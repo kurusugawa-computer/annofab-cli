@@ -38,7 +38,9 @@ from annofabcli.statistics.visualization.dataframe.project_performance import (
     ProjectWorktimePerMonth,
 )
 from annofabcli.statistics.visualization.dataframe.task import Task
+from annofabcli.statistics.visualization.dataframe.task_history import TaskHistory
 from annofabcli.statistics.visualization.dataframe.task_worktime_by_phase_user import TaskWorktimeByPhaseUser
+from annofabcli.statistics.visualization.dataframe.user import User
 from annofabcli.statistics.visualization.dataframe.user_performance import UserPerformance
 from annofabcli.statistics.visualization.dataframe.whole_performance import WholePerformance
 from annofabcli.statistics.visualization.dataframe.whole_productivity_per_date import (
@@ -82,7 +84,6 @@ class WriteCsvGraph:
         self.project_dir = ProjectDir(output_dir)
 
         self.task_df: Optional[pandas.DataFrame] = None
-        self.task_history_df: Optional[pandas.DataFrame] = None
         self.worktime_per_date: Optional[WorktimePerDate] = None
 
     def _catch_exception(self, function: Callable[..., Any]) -> Callable[..., Any]:
@@ -103,11 +104,6 @@ class WriteCsvGraph:
         if self.task_df is None:
             self.task_df = self.table_obj.create_task_df()
         return self.task_df
-
-    def _get_task_history_df(self) -> pandas.DataFrame:
-        if self.task_history_df is None:
-            self.task_history_df = self.table_obj.create_task_history_df()
-        return self.task_history_df
 
     def _get_worktime_per_date(self) -> WorktimePerDate:
         if self.worktime_per_date is None:
@@ -137,15 +133,15 @@ class WriteCsvGraph:
         ユーザごとの生産性と品質に関する情報を出力する。
         """
 
-        df_task_history = self._get_task_history_df()
-        annotation_count_ratio_df = self.table_obj.create_annotation_count_ratio_df(
-            df_task_history, self._get_task_df()
-        )
+        task_history = TaskHistory.from_api_response(self.table_obj._get_task_histories_dict())
         df_user = pandas.DataFrame(self.table_obj.project_members_dict.values())
 
         # タスク、フェーズ、ユーザごとの作業時間を出力する
-        task_worktime_obj = TaskWorktimeByPhaseUser.from_df(
-            annotation_count_ratio_df, df_user=df_user, df_task=self._get_task_df(), project_id=self.project_id
+        task_worktime_obj = TaskWorktimeByPhaseUser.from_df_wrapper(
+            task_history=task_history,
+            user=User(df_user),
+            task=Task(self._get_task_df()),
+            project_id=self.project_id,
         )
         self.project_dir.write_task_worktime_list(task_worktime_obj)
 

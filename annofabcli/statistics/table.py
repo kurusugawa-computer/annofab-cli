@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Optional
 
 import more_itertools
 import pandas
-from annofabapi.models import Task, TaskHistory, TaskPhase
+from annofabapi.models import Task, TaskPhase
 
 import annofabcli
 from annofabcli.common.facade import AnnofabApiFacade
@@ -20,7 +20,6 @@ class Table:
     チェックポイントファイルがあること前提
 
     Attributes:
-        label_dict: label_idとその名前の辞書
         inspection_phrases_dict: 定型指摘IDとそのコメント
         project_members_dict: account_idとプロジェクトメンバ情報
 
@@ -31,7 +30,7 @@ class Table:
     #############################################
 
     _task_list: Optional[List[Task]] = None
-    _task_histories_dict: Optional[Dict[str, List[TaskHistory]]] = None
+    _task_histories_dict: Optional[Dict[str, List[dict[str, Any]]]] = None
 
     def __init__(
         self,
@@ -57,7 +56,7 @@ class Table:
             self._task_list = task_list
             return self._task_list
 
-    def _get_task_histories_dict(self) -> Dict[str, List[TaskHistory]]:
+    def _get_task_histories_dict(self) -> Dict[str, List[dict[str, Any]]]:
         if self._task_histories_dict is not None:
             return self._task_histories_dict
         else:
@@ -66,7 +65,7 @@ class Table:
             return self._task_histories_dict
 
     @staticmethod
-    def operator_is_changed_by_phase(task_history_list: List[TaskHistory], phase: TaskPhase) -> bool:
+    def operator_is_changed_by_phase(task_history_list: List[dict[str, Any]], phase: TaskPhase) -> bool:
         """
         フェーズ内の作業者が途中で変わったかどうか
 
@@ -135,7 +134,7 @@ class Table:
         return project_members_dict
 
     @classmethod
-    def set_task_histories(cls, task: Task, task_histories: List[TaskHistory]) -> Task:
+    def set_task_histories(cls, task: Task, task_histories: List[dict[str, Any]]) -> Task:
         """
         タスク履歴関係の情報を設定する
         """
@@ -150,52 +149,6 @@ class Table:
     @staticmethod
     def _get_task_from_task_id(task_list: List[Task], task_id: str) -> Optional[Task]:
         return more_itertools.first_true(task_list, pred=lambda e: e["task_id"] == task_id)
-
-    def create_task_history_df(self) -> pandas.DataFrame:
-        """
-        タスク履歴の一覧のDataFrameを出力する。
-
-        Returns:
-
-        """
-        task_histories_dict = self._get_task_histories_dict()
-        task_list = self._get_task_list()
-
-        all_task_history_list = []
-        for task_id, task_history_list in task_histories_dict.items():
-            task = self._get_task_from_task_id(task_list, task_id)
-            if task is None:
-                continue
-
-            for history in task_history_list:
-                account_id = history["account_id"]
-                history["user_id"] = self._get_user_id(account_id)
-                history["username"] = self._get_username(account_id)
-                history["biography"] = self._get_biography(account_id)
-                history["worktime_hour"] = annofabcli.common.utils.isoduration_to_hour(
-                    history["accumulated_labor_time_milliseconds"]
-                )
-                # task statusがあると分析しやすいので追加する
-                history["task_status"] = task["status"]
-                all_task_history_list.append(history)
-
-        df = pandas.DataFrame(
-            all_task_history_list,
-            columns=[
-                "project_id",
-                "task_id",
-                "phase",
-                "phase_stage",
-                "account_id",
-                "user_id",
-                "username",
-                "biography",
-                "worktime_hour",
-            ],
-        )
-        if len(df) == 0:
-            logger.warning("タスク履歴の件数が0件です。")
-        return df
 
     def create_task_df(self) -> pandas.DataFrame:
         """
@@ -271,92 +224,3 @@ class Table:
             dtypes = {e: "float64" for e in numeric_columns}
             dtypes.update({e: "boolean" for e in boolean_columns})
             return pandas.DataFrame([], columns=columns).astype(dtypes)
-
-    @staticmethod
-    def create_annotation_count_ratio_df(
-        task_history_df: pandas.DataFrame, task_df: pandas.DataFrame
-    ) -> pandas.DataFrame:
-        """
-        task_id, phase, (phase_index), user_idの作業時間比から、アノテーション数などの生産量を求める
-
-        Args:
-
-        Returns:
-
-
-        """
-        annotation_count_dict = {
-            row["task_id"]: {
-                "annotation_count": row["annotation_count"],
-                "input_data_count": row["input_data_count"],
-                "inspection_comment_count": row["inspection_comment_count"],
-                "rejected_count": row["number_of_rejections_by_inspection"] + row["number_of_rejections_by_acceptance"],
-            }
-            for _, row in task_df.iterrows()
-        }
-
-        def get_inspection_comment_count(row: pandas.Series) -> float:
-            task_id = row.name[0]
-            inspection_comment_count = annotation_count_dict[task_id]["inspection_comment_count"]
-            return row["task_count"] * inspection_comment_count
-
-        def get_rejected_count(row: pandas.Series) -> float:
-            task_id = row.name[0]
-            rejected_count = annotation_count_dict[task_id]["rejected_count"]
-            return row["task_count"] * rejected_count
-
-        def get_annotation_count(row: pandas.Series) -> float:
-            task_id = row.name[0]
-            annotation_count = annotation_count_dict[task_id]["annotation_count"]
-            result = row["task_count"] * annotation_count
-            return result
-
-        def get_input_data_count(row: pandas.Series) -> float:
-            task_id = row.name[0]
-            annotation_count = annotation_count_dict[task_id]["input_data_count"]
-            return row["task_count"] * annotation_count
-
-        if len(task_df) == 0:
-            logger.warning("タスク一覧が0件です。")
-            return pandas.DataFrame()
-
-        group_obj = task_history_df.groupby(["task_id", "phase", "phase_stage", "account_id"]).agg(
-            {"worktime_hour": "sum"}
-        )
-        # 担当者だけ変更して作業していないケースを除外する
-        group_obj = group_obj[group_obj["worktime_hour"] > 0]
-
-        if len(group_obj) == 0:
-            logger.warning("タスク履歴情報に作業しているタスクがありませんでした。タスク履歴全件ファイルが更新されていない可能性があります。")
-            return pandas.DataFrame(
-                columns=[
-                    "task_id",
-                    "phase",
-                    "phase_stage",
-                    "account_id",
-                    "worktime_hour",
-                    "task_count",
-                    "annotation_count",
-                    "input_data_count",
-                    "pointed_out_inspection_comment_count",
-                    "rejected_count",
-                ]
-            )
-
-        group_obj["task_count"] = group_obj.groupby(level=["task_id", "phase", "phase_stage"], group_keys=False).apply(
-            lambda e: e / e["worktime_hour"].sum()
-        )
-        group_obj["annotation_count"] = group_obj.apply(get_annotation_count, axis="columns")
-        group_obj["input_data_count"] = group_obj.apply(get_input_data_count, axis="columns")
-        group_obj["pointed_out_inspection_comment_count"] = group_obj.apply(
-            get_inspection_comment_count, axis="columns"
-        )
-        group_obj["rejected_count"] = group_obj.apply(get_rejected_count, axis="columns")
-        new_df = group_obj.reset_index()
-        new_df["pointed_out_inspection_comment_count"] = new_df["pointed_out_inspection_comment_count"] * new_df[
-            "phase"
-        ].apply(lambda e: 1 if e == TaskPhase.ANNOTATION.value else 0)
-        new_df["rejected_count"] = new_df["rejected_count"] * new_df["phase"].apply(
-            lambda e: 1 if e == TaskPhase.ANNOTATION.value else 0
-        )
-        return new_df

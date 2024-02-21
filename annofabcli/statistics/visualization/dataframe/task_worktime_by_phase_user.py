@@ -5,8 +5,12 @@ from pathlib import Path
 from typing import Optional
 
 import pandas
+from annofabapi.models import TaskPhase
 
 from annofabcli.common.utils import print_csv
+from annofabcli.statistics.visualization.dataframe.task import Task
+from annofabcli.statistics.visualization.dataframe.task_history import TaskHistory
+from annofabcli.statistics.visualization.dataframe.user import User
 
 logger = logging.getLogger(__name__)
 
@@ -20,6 +24,34 @@ class TaskWorktimeByPhaseUser:
         * 品質情報（指摘コメント数、差し戻し回数）
     """
 
+    columns = [
+        "project_id",
+        "task_id",
+        "status",
+        "phase",
+        "phase_stage",
+        "account_id",
+        "user_id",
+        "username",
+        "biography",
+        "worktime_hour",
+        "task_count",
+        "input_data_count",
+        "annotation_count",
+        "pointed_out_inspection_comment_count",
+        "rejected_count",
+    ]
+
+    @classmethod
+    def required_columns_exist(cls, df: pandas.DataFrame) -> bool:
+        """
+        必須の列が存在するかどうかを返します。
+
+        Returns:
+            必須の列が存在するかどうか
+        """
+        return len(set(cls.columns) - set(df.columns)) == 0
+
     @staticmethod
     def _duplicated_keys(df: pandas.DataFrame) -> bool:
         """
@@ -32,6 +64,9 @@ class TaskWorktimeByPhaseUser:
         if self._duplicated_keys(df):
             logger.warning("引数`df`に重複したキー（project_id, task_id, phase, phase_stage, account_id）が含まれています。")
 
+        if not self.required_columns_exist(df):
+            raise ValueError(f"引数`df`には、{self.columns}の列が必要です。 :: {df.columns=}")
+
         self.df = df
 
     def _validate_df_for_output(self, output_file: Path) -> bool:
@@ -41,21 +76,21 @@ class TaskWorktimeByPhaseUser:
         return True
 
     @classmethod
-    def from_df(
-        cls, df_worktime_ratio: pandas.DataFrame, df_user: pandas.DataFrame, df_task: pandas.DataFrame, project_id: str
+    def from_df_wrapper(
+        cls, task_history: TaskHistory, user: User, task: Task, project_id: str
     ) -> TaskWorktimeByPhaseUser:
         """
         AnnoWorkの実績時間から、作業者ごとに生産性を算出する。
 
         Args:
             df_worktime_ratio: 作業したタスク数を、作業時間で按分した値が格納されたDataFrame. 以下の列を参照する。
-            df_user: ユーザー情報が格納されたDataFrame
-            df_task: タスク情報が格納されたDataFrame。以下の列を参照します。
-                * task_id
-                * status
+            user: ユーザー情報が格納されたDataFrameをラップするクラスのインスタンス
+            task: タスク情報が格納されたDataFrameをラップするクラスのインスタンス
             project_id
         """
-        df = df_worktime_ratio.merge(df_user, on="account_id", how="left")
+        df_task = task.df
+        df_worktime_ratio = cls._create_annotation_count_ratio_df(task_history.df, task.df)
+        df = df_worktime_ratio.merge(user.df, on="account_id", how="left")
         df = df.merge(df_task[["task_id", "status"]], on="task_id", how="left")
         df["project_id"] = project_id
         return cls(df)
@@ -64,25 +99,7 @@ class TaskWorktimeByPhaseUser:
         if not self._validate_df_for_output(output_file):
             return
 
-        columns = [
-            "project_id",
-            "task_id",
-            "status",
-            "phase",
-            "phase_stage",
-            "account_id",
-            "user_id",
-            "username",
-            "biography",
-            "worktime_hour",
-            "task_count",
-            "input_data_count",
-            "annotation_count",
-            "pointed_out_inspection_comment_count",
-            "rejected_count",
-        ]
-
-        print_csv(self.df[columns], str(output_file))
+        print_csv(self.df[self.columns], str(output_file))
 
     @staticmethod
     def merge(*obj: TaskWorktimeByPhaseUser) -> TaskWorktimeByPhaseUser:
@@ -159,3 +176,92 @@ class TaskWorktimeByPhaseUser:
         }
         df = self.df.replace(to_replace_info)
         return TaskWorktimeByPhaseUser(df)
+
+    @staticmethod
+    def _create_annotation_count_ratio_df(
+        task_history_df: pandas.DataFrame, task_df: pandas.DataFrame
+    ) -> pandas.DataFrame:
+        """
+        task_id, phase, (phase_index), user_idの作業時間比から、アノテーション数などの生産量を求める
+
+        Args:
+
+        Returns:
+
+
+        """
+        annotation_count_dict = {
+            row["task_id"]: {
+                "annotation_count": row["annotation_count"],
+                "input_data_count": row["input_data_count"],
+                "inspection_comment_count": row["inspection_comment_count"],
+                "rejected_count": row["number_of_rejections_by_inspection"] + row["number_of_rejections_by_acceptance"],
+            }
+            for _, row in task_df.iterrows()
+        }
+
+        def get_inspection_comment_count(row: pandas.Series) -> float:
+            task_id = row.name[0]
+            inspection_comment_count = annotation_count_dict[task_id]["inspection_comment_count"]
+            return row["task_count"] * inspection_comment_count
+
+        def get_rejected_count(row: pandas.Series) -> float:
+            task_id = row.name[0]
+            rejected_count = annotation_count_dict[task_id]["rejected_count"]
+            return row["task_count"] * rejected_count
+
+        def get_annotation_count(row: pandas.Series) -> float:
+            task_id = row.name[0]
+            annotation_count = annotation_count_dict[task_id]["annotation_count"]
+            result = row["task_count"] * annotation_count
+            return result
+
+        def get_input_data_count(row: pandas.Series) -> float:
+            task_id = row.name[0]
+            annotation_count = annotation_count_dict[task_id]["input_data_count"]
+            return row["task_count"] * annotation_count
+
+        if len(task_df) == 0:
+            logger.warning("タスク一覧が0件です。")
+            return pandas.DataFrame()
+
+        group_obj = task_history_df.groupby(["task_id", "phase", "phase_stage", "account_id"]).agg(
+            {"worktime_hour": "sum"}
+        )
+        # 担当者だけ変更して作業していないケースを除外する
+        group_obj = group_obj[group_obj["worktime_hour"] > 0]
+
+        if len(group_obj) == 0:
+            logger.warning("タスク履歴情報に作業しているタスクがありませんでした。タスク履歴全件ファイルが更新されていない可能性があります。")
+            return pandas.DataFrame(
+                columns=[
+                    "task_id",
+                    "phase",
+                    "phase_stage",
+                    "account_id",
+                    "worktime_hour",
+                    "task_count",
+                    "annotation_count",
+                    "input_data_count",
+                    "pointed_out_inspection_comment_count",
+                    "rejected_count",
+                ]
+            )
+
+        group_obj["task_count"] = group_obj.groupby(level=["task_id", "phase", "phase_stage"], group_keys=False).apply(
+            lambda e: e / e["worktime_hour"].sum()
+        )
+        group_obj["annotation_count"] = group_obj.apply(get_annotation_count, axis="columns")
+        group_obj["input_data_count"] = group_obj.apply(get_input_data_count, axis="columns")
+        group_obj["pointed_out_inspection_comment_count"] = group_obj.apply(
+            get_inspection_comment_count, axis="columns"
+        )
+        group_obj["rejected_count"] = group_obj.apply(get_rejected_count, axis="columns")
+        new_df = group_obj.reset_index()
+        new_df["pointed_out_inspection_comment_count"] = new_df["pointed_out_inspection_comment_count"] * new_df[
+            "phase"
+        ].apply(lambda e: 1 if e == TaskPhase.ANNOTATION.value else 0)
+        new_df["rejected_count"] = new_df["rejected_count"] * new_df["phase"].apply(
+            lambda e: 1 if e == TaskPhase.ANNOTATION.value else 0
+        )
+        return new_df

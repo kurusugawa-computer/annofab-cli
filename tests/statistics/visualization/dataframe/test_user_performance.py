@@ -35,7 +35,7 @@ class TestUserPerformance:
         assert actual.df[("task_count", "annotation")][0] == 1
 
     def test__from_df_wrapper__集計対象タスクが0件のとき(self):
-        task_worktime_by_phase_user = TaskWorktimeByPhaseUser.from_csv(data_dir / "annotation-count-ratio-df-empty.csv")
+        task_worktime_by_phase_user = TaskWorktimeByPhaseUser.empty()
         worktime_per_date = WorktimePerDate.from_csv(data_dir / "worktime-per-date.csv")
 
         actual = UserPerformance.from_df_wrapper(
