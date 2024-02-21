@@ -44,8 +44,8 @@ class PrintAnnotationSpecsLabel(AbstractCommandLineInterface):
         """
         日本語名、英語名のタプルを取得する。
         """
-        ja_name = [e["message"] for e in messages if e["lang"] == "ja-JP"][0]
-        en_name = [e["message"] for e in messages if e["lang"] == "en-US"][0]
+        ja_name = [e["message"] for e in messages if e["lang"] == "ja-JP"][0]  # noqa: RUF015
+        en_name = [e["message"] for e in messages if e["lang"] == "en-US"][0]  # noqa: RUF015
         return (ja_name, en_name)
 
     @staticmethod

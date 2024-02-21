@@ -70,7 +70,7 @@ class TestCommandLine:
             old_label_color = json.load(f)
 
         label_color = copy.deepcopy(old_label_color)
-        key = list(label_color.keys())[0]
+        key = list(label_color.keys())[0]  # noqa: RUF015
         color = label_color[key]
         new_color = (color[0], color[1], (color[2] + 1) % 256)
         label_color[key] = new_color
