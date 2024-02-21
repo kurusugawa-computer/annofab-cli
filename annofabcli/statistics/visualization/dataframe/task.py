@@ -2,17 +2,20 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
 
+import annofabapi
 import bokeh
 import bokeh.layouts
 import bokeh.palettes
 import pandas
 import pytz
-from annofabapi.models import TaskPhase
 
 from annofabcli.common.utils import print_csv
 from annofabcli.statistics.histogram import get_histogram_figure, get_sub_title_from_series
+from annofabcli.statistics.visualization.dataframe.annotation_count import AnnotationCount
+from annofabcli.statistics.visualization.dataframe.inspection_comment_count import InspectionCommentCount
+from annofabcli.task.list_all_tasks_added_task_history import AddingAdditionalInfoToTask
 
 logger = logging.getLogger(__name__)
 
@@ -44,6 +47,110 @@ class Task:
             return False
         return True
 
+    @classmethod
+    def columns(cls) -> list[str]:
+        return [
+            # 基本的な情報
+            "project_id",
+            "task_id",
+            "phase",
+            "phase_stage",
+            "status",
+            "number_of_rejections_by_inspection",
+            "number_of_rejections_by_acceptance",
+            # タスク作成時
+            "created_datetime",
+            # 1回目の教師付フェーズ
+            "first_annotation_user_id",
+            "first_annotation_username",
+            "first_annotation_worktime_hour",
+            "first_annotation_started_datetime",
+            # 1回目の検査フェーズ
+            "first_inspection_user_id",
+            "first_inspection_username",
+            "first_inspection_worktime_hour",
+            "first_inspection_started_datetime",
+            # 1回目の受入フェーズ
+            "first_acceptance_user_id",
+            "first_acceptance_username",
+            "first_acceptance_worktime_hour",
+            "first_acceptance_started_datetime",
+            # 最後の受入
+            "first_acceptance_completed_datetime",
+            # 作業時間に関する内容
+            "worktime_hour",
+            "annotation_worktime_hour",
+            "inspection_worktime_hour",
+            "acceptance_worktime_hour",
+            # 個数
+            "input_data_count",
+            "annotation_count",
+            "inspection_comment_count",
+            "inspection_comment_count_in_inspection_phase",
+            "inspection_comment_count_in_acceptance_phase",
+            # タスクの状態
+            "inspection_is_skipped",
+            "acceptance_is_skipped",
+        ]
+
+    @classmethod
+    def from_api_content(
+        cls,
+        tasks: list[dict[str, Any]],
+        task_histories: dict[str, list[dict[str, Any]]],
+        inspection_comment_count: InspectionCommentCount,
+        annotation_count: AnnotationCount,
+        project_id: str,
+        annofab_service: annofabapi.Resource,
+    ) -> Task:
+        """
+        APIから取得した情報と、DataFrameのラッパーからインスタンスを生成します。
+
+        Args:
+            tasks: APIから取得したタスク情報
+            task_histories: APIから取得したタスク履歴情報
+            inspection_comment_count: 検査コメント数を格納したDataFrameのラッパー
+            annotation_count: アノテーション数を格納したDataFrameのラッパー
+            annofab_service: TODO `AddingAdditionalInfoToTask`を修正したら、この引数を削除する。このクラスからAPIに直接アクセスさせたくない。
+
+        """
+
+        adding_obj = AddingAdditionalInfoToTask(annofab_service, project_id=project_id)
+
+        for task in tasks:
+            adding_obj.add_additional_info_to_task(task)
+
+            task_id = task["task_id"]
+            task_histories = task_histories.get(task_id, [])
+
+            task["input_data_count"] = len(task["input_data_id_list"])
+
+            # タスク履歴から取得できる付加的な情報を追加する
+            adding_obj.add_task_history_additional_info_to_task(task, task_histories)
+
+            # task["annotation_count"] = annotations_dict.get(task_id, 0)
+            # task["inspection_comment_count"] = inspections_dict.get(task_id, 0)
+
+        df = pandas.DataFrame(tasks)
+        if len(df) == 0:
+            return cls.empty()
+
+        # dictが含まれたDataFrameをbokehでグラフ化するとErrorが発生するので、dictを含む列を削除する
+        # https://github.com/bokeh/bokeh/issues/9620
+        df = df.drop(["histories_by_phase"], axis=1)
+
+        df = df.merge(annotation_count.df, on=["project_id", "task_id"])
+        df = df.merge(inspection_comment_count.df, on=["project_id", "task_id"])
+        df = df.fillna(
+            {
+                "inspection_comment_count": 0,
+                "inspection_comment_count_in_inspection_phase": 0,
+                "inspection_comment_count_in_acceptance_phase": 0,
+                "annotation_count": 0,
+            }
+        )
+        return cls(df)
+
     def is_empty(self) -> bool:
         """
         空のデータフレームを持つかどうかを返します。
@@ -57,37 +164,40 @@ class Task:
     def empty(cls) -> Task:
         """空のデータフレームを持つインスタンスを生成します。"""
 
-        df_dtype: dict[str, str] = {
-            "project_id": "string",
-            "task_id": "string",
-            "phase": "string",
-            "phase_stage": "int64",
-            "status": "string",
-            "number_of_rejections_by_inspection": "int64",
-            "number_of_rejections_by_acceptance": "int64",
-            "created_datetime": "string",
-            "first_acceptance_completed_datetime": "string",
-            "worktime_hour": "float64",
-            "annotation_worktime_hour": "float64",
-            "inspection_worktime_hour": "float64",
-            "acceptance_worktime_hour": "float64",
-            "input_data_count": "int64",
-            "inspection_comment_count": "int64",
-            "annotation_count": "int64",
-            "inspection_is_skipped": "boolean",
-            "acceptance_is_skipped": "boolean",
+        bool_columns = {
+            "inspection_is_skipped",
+            "acceptance_is_skipped",
         }
-        for phase in TaskPhase:
-            df_dtype.update(
-                {
-                    f"first_{phase.value}_user_id": "string",
-                    f"first_{phase.value}_username": "string",
-                    f"first_{phase.value}_worktime_hour": "int64",
-                    f"first_{phase.value}_started_datetime": "string",
-                }
-            )
 
-        df = pandas.DataFrame(columns=df_dtype.keys()).astype(df_dtype)
+        string_columns = {
+            "project_id",
+            "task_id",
+            "phase",
+            "phase_stage",
+            "status",
+            "created_datetime",
+            "first_annotation_user_id",
+            "first_annotation_username",
+            "first_annotation_started_datetime",
+            "first_inspection_user_id",
+            "first_inspection_username",
+            "first_inspection_started_datetime",
+            "first_acceptance_user_id",
+            "first_acceptance_username",
+            "first_acceptance_started_datetime",
+            "first_acceptance_completed_datetime",
+        }
+
+        numeric_columns = set(cls.columns()) - bool_columns - string_columns
+        df_dtype: dict[str, str] = {}
+        for col in numeric_columns:
+            df_dtype[col] = "float"
+        for col in string_columns:
+            df_dtype[col] = "string"
+        for col in bool_columns:
+            df_dtype[col] = "boolean"
+
+        df = pandas.DataFrame(columns=cls.columns()).astype(df_dtype)
         return cls(df)
 
     @classmethod
