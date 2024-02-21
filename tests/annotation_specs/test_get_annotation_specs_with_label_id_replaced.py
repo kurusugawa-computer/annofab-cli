@@ -6,7 +6,7 @@ from annofabcli.annotation_specs.get_annotation_specs_with_label_id_replaced imp
 
 
 class TestReplacingLabelId:
-    label_list = [
+    label_list = [  # noqa: RUF012
         {
             "label_id": "id1",
             "label_name": {
@@ -15,7 +15,7 @@ class TestReplacingLabelId:
             },
         }
     ]
-    restriction_list = [
+    restriction_list = [  # noqa: RUF012
         {
             "additional_data_definition_id": "attr1",
             "condition": {

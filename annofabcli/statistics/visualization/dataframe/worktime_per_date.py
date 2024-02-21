@@ -71,7 +71,7 @@ class WorktimePerDate:
 
         self.df = df
 
-    _df_dtype = {
+    _df_dtype = {  # noqa: RUF012
         "date": "string",
         "account_id": "string",
         "user_id": "string",
@@ -84,7 +84,7 @@ class WorktimePerDate:
         "monitored_acceptance_worktime_hour": "float64",
     }
 
-    columns = [
+    columns = [  # noqa: RUF012
         "date",
         "account_id",
         "user_id",

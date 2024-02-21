@@ -25,7 +25,7 @@ class WholePerformance:
         series: 全体の生産性と品質が格納されたpandas.Series
     """
 
-    STRING_KEYS = {("first_working_date", ""), ("last_working_date", "")}
+    STRING_KEYS = {("first_working_date", ""), ("last_working_date", "")}  # noqa: RUF012
     """文字列が格納されているキー"""
 
     def __init__(self, series: pandas.Series) -> None:

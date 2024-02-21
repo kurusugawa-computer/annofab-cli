@@ -5,7 +5,7 @@ from annofabcli.annotation.annotation_query import AnnotationQueryForCLI
 
 
 class TestAnnotationQueryForCLI:
-    ANNOTATION_SPECS = {
+    ANNOTATION_SPECS = {  # noqa: RUF012
         "labels": [
             {
                 "label_id": "9d6cca8d-3f5a-4808-a6c9-0ae18a478176",

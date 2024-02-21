@@ -23,7 +23,7 @@ class TaskHistory:
     * worktime_hour
     """
 
-    columns = ["project_id", "task_id", "phase", "phase_stage", "account_id", "worktime_hour"]
+    columns = ["project_id", "task_id", "phase", "phase_stage", "account_id", "worktime_hour"]  # noqa: RUF012
 
     @classmethod
     def required_columns_exist(cls, df: pandas.DataFrame) -> bool:

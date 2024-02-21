@@ -37,7 +37,7 @@ class DrawingOptions(DataClassJsonMixin):
 
 
 class DrawingAnnotationForOneImage:
-    _COLOR_PALETTE = [
+    _COLOR_PALETTE = [  # noqa: RUF012
         "red",
         "maroon",
         "yellow",

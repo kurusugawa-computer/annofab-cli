@@ -138,7 +138,7 @@ class ListProject(AbstractCommandLineInterface):
     プロジェクト一覧を表示する。
     """
 
-    PRIOR_COLUMNS = [
+    PRIOR_COLUMNS = [  # noqa: RUF012
         "organization_id",
         "organization_name",
         "project_id",

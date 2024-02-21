@@ -21,7 +21,7 @@ class ListUser(AbstractCommandLineInterface):
     ユーザを表示する
     """
 
-    PRIOR_COLUMNS = [
+    PRIOR_COLUMNS = [  # noqa: RUF012
         "project_id",
         "project_title",
         "account_id",

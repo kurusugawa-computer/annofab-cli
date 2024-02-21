@@ -24,7 +24,7 @@ class TaskWorktimeByPhaseUser:
         * 品質情報（指摘コメント数、差し戻し回数）
     """
 
-    columns = [
+    columns = [  # noqa: RUF012
         "project_id",
         "task_id",
         "status",

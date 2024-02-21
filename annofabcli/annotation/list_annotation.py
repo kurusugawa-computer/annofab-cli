@@ -120,7 +120,7 @@ def to_annotation_list_for_csv(annotation_list: List[SingleAnnotation]) -> List[
 class ListAnnotation(AbstractCommandLineInterface):
     COMMON_MESSAGE = "annofabcli annotation list: error:"
 
-    PRIOR_COLUMNS = [
+    PRIOR_COLUMNS = [  # noqa: RUF012
         "project_id",
         "task_id",
         "input_data_id",
@@ -136,7 +136,7 @@ class ListAnnotation(AbstractCommandLineInterface):
         "data",
     ]
 
-    DROPPED_COLUMNS = [
+    DROPPED_COLUMNS = [  # noqa: RUF012
         "detail",
         "additional_data_list",
         "etag",

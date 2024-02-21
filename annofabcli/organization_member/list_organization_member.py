@@ -19,7 +19,7 @@ class ListOrganizationMember(AbstractCommandLineInterface):
     組織メンバ一覧を表示する。
     """
 
-    PRIOR_COLUMNS = [
+    PRIOR_COLUMNS = [  # noqa: RUF012
         "organization_id",
         "organization_name",
         "account_id",

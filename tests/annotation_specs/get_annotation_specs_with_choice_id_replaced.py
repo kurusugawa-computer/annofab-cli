@@ -4,7 +4,7 @@ from annofabcli.annotation_specs.get_annotation_specs_with_choice_id_replaced im
 
 
 class TestReplacingChoiceId:
-    attribute_list = [
+    attribute_list = [  # noqa: RUF012
         {
             "additional_data_definition_id": "f98a9545-5864-4e5b-a945-d327001a0179",
             "name": {
