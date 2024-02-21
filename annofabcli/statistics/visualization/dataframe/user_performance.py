@@ -464,7 +464,7 @@ class UserPerformance:
         # joinしない理由: レベル1の列名が空文字のDataFrameをjoinすると、Python3.12のpandas2.2.0で、列名が期待通りにならないため
         # https://github.com/pandas-dev/pandas/issues/57500
         # return df2.join(df3)
-        return pandas.concat([df2,df3], axis=1)
+        return pandas.concat([df2, df3], axis=1)
 
     @staticmethod
     def _create_df_user(worktime_per_date: WorktimePerDate) -> pandas.DataFrame:
