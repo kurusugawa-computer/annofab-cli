@@ -143,9 +143,7 @@ class PuttingTaskMain:
         logger.debug("'initiate_tasks_generation' WebAPIを用いてタスクを生成します。")
         content = self.service.wrapper.initiate_tasks_generation_by_csv(self.project_id, csvfile_path=str(csv_file))
         job = content["job"]
-        logger.info(
-            f"Annofab上でタスク作成処理が開始されました。 :: csv_file='{csv_file}', job_type='{job['job_type']}', job_id='{job['job_id']}'"
-        )
+        logger.info(f"Annofab上でタスク作成処理が開始されました。 :: csv_file='{csv_file}', job_type='{job['job_type']}', job_id='{job['job_id']}'")
         if self.should_wait:
             self.wait_for_completion(job["job_id"])
         else:

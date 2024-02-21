@@ -498,7 +498,7 @@ class ArgumentParser:
         self.parser.add_argument("-tq", "--task_query", type=str, required=required, help=help_message)
 
 
-class AbstractCommandLineWithConfirmInterface(abc.ABC):  # noqa: abstract-base-class-without-abstract-method
+class AbstractCommandLineWithConfirmInterface(abc.ABC):  # noqa: B024
     """
     コマンドライン上でpromptを表示するときのインターフェイス
     """
