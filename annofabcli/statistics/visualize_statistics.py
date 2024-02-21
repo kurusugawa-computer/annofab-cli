@@ -1,5 +1,6 @@
 import argparse
 import functools
+import json
 import logging.handlers
 import re
 import sys
@@ -23,11 +24,13 @@ from annofabcli.stat_visualization.merge_visualization_dir import merge_visualiz
 from annofabcli.statistics.database import Database, Query
 from annofabcli.statistics.table import Table
 from annofabcli.statistics.visualization.dataframe.actual_worktime import ActualWorktime
+from annofabcli.statistics.visualization.dataframe.annotation_count import AnnotationCount
 from annofabcli.statistics.visualization.dataframe.cumulative_productivity import (
     AcceptorCumulativeProductivity,
     AnnotatorCumulativeProductivity,
     InspectorCumulativeProductivity,
 )
+from annofabcli.statistics.visualization.dataframe.inspection_comment_count import InspectionCommentCount
 from annofabcli.statistics.visualization.dataframe.productivity_per_date import (
     AcceptorProductivityPerDate,
     AnnotatorProductivityPerDate,
@@ -102,7 +105,24 @@ class WriteCsvGraph:
 
     def _get_task_df(self) -> pandas.DataFrame:
         if self.task_df is None:
-            self.task_df = self.table_obj.create_task_df()
+            annotation_count = AnnotationCount.from_annotation_zip(self.table_obj.database.annotations_zip_path, project_id=self.project_id)
+
+            with self.table_obj.database.comment_json_path.open() as f:
+                inspection_comments = json.load(f)
+            inspection_comment_count = InspectionCommentCount.from_api_content(inspection_comments, project_id=self.project_id)
+
+            with self.table_obj.database.tasks_json_path.open() as f:
+                tasks = json.load(f)
+            with self.table_obj.database.task_histories_json_path.open() as f:
+                task_histories = json.load(f)
+
+            self.task_df = Task.from_api_content(
+                tasks,
+                task_histories,
+                inspection_comment_count=inspection_comment_count,
+                annotation_count=annotation_count,
+                annofab_service=self.service,
+            )
         return self.task_df
 
     def _get_worktime_per_date(self) -> WorktimePerDate:
