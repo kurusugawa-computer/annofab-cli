@@ -110,9 +110,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--comment_type",
         choices=[CommentType.INSPECTION.value, CommentType.ONHOLD.value],
         help=(
-            "コメントの種類で絞り込みます。\n\n"
-            f" * {CommentType.INSPECTION.value}: 検査コメント\n"
-            f" * {CommentType.ONHOLD.value}: 保留コメント\n"
+            "コメントの種類で絞り込みます。\n\n" f" * {CommentType.INSPECTION.value}: 検査コメント\n" f" * {CommentType.ONHOLD.value}: 保留コメント\n"
         ),
     )
 

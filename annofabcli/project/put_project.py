@@ -74,9 +74,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         f" * {InputDataType.CUSTOM.value} : カスタム（点群など）",
     )
 
-    parser.add_argument(
-        "-p", "--project_id", type=str, required=False, help="作成するプロジェクトのproject_id。未指定の場合はUUIDv4になります。"
-    )
+    parser.add_argument("-p", "--project_id", type=str, required=False, help="作成するプロジェクトのproject_id。未指定の場合はUUIDv4になります。")
     parser.add_argument("--overview", type=str, help="作成するプロジェクトの概要")
     parser.add_argument(
         "--plugin_id", type=str, help="アノテーションエディタプラグインのplugin_id。``--input_data_type custom`` を指定した場合は必須です。"

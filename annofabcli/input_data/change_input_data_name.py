@@ -55,8 +55,7 @@ class ChangeInputDataNameMain(AbstractCommandLineWithConfirmInterface):
             return False
 
         if not self.confirm_processing(
-            f"input_data_id='{input_data_id}' :: "
-            f"input_data_name='{old_input_data['input_data_name']}'を'{new_input_data_name}'に変更しますか？"
+            f"input_data_id='{input_data_id}' :: " f"input_data_name='{old_input_data['input_data_name']}'を'{new_input_data_name}'に変更しますか？"
         ):
             return False
 
@@ -90,9 +89,7 @@ class ChangeInputDataNameMain(AbstractCommandLineWithConfirmInterface):
                 if result:
                     success_count += 1
             except Exception:
-                logger.warning(
-                    f"input_data_id='{changed_input_data.input_data_id}'の入力データの名前を変更するのに失敗しました。", exc_info=True
-                )
+                logger.warning(f"input_data_id='{changed_input_data.input_data_id}'の入力データの名前を変更するのに失敗しました。", exc_info=True)
                 continue
 
         logger.info(f"{success_count} / {len(changed_input_data_list)} 件の入力データの名前を変更しました。")
@@ -190,9 +187,7 @@ class ChangeInputDataName(AbstractCommandLineInterface):
                 project_id, changed_input_data_list=changed_input_data_list, parallelism=args.parallelism
             )
         else:
-            main_obj.change_input_data_name_list_sequentially(
-                project_id, changed_input_data_list=changed_input_data_list
-            )
+            main_obj.change_input_data_name_list_sequentially(project_id, changed_input_data_list=changed_input_data_list)
 
 
 def main(args: argparse.Namespace) -> None:
@@ -232,7 +227,9 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     )
 
     parser.add_argument(
-        "--parallelism", type=int, help="使用するプロセス数（並列度）を指定してください。指定する場合は必ず ``--yes`` を指定してください。指定しない場合は、逐次的に処理します。"
+        "--parallelism",
+        type=int,
+        help="使用するプロセス数（並列度）を指定してください。指定する場合は必ず ``--yes`` を指定してください。指定しない場合は、逐次的に処理します。",
     )
 
     parser.set_defaults(subcommand_func=main)

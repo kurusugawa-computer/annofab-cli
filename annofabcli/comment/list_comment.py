@@ -62,9 +62,7 @@ class ListingComments(AbstractCommandLineInterface):
         task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id)
         comment_type = CommentType(args.comment_type) if args.comment_type is not None else None
 
-        comment_list = self.get_comment_list(
-            args.project_id, task_id_list, comment_type=comment_type, exclude_reply=args.exclude_reply
-        )
+        comment_list = self.get_comment_list(args.project_id, task_id_list, comment_type=comment_type, exclude_reply=args.exclude_reply)
 
         logger.info(f"コメントの件数: {len(comment_list)}")
 
@@ -95,9 +93,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--comment_type",
         choices=[CommentType.INSPECTION.value, CommentType.ONHOLD.value],
         help=(
-            "コメントの種類で絞り込みます。\n\n"
-            f" * {CommentType.INSPECTION.value}: 検査コメント\n"
-            f" * {CommentType.ONHOLD.value}: 保留コメント\n"
+            "コメントの種類で絞り込みます。\n\n" f" * {CommentType.INSPECTION.value}: 検査コメント\n" f" * {CommentType.ONHOLD.value}: 保留コメント\n"
         ),
     )
 

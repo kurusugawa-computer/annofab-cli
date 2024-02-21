@@ -90,9 +90,7 @@ class WritingGraph:
             logger.warning("'タスクlist.csv'から生成できるグラフの出力に失敗しました。", exc_info=True)
 
         try:
-            self.output_project_dir.write_whole_productivity_line_graph_per_date(
-                self.project_dir.read_whole_productivity_per_date()
-            )
+            self.output_project_dir.write_whole_productivity_line_graph_per_date(self.project_dir.read_whole_productivity_per_date())
         except Exception:
             logger.warning("'日毎の生産量と生産性.csv'から生成できるグラフの出力に失敗しました。", exc_info=True)
 

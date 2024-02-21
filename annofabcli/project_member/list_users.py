@@ -42,9 +42,7 @@ class ListUser(AbstractCommandLineInterface):
         project_members = self.service.wrapper.get_all_project_members(project_id, query_params=query_params)
         return project_members
 
-    def get_project_members_with_project_id(
-        self, project_id_list: List[str], include_inactive: bool = False
-    ) -> List[ProjectMember]:
+    def get_project_members_with_project_id(self, project_id_list: List[str], include_inactive: bool = False) -> List[ProjectMember]:
         all_project_members: List[ProjectMember] = []
 
         for project_id in project_id_list:
@@ -52,7 +50,9 @@ class ListUser(AbstractCommandLineInterface):
                 project, _ = self.service.api.get_project(project_id)
             except requests.exceptions.HTTPError as e:
                 logger.warning(e)
-                logger.warning(f"project_id = {project_id} のプロジェクトにアクセスできなかった（存在しないproject_id、またはプロジェクトメンバでない）")
+                logger.warning(
+                    f"project_id = {project_id} のプロジェクトにアクセスできなかった（存在しないproject_id、またはプロジェクトメンバでない）"
+                )
                 continue
 
             project_title = project["title"]

@@ -104,9 +104,7 @@ class TestAnnotationQueryForCLI:
     }
 
     def test_normal(self):
-        query = AnnotationQueryForCLI(
-            label="car", attributes={"car_kind": "emergency_vehicle", "traffic_lane": 1, "tracking_id": "foo"}
-        )
+        query = AnnotationQueryForCLI(label="car", attributes={"car_kind": "emergency_vehicle", "traffic_lane": 1, "tracking_id": "foo"})
         actual = query.to_query_for_api(self.ANNOTATION_SPECS)
         assert actual.label_id == "9d6cca8d-3f5a-4808-a6c9-0ae18a478176"
 

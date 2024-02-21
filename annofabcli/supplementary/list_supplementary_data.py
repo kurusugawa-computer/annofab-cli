@@ -28,9 +28,7 @@ class ListSupplementaryData(AbstractCommandLineInterface):
             all_input_data_id_list.extend(task["input_data_id_list"])
         return all_input_data_id_list
 
-    def get_all_supplementary_data_list(
-        self, project_id: str, input_data_id_list: List[str]
-    ) -> List[SupplementaryData]:
+    def get_all_supplementary_data_list(self, project_id: str, input_data_id_list: List[str]) -> List[SupplementaryData]:
         """
         補助情報一覧を取得する。
         """
@@ -40,9 +38,7 @@ class ListSupplementaryData(AbstractCommandLineInterface):
             if (index + 1) % 100 == 0:
                 logger.debug(f"{index+1} 件目の入力データを取得します。")
 
-            supplementary_data_list = self.service.wrapper.get_supplementary_data_list_or_none(
-                project_id, input_data_id
-            )
+            supplementary_data_list = self.service.wrapper.get_supplementary_data_list_or_none(project_id, input_data_id)
             if supplementary_data_list is not None:
                 all_supplementary_data_list.extend(supplementary_data_list)
             else:
@@ -50,9 +46,7 @@ class ListSupplementaryData(AbstractCommandLineInterface):
 
         return all_supplementary_data_list
 
-    def print_supplementary_data_list(
-        self, project_id: str, input_data_id_list: Optional[List[str]], task_id_list: Optional[List[str]]
-    ) -> None:
+    def print_supplementary_data_list(self, project_id: str, input_data_id_list: Optional[List[str]], task_id_list: Optional[List[str]]) -> None:
         """
         補助情報一覧を出力する
 
@@ -64,22 +58,16 @@ class ListSupplementaryData(AbstractCommandLineInterface):
                 logger.warning("input_data_id_listとtask_id_listの両方がNoneです。")
                 return
 
-        supplementary_data_list = self.get_all_supplementary_data_list(
-            project_id, input_data_id_list=input_data_id_list
-        )
+        supplementary_data_list = self.get_all_supplementary_data_list(project_id, input_data_id_list=input_data_id_list)
         logger.info(f"補助情報一覧の件数: {len(supplementary_data_list)}")
         self.print_according_to_format(supplementary_data_list)
 
     def main(self) -> None:
         args = self.args
-        input_data_id_list = (
-            annofabcli.common.cli.get_list_from_args(args.input_data_id) if args.input_data_id is not None else None
-        )
+        input_data_id_list = annofabcli.common.cli.get_list_from_args(args.input_data_id) if args.input_data_id is not None else None
         task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id) if args.task_id is not None else None
 
-        self.print_supplementary_data_list(
-            project_id=args.project_id, input_data_id_list=input_data_id_list, task_id_list=task_id_list
-        )
+        self.print_supplementary_data_list(project_id=args.project_id, input_data_id_list=input_data_id_list, task_id_list=task_id_list)
 
 
 def main(args: argparse.Namespace) -> None:
@@ -105,12 +93,11 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--input_data_id",
         type=str,
         nargs="+",
-        help="対象の入力データのinput_data_idを指定します。" + " ``file://`` を先頭に付けると、input_data_idの一覧が記載されたファイルを指定できます。",
+        help="対象の入力データのinput_data_idを指定します。"
+        + " ``file://`` を先頭に付けると、input_data_idの一覧が記載されたファイルを指定できます。",
     )
 
-    argument_parser.add_format(
-        choices=[FormatArgument.CSV, FormatArgument.JSON, FormatArgument.PRETTY_JSON], default=FormatArgument.CSV
-    )
+    argument_parser.add_format(choices=[FormatArgument.CSV, FormatArgument.JSON, FormatArgument.PRETTY_JSON], default=FormatArgument.CSV)
     argument_parser.add_output()
     argument_parser.add_csv_format()
 

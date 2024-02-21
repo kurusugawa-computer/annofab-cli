@@ -55,8 +55,6 @@ def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argpa
     subcommand_help = "タスク履歴全件ファイルをダウンロードします。"
     epilog = "オーナロールまたはアノテーションユーザロールを持つユーザで実行してください。"
 
-    parser = annofabcli.common.cli.add_parser(
-        subparsers, subcommand_name, subcommand_help, description=subcommand_help, epilog=epilog
-    )
+    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description=subcommand_help, epilog=epilog)
     parse_args(parser)
     return parser

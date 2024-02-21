@@ -144,9 +144,7 @@ class CopyTasksMain(AbstractCommandLineWithConfirmInterface):
                     if result:
                         success_count += 1
                 except Exception:  # pylint: disable=broad-except
-                    logger.warning(
-                        f"タスク'{copy_target.src_task_id}'を'{copy_target.dest_task_id}'にコピーする際に失敗しました。", exc_info=True
-                    )
+                    logger.warning(f"タスク'{copy_target.src_task_id}'を'{copy_target.dest_task_id}'にコピーする際に失敗しました。", exc_info=True)
                     continue
 
         logger.info(f"{success_count} / {len(copy_target_list)} 件 タスクをコピーしました。")
@@ -204,13 +202,16 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         type=str,
         nargs="+",
         required=True,
-        help="コピー元のtask_idとコピー先のtask_idを ``:`` で区切って指定してください。\n" "``file://`` を先頭に付けると、コピー元とコピー先が記載されているファイルを指定できます。",
+        help="コピー元のtask_idとコピー先のtask_idを ``:`` で区切って指定してください。\n"
+        "``file://`` を先頭に付けると、コピー元とコピー先が記載されているファイルを指定できます。",
     )
 
     parser.add_argument("--copy_metadata", action="store_true", help="指定した場合、タスクのメタデータもコピーします。")
 
     parser.add_argument(
-        "--parallelism", type=int, help="使用するプロセス数（並列度）を指定してください。指定する場合は必ず ``--yes`` を指定してください。指定しない場合は、逐次的に処理します。"
+        "--parallelism",
+        type=int,
+        help="使用するプロセス数（並列度）を指定してください。指定する場合は必ず ``--yes`` を指定してください。指定しない場合は、逐次的に処理します。",
     )
 
     parser.set_defaults(subcommand_func=main)

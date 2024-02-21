@@ -196,14 +196,10 @@ def match_input_data_with_query(  # pylint: disable=too-many-return-statements
     if input_data_query is None:
         return True
 
-    if input_data_query.input_data_id is not None and not match_str(
-        input_data.input_data_id, input_data_query.input_data_id, ignore_case=True
-    ):
+    if input_data_query.input_data_id is not None and not match_str(input_data.input_data_id, input_data_query.input_data_id, ignore_case=True):
         return False
 
-    if input_data_query.input_data_name is not None and not match_str(
-        input_data.input_data_name, input_data_query.input_data_name, ignore_case=True
-    ):
+    if input_data_query.input_data_name is not None and not match_str(input_data.input_data_name, input_data_query.input_data_name, ignore_case=True):
         return False
 
     if input_data_query.input_data_path is not None and not match_str(
@@ -214,9 +210,7 @@ def match_input_data_with_query(  # pylint: disable=too-many-return-statements
     return True
 
 
-def convert_annotation_specs_labels_v2_to_v1(
-    labels_v2: List[Dict[str, Any]], additionals_v2: List[Dict[str, Any]]
-) -> List[Dict[str, Any]]:
+def convert_annotation_specs_labels_v2_to_v1(labels_v2: List[Dict[str, Any]], additionals_v2: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     """アノテーション仕様のV2版からV1版に変換する。V1版の方が扱いやすいので。
 
     Args:
@@ -228,9 +222,7 @@ def convert_annotation_specs_labels_v2_to_v1(
     """
 
     def get_additional(additional_data_definition_id: str) -> Optional[Dict[str, Any]]:
-        return more_itertools.first_true(
-            additionals_v2, pred=lambda e: e["additional_data_definition_id"] == additional_data_definition_id
-        )
+        return more_itertools.first_true(additionals_v2, pred=lambda e: e["additional_data_definition_id"] == additional_data_definition_id)
 
     def to_label_v1(label_v2: dict[str, Any]) -> Dict[str, Any]:
         additional_data_definition_id_list = label_v2["additional_data_definitions"]
@@ -310,9 +302,7 @@ class AnnofabApiFacade:
         project, _ = self.service.api.get_project(project_id)
         return project["title"]
 
-    def _get_organization_member_with_predicate(
-        self, project_id: str, predicate: Callable[[Any], bool]
-    ) -> Optional[OrganizationMember]:
+    def _get_organization_member_with_predicate(self, project_id: str, predicate: Callable[[Any], bool]) -> Optional[OrganizationMember]:
         """
         account_idから組織メンバを取得する。
         インスタンス変数に組織メンバがあれば、WebAPIは実行しない。
@@ -344,9 +334,7 @@ class AnnofabApiFacade:
             update_organization_members()
             return self._get_organization_member_with_predicate(project_id, predicate)
 
-    def _get_project_member_with_predicate(
-        self, project_id: str, predicate: Callable[[Any], bool]
-    ) -> Optional[ProjectMember]:
+    def _get_project_member_with_predicate(self, project_id: str, predicate: Callable[[Any], bool]) -> Optional[ProjectMember]:
         """
         project_memberを取得する
 
@@ -359,9 +347,7 @@ class AnnofabApiFacade:
         """
         project_member_list = self._project_members_dict.get(project_id)
         if project_member_list is None:
-            project_member_list = self.service.wrapper.get_all_project_members(
-                project_id, query_params={"include_inactive_member": True}
-            )
+            project_member_list = self.service.wrapper.get_all_project_members(project_id, query_params={"include_inactive_member": True})
             self._project_members_dict[project_id] = project_member_list
         return more_itertools.first_true(project_member_list, pred=predicate)
 
@@ -473,9 +459,7 @@ class AnnofabApiFacade:
         my_role = ProjectMemberRole(my_member["member_role"])
         return my_role in roles
 
-    def contains_any_organization_member_role(
-        self, organization_name: str, roles: List[OrganizationMemberRole]
-    ) -> bool:
+    def contains_any_organization_member_role(self, organization_name: str, roles: List[OrganizationMemberRole]) -> bool:
         """
         自分自身の組織メンバとしてのロールが、指定されたロールのいずれかに合致するかどうか
         Args:

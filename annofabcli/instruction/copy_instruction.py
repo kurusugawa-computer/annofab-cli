@@ -27,9 +27,7 @@ class CopyInstruction(AbstractCommandLineInterface):
              AuthorizationError: 自分自身のRoleがいずれかのRoleにも合致しなければ、AuthorizationErrorが発生する。
         """
         super().validate_project(src_project_id, project_member_roles=None)
-        super().validate_project(
-            dest_project_id, project_member_roles=[ProjectMemberRole.ACCEPTER, ProjectMemberRole.OWNER]
-        )
+        super().validate_project(dest_project_id, project_member_roles=[ProjectMemberRole.ACCEPTER, ProjectMemberRole.OWNER])
 
     @staticmethod
     def get_instruction_image_id_from_url(url: str) -> str:

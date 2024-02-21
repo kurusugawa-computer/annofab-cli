@@ -182,19 +182,13 @@ class WholeProductivityPerCompletedDate:
             ).fillna(0)
 
             # 作業したユーザ数を算出
-            df_tmp = (
-                df_worktime[df_worktime["monitored_worktime_hour"] > 0]
-                .pivot_table(values=["user_id"], index="date", aggfunc="count")
-                .fillna(0)
-            )
+            df_tmp = df_worktime[df_worktime["monitored_worktime_hour"] > 0].pivot_table(values=["user_id"], index="date", aggfunc="count").fillna(0)
             if len(df_tmp) > 0:
                 df_agg_labor["working_user_count"] = df_tmp
             else:
                 df_agg_labor["working_user_count"] = 0
 
-            df_agg_labor["unmonitored_worktime_hour"] = (
-                df_agg_labor["actual_worktime_hour"] - df_agg_labor["monitored_worktime_hour"]
-            )
+            df_agg_labor["unmonitored_worktime_hour"] = df_agg_labor["actual_worktime_hour"] - df_agg_labor["monitored_worktime_hour"]
 
         else:
             df_agg_labor = pandas.DataFrame(
@@ -255,9 +249,7 @@ class WholeProductivityPerCompletedDate:
                 add_velocity_column(df, numerator_column=f"{category}_worktime_hour", denominator_column=unit)
 
     @classmethod
-    def merge(
-        cls, obj1: WholeProductivityPerCompletedDate, obj2: WholeProductivityPerCompletedDate
-    ) -> WholeProductivityPerCompletedDate:
+    def merge(cls, obj1: WholeProductivityPerCompletedDate, obj2: WholeProductivityPerCompletedDate) -> WholeProductivityPerCompletedDate:
         """
         日毎の全体の生産量、生産性が格納されたDataFrameを結合する。
 
@@ -271,9 +263,7 @@ class WholeProductivityPerCompletedDate:
         df1 = obj1.df
         df2 = obj2.df
 
-        def merge_row(
-            str_date: str, columns: pandas.Index, row1: Optional[pandas.Series], row2: Optional[pandas.Series]
-        ) -> pandas.Series:
+        def merge_row(str_date: str, columns: pandas.Index, row1: Optional[pandas.Series], row2: Optional[pandas.Series]) -> pandas.Series:
             if row1 is not None and row2 is not None:
                 sum_row = row1.fillna(0) + row2.fillna(0)
             elif row1 is not None and row2 is None:
@@ -347,16 +337,14 @@ class WholeProductivityPerCompletedDate:
                     "monitored_acceptance",
                     "unmonitored",
                 ]:
-                    df[f"{category}_worktime_minute/{denominator}"] = (
-                        df[f"{category}_worktime_hour"] * 60 / df[denominator]
-                    )
+                    df[f"{category}_worktime_minute/{denominator}"] = df[f"{category}_worktime_hour"] * 60 / df[denominator]
                     df[f"{category}_worktime_minute/{denominator}{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}"] = (
                         get_weekly_sum(df[f"{category}_worktime_hour"]) * 60 / get_weekly_sum(df[denominator])
                     )
 
-            df[f"actual_worktime_hour/task_count{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}"] = get_weekly_sum(
-                df["actual_worktime_hour"]
-            ) / get_weekly_sum(df["task_count"])
+            df[f"actual_worktime_hour/task_count{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}"] = get_weekly_sum(df["actual_worktime_hour"]) / get_weekly_sum(
+                df["task_count"]
+            )
             df[f"monitored_worktime_hour/task_count{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}"] = get_weekly_sum(
                 df["monitored_worktime_hour"]
             ) / get_weekly_sum(df["task_count"])
@@ -398,8 +386,7 @@ class WholeProductivityPerCompletedDate:
             line_graph.add_secondary_y_axis(
                 "作業時間[hour]",
                 secondary_y_axis_range=DataRange1d(
-                    end=max(df["actual_worktime_hour"].max(), df["monitored_worktime_hour"].max())
-                    * SECONDARY_Y_RANGE_RATIO
+                    end=max(df["actual_worktime_hour"].max(), df["monitored_worktime_hour"].max()) * SECONDARY_Y_RANGE_RATIO
                 ),
                 primary_y_axis_range=DataRange1d(end=df["task_count"].max() * SECONDARY_Y_RANGE_RATIO),
             )
@@ -451,8 +438,7 @@ class WholeProductivityPerCompletedDate:
             line_graph.add_secondary_y_axis(
                 "作業時間[hour]",
                 secondary_y_axis_range=DataRange1d(
-                    end=max(df["actual_worktime_hour"].max(), df["monitored_worktime_hour"].max())
-                    * SECONDARY_Y_RANGE_RATIO
+                    end=max(df["actual_worktime_hour"].max(), df["monitored_worktime_hour"].max()) * SECONDARY_Y_RANGE_RATIO
                 ),
                 primary_y_axis_range=DataRange1d(end=df["input_data_count"].max() * SECONDARY_Y_RANGE_RATIO),
             )
@@ -547,9 +533,7 @@ class WholeProductivityPerCompletedDate:
                         "monitored_acceptance_worktime_minute/input_data_count",
                     ],
                 ),
-                "y_info_list": [
-                    {"column": f"{e[0]}_minute/input_data_count", "legend": f"入力データあたり{e[1]}"} for e in phase_prefix
-                ],
+                "y_info_list": [{"column": f"{e[0]}_minute/input_data_count", "legend": f"入力データあたり{e[1]}"} for e in phase_prefix],
             },
             {
                 "line_graph": create_line_graph(
@@ -570,9 +554,7 @@ class WholeProductivityPerCompletedDate:
                         "monitored_acceptance_worktime_minute/annotation_count",
                     ],
                 ),
-                "y_info_list": [
-                    {"column": f"{e[0]}_minute/annotation_count", "legend": f"アノテーションあたり{e[1]}"} for e in phase_prefix
-                ],
+                "y_info_list": [{"column": f"{e[0]}_minute/annotation_count", "legend": f"アノテーションあたり{e[1]}"} for e in phase_prefix],
             },
         ]
 
@@ -637,8 +619,7 @@ class WholeProductivityPerCompletedDate:
             line_graph.add_secondary_y_axis(
                 "作業時間[hour]",
                 secondary_y_axis_range=DataRange1d(
-                    end=max(df["cumsum_actual_worktime_hour"].max(), df["cumsum_monitored_worktime_hour"].max())
-                    * SECONDARY_Y_RANGE_RATIO
+                    end=max(df["cumsum_actual_worktime_hour"].max(), df["cumsum_monitored_worktime_hour"].max()) * SECONDARY_Y_RANGE_RATIO
                 ),
                 primary_y_axis_range=DataRange1d(end=df["cumsum_task_count"].max() * SECONDARY_Y_RANGE_RATIO),
             )
@@ -693,8 +674,7 @@ class WholeProductivityPerCompletedDate:
             line_graph.add_secondary_y_axis(
                 "作業時間[hour]",
                 secondary_y_axis_range=DataRange1d(
-                    end=max(df["cumsum_actual_worktime_hour"].max(), df["cumsum_monitored_worktime_hour"].max())
-                    * SECONDARY_Y_RANGE_RATIO
+                    end=max(df["cumsum_actual_worktime_hour"].max(), df["cumsum_monitored_worktime_hour"].max()) * SECONDARY_Y_RANGE_RATIO
                 ),
                 primary_y_axis_range=DataRange1d(end=df["cumsum_input_data_count"].max() * SECONDARY_Y_RANGE_RATIO),
             )
@@ -899,9 +879,9 @@ class WholeProductivityPerFirstAnnotationStartedDate:
         def add_velocity_column(df: pandas.DataFrame, numerator_column: str, denominator_column: str):
             df[f"{numerator_column}/{denominator_column}"] = df[numerator_column] / df[denominator_column]
 
-            df[
-                f"{numerator_column}/{denominator_column}{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}"
-            ] = get_weekly_moving_average(df[numerator_column]) / get_weekly_moving_average(df[denominator_column])
+            df[f"{numerator_column}/{denominator_column}{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}"] = get_weekly_moving_average(
+                df[numerator_column]
+            ) / get_weekly_moving_average(df[denominator_column])
 
         # annofab 計測時間から算出したvelocityを追加
         add_velocity_column(df, numerator_column="worktime_hour", denominator_column="input_data_count")
@@ -957,10 +937,7 @@ class WholeProductivityPerFirstAnnotationStartedDate:
         # 日付の一覧を生成
         if len(df_agg_sub_task) > 0:
             df_date_base = pandas.DataFrame(
-                index=[
-                    e.strftime("%Y-%m-%d")
-                    for e in pandas.date_range(start=df_agg_sub_task.index.min(), end=df_agg_sub_task.index.max())
-                ]
+                index=[e.strftime("%Y-%m-%d") for e in pandas.date_range(start=df_agg_sub_task.index.min(), end=df_agg_sub_task.index.max())]
             )
         else:
             df_date_base = pandas.DataFrame()
@@ -1014,9 +991,7 @@ class WholeProductivityPerFirstAnnotationStartedDate:
     def merge(
         cls, obj1: WholeProductivityPerFirstAnnotationStartedDate, obj2: WholeProductivityPerFirstAnnotationStartedDate
     ) -> WholeProductivityPerFirstAnnotationStartedDate:
-        def merge_row(
-            str_date: str, columns: pandas.Index, row1: Optional[pandas.Series], row2: Optional[pandas.Series]
-        ) -> pandas.Series:
+        def merge_row(str_date: str, columns: pandas.Index, row1: Optional[pandas.Series], row2: Optional[pandas.Series]) -> pandas.Series:
             if row1 is not None and row2 is not None:
                 sum_row = row1.fillna(0) + row2.fillna(0)
             elif row1 is not None and row2 is None:
@@ -1283,6 +1258,4 @@ class WholeProductivityPerFirstAnnotationStartedDate:
         for line_graph in line_graph_list:
             line_graph.process_after_adding_glyphs()
 
-        write_bokeh_graph(
-            bokeh.layouts.column([create_div_element()] + [e.figure for e in line_graph_list]), output_file
-        )
+        write_bokeh_graph(bokeh.layouts.column([create_div_element()] + [e.figure for e in line_graph_list]), output_file)

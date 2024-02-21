@@ -55,9 +55,7 @@ class DropProjectMembersMain:
                 logger.warning(f"{project_title}({project_id}) のプロジェクトメンバから、{user_id} を脱退させられませんでした。")
 
     def drop_role_with_organization(self, organization_name: str, user_id_list: List[str]):
-        projects = self.service.wrapper.get_all_projects_of_organization(
-            organization_name, query_params={"account_id": self.service.api.account_id}
-        )
+        projects = self.service.wrapper.get_all_projects_of_organization(organization_name, query_params={"account_id": self.service.api.account_id})
 
         project_id_list = [e["project_id"] for e in projects]
         self.drop_role_with_project_id(project_id_list, user_id_list=user_id_list)
@@ -120,7 +118,10 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     )
 
     drop_group.add_argument(
-        "-org", "--organization", type=str, help="組織名を指定すると、組織配下のすべてのプロジェクト（自分が所属している）から、ユーザを脱退させます。"
+        "-org",
+        "--organization",
+        type=str,
+        help="組織名を指定すると、組織配下のすべてのプロジェクト（自分が所属している）から、ユーザを脱退させます。",
     )
 
     parser.set_defaults(subcommand_func=main)

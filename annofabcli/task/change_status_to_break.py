@@ -50,9 +50,7 @@ class ChangeStatusToBreakMain(AbstractCommandLineWithConfirmInterface):
         task: Task = Task.from_dict(dict_task)
 
         if not match_task_with_query(task, task_query):
-            logger.debug(
-                f"{logging_prefix} : task_id = {task_id} : `--task_query` の条件にマッチしないため、スキップします。task_query={task_query}"
-            )
+            logger.debug(f"{logging_prefix} : task_id = {task_id} : `--task_query` の条件にマッチしないため、スキップします。task_query={task_query}")
             return False
 
         if task.status not in (TaskStatus.WORKING, TaskStatus.ON_HOLD):
@@ -176,9 +174,7 @@ class ChangeStatusToBreak(AbstractCommandLineInterface):
         task_query: Optional[TaskQuery] = TaskQuery.from_dict(dict_task_query) if dict_task_query is not None else None
 
         project_id = args.project_id
-        super().validate_project(
-            project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.ACCEPTER, ProjectMemberRole.WORKER]
-        )
+        super().validate_project(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.ACCEPTER, ProjectMemberRole.WORKER])
 
         main_obj = ChangeStatusToBreakMain(self.service, all_yes=self.all_yes)
         main_obj.change_status_to_break(
@@ -204,7 +200,9 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     argument_parser.add_task_query()
 
     parser.add_argument(
-        "--parallelism", type=int, help="使用するプロセス数（並列度）を指定してください。指定する場合は必ず ``--yes`` を指定してください。指定しない場合は、逐次的に処理します。"
+        "--parallelism",
+        type=int,
+        help="使用するプロセス数（並列度）を指定してください。指定する場合は必ず ``--yes`` を指定してください。指定しない場合は、逐次的に処理します。",
     )
 
     parser.set_defaults(subcommand_func=main)

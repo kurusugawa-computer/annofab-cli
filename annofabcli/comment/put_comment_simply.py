@@ -33,9 +33,7 @@ class AddedSimpleComment:
 
 
 class PutCommentSimplyMain(AbstractCommandLineWithConfirmInterface):
-    def __init__(
-        self, service: annofabapi.Resource, project_id: str, comment_type: CommentType, all_yes: bool = False
-    ) -> None:
+    def __init__(self, service: annofabapi.Resource, project_id: str, comment_type: CommentType, all_yes: bool = False) -> None:
         self.service = service
         self.facade = AnnofabApiFacade(service)
         self.project_id = project_id
@@ -126,11 +124,7 @@ class PutCommentSimplyMain(AbstractCommandLineWithConfirmInterface):
             logger.warning(f"{logging_prefix} : task_id='{task_id}' のタスクは存在しないので、スキップします。")
             return False
 
-        logger.debug(
-            f"{logging_prefix} : task_id = {task['task_id']}, "
-            f"status = {task['status']}, "
-            f"phase = {task['phase']}, "
-        )
+        logger.debug(f"{logging_prefix} : task_id = {task['task_id']}, " f"status = {task['status']}, " f"phase = {task['phase']}, ")
 
         if not self._can_add_comment(
             task=task,
@@ -152,9 +146,7 @@ class PutCommentSimplyMain(AbstractCommandLineWithConfirmInterface):
             logger.debug(f"{logging_prefix} : task_id={task_id} のタスクにコメントを付与しました。")
             return True
         except Exception:  # pylint: disable=broad-except
-            logger.warning(
-                f"{logging_prefix} : task_id={task_id}, input_data_id={input_data_id}: コメントの付与に失敗しました。", exc_info=True
-            )
+            logger.warning(f"{logging_prefix} : task_id={task_id}, input_data_id={input_data_id}: コメントの付与に失敗しました。", exc_info=True)
             return False
         finally:
             self.service.wrapper.change_task_status_to_break(self.project_id, task_id)

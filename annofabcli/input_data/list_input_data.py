@@ -95,9 +95,7 @@ class ListInputData(AbstractCommandLineInterface):
                 continue
 
             logger.debug(f"input_data_list[{initial_index}:{initial_index+chunk_size}] を使用しているタスクを取得する。")
-            task_list = self.service.wrapper.get_all_tasks(
-                project_id, query_params={"input_data_ids": str_input_data_id_list}
-            )
+            task_list = self.service.wrapper.get_all_tasks(project_id, query_params={"input_data_ids": str_input_data_id_list})
 
             for input_data in sub_input_data_list:
                 # input_data_idで絞り込んでいるが、大文字小文字を区別しない。
@@ -170,9 +168,7 @@ class ListInputData(AbstractCommandLineInterface):
 
     def main(self) -> None:
         args = self.args
-        input_data_id_list = (
-            annofabcli.common.cli.get_list_from_args(args.input_data_id) if args.input_data_id is not None else None
-        )
+        input_data_id_list = annofabcli.common.cli.get_list_from_args(args.input_data_id) if args.input_data_id is not None else None
 
         input_data_query = annofabcli.common.cli.get_json_from_args(args.input_data_query)
         self.print_input_data(
@@ -224,7 +220,9 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         type=int,
         default=36,
         help=(
-            "入力データIDの平均長さを指定します。 ``add_details`` がTrueのときのみ有効です。" "デフォルトはUUIDv4の長さです。" "この値を元にして、タスク一括取得APIの実行回数を決めます。"
+            "入力データIDの平均長さを指定します。 ``add_details`` がTrueのときのみ有効です。"
+            "デフォルトはUUIDv4の長さです。"
+            "この値を元にして、タスク一括取得APIの実行回数を決めます。"
         ),
     )
 

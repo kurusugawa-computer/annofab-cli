@@ -93,9 +93,7 @@ class CopyProject(AbstractCommandLineInterface):
                 key = COPIED_TARGET_AND_KEY_MAP[target]
                 request_body[key] = True
 
-        request_body.update(
-            {"dest_project_id": dest_project_id, "dest_title": dest_title, "dest_overview": dest_overview}
-        )
+        request_body.update({"dest_project_id": dest_project_id, "dest_title": dest_title, "dest_overview": dest_overview})
 
         self.service.api.initiate_project_copy(src_project_id, request_body=request_body)
         logger.info("プロジェクトのコピーを実施しています。")
@@ -161,13 +159,13 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
 
     argument_parser.add_project_id(help_message="コピー元のプロジェクトのproject_idを指定してください。")
 
-    parser.add_argument("--dest_project_id", type=str, help="新しいプロジェクトのproject_idを指定してください。省略した場合は UUIDv4 フォーマットになります。")
+    parser.add_argument(
+        "--dest_project_id", type=str, help="新しいプロジェクトのproject_idを指定してください。省略した場合は UUIDv4 フォーマットになります。"
+    )
     parser.add_argument("--dest_title", type=str, required=True, help="新しいプロジェクトのタイトルを指定してください。")
     parser.add_argument("--dest_overview", type=str, help="新しいプロジェクトの概要を指定してください。")
 
-    parser.add_argument(
-        "--copied_target", type=str, nargs="+", choices=[e.value for e in CopiedTarget], help="コピー対象を指定してください。"
-    )
+    parser.add_argument("--copied_target", type=str, nargs="+", choices=[e.value for e in CopiedTarget], help="コピー対象を指定してください。")
 
     parser.add_argument("--wait", action="store_true", help="プロジェクトのコピーが完了するまで待ちます。")
 

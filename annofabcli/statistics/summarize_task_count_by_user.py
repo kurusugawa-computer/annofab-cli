@@ -134,9 +134,7 @@ class SummarizeTaskCountByUser(AbstractCommandLineInterface):
             task_json_path = cache_dir / f"{project_id}-task.json"
 
             downloading_obj = DownloadingFile(self.service)
-            downloading_obj.download_task_json(
-                project_id, dest_path=str(task_json_path), is_latest=args.latest, wait_options=wait_options
-            )
+            downloading_obj.download_task_json(project_id, dest_path=str(task_json_path), is_latest=args.latest, wait_options=wait_options)
 
         with open(task_json_path, encoding="utf-8") as f:
             task_list = json.load(f)
@@ -160,7 +158,9 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     )
 
     parser.add_argument(
-        "--latest", action="store_true", help="最新のタスク一覧ファイルを参照します。このオプションを指定すると、タスク一覧ファイルを更新するのに数分待ちます。"
+        "--latest",
+        action="store_true",
+        help="最新のタスク一覧ファイルを参照します。このオプションを指定すると、タスク一覧ファイルを更新するのに数分待ちます。",
     )
 
     parser.add_argument(
@@ -190,8 +190,6 @@ def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argpa
     subcommand_help = "ユーザごとに、担当しているタスク数を出力します。"
     description = "ユーザごとに、担当しているタスク数をCSV形式で出力します。"
     epilog = "アノテーションユーザまたはオーナロールを持つユーザで実行してください。"
-    parser = annofabcli.common.cli.add_parser(
-        subparsers, subcommand_name, subcommand_help, description=description, epilog=epilog
-    )
+    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description=description, epilog=epilog)
     parse_args(parser)
     return parser

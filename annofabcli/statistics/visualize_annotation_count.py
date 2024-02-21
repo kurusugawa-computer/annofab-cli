@@ -61,9 +61,7 @@ def _only_selective_attribute(columns: list[AttributeValueKey]) -> list[Attribut
         attribute_name_list.append((label, attribute_name))
 
     non_selective_attribute_names = {
-        key
-        for key, value in collections.Counter(attribute_name_list).items()
-        if value > SELECTIVE_ATTRIBUTE_VALUE_MAX_COUNT
+        key for key, value in collections.Counter(attribute_name_list).items() if value > SELECTIVE_ATTRIBUTE_VALUE_MAX_COUNT
     }
 
     if len(non_selective_attribute_names) > 0:
@@ -112,9 +110,7 @@ def plot_label_histogram(
         hist, bin_edges = numpy.histogram(df[col], bins)
 
         df_histogram = pandas.DataFrame({"frequency": hist, "left": bin_edges[:-1], "right": bin_edges[1:]})
-        df_histogram["interval"] = [
-            f"{left:.1f} to {right:.1f}" for left, right in zip(df_histogram["left"], df_histogram["right"])
-        ]
+        df_histogram["interval"] = [f"{left:.1f} to {right:.1f}" for left, right in zip(df_histogram["left"], df_histogram["right"])]
 
         source = ColumnDataSource(df_histogram)
         fig = figure(
@@ -170,9 +166,7 @@ def plot_attribute_histogram(
         hist, bin_edges = numpy.histogram(df[col], bins)
 
         df_histogram = pandas.DataFrame({"frequency": hist, "left": bin_edges[:-1], "right": bin_edges[1:]})
-        df_histogram["interval"] = [
-            f"{left:.1f} to {right:.1f}" for left, right in zip(df_histogram["left"], df_histogram["right"])
-        ]
+        df_histogram["interval"] = [f"{left:.1f} to {right:.1f}" for left, right in zip(df_histogram["left"], df_histogram["right"])]
 
         source = ColumnDataSource(df_histogram)
         fig = figure(
@@ -205,7 +199,7 @@ class VisualizeAnnotationCount(AbstractCommandLineInterface):
     def validate(self, args: argparse.Namespace) -> bool:
         if args.project_id is None and args.annotation is None:
             print(
-                f"{self.COMMON_MESSAGE} argument --project_id: '--annotation'が未指定のときは、'--project_id' を指定してください。",  # noqa: E501
+                f"{self.COMMON_MESSAGE} argument --project_id: '--annotation'が未指定のときは、'--project_id' を指定してください。",
                 file=sys.stderr,
             )
             return False
@@ -261,9 +255,7 @@ class VisualizeAnnotationCount(AbstractCommandLineInterface):
             label_keys = annotation_specs.label_keys()
             attribute_value_keys = annotation_specs.selective_attribute_value_keys()
 
-        plot_label_histogram(
-            counter_list, group_by=group_by, output_file=labels_count_html, bins=bins, prior_keys=label_keys
-        )
+        plot_label_histogram(counter_list, group_by=group_by, output_file=labels_count_html, bins=bins, prior_keys=label_keys)
         plot_attribute_histogram(
             counter_list,
             group_by=group_by,
@@ -280,19 +272,13 @@ class VisualizeAnnotationCount(AbstractCommandLineInterface):
 
         project_id: Optional[str] = args.project_id
         if project_id is not None:
-            super().validate_project(
-                project_id, project_member_roles=[ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER]
-            )
+            super().validate_project(project_id, project_member_roles=[ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER])
 
         output_dir: Path = args.output_dir
         annotation_path = Path(args.annotation) if args.annotation is not None else None
 
         task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id) if args.task_id is not None else None
-        task_query = (
-            TaskQuery.from_dict(annofabcli.common.cli.get_json_from_args(args.task_query))
-            if args.task_query is not None
-            else None
-        )
+        task_query = TaskQuery.from_dict(annofabcli.common.cli.get_json_from_args(args.task_query)) if args.task_query is not None else None
 
         group_by = GroupBy(args.group_by)
 
@@ -393,8 +379,6 @@ def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argpa
     subcommand_help = "各ラベル、各属性値のアノテーション数をヒストグラムで可視化します。"
     description = "各ラベル、各属性値のアノテーション数をヒストグラムで可視化したファイルを出力します。"
     epilog = "オーナロールまたはアノテーションユーザロールを持つユーザで実行してください。"
-    parser = annofabcli.common.cli.add_parser(
-        subparsers, subcommand_name, subcommand_help, description=description, epilog=epilog
-    )
+    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description=description, epilog=epilog)
     parse_args(parser)
     return parser

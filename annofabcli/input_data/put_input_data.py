@@ -120,16 +120,12 @@ class SubPutInputData:
         self.facade = facade
         self.all_yes = all_yes
 
-    def put_input_data(
-        self, project_id: str, csv_input_data: InputDataForPut, last_updated_datetime: Optional[str] = None
-    ):
+    def put_input_data(self, project_id: str, csv_input_data: InputDataForPut, last_updated_datetime: Optional[str] = None):
         request_body: Dict[str, Any] = {"last_updated_datetime": last_updated_datetime}
 
         file_path = get_file_scheme_path(csv_input_data.input_data_path)
         if file_path is not None:
-            request_body.update(
-                {"input_data_name": csv_input_data.input_data_name, "sign_required": csv_input_data.sign_required}
-            )
+            request_body.update({"input_data_name": csv_input_data.input_data_name, "sign_required": csv_input_data.sign_required})
             logger.debug(f"'{file_path}'を入力データとして登録します。input_data_name={csv_input_data.input_data_name}")
             self.service.wrapper.put_input_data_from_file(
                 project_id, input_data_id=csv_input_data.input_data_id, file_path=file_path, request_body=request_body
@@ -174,9 +170,13 @@ class SubPutInputData:
             f"input_data_name='{input_data.input_data_name}', input_data_id='{input_data.input_data_id}' の入力データを登録しますか？"
         )
         if already_exists:
-            message_for_confirm = f"input_data_name='{input_data.input_data_name}', input_data_id='{input_data.input_data_id}' の入力データを上書きして登録しますか？"  # noqa: E501
+            message_for_confirm = (
+                f"input_data_name='{input_data.input_data_name}', input_data_id='{input_data.input_data_id}' の入力データを上書きして登録しますか？"
+            )
         else:
-            message_for_confirm = f"input_data_name='{input_data.input_data_name}', input_data_id='{input_data.input_data_id}' の入力データを登録しますか？"  # noqa: E501
+            message_for_confirm = (
+                f"input_data_name='{input_data.input_data_name}', input_data_id='{input_data.input_data_id}' の入力データを登録しますか？"
+            )
 
         return self.confirm_processing(message_for_confirm)
 
@@ -184,9 +184,7 @@ class SubPutInputData:
         input_data = InputDataForPut(
             input_data_name=csv_input_data.input_data_name,
             input_data_path=csv_input_data.input_data_path,
-            input_data_id=csv_input_data.input_data_id
-            if csv_input_data.input_data_id is not None
-            else str(uuid.uuid4()),
+            input_data_id=csv_input_data.input_data_id if csv_input_data.input_data_id is not None else str(uuid.uuid4()),
             sign_required=csv_input_data.sign_required,
         )
 
@@ -214,17 +212,13 @@ class SubPutInputData:
         try:
             self.put_input_data(project_id, input_data, last_updated_datetime=last_updated_datetime)
             logger.debug(
-                f"入力データを登録しました。 :: "
-                f"input_data_id='{input_data.input_data_id}', "
-                f"input_data_name='{input_data.input_data_name}'"
+                f"入力データを登録しました。 :: " f"input_data_id='{input_data.input_data_id}', " f"input_data_name='{input_data.input_data_name}'"
             )
             return True
 
         except requests.exceptions.HTTPError:
             logger.warning(
-                f"入力データの登録に失敗しました。"
-                f"input_data_id='{input_data.input_data_id}', "
-                f"input_data_name='{input_data.input_data_name}'",
+                f"入力データの登録に失敗しました。" f"input_data_id='{input_data.input_data_id}', " f"input_data_name='{input_data.input_data_name}'",
                 exc_info=True,
             )
             return False
@@ -300,24 +294,18 @@ class PutInputData(AbstractCommandLineInterface):
         return input_data_list
 
     @staticmethod
-    def get_input_data_list_from_dict(
-        input_data_dict_list: List[Dict[str, Any]], allow_duplicated_input_data: bool
-    ) -> List[CsvInputData]:
+    def get_input_data_list_from_dict(input_data_dict_list: List[Dict[str, Any]], allow_duplicated_input_data: bool) -> List[CsvInputData]:
         # 重複チェック
         df = pandas.DataFrame(input_data_dict_list)
         df_duplicated_input_data_name = df[df["input_data_name"].duplicated()]
         if len(df_duplicated_input_data_name) > 0:
-            logger.warning(
-                f"`input_data_name`が重複しています。\n" f"{df_duplicated_input_data_name['input_data_name'].unique()}"
-            )
+            logger.warning(f"`input_data_name`が重複しています。\n" f"{df_duplicated_input_data_name['input_data_name'].unique()}")
             if not allow_duplicated_input_data:
                 raise RuntimeError("`input_data_name`が重複しています。")
 
         df_duplicated_input_data_path = df[df["input_data_path"].duplicated()]
         if len(df_duplicated_input_data_path) > 0:
-            logger.warning(
-                f"`input_data_path`が重複しています。\n" f"{df_duplicated_input_data_path['input_data_path'].unique()}"
-            )
+            logger.warning(f"`input_data_path`が重複しています。\n" f"{df_duplicated_input_data_path['input_data_path'].unique()}")
             if not allow_duplicated_input_data:
                 raise RuntimeError("`input_data_path`が重複しています。")
 
@@ -359,18 +347,12 @@ class PutInputData(AbstractCommandLineInterface):
                 sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
             input_data_list = self.get_input_data_list_from_df(df)
-            self.put_input_data_list(
-                project_id, input_data_list=input_data_list, overwrite=args.overwrite, parallelism=args.parallelism
-            )
+            self.put_input_data_list(project_id, input_data_list=input_data_list, overwrite=args.overwrite, parallelism=args.parallelism)
 
         elif args.json is not None:
             input_data_dict_list = get_json_from_args(args.json)
-            input_data_list = self.get_input_data_list_from_dict(
-                input_data_dict_list, allow_duplicated_input_data=args.allow_duplicated_input_data
-            )
-            self.put_input_data_list(
-                project_id, input_data_list=input_data_list, overwrite=args.overwrite, parallelism=args.parallelism
-            )
+            input_data_list = self.get_input_data_list_from_dict(input_data_dict_list, allow_duplicated_input_data=args.allow_duplicated_input_data)
+            self.put_input_data_list(project_id, input_data_list=input_data_list, overwrite=args.overwrite, parallelism=args.parallelism)
 
         else:
             print("引数が不正です。", file=sys.stderr)
@@ -419,7 +401,8 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--overwrite",
         action="store_true",
-        help="指定した場合、input_data_idがすでに存在していたら上書きします。指定しなければ、スキップします。" " ``--csv`` , ``--json`` を指定したときのみ有効なオプションです。",
+        help="指定した場合、input_data_idがすでに存在していたら上書きします。指定しなければ、スキップします。"
+        " ``--csv`` , ``--json`` を指定したときのみ有効なオプションです。",
     )
 
     parser.add_argument(
@@ -434,7 +417,8 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--parallelism",
         type=int,
-        help="並列度。指定しない場合は、逐次的に処理します。" "``--csv`` , ``--json`` を指定したときのみ有効なオプションです。また、必ず ``--yes`` を指定してください。",
+        help="並列度。指定しない場合は、逐次的に処理します。"
+        "``--csv`` , ``--json`` を指定したときのみ有効なオプションです。また、必ず ``--yes`` を指定してください。",
     )
 
     parser.set_defaults(subcommand_func=main)

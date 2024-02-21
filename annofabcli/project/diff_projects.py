@@ -154,9 +154,7 @@ class DiffProjects(AbstractCommandLineInterface):
 
         return flag, diff_message
 
-    def diff_labels_of_annotation_specs(
-        self, labels1: List[Dict[str, Any]], labels2: List[Dict[str, Any]]
-    ) -> DiffResult:
+    def diff_labels_of_annotation_specs(self, labels1: List[Dict[str, Any]], labels2: List[Dict[str, Any]]) -> DiffResult:
         """
         アノテーションラベル情報の差分を表示する。ラベル名(英語)を基準に差分を表示する。
         以下の項目は無視して比較する。
@@ -185,9 +183,7 @@ class DiffProjects(AbstractCommandLineInterface):
             diff_message += "ラベル名(en)が重複しているので、アノテーションラベル情報の差分は確認しません。\n"
 
         if label_names1 != label_names2:
-            diff_message += (
-                f"### ラベル名(en)のListに差分あり\n" f"label_names1: {label_names1}\n" f"label_names2: {label_names2}\n"
-            )
+            diff_message += f"### ラベル名(en)のListに差分あり\n" f"label_names1: {label_names1}\n" f"label_names2: {label_names2}\n"
 
             # 両方に存在するlabel_nameのみ確認する
             is_different = True
@@ -220,9 +216,7 @@ class DiffProjects(AbstractCommandLineInterface):
         return is_different, diff_message
 
     @staticmethod
-    def diff_inspection_phrases(
-        inspection_phrases1: List[Dict[str, Any]], inspection_phrases2: List[Dict[str, Any]]
-    ) -> DiffResult:
+    def diff_inspection_phrases(inspection_phrases1: List[Dict[str, Any]], inspection_phrases2: List[Dict[str, Any]]) -> DiffResult:
         """
         定型指摘の差分を表示する。定型指摘IDを基準に差分を表示する。
 
@@ -286,9 +280,7 @@ class DiffProjects(AbstractCommandLineInterface):
         annotation_specs2, _ = self.service.api.get_annotation_specs(project_id2, query_params={"v": "2"})
 
         if DiffTarget.INSPECTION_PHRASES in diff_targets:
-            bool_result, message = self.diff_inspection_phrases(
-                annotation_specs1["inspection_phrases"], annotation_specs2["inspection_phrases"]
-            )
+            bool_result, message = self.diff_inspection_phrases(annotation_specs1["inspection_phrases"], annotation_specs2["inspection_phrases"])
             is_different = is_different or bool_result
             diff_message += message
 
@@ -374,10 +366,7 @@ class DiffProjects(AbstractCommandLineInterface):
             diff_message += message
 
         if is_different:
-            diff_message = (
-                f"!!! {self.project_title1}({project_id1}) と "
-                f"{self.project_title2}({project_id2}) に差分あり\n" + diff_message
-            )
+            diff_message = f"!!! {self.project_title1}({project_id1}) と " f"{self.project_title2}({project_id2}) に差分あり\n" + diff_message
         return is_different, diff_message
 
     def main(self) -> None:

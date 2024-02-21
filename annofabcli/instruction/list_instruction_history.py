@@ -40,9 +40,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
 
     argument_parser.add_output()
 
-    argument_parser.add_format(
-        choices=[FormatArgument.CSV, FormatArgument.JSON, FormatArgument.PRETTY_JSON], default=FormatArgument.CSV
-    )
+    argument_parser.add_format(choices=[FormatArgument.CSV, FormatArgument.JSON, FormatArgument.PRETTY_JSON], default=FormatArgument.CSV)
     argument_parser.add_csv_format()
     argument_parser.add_query()
 

@@ -24,9 +24,7 @@ logger = logging.getLogger(__name__)
 
 class ReplacingAttributeId(AbstractCommandLineWithConfirmInterface):
     @staticmethod
-    def replace_attribute_id_of_restrictions(
-        old_attribute_id: str, new_attribute_id: str, restriction_list: list[dict[str, Any]]
-    ) -> None:
+    def replace_attribute_id_of_restrictions(old_attribute_id: str, new_attribute_id: str, restriction_list: list[dict[str, Any]]) -> None:
         """
         制約情報の中で使用されている属性IDを新しい属性IDに変更する
 
@@ -50,9 +48,7 @@ class ReplacingAttributeId(AbstractCommandLineWithConfirmInterface):
             _replace_attribute_id_in_condition(restriction["condition"])
 
     @staticmethod
-    def replace_attribute_id_of_labels(
-        old_attribute_id: str, new_attribute_id: str, label_list: list[dict[str, Any]]
-    ) -> None:
+    def replace_attribute_id_of_labels(old_attribute_id: str, new_attribute_id: str, label_list: list[dict[str, Any]]) -> None:
         """
         ラベル情報の中で使用されている属性IDを新しい属性IDに変更する
 
@@ -72,10 +68,7 @@ class ReplacingAttributeId(AbstractCommandLineWithConfirmInterface):
     @staticmethod
     def exists_attribute_with_attribute_id(attribute_list: list[dict[str, Any]], attribute_id: str) -> bool:
         """指定したlabel_idを持つラベル情報が存在するか否か"""
-        return (
-            more_itertools.first_true(attribute_list, pred=lambda e: e["additional_data_definition_id"] == attribute_id)
-            is not None
-        )
+        return more_itertools.first_true(attribute_list, pred=lambda e: e["additional_data_definition_id"] == attribute_id) is not None
 
     @staticmethod
     def validate_attribute_id(str_id: str) -> bool:
@@ -84,9 +77,7 @@ class ReplacingAttributeId(AbstractCommandLineWithConfirmInterface):
         """
         return re.fullmatch("[A-Za-z0-9_.\\-]+", str_id) is not None
 
-    def main(
-        self, annotation_specs: dict[str, Any], *, target_attribute_names: Optional[Collection[str]] = None
-    ) -> None:
+    def main(self, annotation_specs: dict[str, Any], *, target_attribute_names: Optional[Collection[str]] = None) -> None:
         """
         アノテーション仕様内の属性IDを英語名に変更します。
 
@@ -125,9 +116,7 @@ class ReplacingAttributeId(AbstractCommandLineWithConfirmInterface):
                 continue
 
             attribute["additional_data_definition_id"] = attribute_name_en
-            self.replace_attribute_id_of_labels(
-                old_attribute_id=attribute_id, new_attribute_id=attribute_name_en, label_list=label_list
-            )
+            self.replace_attribute_id_of_labels(old_attribute_id=attribute_id, new_attribute_id=attribute_name_en, label_list=label_list)
             self.replace_attribute_id_of_restrictions(
                 old_attribute_id=attribute_id, new_attribute_id=attribute_name_en, restriction_list=restriction_list
             )
@@ -144,9 +133,7 @@ class GetAnnotationSpecsWithAttributeIdReplaced(AbstractCommandLineInterface):
 
         annotation_specs, _ = self.service.api.get_annotation_specs(project_id, query_params={"v": 3})
 
-        target_attribute_names = (
-            set(get_list_from_args(args.attribute_name)) if args.attribute_name is not None else None
-        )
+        target_attribute_names = set(get_list_from_args(args.attribute_name)) if args.attribute_name is not None else None
 
         # アノテーション仕様のlabel_idを変更する
         ReplacingAttributeId(all_yes=args.yes).main(annotation_specs, target_attribute_names=target_attribute_names)

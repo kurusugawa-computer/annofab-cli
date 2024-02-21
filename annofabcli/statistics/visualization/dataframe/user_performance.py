@@ -110,8 +110,7 @@ class UserPerformance:
         # 集計対象タスクから算出した計測作業時間（`monitored_worktime_hour`）に対応する実績作業時間を推定で算出する
         # 具体的には、実際の計測作業時間と十先作業時間の比（`real_monitored_worktime_hour/real_actual_worktime_hour`）になるように按分する
         df[("actual_worktime_hour", "sum")] = (
-            df[("monitored_worktime_hour", "sum")]
-            / df[("real_monitored_worktime_hour/real_actual_worktime_hour", "sum")]
+            df[("monitored_worktime_hour", "sum")] / df[("real_monitored_worktime_hour/real_actual_worktime_hour", "sum")]
         )
 
         for phase in phase_list:
@@ -136,28 +135,16 @@ class UserPerformance:
             df[("monitored_worktime_ratio", phase)] = df.apply(get_monitored_worktime_ratio, axis=1)
 
             # Annofab時間の比率から、Annowork時間を予測する
-            df[("actual_worktime_hour", phase)] = (
-                df[("actual_worktime_hour", "sum")] * df[("monitored_worktime_ratio", phase)]
-            )
+            df[("actual_worktime_hour", phase)] = df[("actual_worktime_hour", "sum")] * df[("monitored_worktime_ratio", phase)]
 
             # 生産性を算出
-            df[("monitored_worktime_hour/input_data_count", phase)] = (
-                df[("monitored_worktime_hour", phase)] / df[("input_data_count", phase)]
-            )
-            df[("actual_worktime_hour/input_data_count", phase)] = (
-                df[("actual_worktime_hour", phase)] / df[("input_data_count", phase)]
-            )
+            df[("monitored_worktime_hour/input_data_count", phase)] = df[("monitored_worktime_hour", phase)] / df[("input_data_count", phase)]
+            df[("actual_worktime_hour/input_data_count", phase)] = df[("actual_worktime_hour", phase)] / df[("input_data_count", phase)]
 
-            df[("monitored_worktime_hour/annotation_count", phase)] = (
-                df[("monitored_worktime_hour", phase)] / df[("annotation_count", phase)]
-            )
-            df[("actual_worktime_hour/annotation_count", phase)] = (
-                df[("actual_worktime_hour", phase)] / df[("annotation_count", phase)]
-            )
+            df[("monitored_worktime_hour/annotation_count", phase)] = df[("monitored_worktime_hour", phase)] / df[("annotation_count", phase)]
+            df[("actual_worktime_hour/annotation_count", phase)] = df[("actual_worktime_hour", phase)] / df[("annotation_count", phase)]
 
-            ratio__actual_vs_monitored_worktime = (
-                df[("actual_worktime_hour", phase)] / df[("monitored_worktime_hour", phase)]
-            )
+            ratio__actual_vs_monitored_worktime = df[("actual_worktime_hour", phase)] / df[("monitored_worktime_hour", phase)]
             df[("stdev__actual_worktime_hour/input_data_count", phase)] = (
                 df[("stdev__monitored_worktime_hour/input_data_count", phase)] * ratio__actual_vs_monitored_worktime
             )
@@ -236,17 +223,13 @@ class UserPerformance:
         単位量あたり作業時間の標準偏差のDataFrameを生成する
         """
         df_worktime_ratio2 = df_worktime_ratio.copy()
-        df_worktime_ratio2["worktime_hour/input_data_count"] = (
-            df_worktime_ratio2["worktime_hour"] / df_worktime_ratio2["input_data_count"]
-        )
-        df_worktime_ratio2["worktime_hour/annotation_count"] = (
-            df_worktime_ratio2["worktime_hour"] / df_worktime_ratio2["annotation_count"]
-        )
+        df_worktime_ratio2["worktime_hour/input_data_count"] = df_worktime_ratio2["worktime_hour"] / df_worktime_ratio2["input_data_count"]
+        df_worktime_ratio2["worktime_hour/annotation_count"] = df_worktime_ratio2["worktime_hour"] / df_worktime_ratio2["annotation_count"]
 
         # 母標準偏差を算出する
-        df_stdev = df_worktime_ratio2.groupby(["account_id", "phase"])[
-            ["worktime_hour/input_data_count", "worktime_hour/annotation_count"]
-        ].std(ddof=0)
+        df_stdev = df_worktime_ratio2.groupby(["account_id", "phase"])[["worktime_hour/input_data_count", "worktime_hour/annotation_count"]].std(
+            ddof=0
+        )
 
         df_stdev2 = pandas.pivot_table(
             df_stdev,
@@ -320,9 +303,7 @@ class UserPerformance:
         phase_list = list(df2["monitored_worktime_hour"].columns)
 
         # 計測作業時間の合計値を算出する
-        df2[("monitored_worktime_hour", "sum")] = df2[[("monitored_worktime_hour", phase) for phase in phase_list]].sum(
-            axis=1
-        )
+        df2[("monitored_worktime_hour", "sum")] = df2[[("monitored_worktime_hour", phase) for phase in phase_list]].sum(axis=1)
 
         return df2
 
@@ -359,9 +340,7 @@ class UserPerformance:
         df2["worktime_hour/annotation_count"] = df2["worktime_hour"] / df2["annotation_count"]
 
         # 母標準偏差(ddof=0)を算出する
-        df_stdev = df2.groupby(["account_id", "phase"])[
-            ["worktime_hour/input_data_count", "worktime_hour/annotation_count"]
-        ].std(ddof=0)
+        df_stdev = df2.groupby(["account_id", "phase"])[["worktime_hour/input_data_count", "worktime_hour/annotation_count"]].std(ddof=0)
 
         df_stdev2 = pandas.pivot_table(
             df_stdev,
@@ -429,8 +408,7 @@ class UserPerformance:
         )
 
         df_agg_worktime[("real_monitored_worktime_hour/real_actual_worktime_hour", "sum")] = (
-            df_agg_worktime[("real_monitored_worktime_hour", "sum")]
-            / df_agg_worktime[("real_actual_worktime_hour", "sum")]
+            df_agg_worktime[("real_monitored_worktime_hour", "sum")] / df_agg_worktime[("real_actual_worktime_hour", "sum")]
         )
 
         return df_agg_worktime
@@ -450,9 +428,7 @@ class UserPerformance:
                     ("working_days", "")
         """
         df = worktime_per_date.df
-        df2 = df[df["monitored_worktime_hour"] > 0].pivot_table(
-            values="date", index="account_id", aggfunc=["min", "max"]
-        )
+        df2 = df[df["monitored_worktime_hour"] > 0].pivot_table(values="date", index="account_id", aggfunc=["min", "max"])
         df2.columns = pandas.MultiIndex.from_tuples([("first_working_date", ""), ("last_working_date", "")])
 
         # 元のDataFrame`df`が`account_id`,`date`のペアでユニークになっていない可能性も考えて、事前に`account_id`と`date`で集計する
@@ -626,9 +602,7 @@ class UserPerformance:
             ("real_actual_worktime_hour", "sum"),
             ("real_monitored_worktime_hour/real_actual_worktime_hour", "sum"),
         ]
-        actual_worktime_columns = [("actual_worktime_hour", "sum")] + [
-            ("actual_worktime_hour", phase) for phase in phase_list
-        ]
+        actual_worktime_columns = [("actual_worktime_hour", "sum")] + [("actual_worktime_hour", phase) for phase in phase_list]
 
         productivity_columns = (
             [("monitored_worktime_hour/input_data_count", phase) for phase in phase_list]
@@ -717,9 +691,7 @@ class UserPerformance:
             fig.add_layout(span_average_line)
 
     @staticmethod
-    def _get_average_value(
-        df: pandas.DataFrame, numerator_column: tuple[str, str], denominator_column: tuple[str, str]
-    ) -> Optional[float]:
+    def _get_average_value(df: pandas.DataFrame, numerator_column: tuple[str, str], denominator_column: tuple[str, str]) -> Optional[float]:
         numerator = df[numerator_column].sum()
         denominator = df[denominator_column].sum()
         if denominator > 0:
@@ -784,9 +756,7 @@ class UserPerformance:
                     )
 
                 # Annofab時間の比率から、Annowork時間を予測する
-                series[("actual_worktime_hour", phase)] = (
-                    series[("actual_worktime_hour", "sum")] * series[("monitored_worktime_ratio", phase)]
-                )
+                series[("actual_worktime_hour", phase)] = series[("actual_worktime_hour", "sum")] * series[("monitored_worktime_ratio", phase)]
 
                 # 生産性を算出
                 series[("monitored_worktime_hour/input_data_count", phase)] = (
@@ -810,13 +780,9 @@ class UserPerformance:
             series[("pointed_out_inspection_comment_count/input_data_count", phase)] = (
                 series[("pointed_out_inspection_comment_count", phase)] / series[("input_data_count", phase)]
             )
-            series[("rejected_count/task_count", phase)] = (
-                series[("rejected_count", phase)] / series[("task_count", phase)]
-            )
+            series[("rejected_count/task_count", phase)] = series[("rejected_count", phase)] / series[("task_count", phase)]
 
-    def plot_productivity(
-        self, output_file: Path, worktime_type: WorktimeType, performance_unit: PerformanceUnit
-    ) -> None:
+    def plot_productivity(self, output_file: Path, worktime_type: WorktimeType, performance_unit: PerformanceUnit) -> None:
         """作業時間と生産性の関係をメンバごとにプロットする。"""
 
         if not self._validate_df_for_output(output_file):
@@ -844,9 +810,7 @@ class UserPerformance:
             TaskPhase.ACCEPTANCE.value: "受入",
         }
         figure_list = [
-            create_figure(
-                f"{DICT_PHASE_NAME[phase]}の{performance_unit_name}あたり作業時間と累計作業時間の関係({worktime_type.worktime_type_name})"
-            )
+            create_figure(f"{DICT_PHASE_NAME[phase]}の{performance_unit_name}あたり作業時間と累計作業時間の関係({worktime_type.worktime_type_name})")
             for phase in self.phase_list
         ]
 
@@ -876,9 +840,7 @@ class UserPerformance:
 
         for biography_index, biography in enumerate(sorted(set(df["biography"]))):
             for fig, phase in zip(figure_list, self.phase_list):
-                filtered_df = df[
-                    (df["biography"] == biography) & df[(x_column, phase)].notna() & df[(y_column, phase)].notna()
-                ]
+                filtered_df = df[(df["biography"] == biography) & df[(x_column, phase)].notna() & df[(y_column, phase)].notna()]
                 if len(filtered_df) == 0:
                     continue
                 source = ColumnDataSource(data=filtered_df)
@@ -902,9 +864,7 @@ class UserPerformance:
                 average_minute = average_hour * 60
                 self._plot_average_line(fig, average_minute, dimension="width")
 
-            quartile = self._get_quartile_value(
-                df, (f"{worktime_type.value}_worktime_minute/{performance_unit.value}", phase)
-            )
+            quartile = self._get_quartile_value(df, (f"{worktime_type.value}_worktime_minute/{performance_unit.value}", phase))
             if quartile is not None:
                 self._plot_quartile_line(fig, quartile, dimension="width")
 
@@ -959,7 +919,9 @@ class UserPerformance:
         figure_list = [
             create_figure(title="タスクあたり差し戻し回数とタスク数の関係", x_axis_label="タスク数", y_axis_label="タスクあたり差し戻し回数"),
             create_figure(
-                title="アノテーションあたり検査コメント数とアノテーション数の関係", x_axis_label="アノテーション数", y_axis_label="アノテーションあたり検査コメント数"
+                title="アノテーションあたり検査コメント数とアノテーション数の関係",
+                x_axis_label="アノテーション数",
+                y_axis_label="アノテーションあたり検査コメント数",
             ),
         ]
         column_pair_list = [
@@ -988,9 +950,7 @@ class UserPerformance:
             for column_pair, fig in zip(column_pair_list, figure_list):
                 x_column = column_pair[0]
                 y_column = column_pair[1]
-                filtered_df = df[
-                    (df["biography"] == biography) & df[(x_column, phase)].notna() & df[(y_column, phase)].notna()
-                ]
+                filtered_df = df[(df["biography"] == biography) & df[(x_column, phase)].notna() & df[(y_column, phase)].notna()]
                 if len(filtered_df) == 0:
                     continue
 
@@ -1009,9 +969,7 @@ class UserPerformance:
             [("rejected_count", "task_count"), ("pointed_out_inspection_comment_count", "annotation_count")],
             figure_list,
         ):
-            average_value = self._get_average_value(
-                df, numerator_column=(column_pair[0], phase), denominator_column=(column_pair[1], phase)
-            )
+            average_value = self._get_average_value(df, numerator_column=(column_pair[0], phase), denominator_column=(column_pair[1], phase))
             if average_value is not None:
                 self._plot_average_line(fig, average_value, dimension="width")
 
@@ -1046,9 +1004,7 @@ class UserPerformance:
         div_element = self._create_div_element()
         write_bokeh_graph(bokeh.layouts.column([div_element, *figure_list]), output_file)
 
-    def plot_quality_and_productivity(
-        self, output_file: Path, worktime_type: WorktimeType, performance_unit: PerformanceUnit
-    ):
+    def plot_quality_and_productivity(self, output_file: Path, worktime_type: WorktimeType, performance_unit: PerformanceUnit):
         """
         作業時間を元に算出した生産性と品質の関係を、メンバごとにプロットする
         """
@@ -1085,9 +1041,7 @@ class UserPerformance:
                 if y_average is not None:
                     self._plot_average_line(fig, y_average, dimension="width")
 
-            x_quartile = self._get_quartile_value(
-                df, (f"{worktime_type.value}_worktime_minute/{performance_unit.value}", phase)
-            )
+            x_quartile = self._get_quartile_value(df, (f"{worktime_type.value}_worktime_minute/{performance_unit.value}", phase))
             for column, fig in zip(
                 ["rejected_count/task_count", f"pointed_out_inspection_comment_count/{performance_unit.value}"],
                 figure_list,
@@ -1175,9 +1129,7 @@ class UserPerformance:
         for biography_index, biography in enumerate(sorted(set(df["biography"]))):
             for fig, column_pair in zip(figure_list, column_pair_list):
                 x_column, y_column = column_pair
-                filtered_df = df[
-                    (df["biography"] == biography) & df[(x_column, phase)].notna() & df[(y_column, phase)].notna()
-                ]
+                filtered_df = df[(df["biography"] == biography) & df[(x_column, phase)].notna() & df[(y_column, phase)].notna()]
                 if len(filtered_df) == 0:
                     continue
                 source = ColumnDataSource(data=filtered_df)

@@ -81,7 +81,7 @@ class ProjectDir(DataClassJsonMixin):
         if file.exists():
             return Task.from_csv(file)
         else:
-            logger.warning(f"'{str(file)}'を読み込もうとしましたが、ファイルは存在しません。")
+            logger.warning(f"'{file!s}'を読み込もうとしましたが、ファイルは存在しません。")
             return Task.empty()
 
     def write_task_list(self, obj: Task) -> None:
@@ -94,7 +94,7 @@ class ProjectDir(DataClassJsonMixin):
         if file.exists():
             return TaskWorktimeByPhaseUser.from_csv(file)
         else:
-            logger.warning(f"'{str(file)}'を読み込もうとしましたが、ファイルは存在しません。")
+            logger.warning(f"'{file!s}'を読み込もうとしましたが、ファイルは存在しません。")
             return TaskWorktimeByPhaseUser.empty()
 
     def write_task_worktime_list(self, obj: TaskWorktimeByPhaseUser) -> None:
@@ -131,9 +131,7 @@ class ProjectDir(DataClassJsonMixin):
 
         if not minimal_output:
             # アノテーション単位より大きい単位の折れ線グラフは不要かもしれないので、オプションにした
-            obj.plot_input_data_metrics(
-                output_dir / f"{phase_name}者用/累積折れ線-横軸_入力データ数-{phase_name}者用.html", user_id_list
-            )
+            obj.plot_input_data_metrics(output_dir / f"{phase_name}者用/累積折れ線-横軸_入力データ数-{phase_name}者用.html", user_id_list)
 
             if phase == TaskPhase.ANNOTATION:
                 # 教師付フェーズの場合は、「差し戻し回数」で品質を評価した場合があるので、タスク単位の指標も出力する
@@ -168,7 +166,7 @@ class ProjectDir(DataClassJsonMixin):
         if file.exists():
             return WholePerformance.from_csv(file)
         else:
-            logger.warning(f"'{str(file)}'を読み込もうとしましたが、ファイルは存在しません。")
+            logger.warning(f"'{file!s}'を読み込もうとしましたが、ファイルは存在しません。")
             return WholePerformance.empty()
 
     def write_whole_performance(self, whole_performance: WholePerformance) -> None:
@@ -204,17 +202,13 @@ class ProjectDir(DataClassJsonMixin):
             self.project_dir / self.FILENAME_WHOLE_PRODUCTIVITY_PER_FIRST_ANNOTATION_STARTED_DATE
         )
 
-    def write_whole_productivity_per_first_annotation_started_date(
-        self, obj: WholeProductivityPerFirstAnnotationStartedDate
-    ):
+    def write_whole_productivity_per_first_annotation_started_date(self, obj: WholeProductivityPerFirstAnnotationStartedDate):
         """
         教師付開始日ごとの生産性と品質の情報を書き込みます。
         """
         obj.to_csv(self.project_dir / self.FILENAME_WHOLE_PRODUCTIVITY_PER_FIRST_ANNOTATION_STARTED_DATE)
 
-    def write_whole_productivity_line_graph_per_annotation_started_date(
-        self, obj: WholeProductivityPerFirstAnnotationStartedDate
-    ):
+    def write_whole_productivity_line_graph_per_annotation_started_date(self, obj: WholeProductivityPerFirstAnnotationStartedDate):
         """
         横軸が教師付開始日、縦軸が全体の生産性などをプロットした折れ線グラフを出力します。
         """
@@ -228,7 +222,7 @@ class ProjectDir(DataClassJsonMixin):
         if file.exists():
             return UserPerformance.from_csv(file)
         else:
-            logger.warning(f"'{str(file)}'を読み込もうとしましたが、ファイルは存在しません。")
+            logger.warning(f"'{file!s}'を読み込もうとしましたが、ファイルは存在しません。")
             return UserPerformance.empty()
 
     def write_user_performance(self, user_performance: UserPerformance) -> None:
@@ -300,7 +294,7 @@ class ProjectDir(DataClassJsonMixin):
         if file.exists():
             return WorktimePerDate.from_csv(file)
         else:
-            logger.warning(f"'{str(file)}'を読み込もうとしましたが、ファイルは存在しません。")
+            logger.warning(f"'{file!s}'を読み込もうとしましたが、ファイルは存在しません。")
             return WorktimePerDate.empty()
 
     def write_worktime_per_date_user(self, obj: WorktimePerDate) -> None:
@@ -324,9 +318,7 @@ class ProjectDir(DataClassJsonMixin):
         """
         `project_info.json`を書き込む。
         """
-        print_json(
-            project_info.to_dict(encode_json=True), output=self.project_dir / self.FILENAME_PROJECT_INFO, is_pretty=True
-        )
+        print_json(project_info.to_dict(encode_json=True), output=self.project_dir / self.FILENAME_PROJECT_INFO, is_pretty=True)
 
     def read_merge_info(self) -> MergingInfo:
         """

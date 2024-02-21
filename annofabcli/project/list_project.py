@@ -116,9 +116,7 @@ class ListProjectMain:
 
         return project_query
 
-    def get_project_list_from_organization(
-        self, organization_name: str, project_query: Optional[Dict[str, Any]] = None
-    ) -> List[Project]:
+    def get_project_list_from_organization(self, organization_name: str, project_query: Optional[Dict[str, Any]] = None) -> List[Project]:
         """
         組織名からプロジェクト一覧を取得する。
         """
@@ -127,9 +125,7 @@ class ListProjectMain:
             project_query = self._modify_project_query(organization_name, project_query)
 
         logger.debug(f"project_query: {project_query}")
-        project_list = self.service.wrapper.get_all_projects_of_organization(
-            organization_name, query_params=project_query
-        )
+        project_list = self.service.wrapper.get_all_projects_of_organization(organization_name, query_params=project_query)
 
         for project in project_list:
             project["organization_name"] = organization_name

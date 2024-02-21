@@ -157,10 +157,7 @@ class AddingAdditionalInfoToTask:
         # スキップされた履歴より後に検査フェーズがなければ、検査がスキップされたタスクとみなす
         last_task_history_index = task_history_index_list[-1]
         return (
-            more_itertools.first_true(
-                task_histories[last_task_history_index + 1 :], pred=lambda e: e["phase"] == TaskPhase.INSPECTION.value
-            )
-            is None
+            more_itertools.first_true(task_histories[last_task_history_index + 1 :], pred=lambda e: e["phase"] == TaskPhase.INSPECTION.value) is None
         )
 
     def _add_task_history_info(self, task: Task, task_history: Optional[TaskHistory], column_prefix: str) -> Task:
@@ -190,9 +187,7 @@ class AddingAdditionalInfoToTask:
         task.update(
             {
                 f"{column_prefix}_started_datetime": task_history["started_datetime"],
-                f"{column_prefix}_worktime_hour": annofabcli.common.utils.isoduration_to_hour(
-                    task_history["accumulated_labor_time_milliseconds"]
-                ),
+                f"{column_prefix}_worktime_hour": annofabcli.common.utils.isoduration_to_hour(task_history["accumulated_labor_time_milliseconds"]),
             }
         )
 
@@ -209,9 +204,7 @@ class AddingAdditionalInfoToTask:
 
         return task
 
-    def _add_task_history_info_by_phase(
-        self, task: dict[str, Any], task_histories: list[TaskHistory], phase: TaskPhase
-    ) -> Task:
+    def _add_task_history_info_by_phase(self, task: dict[str, Any], task_histories: list[TaskHistory], phase: TaskPhase) -> Task:
         if task_histories is not None:
             task_history_by_phase = [
                 e
@@ -229,8 +222,7 @@ class AddingAdditionalInfoToTask:
 
         # 作業時間に関する情報を設定
         task[f"{phase.value}_worktime_hour"] = sum(
-            annofabcli.common.utils.isoduration_to_hour(e["accumulated_labor_time_milliseconds"])
-            for e in task_history_by_phase
+            annofabcli.common.utils.isoduration_to_hour(e["accumulated_labor_time_milliseconds"]) for e in task_history_by_phase
         )
 
         return task

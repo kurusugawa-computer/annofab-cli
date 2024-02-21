@@ -70,9 +70,7 @@ class ListWorktimeFromTaskHistoryEventMain:
 
         return task_history_event_list
 
-    def get_task_history_event_list(
-        self, project_id: str, task_history_event_json: Optional[Path] = None
-    ) -> list[dict[str, Any]]:
+    def get_task_history_event_list(self, project_id: str, task_history_event_json: Optional[Path] = None) -> list[dict[str, Any]]:
         if task_history_event_json is None:
             downloading_obj = DownloadingFile(self.service)
             cache_dir = annofabcli.common.utils.get_cache_dir()
@@ -114,9 +112,7 @@ class ListWorktimeFromTaskHistoryEventMain:
 
         return result
 
-    def _create_worktime(
-        self, start_event: TaskHistoryEvent, end_event: TaskHistoryEvent
-    ) -> WorktimeFromTaskHistoryEvent:
+    def _create_worktime(self, start_event: TaskHistoryEvent, end_event: TaskHistoryEvent) -> WorktimeFromTaskHistoryEvent:
         diff = parse(end_event["created_datetime"]) - parse(start_event["created_datetime"])
         worktime_hour = diff.total_seconds() / 3600
         assert worktime_hour >= 0, (
@@ -155,9 +151,7 @@ class ListWorktimeFromTaskHistoryEventMain:
             ),
         )
 
-    def _create_worktime_list(
-        self, task_history_event_list: list[TaskHistoryEvent]
-    ) -> list[WorktimeFromTaskHistoryEvent]:
+    def _create_worktime_list(self, task_history_event_list: list[TaskHistoryEvent]) -> list[WorktimeFromTaskHistoryEvent]:
         """タスク履歴イベントから、作業時間のリストを生成する。
 
         Args:
@@ -187,7 +181,8 @@ class ListWorktimeFromTaskHistoryEventMain:
                 TaskStatus.COMPLETE.value,
             }:
                 logger.warning(
-                    "作業中状態のタスク履歴イベントに対応するタスク履歴イベントが存在しませんでした。" f":: start_event={start_event}, next_event={next_event}"
+                    "作業中状態のタスク履歴イベントに対応するタスク履歴イベントが存在しませんでした。"
+                    f":: start_event={start_event}, next_event={next_event}"
                 )
                 i += 1
                 continue
@@ -200,9 +195,7 @@ class ListWorktimeFromTaskHistoryEventMain:
         return result
 
     def get_account_ids_from_user_ids(self, project_id: str, user_ids: set[str]) -> set[str]:
-        project_member_list = self.service.wrapper.get_all_project_members(
-            project_id, query_params={"include_inactive_member": True}
-        )
+        project_member_list = self.service.wrapper.get_all_project_members(project_id, query_params={"include_inactive_member": True})
         return {e["account_id"] for e in project_member_list if e["user_id"] in user_ids}
 
     def get_worktime_list(
@@ -212,18 +205,12 @@ class ListWorktimeFromTaskHistoryEventMain:
         task_id_list: Optional[List[str]] = None,
         user_id_list: Optional[List[str]] = None,
     ) -> list[WorktimeFromTaskHistoryEvent]:
-        all_task_history_event_list = self.get_task_history_event_list(
-            project_id, task_history_event_json=task_history_event_json
-        )
+        all_task_history_event_list = self.get_task_history_event_list(project_id, task_history_event_json=task_history_event_json)
 
         task_id_set = set(task_id_list) if task_id_list is not None else None
-        account_id_set = (
-            self.get_account_ids_from_user_ids(project_id, set(user_id_list)) if user_id_list is not None else None
-        )
+        account_id_set = self.get_account_ids_from_user_ids(project_id, set(user_id_list)) if user_id_list is not None else None
 
-        task_history_event_dict = self._create_task_history_event_dict(
-            all_task_history_event_list, task_ids=task_id_set, account_ids=account_id_set
-        )
+        task_history_event_dict = self._create_task_history_event_dict(all_task_history_event_list, task_ids=task_id_set, account_ids=account_id_set)
 
         worktime_list = []
         for subset_event_list in task_history_event_dict.values():
@@ -279,9 +266,7 @@ class ListWorktimeFromTaskHistoryEvent(AbstractCommandLineInterface):
         )
 
     @staticmethod
-    def to_all_task_history_event_list_from_dict(
-        task_history_event_dict: dict[str, list[dict[str, Any]]]
-    ) -> List[dict[str, Any]]:
+    def to_all_task_history_event_list_from_dict(task_history_event_dict: dict[str, list[dict[str, Any]]]) -> List[dict[str, Any]]:
         all_task_history_event_list = []
         for task_history_event_list in task_history_event_dict.values():
             all_task_history_event_list.extend(task_history_event_list)

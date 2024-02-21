@@ -112,9 +112,7 @@ class ListTaskHistoryEventWithJson(AbstractCommandLineInterface):
         )
 
     @staticmethod
-    def to_all_task_history_event_list_from_dict(
-        task_history_event_dict: dict[str, list[dict[str, Any]]]
-    ) -> List[dict[str, Any]]:
+    def to_all_task_history_event_list_from_dict(task_history_event_dict: dict[str, list[dict[str, Any]]]) -> List[dict[str, Any]]:
         all_task_history_event_list = []
         for task_history_event_list in task_history_event_dict.values():
             all_task_history_event_list.extend(task_history_event_list)

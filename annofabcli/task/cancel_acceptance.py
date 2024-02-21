@@ -73,10 +73,7 @@ class CancelAcceptanceMain(AbstractCommandLineWithConfirmInterface):
                 return False
 
             if task["phase"] != TaskPhase.ACCEPTANCE.value or task["status"] != TaskStatus.COMPLETE.value:
-                logger.warning(
-                    f"{logging_prefix}: task_id = {task_id} は受入完了でありません。"
-                    f"status = {task['status']}, phase={task['phase']}"
-                )
+                logger.warning(f"{logging_prefix}: task_id = {task_id} は受入完了でありません。" f"status = {task['status']}, phase={task['phase']}")
                 return False
 
             actual_acceptor: Optional[User] = None
@@ -86,9 +83,7 @@ class CancelAcceptanceMain(AbstractCommandLineWithConfirmInterface):
                 if acceptor_account_id is not None:
                     member = self.get_project_member_from_account_id(acceptor_account_id)
                     if member is not None:
-                        actual_acceptor = User(
-                            account_id=member["account_id"], user_id=member["user_id"], username=member["username"]
-                        )
+                        actual_acceptor = User(account_id=member["account_id"], user_id=member["user_id"], username=member["username"])
                     else:
                         logger.warning(
                             f"{logging_prefix}: task_id = {task_id} の最後の受入フェーズを担当したユーザ"
@@ -113,9 +108,7 @@ class CancelAcceptanceMain(AbstractCommandLineWithConfirmInterface):
 
             operator_account_id = actual_acceptor.account_id if actual_acceptor is not None else None
             if not dryrun:
-                self.service.wrapper.cancel_completed_task(
-                    self.project_id, task_id, operator_account_id=operator_account_id
-                )
+                self.service.wrapper.cancel_completed_task(self.project_id, task_id, operator_account_id=operator_account_id)
             logger.info(f"{logging_prefix} : task_id = {task_id} の受け入れ取り消しが成功しました。")
             return True
 
@@ -237,9 +230,7 @@ class CancelAcceptance(AbstractCommandLineInterface):
         acceptor: Optional[User] = None  # 受入担当者
         if assigned_acceptor_user_id is not None:
             project_member_list = self.service.wrapper.get_all_project_members(args.project_id)
-            member = more_itertools.first_true(
-                project_member_list, pred=lambda e: e["user_id"] == assigned_acceptor_user_id
-            )
+            member = more_itertools.first_true(project_member_list, pred=lambda e: e["user_id"] == assigned_acceptor_user_id)
             if member is None:
                 print(
                     f"{self.COMMON_MESSAGE} argument --assigned_acceptor_user_id: プロジェクトメンバーに user_id='{assigned_acceptor_user_id}'メンバーは存在しません",  # noqa: E501
@@ -288,7 +279,9 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     assign_group = parser.add_mutually_exclusive_group()
 
     assign_group.add_argument(
-        "--not_assign", action="store_true", help="受入を取り消した後のタスクの担当者を未割り当てにします。" "指定しない場合は、最後の受入phaseの担当者が割り当てます。"
+        "--not_assign",
+        action="store_true",
+        help="受入を取り消した後のタスクの担当者を未割り当てにします。" "指定しない場合は、最後の受入phaseの担当者が割り当てます。",
     )
 
     assign_group.add_argument(
@@ -300,7 +293,9 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     argument_parser.add_task_query()
 
     parser.add_argument(
-        "--parallelism", type=int, help="使用するプロセス数（並列度）を指定してください。指定する場合は必ず ``--yes`` を指定してください。指定しない場合は、逐次的に処理します。"
+        "--parallelism",
+        type=int,
+        help="使用するプロセス数（並列度）を指定してください。指定する場合は必ず ``--yes`` を指定してください。指定しない場合は、逐次的に処理します。",
     )
 
     parser.add_argument("--dryrun", action="store_true", help="取り消しが行われた時の結果を表示しますが、実際は受け入れを取り消しません。")

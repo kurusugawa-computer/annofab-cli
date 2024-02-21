@@ -181,9 +181,7 @@ class ListAnnotationCounterByInputData:
         self.target_labels = set(target_labels) if target_labels is not None else None
         self.target_attribute_names = set(target_attribute_names) if target_attribute_names is not None else None
         self.non_target_labels = set(non_target_labels) if non_target_labels is not None else None
-        self.non_target_attribute_names = (
-            set(non_target_attribute_names) if non_target_attribute_names is not None else None
-        )
+        self.non_target_attribute_names = set(non_target_attribute_names) if non_target_attribute_names is not None else None
         self.frame_no_map = frame_no_map
 
     def get_annotation_counter(
@@ -215,11 +213,7 @@ class ListAnnotationCounterByInputData:
             )
         if self.non_target_labels is not None:
             annotation_count_by_label = collections.Counter(
-                {
-                    label: count
-                    for label, count in annotation_count_by_label.items()
-                    if label not in self.non_target_labels
-                }
+                {label: count for label, count in annotation_count_by_label.items() if label not in self.non_target_labels}
             )
 
         attributes_list: list[AttributeValueKey] = []
@@ -421,9 +415,7 @@ class AttributeCountCsv:
 
     """
 
-    def __init__(
-        self, selective_attribute_value_max_count: int = 20, csv_format: Optional[dict[str, Any]] = None
-    ) -> None:
+    def __init__(self, selective_attribute_value_max_count: int = 20, csv_format: Optional[dict[str, Any]] = None) -> None:
         self.csv_format = csv_format
         self.selective_attribute_value_max_count = selective_attribute_value_max_count
 
@@ -438,9 +430,7 @@ class AttributeCountCsv:
             attribute_name_list.append((label, attribute_name))
 
         non_selective_attribute_names = {
-            key
-            for key, value in collections.Counter(attribute_name_list).items()
-            if value > self.selective_attribute_value_max_count
+            key for key, value in collections.Counter(attribute_name_list).items() if value > self.selective_attribute_value_max_count
         }
         if len(non_selective_attribute_names) > 0:
             logger.debug(
@@ -579,9 +569,7 @@ class LabelCountCsv:
     def __init__(self, csv_format: Optional[dict[str, Any]] = None) -> None:
         self.csv_format = csv_format
 
-    def _value_columns(
-        self, counter_list: Collection[AnnotationCounter], prior_label_columns: Optional[list[str]]
-    ) -> list[str]:
+    def _value_columns(self, counter_list: Collection[AnnotationCounter], prior_label_columns: Optional[list[str]]) -> list[str]:
         all_attr_key_set = {attr_key for c in counter_list for attr_key in c.annotation_count_by_label}
         if prior_label_columns is not None:
             remaining_columns = sorted(all_attr_key_set - set(prior_label_columns))
@@ -697,7 +685,9 @@ class AnnotationSpecs:
         result = [to_label_name(label) for label in self._labels_v1]
         duplicated_labels = [key for key, value in collections.Counter(result).items() if value > 1]
         if len(duplicated_labels) > 0:
-            logger.warning(f"アノテーション仕様のラベル英語名が重複しています。アノテーション個数が正しく算出できない可能性があります。:: {duplicated_labels}")
+            logger.warning(
+                f"アノテーション仕様のラベル英語名が重複しています。アノテーション個数が正しく算出できない可能性があります。:: {duplicated_labels}"
+            )
         return result
 
     def selective_attribute_value_keys(self) -> list[AttributeValueKey]:
@@ -734,9 +724,7 @@ class AnnotationSpecs:
                 else:
                     continue
 
-        duplicated_attributes = [
-            key for key, value in collections.Counter(target_attribute_value_keys).items() if value > 1
-        ]
+        duplicated_attributes = [key for key, value in collections.Counter(target_attribute_value_keys).items() if value > 1]
         if len(duplicated_attributes) > 0:
             logger.warning(
                 f"アノテーション仕様の属性情報（ラベル英語名、属性英語名、選択肢英語名）が重複しています。アノテーション個数が正しく算出できない可能性があります。:: {duplicated_attributes}"
@@ -852,17 +840,13 @@ class ListAnnotationCountMain:
             if annotation_specs is not None:
                 label_columns = annotation_specs.label_keys()
 
-            LabelCountCsv().print_csv_by_input_data(
-                counter_list_by_input_data, output_file, prior_label_columns=label_columns
-            )
+            LabelCountCsv().print_csv_by_input_data(counter_list_by_input_data, output_file, prior_label_columns=label_columns)
         elif csv_type == CsvType.ATTRIBUTE:
             attribute_columns: Optional[list[AttributeValueKey]] = None
             if annotation_specs is not None:
                 attribute_columns = annotation_specs.selective_attribute_value_keys()
 
-            AttributeCountCsv().print_csv_by_input_data(
-                counter_list_by_input_data, output_file, prior_attribute_columns=attribute_columns
-            )
+            AttributeCountCsv().print_csv_by_input_data(counter_list_by_input_data, output_file, prior_attribute_columns=attribute_columns)
 
     def print_annotation_counter_csv_by_task(
         self,
@@ -881,9 +865,7 @@ class ListAnnotationCountMain:
             annotation_specs = AnnotationSpecs(self.service, project_id)
             non_selective_attribute_name_keys = annotation_specs.non_selective_attribute_name_keys()
 
-        counter_list_by_task = ListAnnotationCounterByTask(
-            non_target_attribute_names=non_selective_attribute_name_keys
-        ).get_annotation_counter_list(
+        counter_list_by_task = ListAnnotationCounterByTask(non_target_attribute_names=non_selective_attribute_name_keys).get_annotation_counter_list(
             annotation_path,
             target_task_ids=target_task_ids,
             task_query=task_query,
@@ -903,9 +885,7 @@ class ListAnnotationCountMain:
             if annotation_specs is not None:
                 attribute_columns = annotation_specs.selective_attribute_value_keys()
 
-            AttributeCountCsv().print_csv_by_task(
-                counter_list_by_task, output_file, prior_attribute_columns=attribute_columns
-            )
+            AttributeCountCsv().print_csv_by_task(counter_list_by_task, output_file, prior_attribute_columns=attribute_columns)
 
     def print_annotation_counter_json_by_input_data(
         self,
@@ -1047,7 +1027,7 @@ class ListAnnotationCount(AbstractCommandLineInterface):
     def validate(self, args: argparse.Namespace) -> bool:
         if args.project_id is None and args.annotation is None:
             print(
-                f"{self.COMMON_MESSAGE} argument --project_id: '--annotation'が未指定のときは、'--project_id' を指定してください。",  # noqa: E501
+                f"{self.COMMON_MESSAGE} argument --project_id: '--annotation'が未指定のときは、'--project_id' を指定してください。",
                 file=sys.stderr,
             )
             return False
@@ -1062,18 +1042,12 @@ class ListAnnotationCount(AbstractCommandLineInterface):
 
         project_id: Optional[str] = args.project_id
         if project_id is not None:
-            super().validate_project(
-                project_id, project_member_roles=[ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER]
-            )
+            super().validate_project(project_id, project_member_roles=[ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER])
 
         annotation_path = Path(args.annotation) if args.annotation is not None else None
 
         task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id) if args.task_id is not None else None
-        task_query = (
-            TaskQuery.from_dict(annofabcli.common.cli.get_json_from_args(args.task_query))
-            if args.task_query is not None
-            else None
-        )
+        task_query = TaskQuery.from_dict(annofabcli.common.cli.get_json_from_args(args.task_query)) if args.task_query is not None else None
 
         group_by = GroupBy(args.group_by)
         csv_type = CsvType(args.type)
@@ -1125,7 +1099,9 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     argument_parser = ArgumentParser(parser)
 
     parser.add_argument(
-        "--annotation", type=str, help="アノテーションzip、またはzipを展開したディレクトリを指定します。" "指定しない場合はAnnofabからダウンロードします。"
+        "--annotation",
+        type=str,
+        help="アノテーションzip、またはzipを展開したディレクトリを指定します。" "指定しない場合はAnnofabからダウンロードします。",
     )
 
     parser.add_argument(
@@ -1190,8 +1166,6 @@ def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argpa
     subcommand_help = "各ラベル、各属性値のアノテーション数を出力します。"
     description = "各ラベル、各属性値のアノテーション数を、タスクごと/入力データごとに出力します。"
     epilog = "オーナロールまたはアノテーションユーザロールを持つユーザで実行してください。"
-    parser = annofabcli.common.cli.add_parser(
-        subparsers, subcommand_name, subcommand_help, description=description, epilog=epilog
-    )
+    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description=description, epilog=epilog)
     parse_args(parser)
     return parser
