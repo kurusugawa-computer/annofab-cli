@@ -69,5 +69,25 @@ class TaskHistory:
                 )
                 all_task_history_list.append(new_task_history)
 
-        df = pandas.DataFrame(all_task_history_list)
+        if len(all_task_history_list) > 0:
+            df = pandas.DataFrame(all_task_history_list)
+        else:
+            df = cls.empty()
+
+        return cls(df)
+
+    @classmethod
+    def empty(cls) -> TaskHistory:
+        """空のデータフレームを持つインスタンスを生成します。"""
+
+        df_dtype: dict[str, str] = {
+            "project_id": "string",
+            "task_id": "string",
+            "phase": "string",
+            "phase_stage": "int",
+            "account_id": "string",
+            "worktime_hour": "float64",
+        }
+
+        df = pandas.DataFrame(columns=cls.columns).astype(df_dtype)
         return cls(df)

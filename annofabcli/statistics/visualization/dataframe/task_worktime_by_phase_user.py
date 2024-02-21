@@ -90,6 +90,9 @@ class TaskWorktimeByPhaseUser:
         """
         df_task = task.df
         df_worktime_ratio = cls._create_annotation_count_ratio_df(task_history.df, task.df)
+        if len(df_worktime_ratio) == 0:
+            return cls.empty()
+
         df = df_worktime_ratio.merge(user.df, on="account_id", how="left")
         df = df.merge(df_task[["task_id", "status"]], on="task_id", how="left")
         df["project_id"] = project_id
