@@ -71,7 +71,7 @@ class WorktimePerDate:
 
         self.df = df
 
-    _df_dtype = {
+    _df_dtype = {  # noqa: RUF012
         "date": "string",
         "account_id": "string",
         "user_id": "string",
@@ -84,7 +84,7 @@ class WorktimePerDate:
         "monitored_acceptance_worktime_hour": "float64",
     }
 
-    columns = [
+    columns = [  # noqa: RUF012
         "date",
         "account_id",
         "user_id",
@@ -163,9 +163,7 @@ class WorktimePerDate:
                 df[f"monitored_{phase}_worktime_hour"] = 0
 
         df["monitored_worktime_hour"] = (
-            df["monitored_annotation_worktime_hour"]
-            + df["monitored_inspection_worktime_hour"]
-            + df["monitored_acceptance_worktime_hour"]
+            df["monitored_annotation_worktime_hour"] + df["monitored_inspection_worktime_hour"] + df["monitored_acceptance_worktime_hour"]
         )
 
         if not actual_worktime.is_empty():
@@ -208,17 +206,13 @@ class WorktimePerDate:
         Annoworkで作業したメンバが、Annofabのプロジェクトで作業していない場合もあるので、
         できるだけたくさんのメンバを取得できるようにするため、組織メンバを取得しています。
         """
-        project_member_list = service.wrapper.get_all_project_members(
-            project_id, query_params={"include_inactive_member": ""}
-        )
+        project_member_list = service.wrapper.get_all_project_members(project_id, query_params={"include_inactive_member": ""})
         df_project_member = pandas.DataFrame(project_member_list)
         organization, _ = service.api.get_organization_of_project(project_id)
         organization_member_list = service.wrapper.get_all_organization_members(organization["organization_name"])
         df_organization_member = pandas.DataFrame(organization_member_list)
 
-        df_member = pandas.concat([df_project_member, df_organization_member])[
-            ["account_id", "user_id", "username", "biography"]
-        ]
+        df_member = pandas.concat([df_project_member, df_organization_member])[["account_id", "user_id", "username", "biography"]]
         df_member.drop_duplicates(subset=["account_id", "user_id", "username", "biography"], inplace=True)
         return df_member
 
@@ -271,15 +265,9 @@ class WorktimePerDate:
         # 作業時間の累積値
         df_result["cumulative_actual_worktime_hour"] = groupby_obj["actual_worktime_hour"].cumsum()
         df_result["cumulative_monitored_worktime_hour"] = groupby_obj["monitored_worktime_hour"].cumsum()
-        df_result["cumulative_monitored_annotation_worktime_hour"] = groupby_obj[
-            "monitored_annotation_worktime_hour"
-        ].cumsum()
-        df_result["cumulative_monitored_acceptance_worktime_hour"] = groupby_obj[
-            "monitored_acceptance_worktime_hour"
-        ].cumsum()
-        df_result["cumulative_monitored_inspection_worktime_hour"] = groupby_obj[
-            "monitored_inspection_worktime_hour"
-        ].cumsum()
+        df_result["cumulative_monitored_annotation_worktime_hour"] = groupby_obj["monitored_annotation_worktime_hour"].cumsum()
+        df_result["cumulative_monitored_acceptance_worktime_hour"] = groupby_obj["monitored_acceptance_worktime_hour"].cumsum()
+        df_result["cumulative_monitored_inspection_worktime_hour"] = groupby_obj["monitored_inspection_worktime_hour"].cumsum()
 
         return df_result
 
@@ -477,7 +465,7 @@ class WorktimePerDate:
             show_all_button = line_graph.create_button_hiding_showing_all_lines(is_hiding=False)
             checkbox_group = line_graph.create_checkbox_displaying_markers()
 
-            widgets = bokeh.layouts.column([hide_all_button, show_all_button, checkbox_group])  # type: ignore[list-item] # noqa: E501
+            widgets = bokeh.layouts.column([hide_all_button, show_all_button, checkbox_group])  # type: ignore[list-item]
             graph_group = bokeh.layouts.row([line_graph.figure, widgets])  # type: ignore[list-item]
             graph_group_list.append(graph_group)
 

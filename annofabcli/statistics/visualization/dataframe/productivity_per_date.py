@@ -138,16 +138,10 @@ class AnnotatorProductivityPerDate(AbstractPhaseProductivityPerDate):
         for denominator_column in ["input_data_count", "annotation_count"]:
             for phase in ["annotation", "inspection", "acceptance"]:
                 numerator_column = f"{phase}_worktime_hour"
-                sum_df[f"{numerator_column}/{denominator_column}"] = (
-                    sum_df[numerator_column] / sum_df[denominator_column]
-                )
+                sum_df[f"{numerator_column}/{denominator_column}"] = sum_df[numerator_column] / sum_df[denominator_column]
 
-        sum_df["inspection_comment_count/annotation_count"] = (
-            sum_df["inspection_comment_count"] / sum_df["annotation_count"]
-        )
-        sum_df["inspection_comment_count/input_data_count"] = (
-            sum_df["inspection_comment_count"] / sum_df["annotation_count"]
-        )
+        sum_df["inspection_comment_count/annotation_count"] = sum_df["inspection_comment_count"] / sum_df["annotation_count"]
+        sum_df["inspection_comment_count/input_data_count"] = sum_df["inspection_comment_count"] / sum_df["annotation_count"]
 
         return cls(sum_df)
 
@@ -218,12 +212,7 @@ class AnnotatorProductivityPerDate(AbstractPhaseProductivityPerDate):
         if target_user_id_list is not None:
             user_id_list = target_user_id_list
         else:
-            user_id_list = (
-                df.sort_values(by="first_annotation_started_date", ascending=False)["first_annotation_user_id"]
-                .dropna()
-                .unique()
-                .tolist()
-            )
+            user_id_list = df.sort_values(by="first_annotation_started_date", ascending=False)["first_annotation_user_id"].dropna().unique().tolist()
 
         user_id_list = get_plotted_user_id_list(user_id_list)
 
@@ -295,17 +284,13 @@ class AnnotatorProductivityPerDate(AbstractPhaseProductivityPerDate):
                 continue
 
             df_subset = self._get_df_sequential_date(df_subset)
-            df_subset["annotation_worktime_minute/annotation_count"] = (
-                df_subset["annotation_worktime_hour"] * 60 / df_subset["annotation_count"]
-            )
+            df_subset["annotation_worktime_minute/annotation_count"] = df_subset["annotation_worktime_hour"] * 60 / df_subset["annotation_count"]
             df_subset[f"annotation_worktime_minute/annotation_count{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}"] = (
-                get_weekly_sum(df_subset["annotation_worktime_hour"])
-                * 60
-                / get_weekly_sum(df_subset["annotation_count"])
+                get_weekly_sum(df_subset["annotation_worktime_hour"]) * 60 / get_weekly_sum(df_subset["annotation_count"])
             )
-            df_subset[
-                f"inspection_comment_count/annotation_count{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}"
-            ] = get_weekly_sum(df_subset["inspection_comment_count"]) / get_weekly_sum(df_subset["annotation_count"])
+            df_subset[f"inspection_comment_count/annotation_count{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}"] = get_weekly_sum(
+                df_subset["inspection_comment_count"]
+            ) / get_weekly_sum(df_subset["annotation_count"])
 
             source = ColumnDataSource(data=df_subset)
             color = get_color_from_palette(user_index)
@@ -354,12 +339,7 @@ class AnnotatorProductivityPerDate(AbstractPhaseProductivityPerDate):
         if target_user_id_list is not None:
             user_id_list = target_user_id_list
         else:
-            user_id_list = (
-                df.sort_values(by="first_annotation_started_date", ascending=False)["first_annotation_user_id"]
-                .dropna()
-                .unique()
-                .tolist()
-            )
+            user_id_list = df.sort_values(by="first_annotation_started_date", ascending=False)["first_annotation_user_id"].dropna().unique().tolist()
 
         user_id_list = get_plotted_user_id_list(user_id_list)
 
@@ -433,18 +413,14 @@ class AnnotatorProductivityPerDate(AbstractPhaseProductivityPerDate):
                 continue
 
             df_subset = self._get_df_sequential_date(df_subset)
-            df_subset["annotation_worktime_minute/input_data_count"] = (
-                df_subset["annotation_worktime_hour"] * 60 / df_subset["input_data_count"]
-            )
+            df_subset["annotation_worktime_minute/input_data_count"] = df_subset["annotation_worktime_hour"] * 60 / df_subset["input_data_count"]
 
             df_subset[f"annotation_worktime_minute/input_data_count{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}"] = (
-                get_weekly_sum(df_subset["annotation_worktime_hour"])
-                * 60
-                / get_weekly_sum(df_subset["input_data_count"])
+                get_weekly_sum(df_subset["annotation_worktime_hour"]) * 60 / get_weekly_sum(df_subset["input_data_count"])
             )
-            df_subset[
-                f"inspection_comment_count/input_data_count{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}"
-            ] = get_weekly_sum(df_subset["inspection_comment_count"]) / get_weekly_sum(df_subset["input_data_count"])
+            df_subset[f"inspection_comment_count/input_data_count{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}"] = get_weekly_sum(
+                df_subset["inspection_comment_count"]
+            ) / get_weekly_sum(df_subset["input_data_count"])
 
             source = ColumnDataSource(data=df_subset)
             color = get_color_from_palette(user_index)
@@ -500,11 +476,7 @@ class AnnotatorProductivityPerDate(AbstractPhaseProductivityPerDate):
             for denominator in ["input_data_count", "annotation_count"]
         ]
 
-        columns = (
-            production_columns
-            + velocity_columns
-            + ["inspection_comment_count/input_data_count", "inspection_comment_count/annotation_count"]
-        )
+        columns = production_columns + velocity_columns + ["inspection_comment_count/input_data_count", "inspection_comment_count/annotation_count"]
 
         print_csv(self.df[columns], output=str(output_file))
 
@@ -548,12 +520,8 @@ class InspectorProductivityPerDate(AbstractPhaseProductivityPerDate):
             ]
         ].sum(numeric_only=True)
 
-        sum_df["inspection_worktime_hour/annotation_count"] = (
-            sum_df["inspection_worktime_hour"] / sum_df["annotation_count"]
-        )
-        sum_df["inspection_worktime_hour/input_data_count"] = (
-            sum_df["inspection_worktime_hour"] / sum_df["input_data_count"]
-        )
+        sum_df["inspection_worktime_hour/annotation_count"] = sum_df["inspection_worktime_hour"] / sum_df["annotation_count"]
+        sum_df["inspection_worktime_hour/input_data_count"] = sum_df["inspection_worktime_hour"] / sum_df["input_data_count"]
 
         return cls(sum_df)
 
@@ -612,12 +580,7 @@ class InspectorProductivityPerDate(AbstractPhaseProductivityPerDate):
         if target_user_id_list is not None:
             user_id_list = target_user_id_list
         else:
-            user_id_list = (
-                df.sort_values(by="first_inspection_started_date", ascending=False)["first_inspection_user_id"]
-                .dropna()
-                .unique()
-                .tolist()
-            )
+            user_id_list = df.sort_values(by="first_inspection_started_date", ascending=False)["first_inspection_user_id"].dropna().unique().tolist()
 
         user_id_list = get_plotted_user_id_list(user_id_list)
 
@@ -673,13 +636,9 @@ class InspectorProductivityPerDate(AbstractPhaseProductivityPerDate):
                 continue
 
             df_subset = self._get_df_sequential_date(df_subset)
-            df_subset["inspection_worktime_minute/annotation_count"] = (
-                df_subset["inspection_worktime_hour"] * 60 / df_subset["annotation_count"]
-            )
+            df_subset["inspection_worktime_minute/annotation_count"] = df_subset["inspection_worktime_hour"] * 60 / df_subset["annotation_count"]
             df_subset[f"inspection_worktime_minute/annotation_count{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}"] = (
-                get_weekly_sum(df_subset["inspection_worktime_hour"])
-                * 60
-                / get_weekly_sum(df_subset["annotation_count"])
+                get_weekly_sum(df_subset["inspection_worktime_hour"]) * 60 / get_weekly_sum(df_subset["annotation_count"])
             )
 
             source = ColumnDataSource(data=df_subset)
@@ -728,12 +687,7 @@ class InspectorProductivityPerDate(AbstractPhaseProductivityPerDate):
         if target_user_id_list is not None:
             user_id_list = target_user_id_list
         else:
-            user_id_list = (
-                df.sort_values(by="first_inspection_started_date", ascending=False)["first_inspection_user_id"]
-                .dropna()
-                .unique()
-                .tolist()
-            )
+            user_id_list = df.sort_values(by="first_inspection_started_date", ascending=False)["first_inspection_user_id"].dropna().unique().tolist()
 
         user_id_list = get_plotted_user_id_list(user_id_list)
 
@@ -790,13 +744,9 @@ class InspectorProductivityPerDate(AbstractPhaseProductivityPerDate):
                 continue
 
             df_subset = self._get_df_sequential_date(df_subset)
-            df_subset["inspection_worktime_minute/input_data_count"] = (
-                df_subset["inspection_worktime_hour"] * 60 / df_subset["input_data_count"]
-            )
+            df_subset["inspection_worktime_minute/input_data_count"] = df_subset["inspection_worktime_hour"] * 60 / df_subset["input_data_count"]
             df_subset[f"inspection_worktime_minute/input_data_count{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}"] = (
-                get_weekly_sum(df_subset["inspection_worktime_hour"])
-                * 60
-                / get_weekly_sum(df_subset["input_data_count"])
+                get_weekly_sum(df_subset["inspection_worktime_hour"]) * 60 / get_weekly_sum(df_subset["input_data_count"])
             )
 
             source = ColumnDataSource(data=df_subset)
@@ -847,9 +797,7 @@ class InspectorProductivityPerDate(AbstractPhaseProductivityPerDate):
             "inspection_worktime_hour",
         ]
 
-        velocity_columns = [
-            f"inspection_worktime_hour/{denominator}" for denominator in ["input_data_count", "annotation_count"]
-        ]
+        velocity_columns = [f"inspection_worktime_hour/{denominator}" for denominator in ["input_data_count", "annotation_count"]]
 
         columns = production_columns + velocity_columns
 
@@ -895,12 +843,8 @@ class AcceptorProductivityPerDate(AbstractPhaseProductivityPerDate):
             ]
         ].sum(numeric_only=True)
 
-        sum_df["acceptance_worktime_hour/annotation_count"] = (
-            sum_df["acceptance_worktime_hour"] / sum_df["annotation_count"]
-        )
-        sum_df["acceptance_worktime_hour/input_data_count"] = (
-            sum_df["acceptance_worktime_hour"] / sum_df["input_data_count"]
-        )
+        sum_df["acceptance_worktime_hour/annotation_count"] = sum_df["acceptance_worktime_hour"] / sum_df["annotation_count"]
+        sum_df["acceptance_worktime_hour/input_data_count"] = sum_df["acceptance_worktime_hour"] / sum_df["input_data_count"]
 
         return AcceptorProductivityPerDate(sum_df)
 
@@ -959,12 +903,7 @@ class AcceptorProductivityPerDate(AbstractPhaseProductivityPerDate):
         if target_user_id_list is not None:
             user_id_list = target_user_id_list
         else:
-            user_id_list = (
-                df.sort_values(by="first_acceptance_started_date", ascending=False)["first_acceptance_user_id"]
-                .dropna()
-                .unique()
-                .tolist()
-            )
+            user_id_list = df.sort_values(by="first_acceptance_started_date", ascending=False)["first_acceptance_user_id"].dropna().unique().tolist()
 
         user_id_list = get_plotted_user_id_list(user_id_list)
 
@@ -1021,14 +960,10 @@ class AcceptorProductivityPerDate(AbstractPhaseProductivityPerDate):
                 continue
 
             df_subset = self._get_df_sequential_date(df_subset)
-            df_subset["acceptance_worktime_minute/annotation_count"] = (
-                df_subset["acceptance_worktime_hour"] * 60 / df_subset["annotation_count"]
-            )
+            df_subset["acceptance_worktime_minute/annotation_count"] = df_subset["acceptance_worktime_hour"] * 60 / df_subset["annotation_count"]
 
             df_subset[f"acceptance_worktime_minute/annotation_count{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}"] = (
-                get_weekly_sum(df_subset["acceptance_worktime_hour"])
-                * 60
-                / get_weekly_sum(df_subset["annotation_count"])
+                get_weekly_sum(df_subset["acceptance_worktime_hour"]) * 60 / get_weekly_sum(df_subset["annotation_count"])
             )
 
             source = ColumnDataSource(data=df_subset)
@@ -1078,12 +1013,7 @@ class AcceptorProductivityPerDate(AbstractPhaseProductivityPerDate):
         if target_user_id_list is not None:
             user_id_list = target_user_id_list
         else:
-            user_id_list = (
-                df.sort_values(by="first_acceptance_started_date", ascending=False)["first_acceptance_user_id"]
-                .dropna()
-                .unique()
-                .tolist()
-            )
+            user_id_list = df.sort_values(by="first_acceptance_started_date", ascending=False)["first_acceptance_user_id"].dropna().unique().tolist()
 
         user_id_list = get_plotted_user_id_list(user_id_list)
 
@@ -1139,13 +1069,9 @@ class AcceptorProductivityPerDate(AbstractPhaseProductivityPerDate):
                 continue
 
             df_subset = self._get_df_sequential_date(df_subset)
-            df_subset["acceptance_worktime_minute/input_data_count"] = (
-                df_subset["acceptance_worktime_hour"] * 60 / df_subset["input_data_count"]
-            )
+            df_subset["acceptance_worktime_minute/input_data_count"] = df_subset["acceptance_worktime_hour"] * 60 / df_subset["input_data_count"]
             df_subset[f"acceptance_worktime_minute/input_data_count{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}"] = (
-                get_weekly_sum(df_subset["acceptance_worktime_hour"])
-                * 60
-                / get_weekly_sum(df_subset["input_data_count"])
+                get_weekly_sum(df_subset["acceptance_worktime_hour"]) * 60 / get_weekly_sum(df_subset["input_data_count"])
             )
 
             source = ColumnDataSource(data=df_subset)
@@ -1196,9 +1122,7 @@ class AcceptorProductivityPerDate(AbstractPhaseProductivityPerDate):
             "acceptance_worktime_hour",
         ]
 
-        velocity_columns = [
-            f"acceptance_worktime_hour/{denominator}" for denominator in ["input_data_count", "annotation_count"]
-        ]
+        velocity_columns = [f"acceptance_worktime_hour/{denominator}" for denominator in ["input_data_count", "annotation_count"]]
 
         columns = production_columns + velocity_columns
 

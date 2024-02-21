@@ -60,7 +60,6 @@ pytest-xdist = "*"
 pytest-cov = "*"
 
 [tool.poetry.group.formatter.dependencies]
-black = "^23.3"
 
 [tool.poetry.group.linter.dependencies]
 # ruffのバージョンの上限を指定する理由:
@@ -68,9 +67,9 @@ black = "^23.3"
 # black 23.3(通常版)は"line-width"を"character count"で計算している。
 # ruffとblackで"line-with"の計算が異なってしまうので、ruffのバージョンの上限を指定した。
 # https://qiita.com/yuji38kwmt/items/04208d2d2cafe1218287
-ruff = "<0.0.260"
-mypy = "^1"
-pylint = "^2"
+ruff = {version="^0.2", python=">=3.11"}
+mypy = {version="^1", python=">=3.11"}
+pylint = {version="^3", python=">=3.11"}
 
 types-pytz = "*"
 types-requests = "*"
@@ -107,14 +106,6 @@ pyinstaller = { version = "^5.9", python = "<3.12" }
 [tool.poetry.scripts]
 annofabcli = "annofabcli.__main__:main"
 
-[tool.isort]
-profile = "black"
-line_length = 120
-
-
-[tool.black]
-line-length = 120
-
 
 [tool.mypy]
 ignore_missing_imports = true
@@ -123,7 +114,10 @@ check_untyped_defs = true
 
 [tool.ruff]
 target-version = "py38"
+line-length = 150
 
+
+[tool.ruff.lint]
 ignore = [
     "G004", # `logging-f-string` : loggingでf-stringを使いたいので無視する
     "PD901", #すでに`df`という変数をいろんなところで使っているため
@@ -138,6 +132,9 @@ ignore = [
     "ANN002", # missing-type-args
     "ANN003", # missing-type-kwargs
     "ERA", # : 役立つこともあるが、コメントアウトしていないコードも警告されるので無視する
+    "PERF203", # try-except-in-loop: ループ内でtry-exceptを使うこともあるため無視する。またPython3.11以降ｈ
+    "FIX", # TODOやFIXMEを使うため無視する
+    "TD", # TODOコメントの書き方に気にしていないので無視する
 
     # いずれ無視しないようにする
     "ANN201", # missing-return-type-public-function:
@@ -167,20 +164,19 @@ ignore = [
     "PT", # flake8-pytest-style
 ]
 
-line-length = 120
 select = [
     "ALL"
 ]
 
-[tool.ruff.pydocstyle]
+[tool.ruff.lint.pydocstyle]
 convention = "google"
 
-[tool.ruff.pyupgrade]
+[tool.ruff.lint.pyupgrade]
 # Python3.8をサポートしているため、`typing.List`などの型ヒントは警告しないようにする
 # https://beta.ruff.rs/docs/settings/#keep-runtime-typing
 keep-runtime-typing = true
 
-[tool.ruff.pylint]
+[tool.ruff.lint.pylint]
 max-args = 10
 
 [tool.poetry-dynamic-versioning]

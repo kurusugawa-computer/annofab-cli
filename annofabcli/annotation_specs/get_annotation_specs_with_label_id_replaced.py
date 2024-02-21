@@ -24,9 +24,7 @@ logger = logging.getLogger(__name__)
 
 class ReplacingLabelId(AbstractCommandLineWithConfirmInterface):
     @staticmethod
-    def replace_label_id_of_restrictions(
-        old_label_id: str, new_label_id: str, restriction_list: list[dict[str, Any]]
-    ) -> None:
+    def replace_label_id_of_restrictions(old_label_id: str, new_label_id: str, restriction_list: list[dict[str, Any]]) -> None:
         """
         制約情報の中で使用されているlabel_idを新しいlabel_idに変更する
 
@@ -88,15 +86,12 @@ class ReplacingLabelId(AbstractCommandLineWithConfirmInterface):
 
             if not self.validate_label_id(label_name_en):
                 logger.warning(
-                    f"label_name_en='{label_name_en}'はlabel_idにできない文字を含むため、"
-                    f"label_id='{label_id}'を'{label_name_en}'に変更しません。"
+                    f"label_name_en='{label_name_en}'はlabel_idにできない文字を含むため、" f"label_id='{label_id}'を'{label_name_en}'に変更しません。"
                 )
                 continue
 
             if self.exists_label_with_label_id(label_list, label_id=label_name_en):
-                logger.warning(
-                    f"label_id='{label_name_en}'であるラベルが既に存在するため、label_id='{label_id}'を'{label_name_en}'に変更しません。"
-                )
+                logger.warning(f"label_id='{label_name_en}'であるラベルが既に存在するため、label_id='{label_id}'を'{label_name_en}'に変更しません。")
                 continue
 
             if not self.confirm_processing(f"label_id='{label_id}'を'{label_name_en}'に変更したアノテーション仕様のJSONを出力しますか？"):
@@ -104,9 +99,7 @@ class ReplacingLabelId(AbstractCommandLineWithConfirmInterface):
 
             # ラベル内のlabel_idを変更する
             label["label_id"] = label_name_en
-            self.replace_label_id_of_restrictions(
-                old_label_id=label_id, new_label_id=label_name_en, restriction_list=restriction_list
-            )
+            self.replace_label_id_of_restrictions(old_label_id=label_id, new_label_id=label_name_en, restriction_list=restriction_list)
             replaced_count += 1
 
         logger.info(f"{replaced_count} 個のラベルのlabel_idを変更しました。")

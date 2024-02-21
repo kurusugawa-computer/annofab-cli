@@ -110,12 +110,8 @@ class ChangeProjectMembers(AbstractCommandLineInterface):
 
             # メンバを登録
             try:
-                self.put_project_member(
-                    project_id, user_id, old_member, member_role=member_role, member_info=member_info
-                )
-                logger.debug(
-                    f"user_id = {user_id} のプロジェクトメンバ情報を変更しました。member_role={member_role}, member_info={member_info}"
-                )
+                self.put_project_member(project_id, user_id, old_member, member_role=member_role, member_info=member_info)
+                logger.debug(f"user_id = {user_id} のプロジェクトメンバ情報を変更しました。member_role={member_role}, member_info={member_info}")
                 count_invite_members += 1
 
             except requests.exceptions.HTTPError as e:
@@ -162,9 +158,7 @@ class ChangeProjectMembers(AbstractCommandLineInterface):
         if not self.validate(args, member_info):
             sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
-        self.change_project_members(
-            args.project_id, user_id_list=user_id_list, member_role=member_role, member_info=member_info
-        )
+        self.change_project_members(args.project_id, user_id_list=user_id_list, member_role=member_role, member_info=member_info)
 
 
 def main(args: argparse.Namespace) -> None:
@@ -190,13 +184,16 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     user_group.add_argument("--all_user", action="store_true", help="自分以外のすべてのプロジェクトメンバを変更します。")
 
     parser.add_argument(
-        "--role", type=str, choices=role_choices, help="プロジェクトメンバにユーザに割り当てるロールを指定します。指定しない場合は、ロールは変更されません。"
+        "--role",
+        type=str,
+        choices=role_choices,
+        help="プロジェクトメンバにユーザに割り当てるロールを指定します。指定しない場合は、ロールは変更されません。",
     )
 
     parser.add_argument(
         "--member_info",
         type=str,
-        help="プロジェクトメンバに対して設定するメンバ情報を、JSON形式で指定します。 ``file://`` を先頭に付けると、JSON形式のファイルを指定できます。 "
+        help="プロジェクトメンバに対して設定するメンバ情報を、JSON形式で指定します。 ``file://`` を先頭に付けると、JSON形式のファイルを指定できます。 "  # noqa: E501
         "以下のキーが指定可能です。sampling_inspection_rate, sampling_acceptance_rate, "
         "未設定にする場合は、値にnullを指定してください。"
         "詳細は https://annofab.com/docs/api/#operation/putProjectMember を参照ください。 ",

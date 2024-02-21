@@ -106,9 +106,7 @@ def create_task_count_summary(task_list: List[Task], number_of_inspections: int)
         task["simple_status"] = SimpleTaskStatus.from_task_status(status).value
 
     df = pandas.DataFrame(task_list)
-    df["phase"] = pandas.Categorical(
-        df["phase"], categories=[TaskPhase.ANNOTATION.value, TaskPhase.INSPECTION.value, TaskPhase.ACCEPTANCE.value]
-    )
+    df["phase"] = pandas.Categorical(df["phase"], categories=[TaskPhase.ANNOTATION.value, TaskPhase.INSPECTION.value, TaskPhase.ACCEPTANCE.value])
     df["simple_status"] = pandas.Categorical(
         df["simple_status"],
         categories=[
@@ -119,7 +117,7 @@ def create_task_count_summary(task_list: List[Task], number_of_inspections: int)
     )
 
     # `observed=True`を指定する理由：以下の警告に対応するため
-    # FutureWarning: The default value of observed=False is deprecated and will change to observed=True in a future version of pandas.  # noqa: E501
+    # FutureWarning: The default value of observed=False is deprecated and will change to observed=True in a future version of pandas.
     # Specify observed=False to silence this warning and retain the current behavior
     summary_df = df.pivot_table(
         values="task_id", index=["step", "phase", "phase_stage", "simple_status"], aggfunc="count", observed=False
@@ -141,16 +139,12 @@ class SummarizeTaskCount(AbstractCommandLineInterface):
         project, _ = self.service.api.get_project(project_id)
         return project["configuration"]["number_of_inspections"]
 
-    def summarize_task_count(
-        self, project_id: str, *, task_json_path: Optional[Path], is_latest: bool, is_execute_get_tasks_api: bool
-    ) -> None:
+    def summarize_task_count(self, project_id: str, *, task_json_path: Optional[Path], is_latest: bool, is_execute_get_tasks_api: bool) -> None:
         if is_execute_get_tasks_api:
             super().validate_project(project_id)
         else:
             # タスク全件ファイルをダウンロードするので、オーナロールかアノテーションユーザロールであることを確認する。
-            super().validate_project(
-                project_id, project_member_roles=[ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER]
-            )
+            super().validate_project(project_id, project_member_roles=[ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER])
 
         if is_execute_get_tasks_api:
             task_list = self.service.wrapper.get_all_tasks(project_id)
@@ -165,9 +159,7 @@ class SummarizeTaskCount(AbstractCommandLineInterface):
         task_count_df = create_task_count_summary(task_list, number_of_inspections=number_of_inspections)
         annofabcli.common.utils.print_csv(task_count_df, output=self.output, to_csv_kwargs=self.csv_format)
 
-    def get_task_list_with_downloading_file(
-        self, project_id: str, task_json_path: Optional[Path], is_latest: bool
-    ) -> List[Task]:
+    def get_task_list_with_downloading_file(self, project_id: str, task_json_path: Optional[Path], is_latest: bool) -> List[Task]:
         if task_json_path is None:
             cache_dir = annofabcli.common.utils.get_cache_dir()
             task_json_path = cache_dir / f"task-{project_id}.json"
@@ -207,13 +199,15 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     )
 
     parser.add_argument(
-        "--latest", action="store_true", help="最新のタスク一覧ファイルを参照します。このオプションを指定すると、タスク一覧ファイルを更新するのに数分待ちます。"
+        "--latest",
+        action="store_true",
+        help="最新のタスク一覧ファイルを参照します。このオプションを指定すると、タスク一覧ファイルを更新するのに数分待ちます。",
     )
 
     parser.add_argument(
         "--execute_get_tasks_api",
         action="store_true",
-        help="[EXPERIMENTAL] ``getTasks`` APIを実行して、タスク情報を参照します。タスク数が少ないプロジェクトで、最新のタスク情報を参照したいときに利用できます。",
+        help="[EXPERIMENTAL] ``getTasks`` APIを実行して、タスク情報を参照します。タスク数が少ないプロジェクトで、最新のタスク情報を参照したいときに利用できます。",  # noqa: E501
     )
 
     argument_parser.add_csv_format()
@@ -232,9 +226,7 @@ def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argpa
     subcommand_name = "summarize_task_count"
     subcommand_help = "タスクのフェーズ、ステータス、ステップごとにタスク数を出力します。"
     description = "タスクのフェーズ、ステータス、ステップごとにタスク数を、CSV形式で出力します。"
-    epilog = "アノテーションユーザまたはオーナロールを持つユーザで実行できます。ただし``--execute_get_tasks_api``を指定した場合は、どのロールでも実行できます。"
-    parser = annofabcli.common.cli.add_parser(
-        subparsers, subcommand_name, subcommand_help, description=description, epilog=epilog
-    )
+    epilog = "アノテーションユーザまたはオーナロールを持つユーザで実行できます。ただし``--execute_get_tasks_api``を指定した場合は、どのロールでも実行できます。"  # noqa: E501
+    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description=description, epilog=epilog)
     parse_args(parser)
     return parser

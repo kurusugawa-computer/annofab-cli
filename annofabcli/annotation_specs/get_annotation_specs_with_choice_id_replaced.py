@@ -35,9 +35,7 @@ class ReplacingChoiceId(AbstractCommandLineWithConfirmInterface):
         """
         return re.fullmatch("[A-Za-z0-9_.\\-]+", str_id) is not None
 
-    def main(
-        self, annotation_specs: dict[str, Any], *, target_attribute_names: Optional[Collection[str]] = None
-    ) -> None:
+    def main(self, annotation_specs: dict[str, Any], *, target_attribute_names: Optional[Collection[str]] = None) -> None:
         """
         アノテーション仕様内の選択肢IDを英語名に変更します。
 
@@ -45,7 +43,7 @@ class ReplacingChoiceId(AbstractCommandLineWithConfirmInterface):
             annotation_specs: (IN/OUT) アノテーション仕様情報。中身が変更されます。
             target_attribute_names: 変更対象のラジオボタン/ドロップダウン属性の英語名。Noneならすべてのラジオボタン/ドロップダウン属性の選択肢IDを変更します。
 
-        """
+        """  # noqa: E501
         attribute_list = annotation_specs["additionals"]
 
         replaced_count = 0
@@ -64,7 +62,8 @@ class ReplacingChoiceId(AbstractCommandLineWithConfirmInterface):
             choice_list = attribute["choices"]
 
             if not self.confirm_processing(
-                f"属性英語名='{attribute_name_en}'の{len(choice_list)}個の選択肢IDを、" "選択肢英語名に変更したアノテーション仕様のJSONを出力しますか？"
+                f"属性英語名='{attribute_name_en}'の{len(choice_list)}個の選択肢IDを、"
+                "選択肢英語名に変更したアノテーション仕様のJSONを出力しますか？"
             ):
                 continue
 
@@ -108,9 +107,7 @@ class GetAnnotationSpecsWithAttributeIdReplaced(AbstractCommandLineInterface):
 
         annotation_specs, _ = self.service.api.get_annotation_specs(project_id, query_params={"v": 3})
 
-        target_attribute_names = (
-            set(get_list_from_args(args.attribute_name)) if args.attribute_name is not None else None
-        )
+        target_attribute_names = set(get_list_from_args(args.attribute_name)) if args.attribute_name is not None else None
 
         # アノテーション仕様のlabel_idを変更する
         ReplacingChoiceId(all_yes=args.yes).main(annotation_specs, target_attribute_names=target_attribute_names)

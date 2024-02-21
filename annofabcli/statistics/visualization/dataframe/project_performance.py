@@ -57,9 +57,7 @@ class ProjectPerformance:
         else:
             try:
                 project_info = project_dir.read_project_info()
-                return pandas.Series(
-                    [project_info.project_id, project_info.project_title, project_info.input_data_type], index=index
-                )
+                return pandas.Series([project_info.project_id, project_info.project_title, project_info.input_data_type], index=index)
 
             except Exception:
                 logger.warning(f"'{project_dir}'の`project_info.json`の読み込みに失敗しました。", exc_info=True)
@@ -87,7 +85,7 @@ class ProjectPerformance:
     def from_project_dirs(cls, project_dir_list: list[ProjectDir]) -> ProjectPerformance:
         row_list: list[pandas.Series] = []
         for project_dir in project_dir_list:
-            row_list.append(cls._get_series_from_project_dir(project_dir))
+            row_list.append(cls._get_series_from_project_dir(project_dir))  # noqa: PERF401
 
         return cls(pandas.DataFrame(row_list))
 
@@ -130,9 +128,7 @@ class ProjectWorktimePerMonth:
         df = project_dir.read_worktime_per_date_user().df.copy()
         df["dt_date"] = pandas.to_datetime(df["date"], format="ISO8601")
 
-        series = df.groupby(pandas.Grouper(key="dt_date", freq=get_frequency_of_monthend())).sum(numeric_only=True)[
-            worktime_column.value
-        ]
+        series = df.groupby(pandas.Grouper(key="dt_date", freq=get_frequency_of_monthend())).sum(numeric_only=True)[worktime_column.value]
         # indexを"2022-04"という形式にする
         new_index = [str(dt)[0:7] for dt in series.index]
         result = pandas.Series(series.values, index=new_index)
@@ -140,9 +136,7 @@ class ProjectWorktimePerMonth:
         return result
 
     @classmethod
-    def from_project_dirs(
-        cls, project_dir_list: list[ProjectDir], worktime_column: WorktimeColumn
-    ) -> ProjectWorktimePerMonth:
+    def from_project_dirs(cls, project_dir_list: list[ProjectDir], worktime_column: WorktimeColumn) -> ProjectWorktimePerMonth:
         """
         プロジェクトディレクトリのlistから、インスタンスを生成します。
         Args:

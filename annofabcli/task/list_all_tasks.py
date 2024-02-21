@@ -68,9 +68,7 @@ class ListTasksWithJsonMain:
 
         logger.debug("出力対象のタスクを抽出しています。")
         task_id_set = set(task_id_list) if task_id_list is not None else None
-        filtered_task_list = [
-            e for e in task_list if self.match_task_with_conditions(e, task_query=task_query, task_id_set=task_id_set)
-        ]
+        filtered_task_list = [e for e in task_list if self.match_task_with_conditions(e, task_query=task_query, task_id_set=task_id_set)]
 
         visualize_obj = AddProps(self.service, project_id)
         return [visualize_obj.add_properties_to_task(e) for e in filtered_task_list]
@@ -81,11 +79,7 @@ class ListTasksWithJson(AbstractCommandLineInterface):
         args = self.args
 
         task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id) if args.task_id is not None else None
-        task_query = (
-            TaskQuery.from_dict(annofabcli.common.cli.get_json_from_args(args.task_query))
-            if args.task_query is not None
-            else None
-        )
+        task_query = TaskQuery.from_dict(annofabcli.common.cli.get_json_from_args(args.task_query)) if args.task_query is not None else None
 
         project_id = args.project_id
         super().validate_project(project_id, project_member_roles=None)
@@ -154,7 +148,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
 def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     subcommand_name = "list_all"
     subcommand_help = "すべてのタスクの一覧を出力します。"
-    description = "すべてのタスクの一覧を出力します。\n出力されるタスクは、コマンドを実行した日の02:00(JST)頃の状態です。最新の情報を出力したい場合は、 ``--latest`` を指定してください。"
+    description = "すべてのタスクの一覧を出力します。\n出力されるタスクは、コマンドを実行した日の02:00(JST)頃の状態です。最新の情報を出力したい場合は、 ``--latest`` を指定してください。"  # noqa: E501
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description=description)
     parse_args(parser)
     return parser

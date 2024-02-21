@@ -60,9 +60,7 @@ class TestWholeProductivityPerCompletedDate:
     def test_merge(self):
         df1 = pandas.read_csv(str(data_dir / "productivity-per-date.csv"))
         df2 = pandas.read_csv(str(data_dir / "productivity-per-date2.csv"))
-        sum_obj = WholeProductivityPerCompletedDate.merge(
-            WholeProductivityPerCompletedDate(df1), WholeProductivityPerCompletedDate(df2)
-        )
+        sum_obj = WholeProductivityPerCompletedDate.merge(WholeProductivityPerCompletedDate(df1), WholeProductivityPerCompletedDate(df2))
         sum_obj.to_csv(self.output_dir / "merge-productivity-per-date.csv")
 
 

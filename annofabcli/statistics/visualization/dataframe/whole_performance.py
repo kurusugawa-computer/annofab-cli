@@ -25,7 +25,7 @@ class WholePerformance:
         series: 全体の生産性と品質が格納されたpandas.Series
     """
 
-    STRING_KEYS = {("first_working_date", ""), ("last_working_date", "")}
+    STRING_KEYS = {("first_working_date", ""), ("last_working_date", "")}  # noqa: RUF012
     """文字列が格納されているキー"""
 
     def __init__(self, series: pandas.Series) -> None:
@@ -62,12 +62,8 @@ class WholePerformance:
             df_task_worktime_by_phase_user[column] = "pseudo_value"
 
         unique_keys_for_worktime = ["date"]
-        addable_columns_for_worktime = list(
-            set(df_worktime_per_date.columns) - set(user_info_columns) - set(unique_keys_for_worktime)
-        )
-        df_worktime_per_date = df_worktime_per_date.groupby(unique_keys_for_worktime)[
-            addable_columns_for_worktime
-        ].sum()
+        addable_columns_for_worktime = list(set(df_worktime_per_date.columns) - set(user_info_columns) - set(unique_keys_for_worktime))
+        df_worktime_per_date = df_worktime_per_date.groupby(unique_keys_for_worktime)[addable_columns_for_worktime].sum()
         df_worktime_per_date[user_info_columns] = PSEUDO_VALUE
         df_worktime_per_date = df_worktime_per_date.reset_index()
 
@@ -76,14 +72,9 @@ class WholePerformance:
 
         unique_keys_for_worktime = ["project_id", "task_id", "phase", "phase_stage"]
         addable_columns_for_task = list(
-            set(df_task_worktime_by_phase_user.columns)
-            - set(user_info_columns)
-            - set(unique_keys_for_worktime)
-            - {"status"}
+            set(df_task_worktime_by_phase_user.columns) - set(user_info_columns) - set(unique_keys_for_worktime) - {"status"}
         )
-        df_task_worktime_by_phase_user = df_task_worktime_by_phase_user.groupby(unique_keys_for_worktime)[
-            addable_columns_for_task
-        ].sum()
+        df_task_worktime_by_phase_user = df_task_worktime_by_phase_user.groupby(unique_keys_for_worktime)[addable_columns_for_task].sum()
         df_task_worktime_by_phase_user[user_info_columns] = PSEUDO_VALUE
         df_task_worktime_by_phase_user = df_task_worktime_by_phase_user.reset_index()
         # status情報を結合する
@@ -107,7 +98,7 @@ class WholePerformance:
             worktime_per_date: 日ごとの作業時間が記載されたDataFrameを格納したオブジェクト。ユーザー情報の取得や、実際の作業時間（集計タスクに影響しない）の算出に利用します。
             task_worktime_by_phase_user: タスク、フェーズ、ユーザーごとの作業時間や生産量が格納されたオブジェクト。生産量やタスクにかかった作業時間の取得に利用します。
 
-        """
+        """  # noqa: E501
         # 1人が作業した場合のパフォーマンス情報を生成する
         all_user_performance = cls._create_all_user_performance(worktime_per_date, task_worktime_by_phase_user)
 
@@ -123,13 +114,9 @@ class WholePerformance:
             ]
         ].sum()
         for phase in TaskPhase:
-            df_all[("working_user_count", phase.value)] = (
-                df_worktime2[f"monitored_{phase.value}_worktime_hour"] > 0
-            ).sum()
+            df_all[("working_user_count", phase.value)] = (df_worktime2[f"monitored_{phase.value}_worktime_hour"] > 0).sum()
 
-        df_all = df_all.drop(
-            [("account_id", ""), ("user_id", ""), ("username", ""), ("biography", "")], axis=1, errors="ignore"
-        )
+        df_all = df_all.drop([("account_id", ""), ("user_id", ""), ("username", ""), ("biography", "")], axis=1, errors="ignore")
         return cls(df_all.iloc[0])
 
     @classmethod
@@ -231,7 +218,7 @@ class WholePerformance:
         series = self.series[indexes]
 
         output_file.parent.mkdir(exist_ok=True, parents=True)
-        logger.debug(f"{str(output_file)} を出力します。")
+        logger.debug(f"{output_file!s} を出力します。")
         series.to_csv(str(output_file), sep=",", encoding="utf_8_sig", header=False)
 
     @staticmethod

@@ -68,9 +68,7 @@ class ChangePropertiesOfAnnotationMain(AbstractCommandLineWithConfirmInterface):
 
         now_datetime = str_now()
 
-        def to_properties_from_cli(
-            annotation_list: List[SingleAnnotation], properties: AnnotationDetailForCli
-        ) -> List[Dict[str, Any]]:
+        def to_properties_from_cli(annotation_list: List[SingleAnnotation], properties: AnnotationDetailForCli) -> List[Dict[str, Any]]:
             annotations_for_api = []
             annotation_details_by_input_data: Dict[str, List[Dict[str, Any]]] = {}
 
@@ -113,9 +111,7 @@ class ChangePropertiesOfAnnotationMain(AbstractCommandLineWithConfirmInterface):
         for annotation in annotations:
             _to_request_body_elm(annotation)
 
-    def get_annotation_list_for_task(
-        self, task_id: str, annotation_query: Optional[AnnotationQueryForAPI]
-    ) -> list[dict[str, Any]]:
+    def get_annotation_list_for_task(self, task_id: str, annotation_query: Optional[AnnotationQueryForAPI]) -> list[dict[str, Any]]:
         """
         タスク内のアノテーション一覧を取得する。
 
@@ -131,9 +127,7 @@ class ChangePropertiesOfAnnotationMain(AbstractCommandLineWithConfirmInterface):
         if annotation_query is not None:
             dict_query.update(annotation_query.to_dict())
 
-        annotation_list = self.service.wrapper.get_all_annotation_list(
-            self.project_id, query_params={"query": dict_query}
-        )
+        annotation_list = self.service.wrapper.get_all_annotation_list(self.project_id, query_params={"query": dict_query})
         return annotation_list
 
     def change_properties_for_task(  # pylint: disable=too-many-return-statements
@@ -154,7 +148,7 @@ class ChangePropertiesOfAnnotationMain(AbstractCommandLineWithConfirmInterface):
             backup_dir: アノテーションをバックアップとして保存するディレクトリ。指定しない場合は、バックアップを取得しない。
 
         """
-        logger_prefix = f"{str(task_index+1)} 件目: " if task_index is not None else ""
+        logger_prefix = f"{task_index+1!s} 件目: " if task_index is not None else ""
         dict_task = self.service.wrapper.get_task_or_none(self.project_id, task_id)
         if dict_task is None:
             logger.warning(f"task_id = '{task_id}' は存在しません。")
@@ -166,7 +160,9 @@ class ChangePropertiesOfAnnotationMain(AbstractCommandLineWithConfirmInterface):
         )
 
         if dict_task["status"] in [TaskStatus.WORKING.value, TaskStatus.COMPLETE.value]:
-            logger.info(f"タスク'{task_id}'は作業中または受入完了状態のため、アノテーションプロパティの変更をスキップします。 status={dict_task['status']}")
+            logger.info(
+                f"タスク'{task_id}'は作業中または受入完了状態のため、アノテーションプロパティの変更をスキップします。 status={dict_task['status']}"
+            )
             return False
 
         old_account_id: Optional[str] = dict_task["account_id"]
@@ -328,7 +324,10 @@ class ChangePropertiesOfAnnotation(AbstractCommandLineInterface):
         properties_for_cli = AnnotationDetailForCli.from_dict(properties_of_dict)
 
         if args.backup is None:
-            print("間違えてアノテーションを変更してしまっときに復元できるようにするため、'--backup'でバックアップ用のディレクトリを指定することを推奨します。", file=sys.stderr)
+            print(
+                "間違えてアノテーションを変更してしまっときに復元できるようにするため、'--backup'でバックアップ用のディレクトリを指定することを推奨します。",
+                file=sys.stderr,
+            )
             if not self.confirm_processing("復元用のバックアップディレクトリが指定されていません。処理を続行しますか？"):
                 sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
             backup_dir = None
@@ -337,9 +336,7 @@ class ChangePropertiesOfAnnotation(AbstractCommandLineInterface):
 
         super().validate_project(project_id, [ProjectMemberRole.OWNER])
 
-        main_obj = ChangePropertiesOfAnnotationMain(
-            self.service, project_id=project_id, is_force=args.force, all_yes=args.yes
-        )
+        main_obj = ChangePropertiesOfAnnotationMain(self.service, project_id=project_id, is_force=args.force, all_yes=args.yes)
         main_obj.change_annotation_properties_task_list(
             task_id_list,
             properties=properties_for_cli,
@@ -382,14 +379,16 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     )
 
     parser.add_argument(
-        "--force", action="store_true", help="過去に割り当てられていて現在の担当者が自分自身でない場合、タスクの担当者を自分自身に変更してからアノテーションプロパティを変更します。"
+        "--force",
+        action="store_true",
+        help="過去に割り当てられていて現在の担当者が自分自身でない場合、タスクの担当者を自分自身に変更してからアノテーションプロパティを変更します。",
     )
 
     parser.add_argument(
         "--backup",
         type=str,
         required=False,
-        help="アノテーションのバックアップを保存するディレクトリを指定してください。アノテーションの復元は ``annotation restore`` コマンドで実現できます。",
+        help="アノテーションのバックアップを保存するディレクトリを指定してください。アノテーションの復元は ``annotation restore`` コマンドで実現できます。",  # noqa: E501
     )
 
     parser.add_argument(
@@ -406,7 +405,7 @@ def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argpa
     subcommand_help = "アノテーションのプロパティを変更します。"
     description = (
         "アノテーションのプロパティを一括で変更します。ただし、作業中状態のタスクのアノテーションのプロパティは変更できません。"
-        "間違えてアノテーションのプロパティを変更したときに復元できるようにするため、 ``--backup`` でバックアップ用のディレクトリを指定することを推奨します。"
+        "間違えてアノテーションのプロパティを変更したときに復元できるようにするため、 ``--backup`` でバックアップ用のディレクトリを指定することを推奨します。"  # noqa: E501
     )
     epilog = "オーナロールを持つユーザで実行してください。"
 

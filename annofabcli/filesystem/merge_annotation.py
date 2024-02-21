@@ -54,9 +54,7 @@ class MergeAnnotationMain:
     def _is_segmentation(anno: Dict[str, Any]) -> bool:
         return anno["data"]["_type"] in ["Segmentation", "SegmentationV2"]
 
-    def write_merged_annotation(
-        self, parser1: SimpleAnnotationParser, parser2: SimpleAnnotationParser, output_json: Path
-    ):
+    def write_merged_annotation(self, parser1: SimpleAnnotationParser, parser2: SimpleAnnotationParser, output_json: Path):
         simple_annotation1 = parser1.load_json()
         simple_annotation2 = parser2.load_json()
         details1 = simple_annotation1["details"]
@@ -80,9 +78,7 @@ class MergeAnnotationMain:
             merged_details.append(new_anno)
             # 塗りつぶしアノテーションファイルをコピーする
             if self._is_segmentation(new_anno):
-                self._write_outer_file(
-                    parser=(parser2 if adopt_two else parser1), anno=new_anno, output_json=output_json
-                )
+                self._write_outer_file(parser=(parser2 if adopt_two else parser1), anno=new_anno, output_json=output_json)
 
         merged_details.extend(list(details2_dict.values()))
 
@@ -113,9 +109,7 @@ class MergeAnnotationMain:
             json.dump(simple_annotation, f, ensure_ascii=False)
 
     @staticmethod
-    def _get_parser(
-        annotation_path: Path, zip_file: Optional[zipfile.ZipFile], json_path: Path
-    ) -> Optional[SimpleAnnotationParser]:
+    def _get_parser(annotation_path: Path, zip_file: Optional[zipfile.ZipFile], json_path: Path) -> Optional[SimpleAnnotationParser]:
         if annotation_path.is_dir():
             if (annotation_path / json_path).exists():
                 return SimpleAnnotationDirParser(annotation_path / json_path)
@@ -221,9 +215,7 @@ class MergeAnnotation(AbstractCommandLineWithoutWebapiInterface):
 
         main_obj = MergeAnnotationMain()
         target_task_ids = get_list_from_args(args.task_id) if args.task_id is not None else None
-        main_obj.main(
-            args.annotation[0], args.annotation[1], output_dir=args.output_dir, target_task_ids=target_task_ids
-        )
+        main_obj.main(args.annotation[0], args.annotation[1], output_dir=args.output_dir, target_task_ids=target_task_ids)
 
 
 def main(args: argparse.Namespace) -> None:
@@ -246,7 +238,9 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     argument_parser.add_task_id(
         required=False,
         help_message=(
-            "マージ対象であるタスクのtask_idを指定します。" "指定しない場合、すべてのタスクがマージ対象です。" " ``file://`` を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。"
+            "マージ対象であるタスクのtask_idを指定します。"
+            "指定しない場合、すべてのタスクがマージ対象です。"
+            " ``file://`` を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。"
         ),
     )
 
@@ -258,7 +252,7 @@ def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argpa
 
     subcommand_help = "2つのアノテーションzip（またはzipを展開したディレクトリ）をマージします。"
 
-    description = "2つのアノテーションzip（またはzipを展開したディレクトリ）をマージします。具体的にはアノテーションjsonの'details'キー配下の情報をマージします。"
+    description = "2つのアノテーションzip（またはzipを展開したディレクトリ）をマージします。具体的にはアノテーションjsonの'details'キー配下の情報をマージします。"  # noqa: E501
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
     parse_args(parser)

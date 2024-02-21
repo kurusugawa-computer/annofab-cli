@@ -55,9 +55,7 @@ class PutProjectMembers(AbstractCommandLineInterface):
             "sampling_acceptance_rate": member.sampling_acceptance_rate,
             "last_updated_datetime": last_updated_datetime,
         }
-        updated_project_member = self.service.api.put_project_member(
-            project_id, member.user_id, request_body=request_body
-        )[0]
+        updated_project_member = self.service.api.put_project_member(project_id, member.user_id, request_body=request_body)[0]
         return updated_project_member
 
     def delete_project_member(self, project_id: str, deleted_member: Dict[str, Any]):
@@ -66,9 +64,7 @@ class PutProjectMembers(AbstractCommandLineInterface):
             "member_role": deleted_member["member_role"],
             "last_updated_datetime": deleted_member["updated_datetime"],
         }
-        updated_project_member = self.service.api.put_project_member(
-            project_id, deleted_member["user_id"], request_body=request_body
-        )[0]
+        updated_project_member = self.service.api.put_project_member(project_id, deleted_member["user_id"], request_body=request_body)[0]
         return updated_project_member
 
     def put_project_members(self, project_id: str, members: List[Member], delete: bool = False):
@@ -111,16 +107,12 @@ class PutProjectMembers(AbstractCommandLineInterface):
             # メンバを登録
             try:
                 self.invite_project_member(project_id, member, old_project_members)
-                logger.debug(
-                    f"user_id = {member.user_id}, member_role = {member.member_role.value} のユーザをプ" f"ロジェクトメンバに登録しました。"
-                )
+                logger.debug(f"user_id = {member.user_id}, member_role = {member.member_role.value} のユーザをプ" f"ロジェクトメンバに登録しました。")
                 count_invite_members += 1
 
             except requests.exceptions.HTTPError as e:
                 logger.warning(e)
-                logger.warning(
-                    f"プロジェクトメンバの登録に失敗しました。" f"user_id = {member.user_id}, member_role = {member.member_role.value}"
-                )
+                logger.warning(f"プロジェクトメンバの登録に失敗しました。" f"user_id = {member.user_id}, member_role = {member.member_role.value}")
 
         logger.info(f"{project_title} に、{count_invite_members} / {len(members)} 件のプロジェクトメンバを登録しました。")
 
@@ -129,9 +121,7 @@ class PutProjectMembers(AbstractCommandLineInterface):
             user_id_list = [e.user_id for e in members]
             # 自分自身は削除しないようにする
             deleted_members = [
-                e
-                for e in old_project_members
-                if (e["user_id"] not in user_id_list and e["user_id"] != self.service.api.login_user_id)
+                e for e in old_project_members if (e["user_id"] not in user_id_list and e["user_id"] != self.service.api.login_user_id)
             ]
 
             count_delete_members = 0
@@ -203,7 +193,9 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         ),
     )
 
-    parser.add_argument("--delete", action="store_true", help="CSVファイルに記載されていないプロジェクトメンバを削除します。ただし自分自身は削除しません。")
+    parser.add_argument(
+        "--delete", action="store_true", help="CSVファイルに記載されていないプロジェクトメンバを削除します。ただし自分自身は削除しません。"
+    )
 
     parser.set_defaults(subcommand_func=main)
 

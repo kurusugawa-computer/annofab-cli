@@ -49,7 +49,7 @@ class ListAttributeRestrictionMain:
         self,
         labels: list[dict[str, Any]],
         additionals: list[dict[str, Any]],
-        format: FormatArgument = FormatArgument.DETAILED_TEXT,  # noqa: builtin-argument-shadowing # pylint: disable=redefined-builtin
+        format: FormatArgument = FormatArgument.DETAILED_TEXT,  # noqa: A002 # pylint: disable=redefined-builtin
     ) -> None:
         self.attribute_dict = {e["additional_data_definition_id"]: e for e in additionals}
         self.label_dict = {e["label_id"]: e for e in labels}
@@ -110,9 +110,7 @@ class ListAttributeRestrictionMain:
         if str_type == "Imply":
             # 属性間の制約
             premise = condition["premise"]
-            if_condition_text = self.get_restriction_text(
-                premise["additional_data_definition_id"], premise["condition"]
-            )
+            if_condition_text = self.get_restriction_text(premise["additional_data_definition_id"], premise["condition"])
             then_text = self.get_restriction_text(attribute_id, condition["condition"])
             return f"{then_text} IF {if_condition_text}"
 
@@ -190,12 +188,8 @@ class ListAttributeRestrictionMain:
         result: set[str] = set()
 
         if target_attribute_names is not None:
-            tmp_attribute_list = [
-                self.get_attribute_from_name(attribute_name) for attribute_name in target_attribute_names
-            ]
-            tmp_ids = {
-                attribute["additional_data_definition_id"] for attribute in tmp_attribute_list if attribute is not None
-            }
+            tmp_attribute_list = [self.get_attribute_from_name(attribute_name) for attribute_name in target_attribute_names]
+            tmp_ids = {attribute["additional_data_definition_id"] for attribute in tmp_attribute_list if attribute is not None}
             result = result | tmp_ids
 
         if target_label_names is not None:
@@ -214,9 +208,7 @@ class ListAttributeRestrictionMain:
         target_label_names: Optional[Collection[str]] = None,
     ) -> list[str]:
         if target_attribute_names is not None or target_label_names is not None:
-            target_attribute_ids = self.get_target_attribute_ids(
-                target_attribute_names=target_attribute_names, target_label_names=target_label_names
-            )
+            target_attribute_ids = self.get_target_attribute_ids(target_attribute_names=target_attribute_names, target_label_names=target_label_names)
             return [
                 self.get_restriction_text(e["additional_data_definition_id"], e["condition"])
                 for e in restrictions

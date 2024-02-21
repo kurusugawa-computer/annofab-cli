@@ -45,9 +45,7 @@ class PutInspectionComment(AbstractCommandLineInterface):
         dict_comments = annofabcli.common.cli.get_json_from_args(args.json)
         comments_for_task_list = convert_cli_comments(dict_comments, comment_type=CommentType.INSPECTION)
 
-        main_obj = PutCommentMain(
-            self.service, project_id=args.project_id, comment_type=CommentType.INSPECTION, all_yes=self.all_yes
-        )
+        main_obj = PutCommentMain(self.service, project_id=args.project_id, comment_type=CommentType.INSPECTION, all_yes=self.all_yes)
         main_obj.add_comments_for_task_list(
             comments_for_task_list=comments_for_task_list,
             parallelism=args.parallelism,
@@ -65,9 +63,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
 
     argument_parser.add_project_id()
 
-    SAMPLE_JSON = {
-        "task1": {"input_data1": [{"comment": "type属性が間違っています。", "data": {"x": 10, "y": 20, "_type": "Point"}}]}
-    }
+    SAMPLE_JSON = {"task1": {"input_data1": [{"comment": "type属性が間違っています。", "data": {"x": 10, "y": 20, "_type": "Point"}}]}}
     parser.add_argument(
         "--json",
         type=str,
@@ -79,7 +75,9 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     )
 
     parser.add_argument(
-        "--parallelism", type=int, help="使用するプロセス数（並列度）を指定してください。指定する場合は必ず ``--yes`` を指定してください。指定しない場合は、逐次的に処理します。"
+        "--parallelism",
+        type=int,
+        help="使用するプロセス数（並列度）を指定してください。指定する場合は必ず ``--yes`` を指定してください。指定しない場合は、逐次的に処理します。",  # noqa: E501
     )
 
     parser.set_defaults(subcommand_func=main)

@@ -31,9 +31,7 @@ def get_histogram_figure(
     hist, bin_edges = numpy.histogram(ser, bins)
 
     df_histogram = pandas.DataFrame({"frequency": hist, "left": bin_edges[:-1], "right": bin_edges[1:]})
-    df_histogram["interval"] = [
-        f"{left:.1f} to {right:.1f}" for left, right in zip(df_histogram["left"], df_histogram["right"])
-    ]
+    df_histogram["interval"] = [f"{left:.1f} to {right:.1f}" for left, right in zip(df_histogram["left"], df_histogram["right"])]
 
     source = ColumnDataSource(df_histogram)
     fig = figure(

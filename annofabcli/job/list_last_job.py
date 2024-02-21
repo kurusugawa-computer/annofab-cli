@@ -61,9 +61,7 @@ class ListLastJob(AbstractCommandLineInterface):
 
         return project_info
 
-    def get_last_job_list(
-        self, project_id_list: List[str], job_type: ProjectJobType, add_details: bool = False
-    ) -> List[ProjectJobInfo]:
+    def get_last_job_list(self, project_id_list: List[str], job_type: ProjectJobType, add_details: bool = False) -> List[ProjectJobInfo]:
         job_list = []
         for project_id in project_id_list:
             project = self.service.wrapper.get_project_or_none(project_id)
@@ -105,9 +103,7 @@ class ListLastJob(AbstractCommandLineInterface):
 
         """
         query_params = {"status": "active", "account_id": self.service.api.account_id}
-        project_list = self.service.wrapper.get_all_projects_of_organization(
-            organization_name, query_params=query_params
-        )
+        project_list = self.service.wrapper.get_all_projects_of_organization(organization_name, query_params=query_params)
         return [e["project_id"] for e in project_list]
 
     def main(self) -> None:
@@ -152,7 +148,8 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "-org",
         "--organization",
         type=str,
-        help="組織配下のすべてのプロジェクトのジョブを出力したい場合は、組織名を指定してください。" "自分が所属している進行中のプロジェクトが対象になります。",
+        help="組織配下のすべてのプロジェクトのジョブを出力したい場合は、組織名を指定してください。"
+        "自分が所属している進行中のプロジェクトが対象になります。",
     )
 
     parser.add_argument(
@@ -161,9 +158,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         help="プロジェクトに関する詳細情報を表示します" "（ ``task_last_updated_datetime, annotation_specs_last_updated_datetime`` ）",
     )
 
-    argument_parser.add_format(
-        choices=[FormatArgument.CSV, FormatArgument.JSON, FormatArgument.PRETTY_JSON], default=FormatArgument.CSV
-    )
+    argument_parser.add_format(choices=[FormatArgument.CSV, FormatArgument.JSON, FormatArgument.PRETTY_JSON], default=FormatArgument.CSV)
     argument_parser.add_output()
     argument_parser.add_csv_format()
 

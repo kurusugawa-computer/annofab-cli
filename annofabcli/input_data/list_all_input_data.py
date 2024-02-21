@@ -69,9 +69,7 @@ class ListInputDataWithJsonMain:
         logger.debug("入力データを絞り込み中")
         input_data_id_set = set(input_data_id_list) if input_data_id_list is not None else None
         filtered_input_data_list = [
-            e
-            for e in input_data_list
-            if self.filter_input_data_list(e, input_data_query=input_data_query, input_data_id_set=input_data_id_set)
+            e for e in input_data_list if self.filter_input_data_list(e, input_data_query=input_data_query, input_data_id_set=input_data_id_set)
         ]
         return filtered_input_data_list
 
@@ -80,19 +78,13 @@ class ListInputDataWithJson(AbstractCommandLineInterface):
     def main(self) -> None:
         args = self.args
 
-        input_data_id_list = (
-            annofabcli.common.cli.get_list_from_args(args.input_data_id) if args.input_data_id is not None else None
-        )
+        input_data_id_list = annofabcli.common.cli.get_list_from_args(args.input_data_id) if args.input_data_id is not None else None
         input_data_query = (
-            InputDataQuery.from_dict(annofabcli.common.cli.get_json_from_args(args.input_data_query))
-            if args.input_data_query is not None
-            else None
+            InputDataQuery.from_dict(annofabcli.common.cli.get_json_from_args(args.input_data_query)) if args.input_data_query is not None else None
         )
 
         project_id = args.project_id
-        super().validate_project(
-            project_id, project_member_roles=[ProjectMemberRole.TRAINING_DATA_USER, ProjectMemberRole.OWNER]
-        )
+        super().validate_project(project_id, project_member_roles=[ProjectMemberRole.TRAINING_DATA_USER, ProjectMemberRole.OWNER])
 
         main_obj = ListInputDataWithJsonMain(self.service)
         input_data_list = main_obj.get_input_data_list(
@@ -177,7 +169,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
 def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     subcommand_name = "list_all"
     subcommand_help = "すべての入力データの一覧を出力します。"
-    description = "すべての入力データの一覧を出力します。\n出力される入力データは、コマンドを実行した日の02:00(JST)頃の状態です。最新の情報を出力したい場合は、 ``--latest`` を指定してください。"
+    description = "すべての入力データの一覧を出力します。\n出力される入力データは、コマンドを実行した日の02:00(JST)頃の状態です。最新の情報を出力したい場合は、 ``--latest`` を指定してください。"  # noqa: E501
     epilog = "アノテーションユーザまたはオーナロールを持つユーザで実行してください。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)

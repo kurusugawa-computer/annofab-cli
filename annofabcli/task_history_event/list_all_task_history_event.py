@@ -39,7 +39,7 @@ class ListTaskHistoryEventWithJsonMain:
             task_id_set = set(task_id_list)
             for event in task_history_event_list:
                 if event["task_id"] in task_id_set:
-                    result.append(event)
+                    result.append(event)  # noqa: PERF401
 
             return result
 
@@ -112,9 +112,7 @@ class ListTaskHistoryEventWithJson(AbstractCommandLineInterface):
         )
 
     @staticmethod
-    def to_all_task_history_event_list_from_dict(
-        task_history_event_dict: dict[str, list[dict[str, Any]]]
-    ) -> List[dict[str, Any]]:
+    def to_all_task_history_event_list_from_dict(task_history_event_dict: dict[str, list[dict[str, Any]]]) -> List[dict[str, Any]]:
         all_task_history_event_list = []
         for task_history_event_list in task_history_event_dict.values():
             all_task_history_event_list.extend(task_history_event_list)
@@ -160,7 +158,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
 def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     subcommand_name = "list_all"
     subcommand_help = "すべてのタスク履歴イベントの一覧を出力します。"
-    description = "すべてのタスク履歴イベントの一覧を出力します。\n出力されるタスク履歴イベントは、コマンドを実行した日の02:00(JST)頃の状態です。最新の情報を出力する方法はありません。"
+    description = "すべてのタスク履歴イベントの一覧を出力します。\n出力されるタスク履歴イベントは、コマンドを実行した日の02:00(JST)頃の状態です。最新の情報を出力する方法はありません。"  # noqa: E501
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
     parse_args(parser)

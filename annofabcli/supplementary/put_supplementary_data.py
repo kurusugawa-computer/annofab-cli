@@ -88,9 +88,7 @@ class SubPutSupplementaryData:
             if supplementary_data.supplementary_data_type is not None:
                 request_body.update({"supplementary_data_type": supplementary_data.supplementary_data_type})
 
-            logger.debug(
-                f"'{file_path}'を補助情報として登録します。supplementary_data_name='{supplementary_data.supplementary_data_name}'"
-            )
+            logger.debug(f"'{file_path}'を補助情報として登録します。supplementary_data_name='{supplementary_data.supplementary_data_name}'")
             self.service.wrapper.put_supplementary_data_from_file(
                 project_id,
                 input_data_id=supplementary_data.input_data_id,
@@ -102,9 +100,7 @@ class SubPutSupplementaryData:
         else:
             supplementary_data_type = supplementary_data.supplementary_data_type
             if supplementary_data_type is None:
-                supplementary_data_type = (
-                    "text" if supplementary_data.supplementary_data_path.endswith(".txt") else "image"
-                )
+                supplementary_data_type = "text" if supplementary_data.supplementary_data_path.endswith(".txt") else "image"
 
             request_body = {
                 "supplementary_data_name": supplementary_data.supplementary_data_name,
@@ -144,12 +140,8 @@ class SubPutSupplementaryData:
 
         return yes
 
-    def confirm_put_supplementary_data(
-        self, csv_supplementary_data: CsvSupplementaryData, already_exists: bool = False
-    ) -> bool:
-        message_for_confirm = (
-            f"supplementary_data_name='{csv_supplementary_data.supplementary_data_name}' の補助情報を登録しますか？"
-        )
+    def confirm_put_supplementary_data(self, csv_supplementary_data: CsvSupplementaryData, already_exists: bool = False) -> bool:
+        message_for_confirm = f"supplementary_data_name='{csv_supplementary_data.supplementary_data_name}' の補助情報を登録しますか？"
         if already_exists:
             message_for_confirm += f"supplementary_data_id={csv_supplementary_data.supplementary_data_id} を上書きします。"
         return self.confirm_processing(message_for_confirm)
@@ -161,21 +153,15 @@ class SubPutSupplementaryData:
             self.supplementary_data_cache[key] = supplementary_data_list if supplementary_data_list is not None else []
         return self.supplementary_data_cache[key]
 
-    def get_supplementary_data_by_id(
-        self, project_id: str, input_data_id: str, supplementary_data_id: str
-    ) -> Optional[SupplementaryData]:
+    def get_supplementary_data_by_id(self, project_id: str, input_data_id: str, supplementary_data_id: str) -> Optional[SupplementaryData]:
         cached_list = self.get_supplementary_data_list_cached(project_id, input_data_id)
         return first_true(cached_list, pred=lambda e: e["supplementary_data_id"] == supplementary_data_id)
 
-    def get_supplementary_data_by_number(
-        self, project_id: str, input_data_id: str, supplementary_data_number: int
-    ) -> Optional[SupplementaryData]:
+    def get_supplementary_data_by_number(self, project_id: str, input_data_id: str, supplementary_data_number: int) -> Optional[SupplementaryData]:
         cached_list = self.get_supplementary_data_list_cached(project_id, input_data_id)
         return first_true(cached_list, pred=lambda e: e["supplementary_data_number"] == supplementary_data_number)
 
-    def put_supplementary_data_main(
-        self, project_id: str, csv_supplementary_data: CsvSupplementaryData, overwrite: bool = False
-    ) -> bool:
+    def put_supplementary_data_main(self, project_id: str, csv_supplementary_data: CsvSupplementaryData, overwrite: bool = False) -> bool:
         last_updated_datetime = None
         input_data_id = csv_supplementary_data.input_data_id
         supplementary_data_id = csv_supplementary_data.supplementary_data_id
@@ -191,17 +177,9 @@ class SubPutSupplementaryData:
             old_supplementary_data = self.get_supplementary_data_by_id(project_id, input_data_id, supplementary_data_id)
         else:
             supplementary_data_number = csv_supplementary_data.supplementary_data_number
-            old_supplementary_data_key = (
-                f"input_data_id={input_data_id}, supplementary_data_number={supplementary_data_number}"
-            )
-            old_supplementary_data = self.get_supplementary_data_by_number(
-                project_id, input_data_id, supplementary_data_number
-            )
-            supplementary_data_id = (
-                old_supplementary_data["supplementary_data_id"]
-                if old_supplementary_data is not None
-                else str(uuid.uuid4())
-            )
+            old_supplementary_data_key = f"input_data_id={input_data_id}, supplementary_data_number={supplementary_data_number}"
+            old_supplementary_data = self.get_supplementary_data_by_number(project_id, input_data_id, supplementary_data_number)
+            supplementary_data_id = old_supplementary_data["supplementary_data_id"] if old_supplementary_data is not None else str(uuid.uuid4())
 
         if old_supplementary_data is not None:
             if overwrite:
@@ -218,9 +196,7 @@ class SubPutSupplementaryData:
                 logger.warning(f"'{supplementary_data_path}' は存在しません。")
                 return False
 
-        if not self.confirm_put_supplementary_data(
-            csv_supplementary_data, already_exists=(last_updated_datetime is not None)
-        ):
+        if not self.confirm_put_supplementary_data(csv_supplementary_data, already_exists=last_updated_datetime is not None):
             return False
 
         # 補助情報を登録
@@ -275,7 +251,7 @@ class PutSupplementaryData(AbstractCommandLineInterface):
             overwrite: Trueならば、supplementary_data_id（省略時はsupplementary_data_number）がすでに存在していたら上書きします。Falseならばスキップします。
             parallelism: 並列度
 
-        """
+        """  # noqa: E501
 
         project_title = self.facade.get_project_title(project_id)
         logger.info(f"{project_title} に、{len(supplementary_data_list)} 件の補助情報を登録します。")
@@ -291,18 +267,14 @@ class PutSupplementaryData(AbstractCommandLineInterface):
 
         else:
             for csv_supplementary_data in supplementary_data_list:
-                result = obj.put_supplementary_data_main(
-                    project_id, csv_supplementary_data=csv_supplementary_data, overwrite=overwrite
-                )
+                result = obj.put_supplementary_data_main(project_id, csv_supplementary_data=csv_supplementary_data, overwrite=overwrite)
                 if result:
                     count_put_supplementary_data += 1
 
         logger.info(f"{project_title} に、{count_put_supplementary_data} / {len(supplementary_data_list)} 件の補助情報を登録しました。")
 
     @staticmethod
-    def get_supplementary_data_list_from_dict(
-        supplementary_data_dict_list: List[Dict[str, Any]]
-    ) -> List[CsvSupplementaryData]:
+    def get_supplementary_data_list_from_dict(supplementary_data_dict_list: List[Dict[str, Any]]) -> List[CsvSupplementaryData]:
         return [CsvSupplementaryData.from_dict(e) for e in supplementary_data_dict_list]
 
     @staticmethod

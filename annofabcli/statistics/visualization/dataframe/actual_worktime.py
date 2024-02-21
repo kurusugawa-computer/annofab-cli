@@ -19,7 +19,7 @@ class ActualWorktime:
     `project_id`,`date`, `account_id`のペアがユニークなキーです。
     """
 
-    columns = ["project_id", "date", "account_id", "actual_worktime_hour"]
+    columns = ["project_id", "date", "account_id", "actual_worktime_hour"]  # noqa: RUF012
 
     @classmethod
     def required_columns_exist(cls, df: pandas.DataFrame) -> bool:

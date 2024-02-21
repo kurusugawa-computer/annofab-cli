@@ -44,7 +44,7 @@ def fill_annotation(
     draw: PIL.ImageDraw.Draw,
     annotation: SimpleAnnotationDetail,
     label_color_dict: Dict[str, RGB],
-    outer_image: Optional[Any] = None,
+    outer_image: Optional[Any] = None,  # noqa: ANN401
 ) -> PIL.ImageDraw.Draw:
     """
     1個のアノテーションを、塗りつぶしで描画する。（矩形、ポリゴン、塗りつぶし、塗りつぶしv2）
@@ -84,9 +84,7 @@ def fill_annotation(
         if outer_image is not None:
             draw.bitmap([0, 0], outer_image, fill=color)
         else:
-            logger.warning(
-                f"アノテーション種類が`{data_type}`ですが、`outer_image`がNoneです。 " f"annotation_id={annotation.annotation_id}"
-            )
+            logger.warning(f"アノテーション種類が`{data_type}`ですが、`outer_image`がNoneです。 " f"annotation_id={annotation.annotation_id}")
 
     return draw
 
@@ -126,9 +124,7 @@ def fill_annotation_list(
                 with parser.open_outer_file(data_uri_outer_image) as f:
                     outer_image = PIL.Image.open(f)
                     # アノテーション情報を描画する
-                    fill_annotation(
-                        draw=draw, annotation=annotation, label_color_dict=label_color_dict, outer_image=outer_image
-                    )
+                    fill_annotation(draw=draw, annotation=annotation, label_color_dict=label_color_dict, outer_image=outer_image)
 
             except AnnotationOuterFileNotFoundError as e:
                 logger.warning(str(e))
@@ -145,7 +141,7 @@ def write_annotation_image(
     image_size: InputDataSize,
     label_color_dict: Dict[str, RGB],
     output_image_file: Path,
-    background_color: Optional[Any] = None,
+    background_color: Optional[Any] = None,  # noqa: ANN401
     label_name_list: Optional[List[str]] = None,
 ):
     """
@@ -179,7 +175,7 @@ def write_annotation_image(
             write_annotation_image(parser=parser, image_size=(64,64), label_color_dict=label_color_dict,
                                output_image_file=Path("out.png"), background_color=(64,64,64))
 
-    """  # noqa: E501
+    """
 
     image = PIL.Image.new(mode="RGB", size=image_size, color=background_color)
     draw = PIL.ImageDraw.Draw(image)
@@ -223,17 +219,13 @@ def write_annotation_grayscale_image(
     # 下層レイヤにあるアノテーションから順に画像化する
     # reversed関数を使う理由：`simple_annotation.details`は上層レイヤのアノテーションから順に格納されているため
     if label_name_list is not None:
-        annotation_list = [
-            elm for elm in reversed(simple_annotation["details"]) if elm["label"] in set(label_name_list)
-        ]
+        annotation_list = [elm for elm in reversed(simple_annotation["details"]) if elm["label"] in set(label_name_list)]
     else:
         annotation_list = list(reversed(simple_annotation["details"]))
 
     # 描画対象のアノテーションを絞り込む
     annotation_list = [
-        e
-        for e in annotation_list
-        if e["data"] is not None and e["data"]["_type"] in ["BoundingBox", "Points", "SegmentationV2", "Segmentation"]
+        e for e in annotation_list if e["data"] is not None and e["data"]["_type"] in ["BoundingBox", "Points", "SegmentationV2", "Segmentation"]
     ]
 
     if len(annotation_list) > 255:
@@ -279,7 +271,7 @@ def write_annotation_images_from_path(
     image_size: Optional[InputDataSize] = None,
     input_data_dict: Optional[Dict[str, InputData]] = None,
     output_image_extension: str = "png",
-    background_color: Optional[Any] = None,
+    background_color: Optional[Any] = None,  # noqa: ANN401
     label_name_list: Optional[List[str]] = None,
     is_target_parser_func: Optional[IsParserFunc] = None,
 ) -> bool:
@@ -310,9 +302,7 @@ def write_annotation_images_from_path(
         def _get_image_size_from_system_metadata(arg_input_data: Dict[str, Any]):
             # 入力データの`input_data.system_metadata.original_resolution`を参照して、画像サイズを決める。
             original_resolution = arg_input_data["system_metadata"]["original_resolution"]
-            if original_resolution is not None and (
-                original_resolution.get("width") is not None and original_resolution.get("height") is not None
-            ):
+            if original_resolution is not None and (original_resolution.get("width") is not None and original_resolution.get("height") is not None):
                 return original_resolution.get("width"), original_resolution.get("height")
             else:
                 logger.warning(
@@ -366,8 +356,8 @@ def write_annotation_images_from_path(
             output_image_file=output_image_file,
             label_name_list=label_name_list,
         )
-        logger.debug(f"画像ファイル '{str(output_image_file)}' を生成しました。")
+        logger.debug(f"画像ファイル '{output_image_file!s}' を生成しました。")
         count_created_image += 1
 
-    logger.info(f"{str(output_dir_path)} に、{count_created_image} 件の画像ファイルを生成しました。")
+    logger.info(f"{output_dir_path!s} に、{count_created_image} 件の画像ファイルを生成しました。")
     return True

@@ -42,10 +42,7 @@ class UpdateMetadataMain(AbstractCommandLineWithConfirmInterface):
             logger.warning(f"{logging_prefix} 入力データは存在しないのでスキップします。input_data_id={input_data_id}")
             return False
 
-        logger.debug(
-            f"{logging_prefix} input_data_id={input_data['input_data_id']}, "
-            f"input_data_name={input_data['input_data_name']}"
-        )
+        logger.debug(f"{logging_prefix} input_data_id={input_data['input_data_id']}, " f"input_data_name={input_data['input_data_name']}")
         if not self.confirm_processing(f"入力データのメタデータを更新しますか？ input_data_id={input_data['input_data_id']}"):
             return False
 
@@ -59,9 +56,7 @@ class UpdateMetadataMain(AbstractCommandLineWithConfirmInterface):
         logger.debug(f"{logging_prefix} 入力データを更新しました。input_data_id={input_data['input_data_id']}")
         return True
 
-    def set_metadata_to_input_data_wrapper(
-        self, tpl: Tuple[int, str], project_id: str, metadata: Dict[str, Any], overwrite_metadata: bool = False
-    ):
+    def set_metadata_to_input_data_wrapper(self, tpl: Tuple[int, str], project_id: str, metadata: Dict[str, Any], overwrite_metadata: bool = False):
         input_data_index, input_data_id = tpl
         return self.set_metadata_to_input_data(
             project_id,
@@ -160,17 +155,20 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--metadata",
         required=True,
         type=str,
-        help="入力データに設定する ``metadata`` をJSON形式で指定してください。メタデータの値は文字列です。" " ``file://`` を先頭に付けると、JSON形式のファイルを指定できます。",
+        help="入力データに設定する ``metadata`` をJSON形式で指定してください。メタデータの値は文字列です。"
+        " ``file://`` を先頭に付けると、JSON形式のファイルを指定できます。",
     )
 
     parser.add_argument(
         "--overwrite",
         action="store_true",
-        help="指定した場合、メタデータを上書きして更新します（すでに設定されているメタデータは削除されます）。指定しない場合、 ``--metadata`` に指定されたキーのみ更新されます。",
+        help="指定した場合、メタデータを上書きして更新します（すでに設定されているメタデータは削除されます）。指定しない場合、 ``--metadata`` に指定されたキーのみ更新されます。",  # noqa: E501
     )
 
     parser.add_argument(
-        "--parallelism", type=int, help="使用するプロセス数（並列度）を指定してください。指定する場合は必ず ``--yes`` を指定してください。指定しない場合は、逐次的に処理します。"
+        "--parallelism",
+        type=int,
+        help="使用するプロセス数（並列度）を指定してください。指定する場合は必ず ``--yes`` を指定してください。指定しない場合は、逐次的に処理します。",  # noqa: E501
     )
 
     parser.set_defaults(subcommand_func=main)
@@ -181,8 +179,6 @@ def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argpa
     subcommand_help = "入力データのメタデータを更新します。"
     description = "入力データのメタデータを更新します。"
     epilog = "オーナロールを持つユーザで実行してください。"
-    parser = annofabcli.common.cli.add_parser(
-        subparsers, subcommand_name, subcommand_help, description=description, epilog=epilog
-    )
+    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description=description, epilog=epilog)
     parse_args(parser)
     return parser

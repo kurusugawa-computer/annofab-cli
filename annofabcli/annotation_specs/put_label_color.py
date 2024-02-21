@@ -72,9 +72,7 @@ class PuttingLabelColorMain(AbstractCommandLineWithConfirmInterface):
     def confirm_to_change_label_color(self, changed_labels: list[Label]) -> bool:
         confirm_message = f"以下のラベル({len(changed_labels)})件を変更しますか？"
 
-        str_changed_labels = "\n".join(
-            [f" * label_name_en='{e.label_name_en}', label_id='{e.label_id}'" for e in changed_labels]
-        )
+        str_changed_labels = "\n".join([f" * label_name_en='{e.label_name_en}', label_id='{e.label_id}'" for e in changed_labels])
         confirm_message = confirm_message + "\n" + str_changed_labels
         return self.confirm_processing(confirm_message)
 

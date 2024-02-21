@@ -123,9 +123,7 @@ def get_copy_target_list(str_copy_target_list: list[str]) -> list[CopyTarget]:
 
 
 class CopyAnnotationMain(AbstractCommandLineWithConfirmInterface):
-    def __init__(
-        self, service: annofabapi.Resource, *, project_id: str, all_yes: bool, overwrite: bool, merge: bool, force: bool
-    ) -> None:
+    def __init__(self, service: annofabapi.Resource, *, project_id: str, all_yes: bool, overwrite: bool, merge: bool, force: bool) -> None:
         self.service = service
         self.project_id = project_id
         self.overwrite = overwrite
@@ -183,9 +181,7 @@ class CopyAnnotationMain(AbstractCommandLineWithConfirmInterface):
         return copy_count > 0
 
     @staticmethod
-    def _merge_annotation(
-        src_details: list[dict[str, Any]], dest_details: list[dict[str, Any]]
-    ) -> list[dict[str, Any]]:
+    def _merge_annotation(src_details: list[dict[str, Any]], dest_details: list[dict[str, Any]]) -> list[dict[str, Any]]:
         details = copy.deepcopy(dest_details)
 
         # annotation_idが重複してたときに上書きできるように、annotation_idからindexを取得できるようにする
@@ -214,7 +210,7 @@ class CopyAnnotationMain(AbstractCommandLineWithConfirmInterface):
         )
         if src_annotation is None:
             logger.warning(
-                f"task_id='{copy_target.src_task_id}'のタスクが存在しないか、またはtask_id='{copy_target.src_task_id}'のタスクにinput_data_id='{copy_target.src_input_data_id}'の入力データが存在しません。"  # noqa: E501
+                f"task_id='{copy_target.src_task_id}'のタスクが存在しないか、またはtask_id='{copy_target.src_task_id}'のタスクにinput_data_id='{copy_target.src_input_data_id}'の入力データが存在しません。"
             )
             return False
 
@@ -225,7 +221,7 @@ class CopyAnnotationMain(AbstractCommandLineWithConfirmInterface):
         )
         if dest_annotation is None:
             logger.warning(
-                f"task_id='{copy_target.dest_task_id}'のタスクが存在しないか、またはtask_id='{copy_target.dest_task_id}'のタスクにinput_data_id='{copy_target.dest_input_data_id}'の入力データが存在しません。"  # noqa: E501
+                f"task_id='{copy_target.dest_task_id}'のタスクが存在しないか、またはtask_id='{copy_target.dest_task_id}'のタスクにinput_data_id='{copy_target.dest_input_data_id}'の入力データが存在しません。"
             )
             return False
 
@@ -252,9 +248,7 @@ class CopyAnnotationMain(AbstractCommandLineWithConfirmInterface):
             account_id=self.service.api.account_id,
         )
         request_body["updated_datetime"] = dest_annotation["updated_datetime"]
-        self.service.api.put_annotation(
-            self.project_id, copy_target.dest_task_id, copy_target.dest_input_data_id, request_body=request_body
-        )
+        self.service.api.put_annotation(self.project_id, copy_target.dest_task_id, copy_target.dest_input_data_id, request_body=request_body)
         logger.debug(f"'{copy_target.src}'のアノテーションを'{copy_target.dest}'にコピーしました。")
         return True
 
@@ -396,7 +390,8 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     overwrite_merge_group.add_argument(
         "--overwrite",
         action="store_true",
-        help="コピー先にアノテーションが存在する場合、 ``--overwrite`` を指定していれば、すでに存在するアノテーションを削除してコピーします。" "指定しなければ、アノテーションのコピーをスキップします。",
+        help="コピー先にアノテーションが存在する場合、 ``--overwrite`` を指定していれば、すでに存在するアノテーションを削除してコピーします。"
+        "指定しなければ、アノテーションのコピーをスキップします。",
     )
     overwrite_merge_group.add_argument(
         "--merge",
@@ -406,7 +401,9 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "指定しなければ、アノテーションのコピーをスキップします。",
     )
     parser.add_argument(
-        "--force", action="store_true", help="過去に割り当てられていて現在の担当者が自分自身でない場合、タスクの担当者を一時的に自分自身に変更してからアノテーションをコピーします。"
+        "--force",
+        action="store_true",
+        help="過去に割り当てられていて現在の担当者が自分自身でない場合、タスクの担当者を一時的に自分自身に変更してからアノテーションをコピーします。",
     )
 
     parser.add_argument(

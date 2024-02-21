@@ -130,17 +130,13 @@ class UpdateMetadataOfTaskMain(AbstractCommandLineWithConfirmInterface):
 
             logger.info(f"{success_count} / {len(task_ids)} 件のタスクのmetadataを変更しました。")
 
-    def update_metadata_with_patch_tasks_metadata_api_wrapper(
-        self, tpl: tuple[int, int, list[str]], project_id: str, metadata: Metadata
-    ):
+    def update_metadata_with_patch_tasks_metadata_api_wrapper(self, tpl: tuple[int, int, list[str]], project_id: str, metadata: Metadata):
         global_start_position, global_stop_position, task_id_list = tpl
         logger.debug(f"{global_start_position+1} 〜 {global_stop_position} 件目のタスクのmetadataを更新します。")
         request_body = {task_id: metadata for task_id in task_id_list}
         self.service.api.patch_tasks_metadata(project_id, request_body=request_body)
 
-    def update_metadata_with_patch_tasks_metadata_api(
-        self, project_id: str, task_ids: Collection[str], metadata: Metadata
-    ):
+    def update_metadata_with_patch_tasks_metadata_api(self, project_id: str, task_ids: Collection[str], metadata: Metadata):
         """patch_tasks_metadata webapiを呼び出して、タスクのメタデータを更新します。
         注意：メタデータは上書きされます。
         """
@@ -152,9 +148,7 @@ class UpdateMetadataOfTaskMain(AbstractCommandLineWithConfirmInterface):
 
         if self.parallelism is None:
             while first_index < len(task_id_list):
-                logger.info(
-                    f"{first_index+1} 〜 {min(first_index+BATCH_SIZE, len(task_id_list))} 件目のタスクのmetadataを更新します。"
-                )
+                logger.info(f"{first_index+1} 〜 {min(first_index+BATCH_SIZE, len(task_id_list))} 件目のタスクのmetadataを更新します。")
                 request_body = {task_id: metadata for task_id in task_id_list[first_index : first_index + BATCH_SIZE]}
                 self.service.api.patch_tasks_metadata(project_id, request_body=request_body)
                 first_index += BATCH_SIZE
@@ -199,9 +193,7 @@ class UpdateMetadataOfTask(AbstractCommandLineInterface):
         task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id)
         metadata = annofabcli.common.cli.get_json_from_args(args.metadata)
         super().validate_project(args.project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER])
-        main_obj = UpdateMetadataOfTaskMain(
-            self.service, is_overwrite_metadata=args.overwrite, parallelism=args.parallelism, all_yes=args.yes
-        )
+        main_obj = UpdateMetadataOfTaskMain(self.service, is_overwrite_metadata=args.overwrite, parallelism=args.parallelism, all_yes=args.yes)
         main_obj.update_metadata_of_task(args.project_id, task_ids=task_id_list, metadata=metadata)
 
 
@@ -227,11 +219,13 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--overwrite",
         action="store_true",
-        help="指定した場合、メタデータを上書きして更新します（すでに設定されているメタデータは削除されます）。指定しない場合、 ``--metadata`` に指定されたキーのみ更新されます。",
+        help="指定した場合、メタデータを上書きして更新します（すでに設定されているメタデータは削除されます）。指定しない場合、 ``--metadata`` に指定されたキーのみ更新されます。",  # noqa: E501
     )
 
     parser.add_argument(
-        "--parallelism", type=int, help="使用するプロセス数（並列度）を指定してください。指定する場合は必ず ``--yes`` を指定してください。指定しない場合は、逐次的に処理します。"
+        "--parallelism",
+        type=int,
+        help="使用するプロセス数（並列度）を指定してください。指定する場合は必ず ``--yes`` を指定してください。指定しない場合は、逐次的に処理します。",  # noqa: E501
     )
 
     parser.set_defaults(subcommand_func=main)
@@ -242,8 +236,6 @@ def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argpa
     subcommand_help = "タスクのメタデータを更新します。"
     description = "タスクのメタデータを上書きして更新します。"
     epilog = "オーナまたはアノテーションユーザロールを持つユーザで実行してください。"
-    parser = annofabcli.common.cli.add_parser(
-        subparsers, subcommand_name, subcommand_help, description=description, epilog=epilog
-    )
+    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description=description, epilog=epilog)
     parse_args(parser)
     return parser

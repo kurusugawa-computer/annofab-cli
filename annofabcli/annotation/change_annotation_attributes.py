@@ -92,9 +92,7 @@ class ChangeAnnotationAttributesMain(AbstractCommandLineWithConfirmInterface):
         request_body = [_to_request_body_elm(annotation) for annotation in annotation_list]
         return self.service.api.batch_update_annotations(self.project_id, request_body=request_body)[0]
 
-    def get_annotation_list_for_task(
-        self, task_id: str, annotation_query: AnnotationQueryForAPI
-    ) -> list[dict[str, Any]]:
+    def get_annotation_list_for_task(self, task_id: str, annotation_query: AnnotationQueryForAPI) -> list[dict[str, Any]]:
         """
         タスク内のアノテーション一覧を取得する。
 
@@ -108,9 +106,7 @@ class ChangeAnnotationAttributesMain(AbstractCommandLineWithConfirmInterface):
         """
         dict_query = annotation_query.to_dict()
         dict_query.update({"task_id": task_id, "exact_match_task_id": True})
-        annotation_list = self.service.wrapper.get_all_annotation_list(
-            self.project_id, query_params={"query": dict_query}
-        )
+        annotation_list = self.service.wrapper.get_all_annotation_list(self.project_id, query_params={"query": dict_query})
         return annotation_list
 
     def change_attributes_for_task(
@@ -135,7 +131,7 @@ class ChangeAnnotationAttributesMain(AbstractCommandLineWithConfirmInterface):
         Returns:
             アノテーションの属性を変更するAPI ``change_annotation_attributes`` を実行したか否か
         """
-        logger_prefix = f"{str(task_index+1)} 件目: " if task_index is not None else ""
+        logger_prefix = f"{task_index+1!s} 件目: " if task_index is not None else ""
         dict_task = self.service.wrapper.get_task_or_none(self.project_id, task_id)
         if dict_task is None:
             logger.warning(f"task_id = '{task_id}' は存在しません。")
@@ -252,9 +248,7 @@ class ChangeAttributesOfAnnotation(AbstractCommandLineInterface):
         return True
 
     @classmethod
-    def get_annotation_query_for_api(
-        cls, str_annotation_query: str, annotation_specs: dict[str, Any]
-    ) -> AnnotationQueryForAPI:
+    def get_annotation_query_for_api(cls, str_annotation_query: str, annotation_specs: dict[str, Any]) -> AnnotationQueryForAPI:
         """
         CLIから受け取った`--annotation_query`の値から、APIに渡すクエリー情報を返す。
         """
@@ -263,9 +257,7 @@ class ChangeAttributesOfAnnotation(AbstractCommandLineInterface):
         return annotation_query_for_cli.to_query_for_api(annotation_specs)
 
     @classmethod
-    def get_attributes_for_api(
-        cls, str_attributes: str, annotation_specs: dict[str, Any], label_id: str
-    ) -> list[AdditionalDataV1]:
+    def get_attributes_for_api(cls, str_attributes: str, annotation_specs: dict[str, Any], label_id: str) -> list[AdditionalDataV1]:
         """
         CLIから受け取った`--attributes`の値から、APIに渡す属性情報を返す。
         """
@@ -290,15 +282,16 @@ class ChangeAttributesOfAnnotation(AbstractCommandLineInterface):
             sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
         try:
-            attributes = self.get_attributes_for_api(
-                args.attributes, annotation_specs, label_id=annotation_query.label_id
-            )
+            attributes = self.get_attributes_for_api(args.attributes, annotation_specs, label_id=annotation_query.label_id)
         except ValueError as e:
             print(f"{self.COMMON_MESSAGE} argument '--attributes' の値が不正です。 :: {e}", file=sys.stderr)
             sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
         if args.backup is None:
-            print("間違えてアノテーションを変更してしまっときに復元できるようにするため、'--backup'でバックアップ用のディレクトリを指定することを推奨します。", file=sys.stderr)
+            print(
+                "間違えてアノテーションを変更してしまっときに復元できるようにするため、'--backup'でバックアップ用のディレクトリを指定することを推奨します。",
+                file=sys.stderr,
+            )
             if not self.confirm_processing("復元用のバックアップディレクトリが指定されていません。処理を続行しますか？"):
                 sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
             backup_dir = None
@@ -307,9 +300,7 @@ class ChangeAttributesOfAnnotation(AbstractCommandLineInterface):
 
         super().validate_project(project_id, [ProjectMemberRole.OWNER])
 
-        main_obj = ChangeAnnotationAttributesMain(
-            self.service, project_id=project_id, is_force=args.force, all_yes=args.yes
-        )
+        main_obj = ChangeAnnotationAttributesMain(self.service, project_id=project_id, is_force=args.force, all_yes=args.yes)
         main_obj.change_annotation_attributes_for_task_list(
             task_id_list,
             annotation_query=annotation_query,
@@ -347,7 +338,9 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--attributes",
         type=str,
         required=True,
-        help="変更後の属性をJSON形式で指定します。" "``file://`` を先頭に付けると、JSON形式のファイルを指定できます。" f"(ex): ``{EXAMPLE_ATTRIBUTES}``",
+        help="変更後の属性をJSON形式で指定します。"
+        "``file://`` を先頭に付けると、JSON形式のファイルを指定できます。"
+        f"(ex): ``{EXAMPLE_ATTRIBUTES}``",
     )
 
     parser.add_argument("--force", action="store_true", help="完了状態のタスクのアノテーション属性も変更します。")
@@ -356,7 +349,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--backup",
         type=str,
         required=False,
-        help="アノテーションのバックアップを保存するディレクトリを指定してください。アノテーションの復元は ``annotation restore`` コマンドで実現できます。",
+        help="アノテーションのバックアップを保存するディレクトリを指定してください。アノテーションの復元は ``annotation restore`` コマンドで実現できます。",  # noqa: E501
     )
     parser.add_argument(
         "--parallelism",

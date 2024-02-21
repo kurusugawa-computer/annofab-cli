@@ -116,8 +116,6 @@ def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argpa
     description = "組織メンバの情報（ロールなど）を変更します。"
     epilog = "組織オーナまたは組織管理者ロールを持つユーザで実行してください。"
 
-    parser = annofabcli.common.cli.add_parser(
-        subparsers, subcommand_name, command_help=subcommand_help, description=description, epilog=epilog
-    )
+    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, command_help=subcommand_help, description=description, epilog=epilog)
     parse_args(parser)
     return parser

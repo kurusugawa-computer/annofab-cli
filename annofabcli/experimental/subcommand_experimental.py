@@ -18,8 +18,6 @@ def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argpa
     subcommand_help = "アルファ版のサブコマンド"
     description = "アルファ版のサブコマンド。予告なしに削除されたり、コマンドライン引数が変わったりします。"
 
-    parser = annofabcli.common.cli.add_parser(
-        subparsers, subcommand_name, subcommand_help, description, is_subcommand=False
-    )
+    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, is_subcommand=False)
     parse_args(parser)
     return parser

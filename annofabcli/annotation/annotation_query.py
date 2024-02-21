@@ -56,9 +56,7 @@ def _get_attribute_to_api(additional_data: dict[str, Any], attribute_value: Attr
         AdditionalDataDefinitionType.SELECT.value,
     ]:
         # 排他選択の場合、属性値に選択肢IDが入っているため、対象の選択肢を探す
-        choice_info = more_itertools.first_true(
-            additional_data["choices"], pred=lambda e: get_message_for_i18n(e["name"]) == attribute_value
-        )
+        choice_info = more_itertools.first_true(additional_data["choices"], pred=lambda e: get_message_for_i18n(e["name"]) == attribute_value)
         tmp = [e for e in additional_data["choices"] if get_message_for_i18n(e["name"]) == attribute_value]
 
         if len(tmp) == 0:
@@ -107,18 +105,13 @@ def convert_attributes_from_cli_to_api(
             raise ValueError(f"アノテーション仕様に、label_id='{label_id}' であるラベルは存在しません。")
 
         tmp_additional_data_definition_ids = set(label_info["additional_data_definitions"])
-        tmp_additionals = [
-            e
-            for e in annotation_specs["additionals"]
-            if e["additional_data_definition_id"] in tmp_additional_data_definition_ids
-        ]
+        tmp_additionals = [e for e in annotation_specs["additionals"] if e["additional_data_definition_id"] in tmp_additional_data_definition_ids]
 
     attributes_for_webapi: list[AdditionalDataV1] = []
     for attribute_name, attribute_value in attributes.items():
         additional_data = more_itertools.first_true(
             tmp_additionals,
-            pred=lambda e: get_message_for_i18n(e["name"])
-            == attribute_name,  # noqa: function-uses-loop-variable  # pylint: disable=cell-var-from-loop
+            pred=lambda e: get_message_for_i18n(e["name"]) == attribute_name,  # noqa: B023  # pylint: disable=cell-var-from-loop
         )
         tmp = [e for e in tmp_additionals if get_message_for_i18n(e["name"]) == attribute_name]
         if len(tmp) == 0:

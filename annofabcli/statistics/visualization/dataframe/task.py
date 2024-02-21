@@ -153,9 +153,7 @@ class Task:
 
         # 自動検査したタスクを除外して、検査時間をグラフ化する
         df_ignore_inspection_skipped = df.query("inspection_worktime_hour.notnull() and not inspection_is_skipped")
-        sub_title = get_sub_title_from_series(
-            df_ignore_inspection_skipped["inspection_worktime_hour"], decimals=decimals
-        )
+        sub_title = get_sub_title_from_series(df_ignore_inspection_skipped["inspection_worktime_hour"], decimals=decimals)
         figure_list.append(
             get_histogram_figure(
                 df_ignore_inspection_skipped["inspection_worktime_hour"],
@@ -168,9 +166,7 @@ class Task:
         )
 
         df_ignore_acceptance_skipped = df.query("acceptance_worktime_hour.notnull() and not acceptance_is_skipped")
-        sub_title = get_sub_title_from_series(
-            df_ignore_acceptance_skipped["acceptance_worktime_hour"], decimals=decimals
-        )
+        sub_title = get_sub_title_from_series(df_ignore_acceptance_skipped["acceptance_worktime_hour"], decimals=decimals)
         figure_list.append(
             get_histogram_figure(
                 df_ignore_acceptance_skipped["acceptance_worktime_hour"],
@@ -221,16 +217,10 @@ class Task:
         logger.debug(f"{output_file} を出力します。")
         df = self.df.copy()
 
-        df["diff_days_to_first_inspection_started"] = diff_days(
-            df["first_inspection_started_datetime"], df["first_annotation_started_datetime"]
-        )
-        df["diff_days_to_first_acceptance_started"] = diff_days(
-            df["first_acceptance_started_datetime"], df["first_annotation_started_datetime"]
-        )
+        df["diff_days_to_first_inspection_started"] = diff_days(df["first_inspection_started_datetime"], df["first_annotation_started_datetime"])
+        df["diff_days_to_first_acceptance_started"] = diff_days(df["first_acceptance_started_datetime"], df["first_annotation_started_datetime"])
 
-        df["diff_days_to_first_acceptance_completed"] = diff_days(
-            df["first_acceptance_completed_datetime"], df["first_annotation_started_datetime"]
-        )
+        df["diff_days_to_first_acceptance_completed"] = diff_days(df["first_acceptance_completed_datetime"], df["first_annotation_started_datetime"])
 
         histogram_list = [
             {"column": "annotation_count", "x_axis_label": "アノテーション数", "title": "アノテーション数"},
@@ -273,9 +263,7 @@ class Task:
             x_axis_label = hist["x_axis_label"]
             ser = df[column].dropna()
             sub_title = get_sub_title_from_series(ser, decimals=2)
-            fig = get_histogram_figure(
-                ser, x_axis_label=x_axis_label, y_axis_label="タスク数", title=title, sub_title=sub_title, bins=bins
-            )
+            fig = get_histogram_figure(ser, x_axis_label=x_axis_label, y_axis_label="タスク数", title=title, sub_title=sub_title, bins=bins)
             figure_list.append(fig)
 
         bokeh_obj = bokeh.layouts.gridplot(figure_list, ncols=4)  # type: ignore[arg-type]

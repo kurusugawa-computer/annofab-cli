@@ -35,7 +35,7 @@ class TestCommandLine__put:
                 "input_data_path": "file://tests/data/lenna.png",
             },
         ]
-        with pytest.raises(Exception):
+        with pytest.raises(Exception):  # noqa: B017
             main(
                 [
                     "input_data",
@@ -62,7 +62,7 @@ class TestCommandLine__put:
                 "input_data_path": "file://tests/data/lenna2.png",
             },
         ]
-        with pytest.raises(Exception):
+        with pytest.raises(Exception):  # noqa: B017
             main(
                 [
                     "input_data",
@@ -100,7 +100,7 @@ class TestCommandLine__put_with_json:
 
 class TestCommandLine:
     def test_scenario(self):
-        input_data_id = f"test-{str(datetime.datetime.now().timestamp())}"
+        input_data_id = f"test-{datetime.datetime.now().timestamp()!s}"
 
         json_args = [
             {

@@ -72,9 +72,7 @@ class DeleteAnnotationMain(AbstractCommandLineWithConfirmInterface):
         request_body = [_to_request_body_elm(annotation) for annotation in annotation_list]
         self.service.api.batch_update_annotations(self.project_id, request_body=request_body)
 
-    def get_annotation_list_for_task(
-        self, task_id: str, annotation_query: Optional[AnnotationQueryForAPI]
-    ) -> list[dict[str, Any]]:
+    def get_annotation_list_for_task(self, task_id: str, annotation_query: Optional[AnnotationQueryForAPI]) -> list[dict[str, Any]]:
         """
         タスク内のアノテーション一覧を取得する。
 
@@ -90,9 +88,7 @@ class DeleteAnnotationMain(AbstractCommandLineWithConfirmInterface):
         if annotation_query is not None:
             dict_query.update(annotation_query.to_dict())
 
-        annotation_list = self.service.wrapper.get_all_annotation_list(
-            self.project_id, query_params={"query": dict_query}
-        )
+        annotation_list = self.service.wrapper.get_all_annotation_list(self.project_id, query_params={"query": dict_query})
         return annotation_list
 
     def delete_annotation_for_task(
@@ -116,10 +112,7 @@ class DeleteAnnotationMain(AbstractCommandLineWithConfirmInterface):
             return
 
         task: Task = Task.from_dict(dict_task)
-        logger.info(
-            f"task_id={task.task_id}, phase={task.phase.value}, status={task.status.value}, "
-            f"updated_datetime={task.updated_datetime}"
-        )
+        logger.info(f"task_id={task.task_id}, phase={task.phase.value}, status={task.status.value}, " f"updated_datetime={task.updated_datetime}")
 
         if task.status == TaskStatus.WORKING:
             logger.warning(f"task_id={task_id}: タスクが作業中状態のため、スキップします。")
@@ -194,7 +187,10 @@ class DeleteAnnotation(AbstractCommandLineInterface):
             annotation_query = None
 
         if args.backup is None:
-            print("間違えてアノテーションを削除してしまっときに復元できるようにするため、'--backup'でバックアップ用のディレクトリを指定することを推奨します。", file=sys.stderr)
+            print(
+                "間違えてアノテーションを削除してしまっときに復元できるようにするため、'--backup'でバックアップ用のディレクトリを指定することを推奨します。",
+                file=sys.stderr,
+            )
             if not self.confirm_processing("復元用のバックアップディレクトリが指定されていません。処理を続行しますか？"):
                 return
             backup_dir = None
@@ -236,7 +232,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--backup",
         type=str,
         required=False,
-        help="アノテーションのバックアップを保存するディレクトリを指定してください。アノテーションの復元は ``annotation restore`` コマンドで実現できます。",
+        help="アノテーションのバックアップを保存するディレクトリを指定してください。アノテーションの復元は ``annotation restore`` コマンドで実現できます。",  # noqa: E501
     )
     parser.set_defaults(subcommand_func=main)
 

@@ -39,9 +39,7 @@ class TestCommandLine:
             Trueならシナリオテストを実行できるアノテーション仕様
         """
         annotation_specs, _ = service.api.get_annotation_specs(project_id, query_params={"v": "2"})
-        car_label = more_itertools.first_true(
-            annotation_specs["labels"], pred=lambda e: get_message_for_i18n(e["label_name"]) == "car"
-        )
+        car_label = more_itertools.first_true(annotation_specs["labels"], pred=lambda e: get_message_for_i18n(e["label_name"]) == "car")
         if car_label is None:
             return False
 
@@ -70,7 +68,7 @@ class TestCommandLine:
             作成したタスク
         """
         # タスクの作成
-        new_task_id = f"test-{str(int(datetime.datetime.now().timestamp()))}"
+        new_task_id = f"test-{int(datetime.datetime.now().timestamp())!s}"
         task, _ = service.api.put_task(project_id, new_task_id, request_body={"input_data_id_list": [input_data_id]})
         yield task
         # タスクの削除
@@ -81,9 +79,7 @@ class TestCommandLine:
         シナリオテスト。すべてのannotation系コマンドを実行する。
         前提条件：矩形の"car"ラベルに"truncation"チェックボックスが存在すること
         """
-        assert (
-            self._validate_annotation_specs_for_scenario_test()
-        ), "アノテーション仕様がシナリオテストを実行できる状態でありません。矩形の'car'ラベルを追加して、その下に'truncation'チェックボックスを追加してください。"
+        assert self._validate_annotation_specs_for_scenario_test(), "アノテーション仕様がシナリオテストを実行できる状態でありません。矩形の'car'ラベルを追加して、その下に'truncation'チェックボックスを追加してください。"  # noqa: E501
 
         task_id = target_task["task_id"]
         # インポート用のアノテーションを生成して、アノテーションをインポートする

@@ -27,9 +27,7 @@ class ListTaskHistoryWithJsonMain:
         self.facade = AnnofabApiFacade(service)
 
     @staticmethod
-    def filter_task_history_dict(
-        task_history_dict: TaskHistoryDict, task_id_list: Optional[List[str]] = None
-    ) -> TaskHistoryDict:
+    def filter_task_history_dict(task_history_dict: TaskHistoryDict, task_id_list: Optional[List[str]] = None) -> TaskHistoryDict:
         if task_id_list is None:
             return task_history_dict
 
@@ -100,9 +98,7 @@ class ListTaskHistoryWithJson(AbstractCommandLineInterface):
         super().validate_project(project_id, project_member_roles=None)
 
         main_obj = ListTaskHistoryWithJsonMain(self.service)
-        task_history_dict = main_obj.get_task_history_dict(
-            project_id, task_history_json=task_history_json, task_id_list=task_id_list
-        )
+        task_history_dict = main_obj.get_task_history_dict(project_id, task_history_json=task_history_json, task_id_list=task_id_list)
         logger.debug(f"{len(task_history_dict)} 件のタスクの履歴情報を出力します。")
         if arg_format == FormatArgument.CSV:
             all_task_history_list = main_obj.to_all_task_history_list_from_dict(task_history_dict)
@@ -163,7 +159,7 @@ def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argpa
     subcommand_help = "すべてのタスク履歴の一覧を出力します。"
     description = (
         "すべてのタスク履歴の一覧を出力します。\n"
-        "出力されるタスク履歴は、コマンドを実行した日の02:00(JST)頃の状態です。最新の情報を出力したい場合は、 ``annofabcli task_history list`` コマンドを実行してください。"
+        "出力されるタスク履歴は、コマンドを実行した日の02:00(JST)頃の状態です。最新の情報を出力したい場合は、 ``annofabcli task_history list`` コマンドを実行してください。"  # noqa: E501
     )
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)

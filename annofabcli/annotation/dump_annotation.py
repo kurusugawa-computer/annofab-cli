@@ -54,7 +54,7 @@ class DumpAnnotationMain:
         Returns:
             アノテーション情報をファイルに保存したかどうか。
         """
-        logger_prefix = f"{str(task_index+1)} 件目: " if task_index is not None else ""
+        logger_prefix = f"{task_index+1!s} 件目: " if task_index is not None else ""
         task = self.service.wrapper.get_task_or_none(self.project_id, task_id)
         if task is None:
             logger.warning(f"task_id = '{task_id}' のタスクは存在しません。スキップします。")

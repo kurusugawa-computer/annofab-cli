@@ -34,7 +34,7 @@ class TestCommandLine:
             作成したタスク
         """
         # タスクの作成
-        new_task_id = f"test-{str(int(datetime.datetime.now().timestamp()))}"
+        new_task_id = f"test-{int(datetime.datetime.now().timestamp())!s}"
         task, _ = service.api.put_task(project_id, new_task_id, request_body={"input_data_id_list": [input_data_id]})
 
         yield task

@@ -52,9 +52,7 @@ keyはtask_id
 
 
 class PutCommentMain(AbstractCommandLineWithConfirmInterface):
-    def __init__(
-        self, service: annofabapi.Resource, project_id: str, comment_type: CommentType, all_yes: bool = False
-    ) -> None:
+    def __init__(self, service: annofabapi.Resource, project_id: str, comment_type: CommentType, all_yes: bool = False) -> None:
         self.service = service
         self.facade = AnnofabApiFacade(service)
         self.project_id = project_id
@@ -64,9 +62,7 @@ class PutCommentMain(AbstractCommandLineWithConfirmInterface):
 
         AbstractCommandLineWithConfirmInterface.__init__(self, all_yes)
 
-    def _create_request_body(
-        self, task: Dict[str, Any], input_data_id: str, comments: List[AddedComment]
-    ) -> List[Dict[str, Any]]:
+    def _create_request_body(self, task: Dict[str, Any], input_data_id: str, comments: List[AddedComment]) -> List[Dict[str, Any]]:
         """batch_update_comments に渡すリクエストボディを作成する。"""
 
         def _create_dict_annotation_id() -> Dict[str, str]:
@@ -87,9 +83,7 @@ class PutCommentMain(AbstractCommandLineWithConfirmInterface):
                 "comment_node": {
                     "data": comment.data,
                     "annotation_id": comment.annotation_id,
-                    "label_id": dict_annotation_id_label_id.get(comment.annotation_id)
-                    if comment.annotation_id is not None
-                    else None,
+                    "label_id": dict_annotation_id_label_id.get(comment.annotation_id) if comment.annotation_id is not None else None,
                     "status": "open",
                     "_type": "Root",
                 },
@@ -137,7 +131,7 @@ class PutCommentMain(AbstractCommandLineWithConfirmInterface):
 
         if task["status"] not in [TaskStatus.NOT_STARTED.value, TaskStatus.WORKING.value, TaskStatus.BREAK.value]:
             logger.warning(
-                f"task_id='{task_id}' : タスクの状態が未着手,作業中,休憩中 以外の状態なので、コメントを付与できません。（task_status='{task['status']}'）"
+                f"task_id='{task_id}' : タスクの状態が未着手,作業中,休憩中 以外の状態なので、コメントを付与できません。（task_status='{task['status']}'）"  # noqa: E501
             )
             return False
         return True
@@ -166,11 +160,7 @@ class PutCommentMain(AbstractCommandLineWithConfirmInterface):
             logger.warning(f"{logging_prefix} : task_id='{task_id}' のタスクは存在しないので、スキップします。")
             return 0
 
-        logger.debug(
-            f"{logging_prefix} : task_id = {task['task_id']}, "
-            f"status = {task['status']}, "
-            f"phase = {task['phase']}, "
-        )
+        logger.debug(f"{logging_prefix} : task_id = {task['task_id']}, " f"status = {task['status']}, " f"phase = {task['phase']}, ")
 
         if not self._can_add_comment(
             task=task,
@@ -185,23 +175,14 @@ class PutCommentMain(AbstractCommandLineWithConfirmInterface):
         added_comments_count = 0
         for input_data_id, comments in comments_for_task.items():
             if input_data_id not in task["input_data_id_list"]:
-                logger.warning(
-                    f"{logging_prefix} : task_id='{task_id}'のタスクに input_data_id='{input_data_id}'の入力データは存在しません。"
-                )
+                logger.warning(f"{logging_prefix} : task_id='{task_id}'のタスクに input_data_id='{input_data_id}'の入力データは存在しません。")
                 continue
             try:
                 # コメントを付与する
-                request_body = self._create_request_body(
-                    task=changed_task, input_data_id=input_data_id, comments=comments
-                )
-                self.service.api.batch_update_comments(
-                    self.project_id, task_id, input_data_id, request_body=request_body
-                )
+                request_body = self._create_request_body(task=changed_task, input_data_id=input_data_id, comments=comments)
+                self.service.api.batch_update_comments(self.project_id, task_id, input_data_id, request_body=request_body)
                 added_comments_count += 1
-                logger.debug(
-                    f"{logging_prefix} : task_id={task_id}, input_data_id={input_data_id}: "
-                    f"{len(comments)}件のコメントを付与しました。"
-                )
+                logger.debug(f"{logging_prefix} : task_id={task_id}, input_data_id={input_data_id}: " f"{len(comments)}件のコメントを付与しました。")
             except Exception:  # pylint: disable=broad-except
                 logger.warning(
                     f"{logging_prefix} : task_id={task_id}, input_data_id={input_data_id}: コメントの付与に失敗しました。",
@@ -236,9 +217,7 @@ class PutCommentMain(AbstractCommandLineWithConfirmInterface):
 
         if parallelism is not None:
             with multiprocessing.Pool(parallelism) as pool:
-                result_bool_list = pool.map(
-                    self.add_comments_for_task_wrapper, enumerate(comments_for_task_list.items())
-                )
+                result_bool_list = pool.map(self.add_comments_for_task_wrapper, enumerate(comments_for_task_list.items()))
                 added_comments_count = sum(e for e in result_bool_list)
 
         else:

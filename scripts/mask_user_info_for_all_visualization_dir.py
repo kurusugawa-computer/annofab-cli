@@ -24,9 +24,7 @@ def execute_mask_user_info_command(project_dir: Path, output_project_dir: Path, 
     subprocess.run(command, check=True)
 
 
-def mask_user_info_for_all_project_dir(
-    project_root_dir: Path, output_dir: Path, remainder_options: Optional[list[str]]
-) -> None:
+def mask_user_info_for_all_project_dir(project_root_dir: Path, output_dir: Path, remainder_options: Optional[list[str]]) -> None:
     for project_dir in project_root_dir.iterdir():
         if not project_dir.is_dir():
             continue

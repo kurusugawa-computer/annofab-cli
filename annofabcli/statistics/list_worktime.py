@@ -39,9 +39,7 @@ def _get_worktime_dict_from_event(event: WorktimeFromTaskHistoryEvent) -> Workti
 
         while dt_tmp_start.date() < dt_end.date():
             dt_next_date = dt_tmp_start.date() + datetime.timedelta(days=1)
-            dt_tmp_end = datetime.datetime(
-                year=dt_next_date.year, month=dt_next_date.month, day=dt_next_date.day, tzinfo=jst_tzinfo
-            )
+            dt_tmp_end = datetime.datetime(year=dt_next_date.year, month=dt_next_date.month, day=dt_next_date.day, tzinfo=jst_tzinfo)
             worktime_hour = (dt_tmp_end - dt_tmp_start).total_seconds() / 3600
             dict_result[(str(dt_tmp_start.date()), event.account_id, event.phase)] = worktime_hour
             dt_tmp_start = dt_tmp_end
@@ -62,9 +60,7 @@ def get_worktime_dict_from_event_list(task_history_event_list: list[WorktimeFrom
     return dict_result
 
 
-def get_df_worktime(
-    task_history_event_list: list[WorktimeFromTaskHistoryEvent], member_list: list[dict[str, Any]]
-) -> pandas.DataFrame:
+def get_df_worktime(task_history_event_list: list[WorktimeFromTaskHistoryEvent], member_list: list[dict[str, Any]]) -> pandas.DataFrame:
     dict_worktime = get_worktime_dict_from_event_list(task_history_event_list)
 
     s = pandas.Series(
@@ -88,13 +84,9 @@ def get_df_worktime(
         if column not in df.columns:
             df[column] = 0
 
-    df.fillna(
-        {"annotation_worktime_hour": 0, "inspection_worktime_hour": 0, "acceptance_worktime_hour": 0}, inplace=True
-    )
+    df.fillna({"annotation_worktime_hour": 0, "inspection_worktime_hour": 0, "acceptance_worktime_hour": 0}, inplace=True)
 
-    df["worktime_hour"] = (
-        df["annotation_worktime_hour"] + df["inspection_worktime_hour"] + df["acceptance_worktime_hour"]
-    )
+    df["worktime_hour"] = df["annotation_worktime_hour"] + df["inspection_worktime_hour"] + df["acceptance_worktime_hour"]
 
     df_member = pandas.DataFrame(member_list)[["account_id", "user_id", "username", "biography"]]
 
@@ -127,9 +119,7 @@ class ListWorktimeFromTaskHistoryEvent(AbstractCommandLineInterface):
             project_id,
             task_history_event_json=task_history_event_json,
         )
-        project_member_list = self.service.wrapper.get_all_project_members(
-            project_id, query_params={"include_inactive_member": ""}
-        )
+        project_member_list = self.service.wrapper.get_all_project_members(project_id, query_params={"include_inactive_member": ""})
         df = get_df_worktime(worktime_list, project_member_list)
 
         if len(worktime_list) > 0:

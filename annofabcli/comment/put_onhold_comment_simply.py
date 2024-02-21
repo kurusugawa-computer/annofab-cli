@@ -41,9 +41,7 @@ class PutOnholdCommentSimply(AbstractCommandLineInterface):
         super().validate_project(args.project_id)
 
         task_id_list = get_list_from_args(args.task_id)
-        main_obj = PutCommentSimplyMain(
-            self.service, project_id=args.project_id, comment_type=CommentType.ONHOLD, all_yes=self.all_yes
-        )
+        main_obj = PutCommentSimplyMain(self.service, project_id=args.project_id, comment_type=CommentType.ONHOLD, all_yes=self.all_yes)
         main_obj.put_comment_for_task_list(
             task_ids=task_id_list,
             comment_info=AddedSimpleComment(comment=args.comment, data=None, phrases=None),
@@ -68,7 +66,10 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         type=str,
         nargs="+",
         required=True,
-        help=("コメントを付与するタスクのtask_idを指定してください。\n" "``file://`` を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。"),
+        help=(
+            "コメントを付与するタスクのtask_idを指定してください。\n"
+            "``file://`` を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。"
+        ),
     )
 
     parser.add_argument(
@@ -79,7 +80,9 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     )
 
     parser.add_argument(
-        "--parallelism", type=int, help="使用するプロセス数（並列度）を指定してください。指定する場合は必ず ``--yes`` を指定してください。指定しない場合は、逐次的に処理します。"
+        "--parallelism",
+        type=int,
+        help="使用するプロセス数（並列度）を指定してください。指定する場合は必ず ``--yes`` を指定してください。指定しない場合は、逐次的に処理します。",  # noqa: E501
     )
 
     parser.set_defaults(subcommand_func=main)

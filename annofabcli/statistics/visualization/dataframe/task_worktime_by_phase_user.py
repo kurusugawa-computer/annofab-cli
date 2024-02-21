@@ -24,7 +24,7 @@ class TaskWorktimeByPhaseUser:
         * 品質情報（指摘コメント数、差し戻し回数）
     """
 
-    columns = [
+    columns = [  # noqa: RUF012
         "project_id",
         "task_id",
         "status",
@@ -76,9 +76,7 @@ class TaskWorktimeByPhaseUser:
         return True
 
     @classmethod
-    def from_df_wrapper(
-        cls, task_history: TaskHistory, user: User, task: Task, project_id: str
-    ) -> TaskWorktimeByPhaseUser:
+    def from_df_wrapper(cls, task_history: TaskHistory, user: User, task: Task, project_id: str) -> TaskWorktimeByPhaseUser:
         """
         AnnoWorkの実績時間から、作業者ごとに生産性を算出する。
 
@@ -181,9 +179,7 @@ class TaskWorktimeByPhaseUser:
         return TaskWorktimeByPhaseUser(df)
 
     @staticmethod
-    def _create_annotation_count_ratio_df(
-        task_history_df: pandas.DataFrame, task_df: pandas.DataFrame
-    ) -> pandas.DataFrame:
+    def _create_annotation_count_ratio_df(task_history_df: pandas.DataFrame, task_df: pandas.DataFrame) -> pandas.DataFrame:
         """
         task_id, phase, (phase_index), user_idの作業時間比から、アノテーション数などの生産量を求める
 
@@ -228,9 +224,7 @@ class TaskWorktimeByPhaseUser:
             logger.warning("タスク一覧が0件です。")
             return pandas.DataFrame()
 
-        group_obj = task_history_df.groupby(["task_id", "phase", "phase_stage", "account_id"]).agg(
-            {"worktime_hour": "sum"}
-        )
+        group_obj = task_history_df.groupby(["task_id", "phase", "phase_stage", "account_id"]).agg({"worktime_hour": "sum"})
         # 担当者だけ変更して作業していないケースを除外する
         group_obj = group_obj[group_obj["worktime_hour"] > 0]
 
@@ -256,15 +250,11 @@ class TaskWorktimeByPhaseUser:
         )
         group_obj["annotation_count"] = group_obj.apply(get_annotation_count, axis="columns")
         group_obj["input_data_count"] = group_obj.apply(get_input_data_count, axis="columns")
-        group_obj["pointed_out_inspection_comment_count"] = group_obj.apply(
-            get_inspection_comment_count, axis="columns"
-        )
+        group_obj["pointed_out_inspection_comment_count"] = group_obj.apply(get_inspection_comment_count, axis="columns")
         group_obj["rejected_count"] = group_obj.apply(get_rejected_count, axis="columns")
         new_df = group_obj.reset_index()
-        new_df["pointed_out_inspection_comment_count"] = new_df["pointed_out_inspection_comment_count"] * new_df[
-            "phase"
-        ].apply(lambda e: 1 if e == TaskPhase.ANNOTATION.value else 0)
-        new_df["rejected_count"] = new_df["rejected_count"] * new_df["phase"].apply(
+        new_df["pointed_out_inspection_comment_count"] = new_df["pointed_out_inspection_comment_count"] * new_df["phase"].apply(
             lambda e: 1 if e == TaskPhase.ANNOTATION.value else 0
         )
+        new_df["rejected_count"] = new_df["rejected_count"] * new_df["phase"].apply(lambda e: 1 if e == TaskPhase.ANNOTATION.value else 0)
         return new_df

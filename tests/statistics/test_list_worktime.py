@@ -16,12 +16,8 @@ class TestListWorktime:
                 user_id="alice",
                 username="Alice",
                 worktime_hour=3.0,
-                start_event=SimpleTaskHistoryEvent(
-                    task_history_id="unknown", created_datetime="2019-01-01T23:00:00.000+09:00", status="working"
-                ),
-                end_event=SimpleTaskHistoryEvent(
-                    task_history_id="unknown", created_datetime="2019-01-02T02:00:00.000+09:00", status="on_holding"
-                ),
+                start_event=SimpleTaskHistoryEvent(task_history_id="unknown", created_datetime="2019-01-01T23:00:00.000+09:00", status="working"),
+                end_event=SimpleTaskHistoryEvent(task_history_id="unknown", created_datetime="2019-01-02T02:00:00.000+09:00", status="on_holding"),
             ),
             WorktimeFromTaskHistoryEvent(
                 project_id="prj1",
@@ -32,12 +28,8 @@ class TestListWorktime:
                 user_id="bob",
                 username="Bob",
                 worktime_hour=1.0,
-                start_event=SimpleTaskHistoryEvent(
-                    task_history_id="unknown", created_datetime="2019-01-03T22:00:00.000+09:00", status="working"
-                ),
-                end_event=SimpleTaskHistoryEvent(
-                    task_history_id="unknown", created_datetime="2019-01-03T23:00:00.000+09:00", status="on_holding"
-                ),
+                start_event=SimpleTaskHistoryEvent(task_history_id="unknown", created_datetime="2019-01-03T22:00:00.000+09:00", status="working"),
+                end_event=SimpleTaskHistoryEvent(task_history_id="unknown", created_datetime="2019-01-03T23:00:00.000+09:00", status="on_holding"),
             ),
         ]
 

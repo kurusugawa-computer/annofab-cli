@@ -58,7 +58,7 @@ class TestListAttributeRestrictionMain:
         actual = self.obj.get_restriction_text(attribute_id, condition)
         assert (
             actual
-            == "'link' (id='15235360-4f46-42ac-927d-0e046bf52ddd', type='link') HAS LABEL 'bike' (id='40f7796b-3722-4eed-9c0c-04a27f9165d2'), 'bus' (id='22b5189b-af7b-4d9c-83a5-b92f122170ec')"
+            == "'link' (id='15235360-4f46-42ac-927d-0e046bf52ddd', type='link') HAS LABEL 'bike' (id='40f7796b-3722-4eed-9c0c-04a27f9165d2'), 'bus' (id='22b5189b-af7b-4d9c-83a5-b92f122170ec')"  # noqa: E501
         )
 
     def test_get_restriction_text__imply(self):
@@ -93,9 +93,7 @@ class TestListAttributeRestrictionMain:
         assert actual == "'type' (id='71620647-98cf-48ad-b43b-4af425a24f32', type='select') EQUALS ''"
 
     def test_get_restriction_text_list(self):
-        actual1 = self.obj.get_restriction_text_list(
-            self.annotation_specs["restrictions"], target_attribute_names=["link"]
-        )
+        actual1 = self.obj.get_restriction_text_list(self.annotation_specs["restrictions"], target_attribute_names=["link"])
         assert len(actual1) == 1
 
         actual2 = self.obj.get_restriction_text_list(self.annotation_specs["restrictions"], target_label_names=["car"])

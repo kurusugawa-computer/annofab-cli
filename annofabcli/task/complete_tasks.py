@@ -99,9 +99,7 @@ class CompleteTasksMain(AbstractCommandLineWithConfirmInterface):
 
         request_body = [to_req_inspection(e) for e in unanswered_comment_list]
 
-        return self.service.api.batch_update_comments(
-            task.project_id, task.task_id, input_data_id, request_body=request_body
-        )[0]
+        return self.service.api.batch_update_comments(task.project_id, task.task_id, input_data_id, request_body=request_body)[0]
 
     def update_status_of_inspections(
         self,
@@ -153,9 +151,7 @@ class CompleteTasksMain(AbstractCommandLineWithConfirmInterface):
         Returns:
 
         """
-        comment_list, _ = self.service.api.get_comments(
-            task.project_id, task.task_id, input_data_id, query_params={"v": "2"}
-        )
+        comment_list, _ = self.service.api.get_comments(task.project_id, task.task_id, input_data_id, query_params={"v": "2"})
         return [
             e
             for e in comment_list
@@ -227,21 +223,15 @@ class CompleteTasksMain(AbstractCommandLineWithConfirmInterface):
             )
             return answered_comment is not None
 
-        comment_list, _ = self.service.api.get_comments(
-            task.project_id, task.task_id, input_data_id, query_params={"v": "2"}
-        )
+        comment_list, _ = self.service.api.get_comments(task.project_id, task.task_id, input_data_id, query_params={"v": "2"})
         # 未処置の検査コメント
         unprocessed_inspection_list = [
             e
             for e in comment_list
-            if e["comment_type"] == "inspection"
-            and e["comment_node"]["_type"] == "Root"
-            and e["comment_node"]["status"] == "open"
+            if e["comment_type"] == "inspection" and e["comment_node"]["_type"] == "Root" and e["comment_node"]["status"] == "open"
         ]
 
-        unanswered_comment_list = [
-            e for e in unprocessed_inspection_list if not exists_answered_comment(e["comment_id"])
-        ]
+        unanswered_comment_list = [e for e in unprocessed_inspection_list if not exists_answered_comment(e["comment_id"])]
         return unanswered_comment_list
 
     def complete_task_for_annotation_phase(
@@ -271,7 +261,9 @@ class CompleteTasksMain(AbstractCommandLineWithConfirmInterface):
         logger.debug(f"{task.task_id}: 未回答の検査コメントが {unanswered_comment_count_for_task} 件あります。")
         if unanswered_comment_count_for_task > 0:
             if reply_comment is None:
-                logger.warning(f"{task.task_id}: 未回答の検査コメントに対する返信コメント（'--reply_comment'）が指定されていないので、スキップします。")
+                logger.warning(
+                    f"{task.task_id}: 未回答の検査コメントに対する返信コメント（'--reply_comment'）が指定されていないので、スキップします。"
+                )
                 return False
 
         if not self.confirm_processing(f"タスク'{task.task_id}'の教師付フェーズを次のフェーズに進めますか？"):
@@ -310,7 +302,9 @@ class CompleteTasksMain(AbstractCommandLineWithConfirmInterface):
         logger.debug(f"{task.task_id}: 未処置の検査コメントが {unprocessed_inspection_count} 件あります。")
         if unprocessed_inspection_count > 0:
             if inspection_status is None:
-                logger.warning(f"{task.task_id}: 未処置の検査コメントに対する対応方法（'--inspection_status'）が指定されていないので、スキップします。")
+                logger.warning(
+                    f"{task.task_id}: 未処置の検査コメントに対する対応方法（'--inspection_status'）が指定されていないので、スキップします。"
+                )
                 return False
 
         if not self.confirm_processing(f"タスク'{task.task_id}'の検査/受入フェーズを次のフェーズに進めますか？"):
@@ -320,9 +314,7 @@ class CompleteTasksMain(AbstractCommandLineWithConfirmInterface):
 
         if unprocessed_inspection_count > 0:
             assert inspection_status is not None
-            logger.debug(
-                f"{task.task_id}: 未処置の検査コメント {unprocessed_inspection_count} 件を、{inspection_status.value} 状態にします。"
-            )
+            logger.debug(f"{task.task_id}: 未処置の検査コメント {unprocessed_inspection_count} 件を、{inspection_status.value} 状態にします。")
             for input_data_id, unprocessed_inspection_list in unprocessed_inspection_list_dict.items():
                 if len(unprocessed_inspection_list) == 0:
                     continue
@@ -339,9 +331,7 @@ class CompleteTasksMain(AbstractCommandLineWithConfirmInterface):
         return True
 
     @staticmethod
-    def _validate_task(
-        task: Task, target_phase: TaskPhase, target_phase_stage: int, task_query: Optional[TaskQuery]
-    ) -> bool:
+    def _validate_task(task: Task, target_phase: TaskPhase, target_phase_stage: int, task_query: Optional[TaskQuery]) -> bool:
         if not (task.phase == target_phase and task.phase_stage == target_phase_stage):
             logger.warning(f"{task.task_id} は操作対象のフェーズ、フェーズステージではないため、スキップします。")
             return False
@@ -378,9 +368,7 @@ class CompleteTasksMain(AbstractCommandLineWithConfirmInterface):
             f"{logging_prefix} : タスク情報 task_id={task_id}, "
             f"phase={task.phase.value}, phase_stage={task.phase_stage}, status={task.status.value}"
         )
-        if not self._validate_task(
-            task, target_phase=target_phase, target_phase_stage=target_phase_stage, task_query=task_query
-        ):
+        if not self._validate_task(task, target_phase=target_phase, target_phase_stage=target_phase_stage, task_query=task_query):
             return False
 
         try:
@@ -590,7 +578,9 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     argument_parser.add_task_query()
 
     parser.add_argument(
-        "--parallelism", type=int, help="使用するプロセス数（並列度）を指定してください。指定する場合は必ず ``--yes`` を指定してください。指定しない場合は、逐次的に処理します。"
+        "--parallelism",
+        type=int,
+        help="使用するプロセス数（並列度）を指定してください。指定する場合は必ず ``--yes`` を指定してください。指定しない場合は、逐次的に処理します。",  # noqa: E501
     )
 
     parser.set_defaults(subcommand_func=main)

@@ -46,9 +46,7 @@ class RestoreAnnotationMain(AbstractCommandLineWithConfirmInterface):
         self.project_id = project_id
         self.is_force = is_force
 
-    def _to_annotation_detail_for_request(
-        self, parser: SimpleAnnotationParser, detail: AnnotationDetailV1
-    ) -> AnnotationDetailV1:
+    def _to_annotation_detail_for_request(self, parser: SimpleAnnotationParser, detail: AnnotationDetailV1) -> AnnotationDetailV1:
         """
         Request Bodyに渡すDataClassに変換する。塗りつぶし画像があれば、それをS3にアップロードする。
 
@@ -137,7 +135,7 @@ class RestoreAnnotationMain(AbstractCommandLineWithConfirmInterface):
             1個以上の入力データのアノテーションを変更したか
 
         """
-        logger_prefix = f"{str(task_index+1)} 件目: " if task_index is not None else ""
+        logger_prefix = f"{task_index+1!s} 件目: " if task_index is not None else ""
         task_id = task_parser.task_id
         if not self.confirm_processing(f"task_id={task_id} のアノテーションをリストアしますか？"):
             return False
@@ -314,7 +312,9 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     argument_parser.add_task_id(required=False)
 
     parser.add_argument(
-        "--force", action="store_true", help="過去に割り当てられていて現在の担当者が自分自身でない場合、タスクの担当者を自分自身に変更してからアノテーションをリストアします。"
+        "--force",
+        action="store_true",
+        help="過去に割り当てられていて現在の担当者が自分自身でない場合、タスクの担当者を自分自身に変更してからアノテーションをリストアします。",
     )
 
     parser.add_argument(
@@ -329,7 +329,9 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
 def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     subcommand_name = "restore"
     subcommand_help = "'annotation dump'コマンドで保存したファイルから、アノテーション情報をリストアします。"
-    description = "'annotation dump'コマンドで保存したファイルから、アノテーション情報をリストアします。ただし、作業中/完了状態のタスクはリストアできません。"
+    description = (
+        "'annotation dump'コマンドで保存したファイルから、アノテーション情報をリストアします。ただし、作業中/完了状態のタスクはリストアできません。"
+    )
     epilog = "チェッカーまたはオーナロールを持つユーザで実行してください。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)

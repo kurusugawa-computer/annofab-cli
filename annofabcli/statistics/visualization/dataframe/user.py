@@ -17,7 +17,7 @@ class User:
     * biography
     """
 
-    columns = ["user_id", "account_id", "username", "biography"]
+    columns = ["user_id", "account_id", "username", "biography"]  # noqa: RUF012
 
     @staticmethod
     def _duplicated_keys(df: pandas.DataFrame) -> bool:

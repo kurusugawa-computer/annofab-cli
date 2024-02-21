@@ -153,7 +153,7 @@ class ListTasks(AbstractCommandLineInterface):
         super().__init__(service, facade, args)
         self.visualize = AddProps(self.service, args.project_id)
 
-    PRIOR_COLUMNS = [
+    PRIOR_COLUMNS = [  # noqa: RUF012
         "project_id",
         "task_id",
         "phase",

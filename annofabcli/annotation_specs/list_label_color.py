@@ -52,9 +52,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
 
     argument_parser.add_project_id()
 
-    argument_parser.add_format(
-        choices=[FormatArgument.JSON, FormatArgument.PRETTY_JSON], default=FormatArgument.PRETTY_JSON
-    )
+    argument_parser.add_format(choices=[FormatArgument.JSON, FormatArgument.PRETTY_JSON], default=FormatArgument.PRETTY_JSON)
 
     argument_parser.add_output()
 

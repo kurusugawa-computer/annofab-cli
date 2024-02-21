@@ -91,15 +91,9 @@ class WritingVisualizationFile:
         inspector_per_date_obj = InspectorProductivityPerDate.from_df_task(task.df)
         acceptor_per_date_obj = AcceptorProductivityPerDate.from_df_task(task.df)
 
-        self.output_project_dir.write_performance_per_started_date_csv(
-            annotator_per_date_obj, phase=TaskPhase.ANNOTATION
-        )
-        self.output_project_dir.write_performance_per_started_date_csv(
-            inspector_per_date_obj, phase=TaskPhase.INSPECTION
-        )
-        self.output_project_dir.write_performance_per_started_date_csv(
-            acceptor_per_date_obj, phase=TaskPhase.ACCEPTANCE
-        )
+        self.output_project_dir.write_performance_per_started_date_csv(annotator_per_date_obj, phase=TaskPhase.ANNOTATION)
+        self.output_project_dir.write_performance_per_started_date_csv(inspector_per_date_obj, phase=TaskPhase.INSPECTION)
+        self.output_project_dir.write_performance_per_started_date_csv(acceptor_per_date_obj, phase=TaskPhase.ACCEPTANCE)
 
         # 折れ線グラフを出力
         self.output_project_dir.write_performance_line_graph_per_date(
@@ -203,12 +197,8 @@ def merge_visualization_dir(  # pylint: disable=too-many-statements
     task = merging_obj.merge_task_list()
     worktime_per_date = merging_obj.merge_worktime_per_date()
 
-    user_performance = UserPerformance.from_df_wrapper(
-        task_worktime_by_phase_user=task_worktime_by_phase_user, worktime_per_date=worktime_per_date
-    )
-    whole_performance = WholePerformance.from_df_wrapper(
-        task_worktime_by_phase_user=task_worktime_by_phase_user, worktime_per_date=worktime_per_date
-    )
+    user_performance = UserPerformance.from_df_wrapper(task_worktime_by_phase_user=task_worktime_by_phase_user, worktime_per_date=worktime_per_date)
+    whole_performance = WholePerformance.from_df_wrapper(task_worktime_by_phase_user=task_worktime_by_phase_user, worktime_per_date=worktime_per_date)
     writing_obj = WritingVisualizationFile(output_project_dir, user_id_list=user_id_list, minimal_output=minimal_output)
 
     writing_obj.write_task_list_and_histogram(task)

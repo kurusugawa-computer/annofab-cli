@@ -95,7 +95,7 @@ class Database:
             return True
 
     def get_annotation_count_by_task(self) -> Dict[str, int]:
-        logger.debug(f"{self.logging_prefix}: アノテーションZIPを読み込みます。file='{str(self.annotations_zip_path)}'")
+        logger.debug(f"{self.logging_prefix}: アノテーションZIPを読み込みます。file='{self.annotations_zip_path!s}'")
 
         result: Dict[str, int] = defaultdict(int)
         for index, parser in enumerate(lazy_parse_simple_annotation_zip(self.annotations_zip_path)):
@@ -214,14 +214,12 @@ class Database:
         annotation_specs_updated_datetime = annotation_specs_history[-1]["updated_datetime"]
         logger.debug(f"{self.logging_prefix}: アノテーション仕様の最終更新日時={annotation_specs_updated_datetime}")
 
-        job_list = self.annofab_service.api.get_project_job(
-            project_id, query_params={"type": ProjectJobType.GEN_ANNOTATION.value, "limit": 1}
-        )[0]["list"]
+        job_list = self.annofab_service.api.get_project_job(project_id, query_params={"type": ProjectJobType.GEN_ANNOTATION.value, "limit": 1})[0][
+            "list"
+        ]
         if len(job_list) > 0:
             job = job_list[0]
-            logger.debug(
-                f"{self.logging_prefix}: アノテーションzipの最終更新日時={job['updated_datetime']}, job_status={job['job_status']}"
-            )
+            logger.debug(f"{self.logging_prefix}: アノテーションzipの最終更新日時={job['updated_datetime']}, job_status={job['job_status']}")
 
         if should_update_annotation_zip:
             if len(job_list) == 0:
@@ -235,18 +233,16 @@ class Database:
                     self.wait_for_completion_updated_annotation(project_id)
 
                 elif job_status == JobStatus.SUCCEEDED:
-                    if dateutil.parser.parse(job["updated_datetime"]) < dateutil.parser.parse(
-                        last_tasks_updated_datetime
-                    ):
-                        logger.info(f"{self.logging_prefix}: タスクの最新更新日時よりアノテーションzipの最終更新日時の方が古いので、アノテーションzipを更新します。")
+                    if dateutil.parser.parse(job["updated_datetime"]) < dateutil.parser.parse(last_tasks_updated_datetime):
+                        logger.info(
+                            f"{self.logging_prefix}: タスクの最新更新日時よりアノテーションzipの最終更新日時の方が古いので、アノテーションzipを更新します。"  # noqa: E501
+                        )
                         self.annofab_service.api.post_annotation_archive_update(project_id)
                         self.wait_for_completion_updated_annotation(project_id)
 
-                    elif dateutil.parser.parse(job["updated_datetime"]) < dateutil.parser.parse(
-                        annotation_specs_updated_datetime
-                    ):
+                    elif dateutil.parser.parse(job["updated_datetime"]) < dateutil.parser.parse(annotation_specs_updated_datetime):
                         logger.info(
-                            f"{self.logging_prefix}: アノテーション仕様の更新日時よりアノテーションzipの最終更新日時の方が古いので、アノテーションzipを更新します。"
+                            f"{self.logging_prefix}: アノテーション仕様の更新日時よりアノテーションzipの最終更新日時の方が古いので、アノテーションzipを更新します。"  # noqa: E501
                         )
                         self.annofab_service.api.post_annotation_archive_update(project_id)
                         self.wait_for_completion_updated_annotation(project_id)
@@ -268,9 +264,9 @@ class Database:
             should_update_task_json:
         """
 
-        job_list = self.annofab_service.api.get_project_job(
-            project_id, query_params={"type": ProjectJobType.GEN_TASKS_LIST.value, "limit": 1}
-        )[0]["list"]
+        job_list = self.annofab_service.api.get_project_job(project_id, query_params={"type": ProjectJobType.GEN_TASKS_LIST.value, "limit": 1})[0][
+            "list"
+        ]
 
         if len(job_list) == 0:
             if should_update_task_json:
@@ -279,9 +275,7 @@ class Database:
 
         else:
             job = job_list[0]
-            logger.debug(
-                f"{self.logging_prefix}: タスク全件ファイルの最終更新日時={job['updated_datetime']}, job_status={job['job_status']}"
-            )
+            logger.debug(f"{self.logging_prefix}: タスク全件ファイルの最終更新日時={job['updated_datetime']}, job_status={job['job_status']}")
 
             if should_update_task_json:
                 job_status = JobStatus(job["job_status"])
@@ -317,16 +311,14 @@ class Database:
         annotation_specs_updated_datetime = annotation_specs_history[-1]["updated_datetime"]
         logger.debug(f"{self.logging_prefix}: アノテーション仕様の最終更新日時={annotation_specs_updated_datetime}")
 
-        job_list = self.annofab_service.api.get_project_job(
-            self.project_id, query_params={"type": ProjectJobType.GEN_ANNOTATION.value, "limit": 1}
-        )[0]["list"]
+        job_list = self.annofab_service.api.get_project_job(self.project_id, query_params={"type": ProjectJobType.GEN_ANNOTATION.value, "limit": 1})[
+            0
+        ]["list"]
         if len(job_list) == 0:
             logger.debug(f"{self.logging_prefix}: アノテーションzipの最終更新日時は不明です。")
         else:
             job = job_list[0]
-            logger.debug(
-                f"{self.logging_prefix}: アノテーションzipの最終更新日時={job['updated_datetime']}, job_status={job['job_status']}"
-            )
+            logger.debug(f"{self.logging_prefix}: アノテーションzipの最終更新日時={job['updated_datetime']}, job_status={job['job_status']}")
 
     def _download_db_file(self, is_latest: bool, is_get_task_histories_one_of_each: bool):
         """
@@ -341,9 +333,7 @@ class Database:
 
         wait_options = WaitOptions(interval=60, max_tries=360)
 
-        downloading_obj.download_task_json(
-            self.project_id, dest_path=str(self.tasks_json_path), is_latest=is_latest, wait_options=wait_options
-        )
+        downloading_obj.download_task_json(self.project_id, dest_path=str(self.tasks_json_path), is_latest=is_latest, wait_options=wait_options)
         downloading_obj.download_annotation_zip(
             self.project_id,
             dest_path=str(self.annotations_zip_path),
@@ -365,9 +355,7 @@ class Database:
 
         else:
             try:
-                downloading_obj.download_task_history_json(
-                    self.project_id, dest_path=str(self.task_histories_json_path)
-                )
+                downloading_obj.download_task_history_json(self.project_id, dest_path=str(self.task_histories_json_path))
             except DownloadingFileNotFoundError:
                 # プロジェクトを作成した日だと、タスク履歴全県ファイルが作成されていないので、DownloadingFileNotFoundErrorが発生する
                 # その場合でも、処理は継続できるので、タスク履歴APIを１個ずつ実行して、タスク履歴ファイルを作成する
@@ -392,11 +380,7 @@ class Database:
         query = self.query
 
         # 終了日はその日の23:59までを対象とするため、１日加算する
-        dt_end_date = (
-            self._to_datetime_with_tz(query.end_date) + datetime.timedelta(days=1)
-            if query.end_date is not None
-            else None
-        )
+        dt_end_date = self._to_datetime_with_tz(query.end_date) + datetime.timedelta(days=1) if query.end_date is not None else None
 
         def filter_task(arg_task: Dict[str, Any]) -> bool:
             """
@@ -437,9 +421,7 @@ class Database:
         return filtered_task_list
 
     @staticmethod
-    def _filter_task_with_task_history(
-        task_list: List[Task], dict_task_histories: Dict[str, List[TaskHistory]], start_date: str
-    ) -> List[Task]:
+    def _filter_task_with_task_history(task_list: List[Task], dict_task_histories: Dict[str, List[TaskHistory]], start_date: str) -> List[Task]:
         """
         タスク履歴を参照して、タスクを絞り込む。
 
@@ -464,9 +446,7 @@ class Database:
                 return False
 
             # 初回教師付けの開始日時をfirst_started_datetimeとするため「(タスク作成)」の履歴がある場合はスキップする。
-            first_started_datetime = (task_histories[0] if not has_task_creation else task_histories[1])[
-                "started_datetime"
-            ]
+            first_started_datetime = (task_histories[0] if not has_task_creation else task_histories[1])["started_datetime"]
             if first_started_datetime is None:
                 return False
             return dateutil.parser.parse(first_started_datetime) >= dt_start_date

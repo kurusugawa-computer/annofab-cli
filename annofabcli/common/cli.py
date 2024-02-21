@@ -116,9 +116,7 @@ def add_parser(
 
         group.add_argument("--yes", action="store_true", help="処理中に現れる問い合わせに対して、常に ``yes`` と回答します。")
 
-        group.add_argument(
-            "--endpoint_url", type=str, help="Annofab WebAPIのエンドポイントを指定します。", default=DEFAULT_ENDPOINT_URL
-        )
+        group.add_argument("--endpoint_url", type=str, help="Annofab WebAPIのエンドポイントを指定します。", default=DEFAULT_ENDPOINT_URL)
 
         group.add_argument("--annofab_user_id", type=str, help="Annofabにログインする際のユーザーID")
         group.add_argument("--annofab_password", type=str, help="Annofabにログインする際のパスワード")
@@ -133,7 +131,9 @@ def add_parser(
 
         group.add_argument("--disable_log", action="store_true", help="ログを無効にします。")
 
-        group.add_argument("--debug", action="store_true", help="HTTPリクエストの内容やレスポンスのステータスコードなど、デバッグ用のログが出力されます。")
+        group.add_argument(
+            "--debug", action="store_true", help="HTTPリクエストの内容やレスポンスのステータスコードなど、デバッグ用のログが出力されます。"
+        )
 
         return parent_parser
 
@@ -151,11 +151,9 @@ def add_parser(
     )
     parser.set_defaults(command_help=parser.print_help)
 
-    # 引数グループに"global optional group"がある場合は、"--help"オプションをデフォルトの"optional"グループから、"global optional arguments"グループに移動する
+    # 引数グループに"global optional group"がある場合は、"--help"オプションをデフォルトの"optional"グループから、"global optional arguments"グループに移動する  # noqa: E501
     # https://ja.stackoverflow.com/a/57313/19524
-    global_optional_argument_group = first_true(
-        parser._action_groups, pred=lambda e: e.title == GLOBAL_OPTIONAL_ARGUMENTS_TITLE
-    )
+    global_optional_argument_group = first_true(parser._action_groups, pred=lambda e: e.title == GLOBAL_OPTIONAL_ARGUMENTS_TITLE)
     if global_optional_argument_group is not None:
         # optional グループの 0番目が help なので取り出す
         help_action = parser._optionals._group_actions.pop(0)
@@ -231,9 +229,7 @@ def get_input_data_size(str_input_data_size: str) -> Optional[InputDataSize]:
     return (int(splitted_list[0]), int(splitted_list[1]))
 
 
-def get_wait_options_from_args(
-    dict_wait_options: Optional[Dict[str, Any]], default_wait_options: WaitOptions
-) -> WaitOptions:
+def get_wait_options_from_args(dict_wait_options: Optional[Dict[str, Any]], default_wait_options: WaitOptions) -> WaitOptions:
     """
     デフォルト値とマージして、wait_optionsを取得する。
 
@@ -438,7 +434,10 @@ class ArgumentParser:
         '--input_data_id` 引数を追加
         """
         if help_message is None:
-            help_message = "対象の入力データのinput_data_idを指定します。" + " ``file://`` を先頭に付けると、input_data_idの一覧が記載されたファイルを指定できます。"
+            help_message = (
+                "対象の入力データのinput_data_idを指定します。"
+                + " ``file://`` を先頭に付けると、input_data_idの一覧が記載されたファイルを指定できます。"
+            )
 
         self.parser.add_argument("-i", "--input_data_id", type=str, required=required, nargs="+", help=help_message)
 
@@ -449,9 +448,7 @@ class ArgumentParser:
         if help_message is None:
             help_message = "出力フォーマットを指定します。"
 
-        self.parser.add_argument(
-            "-f", "--format", type=str, choices=[e.value for e in choices], default=default.value, help=help_message
-        )
+        self.parser.add_argument("-f", "--format", type=str, choices=[e.value for e in choices], default=default.value, help=help_message)
 
     def add_csv_format(self, help_message: Optional[str] = None):
         """
@@ -501,7 +498,7 @@ class ArgumentParser:
         self.parser.add_argument("-tq", "--task_query", type=str, required=required, help=help_message)
 
 
-class AbstractCommandLineWithConfirmInterface(abc.ABC):  # noqa: abstract-base-class-without-abstract-method
+class AbstractCommandLineWithConfirmInterface(abc.ABC):  # noqa: B024
     """
     コマンドライン上でpromptを表示するときのインターフェイス
     """
@@ -639,9 +636,7 @@ class AbstractCommandLineWithoutWebapiInterface(abc.ABC):
     def print_according_to_format(self, target: Any) -> None:  # noqa: ANN401
         target = self.search_with_jmespath_expression(target)
 
-        print_according_to_format(
-            target, arg_format=FormatArgument(self.str_format), output=self.output, csv_format=self.csv_format
-        )
+        print_according_to_format(target, arg_format=FormatArgument(self.str_format), output=self.output, csv_format=self.csv_format)
 
 
 class PrettyHelpFormatter(argparse.RawTextHelpFormatter, argparse.ArgumentDefaultsHelpFormatter):
@@ -652,9 +647,9 @@ class PrettyHelpFormatter(argparse.RawTextHelpFormatter, argparse.ArgumentDefaul
 
     def _get_help_string(self, action):  # noqa: ANN001
         # 必須な引数には、引数の説明の後ろに"(required)"を付ける
-        help = action.help  # noqa: builtin-variable-shadowing # pylint: disable=redefined-builtin
+        help = action.help  # noqa: A001 # pylint: disable=redefined-builtin
         if action.required:
-            help += " (required)"  # noqa: builtin-variable-shadowing
+            help += " (required)"  # noqa: A001
 
         # 不要なデフォルト値（--debug や オプショナルな引数）を表示させないようにする
         # super()._get_help_string の中身を、そのまま持ってきた。
@@ -665,7 +660,7 @@ class PrettyHelpFormatter(argparse.RawTextHelpFormatter, argparse.ArgumentDefaul
                 if action.option_strings or action.nargs in defaulting_nargs:
                     # 以下の条件だけ、annofabcli独自の設定
                     if action.default is not None and not action.const:
-                        help += " (default: %(default)s)"  # noqa: builtin-variable-shadowing
+                        help += " (default: %(default)s)"  # noqa: A001
         return help
 
 

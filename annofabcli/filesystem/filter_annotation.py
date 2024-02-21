@@ -33,9 +33,7 @@ class FilterQuery:
 def match_query(  # pylint: disable=too-many-return-statements
     annotation: Dict[str, Any], filter_query: FilterQuery
 ) -> bool:
-    if filter_query.task_query is not None and not match_annotation_with_task_query(
-        annotation, filter_query.task_query
-    ):
+    if filter_query.task_query is not None and not match_annotation_with_task_query(annotation, filter_query.task_query):
         return False
 
     # xxx_set は1個のみ指定されていること前提なので、elif を羅列する
@@ -43,24 +41,13 @@ def match_query(  # pylint: disable=too-many-return-statements
         return False
     elif filter_query.exclude_task_id_set is not None and annotation["task_id"] in filter_query.exclude_task_id_set:
         return False
-    elif (
-        filter_query.input_data_id_set is not None and annotation["input_data_id"] not in filter_query.input_data_id_set
-    ):
+    elif filter_query.input_data_id_set is not None and annotation["input_data_id"] not in filter_query.input_data_id_set:
         return False
-    elif (
-        filter_query.exclude_input_data_id_set is not None
-        and annotation["input_data_id"] in filter_query.exclude_input_data_id_set
-    ):
+    elif filter_query.exclude_input_data_id_set is not None and annotation["input_data_id"] in filter_query.exclude_input_data_id_set:
         return False
-    elif (
-        filter_query.input_data_name_set is not None
-        and annotation["input_data_name"] not in filter_query.input_data_name_set
-    ):
+    elif filter_query.input_data_name_set is not None and annotation["input_data_name"] not in filter_query.input_data_name_set:
         return False
-    elif (
-        filter_query.exclude_input_data_name_set is not None
-        and annotation["input_data_name"] in filter_query.exclude_input_data_name_set
-    ):
+    elif filter_query.exclude_input_data_name_set is not None and annotation["input_data_name"] in filter_query.exclude_input_data_name_set:
         return False
 
     return True
@@ -134,37 +121,17 @@ class FilterAnnotation:
 
     @staticmethod
     def create_filter_query(args: argparse.Namespace) -> FilterQuery:
-        task_query = (
-            TaskQuery.from_dict(annofabcli.common.cli.get_json_from_args(args.task_query))
-            if args.task_query is not None
-            else None
-        )
+        task_query = TaskQuery.from_dict(annofabcli.common.cli.get_json_from_args(args.task_query)) if args.task_query is not None else None
 
         task_id_set = set(annofabcli.common.cli.get_list_from_args(args.task_id)) if args.task_id is not None else None
-        exclude_task_id_set = (
-            set(annofabcli.common.cli.get_list_from_args(args.exclude_task_id))
-            if args.exclude_task_id is not None
-            else None
-        )
-        input_data_id_set = (
-            set(annofabcli.common.cli.get_list_from_args(args.input_data_id))
-            if args.input_data_id is not None
-            else None
-        )
+        exclude_task_id_set = set(annofabcli.common.cli.get_list_from_args(args.exclude_task_id)) if args.exclude_task_id is not None else None
+        input_data_id_set = set(annofabcli.common.cli.get_list_from_args(args.input_data_id)) if args.input_data_id is not None else None
         exclude_input_data_id_set = (
-            set(annofabcli.common.cli.get_list_from_args(args.exclude_input_data_id))
-            if args.exclude_input_data_id is not None
-            else None
+            set(annofabcli.common.cli.get_list_from_args(args.exclude_input_data_id)) if args.exclude_input_data_id is not None else None
         )
-        input_data_name_set = (
-            set(annofabcli.common.cli.get_list_from_args(args.input_data_name))
-            if args.input_data_name is not None
-            else None
-        )
+        input_data_name_set = set(annofabcli.common.cli.get_list_from_args(args.input_data_name)) if args.input_data_name is not None else None
         exclude_input_data_name_set = (
-            set(annofabcli.common.cli.get_list_from_args(args.exclude_input_data_name))
-            if args.exclude_input_data_name is not None
-            else None
+            set(annofabcli.common.cli.get_list_from_args(args.exclude_input_data_name)) if args.exclude_input_data_name is not None else None
         )
 
         return FilterQuery(
@@ -231,26 +198,30 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--input_data_id",
         type=str,
         nargs="+",
-        help="抽出する入力データのinput_data_idを指定してください。" + " ``file://`` を先頭に付けると、input_data_id の一覧が記載されたファイルを指定できます。",
+        help="抽出する入力データのinput_data_idを指定してください。"
+        + " ``file://`` を先頭に付けると、input_data_id の一覧が記載されたファイルを指定できます。",
     )
     id_name_list_group.add_argument(
         "--exclude_input_data_id",
         type=str,
         nargs="+",
-        help="除外する入力データのinput_data_idを指定してください。" + " ``file://`` を先頭に付けると、input_data_id の一覧が記載されたファイルを指定できます。",
+        help="除外する入力データのinput_data_idを指定してください。"
+        + " ``file://`` を先頭に付けると、input_data_id の一覧が記載されたファイルを指定できます。",
     )
 
     id_name_list_group.add_argument(
         "--input_data_name",
         type=str,
         nargs="+",
-        help="抽出する入力データのinput_data_nameを指定してください。" + " ``file://`` を先頭に付けると、input_data_name の一覧が記載されたファイルを指定できます。",
+        help="抽出する入力データのinput_data_nameを指定してください。"
+        + " ``file://`` を先頭に付けると、input_data_name の一覧が記載されたファイルを指定できます。",
     )
     id_name_list_group.add_argument(
         "--exclude_input_data_name",
         type=str,
         nargs="+",
-        help="除外する入力データのinput_data_nameを指定してください。" + " ``file://`` を先頭に付けると、input_data_name の一覧が記載されたファイルを指定できます。",
+        help="除外する入力データのinput_data_nameを指定してください。"
+        + " ``file://`` を先頭に付けると、input_data_name の一覧が記載されたファイルを指定できます。",
     )
 
     parser.add_argument("-o", "--output_dir", type=Path, required=True, help="出力先ディレクトリのパス")

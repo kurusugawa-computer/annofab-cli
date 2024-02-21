@@ -53,7 +53,7 @@ class TestCommandLine:
         """
         label_colorに関するシナリオテスト。
         """
-        out_file = out_dir / f"annotation_specs_list_label_color--{str(datetime.datetime.now().timestamp())}.json"
+        out_file = out_dir / f"annotation_specs_list_label_color--{datetime.datetime.now().timestamp()!s}.json"
         main(
             [
                 self.command_name,
@@ -70,7 +70,7 @@ class TestCommandLine:
             old_label_color = json.load(f)
 
         label_color = copy.deepcopy(old_label_color)
-        key = list(label_color.keys())[0]
+        key = list(label_color.keys())[0]  # noqa: RUF015
         color = label_color[key]
         new_color = (color[0], color[1], (color[2] + 1) % 256)
         label_color[key] = new_color
@@ -87,7 +87,7 @@ class TestCommandLine:
             ]
         )
 
-        out_file2 = out_dir / f"annotation_specs_list_label_color--{str(datetime.datetime.now().timestamp())}.json"
+        out_file2 = out_dir / f"annotation_specs_list_label_color--{datetime.datetime.now().timestamp()!s}.json"
         main(
             [
                 self.command_name,

@@ -43,9 +43,7 @@ class PutInspectionCommentSimply(AbstractCommandLineInterface):
         super().validate_project(args.project_id, [ProjectMemberRole.ACCEPTER, ProjectMemberRole.OWNER])
 
         comment_data = annofabcli.common.cli.get_json_from_args(args.comment_data)
-        custom_project_type = (
-            CustomProjectType(args.custom_project_type) if args.custom_project_type is not None else None
-        )
+        custom_project_type = CustomProjectType(args.custom_project_type) if args.custom_project_type is not None else None
 
         project, _ = self.service.api.get_project(args.project_id)
         if comment_data is None:
@@ -56,10 +54,7 @@ class PutInspectionCommentSimply(AbstractCommandLineInterface):
                 comment_data = {"start": 0, "end": 100, "_type": "Time"}
             elif project["input_data_type"] == InputDataType.CUSTOM.value:
                 editor_plugin_id = project["configuration"]["plugin_id"]
-                if (
-                    editor_plugin_id == EditorPluginId.THREE_DIMENSION.value
-                    or custom_project_type == CustomProjectType.THREE_DIMENSION_POINT_CLOUD
-                ):
+                if editor_plugin_id == EditorPluginId.THREE_DIMENSION.value or custom_project_type == CustomProjectType.THREE_DIMENSION_POINT_CLOUD:
                     comment_data = {
                         "data": '{"kind": "CUBOID", "shape": {"dimensions": {"width": 1.0, "height": 1.0, "depth": 1.0}, "location": {"x": 0.0, "y": 0.0, "z": 0.0}, "rotation": {"x": 0.0, "y": 0.0, "z": 0.0}, "direction": {"front": {"x": 1.0, "y": 0.0, "z": 0.0}, "up": {"x": 0.0, "y": 0.0, "z": 1.0}}}, "version": "2"}',  # noqa: E501
                         "_type": "Custom",
@@ -73,9 +68,7 @@ class PutInspectionCommentSimply(AbstractCommandLineInterface):
 
         task_id_list = get_list_from_args(args.task_id)
         phrase_id_list = get_list_from_args(args.phrase_id)
-        main_obj = PutCommentSimplyMain(
-            self.service, project_id=args.project_id, comment_type=CommentType.INSPECTION, all_yes=self.all_yes
-        )
+        main_obj = PutCommentSimplyMain(self.service, project_id=args.project_id, comment_type=CommentType.INSPECTION, all_yes=self.all_yes)
         main_obj.put_comment_for_task_list(
             task_ids=task_id_list,
             comment_info=AddedSimpleComment(comment=args.comment, data=comment_data, phrases=phrase_id_list),
@@ -100,7 +93,10 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         type=str,
         nargs="+",
         required=True,
-        help=("検査コメントを付与するタスクのtask_idを指定してください。\n" "``file://`` を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。"),
+        help=(
+            "検査コメントを付与するタスクのtask_idを指定してください。\n"
+            "``file://`` を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。"
+        ),
     )
 
     parser.add_argument(
@@ -128,11 +124,13 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--custom_project_type",
         type=str,
         choices=[e.value for e in CustomProjectType],
-        help="[BETA] ビルトインのエディタプラグインを使用していないカスタムプロジェクトの種類を指定します。カスタムプロジェクトに対して、検査コメントの位置を指定しない場合は必須です。\n",
+        help="[BETA] ビルトインのエディタプラグインを使用していないカスタムプロジェクトの種類を指定します。カスタムプロジェクトに対して、検査コメントの位置を指定しない場合は必須です。\n",  # noqa: E501
     )
 
     parser.add_argument(
-        "--parallelism", type=int, help="使用するプロセス数（並列度）を指定してください。指定する場合は必ず ``--yes`` を指定してください。指定しない場合は、逐次的に処理します。"
+        "--parallelism",
+        type=int,
+        help="使用するプロセス数（並列度）を指定してください。指定する場合は必ず ``--yes`` を指定してください。指定しない場合は、逐次的に処理します。",  # noqa: E501
     )
 
     parser.set_defaults(subcommand_func=main)
