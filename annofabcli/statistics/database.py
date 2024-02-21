@@ -94,56 +94,6 @@ class Database:
         else:
             return True
 
-    def get_annotation_count_by_task(self) -> Dict[str, int]:
-        logger.debug(f"{self.logging_prefix}: アノテーションZIPを読み込みます。file='{self.annotations_zip_path!s}'")
-
-        result: Dict[str, int] = defaultdict(int)
-        for index, parser in enumerate(lazy_parse_simple_annotation_zip(self.annotations_zip_path)):
-            simple_annotation: Dict[str, Any] = parser.load_json()
-            annotation_count = len(simple_annotation["details"])
-            result[parser.task_id] += annotation_count
-            if (index + 1) % 10000 == 0:
-                logger.debug(f"{self.logging_prefix}: {index+1} 件の入力データに含まれているアノテーション情報を読み込みました。")
-
-        return result
-
-    def get_inspection_comment_count_by_task(self) -> Dict[str, int]:
-        """
-        タスクごとに指摘を受けた検査コメント数を取得します。
-
-        Returns:
-            key: task_id, value: 指摘を受けた検査コメント数のdictです。
-        """
-
-        def is_target_comment(comment: Dict[str, Any]) -> bool:
-            """
-            指摘を受けたコメントか否か
-            """
-            if comment["comment_type"] != "inspection":
-                return False
-
-            comment_node = comment["comment_node"]
-            if comment_node["_type"] != "Root":
-                return False
-
-            if comment_node["status"] != CommentStatus.RESOLVED.value:
-                return False
-            return True
-
-        logger.debug(f"{self.logging_prefix}: コメント全件ファイルを読み込みます。file='{self.comment_json_path}'")
-
-        with open(str(self.comment_json_path), encoding="utf-8") as f:
-            all_comments = json.load(f)
-
-        tasks_dict: Dict[str, int] = defaultdict(int)
-
-        for comment in all_comments:
-            task_id = comment["task_id"]
-            if is_target_comment(comment):
-                tasks_dict[task_id] += 1
-
-        return tasks_dict
-
     def read_task_histories_from_json(self, task_id_list: Optional[List[str]] = None) -> Dict[str, List[TaskHistory]]:
         logger.debug(f"{self.logging_prefix}: タスク履歴全件ファイルを読み込みます。file='{self.task_histories_json_path}'")
         with open(str(self.task_histories_json_path), encoding="utf-8") as f:
