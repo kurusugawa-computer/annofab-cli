@@ -195,7 +195,7 @@ class ListAnnotationCounterByInputData:
             simple_annotation: JSONファイルの内容
         """
 
-        def convert_attribute_value_to_key(value: Union[bool, str, int, float]) -> str:
+        def convert_attribute_value_to_key(value: Union[bool, str, float]) -> str:
             if isinstance(value, bool):
                 # bool値をCSVの列名やJSONのキーとして扱う場合、`True/False`だとPythonに依存したように見えてしまうので（本当？）、`true/false`に変換する  # noqa: E501
                 if value:
