@@ -121,6 +121,9 @@ class Task:
             adding_obj.add_additional_info_to_task(task)
 
             task_id = task["task_id"]
+            if task_id not in task_histories:
+                logger.warning(f"引数`task_histories`の中にtask_id='{task_id}'に対応するタスク履歴がありません。 :: {project_id=}")
+
             sub_task_histories = task_histories.get(task_id, [])
 
             # タスク履歴から取得できる付加的な情報を追加する
@@ -134,8 +137,8 @@ class Task:
         # https://github.com/bokeh/bokeh/issues/9620
         df = df.drop(["histories_by_phase"], axis=1)
 
-        df = df.merge(annotation_count.df, on=["project_id", "task_id"])
-        df = df.merge(inspection_comment_count.df, on=["project_id", "task_id"])
+        df = df.merge(annotation_count.df, on=["project_id", "task_id"], how="left")
+        df = df.merge(inspection_comment_count.df, on=["project_id", "task_id"], how="left")
         df = df.fillna(
             {
                 "inspection_comment_count": 0,
@@ -386,48 +389,7 @@ class Task:
         if not self._validate_df_for_output(output_file):
             return
 
-        columns = [
-            "project_id",
-            "task_id",
-            "phase",
-            "phase_stage",
-            "status",
-            "number_of_rejections_by_inspection",
-            "number_of_rejections_by_acceptance",
-            # タスク作成時
-            "created_datetime",
-            # 1回目の教師付フェーズ
-            "first_annotation_user_id",
-            "first_annotation_username",
-            "first_annotation_worktime_hour",
-            "first_annotation_started_datetime",
-            # 1回目の検査フェーズ
-            "first_inspection_user_id",
-            "first_inspection_username",
-            "first_inspection_worktime_hour",
-            "first_inspection_started_datetime",
-            # 1回目の受入フェーズ
-            "first_acceptance_user_id",
-            "first_acceptance_username",
-            "first_acceptance_worktime_hour",
-            "first_acceptance_started_datetime",
-            # 最後の受入
-            "first_acceptance_completed_datetime",
-            # 作業時間に関する内容
-            "worktime_hour",
-            "annotation_worktime_hour",
-            "inspection_worktime_hour",
-            "acceptance_worktime_hour",
-            # 個数
-            "input_data_count",
-            "annotation_count",
-            "inspection_comment_count",
-            # タスクの状態
-            "inspection_is_skipped",
-            "acceptance_is_skipped",
-        ]
-
-        print_csv(self.df[columns], str(output_file))
+        print_csv(self.df[self.columns()], str(output_file))
 
     def mask_user_info(
         self,

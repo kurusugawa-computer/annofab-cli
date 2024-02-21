@@ -86,7 +86,7 @@ class WriteCsvGraph:
 
         self.project_dir = ProjectDir(output_dir)
 
-        self.task_df: Optional[pandas.DataFrame] = None
+        self.task: Optional[Task] = None
         self.worktime_per_date: Optional[WorktimePerDate] = None
 
     def _catch_exception(self, function: Callable[..., Any]) -> Callable[..., Any]:
@@ -103,27 +103,24 @@ class WriteCsvGraph:
 
         return wrapped
 
-    def _get_task_df(self) -> pandas.DataFrame:
-        if self.task_df is None:
+    def _get_task(self) -> Task:
+        if self.task is None:
             annotation_count = AnnotationCount.from_annotation_zip(self.table_obj.database.annotations_zip_path, project_id=self.project_id)
 
             with self.table_obj.database.comment_json_path.open() as f:
                 inspection_comments = json.load(f)
-            inspection_comment_count = InspectionCommentCount.from_api_content(inspection_comments, project_id=self.project_id)
+            inspection_comment_count = InspectionCommentCount.from_api_content(inspection_comments)
 
-            with self.table_obj.database.tasks_json_path.open() as f:
-                tasks = json.load(f)
-            with self.table_obj.database.task_histories_json_path.open() as f:
-                task_histories = json.load(f)
-
-            self.task_df = Task.from_api_content(
-                tasks,
-                task_histories,
+            self.task = Task.from_api_content(
+                tasks=self.table_obj._get_task_list(),
+                task_histories=self.table_obj._get_task_histories_dict(),
                 inspection_comment_count=inspection_comment_count,
                 annotation_count=annotation_count,
+                project_id=self.project_id,
                 annofab_service=self.service,
             )
-        return self.task_df
+
+        return self.task
 
     def _get_worktime_per_date(self) -> WorktimePerDate:
         if self.worktime_per_date is None:
@@ -141,7 +138,7 @@ class WriteCsvGraph:
         タスクに関するヒストグラムを出力する。
 
         """
-        obj = Task(self._get_task_df())
+        obj = self._get_task()
 
         self.project_dir.write_task_list(obj)
 
@@ -160,7 +157,7 @@ class WriteCsvGraph:
         task_worktime_obj = TaskWorktimeByPhaseUser.from_df_wrapper(
             task_history=task_history,
             user=User(df_user),
-            task=Task(self._get_task_df()),
+            task=self._get_task(),
             project_id=self.project_id,
         )
         self.project_dir.write_task_worktime_list(task_worktime_obj)
@@ -183,7 +180,7 @@ class WriteCsvGraph:
 
     def write_cumulative_linegraph_by_user(self, user_id_list: Optional[List[str]] = None) -> None:
         """ユーザごとの累積折れ線グラフをプロットする。"""
-        df_task = self._get_task_df()
+        df_task = self._get_task().df
 
         annotator_obj = AnnotatorCumulativeProductivity(df_task)
         inspector_obj = InspectorCumulativeProductivity(df_task)
@@ -206,7 +203,7 @@ class WriteCsvGraph:
 
         self.project_dir.write_worktime_per_date_user(worktime_per_date_obj)
 
-        task = Task(self._get_task_df())
+        task = self._get_task()
         productivity_per_completed_date_obj = WholeProductivityPerCompletedDate.from_df_wrapper(task, worktime_per_date_obj)
 
         self.project_dir.write_whole_productivity_per_date(productivity_per_completed_date_obj)
@@ -221,7 +218,7 @@ class WriteCsvGraph:
 
     def write_user_productivity_per_date(self, user_id_list: Optional[List[str]] = None) -> None:
         """ユーザごとの日ごとの生産性情報を出力する。"""
-        df_task = self._get_task_df()
+        df_task = self._get_task()
 
         annotator_per_date_obj = AnnotatorProductivityPerDate.from_df_task(df_task)
         inspector_per_date_obj = InspectorProductivityPerDate.from_df_task(df_task)
