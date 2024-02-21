@@ -44,7 +44,7 @@ def fill_annotation(
     draw: PIL.ImageDraw.Draw,
     annotation: SimpleAnnotationDetail,
     label_color_dict: Dict[str, RGB],
-    outer_image: Optional[Any] = None,
+    outer_image: Optional[Any] = None,  # noqa: ANN401
 ) -> PIL.ImageDraw.Draw:
     """
     1個のアノテーションを、塗りつぶしで描画する。（矩形、ポリゴン、塗りつぶし、塗りつぶしv2）
@@ -141,7 +141,7 @@ def write_annotation_image(
     image_size: InputDataSize,
     label_color_dict: Dict[str, RGB],
     output_image_file: Path,
-    background_color: Optional[Any] = None,
+    background_color: Optional[Any] = None,  # noqa: ANN401
     label_name_list: Optional[List[str]] = None,
 ):
     """
@@ -271,7 +271,7 @@ def write_annotation_images_from_path(
     image_size: Optional[InputDataSize] = None,
     input_data_dict: Optional[Dict[str, InputData]] = None,
     output_image_extension: str = "png",
-    background_color: Optional[Any] = None,
+    background_color: Optional[Any] = None,  # noqa: ANN401
     label_name_list: Optional[List[str]] = None,
     is_target_parser_func: Optional[IsParserFunc] = None,
 ) -> bool:

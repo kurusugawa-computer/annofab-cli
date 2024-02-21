@@ -132,7 +132,7 @@ class LineGraph:
         y_column: str,
         *,
         legend_label: str,
-        color: Optional[Any] = None,
+        color: Optional[Any] = None,  # noqa: ANN401
         is_secondary_y_axis: bool = False,
         **kwargs,
     ) -> tuple[GlyphRenderer, GlyphRenderer]:
@@ -175,7 +175,7 @@ class LineGraph:
         y_column: str,
         *,
         legend_label: str,
-        color: Optional[Any] = None,
+        color: Optional[Any] = None,  # noqa: ANN401
         is_secondary_y_axis: bool = False,
         **kwargs,
     ) -> tuple[GlyphRenderer, GlyphRenderer]:
