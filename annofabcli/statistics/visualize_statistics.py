@@ -218,11 +218,11 @@ class WriteCsvGraph:
 
     def write_user_productivity_per_date(self, user_id_list: Optional[List[str]] = None) -> None:
         """ユーザごとの日ごとの生産性情報を出力する。"""
-        df_task = self._get_task()
+        task = self._get_task()
 
-        annotator_per_date_obj = AnnotatorProductivityPerDate.from_df_task(df_task)
-        inspector_per_date_obj = InspectorProductivityPerDate.from_df_task(df_task)
-        acceptor_per_date_obj = AcceptorProductivityPerDate.from_df_task(df_task)
+        annotator_per_date_obj = AnnotatorProductivityPerDate.from_df_task(task.df)
+        inspector_per_date_obj = InspectorProductivityPerDate.from_df_task(task.df)
+        acceptor_per_date_obj = AcceptorProductivityPerDate.from_df_task(task.df)
 
         # 開始日ごとのCSVを出力
         self.project_dir.write_performance_per_started_date_csv(annotator_per_date_obj, phase=TaskPhase.ANNOTATION)
