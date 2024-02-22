@@ -2,7 +2,6 @@ import datetime
 import json
 import logging
 import multiprocessing
-from collections import defaultdict
 from dataclasses import dataclass
 from functools import partial
 from pathlib import Path
@@ -13,8 +12,7 @@ import dateutil
 import dateutil.parser
 import more_itertools
 from annofabapi.dataclass.task import Task as DcTask
-from annofabapi.models import CommentStatus, InputDataId, JobStatus, ProjectJobType, Task, TaskHistory
-from annofabapi.parser import lazy_parse_simple_annotation_zip
+from annofabapi.models import InputDataId, JobStatus, ProjectJobType, Task, TaskHistory
 
 from annofabcli.common.dataclasses import WaitOptions
 from annofabcli.common.download import DownloadingFile
