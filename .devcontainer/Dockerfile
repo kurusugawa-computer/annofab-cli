@@ -1,4 +1,4 @@
-FROM ubuntu:22.04 as devcontainer
+FROM ubuntu:22.04
 
 # Install prerequisites
 RUN set -x \
@@ -75,7 +75,7 @@ RUN set -x \
 
 # Add user / Grant sudo privileges
 RUN useradd -m -s /bin/bash -u 5000 -U vscode \
-    && echo "vscode ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers.d/ALL 
+    && echo "vscode ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers.d/ALL
 
 USER vscode
 
