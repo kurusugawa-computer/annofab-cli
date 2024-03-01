@@ -33,6 +33,10 @@ class TestUserPerformance:
         assert actual.df[("user_id", "")][0] == "alice"
         assert actual.df[("real_actual_worktime_hour", "sum")][0] == 6
         assert actual.df[("task_count", "annotation")][0] == 1
+        import pandas
+
+        pandas.set_option("display.max_rows", None)
+        print(actual.df.iloc[0])
 
     def test__from_df_wrapper__集計対象タスクが0件のとき(self):
         task_worktime_by_phase_user = TaskWorktimeByPhaseUser.empty()
