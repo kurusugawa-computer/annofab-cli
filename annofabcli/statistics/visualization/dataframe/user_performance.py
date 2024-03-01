@@ -340,13 +340,25 @@ class UserPerformance:
         df2["worktime_hour/annotation_count"] = df2["worktime_hour"] / df2["annotation_count"]
 
         # 母標準偏差(ddof=0)を算出する
-        df_stdev = df2.groupby(["account_id", "phase"])[["worktime_hour/input_data_count", "worktime_hour/annotation_count"]].std(ddof=0)
+        # 標準偏差を算出する際"inf"を除外する理由：annotation_countが0の場合、"worktime_hour/annotation_count"はinfになる。
+        # infが含まれるデータから標準偏差を求めようとするNaNになる。したがって、infを除外する。
+        # 原則annotation_countが0のときに場合は、作業時間も小さいためこのデータを除外しても、標準偏差には影響がないはず
+        df_stdev_per_input_data_count = (
+            df2[df2["worktime_hour/input_data_count"] != float("inf")]
+            .groupby(["account_id", "phase"])[["worktime_hour/input_data_count"]]
+            .std(ddof=0)
+        )
+        df_stdev_per_annotation_count = (
+            df2[df2["worktime_hour/annotation_count"] != float("inf")]
+            .groupby(["account_id", "phase"])[["worktime_hour/annotation_count"]]
+            .std(ddof=0)
+        )
+        df_stdev = pandas.concat([df_stdev_per_input_data_count, df_stdev_per_annotation_count], axis=1)
 
+        # `dropna=False`を指定する理由：NaNが含まれることにより、列に"annotation"などが含まれないと、後続の処理で失敗するため
+        # 前述の処理でinfを除外しているので、NaNが含まれることはないはず
         df_stdev2 = pandas.pivot_table(
-            df_stdev,
-            values=["worktime_hour/input_data_count", "worktime_hour/annotation_count"],
-            index="account_id",
-            columns="phase",
+            df_stdev, values=["worktime_hour/input_data_count", "worktime_hour/annotation_count"], index="account_id", columns="phase", dropna=False
         )
         df_stdev3 = df_stdev2.rename(
             columns={
