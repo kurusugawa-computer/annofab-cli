@@ -331,7 +331,6 @@ class VisualizingStatisticsMain:
         table_obj = Table(database)
 
         if self.actual_worktime is not None:
-            # project_id列がある場合（複数のproject_id列を指定した場合）はproject_idで絞り込む
             df_actual_worktime = self.actual_worktime.df
             df_actual_worktime = df_actual_worktime[df_actual_worktime["project_id"] == project_id]
 
@@ -343,13 +342,25 @@ class VisualizingStatisticsMain:
         else:
             df_actual_worktime = ActualWorktime.empty()
 
+        if self.annotation_count is not None:
+            # project_idで絞り込む
+            df_annotation_count = self.annotation_count.df
+            df_annotation_count = df_annotation_count[df_annotation_count["project_id"] == project_id]
+            # `annotation_count = None`にする理由：後続の処理でアノテーションZIPからアノテーション数を算出するようにするため
+            if len(df_annotation_count) == 0:
+                annotation_count = None
+            else:
+                annotation_count = AnnotationCount(df_annotation_count)
+        else:
+            annotation_count = self.annotation_count
+
         write_obj = WriteCsvGraph(
             self.service,
             project_id,
             table_obj,
             output_project_dir,
             actual_worktime=ActualWorktime(df_actual_worktime),
-            annotation_count=self.annotation_count,
+            annotation_count=annotation_count,
             start_date=self.start_date,
             end_date=self.end_date,
             minimal_output=self.minimal_output,
