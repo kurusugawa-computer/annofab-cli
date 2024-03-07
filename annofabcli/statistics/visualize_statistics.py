@@ -482,8 +482,6 @@ class VisualizeStatistics(AbstractCommandLineInterface):
 
             if len(project_id_list) == 1:
                 main_obj.visualize_statistics(project_id_list[0], root_output_dir)
-                if args.merge:
-                    logger.warning("出力した統計情報は1件以下なので、`merge`ディレクトリを出力しません。")
 
             else:
                 # project_idが複数指定された場合は、project_titleのディレクトリに統計情報を出力する
@@ -492,14 +490,6 @@ class VisualizeStatistics(AbstractCommandLineInterface):
                     root_output_dir=root_output_dir,
                     parallelism=args.parallelism,
                 )
-
-                if args.merge:
-                    merge_visualization_dir(
-                        project_dir_list=[ProjectDir(e) for e in output_project_dir_list],
-                        output_project_dir=ProjectDir(root_output_dir / "merge"),
-                        user_id_list=user_id_list,
-                        minimal_output=args.minimal,
-                    )
 
                 if len(output_project_dir_list) > 0:
                     project_dir_list = [ProjectDir(e) for e in output_project_dir_list]
@@ -618,11 +608,6 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         help="テキストファイルのみ出力します。グラフが掲載されているHTMLファイルは出力しません。",
     )
 
-    parser.add_argument(
-        "--merge",
-        action="store_true",
-        help="指定した場合、複数のproject_idを指定したときに、マージした統計情報も出力します。ディレクトリ名は ``merge`` です。",
-    )
 
     parser.add_argument(
         "--parallelism",
