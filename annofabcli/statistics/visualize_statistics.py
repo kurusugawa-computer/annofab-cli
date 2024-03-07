@@ -20,7 +20,6 @@ from annofabcli.common.cli import (
     build_annofabapi_resource_and_login,
 )
 from annofabcli.common.facade import AnnofabApiFacade, TaskQuery
-from annofabcli.stat_visualization.merge_visualization_dir import merge_visualization_dir
 from annofabcli.statistics.database import Database, Query
 from annofabcli.statistics.table import Table
 from annofabcli.statistics.visualization.dataframe.actual_worktime import ActualWorktime
@@ -607,7 +606,6 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         action="store_true",
         help="テキストファイルのみ出力します。グラフが掲載されているHTMLファイルは出力しません。",
     )
-
 
     parser.add_argument(
         "--parallelism",
