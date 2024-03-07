@@ -4,8 +4,8 @@ annotation dump
 
 Description
 =================================
-指定したタスク配下のアノテーション情報をディレクトリに保存します。アノテーションのバックアップなどに利用できます。
-
+`annofabcli annotation restore <../annotation/restore.html>`_ コマンドに読み込ませることができるアノテーション情報を出力します。
+アノテーションのバックアップ目的で利用することを想定しています。
 
 
 Examples
@@ -25,7 +25,7 @@ Examples
 
 
 出力先ディレクトリの構成は以下の通りです。
-``{input_data_id}.json`` のフォーマットは、https://annofab.com/docs/api/#operation/getEditorAnnotation APIのレスポンスと同じです。
+``{input_data_id}.json`` のフォーマットは、https://annofab.com/docs/api/#operation/getEditorAnnotation APIのレスポンス ``AnnotationV1`` と同じです。
 
 .. code-block::
 
@@ -37,7 +37,25 @@ Examples
 
 
 
-アノテーション情報の復元は、 `annofabcli annotation restore <../annotation/restore.html>`_ コマンドで実現できます。
+アノテーション情報のリストアは、 `annofabcli annotation restore <../annotation/restore.html>`_ コマンドで実現できます。
+
+.. code-block::
+
+    $ annofabcli annotation restore --project_id prj1 --annotation backup-dir/
+
+
+.. warning::
+
+    ``annotation dump`` コマンドの出力結果は、``annotation restore`` コマンドに読み込ませることを目的として作られています。
+
+    ``annotation dump`` コマンドの出力結果であるJSONの構造は、現在V1形式ですが今後V2形式へ移行する予定です。
+    V1形式のJSON構造に依存したプログラムは、V2形式へ移行した際に動くなる可能性があります。
+    ``annotation dump`` コマンドの出力結果であるJSONの構造に直接依存したプログラムを作成する場合は、ご注意ください。
+
+
+
+
+
 
 Usage Details
 =================================

@@ -32,7 +32,7 @@ Examples
 
 .. code-block::
 
-    $ annofabcli annotation change_attributes --project_id prj1 --task_id file://task.txt \ 
+    $ annofabcli annotation change_attributes --project_id prj1 --task_id file://task.txt \
     --annotation_query '{"label": "car"}' \
     --attributes '{"occluded": false}' \
     --backup backup_dir/

@@ -25,15 +25,17 @@ Examples
 
 .. code-block::
 
-    $ annofabcli annotation restore --project_id prj1 --annotation annotation.zip 
+    $ annofabcli annotation dump --project_id prj1 --task_id file://task.txt --output_dir backup-dir/
+
+    $ annofabcli annotation restore --project_id prj1 --annotation backup-dir/
 
 
 リストア対象のタスクを指定する場合は、``--task_id`` にリストア対象のタスクのtask_idを指定してください。
 
 .. code-block::
 
-    $ annofabcli annotation restore --project_id prj1 --annotation annotation.zip \
-    --task_id file://task_id.txt
+    $ annofabcli annotation restore --project_id prj1 --annotation backup-dir/ \
+    --task_id t1 t2
 
 
 
@@ -46,7 +48,7 @@ Examples
 
 .. code-block::
 
-    $ annofabcli annotation restore --project_id prj1 --annotation annotation.zip \
+    $ annofabcli annotation restore --project_id prj1 --annotation backup-dir/ \
     --force
 
 Usage Details
