@@ -152,8 +152,11 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
 
 def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     subcommand_name = "dump"
-    subcommand_help = "アノテーション情報をファイルに保存します。"
-    description = "指定したタスク配下のアノテーション情報をディレクトリに保存します。アノテーションをバックアップしたいときなどに利用できます。"
+    subcommand_help = "`annotation restore`コマンドに読み込ませることができるアノテーション情報を出力します。"
+    description = (
+        "`annotation restore`コマンドに読み込ませることができるアノテーション情報を出力します。"
+        "アノテーションのバックアップ目的で利用することを想定しています。"
+    )
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
     parse_args(parser)
