@@ -69,6 +69,8 @@ class WriteCsvGraph:
         table_obj: Table,
         output_dir: Path,
         actual_worktime: ActualWorktime,
+        *,
+        annotation_count: Optional[AnnotationCount] = None,
         start_date: Optional[str] = None,
         end_date: Optional[str] = None,
         minimal_output: bool = False,
@@ -83,6 +85,7 @@ class WriteCsvGraph:
         self.end_date = end_date
         self.minimal_output = minimal_output
         self.output_only_text = output_only_text
+        self.annotation_count = annotation_count
 
         self.project_dir = ProjectDir(output_dir)
 
@@ -105,7 +108,11 @@ class WriteCsvGraph:
 
     def _get_task(self) -> Task:
         if self.task is None:
-            annotation_count = AnnotationCount.from_annotation_zip(self.table_obj.database.annotations_zip_path, project_id=self.project_id)
+            if self.annotation_count is None:
+                # アノテーションZIPからアノテーション数を取得
+                annotation_count = AnnotationCount.from_annotation_zip(self.table_obj.database.annotations_zip_path, project_id=self.project_id)
+            else:
+                annotation_count = self.annotation_count
 
             with self.table_obj.database.comment_json_path.open() as f:
                 inspection_comments = json.load(f)
@@ -252,7 +259,8 @@ class VisualizingStatisticsMain:
         # その他
         download_latest: bool = False,
         is_get_task_histories_one_of_each: bool = False,
-        actual_worktime: Optional[ActualWorktime],
+        actual_worktime: Optional[ActualWorktime] = None,
+        annotation_count: Optional[AnnotationCount] = None,
         user_ids: Optional[List[str]],
     ) -> None:
         self.service = service
@@ -268,6 +276,7 @@ class VisualizingStatisticsMain:
         self.download_latest = download_latest
         self.is_get_task_histories_one_of_each = is_get_task_histories_one_of_each
         self.actual_worktime = actual_worktime
+        self.annotation_count = annotation_count
         self.user_ids = user_ids
 
     def write_project_info_json(self, project_id: str, project_dir: ProjectDir) -> None:
@@ -340,6 +349,7 @@ class VisualizingStatisticsMain:
             table_obj,
             output_project_dir,
             actual_worktime=ActualWorktime(df_actual_worktime),
+            annotation_count=self.annotation_count,
             start_date=self.start_date,
             end_date=self.end_date,
             minimal_output=self.minimal_output,
@@ -442,6 +452,17 @@ class VisualizeStatistics(AbstractCommandLineInterface):
                 sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
             actual_worktime = ActualWorktime(df_actual_worktime)
 
+        if args.annotation_count_csv is not None:
+            df_annotation_count = pandas.read_csv(args.annotation_count_csv)
+            if not AnnotationCount.required_columns_exist(df_annotation_count):
+                logger.error(
+                    "引数`--annotation_count_csv`のCSVには以下の列が存在しないので、終了します。\n`project_id`, `task_id`, `annotation_count`"
+                )
+                sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
+            annotation_count = AnnotationCount(df_annotation_count)
+        else:
+            annotation_count = None
+
         with tempfile.TemporaryDirectory() as str_temp_dir:
             main_obj = VisualizingStatisticsMain(
                 service=self.service,
@@ -450,6 +471,7 @@ class VisualizeStatistics(AbstractCommandLineInterface):
                 task_ids=task_id_list,
                 user_ids=user_id_list,
                 actual_worktime=actual_worktime,
+                annotation_count=annotation_count,
                 download_latest=args.latest,
                 is_get_task_histories_one_of_each=args.get_task_histories_one_of_each,
                 start_date=args.start_date,
@@ -571,6 +593,20 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
             "* project_id \n"
         ),
     )
+
+
+    parser.add_argument(
+        "--annotation_count_csv",
+        type=Path,
+        help=(
+            "指定されたCSVに記載されているアノテーション数を参照して、生産量や生産性を算出します。未指定の場合はアノテーションZIPからアノテーション数をカウントします。CSVには以下の列が必要です。\n"
+            "\n"
+            "* project_id\n"
+            "* task_id\n"
+            "* annotation_count\n"
+        ),
+    )
+
 
     parser.add_argument(
         "--minimal",
