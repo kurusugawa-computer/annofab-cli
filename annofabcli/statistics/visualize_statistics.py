@@ -425,7 +425,7 @@ class VisualizeStatistics(AbstractCommandLineInterface):
 
         return True
 
-    def main(self) -> None:
+    def main(self) -> None:  # pylint: disable=too-many-branches
         args = self.args
         if not self.validate(args):
             sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
@@ -594,7 +594,6 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         ),
     )
 
-
     parser.add_argument(
         "--annotation_count_csv",
         type=Path,
@@ -606,7 +605,6 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
             "* annotation_count\n"
         ),
     )
-
 
     parser.add_argument(
         "--minimal",
