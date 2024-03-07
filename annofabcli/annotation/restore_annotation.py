@@ -328,10 +328,8 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
 
 def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     subcommand_name = "restore"
-    subcommand_help = "'annotation dump'コマンドで保存したファイルから、アノテーション情報をリストアします。"
-    description = (
-        "'annotation dump'コマンドで保存したファイルから、アノテーション情報をリストアします。ただし、作業中/完了状態のタスクはリストアできません。"
-    )
+    subcommand_help = "'annotation dump'コマンドの出力結果から、アノテーション情報をリストアします。"
+    description = "'annotation dump'コマンドの出力結果から、アノテーション情報をリストアします。ただし、作業中/完了状態のタスクはリストアできません。"
     epilog = "チェッカーまたはオーナロールを持つユーザで実行してください。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
