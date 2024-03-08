@@ -43,9 +43,9 @@ class InspectionCommentCount:
         self.df = df
 
     @classmethod
-    def from_api_content(cls, inspection_comment_list: list[dict[str, Any]]) -> InspectionCommentCount:
+    def from_api_content(cls, comment_list: list[dict[str, Any]]) -> InspectionCommentCount:
         """
-        APIから取得した検査コメント情報からインスタンスを生成します。
+        APIから取得したコメント情報からインスタンスを生成します。
 
         Args:
             inspection_comment_list: 検査コメントのリスト
@@ -54,7 +54,10 @@ class InspectionCommentCount:
 
         def is_target_comment(comment: dict[str, Any]) -> bool:
             """
-            指摘を受けたコメントか否か
+            以下のすべての条件を満たすコメントかどうか
+            * 検査コメント
+            * 返信コメントでない（最初のコメント）
+            * 解決済のコメント
             """
             if comment["comment_type"] != "inspection":
                 return False
@@ -69,7 +72,7 @@ class InspectionCommentCount:
 
         result: dict[tuple[str, str, str], int] = defaultdict(int)  # key: (project_id, task_id, phase), value: 検査コメント数
 
-        for comment in inspection_comment_list:
+        for comment in comment_list:
             if is_target_comment(comment):
                 result[(comment["project_id"], comment["task_id"], comment["phase"])] += 1
 
