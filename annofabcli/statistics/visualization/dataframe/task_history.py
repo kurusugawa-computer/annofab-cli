@@ -51,7 +51,7 @@ class TaskHistory:
         return len(self.df) == 0
 
     @classmethod
-    def from_api_response(cls, task_histories: dict[str, list[dict[str, Any]]]) -> TaskHistory:
+    def from_api_content(cls, task_histories: dict[str, list[dict[str, Any]]]) -> TaskHistory:
         """
         APIから取得したタスク履歴情報を元に、TaskHistoryを作成します。
 

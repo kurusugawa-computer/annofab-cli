@@ -1,6 +1,5 @@
 import argparse
 import functools
-import json
 import logging.handlers
 import re
 import sys
@@ -52,6 +51,7 @@ from annofabcli.statistics.visualization.dataframe.whole_productivity_per_date i
 from annofabcli.statistics.visualization.dataframe.worktime_per_date import WorktimePerDate
 from annofabcli.statistics.visualization.model import WorktimeColumn
 from annofabcli.statistics.visualization.project_dir import ProjectDir, ProjectInfo
+from annofabcli.statistics.visualization.visualization_source_files import VisualizationSourceFiles
 
 logger = logging.getLogger(__name__)
 
@@ -66,6 +66,7 @@ class WriteCsvGraph:
         service: annofabapi.Resource,
         project_id: str,
         table_obj: Table,
+        visualize_source_files: VisualizationSourceFiles,
         output_dir: Path,
         actual_worktime: ActualWorktime,
         *,
@@ -79,6 +80,7 @@ class WriteCsvGraph:
         self.project_id = project_id
         self.output_dir = output_dir
         self.table_obj = table_obj
+        self.visualize_source_files = visualize_source_files
         self.actual_worktime = actual_worktime
         self.start_date = start_date
         self.end_date = end_date
@@ -109,13 +111,11 @@ class WriteCsvGraph:
         if self.task is None:
             if self.annotation_count is None:
                 # アノテーションZIPからアノテーション数を取得
-                annotation_count = AnnotationCount.from_annotation_zip(self.table_obj.database.annotations_zip_path, project_id=self.project_id)
+                annotation_count = AnnotationCount.from_annotation_zip(self.visualize_source_files.annotation_zip_path, project_id=self.project_id)
             else:
                 annotation_count = self.annotation_count
 
-            with self.table_obj.database.comment_json_path.open() as f:
-                inspection_comments = json.load(f)
-            inspection_comment_count = InspectionCommentCount.from_api_content(inspection_comments)
+            inspection_comment_count = InspectionCommentCount.from_api_content(self.visualize_source_files.read_comments_json())
 
             self.task = Task.from_api_content(
                 tasks=self.table_obj._get_task_list(),
@@ -156,7 +156,7 @@ class WriteCsvGraph:
         ユーザごとの生産性と品質に関する情報を出力する。
         """
 
-        task_history = TaskHistory.from_api_response(self.table_obj._get_task_histories_dict())
+        task_history = TaskHistory.from_api_content(self.table_obj._get_task_histories_dict())
         df_user = pandas.DataFrame(self.table_obj.project_members_dict.values())
 
         # タスク、フェーズ、ユーザごとの作業時間を出力する
