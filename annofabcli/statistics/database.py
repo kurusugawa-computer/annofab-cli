@@ -10,7 +10,6 @@ from typing import Any, Collection, Dict, List, Optional
 import annofabapi.utils
 import dateutil
 import dateutil.parser
-import more_itertools
 from annofabapi.dataclass.task import Task as DcTask
 from annofabapi.models import InputDataId, ProjectJobType, Task, TaskHistory
 
@@ -83,14 +82,6 @@ class Database:
         self.annotations_zip_path = temp_dir / f"{self.project_id}__simple-annotations.zip"
 
         self.logging_prefix = f"project_id={project_id}"
-
-    @staticmethod
-    def task_exists(task_list: List[Task], task_id: str) -> bool:
-        task = more_itertools.first_true(task_list, pred=lambda e: e["task_id"] == task_id)
-        if task is None:
-            return False
-        else:
-            return True
 
     def read_task_histories_from_json(self, task_id_list: Optional[List[str]] = None) -> Dict[str, List[TaskHistory]]:
         logger.debug(f"{self.logging_prefix}: タスク履歴全件ファイルを読み込みます。file='{self.task_histories_json_path}'")
