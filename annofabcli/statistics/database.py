@@ -114,22 +114,6 @@ class Database:
             logger.info(f"{self.logging_prefix}: アノテーションの更新に失敗しました or {MAX_WAIT_MINUTE} 分待っても、更新が完了しませんでした。")
             return
 
-    def wait_for_completion_updated_task_json(self, project_id: str):
-        MAX_JOB_ACCESS = 120
-        JOB_ACCESS_INTERVAL = 60
-        MAX_WAIT_MINUTE = MAX_JOB_ACCESS * JOB_ACCESS_INTERVAL / 60
-        result = self.annofab_service.wrapper.wait_for_completion(
-            project_id,
-            job_type=ProjectJobType.GEN_TASKS_LIST,
-            job_access_interval=JOB_ACCESS_INTERVAL,
-            max_job_access=MAX_JOB_ACCESS,
-        )
-        if result:
-            logger.info(f"{self.logging_prefix}: タスク全件ファイルの更新が完了しました。")
-        else:
-            logger.info(f"{self.logging_prefix}: タスク全件ファイルの更新に失敗しました or {MAX_WAIT_MINUTE} 分待っても、更新が完了しませんでした。")
-            return
-
     def _write_task_histories_json_with_executing_api_one_of_each(self):
         """
         タスク履歴取得APIを1個ずつ実行して、全タスクのタスク履歴が格納されたJSONを出力します。
