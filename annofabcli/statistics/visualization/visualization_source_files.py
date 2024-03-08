@@ -14,10 +14,12 @@ from annofabcli.common.exceptions import DownloadingFileNotFoundError
 logger = logging.getLogger(__name__)
 
 
-class DownloadedFiles:
+class VisualizationSourceFiles:
     """
-    Annofabから取得した情報に関するデータベース。
-    pickelファイルをDBとして扱う
+    可視化に必要なファイルに関するクラス。
+
+    このクラスで、可視化に必要なファイルの作成や読み込みができます。
+
     """
 
     def __init__(
@@ -26,12 +28,6 @@ class DownloadedFiles:
         project_id: str,
         target_dir: Path,
     ) -> None:
-        """
-        環境変数'ANNOFAB_USER_ID', 'ANNOFAB_PASSWORD'から情報を読み込み、AnnofabApiインスタンスを生成する。
-        Args:
-            project_id: Annofabのproject_id
-        """
-
         self.annofab_service = annofab_service
         self.project_id = project_id
         self.target_dir = target_dir
@@ -89,7 +85,8 @@ class DownloadedFiles:
             task_history_event_list = json.load(f)
 
         logger.debug(
-            f"{self.logging_prefix}: '{self.task_history_event_json_path}'を読み込みました。{len(task_history_event_list)}件のタスク履歴イベントが含まれています。"
+            f"{self.logging_prefix}: '{self.task_history_event_json_path}'を読み込みました。"
+            f"{len(task_history_event_list)}件のタスク履歴イベントが含まれています。"
         )
         return task_history_event_list
 
@@ -179,4 +176,4 @@ class DownloadedFiles:
         with self.task_history_json_path.open(mode="w", encoding="utf-8") as f:
             json.dump(result, f)
 
-        return result
+        logger.debug(f"{self.logging_prefix}: '{self.task_history_json_path}'に{len(result)}件のタスクの履歴情報を出力しました。")
