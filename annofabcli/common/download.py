@@ -1,7 +1,8 @@
 import asyncio
 import logging.config
 from functools import partial
-from typing import Optional
+from pathlib import Path
+from typing import Optional, Union
 
 import annofabapi
 import requests
@@ -60,7 +61,7 @@ class DownloadingFile:
             raise UpdatedFileForDownloadingError(f"{filetype}の更新処理が{max_wait_minutes}分以内に完了しない、または更新処理に失敗しました。")
 
     async def download_annotation_zip_with_async(
-        self, project_id: str, dest_path: str, is_latest: bool = False, wait_options: Optional[WaitOptions] = None
+        self, project_id: str, dest_path: Union[str, Path], is_latest: bool = False, wait_options: Optional[WaitOptions] = None
     ):
         loop = asyncio.get_event_loop()
         partial_func = partial(self.download_annotation_zip, project_id, dest_path, is_latest, wait_options)
@@ -70,7 +71,7 @@ class DownloadingFile:
     def download_annotation_zip(
         self,
         project_id: str,
-        dest_path: str,
+        dest_path: Union[str, Path],
         is_latest: bool = False,
         wait_options: Optional[WaitOptions] = None,
         should_download_full_annotation: bool = False,
@@ -116,14 +117,16 @@ class DownloadingFile:
         self._wait_for_completion(project_id, job_type=ProjectJobType.GEN_ANNOTATION, wait_options=wait_options, job_id=job_id)
 
     async def download_input_data_json_with_async(
-        self, project_id: str, dest_path: str, is_latest: bool = False, wait_options: Optional[WaitOptions] = None
+        self, project_id: str, dest_path: Union[str, Path], is_latest: bool = False, wait_options: Optional[WaitOptions] = None
     ):
         loop = asyncio.get_event_loop()
         partial_func = partial(self.download_input_data_json, project_id, dest_path, is_latest, wait_options)
         result = await loop.run_in_executor(None, partial_func)
         return result
 
-    def download_input_data_json(self, project_id: str, dest_path: str, is_latest: bool = False, wait_options: Optional[WaitOptions] = None):
+    def download_input_data_json(
+        self, project_id: str, dest_path: Union[str, Path], is_latest: bool = False, wait_options: Optional[WaitOptions] = None
+    ):
         if is_latest:
             self.wait_until_updated_input_data_json(project_id, wait_options)
             self.service.wrapper.download_project_inputs_url(project_id, dest_path)
@@ -156,14 +159,14 @@ class DownloadingFile:
         self._wait_for_completion(project_id, job_type=ProjectJobType.GEN_INPUTS_LIST, wait_options=wait_options, job_id=job_id)
 
     async def download_task_json_with_async(
-        self, project_id: str, dest_path: str, is_latest: bool = False, wait_options: Optional[WaitOptions] = None
+        self, project_id: str, dest_path: Union[str, Path], is_latest: bool = False, wait_options: Optional[WaitOptions] = None
     ):
         loop = asyncio.get_event_loop()
         partial_func = partial(self.download_task_json, project_id, dest_path, is_latest, wait_options)
         result = await loop.run_in_executor(None, partial_func)
         return result
 
-    def download_task_json(self, project_id: str, dest_path: str, is_latest: bool = False, wait_options: Optional[WaitOptions] = None):
+    def download_task_json(self, project_id: str, dest_path: Union[str, Path], is_latest: bool = False, wait_options: Optional[WaitOptions] = None):
         if is_latest:
             self.wait_until_updated_task_json(project_id, wait_options)
             self.service.wrapper.download_project_tasks_url(project_id, dest_path)
@@ -195,7 +198,7 @@ class DownloadingFile:
 
         self._wait_for_completion(project_id, job_type=ProjectJobType.GEN_TASKS_LIST, wait_options=wait_options, job_id=job_id)
 
-    async def download_task_history_json_with_async(self, project_id: str, dest_path: str):
+    async def download_task_history_json_with_async(self, project_id: str, dest_path: Union[str, Path]):
         """
         非同期でタスク履歴全件ファイルをダウンロードする。
 
@@ -204,7 +207,7 @@ class DownloadingFile:
         """
         return self.download_task_history_json(project_id, dest_path=dest_path)
 
-    def download_task_history_json(self, project_id: str, dest_path: str):
+    def download_task_history_json(self, project_id: str, dest_path: Union[str, Path]):
         """
         タスク履歴全件ファイルをダウンロードする。
 
@@ -224,11 +227,9 @@ class DownloadingFile:
                 ) from e
             raise e
 
-    def download_task_history_event_json(self, project_id: str, dest_path: str):
+    def download_task_history_event_json(self, project_id: str, dest_path: Union[str, Path]):
         """
         タスク履歴イベント全件ファイルをダウンロードする。
-
-        .. deprecated:: 0.21.1
 
         Args:
             project_id:
@@ -246,18 +247,17 @@ class DownloadingFile:
                 ) from e
             raise e
 
-    async def download_task_history_event_json_with_async(self, project_id: str, dest_path: str):
+    async def download_task_history_event_json_with_async(self, project_id: str, dest_path: Union[str, Path]):
         """
         非同期でタスク履歴全件ファイルをダウンロードする。
 
-        .. deprecated:: 0.21.1
 
         Raises:
             DownloadingFileNotFoundError:
         """
         return self.download_task_history_event_json(project_id, dest_path=dest_path)
 
-    async def download_inspection_json_with_async(self, project_id: str, dest_path: str):
+    async def download_inspection_json_with_async(self, project_id: str, dest_path: Union[str, Path]):
         """
         非同期で検査コメント全件ファイルをダウンロードする。
 
@@ -267,7 +267,7 @@ class DownloadingFile:
 
         return self.download_inspection_comment_json(project_id, dest_path=dest_path)
 
-    def download_inspection_comment_json(self, project_id: str, dest_path: str):
+    def download_inspection_comment_json(self, project_id: str, dest_path: Union[str, Path]):
         """
         検査コメント全件ファイルをダウンロードする。
 
@@ -284,7 +284,7 @@ class DownloadingFile:
                 ) from e
             raise e
 
-    async def download_comment_json_with_async(self, project_id: str, dest_path: str):
+    async def download_comment_json_with_async(self, project_id: str, dest_path: Union[str, Path]):
         """
         非同期でコメント全件ファイルをダウンロードする。
 
@@ -294,7 +294,7 @@ class DownloadingFile:
 
         return self.download_comment_json(project_id, dest_path=dest_path)
 
-    def download_comment_json(self, project_id: str, dest_path: str):
+    def download_comment_json(self, project_id: str, dest_path: Union[str, Path]):
         """
         コメント全件ファイルをダウンロードする。
 
