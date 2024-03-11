@@ -115,6 +115,8 @@ class WriteCsvGraph:
             tasks = self.visualize_source_files.read_tasks_json()
             task_histories = self.visualize_source_files.read_task_histories_json()
             new_tasks = filter_tasks(tasks, self.filtering_query, task_histories=task_histories)
+            logger.debug(f"project_id='{self.project_id}' :: 集計対象タスクは {len(new_tasks)} / {len(tasks)} 件です。")
+
             self.task = Task.from_api_content(
                 tasks=new_tasks,
                 task_histories=task_histories,
