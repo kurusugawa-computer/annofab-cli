@@ -223,6 +223,7 @@ class WorktimePerDate:
         project_id: str,
         actual_worktime: ActualWorktime,
         *,
+        task_history_event_json: Optional[Path] = None,
         start_date: Optional[str] = None,
         end_date: Optional[str] = None,
     ) -> WorktimePerDate:
@@ -240,10 +241,7 @@ class WorktimePerDate:
         """
 
         main_obj = ListWorktimeFromTaskHistoryEventMain(service, project_id=project_id)
-        worktime_list = main_obj.get_worktime_list(
-            project_id,
-        )
-
+        worktime_list = main_obj.get_worktime_list(project_id, task_history_event_json=task_history_event_json)
         df_member = cls._get_df_member(service, project_id)
 
         df = cls.get_df_worktime(worktime_list, df_member, actual_worktime=actual_worktime)

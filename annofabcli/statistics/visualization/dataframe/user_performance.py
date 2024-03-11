@@ -387,17 +387,31 @@ class UserPerformance:
 
         """
         df = worktime_per_date.df
-        df_agg_worktime = df.pivot_table(
-            values=[
-                "actual_worktime_hour",
-                "monitored_worktime_hour",
-                "monitored_annotation_worktime_hour",
-                "monitored_inspection_worktime_hour",
-                "monitored_acceptance_worktime_hour",
-            ],
-            index="account_id",
-            aggfunc="sum",
-        )
+        if len(df) > 0:
+            df_agg_worktime = df.pivot_table(
+                values=[
+                    "actual_worktime_hour",
+                    "monitored_worktime_hour",
+                    "monitored_annotation_worktime_hour",
+                    "monitored_inspection_worktime_hour",
+                    "monitored_acceptance_worktime_hour",
+                ],
+                index="account_id",
+                aggfunc="sum",
+            )
+        else:
+            # 引数`df`のlengthが0でも、エラーにならないようにDataFrameを生成する
+            # https://qiita.com/yuji38kwmt/items/93dd31c840fd55d6ac7a
+            df_agg_worktime = pandas.DataFrame(
+                columns=[
+                    "actual_worktime_hour",
+                    "monitored_worktime_hour",
+                    "monitored_annotation_worktime_hour",
+                    "monitored_inspection_worktime_hour",
+                    "monitored_acceptance_worktime_hour",
+                ],
+                index=pandas.Index([], name="account_id"),
+            )
 
         # 列をMultiIndexに変更する
         df_agg_worktime = df_agg_worktime[
@@ -440,8 +454,15 @@ class UserPerformance:
                     ("working_days", "")
         """
         df = worktime_per_date.df
-        df2 = df[df["monitored_worktime_hour"] > 0].pivot_table(values="date", index="account_id", aggfunc=["min", "max"])
-        df2.columns = pandas.MultiIndex.from_tuples([("first_working_date", ""), ("last_working_date", "")])
+        df1 = df[df["monitored_worktime_hour"] > 0]
+        if len(df1) > 0:
+            df2 = df1.pivot_table(values="date", index="account_id", aggfunc=["min", "max"])
+            df2.columns = pandas.MultiIndex.from_tuples([("first_working_date", ""), ("last_working_date", "")])
+        else:
+            df2 = pandas.DataFrame(
+                columns=pandas.MultiIndex.from_tuples([("first_working_date", ""), ("last_working_date", "")]),
+                index=pandas.Index([], name="account_id"),
+            )
 
         # 元のDataFrame`df`が`account_id`,`date`のペアでユニークになっていない可能性も考えて、事前に`account_id`と`date`で集計する
         df3 = df.groupby(["account_id", "date"])[["monitored_worktime_hour"]].sum()

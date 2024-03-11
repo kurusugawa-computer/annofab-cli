@@ -36,7 +36,6 @@ class TestUserPerformance:
         import pandas
 
         pandas.set_option("display.max_rows", None)
-        print(actual.df.iloc[0])
 
     def test__from_df_wrapper__集計対象タスクが0件のとき(self):
         task_worktime_by_phase_user = TaskWorktimeByPhaseUser.empty()
