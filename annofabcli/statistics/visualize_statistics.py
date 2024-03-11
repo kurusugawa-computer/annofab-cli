@@ -134,6 +134,7 @@ class WriteCsvGraph:
                 self.service,
                 self.project_id,
                 actual_worktime=self.actual_worktime,
+                task_history_event_json=self.visualize_source_files.task_history_event_json_path,
                 start_date=self.filtering_query.start_date,
                 end_date=self.filtering_query.end_date,
             )
