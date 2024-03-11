@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import argparse
 import functools
 import logging.handlers
@@ -261,7 +263,8 @@ class VisualizingStatisticsMain:
         is_get_task_histories_one_of_each: bool = False,
         actual_worktime: Optional[ActualWorktime] = None,
         annotation_count: Optional[AnnotationCount] = None,
-        user_ids: Optional[List[str]],
+        user_ids: Optional[List[str]] = None,
+        not_download_visualization_source_files: bool = False,
     ) -> None:
         self.service = service
         self.facade = AnnofabApiFacade(service)
@@ -275,6 +278,7 @@ class VisualizingStatisticsMain:
         self.actual_worktime = actual_worktime
         self.annotation_count = annotation_count
         self.user_ids = user_ids
+        self.not_download_visualization_source_files = not_download_visualization_source_files
 
     def write_project_info_json(self, project_id: str, project_dir: ProjectDir) -> None:
         """
@@ -341,9 +345,10 @@ class VisualizingStatisticsMain:
             project_id,
             self.temp_dir,
         )
-        visualization_source_files.write_files(
-            is_latest=self.download_latest, should_get_task_histories_one_of_each=self.is_get_task_histories_one_of_each
-        )
+        if not self.not_download_visualization_source_files:
+            visualization_source_files.write_files(
+                is_latest=self.download_latest, should_get_task_histories_one_of_each=self.is_get_task_histories_one_of_each
+            )
 
         write_obj = WriteCsvGraph(
             self.service,
@@ -424,7 +429,74 @@ class VisualizeStatistics(AbstractCommandLineInterface):
                 )
                 return False
 
+        if args.not_download:
+            if args.temp_dir is None:
+                print(
+                    f"{COMMON_MESSAGE} argument --not_download: '--not_download'を指定する場合は'--temp_dir'も指定してください。",
+                    file=sys.stderr,
+                )
+                return False
+
         return True
+
+    def visualize_statistics(
+        self,
+        temp_dir: Path,
+        task_query: Optional[TaskQuery],
+        user_id_list: Optional[list[str]],
+        actual_worktime: ActualWorktime,
+        annotation_count: Optional[AnnotationCount],
+        download_latest: bool,
+        is_get_task_histories_one_of_each: bool,
+        start_date: Optional[str],
+        end_date: Optional[str],
+        minimal_output: bool,
+        output_only_text: bool,
+        not_download_visualization_source_files: bool,
+        project_id_list: list[str],
+        root_output_dir: Path,
+        parallelism: Optional[int],
+    ):
+        main_obj = VisualizingStatisticsMain(
+            service=self.service,
+            temp_dir=temp_dir,
+            task_query=task_query,
+            user_ids=user_id_list,
+            actual_worktime=actual_worktime,
+            annotation_count=annotation_count,
+            download_latest=download_latest,
+            is_get_task_histories_one_of_each=is_get_task_histories_one_of_each,
+            start_date=start_date,
+            end_date=end_date,
+            minimal_output=minimal_output,
+            output_only_text=output_only_text,
+            not_download_visualization_source_files=not_download_visualization_source_files,
+        )
+
+        if len(project_id_list) == 1:
+            main_obj.visualize_statistics(project_id_list[0], root_output_dir)
+
+        else:
+            # project_idが複数指定された場合は、project_titleのディレクトリに統計情報を出力する
+            output_project_dir_list = main_obj.visualize_statistics_for_project_list(
+                project_id_list=project_id_list,
+                root_output_dir=root_output_dir,
+                parallelism=parallelism,
+            )
+
+            if len(output_project_dir_list) > 0:
+                project_dir_list = [ProjectDir(e) for e in output_project_dir_list]
+                project_performance = ProjectPerformance.from_project_dirs(project_dir_list)
+                project_performance.to_csv(root_output_dir / "プロジェクトごとの生産性と品質.csv")
+
+                project_actual_worktime = ProjectWorktimePerMonth.from_project_dirs(project_dir_list, WorktimeColumn.ACTUAL_WORKTIME_HOUR)
+                project_actual_worktime.to_csv(root_output_dir / "プロジェクごとの毎月の実績作業時間.csv")
+
+                project_monitored_worktime = ProjectWorktimePerMonth.from_project_dirs(project_dir_list, WorktimeColumn.MONITORED_WORKTIME_HOUR)
+                project_monitored_worktime.to_csv(root_output_dir / "プロジェクごとの毎月の計測作業時間.csv")
+
+            else:
+                logger.warning("出力した統計情報は0件なので、`プロジェクトごとの生産性と品質.csv`を出力しません。")
 
     def main(self) -> None:  # pylint: disable=too-many-branches
         args = self.args
@@ -462,12 +534,31 @@ class VisualizeStatistics(AbstractCommandLineInterface):
         else:
             annotation_count = None
 
-        with tempfile.TemporaryDirectory() as str_temp_dir:
-            main_obj = VisualizingStatisticsMain(
-                service=self.service,
-                temp_dir=Path(str_temp_dir),
+        if args.temp_dir is None:
+            with tempfile.TemporaryDirectory() as str_temp_dir:
+                self.visualize_statistics(
+                    temp_dir=Path(str_temp_dir),
+                    task_query=task_query,
+                    user_id_list=user_id_list,
+                    actual_worktime=actual_worktime,
+                    annotation_count=annotation_count,
+                    download_latest=args.latest,
+                    is_get_task_histories_one_of_each=args.get_task_histories_one_of_each,
+                    start_date=args.start_date,
+                    end_date=args.end_date,
+                    minimal_output=args.minimal,
+                    output_only_text=args.output_only_text,
+                    project_id_list=project_id_list,
+                    root_output_dir=root_output_dir,
+                    parallelism=args.parallelism,
+                    # `tempfile.TemporaryDirectory`で作成したディレクトリを利用する場合は、必ずダウンロードが必要なの`False`を指定する
+                    not_download_visualization_source_files=False,
+                )
+        else:
+            self.visualize_statistics(
+                temp_dir=args.temp_dir,
                 task_query=task_query,
-                user_ids=user_id_list,
+                user_id_list=user_id_list,
                 actual_worktime=actual_worktime,
                 annotation_count=annotation_count,
                 download_latest=args.latest,
@@ -476,32 +567,11 @@ class VisualizeStatistics(AbstractCommandLineInterface):
                 end_date=args.end_date,
                 minimal_output=args.minimal,
                 output_only_text=args.output_only_text,
+                project_id_list=project_id_list,
+                root_output_dir=root_output_dir,
+                parallelism=args.parallelism,
+                not_download_visualization_source_files=args.not_download,
             )
-
-            if len(project_id_list) == 1:
-                main_obj.visualize_statistics(project_id_list[0], root_output_dir)
-
-            else:
-                # project_idが複数指定された場合は、project_titleのディレクトリに統計情報を出力する
-                output_project_dir_list = main_obj.visualize_statistics_for_project_list(
-                    project_id_list=project_id_list,
-                    root_output_dir=root_output_dir,
-                    parallelism=args.parallelism,
-                )
-
-                if len(output_project_dir_list) > 0:
-                    project_dir_list = [ProjectDir(e) for e in output_project_dir_list]
-                    project_performance = ProjectPerformance.from_project_dirs(project_dir_list)
-                    project_performance.to_csv(root_output_dir / "プロジェクトごとの生産性と品質.csv")
-
-                    project_actual_worktime = ProjectWorktimePerMonth.from_project_dirs(project_dir_list, WorktimeColumn.ACTUAL_WORKTIME_HOUR)
-                    project_actual_worktime.to_csv(root_output_dir / "プロジェクごとの毎月の実績作業時間.csv")
-
-                    project_monitored_worktime = ProjectWorktimePerMonth.from_project_dirs(project_dir_list, WorktimeColumn.MONITORED_WORKTIME_HOUR)
-                    project_monitored_worktime.to_csv(root_output_dir / "プロジェクごとの毎月の計測作業時間.csv")
-
-                else:
-                    logger.warning("出力した統計情報は0件なので、`プロジェクトごとの生産性と品質.csv`を出力しません。")
 
 
 def main(args: argparse.Namespace) -> None:
@@ -545,7 +615,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     )
 
     parser.add_argument("--start_date", type=str, help="指定した日付（ ``YYYY-MM-DD`` ）以降に教師付を開始したタスクから生産性を算出します。")
-    parser.add_argument("--end_date", type=str, help="指定した日付（ ``YYYY-MM-DD`` ）以前に更新されたタスクから生産性を算出します。")
+    parser.add_argument("--end_date", type=str, help="指定した日付（ ``YYYY-MM-DD`` ）以前に教師付を開始したタスクから生産性を算出します。")
 
     parser.add_argument(
         "--latest",
@@ -595,6 +665,20 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--output_only_text",
         action="store_true",
         help="テキストファイルのみ出力します。グラフが掲載されているHTMLファイルは出力しません。",
+    )
+
+    parser.add_argument(
+        "--temp_dir",
+        type=Path,
+        help=("指定したディレクトリに、アノテーションZIPなど可視化に必要なファイルを出力します。"),
+    )
+
+    parser.add_argument(
+        "--not_download",
+        action="store_true",
+        help=(
+            "指定した場合、アノテーションZIPなどのファイルをダウンロードせずに、`--temp_dir`で指定したディレクトリ内のファイルを読み込みます。`--temp_dir`は必須です。"
+        ),
     )
 
     parser.add_argument(
