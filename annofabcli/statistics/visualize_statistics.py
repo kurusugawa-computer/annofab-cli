@@ -119,7 +119,7 @@ class WriteCsvGraph:
 
             self.task = Task.from_api_content(
                 tasks=self.table_obj._get_task_list(),
-                task_histories=self.table_obj._get_task_histories_dict(),
+                task_histories=self.visualize_source_files.read_task_histories_json(),
                 inspection_comment_count=inspection_comment_count,
                 annotation_count=annotation_count,
                 project_id=self.project_id,
@@ -155,8 +155,7 @@ class WriteCsvGraph:
         """
         ユーザごとの生産性と品質に関する情報を出力する。
         """
-
-        task_history = TaskHistory.from_api_content(self.table_obj._get_task_histories_dict())
+        task_history = TaskHistory.from_api_content(self.visualize_source_files.read_task_histories_json())
         df_user = pandas.DataFrame(self.table_obj.project_members_dict.values())
 
         # タスク、フェーズ、ユーザごとの作業時間を出力する

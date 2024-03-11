@@ -78,10 +78,13 @@ class TaskWorktimeByPhaseUser:
     @classmethod
     def from_df_wrapper(cls, task_history: TaskHistory, user: User, task: Task, project_id: str) -> TaskWorktimeByPhaseUser:
         """
-        AnnoWorkの実績時間から、作業者ごとに生産性を算出する。
+        以下のDataFrameのラッパーからインスタンスを生成します。
+        * タスク履歴
+        * ユーザー情報
+        * タスク情報
 
         Args:
-            df_worktime_ratio: 作業したタスク数を、作業時間で按分した値が格納されたDataFrame. 以下の列を参照する。
+            task_history: タスク履歴が格納されたDataFrameをラップするクラス
             user: ユーザー情報が格納されたDataFrameをラップするクラスのインスタンス
             task: タスク情報が格納されたDataFrameをラップするクラスのインスタンス
             project_id
@@ -223,6 +226,8 @@ class TaskWorktimeByPhaseUser:
         if len(task_df) == 0:
             logger.warning("タスク一覧が0件です。")
             return pandas.DataFrame()
+
+        task_history_df = task_history_df[task_history_df["task_id"].isin(set(task_df["task_id"]))]
 
         group_obj = task_history_df.groupby(["task_id", "phase", "phase_stage", "account_id"]).agg({"worktime_hour": "sum"})
         # 担当者だけ変更して作業していないケースを除外する
