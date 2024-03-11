@@ -1,13 +1,12 @@
 import argparse
 import functools
-import json
 import logging.handlers
 import re
 import sys
 import tempfile
 from multiprocessing import Pool
 from pathlib import Path
-from typing import Any, Callable, Collection, List, Optional
+from typing import Any, Callable, List, Optional
 
 import annofabapi
 import pandas
@@ -20,8 +19,6 @@ from annofabcli.common.cli import (
     build_annofabapi_resource_and_login,
 )
 from annofabcli.common.facade import AnnofabApiFacade, TaskQuery
-from annofabcli.statistics.database import Database, Query
-from annofabcli.statistics.table import Table
 from annofabcli.statistics.visualization.dataframe.actual_worktime import ActualWorktime
 from annofabcli.statistics.visualization.dataframe.annotation_count import AnnotationCount
 from annofabcli.statistics.visualization.dataframe.cumulative_productivity import (
@@ -50,8 +47,10 @@ from annofabcli.statistics.visualization.dataframe.whole_productivity_per_date i
     WholeProductivityPerFirstAnnotationStartedDate,
 )
 from annofabcli.statistics.visualization.dataframe.worktime_per_date import WorktimePerDate
+from annofabcli.statistics.visualization.filtering_query import FilteringQuery, filter_tasks
 from annofabcli.statistics.visualization.model import WorktimeColumn
 from annofabcli.statistics.visualization.project_dir import ProjectDir, ProjectInfo
+from annofabcli.statistics.visualization.visualization_source_files import VisualizationSourceFiles
 
 logger = logging.getLogger(__name__)
 
@@ -65,23 +64,21 @@ class WriteCsvGraph:
         self,
         service: annofabapi.Resource,
         project_id: str,
-        table_obj: Table,
+        filtering_query: FilteringQuery,
+        visualization_source_files: VisualizationSourceFiles,
         output_dir: Path,
         actual_worktime: ActualWorktime,
         *,
         annotation_count: Optional[AnnotationCount] = None,
-        start_date: Optional[str] = None,
-        end_date: Optional[str] = None,
         minimal_output: bool = False,
         output_only_text: bool = False,
     ) -> None:
         self.service = service
         self.project_id = project_id
         self.output_dir = output_dir
-        self.table_obj = table_obj
+        self.filtering_query = filtering_query
+        self.visualize_source_files = visualization_source_files
         self.actual_worktime = actual_worktime
-        self.start_date = start_date
-        self.end_date = end_date
         self.minimal_output = minimal_output
         self.output_only_text = output_only_text
         self.annotation_count = annotation_count
@@ -109,17 +106,20 @@ class WriteCsvGraph:
         if self.task is None:
             if self.annotation_count is None:
                 # アノテーションZIPからアノテーション数を取得
-                annotation_count = AnnotationCount.from_annotation_zip(self.table_obj.database.annotations_zip_path, project_id=self.project_id)
+                annotation_count = AnnotationCount.from_annotation_zip(self.visualize_source_files.annotation_zip_path, project_id=self.project_id)
             else:
                 annotation_count = self.annotation_count
 
-            with self.table_obj.database.comment_json_path.open() as f:
-                inspection_comments = json.load(f)
-            inspection_comment_count = InspectionCommentCount.from_api_content(inspection_comments)
+            inspection_comment_count = InspectionCommentCount.from_api_content(self.visualize_source_files.read_comments_json())
+
+            tasks = self.visualize_source_files.read_tasks_json()
+            task_histories = self.visualize_source_files.read_task_histories_json()
+            new_tasks = filter_tasks(tasks, self.filtering_query, task_histories=task_histories)
+            logger.debug(f"project_id='{self.project_id}' :: 集計対象タスクは {len(new_tasks)} / {len(tasks)} 件です。")
 
             self.task = Task.from_api_content(
-                tasks=self.table_obj._get_task_list(),
-                task_histories=self.table_obj._get_task_histories_dict(),
+                tasks=new_tasks,
+                task_histories=task_histories,
                 inspection_comment_count=inspection_comment_count,
                 annotation_count=annotation_count,
                 project_id=self.project_id,
@@ -134,8 +134,8 @@ class WriteCsvGraph:
                 self.service,
                 self.project_id,
                 actual_worktime=self.actual_worktime,
-                start_date=self.start_date,
-                end_date=self.end_date,
+                start_date=self.filtering_query.start_date,
+                end_date=self.filtering_query.end_date,
             )
         return self.worktime_per_date
 
@@ -155,14 +155,15 @@ class WriteCsvGraph:
         """
         ユーザごとの生産性と品質に関する情報を出力する。
         """
+        task_history = TaskHistory.from_api_content(self.visualize_source_files.read_task_histories_json())
 
-        task_history = TaskHistory.from_api_response(self.table_obj._get_task_histories_dict())
-        df_user = pandas.DataFrame(self.table_obj.project_members_dict.values())
+        project_members = self.service.wrapper.get_all_project_members(self.project_id, query_params={"include_inactive_member": True})
+        user = User(pandas.DataFrame(project_members))
 
         # タスク、フェーズ、ユーザごとの作業時間を出力する
         task_worktime_obj = TaskWorktimeByPhaseUser.from_df_wrapper(
             task_history=task_history,
-            user=User(df_user),
+            user=user,
             task=self._get_task(),
             project_id=self.project_id,
         )
@@ -249,7 +250,6 @@ class VisualizingStatisticsMain:
         temp_dir: Path,
         # タスクの絞り込み関係
         task_query: Optional[TaskQuery],
-        task_ids: Optional[Collection[str]],
         start_date: Optional[str] = None,
         end_date: Optional[str] = None,
         # 出力方法
@@ -266,10 +266,7 @@ class VisualizingStatisticsMain:
         self.facade = AnnofabApiFacade(service)
         self.temp_dir = temp_dir
 
-        self.task_query = task_query
-        self.task_ids = task_ids
-        self.start_date = start_date
-        self.end_date = end_date
+        self.filtering_query = FilteringQuery(task_query=task_query, start_date=start_date, end_date=end_date)
         self.minimal_output = minimal_output
         self.output_only_text = output_only_text
         self.download_latest = download_latest
@@ -291,7 +288,7 @@ class VisualizingStatisticsMain:
             project_title=project_title,
             input_data_type=project_info["input_data_type"],
             measurement_datetime=annofabapi.utils.str_now(),
-            query=Query(task_query=self.task_query, task_ids=self.task_ids, start_date=self.start_date, end_date=self.end_date),
+            query=self.filtering_query,
         )
         project_dir.write_project_info(project_summary)
 
@@ -314,29 +311,14 @@ class VisualizingStatisticsMain:
         project_dir = ProjectDir(output_project_dir)
         self.write_project_info_json(project_id=project_id, project_dir=project_dir)
 
-        database = Database(
-            self.service,
-            project_id,
-            self.temp_dir,
-            query=Query(
-                task_query=self.task_query,
-                task_ids=set(self.task_ids) if self.task_ids is not None else None,
-                start_date=self.start_date,
-                end_date=self.end_date,
-            ),
-        )
-        database.update_db(self.download_latest, is_get_task_histories_one_of_each=self.is_get_task_histories_one_of_each)
-
-        table_obj = Table(database)
-
         if self.actual_worktime is not None:
             df_actual_worktime = self.actual_worktime.df
             df_actual_worktime = df_actual_worktime[df_actual_worktime["project_id"] == project_id]
 
-            if self.start_date is not None:
-                df_actual_worktime = df_actual_worktime[df_actual_worktime["date"] >= self.start_date]
-            if self.end_date is not None:
-                df_actual_worktime = df_actual_worktime[df_actual_worktime["date"] <= self.end_date]
+            if self.filtering_query.start_date is not None:
+                df_actual_worktime = df_actual_worktime[df_actual_worktime["date"] >= self.filtering_query.start_date]
+            if self.filtering_query.end_date is not None:
+                df_actual_worktime = df_actual_worktime[df_actual_worktime["date"] <= self.filtering_query.end_date]
 
         else:
             df_actual_worktime = ActualWorktime.empty()
@@ -351,17 +333,25 @@ class VisualizingStatisticsMain:
             else:
                 annotation_count = AnnotationCount(df_annotation_count)
         else:
-            annotation_count = self.annotation_count
+            annotation_count = None
+
+        visualization_source_files = VisualizationSourceFiles(
+            self.service,
+            project_id,
+            self.temp_dir,
+        )
+        visualization_source_files.write_files(
+            is_latest=self.download_latest, should_get_task_histories_one_of_each=self.is_get_task_histories_one_of_each
+        )
 
         write_obj = WriteCsvGraph(
             self.service,
             project_id,
-            table_obj,
-            output_project_dir,
+            filtering_query=self.filtering_query,
+            visualization_source_files=visualization_source_files,
+            output_dir=output_project_dir,
             actual_worktime=ActualWorktime(df_actual_worktime),
             annotation_count=annotation_count,
-            start_date=self.start_date,
-            end_date=self.end_date,
             minimal_output=self.minimal_output,
             output_only_text=self.output_only_text,
         )
@@ -443,8 +433,6 @@ class VisualizeStatistics(AbstractCommandLineInterface):
         dict_task_query = annofabcli.common.cli.get_json_from_args(args.task_query)
         task_query: Optional[TaskQuery] = TaskQuery.from_dict(dict_task_query) if dict_task_query is not None else None
 
-        task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id) if args.task_id is not None else None
-
         user_id_list = annofabcli.common.cli.get_list_from_args(args.user_id) if args.user_id is not None else None
         project_id_list = annofabcli.common.cli.get_list_from_args(args.project_id)
 
@@ -478,7 +466,6 @@ class VisualizeStatistics(AbstractCommandLineInterface):
                 service=self.service,
                 temp_dir=Path(str_temp_dir),
                 task_query=task_query,
-                task_ids=task_id_list,
                 user_ids=user_id_list,
                 actual_worktime=actual_worktime,
                 annotation_count=annotation_count,
@@ -554,15 +541,6 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         help="タスクの検索クエリをJSON形式で指定します。指定しない場合はすべてのタスクを取得します。\n"
         "``file://`` を先頭に付けると、JSON形式のファイルを指定できます。"
         "クエリのキーは、``task_id`` , ``phase`` , ``phase_stage`` , ``status`` のみです。",
-    )
-
-    parser.add_argument(
-        "-t",
-        "--task_id",
-        type=str,
-        required=False,
-        nargs="+",
-        help="集計対象のタスクのtask_idを指定します。\n" + "``file://`` を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。",
     )
 
     parser.add_argument("--start_date", type=str, help="指定した日付（ ``YYYY-MM-DD`` ）以降に教師付を開始したタスクから生産性を算出します。")

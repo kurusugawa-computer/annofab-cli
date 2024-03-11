@@ -10,7 +10,6 @@ from annofabapi.models import TaskPhase
 from dataclasses_json import DataClassJsonMixin
 
 from annofabcli.common.utils import print_json
-from annofabcli.statistics.database import Query
 from annofabcli.statistics.visualization.dataframe.cumulative_productivity import AbstractPhaseCumulativeProductivity
 from annofabcli.statistics.visualization.dataframe.productivity_per_date import AbstractPhaseProductivityPerDate
 from annofabcli.statistics.visualization.dataframe.task import Task
@@ -26,6 +25,7 @@ from annofabcli.statistics.visualization.dataframe.whole_productivity_per_date i
     WholeProductivityPerFirstAnnotationStartedDate,
 )
 from annofabcli.statistics.visualization.dataframe.worktime_per_date import WorktimePerDate
+from annofabcli.statistics.visualization.filtering_query import FilteringQuery
 
 logger = logging.getLogger(__name__)
 
@@ -345,7 +345,7 @@ class ProjectInfo(DataClassJsonMixin):
     """入力データの種類"""
     measurement_datetime: str
     """計測日時。（2004-04-01T12:00+09:00形式）"""
-    query: Query
+    query: FilteringQuery
     """集計対象を絞り込むためのクエリ"""
 
 
