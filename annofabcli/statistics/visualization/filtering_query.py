@@ -3,25 +3,17 @@ from __future__ import annotations
 import datetime
 import logging
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional
+from typing import Any, List, Optional
 
-import annofabapi.utils
 import dateutil
 import dateutil.parser
 from annofabapi.dataclass.task import Task as DcTask
-from annofabapi.models import InputDataId, Task, TaskHistory
+from annofabapi.models import Task
 
 from annofabcli.common.facade import TaskQuery, match_task_with_query
 from annofabcli.common.utils import isoduration_to_hour
 
 logger = logging.getLogger(__name__)
-
-InputDataDict = Dict[InputDataId, int]
-
-
-def _get_task_histories_dict(api: annofabapi.AnnofabApi, project_id: str, task_id: str) -> Dict[str, List[TaskHistory]]:
-    task_histories, _ = api.get_task_histories(project_id, task_id)
-    return {task_id: task_histories}
 
 
 @dataclass(frozen=True)
