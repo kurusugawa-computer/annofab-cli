@@ -912,9 +912,10 @@ class UserPerformance:
                 f"annotation_count_{phase}",
                 f"{worktime_type.value}_worktime_hour/input_data_count_{phase}",
                 f"{worktime_type.value}_worktime_hour/annotation_count_{phase}",
+                "first_working_date_",
+                "last_working_date_",
+                "working_days_",
             ]
-            if worktime_type == WorktimeType.ACTUAL:
-                tooltip_item.append("last_working_date_")
 
             hover_tool = create_hover_tool(tooltip_item)
             fig.add_tools(hover_tool)
@@ -1019,7 +1020,6 @@ class UserPerformance:
                 "user_id_",
                 "username_",
                 "biography_",
-                "last_working_date_",
                 f"monitored_worktime_hour_{phase}",
                 f"task_count_{phase}",
                 f"input_data_count_{phase}",
@@ -1028,6 +1028,9 @@ class UserPerformance:
                 f"pointed_out_inspection_comment_count_{phase}",
                 f"rejected_count/task_count_{phase}",
                 f"pointed_out_inspection_comment_count/annotation_count_{phase}",
+                "first_working_date_",
+                "last_working_date_",
+                "working_days_",
             ]
 
             hover_tool = create_hover_tool(tooltip_item)
@@ -1101,9 +1104,10 @@ class UserPerformance:
                     f"pointed_out_inspection_comment_count_{phase}",
                     f"rejected_count/task_count_{phase}",
                     f"pointed_out_inspection_comment_count/annotation_count_{phase}",
+                    "first_working_date_",
+                    "last_working_date_",
+                    "working_days_",
                 ]
-                if worktime_type == WorktimeType.ACTUAL:
-                    tooltip_item.append("last_working_date_")
 
                 hover_tool = create_hover_tool(tooltip_item)
                 fig.add_tools(hover_tool)
