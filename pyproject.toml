@@ -62,11 +62,7 @@ pytest-cov = "*"
 [tool.poetry.group.formatter.dependencies]
 
 [tool.poetry.group.linter.dependencies]
-# ruffのバージョンの上限を指定する理由:
-# ruffは0.0.260から"line-width"の計算を"character count"から"unicode width"に変更した。
-# black 23.3(通常版)は"line-width"を"character count"で計算している。
-# ruffとblackで"line-with"の計算が異なってしまうので、ruffのバージョンの上限を指定した。
-# https://qiita.com/yuji38kwmt/items/04208d2d2cafe1218287
+# pythonバージョンを指定している理由：Python3.11（開発環境）でしかlintを実行していないため
 ruff = {version="^0.2", python=">=3.11"}
 mypy = {version="^1", python=">=3.11"}
 pylint = {version="^3", python=">=3.11"}
