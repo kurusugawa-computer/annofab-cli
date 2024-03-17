@@ -20,13 +20,7 @@ from bokeh.models.widgets.markups import Div
 from bokeh.plotting import ColumnDataSource, figure
 
 from annofabcli.common.utils import print_csv, read_multiheader_csv
-from annofabcli.statistics.scatter import (
-    create_hover_tool,
-    get_color_from_palette,
-    plot_bubble,
-    plot_scatter,
-    write_bokeh_graph,
-)
+from annofabcli.statistics.scatter import ScatterGraph, create_hover_tool, get_color_from_palette, plot_bubble, plot_scatter, write_bokeh_graph
 from annofabcli.statistics.visualization.dataframe.task_worktime_by_phase_user import TaskWorktimeByPhaseUser
 from annofabcli.statistics.visualization.dataframe.worktime_per_date import WorktimePerDate
 
@@ -826,15 +820,6 @@ class UserPerformance:
 
         performance_unit_name = performance_unit.performance_unit_name
 
-        def create_figure(title: str) -> figure:
-            return figure(
-                width=self.PLOT_WIDTH,
-                height=self.PLOT_HEIGHT,
-                title=title,
-                x_axis_label="累計作業時間[hour]",
-                y_axis_label=f"{performance_unit_name}あたり作業時間[minute/annotation]",
-            )
-
         logger.debug(f"{output_file} を出力します。")
 
         DICT_PHASE_NAME = {
@@ -842,8 +827,29 @@ class UserPerformance:
             TaskPhase.INSPECTION.value: "検査",
             TaskPhase.ACCEPTANCE.value: "受入",
         }
-        figure_list = [
-            create_figure(f"{DICT_PHASE_NAME[phase]}の{performance_unit_name}あたり作業時間と累計作業時間の関係({worktime_type.worktime_type_name})")
+
+        scatter_obj_list = [
+            ScatterGraph(
+                title=f"{DICT_PHASE_NAME[phase]}の{performance_unit_name}あたり作業時間と累計作業時間の関係({worktime_type.worktime_type_name})",
+                width=self.PLOT_WIDTH,
+                height=self.PLOT_HEIGHT,
+                x_axis_label="累計作業時間[hour]",
+                y_axis_label=f"{performance_unit_name}あたり作業時間[minute/annotation]",
+                tooltip_columns=[
+                    "user_id_",
+                    "username_",
+                    "biography_",
+                    f"{worktime_type.value}_worktime_hour_{phase}",
+                    f"task_count_{phase}",
+                    f"input_data_count_{phase}",
+                    f"annotation_count_{phase}",
+                    f"{worktime_type.value}_worktime_hour/input_data_count_{phase}",
+                    f"{worktime_type.value}_worktime_hour/annotation_count_{phase}",
+                    "first_working_date_",
+                    "last_working_date_",
+                    "working_days_",
+                ],
+            )
             for phase in self.phase_list
         ]
 
@@ -872,13 +878,12 @@ class UserPerformance:
         )
 
         for biography_index, biography in enumerate(sorted(set(df["biography"]))):
-            for fig, phase in zip(figure_list, self.phase_list):
+            for scatetr_obj, phase in zip(scatter_obj_list, self.phase_list):
                 filtered_df = df[(df["biography"] == biography) & df[(x_column, phase)].notna() & df[(y_column, phase)].notna()]
                 if len(filtered_df) == 0:
                     continue
                 source = ColumnDataSource(data=filtered_df)
-                plot_scatter(
-                    fig=fig,
+                scatetr_obj.plot_scatter(
                     source=source,
                     x_column_name=f"{x_column}_{phase}",
                     y_column_name=f"{y_column}_{phase}",
@@ -887,7 +892,7 @@ class UserPerformance:
                     color=get_color_from_palette(biography_index),
                 )
 
-        for fig, phase in zip(figure_list, self.phase_list):
+        for scatter_obj, phase in zip(scatter_obj_list, self.phase_list):
             average_hour = self._get_average_value(
                 df,
                 numerator_column=(f"{worktime_type.value}_worktime_hour", phase),
@@ -895,34 +900,17 @@ class UserPerformance:
             )
             if average_hour is not None:
                 average_minute = average_hour * 60
-                self._plot_average_line(fig, average_minute, dimension="width")
+                scatter_obj.plot_average_line(average_minute, dimension="width")
 
             quartile = self._get_quartile_value(df, (f"{worktime_type.value}_worktime_minute/{performance_unit.value}", phase))
             if quartile is not None:
-                self._plot_quartile_line(fig, quartile, dimension="width")
+                scatter_obj.plot_quartile_line(quartile, dimension="width")
 
-        for fig, phase in zip(figure_list, self.phase_list):
-            tooltip_item = [
-                "user_id_",
-                "username_",
-                "biography_",
-                f"{worktime_type.value}_worktime_hour_{phase}",
-                f"task_count_{phase}",
-                f"input_data_count_{phase}",
-                f"annotation_count_{phase}",
-                f"{worktime_type.value}_worktime_hour/input_data_count_{phase}",
-                f"{worktime_type.value}_worktime_hour/annotation_count_{phase}",
-                "first_working_date_",
-                "last_working_date_",
-                "working_days_",
-            ]
-
-            hover_tool = create_hover_tool(tooltip_item)
-            fig.add_tools(hover_tool)
-            self._set_legend(fig)
+        for scatter_obj in scatter_obj_list:
+            scatter_obj.process_after_adding_glyphs()
 
         div_element = self._create_div_element()
-        write_bokeh_graph(bokeh.layouts.column([div_element, *figure_list]), output_file)
+        write_bokeh_graph(bokeh.layouts.column([div_element, *[e.figure for e in scatter_obj_list]]), output_file)
 
     def plot_quality(self, output_file: Path) -> None:
         """

@@ -3,13 +3,15 @@ from __future__ import annotations
 import logging
 import math
 from pathlib import Path
-from typing import Any, Callable, Optional
+from typing import Any, Callable, Literal, Optional
 
 import bokeh
 import bokeh.layouts
 import bokeh.palettes
 import numpy
 from bokeh.models import HoverTool
+from bokeh.models.annotations import Span
+from bokeh.models.renderers.glyph_renderer import GlyphRenderer
 from bokeh.plotting import ColumnDataSource, figure
 
 logger = logging.getLogger(__name__)
@@ -144,3 +146,125 @@ def create_hover_tool(tool_tip_items: list[str]) -> HoverTool:
     detail_tooltips = [(exclude_phase_name(e), f"@{{{e}}}") for e in tool_tip_items]
     hover_tool = HoverTool(tooltips=[("(x,y)", "($x, $y)"), *detail_tooltips])
     return hover_tool
+
+
+class ScatterGraph:
+    def __init__(
+        self,
+        *,
+        title: str,
+        x_axis_label: str,
+        y_axis_label: str,
+        width: int = 1200,
+        height: int = 1000,
+        tooltip_columns: Optional[list[str]] = None,
+        **figure_kwargs,
+    ) -> None:
+        fig = figure(
+            title=title,
+            x_axis_label=x_axis_label,
+            y_axis_label=y_axis_label,
+            width=width,
+            height=height,
+            **figure_kwargs,
+        )
+        self.title = title
+        self.tooltip_columns = tooltip_columns
+
+        if tooltip_columns is not None:
+            hover_tool = create_hover_tool(tooltip_columns)
+            fig.add_tools(hover_tool)
+
+        self.figure = fig
+
+        self.text_glyphs: dict[str, GlyphRenderer] = {}
+        """key:user_id, value: 散布図に表示している名前"""
+
+    def plot_average_line(self, value: float, dimension: Literal["width", "height"]) -> None:
+        span_average_line = Span(
+            location=value,
+            dimension=dimension,
+            line_color="red",
+            line_width=0.5,
+        )
+        self.figure.add_layout(span_average_line)
+
+    def plot_quartile_line(self, quartile: tuple[float, float, float], dimension: Literal["width", "height"]) -> None:
+        """
+
+        Args:
+            fig (bokeh.plotting.Figure):
+            quartile (tuple[float, float, float]): 四分位数。tuple[25%値, 50%値, 75%値]
+            dimension (str): [description]: width or height
+        """
+
+        for value in quartile:
+            span_average_line = Span(
+                location=value,
+                dimension=dimension,
+                line_color="blue",
+                line_width=0.5,
+            )
+            self.figure.add_layout(span_average_line)
+
+    def plot_scatter(
+        self,
+        source: ColumnDataSource,
+        x_column_name: str,
+        y_column_name: str,
+        text_column_name: str,
+        legend_label: str,
+        color: str,
+    ) -> None:
+        """
+        丸でプロットして、ユーザ名を表示する。
+
+        Args:
+            fig:
+            source:
+            x_column_name: sourceに対応するX軸の列名
+            y_column_name: sourceに対応するY軸の列名
+            legend_label: 凡例に表示する名前
+            color: 線と点の色
+
+        """
+        if legend_label == "":
+            legend_label = "none"
+
+        self.figure.circle(x=x_column_name, y=y_column_name, source=source, legend_label=legend_label, color=color, muted_alpha=0.2)
+        self.figure.text(
+            x=x_column_name,
+            y=y_column_name,
+            source=source,
+            text=text_column_name,
+            text_font_size="7pt",
+            legend_label=legend_label,
+            muted_alpha=0.2,
+        )
+
+    def process_after_adding_glyphs(self) -> None:
+        """
+        散布図を追加した後に実行する処理です。
+        以下を設定します。
+        * 凡例
+
+        """
+        self.configure_legend()
+
+    def configure_legend(self):
+        """
+        凡例を設定します。
+
+        Notes:
+            散布図などのGlyphを追加した後に実行する必要があります。
+
+        """
+        fig = self.figure
+        if len(fig.legend) == 0:
+            return
+
+        fig.legend.location = "top_left"
+        fig.legend.click_policy = "mute"
+        fig.legend.title = "biography"
+        legend = fig.legend[0]
+        fig.add_layout(legend, "left")
