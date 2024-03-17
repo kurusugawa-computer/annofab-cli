@@ -9,9 +9,10 @@ import bokeh
 import bokeh.layouts
 import bokeh.palettes
 import numpy
-from bokeh.models import HoverTool
+from bokeh.models import CustomJS, HoverTool
 from bokeh.models.annotations import Span
 from bokeh.models.renderers.glyph_renderer import GlyphRenderer
+from bokeh.models.widgets.inputs import MultiChoice
 from bokeh.plotting import ColumnDataSource, figure
 
 logger = logging.getLogger(__name__)
@@ -177,6 +178,9 @@ class ScatterGraph:
 
         self.figure = fig
 
+        self.finding_user_widget: Optional[MultiChoice] = None
+        """ユーザーを探すためのWidget"""
+
         self.text_glyphs: dict[str, GlyphRenderer] = {}
         """key:user_id, value: 散布図に表示している名前"""
 
@@ -212,12 +216,13 @@ class ScatterGraph:
         source: ColumnDataSource,
         x_column_name: str,
         y_column_name: str,
-        text_column_name: str,
+        username_column_name: str,
+        user_id_column_name: str,
         legend_label: str,
         color: str,
     ) -> None:
         """
-        丸でプロットして、ユーザ名を表示する。
+        人ごとの情報を円形でプロットして、ユーザ名を表示する。
 
         Args:
             fig:
@@ -232,15 +237,19 @@ class ScatterGraph:
             legend_label = "none"
 
         self.figure.circle(x=x_column_name, y=y_column_name, source=source, legend_label=legend_label, color=color, muted_alpha=0.2)
-        self.figure.text(
-            x=x_column_name,
-            y=y_column_name,
-            source=source,
-            text=text_column_name,
-            text_font_size="7pt",
-            legend_label=legend_label,
-            muted_alpha=0.2,
-        )
+
+        for x, y, username, user_id in zip(
+            source.data[x_column_name], source.data[y_column_name], source.data[username_column_name], source.data[user_id_column_name]
+        ):
+            self.text_glyphs[user_id] = self.figure.text(
+                x=x,
+                y=y,
+                # listで渡している理由: https://qiita.com/yuji38kwmt/items/5fad41f6db0090a80af4
+                text=[username],
+                legend_label=legend_label,
+                text_font_style="normal",
+                text_font_size="7pt",
+            )
 
     def process_after_adding_glyphs(self) -> None:
         """
@@ -268,3 +277,43 @@ class ScatterGraph:
         fig.legend.title = "biography"
         legend = fig.legend[0]
         fig.add_layout(legend, "left")
+
+    def add_multi_choice_widget_for_searching_user(self, user_ids: list[str]) -> None:
+        """
+        特定のユーザーを探すためのMultiChoiceウィジェットを追加します。
+
+        Notes:
+            2回以上実行しても意味がありません。
+
+        TODO infが含まれるユーザーは？
+
+        """
+        args = {"textGlyphs": self.text_glyphs}
+
+        # 選択されたユーザーのフォントスタイルを太字にする
+        code = """
+        const selectedUserIds = this.value;
+        for (let userId in textGlyphs) {
+            if (selectedUserIds.includes(userId)) {
+                textGlyphs[userId].glyph.text_font_style='bold';
+            } else {
+                textGlyphs[userId].glyph.text_font_style='normal';
+            }
+        }
+        """
+
+        multi_choice = MultiChoice(options=user_ids, title="Find User:")
+        multi_choice.js_on_change(
+            "value",
+            CustomJS(code=code, args=args),
+        )
+        self.finding_user_widget = multi_choice
+
+    @property
+    def layout(self) -> bokeh.models.layouts.Row:
+        widgets = []
+        if self.finding_user_widget is not None:
+            widgets.append(self.finding_user_widget)
+
+        widgets_layout = bokeh.layouts.column(widgets)
+        return bokeh.layouts.row([self.figure, widgets_layout])

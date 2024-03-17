@@ -878,16 +878,17 @@ class UserPerformance:
         )
 
         for biography_index, biography in enumerate(sorted(set(df["biography"]))):
-            for scatetr_obj, phase in zip(scatter_obj_list, self.phase_list):
+            for scatter_obj, phase in zip(scatter_obj_list, self.phase_list):
                 filtered_df = df[(df["biography"] == biography) & df[(x_column, phase)].notna() & df[(y_column, phase)].notna()]
                 if len(filtered_df) == 0:
                     continue
                 source = ColumnDataSource(data=filtered_df)
-                scatetr_obj.plot_scatter(
+                scatter_obj.plot_scatter(
                     source=source,
                     x_column_name=f"{x_column}_{phase}",
                     y_column_name=f"{y_column}_{phase}",
-                    text_column_name="username_",
+                    username_column_name="username_",
+                    user_id_column_name="user_id_",
                     legend_label=biography,
                     color=get_color_from_palette(biography_index),
                 )
@@ -906,11 +907,11 @@ class UserPerformance:
             if quartile is not None:
                 scatter_obj.plot_quartile_line(quartile, dimension="width")
 
-        for scatter_obj in scatter_obj_list:
+            scatter_obj.add_multi_choice_widget_for_searching_user(list(df[("user_id", "")]))
             scatter_obj.process_after_adding_glyphs()
 
         div_element = self._create_div_element()
-        write_bokeh_graph(bokeh.layouts.column([div_element, *[e.figure for e in scatter_obj_list]]), output_file)
+        write_bokeh_graph(bokeh.layouts.column([div_element, *[e.layout for e in scatter_obj_list]]), output_file)
 
     def plot_quality(self, output_file: Path) -> None:
         """
