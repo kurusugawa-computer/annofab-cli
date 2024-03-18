@@ -236,7 +236,7 @@ class ScatterGraph:
         if legend_label == "":
             legend_label = "none"
 
-        self.figure.circle(x=x_column_name, y=y_column_name, source=source, legend_label=legend_label, color=color, muted_alpha=0.2)
+        self.figure.scatter(x=x_column_name, y=y_column_name, source=source, legend_label=legend_label, color=color, muted_alpha=0.2)
 
         for x, y, username, user_id in zip(
             source.data[x_column_name], source.data[y_column_name], source.data[username_column_name], source.data[user_id_column_name]
@@ -306,7 +306,7 @@ class ScatterGraph:
         }
         """
         options = [(user_id, f"{user_id}:{username}") for user_id, username in users]
-        multi_choice = MultiChoice(options=options, title="Find User:")
+        multi_choice = MultiChoice(options=options, title="Find User:", width=200)
         multi_choice.js_on_change(
             "value",
             CustomJS(code=code, args=args),
