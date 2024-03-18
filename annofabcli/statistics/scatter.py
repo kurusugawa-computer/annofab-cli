@@ -278,10 +278,12 @@ class ScatterGraph:
         legend = fig.legend[0]
         fig.add_layout(legend, "left")
 
-    def add_multi_choice_widget_for_searching_user(self, user_ids: list[str]) -> None:
+    def add_multi_choice_widget_for_searching_user(self, users: list[tuple[str, str]]) -> None:
         """
         特定のユーザーを探すためのMultiChoiceウィジェットを追加します。
 
+        Args:
+            users: ユーザーのリスト。tuple[user_id, username]
         Notes:
             2回以上実行しても意味がありません。
 
@@ -296,13 +298,15 @@ class ScatterGraph:
         for (let userId in textGlyphs) {
             if (selectedUserIds.includes(userId)) {
                 textGlyphs[userId].glyph.text_font_style='bold';
+                textGlyphs[userId].glyph.text_font_size='11pt';
             } else {
                 textGlyphs[userId].glyph.text_font_style='normal';
+                textGlyphs[userId].glyph.text_font_size='7pt';
             }
         }
         """
-
-        multi_choice = MultiChoice(options=user_ids, title="Find User:")
+        options = [(user_id, f"{user_id}:{username}") for user_id, username in users]
+        multi_choice = MultiChoice(options=options, title="Find User:")
         multi_choice.js_on_change(
             "value",
             CustomJS(code=code, args=args),

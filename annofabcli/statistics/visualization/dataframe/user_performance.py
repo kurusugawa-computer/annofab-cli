@@ -907,7 +907,7 @@ class UserPerformance:
             if quartile is not None:
                 scatter_obj.plot_quartile_line(quartile, dimension="width")
 
-            scatter_obj.add_multi_choice_widget_for_searching_user(list(df[("user_id", "")]))
+            scatter_obj.add_multi_choice_widget_for_searching_user(list(zip(df[("user_id", "")], df[("username", "")])))
             scatter_obj.process_after_adding_glyphs()
 
         div_element = self._create_div_element()
