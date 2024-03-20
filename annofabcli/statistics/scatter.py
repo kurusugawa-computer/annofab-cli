@@ -270,7 +270,7 @@ class ScatterGraph:
         }
         """
         options = [(user_id, f"{user_id}:{username}") for user_id, username in users]
-        multi_choice = MultiChoice(options=options, title="Find User:", width=200)
+        multi_choice = MultiChoice(options=options, title="Find User:", width=300)
         multi_choice.js_on_change(
             "value",
             CustomJS(code=code, args=args),
