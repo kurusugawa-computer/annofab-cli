@@ -29,11 +29,16 @@ annofabapi = ">=0.72.4"
 python-datauri = "*"
 
 pandas = "^2"
-# bokehのバージョンを3.0に固定している理由
+
+# Python3.8以下で、bokehのバージョンを3.0に固定している理由
 # 3.2以上だとPython3.8をサポートしていない
 # しかし3.1だと、以下のバグがあって正しくグラフを描画できないため
 # https://github.com/bokeh/bokeh/issues/13133#event-9277282834
-bokeh = "~3.0.0"
+bokeh = [
+    {version="~3.0.0", python="=3.8"},
+    {version="^3.3", python=">=3.9"}
+    ]
+
 Pillow = "*"
 typing-extensions="^4.5"
 
