@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import logging
-import math
 from pathlib import Path
 from typing import Any, Callable, Literal, Optional
 
@@ -31,21 +30,21 @@ def get_color_from_palette(index: int) -> str:
     return my_palette[index % len(my_palette)]
 
 
-def create_hover_tool(tool_tip_items: list[str]) -> HoverTool:
-    """
-    HoverTool用のオブジェクトを生成する。
-    """
-
-    def exclude_phase_name(name: str) -> str:
-        tmp = name.split("_")
-        return "_".join(tmp[0 : len(tmp) - 1])
-
-    detail_tooltips = [(exclude_phase_name(e), f"@{{{e}}}") for e in tool_tip_items]
-    hover_tool = HoverTool(tooltips=[("(x,y)", "($x, $y)"), *detail_tooltips])
-    return hover_tool
-
-
 class ScatterGraph:
+    @staticmethod
+    def create_hover_tool(tool_tip_items: list[str]) -> HoverTool:
+        """
+        HoverTool用のオブジェクトを生成する。
+        """
+
+        def exclude_phase_name(name: str) -> str:
+            tmp = name.split("_")
+            return "_".join(tmp[0 : len(tmp) - 1])
+
+        detail_tooltips = [(exclude_phase_name(e), f"@{{{e}}}") for e in tool_tip_items]
+        hover_tool = HoverTool(tooltips=[("(x,y)", "($x, $y)"), *detail_tooltips])
+        return hover_tool
+
     def __init__(
         self,
         *,
@@ -69,7 +68,7 @@ class ScatterGraph:
         self.tooltip_columns = tooltip_columns
 
         if tooltip_columns is not None:
-            hover_tool = create_hover_tool(tooltip_columns)
+            hover_tool = self.create_hover_tool(tooltip_columns)
             self._hover_tool = hover_tool
             fig.add_tools(hover_tool)
 
@@ -162,8 +161,7 @@ class ScatterGraph:
         size_column_name: str,
         legend_label: str,
         color: str,
-        *,
-        func_get_bubble_size: Optional[Callable[[Any], int]] = None,
+        func_get_bubble_size: Callable[[Any], int],
     ) -> None:
         """
         バブルチャート用にプロットする。
@@ -176,22 +174,6 @@ class ScatterGraph:
             color: 線と点の色
 
         """
-
-        def _worktime_hour_to_scatter_size(worktime_hour: float) -> int:
-            """
-            作業時間からバブルの大きさに変更する。
-            """
-            MIN_SCATTER_SIZE = 4
-            if worktime_hour <= 0:
-                return MIN_SCATTER_SIZE
-            tmp = int(math.log2(worktime_hour) * 15 - 50)
-            if tmp < MIN_SCATTER_SIZE:
-                return MIN_SCATTER_SIZE
-            else:
-                return tmp
-
-        if func_get_bubble_size is None:
-            func_get_bubble_size = _worktime_hour_to_scatter_size
 
         if legend_label == "":
             legend_label = "none"

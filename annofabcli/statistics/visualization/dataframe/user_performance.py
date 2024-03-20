@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import logging
+import math
 from enum import Enum
 from pathlib import Path
 from typing import Optional
@@ -1003,6 +1004,19 @@ class UserPerformance:
         作業時間を元に算出した生産性と品質の関係を、メンバごとにプロットする
         """
 
+        def _worktime_hour_to_scatter_size(worktime_hour: float) -> int:
+            """
+            作業時間からバブルの大きさに変更する。
+            """
+            MIN_SCATTER_SIZE = 4
+            if worktime_hour <= 0:
+                return MIN_SCATTER_SIZE
+            tmp = int(math.log2(worktime_hour) * 15 - 50)
+            if tmp < MIN_SCATTER_SIZE:
+                return MIN_SCATTER_SIZE
+            else:
+                return tmp
+
         def create_scatter(title: str, x_axis_label: str, y_axis_label: str) -> ScatterGraph:
             return ScatterGraph(
                 width=self.PLOT_WIDTH,
@@ -1130,6 +1144,7 @@ class UserPerformance:
                     size_column_name=f"{worktime_type.value}_worktime_hour_{PHASE}",
                     legend_label=biography,
                     color=get_color_from_palette(biography_index),
+                    func_get_bubble_size=_worktime_hour_to_scatter_size,
                 )
 
         plot_average_and_quartile_line()
