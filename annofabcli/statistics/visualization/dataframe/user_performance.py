@@ -20,7 +20,7 @@ from bokeh.models.widgets.markups import Div
 from bokeh.plotting import ColumnDataSource, figure
 
 from annofabcli.common.utils import print_csv, read_multiheader_csv
-from annofabcli.statistics.scatter import ScatterGraph, create_hover_tool, get_color_from_palette, plot_bubble, plot_scatter, write_bokeh_graph
+from annofabcli.statistics.scatter import ScatterGraph, create_hover_tool, get_color_from_palette, plot_bubble, write_bokeh_graph
 from annofabcli.statistics.visualization.dataframe.task_worktime_by_phase_user import TaskWorktimeByPhaseUser
 from annofabcli.statistics.visualization.dataframe.worktime_per_date import WorktimePerDate
 
@@ -928,31 +928,48 @@ class UserPerformance:
         # numpy.inf が含まれていると散布図を出力できないので置換する
         df = self.df.replace(numpy.inf, numpy.nan)
 
-        def create_figure(title: str, x_axis_label: str, y_axis_label: str) -> figure:
-            return figure(
+        PHASE = "annotation"
+
+        def create_scatter_obj(title: str, x_axis_label: str, y_axis_label: str) -> ScatterGraph:
+            return ScatterGraph(
                 width=self.PLOT_WIDTH,
                 height=self.PLOT_HEIGHT,
                 title=title,
                 x_axis_label=x_axis_label,
                 y_axis_label=y_axis_label,
+                tooltip_columns=[
+                    "user_id_",
+                    "username_",
+                    "biography_",
+                    f"monitored_worktime_hour_{PHASE}",
+                    f"task_count_{PHASE}",
+                    f"input_data_count_{PHASE}",
+                    f"annotation_count_{PHASE}",
+                    f"rejected_count_{PHASE}",
+                    f"pointed_out_inspection_comment_count_{PHASE}",
+                    f"rejected_count/task_count_{PHASE}",
+                    f"pointed_out_inspection_comment_count/annotation_count_{PHASE}",
+                    "first_working_date_",
+                    "last_working_date_",
+                    "working_days_",
+                ],
             )
 
         logger.debug(f"{output_file} を出力します。")
 
-        figure_list = [
-            create_figure(title="タスクあたり差し戻し回数とタスク数の関係", x_axis_label="タスク数", y_axis_label="タスクあたり差し戻し回数"),
-            create_figure(
+        scatter_obj_list = [
+            create_scatter_obj(title="タスクあたり差し戻し回数とタスク数の関係", x_axis_label="タスク数", y_axis_label="タスクあたり差し戻し回数"),
+            create_scatter_obj(
                 title="アノテーションあたり検査コメント数とアノテーション数の関係",
                 x_axis_label="アノテーション数",
                 y_axis_label="アノテーションあたり検査コメント数",
             ),
         ]
+
         column_pair_list = [
             ("task_count", "rejected_count/task_count"),
             ("annotation_count", "pointed_out_inspection_comment_count/annotation_count"),
         ]
-
-        phase = "annotation"
 
         # bokeh3.0.3では、string型の列を持つpandas.DataFrameを描画できないため、改めてobject型に戻す
         # TODO この問題が解決されたら、削除する
@@ -970,64 +987,46 @@ class UserPerformance:
 
         df["biography"] = df["biography"].fillna("")
         for biography_index, biography in enumerate(sorted(set(df["biography"]))):
-            for column_pair, fig in zip(column_pair_list, figure_list):
+            for column_pair, scatter_obj in zip(column_pair_list, scatter_obj_list):
                 x_column = column_pair[0]
                 y_column = column_pair[1]
-                filtered_df = df[(df["biography"] == biography) & df[(x_column, phase)].notna() & df[(y_column, phase)].notna()]
+                filtered_df = df[(df["biography"] == biography) & df[(x_column, PHASE)].notna() & df[(y_column, PHASE)].notna()]
                 if len(filtered_df) == 0:
                     continue
 
                 source = ColumnDataSource(data=filtered_df)
-                plot_scatter(
-                    fig=fig,
+                scatter_obj.plot_scatter(
                     source=source,
-                    x_column_name=f"{x_column}_{phase}",
-                    y_column_name=f"{y_column}_{phase}",
-                    text_column_name="username_",
+                    x_column_name=f"{x_column}_{PHASE}",
+                    y_column_name=f"{y_column}_{PHASE}",
+                    username_column_name="username_",
+                    user_id_column_name="user_id_",
                     legend_label=biography,
                     color=get_color_from_palette(biography_index),
                 )
 
-        for column_pair, fig in zip(
+        for column_pair, scatter_obj in zip(
             [("rejected_count", "task_count"), ("pointed_out_inspection_comment_count", "annotation_count")],
-            figure_list,
+            scatter_obj_list,
         ):
-            average_value = self._get_average_value(df, numerator_column=(column_pair[0], phase), denominator_column=(column_pair[1], phase))
+            average_value = self._get_average_value(df, numerator_column=(column_pair[0], PHASE), denominator_column=(column_pair[1], PHASE))
             if average_value is not None:
-                self._plot_average_line(fig, average_value, dimension="width")
+                scatter_obj.plot_average_line(average_value, dimension="width")
 
-        for column, fig in zip(
+        for column, scatter_obj in zip(
             ["rejected_count/task_count", "pointed_out_inspection_comment_count/annotation_count"],
-            figure_list,
+            scatter_obj_list,
         ):
-            quartile = self._get_quartile_value(df, (column, phase))
+            quartile = self._get_quartile_value(df, (column, PHASE))
             if quartile is not None:
-                self._plot_quartile_line(fig, quartile, dimension="width")
+                scatter_obj.plot_quartile_line(quartile, dimension="width")
 
-        for fig in figure_list:
-            tooltip_item = [
-                "user_id_",
-                "username_",
-                "biography_",
-                f"monitored_worktime_hour_{phase}",
-                f"task_count_{phase}",
-                f"input_data_count_{phase}",
-                f"annotation_count_{phase}",
-                f"rejected_count_{phase}",
-                f"pointed_out_inspection_comment_count_{phase}",
-                f"rejected_count/task_count_{phase}",
-                f"pointed_out_inspection_comment_count/annotation_count_{phase}",
-                "first_working_date_",
-                "last_working_date_",
-                "working_days_",
-            ]
-
-            hover_tool = create_hover_tool(tooltip_item)
-            fig.add_tools(hover_tool)
-            self._set_legend(fig)
+        for scatter_obj in scatter_obj_list:
+            scatter_obj.add_multi_choice_widget_for_searching_user(list(zip(df[("user_id", "")], df[("username", "")])))
+            scatter_obj.process_after_adding_glyphs()
 
         div_element = self._create_div_element()
-        write_bokeh_graph(bokeh.layouts.column([div_element, *figure_list]), output_file)
+        write_bokeh_graph(bokeh.layouts.column([div_element, *[e.layout for e in scatter_obj_list]]), output_file)
 
     def plot_quality_and_productivity(self, output_file: Path, worktime_type: WorktimeType, performance_unit: PerformanceUnit):
         """

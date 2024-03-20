@@ -183,8 +183,9 @@ class ScatterGraph:
         """ユーザーを探すためのWidget"""
 
         self.text_glyphs: dict[str, GlyphRenderer] = {}
-        """key:user_id, value: 散布図に表示している名前"""
-        self._scatter_glyphs = {}
+        """key:user_id, value: 散布図に表示している名前のGlyph"""
+        self._scatter_glyphs: dict[str, GlyphRenderer] = {}
+        """key:biography, value: 散布図に表示している円形のGlyph"""
 
     def plot_average_line(self, value: float, dimension: Literal["width", "height"]) -> None:
         span_average_line = Span(
@@ -269,7 +270,7 @@ class ScatterGraph:
         # 理由：名前の表示は`ColumnDataSource`を使っていない（`plot_scatter`メソッド参照）ため、ツールチップには値が"???"と表示される。
         # ユーザーが混乱しないようにするため、名前にカーソルを当てたときはツールチップが表示されないようにする。
         if self._hover_tool is not None and self._scatter_glyphs is not None:
-            self._hover_tool.renderers = list(self._scatter_glyphs.values())
+            self._hover_tool.renderers = list(self._scatter_glyphs.values())  # type: ignore[assignment]
 
     def configure_legend(self):
         """
