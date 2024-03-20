@@ -174,6 +174,7 @@ class ScatterGraph:
 
         if tooltip_columns is not None:
             hover_tool = create_hover_tool(tooltip_columns)
+            self._hover_tool = hover_tool
             fig.add_tools(hover_tool)
 
         self.figure = fig
@@ -183,6 +184,7 @@ class ScatterGraph:
 
         self.text_glyphs: dict[str, GlyphRenderer] = {}
         """key:user_id, value: 散布図に表示している名前"""
+        self._scatter_glyphs = {}
 
     def plot_average_line(self, value: float, dimension: Literal["width", "height"]) -> None:
         span_average_line = Span(
@@ -236,7 +238,9 @@ class ScatterGraph:
         if legend_label == "":
             legend_label = "none"
 
-        self.figure.scatter(x=x_column_name, y=y_column_name, source=source, legend_label=legend_label, color=color, muted_alpha=0.2)
+        self._scatter_glyphs[legend_label] = self.figure.scatter(
+            x=x_column_name, y=y_column_name, source=source, legend_label=legend_label, color=color, muted_alpha=0.2, size=6
+        )
 
         for x, y, username, user_id in zip(
             source.data[x_column_name], source.data[y_column_name], source.data[username_column_name], source.data[user_id_column_name]
@@ -259,6 +263,13 @@ class ScatterGraph:
 
         """
         self.configure_legend()
+
+        # 円形にカーソルを当てたときのみツールチップが表示されるようにする
+        # 名前にカーソルを当てたときはツールチップが表示されないようにする。
+        # 理由：名前の表示は`ColumnDataSource`を使っていない（`plot_scatter`メソッド参照）ため、ツールチップには値が"???"と表示される。
+        # ユーザーが混乱しないようにするため、名前にカーソルを当てたときはツールチップが表示されないようにする。
+        if self._hover_tool is not None and self._scatter_glyphs is not None:
+            self._hover_tool.renderers = list(self._scatter_glyphs.values())
 
     def configure_legend(self):
         """
