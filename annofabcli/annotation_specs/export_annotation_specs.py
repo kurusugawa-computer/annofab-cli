@@ -3,7 +3,7 @@ from __future__ import annotations
 import argparse
 import logging
 import sys
-from typing import Optional
+from typing import Any, Optional
 
 import annofabcli
 import annofabcli.common.cli
@@ -31,6 +31,17 @@ class ListAttributeRestriction(AbstractCommandLineInterface):
         history = histories[-(before + 1)]
         return history["history_id"]
 
+    def get_exported_annotation_specs(self, project_id: str, history_id: Optional[str]) -> dict[str, Any]:
+        query_params = {"v": "3"}
+        if history_id is not None:
+            query_params["history_id"] = history_id
+
+        annotation_specs, _ = self.service.api.get_annotation_specs(project_id, query_params=query_params)
+
+        # アノテーション仕様画面のエクスポートが出力するJSONと同じ形式にするため、project_idを削除する
+        annotation_specs.pop("project_id", None)
+        return annotation_specs
+
     def main(self) -> None:
         args = self.args
 
@@ -47,11 +58,7 @@ class ListAttributeRestriction(AbstractCommandLineInterface):
                 )
                 sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
-        query_params = {"v": "3"}
-        if history_id is not None:
-            query_params["history_id"] = history_id
-
-        annotation_specs, _ = self.service.api.get_annotation_specs(args.project_id, query_params=query_params)
+        annotation_specs = self.get_exported_annotation_specs(args.project_id, history_id=history_id)
 
         print_according_to_format(annotation_specs, format=FormatArgument(args.format), output=args.output)
 
