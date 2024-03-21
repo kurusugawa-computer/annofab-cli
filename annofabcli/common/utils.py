@@ -108,7 +108,7 @@ def print_id_list(id_list: List[Any], output: Optional[Union[str, Path]]) -> Non
 
 def print_according_to_format(
     target: Any,  # noqa: ANN401
-    arg_format: FormatArgument,
+    format: FormatArgument,  # noqa: A002
     output: Optional[Union[str, Path]] = None,
     csv_format: Optional[Dict[str, Any]] = None,
 ):
@@ -124,33 +124,33 @@ def print_according_to_format(
 
     """
 
-    if arg_format == FormatArgument.PRETTY_JSON:
+    if format == FormatArgument.PRETTY_JSON:
         print_json(target, is_pretty=True, output=output)
 
-    elif arg_format == FormatArgument.JSON:
+    elif format == FormatArgument.JSON:
         print_json(target, is_pretty=False, output=output)
 
-    elif arg_format == FormatArgument.CSV:
+    elif format == FormatArgument.CSV:
         df = pandas.DataFrame(target)
         print_csv(df, output=output, to_csv_kwargs=csv_format)
 
-    elif arg_format == FormatArgument.TASK_ID_LIST:
+    elif format == FormatArgument.TASK_ID_LIST:
         task_id_list = [e["task_id"] for e in target]
         print_id_list(task_id_list, output)
 
-    elif arg_format == FormatArgument.PROJECT_ID_LIST:
+    elif format == FormatArgument.PROJECT_ID_LIST:
         project_id_list = [e["project_id"] for e in target]
         print_id_list(project_id_list, output)
 
-    elif arg_format == FormatArgument.INPUT_DATA_ID_LIST:
+    elif format == FormatArgument.INPUT_DATA_ID_LIST:
         input_data_id_list = [e["input_data_id"] for e in target]
         print_id_list(input_data_id_list, output)
 
-    elif arg_format == FormatArgument.USER_ID_LIST:
+    elif format == FormatArgument.USER_ID_LIST:
         user_id_list = [e["user_id"] for e in target]
         print_id_list(user_id_list, output)
 
-    elif arg_format == FormatArgument.INSPECTION_ID_LIST:
+    elif format == FormatArgument.INSPECTION_ID_LIST:
         inspection_id_list = [e["inspection_id"] for e in target]
         print_id_list(inspection_id_list, output)
 
