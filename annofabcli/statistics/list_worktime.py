@@ -107,7 +107,7 @@ def get_df_worktime(task_history_event_list: list[WorktimeFromTaskHistoryEvent],
 
 
 class ListWorktimeFromTaskHistoryEvent(AbstractCommandLineInterface):
-    def print_worktime_list(
+    def print_worktime_list(  # noqa: ANN201
         self,
         project_id: str,
         task_history_event_json: Optional[Path],

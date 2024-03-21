@@ -171,7 +171,7 @@ class CollectingPerformanceInfo:
 
         return ThresholdInfo(threshold_worktime=worktime, threshold_task_count=task_count)
 
-    def filter_df_with_threshold(self, df: pandas.DataFrame, phase: TaskPhase, project_title: str):
+    def filter_df_with_threshold(self, df: pandas.DataFrame, phase: TaskPhase, project_title: str):  # noqa: ANN201
         """
         引数`df`をインタンスとして持っている閾値情報でフィルタリングする。
         """
@@ -223,7 +223,7 @@ class CollectingPerformanceInfo:
 
         productivity_indicator = self.productivity_indicator_by_directory.get(project_title, self.productivity_indicator)
 
-        def _join_inspection():
+        def _join_inspection():  # noqa: ANN202
             phase = TaskPhase.INSPECTION
             if (self.productivity_indicator.value, phase.value) not in df_performance.columns:
                 return df
@@ -236,7 +236,7 @@ class CollectingPerformanceInfo:
 
             return df.join(df_tmp)
 
-        def _join_acceptance():
+        def _join_acceptance():  # noqa: ANN202
             phase = TaskPhase.ACCEPTANCE
             if (productivity_indicator.value, phase.value) not in df_performance.columns:
                 return df
@@ -341,7 +341,7 @@ class CollectingPerformanceInfo:
 def to_rank(series: pandas.Series) -> pandas.Series:
     quantile = list(series.quantile([0.25, 0.5, 0.75]))
 
-    def _to_point(value: float):
+    def _to_point(value: float):  # noqa: ANN202
         if numpy.isnan(value):
             return numpy.nan
         elif value < quantile[0]:
@@ -461,7 +461,7 @@ class WritingCsv:
         self.threshold_deviation_user_count = threshold_deviation_user_count
         self.user_ids = user_ids
 
-    def write(self, df: pandas.DataFrame, csv_basename: str, output_dir: Path):
+    def write(self, df: pandas.DataFrame, csv_basename: str, output_dir: Path):  # noqa: ANN201
         print_csv(df, str(output_dir / f"{csv_basename}__original.csv"))
 
         # 偏差値のCSVを出力

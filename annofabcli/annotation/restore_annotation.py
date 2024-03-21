@@ -165,7 +165,7 @@ class RestoreAnnotationMain(AbstractCommandLineWithConfirmInterface):
                 )
                 changed_operator = True
 
-        else:
+        else:  # noqa: PLR5501
             if not can_put_annotation(task, self.service.api.account_id):
                 logger.debug(
                     f"タスク'{task_id}'は、過去に誰かに割り当てられたタスクで、現在の担当者が自分自身でないため、アノテーションのリストアをスキップします。"
@@ -198,7 +198,7 @@ class RestoreAnnotationMain(AbstractCommandLineWithConfirmInterface):
             logger.warning(f"task_id={task_parser.task_id} のアノテーションのリストアに失敗しました。", exc_info=True)
             return False
 
-    def main(
+    def main(  # noqa: ANN201
         self,
         annotation_dir: Path,
         target_task_ids: Optional[set[str]] = None,

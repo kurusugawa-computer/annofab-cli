@@ -90,7 +90,7 @@ def encode_annotation_count_by_attribute(
     JSONへの変換用関数です。
     """
 
-    def _factory():
+    def _factory():  # noqa: ANN202
         """入れ子の辞書を利用できるようにするための関数"""
         return collections.defaultdict(_factory)
 
@@ -476,7 +476,7 @@ class AttributeCountCsv:
         value_columns = list(dict.fromkeys(value_columns).keys())
         return value_columns
 
-    def print_csv_by_task(
+    def print_csv_by_task(  # noqa: ANN201
         self,
         counter_list: list[AnnotationCounterByTask],
         output_file: Path,
@@ -514,7 +514,7 @@ class AttributeCountCsv:
 
         print_csv(df, output=str(output_file), to_csv_kwargs=self.csv_format)
 
-    def print_csv_by_input_data(
+    def print_csv_by_input_data(  # noqa: ANN201
         self,
         counter_list: list[AnnotationCounterByInputData],
         output_file: Path,
@@ -580,7 +580,7 @@ class LabelCountCsv:
 
         return value_columns
 
-    def print_csv_by_task(
+    def print_csv_by_task(  # noqa: ANN201
         self,
         counter_list: list[AnnotationCounterByTask],
         output_file: Path,
@@ -618,7 +618,7 @@ class LabelCountCsv:
         df.fillna(0, inplace=True)
         print_csv(df, output=str(output_file), to_csv_kwargs=self.csv_format)
 
-    def print_csv_by_input_data(
+    def print_csv_by_input_data(  # noqa: ANN201
         self,
         counter_list: list[AnnotationCounterByInputData],
         output_file: Path,
@@ -806,7 +806,7 @@ class ListAnnotationCountMain:
                 result[(task_id, input_data_id)] = index + 1
         return result
 
-    def print_annotation_counter_csv_by_input_data(
+    def print_annotation_counter_csv_by_input_data(  # noqa: ANN201
         self,
         annotation_path: Path,
         csv_type: CsvType,
@@ -848,7 +848,7 @@ class ListAnnotationCountMain:
 
             AttributeCountCsv().print_csv_by_input_data(counter_list_by_input_data, output_file, prior_attribute_columns=attribute_columns)
 
-    def print_annotation_counter_csv_by_task(
+    def print_annotation_counter_csv_by_task(  # noqa: ANN201
         self,
         annotation_path: Path,
         csv_type: CsvType,
@@ -887,7 +887,7 @@ class ListAnnotationCountMain:
 
             AttributeCountCsv().print_csv_by_task(counter_list_by_task, output_file, prior_attribute_columns=attribute_columns)
 
-    def print_annotation_counter_json_by_input_data(
+    def print_annotation_counter_json_by_input_data(  # noqa: ANN201
         self,
         annotation_path: Path,
         output_file: Path,
@@ -922,7 +922,7 @@ class ListAnnotationCountMain:
             output=output_file,
         )
 
-    def print_annotation_counter_json_by_task(
+    def print_annotation_counter_json_by_task(  # noqa: ANN201
         self,
         annotation_path: Path,
         output_file: Path,
@@ -955,7 +955,7 @@ class ListAnnotationCountMain:
             output=output_file,
         )
 
-    def print_annotation_counter(
+    def print_annotation_counter(  # noqa: ANN201
         self,
         annotation_path: Path,
         group_by: GroupBy,

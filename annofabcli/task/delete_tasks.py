@@ -215,7 +215,7 @@ class DeleteTaskMain(AbstractCommandLineWithConfirmInterface):
         annotation_list = self.service.wrapper.get_all_annotation_list(self.project_id, query_params=query_params)
         return annotation_list
 
-    def delete_task_list(
+    def delete_task_list(  # noqa: ANN201
         self,
         task_id_list: List[str],
         task_query: Optional[TaskQuery] = None,

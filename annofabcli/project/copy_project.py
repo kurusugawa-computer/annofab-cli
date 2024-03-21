@@ -46,7 +46,7 @@ class CopyProject(AbstractCommandLineInterface):
     プロジェクトをコピーする
     """
 
-    def copy_project(
+    def copy_project(  # noqa: ANN201
         self,
         src_project_id: str,
         dest_project_id: str,

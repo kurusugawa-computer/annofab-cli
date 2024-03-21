@@ -22,7 +22,7 @@ from annofabcli.common.utils import get_columns_with_priority
 logger = logging.getLogger(__name__)
 
 
-def create_minimal_dataframe(project_list: List[Project]):
+def create_minimal_dataframe(project_list: List[Project]):  # noqa: ANN201
     """必要最小限の列であるDataFrameを作成する"""
     df = pandas.DataFrame(project_list)
     df["last_tasks_updated_datetime"] = [e["summary"]["last_tasks_updated_datetime"] for e in project_list]
@@ -88,7 +88,7 @@ class ListProjectMain:
 
         """
 
-        def remove_key(arg_key: str):
+        def remove_key(arg_key: str):  # noqa: ANN202
             if arg_key in project_query:
                 logger.info(f"project_query から、`{arg_key}`　キーを削除しました。")
                 project_query.pop(arg_key)

@@ -122,7 +122,7 @@ class DeleteSupplementaryDataMain(AbstractCommandLineWithConfirmInterface):
                 continue
         return deleted_count
 
-    def delete_supplementary_data_list(self, project_id: str, input_data_dict: InputDataSupplementaryDataDict):
+    def delete_supplementary_data_list(self, project_id: str, input_data_dict: InputDataSupplementaryDataDict):  # noqa: ANN201
         deleted_count = 0
         total_count = sum(len(e) for e in input_data_dict.values())
         for input_data_id, supplementary_data_id_list in input_data_dict.items():
@@ -169,7 +169,7 @@ class DeleteSupplementaryDataMain(AbstractCommandLineWithConfirmInterface):
 
         return deleted_count
 
-    def delete_supplementary_data_list_by_input_data_id(self, project_id: str, input_data_id_list: List[str]):
+    def delete_supplementary_data_list_by_input_data_id(self, project_id: str, input_data_id_list: List[str]):  # noqa: ANN201
         dict_deleted_count: Dict[str, int] = {}
         for input_data_id in input_data_id_list:
             input_data = self.service.wrapper.get_input_data_or_none(project_id, input_data_id)

@@ -340,7 +340,7 @@ class WorktimePerDate:
 
         return df
 
-    def plot_cumulatively(
+    def plot_cumulatively(  # noqa: ANN201
         self,
         output_file: Path,
         target_user_id_list: Optional[list[str]] = None,

@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 
 class DownloadingTaskJson(AbstractCommandLineInterface):
-    def download_task_json(self, project_id: str, output_file: Path, is_latest: bool):
+    def download_task_json(self, project_id: str, output_file: Path, is_latest: bool):  # noqa: ANN201
         super().validate_project(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER])
         project_title = self.facade.get_project_title(project_id)
         logger.info(f"{project_title} のタスク全件ファイルをダウンロードします。")

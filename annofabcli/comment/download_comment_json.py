@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 
 class DownloadingComment(AbstractCommandLineInterface):
-    def download_comment_json(self, project_id: str, output_file: Path):
+    def download_comment_json(self, project_id: str, output_file: Path):  # noqa: ANN201
         super().validate_project(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER])
         project_title = self.facade.get_project_title(project_id)
         logger.info(f"{project_title} のコメント全件ファイルをダウンロードします。")

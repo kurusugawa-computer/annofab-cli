@@ -53,7 +53,7 @@ class ListSupplementaryData(AbstractCommandLineInterface):
         """
         if task_id_list is not None:
             input_data_id_list = self.get_input_data_id_from_task(project_id, task_id_list)
-        else:
+        else:  # noqa: PLR5501
             if input_data_id_list is None:
                 logger.warning("input_data_id_listとtask_id_listの両方がNoneです。")
                 return

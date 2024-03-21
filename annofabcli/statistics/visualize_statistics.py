@@ -95,7 +95,7 @@ class WriteCsvGraph:
         Exceptionをキャッチしてログにstacktraceを出力する。
         """
 
-        def wrapped(*args, **kwargs):
+        def wrapped(*args, **kwargs):  # noqa: ANN002, ANN003, ANN202
             try:
                 return function(*args, **kwargs)
             except Exception:  # pylint: disable=broad-except
@@ -246,7 +246,7 @@ class WriteCsvGraph:
 
 
 class VisualizingStatisticsMain:
-    def __init__(
+    def __init__(  # noqa: PLR0913
         self,
         service: annofabapi.Resource,
         *,
@@ -297,7 +297,7 @@ class VisualizingStatisticsMain:
         )
         project_dir.write_project_info(project_summary)
 
-    def visualize_statistics(
+    def visualize_statistics(  # noqa: ANN201
         self,
         project_id: str,
         output_project_dir: Path,
@@ -439,7 +439,7 @@ class VisualizeStatistics(AbstractCommandLineInterface):
 
         return True
 
-    def visualize_statistics(
+    def visualize_statistics(  # noqa: ANN201, PLR0913
         self,
         temp_dir: Path,
         task_query: Optional[TaskQuery],

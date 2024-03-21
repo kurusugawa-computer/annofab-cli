@@ -108,7 +108,7 @@ class ProjectDir(DataClassJsonMixin):
         obj.plot_histogram_of_worktime(self.project_dir / "histogram/ヒストグラム-作業時間.html")
         obj.plot_histogram_of_others(self.project_dir / "histogram/ヒストグラム.html")
 
-    def write_cumulative_line_graph(
+    def write_cumulative_line_graph(  # noqa: ANN201
         self,
         obj: AbstractPhaseCumulativeProductivity,
         phase: TaskPhase,
@@ -144,7 +144,7 @@ class ProjectDir(DataClassJsonMixin):
         phase_name = self.get_phase_name_for_filename(phase)
         obj.to_csv(self.project_dir / Path(f"{phase_name}者_{phase_name}開始日list.csv"))
 
-    def write_performance_line_graph_per_date(
+    def write_performance_line_graph_per_date(  # noqa: ANN201
         self, obj: AbstractPhaseProductivityPerDate, phase: TaskPhase, user_id_list: Optional[List[str]] = None
     ):
         """
@@ -202,13 +202,13 @@ class ProjectDir(DataClassJsonMixin):
             self.project_dir / self.FILENAME_WHOLE_PRODUCTIVITY_PER_FIRST_ANNOTATION_STARTED_DATE
         )
 
-    def write_whole_productivity_per_first_annotation_started_date(self, obj: WholeProductivityPerFirstAnnotationStartedDate):
+    def write_whole_productivity_per_first_annotation_started_date(self, obj: WholeProductivityPerFirstAnnotationStartedDate):  # noqa: ANN201
         """
         教師付開始日ごとの生産性と品質の情報を書き込みます。
         """
         obj.to_csv(self.project_dir / self.FILENAME_WHOLE_PRODUCTIVITY_PER_FIRST_ANNOTATION_STARTED_DATE)
 
-    def write_whole_productivity_line_graph_per_annotation_started_date(self, obj: WholeProductivityPerFirstAnnotationStartedDate):
+    def write_whole_productivity_line_graph_per_annotation_started_date(self, obj: WholeProductivityPerFirstAnnotationStartedDate):  # noqa: ANN201
         """
         横軸が教師付開始日、縦軸が全体の生産性などをプロットした折れ線グラフを出力します。
         """

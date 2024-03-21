@@ -76,7 +76,7 @@ class SubPutSupplementaryData:
         self.all_yes = all_yes
         self.supplementary_data_cache: Dict[str, List[SupplementaryData]] = {}
 
-    def put_supplementary_data(self, project_id: str, supplementary_data: SupplementaryDataForPut):
+    def put_supplementary_data(self, project_id: str, supplementary_data: SupplementaryDataForPut):  # noqa: ANN201
         file_path = get_file_scheme_path(supplementary_data.supplementary_data_path)
         if file_path is not None:
             request_body = {
@@ -279,7 +279,7 @@ class PutSupplementaryData(AbstractCommandLineInterface):
 
     @staticmethod
     def get_supplementary_data_list_from_csv(csv_path: Path) -> List[CsvSupplementaryData]:
-        def create_supplementary_data(e: Any):  # noqa: ANN401
+        def create_supplementary_data(e: Any):  # noqa: ANN202, ANN401
             supplementary_data_id = e.supplementary_data_id if not pandas.isna(e.supplementary_data_id) else None
             supplementary_data_type = e.supplementary_data_type if not pandas.isna(e.supplementary_data_type) else None
             return CsvSupplementaryData(

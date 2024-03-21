@@ -30,7 +30,7 @@ class CopyProjectMembers(AbstractCommandLineInterface):
         self.src_project_title = project_title1
         self.dest_project_title = project_title2
 
-    def validate_projects(self, src_project_id: str, dest_project_id: str):
+    def validate_projects(self, src_project_id: str, dest_project_id: str):  # noqa: ANN201
         """
         適切なRoleが付与されているかを確認する。
 
@@ -92,7 +92,7 @@ class CopyProjectMembers(AbstractCommandLineInterface):
 
         return updated_project_members
 
-    def copy_project_members(self, src_project_id: str, dest_project_id: str, delete_dest: bool = False):
+    def copy_project_members(self, src_project_id: str, dest_project_id: str, delete_dest: bool = False):  # noqa: ANN201
         """
         プロジェクトメンバを、別のプロジェクトにコピーする。
 
@@ -140,7 +140,7 @@ class CopyProjectMembers(AbstractCommandLineInterface):
             src_account_ids = [e["account_id"] for e in src_project_members]
             deleted_dest_members = [e for e in dest_project_members if e["account_id"] not in src_account_ids]
 
-            def to_inactive(arg_member: dict[str, Any]):
+            def to_inactive(arg_member: dict[str, Any]):  # noqa: ANN202
                 arg_member["member_status"] = "inactive"
                 return arg_member
 

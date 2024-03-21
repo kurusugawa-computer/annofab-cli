@@ -74,7 +74,7 @@ class CompleteTasksMain(AbstractCommandLineWithConfirmInterface):
 
         return task_dict
 
-    def reply_inspection_comment(
+    def reply_inspection_comment(  # noqa: ANN201
         self,
         task: Task,
         input_data_id: str,
@@ -101,7 +101,7 @@ class CompleteTasksMain(AbstractCommandLineWithConfirmInterface):
 
         return self.service.api.batch_update_comments(task.project_id, task.task_id, input_data_id, request_body=request_body)[0]
 
-    def update_status_of_inspections(
+    def update_status_of_inspections(  # noqa: ANN201
         self,
         task: Task,
         input_data_id: str,
@@ -410,7 +410,7 @@ class CompleteTasksMain(AbstractCommandLineWithConfirmInterface):
             logger.warning(f"タスク'{task_id}'のフェーズを完了状態にするのに失敗しました。", exc_info=True)
             return False
 
-    def complete_task_list(
+    def complete_task_list(  # noqa: ANN201
         self,
         project_id: str,
         task_id_list: List[str],

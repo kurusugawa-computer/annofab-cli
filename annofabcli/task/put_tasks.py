@@ -113,7 +113,7 @@ class PuttingTaskMain:
             logger.warning(f"タスク'{task_id}'の登録に失敗しました。", exc_info=True)
             return False
 
-    def put_task_list(self, task_relation_dict: TaskInputRelation):
+    def put_task_list(self, task_relation_dict: TaskInputRelation):  # noqa: ANN201
         logger.debug("'put_task' WebAPIを用いてタスクを生成します。")
         success_count = 0
         if self.parallelism is None:

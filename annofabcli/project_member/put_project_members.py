@@ -44,7 +44,7 @@ class PutProjectMembers(AbstractCommandLineInterface):
     def member_exists(members: List[Dict[str, Any]], user_id: str) -> bool:
         return PutProjectMembers.find_member(members, user_id) is not None
 
-    def invite_project_member(self, project_id: str, member: Member, old_project_members: List[Dict[str, Any]]):
+    def invite_project_member(self, project_id: str, member: Member, old_project_members: List[Dict[str, Any]]):  # noqa: ANN201
         old_member = self.find_member(old_project_members, member.user_id)
         last_updated_datetime = old_member["updated_datetime"] if old_member is not None else None
 
@@ -58,7 +58,7 @@ class PutProjectMembers(AbstractCommandLineInterface):
         updated_project_member = self.service.api.put_project_member(project_id, member.user_id, request_body=request_body)[0]
         return updated_project_member
 
-    def delete_project_member(self, project_id: str, deleted_member: Dict[str, Any]):
+    def delete_project_member(self, project_id: str, deleted_member: Dict[str, Any]):  # noqa: ANN201
         request_body = {
             "member_status": ProjectMemberStatus.INACTIVE.value,
             "member_role": deleted_member["member_role"],
@@ -67,7 +67,7 @@ class PutProjectMembers(AbstractCommandLineInterface):
         updated_project_member = self.service.api.put_project_member(project_id, deleted_member["user_id"], request_body=request_body)[0]
         return updated_project_member
 
-    def put_project_members(self, project_id: str, members: List[Member], delete: bool = False):
+    def put_project_members(self, project_id: str, members: List[Member], delete: bool = False):  # noqa: ANN201
         """
         プロジェクトメンバを一括で登録する。
 
@@ -143,7 +143,7 @@ class PutProjectMembers(AbstractCommandLineInterface):
 
     @staticmethod
     def get_members_from_csv(csv_path: Path) -> List[Member]:
-        def create_member(e):  # noqa: ANN001
+        def create_member(e):  # noqa: ANN001, ANN202
             return Member(
                 user_id=e.user_id,
                 member_role=ProjectMemberRole(e.member_role),

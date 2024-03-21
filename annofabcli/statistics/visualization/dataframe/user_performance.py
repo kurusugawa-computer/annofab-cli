@@ -36,7 +36,7 @@ class WorktimeType(Enum):
     MONITORED = "monitored"
 
     @property
-    def worktime_type_name(self):
+    def worktime_type_name(self) -> str:
         if self.value == "actual":
             worktime_name = "実績時間"
         elif self.value == "monitored":
@@ -55,7 +55,7 @@ class PerformanceUnit(Enum):
     INPUT_DATA_COUNT = "input_data_count"
 
     @property
-    def performance_unit_name(self):
+    def performance_unit_name(self) -> str:
         if self.value == "annotation_count":
             performance_unit_name = "アノテーション"
         elif self.value == "input_data_count":

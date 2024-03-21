@@ -92,7 +92,7 @@ class ChangeStatusToBreakMain(AbstractCommandLineWithConfirmInterface):
             logger.warning(f"タスク'{task_id}'のステータスの変更に失敗しました。", exc_info=True)
             return False
 
-    def change_status_to_break(
+    def change_status_to_break(  # noqa: ANN201
         self,
         project_id: str,
         task_id_list: List[str],

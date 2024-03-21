@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Optional
 
 
-def execute_mask_user_info_command(csv_path: Path, output_csv: Path, remainder_options: Optional[list[str]]):
+def execute_mask_user_info_command(csv_path: Path, output_csv: Path, remainder_options: Optional[list[str]]) -> None:
     command = [
         "annofabcli",
         "filesystem",

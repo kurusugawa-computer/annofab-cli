@@ -120,7 +120,7 @@ class SubPutInputData:
         self.facade = facade
         self.all_yes = all_yes
 
-    def put_input_data(self, project_id: str, csv_input_data: InputDataForPut, last_updated_datetime: Optional[str] = None):
+    def put_input_data(self, project_id: str, csv_input_data: InputDataForPut, last_updated_datetime: Optional[str] = None):  # noqa: ANN201
         request_body: Dict[str, Any] = {"last_updated_datetime": last_updated_datetime}
 
         file_path = get_file_scheme_path(csv_input_data.input_data_path)
@@ -279,7 +279,7 @@ class PutInputData(AbstractCommandLineInterface):
 
     @staticmethod
     def get_input_data_list_from_df(df: pandas.DataFrame) -> List[CsvInputData]:
-        def create_input_data(e: Any):  # noqa: ANN401
+        def create_input_data(e: Any):  # noqa: ANN202, ANN401
             input_data_id = e.input_data_id if not pandas.isna(e.input_data_id) else None
             sign_required: Optional[bool] = e.sign_required if pandas.notna(e.sign_required) else None
             return CsvInputData(

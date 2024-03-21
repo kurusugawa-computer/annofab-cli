@@ -77,7 +77,7 @@ def create_task_count_summary_df(task_list: List[Task]) -> pandas.DataFrame:
 
     """
 
-    def add_columns_if_not_exists(df: pandas.DataFrame, column: str):
+    def add_columns_if_not_exists(df: pandas.DataFrame, column: str):  # noqa: ANN202
         if column not in df.columns:
             df[column] = 0
 

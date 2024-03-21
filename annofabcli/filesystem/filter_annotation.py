@@ -30,7 +30,7 @@ class FilterQuery:
     exclude_input_data_name_set: Optional[Set[str]] = None
 
 
-def match_query(  # pylint: disable=too-many-return-statements
+def match_query(  # pylint: disable=too-many-return-statements  # noqa: PLR0911
     annotation: Dict[str, Any], filter_query: FilterQuery
 ) -> bool:
     if filter_query.task_query is not None and not match_annotation_with_task_query(annotation, filter_query.task_query):

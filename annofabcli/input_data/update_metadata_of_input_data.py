@@ -56,7 +56,7 @@ class UpdateMetadataMain(AbstractCommandLineWithConfirmInterface):
         logger.debug(f"{logging_prefix} 入力データを更新しました。input_data_id={input_data['input_data_id']}")
         return True
 
-    def set_metadata_to_input_data_wrapper(self, tpl: Tuple[int, str], project_id: str, metadata: Dict[str, Any], overwrite_metadata: bool = False):
+    def set_metadata_to_input_data_wrapper(self, tpl: Tuple[int, str], project_id: str, metadata: Dict[str, Any], overwrite_metadata: bool = False):  # noqa: ANN201
         input_data_index, input_data_id = tpl
         return self.set_metadata_to_input_data(
             project_id,
@@ -66,7 +66,7 @@ class UpdateMetadataMain(AbstractCommandLineWithConfirmInterface):
             input_data_index=input_data_index,
         )
 
-    def update_metadata_of_input_data(
+    def update_metadata_of_input_data(  # noqa: ANN201
         self,
         project_id: str,
         input_data_id_list: List[str],

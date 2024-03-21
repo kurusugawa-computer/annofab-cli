@@ -48,7 +48,7 @@ class UploadInstruction(AbstractCommandLineInterface):
     作業ガイドをアップロードする
     """
 
-    def upload_html_to_instruction(self, project_id: str, html_path: Path, temp_dir: Path):
+    def upload_html_to_instruction(self, project_id: str, html_path: Path, temp_dir: Path):  # noqa: ANN201, PLR0912
         with html_path.open(encoding="utf-8") as f:
             file_content = f.read()
         pq_html = pyquery.PyQuery(file_content)
@@ -66,7 +66,7 @@ class UploadInstruction(AbstractCommandLineInterface):
 
             if src_value.startswith("data:"):
                 img_path = save_image_from_data_uri_scheme(src_value, temp_dir=temp_dir)
-            else:
+            else:  # noqa: PLR5501
                 if src_value[0] == "/":
                     img_path = Path(src_value)
                 else:
@@ -103,7 +103,7 @@ class UploadInstruction(AbstractCommandLineInterface):
         self.update_instruction(project_id, html_data)
         logger.info("作業ガイドを更新しました。")
 
-    def update_instruction(self, project_id: str, html_data: str):
+    def update_instruction(self, project_id: str, html_data: str):  # noqa: ANN201
         histories, _ = self.service.api.get_instruction_history(project_id)
         if len(histories) > 0:
             last_updated_datetime = histories[0]["updated_datetime"]
