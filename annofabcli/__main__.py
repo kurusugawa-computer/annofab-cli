@@ -66,6 +66,7 @@ def main(arguments: Optional[list[str]] = None) -> None:
         arguments: コマンドライン引数。テストコード用
 
     """
+    warn_pandas_copy_on_write()
     parser = create_parser()
 
     if arguments is None:
@@ -122,5 +123,4 @@ def create_parser() -> argparse.ArgumentParser:
 
 
 if __name__ == "__main__":
-    warn_pandas_copy_on_write()
     main()
