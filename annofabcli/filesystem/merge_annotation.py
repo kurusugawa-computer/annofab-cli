@@ -54,7 +54,7 @@ class MergeAnnotationMain:
     def _is_segmentation(anno: Dict[str, Any]) -> bool:
         return anno["data"]["_type"] in ["Segmentation", "SegmentationV2"]
 
-    def write_merged_annotation(self, parser1: SimpleAnnotationParser, parser2: SimpleAnnotationParser, output_json: Path):
+    def write_merged_annotation(self, parser1: SimpleAnnotationParser, parser2: SimpleAnnotationParser, output_json: Path):  # noqa: ANN201
         simple_annotation1 = parser1.load_json()
         simple_annotation2 = parser2.load_json()
         details1 = simple_annotation1["details"]
@@ -95,7 +95,7 @@ class MergeAnnotationMain:
         with output_json.open("w") as f:
             json.dump(new_simple_annotation, f, ensure_ascii=False)
 
-    def copy_annotation(self, parser: SimpleAnnotationParser, output_json: Path):
+    def copy_annotation(self, parser: SimpleAnnotationParser, output_json: Path):  # noqa: ANN201
         simple_annotation = parser.load_json()
         details = simple_annotation["details"]
 
@@ -141,7 +141,7 @@ class MergeAnnotationMain:
 
         return is_target_parser
 
-    def main(
+    def main(  # noqa: ANN201
         self,
         annotation_path1: Path,
         annotation_path2: Path,

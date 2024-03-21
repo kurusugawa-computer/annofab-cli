@@ -46,7 +46,7 @@ class ChangeProjectMembers(AbstractCommandLineInterface):
 
         """
 
-        def get_value(key: str):
+        def get_value(key: str):  # noqa: ANN202
             if member_info is None:
                 return old_member[key]
 
@@ -68,7 +68,7 @@ class ChangeProjectMembers(AbstractCommandLineInterface):
         updated_project_member = self.service.api.put_project_member(project_id, user_id, request_body=request_body)[0]
         return updated_project_member
 
-    def change_project_members(
+    def change_project_members(  # noqa: ANN201
         self,
         project_id: str,
         user_id_list: Collection[str],

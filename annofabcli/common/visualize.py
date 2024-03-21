@@ -43,7 +43,7 @@ class AddProps:
         self._specs_labels: Optional[list[dict[str, Any]]] = None
         self._specs_inspection_phrases: Optional[list[dict[str, Any]]] = None
 
-    def _set_annotation_specs(self):
+    def _set_annotation_specs(self):  # noqa: ANN202
         """
         アノテーション仕様に関する情報をインスタンス変数に格納します。
         """
@@ -215,7 +215,7 @@ class AddProps:
 
         """
 
-        def add_commenter_info():
+        def add_commenter_info():  # noqa: ANN202
             commenter_user_id = None
             commenter_username = None
 
@@ -258,7 +258,7 @@ class AddProps:
 
         """
 
-        def add_commenter_info():
+        def add_commenter_info():  # noqa: ANN202
             commenter_user_id = None
             commenter_username = None
 

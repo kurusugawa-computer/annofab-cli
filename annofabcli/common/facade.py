@@ -128,7 +128,7 @@ def match_annotation_with_task_query(annotation: Dict[str, Any], task_query: Opt
     return True
 
 
-def match_task_with_query(  # pylint: disable=too-many-return-statements
+def match_task_with_query(  # pylint: disable=too-many-return-statements  # noqa: PLR0911
     task: Task, task_query: Optional[TaskQuery]
 ) -> bool:
     """
@@ -315,7 +315,7 @@ class AnnofabApiFacade:
             組織メンバ。見つからない場合はNone
         """
 
-        def update_organization_members():
+        def update_organization_members():  # noqa: ANN202
             organization_name = self.get_organization_name_from_project_id(project_id)
             members = self.service.wrapper.get_all_organization_members(organization_name)
             self._organization_members = (project_id, members)
@@ -498,7 +498,7 @@ class AnnofabApiFacade:
             task_query.account_id = self.get_account_id_from_user_id(project_id, task_query.user_id)
         return task_query
 
-    def validate_project(
+    def validate_project(  # noqa: ANN201
         self,
         project_id: str,
         project_member_roles: Optional[List[ProjectMemberRole]] = None,

@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 
 class ListingComments(AbstractCommandLineInterface):
-    def get_comments(self, project_id: str, task_id: str, input_data_id: str):
+    def get_comments(self, project_id: str, task_id: str, input_data_id: str):  # noqa: ANN201
         comments, _ = self.service.api.get_comments(project_id, task_id, input_data_id, query_params={"v": "2"})
         return comments
 

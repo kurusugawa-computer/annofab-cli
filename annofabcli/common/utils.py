@@ -84,7 +84,7 @@ def print_json(target: Any, is_pretty: bool = False, output: Optional[Union[str,
         output_string(json.dumps(target, ensure_ascii=False), output)
 
 
-def print_csv(df: pandas.DataFrame, output: Optional[Union[str, Path]] = None, to_csv_kwargs: Optional[Dict[str, Any]] = None):
+def print_csv(df: pandas.DataFrame, output: Optional[Union[str, Path]] = None, to_csv_kwargs: Optional[Dict[str, Any]] = None):  # noqa: ANN201
     if output is not None:
         Path(output).parent.mkdir(parents=True, exist_ok=True)
 
@@ -106,7 +106,7 @@ def print_id_list(id_list: List[Any], output: Optional[Union[str, Path]]) -> Non
     output_string(s, output)
 
 
-def print_according_to_format(
+def print_according_to_format(  # noqa: ANN201
     target: Any,  # noqa: ANN401
     arg_format: FormatArgument,
     output: Optional[Union[str, Path]] = None,
@@ -155,7 +155,7 @@ def print_according_to_format(
         print_id_list(inspection_id_list, output)
 
 
-def to_filename(s: str):
+def to_filename(s: str):  # noqa: ANN201
     """
     文字列をファイル名に使えるよう変換する。ファイル名に使えない文字は"__"に変換する。
     Args:
@@ -231,7 +231,7 @@ def get_cache_dir() -> Path:
     return cache_home_dir_path / "annofabcli"
 
 
-def read_multiheader_csv(csv_file: str, header_row_count: int = 2, **kwargs) -> pandas.DataFrame:
+def read_multiheader_csv(csv_file: str, header_row_count: int = 2, **kwargs) -> pandas.DataFrame:  # noqa: ANN003
     """
     複数ヘッダ行のCSVを読み込む。その際、"Unnamed"の列名は空文字に変更する。
 
@@ -279,7 +279,7 @@ def _catch_exception(function: Callable[..., Any]) -> Callable[..., Any]:
     Exceptionをキャッチしてログにstacktraceを出力する。
     """
 
-    def wrapped(*args, **kwargs):
+    def wrapped(*args, **kwargs):  # noqa: ANN002, ANN003, ANN202
         try:
             return function(*args, **kwargs)
         except Exception as e:  # pylint: disable=broad-except

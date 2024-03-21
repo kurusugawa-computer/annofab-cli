@@ -96,31 +96,31 @@ class DrawingAnnotationForOneImage:
             アノテーションを描画した状態のDrawing Object
         """
 
-        def draw_segmentation(data_uri: str, color: Color):
+        def draw_segmentation(data_uri: str, color: Color):  # noqa: ANN202
             # 外部ファイルを描画する
             with parser.open_outer_file(data_uri) as f:
                 with Image.open(f) as outer_image:
                     draw.bitmap([0, 0], outer_image, fill=color)
 
-        def draw_bounding_box(data: Dict[str, Any], color: Color):
+        def draw_bounding_box(data: Dict[str, Any], color: Color):  # noqa: ANN202
             xy = [
                 (data["left_top"]["x"], data["left_top"]["y"]),
                 (data["right_bottom"]["x"], data["right_bottom"]["y"]),
             ]
             draw.rectangle(xy, outline=color, width=self.drawing_options.line_width)
 
-        def draw_single_point(data: Dict[str, Any], color: Color, radius: int = 2):
+        def draw_single_point(data: Dict[str, Any], color: Color, radius: int = 2):  # noqa: ANN202
             point_x = data["point"]["x"]
             point_y = data["point"]["y"]
             draw.ellipse([(point_x - radius, point_y - radius), (point_x + radius, point_y + radius)], fill=color)
 
-        def draw_closed_polyline(data: Dict[str, Any], color: Color):
+        def draw_closed_polyline(data: Dict[str, Any], color: Color):  # noqa: ANN202
             points = data["points"]
             first_point = points[0]
             xy = [(e["x"], e["y"]) for e in points] + [(first_point["x"], first_point["y"])]
             draw.line(xy, fill=color, width=self.drawing_options.line_width)
 
-        def draw_polyline(data: Dict[str, Any], color: Color):
+        def draw_polyline(data: Dict[str, Any], color: Color):  # noqa: ANN202
             xy = [(e["x"], e["y"]) for e in data["points"]]
             draw.line(xy, fill=color, width=self.drawing_options.line_width)
 
@@ -157,7 +157,7 @@ class DrawingAnnotationForOneImage:
 
         return draw
 
-    def main(
+    def main(  # noqa: ANN201
         self,
         parser: SimpleAnnotationParser,
         image_file: Optional[Path],
@@ -212,7 +212,7 @@ def create_is_target_parser_func(
     return is_target_parser
 
 
-def draw_annotation_all(
+def draw_annotation_all(  # noqa: ANN201, PLR0913
     iter_parser: Iterator[SimpleAnnotationParser],
     image_dir: Optional[Path],
     input_data_id_relation_dict: Optional[Dict[str, str]],

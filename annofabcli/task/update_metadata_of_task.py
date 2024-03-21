@@ -87,7 +87,7 @@ class UpdateMetadataOfTaskMain(AbstractCommandLineWithConfirmInterface):
             logger.warning(f"タスク'{task_id}'のメタデータの更新に失敗しました。", exc_info=True)
             return False
 
-    def update_metadata_of_task(
+    def update_metadata_of_task(  # noqa: ANN201
         self,
         project_id: str,
         task_ids: Collection[str],
@@ -130,13 +130,13 @@ class UpdateMetadataOfTaskMain(AbstractCommandLineWithConfirmInterface):
 
             logger.info(f"{success_count} / {len(task_ids)} 件のタスクのmetadataを変更しました。")
 
-    def update_metadata_with_patch_tasks_metadata_api_wrapper(self, tpl: tuple[int, int, list[str]], project_id: str, metadata: Metadata):
+    def update_metadata_with_patch_tasks_metadata_api_wrapper(self, tpl: tuple[int, int, list[str]], project_id: str, metadata: Metadata):  # noqa: ANN201
         global_start_position, global_stop_position, task_id_list = tpl
         logger.debug(f"{global_start_position+1} 〜 {global_stop_position} 件目のタスクのmetadataを更新します。")
         request_body = {task_id: metadata for task_id in task_id_list}
         self.service.api.patch_tasks_metadata(project_id, request_body=request_body)
 
-    def update_metadata_with_patch_tasks_metadata_api(self, project_id: str, task_ids: Collection[str], metadata: Metadata):
+    def update_metadata_with_patch_tasks_metadata_api(self, project_id: str, task_ids: Collection[str], metadata: Metadata):  # noqa: ANN201
         """patch_tasks_metadata webapiを呼び出して、タスクのメタデータを更新します。
         注意：メタデータは上書きされます。
         """

@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 
 class DownloadingInputData(AbstractCommandLineInterface):
-    def download_input_data_json(self, project_id: str, output_file: Path, is_latest: bool):
+    def download_input_data_json(self, project_id: str, output_file: Path, is_latest: bool):  # noqa: ANN201
         super().validate_project(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER])
         project_title = self.facade.get_project_title(project_id)
         logger.info(f"{project_title} の入力データ全件ファイルをダウンロードします。")

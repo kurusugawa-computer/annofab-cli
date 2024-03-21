@@ -138,7 +138,7 @@ class CancelAcceptanceMain(AbstractCommandLineWithConfirmInterface):
             logger.warning(f"タスク'{task_id}'の受け入れ取り消しに失敗しました。", exc_info=True)
             return False
 
-    def cancel_acceptance_for_task_list(
+    def cancel_acceptance_for_task_list(  # noqa: ANN201
         self,
         task_id_list: List[str],
         acceptor: Optional[User] = None,

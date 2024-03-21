@@ -30,7 +30,7 @@ logger = logging.getLogger(__name__)
 DEFAULT_WAIT_OPTIONS = WaitOptions(interval=60, max_tries=360)
 
 
-def millisecond_to_hour(millisecond: int):
+def millisecond_to_hour(millisecond: int):  # noqa: ANN201
     return millisecond / 1000 / 3600
 
 
@@ -70,7 +70,7 @@ class ListInputDataMergedTaskMain:
             )
         return df
 
-    def create_input_data_merged_task(
+    def create_input_data_merged_task(  # noqa: ANN201
         self,
         input_data_list: List[Dict[str, Any]],
         task_list: List[Dict[str, Any]],
@@ -131,7 +131,7 @@ class ListInputDataMergedTask(AbstractCommandLineInterface):
 
         return True
 
-    def download_json_files(self, project_id: str, output_dir: Path, is_latest: bool, wait_options: WaitOptions):
+    def download_json_files(self, project_id: str, output_dir: Path, is_latest: bool, wait_options: WaitOptions):  # noqa: ANN201
         loop = asyncio.get_event_loop()
         downloading_obj = DownloadingFile(self.service)
         gather = asyncio.gather(

@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 
 class PutProject(AbstractCommandLineInterface):
-    def put_project(
+    def put_project(  # noqa: ANN201
         self,
         organization: str,
         title: str,

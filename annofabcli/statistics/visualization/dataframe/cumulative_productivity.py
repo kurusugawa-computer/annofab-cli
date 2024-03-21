@@ -71,7 +71,7 @@ class AbstractPhaseCumulativeProductivity(abc.ABC):
 
         return True
 
-    def _plot(
+    def _plot(  # noqa: ANN202
         self,
         line_graph_list: list[LineGraph],
         columns_list: list[tuple[str, str]],
@@ -209,7 +209,7 @@ class AnnotatorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
         df = df.drop(["task_count"], axis=1)
         return df
 
-    def plot_annotation_metrics(
+    def plot_annotation_metrics(  # noqa: ANN201
         self,
         output_file: Path,
         target_user_id_list: Optional[list[str]] = None,
@@ -276,7 +276,7 @@ class AnnotatorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
         ]
         self._plot(line_graph_list, columns_list, user_id_list, output_file)
 
-    def plot_input_data_metrics(
+    def plot_input_data_metrics(  # noqa: ANN201
         self,
         output_file: Path,
         target_user_id_list: Optional[list[str]] = None,
@@ -339,7 +339,7 @@ class AnnotatorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
 
         self._plot(line_graph_list, columns_list, user_id_list, output_file)
 
-    def plot_task_metrics(
+    def plot_task_metrics(  # noqa: ANN201
         self,
         output_file: Path,
         target_user_id_list: Optional[list[str]] = None,
@@ -450,7 +450,7 @@ class InspectorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
 
         return df
 
-    def plot_annotation_metrics(
+    def plot_annotation_metrics(  # noqa: ANN201
         self,
         output_file: Path,
         target_user_id_list: Optional[list[str]] = None,
@@ -504,7 +504,7 @@ class InspectorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
 
         self._plot(line_graph_list, columns_list, user_id_list, output_file)
 
-    def plot_input_data_metrics(
+    def plot_input_data_metrics(  # noqa: ANN201
         self,
         output_file: Path,
         target_user_id_list: Optional[list[str]] = None,
@@ -552,7 +552,7 @@ class InspectorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
 
         self._plot(line_graph_list, columns_list, user_id_list, output_file)
 
-    def plot_task_metrics(
+    def plot_task_metrics(  # noqa: ANN201
         self,
         output_file: Path,
         target_user_id_list: Optional[list[str]] = None,
@@ -641,7 +641,7 @@ class AcceptorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
 
         return df
 
-    def plot_annotation_metrics(
+    def plot_annotation_metrics(  # noqa: ANN201
         self,
         output_file: Path,
         target_user_id_list: Optional[list[str]] = None,
@@ -695,7 +695,7 @@ class AcceptorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
 
         self._plot(line_graph_list, columns_list, user_id_list, output_file)
 
-    def plot_input_data_metrics(
+    def plot_input_data_metrics(  # noqa: ANN201
         self,
         output_file: Path,
         target_user_id_list: Optional[list[str]] = None,
@@ -743,7 +743,7 @@ class AcceptorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
 
         self._plot(line_graph_list, columns_list, user_id_list, output_file)
 
-    def plot_task_metrics(
+    def plot_task_metrics(  # noqa: ANN201
         self,
         output_file: Path,
         target_user_id_list: Optional[list[str]] = None,

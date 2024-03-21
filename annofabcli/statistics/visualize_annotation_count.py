@@ -76,7 +76,7 @@ def _only_selective_attribute(columns: list[AttributeValueKey]) -> list[Attribut
     ]
 
 
-def plot_label_histogram(
+def plot_label_histogram(  # noqa: ANN201
     counter_list: Sequence[AnnotationCounter],
     group_by: GroupBy,
     output_file: Path,
@@ -138,7 +138,7 @@ def plot_label_histogram(
     logger.info(f"'{output_file}'を出力しました。")
 
 
-def plot_attribute_histogram(
+def plot_attribute_histogram(  # noqa: ANN201
     counter_list: Sequence[AnnotationCounter],
     group_by: GroupBy,
     output_file: Path,
@@ -206,7 +206,7 @@ class VisualizeAnnotationCount(AbstractCommandLineInterface):
 
         return True
 
-    def visualize_annotation_count(
+    def visualize_annotation_count(  # noqa: ANN201
         self,
         group_by: GroupBy,
         annotation_path: Path,

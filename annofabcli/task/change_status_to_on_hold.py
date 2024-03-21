@@ -183,7 +183,7 @@ class ChangingStatusToOnHoldMain(AbstractCommandLineWithConfirmInterface):
             logger.warning(f"タスク'{task_id}'のステータスの変更に失敗しました。", exc_info=True)
             return False
 
-    def change_status_to_on_hold(
+    def change_status_to_on_hold(  # noqa: ANN201
         self,
         task_id_list: list[str],
         *,

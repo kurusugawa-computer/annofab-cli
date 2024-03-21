@@ -185,7 +185,7 @@ class ChangeAnnotationAttributesMain(AbstractCommandLineWithConfirmInterface):
             logger.warning(f"タスク'{task_id}'のアノテーションの属性の変更に失敗しました。", exc_info=True)
             return False
 
-    def change_annotation_attributes_for_task_list(
+    def change_annotation_attributes_for_task_list(  # noqa: ANN201
         self,
         task_id_list: List[str],
         annotation_query: AnnotationQueryForAPI,

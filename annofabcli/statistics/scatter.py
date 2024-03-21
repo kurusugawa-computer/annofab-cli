@@ -54,7 +54,7 @@ class ScatterGraph:
         width: int = 1200,
         height: int = 1000,
         tooltip_columns: Optional[list[str]] = None,
-        **figure_kwargs,
+        **figure_kwargs,  # noqa: ANN003
     ) -> None:
         fig = figure(
             title=title,
@@ -224,7 +224,7 @@ class ScatterGraph:
         if self._hover_tool is not None and self._scatter_glyphs is not None:
             self._hover_tool.renderers = list(self._scatter_glyphs.values())  # type: ignore[assignment]
 
-    def configure_legend(self):
+    def configure_legend(self):  # noqa: ANN201
         """
         凡例を設定します。
 

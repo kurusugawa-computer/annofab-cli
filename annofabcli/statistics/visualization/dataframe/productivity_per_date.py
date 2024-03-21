@@ -79,7 +79,7 @@ class AbstractPhaseProductivityPerDate(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def to_csv(self, output_file: Path):
+    def to_csv(self, output_file: Path):  # noqa: ANN201
         raise NotImplementedError()
 
     @abc.abstractmethod
@@ -188,7 +188,7 @@ class AnnotatorProductivityPerDate(AbstractPhaseProductivityPerDate):
 
         return df2
 
-    def plot_annotation_metrics(
+    def plot_annotation_metrics(  # noqa: ANN201
         self,
         output_file: Path,
         target_user_id_list: Optional[list[str]] = None,
@@ -322,7 +322,7 @@ class AnnotatorProductivityPerDate(AbstractPhaseProductivityPerDate):
 
         self._plot(line_graph_list, output_file)
 
-    def plot_input_data_metrics(
+    def plot_input_data_metrics(  # noqa: ANN201
         self,
         output_file: Path,
         target_user_id_list: Optional[list[str]] = None,
@@ -562,7 +562,7 @@ class InspectorProductivityPerDate(AbstractPhaseProductivityPerDate):
         )
         return df2
 
-    def plot_annotation_metrics(
+    def plot_annotation_metrics(  # noqa: ANN201
         self,
         output_file: Path,
         target_user_id_list: Optional[list[str]] = None,
@@ -670,7 +670,7 @@ class InspectorProductivityPerDate(AbstractPhaseProductivityPerDate):
 
         self._plot(line_graph_list, output_file)
 
-    def plot_input_data_metrics(
+    def plot_input_data_metrics(  # noqa: ANN201
         self,
         output_file: Path,
         target_user_id_list: Optional[list[str]] = None,
@@ -885,7 +885,7 @@ class AcceptorProductivityPerDate(AbstractPhaseProductivityPerDate):
         )
         return df2
 
-    def plot_annotation_metrics(
+    def plot_annotation_metrics(  # noqa: ANN201
         self,
         output_file: Path,
         target_user_id_list: Optional[list[str]] = None,
@@ -996,7 +996,7 @@ class AcceptorProductivityPerDate(AbstractPhaseProductivityPerDate):
 
         self._plot(line_graph_list, output_file)
 
-    def plot_input_data_metrics(
+    def plot_input_data_metrics(  # noqa: ANN201
         self,
         output_file: Path,
         target_user_id_list: Optional[list[str]] = None,

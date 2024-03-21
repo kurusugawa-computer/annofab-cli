@@ -35,23 +35,23 @@ class CopyTargetMixin:
 class CopyTarget(CopyTargetMixin, ABC):
     @property
     @abstractmethod
-    def src(self):
+    def src(self):  # noqa: ANN201
         pass
 
     @property
     @abstractmethod
-    def dest(self):
+    def dest(self):  # noqa: ANN201
         pass
 
 
 @dataclass(frozen=True)
 class CopyTargetByTask(CopyTarget):
     @property
-    def src(self):
+    def src(self):  # noqa: ANN201
         return f"{self.src_task_id}"
 
     @property
-    def dest(self):
+    def dest(self):  # noqa: ANN201
         return f"{self.dest_task_id}"
 
 
@@ -61,11 +61,11 @@ class CopyTargetByInputData(CopyTarget):
     dest_input_data_id: str
 
     @property
-    def src(self):
+    def src(self):  # noqa: ANN201
         return f"{self.src_task_id}/{self.src_input_data_id}"
 
     @property
-    def dest(self):
+    def dest(self):  # noqa: ANN201
         return f"{self.dest_task_id}/{self.dest_input_data_id}"
 
 
@@ -307,7 +307,7 @@ class CopyAnnotationMain(AbstractCommandLineWithConfirmInterface):
             logger.warning(f"'{copy_target.src}'のアノテーションを'{copy_target.dest}'へコピーするのに失敗しました。", exc_info=True)
             return False
 
-    def copy_annotations(self, copy_target_list: list[CopyTarget], *, parallelism: Optional[int] = None):
+    def copy_annotations(self, copy_target_list: list[CopyTarget], *, parallelism: Optional[int] = None):  # noqa: ANN201
         if parallelism is not None:
             with multiprocessing.Pool(parallelism) as pool:
                 result_bool_list = pool.map(self.copy_annotation_wrapper, copy_target_list)

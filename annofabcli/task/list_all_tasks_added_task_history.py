@@ -40,7 +40,7 @@ class ListAllTasksAddedTaskHistoryMain:
         self.downloading_obj = DownloadingFile(self.service)
         self.facade = AnnofabApiFacade(self.service)
 
-    def get_detail_task_list(
+    def get_detail_task_list(  # noqa: ANN201
         self,
         task_list: list[dict[str, Any]],
         task_history_dict: TaskHistoryDict,
@@ -113,7 +113,7 @@ class ListAllTasksAddedTaskHistoryMain:
         filtered_task_list = [e for e in task_list if self.match_task_with_conditions(e, task_query=task_query, task_id_set=task_id_set)]
         return filtered_task_list
 
-    def get_task_list_added_task_history(
+    def get_task_list_added_task_history(  # noqa: ANN201
         self,
         task_json_path: Optional[Path],
         task_history_json_path: Optional[Path],

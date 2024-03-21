@@ -53,7 +53,7 @@ class ListTasksMain:
 
         """
 
-        def remove_key(arg_key: str):
+        def remove_key(arg_key: str):  # noqa: ANN202
             if arg_key in task_query:
                 logger.info(f"タスク検索クエリから、`{arg_key}`　キーを削除しました。")
                 task_query.pop(arg_key)

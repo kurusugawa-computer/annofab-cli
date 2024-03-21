@@ -24,7 +24,7 @@ class DownloadInstructionMain:
         self.service = service
         self.facade = AnnofabApiFacade(service)
 
-    def download_instruction_image(self, project_id: str, instruction_image_url: str, dest_path: Path):
+    def download_instruction_image(self, project_id: str, instruction_image_url: str, dest_path: Path):  # noqa: ANN201
         """
         HTTP GETで取得した内容をファイルに保存する（ダウンロードする）
         """
@@ -81,7 +81,7 @@ class DownloadInstructionMain:
 
         return pq.outer_html()
 
-    def download_instruction(self, project_id: str, output_dir: Path, history_id: Optional[str] = None, is_download_image: bool = False):
+    def download_instruction(self, project_id: str, output_dir: Path, history_id: Optional[str] = None, is_download_image: bool = False):  # noqa: ANN201
         """
         作業ガイドをダウンロードする
 

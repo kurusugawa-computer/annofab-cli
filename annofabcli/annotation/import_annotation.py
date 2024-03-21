@@ -229,7 +229,7 @@ class ImportAnnotationMain(AbstractCommandLineWithConfirmInterface):
         def _get_annotation_id(arg_label_info: LabelV1) -> str:
             if detail.annotation_id is not None:
                 return detail.annotation_id
-            else:
+            else:  # noqa: PLR5501
                 if arg_label_info["annotation_type"] == DefaultAnnotationType.CLASSIFICATION.value:
                     # 全体アノテーションの場合、annotation_idはlabel_idである必要がある
                     return arg_label_info["label_id"]
@@ -447,7 +447,7 @@ class ImportAnnotationMain(AbstractCommandLineWithConfirmInterface):
                 )
                 changed_operator = True
 
-        else:
+        else:  # noqa: PLR5501
             if not can_put_annotation(task, self.service.api.account_id):
                 logger.debug(
                     f"タスク'{task_id}'は、過去に誰かに割り当てられたタスクで、現在の担当者が自分自身でないため、アノテーションのインポートをスキップします。"
@@ -480,7 +480,7 @@ class ImportAnnotationMain(AbstractCommandLineWithConfirmInterface):
             logger.warning(f"task_id='{task_parser.task_id}' のアノテーションのインポートに失敗しました。", exc_info=True)
             return False
 
-    def main(
+    def main(  # noqa: ANN201
         self,
         iter_task_parser: Iterator[SimpleAnnotationParserByTask],
         target_task_ids: Optional[set[str]] = None,

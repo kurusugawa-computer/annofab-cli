@@ -41,7 +41,7 @@ SECONDARY_Y_RANGE_RATIO = 1.05
 """
 
 
-def _plot_and_moving_average(
+def _plot_and_moving_average(  # noqa: ANN202
     line_graph: LineGraph,
     source: ColumnDataSource,
     x_column: str,
@@ -49,7 +49,7 @@ def _plot_and_moving_average(
     legend_name: str,
     color: str,
     is_secondary_y_axis: bool = False,
-    **kwargs,
+    **kwargs,  # noqa: ANN003
 ):
     """
     折れ線と1週間移動平均をプロットします。
@@ -220,11 +220,11 @@ class WholeProductivityPerCompletedDate:
         生産性情報などの列を追加する。
         """
 
-        def add_cumsum_column(df: pandas.DataFrame, column: str):
+        def add_cumsum_column(df: pandas.DataFrame, column: str):  # noqa: ANN202
             """累積情報の列を追加"""
             df[f"cumsum_{column}"] = df[column].cumsum()
 
-        def add_velocity_column(df: pandas.DataFrame, numerator_column: str, denominator_column: str):
+        def add_velocity_column(df: pandas.DataFrame, numerator_column: str, denominator_column: str):  # noqa: ANN202
             """速度情報の列を追加"""
             df[f"{numerator_column}/{denominator_column}"] = df[numerator_column] / df[denominator_column]
             # 1週間移動平均も出力
@@ -276,7 +276,7 @@ class WholeProductivityPerCompletedDate:
             sum_row.name = str_date
             return sum_row
 
-        def date_range():
+        def date_range():  # noqa: ANN202
             lower_date = min(df1["date"].min(), df2["date"].min())
             upper_date = max(df1["date"].max(), df2["date"].max())
             return pandas.date_range(start=lower_date, end=upper_date)
@@ -315,7 +315,7 @@ class WholeProductivityPerCompletedDate:
             """
         )
 
-    def plot(self, output_file: Path):
+    def plot(self, output_file: Path):  # noqa: ANN201
         """
         全体の生産量や生産性をプロットする
 
@@ -327,7 +327,7 @@ class WholeProductivityPerCompletedDate:
 
         """
 
-        def add_velocity_columns(df: pandas.DataFrame):
+        def add_velocity_columns(df: pandas.DataFrame):  # noqa: ANN202
             for denominator in ["input_data_count", "annotation_count"]:
                 for category in [
                     "actual",
@@ -876,7 +876,7 @@ class WholeProductivityPerFirstAnnotationStartedDate:
         日毎の全体の生産量から、累計情報、生産性の列を追加する。
         """
 
-        def add_velocity_column(df: pandas.DataFrame, numerator_column: str, denominator_column: str):
+        def add_velocity_column(df: pandas.DataFrame, numerator_column: str, denominator_column: str):  # noqa: ANN202
             df[f"{numerator_column}/{denominator_column}"] = df[numerator_column] / df[denominator_column]
 
             df[f"{numerator_column}/{denominator_column}{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}"] = get_weekly_moving_average(
@@ -1004,7 +1004,7 @@ class WholeProductivityPerFirstAnnotationStartedDate:
             sum_row.name = str_date
             return sum_row
 
-        def date_range():
+        def date_range():  # noqa: ANN202
             lower_date = min(df1["first_annotation_started_date"].min(), df2["first_annotation_started_date"].min())
             upper_date = max(df1["first_annotation_started_date"].max(), df2["first_annotation_started_date"].max())
             return pandas.date_range(start=lower_date, end=upper_date)
@@ -1035,7 +1035,7 @@ class WholeProductivityPerFirstAnnotationStartedDate:
         cls._add_velocity_columns(sum_df)
         return cls(sum_df)
 
-    def plot(self, output_file: Path):
+    def plot(self, output_file: Path):  # noqa: ANN201
         """
         全体の生産量や生産性をプロットする
         """

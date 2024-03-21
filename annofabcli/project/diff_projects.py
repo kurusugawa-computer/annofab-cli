@@ -36,15 +36,15 @@ class DiffTarget(Enum):
     SETTINGS = "settings"
 
 
-def sorted_inspection_phrases(phrases: List[Dict[str, Any]]):
+def sorted_inspection_phrases(phrases: List[Dict[str, Any]]):  # noqa: ANN201
     return sorted(phrases, key=lambda e: e["id"])
 
 
-def sorted_project_members(project_members: List[Dict[str, Any]]):
+def sorted_project_members(project_members: List[Dict[str, Any]]):  # noqa: ANN201
     return sorted(project_members, key=lambda e: e["user_id"])
 
 
-def create_ignored_label(label: Dict[str, Any]):
+def create_ignored_label(label: Dict[str, Any]):  # noqa: ANN201
     """
     比較対象外のkeyを削除したラベル情報を生成する
     """
@@ -194,7 +194,7 @@ class DiffProjects(AbstractCommandLineInterface):
 
         for label_name in label_names:
 
-            def get_label_func(label_name: str, label: Dict[str, Any]):
+            def get_label_func(label_name: str, label: Dict[str, Any]):  # noqa: ANN202
                 return AnnofabApiFacade.get_label_name_en(label) == label_name
 
             label1 = more_itertools.first_true(labels1, pred=functools.partial(get_label_func, label_name))
@@ -325,7 +325,7 @@ class DiffProjects(AbstractCommandLineInterface):
             logger.info("プロジェクト設定は同じ")
             return False, diff_message
 
-    def validate_projects(self, project_id1: str, project_id2: str):
+    def validate_projects(self, project_id1: str, project_id2: str):  # noqa: ANN201
         """
         適切なRoleが付与されているかを確認する。
 

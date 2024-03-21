@@ -49,7 +49,7 @@ class DeleteAnnotationMain(AbstractCommandLineWithConfirmInterface):
         self.project_id = project_id
         self.dump_annotation_obj = DumpAnnotationMain(service, project_id)
 
-    def delete_annotation_list(self, annotation_list: list[dict[str, Any]]):
+    def delete_annotation_list(self, annotation_list: list[dict[str, Any]]):  # noqa: ANN201
         """
         アノテーション一覧を削除する。
 
@@ -141,7 +141,7 @@ class DeleteAnnotationMain(AbstractCommandLineWithConfirmInterface):
         except requests.HTTPError:
             logger.warning(f"task_id={task_id}: アノテーションの削除に失敗しました。", exc_info=True)
 
-    def delete_annotation_for_task_list(
+    def delete_annotation_for_task_list(  # noqa: ANN201
         self,
         task_id_list: List[str],
         annotation_query: Optional[AnnotationQueryForAPI] = None,

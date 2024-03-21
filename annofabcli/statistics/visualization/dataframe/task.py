@@ -228,7 +228,7 @@ class Task:
         df_merged = pandas.concat(df_list)
         return Task(df_merged)
 
-    def plot_histogram_of_worktime(
+    def plot_histogram_of_worktime(  # noqa: ANN201
         self,
         output_file: Path,
         bins: int = 20,
@@ -306,7 +306,7 @@ class Task:
         bokeh.plotting.save(bokeh_obj)
         logger.debug(f"'{output_file}'を出力しました。")
 
-    def plot_histogram_of_others(
+    def plot_histogram_of_others(  # noqa: ANN201
         self,
         output_file: Path,
         bins: int = 20,

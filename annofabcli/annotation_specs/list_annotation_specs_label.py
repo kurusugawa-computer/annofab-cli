@@ -29,7 +29,7 @@ class PrintAnnotationSpecsLabel(AbstractCommandLineInterface):
 
     COMMON_MESSAGE = "annofabcli annotation_specs list_label: error:"
 
-    def print_annotation_specs_label(self, project_id: str, arg_format: str, output: Optional[str] = None, history_id: Optional[str] = None):
+    def print_annotation_specs_label(self, project_id: str, arg_format: str, output: Optional[str] = None, history_id: Optional[str] = None):  # noqa: ANN201
         # [REMOVE_V2_PARAM]
         annotation_specs, _ = self.service.api.get_annotation_specs(project_id, query_params={"history_id": history_id, "v": "2"})
         labels_v1 = convert_annotation_specs_labels_v2_to_v1(labels_v2=annotation_specs["labels"], additionals_v2=annotation_specs["additionals"])

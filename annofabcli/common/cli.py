@@ -411,7 +411,7 @@ class ArgumentParser:
     def __init__(self, parser: argparse.ArgumentParser) -> None:
         self.parser = parser
 
-    def add_project_id(self, help_message: Optional[str] = None):
+    def add_project_id(self, help_message: Optional[str] = None):  # noqa: ANN201
         """
         '--project_id` 引数を追加
         """
@@ -420,7 +420,7 @@ class ArgumentParser:
 
         self.parser.add_argument("-p", "--project_id", type=str, required=True, help=help_message)
 
-    def add_task_id(self, required: bool = True, help_message: Optional[str] = None):
+    def add_task_id(self, required: bool = True, help_message: Optional[str] = None):  # noqa: ANN201
         """
         '--task_id` 引数を追加
         """
@@ -429,7 +429,7 @@ class ArgumentParser:
 
         self.parser.add_argument("-t", "--task_id", type=str, required=required, nargs="+", help=help_message)
 
-    def add_input_data_id(self, required: bool = True, help_message: Optional[str] = None):
+    def add_input_data_id(self, required: bool = True, help_message: Optional[str] = None):  # noqa: ANN201
         """
         '--input_data_id` 引数を追加
         """
@@ -441,7 +441,7 @@ class ArgumentParser:
 
         self.parser.add_argument("-i", "--input_data_id", type=str, required=required, nargs="+", help=help_message)
 
-    def add_format(self, choices: List[FormatArgument], default: FormatArgument, help_message: Optional[str] = None):
+    def add_format(self, choices: List[FormatArgument], default: FormatArgument, help_message: Optional[str] = None):  # noqa: ANN201
         """
         '--format` 引数を追加
         """
@@ -450,7 +450,7 @@ class ArgumentParser:
 
         self.parser.add_argument("-f", "--format", type=str, choices=[e.value for e in choices], default=default.value, help=help_message)
 
-    def add_csv_format(self, help_message: Optional[str] = None):
+    def add_csv_format(self, help_message: Optional[str] = None):  # noqa: ANN201
         """
         '--csv_format` 引数を追加
         """
@@ -463,7 +463,7 @@ class ArgumentParser:
 
         self.parser.add_argument("--csv_format", type=str, help=help_message)
 
-    def add_output(self, required: bool = False, help_message: Optional[str] = None):
+    def add_output(self, required: bool = False, help_message: Optional[str] = None):  # noqa: ANN201
         """
         '--output` 引数を追加
         """
@@ -472,7 +472,7 @@ class ArgumentParser:
 
         self.parser.add_argument("-o", "--output", type=str, required=required, help=help_message)
 
-    def add_query(self, help_message: Optional[str] = None):
+    def add_query(self, help_message: Optional[str] = None):  # noqa: ANN201
         """
         '--query` 引数を追加
         """
@@ -481,7 +481,7 @@ class ArgumentParser:
 
         self.parser.add_argument("-q", "--query", type=str, help=help_message)
 
-    def add_task_query(self, required: bool = False, help_message: Optional[str] = None):
+    def add_task_query(self, required: bool = False, help_message: Optional[str] = None):  # noqa: ANN201
         if help_message is None:
             help_message = (
                 "タスクを絞り込むためのクエリ条件をJSON形式で指定します。"
@@ -547,7 +547,7 @@ class AbstractCommandLineWithoutWebapiInterface(abc.ABC):
         self.args = args
         self.process_common_args(args)
 
-    def process_common_args(self, args: argparse.Namespace):
+    def process_common_args(self, args: argparse.Namespace):  # noqa: ANN201
         """
         共通のコマンドライン引数を処理する。
         Args:
@@ -645,7 +645,7 @@ class PrettyHelpFormatter(argparse.RawTextHelpFormatter, argparse.ArgumentDefaul
         # https://qiita.com/yuji38kwmt/items/c7c4d487e3188afd781e 参照
         return super()._format_action(action) + "\n"
 
-    def _get_help_string(self, action):  # noqa: ANN001
+    def _get_help_string(self, action):  # noqa: ANN001, ANN202
         # 必須な引数には、引数の説明の後ろに"(required)"を付ける
         help = action.help  # noqa: A001 # pylint: disable=redefined-builtin
         if action.required:
@@ -680,7 +680,7 @@ class AbstractCommandLineInterface(AbstractCommandLineWithoutWebapiInterface):
         self.facade = facade
         super().__init__(args)
 
-    def validate_project(
+    def validate_project(  # noqa: ANN201
         self,
         project_id: str,
         project_member_roles: Optional[List[ProjectMemberRole]] = None,

@@ -227,7 +227,7 @@ class AddingAdditionalInfoToTask:
 
         return task
 
-    def add_additional_info_to_task(self, task: dict[str, Any]):
+    def add_additional_info_to_task(self, task: dict[str, Any]):  # noqa: ANN201
         """タスクの付加的情報を、タスクに追加する。
         以下の列を追加する。
         * user_id
@@ -244,7 +244,7 @@ class AddingAdditionalInfoToTask:
         # タスク情報から取得できる、付加的な情報を追加する
         self.visualize.add_properties_to_task(task)
 
-    def add_task_history_additional_info_to_task(self, task: dict[str, Any], task_histories: list[TaskHistory]):
+    def add_task_history_additional_info_to_task(self, task: dict[str, Any], task_histories: list[TaskHistory]):  # noqa: ANN201
         """タスク履歴から取得できる付加的情報を、タスクに追加する。
         以下の列を追加する。
         * annotation_worktime_hour
@@ -356,7 +356,7 @@ class TasksAddedTaskHistoryOutput:
 
         return base_columns + task_history_columns
 
-    def output(self, output_path: Path, output_format: FormatArgument):
+    def output(self, output_path: Path, output_format: FormatArgument):  # noqa: ANN201
         task_list = self.task_list
         if len(task_list) == 0:
             logger.info("タスク一覧の件数が0件のため、出力しません。")

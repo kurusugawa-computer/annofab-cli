@@ -131,7 +131,7 @@ class ListInputData(AbstractCommandLineInterface):
 
         return input_data_list
 
-    def print_input_data(
+    def print_input_data(  # noqa: ANN201
         self,
         project_id: str,
         input_data_query: Optional[Dict[str, Any]] = None,

@@ -41,7 +41,7 @@ class VisualizationSourceFiles:
 
         self.logging_prefix = f"project_id='{project_id}'"
 
-    def download(self):
+    def download(self):  # noqa: ANN201
         pass
 
     def read_tasks_json(

@@ -133,7 +133,7 @@ def _get_tuple_column(df: pandas.DataFrame, column: str) -> Union[str, Tuple]:
         return column
 
 
-def replace_by_columns(
+def replace_by_columns(  # noqa: ANN201
     df: pandas.DataFrame,
     replacement_dict: Dict[str, str],
     main_column: Union[str, Tuple],
@@ -239,7 +239,7 @@ def create_replacement_dict_by_biography(
     return {key: f"category-{value}" for key, value in tmp_replace_dict_by_biography.items()}
 
 
-def replace_user_info_by_user_id(df: pandas.DataFrame, replacement_dict_by_user_id: Dict[str, str]):
+def replace_user_info_by_user_id(df: pandas.DataFrame, replacement_dict_by_user_id: Dict[str, str]):  # noqa: ANN201
     """
     user_id, username, account_id 列を, マスクする。
 
@@ -260,7 +260,7 @@ def replace_user_info_by_user_id(df: pandas.DataFrame, replacement_dict_by_user_
     replace_by_columns(df, replacement_dict_by_user_id, main_column=user_id_column, sub_columns=sub_columns)
 
 
-def replace_biography(df: pandas.DataFrame, replacement_dict_by_user_id: Dict[str, str], replacement_dict_by_biography: Dict[str, str]):
+def replace_biography(df: pandas.DataFrame, replacement_dict_by_user_id: Dict[str, str], replacement_dict_by_biography: Dict[str, str]):  # noqa: ANN201
     """
     biography 列を, マスクする。
 

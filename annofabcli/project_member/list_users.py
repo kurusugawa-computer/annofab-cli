@@ -34,7 +34,7 @@ class ListUser(AbstractCommandLineInterface):
         "sampling_acceptance_rate",
     ]
 
-    def get_all_project_members(self, project_id: str, include_inactive: bool = False):
+    def get_all_project_members(self, project_id: str, include_inactive: bool = False):  # noqa: ANN201
         query_params = {}
         if include_inactive:
             query_params.update({"include_inactive_member": ""})

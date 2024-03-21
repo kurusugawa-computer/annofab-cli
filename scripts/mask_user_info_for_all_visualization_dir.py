@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Optional
 
 
-def execute_mask_user_info_command(project_dir: Path, output_project_dir: Path, remainder_options: Optional[list[str]]):
+def execute_mask_user_info_command(project_dir: Path, output_project_dir: Path, remainder_options: Optional[list[str]]) -> None:
     command = [
         "annofabcli",
         "stat_visualization",

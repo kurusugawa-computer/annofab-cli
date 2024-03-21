@@ -220,7 +220,7 @@ class ListWorktimeFromTaskHistoryEventMain:
 
 
 class ListWorktimeFromTaskHistoryEvent(AbstractCommandLineInterface):
-    def print_worktime_from_task_history_event(
+    def print_worktime_from_task_history_event(  # noqa: ANN201
         self,
         project_id: str,
         task_history_event_json: Optional[Path],

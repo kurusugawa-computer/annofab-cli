@@ -38,7 +38,7 @@ class RejectTasksMain(AbstractCommandLineWithConfirmInterface):
         self.comment_data = comment_data
         AbstractCommandLineWithConfirmInterface.__init__(self, all_yes)
 
-    def add_inspection_comment(
+    def add_inspection_comment(  # noqa: ANN201
         self,
         project_id: str,
         task: dict[str, Any],
@@ -116,7 +116,7 @@ class RejectTasksMain(AbstractCommandLineWithConfirmInterface):
             logger.warning(f"{task_id}: 担当者の変更、または作業中状態への変更に失敗しました。", exc_info=True)
             raise
 
-    def _can_reject_task(
+    def _can_reject_task(  # noqa: ANN202
         self,
         task: dict[str, Any],
         assign_last_annotator: bool,

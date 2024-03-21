@@ -51,7 +51,7 @@ class ChangePropertiesOfAnnotationMain(AbstractCommandLineWithConfirmInterface):
         self.project_id = project_id
         self.dump_annotation_obj = DumpAnnotationMain(service, project_id)
 
-    def change_annotation_properties(
+    def change_annotation_properties(  # noqa: ANN201
         self,
         task_id: str,
         annotation_list: List[SingleAnnotation],
@@ -93,7 +93,7 @@ class ChangePropertiesOfAnnotationMain(AbstractCommandLineWithConfirmInterface):
                 annotations_for_api.append(annotations)
             return annotations_for_api
 
-        def _to_request_body_elm(annotation: Dict[str, Any]):
+        def _to_request_body_elm(annotation: Dict[str, Any]):  # noqa: ANN202
             return self.service.api.put_annotation(
                 annotation["project_id"],
                 annotation["task_id"],
@@ -130,7 +130,7 @@ class ChangePropertiesOfAnnotationMain(AbstractCommandLineWithConfirmInterface):
         annotation_list = self.service.wrapper.get_all_annotation_list(self.project_id, query_params={"query": dict_query})
         return annotation_list
 
-    def change_properties_for_task(  # pylint: disable=too-many-return-statements
+    def change_properties_for_task(  # pylint: disable=too-many-return-statements  # noqa: PLR0911, PLR0912
         self,
         task_id: str,
         properties: AnnotationDetailForCli,
@@ -179,7 +179,7 @@ class ChangePropertiesOfAnnotationMain(AbstractCommandLineWithConfirmInterface):
                 )
                 changed_operator = True
 
-        else:
+        else:  # noqa: PLR5501
             if not can_put_annotation(dict_task, self.service.api.account_id):
                 logger.debug(
                     f"タスク'{task_id}'は、過去に誰かに割り当てられたタスクで、現在の担当者が自分自身でないため、アノテーションのプロパティの変更をスキップします。"
@@ -236,7 +236,7 @@ class ChangePropertiesOfAnnotationMain(AbstractCommandLineWithConfirmInterface):
             logger.warning(f"task_id={task_id}: アノテーションのプロパティの変更に失敗しました。", exc_info=True)
             return False
 
-    def change_annotation_properties_task_list(
+    def change_annotation_properties_task_list(  # noqa: ANN201
         self,
         task_id_list: List[str],
         properties: AnnotationDetailForCli,

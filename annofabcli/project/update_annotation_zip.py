@@ -83,7 +83,7 @@ class SubUpdateAnnotationZip:
         else:
             return True
 
-    def _wait_for_completion_updated_annotation(self, project_id: str, wait_options: Optional[WaitOptions] = None):
+    def _wait_for_completion_updated_annotation(self, project_id: str, wait_options: Optional[WaitOptions] = None):  # noqa: ANN202
         """
         アノテーションzipの更新が完了するまで待ちます。
         """

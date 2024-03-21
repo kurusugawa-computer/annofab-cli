@@ -77,7 +77,7 @@ class ListTaskHistoryWithJsonMain:
 
 
 class ListTaskHistoryWithJson(AbstractCommandLineInterface):
-    def print_task_history_list(
+    def print_task_history_list(  # noqa: ANN201
         self,
         project_id: str,
         task_history_json: Optional[Path],
