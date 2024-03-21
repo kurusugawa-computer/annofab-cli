@@ -130,17 +130,17 @@ ignore = [
     "PLR2004", # magic-value-comparison: listのサイズで判定するときがよくあるため
     "ANN101", # missing-type-self: 引数selfには型ヒントは付けていないため
     "ANN102", # missing-type-cls: 引数clsには型ヒントは付けていないため
-    "ANN002", # missing-type-args
-    "ANN003", # missing-type-kwargs
+    # "ANN002", # missing-type-args
+    # "ANN003", # missing-type-kwargs
     "ERA", # : 役立つこともあるが、コメントアウトしていないコードも警告されるので無視する
-    "PERF203", # try-except-in-loop: ループ内でtry-exceptを使うこともあるため無視する。またPython3.11以降ｈ
+    "PERF203", # try-except-in-loop: ループ内でtry-exceptを使うこともあるため無視する。
     "FIX", # TODOやFIXMEを使うため無視する
     "TD", # TODOコメントの書き方に気にしていないので無視する
 
     # いずれ無視しないようにする
-    "ANN201", # missing-return-type-public-function:
-    "ANN202", # missing-return-type-private-function:
-    "PLR",  # pylint Refactor
+    # "ANN201", # missing-return-type-public-function:
+    # "ANN202", # missing-return-type-private-function:
+    # "PLR",  # pylint Refactor
 
     # 以下のルールはannofabcliのコードに合っていないので無効化した
     "RSE", # flake8-raise
