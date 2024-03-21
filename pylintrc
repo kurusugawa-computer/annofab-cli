@@ -27,5 +27,6 @@ disable=
   no-else-return,
   f-string-without-interpolation,
   broad-except,
-  
+
   unused-argument, # ruffの"ARG002"でチェックしているため
+  redefined-builtin, # ruffの"builtin-argument-shadowin"でチェックしているため無視する
