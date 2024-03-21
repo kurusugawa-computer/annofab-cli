@@ -151,7 +151,7 @@ class SummarizeTaskCountByTaskId(AbstractCommandLineInterface):
         columns = ["task_id_group"] + [status.value for status in TaskStatusForSummary] + ["sum"]
         annofabcli.common.utils.print_according_to_format(
             df[columns],
-            arg_format=FormatArgument(FormatArgument.CSV),
+            format=FormatArgument(FormatArgument.CSV),
             output=self.output,
             csv_format=self.csv_format,
         )

@@ -636,7 +636,7 @@ class AbstractCommandLineWithoutWebapiInterface(abc.ABC):
     def print_according_to_format(self, target: Any) -> None:  # noqa: ANN401
         target = self.search_with_jmespath_expression(target)
 
-        print_according_to_format(target, arg_format=FormatArgument(self.str_format), output=self.output, csv_format=self.csv_format)
+        print_according_to_format(target, format=FormatArgument(self.str_format), output=self.output, csv_format=self.csv_format)
 
 
 class PrettyHelpFormatter(argparse.RawTextHelpFormatter, argparse.ArgumentDefaultsHelpFormatter):

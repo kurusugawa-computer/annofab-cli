@@ -37,7 +37,7 @@ class PrintAnnotationSpecsLabel(AbstractCommandLineInterface):
             self._print_text_format_labels(labels_v1, output=output)
 
         elif arg_format in [FormatArgument.JSON.value, FormatArgument.PRETTY_JSON.value]:
-            annofabcli.common.utils.print_according_to_format(target=labels_v1, arg_format=FormatArgument(arg_format), output=output)
+            annofabcli.common.utils.print_according_to_format(target=labels_v1, format=FormatArgument(arg_format), output=output)
 
     @staticmethod
     def _get_name_tuple(messages: List[Dict[str, Any]]) -> tuple[str, str]:
