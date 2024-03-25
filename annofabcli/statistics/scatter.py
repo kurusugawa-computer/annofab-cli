@@ -66,7 +66,6 @@ class ScatterGraph:
         )
         self.title = title
         self.tooltip_columns = tooltip_columns
-
         if tooltip_columns is not None:
             hover_tool = self.create_hover_tool(tooltip_columns)
             self._hover_tool = hover_tool

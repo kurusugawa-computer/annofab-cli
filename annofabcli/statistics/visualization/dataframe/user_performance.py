@@ -446,28 +446,64 @@ class UserPerformance:
                     ("first_working_date", "")
                     ("last_working_date", "")
                     ("working_days", "")
+                    ("first_working_date", "annotation")
+                    ("last_working_date", "annotation")
+                    ("working_days", "annotation")
+                    ("first_working_date", "inspection")
+                    ("last_working_date", "inspection")
+                    ("working_days", "inspection")
+                    ("first_working_date", "acceptance")
+                    ("last_working_date", "acceptance")
+                    ("working_days", "acceptance")
         """
-        df = worktime_per_date.df
-        df1 = df[df["monitored_worktime_hour"] > 0]
-        if len(df1) > 0:
-            df2 = df1.pivot_table(values="date", index="account_id", aggfunc=["min", "max"])
-            df2.columns = pandas.MultiIndex.from_tuples([("first_working_date", ""), ("last_working_date", "")])
-        else:
-            df2 = pandas.DataFrame(
-                columns=pandas.MultiIndex.from_tuples([("first_working_date", ""), ("last_working_date", "")]),
-                index=pandas.Index([], name="account_id"),
-            )
 
-        # 元のDataFrame`df`が`account_id`,`date`のペアでユニークになっていない可能性も考えて、事前に`account_id`と`date`で集計する
-        df3 = df.groupby(["account_id", "date"])[["monitored_worktime_hour"]].sum()
-        # 作業日数を算出する
-        df3 = df3[df3["monitored_worktime_hour"] > 0].groupby("account_id").count()
-        df3.columns = pandas.MultiIndex.from_tuples([("working_days", "")])
+        def _create_df_first_last_working_date(phase: Optional[str]) -> pandas.DataFrame:
+            """
+            指定したフェーズに対応する作業開始日、作業終了日、作業日数を算出する
+
+            Args:
+                phase: フェーズ。Noneのときは全フェーズの合計の作業時間から算出する
+            """
+            if phase is None:
+                target_worktime_column = "monitored_worktime_hour"
+                phase_column = ""
+            else:
+                target_worktime_column = f"monitored_{phase}_worktime_hour"
+                phase_column = phase
+
+            df1 = df[df[target_worktime_column] > 0]
+            if len(df1) > 0:
+                df2 = df1.pivot_table(values="date", index="account_id", aggfunc=["min", "max"])
+                df2.columns = pandas.MultiIndex.from_tuples([("first_working_date", phase_column), ("last_working_date", phase_column)])
+            else:
+                df2 = pandas.DataFrame(
+                    columns=pandas.MultiIndex.from_tuples([("first_working_date", phase_column), ("last_working_date", phase_column)]),
+                    index=pandas.Index([], name="account_id"),
+                )
+
+            # 元のDataFrame`df`が`account_id`,`date`のペアでユニークになっていない可能性も考えて、事前に`account_id`と`date`で集計する
+            df3 = df.groupby(["account_id", "date"])[[target_worktime_column]].sum()
+            # 作業日数を算出する
+            df3 = df3[df3[target_worktime_column] > 0].groupby("account_id").count()
+            df3.columns = pandas.MultiIndex.from_tuples([("working_days", phase_column)])
+
+            # joinしない理由: レベル1の列名が空文字のDataFrameをjoinすると、Python3.12のpandas2.2.0で、列名が期待通りにならないため
+            # https://github.com/pandas-dev/pandas/issues/57500
+            # df_result = df2.join(df3)
+            df_result = pandas.concat([df2, df3], axis=1)
+            return df_result
+
+        df = worktime_per_date.df
+
+        df4_list = [
+            _create_df_first_last_working_date(phase)
+            for phase in [None, TaskPhase.ANNOTATION.value, TaskPhase.INSPECTION.value, TaskPhase.ACCEPTANCE.value]
+        ]
 
         # joinしない理由: レベル1の列名が空文字のDataFrameをjoinすると、Python3.12のpandas2.2.0で、列名が期待通りにならないため
         # https://github.com/pandas-dev/pandas/issues/57500
         # return df2.join(df3)
-        return pandas.concat([df2, df3], axis=1)
+        return pandas.concat(df4_list, axis=1)
 
     @staticmethod
     def _create_df_user(worktime_per_date: WorktimePerDate) -> pandas.DataFrame:
@@ -681,11 +717,18 @@ class UserPerformance:
             ("user_id", ""),
             ("username", ""),
             ("biography", ""),
-            ("first_working_date", ""),
-            ("last_working_date", ""),
-            ("working_days", ""),
         ]
-        columns = user_columns + value_columns
+
+        working_date_columns = []
+        for phase_column in ["", "annotation", "inspection", "acceptance"]:
+            working_date_columns.extend(
+                [
+                    ("first_working_date", phase_column),
+                    ("last_working_date", phase_column),
+                    ("working_days", phase_column),
+                ]
+            )
+        columns = user_columns + working_date_columns + value_columns
         print_csv(self.df[columns], str(output_file))
 
     @staticmethod
@@ -816,9 +859,9 @@ class UserPerformance:
                     f"annotation_count_{phase}",
                     f"{worktime_type.value}_worktime_hour/input_data_count_{phase}",
                     f"{worktime_type.value}_worktime_hour/annotation_count_{phase}",
-                    "first_working_date_",
-                    "last_working_date_",
-                    "working_days_",
+                    f"first_working_date_{phase}",
+                    f"last_working_date_{phase}",
+                    f"working_days_{phase}",
                 ],
             )
             for phase in self.phase_list
@@ -845,6 +888,12 @@ class UserPerformance:
                 ("biography", ""): "object",
                 ("first_working_date", ""): "object",
                 ("last_working_date", ""): "object",
+                ("first_working_date", "annotation"): "object",
+                ("last_working_date", "annotation"): "object",
+                ("first_working_date", "inspection"): "object",
+                ("last_working_date", "inspection"): "object",
+                ("first_working_date", "acceptance"): "object",
+                ("last_working_date", "acceptance"): "object",
             }
         )
 
@@ -920,9 +969,9 @@ class UserPerformance:
                     f"pointed_out_inspection_comment_count_{PHASE}",
                     f"rejected_count/task_count_{PHASE}",
                     f"pointed_out_inspection_comment_count/annotation_count_{PHASE}",
-                    "first_working_date_",
-                    "last_working_date_",
-                    "working_days_",
+                    f"first_working_date_{PHASE}",
+                    f"last_working_date_{PHASE}",
+                    f"working_days_{PHASE}",
                 ],
             )
 
@@ -953,6 +1002,12 @@ class UserPerformance:
                 ("biography", ""): "object",
                 ("first_working_date", ""): "object",
                 ("last_working_date", ""): "object",
+                ("first_working_date", "annotation"): "object",
+                ("last_working_date", "annotation"): "object",
+                ("first_working_date", "inspection"): "object",
+                ("last_working_date", "inspection"): "object",
+                ("first_working_date", "acceptance"): "object",
+                ("last_working_date", "acceptance"): "object",
             }
         )
 
@@ -1038,9 +1093,9 @@ class UserPerformance:
                     f"pointed_out_inspection_comment_count_{PHASE}",
                     f"rejected_count/task_count_{PHASE}",
                     f"pointed_out_inspection_comment_count/annotation_count_{PHASE}",
-                    "first_working_date_",
-                    "last_working_date_",
-                    "working_days_",
+                    f"first_working_date_{PHASE}",
+                    f"last_working_date_{PHASE}",
+                    f"working_days_{PHASE}",
                 ],
             )
 
@@ -1083,10 +1138,11 @@ class UserPerformance:
 
         # numpy.inf が含まれていると散布図を出力できないので置換する
         df = self.df.replace(numpy.inf, numpy.nan)
-        for PHASE in self.phase_list:
-            df[(f"{worktime_type.value}_worktime_minute/{performance_unit.value}", PHASE)] = (
-                df[(f"{worktime_type.value}_worktime_hour/{performance_unit.value}", PHASE)] * 60
-            )
+        PHASE = TaskPhase.ANNOTATION.value
+
+        df[(f"{worktime_type.value}_worktime_minute/{performance_unit.value}", PHASE)] = (
+            df[(f"{worktime_type.value}_worktime_hour/{performance_unit.value}", PHASE)] * 60
+        )
 
         logger.debug(f"{output_file} を出力します。")
 
@@ -1125,6 +1181,12 @@ class UserPerformance:
                 ("biography", ""): "object",
                 ("first_working_date", ""): "object",
                 ("last_working_date", ""): "object",
+                ("first_working_date", "annotation"): "object",
+                ("last_working_date", "annotation"): "object",
+                ("first_working_date", "inspection"): "object",
+                ("last_working_date", "inspection"): "object",
+                ("first_working_date", "acceptance"): "object",
+                ("last_working_date", "acceptance"): "object",
             }
         )
 
@@ -1134,6 +1196,7 @@ class UserPerformance:
                 filtered_df = df[(df["biography"] == biography) & df[(x_column, PHASE)].notna() & df[(y_column, PHASE)].notna()]
                 if len(filtered_df) == 0:
                     continue
+
                 source = ColumnDataSource(data=filtered_df)
                 scatter_obj.plot_bubble(
                     source=source,
