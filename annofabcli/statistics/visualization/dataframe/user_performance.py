@@ -850,9 +850,9 @@ class UserPerformance:
                     f"annotation_count_{phase}",
                     f"{worktime_type.value}_worktime_hour/input_data_count_{phase}",
                     f"{worktime_type.value}_worktime_hour/annotation_count_{phase}",
-                    "first_working_date_",
-                    "last_working_date_",
-                    "working_days_",
+                    f"first_working_date_{phase}",
+                    f"last_working_date_{phase}",
+                    f"working_days_{phase}",
                 ],
             )
             for phase in self.phase_list
@@ -879,6 +879,12 @@ class UserPerformance:
                 ("biography", ""): "object",
                 ("first_working_date", ""): "object",
                 ("last_working_date", ""): "object",
+                ("first_working_date", "annotation"): "object",
+                ("last_working_date", "annotation"): "object",
+                ("first_working_date", "inspection"): "object",
+                ("last_working_date", "inspection"): "object",
+                ("first_working_date", "acceptance"): "object",
+                ("last_working_date", "acceptance"): "object",
             }
         )
 
@@ -954,9 +960,9 @@ class UserPerformance:
                     f"pointed_out_inspection_comment_count_{PHASE}",
                     f"rejected_count/task_count_{PHASE}",
                     f"pointed_out_inspection_comment_count/annotation_count_{PHASE}",
-                    "first_working_date_",
-                    "last_working_date_",
-                    "working_days_",
+                    f"first_working_date_{PHASE}",
+                    f"last_working_date_{PHASE}",
+                    f"working_days_{PHASE}",
                 ],
             )
 
@@ -987,6 +993,12 @@ class UserPerformance:
                 ("biography", ""): "object",
                 ("first_working_date", ""): "object",
                 ("last_working_date", ""): "object",
+                ("first_working_date", "annotation"): "object",
+                ("last_working_date", "annotation"): "object",
+                ("first_working_date", "inspection"): "object",
+                ("last_working_date", "inspection"): "object",
+                ("first_working_date", "acceptance"): "object",
+                ("last_working_date", "acceptance"): "object",
             }
         )
 
@@ -1072,9 +1084,9 @@ class UserPerformance:
                     f"pointed_out_inspection_comment_count_{PHASE}",
                     f"rejected_count/task_count_{PHASE}",
                     f"pointed_out_inspection_comment_count/annotation_count_{PHASE}",
-                    "first_working_date_",
-                    "last_working_date_",
-                    "working_days_",
+                    f"first_working_date_{PHASE}",
+                    f"last_working_date_{PHASE}",
+                    f"working_days_{PHASE}",
                 ],
             )
 
@@ -1159,6 +1171,12 @@ class UserPerformance:
                 ("biography", ""): "object",
                 ("first_working_date", ""): "object",
                 ("last_working_date", ""): "object",
+                ("first_working_date", "annotation"): "object",
+                ("last_working_date", "annotation"): "object",
+                ("first_working_date", "inspection"): "object",
+                ("last_working_date", "inspection"): "object",
+                ("first_working_date", "acceptance"): "object",
+                ("last_working_date", "acceptance"): "object",
             }
         )
 
