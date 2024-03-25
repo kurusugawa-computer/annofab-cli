@@ -446,6 +446,15 @@ class UserPerformance:
                     ("first_working_date", "")
                     ("last_working_date", "")
                     ("working_days", "")
+                    ("first_working_date", "annotation")
+                    ("last_working_date", "annotation")
+                    ("working_days", "annotation")
+                    ("first_working_date", "inspection")
+                    ("last_working_date", "inspection")
+                    ("working_days", "inspection")
+                    ("first_working_date", "acceptance")
+                    ("last_working_date", "acceptance")
+                    ("working_days", "acceptance")
         """
 
         def _create_df_first_last_working_date(phase: Optional[str]) -> pandas.DataFrame:
@@ -1129,10 +1138,11 @@ class UserPerformance:
 
         # numpy.inf が含まれていると散布図を出力できないので置換する
         df = self.df.replace(numpy.inf, numpy.nan)
-        for PHASE in self.phase_list:
-            df[(f"{worktime_type.value}_worktime_minute/{performance_unit.value}", PHASE)] = (
-                df[(f"{worktime_type.value}_worktime_hour/{performance_unit.value}", PHASE)] * 60
-            )
+        PHASE = TaskPhase.ANNOTATION.value
+
+        df[(f"{worktime_type.value}_worktime_minute/{performance_unit.value}", PHASE)] = (
+            df[(f"{worktime_type.value}_worktime_hour/{performance_unit.value}", PHASE)] * 60
+        )
 
         logger.debug(f"{output_file} を出力します。")
 
@@ -1186,6 +1196,7 @@ class UserPerformance:
                 filtered_df = df[(df["biography"] == biography) & df[(x_column, PHASE)].notna() & df[(y_column, PHASE)].notna()]
                 if len(filtered_df) == 0:
                     continue
+
                 source = ColumnDataSource(data=filtered_df)
                 scatter_obj.plot_bubble(
                     source=source,

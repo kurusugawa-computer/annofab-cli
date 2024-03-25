@@ -65,25 +65,28 @@ class TestUserPerformance:
     def test_plot_quality(self):
         self.obj.plot_quality(output_dir / "散布図-教師付者の品質と作業量の関係.html")
 
-    def test_plot_productivity(self):
+    def test_plot_productivity__アノテーションあたり実績時間(self) -> None:
         self.obj.plot_productivity(
             output_dir / "散布図-アノテーションあたり作業時間と累計作業時間の関係-実績時間.html",
             worktime_type=WorktimeType.ACTUAL,
             performance_unit=PerformanceUnit.ANNOTATION_COUNT,
         )
+
+    def test_plot_productivity__入力データあたり計測時間(self) -> None:
         self.obj.plot_productivity(
             output_dir / "散布図-入力データあたり作業時間と累計作業時間の関係-計測時間.html",
             worktime_type=WorktimeType.MONITORED,
             performance_unit=PerformanceUnit.INPUT_DATA_COUNT,
         )
 
-    def test_plot_quality_and_productivity(self):
+    def test_plot_quality_and_productivity__アノテーションあたり実績時間(self) -> None:
         self.obj.plot_quality_and_productivity(
             output_dir / "散布図-アノテーションあたり作業時間と品質の関係-実績時間-教師付者用.html",
             worktime_type=WorktimeType.ACTUAL,
             performance_unit=PerformanceUnit.ANNOTATION_COUNT,
         )
 
+    def test_plot_quality_and_productivity__入力データあたり計測時間(self) -> None:
         self.obj.plot_quality_and_productivity(
             output_dir / "散布図-入力データあたり作業時間と品質の関係-計測時間-教師付者用.html",
             worktime_type=WorktimeType.ACTUAL,
