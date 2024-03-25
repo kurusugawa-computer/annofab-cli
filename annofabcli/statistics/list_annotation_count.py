@@ -663,12 +663,22 @@ class LabelCountCsv:
 
 
 class AnnotationSpecs:
-    def __init__(self, service: annofabapi.Resource, project_id: str) -> None:
+    """
+
+    Args:
+        annotation_type: 出力対象のラベルの種類。
+
+    """
+    def __init__(self, service: annofabapi.Resource, project_id: str, *, annotation_type:Optional[str]=None) -> None:
         self.service = service
         self.project_id = project_id
 
         annotation_specs, _ = service.api.get_annotation_specs(project_id, query_params={"v": "2"})
         self._annotation_specs = annotation_specs
+
+        labels_v2 = annotation_specs["labels"]
+        if annotation_type is not None:
+            labels_v2 = [e for e in labels_v2 if e["annotation_type"] == annotation_type]
 
         self._labels_v1 = convert_annotation_specs_labels_v2_to_v1(
             labels_v2=annotation_specs["labels"], additionals_v2=annotation_specs["additionals"]
