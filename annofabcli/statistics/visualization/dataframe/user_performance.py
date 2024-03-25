@@ -447,27 +447,54 @@ class UserPerformance:
                     ("last_working_date", "")
                     ("working_days", "")
         """
-        df = worktime_per_date.df
-        df1 = df[df["monitored_worktime_hour"] > 0]
-        if len(df1) > 0:
-            df2 = df1.pivot_table(values="date", index="account_id", aggfunc=["min", "max"])
-            df2.columns = pandas.MultiIndex.from_tuples([("first_working_date", ""), ("last_working_date", "")])
-        else:
-            df2 = pandas.DataFrame(
-                columns=pandas.MultiIndex.from_tuples([("first_working_date", ""), ("last_working_date", "")]),
-                index=pandas.Index([], name="account_id"),
-            )
 
-        # 元のDataFrame`df`が`account_id`,`date`のペアでユニークになっていない可能性も考えて、事前に`account_id`と`date`で集計する
-        df3 = df.groupby(["account_id", "date"])[["monitored_worktime_hour"]].sum()
-        # 作業日数を算出する
-        df3 = df3[df3["monitored_worktime_hour"] > 0].groupby("account_id").count()
-        df3.columns = pandas.MultiIndex.from_tuples([("working_days", "")])
+        def _create_df_first_last_working_date(phase: Optional[str]) -> pandas.DataFrame:
+            """
+            指定したフェーズに対応する作業開始日、作業終了日、作業日数を算出する
+
+            Args:
+                phase: フェーズ。Noneのときは全フェーズの合計の作業時間から算出する
+            """
+            if phase is None:
+                target_worktime_column = "monitored_worktime_hour"
+                phase_column = ""
+            else:
+                target_worktime_column = f"monitored_{phase}_worktime_hour"
+                phase_column = phase
+
+            df1 = df[df[target_worktime_column] > 0]
+            if len(df1) > 0:
+                df2 = df1.pivot_table(values="date", index="account_id", aggfunc=["min", "max"])
+                df2.columns = pandas.MultiIndex.from_tuples([("first_working_date", phase_column), ("last_working_date", phase_column)])
+            else:
+                df2 = pandas.DataFrame(
+                    columns=pandas.MultiIndex.from_tuples([("first_working_date", phase_column), ("last_working_date", phase_column)]),
+                    index=pandas.Index([], name="account_id"),
+                )
+
+            # 元のDataFrame`df`が`account_id`,`date`のペアでユニークになっていない可能性も考えて、事前に`account_id`と`date`で集計する
+            df3 = df.groupby(["account_id", "date"])[[target_worktime_column]].sum()
+            # 作業日数を算出する
+            df3 = df3[df3[target_worktime_column] > 0].groupby("account_id").count()
+            df3.columns = pandas.MultiIndex.from_tuples([("working_days", phase_column)])
+
+            # joinしない理由: レベル1の列名が空文字のDataFrameをjoinすると、Python3.12のpandas2.2.0で、列名が期待通りにならないため
+            # https://github.com/pandas-dev/pandas/issues/57500
+            # df_result = df2.join(df3)
+            df_result = pandas.concat([df2, df3], axis=1)
+            return df_result
+
+        df = worktime_per_date.df
+
+        df4_list = [
+            _create_df_first_last_working_date(phase)
+            for phase in [None, TaskPhase.ANNOTATION.value, TaskPhase.INSPECTION.value, TaskPhase.ACCEPTANCE.value]
+        ]
 
         # joinしない理由: レベル1の列名が空文字のDataFrameをjoinすると、Python3.12のpandas2.2.0で、列名が期待通りにならないため
         # https://github.com/pandas-dev/pandas/issues/57500
         # return df2.join(df3)
-        return pandas.concat([df2, df3], axis=1)
+        return pandas.concat(df4_list, axis=1)
 
     @staticmethod
     def _create_df_user(worktime_per_date: WorktimePerDate) -> pandas.DataFrame:
