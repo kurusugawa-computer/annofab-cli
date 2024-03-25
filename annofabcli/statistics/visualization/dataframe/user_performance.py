@@ -708,11 +708,18 @@ class UserPerformance:
             ("user_id", ""),
             ("username", ""),
             ("biography", ""),
-            ("first_working_date", ""),
-            ("last_working_date", ""),
-            ("working_days", ""),
         ]
-        columns = user_columns + value_columns
+
+        working_date_columns = []
+        for phase_column in ["", "annotation", "inspection", "acceptance"]:
+            working_date_columns.extend(
+                [
+                    ("first_working_date", phase_column),
+                    ("last_working_date", phase_column),
+                    ("working_days", phase_column),
+                ]
+            )
+        columns = user_columns + working_date_columns + value_columns
         print_csv(self.df[columns], str(output_file))
 
     @staticmethod
