@@ -17,7 +17,7 @@ import numpy
 import pandas
 from annofabapi.models import TaskPhase
 from bokeh.models.widgets.markups import Div
-from bokeh.plotting import ColumnDataSource, figure
+from bokeh.plotting import ColumnDataSource
 
 from annofabcli.common.utils import print_csv, read_multiheader_csv
 from annofabcli.statistics.scatter import ScatterGraph, get_color_from_palette, write_bokeh_graph
@@ -761,16 +761,41 @@ class UserPerformance:
         )
 
     @staticmethod
-    def _set_legend(fig: figure) -> None:
+    def convert_df_suitable_for_bokeh(df: pandas.DataFrame) -> pandas.DataFrame:
         """
-        凡例の設定。
+        DataFrameをbokehで出力できるように変換する。
         """
-        fig.legend.location = "top_left"
-        fig.legend.click_policy = "mute"
-        fig.legend.title = "biography"
-        if len(fig.legend) > 0:
-            legend = fig.legend[0]
-            fig.add_layout(legend, "left")
+
+        # biographyはbokehの凡例に使う
+        # 凡例に使う値が欠損値だと描画に失敗するため、空文字に変換する
+        # https://qiita.com/yuji38kwmt/items/16ce548248c5c71fab3a
+        df = df.fillna({"biography": ""})
+
+        # bokeh 3.0.3ではpandas.NAを含むDataFrameを描画できないので、`numpy.nan`に変換する
+        # https://qiita.com/yuji38kwmt/items/b5da6ed521e827620186
+        # TODO python3.8のサポートを終了したら、このコードを削除する
+        df = df.replace({pandas.NA: numpy.nan})
+
+        # bokeh 3.0.3では、dtypeが`string`である列を含むDataFrameを描画できないので、dtypeが`string`である列のdtypeを`object`変換する
+        # https://qiita.com/yuji38kwmt/items/b5da6ed521e827620186
+        # TODO python3.8のサポートを終了したら、このコードを削除する
+        df = df.astype(
+            {
+                ("account_id", ""): "object",
+                ("user_id", ""): "object",
+                ("username", ""): "object",
+                ("biography", ""): "object",
+                ("first_working_date", ""): "object",
+                ("last_working_date", ""): "object",
+                ("first_working_date", "annotation"): "object",
+                ("last_working_date", "annotation"): "object",
+                ("first_working_date", "inspection"): "object",
+                ("last_working_date", "inspection"): "object",
+                ("first_working_date", "acceptance"): "object",
+                ("last_working_date", "acceptance"): "object",
+            }
+        )
+        return df
 
     @staticmethod
     def _add_ratio_key_for_whole_productivity(series: pandas.Series, phase_list: list[str]) -> None:
@@ -829,8 +854,7 @@ class UserPerformance:
         if not self._validate_df_for_output(output_file):
             return
 
-        # numpy.inf が含まれていると散布図を出力できないので置換する
-        df = self.df.replace(numpy.inf, numpy.nan)
+        df = self.convert_df_suitable_for_bokeh(self.df)
 
         performance_unit_name = performance_unit.performance_unit_name
 
@@ -867,8 +891,6 @@ class UserPerformance:
             for phase in self.phase_list
         ]
 
-        df["biography"] = df["biography"].fillna("")
-
         x_column = f"{worktime_type.value}_worktime_hour"
         y_column = f"{worktime_type.value}_worktime_minute/{performance_unit.value}"
         # 分単位の生産性を算出する
@@ -876,26 +898,6 @@ class UserPerformance:
             df[(f"{worktime_type.value}_worktime_minute/{performance_unit.value}", phase)] = (
                 df[(f"{worktime_type.value}_worktime_hour/{performance_unit.value}", phase)] * 60
             )
-
-        # bokeh3.0.3では、string型の列を持つpandas.DataFrameを描画できないため、改めてobject型に戻す
-        # TODO この問題が解決されたら、削除する
-        # https://qiita.com/yuji38kwmt/items/b5da6ed521e827620186
-        df = df.astype(
-            {
-                ("account_id", ""): "object",
-                ("user_id", ""): "object",
-                ("username", ""): "object",
-                ("biography", ""): "object",
-                ("first_working_date", ""): "object",
-                ("last_working_date", ""): "object",
-                ("first_working_date", "annotation"): "object",
-                ("last_working_date", "annotation"): "object",
-                ("first_working_date", "inspection"): "object",
-                ("last_working_date", "inspection"): "object",
-                ("first_working_date", "acceptance"): "object",
-                ("last_working_date", "acceptance"): "object",
-            }
-        )
 
         for biography_index, biography in enumerate(sorted(set(df["biography"]))):
             for scatter_obj, phase in zip(scatter_obj_list, self.phase_list):
@@ -945,8 +947,7 @@ class UserPerformance:
         if not self._validate_df_for_output(output_file):
             return
 
-        # numpy.inf が含まれていると散布図を出力できないので置換する
-        df = self.df.replace(numpy.inf, numpy.nan)
+        df = self.convert_df_suitable_for_bokeh(self.df)
 
         PHASE = "annotation"
 
@@ -991,27 +992,6 @@ class UserPerformance:
             ("annotation_count", "pointed_out_inspection_comment_count/annotation_count"),
         ]
 
-        # bokeh3.0.3では、string型の列を持つpandas.DataFrameを描画できないため、改めてobject型に戻す
-        # TODO この問題が解決されたら、削除する
-        # https://qiita.com/yuji38kwmt/items/b5da6ed521e827620186
-        df = df.astype(
-            {
-                ("account_id", ""): "object",
-                ("user_id", ""): "object",
-                ("username", ""): "object",
-                ("biography", ""): "object",
-                ("first_working_date", ""): "object",
-                ("last_working_date", ""): "object",
-                ("first_working_date", "annotation"): "object",
-                ("last_working_date", "annotation"): "object",
-                ("first_working_date", "inspection"): "object",
-                ("last_working_date", "inspection"): "object",
-                ("first_working_date", "acceptance"): "object",
-                ("last_working_date", "acceptance"): "object",
-            }
-        )
-
-        df["biography"] = df["biography"].fillna("")
         for biography_index, biography in enumerate(sorted(set(df["biography"]))):
             for column_pair, scatter_obj in zip(column_pair_list, scatter_obj_list):
                 x_column = column_pair[0]
@@ -1136,14 +1116,12 @@ class UserPerformance:
         if not self._validate_df_for_output(output_file):
             return
 
-        # numpy.inf が含まれていると散布図を出力できないので置換する
-        df = self.df.replace(numpy.inf, numpy.nan)
+        df = self.convert_df_suitable_for_bokeh(self.df)
         PHASE = TaskPhase.ANNOTATION.value
 
         df[(f"{worktime_type.value}_worktime_minute/{performance_unit.value}", PHASE)] = (
             df[(f"{worktime_type.value}_worktime_hour/{performance_unit.value}", PHASE)] * 60
         )
-
         logger.debug(f"{output_file} を出力します。")
 
         performance_unit_name = performance_unit.performance_unit_name
@@ -1167,28 +1145,6 @@ class UserPerformance:
                 f"pointed_out_inspection_comment_count/{performance_unit.value}",
             ),
         ]
-        PHASE = TaskPhase.ANNOTATION.value
-        df["biography"] = df["biography"].fillna("")
-
-        # bokeh3.0.3では、string型の列を持つpandas.DataFrameを描画できないため、改めてobject型に戻す
-        # TODO この問題が解決されたら、削除する
-        # https://qiita.com/yuji38kwmt/items/b5da6ed521e827620186
-        df = df.astype(
-            {
-                ("account_id", ""): "object",
-                ("user_id", ""): "object",
-                ("username", ""): "object",
-                ("biography", ""): "object",
-                ("first_working_date", ""): "object",
-                ("last_working_date", ""): "object",
-                ("first_working_date", "annotation"): "object",
-                ("last_working_date", "annotation"): "object",
-                ("first_working_date", "inspection"): "object",
-                ("last_working_date", "inspection"): "object",
-                ("first_working_date", "acceptance"): "object",
-                ("last_working_date", "acceptance"): "object",
-            }
-        )
 
         for biography_index, biography in enumerate(sorted(set(df["biography"]))):
             for scatter_obj, column_pair in zip(scatter_obj_list, column_pair_list):
