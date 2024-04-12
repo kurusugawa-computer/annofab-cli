@@ -38,6 +38,11 @@ class ScatterGraph:
         """
 
         def exclude_phase_name(name: str) -> str:
+            """
+            tooltipに渡された名前から、最後のフェーズ名を除いた名前を返します。
+
+            例えば"task_count_annotation"を渡すと"task_count"を返します。
+            """
             tmp = name.split("_")
             return "_".join(tmp[0 : len(tmp) - 1])
 
@@ -137,6 +142,8 @@ class ScatterGraph:
             x=x_column_name, y=y_column_name, source=source, legend_label=legend_label, color=color, muted_alpha=0.2, size=6
         )
 
+        # 1点ごとに`text`で名前を表示している理由：
+        # `add_multi_choice_widget_for_searching_user`関数で追加したMultiChoice Widgetで、名前の表示スタイルを変更するため
         for x, y, username, user_id in zip(
             source.data[x_column_name], source.data[y_column_name], source.data[username_column_name], source.data[user_id_column_name]
         ):
@@ -191,6 +198,8 @@ class ScatterGraph:
             size=tmp_size_field,
         )
 
+        # 1点ごとに`text`で名前を表示している理由：
+        # `add_multi_choice_widget_for_searching_user`関数で追加したMultiChoice Widgetで、名前の表示スタイルを変更するため
         for x, y, username, user_id in zip(
             source.data[x_column_name], source.data[y_column_name], source.data[username_column_name], source.data[user_id_column_name]
         ):
@@ -249,8 +258,6 @@ class ScatterGraph:
             users: ユーザーのリスト。tuple[user_id, username]
         Notes:
             2回以上実行しても意味がありません。
-
-        TODO infが含まれるユーザーは？
 
         """
         args = {"textGlyphs": self.text_glyphs}
