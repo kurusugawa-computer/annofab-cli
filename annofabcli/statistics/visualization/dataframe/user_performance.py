@@ -17,7 +17,7 @@ import numpy
 import pandas
 from annofabapi.models import TaskPhase
 from bokeh.models.widgets.markups import Div
-from bokeh.plotting import ColumnDataSource, figure
+from bokeh.plotting import ColumnDataSource
 
 from annofabcli.common.utils import print_csv, read_multiheader_csv
 from annofabcli.statistics.scatter import ScatterGraph, get_color_from_palette, write_bokeh_graph
@@ -185,7 +185,18 @@ class UserPerformance:
             ("user_id", ""): "string",
             ("username", ""): "string",
             ("biography", ""): "string",
+            ("first_working_date", ""): "string",
             ("last_working_date", ""): "string",
+            ("working_days", ""): "int64",
+            ("first_working_date", "annotation"): "string",
+            ("last_working_date", "annotation"): "string",
+            ("working_days", "annotation"): "int64",
+            ("first_working_date", "inspection"): "string",
+            ("last_working_date", "inspection"): "string",
+            ("working_days", "inspection"): "int64",
+            ("first_working_date", "acceptance"): "string",
+            ("last_working_date", "acceptance"): "string",
+            ("working_days", "acceptance"): "int64",
             ("real_monitored_worktime_hour", "sum"): "float64",
             ("real_monitored_worktime_hour", "annotation"): "float64",
             ("real_monitored_worktime_hour", "inspection"): "float64",
@@ -446,28 +457,64 @@ class UserPerformance:
                     ("first_working_date", "")
                     ("last_working_date", "")
                     ("working_days", "")
+                    ("first_working_date", "annotation")
+                    ("last_working_date", "annotation")
+                    ("working_days", "annotation")
+                    ("first_working_date", "inspection")
+                    ("last_working_date", "inspection")
+                    ("working_days", "inspection")
+                    ("first_working_date", "acceptance")
+                    ("last_working_date", "acceptance")
+                    ("working_days", "acceptance")
         """
-        df = worktime_per_date.df
-        df1 = df[df["monitored_worktime_hour"] > 0]
-        if len(df1) > 0:
-            df2 = df1.pivot_table(values="date", index="account_id", aggfunc=["min", "max"])
-            df2.columns = pandas.MultiIndex.from_tuples([("first_working_date", ""), ("last_working_date", "")])
-        else:
-            df2 = pandas.DataFrame(
-                columns=pandas.MultiIndex.from_tuples([("first_working_date", ""), ("last_working_date", "")]),
-                index=pandas.Index([], name="account_id"),
-            )
 
-        # 元のDataFrame`df`が`account_id`,`date`のペアでユニークになっていない可能性も考えて、事前に`account_id`と`date`で集計する
-        df3 = df.groupby(["account_id", "date"])[["monitored_worktime_hour"]].sum()
-        # 作業日数を算出する
-        df3 = df3[df3["monitored_worktime_hour"] > 0].groupby("account_id").count()
-        df3.columns = pandas.MultiIndex.from_tuples([("working_days", "")])
+        def _create_df_first_last_working_date(phase: Optional[str]) -> pandas.DataFrame:
+            """
+            指定したフェーズに対応する作業開始日、作業終了日、作業日数を算出する
+
+            Args:
+                phase: フェーズ。Noneのときは全フェーズの合計の作業時間から算出する
+            """
+            if phase is None:
+                target_worktime_column = "monitored_worktime_hour"
+                phase_column = ""
+            else:
+                target_worktime_column = f"monitored_{phase}_worktime_hour"
+                phase_column = phase
+
+            df1 = df[df[target_worktime_column] > 0]
+            if len(df1) > 0:
+                df2 = df1.pivot_table(values="date", index="account_id", aggfunc=["min", "max"])
+                df2.columns = pandas.MultiIndex.from_tuples([("first_working_date", phase_column), ("last_working_date", phase_column)])
+            else:
+                df2 = pandas.DataFrame(
+                    columns=pandas.MultiIndex.from_tuples([("first_working_date", phase_column), ("last_working_date", phase_column)]),
+                    index=pandas.Index([], name="account_id", dtype="string"),
+                )
+
+            # 元のDataFrame`df`が`account_id`,`date`のペアでユニークになっていない可能性も考えて、事前に`account_id`と`date`で集計する
+            df3 = df.groupby(["account_id", "date"])[[target_worktime_column]].sum()
+            # 作業日数を算出する
+            df3 = df3[df3[target_worktime_column] > 0].groupby("account_id").count()
+            df3.columns = pandas.MultiIndex.from_tuples([("working_days", phase_column)])
+
+            # joinしない理由: レベル1の列名が空文字のDataFrameをjoinすると、Python3.12のpandas2.2.0で、列名が期待通りにならないため
+            # https://github.com/pandas-dev/pandas/issues/57500
+            # df_result = df2.join(df3)
+            df_result = pandas.concat([df2, df3], axis=1)
+            return df_result
+
+        df = worktime_per_date.df
+
+        df4_list = [
+            _create_df_first_last_working_date(phase)
+            for phase in [None, TaskPhase.ANNOTATION.value, TaskPhase.INSPECTION.value, TaskPhase.ACCEPTANCE.value]
+        ]
 
         # joinしない理由: レベル1の列名が空文字のDataFrameをjoinすると、Python3.12のpandas2.2.0で、列名が期待通りにならないため
         # https://github.com/pandas-dev/pandas/issues/57500
         # return df2.join(df3)
-        return pandas.concat([df2, df3], axis=1)
+        return pandas.concat(df4_list, axis=1)
 
     @staticmethod
     def _create_df_user(worktime_per_date: WorktimePerDate) -> pandas.DataFrame:
@@ -681,11 +728,18 @@ class UserPerformance:
             ("user_id", ""),
             ("username", ""),
             ("biography", ""),
-            ("first_working_date", ""),
-            ("last_working_date", ""),
-            ("working_days", ""),
         ]
-        columns = user_columns + value_columns
+
+        working_date_columns = []
+        for phase_column in ["", "annotation", "inspection", "acceptance"]:
+            working_date_columns.extend(
+                [
+                    ("first_working_date", phase_column),
+                    ("last_working_date", phase_column),
+                    ("working_days", phase_column),
+                ]
+            )
+        columns = user_columns + working_date_columns + value_columns
         print_csv(self.df[columns], str(output_file))
 
     @staticmethod
@@ -718,16 +772,50 @@ class UserPerformance:
         )
 
     @staticmethod
-    def _set_legend(fig: figure) -> None:
+    def convert_df_suitable_for_bokeh(df: pandas.DataFrame) -> pandas.DataFrame:
         """
-        凡例の設定。
+        DataFrameをbokehで出力できるように変換する。
         """
-        fig.legend.location = "top_left"
-        fig.legend.click_policy = "mute"
-        fig.legend.title = "biography"
-        if len(fig.legend) > 0:
-            legend = fig.legend[0]
-            fig.add_layout(legend, "left")
+
+        # biographyはbokehの凡例に使う
+        # 凡例に使う値が欠損値だと描画に失敗するため、空文字に変換する
+        # https://qiita.com/yuji38kwmt/items/16ce548248c5c71fab3a
+        df = df.fillna({"biography": ""})
+
+        # bokeh 3.0.3では、dtypeが`string`である列を含むDataFrameを描画できないので、dtypeが`string`である列のdtypeを`object`変換する
+        # https://qiita.com/yuji38kwmt/items/b5da6ed521e827620186
+        # TODO python3.8のサポートを終了したら、このコードを削除する
+        df = df.astype(
+            {
+                ("account_id", ""): "object",
+                ("user_id", ""): "object",
+                ("username", ""): "object",
+                ("biography", ""): "object",
+                ("first_working_date", ""): "object",
+                ("last_working_date", ""): "object",
+                ("first_working_date", "annotation"): "object",
+                ("last_working_date", "annotation"): "object",
+                ("first_working_date", "inspection"): "object",
+                ("last_working_date", "inspection"): "object",
+                ("first_working_date", "acceptance"): "object",
+                ("last_working_date", "acceptance"): "object",
+            }
+        )
+
+        # bokeh 3.0.3ではpandas.NAを含むDataFrameを描画できないので、`numpy.nan`に変換する
+        # https://qiita.com/yuji38kwmt/items/b5da6ed521e827620186
+        # TODO python3.8のサポートを終了したら、このコードを削除する
+        try:
+            # "no_silent_downcasting" option をTrueにする理由:
+            # `pandas.NA`を`numpy.nan`にすることで、dtypeが`string`から`float64`になる列があるため、`FutureWarning`が発生する
+            # このdowncastingが将来なくなっても困ることはないので、警告を抑制した
+            with pandas.option_context("future.no_silent_downcasting", True):
+                df = df.replace({pandas.NA: numpy.nan})
+        except pandas.errors.OptionError:
+            # pandas 2.2未満では"future.no_silent_downcasting"が存在しないため、OptionErrorが発生する
+            df = df.replace({pandas.NA: numpy.nan})
+
+        return df
 
     @staticmethod
     def _add_ratio_key_for_whole_productivity(series: pandas.Series, phase_list: list[str]) -> None:
@@ -786,8 +874,7 @@ class UserPerformance:
         if not self._validate_df_for_output(output_file):
             return
 
-        # numpy.inf が含まれていると散布図を出力できないので置換する
-        df = self.df.replace(numpy.inf, numpy.nan)
+        df = self.convert_df_suitable_for_bokeh(self.df)
 
         performance_unit_name = performance_unit.performance_unit_name
 
@@ -816,15 +903,13 @@ class UserPerformance:
                     f"annotation_count_{phase}",
                     f"{worktime_type.value}_worktime_hour/input_data_count_{phase}",
                     f"{worktime_type.value}_worktime_hour/annotation_count_{phase}",
-                    "first_working_date_",
-                    "last_working_date_",
-                    "working_days_",
+                    f"first_working_date_{phase}",
+                    f"last_working_date_{phase}",
+                    f"working_days_{phase}",
                 ],
             )
             for phase in self.phase_list
         ]
-
-        df["biography"] = df["biography"].fillna("")
 
         x_column = f"{worktime_type.value}_worktime_hour"
         y_column = f"{worktime_type.value}_worktime_minute/{performance_unit.value}"
@@ -833,20 +918,6 @@ class UserPerformance:
             df[(f"{worktime_type.value}_worktime_minute/{performance_unit.value}", phase)] = (
                 df[(f"{worktime_type.value}_worktime_hour/{performance_unit.value}", phase)] * 60
             )
-
-        # bokeh3.0.3では、string型の列を持つpandas.DataFrameを描画できないため、改めてobject型に戻す
-        # TODO この問題が解決されたら、削除する
-        # https://qiita.com/yuji38kwmt/items/b5da6ed521e827620186
-        df = df.astype(
-            {
-                ("account_id", ""): "object",
-                ("user_id", ""): "object",
-                ("username", ""): "object",
-                ("biography", ""): "object",
-                ("first_working_date", ""): "object",
-                ("last_working_date", ""): "object",
-            }
-        )
 
         for biography_index, biography in enumerate(sorted(set(df["biography"]))):
             for scatter_obj, phase in zip(scatter_obj_list, self.phase_list):
@@ -896,8 +967,7 @@ class UserPerformance:
         if not self._validate_df_for_output(output_file):
             return
 
-        # numpy.inf が含まれていると散布図を出力できないので置換する
-        df = self.df.replace(numpy.inf, numpy.nan)
+        df = self.convert_df_suitable_for_bokeh(self.df)
 
         PHASE = "annotation"
 
@@ -920,9 +990,9 @@ class UserPerformance:
                     f"pointed_out_inspection_comment_count_{PHASE}",
                     f"rejected_count/task_count_{PHASE}",
                     f"pointed_out_inspection_comment_count/annotation_count_{PHASE}",
-                    "first_working_date_",
-                    "last_working_date_",
-                    "working_days_",
+                    f"first_working_date_{PHASE}",
+                    f"last_working_date_{PHASE}",
+                    f"working_days_{PHASE}",
                 ],
             )
 
@@ -942,21 +1012,6 @@ class UserPerformance:
             ("annotation_count", "pointed_out_inspection_comment_count/annotation_count"),
         ]
 
-        # bokeh3.0.3では、string型の列を持つpandas.DataFrameを描画できないため、改めてobject型に戻す
-        # TODO この問題が解決されたら、削除する
-        # https://qiita.com/yuji38kwmt/items/b5da6ed521e827620186
-        df = df.astype(
-            {
-                ("account_id", ""): "object",
-                ("user_id", ""): "object",
-                ("username", ""): "object",
-                ("biography", ""): "object",
-                ("first_working_date", ""): "object",
-                ("last_working_date", ""): "object",
-            }
-        )
-
-        df["biography"] = df["biography"].fillna("")
         for biography_index, biography in enumerate(sorted(set(df["biography"]))):
             for column_pair, scatter_obj in zip(column_pair_list, scatter_obj_list):
                 x_column = column_pair[0]
@@ -1038,9 +1093,9 @@ class UserPerformance:
                     f"pointed_out_inspection_comment_count_{PHASE}",
                     f"rejected_count/task_count_{PHASE}",
                     f"pointed_out_inspection_comment_count/annotation_count_{PHASE}",
-                    "first_working_date_",
-                    "last_working_date_",
-                    "working_days_",
+                    f"first_working_date_{PHASE}",
+                    f"last_working_date_{PHASE}",
+                    f"working_days_{PHASE}",
                 ],
             )
 
@@ -1081,13 +1136,12 @@ class UserPerformance:
         if not self._validate_df_for_output(output_file):
             return
 
-        # numpy.inf が含まれていると散布図を出力できないので置換する
-        df = self.df.replace(numpy.inf, numpy.nan)
-        for PHASE in self.phase_list:
-            df[(f"{worktime_type.value}_worktime_minute/{performance_unit.value}", PHASE)] = (
-                df[(f"{worktime_type.value}_worktime_hour/{performance_unit.value}", PHASE)] * 60
-            )
+        df = self.convert_df_suitable_for_bokeh(self.df)
+        PHASE = TaskPhase.ANNOTATION.value
 
+        df[(f"{worktime_type.value}_worktime_minute/{performance_unit.value}", PHASE)] = (
+            df[(f"{worktime_type.value}_worktime_hour/{performance_unit.value}", PHASE)] * 60
+        )
         logger.debug(f"{output_file} を出力します。")
 
         performance_unit_name = performance_unit.performance_unit_name
@@ -1111,22 +1165,6 @@ class UserPerformance:
                 f"pointed_out_inspection_comment_count/{performance_unit.value}",
             ),
         ]
-        PHASE = TaskPhase.ANNOTATION.value
-        df["biography"] = df["biography"].fillna("")
-
-        # bokeh3.0.3では、string型の列を持つpandas.DataFrameを描画できないため、改めてobject型に戻す
-        # TODO この問題が解決されたら、削除する
-        # https://qiita.com/yuji38kwmt/items/b5da6ed521e827620186
-        df = df.astype(
-            {
-                ("account_id", ""): "object",
-                ("user_id", ""): "object",
-                ("username", ""): "object",
-                ("biography", ""): "object",
-                ("first_working_date", ""): "object",
-                ("last_working_date", ""): "object",
-            }
-        )
 
         for biography_index, biography in enumerate(sorted(set(df["biography"]))):
             for scatter_obj, column_pair in zip(scatter_obj_list, column_pair_list):
@@ -1134,6 +1172,7 @@ class UserPerformance:
                 filtered_df = df[(df["biography"] == biography) & df[(x_column, PHASE)].notna() & df[(y_column, PHASE)].notna()]
                 if len(filtered_df) == 0:
                     continue
+
                 source = ColumnDataSource(data=filtered_df)
                 scatter_obj.plot_bubble(
                     source=source,
