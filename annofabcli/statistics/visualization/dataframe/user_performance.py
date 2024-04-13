@@ -782,7 +782,6 @@ class UserPerformance:
         # https://qiita.com/yuji38kwmt/items/16ce548248c5c71fab3a
         df = df.fillna({"biography": ""})
 
-
         # bokeh 3.0.3では、dtypeが`string`である列を含むDataFrameを描画できないので、dtypeが`string`である列のdtypeを`object`変換する
         # https://qiita.com/yuji38kwmt/items/b5da6ed521e827620186
         # TODO python3.8のサポートを終了したら、このコードを削除する
@@ -969,7 +968,7 @@ class UserPerformance:
             return
 
         df = self.convert_df_suitable_for_bokeh(self.df)
-        
+
         PHASE = "annotation"
 
         def create_scatter_obj(title: str, x_axis_label: str, y_axis_label: str) -> ScatterGraph:
