@@ -786,12 +786,6 @@ class UserPerformance:
         # https://qiita.com/yuji38kwmt/items/b5da6ed521e827620186
         # TODO python3.8のサポートを終了したら、このコードを削除する
 
-        # "no_silent_downcasting" option をTrueにする理由:
-        # `pandas.NA`を`numpy.nan`にすることで、dtypeが`string`から`float64`になる列があるため、`FutureWarning`が発生する
-        # このdowncastingが将来なくなっても困ることはないので、警告を抑制した
-        with pandas.option_context("future.no_silent_downcasting", True):
-            df = df.replace({pandas.NA: numpy.nan})
-
         # bokeh 3.0.3では、dtypeが`string`である列を含むDataFrameを描画できないので、dtypeが`string`である列のdtypeを`object`変換する
         # https://qiita.com/yuji38kwmt/items/b5da6ed521e827620186
         # TODO python3.8のサポートを終了したら、このコードを削除する
@@ -811,6 +805,17 @@ class UserPerformance:
                 ("last_working_date", "acceptance"): "object",
             }
         )
+
+        # "no_silent_downcasting" option をTrueにする理由:
+        # `pandas.NA`を`numpy.nan`にすることで、dtypeが`string`から`float64`になる列があるため、`FutureWarning`が発生する
+        # このdowncastingが将来なくなっても困ることはないので、警告を抑制した
+        try:
+            with pandas.option_context("future.no_silent_downcasting", True):
+                df = df.replace({pandas.NA: numpy.nan})
+        except pandas.errors.OptionError:
+            # pandas 2.2未満では"future.no_silent_downcasting"が存在しないため、OptionErrorが発生する
+            df = df.replace({pandas.NA: numpy.nan})
+
         return df
 
     @staticmethod
@@ -964,7 +969,7 @@ class UserPerformance:
             return
 
         df = self.convert_df_suitable_for_bokeh(self.df)
-
+        
         PHASE = "annotation"
 
         def create_scatter_obj(title: str, x_axis_label: str, y_axis_label: str) -> ScatterGraph:
