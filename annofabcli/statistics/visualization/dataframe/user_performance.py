@@ -185,7 +185,18 @@ class UserPerformance:
             ("user_id", ""): "string",
             ("username", ""): "string",
             ("biography", ""): "string",
+            ("first_working_date", ""): "string",
             ("last_working_date", ""): "string",
+            ("working_days", ""): "int64",
+            ("first_working_date", "annotation"): "string",
+            ("last_working_date", "annotation"): "string",
+            ("working_days", "annotation"): "int64",
+            ("first_working_date", "inspection"): "string",
+            ("last_working_date", "inspection"): "string",
+            ("working_days", "inspection"): "int64",
+            ("first_working_date", "acceptance"): "string",
+            ("last_working_date", "acceptance"): "string",
+            ("working_days", "acceptance"): "int64",
             ("real_monitored_worktime_hour", "sum"): "float64",
             ("real_monitored_worktime_hour", "annotation"): "float64",
             ("real_monitored_worktime_hour", "inspection"): "float64",
@@ -478,7 +489,7 @@ class UserPerformance:
             else:
                 df2 = pandas.DataFrame(
                     columns=pandas.MultiIndex.from_tuples([("first_working_date", phase_column), ("last_working_date", phase_column)]),
-                    index=pandas.Index([], name="account_id"),
+                    index=pandas.Index([], name="account_id", dtype="string"),
                 )
 
             # 元のDataFrame`df`が`account_id`,`date`のペアでユニークになっていない可能性も考えて、事前に`account_id`と`date`で集計する
@@ -774,7 +785,12 @@ class UserPerformance:
         # bokeh 3.0.3ではpandas.NAを含むDataFrameを描画できないので、`numpy.nan`に変換する
         # https://qiita.com/yuji38kwmt/items/b5da6ed521e827620186
         # TODO python3.8のサポートを終了したら、このコードを削除する
-        df = df.replace({pandas.NA: numpy.nan})
+
+        # "no_silent_downcasting" option をTrueにする理由:
+        # `pandas.NA`を`numpy.nan`にすることで、dtypeが`string`から`float64`になる列があるため、`FutureWarning`が発生する
+        # このdowncastingが将来なくなっても困ることはないので、警告を抑制した
+        with pandas.option_context("future.no_silent_downcasting", True):
+            df = df.replace({pandas.NA: numpy.nan})
 
         # bokeh 3.0.3では、dtypeが`string`である列を含むDataFrameを描画できないので、dtypeが`string`である列のdtypeを`object`変換する
         # https://qiita.com/yuji38kwmt/items/b5da6ed521e827620186
