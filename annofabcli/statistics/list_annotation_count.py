@@ -476,12 +476,12 @@ class AttributeCountCsv:
         value_columns = list(dict.fromkeys(value_columns).keys())
         return value_columns
 
-    def print_csv_by_task(  # noqa: ANN201
+    def print_csv_by_task(  
         self,
         counter_list: list[AnnotationCounterByTask],
         output_file: Path,
         prior_attribute_columns: Optional[list[AttributeValueKey]] = None,
-    ):
+    ) -> None:
         def get_columns() -> list[AttributeValueKey]:
             basic_columns = [
                 ("task_id", "", ""),
@@ -514,12 +514,12 @@ class AttributeCountCsv:
 
         print_csv(df, output=str(output_file), to_csv_kwargs=self.csv_format)
 
-    def print_csv_by_input_data(  # noqa: ANN201
+    def print_csv_by_input_data(  
         self,
         counter_list: list[AnnotationCounterByInputData],
         output_file: Path,
         prior_attribute_columns: Optional[list[AttributeValueKey]] = None,
-    ):
+    ) -> None:
         def get_columns() -> list[AttributeValueKey]:
             basic_columns = [
                 ("task_id", "", ""),
@@ -580,12 +580,12 @@ class LabelCountCsv:
 
         return value_columns
 
-    def print_csv_by_task(  # noqa: ANN201
+    def print_csv_by_task( 
         self,
         counter_list: list[AnnotationCounterByTask],
         output_file: Path,
         prior_label_columns: Optional[list[str]] = None,
-    ):
+    ) -> None:
         def get_columns() -> list[str]:
             basic_columns = [
                 "task_id",
@@ -618,12 +618,12 @@ class LabelCountCsv:
         df.fillna(0, inplace=True)
         print_csv(df, output=str(output_file), to_csv_kwargs=self.csv_format)
 
-    def print_csv_by_input_data(  # noqa: ANN201
+    def print_csv_by_input_data(  
         self,
         counter_list: list[AnnotationCounterByInputData],
         output_file: Path,
         prior_label_columns: Optional[list[str]] = None,
-    ):
+    ) -> None:
         def get_columns() -> list[str]:
             basic_columns = [
                 "task_id",
@@ -816,7 +816,7 @@ class ListAnnotationCountMain:
                 result[(task_id, input_data_id)] = index + 1
         return result
 
-    def print_annotation_counter_csv_by_input_data(  # noqa: ANN201
+    def print_annotation_counter_csv_by_input_data(  
         self,
         annotation_path: Path,
         csv_type: CsvType,
@@ -826,7 +826,7 @@ class ListAnnotationCountMain:
         task_json_path: Optional[Path] = None,
         target_task_ids: Optional[Collection[str]] = None,
         task_query: Optional[TaskQuery] = None,
-    ):
+    ) -> None:
         # アノテーション仕様の非選択系の属性は、集計しないようにする。集計しても意味がないため。
         annotation_specs: Optional[AnnotationSpecs] = None
         non_selective_attribute_name_keys: Optional[list[AttributeNameKey]] = None
@@ -858,7 +858,7 @@ class ListAnnotationCountMain:
 
             AttributeCountCsv().print_csv_by_input_data(counter_list_by_input_data, output_file, prior_attribute_columns=attribute_columns)
 
-    def print_annotation_counter_csv_by_task(  # noqa: ANN201
+    def print_annotation_counter_csv_by_task(  
         self,
         annotation_path: Path,
         csv_type: CsvType,
@@ -867,7 +867,7 @@ class ListAnnotationCountMain:
         project_id: Optional[str] = None,
         target_task_ids: Optional[Collection[str]] = None,
         task_query: Optional[TaskQuery] = None,
-    ):
+    ) -> None:
         # アノテーション仕様の非選択系の属性は、集計しないようにする。集計しても意味がないため。
         annotation_specs: Optional[AnnotationSpecs] = None
         non_selective_attribute_name_keys: Optional[list[AttributeNameKey]] = None
@@ -897,7 +897,7 @@ class ListAnnotationCountMain:
 
             AttributeCountCsv().print_csv_by_task(counter_list_by_task, output_file, prior_attribute_columns=attribute_columns)
 
-    def print_annotation_counter_json_by_input_data(  # noqa: ANN201
+    def print_annotation_counter_json_by_input_data( 
         self,
         annotation_path: Path,
         output_file: Path,
@@ -907,7 +907,7 @@ class ListAnnotationCountMain:
         target_task_ids: Optional[Collection[str]] = None,
         task_query: Optional[TaskQuery] = None,
         json_is_pretty: bool = False,
-    ):
+    ) -> None:
         """ラベルごと/属性ごとのアノテーション数を入力データ単位でJSONファイルに出力します。"""
 
         # アノテーション仕様の非選択系の属性は、集計しないようにする。集計しても意味がないため。
@@ -932,7 +932,7 @@ class ListAnnotationCountMain:
             output=output_file,
         )
 
-    def print_annotation_counter_json_by_task(  # noqa: ANN201
+    def print_annotation_counter_json_by_task(  
         self,
         annotation_path: Path,
         output_file: Path,
@@ -941,7 +941,7 @@ class ListAnnotationCountMain:
         target_task_ids: Optional[Collection[str]] = None,
         task_query: Optional[TaskQuery] = None,
         json_is_pretty: bool = False,
-    ):
+    ) -> None:
         """ラベルごと/属性ごとのアノテーション数をタスク単位でJSONファイルに出力します。"""
 
         # アノテーション仕様の非選択系の属性は、集計しないようにする。集計しても意味がないため。
@@ -965,7 +965,7 @@ class ListAnnotationCountMain:
             output=output_file,
         )
 
-    def print_annotation_counter(  # noqa: ANN201
+    def print_annotation_counter(  
         self,
         annotation_path: Path,
         group_by: GroupBy,
@@ -977,7 +977,7 @@ class ListAnnotationCountMain:
         target_task_ids: Optional[Collection[str]] = None,
         task_query: Optional[TaskQuery] = None,
         csv_type: Optional[CsvType] = None,
-    ):
+    ) -> None:
         """ラベルごと/属性ごとのアノテーション数を出力します。"""
         if arg_format == FormatArgument.CSV:
             assert csv_type is not None
