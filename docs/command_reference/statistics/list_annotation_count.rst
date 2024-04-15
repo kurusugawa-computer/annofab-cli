@@ -55,7 +55,7 @@ Examples
         "status": "complete",
         "phase": "acceptance",
         "phase_stage": 1,
-        "input_data_count": 10
+        "input_data_count": 10,
     }
     ]  
 
@@ -137,7 +137,8 @@ JSON出力
         "status": "complete",
         "phase": "acceptance",
         "phase_stage": 1,
-        "input_data_count": 10
+        "input_data_count": 10,
+        "frame_no": 1        
     }
     ]  
 
