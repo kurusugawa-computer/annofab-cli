@@ -18,9 +18,6 @@ from typing import Any, Collection, Counter, Optional, Tuple, Union
 import annofabapi
 import pandas
 from annofabapi.models import ProjectMemberRole, TaskPhase, TaskStatus
-from annofabapi.parser import (
-    SimpleAnnotationParserByTask,
-)
 from dataclasses_json import DataClassJsonMixin, config
 
 import annofabcli
@@ -101,7 +98,10 @@ class AnnotationDuration(DataClassJsonMixin):
     input_data_name: str
 
     annotation_duration_second: int
-    """区間アノテーションの合計の長さ（秒）"""
+    """
+    区間アノテーションの合計の長さ（秒）
+    `sum(annotation_duration_second_by_label.values())`と一致する
+    """
     annotation_duration_second_by_label: dict[str, float]
     """
     ラベルごとの区間アノテーションの長さ（秒）
@@ -117,7 +117,7 @@ class AnnotationDuration(DataClassJsonMixin):
     """
 
 
-class ListAnnotationCounterByInputData:
+class ListAnnotationDurationByInputData:
     """入力データ単位で、ラベルごと/属性ごとのアノテーション数を集計情報を取得するメソッドの集まり。
 
     Args:
@@ -136,13 +136,11 @@ class ListAnnotationCounterByInputData:
         non_target_labels: Optional[Collection[str]] = None,
         target_attribute_names: Optional[Collection[AttributeNameKey]] = None,
         non_target_attribute_names: Optional[Collection[AttributeNameKey]] = None,
-        frame_no_map: Optional[dict[tuple[str, str], int]] = None,
     ) -> None:
         self.target_labels = set(target_labels) if target_labels is not None else None
         self.target_attribute_names = set(target_attribute_names) if target_attribute_names is not None else None
         self.non_target_labels = set(non_target_labels) if non_target_labels is not None else None
         self.non_target_attribute_names = set(non_target_attribute_names) if non_target_attribute_names is not None else None
-        self.frame_no_map = frame_no_map
 
     def get_annotation_duration(
         self,
@@ -157,11 +155,20 @@ class ListAnnotationCounterByInputData:
 
         def calculate_annotation_duration_second(detail: dict[str, Any]) -> float:
             """区間アノテーションのdetail情報から、区間アノテーションの長さ（秒）を計算する"""
-            return (detail["data"]["end"] - detail["data"]["start"]) / 1000
+            return (detail["data"]["end"] - detail["data"]["begin"]) / 1000
 
         def convert_attribute_value_to_key(value: Union[bool, str, float]) -> str:
+            """
+            アノテーションJSONに格納されている属性値を、dict用のkeyに変換する。
+
+            Notes:
+                アノテーションJSONに格納されている属性値の型はbool, str, floatの3つ
+
+            """
             if isinstance(value, bool):
-                # bool値をCSVの列名やJSONのキーとして扱う場合、`True/False`だとPythonに依存したように見えてしまうので（本当？）、`true/false`に変換する  # noqa: E501
+                # str関数で変換せずに、直接文字列を返している理由：
+                # bool値をstr関数に渡すと、`True/False`が返る。
+                # CSVの列名やJSONのキーとして扱う場合、`True/False`だとPythonに依存した表現に見えるので、`true/false`に変換する
                 if value:
                     return "true"
                 elif not value:
@@ -170,12 +177,13 @@ class ListAnnotationCounterByInputData:
 
         # 区間アノテーションのみのdetails
         # TODO type文字列の定義をannofab-apiに定義する
-        range_details = [e for e in simple_annotation["details"] if e["type"]["_type"] == "Range"]
+        range_details = [e for e in simple_annotation["details"] if e["data"]["_type"] == "Range"]
 
         annotation_duration_by_label = defaultdict(float)
         for detail in range_details:
             annotation_duration_by_label[detail["label"]] += calculate_annotation_duration_second(detail)
 
+        # TODO target_labels, non_target_labelsでの絞り込みが本当に必要かを確認する
         if self.target_labels is not None:
             annotation_duration_by_label = {
                 label: duration for label, duration in annotation_duration_by_label.items() if label in self.target_labels
@@ -186,33 +194,30 @@ class ListAnnotationCounterByInputData:
                 label: duration for label, duration in annotation_duration_by_label.items() if label not in self.non_target_labels
             }
 
-        attributes_list: list[AttributeValueKey] = []
+        annotation_duration_by_attribute = defaultdict(float)
         for detail in range_details:
             label = detail["label"]
             for attribute, value in detail["attributes"].items():
-                # 属性値を json.dumps関数で変換している理由： bool値の表現をJSONに合わせるため
-                attributes_list.append((label, attribute, convert_attribute_value_to_key(value)))
+                attribute_key = (label, attribute, convert_attribute_value_to_key(value))
+                annotation_duration_by_attribute[attribute_key] += calculate_annotation_duration_second(detail)
 
-        annotation_count_by_attribute = collections.Counter(attributes_list)
         if self.target_attribute_names is not None:
-            annotation_count_by_attribute = collections.Counter(
+            annotation_duration_by_attribute = collections.Counter(
                 {
-                    (label, attribute_name, attribute_value): count
-                    for (label, attribute_name, attribute_value), count in annotation_count_by_attribute.items()
+                    (label, attribute_name, attribute_value): duration
+                    for (label, attribute_name, attribute_value), duration in annotation_duration_by_attribute.items()
                     if (label, attribute_name) in self.target_attribute_names
                 }
             )
+
         if self.non_target_attribute_names is not None:
-            annotation_count_by_attribute = collections.Counter(
+            annotation_duration_by_attribute = collections.Counter(
                 {
-                    (label, attribute_name, attribute_value): count
-                    for (label, attribute_name, attribute_value), count in annotation_count_by_attribute.items()
+                    (label, attribute_name, attribute_value): duration
+                    for (label, attribute_name, attribute_value), duration in annotation_duration_by_attribute.items()
                     if (label, attribute_name) not in self.non_target_attribute_names
                 }
             )
-
-        task_id = simple_annotation["task_id"]
-        input_data_id = simple_annotation["input_data_id"]
 
         return AnnotationDuration(
             task_id=simple_annotation["task_id"],
@@ -221,9 +226,9 @@ class ListAnnotationCounterByInputData:
             status=TaskStatus(simple_annotation["task_status"]),
             input_data_id=simple_annotation["input_data_id"],
             input_data_name=simple_annotation["input_data_name"],
-            annotation_count=sum(annotation_count_by_label.values()),
-            annotation_duration_by_label=annotation_duration_by_label,
-            annotation_count_by_attribute=annotation_count_by_attribute,
+            annotation_duration_second=sum(annotation_duration_by_label.values()),
+            annotation_duration_second_by_label=annotation_duration_by_label,
+            annotation_duration_second_by_attribute=annotation_duration_by_attribute,
         )
 
     def get_annotation_counter_list(
@@ -232,7 +237,7 @@ class ListAnnotationCounterByInputData:
         *,
         target_task_ids: Optional[Collection[str]] = None,
         task_query: Optional[TaskQuery] = None,
-    ) -> list[AnnotationCounterByInputData]:
+    ) -> list[ListAnnotationDurationByInputData]:
         """
         アノテーションzipまたはそれを展開したディレクトリから、ラベルごと/属性ごとのアノテーション数を集計情報を取得する。
 
@@ -263,111 +268,6 @@ class ListAnnotationCounterByInputData:
 
             input_data_counter = self.get_annotation_counter(simple_annotation_dict)
             counter_list.append(input_data_counter)
-
-        return counter_list
-
-
-class ListAnnotationCounterByTask:
-    """タスク単位で、ラベルごと/属性ごとのアノテーション数を集計情報を取得するメソッドの集まり。"""
-
-    def __init__(
-        self,
-        *,
-        target_labels: Optional[Collection[str]] = None,
-        non_target_labels: Optional[Collection[str]] = None,
-        target_attribute_names: Optional[Collection[AttributeNameKey]] = None,
-        non_target_attribute_names: Optional[Collection[AttributeNameKey]] = None,
-    ) -> None:
-        self.counter_by_input_data = ListAnnotationCounterByInputData(
-            target_labels=target_labels,
-            non_target_labels=non_target_labels,
-            target_attribute_names=target_attribute_names,
-            non_target_attribute_names=non_target_attribute_names,
-        )
-
-    def get_annotation_counter(self, task_parser: SimpleAnnotationParserByTask) -> AnnotationCounterByTask:
-        """
-        1個のタスクに対して、ラベルごと/属性ごとのアノテーション数を集計情報を取得する。
-
-        Args:
-            simple_annotation: JSONファイルの内容
-            target_labels: 集計対象のラベル（label_name_en）
-            target_attributes: 集計対象の属性
-
-
-        """
-
-        annotation_count_by_label: Counter[str] = collections.Counter()
-        annotation_count_by_attribute: Counter[Tuple[str, str, str]] = collections.Counter()
-
-        last_simple_annotation = None
-        input_data_count = 0
-        for parser in task_parser.lazy_parse():
-            # parse()メソッドは遅いので、使わない
-            simple_annotation_dict = parser.load_json()
-            input_data = self.counter_by_input_data.get_annotation_counter(simple_annotation_dict)
-            annotation_count_by_label += input_data.annotation_count_by_label
-            annotation_count_by_attribute += input_data.annotation_count_by_attribute
-            last_simple_annotation = simple_annotation_dict
-            input_data_count += 1
-
-        if last_simple_annotation is None:
-            raise RuntimeError(f"{task_parser.task_id} ディレクトリにはjsonファイルが1つも含まれていません。")
-
-        return AnnotationCounterByTask(
-            task_id=last_simple_annotation["task_id"],
-            status=TaskStatus(last_simple_annotation["task_status"]),
-            phase=TaskPhase(last_simple_annotation["task_phase"]),
-            phase_stage=last_simple_annotation["task_phase_stage"],
-            input_data_count=input_data_count,
-            annotation_count=sum(annotation_count_by_label.values()),
-            annotation_count_by_label=annotation_count_by_label,
-            annotation_count_by_attribute=annotation_count_by_attribute,
-        )
-
-    def get_annotation_counter_list(
-        self,
-        annotation_path: Path,
-        *,
-        target_task_ids: Optional[Collection[str]] = None,
-        task_query: Optional[TaskQuery] = None,
-    ) -> list[AnnotationCounterByTask]:
-        """
-        アノテーションzipまたはそれを展開したディレクトリから、ラベルごと/属性ごとのアノテーション数を集計情報を取得する。
-
-        Args:
-            simple_annotation: JSONファイルの内容
-            target_labels: 集計対象のラベル（label_name_en）
-            target_attributes: 集計対象の属性
-
-
-        """
-
-        counter_list = []
-        iter_task_parser = lazy_parse_simple_annotation_by_task(annotation_path)
-
-        target_task_ids = set(target_task_ids) if target_task_ids is not None else None
-
-        logger.debug("アノテーションzip/ディレクトリを読み込み中")
-        for task_index, task_parser in enumerate(iter_task_parser):
-            if (task_index + 1) % 1000 == 0:
-                logger.debug(f"{task_index+1}  件目のタスクディレクトリを読み込み中")
-
-            if target_task_ids is not None and task_parser.task_id not in target_task_ids:
-                continue
-
-            if task_query is not None:
-                json_file_path_list = task_parser.json_file_path_list
-                if len(json_file_path_list) == 0:
-                    continue
-
-                input_data_parser = task_parser.get_parser(json_file_path_list[0])
-                dict_simple_annotation = input_data_parser.load_json()
-                if not match_annotation_with_task_query(dict_simple_annotation, task_query):
-                    continue
-
-            task_counter = self.get_annotation_counter(task_parser)
-            counter_list.append(task_counter)
 
         return counter_list
 
