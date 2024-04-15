@@ -196,8 +196,17 @@ class ListAnnotationCounterByInputData:
         """
 
         def convert_attribute_value_to_key(value: Union[bool, str, float]) -> str:
+            """
+            アノテーションJSONに格納されている属性値を、dict用のkeyに変換する。
+
+            Notes:
+                アノテーションJSONに格納されている属性値の型はbool, str, floatの3つ
+
+            """
             if isinstance(value, bool):
-                # bool値をCSVの列名やJSONのキーとして扱う場合、`True/False`だとPythonに依存したように見えてしまうので（本当？）、`true/false`に変換する  # noqa: E501
+                # str関数で変換せずに、直接文字列を返している理由：
+                # bool値をstr関数に渡すと、`True/False`が返る。
+                # CSVの列名やJSONのキーとして扱う場合、`True/False`だとPythonに依存した表現に見えるので、`true/false`に変換する
                 if value:
                     return "true"
                 elif not value:
@@ -220,7 +229,6 @@ class ListAnnotationCounterByInputData:
         for detail in details:
             label = detail["label"]
             for attribute, value in detail["attributes"].items():
-                # 属性値を json.dumps関数で変換している理由： bool値の表現をJSONに合わせるため
                 attributes_list.append((label, attribute, convert_attribute_value_to_key(value)))
 
         annotation_count_by_attribute = collections.Counter(attributes_list)
