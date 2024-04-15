@@ -476,7 +476,7 @@ class AttributeCountCsv:
         value_columns = list(dict.fromkeys(value_columns).keys())
         return value_columns
 
-    def print_csv_by_task(  
+    def print_csv_by_task(
         self,
         counter_list: list[AnnotationCounterByTask],
         output_file: Path,
@@ -514,7 +514,7 @@ class AttributeCountCsv:
 
         print_csv(df, output=str(output_file), to_csv_kwargs=self.csv_format)
 
-    def print_csv_by_input_data(  
+    def print_csv_by_input_data(
         self,
         counter_list: list[AnnotationCounterByInputData],
         output_file: Path,
@@ -580,7 +580,7 @@ class LabelCountCsv:
 
         return value_columns
 
-    def print_csv_by_task( 
+    def print_csv_by_task(
         self,
         counter_list: list[AnnotationCounterByTask],
         output_file: Path,
@@ -618,7 +618,7 @@ class LabelCountCsv:
         df.fillna(0, inplace=True)
         print_csv(df, output=str(output_file), to_csv_kwargs=self.csv_format)
 
-    def print_csv_by_input_data(  
+    def print_csv_by_input_data(
         self,
         counter_list: list[AnnotationCounterByInputData],
         output_file: Path,
@@ -669,7 +669,8 @@ class AnnotationSpecs:
         annotation_type: 出力対象のラベルの種類。
 
     """
-    def __init__(self, service: annofabapi.Resource, project_id: str, *, annotation_type:Optional[str]=None) -> None:
+
+    def __init__(self, service: annofabapi.Resource, project_id: str, *, annotation_type: Optional[str] = None) -> None:
         self.service = service
         self.project_id = project_id
 
@@ -816,7 +817,7 @@ class ListAnnotationCountMain:
                 result[(task_id, input_data_id)] = index + 1
         return result
 
-    def print_annotation_counter_csv_by_input_data(  
+    def print_annotation_counter_csv_by_input_data(
         self,
         annotation_path: Path,
         csv_type: CsvType,
@@ -858,7 +859,7 @@ class ListAnnotationCountMain:
 
             AttributeCountCsv().print_csv_by_input_data(counter_list_by_input_data, output_file, prior_attribute_columns=attribute_columns)
 
-    def print_annotation_counter_csv_by_task(  
+    def print_annotation_counter_csv_by_task(
         self,
         annotation_path: Path,
         csv_type: CsvType,
@@ -897,7 +898,7 @@ class ListAnnotationCountMain:
 
             AttributeCountCsv().print_csv_by_task(counter_list_by_task, output_file, prior_attribute_columns=attribute_columns)
 
-    def print_annotation_counter_json_by_input_data( 
+    def print_annotation_counter_json_by_input_data(
         self,
         annotation_path: Path,
         output_file: Path,
@@ -932,7 +933,7 @@ class ListAnnotationCountMain:
             output=output_file,
         )
 
-    def print_annotation_counter_json_by_task(  
+    def print_annotation_counter_json_by_task(
         self,
         annotation_path: Path,
         output_file: Path,
@@ -951,7 +952,7 @@ class ListAnnotationCountMain:
         else:
             non_selective_attribute_name_keys = None
 
-        counter_list_by_input_data = ListAnnotationCounterByTask(
+        counter_list_by_task = ListAnnotationCounterByTask(
             non_target_attribute_names=non_selective_attribute_name_keys,
         ).get_annotation_counter_list(
             annotation_path,
@@ -960,12 +961,12 @@ class ListAnnotationCountMain:
         )
 
         print_json(
-            [e.to_dict(encode_json=True) for e in counter_list_by_input_data],
+            [e.to_dict(encode_json=True) for e in counter_list_by_task],
             is_pretty=json_is_pretty,
             output=output_file,
         )
 
-    def print_annotation_counter(  
+    def print_annotation_counter(
         self,
         annotation_path: Path,
         group_by: GroupBy,
