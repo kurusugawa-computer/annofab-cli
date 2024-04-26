@@ -5,6 +5,7 @@ import annofabcli
 import annofabcli.common.cli
 import annofabcli.stat_visualization.merge_visualization_dir
 import annofabcli.statistics.list_annotation_count
+import annofabcli.statistics.list_annotation_duration
 import annofabcli.statistics.list_worktime
 import annofabcli.statistics.summarize_task_count
 import annofabcli.statistics.summarize_task_count_by_task_id_group
@@ -18,6 +19,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
 
     # サブコマンドの定義
     annofabcli.statistics.list_annotation_count.add_parser(subparsers)
+    annofabcli.statistics.list_annotation_duration.add_parser(subparsers)
     annofabcli.statistics.list_worktime.add_parser(subparsers)
     annofabcli.statistics.summarize_task_count.add_parser(subparsers)
     annofabcli.statistics.summarize_task_count_by_task_id_group.add_parser(subparsers)
