@@ -1,6 +1,10 @@
 from pathlib import Path
 
-from annofabcli.statistics.list_annotation_duration import AnnotationDurationCsvByLabel, ListAnnotationDurationByInputData
+from annofabcli.statistics.list_annotation_duration import (
+    AnnotationDurationCsvByAttribute,
+    AnnotationDurationCsvByLabel,
+    ListAnnotationDurationByInputData,
+)
 
 output_dir = Path("./tests/out/statistics/list_annotation_duration")
 data_dir = Path("./tests/data/statistics/")
@@ -119,4 +123,24 @@ class Test__AnnotationDurationCsvByLabel:
             "annotation_duration_second": 26.0,
             "traffic_light": 21.0,
             "traffic_light_for_pedestrian": 5.0,
+        }
+
+
+class Test__AnnotationDurationCsvByAttribute:
+    def test__create_df(self) -> None:
+        annotation_duration = ListAnnotationDurationByInputData().get_annotation_duration(ANNOTATION)
+        df = AnnotationDurationCsvByAttribute().create_df([annotation_duration])
+        assert len(df) == 1
+        row = df.iloc[0]
+        assert row.to_dict() == {
+            ("task_id", "", ""): "task1",
+            ("phase", "", ""): "acceptance",
+            ("phase_stage", "", ""): 1,
+            ("status", "", ""): "complete",
+            ("input_data_id", "", ""): "input1",
+            ("input_data_name", "", ""): "input1",
+            ("annotation_duration_second", "", ""): 26.0,
+            ("traffic_light", "color", "green"): 8.0,
+            ("traffic_light", "color", "red"): 13.0,
+            ("traffic_light_for_pedestrian", "color", "green"): 5.0,
         }

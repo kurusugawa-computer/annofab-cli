@@ -40,7 +40,7 @@ from annofabcli.common.facade import (
     TaskQuery,
     match_annotation_with_task_query,
 )
-from annofabcli.common.utils import print_csv, print_json
+from annofabcli.common.utils import print_json
 from annofabcli.statistics.list_annotation_count import AnnotationSpecs
 
 logger = logging.getLogger(__name__)
@@ -285,17 +285,16 @@ class ListAnnotationDurationByInputData:
         return annotation_duration_list
 
 
-class AttributeCountCsv:
+class AnnotationDurationCsvByAttribute:
     """
-    属性値ごとのアノテーション数を記載するCSV。
+    属性値ごとのアノテーション長さをCSVに出力するためのクラス
 
     Args:
         selective_attribute_value_max_count: 選択肢系の属性の値の個数の上限。これを超えた場合は、非選択肢系属性（トラッキングIDやアノテーションリンクなど）とみなす
 
     """  # noqa: E501
 
-    def __init__(self, selective_attribute_value_max_count: int = 20, csv_format: Optional[dict[str, Any]] = None) -> None:
-        self.csv_format = csv_format
+    def __init__(self, selective_attribute_value_max_count: int = 20) -> None:
         self.selective_attribute_value_max_count = selective_attribute_value_max_count
 
     def _only_selective_attribute(self, columns: list[AttributeValueKey]) -> list[AttributeValueKey]:
@@ -324,9 +323,9 @@ class AttributeCountCsv:
         ]
 
     def _value_columns(
-        self, counter_list: Collection[AnnotationCounter], prior_attribute_columns: Optional[list[AttributeValueKey]]
+        self, annotation_duration_list: Collection[AnnotationDuration], prior_attribute_columns: Optional[list[AttributeValueKey]]
     ) -> list[AttributeValueKey]:
-        all_attr_key_set = {attr_key for c in counter_list for attr_key in c.annotation_count_by_attribute}
+        all_attr_key_set = {attr_key for c in annotation_duration_list for attr_key in c.annotation_duration_second_by_attribute}
         if prior_attribute_columns is not None:
             remaining_columns = sorted(all_attr_key_set - set(prior_attribute_columns))
             remaining_columns_only_selective_attribute = self._only_selective_attribute(remaining_columns)
@@ -355,87 +354,49 @@ class AttributeCountCsv:
         value_columns = list(dict.fromkeys(value_columns).keys())
         return value_columns
 
-    def print_csv_by_task(  # noqa: ANN201
+    def get_columns(
         self,
-        counter_list: list[AnnotationCounterByTask],
-        output_file: Path,
+        annotation_duration_list: list[AnnotationDuration],
         prior_attribute_columns: Optional[list[AttributeValueKey]] = None,
-    ):
-        def get_columns() -> list[AttributeValueKey]:
-            basic_columns = [
-                ("task_id", "", ""),
-                ("status", "", ""),
-                ("phase", "", ""),
-                ("phase_stage", "", ""),
-                ("input_data_count", "", ""),
-                ("annotation_count", "", ""),
-            ]
-            value_columns = self._value_columns(counter_list, prior_attribute_columns)
-            return basic_columns + value_columns
+    ) -> list[AttributeValueKey]:
+        basic_columns = [
+            ("task_id", "", ""),
+            ("status", "", ""),
+            ("phase", "", ""),
+            ("phase_stage", "", ""),
+            ("input_data_id", "", ""),
+            ("input_data_name", "", ""),
+            ("annotation_duration_second", "", ""),
+        ]
+        value_columns = self._value_columns(annotation_duration_list, prior_attribute_columns)
+        return basic_columns + value_columns
 
-        def to_cell(c: AnnotationCounterByTask) -> dict[AttributeValueKey, Any]:
-            cell = {
-                ("task_id", "", ""): c.task_id,
-                ("status", "", ""): c.status.value,
-                ("phase", "", ""): c.phase.value,
-                ("phase_stage", "", ""): c.phase_stage,
-                ("input_data_count", "", ""): c.input_data_count,
-                ("annotation_count", "", ""): c.annotation_count,
-            }
-            cell.update(c.annotation_count_by_attribute)
-            return cell
-
-        columns = get_columns()
-        df = pandas.DataFrame([to_cell(e) for e in counter_list], columns=pandas.MultiIndex.from_tuples(columns))
-
-        # `task_id`列など`basic_columns`も`fillna`対象だが、nanではないはずので問題ない
-        df.fillna(0, inplace=True)
-
-        print_csv(df, output=str(output_file), to_csv_kwargs=self.csv_format)
-
-    def print_csv_by_input_data(  # noqa: ANN201
+    def create_df(
         self,
-        counter_list: list[AnnotationCounterByInputData],
-        output_file: Path,
+        annotation_duration_list: list[AnnotationDuration],
         prior_attribute_columns: Optional[list[AttributeValueKey]] = None,
-    ):
-        def get_columns() -> list[AttributeValueKey]:
-            basic_columns = [
-                ("task_id", "", ""),
-                ("status", "", ""),
-                ("phase", "", ""),
-                ("phase_stage", "", ""),
-                ("input_data_id", "", ""),
-                ("input_data_name", "", ""),
-                ("frame_no", "", ""),
-                ("annotation_count", "", ""),
-            ]
-            value_columns = self._value_columns(counter_list, prior_attribute_columns)
-            return basic_columns + value_columns
-
-        def to_cell(c: AnnotationCounterByInputData) -> dict[tuple[str, str, str], Any]:
+    ) -> pandas.DataFrame:
+        def to_cell(c: AnnotationDuration) -> dict[tuple[str, str, str], Any]:
             cell = {
                 ("input_data_id", "", ""): c.input_data_id,
                 ("input_data_name", "", ""): c.input_data_name,
-                ("frame_no", "", ""): c.frame_no,
                 ("task_id", "", ""): c.task_id,
                 ("status", "", ""): c.status.value,
                 ("phase", "", ""): c.phase.value,
                 ("phase_stage", "", ""): c.phase_stage,
-                ("annotation_count", "", ""): c.annotation_count,
+                ("annotation_duration_second", "", ""): c.annotation_duration_second,
             }
-            cell.update(c.annotation_count_by_attribute)
+            cell.update(c.annotation_duration_second_by_attribute)
 
             return cell
 
-        columns = get_columns()
-        df = pandas.DataFrame([to_cell(e) for e in counter_list], columns=pandas.MultiIndex.from_tuples(columns))
+        columns = self.get_columns(annotation_duration_list, prior_attribute_columns)
+        df = pandas.DataFrame([to_cell(e) for e in annotation_duration_list], columns=pandas.MultiIndex.from_tuples(columns))
 
         # アノテーション数の列のNaNを0に変換する
-        value_columns = self._value_columns(counter_list, prior_attribute_columns)
+        value_columns = self._value_columns(annotation_duration_list, prior_attribute_columns)
         df = df.fillna({column: 0 for column in value_columns})
-
-        print_csv(df, output=str(output_file), to_csv_kwargs=self.csv_format)
+        return df
 
 
 class AnnotationDurationCsvByLabel:
