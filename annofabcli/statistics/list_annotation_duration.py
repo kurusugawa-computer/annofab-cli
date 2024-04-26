@@ -35,6 +35,16 @@ from annofabcli.common.facade import (
     TaskQuery,
     match_annotation_with_task_query,
 )
+from annofabapi.parser import (
+    SimpleAnnotationParser,
+    SimpleAnnotationParserByTask,
+    lazy_parse_simple_annotation_dir,
+    lazy_parse_simple_annotation_dir_by_task,
+    lazy_parse_simple_annotation_zip,
+    lazy_parse_simple_annotation_zip_by_task,
+)
+import zipfile
+from typing import Iterator
 from annofabcli.common.utils import print_csv, print_json
 
 logger = logging.getLogger(__name__)
@@ -64,6 +74,19 @@ class CsvType(Enum):
     """ラベルごとのアノテーション数を出力"""
     ATTRIBUTE = "attribute"
     """属性値ごとのアノテーション数を出力"""
+
+
+def lazy_parse_simple_annotation_by_input_data(annotation_path: Path) -> Iterator[SimpleAnnotationParser]:
+    if not annotation_path.exists():
+        raise RuntimeError(f"'{annotation_path}' は存在しません。")
+
+    if annotation_path.is_dir():
+        return lazy_parse_simple_annotation_dir(annotation_path)
+    elif zipfile.is_zipfile(str(annotation_path)):
+        return lazy_parse_simple_annotation_zip(annotation_path)
+    else:
+        raise RuntimeError(f"'{annotation_path}'は、zipファイルまたはディレクトリではありません。")
+
 
 
 def encode_annotation_duration_second_by_attribute(
@@ -231,19 +254,15 @@ class ListAnnotationDurationByInputData:
             annotation_duration_second_by_attribute=annotation_duration_by_attribute,
         )
 
-    def get_annotation_counter_list(
+    def get_annotation_duration_list(
         self,
         annotation_path: Path,
         *,
         target_task_ids: Optional[Collection[str]] = None,
         task_query: Optional[TaskQuery] = None,
-    ) -> list[ListAnnotationDurationByInputData]:
+    ) -> list[AnnotationDuration]:
         """
-        アノテーションzipまたはそれを展開したディレクトリから、ラベルごと/属性ごとのアノテーション数を集計情報を取得する。
-
-        Args:
-            simple_annotation: JSONファイルの内容
-
+        アノテーションzipまたはそれを展開したディレクトリから、ラベルごと/属性ごとの区間アノテーションの長さを取得する。
 
         """
 
