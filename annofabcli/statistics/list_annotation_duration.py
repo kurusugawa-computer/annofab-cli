@@ -566,7 +566,6 @@ class ListAnnotationDuration(AbstractCommandLineInterface):
         arg_format = FormatArgument(args.format)
         main_obj = ListAnnotationDurationMain(self.service)
 
-
         downloading_obj = DownloadingFile(self.service)
 
         func = partial(
@@ -580,8 +579,17 @@ class ListAnnotationDuration(AbstractCommandLineInterface):
         )
 
         if annotation_path is None:
+            assert project_id is not None
+
             if args.temp_dir is not None:
-                assert project_id is not None
+                annotation_path = args.temp_dir / f"{project_id}__annotation.zip"
+                downloading_obj.download_annotation_zip(
+                    project_id,
+                    dest_path=annotation_path,
+                    is_latest=args.latest,
+                )
+                func(annotation_path=annotation_path)
+            else:
                 # `NamedTemporaryFile`を使わない理由: Windowsで`PermissionError`が発生するため
                 # https://qiita.com/yuji38kwmt/items/c6f50e1fc03dafdcdda0 参考
                 with tempfile.TemporaryDirectory() as str_temp_dir:
@@ -592,14 +600,6 @@ class ListAnnotationDuration(AbstractCommandLineInterface):
                         is_latest=args.latest,
                     )
                     func(annotation_path=annotation_path)
-            else:
-                annotation_path = args.temp_dir / f"{project_id}__annotation.zip"
-                downloading_obj.download_annotation_zip(
-                    project_id,
-                    dest_path=str(output_file),
-                    is_latest=args.latest,
-                )
-                func(annotation_path=output_file)
 
         else:
             func(annotation_path=annotation_path)
