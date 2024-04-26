@@ -278,10 +278,6 @@ class ListAnnotationCounterByInputData:
         """
         アノテーションzipまたはそれを展開したディレクトリから、ラベルごと/属性ごとのアノテーション数を集計情報を取得する。
 
-        Args:
-            simple_annotation: JSONファイルの内容
-
-
         """
 
         counter_list = []
@@ -376,12 +372,6 @@ class ListAnnotationCounterByTask:
     ) -> list[AnnotationCounterByTask]:
         """
         アノテーションzipまたはそれを展開したディレクトリから、ラベルごと/属性ごとのアノテーション数を集計情報を取得する。
-
-        Args:
-            simple_annotation: JSONファイルの内容
-            target_labels: 集計対象のラベル（label_name_en）
-            target_attributes: 集計対象の属性
-
 
         """
 
