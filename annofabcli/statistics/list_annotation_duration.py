@@ -551,7 +551,7 @@ class ListAnnotationDuration(AbstractCommandLineInterface):
         if project_id is not None:
             super().validate_project(project_id, project_member_roles=[ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER])
             project, _ = self.service.api.get_project(project_id)
-            if project["input_data_type"] != InputDataType.MOVIE:
+            if project["input_data_type"] != InputDataType.MOVIE.value:
                 logger.warning(
                     f"project_id='{project_id}'であるプロジェクトは、動画プロジェクトでないので、出力されれる区間アノテーションの長さはすべて0秒になります。"
                 )
@@ -566,32 +566,43 @@ class ListAnnotationDuration(AbstractCommandLineInterface):
         arg_format = FormatArgument(args.format)
         main_obj = ListAnnotationDurationMain(self.service)
 
+
         downloading_obj = DownloadingFile(self.service)
 
-        # `NamedTemporaryFile`を使わない理由: Windowsで`PermissionError`が発生するため
-        # https://qiita.com/yuji38kwmt/items/c6f50e1fc03dafdcdda0 参考
-        with tempfile.TemporaryDirectory() as str_temp_dir:
-            func = partial(
-                main_obj.print_annotation_duration,
-                project_id=project_id,
-                csv_type=csv_type,
-                arg_format=arg_format,
-                output_file=output_file,
-                target_task_ids=task_id_list,
-                task_query=task_query,
-            )
+        func = partial(
+            main_obj.print_annotation_duration,
+            project_id=project_id,
+            csv_type=csv_type,
+            arg_format=arg_format,
+            output_file=output_file,
+            target_task_ids=task_id_list,
+            task_query=task_query,
+        )
 
-            if annotation_path is None:
+        if annotation_path is None:
+            if args.temp_dir is not None:
                 assert project_id is not None
-                annotation_path = Path(str_temp_dir) / f"{project_id}__annotation.zip"
+                # `NamedTemporaryFile`を使わない理由: Windowsで`PermissionError`が発生するため
+                # https://qiita.com/yuji38kwmt/items/c6f50e1fc03dafdcdda0 参考
+                with tempfile.TemporaryDirectory() as str_temp_dir:
+                    annotation_path = Path(str_temp_dir) / f"{project_id}__annotation.zip"
+                    downloading_obj.download_annotation_zip(
+                        project_id,
+                        dest_path=str(annotation_path),
+                        is_latest=args.latest,
+                    )
+                    func(annotation_path=annotation_path)
+            else:
+                annotation_path = args.temp_dir / f"{project_id}__annotation.zip"
                 downloading_obj.download_annotation_zip(
                     project_id,
-                    dest_path=str(annotation_path),
+                    dest_path=str(output_file),
                     is_latest=args.latest,
                 )
-                func(annotation_path=annotation_path)
-            else:
-                func(annotation_path=annotation_path)
+                func(annotation_path=output_file)
+
+        else:
+            func(annotation_path=annotation_path)
 
 
 def parse_args(parser: argparse.ArgumentParser) -> None:
@@ -641,6 +652,12 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--latest",
         action="store_true",
         help="``--annotation`` を指定しないとき、最新のアノテーションzipを参照します。このオプションを指定すると、アノテーションzipを更新するのに数分待ちます。",  # noqa: E501
+    )
+
+    parser.add_argument(
+        "--temp_dir",
+        type=Path,
+        help="指定したディレクトリに、アノテーションZIPなどの一時ファイルをダウンロードします。",
     )
 
     parser.set_defaults(subcommand_func=main)
