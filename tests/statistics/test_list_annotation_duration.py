@@ -1,4 +1,3 @@
-import collections
 from pathlib import Path
 
 from annofabcli.statistics.list_annotation_duration import (
@@ -43,7 +42,6 @@ ANNOTATION = {
 
 class TestListAnnotationDurationByInputData:
     def test_get_annotation_duration(self) -> None:
-
         annotation_duration = ListAnnotationDurationByInputData().get_annotation_duration(ANNOTATION)
         assert annotation_duration.input_data_id == "input1"
         assert annotation_duration.task_id == "task1"
@@ -52,16 +50,35 @@ class TestListAnnotationDurationByInputData:
             "traffic_light": 21.0,
             "traffic_light_for_pedestrian": 5.0,
         }
-        assert annotation_duration.annotation_duration_second_by_attribute == collections.Counter(
-            {
-                ("traffic_light", "color", "green"): 8.0,
-                ("traffic_light", "color", "red"): 13.0,
-                ("traffic_light_for_pedestrian", "color", "green"): 5.0,
-            }
-        )
+        assert annotation_duration.annotation_duration_second_by_attribute == {
+            ("traffic_light", "color", "green"): 8.0,
+            ("traffic_light", "color", "red"): 13.0,
+            ("traffic_light_for_pedestrian", "color", "green"): 5.0,
+        }
 
     def test_get_annotation_duration__target_labels引数を指定する(self) -> None:
-        annotation_duration = ListAnnotationDurationByInputData(target_labels=["traffic_light"]).get_annotation_counter(
+        annotation_duration = ListAnnotationDurationByInputData(target_labels=["traffic_light"]).get_annotation_duration(ANNOTATION)
+        assert annotation_duration.annotation_duration_second == 21.0
+        assert annotation_duration.annotation_duration_second_by_label == {
+            "traffic_light": 21.0,
+        }
+        assert annotation_duration.annotation_duration_second_by_attribute == {
+            ("traffic_light", "color", "green"): 8.0,
+            ("traffic_light", "color", "red"): 13.0,
+        }
+
+    def test_get_annotation_duration__non_target_labels引数を指定する(self) -> None:
+        annotation_duration = ListAnnotationDurationByInputData(non_target_labels=["traffic_light"]).get_annotation_duration(ANNOTATION)
+        assert annotation_duration.annotation_duration_second == 5.0
+        assert annotation_duration.annotation_duration_second_by_label == {
+            "traffic_light_for_pedestrian": 5.0,
+        }
+        assert annotation_duration.annotation_duration_second_by_attribute == {
+            ("traffic_light_for_pedestrian", "color", "green"): 5.0,
+        }
+
+    def test_get_annotation_duration__target_attribute_names引数を指定する(self) -> None:
+        annotation_duration = ListAnnotationDurationByInputData(target_attribute_names=[("traffic_light", "color")]).get_annotation_duration(
             ANNOTATION
         )
         assert annotation_duration.annotation_duration_second == 26.0
@@ -69,13 +86,23 @@ class TestListAnnotationDurationByInputData:
             "traffic_light": 21.0,
             "traffic_light_for_pedestrian": 5.0,
         }
-        assert annotation_duration.annotation_duration_second_by_attribute == collections.Counter(
-            {
-                ("traffic_light", "color", "green"): 8.0,
-                ("traffic_light", "color", "red"): 13.0,
-                ("traffic_light_for_pedestrian", "color", "green"): 5.0,
-            }
+        assert annotation_duration.annotation_duration_second_by_attribute == {
+            ("traffic_light", "color", "green"): 8.0,
+            ("traffic_light", "color", "red"): 13.0,
+        }
+
+    def test_get_annotation_duration__non_target_attribute_names引数を指定する(self) -> None:
+        annotation_duration = ListAnnotationDurationByInputData(non_target_attribute_names=[("traffic_light", "color")]).get_annotation_duration(
+            ANNOTATION
         )
+        assert annotation_duration.annotation_duration_second == 26.0
+        assert annotation_duration.annotation_duration_second_by_label == {
+            "traffic_light": 21.0,
+            "traffic_light_for_pedestrian": 5.0,
+        }
+        assert annotation_duration.annotation_duration_second_by_attribute == {
+            ("traffic_light_for_pedestrian", "color", "green"): 5.0,
+        }
 
     # def test_get_annotation_counter_list(self):
     #     counter_list = ListAnnotationCounterByInputData().get_annotation_counter_list(data_dir / "simple-annotations.zip")

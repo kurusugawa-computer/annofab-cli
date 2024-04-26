@@ -4,20 +4,25 @@ from __future__ import annotations
 import argparse
 import collections
 import copy
-import json
 import logging
 import sys
 import tempfile
+import zipfile
 from collections import defaultdict
 from dataclasses import dataclass, field
 from enum import Enum
 from functools import partial
 from pathlib import Path
-from typing import Any, Collection, Counter, Optional, Tuple, Union
+from typing import Any, Collection, Counter, Iterator, Optional, Tuple, Union
 
 import annofabapi
 import pandas
 from annofabapi.models import ProjectMemberRole, TaskPhase, TaskStatus
+from annofabapi.parser import (
+    SimpleAnnotationParser,
+    lazy_parse_simple_annotation_dir,
+    lazy_parse_simple_annotation_zip,
+)
 from dataclasses_json import DataClassJsonMixin, config
 
 import annofabcli
@@ -35,17 +40,8 @@ from annofabcli.common.facade import (
     TaskQuery,
     match_annotation_with_task_query,
 )
-from annofabapi.parser import (
-    SimpleAnnotationParser,
-    SimpleAnnotationParserByTask,
-    lazy_parse_simple_annotation_dir,
-    lazy_parse_simple_annotation_dir_by_task,
-    lazy_parse_simple_annotation_zip,
-    lazy_parse_simple_annotation_zip_by_task,
-)
-import zipfile
-from typing import Iterator
 from annofabcli.common.utils import print_csv, print_json
+from annofabcli.statistics.list_annotation_count import AnnotationSpecs
 
 logger = logging.getLogger(__name__)
 
@@ -86,7 +82,6 @@ def lazy_parse_simple_annotation_by_input_data(annotation_path: Path) -> Iterato
         return lazy_parse_simple_annotation_zip(annotation_path)
     else:
         raise RuntimeError(f"'{annotation_path}'は、zipファイルまたはディレクトリではありません。")
-
 
 
 def encode_annotation_duration_second_by_attribute(
@@ -220,27 +215,27 @@ class ListAnnotationDurationByInputData:
         annotation_duration_by_attribute = defaultdict(float)
         for detail in range_details:
             label = detail["label"]
+            if label not in annotation_duration_by_label:
+                # 対象外のラベルは除外する
+                continue
+
             for attribute, value in detail["attributes"].items():
                 attribute_key = (label, attribute, convert_attribute_value_to_key(value))
                 annotation_duration_by_attribute[attribute_key] += calculate_annotation_duration_second(detail)
 
         if self.target_attribute_names is not None:
-            annotation_duration_by_attribute = collections.Counter(
-                {
-                    (label, attribute_name, attribute_value): duration
-                    for (label, attribute_name, attribute_value), duration in annotation_duration_by_attribute.items()
-                    if (label, attribute_name) in self.target_attribute_names
-                }
-            )
+            annotation_duration_by_attribute = {
+                (label, attribute_name, attribute_value): duration
+                for (label, attribute_name, attribute_value), duration in annotation_duration_by_attribute.items()
+                if (label, attribute_name) in self.target_attribute_names
+            }
 
         if self.non_target_attribute_names is not None:
-            annotation_duration_by_attribute = collections.Counter(
-                {
-                    (label, attribute_name, attribute_value): duration
-                    for (label, attribute_name, attribute_value), duration in annotation_duration_by_attribute.items()
-                    if (label, attribute_name) not in self.non_target_attribute_names
-                }
-            )
+            annotation_duration_by_attribute = {
+                (label, attribute_name, attribute_value): duration
+                for (label, attribute_name, attribute_value), duration in annotation_duration_by_attribute.items()
+                if (label, attribute_name) not in self.non_target_attribute_names
+            }
 
         return AnnotationDuration(
             task_id=simple_annotation["task_id"],
@@ -551,20 +546,6 @@ class ListAnnotationDurationMain:
     def __init__(self, service: annofabapi.Resource) -> None:
         self.service = service
 
-    @staticmethod
-    def get_frame_no_map(task_json_path: Path) -> dict[tuple[str, str], int]:
-        with task_json_path.open() as f:
-            task_list = json.load(f)
-
-        result = {}
-        for task in task_list:
-            task_id = task["task_id"]
-            input_data_id_list = task["input_data_id_list"]
-            for index, input_data_id in enumerate(input_data_id_list):
-                # 画面に合わせて1始まりにする
-                result[(task_id, input_data_id)] = index + 1
-        return result
-
     def print_annotation_counter_csv_by_input_data(  # noqa: ANN201
         self,
         annotation_path: Path,
@@ -613,7 +594,6 @@ class ListAnnotationDurationMain:
         output_file: Path,
         *,
         project_id: Optional[str] = None,
-        task_json_path: Optional[Path] = None,
         target_task_ids: Optional[Collection[str]] = None,
         task_query: Optional[TaskQuery] = None,
         json_is_pretty: bool = False,
@@ -627,7 +607,7 @@ class ListAnnotationDurationMain:
         else:
             non_selective_attribute_name_keys = None
 
-        counter_list_by_input_data = ListAnnotationCounterByInputData(
+        counter_list_by_input_data = ListAnnotationDurationByInputData(
             non_target_attribute_names=non_selective_attribute_name_keys, frame_no_map=frame_no_map
         ).get_annotation_counter_list(
             annotation_path,
