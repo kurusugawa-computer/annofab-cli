@@ -13,7 +13,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 from functools import partial
 from pathlib import Path
-from typing import Any, Collection, Counter, Iterator, Optional, Tuple, Union
+from typing import Any, Collection, Iterator, Optional, Tuple, Union
 
 import annofabapi
 import pandas
@@ -85,8 +85,8 @@ def lazy_parse_simple_annotation_by_input_data(annotation_path: Path) -> Iterato
 
 
 def encode_annotation_duration_second_by_attribute(
-    annotation_duration_second_by_attribute: Counter[AttributeValueKey],
-) -> dict[str, dict[str, dict[str, int]]]:
+    annotation_duration_second_by_attribute: dict[AttributeValueKey, float],
+) -> dict[str, dict[str, dict[str, float]]]:
     """annotation_duration_second_by_attributeを `{label_name: {attribute_name: {attribute_value: annotation_count}}}`のdictに変換します。
     JSONへの変換用関数です。
     """
@@ -95,7 +95,7 @@ def encode_annotation_duration_second_by_attribute(
         """入れ子の辞書を利用できるようにするための関数"""
         return collections.defaultdict(_factory)
 
-    result: dict[str, dict[str, dict[str, int]]] = defaultdict(_factory)
+    result: dict[str, dict[str, dict[str, float]]] = defaultdict(_factory)
     for (label_name, attribute_name, attribute_value), annotation_duration_second in annotation_duration_second_by_attribute.items():
         result[label_name][attribute_name][attribute_value] = annotation_duration_second
     return result
