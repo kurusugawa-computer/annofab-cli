@@ -465,30 +465,8 @@ class ListAnnotationDurationMain:
         self.service = service
 
     def print_annotation_duration_csv(
-        self,
-        annotation_path: Path,
-        csv_type: CsvType,
-        output_file: Path,
-        *,
-        project_id: Optional[str] = None,
-        target_task_ids: Optional[Collection[str]] = None,
-        task_query: Optional[TaskQuery] = None,
+        self, annotation_duration_list: list[AnnotationDuration], csv_type: CsvType, output_file: Path, *, annotation_specs: Optional[AnnotationSpecs]
     ) -> None:
-        # アノテーション仕様の非選択系の属性は、集計しないようにする。集計しても意味がないため。
-        annotation_specs: Optional[AnnotationSpecs] = None
-        non_selective_attribute_name_keys: Optional[list[AttributeNameKey]] = None
-        if project_id is not None:
-            annotation_specs = AnnotationSpecs(self.service, project_id)
-            non_selective_attribute_name_keys = annotation_specs.non_selective_attribute_name_keys()
-
-        annotation_duration_list = ListAnnotationDurationByInputData(
-            non_target_attribute_names=non_selective_attribute_name_keys
-        ).get_annotation_duration_list(
-            annotation_path,
-            target_task_ids=target_task_ids,
-            task_query=task_query,
-        )
-
         if csv_type == CsvType.LABEL:
             # ラベル名の列順が、アノテーション仕様にあるラベル名の順番に対応するようにする。
             label_columns: Optional[list[str]] = None
@@ -505,39 +483,6 @@ class ListAnnotationDurationMain:
 
         print_csv(df, output_file)
 
-    def print_annotation_duration_json(
-        self,
-        annotation_path: Path,
-        output_file: Path,
-        *,
-        project_id: Optional[str] = None,
-        target_task_ids: Optional[Collection[str]] = None,
-        task_query: Optional[TaskQuery] = None,
-        json_is_pretty: bool = False,
-    ) -> None:
-        """ラベルごと/属性ごとのアノテーション数を入力データ単位でJSONファイルに出力します。"""
-
-        # アノテーション仕様の非選択系の属性（テキストボックス、アノテーションリンク、トラッキングIDなど）は、集計しないようにする。集計しても意味がないため。  # noqa: E501
-        if project_id is not None:
-            annotation_specs = AnnotationSpecs(self.service, project_id)
-            non_selective_attribute_name_keys = annotation_specs.non_selective_attribute_name_keys()
-        else:
-            non_selective_attribute_name_keys = None
-
-        annotation_duration_list = ListAnnotationDurationByInputData(
-            non_target_attribute_names=non_selective_attribute_name_keys
-        ).get_annotation_duration_list(
-            annotation_path,
-            target_task_ids=target_task_ids,
-            task_query=task_query,
-        )
-
-        print_json(
-            [e.to_dict(encode_json=True) for e in annotation_duration_list],
-            is_pretty=json_is_pretty,
-            output=output_file,
-        )
-
     def print_annotation_duration(
         self,
         annotation_path: Path,
@@ -549,27 +494,33 @@ class ListAnnotationDurationMain:
         task_query: Optional[TaskQuery] = None,
         csv_type: Optional[CsvType] = None,
     ) -> None:
+        annotation_specs: Optional[AnnotationSpecs] = None
+        non_selective_attribute_name_keys: Optional[list[AttributeNameKey]] = None
+        if project_id is not None:
+            annotation_specs = AnnotationSpecs(self.service, project_id, annotation_type="range")
+            non_selective_attribute_name_keys = annotation_specs.non_selective_attribute_name_keys()
+
+        annotation_duration_list = ListAnnotationDurationByInputData(
+            non_target_attribute_names=non_selective_attribute_name_keys
+        ).get_annotation_duration_list(
+            annotation_path,
+            target_task_ids=target_task_ids,
+            task_query=task_query,
+        )
+
         if arg_format == FormatArgument.CSV:
             assert csv_type is not None
             self.print_annotation_duration_csv(
-                project_id=project_id,
-                annotation_path=annotation_path,
-                output_file=output_file,
-                target_task_ids=target_task_ids,
-                task_query=task_query,
-                csv_type=csv_type,
+                annotation_duration_list, output_file=output_file, csv_type=csv_type, annotation_specs=annotation_specs
             )
 
         elif arg_format in [FormatArgument.PRETTY_JSON, FormatArgument.JSON]:
             json_is_pretty = arg_format == FormatArgument.PRETTY_JSON
 
-            self.print_annotation_duration_json(
-                project_id=project_id,
-                annotation_path=annotation_path,
-                output_file=output_file,
-                target_task_ids=target_task_ids,
-                task_query=task_query,
-                json_is_pretty=json_is_pretty,
+            print_json(
+                [e.to_dict(encode_json=True) for e in annotation_duration_list],
+                is_pretty=json_is_pretty,
+                output=output_file,
             )
 
 
@@ -615,13 +566,9 @@ class ListAnnotationDuration(AbstractCommandLineInterface):
         # `NamedTemporaryFile`を使わない理由: Windowsで`PermissionError`が発生するため
         # https://qiita.com/yuji38kwmt/items/c6f50e1fc03dafdcdda0 参考
         with tempfile.TemporaryDirectory() as str_temp_dir:
-            # タスク全件ファイルは、フレーム番号を参照するのに利用する
-            task_json_path = None
-
             func = partial(
                 main_obj.print_annotation_duration,
                 project_id=project_id,
-                task_json_path=task_json_path,
                 csv_type=csv_type,
                 arg_format=arg_format,
                 output_file=output_file,

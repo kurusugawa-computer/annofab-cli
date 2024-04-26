@@ -679,9 +679,7 @@ class AnnotationSpecs:
         if annotation_type is not None:
             labels_v2 = [e for e in labels_v2 if e["annotation_type"] == annotation_type]
 
-        self._labels_v1 = convert_annotation_specs_labels_v2_to_v1(
-            labels_v2=annotation_specs["labels"], additionals_v2=annotation_specs["additionals"]
-        )
+        self._labels_v1 = convert_annotation_specs_labels_v2_to_v1(labels_v2=labels_v2, additionals_v2=annotation_specs["additionals"])
 
     def label_keys(self) -> list[str]:
         """ラベル名（英語名）のキーの一覧"""
