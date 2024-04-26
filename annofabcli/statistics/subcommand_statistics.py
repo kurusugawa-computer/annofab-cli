@@ -11,6 +11,7 @@ import annofabcli.statistics.summarize_task_count
 import annofabcli.statistics.summarize_task_count_by_task_id_group
 import annofabcli.statistics.summarize_task_count_by_user
 import annofabcli.statistics.visualize_annotation_count
+import annofabcli.statistics.visualize_annotation_duration
 import annofabcli.statistics.visualize_statistics
 
 
@@ -26,6 +27,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     annofabcli.statistics.summarize_task_count_by_user.add_parser(subparsers)
     annofabcli.statistics.visualize_statistics.add_parser(subparsers)
     annofabcli.statistics.visualize_annotation_count.add_parser(subparsers)
+    annofabcli.statistics.visualize_annotation_duration.add_parser(subparsers)
 
 
 def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:

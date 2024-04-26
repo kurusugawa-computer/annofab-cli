@@ -18,7 +18,7 @@ def test_plot_label_histogram() -> None:
     )
 
 
-def test_plot_attribute_histogram()-> None:
+def test_plot_attribute_histogram() -> None:
     counter_list = ListAnnotationCounterByTask().get_annotation_counter_list(data_dir / "simple-annotations.zip")
 
     plot_attribute_histogram(

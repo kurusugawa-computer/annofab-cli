@@ -194,7 +194,7 @@ def plot_attribute_histogram(  # noqa: ANN201
 
 
 class VisualizeAnnotationCount(AbstractCommandLineInterface):
-    COMMON_MESSAGE = "annofabcli statistics list_annotation_count: error:"
+    COMMON_MESSAGE = "annofabcli statistics visualize_annotation_count: error:"
 
     def validate(self, args: argparse.Namespace) -> bool:
         if args.project_id is None and args.annotation is None:

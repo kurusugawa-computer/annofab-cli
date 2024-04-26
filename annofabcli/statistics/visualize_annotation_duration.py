@@ -5,13 +5,14 @@ import collections
 import logging
 import sys
 import tempfile
+from functools import partial
 from pathlib import Path
 from typing import Collection, Optional, Sequence
 
 import bokeh
 import numpy
 import pandas
-from annofabapi.models import ProjectMemberRole
+from annofabapi.models import ProjectMemberRole, InputDataType
 from bokeh.models import HoverTool
 from bokeh.models.annotations.labels import Title
 from bokeh.plotting import ColumnDataSource, figure
@@ -33,7 +34,6 @@ from annofabcli.statistics.list_annotation_duration import (
     AttributeNameKey,
     AttributeValueKey,
     ListAnnotationDurationByInputData,
-
 )
 
 logger = logging.getLogger(__name__)
@@ -66,7 +66,7 @@ def _only_selective_attribute(columns: list[AttributeValueKey]) -> list[Attribut
     ]
 
 
-def plot_annotation_duration_histogram_by_label( 
+def plot_annotation_duration_histogram_by_label(
     annotation_duration_list: list[AnnotationDuration],
     output_file: Path,
     *,
@@ -74,7 +74,7 @@ def plot_annotation_duration_histogram_by_label(
     bins: int = 20,
 ) -> None:
     """
-    ラベルごとの区間アノテーション数のヒストグラムを出力します。
+    ラベルごとの区間アノテーションの長さのヒストグラムを出力します。
 
     Args:
         prior_keys: 優先して表示するcounter_listのキーlist
@@ -91,7 +91,6 @@ def plot_annotation_duration_histogram_by_label(
 
     figure_list = []
 
-
     logger.debug(f"{len(df.columns)}個のラベルごとのヒストグラムを出力します。")
     for col in df.columns:
         # numpy.histogramで20のビンに分割
@@ -104,7 +103,7 @@ def plot_annotation_duration_histogram_by_label(
         fig = figure(
             width=400,
             height=300,
-            x_axis_label="アノテーション数",
+            x_axis_label="区間アノテーションの長さ[秒]",
             y_axis_label="タスク数",
         )
 
@@ -126,7 +125,7 @@ def plot_annotation_duration_histogram_by_label(
     logger.info(f"'{output_file}'を出力しました。")
 
 
-def plot_annotation_duration_histogram_by_attribute( 
+def plot_annotation_duration_histogram_by_attribute(
     annotation_duration_list: Sequence[AnnotationDuration],
     output_file: Path,
     *,
@@ -134,7 +133,7 @@ def plot_annotation_duration_histogram_by_attribute(
     bins: int = 20,
 ) -> None:
     """
-    属性値ごとの区間アノテーション数のヒストグラムを出力します。
+    属性値ごとの区間アノテーションの長さのヒストグラムを出力します。
 
     Args:
         prior_keys: 優先して表示するcounter_listのキーlist
@@ -164,7 +163,7 @@ def plot_annotation_duration_histogram_by_attribute(
         fig = figure(
             width=400,
             height=300,
-            x_axis_label="アノテーション数",
+            x_axis_label="区間アノテーションの長さ[秒]",
             y_axis_label="タスク数",
         )
         fig.add_layout(Title(text=get_sub_title_from_series(df[col], decimals=2), text_font_size="11px"), "above")
@@ -185,8 +184,8 @@ def plot_annotation_duration_histogram_by_attribute(
     logger.info(f"'{output_file}'を出力しました。")
 
 
-class VisualizeAnnotationCount(AbstractCommandLineInterface):
-    COMMON_MESSAGE = "annofabcli statistics list_annotation_count: error:"
+class VisualizeAnnotationDuration(AbstractCommandLineInterface):
+    COMMON_MESSAGE = "annofabcli statistics visualize_annotation_duration: error:"
 
     def validate(self, args: argparse.Namespace) -> bool:
         if args.project_id is None and args.annotation is None:
@@ -198,9 +197,8 @@ class VisualizeAnnotationCount(AbstractCommandLineInterface):
 
         return True
 
-    def visualize_annotation_count(  # noqa: ANN201
+    def visualize_annotation_duration(
         self,
-        group_by: GroupBy,
         annotation_path: Path,
         output_dir: Path,
         bins: int,
@@ -208,9 +206,9 @@ class VisualizeAnnotationCount(AbstractCommandLineInterface):
         project_id: Optional[str] = None,
         target_task_ids: Optional[Collection[str]] = None,
         task_query: Optional[TaskQuery] = None,
-    ):
-        labels_count_html = output_dir / "labels_count.html"
-        attributes_count_html = output_dir / "attributes_count.html"
+    ) -> None:
+        duration_by_label_html = output_dir / "annotation_duration_by_label.html"
+        duration_by_attribute_html = output_dir / "annotation_duration_by_attribute.html"
 
         # 集計対象の属性を、選択肢系の属性にする
         annotation_specs: Optional[AnnotationSpecs] = None
@@ -219,27 +217,13 @@ class VisualizeAnnotationCount(AbstractCommandLineInterface):
             annotation_specs = AnnotationSpecs(self.service, project_id)
             non_selective_attribute_name_keys = annotation_specs.non_selective_attribute_name_keys()
 
-        counter_list: Sequence[AnnotationCounter] = []
-        if group_by == GroupBy.INPUT_DATA_ID:
-            counter_list = ListAnnotationCounterByInputData(
-                non_target_attribute_names=non_selective_attribute_name_keys,
-            ).get_annotation_counter_list(
-                annotation_path,
-                target_task_ids=target_task_ids,
-                task_query=task_query,
-            )
-
-        elif group_by == GroupBy.TASK_ID:
-            counter_list = ListAnnotationCounterByTask(
-                non_target_attribute_names=non_selective_attribute_name_keys,
-            ).get_annotation_counter_list(
-                annotation_path,
-                target_task_ids=target_task_ids,
-                task_query=task_query,
-            )
-
-        else:
-            raise RuntimeError(f"group_by='{group_by}'が対象外です。")
+        annotation_duration_list = ListAnnotationDurationByInputData(
+            non_target_attribute_names=non_selective_attribute_name_keys,
+        ).get_annotation_duration_list(
+            annotation_path,
+            target_task_ids=target_task_ids,
+            task_query=task_query,
+        )
 
         label_keys: Optional[list[str]] = None
         attribute_value_keys: Optional[list[AttributeValueKey]] = None
@@ -247,11 +231,10 @@ class VisualizeAnnotationCount(AbstractCommandLineInterface):
             label_keys = annotation_specs.label_keys()
             attribute_value_keys = annotation_specs.selective_attribute_value_keys()
 
-        plot_label_histogram(counter_list, group_by=group_by, output_file=labels_count_html, bins=bins, prior_keys=label_keys)
-        plot_attribute_histogram(
-            counter_list,
-            group_by=group_by,
-            output_file=attributes_count_html,
+        plot_annotation_duration_histogram_by_label(annotation_duration_list, output_file=duration_by_label_html, bins=bins, prior_keys=label_keys)
+        plot_annotation_duration_histogram_by_attribute(
+            annotation_duration_list,
+            output_file=duration_by_attribute_html,
             bins=bins,
             prior_keys=attribute_value_keys,
         )
@@ -265,6 +248,12 @@ class VisualizeAnnotationCount(AbstractCommandLineInterface):
         project_id: Optional[str] = args.project_id
         if project_id is not None:
             super().validate_project(project_id, project_member_roles=[ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER])
+            project, _ = self.service.api.get_project(project_id)
+            if project["input_data_type"] != InputDataType.MOVIE.value:
+                logger.warning(
+                    f"project_id='{project_id}'であるプロジェクトは、動画プロジェクトでないので、出力される区間アノテーションの長さはすべて0秒になります。"
+                )
+
 
         output_dir: Path = args.output_dir
         annotation_path = Path(args.annotation) if args.annotation is not None else None
@@ -272,39 +261,40 @@ class VisualizeAnnotationCount(AbstractCommandLineInterface):
         task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id) if args.task_id is not None else None
         task_query = TaskQuery.from_dict(annofabcli.common.cli.get_json_from_args(args.task_query)) if args.task_query is not None else None
 
-        group_by = GroupBy(args.group_by)
+        func = partial(
+            self.visualize_annotation_duration,
+            project_id=project_id,
+            output_dir=output_dir,
+            target_task_ids=task_id_list,
+            task_query=task_query,
+            bins=args.bins,
+        )
 
         if annotation_path is None:
             assert project_id is not None
-            # `NamedTemporaryFile`を使わない理由: Windowsで`PermissionError`が発生するため
-            # https://qiita.com/yuji38kwmt/items/c6f50e1fc03dafdcdda0 参考
-            with tempfile.TemporaryDirectory() as str_temp_dir:
-                annotation_path = Path(str_temp_dir) / f"{project_id}__annotation.zip"
-                downloading_obj = DownloadingFile(self.service)
+            downloading_obj = DownloadingFile(self.service)
+            if args.temp_dir is not None:
+                annotation_path = args.temp_dir / f"{project_id}__annotation.zip"
                 downloading_obj.download_annotation_zip(
                     project_id,
-                    dest_path=str(annotation_path),
+                    dest_path=annotation_path,
                     is_latest=args.latest,
                 )
-                self.visualize_annotation_count(
-                    project_id=project_id,
-                    annotation_path=annotation_path,
-                    group_by=group_by,
-                    output_dir=output_dir,
-                    target_task_ids=task_id_list,
-                    task_query=task_query,
-                    bins=args.bins,
-                )
+                func(annotation_path=annotation_path)
+            else:
+                # `NamedTemporaryFile`を使わない理由: Windowsで`PermissionError`が発生するため
+                # https://qiita.com/yuji38kwmt/items/c6f50e1fc03dafdcdda0 参考
+                with tempfile.TemporaryDirectory() as str_temp_dir:
+                    annotation_path = Path(str_temp_dir) / f"{project_id}__annotation.zip"
+                    downloading_obj.download_annotation_zip(
+                        project_id,
+                        dest_path=str(annotation_path),
+                        is_latest=args.latest,
+                    )
+                    func(annotation_path=annotation_path)
+
         else:
-            self.visualize_annotation_count(
-                project_id=project_id,
-                annotation_path=annotation_path,
-                group_by=group_by,
-                output_dir=output_dir,
-                target_task_ids=task_id_list,
-                task_query=task_query,
-                bins=args.bins,
-            )
+            func(annotation_path=annotation_path)
 
 
 def parse_args(parser: argparse.ArgumentParser) -> None:
@@ -349,13 +339,19 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         help="``--annotation`` を指定しないとき、最新のアノテーションzipを参照します。このオプションを指定すると、アノテーションzipを更新するのに数分待ちます。",  # noqa: E501
     )
 
+    parser.add_argument(
+        "--temp_dir",
+        type=Path,
+        help="指定したディレクトリに、アノテーションZIPなどの一時ファイルをダウンロードします。",
+    )
+
     parser.set_defaults(subcommand_func=main)
 
 
 def main(args: argparse.Namespace) -> None:
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
-    VisualizeAnnotationCount(service, facade, args).main()
+    VisualizeAnnotationDuration(service, facade, args).main()
 
 
 def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:

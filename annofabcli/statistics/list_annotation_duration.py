@@ -553,7 +553,7 @@ class ListAnnotationDuration(AbstractCommandLineInterface):
             project, _ = self.service.api.get_project(project_id)
             if project["input_data_type"] != InputDataType.MOVIE.value:
                 logger.warning(
-                    f"project_id='{project_id}'であるプロジェクトは、動画プロジェクトでないので、出力されれる区間アノテーションの長さはすべて0秒になります。"
+                    f"project_id='{project_id}'であるプロジェクトは、動画プロジェクトでないので、出力される区間アノテーションの長さはすべて0秒になります。"
                 )
 
         annotation_path = Path(args.annotation) if args.annotation is not None else None
