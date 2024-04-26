@@ -115,7 +115,7 @@ class AnnotationDuration(DataClassJsonMixin):
     input_data_id: str
     input_data_name: str
 
-    annotation_duration_second: int
+    annotation_duration_second: float
     """
     区間アノテーションの合計の長さ（秒）
     `sum(annotation_duration_second_by_label.values())`と一致する
@@ -197,7 +197,7 @@ class ListAnnotationDurationByInputData:
         # TODO type文字列の定義をannofab-apiに定義する
         range_details = [e for e in simple_annotation["details"] if e["data"]["_type"] == "Range"]
 
-        annotation_duration_by_label = defaultdict(float)
+        annotation_duration_by_label: dict[str, float] = defaultdict(float)
         for detail in range_details:
             annotation_duration_by_label[detail["label"]] += calculate_annotation_duration_second(detail)
 
@@ -211,7 +211,7 @@ class ListAnnotationDurationByInputData:
                 label: duration for label, duration in annotation_duration_by_label.items() if label not in self.non_target_labels
             }
 
-        annotation_duration_by_attribute = defaultdict(float)
+        annotation_duration_by_attribute: dict[AttributeValueKey, float] = defaultdict(float)
         for detail in range_details:
             label = detail["label"]
             if label not in annotation_duration_by_label:
@@ -377,7 +377,7 @@ class AnnotationDurationCsvByAttribute:
         prior_attribute_columns: Optional[list[AttributeValueKey]] = None,
     ) -> pandas.DataFrame:
         def to_cell(c: AnnotationDuration) -> dict[tuple[str, str, str], Any]:
-            cell = {
+            cell: dict[AttributeValueKey, Any] = {
                 ("input_data_id", "", ""): c.input_data_id,
                 ("input_data_name", "", ""): c.input_data_name,
                 ("task_id", "", ""): c.task_id,
@@ -438,7 +438,7 @@ class AnnotationDurationCsvByLabel:
         prior_label_columns: Optional[list[str]] = None,
     ) -> pandas.DataFrame:
         def to_dict(c: AnnotationDuration) -> dict[str, Any]:
-            d = {
+            d: dict[str, Any] = {
                 "input_data_id": c.input_data_id,
                 "input_data_name": c.input_data_name,
                 "task_id": c.task_id,
@@ -483,7 +483,7 @@ class ListAnnotationDurationMain:
 
         annotation_duration_list = ListAnnotationDurationByInputData(
             non_target_attribute_names=non_selective_attribute_name_keys
-        ).get_annotation_counter_list(
+        ).get_annotation_duration_list(
             annotation_path,
             target_task_ids=target_task_ids,
             task_query=task_query,
@@ -619,7 +619,7 @@ class ListAnnotationDuration(AbstractCommandLineInterface):
             task_json_path = None
 
             func = partial(
-                main_obj.print_annotation_counter,
+                main_obj.print_annotation_duration,
                 project_id=project_id,
                 task_json_path=task_json_path,
                 csv_type=csv_type,
