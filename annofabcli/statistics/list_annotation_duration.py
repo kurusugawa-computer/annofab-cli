@@ -438,18 +438,13 @@ class AttributeCountCsv:
         print_csv(df, output=str(output_file), to_csv_kwargs=self.csv_format)
 
 
-class LabelCountCsv:
+class AnnotationDurationCsvByLabel:
     """
-    ラベルごとのアノテーション数を記載するCSV。
-
-
+    ラベルごとのアノテーション長さをCSVとして出力するためのクラス。
     """
 
-    def __init__(self, csv_format: Optional[dict[str, Any]] = None) -> None:
-        self.csv_format = csv_format
-
-    def _value_columns(self, counter_list: Collection[AnnotationCounter], prior_label_columns: Optional[list[str]]) -> list[str]:
-        all_attr_key_set = {attr_key for c in counter_list for attr_key in c.annotation_count_by_label}
+    def _value_columns(self, annotation_duration_list: list[AnnotationDuration], prior_label_columns: Optional[list[str]]) -> list[str]:
+        all_attr_key_set = {attr_key for elm in annotation_duration_list for attr_key in elm.annotation_duration_second_by_label.keys()}
         if prior_label_columns is not None:
             remaining_columns = sorted(all_attr_key_set - set(prior_label_columns))
             value_columns = prior_label_columns + remaining_columns
@@ -459,93 +454,56 @@ class LabelCountCsv:
 
         return value_columns
 
-    def print_csv_by_task(  # noqa: ANN201
+    def get_columns(
         self,
-        counter_list: list[AnnotationCounterByTask],
-        output_file: Path,
+        annotation_duration_list: list[AnnotationDuration],
         prior_label_columns: Optional[list[str]] = None,
-    ):
-        def get_columns() -> list[str]:
-            basic_columns = [
-                "task_id",
-                "status",
-                "phase",
-                "phase_stage",
-                "input_data_count",
-                "annotation_count",
-            ]
-            value_columns = self._value_columns(counter_list, prior_label_columns)
-            return basic_columns + value_columns
+    ) -> list[str]:
+        basic_columns = [
+            "task_id",
+            "status",
+            "phase",
+            "phase_stage",
+            "input_data_id",
+            "input_data_name",
+            "annotation_duration_second",
+        ]
+        value_columns = self._value_columns(annotation_duration_list, prior_label_columns)
+        return basic_columns + value_columns
 
-        def to_dict(c: AnnotationCounterByTask) -> dict[str, Any]:
-            d = {
-                "task_id": c.task_id,
-                "status": c.status.value,
-                "phase": c.phase.value,
-                "phase_stage": c.phase_stage,
-                "input_data_count": c.input_data_count,
-                "annotation_count": c.annotation_count,
-            }
-            # キーをラベル名、値をラベルごとのアノテーション数にしたdictに変換する
-            d.update(c.annotation_count_by_label)
-            return d
-
-        df = pandas.DataFrame([to_dict(e) for e in counter_list], columns=get_columns())
-
-        # NaNを0に変換する
-        # `basic_columns`は必ずnanではないので、すべての列に対してfillnaを実行しても問題ないはず
-        df.fillna(0, inplace=True)
-        print_csv(df, output=str(output_file), to_csv_kwargs=self.csv_format)
-
-    def print_csv_by_input_data(  # noqa: ANN201
+    def create_df(
         self,
-        counter_list: list[AnnotationCounterByInputData],
-        output_file: Path,
+        annotation_duration_list: list[AnnotationDuration],
         prior_label_columns: Optional[list[str]] = None,
-    ):
-        def get_columns() -> list[str]:
-            basic_columns = [
-                "task_id",
-                "status",
-                "phase",
-                "phase_stage",
-                "input_data_id",
-                "input_data_name",
-                "frame_no",
-                "annotation_count",
-            ]
-            value_columns = self._value_columns(counter_list, prior_label_columns)
-            return basic_columns + value_columns
-
-        def to_dict(c: AnnotationCounterByInputData) -> dict[str, Any]:
+    ) -> pandas.DataFrame:
+        def to_dict(c: AnnotationDuration) -> dict[str, Any]:
             d = {
                 "input_data_id": c.input_data_id,
                 "input_data_name": c.input_data_name,
-                "frame_no": c.frame_no,
                 "task_id": c.task_id,
                 "status": c.status.value,
                 "phase": c.phase.value,
                 "phase_stage": c.phase_stage,
-                "annotation_count": c.annotation_count,
+                "annotation_duration_second": c.annotation_duration_second,
             }
-            d.update(c.annotation_count_by_label)
+            d.update(c.annotation_duration_second_by_label)
             return d
 
-        columns = get_columns()
-        df = pandas.DataFrame([to_dict(e) for e in counter_list], columns=columns)
+        columns = self.get_columns(annotation_duration_list, prior_label_columns)
+        df = pandas.DataFrame([to_dict(e) for e in annotation_duration_list], columns=columns)
 
         # アノテーション数列のNaNを0に変換する
-        value_columns = self._value_columns(counter_list, prior_label_columns)
+        value_columns = self._value_columns(annotation_duration_list, prior_label_columns)
         df = df.fillna({column: 0 for column in value_columns})
 
-        print_csv(df, output=str(output_file), to_csv_kwargs=self.csv_format)
+        return df
 
 
 class ListAnnotationDurationMain:
     def __init__(self, service: annofabapi.Resource) -> None:
         self.service = service
 
-    def print_annotation_counter_csv_by_input_data(  # noqa: ANN201
+    def print_annotation_duration_csv_by_input_data(
         self,
         annotation_path: Path,
         csv_type: CsvType,
@@ -555,7 +513,7 @@ class ListAnnotationDurationMain:
         task_json_path: Optional[Path] = None,
         target_task_ids: Optional[Collection[str]] = None,
         task_query: Optional[TaskQuery] = None,
-    ):
+    ) -> None:
         # アノテーション仕様の非選択系の属性は、集計しないようにする。集計しても意味がないため。
         annotation_specs: Optional[AnnotationSpecs] = None
         non_selective_attribute_name_keys: Optional[list[AttributeNameKey]] = None
@@ -563,11 +521,9 @@ class ListAnnotationDurationMain:
             annotation_specs = AnnotationSpecs(self.service, project_id)
             non_selective_attribute_name_keys = annotation_specs.non_selective_attribute_name_keys()
 
-        frame_no_map = self.get_frame_no_map(task_json_path) if task_json_path is not None else None
-        counter_by_input_data = ListAnnotationDurationByInputData(
-            non_target_attribute_names=non_selective_attribute_name_keys, frame_no_map=frame_no_map
-        )
-        counter_list_by_input_data = counter_by_input_data.get_annotation_counter_list(
+        annotation_duration_list = ListAnnotationDurationByInputData(
+            non_target_attribute_names=non_selective_attribute_name_keys
+        ).get_annotation_counter_list(
             annotation_path,
             target_task_ids=target_task_ids,
             task_query=task_query,
@@ -587,7 +543,7 @@ class ListAnnotationDurationMain:
 
             AttributeCountCsv().print_csv_by_input_data(counter_list_by_input_data, output_file, prior_attribute_columns=attribute_columns)
 
-    def print_annotation_duration_json_by_input_data(  # noqa: ANN201
+    def print_annotation_duration_json_by_input_data(
         self,
         annotation_path: Path,
         output_file: Path,
@@ -596,7 +552,7 @@ class ListAnnotationDurationMain:
         target_task_ids: Optional[Collection[str]] = None,
         task_query: Optional[TaskQuery] = None,
         json_is_pretty: bool = False,
-    ):
+    ) -> None:
         """ラベルごと/属性ごとのアノテーション数を入力データ単位でJSONファイルに出力します。"""
 
         # アノテーション仕様の非選択系の属性（テキストボックス、アノテーションリンク、トラッキングIDなど）は、集計しないようにする。集計しても意味がないため。  # noqa: E501
@@ -635,10 +591,9 @@ class ListAnnotationDurationMain:
         """ラベルごと/属性ごとのアノテーション数を出力します。"""
         if arg_format == FormatArgument.CSV:
             assert csv_type is not None
-            self.print_annotation_counter_csv_by_input_data(
+            self.print_annotation_duration_csv_by_input_data(
                 project_id=project_id,
                 annotation_path=annotation_path,
-                task_json_path=task_json_path,
                 output_file=output_file,
                 target_task_ids=target_task_ids,
                 task_query=task_query,
