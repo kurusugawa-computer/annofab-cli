@@ -40,7 +40,7 @@ from annofabcli.common.facade import (
     TaskQuery,
     match_annotation_with_task_query,
 )
-from annofabcli.common.utils import print_json
+from annofabcli.common.utils import print_csv, print_json
 from annofabcli.statistics.list_annotation_count import AnnotationSpecs
 
 logger = logging.getLogger(__name__)
@@ -464,14 +464,13 @@ class ListAnnotationDurationMain:
     def __init__(self, service: annofabapi.Resource) -> None:
         self.service = service
 
-    def print_annotation_duration_csv_by_input_data(
+    def print_annotation_duration_csv(
         self,
         annotation_path: Path,
         csv_type: CsvType,
         output_file: Path,
         *,
         project_id: Optional[str] = None,
-        task_json_path: Optional[Path] = None,
         target_task_ids: Optional[Collection[str]] = None,
         task_query: Optional[TaskQuery] = None,
     ) -> None:
@@ -496,15 +495,17 @@ class ListAnnotationDurationMain:
             if annotation_specs is not None:
                 label_columns = annotation_specs.label_keys()
 
-            LabelCountCsv().print_csv_by_input_data(counter_list_by_input_data, output_file, prior_label_columns=label_columns)
+            df = AnnotationDurationCsvByLabel().create_df(annotation_duration_list, prior_label_columns=label_columns)
         elif csv_type == CsvType.ATTRIBUTE:
             attribute_columns: Optional[list[AttributeValueKey]] = None
             if annotation_specs is not None:
                 attribute_columns = annotation_specs.selective_attribute_value_keys()
 
-            AttributeCountCsv().print_csv_by_input_data(counter_list_by_input_data, output_file, prior_attribute_columns=attribute_columns)
+            df = AnnotationDurationCsvByAttribute().create_df(annotation_duration_list, prior_attribute_columns=attribute_columns)
 
-    def print_annotation_duration_json_by_input_data(
+        print_csv(df, output_file)
+
+    def print_annotation_duration_json(
         self,
         annotation_path: Path,
         output_file: Path,
@@ -537,22 +538,20 @@ class ListAnnotationDurationMain:
             output=output_file,
         )
 
-    def print_annotation_counter(  # noqa: ANN201
+    def print_annotation_duration(
         self,
         annotation_path: Path,
         output_file: Path,
         arg_format: FormatArgument,
         *,
         project_id: Optional[str] = None,
-        task_json_path: Optional[Path] = None,
         target_task_ids: Optional[Collection[str]] = None,
         task_query: Optional[TaskQuery] = None,
         csv_type: Optional[CsvType] = None,
-    ):
-        """ラベルごと/属性ごとのアノテーション数を出力します。"""
+    ) -> None:
         if arg_format == FormatArgument.CSV:
             assert csv_type is not None
-            self.print_annotation_duration_csv_by_input_data(
+            self.print_annotation_duration_csv(
                 project_id=project_id,
                 annotation_path=annotation_path,
                 output_file=output_file,
@@ -564,7 +563,7 @@ class ListAnnotationDurationMain:
         elif arg_format in [FormatArgument.PRETTY_JSON, FormatArgument.JSON]:
             json_is_pretty = arg_format == FormatArgument.PRETTY_JSON
 
-            self.print_annotation_duration_json_by_input_data(
+            self.print_annotation_duration_json(
                 project_id=project_id,
                 annotation_path=annotation_path,
                 output_file=output_file,
