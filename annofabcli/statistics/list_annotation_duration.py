@@ -17,7 +17,7 @@ from typing import Any, Collection, Iterator, Optional, Tuple, Union
 
 import annofabapi
 import pandas
-from annofabapi.models import ProjectMemberRole, TaskPhase, TaskStatus
+from annofabapi.models import InputDataType, ProjectMemberRole, TaskPhase, TaskStatus
 from annofabapi.parser import (
     SimpleAnnotationParser,
     lazy_parse_simple_annotation_dir,
@@ -550,6 +550,11 @@ class ListAnnotationDuration(AbstractCommandLineInterface):
         project_id: Optional[str] = args.project_id
         if project_id is not None:
             super().validate_project(project_id, project_member_roles=[ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER])
+            project, _ = self.service.api.get_project(project_id)
+            if project["input_data_type"] != InputDataType.MOVIE:
+                logger.warning(
+                    f"project_id='{project_id}'であるプロジェクトは、動画プロジェクトでないので、出力されれる区間アノテーションの長さはすべて0秒になります。"
+                )
 
         annotation_path = Path(args.annotation) if args.annotation is not None else None
 
