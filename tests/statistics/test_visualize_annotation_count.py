@@ -8,7 +8,7 @@ data_dir = Path("./tests/data/statistics/")
 output_dir.mkdir(exist_ok=True, parents=True)
 
 
-def test_plot_label_histogram():
+def test_plot_label_histogram() -> None:
     counter_list = ListAnnotationCounterByInputData().get_annotation_counter_list(data_dir / "simple-annotations.zip")
 
     plot_label_histogram(
@@ -18,7 +18,7 @@ def test_plot_label_histogram():
     )
 
 
-def test_plot_attribute_histogram():
+def test_plot_attribute_histogram()-> None:
     counter_list = ListAnnotationCounterByTask().get_annotation_counter_list(data_dir / "simple-annotations.zip")
 
     plot_attribute_histogram(
