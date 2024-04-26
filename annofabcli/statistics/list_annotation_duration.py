@@ -628,8 +628,8 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         default=CsvType.LABEL.value,
         help="出力するCSVの種類を指定してください。 ``--format csv`` を指定したときのみ有効なオプションです。\n"
         "\n"
-        "* label: ラベルごとにアノテーション数が記載されているCSV\n"
-        "* attribute: 属性値ごとにアノテーション数が記載されているCSV",
+        "* label: ラベルごとに区間アノテーションの長さが記載されているCSV\n"
+        "* attribute: 属性値ごとに区間アノテーションの長さが記載されているCSV",
     )
 
     argument_parser.add_format(
@@ -671,7 +671,7 @@ def main(args: argparse.Namespace) -> None:
 
 def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     subcommand_name = "list_annotation_duration"
-    subcommand_help = "区間アノテーション（動画プロジェクト専用）に対して、各ラベル、各属性値の区間の長さ（秒）を出力します。"
+    subcommand_help = "ラベルごとまたは属性値ごとに区間アノテーションの長さ（秒）を出力します。"
     epilog = "オーナロールまたはアノテーションユーザロールを持つユーザで実行してください。"
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description=subcommand_help, epilog=epilog)
     parse_args(parser)
