@@ -201,7 +201,6 @@ class ListAnnotationDurationByInputData:
         for detail in range_details:
             annotation_duration_by_label[detail["label"]] += calculate_annotation_duration_second(detail)
 
-        # TODO target_labels, non_target_labelsでの絞り込みが本当に必要かを確認する
         if self.target_labels is not None:
             annotation_duration_by_label = {
                 label: duration for label, duration in annotation_duration_by_label.items() if label in self.target_labels
@@ -261,7 +260,7 @@ class ListAnnotationDurationByInputData:
 
         """
 
-        counter_list = []
+        annotation_duration_list = []
 
         target_task_ids = set(target_task_ids) if target_task_ids is not None else None
 
@@ -280,10 +279,10 @@ class ListAnnotationDurationByInputData:
                 if not match_annotation_with_task_query(simple_annotation_dict, task_query):
                     continue
 
-            input_data_counter = self.get_annotation_counter(simple_annotation_dict)
-            counter_list.append(input_data_counter)
+            annotation_duration = self.get_annotation_duration(simple_annotation_dict)
+            annotation_duration_list.append(annotation_duration)
 
-        return counter_list
+        return annotation_duration_list
 
 
 class AttributeCountCsv:
@@ -565,7 +564,7 @@ class ListAnnotationDurationMain:
             non_selective_attribute_name_keys = annotation_specs.non_selective_attribute_name_keys()
 
         frame_no_map = self.get_frame_no_map(task_json_path) if task_json_path is not None else None
-        counter_by_input_data = ListAnnotationCounterByInputData(
+        counter_by_input_data = ListAnnotationDurationByInputData(
             non_target_attribute_names=non_selective_attribute_name_keys, frame_no_map=frame_no_map
         )
         counter_list_by_input_data = counter_by_input_data.get_annotation_counter_list(
@@ -607,16 +606,16 @@ class ListAnnotationDurationMain:
         else:
             non_selective_attribute_name_keys = None
 
-        counter_list_by_input_data = ListAnnotationDurationByInputData(
-            non_target_attribute_names=non_selective_attribute_name_keys, frame_no_map=frame_no_map
-        ).get_annotation_counter_list(
+        annotation_duration_list = ListAnnotationDurationByInputData(
+            non_target_attribute_names=non_selective_attribute_name_keys
+        ).get_annotation_duration_list(
             annotation_path,
             target_task_ids=target_task_ids,
             task_query=task_query,
         )
 
         print_json(
-            [e.to_dict(encode_json=True) for e in counter_list_by_input_data],
+            [e.to_dict(encode_json=True) for e in annotation_duration_list],
             is_pretty=json_is_pretty,
             output=output_file,
         )
@@ -652,7 +651,6 @@ class ListAnnotationDurationMain:
             self.print_annotation_duration_json_by_input_data(
                 project_id=project_id,
                 annotation_path=annotation_path,
-                task_json_path=task_json_path,
                 output_file=output_file,
                 target_task_ids=target_task_ids,
                 task_query=task_query,
@@ -695,7 +693,7 @@ class ListAnnotationDuration(AbstractCommandLineInterface):
         csv_type = CsvType(args.type)
         output_file: Path = args.output
         arg_format = FormatArgument(args.format)
-        main_obj = ListAnnotationCountMain(self.service)
+        main_obj = ListAnnotationDurationMain(self.service)
 
         downloading_obj = DownloadingFile(self.service)
 
@@ -703,14 +701,7 @@ class ListAnnotationDuration(AbstractCommandLineInterface):
         # https://qiita.com/yuji38kwmt/items/c6f50e1fc03dafdcdda0 参考
         with tempfile.TemporaryDirectory() as str_temp_dir:
             # タスク全件ファイルは、フレーム番号を参照するのに利用する
-            if project_id is not None:
-                task_json_path = Path(str_temp_dir) / f"{project_id}__task.json"
-                downloading_obj.download_task_json(
-                    project_id,
-                    dest_path=str(task_json_path),
-                )
-            else:
-                task_json_path = None
+            task_json_path = None
 
             func = partial(
                 main_obj.print_annotation_counter,
