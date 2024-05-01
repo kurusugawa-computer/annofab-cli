@@ -75,12 +75,14 @@ def plot_annotation_duration_histogram_by_label(
     *,
     prior_keys: Optional[list[str]] = None,
     bins: int = 20,
+    exclude_empty_value: bool = False,
 ) -> None:
     """
     ラベルごとの区間アノテーションの長さのヒストグラムを出力します。
 
     Args:
         prior_keys: 優先して表示するcounter_listのキーlist
+        exclude_empty_value: Trueならば、すべての値が0である列のヒストグラムは生成しません。
     """
     all_label_key_set = {key for c in annotation_duration_list for key in c.annotation_duration_second_by_label.keys()}
     if prior_keys is not None:
@@ -96,6 +98,10 @@ def plot_annotation_duration_histogram_by_label(
 
     logger.debug(f"{len(df.columns)}個のラベルごとのヒストグラムを出力します。")
     for col in df.columns:
+        if exclude_empty_value and df[col].sum() == 0:
+            logger.debug(f"{col}はすべてのタスクで値が0なので、ヒストグラムを描画しません。")
+            continue
+
         # numpy.histogramで20のビンに分割
         hist, bin_edges = numpy.histogram(df[col], bins)
 
@@ -155,12 +161,14 @@ def plot_annotation_duration_histogram_by_attribute(
     *,
     prior_keys: Optional[list[AttributeValueKey]] = None,
     bins: int = 20,
+    exclude_empty_value: bool = False,
 ) -> None:
     """
     属性値ごとの区間アノテーションの長さのヒストグラムを出力します。
 
     Args:
         prior_keys: 優先して表示するcounter_listのキーlist
+        exclude_empty_value: Trueならば、すべての値が0である列のヒストグラムは生成しません。
     """
     all_key_set = {key for c in annotation_duration_list for key in c.annotation_duration_second_by_attribute.keys()}
     if prior_keys is not None:
@@ -172,12 +180,16 @@ def plot_annotation_duration_histogram_by_attribute(
         columns = remaining_columns_selective_attribute
 
     df = pandas.DataFrame([e.annotation_duration_second_by_attribute for e in annotation_duration_list], columns=columns)
-    df.fillna(0, inplace=True)
+    df = df.fillna(0)
 
-    logger.debug(f"{len(df.columns)}個の属性値ごとのヒストグラムを出力します。")
+    logger.debug(f"{len(df.columns)}個の属性値ごとのヒストグラムで出力します。")
 
     figures_dict = defaultdict(list)
     for col in df.columns:
+        if exclude_empty_value and df[col].sum() == 0:
+            logger.debug(f"{col}はすべてのタスクで値が0なので、ヒストグラムを描画しません。")
+            continue
+
         header = (str(col[0]), str(col[1]))  # ラベル名, 属性名
         hist, bin_edges = numpy.histogram(df[col], bins)
 
@@ -234,6 +246,7 @@ class VisualizeAnnotationDuration(AbstractCommandLineInterface):
         project_id: Optional[str] = None,
         target_task_ids: Optional[Collection[str]] = None,
         task_query: Optional[TaskQuery] = None,
+        exclude_empty_value: bool = False,
     ) -> None:
         duration_by_label_html = output_dir / "annotation_duration_by_label.html"
         duration_by_attribute_html = output_dir / "annotation_duration_by_attribute.html"
@@ -259,12 +272,15 @@ class VisualizeAnnotationDuration(AbstractCommandLineInterface):
             label_keys = annotation_specs.label_keys()
             attribute_value_keys = annotation_specs.selective_attribute_value_keys()
 
-        plot_annotation_duration_histogram_by_label(annotation_duration_list, output_file=duration_by_label_html, bins=bins, prior_keys=label_keys)
+        plot_annotation_duration_histogram_by_label(
+            annotation_duration_list, output_file=duration_by_label_html, bins=bins, prior_keys=label_keys, exclude_empty_value=exclude_empty_value
+        )
         plot_annotation_duration_histogram_by_attribute(
             annotation_duration_list,
             output_file=duration_by_attribute_html,
             bins=bins,
             prior_keys=attribute_value_keys,
+            exclude_empty_value=exclude_empty_value,
         )
 
     def main(self) -> None:
@@ -295,6 +311,7 @@ class VisualizeAnnotationDuration(AbstractCommandLineInterface):
             target_task_ids=task_id_list,
             task_query=task_query,
             bins=args.bins,
+            exclude_empty_value=args.exclude_empty_value,
         )
 
         if annotation_path is None:
@@ -349,6 +366,12 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         type=int,
         default=20,
         help="ヒストグラムのビンの数を指定します。",
+    )
+
+    parser.add_argument(
+        "--exclude_empty_value",
+        action="store_true",
+        help="指定すると、すべてのタスクで区間アノテーションの長さが0であるヒストグラムは描画しません。",
     )
 
     parser.add_argument(
