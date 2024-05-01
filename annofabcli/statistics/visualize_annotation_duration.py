@@ -76,6 +76,7 @@ def plot_annotation_duration_histogram_by_label(
     prior_keys: Optional[list[str]] = None,
     bins: int = 20,
     exclude_empty_value: bool = False,
+    arrange_bin_edges: bool = False,
 ) -> None:
     """
     ラベルごとの区間アノテーションの長さのヒストグラムを出力します。
@@ -83,6 +84,7 @@ def plot_annotation_duration_histogram_by_label(
     Args:
         prior_keys: 優先して表示するcounter_listのキーlist
         exclude_empty_value: Trueならば、すべての値が0である列のヒストグラムは生成しません。
+        arrange_bin_edges: Trueならば、ヒストグラムの範囲をすべてのヒストグラムで一致させます。
     """
     all_label_key_set = {key for c in annotation_duration_list for key in c.annotation_duration_second_by_label.keys()}
     if prior_keys is not None:
@@ -92,18 +94,25 @@ def plot_annotation_duration_histogram_by_label(
         columns = sorted(all_label_key_set)
 
     df = pandas.DataFrame([e.annotation_duration_second_by_label for e in annotation_duration_list], columns=columns)
-    df = df.fillna(0)
+    df.fillna(0, inplace=True)
 
     figure_list = []
 
+    if arrange_bin_edges:
+        histogram_range = (df.max(numeric_only=True).max(), df.min(numeric_only=True).min())
+    else:
+        histogram_range = None
+
     logger.debug(f"{len(df.columns)}個のラベルごとのヒストグラムを出力します。")
     for col in df.columns:
+        print(df[col])
+        print(df[col].sum())
         if exclude_empty_value and df[col].sum() == 0:
             logger.debug(f"{col}はすべてのタスクで値が0なので、ヒストグラムを描画しません。")
             continue
 
         # numpy.histogramで20のビンに分割
-        hist, bin_edges = numpy.histogram(df[col], bins)
+        hist, bin_edges = numpy.histogram(df[col], bins=bins, range=histogram_range)
 
         df_histogram = pandas.DataFrame({"frequency": hist, "left": bin_edges[:-1], "right": bin_edges[1:]})
         df_histogram["interval"] = [f"{left:.1f} to {right:.1f}" for left, right in zip(df_histogram["left"], df_histogram["right"])]
@@ -162,6 +171,7 @@ def plot_annotation_duration_histogram_by_attribute(
     prior_keys: Optional[list[AttributeValueKey]] = None,
     bins: int = 20,
     exclude_empty_value: bool = False,
+    arrange_bin_edges: bool = False,
 ) -> None:
     """
     属性値ごとの区間アノテーションの長さのヒストグラムを出力します。
@@ -169,6 +179,7 @@ def plot_annotation_duration_histogram_by_attribute(
     Args:
         prior_keys: 優先して表示するcounter_listのキーlist
         exclude_empty_value: Trueならば、すべての値が0である列のヒストグラムは生成しません。
+        arrange_bin_edges: Trueならば、ヒストグラムの範囲をすべてのヒストグラムで一致させます。
     """
     all_key_set = {key for c in annotation_duration_list for key in c.annotation_duration_second_by_attribute.keys()}
     if prior_keys is not None:
@@ -180,9 +191,14 @@ def plot_annotation_duration_histogram_by_attribute(
         columns = remaining_columns_selective_attribute
 
     df = pandas.DataFrame([e.annotation_duration_second_by_attribute for e in annotation_duration_list], columns=columns)
-    df = df.fillna(0)
+    df.fillna(0, inplace=True)
 
     logger.debug(f"{len(df.columns)}個の属性値ごとのヒストグラムで出力します。")
+
+    if arrange_bin_edges:
+        histogram_range = (df.max(numeric_only=True).max(), df.min(numeric_only=True).min())
+    else:
+        histogram_range = None
 
     figures_dict = defaultdict(list)
     for col in df.columns:
@@ -191,7 +207,7 @@ def plot_annotation_duration_histogram_by_attribute(
             continue
 
         header = (str(col[0]), str(col[1]))  # ラベル名, 属性名
-        hist, bin_edges = numpy.histogram(df[col], bins)
+        hist, bin_edges = numpy.histogram(df[col], bins=bins, range=histogram_range)
 
         df_histogram = pandas.DataFrame({"frequency": hist, "left": bin_edges[:-1], "right": bin_edges[1:]})
         df_histogram["interval"] = [f"{left:.1f} to {right:.1f}" for left, right in zip(df_histogram["left"], df_histogram["right"])]
@@ -247,6 +263,7 @@ class VisualizeAnnotationDuration(AbstractCommandLineInterface):
         target_task_ids: Optional[Collection[str]] = None,
         task_query: Optional[TaskQuery] = None,
         exclude_empty_value: bool = False,
+        arrange_bin_edges: bool = False,
     ) -> None:
         duration_by_label_html = output_dir / "annotation_duration_by_label.html"
         duration_by_attribute_html = output_dir / "annotation_duration_by_attribute.html"
@@ -273,7 +290,12 @@ class VisualizeAnnotationDuration(AbstractCommandLineInterface):
             attribute_value_keys = annotation_specs.selective_attribute_value_keys()
 
         plot_annotation_duration_histogram_by_label(
-            annotation_duration_list, output_file=duration_by_label_html, bins=bins, prior_keys=label_keys, exclude_empty_value=exclude_empty_value
+            annotation_duration_list,
+            output_file=duration_by_label_html,
+            bins=bins,
+            prior_keys=label_keys,
+            exclude_empty_value=exclude_empty_value,
+            arrange_bin_edges=arrange_bin_edges,
         )
         plot_annotation_duration_histogram_by_attribute(
             annotation_duration_list,
@@ -281,6 +303,7 @@ class VisualizeAnnotationDuration(AbstractCommandLineInterface):
             bins=bins,
             prior_keys=attribute_value_keys,
             exclude_empty_value=exclude_empty_value,
+            arrange_bin_edges=arrange_bin_edges,
         )
 
     def main(self) -> None:
@@ -312,6 +335,7 @@ class VisualizeAnnotationDuration(AbstractCommandLineInterface):
             task_query=task_query,
             bins=args.bins,
             exclude_empty_value=args.exclude_empty_value,
+            arrange_bin_edges=args.arrange_bin_edges,
         )
 
         if annotation_path is None:
@@ -372,6 +396,12 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--exclude_empty_value",
         action="store_true",
         help="指定すると、すべてのタスクで区間アノテーションの長さが0であるヒストグラムは描画しません。",
+    )
+
+    parser.add_argument(
+        "--arrange_bin_edges",
+        action="store_true",
+        help="指定すると、ヒストグラムのビンの各範囲をすべてのヒストグラムで一致させます。",
     )
 
     parser.add_argument(
