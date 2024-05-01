@@ -68,7 +68,7 @@ pytest-cov = "*"
 
 [tool.poetry.group.linter.dependencies]
 # pythonバージョンを指定している理由：Python3.11（開発環境）でしかlintを実行していないため
-ruff = {version="^0.2", python=">=3.11"}
+ruff = {version="^0.4", python=">=3.11"}
 mypy = {version="^1", python=">=3.11"}
 pylint = {version="^3", python=">=3.11"}
 

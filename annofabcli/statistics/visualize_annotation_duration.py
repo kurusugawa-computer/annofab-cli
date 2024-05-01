@@ -3,8 +3,10 @@ from __future__ import annotations
 import argparse
 import collections
 import logging
+import math
 import sys
 import tempfile
+from collections import defaultdict
 from functools import partial
 from pathlib import Path
 from typing import Collection, Optional, Sequence
@@ -12,9 +14,10 @@ from typing import Collection, Optional, Sequence
 import bokeh
 import numpy
 import pandas
-from annofabapi.models import ProjectMemberRole, InputDataType
-from bokeh.models import HoverTool
+from annofabapi.models import InputDataType, ProjectMemberRole
+from bokeh.models import HoverTool, LayoutDOM
 from bokeh.models.annotations.labels import Title
+from bokeh.models.widgets.markups import Div
 from bokeh.plotting import ColumnDataSource, figure
 
 import annofabcli
@@ -125,6 +128,27 @@ def plot_annotation_duration_histogram_by_label(
     logger.info(f"'{output_file}'を出力しました。")
 
 
+def convert_to_2d_figure_list(figures_dict: dict[tuple[str, str], list[figure]], *, ncols: int = 4) -> list[list[Optional[LayoutDOM]]]:
+    """
+    grid layout用に2次元のfigureリストに変換する。
+    """
+    row_list: list[list[Optional[LayoutDOM]]] = []
+
+    for (label_name, attribute_name), figure_list in figures_dict.items():
+        row_list.append([Div(text=f"<h3>ラベル名='{label_name}', 属性名='{attribute_name}'</h3>"), *[None] * (ncols - 1)])
+
+        for i in range(math.ceil(len(figure_list) / ncols)):
+            start = i * ncols
+            end = (i + 1) * ncols
+            row: list[Optional[LayoutDOM]] = []
+            row.extend(figure_list[start:end])
+            if len(row) < ncols:
+                row.extend([None] * (ncols - len(row)))
+            row_list.append(row)
+
+    return row_list
+
+
 def plot_annotation_duration_histogram_by_attribute(
     annotation_duration_list: Sequence[AnnotationDuration],
     output_file: Path,
@@ -150,10 +174,11 @@ def plot_annotation_duration_histogram_by_attribute(
     df = pandas.DataFrame([e.annotation_duration_second_by_attribute for e in annotation_duration_list], columns=columns)
     df.fillna(0, inplace=True)
 
-    figure_list = []
-
     logger.debug(f"{len(df.columns)}個の属性値ごとのヒストグラムを出力します。")
-    for col in sorted(df.columns):
+
+    figures_dict = defaultdict(list)
+    for col in df.columns:
+        header = (str(col[0]), str(col[1]))  # ラベル名, 属性名
         hist, bin_edges = numpy.histogram(df[col], bins)
 
         df_histogram = pandas.DataFrame({"frequency": hist, "left": bin_edges[:-1], "right": bin_edges[1:]})
@@ -174,9 +199,12 @@ def plot_annotation_duration_histogram_by_attribute(
         fig.quad(source=source, top="frequency", bottom=0, left="left", right="right", line_color="white")
 
         fig.add_tools(hover)
-        figure_list.append(fig)
 
-    bokeh_obj = bokeh.layouts.gridplot(figure_list, ncols=4)  # type: ignore[arg-type]
+        figures_dict[header].append(fig)
+
+    grid_layout_figures = convert_to_2d_figure_list(figures_dict)
+
+    bokeh_obj = bokeh.layouts.gridplot(grid_layout_figures)  # type: ignore[arg-type]
     output_file.parent.mkdir(exist_ok=True, parents=True)
     bokeh.plotting.reset_output()
     bokeh.plotting.output_file(output_file, title=output_file.stem)
@@ -253,7 +281,6 @@ class VisualizeAnnotationDuration(AbstractCommandLineInterface):
                 logger.warning(
                     f"project_id='{project_id}'であるプロジェクトは、動画プロジェクトでないので、出力される区間アノテーションの長さはすべて0秒になります。"
                 )
-
 
         output_dir: Path = args.output_dir
         annotation_path = Path(args.annotation) if args.annotation is not None else None
