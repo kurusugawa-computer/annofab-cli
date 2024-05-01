@@ -99,14 +99,12 @@ def plot_annotation_duration_histogram_by_label(
     figure_list = []
 
     if arrange_bin_edges:
-        histogram_range = (df.max(numeric_only=True).max(), df.min(numeric_only=True).min())
+        histogram_range = (df.min(numeric_only=True).min(), df.max(numeric_only=True).max(), )
     else:
         histogram_range = None
 
     logger.debug(f"{len(df.columns)}個のラベルごとのヒストグラムを出力します。")
     for col in df.columns:
-        print(df[col])
-        print(df[col].sum())
         if exclude_empty_value and df[col].sum() == 0:
             logger.debug(f"{col}はすべてのタスクで値が0なので、ヒストグラムを描画しません。")
             continue
@@ -196,7 +194,7 @@ def plot_annotation_duration_histogram_by_attribute(
     logger.debug(f"{len(df.columns)}個の属性値ごとのヒストグラムで出力します。")
 
     if arrange_bin_edges:
-        histogram_range = (df.max(numeric_only=True).max(), df.min(numeric_only=True).min())
+        histogram_range = (df.min(numeric_only=True).min(), df.max(numeric_only=True).max())
     else:
         histogram_range = None
 
