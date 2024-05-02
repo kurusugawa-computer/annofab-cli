@@ -83,7 +83,7 @@ def plot_annotation_duration_histogram_by_label(
 
     Args:
         prior_keys: 優先して表示するcounter_listのキーlist
-        exclude_empty_value: Trueならば、すべての値が0である列のヒストグラムは生成しません。
+        exclude_empty_value: Trueならば、すべての値が0である列のヒストグラムは描画しません。
         arrange_bin_edge: Trueならば、ヒストグラムの範囲をすべてのヒストグラムで一致させます。
     """
     all_label_key_set = {key for c in annotation_duration_list for key in c.annotation_duration_second_by_label.keys()}
@@ -402,7 +402,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--arrange_bin_edge",
         action="store_true",
-        help="指定すると、ヒストグラムのビンの各範囲をすべてのヒストグラムで一致させます。",
+        help="指定すると、ヒストグラムのデータの範囲とビンの幅がすべてのヒストグラムで一致します。",
     )
 
     parser.add_argument(
