@@ -3,8 +3,10 @@ from __future__ import annotations
 import argparse
 import collections
 import logging
+import math
 import sys
 import tempfile
+from collections import defaultdict
 from pathlib import Path
 from typing import Collection, Optional, Sequence
 
@@ -12,8 +14,9 @@ import bokeh
 import numpy
 import pandas
 from annofabapi.models import ProjectMemberRole
-from bokeh.models import HoverTool
+from bokeh.models import HoverTool, LayoutDOM
 from bokeh.models.annotations.labels import Title
+from bokeh.models.widgets.markups import Div
 from bokeh.plotting import ColumnDataSource, figure
 
 import annofabcli
@@ -49,7 +52,28 @@ def _get_y_axis_label(group_by: GroupBy) -> str:
         raise RuntimeError(f"group_by='{group_by}'が対象外です。")
 
 
-def _only_selective_attribute(columns: list[AttributeValueKey]) -> list[AttributeValueKey]:
+def convert_to_2d_figure_list(figures_dict: dict[tuple[str, str], list[figure]], *, ncols: int = 4) -> list[list[Optional[LayoutDOM]]]:
+    """
+    grid layout用に2次元のfigureリストに変換する。
+    """
+    row_list: list[list[Optional[LayoutDOM]]] = []
+
+    for (label_name, attribute_name), figure_list in figures_dict.items():
+        row_list.append([Div(text=f"<h3>ラベル名='{label_name}', 属性名='{attribute_name}'</h3>"), *[None] * (ncols - 1)])
+
+        for i in range(math.ceil(len(figure_list) / ncols)):
+            start = i * ncols
+            end = (i + 1) * ncols
+            row: list[Optional[LayoutDOM]] = []
+            row.extend(figure_list[start:end])
+            if len(row) < ncols:
+                row.extend([None] * (ncols - len(row)))
+            row_list.append(row)
+
+    return row_list
+
+
+def get_only_selective_attribute(columns: list[AttributeValueKey]) -> list[AttributeValueKey]:
     """
     選択肢系の属性に対応する列のみ抽出する。
     属性値の個数が多い場合、非選択肢系の属性（トラッキングIDやアノテーションリンクなど）の可能性があるため、それらを除外する。
@@ -76,19 +100,23 @@ def _only_selective_attribute(columns: list[AttributeValueKey]) -> list[Attribut
     ]
 
 
-def plot_label_histogram(  # noqa: ANN201
+def plot_label_histogram(
     counter_list: Sequence[AnnotationCounter],
     group_by: GroupBy,
     output_file: Path,
     *,
     prior_keys: Optional[list[str]] = None,
     bins: int = 20,
-):
+    exclude_empty_value: bool = False,
+    arrange_bin_edge: bool = False,
+) -> None:
     """
     ラベルごとのアノテーション数のヒストグラムを出力する。
 
     Args:
         prior_keys: 優先して表示するcounter_listのキーlist
+        exclude_empty_value: Trueならば、すべての値が0である列のヒストグラムを描画しません。
+        arrange_bin_edge: Trueならば、ヒストグラムの範囲をすべてのヒストグラムで一致させます。
     """
     all_label_key_set = {key for c in counter_list for key in c.annotation_count_by_label}
     if prior_keys is not None:
@@ -102,12 +130,29 @@ def plot_label_histogram(  # noqa: ANN201
 
     figure_list = []
 
+    if arrange_bin_edge:
+        histogram_range = (
+            df.min(numeric_only=True).min(),
+            df.max(numeric_only=True).max(),
+        )
+    else:
+        histogram_range = None
+
     y_axis_label = _get_y_axis_label(group_by)
 
-    logger.debug(f"{len(df.columns)}個のラベルごとのヒストグラムを出力します。")
-    for col in df.columns:
-        # numpy.histogramで20のビンに分割
-        hist, bin_edges = numpy.histogram(df[col], bins)
+    if exclude_empty_value:
+        # すべての値が0である列を除外する
+        columns = [col for col in df.columns if df[col].sum() > 0]
+        if len(columns) < len(df.columns):
+            logger.debug(
+                f"以下のラベルは、すべてのタスクでアノテーション数が0であるためヒストグラムを描画しません。 :: {set(df.columns) - set(columns)}"
+            )
+    else:
+        columns = df.columns
+
+    logger.debug(f"{len(columns)}個のラベルごとのヒストグラムが描画されたhtmlファイルを出力します。")
+    for col in columns:
+        hist, bin_edges = numpy.histogram(df[col], bins, range=histogram_range)
 
         df_histogram = pandas.DataFrame({"frequency": hist, "left": bin_edges[:-1], "right": bin_edges[1:]})
         df_histogram["interval"] = [f"{left:.1f} to {right:.1f}" for left, right in zip(df_histogram["left"], df_histogram["right"])]
@@ -138,32 +183,63 @@ def plot_label_histogram(  # noqa: ANN201
     logger.info(f"'{output_file}'を出力しました。")
 
 
-def plot_attribute_histogram(  # noqa: ANN201
+def plot_attribute_histogram(
     counter_list: Sequence[AnnotationCounter],
     group_by: GroupBy,
     output_file: Path,
     *,
     prior_keys: Optional[list[AttributeValueKey]] = None,
     bins: int = 20,
-):
+    exclude_empty_value: bool = False,
+    arrange_bin_edge: bool = False,
+) -> None:
+    """
+    属性値ごとのアノテーション数のヒストグラムを出力する。
+
+    Args:
+        prior_keys: 優先して表示するcounter_listのキーlist
+        exclude_empty_value: Trueならば、すべての値が0である列のヒストグラムを描画しません。
+        arrange_bin_edge: Trueならば、ヒストグラムの範囲をすべてのヒストグラムで一致させます。
+
+    """
     all_key_set = {key for c in counter_list for key in c.annotation_count_by_attribute}
     if prior_keys is not None:
         remaining_columns = list(all_key_set - set(prior_keys))
-        remaining_columns_selective_attribute = sorted(_only_selective_attribute(remaining_columns))
+        remaining_columns_selective_attribute = sorted(get_only_selective_attribute(remaining_columns))
         columns = prior_keys + remaining_columns_selective_attribute
     else:
-        remaining_columns_selective_attribute = sorted(_only_selective_attribute(list(all_key_set)))
+        remaining_columns_selective_attribute = sorted(get_only_selective_attribute(list(all_key_set)))
         columns = remaining_columns_selective_attribute
 
     df = pandas.DataFrame([e.annotation_count_by_attribute for e in counter_list], columns=columns)
     df.fillna(0, inplace=True)
 
-    figure_list = []
     y_axis_label = _get_y_axis_label(group_by)
 
-    logger.debug(f"{len(df.columns)}個の属性値ごとのヒストグラムを出力します。")
-    for col in sorted(df.columns):
-        hist, bin_edges = numpy.histogram(df[col], bins)
+    if arrange_bin_edge:
+        histogram_range = (
+            df.min(numeric_only=True).min(),
+            df.max(numeric_only=True).max(),
+        )
+    else:
+        histogram_range = None
+
+    if exclude_empty_value:
+        # すべての値が0である列を除外する
+        columns = [col for col in df.columns if df[col].sum() > 0]
+        if len(columns) < len(df.columns):
+            logger.debug(
+                f"以下の属性値は、すべてのタスクでアノテーション数が0であるためヒストグラムを描画しません。 :: {set(df.columns) - set(columns)}"
+            )
+    else:
+        columns = df.columns
+
+    figures_dict = defaultdict(list)
+    logger.debug(f"{len(columns)}個の属性値ごとのヒストグラムが描画されたhtmlファイルを出力します。")
+    for col in columns:
+        hist, bin_edges = numpy.histogram(df[col], bins, range=histogram_range)
+
+        header = (str(col[0]), str(col[1]))  # ラベル名, 属性名
 
         df_histogram = pandas.DataFrame({"frequency": hist, "left": bin_edges[:-1], "right": bin_edges[1:]})
         df_histogram["interval"] = [f"{left:.1f} to {right:.1f}" for left, right in zip(df_histogram["left"], df_histogram["right"])]
@@ -183,9 +259,11 @@ def plot_attribute_histogram(  # noqa: ANN201
         fig.quad(source=source, top="frequency", bottom=0, left="left", right="right", line_color="white")
 
         fig.add_tools(hover)
-        figure_list.append(fig)
+        figures_dict[header].append(fig)
 
-    bokeh_obj = bokeh.layouts.gridplot(figure_list, ncols=4)  # type: ignore[arg-type]
+    grid_layout_figures = convert_to_2d_figure_list(figures_dict)
+
+    bokeh_obj = bokeh.layouts.gridplot(grid_layout_figures)
     output_file.parent.mkdir(exist_ok=True, parents=True)
     bokeh.plotting.reset_output()
     bokeh.plotting.output_file(output_file, title=output_file.stem)
@@ -206,7 +284,7 @@ class VisualizeAnnotationCount(AbstractCommandLineInterface):
 
         return True
 
-    def visualize_annotation_count(  # noqa: ANN201
+    def visualize_annotation_count(
         self,
         group_by: GroupBy,
         annotation_path: Path,
@@ -216,7 +294,9 @@ class VisualizeAnnotationCount(AbstractCommandLineInterface):
         project_id: Optional[str] = None,
         target_task_ids: Optional[Collection[str]] = None,
         task_query: Optional[TaskQuery] = None,
-    ):
+        exclude_empty_value: bool = False,
+        arrange_bin_edge: bool = False,
+    ) -> None:
         labels_count_html = output_dir / "labels_count.html"
         attributes_count_html = output_dir / "attributes_count.html"
 
@@ -255,13 +335,23 @@ class VisualizeAnnotationCount(AbstractCommandLineInterface):
             label_keys = annotation_specs.label_keys()
             attribute_value_keys = annotation_specs.selective_attribute_value_keys()
 
-        plot_label_histogram(counter_list, group_by=group_by, output_file=labels_count_html, bins=bins, prior_keys=label_keys)
+        plot_label_histogram(
+            counter_list,
+            group_by=group_by,
+            output_file=labels_count_html,
+            bins=bins,
+            prior_keys=label_keys,
+            exclude_empty_value=exclude_empty_value,
+            arrange_bin_edge=arrange_bin_edge,
+        )
         plot_attribute_histogram(
             counter_list,
             group_by=group_by,
             output_file=attributes_count_html,
             bins=bins,
             prior_keys=attribute_value_keys,
+            exclude_empty_value=exclude_empty_value,
+            arrange_bin_edge=arrange_bin_edge,
         )
 
     def main(self) -> None:
@@ -302,6 +392,8 @@ class VisualizeAnnotationCount(AbstractCommandLineInterface):
                     target_task_ids=task_id_list,
                     task_query=task_query,
                     bins=args.bins,
+                    exclude_empty_value=args.exclude_empty_value,
+                    arrange_bin_edge=args.arrange_bin_edge,
                 )
         else:
             self.visualize_annotation_count(
@@ -312,6 +404,8 @@ class VisualizeAnnotationCount(AbstractCommandLineInterface):
                 target_task_ids=task_id_list,
                 task_query=task_query,
                 bins=args.bins,
+                exclude_empty_value=args.exclude_empty_value,
+                arrange_bin_edge=args.arrange_bin_edge,
             )
 
 
@@ -348,6 +442,18 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         type=int,
         default=20,
         help="ヒストグラムのビンの数を指定します。",
+    )
+
+    parser.add_argument(
+        "--exclude_empty_value",
+        action="store_true",
+        help="指定すると、すべてのタスクでアノテーション数が0であるヒストグラムを描画しません。",
+    )
+
+    parser.add_argument(
+        "--arrange_bin_edge",
+        action="store_true",
+        help="指定すると、ヒストグラムのデータの範囲とビンの幅がすべてのヒストグラムで一致します。",
     )
 
     parser.add_argument(
