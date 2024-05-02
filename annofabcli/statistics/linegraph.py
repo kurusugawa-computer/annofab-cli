@@ -1,6 +1,7 @@
 """
 折れ線グラフを出力する関数の定義など
 """
+
 from __future__ import annotations
 
 import copy

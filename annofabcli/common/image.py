@@ -2,6 +2,7 @@
 アノテーション情報を画像化するメソッドです。
 外部に公開しています。
 """
+
 import logging
 import zipfile
 from pathlib import Path

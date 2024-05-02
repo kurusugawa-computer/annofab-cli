@@ -1,6 +1,7 @@
 """
 Command Line Interfaceの共通部分
 """
+
 import abc
 import argparse
 import dataclasses

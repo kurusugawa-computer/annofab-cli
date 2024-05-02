@@ -17,7 +17,7 @@ from typing import Any, Collection, Iterator, Optional, Tuple, Union
 
 import annofabapi
 import pandas
-from annofabapi.models import InputDataType, ProjectMemberRole, TaskPhase, TaskStatus
+from annofabapi.models import DefaultAnnotationType, InputDataType, ProjectMemberRole, TaskPhase, TaskStatus
 from annofabapi.parser import (
     SimpleAnnotationParser,
     lazy_parse_simple_annotation_dir,
@@ -497,7 +497,7 @@ class ListAnnotationDurationMain:
         annotation_specs: Optional[AnnotationSpecs] = None
         non_selective_attribute_name_keys: Optional[list[AttributeNameKey]] = None
         if project_id is not None:
-            annotation_specs = AnnotationSpecs(self.service, project_id, annotation_type="range")
+            annotation_specs = AnnotationSpecs(self.service, project_id, annotation_type=DefaultAnnotationType.RANGE.value)
             non_selective_attribute_name_keys = annotation_specs.non_selective_attribute_name_keys()
 
         annotation_duration_list = ListAnnotationDurationByInputData(
@@ -553,7 +553,7 @@ class ListAnnotationDuration(AbstractCommandLineInterface):
             project, _ = self.service.api.get_project(project_id)
             if project["input_data_type"] != InputDataType.MOVIE.value:
                 logger.warning(
-                    f"project_id='{project_id}'であるプロジェクトは、動画プロジェクトでないので、出力されれる区間アノテーションの長さはすべて0秒になります。"
+                    f"project_id='{project_id}'であるプロジェクトは、動画プロジェクトでないので、出力される区間アノテーションの長さはすべて0秒になります。"
                 )
 
         annotation_path = Path(args.annotation) if args.annotation is not None else None

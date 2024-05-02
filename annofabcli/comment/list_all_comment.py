@@ -1,6 +1,7 @@
 """
 コメント一覧を出力する。
 """
+
 from __future__ import annotations
 
 import argparse

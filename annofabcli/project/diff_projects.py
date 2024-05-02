@@ -1,6 +1,7 @@
 """
 プロジェクト間の差分を表示する。
 """
+
 import argparse
 import copy
 import functools

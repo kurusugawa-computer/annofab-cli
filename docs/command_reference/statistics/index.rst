@@ -24,6 +24,7 @@ Available Commands
    summarize_task_count_by_user
    visualize
    visualize_annotation_count
+   visualize_annotation_duration
 
 Usage Details
 =================================

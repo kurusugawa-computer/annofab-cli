@@ -2,6 +2,7 @@
 """
 各ユーザの合計の生産性と品質
 """
+
 from __future__ import annotations
 
 import logging
