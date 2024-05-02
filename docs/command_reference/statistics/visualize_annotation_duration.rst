@@ -23,17 +23,19 @@ Examples
     │
 
 
-下図は ``annotation_duration_by_label.html`` の中身です。ラベル名ごとにヒストグラムが描画されています。
+
+
+下図は `annotation_duration_by_label.html <https://kurusugawa-computer.github.io/annofab-cli/command_reference/statistics/visualize_annotation_duration/output/annotation_duration_by_label.html>`_ の中身です。ラベル名ごとにヒストグラムが描画されています。
 
 
 .. image:: visualize_annotation_duration/img/annotation_duration_by_label.png
-    :alt: annotation_duration_by_label
+    :alt: annotation_duration_by_label.htmlの中身
 
 
-下図は ``annotation_duration_by_attribute.html`` の中身です。ラベル名、属性名、属性値のペアごとにヒストグラムが描画されています。
+下図は `annotation_duration_by_attribute.html <https://kurusugawa-computer.github.io/annofab-cli/command_reference/statistics/visualize_annotation_duration/output/annotation_duration_by_attribute.html>`_ の中身です。ラベル名、属性名、属性値のペアごとにヒストグラムが描画されています。
 
 .. image:: visualize_annotation_duration/img/annotation_duration_by_attribute.png
-    :alt: annotation_duration_by_attribute
+    :alt: annotation_duration_by_attribute.htmlの中身
 
 集計対象の属性の種類は以下の通りです。
 
@@ -41,35 +43,19 @@ Examples
 * ラジオボタン
 * チェックボックス
 
-
-
-
-出力結果
-=================================
-
-.. code-block::
-
-    $ annofabcli statistics visualize_annotation_count --project_id prj1 --output_dir out_by_task/ \
-    --group_by task_id
+デフォルトでは各ヒストグラムのビンの幅を異なります。すべてのヒストグラムでビンの幅を揃える場合は、 ``--arrange_bin_edge`` を指定します。
 
 
 .. code-block::
 
-    out_by_task/
-    ├── labels_count.html
-    ├── attributes_count.html
+    $ annofabcli statistics visualize_annotation_duration --project_id prj1 --output_dir out_dir/ \
+    --arrange_bin_edge
 
 
-.. image:: visualize_annotation_count/img/labels_count.png
+.. image:: visualize_annotation_duration/img/annotation_duration_by_label__with_arrange_bin_edge.png
+    :alt: annotation_duration_by_label.htmlの中身（--arrange_bin_edgeを指定）
+    
 
-
-`out_by_task <https://github.com/kurusugawa-computer/annofab-cli/blob/main/docs/command_reference/statistics/visualize_annotation_count/out_by_task>`_
-
-
-
-`labels_count.html <https://kurusugawa-computer.github.io/annofab-cli/command_reference/statistics/visualize_annotation_count/out_by_task/labels_count.html>`_
-
-`attributes_count.html <https://kurusugawa-computer.github.io/annofab-cli/command_reference/statistics/visualize_annotation_count/out_by_task/attributes_count.html>`_
 
 
 

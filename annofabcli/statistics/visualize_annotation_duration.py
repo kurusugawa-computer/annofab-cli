@@ -84,7 +84,7 @@ def plot_annotation_duration_histogram_by_label(
     Args:
         prior_keys: 優先して表示するcounter_listのキーlist
         exclude_empty_value: Trueならば、すべての値が0である列のヒストグラムは生成しません。
-        arrange_bin_edges: Trueならば、ヒストグラムの範囲をすべてのヒストグラムで一致させます。
+        arrange_bin_edge: Trueならば、ヒストグラムの範囲をすべてのヒストグラムで一致させます。
     """
     all_label_key_set = {key for c in annotation_duration_list for key in c.annotation_duration_second_by_label.keys()}
     if prior_keys is not None:
@@ -180,7 +180,7 @@ def plot_annotation_duration_histogram_by_attribute(
     Args:
         prior_keys: 優先して表示するcounter_listのキーlist
         exclude_empty_value: Trueならば、すべての値が0である列のヒストグラムは生成しません。
-        arrange_bin_edges: Trueならば、ヒストグラムの範囲をすべてのヒストグラムで一致させます。
+        arrange_bin_edge: Trueならば、ヒストグラムの範囲をすべてのヒストグラムで一致させます。
     """
     all_key_set = {key for c in annotation_duration_list for key in c.annotation_duration_second_by_attribute.keys()}
     if prior_keys is not None:
@@ -336,7 +336,7 @@ class VisualizeAnnotationDuration(AbstractCommandLineInterface):
             task_query=task_query,
             bins=args.bins,
             exclude_empty_value=args.exclude_empty_value,
-            arrange_bin_edges=args.arrange_bin_edge,
+            arrange_bin_edge=args.arrange_bin_edge,
         )
 
         if annotation_path is None:
@@ -396,7 +396,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--exclude_empty_value",
         action="store_true",
-        help="指定すると、すべてのタスクで区間アノテーションの長さが0であるヒストグラムは描画しません。",
+        help="指定すると、すべてのタスクで区間アノテーションの長さが0であるヒストグラムを描画しません。",
     )
 
     parser.add_argument(
