@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import collections
 import logging
+import math
 import sys
 import tempfile
 from pathlib import Path
@@ -12,8 +13,9 @@ import bokeh
 import numpy
 import pandas
 from annofabapi.models import ProjectMemberRole
-from bokeh.models import HoverTool
+from bokeh.models import HoverTool, LayoutDOM
 from bokeh.models.annotations.labels import Title
+from bokeh.models.widgets.markups import Div
 from bokeh.plotting import ColumnDataSource, figure
 
 import annofabcli
@@ -49,7 +51,28 @@ def _get_y_axis_label(group_by: GroupBy) -> str:
         raise RuntimeError(f"group_by='{group_by}'が対象外です。")
 
 
-def _only_selective_attribute(columns: list[AttributeValueKey]) -> list[AttributeValueKey]:
+def convert_to_2d_figure_list(figures_dict: dict[tuple[str, str], list[figure]], *, ncols: int = 4) -> list[list[Optional[LayoutDOM]]]:
+    """
+    grid layout用に2次元のfigureリストに変換する。
+    """
+    row_list: list[list[Optional[LayoutDOM]]] = []
+
+    for (label_name, attribute_name), figure_list in figures_dict.items():
+        row_list.append([Div(text=f"<h3>ラベル名='{label_name}', 属性名='{attribute_name}'</h3>"), *[None] * (ncols - 1)])
+
+        for i in range(math.ceil(len(figure_list) / ncols)):
+            start = i * ncols
+            end = (i + 1) * ncols
+            row: list[Optional[LayoutDOM]] = []
+            row.extend(figure_list[start:end])
+            if len(row) < ncols:
+                row.extend([None] * (ncols - len(row)))
+            row_list.append(row)
+
+    return row_list
+
+
+def get_only_selective_attribute(columns: list[AttributeValueKey]) -> list[AttributeValueKey]:
     """
     選択肢系の属性に対応する列のみ抽出する。
     属性値の個数が多い場合、非選択肢系の属性（トラッキングIDやアノテーションリンクなど）の可能性があるため、それらを除外する。
@@ -179,10 +202,10 @@ def plot_attribute_histogram(
     all_key_set = {key for c in counter_list for key in c.annotation_count_by_attribute}
     if prior_keys is not None:
         remaining_columns = list(all_key_set - set(prior_keys))
-        remaining_columns_selective_attribute = sorted(_only_selective_attribute(remaining_columns))
+        remaining_columns_selective_attribute = sorted(get_only_selective_attribute(remaining_columns))
         columns = prior_keys + remaining_columns_selective_attribute
     else:
-        remaining_columns_selective_attribute = sorted(_only_selective_attribute(list(all_key_set)))
+        remaining_columns_selective_attribute = sorted(get_only_selective_attribute(list(all_key_set)))
         columns = remaining_columns_selective_attribute
 
     df = pandas.DataFrame([e.annotation_count_by_attribute for e in counter_list], columns=columns)

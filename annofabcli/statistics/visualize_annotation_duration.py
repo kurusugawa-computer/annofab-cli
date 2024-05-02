@@ -1,9 +1,7 @@
 from __future__ import annotations
 
 import argparse
-import collections
 import logging
-import math
 import sys
 import tempfile
 from collections import defaultdict
@@ -15,9 +13,8 @@ import bokeh
 import numpy
 import pandas
 from annofabapi.models import DefaultAnnotationType, InputDataType, ProjectMemberRole
-from bokeh.models import HoverTool, LayoutDOM
+from bokeh.models import HoverTool
 from bokeh.models.annotations.labels import Title
-from bokeh.models.widgets.markups import Div
 from bokeh.plotting import ColumnDataSource, figure
 
 import annofabcli
@@ -38,35 +35,9 @@ from annofabcli.statistics.list_annotation_duration import (
     AttributeValueKey,
     ListAnnotationDurationByInputData,
 )
+from annofabcli.statistics.visualize_annotation_count import convert_to_2d_figure_list, get_only_selective_attribute
 
 logger = logging.getLogger(__name__)
-
-
-def _only_selective_attribute(columns: list[AttributeValueKey]) -> list[AttributeValueKey]:
-    """
-    選択肢系の属性に対応する列のみ抽出する。
-    属性値の個数が多い場合、非選択肢系の属性（トラッキングIDやアノテーションリンクなど）の可能性があるため、それらを除外する。
-    CSVの列数を増やしすぎないための対策。
-    """
-    SELECTIVE_ATTRIBUTE_VALUE_MAX_COUNT = 20
-    attribute_name_list: list[AttributeNameKey] = []
-    for label, attribute_name, _ in columns:
-        attribute_name_list.append((label, attribute_name))
-
-    non_selective_attribute_names = {
-        key for key, value in collections.Counter(attribute_name_list).items() if value > SELECTIVE_ATTRIBUTE_VALUE_MAX_COUNT
-    }
-
-    if len(non_selective_attribute_names) > 0:
-        logger.debug(
-            f"以下の属性は値の個数が{SELECTIVE_ATTRIBUTE_VALUE_MAX_COUNT}を超えていたため、集計しません。 :: " f"{non_selective_attribute_names}"
-        )
-
-    return [
-        (label, attribute_name, attribute_value)
-        for (label, attribute_name, attribute_value) in columns
-        if (label, attribute_name) not in non_selective_attribute_names
-    ]
 
 
 def plot_annotation_duration_histogram_by_label(
@@ -144,27 +115,6 @@ def plot_annotation_duration_histogram_by_label(
     logger.info(f"'{output_file}'を出力しました。")
 
 
-def convert_to_2d_figure_list(figures_dict: dict[tuple[str, str], list[figure]], *, ncols: int = 4) -> list[list[Optional[LayoutDOM]]]:
-    """
-    grid layout用に2次元のfigureリストに変換する。
-    """
-    row_list: list[list[Optional[LayoutDOM]]] = []
-
-    for (label_name, attribute_name), figure_list in figures_dict.items():
-        row_list.append([Div(text=f"<h3>ラベル名='{label_name}', 属性名='{attribute_name}'</h3>"), *[None] * (ncols - 1)])
-
-        for i in range(math.ceil(len(figure_list) / ncols)):
-            start = i * ncols
-            end = (i + 1) * ncols
-            row: list[Optional[LayoutDOM]] = []
-            row.extend(figure_list[start:end])
-            if len(row) < ncols:
-                row.extend([None] * (ncols - len(row)))
-            row_list.append(row)
-
-    return row_list
-
-
 def plot_annotation_duration_histogram_by_attribute(
     annotation_duration_list: Sequence[AnnotationDuration],
     output_file: Path,
@@ -185,10 +135,10 @@ def plot_annotation_duration_histogram_by_attribute(
     all_key_set = {key for c in annotation_duration_list for key in c.annotation_duration_second_by_attribute.keys()}
     if prior_keys is not None:
         remaining_columns = list(all_key_set - set(prior_keys))
-        remaining_columns_selective_attribute = sorted(_only_selective_attribute(remaining_columns))
+        remaining_columns_selective_attribute = sorted(get_only_selective_attribute(remaining_columns))
         columns = prior_keys + remaining_columns_selective_attribute
     else:
-        remaining_columns_selective_attribute = sorted(_only_selective_attribute(list(all_key_set)))
+        remaining_columns_selective_attribute = sorted(get_only_selective_attribute(list(all_key_set)))
         columns = remaining_columns_selective_attribute
 
     df = pandas.DataFrame([e.annotation_duration_second_by_attribute for e in annotation_duration_list], columns=columns)
