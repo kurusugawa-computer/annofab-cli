@@ -76,7 +76,7 @@ def plot_annotation_duration_histogram_by_label(
     prior_keys: Optional[list[str]] = None,
     bins: int = 20,
     exclude_empty_value: bool = False,
-    arrange_bin_edges: bool = False,
+    arrange_bin_edge: bool = False,
 ) -> None:
     """
     ラベルごとの区間アノテーションの長さのヒストグラムを出力します。
@@ -98,8 +98,11 @@ def plot_annotation_duration_histogram_by_label(
 
     figure_list = []
 
-    if arrange_bin_edges:
-        histogram_range = (df.min(numeric_only=True).min(), df.max(numeric_only=True).max(), )
+    if arrange_bin_edge:
+        histogram_range = (
+            df.min(numeric_only=True).min(),
+            df.max(numeric_only=True).max(),
+        )
     else:
         histogram_range = None
 
@@ -169,7 +172,7 @@ def plot_annotation_duration_histogram_by_attribute(
     prior_keys: Optional[list[AttributeValueKey]] = None,
     bins: int = 20,
     exclude_empty_value: bool = False,
-    arrange_bin_edges: bool = False,
+    arrange_bin_edge: bool = False,
 ) -> None:
     """
     属性値ごとの区間アノテーションの長さのヒストグラムを出力します。
@@ -193,7 +196,7 @@ def plot_annotation_duration_histogram_by_attribute(
 
     logger.debug(f"{len(df.columns)}個の属性値ごとのヒストグラムで出力します。")
 
-    if arrange_bin_edges:
+    if arrange_bin_edge:
         histogram_range = (df.min(numeric_only=True).min(), df.max(numeric_only=True).max())
     else:
         histogram_range = None
@@ -261,7 +264,7 @@ class VisualizeAnnotationDuration(AbstractCommandLineInterface):
         target_task_ids: Optional[Collection[str]] = None,
         task_query: Optional[TaskQuery] = None,
         exclude_empty_value: bool = False,
-        arrange_bin_edges: bool = False,
+        arrange_bin_edge: bool = False,
     ) -> None:
         duration_by_label_html = output_dir / "annotation_duration_by_label.html"
         duration_by_attribute_html = output_dir / "annotation_duration_by_attribute.html"
@@ -270,7 +273,7 @@ class VisualizeAnnotationDuration(AbstractCommandLineInterface):
         annotation_specs: Optional[AnnotationSpecs] = None
         non_selective_attribute_name_keys: Optional[list[AttributeNameKey]] = None
         if project_id is not None:
-            annotation_specs = AnnotationSpecs(self.service, project_id)
+            annotation_specs = AnnotationSpecs(self.service, project_id, annotation_type="range")
             non_selective_attribute_name_keys = annotation_specs.non_selective_attribute_name_keys()
 
         annotation_duration_list = ListAnnotationDurationByInputData(
@@ -293,7 +296,7 @@ class VisualizeAnnotationDuration(AbstractCommandLineInterface):
             bins=bins,
             prior_keys=label_keys,
             exclude_empty_value=exclude_empty_value,
-            arrange_bin_edges=arrange_bin_edges,
+            arrange_bin_edge=arrange_bin_edge,
         )
         plot_annotation_duration_histogram_by_attribute(
             annotation_duration_list,
@@ -301,7 +304,7 @@ class VisualizeAnnotationDuration(AbstractCommandLineInterface):
             bins=bins,
             prior_keys=attribute_value_keys,
             exclude_empty_value=exclude_empty_value,
-            arrange_bin_edges=arrange_bin_edges,
+            arrange_bin_edge=arrange_bin_edge,
         )
 
     def main(self) -> None:
@@ -333,7 +336,7 @@ class VisualizeAnnotationDuration(AbstractCommandLineInterface):
             task_query=task_query,
             bins=args.bins,
             exclude_empty_value=args.exclude_empty_value,
-            arrange_bin_edges=args.arrange_bin_edges,
+            arrange_bin_edges=args.arrange_bin_edge,
         )
 
         if annotation_path is None:
@@ -397,7 +400,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     )
 
     parser.add_argument(
-        "--arrange_bin_edges",
+        "--arrange_bin_edge",
         action="store_true",
         help="指定すると、ヒストグラムのビンの各範囲をすべてのヒストグラムで一致させます。",
     )
