@@ -144,7 +144,9 @@ def plot_label_histogram(
         # すべての値が0である列を除外する
         columns = [col for col in df.columns if df[col].sum() > 0]
         if len(columns) < len(df.columns):
-            logger.debug(f"以下のラベルはすべての値が0であるためヒストグラムを描画しません。 :: {set(df.columns) - set(columns)}")
+            logger.debug(
+                f"以下のラベルは、すべてのタスクでアノテーション数が0であるためヒストグラムを描画しません。 :: {set(df.columns) - set(columns)}"
+            )
     else:
         columns = df.columns
 
@@ -226,7 +228,9 @@ def plot_attribute_histogram(
         # すべての値が0である列を除外する
         columns = [col for col in df.columns if df[col].sum() > 0]
         if len(columns) < len(df.columns):
-            logger.debug(f"以下の属性値はすべての値が0であるためヒストグラムを描画しません。 :: {set(df.columns) - set(columns)}")
+            logger.debug(
+                f"以下の属性値は、すべてのタスクでアノテーション数が0であるためヒストグラムを描画しません。 :: {set(df.columns) - set(columns)}"
+            )
     else:
         columns = df.columns
 

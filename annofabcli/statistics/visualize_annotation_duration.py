@@ -77,13 +77,19 @@ def plot_annotation_duration_histogram_by_label(
     else:
         histogram_range = None
 
-    logger.debug(f"{len(df.columns)}個のラベルごとのヒストグラムを出力します。")
-    for col in df.columns:
-        if exclude_empty_value and df[col].sum() == 0:
-            logger.debug(f"{col}はすべてのタスクで値が0なので、ヒストグラムを描画しません。")
-            continue
+    if exclude_empty_value:
+        # すべての値が0である列を除外する
+        columns = [col for col in df.columns if df[col].sum() > 0]
+        if len(columns) < len(df.columns):
+            logger.debug(
+                f"以下の属性値は、すべてのタスクで区間アノテーションの長さが0であるためヒストグラムを描画しません。 :: "
+                f"{set(df.columns) - set(columns)}"
+            )
+    else:
+        columns = df.columns
 
-        # numpy.histogramで20のビンに分割
+    logger.debug(f"{len(df.columns)}個のラベルごとのヒストグラムを出力します。")
+    for col in columns:
         hist, bin_edges = numpy.histogram(df[col], bins=bins, range=histogram_range)
 
         df_histogram = pandas.DataFrame({"frequency": hist, "left": bin_edges[:-1], "right": bin_edges[1:]})
@@ -151,12 +157,19 @@ def plot_annotation_duration_histogram_by_attribute(
     else:
         histogram_range = None
 
-    figures_dict = defaultdict(list)
-    for col in df.columns:
-        if exclude_empty_value and df[col].sum() == 0:
-            logger.debug(f"{col}はすべてのタスクで値が0なので、ヒストグラムを描画しません。")
-            continue
+    if exclude_empty_value:
+        # すべての値が0である列を除外する
+        columns = [col for col in df.columns if df[col].sum() > 0]
+        if len(columns) < len(df.columns):
+            logger.debug(
+                f"以下のラベルは、すべてのタスクで区間アノテーションの長さが0であるためヒストグラムを描画しません。 :: "
+                f"{set(df.columns) - set(columns)}"
+            )
+    else:
+        columns = df.columns
 
+    figures_dict = defaultdict(list)
+    for col in columns:
         header = (str(col[0]), str(col[1]))  # ラベル名, 属性名
         hist, bin_edges = numpy.histogram(df[col], bins=bins, range=histogram_range)
 
