@@ -14,7 +14,7 @@ from typing import Collection, Optional, Sequence
 import bokeh
 import numpy
 import pandas
-from annofabapi.models import InputDataType, ProjectMemberRole
+from annofabapi.models import DefaultAnnotationType, InputDataType, ProjectMemberRole
 from bokeh.models import HoverTool, LayoutDOM
 from bokeh.models.annotations.labels import Title
 from bokeh.models.widgets.markups import Div
@@ -273,7 +273,7 @@ class VisualizeAnnotationDuration(AbstractCommandLineInterface):
         annotation_specs: Optional[AnnotationSpecs] = None
         non_selective_attribute_name_keys: Optional[list[AttributeNameKey]] = None
         if project_id is not None:
-            annotation_specs = AnnotationSpecs(self.service, project_id, annotation_type="range")
+            annotation_specs = AnnotationSpecs(self.service, project_id, annotation_type=DefaultAnnotationType.RANGE.value)
             non_selective_attribute_name_keys = annotation_specs.non_selective_attribute_name_keys()
 
         annotation_duration_list = ListAnnotationDurationByInputData(

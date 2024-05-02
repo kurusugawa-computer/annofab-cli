@@ -17,7 +17,7 @@ from typing import Any, Collection, Iterator, Optional, Tuple, Union
 
 import annofabapi
 import pandas
-from annofabapi.models import InputDataType, ProjectMemberRole, TaskPhase, TaskStatus
+from annofabapi.models import DefaultAnnotationType, InputDataType, ProjectMemberRole, TaskPhase, TaskStatus
 from annofabapi.parser import (
     SimpleAnnotationParser,
     lazy_parse_simple_annotation_dir,
@@ -497,7 +497,7 @@ class ListAnnotationDurationMain:
         annotation_specs: Optional[AnnotationSpecs] = None
         non_selective_attribute_name_keys: Optional[list[AttributeNameKey]] = None
         if project_id is not None:
-            annotation_specs = AnnotationSpecs(self.service, project_id, annotation_type="range")
+            annotation_specs = AnnotationSpecs(self.service, project_id, annotation_type=DefaultAnnotationType.RANGE.value)
             non_selective_attribute_name_keys = annotation_specs.non_selective_attribute_name_keys()
 
         annotation_duration_list = ListAnnotationDurationByInputData(
