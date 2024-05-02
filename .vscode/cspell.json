@@ -60,6 +60,7 @@
         "multiindex",
         "nargs",
         "ncols",
+        "ndarray",
         "netrc",
         "noqa",
         "notequals",

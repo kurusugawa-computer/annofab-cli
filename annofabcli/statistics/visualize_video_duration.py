@@ -1,13 +1,14 @@
 from __future__ import annotations
 
 import argparse
+import json
 import logging
 import sys
 import tempfile
 from enum import Enum, auto
 from functools import partial
 from pathlib import Path
-from typing import Collection, Optional, Sequence
+from typing import Collection, Optional, Sequence, Union
 
 import bokeh
 import numpy
@@ -43,12 +44,13 @@ class TimeUnit(Enum):
 
 
 def plot_video_duration(
-    durations: Sequence[float],
+    durations_for_input_data: Sequence[float],
+    durations_for_task: Sequence[float],
     output_file: Path,
     *,
     time_unit: TimeUnit = TimeUnit.SECOND,
-    bin_count: Optional[int] = None,
     bin_width: Optional[float] = None,
+    html_title: Optional[str]= None
 ) -> None:
     """
     ラベルごとの区間アノテーションの長さのヒストグラムを出力します。
@@ -57,59 +59,110 @@ def plot_video_duration(
         prior_keys: 優先して表示するcounter_listのキーlist
         exclude_empty_value: Trueならば、すべての値が0である列のヒストグラムは生成しません。
         arrange_bin_edge: Trueならば、ヒストグラムの範囲をすべてのヒストグラムで一致させます。
+        html_title: HTMLのタイトル。
     """
 
+    def create_figure(durations: list[float], bins: Union[int, numpy.ndarray], title: str, x_axis_label: str, y_axis_label: str) -> figure:
+        hist, bin_edges = numpy.histogram(durations, bins=bins)
+
+        df_histogram = pandas.DataFrame({"frequency": hist, "left": bin_edges[:-1], "right": bin_edges[1:]})
+        df_histogram["interval"] = [f"{left:.1f} to {right:.1f}" for left, right in zip(df_histogram["left"], df_histogram["right"])]
+
+        source = ColumnDataSource(df_histogram)
+        fig = figure(
+            width=400,
+            height=300,
+            x_axis_label=x_axis_label,
+            y_axis_label=y_axis_label,
+        )
+
+        fig.add_layout(Title(text=get_sub_title_from_series(pandas.Series(durations), decimals=2), text_font_size="11px"), "above")
+        fig.add_layout(Title(text=title), "above")
+
+        hover = HoverTool(tooltips=[("interval", "@interval"), ("frequency", "@frequency")])
+
+        fig.quad(source=source, top="frequency", bottom=0, left="left", right="right", line_color="white")
+
+        fig.add_tools(hover)
+        return fig
+
     if time_unit == TimeUnit.MINUTE:
-        durations = [duration / 60 for duration in durations]
+        durations_for_input_data = [duration / 60 for duration in durations_for_input_data]
+        durations_for_task = [duration / 60 for duration in durations_for_task]
 
-    figure_list = []
-
-    assert not ((bin_count is not None) and (bin_width is not None))
-    if bin_count is not None:
-        hist, bin_edges = numpy.histogram(durations, bins=bin_count)
-    elif bin_width is not None:
+    if bin_width is not None:
         if time_unit == TimeUnit.MINUTE:
             bin_width = bin_width / 60
 
-        max_duration = max(durations)
+        max_duration = max(*durations_for_input_data, *durations_for_task)
         bins_sequence = numpy.arange(0, max_duration + bin_width, bin_width)
         if bins_sequence[-1] == max_duration:
             bins_sequence = numpy.append(bins_sequence, bins_sequence[-1] + bin_width)
 
-        hist, bin_edges = numpy.histogram(durations, bins=bins_sequence)
+        bins = bins_sequence
     else:
-        hist, bin_edges = numpy.histogram(durations)
+        bins = 20
 
-    df_histogram = pandas.DataFrame({"frequency": hist, "left": bin_edges[:-1], "right": bin_edges[1:]})
-    df_histogram["interval"] = [f"{left:.1f} to {right:.1f}" for left, right in zip(df_histogram["left"], df_histogram["right"])]
+    x_axis_label = "動画の長さ[分]" if time_unit == TimeUnit.MINUTE else "動画の長さ[秒]"
 
-    source = ColumnDataSource(df_histogram)
-    fig = figure(
-        width=400,
-        height=300,
-        x_axis_label="動画の長さ[分]" if time_unit == TimeUnit.MINUTE else "動画の長さ[秒]",
-        y_axis_label="入力データ数",
+    figure_list = []
+    figure_list.append(
+        create_figure(
+            durations_for_input_data, bins=bins, title="動画の長さの分布（全ての入力データ）", x_axis_label=x_axis_label, y_axis_label="入力データ数"
+        )
     )
-
-    fig.add_layout(Title(text=get_sub_title_from_series(pandas.Series(durations), decimals=2), text_font_size="11px"), "above")
-    # fig.add_layout(Title(text=str(col)), "above")
-
-    hover = HoverTool(tooltips=[("interval", "@interval"), ("frequency", "@frequency")])
-
-    fig.quad(source=source, top="frequency", bottom=0, left="left", right="right", line_color="white")
-
-    fig.add_tools(hover)
-    figure_list.append(fig)
+    figure_list.append(
+        create_figure(durations_for_task, bins=bins, title="動画の長さの分布（タスクに含まれる入力データ）", x_axis_label=x_axis_label, y_axis_label="タスク数")
+    )
 
     bokeh_obj = bokeh.layouts.layout(figure_list)  # type: ignore[arg-type]
     output_file.parent.mkdir(exist_ok=True, parents=True)
     bokeh.plotting.reset_output()
-    bokeh.plotting.output_file(output_file, title=output_file.stem)
+    bokeh.plotting.output_file(output_file, title=html_title)
     bokeh.plotting.save(bokeh_obj)
     logger.info(f"'{output_file}'を出力しました。")
 
 
-class VisualizeAnnotationDuration(AbstractCommandLineInterface):
+def get_video_durations(input_data_json: Path, task_json: Path) -> tuple[list[float], list[float]]:
+    """
+    入力データの動画の長さと、タスクの動画の長さを取得する。
+
+    Args:
+        input_data_json: 入力データ全件ファイル
+        task_json: タスク全件ファイル
+
+    Returns:
+        tuple[0]: 動画の長さのリスト（入力データ全件ファイル内の個数に一致する）
+        tuple[1]: タスクに含まれる動画の長さのリスト（タスク全件ファイル内の個数に一致する）
+    """
+    with input_data_json.open(encoding="utf-8") as f:
+        input_data_list = json.load(f)
+
+    with task_json.open(encoding="utf-8") as f:
+        task_list = json.load(f)
+
+    video_durations_dict_for_input_data: dict[str, float] = {}
+
+    for input_data in input_data_list:
+        input_data_id = input_data["input_data_id"]
+        duration = input_data["system_metadata"]["input_duration"]
+        if duration is None:
+            logger.warning(f"input_data_id='{input_data_id}' :: 'system_metadata.input_duration'がNoneです。")
+        video_durations_dict_for_input_data[input_data_id] = duration
+
+    video_durations_dict_for_task: dict[str, float] = {}
+    for task in task_list:
+        task_id = task["task_id"]
+        first_input_data_id = task["input_data_id_list"][0]
+        duration = video_durations_dict_for_input_data.get(first_input_data_id)
+        if duration is None:
+            logger.warning(f"task_id='{task_id}' :: input_data='{first_input_data_id}'のinput_durationがNoneです。")
+        video_durations_dict_for_task[task_id] = duration
+
+    return list(video_durations_dict_for_input_data.value()), list(video_durations_dict_for_task.value())
+
+
+class VisualizeVideoDuration(AbstractCommandLineInterface):
     COMMON_MESSAGE = "annofabcli statistics visualize_video_duration: error:"
 
     def validate(self, args: argparse.Namespace) -> bool:
@@ -122,41 +175,17 @@ class VisualizeAnnotationDuration(AbstractCommandLineInterface):
 
         return True
 
-    def visualize_annotation_duration(
+    def visualize_video_duration(
         self,
-        annotation_path: Path,
-        output_dir: Path,
-        bins: int,
+        input_data_json: Path,
+        task_json_json: Path,
+        output_html: Path,
         *,
         project_id: Optional[str] = None,
-        target_task_ids: Optional[Collection[str]] = None,
-        task_query: Optional[TaskQuery] = None,
-        exclude_empty_value: bool = False,
-        arrange_bin_edge: bool = False,
     ) -> None:
-        duration_by_label_html = output_dir / "annotation_duration_by_label.html"
-        duration_by_attribute_html = output_dir / "annotation_duration_by_attribute.html"
 
-        # 集計対象の属性を、選択肢系の属性にする
-        annotation_specs: Optional[AnnotationSpecs] = None
-        non_selective_attribute_name_keys: Optional[list[AttributeNameKey]] = None
-        if project_id is not None:
-            annotation_specs = AnnotationSpecs(self.service, project_id, annotation_type=DefaultAnnotationType.RANGE.value)
-            non_selective_attribute_name_keys = annotation_specs.non_selective_attribute_name_keys()
-
-        annotation_duration_list = ListAnnotationDurationByInputData(
-            non_target_attribute_names=non_selective_attribute_name_keys,
-        ).get_annotation_duration_list(
-            annotation_path,
-            target_task_ids=target_task_ids,
-            task_query=task_query,
-        )
-
-        label_keys: Optional[list[str]] = None
-        attribute_value_keys: Optional[list[AttributeValueKey]] = None
-        if annotation_specs is not None:
-            label_keys = annotation_specs.label_keys()
-            attribute_value_keys = annotation_specs.selective_attribute_value_keys()
+        durations_for_input_data, durations_for_task = get_video_durations(input_data_json, task_json_json)
+        
 
         plot_annotation_duration_histogram_by_label(
             annotation_duration_list,
@@ -211,12 +240,19 @@ class VisualizeAnnotationDuration(AbstractCommandLineInterface):
             assert project_id is not None
             downloading_obj = DownloadingFile(self.service)
             if args.temp_dir is not None:
-                annotation_path = args.temp_dir / f"{project_id}__annotation.zip"
-                downloading_obj.download_annotation_zip(
+                input_data_json = args.temp_dir / f"{project_id}__input_data.json"
+                downloading_obj.download_input_data_json(
                     project_id,
-                    dest_path=annotation_path,
+                    dest_path=input_data_json,
                     is_latest=args.latest,
                 )
+                task_json = args.temp_dir / f"{project_id}__task.json"
+                downloading_obj.download_task_json(
+                    project_id,
+                    dest_path=task_json,
+                    is_latest=args.latest,
+                )
+
                 func(annotation_path=annotation_path)
             else:
                 # `NamedTemporaryFile`を使わない理由: Windowsで`PermissionError`が発生するため
