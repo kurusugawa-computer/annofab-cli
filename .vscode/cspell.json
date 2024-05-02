@@ -21,6 +21,7 @@
         "annofabapi",
         "annofabcli",
         "Annowork",
+        "arange",
         "asdict",
         "astimezone",
         "astype",

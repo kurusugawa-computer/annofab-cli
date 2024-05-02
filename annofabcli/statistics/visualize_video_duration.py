@@ -4,6 +4,7 @@ import argparse
 import logging
 import sys
 import tempfile
+from enum import Enum, auto
 from functools import partial
 from pathlib import Path
 from typing import Collection, Optional, Sequence
@@ -36,11 +37,18 @@ from annofabcli.statistics.list_annotation_duration import (
 logger = logging.getLogger(__name__)
 
 
+class TimeUnit(Enum):
+    SECOND = auto()
+    MINUTE = auto()
+
+
 def plot_video_duration(
     durations: Sequence[float],
     output_file: Path,
     *,
-    bins: int = 20,
+    time_unit: TimeUnit = TimeUnit.SECOND,
+    bin_count: Optional[int] = None,
+    bin_width: Optional[float] = None,
 ) -> None:
     """
     ラベルごとの区間アノテーションの長さのヒストグラムを出力します。
@@ -51,9 +59,27 @@ def plot_video_duration(
         arrange_bin_edge: Trueならば、ヒストグラムの範囲をすべてのヒストグラムで一致させます。
     """
 
+    if time_unit == TimeUnit.MINUTE:
+        durations = [duration / 60 for duration in durations]
+
     figure_list = []
 
-    hist, bin_edges = numpy.histogram(durations, bins=bins)
+    assert not ((bin_count is not None) and (bin_width is not None))
+    if bin_count is not None:
+        hist, bin_edges = numpy.histogram(durations, bins=bin_count)
+    elif bin_width is not None:
+        if time_unit == TimeUnit.MINUTE:
+            bin_width = bin_width / 60
+
+        max_duration = max(durations)
+        bins_sequence = numpy.arange(0, max_duration + bin_width, bin_width)
+        if bins_sequence[-1] == max_duration:
+            bins_sequence = numpy.append(bins_sequence, bins_sequence[-1] + bin_width)
+
+        hist, bin_edges = numpy.histogram(durations, bins=bins_sequence)
+    else:
+        hist, bin_edges = numpy.histogram(durations)
+
     df_histogram = pandas.DataFrame({"frequency": hist, "left": bin_edges[:-1], "right": bin_edges[1:]})
     df_histogram["interval"] = [f"{left:.1f} to {right:.1f}" for left, right in zip(df_histogram["left"], df_histogram["right"])]
 
@@ -61,7 +87,7 @@ def plot_video_duration(
     fig = figure(
         width=400,
         height=300,
-        x_axis_label="動画の長さ[秒]",
+        x_axis_label="動画の長さ[分]" if time_unit == TimeUnit.MINUTE else "動画の長さ[秒]",
         y_axis_label="入力データ数",
     )
 
