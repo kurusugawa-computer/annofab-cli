@@ -6,6 +6,7 @@ import logging
 import math
 import sys
 import tempfile
+from collections import defaultdict
 from pathlib import Path
 from typing import Collection, Optional, Sequence
 
@@ -211,7 +212,6 @@ def plot_attribute_histogram(
     df = pandas.DataFrame([e.annotation_count_by_attribute for e in counter_list], columns=columns)
     df.fillna(0, inplace=True)
 
-    figure_list = []
     y_axis_label = _get_y_axis_label(group_by)
 
     if arrange_bin_edge:
@@ -230,9 +230,12 @@ def plot_attribute_histogram(
     else:
         columns = df.columns
 
+    figures_dict = defaultdict(list)
     logger.debug(f"{len(columns)}個の属性値ごとのヒストグラムが描画されたhtmlファイルを出力します。")
     for col in columns:
         hist, bin_edges = numpy.histogram(df[col], bins, range=histogram_range)
+
+        header = (str(col[0]), str(col[1]))  # ラベル名, 属性名
 
         df_histogram = pandas.DataFrame({"frequency": hist, "left": bin_edges[:-1], "right": bin_edges[1:]})
         df_histogram["interval"] = [f"{left:.1f} to {right:.1f}" for left, right in zip(df_histogram["left"], df_histogram["right"])]
@@ -252,9 +255,11 @@ def plot_attribute_histogram(
         fig.quad(source=source, top="frequency", bottom=0, left="left", right="right", line_color="white")
 
         fig.add_tools(hover)
-        figure_list.append(fig)
+        figures_dict[header].append(fig)
 
-    bokeh_obj = bokeh.layouts.gridplot(figure_list, ncols=4)  # type: ignore[arg-type]
+    grid_layout_figures = convert_to_2d_figure_list(figures_dict)
+
+    bokeh_obj = bokeh.layouts.gridplot(grid_layout_figures)
     output_file.parent.mkdir(exist_ok=True, parents=True)
     bokeh.plotting.reset_output()
     bokeh.plotting.output_file(output_file, title=output_file.stem)
