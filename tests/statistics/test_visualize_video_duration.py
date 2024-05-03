@@ -34,13 +34,3 @@ def test__plot_video_duration__time_unitにminuteを指定する() -> None:
         bin_width=60,
         time_unit=TimeUnit.MINUTE,
     )
-
-
-def test__plot_video_duration__html_titleを指定する() -> None:
-    plot_video_duration(
-        durations_for_input_data,
-        durations_for_input_task,
-        output_file=output_dir / "test__plot_video_duration__html_titleを指定する.html",
-        time_unit=TimeUnit.SECOND,
-        html_title="動画の長さの分布（テスト）",
-    )

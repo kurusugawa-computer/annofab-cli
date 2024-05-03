@@ -16,7 +16,7 @@ import pandas
 from annofabapi.models import InputDataType, ProjectMemberRole
 from bokeh.models import HoverTool, LayoutDOM
 from bokeh.models.annotations.labels import Title
-from bokeh.models.widgets.markups import Div
+from bokeh.models.widgets.markups import Div, PreText
 from bokeh.plotting import ColumnDataSource, figure
 
 import annofabcli
@@ -47,7 +47,8 @@ def plot_video_duration(
     *,
     time_unit: TimeUnit,
     bin_width: Optional[float] = None,
-    html_title: Optional[str] = None,
+    project_id: Optional[str] = None,
+    project_title: Optional[str] = None,
 ) -> None:
     """
     ラベルごとの区間アノテーションの長さのヒストグラムを出力します。
@@ -114,15 +115,15 @@ def plot_video_duration(
     histogram_range = (min(*durations_for_input_data, *durations_for_task), max(*durations_for_input_data, *durations_for_task))
 
     layout_list: list[LayoutDOM] = []
-    if html_title is not None:
-        layout_list.append(Div(text=f"<h3>{html_title}</h3>"))
+    layout_list.append(Div(text="<h3>動画の長さの分布</h3>"))
 
+    layout_list.append(PreText(text=f"project_id='{project_id}'\n" f"project_title='{project_title}'"))
     layout_list.append(
         create_figure(
             durations_for_input_data,
             bins=bins,
             histogram_range=histogram_range,
-            title="動画の長さの分布（全ての入力データ）",
+            title="全ての入力データ",
             x_axis_label=x_axis_label,
             y_axis_label="入力データ数",
         )
@@ -132,7 +133,7 @@ def plot_video_duration(
             durations_for_task,
             bins=bins,
             histogram_range=histogram_range,
-            title="動画の長さの分布（タスクに含まれる入力データ）",
+            title="タスクに含まれる入力データ",
             x_axis_label=x_axis_label,
             y_axis_label="タスク数",
         )
@@ -141,7 +142,10 @@ def plot_video_duration(
     bokeh_obj = bokeh.layouts.layout(layout_list)
     output_file.parent.mkdir(exist_ok=True, parents=True)
     bokeh.plotting.reset_output()
-    bokeh.plotting.output_file(output_file, title=html_title if html_title is not None else "動画の長さの分布")
+    title = "動画の長さの分布"
+    if project_title is not None:
+        title = title + f"({project_title})"
+    bokeh.plotting.output_file(output_file, title=title)
     bokeh.plotting.save(bokeh_obj)
     logger.info(f"'{output_file}'を出力しました。")
 
@@ -189,9 +193,9 @@ class VisualizeVideoDuration(AbstractCommandLineInterface):
     COMMON_MESSAGE = "annofabcli statistics visualize_video_duration: error:"
 
     def validate(self, args: argparse.Namespace) -> bool:
-        if args.project_id is None and args.annotation is None:
+        if args.project_id is None and (args.input_data_json is None or args.task_json is None):
             print(
-                f"{self.COMMON_MESSAGE} argument --project_id: '--annotation'が未指定のときは、'--project_id' を指定してください。",
+                f"{self.COMMON_MESSAGE} argument --project_id: '--input_data_json'または'--task_json'が未指定のときは、'--project_id' を指定してください。",
                 file=sys.stderr,
             )
             return False
@@ -201,20 +205,24 @@ class VisualizeVideoDuration(AbstractCommandLineInterface):
     def visualize_video_duration(
         self,
         input_data_json: Path,
-        task_json_json: Path,
+        task_json: Path,
         output_html: Path,
         *,
         time_unit: TimeUnit,
         project_id: Optional[str] = None,
+        project_title: Optional[str] = None,
         bin_width: Optional[float] = None,
     ) -> None:
-        durations_for_input_data, durations_for_task = get_video_durations(input_data_json, task_json_json)
-        html_title = "動画の長さの分布"
-        if project_id is not None:
-            html_title = html_title + f"(project_id='{project_id}')"
+        durations_for_input_data, durations_for_task = get_video_durations(input_data_json, task_json)
 
         plot_video_duration(
-            durations_for_input_data, durations_for_task, output_html, html_title=html_title, time_unit=time_unit, bin_width=bin_width
+            durations_for_input_data,
+            durations_for_task,
+            output_html,
+            project_id=project_id,
+            project_title=project_title,
+            time_unit=time_unit,
+            bin_width=bin_width,
         )
 
     def main(self) -> None:
@@ -228,13 +236,15 @@ class VisualizeVideoDuration(AbstractCommandLineInterface):
             super().validate_project(project_id, project_member_roles=[ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER])
             project, _ = self.service.api.get_project(project_id)
             if project["input_data_type"] != InputDataType.MOVIE.value:
-                logger.warning(
-                    f"project_id='{project_id}'であるプロジェクトは、動画プロジェクトでないので、出力される区間アノテーションの長さはすべて0秒になります。"
+                print(
+                    f"project_id='{project_id}'であるプロジェクトは、動画プロジェクトでないので動画の長さを可視化したファイルを出力できません。終了します。", file=sys.stderr
                 )
+                sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
         func = partial(
             self.visualize_video_duration,
             project_id=project_id,
+            project_title=project["title"] if project_id is not None else None,
             output_html=args.output,
             time_unit=TimeUnit(args.time_unit),
             bin_width=args.bin_width,
@@ -266,7 +276,6 @@ class VisualizeVideoDuration(AbstractCommandLineInterface):
             func(task_json=task_json, input_data_json=input_data_json)
 
         if args.input_data_json is None or args.task_json is None:
-
             if args.temp_dir is not None:
                 wrapper_func(args.temp_dir)
             else:
@@ -281,10 +290,18 @@ class VisualizeVideoDuration(AbstractCommandLineInterface):
 
 def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
-        "--annotation",
-        type=str,
+        "--input_data_json",
+        type=Path,
         required=False,
-        help="アノテーションzip、またはzipを展開したディレクトリを指定します。" "指定しない場合はAnnofabからダウンロードします。",
+        help="入力データ情報が記載されたJSONファイルのパスを指定します。\n"
+        "JSONファイルは ``$ annofabcli input_data download`` コマンドで取得できます。",
+    )
+
+    parser.add_argument(
+        "--task_json",
+        type=Path,
+        required=False,
+        help="タスク情報が記載されたJSONファイルのパスを指定します。\n" "JSONファイルは ``$ annofabcli task download`` コマンドで取得できます。",
     )
 
     parser.add_argument(
@@ -292,22 +309,15 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--project_id",
         type=str,
         required=False,
-        help="project_id。``--annotation`` が未指定のときは必須です。``--annotation`` が指定されているときに ``--project_id`` を指定すると、アノテーション仕様を参照して、集計対象の属性やグラフの順番が決まります。",  # noqa: E501
+        help="project_id。``--input_data_json`` と ``--task_json`` が未指定のときは必須です。",
     )
 
     parser.add_argument("-o", "--output", type=Path, required=True, help="出力先HTMLファイルのパス")
 
     parser.add_argument(
-        "--bins",
-        type=int,
-        default=20,
-        help="ヒストグラムのビンの数を指定します。",
-    )
-
-    parser.add_argument(
         "--bin_width",
         type=int,
-        help=f"ヒストグラムのビンの幅を指定します。単位は「秒」です。指定しない場合は、ビンの個数が{BIN_COUNT}になるように幅が調整されます。",
+        help=f"ヒストグラムのビンの幅を指定します。単位は「秒」です。指定しない場合は、ビンの個数が{BIN_COUNT}になるようにビンの幅が調整されます。",
     )
 
     parser.add_argument(
@@ -321,7 +331,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--latest",
         action="store_true",
-        help="``--annotation`` を指定しないとき、最新のアノテーションzipを参照します。このオプションを指定すると、アノテーションzipを更新するのに数分待ちます。",  # noqa: E501
+        help="入力データ情報とタスク情報を最新版を参照します。このオプションを指定すると数分待ちます。",
     )
 
     parser.add_argument(
