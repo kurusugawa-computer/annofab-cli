@@ -25,6 +25,7 @@ Available Commands
    visualize
    visualize_annotation_count
    visualize_annotation_duration
+   visualize_video_duration
 
 Usage Details
 =================================
