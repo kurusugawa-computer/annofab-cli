@@ -195,7 +195,7 @@ class VisualizeVideoDuration(AbstractCommandLineInterface):
     def validate(self, args: argparse.Namespace) -> bool:
         if args.project_id is None and (args.input_data_json is None or args.task_json is None):
             print(
-                f"{self.COMMON_MESSAGE} argument --project_id: '--input_data_json'または'--task_json'が未指定のときは、'--project_id' を指定してください。",
+                f"{self.COMMON_MESSAGE} argument --project_id: '--input_data_json'または'--task_json'が未指定のときは、'--project_id' を指定してください。",  # noqa: E501
                 file=sys.stderr,
             )
             return False
@@ -237,7 +237,8 @@ class VisualizeVideoDuration(AbstractCommandLineInterface):
             project, _ = self.service.api.get_project(project_id)
             if project["input_data_type"] != InputDataType.MOVIE.value:
                 print(
-                    f"project_id='{project_id}'であるプロジェクトは、動画プロジェクトでないので動画の長さを可視化したファイルを出力できません。終了します。", file=sys.stderr
+                    f"project_id='{project_id}'であるプロジェクトは、動画プロジェクトでないので動画の長さを可視化したファイルを出力できません。終了します。",
+                    file=sys.stderr,
                 )
                 sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 

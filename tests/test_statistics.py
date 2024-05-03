@@ -22,6 +22,8 @@ annofab_config = dict(inifile.items("annofab"))
 project_id = annofab_config["project_id"]
 service = annofabapi.build()
 
+video_project_id = annofab_config["video_project_id"]
+
 
 class TestCommandLine:
     def test_list_annotation_count_by_task(self):
@@ -122,3 +124,6 @@ class TestCommandLine:
                 str(out_dir / "list-worktime-out.csv"),
             ]
         )
+
+    def test__visualize_video_duration(self) -> None:
+        main(["statistics", "visualize_video_duration", "--project_id", video_project_id, "--output", str(out_dir / "visualize_video_duration.html")])
