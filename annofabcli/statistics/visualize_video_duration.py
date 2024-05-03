@@ -5,17 +5,18 @@ import json
 import logging
 import sys
 import tempfile
-from enum import Enum, auto
+from enum import Enum
 from functools import partial
 from pathlib import Path
-from typing import Collection, Optional, Sequence, Union
+from typing import Optional, Sequence, Union
 
 import bokeh
 import numpy
 import pandas
-from annofabapi.models import DefaultAnnotationType, InputDataType, ProjectMemberRole
-from bokeh.models import HoverTool
+from annofabapi.models import InputDataType, ProjectMemberRole
+from bokeh.models import HoverTool, LayoutDOM
 from bokeh.models.annotations.labels import Title
+from bokeh.models.widgets.markups import Div
 from bokeh.plotting import ColumnDataSource, figure
 
 import annofabcli
@@ -26,21 +27,17 @@ from annofabcli.common.cli import (
     build_annofabapi_resource_and_login,
 )
 from annofabcli.common.download import DownloadingFile
-from annofabcli.common.facade import AnnofabApiFacade, TaskQuery
+from annofabcli.common.facade import AnnofabApiFacade
 from annofabcli.statistics.histogram import get_sub_title_from_series
-from annofabcli.statistics.list_annotation_duration import (
-    AnnotationSpecs,
-    AttributeNameKey,
-    AttributeValueKey,
-    ListAnnotationDurationByInputData,
-)
 
 logger = logging.getLogger(__name__)
 
+BIN_COUNT = 20
+
 
 class TimeUnit(Enum):
-    SECOND = auto()
-    MINUTE = auto()
+    SECOND = "second"
+    MINUTE = "minute"
 
 
 def plot_video_duration(
@@ -48,22 +45,31 @@ def plot_video_duration(
     durations_for_task: Sequence[float],
     output_file: Path,
     *,
-    time_unit: TimeUnit = TimeUnit.SECOND,
+    time_unit: TimeUnit,
     bin_width: Optional[float] = None,
-    html_title: Optional[str]= None
+    html_title: Optional[str] = None,
 ) -> None:
     """
     ラベルごとの区間アノテーションの長さのヒストグラムを出力します。
 
     Args:
-        prior_keys: 優先して表示するcounter_listのキーlist
-        exclude_empty_value: Trueならば、すべての値が0である列のヒストグラムは生成しません。
-        arrange_bin_edge: Trueならば、ヒストグラムの範囲をすべてのヒストグラムで一致させます。
+        durations_for_input_data: 動画の長さの一覧。単位は「秒」です。
+        durations_for_task: タスクに含まれる動画の長さの一覧。単位は「秒」です。
+        output_file: 出力先のファイルのパス
+        time_unit: ヒストグラムに表示する時間の単位
+        bin_width_second: ヒストグラムのビンの幅。単位は「秒」です。
         html_title: HTMLのタイトル。
     """
 
-    def create_figure(durations: list[float], bins: Union[int, numpy.ndarray], title: str, x_axis_label: str, y_axis_label: str) -> figure:
-        hist, bin_edges = numpy.histogram(durations, bins=bins)
+    def create_figure(
+        durations: Sequence[float],
+        bins: Union[int, numpy.ndarray],
+        histogram_range: tuple[float, float],
+        title: str,
+        x_axis_label: str,
+        y_axis_label: str,
+    ) -> figure:
+        hist, bin_edges = numpy.histogram(durations, bins=bins, range=histogram_range)
 
         df_histogram = pandas.DataFrame({"frequency": hist, "left": bin_edges[:-1], "right": bin_edges[1:]})
         df_histogram["interval"] = [f"{left:.1f} to {right:.1f}" for left, right in zip(df_histogram["left"], df_histogram["right"])]
@@ -96,29 +102,46 @@ def plot_video_duration(
 
         max_duration = max(*durations_for_input_data, *durations_for_task)
         bins_sequence = numpy.arange(0, max_duration + bin_width, bin_width)
+
         if bins_sequence[-1] == max_duration:
             bins_sequence = numpy.append(bins_sequence, bins_sequence[-1] + bin_width)
 
-        bins = bins_sequence
+        bins: Union[int, numpy.ndarray] = bins_sequence
     else:
-        bins = 20
+        bins = BIN_COUNT
 
     x_axis_label = "動画の長さ[分]" if time_unit == TimeUnit.MINUTE else "動画の長さ[秒]"
+    histogram_range = (min(*durations_for_input_data, *durations_for_task), max(*durations_for_input_data, *durations_for_task))
 
-    figure_list = []
-    figure_list.append(
+    layout_list: list[LayoutDOM] = []
+    if html_title is not None:
+        layout_list.append(Div(text=f"<h3>{html_title}</h3>"))
+
+    layout_list.append(
         create_figure(
-            durations_for_input_data, bins=bins, title="動画の長さの分布（全ての入力データ）", x_axis_label=x_axis_label, y_axis_label="入力データ数"
+            durations_for_input_data,
+            bins=bins,
+            histogram_range=histogram_range,
+            title="動画の長さの分布（全ての入力データ）",
+            x_axis_label=x_axis_label,
+            y_axis_label="入力データ数",
         )
     )
-    figure_list.append(
-        create_figure(durations_for_task, bins=bins, title="動画の長さの分布（タスクに含まれる入力データ）", x_axis_label=x_axis_label, y_axis_label="タスク数")
+    layout_list.append(
+        create_figure(
+            durations_for_task,
+            bins=bins,
+            histogram_range=histogram_range,
+            title="動画の長さの分布（タスクに含まれる入力データ）",
+            x_axis_label=x_axis_label,
+            y_axis_label="タスク数",
+        )
     )
 
-    bokeh_obj = bokeh.layouts.layout(figure_list)  # type: ignore[arg-type]
+    bokeh_obj = bokeh.layouts.layout(layout_list)
     output_file.parent.mkdir(exist_ok=True, parents=True)
     bokeh.plotting.reset_output()
-    bokeh.plotting.output_file(output_file, title=html_title)
+    bokeh.plotting.output_file(output_file, title=html_title if html_title is not None else "動画の長さの分布")
     bokeh.plotting.save(bokeh_obj)
     logger.info(f"'{output_file}'を出力しました。")
 
@@ -159,7 +182,7 @@ def get_video_durations(input_data_json: Path, task_json: Path) -> tuple[list[fl
             logger.warning(f"task_id='{task_id}' :: input_data='{first_input_data_id}'のinput_durationがNoneです。")
         video_durations_dict_for_task[task_id] = duration
 
-    return list(video_durations_dict_for_input_data.value()), list(video_durations_dict_for_task.value())
+    return list(video_durations_dict_for_input_data.values()), list(video_durations_dict_for_task.values())
 
 
 class VisualizeVideoDuration(AbstractCommandLineInterface):
@@ -181,27 +204,17 @@ class VisualizeVideoDuration(AbstractCommandLineInterface):
         task_json_json: Path,
         output_html: Path,
         *,
+        time_unit: TimeUnit,
         project_id: Optional[str] = None,
+        bin_width: Optional[float] = None,
     ) -> None:
-
         durations_for_input_data, durations_for_task = get_video_durations(input_data_json, task_json_json)
-        
+        html_title = "動画の長さの分布"
+        if project_id is not None:
+            html_title = html_title + f"(project_id='{project_id}')"
 
-        plot_annotation_duration_histogram_by_label(
-            annotation_duration_list,
-            output_file=duration_by_label_html,
-            bins=bins,
-            prior_keys=label_keys,
-            exclude_empty_value=exclude_empty_value,
-            arrange_bin_edge=arrange_bin_edge,
-        )
-        plot_annotation_duration_histogram_by_attribute(
-            annotation_duration_list,
-            output_file=duration_by_attribute_html,
-            bins=bins,
-            prior_keys=attribute_value_keys,
-            exclude_empty_value=exclude_empty_value,
-            arrange_bin_edge=arrange_bin_edge,
+        plot_video_duration(
+            durations_for_input_data, durations_for_task, output_html, html_title=html_title, time_unit=time_unit, bin_width=bin_width
         )
 
     def main(self) -> None:
@@ -219,55 +232,51 @@ class VisualizeVideoDuration(AbstractCommandLineInterface):
                     f"project_id='{project_id}'であるプロジェクトは、動画プロジェクトでないので、出力される区間アノテーションの長さはすべて0秒になります。"
                 )
 
-        output_dir: Path = args.output_dir
-        annotation_path = Path(args.annotation) if args.annotation is not None else None
-
-        task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id) if args.task_id is not None else None
-        task_query = TaskQuery.from_dict(annofabcli.common.cli.get_json_from_args(args.task_query)) if args.task_query is not None else None
-
         func = partial(
-            self.visualize_annotation_duration,
+            self.visualize_video_duration,
             project_id=project_id,
-            output_dir=output_dir,
-            target_task_ids=task_id_list,
-            task_query=task_query,
-            bins=args.bins,
-            exclude_empty_value=args.exclude_empty_value,
-            arrange_bin_edge=args.arrange_bin_edge,
+            output_html=args.output,
+            time_unit=TimeUnit(args.time_unit),
+            bin_width=args.bin_width,
         )
 
-        if annotation_path is None:
-            assert project_id is not None
+        def wrapper_func(temp_dir: Path) -> None:
             downloading_obj = DownloadingFile(self.service)
-            if args.temp_dir is not None:
-                input_data_json = args.temp_dir / f"{project_id}__input_data.json"
+            assert project_id is not None
+            if args.input_data_json is None:
+                input_data_json = temp_dir / f"{project_id}__input_data.json"
                 downloading_obj.download_input_data_json(
                     project_id,
                     dest_path=input_data_json,
                     is_latest=args.latest,
                 )
-                task_json = args.temp_dir / f"{project_id}__task.json"
+            else:
+                input_data_json = args.input_data_json
+
+            if args.task_json is None:
+                task_json = temp_dir / f"{project_id}__task.json"
                 downloading_obj.download_task_json(
                     project_id,
                     dest_path=task_json,
                     is_latest=args.latest,
                 )
+            else:
+                task_json = args.task_json
 
-                func(annotation_path=annotation_path)
+            func(task_json=task_json, input_data_json=input_data_json)
+
+        if args.input_data_json is None or args.task_json is None:
+
+            if args.temp_dir is not None:
+                wrapper_func(args.temp_dir)
             else:
                 # `NamedTemporaryFile`を使わない理由: Windowsで`PermissionError`が発生するため
                 # https://qiita.com/yuji38kwmt/items/c6f50e1fc03dafdcdda0 参考
                 with tempfile.TemporaryDirectory() as str_temp_dir:
-                    annotation_path = Path(str_temp_dir) / f"{project_id}__annotation.zip"
-                    downloading_obj.download_annotation_zip(
-                        project_id,
-                        dest_path=str(annotation_path),
-                        is_latest=args.latest,
-                    )
-                    func(annotation_path=annotation_path)
+                    wrapper_func(Path(str_temp_dir))
 
         else:
-            func(annotation_path=annotation_path)
+            func(task_json=args.task_json, input_data_json=args.input_data_json)
 
 
 def parse_args(parser: argparse.ArgumentParser) -> None:
@@ -286,13 +295,27 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         help="project_id。``--annotation`` が未指定のときは必須です。``--annotation`` が指定されているときに ``--project_id`` を指定すると、アノテーション仕様を参照して、集計対象の属性やグラフの順番が決まります。",  # noqa: E501
     )
 
-    parser.add_argument("-o", "--output_dir", type=Path, required=True, help="出力先ディレクトリのパス")
+    parser.add_argument("-o", "--output", type=Path, required=True, help="出力先HTMLファイルのパス")
 
     parser.add_argument(
         "--bins",
         type=int,
         default=20,
         help="ヒストグラムのビンの数を指定します。",
+    )
+
+    parser.add_argument(
+        "--bin_width",
+        type=int,
+        help=f"ヒストグラムのビンの幅を指定します。単位は「秒」です。指定しない場合は、ビンの個数が{BIN_COUNT}になるように幅が調整されます。",
+    )
+
+    parser.add_argument(
+        "--time_unit",
+        type=str,
+        default=TimeUnit.SECOND.value,
+        choices=[e.value for e in TimeUnit],
+        help="動画の長さの時間単位を指定します。",
     )
 
     parser.add_argument(
@@ -313,7 +336,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
 def main(args: argparse.Namespace) -> None:
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
-    VisualizeAnnotationDuration(service, facade, args).main()
+    VisualizeVideoDuration(service, facade, args).main()
 
 
 def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
