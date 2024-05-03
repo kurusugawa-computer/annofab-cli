@@ -801,7 +801,7 @@ class ListAnnotationCountMain:
 
     @staticmethod
     def get_frame_no_map(task_json_path: Path) -> dict[tuple[str, str], int]:
-        with task_json_path.open() as f:
+        with task_json_path.open(encoding="utf-8") as f:
             task_list = json.load(f)
 
         result = {}
