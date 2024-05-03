@@ -92,7 +92,7 @@ class MergeAnnotationMain:
         }
 
         output_json.parent.mkdir(parents=True, exist_ok=True)
-        with output_json.open("w") as f:
+        with output_json.open("w", encoding="utf-8") as f:
             json.dump(new_simple_annotation, f, ensure_ascii=False)
 
     def copy_annotation(self, parser: SimpleAnnotationParser, output_json: Path):  # noqa: ANN201
@@ -105,7 +105,7 @@ class MergeAnnotationMain:
                 self._write_outer_file(parser, anno, output_json)
 
         output_json.parent.mkdir(exist_ok=True, parents=True)
-        with output_json.open("w") as f:
+        with output_json.open("w", encoding="utf-8") as f:
             json.dump(simple_annotation, f, ensure_ascii=False)
 
     @staticmethod
