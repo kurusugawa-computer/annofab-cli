@@ -337,7 +337,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--temp_dir",
         type=Path,
-        help="指定したディレクトリに、アノテーションZIPなどの一時ファイルをダウンロードします。",
+        help="指定したディレクトリに、入力データのJSONやタスクのJSONなどテンポラリファイルをダウンロードします。",
     )
 
     parser.set_defaults(subcommand_func=main)
@@ -351,7 +351,7 @@ def main(args: argparse.Namespace) -> None:
 
 def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     subcommand_name = "visualize_video_duration"
-    subcommand_help = "動画の長さをヒストグラムで可視化したファイルを出力します。"
+    subcommand_help = "動画の長さをヒストグラムで可視化します。"
     epilog = "オーナロールまたはアノテーションユーザロールを持つユーザで実行してください。"
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, epilog=epilog)
     parse_args(parser)
