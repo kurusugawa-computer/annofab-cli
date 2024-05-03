@@ -119,6 +119,7 @@ line-length = 150
 
 
 [tool.ruff.lint]
+
 ignore = [
     "G004", # `logging-f-string` : loggingでf-stringを使いたいので無視する
     "PD901", #すでに`df`という変数をいろんなところで使っているため
@@ -158,8 +159,16 @@ ignore = [
     "PT", # flake8-pytest-style
 ]
 
+
+# preview段階のルールを個別に指定できるようにするための設定
+preview = true
+explicit-preview-rules = true
+
 select = [
-    "ALL"
+    "ALL",
+    # 以降のルールはpreview版のルールのみを指定する
+    "B909",
+    "PLW1514"  # unspecified-encoding: Windows環境で実行する際にencoding="utf-8"を指定しないとエラーになるため、チェックする
 ]
 
 [tool.ruff.lint.pydocstyle]
