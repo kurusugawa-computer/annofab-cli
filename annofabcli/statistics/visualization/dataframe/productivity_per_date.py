@@ -60,8 +60,7 @@ class AbstractPhaseProductivityPerDate(abc.ABC):
             widget_list: list[Widget] = []
             hide_all_button = line_graph.create_button_hiding_showing_all_lines(is_hiding=True)
             show_all_button = line_graph.create_button_hiding_showing_all_lines(is_hiding=False)
-            widget_list.append(hide_all_button)
-            widget_list.append(show_all_button)
+            widget_list.extend([hide_all_button, show_all_button])
 
             # マーカーがある場合は、マーカーを表示/非表示切り替えられるチェックボックスを配置する
             if len(line_graph.marker_glyphs) > 0:
