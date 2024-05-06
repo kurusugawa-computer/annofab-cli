@@ -202,9 +202,7 @@ def get_replaced_biography_set(df: pandas.DataFrame, not_masked_location_set: Op
     if not_masked_location_set is None:
         return biography_set
     else:
-        for not_masked_location in not_masked_location_set:
-            if not_masked_location in biography_set:
-                biography_set.remove(not_masked_location)
+        biography_set.difference_update(not_masked_location_set)
 
     return biography_set
 

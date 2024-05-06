@@ -40,47 +40,13 @@ class CompleteTasksMain(AbstractCommandLineWithConfirmInterface):
         self.facade = AnnofabApiFacade(service)
         AbstractCommandLineWithConfirmInterface.__init__(self, all_yes)
 
-    @staticmethod
-    def inspection_list_to_input_data_dict(inspection_list: List[Inspection]) -> Dict[str, List[Inspection]]:
-        """
-        検査コメントのListを、Dict[InputDataId, List[Inspection]]] の形式に変換する。
-
-        """
-        input_data_dict: Dict[str, List[Inspection]] = {}
-        for inspection in inspection_list:
-            input_data_id = inspection["input_data_id"]
-            inspection_list = input_data_dict.get(input_data_id, [])
-            inspection_list.append(inspection)
-            input_data_dict[input_data_id] = inspection_list
-        return input_data_dict
-
-    @staticmethod
-    def inspection_list_to_dict(all_inspection_list: List[Inspection]) -> InspectionJson:
-        """
-        検査コメントのListを、Dict[TaskId, Dict[InputDataId, List[Inspection]]] の形式に変換する。
-
-        """
-        task_dict: InspectionJson = {}
-        for inspection in all_inspection_list:
-            task_id = inspection["task_id"]
-            input_data_dict: Dict[str, List[Inspection]] = task_dict.get(task_id, {})
-
-            input_data_id = inspection["input_data_id"]
-            inspection_list = input_data_dict.get(input_data_id, [])
-            inspection_list.append(inspection)
-            input_data_dict[input_data_id] = inspection_list
-
-            task_dict[task_id] = input_data_dict
-
-        return task_dict
-
-    def reply_inspection_comment(  # noqa: ANN201
+    def reply_inspection_comment(
         self,
         task: Task,
         input_data_id: str,
         unanswered_comment_list: List[Inspection],
         comment: str,
-    ):
+    ) -> None:
         """
         未回答の検査コメントに対して、返信を付与する。
         """
@@ -99,7 +65,7 @@ class CompleteTasksMain(AbstractCommandLineWithConfirmInterface):
 
         request_body = [to_req_inspection(e) for e in unanswered_comment_list]
 
-        return self.service.api.batch_update_comments(task.project_id, task.task_id, input_data_id, request_body=request_body)[0]
+        self.service.api.batch_update_comments(task.project_id, task.task_id, input_data_id, request_body=request_body)
 
     def update_status_of_inspections(  # noqa: ANN201
         self,

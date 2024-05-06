@@ -10,7 +10,7 @@ output_dir.mkdir(exist_ok=True, parents=True)
 
 class Test__InspectionCommentCount:
     def test__from_api_content(self):
-        with open(data_dir / "inspection-comment.json") as f:
+        with open(data_dir / "inspection-comment.json", encoding="utf-8") as f:
             inspection_comment = json.load(f)
 
         actual = InspectionCommentCount.from_api_content(inspection_comment)

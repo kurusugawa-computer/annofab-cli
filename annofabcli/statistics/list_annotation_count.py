@@ -725,8 +725,7 @@ class AnnotationSpecs:
                         target_attribute_value_keys.append((label_name_en, attribute_name_en, choice_name_en))
 
                 elif AdditionalDataDefinitionType(attribute["type"]) == AdditionalDataDefinitionType.FLAG:
-                    target_attribute_value_keys.append((label_name_en, attribute_name_en, "true"))
-                    target_attribute_value_keys.append((label_name_en, attribute_name_en, "false"))
+                    target_attribute_value_keys.extend([(label_name_en, attribute_name_en, "true"), (label_name_en, attribute_name_en, "false")])
 
                 else:
                     continue

@@ -114,11 +114,9 @@ def plot_video_duration(
     x_axis_label = "動画の長さ[分]" if time_unit == TimeUnit.MINUTE else "動画の長さ[秒]"
     histogram_range = (min(*durations_for_input_data, *durations_for_task), max(*durations_for_input_data, *durations_for_task))
 
-    layout_list: list[LayoutDOM] = []
-    layout_list.append(Div(text="<h3>動画の長さの分布</h3>"))
-
-    layout_list.append(PreText(text=f"project_id='{project_id}'\n" f"project_title='{project_title}'"))
-    layout_list.append(
+    layout_list: list[LayoutDOM] = [
+        Div(text="<h3>動画の長さの分布</h3>"),
+        PreText(text=f"project_id='{project_id}'\n" f"project_title='{project_title}'"),
         create_figure(
             durations_for_input_data,
             bins=bins,
@@ -126,9 +124,7 @@ def plot_video_duration(
             title="全ての入力データ",
             x_axis_label=x_axis_label,
             y_axis_label="入力データ数",
-        )
-    )
-    layout_list.append(
+        ),
         create_figure(
             durations_for_task,
             bins=bins,
@@ -136,8 +132,8 @@ def plot_video_duration(
             title="タスクに含まれる入力データ",
             x_axis_label=x_axis_label,
             y_axis_label="タスク数",
-        )
-    )
+        ),
+    ]
 
     bokeh_obj = bokeh.layouts.layout(layout_list)
     output_file.parent.mkdir(exist_ok=True, parents=True)

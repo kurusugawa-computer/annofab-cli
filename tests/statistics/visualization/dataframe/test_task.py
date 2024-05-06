@@ -17,10 +17,10 @@ output_dir.mkdir(exist_ok=True, parents=True)
 class TestTask:
     @pytest.mark.access_webapi
     def test__from_api_content(self):
-        with open(data_dir / "task.json") as f:
+        with open(data_dir / "task.json", encoding="utf-8") as f:
             tasks = json.load(f)
 
-        with open(data_dir / "task-history.json") as f:
+        with open(data_dir / "task-history.json", encoding="utf-8") as f:
             task_histories = json.load(f)
 
         project_id = "1186bb00-16e6-4d20-8e24-310322911850"
