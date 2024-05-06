@@ -65,7 +65,7 @@ class CompleteTasksMain(AbstractCommandLineWithConfirmInterface):
 
         request_body = [to_req_inspection(e) for e in unanswered_comment_list]
 
-        self.service.api.batch_update_comments(task.project_id, task.task_id, input_data_id, request_body=request_body)[0]
+        self.service.api.batch_update_comments(task.project_id, task.task_id, input_data_id, request_body=request_body)
 
     def update_status_of_inspections(  # noqa: ANN201
         self,
