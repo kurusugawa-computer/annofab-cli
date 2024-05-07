@@ -137,7 +137,7 @@ def test__plot_annotation_duration_histogram_by_label__metadataを指定() -> No
         annotation_duration_list,
         output_file=output_dir / "test__plot_annotation_duration_histogram_by_label__metadataを指定.html",
         time_unit=TimeUnit.SECOND,
-        metadata={"project_id":"id","project_title":"title1"}
+        metadata={"project_id": "id", "project_title": "title1"},
     )
 
 
@@ -192,4 +192,15 @@ def test__plot_annotation_duration_histogram_by_attribute__bin_widthとarrange_b
         time_unit=TimeUnit.MINUTE,
         bin_width=60,
         arrange_bin_edge=True,
+    )
+
+
+def test__plot_annotation_duration_histogram_by_attribute__metadataを指定() -> None:
+    annotation_duration_list = [ListAnnotationDurationByInputData().get_annotation_duration(e) for e in ANNOTATIONS]
+
+    plot_annotation_duration_histogram_by_attribute(
+        annotation_duration_list,
+        output_file=output_dir / "test__plot_annotation_duration_histogram_by_attribute__metadataを指定.html",
+        time_unit=TimeUnit.SECOND,
+        metadata={"project_id": "id", "project_title": "title1"},
     )

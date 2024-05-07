@@ -69,6 +69,7 @@ def plot_annotation_duration_histogram_by_label(
         prior_keys: 優先して表示するcounter_listのキーlist
         exclude_empty_value: Trueならば、すべての値が0である列のヒストグラムは描画しません。
         arrange_bin_edge: Trueならば、ヒストグラムの範囲をすべてのヒストグラムで一致させます。
+        metadata: HTMLファイルの上部に表示するメタデータです。
     """
 
     def create_df() -> pandas.DataFrame:
@@ -100,7 +101,7 @@ def plot_annotation_duration_histogram_by_label(
 
     figure_list_2d: list[list[Optional[LayoutDOM]]] = [
         [
-            Div(text="<h3>区間アノテーションの長さの分布（ラベルごと）</h3>"),
+            Div(text="<h3>区間アノテーションの長さの分布（ラベル名ごと）</h3>"),
         ]
     ]
 
@@ -165,6 +166,7 @@ def plot_annotation_duration_histogram_by_attribute(
     prior_keys: Optional[list[AttributeValueKey]] = None,
     exclude_empty_value: bool = False,
     arrange_bin_edge: bool = False,
+    metadata: Optional[dict[str, Any]] = None,
 ) -> None:
     """
     属性値ごとの区間アノテーションの長さのヒストグラムを出力します。
@@ -174,6 +176,7 @@ def plot_annotation_duration_histogram_by_attribute(
         prior_keys: 優先して表示するcounter_listのキーlist
         exclude_empty_value: Trueならば、すべての値が0である列のヒストグラムは生成しません。
         arrange_bin_edge: Trueならば、ヒストグラムの範囲をすべてのヒストグラムで一致させます。
+        metadata: HTMLファイルの上部に表示するメタデータです。
     """
 
     def create_df() -> pandas.DataFrame:
@@ -220,6 +223,16 @@ def plot_annotation_duration_histogram_by_attribute(
     histogram_range = get_histogram_range(df)
     max_duration = df.max(numeric_only=True).max()
     x_axis_label = "区間アノテーションの長さ[分]" if time_unit == TimeUnit.MINUTE else "区間アノテーションの長さ[秒]"
+
+    figure_list_2d: list[list[Optional[LayoutDOM]]] = [
+        [
+            Div(text="<h3>区間アノテーションの長さの分布（ラベル名ごと）</h3>"),
+        ]
+    ]
+
+    if metadata is not None:
+        figure_list_2d.append([create_pretext_from_metadata(metadata)])
+
     figures_dict = defaultdict(list)
     for col in df.columns:
         header = (str(col[0]), str(col[1]))  # ラベル名, 属性名
@@ -245,9 +258,9 @@ def plot_annotation_duration_histogram_by_attribute(
 
         figures_dict[header].append(fig)
 
-    grid_layout_figures = convert_to_2d_figure_list(figures_dict)
+    figure_list_2d.extend(convert_to_2d_figure_list(figures_dict))
 
-    bokeh_obj = bokeh.layouts.gridplot(grid_layout_figures)  # type: ignore[arg-type]
+    bokeh_obj = bokeh.layouts.gridplot(figure_list_2d)  # type: ignore[arg-type]
     output_file.parent.mkdir(exist_ok=True, parents=True)
     bokeh.plotting.reset_output()
     bokeh.plotting.output_file(output_file, title=output_file.stem)
