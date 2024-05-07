@@ -71,6 +71,7 @@ def plot_annotation_duration_histogram_by_label(
         arrange_bin_edge: Trueならば、ヒストグラムの範囲をすべてのヒストグラムで一致させます。
         metadata: HTMLファイルの上部に表示するメタデータです。
     """
+    print(f"{metadata=}")
 
     def create_df() -> pandas.DataFrame:
         all_label_key_set = {key for c in annotation_duration_list for key in c.annotation_duration_second_by_label.keys()}
@@ -157,7 +158,7 @@ def plot_annotation_duration_histogram_by_label(
     logger.info(f"'{output_file}'を出力しました。")
 
 
-def plot_annotation_duration_histogram_by_attribute(
+def plot_annotation_duration_histogram_by_attribute(  # noqa: PLR0915
     annotation_duration_list: Sequence[AnnotationDuration],
     output_file: Path,
     *,
@@ -226,7 +227,7 @@ def plot_annotation_duration_histogram_by_attribute(
 
     figure_list_2d: list[list[Optional[LayoutDOM]]] = [
         [
-            Div(text="<h3>区間アノテーションの長さの分布（ラベル名ごと）</h3>"),
+            Div(text="<h3>区間アノテーションの長さの分布（属性値ごと）</h3>"),
         ]
     ]
 
@@ -318,6 +319,17 @@ class VisualizeAnnotationDuration(AbstractCommandLineInterface):
             label_keys = annotation_specs.label_keys()
             attribute_value_keys = annotation_specs.selective_attribute_value_keys()
 
+        project_title = None
+        if project_id is not None:
+            project, _ = self.service.api.get_project(project_id)
+            project_title = project["title"]
+
+        metadata = {
+            "project_id": project_id,
+            "project_title": project_title,
+            "task_query": task_query.to_dict(encode_json=True) if task_query is not None else None,
+            "target_task_ids": target_task_ids,
+        }
         plot_annotation_duration_histogram_by_label(
             annotation_duration_list,
             output_file=duration_by_label_html,
@@ -326,6 +338,7 @@ class VisualizeAnnotationDuration(AbstractCommandLineInterface):
             prior_keys=label_keys,
             exclude_empty_value=exclude_empty_value,
             arrange_bin_edge=arrange_bin_edge,
+            metadata=metadata,
         )
         plot_annotation_duration_histogram_by_attribute(
             annotation_duration_list,
@@ -335,6 +348,7 @@ class VisualizeAnnotationDuration(AbstractCommandLineInterface):
             prior_keys=attribute_value_keys,
             exclude_empty_value=exclude_empty_value,
             arrange_bin_edge=arrange_bin_edge,
+            metadata=metadata,
         )
 
     def main(self) -> None:
@@ -363,6 +377,7 @@ class VisualizeAnnotationDuration(AbstractCommandLineInterface):
             project_id=project_id,
             output_dir=output_dir,
             time_unit=TimeUnit(args.time_unit),
+            bin_width=args.bin_width,
             target_task_ids=task_id_list,
             task_query=task_query,
             exclude_empty_value=args.exclude_empty_value,

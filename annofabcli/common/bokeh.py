@@ -10,7 +10,7 @@ from bokeh.plotting import figure
 
 
 def create_pretext_from_metadata(metadata: dict[str, Any]) -> PreText:
-    text_lines = [f"{key}={json.dumps(value)}" for key, value in metadata.items()]
+    text_lines = [f"{key} = {json.dumps(value)}" for key, value in metadata.items()]
     text = "\n".join(text_lines)
     return PreText(text=text)
 
