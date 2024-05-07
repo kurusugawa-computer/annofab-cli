@@ -83,6 +83,19 @@ def create_histogram_figure2(
     width: int = 400,
     height: int = 300,
 ) -> figure:
+    """
+    ヒストグラムのbokeh.figureを生成します。
+
+    Args:
+        hist: `numpy.histogram`の戻り値 tuple[0]
+        bin_edges: `numpy.histogram`の戻り値 tuple[1]
+        x_axis_label: X軸の名前
+        y_axis_label: Y軸の名前
+        title: グラフのタイトル
+        sub_title: グラフのサブタイトル
+        width: グラフの幅
+        height: グラフの高さ
+    """
     df_histogram = pandas.DataFrame({"frequency": hist, "left": bin_edges[:-1], "right": bin_edges[1:]})
     df_histogram["interval"] = [f"{left:.1f} to {right:.1f}" for left, right in zip(df_histogram["left"], df_histogram["right"])]
     df_histogram["width"] = [f"{(right-left):.1f}" for left, right in zip(df_histogram["left"], df_histogram["right"])]

@@ -114,7 +114,7 @@ def test__plot_annotation_duration_histogram_by_label__arrange_bin_edgeを指定
         annotation_duration_list,
         output_file=output_dir / "test__plot_annotation_duration_histogram_by_label__arrange_bin_edgeを指定する.html",
         time_unit=TimeUnit.SECOND,
-        arrange_bin_edge=True
+        arrange_bin_edge=True,
     )
 
 
@@ -126,7 +126,7 @@ def test__plot_annotation_duration_histogram_by_label__bin_widthとarrange_bin_e
         output_file=output_dir / "test__plot_annotation_duration_histogram_by_label__bin_widthとarrange_bin_edgeを指定する.html",
         time_unit=TimeUnit.MINUTE,
         bin_width=60,
-        arrange_bin_edge=True
+        arrange_bin_edge=True,
     )
 
 
@@ -136,4 +136,49 @@ def test__plot_annotation_duration_histogram_by_attribute() -> None:
     plot_annotation_duration_histogram_by_attribute(
         annotation_duration_list,
         output_file=output_dir / "test__plot_annotation_duration_histogram_by_attribute.html",
+        time_unit=TimeUnit.SECOND,
+    )
+
+
+def test__plot_annotation_duration_histogram_by_attribute__time_unitに分を指定() -> None:
+    annotation_duration_list = [ListAnnotationDurationByInputData().get_annotation_duration(e) for e in ANNOTATIONS]
+
+    plot_annotation_duration_histogram_by_attribute(
+        annotation_duration_list,
+        output_file=output_dir / "plot_annotation_duration_histogram_by_attribute__time_unitに分を指定.html",
+        time_unit=TimeUnit.MINUTE,
+    )
+
+
+def test__plot_annotation_duration_histogram_by_attribute__arrange_bin_edgeを指定() -> None:
+    annotation_duration_list = [ListAnnotationDurationByInputData().get_annotation_duration(e) for e in ANNOTATIONS]
+
+    plot_annotation_duration_histogram_by_attribute(
+        annotation_duration_list,
+        output_file=output_dir / "test__plot_annotation_duration_histogram_by_attribute__arrange_bin_edgeを指定.html",
+        time_unit=TimeUnit.MINUTE,
+        arrange_bin_edge=True,
+    )
+
+
+def test__plot_annotation_duration_histogram_by_attribute__bin_widthを指定() -> None:
+    annotation_duration_list = [ListAnnotationDurationByInputData().get_annotation_duration(e) for e in ANNOTATIONS]
+
+    plot_annotation_duration_histogram_by_attribute(
+        annotation_duration_list,
+        output_file=output_dir / "test__plot_annotation_duration_histogram_by_attribute__bin_widthを指定.html",
+        time_unit=TimeUnit.MINUTE,
+        bin_width=60,
+    )
+
+
+def test__plot_annotation_duration_histogram_by_attribute__bin_widthとarrange_bin_edgeを指定() -> None:
+    annotation_duration_list = [ListAnnotationDurationByInputData().get_annotation_duration(e) for e in ANNOTATIONS]
+
+    plot_annotation_duration_histogram_by_attribute(
+        annotation_duration_list,
+        output_file=output_dir / "test__plot_annotation_duration_histogram_by_attribute__bin_widthとarrange_bin_edgeを指定.html",
+        time_unit=TimeUnit.MINUTE,
+        bin_width=60,
+        arrange_bin_edge=True,
     )
