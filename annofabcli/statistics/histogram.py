@@ -70,3 +70,38 @@ def get_histogram_figure(
 
     fig.add_tools(hover)
     return fig
+
+
+def create_histogram_figure2(
+    hist: numpy.ndarray,
+    bin_edges: numpy.ndarray,
+    *,
+    x_axis_label: str,
+    y_axis_label: str,
+    title: Optional[str] = None,
+    sub_title: Optional[str] = None,
+    width: int = 400,
+    height: int = 300,
+) -> figure:
+    df_histogram = pandas.DataFrame({"frequency": hist, "left": bin_edges[:-1], "right": bin_edges[1:]})
+    df_histogram["interval"] = [f"{left:.1f} to {right:.1f}" for left, right in zip(df_histogram["left"], df_histogram["right"])]
+
+    source = ColumnDataSource(df_histogram)
+    fig = figure(
+        width=width,
+        height=height,
+        x_axis_label=x_axis_label,
+        y_axis_label=y_axis_label,
+    )
+
+    if sub_title is not None:
+        fig.add_layout(Title(text=sub_title, text_font_size="11px"), "above")
+    if title is not None:
+        fig.add_layout(Title(text=title), "above")
+
+    hover = HoverTool(tooltips=[("interval", "@interval"), ("frequency", "@frequency")])
+
+    fig.quad(source=source, top="frequency", bottom=0, left="left", right="right", line_color="white")
+
+    fig.add_tools(hover)
+    return fig

@@ -28,7 +28,7 @@ from annofabcli.common.cli import (
 )
 from annofabcli.common.download import DownloadingFile
 from annofabcli.common.facade import AnnofabApiFacade, TaskQuery
-from annofabcli.statistics.histogram import get_bin_edges, get_sub_title_from_series
+from annofabcli.statistics.histogram import create_histogram_figure2, get_bin_edges, get_sub_title_from_series
 from annofabcli.statistics.list_annotation_duration import (
     AnnotationDuration,
     AnnotationSpecs,
@@ -68,28 +68,32 @@ def plot_annotation_duration_histogram_by_label(
         arrange_bin_edge: Trueならば、ヒストグラムの範囲をすべてのヒストグラムで一致させます。
     """
 
-    all_label_key_set = {key for c in annotation_duration_list for key in c.annotation_duration_second_by_label.keys()}
-    if prior_keys is not None:
-        remaining_columns = sorted(all_label_key_set - set(prior_keys))
-        columns = prior_keys + remaining_columns
-    else:
-        columns = sorted(all_label_key_set)
+    def create_df() -> pandas.DataFrame:
+        all_label_key_set = {key for c in annotation_duration_list for key in c.annotation_duration_second_by_label.keys()}
+        if prior_keys is not None:
+            remaining_columns = sorted(all_label_key_set - set(prior_keys))
+            columns = prior_keys + remaining_columns
+        else:
+            columns = sorted(all_label_key_set)
 
-    df = pandas.DataFrame([e.annotation_duration_second_by_label for e in annotation_duration_list], columns=columns)
-    df.fillna(0, inplace=True)
-    if time_unit == TimeUnit.MINUTE:
-        df = df / 60
+        df = pandas.DataFrame([e.annotation_duration_second_by_label for e in annotation_duration_list], columns=columns)
+        df.fillna(0, inplace=True)
+        if time_unit == TimeUnit.MINUTE:
+            df = df / 60
+        return df
 
+    def get_histogram_range(df: pandas.DataFrame) -> Optional[tuple[float, float]]:
+        if arrange_bin_edge:
+            return (
+                df.min(numeric_only=True).min(),
+                df.max(numeric_only=True).max(),
+            )
+        return None
+
+    df = create_df()
     figure_list = []
 
     max_duration = df.max(numeric_only=True).max()
-    if arrange_bin_edge:
-        histogram_range = (
-            df.min(numeric_only=True).min(),
-            max_duration,
-        )
-    else:
-        histogram_range = None
 
     if exclude_empty_value:
         # すべての値が0である列を除外する
@@ -99,14 +103,14 @@ def plot_annotation_duration_histogram_by_label(
                 f"以下の属性値は、すべてのタスクで区間アノテーションの長さが0であるためヒストグラムを描画しません。 :: "
                 f"{set(df.columns) - set(columns)}"
             )
-    else:
-        columns = df.columns
+        df = df[columns]
 
     if bin_width is not None:
         if time_unit == TimeUnit.MINUTE:
             bin_width = bin_width / 60
 
     x_axis_label = "区間アノテーションの長さ[分]" if time_unit == TimeUnit.MINUTE else "区間アノテーションの長さ[秒]"
+    histogram_range = get_histogram_range(df)
 
     logger.debug(f"{len(df.columns)}個のラベルごとのヒストグラムを出力します。")
     for col in columns:
@@ -120,25 +124,14 @@ def plot_annotation_duration_histogram_by_label(
         else:
             hist, bin_edges = numpy.histogram(df[col], bins=BIN_COUNT, range=histogram_range)
 
-        df_histogram = pandas.DataFrame({"frequency": hist, "left": bin_edges[:-1], "right": bin_edges[1:]})
-        df_histogram["interval"] = [f"{left:.1f} to {right:.1f}" for left, right in zip(df_histogram["left"], df_histogram["right"])]
-
-        source = ColumnDataSource(df_histogram)
-        fig = figure(
-            width=400,
-            height=300,
+        fig = create_histogram_figure2(
+            hist,
+            bin_edges,
             x_axis_label=x_axis_label,
             y_axis_label="タスク数",
+            title=str(col),
+            sub_title=get_sub_title_from_series(df[col], decimals=2),
         )
-
-        fig.add_layout(Title(text=get_sub_title_from_series(df[col], decimals=2), text_font_size="11px"), "above")
-        fig.add_layout(Title(text=str(col)), "above")
-
-        hover = HoverTool(tooltips=[("interval", "@interval"), ("frequency", "@frequency")])
-
-        fig.quad(source=source, top="frequency", bottom=0, left="left", right="right", line_color="white")
-
-        fig.add_tools(hover)
         figure_list.append(fig)
 
     bokeh_obj = bokeh.layouts.gridplot(figure_list, ncols=4)  # type: ignore[arg-type]
@@ -249,8 +242,9 @@ class VisualizeAnnotationDuration(AbstractCommandLineInterface):
         self,
         annotation_path: Path,
         output_dir: Path,
-        bins: int,
+        time_unit: TimeUnit,
         *,
+        bin_width: Optional[int] = None,
         project_id: Optional[str] = None,
         target_task_ids: Optional[Collection[str]] = None,
         task_query: Optional[TaskQuery] = None,
@@ -284,7 +278,8 @@ class VisualizeAnnotationDuration(AbstractCommandLineInterface):
         plot_annotation_duration_histogram_by_label(
             annotation_duration_list,
             output_file=duration_by_label_html,
-            bins=bins,
+            time_unit=time_unit,
+            bin_width=bin_width,
             prior_keys=label_keys,
             exclude_empty_value=exclude_empty_value,
             arrange_bin_edge=arrange_bin_edge,
@@ -292,7 +287,7 @@ class VisualizeAnnotationDuration(AbstractCommandLineInterface):
         plot_annotation_duration_histogram_by_attribute(
             annotation_duration_list,
             output_file=duration_by_attribute_html,
-            bins=bins,
+            bins=20,
             prior_keys=attribute_value_keys,
             exclude_empty_value=exclude_empty_value,
             arrange_bin_edge=arrange_bin_edge,
@@ -323,6 +318,7 @@ class VisualizeAnnotationDuration(AbstractCommandLineInterface):
             self.visualize_annotation_duration,
             project_id=project_id,
             output_dir=output_dir,
+            time_unit=TimeUnit(args.time_unit),
             target_task_ids=task_id_list,
             task_query=task_query,
             exclude_empty_value=args.exclude_empty_value,

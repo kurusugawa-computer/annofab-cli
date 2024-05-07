@@ -2,6 +2,7 @@ from pathlib import Path
 
 from annofabcli.statistics.list_annotation_duration import ListAnnotationDurationByInputData
 from annofabcli.statistics.visualize_annotation_duration import (
+    TimeUnit,
     plot_annotation_duration_histogram_by_attribute,
     plot_annotation_duration_histogram_by_label,
 )
@@ -49,6 +50,7 @@ def test__plot_annotation_duration_histogram_by_label() -> None:
     plot_annotation_duration_histogram_by_label(
         annotation_duration_list,
         output_file=output_dir / "test__plot_annotation_duration_histogram_by_label.html",
+        time_unit=TimeUnit.SECOND,
     )
 
 
