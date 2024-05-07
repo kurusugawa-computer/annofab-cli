@@ -5,6 +5,7 @@ import logging
 import sys
 import tempfile
 from collections import defaultdict
+from enum import Enum
 from functools import partial
 from pathlib import Path
 from typing import Collection, Optional, Sequence
@@ -27,7 +28,7 @@ from annofabcli.common.cli import (
 )
 from annofabcli.common.download import DownloadingFile
 from annofabcli.common.facade import AnnofabApiFacade, TaskQuery
-from annofabcli.statistics.histogram import get_sub_title_from_series
+from annofabcli.statistics.histogram import get_bin_edges, get_sub_title_from_series
 from annofabcli.statistics.list_annotation_duration import (
     AnnotationDuration,
     AnnotationSpecs,
@@ -39,13 +40,21 @@ from annofabcli.statistics.visualize_annotation_count import convert_to_2d_figur
 
 logger = logging.getLogger(__name__)
 
+BIN_COUNT = 20
+
+
+class TimeUnit(Enum):
+    SECOND = "second"
+    MINUTE = "minute"
+
 
 def plot_annotation_duration_histogram_by_label(
     annotation_duration_list: list[AnnotationDuration],
     output_file: Path,
     *,
+    time_unit: TimeUnit,
+    bin_width: Optional[float] = None,
     prior_keys: Optional[list[str]] = None,
-    bins: int = 20,
     exclude_empty_value: bool = False,
     arrange_bin_edge: bool = False,
 ) -> None:
@@ -53,10 +62,12 @@ def plot_annotation_duration_histogram_by_label(
     ラベルごとの区間アノテーションの長さのヒストグラムを出力します。
 
     Args:
+        time_unit: ヒストグラムに表示する時間の単位
         prior_keys: 優先して表示するcounter_listのキーlist
         exclude_empty_value: Trueならば、すべての値が0である列のヒストグラムは描画しません。
         arrange_bin_edge: Trueならば、ヒストグラムの範囲をすべてのヒストグラムで一致させます。
     """
+
     all_label_key_set = {key for c in annotation_duration_list for key in c.annotation_duration_second_by_label.keys()}
     if prior_keys is not None:
         remaining_columns = sorted(all_label_key_set - set(prior_keys))
@@ -66,13 +77,16 @@ def plot_annotation_duration_histogram_by_label(
 
     df = pandas.DataFrame([e.annotation_duration_second_by_label for e in annotation_duration_list], columns=columns)
     df.fillna(0, inplace=True)
+    if time_unit == TimeUnit.MINUTE:
+        df = df / 60
 
     figure_list = []
 
+    max_duration = df.max(numeric_only=True).max()
     if arrange_bin_edge:
         histogram_range = (
             df.min(numeric_only=True).min(),
-            df.max(numeric_only=True).max(),
+            max_duration,
         )
     else:
         histogram_range = None
@@ -88,9 +102,23 @@ def plot_annotation_duration_histogram_by_label(
     else:
         columns = df.columns
 
+    if bin_width is not None:
+        if time_unit == TimeUnit.MINUTE:
+            bin_width = bin_width / 60
+
+    x_axis_label = "区間アノテーションの長さ[分]" if time_unit == TimeUnit.MINUTE else "区間アノテーションの長さ[秒]"
+
     logger.debug(f"{len(df.columns)}個のラベルごとのヒストグラムを出力します。")
     for col in columns:
-        hist, bin_edges = numpy.histogram(df[col], bins=bins, range=histogram_range)
+        if bin_width is not None:
+            if arrange_bin_edge:
+                bin_edges = get_bin_edges(min_value=0, max_value=max_duration, bin_width=bin_width)
+            else:
+                bin_edges = get_bin_edges(min_value=0, max_value=df[col].max(), bin_width=bin_width)
+
+            hist, bin_edges = numpy.histogram(df[col], bins=bin_edges, range=histogram_range)
+        else:
+            hist, bin_edges = numpy.histogram(df[col], bins=BIN_COUNT, range=histogram_range)
 
         df_histogram = pandas.DataFrame({"frequency": hist, "left": bin_edges[:-1], "right": bin_edges[1:]})
         df_histogram["interval"] = [f"{left:.1f} to {right:.1f}" for left, right in zip(df_histogram["left"], df_histogram["right"])]
@@ -99,7 +127,7 @@ def plot_annotation_duration_histogram_by_label(
         fig = figure(
             width=400,
             height=300,
-            x_axis_label="区間アノテーションの長さ[秒]",
+            x_axis_label=x_axis_label,
             y_axis_label="タスク数",
         )
 
@@ -297,7 +325,6 @@ class VisualizeAnnotationDuration(AbstractCommandLineInterface):
             output_dir=output_dir,
             target_task_ids=task_id_list,
             task_query=task_query,
-            bins=args.bins,
             exclude_empty_value=args.exclude_empty_value,
             arrange_bin_edge=args.arrange_bin_edge,
         )
@@ -350,13 +377,6 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("-o", "--output_dir", type=Path, required=True, help="出力先ディレクトリのパス")
 
     parser.add_argument(
-        "--bins",
-        type=int,
-        default=20,
-        help="ヒストグラムのビンの数を指定します。",
-    )
-
-    parser.add_argument(
         "--exclude_empty_value",
         action="store_true",
         help="指定すると、すべてのタスクで区間アノテーションの長さが0であるヒストグラムを描画しません。",
@@ -366,6 +386,20 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--arrange_bin_edge",
         action="store_true",
         help="指定すると、ヒストグラムのデータの範囲とビンの幅がすべてのヒストグラムで一致します。",
+    )
+
+    parser.add_argument(
+        "--bin_width",
+        type=int,
+        help=f"ヒストグラムのビンの幅を指定します。単位は「秒」です。指定しない場合は、ビンの個数が{BIN_COUNT}になるようにビンの幅が調整されます。",
+    )
+
+    parser.add_argument(
+        "--time_unit",
+        type=str,
+        default=TimeUnit.SECOND.value,
+        choices=[e.value for e in TimeUnit],
+        help="動画の長さの時間単位を指定します。",
     )
 
     parser.add_argument(

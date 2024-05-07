@@ -18,6 +18,25 @@ def get_sub_title_from_series(ser: pandas.Series, decimals: int = 3) -> str:
     return sub_title
 
 
+def get_bin_edges(min_value: float, max_value: float, bin_width: float) -> numpy.ndarray:
+    """
+    numpy.histogramのbins引数に渡す、ビンの境界値を取得します。
+
+    * min_value=0, max_value=3, bin_width=2の場合: [0, 2, 4]を返す。
+    * min_value=0, max_value=4, bin_width=2の場合: [0, 2, 4, 6]を返す。
+
+    Args:
+        min_value: ヒストグラムに表示するデータの最小値
+        max_value: ヒストグラムに表示するデータの最大値
+        bin_width: ヒストグラムに表示するビンの幅
+    """
+    # stop引数に、`bin_width*2`を指定している理由：
+    # 引数が小数のときは`len(bin_edges)``期待通りにならないときがあるので、ビンの数を少し増やしている
+    # https://qiita.com/yuji38kwmt/items/ff00f3cb9083567d083f
+    bin_edges = numpy.arange(start=min_value, stop=max_value + bin_width * 2, step=bin_width)
+    return bin_edges
+
+
 def get_histogram_figure(
     ser: pandas.Series,
     x_axis_label: str,
