@@ -85,6 +85,7 @@ def create_histogram_figure2(
 ) -> figure:
     df_histogram = pandas.DataFrame({"frequency": hist, "left": bin_edges[:-1], "right": bin_edges[1:]})
     df_histogram["interval"] = [f"{left:.1f} to {right:.1f}" for left, right in zip(df_histogram["left"], df_histogram["right"])]
+    df_histogram["width"] = [f"{(right-left):.1f}" for left, right in zip(df_histogram["left"], df_histogram["right"])]
 
     source = ColumnDataSource(df_histogram)
     fig = figure(
@@ -99,7 +100,7 @@ def create_histogram_figure2(
     if title is not None:
         fig.add_layout(Title(text=title), "above")
 
-    hover = HoverTool(tooltips=[("interval", "@interval"), ("frequency", "@frequency")])
+    hover = HoverTool(tooltips=[("interval", "@interval"), ("width", "@width"), ("frequency", "@frequency")])
 
     fig.quad(source=source, top="frequency", bottom=0, left="left", right="right", line_color="white")
 

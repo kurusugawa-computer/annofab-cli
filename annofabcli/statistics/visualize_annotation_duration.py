@@ -113,7 +113,7 @@ def plot_annotation_duration_histogram_by_label(
     histogram_range = get_histogram_range(df)
 
     logger.debug(f"{len(df.columns)}個のラベルごとのヒストグラムを出力します。")
-    for col in columns:
+    for col in df.columns:
         if bin_width is not None:
             if arrange_bin_edge:
                 bin_edges = get_bin_edges(min_value=0, max_value=max_duration, bin_width=bin_width)
