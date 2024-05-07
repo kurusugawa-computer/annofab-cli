@@ -8,15 +8,19 @@ from collections import defaultdict
 from enum import Enum
 from functools import partial
 from pathlib import Path
-from typing import Collection, Optional, Sequence
+from typing import Any, Collection, Optional, Sequence
 
 import bokeh
 import numpy
 import pandas
 from annofabapi.models import DefaultAnnotationType, InputDataType, ProjectMemberRole
+from bokeh.models import LayoutDOM
+from bokeh.models.widgets.markups import Div
+from bokeh.plotting import figure
 
 import annofabcli
 import annofabcli.common.cli
+from annofabcli.common.bokeh import convert_1d_figure_list_to_2d, create_pretext_from_metadata
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
     AbstractCommandLineInterface,
@@ -54,6 +58,7 @@ def plot_annotation_duration_histogram_by_label(
     prior_keys: Optional[list[str]] = None,
     exclude_empty_value: bool = False,
     arrange_bin_edge: bool = False,
+    metadata: Optional[dict[str, Any]] = None,
 ) -> None:
     """
     ラベルごとの区間アノテーションの長さのヒストグラムを出力します。
@@ -89,9 +94,18 @@ def plot_annotation_duration_histogram_by_label(
         return None
 
     df = create_df()
-    figure_list = []
+    histogram_list: list[figure] = []
 
     max_duration = df.max(numeric_only=True).max()
+
+    figure_list_2d: list[list[Optional[LayoutDOM]]] = [
+        [
+            Div(text="<h3>区間アノテーションの長さの分布（ラベルごと）</h3>"),
+        ]
+    ]
+
+    if metadata is not None:
+        figure_list_2d.append([create_pretext_from_metadata(metadata)])
 
     if exclude_empty_value:
         # すべての値が0である列を除外する
@@ -130,9 +144,11 @@ def plot_annotation_duration_histogram_by_label(
             title=str(col),
             sub_title=get_sub_title_from_series(df[col], decimals=2),
         )
-        figure_list.append(fig)
+        histogram_list.append(fig)
 
-    bokeh_obj = bokeh.layouts.gridplot(figure_list, ncols=4)  # type: ignore[arg-type]
+    figure_list_2d.extend(convert_1d_figure_list_to_2d(histogram_list))
+
+    bokeh_obj = bokeh.layouts.gridplot(figure_list_2d)  # type: ignore[arg-type]
     output_file.parent.mkdir(exist_ok=True, parents=True)
     bokeh.plotting.reset_output()
     bokeh.plotting.output_file(output_file, title=output_file.stem)
