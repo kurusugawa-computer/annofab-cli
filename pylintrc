@@ -30,3 +30,5 @@ disable=
 
   unused-argument, # ruffの"ARG002"でチェックしているため
   redefined-builtin, # ruffの"builtin-argument-shadowin"でチェックしているため無視する
+  too-many-statements, # ruffの`PLR0915`でチェックしているため無視する
+  

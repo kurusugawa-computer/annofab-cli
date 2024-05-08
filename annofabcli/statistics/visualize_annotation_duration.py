@@ -5,20 +5,22 @@ import logging
 import sys
 import tempfile
 from collections import defaultdict
+from enum import Enum
 from functools import partial
 from pathlib import Path
-from typing import Collection, Optional, Sequence
+from typing import Any, Collection, Optional, Sequence
 
 import bokeh
 import numpy
 import pandas
 from annofabapi.models import DefaultAnnotationType, InputDataType, ProjectMemberRole
-from bokeh.models import HoverTool
-from bokeh.models.annotations.labels import Title
-from bokeh.plotting import ColumnDataSource, figure
+from bokeh.models import LayoutDOM
+from bokeh.models.widgets.markups import Div
+from bokeh.plotting import figure
 
 import annofabcli
 import annofabcli.common.cli
+from annofabcli.common.bokeh import convert_1d_figure_list_to_2d, create_pretext_from_metadata
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
     AbstractCommandLineInterface,
@@ -27,7 +29,7 @@ from annofabcli.common.cli import (
 )
 from annofabcli.common.download import DownloadingFile
 from annofabcli.common.facade import AnnofabApiFacade, TaskQuery
-from annofabcli.statistics.histogram import get_sub_title_from_series
+from annofabcli.statistics.histogram import create_histogram_figure2, get_bin_edges, get_sub_title_from_series
 from annofabcli.statistics.list_annotation_duration import (
     AnnotationDuration,
     AnnotationSpecs,
@@ -39,43 +41,73 @@ from annofabcli.statistics.visualize_annotation_count import convert_to_2d_figur
 
 logger = logging.getLogger(__name__)
 
+BIN_COUNT = 20
 
-def plot_annotation_duration_histogram_by_label(
+
+class TimeUnit(Enum):
+    SECOND = "second"
+    MINUTE = "minute"
+
+
+def plot_annotation_duration_histogram_by_label(  # noqa: PLR0915
     annotation_duration_list: list[AnnotationDuration],
     output_file: Path,
     *,
+    time_unit: TimeUnit,
+    bin_width: Optional[float] = None,
     prior_keys: Optional[list[str]] = None,
-    bins: int = 20,
     exclude_empty_value: bool = False,
     arrange_bin_edge: bool = False,
+    metadata: Optional[dict[str, Any]] = None,
 ) -> None:
     """
     ラベルごとの区間アノテーションの長さのヒストグラムを出力します。
 
     Args:
+        time_unit: ヒストグラムに表示する時間の単位
+        bin_width: ビンの幅（単位は秒）
         prior_keys: 優先して表示するcounter_listのキーlist
         exclude_empty_value: Trueならば、すべての値が0である列のヒストグラムは描画しません。
         arrange_bin_edge: Trueならば、ヒストグラムの範囲をすべてのヒストグラムで一致させます。
+        metadata: HTMLファイルの上部に表示するメタデータです。
     """
-    all_label_key_set = {key for c in annotation_duration_list for key in c.annotation_duration_second_by_label.keys()}
-    if prior_keys is not None:
-        remaining_columns = sorted(all_label_key_set - set(prior_keys))
-        columns = prior_keys + remaining_columns
-    else:
-        columns = sorted(all_label_key_set)
+    print(f"{metadata=}")
 
-    df = pandas.DataFrame([e.annotation_duration_second_by_label for e in annotation_duration_list], columns=columns)
-    df.fillna(0, inplace=True)
+    def create_df() -> pandas.DataFrame:
+        all_label_key_set = {key for c in annotation_duration_list for key in c.annotation_duration_second_by_label.keys()}
+        if prior_keys is not None:
+            remaining_columns = sorted(all_label_key_set - set(prior_keys))
+            columns = prior_keys + remaining_columns
+        else:
+            columns = sorted(all_label_key_set)
 
-    figure_list = []
+        df = pandas.DataFrame([e.annotation_duration_second_by_label for e in annotation_duration_list], columns=columns)
+        df.fillna(0, inplace=True)
+        if time_unit == TimeUnit.MINUTE:
+            df = df / 60
+        return df
 
-    if arrange_bin_edge:
-        histogram_range = (
-            df.min(numeric_only=True).min(),
-            df.max(numeric_only=True).max(),
-        )
-    else:
-        histogram_range = None
+    def get_histogram_range(df: pandas.DataFrame) -> Optional[tuple[float, float]]:
+        if arrange_bin_edge:
+            return (
+                df.min(numeric_only=True).min(),
+                df.max(numeric_only=True).max(),
+            )
+        return None
+
+    df = create_df()
+    histogram_list: list[figure] = []
+
+    max_duration = df.max(numeric_only=True).max()
+
+    figure_list_2d: list[list[Optional[LayoutDOM]]] = [
+        [
+            Div(text="<h3>区間アノテーションの長さの分布（ラベル名ごと）</h3>"),
+        ]
+    ]
+
+    if metadata is not None:
+        figure_list_2d.append([create_pretext_from_metadata(metadata)])
 
     if exclude_empty_value:
         # すべての値が0である列を除外する
@@ -85,77 +117,103 @@ def plot_annotation_duration_histogram_by_label(
                 f"以下の属性値は、すべてのタスクで区間アノテーションの長さが0であるためヒストグラムを描画しません。 :: "
                 f"{set(df.columns) - set(columns)}"
             )
-    else:
-        columns = df.columns
+        df = df[columns]
+
+    if bin_width is not None:
+        if time_unit == TimeUnit.MINUTE:
+            bin_width = bin_width / 60
+
+    x_axis_label = "区間アノテーションの長さ[分]" if time_unit == TimeUnit.MINUTE else "区間アノテーションの長さ[秒]"
+    histogram_range = get_histogram_range(df)
 
     logger.debug(f"{len(df.columns)}個のラベルごとのヒストグラムを出力します。")
-    for col in columns:
-        hist, bin_edges = numpy.histogram(df[col], bins=bins, range=histogram_range)
+    for col in df.columns:
+        if bin_width is not None:
+            if arrange_bin_edge:
+                bin_edges = get_bin_edges(min_value=0, max_value=max_duration, bin_width=bin_width)
+            else:
+                bin_edges = get_bin_edges(min_value=0, max_value=df[col].max(), bin_width=bin_width)
 
-        df_histogram = pandas.DataFrame({"frequency": hist, "left": bin_edges[:-1], "right": bin_edges[1:]})
-        df_histogram["interval"] = [f"{left:.1f} to {right:.1f}" for left, right in zip(df_histogram["left"], df_histogram["right"])]
+            hist, bin_edges = numpy.histogram(df[col], bins=bin_edges, range=histogram_range)
+        else:
+            hist, bin_edges = numpy.histogram(df[col], bins=BIN_COUNT, range=histogram_range)
 
-        source = ColumnDataSource(df_histogram)
-        fig = figure(
-            width=400,
-            height=300,
-            x_axis_label="区間アノテーションの長さ[秒]",
+        fig = create_histogram_figure2(
+            hist,
+            bin_edges,
+            x_axis_label=x_axis_label,
             y_axis_label="タスク数",
+            title=str(col),
+            sub_title=get_sub_title_from_series(df[col], decimals=2),
         )
+        histogram_list.append(fig)
 
-        fig.add_layout(Title(text=get_sub_title_from_series(df[col], decimals=2), text_font_size="11px"), "above")
-        fig.add_layout(Title(text=str(col)), "above")
+    figure_list_2d.extend(convert_1d_figure_list_to_2d(histogram_list))
 
-        hover = HoverTool(tooltips=[("interval", "@interval"), ("frequency", "@frequency")])
-
-        fig.quad(source=source, top="frequency", bottom=0, left="left", right="right", line_color="white")
-
-        fig.add_tools(hover)
-        figure_list.append(fig)
-
-    bokeh_obj = bokeh.layouts.gridplot(figure_list, ncols=4)  # type: ignore[arg-type]
+    bokeh_obj = bokeh.layouts.gridplot(figure_list_2d)  # type: ignore[arg-type]
     output_file.parent.mkdir(exist_ok=True, parents=True)
     bokeh.plotting.reset_output()
-    bokeh.plotting.output_file(output_file, title=output_file.stem)
+    html_title = "区間アノテーションの長さの分布（ラベル名ごと）"
+    if metadata is not None and "project_title" in metadata:
+        html_title = f"{html_title}({metadata['project_title']})"
+
+    bokeh.plotting.output_file(output_file, title=html_title)
     bokeh.plotting.save(bokeh_obj)
     logger.info(f"'{output_file}'を出力しました。")
 
 
-def plot_annotation_duration_histogram_by_attribute(
+def plot_annotation_duration_histogram_by_attribute(  # noqa: PLR0915
     annotation_duration_list: Sequence[AnnotationDuration],
     output_file: Path,
     *,
+    time_unit: TimeUnit,
+    bin_width: Optional[float] = None,
     prior_keys: Optional[list[AttributeValueKey]] = None,
-    bins: int = 20,
     exclude_empty_value: bool = False,
     arrange_bin_edge: bool = False,
+    metadata: Optional[dict[str, Any]] = None,
 ) -> None:
     """
     属性値ごとの区間アノテーションの長さのヒストグラムを出力します。
 
     Args:
+        bin_width: ビンの幅（単位は秒）
         prior_keys: 優先して表示するcounter_listのキーlist
         exclude_empty_value: Trueならば、すべての値が0である列のヒストグラムは生成しません。
         arrange_bin_edge: Trueならば、ヒストグラムの範囲をすべてのヒストグラムで一致させます。
+        metadata: HTMLファイルの上部に表示するメタデータです。
     """
-    all_key_set = {key for c in annotation_duration_list for key in c.annotation_duration_second_by_attribute.keys()}
-    if prior_keys is not None:
-        remaining_columns = list(all_key_set - set(prior_keys))
-        remaining_columns_selective_attribute = sorted(get_only_selective_attribute(remaining_columns))
-        columns = prior_keys + remaining_columns_selective_attribute
-    else:
-        remaining_columns_selective_attribute = sorted(get_only_selective_attribute(list(all_key_set)))
-        columns = remaining_columns_selective_attribute
 
-    df = pandas.DataFrame([e.annotation_duration_second_by_attribute for e in annotation_duration_list], columns=columns)
-    df.fillna(0, inplace=True)
+    def create_df() -> pandas.DataFrame:
+        all_key_set = {key for c in annotation_duration_list for key in c.annotation_duration_second_by_attribute.keys()}
+        if prior_keys is not None:
+            remaining_columns = list(all_key_set - set(prior_keys))
+            remaining_columns_selective_attribute = sorted(get_only_selective_attribute(remaining_columns))
+            columns = prior_keys + remaining_columns_selective_attribute
+        else:
+            remaining_columns_selective_attribute = sorted(get_only_selective_attribute(list(all_key_set)))
+            columns = remaining_columns_selective_attribute
 
+        df = pandas.DataFrame([e.annotation_duration_second_by_attribute for e in annotation_duration_list], columns=columns)
+        df.fillna(0, inplace=True)
+        if time_unit == TimeUnit.MINUTE:
+            df = df / 60
+        return df
+
+    def get_histogram_range(df: pandas.DataFrame) -> Optional[tuple[float, float]]:
+        if arrange_bin_edge:
+            return (
+                df.min(numeric_only=True).min(),
+                df.max(numeric_only=True).max(),
+            )
+        return None
+
+    df = create_df()
     logger.debug(f"{len(df.columns)}個の属性値ごとのヒストグラムで出力します。")
 
-    if arrange_bin_edge:
-        histogram_range = (df.min(numeric_only=True).min(), df.max(numeric_only=True).max())
-    else:
-        histogram_range = None
+    if bin_width is not None:
+        if time_unit == TimeUnit.MINUTE:
+            bin_width = bin_width / 60
 
     if exclude_empty_value:
         # すべての値が0である列を除外する
@@ -165,41 +223,55 @@ def plot_annotation_duration_histogram_by_attribute(
                 f"以下のラベルは、すべてのタスクで区間アノテーションの長さが0であるためヒストグラムを描画しません。 :: "
                 f"{set(df.columns) - set(columns)}"
             )
-    else:
-        columns = df.columns
+        df = df[columns]
+
+    histogram_range = get_histogram_range(df)
+    max_duration = df.max(numeric_only=True).max()
+    x_axis_label = "区間アノテーションの長さ[分]" if time_unit == TimeUnit.MINUTE else "区間アノテーションの長さ[秒]"
+
+    figure_list_2d: list[list[Optional[LayoutDOM]]] = [
+        [
+            Div(text="<h3>区間アノテーションの長さの分布（属性値ごと）</h3>"),
+        ]
+    ]
+
+    if metadata is not None:
+        figure_list_2d.append([create_pretext_from_metadata(metadata)])
 
     figures_dict = defaultdict(list)
-    for col in columns:
+    for col in df.columns:
         header = (str(col[0]), str(col[1]))  # ラベル名, 属性名
-        hist, bin_edges = numpy.histogram(df[col], bins=bins, range=histogram_range)
 
-        df_histogram = pandas.DataFrame({"frequency": hist, "left": bin_edges[:-1], "right": bin_edges[1:]})
-        df_histogram["interval"] = [f"{left:.1f} to {right:.1f}" for left, right in zip(df_histogram["left"], df_histogram["right"])]
+        if bin_width is not None:
+            if arrange_bin_edge:
+                bin_edges = get_bin_edges(min_value=0, max_value=max_duration, bin_width=bin_width)
+            else:
+                bin_edges = get_bin_edges(min_value=0, max_value=df[col].max(), bin_width=bin_width)
 
-        source = ColumnDataSource(df_histogram)
-        fig = figure(
-            width=400,
-            height=300,
-            x_axis_label="区間アノテーションの長さ[秒]",
+            hist, bin_edges = numpy.histogram(df[col], bins=bin_edges, range=histogram_range)
+        else:
+            hist, bin_edges = numpy.histogram(df[col], bins=BIN_COUNT, range=histogram_range)
+
+        fig = create_histogram_figure2(
+            hist,
+            bin_edges,
+            x_axis_label=x_axis_label,
             y_axis_label="タスク数",
+            title=f"{col[0]},{col[1]},{col[2]}",
+            sub_title=get_sub_title_from_series(df[col], decimals=2),
         )
-        fig.add_layout(Title(text=get_sub_title_from_series(df[col], decimals=2), text_font_size="11px"), "above")
-        fig.add_layout(Title(text=f"{col[0]},{col[1]},{col[2]}"), "above")
-
-        hover = HoverTool(tooltips=[("interval", "@interval"), ("frequency", "@frequency")])
-
-        fig.quad(source=source, top="frequency", bottom=0, left="left", right="right", line_color="white")
-
-        fig.add_tools(hover)
 
         figures_dict[header].append(fig)
 
-    grid_layout_figures = convert_to_2d_figure_list(figures_dict)
+    figure_list_2d.extend(convert_to_2d_figure_list(figures_dict))
 
-    bokeh_obj = bokeh.layouts.gridplot(grid_layout_figures)  # type: ignore[arg-type]
+    bokeh_obj = bokeh.layouts.gridplot(figure_list_2d)  # type: ignore[arg-type]
     output_file.parent.mkdir(exist_ok=True, parents=True)
     bokeh.plotting.reset_output()
-    bokeh.plotting.output_file(output_file, title=output_file.stem)
+    html_title = "区間アノテーションの長さの分布（属性値ごと）"
+    if metadata is not None and "project_title" in metadata:
+        html_title = f"{html_title}({metadata['project_title']})"
+    bokeh.plotting.output_file(output_file, title=html_title)
     bokeh.plotting.save(bokeh_obj)
     logger.info(f"'{output_file}'を出力しました。")
 
@@ -221,8 +293,9 @@ class VisualizeAnnotationDuration(AbstractCommandLineInterface):
         self,
         annotation_path: Path,
         output_dir: Path,
-        bins: int,
+        time_unit: TimeUnit,
         *,
+        bin_width: Optional[int] = None,
         project_id: Optional[str] = None,
         target_task_ids: Optional[Collection[str]] = None,
         task_query: Optional[TaskQuery] = None,
@@ -253,21 +326,38 @@ class VisualizeAnnotationDuration(AbstractCommandLineInterface):
             label_keys = annotation_specs.label_keys()
             attribute_value_keys = annotation_specs.selective_attribute_value_keys()
 
+        project_title = None
+        if project_id is not None:
+            project, _ = self.service.api.get_project(project_id)
+            project_title = project["title"]
+
+        metadata = {
+            "project_id": project_id,
+            "project_title": project_title,
+            "task_query": {k: v for k, v in task_query.to_dict(encode_json=True).items() if v is not None and v is not False}
+            if task_query is not None
+            else None,
+            "target_task_ids": target_task_ids,
+        }
         plot_annotation_duration_histogram_by_label(
             annotation_duration_list,
             output_file=duration_by_label_html,
-            bins=bins,
+            time_unit=time_unit,
+            bin_width=bin_width,
             prior_keys=label_keys,
             exclude_empty_value=exclude_empty_value,
             arrange_bin_edge=arrange_bin_edge,
+            metadata=metadata,
         )
         plot_annotation_duration_histogram_by_attribute(
             annotation_duration_list,
             output_file=duration_by_attribute_html,
-            bins=bins,
+            time_unit=time_unit,
+            bin_width=bin_width,
             prior_keys=attribute_value_keys,
             exclude_empty_value=exclude_empty_value,
             arrange_bin_edge=arrange_bin_edge,
+            metadata=metadata,
         )
 
     def main(self) -> None:
@@ -295,9 +385,10 @@ class VisualizeAnnotationDuration(AbstractCommandLineInterface):
             self.visualize_annotation_duration,
             project_id=project_id,
             output_dir=output_dir,
+            time_unit=TimeUnit(args.time_unit),
+            bin_width=args.bin_width,
             target_task_ids=task_id_list,
             task_query=task_query,
-            bins=args.bins,
             exclude_empty_value=args.exclude_empty_value,
             arrange_bin_edge=args.arrange_bin_edge,
         )
@@ -350,13 +441,6 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("-o", "--output_dir", type=Path, required=True, help="出力先ディレクトリのパス")
 
     parser.add_argument(
-        "--bins",
-        type=int,
-        default=20,
-        help="ヒストグラムのビンの数を指定します。",
-    )
-
-    parser.add_argument(
         "--exclude_empty_value",
         action="store_true",
         help="指定すると、すべてのタスクで区間アノテーションの長さが0であるヒストグラムを描画しません。",
@@ -366,6 +450,20 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--arrange_bin_edge",
         action="store_true",
         help="指定すると、ヒストグラムのデータの範囲とビンの幅がすべてのヒストグラムで一致します。",
+    )
+
+    parser.add_argument(
+        "--bin_width",
+        type=int,
+        help=f"ヒストグラムのビンの幅を指定します。単位は「秒」です。指定しない場合は、ビンの個数が{BIN_COUNT}になるようにビンの幅が調整されます。",
+    )
+
+    parser.add_argument(
+        "--time_unit",
+        type=str,
+        default=TimeUnit.SECOND.value,
+        choices=[e.value for e in TimeUnit],
+        help="動画の長さの時間単位を指定します。",
     )
 
     parser.add_argument(

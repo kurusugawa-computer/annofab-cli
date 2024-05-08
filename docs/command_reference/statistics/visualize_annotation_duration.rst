@@ -43,18 +43,50 @@ Examples
 * ラジオボタン
 * チェックボックス
 
+
+
+デフォルトでは、動画の長さは「秒」単位で表示されます。「分」単位で表示する場合は、 ``--time_unit minute`` を指定してください。
+
+
+.. code-block::
+
+    $ annofabcli statistics visualize_annotation_duration --project_id prj1 --output_dir out_dir2/ \
+    --time_unit minute
+
+
+.. image:: visualize_annotation_duration/img/annotation_duration_by_label__with_minute.png
+    :alt: out_dir2/annotation_duration_by_label.htmlの中身
+
+
+
+``--bin_width`` を指定するとビンの幅を「秒」単位で指定できます。以下のコマンドはビンの幅を15秒（0.25分）に指定しています。
+
+
+.. code-block::
+
+    $ annofabcli statistics visualize_annotation_duration --project_id prj1 --output_dir out_dir3/ \
+    --time_unit minute --bin_width 15
+
+
+.. image:: visualize_annotation_duration/img/annotation_duration_by_label__with_bin_width.png
+    :alt: out_dir3/annotation_duration_by_label.htmlの中身
+
+
+
+
 デフォルトでは、各ヒストグラムのデータの範囲やビンの幅は異なります。すべてのヒストグラムでデータの範囲とビンの幅を揃える場合は、 ``--arrange_bin_edge`` を指定します。
 
 
 .. code-block::
 
-    $ annofabcli statistics visualize_annotation_duration --project_id prj1 --output_dir out_dir/ \
+    $ annofabcli statistics visualize_annotation_duration --project_id prj1 --output_dir out_dir4/ \
     --arrange_bin_edge
 
 
 .. image:: visualize_annotation_duration/img/annotation_duration_by_label__with_arrange_bin_edge.png
-    :alt: annotation_duration_by_label.htmlの中身（--arrange_bin_edgeを指定）
+    :alt: out_dir4/annotation_duration_by_label.htmlの中身
     
+
 
 
 
