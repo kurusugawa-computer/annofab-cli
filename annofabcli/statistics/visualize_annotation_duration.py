@@ -334,7 +334,9 @@ class VisualizeAnnotationDuration(AbstractCommandLineInterface):
         metadata = {
             "project_id": project_id,
             "project_title": project_title,
-            "task_query": {k:v for k,v in task_query.to_dict(encode_json=True).items() if v is not None and v is not False} if task_query is not None else None,
+            "task_query": {k: v for k, v in task_query.to_dict(encode_json=True).items() if v is not None and v is not False}
+            if task_query is not None
+            else None,
             "target_task_ids": target_task_ids,
         }
         plot_annotation_duration_histogram_by_label(
