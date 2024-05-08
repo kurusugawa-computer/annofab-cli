@@ -49,7 +49,7 @@ class TimeUnit(Enum):
     MINUTE = "minute"
 
 
-def plot_annotation_duration_histogram_by_label(
+def plot_annotation_duration_histogram_by_label(  # noqa: PLR0915
     annotation_duration_list: list[AnnotationDuration],
     output_file: Path,
     *,
@@ -153,6 +153,10 @@ def plot_annotation_duration_histogram_by_label(
     bokeh_obj = bokeh.layouts.gridplot(figure_list_2d)  # type: ignore[arg-type]
     output_file.parent.mkdir(exist_ok=True, parents=True)
     bokeh.plotting.reset_output()
+    html_title = "区間アノテーションの長さの分布（ラベル名ごと）"
+    if metadata is not None and "project_title" in metadata:
+        html_title = f"{html_title}({metadata['project_title']})"
+
     bokeh.plotting.output_file(output_file, title=output_file.stem)
     bokeh.plotting.save(bokeh_obj)
     logger.info(f"'{output_file}'を出力しました。")
@@ -264,7 +268,10 @@ def plot_annotation_duration_histogram_by_attribute(  # noqa: PLR0915
     bokeh_obj = bokeh.layouts.gridplot(figure_list_2d)  # type: ignore[arg-type]
     output_file.parent.mkdir(exist_ok=True, parents=True)
     bokeh.plotting.reset_output()
-    bokeh.plotting.output_file(output_file, title=output_file.stem)
+    html_title = "区間アノテーションの長さの分布（属性値ごと）"
+    if metadata is not None and "project_title" in metadata:
+        html_title = f"{html_title}({metadata['project_title']})"
+    bokeh.plotting.output_file(output_file, title=html_title)
     bokeh.plotting.save(bokeh_obj)
     logger.info(f"'{output_file}'を出力しました。")
 
