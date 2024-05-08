@@ -157,7 +157,7 @@ def plot_annotation_duration_histogram_by_label(  # noqa: PLR0915
     if metadata is not None and "project_title" in metadata:
         html_title = f"{html_title}({metadata['project_title']})"
 
-    bokeh.plotting.output_file(output_file, title=output_file.stem)
+    bokeh.plotting.output_file(output_file, title=html_title)
     bokeh.plotting.save(bokeh_obj)
     logger.info(f"'{output_file}'を出力しました。")
 
@@ -334,7 +334,7 @@ class VisualizeAnnotationDuration(AbstractCommandLineInterface):
         metadata = {
             "project_id": project_id,
             "project_title": project_title,
-            "task_query": task_query.to_dict(encode_json=True) if task_query is not None else None,
+            "task_query": {k:v for k,v in task_query.to_dict(encode_json=True).items() if v is not None and v is not False} if task_query is not None else None,
             "target_task_ids": target_task_ids,
         }
         plot_annotation_duration_histogram_by_label(
