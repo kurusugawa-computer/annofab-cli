@@ -71,7 +71,6 @@ def plot_annotation_duration_histogram_by_label(  # noqa: PLR0915
         arrange_bin_edge: Trueならば、ヒストグラムの範囲をすべてのヒストグラムで一致させます。
         metadata: HTMLファイルの上部に表示するメタデータです。
     """
-    print(f"{metadata=}")
 
     def create_df() -> pandas.DataFrame:
         all_label_key_set = {key for c in annotation_duration_list for key in c.annotation_duration_second_by_label.keys()}

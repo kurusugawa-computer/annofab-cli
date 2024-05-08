@@ -11,9 +11,11 @@ logger = logging.getLogger(__name__)
 
 
 def get_sub_title_from_series(ser: pandas.Series, decimals: int = 3) -> str:
-    """pandas.Seriesから、平均値、標準偏差、データ数が記載されたSubTitleを生成する。"""
+    """
+    pandas.Seriesから、平均値、標準偏差(ddof=0)、データ数が記載されたSubTitleを生成する。
+    """
     mean = round(ser.mean(), decimals)
-    std = round(ser.std(), decimals)
+    std = round(ser.std(ddof=0), decimals)
     sub_title = f"μ={mean}, α={std}, N={len(ser)}"
     return sub_title
 
