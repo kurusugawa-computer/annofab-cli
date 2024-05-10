@@ -59,7 +59,7 @@ def convert_to_2d_figure_list(figures_dict: dict[tuple[str, str], list[figure]],
     row_list: list[list[Optional[LayoutDOM]]] = []
 
     for (label_name, attribute_name), figure_list in figures_dict.items():
-        row_list.append([Div(text=f"<h3>ラベル名='{label_name}', 属性名='{attribute_name}'</h3>"), *[None] * (ncols - 1)])
+        row_list.append([Div(text=f"<h3>ラベル名='{label_name}', 属性名='{attribute_name}'</h3>")])
 
         for i in range(math.ceil(len(figure_list) / ncols)):
             start = i * ncols
