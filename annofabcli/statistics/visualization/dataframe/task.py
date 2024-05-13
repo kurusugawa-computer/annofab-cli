@@ -13,7 +13,7 @@ import pandas
 import pytz
 
 from annofabcli.common.utils import print_csv
-from annofabcli.statistics.histogram import create_histogram_figure2, get_sub_title_from_series
+from annofabcli.statistics.histogram import create_histogram_figure, get_sub_title_from_series
 from annofabcli.statistics.visualization.dataframe.annotation_count import AnnotationCount
 from annofabcli.statistics.visualization.dataframe.inspection_comment_count import InspectionCommentCount
 from annofabcli.task.list_all_tasks_added_task_history import AddingAdditionalInfoToTask
@@ -271,7 +271,7 @@ class Task:
             sub_title = get_sub_title_from_series(df[column], decimals=decimals)
 
             hist, bin_edges = numpy.histogram(df[column], bins=BIN_COUNT)
-            fig = create_histogram_figure2(hist, bin_edges, x_axis_label="作業時間[hour]", y_axis_label="タスク数", title=title, sub_title=sub_title)
+            fig = create_histogram_figure(hist, bin_edges, x_axis_label="作業時間[hour]", y_axis_label="タスク数", title=title, sub_title=sub_title)
             figure_list.append(fig)
 
         # 自動検査したタスクを除外して、検査時間をグラフ化する
@@ -280,7 +280,7 @@ class Task:
 
         hist, bin_edges = numpy.histogram(df_ignore_inspection_skipped["inspection_worktime_hour"], bins=BIN_COUNT)
         figure_list.append(
-            create_histogram_figure2(
+            create_histogram_figure(
                 hist,
                 bin_edges,
                 x_axis_label="作業時間[hour]",
@@ -295,7 +295,7 @@ class Task:
         hist, bin_edges = numpy.histogram(df_ignore_acceptance_skipped["acceptance_worktime_hour"], bins=BIN_COUNT)
 
         figure_list.append(
-            create_histogram_figure2(
+            create_histogram_figure(
                 hist,
                 bin_edges,
                 x_axis_label="作業時間[hour]",
@@ -389,7 +389,7 @@ class Task:
             ser = df[column].dropna()
             sub_title = get_sub_title_from_series(ser, decimals=2)
             hist, bin_edges = numpy.histogram(ser, bins=BIN_COUNT)
-            fig = create_histogram_figure2(hist, bin_edges, x_axis_label=x_axis_label, y_axis_label="タスク数", title=title, sub_title=sub_title)
+            fig = create_histogram_figure(hist, bin_edges, x_axis_label=x_axis_label, y_axis_label="タスク数", title=title, sub_title=sub_title)
             figure_list.append(fig)
 
         bokeh_obj = bokeh.layouts.gridplot(figure_list, ncols=4)  # type: ignore[arg-type]

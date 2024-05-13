@@ -30,7 +30,7 @@ from annofabcli.common.cli import (
 )
 from annofabcli.common.download import DownloadingFile
 from annofabcli.common.facade import AnnofabApiFacade, TaskQuery
-from annofabcli.statistics.histogram import create_histogram_figure2, get_bin_edges, get_sub_title_from_series
+from annofabcli.statistics.histogram import create_histogram_figure, get_bin_edges, get_sub_title_from_series
 from annofabcli.statistics.list_annotation_count import (
     AnnotationCounter,
     AnnotationSpecs,
@@ -183,7 +183,7 @@ def plot_label_histogram(
         else:
             hist, bin_edges = numpy.histogram(df[col], bins=BIN_COUNT, range=histogram_range)
 
-        fig = create_histogram_figure2(
+        fig = create_histogram_figure(
             hist,
             bin_edges,
             x_axis_label="アノテーション数",
@@ -291,7 +291,7 @@ def plot_attribute_histogram(  # noqa: PLR0915
         else:
             hist, bin_edges = numpy.histogram(df[col], bins=BIN_COUNT, range=histogram_range)
 
-        fig = create_histogram_figure2(
+        fig = create_histogram_figure(
             hist,
             bin_edges,
             x_axis_label="アノテーション数",
