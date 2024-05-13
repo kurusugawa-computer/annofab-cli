@@ -14,14 +14,13 @@ import bokeh
 import numpy
 import pandas
 from annofabapi.models import ProjectMemberRole
-from bokeh.models import HoverTool, LayoutDOM
-from bokeh.models.annotations.labels import Title
+from bokeh.models import LayoutDOM
 from bokeh.models.widgets.markups import Div
-from bokeh.plotting import ColumnDataSource, figure
+from bokeh.plotting import figure
 
 import annofabcli
 import annofabcli.common.cli
-from annofabcli.common.bokeh import create_pretext_from_metadata
+from annofabcli.common.bokeh import convert_1d_figure_list_to_2d, create_pretext_from_metadata
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
     AbstractCommandLineInterface,
@@ -109,29 +108,35 @@ def plot_label_histogram(
     output_file: Path,
     *,
     prior_keys: Optional[list[str]] = None,
-    bins: int = 20,
+    bin_width: Optional[int] = None,
     exclude_empty_value: bool = False,
     arrange_bin_edge: bool = False,
+    metadata: Optional[dict[str, Any]] = None,
 ) -> None:
     """
     ラベルごとのアノテーション数のヒストグラムを出力する。
 
     Args:
         prior_keys: 優先して表示するcounter_listのキーlist
+        bin_width: ビンの幅
         exclude_empty_value: Trueならば、すべての値が0である列のヒストグラムを描画しません。
         arrange_bin_edge: Trueならば、ヒストグラムの範囲をすべてのヒストグラムで一致させます。
+        metadata: HTMLファイルの上部に表示するメタデータです。
     """
-    all_label_key_set = {key for c in counter_list for key in c.annotation_count_by_label}
-    if prior_keys is not None:
-        remaining_columns = sorted(all_label_key_set - set(prior_keys))
-        columns = prior_keys + remaining_columns
-    else:
-        columns = sorted(all_label_key_set)
 
-    df = pandas.DataFrame([e.annotation_count_by_label for e in counter_list], columns=columns)
-    df.fillna(0, inplace=True)
+    def create_df() -> pandas.DataFrame:
+        all_label_key_set = {key for c in counter_list for key in c.annotation_count_by_label}
+        if prior_keys is not None:
+            remaining_columns = sorted(all_label_key_set - set(prior_keys))
+            columns = prior_keys + remaining_columns
+        else:
+            columns = sorted(all_label_key_set)
 
-    figure_list = []
+        df = pandas.DataFrame([e.annotation_count_by_label for e in counter_list], columns=columns)
+        df.fillna(0, inplace=True)
+        return df
+
+    df = create_df()
 
     if arrange_bin_edge:
         histogram_range = (
@@ -153,32 +158,42 @@ def plot_label_histogram(
     else:
         columns = df.columns
 
+    max_annotation_count = df.max(numeric_only=True).max()
+
+    figure_list_2d: list[list[Optional[LayoutDOM]]] = [
+        [
+            Div(text="<h3>アノテーション数の分布（ラベル名ごと）</h3>"),
+        ]
+    ]
+
+    if metadata is not None:
+        figure_list_2d.append([create_pretext_from_metadata(metadata)])
+
     logger.debug(f"{len(columns)}個のラベルごとのヒストグラムが描画されたhtmlファイルを出力します。")
+    histogram_list: list[figure] = []
     for col in columns:
-        hist, bin_edges = numpy.histogram(df[col], bins, range=histogram_range)
+        if bin_width is not None:
+            if arrange_bin_edge:
+                bin_edges = get_bin_edges(min_value=0, max_value=max_annotation_count, bin_width=bin_width)
+            else:
+                bin_edges = get_bin_edges(min_value=0, max_value=df[col].max(), bin_width=bin_width)
 
-        df_histogram = pandas.DataFrame({"frequency": hist, "left": bin_edges[:-1], "right": bin_edges[1:]})
-        df_histogram["interval"] = [f"{left:.1f} to {right:.1f}" for left, right in zip(df_histogram["left"], df_histogram["right"])]
+            hist, bin_edges = numpy.histogram(df[col], bins=bin_edges, range=histogram_range)
+        else:
+            hist, bin_edges = numpy.histogram(df[col], bins=BIN_COUNT, range=histogram_range)
 
-        source = ColumnDataSource(df_histogram)
-        fig = figure(
-            width=400,
-            height=300,
+        fig = create_histogram_figure2(
+            hist,
+            bin_edges,
             x_axis_label="アノテーション数",
             y_axis_label=y_axis_label,
+            title=str(col),
+            sub_title=get_sub_title_from_series(df[col], decimals=2),
         )
+        histogram_list.append(fig)
 
-        fig.add_layout(Title(text=get_sub_title_from_series(df[col], decimals=2), text_font_size="11px"), "above")
-        fig.add_layout(Title(text=str(col)), "above")
-
-        hover = HoverTool(tooltips=[("interval", "@interval"), ("frequency", "@frequency")])
-
-        fig.quad(source=source, top="frequency", bottom=0, left="left", right="right", line_color="white")
-
-        fig.add_tools(hover)
-        figure_list.append(fig)
-
-    bokeh_obj = bokeh.layouts.gridplot(figure_list, ncols=4)  # type: ignore[arg-type]
+    figure_list_2d.extend(convert_1d_figure_list_to_2d(histogram_list))
+    bokeh_obj = bokeh.layouts.gridplot(figure_list_2d)
     output_file.parent.mkdir(exist_ok=True, parents=True)
     bokeh.plotting.reset_output()
     bokeh.plotting.output_file(output_file, title=output_file.stem)
