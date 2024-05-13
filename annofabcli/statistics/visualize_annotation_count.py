@@ -8,7 +8,7 @@ import sys
 import tempfile
 from collections import defaultdict
 from pathlib import Path
-from typing import Collection, Optional, Sequence
+from typing import Any, Collection, Optional, Sequence
 
 import bokeh
 import numpy
@@ -21,6 +21,7 @@ from bokeh.plotting import ColumnDataSource, figure
 
 import annofabcli
 import annofabcli.common.cli
+from annofabcli.common.bokeh import create_pretext_from_metadata
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
     AbstractCommandLineInterface,
@@ -29,7 +30,7 @@ from annofabcli.common.cli import (
 )
 from annofabcli.common.download import DownloadingFile
 from annofabcli.common.facade import AnnofabApiFacade, TaskQuery
-from annofabcli.statistics.histogram import get_sub_title_from_series
+from annofabcli.statistics.histogram import create_histogram_figure2, get_bin_edges, get_sub_title_from_series
 from annofabcli.statistics.list_annotation_count import (
     AnnotationCounter,
     AnnotationSpecs,
@@ -41,6 +42,8 @@ from annofabcli.statistics.list_annotation_count import (
 )
 
 logger = logging.getLogger(__name__)
+
+BIN_COUNT = 20
 
 
 def _get_y_axis_label(group_by: GroupBy) -> str:
@@ -189,9 +192,10 @@ def plot_attribute_histogram(
     output_file: Path,
     *,
     prior_keys: Optional[list[AttributeValueKey]] = None,
-    bins: int = 20,
+    bin_width: Optional[int] = None,
     exclude_empty_value: bool = False,
     arrange_bin_edge: bool = False,
+    metadata: Optional[dict[str, Any]] = None,
 ) -> None:
     """
     属性値ごとのアノテーション数のヒストグラムを出力する。
@@ -200,20 +204,26 @@ def plot_attribute_histogram(
         prior_keys: 優先して表示するcounter_listのキーlist
         exclude_empty_value: Trueならば、すべての値が0である列のヒストグラムを描画しません。
         arrange_bin_edge: Trueならば、ヒストグラムの範囲をすべてのヒストグラムで一致させます。
+        metadata: HTMLファイルの上部に表示するメタデータです。
 
     """
-    all_key_set = {key for c in counter_list for key in c.annotation_count_by_attribute}
-    if prior_keys is not None:
-        remaining_columns = list(all_key_set - set(prior_keys))
-        remaining_columns_selective_attribute = sorted(get_only_selective_attribute(remaining_columns))
-        columns = prior_keys + remaining_columns_selective_attribute
-    else:
-        remaining_columns_selective_attribute = sorted(get_only_selective_attribute(list(all_key_set)))
-        columns = remaining_columns_selective_attribute
 
-    df = pandas.DataFrame([e.annotation_count_by_attribute for e in counter_list], columns=columns)
-    df.fillna(0, inplace=True)
+    def create_df() -> pandas.DataFrame:
+        all_key_set = {key for c in counter_list for key in c.annotation_count_by_attribute}
+        if prior_keys is not None:
+            remaining_columns = list(all_key_set - set(prior_keys))
+            remaining_columns_selective_attribute = sorted(get_only_selective_attribute(remaining_columns))
+            columns = prior_keys + remaining_columns_selective_attribute
+        else:
+            remaining_columns_selective_attribute = sorted(get_only_selective_attribute(list(all_key_set)))
+            columns = remaining_columns_selective_attribute
 
+        df = pandas.DataFrame([e.annotation_count_by_attribute for e in counter_list], columns=columns)
+        df.fillna(0, inplace=True)
+
+        return df
+
+    df = create_df()
     y_axis_label = _get_y_axis_label(group_by)
 
     if arrange_bin_edge:
@@ -234,36 +244,44 @@ def plot_attribute_histogram(
     else:
         columns = df.columns
 
+    max_annotation_count = df.max(numeric_only=True).max()
+
+    figure_list_2d: list[list[Optional[LayoutDOM]]] = [
+        [
+            Div(text="<h3>アノテーション数の分布（属性値ごと）</h3>"),
+        ]
+    ]
+
+    if metadata is not None:
+        figure_list_2d.append([create_pretext_from_metadata(metadata)])
+
     figures_dict = defaultdict(list)
     logger.debug(f"{len(columns)}個の属性値ごとのヒストグラムが描画されたhtmlファイルを出力します。")
     for col in columns:
-        hist, bin_edges = numpy.histogram(df[col], bins, range=histogram_range)
-
         header = (str(col[0]), str(col[1]))  # ラベル名, 属性名
 
-        df_histogram = pandas.DataFrame({"frequency": hist, "left": bin_edges[:-1], "right": bin_edges[1:]})
-        df_histogram["interval"] = [f"{left:.1f} to {right:.1f}" for left, right in zip(df_histogram["left"], df_histogram["right"])]
+        if bin_width is not None:
+            if arrange_bin_edge:
+                bin_edges = get_bin_edges(min_value=0, max_value=max_annotation_count, bin_width=bin_width)
+            else:
+                bin_edges = get_bin_edges(min_value=0, max_value=df[col].max(), bin_width=bin_width)
 
-        source = ColumnDataSource(df_histogram)
-        fig = figure(
-            width=400,
-            height=300,
+            hist, bin_edges = numpy.histogram(df[col], bins=bin_edges, range=histogram_range)
+        else:
+            hist, bin_edges = numpy.histogram(df[col], bins=BIN_COUNT, range=histogram_range)
+
+        fig = create_histogram_figure2(
+            hist,
+            bin_edges,
             x_axis_label="アノテーション数",
             y_axis_label=y_axis_label,
+            title=f"{col[0]},{col[1]},{col[2]}",
+            sub_title=get_sub_title_from_series(df[col], decimals=2),
         )
-        fig.add_layout(Title(text=get_sub_title_from_series(df[col], decimals=2), text_font_size="11px"), "above")
-        fig.add_layout(Title(text=f"{col[0]},{col[1]},{col[2]}"), "above")
-
-        hover = HoverTool(tooltips=[("interval", "@interval"), ("frequency", "@frequency")])
-
-        fig.quad(source=source, top="frequency", bottom=0, left="left", right="right", line_color="white")
-
-        fig.add_tools(hover)
         figures_dict[header].append(fig)
 
-    grid_layout_figures = convert_to_2d_figure_list(figures_dict)
-
-    bokeh_obj = bokeh.layouts.gridplot(grid_layout_figures)
+    figure_list_2d.extend(convert_to_2d_figure_list(figures_dict))
+    bokeh_obj = bokeh.layouts.gridplot(figure_list_2d)
     output_file.parent.mkdir(exist_ok=True, parents=True)
     bokeh.plotting.reset_output()
     bokeh.plotting.output_file(output_file, title=output_file.stem)
@@ -438,10 +456,21 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     )
 
     parser.add_argument(
-        "--bins",
+        "--exclude_empty_value",
+        action="store_true",
+        help="指定すると、すべてのタスクでアノテーション数が0であるヒストグラムを描画しません。",
+    )
+
+    parser.add_argument(
+        "--arrange_bin_edge",
+        action="store_true",
+        help="指定すると、ヒストグラムのデータの範囲とビンの幅がすべてのヒストグラムで一致します。",
+    )
+
+    parser.add_argument(
+        "--bin_width",
         type=int,
-        default=20,
-        help="ヒストグラムのビンの数を指定します。",
+        help=f"ヒストグラムのビンの幅を指定します。指定しない場合は、ビンの個数が{BIN_COUNT}になるようにビンの幅が調整されます。",
     )
 
     parser.add_argument(
