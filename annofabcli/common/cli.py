@@ -524,7 +524,7 @@ class AbstractCommandLineWithConfirmInterface(abc.ABC):  # noqa: B024
         return yes
 
 
-class AbstractCommandLineWithoutWebapiInterface(abc.ABC):
+class AbstractCommandLineWithoutWebapiInterface(abc.ABC):  # noqa: B024
     """
     webapiにアクセスしないCLI用の抽象クラス
     """
