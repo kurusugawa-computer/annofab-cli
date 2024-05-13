@@ -18,8 +18,8 @@ from dataclasses_json import DataClassJsonMixin
 import annofabcli
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
-    AbstractCommandLineInterface,
     ArgumentParser,
+    CommandLine,
     build_annofabapi_resource_and_login,
     get_json_from_args,
     prompt_yesnoall,
@@ -232,7 +232,7 @@ class SubPutInputData:
             return False
 
 
-class PutInputData(AbstractCommandLineInterface):
+class PutInputData(CommandLine):
     """
     入力データをCSVで登録する。
     """

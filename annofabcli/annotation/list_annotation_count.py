@@ -13,8 +13,8 @@ from annofabcli.annotation.annotation_query import AnnotationQueryForCLI
 from annofabcli.annotation.list_annotation import ListAnnotationMain
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
-    AbstractCommandLineInterface,
     ArgumentParser,
+    CommandLine,
     build_annofabapi_resource_and_login,
     get_json_from_args,
     get_list_from_args,
@@ -30,7 +30,7 @@ class GroupBy(Enum):
     INPUT_DATA_ID = "input_data_id"
 
 
-class ListAnnotationCount(AbstractCommandLineInterface):
+class ListAnnotationCount(CommandLine):
     COMMON_MESSAGE = "annofabcli annotation list_count: error:"
 
     def __init__(self, service: annofabapi.Resource, facade: AnnofabApiFacade, args: argparse.Namespace) -> None:

@@ -11,8 +11,8 @@ from annofabapi.models import OrganizationMemberRole
 import annofabcli
 import annofabcli.common.cli
 from annofabcli.common.cli import (
-    AbstractCommandLineInterface,
-    AbstractCommandLineWithConfirmInterface,
+    CommandLine,
+    CommandLineWithConfirm,
     build_annofabapi_resource_and_login,
 )
 from annofabcli.common.facade import AnnofabApiFacade
@@ -20,7 +20,7 @@ from annofabcli.common.facade import AnnofabApiFacade
 logger = logging.getLogger(__name__)
 
 
-class ChangeOrganizationMemberMain(AbstractCommandLineWithConfirmInterface):
+class ChangeOrganizationMemberMain(CommandLineWithConfirm):
     def __init__(
         self,
         service: annofabapi.Resource,
@@ -69,7 +69,7 @@ class ChangeOrganizationMemberMain(AbstractCommandLineWithConfirmInterface):
         logger.info(f"{success_count} / {len(user_ids)} 件のユーザの組織メンバロールを'{role}'に変更しました。")
 
 
-class ChangeOrganizationMember(AbstractCommandLineInterface):
+class ChangeOrganizationMember(CommandLine):
     def main(self) -> None:
         args = self.args
 

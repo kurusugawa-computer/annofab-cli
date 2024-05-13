@@ -9,7 +9,7 @@ import annofabapi
 from annofabapi.models import JobStatus, ProjectJobType, ProjectMemberRole
 
 import annofabcli
-from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, build_annofabapi_resource_and_login
+from annofabcli.common.cli import ArgumentParser, CommandLine, build_annofabapi_resource_and_login
 from annofabcli.common.dataclasses import WaitOptions
 from annofabcli.common.facade import AnnofabApiFacade
 
@@ -91,7 +91,7 @@ class PuttingTaskByCountMain:
             logger.warning(f"job_id='{job_id}' :: {max_wait_minute}分間待ちましたが、タスク登録のジョブが終了しませんでした。")
 
 
-class PutTaskByCount(AbstractCommandLineInterface):
+class PutTaskByCount(CommandLine):
     def main(self) -> None:
         args = self.args
         project_id = args.project_id

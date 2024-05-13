@@ -12,7 +12,7 @@ import annofabapi
 from annofabapi.models import AnnotationDataHoldingType
 
 import annofabcli
-from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, build_annofabapi_resource_and_login
+from annofabcli.common.cli import ArgumentParser, CommandLine, build_annofabapi_resource_and_login
 from annofabcli.common.facade import AnnofabApiFacade
 
 logger = logging.getLogger(__name__)
@@ -110,7 +110,7 @@ class DumpAnnotationMain:
         logger.info(f"{success_count} / {len(task_id_list)} 件のタスクのアノテーション情報をダンプしました。")
 
 
-class DumpAnnotation(AbstractCommandLineInterface):
+class DumpAnnotation(CommandLine):
     """
     アノテーション情報をダンプする
     """

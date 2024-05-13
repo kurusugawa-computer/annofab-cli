@@ -10,8 +10,8 @@ import pyquery
 import annofabcli
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
-    AbstractCommandLineInterface,
     ArgumentParser,
+    CommandLine,
     build_annofabapi_resource_and_login,
 )
 from annofabcli.common.facade import AnnofabApiFacade
@@ -112,7 +112,7 @@ class DownloadInstructionMain:
         logger.debug(f"{output_html} をダウンロードしました。")
 
 
-class DownloadInstruction(AbstractCommandLineInterface):
+class DownloadInstruction(CommandLine):
     COMMON_MESSAGE = "annofabcli instruction download"
 
     def get_history_id_from_before_index(self, project_id: str, before: int) -> Optional[str]:

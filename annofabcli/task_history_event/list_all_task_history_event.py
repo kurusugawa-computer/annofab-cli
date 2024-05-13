@@ -13,8 +13,8 @@ from annofabapi.models import TaskHistoryEvent
 
 import annofabcli
 from annofabcli.common.cli import (
-    AbstractCommandLineInterface,
     ArgumentParser,
+    CommandLine,
     build_annofabapi_resource_and_login,
     get_list_from_args,
 )
@@ -72,7 +72,7 @@ class ListTaskHistoryEventWithJsonMain:
         return filtered_task_history_event_list
 
 
-class ListTaskHistoryEventWithJson(AbstractCommandLineInterface):
+class ListTaskHistoryEventWithJson(CommandLine):
     def print_task_history_event_list(
         self,
         project_id: str,

@@ -16,9 +16,9 @@ from annofabcli.annotation.annotation_query import AnnotationQueryForAPI, Annota
 from annofabcli.annotation.dump_annotation import DumpAnnotationMain
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
-    AbstractCommandLineInterface,
-    AbstractCommandLineWithConfirmInterface,
     ArgumentParser,
+    CommandLine,
+    CommandLineWithConfirm,
     build_annofabapi_resource_and_login,
     get_json_from_args,
 )
@@ -27,7 +27,7 @@ from annofabcli.common.facade import AnnofabApiFacade
 logger = logging.getLogger(__name__)
 
 
-class DeleteAnnotationMain(AbstractCommandLineWithConfirmInterface):
+class DeleteAnnotationMain(CommandLineWithConfirm):
     """アノテーション削除処理用のクラス
 
     Args:
@@ -45,7 +45,7 @@ class DeleteAnnotationMain(AbstractCommandLineWithConfirmInterface):
         self.service = service
         self.facade = AnnofabApiFacade(service)
         self.is_force = is_force
-        AbstractCommandLineWithConfirmInterface.__init__(self, all_yes)
+        CommandLineWithConfirm.__init__(self, all_yes)
         self.project_id = project_id
         self.dump_annotation_obj = DumpAnnotationMain(service, project_id)
 
@@ -162,7 +162,7 @@ class DeleteAnnotationMain(AbstractCommandLineWithConfirmInterface):
             )
 
 
-class DeleteAnnotation(AbstractCommandLineInterface):
+class DeleteAnnotation(CommandLine):
     """
     アノテーションを削除する
     """

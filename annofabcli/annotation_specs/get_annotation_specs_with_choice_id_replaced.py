@@ -10,9 +10,9 @@ import more_itertools
 import annofabcli
 import annofabcli.common.cli
 from annofabcli.common.cli import (
-    AbstractCommandLineInterface,
-    AbstractCommandLineWithConfirmInterface,
     ArgumentParser,
+    CommandLine,
+    CommandLineWithConfirm,
     build_annofabapi_resource_and_login,
     get_list_from_args,
 )
@@ -22,7 +22,7 @@ from annofabcli.common.facade import AnnofabApiFacade
 logger = logging.getLogger(__name__)
 
 
-class ReplacingChoiceId(AbstractCommandLineWithConfirmInterface):
+class ReplacingChoiceId(CommandLineWithConfirm):
     @staticmethod
     def exists_choice_with_choice_id(choice_list: list[dict[str, Any]], choice_id: str) -> bool:
         """指定した選択肢IDを持つ選択肢情報が存在するか否か"""
@@ -99,7 +99,7 @@ class ReplacingChoiceId(AbstractCommandLineWithConfirmInterface):
         logger.info(f"{attribute_count} 個のラジオボタン/ドロップ属性の選択肢IDを、{replaced_count} 件変更しました。")
 
 
-class GetAnnotationSpecsWithAttributeIdReplaced(AbstractCommandLineInterface):
+class GetAnnotationSpecsWithAttributeIdReplaced(CommandLine):
     def main(self) -> None:
         args = self.args
         project_id: str = args.project_id

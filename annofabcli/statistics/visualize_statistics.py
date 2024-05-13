@@ -17,7 +17,7 @@ from annofabapi.models import ProjectMemberRole, TaskPhase
 import annofabcli
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
-    AbstractCommandLineInterface,
+    CommandLine,
     build_annofabapi_resource_and_login,
 )
 from annofabcli.common.facade import AnnofabApiFacade, TaskQuery
@@ -413,7 +413,7 @@ class VisualizingStatisticsMain:
         return output_project_dir_list
 
 
-class VisualizeStatistics(AbstractCommandLineInterface):
+class VisualizeStatistics(CommandLine):
     """
     統計情報を可視化する。
     """

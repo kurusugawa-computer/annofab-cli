@@ -12,9 +12,9 @@ import annofabcli
 import annofabcli.common.cli
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
-    AbstractCommandLineInterface,
-    AbstractCommandLineWithConfirmInterface,
     ArgumentParser,
+    CommandLine,
+    CommandLineWithConfirm,
     build_annofabapi_resource_and_login,
 )
 from annofabcli.common.facade import AnnofabApiFacade
@@ -22,10 +22,10 @@ from annofabcli.common.facade import AnnofabApiFacade
 logger = logging.getLogger(__name__)
 
 
-class UpdateMetadataMain(AbstractCommandLineWithConfirmInterface):
+class UpdateMetadataMain(CommandLineWithConfirm):
     def __init__(self, service: annofabapi.Resource, all_yes: bool = False) -> None:
         self.service = service
-        AbstractCommandLineWithConfirmInterface.__init__(self, all_yes)
+        CommandLineWithConfirm.__init__(self, all_yes)
 
     def set_metadata_to_input_data(
         self,
@@ -108,7 +108,7 @@ class UpdateMetadataMain(AbstractCommandLineWithConfirmInterface):
         logger.info(f"{success_count} / {len(input_data_id_list)} 件の入力データのmetadataを変更しました。")
 
 
-class UpdateMetadata(AbstractCommandLineInterface):
+class UpdateMetadata(CommandLine):
     @staticmethod
     def validate(args: argparse.Namespace) -> bool:
         COMMON_MESSAGE = "annofabcli input_data update_metadata: error:"

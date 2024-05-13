@@ -9,8 +9,8 @@ from typing import Any, Dict, Optional, Tuple
 import annofabcli
 import annofabcli.common.cli
 from annofabcli.common.cli import (
-    AbstractCommandLineInterface,
     ArgumentParser,
+    CommandLine,
     FormatArgument,
     build_annofabapi_resource_and_login,
 )
@@ -19,7 +19,7 @@ from annofabcli.common.facade import AnnofabApiFacade
 logger = logging.getLogger(__name__)
 
 
-class PrintLabelColor(AbstractCommandLineInterface):
+class PrintLabelColor(CommandLine):
     """
     アノテーションラベルの色(RGB)を出力する
     """

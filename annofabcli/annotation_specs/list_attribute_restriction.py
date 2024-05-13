@@ -12,8 +12,8 @@ import annofabcli
 import annofabcli.common.cli
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
-    AbstractCommandLineInterface,
     ArgumentParser,
+    CommandLine,
     build_annofabapi_resource_and_login,
     get_list_from_args,
 )
@@ -218,7 +218,7 @@ class ListAttributeRestrictionMain:
             return [self.get_restriction_text(e["additional_data_definition_id"], e["condition"]) for e in restrictions]
 
 
-class ListAttributeRestriction(AbstractCommandLineInterface):
+class ListAttributeRestriction(CommandLine):
     COMMON_MESSAGE = "annofabcli annotation_specs list_restriction: error:"
 
     def get_history_id_from_before_index(self, project_id: str, before: int) -> Optional[str]:

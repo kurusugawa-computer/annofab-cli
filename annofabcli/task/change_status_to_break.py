@@ -14,9 +14,9 @@ import annofabcli
 import annofabcli.common.cli
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
-    AbstractCommandLineInterface,
-    AbstractCommandLineWithConfirmInterface,
     ArgumentParser,
+    CommandLine,
+    CommandLineWithConfirm,
     build_annofabapi_resource_and_login,
 )
 from annofabcli.common.facade import AnnofabApiFacade, TaskQuery, match_task_with_query
@@ -24,7 +24,7 @@ from annofabcli.common.facade import AnnofabApiFacade, TaskQuery, match_task_wit
 logger = logging.getLogger(__name__)
 
 
-class ChangeStatusToBreakMain(AbstractCommandLineWithConfirmInterface):
+class ChangeStatusToBreakMain(CommandLineWithConfirm):
     def __init__(self, service: annofabapi.Resource, all_yes: bool) -> None:
         super().__init__(all_yes)
         self.service = service
@@ -145,7 +145,7 @@ class ChangeStatusToBreakMain(AbstractCommandLineWithConfirmInterface):
         logger.info(f"{success_count} / {len(task_id_list)} 件 タスクのステータスを休憩中に変更しました。")
 
 
-class ChangeStatusToBreak(AbstractCommandLineInterface):
+class ChangeStatusToBreak(CommandLine):
     """
     タスクのステータスを休憩中に変更する。
     """

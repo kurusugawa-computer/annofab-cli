@@ -14,7 +14,7 @@ from datauri import DataURI
 from PIL import Image
 
 import annofabcli
-from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, build_annofabapi_resource_and_login
+from annofabcli.common.cli import ArgumentParser, CommandLine, build_annofabapi_resource_and_login
 from annofabcli.common.facade import AnnofabApiFacade
 
 logger = logging.getLogger(__name__)
@@ -43,7 +43,7 @@ def save_image_from_data_uri_scheme(value: str, temp_dir: Path) -> Path:
         return image_file_path
 
 
-class UploadInstruction(AbstractCommandLineInterface):
+class UploadInstruction(CommandLine):
     """
     作業ガイドをアップロードする
     """

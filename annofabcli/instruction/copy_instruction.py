@@ -8,13 +8,13 @@ from annofabapi.models import ProjectMemberRole
 from pyquery import PyQuery
 
 import annofabcli
-from annofabcli.common.cli import AbstractCommandLineInterface, build_annofabapi_resource_and_login
+from annofabcli.common.cli import CommandLine, build_annofabapi_resource_and_login
 from annofabcli.common.facade import AnnofabApiFacade
 
 logger = logging.getLogger(__name__)
 
 
-class CopyInstruction(AbstractCommandLineInterface):
+class CopyInstruction(CommandLine):
     """
     作業ガイドをコピーする。
     """

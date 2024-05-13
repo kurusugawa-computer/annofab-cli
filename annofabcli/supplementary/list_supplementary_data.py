@@ -5,14 +5,14 @@ from typing import List, Optional
 from annofabapi.models import SupplementaryData
 
 import annofabcli
-from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, build_annofabapi_resource_and_login
+from annofabcli.common.cli import ArgumentParser, CommandLine, build_annofabapi_resource_and_login
 from annofabcli.common.enums import FormatArgument
 from annofabcli.common.facade import AnnofabApiFacade
 
 logger = logging.getLogger(__name__)
 
 
-class ListSupplementaryData(AbstractCommandLineInterface):
+class ListSupplementaryData(CommandLine):
     """
     補助情報一覧を表示する。
     """

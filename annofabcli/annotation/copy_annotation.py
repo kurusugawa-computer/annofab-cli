@@ -15,9 +15,9 @@ from annofabapi.utils import can_put_annotation
 import annofabcli
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
-    AbstractCommandLineInterface,
-    AbstractCommandLineWithConfirmInterface,
     ArgumentParser,
+    CommandLine,
+    CommandLineWithConfirm,
     build_annofabapi_resource_and_login,
     get_list_from_args,
 )
@@ -122,7 +122,7 @@ def get_copy_target_list(str_copy_target_list: list[str]) -> list[CopyTarget]:
     return copy_target_list
 
 
-class CopyAnnotationMain(AbstractCommandLineWithConfirmInterface):
+class CopyAnnotationMain(CommandLineWithConfirm):
     def __init__(self, service: annofabapi.Resource, *, project_id: str, all_yes: bool, overwrite: bool, merge: bool, force: bool) -> None:
         self.service = service
         self.project_id = project_id
@@ -130,7 +130,7 @@ class CopyAnnotationMain(AbstractCommandLineWithConfirmInterface):
         self.merge = merge
         self.force = force
 
-        AbstractCommandLineWithConfirmInterface.__init__(self, all_yes)
+        CommandLineWithConfirm.__init__(self, all_yes)
 
     def copy_annotation_by_task(self, copy_target: CopyTargetByTask) -> bool:
         """
@@ -330,7 +330,7 @@ class CopyAnnotationMain(AbstractCommandLineWithConfirmInterface):
         logger.info(f"{success_count} / {len(copy_target_list)} 件のタスクまたは入力データに対して、アノテーションをコピーしました。")
 
 
-class CopyAnnotation(AbstractCommandLineInterface):
+class CopyAnnotation(CommandLine):
     COMMON_MESSAGE = "annofabcli annotation copy: error:"
 
     def validate(self, args: argparse.Namespace) -> bool:

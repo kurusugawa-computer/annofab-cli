@@ -10,8 +10,8 @@ import annofabcli.common.cli
 from annofabcli.comment.put_comment_simply import AddedSimpleComment, PutCommentSimplyMain
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
-    AbstractCommandLineInterface,
     ArgumentParser,
+    CommandLine,
     build_annofabapi_resource_and_login,
     get_list_from_args,
 )
@@ -20,7 +20,7 @@ from annofabcli.common.facade import AnnofabApiFacade
 logger = logging.getLogger(__name__)
 
 
-class PutOnholdCommentSimply(AbstractCommandLineInterface):
+class PutOnholdCommentSimply(CommandLine):
     COMMON_MESSAGE = "annofabcli comment put_onhold_simply: error:"
 
     def validate(self, args: argparse.Namespace) -> bool:

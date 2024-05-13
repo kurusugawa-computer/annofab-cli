@@ -21,9 +21,9 @@ from annofabapi.utils import can_put_annotation
 import annofabcli
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
-    AbstractCommandLineInterface,
-    AbstractCommandLineWithConfirmInterface,
     ArgumentParser,
+    CommandLine,
+    CommandLineWithConfirm,
     build_annofabapi_resource_and_login,
 )
 from annofabcli.common.facade import AnnofabApiFacade
@@ -31,7 +31,7 @@ from annofabcli.common.facade import AnnofabApiFacade
 logger = logging.getLogger(__name__)
 
 
-class RestoreAnnotationMain(AbstractCommandLineWithConfirmInterface):
+class RestoreAnnotationMain(CommandLineWithConfirm):
     def __init__(
         self,
         service: annofabapi.Resource,
@@ -41,7 +41,7 @@ class RestoreAnnotationMain(AbstractCommandLineWithConfirmInterface):
         all_yes: bool,
     ) -> None:
         self.service = service
-        AbstractCommandLineWithConfirmInterface.__init__(self, all_yes)
+        CommandLineWithConfirm.__init__(self, all_yes)
 
         self.project_id = project_id
         self.is_force = is_force
@@ -257,7 +257,7 @@ class RestoreAnnotationMain(AbstractCommandLineWithConfirmInterface):
         logger.info(f"{success_count} / {task_count} 件のタスクに対してアノテーションをリストアしました。")
 
 
-class RestoreAnnotation(AbstractCommandLineInterface):
+class RestoreAnnotation(CommandLine):
     """
     アノテーションをリストアする。
     """

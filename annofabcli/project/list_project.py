@@ -11,8 +11,8 @@ from more_itertools import first_true
 import annofabcli
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
-    AbstractCommandLineInterface,
     ArgumentParser,
+    CommandLine,
     build_annofabapi_resource_and_login,
 )
 from annofabcli.common.enums import FormatArgument
@@ -133,7 +133,7 @@ class ListProjectMain:
         return project_list
 
 
-class ListProject(AbstractCommandLineInterface):
+class ListProject(CommandLine):
     """
     プロジェクト一覧を表示する。
     """

@@ -11,7 +11,7 @@ from annofabapi.dataclass.input import InputData
 from annofabapi.models import ProjectMemberRole
 
 import annofabcli
-from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, build_annofabapi_resource_and_login
+from annofabcli.common.cli import ArgumentParser, CommandLine, build_annofabapi_resource_and_login
 from annofabcli.common.download import DownloadingFile
 from annofabcli.common.enums import FormatArgument
 from annofabcli.common.facade import AnnofabApiFacade, InputDataQuery, match_input_data_with_query
@@ -74,7 +74,7 @@ class ListInputDataWithJsonMain:
         return filtered_input_data_list
 
 
-class ListInputDataWithJson(AbstractCommandLineInterface):
+class ListInputDataWithJson(CommandLine):
     def main(self) -> None:
         args = self.args
 

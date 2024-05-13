@@ -12,7 +12,7 @@ from annofabapi.parser import SimpleAnnotationZipParser
 
 import annofabcli
 import annofabcli.common.cli
-from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, build_annofabapi_resource_and_login
+from annofabcli.common.cli import ArgumentParser, CommandLine, build_annofabapi_resource_and_login
 from annofabcli.common.download import DownloadingFile
 from annofabcli.common.facade import AnnofabApiFacade
 
@@ -162,7 +162,7 @@ class ListOutOfRangeAnnotationForMovieMain:
         return df
 
 
-class ListOutOfRangeAnnotationForMovie(AbstractCommandLineInterface):
+class ListOutOfRangeAnnotationForMovie(CommandLine):
     def main(self) -> None:
         args = self.args
 

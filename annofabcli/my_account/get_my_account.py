@@ -6,8 +6,8 @@ from typing import Optional
 
 import annofabcli
 from annofabcli.common.cli import (
-    AbstractCommandLineInterface,
     ArgumentParser,
+    CommandLine,
     FormatArgument,
     build_annofabapi_resource_and_login,
 )
@@ -16,7 +16,7 @@ from annofabcli.common.facade import AnnofabApiFacade
 logger = logging.getLogger(__name__)
 
 
-class GetMyAccount(AbstractCommandLineInterface):
+class GetMyAccount(CommandLine):
     def main(self) -> None:
         account, _ = self.service.api.get_my_account()
         self.print_according_to_format(account)

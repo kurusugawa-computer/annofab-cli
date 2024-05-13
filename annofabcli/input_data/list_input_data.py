@@ -7,7 +7,7 @@ import annofabapi
 from annofabapi.models import InputData, Task
 
 import annofabcli
-from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, build_annofabapi_resource_and_login
+from annofabcli.common.cli import ArgumentParser, CommandLine, build_annofabapi_resource_and_login
 from annofabcli.common.enums import FormatArgument
 from annofabcli.common.facade import AnnofabApiFacade
 from annofabcli.common.visualize import AddProps
@@ -15,7 +15,7 @@ from annofabcli.common.visualize import AddProps
 logger = logging.getLogger(__name__)
 
 
-class ListInputData(AbstractCommandLineInterface):
+class ListInputData(CommandLine):
     """
     入力データの一覧を表示する
     """

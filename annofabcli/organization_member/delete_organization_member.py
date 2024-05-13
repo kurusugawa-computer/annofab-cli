@@ -10,8 +10,8 @@ import more_itertools
 import annofabcli
 import annofabcli.common.cli
 from annofabcli.common.cli import (
-    AbstractCommandLineInterface,
-    AbstractCommandLineWithConfirmInterface,
+    CommandLine,
+    CommandLineWithConfirm,
     build_annofabapi_resource_and_login,
 )
 from annofabcli.common.facade import AnnofabApiFacade
@@ -19,7 +19,7 @@ from annofabcli.common.facade import AnnofabApiFacade
 logger = logging.getLogger(__name__)
 
 
-class DeleteOrganizationMemberMain(AbstractCommandLineWithConfirmInterface):
+class DeleteOrganizationMemberMain(CommandLineWithConfirm):
     def __init__(
         self,
         service: annofabapi.Resource,
@@ -64,7 +64,7 @@ class DeleteOrganizationMemberMain(AbstractCommandLineWithConfirmInterface):
         logger.info(f"{success_count} / {len(user_ids)} 件のユーザを組織'{organization_name}'から脱退させました。")
 
 
-class DeleteOrganizationMember(AbstractCommandLineInterface):
+class DeleteOrganizationMember(CommandLine):
     def main(self) -> None:
         args = self.args
 

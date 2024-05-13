@@ -24,9 +24,9 @@ from annofabcli.annotation.annotation_query import (
 from annofabcli.annotation.dump_annotation import DumpAnnotationMain
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
-    AbstractCommandLineInterface,
-    AbstractCommandLineWithConfirmInterface,
     ArgumentParser,
+    CommandLine,
+    CommandLineWithConfirm,
     build_annofabapi_resource_and_login,
     get_json_from_args,
 )
@@ -40,7 +40,7 @@ class ChangeBy(Enum):
     INPUT_DATA = "input_data"
 
 
-class ChangeAnnotationAttributesMain(AbstractCommandLineWithConfirmInterface):
+class ChangeAnnotationAttributesMain(CommandLineWithConfirm):
     def __init__(
         self,
         service: annofabapi.Resource,
@@ -51,7 +51,7 @@ class ChangeAnnotationAttributesMain(AbstractCommandLineWithConfirmInterface):
     ) -> None:
         self.service = service
         self.facade = AnnofabApiFacade(service)
-        AbstractCommandLineWithConfirmInterface.__init__(self, all_yes)
+        CommandLineWithConfirm.__init__(self, all_yes)
 
         self.project_id = project_id
         self.is_force = is_force
@@ -230,7 +230,7 @@ class ChangeAnnotationAttributesMain(AbstractCommandLineWithConfirmInterface):
         logger.info(f"{success_count} / {len(task_id_list)} 件のタスクに対してアノテーションの属性を変更しました。")
 
 
-class ChangeAttributesOfAnnotation(AbstractCommandLineInterface):
+class ChangeAttributesOfAnnotation(CommandLine):
     """
     アノテーション属性を変更
     """

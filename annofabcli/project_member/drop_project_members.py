@@ -8,7 +8,7 @@ from annofabapi.models import ProjectMemberStatus
 from more_itertools import first_true
 
 import annofabcli
-from annofabcli.common.cli import AbstractCommandLineInterface, build_annofabapi_resource_and_login
+from annofabcli.common.cli import CommandLine, build_annofabapi_resource_and_login
 from annofabcli.common.facade import AnnofabApiFacade
 
 logger = logging.getLogger(__name__)
@@ -74,7 +74,7 @@ class DropProjectMembersMain:
                 logger.warning(f"project_id={project_id} のプロジェクトメンバからユーザを脱退させられませんでした。")
 
 
-class DropProjectMembers(AbstractCommandLineInterface):
+class DropProjectMembers(CommandLine):
     """
     ユーザをプロジェクトから削除する
     """

@@ -9,8 +9,8 @@ from annofabapi.models import ProjectMember, ProjectMemberRole, ProjectMemberSta
 import annofabcli
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
-    AbstractCommandLineInterface,
     ArgumentParser,
+    CommandLine,
     build_annofabapi_resource_and_login,
 )
 from annofabcli.common.facade import AnnofabApiFacade
@@ -19,7 +19,7 @@ from annofabcli.project_member.put_project_members import PutProjectMembers
 logger = logging.getLogger(__name__)
 
 
-class ChangeProjectMembers(AbstractCommandLineInterface):
+class ChangeProjectMembers(CommandLine):
     """
     プロジェクトメンバのメンバ情報を更新する。
     """

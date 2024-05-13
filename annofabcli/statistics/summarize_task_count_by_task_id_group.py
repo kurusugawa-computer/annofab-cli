@@ -12,8 +12,8 @@ from annofabapi.models import ProjectMemberRole, Task, TaskPhase, TaskStatus
 import annofabcli
 import annofabcli.common.cli
 from annofabcli.common.cli import (
-    AbstractCommandLineInterface,
     ArgumentParser,
+    CommandLine,
     build_annofabapi_resource_and_login,
     get_json_from_args,
     get_wait_options_from_args,
@@ -146,7 +146,7 @@ def create_task_count_summary_df(
     return df_summary
 
 
-class SummarizeTaskCountByTaskId(AbstractCommandLineInterface):
+class SummarizeTaskCountByTaskId(CommandLine):
     def print_summarize_task_count(self, df: pandas.DataFrame) -> None:
         columns = ["task_id_group"] + [status.value for status in TaskStatusForSummary] + ["sum"]
         annofabcli.common.utils.print_according_to_format(

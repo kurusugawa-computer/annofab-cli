@@ -3,14 +3,14 @@ import logging
 from typing import Optional
 
 import annofabcli
-from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, build_annofabapi_resource_and_login
+from annofabcli.common.cli import ArgumentParser, CommandLine, build_annofabapi_resource_and_login
 from annofabcli.common.enums import FormatArgument
 from annofabcli.common.facade import AnnofabApiFacade
 
 logger = logging.getLogger(__name__)
 
 
-class ListOrganization(AbstractCommandLineInterface):
+class ListOrganization(CommandLine):
     def main(self) -> None:
         organization_list = self.service.wrapper.get_all_my_organizations()
         logger.info(f"組織一覧の件数: {len(organization_list)}")

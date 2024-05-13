@@ -10,9 +10,9 @@ import annofabapi
 import annofabcli
 import annofabcli.common.cli
 from annofabcli.common.cli import (
-    AbstractCommandLineInterface,
-    AbstractCommandLineWithConfirmInterface,
     ArgumentParser,
+    CommandLine,
+    CommandLineWithConfirm,
     build_annofabapi_resource_and_login,
     get_json_from_args,
 )
@@ -31,12 +31,12 @@ class Label:
     label_id: str
 
 
-class PuttingLabelColorMain(AbstractCommandLineWithConfirmInterface):
+class PuttingLabelColorMain(CommandLineWithConfirm):
     def __init__(self, service: annofabapi.Resource, project_id: str, *, all_yes: bool) -> None:
         self.service = service
         self.facade = AnnofabApiFacade(service)
         self.project_id = project_id
-        AbstractCommandLineWithConfirmInterface.__init__(self, all_yes)
+        CommandLineWithConfirm.__init__(self, all_yes)
 
     def create_request_body(self, label_color_dict: LabelColorDict) -> tuple[dict[str, Any], list[Label]]:
         """
@@ -95,7 +95,7 @@ class PuttingLabelColorMain(AbstractCommandLineWithConfirmInterface):
         logger.info("アノテーション仕様のラベルの色を変更しました。")
 
 
-class PutLabelColor(AbstractCommandLineInterface):
+class PutLabelColor(CommandLine):
     def main(self) -> None:
         args = self.args
         label_color = get_json_from_args(args.json)

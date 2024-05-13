@@ -17,8 +17,8 @@ from annofabapi.parser import (
 import annofabcli
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
-    AbstractCommandLineWithoutWebapiInterface,
     ArgumentParser,
+    CommandLineWithoutWebapi,
     get_list_from_args,
 )
 
@@ -193,7 +193,7 @@ class MergeAnnotationMain:
             logger.debug(f"{output_json} を出力しました。")
 
 
-class MergeAnnotation(AbstractCommandLineWithoutWebapiInterface):
+class MergeAnnotation(CommandLineWithoutWebapi):
     @staticmethod
     def validate(args: argparse.Namespace) -> bool:
         COMMON_MESSAGE = "annofabcli filesystem merge_annotation: error:"

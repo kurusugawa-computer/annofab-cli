@@ -10,7 +10,7 @@ from annofabapi.models import Comment, CommentType
 
 import annofabcli
 import annofabcli.common.cli
-from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, build_annofabapi_resource_and_login
+from annofabcli.common.cli import ArgumentParser, CommandLine, build_annofabapi_resource_and_login
 from annofabcli.common.enums import FormatArgument
 from annofabcli.common.facade import AnnofabApiFacade
 from annofabcli.common.utils import print_according_to_format, print_csv
@@ -19,7 +19,7 @@ from annofabcli.common.visualize import AddProps
 logger = logging.getLogger(__name__)
 
 
-class ListingComments(AbstractCommandLineInterface):
+class ListingComments(CommandLine):
     def get_comments(self, project_id: str, task_id: str, input_data_id: str):  # noqa: ANN201
         comments, _ = self.service.api.get_comments(project_id, task_id, input_data_id, query_params={"v": "2"})
         return comments

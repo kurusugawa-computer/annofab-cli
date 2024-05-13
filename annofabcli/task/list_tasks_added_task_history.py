@@ -12,7 +12,7 @@ from annofabapi.models import Task, TaskHistory, TaskPhase, TaskStatus
 from annofabapi.utils import get_task_history_index_skipped_acceptance, get_task_history_index_skipped_inspection
 
 import annofabcli
-from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, build_annofabapi_resource_and_login
+from annofabcli.common.cli import ArgumentParser, CommandLine, build_annofabapi_resource_and_login
 from annofabcli.common.enums import FormatArgument
 from annofabcli.common.facade import AnnofabApiFacade
 from annofabcli.common.utils import print_csv, print_json
@@ -375,7 +375,7 @@ class TasksAddedTaskHistoryOutput:
             print_json(task_list, is_pretty=True, output=output_path)
 
 
-class ListTasksAddedTaskHistory(AbstractCommandLineInterface):
+class ListTasksAddedTaskHistory(CommandLine):
     def main(self) -> None:
         args = self.args
 

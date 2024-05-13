@@ -13,7 +13,7 @@ from annofabapi.models import CommentType, TaskPhase, TaskStatus
 from dataclasses_json import DataClassJsonMixin
 
 from annofabcli.comment.utils import get_comment_type_name
-from annofabcli.common.cli import AbstractCommandLineWithConfirmInterface
+from annofabcli.common.cli import CommandLineWithConfirm
 from annofabcli.common.facade import AnnofabApiFacade
 
 logger = logging.getLogger(__name__)
@@ -51,7 +51,7 @@ keyはtask_id
 """
 
 
-class PutCommentMain(AbstractCommandLineWithConfirmInterface):
+class PutCommentMain(CommandLineWithConfirm):
     def __init__(self, service: annofabapi.Resource, project_id: str, comment_type: CommentType, all_yes: bool = False) -> None:
         self.service = service
         self.facade = AnnofabApiFacade(service)
@@ -60,7 +60,7 @@ class PutCommentMain(AbstractCommandLineWithConfirmInterface):
         self.comment_type = comment_type
         self.comment_type_name = get_comment_type_name(comment_type)
 
-        AbstractCommandLineWithConfirmInterface.__init__(self, all_yes)
+        CommandLineWithConfirm.__init__(self, all_yes)
 
     def _create_request_body(self, task: Dict[str, Any], input_data_id: str, comments: List[AddedComment]) -> List[Dict[str, Any]]:
         """batch_update_comments に渡すリクエストボディを作成する。"""

@@ -10,9 +10,9 @@ from annofabapi.models import ProjectMemberRole, TaskStatus
 
 import annofabcli
 from annofabcli.common.cli import (
-    AbstractCommandLineInterface,
-    AbstractCommandLineWithConfirmInterface,
     ArgumentParser,
+    CommandLine,
+    CommandLineWithConfirm,
     build_annofabapi_resource_and_login,
 )
 from annofabcli.common.facade import AnnofabApiFacade, TaskQuery, match_task_with_query
@@ -21,7 +21,7 @@ from annofabcli.common.utils import add_dryrun_prefix
 logger = logging.getLogger(__name__)
 
 
-class DeleteTaskMain(AbstractCommandLineWithConfirmInterface):
+class DeleteTaskMain(CommandLineWithConfirm):
     def __init__(
         self,
         service: annofabapi.Resource,
@@ -39,7 +39,7 @@ class DeleteTaskMain(AbstractCommandLineWithConfirmInterface):
         self.force = force
         self.should_delete_input_data = should_delete_input_data
 
-        AbstractCommandLineWithConfirmInterface.__init__(self, all_yes)
+        CommandLineWithConfirm.__init__(self, all_yes)
 
     def delete_supplementary_data_list(self, task_id: str, input_data_id: str) -> int:
         supplementary_data_list, _ = self.service.api.get_supplementary_data_list(self.project_id, input_data_id)
@@ -242,7 +242,7 @@ class DeleteTaskMain(AbstractCommandLineWithConfirmInterface):
         logger.info(f"{count_delete_task} / {len(task_id_list)} 件のタスクを削除しました。")
 
 
-class DeleteTask(AbstractCommandLineInterface):
+class DeleteTask(CommandLine):
     """
     タスクを削除する
     """

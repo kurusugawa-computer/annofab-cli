@@ -19,9 +19,9 @@ import annofabcli
 import annofabcli.common.cli
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
-    AbstractCommandLineInterface,
-    AbstractCommandLineWithConfirmInterface,
     ArgumentParser,
+    CommandLine,
+    CommandLineWithConfirm,
     build_annofabapi_resource_and_login,
 )
 from annofabcli.common.facade import AnnofabApiFacade, TaskQuery, match_task_with_query
@@ -34,11 +34,11 @@ Dict[task_id, Dict[input_data_id, List[Inspection]]] の検査コメント情報
 """
 
 
-class CompleteTasksMain(AbstractCommandLineWithConfirmInterface):
+class CompleteTasksMain(CommandLineWithConfirm):
     def __init__(self, service: annofabapi.Resource, all_yes: bool = False) -> None:
         self.service = service
         self.facade = AnnofabApiFacade(service)
-        AbstractCommandLineWithConfirmInterface.__init__(self, all_yes)
+        CommandLineWithConfirm.__init__(self, all_yes)
 
     def reply_inspection_comment(
         self,
@@ -443,7 +443,7 @@ class CompleteTasksMain(AbstractCommandLineWithConfirmInterface):
         logger.info(f"{success_count} / {len(task_id_list)} 件のタスクに対して、今のフェーズを完了状態にしました。")
 
 
-class CompleteTasks(AbstractCommandLineInterface):
+class CompleteTasks(CommandLine):
     """
     タスクを受け入れ完了にする
     """

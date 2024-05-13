@@ -10,9 +10,9 @@ import more_itertools
 import annofabcli
 import annofabcli.common.cli
 from annofabcli.common.cli import (
-    AbstractCommandLineInterface,
-    AbstractCommandLineWithConfirmInterface,
     ArgumentParser,
+    CommandLine,
+    CommandLineWithConfirm,
     build_annofabapi_resource_and_login,
     get_list_from_args,
 )
@@ -22,7 +22,7 @@ from annofabcli.common.facade import AnnofabApiFacade
 logger = logging.getLogger(__name__)
 
 
-class ReplacingAttributeId(AbstractCommandLineWithConfirmInterface):
+class ReplacingAttributeId(CommandLineWithConfirm):
     @staticmethod
     def replace_attribute_id_of_restrictions(old_attribute_id: str, new_attribute_id: str, restriction_list: list[dict[str, Any]]) -> None:
         """
@@ -125,7 +125,7 @@ class ReplacingAttributeId(AbstractCommandLineWithConfirmInterface):
         logger.info(f"{replaced_count} 個の属性の属性IDを変更しました。")
 
 
-class GetAnnotationSpecsWithAttributeIdReplaced(AbstractCommandLineInterface):
+class GetAnnotationSpecsWithAttributeIdReplaced(CommandLine):
     def main(self) -> None:
         args = self.args
         project_id: str = args.project_id

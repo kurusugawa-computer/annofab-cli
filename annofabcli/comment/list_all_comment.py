@@ -17,7 +17,7 @@ from annofabapi.models import CommentType
 
 import annofabcli
 import annofabcli.common.cli
-from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, build_annofabapi_resource_and_login
+from annofabcli.common.cli import ArgumentParser, CommandLine, build_annofabapi_resource_and_login
 from annofabcli.common.download import DownloadingFile
 from annofabcli.common.enums import FormatArgument
 from annofabcli.common.facade import AnnofabApiFacade
@@ -70,7 +70,7 @@ class ListAllCommentMain:
         return comment_list
 
 
-class ListAllComment(AbstractCommandLineInterface):
+class ListAllComment(CommandLine):
     def main(self) -> None:
         args = self.args
         project_id = args.project_id
