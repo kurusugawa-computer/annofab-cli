@@ -42,6 +42,7 @@ from annofabcli.statistics.visualize_annotation_count import convert_to_2d_figur
 logger = logging.getLogger(__name__)
 
 BIN_COUNT = 20
+"""ヒストグラムのビンの個数"""
 
 
 class TimeUnit(Enum):
