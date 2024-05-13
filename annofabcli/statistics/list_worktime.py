@@ -11,7 +11,7 @@ import pandas
 from dateutil.parser import parse
 
 import annofabcli
-from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, build_annofabapi_resource_and_login
+from annofabcli.common.cli import ArgumentParser, CommandLine, build_annofabapi_resource_and_login
 from annofabcli.common.facade import AnnofabApiFacade
 from annofabcli.task_history_event.list_worktime import (
     ListWorktimeFromTaskHistoryEventMain,
@@ -106,7 +106,7 @@ def get_df_worktime(task_history_event_list: list[WorktimeFromTaskHistoryEvent],
     ]
 
 
-class ListWorktimeFromTaskHistoryEvent(AbstractCommandLineInterface):
+class ListWorktimeFromTaskHistoryEvent(CommandLine):
     def print_worktime_list(  # noqa: ANN201
         self,
         project_id: str,

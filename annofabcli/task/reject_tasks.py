@@ -19,9 +19,9 @@ import annofabcli
 import annofabcli.common.cli
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
-    AbstractCommandLineInterface,
-    AbstractCommandLineWithConfirmInterface,
     ArgumentParser,
+    CommandLine,
+    CommandLineWithConfirm,
     build_annofabapi_resource_and_login,
 )
 from annofabcli.common.enums import CustomProjectType
@@ -31,12 +31,12 @@ from annofabcli.common.utils import add_dryrun_prefix
 logger = logging.getLogger(__name__)
 
 
-class RejectTasksMain(AbstractCommandLineWithConfirmInterface):
+class RejectTasksMain(CommandLineWithConfirm):
     def __init__(self, service: annofabapi.Resource, *, comment_data: Optional[dict[str, Any]], all_yes: bool = False) -> None:
         self.service = service
         self.facade = AnnofabApiFacade(service)
         self.comment_data = comment_data
-        AbstractCommandLineWithConfirmInterface.__init__(self, all_yes)
+        CommandLineWithConfirm.__init__(self, all_yes)
 
     def add_inspection_comment(  # noqa: ANN201
         self,
@@ -341,7 +341,7 @@ class RejectTasksMain(AbstractCommandLineWithConfirmInterface):
         logger.info(f"{success_count} / {len(task_id_list)} 件 タスクを差し戻しました。")
 
 
-class RejectTasks(AbstractCommandLineInterface):
+class RejectTasks(CommandLine):
     COMMON_MESSAGE = "annofabcli task reject: error:"
 
     def validate(self, args: argparse.Namespace) -> bool:

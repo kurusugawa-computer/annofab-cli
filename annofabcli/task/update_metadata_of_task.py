@@ -14,9 +14,9 @@ import annofabcli
 import annofabcli.common.cli
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
-    AbstractCommandLineInterface,
-    AbstractCommandLineWithConfirmInterface,
     ArgumentParser,
+    CommandLine,
+    CommandLineWithConfirm,
     build_annofabapi_resource_and_login,
 )
 from annofabcli.common.facade import AnnofabApiFacade
@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 Metadata = Dict[str, Union[str, bool, int]]
 
 
-class UpdateMetadataOfTaskMain(AbstractCommandLineWithConfirmInterface):
+class UpdateMetadataOfTaskMain(CommandLineWithConfirm):
     def __init__(
         self,
         service: annofabapi.Resource,
@@ -37,7 +37,7 @@ class UpdateMetadataOfTaskMain(AbstractCommandLineWithConfirmInterface):
         self.service = service
         self.is_overwrite_metadata = is_overwrite_metadata
         self.parallelism = parallelism
-        AbstractCommandLineWithConfirmInterface.__init__(self, all_yes)
+        CommandLineWithConfirm.__init__(self, all_yes)
 
     def get_confirm_message(self, task_id: str, metadata: dict[str, Any]) -> str:
         if self.is_overwrite_metadata:
@@ -170,7 +170,7 @@ class UpdateMetadataOfTaskMain(AbstractCommandLineWithConfirmInterface):
                 pool.map(partial_func, tmp_list)
 
 
-class UpdateMetadataOfTask(AbstractCommandLineInterface):
+class UpdateMetadataOfTask(CommandLine):
     @staticmethod
     def validate(args: argparse.Namespace) -> bool:
         COMMON_MESSAGE = "annofabcli task update_metadata: error:"

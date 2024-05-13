@@ -6,7 +6,7 @@ import annofabapi
 import pandas
 
 import annofabcli
-from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, build_annofabapi_resource_and_login
+from annofabcli.common.cli import ArgumentParser, CommandLine, build_annofabapi_resource_and_login
 from annofabcli.common.enums import FormatArgument
 from annofabcli.common.facade import AnnofabApiFacade
 
@@ -36,7 +36,7 @@ class ListTaskCreationHistoryMain:
         return [create_elm(job) for job in job_list]
 
 
-class ListTaskCreationHistory(AbstractCommandLineInterface):
+class ListTaskCreationHistory(CommandLine):
     def main(self) -> None:
         args = self.args
         main_obj = ListTaskCreationHistoryMain(self.service)

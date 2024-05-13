@@ -17,9 +17,9 @@ import annofabcli
 import annofabcli.common.cli
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
-    AbstractCommandLineInterface,
-    AbstractCommandLineWithConfirmInterface,
     ArgumentParser,
+    CommandLine,
+    CommandLineWithConfirm,
     build_annofabapi_resource_and_login,
     get_json_from_args,
 )
@@ -40,10 +40,10 @@ class ChangedInputData(DataClassJsonMixin):
     """変更後の入力データ名"""
 
 
-class ChangeInputDataNameMain(AbstractCommandLineWithConfirmInterface):
+class ChangeInputDataNameMain(CommandLineWithConfirm):
     def __init__(self, service: annofabapi.Resource, *, all_yes: bool = False) -> None:
         self.service = service
-        AbstractCommandLineWithConfirmInterface.__init__(self, all_yes)
+        CommandLineWithConfirm.__init__(self, all_yes)
 
     def change_input_data_name(self, project_id: str, input_data_id: str, new_input_data_name: str) -> bool:
         """
@@ -153,7 +153,7 @@ def create_changed_input_data_list_from_csv(csv_file: Path) -> list[ChangedInput
     return [ChangedInputData.from_dict(e) for e in input_data_dict_list]
 
 
-class ChangeInputDataName(AbstractCommandLineInterface):
+class ChangeInputDataName(CommandLine):
     @staticmethod
     def validate(args: argparse.Namespace) -> bool:
         COMMON_MESSAGE = "annofabcli input_data change_name: error:"

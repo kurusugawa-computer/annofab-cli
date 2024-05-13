@@ -7,14 +7,14 @@ from annofabapi.models import ProjectMemberRole
 
 import annofabcli
 import annofabcli.common.cli
-from annofabcli.common.cli import AbstractCommandLineInterface, build_annofabapi_resource_and_login
+from annofabcli.common.cli import CommandLine, build_annofabapi_resource_and_login
 from annofabcli.common.download import DownloadingFile
 from annofabcli.common.facade import AnnofabApiFacade
 
 logger = logging.getLogger(__name__)
 
 
-class DownloadingComment(AbstractCommandLineInterface):
+class DownloadingComment(CommandLine):
     def download_comment_json(self, project_id: str, output_file: Path):  # noqa: ANN201
         super().validate_project(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER])
         project_title = self.facade.get_project_title(project_id)

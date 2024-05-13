@@ -11,7 +11,7 @@ from annofabapi.models import JobStatus, ProjectJobType, ProjectMemberRole
 import annofabcli
 import annofabcli.common.cli
 from annofabcli.common.cli import (
-    AbstractCommandLineInterface,
+    CommandLine,
     build_annofabapi_resource_and_login,
     get_json_from_args,
     get_wait_options_from_args,
@@ -143,7 +143,7 @@ class SubUpdateAnnotationZip:
             logger.info(f"project_id={project_id}: アノテーションzipを更新する必要がないので、何も処理しません。")
 
 
-class UpdateAnnotationZip(AbstractCommandLineInterface):
+class UpdateAnnotationZip(CommandLine):
     def update_annotation_zip(
         self,
         project_id_list: List[str],

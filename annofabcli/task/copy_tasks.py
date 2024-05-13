@@ -15,9 +15,9 @@ import annofabcli
 import annofabcli.common.cli
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
-    AbstractCommandLineInterface,
-    AbstractCommandLineWithConfirmInterface,
     ArgumentParser,
+    CommandLine,
+    CommandLineWithConfirm,
     build_annofabapi_resource_and_login,
 )
 from annofabcli.common.facade import AnnofabApiFacade
@@ -57,7 +57,7 @@ def get_copy_target_list(str_copy_target_list: list[str]) -> list[CopyTarget]:
     return copy_target_list
 
 
-class CopyTasksMain(AbstractCommandLineWithConfirmInterface):
+class CopyTasksMain(CommandLineWithConfirm):
     def __init__(
         self,
         service: annofabapi.Resource,
@@ -68,7 +68,7 @@ class CopyTasksMain(AbstractCommandLineWithConfirmInterface):
     ) -> None:
         self.service = service
         self.facade = AnnofabApiFacade(service)
-        AbstractCommandLineWithConfirmInterface.__init__(self, all_yes)
+        CommandLineWithConfirm.__init__(self, all_yes)
 
         self.is_copy_annotations = is_copy_annotations
         self.is_copy_metadata = is_copy_metadata
@@ -150,7 +150,7 @@ class CopyTasksMain(AbstractCommandLineWithConfirmInterface):
         logger.info(f"{success_count} / {len(copy_target_list)} 件 タスクをコピーしました。")
 
 
-class CopyTasks(AbstractCommandLineInterface):
+class CopyTasks(CommandLine):
     COMMON_MESSAGE = "annofabcli task copy: error:"
 
     def validate(self, args: argparse.Namespace) -> bool:

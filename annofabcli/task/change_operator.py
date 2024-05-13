@@ -14,8 +14,8 @@ import annofabcli
 import annofabcli.common.cli
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
-    AbstractCommandLineInterface,
     ArgumentParser,
+    CommandLine,
     build_annofabapi_resource_and_login,
     prompt_yesnoall,
 )
@@ -185,7 +185,7 @@ class ChangeOperatorMain:
         logger.info(f"{success_count} / {len(task_id_list)} 件 タスクの担当者を変更しました。")
 
 
-class ChangeOperator(AbstractCommandLineInterface):
+class ChangeOperator(CommandLine):
     @staticmethod
     def validate(args: argparse.Namespace) -> bool:
         COMMON_MESSAGE = "annofabcli task change_operator: error:"

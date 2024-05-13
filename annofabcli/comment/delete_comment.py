@@ -14,9 +14,9 @@ import annofabcli
 import annofabcli.common.cli
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
-    AbstractCommandLineInterface,
-    AbstractCommandLineWithConfirmInterface,
     ArgumentParser,
+    CommandLine,
+    CommandLineWithConfirm,
     build_annofabapi_resource_and_login,
 )
 from annofabcli.common.facade import AnnofabApiFacade
@@ -37,13 +37,13 @@ keyはtask_id, value: `DeletedCommentsForTask`
 """
 
 
-class DeleteCommentMain(AbstractCommandLineWithConfirmInterface):
+class DeleteCommentMain(CommandLineWithConfirm):
     def __init__(self, service: annofabapi.Resource, project_id: str, all_yes: bool = False) -> None:
         self.service = service
         self.facade = AnnofabApiFacade(service)
         self.project_id = project_id
 
-        AbstractCommandLineWithConfirmInterface.__init__(self, all_yes)
+        CommandLineWithConfirm.__init__(self, all_yes)
 
     def _create_request_body(self, task: Dict[str, Any], input_data_id: str, comment_ids: List[str]) -> List[Dict[str, Any]]:
         """batch_update_comments に渡すリクエストボディを作成する。"""
@@ -205,7 +205,7 @@ class DeleteCommentMain(AbstractCommandLineWithConfirmInterface):
         logger.info(f"{added_comments_count} / {comments_count} 件の入力データからコメントを削除しました。")
 
 
-class DeleteComment(AbstractCommandLineInterface):
+class DeleteComment(CommandLine):
     COMMON_MESSAGE = "annofabcli comment delete: error:"
 
     def validate(self, args: argparse.Namespace) -> bool:

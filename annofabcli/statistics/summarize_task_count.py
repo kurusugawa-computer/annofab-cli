@@ -13,8 +13,8 @@ from annofabapi.utils import get_number_of_rejections
 import annofabcli
 import annofabcli.common.cli
 from annofabcli.common.cli import (
-    AbstractCommandLineInterface,
     ArgumentParser,
+    CommandLine,
     build_annofabapi_resource_and_login,
 )
 from annofabcli.common.download import DownloadingFile
@@ -130,7 +130,7 @@ def create_task_count_summary(task_list: List[Task], number_of_inspections: int)
     return summary_df[summary_df["task_count"] > 0]
 
 
-class SummarizeTaskCount(AbstractCommandLineInterface):
+class SummarizeTaskCount(CommandLine):
     """
     タスク数を集計する。
     """

@@ -9,8 +9,8 @@ import annofabcli
 import annofabcli.common.cli
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
-    AbstractCommandLineInterface,
     ArgumentParser,
+    CommandLine,
     build_annofabapi_resource_and_login,
 )
 from annofabcli.common.enums import FormatArgument
@@ -20,7 +20,7 @@ from annofabcli.common.utils import print_according_to_format
 logger = logging.getLogger(__name__)
 
 
-class ListAttributeRestriction(AbstractCommandLineInterface):
+class ListAttributeRestriction(CommandLine):
     COMMON_MESSAGE = "annofabcli annotation_specs export: error:"
 
     def get_history_id_from_before_index(self, project_id: str, before: int) -> Optional[str]:

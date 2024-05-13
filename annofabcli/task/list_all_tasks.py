@@ -10,7 +10,7 @@ import pandas
 from annofabapi.dataclass.task import Task
 
 import annofabcli
-from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, build_annofabapi_resource_and_login
+from annofabcli.common.cli import ArgumentParser, CommandLine, build_annofabapi_resource_and_login
 from annofabcli.common.download import DownloadingFile
 from annofabcli.common.enums import FormatArgument
 from annofabcli.common.facade import AnnofabApiFacade, TaskQuery, match_task_with_query
@@ -74,7 +74,7 @@ class ListTasksWithJsonMain:
         return [visualize_obj.add_properties_to_task(e) for e in filtered_task_list]
 
 
-class ListTasksWithJson(AbstractCommandLineInterface):
+class ListTasksWithJson(CommandLine):
     def main(self) -> None:
         args = self.args
 

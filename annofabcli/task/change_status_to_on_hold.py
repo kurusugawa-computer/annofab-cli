@@ -17,9 +17,9 @@ import annofabcli
 import annofabcli.common.cli
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
-    AbstractCommandLineInterface,
-    AbstractCommandLineWithConfirmInterface,
     ArgumentParser,
+    CommandLine,
+    CommandLineWithConfirm,
     build_annofabapi_resource_and_login,
 )
 from annofabcli.common.facade import AnnofabApiFacade, TaskQuery, match_task_with_query
@@ -27,7 +27,7 @@ from annofabcli.common.facade import AnnofabApiFacade, TaskQuery, match_task_wit
 logger = logging.getLogger(__name__)
 
 
-class ChangingStatusToOnHoldMain(AbstractCommandLineWithConfirmInterface):
+class ChangingStatusToOnHoldMain(CommandLineWithConfirm):
     def __init__(self, service: annofabapi.Resource, project_id: str, *, all_yes: bool) -> None:
         super().__init__(all_yes)
         self.service = service
@@ -237,7 +237,7 @@ class ChangingStatusToOnHoldMain(AbstractCommandLineWithConfirmInterface):
         logger.info(f"{success_count} / {len(task_id_list)} 件 タスクのステータスを保留中に変更しました。")
 
 
-class ChangingStatusToOnHold(AbstractCommandLineInterface):
+class ChangingStatusToOnHold(CommandLine):
     @staticmethod
     def validate(args: argparse.Namespace) -> bool:
         COMMON_MESSAGE = "annofabcli task change_status_to_on_hold: error:"

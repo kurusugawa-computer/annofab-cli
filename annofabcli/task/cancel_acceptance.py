@@ -18,9 +18,9 @@ import annofabcli
 import annofabcli.common.cli
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
-    AbstractCommandLineInterface,
-    AbstractCommandLineWithConfirmInterface,
     ArgumentParser,
+    CommandLine,
+    CommandLineWithConfirm,
     build_annofabapi_resource_and_login,
 )
 from annofabcli.common.facade import AnnofabApiFacade, TaskQuery, match_task_with_query
@@ -36,7 +36,7 @@ class User:
     username: str
 
 
-class CancelAcceptanceMain(AbstractCommandLineWithConfirmInterface):
+class CancelAcceptanceMain(CommandLineWithConfirm):
     def __init__(self, service: annofabapi.Resource, project_id: str, all_yes: bool = False) -> None:
         self.service = service
         self.project_id = project_id
@@ -45,7 +45,7 @@ class CancelAcceptanceMain(AbstractCommandLineWithConfirmInterface):
         self._project_members_dict: Optional[dict[str, dict[str, Any]]] = None
         """プロジェクトメンバー情報を保持する変数"""
 
-        AbstractCommandLineWithConfirmInterface.__init__(self, all_yes)
+        CommandLineWithConfirm.__init__(self, all_yes)
 
     def get_project_member_from_account_id(self, account_id: str) -> Optional[dict[str, Any]]:
         """account_idからプロジェクトメンバを取得します。"""
@@ -197,7 +197,7 @@ class CancelAcceptanceMain(AbstractCommandLineWithConfirmInterface):
         logger.info(f"{success_count} / {len(task_id_list)} 件 受け入れ取り消しに成功しました。")
 
 
-class CancelAcceptance(AbstractCommandLineInterface):
+class CancelAcceptance(CommandLine):
     COMMON_MESSAGE = "annofabcli task cancel_acceptance: error:"
 
     @classmethod

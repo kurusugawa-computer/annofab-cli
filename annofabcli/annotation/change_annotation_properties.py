@@ -19,9 +19,9 @@ from annofabcli.annotation.annotation_query import AnnotationQueryForAPI, Annota
 from annofabcli.annotation.dump_annotation import DumpAnnotationMain
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
-    AbstractCommandLineInterface,
-    AbstractCommandLineWithConfirmInterface,
     ArgumentParser,
+    CommandLine,
+    CommandLineWithConfirm,
     build_annofabapi_resource_and_login,
     get_json_from_args,
 )
@@ -35,7 +35,7 @@ class AnnotationDetailForCli(DataClassJsonMixin):
     is_protected: Optional[bool] = None
 
 
-class ChangePropertiesOfAnnotationMain(AbstractCommandLineWithConfirmInterface):
+class ChangePropertiesOfAnnotationMain(CommandLineWithConfirm):
     def __init__(
         self,
         service: annofabapi.Resource,
@@ -47,7 +47,7 @@ class ChangePropertiesOfAnnotationMain(AbstractCommandLineWithConfirmInterface):
         self.service = service
         self.facade = AnnofabApiFacade(service)
         self.is_force = is_force
-        AbstractCommandLineWithConfirmInterface.__init__(self, all_yes)
+        CommandLineWithConfirm.__init__(self, all_yes)
         self.project_id = project_id
         self.dump_annotation_obj = DumpAnnotationMain(service, project_id)
 
@@ -282,7 +282,7 @@ class ChangePropertiesOfAnnotationMain(AbstractCommandLineWithConfirmInterface):
         logger.info(f"{success_count} / {len(task_id_list)} 件のタスクに対してアノテーションのプロパティを変更しました。")
 
 
-class ChangePropertiesOfAnnotation(AbstractCommandLineInterface):
+class ChangePropertiesOfAnnotation(CommandLine):
     """
     アノテーションのプロパティを変更
     """

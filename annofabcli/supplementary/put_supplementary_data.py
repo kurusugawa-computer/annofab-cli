@@ -19,8 +19,8 @@ from more_itertools import first_true
 import annofabcli
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
-    AbstractCommandLineInterface,
     ArgumentParser,
+    CommandLine,
     build_annofabapi_resource_and_login,
     get_json_from_args,
     prompt_yesnoall,
@@ -230,7 +230,7 @@ class SubPutSupplementaryData:
             return False
 
 
-class PutSupplementaryData(AbstractCommandLineInterface):
+class PutSupplementaryData(CommandLine):
     """
     補助情報をCSVで登録する。
     """

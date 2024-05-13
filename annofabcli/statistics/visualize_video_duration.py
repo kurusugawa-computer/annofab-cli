@@ -23,7 +23,7 @@ import annofabcli
 import annofabcli.common.cli
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
-    AbstractCommandLineInterface,
+    CommandLine,
     build_annofabapi_resource_and_login,
 )
 from annofabcli.common.download import DownloadingFile
@@ -185,7 +185,7 @@ def get_video_durations(input_data_json: Path, task_json: Path) -> tuple[list[fl
     return list(video_durations_dict_for_input_data.values()), list(video_durations_dict_for_task.values())
 
 
-class VisualizeVideoDuration(AbstractCommandLineInterface):
+class VisualizeVideoDuration(CommandLine):
     COMMON_MESSAGE = "annofabcli statistics visualize_video_duration: error:"
 
     def validate(self, args: argparse.Namespace) -> bool:

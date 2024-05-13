@@ -8,7 +8,7 @@ import numpy
 import pandas
 
 import annofabcli
-from annofabcli.common.cli import AbstractCommandLineWithoutWebapiInterface, ArgumentParser, get_list_from_args
+from annofabcli.common.cli import ArgumentParser, CommandLineWithoutWebapi, get_list_from_args
 from annofabcli.common.utils import read_multiheader_csv
 
 logger = logging.getLogger(__name__)
@@ -313,7 +313,7 @@ def create_masked_user_info_df(
     return df_output
 
 
-class MaskUserInfo(AbstractCommandLineWithoutWebapiInterface):
+class MaskUserInfo(CommandLineWithoutWebapi):
     def main(self) -> None:
         args = self.args
 

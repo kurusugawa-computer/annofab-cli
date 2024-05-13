@@ -36,9 +36,9 @@ from more_itertools import first_true
 import annofabcli
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
-    AbstractCommandLineInterface,
-    AbstractCommandLineWithConfirmInterface,
     ArgumentParser,
+    CommandLine,
+    CommandLineWithConfirm,
     build_annofabapi_resource_and_login,
 )
 from annofabcli.common.facade import AnnofabApiFacade
@@ -76,7 +76,7 @@ class ImportedSimpleAnnotation(DataClassJsonMixin):
     """矩形、ポリゴン、全体アノテーションなど個々のアノテーションの配列。"""
 
 
-class ImportAnnotationMain(AbstractCommandLineWithConfirmInterface):
+class ImportAnnotationMain(CommandLineWithConfirm):
     def __init__(
         self,
         service: annofabapi.Resource,
@@ -89,7 +89,7 @@ class ImportAnnotationMain(AbstractCommandLineWithConfirmInterface):
     ) -> None:
         self.service = service
         self.facade = AnnofabApiFacade(service)
-        AbstractCommandLineWithConfirmInterface.__init__(self, all_yes)
+        CommandLineWithConfirm.__init__(self, all_yes)
 
         self.project_id = project_id
         self.is_force = is_force
@@ -528,7 +528,7 @@ class ImportAnnotationMain(AbstractCommandLineWithConfirmInterface):
         logger.info(f"{success_count} / {task_count} 件のタスクに対してアノテーションをインポートしました。")
 
 
-class ImportAnnotation(AbstractCommandLineInterface):
+class ImportAnnotation(CommandLine):
     """
     アノテーションをインポートする
     """

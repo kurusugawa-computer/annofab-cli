@@ -11,8 +11,8 @@ from annofabapi.models import ProjectJobType, ProjectMemberRole
 import annofabcli
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
-    AbstractCommandLineInterface,
     ArgumentParser,
+    CommandLine,
     build_annofabapi_resource_and_login,
 )
 from annofabcli.common.dataclasses import WaitOptions
@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 DEFAULT_WAIT_OPTIONS = WaitOptions(interval=60, max_tries=360)
 
 
-class PutInputData(AbstractCommandLineInterface):
+class PutInputData(CommandLine):
     """
     入力データをZIPで登録する。
     """

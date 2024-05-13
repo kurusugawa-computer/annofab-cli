@@ -13,8 +13,8 @@ import annofabcli
 import annofabcli.common.cli
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
-    AbstractCommandLineInterface,
     ArgumentParser,
+    CommandLine,
     build_annofabapi_resource_and_login,
 )
 from annofabcli.common.enums import FormatArgument
@@ -23,7 +23,7 @@ from annofabcli.common.facade import AnnofabApiFacade, convert_annotation_specs_
 logger = logging.getLogger(__name__)
 
 
-class PrintAnnotationSpecsLabel(AbstractCommandLineInterface):
+class PrintAnnotationSpecsLabel(CommandLine):
     """
     アノテーション仕様を出力する
     """

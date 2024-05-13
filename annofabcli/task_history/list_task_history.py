@@ -6,7 +6,7 @@ import annofabapi
 from annofabapi.models import TaskHistory
 
 import annofabcli
-from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, build_annofabapi_resource_and_login
+from annofabcli.common.cli import ArgumentParser, CommandLine, build_annofabapi_resource_and_login
 from annofabcli.common.enums import FormatArgument
 from annofabcli.common.facade import AnnofabApiFacade
 from annofabcli.common.visualize import AddProps
@@ -74,7 +74,7 @@ class ListTaskHistoryMain:
         return all_task_history_list
 
 
-class ListTaskHistory(AbstractCommandLineInterface):
+class ListTaskHistory(CommandLine):
     def print_task_history_list(
         self,
         project_id: str,

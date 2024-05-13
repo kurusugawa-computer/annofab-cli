@@ -7,8 +7,8 @@ from annofabapi.models import ProjectJobType, ProjectMemberRole
 
 import annofabcli
 from annofabcli.common.cli import (
-    AbstractCommandLineInterface,
     ArgumentParser,
+    CommandLine,
     build_annofabapi_resource_and_login,
     get_list_from_args,
 )
@@ -40,7 +40,7 @@ class DeleteJobMain:
         logger.info(f"{count} / {len(job_id_list)} 件のジョブを削除しました。")
 
 
-class DeleteJob(AbstractCommandLineInterface):
+class DeleteJob(CommandLine):
     def main(self) -> None:
         args = self.args
         project_id = args.project_id

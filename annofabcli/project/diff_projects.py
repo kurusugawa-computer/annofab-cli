@@ -17,7 +17,7 @@ from annofabapi.models import ProjectMemberRole
 
 import annofabcli
 import annofabcli.common.cli
-from annofabcli.common.cli import AbstractCommandLineInterface, build_annofabapi_resource_and_login
+from annofabcli.common.cli import CommandLine, build_annofabapi_resource_and_login
 from annofabcli.common.facade import AnnofabApiFacade, convert_annotation_specs_labels_v2_to_v1
 
 DiffResult = Tuple[bool, str]
@@ -63,7 +63,7 @@ def create_ignored_label(label: Dict[str, Any]):  # noqa: ANN201
     return copied_label
 
 
-class DiffProjects(AbstractCommandLineInterface):
+class DiffProjects(CommandLine):
     """
     プロジェクト間の差分を表示する
     """

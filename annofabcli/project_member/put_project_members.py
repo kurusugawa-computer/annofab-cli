@@ -12,7 +12,7 @@ from annofabapi.models import ProjectMemberRole, ProjectMemberStatus
 from dataclasses_json import DataClassJsonMixin
 
 import annofabcli
-from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, build_annofabapi_resource_and_login
+from annofabcli.common.cli import ArgumentParser, CommandLine, build_annofabapi_resource_and_login
 from annofabcli.common.facade import AnnofabApiFacade
 
 logger = logging.getLogger(__name__)
@@ -30,7 +30,7 @@ class Member(DataClassJsonMixin):
     sampling_acceptance_rate: Optional[int]
 
 
-class PutProjectMembers(AbstractCommandLineInterface):
+class PutProjectMembers(CommandLine):
     """
     プロジェクトメンバをCSVで登録する。
     """

@@ -9,7 +9,7 @@ from annofabapi.models import OrganizationMember, Project, ProjectMemberRole, Pr
 from more_itertools import first_true
 
 import annofabcli
-from annofabcli.common.cli import AbstractCommandLineInterface, build_annofabapi_resource_and_login
+from annofabcli.common.cli import CommandLine, build_annofabapi_resource_and_login
 from annofabcli.common.facade import AnnofabApiFacade
 
 logger = logging.getLogger(__name__)
@@ -152,7 +152,7 @@ class ChanegProjectStatusMain:
         logger.info(f"{success_count} 件のプロジェクトのステータスを {status.value} に変更しました。")
 
 
-class ChangeProjectStatus(AbstractCommandLineInterface):
+class ChangeProjectStatus(CommandLine):
     def main(self) -> None:
         args = self.args
         project_id_list = annofabcli.common.cli.get_list_from_args(args.project_id)

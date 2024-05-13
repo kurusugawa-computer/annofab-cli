@@ -14,9 +14,9 @@ from more_itertools import first_true
 import annofabcli
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
-    AbstractCommandLineInterface,
-    AbstractCommandLineWithConfirmInterface,
     ArgumentParser,
+    CommandLine,
+    CommandLineWithConfirm,
     build_annofabapi_resource_and_login,
 )
 from annofabcli.common.facade import AnnofabApiFacade
@@ -57,11 +57,11 @@ def get_input_data_supplementary_data_dict_from_list(supplementary_data_list: Li
     return input_data_dict
 
 
-class DeleteSupplementaryDataMain(AbstractCommandLineWithConfirmInterface):
+class DeleteSupplementaryDataMain(CommandLineWithConfirm):
     def __init__(self, service: annofabapi.Resource, all_yes: bool = False) -> None:
         self.service = service
         self.facade = AnnofabApiFacade(service)
-        AbstractCommandLineWithConfirmInterface.__init__(self, all_yes)
+        CommandLineWithConfirm.__init__(self, all_yes)
 
     def delete_supplementary_data_list_for_input_data(self, project_id: str, input_data_id: str, supplementary_data_id_list: List[str]) -> int:
         """
@@ -209,7 +209,7 @@ class DeleteSupplementaryDataMain(AbstractCommandLineWithConfirmInterface):
         logger.info(f"{len(dict_deleted_count)} / {len(input_data_id_list)} 件の入力データに紐づく補助情報を削除しました。")
 
 
-class DeleteSupplementaryData(AbstractCommandLineInterface):
+class DeleteSupplementaryData(CommandLine):
     @staticmethod
     def validate(args: argparse.Namespace) -> bool:
         COMMON_MESSAGE = "annofabcli supplementary_data put: error:"

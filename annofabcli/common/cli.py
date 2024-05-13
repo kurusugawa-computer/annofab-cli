@@ -2,7 +2,6 @@
 Command Line Interfaceの共通部分
 """
 
-import abc
 import argparse
 import dataclasses
 import getpass
@@ -499,9 +498,9 @@ class ArgumentParser:
         self.parser.add_argument("-tq", "--task_query", type=str, required=required, help=help_message)
 
 
-class AbstractCommandLineWithConfirmInterface(abc.ABC):  # noqa: B024
+class CommandLineWithConfirm:
     """
-    コマンドライン上でpromptを表示するときのインターフェイス
+    コマンドライン上でpromptを表示するときのクラス
     """
 
     def __init__(self, all_yes: bool = False) -> None:
@@ -524,7 +523,7 @@ class AbstractCommandLineWithConfirmInterface(abc.ABC):  # noqa: B024
         return yes
 
 
-class AbstractCommandLineWithoutWebapiInterface(abc.ABC):  # noqa: B024
+class CommandLineWithoutWebapi:
     """
     webapiにアクセスしないCLI用の抽象クラス
     """
@@ -665,9 +664,9 @@ class PrettyHelpFormatter(argparse.RawTextHelpFormatter, argparse.ArgumentDefaul
         return help
 
 
-class AbstractCommandLineInterface(AbstractCommandLineWithoutWebapiInterface):
+class CommandLine(CommandLineWithoutWebapi):
     """
-    CLI用の抽象クラス
+    CLI用のクラス
     """
 
     #: annofabapi.Resourceインスタンス

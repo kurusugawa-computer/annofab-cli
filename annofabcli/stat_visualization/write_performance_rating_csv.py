@@ -15,7 +15,7 @@ from dataclasses_json import DataClassJsonMixin
 from typing_extensions import TypeAlias
 
 import annofabcli
-from annofabcli.common.cli import AbstractCommandLineWithoutWebapiInterface, get_json_from_args, get_list_from_args
+from annofabcli.common.cli import CommandLineWithoutWebapi, get_json_from_args, get_list_from_args
 from annofabcli.common.utils import print_csv
 from annofabcli.statistics.visualization.dataframe.project_performance import (
     ProjectPerformance,
@@ -530,7 +530,7 @@ def create_threshold_infos_per_project(value: Optional[str]) -> ThresholdInfoSet
     return result
 
 
-class WritePerformanceRatingCsv(AbstractCommandLineWithoutWebapiInterface):
+class WritePerformanceRatingCsv(CommandLineWithoutWebapi):
     def main(self) -> None:
         args = self.args
 

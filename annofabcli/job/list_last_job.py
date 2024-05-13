@@ -8,8 +8,8 @@ from annofabapi.models import Project, ProjectJobInfo, ProjectJobType
 import annofabcli
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
-    AbstractCommandLineInterface,
     ArgumentParser,
+    CommandLine,
     build_annofabapi_resource_and_login,
 )
 from annofabcli.common.enums import FormatArgument
@@ -18,7 +18,7 @@ from annofabcli.common.facade import AnnofabApiFacade
 logger = logging.getLogger(__name__)
 
 
-class ListLastJob(AbstractCommandLineInterface):
+class ListLastJob(CommandLine):
     """
     ジョブ一覧を表示する。
     """

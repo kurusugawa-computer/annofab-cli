@@ -16,8 +16,8 @@ from dateutil.parser import parse
 
 import annofabcli
 from annofabcli.common.cli import (
-    AbstractCommandLineInterface,
     ArgumentParser,
+    CommandLine,
     build_annofabapi_resource_and_login,
     get_list_from_args,
 )
@@ -219,7 +219,7 @@ class ListWorktimeFromTaskHistoryEventMain:
         return worktime_list
 
 
-class ListWorktimeFromTaskHistoryEvent(AbstractCommandLineInterface):
+class ListWorktimeFromTaskHistoryEvent(CommandLine):
     def print_worktime_from_task_history_event(  # noqa: ANN201
         self,
         project_id: str,

@@ -13,8 +13,8 @@ import annofabcli
 from annofabcli.annotation.annotation_query import AnnotationQueryForAPI, AnnotationQueryForCLI
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
-    AbstractCommandLineInterface,
     ArgumentParser,
+    CommandLine,
     build_annofabapi_resource_and_login,
     get_json_from_args,
     get_list_from_args,
@@ -117,7 +117,7 @@ def to_annotation_list_for_csv(annotation_list: List[SingleAnnotation]) -> List[
     return [to_new_annotation(a) for a in annotation_list]
 
 
-class ListAnnotation(AbstractCommandLineInterface):
+class ListAnnotation(CommandLine):
     COMMON_MESSAGE = "annofabcli annotation list: error:"
 
     PRIOR_COLUMNS = [  # noqa: RUF012

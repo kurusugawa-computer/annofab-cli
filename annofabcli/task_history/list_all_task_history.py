@@ -9,7 +9,7 @@ import annofabapi
 from annofabapi.models import TaskHistory
 
 import annofabcli
-from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, build_annofabapi_resource_and_login
+from annofabcli.common.cli import ArgumentParser, CommandLine, build_annofabapi_resource_and_login
 from annofabcli.common.download import DownloadingFile
 from annofabcli.common.enums import FormatArgument
 from annofabcli.common.facade import AnnofabApiFacade
@@ -76,7 +76,7 @@ class ListTaskHistoryWithJsonMain:
         return all_task_history_list
 
 
-class ListTaskHistoryWithJson(AbstractCommandLineInterface):
+class ListTaskHistoryWithJson(CommandLine):
     def print_task_history_list(  # noqa: ANN201
         self,
         project_id: str,

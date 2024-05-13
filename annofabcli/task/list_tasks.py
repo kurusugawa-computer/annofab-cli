@@ -7,7 +7,7 @@ import pandas
 from annofabapi.models import Task
 
 import annofabcli
-from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, build_annofabapi_resource_and_login
+from annofabcli.common.cli import ArgumentParser, CommandLine, build_annofabapi_resource_and_login
 from annofabcli.common.enums import FormatArgument
 from annofabcli.common.facade import AnnofabApiFacade
 from annofabcli.common.utils import get_columns_with_priority
@@ -144,7 +144,7 @@ class ListTasksMain:
         return task_list
 
 
-class ListTasks(AbstractCommandLineInterface):
+class ListTasks(CommandLine):
     """
     タスクの一覧を表示する
     """

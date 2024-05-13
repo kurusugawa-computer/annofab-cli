@@ -16,8 +16,8 @@ from PIL import Image, ImageColor, ImageDraw
 import annofabcli
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
-    AbstractCommandLineWithoutWebapiInterface,
     ArgumentParser,
+    CommandLineWithoutWebapi,
     get_json_from_args,
     get_list_from_args,
 )
@@ -280,7 +280,7 @@ def draw_annotation_all(  # noqa: ANN201, PLR0913
     logger.info(f"label_color={json.dumps(new_label_color_dict, ensure_ascii=False)}")
 
 
-class DrawAnnotation(AbstractCommandLineWithoutWebapiInterface):
+class DrawAnnotation(CommandLineWithoutWebapi):
     COMMON_MESSAGE = "annofabcli filesystem draw_annotation:"
 
     @staticmethod

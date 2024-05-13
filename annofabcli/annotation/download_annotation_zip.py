@@ -7,14 +7,14 @@ from annofabapi.models import ProjectMemberRole
 
 import annofabcli
 import annofabcli.common.cli
-from annofabcli.common.cli import AbstractCommandLineInterface, build_annofabapi_resource_and_login
+from annofabcli.common.cli import CommandLine, build_annofabapi_resource_and_login
 from annofabcli.common.download import DownloadingFile
 from annofabcli.common.facade import AnnofabApiFacade
 
 logger = logging.getLogger(__name__)
 
 
-class DownloadingAnnotationZip(AbstractCommandLineInterface):
+class DownloadingAnnotationZip(CommandLine):
     def download_annotation_zip(self, project_id: str, output_zip: Path, is_latest: bool, should_download_full_annotation: bool = False):  # noqa: ANN201
         super().validate_project(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER])
 

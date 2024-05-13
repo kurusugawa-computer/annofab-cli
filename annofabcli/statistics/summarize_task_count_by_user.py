@@ -10,8 +10,8 @@ from annofabapi.models import ProjectMemberRole, Task, TaskPhase, TaskStatus
 import annofabcli
 import annofabcli.common.cli
 from annofabcli.common.cli import (
-    AbstractCommandLineInterface,
     ArgumentParser,
+    CommandLine,
     build_annofabapi_resource_and_login,
     get_json_from_args,
     get_wait_options_from_args,
@@ -91,7 +91,7 @@ def create_task_count_summary_df(task_list: List[Task]) -> pandas.DataFrame:
     return df_summary
 
 
-class SummarizeTaskCountByUser(AbstractCommandLineInterface):
+class SummarizeTaskCountByUser(CommandLine):
     def create_user_df(self, project_id: str, account_id_list: List[str]) -> pandas.DataFrame:
         user_list = []
         for account_id in account_id_list:

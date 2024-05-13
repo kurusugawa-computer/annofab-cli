@@ -23,8 +23,8 @@ import annofabcli.common.cli
 from annofabcli.common.bokeh import convert_1d_figure_list_to_2d, create_pretext_from_metadata
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
-    AbstractCommandLineInterface,
     ArgumentParser,
+    CommandLine,
     build_annofabapi_resource_and_login,
 )
 from annofabcli.common.download import DownloadingFile
@@ -275,7 +275,7 @@ def plot_annotation_duration_histogram_by_attribute(  # noqa: PLR0915
     logger.info(f"'{output_file}'を出力しました。")
 
 
-class VisualizeAnnotationDuration(AbstractCommandLineInterface):
+class VisualizeAnnotationDuration(CommandLine):
     COMMON_MESSAGE = "annofabcli statistics visualize_annotation_duration: error:"
 
     def validate(self, args: argparse.Namespace) -> bool:

@@ -14,8 +14,8 @@ from annofabapi.models import ProjectMemberRole, TaskHistory
 import annofabcli
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
-    AbstractCommandLineInterface,
     ArgumentParser,
+    CommandLine,
     build_annofabapi_resource_and_login,
 )
 from annofabcli.common.dataclasses import WaitOptions
@@ -133,7 +133,7 @@ class ListAllTasksAddedTaskHistoryMain:
         return detail_task_list
 
 
-class ListAllTasksAddedTaskHistory(AbstractCommandLineInterface):
+class ListAllTasksAddedTaskHistory(CommandLine):
     """
     タスクの一覧を表示する
     """

@@ -8,8 +8,8 @@ from annofabapi.models import OrganizationMemberRole
 import annofabcli
 import annofabcli.common.cli
 from annofabcli.common.cli import (
-    AbstractCommandLineInterface,
-    AbstractCommandLineWithConfirmInterface,
+    CommandLine,
+    CommandLineWithConfirm,
     build_annofabapi_resource_and_login,
 )
 from annofabcli.common.facade import AnnofabApiFacade
@@ -17,7 +17,7 @@ from annofabcli.common.facade import AnnofabApiFacade
 logger = logging.getLogger(__name__)
 
 
-class InviteOrganizationMemberMain(AbstractCommandLineWithConfirmInterface):
+class InviteOrganizationMemberMain(CommandLineWithConfirm):
     def __init__(
         self,
         service: annofabapi.Resource,
@@ -55,7 +55,7 @@ class InviteOrganizationMemberMain(AbstractCommandLineWithConfirmInterface):
         logger.info(f"{success_count} / {len(user_ids)} 件のユーザを組織'{organization_name}'に招待しました。")
 
 
-class InviteOrganizationMember(AbstractCommandLineInterface):
+class InviteOrganizationMember(CommandLine):
     def main(self) -> None:
         args = self.args
 

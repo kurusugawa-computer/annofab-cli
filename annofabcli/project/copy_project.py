@@ -9,7 +9,7 @@ from typing import Any, Collection, Dict, Optional
 from annofabapi.models import OrganizationMemberRole, ProjectJobType, ProjectMemberRole
 
 import annofabcli
-from annofabcli.common.cli import AbstractCommandLineInterface, ArgumentParser, build_annofabapi_resource_and_login
+from annofabcli.common.cli import ArgumentParser, CommandLine, build_annofabapi_resource_and_login
 from annofabcli.common.dataclasses import WaitOptions
 from annofabcli.common.facade import AnnofabApiFacade
 
@@ -41,7 +41,7 @@ COPIED_TARGET_AND_KEY_MAP = {
 """コピー対象とリクエストボディに渡すキーの関係"""
 
 
-class CopyProject(AbstractCommandLineInterface):
+class CopyProject(CommandLine):
     """
     プロジェクトをコピーする
     """

@@ -9,7 +9,7 @@ from more_itertools import first_true
 
 import annofabcli
 import annofabcli.common.cli
-from annofabcli.common.cli import AbstractCommandLineInterface, build_annofabapi_resource_and_login
+from annofabcli.common.cli import CommandLine, build_annofabapi_resource_and_login
 from annofabcli.common.facade import AnnofabApiFacade
 
 logger = logging.getLogger(__name__)
@@ -80,7 +80,7 @@ class InviteProjectMemberMain:
                 logger.warning(f"project_id={project_id} のプロジェクトメンバにユーザを招待できませんでした。")
 
 
-class InviteUser(AbstractCommandLineInterface):
+class InviteUser(CommandLine):
     """
     ユーザをプロジェクトに招待する
     """

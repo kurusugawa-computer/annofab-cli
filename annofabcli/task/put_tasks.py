@@ -15,8 +15,8 @@ from annofabapi.models import JobStatus, ProjectJobType, ProjectMemberRole
 
 import annofabcli
 from annofabcli.common.cli import (
-    AbstractCommandLineInterface,
     ArgumentParser,
+    CommandLine,
     build_annofabapi_resource_and_login,
     get_json_from_args,
 )
@@ -213,7 +213,7 @@ class PuttingTaskMain:
             logger.warning(f"job_id='{job_id}' :: {max_wait_minute}分間待ちましたが、タスク登録のジョブが終了しませんでした。")
 
 
-class PutTask(AbstractCommandLineInterface):
+class PutTask(CommandLine):
     def main(self) -> None:
         args = self.args
         project_id = args.project_id

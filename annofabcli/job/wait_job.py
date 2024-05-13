@@ -8,8 +8,8 @@ from annofabapi.models import ProjectJobType
 import annofabcli
 import annofabcli.common.cli
 from annofabcli.common.cli import (
-    AbstractCommandLineInterface,
     ArgumentParser,
+    CommandLine,
     build_annofabapi_resource_and_login,
     get_json_from_args,
     get_wait_options_from_args,
@@ -40,7 +40,7 @@ class WaitJobMain:
             return
 
 
-class WaitJob(AbstractCommandLineInterface):
+class WaitJob(CommandLine):
     def main(self) -> None:
         args = self.args
         project_id = args.project_id

@@ -13,8 +13,8 @@ from annofabapi.dataclass.input import InputData
 import annofabcli
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
-    AbstractCommandLineInterface,
     ArgumentParser,
+    CommandLine,
     build_annofabapi_resource_and_login,
     get_json_from_args,
     get_list_from_args,
@@ -111,7 +111,7 @@ def match_input_data(
     return result
 
 
-class ListInputDataMergedTask(AbstractCommandLineInterface):
+class ListInputDataMergedTask(CommandLine):
     @staticmethod
     def validate(args: argparse.Namespace) -> bool:
         COMMON_MESSAGE = "annofabcli input_data list_merged_task: error:"
