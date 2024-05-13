@@ -42,11 +42,11 @@ def get_data_uri_of_outer_file(annotation: SimpleAnnotationDetail) -> Optional[s
 
 
 def fill_annotation(
-    draw: PIL.ImageDraw.Draw,
+    draw: PIL.ImageDraw.ImageDraw,
     annotation: SimpleAnnotationDetail,
     label_color_dict: Dict[str, RGB],
     outer_image: Optional[Any] = None,  # noqa: ANN401
-) -> PIL.ImageDraw.Draw:
+) -> PIL.ImageDraw.ImageDraw:
     """
     1個のアノテーションを、塗りつぶしで描画する。（矩形、ポリゴン、塗りつぶし、塗りつぶしv2）
 
@@ -91,11 +91,11 @@ def fill_annotation(
 
 
 def fill_annotation_list(
-    draw: PIL.ImageDraw.Draw,
+    draw: PIL.ImageDraw.ImageDraw,
     parser: SimpleAnnotationParser,
     label_color_dict: Dict[str, RGB],
     label_name_list: Optional[List[str]] = None,
-) -> PIL.ImageDraw.Draw:
+) -> PIL.ImageDraw.ImageDraw:
     """
     1個の入力データに属するアノテーションlistを描画する
 

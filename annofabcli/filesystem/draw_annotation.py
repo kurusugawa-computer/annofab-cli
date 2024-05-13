@@ -82,9 +82,9 @@ class DrawingAnnotationForOneImage:
 
     def _draw_annotations(
         self,
-        draw: ImageDraw.Draw,
+        draw: ImageDraw.ImageDraw,
         parser: SimpleAnnotationParser,
-    ) -> ImageDraw.Draw:
+    ) -> ImageDraw.ImageDraw:
         """
         1個の入力データに属するアノテーションのみを描画する。
 
