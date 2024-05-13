@@ -207,7 +207,7 @@ def plot_label_histogram(
     logger.info(f"'{output_file}'を出力しました。")
 
 
-def plot_attribute_histogram(
+def plot_attribute_histogram(  # noqa: PLR0915
     counter_list: Sequence[AnnotationCounter],
     group_by: GroupBy,
     output_file: Path,
