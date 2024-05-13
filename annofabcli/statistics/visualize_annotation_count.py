@@ -7,6 +7,7 @@ import math
 import sys
 import tempfile
 from collections import defaultdict
+from functools import partial
 from pathlib import Path
 from typing import Any, Collection, Optional, Sequence
 
@@ -196,7 +197,12 @@ def plot_label_histogram(
     bokeh_obj = bokeh.layouts.gridplot(figure_list_2d)
     output_file.parent.mkdir(exist_ok=True, parents=True)
     bokeh.plotting.reset_output()
-    bokeh.plotting.output_file(output_file, title=output_file.stem)
+
+    html_title = "アノテーション数の分布（ラベル名ごと）"
+    if metadata is not None and "project_title" in metadata:
+        html_title = f"{html_title}({metadata['project_title']})"
+
+    bokeh.plotting.output_file(output_file, title=html_title)
     bokeh.plotting.save(bokeh_obj)
     logger.info(f"'{output_file}'を出力しました。")
 
@@ -299,7 +305,11 @@ def plot_attribute_histogram(
     bokeh_obj = bokeh.layouts.gridplot(figure_list_2d)
     output_file.parent.mkdir(exist_ok=True, parents=True)
     bokeh.plotting.reset_output()
-    bokeh.plotting.output_file(output_file, title=output_file.stem)
+    html_title = "アノテーション数の分布（属性値ごと）"
+    if metadata is not None and "project_title" in metadata:
+        html_title = f"{html_title}({metadata['project_title']})"
+
+    bokeh.plotting.output_file(output_file, title=html_title)
     bokeh.plotting.save(bokeh_obj)
     logger.info(f"'{output_file}'を出力しました。")
 
@@ -322,8 +332,8 @@ class VisualizeAnnotationCount(AbstractCommandLineInterface):
         group_by: GroupBy,
         annotation_path: Path,
         output_dir: Path,
-        bins: int,
         *,
+        bin_width: Optional[int] = None,
         project_id: Optional[str] = None,
         target_task_ids: Optional[Collection[str]] = None,
         task_query: Optional[TaskQuery] = None,
@@ -368,23 +378,39 @@ class VisualizeAnnotationCount(AbstractCommandLineInterface):
             label_keys = annotation_specs.label_keys()
             attribute_value_keys = annotation_specs.selective_attribute_value_keys()
 
+        project_title = None
+        if project_id is not None:
+            project, _ = self.service.api.get_project(project_id)
+            project_title = project["title"]
+
+        metadata = {
+            "project_id": project_id,
+            "project_title": project_title,
+            "task_query": {k: v for k, v in task_query.to_dict(encode_json=True).items() if v is not None and v is not False}
+            if task_query is not None
+            else None,
+            "target_task_ids": target_task_ids,
+        }
+
         plot_label_histogram(
             counter_list,
             group_by=group_by,
             output_file=labels_count_html,
-            bins=bins,
+            bin_width=bin_width,
             prior_keys=label_keys,
             exclude_empty_value=exclude_empty_value,
             arrange_bin_edge=arrange_bin_edge,
+            metadata=metadata,
         )
         plot_attribute_histogram(
             counter_list,
             group_by=group_by,
             output_file=attributes_count_html,
-            bins=bins,
+            bin_width=bin_width,
             prior_keys=attribute_value_keys,
             exclude_empty_value=exclude_empty_value,
             arrange_bin_edge=arrange_bin_edge,
+            metadata=metadata,
         )
 
     def main(self) -> None:
@@ -405,41 +431,44 @@ class VisualizeAnnotationCount(AbstractCommandLineInterface):
 
         group_by = GroupBy(args.group_by)
 
+        func = partial(
+            self.visualize_annotation_count,
+            project_id=project_id,
+            group_by=group_by,
+            output_dir=output_dir,
+            target_task_ids=task_id_list,
+            task_query=task_query,
+            bin_width=args.bin_width,
+            exclude_empty_value=args.exclude_empty_value,
+            arrange_bin_edge=args.arrange_bin_edge,
+        )
+
         if annotation_path is None:
             assert project_id is not None
-            # `NamedTemporaryFile`を使わない理由: Windowsで`PermissionError`が発生するため
-            # https://qiita.com/yuji38kwmt/items/c6f50e1fc03dafdcdda0 参考
-            with tempfile.TemporaryDirectory() as str_temp_dir:
-                annotation_path = Path(str_temp_dir) / f"{project_id}__annotation.zip"
-                downloading_obj = DownloadingFile(self.service)
+            downloading_obj = DownloadingFile(self.service)
+
+            if args.temp_dir is not None:
+                annotation_path = args.temp_dir / f"{project_id}__annotation.zip"
                 downloading_obj.download_annotation_zip(
                     project_id,
-                    dest_path=str(annotation_path),
+                    dest_path=annotation_path,
                     is_latest=args.latest,
                 )
-                self.visualize_annotation_count(
-                    project_id=project_id,
-                    annotation_path=annotation_path,
-                    group_by=group_by,
-                    output_dir=output_dir,
-                    target_task_ids=task_id_list,
-                    task_query=task_query,
-                    bins=args.bins,
-                    exclude_empty_value=args.exclude_empty_value,
-                    arrange_bin_edge=args.arrange_bin_edge,
-                )
+                func(annotation_path=annotation_path)
+
+            else:
+                # `NamedTemporaryFile`を使わない理由: Windowsで`PermissionError`が発生するため
+                # https://qiita.com/yuji38kwmt/items/c6f50e1fc03dafdcdda0 参考
+                with tempfile.TemporaryDirectory() as str_temp_dir:
+                    annotation_path = Path(str_temp_dir) / f"{project_id}__annotation.zip"
+                    downloading_obj.download_annotation_zip(
+                        project_id,
+                        dest_path=str(annotation_path),
+                        is_latest=args.latest,
+                    )
+                    func(annotation_path=annotation_path)
         else:
-            self.visualize_annotation_count(
-                project_id=project_id,
-                annotation_path=annotation_path,
-                group_by=group_by,
-                output_dir=output_dir,
-                target_task_ids=task_id_list,
-                task_query=task_query,
-                bins=args.bins,
-                exclude_empty_value=args.exclude_empty_value,
-                arrange_bin_edge=args.arrange_bin_edge,
-            )
+            func(annotation_path=annotation_path)
 
 
 def parse_args(parser: argparse.ArgumentParser) -> None:
@@ -468,18 +497,6 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         choices=[GroupBy.TASK_ID.value, GroupBy.INPUT_DATA_ID.value],
         default=GroupBy.TASK_ID.value,
         help="アノテーションの個数をどの単位で集約するかを指定します。",
-    )
-
-    parser.add_argument(
-        "--exclude_empty_value",
-        action="store_true",
-        help="指定すると、すべてのタスクでアノテーション数が0であるヒストグラムを描画しません。",
-    )
-
-    parser.add_argument(
-        "--arrange_bin_edge",
-        action="store_true",
-        help="指定すると、ヒストグラムのデータの範囲とビンの幅がすべてのヒストグラムで一致します。",
     )
 
     parser.add_argument(
@@ -513,6 +530,12 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--latest",
         action="store_true",
         help="``--annotation`` を指定しないとき、最新のアノテーションzipを参照します。このオプションを指定すると、アノテーションzipを更新するのに数分待ちます。",  # noqa: E501
+    )
+
+    parser.add_argument(
+        "--temp_dir",
+        type=Path,
+        help="指定したディレクトリに、アノテーションZIPなどの一時ファイルをダウンロードします。",
     )
 
     parser.set_defaults(subcommand_func=main)
