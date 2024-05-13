@@ -29,7 +29,7 @@ from annofabcli.common.cli import (
 )
 from annofabcli.common.download import DownloadingFile
 from annofabcli.common.facade import AnnofabApiFacade, TaskQuery
-from annofabcli.statistics.histogram import create_histogram_figure2, get_bin_edges, get_sub_title_from_series
+from annofabcli.statistics.histogram import create_histogram_figure, get_bin_edges, get_sub_title_from_series
 from annofabcli.statistics.list_annotation_duration import (
     AnnotationDuration,
     AnnotationSpecs,
@@ -42,6 +42,7 @@ from annofabcli.statistics.visualize_annotation_count import convert_to_2d_figur
 logger = logging.getLogger(__name__)
 
 BIN_COUNT = 20
+"""ヒストグラムのビンの個数"""
 
 
 class TimeUnit(Enum):
@@ -137,7 +138,7 @@ def plot_annotation_duration_histogram_by_label(  # noqa: PLR0915
         else:
             hist, bin_edges = numpy.histogram(df[col], bins=BIN_COUNT, range=histogram_range)
 
-        fig = create_histogram_figure2(
+        fig = create_histogram_figure(
             hist,
             bin_edges,
             x_axis_label=x_axis_label,
@@ -251,7 +252,7 @@ def plot_annotation_duration_histogram_by_attribute(  # noqa: PLR0915
         else:
             hist, bin_edges = numpy.histogram(df[col], bins=BIN_COUNT, range=histogram_range)
 
-        fig = create_histogram_figure2(
+        fig = create_histogram_figure(
             hist,
             bin_edges,
             x_axis_label=x_axis_label,

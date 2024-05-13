@@ -8,16 +8,20 @@ import annofabapi
 import bokeh
 import bokeh.layouts
 import bokeh.palettes
+import numpy
 import pandas
 import pytz
 
 from annofabcli.common.utils import print_csv
-from annofabcli.statistics.histogram import get_histogram_figure, get_sub_title_from_series
+from annofabcli.statistics.histogram import create_histogram_figure, get_sub_title_from_series
 from annofabcli.statistics.visualization.dataframe.annotation_count import AnnotationCount
 from annofabcli.statistics.visualization.dataframe.inspection_comment_count import InspectionCommentCount
 from annofabcli.task.list_all_tasks_added_task_history import AddingAdditionalInfoToTask
 
 logger = logging.getLogger(__name__)
+
+BIN_COUNT = 20
+"""ヒストグラムのビンの個数"""
 
 
 class Task:
@@ -228,16 +232,14 @@ class Task:
         df_merged = pandas.concat(df_list)
         return Task(df_merged)
 
-    def plot_histogram_of_worktime(  # noqa: ANN201
+    def plot_histogram_of_worktime(
         self,
         output_file: Path,
-        bins: int = 20,
-    ):
+    ) -> None:
         """作業時間に関する情報をヒストグラムでプロットする。
 
         Args:
             output_file (Path): [description]
-            bins (int, optional): [description]. Defaults to 20.
         """
         if not self._validate_df_for_output(output_file):
             return
@@ -263,39 +265,43 @@ class Task:
         figure_list = []
 
         decimals = 2
-        for hist in histogram_list:
-            column = hist["column"]
-            title = hist["title"]
+        for histogram in histogram_list:
+            column = histogram["column"]
+            title = histogram["title"]
             sub_title = get_sub_title_from_series(df[column], decimals=decimals)
-            fig = get_histogram_figure(
-                df[column], x_axis_label="作業時間[hour]", y_axis_label="タスク数", title=title, sub_title=sub_title, bins=bins
-            )
+
+            hist, bin_edges = numpy.histogram(df[column], bins=BIN_COUNT)
+            fig = create_histogram_figure(hist, bin_edges, x_axis_label="作業時間[hour]", y_axis_label="タスク数", title=title, sub_title=sub_title)
             figure_list.append(fig)
 
         # 自動検査したタスクを除外して、検査時間をグラフ化する
         df_ignore_inspection_skipped = df.query("inspection_worktime_hour.notnull() and not inspection_is_skipped")
         sub_title = get_sub_title_from_series(df_ignore_inspection_skipped["inspection_worktime_hour"], decimals=decimals)
+
+        hist, bin_edges = numpy.histogram(df_ignore_inspection_skipped["inspection_worktime_hour"], bins=BIN_COUNT)
         figure_list.append(
-            get_histogram_figure(
-                df_ignore_inspection_skipped["inspection_worktime_hour"],
+            create_histogram_figure(
+                hist,
+                bin_edges,
                 x_axis_label="作業時間[hour]",
                 y_axis_label="タスク数",
                 title="検査作業時間(自動検査されたタスクを除外)",
                 sub_title=sub_title,
-                bins=bins,
             )
         )
 
         df_ignore_acceptance_skipped = df.query("acceptance_worktime_hour.notnull() and not acceptance_is_skipped")
         sub_title = get_sub_title_from_series(df_ignore_acceptance_skipped["acceptance_worktime_hour"], decimals=decimals)
+        hist, bin_edges = numpy.histogram(df_ignore_acceptance_skipped["acceptance_worktime_hour"], bins=BIN_COUNT)
+
         figure_list.append(
-            get_histogram_figure(
-                df_ignore_acceptance_skipped["acceptance_worktime_hour"],
+            create_histogram_figure(
+                hist,
+                bin_edges,
                 x_axis_label="作業時間[hour]",
                 y_axis_label="タスク数",
                 title="受入作業時間(自動受入されたタスクを除外)",
                 sub_title=sub_title,
-                bins=bins,
             )
         )
 
@@ -306,16 +312,14 @@ class Task:
         bokeh.plotting.save(bokeh_obj)
         logger.debug(f"'{output_file}'を出力しました。")
 
-    def plot_histogram_of_others(  # noqa: ANN201
+    def plot_histogram_of_others(
         self,
         output_file: Path,
-        bins: int = 20,
-    ):
+    ) -> None:
         """アノテーション数や、検査コメント数など、作業時間以外の情報をヒストグラムで表示する。
 
         Args:
             output_file (Path): [description]
-            bins (int, optional): [description]. Defaults to 20.
         """
 
         def diff_days(s1: pandas.Series, s2: pandas.Series) -> pandas.Series:
@@ -378,13 +382,14 @@ class Task:
 
         figure_list = []
 
-        for hist in histogram_list:
-            column = hist["column"]
-            title = hist["title"]
-            x_axis_label = hist["x_axis_label"]
+        for histogram in histogram_list:
+            column = histogram["column"]
+            title = histogram["title"]
+            x_axis_label = histogram["x_axis_label"]
             ser = df[column].dropna()
             sub_title = get_sub_title_from_series(ser, decimals=2)
-            fig = get_histogram_figure(ser, x_axis_label=x_axis_label, y_axis_label="タスク数", title=title, sub_title=sub_title, bins=bins)
+            hist, bin_edges = numpy.histogram(ser, bins=BIN_COUNT)
+            fig = create_histogram_figure(hist, bin_edges, x_axis_label=x_axis_label, y_axis_label="タスク数", title=title, sub_title=sub_title)
             figure_list.append(fig)
 
         bokeh_obj = bokeh.layouts.gridplot(figure_list, ncols=4)  # type: ignore[arg-type]
