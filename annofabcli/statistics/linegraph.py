@@ -140,7 +140,12 @@ class LineGraph:
         """
         折れ線を追加する
 
-        is_secondary_y_axis
+        Args:
+            is_secondary_y_axis: Y軸の第2軸を設定するか
+
+        Returns:
+            折れ線のglyph, 折れ線のマーカーのglyph
+
         """
         new_kwargs = copy.deepcopy(kwargs)
         if is_secondary_y_axis:
@@ -155,7 +160,7 @@ class LineGraph:
             line_width=1,
             **new_kwargs,
         )
-        circle = self.figure.circle(
+        scatter = self.figure.scatter(
             x=x_column,
             y=y_column,
             source=source,
@@ -165,9 +170,9 @@ class LineGraph:
         )
 
         self.line_glyphs[legend_label] = line
-        self.marker_glyphs[legend_label] = circle
+        self.marker_glyphs[legend_label] = scatter
 
-        return (line, circle)
+        return (line, scatter)
 
     def add_moving_average_line(
         self,
