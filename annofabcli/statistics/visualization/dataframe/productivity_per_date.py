@@ -49,7 +49,7 @@ class AbstractPhaseProductivityPerDate(abc.ABC):
         return True
 
     @staticmethod
-    def _plot(line_graph_list: list[LineGraph], output_file: Path) -> None:
+    def _plot(line_graph_list: list[LineGraph], plotted_users: list[tuple[str, str]], output_file: Path) -> None:
         """
         折れ線グラフを、HTMLファイルに出力します。
         """
@@ -66,6 +66,9 @@ class AbstractPhaseProductivityPerDate(abc.ABC):
             if len(line_graph.marker_glyphs) > 0:
                 checkbox_group = line_graph.create_checkbox_displaying_markers()
                 widget_list.append(checkbox_group)
+
+            multi_choice_widget = line_graph.create_multi_choice_widget_for_searching_user(plotted_users)
+            widget_list.append(multi_choice_widget)
 
             widgets = bokeh.layouts.column(widget_list)
             graph_group = bokeh.layouts.row([line_graph.figure, widgets])  # type: ignore[list-item]
@@ -277,6 +280,7 @@ class AnnotatorProductivityPerDate(AbstractPhaseProductivityPerDate):
         logger.debug(f"{output_file} を出力します。")
 
         line_count = 0
+        ploted_users: list[tuple[str, str]] = []
         for user_index, user_id in enumerate(user_id_list):
             df_subset = df[df["first_annotation_user_id"] == user_id]
             if df_subset.empty:
@@ -315,12 +319,13 @@ class AnnotatorProductivityPerDate(AbstractPhaseProductivityPerDate):
                         legend_label=username,
                         color=color,
                     )
+            ploted_users.append((user_id, username))
 
         if line_count == 0:
             logger.warning(f"プロットするデータがなかっため、'{output_file}'は出力しません。")
             return
 
-        self._plot(line_graph_list, output_file)
+        self._plot(line_graph_list, ploted_users, output_file)
 
     def plot_input_data_metrics(  # noqa: ANN201
         self,
@@ -406,6 +411,7 @@ class AnnotatorProductivityPerDate(AbstractPhaseProductivityPerDate):
 
         line_count = 0
 
+        plotted_users: list[tuple[str, str]] = []
         for user_index, user_id in enumerate(user_id_list):
             df_subset = df[df["first_annotation_user_id"] == user_id]
             if df_subset.empty:
@@ -445,12 +451,13 @@ class AnnotatorProductivityPerDate(AbstractPhaseProductivityPerDate):
                         legend_label=username,
                         color=color,
                     )
+            plotted_users.append((user_id, username))
 
         if line_count == 0:
             logger.warning(f"プロットするデータがなかっため、'{output_file}'は出力しません。")
             return
 
-        self._plot(line_graph_list, output_file)
+        self._plot(line_graph_list, plotted_users, output_file)
 
     def to_csv(self, output_file: Path) -> None:
         if not self._validate_df_for_output(output_file):
@@ -629,6 +636,7 @@ class InspectorProductivityPerDate(AbstractPhaseProductivityPerDate):
         logger.debug(f"{output_file} を出力します。")
 
         line_count = 0
+        plotted_users: list[tuple[str, str]] = []
         for user_index, user_id in enumerate(user_id_list):
             df_subset = df[df["first_inspection_user_id"] == user_id]
             if df_subset.empty:
@@ -663,12 +671,13 @@ class InspectorProductivityPerDate(AbstractPhaseProductivityPerDate):
                         legend_label=username,
                         color=color,
                     )
+            plotted_users.append((user_id, username))
 
         if line_count == 0:
             logger.warning(f"プロットするデータがなかっため、'{output_file}'は出力しません。")
             return
 
-        self._plot(line_graph_list, output_file)
+        self._plot(line_graph_list, plotted_users, output_file)
 
     def plot_input_data_metrics(  # noqa: ANN201
         self,
@@ -737,6 +746,7 @@ class InspectorProductivityPerDate(AbstractPhaseProductivityPerDate):
         logger.debug(f"{output_file} を出力します。")
 
         line_count = 0
+        plotted_users: list[tuple[str, str]] = []
         for user_index, user_id in enumerate(user_id_list):
             df_subset = df[df["first_inspection_user_id"] == user_id]
             if df_subset.empty:
@@ -772,12 +782,13 @@ class InspectorProductivityPerDate(AbstractPhaseProductivityPerDate):
                         legend_label=username,
                         color=color,
                     )
+            plotted_users.append((user_id, username))
 
         if line_count == 0:
             logger.warning(f"プロットするデータがなかっため、'{output_file}'は出力しません。")
             return
 
-        self._plot(line_graph_list, output_file)
+        self._plot(line_graph_list, plotted_users, output_file)
 
     def to_csv(self, output_file: Path) -> None:
         """
@@ -953,6 +964,7 @@ class AcceptorProductivityPerDate(AbstractPhaseProductivityPerDate):
         logger.debug(f"{output_file} を出力します。")
 
         line_count = 0
+        plotted_users: list[tuple[str, str]] = []
         for user_index, user_id in enumerate(user_id_list):
             df_subset = df[df["first_acceptance_user_id"] == user_id]
             if df_subset.empty:
@@ -989,12 +1001,13 @@ class AcceptorProductivityPerDate(AbstractPhaseProductivityPerDate):
                         legend_label=username,
                         color=color,
                     )
+            plotted_users.append((user_id, username))
 
         if line_count == 0:
             logger.warning(f"プロットするデータがなかっため、'{output_file}'は出力しません。")
             return
 
-        self._plot(line_graph_list, output_file)
+        self._plot(line_graph_list, plotted_users, output_file)
 
     def plot_input_data_metrics(  # noqa: ANN201
         self,
@@ -1062,6 +1075,7 @@ class AcceptorProductivityPerDate(AbstractPhaseProductivityPerDate):
         logger.debug(f"{output_file} を出力します。")
 
         line_count = 0
+        plotted_users: list[tuple[str, str]] = []
         for user_index, user_id in enumerate(user_id_list):
             df_subset = df[df["first_acceptance_user_id"] == user_id]
             if df_subset.empty:
@@ -1097,12 +1111,13 @@ class AcceptorProductivityPerDate(AbstractPhaseProductivityPerDate):
                         legend_label=username,
                         color=color,
                     )
+            plotted_users.append((user_id, username))
 
         if line_count == 0:
             logger.warning(f"プロットするデータがなかっため、'{output_file}'は出力しません。")
             return
 
-        self._plot(line_graph_list, output_file)
+        self._plot(line_graph_list, plotted_users, output_file)
 
     def to_csv(self, output_file: Path) -> None:
         """

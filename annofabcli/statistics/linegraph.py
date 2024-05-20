@@ -276,12 +276,12 @@ class LineGraph:
 
         args = {"glyph_list": glyph_list}
         code = """
-            let radius = ( "0" in this.active) ? null : 0
+            let size = ( "0" in this.active) ? 4 : 0
             for (let glyph of glyph_list) {
-                glyph.radius = radius
+                glyph.size = size
             }
         """
-        checkbox_group.js_on_event("button_click", CustomJS(code=code, args=args))
+        checkbox_group.js_on_change("active", CustomJS(code=code, args=args))
         return checkbox_group
 
     def create_multi_choice_widget_for_searching_user(self, users: list[tuple[str, str]]) -> MultiChoice:
@@ -299,13 +299,6 @@ class LineGraph:
         # 選択されたユーザーのフォントスタイルを太字にする
         code = """
         const selectedLegendLabel = this.value;
-        for (let legendLabel in markerGlyphs) {
-            if (selectedLegendLabel.includes(legendLabel)) {
-                markerGlyphs[legendLabel].glyph.size = 8;
-            } else {
-                markerGlyphs[legendLabel].glyph.size = 4;
-            }
-        }
 
         for (let legendLabel in lineGlyphs) {
             if (selectedLegendLabel.includes(legendLabel)) {
