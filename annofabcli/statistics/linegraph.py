@@ -301,7 +301,7 @@ class LineGraph:
 
         for (let legendLabel in lineGlyphs) {
             if (selectedLegendLabel.includes(legendLabel)) {
-                lineGlyphs[legendLabel].glyph.line_width = 2;
+                lineGlyphs[legendLabel].glyph.line_width = 4;
             } else {
                 lineGlyphs[legendLabel].glyph.line_width = 1;
             }
