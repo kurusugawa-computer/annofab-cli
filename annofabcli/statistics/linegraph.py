@@ -287,11 +287,10 @@ class LineGraph:
     def create_multi_choice_widget_for_searching_user(self, users: list[tuple[str, str]]) -> MultiChoice:
         """
         特定のユーザーを探すためのMultiChoiceウィジェットを追加します。
+        指定したユーザーの折れ線グラフを太くします。
 
         Args:
             users: ユーザーのリスト。tuple[user_id, username]
-        Notes:
-            2回以上実行しても意味がありません。
 
         """
         args = {"markerGlyphs": self.marker_glyphs, "lineGlyphs": self.line_glyphs}
@@ -302,13 +301,13 @@ class LineGraph:
 
         for (let legendLabel in lineGlyphs) {
             if (selectedLegendLabel.includes(legendLabel)) {
-                lineGlyphs[legendLabel].glyph.line_width = 4;
+                lineGlyphs[legendLabel].glyph.line_width = 2;
             } else {
                 lineGlyphs[legendLabel].glyph.line_width = 1;
             }
         }
         """
-        options = [(user_id, f"{user_id}:{username}") for user_id, username in users]
+        options = [(username, f"{user_id}:{username}") for user_id, username in users]
         multi_choice = MultiChoice(options=options, title="Find User:", width=300)
         multi_choice.js_on_change(
             "value",

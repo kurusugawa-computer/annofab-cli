@@ -437,6 +437,7 @@ class WorktimePerDate:
         df_cumulative.replace(pandas.NA, numpy.nan, inplace=True)
 
         line_count = 0
+        plotted_users: list[tuple[str, str]] = []
         for user_index, user_id in enumerate(user_id_list):
             df_subset = df_cumulative[df_cumulative["user_id"] == user_id]
             if df_subset.empty:
@@ -457,14 +458,17 @@ class WorktimePerDate:
                     color=color,
                 )
 
+            plotted_users.append((user_id, username))
+
         graph_group_list = []
         for line_graph in line_graph_list:
             line_graph.process_after_adding_glyphs()
             hide_all_button = line_graph.create_button_hiding_showing_all_lines(is_hiding=True)
             show_all_button = line_graph.create_button_hiding_showing_all_lines(is_hiding=False)
             checkbox_group = line_graph.create_checkbox_displaying_markers()
+            multi_choice_widget = line_graph.create_multi_choice_widget_for_searching_user(plotted_users)
 
-            widgets = bokeh.layouts.column([hide_all_button, show_all_button, checkbox_group])  # type: ignore[list-item]
+            widgets = bokeh.layouts.column([hide_all_button, show_all_button, checkbox_group, multi_choice_widget])  # type: ignore[list-item]
             graph_group = bokeh.layouts.row([line_graph.figure, widgets])  # type: ignore[list-item]
             graph_group_list.append(graph_group)
 
