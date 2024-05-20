@@ -17,6 +17,7 @@ from bokeh.models import CrosshairTool, CustomJS, DataRange1d, HoverTool, Linear
 from bokeh.models.renderers.glyph_renderer import GlyphRenderer
 from bokeh.models.widgets.buttons import Button
 from bokeh.models.widgets.groups import CheckboxGroup
+from bokeh.models.widgets.inputs import MultiChoice
 from bokeh.plotting import ColumnDataSource, figure
 
 logger = logging.getLogger(__name__)
@@ -282,6 +283,45 @@ class LineGraph:
         """
         checkbox_group.js_on_event("button_click", CustomJS(code=code, args=args))
         return checkbox_group
+
+    def create_multi_choice_widget_for_searching_user(self, users: list[tuple[str, str]]) -> MultiChoice:
+        """
+        特定のユーザーを探すためのMultiChoiceウィジェットを追加します。
+
+        Args:
+            users: ユーザーのリスト。tuple[user_id, username]
+        Notes:
+            2回以上実行しても意味がありません。
+
+        """
+        args = {"markerGlyphs": self.marker_glyphs, "lineGlyphs": self.line_glyphs}
+
+        # 選択されたユーザーのフォントスタイルを太字にする
+        code = """
+        const selectedLegendLabel = this.value;
+        for (let legendLabel in markerGlyphs) {
+            if (selectedLegendLabel.includes(legendLabel)) {
+                markerGlyphs[legendLabel].glyph.size = 8;
+            } else {
+                markerGlyphs[legendLabel].glyph.size = 4;
+            }
+        }
+
+        for (let legendLabel in lineGlyphs) {
+            if (selectedLegendLabel.includes(legendLabel)) {
+                lineGlyphs[legendLabel].glyph.line_width = 4;
+            } else {
+                lineGlyphs[legendLabel].glyph.line_width = 1;
+            }
+        }
+        """
+        options = [(user_id, f"{user_id}:{username}") for user_id, username in users]
+        multi_choice = MultiChoice(options=options, title="Find User:", width=300)
+        multi_choice.js_on_change(
+            "value",
+            CustomJS(code=code, args=args),
+        )
+        return multi_choice
 
 
 def write_bokeh_graph(bokeh_obj: Any, output_file: Path) -> None:  # noqa: ANN401
