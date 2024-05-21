@@ -17,6 +17,7 @@ from bokeh.models import CrosshairTool, CustomJS, DataRange1d, HoverTool, Linear
 from bokeh.models.renderers.glyph_renderer import GlyphRenderer
 from bokeh.models.widgets.buttons import Button
 from bokeh.models.widgets.groups import CheckboxGroup
+from bokeh.models.widgets.inputs import MultiChoice
 from bokeh.plotting import ColumnDataSource, figure
 
 logger = logging.getLogger(__name__)
@@ -41,6 +42,12 @@ class LineGraph:
     """
     第2のY軸用の内部的な名前
     """
+
+    DEFAULT_LINE_WIDTH: int = 1
+    """折れ線の太さ"""
+
+    DEFAULT_SCATTER_SIZE: int = 4
+    """マーカーのサイズ"""
 
     @staticmethod
     def _create_hover_tool(tool_tip_items: Optional[List[str]] = None) -> HoverTool:
@@ -140,7 +147,12 @@ class LineGraph:
         """
         折れ線を追加する
 
-        is_secondary_y_axis
+        Args:
+            is_secondary_y_axis: Y軸の第2軸を設定するか
+
+        Returns:
+            折れ線のglyph, 折れ線のマーカーのglyph
+
         """
         new_kwargs = copy.deepcopy(kwargs)
         if is_secondary_y_axis:
@@ -152,22 +164,23 @@ class LineGraph:
             source=source,
             legend_label=legend_label,
             line_color=color,
-            line_width=1,
+            line_width=self.DEFAULT_SCATTER_SIZE,
             **new_kwargs,
         )
-        circle = self.figure.circle(
+        scatter = self.figure.scatter(
             x=x_column,
             y=y_column,
             source=source,
+            size=self.DEFAULT_SCATTER_SIZE,
             legend_label=legend_label,
             color=color,
             **new_kwargs,
         )
 
         self.line_glyphs[legend_label] = line
-        self.marker_glyphs[legend_label] = circle
+        self.marker_glyphs[legend_label] = scatter
 
-        return (line, circle)
+        return (line, scatter)
 
     def add_moving_average_line(
         self,
@@ -193,7 +206,7 @@ class LineGraph:
             source=source,
             legend_label=legend_label,
             line_color=color,
-            line_width=1,
+            line_width=self.DEFAULT_SCATTER_SIZE,
             line_dash="dashed",
             line_alpha=0.6,
             **new_kwargs,
@@ -270,13 +283,46 @@ class LineGraph:
 
         args = {"glyph_list": glyph_list}
         code = """
-            let radius = ( "0" in this.active) ? null : 0
+            let size = ( "0" in this.active) ? %s : 0
             for (let glyph of glyph_list) {
-                glyph.radius = radius
+                glyph.size = size
             }
         """
-        checkbox_group.js_on_event("button_click", CustomJS(code=code, args=args))
+        code = code % (self.DEFAULT_SCATTER_SIZE)
+        checkbox_group.js_on_change("active", CustomJS(code=code, args=args))
         return checkbox_group
+
+    def create_multi_choice_widget_for_searching_user(self, users: list[tuple[str, str]]) -> MultiChoice:
+        """
+        特定のユーザーを探すためのMultiChoiceウィジェットを追加します。
+        指定したユーザーの折れ線グラフを太くします。
+
+        Args:
+            users: ユーザーのリスト。tuple[user_id, username]
+
+        """
+        args = {"markerGlyphs": self.marker_glyphs, "lineGlyphs": self.line_glyphs}
+
+        # 選択されたユーザーのフォントスタイルを太字にする
+        code = """
+        const selectedLegendLabel = this.value;
+
+        for (let legendLabel in lineGlyphs) {
+            if (selectedLegendLabel.includes(legendLabel)) {
+                lineGlyphs[legendLabel].glyph.line_width = 4;
+            } else {
+                lineGlyphs[legendLabel].glyph.line_width = %s;
+            }
+        }
+        """
+        code = code % (self.DEFAULT_LINE_WIDTH)
+        options = [(username, f"{user_id}:{username}") for user_id, username in users]
+        multi_choice = MultiChoice(options=options, title="Find User:", width=300)
+        multi_choice.js_on_change(
+            "value",
+            CustomJS(code=code, args=args),
+        )
+        return multi_choice
 
 
 def write_bokeh_graph(bokeh_obj: Any, output_file: Path) -> None:  # noqa: ANN401

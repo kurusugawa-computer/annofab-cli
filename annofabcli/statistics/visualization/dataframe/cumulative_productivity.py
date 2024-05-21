@@ -71,13 +71,13 @@ class AbstractPhaseCumulativeProductivity(abc.ABC):
 
         return True
 
-    def _plot(  # noqa: ANN202
+    def _plot(
         self,
         line_graph_list: list[LineGraph],
         columns_list: list[tuple[str, str]],
         user_id_list: list[str],
         output_file: Path,
-    ):
+    ) -> None:
         """
         折れ線グラフを、HTMLファイルに出力します。
 
@@ -106,6 +106,8 @@ class AbstractPhaseCumulativeProductivity(abc.ABC):
         required_columns = get_required_columns()
 
         line_count = 0
+        ploted_users: list[tuple[str, str]] = []
+
         for user_index, user_id in enumerate(user_id_list):
             df_subset = df[df[f"first_{self.phase.value}_user_id"] == user_id]
             if df_subset.empty:
@@ -120,6 +122,8 @@ class AbstractPhaseCumulativeProductivity(abc.ABC):
             for line_graph, (x_column, y_column) in zip(line_graph_list, columns_list):
                 line_graph.add_line(source, x_column=x_column, y_column=y_column, legend_label=username, color=color)
 
+            ploted_users.append((user_id, username))
+
         if line_count == 0:
             logger.warning(f"プロットするデータがなかっため、'{output_file}'は出力しません。")
             return
@@ -131,7 +135,9 @@ class AbstractPhaseCumulativeProductivity(abc.ABC):
             show_all_button = line_graph.create_button_hiding_showing_all_lines(is_hiding=False)
             checkbox_group = line_graph.create_checkbox_displaying_markers()
 
-            widgets = bokeh.layouts.column([hide_all_button, show_all_button, checkbox_group])
+            multi_choice_widget = line_graph.create_multi_choice_widget_for_searching_user(ploted_users)
+
+            widgets = bokeh.layouts.column([hide_all_button, show_all_button, checkbox_group, multi_choice_widget])
             graph_group = bokeh.layouts.row([line_graph.figure, widgets])  # type: ignore[list-item]
             graph_group_list.append(graph_group)
 
