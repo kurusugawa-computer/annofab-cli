@@ -316,16 +316,9 @@ class WholeProductivityPerCompletedDate:
             """
         )
 
-    def plot(self, output_file: Path):  # noqa: ANN201
+    def plot(self, output_file: Path) -> None:
         """
         全体の生産量や生産性をプロットする
-
-
-        Args:
-            df:
-
-        Returns:
-
         """
 
         def add_velocity_columns(df: pandas.DataFrame):  # noqa: ANN202
@@ -377,12 +370,7 @@ class WholeProductivityPerCompletedDate:
             line_graph = create_line_graph(
                 title="日ごとのタスク数と作業時間",
                 y_axis_label="タスク数",
-                tooltip_columns=[
-                    "date",
-                    "task_count",
-                    "actual_worktime_hour",
-                    "monitored_worktime_hour",
-                ],
+                tooltip_columns=["date", "task_count", "actual_worktime_hour", "monitored_worktime_hour", "working_user_count"],
             )
             line_graph.add_secondary_y_axis(
                 "作業時間[hour]",
@@ -429,12 +417,7 @@ class WholeProductivityPerCompletedDate:
             line_graph = create_line_graph(
                 title="日ごとの入力データ数と作業時間",
                 y_axis_label="入力データ数",
-                tooltip_columns=[
-                    "date",
-                    "input_data_count",
-                    "actual_worktime_hour",
-                    "monitored_worktime_hour",
-                ],
+                tooltip_columns=["date", "input_data_count", "actual_worktime_hour", "monitored_worktime_hour", "working_user_count"],
             )
             line_graph.add_secondary_y_axis(
                 "作業時間[hour]",
@@ -511,6 +494,7 @@ class WholeProductivityPerCompletedDate:
                         "monitored_annotation_worktime_hour",
                         "monitored_inspection_worktime_hour",
                         "monitored_acceptance_worktime_hour",
+                        "working_user_count",
                     ],
                 ),
                 "y_info_list": [{"column": f"{e[0]}_hour", "legend": f"{e[1]}"} for e in phase_prefix],
@@ -612,6 +596,7 @@ class WholeProductivityPerCompletedDate:
                     "task_count",
                     "actual_worktime_hour",
                     "monitored_worktime_hour",
+                    "working_user_count",
                     "cumsum_task_count",
                     "cumsum_actual_worktime_hour",
                     "cumsum_monitored_worktime_hour",
@@ -667,6 +652,7 @@ class WholeProductivityPerCompletedDate:
                     "input_data_count",
                     "actual_worktime_hour",
                     "monitored_worktime_hour",
+                    "working_user_count",
                     "cumsum_input_data_count",
                     "cumsum_actual_worktime_hour",
                     "cumsum_monitored_worktime_hour",
@@ -722,6 +708,7 @@ class WholeProductivityPerCompletedDate:
                     "monitored_annotation_worktime_hour",
                     "monitored_inspection_worktime_hour",
                     "monitored_acceptance_worktime_hour",
+                    "working_user_count",
                     "cumsum_actual_worktime_hour",
                     "cumsum_monitored_worktime_hour",
                     "cumsum_monitored_annotation_worktime_hour",
