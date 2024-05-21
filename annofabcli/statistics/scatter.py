@@ -33,7 +33,7 @@ def get_color_from_palette(index: int) -> str:
 class ScatterGraph:
     DEFAULT_USER_TEXT_FONT_STYLE = "normal"
 
-    DEFAULT_USER_TEXT_FONT_SIZE = ("7pt",)
+    DEFAULT_USER_TEXT_FONT_SIZE = "7pt"
 
     @staticmethod
     def create_hover_tool(tool_tip_items: list[str]) -> HoverTool:
@@ -274,8 +274,8 @@ class ScatterGraph:
                 textGlyphs[userId].glyph.text_font_style='bold';
                 textGlyphs[userId].glyph.text_font_size='11pt';
             } else {
-                textGlyphs[userId].glyph.text_font_style=%s;
-                textGlyphs[userId].glyph.text_font_size=%s;
+                textGlyphs[userId].glyph.text_font_style='%s';
+                textGlyphs[userId].glyph.text_font_size='%s';
             }
         }
         """
