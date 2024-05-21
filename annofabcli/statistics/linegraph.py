@@ -164,7 +164,7 @@ class LineGraph:
             source=source,
             legend_label=legend_label,
             line_color=color,
-            line_width=self.DEFAULT_SCATTER_SIZE,
+            line_width=self.DEFAULT_LINE_WIDTH,
             **new_kwargs,
         )
         scatter = self.figure.scatter(
@@ -206,7 +206,7 @@ class LineGraph:
             source=source,
             legend_label=legend_label,
             line_color=color,
-            line_width=self.DEFAULT_SCATTER_SIZE,
+            line_width=self.DEFAULT_LINE_WIDTH,
             line_dash="dashed",
             line_alpha=0.6,
             **new_kwargs,
