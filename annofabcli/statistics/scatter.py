@@ -31,6 +31,10 @@ def get_color_from_palette(index: int) -> str:
 
 
 class ScatterGraph:
+    DEFAULT_USER_TEXT_FONT_STYLE = "normal"
+
+    DEFAULT_USER_TEXT_FONT_SIZE = ("7pt",)
+
     @staticmethod
     def create_hover_tool(tool_tip_items: list[str]) -> HoverTool:
         """
@@ -153,8 +157,8 @@ class ScatterGraph:
                 # listで渡している理由: https://qiita.com/yuji38kwmt/items/5fad41f6db0090a80af4
                 text=[username],
                 legend_label=legend_label,
-                text_font_style="normal",
-                text_font_size="7pt",
+                text_font_style=self.DEFAULT_USER_TEXT_FONT_STYLE,
+                text_font_size=self.DEFAULT_USER_TEXT_FONT_SIZE,
             )
 
     def plot_bubble(
@@ -209,8 +213,8 @@ class ScatterGraph:
                 # listで渡している理由: https://qiita.com/yuji38kwmt/items/5fad41f6db0090a80af4
                 text=[username],
                 legend_label=legend_label,
-                text_font_style="normal",
-                text_font_size="7pt",
+                text_font_style=self.DEFAULT_USER_TEXT_FONT_STYLE,
+                text_font_size=self.DEFAULT_USER_TEXT_FONT_SIZE,
                 text_align="center",
                 text_baseline="middle",
                 muted_alpha=0.2,
@@ -270,11 +274,12 @@ class ScatterGraph:
                 textGlyphs[userId].glyph.text_font_style='bold';
                 textGlyphs[userId].glyph.text_font_size='11pt';
             } else {
-                textGlyphs[userId].glyph.text_font_style='normal';
-                textGlyphs[userId].glyph.text_font_size='7pt';
+                textGlyphs[userId].glyph.text_font_style=%s;
+                textGlyphs[userId].glyph.text_font_size=%s;
             }
         }
         """
+        code = code % (self.DEFAULT_USER_TEXT_FONT_STYLE, self.DEFAULT_USER_TEXT_FONT_SIZE)
         options = [(user_id, f"{user_id}:{username}") for user_id, username in users]
         multi_choice = MultiChoice(options=options, title="Find User:", width=300)
         multi_choice.js_on_change(

@@ -43,6 +43,12 @@ class LineGraph:
     第2のY軸用の内部的な名前
     """
 
+    DEFAULT_LINE_WIDTH: int = 1
+    """折れ線の太さ"""
+
+    DEFAULT_SCATTER_SIZE: int = 4
+    """マーカーのサイズ"""
+
     @staticmethod
     def _create_hover_tool(tool_tip_items: Optional[List[str]] = None) -> HoverTool:
         """
@@ -158,13 +164,14 @@ class LineGraph:
             source=source,
             legend_label=legend_label,
             line_color=color,
-            line_width=1,
+            line_width=self.DEFAULT_SCATTER_SIZE,
             **new_kwargs,
         )
         scatter = self.figure.scatter(
             x=x_column,
             y=y_column,
             source=source,
+            size=self.DEFAULT_SCATTER_SIZE,
             legend_label=legend_label,
             color=color,
             **new_kwargs,
@@ -199,7 +206,7 @@ class LineGraph:
             source=source,
             legend_label=legend_label,
             line_color=color,
-            line_width=1,
+            line_width=self.DEFAULT_SCATTER_SIZE,
             line_dash="dashed",
             line_alpha=0.6,
             **new_kwargs,
@@ -276,11 +283,12 @@ class LineGraph:
 
         args = {"glyph_list": glyph_list}
         code = """
-            let size = ( "0" in this.active) ? 4 : 0
+            let size = ( "0" in this.active) ? %s : 0
             for (let glyph of glyph_list) {
                 glyph.size = size
             }
         """
+        code = code % (self.DEFAULT_SCATTER_SIZE)
         checkbox_group.js_on_change("active", CustomJS(code=code, args=args))
         return checkbox_group
 
@@ -303,10 +311,11 @@ class LineGraph:
             if (selectedLegendLabel.includes(legendLabel)) {
                 lineGlyphs[legendLabel].glyph.line_width = 4;
             } else {
-                lineGlyphs[legendLabel].glyph.line_width = 1;
+                lineGlyphs[legendLabel].glyph.line_width = %s;
             }
         }
         """
+        code = code % (self.DEFAULT_LINE_WIDTH)
         options = [(username, f"{user_id}:{username}") for user_id, username in users]
         multi_choice = MultiChoice(options=options, title="Find User:", width=300)
         multi_choice.js_on_change(
