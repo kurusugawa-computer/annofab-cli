@@ -762,6 +762,8 @@ class UserPerformance:
             tuple[1]: 50パーセンタイル
             tuple[2]: 75パーセンタイル
         """
+        # infinityが含まれていると、四分位数がnanになるときがあるので、infinityをnanに置換する
+        series = series.replace({numpy.inf: numpy.nan})
         return tuple(series.quantile([0.25, 0.5, 0.75]))
 
     @staticmethod
