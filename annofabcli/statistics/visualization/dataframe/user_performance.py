@@ -753,12 +753,18 @@ class UserPerformance:
             return None
 
     @staticmethod
-    def _get_quartile_value(df: pandas.DataFrame, column: tuple[str, str]) -> Optional[tuple[float, float, float]]:
-        tmp = df[column].describe()
-        if tmp["count"] > 3:
-            return (tmp["25%"], tmp["50%"], tmp["75%"])
-        else:
-            return None
+    def _get_quartile_value(series: pandas.Series) -> tuple[float, float, float]:
+        """
+        四分位数の値を返します。
+
+        Returns:
+            tuple[0]: 25パーセンタイル
+            tuple[1]: 50パーセンタイル
+            tuple[2]: 75パーセンタイル
+        """
+        # infinityが含まれていると、四分位数がnanになるときがあるので、infinityをnanに置換する
+        series = series.replace({numpy.inf: numpy.nan})
+        return tuple(series.quantile([0.25, 0.5, 0.75]))
 
     @staticmethod
     def _create_div_element() -> Div:
@@ -946,9 +952,8 @@ class UserPerformance:
                 average_minute = average_hour * 60
                 scatter_obj.plot_average_line(average_minute, dimension="width")
 
-            quartile = self._get_quartile_value(df, (f"{worktime_type.value}_worktime_minute/{performance_unit.value}", phase))
-            if quartile is not None:
-                scatter_obj.plot_quartile_line(quartile, dimension="width")
+            quartile = self._get_quartile_value(df[(f"{worktime_type.value}_worktime_minute/{performance_unit.value}", phase)])
+            scatter_obj.plot_quartile_line(quartile, dimension="width")
 
             scatter_obj.add_multi_choice_widget_for_searching_user(list(zip(df[("user_id", "")], df[("username", "")])))
             scatter_obj.process_after_adding_glyphs()
@@ -1044,9 +1049,8 @@ class UserPerformance:
             ["rejected_count/task_count", "pointed_out_inspection_comment_count/annotation_count"],
             scatter_obj_list,
         ):
-            quartile = self._get_quartile_value(df, (column, PHASE))
-            if quartile is not None:
-                scatter_obj.plot_quartile_line(quartile, dimension="width")
+            quartile = self._get_quartile_value(df[(column, PHASE)])
+            scatter_obj.plot_quartile_line(quartile, dimension="width")
 
         for scatter_obj in scatter_obj_list:
             scatter_obj.add_multi_choice_widget_for_searching_user(list(zip(df[("user_id", "")], df[("username", "")])))
@@ -1123,16 +1127,14 @@ class UserPerformance:
                 if y_average is not None:
                     scatter_obj.plot_average_line(y_average, dimension="width")
 
-            x_quartile = self._get_quartile_value(df, (f"{worktime_type.value}_worktime_minute/{performance_unit.value}", PHASE))
+            x_quartile = self._get_quartile_value(df[(f"{worktime_type.value}_worktime_minute/{performance_unit.value}", PHASE)])
             for column, scatter_obj in zip(
                 ["rejected_count/task_count", f"pointed_out_inspection_comment_count/{performance_unit.value}"],
                 scatter_obj_list,
             ):
-                if x_quartile is not None:
-                    scatter_obj.plot_quartile_line(x_quartile, dimension="height")
-                y_quartile = self._get_quartile_value(df, (column, PHASE))
-                if y_quartile is not None:
-                    scatter_obj.plot_quartile_line(y_quartile, dimension="width")
+                scatter_obj.plot_quartile_line(x_quartile, dimension="height")
+                y_quartile = self._get_quartile_value(df[(column, PHASE)])
+                scatter_obj.plot_quartile_line(y_quartile, dimension="width")
 
         if not self._validate_df_for_output(output_file):
             return
