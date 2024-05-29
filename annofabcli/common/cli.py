@@ -19,13 +19,12 @@ import requests
 import yaml
 from annofabapi.api import DEFAULT_ENDPOINT_URL
 from annofabapi.exceptions import AnnofabApiException
-from annofabapi.exceptions import MfaEnabledUserExecutionError as AnnofabApiMfaEnabledUserExecutionError
 from annofabapi.models import OrganizationMemberRole, ProjectMemberRole
 from more_itertools import first_true
 
 from annofabcli.common.dataclasses import WaitOptions
 from annofabcli.common.enums import FormatArgument
-from annofabcli.common.exceptions import AnnofabCliException, AuthenticationError, MfaEnabledUserExecutionError
+from annofabcli.common.exceptions import AnnofabCliException, AuthenticationError
 from annofabcli.common.facade import AnnofabApiFacade
 from annofabcli.common.typing import InputDataSize
 from annofabcli.common.utils import (
@@ -68,18 +67,6 @@ def build_annofabapi_resource_and_login(args: argparse.Namespace) -> annofabapi.
         if e.response.status_code == requests.codes.unauthorized:
             raise AuthenticationError(service.api.login_user_id) from e
         raise e  # noqa: TRY201
-
-    except AnnofabApiMfaEnabledUserExecutionError:
-        # 標準入力からMFAコードを入力させる
-        inputted_mfa_code = ""
-        while inputted_mfa_code == "":
-            inputted_mfa_code = input("Enter MFA Code: ")
-
-        try:
-            service.api.login(mfa_code=inputted_mfa_code)
-            return service  # noqa: TRY300
-        except AnnofabApiMfaEnabledUserExecutionError as e:
-            raise MfaEnabledUserExecutionError(service.api.login_user_id) from e
 
 
 def add_parser(
@@ -326,27 +313,28 @@ def build_annofabapi_resource(args: argparse.Namespace) -> annofabapi.Resource:
     if endpoint_url != DEFAULT_ENDPOINT_URL:
         logger.info(f"Annofab WebAPIのエンドポイントURL: {endpoint_url}")
 
+    kwargs = {"endpoint_url": endpoint_url, "input_mfa_code_via_stdin": True}
     # コマンドライン引数からユーザーIDが指定された場合
     if args.annofab_user_id is not None:
         login_user_id: str = args.annofab_user_id
         if args.annofab_password is not None:
-            return annofabapi.build(login_user_id, args.annofab_password, endpoint_url=endpoint_url)
+            return annofabapi.build(login_user_id, args.annofab_password, **kwargs)  # type: ignore[arg-type]
         else:
             # コマンドライン引数にパスワードが指定されなければ、標準入力からパスワードを取得する
             login_password = ""
             while login_password == "":
                 login_password = getpass.getpass("Enter Annofab Password: ")
-            return annofabapi.build(login_user_id, login_password, endpoint_url=endpoint_url)
+            return annofabapi.build(login_user_id, login_password, **kwargs)  # type: ignore[arg-type]
 
     # 環境変数から認証情報を取得する
     try:
-        return annofabapi.build_from_env(endpoint_url)
+        return annofabapi.build_from_env(**kwargs)  # type: ignore[arg-type]
     except AnnofabApiException:
         pass
 
     # .netrcファイルから認証情報を取得する
     try:
-        return annofabapi.build_from_netrc(endpoint_url)
+        return annofabapi.build_from_netrc(**kwargs)  # type: ignore[arg-type]
     except AnnofabApiException:
         pass
 
@@ -359,7 +347,7 @@ def build_annofabapi_resource(args: argparse.Namespace) -> annofabapi.Resource:
     while login_password == "":
         login_password = getpass.getpass("Enter Annofab Password: ")
 
-    return annofabapi.build(login_user_id, login_password, endpoint_url=endpoint_url)
+    return annofabapi.build(login_user_id, login_password, **kwargs)  # type: ignore[arg-type]
 
 
 def prompt_yesno(msg: str) -> bool:

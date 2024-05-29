@@ -42,13 +42,13 @@ files = [
 
 [[package]]
 name = "annofabapi"
-version = "0.72.4"
+version = "0.73.0"
 description = "Python Clinet Library of Annofab WebAPI (https://annofab.com/docs/api/)"
 optional = false
-python-versions = ">=3.8,<4.0"
+python-versions = "<4.0,>=3.8"
 files = [
-    {file = "annofabapi-0.72.4-py3-none-any.whl", hash = "sha256:72107d73285f65fbaa2654a6f739a89b21979943711a3cb9a767e4545f02b7ea"},
-    {file = "annofabapi-0.72.4.tar.gz", hash = "sha256:0950592632b15a5e00a4d94ca7d0209e9108f344e48c466bf2630f2c2b98855e"},
+    {file = "annofabapi-0.73.0-py3-none-any.whl", hash = "sha256:1942ab01548aba769e180ceedab7d289de0e96262024dd2f880f568e30dba421"},
+    {file = "annofabapi-0.73.0.tar.gz", hash = "sha256:77b96dbf0959158944745f9ee88d225b55b7831ff88aecb72dee08a2b1c5fcb4"},
 ]
 
 [package.dependencies]
