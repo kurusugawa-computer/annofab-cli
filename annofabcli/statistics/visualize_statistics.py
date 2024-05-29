@@ -362,16 +362,16 @@ class VisualizingStatisticsMain:
             output_only_text=self.output_only_text,
         )
 
-        write_obj._catch_exception(write_obj.write_user_performance)()
-        write_obj._catch_exception(write_obj.write_worktime_per_date)(self.user_ids)
+        write_obj._catch_exception(write_obj.write_user_performance)()  # noqa: SLF001
+        write_obj._catch_exception(write_obj.write_worktime_per_date)(self.user_ids)  # noqa: SLF001
 
-        write_obj._catch_exception(write_obj.write_task_info)()
+        write_obj._catch_exception(write_obj.write_task_info)()  # noqa: SLF001
 
         # 折れ線グラフ
         write_obj.write_cumulative_linegraph_by_user(self.user_ids)
 
         if not self.minimal_output:
-            write_obj._catch_exception(write_obj.write_user_productivity_per_date)(self.user_ids)
+            write_obj._catch_exception(write_obj.write_user_productivity_per_date)(self.user_ids)  # noqa: SLF001
 
     def visualize_statistics_wrapper(
         self,

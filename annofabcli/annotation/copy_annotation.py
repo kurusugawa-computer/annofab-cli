@@ -240,7 +240,7 @@ class CopyAnnotationMain(CommandLineWithConfirm):
             )
             return False
 
-        request_body = self.service.wrapper._create_request_body_for_copy_annotation(
+        request_body = self.service.wrapper._create_request_body_for_copy_annotation(  # noqa: SLF001
             self.project_id,
             copy_target.dest_task_id,
             copy_target.dest_input_data_id,

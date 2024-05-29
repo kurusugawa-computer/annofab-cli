@@ -302,8 +302,8 @@ def add_dryrun_prefix(lgr: logging.Logger) -> None:
     # オリジナルのフォーマットを探す
     fmt_original = logging.BASIC_FORMAT
     for handler in parent.handlers:
-        if isinstance(handler, logging.StreamHandler) and handler.formatter is not None and handler.formatter._fmt is not None:
-            fmt_original = handler.formatter._fmt
+        if isinstance(handler, logging.StreamHandler) and handler.formatter is not None and handler.formatter._fmt is not None:  # noqa: SLF001
+            fmt_original = handler.formatter._fmt  # noqa: SLF001
 
     log_formatter = logging.Formatter(fmt_original.replace("%(message)s", "[DRYRUN] %(message)s"))
     log_handler = logging.StreamHandler()
