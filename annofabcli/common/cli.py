@@ -87,7 +87,7 @@ def add_parser(
     command_name: str,
     command_help: str,
     description: Optional[str] = None,
-    is_subcommand: bool = True,
+    is_subcommand: bool = True,  # noqa: FBT001
     epilog: Optional[str] = None,
 ) -> argparse.ArgumentParser:
     """
@@ -420,7 +420,7 @@ class ArgumentParser:
 
         self.parser.add_argument("-p", "--project_id", type=str, required=True, help=help_message)
 
-    def add_task_id(self, required: bool = True, help_message: Optional[str] = None):  # noqa: ANN201
+    def add_task_id(self, required: bool = True, help_message: Optional[str] = None):  # noqa: ANN201, FBT001
         """
         '--task_id` 引数を追加
         """
@@ -429,7 +429,7 @@ class ArgumentParser:
 
         self.parser.add_argument("-t", "--task_id", type=str, required=required, nargs="+", help=help_message)
 
-    def add_input_data_id(self, required: bool = True, help_message: Optional[str] = None):  # noqa: ANN201
+    def add_input_data_id(self, required: bool = True, help_message: Optional[str] = None):  # noqa: ANN201, FBT001
         """
         '--input_data_id` 引数を追加
         """
@@ -463,7 +463,7 @@ class ArgumentParser:
 
         self.parser.add_argument("--csv_format", type=str, help=help_message)
 
-    def add_output(self, required: bool = False, help_message: Optional[str] = None):  # noqa: ANN201
+    def add_output(self, required: bool = False, help_message: Optional[str] = None):  # noqa: ANN201, FBT001
         """
         '--output` 引数を追加
         """
@@ -481,7 +481,7 @@ class ArgumentParser:
 
         self.parser.add_argument("-q", "--query", type=str, help=help_message)
 
-    def add_task_query(self, required: bool = False, help_message: Optional[str] = None):  # noqa: ANN201
+    def add_task_query(self, required: bool = False, help_message: Optional[str] = None):  # noqa: ANN201, FBT001
         if help_message is None:
             help_message = (
                 "タスクを絞り込むためのクエリ条件をJSON形式で指定します。"
@@ -503,7 +503,7 @@ class CommandLineWithConfirm:
     コマンドライン上でpromptを表示するときのクラス
     """
 
-    def __init__(self, all_yes: bool = False) -> None:
+    def __init__(self, all_yes: bool = False) -> None:  # noqa: FBT001
         self.all_yes = all_yes
 
     def confirm_processing(self, confirm_message: str) -> bool:

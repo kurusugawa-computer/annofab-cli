@@ -114,7 +114,7 @@ class ListInputData(CommandLine):
         project_id: str,
         input_data_id_list: Optional[List[str]] = None,
         input_data_query: Optional[Dict[str, Any]] = None,
-        add_details: bool = False,
+        add_details: bool = False,  # noqa: FBT001
     ) -> List[InputData]:
         """
         入力データ一覧を取得する。
@@ -136,7 +136,7 @@ class ListInputData(CommandLine):
         project_id: str,
         input_data_query: Optional[Dict[str, Any]] = None,
         input_data_id_list: Optional[List[str]] = None,
-        add_details: bool = False,
+        add_details: bool = False,  # noqa: FBT001
     ):
         """
         入力データ一覧を出力する

@@ -58,7 +58,7 @@ def get_input_data_supplementary_data_dict_from_list(supplementary_data_list: Li
 
 
 class DeleteSupplementaryDataMain(CommandLineWithConfirm):
-    def __init__(self, service: annofabapi.Resource, all_yes: bool = False) -> None:
+    def __init__(self, service: annofabapi.Resource, all_yes: bool = False) -> None:  # noqa: FBT001
         self.service = service
         self.facade = AnnofabApiFacade(service)
         CommandLineWithConfirm.__init__(self, all_yes)

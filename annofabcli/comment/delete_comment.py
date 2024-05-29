@@ -38,7 +38,7 @@ keyはtask_id, value: `DeletedCommentsForTask`
 
 
 class DeleteCommentMain(CommandLineWithConfirm):
-    def __init__(self, service: annofabapi.Resource, project_id: str, all_yes: bool = False) -> None:
+    def __init__(self, service: annofabapi.Resource, project_id: str, all_yes: bool = False) -> None:  # noqa: FBT001
         self.service = service
         self.facade = AnnofabApiFacade(service)
         self.project_id = project_id

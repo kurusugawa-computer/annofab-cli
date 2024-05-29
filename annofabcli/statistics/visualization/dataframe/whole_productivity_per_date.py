@@ -49,7 +49,7 @@ def _plot_and_moving_average(  # noqa: ANN202
     y_column: str,
     legend_name: str,
     color: str,
-    is_secondary_y_axis: bool = False,
+    is_secondary_y_axis: bool = False,  # noqa: FBT001
     **kwargs,  # noqa: ANN003
 ):
     """

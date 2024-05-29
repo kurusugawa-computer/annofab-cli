@@ -250,7 +250,7 @@ class LineGraph:
         legend = fig.legend[0]
         fig.add_layout(legend, "left")
 
-    def create_button_hiding_showing_all_lines(self, is_hiding: bool) -> Button:
+    def create_button_hiding_showing_all_lines(self, is_hiding: bool) -> Button:  # noqa: FBT001
         """
         全ての折れ線を非表示にするボタンを生成します。
         折れ線が20個以上あると見えづらくなるので、すべて非表示にするボタンを用意しました。

@@ -92,7 +92,7 @@ class CopyProjectMembers(CommandLine):
 
         return updated_project_members
 
-    def copy_project_members(self, src_project_id: str, dest_project_id: str, delete_dest: bool = False):  # noqa: ANN201
+    def copy_project_members(self, src_project_id: str, dest_project_id: str, delete_dest: bool = False):  # noqa: ANN201, FBT001
         """
         プロジェクトメンバを、別のプロジェクトにコピーする。
 

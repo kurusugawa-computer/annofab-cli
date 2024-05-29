@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 
 
 class UpdateMetadataMain(CommandLineWithConfirm):
-    def __init__(self, service: annofabapi.Resource, all_yes: bool = False) -> None:
+    def __init__(self, service: annofabapi.Resource, all_yes: bool = False) -> None:  # noqa: FBT001
         self.service = service
         CommandLineWithConfirm.__init__(self, all_yes)
 
@@ -32,7 +32,7 @@ class UpdateMetadataMain(CommandLineWithConfirm):
         project_id: str,
         input_data_id: str,
         metadata: Dict[str, Any],
-        overwrite_metadata: bool = False,
+        overwrite_metadata: bool = False,  # noqa: FBT001
         input_data_index: Optional[int] = None,
     ) -> bool:
         logging_prefix = f"{input_data_index+1} 件目" if input_data_index is not None else ""
@@ -56,7 +56,7 @@ class UpdateMetadataMain(CommandLineWithConfirm):
         logger.debug(f"{logging_prefix} 入力データを更新しました。input_data_id={input_data['input_data_id']}")
         return True
 
-    def set_metadata_to_input_data_wrapper(self, tpl: Tuple[int, str], project_id: str, metadata: Dict[str, Any], overwrite_metadata: bool = False):  # noqa: ANN201
+    def set_metadata_to_input_data_wrapper(self, tpl: Tuple[int, str], project_id: str, metadata: Dict[str, Any], overwrite_metadata: bool = False):  # noqa: ANN201, FBT001
         input_data_index, input_data_id = tpl
         return self.set_metadata_to_input_data(
             project_id,
@@ -71,7 +71,7 @@ class UpdateMetadataMain(CommandLineWithConfirm):
         project_id: str,
         input_data_id_list: List[str],
         metadata: Dict[str, Any],
-        overwrite_metadata: bool = False,
+        overwrite_metadata: bool = False,  # noqa: FBT001
         parallelism: Optional[int] = None,
     ):
         if overwrite_metadata:

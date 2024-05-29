@@ -68,7 +68,7 @@ def output_string(target: str, output: Optional[Union[str, Path]] = None) -> Non
             logger.info(f"{output} を出力しました。")
 
 
-def print_json(target: Any, is_pretty: bool = False, output: Optional[Union[str, Path]] = None) -> None:  # noqa: ANN401
+def print_json(target: Any, is_pretty: bool = False, output: Optional[Union[str, Path]] = None) -> None:  # noqa: ANN401, FBT001
     """
     JSONを出力する。
 

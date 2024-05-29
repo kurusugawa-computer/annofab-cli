@@ -29,7 +29,7 @@ class WritingGraph:
         project_dir: ProjectDir,
         output_project_dir: ProjectDir,
         user_id_list: Optional[List[str]] = None,
-        minimal_output: bool = False,
+        minimal_output: bool = False,  # noqa: FBT001
     ) -> None:
         self.project_dir = project_dir
         self.output_project_dir = output_project_dir

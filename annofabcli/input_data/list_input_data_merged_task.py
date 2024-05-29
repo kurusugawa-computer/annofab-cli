@@ -74,8 +74,8 @@ class ListInputDataMergedTaskMain:
         self,
         input_data_list: List[Dict[str, Any]],
         task_list: List[Dict[str, Any]],
-        is_not_used_by_task: bool = False,
-        is_used_by_multiple_task: bool = False,
+        is_not_used_by_task: bool = False,  # noqa: FBT001
+        is_used_by_multiple_task: bool = False,  # noqa: FBT001
     ):
         new_task_list = self._to_task_list_based_input_data(task_list)
 
@@ -131,7 +131,7 @@ class ListInputDataMergedTask(CommandLine):
 
         return True
 
-    def download_json_files(self, project_id: str, output_dir: Path, is_latest: bool, wait_options: WaitOptions):  # noqa: ANN201
+    def download_json_files(self, project_id: str, output_dir: Path, is_latest: bool, wait_options: WaitOptions):  # noqa: ANN201, FBT001
         loop = asyncio.get_event_loop()
         downloading_obj = DownloadingFile(self.service)
         gather = asyncio.gather(
