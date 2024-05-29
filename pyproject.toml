@@ -142,7 +142,6 @@ ignore = [
     "C90", # mccabe
     "BLE", # flake8-blind-except
     "TRY", # tryceratops
-    # "COM", # flake8-commas
     "S", # flake8-bandit
     "EM",#flake8-errmsg
     "EXE", # flake8-executable
