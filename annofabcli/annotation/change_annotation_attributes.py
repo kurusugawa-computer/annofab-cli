@@ -239,7 +239,7 @@ class ChangeAttributesOfAnnotation(CommandLine):
 
     def validate(self, args: argparse.Namespace) -> bool:
         if args.parallelism is not None and not args.yes:
-            print(
+            print(  # noqa: T201
                 f"{self.COMMON_MESSAGE} argument --parallelism: '--parallelism'を指定するときは、'--yes' を指定してください。",
                 file=sys.stderr,
             )
@@ -278,17 +278,17 @@ class ChangeAttributesOfAnnotation(CommandLine):
         try:
             annotation_query = self.get_annotation_query_for_api(args.annotation_query, annotation_specs)
         except ValueError as e:
-            print(f"{self.COMMON_MESSAGE} argument '--annotation_query' の値が不正です。 :: {e}", file=sys.stderr)
+            print(f"{self.COMMON_MESSAGE} argument '--annotation_query' の値が不正です。 :: {e}", file=sys.stderr)  # noqa: T201
             sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
         try:
             attributes = self.get_attributes_for_api(args.attributes, annotation_specs, label_id=annotation_query.label_id)
         except ValueError as e:
-            print(f"{self.COMMON_MESSAGE} argument '--attributes' の値が不正です。 :: {e}", file=sys.stderr)
+            print(f"{self.COMMON_MESSAGE} argument '--attributes' の値が不正です。 :: {e}", file=sys.stderr)  # noqa: T201
             sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
         if args.backup is None:
-            print(
+            print(  # noqa: T201
                 "間違えてアノテーションを変更してしまっときに復元できるようにするため、'--backup'でバックアップ用のディレクトリを指定することを推奨します。",
                 file=sys.stderr,
             )

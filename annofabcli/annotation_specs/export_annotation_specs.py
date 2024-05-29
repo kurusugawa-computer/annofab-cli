@@ -52,7 +52,7 @@ class ListAttributeRestriction(CommandLine):
         if args.before is not None:
             history_id = self.get_history_id_from_before_index(args.project_id, args.before)
             if history_id is None:
-                print(
+                print(  # noqa: T201
                     f"{self.COMMON_MESSAGE} argument --before: 最新より{args.before}個前のアノテーション仕様は見つかりませんでした。",
                     file=sys.stderr,
                 )

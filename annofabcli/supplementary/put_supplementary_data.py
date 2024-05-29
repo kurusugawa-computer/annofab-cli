@@ -314,11 +314,11 @@ class PutSupplementaryData(CommandLine):
     def validate(self, args: argparse.Namespace) -> bool:
         if args.csv is not None:
             if not Path(args.csv).exists():
-                print(f"{self.COMMON_MESSAGE} argument --csv: ファイルパスが存在しません。 '{args.csv}'", file=sys.stderr)
+                print(f"{self.COMMON_MESSAGE} argument --csv: ファイルパスが存在しません。 '{args.csv}'", file=sys.stderr)  # noqa: T201
                 return False
 
         if args.parallelism is not None and not args.yes:
-            print(
+            print(  # noqa: T201
                 f"{self.COMMON_MESSAGE} argument --parallelism: '--parallelism'を指定するときは、必ず ``--yes`` を指定してください。",
                 file=sys.stderr,
             )
@@ -339,7 +339,7 @@ class PutSupplementaryData(CommandLine):
         elif args.json is not None:
             supplementary_data_list = self.get_supplementary_data_list_from_dict(get_json_from_args(args.json))
         else:
-            print(
+            print(  # noqa: T201
                 f"{self.COMMON_MESSAGE} argument --parallelism: '--csv'または'--json'のいずれかを指定してください。",
                 file=sys.stderr,
             )

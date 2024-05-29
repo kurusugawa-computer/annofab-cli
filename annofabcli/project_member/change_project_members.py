@@ -129,11 +129,11 @@ class ChangeProjectMembers(CommandLine):
     def validate(args: argparse.Namespace, member_info: Optional[Dict[str, Any]] = None) -> bool:
         COMMON_MESSAGE = "annofabcli project_member change: error:"
         if args.role is None and args.member_info is None:
-            print(f"{COMMON_MESSAGE} argument `--role`または`--member_info`のどちらかは、必ず指定してください。", file=sys.stderr)
+            print(f"{COMMON_MESSAGE} argument `--role`または`--member_info`のどちらかは、必ず指定してください。", file=sys.stderr)  # noqa: T201
             return False
 
         elif member_info is not None and not ChangeProjectMembers.validate_member_info(member_info):
-            print(f"{COMMON_MESSAGE} argument --member_info: 有効なキーが１つも指定されていません。", file=sys.stderr)
+            print(f"{COMMON_MESSAGE} argument --member_info: 有効なキーが１つも指定されていません。", file=sys.stderr)  # noqa: T201
             return False
 
         else:

@@ -130,7 +130,7 @@ class ChangePropertiesOfAnnotationMain(CommandLineWithConfirm):
         annotation_list = self.service.wrapper.get_all_annotation_list(self.project_id, query_params={"query": dict_query})
         return annotation_list
 
-    def change_properties_for_task(  # pylint: disable=too-many-return-statements  # noqa: PLR0911, PLR0912
+    def change_properties_for_task(  # pylint: disable=too-many-return-statements  # noqa: PLR0911
         self,
         task_id: str,
         properties: AnnotationDetailForCli,
@@ -291,7 +291,7 @@ class ChangePropertiesOfAnnotation(CommandLine):
 
     def validate(self, args: argparse.Namespace) -> bool:
         if args.parallelism is not None and not args.yes:
-            print(
+            print(  # noqa: T201
                 f"{self.COMMON_MESSAGE} argument --parallelism: '--parallelism'を指定するときは、'--yes' を指定してください。",
                 file=sys.stderr,
             )
@@ -315,7 +315,7 @@ class ChangePropertiesOfAnnotation(CommandLine):
                 annotation_query_for_cli = AnnotationQueryForCLI.from_dict(dict_annotation_query)
                 annotation_query = annotation_query_for_cli.to_query_for_api(annotation_specs)
             except ValueError as e:
-                print(f"{self.COMMON_MESSAGE} argument '--annotation_query' の値が不正です。{e}", file=sys.stderr)
+                print(f"{self.COMMON_MESSAGE} argument '--annotation_query' の値が不正です。{e}", file=sys.stderr)  # noqa: T201
                 sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
         else:
             annotation_query = None
@@ -324,7 +324,7 @@ class ChangePropertiesOfAnnotation(CommandLine):
         properties_for_cli = AnnotationDetailForCli.from_dict(properties_of_dict)
 
         if args.backup is None:
-            print(
+            print(  # noqa: T201
                 "間違えてアノテーションを変更してしまっときに復元できるようにするため、'--backup'でバックアップ用のディレクトリを指定することを推奨します。",
                 file=sys.stderr,
             )

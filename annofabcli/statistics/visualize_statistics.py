@@ -423,7 +423,7 @@ class VisualizeStatistics(CommandLine):
         COMMON_MESSAGE = "annofabcli statistics visualize: error:"
         if args.start_date is not None and args.end_date is not None:
             if args.start_date > args.end_date:
-                print(
+                print(  # noqa: T201
                     f"{COMMON_MESSAGE} argument `START_DATE <= END_DATE` の関係を満たしていません。",
                     file=sys.stderr,
                 )
@@ -431,7 +431,7 @@ class VisualizeStatistics(CommandLine):
 
         if args.not_download:
             if args.temp_dir is None:
-                print(
+                print(  # noqa: T201
                     f"{COMMON_MESSAGE} argument --not_download: '--not_download'を指定する場合は'--temp_dir'も指定してください。",
                     file=sys.stderr,
                 )

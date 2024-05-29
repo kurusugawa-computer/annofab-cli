@@ -158,7 +158,7 @@ class FilterAnnotation:
         elif annotation_path.is_dir():
             self.filter_annotation_dir(annotation_path, filter_query=filter_query, output_dir=output_dir)
         else:
-            print(f"{COMMON_MESSAGE} argument --annotation: ZIPファイルまたはディレクトリを指定してください。", file=sys.stderr)
+            print(f"{COMMON_MESSAGE} argument --annotation: ZIPファイルまたはディレクトリを指定してください。", file=sys.stderr)  # noqa: T201
             sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
 
