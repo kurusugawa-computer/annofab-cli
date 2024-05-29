@@ -64,7 +64,7 @@ class DownloadingFile:
         self,
         project_id: str,
         dest_path: Union[str, Path],
-        is_latest: bool = False,
+        is_latest: bool = False,  # noqa: FBT001, FBT002
         wait_options: Optional[WaitOptions] = None,
     ):
         loop = asyncio.get_event_loop()
@@ -124,7 +124,7 @@ class DownloadingFile:
         self,
         project_id: str,
         dest_path: Union[str, Path],
-        is_latest: bool = False,
+        is_latest: bool = False,  # noqa: FBT001, FBT002
         wait_options: Optional[WaitOptions] = None,
     ):
         loop = asyncio.get_event_loop()
@@ -136,7 +136,7 @@ class DownloadingFile:
         self,
         project_id: str,
         dest_path: Union[str, Path],
-        is_latest: bool = False,
+        is_latest: bool = False,  # noqa: FBT001, FBT002
         wait_options: Optional[WaitOptions] = None,
     ):
         if is_latest:
@@ -174,7 +174,7 @@ class DownloadingFile:
         self,
         project_id: str,
         dest_path: Union[str, Path],
-        is_latest: bool = False,
+        is_latest: bool = False,  # noqa: FBT001, FBT002
         wait_options: Optional[WaitOptions] = None,
     ):
         loop = asyncio.get_event_loop()
