@@ -100,7 +100,7 @@ class ChangeOperatorMain:
             # 担当者を変更する
             self.service.wrapper.change_task_operator(project_id, task_id, operator_account_id=new_account_id)
             logger.debug(f"{logging_prefix} : task_id = {task_id}, phase={dict_task['phase']} のタスクの担当者を変更しました。")
-            return True
+            return True  # noqa: TRY300
 
         except requests.exceptions.HTTPError:
             logger.warning(f"{logging_prefix} : task_id = {task_id} の担当者を変更するのに失敗しました。", exc_info=True)

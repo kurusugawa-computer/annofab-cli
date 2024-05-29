@@ -217,7 +217,7 @@ class SubPutSupplementaryData:
                 f"supplementary_data_id='{supplementary_data_for_put.supplementary_data_id}', "
                 f"supplementary_data_name='{supplementary_data_for_put.supplementary_data_name}'"
             )
-            return True
+            return True  # noqa: TRY300
 
         except requests.exceptions.HTTPError:
             logger.warning(

@@ -62,7 +62,7 @@ def build_annofabapi_resource_and_login(args: argparse.Namespace) -> annofabapi.
             service.api.login(mfa_code=args.mfa_code)
         else:
             service.api.login()
-        return service
+        return service  # noqa: TRY300
 
     except requests.exceptions.HTTPError as e:
         if e.response.status_code == requests.codes.unauthorized:
@@ -77,7 +77,7 @@ def build_annofabapi_resource_and_login(args: argparse.Namespace) -> annofabapi.
 
         try:
             service.api.login(mfa_code=inputted_mfa_code)
-            return service
+            return service  # noqa: TRY300
         except AnnofabApiMfaEnabledUserExecutionError as e:
             raise MfaEnabledUserExecutionError(service.api.login_user_id) from e
 

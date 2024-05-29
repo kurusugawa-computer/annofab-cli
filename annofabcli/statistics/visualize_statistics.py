@@ -385,7 +385,7 @@ class VisualizingStatisticsMain:
                 project_id=project_id,
                 output_project_dir=output_project_dir,
             )
-            return output_project_dir
+            return output_project_dir  # noqa: TRY300
         except Exception:  # pylint: disable=broad-except
             logger.warning(f"project_id='{project_id}'の可視化処理に失敗しました。", exc_info=True)
             return None

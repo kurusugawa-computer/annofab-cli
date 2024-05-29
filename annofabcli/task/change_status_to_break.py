@@ -69,7 +69,7 @@ class ChangeStatusToBreakMain(CommandLineWithConfirm):
 
             self.service.wrapper.change_task_status_to_break(project_id, task_id)
             logger.debug(f"{logging_prefix} : task_id = {task_id}, タスクのステータスを休憩中に変更しました。")
-            return True
+            return True  # noqa: TRY300
         except requests.exceptions.HTTPError:
             logger.warning(f"{logging_prefix} : task_id = {task_id} のステータスの変更に失敗しました。", exc_info=True)
             return False

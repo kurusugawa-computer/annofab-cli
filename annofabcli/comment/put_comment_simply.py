@@ -144,7 +144,7 @@ class PutCommentSimplyMain(CommandLineWithConfirm):
             request_body = self._create_request_body(task=changed_task, comment_info=comment_info)
             self.service.api.batch_update_comments(self.project_id, task_id, input_data_id, request_body=request_body)
             logger.debug(f"{logging_prefix} : task_id={task_id} のタスクにコメントを付与しました。")
-            return True
+            return True  # noqa: TRY300
         except Exception:  # pylint: disable=broad-except
             logger.warning(f"{logging_prefix} : task_id={task_id}, input_data_id={input_data_id}: コメントの付与に失敗しました。", exc_info=True)
             return False

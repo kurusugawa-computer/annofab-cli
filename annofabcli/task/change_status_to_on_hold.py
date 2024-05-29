@@ -155,7 +155,7 @@ class ChangingStatusToOnHoldMain(CommandLineWithConfirm):
             # ステータスを保留中状態に変更する
             self.service.wrapper.change_task_status_to_on_hold(self.project_id, task_id, last_updated_datetime=task_last_updated_datetime)
             logger.debug(f"{logging_prefix} : task_id='{task_id}' のタスクのステータスを保留中に変更しました。")
-            return True
+            return True  # noqa: TRY300
 
         except requests.exceptions.HTTPError:
             logger.warning(f"{logging_prefix} : task_id = {task_id} のステータスの保留中に変更するのに失敗しました。", exc_info=True)
