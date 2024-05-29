@@ -365,7 +365,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--annotation_query",
         type=str,
         required=False,
-        help="変更対象のアノテーションを検索する条件をJSON形式で指定します。" f"(ex): ``{EXAMPLE_ANNOTATION_QUERY}``",
+        help=f"変更対象のアノテーションを検索する条件をJSON形式で指定します。(ex): ``{EXAMPLE_ANNOTATION_QUERY}``",
     )
 
     EXAMPLE_PROPERTIES = '{"is_protected": true}'

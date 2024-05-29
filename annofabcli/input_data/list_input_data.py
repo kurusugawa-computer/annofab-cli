@@ -212,7 +212,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     )
 
     parser.add_argument(
-        "--add_details", action="store_true", help="入力データの詳細情報を表示します。以下の列を追加します。\n" "\n" " * parent_task_id_list"
+        "--add_details", action="store_true", help="入力データの詳細情報を表示します。以下の列を追加します。\n\n * parent_task_id_list"
     )
 
     parser.add_argument(

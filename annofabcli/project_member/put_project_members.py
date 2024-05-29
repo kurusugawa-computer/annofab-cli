@@ -95,11 +95,11 @@ class PutProjectMembers(CommandLine):
                 continue
 
             if not self.member_exists(organization_members, member.user_id):
-                logger.warning(f"ユーザ '{member.user_id}' は、" f"'{organization_name}' 組織の組織メンバでないため、登録できませんでした。")
+                logger.warning(f"ユーザ '{member.user_id}' は、'{organization_name}' 組織の組織メンバでないため、登録できませんでした。")
                 continue
 
             message_for_confirm = (
-                f"ユーザ '{member.user_id}'を、{project_title} プロジェクトのメンバに登録しますか？" f"member_role={member.member_role.value}"
+                f"ユーザ '{member.user_id}'を、{project_title} プロジェクトのメンバに登録しますか？member_role={member.member_role.value}"
             )
             if not self.confirm_processing(message_for_confirm):
                 continue
@@ -107,12 +107,12 @@ class PutProjectMembers(CommandLine):
             # メンバを登録
             try:
                 self.invite_project_member(project_id, member, old_project_members)
-                logger.debug(f"user_id = {member.user_id}, member_role = {member.member_role.value} のユーザをプ" f"ロジェクトメンバに登録しました。")
+                logger.debug(f"user_id = {member.user_id}, member_role = {member.member_role.value} のユーザをプロジェクトメンバに登録しました。")
                 count_invite_members += 1
 
             except requests.exceptions.HTTPError as e:
                 logger.warning(e)
-                logger.warning(f"プロジェクトメンバの登録に失敗しました。" f"user_id = {member.user_id}, member_role = {member.member_role.value}")
+                logger.warning(f"プロジェクトメンバの登録に失敗しました。user_id = {member.user_id}, member_role = {member.member_role.value}")
 
         logger.info(f"{project_title} に、{count_invite_members} / {len(members)} 件のプロジェクトメンバを登録しました。")
 
@@ -127,7 +127,7 @@ class PutProjectMembers(CommandLine):
             count_delete_members = 0
             logger.info(f"{project_title} から、{len(deleted_members)} 件のプロジェクトメンバを削除します。")
             for deleted_member in deleted_members:
-                message_for_confirm = f"ユーザ '{deleted_member['user_id']}'を、" f"{project_title} のプロジェクトメンバから削除しますか？"
+                message_for_confirm = f"ユーザ '{deleted_member['user_id']}'を、{project_title} のプロジェクトメンバから削除しますか？"
                 if not self.confirm_processing(message_for_confirm):
                     continue
 
@@ -139,7 +139,7 @@ class PutProjectMembers(CommandLine):
                     logger.warning(e)
                     logger.warning(f"プロジェクトメンバの削除に失敗しました。user_id = '{deleted_member['user_id']}' ")
 
-            logger.info(f"{project_title} から {count_delete_members} / {len(deleted_members)} 件の" f"プロジェクトメンバを削除しました。")
+            logger.info(f"{project_title} から {count_delete_members} / {len(deleted_members)} 件のプロジェクトメンバを削除しました。")
 
     @staticmethod
     def get_members_from_csv(csv_path: Path) -> List[Member]:

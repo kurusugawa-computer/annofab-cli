@@ -453,7 +453,7 @@ class CompleteTasks(CommandLine):
         COMMON_MESSAGE = "annofabcli task complete: error:"
         if args.phase == TaskPhase.ANNOTATION.value:
             if args.inspection_status is not None:
-                logger.warning(f"'--phase'に'{TaskPhase.ANNOTATION.value}'を指定しているとき、" f"'--inspection_status'の値は無視されます。")
+                logger.warning(f"'--phase'に'{TaskPhase.ANNOTATION.value}'を指定しているとき、'--inspection_status'の値は無視されます。")
         elif args.phase in [TaskPhase.INSPECTION.value, TaskPhase.ACCEPTANCE.value]:
             if args.reply_comment is not None:
                 logger.warning(

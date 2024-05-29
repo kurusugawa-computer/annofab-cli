@@ -85,7 +85,7 @@ def fill_annotation(
         if outer_image is not None:
             draw.bitmap([0, 0], outer_image, fill=color)
         else:
-            logger.warning(f"アノテーション種類が`{data_type}`ですが、`outer_image`がNoneです。 " f"annotation_id={annotation.annotation_id}")
+            logger.warning(f"アノテーション種類が`{data_type}`ですが、`outer_image`がNoneです。 annotation_id={annotation.annotation_id}")
 
     return draw
 
@@ -306,9 +306,7 @@ def write_annotation_images_from_path(
             if original_resolution is not None and (original_resolution.get("width") is not None and original_resolution.get("height") is not None):
                 return original_resolution.get("width"), original_resolution.get("height")
             else:
-                logger.warning(
-                    f"input_data_id={input_data_id}のプロパティ" f"`system_metadata.original_resolution`には画像サイズが設定されていません。"
-                )
+                logger.warning(f"input_data_id={input_data_id}のプロパティ`system_metadata.original_resolution`には画像サイズが設定されていません。")
                 return None
 
         if image_size is not None:

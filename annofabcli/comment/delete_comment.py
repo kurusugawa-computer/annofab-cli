@@ -60,7 +60,7 @@ class DeleteCommentMain(CommandLineWithConfirm):
         for comment_id in comment_ids:
             if comment_id not in old_comment_ids:
                 logger.warning(
-                    f"task_id={task['task_id']}, input_data_id={input_data_id}: " f"comment_id='{comment_id}'のコメントは存在しません。",
+                    f"task_id={task['task_id']}, input_data_id={input_data_id}: comment_id='{comment_id}'のコメントは存在しません。",
                 )
                 continue
             request_body.append(_convert(comment_id))
@@ -127,7 +127,7 @@ class DeleteCommentMain(CommandLineWithConfirm):
             logger.warning(f"{logging_prefix} : task_id='{task_id}' のタスクは存在しないので、スキップします。")
             return 0
 
-        logger.debug(f"{logging_prefix} : task_id = {task['task_id']}, " f"status = {task['status']}, " f"phase = {task['phase']}, ")
+        logger.debug(f"{logging_prefix} : task_id = {task['task_id']}, status = {task['status']}, phase = {task['phase']}, ")
 
         if not self._can_delete_comment(
             task=task,
@@ -151,12 +151,10 @@ class DeleteCommentMain(CommandLineWithConfirm):
                     self.service.api.batch_update_comments(self.project_id, task_id, input_data_id, request_body=request_body)
                     added_comments_count += 1
                     logger.debug(
-                        f"{logging_prefix} : task_id={task_id}, input_data_id={input_data_id}: " f"{len(request_body)}件のコメントを削除しました。"
+                        f"{logging_prefix} : task_id={task_id}, input_data_id={input_data_id}: {len(request_body)}件のコメントを削除しました。"
                     )
                 else:
-                    logger.warning(
-                        f"{logging_prefix} : task_id={task_id}, input_data_id={input_data_id}: " f"削除できるコメントは存在しませんでした。"
-                    )
+                    logger.warning(f"{logging_prefix} : task_id={task_id}, input_data_id={input_data_id}: 削除できるコメントは存在しませんでした。")
 
             except Exception:  # pylint: disable=broad-except
                 logger.warning(
@@ -249,7 +247,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--json",
         type=str,
         required=True,
-        help=("削除するコメントのcomment_idをJSON形式で指定してください。\n\n" f"(ex) ``{json.dumps(JSON_SAMPLE)}``"),
+        help=(f"削除するコメントのcomment_idをJSON形式で指定してください。\n\n(ex) ``{json.dumps(JSON_SAMPLE)}``"),
     )
 
     parser.add_argument(

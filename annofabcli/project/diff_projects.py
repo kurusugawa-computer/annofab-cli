@@ -119,7 +119,7 @@ class DiffProjects(CommandLine):
             diff_result = list(dictdiffer.diff(member1, member2, ignore=ignored_key))
             if len(diff_result) > 0:
                 is_different = True
-                diff_message += f"差分のあるuser_id: {member1['user_id']}\n" f"{pprint.pformat(diff_result)}\n"
+                diff_message += f"差分のあるuser_id: {member1['user_id']}\n{pprint.pformat(diff_result)}\n"
 
         if not is_different:
             logger.info("プロジェクトメンバは同じ")
@@ -184,7 +184,7 @@ class DiffProjects(CommandLine):
             diff_message += "ラベル名(en)が重複しているので、アノテーションラベル情報の差分は確認しません。\n"
 
         if label_names1 != label_names2:
-            diff_message += f"### ラベル名(en)のListに差分あり\n" f"label_names1: {label_names1}\n" f"label_names2: {label_names2}\n"
+            diff_message += f"### ラベル名(en)のListに差分あり\nlabel_names1: {label_names1}\nlabel_names2: {label_names2}\n"
 
             # 両方に存在するlabel_nameのみ確認する
             is_different = True
@@ -206,7 +206,7 @@ class DiffProjects(CommandLine):
             diff_result = list(dictdiffer.diff(create_ignored_label(label1), create_ignored_label(label2)))
             if len(diff_result) > 0:
                 is_different = True
-                diff_message += f"ラベル名(en): {label_name} は差分あり\n" f"{pprint.pformat(diff_result)}\n"
+                diff_message += f"ラベル名(en): {label_name} は差分あり\n{pprint.pformat(diff_result)}\n"
 
             else:
                 logger.debug(f"ラベル名(en): {label_name} は同じ")
@@ -253,7 +253,7 @@ class DiffProjects(CommandLine):
             diff_result = list(dictdiffer.diff(phrase1, phrase2))
             if len(diff_result) > 0:
                 is_different = True
-                diff_message += f"定型指摘に: {phrase1['id']} は差分あり\n" f"{pprint.pformat(diff_result)}\n"
+                diff_message += f"定型指摘に: {phrase1['id']} は差分あり\n{pprint.pformat(diff_result)}\n"
 
         if not is_different:
             logger.info("定型指摘は同じ")
@@ -320,7 +320,7 @@ class DiffProjects(CommandLine):
 
         diff_result = list(dictdiffer.diff(config1, config2))
         if len(diff_result) > 0:
-            diff_message += f"### プロジェクト設定に差分あり\n" f"{pprint.pformat(diff_result)}\n"
+            diff_message += f"### プロジェクト設定に差分あり\n{pprint.pformat(diff_result)}\n"
             return True, diff_message
         else:
             logger.info("プロジェクト設定は同じ")
@@ -367,7 +367,7 @@ class DiffProjects(CommandLine):
             diff_message += message
 
         if is_different:
-            diff_message = f"!!! {self.project_title1}({project_id1}) と " f"{self.project_title2}({project_id2}) に差分あり\n" + diff_message
+            diff_message = f"!!! {self.project_title1}({project_id1}) と {self.project_title2}({project_id2}) に差分あり\n" + diff_message
         return is_different, diff_message
 
     def main(self) -> None:

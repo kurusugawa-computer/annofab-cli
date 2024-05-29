@@ -116,7 +116,7 @@ def plot_video_duration(
 
     layout_list: list[LayoutDOM] = [
         Div(text="<h3>動画の長さの分布</h3>"),
-        PreText(text=f"project_id='{project_id}'\n" f"project_title='{project_title}'"),
+        PreText(text=f"project_id='{project_id}'\nproject_title='{project_title}'"),
         create_figure(
             durations_for_input_data,
             bins=bins,
@@ -298,7 +298,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--task_json",
         type=Path,
         required=False,
-        help="タスク情報が記載されたJSONファイルのパスを指定します。\n" "JSONファイルは ``$ annofabcli task download`` コマンドで取得できます。",
+        help="タスク情報が記載されたJSONファイルのパスを指定します。\nJSONファイルは ``$ annofabcli task download`` コマンドで取得できます。",
     )
 
     parser.add_argument(

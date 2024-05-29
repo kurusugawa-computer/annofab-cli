@@ -211,7 +211,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "-aq",
         "--annotation_query",
         type=str,
-        help="アノテーションの検索クエリをJSON形式で指定します。" " ``file://`` を先頭に付けると、JSON形式のファイルを指定できます。",
+        help="アノテーションの検索クエリをJSON形式で指定します。 ``file://`` を先頭に付けると、JSON形式のファイルを指定できます。",
     )
 
     id_group = parser.add_mutually_exclusive_group()
@@ -220,16 +220,14 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "-t",
         "--task_id",
         nargs="+",
-        help=("対象のタスクのtask_idを指定します。" " ``file://`` を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。"),
+        help=("対象のタスクのtask_idを指定します。 ``file://`` を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。"),
     )
 
     id_group.add_argument(
         "-i",
         "--input_data_id",
         nargs="+",
-        help=(
-            "対象の入力データのinput_data_idを指定します。" " ``file://`` を先頭に付けると、input_data_idの一覧が記載されたファイルを指定できます。"
-        ),
+        help=("対象の入力データのinput_data_idを指定します。 ``file://`` を先頭に付けると、input_data_idの一覧が記載されたファイルを指定できます。"),
     )
 
     argument_parser.add_format(

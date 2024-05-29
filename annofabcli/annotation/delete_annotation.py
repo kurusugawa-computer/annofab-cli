@@ -112,7 +112,7 @@ class DeleteAnnotationMain(CommandLineWithConfirm):
             return
 
         task: Task = Task.from_dict(dict_task)
-        logger.info(f"task_id={task.task_id}, phase={task.phase.value}, status={task.status.value}, " f"updated_datetime={task.updated_datetime}")
+        logger.info(f"task_id={task.task_id}, phase={task.phase.value}, status={task.status.value}, updated_datetime={task.updated_datetime}")
 
         if task.status == TaskStatus.WORKING:
             logger.warning(f"task_id={task_id}: タスクが作業中状態のため、スキップします。")
@@ -241,7 +241,7 @@ def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argpa
     subcommand_name = "delete"
     subcommand_help = "アノテーションを削除します。"
     description = (
-        "タスク配下のアノテーションを削除します。" + "ただし、作業中状態のタスクのアノテーションは削除できません。"
+        "タスク配下のアノテーションを削除します。ただし、作業中状態のタスクのアノテーションは削除できません。"
         "間違えてアノテーションを削除したときに復元できるようにするため、 ``--backup`` でバックアップ用のディレクトリを指定することを推奨します。"
     )
     epilog = "オーナロールを持つユーザで実行してください。"

@@ -94,12 +94,12 @@ def is_duplicated_input_data(df: pandas.DataFrame) -> bool:
     df_duplicated_input_data_name = df[df["input_data_name"].duplicated()]
     result = False
     if len(df_duplicated_input_data_name) > 0:
-        logger.warning(f"'input_data_name'が重複しています。\n" f"{df_duplicated_input_data_name['input_data_name'].unique()}")
+        logger.warning(f"'input_data_name'が重複しています。\n{df_duplicated_input_data_name['input_data_name'].unique()}")
         result = True
 
     df_duplicated_input_data_path = df[df["input_data_path"].duplicated()]
     if len(df_duplicated_input_data_path) > 0:
-        logger.warning(f"'input_data_path'が重複しています。\n" f"{df_duplicated_input_data_path['input_data_path'].unique()}")
+        logger.warning(f"'input_data_path'が重複しています。\n{df_duplicated_input_data_path['input_data_path'].unique()}")
         result = True
 
     return result
@@ -211,14 +211,12 @@ class SubPutInputData:
         # 入力データを登録
         try:
             self.put_input_data(project_id, input_data, last_updated_datetime=last_updated_datetime)
-            logger.debug(
-                f"入力データを登録しました。 :: " f"input_data_id='{input_data.input_data_id}', " f"input_data_name='{input_data.input_data_name}'"
-            )
+            logger.debug(f"入力データを登録しました。 :: input_data_id='{input_data.input_data_id}', input_data_name='{input_data.input_data_name}'")
             return True
 
         except requests.exceptions.HTTPError:
             logger.warning(
-                f"入力データの登録に失敗しました。" f"input_data_id='{input_data.input_data_id}', " f"input_data_name='{input_data.input_data_name}'",
+                f"入力データの登録に失敗しました。input_data_id='{input_data.input_data_id}', input_data_name='{input_data.input_data_name}'",
                 exc_info=True,
             )
             return False
@@ -299,13 +297,13 @@ class PutInputData(CommandLine):
         df = pandas.DataFrame(input_data_dict_list)
         df_duplicated_input_data_name = df[df["input_data_name"].duplicated()]
         if len(df_duplicated_input_data_name) > 0:
-            logger.warning(f"`input_data_name`が重複しています。\n" f"{df_duplicated_input_data_name['input_data_name'].unique()}")
+            logger.warning(f"`input_data_name`が重複しています。\n{df_duplicated_input_data_name['input_data_name'].unique()}")
             if not allow_duplicated_input_data:
                 raise RuntimeError("`input_data_name`が重複しています。")
 
         df_duplicated_input_data_path = df[df["input_data_path"].duplicated()]
         if len(df_duplicated_input_data_path) > 0:
-            logger.warning(f"`input_data_path`が重複しています。\n" f"{df_duplicated_input_data_path['input_data_path'].unique()}")
+            logger.warning(f"`input_data_path`が重複しています。\n{df_duplicated_input_data_path['input_data_path'].unique()}")
             if not allow_duplicated_input_data:
                 raise RuntimeError("`input_data_path`が重複しています。")
 
