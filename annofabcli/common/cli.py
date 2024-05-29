@@ -326,27 +326,28 @@ def build_annofabapi_resource(args: argparse.Namespace) -> annofabapi.Resource:
     if endpoint_url != DEFAULT_ENDPOINT_URL:
         logger.info(f"Annofab WebAPIのエンドポイントURL: {endpoint_url}")
 
+    kwargs = {"endpoint_url": endpoint_url, "input_mfa_code_via_stdin": True}
     # コマンドライン引数からユーザーIDが指定された場合
     if args.annofab_user_id is not None:
         login_user_id: str = args.annofab_user_id
         if args.annofab_password is not None:
-            return annofabapi.build(login_user_id, args.annofab_password, endpoint_url=endpoint_url)
+            return annofabapi.build(login_user_id, args.annofab_password, **kwargs)
         else:
             # コマンドライン引数にパスワードが指定されなければ、標準入力からパスワードを取得する
             login_password = ""
             while login_password == "":
                 login_password = getpass.getpass("Enter Annofab Password: ")
-            return annofabapi.build(login_user_id, login_password, endpoint_url=endpoint_url)
+            return annofabapi.build(login_user_id, login_password, **kwargs)
 
     # 環境変数から認証情報を取得する
     try:
-        return annofabapi.build_from_env(endpoint_url)
+        return annofabapi.build_from_env(**kwargs)
     except AnnofabApiException:
         pass
 
     # .netrcファイルから認証情報を取得する
     try:
-        return annofabapi.build_from_netrc(endpoint_url)
+        return annofabapi.build_from_netrc(**kwargs)
     except AnnofabApiException:
         pass
 
@@ -359,7 +360,7 @@ def build_annofabapi_resource(args: argparse.Namespace) -> annofabapi.Resource:
     while login_password == "":
         login_password = getpass.getpass("Enter Annofab Password: ")
 
-    return annofabapi.build(login_user_id, login_password, endpoint_url=endpoint_url)
+    return annofabapi.build(login_user_id, login_password, **kwargs)
 
 
 def prompt_yesno(msg: str) -> bool:
