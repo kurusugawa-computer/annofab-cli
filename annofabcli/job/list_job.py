@@ -23,7 +23,7 @@ class ListJob(CommandLine):
         ジョブ一覧を取得する。
         """
 
-        if job_query is not None:
+        if job_query is not None:  # noqa: SIM108
             query_params = copy.deepcopy(job_query)
         else:
             query_params = {}

@@ -63,7 +63,7 @@ class UpdateMetadataOfTaskMain(CommandLineWithConfirm):
         if not self.confirm_processing(self.get_confirm_message(task_id, metadata)):
             return False
 
-        if self.is_overwrite_metadata:
+        if self.is_overwrite_metadata:  # noqa: SIM108
             new_metadata = metadata
         else:
             new_metadata = {**task["metadata"], **metadata}

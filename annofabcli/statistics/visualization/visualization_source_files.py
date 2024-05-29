@@ -172,7 +172,7 @@ class VisualizationSourceFiles:
                 logger.debug(f"{self.logging_prefix}: タスク履歴一覧取得中 {task_index} / {len(task_ids)} 件目")
             sub_task_histories, _ = self.annofab_service.api.get_task_histories(self.project_id, task_id)
             result[task_id] = sub_task_histories
-            task_index += 1
+            task_index += 1  # noqa: SIM113
 
         with self.task_history_json_path.open(mode="w", encoding="utf-8") as f:
             json.dump(result, f)

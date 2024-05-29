@@ -98,7 +98,7 @@ def create_task_count_summary(task_list: List[Task], number_of_inspections: int)
     """
     for task in task_list:
         status = TaskStatus(task["status"])
-        if status == TaskStatus.COMPLETE:
+        if status == TaskStatus.COMPLETE:  # noqa: SIM108
             step_for_current_phase = sys.maxsize
         else:
             step_for_current_phase = get_step_for_current_phase(task, number_of_inspections)

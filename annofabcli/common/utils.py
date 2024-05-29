@@ -223,7 +223,7 @@ def get_cache_dir() -> Path:
 
     """
     cache_home_dir = os.environ.get("XDG_CACHE_HOME")
-    if cache_home_dir is None:
+    if cache_home_dir is None:  # noqa: SIM108
         cache_home_dir_path = Path.home() / ".cache"
     else:
         cache_home_dir_path = Path(cache_home_dir)

@@ -275,7 +275,7 @@ class ListAnnotationDurationByInputData:
                 continue
 
             simple_annotation_dict = parser.load_json()
-            if task_query is not None:
+            if task_query is not None:  # noqa: SIM102
                 if not match_annotation_with_task_query(simple_annotation_dict, task_query):
                     continue
 
@@ -405,7 +405,7 @@ class AnnotationDurationCsvByLabel:
     """
 
     def _value_columns(self, annotation_duration_list: list[AnnotationDuration], prior_label_columns: Optional[list[str]]) -> list[str]:
-        all_attr_key_set = {attr_key for elm in annotation_duration_list for attr_key in elm.annotation_duration_second_by_label.keys()}
+        all_attr_key_set = {attr_key for elm in annotation_duration_list for attr_key in elm.annotation_duration_second_by_label.keys()}  # noqa: SIM118
         if prior_label_columns is not None:
             remaining_columns = sorted(all_attr_key_set - set(prior_label_columns))
             value_columns = prior_label_columns + remaining_columns

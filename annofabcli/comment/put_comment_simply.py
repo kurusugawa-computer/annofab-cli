@@ -88,7 +88,7 @@ class PutCommentSimplyMain(CommandLineWithConfirm):
     ) -> bool:
         task_id = task["task_id"]
 
-        if self.comment_type == CommentType.INSPECTION:
+        if self.comment_type == CommentType.INSPECTION:  # noqa: SIM102
             if task["phase"] == TaskPhase.ANNOTATION.value:
                 logger.warning(f"task_id='{task_id}': 教師付フェーズなので、検査コメントを付与できません。")
                 return False

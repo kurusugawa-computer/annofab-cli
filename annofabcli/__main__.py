@@ -69,7 +69,7 @@ def main(arguments: Optional[list[str]] = None) -> None:
     warn_pandas_copy_on_write()
     parser = create_parser()
 
-    if arguments is None:
+    if arguments is None:  # noqa: SIM108
         args = parser.parse_args()
     else:
         args = parser.parse_args(arguments)

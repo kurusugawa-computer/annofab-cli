@@ -42,7 +42,7 @@ class InviteProjectMemberMain:
         # プロジェクトメンバを追加/更新する
         for user_id in user_id_list:
             dest_member = get_project_member(user_id)
-            if dest_member is not None:
+            if dest_member is not None:  # noqa: SIM108
                 last_updated_datetime = dest_member["updated_datetime"]
             else:
                 last_updated_datetime = None

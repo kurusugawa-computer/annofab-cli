@@ -355,7 +355,7 @@ class WorktimePerDate:
 
         logger.debug(f"{output_file} を出力します。")
 
-        if target_user_id_list is not None:
+        if target_user_id_list is not None:  # noqa: SIM108
             user_id_list = target_user_id_list
         else:
             user_id_list = self._get_default_user_id_list()

@@ -98,7 +98,7 @@ class DrawingAnnotationForOneImage:
 
         def draw_segmentation(data_uri: str, color: Color):  # noqa: ANN202
             # 外部ファイルを描画する
-            with parser.open_outer_file(data_uri) as f:
+            with parser.open_outer_file(data_uri) as f:  # noqa: SIM117
                 with Image.open(f) as outer_image:
                     draw.bitmap([0, 0], outer_image, fill=color)
 
@@ -198,7 +198,7 @@ def create_is_target_parser_func(
     task_id_set = set(task_ids) if task_ids is not None else None
 
     def is_target_parser(parser: SimpleAnnotationParser) -> bool:
-        if task_id_set is not None and len(task_id_set) > 0:
+        if task_id_set is not None and len(task_id_set) > 0:  # noqa: SIM102
             if parser.task_id not in task_id_set:
                 return False
 
@@ -245,7 +245,7 @@ def draw_annotation_all(  # noqa: ANN201, PLR0913
 
         total_count += 1
         input_data_id = parser.input_data_id
-        if input_data_id_relation_dict is not None:
+        if input_data_id_relation_dict is not None:  # noqa: SIM102
             if input_data_id not in input_data_id_relation_dict:
                 logger.warning(f"input_data_id='{input_data_id}'に対応する画像ファイルのパスが見つかりませんでした。")
                 continue

@@ -149,7 +149,6 @@ ignore = [
     "EXE", # flake8-executable
     "ICN", # flake8-import-conventions
     "RET",#flake8-return
-    "SIM",#flake8-simplify
     "TCH", # flake8-type-checking
     "PTH", #pathlibを使わないコードが多いので、除外する
     "N", # pep8-naming
@@ -180,7 +179,8 @@ select = [
     "DTZ",  # flake8-datetimez
     "ANN",  # flake8-annotations
     "E501",  # line-too-long
-    "RUF100"  # unused-noqa
+    "RUF100",  # unused-noqa
+    "SIM",#flake8-simplify
 ]
 
 
