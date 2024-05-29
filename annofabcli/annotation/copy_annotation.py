@@ -335,7 +335,7 @@ class CopyAnnotation(CommandLine):
 
     def validate(self, args: argparse.Namespace) -> bool:
         if args.parallelism is not None and not args.yes:
-            print(
+            print(  # noqa: T201
                 f"{self.COMMON_MESSAGE} argument --parallelism: '--parallelism'を指定するときは、'--yes' を指定してください。",
                 file=sys.stderr,
             )
@@ -353,7 +353,7 @@ class CopyAnnotation(CommandLine):
 
         copy_target_list = get_copy_target_list(str_copy_target_list)
         if len(str_copy_target_list) != len(copy_target_list):
-            print(f"{self.COMMON_MESSAGE} argument '--input' の値が不正です。", file=sys.stderr)
+            print(f"{self.COMMON_MESSAGE} argument '--input' の値が不正です。", file=sys.stderr)  # noqa: T201
             sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
         main_obj = CopyAnnotationMain(

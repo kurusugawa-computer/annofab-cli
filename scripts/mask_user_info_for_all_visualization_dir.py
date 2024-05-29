@@ -34,7 +34,7 @@ def mask_user_info_for_all_project_dir(project_root_dir: Path, output_dir: Path,
         try:
             execute_mask_user_info_command(project_dir, project_output_dir, remainder_options=remainder_options)
         except Exception:  # pylint: disable=broad-except
-            print(f"'{project_dir}'のユーザのマスク処理に失敗しました。")
+            print(f"'{project_dir}'のユーザのマスク処理に失敗しました。")  # noqa: T201
             traceback.print_exc()
             continue
 

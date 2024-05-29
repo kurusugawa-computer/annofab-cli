@@ -83,11 +83,11 @@ class PutInputData(CommandLine):
     def validate(self, args: argparse.Namespace) -> bool:
         if args.zip is not None:
             if not Path(args.zip).exists():
-                print(f"{self.COMMON_MESSAGE} argument --zip: ファイルパスが存在しません。 '{args.zip}'", file=sys.stderr)
+                print(f"{self.COMMON_MESSAGE} argument --zip: ファイルパスが存在しません。 '{args.zip}'", file=sys.stderr)  # noqa: T201
                 return False
 
             if not zipfile.is_zipfile(args.zip):
-                print(f"{self.COMMON_MESSAGE} argument --zip: zipファイルではありません。 '{args.zip}'", file=sys.stderr)
+                print(f"{self.COMMON_MESSAGE} argument --zip: zipファイルではありません。 '{args.zip}'", file=sys.stderr)  # noqa: T201
                 return False
 
         return True
@@ -110,7 +110,7 @@ class PutInputData(CommandLine):
             )
 
         else:
-            print("引数が不正です。", file=sys.stderr)
+            print("引数が不正です。", file=sys.stderr)  # noqa: T201
 
 
 def main(args: argparse.Namespace) -> None:

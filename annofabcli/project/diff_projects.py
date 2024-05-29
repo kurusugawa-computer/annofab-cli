@@ -377,7 +377,7 @@ class DiffProjects(CommandLine):
 
         diff_targets = {DiffTarget(e) for e in args.target}
         _, diff_message = self.diff(project_id1, project_id2, diff_targets)
-        print(diff_message)
+        print(diff_message)  # noqa: T201
 
 
 def parse_args(parser: argparse.ArgumentParser) -> None:

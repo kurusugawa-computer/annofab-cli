@@ -181,13 +181,13 @@ class DeleteAnnotation(CommandLine):
                 annotation_query_for_cli = AnnotationQueryForCLI.from_dict(dict_annotation_query)
                 annotation_query = annotation_query_for_cli.to_query_for_api(annotation_specs)
             except ValueError as e:
-                print(f"{self.COMMON_MESSAGE} argument '--annotation_query' の値が不正です。{e}", file=sys.stderr)
+                print(f"{self.COMMON_MESSAGE} argument '--annotation_query' の値が不正です。{e}", file=sys.stderr)  # noqa: T201
                 sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
         else:
             annotation_query = None
 
         if args.backup is None:
-            print(
+            print(  # noqa: T201
                 "間違えてアノテーションを削除してしまっときに復元できるようにするため、'--backup'でバックアップ用のディレクトリを指定することを推奨します。",
                 file=sys.stderr,
             )

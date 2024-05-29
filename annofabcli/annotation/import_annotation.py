@@ -542,18 +542,18 @@ class ImportAnnotation(CommandLine):
         COMMON_MESSAGE = "annofabcli annotation import: error:"
         annotation_path = Path(args.annotation)
         if not annotation_path.exists():
-            print(
+            print(  # noqa: T201
                 f"{COMMON_MESSAGE} argument --annotation: ZIPファイルまたはディレクトリが存在しません。'{annotation_path!s}'",
                 file=sys.stderr,
             )
             return False
 
         elif not (zipfile.is_zipfile(str(annotation_path)) or annotation_path.is_dir()):
-            print(f"{COMMON_MESSAGE} argument --annotation: ZIPファイルまたはディレクトリを指定してください。", file=sys.stderr)
+            print(f"{COMMON_MESSAGE} argument --annotation: ZIPファイルまたはディレクトリを指定してください。", file=sys.stderr)  # noqa: T201
             return False
 
         if args.parallelism is not None and not args.yes:
-            print(
+            print(  # noqa: T201
                 f"{COMMON_MESSAGE} argument --parallelism: '--parallelism'を指定するときは、必ず '--yes' を指定してください。",
                 file=sys.stderr,
             )

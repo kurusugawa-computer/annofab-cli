@@ -201,7 +201,7 @@ class MergeAnnotation(CommandLineWithoutWebapi):
             annotation_paths: List[Path] = args.annotation
             for path in annotation_paths:
                 if not path.exists():
-                    print(
+                    print(  # noqa: T201
                         f"{COMMON_MESSAGE} argument --annotation: ファイルパス '{path}' が存在しません。",
                         file=sys.stderr,
                     )

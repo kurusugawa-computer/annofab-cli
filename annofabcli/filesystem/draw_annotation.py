@@ -298,21 +298,21 @@ class DrawAnnotation(CommandLineWithoutWebapi):
         if args.default_image_size is not None:
             default_image_size = annofabcli.common.cli.get_input_data_size(args.default_image_size)
             if default_image_size is None:
-                print(
+                print(  # noqa: T201
                     f"{self.COMMON_MESSAGE} argument '--default_image_size': フォーマットが不正です。",
                     file=sys.stderr,
                 )
                 sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
         if args.default_image_size is None and args.input_data_id_csv is None:
-            print(
+            print(  # noqa: T201
                 f"{self.COMMON_MESSAGE} '--default_image_size'または'--input_data_id_csv'のいずれかは必須です。",
                 file=sys.stderr,
             )
             sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
         if args.image_dir is None and args.input_data_id_csv is not None:
-            print(
+            print(  # noqa: T201
                 f"{self.COMMON_MESSAGE} argument '--image_dir': '--input_data_id_csv'を指定したときは必須です。",
                 file=sys.stderr,
             )

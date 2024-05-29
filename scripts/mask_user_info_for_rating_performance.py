@@ -38,7 +38,7 @@ def mask_user_info_for_dir(root_dir: Path, output_dir: Path, remainder_options: 
             try:
                 execute_mask_user_info_command(root_dir / path, output_dir / path, remainder_options=remainder_options)
             except Exception:  # pylint: disable=broad-except
-                print(f"'{root_dir / path}'のユーザー情報のマスク処理に失敗しました。")
+                print(f"'{root_dir / path}'のユーザー情報のマスク処理に失敗しました。")  # noqa: T201
                 traceback.print_exc()
                 continue
 

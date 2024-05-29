@@ -116,14 +116,14 @@ class ListInputDataMergedTask(CommandLine):
     def validate(args: argparse.Namespace) -> bool:
         COMMON_MESSAGE = "annofabcli input_data list_merged_task: error:"
         if args.project_id is None and (args.input_data_json is None or args.task_json is None):
-            print(
+            print(  # noqa: T201
                 f"{COMMON_MESSAGE} '--project_id' か、'--task_json'/'--input_data_json'ペアのいずれかを指定する必要があります。",
                 file=sys.stderr,
             )
             return False
 
         if (args.input_data_json is None and args.task_json is not None) or (args.input_data_json is not None and args.task_json is None):
-            print(
+            print(  # noqa: T201
                 f"{COMMON_MESSAGE} '--task_json'と'--input_data_json'の両方を指定する必要があります。",
                 file=sys.stderr,
             )

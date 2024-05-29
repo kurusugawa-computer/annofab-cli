@@ -59,7 +59,7 @@ def output_string(target: str, output: Optional[Union[str, Path]] = None) -> Non
         output: 出力先。Noneなら標準出力に出力する。
     """
     if output is None:
-        print(target)
+        print(target)  # noqa: T201
     else:
         p_output = output if isinstance(output, Path) else Path(output)
         p_output.parent.mkdir(parents=True, exist_ok=True)

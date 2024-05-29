@@ -203,7 +203,7 @@ class CancelAcceptance(CommandLine):
     @classmethod
     def validate(cls, args: argparse.Namespace) -> bool:
         if args.parallelism is not None and not args.yes:
-            print(
+            print(  # noqa: T201
                 f"{cls.COMMON_MESSAGE} argument --parallelism: '--parallelism'を指定するときは、'--yes' を指定してください。",
                 file=sys.stderr,
             )
@@ -232,7 +232,7 @@ class CancelAcceptance(CommandLine):
             project_member_list = self.service.wrapper.get_all_project_members(args.project_id)
             member = more_itertools.first_true(project_member_list, pred=lambda e: e["user_id"] == assigned_acceptor_user_id)
             if member is None:
-                print(
+                print(  # noqa: T201
                     f"{self.COMMON_MESSAGE} argument --assigned_acceptor_user_id: プロジェクトメンバーに user_id='{assigned_acceptor_user_id}'メンバーは存在しません",  # noqa: E501
                     file=sys.stderr,
                 )

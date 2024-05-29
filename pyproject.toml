@@ -137,7 +137,7 @@ ignore = [
     "RSE", # flake8-raise
     "D", # pydocstyle, Docstringを中途半端にしか書いていないので、除外する
     "C90", # mccabe
-    "T20", # flake8-print
+    # "T20", # flake8-print
     "SLF", #  flake8-self
     "BLE", # flake8-blind-except
     # "FBT", # flake8-boolean-trap

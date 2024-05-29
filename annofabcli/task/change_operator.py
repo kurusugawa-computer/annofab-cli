@@ -191,7 +191,7 @@ class ChangeOperator(CommandLine):
         COMMON_MESSAGE = "annofabcli task change_operator: error:"
 
         if args.parallelism is not None and not args.yes:
-            print(
+            print(  # noqa: T201
                 f"{COMMON_MESSAGE} argument --parallelism: '--parallelism'を指定するときは、必ず ``--yes`` を指定してください。",
                 file=sys.stderr,
             )
