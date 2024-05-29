@@ -117,7 +117,7 @@ class ListLastJob(CommandLine):
             project_id_list = annofabcli.common.cli.get_list_from_args(args.project_id)
 
         else:
-            print("引数に`--project_id` または `--organization` を指定してください。", file=sys.stderr)
+            print("引数に`--project_id` または `--organization` を指定してください。", file=sys.stderr)  # noqa: T201
             sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
         self.print_job_list(project_id_list, job_type=job_type, add_details=args.add_details)

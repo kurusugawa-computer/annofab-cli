@@ -314,12 +314,12 @@ class PutInputData(CommandLine):
     def validate(self, args: argparse.Namespace) -> bool:
         if args.csv is not None:
             if not Path(args.csv).exists():
-                print(f"{self.COMMON_MESSAGE} argument --csv: ファイルパスが存在しません。 '{args.csv}'", file=sys.stderr)
+                print(f"{self.COMMON_MESSAGE} argument --csv: ファイルパスが存在しません。 '{args.csv}'", file=sys.stderr)  # noqa: T201
                 return False
 
         if args.csv is not None or args.json is not None:
             if args.parallelism is not None and not args.yes:
-                print(
+                print(  # noqa: T201
                     f"{self.COMMON_MESSAGE} argument --parallelism: '--parallelism'を指定するときは、必ず '--yes' を指定してください。",
                     file=sys.stderr,
                 )
@@ -339,7 +339,7 @@ class PutInputData(CommandLine):
             df = read_input_data_csv(args.csv)
             is_duplicated = is_duplicated_input_data(df)
             if not args.allow_duplicated_input_data and is_duplicated:
-                print(
+                print(  # noqa: T201
                     f"{self.COMMON_MESSAGE} argument --csv: '{args.csv}' に記載されている'input_data_name'または'input_data_path'が重複しているため、入力データを登録しません。"  # noqa: E501
                     f"重複している状態で入力データを登録する際は、'--allow_duplicated_input_data'を指定してください。",
                     file=sys.stderr,
@@ -355,7 +355,7 @@ class PutInputData(CommandLine):
             self.put_input_data_list(project_id, input_data_list=input_data_list, overwrite=args.overwrite, parallelism=args.parallelism)
 
         else:
-            print("引数が不正です。", file=sys.stderr)
+            print("引数が不正です。", file=sys.stderr)  # noqa: T201
 
 
 def main(args: argparse.Namespace) -> None:

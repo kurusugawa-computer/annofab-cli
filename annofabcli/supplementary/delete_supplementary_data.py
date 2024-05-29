@@ -215,7 +215,7 @@ class DeleteSupplementaryData(CommandLine):
         COMMON_MESSAGE = "annofabcli supplementary_data put: error:"
         if args.csv is not None:
             if not Path(args.csv).exists():
-                print(f"{COMMON_MESSAGE} argument --csv: ファイルパスが存在しません。 '{args.csv}'", file=sys.stderr)
+                print(f"{COMMON_MESSAGE} argument --csv: ファイルパスが存在しません。 '{args.csv}'", file=sys.stderr)  # noqa: T201
                 return False
 
         return True

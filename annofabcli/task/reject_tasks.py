@@ -346,7 +346,7 @@ class RejectTasks(CommandLine):
 
     def validate(self, args: argparse.Namespace) -> bool:
         if args.parallelism is not None and not args.yes:
-            print(
+            print(  # noqa: T201
                 f"{self.COMMON_MESSAGE} argument --parallelism: '--parallelism'を指定するときは、'--yes' を指定してください。",
                 file=sys.stderr,
             )
@@ -388,7 +388,7 @@ class RejectTasks(CommandLine):
                         "_type": "Custom",
                     }
                 else:
-                    print(
+                    print(  # noqa: T201
                         f"{self.COMMON_MESSAGE}: カスタムプロジェクト（ビルトインのエディタプラグインを使用していない）に検査コメントを付与する場合は、'--comment_data' または '--custom_project_type'を指定してください。",  # noqa: E501
                         file=sys.stderr,
                     )

@@ -533,7 +533,7 @@ class ListAnnotationDuration(CommandLine):
 
     def validate(self, args: argparse.Namespace) -> bool:
         if args.project_id is None and args.annotation is None:
-            print(
+            print(  # noqa: T201
                 f"{self.COMMON_MESSAGE} argument --project_id: '--annotation'が未指定のときは、'--project_id' を指定してください。",
                 file=sys.stderr,
             )
