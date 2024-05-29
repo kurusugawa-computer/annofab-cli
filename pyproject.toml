@@ -137,10 +137,8 @@ ignore = [
     "RSE", # flake8-raise
     "D", # pydocstyle, Docstringを中途半端にしか書いていないので、除外する
     "C90", # mccabe
-    # "T20", # flake8-print
     "SLF", #  flake8-self
     "BLE", # flake8-blind-except
-    # "FBT", # flake8-boolean-trap
     "TRY", # tryceratops
     "COM", # flake8-commas
     "S", # flake8-bandit
@@ -148,10 +146,8 @@ ignore = [
     "EXE", # flake8-executable
     "ICN", # flake8-import-conventions
     "RET",#flake8-return
-#    "SIM",#flake8-simplify
     "TCH", # flake8-type-checking
     "PTH", #pathlibを使わないコードが多いので、除外する
-    #"ISC", #flake8-implicit-str-concat
     "N", # pep8-naming
     "PT", # flake8-pytest-style
 ]
