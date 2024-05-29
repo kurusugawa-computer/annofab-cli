@@ -450,7 +450,7 @@ class CompleteTasks(CommandLine):
 
     @staticmethod
     def validate(args: argparse.Namespace) -> bool:
-        COMMON_MESSAGE = "annofabcli task complete: error:"
+        COMMON_MESSAGE = "annofabcli task complete: error:"  # noqa: N806
         if args.phase == TaskPhase.ANNOTATION.value:
             if args.inspection_status is not None:
                 logger.warning(f"'--phase'に'{TaskPhase.ANNOTATION.value}'を指定しているとき、'--inspection_status'の値は無視されます。")

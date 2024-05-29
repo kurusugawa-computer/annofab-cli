@@ -82,7 +82,7 @@ def get_only_selective_attribute(columns: list[AttributeValueKey]) -> list[Attri
     属性値の個数が多い場合、非選択肢系の属性（トラッキングIDやアノテーションリンクなど）の可能性があるため、それらを除外する。
     CSVの列数を増やしすぎないための対策。
     """
-    SELECTIVE_ATTRIBUTE_VALUE_MAX_COUNT = 20
+    SELECTIVE_ATTRIBUTE_VALUE_MAX_COUNT = 20  # noqa: N806
     attribute_name_list: list[AttributeNameKey] = []
     for label, attribute_name, _ in columns:
         attribute_name_list.append((label, attribute_name))

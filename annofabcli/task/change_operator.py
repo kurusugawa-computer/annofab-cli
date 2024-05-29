@@ -188,7 +188,7 @@ class ChangeOperatorMain:
 class ChangeOperator(CommandLine):
     @staticmethod
     def validate(args: argparse.Namespace) -> bool:
-        COMMON_MESSAGE = "annofabcli task change_operator: error:"
+        COMMON_MESSAGE = "annofabcli task change_operator: error:"  # noqa: N806
 
         if args.parallelism is not None and not args.yes:
             print(  # noqa: T201

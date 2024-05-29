@@ -142,7 +142,7 @@ class UpdateMetadataOfTaskMain(CommandLineWithConfirm):
         """
 
         # 1000件以上の大量のタスクを一度に更新しようとするとwebapiが失敗するので、何回かに分けてメタデータを更新するようにする。
-        BATCH_SIZE = 500
+        BATCH_SIZE = 500  # noqa: N806
         first_index = 0
         task_id_list = list(task_ids)
 
@@ -173,7 +173,7 @@ class UpdateMetadataOfTaskMain(CommandLineWithConfirm):
 class UpdateMetadataOfTask(CommandLine):
     @staticmethod
     def validate(args: argparse.Namespace) -> bool:
-        COMMON_MESSAGE = "annofabcli task update_metadata: error:"
+        COMMON_MESSAGE = "annofabcli task update_metadata: error:"  # noqa: N806
 
         if args.parallelism is not None and not args.yes:
             print(  # noqa: T201

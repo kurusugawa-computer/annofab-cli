@@ -90,7 +90,7 @@ class SubUpdateAnnotationZip:
         if wait_options is None:
             wait_options = DEFAULT_WAIT_OPTIONS
 
-        MAX_WAIT_MINUTU = wait_options.max_tries * wait_options.interval / 60
+        MAX_WAIT_MINUTU = wait_options.max_tries * wait_options.interval / 60  # noqa: N806
         result = self.service.wrapper.wait_for_completion(
             project_id,
             job_type=ProjectJobType.GEN_ANNOTATION,

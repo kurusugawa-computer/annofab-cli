@@ -72,7 +72,7 @@ class ListInputData(CommandLine):
 
         # AWS CloudFrontのURLの上限が8,192byte
         # https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/cloudfront-limits.html
-        MAX_URL_QUERY_LENGTH = 8000  # input_dat_ids部分のURLクエリの最大値
+        MAX_URL_QUERY_LENGTH = 8000  # input_dat_ids部分のURLクエリの最大値  # noqa: N806
         average_input_data_id_length = self.average_input_data_id_length + 1  # カンマの分だけ長さを増やす
         chunk_size = MAX_URL_QUERY_LENGTH // average_input_data_id_length
         initial_index = 0

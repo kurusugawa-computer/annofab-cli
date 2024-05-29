@@ -9,7 +9,7 @@ from typing import List
 from annofabapi.models import OrganizationMemberRole, ProjectMemberRole
 
 
-class AnnofabCliException(Exception):
+class AnnofabCliException(Exception):  # noqa: N818
     """
     annofabcliに関するException
     """

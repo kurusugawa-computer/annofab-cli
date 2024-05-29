@@ -240,7 +240,7 @@ class ChangingStatusToOnHoldMain(CommandLineWithConfirm):
 class ChangingStatusToOnHold(CommandLine):
     @staticmethod
     def validate(args: argparse.Namespace) -> bool:
-        COMMON_MESSAGE = "annofabcli task change_status_to_on_hold: error:"
+        COMMON_MESSAGE = "annofabcli task change_status_to_on_hold: error:"  # noqa: N806
 
         if args.parallelism is not None and not args.yes:
             print(  # noqa: T201

@@ -196,7 +196,7 @@ class MergeAnnotationMain:
 class MergeAnnotation(CommandLineWithoutWebapi):
     @staticmethod
     def validate(args: argparse.Namespace) -> bool:
-        COMMON_MESSAGE = "annofabcli filesystem merge_annotation: error:"
+        COMMON_MESSAGE = "annofabcli filesystem merge_annotation: error:"  # noqa: N806
         if args.annotation is not None:
             annotation_paths: List[Path] = args.annotation
             for path in annotation_paths:

@@ -109,7 +109,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
 
     argument_parser.add_project_id()
 
-    JSON_SAMPLE = '{"label1":[255,255,255]}'
+    JSON_SAMPLE = '{"label1":[255,255,255]}'  # noqa: N806
     parser.add_argument(
         "--json",
         type=str,

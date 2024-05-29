@@ -383,7 +383,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         ),
     )
 
-    JSON_SAMPLE = [
+    JSON_SAMPLE = [  # noqa: N806
         {
             "input_data_id": "input1",
             "supplementary_data_number": 1,

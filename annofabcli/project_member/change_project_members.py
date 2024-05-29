@@ -127,7 +127,7 @@ class ChangeProjectMembers(CommandLine):
 
     @staticmethod
     def validate(args: argparse.Namespace, member_info: Optional[Dict[str, Any]] = None) -> bool:
-        COMMON_MESSAGE = "annofabcli project_member change: error:"
+        COMMON_MESSAGE = "annofabcli project_member change: error:"  # noqa: N806
         if args.role is None and args.member_info is None:
             print(f"{COMMON_MESSAGE} argument `--role`または`--member_info`のどちらかは、必ず指定してください。", file=sys.stderr)  # noqa: T201
             return False
@@ -141,7 +141,7 @@ class ChangeProjectMembers(CommandLine):
 
     @staticmethod
     def validate_member_info(member_info: Dict[str, Any]) -> bool:
-        KEYS = ["sampling_inspection_rate", "sampling_acceptance_rate"]
+        KEYS = ["sampling_inspection_rate", "sampling_acceptance_rate"]  # noqa: N806
         return any(k in member_info for k in KEYS)
 
     def main(self) -> None:

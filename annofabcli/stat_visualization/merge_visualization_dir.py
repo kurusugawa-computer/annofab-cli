@@ -219,7 +219,7 @@ def merge_visualization_dir(  # pylint: disable=too-many-statements  # noqa: ANN
 
 
 def validate(args: argparse.Namespace) -> bool:
-    COMMON_MESSAGE = "annofabcli stat_visualization merge:"
+    COMMON_MESSAGE = "annofabcli stat_visualization merge:"  # noqa: N806
     if len(args.dir) < 2:
         print(f"{COMMON_MESSAGE} argument --dir: マージ対象のディレクトリは2つ以上指定してください。", file=sys.stderr)  # noqa: T201
         return False

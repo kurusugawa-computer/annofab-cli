@@ -63,7 +63,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
 
     argument_parser.add_project_id()
 
-    SAMPLE_JSON = {"task1": {"input_data1": [{"comment": "type属性が間違っています。", "data": {"x": 10, "y": 20, "_type": "Point"}}]}}
+    SAMPLE_JSON = {"task1": {"input_data1": [{"comment": "type属性が間違っています。", "data": {"x": 10, "y": 20, "_type": "Point"}}]}}  # noqa: N806
     parser.add_argument(
         "--json",
         type=str,

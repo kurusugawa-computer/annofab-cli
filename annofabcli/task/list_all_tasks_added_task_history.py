@@ -140,7 +140,7 @@ class ListAllTasksAddedTaskHistory(CommandLine):
 
     @staticmethod
     def validate(args: argparse.Namespace) -> bool:
-        COMMON_MESSAGE = "annofabcli task list_merged_task_history: error:"
+        COMMON_MESSAGE = "annofabcli task list_merged_task_history: error:"  # noqa: N806
         if (args.task_json is None and args.task_history_json is not None) or (args.task_json is not None and args.task_history_json is None):
             print(  # noqa: T201
                 f"{COMMON_MESSAGE} '--task_json'と'--task_history_json'の両方を指定する必要があります。",

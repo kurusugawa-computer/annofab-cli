@@ -309,7 +309,7 @@ class ImportAnnotationMain(CommandLineWithConfirm):
     ) -> Dict[str, Any]:
         old_details = old_annotation["details"]
         old_dict_detail = {}
-        INDEX_KEY = "_index"
+        INDEX_KEY = "_index"  # noqa: N806
         for index, old_detail in enumerate(old_details):
             if old_detail["data_holding_type"] == AnnotationDataHoldingType.OUTER.value:
                 # 外部アノテーションを利用する際はurlが不要でpathが必要なので、対応する
@@ -539,7 +539,7 @@ class ImportAnnotation(CommandLine):
 
     @staticmethod
     def validate(args: argparse.Namespace) -> bool:
-        COMMON_MESSAGE = "annofabcli annotation import: error:"
+        COMMON_MESSAGE = "annofabcli annotation import: error:"  # noqa: N806
         annotation_path = Path(args.annotation)
         if not annotation_path.exists():
             print(  # noqa: T201

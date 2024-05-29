@@ -40,7 +40,7 @@ class CopyInstruction(CommandLine):
         """
         ファイル名からMIME TYPEを取得する。
         """
-        DEFAULT_MIME_TYPE = "application/octet-stream"
+        DEFAULT_MIME_TYPE = "application/octet-stream"  # noqa: N806
         if filename is None:
             return DEFAULT_MIME_TYPE
 
