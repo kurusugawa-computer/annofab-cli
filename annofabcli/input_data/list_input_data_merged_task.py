@@ -74,8 +74,8 @@ class ListInputDataMergedTaskMain:
         self,
         input_data_list: List[Dict[str, Any]],
         task_list: List[Dict[str, Any]],
-        is_not_used_by_task: bool = False,  # noqa: FBT001
-        is_used_by_multiple_task: bool = False,  # noqa: FBT001
+        is_not_used_by_task: bool = False,  # noqa: FBT001, FBT002
+        is_used_by_multiple_task: bool = False,  # noqa: FBT001, FBT002
     ):
         new_task_list = self._to_task_list_based_input_data(task_list)
 

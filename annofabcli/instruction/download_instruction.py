@@ -81,7 +81,7 @@ class DownloadInstructionMain:
 
         return pq.outer_html()
 
-    def download_instruction(self, project_id: str, output_dir: Path, history_id: Optional[str] = None, is_download_image: bool = False):  # noqa: ANN201, FBT001
+    def download_instruction(self, project_id: str, output_dir: Path, history_id: Optional[str] = None, is_download_image: bool = False):  # noqa: ANN201, FBT001, FBT002
         """
         作業ガイドをダウンロードする
 

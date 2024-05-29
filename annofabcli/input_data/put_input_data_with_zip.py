@@ -36,7 +36,7 @@ class PutInputData(CommandLine):
         zip_file: Path,
         wait_options: WaitOptions,
         input_data_name_prefix: Optional[str] = None,
-        wait: bool = False,  # noqa: FBT001
+        wait: bool = False,  # noqa: FBT001, FBT002
     ) -> None:
         """
         zipファイルを入力データとして登録する

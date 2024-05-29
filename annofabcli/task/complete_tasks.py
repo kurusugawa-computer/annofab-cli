@@ -35,7 +35,7 @@ Dict[task_id, Dict[input_data_id, List[Inspection]]] の検査コメント情報
 
 
 class CompleteTasksMain(CommandLineWithConfirm):
-    def __init__(self, service: annofabapi.Resource, all_yes: bool = False) -> None:  # noqa: FBT001
+    def __init__(self, service: annofabapi.Resource, all_yes: bool = False) -> None:  # noqa: FBT001, FBT002
         self.service = service
         self.facade = AnnofabApiFacade(service)
         CommandLineWithConfirm.__init__(self, all_yes)

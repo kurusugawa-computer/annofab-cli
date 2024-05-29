@@ -105,7 +105,7 @@ class ChanegProjectStatusMain:
 
         return project_query
 
-    def change_status_for_project(self, project_id: str, status: ProjectStatus, force_suspend: bool = False) -> bool:  # noqa: FBT001
+    def change_status_for_project(self, project_id: str, status: ProjectStatus, force_suspend: bool = False) -> bool:  # noqa: FBT001, FBT002
         project = self.service.wrapper.get_project_or_none(project_id)
         if project is None:
             logger.warning(f"project_id={project_id} のプロジェクトは存在しないので、スキップします。")
@@ -122,7 +122,7 @@ class ChanegProjectStatusMain:
         self.service.api.put_project(project_id, request_body=project)
         return True
 
-    def change_status_for_project_list(self, project_id_list: List[str], status: ProjectStatus, force_suspend: bool = False):  # noqa: ANN201, FBT001
+    def change_status_for_project_list(self, project_id_list: List[str], status: ProjectStatus, force_suspend: bool = False):  # noqa: ANN201, FBT001, FBT002
         """
         複数のプロジェクトに対して、プロジェクトのステータスを変更する。
 

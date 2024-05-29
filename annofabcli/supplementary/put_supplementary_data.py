@@ -70,7 +70,7 @@ class SubPutSupplementaryData:
         all_yes:
     """
 
-    def __init__(self, service: annofabapi.Resource, facade: AnnofabApiFacade, all_yes: bool = False) -> None:  # noqa: FBT001
+    def __init__(self, service: annofabapi.Resource, facade: AnnofabApiFacade, all_yes: bool = False) -> None:  # noqa: FBT001, FBT002
         self.service = service
         self.facade = facade
         self.all_yes = all_yes
@@ -140,7 +140,7 @@ class SubPutSupplementaryData:
 
         return yes
 
-    def confirm_put_supplementary_data(self, csv_supplementary_data: CsvSupplementaryData, already_exists: bool = False) -> bool:  # noqa: FBT001
+    def confirm_put_supplementary_data(self, csv_supplementary_data: CsvSupplementaryData, already_exists: bool = False) -> bool:  # noqa: FBT001, FBT002
         message_for_confirm = f"supplementary_data_name='{csv_supplementary_data.supplementary_data_name}' の補助情報を登録しますか？"
         if already_exists:
             message_for_confirm += f"supplementary_data_id={csv_supplementary_data.supplementary_data_id} を上書きします。"
@@ -161,7 +161,7 @@ class SubPutSupplementaryData:
         cached_list = self.get_supplementary_data_list_cached(project_id, input_data_id)
         return first_true(cached_list, pred=lambda e: e["supplementary_data_number"] == supplementary_data_number)
 
-    def put_supplementary_data_main(self, project_id: str, csv_supplementary_data: CsvSupplementaryData, overwrite: bool = False) -> bool:  # noqa: FBT001
+    def put_supplementary_data_main(self, project_id: str, csv_supplementary_data: CsvSupplementaryData, overwrite: bool = False) -> bool:  # noqa: FBT001, FBT002
         last_updated_datetime = None
         input_data_id = csv_supplementary_data.input_data_id
         supplementary_data_id = csv_supplementary_data.supplementary_data_id
@@ -239,7 +239,7 @@ class PutSupplementaryData(CommandLine):
         self,
         project_id: str,
         supplementary_data_list: List[CsvSupplementaryData],
-        overwrite: bool = False,  # noqa: FBT001
+        overwrite: bool = False,  # noqa: FBT001, FBT002
         parallelism: Optional[int] = None,
     ) -> None:
         """

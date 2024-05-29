@@ -116,7 +116,7 @@ class SubUpdateAnnotationZip:
         self.service.api.post_annotation_archive_update(project_id)
         logger.info(f"project_id={project_id}: アノテーションzipの更新処理が開始されました。")
 
-    def execute_for_project(self, project_id: str, force: bool = False, wait: bool = False, wait_options: Optional[WaitOptions] = None) -> None:  # noqa: FBT001
+    def execute_for_project(self, project_id: str, force: bool = False, wait: bool = False, wait_options: Optional[WaitOptions] = None) -> None:  # noqa: FBT001, FBT002
         """
         1つのプロジェクトに対して、アノテーションzipを更新して、必要なら更新が完了するまで待ちます。
         """
@@ -147,8 +147,8 @@ class UpdateAnnotationZip(CommandLine):
     def update_annotation_zip(
         self,
         project_id_list: List[str],
-        force: bool = False,  # noqa: FBT001
-        wait: bool = False,  # noqa: FBT001
+        force: bool = False,  # noqa: FBT001, FBT002
+        wait: bool = False,  # noqa: FBT001, FBT002
         wait_options: Optional[WaitOptions] = None,
         parallelism: Optional[int] = None,
     ) -> None:

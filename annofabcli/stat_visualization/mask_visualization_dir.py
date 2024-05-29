@@ -89,7 +89,7 @@ def create_replacement_dict(
     )
 
 
-def write_line_graph(task: Task, output_project_dir: ProjectDir, user_id_list: Optional[List[str]] = None, minimal_output: bool = False):  # noqa: ANN201, FBT001
+def write_line_graph(task: Task, output_project_dir: ProjectDir, user_id_list: Optional[List[str]] = None, minimal_output: bool = False):  # noqa: ANN201, FBT001, FBT002
     output_project_dir.write_cumulative_line_graph(
         AnnotatorCumulativeProductivity.from_task(task),
         phase=TaskPhase.ANNOTATION,

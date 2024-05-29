@@ -115,7 +115,7 @@ class SubPutInputData:
         all_yes:
     """
 
-    def __init__(self, service: annofabapi.Resource, facade: AnnofabApiFacade, all_yes: bool = False) -> None:  # noqa: FBT001
+    def __init__(self, service: annofabapi.Resource, facade: AnnofabApiFacade, all_yes: bool = False) -> None:  # noqa: FBT001, FBT002
         self.service = service
         self.facade = facade
         self.all_yes = all_yes
@@ -165,7 +165,7 @@ class SubPutInputData:
 
         return yes
 
-    def confirm_put_input_data(self, input_data: InputDataForPut, already_exists: bool = False) -> bool:  # noqa: FBT001
+    def confirm_put_input_data(self, input_data: InputDataForPut, already_exists: bool = False) -> bool:  # noqa: FBT001, FBT002
         message_for_confirm = (
             f"input_data_name='{input_data.input_data_name}', input_data_id='{input_data.input_data_id}' の入力データを登録しますか？"
         )
@@ -180,7 +180,7 @@ class SubPutInputData:
 
         return self.confirm_processing(message_for_confirm)
 
-    def put_input_data_main(self, project_id: str, csv_input_data: CsvInputData, overwrite: bool = False) -> bool:  # noqa: FBT001
+    def put_input_data_main(self, project_id: str, csv_input_data: CsvInputData, overwrite: bool = False) -> bool:  # noqa: FBT001, FBT002
         input_data = InputDataForPut(
             input_data_name=csv_input_data.input_data_name,
             input_data_path=csv_input_data.input_data_path,
@@ -241,7 +241,7 @@ class PutInputData(CommandLine):
         self,
         project_id: str,
         input_data_list: List[CsvInputData],
-        overwrite: bool = False,  # noqa: FBT001
+        overwrite: bool = False,  # noqa: FBT001, FBT002
         parallelism: Optional[int] = None,
     ) -> None:
         """

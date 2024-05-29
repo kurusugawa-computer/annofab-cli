@@ -32,7 +32,7 @@ class UpdateMetadataOfTaskMain(CommandLineWithConfirm):
         service: annofabapi.Resource,
         is_overwrite_metadata: bool,  # noqa: FBT001
         parallelism: Optional[int] = None,
-        all_yes: bool = False,  # noqa: FBT001
+        all_yes: bool = False,  # noqa: FBT001, FBT002
     ) -> None:
         self.service = service
         self.is_overwrite_metadata = is_overwrite_metadata

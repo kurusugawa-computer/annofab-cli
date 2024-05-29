@@ -121,7 +121,7 @@ class ListOutOfRangeAnnotationForMovieMain:
         return task_list
 
     def list_out_of_range_annotation_for_movie(
-        self, project_id: str, task_id_list: Optional[List[str]], parse_annotation_zip: bool = False  # noqa: FBT001
+        self, project_id: str, task_id_list: Optional[List[str]], parse_annotation_zip: bool = False  # noqa: FBT001, FBT002
     ) -> pandas.DataFrame:
         cache_dir = annofabcli.common.utils.get_cache_dir()
         downloading_obj = DownloadingFile(self.service)
