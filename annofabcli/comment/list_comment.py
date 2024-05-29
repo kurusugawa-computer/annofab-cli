@@ -92,9 +92,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--comment_type",
         choices=[CommentType.INSPECTION.value, CommentType.ONHOLD.value],
-        help=(
-            "コメントの種類で絞り込みます。\n\n" f" * {CommentType.INSPECTION.value}: 検査コメント\n * {CommentType.ONHOLD.value}: 保留コメント\n"
-        ),
+        help=("コメントの種類で絞り込みます。\n\n" f" * {CommentType.INSPECTION.value}: 検査コメント\n * {CommentType.ONHOLD.value}: 保留コメント\n"),
     )
 
     parser.add_argument("--exclude_reply", action="store_true", help="返信コメントを除外します。")

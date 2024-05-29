@@ -306,9 +306,7 @@ def write_annotation_images_from_path(
             if original_resolution is not None and (original_resolution.get("width") is not None and original_resolution.get("height") is not None):
                 return original_resolution.get("width"), original_resolution.get("height")
             else:
-                logger.warning(
-                    f"input_data_id={input_data_id}のプロパティ`system_metadata.original_resolution`には画像サイズが設定されていません。"
-                )
+                logger.warning(f"input_data_id={input_data_id}のプロパティ`system_metadata.original_resolution`には画像サイズが設定されていません。")
                 return None
 
         if image_size is not None:

@@ -446,13 +446,13 @@ class VisualizeStatistics(CommandLine):
         user_id_list: Optional[list[str]],
         actual_worktime: ActualWorktime,
         annotation_count: Optional[AnnotationCount],
-        download_latest: bool,
-        is_get_task_histories_one_of_each: bool,
+        download_latest: bool,  # noqa: FBT001
+        is_get_task_histories_one_of_each: bool,  # noqa: FBT001
         start_date: Optional[str],
         end_date: Optional[str],
-        minimal_output: bool,
-        output_only_text: bool,
-        not_download_visualization_source_files: bool,
+        minimal_output: bool,  # noqa: FBT001
+        output_only_text: bool,  # noqa: FBT001
+        not_download_visualization_source_files: bool,  # noqa: FBT001
         project_id_list: list[str],
         root_output_dir: Path,
         parallelism: Optional[int],

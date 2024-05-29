@@ -122,9 +122,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "-i",
         "--input_data_id",
         nargs="+",
-        help=(
-            "対象の入力データのinput_data_idを指定します。 ``file://`` を先頭に付けると、input_data_idの一覧が記載されたファイルを指定できます。"
-        ),
+        help=("対象の入力データのinput_data_idを指定します。 ``file://`` を先頭に付けると、input_data_idの一覧が記載されたファイルを指定できます。"),
     )
 
     parser.add_argument(

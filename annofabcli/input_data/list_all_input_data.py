@@ -46,7 +46,7 @@ class ListInputDataWithJsonMain:
         input_data_json: Optional[Path],
         input_data_id_list: Optional[List[str]] = None,
         input_data_query: Optional[InputDataQuery] = None,
-        is_latest: bool = False,
+        is_latest: bool = False,  # noqa: FBT001, FBT002
     ) -> List[Dict[str, Any]]:
         if input_data_json is None:
             downloading_obj = DownloadingFile(self.service)

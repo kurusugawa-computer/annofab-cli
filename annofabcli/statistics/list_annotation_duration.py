@@ -175,7 +175,7 @@ class ListAnnotationDurationByInputData:
             """区間アノテーションのdetail情報から、区間アノテーションの長さ（秒）を計算する"""
             return (detail["data"]["end"] - detail["data"]["begin"]) / 1000
 
-        def convert_attribute_value_to_key(value: Union[bool, str, float]) -> str:
+        def convert_attribute_value_to_key(value: Union[bool, str, float]) -> str:  # noqa: FBT001
             """
             アノテーションJSONに格納されている属性値を、dict用のkeyに変換する。
 

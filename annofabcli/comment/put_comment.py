@@ -52,7 +52,7 @@ keyはtask_id
 
 
 class PutCommentMain(CommandLineWithConfirm):
-    def __init__(self, service: annofabapi.Resource, project_id: str, comment_type: CommentType, all_yes: bool = False) -> None:
+    def __init__(self, service: annofabapi.Resource, project_id: str, comment_type: CommentType, all_yes: bool = False) -> None:  # noqa: FBT001, FBT002
         self.service = service
         self.facade = AnnofabApiFacade(service)
         self.project_id = project_id

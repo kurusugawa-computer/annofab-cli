@@ -113,7 +113,7 @@ class ProjectDir(DataClassJsonMixin):
         obj: AbstractPhaseCumulativeProductivity,
         phase: TaskPhase,
         user_id_list: Optional[List[str]] = None,
-        minimal_output: bool = False,
+        minimal_output: bool = False,  # noqa: FBT001, FBT002
     ):
         """
         ユーザごとにプロットした累積折れ線グラフを出力します。

@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 
 
 class ChangeStatusToBreakMain(CommandLineWithConfirm):
-    def __init__(self, service: annofabapi.Resource, all_yes: bool) -> None:
+    def __init__(self, service: annofabapi.Resource, all_yes: bool) -> None:  # noqa: FBT001
         super().__init__(all_yes)
         self.service = service
         self.facade = AnnofabApiFacade(service)

@@ -46,7 +46,7 @@ class ListTasksWithJsonMain:
         task_json: Optional[Path],
         task_id_list: Optional[List[str]] = None,
         task_query: Optional[TaskQuery] = None,
-        is_latest: bool = False,
+        is_latest: bool = False,  # noqa: FBT001, FBT002
     ) -> List[Dict[str, Any]]:
         if task_json is None:
             downloading_obj = DownloadingFile(self.service)

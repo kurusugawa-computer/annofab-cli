@@ -38,7 +38,7 @@ keyはtask_id, value: `DeletedCommentsForTask`
 
 
 class DeleteCommentMain(CommandLineWithConfirm):
-    def __init__(self, service: annofabapi.Resource, project_id: str, all_yes: bool = False) -> None:
+    def __init__(self, service: annofabapi.Resource, project_id: str, all_yes: bool = False) -> None:  # noqa: FBT001, FBT002
         self.service = service
         self.facade = AnnofabApiFacade(service)
         self.project_id = project_id
@@ -154,9 +154,7 @@ class DeleteCommentMain(CommandLineWithConfirm):
                         f"{logging_prefix} : task_id={task_id}, input_data_id={input_data_id}: {len(request_body)}件のコメントを削除しました。"
                     )
                 else:
-                    logger.warning(
-                        f"{logging_prefix} : task_id={task_id}, input_data_id={input_data_id}: 削除できるコメントは存在しませんでした。"
-                    )
+                    logger.warning(f"{logging_prefix} : task_id={task_id}, input_data_id={input_data_id}: 削除できるコメントは存在しませんでした。")
 
             except Exception:  # pylint: disable=broad-except
                 logger.warning(

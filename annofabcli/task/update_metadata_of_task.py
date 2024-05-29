@@ -30,9 +30,9 @@ class UpdateMetadataOfTaskMain(CommandLineWithConfirm):
     def __init__(
         self,
         service: annofabapi.Resource,
-        is_overwrite_metadata: bool,
+        is_overwrite_metadata: bool,  # noqa: FBT001
         parallelism: Optional[int] = None,
-        all_yes: bool = False,
+        all_yes: bool = False,  # noqa: FBT001, FBT002
     ) -> None:
         self.service = service
         self.is_overwrite_metadata = is_overwrite_metadata
