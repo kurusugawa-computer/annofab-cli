@@ -97,7 +97,7 @@ class DownloadingFile:
                     self.wait_until_updated_annotation_zip(project_id, wait_options)
                     download_annotation_zip()
                 else:
-                    raise e
+                    raise e  # noqa: TRY201
 
     def wait_until_updated_annotation_zip(self, project_id: str, wait_options: Optional[WaitOptions] = None):  # noqa: ANN201
         job_id = None
@@ -112,7 +112,7 @@ class DownloadingFile:
                     f" :: error_message: {_get_annofab_error_message(e)}"
                 )
             else:
-                raise e
+                raise e  # noqa: TRY201
 
         self._wait_for_completion(project_id, job_type=ProjectJobType.GEN_ANNOTATION, wait_options=wait_options, job_id=job_id)
 
@@ -140,7 +140,7 @@ class DownloadingFile:
                     self.wait_until_updated_input_data_json(project_id, wait_options)
                     self.service.wrapper.download_project_inputs_url(project_id, dest_path)
                 else:
-                    raise e
+                    raise e  # noqa: TRY201
 
     def wait_until_updated_input_data_json(self, project_id: str, wait_options: Optional[WaitOptions] = None):  # noqa: ANN201
         job_id = None
@@ -154,7 +154,7 @@ class DownloadingFile:
                     f"別のバックグラウンドジョブが既に実行されているので、更新処理を無視します。 :: error_message: {_get_annofab_error_message(e)}"
                 )
             else:
-                raise e
+                raise e  # noqa: TRY201
 
         self._wait_for_completion(project_id, job_type=ProjectJobType.GEN_INPUTS_LIST, wait_options=wait_options, job_id=job_id)
 
@@ -180,7 +180,7 @@ class DownloadingFile:
                     self.wait_until_updated_task_json(project_id, wait_options)
                     self.service.wrapper.download_project_tasks_url(project_id, dest_path)
                 else:
-                    raise e
+                    raise e  # noqa: TRY201
 
     def wait_until_updated_task_json(self, project_id: str, wait_options: Optional[WaitOptions] = None):  # noqa: ANN201
         job_id = None
@@ -194,7 +194,7 @@ class DownloadingFile:
                     f"別のバックグラウンドジョブが既に実行されているので、更新処理を無視します。 :: error_message={_get_annofab_error_message(e)}"
                 )
             else:
-                raise e
+                raise e  # noqa: TRY201
 
         self._wait_for_completion(project_id, job_type=ProjectJobType.GEN_TASKS_LIST, wait_options=wait_options, job_id=job_id)
 
@@ -225,7 +225,7 @@ class DownloadingFile:
                 raise DownloadingFileNotFoundError(
                     f"project_id='{project_id}'のプロジェクトに、タスク履歴全件ファイルが存在しないため、ダウンロードできませんでした。"
                 ) from e
-            raise e
+            raise e  # noqa: TRY201
 
     def download_task_history_event_json(self, project_id: str, dest_path: Union[str, Path]):  # noqa: ANN201
         """
@@ -245,7 +245,7 @@ class DownloadingFile:
                 raise DownloadingFileNotFoundError(
                     f"project_id='{project_id}'のプロジェクトに、タスク履歴イベント全件ファイルが存在しないため、ダウンロードできませんでした。"
                 ) from e
-            raise e
+            raise e  # noqa: TRY201
 
     async def download_task_history_event_json_with_async(self, project_id: str, dest_path: Union[str, Path]):  # noqa: ANN201
         """
@@ -282,7 +282,7 @@ class DownloadingFile:
                 raise DownloadingFileNotFoundError(
                     f"project_id='{project_id}'のプロジェクトに、検査コメント全件ファイルが存在しないため、ダウンロードできませんでした。"
                 ) from e
-            raise e
+            raise e  # noqa: TRY201
 
     async def download_comment_json_with_async(self, project_id: str, dest_path: Union[str, Path]):  # noqa: ANN201
         """
@@ -309,4 +309,4 @@ class DownloadingFile:
                 raise DownloadingFileNotFoundError(
                     f"project_id='{project_id}'のプロジェクトに、コメント全件ファイルが存在しないため、ダウンロードできませんでした。"
                 ) from e
-            raise e
+            raise e  # noqa: TRY201

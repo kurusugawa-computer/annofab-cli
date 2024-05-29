@@ -212,7 +212,7 @@ class SubPutInputData:
         try:
             self.put_input_data(project_id, input_data, last_updated_datetime=last_updated_datetime)
             logger.debug(f"入力データを登録しました。 :: input_data_id='{input_data.input_data_id}', input_data_name='{input_data.input_data_name}'")
-            return True
+            return True  # noqa: TRY300
 
         except requests.exceptions.HTTPError:
             logger.warning(

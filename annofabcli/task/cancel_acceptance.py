@@ -110,7 +110,7 @@ class CancelAcceptanceMain(CommandLineWithConfirm):
             if not dryrun:
                 self.service.wrapper.cancel_completed_task(self.project_id, task_id, operator_account_id=operator_account_id)
             logger.info(f"{logging_prefix} : task_id = {task_id} の受け入れ取り消しが成功しました。")
-            return True
+            return True  # noqa: TRY300
 
         except requests.exceptions.HTTPError:
             logger.warning(f"{logging_prefix} : task_id = {task_id} の受け入れ取り消しに失敗しました。", exc_info=True)

@@ -112,7 +112,7 @@ class PutCommentMain(CommandLineWithConfirm):
                 logger.debug(f"{task_id}: 担当者を自分自身に変更しました。")
 
             changed_task = self.service.wrapper.change_task_status_to_working(project_id, task_id)
-            return changed_task
+            return changed_task  # noqa: TRY300
 
         except requests.HTTPError:
             logger.warning(f"{task_id}: 担当者の変更、または作業中状態への変更に失敗しました。", exc_info=True)

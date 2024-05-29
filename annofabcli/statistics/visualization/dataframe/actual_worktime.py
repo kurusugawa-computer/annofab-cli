@@ -33,7 +33,7 @@ class ActualWorktime:
 
     def __init__(self, df: pandas.DataFrame) -> None:
         if not self.required_columns_exist(df):
-            raise ValueError(f"引数`df`には、{self.columns}の列が必要です。 :: {df.columns=}")
+            raise ValueError(f"引数`df`には、{self.columns}の列が必要です。 :: {df.columns=}")  # noqa: TRY003
         self.df = df
 
     def is_empty(self) -> bool:

@@ -202,7 +202,7 @@ class ChangePropertiesOfAnnotationMain(CommandLineWithConfirm):
         try:
             self.change_annotation_properties(task_id, annotation_list, properties)
             logger.info(f"{logger_prefix}task_id={task_id}: アノテーションのプロパティを変更しました。")
-            return True
+            return True  # noqa: TRY300
         except Exception:  # pylint: disable=broad-except
             logger.warning(f"task_id={task_id}: アノテーションのプロパティの変更に失敗しました。", exc_info=True)
             return False

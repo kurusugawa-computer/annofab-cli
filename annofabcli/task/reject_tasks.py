@@ -110,7 +110,7 @@ class RejectTasksMain(CommandLineWithConfirm):
                 logger.debug(f"{task_id}: 担当者を自分自身に変更しました。")
 
             changed_task = self.service.wrapper.change_task_status_to_working(project_id, task_id, last_updated_datetime=last_updated_datetime)
-            return changed_task
+            return changed_task  # noqa: TRY300
 
         except requests.HTTPError:
             logger.warning(f"{task_id}: 担当者の変更、または作業中状態への変更に失敗しました。", exc_info=True)
@@ -195,7 +195,7 @@ class RejectTasksMain(CommandLineWithConfirm):
                     # 作業時間が増えすぎないようにするため、すぐに休憩中状態にする
                     task = self.service.wrapper.change_task_status_to_break(project_id, task_id, last_updated_datetime=task["updated_datetime"])
                     logger.debug(f"{logging_prefix} : task_id = {task_id}, 検査コメントを付与しました。")
-                    return task
+                    return task  # noqa: TRY300
                 except requests.exceptions.HTTPError:
                     logger.warning(f"{logging_prefix} : task_id = {task_id} 検査コメントの付与に失敗しました。", exc_info=True)
                     # 作業時間が増えすぎないようにするため、すぐに休憩中状態にする

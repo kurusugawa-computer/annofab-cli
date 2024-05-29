@@ -74,7 +74,7 @@ class CsvType(Enum):
 
 def lazy_parse_simple_annotation_by_input_data(annotation_path: Path) -> Iterator[SimpleAnnotationParser]:
     if not annotation_path.exists():
-        raise RuntimeError(f"'{annotation_path}' は存在しません。")
+        raise RuntimeError(f"'{annotation_path}' は存在しません。")  # noqa: TRY003
 
     if annotation_path.is_dir():
         return lazy_parse_simple_annotation_dir(annotation_path)

@@ -62,12 +62,12 @@ def build_annofabapi_resource_and_login(args: argparse.Namespace) -> annofabapi.
             service.api.login(mfa_code=args.mfa_code)
         else:
             service.api.login()
-        return service
+        return service  # noqa: TRY300
 
     except requests.exceptions.HTTPError as e:
         if e.response.status_code == requests.codes.unauthorized:
             raise AuthenticationError(service.api.login_user_id) from e
-        raise e
+        raise e  # noqa: TRY201
 
     except AnnofabApiMfaEnabledUserExecutionError:
         # 標準入力からMFAコードを入力させる
@@ -77,7 +77,7 @@ def build_annofabapi_resource_and_login(args: argparse.Namespace) -> annofabapi.
 
         try:
             service.api.login(mfa_code=inputted_mfa_code)
-            return service
+            return service  # noqa: TRY300
         except AnnofabApiMfaEnabledUserExecutionError as e:
             raise MfaEnabledUserExecutionError(service.api.login_user_id) from e
 
@@ -268,7 +268,7 @@ def load_logging_config_from_args(args: argparse.Namespace) -> None:
     data = pkgutil.get_data("annofabcli", "data/logging.yaml")
     if data is None:
         logger.warning("annofabcli/data/logging.yaml が読み込めませんでした")
-        raise AnnofabCliException("annofabcli/data/logging.yaml が読み込めませんでした")
+        raise AnnofabCliException("annofabcli/data/logging.yaml が読み込めませんでした")  # noqa: TRY003
 
     logging_config = yaml.safe_load(data.decode("utf-8"))
 
