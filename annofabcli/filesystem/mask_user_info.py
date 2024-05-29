@@ -93,7 +93,7 @@ def create_masked_name(name: str) -> str:
         else:
             return _num2alpha(num // ALPHABET_SIZE) + chr(64 + num % ALPHABET_SIZE)
 
-    SIZE = pow(ALPHABET_SIZE, DIGIT)
+    SIZE = pow(ALPHABET_SIZE, DIGIT)  # noqa: N806
     hash_value = (_hash_str(name) % SIZE) + 1
     return _num2alpha(hash_value)
 

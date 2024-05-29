@@ -264,7 +264,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         ),
     )
 
-    JSON_SAMPLE = '{"task1":["input1","input2"]}'
+    JSON_SAMPLE = '{"task1":["input1","input2"]}'  # noqa: N806
     file_group.add_argument(
         "--json",
         type=str,

@@ -146,7 +146,7 @@ class FilterAnnotation:
 
     def main(self, args: argparse.Namespace) -> None:
         logger.info(f"args: {args}")
-        COMMON_MESSAGE = "annofabcli filesystem filter_annotation:"
+        COMMON_MESSAGE = "annofabcli filesystem filter_annotation:"  # noqa: N806
 
         annotation_path: Path = args.annotation
         output_dir: Path = args.output_dir

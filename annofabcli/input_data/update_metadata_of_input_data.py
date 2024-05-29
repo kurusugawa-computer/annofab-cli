@@ -111,7 +111,7 @@ class UpdateMetadataMain(CommandLineWithConfirm):
 class UpdateMetadata(CommandLine):
     @staticmethod
     def validate(args: argparse.Namespace) -> bool:
-        COMMON_MESSAGE = "annofabcli input_data update_metadata: error:"
+        COMMON_MESSAGE = "annofabcli input_data update_metadata: error:"  # noqa: N806
 
         if args.parallelism is not None and not args.yes:
             print(  # noqa: T201

@@ -420,7 +420,7 @@ class VisualizeStatistics(CommandLine):
 
     @staticmethod
     def validate(args: argparse.Namespace) -> bool:
-        COMMON_MESSAGE = "annofabcli statistics visualize: error:"
+        COMMON_MESSAGE = "annofabcli statistics visualize: error:"  # noqa: N806
         if args.start_date is not None and args.end_date is not None:  # noqa: SIM102
             if args.start_date > args.end_date:
                 print(  # noqa: T201

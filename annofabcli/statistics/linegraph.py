@@ -338,15 +338,15 @@ def write_bokeh_graph(bokeh_obj: Any, output_file: Path) -> None:  # noqa: ANN40
 
 def get_weekly_moving_average(series: pandas.Series) -> pandas.Series:
     """1週間移動平均用のpandas.Seriesを取得する。"""
-    MOVING_WINDOW_DAYS = 7
-    MIN_WINDOW_DAYS = 2
+    MOVING_WINDOW_DAYS = 7  # noqa: N806
+    MIN_WINDOW_DAYS = 2  # noqa: N806
     return series.rolling(MOVING_WINDOW_DAYS, min_periods=MIN_WINDOW_DAYS).mean()
 
 
 def get_weekly_sum(series: pandas.Series) -> pandas.Series:
     """1週間の合計値が格納されたpandas.Seriesを取得する。"""
-    MOVING_WINDOW_DAYS = 7
-    MIN_WINDOW_DAYS = 2
+    MOVING_WINDOW_DAYS = 7  # noqa: N806
+    MIN_WINDOW_DAYS = 2  # noqa: N806
     return series.rolling(MOVING_WINDOW_DAYS, min_periods=MIN_WINDOW_DAYS).sum()
 
 

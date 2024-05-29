@@ -384,7 +384,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         ),
     )
 
-    JSON_SAMPLE = '[{"input_data_name":"data1", "input_data_path":"file://lenna.png"}]'
+    JSON_SAMPLE = '[{"input_data_name":"data1", "input_data_path":"file://lenna.png"}]'  # noqa: N806
     file_group.add_argument(
         "--json",
         type=str,

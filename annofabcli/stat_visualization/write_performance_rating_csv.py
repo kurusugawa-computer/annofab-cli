@@ -605,7 +605,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         help="生産性の指標",
     )
 
-    PRODUCTIVITY_INDICATOR_BY_DIRECTORY_SAMPLE = {
+    PRODUCTIVITY_INDICATOR_BY_DIRECTORY_SAMPLE = {  # noqa: N806
         "dirname1": "monitored_worktime_hour/annotation_count",
     }
     parser.add_argument(
@@ -624,7 +624,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         help="品質の指標",
     )
 
-    QUALITY_INDICATOR_BY_DIRECTORY_SAMPLE = {
+    QUALITY_INDICATOR_BY_DIRECTORY_SAMPLE = {  # noqa: N806
         "dirname1": "rejected_count/task_count",
     }
     parser.add_argument(
@@ -652,7 +652,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         help="偏差値を出す際、プロジェクト内の作業者がしきい値以下であれば、偏差値を算出しない。",
     )
 
-    THRESHOLD_SETTINGS_SAMPLE = {
+    THRESHOLD_SETTINGS_SAMPLE = {  # noqa: N806
         "dirname1": {"annotation": {"threshold_worktime": 20}},
         "dirname2": {"inspection_acceptance": {"threshold_task_count": 5}},
     }

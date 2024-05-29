@@ -212,7 +212,7 @@ class DeleteSupplementaryDataMain(CommandLineWithConfirm):
 class DeleteSupplementaryData(CommandLine):
     @staticmethod
     def validate(args: argparse.Namespace) -> bool:
-        COMMON_MESSAGE = "annofabcli supplementary_data put: error:"
+        COMMON_MESSAGE = "annofabcli supplementary_data put: error:"  # noqa: N806
         if args.csv is not None:  # noqa: SIM102
             if not Path(args.csv).exists():
                 print(f"{COMMON_MESSAGE} argument --csv: ファイルパスが存在しません。 '{args.csv}'", file=sys.stderr)  # noqa: T201
@@ -269,7 +269,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         ),
     )
 
-    JSON_SAMPLE = '[{"input_data_id" : "input1", "supplementary_data_id" : "supplementary1"}]'
+    JSON_SAMPLE = '[{"input_data_id" : "input1", "supplementary_data_id" : "supplementary1"}]'  # noqa: N806
     group.add_argument(
         "--json",
         type=str,

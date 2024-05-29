@@ -65,7 +65,7 @@ class ListAnnotationMain:
         assert task_id_list is None or input_data_id_list is None, "task_id_listとinput_data_listのどちらかはNoneにしてください。"
 
         all_annotation_list = []
-        UPPER_BOUND = 10_000
+        UPPER_BOUND = 10_000  # noqa: N806
         if task_id_list is not None:
             for task_id in task_id_list:
                 try:

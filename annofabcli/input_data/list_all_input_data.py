@@ -114,7 +114,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
 
     argument_parser.add_project_id()
 
-    INPUT_DATA_QUERY_SAMPLE = {"input_data_name": "sample"}
+    INPUT_DATA_QUERY_SAMPLE = {"input_data_name": "sample"}  # noqa: N806
     parser.add_argument(
         "-iq",
         "--input_data_query",

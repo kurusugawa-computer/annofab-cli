@@ -99,7 +99,7 @@ class CopyProject(CommandLine):
         logger.info("プロジェクトのコピーを実施しています。")
 
         if wait_for_completion:
-            MAX_WAIT_MINUTE = DEFAULT_WAIT_OPTIONS.max_tries * DEFAULT_WAIT_OPTIONS.interval / 60
+            MAX_WAIT_MINUTE = DEFAULT_WAIT_OPTIONS.max_tries * DEFAULT_WAIT_OPTIONS.interval / 60  # noqa: N806
             logger.info(f"最大{MAX_WAIT_MINUTE}分間、コピーが完了するまで待ちます。")
 
             result = self.service.wrapper.wait_for_completion(

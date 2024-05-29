@@ -358,7 +358,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     argument_parser.add_project_id()
     argument_parser.add_task_id()
 
-    EXAMPLE_ANNOTATION_QUERY = '{"label": "car", "attributes":{"occluded" true} }'
+    EXAMPLE_ANNOTATION_QUERY = '{"label": "car", "attributes":{"occluded" true} }'  # noqa: N806
 
     parser.add_argument(
         "-aq",
@@ -368,7 +368,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         help=f"変更対象のアノテーションを検索する条件をJSON形式で指定します。(ex): ``{EXAMPLE_ANNOTATION_QUERY}``",
     )
 
-    EXAMPLE_PROPERTIES = '{"is_protected": true}'
+    EXAMPLE_PROPERTIES = '{"is_protected": true}'  # noqa: N806
     parser.add_argument(
         "--properties",
         type=str,

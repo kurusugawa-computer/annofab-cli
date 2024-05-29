@@ -383,7 +383,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--default_image_size", type=str, help="デフォルトの画像サイズ。 ``--input_data_id_csv`` を指定しないときは必須です。\n(例) 1280x720"
     )
 
-    LABEL_COLOR_SAMPLE = {"dog": [255, 128, 64], "cat": "blue"}
+    LABEL_COLOR_SAMPLE = {"dog": [255, 128, 64], "cat": "blue"}  # noqa: N806
     parser.add_argument(
         "--label_color",
         type=str,
@@ -420,7 +420,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "【注意】アノテーションzipでポリラインかポリゴンかを判断できるようになれば、このオプションは削除する予定です。",
     )
 
-    DRAWING_OPTIONS_SAMPLE = {"line_width": 3}
+    DRAWING_OPTIONS_SAMPLE = {"line_width": 3}  # noqa: N806
     parser.add_argument(
         "--drawing_options",
         type=str,

@@ -156,7 +156,7 @@ def create_changed_input_data_list_from_csv(csv_file: Path) -> list[ChangedInput
 class ChangeInputDataName(CommandLine):
     @staticmethod
     def validate(args: argparse.Namespace) -> bool:
-        COMMON_MESSAGE = "annofabcli input_data change_name: error:"
+        COMMON_MESSAGE = "annofabcli input_data change_name: error:"  # noqa: N806
 
         if args.parallelism is not None and not args.yes:
             print(  # noqa: T201
@@ -214,7 +214,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         ),
     )
 
-    JSON_SAMPLE = '[{"input_data_id":"id", "input_data_name":"new_name"}]'
+    JSON_SAMPLE = '[{"input_data_id":"id", "input_data_name":"new_name"}]'  # noqa: N806
     file_group.add_argument(
         "--json",
         type=str,

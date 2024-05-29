@@ -887,7 +887,7 @@ class UserPerformance:
 
         logger.debug(f"{output_file} を出力します。")
 
-        DICT_PHASE_NAME = {
+        DICT_PHASE_NAME = {  # noqa: N806
             TaskPhase.ANNOTATION.value: "教師付",
             TaskPhase.INSPECTION.value: "検査",
             TaskPhase.ACCEPTANCE.value: "受入",
@@ -975,7 +975,7 @@ class UserPerformance:
 
         df = self.convert_df_suitable_for_bokeh(self.df)
 
-        PHASE = "annotation"
+        PHASE = "annotation"  # noqa: N806
 
         def create_scatter_obj(title: str, x_axis_label: str, y_axis_label: str) -> ScatterGraph:
             return ScatterGraph(
@@ -1068,7 +1068,7 @@ class UserPerformance:
             """
             作業時間からバブルの大きさに変更する。
             """
-            MIN_SCATTER_SIZE = 4
+            MIN_SCATTER_SIZE = 4  # noqa: N806
             if worktime_hour <= 0:
                 return MIN_SCATTER_SIZE
             tmp = int(math.log2(worktime_hour) * 15 - 50)
@@ -1140,7 +1140,7 @@ class UserPerformance:
             return
 
         df = self.convert_df_suitable_for_bokeh(self.df)
-        PHASE = TaskPhase.ANNOTATION.value
+        PHASE = TaskPhase.ANNOTATION.value  # noqa: N806
 
         df[(f"{worktime_type.value}_worktime_minute/{performance_unit.value}", PHASE)] = (
             df[(f"{worktime_type.value}_worktime_hour/{performance_unit.value}", PHASE)] * 60

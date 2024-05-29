@@ -66,7 +66,7 @@ class PutInputData(CommandLine):
         logger.info("入力データの登録中です（サーバ側の処理）。")
 
         if wait:
-            MAX_WAIT_MINUTE = wait_options.max_tries * wait_options.interval / 60
+            MAX_WAIT_MINUTE = wait_options.max_tries * wait_options.interval / 60  # noqa: N806
             logger.info(f"最大{MAX_WAIT_MINUTE}分間、処理が終了するまで待ちます。")
 
             result = self.service.wrapper.wait_for_completion(

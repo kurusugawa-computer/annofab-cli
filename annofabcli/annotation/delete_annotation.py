@@ -215,7 +215,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     argument_parser.add_project_id()
     argument_parser.add_task_id()
 
-    EXAMPLE_ANNOTATION_QUERY = '{"label": "car", "attributes":{"occluded" true} }'
+    EXAMPLE_ANNOTATION_QUERY = '{"label": "car", "attributes":{"occluded" true} }'  # noqa: N806
 
     parser.add_argument(
         "-aq",
