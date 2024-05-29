@@ -28,7 +28,7 @@ class DownloadInstructionMain:
         """
         HTTP GETで取得した内容をファイルに保存する（ダウンロードする）
         """
-        response = self.service.api._request_get_with_cookie(project_id, instruction_image_url)
+        response = self.service.api._request_get_with_cookie(project_id, instruction_image_url)  # noqa: SLF001
         response.raise_for_status()
 
         p = Path(dest_path)

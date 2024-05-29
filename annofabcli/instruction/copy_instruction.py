@@ -69,7 +69,7 @@ class CopyInstruction(CommandLine):
         instruction_image_id = self.get_instruction_image_id_from_url(src_instruction_image_url)
 
         try:
-            response_image = self.service.api._request_get_with_cookie(src_project_id, src_instruction_image_url)
+            response_image = self.service.api._request_get_with_cookie(src_project_id, src_instruction_image_url)  # noqa: SLF001
         except requests.exceptions.RequestException as e:
             logger.warning(f"コピー元の作業ガイド画像の取得に失敗しました。: {e}")
             return None

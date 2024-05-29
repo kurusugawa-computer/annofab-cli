@@ -153,13 +153,13 @@ def add_parser(
 
     # 引数グループに"global optional group"がある場合は、"--help"オプションをデフォルトの"optional"グループから、"global optional arguments"グループに移動する  # noqa: E501
     # https://ja.stackoverflow.com/a/57313/19524
-    global_optional_argument_group = first_true(parser._action_groups, pred=lambda e: e.title == GLOBAL_OPTIONAL_ARGUMENTS_TITLE)
+    global_optional_argument_group = first_true(parser._action_groups, pred=lambda e: e.title == GLOBAL_OPTIONAL_ARGUMENTS_TITLE)  # noqa: SLF001
     if global_optional_argument_group is not None:
         # optional グループの 0番目が help なので取り出す
-        help_action = parser._optionals._group_actions.pop(0)
+        help_action = parser._optionals._group_actions.pop(0)  # noqa: SLF001
         assert help_action.dest == "help"
         # global optional group の 先頭にhelpを追加
-        global_optional_argument_group._group_actions.insert(0, help_action)
+        global_optional_argument_group._group_actions.insert(0, help_action)  # noqa: SLF001
     return parser
 
 
