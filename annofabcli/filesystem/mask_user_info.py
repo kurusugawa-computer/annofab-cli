@@ -99,7 +99,7 @@ def create_masked_name(name: str) -> str:
 
 
 def get_replaced_user_id_set_from_biography(df: pandas.DataFrame, not_masked_location_set: Optional[Set[str]] = None) -> Set[str]:
-    if not_masked_location_set is None:
+    if not_masked_location_set is None:  # noqa: SIM108
         filtered_df = df
     else:
         filtered_df = df[df["biography"].map(lambda e: e not in not_masked_location_set)]

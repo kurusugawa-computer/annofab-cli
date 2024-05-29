@@ -51,7 +51,7 @@ class ReplacingChoiceId(CommandLineWithConfirm):
         for attribute in attribute_list:
             attribute_name_en = AnnofabApiFacade.get_additional_data_definition_name_en(attribute)
 
-            if target_attribute_names is not None:
+            if target_attribute_names is not None:  # noqa: SIM102
                 if attribute_name_en not in target_attribute_names:
                     continue
 

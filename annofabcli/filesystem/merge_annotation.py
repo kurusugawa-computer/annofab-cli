@@ -133,7 +133,7 @@ class MergeAnnotationMain:
         task_id_set = set(task_ids) if task_ids is not None else None
 
         def is_target_parser(parser: SimpleAnnotationParser) -> bool:
-            if task_id_set is not None and len(task_id_set) > 0:
+            if task_id_set is not None and len(task_id_set) > 0:  # noqa: SIM102
                 if parser.task_id not in task_id_set:
                     return False
 

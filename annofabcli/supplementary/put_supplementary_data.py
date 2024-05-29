@@ -191,7 +191,7 @@ class SubPutSupplementaryData:
 
         file_path = get_file_scheme_path(supplementary_data_path)
         logger.debug(f"csv_supplementary_data='{csv_supplementary_data}'")
-        if file_path is not None:
+        if file_path is not None:  # noqa: SIM102
             if not Path(file_path).exists():
                 logger.warning(f"'{supplementary_data_path}' は存在しません。")
                 return False
@@ -312,7 +312,7 @@ class PutSupplementaryData(CommandLine):
     COMMON_MESSAGE = "annofabcli supplementary_data put: error:"
 
     def validate(self, args: argparse.Namespace) -> bool:
-        if args.csv is not None:
+        if args.csv is not None:  # noqa: SIM102
             if not Path(args.csv).exists():
                 print(f"{self.COMMON_MESSAGE} argument --csv: ファイルパスが存在しません。 '{args.csv}'", file=sys.stderr)  # noqa: T201
                 return False

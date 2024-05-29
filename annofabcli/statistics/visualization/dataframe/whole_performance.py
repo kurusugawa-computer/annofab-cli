@@ -191,12 +191,12 @@ class WholePerformance:
         # CSVファイル読み込み直後では、数値も文字列として格納されているので、文字列情報以外は数値に変換する
         for key, value in series.items():
             # `first_working_date`など2列目が空欄の場合は、key[1]がnumpy.nanになるため、keyを変換する
-            if isinstance(key[1], float) and numpy.isnan(key[1]):
+            if isinstance(key[1], float) and numpy.isnan(key[1]):  # noqa: SIM108
                 key2 = (key[0], "")
             else:
                 key2 = key
 
-            if key2 in cls.STRING_KEYS:
+            if key2 in cls.STRING_KEYS:  # noqa: SIM108
                 value2 = value
             else:
                 value2 = float(value)
