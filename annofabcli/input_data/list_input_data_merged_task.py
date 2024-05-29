@@ -165,11 +165,11 @@ class ListInputDataMergedTask(CommandLine):
             input_data_json_path = args.input_data_json
 
         logger.debug(f"{task_json_path} を読み込み中")
-        with open(task_json_path, encoding="utf-8") as f:
+        with open(task_json_path, encoding="utf-8") as f:  # noqa: PTH123
             task_list = json.load(f)
 
         logger.debug(f"{input_data_json_path} を読み込み中")
-        with open(input_data_json_path, encoding="utf-8") as f:
+        with open(input_data_json_path, encoding="utf-8") as f:  # noqa: PTH123
             input_data_list = json.load(f)
 
         input_data_id_set = set(get_list_from_args(args.input_data_id)) if args.input_data_id is not None else None

@@ -149,7 +149,6 @@ ignore = [
     "ICN", # flake8-import-conventions
     "RET",#flake8-return
     "TCH", # flake8-type-checking
-    "PTH", #pathlibを使わないコードが多いので、除外する
     "PT", # flake8-pytest-style
 ]
 

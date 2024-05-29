@@ -86,7 +86,7 @@ class FilterAnnotation:
                 # JSONを展開
                 zip_file.extract(parser.json_file_path, str(output_dir))
                 # 塗りつぶしアノテーションが格納されているディレクトリを展開
-                outer_annotation_dir = os.path.splitext(parser.json_file_path)[0]
+                outer_annotation_dir = os.path.splitext(parser.json_file_path)[0]  # noqa: PTH122
                 outer_annotation_file_list = zip_filepath_dict.get(outer_annotation_dir)
                 if outer_annotation_file_list is not None:
                     for outer_annotation_file in outer_annotation_file_list:
@@ -109,7 +109,7 @@ class FilterAnnotation:
             dest_task_id_dir.mkdir(exist_ok=True, parents=True)
             shutil.copy(str(annotation_dir / parser.json_file_path), str(dest_task_id_dir))
             # 塗りつぶしアノテーションファイルをコピー
-            outer_annotation_dir = annotation_dir / os.path.splitext(parser.json_file_path)[0]
+            outer_annotation_dir = annotation_dir / os.path.splitext(parser.json_file_path)[0]  # noqa: PTH122
             if outer_annotation_dir.exists():
                 shutil.copytree(str(outer_annotation_dir), str(output_dir))
 

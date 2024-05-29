@@ -214,7 +214,7 @@ def get_json_from_args(target: Optional[str] = None) -> Any:  # noqa: ANN401
 
     path = get_file_scheme_path(target)
     if path is not None:
-        with open(path, encoding="utf-8") as f:
+        with open(path, encoding="utf-8") as f:  # noqa: PTH123
             return json.load(f)
     else:
         return json.loads(target)
