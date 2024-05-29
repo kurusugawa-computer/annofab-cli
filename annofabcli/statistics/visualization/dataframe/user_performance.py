@@ -816,7 +816,7 @@ class UserPerformance:
             # "no_silent_downcasting" option をTrueにする理由:
             # `pandas.NA`を`numpy.nan`にすることで、dtypeが`string`から`float64`になる列があるため、`FutureWarning`が発生する
             # このdowncastingが将来なくなっても困ることはないので、警告を抑制した
-            with pandas.option_context("future.no_silent_downcasting", True):
+            with pandas.option_context("future.no_silent_downcasting", True):  # noqa: FBT003
                 df = df.replace({pandas.NA: numpy.nan})
         except pandas.errors.OptionError:
             # pandas 2.2未満では"future.no_silent_downcasting"が存在しないため、OptionErrorが発生する
