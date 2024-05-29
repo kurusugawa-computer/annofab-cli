@@ -241,7 +241,7 @@ def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argpa
     subcommand_name = "delete"
     subcommand_help = "アノテーションを削除します。"
     description = (
-        "タスク配下のアノテーションを削除します。" + "ただし、作業中状態のタスクのアノテーションは削除できません。"
+        "タスク配下のアノテーションを削除します。ただし、作業中状態のタスクのアノテーションは削除できません。"
         "間違えてアノテーションを削除したときに復元できるようにするため、 ``--backup`` でバックアップ用のディレクトリを指定することを推奨します。"
     )
     epilog = "オーナロールを持つユーザで実行してください。"

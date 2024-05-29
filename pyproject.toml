@@ -128,6 +128,7 @@ ignore = [
     "RUF002",# 全角記号など`ambiguous unicode character`も使いたいため
     "RUF003",# 全角記号など`ambiguous unicode character`も使いたいため
     "PLR2004", # magic-value-comparison: listのサイズで判定するときがよくあるため
+    "ISC001", # single-line-implicit-string-concatenation: formatterと競合するので無視する https://docs.astral.sh/ruff/formatter/#conflicting-lint-rules
     "ERA", # : 役立つこともあるが、コメントアウトしていないコードも警告されるので無視する
     "PERF203", # try-except-in-loop: ループ内でtry-exceptを使うこともあるため無視する。
     "FIX", # TODOやFIXMEを使うため無視する
@@ -191,6 +192,7 @@ keep-runtime-typing = true
 
 [tool.ruff.lint.pylint]
 max-args = 10
+
 
 [tool.poetry-dynamic-versioning]
 enable = true

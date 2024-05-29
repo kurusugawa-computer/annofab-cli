@@ -93,8 +93,9 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--input_data_id",
         type=str,
         nargs="+",
-        help="対象の入力データのinput_data_idを指定します。"
-        + " ``file://`` を先頭に付けると、input_data_idの一覧が記載されたファイルを指定できます。",
+        help=(
+            "対象の入力データのinput_data_idを指定します。 ``file://`` を先頭に付けると、input_data_idの一覧が記載されたファイルを指定できます。"
+        ),
     )
 
     argument_parser.add_format(choices=[FormatArgument.CSV, FormatArgument.JSON, FormatArgument.PRETTY_JSON], default=FormatArgument.CSV)
