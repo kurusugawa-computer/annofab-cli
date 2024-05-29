@@ -318,23 +318,23 @@ def build_annofabapi_resource(args: argparse.Namespace) -> annofabapi.Resource:
     if args.annofab_user_id is not None:
         login_user_id: str = args.annofab_user_id
         if args.annofab_password is not None:
-            return annofabapi.build(login_user_id, args.annofab_password, **kwargs)
+            return annofabapi.build(login_user_id, args.annofab_password, **kwargs)  # type: ignore[arg-type]
         else:
             # コマンドライン引数にパスワードが指定されなければ、標準入力からパスワードを取得する
             login_password = ""
             while login_password == "":
                 login_password = getpass.getpass("Enter Annofab Password: ")
-            return annofabapi.build(login_user_id, login_password, **kwargs)
+            return annofabapi.build(login_user_id, login_password, **kwargs)  # type: ignore[arg-type]
 
     # 環境変数から認証情報を取得する
     try:
-        return annofabapi.build_from_env(**kwargs)
+        return annofabapi.build_from_env(**kwargs)  # type: ignore[arg-type]
     except AnnofabApiException:
         pass
 
     # .netrcファイルから認証情報を取得する
     try:
-        return annofabapi.build_from_netrc(**kwargs)
+        return annofabapi.build_from_netrc(**kwargs)  # type: ignore[arg-type]
     except AnnofabApiException:
         pass
 
@@ -347,7 +347,7 @@ def build_annofabapi_resource(args: argparse.Namespace) -> annofabapi.Resource:
     while login_password == "":
         login_password = getpass.getpass("Enter Annofab Password: ")
 
-    return annofabapi.build(login_user_id, login_password, **kwargs)
+    return annofabapi.build(login_user_id, login_password, **kwargs)  # type: ignore[arg-type]
 
 
 def prompt_yesno(msg: str) -> bool:
