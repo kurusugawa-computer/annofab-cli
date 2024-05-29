@@ -284,7 +284,7 @@ def _catch_exception(function: Callable[..., Any]) -> Callable[..., Any]:
             return function(*args, **kwargs)
         except Exception as e:  # pylint: disable=broad-except
             logger.warning(e)
-            logger.exception(e)
+            logger.exception(e)  # noqa: TRY401
             return None
 
     return wrapped

@@ -83,7 +83,7 @@ def main(arguments: Optional[list[str]] = None) -> None:
             logger.info(f"argv={mask_argv(argv)}")
             args.subcommand_func(args)
         except Exception as e:
-            logger.exception(e)
+            logger.exception(e)  # noqa: TRY401
             raise e  # noqa: TRY201
 
     else:
