@@ -122,7 +122,7 @@ def match_annotation_with_task_query(annotation: Dict[str, Any], task_query: Opt
     if task_query.phase is not None and annotation["task_phase"] != task_query.phase.value:
         return False
 
-    if task_query.phase_stage is not None and annotation["task_phase_stage"] != task_query.phase_stage:
+    if task_query.phase_stage is not None and annotation["task_phase_stage"] != task_query.phase_stage:  # noqa: SIM103
         return False
 
     return True
@@ -167,7 +167,7 @@ def match_task_with_query(  # pylint: disable=too-many-return-statements  # noqa
     if task_query.no_user and task.account_id is not None:
         return False
 
-    if task_query.account_id is not None and task.account_id != task_query.account_id:
+    if task_query.account_id is not None and task.account_id != task_query.account_id:  # noqa: SIM103
         return False
 
     return True
@@ -202,7 +202,7 @@ def match_input_data_with_query(  # pylint: disable=too-many-return-statements
     if input_data_query.input_data_name is not None and not match_str(input_data.input_data_name, input_data_query.input_data_name, ignore_case=True):
         return False
 
-    if input_data_query.input_data_path is not None and not match_str(
+    if input_data_query.input_data_path is not None and not match_str(  # noqa: SIM103
         input_data.input_data_path, input_data_query.input_data_path, ignore_case=False
     ):
         return False
@@ -519,7 +519,7 @@ class AnnofabApiFacade:
         project_title = self.get_project_title(project_id)
         logger.info(f"project_title = {project_title}, project_id = {project_id}")
 
-        if project_member_roles is not None:
+        if project_member_roles is not None:  # noqa: SIM102
             if not self.contains_any_project_member_role(project_id, project_member_roles):
                 raise ProjectAuthorizationError(project_title, project_member_roles)
 

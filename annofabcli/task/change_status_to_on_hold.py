@@ -95,7 +95,7 @@ class ChangingStatusToOnHoldMain(CommandLineWithConfirm):
                 )
                 return False
 
-            if not self.confirm_change_status_to_on_hold(task):
+            if not self.confirm_change_status_to_on_hold(task):  # noqa: SIM103
                 return False
 
             return True

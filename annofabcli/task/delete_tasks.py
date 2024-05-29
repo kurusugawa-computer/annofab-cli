@@ -138,7 +138,7 @@ class DeleteTaskMain(CommandLineWithConfirm):
 
         annotation_list = self.get_annotation_list(task_id)
         logger.debug(f"{log_prefix} :: アノテーションが{len(annotation_list)}個付与されています。")
-        if not self.force:
+        if not self.force:  # noqa: SIM102
             if len(annotation_list) > 0:
                 logger.info(
                     f"{log_prefix} :: アノテーションが付与されているため（{len(annotation_list)}個）、タスクの削除をスキップします。"
@@ -150,7 +150,7 @@ class DeleteTaskMain(CommandLineWithConfirm):
             logger.debug(f"{log_prefix} :: `--task_query`の条件にマッチしないため、スキップします。task_query={task_query}")
             return False
 
-        if not self.confirm_delete_task(task_id):
+        if not self.confirm_delete_task(task_id):  # noqa: SIM103
             return False
 
         return True
@@ -172,7 +172,7 @@ class DeleteTaskMain(CommandLineWithConfirm):
             True: タスクを削除した。False: タスクを削除しなかった。
 
         """
-        if task_index is not None:
+        if task_index is not None:  # noqa: SIM108
             log_prefix = f"{task_index+1} 件目, task_id='{task_id}'"
         else:
             log_prefix = f"task_id='{task_id}'"

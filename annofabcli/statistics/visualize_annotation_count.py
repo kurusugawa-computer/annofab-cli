@@ -139,7 +139,7 @@ def plot_label_histogram(
 
     df = create_df()
 
-    if arrange_bin_edge:
+    if arrange_bin_edge:  # noqa: SIM108
         histogram_range = (
             df.min(numeric_only=True).min(),
             df.max(numeric_only=True).max(),
@@ -247,7 +247,7 @@ def plot_attribute_histogram(  # noqa: PLR0915
     df = create_df()
     y_axis_label = _get_y_axis_label(group_by)
 
-    if arrange_bin_edge:
+    if arrange_bin_edge:  # noqa: SIM108
         histogram_range = (
             df.min(numeric_only=True).min(),
             df.max(numeric_only=True).max(),

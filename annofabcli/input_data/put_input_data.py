@@ -200,7 +200,7 @@ class SubPutInputData:
                 return False
 
         file_path = get_file_scheme_path(input_data.input_data_path)
-        if file_path is not None:
+        if file_path is not None:  # noqa: SIM102
             if not Path(file_path).exists():
                 logger.warning(f"{input_data.input_data_path} は存在しません。")
                 return False
@@ -312,12 +312,12 @@ class PutInputData(CommandLine):
         return [CsvInputData.from_dict(e) for e in input_data_dict_list]
 
     def validate(self, args: argparse.Namespace) -> bool:
-        if args.csv is not None:
+        if args.csv is not None:  # noqa: SIM102
             if not Path(args.csv).exists():
                 print(f"{self.COMMON_MESSAGE} argument --csv: ファイルパスが存在しません。 '{args.csv}'", file=sys.stderr)
                 return False
 
-        if args.csv is not None or args.json is not None:
+        if args.csv is not None or args.json is not None:  # noqa: SIM102
             if args.parallelism is not None and not args.yes:
                 print(
                     f"{self.COMMON_MESSAGE} argument --parallelism: '--parallelism'を指定するときは、必ず '--yes' を指定してください。",

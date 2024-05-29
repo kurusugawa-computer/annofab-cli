@@ -142,7 +142,7 @@ class ChangeAnnotationAttributesMain(CommandLineWithConfirm):
             logger.warning(f"task_id={task_id}: タスクが作業中状態のため、スキップします。")
             return False
 
-        if not self.is_force:
+        if not self.is_force:  # noqa: SIM102
             if task.status == TaskStatus.COMPLETE:
                 logger.warning(f"task_id={task_id}: タスクが完了状態のため、スキップします。")
                 return False

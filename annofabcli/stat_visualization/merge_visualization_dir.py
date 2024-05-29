@@ -146,7 +146,7 @@ class MergingVisualizationFile:
         for project_dir in self.project_dir_list:
             tmp_obj = project_dir.read_worktime_per_date_user()
 
-            if merged_obj is None:
+            if merged_obj is None:  # noqa: SIM108
                 merged_obj = tmp_obj
             else:
                 merged_obj = WorktimePerDate.merge(merged_obj, tmp_obj)

@@ -213,7 +213,7 @@ class DeleteSupplementaryData(CommandLine):
     @staticmethod
     def validate(args: argparse.Namespace) -> bool:
         COMMON_MESSAGE = "annofabcli supplementary_data put: error:"
-        if args.csv is not None:
+        if args.csv is not None:  # noqa: SIM102
             if not Path(args.csv).exists():
                 print(f"{COMMON_MESSAGE} argument --csv: ファイルパスが存在しません。 '{args.csv}'", file=sys.stderr)
                 return False

@@ -295,7 +295,7 @@ class ListAnnotationCounterByInputData:
                 continue
 
             simple_annotation_dict = parser.load_json()
-            if task_query is not None:
+            if task_query is not None:  # noqa: SIM102
                 if not match_annotation_with_task_query(simple_annotation_dict, task_query):
                     continue
 

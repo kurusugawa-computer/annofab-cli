@@ -66,7 +66,7 @@ class InspectionCommentCount:
             if comment_node["_type"] != "Root":
                 return False
 
-            if comment_node["status"] != CommentStatus.RESOLVED.value:
+            if comment_node["status"] != CommentStatus.RESOLVED.value:  # noqa: SIM103
                 return False
             return True
 

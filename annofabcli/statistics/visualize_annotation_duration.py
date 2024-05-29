@@ -74,7 +74,7 @@ def plot_annotation_duration_histogram_by_label(  # noqa: PLR0915
     """
 
     def create_df() -> pandas.DataFrame:
-        all_label_key_set = {key for c in annotation_duration_list for key in c.annotation_duration_second_by_label.keys()}
+        all_label_key_set = {key for c in annotation_duration_list for key in c.annotation_duration_second_by_label.keys()}  # noqa: SIM118
         if prior_keys is not None:
             remaining_columns = sorted(all_label_key_set - set(prior_keys))
             columns = prior_keys + remaining_columns
@@ -119,7 +119,7 @@ def plot_annotation_duration_histogram_by_label(  # noqa: PLR0915
             )
         df = df[columns]
 
-    if bin_width is not None:
+    if bin_width is not None:  # noqa: SIM102
         if time_unit == TimeUnit.MINUTE:
             bin_width = bin_width / 60
 
@@ -185,7 +185,7 @@ def plot_annotation_duration_histogram_by_attribute(  # noqa: PLR0915
     """
 
     def create_df() -> pandas.DataFrame:
-        all_key_set = {key for c in annotation_duration_list for key in c.annotation_duration_second_by_attribute.keys()}
+        all_key_set = {key for c in annotation_duration_list for key in c.annotation_duration_second_by_attribute.keys()}  # noqa: SIM118
         if prior_keys is not None:
             remaining_columns = list(all_key_set - set(prior_keys))
             remaining_columns_selective_attribute = sorted(get_only_selective_attribute(remaining_columns))
@@ -211,7 +211,7 @@ def plot_annotation_duration_histogram_by_attribute(  # noqa: PLR0915
     df = create_df()
     logger.debug(f"{len(df.columns)}個の属性値ごとのヒストグラムで出力します。")
 
-    if bin_width is not None:
+    if bin_width is not None:  # noqa: SIM102
         if time_unit == TimeUnit.MINUTE:
             bin_width = bin_width / 60
 

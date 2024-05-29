@@ -144,7 +144,7 @@ class RejectTasksMain(CommandLineWithConfirm):
             logger.debug(f"task_id = {task_id} : `--task_query`の条件にマッチしないため、スキップします。task_query={task_query}")
             return False
 
-        if not self.confirm_reject_task(task_id, assign_last_annotator=assign_last_annotator, assigned_annotator_user_id=assigned_annotator_user_id):
+        if not self.confirm_reject_task(task_id, assign_last_annotator=assign_last_annotator, assigned_annotator_user_id=assigned_annotator_user_id):  # noqa: SIM103
             return False
 
         return True

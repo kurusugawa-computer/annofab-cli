@@ -236,7 +236,7 @@ class ImportAnnotationMain(CommandLineWithConfirm):
                 else:
                     return str(uuid.uuid4())
 
-        if detail.attributes is not None:
+        if detail.attributes is not None:  # noqa: SIM108
             additional_data_list = self._to_additional_data_list(detail.attributes, label_info)
         else:
             additional_data_list = []
@@ -372,7 +372,7 @@ class ImportAnnotationMain(CommandLineWithConfirm):
             return False
 
         old_annotation, _ = self.service.api.get_editor_annotation(self.project_id, task_id, input_data_id)
-        if len(old_annotation["details"]) > 0:
+        if len(old_annotation["details"]) > 0:  # noqa: SIM102
             if not self.is_overwrite and not self.is_merge:
                 logger.debug(
                     f"task_id={task_id}, input_data_id={input_data_id} : "

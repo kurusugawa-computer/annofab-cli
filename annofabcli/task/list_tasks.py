@@ -92,7 +92,7 @@ class ListTasksMain:
         Returns:
             対象の検査コメント一覧
         """
-        if task_query is not None:
+        if task_query is not None:  # noqa: SIM108
             task_query = self._modify_task_query(project_id, task_query)
         else:
             task_query = {}

@@ -393,7 +393,7 @@ def prompt_yesnoall(msg: str) -> Tuple[bool, bool]:
     """
     while True:
         choice = input(f"{msg} [y/N/ALL] : ")
-        if choice == "y":
+        if choice == "y":  # noqa: SIM116
             return True, False
 
         elif choice == "N":
@@ -654,10 +654,10 @@ class PrettyHelpFormatter(argparse.RawTextHelpFormatter, argparse.ArgumentDefaul
         # 不要なデフォルト値（--debug や オプショナルな引数）を表示させないようにする
         # super()._get_help_string の中身を、そのまま持ってきた。
         # https://qiita.com/yuji38kwmt/items/c7c4d487e3188afd781e 参照
-        if "%(default)" not in action.help:
+        if "%(default)" not in action.help:  # noqa: SIM102
             if action.default is not argparse.SUPPRESS:
                 defaulting_nargs = [argparse.OPTIONAL, argparse.ZERO_OR_MORE]
-                if action.option_strings or action.nargs in defaulting_nargs:
+                if action.option_strings or action.nargs in defaulting_nargs:  # noqa: SIM102
                     # 以下の条件だけ、annofabcli独自の設定
                     if action.default is not None and not action.const:
                         help += " (default: %(default)s)"  # noqa: A001

@@ -67,7 +67,7 @@ class TaskHistory:
                 new_task_history["worktime_hour"] = isoduration_to_hour(task_history["accumulated_labor_time_milliseconds"])
                 all_task_history_list.append(new_task_history)
 
-        if len(all_task_history_list) > 0:
+        if len(all_task_history_list) > 0:  # noqa: SIM108
             df = pandas.DataFrame(all_task_history_list)
         else:
             df = cls.empty()

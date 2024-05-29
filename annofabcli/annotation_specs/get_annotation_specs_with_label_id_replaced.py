@@ -80,7 +80,7 @@ class ReplacingLabelId(CommandLineWithConfirm):
             label_id = label["label_id"]
             label_name_en = AnnofabApiFacade.get_label_name_en(label)
 
-            if target_label_names is not None:
+            if target_label_names is not None:  # noqa: SIM102
                 if label_name_en not in target_label_names:
                     continue
 

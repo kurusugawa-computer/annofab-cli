@@ -225,7 +225,7 @@ class CompleteTasksMain(CommandLineWithConfirm):
         unanswered_comment_count_for_task = sum(len(e) for e in unanswered_comment_list_dict.values())
 
         logger.debug(f"{task.task_id}: 未回答の検査コメントが {unanswered_comment_count_for_task} 件あります。")
-        if unanswered_comment_count_for_task > 0:
+        if unanswered_comment_count_for_task > 0:  # noqa: SIM102
             if reply_comment is None:
                 logger.warning(
                     f"{task.task_id}: 未回答の検査コメントに対する返信コメント（'--reply_comment'）が指定されていないので、スキップします。"
@@ -266,7 +266,7 @@ class CompleteTasksMain(CommandLineWithConfirm):
         unprocessed_inspection_count = sum(len(e) for e in unprocessed_inspection_list_dict.values())
 
         logger.debug(f"{task.task_id}: 未処置の検査コメントが {unprocessed_inspection_count} 件あります。")
-        if unprocessed_inspection_count > 0:
+        if unprocessed_inspection_count > 0:  # noqa: SIM102
             if inspection_status is None:
                 logger.warning(
                     f"{task.task_id}: 未処置の検査コメントに対する対応方法（'--inspection_status'）が指定されていないので、スキップします。"
@@ -454,7 +454,7 @@ class CompleteTasks(CommandLine):
         if args.phase == TaskPhase.ANNOTATION.value:
             if args.inspection_status is not None:
                 logger.warning(f"'--phase'に'{TaskPhase.ANNOTATION.value}'を指定しているとき、" f"'--inspection_status'の値は無視されます。")
-        elif args.phase in [TaskPhase.INSPECTION.value, TaskPhase.ACCEPTANCE.value]:
+        elif args.phase in [TaskPhase.INSPECTION.value, TaskPhase.ACCEPTANCE.value]:  # noqa: SIM102
             if args.reply_comment is not None:
                 logger.warning(
                     f"'--phase'に'{TaskPhase.INSPECTION.value}'または'{TaskPhase.ACCEPTANCE.value}'を指定しているとき、"

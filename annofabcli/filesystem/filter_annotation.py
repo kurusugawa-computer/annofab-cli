@@ -30,24 +30,14 @@ class FilterQuery:
     exclude_input_data_name_set: Optional[Set[str]] = None
 
 
-def match_query(  # pylint: disable=too-many-return-statements  # noqa: PLR0911
+def match_query(  # pylint: disable=too-many-return-statements
     annotation: Dict[str, Any], filter_query: FilterQuery
 ) -> bool:
     if filter_query.task_query is not None and not match_annotation_with_task_query(annotation, filter_query.task_query):
         return False
 
     # xxx_set は1個のみ指定されていること前提なので、elif を羅列する
-    if filter_query.task_id_set is not None and annotation["task_id"] not in filter_query.task_id_set:
-        return False
-    elif filter_query.exclude_task_id_set is not None and annotation["task_id"] in filter_query.exclude_task_id_set:
-        return False
-    elif filter_query.input_data_id_set is not None and annotation["input_data_id"] not in filter_query.input_data_id_set:
-        return False
-    elif filter_query.exclude_input_data_id_set is not None and annotation["input_data_id"] in filter_query.exclude_input_data_id_set:
-        return False
-    elif filter_query.input_data_name_set is not None and annotation["input_data_name"] not in filter_query.input_data_name_set:
-        return False
-    elif filter_query.exclude_input_data_name_set is not None and annotation["input_data_name"] in filter_query.exclude_input_data_name_set:
+    if filter_query.task_id_set is not None and annotation["task_id"] not in filter_query.task_id_set or filter_query.exclude_task_id_set is not None and annotation["task_id"] in filter_query.exclude_task_id_set or (filter_query.input_data_id_set is not None and annotation["input_data_id"] not in filter_query.input_data_id_set or filter_query.exclude_input_data_id_set is not None and annotation["input_data_id"] in filter_query.exclude_input_data_id_set) or (filter_query.input_data_name_set is not None and annotation["input_data_name"] not in filter_query.input_data_name_set or filter_query.exclude_input_data_name_set is not None and annotation["input_data_name"] in filter_query.exclude_input_data_name_set):  # noqa: SIM103
         return False
 
     return True

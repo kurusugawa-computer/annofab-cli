@@ -69,10 +69,7 @@ class SubUpdateAnnotationZip:
         )
         job_status = JobStatus(job["job_status"])
         if job_status == JobStatus.SUCCEEDED:
-            if dateutil.parser.parse(job["updated_datetime"]) < dateutil.parser.parse(last_tasks_updated_datetime):
-                return True
-
-            elif dateutil.parser.parse(job["updated_datetime"]) < dateutil.parser.parse(annotation_specs_updated_datetime):
+            if dateutil.parser.parse(job["updated_datetime"]) < dateutil.parser.parse(last_tasks_updated_datetime) or dateutil.parser.parse(job["updated_datetime"]) < dateutil.parser.parse(annotation_specs_updated_datetime):
                 return True
             else:
                 logger.debug(
@@ -130,7 +127,7 @@ class SubUpdateAnnotationZip:
             logger.warning(f"project_id={project_id}: オーナロールまたはアノテーションユーザロールでないため、アノテーションzipを更新できません。")
             return
 
-        if not force:
+        if not force:  # noqa: SIM108
             should_update = self._should_update_annotation_zip(project_id)
         else:
             should_update = True

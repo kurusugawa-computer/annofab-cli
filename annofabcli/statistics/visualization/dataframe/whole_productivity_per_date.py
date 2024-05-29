@@ -288,11 +288,11 @@ class WholeProductivityPerCompletedDate:
         row_list: list[pandas.Series] = []
         for dt in date_range():
             str_date = str(dt.date())
-            if str_date in tmp_df1.index:
+            if str_date in tmp_df1.index:  # noqa: SIM108
                 row1 = tmp_df1.loc[str_date]
             else:
                 row1 = None
-            if str_date in tmp_df2.index:
+            if str_date in tmp_df2.index:  # noqa: SIM108
                 row2 = tmp_df2.loc[str_date]
             else:
                 row2 = None
@@ -1005,11 +1005,11 @@ class WholeProductivityPerFirstAnnotationStartedDate:
         row_list: list[pandas.Series] = []
         for dt in date_range():
             str_date = str(dt.date())
-            if str_date in tmp_df1.index:
+            if str_date in tmp_df1.index:  # noqa: SIM108
                 row1 = tmp_df1.loc[str_date]
             else:
                 row1 = None
-            if str_date in tmp_df2.index:
+            if str_date in tmp_df2.index:  # noqa: SIM108
                 row2 = tmp_df2.loc[str_date]
             else:
                 row2 = None
