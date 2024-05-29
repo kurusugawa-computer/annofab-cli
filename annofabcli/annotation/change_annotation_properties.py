@@ -130,7 +130,7 @@ class ChangePropertiesOfAnnotationMain(CommandLineWithConfirm):
         annotation_list = self.service.wrapper.get_all_annotation_list(self.project_id, query_params={"query": dict_query})
         return annotation_list
 
-    def change_properties_for_task(  # pylint: disable=too-many-return-statements  # noqa: PLR0911, PLR0912
+    def change_properties_for_task(  # pylint: disable=too-many-return-statements  # noqa: PLR0911
         self,
         task_id: str,
         properties: AnnotationDetailForCli,
