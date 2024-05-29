@@ -128,16 +128,17 @@ ignore = [
     "RUF002",# 全角記号など`ambiguous unicode character`も使いたいため
     "RUF003",# 全角記号など`ambiguous unicode character`も使いたいため
     "PLR2004", # magic-value-comparison: listのサイズで判定するときがよくあるため
+    "ISC001", # single-line-implicit-string-concatenation: formatterと競合するので無視する https://docs.astral.sh/ruff/formatter/#conflicting-lint-rules
     "ERA", # : 役立つこともあるが、コメントアウトしていないコードも警告されるので無視する
     "PERF203", # try-except-in-loop: ループ内でtry-exceptを使うこともあるため無視する。
     "FIX", # TODOやFIXMEを使うため無視する
     "TD", # TODOコメントの書き方に気にしていないので無視する
+    
 
     # 以下のルールはannofabcliのコードに合っていないので無効化した
     "RSE", # flake8-raise
     "D", # pydocstyle, Docstringを中途半端にしか書いていないので、除外する
     "C90", # mccabe
-#    "T20", # flake8-print
     "SLF", #  flake8-self
     "BLE", # flake8-blind-except
     "FBT", # flake8-boolean-trap
@@ -151,7 +152,6 @@ ignore = [
     "SIM",#flake8-simplify
     "TCH", # flake8-type-checking
     "PTH", #pathlibを使わないコードが多いので、除外する
-    "ISC", #flake8-implicit-str-concat
     "N", # pep8-naming
     "PT", # flake8-pytest-style
 ]

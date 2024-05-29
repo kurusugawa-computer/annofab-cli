@@ -73,7 +73,7 @@ class CancelAcceptanceMain(CommandLineWithConfirm):
                 return False
 
             if task["phase"] != TaskPhase.ACCEPTANCE.value or task["status"] != TaskStatus.COMPLETE.value:
-                logger.warning(f"{logging_prefix}: task_id = {task_id} は受入完了でありません。" f"status = {task['status']}, phase={task['phase']}")
+                logger.warning(f"{logging_prefix}: task_id = {task_id} は受入完了でありません。status = {task['status']}, phase={task['phase']}")
                 return False
 
             actual_acceptor: Optional[User] = None
@@ -281,13 +281,13 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     assign_group.add_argument(
         "--not_assign",
         action="store_true",
-        help="受入を取り消した後のタスクの担当者を未割り当てにします。" "指定しない場合は、最後の受入phaseの担当者が割り当てます。",
+        help="受入を取り消した後のタスクの担当者を未割り当てにします。指定しない場合は、最後の受入phaseの担当者が割り当てます。",
     )
 
     assign_group.add_argument(
         "--assigned_acceptor_user_id",
         type=str,
-        help="受入を取り消した後に割り当てる受入作業者のuser_idを指定します。" "指定しない場合は、最後の受入phaseの担当者が割り当てます。",
+        help="受入を取り消した後に割り当てる受入作業者のuser_idを指定します。指定しない場合は、最後の受入phaseの担当者が割り当てます。",
     )
 
     argument_parser.add_task_query()

@@ -594,7 +594,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--user_id",
         type=str,
         nargs="+",
-        help="評価対象のユーザのuser_idを指定してください。" " ``file://`` を先頭に付けると、user_idの一覧が記載されたファイルを指定できます。",
+        help="評価対象のユーザのuser_idを指定してください。 ``file://`` を先頭に付けると、user_idの一覧が記載されたファイルを指定できます。",
     )
 
     parser.add_argument(
@@ -659,7 +659,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--threshold_settings",
         type=str,
-        help="JSON形式で、ディレクトリ名ごとに閾値を指定してください。\n" f"(ex) ``{json.dumps(THRESHOLD_SETTINGS_SAMPLE)}``",
+        help=f"JSON形式で、ディレクトリ名ごとに閾値を指定してください。\n(ex) ``{json.dumps(THRESHOLD_SETTINGS_SAMPLE)}``",
     )
 
     parser.add_argument("-o", "--output_dir", required=True, type=Path, help="出力ディレクトリ")

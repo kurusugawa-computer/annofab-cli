@@ -53,7 +53,7 @@ class DeleteInputData(CommandLine):
         return deleted_count
 
     def confirm_delete_input_data(self, input_data_id: str, input_data_name: str, used_task_id_list: List[str]) -> bool:
-        message_for_confirm = f"入力データ(input_data_id='{input_data_id}', " f"input_data_name='{input_data_name}') を削除しますか？"
+        message_for_confirm = f"入力データ(input_data_id='{input_data_id}', input_data_name='{input_data_name}') を削除しますか？"
         if len(used_task_id_list) > 0:
             message_for_confirm += f"タスク{used_task_id_list}に使われています。"
         return self.confirm_processing(message_for_confirm)
@@ -97,7 +97,7 @@ class DeleteInputData(CommandLine):
 
         self.service.api.delete_input_data(project_id, input_data_id)
         logger.debug(
-            f"{input_data_index+1!s} 件目: 入力データ(input_data_id='{input_data_id}', " f"input_data_name='{input_data_name}') を削除しました。"
+            f"{input_data_index+1!s} 件目: 入力データ(input_data_id='{input_data_id}', input_data_name='{input_data_name}') を削除しました。"
         )
 
         if delete_supplementary:

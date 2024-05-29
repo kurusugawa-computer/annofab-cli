@@ -179,7 +179,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--user_id",
         type=str,
         nargs="+",
-        help="変更するプロジェクトメンバのuser_idを指定してください。" " ``file://`` を先頭に付けると、一覧が記載されたファイルを指定できます。",
+        help="変更するプロジェクトメンバのuser_idを指定してください。 ``file://`` を先頭に付けると、一覧が記載されたファイルを指定できます。",
     )
     user_group.add_argument("--all_user", action="store_true", help="自分以外のすべてのプロジェクトメンバを変更します。")
 

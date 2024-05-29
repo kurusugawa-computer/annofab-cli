@@ -198,30 +198,38 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--input_data_id",
         type=str,
         nargs="+",
-        help="抽出する入力データのinput_data_idを指定してください。"
-        + " ``file://`` を先頭に付けると、input_data_id の一覧が記載されたファイルを指定できます。",
+        help=(
+            "抽出する入力データのinput_data_idを指定してください。"
+            " ``file://`` を先頭に付けると、input_data_id の一覧が記載されたファイルを指定できます。"
+        ),
     )
     id_name_list_group.add_argument(
         "--exclude_input_data_id",
         type=str,
         nargs="+",
-        help="除外する入力データのinput_data_idを指定してください。"
-        + " ``file://`` を先頭に付けると、input_data_id の一覧が記載されたファイルを指定できます。",
+        help=(
+            "除外する入力データのinput_data_idを指定してください。"
+            " ``file://`` を先頭に付けると、input_data_id の一覧が記載されたファイルを指定できます。"
+        ),
     )
 
     id_name_list_group.add_argument(
         "--input_data_name",
         type=str,
         nargs="+",
-        help="抽出する入力データのinput_data_nameを指定してください。"
-        + " ``file://`` を先頭に付けると、input_data_name の一覧が記載されたファイルを指定できます。",
+        help=(
+            "抽出する入力データのinput_data_nameを指定してください。"
+            " ``file://`` を先頭に付けると、input_data_name の一覧が記載されたファイルを指定できます。"
+        ),
     )
     id_name_list_group.add_argument(
         "--exclude_input_data_name",
         type=str,
         nargs="+",
-        help="除外する入力データのinput_data_nameを指定してください。"
-        + " ``file://`` を先頭に付けると、input_data_name の一覧が記載されたファイルを指定できます。",
+        help=(
+            "除外する入力データのinput_data_nameを指定してください。"
+            " ``file://`` を先頭に付けると、input_data_name の一覧が記載されたファイルを指定できます。"
+        ),
     )
 
     parser.add_argument("-o", "--output_dir", type=Path, required=True, help="出力先ディレクトリのパス")
