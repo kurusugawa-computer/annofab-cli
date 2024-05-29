@@ -84,7 +84,7 @@ def main(arguments: Optional[list[str]] = None) -> None:
             args.subcommand_func(args)
         except Exception as e:
             logger.exception(e)
-            raise e
+            raise e  # noqa: TRY201
 
     else:
         # 未知のサブコマンドの場合はヘルプを表示

@@ -147,7 +147,7 @@ class ChanegProjectStatusMain:
                     # 現在のプロジェクトの状態では、ステータスを変更できない場合に発生するエラー
                     logger.warning(e)
                 else:
-                    raise e
+                    raise e  # noqa: TRY201
 
         logger.info(f"{success_count} 件のプロジェクトのステータスを {status.value} に変更しました。")
 

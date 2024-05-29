@@ -67,7 +67,7 @@ def build_annofabapi_resource_and_login(args: argparse.Namespace) -> annofabapi.
     except requests.exceptions.HTTPError as e:
         if e.response.status_code == requests.codes.unauthorized:
             raise AuthenticationError(service.api.login_user_id) from e
-        raise e
+        raise e  # noqa: TRY201
 
     except AnnofabApiMfaEnabledUserExecutionError:
         # 標準入力からMFAコードを入力させる
