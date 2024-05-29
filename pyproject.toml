@@ -151,7 +151,6 @@ ignore = [
     "RET",#flake8-return
     "TCH", # flake8-type-checking
     "PTH", #pathlibを使わないコードが多いので、除外する
-    "N", # pep8-naming
     "PT", # flake8-pytest-style
 ]
 
@@ -180,7 +179,9 @@ select = [
     "ANN",  # flake8-annotations
     "E501",  # line-too-long
     "RUF100",  # unused-noqa
-    "SIM",#flake8-simplify
+    "SIM", # flake8-simplify
+    "N", # pep8-naming
+
 ]
 
 
