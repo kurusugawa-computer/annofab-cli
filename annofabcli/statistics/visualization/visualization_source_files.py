@@ -66,7 +66,7 @@ class VisualizationSourceFiles:
         Returns:
             全タスクの履歴情報。keyはtask_id, valueはタスク履歴のlist
         """
-        with open(str(self.task_history_json_path), encoding="utf-8") as f:
+        with open(str(self.task_history_json_path), encoding="utf-8") as f:  # noqa: PTH123
             task_histories_dict = json.load(f)
 
         logger.debug(
@@ -97,7 +97,7 @@ class VisualizationSourceFiles:
         Returns:
             全コメントの一覧。検査コメントだけでなく保留コメントや、返信のコメントも含まれています。
         """
-        with open(str(self.comment_json_path), encoding="utf-8") as f:
+        with open(str(self.comment_json_path), encoding="utf-8") as f:  # noqa: PTH123
             comment_list = json.load(f)
 
         logger.debug(f"{self.logging_prefix}: '{self.comment_json_path}'を読み込みました。{len(comment_list)}件のコメントが含まれています。")

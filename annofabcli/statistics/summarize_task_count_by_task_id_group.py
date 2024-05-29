@@ -171,7 +171,7 @@ class SummarizeTaskCountByTaskId(CommandLine):
             downloading_obj = DownloadingFile(self.service)
             downloading_obj.download_task_json(project_id, dest_path=str(task_json_path), is_latest=args.latest, wait_options=wait_options)
 
-        with open(task_json_path, encoding="utf-8") as f:
+        with open(task_json_path, encoding="utf-8") as f:  # noqa: PTH123
             task_list = json.load(f)
 
         df = create_task_count_summary_df(task_list, task_id_delimiter=args.task_id_delimiter, task_id_groups=get_json_from_args(args.task_id_groups))
