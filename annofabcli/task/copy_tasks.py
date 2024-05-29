@@ -39,7 +39,7 @@ def parse_copy_target(str_copy_target: str) -> CopyTarget:
     """
     tmp_array = str_copy_target.split(":")
     if len(tmp_array) != 2:
-        raise ValueError(f"'{str_copy_target}' の形式が間違っています。")
+        raise ValueError(f"'{str_copy_target}' の形式が間違っています。")  # noqa: TRY003
 
     return CopyTarget(src_task_id=tmp_array[0], dest_task_id=tmp_array[1])
 

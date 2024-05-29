@@ -135,7 +135,7 @@ class AnnotationCounterByInputData(AnnotationCounter, DataClassJsonMixin):
 
 def lazy_parse_simple_annotation_by_input_data(annotation_path: Path) -> Iterator[SimpleAnnotationParser]:
     if not annotation_path.exists():
-        raise RuntimeError(f"'{annotation_path}' は存在しません。")
+        raise RuntimeError(f"'{annotation_path}' は存在しません。")  # noqa: TRY003
 
     if annotation_path.is_dir():
         return lazy_parse_simple_annotation_dir(annotation_path)
@@ -147,7 +147,7 @@ def lazy_parse_simple_annotation_by_input_data(annotation_path: Path) -> Iterato
 
 def lazy_parse_simple_annotation_by_task(annotation_path: Path) -> Iterator[SimpleAnnotationParserByTask]:
     if not annotation_path.exists():
-        raise RuntimeError(f"'{annotation_path}' は存在しません。")
+        raise RuntimeError(f"'{annotation_path}' は存在しません。")  # noqa: TRY003
 
     if annotation_path.is_dir():
         return lazy_parse_simple_annotation_dir_by_task(annotation_path)
@@ -350,7 +350,7 @@ class ListAnnotationCounterByTask:
             input_data_count += 1
 
         if last_simple_annotation is None:
-            raise RuntimeError(f"{task_parser.task_id} ディレクトリにはjsonファイルが1つも含まれていません。")
+            raise RuntimeError(f"{task_parser.task_id} ディレクトリにはjsonファイルが1つも含まれていません。")  # noqa: TRY003
 
         return AnnotationCounterByTask(
             task_id=last_simple_annotation["task_id"],

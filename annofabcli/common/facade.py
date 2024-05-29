@@ -232,7 +232,7 @@ def convert_annotation_specs_labels_v2_to_v1(labels_v2: List[Dict[str, Any]], ad
             if additional is not None:
                 new_additional_data_definitions.append(additional)
             else:
-                raise ValueError(
+                raise ValueError(  # noqa: TRY003
                     f"additional_data_definition_id='{additional_data_definition_id}' に対応する属性情報が存在しません。"
                     f"label_id='{label_v2['label_id']}', label_name_en='{AnnofabApiFacade.get_label_name_en(label_v2)}'"
                 )

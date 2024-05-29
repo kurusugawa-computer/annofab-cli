@@ -60,12 +60,12 @@ def _get_attribute_to_api(additional_data: dict[str, Any], attribute_value: Attr
         tmp = [e for e in additional_data["choices"] if get_message_for_i18n(e["name"]) == attribute_value]
 
         if len(tmp) == 0:
-            raise ValueError(
+            raise ValueError(  # noqa: TRY003
                 f"アノテーション仕様の'{get_attribute_name(additional_data)}'属性に、選択肢名(英語)が'{attribute_value}'である選択肢は存在しません。"
                 f" :: additional_data_definition_id='{additional_data_definition_id}'"
             )
         if len(tmp) > 1:
-            raise ValueError(
+            raise ValueError(  # noqa: TRY003
                 f"アノテーション仕様の'{get_attribute_name(additional_data)}'属性に、選択肢名(英語)が'{attribute_value}'である選択肢が複数存在します。"
                 f" :: additional_data_definition_id='{additional_data_definition_id}'"
             )
@@ -102,7 +102,7 @@ def convert_attributes_from_cli_to_api(
     else:
         label_info = more_itertools.first_true(annotation_specs["labels"], pred=lambda e: e["label_id"] == label_id)
         if label_info is None:
-            raise ValueError(f"アノテーション仕様に、label_id='{label_id}' であるラベルは存在しません。")
+            raise ValueError(f"アノテーション仕様に、label_id='{label_id}' であるラベルは存在しません。")  # noqa: TRY003
 
         tmp_additional_data_definition_ids = set(label_info["additional_data_definitions"])
         tmp_additionals = [e for e in annotation_specs["additionals"] if e["additional_data_definition_id"] in tmp_additional_data_definition_ids]

@@ -37,7 +37,7 @@ class MergeAnnotationMain:
         elif annotation_path.is_dir():
             return lazy_parse_simple_annotation_dir(annotation_path)
         else:
-            raise RuntimeError(f"{annotation_path} はサポート対象外です。")
+            raise RuntimeError(f"{annotation_path} はサポート対象外です。")  # noqa: TRY003
 
     @staticmethod
     def _write_outer_file(parser: SimpleAnnotationParser, anno: Dict[str, Any], output_json: Path) -> None:
@@ -121,7 +121,7 @@ class MergeAnnotationMain:
                 return SimpleAnnotationZipParser(zip_file, str(json_path))
             return None
         else:
-            raise RuntimeError(f"{annotation_path} はサポート対象外です。")
+            raise RuntimeError(f"{annotation_path} はサポート対象外です。")  # noqa: TRY003
 
     @staticmethod
     def create_is_target_parser_func(

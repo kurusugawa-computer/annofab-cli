@@ -84,11 +84,11 @@ def parse_copy_target(str_copy_target: str) -> CopyTarget:
         elif len(tmp) == 2:
             return (tmp[0], tmp[1])
         else:
-            raise ValueError(f"'{str_copy_target}' の形式が間違っています。")
+            raise ValueError(f"'{str_copy_target}' の形式が間違っています。")  # noqa: TRY003
 
     tmp_array = str_copy_target.split(":")
     if len(tmp_array) != 2:
-        raise ValueError(f"'{str_copy_target}' の形式が間違っています。")
+        raise ValueError(f"'{str_copy_target}' の形式が間違っています。")  # noqa: TRY003
 
     str_src = tmp_array[0]
     str_dest = tmp_array[1]
@@ -106,7 +106,7 @@ def parse_copy_target(str_copy_target: str) -> CopyTarget:
     elif src_input_data_id is None and dest_input_data_id is None:
         return CopyTargetByTask(src_task_id=src_task_id, dest_task_id=dest_task_id)
     else:
-        raise ValueError(f"'{str_copy_target}' の形式が間違っています。")
+        raise ValueError(f"'{str_copy_target}' の形式が間違っています。")  # noqa: TRY003
 
 
 def get_copy_target_list(str_copy_target_list: list[str]) -> list[CopyTarget]:

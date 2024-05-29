@@ -268,7 +268,7 @@ def load_logging_config_from_args(args: argparse.Namespace) -> None:
     data = pkgutil.get_data("annofabcli", "data/logging.yaml")
     if data is None:
         logger.warning("annofabcli/data/logging.yaml が読み込めませんでした")
-        raise AnnofabCliException("annofabcli/data/logging.yaml が読み込めませんでした")
+        raise AnnofabCliException("annofabcli/data/logging.yaml が読み込めませんでした")  # noqa: TRY003
 
     logging_config = yaml.safe_load(data.decode("utf-8"))
 
