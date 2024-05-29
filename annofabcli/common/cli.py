@@ -19,13 +19,12 @@ import requests
 import yaml
 from annofabapi.api import DEFAULT_ENDPOINT_URL
 from annofabapi.exceptions import AnnofabApiException
-from annofabapi.exceptions import MfaEnabledUserExecutionError as AnnofabApiMfaEnabledUserExecutionError
 from annofabapi.models import OrganizationMemberRole, ProjectMemberRole
 from more_itertools import first_true
 
 from annofabcli.common.dataclasses import WaitOptions
 from annofabcli.common.enums import FormatArgument
-from annofabcli.common.exceptions import AnnofabCliException, AuthenticationError, MfaEnabledUserExecutionError
+from annofabcli.common.exceptions import AnnofabCliException, AuthenticationError
 from annofabcli.common.facade import AnnofabApiFacade
 from annofabcli.common.typing import InputDataSize
 from annofabcli.common.utils import (
@@ -68,18 +67,6 @@ def build_annofabapi_resource_and_login(args: argparse.Namespace) -> annofabapi.
         if e.response.status_code == requests.codes.unauthorized:
             raise AuthenticationError(service.api.login_user_id) from e
         raise e  # noqa: TRY201
-
-    except AnnofabApiMfaEnabledUserExecutionError:
-        # 標準入力からMFAコードを入力させる
-        inputted_mfa_code = ""
-        while inputted_mfa_code == "":
-            inputted_mfa_code = input("Enter MFA Code: ")
-
-        try:
-            service.api.login(mfa_code=inputted_mfa_code)
-            return service  # noqa: TRY300
-        except AnnofabApiMfaEnabledUserExecutionError as e:
-            raise MfaEnabledUserExecutionError(service.api.login_user_id) from e
 
 
 def add_parser(
