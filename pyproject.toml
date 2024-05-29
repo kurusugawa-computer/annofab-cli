@@ -131,6 +131,7 @@ ignore = [
     "ISC001", # single-line-implicit-string-concatenation: formatterと競合するので無視する https://docs.astral.sh/ruff/formatter/#conflicting-lint-rules
     "ERA", # : 役立つこともあるが、コメントアウトしていないコードも警告されるので無視する
     "PERF203", # try-except-in-loop: ループ内でtry-exceptを使うこともあるため無視する。
+    "COM812", # missing-trailing-comma: 末尾のカンマを考慮しないため無視する
     "FIX", # TODOやFIXMEを使うため無視する
     "TD", # TODOコメントの書き方に気にしていないので無視する
     
@@ -141,7 +142,6 @@ ignore = [
     "C90", # mccabe
     "BLE", # flake8-blind-except
     "TRY", # tryceratops
-    "COM", # flake8-commas
     "S", # flake8-bandit
     "EM",#flake8-errmsg
     "EXE", # flake8-executable
