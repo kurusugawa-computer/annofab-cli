@@ -67,7 +67,7 @@ class PutProjectMembers(CommandLine):
         updated_project_member = self.service.api.put_project_member(project_id, deleted_member["user_id"], request_body=request_body)[0]
         return updated_project_member
 
-    def put_project_members(self, project_id: str, members: List[Member], delete: bool = False):  # noqa: ANN201
+    def put_project_members(self, project_id: str, members: List[Member], delete: bool = False):  # noqa: ANN201, FBT001, FBT002
         """
         プロジェクトメンバを一括で登録する。
 

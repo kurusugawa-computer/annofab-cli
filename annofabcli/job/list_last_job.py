@@ -37,7 +37,7 @@ class ListLastJob(CommandLine):
         else:
             return job_list[-1]
 
-    def get_project_info(self, project_id: str, project: Project, add_details: bool = False) -> Dict[str, Any]:
+    def get_project_info(self, project_id: str, project: Project, add_details: bool = False) -> Dict[str, Any]:  # noqa: FBT001, FBT002
         """
         出力対象であるプロジェクトに関する情報を取得する。
 
@@ -61,7 +61,7 @@ class ListLastJob(CommandLine):
 
         return project_info
 
-    def get_last_job_list(self, project_id_list: List[str], job_type: ProjectJobType, add_details: bool = False) -> List[ProjectJobInfo]:
+    def get_last_job_list(self, project_id_list: List[str], job_type: ProjectJobType, add_details: bool = False) -> List[ProjectJobInfo]:  # noqa: FBT001, FBT002
         job_list = []
         for project_id in project_id_list:
             project = self.service.wrapper.get_project_or_none(project_id)
@@ -79,7 +79,7 @@ class ListLastJob(CommandLine):
 
         return job_list
 
-    def print_job_list(self, project_id_list: List[str], job_type: ProjectJobType, add_details: bool = False) -> None:
+    def print_job_list(self, project_id_list: List[str], job_type: ProjectJobType, add_details: bool = False) -> None:  # noqa: FBT001, FBT002
         """
         ジョブ一覧を出力する
 

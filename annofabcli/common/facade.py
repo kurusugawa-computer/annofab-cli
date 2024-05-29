@@ -143,7 +143,7 @@ def match_task_with_query(  # pylint: disable=too-many-return-statements  # noqa
         trueならタスククエリ条件に合致する。
     """
 
-    def match_str(name: str, query: str, ignore_case: bool) -> bool:
+    def match_str(name: str, query: str, ignore_case: bool) -> bool:  # noqa: FBT001
         if ignore_case:
             return query.lower() in name.lower()
         else:
@@ -187,7 +187,7 @@ def match_input_data_with_query(  # pylint: disable=too-many-return-statements
         trueならクエリ条件に合致する。
     """
 
-    def match_str(name: str, query: str, ignore_case: bool) -> bool:
+    def match_str(name: str, query: str, ignore_case: bool) -> bool:  # noqa: FBT001
         if ignore_case:
             return query.lower() in name.lower()
         else:

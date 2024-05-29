@@ -66,7 +66,7 @@ class DeleteInputData(CommandLine):
         )
         return self.confirm_processing(message_for_confirm)
 
-    def delete_input_data(self, project_id: str, input_data_id: str, input_data_index: int, delete_supplementary: bool, force: bool):  # noqa: ANN201
+    def delete_input_data(self, project_id: str, input_data_id: str, input_data_index: int, delete_supplementary: bool, force: bool):  # noqa: ANN201, FBT001
         input_data = self.service.wrapper.get_input_data_or_none(project_id, input_data_id)
         if input_data is None:
             logger.info(f"input_data_id={input_data_id} は存在しません。")
@@ -115,7 +115,7 @@ class DeleteInputData(CommandLine):
                 )
         return True
 
-    def delete_input_data_list(self, project_id: str, input_data_id_list: List[str], delete_supplementary: bool, force: bool):  # noqa: ANN201
+    def delete_input_data_list(self, project_id: str, input_data_id_list: List[str], delete_supplementary: bool, force: bool):  # noqa: ANN201, FBT001
         """
         タスクに使われていない入力データを削除する。
         """

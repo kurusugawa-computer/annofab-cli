@@ -37,7 +37,7 @@ class ListAllCommentMain:
         comment_json: Optional[Path],
         task_ids: Optional[Collection[str]],
         comment_type: Optional[CommentType],
-        exclude_reply: bool,
+        exclude_reply: bool,  # noqa: FBT001
     ) -> list[dict[str, Any]]:
         if comment_json is None:
             downloading_obj = DownloadingFile(self.service)

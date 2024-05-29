@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 
 class DownloadingAnnotationZip(CommandLine):
-    def download_annotation_zip(self, project_id: str, output_zip: Path, is_latest: bool, should_download_full_annotation: bool = False):  # noqa: ANN201
+    def download_annotation_zip(self, project_id: str, output_zip: Path, is_latest: bool, should_download_full_annotation: bool = False):  # noqa: ANN201, FBT001, FBT002
         super().validate_project(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER])
 
         project_title = self.facade.get_project_title(project_id)

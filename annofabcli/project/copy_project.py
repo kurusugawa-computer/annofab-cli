@@ -53,7 +53,7 @@ class CopyProject(CommandLine):
         dest_title: str,
         dest_overview: Optional[str] = None,
         copied_targets: Optional[Collection[CopiedTarget]] = None,
-        wait_for_completion: bool = False,
+        wait_for_completion: bool = False,  # noqa: FBT001, FBT002
     ):
         """
         プロジェクトメンバを、別のプロジェクトにコピーする。

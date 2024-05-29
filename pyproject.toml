@@ -141,7 +141,6 @@ ignore = [
     "C90", # mccabe
     "SLF", #  flake8-self
     "BLE", # flake8-blind-except
-    "FBT", # flake8-boolean-trap
     "TRY", # tryceratops
     "COM", # flake8-commas
     "S", # flake8-bandit

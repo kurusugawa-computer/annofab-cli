@@ -34,7 +34,7 @@ class ListUser(CommandLine):
         "sampling_acceptance_rate",
     ]
 
-    def get_all_project_members(self, project_id: str, include_inactive: bool = False):  # noqa: ANN201
+    def get_all_project_members(self, project_id: str, include_inactive: bool = False):  # noqa: ANN201, FBT001, FBT002
         query_params = {}
         if include_inactive:
             query_params.update({"include_inactive_member": ""})
@@ -42,7 +42,7 @@ class ListUser(CommandLine):
         project_members = self.service.wrapper.get_all_project_members(project_id, query_params=query_params)
         return project_members
 
-    def get_project_members_with_project_id(self, project_id_list: List[str], include_inactive: bool = False) -> List[ProjectMember]:
+    def get_project_members_with_project_id(self, project_id_list: List[str], include_inactive: bool = False) -> List[ProjectMember]:  # noqa: FBT001, FBT002
         all_project_members: List[ProjectMember] = []
 
         for project_id in project_id_list:

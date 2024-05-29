@@ -195,7 +195,7 @@ class ListAnnotationCounterByInputData:
             simple_annotation: JSONファイルの内容
         """
 
-        def convert_attribute_value_to_key(value: Union[bool, str, float]) -> str:
+        def convert_attribute_value_to_key(value: Union[bool, str, float]) -> str:  # noqa: FBT001
             """
             アノテーションJSONに格納されている属性値を、dict用のkeyに変換する。
 

@@ -37,7 +37,7 @@ class User:
 
 
 class CancelAcceptanceMain(CommandLineWithConfirm):
-    def __init__(self, service: annofabapi.Resource, project_id: str, all_yes: bool = False) -> None:
+    def __init__(self, service: annofabapi.Resource, project_id: str, all_yes: bool = False) -> None:  # noqa: FBT001, FBT002
         self.service = service
         self.project_id = project_id
         self.facade = AnnofabApiFacade(service)
@@ -59,10 +59,10 @@ class CancelAcceptanceMain(CommandLineWithConfirm):
         self,
         task_id: str,
         acceptor: Optional[User] = None,
-        assign_last_acceptor: bool = True,
+        assign_last_acceptor: bool = True,  # noqa: FBT001, FBT002
         task_query: Optional[TaskQuery] = None,
         task_index: Optional[int] = None,
-        dryrun: bool = False,
+        dryrun: bool = False,  # noqa: FBT001, FBT002
     ) -> bool:
         logging_prefix = f"{task_index + 1} 件目" if task_index is not None else ""
 
@@ -120,9 +120,9 @@ class CancelAcceptanceMain(CommandLineWithConfirm):
         self,
         tpl: Tuple[int, str],
         acceptor: Optional[User] = None,
-        assign_last_acceptor: bool = True,
+        assign_last_acceptor: bool = True,  # noqa: FBT001, FBT002
         task_query: Optional[TaskQuery] = None,
-        dryrun: bool = False,
+        dryrun: bool = False,  # noqa: FBT001, FBT002
     ) -> bool:
         task_index, task_id = tpl
         try:
@@ -142,10 +142,10 @@ class CancelAcceptanceMain(CommandLineWithConfirm):
         self,
         task_id_list: List[str],
         acceptor: Optional[User] = None,
-        assign_last_acceptor: bool = True,
+        assign_last_acceptor: bool = True,  # noqa: FBT001, FBT002
         task_query: Optional[TaskQuery] = None,
         parallelism: Optional[int] = None,
-        dryrun: bool = False,
+        dryrun: bool = False,  # noqa: FBT001, FBT002
     ):
         """
         タスクを受入取り消しする

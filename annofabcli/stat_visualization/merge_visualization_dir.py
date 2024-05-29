@@ -189,7 +189,7 @@ def merge_visualization_dir(  # pylint: disable=too-many-statements  # noqa: ANN
     project_dir_list: List[ProjectDir],
     output_project_dir: ProjectDir,
     user_id_list: Optional[List[str]] = None,
-    minimal_output: bool = False,
+    minimal_output: bool = False,  # noqa: FBT001, FBT002
 ):
     merging_obj = MergingVisualizationFile(project_dir_list)
     # 基本となるCSVファイルを読み込みマージする

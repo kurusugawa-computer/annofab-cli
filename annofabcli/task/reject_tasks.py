@@ -73,7 +73,7 @@ class RejectTasksMain(CommandLineWithConfirm):
 
         return self.service.api.batch_update_comments(project_id, task["task_id"], first_input_data_id, request_body=req_inspection)[0]
 
-    def confirm_reject_task(self, task_id: str, assign_last_annotator: bool, assigned_annotator_user_id: Optional[str]) -> bool:
+    def confirm_reject_task(self, task_id: str, assign_last_annotator: bool, assigned_annotator_user_id: Optional[str]) -> bool:  # noqa: FBT001
         confirm_message = f"task_id = {task_id} のタスクを差し戻しますか？"
         if assign_last_annotator:
             confirm_message += "最後のannotation phaseの担当者を割り当てます。"
@@ -119,9 +119,9 @@ class RejectTasksMain(CommandLineWithConfirm):
     def _can_reject_task(  # noqa: ANN202
         self,
         task: dict[str, Any],
-        assign_last_annotator: bool,
+        assign_last_annotator: bool,  # noqa: FBT001
         assigned_annotator_user_id: Optional[str],
-        cancel_acceptance: bool = False,
+        cancel_acceptance: bool = False,  # noqa: FBT001, FBT002
         task_query: Optional[TaskQuery] = None,
     ):
         task_id = task["task_id"]
@@ -163,12 +163,12 @@ class RejectTasksMain(CommandLineWithConfirm):
         project_id: str,
         task_id: str,
         inspection_comment: Optional[str] = None,
-        assign_last_annotator: bool = True,
+        assign_last_annotator: bool = True,  # noqa: FBT001, FBT002
         assigned_annotator_user_id: Optional[str] = None,
-        cancel_acceptance: bool = False,
+        cancel_acceptance: bool = False,  # noqa: FBT001, FBT002
         task_query: Optional[TaskQuery] = None,
         task_index: Optional[int] = None,
-        dryrun: bool = False,
+        dryrun: bool = False,  # noqa: FBT001, FBT002
     ) -> bool:
         """
         タスクを強制的に差し戻す
@@ -261,11 +261,11 @@ class RejectTasksMain(CommandLineWithConfirm):
         tpl: tuple[int, str],
         project_id: str,
         inspection_comment: Optional[str] = None,
-        assign_last_annotator: bool = True,
+        assign_last_annotator: bool = True,  # noqa: FBT001, FBT002
         assigned_annotator_user_id: Optional[str] = None,
-        cancel_acceptance: bool = False,
+        cancel_acceptance: bool = False,  # noqa: FBT001, FBT002
         task_query: Optional[TaskQuery] = None,
-        dryrun: bool = False,
+        dryrun: bool = False,  # noqa: FBT001, FBT002
     ) -> bool:
         task_index, task_id = tpl
         try:
@@ -289,12 +289,12 @@ class RejectTasksMain(CommandLineWithConfirm):
         project_id: str,
         task_id_list: list[str],
         inspection_comment: Optional[str] = None,
-        assign_last_annotator: bool = True,
+        assign_last_annotator: bool = True,  # noqa: FBT001, FBT002
         assigned_annotator_user_id: Optional[str] = None,
-        cancel_acceptance: bool = False,
+        cancel_acceptance: bool = False,  # noqa: FBT001, FBT002
         task_query: Optional[TaskQuery] = None,
         parallelism: Optional[int] = None,
-        dryrun: bool = False,
+        dryrun: bool = False,  # noqa: FBT001, FBT002
     ) -> None:
         if task_query is not None:
             task_query = self.facade.set_account_id_of_task_query(project_id, task_query)
