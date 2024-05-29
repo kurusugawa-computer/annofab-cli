@@ -64,7 +64,7 @@ class DropProjectMembersMain:
         for project_id in project_id_list:
             try:
                 if not self.facade.my_role_is_owner(project_id):
-                    logger.warning(f"オーナではないため、プロジェクトメンバを脱退させられません。" f"project_id = {project_id}")
+                    logger.warning(f"オーナではないため、プロジェクトメンバを脱退させられません。project_id = {project_id}")
                     continue
 
                 self.drop_project_members(project_id, user_id_list)

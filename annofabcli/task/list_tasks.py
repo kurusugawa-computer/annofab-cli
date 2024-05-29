@@ -245,7 +245,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--user_id",
         type=str,
         nargs="+",
-        help="絞り込み対象である担当者のuser_idを指定します。" " ``file://`` を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。",
+        help="絞り込み対象である担当者のuser_idを指定します。 ``file://`` を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。",
     )
 
     argument_parser.add_format(

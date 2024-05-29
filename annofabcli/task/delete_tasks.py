@@ -182,7 +182,7 @@ class DeleteTaskMain(CommandLineWithConfirm):
             logger.warning(f"{log_prefix} :: タスクは存在しません。")
             return False
 
-        logger.debug(f"{log_prefix} :: status={task['status']}, " f"phase={task['phase']}, updated_datetime={task['updated_datetime']}")
+        logger.debug(f"{log_prefix} :: status={task['status']}, phase={task['phase']}, updated_datetime={task['updated_datetime']}")
 
         if not self._should_delete_task(task, log_prefix, task_query=task_query):
             return False

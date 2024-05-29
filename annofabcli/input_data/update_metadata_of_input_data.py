@@ -42,7 +42,7 @@ class UpdateMetadataMain(CommandLineWithConfirm):
             logger.warning(f"{logging_prefix} 入力データは存在しないのでスキップします。input_data_id={input_data_id}")
             return False
 
-        logger.debug(f"{logging_prefix} input_data_id={input_data['input_data_id']}, " f"input_data_name={input_data['input_data_name']}")
+        logger.debug(f"{logging_prefix} input_data_id={input_data['input_data_id']}, input_data_name={input_data['input_data_name']}")
         if not self.confirm_processing(f"入力データのメタデータを更新しますか？ input_data_id={input_data['input_data_id']}"):
             return False
 

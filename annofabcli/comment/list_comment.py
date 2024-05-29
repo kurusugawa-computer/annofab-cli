@@ -86,14 +86,14 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     argument_parser.add_project_id()
     argument_parser.add_task_id(
         required=True,
-        help_message="対象のタスクのtask_idを指定します。" " ``file://`` を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。",
+        help_message="対象のタスクのtask_idを指定します。 ``file://`` を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。",
     )
 
     parser.add_argument(
         "--comment_type",
         choices=[CommentType.INSPECTION.value, CommentType.ONHOLD.value],
         help=(
-            "コメントの種類で絞り込みます。\n\n" f" * {CommentType.INSPECTION.value}: 検査コメント\n" f" * {CommentType.ONHOLD.value}: 保留コメント\n"
+            "コメントの種類で絞り込みます。\n\n" f" * {CommentType.INSPECTION.value}: 検査コメント\n * {CommentType.ONHOLD.value}: 保留コメント\n"
         ),
     )
 

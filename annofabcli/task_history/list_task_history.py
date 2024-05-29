@@ -131,7 +131,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--task_id",
         type=str,
         nargs="+",
-        help="対象のタスクのtask_idを指定します。" " ``file://`` を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。",
+        help="対象のタスクのtask_idを指定します。 ``file://`` を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。",
     )
 
     argument_parser.add_format(

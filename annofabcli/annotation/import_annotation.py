@@ -400,7 +400,7 @@ class ImportAnnotationMain(CommandLineWithConfirm):
                     success_count += 1
             except Exception:  # pylint: disable=broad-except
                 logger.warning(
-                    f"task_id='{parser.task_id}', input_data_id='{parser.input_data_id}' の" f"アノテーションのインポートに失敗しました。",
+                    f"task_id='{parser.task_id}', input_data_id='{parser.input_data_id}' のアノテーションのインポートに失敗しました。",
                     exc_info=True,
                 )
 

@@ -70,7 +70,7 @@ class InviteProjectMemberMain:
         for project_id in project_id_list:
             try:
                 if not self.facade.my_role_is_owner(project_id):
-                    logger.warning(f"オーナではないため、プロジェクトメンバを招待できません。" f"project_id = {project_id}")
+                    logger.warning(f"オーナではないため、プロジェクトメンバを招待できません。project_id = {project_id}")
                     continue
 
                 self.invite_project_members(project_id, user_id_list, member_role)

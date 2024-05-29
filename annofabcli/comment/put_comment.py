@@ -160,7 +160,7 @@ class PutCommentMain(CommandLineWithConfirm):
             logger.warning(f"{logging_prefix} : task_id='{task_id}' のタスクは存在しないので、スキップします。")
             return 0
 
-        logger.debug(f"{logging_prefix} : task_id = {task['task_id']}, " f"status = {task['status']}, " f"phase = {task['phase']}, ")
+        logger.debug(f"{logging_prefix} : task_id = {task['task_id']}, status = {task['status']}, phase = {task['phase']}, ")
 
         if not self._can_add_comment(
             task=task,
@@ -182,7 +182,7 @@ class PutCommentMain(CommandLineWithConfirm):
                 request_body = self._create_request_body(task=changed_task, input_data_id=input_data_id, comments=comments)
                 self.service.api.batch_update_comments(self.project_id, task_id, input_data_id, request_body=request_body)
                 added_comments_count += 1
-                logger.debug(f"{logging_prefix} : task_id={task_id}, input_data_id={input_data_id}: " f"{len(comments)}件のコメントを付与しました。")
+                logger.debug(f"{logging_prefix} : task_id={task_id}, input_data_id={input_data_id}: {len(comments)}件のコメントを付与しました。")
             except Exception:  # pylint: disable=broad-except
                 logger.warning(
                     f"{logging_prefix} : task_id={task_id}, input_data_id={input_data_id}: コメントの付与に失敗しました。",

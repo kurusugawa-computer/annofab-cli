@@ -96,7 +96,7 @@ class PrintAnnotationSpecsLabel(CommandLine):
             return None
         history = histories[-(before + 1)]
         logger.info(
-            f"{history['updated_datetime']}のアノテーション仕様を出力します。" f"history_id={history['history_id']}, comment={history['comment']}"
+            f"{history['updated_datetime']}のアノテーション仕様を出力します。history_id={history['history_id']}, comment={history['comment']}"
         )
         return history["history_id"]
 

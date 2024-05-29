@@ -112,7 +112,7 @@ class DeleteAnnotationMain(CommandLineWithConfirm):
             return
 
         task: Task = Task.from_dict(dict_task)
-        logger.info(f"task_id={task.task_id}, phase={task.phase.value}, status={task.status.value}, " f"updated_datetime={task.updated_datetime}")
+        logger.info(f"task_id={task.task_id}, phase={task.phase.value}, status={task.status.value}, updated_datetime={task.updated_datetime}")
 
         if task.status == TaskStatus.WORKING:
             logger.warning(f"task_id={task_id}: タスクが作業中状態のため、スキップします。")

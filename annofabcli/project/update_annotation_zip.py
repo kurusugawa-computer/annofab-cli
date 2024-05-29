@@ -69,7 +69,9 @@ class SubUpdateAnnotationZip:
         )
         job_status = JobStatus(job["job_status"])
         if job_status == JobStatus.SUCCEEDED:
-            if dateutil.parser.parse(job["updated_datetime"]) < dateutil.parser.parse(last_tasks_updated_datetime) or dateutil.parser.parse(job["updated_datetime"]) < dateutil.parser.parse(annotation_specs_updated_datetime):
+            if dateutil.parser.parse(job["updated_datetime"]) < dateutil.parser.parse(last_tasks_updated_datetime) or dateutil.parser.parse(
+                job["updated_datetime"]
+            ) < dateutil.parser.parse(annotation_specs_updated_datetime):
                 return True
             else:
                 logger.debug(

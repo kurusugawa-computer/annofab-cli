@@ -55,7 +55,7 @@ class ChangeInputDataNameMain(CommandLineWithConfirm):
             return False
 
         if not self.confirm_processing(
-            f"input_data_id='{input_data_id}' :: " f"input_data_name='{old_input_data['input_data_name']}'を'{new_input_data_name}'に変更しますか？"
+            f"input_data_id='{input_data_id}' :: input_data_name='{old_input_data['input_data_name']}'を'{new_input_data_name}'に変更しますか？"
         ):
             return False
 

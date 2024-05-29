@@ -93,7 +93,7 @@ def get_only_selective_attribute(columns: list[AttributeValueKey]) -> list[Attri
 
     if len(non_selective_attribute_names) > 0:
         logger.debug(
-            f"以下の属性は値の個数が{SELECTIVE_ATTRIBUTE_VALUE_MAX_COUNT}を超えていたため、集計しません。 :: " f"{non_selective_attribute_names}"
+            f"以下の属性は値の個数が{SELECTIVE_ATTRIBUTE_VALUE_MAX_COUNT}を超えていたため、集計しません。 :: {non_selective_attribute_names}"
         )
 
     return [
@@ -478,7 +478,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--annotation",
         type=str,
         required=False,
-        help="アノテーションzip、またはzipを展開したディレクトリを指定します。" "指定しない場合はAnnofabからダウンロードします。",
+        help="アノテーションzip、またはzipを展開したディレクトリを指定します。指定しない場合はAnnofabからダウンロードします。",
     )
 
     parser.add_argument(

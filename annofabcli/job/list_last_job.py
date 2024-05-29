@@ -155,7 +155,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--add_details",
         action="store_true",
-        help="プロジェクトに関する詳細情報を表示します" "（ ``task_last_updated_datetime, annotation_specs_last_updated_datetime`` ）",
+        help="プロジェクトに関する詳細情報を表示します（ ``task_last_updated_datetime, annotation_specs_last_updated_datetime`` ）",
     )
 
     argument_parser.add_format(choices=[FormatArgument.CSV, FormatArgument.JSON, FormatArgument.PRETTY_JSON], default=FormatArgument.CSV)

@@ -210,7 +210,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "-p",
         "--project_id",
         type=str,
-        help="対象のプロジェクトのproject_idを指定してください。" "指定すると、入力データ一覧ファイル、タスク一覧ファイルをダウンロードします。",
+        help="対象のプロジェクトのproject_idを指定してください。指定すると、入力データ一覧ファイル、タスク一覧ファイルをダウンロードします。",
     )
 
     parser.add_argument("-i", "--input_data_id", type=str, nargs="+", help="指定したinput_data_idに完全一致する入力データを絞り込みます。")

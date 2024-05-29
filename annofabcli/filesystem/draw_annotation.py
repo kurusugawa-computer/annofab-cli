@@ -266,7 +266,7 @@ def draw_annotation_all(  # noqa: ANN201, PLR0913
         try:
             drawing.main(parser, image_file=image_file, output_file=output_file, image_size=default_image_size)
             logger.debug(
-                f"{success_count+1}件目: {output_file!s} を出力しました。image_file={image_file}, " f"アノテーションJSON={parser.json_file_path}"
+                f"{success_count+1}件目: {output_file!s} を出力しました。image_file={image_file}, アノテーションJSON={parser.json_file_path}"
             )
             success_count += 1
         except Exception:  # pylint: disable=broad-except
@@ -367,7 +367,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     )
 
     parser.add_argument(
-        "--image_dir", type=Path, help="画像が存在するディレクトリを指定してください。\n" "'--input_data_id_csv'を指定したときは必須です。"
+        "--image_dir", type=Path, help="画像が存在するディレクトリを指定してください。\n'--input_data_id_csv'を指定したときは必須です。"
     )
 
     parser.add_argument(
@@ -380,7 +380,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     )
 
     parser.add_argument(
-        "--default_image_size", type=str, help="デフォルトの画像サイズ。 ``--input_data_id_csv`` を指定しないときは必須です。\n" "(例) 1280x720"
+        "--default_image_size", type=str, help="デフォルトの画像サイズ。 ``--input_data_id_csv`` を指定しないときは必須です。\n(例) 1280x720"
     )
 
     LABEL_COLOR_SAMPLE = {"dog": [255, 128, 64], "cat": "blue"}

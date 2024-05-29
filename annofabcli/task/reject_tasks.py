@@ -213,7 +213,7 @@ class RejectTasksMain(CommandLineWithConfirm):
             logger.warning(f"{logging_prefix} : task_id='{task_id}'のタスクをは存在しないので、スキップします。")
             return False
 
-        logger.debug(f"{logging_prefix} : task_id = {task['task_id']}, " f"status = {task['status']}, " f"phase = {task['phase']}, ")
+        logger.debug(f"{logging_prefix} : task_id = {task['task_id']}, status = {task['status']}, phase = {task['phase']}, ")
 
         if not self._can_reject_task(
             task=task,
@@ -454,13 +454,13 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     assign_group.add_argument(
         "--not_assign",
         action="store_true",
-        help="差し戻したタスクに担当者を割り当てません。" "指定しない場合は、最後のannotation phaseの担当者が割り当てられます。",
+        help="差し戻したタスクに担当者を割り当てません。指定しない場合は、最後のannotation phaseの担当者が割り当てられます。",
     )
 
     assign_group.add_argument(
         "--assigned_annotator_user_id",
         type=str,
-        help="差し戻したタスクに割り当てるユーザのuser_idを指定します。" "指定しない場合は、最後の教師付フェーズの担当者が割り当てられます。",
+        help="差し戻したタスクに割り当てるユーザのuser_idを指定します。指定しない場合は、最後の教師付フェーズの担当者が割り当てられます。",
     )
 
     parser.add_argument("--cancel_acceptance", action="store_true", help="受入完了状態を取り消して、タスクを差し戻します。")
