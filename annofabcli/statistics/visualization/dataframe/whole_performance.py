@@ -104,6 +104,11 @@ class WholePerformance:
         all_user_performance = cls._create_all_user_performance(worktime_per_date, task_worktime_by_phase_user)
 
         df_all = all_user_performance.df
+        # タスクは存在するが合計の作業時間が0時間の場合
+        if len(df_all) == 0:
+            return WholePerformance.empty()
+
+        # 1人が作業した場合のパフォーマンス情報を生成しているので、lengthは1のはず
         assert len(df_all) == 1
 
         # 作業している人数をカウントする（実際の計測作業時間でカウントする）
