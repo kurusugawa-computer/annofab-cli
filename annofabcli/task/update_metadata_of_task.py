@@ -179,7 +179,7 @@ class UpdateMetadataOfTaskMain(CommandLineWithConfirm):
             with multiprocessing.Pool(self.parallelism) as pool:
                 pool.map(partial_func, tmp_list)
 
-    def update_metadata_of_task2(
+    def update_metadata_of_task(
         self,
         project_id: str,
         metadata_by_task_id: dict[str, Metadata],
@@ -191,6 +191,7 @@ class UpdateMetadataOfTaskMain(CommandLineWithConfirm):
 
         if self.is_overwrite_metadata and self.all_yes:
             self.update_metadata_with_patch_tasks_metadata_api(project_id, metadata_by_task_id)
+            logger.info(f"{len(metadata_by_task_id)} 件のタスクのメタデータを変更しました。")
         else:
             success_count = 0
             if self.parallelism is not None:
@@ -229,7 +230,14 @@ class UpdateMetadataOfTask(CommandLine):
 
         if args.parallelism is not None and not args.yes:
             print(  # noqa: T201
-                f"{COMMON_MESSAGE} argument --parallelism: '--parallelism' を指定するときは、必ず  '--yes'  を指定してください。",
+                f"{COMMON_MESSAGE} argument --parallelism: '--parallelism' を指定するときは、 '--yes' が必須です。",
+                file=sys.stderr,
+            )
+            return False
+
+        if args.metadata is not None and args.task_id is None:
+            print(  # noqa: T201
+                f"{COMMON_MESSAGE} argument --task_id: '--metadata' を指定するときは、 '--task_id' が必須です。",
                 file=sys.stderr,
             )
             return False
@@ -242,20 +250,22 @@ class UpdateMetadataOfTask(CommandLine):
         if not self.validate(args):
             sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
-        task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id)
+        task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id) if args.task_id is not None else None
 
         if args.metadata is not None:
             metadata = annofabcli.common.cli.get_json_from_args(args.metadata)
+            assert task_id_list is not None, "'--metadata'を指定したときは'--task_id'は必須です。"
             metadata_by_task_id = {task_id: metadata for task_id in task_id_list}
         elif args.metadata_by_task_id is not None:
             metadata_by_task_id = annofabcli.common.cli.get_json_from_args(args.metadata_by_task_id)
-            metadata_by_task_id = {task_id: metadata for task_id, metadata in metadata_by_task_id.items() if task_id in task_id_list}
+            if task_id_list is not None:
+                metadata_by_task_id = {task_id: metadata for task_id, metadata in metadata_by_task_id.items() if task_id in task_id_list}
         else:
             raise RuntimeError("'--metadata'か'--metadata_by_task_id'のどちらかを指定する必要があります。")
 
         super().validate_project(args.project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER])
         main_obj = UpdateMetadataOfTaskMain(self.service, is_overwrite_metadata=args.overwrite, parallelism=args.parallelism, all_yes=args.yes)
-        main_obj.update_metadata_of_task2(args.project_id, metadata_by_task_id=metadata_by_task_id)
+        main_obj.update_metadata_of_task(args.project_id, metadata_by_task_id=metadata_by_task_id)
 
 
 def main(args: argparse.Namespace) -> None:
@@ -267,7 +277,7 @@ def main(args: argparse.Namespace) -> None:
 def parse_args(parser: argparse.ArgumentParser) -> None:
     argument_parser = ArgumentParser(parser)
     argument_parser.add_project_id()
-    argument_parser.add_task_id(required=True)
+    argument_parser.add_task_id(required=False)
 
     metadata_group_parser = parser.add_mutually_exclusive_group(required=True)
     metadata_group_parser.add_argument(
