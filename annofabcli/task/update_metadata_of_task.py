@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import argparse
+import json
 import logging
 import multiprocessing
 import sys
+from dataclasses import dataclass
 from functools import partial
 from typing import Any, Collection, Dict, Optional, Union
 
@@ -24,6 +26,12 @@ from annofabcli.common.facade import AnnofabApiFacade
 logger = logging.getLogger(__name__)
 
 Metadata = Dict[str, Union[str, bool, int]]
+
+
+@dataclass(frozen=True)
+class TaskMetadataInfo:
+    task_id: str
+    metadata: Metadata
 
 
 class UpdateMetadataOfTaskMain(CommandLineWithConfirm):
@@ -74,42 +82,43 @@ class UpdateMetadataOfTaskMain(CommandLineWithConfirm):
         logger.debug(f"{logging_prefix} タスク '{task_id}' のメタデータを更新しました。")
         return True
 
-    def set_metadata_to_task_wrapper(self, tpl: tuple[int, str], project_id: str, metadata: Dict[str, Any]) -> bool:
-        task_index, task_id = tpl
+    def set_metadata_to_task_wrapper(self, tpl: tuple[int, TaskMetadataInfo], project_id: str) -> bool:
+        task_index, info = tpl
         try:
             return self.set_metadata_to_task(
                 project_id,
-                task_id,
-                metadata=metadata,
+                info.task_id,
+                metadata=info.metadata,
                 task_index=task_index,
             )
         except Exception:
-            logger.warning(f"タスク'{task_id}'のメタデータの更新に失敗しました。", exc_info=True)
+            logger.warning(f"タスク'{info.task_id}'のメタデータの更新に失敗しました。", exc_info=True)
             return False
 
-    def update_metadata_of_task(  # noqa: ANN201
+    def update_metadata_of_task(
         self,
         project_id: str,
         task_ids: Collection[str],
-        metadata: Dict[str, Any],
-    ):
+        metadata: Metadata,
+    ) -> None:
         if self.is_overwrite_metadata:
-            logger.info(f"{len(task_ids)} 件のタスクのメタデータを、{metadata} に変更します（上書き）。")
+            logger.info(f"{len(task_ids)} 件のタスクのメタデータを、'{metadata}' に変更します（上書き）。")
         else:
-            logger.info(f"{len(task_ids)} 件のタスクのメタデータに、{metadata} を追加します。")
+            logger.info(f"{len(task_ids)} 件のタスクのメタデータに、'{metadata}' を追加します。")
 
         if self.is_overwrite_metadata and self.all_yes:
-            self.update_metadata_with_patch_tasks_metadata_api(project_id, task_ids=task_ids, metadata=metadata)
+            metadata_by_task_id = {task_id: metadata for task_id in task_ids}
+            self.update_metadata_with_patch_tasks_metadata_api(project_id, metadata_by_task_id)
         else:
             success_count = 0
             if self.parallelism is not None:
                 partial_func = partial(
                     self.set_metadata_to_task_wrapper,
                     project_id=project_id,
-                    metadata=metadata,
                 )
+                metadata_info_list = [TaskMetadataInfo(task_id, metadata) for task_id in task_ids]
                 with multiprocessing.Pool(self.parallelism) as pool:
-                    result_bool_list = pool.map(partial_func, enumerate(task_ids))
+                    result_bool_list = pool.map(partial_func, enumerate(metadata_info_list))
                     success_count = len([e for e in result_bool_list if e])
 
             else:
@@ -130,13 +139,13 @@ class UpdateMetadataOfTaskMain(CommandLineWithConfirm):
 
             logger.info(f"{success_count} / {len(task_ids)} 件のタスクのmetadataを変更しました。")
 
-    def update_metadata_with_patch_tasks_metadata_api_wrapper(self, tpl: tuple[int, int, list[str]], project_id: str, metadata: Metadata):  # noqa: ANN201
-        global_start_position, global_stop_position, task_id_list = tpl
-        logger.debug(f"{global_start_position+1} 〜 {global_stop_position} 件目のタスクのmetadataを更新します。")
-        request_body = {task_id: metadata for task_id in task_id_list}
+    def _update_metadata_with_patch_tasks_metadata_api_wrapper(self, tpl: tuple[int, int, list[TaskMetadataInfo]], project_id: str) -> None:
+        global_start_position, global_stop_position, info_list = tpl
+        logger.debug(f"{global_start_position+1} 〜 {global_stop_position} 件目のタスクのメタデータを更新します。")
+        request_body = {info.task_id: info.metadata for info in info_list}
         self.service.api.patch_tasks_metadata(project_id, request_body=request_body)
 
-    def update_metadata_with_patch_tasks_metadata_api(self, project_id: str, task_ids: Collection[str], metadata: Metadata):  # noqa: ANN201
+    def update_metadata_with_patch_tasks_metadata_api(self, project_id: str, metadata_by_task_id: dict[str, Metadata]) -> None:
         """patch_tasks_metadata webapiを呼び出して、タスクのメタデータを更新します。
         注意：メタデータは上書きされます。
         """
@@ -144,30 +153,73 @@ class UpdateMetadataOfTaskMain(CommandLineWithConfirm):
         # 1000件以上の大量のタスクを一度に更新しようとするとwebapiが失敗するので、何回かに分けてメタデータを更新するようにする。
         BATCH_SIZE = 500  # noqa: N806
         first_index = 0
-        task_id_list = list(task_ids)
+        # task_id_list = list(task_ids)
+
+        metadata_info_list = [TaskMetadataInfo(task_id, metadata) for task_id, metadata in metadata_by_task_id.items()]
 
         if self.parallelism is None:
-            while first_index < len(task_id_list):
-                logger.info(f"{first_index+1} 〜 {min(first_index+BATCH_SIZE, len(task_id_list))} 件目のタスクのmetadataを更新します。")
-                request_body = {task_id: metadata for task_id in task_id_list[first_index : first_index + BATCH_SIZE]}
+            while first_index < len(metadata_info_list):
+                logger.info(f"{first_index+1} 〜 {min(first_index+BATCH_SIZE, len(metadata_info_list))} 件目のタスクのメタデータを更新します。")
+                request_body = {info.task_id: info.metadata for info in metadata_info_list[first_index : first_index + BATCH_SIZE]}
                 self.service.api.patch_tasks_metadata(project_id, request_body=request_body)
                 first_index += BATCH_SIZE
         else:
             partial_func = partial(
-                self.update_metadata_with_patch_tasks_metadata_api_wrapper,
+                self._update_metadata_with_patch_tasks_metadata_api_wrapper,
                 project_id=project_id,
-                metadata=metadata,
             )
             tmp_list = []
-            while first_index < len(task_id_list):
+            while first_index < len(metadata_info_list):
                 global_start_position = first_index
-                global_stop_position = min(first_index + BATCH_SIZE, len(task_id_list))
-                subset_task_id_list = task_id_list[global_start_position:global_stop_position]
-                tmp_list.append((global_start_position, global_stop_position, subset_task_id_list))
+                global_stop_position = min(first_index + BATCH_SIZE, len(metadata_info_list))
+                subset_info_list = metadata_info_list[global_start_position:global_stop_position]
+                tmp_list.append((global_start_position, global_stop_position, subset_info_list))
                 first_index += BATCH_SIZE
 
             with multiprocessing.Pool(self.parallelism) as pool:
                 pool.map(partial_func, tmp_list)
+
+    def update_metadata_of_task2(
+        self,
+        project_id: str,
+        metadata_by_task_id: dict[str, Metadata],
+    ) -> None:
+        if self.is_overwrite_metadata:
+            logger.info(f"{len(metadata_by_task_id)} 件のタスクのメタデータを変更します（上書き）。")
+        else:
+            logger.info(f"{len(metadata_by_task_id)} 件のタスクのメタデータを変更します（追記）。")
+
+        if self.is_overwrite_metadata and self.all_yes:
+            self.update_metadata_with_patch_tasks_metadata_api(project_id, metadata_by_task_id)
+        else:
+            success_count = 0
+            if self.parallelism is not None:
+                partial_func = partial(
+                    self.set_metadata_to_task_wrapper,
+                    project_id=project_id,
+                )
+                metadata_info_list = [TaskMetadataInfo(task_id, metadata) for task_id, metadata in metadata_by_task_id.items()]
+                with multiprocessing.Pool(self.parallelism) as pool:
+                    result_bool_list = pool.map(partial_func, enumerate(metadata_info_list))
+                    success_count = len([e for e in result_bool_list if e])
+
+            else:
+                # 逐次処理
+                for task_index, (task_id, metadata) in enumerate(metadata_by_task_id.items()):
+                    try:
+                        result = self.set_metadata_to_task(
+                            project_id,
+                            task_id,
+                            metadata=metadata,
+                            task_index=task_index,
+                        )
+                        if result:
+                            success_count += 1
+                    except Exception:
+                        logger.warning(f"タスク'{task_id}'のメタデータの更新に失敗しました。", exc_info=True)
+                        continue
+
+            logger.info(f"{success_count} / {len(metadata_by_task_id)} 件のタスクのメタデータを変更しました。")
 
 
 class UpdateMetadataOfTask(CommandLine):
@@ -208,12 +260,23 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     argument_parser.add_project_id()
     argument_parser.add_task_id(required=True)
 
-    parser.add_argument(
+    metadata_group_parser = parser.add_mutually_exclusive_group(required=True)
+    metadata_group_parser.add_argument(
         "--metadata",
-        required=True,
         type=str,
         help="タスクに設定する ``metadata`` をJSON形式で指定してください。メタデータの値には文字列、数値、真偽値のいずれかを指定してください。"
         " ``file://`` を先頭に付けると、JSON形式のファイルを指定できます。",
+    )
+
+    sample_metadata_by_task_id = {"task1": {"priority": 2}}
+    metadata_group_parser.add_argument(
+        "--metadata_by_task_id",
+        type=str,
+        help=(
+            "キーがタスクID, 値ががメタデータ( ``--metadata`` 参照)であるオブジェクトをJSON形式で指定してください。\n"
+            f"(ex) '{json.dumps(sample_metadata_by_task_id)}'\n"
+            " ``file://`` を先頭に付けると、JSON形式のファイルを指定できます。"
+        ),
     )
 
     parser.add_argument(
