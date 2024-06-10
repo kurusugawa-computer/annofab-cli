@@ -243,10 +243,19 @@ class UpdateMetadataOfTask(CommandLine):
             sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
         task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id)
-        metadata = annofabcli.common.cli.get_json_from_args(args.metadata)
+
+        if args.metadata is not None:
+            metadata = annofabcli.common.cli.get_json_from_args(args.metadata)
+            metadata_by_task_id = {task_id: metadata for task_id in task_id_list}
+        elif args.metadata_by_task_id is not None:
+            metadata_by_task_id = annofabcli.common.cli.get_json_from_args(args.metadata_by_task_id)
+            metadata_by_task_id = {task_id: metadata for task_id, metadata in metadata_by_task_id.items() if task_id in task_id_list}
+        else:
+            raise RuntimeError("'--metadata'か'--metadata_by_task_id'のどちらかを指定する必要があります。")
+
         super().validate_project(args.project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER])
         main_obj = UpdateMetadataOfTaskMain(self.service, is_overwrite_metadata=args.overwrite, parallelism=args.parallelism, all_yes=args.yes)
-        main_obj.update_metadata_of_task(args.project_id, task_ids=task_id_list, metadata=metadata)
+        main_obj.update_metadata_of_task2(args.project_id, metadata_by_task_id=metadata_by_task_id)
 
 
 def main(args: argparse.Namespace) -> None:
