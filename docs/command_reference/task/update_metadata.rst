@@ -81,6 +81,36 @@ Examples
 
 
 
+.. warning::
+
+    タスクのメタデータを更新すると、タスクの ``updated_datetime`` （更新日時）が更新されます。
+    タスクの ``updated_datetime`` は、アノテーション作業以外でも更新されることに注意してください。
+    
+
+
+
+タスクごとにメタデータを指定する
+--------------------------------------
+
+``--metadata_by_task_id`` を指定すれば、タスクごとにメタデータを指定できます。
+
+
+.. code-block:: json
+    :caption: all_metadata.json
+    
+    {
+      "task1": {"priority":1},
+      "task2": {"priority":2},
+    }
+    
+    
+.. code-block::
+
+    $ annofabcli task update_metadata --project_id prj1 \
+     --metadata_by_task_id file://all_metadata.json
+
+
+
 並列処理
 ----------------------------------------------
 
