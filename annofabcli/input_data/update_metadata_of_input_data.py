@@ -146,6 +146,13 @@ class UpdateMetadata(CommandLine):
             )
             return False
 
+        if args.metadata is not None and args.input_data_id is None:
+            print(  # noqa: T201
+                f"{self.COMMON_MESSAGE} argument --input_data_id: '--metadata' を指定するときは、 '--input_data_id' が必須です。",
+                file=sys.stderr,
+            )
+            return False
+
         return True
 
     def main(self) -> None:
