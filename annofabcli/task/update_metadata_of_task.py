@@ -38,9 +38,10 @@ class UpdateMetadataOfTaskMain(CommandLineWithConfirm):
     def __init__(
         self,
         service: annofabapi.Resource,
-        is_overwrite_metadata: bool,  # noqa: FBT001
+        *,
+        is_overwrite_metadata: bool,
         parallelism: Optional[int] = None,
-        all_yes: bool = False,  # noqa: FBT001, FBT002
+        all_yes: bool = False,
     ) -> None:
         self.service = service
         self.is_overwrite_metadata = is_overwrite_metadata
@@ -109,7 +110,6 @@ class UpdateMetadataOfTaskMain(CommandLineWithConfirm):
         # 1000件以上の大量のタスクを一度に更新しようとするとwebapiが失敗するので、何回かに分けてメタデータを更新するようにする。
         BATCH_SIZE = 500  # noqa: N806
         first_index = 0
-        # task_id_list = list(task_ids)
 
         metadata_info_list = [TaskMetadataInfo(task_id, metadata) for task_id, metadata in metadata_by_task_id.items()]
 
@@ -248,7 +248,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--metadata_by_task_id",
         type=str,
         help=(
-            "キーがタスクID, 値ががメタデータ( ``--metadata`` 参照)であるオブジェクトをJSON形式で指定してください。\n"
+            "キーがタスクID, 値がメタデータ( ``--metadata`` 参照)であるオブジェクトをJSON形式で指定してください。\n"
             f"(ex) '{json.dumps(sample_metadata_by_task_id)}'\n"
             " ``file://`` を先頭に付けると、JSON形式のファイルを指定できます。"
         ),
