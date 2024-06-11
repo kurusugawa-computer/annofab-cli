@@ -65,6 +65,36 @@ Examples
 
 
 
+.. warning::
+
+    入力データのメタデータを更新すると、入力データの ``updated_datetime`` （更新日時）が更新されます。
+    
+
+
+
+入力データごとにメタデータを指定する
+--------------------------------------
+
+``--metadata_by_input_data_id`` を指定すれば、入力データごとにメタデータを指定できます。
+
+
+.. code-block:: json
+    :caption: all_metadata.json
+    
+    {
+      "input_data1": {"country":"japan"},
+      "input_data2": {"country":"us"}
+    }
+    
+    
+.. code-block::
+
+    $ annofabcli input_data update_metadata --project_id prj1 \
+     --metadata_by_input_data_id file://all_metadata.json
+
+
+
+
 並列処理
 ----------------------------------------------
 
