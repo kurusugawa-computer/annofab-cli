@@ -52,6 +52,12 @@ class UpdateMetadataMain(CommandLineWithConfirm):
         overwrite_metadata: bool = False,
         input_data_index: Optional[int] = None,
     ) -> bool:
+        def get_confirm_message() -> str:
+            if overwrite_metadata:
+                return f"入力データ(input_data_id='{input_data_id}')のメタデータを'{json.dumps(metadata)}'に変更しますか？ "
+            else:
+                return f"入力データ(input_data_id='{input_data_id}')のメタデータに'{json.dumps(metadata)}'を追加しますか？ "
+
         logging_prefix = f"{input_data_index+1} 件目" if input_data_index is not None else ""
 
         input_data = self.service.wrapper.get_input_data_or_none(project_id, input_data_id)
@@ -59,8 +65,11 @@ class UpdateMetadataMain(CommandLineWithConfirm):
             logger.warning(f"{logging_prefix} 入力データは存在しないのでスキップします。input_data_id={input_data_id}")
             return False
 
-        logger.debug(f"{logging_prefix} input_data_id={input_data['input_data_id']}, input_data_name={input_data['input_data_name']}")
-        if not self.confirm_processing(f"入力データのメタデータを更新しますか？ input_data_id={input_data['input_data_id']}"):
+        logger.debug(
+            f"{logging_prefix} input_data_id='{input_data['input_data_id']}', "
+            f"input_data_name='{input_data['input_data_name']}', metadata='{json.dumps(input_data['metadata'])}'"
+        )
+        if not self.confirm_processing(get_confirm_message()):
             return False
 
         input_data["last_updated_datetime"] = input_data["updated_datetime"]

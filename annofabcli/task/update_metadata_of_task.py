@@ -50,9 +50,9 @@ class UpdateMetadataOfTaskMain(CommandLineWithConfirm):
 
     def get_confirm_message(self, task_id: str, metadata: dict[str, Any]) -> str:
         if self.is_overwrite_metadata:
-            return f"タスク '{task_id}' のメタデータを '{metadata}' に変更しますか？ "
+            return f"タスク '{task_id}' のメタデータを '{json.dumps(metadata)}' に変更しますか？ "
         else:
-            return f"タスク '{task_id}' のメタデータに '{metadata}' を追加しますか？ "
+            return f"タスク '{task_id}' のメタデータに '{json.dumps(metadata)}' を追加しますか？ "
 
     def set_metadata_to_task(
         self,
@@ -67,7 +67,7 @@ class UpdateMetadataOfTaskMain(CommandLineWithConfirm):
             logger.warning(f"{logging_prefix} タスク '{task_id}' は存在しないのでスキップします。")
             return False
 
-        logger.debug(f"task_id: {task_id}, metadata='{task['metadata']}'")
+        logger.debug(f"task_id='{task_id}', metadata='{json.dumps(task['metadata'])}'")
 
         if not self.confirm_processing(self.get_confirm_message(task_id, metadata)):
             return False
