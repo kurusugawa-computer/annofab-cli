@@ -127,14 +127,21 @@ class UpdateMetadataMain(CommandLineWithConfirm):
         logger.info(f"{success_count} / {len(metadata_info_list)} 件の入力データのmetadataを変更しました。")
 
 
-class UpdateMetadata(CommandLine):
-    @staticmethod
-    def validate(args: argparse.Namespace) -> bool:
-        COMMON_MESSAGE = "annofabcli input_data update_metadata: error:"  # noqa: N806
+def validate_metadata(metadata: Metadata) -> bool:
+    """
+    メタデータの値を検証します。
+    * メタデータの値がstr型であること
+    """
+    return all(isinstance(value, str) for value in metadata.values())
 
+
+class UpdateMetadata(CommandLine):
+    COMMON_MESSAGE = "annofabcli input_data update_metadata: error:"
+
+    def validate(self, args: argparse.Namespace) -> bool:
         if args.parallelism is not None and not args.yes:
             print(  # noqa: T201
-                f"{COMMON_MESSAGE} argument --parallelism: '--parallelism'を指定するときは、必ず ``--yes`` を指定してください。",
+                f"{self.COMMON_MESSAGE} argument --parallelism: '--parallelism'を指定するときは、必ず ``--yes`` を指定してください。",
                 file=sys.stderr,
             )
             return False
@@ -150,11 +157,32 @@ class UpdateMetadata(CommandLine):
 
         if args.metadata is not None:
             metadata = annofabcli.common.cli.get_json_from_args(args.metadata)
+            if not validate_metadata(metadata):
+                print(  # noqa: T201
+                    f"{self.COMMON_MESSAGE} argument --metadata: メタデータは不正な形式です。メタデータの値は文字列である必要があります。",
+                    file=sys.stderr,
+                )
+                sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
+
             assert input_data_id_list is not None, "'--metadata'を指定したときは'--input_data_id'は必須です。"
             metadata_by_input_data_id = {input_data_id: metadata for input_data_id in input_data_id_list}
 
         elif args.metadata_by_input_data_id is not None:
             metadata_by_input_data_id = annofabcli.common.cli.get_json_from_args(args.metadata_by_input_data_id)
+
+            input_data_ids_containing_invalid_metadata = []
+            for input_data_id, metadata in metadata_by_input_data_id.items():
+                if not validate_metadata(metadata):
+                    input_data_ids_containing_invalid_metadata.append(input_data_id)
+
+            if len(input_data_ids_containing_invalid_metadata) > 0:
+                print(  # noqa: T201
+                    f"{self.COMMON_MESSAGE} argument --metadata: 以下の入力データIDに対応するメタデータは不正な形式です。"
+                    f"メタデータの値は文字列である必要があります。 :: {input_data_ids_containing_invalid_metadata}",
+                    file=sys.stderr,
+                )
+                sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
+
             if input_data_id_list is not None:
                 metadata_by_input_data_id = {
                     input_data_id: metadata for input_data_id, metadata in metadata_by_input_data_id.items() if input_data_id in input_data_id_list
@@ -193,13 +221,13 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         " ``file://`` を先頭に付けると、JSON形式のファイルを指定できます。",
     )
 
-    sample_metadata_by_task_id = {"input_data1": {"country": "japan"}}
+    sample_metadata_by_input_data_id = {"input_data1": {"country": "japan"}}
     metadata_group_parser.add_argument(
-        "--metadata_by_task_id",
+        "--metadata_by_input_data_id",
         type=str,
         help=(
             "キーが入力データID, 値がメタデータ( ``--metadata`` 参照)であるオブジェクトをJSON形式で指定してください。\n"
-            f"(ex) '{json.dumps(sample_metadata_by_task_id)}'\n"
+            f"(ex) '{json.dumps(sample_metadata_by_input_data_id)}'\n"
             " ``file://`` を先頭に付けると、JSON形式のファイルを指定できます。"
         ),
     )
