@@ -7,7 +7,7 @@ import multiprocessing
 import sys
 from dataclasses import dataclass
 from functools import partial
-from typing import Any, Collection, Dict, Optional, Union
+from typing import Any, Dict, Optional, Union
 
 import annofabapi
 from annofabapi.models import ProjectMemberRole
@@ -94,50 +94,6 @@ class UpdateMetadataOfTaskMain(CommandLineWithConfirm):
         except Exception:
             logger.warning(f"タスク'{info.task_id}'のメタデータの更新に失敗しました。", exc_info=True)
             return False
-
-    def update_metadata_of_task(
-        self,
-        project_id: str,
-        task_ids: Collection[str],
-        metadata: Metadata,
-    ) -> None:
-        if self.is_overwrite_metadata:
-            logger.info(f"{len(task_ids)} 件のタスクのメタデータを、'{metadata}' に変更します（上書き）。")
-        else:
-            logger.info(f"{len(task_ids)} 件のタスクのメタデータに、'{metadata}' を追加します。")
-
-        if self.is_overwrite_metadata and self.all_yes:
-            metadata_by_task_id = {task_id: metadata for task_id in task_ids}
-            self.update_metadata_with_patch_tasks_metadata_api(project_id, metadata_by_task_id)
-        else:
-            success_count = 0
-            if self.parallelism is not None:
-                partial_func = partial(
-                    self.set_metadata_to_task_wrapper,
-                    project_id=project_id,
-                )
-                metadata_info_list = [TaskMetadataInfo(task_id, metadata) for task_id in task_ids]
-                with multiprocessing.Pool(self.parallelism) as pool:
-                    result_bool_list = pool.map(partial_func, enumerate(metadata_info_list))
-                    success_count = len([e for e in result_bool_list if e])
-
-            else:
-                # 逐次処理
-                for task_index, task_id in enumerate(task_ids):
-                    try:
-                        result = self.set_metadata_to_task(
-                            project_id,
-                            task_id,
-                            metadata=metadata,
-                            task_index=task_index,
-                        )
-                        if result:
-                            success_count += 1
-                    except Exception:
-                        logger.warning(f"タスク'{task_id}'のメタデータの更新に失敗しました。", exc_info=True)
-                        continue
-
-            logger.info(f"{success_count} / {len(task_ids)} 件のタスクのmetadataを変更しました。")
 
     def _update_metadata_with_patch_tasks_metadata_api_wrapper(self, tpl: tuple[int, int, list[TaskMetadataInfo]], project_id: str) -> None:
         global_start_position, global_stop_position, info_list = tpl
