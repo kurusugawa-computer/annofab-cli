@@ -152,9 +152,9 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
 
 def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     subcommand_name = "dump"
-    subcommand_help = "`annotation restore`コマンドに読み込ませることができるアノテーション情報を出力します。"
+    subcommand_help = "``annotation restore`` コマンドに読み込ませることができるアノテーション情報を出力します。"
     description = (
-        "`annotation restore`コマンドに読み込ませることができるアノテーション情報を出力します。"
+        "``annotation restore`` コマンドに読み込ませることができるアノテーション情報を出力します。"
         "アノテーションのバックアップ目的で利用することを想定しています。"
     )
 
