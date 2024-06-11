@@ -1,9 +1,13 @@
+from __future__ import annotations
+
 import argparse
+import json
 import logging
 import multiprocessing
 import sys
+from dataclasses import dataclass
 from functools import partial
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Dict, Optional, Tuple
 
 import annofabapi
 from annofabapi.models import ProjectMemberRole
@@ -21,9 +25,21 @@ from annofabcli.common.facade import AnnofabApiFacade
 
 logger = logging.getLogger(__name__)
 
+Metadata = Dict[str, str]
+"""
+入力データのメタデータ。
+値はstr型しか指定できない。
+"""
+
+
+@dataclass(frozen=True)
+class InputDataMetadataInfo:
+    input_data_id: str
+    metadata: Metadata
+
 
 class UpdateMetadataMain(CommandLineWithConfirm):
-    def __init__(self, service: annofabapi.Resource, all_yes: bool = False) -> None:  # noqa: FBT001, FBT002
+    def __init__(self, service: annofabapi.Resource, *, all_yes: bool = False) -> None:
         self.service = service
         CommandLineWithConfirm.__init__(self, all_yes)
 
@@ -31,8 +47,9 @@ class UpdateMetadataMain(CommandLineWithConfirm):
         self,
         project_id: str,
         input_data_id: str,
-        metadata: Dict[str, Any],
-        overwrite_metadata: bool = False,  # noqa: FBT001, FBT002
+        metadata: Metadata,
+        *,
+        overwrite_metadata: bool = False,
         input_data_index: Optional[int] = None,
     ) -> bool:
         logging_prefix = f"{input_data_index+1} 件目" if input_data_index is not None else ""
@@ -56,28 +73,30 @@ class UpdateMetadataMain(CommandLineWithConfirm):
         logger.debug(f"{logging_prefix} 入力データを更新しました。input_data_id={input_data['input_data_id']}")
         return True
 
-    def set_metadata_to_input_data_wrapper(self, tpl: Tuple[int, str], project_id: str, metadata: Dict[str, Any], overwrite_metadata: bool = False):  # noqa: ANN201, FBT001, FBT002
-        input_data_index, input_data_id = tpl
+    def set_metadata_to_input_data_wrapper(
+        self, tpl: Tuple[int, InputDataMetadataInfo], project_id: str, *, overwrite_metadata: bool = False
+    ) -> None:
+        input_data_index, info = tpl
         return self.set_metadata_to_input_data(
             project_id,
-            input_data_id,
-            metadata=metadata,
+            info.input_data_id,
+            metadata=info.metadata,
             overwrite_metadata=overwrite_metadata,
             input_data_index=input_data_index,
         )
 
-    def update_metadata_of_input_data(  # noqa: ANN201
+    def update_metadata_of_input_data(
         self,
         project_id: str,
-        input_data_id_list: List[str],
-        metadata: Dict[str, Any],
-        overwrite_metadata: bool = False,  # noqa: FBT001, FBT002
+        metadata_info_list: list[InputDataMetadataInfo],
+        *,
+        overwrite_metadata: bool = False,
         parallelism: Optional[int] = None,
-    ):
+    ) -> None:
         if overwrite_metadata:
-            logger.info(f"{len(input_data_id_list)} 件の入力データのmetadataを、{metadata} に変更します（上書き）。")
+            logger.info(f"{len(metadata_info_list)} 件の入力データのメタデータを変更します（上書き）。")
         else:
-            logger.info(f"{len(input_data_id_list)} 件の入力データのmetadataに、{metadata} を追加します。")
+            logger.info(f"{len(metadata_info_list)} 件の入力データのメタデータを変更します（追記）。")
 
         success_count = 0
 
@@ -85,27 +104,26 @@ class UpdateMetadataMain(CommandLineWithConfirm):
             partial_func = partial(
                 self.set_metadata_to_input_data_wrapper,
                 project_id=project_id,
-                metadata=metadata,
                 overwrite_metadata=overwrite_metadata,
             )
             with multiprocessing.Pool(parallelism) as pool:
-                result_bool_list = pool.map(partial_func, enumerate(input_data_id_list))
+                result_bool_list = pool.map(partial_func, enumerate(metadata_info_list))
                 success_count = len([e for e in result_bool_list if e])
 
         else:
             # 逐次処理
-            for input_data_index, input_data_id in enumerate(input_data_id_list):
+            for input_data_index, info in enumerate(metadata_info_list):
                 result = self.set_metadata_to_input_data(
                     project_id,
-                    input_data_id,
-                    metadata=metadata,
+                    info.input_data_id,
+                    metadata=info.metadata,
                     overwrite_metadata=overwrite_metadata,
                     input_data_index=input_data_index,
                 )
                 if result:
                     success_count += 1
 
-        logger.info(f"{success_count} / {len(input_data_id_list)} 件の入力データのmetadataを変更しました。")
+        logger.info(f"{success_count} / {len(metadata_info_list)} 件の入力データのmetadataを変更しました。")
 
 
 class UpdateMetadata(CommandLine):
@@ -127,14 +145,29 @@ class UpdateMetadata(CommandLine):
         if not self.validate(args):
             sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
-        input_data_id_list = annofabcli.common.cli.get_list_from_args(args.input_data_id)
-        metadata = annofabcli.common.cli.get_json_from_args(args.metadata)
+        input_data_id_list = annofabcli.common.cli.get_list_from_args(args.input_data_id) if args.input_data_id is not None else None
+
+        if args.metadata is not None:
+            metadata = annofabcli.common.cli.get_json_from_args(args.metadata)
+            assert input_data_id_list is not None, "'--metadata'を指定したときは'--input_data_id'は必須です。"
+            metadata_by_input_data_id = {input_data_id: metadata for input_data_id in input_data_id_list}
+
+        elif args.metadata_by_input_data_id is not None:
+            metadata_by_input_data_id = annofabcli.common.cli.get_json_from_args(args.metadata_by_input_data_id)
+            if input_data_id_list is not None:
+                metadata_by_input_data_id = {
+                    input_data_id: metadata for input_data_id, metadata in metadata_by_input_data_id.items() if input_data_id in input_data_id_list
+                }
+        else:
+            raise RuntimeError("'--metadata'か'--metadata_by_input_data_id'のどちらかを指定する必要があります。")
+
+        # TODO: validate metadata
+
         super().validate_project(args.project_id, [ProjectMemberRole.OWNER])
         main_obj = UpdateMetadataMain(self.service, all_yes=args.yes)
         main_obj.update_metadata_of_input_data(
             args.project_id,
-            input_data_id_list,
-            metadata,
+            metadata_by_input_data_id=metadata_by_input_data_id,
             overwrite_metadata=args.overwrite,
             parallelism=args.parallelism,
         )
@@ -149,14 +182,25 @@ def main(args: argparse.Namespace) -> None:
 def parse_args(parser: argparse.ArgumentParser) -> None:
     argument_parser = ArgumentParser(parser)
     argument_parser.add_project_id()
-    argument_parser.add_input_data_id(required=True)
+    argument_parser.add_input_data_id(required=False)
 
-    parser.add_argument(
+    metadata_group_parser = parser.add_mutually_exclusive_group(required=True)
+    metadata_group_parser.add_argument(
         "--metadata",
-        required=True,
         type=str,
         help="入力データに設定する ``metadata`` をJSON形式で指定してください。メタデータの値は文字列です。"
         " ``file://`` を先頭に付けると、JSON形式のファイルを指定できます。",
+    )
+
+    sample_metadata_by_task_id = {"input_data1": {"country": "japan"}}
+    metadata_group_parser.add_argument(
+        "--metadata_by_task_id",
+        type=str,
+        help=(
+            "キーが入力データID, 値がメタデータ( ``--metadata`` 参照)であるオブジェクトをJSON形式で指定してください。\n"
+            f"(ex) '{json.dumps(sample_metadata_by_task_id)}'\n"
+            " ``file://`` を先頭に付けると、JSON形式のファイルを指定できます。"
+        ),
     )
 
     parser.add_argument(
