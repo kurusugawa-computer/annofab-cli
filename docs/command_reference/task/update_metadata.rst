@@ -100,7 +100,7 @@ Examples
     
     {
       "task1": {"priority":1},
-      "task2": {"priority":2},
+      "task2": {"priority":2}
     }
     
     
