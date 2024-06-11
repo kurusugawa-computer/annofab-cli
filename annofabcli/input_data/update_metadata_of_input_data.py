@@ -75,7 +75,7 @@ class UpdateMetadataMain(CommandLineWithConfirm):
 
     def set_metadata_to_input_data_wrapper(
         self, tpl: Tuple[int, InputDataMetadataInfo], project_id: str, *, overwrite_metadata: bool = False
-    ) -> None:
+    ) -> bool:
         input_data_index, info = tpl
         return self.set_metadata_to_input_data(
             project_id,
@@ -88,11 +88,12 @@ class UpdateMetadataMain(CommandLineWithConfirm):
     def update_metadata_of_input_data(
         self,
         project_id: str,
-        metadata_info_list: list[InputDataMetadataInfo],
+        metadata_by_input_data_id: dict[str, Metadata],
         *,
         overwrite_metadata: bool = False,
         parallelism: Optional[int] = None,
     ) -> None:
+        metadata_info_list = [InputDataMetadataInfo(input_data_id, metadata) for input_data_id, metadata in metadata_by_input_data_id.items()]
         if overwrite_metadata:
             logger.info(f"{len(metadata_info_list)} 件の入力データのメタデータを変更します（上書き）。")
         else:
