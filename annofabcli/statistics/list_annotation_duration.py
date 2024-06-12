@@ -481,6 +481,9 @@ class ListAnnotationDurationMain:
 
             df = AnnotationDurationCsvByAttribute().create_df(annotation_duration_list, prior_attribute_columns=attribute_columns)
 
+        else:
+            raise RuntimeError(f"{csv_type=}はサポートしていません。")
+
         print_csv(df, output_file)
 
     def print_annotation_duration(
