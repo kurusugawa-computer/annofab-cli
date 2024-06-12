@@ -1,13 +1,15 @@
 import argparse
 import logging
 import urllib.parse
+from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 import annofabapi
+import pandas
 from annofabapi.models import InputData, Task
 
 import annofabcli
-from annofabcli.common.cli import ArgumentParser, CommandLine, build_annofabapi_resource_and_login
+from annofabcli.common.cli import ArgumentParser, CommandLine, build_annofabapi_resource_and_login, print_according_to_format, print_csv
 from annofabcli.common.enums import FormatArgument
 from annofabcli.common.facade import AnnofabApiFacade
 from annofabcli.common.visualize import AddProps
@@ -131,13 +133,15 @@ class ListInputData(CommandLine):
 
         return input_data_list
 
-    def print_input_data(  # noqa: ANN201
+    def print_input_data(
         self,
         project_id: str,
+        output_file: Optional[Path],
+        output_format: FormatArgument,
         input_data_query: Optional[Dict[str, Any]] = None,
         input_data_id_list: Optional[List[str]] = None,
         add_details: bool = False,  # noqa: FBT001, FBT002
-    ):
+    ) -> None:
         """
         入力データ一覧を出力する
 
@@ -162,7 +166,13 @@ class ListInputData(CommandLine):
             logger.warning("入力データ一覧は10,000件で打ち切られている可能性があります。")
 
         if len(input_data_list) > 0:
-            self.print_according_to_format(input_data_list)
+            if output_format == FormatArgument.CSV:
+                # panadas.DataFramdでなくpandas.json_normalizeを使う理由:
+                # ネストしたオブジェクトを`system_metadata.input_daration`のような列名でアクセスできるようにするため
+                df = pandas.json_normalize(input_data_list)
+                print_csv(df, output=output_file)
+            else:
+                print_according_to_format(input_data_list, format=output_format, output=output_file)
         else:
             logger.info("入力データの件数が0件のため、出力しません。")
 
@@ -173,6 +183,8 @@ class ListInputData(CommandLine):
         input_data_query = annofabcli.common.cli.get_json_from_args(args.input_data_query)
         self.print_input_data(
             args.project_id,
+            output_file=Path(args.output),
+            output_format=FormatArgument(args.format),
             input_data_id_list=input_data_id_list,
             input_data_query=input_data_query,
             add_details=args.add_details,
