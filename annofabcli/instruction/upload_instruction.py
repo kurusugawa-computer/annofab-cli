@@ -31,7 +31,10 @@ def save_image_from_data_uri_scheme(value: str, temp_dir: Path) -> Path:
         Path: 保存した画像パス
     """
     uri = DataURI(value)
-    extension = uri.mimetype.split("/")[1]
+    mimetype = uri.mimetype
+    assert mimetype is not None
+    # "image/png"というmimetypeから"png"を取り出して、それをファイルの拡張子とする
+    extension = mimetype.split("/")[1]
 
     md5_hash = hashlib.md5(uri.data).hexdigest()
     image_file_name = f"{md5_hash}.{extension}"

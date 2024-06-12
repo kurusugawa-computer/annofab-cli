@@ -95,7 +95,7 @@ class ListAttributeRestrictionMain:
         else:
             return f"'{value}'"
 
-    def get_restriction_text(self, attribute_id: str, condition: dict[str, Any]) -> str:
+    def get_restriction_text(self, attribute_id: str, condition: dict[str, Any]) -> str:  # noqa: PLR0912
         """制約情報のテキストを返します。
 
         Args:
@@ -148,6 +148,8 @@ class ListAttributeRestrictionMain:
         elif str_type == "NotMatches":
             verb = "DOES NOT MATCH"
             str_object = f"'{condition['value']}'"
+        else:
+            raise RuntimeError(f"{str_type=}はサポートしていません。")
 
         tmp = f"{subject} {verb}"
         if str_object != "":

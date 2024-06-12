@@ -107,11 +107,11 @@ def get_df_worktime(task_history_event_list: list[WorktimeFromTaskHistoryEvent],
 
 
 class ListWorktimeFromTaskHistoryEvent(CommandLine):
-    def print_worktime_list(  # noqa: ANN201
+    def print_worktime_list(
         self,
         project_id: str,
         task_history_event_json: Optional[Path],
-    ):
+    ) -> None:
         super().validate_project(project_id, project_member_roles=None)
 
         main_obj = ListWorktimeFromTaskHistoryEventMain(self.service, project_id=project_id)
@@ -126,7 +126,6 @@ class ListWorktimeFromTaskHistoryEvent(CommandLine):
             self.print_csv(df)
         else:
             logger.warning("データ件数が0件であるため、出力しません。")
-            return
 
     def main(self) -> None:
         args = self.args

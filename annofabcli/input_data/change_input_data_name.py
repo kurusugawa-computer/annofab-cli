@@ -180,6 +180,8 @@ class ChangeInputDataName(CommandLine):
         elif args.json is not None:
             input_data_dict_list: list[dict[str, str]] = get_json_from_args(args.json)
             changed_input_data_list = create_changed_input_data_list_from_dict(input_data_dict_list)
+        else:
+            raise RuntimeError("'--csv'または'--json'のいずれかを指定してください。")
 
         project_id: str = args.project_id
         if args.parallelism is not None:
