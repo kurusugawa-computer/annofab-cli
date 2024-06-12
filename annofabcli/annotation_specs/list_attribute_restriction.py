@@ -95,7 +95,7 @@ class ListAttributeRestrictionMain:
         else:
             return f"'{value}'"
 
-    def get_restriction_text(self, attribute_id: str, condition: dict[str, Any]) -> str:
+    def get_restriction_text(self, attribute_id: str, condition: dict[str, Any]) -> str:  # noqa: PLR0912
         """制約情報のテキストを返します。
 
         Args:
