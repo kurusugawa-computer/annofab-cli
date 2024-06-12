@@ -25,7 +25,7 @@ class WaitJobMain:
         self.service = service
         self.facade = AnnofabApiFacade(service)
 
-    def wait_job(self, project_id: str, job_type: ProjectJobType, wait_options: WaitOptions, job_id: Optional[str] = None):  # noqa: ANN201
+    def wait_job(self, project_id: str, job_type: ProjectJobType, wait_options: WaitOptions, job_id: Optional[str] = None) -> None:
         MAX_WAIT_MINUTE = wait_options.max_tries * wait_options.interval / 60  # noqa: N806
         logger.info(f"job_type='{job_type.value}', job_id='{job_id}' :: ジョブが完了するまで、最大{MAX_WAIT_MINUTE}分間待ちます。")
         result = self.service.wrapper.wait_until_job_finished(
@@ -37,7 +37,6 @@ class WaitJobMain:
         )
         if result is None:
             logger.warning(f"job_type='{job_type.value}', job_id='{job_id}' :: ジョブは存在しませんでした。")
-            return
 
 
 class WaitJob(CommandLine):
