@@ -70,16 +70,19 @@ class ListInputDataMergedTaskMain:
             )
         return df
 
-    def create_input_data_merged_task(  # noqa: ANN201
+    def create_input_data_merged_task(
         self,
         input_data_list: List[Dict[str, Any]],
         task_list: List[Dict[str, Any]],
-        is_not_used_by_task: bool = False,  # noqa: FBT001, FBT002
-        is_used_by_multiple_task: bool = False,  # noqa: FBT001, FBT002
-    ):
+        *,
+        is_not_used_by_task: bool = False,
+        is_used_by_multiple_task: bool = False,
+    ) -> pandas.DataFrame:
         new_task_list = self._to_task_list_based_input_data(task_list)
 
-        df_input_data = pandas.DataFrame(input_data_list)
+        # panadas.DataFramdでなくpandas.json_normalizeを使う理由:
+        # ネストしたオブジェクトを`system_metadata.input_daration`のような列名でアクセスできるようにするため
+        df_input_data = pandas.json_normalize(input_data_list)
 
         df_task = pandas.DataFrame(new_task_list)
 

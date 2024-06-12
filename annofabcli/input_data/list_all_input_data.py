@@ -7,11 +7,12 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Tuple
 
 import annofabapi
+import pandas
 from annofabapi.dataclass.input import InputData
 from annofabapi.models import ProjectMemberRole
 
 import annofabcli
-from annofabcli.common.cli import ArgumentParser, CommandLine, build_annofabapi_resource_and_login
+from annofabcli.common.cli import ArgumentParser, CommandLine, build_annofabapi_resource_and_login, print_according_to_format, print_csv
 from annofabcli.common.download import DownloadingFile
 from annofabcli.common.enums import FormatArgument
 from annofabcli.common.facade import AnnofabApiFacade, InputDataQuery, match_input_data_with_query
@@ -98,7 +99,15 @@ class ListInputDataWithJson(CommandLine):
         logger.debug(f"入力データ一覧の件数: {len(input_data_list)}")
 
         if len(input_data_list) > 0:
-            self.print_according_to_format(input_data_list)
+            output_format = FormatArgument(args.format)
+            if output_format == FormatArgument.CSV:
+                # panadas.DataFramdでなくpandas.json_normalizeを使う理由:
+                # ネストしたオブジェクトを`system_metadata.input_daration`のような列名でアクセスできるようにするため
+                df = pandas.json_normalize(input_data_list)
+                print_csv(df, output=args.output)
+            else:
+                print_according_to_format(input_data_list, format=output_format, output=args.output)
+
         else:
             logger.info("入力データ一覧の件数が0件のため、出力しません。")
 
