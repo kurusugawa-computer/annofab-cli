@@ -28,8 +28,10 @@ disable=
   f-string-without-interpolation,
   broad-except,
 
-  unused-argument, # ruffの"ARG002"でチェックしているため
-  redefined-builtin, # ruffの"builtin-argument-shadowin"でチェックしているため無視する
-  too-many-statements, # ruffの`PLR0915`でチェックしているため無視する
-  too-many-branches, # ruffの`R0912`でチェックしているため無視する
+# RuffでチェックしているためPylintで無視する
+  unused-argument, # ruffの"ARG002"でチェックしている
+  redefined-builtin, # ruffの"builtin-argument-shadowin"でチェックしている
+  too-many-statements, # ruffの`PLR0915`でチェックしている
+  too-many-branches, # ruffの`R0912`でチェックしている
+  cell-var-from-loop, # ruffの`B023`でチェックしている
   
