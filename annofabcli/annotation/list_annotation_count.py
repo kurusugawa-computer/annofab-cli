@@ -88,7 +88,6 @@ class ListAnnotationCount(CommandLine):
             self.print_csv(df)
         else:
             logger.info("アノテーション一覧が0件のため出力しません。")
-            return
 
 
 def main(args: argparse.Namespace) -> None:

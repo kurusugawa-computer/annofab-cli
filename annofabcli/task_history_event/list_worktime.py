@@ -220,14 +220,14 @@ class ListWorktimeFromTaskHistoryEventMain:
 
 
 class ListWorktimeFromTaskHistoryEvent(CommandLine):
-    def print_worktime_from_task_history_event(  # noqa: ANN201
+    def print_worktime_from_task_history_event(
         self,
         project_id: str,
         task_history_event_json: Optional[Path],
         task_id_list: Optional[list[str]],
         user_id_list: Optional[list[str]],
         arg_format: FormatArgument,
-    ):
+    ) -> None:
         super().validate_project(project_id, project_member_roles=None)
 
         main_obj = ListWorktimeFromTaskHistoryEventMain(self.service, project_id=project_id)
@@ -249,7 +249,6 @@ class ListWorktimeFromTaskHistoryEvent(CommandLine):
                 self.print_according_to_format(dict_worktime_list)
         else:
             logger.warning("作業時間一覧の件数が0件であるため、出力しません。")
-            return
 
     def main(self) -> None:
         args = self.args
