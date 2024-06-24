@@ -1,0 +1,186 @@
+from __future__ import annotations
+
+import argparse
+import logging
+import sys
+from dataclasses import dataclass
+from typing import Any, Optional
+
+import pandas
+from annofabapi.models import Lang
+from annofabapi.util.annotation_specs import get_english_message, get_message_with_lang
+from dataclasses_json import DataClassJsonMixin
+
+import annofabcli
+import annofabcli.common.cli
+from annofabcli.common.cli import (
+    COMMAND_LINE_ERROR_STATUS_CODE,
+    ArgumentParser,
+    CommandLine,
+    build_annofabapi_resource_and_login,
+)
+from annofabcli.common.enums import FormatArgument
+from annofabcli.common.facade import AnnofabApiFacade
+from annofabcli.common.utils import print_csv
+
+logger = logging.getLogger(__name__)
+
+
+@dataclass
+class ChoiceForCsv(DataClassJsonMixin):
+    """
+    CSV用の選択肢情報を格納するクラスです。
+    """
+
+    attribute_id: str
+    """
+    属性ID
+    どの属性に属しているか分かるようにするため追加した。
+    """
+
+    attribute_name_en: Optional[str]
+    """
+    属性名（英語）
+    どの属性に属しているか分かるようにするため追加した。
+    """
+
+    attribute_type: str
+    """属性の種類"""
+    choice_id: str
+    choice_name_en: Optional[str]
+    choice_name_ja: Optional[str]
+    choice_name_vi: Optional[str]
+    is_default: bool
+    """初期値として設定されているかどうか"""
+
+
+def create_df_from_additionals(additionals_v3: list[dict[str, Any]]) -> pandas.DataFrame:
+    """
+    APIから取得した属性情報（v3版）から、pandas.DataFrameを生成します。
+
+    Args:
+        additionals_v3: APIから取得した属性情報（v3版）
+    """
+
+    def dict_choice_to_dataclass(
+        choice: dict[str, Any],
+        additional: dict[str, Any],
+    ) -> ChoiceForCsv:
+        """
+        辞書の選択肢情報をDataClassの選択肢情報に変換します。
+        """
+        attribute_id = additional["additional_data_definition_id"]
+        additional_name = additional["name"]
+
+        choice_id = choice["choice_id"]
+        choice_name = choice["name"]
+        is_default = additional["default"] == choice_id
+        return ChoiceForCsv(
+            attribute_id=attribute_id,
+            attribute_name_en=get_english_message(additional_name),
+            attribute_type=additional["type"],
+            choice_id=choice_id,
+            choice_name_en=get_message_with_lang(choice_name, lang=Lang.EN_US),
+            choice_name_ja=get_message_with_lang(choice_name, lang=Lang.JA_JP),
+            choice_name_vi=get_message_with_lang(choice_name, lang=Lang.VI_VN),
+            is_default=is_default,
+        )
+
+    tmp_list = []
+    for additional in additionals_v3:
+        choices = additional["choices"]
+        if len(choices) == 0:
+            continue
+        for choice in choices:
+            tmp_list.append(dict_choice_to_dataclass(choice, additional))  # noqa: PERF401
+
+    df = pandas.DataFrame(tmp_list)
+    return df
+
+
+class PrintAnnotationSpecsAttribute(CommandLine):
+    COMMON_MESSAGE = "annofabcli annotation_specs list_choice: error:"
+
+    def print_annotation_specs_choice(self, project_id: str, arg_format: str, output: Optional[str] = None, history_id: Optional[str] = None) -> None:
+        annotation_specs, _ = self.service.api.get_annotation_specs(project_id, query_params={"history_id": history_id, "v": "3"})
+
+        if arg_format == FormatArgument.CSV.value:
+            df = create_df_from_additionals(annotation_specs["additionals"])
+            print_csv(df, output)
+
+    def get_history_id_from_before_index(self, project_id: str, before: int) -> Optional[str]:
+        histories, _ = self.service.api.get_annotation_specs_histories(project_id)
+        if before + 1 > len(histories):
+            logger.warning(f"アノテーション仕様の履歴は{len(histories)}個のため、最新より{before}個前のアノテーション仕様は見つかりませんでした。")
+            return None
+        history = histories[-(before + 1)]
+        logger.info(
+            f"{history['updated_datetime']}のアノテーション仕様を出力します。history_id={history['history_id']}, comment={history['comment']}"
+        )
+        return history["history_id"]
+
+    def main(self) -> None:
+        args = self.args
+
+        if args.before is not None:
+            history_id = self.get_history_id_from_before_index(args.project_id, args.before)
+            if history_id is None:
+                print(  # noqa: T201
+                    f"{self.COMMON_MESSAGE} argument --before: 最新より{args.before}個前のアノテーション仕様は見つかりませんでした。",
+                    file=sys.stderr,
+                )
+                sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
+        else:
+            history_id = args.history_id
+
+        self.print_annotation_specs_choice(args.project_id, arg_format=args.format, output=args.output, history_id=history_id)
+
+
+def parse_args(parser: argparse.ArgumentParser) -> None:
+    argument_parser = ArgumentParser(parser)
+
+    argument_parser.add_project_id()
+
+    # 過去のアノテーション仕様を参照するためのオプション
+    old_annotation_specs_group = parser.add_mutually_exclusive_group()
+    old_annotation_specs_group.add_argument(
+        "--history_id",
+        type=str,
+        help=(
+            "出力したいアノテーション仕様のhistory_idを指定してください。 "
+            "history_idは ``annotation_specs list_history`` コマンドで確認できます。 "
+            "指定しない場合は、最新のアノテーション仕様が出力されます。 "
+        ),
+    )
+
+    old_annotation_specs_group.add_argument(
+        "--before",
+        type=int,
+        help=(
+            "出力したい過去のアノテーション仕様が、最新よりいくつ前のアノテーション仕様であるかを指定してください。  "
+            "たとえば ``1`` を指定した場合、最新より1個前のアノテーション仕様を出力します。 "
+            "指定しない場合は、最新のアノテーション仕様が出力されます。 "
+        ),
+    )
+
+    parser.add_argument("-f", "--format", type=str, choices=[FormatArgument.CSV.value], default=FormatArgument.CSV.value, help="出力フォーマット ")
+
+    argument_parser.add_output()
+
+    parser.set_defaults(subcommand_func=main)
+
+
+def main(args: argparse.Namespace) -> None:
+    service = build_annofabapi_resource_and_login(args)
+    facade = AnnofabApiFacade(service)
+    PrintAnnotationSpecsAttribute(service, facade, args).main()
+
+
+def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
+    subcommand_name = "list_choice"
+
+    subcommand_help = "アノテーション仕様のドロップダウンまたはラジオボタン属性の選択肢情報を出力する"
+
+    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help)
+    parse_args(parser)
+    return parser
