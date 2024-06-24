@@ -10,7 +10,7 @@ from pathlib import Path
 import annofabapi
 import more_itertools
 import pytest
-from annofabapi.utils import get_message_for_i18n
+from annofabapi.util.annotation_specs import get_english_message
 
 from annofabcli.__main__ import main
 
@@ -39,7 +39,7 @@ class TestCommandLine:
             Trueならシナリオテストを実行できるアノテーション仕様
         """
         annotation_specs, _ = service.api.get_annotation_specs(project_id, query_params={"v": "2"})
-        car_label = more_itertools.first_true(annotation_specs["labels"], pred=lambda e: get_message_for_i18n(e["label_name"]) == "car")
+        car_label = more_itertools.first_true(annotation_specs["labels"], pred=lambda e: get_english_message(e["label_name"]) == "car")
         if car_label is None:
             return False
 
@@ -47,7 +47,7 @@ class TestCommandLine:
             return False
 
         truncation_attribute = more_itertools.first_true(
-            annotation_specs["additionals"], pred=lambda e: get_message_for_i18n(e["name"]) == "truncation"
+            annotation_specs["additionals"], pred=lambda e: get_english_message(e["name"]) == "truncation"
         )
         if truncation_attribute is None:
             return False

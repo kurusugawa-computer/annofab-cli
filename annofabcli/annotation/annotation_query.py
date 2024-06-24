@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Optional, Union
 import more_itertools
 from annofabapi.dataclass.annotation import AdditionalDataV1
 from annofabapi.models import AdditionalDataDefinitionType
-from annofabapi.utils import get_message_for_i18n
+from annofabapi.util.annotation_specs import get_english_message
 from dataclasses_json import DataClassJsonMixin
 
 AttributeValue = Optional[Union[str, int, bool]]
@@ -27,7 +27,7 @@ def _get_attribute_to_api(additional_data: dict[str, Any], attribute_value: Attr
     """
 
     def get_attribute_name(additional_data: dict[str, Any]) -> str:
-        return get_message_for_i18n(additional_data["name"])
+        return get_english_message(additional_data["name"])
 
     additional_data_definition_id = additional_data["additional_data_definition_id"]
     result = {
@@ -56,8 +56,8 @@ def _get_attribute_to_api(additional_data: dict[str, Any], attribute_value: Attr
         AdditionalDataDefinitionType.SELECT.value,
     ]:
         # 排他選択の場合、属性値に選択肢IDが入っているため、対象の選択肢を探す
-        choice_info = more_itertools.first_true(additional_data["choices"], pred=lambda e: get_message_for_i18n(e["name"]) == attribute_value)
-        tmp = [e for e in additional_data["choices"] if get_message_for_i18n(e["name"]) == attribute_value]
+        choice_info = more_itertools.first_true(additional_data["choices"], pred=lambda e: get_english_message(e["name"]) == attribute_value)
+        tmp = [e for e in additional_data["choices"] if get_english_message(e["name"]) == attribute_value]
 
         if len(tmp) == 0:
             raise ValueError(  # noqa: TRY003
@@ -95,7 +95,7 @@ def convert_attributes_from_cli_to_api(
     """
 
     def get_label_name(label_info: dict[str, Any]) -> str:
-        return get_message_for_i18n(label_info["label_name"])
+        return get_english_message(label_info["label_name"])
 
     if label_id is None:
         tmp_additionals = annotation_specs["additionals"]
@@ -111,9 +111,9 @@ def convert_attributes_from_cli_to_api(
     for attribute_name, attribute_value in attributes.items():
         additional_data = more_itertools.first_true(
             tmp_additionals,
-            pred=lambda e: get_message_for_i18n(e["name"]) == attribute_name,  # noqa: B023  # pylint: disable=cell-var-from-loop
+            pred=lambda e: get_english_message(e["name"]) == attribute_name,  # noqa: B023  # pylint: disable=cell-var-from-loop
         )
-        tmp = [e for e in tmp_additionals if get_message_for_i18n(e["name"]) == attribute_name]
+        tmp = [e for e in tmp_additionals if get_english_message(e["name"]) == attribute_name]
         if len(tmp) == 0:
             if label_info is None:
                 error_message = f"アノテーション仕様に、属性名(英語)が'{attribute_name}'である属性は存在しません。"
@@ -165,7 +165,7 @@ class AnnotationQueryForCLI(DataClassJsonMixin):
         Returns:
             dict[str,Any]: WebAPIのquery_paramsに渡すdict
         """
-        tmp = [e for e in annotation_specs["labels"] if get_message_for_i18n(e["label_name"]) == self.label]
+        tmp = [e for e in annotation_specs["labels"] if get_english_message(e["label_name"]) == self.label]
 
         if len(tmp) == 0:
             raise ValueError(f"アノテーション仕様に、ラベル名（英語）が'{self.label}'であるラベルは存在しません。")
