@@ -62,6 +62,45 @@ class TestCommandLine:
         out_file = str(out_dir / "annotation_specs_list_label.json")
         main([self.command_name, "list_label", "--project_id", project_id, "--before", "1", "--output", out_file])
 
+    def test__list_label__with_csv_format(self):
+        out_file = str(out_dir / "list_label.csv")
+        main(
+            [
+                self.command_name,
+                "list_label",
+                "--project_id",
+                project_id,
+                "--output",
+                out_file,
+            ]
+        )
+
+    def test__list_attribute__with_csv_format(self):
+        out_file = str(out_dir / "list_attribute.csv")
+        main(
+            [
+                self.command_name,
+                "list_attribute",
+                "--project_id",
+                project_id,
+                "--output",
+                out_file,
+            ]
+        )
+
+    def test__list_choice__with_csv_format(self):
+        out_file = str(out_dir / "list_choice.csv")
+        main(
+            [
+                self.command_name,
+                "list_choice",
+                "--project_id",
+                project_id,
+                "--output",
+                out_file,
+            ]
+        )
+
     def test_scenario_label_color(self):
         """
         label_colorに関するシナリオテスト。
