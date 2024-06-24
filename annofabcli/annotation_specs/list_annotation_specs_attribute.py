@@ -56,6 +56,8 @@ class AttributeForCsv(DataClassJsonMixin):
     選択肢の個数
     ドロップダウン属性またはラジオボタン属性以外では0個です。
     """
+    restriction_count: int
+    """制約の個数"""
     reference_label_count: int
     """参照されているラベルの個数"""
 
@@ -76,14 +78,25 @@ def create_relationship_between_attribute_and_label(labels_v3: list[dict[str, An
     return result
 
 
-def create_df_from_additionals(additionals_v3: list[dict[str, Any]], dict_label_ids: dict[str, set[str]]) -> pandas.DataFrame:
+def create_df_from_additionals(
+    additionals_v3: list[dict[str, Any]], labels_v3: list[dict[str, Any]], restrictions: list[dict[str, Any]]
+) -> pandas.DataFrame:
     """
     APIから取得した属性情報（v3版）から、pandas.DataFrameを生成します。
 
     Args:
         additionals_v3: APIから取得した属性情報（v3版）
-        dict_label_ids: keyが属性ID、valueが属性に紐づくラベルのIDのsetであるdict
+        labels_v3: APIから取得したラベル情報（v3版）
+        restrictions: APIから取得した制約情報
     """
+    # 属性IDごとの制約数をカウントする
+    dict_restriction_count:dict[str,int] = defaultdict(int)
+    for restriction in restrictions:
+        dict_restriction_count[restriction["additional_data_definition_id"]] += 1
+
+    # 属性IDとラベルIDの関係を表したdictを生成する
+    # keyが属性ID、valueが属性に紐づくラベルのIDのsetであるdict
+    dict_label_ids = create_relationship_between_attribute_and_label(labels_v3)
 
     def dict_additional_to_dataclass(additional: dict[str, Any]) -> AttributeForCsv:
         """
@@ -100,6 +113,7 @@ def create_df_from_additionals(additionals_v3: list[dict[str, Any]], dict_label_
             default=additional["default"],
             read_only=additional["read_only"],
             choice_count=len(additional["choices"]),
+            restriction_count=dict_restriction_count[attribute_id],
             reference_label_count=len(dict_label_ids[attribute_id]),
         )
 
@@ -114,6 +128,7 @@ def create_df_from_additionals(additionals_v3: list[dict[str, Any]], dict_label_
         "default",
         "read_only",
         "choice_count",
+        "restriction_count",
         "reference_label_count",
     ]
 
@@ -126,8 +141,7 @@ class PrintAnnotationSpecsAttribute(CommandLine):
 
     def print_annotation_specs_attribute(self, annotation_specs_v3: dict[str, Any], arg_format: str, output: Optional[str] = None) -> None:
         if arg_format == FormatArgument.CSV.value:
-            dict_label_ids = create_relationship_between_attribute_and_label(annotation_specs_v3["labels"])
-            df = create_df_from_additionals(annotation_specs_v3["additionals"], dict_label_ids)
+            df = create_df_from_additionals(annotation_specs_v3["additionals"], annotation_specs_v3["labels"], annotation_specs_v3["restrictions"])
             print_csv(df, output)
 
     def get_history_id_from_before_index(self, project_id: str, before: int) -> Optional[str]:
