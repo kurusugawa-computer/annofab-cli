@@ -211,7 +211,7 @@ def match_input_data_with_query(  # pylint: disable=too-many-return-statements
 
 
 def convert_annotation_specs_labels_v2_to_v1(labels_v2: List[Dict[str, Any]], additionals_v2: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-    """アノテーション仕様のV2版からV1版に変換する。V1版の方が扱いやすいので。
+    """アノテーション仕様のV2(またはV3)版からV1版に変換する。V1版の方が扱いやすいので。
 
     Args:
         labels_v2 (List[Dict[str, Any]]): V2版のラベル情報

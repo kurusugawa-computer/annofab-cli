@@ -31,8 +31,8 @@ class PrintAnnotationSpecsLabel(CommandLine):
     COMMON_MESSAGE = "annofabcli annotation_specs list_label: error:"
 
     def print_annotation_specs_label(self, project_id: str, arg_format: str, output: Optional[str] = None, history_id: Optional[str] = None):  # noqa: ANN201
-        # [REMOVE_V2_PARAM]
-        annotation_specs, _ = self.service.api.get_annotation_specs(project_id, query_params={"history_id": history_id, "v": "2"})
+        # v2とv3はほとんど同じなので、V3はV2とみなしてコードを書く
+        annotation_specs, _ = self.service.api.get_annotation_specs(project_id, query_params={"history_id": history_id, "v": "3"})
         labels_v1 = convert_annotation_specs_labels_v2_to_v1(labels_v2=annotation_specs["labels"], additionals_v2=annotation_specs["additionals"])
         if arg_format == "text":
             self._print_text_format_labels(labels_v1, output=output)
