@@ -91,7 +91,17 @@ def create_df_from_labels(labels_v3: list[dict[str, Any]]) -> pandas.DataFrame:
         )
 
     new_labels = [dict_label_to_dataclass(e) for e in labels_v3]
-    df = pandas.DataFrame(new_labels)
+
+    columns = [
+        "label_id",
+        "label_name_en",
+        "label_name_ja",
+        "label_name_vi",
+        "annotation_type",
+        "color",
+        "attribute_count",
+    ]
+    df = pandas.DataFrame(new_labels, columns=columns)
     return df
 
 
@@ -229,6 +239,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         default="text",
         help=f"出力フォーマット "
         "text: 人が見やすい形式, "
+        f"{FormatArgument.CSV.value}: ラベル情報の一覧が記載されたCSV, "
         f"{FormatArgument.PRETTY_JSON.value}: インデントされたJSON, "
         f"{FormatArgument.JSON.value}: フラットなJSON",
     )

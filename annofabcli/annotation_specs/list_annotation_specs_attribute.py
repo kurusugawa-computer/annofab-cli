@@ -87,7 +87,7 @@ def create_df_from_additionals(additionals_v3: list[dict[str, Any]], dict_label_
         dict_label_ids: keyが属性ID、valueが属性に紐づくラベルのIDのsetであるdict
     """
 
-    def dict_label_to_dataclass(additional: dict[str, Any]) -> AttributeForCsv:
+    def dict_additional_to_dataclass(additional: dict[str, Any]) -> AttributeForCsv:
         """
         辞書の属性情報をDataClassのラベル情報に変換します。
         """
@@ -105,8 +105,21 @@ def create_df_from_additionals(additionals_v3: list[dict[str, Any]], dict_label_
             reference_label_count=len(dict_label_ids[attribute_id]),
         )
 
-    new_labels = [dict_label_to_dataclass(e) for e in additionals_v3]
-    df = pandas.DataFrame(new_labels)
+    new_labels = [dict_additional_to_dataclass(e) for e in additionals_v3]
+
+    columns = [
+        "attribute_id",
+        "attribute_name_en",
+        "attribute_name_ja",
+        "attribute_name_vi",
+        "type",
+        "default",
+        "read_only",
+        "choice_count",
+        "reference_label_count",
+    ]
+
+    df = pandas.DataFrame(new_labels, columns=columns)
     return df
 
 

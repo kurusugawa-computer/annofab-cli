@@ -94,7 +94,8 @@ def create_df_from_additionals(additionals_v3: list[dict[str, Any]]) -> pandas.D
         for choice in choices:
             tmp_list.append(dict_choice_to_dataclass(choice, additional))  # noqa: PERF401
 
-    df = pandas.DataFrame(tmp_list)
+    columns = ["attribute_id", "attribute_name_en", "attribute_type", "choice_id", "choice_name_en", "choice_name_ja", "choice_name_vi", "is_default"]
+    df = pandas.DataFrame(tmp_list, columns=columns)
     return df
 
 
