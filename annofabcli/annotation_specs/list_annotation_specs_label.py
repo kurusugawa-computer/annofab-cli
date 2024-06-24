@@ -35,6 +35,7 @@ class LabelForCsv(DataClassJsonMixin):
     """
     CSV用のラベル情報を格納するクラスです。
     """
+
     label_id: str
     label_name_en: Optional[str]
     label_name_ja: Optional[str]
@@ -64,15 +65,14 @@ def decimal_to_hex_color(red: int, green: int, blue: int) -> str:
     return f"#{red:02X}{green:02X}{blue:02X}"
 
 
-
-
 def create_df_from_labels(labels_v3: list[dict[str, Any]]) -> pandas.DataFrame:
     """
     APIから取得したラベル情報（v3版）から、pandas.DataFrameを生成します。
-    
+
     Args:
         labels_v3: APIから取得したラベル情報（v3版）
     """
+
     def dict_label_to_dataclass(label: dict[str, Any]) -> LabelForCsv:
         """
         辞書のラベル情報をDataClassのラベル情報に変換します。
@@ -89,7 +89,7 @@ def create_df_from_labels(labels_v3: list[dict[str, Any]]) -> pandas.DataFrame:
             color=hex_color_code,
             attribute_count=len(additional_data_definitions),
         )
-    
+
     new_labels = [dict_label_to_dataclass(e) for e in labels_v3]
     df = pandas.DataFrame(new_labels)
     return df
