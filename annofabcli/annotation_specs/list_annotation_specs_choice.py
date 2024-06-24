@@ -136,6 +136,7 @@ class PrintAnnotationSpecsAttribute(CommandLine):
                 history_id = args.history_id
 
             annotation_specs, _ = self.service.api.get_annotation_specs(args.project_id, query_params={"history_id": history_id, "v": "3"})
+
         elif args.annotation_specs_json is not None:
             with args.annotation_specs_json.open() as f:
                 annotation_specs = json.load(f)
