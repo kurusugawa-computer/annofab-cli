@@ -7,7 +7,13 @@ from __future__ import annotations
 import argparse
 import logging
 import sys
+from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
+
+import pandas
+from annofabapi.models import Lang
+from annofabapi.util.annotation_specs import get_message_with_lang
+from dataclasses_json import DataClassJsonMixin
 
 import annofabcli
 import annofabcli.common.cli
@@ -19,8 +25,84 @@ from annofabcli.common.cli import (
 )
 from annofabcli.common.enums import FormatArgument
 from annofabcli.common.facade import AnnofabApiFacade, convert_annotation_specs_labels_v2_to_v1
+from annofabcli.common.utils import print_csv
 
 logger = logging.getLogger(__name__)
+
+
+@dataclass
+class LabelForCsv(DataClassJsonMixin):
+    """
+    CSV用のラベル情報を格納するクラスです。
+    """
+
+    label_id: str
+    label_name_en: Optional[str]
+    label_name_ja: Optional[str]
+    label_name_vi: Optional[str]
+    annotation_type: str
+    color: str
+    """16進数カラーコード
+    例: `#000000`
+    """
+    attribute_count: int
+    """
+    参照している属性の個数
+
+    Notes:
+        APIでは`additional_data_definitions`のような名前だが、分かりにくかったので"attribute"という名前に変えた。
+    """
+
+
+def decimal_to_hex_color(red: int, green: int, blue: int) -> str:
+    """
+    10進数のRGB値を16進数のColor Codeに変換します。
+    """
+    # 各値が0から255の範囲内にあるか確認
+    if not (0 <= red <= 255 and 0 <= green <= 255 and 0 <= blue <= 255):
+        raise ValueError(f"RGB values must be in the range 0-255 :: {red=}, {blue=}, {green=}")  # noqa: TRY003
+
+    return f"#{red:02X}{green:02X}{blue:02X}"
+
+
+def create_df_from_labels(labels_v3: list[dict[str, Any]]) -> pandas.DataFrame:
+    """
+    APIから取得したラベル情報（v3版）から、pandas.DataFrameを生成します。
+
+    Args:
+        labels_v3: APIから取得したラベル情報（v3版）
+    """
+
+    def dict_label_to_dataclass(label: dict[str, Any]) -> LabelForCsv:
+        """
+        辞書のラベル情報をDataClassのラベル情報に変換します。
+        """
+        label_color = label["color"]
+        hex_color_code = decimal_to_hex_color(label_color["red"], label_color["green"], label_color["blue"])
+        additional_data_definitions = label["additional_data_definitions"]
+        return LabelForCsv(
+            label_id=label["label_id"],
+            label_name_en=get_message_with_lang(label["label_name"], lang=Lang.EN_US),
+            label_name_ja=get_message_with_lang(label["label_name"], lang=Lang.JA_JP),
+            label_name_vi=get_message_with_lang(label["label_name"], lang=Lang.VI_VN),
+            annotation_type=label["annotation_type"],
+            color=hex_color_code,
+            attribute_count=len(additional_data_definitions),
+        )
+
+    new_labels = [dict_label_to_dataclass(e) for e in labels_v3]
+
+    columns = [
+        "label_id",
+        "label_name_en",
+        "label_name_ja",
+        "label_name_vi",
+        "annotation_type",
+        "color",
+        "attribute_count",
+    ]
+    df = pandas.DataFrame(new_labels, columns=columns)
+    return df
 
 
 class PrintAnnotationSpecsLabel(CommandLine):
@@ -36,6 +118,10 @@ class PrintAnnotationSpecsLabel(CommandLine):
         labels_v1 = convert_annotation_specs_labels_v2_to_v1(labels_v2=annotation_specs["labels"], additionals_v2=annotation_specs["additionals"])
         if arg_format == "text":
             self._print_text_format_labels(labels_v1, output=output)
+
+        elif arg_format == FormatArgument.CSV.value:
+            df = create_df_from_labels(annotation_specs["labels"])
+            print_csv(df, output)
 
         elif arg_format in [FormatArgument.JSON.value, FormatArgument.PRETTY_JSON.value]:
             annofabcli.common.utils.print_according_to_format(target=labels_v1, format=FormatArgument(arg_format), output=output)
@@ -149,10 +235,11 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "-f",
         "--format",
         type=str,
-        choices=["text", FormatArgument.PRETTY_JSON.value, FormatArgument.JSON.value],
+        choices=["text", FormatArgument.CSV.value, FormatArgument.PRETTY_JSON.value, FormatArgument.JSON.value],
         default="text",
         help=f"出力フォーマット "
         "text: 人が見やすい形式, "
+        f"{FormatArgument.CSV.value}: ラベル情報の一覧が記載されたCSV, "
         f"{FormatArgument.PRETTY_JSON.value}: インデントされたJSON, "
         f"{FormatArgument.JSON.value}: フラットなJSON",
     )
