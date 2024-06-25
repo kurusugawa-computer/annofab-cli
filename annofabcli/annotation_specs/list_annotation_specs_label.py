@@ -207,6 +207,9 @@ class PrintAnnotationSpecsLabel(CommandLine):
             with args.annotation_specs_json.open() as f:
                 annotation_specs = json.load(f)
 
+        else:
+            raise RuntimeError("'--project_id'か'--annotation_specs_json'のどちらかを指定する必要があります。")
+
         self.print_annotation_specs_label(annotation_specs, arg_format=args.format, output=args.output)
 
 

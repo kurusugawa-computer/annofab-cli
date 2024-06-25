@@ -90,7 +90,7 @@ def create_df_from_additionals(
         restrictions: APIから取得した制約情報
     """
     # 属性IDごとの制約数をカウントする
-    dict_restriction_count:dict[str,int] = defaultdict(int)
+    dict_restriction_count: dict[str, int] = defaultdict(int)
     for restriction in restrictions:
         dict_restriction_count[restriction["additional_data_definition_id"]] += 1
 
@@ -174,6 +174,8 @@ class PrintAnnotationSpecsAttribute(CommandLine):
         elif args.annotation_specs_json is not None:
             with args.annotation_specs_json.open() as f:
                 annotation_specs = json.load(f)
+        else:
+            raise RuntimeError("'--project_id'か'--annotation_specs_json'のどちらかを指定する必要があります。")
 
         self.print_annotation_specs_attribute(annotation_specs, arg_format=args.format, output=args.output)
 
