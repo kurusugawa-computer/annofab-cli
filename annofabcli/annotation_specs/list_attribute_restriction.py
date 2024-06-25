@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import argparse
+import json
 import logging
 import sys
 from enum import Enum
+from pathlib import Path
 from typing import Any, Collection, Optional
 
 from more_itertools import first_true
@@ -234,24 +236,32 @@ class ListAttributeRestriction(CommandLine):
     def main(self) -> None:
         args = self.args
 
-        history_id = None
-        if args.history_id is not None:
-            history_id = args.history_id
+        if args.project_id is not None:
+            history_id = None
+            if args.history_id is not None:
+                history_id = args.history_id
 
-        if args.before is not None:
-            history_id = self.get_history_id_from_before_index(args.project_id, args.before)
-            if history_id is None:
-                print(  # noqa: T201
-                    f"{self.COMMON_MESSAGE} argument --before: 最新より{args.before}個前のアノテーション仕様は見つかりませんでした。",
-                    file=sys.stderr,
-                )
-                sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
+            if args.before is not None:
+                history_id = self.get_history_id_from_before_index(args.project_id, args.before)
+                if history_id is None:
+                    print(  # noqa: T201
+                        f"{self.COMMON_MESSAGE} argument --before: 最新より{args.before}個前のアノテーション仕様は見つかりませんでした。",
+                        file=sys.stderr,
+                    )
+                    sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
-        query_params = {"v": "2"}
-        if history_id is not None:
-            query_params["history_id"] = history_id
+            query_params = {"v": "3"}
+            if history_id is not None:
+                query_params["history_id"] = history_id
 
-        annotation_specs, _ = self.service.api.get_annotation_specs(args.project_id, query_params=query_params)
+            annotation_specs, _ = self.service.api.get_annotation_specs(args.project_id, query_params=query_params)
+        elif args.annotation_json_path is not None:
+            with args.annotation_json_path.open() as f:
+                annotation_specs = json.load(f)
+
+        else:
+            raise RuntimeError("'--project_id'か'--annotation_specs_json'のどちらかを指定する必要があります。")
+
         main_obj = ListAttributeRestrictionMain(
             labels=annotation_specs["labels"],
             additionals=annotation_specs["additionals"],
@@ -271,7 +281,16 @@ class ListAttributeRestriction(CommandLine):
 def parse_args(parser: argparse.ArgumentParser) -> None:
     argument_parser = ArgumentParser(parser)
 
-    argument_parser.add_project_id()
+    required_group = parser.add_mutually_exclusive_group(required=True)
+    required_group.add_argument(
+        "-p", "--project_id", help="対象のプロジェクトのproject_idを指定します。APIで取得したアノテーション仕様情報を元に出力します。"
+    )
+    required_group.add_argument(
+        "--annotation_specs_json",
+        type=Path,
+        help="指定したアノテーション仕様のJSONファイルを指定します。"
+        "JSONファイルに記載された情報を元に出力します。ただしアノテーション仕様の ``format_version`` は ``3`` である必要があります。",
+    )
 
     # 過去のアノテーション仕様を参照するためのオプション
     old_annotation_specs_group = parser.add_mutually_exclusive_group()

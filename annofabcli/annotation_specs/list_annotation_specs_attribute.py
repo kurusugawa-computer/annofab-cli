@@ -1,14 +1,12 @@
-"""
-アノテーション仕様を出力する
-"""
-
 from __future__ import annotations
 
 import argparse
+import json
 import logging
 import sys
 from collections import defaultdict
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any, Optional, Union
 
 import pandas
@@ -58,6 +56,8 @@ class AttributeForCsv(DataClassJsonMixin):
     選択肢の個数
     ドロップダウン属性またはラジオボタン属性以外では0個です。
     """
+    restriction_count: int
+    """制約の個数"""
     reference_label_count: int
     """参照されているラベルの個数"""
 
@@ -78,14 +78,25 @@ def create_relationship_between_attribute_and_label(labels_v3: list[dict[str, An
     return result
 
 
-def create_df_from_additionals(additionals_v3: list[dict[str, Any]], dict_label_ids: dict[str, set[str]]) -> pandas.DataFrame:
+def create_df_from_additionals(
+    additionals_v3: list[dict[str, Any]], labels_v3: list[dict[str, Any]], restrictions: list[dict[str, Any]]
+) -> pandas.DataFrame:
     """
     APIから取得した属性情報（v3版）から、pandas.DataFrameを生成します。
 
     Args:
         additionals_v3: APIから取得した属性情報（v3版）
-        dict_label_ids: keyが属性ID、valueが属性に紐づくラベルのIDのsetであるdict
+        labels_v3: APIから取得したラベル情報（v3版）
+        restrictions: APIから取得した制約情報
     """
+    # 属性IDごとの制約数をカウントする
+    dict_restriction_count: dict[str, int] = defaultdict(int)
+    for restriction in restrictions:
+        dict_restriction_count[restriction["additional_data_definition_id"]] += 1
+
+    # 属性IDとラベルIDの関係を表したdictを生成する
+    # keyが属性ID、valueが属性に紐づくラベルのIDのsetであるdict
+    dict_label_ids = create_relationship_between_attribute_and_label(labels_v3)
 
     def dict_additional_to_dataclass(additional: dict[str, Any]) -> AttributeForCsv:
         """
@@ -102,6 +113,7 @@ def create_df_from_additionals(additionals_v3: list[dict[str, Any]], dict_label_
             default=additional["default"],
             read_only=additional["read_only"],
             choice_count=len(additional["choices"]),
+            restriction_count=dict_restriction_count[attribute_id],
             reference_label_count=len(dict_label_ids[attribute_id]),
         )
 
@@ -116,6 +128,7 @@ def create_df_from_additionals(additionals_v3: list[dict[str, Any]], dict_label_
         "default",
         "read_only",
         "choice_count",
+        "restriction_count",
         "reference_label_count",
     ]
 
@@ -126,12 +139,9 @@ def create_df_from_additionals(additionals_v3: list[dict[str, Any]], dict_label_
 class PrintAnnotationSpecsAttribute(CommandLine):
     COMMON_MESSAGE = "annofabcli annotation_specs list_attribute: error:"
 
-    def print_annotation_specs_attribute(self, project_id: str, arg_format: str, output: Optional[str] = None, history_id: Optional[str] = None):  # noqa: ANN201
-        annotation_specs, _ = self.service.api.get_annotation_specs(project_id, query_params={"history_id": history_id, "v": "3"})
-
+    def print_annotation_specs_attribute(self, annotation_specs_v3: dict[str, Any], arg_format: str, output: Optional[str] = None) -> None:
         if arg_format == FormatArgument.CSV.value:
-            dict_label_ids = create_relationship_between_attribute_and_label(annotation_specs["labels"])
-            df = create_df_from_additionals(annotation_specs["additionals"], dict_label_ids)
+            df = create_df_from_additionals(annotation_specs_v3["additionals"], annotation_specs_v3["labels"], annotation_specs_v3["restrictions"])
             print_csv(df, output)
 
     def get_history_id_from_before_index(self, project_id: str, before: int) -> Optional[str]:
@@ -148,24 +158,41 @@ class PrintAnnotationSpecsAttribute(CommandLine):
     def main(self) -> None:
         args = self.args
 
-        if args.before is not None:
-            history_id = self.get_history_id_from_before_index(args.project_id, args.before)
-            if history_id is None:
-                print(  # noqa: T201
-                    f"{self.COMMON_MESSAGE} argument --before: 最新より{args.before}個前のアノテーション仕様は見つかりませんでした。",
-                    file=sys.stderr,
-                )
-                sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
-        else:
-            history_id = args.history_id
+        if args.project_id is not None:
+            if args.before is not None:
+                history_id = self.get_history_id_from_before_index(args.project_id, args.before)
+                if history_id is None:
+                    print(  # noqa: T201
+                        f"{self.COMMON_MESSAGE} argument --before: 最新より{args.before}個前のアノテーション仕様は見つかりませんでした。",
+                        file=sys.stderr,
+                    )
+                    sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
+            else:
+                history_id = args.history_id
 
-        self.print_annotation_specs_attribute(args.project_id, arg_format=args.format, output=args.output, history_id=history_id)
+            annotation_specs, _ = self.service.api.get_annotation_specs(args.project_id, query_params={"history_id": history_id, "v": "3"})
+        elif args.annotation_specs_json is not None:
+            with args.annotation_specs_json.open() as f:
+                annotation_specs = json.load(f)
+        else:
+            raise RuntimeError("'--project_id'か'--annotation_specs_json'のどちらかを指定する必要があります。")
+
+        self.print_annotation_specs_attribute(annotation_specs, arg_format=args.format, output=args.output)
 
 
 def parse_args(parser: argparse.ArgumentParser) -> None:
     argument_parser = ArgumentParser(parser)
 
-    argument_parser.add_project_id()
+    required_group = parser.add_mutually_exclusive_group(required=True)
+    required_group.add_argument(
+        "-p", "--project_id", help="対象のプロジェクトのproject_idを指定します。APIで取得したアノテーション仕様情報を元に出力します。"
+    )
+    required_group.add_argument(
+        "--annotation_specs_json",
+        type=Path,
+        help="指定したアノテーション仕様のJSONファイルを指定します。"
+        "JSONファイルに記載された情報を元に出力します。ただしアノテーション仕様の ``format_version`` は ``3`` である必要があります。",
+    )
 
     # 過去のアノテーション仕様を参照するためのオプション
     old_annotation_specs_group = parser.add_mutually_exclusive_group()

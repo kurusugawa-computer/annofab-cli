@@ -1,13 +1,11 @@
-"""
-アノテーション仕様を出力する
-"""
-
 from __future__ import annotations
 
 import argparse
+import json
 import logging
 import sys
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 import pandas
@@ -112,15 +110,16 @@ class PrintAnnotationSpecsLabel(CommandLine):
 
     COMMON_MESSAGE = "annofabcli annotation_specs list_label: error:"
 
-    def print_annotation_specs_label(self, project_id: str, arg_format: str, output: Optional[str] = None, history_id: Optional[str] = None):  # noqa: ANN201
-        # v2とv3はほとんど同じなので、V3はV2とみなしてコードを書く
-        annotation_specs, _ = self.service.api.get_annotation_specs(project_id, query_params={"history_id": history_id, "v": "3"})
-        labels_v1 = convert_annotation_specs_labels_v2_to_v1(labels_v2=annotation_specs["labels"], additionals_v2=annotation_specs["additionals"])
+    def print_annotation_specs_label(self, annotation_specs_v3: dict[str, Any], arg_format: str, output: Optional[str] = None) -> None:
+        # アノテーション仕様のv2とv3はほとんど同じなので、`convert_annotation_specs_labels_v2_to_v1`にはV3のアノテーション仕様を渡す
+        labels_v1 = convert_annotation_specs_labels_v2_to_v1(
+            labels_v2=annotation_specs_v3["labels"], additionals_v2=annotation_specs_v3["additionals"]
+        )
         if arg_format == "text":
             self._print_text_format_labels(labels_v1, output=output)
 
         elif arg_format == FormatArgument.CSV.value:
-            df = create_df_from_labels(annotation_specs["labels"])
+            df = create_df_from_labels(annotation_specs_v3["labels"])
             print_csv(df, output)
 
         elif arg_format in [FormatArgument.JSON.value, FormatArgument.PRETTY_JSON.value]:
@@ -189,25 +188,44 @@ class PrintAnnotationSpecsLabel(CommandLine):
     def main(self) -> None:
         args = self.args
 
-        if args.before is not None:
-            history_id = self.get_history_id_from_before_index(args.project_id, args.before)
-            if history_id is None:
-                print(  # noqa: T201
-                    f"{self.COMMON_MESSAGE} argument --before: 最新より{args.before}個前のアノテーション仕様は見つかりませんでした。",
-                    file=sys.stderr,
-                )
-                sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
-        else:
-            # args.beforeがNoneならば、必ずargs.history_idはNoneでない
-            history_id = args.history_id
+        if args.project_id is not None:
+            if args.before is not None:
+                history_id = self.get_history_id_from_before_index(args.project_id, args.before)
+                if history_id is None:
+                    print(  # noqa: T201
+                        f"{self.COMMON_MESSAGE} argument --before: 最新より{args.before}個前のアノテーション仕様は見つかりませんでした。",
+                        file=sys.stderr,
+                    )
+                    sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
+            else:
+                # args.beforeがNoneならば、必ずargs.history_idはNoneでない
+                history_id = args.history_id
 
-        self.print_annotation_specs_label(args.project_id, arg_format=args.format, output=args.output, history_id=history_id)
+            annotation_specs, _ = self.service.api.get_annotation_specs(args.project_id, query_params={"history_id": history_id, "v": "3"})
+
+        elif args.annotation_specs_json is not None:
+            with args.annotation_specs_json.open() as f:
+                annotation_specs = json.load(f)
+
+        else:
+            raise RuntimeError("'--project_id'か'--annotation_specs_json'のどちらかを指定する必要があります。")
+
+        self.print_annotation_specs_label(annotation_specs, arg_format=args.format, output=args.output)
 
 
 def parse_args(parser: argparse.ArgumentParser) -> None:
     argument_parser = ArgumentParser(parser)
 
-    argument_parser.add_project_id()
+    required_group = parser.add_mutually_exclusive_group(required=True)
+    required_group.add_argument(
+        "-p", "--project_id", help="対象のプロジェクトのproject_idを指定します。APIで取得したアノテーション仕様情報を元に出力します。"
+    )
+    required_group.add_argument(
+        "--annotation_specs_json",
+        type=Path,
+        help="指定したアノテーション仕様のJSONファイルを指定します。"
+        "JSONファイルに記載された情報を元に出力します。ただしアノテーション仕様の ``format_version`` は ``3`` である必要があります。",
+    )
 
     # 過去のアノテーション仕様を参照するためのオプション
     old_annotation_specs_group = parser.add_mutually_exclusive_group()
