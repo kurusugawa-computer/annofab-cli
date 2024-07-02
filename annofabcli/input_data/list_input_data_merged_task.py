@@ -24,6 +24,7 @@ from annofabcli.common.dataclasses import WaitOptions
 from annofabcli.common.download import DownloadingFile
 from annofabcli.common.enums import FormatArgument
 from annofabcli.common.facade import AnnofabApiFacade, InputDataQuery, match_input_data_with_query
+from annofabcli.common.utils import print_csv, print_json_with_dataframe
 
 logger = logging.getLogger(__name__)
 
@@ -43,11 +44,12 @@ class ListInputDataMergedTaskMain:
     def _to_task_list_based_input_data(task_list: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         new_all_task_list: List[Dict[str, Any]] = []
         for task in task_list:
-            for input_data_id in task["input_data_id_list"]:
+            for input_data_index, input_data_id in enumerate(task["input_data_id_list"]):
                 new_task = {
                     "task_id": task["task_id"],
                     "task_status": task["status"],
                     "task_phase": task["phase"],
+                    "frame_no": input_data_index + 1,
                     "worktime_hour": millisecond_to_hour(task["work_time_span"]),
                     "input_data_id": input_data_id,
                 }
@@ -194,10 +196,13 @@ class ListInputDataMergedTask(CommandLine):
         logger.debug(f"一覧の件数: {len(df_merged)}")
 
         if self.str_format == FormatArgument.CSV.value:
-            self.print_according_to_format(df_merged)
-        elif self.str_format in [FormatArgument.JSON.value, FormatArgument.PRETTY_JSON.value]:
-            result = df_merged.to_dict("records")
-            self.print_according_to_format(result)
+            print_csv(df_merged, output=args.output)
+
+        elif self.str_format == FormatArgument.JSON.value:
+            print_json_with_dataframe(df_merged, output=args.output, is_pretty=False)
+
+        elif self.str_format == FormatArgument.PRETTY_JSON.value:
+            print_json_with_dataframe(df_merged, output=args.output, is_pretty=True)
 
 
 def main(args: argparse.Namespace) -> None:
