@@ -84,31 +84,6 @@ def print_json(target: Any, is_pretty: bool = False, output: Optional[Union[str,
         output_string(json.dumps(target, ensure_ascii=False), output)
 
 
-def print_json_with_dataframe(
-    df: pandas.DataFrame, *, output: Optional[Union[str, Path]] = None, is_pretty: bool = False, orient: str = "records"
-) -> None:
-    """
-    pandas.DataFrameの内容をJSONファイルに出力します。
-
-    Args:
-        df: 出力対象のpandas.DataFrame
-        output: 出力先ファイルのパス。Noneならば標準出力に出力します。
-        is_pretty: Trueならば見やすいJSONを出力します（indent=2）
-        orient: `pandas.DataFrame.to_json`の`orient`引数に渡す値です。
-
-    """
-    if output is not None:
-        Path(output).parent.mkdir(parents=True, exist_ok=True)
-
-    path_or_buf = sys.stdout if output is None else str(output)
-
-    indent = 2 if is_pretty else None
-
-    df.to_json(path_or_buf, force_ascii=False, orient=orient, indent=indent)
-    if output is not None:
-        logger.info(f"'{output}'を出力しました。")
-
-
 def print_csv(df: pandas.DataFrame, output: Optional[Union[str, Path]] = None, to_csv_kwargs: Optional[Dict[str, Any]] = None) -> None:
     if output is not None:
         Path(output).parent.mkdir(parents=True, exist_ok=True)

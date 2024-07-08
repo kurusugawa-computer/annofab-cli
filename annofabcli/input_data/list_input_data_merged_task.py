@@ -24,7 +24,7 @@ from annofabcli.common.dataclasses import WaitOptions
 from annofabcli.common.download import DownloadingFile
 from annofabcli.common.enums import FormatArgument
 from annofabcli.common.facade import AnnofabApiFacade, InputDataQuery, match_input_data_with_query
-from annofabcli.common.utils import print_csv, print_json_with_dataframe
+from annofabcli.common.utils import print_csv
 
 logger = logging.getLogger(__name__)
 
@@ -41,7 +41,7 @@ class ListInputDataMergedTaskMain:
         self.facade = AnnofabApiFacade(service)
 
     @staticmethod
-    def _to_task_list_based_input_data(task_list: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def create_df_task(task_list: List[Dict[str, Any]]) -> pandas.DataFrame:
         new_all_task_list: List[Dict[str, Any]] = []
         for task in task_list:
             for input_data_index, input_data_id in enumerate(task["input_data_id_list"]):
@@ -49,28 +49,24 @@ class ListInputDataMergedTaskMain:
                     "task_id": task["task_id"],
                     "task_status": task["status"],
                     "task_phase": task["phase"],
+                    "task_phase_stage": task["phase_stage"],
                     "frame_no": input_data_index + 1,
                     "worktime_hour": millisecond_to_hour(task["work_time_span"]),
                     "input_data_id": input_data_id,
                 }
                 new_all_task_list.append(new_task)
-        return new_all_task_list
+        df_task = pandas.DataFrame(new_all_task_list)
+        # int型がfloat型になるのを防ぐためにnullableなInt64型を指定する
+        df_task = df_task.astype({"task_phase_stage": "Int64", "frame_no": "Int64"})
+        return df_task
 
-    @staticmethod
-    def _filter_input_data(
-        df_input_data: pandas.DataFrame,
-        input_data_id_list: Optional[List[str]] = None,
-        input_data_name_list: Optional[List[str]] = None,
-    ) -> pandas.DataFrame:
-        df = df_input_data
-        if input_data_id_list is not None:
-            df = df[df["input_data_id"].isin(input_data_id_list)]
 
-        if input_data_name_list is not None:
-            df = pandas.concat(
-                [df[df["input_data_name"].str.lower().str.contains(input_data_name.lower())] for input_data_name in input_data_name_list]
-            )
-        return df
+    def merge(input_data_list: List[Dict[str, Any]],
+        task_list: List[Dict[str, Any]]):
+        for input_data in input_data_list:
+            
+        
+
 
     def create_input_data_merged_task(
         self,
@@ -80,16 +76,13 @@ class ListInputDataMergedTaskMain:
         is_not_used_by_task: bool = False,
         is_used_by_multiple_task: bool = False,
     ) -> pandas.DataFrame:
-        new_task_list = self._to_task_list_based_input_data(task_list)
+        df_task = self.create_df_task(task_list)
 
         # panadas.DataFramdでなくpandas.json_normalizeを使う理由:
         # ネストしたオブジェクトを`system_metadata.input_daration`のような列名でアクセスできるようにするため
         df_input_data = pandas.json_normalize(input_data_list)
 
-        df_task = pandas.DataFrame(new_task_list)
-
         df_merged = pandas.merge(df_input_data, df_task, how="left", on="input_data_id")
-
         assert not (is_not_used_by_task and is_used_by_multiple_task)
         if is_not_used_by_task:
             df_merged = df_merged[df_merged["task_id"].isna()]
@@ -198,11 +191,10 @@ class ListInputDataMergedTask(CommandLine):
         if self.str_format == FormatArgument.CSV.value:
             print_csv(df_merged, output=args.output)
 
-        elif self.str_format == FormatArgument.JSON.value:
-            print_json_with_dataframe(df_merged, output=args.output, is_pretty=False)
-
-        elif self.str_format == FormatArgument.PRETTY_JSON.value:
-            print_json_with_dataframe(df_merged, output=args.output, is_pretty=True)
+        elif self.str_format in [FormatArgument.JSON.value, FormatArgument.PRETTY_JSON.value]:
+            # NaNをJSONに出力しないようにするためNoneに変換する
+            result = df_merged.replace({float("nan"): None}).to_dict("records")
+            self.print_according_to_format(result)
 
 
 def main(args: argparse.Namespace) -> None:
