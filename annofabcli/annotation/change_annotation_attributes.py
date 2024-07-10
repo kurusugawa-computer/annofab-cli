@@ -85,7 +85,7 @@ class ChangeAnnotationAttributesMain(CommandLineWithConfirm):
                     "label_id": detail["label_id"],
                     "additional_data_list": attributes_for_dict,
                 },
-                "_type": "Put",
+                "_type": "PutV2",
             }
 
         attributes_for_dict: List[Dict[str, Any]] = [dataclasses.asdict(e) for e in attributes]
@@ -185,14 +185,14 @@ class ChangeAnnotationAttributesMain(CommandLineWithConfirm):
             logger.warning(f"タスク'{task_id}'のアノテーションの属性の変更に失敗しました。", exc_info=True)
             return False
 
-    def change_annotation_attributes_for_task_list(  # noqa: ANN201
+    def change_annotation_attributes_for_task_list(
         self,
         task_id_list: List[str],
         annotation_query: AnnotationQueryForAPI,
         attributes: List[AdditionalDataV1],
         backup_dir: Optional[Path] = None,
         parallelism: Optional[int] = None,
-    ):
+    ) -> None:
         project_title = self.facade.get_project_title(self.project_id)
         logger.info(f"プロジェクト'{project_title}'に対して、タスク{len(task_id_list)} 件のアノテーションの属性を変更します。")
 
@@ -273,7 +273,7 @@ class ChangeAttributesOfAnnotation(CommandLine):
         project_id = args.project_id
         task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id)
 
-        annotation_specs, _ = self.service.api.get_annotation_specs(project_id, query_params={"v": "2"})
+        annotation_specs, _ = self.service.api.get_annotation_specs(project_id, query_params={"v": "3"})
 
         try:
             annotation_query = self.get_annotation_query_for_api(args.annotation_query, annotation_specs)

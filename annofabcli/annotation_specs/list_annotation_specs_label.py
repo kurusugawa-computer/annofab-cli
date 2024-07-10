@@ -58,7 +58,7 @@ def decimal_to_hex_color(red: int, green: int, blue: int) -> str:
     """
     # 各値が0から255の範囲内にあるか確認
     if not (0 <= red <= 255 and 0 <= green <= 255 and 0 <= blue <= 255):
-        raise ValueError(f"RGB values must be in the range 0-255 :: {red=}, {blue=}, {green=}")  # noqa: TRY003
+        raise ValueError(f"RGB values must be in the range 0-255 :: {red=}, {blue=}, {green=}")
 
     return f"#{red:02X}{green:02X}{blue:02X}"
 
