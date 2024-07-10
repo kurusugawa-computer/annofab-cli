@@ -132,6 +132,7 @@ ignore = [
     "ERA", # : 役立つこともあるが、コメントアウトしていないコードも警告されるので無視する
     "PERF203", # try-except-in-loop: ループ内でtry-exceptを使うこともあるため無視する。
     "COM812", # missing-trailing-comma: 末尾のカンマを考慮しないため無視する
+    "TRY003", # raise-vanilla-args: `ValueError`にf-stringで長いメッセージを渡すことが多いので無視する
     "FIX", # TODOやFIXMEを使うため無視する
     "TD", # TODOコメントの書き方に気にしていないので無視する
     
