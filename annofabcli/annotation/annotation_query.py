@@ -203,7 +203,7 @@ def convert_attributes_from_cli_to_api(
     return attributes_for_webapi
 
 
-def convert_attributes_from_cli_to_api_v2(
+def convert_attributes_from_cli_to_additional_data_list_v2(
     attributes: dict[str, AttributeValue], annotation_specs: dict[str, Any], *, label_id: Optional[str] = None
 ) -> list[dict[str, Any]]:
     """
