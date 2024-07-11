@@ -147,7 +147,7 @@ class ChangeAnnotationAttributesMain(CommandLineWithConfirm):
 
         annotation_list = self.get_annotation_list_for_task(task_id, annotation_query)
         logger.info(
-            f"{logger_prefix}task_id='{task_id}'の変更対象アノテーション数：{len(annotation_list)}, phase={task.phase.value}, status={task.status.value}, updated_datetime={task.updated_datetime}"  # noqa: E501
+            f"{logger_prefix}task_id='{task_id}'の変更対象アノテーション数は{len(annotation_list)}個です。 :: task_phase='{task.phase.value}', task_status='{task.status.value}', task_updated_datetime='{task.updated_datetime}'"  # noqa: E501
         )
         if len(annotation_list) == 0:
             logger.info(f"{logger_prefix}task_id='{task_id}'には変更対象のアノテーションが存在しないので、スキップします。")
