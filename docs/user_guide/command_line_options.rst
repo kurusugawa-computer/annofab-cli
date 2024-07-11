@@ -140,7 +140,7 @@ Command line options
 
 以下のキーが利用可能です。
 
-* ``label`` : 指定したラベル名(英語)に一致するアノテーション（必須）
+* ``label`` : 指定したラベル名(英語)に一致するアノテーション
 * ``attributes`` : 指定した属性の検索条件に一致するアノテーション
 
 .. code-block::
@@ -159,6 +159,9 @@ Command line options
 
     # ラベル名（英語)が"car"で、属性(英語名)"weather"の選択肢名(英語)が"sunny"であるアノテーション
     {"label": "car", "attributes":{"weather": "sunny"}}
+
+    # 属性(英語名)"occluded"の値がtrueである（チェックボックス）アノテーション
+    {"attributes":{"occluded":true}}
 
 
 パスを指定するオプション
