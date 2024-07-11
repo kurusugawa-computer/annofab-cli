@@ -313,7 +313,14 @@ class ChangeAttributesOfAnnotation(CommandLine):
         else:
             backup_dir = Path(args.backup)
 
-        super().validate_project(project_id, [ProjectMemberRole.OWNER])
+        super().validate_project(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.ACCEPTER])
+        if args.force:
+            if not self.facade.contains_any_project_member_role(project_id, [ProjectMemberRole.OWNER]):
+                print(
+                    f"{self.COMMON_MESSAGE} argument --force : '--force' 引数を利用するにはプロジェクトのオーナーロールを持つユーザーで実行する必要があります。",
+                    file=sys.stderr,
+                )
+                sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
         main_obj = ChangeAnnotationAttributesMain(self.service, project_id=project_id, is_force=args.force, all_yes=args.yes)
         main_obj.change_annotation_attributes_for_task_list(
@@ -358,7 +365,11 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         f"(ex): ``{EXAMPLE_ATTRIBUTES}``",
     )
 
-    parser.add_argument("--force", action="store_true", help="完了状態のタスクのアノテーション属性も変更します。")
+    parser.add_argument(
+        "--force",
+        action="store_true",
+        help="完了状態のタスクのアノテーション属性も変更します。ただし、オーナーロールを持つユーザーでしか実行できません。",
+    )
 
     parser.add_argument(
         "--backup",
@@ -382,7 +393,7 @@ def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argpa
         "アノテーションの属性を一括で変更します。ただし、作業中状態のタスクのアノテーションの属性は変更できません。"
         "間違えてアノテーション属性を変更したときに復元できるようにするため、 ``--backup`` でバックアップ用のディレクトリを指定することを推奨します。"
     )
-    epilog = "オーナロールを持つユーザで実行してください。"
+    epilog = "オーナロールまたはチェッカーロールを持つユーザで実行してください。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
     parse_args(parser)

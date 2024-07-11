@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Callable, Collection, Dict, List, Optional, Tuple
 
 import annofabapi
 import annofabapi.utils
@@ -444,7 +444,7 @@ class AnnofabApiFacade:
         my_member, _ = self.service.api.get_my_member_in_project(project_id)
         return my_member["member_role"] == "owner"
 
-    def contains_any_project_member_role(self, project_id: str, roles: List[ProjectMemberRole]) -> bool:
+    def contains_any_project_member_role(self, project_id: str, roles: Collection[ProjectMemberRole]) -> bool:
         """
         自分自身のプロジェクトメンバとしてのロールが、指定されたロールのいずれかに合致するかどうか
         Args:
@@ -459,7 +459,7 @@ class AnnofabApiFacade:
         my_role = ProjectMemberRole(my_member["member_role"])
         return my_role in roles
 
-    def contains_any_organization_member_role(self, organization_name: str, roles: List[OrganizationMemberRole]) -> bool:
+    def contains_any_organization_member_role(self, organization_name: str, roles: Collection[OrganizationMemberRole]) -> bool:
         """
         自分自身の組織メンバとしてのロールが、指定されたロールのいずれかに合致するかどうか
         Args:
