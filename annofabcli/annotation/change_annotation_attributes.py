@@ -314,10 +314,10 @@ class ChangeAttributesOfAnnotation(CommandLine):
             backup_dir = Path(args.backup)
 
         super().validate_project(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.ACCEPTER])
-        if args.force:
+        if args.force:  # noqa: SIM102
             if not self.facade.contains_any_project_member_role(project_id, [ProjectMemberRole.OWNER]):
-                print(
-                    f"{self.COMMON_MESSAGE} argument --force : '--force' 引数を利用するにはプロジェクトのオーナーロールを持つユーザーで実行する必要があります。",
+                print(  # noqa: T201
+                    f"{self.COMMON_MESSAGE} argument --force : '--force' 引数を利用するにはプロジェクトのオーナーロールを持つユーザーで実行する必要があります。",  # noqa: E501
                     file=sys.stderr,
                 )
                 sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
