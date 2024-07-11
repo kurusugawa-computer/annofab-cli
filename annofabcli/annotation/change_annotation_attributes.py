@@ -160,7 +160,7 @@ class ChangeAnnotationAttributesMain(CommandLineWithConfirm):
             self.dump_annotation_obj.dump_annotation_for_task(task_id, output_dir=backup_dir)
 
         self.change_annotation_attributes(annotation_list, additional_data_list)
-        logger.info(f"{logger_prefix}task_id={task_id}: アノテーション属性を変更しました。")
+        logger.info(f"{logger_prefix}task_id='{task_id}': {len(annotation_list)} 個のアノテーションの属性値を変更しました。")
         return True
 
     def change_attributes_for_task_wrapper(
@@ -205,7 +205,7 @@ class ChangeAnnotationAttributesMain(CommandLineWithConfirm):
 
         """
         project_title = self.facade.get_project_title(self.project_id)
-        logger.info(f"プロジェクト'{project_title}'に対して、タスク{len(task_id_list)} 件のアノテーションの属性を変更します。")
+        logger.info(f"プロジェクト'{project_title}'に対して、タスク{len(task_id_list)} 件のアノテーションの属性値を変更します。")
 
         if backup_dir is not None:
             backup_dir.mkdir(exist_ok=True, parents=True)
@@ -269,7 +269,7 @@ class ChangeAttributesOfAnnotation(CommandLine):
 
     @classmethod
     def get_additional_data_list_from_cli_attributes(
-        cls, str_attributes: str, annotation_specs: dict[str, Any], label_id: str
+        cls, str_attributes: str, annotation_specs: dict[str, Any], label_id: Optional[str]
     ) -> list[dict[str, Any]]:
         """
         CLIから受け取った`--attributes`の値から、APIに渡す属性情報(`AdditionalDataListV2`)を返します。

@@ -68,7 +68,7 @@ def _get_attribute_to_api(additional_data: dict[str, Any], attribute_value: Attr
             )
         if len(tmp) > 1:
             raise ValueError(
-                f"アノテーション仕様の'{get_attribute_name(additional_data)}'属性に、選択肢名(英語)が'{attribute_value}'である選択肢が複数存在します。"
+                f"アノテーション仕様の'{get_attribute_name(additional_data)}'属性に、選択肢名(英語)が'{attribute_value}'である選択肢が複数（{len(tmp)} 個）存在します。"
                 f" :: additional_data_definition_id='{additional_data_definition_id}'"
             )
 
@@ -103,7 +103,7 @@ def _get_additional_data_v2(additional_data: dict[str, Any], attribute_value: At
             )
         elif len(tmp) > 1:
             raise ValueError(
-                f"アノテーション仕様の'{get_attribute_name(additional_data)}'属性に、選択肢名(英語)が'{choice_name_en}'である選択肢が複数存在します。"
+                f"アノテーション仕様の'{get_attribute_name(additional_data)}'属性に、選択肢名(英語)が'{choice_name_en}'である選択肢が複数（{len(tmp)} 個）存在します。"
             )
 
         return tmp[0]["choice_id"]
@@ -272,7 +272,7 @@ class AnnotationQueryForCLI(DataClassJsonMixin):
     CLIでアノテーションを絞り込むためのクエリ。
     """
 
-    label: str
+    label: Optional[str] = None
     """ラベル名（英語）"""
 
     attributes: Optional[Dict[str, AttributeValue]] = None
@@ -292,20 +292,27 @@ class AnnotationQueryForCLI(DataClassJsonMixin):
         Returns:
             dict[str,Any]: WebAPIのquery_paramsに渡すdict
         """
-        tmp = [e for e in annotation_specs["labels"] if get_english_message(e["label_name"]) == self.label]
+        assert self.label is not None or self.attributes is not None
+        label_id: Optional[str] = None
+        attributes_for_webapi: Optional[list[AdditionalDataV1]] = None
 
-        if len(tmp) == 0:
-            raise ValueError(f"アノテーション仕様に、ラベル名（英語）が'{self.label}'であるラベルは存在しません。")
-        if len(tmp) > 1:
-            raise ValueError(f"アノテーション仕様に、ラベル名（英語）が'{self.label}'であるラベルが複数存在します。")
+        if self.label is not None:
+            tmp = [e for e in annotation_specs["labels"] if get_english_message(e["label_name"]) == self.label]
 
-        label_info = tmp[0]
-        label_id = label_info["label_id"]
-        if self.attributes is None:
-            return AnnotationQueryForAPI(label_id=label_id)
+            if len(tmp) == 0:
+                raise ValueError(f"アノテーション仕様に、ラベル名（英語）が'{self.label}'であるラベルは存在しません。")
+            if len(tmp) > 1:
+                raise ValueError(f"アノテーション仕様に、ラベル名（英語）が'{self.label}'であるラベルが複数存在します。")
 
-        # ラベル配下の属性情報から、`self.attributes`に対応する属性情報を探す
-        attributes_for_webapi = convert_attributes_from_cli_to_api(self.attributes, annotation_specs, label_id=label_id)
+            label_id = tmp[0]["label_id"]
+
+            if self.attributes is None:
+                return AnnotationQueryForAPI(label_id=label_id)
+
+        if self.attributes is not None:
+            # `self.attributes`に対応する属性情報を探す
+            attributes_for_webapi = convert_attributes_from_cli_to_api(self.attributes, annotation_specs, label_id=label_id)
+
         return AnnotationQueryForAPI(label_id=label_id, attributes=attributes_for_webapi)
 
 
@@ -315,7 +322,7 @@ class AnnotationQueryForAPI(DataClassJsonMixin):
     WebAPIでアノテーションを絞り込むためのクエリ。
     """
 
-    label_id: str
+    label_id: Optional[str] = None
     """ラベルID"""
 
     attributes: Optional[List[AdditionalDataV1]] = None
