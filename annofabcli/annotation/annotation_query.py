@@ -68,7 +68,7 @@ def _get_attribute_to_api(additional_data: dict[str, Any], attribute_value: Attr
             )
         if len(tmp) > 1:
             raise ValueError(
-                f"アノテーション仕様の'{get_attribute_name(additional_data)}'属性に、選択肢名(英語)が'{attribute_value}'である選択肢が複数（{len(tmp)} 個）存在します。"
+                f"アノテーション仕様の'{get_attribute_name(additional_data)}'属性に、選択肢名(英語)が'{attribute_value}'である選択肢が複数（{len(tmp)} 個）存在します。"  # noqa: E501
                 f" :: additional_data_definition_id='{additional_data_definition_id}'"
             )
 
@@ -103,7 +103,7 @@ def _get_additional_data_v2(additional_data: dict[str, Any], attribute_value: At
             )
         elif len(tmp) > 1:
             raise ValueError(
-                f"アノテーション仕様の'{get_attribute_name(additional_data)}'属性に、選択肢名(英語)が'{choice_name_en}'である選択肢が複数（{len(tmp)} 個）存在します。"
+                f"アノテーション仕様の'{get_attribute_name(additional_data)}'属性に、選択肢名(英語)が'{choice_name_en}'である選択肢が複数（{len(tmp)} 個）存在します。"  # noqa: E501
             )
 
         return tmp[0]["choice_id"]
@@ -282,6 +282,10 @@ class AnnotationQueryForCLI(DataClassJsonMixin):
     属性値がNoneのときは、「未指定」で絞り込む。
     """
 
+    def __post_init__(self) -> None:
+        if self.label is None and self.attributes is None:
+            raise ValueError("'label'か'attributes'のいずれかは'not None'である必要があります。")
+
     def to_query_for_api(self, annotation_specs: dict[str, Any]) -> AnnotationQueryForAPI:
         """
         WebAPIのquery_params( https://annofab.com/docs/api/#section/AnnotationQuery )に渡すdictに変換する。
@@ -320,6 +324,7 @@ class AnnotationQueryForCLI(DataClassJsonMixin):
 class AnnotationQueryForAPI(DataClassJsonMixin):
     """
     WebAPIでアノテーションを絞り込むためのクエリ。
+    https://annofab.com/docs/api/#section/AnnotationQuery に対応しています。
     """
 
     label_id: Optional[str] = None
@@ -327,3 +332,7 @@ class AnnotationQueryForAPI(DataClassJsonMixin):
 
     attributes: Optional[List[AdditionalDataV1]] = None
     """属性IDと属性値のList"""
+
+    def __post_init__(self) -> None:
+        if self.label_id is None and self.attributes is None:
+            raise ValueError("'label_id'か'attributes'のいずれかは'not None'である必要があります。")
