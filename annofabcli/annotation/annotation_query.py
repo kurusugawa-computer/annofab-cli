@@ -13,8 +13,8 @@ AttributeValue = Optional[Union[str, int, bool]]
 """属性値の型情報"""
 
 
-def _get_attribute_to_api(additional_data: dict[str, Any], attribute_value: AttributeValue) -> AdditionalDataV1:
-    """API用の属性情報を取得する。
+def _get_additional_data_v1(additional_data: dict[str, Any], attribute_value: AttributeValue) -> AdditionalDataV1:
+    """API用の`AdditionalDataV1`に相当する属性情報を取得する。
 
     Args:
         additional_data: アノテーション仕様の属性情報
@@ -57,8 +57,6 @@ def _get_attribute_to_api(additional_data: dict[str, Any], attribute_value: Attr
         AdditionalDataDefinitionType.SELECT.value,
     ]:
         # 排他選択の場合、属性値に選択肢IDが入っているため、対象の選択肢を探す
-        # TODO コードの処理を確認する
-        choice_info = more_itertools.first_true(additional_data["choices"], pred=lambda e: get_english_message(e["name"]) == attribute_value)
         tmp = [e for e in additional_data["choices"] if get_english_message(e["name"]) == attribute_value]
 
         if len(tmp) == 0:
@@ -72,8 +70,7 @@ def _get_attribute_to_api(additional_data: dict[str, Any], attribute_value: Attr
                 f" :: additional_data_definition_id='{additional_data_definition_id}'"
             )
 
-        choice_info = tmp[0]
-        result["choice"] = choice_info["choice_id"]
+        result["choice"] = tmp[0]["choice_id"]
 
     return AdditionalDataV1.from_dict(result, infer_missing=True)
 
@@ -198,7 +195,7 @@ def convert_attributes_from_cli_to_api(
                 )
             raise ValueError(error_message)
         additional_data = tmp[0]
-        attributes_for_webapi.append(_get_attribute_to_api(additional_data, attribute_value))
+        attributes_for_webapi.append(_get_additional_data_v1(additional_data, attribute_value))
 
     return attributes_for_webapi
 
@@ -306,7 +303,7 @@ class AnnotationQueryForCLI(DataClassJsonMixin):
             if len(tmp) == 0:
                 raise ValueError(f"アノテーション仕様に、ラベル名（英語）が'{self.label}'であるラベルは存在しません。")
             if len(tmp) > 1:
-                raise ValueError(f"アノテーション仕様に、ラベル名（英語）が'{self.label}'であるラベルが複数存在します。")
+                raise ValueError(f"アノテーション仕様に、ラベル名（英語）が'{self.label}'であるラベルが複数（{len(tmp)} 個）存在します。")
 
             label_id = tmp[0]["label_id"]
 

@@ -38,6 +38,18 @@ from annofabcli.common.utils import (
 logger = logging.getLogger(__name__)
 
 
+class ExitCode:
+    """
+    BashのExit Codes
+    https://tldp.org/LDP/abs/html/exitcodes.html
+    """
+
+    GENERAL_ERROR = 1
+    """一般的なエラー全般"""
+    MISUSE_OF_COMMAND = 2
+    """コマンドの誤用"""
+
+
 COMMAND_LINE_ERROR_STATUS_CODE = 2
 """コマンドラインエラーが発生したときに返すステータスコード"""
 
