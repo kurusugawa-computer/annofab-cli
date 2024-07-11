@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import argparse
-import dataclasses
 import functools
 import logging
 import multiprocessing
@@ -11,7 +10,6 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 import annofabapi
-from annofabapi.dataclass.annotation import AdditionalDataV1
 from annofabapi.dataclass.task import Task
 from annofabapi.models import ProjectMemberRole, TaskStatus
 
@@ -19,7 +17,7 @@ import annofabcli
 from annofabcli.annotation.annotation_query import (
     AnnotationQueryForAPI,
     AnnotationQueryForCLI,
-    convert_attributes_from_cli_to_api,
+    convert_attributes_from_cli_to_additional_data_list_v2,
 )
 from annofabcli.annotation.dump_annotation import DumpAnnotationMain
 from annofabcli.common.cli import (
@@ -59,14 +57,14 @@ class ChangeAnnotationAttributesMain(CommandLineWithConfirm):
         self.dump_annotation_obj = DumpAnnotationMain(service, project_id)
 
     def change_annotation_attributes(
-        self, annotation_list: List[Dict[str, Any]], attributes: List[AdditionalDataV1]
+        self, annotation_list: List[Dict[str, Any]], additional_data_list: list[dict[str, Any]]
     ) -> Optional[List[Dict[str, Any]]]:
         """
         アノテーション属性値を変更する。
 
         Args:
             annotation_list: 変更対象のアノテーション一覧
-            attributes: 変更後の属性値
+            additional_data_list: 変更後の属性値(`AdditionalDataListV2`スキーマ)
 
         Returns:
             `batch_update_annotations`メソッドのレスポンス
@@ -83,12 +81,11 @@ class ChangeAnnotationAttributesMain(CommandLineWithConfirm):
                     "updated_datetime": annotation["updated_datetime"],
                     "annotation_id": detail["annotation_id"],
                     "label_id": detail["label_id"],
-                    "additional_data_list": attributes_for_dict,
+                    "additional_data_list": additional_data_list,
                 },
-                "_type": "Put",
+                "_type": "PutV2",
             }
 
-        attributes_for_dict: List[Dict[str, Any]] = [dataclasses.asdict(e) for e in attributes]
         request_body = [_to_request_body_elm(annotation) for annotation in annotation_list]
         return self.service.api.batch_update_annotations(self.project_id, request_body=request_body)[0]
 
@@ -113,7 +110,8 @@ class ChangeAnnotationAttributesMain(CommandLineWithConfirm):
         self,
         task_id: str,
         annotation_query: AnnotationQueryForAPI,
-        attributes: List[AdditionalDataV1],
+        additional_data_list: list[dict[str, Any]],
+        *,
         backup_dir: Optional[Path] = None,
         task_index: Optional[int] = None,
     ) -> bool:
@@ -124,7 +122,7 @@ class ChangeAnnotationAttributesMain(CommandLineWithConfirm):
             project_id:
             task_id:
             annotation_query: 変更対象のアノテーションの検索条件
-            attributes: 変更後のアノテーション属性
+            additional_data_list: 変更後の属性値(`AdditionalDataListV2`スキーマ)
             force: タスクのステータスによらず更新する
             backup_dir: アノテーションをバックアップとして保存するディレクトリ。指定しない場合は、バックアップを取得しない。
 
@@ -149,7 +147,7 @@ class ChangeAnnotationAttributesMain(CommandLineWithConfirm):
 
         annotation_list = self.get_annotation_list_for_task(task_id, annotation_query)
         logger.info(
-            f"{logger_prefix}task_id='{task_id}'の変更対象アノテーション数：{len(annotation_list)}, phase={task.phase.value}, status={task.status.value}, updated_datetime={task.updated_datetime}"  # noqa: E501
+            f"{logger_prefix}task_id='{task_id}'の変更対象アノテーション数は{len(annotation_list)}個です。 :: task_phase='{task.phase.value}', task_status='{task.status.value}', task_updated_datetime='{task.updated_datetime}'"  # noqa: E501
         )
         if len(annotation_list) == 0:
             logger.info(f"{logger_prefix}task_id='{task_id}'には変更対象のアノテーションが存在しないので、スキップします。")
@@ -161,15 +159,16 @@ class ChangeAnnotationAttributesMain(CommandLineWithConfirm):
         if backup_dir is not None:
             self.dump_annotation_obj.dump_annotation_for_task(task_id, output_dir=backup_dir)
 
-        self.change_annotation_attributes(annotation_list, attributes)
-        logger.info(f"{logger_prefix}task_id={task_id}: アノテーション属性を変更しました。")
+        self.change_annotation_attributes(annotation_list, additional_data_list)
+        logger.info(f"{logger_prefix}task_id='{task_id}': {len(annotation_list)} 個のアノテーションの属性値を変更しました。")
         return True
 
     def change_attributes_for_task_wrapper(
         self,
         tpl: tuple[int, str],
         annotation_query: AnnotationQueryForAPI,
-        attributes: List[AdditionalDataV1],
+        additional_data_list: list[dict[str, Any]],
+        *,
         backup_dir: Optional[Path] = None,
     ) -> bool:
         task_index, task_id = tpl
@@ -177,7 +176,7 @@ class ChangeAnnotationAttributesMain(CommandLineWithConfirm):
             return self.change_attributes_for_task(
                 task_id,
                 annotation_query=annotation_query,
-                attributes=attributes,
+                additional_data_list=additional_data_list,
                 backup_dir=backup_dir,
                 task_index=task_index,
             )
@@ -185,16 +184,28 @@ class ChangeAnnotationAttributesMain(CommandLineWithConfirm):
             logger.warning(f"タスク'{task_id}'のアノテーションの属性の変更に失敗しました。", exc_info=True)
             return False
 
-    def change_annotation_attributes_for_task_list(  # noqa: ANN201
+    def change_annotation_attributes_for_task_list(
         self,
         task_id_list: List[str],
         annotation_query: AnnotationQueryForAPI,
-        attributes: List[AdditionalDataV1],
+        additional_data_list: list[dict[str, Any]],
+        *,
         backup_dir: Optional[Path] = None,
         parallelism: Optional[int] = None,
-    ):
+    ) -> None:
+        """
+        複数のタスクに対してアノテーションの属性値を変更します。
+
+        Args:
+            task_id_list: 変更対象のタスクのIDのlist
+            annotation_query: 変更対象のアノテーションを特定するためのクエリー
+            additional_data_list: 変更後の属性値(`AdditionalDataListV2`スキーマ)
+            backup_dir: バックアップ先のディレクトリ
+            parallelism: 並列数
+
+        """
         project_title = self.facade.get_project_title(self.project_id)
-        logger.info(f"プロジェクト'{project_title}'に対して、タスク{len(task_id_list)} 件のアノテーションの属性を変更します。")
+        logger.info(f"プロジェクト'{project_title}'に対して、タスク{len(task_id_list)} 件のアノテーションの属性値を変更します。")
 
         if backup_dir is not None:
             backup_dir.mkdir(exist_ok=True, parents=True)
@@ -204,7 +215,7 @@ class ChangeAnnotationAttributesMain(CommandLineWithConfirm):
             func = functools.partial(
                 self.change_attributes_for_task_wrapper,
                 annotation_query=annotation_query,
-                attributes=attributes,
+                additional_data_list=additional_data_list,
                 backup_dir=backup_dir,
             )
             with multiprocessing.Pool(parallelism) as pool:
@@ -217,7 +228,7 @@ class ChangeAnnotationAttributesMain(CommandLineWithConfirm):
                     result = self.change_attributes_for_task(
                         task_id,
                         annotation_query=annotation_query,
-                        attributes=attributes,
+                        additional_data_list=additional_data_list,
                         backup_dir=backup_dir,
                         task_index=task_index,
                     )
@@ -257,12 +268,14 @@ class ChangeAttributesOfAnnotation(CommandLine):
         return annotation_query_for_cli.to_query_for_api(annotation_specs)
 
     @classmethod
-    def get_attributes_for_api(cls, str_attributes: str, annotation_specs: dict[str, Any], label_id: str) -> list[AdditionalDataV1]:
+    def get_additional_data_list_from_cli_attributes(
+        cls, str_attributes: str, annotation_specs: dict[str, Any], label_id: Optional[str]
+    ) -> list[dict[str, Any]]:
         """
-        CLIから受け取った`--attributes`の値から、APIに渡す属性情報を返す。
+        CLIから受け取った`--attributes`の値から、APIに渡す属性情報(`AdditionalDataListV2`)を返します。
         """
         dict_attributes = get_json_from_args(str_attributes)
-        return convert_attributes_from_cli_to_api(dict_attributes, annotation_specs, label_id=label_id)
+        return convert_attributes_from_cli_to_additional_data_list_v2(dict_attributes, annotation_specs, label_id=label_id)
 
     def main(self) -> None:
         args = self.args
@@ -273,7 +286,7 @@ class ChangeAttributesOfAnnotation(CommandLine):
         project_id = args.project_id
         task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id)
 
-        annotation_specs, _ = self.service.api.get_annotation_specs(project_id, query_params={"v": "2"})
+        annotation_specs, _ = self.service.api.get_annotation_specs(project_id, query_params={"v": "3"})
 
         try:
             annotation_query = self.get_annotation_query_for_api(args.annotation_query, annotation_specs)
@@ -282,7 +295,9 @@ class ChangeAttributesOfAnnotation(CommandLine):
             sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
         try:
-            attributes = self.get_attributes_for_api(args.attributes, annotation_specs, label_id=annotation_query.label_id)
+            additional_data_list = self.get_additional_data_list_from_cli_attributes(
+                args.attributes, annotation_specs, label_id=annotation_query.label_id
+            )
         except ValueError as e:
             print(f"{self.COMMON_MESSAGE} argument '--attributes' の値が不正です。 :: {e}", file=sys.stderr)  # noqa: T201
             sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
@@ -304,7 +319,7 @@ class ChangeAttributesOfAnnotation(CommandLine):
         main_obj.change_annotation_attributes_for_task_list(
             task_id_list,
             annotation_query=annotation_query,
-            attributes=attributes,
+            additional_data_list=additional_data_list,
             backup_dir=backup_dir,
             parallelism=args.parallelism,
         )
