@@ -1,7 +1,6 @@
 import argparse
 import logging
 import urllib.parse
-from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 import annofabapi
@@ -17,18 +16,24 @@ from annofabcli.common.visualize import AddProps
 logger = logging.getLogger(__name__)
 
 
-class ListInputData(CommandLine):
-    """
-    入力データの一覧を表示する
+class ListInputDataMain:
     """
 
-    #: 入力データIDの平均長さ
-    average_input_data_id_length: int = 36
+    Args:
+        average_input_data_id_length: 入力データIDの平均長さ。この値を元にして、`getTasks` APIの実行回数を決めます。
+            `getTasks` APIはクエリパラメータに`input_data_ids`で複数の入力データIDを指定できます。
+            クエリパラメータのサイズには上限があるため、たとえば10,000個の入力データIDを指定することはできません。
+            したがって、入力データIDの平均サイズから、`getTasks` APIの実行回数を決めます。
 
-    def __init__(self, service: annofabapi.Resource, facade: AnnofabApiFacade, args: argparse.Namespace) -> None:
-        super().__init__(service, facade, args)
-        self.visualize = AddProps(self.service, args.project_id)
-        self.average_input_data_id_length = args.average_input_data_id_length
+    """
+
+    def __init__(self, service: annofabapi.Resource, project_id: str, *, average_input_data_id_length: int = 36) -> None:
+        self.service = service
+        self.project_id = project_id
+        self.facade = AnnofabApiFacade(service)
+        self.visualize = AddProps(service, project_id)
+
+        self.average_input_data_id_length = average_input_data_id_length
 
     @staticmethod
     def _find_task_id_list(task_list: List[Task], input_data_id: str) -> List[str]:
@@ -41,14 +46,14 @@ class ListInputData(CommandLine):
                 task_id_list.append(task["task_id"])  # noqa: PERF401
         return task_id_list
 
-    def get_input_data_from_input_data_id(self, project_id: str, input_data_id_list: List[str]) -> List[InputData]:
+    def get_input_data_from_input_data_id(self, input_data_id_list: List[str]) -> List[InputData]:
         input_data_list = []
         logger.debug(f"{len(input_data_id_list)}件の入力データを取得します。")
         for index, input_data_id in enumerate(input_data_id_list):
             if (index + 1) % 100 == 0:
                 logger.debug(f"{index+1} 件目の入力データを取得します。")
 
-            input_data = self.service.wrapper.get_input_data_or_none(project_id, input_data_id)
+            input_data = self.service.wrapper.get_input_data_or_none(self.project_id, input_data_id)
             if input_data is not None:
                 input_data_list.append(input_data)
             else:
@@ -56,7 +61,7 @@ class ListInputData(CommandLine):
 
         return input_data_list
 
-    def add_details_to_input_data_list(self, project_id: str, input_data_list: List[InputData]) -> List[InputData]:
+    def add_details_to_input_data_list(self, input_data_list: List[InputData]) -> List[InputData]:
         """
         `input_data_list`に詳細情報（どのタスクに使われているか）を付与する。
 
@@ -97,7 +102,7 @@ class ListInputData(CommandLine):
                 continue
 
             logger.debug(f"input_data_list[{initial_index}:{initial_index+chunk_size}] を使用しているタスクを取得する。")
-            task_list = self.service.wrapper.get_all_tasks(project_id, query_params={"input_data_ids": str_input_data_id_list})
+            task_list = self.service.wrapper.get_all_tasks(self.project_id, query_params={"input_data_ids": str_input_data_id_list})
 
             for input_data in sub_input_data_list:
                 # input_data_idで絞り込んでいるが、大文字小文字を区別しない。
@@ -113,82 +118,61 @@ class ListInputData(CommandLine):
 
     def get_input_data_list(
         self,
-        project_id: str,
+        *,
         input_data_id_list: Optional[List[str]] = None,
         input_data_query: Optional[Dict[str, Any]] = None,
-        add_details: bool = False,  # noqa: FBT001, FBT002
+        add_details: bool = False,
     ) -> List[InputData]:
         """
         入力データ一覧を取得する。
         """
         if input_data_id_list is not None:
-            input_data_list = self.get_input_data_from_input_data_id(project_id, input_data_id_list)
+            input_data_list = self.get_input_data_from_input_data_id(input_data_id_list)
         else:
             logger.debug(f"input_data_query: {input_data_query}")
-            input_data_list = self.service.wrapper.get_all_input_data_list(project_id, query_params=input_data_query)
+            input_data_list = self.service.wrapper.get_all_input_data_list(self.project_id, query_params=input_data_query)
 
         # 詳細な情報を追加する
         if add_details:
-            self.add_details_to_input_data_list(project_id, input_data_list)
+            self.add_details_to_input_data_list(input_data_list)
 
         return input_data_list
 
-    def print_input_data(
-        self,
-        project_id: str,
-        output_file: Optional[Path],
-        output_format: FormatArgument,
-        input_data_query: Optional[Dict[str, Any]] = None,
-        input_data_id_list: Optional[List[str]] = None,
-        add_details: bool = False,  # noqa: FBT001, FBT002
-    ) -> None:
-        """
-        入力データ一覧を出力する
 
-        Args:
-            project_id: 対象のproject_id
-            input_data_query: 入力データの検索クエリ
-            input_data_id: 入力データID
-            add_details: 詳細情報を表示する
-
-        """
-
-        super().validate_project(project_id, project_member_roles=None)
-
-        input_data_list = self.get_input_data_list(
-            project_id,
-            input_data_query=input_data_query,
-            input_data_id_list=input_data_id_list,
-            add_details=add_details,
-        )
-        logger.info(f"入力データ一覧の件数: {len(input_data_list)}")
-        if len(input_data_list) == 10000:
-            logger.warning("入力データ一覧は10,000件で打ち切られている可能性があります。")
-
-        if len(input_data_list) > 0:
-            if output_format == FormatArgument.CSV:
-                # panadas.DataFramdでなくpandas.json_normalizeを使う理由:
-                # ネストしたオブジェクトを`system_metadata.input_daration`のような列名でアクセスできるようにするため
-                df = pandas.json_normalize(input_data_list)
-                print_csv(df, output=output_file)
-            else:
-                print_according_to_format(input_data_list, format=output_format, output=output_file)
-        else:
-            logger.info("入力データの件数が0件のため、出力しません。")
+class ListInputData(CommandLine):
+    """
+    入力データの一覧を表示する
+    """
 
     def main(self) -> None:
         args = self.args
         input_data_id_list = annofabcli.common.cli.get_list_from_args(args.input_data_id) if args.input_data_id is not None else None
 
         input_data_query = annofabcli.common.cli.get_json_from_args(args.input_data_query)
-        self.print_input_data(
-            args.project_id,
-            output_file=Path(args.output),
-            output_format=FormatArgument(args.format),
+
+        main_obj = ListInputDataMain(self.service, project_id=args.project_id)
+
+        input_data_list = main_obj.get_input_data_list(
             input_data_id_list=input_data_id_list,
             input_data_query=input_data_query,
             add_details=args.add_details,
         )
+
+        logger.info(f"入力データ一覧の件数: {len(input_data_list)}")
+        if len(input_data_list) == 10_000:
+            logger.warning("入力データ一覧は10,000件で打ち切られている可能性があります。")
+
+        output_format = FormatArgument(args.format)
+        if len(input_data_list) > 0:
+            if output_format == FormatArgument.CSV:
+                # panadas.DataFramdでなくpandas.json_normalizeを使う理由:
+                # ネストしたオブジェクトを`system_metadata.input_daration`のような列名でアクセスできるようにするため
+                df = pandas.json_normalize(input_data_list)
+                print_csv(df, output=args.output)
+            else:
+                print_according_to_format(input_data_list, format=output_format, output=args.output)
+        else:
+            logger.info("入力データの件数が0件のため、出力しません。")
 
 
 def main(args: argparse.Namespace) -> None:
@@ -225,17 +209,6 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
 
     parser.add_argument(
         "--add_details", action="store_true", help="入力データの詳細情報を表示します。以下の列を追加します。\n\n * parent_task_id_list"
-    )
-
-    parser.add_argument(
-        "--average_input_data_id_length",
-        type=int,
-        default=36,
-        help=(
-            "入力データIDの平均長さを指定します。 ``add_details`` がTrueのときのみ有効です。"
-            "デフォルトはUUIDv4の長さです。"
-            "この値を元にして、タスク一括取得APIの実行回数を決めます。"
-        ),
     )
 
     argument_parser.add_format(
