@@ -54,7 +54,7 @@ class Task:
             logger.warning("引数`df`に重複したキー（project_id, task_id）が含まれています。")
 
         if not self.required_columns_exist(df):
-            raise ValueError(f"引数`df`には、{self.columns()}の列が必要です。 :: {df.columns=}")  # noqa: TRY003
+            raise ValueError(f"引数`df`には、{self.columns()}の列が必要です。 :: {df.columns=}")
 
         self.df = df
 
