@@ -38,6 +38,18 @@ from annofabcli.common.utils import (
 logger = logging.getLogger(__name__)
 
 
+class ExitCode:
+    """
+    BashのExit Codes
+    https://tldp.org/LDP/abs/html/exitcodes.html
+    """
+
+    GENERAL_ERROR = 1
+    """一般的なエラー全般"""
+    MISUSE_OF_COMMAND = 2
+    """コマンドの誤用"""
+
+
 COMMAND_LINE_ERROR_STATUS_CODE = 2
 """コマンドラインエラーが発生したときに返すステータスコード"""
 
@@ -255,7 +267,7 @@ def load_logging_config_from_args(args: argparse.Namespace) -> None:
     data = pkgutil.get_data("annofabcli", "data/logging.yaml")
     if data is None:
         logger.warning("annofabcli/data/logging.yaml が読み込めませんでした")
-        raise AnnofabCliException("annofabcli/data/logging.yaml が読み込めませんでした")  # noqa: TRY003
+        raise AnnofabCliException("annofabcli/data/logging.yaml が読み込めませんでした")
 
     logging_config = yaml.safe_load(data.decode("utf-8"))
 

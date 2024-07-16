@@ -65,7 +65,6 @@ html_css_files = ["css/custom.css"]
 html_theme_options = {
     "github_url": "https://github.com/kurusugawa-computer/annofab-cli",
     "use_edit_page_button": True,
-    "footer_items": [],  # footerを空にする
     # "last_updated" を footerに配置すると広告に重なるので、"last_updated"は右側に配置する
     "secondary_sidebar_items": ["page-toc", "edit-this-page", "last-updated"],
     

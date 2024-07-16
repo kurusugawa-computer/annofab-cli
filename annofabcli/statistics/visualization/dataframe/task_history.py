@@ -37,7 +37,7 @@ class TaskHistory:
 
     def __init__(self, df: pandas.DataFrame) -> None:
         if not self.required_columns_exist(df):
-            raise ValueError(f"引数`df`には、{self.columns}の列が必要です。 :: {df.columns=}")  # noqa: TRY003
+            raise ValueError(f"引数`df`には、{self.columns}の列が必要です。 :: {df.columns=}")
 
         self.df = df
 
