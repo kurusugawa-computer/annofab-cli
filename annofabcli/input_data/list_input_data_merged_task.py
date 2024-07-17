@@ -1,12 +1,15 @@
+from __future__ import annotations
+
 import argparse
 import asyncio
+import copy
 import json
 import logging
 import sys
+from collections import defaultdict
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set
+from typing import Any, Dict, Optional, Set
 
-import annofabapi
 import pandas
 from annofabapi.dataclass.input import InputData
 
@@ -16,88 +19,87 @@ from annofabcli.common.cli import (
     ArgumentParser,
     CommandLine,
     build_annofabapi_resource_and_login,
-    get_json_from_args,
     get_list_from_args,
-    get_wait_options_from_args,
 )
-from annofabcli.common.dataclasses import WaitOptions
 from annofabcli.common.download import DownloadingFile
 from annofabcli.common.enums import FormatArgument
 from annofabcli.common.facade import AnnofabApiFacade, InputDataQuery, match_input_data_with_query
+from annofabcli.common.utils import print_csv
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_WAIT_OPTIONS = WaitOptions(interval=60, max_tries=360)
+
+def _create_dict_tasks_by_input_data_id(task_list: list[dict[str, Any]]) -> dict[str, list[dict[str, Any]]]:
+    """
+    task_listから、keyがinput_data_id, valueがsub_task_listであるdictを生成します。
+    """
+    result = defaultdict(list)
+    for task in task_list:
+        for input_data_index, input_data_id in enumerate(task["input_data_id_list"]):
+            new_task = {
+                "task_id": task["task_id"],
+                "task_status": task["status"],
+                "task_phase": task["phase"],
+                "task_phase_stage": task["phase_stage"],
+                "frame_no": input_data_index + 1,
+            }
+            result[input_data_id].append(new_task)
+
+    return result
 
 
-def millisecond_to_hour(millisecond: int):  # noqa: ANN201
-    return millisecond / 1000 / 3600
+def create_input_data_list_with_merged_task(input_data_list: list[dict[str, Any]], task_list: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """
+    入力データのlistに、`parent_task_list`という参照されているタスクの情報が格納されたlistを返します。
+
+    Args:
+        input_data_list: 入力データのlist
+        task_list: タスクのlist
+    """
+    dict_tasks_by_input_data_id = _create_dict_tasks_by_input_data_id(task_list)
+    for input_data in input_data_list:
+        input_data["parent_task_list"] = dict_tasks_by_input_data_id.get(input_data["input_data_id"], [])
+
+    return input_data_list
 
 
-class ListInputDataMergedTaskMain:
-    def __init__(self, service: annofabapi.Resource) -> None:
-        self.service = service
-        self.facade = AnnofabApiFacade(service)
+def create_df_input_data_with_merged_task(input_data_list: list[dict[str, Any]]) -> pandas.DataFrame:
+    """
+    参照されているタスクlist情報が格納されている入力データのlistを、pandas.DataFrameに変換します。
+    """
 
-    @staticmethod
-    def _to_task_list_based_input_data(task_list: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-        new_all_task_list: List[Dict[str, Any]] = []
-        for task in task_list:
-            for input_data_id in task["input_data_id_list"]:
-                new_task = {
-                    "task_id": task["task_id"],
-                    "task_status": task["status"],
-                    "task_phase": task["phase"],
-                    "worktime_hour": millisecond_to_hour(task["work_time_span"]),
-                    "input_data_id": input_data_id,
-                }
-                new_all_task_list.append(new_task)
-        return new_all_task_list
+    def get_columns(columns: pandas.Index) -> list[str]:
+        task_columns = ["task_id", "task_status", "task_phase", "task_phase_stage", "frame_no"]
+        new_columns = columns.drop(task_columns)
+        return list(new_columns) + task_columns
 
-    @staticmethod
-    def _filter_input_data(
-        df_input_data: pandas.DataFrame,
-        input_data_id_list: Optional[List[str]] = None,
-        input_data_name_list: Optional[List[str]] = None,
-    ) -> pandas.DataFrame:
-        df = df_input_data
-        if input_data_id_list is not None:
-            df = df[df["input_data_id"].isin(input_data_id_list)]
+    new_input_data_list = []
+    for input_data in input_data_list:
+        parent_task_list = input_data["parent_task_list"]
 
-        if input_data_name_list is not None:
-            df = pandas.concat(
-                [df[df["input_data_name"].str.lower().str.contains(input_data_name.lower())] for input_data_name in input_data_name_list]
-            )
-        return df
+        if len(parent_task_list) > 0:
+            for task in parent_task_list:
+                new_input_data = copy.deepcopy(input_data)
+                new_input_data.pop("parent_task_list")
+                new_input_data.update(task)
+                new_input_data_list.append(new_input_data)
+        else:
+            new_input_data = copy.deepcopy(input_data)
+            new_input_data.pop("parent_task_list")
+            new_input_data_list.append(new_input_data)
 
-    def create_input_data_merged_task(
-        self,
-        input_data_list: List[Dict[str, Any]],
-        task_list: List[Dict[str, Any]],
-        *,
-        is_not_used_by_task: bool = False,
-        is_used_by_multiple_task: bool = False,
-    ) -> pandas.DataFrame:
-        new_task_list = self._to_task_list_based_input_data(task_list)
+    # panadas.DataFramdでなくpandas.json_normalizeを使う理由:
+    # ネストしたオブジェクトを`system_metadata.input_daration`のような列名でアクセスできるようにするため
+    df_input_data = pandas.json_normalize(new_input_data_list)
 
-        # panadas.DataFramdでなくpandas.json_normalizeを使う理由:
-        # ネストしたオブジェクトを`system_metadata.input_daration`のような列名でアクセスできるようにするため
-        df_input_data = pandas.json_normalize(input_data_list)
+    for column in ["task_id", "task_status", "task_phase", "task_phase_stage", "frame_no"]:
+        if column not in df_input_data.columns:
+            df_input_data[column] = pandas.NA
 
-        df_task = pandas.DataFrame(new_task_list)
-
-        df_merged = pandas.merge(df_input_data, df_task, how="left", on="input_data_id")
-
-        assert not (is_not_used_by_task and is_used_by_multiple_task)
-        if is_not_used_by_task:
-            df_merged = df_merged[df_merged["task_id"].isna()]
-
-        if is_used_by_multiple_task:
-            tmp = df_merged["input_data_id"].value_counts()
-            input_data_ids = {input_data_id for (input_data_id, count) in tmp.items() if count >= 2}
-            df_merged = df_merged[df_merged["input_data_id"].isin(input_data_ids)]
-
-        return df_merged
+    # int型がfloat型になるのを防ぐためにnullableなInt64型を指定する
+    df_input_data = df_input_data.astype({"task_phase_stage": "Int64", "frame_no": "Int64"})
+    columns = get_columns(df_input_data.columns)
+    return df_input_data[columns]
 
 
 def match_input_data(
@@ -134,7 +136,7 @@ class ListInputDataMergedTask(CommandLine):
 
         return True
 
-    def download_json_files(self, project_id: str, output_dir: Path, is_latest: bool, wait_options: WaitOptions):  # noqa: ANN201, FBT001
+    def download_json_files(self, project_id: str, output_dir: Path, is_latest: bool) -> None:  # noqa: FBT001
         loop = asyncio.get_event_loop()
         downloading_obj = DownloadingFile(self.service)
         gather = asyncio.gather(
@@ -142,11 +144,8 @@ class ListInputDataMergedTask(CommandLine):
                 project_id,
                 dest_path=str(output_dir / "input_data.json"),
                 is_latest=is_latest,
-                wait_options=wait_options,
             ),
-            downloading_obj.download_task_json_with_async(
-                project_id, dest_path=str(output_dir / "task.json"), is_latest=is_latest, wait_options=wait_options
-            ),
+            downloading_obj.download_task_json_with_async(project_id, dest_path=str(output_dir / "task.json"), is_latest=is_latest),
         )
         loop.run_until_complete(gather)
 
@@ -158,9 +157,8 @@ class ListInputDataMergedTask(CommandLine):
         project_id = args.project_id
         if project_id is not None:
             super().validate_project(project_id, None)
-            wait_options = get_wait_options_from_args(get_json_from_args(args.wait_options), DEFAULT_WAIT_OPTIONS)
             cache_dir = annofabcli.common.utils.get_cache_dir()
-            self.download_json_files(project_id, cache_dir, args.latest, wait_options)
+            self.download_json_files(project_id, cache_dir, args.latest)
             task_json_path = cache_dir / "task.json"
             input_data_json_path = cache_dir / "input_data.json"
         else:
@@ -183,21 +181,16 @@ class ListInputDataMergedTask(CommandLine):
             e for e in input_data_list if match_input_data(e, input_data_query=input_data_query, input_data_id_set=input_data_id_set)
         ]
 
-        main_obj = ListInputDataMergedTaskMain(self.service)
-        df_merged = main_obj.create_input_data_merged_task(
-            input_data_list=filtered_input_data_list,
-            task_list=task_list,
-            is_not_used_by_task=args.not_used_by_task,
-            is_used_by_multiple_task=args.used_by_multiple_task,
-        )
+        input_data_list_with_merged_task = create_input_data_list_with_merged_task(input_data_list=filtered_input_data_list, task_list=task_list)
 
-        logger.debug(f"一覧の件数: {len(df_merged)}")
+        logger.debug(f"入力データ {len(input_data_list_with_merged_task)} 件を出力します。")
 
         if self.str_format == FormatArgument.CSV.value:
-            self.print_according_to_format(df_merged)
+            df_input_data = create_df_input_data_with_merged_task(input_data_list_with_merged_task)
+            print_csv(df_input_data, output=args.output)
+
         elif self.str_format in [FormatArgument.JSON.value, FormatArgument.PRETTY_JSON.value]:
-            result = df_merged.to_dict("records")
-            self.print_according_to_format(result)
+            self.print_according_to_format(input_data_list_with_merged_task)
 
 
 def main(args: argparse.Namespace) -> None:
@@ -263,16 +256,6 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         action="store_true",
         help="入力データ一覧ファイル、タスク一覧ファイルの更新が完了するまで待って、最新のファイルをダウンロードします。"
         " ``--project_id`` を指定したときのみ有効です。",
-    )
-
-    parser.add_argument(
-        "--wait_options",
-        type=str,
-        help="入力データ一覧ファイル、タスク一覧ファイルの更新が完了するまで待つ際のオプションを、JSON形式で指定してください。"
-        " ``file://`` を先頭に付けるとjsonファイルを指定できます。"
-        'デフォルトは ``{"interval":60, "max_tries":360}`` です。'
-        "``interval`` :完了したかを問い合わせる間隔[秒], "
-        "``max_tires`` :完了したかの問い合わせを最大何回行うか。",
     )
 
     argument_parser.add_format(

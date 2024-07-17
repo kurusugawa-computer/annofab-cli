@@ -65,7 +65,7 @@ def output_string(target: str, output: Optional[Union[str, Path]] = None) -> Non
         p_output.parent.mkdir(parents=True, exist_ok=True)
         with p_output.open(mode="w", encoding="utf_8") as f:
             f.write(target)
-            logger.info(f"{output} を出力しました。")
+            logger.info(f"'{output}'を出力しました。")
 
 
 def print_json(target: Any, is_pretty: bool = False, output: Optional[Union[str, Path]] = None) -> None:  # noqa: ANN401, FBT001, FBT002
@@ -84,7 +84,7 @@ def print_json(target: Any, is_pretty: bool = False, output: Optional[Union[str,
         output_string(json.dumps(target, ensure_ascii=False), output)
 
 
-def print_csv(df: pandas.DataFrame, output: Optional[Union[str, Path]] = None, to_csv_kwargs: Optional[Dict[str, Any]] = None):  # noqa: ANN201
+def print_csv(df: pandas.DataFrame, output: Optional[Union[str, Path]] = None, to_csv_kwargs: Optional[Dict[str, Any]] = None) -> None:
     if output is not None:
         Path(output).parent.mkdir(parents=True, exist_ok=True)
 
@@ -98,7 +98,7 @@ def print_csv(df: pandas.DataFrame, output: Optional[Union[str, Path]] = None, t
         df.to_csv(path_or_buf, **kwargs)
 
     if output is not None:
-        logger.info(f"{output} を出力しました。")
+        logger.info(f"'{output}'を出力しました。")
 
 
 def print_id_list(id_list: List[Any], output: Optional[Union[str, Path]]) -> None:
@@ -106,12 +106,12 @@ def print_id_list(id_list: List[Any], output: Optional[Union[str, Path]]) -> Non
     output_string(s, output)
 
 
-def print_according_to_format(  # noqa: ANN201
+def print_according_to_format(
     target: Any,  # noqa: ANN401
     format: FormatArgument,  # noqa: A002
     output: Optional[Union[str, Path]] = None,
     csv_format: Optional[Dict[str, Any]] = None,
-):
+) -> None:
     """
     コマンドライン引数 ``--format`` の値にしたがって、内容を出力する。
 
@@ -155,7 +155,7 @@ def print_according_to_format(  # noqa: ANN201
         print_id_list(inspection_id_list, output)
 
 
-def to_filename(s: str):  # noqa: ANN201
+def to_filename(s: str) -> str:
     """
     文字列をファイル名に使えるよう変換する。ファイル名に使えない文字は"__"に変換する。
     Args:
