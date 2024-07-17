@@ -58,7 +58,7 @@ def create_input_data_list_with_merged_task(input_data_list: list[dict[str, Any]
     """
     dict_tasks_by_input_data_id = _create_dict_tasks_by_input_data_id(task_list)
     for input_data in input_data_list:
-        input_data["parent_task_list"] = dict_tasks_by_input_data_id.get(input_data["input_data_list"], [])
+        input_data["parent_task_list"] = dict_tasks_by_input_data_id.get(input_data["input_data_id"], [])
 
     return input_data_list
 
@@ -68,14 +68,24 @@ def create_df_input_data_with_merged_task(input_data_list: list[dict[str, Any]])
     参照されているタスクlist情報が格納されている入力データのlistを、pandas.DataFrameに変換します。
     """
 
+    def get_columns(columns: pandas.Index) -> list[str]:
+        task_columns = ["task_id", "task_status", "task_phase", "task_phase_stage", "frame_no"]
+        new_columns = columns.drop(task_columns)
+        return list(new_columns) + task_columns
+
     new_input_data_list = []
     for input_data in input_data_list:
         parent_task_list = input_data["parent_task_list"]
 
-        new_input_data = copy.deepcopy(input_data)
-        new_input_data.pop("parent_task_list")
-        for task in parent_task_list:
-            new_input_data.update(task)
+        if len(parent_task_list) > 0:
+            for task in parent_task_list:
+                new_input_data = copy.deepcopy(input_data)
+                new_input_data.pop("parent_task_list")
+                new_input_data.update(task)
+                new_input_data_list.append(new_input_data)
+        else:
+            new_input_data = copy.deepcopy(input_data)
+            new_input_data.pop("parent_task_list")
             new_input_data_list.append(new_input_data)
 
     # panadas.DataFramdでなくpandas.json_normalizeを使う理由:
@@ -88,7 +98,8 @@ def create_df_input_data_with_merged_task(input_data_list: list[dict[str, Any]])
 
     # int型がfloat型になるのを防ぐためにnullableなInt64型を指定する
     df_input_data = df_input_data.astype({"task_phase_stage": "Int64", "frame_no": "Int64"})
-    return df_input_data
+    columns = get_columns(df_input_data.columns)
+    return df_input_data[columns]
 
 
 def match_input_data(
