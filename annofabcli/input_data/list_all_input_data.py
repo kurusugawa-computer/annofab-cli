@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import argparse
 import datetime
 import json
@@ -16,6 +18,7 @@ from annofabcli.common.cli import ArgumentParser, CommandLine, build_annofabapi_
 from annofabcli.common.download import DownloadingFile
 from annofabcli.common.enums import FormatArgument
 from annofabcli.common.facade import AnnofabApiFacade, InputDataQuery, match_input_data_with_query
+from annofabcli.input_data.utils import remove_unnecessary_keys_from_input_data
 
 logger = logging.getLogger(__name__)
 
@@ -25,7 +28,6 @@ DatetimeRange = Tuple[Optional[datetime.datetime], Optional[datetime.datetime]]
 class ListInputDataWithJsonMain:
     def __init__(self, service: annofabapi.Resource) -> None:
         self.service = service
-        self.facade = AnnofabApiFacade(service)
 
     @staticmethod
     def filter_input_data_list(
@@ -40,6 +42,23 @@ class ListInputDataWithJsonMain:
         if input_data_id_set is not None:
             result = result and (dc_input_data.input_data_id in input_data_id_set)
         return result
+
+    @staticmethod
+    def remove_unnecessary_keys_from_input_data2(input_data_list: list[dict[str, Any]]) -> None:
+        """
+        入力データから不要なキーを取り除きます。
+
+        Args:
+            input_data_list: (IN/OUT) 入力データのlist
+        """
+        unnecessary_keys = [
+            "url",  # システム内部用のプロパティ
+            "original_input_data_path",  # システム内部用のプロパティ
+            "etag",  # annofab-cliで見ることはない
+        ]
+        for input_data in input_data_list:
+            for key in unnecessary_keys:
+                input_data.pop(key, None)
 
     def get_input_data_list(
         self,
@@ -72,6 +91,10 @@ class ListInputDataWithJsonMain:
         filtered_input_data_list = [
             e for e in input_data_list if self.filter_input_data_list(e, input_data_query=input_data_query, input_data_id_set=input_data_id_set)
         ]
+
+        # 入力データの不要なキーを削除する
+        for input_data in input_data_list:
+            remove_unnecessary_keys_from_input_data(input_data)
         return filtered_input_data_list
 
 
@@ -101,8 +124,8 @@ class ListInputDataWithJson(CommandLine):
         if len(input_data_list) > 0:
             output_format = FormatArgument(args.format)
             if output_format == FormatArgument.CSV:
-                # panadas.DataFramdでなくpandas.json_normalizeを使う理由:
-                # ネストしたオブジェクトを`system_metadata.input_daration`のような列名でアクセスできるようにするため
+                # pandas.DataFrameでなくpandas.json_normalizeを使う理由:
+                # ネストしたオブジェクトを`system_metadata.input_duration`のような列名でアクセスできるようにするため
                 df = pandas.json_normalize(input_data_list)
                 print_csv(df, output=args.output)
             else:

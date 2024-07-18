@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import argparse
 import logging
-from typing import List, Optional
+from typing import Any, List, Optional
 
 from annofabapi.models import SupplementaryData
 
@@ -10,6 +12,22 @@ from annofabcli.common.enums import FormatArgument
 from annofabcli.common.facade import AnnofabApiFacade
 
 logger = logging.getLogger(__name__)
+
+
+def remove_unnecessary_keys_from_supplementary_data(supplementary_data: dict[str, Any]) -> None:
+    """
+    補助情報から不要なキーを取り除きます。
+    システム内部用のプロパティなど、annofab-cliを使う上で不要な情報を削除します。
+
+    Args:
+        supplementary_data: (IN/OUT) 補助情報。引数が変更されます。
+    """
+    unnecessary_keys = [
+        "url",  # システム内部用のプロパティ
+        "etag",  # annofab-cliで見ることはない
+    ]
+    for key in unnecessary_keys:
+        supplementary_data.pop(key, None)
 
 
 class ListSupplementaryData(CommandLine):
@@ -39,7 +57,11 @@ class ListSupplementaryData(CommandLine):
                 logger.debug(f"{index+1} 件目の入力データを取得します。")
 
             supplementary_data_list = self.service.wrapper.get_supplementary_data_list_or_none(project_id, input_data_id)
+
             if supplementary_data_list is not None:
+                # 補助情報から不要なキーを取り除く
+                for supplementary_data in supplementary_data_list:
+                    remove_unnecessary_keys_from_supplementary_data(supplementary_data)
                 all_supplementary_data_list.extend(supplementary_data_list)
             else:
                 logger.warning(f"入力データ '{input_data_id}' に紐づく補助情報が見つかりませんでした。")

@@ -12,6 +12,7 @@ from annofabcli.common.cli import ArgumentParser, CommandLine, build_annofabapi_
 from annofabcli.common.enums import FormatArgument
 from annofabcli.common.facade import AnnofabApiFacade
 from annofabcli.common.visualize import AddProps
+from annofabcli.input_data.utils import remove_unnecessary_keys_from_input_data
 
 logger = logging.getLogger(__name__)
 
@@ -136,6 +137,9 @@ class ListInputDataMain:
         if add_details:
             self.add_details_to_input_data_list(input_data_list)
 
+        # 入力データの不要なキーを削除する
+        for input_data in input_data_list:
+            remove_unnecessary_keys_from_input_data(input_data)
         return input_data_list
 
 
@@ -165,8 +169,8 @@ class ListInputData(CommandLine):
         output_format = FormatArgument(args.format)
         if len(input_data_list) > 0:
             if output_format == FormatArgument.CSV:
-                # panadas.DataFramdでなくpandas.json_normalizeを使う理由:
-                # ネストしたオブジェクトを`system_metadata.input_daration`のような列名でアクセスできるようにするため
+                # pandas.DataFrameでなくpandas.json_normalizeを使う理由:
+                # ネストしたオブジェクトを`system_metadata.input_duration`のような列名でアクセスできるようにするため
                 df = pandas.json_normalize(input_data_list)
                 print_csv(df, output=args.output)
             else:
