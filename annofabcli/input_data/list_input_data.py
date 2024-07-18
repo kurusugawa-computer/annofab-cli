@@ -116,16 +116,6 @@ class ListInputDataMain:
 
         return input_data_list
 
-    def remove_unnecessary_keys_from_input_data(input_data_list:list[dict[str,Any]]):
-        unnecessary_keys = [
-            "url", # システム内部用のプロパティ
-            "original_input_data_path", # システム内部用のプロパティ
-            "etag", # annofab-cliで見ることはない
-        ]
-        for input_data in input_data_list:
-            for key in unnecessary_keys:
-                
-
     def get_input_data_list(
         self,
         *,
