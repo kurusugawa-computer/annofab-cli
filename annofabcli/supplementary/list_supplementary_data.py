@@ -1,13 +1,17 @@
 from __future__ import annotations
 
 import argparse
+import json
 import logging
+import tempfile
+from pathlib import Path
 from typing import Any, List, Optional
 
 from annofabapi.models import SupplementaryData
 
 import annofabcli
 from annofabcli.common.cli import ArgumentParser, CommandLine, build_annofabapi_resource_and_login
+from annofabcli.common.download import DownloadingFile
 from annofabcli.common.enums import FormatArgument
 from annofabcli.common.facade import AnnofabApiFacade
 
@@ -68,17 +72,21 @@ class ListSupplementaryData(CommandLine):
 
         return all_supplementary_data_list
 
-    def print_supplementary_data_list(self, project_id: str, input_data_id_list: Optional[List[str]], task_id_list: Optional[List[str]]) -> None:
+    def print_supplementary_data_list(self, project_id: str, input_data_id_list: Optional[List[str]]) -> None:
         """
         補助情報一覧を出力する
 
         """
-        if task_id_list is not None:
-            input_data_id_list = self.get_input_data_id_from_task(project_id, task_id_list)
-        else:  # noqa: PLR5501
-            if input_data_id_list is None:
-                logger.warning("input_data_id_listとtask_id_listの両方がNoneです。")
-                return
+        if input_data_id_list is None:
+            downloading_obj = DownloadingFile(self.service)
+            with tempfile.TemporaryDirectory() as str_temp_dir:
+                input_data_json = Path(str_temp_dir) / f"{project_id}__input_data.json"
+                downloading_obj.download_input_data_json(project_id, dest_path=input_data_json)
+                with input_data_json.open() as f:
+                    input_data_list = json.load(f)
+
+            input_data_id_list = [e["input_data_id"] for e in input_data_list]
+            return
 
         supplementary_data_list = self.get_all_supplementary_data_list(project_id, input_data_id_list=input_data_id_list)
         logger.info(f"補助情報一覧の件数: {len(supplementary_data_list)}")
@@ -102,27 +110,21 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     argument_parser = ArgumentParser(parser)
     argument_parser.add_project_id()
 
-    query_group = parser.add_mutually_exclusive_group(required=True)
-    query_group.add_argument(
-        "-t",
-        "--task_id",
-        type=str,
-        nargs="+",
-        help="対象のタスクのtask_idを指定します。" + " ``file://`` を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。",
-    )
-    query_group.add_argument(
+    parser.add_argument(
         "-i",
         "--input_data_id",
         type=str,
         nargs="+",
-        help=("対象の入力データのinput_data_idを指定します。 ``file://`` を先頭に付けると、input_data_idの一覧が記載されたファイルを指定できます。"),
+        help=(
+            "指定したinput_data_idの入力データに紐づく補助情報を出力します。\n"
+            "未指定の場合は、入力データ全件ファイルをダウンロードして、すべての入力データに紐づく補助情報を出力します。ただし入力データの数だけAPIを実行するため、出力に時間がかかります。 \n"  # noqa: E501
+            "``file://`` を先頭に付けると、input_data_idの一覧が記載されたファイルを指定できます。"
+        ),
     )
 
     argument_parser.add_format(choices=[FormatArgument.CSV, FormatArgument.JSON, FormatArgument.PRETTY_JSON], default=FormatArgument.CSV)
     argument_parser.add_output()
-    argument_parser.add_csv_format()
 
-    argument_parser.add_query()
     parser.set_defaults(subcommand_func=main)
 
 
