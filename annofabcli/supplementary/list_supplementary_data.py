@@ -86,7 +86,6 @@ class ListSupplementaryData(CommandLine):
                     input_data_list = json.load(f)
 
             input_data_id_list = [e["input_data_id"] for e in input_data_list]
-            return
 
         supplementary_data_list = self.get_all_supplementary_data_list(project_id, input_data_id_list=input_data_id_list)
         logger.info(f"補助情報一覧の件数: {len(supplementary_data_list)}")
@@ -95,9 +94,8 @@ class ListSupplementaryData(CommandLine):
     def main(self) -> None:
         args = self.args
         input_data_id_list = annofabcli.common.cli.get_list_from_args(args.input_data_id) if args.input_data_id is not None else None
-        task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id) if args.task_id is not None else None
 
-        self.print_supplementary_data_list(project_id=args.project_id, input_data_id_list=input_data_id_list, task_id_list=task_id_list)
+        self.print_supplementary_data_list(project_id=args.project_id, input_data_id_list=input_data_id_list)
 
 
 def main(args: argparse.Namespace) -> None:
