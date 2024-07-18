@@ -61,7 +61,7 @@ class ListSupplementaryDataMain:
                 remove_unnecessary_keys_from_supplementary_data(supplementary_data)
             return supplementary_data_list
         else:
-            logger.warning(f"入力データ '{input_data_id}' に紐づく補助情報が見つかりませんでした。")
+            logger.warning(f"input_data_id='{input_data_id}'である入力データは存在しません。")
             return []
 
     def get_supplementary_data_list_wrapper(self, tpl: tuple[int, str]) -> list[dict[str, Any]]:
@@ -99,20 +99,6 @@ class ListSupplementaryDataMain:
                 except Exception:
                     logger.warning(f"input_data_id='{input_data_index}': 補助情報の取得に失敗しました。", exc_info=True)
                     continue
-
-        for index, input_data_id in enumerate(input_data_id_list):
-            if (index + 1) % 100 == 0:
-                logger.debug(f"{index+1} 件目の入力データに紐づく補助情報を取得します。")
-
-            supplementary_data_list = self.service.wrapper.get_supplementary_data_list_or_none(project_id, input_data_id)
-
-            if supplementary_data_list is not None:
-                # 補助情報から不要なキーを取り除く
-                for supplementary_data in supplementary_data_list:
-                    remove_unnecessary_keys_from_supplementary_data(supplementary_data)
-                all_supplementary_data_list.extend(supplementary_data_list)
-            else:
-                logger.warning(f"入力データ '{input_data_id}' に紐づく補助情報が見つかりませんでした。")
 
         return all_supplementary_data_list
 
