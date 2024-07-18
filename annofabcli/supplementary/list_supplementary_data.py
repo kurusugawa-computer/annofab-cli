@@ -1,12 +1,15 @@
 from __future__ import annotations
 
 import argparse
+import itertools
 import json
 import logging
+import multiprocessing
 import tempfile
 from pathlib import Path
 from typing import Any, List, Optional
 
+import annofabapi
 from annofabapi.models import SupplementaryData
 
 import annofabcli
@@ -34,31 +37,72 @@ def remove_unnecessary_keys_from_supplementary_data(supplementary_data: dict[str
         supplementary_data.pop(key, None)
 
 
-class ListSupplementaryData(CommandLine):
-    """
-    補助情報一覧を表示する。
-    """
+class ListSupplementaryDataMain:
+    def __init__(self, service: annofabapi.Resource, project_id: str) -> None:
+        self.service = service
+        self.project_id = project_id
 
-    def get_input_data_id_from_task(self, project_id: str, task_id_list: List[str]) -> List[str]:
-        all_input_data_id_list = []
-        logger.info(f"{len(task_id_list)} 件のタスクを取得します。")
-        for task_id in task_id_list:
-            task = self.service.wrapper.get_task_or_none(project_id, task_id)
-            if task is None:
-                logger.warning(f"task_id='{task_id}'のタスクが見つかりませんでした。")
-                continue
-            all_input_data_id_list.extend(task["input_data_id_list"])
-        return all_input_data_id_list
+    def get_supplementary_data_list(self, input_data_id: str, input_data_index: int) -> list[dict[str, Any]]:
+        """
+        入力データに紐づく補助情報一覧を取得する。
 
-    def get_all_supplementary_data_list(self, project_id: str, input_data_id_list: List[str]) -> List[SupplementaryData]:
+        Args:
+            input_data_id: 入力データID
+            input_data_index: 0始まりのインデックス
+        """
+        if (input_data_index + 1) % 100 == 0:
+            logger.debug(f"{input_data_index+1} 件目の入力データに紐づく補助情報を取得します。")
+
+        supplementary_data_list = self.service.wrapper.get_supplementary_data_list_or_none(self.project_id, input_data_id)
+
+        if supplementary_data_list is not None:
+            # 補助情報から不要なキーを取り除く
+            for supplementary_data in supplementary_data_list:
+                remove_unnecessary_keys_from_supplementary_data(supplementary_data)
+            return supplementary_data_list
+        else:
+            logger.warning(f"入力データ '{input_data_id}' に紐づく補助情報が見つかりませんでした。")
+            return []
+
+    def get_supplementary_data_list_wrapper(self, tpl: tuple[int, str]) -> list[dict[str, Any]]:
+        input_data_index, input_data_id = tpl
+        try:
+            return self.get_supplementary_data_list(input_data_id=input_data_id, input_data_index=input_data_index)
+        except Exception:
+            logger.warning(f"input_data_id='{input_data_index}': 補助情報の取得に失敗しました。", exc_info=True)
+            return []
+
+    def get_all_supplementary_data_list(
+        self, project_id: str, input_data_id_list: List[str], *, parallelism: Optional[int] = None
+    ) -> List[SupplementaryData]:
         """
         補助情報一覧を取得する。
         """
         all_supplementary_data_list: List[SupplementaryData] = []
         logger.info(f"{len(input_data_id_list)} 件の入力データに紐づく補助情報を取得します。")
+
+        if parallelism is not None:
+            with multiprocessing.Pool(parallelism) as pool:
+                result = pool.map(self.get_supplementary_data_list_wrapper, enumerate(input_data_id_list))
+                return list(itertools.chain.from_iterable(result))
+
+        else:
+            # 逐次処理
+            all_supplementary_data_list = []
+            for input_data_index, input_data_id in enumerate(input_data_id_list):
+                try:
+                    sub_supplementary_data_list = self.get_supplementary_data_list(
+                        input_data_id=input_data_id,
+                        input_data_index=input_data_index,
+                    )
+                    all_supplementary_data_list.extend(sub_supplementary_data_list)
+                except Exception:
+                    logger.warning(f"input_data_id='{input_data_index}': 補助情報の取得に失敗しました。", exc_info=True)
+                    continue
+
         for index, input_data_id in enumerate(input_data_id_list):
             if (index + 1) % 100 == 0:
-                logger.debug(f"{index+1} 件目の入力データを取得します。")
+                logger.debug(f"{index+1} 件目の入力データに紐づく補助情報を取得します。")
 
             supplementary_data_list = self.service.wrapper.get_supplementary_data_list_or_none(project_id, input_data_id)
 
@@ -72,30 +116,37 @@ class ListSupplementaryData(CommandLine):
 
         return all_supplementary_data_list
 
-    def print_supplementary_data_list(self, project_id: str, input_data_id_list: Optional[List[str]]) -> None:
+
+class ListSupplementaryData(CommandLine):
+    """
+    補助情報一覧を表示する。
+    """
+
+    def get_input_data_id_list_from_input_data_json(self, project_id: str) -> list[str]:
         """
-        補助情報一覧を出力する
-
+        入力データ全件ファイルをダウンロードして、そのファイルからinput_data_idのlistを取得します。
         """
-        if input_data_id_list is None:
-            downloading_obj = DownloadingFile(self.service)
-            with tempfile.TemporaryDirectory() as str_temp_dir:
-                input_data_json = Path(str_temp_dir) / f"{project_id}__input_data.json"
-                downloading_obj.download_input_data_json(project_id, dest_path=input_data_json)
-                with input_data_json.open() as f:
-                    input_data_list = json.load(f)
+        downloading_obj = DownloadingFile(self.service)
+        with tempfile.TemporaryDirectory() as str_temp_dir:
+            input_data_json = Path(str_temp_dir) / f"{project_id}__input_data.json"
+            downloading_obj.download_input_data_json(project_id, dest_path=input_data_json)
+            with input_data_json.open() as f:
+                input_data_list = json.load(f)
 
-            input_data_id_list = [e["input_data_id"] for e in input_data_list]
-
-        supplementary_data_list = self.get_all_supplementary_data_list(project_id, input_data_id_list=input_data_id_list)
-        logger.info(f"補助情報一覧の件数: {len(supplementary_data_list)}")
-        self.print_according_to_format(supplementary_data_list)
+        return [e["input_data_id"] for e in input_data_list]
 
     def main(self) -> None:
         args = self.args
         input_data_id_list = annofabcli.common.cli.get_list_from_args(args.input_data_id) if args.input_data_id is not None else None
+        project_id = args.project_id
 
-        self.print_supplementary_data_list(project_id=args.project_id, input_data_id_list=input_data_id_list)
+        if input_data_id_list is None:
+            input_data_id_list = self.get_input_data_id_list_from_input_data_json(project_id)
+
+        main_obj = ListSupplementaryDataMain(self.service, project_id=project_id)
+        all_supplementary_data_list = main_obj.get_all_supplementary_data_list(project_id, input_data_id_list, parallelism=args.parallelism)
+        logger.info(f"補助情報一覧の件数: {len(all_supplementary_data_list)}")
+        self.print_according_to_format(all_supplementary_data_list)
 
 
 def main(args: argparse.Namespace) -> None:
@@ -122,6 +173,12 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
 
     argument_parser.add_format(choices=[FormatArgument.CSV, FormatArgument.JSON, FormatArgument.PRETTY_JSON], default=FormatArgument.CSV)
     argument_parser.add_output()
+
+    parser.add_argument(
+        "--parallelism",
+        type=int,
+        help="並列度。指定しない場合は、逐次的に処理します。",
+    )
 
     parser.set_defaults(subcommand_func=main)
 
