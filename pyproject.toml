@@ -67,10 +67,10 @@ pytest-cov = "*"
 [tool.poetry.group.formatter.dependencies]
 
 [tool.poetry.group.linter.dependencies]
-# pythonバージョンを指定している理由：Python3.11（開発環境）でしかlintを実行していないため
-ruff = {version="^0.4", python=">=3.11"}
-mypy = {version="^1", python=">=3.11"}
-pylint = {version="^3", python=">=3.11"}
+# pythonバージョンを指定している理由：Python3.12（開発環境）でしかlintを実行していないため
+ruff = {version="^0.4", python=">=3.12"}
+mypy = {version="^1", python=">=3.12"}
+pylint = {version="^3", python=">=3.12"}
 
 types-pytz = "*"
 types-requests = "*"
@@ -80,10 +80,10 @@ types-PyYAML = "*"
 [tool.poetry.group.documentation.dependencies]
 # ドキュメント生成用のライブラリ
 # `python=">=3.11"`を指定している理由：Pytyhon3.11を利用している開発環境かReadTheDocsでしかドキュメントを生成しないため
-sphinx = {version="^7", python=">=3.11"}
-pydata-sphinx-theme = {version=">=0.13", python=">=3.11"}
-sphinx-last-updated-by-git = {version="*", python=">=3.11"}
-sphinx-argparse = {version="*", python=">=3.11"}
+sphinx = {version="^7", python=">=3.12"}
+pydata-sphinx-theme = {version=">=0.13", python=">=3.12"}
+sphinx-last-updated-by-git = {version="*", python=">=3.12"}
+sphinx-argparse = {version="*", python=">=3.12"}
 
 
 

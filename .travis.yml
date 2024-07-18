@@ -10,11 +10,11 @@ jobs:
     - python: 3.9
     - python: 3.10
     - python: 3.11
+    - python: 3.12
       script:
         - poetry run pytest -n auto -m "not access_webapi"
         # 開発環境と同じバージョンではlintを実行する
         - make lint
-    - python: 3.12
 
 install:
   # pipをアップグレードする理由: pipのバージョンが古いと、pillowなど環境ごとにwheelを提供しているライブラリのインストールに失敗する可能性があるため
