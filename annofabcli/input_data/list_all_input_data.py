@@ -18,6 +18,7 @@ from annofabcli.common.cli import ArgumentParser, CommandLine, build_annofabapi_
 from annofabcli.common.download import DownloadingFile
 from annofabcli.common.enums import FormatArgument
 from annofabcli.common.facade import AnnofabApiFacade, InputDataQuery, match_input_data_with_query
+from annofabcli.input_data.utils import remove_unnecessary_keys_from_input_data
 
 logger = logging.getLogger(__name__)
 
@@ -43,7 +44,7 @@ class ListInputDataWithJsonMain:
         return result
 
     @staticmethod
-    def remove_unnecessary_keys_from_input_data(input_data_list: list[dict[str, Any]]) -> None:
+    def remove_unnecessary_keys_from_input_data2(input_data_list: list[dict[str, Any]]) -> None:
         """
         入力データから不要なキーを取り除きます。
 
@@ -92,7 +93,8 @@ class ListInputDataWithJsonMain:
         ]
 
         # 入力データの不要なキーを削除する
-        self.remove_unnecessary_keys_from_input_data(filtered_input_data_list)
+        for input_data in input_data_list:
+            remove_unnecessary_keys_from_input_data(input_data)
         return filtered_input_data_list
 
 

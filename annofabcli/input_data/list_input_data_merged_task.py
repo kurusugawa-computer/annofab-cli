@@ -25,6 +25,7 @@ from annofabcli.common.download import DownloadingFile
 from annofabcli.common.enums import FormatArgument
 from annofabcli.common.facade import AnnofabApiFacade, InputDataQuery, match_input_data_with_query
 from annofabcli.common.utils import print_csv
+from annofabcli.input_data.utils import remove_unnecessary_keys_from_input_data
 
 logger = logging.getLogger(__name__)
 
@@ -59,7 +60,8 @@ def create_input_data_list_with_merged_task(input_data_list: list[dict[str, Any]
     dict_tasks_by_input_data_id = _create_dict_tasks_by_input_data_id(task_list)
     for input_data in input_data_list:
         input_data["parent_task_list"] = dict_tasks_by_input_data_id.get(input_data["input_data_id"], [])
-
+        # 不要なキーを削除する
+        remove_unnecessary_keys_from_input_data(input_data)
     return input_data_list
 
 
@@ -88,8 +90,8 @@ def create_df_input_data_with_merged_task(input_data_list: list[dict[str, Any]])
             new_input_data.pop("parent_task_list")
             new_input_data_list.append(new_input_data)
 
-    # panadas.DataFramdでなくpandas.json_normalizeを使う理由:
-    # ネストしたオブジェクトを`system_metadata.input_daration`のような列名でアクセスできるようにするため
+    # pandas.DataFrameでなくpandas.json_normalizeを使う理由:
+    # ネストしたオブジェクトを`system_metadata.input_duration`のような列名でアクセスできるようにするため
     df_input_data = pandas.json_normalize(new_input_data_list)
 
     for column in ["task_id", "task_status", "task_phase", "task_phase_stage", "frame_no"]:
