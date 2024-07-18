@@ -72,9 +72,7 @@ class ListSupplementaryDataMain:
             logger.warning(f"input_data_id='{input_data_index}': 補助情報の取得に失敗しました。", exc_info=True)
             return []
 
-    def get_all_supplementary_data_list(
-        self, project_id: str, input_data_id_list: List[str], *, parallelism: Optional[int] = None
-    ) -> List[SupplementaryData]:
+    def get_all_supplementary_data_list(self, input_data_id_list: List[str], *, parallelism: Optional[int] = None) -> List[SupplementaryData]:
         """
         補助情報一覧を取得する。
         """
@@ -130,7 +128,7 @@ class ListSupplementaryData(CommandLine):
             input_data_id_list = self.get_input_data_id_list_from_input_data_json(project_id)
 
         main_obj = ListSupplementaryDataMain(self.service, project_id=project_id)
-        all_supplementary_data_list = main_obj.get_all_supplementary_data_list(project_id, input_data_id_list, parallelism=args.parallelism)
+        all_supplementary_data_list = main_obj.get_all_supplementary_data_list(input_data_id_list, parallelism=args.parallelism)
         logger.info(f"補助情報一覧の件数: {len(all_supplementary_data_list)}")
         self.print_according_to_format(all_supplementary_data_list)
 
