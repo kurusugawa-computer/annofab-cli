@@ -162,7 +162,7 @@ class ListAnnotationDurationByInputData:
         self.non_target_labels = set(non_target_labels) if non_target_labels is not None else None
         self.non_target_attribute_names = set(non_target_attribute_names) if non_target_attribute_names is not None else None
 
-    def get_annotation_duration(self, simple_annotation: dict[str, Any], video_duration_second: Optional[float]=None) -> AnnotationDuration:
+    def get_annotation_duration(self, simple_annotation: dict[str, Any], video_duration_second: Optional[float] = None) -> AnnotationDuration:
         """
         1個のアノテーションJSONに対して、ラベルごと/属性ごとの区間アノテーションの長さを取得する。
 
@@ -380,6 +380,7 @@ class AnnotationDurationCsvByAttribute:
             ("phase_stage", "", ""),
             ("input_data_id", "", ""),
             ("input_data_name", "", ""),
+            ("video_duration_second", "", ""),
             ("annotation_duration_second", "", ""),
         ]
         value_columns = self._value_columns(annotation_duration_list, prior_attribute_columns)
@@ -398,6 +399,7 @@ class AnnotationDurationCsvByAttribute:
                 ("status", "", ""): c.status.value,
                 ("phase", "", ""): c.phase.value,
                 ("phase_stage", "", ""): c.phase_stage,
+                ("video_duration_second", "", ""): c.video_duration_second,
                 ("annotation_duration_second", "", ""): c.annotation_duration_second,
             }
             cell.update(c.annotation_duration_second_by_attribute)
@@ -441,6 +443,7 @@ class AnnotationDurationCsvByLabel:
             "phase_stage",
             "input_data_id",
             "input_data_name",
+            "video_duration_second",
             "annotation_duration_second",
         ]
         value_columns = self._value_columns(annotation_duration_list, prior_label_columns)
@@ -459,6 +462,7 @@ class AnnotationDurationCsvByLabel:
                 "status": c.status.value,
                 "phase": c.phase.value,
                 "phase_stage": c.phase_stage,
+                "video_duration_second": c.video_duration_second,
                 "annotation_duration_second": c.annotation_duration_second,
             }
             d.update(c.annotation_duration_second_by_label)
@@ -526,6 +530,8 @@ class ListAnnotationDurationMain:
             target_task_ids=target_task_ids,
             task_query=task_query,
         )
+
+        logger.info(f"{len(annotation_duration_list)} 件のタスクに含まれる区間アノテーションの長さ情報を出力します。")
 
         if arg_format == FormatArgument.CSV:
             assert csv_type is not None
