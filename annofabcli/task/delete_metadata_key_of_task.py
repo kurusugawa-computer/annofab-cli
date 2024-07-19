@@ -68,16 +68,15 @@ class DeleteMetadataKeysOfTaskMain(CommandLineWithConfirm):
 
         old_metadata = task["metadata"]
         str_old_metadata = json.dumps(old_metadata)
-        logger.debug(f"{logging_prefix} task_id='{task_id}', metadata='{str_old_metadata}'")
+
+        deleted_keys = set(metadata_keys) & set(old_metadata.keys())  # 削除可能な（存在する）メタデータのキー
+        logger.debug(f"{logging_prefix} task_id='{task_id}', metadata='{str_old_metadata}' :: 削除対象のキーが {len(deleted_keys)} 件存在します。")
+
         new_metadata = copy.deepcopy(old_metadata)
+        for key in deleted_keys:
+            new_metadata.pop(key, None)
 
-        deleted_keys = []
-        for key in metadata_keys:
-            deleted_value = new_metadata.pop(key, None)
-            if deleted_value is not None:
-                deleted_keys.append(key)
-
-        if new_metadata == old_metadata:
+        if len(deleted_keys) == 0:
             # メタデータを更新する必要がないのでreturnします。
             return False
 
@@ -188,7 +187,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--parallelism",
         type=int,
-        help="使用するプロセス数（並列度）を指定してください。指定する場合は ``--yes`` を指定してください。指定しない場合は、逐次的に処理します。",
+        help="使用するプロセス数（並列度）を指定します。指定する場合は ``--yes`` を指定してください。指定しない場合は、逐次的に処理します。",
     )
 
     parser.set_defaults(subcommand_func=main)

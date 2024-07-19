@@ -187,7 +187,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--parallelism",
         type=int,
-        help="使用するプロセス数（並列度）を指定してください。指定する場合は ``--yes`` を指定してください。指定しない場合は、逐次的に処理します。",
+        help="使用するプロセス数（並列度）を指定します。指定する場合は ``--yes`` を指定してください。指定しない場合は、逐次的に処理します。",
     )
 
     parser.set_defaults(subcommand_func=main)
