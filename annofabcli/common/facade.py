@@ -517,7 +517,7 @@ class AnnofabApiFacade:
 
         """
         project_title = self.get_project_title(project_id)
-        logger.info(f"project_title = {project_title}, project_id = {project_id}")
+        logger.info(f"project_title='{project_title}', project_id='{project_id}'")
 
         if project_member_roles is not None:  # noqa: SIM102
             if not self.contains_any_project_member_role(project_id, project_member_roles):

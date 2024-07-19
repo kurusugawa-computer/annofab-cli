@@ -4,6 +4,7 @@ from __future__ import annotations
 import argparse
 import collections
 import copy
+import json
 import logging
 import sys
 import tempfile
@@ -11,7 +12,6 @@ import zipfile
 from collections import defaultdict
 from dataclasses import dataclass, field
 from enum import Enum
-from functools import partial
 from pathlib import Path
 from typing import Any, Collection, Iterator, Optional, Tuple, Union
 
@@ -114,6 +114,8 @@ class AnnotationDuration(DataClassJsonMixin):
 
     input_data_id: str
     input_data_name: str
+    video_duration_second: Optional[float]
+    """動画の長さ[秒]"""
 
     annotation_duration_second: float
     """
@@ -160,15 +162,13 @@ class ListAnnotationDurationByInputData:
         self.non_target_labels = set(non_target_labels) if non_target_labels is not None else None
         self.non_target_attribute_names = set(non_target_attribute_names) if non_target_attribute_names is not None else None
 
-    def get_annotation_duration(
-        self,
-        simple_annotation: dict[str, Any],
-    ) -> AnnotationDuration:
+    def get_annotation_duration(self, simple_annotation: dict[str, Any], video_duration_second: Optional[float] = None) -> AnnotationDuration:
         """
         1個のアノテーションJSONに対して、ラベルごと/属性ごとの区間アノテーションの長さを取得する。
 
         Args:
             simple_annotation: アノテーションJSONファイルの内容
+            video_duration_second: 動画の長さ[秒]
         """
 
         def calculate_annotation_duration_second(detail: dict[str, Any]) -> float:
@@ -243,6 +243,7 @@ class ListAnnotationDurationByInputData:
             status=TaskStatus(simple_annotation["task_status"]),
             input_data_id=simple_annotation["input_data_id"],
             input_data_name=simple_annotation["input_data_name"],
+            video_duration_second=video_duration_second,
             annotation_duration_second=sum(annotation_duration_by_label.values()),
             annotation_duration_second_by_label=annotation_duration_by_label,
             annotation_duration_second_by_attribute=annotation_duration_by_attribute,
@@ -252,13 +253,21 @@ class ListAnnotationDurationByInputData:
         self,
         annotation_path: Path,
         *,
+        input_data_json_path: Optional[Path] = None,
         target_task_ids: Optional[Collection[str]] = None,
         task_query: Optional[TaskQuery] = None,
     ) -> list[AnnotationDuration]:
         """
         アノテーションzipまたはそれを展開したディレクトリから、ラベルごと/属性ごとの区間アノテーションの長さを取得する。
 
+        Args:
+            input_data_json_path: 入力データ全件ファイルのパス。動画の長さを取得するのに利用します。
         """
+        dict_input_data: Optional[dict[str, dict[str, Any]]] = None
+        if input_data_json_path is not None:
+            with input_data_json_path.open() as f:
+                input_data_list = json.load(f)
+            dict_input_data = {e["input_data_id"]: e for e in input_data_list}
 
         annotation_duration_list = []
 
@@ -279,7 +288,12 @@ class ListAnnotationDurationByInputData:
                 if not match_annotation_with_task_query(simple_annotation_dict, task_query):
                     continue
 
-            annotation_duration = self.get_annotation_duration(simple_annotation_dict)
+            video_duration_second: Optional[float] = None
+            if dict_input_data is not None:
+                input_data = dict_input_data[parser.input_data_id]
+                video_duration_second = input_data["system_metadata"]["input_duration"]
+
+            annotation_duration = self.get_annotation_duration(simple_annotation_dict, video_duration_second=video_duration_second)
             annotation_duration_list.append(annotation_duration)
 
         return annotation_duration_list
@@ -366,6 +380,7 @@ class AnnotationDurationCsvByAttribute:
             ("phase_stage", "", ""),
             ("input_data_id", "", ""),
             ("input_data_name", "", ""),
+            ("video_duration_second", "", ""),
             ("annotation_duration_second", "", ""),
         ]
         value_columns = self._value_columns(annotation_duration_list, prior_attribute_columns)
@@ -384,6 +399,7 @@ class AnnotationDurationCsvByAttribute:
                 ("status", "", ""): c.status.value,
                 ("phase", "", ""): c.phase.value,
                 ("phase_stage", "", ""): c.phase_stage,
+                ("video_duration_second", "", ""): c.video_duration_second,
                 ("annotation_duration_second", "", ""): c.annotation_duration_second,
             }
             cell.update(c.annotation_duration_second_by_attribute)
@@ -427,6 +443,7 @@ class AnnotationDurationCsvByLabel:
             "phase_stage",
             "input_data_id",
             "input_data_name",
+            "video_duration_second",
             "annotation_duration_second",
         ]
         value_columns = self._value_columns(annotation_duration_list, prior_label_columns)
@@ -445,6 +462,7 @@ class AnnotationDurationCsvByLabel:
                 "status": c.status.value,
                 "phase": c.phase.value,
                 "phase_stage": c.phase_stage,
+                "video_duration_second": c.video_duration_second,
                 "annotation_duration_second": c.annotation_duration_second,
             }
             d.update(c.annotation_duration_second_by_label)
@@ -493,6 +511,7 @@ class ListAnnotationDurationMain:
         arg_format: FormatArgument,
         *,
         project_id: Optional[str] = None,
+        input_data_json_path: Optional[Path] = None,
         target_task_ids: Optional[Collection[str]] = None,
         task_query: Optional[TaskQuery] = None,
         csv_type: Optional[CsvType] = None,
@@ -507,9 +526,12 @@ class ListAnnotationDurationMain:
             non_target_attribute_names=non_selective_attribute_name_keys
         ).get_annotation_duration_list(
             annotation_path,
+            input_data_json_path=input_data_json_path,
             target_task_ids=target_task_ids,
             task_query=task_query,
         )
+
+        logger.info(f"{len(annotation_duration_list)} 件のタスクに含まれる区間アノテーションの長さ情報を出力します。")
 
         if arg_format == FormatArgument.CSV:
             assert csv_type is not None
@@ -571,41 +593,57 @@ class ListAnnotationDuration(CommandLine):
 
         downloading_obj = DownloadingFile(self.service)
 
-        func = partial(
-            main_obj.print_annotation_duration,
-            project_id=project_id,
-            csv_type=csv_type,
-            arg_format=arg_format,
-            output_file=output_file,
-            target_task_ids=task_id_list,
-            task_query=task_query,
-        )
-
-        if annotation_path is None:
-            assert project_id is not None
-
-            if args.temp_dir is not None:
-                annotation_path = args.temp_dir / f"{project_id}__annotation.zip"
+        def download_and_print_annotation_duration(project_id: str, temp_dir: Path, *, is_latest: bool, annotation_path: Optional[Path]) -> None:
+            if annotation_path is None:
+                annotation_path = temp_dir / f"{project_id}__annotation.zip"
                 downloading_obj.download_annotation_zip(
                     project_id,
                     dest_path=annotation_path,
-                    is_latest=args.latest,
+                    is_latest=is_latest,
                 )
-                func(annotation_path=annotation_path)
+
+            input_data_json_path = temp_dir / f"{project_id}__input_data.json"
+            downloading_obj.download_input_data_json(
+                project_id,
+                dest_path=input_data_json_path,
+                is_latest=is_latest,
+            )
+
+            main_obj.print_annotation_duration(
+                project_id=project_id,
+                csv_type=csv_type,
+                arg_format=arg_format,
+                output_file=output_file,
+                target_task_ids=task_id_list,
+                task_query=task_query,
+                annotation_path=annotation_path,
+                input_data_json_path=input_data_json_path,
+            )
+
+        if project_id is not None:
+            if args.temp_dir is not None:
+                download_and_print_annotation_duration(
+                    project_id=project_id, temp_dir=args.temp_dir, is_latest=args.latest, annotation_path=annotation_path
+                )
             else:
                 # `NamedTemporaryFile`を使わない理由: Windowsで`PermissionError`が発生するため
                 # https://qiita.com/yuji38kwmt/items/c6f50e1fc03dafdcdda0 参考
                 with tempfile.TemporaryDirectory() as str_temp_dir:
-                    annotation_path = Path(str_temp_dir) / f"{project_id}__annotation.zip"
-                    downloading_obj.download_annotation_zip(
-                        project_id,
-                        dest_path=str(annotation_path),
-                        is_latest=args.latest,
+                    download_and_print_annotation_duration(
+                        project_id=project_id, temp_dir=Path(str_temp_dir), is_latest=args.latest, annotation_path=annotation_path
                     )
-                    func(annotation_path=annotation_path)
-
         else:
-            func(annotation_path=annotation_path)
+            assert annotation_path is not None
+            main_obj.print_annotation_duration(
+                project_id=project_id,
+                csv_type=csv_type,
+                arg_format=arg_format,
+                output_file=output_file,
+                target_task_ids=task_id_list,
+                task_query=task_query,
+                annotation_path=annotation_path,
+                input_data_json_path=None,
+            )
 
 
 def parse_args(parser: argparse.ArgumentParser) -> None:
@@ -621,7 +659,9 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "-p",
         "--project_id",
         type=str,
-        help="project_id。``--annotation`` が未指定のときは必須です。``--annotation`` が指定されているときに ``--project_id`` を指定すると、アノテーション仕様を参照して、集計対象の属性やCSV列順が決まります。",  # noqa: E501
+        help="project_id。``--annotation`` が未指定のときは必須です。\n"
+        "``--annotation`` が指定されているときに ``--project_id`` を指定すると、アノテーション仕様を参照して、集計対象の属性やCSV列順が決まります。"
+        "また、動画の長さ( ``video_duration_second`` )も出力します。",
     )
 
     parser.add_argument(
