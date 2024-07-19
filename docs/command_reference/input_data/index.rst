@@ -20,7 +20,7 @@ Available Commands
    download
    list
    list_all
-   list_merged_task
+   list_all_merged_task
    put
    put_with_zip
    update_metadata

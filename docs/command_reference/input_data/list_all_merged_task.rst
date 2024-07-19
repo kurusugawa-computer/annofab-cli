@@ -1,15 +1,22 @@
 ==========================================
-input_data list_merged_task
+input_data list_all_merged_task
 ==========================================
 
 Description
 =================================
-入力データ一覧にタスク一覧を結合した情報を出力します。
+すべての入力データ一覧にタスク一覧を結合した情報を出力します。
 
 以下の情報などを知りたいときに利用できます。
 
 * 画像プロジェクト：画像データがどのタスクで使われているか。また、フレーム番号はいくつか。
 * 動画プロジェクト：タスクの動画時間の長さ
+
+
+.. note::
+
+    出力される入力データとタスクは、コマンドを実行した日の02:00(JST)頃の状態です。
+    最新の情報を出力したい場合は、 ``--latest`` 引数を指定してください。
+
 
 
 Examples
@@ -23,14 +30,14 @@ Examples
 
 .. code-block::
 
-    $ annofabcli input_data list_merged_task --project_id prj1 
+    $ annofabcli input_data list_all_merged_task --project_id prj1 
 
 
-手元にある入力データ全件ファイル、タスク全件ファイルを指定する場合は、``--task_json`` , ``--input_data_json`` を指定してください。
+手元にある入力データ全件ファイル、タスク全件ファイルを指定する場合は、 ``--task_json`` , ``--input_data_json`` を指定してください。
 
 .. code-block::
 
-    $ annofabcli input_data list_merged_task --input_data_json input_data.json --task_json task.json
+    $ annofabcli input_data list_all_merged_task --input_data_json input_data.json --task_json task.json
 
 
 絞り込み
@@ -43,7 +50,7 @@ Examples
 
 .. code-block::
 
-    $ annofabcli input_data list_merged_task --project_id prj1  \
+    $ annofabcli input_data list_all_merged_task --project_id prj1  \
      --input_data_query '{"input_data_name": "sample"}' 
 
 
@@ -52,7 +59,7 @@ Examples
 
 .. code-block::
 
-    $ annofabcli input_data list_merged_task --project_id prj1 \
+    $ annofabcli input_data list_all_merged_task --project_id prj1 \
      --input_data_id file://input_data_id.txt
 
 
@@ -78,9 +85,9 @@ CSV出力
 
 .. code-block::
 
-    $ annofabcli input_data list_merged_task --project_id prj1 --format csv --output out.csv
+    $ annofabcli input_data list_all_merged_task --project_id prj1 --format csv --output out.csv
 
-`out.csv <https://github.com/kurusugawa-computer/annofab-cli/blob/main/docs/command_reference/input_data/list_merged_task/out.csv>`_
+`out.csv <https://github.com/kurusugawa-computer/annofab-cli/blob/main/docs/command_reference/input_data/list_all_merged_task/out.csv>`_
 
 
 JSON出力
@@ -88,7 +95,7 @@ JSON出力
 
 .. code-block::
 
-    $ annofabcli input_data list_merged_task --project_id prj1 --format pretty_json --output out.json
+    $ annofabcli input_data list_all_merged_task --project_id prj1 --format pretty_json --output out.json
 
 
 
@@ -132,7 +139,7 @@ Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.input_data.list_input_data_merged_task.add_parser
-   :prog: annofabcli input_data list_merged_task
+   :ref: annofabcli.input_data.list_all_input_data_merged_task.add_parser
+   :prog: annofabcli input_data list_all_merged_task
    :nosubcommands:
    :nodefaultconst:
