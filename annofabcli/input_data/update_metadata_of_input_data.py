@@ -79,7 +79,7 @@ class UpdateMetadataMain(CommandLineWithConfirm):
             input_data["metadata"].update(metadata)
 
         self.service.api.put_input_data(project_id, input_data_id, request_body=input_data)
-        logger.debug(f"{logging_prefix} 入力データを更新しました。input_data_id={input_data['input_data_id']}")
+        logger.debug(f"{logging_prefix} 入力データのメタデータを更新しました。input_data_id='{input_data['input_data_id']}'")
         return True
 
     def set_metadata_to_input_data_wrapper(
