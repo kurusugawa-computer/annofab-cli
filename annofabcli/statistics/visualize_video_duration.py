@@ -328,7 +328,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--latest",
         action="store_true",
-        help="入力データ情報とタスク情報を最新版を参照します。このオプションを指定すると数分待ちます。",
+        help="入力データ情報とタスク情報の最新版を参照します。このオプションを指定すると数分待ちます。",
     )
 
     parser.add_argument(
