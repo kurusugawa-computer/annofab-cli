@@ -68,7 +68,7 @@ pytest-cov = "*"
 
 [tool.poetry.group.linter.dependencies]
 # pythonバージョンを指定している理由：Python3.12（開発環境）でしかlintを実行していないため
-ruff = {version="^0.4", python=">=3.12"}
+ruff = {version="^0.5", python=">=3.12"}
 mypy = {version="^1", python=">=3.12"}
 pylint = {version="^3", python=">=3.12"}
 
@@ -164,7 +164,7 @@ select = [
     "FURB142", # for-loop-set-mutations
     "FURB113", # repeated-append
     "B909", # loop-iterator-mutation 
-    "PLW1514"  # unspecified-encoding: Windows環境で実行する際にencoding="utf-8"を指定しないとエラーになるため、チェックする
+    "PLW1514",  # unspecified-encoding: Windows環境で実行する際にencoding="utf-8"を指定しないとエラーになるため、チェックする
 ]
 
 
@@ -181,6 +181,7 @@ select = [
     "N", # pep8-naming
     "PTH", # flake8-use-pathlib
     "SLF", # flake8-self
+    "PLC2401", # non-ascii-name: メソッド名に日本語を使うため
 ]
 
 
