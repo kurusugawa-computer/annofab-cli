@@ -269,7 +269,7 @@ class TestCommandLine:
         main(
             [
                 self.command_name,
-                "update_metadata",
+                "delete_metadata_key",
                 "--project_id",
                 project_id,
                 "--task_id",
