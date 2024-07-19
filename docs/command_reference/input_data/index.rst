@@ -17,6 +17,7 @@ Available Commands
 
    change_name
    delete
+   delete_metadata_key
    download
    list
    list_all

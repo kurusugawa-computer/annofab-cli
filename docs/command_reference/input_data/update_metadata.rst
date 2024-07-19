@@ -29,6 +29,7 @@ Examples
 メタデータの値は文字列のみ指定できます。
 
 
+
 .. code-block::
 
     $ annofabcli input_data update_metadata --project_id prj1 \
@@ -68,7 +69,7 @@ Examples
 .. warning::
 
     入力データのメタデータを更新すると、入力データの ``updated_datetime`` （更新日時）が更新されます。
-    
+    入力データの更新日時は、入力データの登録以外でも更新されることに注意してください。
 
 
 
