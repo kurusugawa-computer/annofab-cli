@@ -89,7 +89,7 @@ class ListVideoDuration(CommandLine):
         if output_format == FormatArgument.CSV:
             columns = ["task_id", "task_status", "task_phase", "task_phase_stage", "input_data_id", "input_data_name", "video_duration_second"]
             df = pandas.DataFrame(video_duration_list, columns=columns)
-            print_csv(df,output=output_file)
+            print_csv(df, output=output_file)
         else:
             print_according_to_format(video_duration_list, format=output_format, output=output_file)
 
@@ -172,7 +172,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--project_id",
         type=str,
         required=False,
-        help="project_id。``--input_data_json`` と ``--task_json`` が未指定のときは必須です。",
+        help="出力対象プロジェクトのID。``--input_data_json`` と ``--task_json`` が未指定のときは必須です。",
     )
 
     argument_parser.add_format(
@@ -205,7 +205,7 @@ def main(args: argparse.Namespace) -> None:
 
 def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     subcommand_name = "list_video_duration"
-    subcommand_help = "動画の長さの一覧を出力します。"
+    subcommand_help = "各タスクの動画の長さを出力します。"
     epilog = "オーナロールまたはアノテーションユーザロールを持つユーザで実行してください。"
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, epilog=epilog)
     parse_args(parser)
