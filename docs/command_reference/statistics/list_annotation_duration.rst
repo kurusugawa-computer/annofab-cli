@@ -36,6 +36,7 @@ JSON出力
         "phase_stage": 1,
         "input_data_id": "sample_video_00.mp4",
         "input_data_name": "sample_video_00.mp4",
+        "video_duration_second": 30,
         "annotation_duration_second": 21.333,
         "annotation_duration_second_by_label": {
             "traffic_light": 21.333

@@ -659,7 +659,9 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "-p",
         "--project_id",
         type=str,
-        help="project_id。``--annotation`` が未指定のときは必須です。``--annotation`` が指定されているときに ``--project_id`` を指定すると、アノテーション仕様を参照して、集計対象の属性やCSV列順が決まります。",  # noqa: E501
+        help="project_id。``--annotation`` が未指定のときは必須です。\n"
+        "``--annotation`` が指定されているときに ``--project_id`` を指定すると、アノテーション仕様を参照して、集計対象の属性やCSV列順が決まります。"
+        "また、動画の長さ( ``video_duration_second`` )も出力します。",
     )
 
     parser.add_argument(
