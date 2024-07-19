@@ -16,6 +16,7 @@ import annofabcli
 import annofabcli.common.cli
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
+    ArgumentParser,
     CommandLine,
     build_annofabapi_resource_and_login,
 )
@@ -37,9 +38,9 @@ def get_video_duration_list(task_list: list[dict[str, Any]], input_data_list: li
     result = []
     for task in task_list:
         task_id = task["task_id"]
-        elm = {"task_id": task_id, "task_status": task["status"], "task_phase": task["phase"], "phase_stage": task["stage"]}
+        elm = {"task_id": task_id, "task_status": task["status"], "task_phase": task["phase"], "task_phase_stage": task["phase_stage"]}
         input_data_id_list = task["input_data_id_list"]
-        assert input_data_id_list == 1
+        assert len(input_data_id_list) == 1, f"task_id='{task_id}'には複数の入力データが含まれています。"
         input_data_id = input_data_id_list[0]
         elm["input_data_id"] = input_data_id
         input_data = dict_input_data_by_id.get(input_data_id)
@@ -47,12 +48,12 @@ def get_video_duration_list(task_list: list[dict[str, Any]], input_data_list: li
             logger.warning(f"task_id='{task_id}'のタスクに含まれている入力データ（input_data_id='{input_data_id}'）は、見つかりません。")
             elm.update({"input_data_name": None, "video_duration_second": 0})
         else:
-            video_duration_millisecond = input_data["system_metadata"]["input_duration"]
-            if video_duration_millisecond is None:
+            video_duration_second = input_data["system_metadata"]["input_duration"]
+            if video_duration_second is None:
                 logger.warning(f"input_data_id='{input_data_id}' :: 'system_metadata.input_duration'がNoneです。")
-                video_duration_millisecond = 0
+                video_duration_second = 0
 
-            elm.update({"input_data_name": input_data["input_data_name"], "video_duration_second": video_duration_millisecond / 60})
+            elm.update({"input_data_name": input_data["input_data_name"], "video_duration_second": video_duration_second})
 
         result.append(elm)
     return result
@@ -88,7 +89,7 @@ class ListVideoDuration(CommandLine):
         if output_format == FormatArgument.CSV:
             columns = ["task_id", "task_status", "task_phase", "task_phase_stage", "input_data_id", "input_data_name", "video_duration_second"]
             df = pandas.DataFrame(video_duration_list, columns=columns)
-            print_csv(df)
+            print_csv(df,output=output_file)
         else:
             print_according_to_format(video_duration_list, format=output_format, output=output_file)
 
@@ -109,7 +110,7 @@ class ListVideoDuration(CommandLine):
                 )
                 sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
-        func = partial(self.list_video_duration, project_id=project_id, output_file=args.output, output_format=FormatArgument(args.format))
+        func = partial(self.list_video_duration, output_file=args.output, output_format=FormatArgument(args.format))
 
         def wrapper_func(temp_dir: Path) -> None:
             downloading_obj = DownloadingFile(self.service)
@@ -150,6 +151,7 @@ class ListVideoDuration(CommandLine):
 
 
 def parse_args(parser: argparse.ArgumentParser) -> None:
+    argument_parser = ArgumentParser(parser)
     parser.add_argument(
         "--input_data_json",
         type=Path,
@@ -173,12 +175,17 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         help="project_id。``--input_data_json`` と ``--task_json`` が未指定のときは必須です。",
     )
 
-    parser.add_argument("-o", "--output", type=Path, required=True, help="出力先HTMLファイルのパス")
+    argument_parser.add_format(
+        choices=[FormatArgument.CSV, FormatArgument.JSON, FormatArgument.PRETTY_JSON],
+        default=FormatArgument.CSV,
+    )
+
+    argument_parser.add_output()
 
     parser.add_argument(
         "--latest",
         action="store_true",
-        help="入力データ情報とタスク情報を最新版を参照します。このオプションを指定すると数分待ちます。",
+        help="入力データ情報とタスク情報の最新版を参照します。このオプションを指定すると数分待ちます。",
     )
 
     parser.add_argument(
