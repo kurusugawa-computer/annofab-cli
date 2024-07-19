@@ -60,6 +60,34 @@ class TestCommandLine:
             ]
         )
 
+    def test_list_annotation_duration(self):
+        main(
+            [
+                "statistics",
+                "list_annotation_duration",
+                "--project_id",
+                video_project_id,
+                "--output",
+                str(out_dir / "test_list_annotation_duration-out.csv"),
+                "--format",
+                "csv",
+            ]
+        )
+
+    def test_list_video_duration(self):
+        main(
+            [
+                "statistics",
+                "list_video_duration",
+                "--project_id",
+                video_project_id,
+                "--output",
+                str(out_dir / "test_list_video_duration-out.csv"),
+                "--format",
+                "csv",
+            ]
+        )
+
     def test_summarize_task_count(self):
         main(
             [
