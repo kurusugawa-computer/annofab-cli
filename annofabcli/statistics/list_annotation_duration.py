@@ -12,7 +12,6 @@ import zipfile
 from collections import defaultdict
 from dataclasses import dataclass, field
 from enum import Enum
-from functools import partial
 from pathlib import Path
 from typing import Any, Collection, Iterator, Optional, Tuple, Union
 
@@ -115,7 +114,7 @@ class AnnotationDuration(DataClassJsonMixin):
 
     input_data_id: str
     input_data_name: str
-    video_duration_second: float
+    video_duration_second: Optional[float]
     """動画の長さ[秒]"""
 
     annotation_duration_second: float
@@ -163,7 +162,7 @@ class ListAnnotationDurationByInputData:
         self.non_target_labels = set(non_target_labels) if non_target_labels is not None else None
         self.non_target_attribute_names = set(non_target_attribute_names) if non_target_attribute_names is not None else None
 
-    def get_annotation_duration(self, simple_annotation: dict[str, Any], video_duration_second: Optional[float]) -> AnnotationDuration:
+    def get_annotation_duration(self, simple_annotation: dict[str, Any], video_duration_second: Optional[float]=None) -> AnnotationDuration:
         """
         1個のアノテーションJSONに対して、ラベルごと/属性ごとの区間アノテーションの長さを取得する。
 
@@ -508,6 +507,7 @@ class ListAnnotationDurationMain:
         arg_format: FormatArgument,
         *,
         project_id: Optional[str] = None,
+        input_data_json_path: Optional[Path] = None,
         target_task_ids: Optional[Collection[str]] = None,
         task_query: Optional[TaskQuery] = None,
         csv_type: Optional[CsvType] = None,
@@ -587,18 +587,7 @@ class ListAnnotationDuration(CommandLine):
 
         downloading_obj = DownloadingFile(self.service)
 
-        func = partial(
-            main_obj.print_annotation_duration,
-            project_id=project_id,
-            csv_type=csv_type,
-            arg_format=arg_format,
-            output_file=output_file,
-            target_task_ids=task_id_list,
-            task_query=task_query,
-        )
-
-
-        def foo(project_id:str, temp_dir:Path, is_latest:bool, annotation_path:Optional[Path])->None:
+        def download_and_print_annotation_duration(project_id: str, temp_dir: Path, *, is_latest: bool, annotation_path: Optional[Path]) -> None:
             if annotation_path is None:
                 annotation_path = temp_dir / f"{project_id}__annotation.zip"
                 downloading_obj.download_annotation_zip(
@@ -606,7 +595,7 @@ class ListAnnotationDuration(CommandLine):
                     dest_path=annotation_path,
                     is_latest=is_latest,
                 )
-            
+
             input_data_json_path = temp_dir / f"{project_id}__input_data.json"
             downloading_obj.download_input_data_json(
                 project_id,
@@ -614,35 +603,41 @@ class ListAnnotationDuration(CommandLine):
                 is_latest=is_latest,
             )
 
-            func(annotation_path=annotation_path, input_data_json_path=input_data_json_path)
+            main_obj.print_annotation_duration(
+                project_id=project_id,
+                csv_type=csv_type,
+                arg_format=arg_format,
+                output_file=output_file,
+                target_task_ids=task_id_list,
+                task_query=task_query,
+                annotation_path=annotation_path,
+                input_data_json_path=input_data_json_path,
+            )
 
-
-
-        if annotation_path is None:
-            assert project_id is not None
-
+        if project_id is not None:
             if args.temp_dir is not None:
-                annotation_path = args.temp_dir / f"{project_id}__annotation.zip"
-                downloading_obj.download_annotation_zip(
-                    project_id,
-                    dest_path=annotation_path,
-                    is_latest=args.latest,
+                download_and_print_annotation_duration(
+                    project_id=project_id, temp_dir=args.temp_dir, is_latest=args.latest, annotation_path=annotation_path
                 )
-                func(annotation_path=annotation_path)
             else:
                 # `NamedTemporaryFile`を使わない理由: Windowsで`PermissionError`が発生するため
                 # https://qiita.com/yuji38kwmt/items/c6f50e1fc03dafdcdda0 参考
                 with tempfile.TemporaryDirectory() as str_temp_dir:
-                    annotation_path = Path(str_temp_dir) / f"{project_id}__annotation.zip"
-                    downloading_obj.download_annotation_zip(
-                        project_id,
-                        dest_path=str(annotation_path),
-                        is_latest=args.latest,
+                    download_and_print_annotation_duration(
+                        project_id=project_id, temp_dir=Path(str_temp_dir), is_latest=args.latest, annotation_path=annotation_path
                     )
-                    func(annotation_path=annotation_path)
-
         else:
-            func(annotation_path=annotation_path)
+            assert annotation_path is not None
+            main_obj.print_annotation_duration(
+                project_id=project_id,
+                csv_type=csv_type,
+                arg_format=arg_format,
+                output_file=output_file,
+                target_task_ids=task_id_list,
+                task_query=task_query,
+                annotation_path=annotation_path,
+                input_data_json_path=None,
+            )
 
 
 def parse_args(parser: argparse.ArgumentParser) -> None:
