@@ -53,9 +53,11 @@ Examples
      --input_data_id file://input_data_id.txt
 
 
-``--not_used_by_task`` を指定すれば、タスクに使われていない入力データがあります。
+``--not_used_by_task`` を指定すれば、タスクに使われていない入力データがあります。「入力データは登録したがタスクは登録していなかった」などのデータ登録のミスを探すときに、 ``--not_used_by_task`` は便利です。
+
 
 ``--used_by_multiple_task`` を指定すれば、複数のタスクから使われている入力データが出力されます。
+基本的な運用では、1個の入力データは複数のタスクから参照されることはありません。複数のタスクから参照されている場合は、データ登録のミスの可能性があります。このようなミスを探すときに、 ``--used_by_multiple_task`` は便利です。
 
 
 
@@ -98,27 +100,27 @@ JSON出力
             "input_data_set_id": ",12345678-abcd-1234-abcd-1234abcd5678",
             "input_data_name": "data1",
             "input_data_path": "s3://af-production-input/organizations/...",
-            "url": "https://annofab.com/organizations/...",
-            "etag": "...",
             "updated_datetime": "2021-01-04T21:21:28.169+09:00",
             "original_input_data_path": "s3://af-production-input/organizations/...",
             "sign_required": false,
             "metadata": {},
             "system_metadata": {
-              "resized_resolution": null,
-              "original_resolution": null,
-              "_type": "Image"
+                "resized_resolution": null,
+                "original_resolution": {
+                    "width": 80,
+                    "height": 80
+                },
+                "_type": "Image"
             },
-            "resized_resolution": null,
-            "original_resolution": {
-                "width": 128,
-                "height": 128
-            },
-            "_type": "Image",
-            "task_id": "task1",
-            "task_status": "break",
-            "task_phase": "annotation",
-            "worktime_hour": 4.308171944444444
+            "parent_task_list": [
+                {
+                    "task_id": "test_16",
+                    "task_status": "break",
+                    "task_phase": "acceptance",
+                    "task_phase_stage": 1,
+                    "frame_no": 1
+                }
+            ]
         },
         ...
     ]
