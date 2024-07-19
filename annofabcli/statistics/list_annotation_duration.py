@@ -4,6 +4,7 @@ from __future__ import annotations
 import argparse
 import collections
 import copy
+import json
 import logging
 import sys
 import tempfile
@@ -114,6 +115,8 @@ class AnnotationDuration(DataClassJsonMixin):
 
     input_data_id: str
     input_data_name: str
+    video_duration_second: float
+    """動画の長さ[秒]"""
 
     annotation_duration_second: float
     """
@@ -160,15 +163,13 @@ class ListAnnotationDurationByInputData:
         self.non_target_labels = set(non_target_labels) if non_target_labels is not None else None
         self.non_target_attribute_names = set(non_target_attribute_names) if non_target_attribute_names is not None else None
 
-    def get_annotation_duration(
-        self,
-        simple_annotation: dict[str, Any],
-    ) -> AnnotationDuration:
+    def get_annotation_duration(self, simple_annotation: dict[str, Any], video_duration_second: Optional[float]) -> AnnotationDuration:
         """
         1個のアノテーションJSONに対して、ラベルごと/属性ごとの区間アノテーションの長さを取得する。
 
         Args:
             simple_annotation: アノテーションJSONファイルの内容
+            video_duration_second: 動画の長さ[秒]
         """
 
         def calculate_annotation_duration_second(detail: dict[str, Any]) -> float:
@@ -243,6 +244,7 @@ class ListAnnotationDurationByInputData:
             status=TaskStatus(simple_annotation["task_status"]),
             input_data_id=simple_annotation["input_data_id"],
             input_data_name=simple_annotation["input_data_name"],
+            video_duration_second=video_duration_second,
             annotation_duration_second=sum(annotation_duration_by_label.values()),
             annotation_duration_second_by_label=annotation_duration_by_label,
             annotation_duration_second_by_attribute=annotation_duration_by_attribute,
@@ -252,13 +254,21 @@ class ListAnnotationDurationByInputData:
         self,
         annotation_path: Path,
         *,
+        input_data_json_path: Optional[Path] = None,
         target_task_ids: Optional[Collection[str]] = None,
         task_query: Optional[TaskQuery] = None,
     ) -> list[AnnotationDuration]:
         """
         アノテーションzipまたはそれを展開したディレクトリから、ラベルごと/属性ごとの区間アノテーションの長さを取得する。
 
+        Args:
+            input_data_json_path: 入力データ全件ファイルのパス。動画の長さを取得するのに利用します。
         """
+        dict_input_data: Optional[dict[str, dict[str, Any]]] = None
+        if input_data_json_path is not None:
+            with input_data_json_path.open() as f:
+                input_data_list = json.load(f)
+            dict_input_data = {e["input_data_id"]: e for e in input_data_list}
 
         annotation_duration_list = []
 
@@ -279,7 +289,12 @@ class ListAnnotationDurationByInputData:
                 if not match_annotation_with_task_query(simple_annotation_dict, task_query):
                     continue
 
-            annotation_duration = self.get_annotation_duration(simple_annotation_dict)
+            video_duration_second: Optional[float] = None
+            if dict_input_data is not None:
+                input_data = dict_input_data[parser.input_data_id]
+                video_duration_second = input_data["system_metadata"]["input_duration"]
+
+            annotation_duration = self.get_annotation_duration(simple_annotation_dict, video_duration_second=video_duration_second)
             annotation_duration_list.append(annotation_duration)
 
         return annotation_duration_list
@@ -507,6 +522,7 @@ class ListAnnotationDurationMain:
             non_target_attribute_names=non_selective_attribute_name_keys
         ).get_annotation_duration_list(
             annotation_path,
+            input_data_json_path=input_data_json_path,
             target_task_ids=target_task_ids,
             task_query=task_query,
         )
@@ -580,6 +596,27 @@ class ListAnnotationDuration(CommandLine):
             target_task_ids=task_id_list,
             task_query=task_query,
         )
+
+
+        def foo(project_id:str, temp_dir:Path, is_latest:bool, annotation_path:Optional[Path])->None:
+            if annotation_path is None:
+                annotation_path = temp_dir / f"{project_id}__annotation.zip"
+                downloading_obj.download_annotation_zip(
+                    project_id,
+                    dest_path=annotation_path,
+                    is_latest=is_latest,
+                )
+            
+            input_data_json_path = temp_dir / f"{project_id}__input_data.json"
+            downloading_obj.download_input_data_json(
+                project_id,
+                dest_path=input_data_json_path,
+                is_latest=is_latest,
+            )
+
+            func(annotation_path=annotation_path, input_data_json_path=input_data_json_path)
+
+
 
         if annotation_path is None:
             assert project_id is not None
