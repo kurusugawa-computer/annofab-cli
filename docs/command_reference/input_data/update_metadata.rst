@@ -29,6 +29,7 @@ Examples
 メタデータの値は文字列のみ指定できます。
 
 
+
 .. code-block::
 
     $ annofabcli input_data update_metadata --project_id prj1 \
