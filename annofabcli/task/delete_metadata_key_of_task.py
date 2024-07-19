@@ -1,13 +1,14 @@
 from __future__ import annotations
 
 import argparse
+import copy
 import json
 import logging
 import multiprocessing
 import sys
 from dataclasses import dataclass
 from functools import partial
-from typing import Any, Dict, Optional, Union
+from typing import Collection, Dict, Optional, Union
 
 import annofabapi
 from annofabapi.models import ProjectMemberRole
@@ -21,8 +22,6 @@ from annofabcli.common.cli import (
     CommandLineWithConfirm,
     build_annofabapi_resource_and_login,
 )
-from typing import Collection
-import copy
 from annofabcli.common.facade import AnnofabApiFacade
 
 logger = logging.getLogger(__name__)
@@ -36,11 +35,11 @@ class TaskMetadataInfo:
     metadata: Metadata
 
 
-class UpdateMetadataOfTaskMain(CommandLineWithConfirm):
+class DeleteMetadataKeysOfTaskMain(CommandLineWithConfirm):
     def __init__(
         self,
         service: annofabapi.Resource,
-        project_id:str,
+        project_id: str,
         *,
         parallelism: Optional[int] = None,
         all_yes: bool = False,
@@ -48,139 +47,88 @@ class UpdateMetadataOfTaskMain(CommandLineWithConfirm):
         self.service = service
         self.project_id = project_id
         self.parallelism = parallelism
-        self.__init__(self, all_yes)
+        super().__init__(all_yes=all_yes)
 
-
-    def delete_metadata_keys_for_one_task(self, task_id:list[str], metadata_keys:Collection[str]) -> Metadata:
+    def delete_metadata_keys_for_one_task(self, task_id: str, metadata_keys: Collection[str], *, task_index: Optional[int] = None) -> bool:
         """
         １個のタスクに対して、メタデータのキーを削除します。
-        
+
         Args:
-            task_id: 
+            task_id:
             metadata_keys: 削除するメタデータのキー
-            
+
         Returns:
             メタデータのキーを削除した場合はTrueを返します。
         """
-        logging_prefix = ""
+        logging_prefix = f"{task_index+1} 件目" if task_index is not None else ""
         task = self.service.wrapper.get_task_or_none(self.project_id, task_id)
         if task is None:
-            logger.warning(f"task_id='{task_id}'であるタスクは存在しません。")
+            logger.warning(f"{logging_prefix} task_id='{task_id}'であるタスクは存在しません。")
             return False
-        
+
         old_metadata = task["metadata"]
         str_old_metadata = json.dumps(old_metadata)
-        logger.debug(f"task_id='{task_id}', metadata='{str_old_metadata}'")
+        logger.debug(f"{logging_prefix} task_id='{task_id}', metadata='{str_old_metadata}'")
         new_metadata = copy.deepcopy(old_metadata)
         for key in metadata_keys:
             new_metadata.pop(key, None)
-        
+
         if new_metadata == old_metadata:
             # メタデータを更新する必要がないのでreturnします。
             return False
 
-        if not self.all_yes and not self.confirm_processing(f"task_id='{task_id}' :: metadata='{str_old_metadata}' からキー'{metadata_keys}'を削除しますか？"):
+        if not self.all_yes and not self.confirm_processing(
+            f"task_id='{task_id}' :: metadata='{str_old_metadata}' からキー'{metadata_keys}'を削除しますか？"
+        ):
             return False
 
         request_body = {task_id: new_metadata}
-        self.service.api.patch_tasks_metadata(project_id, request_body=request_body)
+        self.service.api.patch_tasks_metadata(self.project_id, request_body=request_body)
         logger.debug(f"{logging_prefix} task_id='{task_id}' :: タスクのメタデータからキー'{metadata_keys}'を削除しました。")
         return True
-        
 
-
-    def set_metadata_to_task_wrapper(self, tpl: tuple[int, TaskMetadataInfo], project_id: str) -> bool:
-        task_index, info = tpl
+    def delete_metadata_keys_for_one_task_wrapper(self, tpl: tuple[int, str], metadata_keys: Collection[str]) -> bool:
+        task_index, task_id = tpl
         try:
-            return self.set_metadata_to_task(
-                project_id,
-                info.task_id,
-                metadata=info.metadata,
+            return self.delete_metadata_keys_for_one_task(
+                task_id=task_id,
+                metadata_keys=metadata_keys,
                 task_index=task_index,
             )
         except Exception:
-            logger.warning(f"タスク'{info.task_id}'のメタデータの更新に失敗しました。", exc_info=True)
+            logger.warning(f"task_id='{task_id}' :: タスクのメタデータのキーを削除するのに失敗しました。", exc_info=True)
             return False
 
-    def _update_metadata_with_patch_tasks_metadata_api_wrapper(self, tpl: tuple[int, int, list[TaskMetadataInfo]], project_id: str) -> None:
-        global_start_position, global_stop_position, info_list = tpl
-        logger.debug(f"{global_start_position+1} 〜 {global_stop_position} 件目のタスクのメタデータを更新します。")
-        request_body = {info.task_id: info.metadata for info in info_list}
-        self.service.api.patch_tasks_metadata(project_id, request_body=request_body)
-
-    def update_metadata_with_patch_tasks_metadata_api(self, project_id: str, metadata_by_task_id: dict[str, Metadata]) -> None:
-        """patch_tasks_metadata webapiを呼び出して、タスクのメタデータを更新します。
-        注意：メタデータは上書きされます。
-        """
-
-        # 1000件以上の大量のタスクを一度に更新しようとするとwebapiが失敗するので、何回かに分けてメタデータを更新するようにする。
-        BATCH_SIZE = 500  # noqa: N806
-        first_index = 0
-
-        metadata_info_list = [TaskMetadataInfo(task_id, metadata) for task_id, metadata in metadata_by_task_id.items()]
-
-        if self.parallelism is None:
-            while first_index < len(metadata_info_list):
-                logger.info(f"{first_index+1} 〜 {min(first_index+BATCH_SIZE, len(metadata_info_list))} 件目のタスクのメタデータを更新します。")
-                request_body = {info.task_id: info.metadata for info in metadata_info_list[first_index : first_index + BATCH_SIZE]}
-                self.service.api.patch_tasks_metadata(project_id, request_body=request_body)
-                first_index += BATCH_SIZE
-        else:
-            partial_func = partial(
-                self._update_metadata_with_patch_tasks_metadata_api_wrapper,
-                project_id=project_id,
-            )
-            tmp_list = []
-            while first_index < len(metadata_info_list):
-                global_start_position = first_index
-                global_stop_position = min(first_index + BATCH_SIZE, len(metadata_info_list))
-                subset_info_list = metadata_info_list[global_start_position:global_stop_position]
-                tmp_list.append((global_start_position, global_stop_position, subset_info_list))
-                first_index += BATCH_SIZE
-
-            with multiprocessing.Pool(self.parallelism) as pool:
-                pool.map(partial_func, tmp_list)
-
-    def delete_metadata_keys(
-        self,
-        project_id: str,
-        task_id_list:list[str], metadata_keys:Collection[str]
-    ) -> None:
-
+    def delete_metadata_keys_for_task_list(self, task_id_list: list[str], metadata_keys: Collection[str]) -> None:
         logger.info(f"{len(task_id_list)} 件のタスクのメタデータから、キー'{metadata_keys}'を削除します。")
 
-        if self.all_yes:
-            self.update_metadata_with_patch_tasks_metadata_api(project_id, metadata_by_task_id)
-            logger.info(f"{len(metadata_by_task_id)} 件のタスクのメタデータを変更しました。")
+        success_count = 0
+        if self.parallelism is not None:
+            assert not self.all_yes
+            partial_func = partial(
+                self.delete_metadata_keys_for_one_task_wrapper,
+                metadata_keys=metadata_keys,
+            )
+            with multiprocessing.Pool(self.parallelism) as pool:
+                result_bool_list = pool.map(partial_func, enumerate(task_id_list))
+                success_count = len([e for e in result_bool_list if e])
+
         else:
-            success_count = 0
-            if self.parallelism is not None:
-                partial_func = partial(
-                    self.set_metadata_to_task_wrapper,
-                    project_id=project_id,
-                )
-                metadata_info_list = [TaskMetadataInfo(task_id, metadata) for task_id, metadata in metadata_by_task_id.items()]
-                with multiprocessing.Pool(self.parallelism) as pool:
-                    result_bool_list = pool.map(partial_func, enumerate(metadata_info_list))
-                    success_count = len([e for e in result_bool_list if e])
+            # 逐次処理
+            for task_index, task_id in enumerate(task_id_list):
+                try:
+                    result = self.delete_metadata_keys_for_one_task(
+                        task_id,
+                        metadata_keys=metadata_keys,
+                        task_index=task_index,
+                    )
+                    if result:
+                        success_count += 1
+                except Exception:
+                    logger.warning(f"task_id='{task_id}' :: タスクのメタデータのキーを削除するのに失敗しました。", exc_info=True)
+                    continue
 
-            else:
-                # 逐次処理
-                for task_index, (task_id, metadata) in enumerate(metadata_by_task_id.items()):
-                    try:
-                        result = self.set_metadata_to_task(
-                            project_id,
-                            task_id,
-                            metadata=metadata,
-                            task_index=task_index,
-                        )
-                        if result:
-                            success_count += 1
-                    except Exception:
-                        logger.warning(f"タスク'{task_id}'のメタデータの更新に失敗しました。", exc_info=True)
-                        continue
-
-            logger.info(f"{success_count} / {len(metadata_by_task_id)} 件のタスクのメタデータを変更しました。")
+        logger.info(f"{success_count} / {len(task_id_list)} 件のタスクのメタデータから、キー'{metadata_keys}'を削除しました。")
 
 
 class UpdateMetadataOfTask(CommandLine):
@@ -210,22 +158,12 @@ class UpdateMetadataOfTask(CommandLine):
         if not self.validate(args):
             sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
-        task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id) if args.task_id is not None else None
-
-        if args.metadata is not None:
-            metadata = annofabcli.common.cli.get_json_from_args(args.metadata)
-            assert task_id_list is not None, "'--metadata'を指定したときは'--task_id'は必須です。"
-            metadata_by_task_id = {task_id: metadata for task_id in task_id_list}
-        elif args.metadata_by_task_id is not None:
-            metadata_by_task_id = annofabcli.common.cli.get_json_from_args(args.metadata_by_task_id)
-            if task_id_list is not None:
-                metadata_by_task_id = {task_id: metadata for task_id, metadata in metadata_by_task_id.items() if task_id in task_id_list}
-        else:
-            raise RuntimeError("'--metadata'か'--metadata_by_task_id'のどちらかを指定する必要があります。")
+        task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id)
+        metadata_keys = annofabcli.common.cli.get_list_from_args(args.metadata_key)
 
         super().validate_project(args.project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER])
-        main_obj = UpdateMetadataOfTaskMain(self.service, is_overwrite_metadata=args.overwrite, parallelism=args.parallelism, all_yes=args.yes)
-        main_obj.update_metadata_of_task(args.project_id, metadata_by_task_id=metadata_by_task_id)
+        main_obj = DeleteMetadataKeysOfTaskMain(self.service, project_id=args.project_id, parallelism=args.parallelism, all_yes=args.yes)
+        main_obj.delete_metadata_keys_for_task_list(task_id_list=task_id_list, metadata_keys=metadata_keys)
 
 
 def main(args: argparse.Namespace) -> None:
@@ -244,10 +182,8 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         type=str,
         required=True,
         nargs="+",
-        help="削除したいメタデータのキーを複数指定します。\n"
-        " ``file://`` を先頭に付けると、JSON形式のファイルを指定できます。",
+        help="削除したいメタデータのキーを複数指定します。\n" " ``file://`` を先頭に付けると、JSON形式のファイルを指定できます。",
     )
-
 
     parser.add_argument(
         "--parallelism",
