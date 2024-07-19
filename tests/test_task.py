@@ -4,6 +4,7 @@ import configparser
 import datetime
 import json
 from pathlib import Path
+from typing import Any
 
 import annofabapi
 import more_itertools
@@ -263,6 +264,25 @@ class TestCommandLine:
         task, _ = service.api.get_task(project_id, task_id)
         assert task["metadata"] == metadata
 
+    def _execute_delete_metadata_key(self, task_id: str, metadata_keys: list[str], expected_metadata: dict[str, Any]) -> None:
+        """メタデータのキーを削除"""
+        main(
+            [
+                self.command_name,
+                "update_metadata",
+                "--project_id",
+                project_id,
+                "--task_id",
+                task_id,
+                "--metadata_key",
+                *metadata_keys,
+                "--yes",
+            ]
+        )
+
+        task, _ = service.api.get_task(project_id, task_id)
+        assert task["metadata"] == expected_metadata
+
     def _execute_copy(self, src_task_id: str, expected_metadata: dict[str, str]):
         """タスクのコピー"""
         dest_task_id = f"{src_task_id}-copy"
@@ -358,6 +378,9 @@ class TestCommandLine:
         # 状態を変更するコマンドの確認
         self._execute_change_status_to_on_hold(task_id)
         self._execute_change_status_to_break(task_id)
+
+        # メタデータのキーを削除
+        self._execute_delete_metadata_key(task_id, metadata_keys=["foo"], expected_metadata={})
 
     def test_create_and_delete_task(self):
         """
