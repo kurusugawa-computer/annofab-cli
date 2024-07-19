@@ -7,8 +7,8 @@ import annofabcli.input_data.change_input_data_name
 import annofabcli.input_data.delete_input_data
 import annofabcli.input_data.download_input_data_json
 import annofabcli.input_data.list_all_input_data
-import annofabcli.input_data.list_input_data
 import annofabcli.input_data.list_all_input_data_merged_task
+import annofabcli.input_data.list_input_data
 import annofabcli.input_data.put_input_data
 import annofabcli.input_data.put_input_data_with_zip
 import annofabcli.input_data.update_metadata_of_input_data
