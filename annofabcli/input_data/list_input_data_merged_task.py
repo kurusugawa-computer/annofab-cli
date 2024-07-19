@@ -118,6 +118,15 @@ def match_input_data(
     return result
 
 
+def match_parent_task_list_of_input_data_with(input_data: Dict[str, Any], *, is_not_used_by_task: bool, is_used_by_multiple_task: bool) -> bool:
+    parent_task_list = input_data["parent_task_list"]
+    if is_not_used_by_task:
+        return len(parent_task_list) == 0
+    if is_used_by_multiple_task:
+        return len(parent_task_list) > 1
+    return True
+
+
 class ListInputDataMergedTask(CommandLine):
     @staticmethod
     def validate(args: argparse.Namespace) -> bool:
@@ -185,14 +194,22 @@ class ListInputDataMergedTask(CommandLine):
 
         input_data_list_with_merged_task = create_input_data_list_with_merged_task(input_data_list=filtered_input_data_list, task_list=task_list)
 
-        logger.debug(f"入力データ {len(input_data_list_with_merged_task)} 件を出力します。")
+        filtered_input_data_list_with_merged_task = [
+            e
+            for e in input_data_list_with_merged_task
+            if match_parent_task_list_of_input_data_with(
+                e, is_not_used_by_task=args.not_used_by_task, is_used_by_multiple_task=args.used_by_multiple_task
+            )
+        ]
+
+        logger.debug(f"入力データ {len(filtered_input_data_list_with_merged_task)} 件を出力します。")
 
         if self.str_format == FormatArgument.CSV.value:
-            df_input_data = create_df_input_data_with_merged_task(input_data_list_with_merged_task)
+            df_input_data = create_df_input_data_with_merged_task(filtered_input_data_list_with_merged_task)
             print_csv(df_input_data, output=args.output)
 
         elif self.str_format in [FormatArgument.JSON.value, FormatArgument.PRETTY_JSON.value]:
-            self.print_according_to_format(input_data_list_with_merged_task)
+            self.print_according_to_format(filtered_input_data_list_with_merged_task)
 
 
 def main(args: argparse.Namespace) -> None:
@@ -230,13 +247,15 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     used_by_task_group.add_argument(
         "--not_used_by_task",
         action="store_true",
-        help="タスクから使われていない入力データのみ出力します。",
+        help="タスクから使われていない入力データのみ出力します。\n"
+        "「入力データは登録したがタスクは登録していなかった」などのデータ登録のミスを探すときに利用できます。",
     )
 
     used_by_task_group.add_argument(
         "--used_by_multiple_task",
         action="store_true",
-        help="複数のタスクから使われている入力データのみ出力します。",
+        help="複数のタスクから使われている入力データのみ出力します。\n"
+        "基本的な運用では、1個の入力データは複数のタスクから参照されることはありません。複数のタスクから参照されている場合は、データ登録のミスの可能性があります。このようなミスを探すときに利用できます。",
     )
 
     parser.add_argument(
