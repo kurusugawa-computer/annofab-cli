@@ -19,12 +19,12 @@ Examples
 
     $ annofabcli supplementary list --project_id prj1 --input_data_id input1 input2
 
-
-以下のコマンドは、指定したタスクに紐づく補助情報を出力します。
+``--input_data_id`` を指定しない場合は、入力データ全件ファイルに記載されているすべての入力データに紐づく補助情報の一覧を出力します。
 
 .. code-block::
 
-    $ annofabcli supplementary list --project_id prj1 --task_id task1 task2
+    $ annofabcli supplementary list --project_id prj1
+
 
 
 出力結果
@@ -60,8 +60,6 @@ JSON出力
         "supplementary_data_id": "supplementary1",
         "supplementary_data_name": "test-supplementary1",
         "supplementary_data_path": "s3://af-production-input/organizations/...",
-        "url": "https://annofab.com/organizations/...",
-        "etag": "...",
         "supplementary_data_type": "image",
         "supplementary_data_number": 1,
         "updated_datetime": "2021-01-04T22:02:36.33+09:00"
