@@ -104,7 +104,7 @@ class DeleteMetadataKeysOfTaskMain(CommandLineWithConfirm):
 
         success_count = 0
         if self.parallelism is not None:
-            assert not self.all_yes
+            assert self.all_yes
             partial_func = partial(
                 self.delete_metadata_keys_for_one_task_wrapper,
                 metadata_keys=metadata_keys,
@@ -134,18 +134,11 @@ class DeleteMetadataKeysOfTaskMain(CommandLineWithConfirm):
 class UpdateMetadataOfTask(CommandLine):
     @staticmethod
     def validate(args: argparse.Namespace) -> bool:
-        COMMON_MESSAGE = "annofabcli task update_metadata: error:"  # noqa: N806
+        COMMON_MESSAGE = "annofabcli task delete_metadata_key: error:"  # noqa: N806
 
         if args.parallelism is not None and not args.yes:
             print(  # noqa: T201
                 f"{COMMON_MESSAGE} argument --parallelism: '--parallelism' を指定するときは、 '--yes' が必須です。",
-                file=sys.stderr,
-            )
-            return False
-
-        if args.metadata is not None and args.task_id is None:
-            print(  # noqa: T201
-                f"{COMMON_MESSAGE} argument --task_id: '--metadata' を指定するときは、 '--task_id' が必須です。",
                 file=sys.stderr,
             )
             return False
@@ -175,7 +168,7 @@ def main(args: argparse.Namespace) -> None:
 def parse_args(parser: argparse.ArgumentParser) -> None:
     argument_parser = ArgumentParser(parser)
     argument_parser.add_project_id()
-    argument_parser.add_task_id(required=False)
+    argument_parser.add_task_id(required=True)
 
     parser.add_argument(
         "--metadata_key",
@@ -188,7 +181,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--parallelism",
         type=int,
-        help="使用するプロセス数（並列度）を指定してください。指定する場合は必ず ``--yes`` を指定してください。指定しない場合は、逐次的に処理します。",  # noqa: E501
+        help="使用するプロセス数（並列度）を指定してください。指定する場合は ``--yes`` を指定してください。指定しない場合は、逐次的に処理します。",
     )
 
     parser.set_defaults(subcommand_func=main)
