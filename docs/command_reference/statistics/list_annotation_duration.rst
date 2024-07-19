@@ -77,11 +77,11 @@ CSVを出力する場合は、``--type`` で列名をラベル( ``label`` )に�
 .. code-block::
 
     $ annofabcli statistics list_annotation_count --project_id prj1 \
-    --format csv --type label --output out_by_task_label.csv 
+    --format csv --type label --output out_by_label.csv 
 
-.. csv-table:: out_by_task_label.csv 
+.. csv-table:: out_by_label.csv 
     :header-rows: 1
-    :file: list_annotation_duration/out_by_task_label.csv 
+    :file: list_annotation_duration/out_by_label.csv 
 
 
 .. code-block::
