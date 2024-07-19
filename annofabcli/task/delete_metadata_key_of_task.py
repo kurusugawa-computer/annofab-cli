@@ -70,21 +70,28 @@ class DeleteMetadataKeysOfTaskMain(CommandLineWithConfirm):
         str_old_metadata = json.dumps(old_metadata)
         logger.debug(f"{logging_prefix} task_id='{task_id}', metadata='{str_old_metadata}'")
         new_metadata = copy.deepcopy(old_metadata)
+
+        deleted_keys = []
         for key in metadata_keys:
-            new_metadata.pop(key, None)
+            deleted_value = new_metadata.pop(key, None)
+            if deleted_value is not None:
+                deleted_keys.append(key)
 
         if new_metadata == old_metadata:
             # メタデータを更新する必要がないのでreturnします。
             return False
 
         if not self.all_yes and not self.confirm_processing(
-            f"task_id='{task_id}' :: metadata='{str_old_metadata}' からキー'{metadata_keys}'を削除しますか？"
+            f"task_id='{task_id}' :: metadata='{str_old_metadata}' からキー'{deleted_keys}'を削除しますか？"
         ):
             return False
 
         request_body = {task_id: new_metadata}
         self.service.api.patch_tasks_metadata(self.project_id, request_body=request_body)
-        logger.debug(f"{logging_prefix} task_id='{task_id}' :: タスクのメタデータからキー'{metadata_keys}'を削除しました。")
+        str_new_metadata = json.dumps(new_metadata)
+        logger.debug(
+            f"{logging_prefix} task_id='{task_id}' :: タスクのメタデータからキー'{deleted_keys}'を削除しました。 :: metadata='{str_new_metadata}'"
+        )
         return True
 
     def delete_metadata_keys_for_one_task_wrapper(self, tpl: tuple[int, str], metadata_keys: Collection[str]) -> bool:
@@ -175,7 +182,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         type=str,
         required=True,
         nargs="+",
-        help="削除したいメタデータのキーを複数指定します。\n" " ``file://`` を先頭に付けると、JSON形式のファイルを指定できます。",
+        help="削除したいメタデータのキーを複数指定します。\n``file://`` を先頭に付けると、JSON形式のファイルを指定できます。",
     )
 
     parser.add_argument(

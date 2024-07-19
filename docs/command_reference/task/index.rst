@@ -22,6 +22,7 @@ Available Commands
    complete
    copy
    delete
+   delete_metadata_key
    download
    list
    list_added_task_history
