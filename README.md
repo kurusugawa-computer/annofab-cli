@@ -43,25 +43,6 @@ https://pypi.org/project/annofabcli/
 zipの中にある`annofabcli.exe`が実行ファイルになります。
 
 
-## Dockerを利用する場合
-
-```
-$ git clone https://github.com/kurusugawa-computer/annofab-cli.git
-$ cd annofab-cli
-$ chmod u+x docker-build.sh
-$ ./docker-build.sh
-
-$ docker run -it annofab-cli --help
-
-# Annofabの認証情報を標準入力から指定する
-$ docker run -it annofab-cli project diff prj1 prj2
-Enter Annofab User ID: XXXXXX
-Enter Annofab Password: 
-
-# Annofabの認証情報を環境変数で指定する
-$ docker run -it -e ANNOFAB_USER_ID=XXXX -e ANNOFAB_PASSWORD=YYYYY annofab-cli project diff prj1 prj2
-```
-
 
 ## Annofabの認証情報の設定
 https://annofab-cli.readthedocs.io/ja/latest/user_guide/configurations.html 参照
