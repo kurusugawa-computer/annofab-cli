@@ -18,7 +18,7 @@ Examples
 基本的な使い方
 --------------------------
 
-以下のコマンドは、すべてのアノテーションの一覧を出力します。 ただし10,000件までしか出力できません。
+以下のコマンドは、すべてのアノテーションの一覧を出力します。 
 
 .. code-block::
 
@@ -113,7 +113,13 @@ CSV出力
 
     $ annofabcli annotation list --format csv --output out.csv
 
-`out.csv <https://github.com/kurusugawa-computer/annofab-cli/blob/main/docs/command_reference/annotation/list/out.csv>`_
+
+
+.. csv-table:: out.csv 
+    :header-rows: 1
+    :file: list/out.csv
+
+
 
 Usage Details
 =================================

@@ -111,7 +111,7 @@ def to_annotation_list_for_csv(annotation_list: List[SingleAnnotation]) -> List[
     def to_new_annotation(annotation: Dict[str, Any]) -> Dict[str, Any]:
         detail = annotation["detail"]
         for key, value in detail.items():
-            annotation[key] = value
+            annotation[f"detail.{key}"] = value
         return annotation
 
     return [to_new_annotation(a) for a in annotation_list]
