@@ -15,23 +15,15 @@ Examples
 基本的な使い方
 --------------------------------------
 
-``--task_id`` にメタデータを付与するタスクのtask_idを指定してください。
-
-.. code-block::
-    :caption: task_id.txt
-
-    task1
-    task2
-    ...
 
 
-``--metadata`` にタスクに設定するメタデータをJSON形式で指定してください。
+``--metadata`` にタスクに設定するメタデータをJSON形式で指定します。
 メタデータの値には文字列、数値、真偽値を指定できます。
 
 
 .. code-block::
 
-    $ annofabcli task update_metadata --project_id prj1 --task_id file://task_id.txt \
+    $ annofabcli task update_metadata --project_id prj1 --task_id task1 task2 \
      --metadata '{"priority":2, "rquired":true, "category":"202010"}'
 
 
@@ -40,28 +32,71 @@ Examples
 デフォルトでは ``--metadata`` に指定したキーのみ更新されます。メタデータ自体を上書きする場合は ``--overwrite`` を指定してください。
 
 
+
+.. note::
+
+    タスクのメタデータは ``task list`` コマンドで確認できます。
+    ``task list`` の出力結果は情報量が多いので、以下のようにjqコマンドを使って情報を絞り込むと、見やすくなります。
+    
+    .. code-block::
+        
+        $ annofabcli task list --project_id prj1 --task_id task1 --format json |
+            jq '.[] | {task_id,metadata}'
+        [
+            {
+                "task_id": "task1",
+                "metadata": {
+                    "category": "202010",
+                    "priority": 2,
+                    "rquired": true
+                }
+            }
+        ]  
+
+    
+
+
+
 .. code-block::
 
     $ annofabcli task update_metadata --project_id prj1 --task_id task1 \
      --metadata '{"category":"202010"}'
 
-    $ annofabcli task list --project_id prj1 --task_id task1 \
-     --format json --query "[0].metadata"
-    {"category": "202010"}
-
+    $ annofabcli task list --project_id prj1 --task_id task1 --format json | \
+    jq '.[].metadata'
+    {
+        "task_id": "task1",
+        "metadata": {
+            "category": "202010"
+        }
+    }
+    
     # メタデータの一部のキーのみ更新する
     $ annofabcli task update_metadata --project_id prj1 --task_id task1 \
      --metadata '{"country":"Japan"}'
-    $ annofabcli task list --project_id prj1 --task_id task1 \
-     --format json --query "[0].metadata"
-    {"category": "202010", "country":"Japan"}
+    
+    $ annofabcli task list --project_id prj1 --task_id task1 --format json | \
+    jq '.[].metadata'
+    {
+        "task_id": "task1",
+        "metadata": {
+            "category": "202010",
+                "country":"Japan"
+        }
+    }
 
     # メタデータ自体を上書きする
     $ annofabcli task update_metadata --project_id prj1 --task_id task1 \
      --metadata '{"weather":"sunny"}' --overwrite
-    $ annofabcli task list --project_id prj1 --task_id task1 \
-     --format json --query "[0].metadata"
-    {"weather":"sunny"}
+     
+    $ annofabcli task list --project_id prj1 --task_id task1 --format json | \
+    jq '.[].metadata'
+    {
+        "task_id": "task1",
+        "metadata": {
+            "weather": "sunny",
+        }
+    }
 
 
 
@@ -102,6 +137,27 @@ Examples
     $ annofabcli task update_metadata --project_id prj1 \
      --metadata_by_task_id file://all_metadata.json
 
+
+``--metadata_by_task_id`` に指定するJSONのフォーマットは、以下のjqコマンドで生成できます。
+プロジェクト ``prj1`` と ``prj2`` で同じタスクを管理している状況で、プロジェクト ``prj1`` のタスクのメタデータをプロジェクト ``prj2`` にコピーするときに便利です。
+
+
+
+
+
+.. code-block::
+
+    $ annofabcli task list --project_id prj1 --format json | \
+     jq  'map({(.task_id):.metadata}) | add' > tmp.json
+    
+    $ cat tmp.json
+    {
+      "task1": {"priority":1},
+      "task2": {"priority":2}
+    }   
+
+    $ annofabcli task update_metadata --project_id prj2 \
+     --metadata_by_task_id file://tmp.json
 
 
 並列処理
