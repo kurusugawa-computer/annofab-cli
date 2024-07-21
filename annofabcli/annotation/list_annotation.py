@@ -27,6 +27,22 @@ from annofabcli.common.visualize import AddProps
 logger = logging.getLogger(__name__)
 
 
+def remove_unnecessary_keys_from_annotation(annotation: dict[str, Any]) -> None:
+    """
+    アノテーション情報から不要なキーを取り除きます。
+    システム内部用のプロパティなど、annofab-cliを使う上で不要な情報を削除します。
+
+    Args:
+        annotation: (IN/OUT) 入力データ情報。引数が変更されます。
+    """
+    body = annotation["detail"]["body"]
+    if body["_type"] == "Outer":
+        # 認証済一時URLはファイルなどに保存すると、セキュリティ的によくないので取り除く
+        # CLIでetagを出力するユースケースないと思うので、etagも取り除く
+        body.pop("url", None)
+        body.pop("etag", None)
+
+
 class ListAnnotationMain:
     def __init__(self, service: annofabapi.Resource, project_id: str) -> None:
         self.service = service
@@ -51,7 +67,7 @@ class ListAnnotationMain:
         if input_data_id is not None:
             dict_query.update({"input_data_id": input_data_id, "exact_match_input_data_id": True})
 
-        annotation_list = self.service.wrapper.get_all_annotation_list(project_id, query_params={"query": dict_query})
+        annotation_list = self.service.wrapper.get_all_annotation_list(project_id, query_params={"query": dict_query, "v": "2"})
         return [self.visualize.add_properties_to_single_annotation(annotation) for annotation in annotation_list]
 
     def get_all_annotation_list(
@@ -160,7 +176,7 @@ class ListAnnotation(CommandLine):
         main_obj = ListAnnotationMain(self.service, project_id=project_id)
 
         if args.annotation_query is not None:
-            annotation_specs, _ = self.service.api.get_annotation_specs(project_id, query_params={"v": "2"})
+            annotation_specs, _ = self.service.api.get_annotation_specs(project_id, query_params={"v": "3"})
             try:
                 dict_annotation_query = get_json_from_args(args.annotation_query)
                 annotation_query_for_cli = AnnotationQueryForCLI.from_dict(dict_annotation_query)
@@ -182,18 +198,19 @@ class ListAnnotation(CommandLine):
             task_id_list=task_id_list,
             input_data_id_list=input_data_id_list,
         )
-        logger.debug(f"アノテーション一覧の件数: {len(annotation_list)}")
+        # 不要なキーを取り除く
+        for annotation in annotation_list:
+            remove_unnecessary_keys_from_annotation(annotation)
 
-        if len(annotation_list) > 0:
-            if self.str_format == FormatArgument.CSV.value:
-                annotation_list_for_csv = to_annotation_list_for_csv(annotation_list)
-                df = pandas.DataFrame(annotation_list_for_csv)
-                columns = self.drop_columns(get_columns_with_priority(df, prior_columns=self.PRIOR_COLUMNS))
-                self.print_csv(df[columns])
-            else:
-                self.print_according_to_format(annotation_list)
+        logger.debug(f"アノテーション {len(annotation_list)} 件を出力します。")
+
+        if self.str_format == FormatArgument.CSV.value:
+            annotation_list_for_csv = to_annotation_list_for_csv(annotation_list)
+            df = pandas.DataFrame(annotation_list_for_csv)
+            columns = self.drop_columns(get_columns_with_priority(df, prior_columns=self.PRIOR_COLUMNS))
+            self.print_csv(df[columns])
         else:
-            logger.info("アノテーション一覧の件数が0件のため、出力しません。")
+            self.print_according_to_format(annotation_list)
 
 
 def main(args: argparse.Namespace) -> None:

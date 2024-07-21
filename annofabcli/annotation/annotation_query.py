@@ -145,7 +145,7 @@ def convert_attributes_from_cli_to_api(
 
     Args:
         attributes: CLI用の属性
-        annotation_specs: アノテーション仕様
+        annotation_specs: アノテーション仕様(V2,V3版)
         label_id: 指定したlabel_idを持つラベル配下の属性から、属性情報を探します。Noneの場合は、すべての属性から属性情報を探します。
 
     Raises:
@@ -288,7 +288,7 @@ class AnnotationQueryForCLI(DataClassJsonMixin):
         WebAPIのquery_params( https://annofab.com/docs/api/#section/AnnotationQuery )に渡すdictに変換する。
 
         Args:
-            annotation_specs: アノテーション仕様（V2版）
+            annotation_specs: アノテーション仕様（V2,V3版）
 
         Returns:
             dict[str,Any]: WebAPIのquery_paramsに渡すdict
