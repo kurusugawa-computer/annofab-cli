@@ -87,11 +87,11 @@ class ListAnnotationMain:
                 try:
                     annotation_list = self.get_annotation_list(project_id, annotation_query, task_id=task_id)
                 except Exception:
-                    logger.warning(f"タスク'{task_id}'のアノテーションの一覧の取得に失敗しました。", exc_info=True)
+                    logger.warning(f"タスク(task_id='{task_id}')のアノテーションの一覧の取得に失敗しました。", exc_info=True)
                     continue
-                logger.debug(f"タスク {task_id} のアノテーション一覧の件数: {len(annotation_list)}")
+                logger.debug(f"タスク(task_id='{task_id}')のアノテーション一覧の件数: {len(annotation_list)}")
                 if len(annotation_list) == UPPER_BOUND:
-                    logger.warning(f"アノテーション一覧は{UPPER_BOUND}件で打ち切られている可能性があります。")
+                    logger.warning(f"タスク(task_id='{task_id}')のアノテーション一覧は{UPPER_BOUND}件で打ち切られている可能性があります。")
                 all_annotation_list.extend(annotation_list)
             return all_annotation_list
         elif input_data_id_list is not None:
@@ -99,12 +99,12 @@ class ListAnnotationMain:
                 try:
                     annotation_list = self.get_annotation_list(project_id, annotation_query, input_data_id=input_data_id)
                 except Exception:
-                    logger.warning(f"入力データ'{input_data_id}'のアノテーションの一覧の取得に失敗しました。", exc_info=True)
+                    logger.warning(f"入力データ(input_data_id='{input_data_id}')のアノテーションの一覧の取得に失敗しました。", exc_info=True)
                     continue
 
-                logger.debug(f"入力データ'{input_data_id}'のアノテーション一覧の件数: {len(annotation_list)}")
+                logger.debug(f"入力データ(input_data_id='{input_data_id}')のアノテーション一覧の件数: {len(annotation_list)}")
                 if len(annotation_list) == UPPER_BOUND:
-                    logger.warning(f"アノテーション一覧は{UPPER_BOUND}件で打ち切られている可能性があります。")
+                    logger.warning(f"入力データ(input_data_id='{input_data_id}')のアノテーション一覧は{UPPER_BOUND}件で打ち切られている可能性があります。")
                 all_annotation_list.extend(annotation_list)
             return all_annotation_list
         else:
@@ -128,6 +128,7 @@ def to_annotation_list_for_csv(annotation_list: List[SingleAnnotation]) -> List[
         detail = annotation["detail"]
         for key, value in detail.items():
             annotation[f"detail.{key}"] = value
+        annotation.pop("detail", None)
         return annotation
 
     return [to_new_annotation(a) for a in annotation_list]
@@ -140,30 +141,19 @@ class ListAnnotation(CommandLine):
         "project_id",
         "task_id",
         "input_data_id",
-        "annotation_id",
-        "label_id",
-        "label_name_en",
-        "data_holding_type",
-        "created_datetime",
         "updated_datetime",
-        "account_id",
-        "user_id",
-        "username",
-        "data",
+        "detail.annotation_id",
+        "detail.label_id",
+        "detail.label_name_en",
+        "detail.data_holding_type",
+        "detail.account_id",
+        "detail.user_id",
+        "detail.username",
+        "detail.created_datetime",
+        "detail.updated_datetime",
+        "detail.body",
+        "detail.additional_data_list",
     ]
-
-    DROPPED_COLUMNS = [  # noqa: RUF012
-        "detail",
-        "additional_data_list",
-        "etag",
-        "url",
-    ]
-
-    def drop_columns(self, columns: List[str]) -> List[str]:
-        for c in self.DROPPED_COLUMNS:
-            if c in columns:
-                columns.remove(c)
-        return columns
 
     def __init__(self, service: annofabapi.Resource, facade: AnnofabApiFacade, args: argparse.Namespace) -> None:
         super().__init__(service, facade, args)
@@ -207,8 +197,13 @@ class ListAnnotation(CommandLine):
         if self.str_format == FormatArgument.CSV.value:
             annotation_list_for_csv = to_annotation_list_for_csv(annotation_list)
             df = pandas.DataFrame(annotation_list_for_csv)
-            columns = self.drop_columns(get_columns_with_priority(df, prior_columns=self.PRIOR_COLUMNS))
-            self.print_csv(df[columns])
+            columns = get_columns_with_priority(df, prior_columns=self.PRIOR_COLUMNS)
+            if len(df) == 0:
+                # 列を作成するために、何らかの値を設定する
+                df[self.PRIOR_COLUMNS] = None
+            else:
+                df = df[columns]
+            self.print_csv(df)
         else:
             self.print_according_to_format(annotation_list)
 

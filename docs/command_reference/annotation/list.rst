@@ -27,8 +27,10 @@ Examples
 
 .. warning::
     
-    WebAPIの都合上、集計対象のアノテーションは10,000個までしか検索できません。
-
+    WebAPIの都合上、1回のWebAPI( ``getAnnotationList`` API)のアクセスで取得できるアノテーションは最大10,000件です。
+    したがって、 ``--task_id`` または ``--input_data_id`` を指定しない場合は、10,000件までしかアノテーション情報は出力されません。
+    ``--task_id`` または ``--input_data_id`` を指定した場合は、task_idまたはinput_data_idごとにWebAPIにアクセスするため、10,000件以上のアノテーション情報が出力されることがあります。
+    
 
 ``--annotation_query`` で、アノテーションを検索するする条件を指定することができます。
 ``--annotation_query`` のサンプルは、`Command line options <../../user_guide/command_line_options.html#annotation-query-aq>`_ を参照してください。
@@ -70,40 +72,42 @@ JSON出力
     :caption: out.json
 
     [
-        {
-            "project_id": "prj1",
-            "task_id": "task1",
-            "input_data_id": "input1",
-            "detail": {
-                "annotation_id": "annotation1",
-                "account_id": "account1",
-                "label_id": "label1",
-                "data_holding_type": "inner",
-                "data": {
-                    "left_top": {
-                    "x": 10,
-                    "y": 7
-                    },
-                    "right_bottom": {
-                    "x": 36,
-                    "y": 36
-                    },
-                    "_type": "BoundingBox"
+    {
+        "project_id": "prj1",
+        "task_id": "task1",
+        "input_data_id": "input1",
+        "detail": {
+        "annotation_id": "anno1",
+        "account_id": "account1",
+        "label_id": "label1",
+        "body": {
+            "data": {
+            "points": [
+                {
+                "x": 663,
+                "y": 376
                 },
-                "etag": null,
-                "url": null,
-                "additional_data_list": [],
-                "created_datetime": "2019-08-22T12:04:19.256+09:00",
-                "updated_datetime": "2019-08-22T14:12:45.555+09:00",
-                "label_name_en": "car",
-                "user_id": "user1",
-                "username": "user1"
+                {
+                "x": 664,
+                "y": 432
+                },
+            ],
+            "_type": "Points"
             },
-            "updated_datetime": "2019-08-22T14:14:11.084+09:00"
+            "_type": "Inner"
         },
-
-        ...
+        "additional_data_list": [],
+        "created_datetime": "2024-07-11T15:27:29.436+09:00",
+        "updated_datetime": "2024-07-11T15:27:29.436+09:00",
+        "label_name_en": "human",
+        "user_id": "alice",
+        "username": "ALICE"
+        },
+        "updated_datetime": "2024-07-12T11:39:57.478+09:00"
+    },
+    ...
     ]
+
 
 
 CSV出力

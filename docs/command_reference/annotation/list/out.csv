@@ -1,3 +1,2 @@
 project_id,task_id,input_data_id,detail.annotation_id,detail.abel_id,detail.label_name_en,detail.data_holding_type,detail.created_datetime,detail.updated_datetime,detail.account_id,detail.user_id,detail.username,detail.data
-prj1,task1,input1,annotation1,label1,car,inner,2019-08-22T12:04:19.256+09:00,2019-08-22T14:12:45.555+09:00,account1,user1,user1,"{'left_top': {'x': 10, 'y': 7}, 'right_bottom': {'x': 36, 'y': 36}, '_type': 'BoundingBox'}"
-prj1,task1,input1,annotation2,label1,car,inner,2020-09-01T03:45:24.786+09:00,2020-09-01T03:45:24.786+09:00,account1,user1,user1,"{'left_top': {'x': 10, 'y': 7}, 'right_bottom': {'x': 36, 'y': 36}, '_type': 'BoundingBox'}"
+prj1,task1,input1,annotation1,label1,car,inner,2019-08-22T12:04:19.256+09:00,2019-08-22T14:12:45.555+09:00,account1,user1,user1,"{'data': {'points': [{'x': 663, 'y': 376}, {'x': 664, 'y': 432}], '_type': 'Points'}, '_type': 'Inner'}"
