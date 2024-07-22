@@ -40,28 +40,60 @@ Examples
 デフォルトでは ``--metadata`` に指定したキーのみ更新されます。メタデータ自体を上書きする場合は ``--overwrite`` を指定してください。
 
 
+
+
+
+.. note::
+
+    入力データのメタデータは ``input_data list`` コマンドで確認できます。
+    ``input_data list`` の出力結果は情報量が多いので、以下のようにjqコマンドを使って情報を絞り込むと、見やすくなります。
+    
+    .. code-block::
+        
+        $ annofabcli input_data list --project_id prj1 --input_data_id input1 --format json |
+            jq '[.[] | {input_data,metadata}]'
+        [
+            {
+                "input_data_id": "input1",
+                "metadata": {
+                    "category": "202010"
+                }
+            }
+        ]  
+
+
+
 .. code-block::
 
     $ annofabcli input_data update_metadata --project_id prj1 --input_data_id input1 \
      --metadata '{"category":"202010"}'
 
     $ annofabcli input_data list --project_id prj1 --input_data_id input1 \
-     --format json --query "[0].metadata"
-    {"category": "202010"}
+     --format json | jq '.[].metadata'
+    {
+        "category": "202010"
+    }
 
     # メタデータの一部のキーのみ更新する
     $ annofabcli input_data update_metadata --project_id prj1 --input_data_id input1 \
      --metadata '{"country":"Japan"}'
+    
     $ annofabcli input_data list --project_id prj1 --input_data_id input1 \
-     --format json --query "[0].metadata"
-    {"category": "202010", "country":"Japan"}
+     --format json | jq '.[].metadata'
+    {
+        "category": "202010",
+        "country":"Japan"
+    }
 
     # メタデータ自体を上書きする
     $ annofabcli input_data update_metadata --project_id prj1 --input_data_id input1 \
      --metadata '{"weather":"sunny"}' --overwrite
+    
     $ annofabcli input_data list --project_id prj1 --input_data_id input1 \
-     --format json --query "[0].metadata"
-    {"weather":"sunny"}
+     --format json | jq '.[].metadata'
+    {
+        "weather":"sunny"
+    }
 
 
 
