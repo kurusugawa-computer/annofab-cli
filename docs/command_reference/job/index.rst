@@ -18,7 +18,6 @@ Available Commands
    delete
    list
    list_last
-   list_task_creation_history
    wait
 
 Usage Details

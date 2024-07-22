@@ -69,7 +69,13 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     job_choices = [e.value for e in ProjectJobType]
     argument_parser.add_project_id()
 
-    parser.add_argument("--job_type", type=str, choices=job_choices, required=True, help="ジョブタイプを指定します。")
+    parser.add_argument(
+        "--job_type",
+        type=str,
+        choices=job_choices,
+        required=True,
+        help="ジョブタイプを指定します。指定できる値については https://annofab-cli.readthedocs.io/ja/latest/user_guide/command_line_options.html#job-type を参照してください。",  # noqa: E501
+    )
 
     argument_parser.add_format(choices=[FormatArgument.CSV, FormatArgument.JSON, FormatArgument.PRETTY_JSON], default=FormatArgument.CSV)
     argument_parser.add_output()
