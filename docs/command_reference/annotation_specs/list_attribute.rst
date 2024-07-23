@@ -64,11 +64,11 @@ JSON出力
     ]
 
 
-* ``attribute_id`` : 属性ID。WebAPIで利用する ``additional_data_definition_id`` または ``definition_id`` に対応しています。
+* ``attribute_id`` : 属性ID。WebAPIの ``additional_data_definition_id`` または ``definition_id`` に対応しています。
 * ``attribute_name_en`` : 属性名（英語）。
 * ``attribute_name_ja`` : 属性名（日本語）。
 * ``attribute_name_vi`` : 属性名（ベトナム語）。
-* ``type`` : 属性の種類。WebAPIの ``AdditionalDataDefinitionType`` に対応しています。
+* ``type`` : 属性の種類。WebAPIの ``AdditionalDataDefinitionType`` に対応しています。 ``type`` の値は以下のいずれかです。
 
   * ``flag`` : チェックボックス
   * ``integer`` : 整数
