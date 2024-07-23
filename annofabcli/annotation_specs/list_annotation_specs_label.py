@@ -276,10 +276,8 @@ def main(args: argparse.Namespace) -> None:
 def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     subcommand_name = "list_label"
 
-    subcommand_help = "アノテーション仕様のラベル情報を出力する"
+    subcommand_help = "アノテーション仕様のラベル情報を出力します。"
 
-    description = "アノテーション仕様のラベル情報を出力する"
-
-    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
+    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help)
     parse_args(parser)
     return parser

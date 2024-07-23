@@ -199,7 +199,7 @@ def main(args: argparse.Namespace) -> None:
 def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     subcommand_name = "list_choice"
 
-    subcommand_help = "アノテーション仕様のドロップダウンまたはラジオボタン属性の選択肢情報を出力する"
+    subcommand_help = "アノテーション仕様のドロップダウンまたはラジオボタン属性の選択肢情報を出力します。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help)
     parse_args(parser)
