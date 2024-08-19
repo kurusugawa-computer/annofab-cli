@@ -178,7 +178,7 @@ class AddingAdditionalInfoToTask:
                     f"{column_prefix}_user_id": None,
                     f"{column_prefix}_username": None,
                     f"{column_prefix}_started_datetime": None,
-                    f"{column_prefix}_worktime_hour": None,
+                    f"{column_prefix}_worktime_hour": 0,  # 作業時間はNoneでなく0を設定する。
                 }
             )
             return task
