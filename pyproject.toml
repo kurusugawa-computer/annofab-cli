@@ -49,13 +49,13 @@ typing-extensions="^4.5"
 # pandsaのCopy-on-Writeの警告を出すために、pandas2.2以上を利用する
 # https://pandas.pydata.org/docs/user_guide/copy_on_write.html
 pandas = [
-    {version=">=2.2", python=">=3.11"}
+    {version=">=2.2", python=">=3.12"}
 ]
 
 # pandas 2.2以上を利用する場合、numpyのバージョンを指定しないとpoetryが依存解決できないので、panda2.2が要求するnumpyのバージョンを指定する
-# 補足: numpy1.26.0はPython3.8に対応していない。したがって、"python>=3.11"という条件を指定して、numpy1.26.0を指定する必要がある
+# 補足: numpy1.26.0はPython3.8に対応していない。したがって、"python>=3.12"という条件を指定して、numpy1.26.0以上を指定する必要がある
 numpy = [
-    {version=">=1.26.0", python=">=3.11"}
+    {version=">=1.26.0,<2.1", python=">=3.12"}
 ]
 
 
