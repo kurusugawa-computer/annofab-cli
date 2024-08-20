@@ -27,7 +27,7 @@ pyquery = "*"
 isodate = "*"
 annofabapi = ">=0.74.0"
 python-datauri = "*"
-
+numpy = "*"
 pandas = "^2"
 
 # Python3.8以下で、bokehのバージョンを3.0に固定している理由
@@ -55,7 +55,7 @@ pandas = [
 # pandas 2.2以上を利用する場合、numpyのバージョンを指定しないとpoetryが依存解決できないので、panda2.2が要求するnumpyのバージョンを指定する
 # 補足: numpy1.26.0はPython3.8に対応していない。したがって、"python>=3.12"という条件を指定して、numpy1.26.0以上を指定する必要がある
 numpy = [
-    {version=">=1.26.0,<2.1", python=">=3.12"}
+    {version=">=1.26.0", python=">=3.12"}
 ]
 
 
