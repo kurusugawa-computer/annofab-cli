@@ -26,7 +26,6 @@ jobs:
           poetry install --only main,publish
 
       - name: Create executable file with pyinstaller and zip
-        shell: powershell
         run: |
           poetry run pyinstaller annofabcli\__main__.py  --name annofabcli --add-data "annofabcli/data/logging.yaml;annofabcli/data"
           Compress-Archive -Path dist\annofabcli\  -DestinationPath dist\annofabcli-windows.zip
