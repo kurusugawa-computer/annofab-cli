@@ -9,6 +9,12 @@ on:
 permissions:
   contents: read
 
+env:
+  # 認証情報を確認するテストを動作させるために、適当な値を認証情報として設定する
+  ANNOFAB_USER_ID: foo
+  ANNOFAB_PASSWORD: bar
+
+
 jobs:
   test:
     runs-on: ubuntu-latest

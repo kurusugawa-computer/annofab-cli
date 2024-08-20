@@ -68,7 +68,7 @@ pytest-cov = "*"
 
 [tool.poetry.group.linter.dependencies]
 # pythonバージョンを指定している理由：Python3.12（開発環境）でしかlintを実行していないため
-ruff = {version="^0.5", python=">=3.12"}
+ruff = {version="^0.6", python=">=3.12"}
 mypy = {version="^1", python=">=3.12"}
 pylint = {version="^3", python=">=3.12"}
 
@@ -102,7 +102,7 @@ optional = true
 # GitHubでリリース時に、 GitHub Actionでannofabcliのexeを公開している
 # pythonバージョンを指定している理由: pyinstaller5.9はPython3.12未満までしかサポートしていない。
 # pythonバージョンを指定しないと、annofabcli自体のpython requirementが3.12未満になってしまうため。
-pyinstaller = { version = "^5.9", python = "<3.12" }
+pyinstaller = { version = "^6.10", python = "==3.12" }
 
 [tool.poetry.scripts]
 annofabcli = "annofabcli.__main__:main"
