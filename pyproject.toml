@@ -27,7 +27,7 @@ pyquery = "*"
 isodate = "*"
 annofabapi = ">=0.74.0"
 python-datauri = "*"
-
+numpy = "*"
 pandas = "^2"
 
 # Python3.8以下で、bokehのバージョンを3.0に固定している理由
@@ -49,13 +49,13 @@ typing-extensions="^4.5"
 # pandsaのCopy-on-Writeの警告を出すために、pandas2.2以上を利用する
 # https://pandas.pydata.org/docs/user_guide/copy_on_write.html
 pandas = [
-    {version=">=2.2", python=">=3.11"}
+    {version=">=2.2", python=">=3.12"}
 ]
 
 # pandas 2.2以上を利用する場合、numpyのバージョンを指定しないとpoetryが依存解決できないので、panda2.2が要求するnumpyのバージョンを指定する
-# 補足: numpy1.26.0はPython3.8に対応していない。したがって、"python>=3.11"という条件を指定して、numpy1.26.0を指定する必要がある
+# 補足: numpy1.26.0はPython3.8に対応していない。したがって、"python>=3.12"という条件を指定して、numpy1.26.0以上を指定する必要がある
 numpy = [
-    {version=">=1.26.0", python=">=3.11"}
+    {version=">=1.26.0", python=">=3.12"}
 ]
 
 
@@ -68,7 +68,7 @@ pytest-cov = "*"
 
 [tool.poetry.group.linter.dependencies]
 # pythonバージョンを指定している理由：Python3.12（開発環境）でしかlintを実行していないため
-ruff = {version="^0.5", python=">=3.12"}
+ruff = {version="^0.6", python=">=3.12"}
 mypy = {version="^1", python=">=3.12"}
 pylint = {version="^3", python=">=3.12"}
 
@@ -102,7 +102,7 @@ optional = true
 # GitHubでリリース時に、 GitHub Actionでannofabcliのexeを公開している
 # pythonバージョンを指定している理由: pyinstaller5.9はPython3.12未満までしかサポートしていない。
 # pythonバージョンを指定しないと、annofabcli自体のpython requirementが3.12未満になってしまうため。
-pyinstaller = { version = "^5.9", python = "<3.12" }
+pyinstaller = { version = "^6.10", python = "==3.12" }
 
 [tool.poetry.scripts]
 annofabcli = "annofabcli.__main__:main"
@@ -142,7 +142,6 @@ ignore = [
     "D", # pydocstyle, Docstringを中途半端にしか書いていないので、除外する
     "C90", # mccabe
     "BLE", # flake8-blind-except
-    # "TRY", # tryceratops
     "S", # flake8-bandit
     "EM",#flake8-errmsg
     "EXE", # flake8-executable
@@ -198,7 +197,6 @@ max-args = 10
 
 [tool.poetry-dynamic-versioning]
 enable = true
-format = "{base}"
 
 [build-system]
 requires = ["poetry-core>=1.0.0", "poetry-dynamic-versioning"]
