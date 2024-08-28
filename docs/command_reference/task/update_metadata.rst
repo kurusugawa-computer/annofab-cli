@@ -24,7 +24,7 @@ Examples
 .. code-block::
 
     $ annofabcli task update_metadata --project_id prj1 --task_id task1 task2 \
-     --metadata '{"priority":2, "rquired":true, "category":"202010"}'
+     --metadata '{"priority":2, "required":true, "category":"202010"}'
 
 
 
@@ -48,7 +48,7 @@ Examples
                 "metadata": {
                     "category": "202010",
                     "priority": 2,
-                    "rquired": true
+                    "required": true
                 }
             }
         ]  
@@ -84,7 +84,7 @@ Examples
             "task_id": "task1",
             "metadata": {
                 "category": "202010",
-                    "country":"Japan"
+                "country":"Japan"
             }
         }
      ]
@@ -99,7 +99,7 @@ Examples
     {
         "task_id": "task1",
         "metadata": {
-            "weather": "sunny",
+            "weather": "sunny"
         }
     }
     ]
