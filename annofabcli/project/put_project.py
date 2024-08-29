@@ -12,6 +12,7 @@ from annofabapi.plugin import EditorPluginId, ExtendSpecsPluginId
 
 import annofabcli
 from annofabcli.common.cli import (
+    COMMAND_LINE_ERROR_STATUS_CODE,
     CommandLine,
     build_annofabapi_resource_and_login,
     get_json_from_args,
@@ -64,7 +65,7 @@ class PutProject(CommandLine):
         }
         new_project, _ = self.service.api.put_project(new_project_id, request_body=request_body)
         logger.info(
-            f"project_id='{new_project['project_id']}'のプロジェクトを作成しました。 :: "
+            f"'{organization}'組織に、project_id='{new_project['project_id']}'のプロジェクトを作成しました。 :: "
             f"title='{new_project['title']}', input_data_type='{new_project['input_data_type']}'"
         )
 
@@ -83,6 +84,8 @@ class PutProject(CommandLine):
 
     def main(self) -> None:
         args = self.args
+        if not self.validate(args):
+            sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
         self.put_project(
             args.organization,
@@ -134,8 +137,8 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--configuration",
         type=str,
-        help="プロジェクトの設定情報をJSON形式で指定します。"
-        "JSON構造については https://annofab.com/docs/api/#operation/putProject のリクエストボディを参照してください。\n"
+        help="プロジェクトの設定情報。JSON形式で指定します。"
+        "JSONの構造については https://annofab.com/docs/api/#operation/putProject のリクエストボディを参照してください。\n"
         "``file://`` を先頭に付けると、JSON形式のファイルを指定できます。",
     )
 
