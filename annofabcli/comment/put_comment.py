@@ -110,13 +110,13 @@ class PutCommentMain(CommandLineWithConfirm):
         try:
             if task["account_id"] != self.service.api.account_id:
                 self.service.wrapper.change_task_operator(project_id, task_id, self.service.api.account_id)
-                logger.debug(f"{task_id}: 担当者を自分自身に変更しました。")
+                logger.debug(f"task_id='{task_id}' :: 担当者を自分自身に変更しました。")
 
             changed_task = self.service.wrapper.change_task_status_to_working(project_id, task_id)
             return changed_task  # noqa: TRY300
 
         except requests.HTTPError:
-            logger.warning(f"{task_id}: 担当者の変更、または作業中状態への変更に失敗しました。", exc_info=True)
+            logger.warning(f"task_id='{task_id}' :: 担当者の変更、または作業中状態への変更に失敗しました。", exc_info=True)
             raise
 
     def _can_add_comment(
@@ -127,12 +127,12 @@ class PutCommentMain(CommandLineWithConfirm):
 
         if self.comment_type == CommentType.INSPECTION:  # noqa: SIM102
             if task["phase"] == TaskPhase.ANNOTATION.value:
-                logger.warning(f"task_id='{task_id}': 教師付フェーズなので、検査コメントを付与できません。")
+                logger.warning(f"task_id='{task_id}' :: フェーズが検査/受入でないため検査コメントを付与できません。 :: task_phase='{task['phase']}'")
                 return False
 
         if task["status"] not in [TaskStatus.NOT_STARTED.value, TaskStatus.WORKING.value, TaskStatus.BREAK.value]:
             logger.warning(
-                f"task_id='{task_id}' : タスクの状態が未着手,作業中,休憩中 以外の状態なので、コメントを付与できません。（task_status='{task['status']}'）"  # noqa: E501
+                f"task_id='{task_id}' :: タスクの状態が未着手,作業中,休憩中 以外の状態なので、コメントを付与できません。 :: task_status='{task['status']}'"  # noqa: E501
             )
             return False
         return True
@@ -161,7 +161,7 @@ class PutCommentMain(CommandLineWithConfirm):
             logger.warning(f"{logging_prefix} : task_id='{task_id}' のタスクは存在しないので、スキップします。")
             return 0
 
-        logger.debug(f"{logging_prefix} : task_id = {task['task_id']}, status = {task['status']}, phase = {task['phase']}, ")
+        logger.debug(f"{logging_prefix} : task_id='{task['task_id']}', status='{task['status']}', phase='{task['phase']}'")
 
         if not self._can_add_comment(
             task=task,
@@ -184,7 +184,9 @@ class PutCommentMain(CommandLineWithConfirm):
                     request_body = self._create_request_body(task=changed_task, input_data_id=input_data_id, comments=comments)
                     self.service.api.batch_update_comments(self.project_id, task_id, input_data_id, request_body=request_body)
                     added_comments_count += 1
-                    logger.debug(f"{logging_prefix} : task_id={task_id}, input_data_id={input_data_id}: {len(comments)}件のコメントを付与しました。")
+                    logger.debug(
+                        f"{logging_prefix} : task_id='{task_id}', input_data_id='{input_data_id}' :: {len(comments)}件のコメントを付与しました。"
+                    )
             except Exception:  # pylint: disable=broad-except
                 logger.warning(
                     f"{logging_prefix} : task_id={task_id}, input_data_id={input_data_id}: コメントの付与に失敗しました。",
@@ -195,7 +197,7 @@ class PutCommentMain(CommandLineWithConfirm):
         # 担当者が変えている場合は、元に戻す
         if task["account_id"] != changed_task["account_id"]:
             self.service.wrapper.change_task_operator(self.project_id, task_id, task["account_id"])
-            logger.debug(f"{task_id}: 担当者を元のユーザ( account_id={task['account_id']}）に戻しました。")
+            logger.debug(f"task_id='{task_id}' :: 担当者を元のユーザ( account_id='{task['account_id']}'）に戻しました。")
 
         return added_comments_count
 
@@ -234,7 +236,7 @@ class PutCommentMain(CommandLineWithConfirm):
                     )
                     added_comments_count += result
                 except Exception:  # pylint: disable=broad-except
-                    logger.warning(f"task_id={task_id}: コメントの付与に失敗しました。", exc_info=True)
+                    logger.warning(f"task_id='{task_id}' :: コメントの付与に失敗しました。", exc_info=True)
                     continue
 
         logger.info(f"{added_comments_count} / {comments_count} 件の入力データに{self.comment_type_name}を付与しました。")
