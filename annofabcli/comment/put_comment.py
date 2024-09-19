@@ -15,6 +15,7 @@ from dataclasses_json import DataClassJsonMixin
 from annofabcli.comment.utils import get_comment_type_name
 from annofabcli.common.cli import CommandLineWithConfirm
 from annofabcli.common.facade import AnnofabApiFacade
+from annofabcli.common.type_util import assert_noreturn
 
 logger = logging.getLogger(__name__)
 
@@ -151,7 +152,7 @@ class PutCommentMain(CommandLineWithConfirm):
             task_index: タスクの連番
 
         Returns:
-            付与したコメントの数
+            コメントを付与した入力データの個数
         """
         logging_prefix = f"{task_index+1} 件目" if task_index is not None else ""
 
@@ -179,21 +180,22 @@ class PutCommentMain(CommandLineWithConfirm):
                 continue
             try:
                 # コメントを付与する
-                request_body = self._create_request_body(task=changed_task, input_data_id=input_data_id, comments=comments)
-                self.service.api.batch_update_comments(self.project_id, task_id, input_data_id, request_body=request_body)
-                added_comments_count += 1
-                logger.debug(f"{logging_prefix} : task_id={task_id}, input_data_id={input_data_id}: {len(comments)}件のコメントを付与しました。")
+                if len(comments) > 0:
+                    request_body = self._create_request_body(task=changed_task, input_data_id=input_data_id, comments=comments)
+                    self.service.api.batch_update_comments(self.project_id, task_id, input_data_id, request_body=request_body)
+                    added_comments_count += 1
+                    logger.debug(f"{logging_prefix} : task_id={task_id}, input_data_id={input_data_id}: {len(comments)}件のコメントを付与しました。")
             except Exception:  # pylint: disable=broad-except
                 logger.warning(
                     f"{logging_prefix} : task_id={task_id}, input_data_id={input_data_id}: コメントの付与に失敗しました。",
                     exc_info=True,
                 )
-            finally:
-                self.service.wrapper.change_task_status_to_break(self.project_id, task_id)
-                # 担当者が変えている場合は、元に戻す
-                if task["account_id"] != changed_task["account_id"]:
-                    self.service.wrapper.change_task_operator(self.project_id, task_id, task["account_id"])
-                    logger.debug(f"{task_id}: 担当者を元のユーザ( account_id={task['account_id']}）に戻しました。")
+
+        self.service.wrapper.change_task_status_to_break(self.project_id, task_id)
+        # 担当者が変えている場合は、元に戻す
+        if task["account_id"] != changed_task["account_id"]:
+            self.service.wrapper.change_task_operator(self.project_id, task_id, task["account_id"])
+            logger.debug(f"{task_id}: 担当者を元のユーザ( account_id={task['account_id']}）に戻しました。")
 
         return added_comments_count
 
@@ -286,10 +288,12 @@ def convert_cli_comments(dict_comments: Dict[str, Any], *, comment_type: Comment
     elif comment_type == CommentType.ONHOLD:
         func_convert = convert_onhold_comment
     else:
-        raise RuntimeError(f"{comment_type=}が無効な値です。")
+        assert_noreturn(comment_type)
 
-    return {
-        task_id: {input_data_id: [func_convert(e) for e in comments]}
-        for task_id, comments_for_task in dict_comments.items()
-        for input_data_id, comments in comments_for_task.items()
-    }
+    result = {}
+    for task_id, comments_for_task in dict_comments.items():
+        sub_result = {
+            input_data_id: [func_convert(e) for e in comments] for input_data_id, comments in comments_for_task.items() if len(comments) > 0
+        }
+        result.update({task_id: sub_result})
+    return result
