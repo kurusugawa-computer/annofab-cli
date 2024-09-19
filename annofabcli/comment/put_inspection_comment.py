@@ -44,7 +44,6 @@ class PutInspectionComment(CommandLine):
 
         dict_comments = annofabcli.common.cli.get_json_from_args(args.json)
         comments_for_task_list = convert_cli_comments(dict_comments, comment_type=CommentType.INSPECTION)
-
         main_obj = PutCommentMain(self.service, project_id=args.project_id, comment_type=CommentType.INSPECTION, all_yes=self.all_yes)
         main_obj.add_comments_for_task_list(
             comments_for_task_list=comments_for_task_list,
