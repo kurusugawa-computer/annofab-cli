@@ -158,7 +158,7 @@ class PutCommentMain(CommandLineWithConfirm):
 
         task = self.service.wrapper.get_task_or_none(self.project_id, task_id)
         if task is None:
-            logger.warning(f"{logging_prefix} : task_id='{task_id}' のタスクは存在しないので、スキップします。")
+            logger.warning(f"{logging_prefix} :: task_id='{task_id}' のタスクは存在しないので、スキップします。")
             return 0
 
         logger.debug(f"{logging_prefix} : task_id='{task['task_id']}', status='{task['status']}', phase='{task['phase']}'")
@@ -176,7 +176,7 @@ class PutCommentMain(CommandLineWithConfirm):
         added_comments_count = 0
         for input_data_id, comments in comments_for_task.items():
             if input_data_id not in task["input_data_id_list"]:
-                logger.warning(f"{logging_prefix} : task_id='{task_id}'のタスクに input_data_id='{input_data_id}'の入力データは存在しません。")
+                logger.warning(f"{logging_prefix} :: task_id='{task_id}'のタスクに input_data_id='{input_data_id}'の入力データは存在しません。")
                 continue
             try:
                 # コメントを付与する
@@ -185,11 +185,11 @@ class PutCommentMain(CommandLineWithConfirm):
                     self.service.api.batch_update_comments(self.project_id, task_id, input_data_id, request_body=request_body)
                     added_comments_count += 1
                     logger.debug(
-                        f"{logging_prefix} : task_id='{task_id}', input_data_id='{input_data_id}' :: {len(comments)}件のコメントを付与しました。"
+                        f"{logging_prefix} :: task_id='{task_id}', input_data_id='{input_data_id}' :: {len(comments)}件のコメントを付与しました。"
                     )
             except Exception:  # pylint: disable=broad-except
                 logger.warning(
-                    f"{logging_prefix} : task_id={task_id}, input_data_id={input_data_id}: コメントの付与に失敗しました。",
+                    f"{logging_prefix} :: task_id={task_id}, input_data_id={input_data_id}: コメントの付与に失敗しました。",
                     exc_info=True,
                 )
 
@@ -197,7 +197,7 @@ class PutCommentMain(CommandLineWithConfirm):
         # 担当者が変えている場合は、元に戻す
         if task["account_id"] != changed_task["account_id"]:
             self.service.wrapper.change_task_operator(self.project_id, task_id, task["account_id"])
-            logger.debug(f"task_id='{task_id}' :: 担当者を元のユーザ( account_id='{task['account_id']}'）に戻しました。")
+            logger.debug(f"{logging_prefix} :: task_id='{task_id}' :: 担当者を元のユーザ( account_id='{task['account_id']}'）に戻しました。")
 
         return added_comments_count
 
