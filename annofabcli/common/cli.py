@@ -117,10 +117,9 @@ def add_parser(
 
         group.add_argument("--endpoint_url", type=str, help="Annofab WebAPIのエンドポイントを指定します。", default=DEFAULT_ENDPOINT_URL)
 
-        login_group = group.add_mutually_exclusive_group()
-        login_group.add_argument("--annofab_user_id", type=str, help="Annofabにログインする際のユーザーID")
+        group.add_argument("--annofab_user_id", type=str, help="Annofabにログインする際のユーザーID")
         group.add_argument("--annofab_password", type=str, help="Annofabにログインする際のパスワード")
-        login_group.add_argument("--annofab_pat", type=str, help="Annofabにログインする際のパーソナルアクセストークン。")
+        group.add_argument("--annofab_pat", type=str, help="Annofabにログインする際のパーソナルアクセストークン")
 
         group.add_argument("--mfa_code", type=str, help="Annofabにログインする際のMFAコード")
 
@@ -329,6 +328,11 @@ def build_annofabapi_resource(args: argparse.Namespace) -> annofabapi.Resource:
         logger.info(f"Annofab WebAPIのエンドポイントURL: {endpoint_url}")
 
     kwargs = {"endpoint_url": endpoint_url, "input_mfa_code_via_stdin": True}
+
+    # コマンドライン引数からパーソナルアクセストークンが指定された場合
+    if args.annofab_pat is not None:
+        return annofabapi.build(pat=args.annofab_pat, **kwargs)  # type: ignore[arg-type]
+
     # コマンドライン引数からユーザーIDが指定された場合
     if args.annofab_user_id is not None:
         login_user_id: str = args.annofab_user_id
@@ -340,10 +344,6 @@ def build_annofabapi_resource(args: argparse.Namespace) -> annofabapi.Resource:
             while login_password == "":
                 login_password = getpass.getpass("Enter Annofab Password: ")
             return annofabapi.build(login_user_id, login_password, **kwargs)  # type: ignore[arg-type]
-
-    # パーソナルアクセストークンが指定された場合
-    if args.annofab_path is not None:
-        return annofabapi.build(pat=args.annofab_pat, **kwargs)  # type: ignore[arg-type]
 
     # 環境変数から認証情報を取得する
     try:
