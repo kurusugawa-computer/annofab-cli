@@ -1,4 +1,6 @@
 [pylint]
+max-positional-arguments=10
+
 disable=
   # Convension
   missing-module-docstring,
