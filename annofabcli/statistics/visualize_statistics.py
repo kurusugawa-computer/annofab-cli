@@ -439,7 +439,7 @@ class VisualizeStatistics(CommandLine):
 
         return True
 
-    def visualize_statistics(  # noqa: ANN201, PLR0913
+    def visualize_statistics(  # noqa: PLR0913  # pylint: disable=too-many-positional-arguments
         self,
         temp_dir: Path,
         task_query: Optional[TaskQuery],
@@ -456,7 +456,7 @@ class VisualizeStatistics(CommandLine):
         project_id_list: list[str],
         root_output_dir: Path,
         parallelism: Optional[int],
-    ):
+    ) -> None:
         main_obj = VisualizingStatisticsMain(
             service=self.service,
             temp_dir=temp_dir,
