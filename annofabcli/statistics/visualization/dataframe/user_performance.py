@@ -9,7 +9,7 @@ import logging
 import math
 from enum import Enum
 from pathlib import Path
-from typing import Optional
+from typing import Literal, Optional, Sequence
 
 import bokeh
 import bokeh.layouts
@@ -26,6 +26,8 @@ from annofabcli.statistics.visualization.dataframe.task_worktime_by_phase_user i
 from annofabcli.statistics.visualization.dataframe.worktime_per_date import WorktimePerDate
 
 logger = logging.getLogger(__name__)
+
+TaskPhaseString = Literal["annotation", "inspection", "acceptance"]
 
 
 class WorktimeType(Enum):
@@ -84,7 +86,14 @@ class UserPerformance:
     PLOT_HEIGHT = 800
 
     def __init__(self, df: pandas.DataFrame) -> None:
-        self.phase_list = self.get_phase_list(df.columns)
+        phase_list = self.get_phase_list(df.columns)
+        if not self.required_columns_exist(df, phase_list=phase_list):
+            raise ValueError(
+                f"引数'df'の'columns'に次の列が存在していません。 {self.missing_columns(df, phase_list)} :: "
+                f"次の列が必須です。{self.columns(phase_list)}の列が必要です。"
+            )
+
+        self.phase_list = phase_list
         self.df = df
 
     def is_empty(self) -> bool:
@@ -97,7 +106,7 @@ class UserPerformance:
         return len(self.df) == 0
 
     @staticmethod
-    def _add_ratio_column_for_productivity_per_user(df: pandas.DataFrame, phase_list: list[str]) -> None:
+    def _add_ratio_column_for_productivity_per_user(df: pandas.DataFrame, phase_list: Sequence[TaskPhaseString]) -> None:
         """
         ユーザーの生産性に関する列を、DataFrameに追加します。
         """
@@ -157,11 +166,10 @@ class UserPerformance:
         df[("rejected_count/task_count", phase)] = df[("rejected_count", phase)] / df[("task_count", phase)]
 
     @staticmethod
-    def get_phase_list(columns: list[tuple[str, str]]) -> list[str]:
+    def get_phase_list(columns: list[tuple[str, str]]) -> list[TaskPhaseString]:
         """
         サポートしているフェーズのlistを取得します。
         `monitored_worktime_hour`列情報を見て、サポートしているフェーズを判断します。
-
         """
         tmp_set = {c1 for c0, c1 in columns if c0 == "monitored_worktime_hour"}
         phase_list = []
@@ -170,7 +178,8 @@ class UserPerformance:
             if phase.value in tmp_set:
                 phase_list.append(phase.value)  # noqa: PERF401
 
-        return phase_list
+        # mypyはTaskPhaseStringが返ることを認識できないため'return-value'を無視する
+        return phase_list  # type: ignore[return-value]
 
     @classmethod
     def from_csv(cls, csv_file: Path) -> UserPerformance:
@@ -647,7 +656,7 @@ class UserPerformance:
         return True
 
     @staticmethod
-    def get_productivity_columns(phase_list: list[str]) -> list[tuple[str, str]]:
+    def get_productivity_columns(phase_list: Sequence[TaskPhaseString]) -> list[tuple[str, str]]:
         """
         生産性に関する情報（作業時間、生産量、生産量あたり作業時間）の列を取得します。
         """
@@ -718,11 +727,27 @@ class UserPerformance:
 
         return prior_columns
 
-    def to_csv(self, output_file: Path) -> None:
-        if not self._validate_df_for_output(output_file):
-            return
+    @classmethod
+    def required_columns_exist(cls, df: pandas.DataFrame, phase_list: Sequence[TaskPhaseString]) -> bool:
+        """
+        必須の列が存在するかどうかを返します。
 
-        value_columns = self.get_productivity_columns(self.phase_list)
+        Returns:
+            必須の列が存在するかどうか
+        """
+        return len(set(cls.columns(phase_list)) - set(df.columns)) == 0
+
+    @classmethod
+    def missing_columns(cls, df: pandas.DataFrame, phase_list: Sequence[TaskPhaseString]) -> list[tuple[str, str]]:
+        """
+        欠損している列名を取得します。
+
+        """
+        return list(set(cls.columns(phase_list)) - set(df.columns))
+
+    @classmethod
+    def columns(cls, phase_list: Sequence[TaskPhaseString]) -> list[tuple[str, str]]:
+        value_columns = cls.get_productivity_columns(phase_list)
 
         user_columns = [
             ("account_id", ""),
@@ -740,8 +765,13 @@ class UserPerformance:
                     ("working_days", phase_column),
                 ]
             )
-        columns = user_columns + working_date_columns + value_columns
-        print_csv(self.df[columns], str(output_file))
+        return user_columns + working_date_columns + value_columns
+
+    def to_csv(self, output_file: Path) -> None:
+        if not self._validate_df_for_output(output_file):
+            return
+
+        print_csv(self.df[self.columns(self.phase_list)], str(output_file))
 
     @staticmethod
     def _get_average_value(df: pandas.DataFrame, numerator_column: tuple[str, str], denominator_column: tuple[str, str]) -> Optional[float]:
@@ -792,6 +822,7 @@ class UserPerformance:
         # bokeh 3.0.3では、dtypeが`string`である列を含むDataFrameを描画できないので、dtypeが`string`である列のdtypeを`object`変換する
         # https://qiita.com/yuji38kwmt/items/b5da6ed521e827620186
         # TODO python3.8のサポートを終了したら、このコードを削除する
+
         df = df.astype(
             {
                 ("account_id", ""): "object",
@@ -825,7 +856,7 @@ class UserPerformance:
         return df
 
     @staticmethod
-    def _add_ratio_key_for_whole_productivity(series: pandas.Series, phase_list: list[str]) -> None:
+    def _add_ratio_key_for_whole_productivity(series: pandas.Series, phase_list: Sequence[str]) -> None:
         """
         プロジェクト全体の生産性に関するkeyを、pandas.Seriesに追加します。
         """
