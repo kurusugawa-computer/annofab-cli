@@ -822,6 +822,7 @@ class UserPerformance:
         # bokeh 3.0.3では、dtypeが`string`である列を含むDataFrameを描画できないので、dtypeが`string`である列のdtypeを`object`変換する
         # https://qiita.com/yuji38kwmt/items/b5da6ed521e827620186
         # TODO python3.8のサポートを終了したら、このコードを削除する
+
         df = df.astype(
             {
                 ("account_id", ""): "object",
