@@ -49,12 +49,23 @@ class Task:
         """
         return len(set(cls.columns()) - set(df.columns)) == 0
 
+    @classmethod
+    def missing_columns(cls, df: pandas.DataFrame) -> list[str]:
+        """
+        欠損している列名を取得します。
+
+        """
+        return list(set(cls.columns()) - set(df.columns))
+
     def __init__(self, df: pandas.DataFrame) -> None:
         if self._duplicated_keys(df):
             logger.warning("引数`df`に重複したキー（project_id, task_id）が含まれています。")
 
         if not self.required_columns_exist(df):
-            raise ValueError(f"引数`df`には、{self.columns()}の列が必要です。 :: {df.columns=}")
+            raise ValueError(
+                f"引数'df'の'columns'に次の列が存在していません。 {self.missing_columns(df)} :: "
+                f"次の列が必須です。{self.columns()}の列が必要です。"
+            )
 
         self.df = df
 
