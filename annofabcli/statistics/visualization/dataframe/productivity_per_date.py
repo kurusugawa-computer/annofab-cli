@@ -71,7 +71,7 @@ class AbstractPhaseProductivityPerDate(abc.ABC):
             widget_list.append(multi_choice_widget)
 
             widgets = bokeh.layouts.column(widget_list)
-            graph_group = bokeh.layouts.row([line_graph.figure, widgets])  # type: ignore[list-item]
+            graph_group = bokeh.layouts.row([line_graph.figure, widgets])
             graph_group_list.append(graph_group)
 
         write_bokeh_graph(bokeh.layouts.layout(graph_group_list), output_file)

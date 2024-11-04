@@ -468,8 +468,8 @@ class WorktimePerDate:
             checkbox_group = line_graph.create_checkbox_displaying_markers()
             multi_choice_widget = line_graph.create_multi_choice_widget_for_searching_user(plotted_users)
 
-            widgets = bokeh.layouts.column([hide_all_button, show_all_button, checkbox_group, multi_choice_widget])  # type: ignore[list-item]
-            graph_group = bokeh.layouts.row([line_graph.figure, widgets])  # type: ignore[list-item]
+            widgets = bokeh.layouts.column([hide_all_button, show_all_button, checkbox_group, multi_choice_widget])
+            graph_group = bokeh.layouts.row([line_graph.figure, widgets])
             graph_group_list.append(graph_group)
 
         if line_count == 0:
