@@ -352,7 +352,7 @@ class UserPerformance:
                 .std(ddof=0)
             )
             df_stdev_per_volume_count_list.append(df_stdev_per_input_data_count)
-        df_stdev = pandas.concat([df_stdev_per_volume_count_list], axis=1)
+        df_stdev = pandas.concat(df_stdev_per_volume_count_list, axis=1)
 
         # `dropna=False`を指定する理由：NaNが含まれることにより、列に"annotation"などが含まれないと、後続の処理で失敗するため
         # 前述の処理でinfを除外しているので、NaNが含まれることはないはず
