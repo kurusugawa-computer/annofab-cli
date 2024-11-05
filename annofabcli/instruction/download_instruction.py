@@ -62,7 +62,7 @@ class DownloadInstructionMain:
         img_dir = output_dir / "img"
         img_dir.mkdir(exist_ok=True, parents=True)
         for img_elm in pq_img:
-            src_value: str = img_elm.attrib.get("src")
+            src_value: Optional[str] = img_elm.attrib.get("src")
             if src_value is None:
                 continue
 

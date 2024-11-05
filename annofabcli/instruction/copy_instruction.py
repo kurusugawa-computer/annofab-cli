@@ -60,9 +60,9 @@ class CopyInstruction(CommandLine):
 
         """
 
-        src_instruction_image_url: str = pq_img.attr["src"]
+        src_instruction_image_url: Optional[str] = pq_img.attr["src"]
         if src_instruction_image_url is None:
-            logger.warning(f"{pq_img} にsrc属性がないのでスキップします。")
+            logger.warning(f"{pq_img=} にsrc属性がないのでスキップします。")
             return None
 
         logger.debug(f"コピー元プロジェクトの {src_instruction_image_url} を、コピー先プロジェクトにアップロードします。")
