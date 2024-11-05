@@ -205,16 +205,13 @@ class AddingAdditionalInfoToTask:
         return task
 
     def _add_task_history_info_by_phase(self, task: dict[str, Any], task_histories: list[TaskHistory], phase: TaskPhase) -> Task:
-        if task_histories is not None:
-            task_history_by_phase = [
-                e
-                for e in task_histories
-                if e["phase"] == phase.value
-                and e["account_id"] is not None
-                and annofabcli.common.utils.isoduration_to_hour(e["accumulated_labor_time_milliseconds"]) > 0
-            ]
-        else:
-            task_history_by_phase = []
+        task_history_by_phase = [
+            e
+            for e in task_histories
+            if e["phase"] == phase.value
+            and e["account_id"] is not None
+            and annofabcli.common.utils.isoduration_to_hour(e["accumulated_labor_time_milliseconds"]) > 0
+        ]
 
         # 最初の対象フェーズに関する情報を設定
         first_task_history = task_history_by_phase[0] if len(task_history_by_phase) > 0 else None
@@ -244,7 +241,7 @@ class AddingAdditionalInfoToTask:
         # タスク情報から取得できる、付加的な情報を追加する
         self.visualize.add_properties_to_task(task)
 
-    def add_task_history_additional_info_to_task(self, task: dict[str, Any], task_histories: list[TaskHistory]):  # noqa: ANN201
+    def add_task_history_additional_info_to_task(self, task: dict[str, Any], task_histories: list[TaskHistory]) -> None:
         """タスク履歴から取得できる付加的情報を、タスクに追加する。
         以下の列を追加する。
         * annotation_worktime_hour

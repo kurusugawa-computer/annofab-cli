@@ -112,6 +112,9 @@ annofabcli = "annofabcli.__main__:main"
 ignore_missing_imports = true
 
 check_untyped_defs = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_unreachable = true
 
 [tool.ruff]
 target-version = "py38"

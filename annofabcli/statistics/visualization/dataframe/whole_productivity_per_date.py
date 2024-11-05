@@ -1228,7 +1228,7 @@ class WholeProductivityPerFirstAnnotationStartedDate:
         source = ColumnDataSource(data=df)
 
         for line_graph, fig_info in zip(line_graph_list, fig_info_list):
-            y_info_list: list[dict[str, str]] = fig_info["y_info_list"]  # type: ignore[assignment]
+            y_info_list: list[dict[str, str]] = fig_info["y_info_list"]
             for index, y_info in enumerate(y_info_list):
                 color = get_color_from_small_palette(index)
 

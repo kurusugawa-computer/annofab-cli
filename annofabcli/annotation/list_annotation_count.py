@@ -20,6 +20,7 @@ from annofabcli.common.cli import (
     get_list_from_args,
 )
 from annofabcli.common.facade import AnnofabApiFacade
+from annofabcli.common.type_util import assert_noreturn
 from annofabcli.common.visualize import AddProps
 
 logger = logging.getLogger(__name__)
@@ -51,7 +52,7 @@ class ListAnnotationCount(CommandLine):
             return df.groupby(["task_id"], as_index=False).count().drop(["input_data_id"], axis=1)
 
         else:
-            return pandas.DataFrame()
+            assert_noreturn(group_by)
 
     def main(self) -> None:
         args = self.args

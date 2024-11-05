@@ -60,7 +60,7 @@ class UploadInstruction(CommandLine):
         img_path_dict: dict[str, str] = {}
         # 画像をすべてアップロードして、img要素のsrc属性値を annofab urlに変更する
         for img_elm in pq_img:
-            src_value: str = img_elm.attrib.get("src")
+            src_value: Optional[str] = img_elm.attrib.get("src")
             if src_value is None:
                 continue
 
