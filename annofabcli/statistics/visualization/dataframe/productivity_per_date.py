@@ -254,14 +254,14 @@ class AnnotatorProductivityPerDate(AbstractPhaseProductivityPerDate):
             ),
             LineGraph(
                 title="教師付開始日ごとのアノテーションあたり検査コメント数",
-                y_axis_label="アノテーションあたり検査コメント数[個/アノテーション]",
+                y_axis_label="アノテーションあたり検査コメント数",
                 tooltip_columns=tooltip_columns,
                 x_axis_label=x_axis_label,
                 x_axis_type="datetime",
             ),
             LineGraph(
                 title="教師付開始日ごとのアノテーションあたり検査コメント数(1週間移動平均)",
-                y_axis_label="アノテーションあたり検査コメント数[個/アノテーション]",
+                y_axis_label="アノテーションあたり検査コメント数",
                 tooltip_columns=tooltip_columns,
                 x_axis_label=x_axis_label,
                 x_axis_type="datetime",
@@ -383,14 +383,14 @@ class AnnotatorProductivityPerDate(AbstractPhaseProductivityPerDate):
             ),
             LineGraph(
                 title="教師付開始日ごとの入力データあたり検査コメント数",
-                y_axis_label="入力データあたり検査コメント数[個/入力データ]",
+                y_axis_label="入力データあたり検査コメント数",
                 tooltip_columns=tooltip_columns,
                 x_axis_label=x_axis_label,
                 x_axis_type="datetime",
             ),
             LineGraph(
                 title="教師付開始日ごとの入力データあたり検査コメント数(1週間移動平均)",
-                y_axis_label="入力データあたり検査コメント数[個/入力データ]",
+                y_axis_label="入力データあたり検査コメント数",
                 tooltip_columns=tooltip_columns,
                 x_axis_label=x_axis_label,
                 x_axis_type="datetime",
