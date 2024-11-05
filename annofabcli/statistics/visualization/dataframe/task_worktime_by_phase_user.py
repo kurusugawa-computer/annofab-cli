@@ -22,6 +22,9 @@ class TaskWorktimeByPhaseUser:
         * 計測作業時間
         * 生産量（タスク数、入力データ数、アノテーション数）
         * 品質情報（指摘コメント数、差し戻し回数）
+
+    Args:
+        custom_production_volume_columns: ユーザー独自の生産量を表す列名のlist
     """
 
     @property
@@ -32,15 +35,7 @@ class TaskWorktimeByPhaseUser:
         Notes:
             `task_count`も生産量に該当するが、`input_data_count`や`annotation_count`と比較すると生産量として評価するのは厳しいので、`production_volume_columns`には含めない
         """
-        result = [
-            "input_data_count",
-            "annotation_count",
-        ]
-
-        if self.custom_production_volume_column is not None:
-            result.append(self.custom_production_volume_column)
-
-        return result
+        return ["input_data_count", "annotation_count", *self.custom_production_volume_columns]
 
     @property
     def quantity_columns(self) -> list[str]:
@@ -90,8 +85,8 @@ class TaskWorktimeByPhaseUser:
         duplicated = df.duplicated(subset=["project_id", "task_id", "phase", "phase_stage", "account_id"])
         return duplicated.any()
 
-    def __init__(self, df: pandas.DataFrame, *, custom_production_volume_column: Optional[str] = None) -> None:
-        self.custom_production_volume_column = custom_production_volume_column
+    def __init__(self, df: pandas.DataFrame, *, custom_production_volume_columns: Optional[list[str]] = None) -> None:
+        self.custom_production_volume_columns = custom_production_volume_columns if custom_production_volume_columns is not None else []
 
         if self._duplicated_keys(df):
             logger.warning("引数`df`に重複したキー（project_id, task_id, phase, phase_stage, account_id）が含まれています。")
