@@ -106,7 +106,9 @@ class UserPerformance:
         return len(self.df) == 0
 
     @staticmethod
-    def _add_ratio_column_for_productivity_per_user(df: pandas.DataFrame, phase_list: Sequence[TaskPhaseString]) -> None:
+    def _add_ratio_column_for_productivity_per_user(
+        df: pandas.DataFrame, phase_list: Sequence[TaskPhaseString], production_volume_columns: list[str]
+    ) -> None:
         """
         ユーザーの生産性に関する列を、DataFrameに追加します。
         """
@@ -142,27 +144,26 @@ class UserPerformance:
             df[("actual_worktime_hour", phase)] = df[("actual_worktime_hour", "sum")] * df[("monitored_worktime_ratio", phase)]
 
             # 生産性を算出
-            df[("monitored_worktime_hour/input_data_count", phase)] = df[("monitored_worktime_hour", phase)] / df[("input_data_count", phase)]
-            df[("actual_worktime_hour/input_data_count", phase)] = df[("actual_worktime_hour", phase)] / df[("input_data_count", phase)]
-
-            df[("monitored_worktime_hour/annotation_count", phase)] = df[("monitored_worktime_hour", phase)] / df[("annotation_count", phase)]
-            df[("actual_worktime_hour/annotation_count", phase)] = df[("actual_worktime_hour", phase)] / df[("annotation_count", phase)]
-
             ratio__actual_vs_monitored_worktime = df[("actual_worktime_hour", phase)] / df[("monitored_worktime_hour", phase)]
-            df[("stdev__actual_worktime_hour/input_data_count", phase)] = (
-                df[("stdev__monitored_worktime_hour/input_data_count", phase)] * ratio__actual_vs_monitored_worktime
-            )
-            df[("stdev__actual_worktime_hour/annotation_count", phase)] = (
-                df[("stdev__monitored_worktime_hour/annotation_count", phase)] * ratio__actual_vs_monitored_worktime
+            for production_volume_column in production_volume_columns:
+                df[(f"monitored_worktime_hour/{production_volume_column}", phase)] = (
+                    df[("monitored_worktime_hour", phase)] / df[(production_volume_column, phase)]
+                )
+                df[(f"actual_worktime_hour/{production_volume_column}", phase)] = (
+                    df[("actual_worktime_hour", phase)] / df[(production_volume_column, phase)]
+                )
+
+                df[(f"stdev__actual_worktime_hour/{production_volume_column}", phase)] = (
+                    df[(f"stdev__monitored_worktime_hour/{production_volume_column}", phase)] * ratio__actual_vs_monitored_worktime
+                )
+
+        # 品質に関する情報
+        phase = TaskPhase.ANNOTATION.value
+        for production_volume_column in production_volume_columns:
+            df[(f"pointed_out_inspection_comment_count/{production_volume_column}", phase)] = (
+                df[("pointed_out_inspection_comment_count", phase)] / df[(production_volume_column, phase)]
             )
 
-        phase = TaskPhase.ANNOTATION.value
-        df[("pointed_out_inspection_comment_count/annotation_count", phase)] = (
-            df[("pointed_out_inspection_comment_count", phase)] / df[("annotation_count", phase)]
-        )
-        df[("pointed_out_inspection_comment_count/input_data_count", phase)] = (
-            df[("pointed_out_inspection_comment_count", phase)] / df[("input_data_count", phase)]
-        )
         df[("rejected_count/task_count", phase)] = df[("rejected_count", phase)] / df[("task_count", phase)]
 
     @staticmethod
@@ -231,35 +232,6 @@ class UserPerformance:
     def actual_worktime_exists(self) -> bool:
         """実績作業時間が入力されているか否か"""
         return self.df[("actual_worktime_hour", "sum")].sum() > 0
-
-    @staticmethod
-    def create_df_stdev_worktime(df_worktime_ratio: pandas.DataFrame) -> pandas.DataFrame:
-        """
-        単位量あたり作業時間の標準偏差のDataFrameを生成する
-        """
-        df_worktime_ratio2 = df_worktime_ratio.copy()
-        df_worktime_ratio2["worktime_hour/input_data_count"] = df_worktime_ratio2["worktime_hour"] / df_worktime_ratio2["input_data_count"]
-        df_worktime_ratio2["worktime_hour/annotation_count"] = df_worktime_ratio2["worktime_hour"] / df_worktime_ratio2["annotation_count"]
-
-        # 母標準偏差を算出する
-        df_stdev = df_worktime_ratio2.groupby(["account_id", "phase"])[["worktime_hour/input_data_count", "worktime_hour/annotation_count"]].std(
-            ddof=0
-        )
-
-        df_stdev2 = pandas.pivot_table(
-            df_stdev,
-            values=["worktime_hour/input_data_count", "worktime_hour/annotation_count"],
-            index="account_id",
-            columns="phase",
-        )
-        df_stdev3 = df_stdev2.rename(
-            columns={
-                "worktime_hour/input_data_count": "stdev__monitored_worktime_hour/input_data_count",
-                "worktime_hour/annotation_count": "stdev__monitored_worktime_hour/annotation_count",
-            }
-        )
-
-        return df_stdev3
 
     @staticmethod
     def _create_df_monitored_worktime_and_production_amount(
@@ -591,7 +563,9 @@ class UserPerformance:
         df = df.join(cls._create_df_stdev_monitored_worktime(task_worktime_by_phase_user))
 
         # 比例関係の列を計算して追加する
-        cls._add_ratio_column_for_productivity_per_user(df, phase_list=phase_list)
+        cls._add_ratio_column_for_productivity_per_user(
+            df, phase_list=phase_list, production_volume_columns=task_worktime_by_phase_user.production_volume_columns
+        )
 
         # 出力に不要な列を削除する
         df = drop_unnecessary_columns(df)
