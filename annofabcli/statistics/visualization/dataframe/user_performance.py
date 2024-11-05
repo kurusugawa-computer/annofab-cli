@@ -68,6 +68,17 @@ class PerformanceUnit(Enum):
         return performance_unit_name
 
 
+class CustomProductionVolume:
+    """
+    入力データ数やアノテーション数以外の、ユーザー独自の生産量
+    """
+
+    column: str
+    """CSVに使われる列名"""
+    name: str
+    """グラフに使われる名前"""
+
+
 class UserPerformance:
     """
     各ユーザの合計の生産性と品質。
@@ -85,15 +96,16 @@ class UserPerformance:
     PLOT_WIDTH = 1200
     PLOT_HEIGHT = 800
 
-    def __init__(self, df: pandas.DataFrame) -> None:
+    def __init__(self, df: pandas.DataFrame, *, custom_production_volume: Optional[CustomProductionVolume] = None) -> None:
         phase_list = self.get_phase_list(df.columns)
+        self.custom_production_volume = custom_production_volume
+        self.phase_list = phase_list
         if not self.required_columns_exist(df, phase_list=phase_list):
             raise ValueError(
                 f"引数'df'の'columns'に次の列が存在していません。 {self.missing_columns(df, phase_list)} :: "
                 f"次の列が必須です。{self.columns(phase_list)}の列が必要です。"
             )
 
-        self.phase_list = phase_list
         self.df = df
 
     def is_empty(self) -> bool:
@@ -861,7 +873,20 @@ class UserPerformance:
             )
             series[("rejected_count/task_count", phase)] = series[("rejected_count", phase)] / series[("task_count", phase)]
 
-    def plot_productivity(self, output_file: Path, worktime_type: WorktimeType, performance_unit: PerformanceUnit) -> None:
+    def get_production_volume_name(self, production_volume_column: str) -> str:
+        """
+        生産量を表す列名から、名前を取得します。
+        """
+        if production_volume_column == "input_data_count":
+            return "入力データ"
+        elif production_volume_column == "annotation_count":
+            return "アノテーション"
+        elif production_volume_column == self.custom_production_volume_column:
+            return self.custom_production_volume_name
+        else:
+            raise RuntimeError(f"{production_volume_column=} は対応していません。")
+
+    def plot_productivity(self, output_file: Path, worktime_type: WorktimeType, production_volume_column: str) -> None:
         """作業時間と生産性の関係をメンバごとにプロットする。"""
 
         if not self._validate_df_for_output(output_file):
@@ -869,7 +894,7 @@ class UserPerformance:
 
         df = self.convert_df_suitable_for_bokeh(self.df)
 
-        performance_unit_name = performance_unit.performance_unit_name
+        production_volume_name = self.get_production_volume_name(production_volume_column)
 
         logger.debug(f"{output_file} を出力します。")
 
@@ -881,21 +906,19 @@ class UserPerformance:
 
         scatter_obj_list = [
             ScatterGraph(
-                title=f"{DICT_PHASE_NAME[phase]}の{performance_unit_name}あたり作業時間と累計作業時間の関係({worktime_type.worktime_type_name})",
+                title=f"{DICT_PHASE_NAME[phase]}の{production_volume_name}あたり作業時間と累計作業時間の関係({worktime_type.worktime_type_name})",
                 width=self.PLOT_WIDTH,
                 height=self.PLOT_HEIGHT,
                 x_axis_label="累計作業時間[hour]",
-                y_axis_label=f"{performance_unit_name}あたり作業時間[minute/annotation]",
+                y_axis_label=f"{production_volume_name}あたり作業時間[minute/{production_volume_name}]",
                 tooltip_columns=[
                     "user_id_",
                     "username_",
                     "biography_",
                     f"{worktime_type.value}_worktime_hour_{phase}",
                     f"task_count_{phase}",
-                    f"input_data_count_{phase}",
-                    f"annotation_count_{phase}",
-                    f"{worktime_type.value}_worktime_hour/input_data_count_{phase}",
-                    f"{worktime_type.value}_worktime_hour/annotation_count_{phase}",
+                    f"{production_volume_column}_{phase}",
+                    f"{worktime_type.value}_worktime_hour/{production_volume_column}_{phase}",
                     f"first_working_date_{phase}",
                     f"last_working_date_{phase}",
                     f"working_days_{phase}",
@@ -905,11 +928,11 @@ class UserPerformance:
         ]
 
         x_column = f"{worktime_type.value}_worktime_hour"
-        y_column = f"{worktime_type.value}_worktime_minute/{performance_unit.value}"
+        y_column = f"{worktime_type.value}_worktime_minute/{production_volume_column}"
         # 分単位の生産性を算出する
         for phase in self.phase_list:
-            df[(f"{worktime_type.value}_worktime_minute/{performance_unit.value}", phase)] = (
-                df[(f"{worktime_type.value}_worktime_hour/{performance_unit.value}", phase)] * 60
+            df[(f"{worktime_type.value}_worktime_minute/{production_volume_column}", phase)] = (
+                df[(f"{worktime_type.value}_worktime_hour/{production_volume_column}", phase)] * 60
             )
 
         for biography_index, biography in enumerate(sorted(set(df["biography"]))):
@@ -931,14 +954,14 @@ class UserPerformance:
         for scatter_obj, phase in zip(scatter_obj_list, self.phase_list):
             average_hour = self._get_average_value(
                 df,
-                numerator_column=(f"{worktime_type.value}_worktime_hour", phase),
-                denominator_column=(performance_unit.value, phase),
+                numerator_column=(f"{production_volume_column}_worktime_hour", phase),
+                denominator_column=(production_volume_column, phase),
             )
             if average_hour is not None:
                 average_minute = average_hour * 60
                 scatter_obj.plot_average_line(average_minute, dimension="width")
 
-            quartile = self._get_quartile_value(df[(f"{worktime_type.value}_worktime_minute/{performance_unit.value}", phase)])
+            quartile = self._get_quartile_value(df[(f"{production_volume_column}_worktime_minute/{production_volume_column}", phase)])
             scatter_obj.plot_quartile_line(quartile, dimension="width")
 
             scatter_obj.add_multi_choice_widget_for_searching_user(list(zip(df[("user_id", "")], df[("username", "")])))
