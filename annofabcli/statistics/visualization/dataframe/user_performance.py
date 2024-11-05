@@ -613,7 +613,7 @@ class UserPerformance:
         return True
 
     @staticmethod
-    def get_productivity_columns(phase_list: Sequence[TaskPhaseString]) -> list[tuple[str, str]]:
+    def get_productivity_columns(phase_list: Sequence[TaskPhaseString], production_volume_columns: list[str]) -> list[tuple[str, str]]:
         """
         生産性に関する情報（作業時間、生産量、生産量あたり作業時間）の列を取得します。
         """
@@ -645,17 +645,17 @@ class UserPerformance:
         ]
         actual_worktime_columns = [("actual_worktime_hour", "sum")] + [("actual_worktime_hour", phase) for phase in phase_list]
 
-        productivity_columns = (
-            [("monitored_worktime_hour/input_data_count", phase) for phase in phase_list]
-            + [("actual_worktime_hour/input_data_count", phase) for phase in phase_list]
-            + [("monitored_worktime_hour/annotation_count", phase) for phase in phase_list]
-            + [("actual_worktime_hour/annotation_count", phase) for phase in phase_list]
-        )
+        productivity_columns = []
+        for production_volume_column in production_volume_columns:
+            productivity_columns.extend([(f"monitored_worktime_hour/{production_volume_column}", phase) for phase in phase_list])
+            productivity_columns.extend([(f"actual_worktime_hour/{production_volume_column}", phase) for phase in phase_list])
 
         inspection_comment_columns = [
             ("pointed_out_inspection_comment_count", TaskPhase.ANNOTATION.value),
-            ("pointed_out_inspection_comment_count/input_data_count", TaskPhase.ANNOTATION.value),
-            ("pointed_out_inspection_comment_count/annotation_count", TaskPhase.ANNOTATION.value),
+            *[
+                (f"pointed_out_inspection_comment_count/{production_volume_column}", TaskPhase.ANNOTATION.value)
+                for production_volume_column in production_volume_columns
+            ],
         ]
 
         rejected_count_columns = [
@@ -663,12 +663,10 @@ class UserPerformance:
             ("rejected_count/task_count", TaskPhase.ANNOTATION.value),
         ]
 
-        stdev_columns = (
-            [("stdev__monitored_worktime_hour/input_data_count", phase) for phase in phase_list]
-            + [("stdev__actual_worktime_hour/input_data_count", phase) for phase in phase_list]
-            + [("stdev__monitored_worktime_hour/annotation_count", phase) for phase in phase_list]
-            + [("stdev__actual_worktime_hour/annotation_count", phase) for phase in phase_list]
-        )
+        stdev_columns = []
+        for production_volume_column in production_volume_columns:
+            stdev_columns.extend([(f"stdev__monitored_worktime_hour/{production_volume_column}", phase) for phase in phase_list])
+            stdev_columns.extend([(f"stdev__actual_worktime_hour/{production_volume_column}", phase) for phase in phase_list])
 
         prior_columns = (
             real_monitored_worktime_columns
