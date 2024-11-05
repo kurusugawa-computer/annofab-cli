@@ -233,21 +233,21 @@ class AnnotatorProductivityPerDate(AbstractPhaseProductivityPerDate):
         line_graph_list = [
             LineGraph(
                 title="教師付開始日ごとの教師付作業時間",
-                y_axis_label="教師付作業時間[hour]",
+                y_axis_label="教師付作業時間[時間]",
                 tooltip_columns=tooltip_columns,
                 x_axis_label=x_axis_label,
                 x_axis_type="datetime",
             ),
             LineGraph(
                 title="教師付開始日ごとのアノテーションあたり教師付作業時間",
-                y_axis_label="アノテーションあたり教師付時間[min/annotation]",
+                y_axis_label="アノテーションあたり教師付時間[分/アノテーション]",
                 tooltip_columns=tooltip_columns,
                 x_axis_label=x_axis_label,
                 x_axis_type="datetime",
             ),
             LineGraph(
                 title="教師付開始日ごとのアノテーションあたり教師付作業時間(1週間移動平均)",
-                y_axis_label="アノテーションあたり教師付時間[min/annotation]",
+                y_axis_label="アノテーションあたり教師付時間[分/アノテーション]",
                 tooltip_columns=tooltip_columns,
                 x_axis_label=x_axis_label,
                 x_axis_type="datetime",
@@ -362,21 +362,21 @@ class AnnotatorProductivityPerDate(AbstractPhaseProductivityPerDate):
         line_graph_list = [
             LineGraph(
                 title="教師付開始日ごとの教師付作業時間",
-                y_axis_label="教師付作業時間[hour]",
+                y_axis_label="教師付作業時間[時間]",
                 tooltip_columns=tooltip_columns,
                 x_axis_label=x_axis_label,
                 x_axis_type="datetime",
             ),
             LineGraph(
                 title="教師付開始日ごとの入力データあたり教師付作業時間",
-                y_axis_label="入力データあたり教師付時間[min/input_data]",
+                y_axis_label="入力データあたり教師付時間[分/入力データ]",
                 tooltip_columns=tooltip_columns,
                 x_axis_label=x_axis_label,
                 x_axis_type="datetime",
             ),
             LineGraph(
                 title="教師付開始日ごとの入力データあたり教師付作業時間(1週間移動平均)",
-                y_axis_label="入力データあたり教師付時間[min/annotation]",
+                y_axis_label="入力データあたり教師付時間[分/入力データ]",
                 tooltip_columns=tooltip_columns,
                 x_axis_label=x_axis_label,
                 x_axis_type="datetime",
@@ -605,21 +605,21 @@ class InspectorProductivityPerDate(AbstractPhaseProductivityPerDate):
         line_graph_list = [
             LineGraph(
                 title="検査開始日ごとの受入作業時間",
-                y_axis_label="検査作業時間[hour]",
+                y_axis_label="検査作業時間[時間]",
                 tooltip_columns=tooltip_columns,
                 x_axis_label=x_axis_label,
                 x_axis_type="datetime",
             ),
             LineGraph(
                 title="検査開始日ごとのアノテーションあたり検査作業時間",
-                y_axis_label="アノテーションあたり検査作業時間[min/annotation]",
+                y_axis_label="アノテーションあたり検査作業時間[分/アノテーション]",
                 tooltip_columns=tooltip_columns,
                 x_axis_label=x_axis_label,
                 x_axis_type="datetime",
             ),
             LineGraph(
                 title="検査開始日ごとのアノテーションあたり検査作業時間(1週間移動平均)",
-                y_axis_label="アノテーションあたり検査作業時間[min/annotation]",
+                y_axis_label="アノテーションあたり検査作業時間[分/アノテーション]",
                 tooltip_columns=tooltip_columns,
                 x_axis_label=x_axis_label,
                 x_axis_type="datetime",
@@ -715,21 +715,21 @@ class InspectorProductivityPerDate(AbstractPhaseProductivityPerDate):
         line_graph_list = [
             LineGraph(
                 title="検査開始日ごとの検査作業時間",
-                y_axis_label="検査作業時間[hour]",
+                y_axis_label="検査作業時間[時間]",
                 tooltip_columns=tooltip_columns,
                 x_axis_label=x_axis_label,
                 x_axis_type="datetime",
             ),
             LineGraph(
                 title="検査開始日ごとの入力データあたり検査作業時間",
-                y_axis_label="入力データあたり検査時間[min/input_data]",
+                y_axis_label="入力データあたり検査時間[分/入力データ]",
                 tooltip_columns=tooltip_columns,
                 x_axis_label=x_axis_label,
                 x_axis_type="datetime",
             ),
             LineGraph(
                 title="検査開始日ごとの入力データあたり検査作業時間(1週間移動平均)",
-                y_axis_label="入力データあたり検査時間[min/annotation]",
+                y_axis_label="入力データあたり検査時間[分/入力データ]",
                 tooltip_columns=tooltip_columns,
                 x_axis_label=x_axis_label,
                 x_axis_type="datetime",
@@ -933,21 +933,21 @@ class AcceptorProductivityPerDate(AbstractPhaseProductivityPerDate):
         line_graph_list = [
             LineGraph(
                 title="受入開始日ごとの受入作業時間",
-                y_axis_label="受入作業時間[hour]",
+                y_axis_label="受入作業時間[時間]",
                 tooltip_columns=tooltip_columns,
                 x_axis_label=x_axis_label,
                 x_axis_type="datetime",
             ),
             LineGraph(
                 title="受入開始日ごとのアノテーションあたり受入作業時間",
-                y_axis_label="アノテーションあたり受入時間[min/annotation]",
+                y_axis_label="アノテーションあたり受入時間[分/アノテーション]",
                 tooltip_columns=tooltip_columns,
                 x_axis_label=x_axis_label,
                 x_axis_type="datetime",
             ),
             LineGraph(
                 title="受入開始日ごとのアノテーションあたり受入作業時間(1週間移動平均)",
-                y_axis_label="アノテーションあたり受入時間[min/annotation]",
+                y_axis_label="アノテーションあたり受入時間[分/アノテーション]",
                 tooltip_columns=tooltip_columns,
                 x_axis_label=x_axis_label,
                 x_axis_type="datetime",
@@ -1044,21 +1044,21 @@ class AcceptorProductivityPerDate(AbstractPhaseProductivityPerDate):
         line_graph_list = [
             LineGraph(
                 title="受入開始日ごとの受入作業時間",
-                y_axis_label="受入作業時間[hour]",
+                y_axis_label="受入作業時間[時間]",
                 tooltip_columns=tooltip_columns,
                 x_axis_label=x_axis_label,
                 x_axis_type="datetime",
             ),
             LineGraph(
                 title="受入開始日ごとの入力データあたり受入作業時間",
-                y_axis_label="入力データあたり受入作業時間[min/input_data]",
+                y_axis_label="入力データあたり受入作業時間[分/入力データ]",
                 tooltip_columns=tooltip_columns,
                 x_axis_label=x_axis_label,
                 x_axis_type="datetime",
             ),
             LineGraph(
                 title="受入開始日ごとの入力データあたり受入作業時間(1週間移動平均)",
-                y_axis_label="入力データあたり受入作業時間[min/annotation]",
+                y_axis_label="入力データあたり受入作業時間[分/アノテーション]",
                 tooltip_columns=tooltip_columns,
                 x_axis_label=x_axis_label,
                 x_axis_type="datetime",

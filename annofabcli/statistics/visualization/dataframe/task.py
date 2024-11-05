@@ -282,7 +282,7 @@ class Task:
             sub_title = get_sub_title_from_series(df[column], decimals=decimals)
 
             hist, bin_edges = numpy.histogram(df[column], bins=BIN_COUNT)
-            fig = create_histogram_figure(hist, bin_edges, x_axis_label="作業時間[hour]", y_axis_label="タスク数", title=title, sub_title=sub_title)
+            fig = create_histogram_figure(hist, bin_edges, x_axis_label="作業時間[時間]", y_axis_label="タスク数", title=title, sub_title=sub_title)
             figure_list.append(fig)
 
         # 自動検査したタスクを除外して、検査時間をグラフ化する
@@ -294,7 +294,7 @@ class Task:
             create_histogram_figure(
                 hist,
                 bin_edges,
-                x_axis_label="作業時間[hour]",
+                x_axis_label="作業時間[時間]",
                 y_axis_label="タスク数",
                 title="検査作業時間(自動検査されたタスクを除外)",
                 sub_title=sub_title,
@@ -309,7 +309,7 @@ class Task:
             create_histogram_figure(
                 hist,
                 bin_edges,
-                x_axis_label="作業時間[hour]",
+                x_axis_label="作業時間[時間]",
                 y_axis_label="タスク数",
                 title="受入作業時間(自動受入されたタスクを除外)",
                 sub_title=sub_title,

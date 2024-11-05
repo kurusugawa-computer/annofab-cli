@@ -909,8 +909,8 @@ class UserPerformance:
                 title=f"{DICT_PHASE_NAME[phase]}の{production_volume_name}あたり作業時間と累計作業時間の関係({worktime_type.worktime_type_name})",
                 width=self.PLOT_WIDTH,
                 height=self.PLOT_HEIGHT,
-                x_axis_label="累計作業時間[hour]",
-                y_axis_label=f"{production_volume_name}あたり作業時間[minute/{production_volume_name}]",
+                x_axis_label="累計作業時間[時間]",
+                y_axis_label=f"{production_volume_name}あたり作業時間[分/{production_volume_name}]",
                 tooltip_columns=[
                     "user_id_",
                     "username_",
@@ -1162,12 +1162,12 @@ class UserPerformance:
         scatter_obj_list = [
             create_scatter(
                 title=f"{production_volume_name}あたり作業時間({worktime_type_name})とタスクあたり差し戻し回数の関係",
-                x_axis_label=f"{production_volume_name}あたり作業時間[minute/{production_volume_name}]",
+                x_axis_label=f"{production_volume_name}あたり作業時間[分/{production_volume_name}]",
                 y_axis_label="タスクあたり差し戻し回数",
             ),
             create_scatter(
                 title=f"{production_volume_name}あたり作業時間({worktime_type_name})と{production_volume_name}あたり検査コメント数の関係",
-                x_axis_label=f"{production_volume_name}あたり作業時間[minute/{production_volume_name}]",
+                x_axis_label=f"{production_volume_name}あたり作業時間[分/{production_volume_name}]",
                 y_axis_label=f"{production_volume_name}あたり検査コメント数",
             ),
         ]

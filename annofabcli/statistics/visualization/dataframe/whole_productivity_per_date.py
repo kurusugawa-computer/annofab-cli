@@ -373,7 +373,7 @@ class WholeProductivityPerCompletedDate:
                 tooltip_columns=["date", "task_count", "actual_worktime_hour", "monitored_worktime_hour", "working_user_count"],
             )
             line_graph.add_secondary_y_axis(
-                "作業時間[hour]",
+                "作業時間[時間]",
                 secondary_y_axis_range=DataRange1d(
                     end=max(df["actual_worktime_hour"].max(), df["monitored_worktime_hour"].max()) * SECONDARY_Y_RANGE_RATIO
                 ),
@@ -420,7 +420,7 @@ class WholeProductivityPerCompletedDate:
                 tooltip_columns=["date", "input_data_count", "actual_worktime_hour", "monitored_worktime_hour", "working_user_count"],
             )
             line_graph.add_secondary_y_axis(
-                "作業時間[hour]",
+                "作業時間[時間]",
                 secondary_y_axis_range=DataRange1d(
                     end=max(df["actual_worktime_hour"].max(), df["monitored_worktime_hour"].max()) * SECONDARY_Y_RANGE_RATIO
                 ),
@@ -486,7 +486,7 @@ class WholeProductivityPerCompletedDate:
             {
                 "line_graph": create_line_graph(
                     title="日ごとの作業時間",
-                    y_axis_label="作業時間[hour]",
+                    y_axis_label="作業時間[時間]",
                     tooltip_columns=[
                         "date",
                         "actual_worktime_hour",
@@ -502,7 +502,7 @@ class WholeProductivityPerCompletedDate:
             {
                 "line_graph": create_line_graph(
                     title="日ごとの入力データあたり作業時間",
-                    y_axis_label="入力データあたり作業時間[minute/input_data]",
+                    y_axis_label="入力データあたり作業時間[分/入力データ]",
                     tooltip_columns=[
                         "date",
                         "input_data_count",
@@ -523,7 +523,7 @@ class WholeProductivityPerCompletedDate:
             {
                 "line_graph": create_line_graph(
                     title="日ごとのアノテーションあたり作業時間",
-                    y_axis_label="アノテーションあたり作業時間[minute/annotation]",
+                    y_axis_label="アノテーションあたり作業時間[分/アノテーション]",
                     tooltip_columns=[
                         "date",
                         "annotation_count",
@@ -603,7 +603,7 @@ class WholeProductivityPerCompletedDate:
                 ],
             )
             line_graph.add_secondary_y_axis(
-                "作業時間[hour]",
+                "作業時間[時間]",
                 secondary_y_axis_range=DataRange1d(
                     end=max(df["cumsum_actual_worktime_hour"].max(), df["cumsum_monitored_worktime_hour"].max()) * SECONDARY_Y_RANGE_RATIO
                 ),
@@ -659,7 +659,7 @@ class WholeProductivityPerCompletedDate:
                 ],
             )
             line_graph.add_secondary_y_axis(
-                "作業時間[hour]",
+                "作業時間[時間]",
                 secondary_y_axis_range=DataRange1d(
                     end=max(df["cumsum_actual_worktime_hour"].max(), df["cumsum_monitored_worktime_hour"].max()) * SECONDARY_Y_RANGE_RATIO
                 ),
@@ -700,7 +700,7 @@ class WholeProductivityPerCompletedDate:
         def create_worktime_line_graph() -> LineGraph:
             line_graph = create_line_graph(
                 title="日ごとの累積作業時間",
-                y_axis_label="作業時間[hour]",
+                y_axis_label="作業時間[時間]",
                 tooltip_columns=[
                     "date",
                     "actual_worktime_hour",
@@ -1081,7 +1081,7 @@ class WholeProductivityPerFirstAnnotationStartedDate:
             )
 
             line_graph.add_secondary_y_axis(
-                "作業時間[hour]",
+                "作業時間[時間]",
                 secondary_y_axis_range=DataRange1d(end=df["worktime_hour"].max() * SECONDARY_Y_RANGE_RATIO),
                 primary_y_axis_range=DataRange1d(end=df["task_count"].max() * SECONDARY_Y_RANGE_RATIO),
             )
@@ -1119,7 +1119,7 @@ class WholeProductivityPerFirstAnnotationStartedDate:
                 ],
             )
 
-            line_graph.add_secondary_y_axis("作業時間[hour]")
+            line_graph.add_secondary_y_axis("作業時間[時間]")
 
             plot_index = 0
             _plot_and_moving_average(
@@ -1182,7 +1182,7 @@ class WholeProductivityPerFirstAnnotationStartedDate:
         line_graph_list = [
             create_line_graph(
                 title="教師付開始日ごとの計測作業時間",
-                y_axis_label="作業時間[hour]",
+                y_axis_label="作業時間[時間]",
                 tooltip_columns=[
                     "first_annotation_started_date",
                     "worktime_hour",
@@ -1193,7 +1193,7 @@ class WholeProductivityPerFirstAnnotationStartedDate:
             ),
             create_line_graph(
                 title="教師付開始日ごとの入力データあたり計測作業時間",
-                y_axis_label="入力データあたり作業時間[minute/input_data]",
+                y_axis_label="入力データあたり作業時間[分/入力データ]",
                 tooltip_columns=[
                     "first_annotation_started_date",
                     "input_data_count",
@@ -1209,7 +1209,7 @@ class WholeProductivityPerFirstAnnotationStartedDate:
             ),
             create_line_graph(
                 title="教師付開始日ごとのアノテーションあたり計測作業時間",
-                y_axis_label="アノテーションあたり作業時間[minute/annotation]",
+                y_axis_label="アノテーションあたり作業時間[分/アノテーション]",
                 tooltip_columns=[
                     "first_annotation_started_date",
                     "annotation_count",
