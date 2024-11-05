@@ -25,19 +25,32 @@ class TaskWorktimeByPhaseUser:
     """
 
     @property
-    def columns(self) -> list[str]:
+    def quantity_columns(self) -> list[str]:
         """
-        列名
+        アノテーション数や指摘コメント数など「量」を表す列名
         """
-        volume_columns = [
+        result = [
             "task_count",
             "input_data_count",
             "annotation_count",
         ]
 
         if self.custom_production_volume_column is not None:
-            volume_columns.append(self.custom_production_volume_column)
+            result.append(self.custom_production_volume_column)
 
+        result.extend(
+            [
+                "pointed_out_inspection_comment_count",
+                "rejected_count",
+            ]
+        )
+        return result
+
+    @property
+    def columns(self) -> list[str]:
+        """
+        列名
+        """
         return [
             "project_id",
             "task_id",
@@ -49,9 +62,7 @@ class TaskWorktimeByPhaseUser:
             "username",
             "biography",
             "worktime_hour",
-            *volume_columns,
-            "pointed_out_inspection_comment_count",
-            "rejected_count",
+            *self.quantity_columns,
         ]
 
     def required_columns_exist(self, df: pandas.DataFrame) -> bool:

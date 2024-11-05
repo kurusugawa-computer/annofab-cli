@@ -271,11 +271,8 @@ class UserPerformance:
         Returns: 生成されるDataFrame
             columns(level0):
                 * monitored_worktime_hour
-                * task_count
-                * input_data_count
-                * annotation_count
-                * pointed_out_inspection_comment_count
-                * rejected_count
+                * {task_worktime_by_phase_user.quantity_columns}
+
             columns(level1): ${phase}
             index: account_id
         """
@@ -288,11 +285,7 @@ class UserPerformance:
                 [
                     ("monitored_worktime_hour", "sum"),
                     ("monitored_worktime_hour", phase),
-                    ("task_count", phase),
-                    ("input_data_count", phase),
-                    ("annotation_count", phase),
-                    ("pointed_out_inspection_comment_count", phase),
-                    ("rejected_count", phase),
+                    *[(quantity_column, phase) for quantity_column in task_worktime_by_phase_user.quantity_columns],
                 ]
             )
 
@@ -301,14 +294,7 @@ class UserPerformance:
 
         # TODO もしかしたら  `["worktime_hour"]>0]`を指定する必要があるかもしれない。分からないので、いったん指定しない
         df2 = df.pivot_table(
-            values=[
-                "worktime_hour",
-                "task_count",
-                "input_data_count",
-                "annotation_count",
-                "pointed_out_inspection_comment_count",
-                "rejected_count",
-            ],
+            values=["worktime_hour", *task_worktime_by_phase_user.quantity_columns],
             columns="phase",
             index="account_id",
             aggfunc="sum",
