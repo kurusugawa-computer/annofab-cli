@@ -952,14 +952,14 @@ class UserPerformance:
         for scatter_obj, phase in zip(scatter_obj_list, self.phase_list):
             average_hour = self._get_average_value(
                 df,
-                numerator_column=(f"{production_volume_column}_worktime_hour", phase),
+                numerator_column=(f"{worktime_type.value}_worktime_hour", phase),
                 denominator_column=(production_volume_column, phase),
             )
             if average_hour is not None:
                 average_minute = average_hour * 60
                 scatter_obj.plot_average_line(average_minute, dimension="width")
 
-            quartile = self._get_quartile_value(df[(f"{production_volume_column}_worktime_minute/{production_volume_column}", phase)])
+            quartile = self._get_quartile_value(df[(f"{worktime_type.value}_worktime_minute/{production_volume_column}", phase)])
             scatter_obj.plot_quartile_line(quartile, dimension="width")
 
             scatter_obj.add_multi_choice_widget_for_searching_user(list(zip(df[("user_id", "")], df[("username", "")])))
