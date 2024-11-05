@@ -96,14 +96,13 @@ class UserPerformance:
     PLOT_WIDTH = 1200
     PLOT_HEIGHT = 800
 
-    def __init__(self, df: pandas.DataFrame, *, custom_production_volume: Optional[CustomProductionVolume] = None) -> None:
+    def __init__(self, df: pandas.DataFrame, *, custom_production_volume_list: Optional[list[CustomProductionVolume]] = None) -> None:
         phase_list = self.get_phase_list(df.columns)
-        self.custom_production_volume = custom_production_volume
+        self.custom_production_volume_list = custom_production_volume_list if custom_production_volume_list is not None else []
         self.phase_list = phase_list
-        if not self.required_columns_exist(df, phase_list=phase_list):
+        if not self.required_columns_exist(df):
             raise ValueError(
-                f"引数'df'の'columns'に次の列が存在していません。 {self.missing_columns(df, phase_list)} :: "
-                f"次の列が必須です。{self.columns(phase_list)}の列が必要です。"
+                f"引数'df'の'columns'に次の列が存在していません。 {self.missing_columns(df)} :: " f"次の列が必須です。{self.columns}の列が必要です。"
             )
 
         self.df = df
@@ -694,27 +693,26 @@ class UserPerformance:
 
         return prior_columns
 
-    @classmethod
-    def required_columns_exist(cls, df: pandas.DataFrame, phase_list: Sequence[TaskPhaseString]) -> bool:
+    def required_columns_exist(self, df: pandas.DataFrame) -> bool:
         """
         必須の列が存在するかどうかを返します。
 
         Returns:
             必須の列が存在するかどうか
         """
-        return len(set(cls.columns(phase_list)) - set(df.columns)) == 0
+        return len(set(self.columns) - set(df.columns)) == 0
 
-    @classmethod
-    def missing_columns(cls, df: pandas.DataFrame, phase_list: Sequence[TaskPhaseString]) -> list[tuple[str, str]]:
+    def missing_columns(self, df: pandas.DataFrame) -> list[tuple[str, str]]:
         """
         欠損している列名を取得します。
 
         """
-        return list(set(cls.columns(phase_list)) - set(df.columns))
+        return list(set(self.columns) - set(df.columns))
 
-    @classmethod
-    def columns(cls, phase_list: Sequence[TaskPhaseString]) -> list[tuple[str, str]]:
-        value_columns = cls.get_productivity_columns(phase_list)
+    @property
+    def columns(self) -> list[tuple[str, str]]:
+        production_volume_columns = ["input_data_count", "annotation_count", *[e.column for e in self.custom_production_volume_list]]
+        value_columns = self.get_productivity_columns(self.phase_list, production_volume_columns=production_volume_columns)
 
         user_columns = [
             ("account_id", ""),
@@ -738,7 +736,7 @@ class UserPerformance:
         if not self._validate_df_for_output(output_file):
             return
 
-        print_csv(self.df[self.columns(self.phase_list)], str(output_file))
+        print_csv(self.df[self.columns], str(output_file))
 
     @staticmethod
     def _get_average_value(df: pandas.DataFrame, numerator_column: tuple[str, str], denominator_column: tuple[str, str]) -> Optional[float]:
@@ -877,14 +875,14 @@ class UserPerformance:
         """
         生産量を表す列名から、名前を取得します。
         """
-        if production_volume_column == "input_data_count":
-            return "入力データ"
-        elif production_volume_column == "annotation_count":
-            return "アノテーション"
-        elif production_volume_column == self.custom_production_volume_column:
-            return self.custom_production_volume_name
-        else:
-            raise RuntimeError(f"{production_volume_column=} は対応していません。")
+        column_to_name: dict[str, str] = {e.column: e.name for e in self.custom_production_volume_list}
+        column_to_name.update(
+            {
+                "input_data_count": "入力データ",
+                "annotation_count": "アノテーション",
+            }
+        )
+        return column_to_name[production_volume_column]
 
     def plot_productivity(self, output_file: Path, worktime_type: WorktimeType, production_volume_column: str) -> None:
         """作業時間と生産性の関係をメンバごとにプロットする。"""

@@ -6,14 +6,14 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
-from typing import Sequence
+from typing import Optional, Sequence
 
 import numpy
 import pandas
 from annofabapi.models import TaskPhase
 
 from annofabcli.statistics.visualization.dataframe.task_worktime_by_phase_user import TaskWorktimeByPhaseUser
-from annofabcli.statistics.visualization.dataframe.user_performance import TaskPhaseString, UserPerformance
+from annofabcli.statistics.visualization.dataframe.user_performance import CustomProductionVolume, TaskPhaseString, UserPerformance
 from annofabcli.statistics.visualization.dataframe.worktime_per_date import WorktimePerDate
 
 logger = logging.getLogger(__name__)
@@ -30,8 +30,9 @@ class WholePerformance:
     STRING_KEYS = {("first_working_date", ""), ("last_working_date", "")}  # noqa: RUF012
     """文字列が格納されているキー"""
 
-    def __init__(self, series: pandas.Series) -> None:
+    def __init__(self, series: pandas.Series, *, custom_production_volume_list: Optional[list[CustomProductionVolume]] = None) -> None:
         self.series = series
+        self.custom_production_volume_list = custom_production_volume_list if custom_production_volume_list is not None else []
 
     def _validate_df_for_output(self, output_file: Path) -> bool:
         if len(self.series) == 0:
@@ -221,7 +222,8 @@ class WholePerformance:
 
         # 列の順番を整える
         phase_list = UserPerformance.get_phase_list(self.series.index)
-        indexes = self.get_series_index(phase_list)
+        production_volume_columns = ["input_data_count", "annotation_count", *[e.column for e in self.custom_production_volume_list]]
+        indexes = self.get_series_index(phase_list, production_volume_columns=production_volume_columns)
         series = self.series[indexes]
 
         output_file.parent.mkdir(exist_ok=True, parents=True)
@@ -229,7 +231,7 @@ class WholePerformance:
         series.to_csv(str(output_file), sep=",", encoding="utf_8_sig", header=False)
 
     @staticmethod
-    def get_series_index(phase_list: Sequence[TaskPhaseString]) -> list[tuple[str, str]]:
+    def get_series_index(phase_list: Sequence[TaskPhaseString], production_volume_columns: list[str]) -> list[tuple[str, str]]:
         """
         格納しているpandas.Seriesのindexを取得する。
         """
@@ -238,7 +240,7 @@ class WholePerformance:
             ("first_working_date", ""),
             ("last_working_date", ""),
             ("working_days", ""),
-            *UserPerformance.get_productivity_columns(phase_list),
+            *UserPerformance.get_productivity_columns(phase_list, production_volume_columns),
             ("working_user_count", TaskPhase.ANNOTATION.value),
             ("working_user_count", TaskPhase.INSPECTION.value),
             ("working_user_count", TaskPhase.ACCEPTANCE.value),

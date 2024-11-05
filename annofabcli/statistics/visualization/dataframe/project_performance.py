@@ -2,13 +2,14 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
+from typing import Optional
 
 import numpy
 import pandas
 
 from annofabcli.common.pandas import get_frequency_of_monthend
 from annofabcli.common.utils import print_csv
-from annofabcli.statistics.visualization.dataframe.user_performance import UserPerformance
+from annofabcli.statistics.visualization.dataframe.user_performance import CustomProductionVolume, UserPerformance
 from annofabcli.statistics.visualization.dataframe.whole_performance import WholePerformance
 from annofabcli.statistics.visualization.model import WorktimeColumn
 from annofabcli.statistics.visualization.project_dir import ProjectDir
@@ -21,8 +22,9 @@ class ProjectPerformance:
     プロジェクトごとの生産性と品質
     """
 
-    def __init__(self, df: pandas.DataFrame) -> None:
+    def __init__(self, df: pandas.DataFrame, *, custom_production_volume_list: Optional[list[CustomProductionVolume]] = None) -> None:
         self.df = df
+        self.custom_production_volume_list = custom_production_volume_list if custom_production_volume_list is not None else []
 
     def _validate_df_for_output(self, output_file: Path) -> bool:
         if len(self.df) == 0:
@@ -99,7 +101,9 @@ class ProjectPerformance:
         phase_list = UserPerformance.get_phase_list(self.df)
 
         first_columns = [("dirname", ""), ("project_title", ""), ("project_id", ""), ("input_data_type", "")]
-        value_columns = WholePerformance.get_series_index(phase_list)
+
+        production_volume_columns = ["input_data_count", "annotation_count", *[e.column for e in self.custom_production_volume_list]]
+        value_columns = WholePerformance.get_series_index(phase_list, production_volume_columns=production_volume_columns)
 
         columns = first_columns + value_columns
         print_csv(self.df[columns], output=str(output_file))

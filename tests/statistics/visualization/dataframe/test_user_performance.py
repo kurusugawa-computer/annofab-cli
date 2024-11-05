@@ -2,7 +2,6 @@ from pathlib import Path
 
 from annofabcli.statistics.visualization.dataframe.task_worktime_by_phase_user import TaskWorktimeByPhaseUser
 from annofabcli.statistics.visualization.dataframe.user_performance import (
-    PerformanceUnit,
     UserPerformance,
     WorktimeType,
 )
@@ -69,26 +68,26 @@ class TestUserPerformance:
         self.obj.plot_productivity(
             output_dir / "散布図-アノテーションあたり作業時間と累計作業時間の関係-実績時間.html",
             worktime_type=WorktimeType.ACTUAL,
-            performance_unit=PerformanceUnit.ANNOTATION_COUNT,
+            production_volume_column="annotation_count",
         )
 
     def test_plot_productivity__入力データあたり計測時間(self) -> None:
         self.obj.plot_productivity(
             output_dir / "散布図-入力データあたり作業時間と累計作業時間の関係-計測時間.html",
             worktime_type=WorktimeType.MONITORED,
-            performance_unit=PerformanceUnit.INPUT_DATA_COUNT,
+            production_volume_column="input_data_count",
         )
 
     def test_plot_quality_and_productivity__アノテーションあたり実績時間(self) -> None:
         self.obj.plot_quality_and_productivity(
             output_dir / "散布図-アノテーションあたり作業時間と品質の関係-実績時間-教師付者用.html",
             worktime_type=WorktimeType.ACTUAL,
-            performance_unit=PerformanceUnit.ANNOTATION_COUNT,
+            production_volume_column="annotation_count",
         )
 
     def test_plot_quality_and_productivity__入力データあたり計測時間(self) -> None:
         self.obj.plot_quality_and_productivity(
             output_dir / "散布図-入力データあたり作業時間と品質の関係-計測時間-教師付者用.html",
             worktime_type=WorktimeType.ACTUAL,
-            performance_unit=PerformanceUnit.INPUT_DATA_COUNT,
+            production_volume_column="input_data_count",
         )
