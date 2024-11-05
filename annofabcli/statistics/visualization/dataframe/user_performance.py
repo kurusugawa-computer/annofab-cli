@@ -1068,7 +1068,7 @@ class UserPerformance:
         div_element = self._create_div_element()
         write_bokeh_graph(bokeh.layouts.column([div_element, *[e.layout for e in scatter_obj_list]]), output_file)
 
-    def plot_quality_and_productivity(self, output_file: Path, worktime_type: WorktimeType, performance_unit: PerformanceUnit) -> None:
+    def plot_quality_and_productivity(self, output_file: Path, worktime_type: WorktimeType, production_volume_column: str) -> None:
         """
         作業時間を元に算出した生産性と品質の関係を、メンバごとにプロットする
         """
@@ -1117,12 +1117,12 @@ class UserPerformance:
             x_average_hour = self._get_average_value(
                 df,
                 numerator_column=(f"{worktime_type.value}_worktime_hour", PHASE),
-                denominator_column=(performance_unit.value, PHASE),
+                denominator_column=(production_volume_column, PHASE),
             )
             x_average_minute = x_average_hour * 60 if x_average_hour is not None else None
 
             for column_pair, scatter_obj in zip(
-                [("rejected_count", "task_count"), ("pointed_out_inspection_comment_count", performance_unit.value)],
+                [("rejected_count", "task_count"), ("pointed_out_inspection_comment_count", production_volume_column)],
                 scatter_obj_list,
             ):
                 if x_average_minute is not None:
@@ -1136,9 +1136,9 @@ class UserPerformance:
                 if y_average is not None:
                     scatter_obj.plot_average_line(y_average, dimension="width")
 
-            x_quartile = self._get_quartile_value(df[(f"{worktime_type.value}_worktime_minute/{performance_unit.value}", PHASE)])
+            x_quartile = self._get_quartile_value(df[(f"{worktime_type.value}_worktime_minute/{production_volume_column}", PHASE)])
             for column, scatter_obj in zip(
-                ["rejected_count/task_count", f"pointed_out_inspection_comment_count/{performance_unit.value}"],
+                ["rejected_count/task_count", f"pointed_out_inspection_comment_count/{production_volume_column}"],
                 scatter_obj_list,
             ):
                 scatter_obj.plot_quartile_line(x_quartile, dimension="height")
@@ -1151,30 +1151,31 @@ class UserPerformance:
         df = self.convert_df_suitable_for_bokeh(self.df)
         PHASE = TaskPhase.ANNOTATION.value  # noqa: N806
 
-        df[(f"{worktime_type.value}_worktime_minute/{performance_unit.value}", PHASE)] = (
-            df[(f"{worktime_type.value}_worktime_hour/{performance_unit.value}", PHASE)] * 60
+        df[(f"{worktime_type.value}_worktime_minute/{production_volume_column}", PHASE)] = (
+            df[(f"{worktime_type.value}_worktime_hour/{production_volume_column}", PHASE)] * 60
         )
         logger.debug(f"{output_file} を出力します。")
 
-        performance_unit_name = performance_unit.performance_unit_name
+        production_volume_name = self.get_production_volume_name(production_volume_column)
+
         worktime_type_name = worktime_type.worktime_type_name
         scatter_obj_list = [
             create_scatter(
-                title=f"{performance_unit_name}あたり作業時間({worktime_type_name})とタスクあたり差し戻し回数の関係",
-                x_axis_label=f"{performance_unit_name}あたり作業時間[minute/{performance_unit.value}]",
+                title=f"{production_volume_name}あたり作業時間({worktime_type_name})とタスクあたり差し戻し回数の関係",
+                x_axis_label=f"{production_volume_name}あたり作業時間[minute/{production_volume_name}]",
                 y_axis_label="タスクあたり差し戻し回数",
             ),
             create_scatter(
-                title=f"{performance_unit_name}あたり作業時間({worktime_type_name})と{performance_unit_name}あたり検査コメント数の関係",
-                x_axis_label=f"{performance_unit_name}あたり作業時間[minute/{performance_unit.value}]",
-                y_axis_label=f"{performance_unit_name}あたり検査コメント数",
+                title=f"{production_volume_name}あたり作業時間({worktime_type_name})と{production_volume_name}あたり検査コメント数の関係",
+                x_axis_label=f"{production_volume_name}あたり作業時間[minute/{production_volume_name}]",
+                y_axis_label=f"{production_volume_name}あたり検査コメント数",
             ),
         ]
         column_pair_list = [
-            (f"{worktime_type.value}_worktime_minute/{performance_unit.value}", "rejected_count/task_count"),
+            (f"{worktime_type.value}_worktime_minute/{production_volume_column}", "rejected_count/task_count"),
             (
-                f"{worktime_type.value}_worktime_minute/{performance_unit.value}",
-                f"pointed_out_inspection_comment_count/{performance_unit.value}",
+                f"{worktime_type.value}_worktime_minute/{production_volume_column}",
+                f"pointed_out_inspection_comment_count/{production_volume_column}",
             ),
         ]
 
