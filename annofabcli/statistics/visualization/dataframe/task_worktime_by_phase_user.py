@@ -25,12 +25,14 @@ class TaskWorktimeByPhaseUser:
     """
 
     @property
-    def quantity_columns(self) -> list[str]:
+    def production_volume_columns(self) -> list[str]:
         """
-        アノテーション数や指摘コメント数など「量」を表す列名
+        生産量を表す列名
+
+        Notes:
+            `task_count`も生産量に該当するが、`input_data_count`や`annotation_count`と比較すると生産量として評価するのは厳しいので、`production_volume_columns`には含めない
         """
         result = [
-            "task_count",
             "input_data_count",
             "annotation_count",
         ]
@@ -38,13 +40,19 @@ class TaskWorktimeByPhaseUser:
         if self.custom_production_volume_column is not None:
             result.append(self.custom_production_volume_column)
 
-        result.extend(
-            [
-                "pointed_out_inspection_comment_count",
-                "rejected_count",
-            ]
-        )
         return result
+
+    @property
+    def quantity_columns(self) -> list[str]:
+        """
+        アノテーション数や指摘コメント数など「量」を表す列名
+        """
+        return [
+            "task_count",
+            *self.production_volume_columns,
+            "pointed_out_inspection_comment_count",
+            "rejected_count",
+        ]
 
     @property
     def columns(self) -> list[str]:

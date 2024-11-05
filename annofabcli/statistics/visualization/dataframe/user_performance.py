@@ -329,42 +329,46 @@ class UserPerformance:
             phase = TaskPhase.ANNOTATION.value
             columns = pandas.MultiIndex.from_tuples(
                 [
-                    ("stdev__monitored_worktime_hour/input_data_count", phase),
-                    ("stdev__monitored_worktime_hour/annotation_count", phase),
+                    (f"stdev__monitored_worktime_hour/{production_volume_column}", phase)
+                    for production_volume_column in task_worktime_by_phase_user.production_volume_columns
                 ]
             )
             df_empty = pandas.DataFrame(columns=columns, index=pandas.Index([], name="account_id"), dtype="float64")
             return df_empty
 
         df2 = df.copy()
-        df2["worktime_hour/input_data_count"] = df2["worktime_hour"] / df2["input_data_count"]
-        df2["worktime_hour/annotation_count"] = df2["worktime_hour"] / df2["annotation_count"]
+        for production_volume_column in task_worktime_by_phase_user.production_volume_columns:
+            df2[f"worktime_hour/{production_volume_column}"] = df2["worktime_hour"] / df2[production_volume_column]
 
         # 母標準偏差(ddof=0)を算出する
         # 標準偏差を算出する際"inf"を除外する理由：annotation_countが0の場合、"worktime_hour/annotation_count"はinfになる。
         # infが含まれるデータから標準偏差を求めようとするNaNになる。したがって、infを除外する。
         # 原則annotation_countが0のときに場合は、作業時間も小さいためこのデータを除外しても、標準偏差には影響がないはず
-        df_stdev_per_input_data_count = (
-            df2[df2["worktime_hour/input_data_count"] != float("inf")]
-            .groupby(["account_id", "phase"])[["worktime_hour/input_data_count"]]
-            .std(ddof=0)
-        )
-        df_stdev_per_annotation_count = (
-            df2[df2["worktime_hour/annotation_count"] != float("inf")]
-            .groupby(["account_id", "phase"])[["worktime_hour/annotation_count"]]
-            .std(ddof=0)
-        )
-        df_stdev = pandas.concat([df_stdev_per_input_data_count, df_stdev_per_annotation_count], axis=1)
+        df_stdev_per_volume_count_list = []
+        for production_volume_column in task_worktime_by_phase_user.production_volume_columns:
+            df_stdev_per_input_data_count = (
+                df2[df2[f"worktime_hour/{production_volume_column}"] != float("inf")]
+                .groupby(["account_id", "phase"])[[f"worktime_hour/{production_volume_column}"]]
+                .std(ddof=0)
+            )
+            df_stdev_per_volume_count_list.append(df_stdev_per_input_data_count)
+        df_stdev = pandas.concat([df_stdev_per_volume_count_list], axis=1)
 
         # `dropna=False`を指定する理由：NaNが含まれることにより、列に"annotation"などが含まれないと、後続の処理で失敗するため
         # 前述の処理でinfを除外しているので、NaNが含まれることはないはず
         df_stdev2 = pandas.pivot_table(
-            df_stdev, values=["worktime_hour/input_data_count", "worktime_hour/annotation_count"], index="account_id", columns="phase", dropna=False
+            df_stdev,
+            values=[
+                f"worktime_hour/{production_volume_column}" for production_volume_column in task_worktime_by_phase_user.production_volume_columns
+            ],
+            index="account_id",
+            columns="phase",
+            dropna=False,
         )
         df_stdev3 = df_stdev2.rename(
             columns={
-                "worktime_hour/input_data_count": "stdev__monitored_worktime_hour/input_data_count",
-                "worktime_hour/annotation_count": "stdev__monitored_worktime_hour/annotation_count",
+                f"worktime_hour/{production_volume_column}": f"stdev__monitored_worktime_hour/{production_volume_column}"
+                for production_volume_column in task_worktime_by_phase_user.production_volume_columns
             }
         )
 
@@ -568,14 +572,7 @@ class UserPerformance:
             """
             生産量や指摘数などの情報が欠損している場合は、0で埋めます。そうしないと、生産性や品質情報を計算する際にエラーになるためです。
             """
-            level0_columns = [
-                "monitored_worktime_hour",
-                "task_count",
-                "input_data_count",
-                "annotation_count",
-                "pointed_out_inspection_comment_count",
-                "rejected_count",
-            ]
+            level0_columns = ["monitored_worktime_hour", *task_worktime_by_phase_user.quantity_columns]
             columns = [(c0, c1) for c0, c1 in df.columns if c0 in level0_columns]
 
             return df.fillna({col: 0 for col in columns})
