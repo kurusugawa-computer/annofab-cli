@@ -15,7 +15,6 @@ from annofabcli.statistics.visualization.dataframe.productivity_per_date import 
 from annofabcli.statistics.visualization.dataframe.task import Task
 from annofabcli.statistics.visualization.dataframe.task_worktime_by_phase_user import TaskWorktimeByPhaseUser
 from annofabcli.statistics.visualization.dataframe.user_performance import (
-    PerformanceUnit,
     UserPerformance,
     WorktimeType,
 )
@@ -240,45 +239,45 @@ class ProjectDir(DataClassJsonMixin):
         obj.plot_productivity(
             output_dir / "散布図-アノテーションあたり作業時間と累計作業時間の関係-計測時間.html",
             worktime_type=WorktimeType.MONITORED,
-            performance_unit=PerformanceUnit.ANNOTATION_COUNT,
+            production_volume_column="annotation_count",
         )
         obj.plot_productivity(
             output_dir / "散布図-入力データあたり作業時間と累計作業時間の関係-計測時間.html",
             worktime_type=WorktimeType.MONITORED,
-            performance_unit=PerformanceUnit.INPUT_DATA_COUNT,
+            production_volume_column="input_data_count",
         )
         obj.plot_quality_and_productivity(
             output_dir / "散布図-アノテーションあたり作業時間と品質の関係-計測時間-教師付者用.html",
             worktime_type=WorktimeType.MONITORED,
-            performance_unit=PerformanceUnit.ANNOTATION_COUNT,
+            production_volume_column="annotation_count",
         )
         obj.plot_quality_and_productivity(
             output_dir / "散布図-入力データあたり作業時間と品質の関係-計測時間-教師付者用.html",
             worktime_type=WorktimeType.MONITORED,
-            performance_unit=PerformanceUnit.INPUT_DATA_COUNT,
+            production_volume_column="input_data_count",
         )
 
         if obj.actual_worktime_exists():
             obj.plot_productivity(
                 output_dir / "散布図-アノテーションあたり作業時間と累計作業時間の関係-実績時間.html",
                 worktime_type=WorktimeType.ACTUAL,
-                performance_unit=PerformanceUnit.ANNOTATION_COUNT,
+                production_volume_column="annotation_count",
             )
             obj.plot_productivity(
                 output_dir / "散布図-入力データあたり作業時間と累計作業時間の関係-実績時間.html",
                 worktime_type=WorktimeType.ACTUAL,
-                performance_unit=PerformanceUnit.INPUT_DATA_COUNT,
+                production_volume_column="input_data_count",
             )
 
             obj.plot_quality_and_productivity(
                 output_dir / "散布図-アノテーションあたり作業時間と品質の関係-実績時間-教師付者用.html",
                 worktime_type=WorktimeType.ACTUAL,
-                performance_unit=PerformanceUnit.ANNOTATION_COUNT,
+                production_volume_column="annotation_count",
             )
             obj.plot_quality_and_productivity(
                 output_dir / "散布図-入力データあたり作業時間と品質の関係-実績時間-教師付者用.html",
                 worktime_type=WorktimeType.ACTUAL,
-                performance_unit=PerformanceUnit.INPUT_DATA_COUNT,
+                production_volume_column="input_data_count",
             )
 
         else:

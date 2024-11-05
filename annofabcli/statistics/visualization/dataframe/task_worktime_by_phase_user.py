@@ -22,35 +22,60 @@ class TaskWorktimeByPhaseUser:
         * 計測作業時間
         * 生産量（タスク数、入力データ数、アノテーション数）
         * 品質情報（指摘コメント数、差し戻し回数）
+
+    Args:
+        custom_production_volume_columns: ユーザー独自の生産量を表す列名のlist
     """
 
-    columns = [  # noqa: RUF012
-        "project_id",
-        "task_id",
-        "status",
-        "phase",
-        "phase_stage",
-        "account_id",
-        "user_id",
-        "username",
-        "biography",
-        "worktime_hour",
-        "task_count",
-        "input_data_count",
-        "annotation_count",
-        "pointed_out_inspection_comment_count",
-        "rejected_count",
-    ]
+    @property
+    def production_volume_columns(self) -> list[str]:
+        """
+        生産量を表す列名
 
-    @classmethod
-    def required_columns_exist(cls, df: pandas.DataFrame) -> bool:
+        Notes:
+            `task_count`も生産量に該当するが、`input_data_count`や`annotation_count`と比較すると生産量として評価するのは厳しいので、`production_volume_columns`には含めない
+        """
+        return ["input_data_count", "annotation_count", *self.custom_production_volume_columns]
+
+    @property
+    def quantity_columns(self) -> list[str]:
+        """
+        アノテーション数や指摘コメント数など「量」を表す列名
+        """
+        return [
+            "task_count",
+            *self.production_volume_columns,
+            "pointed_out_inspection_comment_count",
+            "rejected_count",
+        ]
+
+    @property
+    def columns(self) -> list[str]:
+        """
+        列名
+        """
+        return [
+            "project_id",
+            "task_id",
+            "status",
+            "phase",
+            "phase_stage",
+            "account_id",
+            "user_id",
+            "username",
+            "biography",
+            "worktime_hour",
+            *self.quantity_columns,
+        ]
+
+    def required_columns_exist(self, df: pandas.DataFrame) -> bool:
         """
         必須の列が存在するかどうかを返します。
 
         Returns:
             必須の列が存在するかどうか
         """
-        return len(set(cls.columns) - set(df.columns)) == 0
+        return len(set(self.columns) - set(df.columns)) == 0
 
     @staticmethod
     def _duplicated_keys(df: pandas.DataFrame) -> bool:
@@ -60,7 +85,9 @@ class TaskWorktimeByPhaseUser:
         duplicated = df.duplicated(subset=["project_id", "task_id", "phase", "phase_stage", "account_id"])
         return duplicated.any()
 
-    def __init__(self, df: pandas.DataFrame) -> None:
+    def __init__(self, df: pandas.DataFrame, *, custom_production_volume_columns: Optional[list[str]] = None) -> None:
+        self.custom_production_volume_columns = custom_production_volume_columns if custom_production_volume_columns is not None else []
+
         if self._duplicated_keys(df):
             logger.warning("引数`df`に重複したキー（project_id, task_id, phase, phase_stage, account_id）が含まれています。")
 
@@ -76,7 +103,9 @@ class TaskWorktimeByPhaseUser:
         return True
 
     @classmethod
-    def from_df_wrapper(cls, task_history: TaskHistory, user: User, task: Task, project_id: str) -> TaskWorktimeByPhaseUser:
+    def from_df_wrapper(
+        cls, task_history: TaskHistory, user: User, task: Task, project_id: str, *, custom_production_volume_columns: Optional[list[str]] = None
+    ) -> TaskWorktimeByPhaseUser:
         """
         以下のDataFrameのラッパーからインスタンスを生成します。
         * タスク履歴
@@ -97,7 +126,7 @@ class TaskWorktimeByPhaseUser:
         df = df_worktime_ratio.merge(user.df, on="account_id", how="left")
         df = df.merge(df_task[["task_id", "status"]], on="task_id", how="left")
         df["project_id"] = project_id
-        return cls(df)
+        return cls(df, custom_production_volume_columns=custom_production_volume_columns)
 
     def to_csv(self, output_file: Path) -> None:
         if not self._validate_df_for_output(output_file):
@@ -106,7 +135,7 @@ class TaskWorktimeByPhaseUser:
         print_csv(self.df[self.columns], str(output_file))
 
     @staticmethod
-    def merge(*obj: TaskWorktimeByPhaseUser) -> TaskWorktimeByPhaseUser:
+    def merge(*obj: TaskWorktimeByPhaseUser, custom_production_volume_columns: Optional[list[str]] = None) -> TaskWorktimeByPhaseUser:
         """
         複数のインスタンスをマージします。
 
@@ -114,7 +143,7 @@ class TaskWorktimeByPhaseUser:
         """
         df_list = [e.df for e in obj]
         df_merged = pandas.concat(df_list)
-        return TaskWorktimeByPhaseUser(df_merged)
+        return TaskWorktimeByPhaseUser(df_merged, custom_production_volume_columns=custom_production_volume_columns)
 
     @classmethod
     def empty(cls) -> TaskWorktimeByPhaseUser:
@@ -151,9 +180,9 @@ class TaskWorktimeByPhaseUser:
         return len(self.df) == 0
 
     @classmethod
-    def from_csv(cls, csv_file: Path) -> TaskWorktimeByPhaseUser:
+    def from_csv(cls, csv_file: Path, *, custom_production_volume_columns: Optional[list[str]] = None) -> TaskWorktimeByPhaseUser:
         df = pandas.read_csv(str(csv_file))
-        return cls(df)
+        return cls(df, custom_production_volume_columns=custom_production_volume_columns)
 
     def mask_user_info(
         self,
