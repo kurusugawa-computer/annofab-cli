@@ -248,7 +248,7 @@ class AnnotatorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
         line_graph_list = [
             LineGraph(
                 title="累積のアノテーション数と教師付作業時間",
-                y_axis_label="教師付作業時間[hour]",
+                y_axis_label="教師付作業時間[時間]",
                 tooltip_columns=[
                     "task_id",
                     "first_annotation_user_id",
@@ -309,7 +309,7 @@ class AnnotatorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
         line_graph_list = [
             LineGraph(
                 title="累積の入力データ数と教師付作業時間",
-                y_axis_label="教師付作業時間[hour]",
+                y_axis_label="教師付作業時間[時間]",
                 tooltip_columns=[
                     "task_id",
                     "first_annotation_user_id",
@@ -381,7 +381,7 @@ class AnnotatorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
         line_graph_list = [
             LineGraph(
                 title="累積のタスク数と教師付作業時間",
-                y_axis_label="教師付作業時間[hour]",
+                y_axis_label="教師付作業時間[時間]",
                 tooltip_columns=tooltip_columns,
                 x_axis_label=x_axis_label,
             ),
@@ -489,7 +489,7 @@ class InspectorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
         line_graph_list = [
             LineGraph(
                 title="累積のアノテーション数と検査作業時間",
-                y_axis_label="検査作業時間[hour]",
+                y_axis_label="検査作業時間[時間]",
                 tooltip_columns=[
                     "task_id",
                     "first_inspection_user_id",
@@ -537,7 +537,7 @@ class InspectorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
         line_graph_list = [
             LineGraph(
                 title="累積の入力データ数と検査作業時間",
-                y_axis_label="検査作業時間[hour]",
+                y_axis_label="検査作業時間[時間]",
                 tooltip_columns=[
                     "task_id",
                     "first_inspection_user_id",
@@ -585,7 +585,7 @@ class InspectorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
         line_graph_list = [
             LineGraph(
                 title="累積のタスク数と検査作業時間",
-                y_axis_label="検査作業時間[hour]",
+                y_axis_label="検査作業時間[時間]",
                 tooltip_columns=[
                     "task_id",
                     "first_inspection_user_id",
@@ -680,7 +680,7 @@ class AcceptorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
         line_graph_list = [
             LineGraph(
                 title="累積のアノテーション数と受入作業時間",
-                y_axis_label="受入作業時間[hour]",
+                y_axis_label="受入作業時間[時間]",
                 tooltip_columns=[
                     "task_id",
                     "first_acceptance_user_id",
@@ -728,7 +728,7 @@ class AcceptorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
         line_graph_list = [
             LineGraph(
                 title="累積の入力データ数と受入作業時間",
-                y_axis_label="受入作業時間[hour]",
+                y_axis_label="受入作業時間[時間]",
                 tooltip_columns=[
                     "task_id",
                     "first_acceptance_user_id",
@@ -774,7 +774,7 @@ class AcceptorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
         line_graph_list = [
             LineGraph(
                 title="累積のタスク数と受入作業時間",
-                y_axis_label="受入作業時間[hour]",
+                y_axis_label="受入作業時間[時間]",
                 tooltip_columns=[
                     "task_id",
                     "first_acceptance_user_id",
