@@ -24,33 +24,44 @@ class TaskWorktimeByPhaseUser:
         * 品質情報（指摘コメント数、差し戻し回数）
     """
 
-    columns = [  # noqa: RUF012
-        "project_id",
-        "task_id",
-        "status",
-        "phase",
-        "phase_stage",
-        "account_id",
-        "user_id",
-        "username",
-        "biography",
-        "worktime_hour",
-        "task_count",
-        "input_data_count",
-        "annotation_count",
-        "pointed_out_inspection_comment_count",
-        "rejected_count",
-    ]
+    @property
+    def columns(self) -> list[str]:
+        """
+        列名
+        """
+        volume_columns = [
+            "task_count",
+            "input_data_count",
+            "annotation_count",
+        ]
 
-    @classmethod
-    def required_columns_exist(cls, df: pandas.DataFrame) -> bool:
+        if self.custom_production_volume_column is not None:
+            volume_columns.append(self.custom_production_volume_column)
+
+        return [
+            "project_id",
+            "task_id",
+            "status",
+            "phase",
+            "phase_stage",
+            "account_id",
+            "user_id",
+            "username",
+            "biography",
+            "worktime_hour",
+            *volume_columns,
+            "pointed_out_inspection_comment_count",
+            "rejected_count",
+        ]
+
+    def required_columns_exist(self, df: pandas.DataFrame) -> bool:
         """
         必須の列が存在するかどうかを返します。
 
         Returns:
             必須の列が存在するかどうか
         """
-        return len(set(cls.columns) - set(df.columns)) == 0
+        return len(set(self.columns) - set(df.columns)) == 0
 
     @staticmethod
     def _duplicated_keys(df: pandas.DataFrame) -> bool:
@@ -60,7 +71,9 @@ class TaskWorktimeByPhaseUser:
         duplicated = df.duplicated(subset=["project_id", "task_id", "phase", "phase_stage", "account_id"])
         return duplicated.any()
 
-    def __init__(self, df: pandas.DataFrame) -> None:
+    def __init__(self, df: pandas.DataFrame, *, custom_production_volume_column: Optional[str] = None) -> None:
+        self.custom_production_volume_column = custom_production_volume_column
+
         if self._duplicated_keys(df):
             logger.warning("引数`df`に重複したキー（project_id, task_id, phase, phase_stage, account_id）が含まれています。")
 
