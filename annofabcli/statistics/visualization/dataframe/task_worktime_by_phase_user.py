@@ -103,7 +103,9 @@ class TaskWorktimeByPhaseUser:
         return True
 
     @classmethod
-    def from_df_wrapper(cls, task_history: TaskHistory, user: User, task: Task, project_id: str) -> TaskWorktimeByPhaseUser:
+    def from_df_wrapper(
+        cls, task_history: TaskHistory, user: User, task: Task, project_id: str, *, custom_production_volume_columns: Optional[list[str]] = None
+    ) -> TaskWorktimeByPhaseUser:
         """
         以下のDataFrameのラッパーからインスタンスを生成します。
         * タスク履歴
@@ -124,7 +126,7 @@ class TaskWorktimeByPhaseUser:
         df = df_worktime_ratio.merge(user.df, on="account_id", how="left")
         df = df.merge(df_task[["task_id", "status"]], on="task_id", how="left")
         df["project_id"] = project_id
-        return cls(df)
+        return cls(df, custom_production_volume_columns=custom_production_volume_columns)
 
     def to_csv(self, output_file: Path) -> None:
         if not self._validate_df_for_output(output_file):
@@ -133,7 +135,7 @@ class TaskWorktimeByPhaseUser:
         print_csv(self.df[self.columns], str(output_file))
 
     @staticmethod
-    def merge(*obj: TaskWorktimeByPhaseUser) -> TaskWorktimeByPhaseUser:
+    def merge(*obj: TaskWorktimeByPhaseUser, custom_production_volume_columns: Optional[list[str]] = None) -> TaskWorktimeByPhaseUser:
         """
         複数のインスタンスをマージします。
 
@@ -141,7 +143,7 @@ class TaskWorktimeByPhaseUser:
         """
         df_list = [e.df for e in obj]
         df_merged = pandas.concat(df_list)
-        return TaskWorktimeByPhaseUser(df_merged)
+        return TaskWorktimeByPhaseUser(df_merged, custom_production_volume_columns=custom_production_volume_columns)
 
     @classmethod
     def empty(cls) -> TaskWorktimeByPhaseUser:
@@ -178,9 +180,9 @@ class TaskWorktimeByPhaseUser:
         return len(self.df) == 0
 
     @classmethod
-    def from_csv(cls, csv_file: Path) -> TaskWorktimeByPhaseUser:
+    def from_csv(cls, csv_file: Path, *, custom_production_volume_columns: Optional[list[str]] = None) -> TaskWorktimeByPhaseUser:
         df = pandas.read_csv(str(csv_file))
-        return cls(df)
+        return cls(df, custom_production_volume_columns=custom_production_volume_columns)
 
     def mask_user_info(
         self,

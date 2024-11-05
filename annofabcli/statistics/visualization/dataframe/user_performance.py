@@ -194,9 +194,9 @@ class UserPerformance:
         return phase_list  # type: ignore[return-value]
 
     @classmethod
-    def from_csv(cls, csv_file: Path) -> UserPerformance:
+    def from_csv(cls, csv_file: Path, *, custom_production_volume_list: Optional[list[CustomProductionVolume]] = None) -> UserPerformance:
         df = read_multiheader_csv(str(csv_file))
-        return cls(df)
+        return cls(df, custom_production_volume_list=custom_production_volume_list)
 
     @classmethod
     def empty(cls) -> UserPerformance:
@@ -524,6 +524,8 @@ class UserPerformance:
         cls,
         worktime_per_date: WorktimePerDate,
         task_worktime_by_phase_user: TaskWorktimeByPhaseUser,
+        *,
+        custom_production_volume_list: Optional[list[CustomProductionVolume]] = None,
     ) -> UserPerformance:
         """
         pandas.DataFrameをラップしたオブジェクトから、インスタンスを生成します。
@@ -592,7 +594,7 @@ class UserPerformance:
 
         df = df.sort_values(["user_id"])
         # `df.reset_index()`を実行する理由：indexである`account_id`を列にするため
-        return cls(df.reset_index())
+        return cls(df.reset_index(), custom_production_volume_list=custom_production_volume_list)
 
     @classmethod
     def _convert_column_dtypes(cls, df: pandas.DataFrame) -> pandas.DataFrame:

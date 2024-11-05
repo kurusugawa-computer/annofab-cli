@@ -13,7 +13,7 @@ import pandas
 from annofabapi.models import TaskPhase
 
 from annofabcli.statistics.visualization.dataframe.task_worktime_by_phase_user import TaskWorktimeByPhaseUser
-from annofabcli.statistics.visualization.dataframe.user_performance import CustomProductionVolume, TaskPhaseString, UserPerformance
+from annofabcli.statistics.visualization.dataframe.user_performance import TaskPhaseString, UserPerformance
 from annofabcli.statistics.visualization.dataframe.worktime_per_date import WorktimePerDate
 
 logger = logging.getLogger(__name__)
@@ -30,9 +30,9 @@ class WholePerformance:
     STRING_KEYS = {("first_working_date", ""), ("last_working_date", "")}  # noqa: RUF012
     """文字列が格納されているキー"""
 
-    def __init__(self, series: pandas.Series, *, custom_production_volume_list: Optional[list[CustomProductionVolume]] = None) -> None:
+    def __init__(self, series: pandas.Series, *, custom_production_volume_columns: Optional[list[str]] = None) -> None:
         self.series = series
-        self.custom_production_volume_list = custom_production_volume_list if custom_production_volume_list is not None else []
+        self.custom_production_volume_columns = custom_production_volume_columns if custom_production_volume_columns is not None else []
 
     def _validate_df_for_output(self, output_file: Path) -> bool:
         if len(self.series) == 0:
@@ -85,7 +85,9 @@ class WholePerformance:
 
         return UserPerformance.from_df_wrapper(
             worktime_per_date=WorktimePerDate(df_worktime_per_date),
-            task_worktime_by_phase_user=TaskWorktimeByPhaseUser(df_task_worktime_by_phase_user),
+            task_worktime_by_phase_user=TaskWorktimeByPhaseUser(
+                df_task_worktime_by_phase_user, custom_production_volume_columns=task_worktime_by_phase_user.custom_production_volume_columns
+            ),
         )
 
     @classmethod
@@ -222,7 +224,7 @@ class WholePerformance:
 
         # 列の順番を整える
         phase_list = UserPerformance.get_phase_list(self.series.index)
-        production_volume_columns = ["input_data_count", "annotation_count", *[e.column for e in self.custom_production_volume_list]]
+        production_volume_columns = ["input_data_count", "annotation_count", *self.custom_production_volume_columns]
         indexes = self.get_series_index(phase_list, production_volume_columns=production_volume_columns)
         series = self.series[indexes]
 
