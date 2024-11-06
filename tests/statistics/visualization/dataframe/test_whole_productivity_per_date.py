@@ -82,10 +82,3 @@ class TestWholeProductivityPerFirstAnnotationStartedDate:
         task = Task.from_csv(data_dir / "task.csv")
         obj = WholeProductivityPerFirstAnnotationStartedDate.from_task(task)
         obj.plot(self.output_dir / "test__from_task__and__plot.html")
-
-    def test__merge(self):
-        obj1 = WholeProductivityPerFirstAnnotationStartedDate.from_csv(data_dir / "教師付開始日毎の生産量と生産性.csv")
-        obj2 = WholeProductivityPerFirstAnnotationStartedDate.from_csv(data_dir / "教師付開始日毎の生産量と生産性2.csv")
-        merged_obj = WholeProductivityPerFirstAnnotationStartedDate.merge(obj1, obj2)
-        merged_obj.to_csv(self.output_dir / "test__merge.csv")
-        merged_obj.plot(self.output_dir / "test__merge.html")
