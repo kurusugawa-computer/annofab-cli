@@ -29,6 +29,7 @@ from annofabcli.statistics.linegraph import (
 )
 from annofabcli.statistics.visualization.dataframe.task import Task
 from annofabcli.statistics.visualization.dataframe.worktime_per_date import WorktimePerDate
+from annofabcli.statistics.visualization.model import CustomProductionVolumeColumn
 
 logger = logging.getLogger(__name__)
 
@@ -89,8 +90,9 @@ def _plot_and_moving_average(  # noqa: ANN202
 class WholeProductivityPerCompletedDate:
     """受入完了日ごとの全体の生産量と生産性に関する情報"""
 
-    def __init__(self, df: pandas.DataFrame) -> None:
+    def __init__(self, df: pandas.DataFrame, *, custom_production_volume_list: Optional[list[CustomProductionVolumeColumn]] = None) -> None:
         self.df = df
+        self.custom_production_volume_list = custom_production_volume_list if custom_production_volume_list is not None else []
 
     def _validate_df_for_output(self, output_file: Path) -> bool:
         if len(self.df) == 0:
@@ -122,7 +124,9 @@ class WholeProductivityPerCompletedDate:
         return pandas.DataFrame(index=[e.strftime("%Y-%m-%d") for e in pandas.date_range(start_date, end_date)])
 
     @classmethod
-    def from_df_wrapper(cls, task: Task, worktime_per_date: WorktimePerDate) -> WholeProductivityPerCompletedDate:
+    def from_df_wrapper(
+        cls, task: Task, worktime_per_date: WorktimePerDate, *, custom_production_volume_list: Optional[list[CustomProductionVolumeColumn]] = None
+    ) -> WholeProductivityPerCompletedDate:
         """
         受入完了日毎の全体の生産量、生産性を算出する。
 
@@ -138,25 +142,22 @@ class WholeProductivityPerCompletedDate:
                 monitored_acceptance_worktime_hour
         """
 
-        df_sub_task = task.df[
-            [
-                "task_id",
-                "first_acceptance_completed_datetime",
-                "input_data_count",
-                "annotation_count",
-            ]
-        ].copy()
+        # 生産量を表す列名
+        production_volume_columns = [
+            "input_data_count",
+            "annotation_count",
+        ]
+        if custom_production_volume_list is not None:
+            production_volume_columns.extend([e.value for e in custom_production_volume_list])
+
+        df_sub_task = task.df[["task_id", "first_acceptance_completed_datetime", *custom_production_volume_list]].copy()
         df_sub_task["first_acceptance_completed_date"] = df_sub_task["first_acceptance_completed_datetime"].map(
             lambda e: datetime_to_date(e) if not pandas.isna(e) else None
         )
 
         # タスク完了日を軸にして集計する
-        value_columns = [
-            "input_data_count",
-            "annotation_count",
-        ]
         df_agg_sub_task = df_sub_task.pivot_table(
-            values=value_columns,
+            values=production_volume_columns,
             index="first_acceptance_completed_date",
             aggfunc="sum",
         ).fillna(0)
@@ -166,7 +167,7 @@ class WholeProductivityPerCompletedDate:
             ).fillna(0)
         else:
             # 列だけ作る
-            df_agg_sub_task = df_agg_sub_task.assign(**{key: 0 for key in value_columns}, task_count=0)
+            df_agg_sub_task = df_agg_sub_task.assign(**{key: 0 for key in production_volume_columns}, task_count=0)
 
         df_worktime = worktime_per_date.df
         if len(df_worktime) > 0:
@@ -212,11 +213,11 @@ class WholeProductivityPerCompletedDate:
         df_date = df_date_base.join(df_agg_sub_task).join(df_agg_labor).fillna(0)
         df_date["date"] = df_date.index
 
-        cls._add_velocity_columns(df_date)
-        return cls(df_date)
+        cls._add_velocity_columns(df_date, production_volume_columns)
+        return cls(df_date, custom_production_volume_list=custom_production_volume_list)
 
     @classmethod
-    def _add_velocity_columns(cls, df: pandas.DataFrame) -> None:
+    def _add_velocity_columns(cls, df: pandas.DataFrame, production_volume_columns: list[str]) -> None:
         """
         生産性情報などの列を追加する。
         """
@@ -241,12 +242,12 @@ class WholeProductivityPerCompletedDate:
 
         # 生産性情報を追加
         for category in ["actual", "monitored"]:
-            for unit in ["task_count", "input_data_count", "annotation_count"]:
+            for unit in ["task_count", *production_volume_columns]:
                 add_velocity_column(df, numerator_column=f"{category}_worktime_hour", denominator_column=unit)
 
         # フェーズごとの作業時間は、細かい単位で生産性を出したいので、task_countを使わない
         for category in ["monitored_annotation", "monitored_inspection", "monitored_acceptance", "unmonitored"]:
-            for unit in ["input_data_count", "annotation_count"]:
+            for unit in production_volume_columns:
                 add_velocity_column(df, numerator_column=f"{category}_worktime_hour", denominator_column=unit)
 
     @classmethod
