@@ -120,7 +120,7 @@ class Task:
             # 個数
             "input_data_count",
             "annotation_count",
-            *[e.column for e in self.custom_production_volume_list],
+            *[e.value for e in self.custom_production_volume_list],
             "inspection_comment_count",
             "inspection_comment_count_in_inspection_phase",
             "inspection_comment_count_in_acceptance_phase",
@@ -191,7 +191,7 @@ class Task:
         if custom_production_volume is not None:
             df = df.merge(custom_production_volume.df, on=["project_id", "task_id"], how="left")
             custom_production_volume_list = custom_production_volume.custom_production_volume_list
-            df = df.fillna({e.column: 0 for e in custom_production_volume_list})
+            df = df.fillna({e.value: 0 for e in custom_production_volume_list})
 
         return cls(df, custom_production_volume_list=custom_production_volume_list)
 
@@ -249,7 +249,7 @@ class Task:
             "inspection_comment_count_in_acceptance_phase",
         ]
         if custom_production_volume_list is not None:
-            numeric_columns.extend([e.column for e in custom_production_volume_list])
+            numeric_columns.extend([e.value for e in custom_production_volume_list])
 
         df_dtype: dict[str, str] = {}
         for col in numeric_columns:
@@ -399,7 +399,7 @@ class Task:
             "production_volume": [
                 {"column": "annotation_count", "x_axis_label": "アノテーション数", "title": "アノテーション数"},
                 {"column": "input_data_count", "x_axis_label": "入力データ数", "title": "入力データ数"},
-                *[{"column": e.column, "x_axis_label": e.name, "title": e.name} for e in self.custom_production_volume_list],
+                *[{"column": e.value, "x_axis_label": e.name, "title": e.name} for e in self.custom_production_volume_list],
             ],
             "inspection_comment": [
                 {"column": "inspection_comment_count", "x_axis_label": "検査コメント数", "title": "検査コメント数"},

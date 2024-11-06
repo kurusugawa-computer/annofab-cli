@@ -514,8 +514,6 @@ class UserPerformance:
         cls,
         worktime_per_date: WorktimePerDate,
         task_worktime_by_phase_user: TaskWorktimeByPhaseUser,
-        *,
-        custom_production_volume_list: Optional[list[CustomProductionVolumeColumn]] = None,
     ) -> UserPerformance:
         """
         pandas.DataFrameをラップしたオブジェクトから、インスタンスを生成します。
@@ -584,7 +582,7 @@ class UserPerformance:
 
         df = df.sort_values(["user_id"])
         # `df.reset_index()`を実行する理由：indexである`account_id`を列にするため
-        return cls(df.reset_index(), custom_production_volume_list=custom_production_volume_list)
+        return cls(df.reset_index(), custom_production_volume_list=task_worktime_by_phase_user.custom_production_volume_list)
 
     @classmethod
     def _convert_column_dtypes(cls, df: pandas.DataFrame) -> pandas.DataFrame:
@@ -703,7 +701,7 @@ class UserPerformance:
 
     @property
     def columns(self) -> list[tuple[str, str]]:
-        production_volume_columns = ["input_data_count", "annotation_count", *[e.column for e in self.custom_production_volume_list]]
+        production_volume_columns = ["input_data_count", "annotation_count", *[e.value for e in self.custom_production_volume_list]]
         value_columns = self.get_productivity_columns(self.phase_list, production_volume_columns=production_volume_columns)
 
         user_columns = [
@@ -867,7 +865,7 @@ class UserPerformance:
         """
         生産量を表す列名から、名前を取得します。
         """
-        column_to_name: dict[str, str] = {e.column: e.name for e in self.custom_production_volume_list}
+        column_to_name: dict[str, str] = {e.value: e.name for e in self.custom_production_volume_list}
         column_to_name.update(
             {
                 "input_data_count": "入力データ",

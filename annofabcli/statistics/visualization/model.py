@@ -14,10 +14,10 @@ class WorktimeColumn(Enum):
 @dataclass(frozen=True)
 class CustomProductionVolumeColumn:
     """
-    入力データ数やアノテーション数以外の、ユーザー独自の生産量
+    プロジェクト独自の生産量の列情報
     """
 
-    column: str
-    """CSVに使われる列名"""
+    value: str
+    """CSVの列名"""
     name: str
-    """グラフに使われる名前"""
+    """列の名前。グラフに表示する名前などに使用する"""

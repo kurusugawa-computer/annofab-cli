@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+from functools import partial
 from pathlib import Path
 from typing import Optional
 
@@ -11,6 +12,7 @@ from annofabcli.common.utils import print_csv
 from annofabcli.statistics.visualization.dataframe.task import Task
 from annofabcli.statistics.visualization.dataframe.task_history import TaskHistory
 from annofabcli.statistics.visualization.dataframe.user import User
+from annofabcli.statistics.visualization.model import CustomProductionVolumeColumn
 
 logger = logging.getLogger(__name__)
 
@@ -35,7 +37,7 @@ class TaskWorktimeByPhaseUser:
         Notes:
             `task_count`も生産量に該当するが、`input_data_count`や`annotation_count`と比較すると生産量として評価するのは厳しいので、`production_volume_columns`には含めない
         """
-        return ["input_data_count", "annotation_count", *self.custom_production_volume_columns]
+        return ["input_data_count", "annotation_count", *[e.value for e in self.custom_production_volume_list]]
 
     @property
     def quantity_columns(self) -> list[str]:
@@ -85,16 +87,25 @@ class TaskWorktimeByPhaseUser:
         duplicated = df.duplicated(subset=["project_id", "task_id", "phase", "phase_stage", "account_id"])
         return duplicated.any()
 
-    def __init__(self, df: pandas.DataFrame, *, custom_production_volume_columns: Optional[list[str]] = None) -> None:
-        self.custom_production_volume_columns = custom_production_volume_columns if custom_production_volume_columns is not None else []
+    def __init__(self, df: pandas.DataFrame, *, custom_production_volume_list: Optional[list[CustomProductionVolumeColumn]] = None) -> None:
+        self.custom_production_volume_list = custom_production_volume_list if custom_production_volume_list is not None else []
 
         if self._duplicated_keys(df):
             logger.warning("引数`df`に重複したキー（project_id, task_id, phase, phase_stage, account_id）が含まれています。")
 
         if not self.required_columns_exist(df):
-            raise ValueError(f"引数`df`には、{self.columns}の列が必要です。 :: {df.columns=}")
+            raise ValueError(
+                f"引数'df'の'columns'に次の列が存在していません。 {self.missing_columns(df)} :: " f"次の列が必須です。{self.columns}の列が必要です。"
+            )
 
         self.df = df
+
+    def missing_columns(self, df: pandas.DataFrame) -> list[str]:
+        """
+        欠損している列名を取得します。
+
+        """
+        return list(set(self.columns) - set(df.columns))
 
     def _validate_df_for_output(self, output_file: Path) -> bool:
         if len(self.df) == 0:
@@ -103,9 +114,7 @@ class TaskWorktimeByPhaseUser:
         return True
 
     @classmethod
-    def from_df_wrapper(
-        cls, task_history: TaskHistory, user: User, task: Task, project_id: str, *, custom_production_volume_columns: Optional[list[str]] = None
-    ) -> TaskWorktimeByPhaseUser:
+    def from_df_wrapper(cls, task_history: TaskHistory, user: User, task: Task, project_id: str) -> TaskWorktimeByPhaseUser:
         """
         以下のDataFrameのラッパーからインスタンスを生成します。
         * タスク履歴
@@ -119,14 +128,16 @@ class TaskWorktimeByPhaseUser:
             project_id
         """
         df_task = task.df
-        df_worktime_ratio = cls._create_annotation_count_ratio_df(task_history.df, task.df)
+        df_worktime_ratio = cls._create_annotation_count_ratio_df(
+            task_history.df, task.df, custom_production_volume_columns=[e.value for e in task.custom_production_volume_list]
+        )
         if len(df_worktime_ratio) == 0:
             return cls.empty()
 
         df = df_worktime_ratio.merge(user.df, on="account_id", how="left")
         df = df.merge(df_task[["task_id", "status"]], on="task_id", how="left")
         df["project_id"] = project_id
-        return cls(df, custom_production_volume_columns=custom_production_volume_columns)
+        return cls(df, custom_production_volume_list=task.custom_production_volume_list)
 
     def to_csv(self, output_file: Path) -> None:
         if not self._validate_df_for_output(output_file):
@@ -135,7 +146,9 @@ class TaskWorktimeByPhaseUser:
         print_csv(self.df[self.columns], str(output_file))
 
     @staticmethod
-    def merge(*obj: TaskWorktimeByPhaseUser, custom_production_volume_columns: Optional[list[str]] = None) -> TaskWorktimeByPhaseUser:
+    def merge(
+        *obj: TaskWorktimeByPhaseUser, custom_production_volume_list: Optional[list[CustomProductionVolumeColumn]] = None
+    ) -> TaskWorktimeByPhaseUser:
         """
         複数のインスタンスをマージします。
 
@@ -143,10 +156,10 @@ class TaskWorktimeByPhaseUser:
         """
         df_list = [e.df for e in obj]
         df_merged = pandas.concat(df_list)
-        return TaskWorktimeByPhaseUser(df_merged, custom_production_volume_columns=custom_production_volume_columns)
+        return TaskWorktimeByPhaseUser(df_merged, custom_production_volume_list=custom_production_volume_list)
 
     @classmethod
-    def empty(cls) -> TaskWorktimeByPhaseUser:
+    def empty(cls, *, custom_production_volume_list: Optional[list[CustomProductionVolumeColumn]] = None) -> TaskWorktimeByPhaseUser:
         """空のデータフレームを持つインスタンスを生成します。"""
 
         df_dtype: dict[str, str] = {
@@ -166,9 +179,11 @@ class TaskWorktimeByPhaseUser:
             "pointed_out_inspection_comment_count": "float64",
             "rejected_count": "float64",
         }
+        if custom_production_volume_list is not None:
+            df_dtype.update({e.value: "float64" for e in custom_production_volume_list})
 
         df = pandas.DataFrame(columns=df_dtype.keys()).astype(df_dtype)
-        return cls(df)
+        return cls(df, custom_production_volume_list=custom_production_volume_list)
 
     def is_empty(self) -> bool:
         """
@@ -180,9 +195,11 @@ class TaskWorktimeByPhaseUser:
         return len(self.df) == 0
 
     @classmethod
-    def from_csv(cls, csv_file: Path, *, custom_production_volume_columns: Optional[list[str]] = None) -> TaskWorktimeByPhaseUser:
+    def from_csv(
+        cls, csv_file: Path, *, custom_production_volume_list: Optional[list[CustomProductionVolumeColumn]] = None
+    ) -> TaskWorktimeByPhaseUser:
         df = pandas.read_csv(str(csv_file))
-        return cls(df, custom_production_volume_columns=custom_production_volume_columns)
+        return cls(df, custom_production_volume_list=custom_production_volume_list)
 
     def mask_user_info(
         self,
@@ -211,7 +228,9 @@ class TaskWorktimeByPhaseUser:
         return TaskWorktimeByPhaseUser(df)
 
     @staticmethod
-    def _create_annotation_count_ratio_df(task_history_df: pandas.DataFrame, task_df: pandas.DataFrame) -> pandas.DataFrame:
+    def _create_annotation_count_ratio_df(
+        task_history_df: pandas.DataFrame, task_df: pandas.DataFrame, *, custom_production_volume_columns: Optional[list[str]]
+    ) -> pandas.DataFrame:
         """
         task_id, phase, (phase_index), user_idの作業時間比から、アノテーション数などの生産量を求める
 
@@ -225,32 +244,17 @@ class TaskWorktimeByPhaseUser:
             row["task_id"]: {
                 "annotation_count": row["annotation_count"],
                 "input_data_count": row["input_data_count"],
-                "inspection_comment_count": row["inspection_comment_count"],
+                "pointed_out_inspection_comment_count": row["inspection_comment_count"],
+                **({col: row[col] for col in custom_production_volume_columns} if custom_production_volume_columns is not None else {}),
                 "rejected_count": row["number_of_rejections_by_inspection"] + row["number_of_rejections_by_acceptance"],
             }
             for _, row in task_df.iterrows()
         }
 
-        def get_inspection_comment_count(row: pandas.Series) -> float:
+        def get_quantity_value(row: pandas.Series, column: str) -> float:
             task_id = row.name[0]
-            inspection_comment_count = annotation_count_dict[task_id]["inspection_comment_count"]
-            return row["task_count"] * inspection_comment_count
-
-        def get_rejected_count(row: pandas.Series) -> float:
-            task_id = row.name[0]
-            rejected_count = annotation_count_dict[task_id]["rejected_count"]
-            return row["task_count"] * rejected_count
-
-        def get_annotation_count(row: pandas.Series) -> float:
-            task_id = row.name[0]
-            annotation_count = annotation_count_dict[task_id]["annotation_count"]
-            result = row["task_count"] * annotation_count
-            return result
-
-        def get_input_data_count(row: pandas.Series) -> float:
-            task_id = row.name[0]
-            annotation_count = annotation_count_dict[task_id]["input_data_count"]
-            return row["task_count"] * annotation_count
+            value = annotation_count_dict[task_id][column]
+            return row["task_count"] * value
 
         if len(task_df) == 0:
             logger.warning("タスク一覧が0件です。")
@@ -264,28 +268,24 @@ class TaskWorktimeByPhaseUser:
 
         if len(group_obj) == 0:
             logger.warning("タスク履歴情報に作業しているタスクがありませんでした。タスク履歴全件ファイルが更新されていない可能性があります。")
-            return pandas.DataFrame(
-                columns=[
-                    "task_id",
-                    "phase",
-                    "phase_stage",
-                    "account_id",
-                    "worktime_hour",
-                    "task_count",
-                    "annotation_count",
-                    "input_data_count",
-                    "pointed_out_inspection_comment_count",
-                    "rejected_count",
-                ]
-            )
+            return pandas.DataFrame()
 
         group_obj["task_count"] = group_obj.groupby(level=["task_id", "phase", "phase_stage"], group_keys=False).apply(
             lambda e: e / e["worktime_hour"].sum()
         )
-        group_obj["annotation_count"] = group_obj.apply(get_annotation_count, axis="columns")
-        group_obj["input_data_count"] = group_obj.apply(get_input_data_count, axis="columns")
-        group_obj["pointed_out_inspection_comment_count"] = group_obj.apply(get_inspection_comment_count, axis="columns")
-        group_obj["rejected_count"] = group_obj.apply(get_rejected_count, axis="columns")
+
+        quantity_columns = [
+            "annotation_count",
+            "input_data_count",
+            "pointed_out_inspection_comment_count",
+            "rejected_count",
+            *(custom_production_volume_columns if custom_production_volume_columns is not None else []),
+        ]
+
+        for col in quantity_columns:
+            sub_get_quantity_value = partial(get_quantity_value, column=col)
+            group_obj[col] = group_obj.apply(sub_get_quantity_value, axis="columns")
+
         new_df = group_obj.reset_index()
         new_df["pointed_out_inspection_comment_count"] = new_df["pointed_out_inspection_comment_count"] * new_df["phase"].apply(
             lambda e: 1 if e == TaskPhase.ANNOTATION.value else 0

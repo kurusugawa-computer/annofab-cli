@@ -257,6 +257,18 @@ class ProjectDir(DataClassJsonMixin):
             production_volume_column="input_data_count",
         )
 
+        for custom_production_volume in obj.custom_production_volume_list:
+            obj.plot_productivity(
+                output_dir / f"散布図-{custom_production_volume.name}あたり作業時間と累計作業時間の関係-計測時間.html",
+                worktime_type=WorktimeType.MONITORED,
+                production_volume_column=custom_production_volume.value,
+            )
+            obj.plot_quality_and_productivity(
+                output_dir / f"散布図-{custom_production_volume.name}あたり作業時間と品質の関係-計測時間-教師付者用.html",
+                worktime_type=WorktimeType.MONITORED,
+                production_volume_column=custom_production_volume.value,
+            )
+
         if obj.actual_worktime_exists():
             obj.plot_productivity(
                 output_dir / "散布図-アノテーションあたり作業時間と累計作業時間の関係-実績時間.html",
@@ -279,6 +291,17 @@ class ProjectDir(DataClassJsonMixin):
                 worktime_type=WorktimeType.ACTUAL,
                 production_volume_column="input_data_count",
             )
+            for custom_production_volume in obj.custom_production_volume_list:
+                obj.plot_productivity(
+                    output_dir / f"散布図-{custom_production_volume.name}あたり作業時間と累計作業時間の関係-実績時間.html",
+                    worktime_type=WorktimeType.ACTUAL,
+                    production_volume_column=custom_production_volume.value,
+                )
+                obj.plot_quality_and_productivity(
+                    output_dir / f"散布図-{custom_production_volume.name}あたり作業時間と品質の関係-実績時間-教師付者用.html",
+                    worktime_type=WorktimeType.ACTUAL,
+                    production_volume_column=custom_production_volume.value,
+                )
 
         else:
             logger.warning(

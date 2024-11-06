@@ -86,7 +86,7 @@ class WholePerformance:
         return UserPerformance.from_df_wrapper(
             worktime_per_date=WorktimePerDate(df_worktime_per_date),
             task_worktime_by_phase_user=TaskWorktimeByPhaseUser(
-                df_task_worktime_by_phase_user, custom_production_volume_columns=task_worktime_by_phase_user.custom_production_volume_columns
+                df_task_worktime_by_phase_user, custom_production_volume_list=task_worktime_by_phase_user.custom_production_volume_list
             ),
         )
 
