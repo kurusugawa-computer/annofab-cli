@@ -6,7 +6,7 @@ from annofabcli.statistics.visualization.dataframe.user_performance import (
     WorktimeType,
 )
 from annofabcli.statistics.visualization.dataframe.worktime_per_date import WorktimePerDate
-from annofabcli.statistics.visualization.model import CustomProductionVolumeColumn
+from annofabcli.statistics.visualization.model import ProductionVolumeColumn
 
 output_dir = Path("./tests/out/statistics/visualization/dataframe/user_perforamance")
 data_dir = Path("./tests/data/statistics")
@@ -24,7 +24,7 @@ class TestUserPerformance:
         task_worktime_by_phase_user = TaskWorktimeByPhaseUser.from_csv(
             data_dir / "task-worktime-by-user-phase.csv",
             custom_production_volume_list=[
-                CustomProductionVolumeColumn("custom_production_volume1", "custom_生産量1"),
+                ProductionVolumeColumn("custom_production_volume1", "custom_生産量1"),
             ],
         )
         worktime_per_date = WorktimePerDate.from_csv(data_dir / "worktime-per-date.csv")

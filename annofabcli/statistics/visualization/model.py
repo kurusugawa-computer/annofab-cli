@@ -12,9 +12,9 @@ class WorktimeColumn(Enum):
 
 
 @dataclass(frozen=True)
-class CustomProductionVolumeColumn:
+class ProductionVolumeColumn:
     """
-    プロジェクト独自の生産量の列情報
+    生産量の列情報
     """
 
     value: str

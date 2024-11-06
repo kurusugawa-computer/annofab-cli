@@ -29,7 +29,7 @@ from annofabcli.statistics.linegraph import (
 )
 from annofabcli.statistics.visualization.dataframe.task import Task
 from annofabcli.statistics.visualization.dataframe.worktime_per_date import WorktimePerDate
-from annofabcli.statistics.visualization.model import CustomProductionVolumeColumn
+from annofabcli.statistics.visualization.model import ProductionVolumeColumn
 
 logger = logging.getLogger(__name__)
 
@@ -90,7 +90,7 @@ def _plot_and_moving_average(  # noqa: ANN202
 class WholeProductivityPerCompletedDate:
     """受入完了日ごとの全体の生産量と生産性に関する情報"""
 
-    def __init__(self, df: pandas.DataFrame, *, custom_production_volume_list: Optional[list[CustomProductionVolumeColumn]] = None) -> None:
+    def __init__(self, df: pandas.DataFrame, *, custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None) -> None:
         self.df = df
         self.custom_production_volume_list = custom_production_volume_list if custom_production_volume_list is not None else []
 
@@ -101,10 +101,12 @@ class WholeProductivityPerCompletedDate:
         return True
 
     @classmethod
-    def from_csv(cls, csv_file: Path) -> WholeProductivityPerCompletedDate:
+    def from_csv(
+        cls, csv_file: Path, *, custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None
+    ) -> WholeProductivityPerCompletedDate:
         """CSVファイルからインスタンスを生成します。"""
         df = pandas.read_csv(str(csv_file))
-        return cls(df)
+        return cls(df, custom_production_volume_list=custom_production_volume_list)
 
     @staticmethod
     def _create_df_date(date_index1: pandas.Index, date_index2: pandas.Index) -> pandas.DataFrame:
@@ -124,9 +126,7 @@ class WholeProductivityPerCompletedDate:
         return pandas.DataFrame(index=[e.strftime("%Y-%m-%d") for e in pandas.date_range(start_date, end_date)])
 
     @classmethod
-    def from_df_wrapper(
-        cls, task: Task, worktime_per_date: WorktimePerDate, *, custom_production_volume_list: Optional[list[CustomProductionVolumeColumn]] = None
-    ) -> WholeProductivityPerCompletedDate:
+    def from_df_wrapper(cls, task: Task, worktime_per_date: WorktimePerDate) -> WholeProductivityPerCompletedDate:
         """
         受入完了日毎の全体の生産量、生産性を算出する。
 
@@ -143,12 +143,7 @@ class WholeProductivityPerCompletedDate:
         """
 
         # 生産量を表す列名
-        production_volume_columns = [
-            "input_data_count",
-            "annotation_count",
-        ]
-        if custom_production_volume_list is not None:
-            production_volume_columns.extend([e.value for e in custom_production_volume_list])
+        production_volume_columns = ["input_data_count", "annotation_count", *[e.value for e in task.custom_production_volume_list]]
 
         df_sub_task = task.df[["task_id", "first_acceptance_completed_datetime", *production_volume_columns]].copy()
         df_sub_task["first_acceptance_completed_date"] = df_sub_task["first_acceptance_completed_datetime"].map(
@@ -214,7 +209,7 @@ class WholeProductivityPerCompletedDate:
         df_date["date"] = df_date.index
 
         cls._add_velocity_columns(df_date, production_volume_columns)
-        return cls(df_date, custom_production_volume_list=custom_production_volume_list)
+        return cls(df_date, custom_production_volume_list=task.custom_production_volume_list)
 
     @classmethod
     def _add_velocity_columns(cls, df: pandas.DataFrame, production_volume_columns: list[str]) -> None:
@@ -267,7 +262,7 @@ class WholeProductivityPerCompletedDate:
         """
 
         def add_velocity_columns(df: pandas.DataFrame):  # noqa: ANN202
-            for denominator in ["input_data_count", "annotation_count"]:
+            for denominator in [e.value for e in production_volume_list]:
                 for category in [
                     "actual",
                     "monitored",
@@ -412,6 +407,12 @@ class WholeProductivityPerCompletedDate:
         df = self.df.copy()
         df["dt_date"] = df["date"].map(lambda e: parse(e).date())
 
+        production_volume_list = [
+            ProductionVolumeColumn("input_data_count", "入力データ"),
+            ProductionVolumeColumn("annotation_count", "アノテーション"),
+            *self.custom_production_volume_list,
+        ]
+
         add_velocity_columns(df)
 
         logger.debug(f"{output_file} を出力します。")
@@ -444,49 +445,32 @@ class WholeProductivityPerCompletedDate:
                 ),
                 "y_info_list": [{"column": f"{e[0]}_hour", "legend": f"{e[1]}"} for e in phase_prefix],
             },
-            {
-                "line_graph": create_line_graph(
-                    title="日ごとの入力データあたり作業時間",
-                    y_axis_label="入力データあたり作業時間[分/入力データ]",
-                    tooltip_columns=[
-                        "date",
-                        "input_data_count",
-                        "actual_worktime_hour",
-                        "monitored_worktime_hour",
-                        "monitored_annotation_worktime_hour",
-                        "monitored_inspection_worktime_hour",
-                        "monitored_acceptance_worktime_hour",
-                        "actual_worktime_minute/input_data_count",
-                        "monitored_worktime_minute/input_data_count",
-                        "monitored_annotation_worktime_minute/input_data_count",
-                        "monitored_inspection_worktime_minute/input_data_count",
-                        "monitored_acceptance_worktime_minute/input_data_count",
-                    ],
-                ),
-                "y_info_list": [{"column": f"{e[0]}_minute/input_data_count", "legend": f"入力データあたり{e[1]}"} for e in phase_prefix],
-            },
-            {
-                "line_graph": create_line_graph(
-                    title="日ごとのアノテーションあたり作業時間",
-                    y_axis_label="アノテーションあたり作業時間[分/アノテーション]",
-                    tooltip_columns=[
-                        "date",
-                        "annotation_count",
-                        "actual_worktime_hour",
-                        "monitored_worktime_hour",
-                        "monitored_annotation_worktime_hour",
-                        "monitored_inspection_worktime_hour",
-                        "monitored_acceptance_worktime_hour",
-                        "actual_worktime_minute/annotation_count",
-                        "monitored_worktime_minute/annotation_count",
-                        "monitored_annotation_worktime_minute/annotation_count",
-                        "monitored_inspection_worktime_minute/annotation_count",
-                        "monitored_acceptance_worktime_minute/annotation_count",
-                    ],
-                ),
-                "y_info_list": [{"column": f"{e[0]}_minute/annotation_count", "legend": f"アノテーションあたり{e[1]}"} for e in phase_prefix],
-            },
         ]
+
+        for info in production_volume_list:
+            fig_info_list.append(  # noqa: PERF401
+                {
+                    "line_graph": create_line_graph(
+                        title=f"日ごとの{info.name}あたり作業時間",
+                        y_axis_label=f"{info.name}あたり作業時間[分/{info.name}]",
+                        tooltip_columns=[
+                            "date",
+                            info.value,
+                            "actual_worktime_hour",
+                            "monitored_worktime_hour",
+                            "monitored_annotation_worktime_hour",
+                            "monitored_inspection_worktime_hour",
+                            "monitored_acceptance_worktime_hour",
+                            f"actual_worktime_minute/{info.value}",
+                            "monitored_worktime_minute/input_data_count",
+                            f"monitored_annotation_worktime_minute/{info.value}",
+                            f"monitored_inspection_worktime_minute/{info.value}",
+                            f"monitored_acceptance_worktime_minute/{info.value}",
+                        ],
+                    ),
+                    "y_info_list": [{"column": f"{e[0]}_minute/{info.value}", "legend": f"{info.name}あたり{e[1]}"} for e in phase_prefix],
+                }
+            )
 
         source = ColumnDataSource(data=df)
 
@@ -741,11 +725,7 @@ class WholeProductivityPerCompletedDate:
         if not self._validate_df_for_output(output_file):
             return
 
-        production_columns = [
-            "task_count",
-            "input_data_count",
-            "annotation_count",
-        ]
+        production_volume_columns = ["input_data_count", "annotation_count", *[e.value for e in self.custom_production_volume_list]]
         worktime_columns = [
             "actual_worktime_hour",
             "monitored_worktime_hour",
@@ -759,7 +739,7 @@ class WholeProductivityPerCompletedDate:
             f"{numerator}/{denominator}{suffix}"
             for suffix in ["", WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX]
             for numerator in ["actual_worktime_hour", "monitored_worktime_hour"]
-            for denominator in ["task_count", "input_data_count", "annotation_count"]
+            for denominator in ["task_count", *production_volume_columns]
         ]
 
         # フェーズごとの作業時間に関する生産性
@@ -772,7 +752,7 @@ class WholeProductivityPerCompletedDate:
                 "monitored_acceptance_worktime_hour",
                 "unmonitored_worktime_hour",
             ]
-            for denominator in ["input_data_count", "annotation_count"]
+            for denominator in production_volume_columns
         ]
 
         columns = [
@@ -781,7 +761,8 @@ class WholeProductivityPerCompletedDate:
             "cumsum_input_data_count",
             "cumsum_actual_worktime_hour",
             "cumsum_monitored_worktime_hour",
-            *production_columns,
+            "task_count",
+            *production_volume_columns,
             *worktime_columns,
             *velocity_columns,
             *velocity_details_columns,

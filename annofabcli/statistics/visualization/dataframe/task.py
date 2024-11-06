@@ -19,7 +19,7 @@ from annofabcli.statistics.histogram import create_histogram_figure, get_sub_tit
 from annofabcli.statistics.visualization.dataframe.annotation_count import AnnotationCount
 from annofabcli.statistics.visualization.dataframe.custom_production_volume import CustomProductionVolume
 from annofabcli.statistics.visualization.dataframe.inspection_comment_count import InspectionCommentCount
-from annofabcli.statistics.visualization.model import CustomProductionVolumeColumn
+from annofabcli.statistics.visualization.model import ProductionVolumeColumn
 from annofabcli.task.list_all_tasks_added_task_history import AddingAdditionalInfoToTask
 
 logger = logging.getLogger(__name__)
@@ -63,7 +63,7 @@ class Task:
         """
         return list(set(self.columns) - set(df.columns))
 
-    def __init__(self, df: pandas.DataFrame, *, custom_production_volume_list: Optional[list[CustomProductionVolumeColumn]] = None) -> None:
+    def __init__(self, df: pandas.DataFrame, *, custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None) -> None:
         self.custom_production_volume_list = custom_production_volume_list if custom_production_volume_list is not None else []
 
         if self._duplicated_keys(df):
@@ -205,7 +205,7 @@ class Task:
         return len(self.df) == 0
 
     @classmethod
-    def empty(cls, *, custom_production_volume_list: Optional[list[CustomProductionVolumeColumn]] = None) -> Task:
+    def empty(cls, *, custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None) -> Task:
         """空のデータフレームを持つインスタンスを生成します。"""
 
         bool_columns = [
@@ -264,12 +264,12 @@ class Task:
         return cls(df, custom_production_volume_list=custom_production_volume_list)
 
     @classmethod
-    def from_csv(cls, csv_file: Path, *, custom_production_volume_list: Optional[list[CustomProductionVolumeColumn]] = None) -> Task:
+    def from_csv(cls, csv_file: Path, *, custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None) -> Task:
         df = pandas.read_csv(str(csv_file))
         return cls(df, custom_production_volume_list=custom_production_volume_list)
 
     @staticmethod
-    def merge(*obj: Task, custom_production_volume_list: Optional[list[CustomProductionVolumeColumn]] = None) -> Task:
+    def merge(*obj: Task, custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None) -> Task:
         """
         複数のインスタンスをマージします。
 

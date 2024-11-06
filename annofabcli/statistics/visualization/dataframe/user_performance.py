@@ -24,7 +24,7 @@ from annofabcli.common.utils import print_csv, read_multiheader_csv
 from annofabcli.statistics.scatter import ScatterGraph, get_color_from_palette, write_bokeh_graph
 from annofabcli.statistics.visualization.dataframe.task_worktime_by_phase_user import TaskWorktimeByPhaseUser
 from annofabcli.statistics.visualization.dataframe.worktime_per_date import WorktimePerDate
-from annofabcli.statistics.visualization.model import CustomProductionVolumeColumn
+from annofabcli.statistics.visualization.model import ProductionVolumeColumn
 
 logger = logging.getLogger(__name__)
 
@@ -86,7 +86,7 @@ class UserPerformance:
     PLOT_WIDTH = 1200
     PLOT_HEIGHT = 800
 
-    def __init__(self, df: pandas.DataFrame, *, custom_production_volume_list: Optional[list[CustomProductionVolumeColumn]] = None) -> None:
+    def __init__(self, df: pandas.DataFrame, *, custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None) -> None:
         phase_list = self.get_phase_list(df.columns)
         self.custom_production_volume_list = custom_production_volume_list if custom_production_volume_list is not None else []
         self.phase_list = phase_list
@@ -184,7 +184,7 @@ class UserPerformance:
         return phase_list  # type: ignore[return-value]
 
     @classmethod
-    def from_csv(cls, csv_file: Path, *, custom_production_volume_list: Optional[list[CustomProductionVolumeColumn]] = None) -> UserPerformance:
+    def from_csv(cls, csv_file: Path, *, custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None) -> UserPerformance:
         df = read_multiheader_csv(str(csv_file))
         return cls(df, custom_production_volume_list=custom_production_volume_list)
 

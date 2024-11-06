@@ -6,6 +6,7 @@ from annofabcli.statistics.visualization.dataframe.whole_productivity_per_date i
     WholeProductivityPerFirstAnnotationStartedDate,
 )
 from annofabcli.statistics.visualization.dataframe.worktime_per_date import WorktimePerDate
+from annofabcli.statistics.visualization.model import ProductionVolumeColumn
 
 output_dir = Path("./tests/out/statistics/visualization/dataframe/whole_productivity_per_date")
 data_dir = Path("./tests/data/statistics")
@@ -18,7 +19,13 @@ class TestWholeProductivityPerCompletedDate:
 
     @classmethod
     def setup_class(cls) -> None:
-        task = Task.from_csv(data_dir / "task.csv")
+        task = Task.from_csv(
+            data_dir / "task.csv",
+            custom_production_volume_list=[
+                ProductionVolumeColumn("custom_production_volume1", "custom_生産量1"),
+                ProductionVolumeColumn("custom_production_volume2", "custom_生産量2"),
+            ],
+        )
         worktime_per_date = WorktimePerDate.from_csv(data_dir / "ユーザ_日付list-作業時間.csv")
         cls.main_obj = WholeProductivityPerCompletedDate.from_df_wrapper(task, worktime_per_date)
 
@@ -26,7 +33,9 @@ class TestWholeProductivityPerCompletedDate:
         cls.output_dir.mkdir(exist_ok=True, parents=True)
 
     def test__from_df_wrapper(cls):
-        task = Task.from_csv(data_dir / "task.csv")
+        task = Task.from_csv(
+            data_dir / "task.csv",
+        )
         worktime_per_date = WorktimePerDate.from_csv(data_dir / "ユーザ_日付list-作業時間.csv")
         WholeProductivityPerCompletedDate.from_df_wrapper(task, worktime_per_date)
 

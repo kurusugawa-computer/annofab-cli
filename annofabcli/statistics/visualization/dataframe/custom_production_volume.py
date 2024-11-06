@@ -4,7 +4,7 @@ import logging
 
 import pandas
 
-from annofabcli.statistics.visualization.model import CustomProductionVolumeColumn
+from annofabcli.statistics.visualization.model import ProductionVolumeColumn
 
 logger = logging.getLogger(__name__)
 
@@ -33,7 +33,7 @@ class CustomProductionVolume:
         """
         return len(set(self.columns) - set(df.columns)) == 0
 
-    def __init__(self, df: pandas.DataFrame, *, custom_production_volume_list: list[CustomProductionVolumeColumn]) -> None:
+    def __init__(self, df: pandas.DataFrame, *, custom_production_volume_list: list[ProductionVolumeColumn]) -> None:
         self.custom_production_volume_list = custom_production_volume_list
         assert len(custom_production_volume_list) > 0
         if not self.required_columns_exist(df):
@@ -50,7 +50,7 @@ class CustomProductionVolume:
         return len(self.df) == 0
 
     @classmethod
-    def empty(cls, *, custom_production_volume_list: list[CustomProductionVolumeColumn]) -> CustomProductionVolume:
+    def empty(cls, *, custom_production_volume_list: list[ProductionVolumeColumn]) -> CustomProductionVolume:
         """空のデータフレームを持つインスタンスを生成します。"""
 
         df_dtype: dict[str, str] = {

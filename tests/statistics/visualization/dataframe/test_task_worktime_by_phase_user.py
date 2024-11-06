@@ -6,7 +6,7 @@ from annofabcli.statistics.visualization.dataframe.task import Task
 from annofabcli.statistics.visualization.dataframe.task_history import TaskHistory
 from annofabcli.statistics.visualization.dataframe.task_worktime_by_phase_user import TaskWorktimeByPhaseUser
 from annofabcli.statistics.visualization.dataframe.user import User
-from annofabcli.statistics.visualization.model import CustomProductionVolumeColumn
+from annofabcli.statistics.visualization.model import ProductionVolumeColumn
 
 output_dir = Path("./tests/out/statistics/visualization/dataframe/task_worktime_by_phase_user")
 data_dir = Path("./tests/data/statistics")
@@ -20,8 +20,8 @@ class TestTaskWorktimeByPhaseUser:
         task = Task.from_csv(
             data_dir / "task.csv",
             custom_production_volume_list=[
-                CustomProductionVolumeColumn("custom_production_volume1", "custom_生産量1"),
-                CustomProductionVolumeColumn("custom_production_volume2", "custom_生産量2"),
+                ProductionVolumeColumn("custom_production_volume1", "custom_生産量1"),
+                ProductionVolumeColumn("custom_production_volume2", "custom_生産量2"),
             ],
         )
         actual = TaskWorktimeByPhaseUser.from_df_wrapper(task_history=task_history, user=user, task=task, project_id="prj1")

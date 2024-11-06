@@ -8,7 +8,7 @@ import pytest
 from annofabcli.statistics.visualization.dataframe.annotation_count import AnnotationCount
 from annofabcli.statistics.visualization.dataframe.inspection_comment_count import InspectionCommentCount
 from annofabcli.statistics.visualization.dataframe.task import Task
-from annofabcli.statistics.visualization.model import CustomProductionVolumeColumn
+from annofabcli.statistics.visualization.model import ProductionVolumeColumn
 
 output_dir = Path("./tests/out/statistics/visualization/dataframe/task")
 data_dir = Path("./tests/data/statistics")
@@ -72,8 +72,8 @@ class TestTask:
         obj = Task.from_csv(
             data_dir / "task.csv",
             custom_production_volume_list=[
-                CustomProductionVolumeColumn("custom_production_volume1", "custom_生産量1"),
-                CustomProductionVolumeColumn("custom_production_volume2", "custom_生産量2"),
+                ProductionVolumeColumn("custom_production_volume1", "custom_生産量1"),
+                ProductionVolumeColumn("custom_production_volume2", "custom_生産量2"),
             ],
         )
         obj.plot_histogram_of_others(output_dir / "ヒストグラム.html")
