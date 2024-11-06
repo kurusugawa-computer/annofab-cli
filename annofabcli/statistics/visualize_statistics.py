@@ -683,7 +683,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--custom_production_volume",
         type=str,
-        help=("プロジェクト独自の生産量の指標をJSON形式で指定します。\n" "\n" "* csv_path : \n" "* column\n" "* name\n"),
+        help=("プロジェクト独自の生産量の指標をJSON形式で指定します。"),
     )
 
     parser.add_argument(
