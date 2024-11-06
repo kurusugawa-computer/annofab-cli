@@ -15,11 +15,7 @@ import pandas
 from annofabapi.models import ProjectMemberRole, TaskPhase
 
 import annofabcli
-from annofabcli.common.cli import (
-    COMMAND_LINE_ERROR_STATUS_CODE,
-    CommandLine,
-    build_annofabapi_resource_and_login,
-)
+from annofabcli.common.cli import COMMAND_LINE_ERROR_STATUS_CODE, CommandLine, build_annofabapi_resource_and_login, get_json_from_args
 from annofabcli.common.facade import AnnofabApiFacade, TaskQuery
 from annofabcli.statistics.visualization.dataframe.actual_worktime import ActualWorktime
 from annofabcli.statistics.visualization.dataframe.annotation_count import AnnotationCount
@@ -267,6 +263,7 @@ class VisualizingStatisticsMain:
         is_get_task_histories_one_of_each: bool = False,
         actual_worktime: Optional[ActualWorktime] = None,
         annotation_count: Optional[AnnotationCount] = None,
+        custom_production_volume: Optional[CustomProductionVolume] = None,
         user_ids: Optional[List[str]] = None,
         not_download_visualization_source_files: bool = False,
     ) -> None:
@@ -281,6 +278,7 @@ class VisualizingStatisticsMain:
         self.is_get_task_histories_one_of_each = is_get_task_histories_one_of_each
         self.actual_worktime = actual_worktime
         self.annotation_count = annotation_count
+        self.custom_production_volume = custom_production_volume
         self.user_ids = user_ids
         self.not_download_visualization_source_files = not_download_visualization_source_files
 
@@ -354,13 +352,6 @@ class VisualizingStatisticsMain:
                 is_latest=self.download_latest, should_get_task_histories_one_of_each=self.is_get_task_histories_one_of_each
             )
 
-        custom_production_volume = CustomProductionVolume(
-            df=pandas.read_csv("out/glico/custom_production_volume.csv"),
-            custom_production_volume_list=[
-                CustomProductionVolumeColumn("video_duration_minute", "動画長さ[分]"),
-                CustomProductionVolumeColumn("segment_area", "塗りつぶし面積"),
-            ],
-        )
         write_obj = WriteCsvGraph(
             self.service,
             project_id,
@@ -369,7 +360,7 @@ class VisualizingStatisticsMain:
             output_dir=output_project_dir,
             actual_worktime=ActualWorktime(df_actual_worktime),
             annotation_count=annotation_count,
-            custom_production_volume=custom_production_volume,
+            custom_production_volume=self.custom_production_volume,
             minimal_output=self.minimal_output,
             output_only_text=self.output_only_text,
         )
@@ -425,6 +416,20 @@ class VisualizingStatisticsMain:
         return output_project_dir_list
 
 
+def create_custom_production_volume(cli_value: str) -> CustomProductionVolume:
+    """
+    コマンドラインから渡された文字列を元に、`CustomProductionVolume`インスタンスを生成します。
+    """
+    dict_data = get_json_from_args(cli_value)
+    csv_path = dict_data["csv_path"]
+    df = pandas.read_csv(csv_path)
+
+    column_list = dict_data["column_list"]
+    custom_production_volume_list = [CustomProductionVolumeColumn(column["value"], column["name"]) for column in column_list]
+
+    return CustomProductionVolume(df=df, custom_production_volume_list=custom_production_volume_list)
+
+
 class VisualizeStatistics(CommandLine):
     """
     統計情報を可視化する。
@@ -458,6 +463,7 @@ class VisualizeStatistics(CommandLine):
         user_id_list: Optional[list[str]],
         actual_worktime: ActualWorktime,
         annotation_count: Optional[AnnotationCount],
+        custom_production_volume: Optional[CustomProductionVolume],
         download_latest: bool,  # noqa: FBT001
         is_get_task_histories_one_of_each: bool,  # noqa: FBT001
         start_date: Optional[str],
@@ -476,6 +482,7 @@ class VisualizeStatistics(CommandLine):
             user_ids=user_id_list,
             actual_worktime=actual_worktime,
             annotation_count=annotation_count,
+            custom_production_volume=custom_production_volume,
             download_latest=download_latest,
             is_get_task_histories_one_of_each=is_get_task_histories_one_of_each,
             start_date=start_date,
@@ -546,6 +553,10 @@ class VisualizeStatistics(CommandLine):
         else:
             annotation_count = None
 
+        custom_production_volume = (
+            create_custom_production_volume(args.custom_production_volume) if args.custom_production_volume is not None else None
+        )
+
         if args.temp_dir is None:
             with tempfile.TemporaryDirectory() as str_temp_dir:
                 self.visualize_statistics(
@@ -554,6 +565,7 @@ class VisualizeStatistics(CommandLine):
                     user_id_list=user_id_list,
                     actual_worktime=actual_worktime,
                     annotation_count=annotation_count,
+                    custom_production_volume=custom_production_volume,
                     download_latest=args.latest,
                     is_get_task_histories_one_of_each=args.get_task_histories_one_of_each,
                     start_date=args.start_date,
@@ -573,6 +585,7 @@ class VisualizeStatistics(CommandLine):
                 user_id_list=user_id_list,
                 actual_worktime=actual_worktime,
                 annotation_count=annotation_count,
+                custom_production_volume=custom_production_volume,
                 download_latest=args.latest,
                 is_get_task_histories_one_of_each=args.get_task_histories_one_of_each,
                 start_date=args.start_date,
@@ -665,6 +678,12 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
             "* task_id\n"
             "* annotation_count\n"
         ),
+    )
+
+    parser.add_argument(
+        "--custom_production_volume",
+        type=str,
+        help=("プロジェクト独自の生産量の指標をJSON形式で指定します。\n" "\n" "* csv_path : \n" "* column\n" "* name\n"),
     )
 
     parser.add_argument(
