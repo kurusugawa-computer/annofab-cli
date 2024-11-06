@@ -47,7 +47,7 @@ from annofabcli.statistics.visualization.dataframe.whole_productivity_per_date i
 )
 from annofabcli.statistics.visualization.dataframe.worktime_per_date import WorktimePerDate
 from annofabcli.statistics.visualization.filtering_query import FilteringQuery, filter_tasks
-from annofabcli.statistics.visualization.model import CustomProductionVolumeColumn, WorktimeColumn
+from annofabcli.statistics.visualization.model import ProductionVolumeColumn, WorktimeColumn
 from annofabcli.statistics.visualization.project_dir import ProjectDir, ProjectInfo
 from annofabcli.statistics.visualization.visualization_source_files import VisualizationSourceFiles
 
@@ -425,7 +425,7 @@ def create_custom_production_volume(cli_value: str) -> CustomProductionVolume:
     df = pandas.read_csv(csv_path)
 
     column_list = dict_data["column_list"]
-    custom_production_volume_list = [CustomProductionVolumeColumn(column["value"], column["name"]) for column in column_list]
+    custom_production_volume_list = [ProductionVolumeColumn(column["value"], column["name"]) for column in column_list]
 
     return CustomProductionVolume(df=df, custom_production_volume_list=custom_production_volume_list)
 

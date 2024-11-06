@@ -24,7 +24,7 @@ from annofabcli.common.utils import print_csv, read_multiheader_csv
 from annofabcli.statistics.scatter import ScatterGraph, get_color_from_palette, write_bokeh_graph
 from annofabcli.statistics.visualization.dataframe.task_worktime_by_phase_user import TaskWorktimeByPhaseUser
 from annofabcli.statistics.visualization.dataframe.worktime_per_date import WorktimePerDate
-from annofabcli.statistics.visualization.model import CustomProductionVolumeColumn
+from annofabcli.statistics.visualization.model import ProductionVolumeColumn
 
 logger = logging.getLogger(__name__)
 
@@ -86,7 +86,7 @@ class UserPerformance:
     PLOT_WIDTH = 1200
     PLOT_HEIGHT = 800
 
-    def __init__(self, df: pandas.DataFrame, *, custom_production_volume_list: Optional[list[CustomProductionVolumeColumn]] = None) -> None:
+    def __init__(self, df: pandas.DataFrame, *, custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None) -> None:
         phase_list = self.get_phase_list(df.columns)
         self.custom_production_volume_list = custom_production_volume_list if custom_production_volume_list is not None else []
         self.phase_list = phase_list
@@ -184,7 +184,7 @@ class UserPerformance:
         return phase_list  # type: ignore[return-value]
 
     @classmethod
-    def from_csv(cls, csv_file: Path, *, custom_production_volume_list: Optional[list[CustomProductionVolumeColumn]] = None) -> UserPerformance:
+    def from_csv(cls, csv_file: Path, *, custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None) -> UserPerformance:
         df = read_multiheader_csv(str(csv_file))
         return cls(df, custom_production_volume_list=custom_production_volume_list)
 
@@ -617,6 +617,9 @@ class UserPerformance:
     def get_productivity_columns(phase_list: Sequence[TaskPhaseString], production_volume_columns: list[str]) -> list[tuple[str, str]]:
         """
         生産性に関する情報（作業時間、生産量、生産量あたり作業時間）の列を取得します。
+
+        Args:
+            production_volume_columns: 生産量を表す列。ただし`task_count`は除く。
         """
         # `phase_list`を参照しない理由： `phase_list`は集計対象のタスクから求めた作業時間を元に決めている
         # `real_monitored_worktime_hour`は実際に作業した時間を表すため、`phase_list`を参照していない。
@@ -634,11 +637,9 @@ class UserPerformance:
             + [("monitored_worktime_hour", phase) for phase in phase_list]
             + [("monitored_worktime_ratio", phase) for phase in phase_list]
         )
-        production_columns = (
-            [("task_count", phase) for phase in phase_list]
-            + [("input_data_count", phase) for phase in phase_list]
-            + [("annotation_count", phase) for phase in phase_list]
-        )
+        production_columns = [("task_count", phase) for phase in phase_list]
+        for production_volume_column in production_volume_columns:
+            production_columns.extend([(production_volume_column, phase) for phase in phase_list])
 
         real_actual_worktime_columns = [
             ("real_actual_worktime_hour", "sum"),
