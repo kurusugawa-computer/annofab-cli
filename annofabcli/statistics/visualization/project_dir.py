@@ -127,7 +127,6 @@ class ProjectDir(DataClassJsonMixin):
         output_dir = self.project_dir / "line-graph"
 
         phase_name = self.get_phase_name_for_filename(phase)
-        # obj.plot_annotation_metrics(output_dir / f"{phase_name}者用/累積折れ線-横軸_アノテーション数-{phase_name}者用.html", user_id_list)
 
         obj.plot_production_volume_metrics(
             production_volume_column="annotation_count",
@@ -145,7 +144,6 @@ class ProjectDir(DataClassJsonMixin):
 
         if not minimal_output:
             # アノテーション単位より大きい単位の折れ線グラフは不要かもしれないので、オプションにした
-            # obj.plot_input_data_metrics(output_dir / f"{phase_name}者用/累積折れ線-横軸_入力データ数-{phase_name}者用.html", user_id_list)
             obj.plot_production_volume_metrics(
                 production_volume_column="input_data_count",
                 production_volume_name="入力データ数",

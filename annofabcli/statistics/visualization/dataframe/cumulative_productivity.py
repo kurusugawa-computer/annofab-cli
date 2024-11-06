@@ -434,6 +434,7 @@ class AnnotatorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
     def plot_task_metrics(  # noqa: ANN201
         self,
         output_file: Path,
+        *,
         target_user_id_list: Optional[list[str]] = None,
     ):
         """
@@ -706,6 +707,7 @@ class InspectorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
     def plot_task_metrics(  # noqa: ANN201
         self,
         output_file: Path,
+        *,
         target_user_id_list: Optional[list[str]] = None,
     ):
         """
@@ -955,6 +957,7 @@ class AcceptorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
     def plot_task_metrics(  # noqa: ANN201
         self,
         output_file: Path,
+        *,
         target_user_id_list: Optional[list[str]] = None,
     ):
         """
