@@ -9,7 +9,7 @@ import pandas
 
 from annofabcli.common.pandas import get_frequency_of_monthend
 from annofabcli.common.utils import print_csv
-from annofabcli.statistics.visualization.dataframe.user_performance import CustomProductionVolume, UserPerformance
+from annofabcli.statistics.visualization.dataframe.user_performance import CustomProductionVolumeColumn, UserPerformance
 from annofabcli.statistics.visualization.dataframe.whole_performance import WholePerformance
 from annofabcli.statistics.visualization.model import WorktimeColumn
 from annofabcli.statistics.visualization.project_dir import ProjectDir
@@ -22,7 +22,7 @@ class ProjectPerformance:
     プロジェクトごとの生産性と品質
     """
 
-    def __init__(self, df: pandas.DataFrame, *, custom_production_volume_list: Optional[list[CustomProductionVolume]] = None) -> None:
+    def __init__(self, df: pandas.DataFrame, *, custom_production_volume_list: Optional[list[CustomProductionVolumeColumn]] = None) -> None:
         self.df = df
         self.custom_production_volume_list = custom_production_volume_list if custom_production_volume_list is not None else []
 
