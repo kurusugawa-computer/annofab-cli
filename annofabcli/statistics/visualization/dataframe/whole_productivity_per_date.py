@@ -875,11 +875,11 @@ class WholeProductivityPerFirstAnnotationStartedDate:
         if not self._validate_df_for_output(output_file):
             return
 
+        production_volume_columns = ["input_data_count", "annotation_count", *[e.value for e in self.custom_production_volume_list]]
         basic_columns = [
             "first_annotation_started_date",
             "task_count",
-            "input_data_count",
-            "annotation_count",
+            *production_volume_columns,
             "worktime_hour",
             "annotation_worktime_hour",
             "inspection_worktime_hour",
@@ -889,7 +889,7 @@ class WholeProductivityPerFirstAnnotationStartedDate:
         velocity_columns = [
             f"{numerator}/{denominator}{suffix}"
             for suffix in ["", WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX]
-            for denominator in ["input_data_count", "annotation_count"]
+            for denominator in production_volume_columns
             for numerator in [
                 "worktime_hour",
                 "annotation_worktime_hour",
@@ -1036,7 +1036,6 @@ class WholeProductivityPerFirstAnnotationStartedDate:
         add_velocity_and_weekly_moving_average_columns(df)
 
         logger.debug(f"{output_file} を出力します。")
-
 
         @dataclass
         class LegendInfo:
