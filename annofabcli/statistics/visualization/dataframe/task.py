@@ -11,10 +11,13 @@ import bokeh.palettes
 import numpy
 import pandas
 import pytz
+from bokeh.plotting import figure
 
+from annofabcli.common.bokeh import convert_1d_figure_list_to_2d
 from annofabcli.common.utils import print_csv
 from annofabcli.statistics.histogram import create_histogram_figure, get_sub_title_from_series
 from annofabcli.statistics.visualization.dataframe.annotation_count import AnnotationCount
+from annofabcli.statistics.visualization.dataframe.custom_production_volume import CustomProductionVolume
 from annofabcli.statistics.visualization.dataframe.inspection_comment_count import InspectionCommentCount
 from annofabcli.task.list_all_tasks_added_task_history import AddingAdditionalInfoToTask
 
@@ -134,6 +137,8 @@ class Task:
         annotation_count: AnnotationCount,
         project_id: str,
         annofab_service: annofabapi.Resource,
+        *,
+        custom_production_volume: Optional[CustomProductionVolume] = None,
     ) -> Task:
         """
         APIから取得した情報と、DataFrameのラッパーからインスタンスを生成します。
@@ -144,7 +149,7 @@ class Task:
             inspection_comment_count: 検査コメント数を格納したDataFrameのラッパー
             annotation_count: アノテーション数を格納したDataFrameのラッパー
             annofab_service: TODO `AddingAdditionalInfoToTask`を修正したら、この引数を削除する。このクラスからAPIに直接アクセスさせたくない。
-
+            custom_production_volume: ユーザー独自の生産量を格納したDataFrameのラッパー
         """
 
         adding_obj = AddingAdditionalInfoToTask(annofab_service, project_id=project_id)
@@ -179,7 +184,15 @@ class Task:
                 "annotation_count": 0,
             }
         )
-        return cls(df)
+
+        # ユーザー独自の生産量を追加する
+        custom_production_volume_columns = None
+        if custom_production_volume is not None:
+            df = df.merge(custom_production_volume.df, on=["project_id", "task_id"], how="left")
+            custom_production_volume_columns = custom_production_volume.custom_production_volume_columns
+            df = df.fillna({col: 0 for col in custom_production_volume_columns})
+
+        return cls(df, custom_production_volume_columns=custom_production_volume_columns)
 
     def is_empty(self) -> bool:
         """
@@ -381,52 +394,76 @@ class Task:
 
         df["diff_days_to_first_acceptance_completed"] = diff_days(df["first_acceptance_completed_datetime"], df["first_annotation_started_datetime"])
 
-        histogram_list = [
-            {"column": "annotation_count", "x_axis_label": "アノテーション数", "title": "アノテーション数"},
-            {"column": "input_data_count", "x_axis_label": "入力データ数", "title": "入力データ数"},
-            {"column": "inspection_comment_count", "x_axis_label": "検査コメント数", "title": "検査コメント数"},
-            # 経過日数
-            {
-                "column": "diff_days_to_first_inspection_started",
-                "x_axis_label": "最初の検査を着手するまでの日数",
-                "title": "最初の検査を着手するまでの日数",
-            },
-            {
-                "column": "diff_days_to_first_acceptance_started",
-                "x_axis_label": "最初の受入を着手するまでの日数",
-                "title": "最初の受入を着手するまでの日数",
-            },
-            {
-                "column": "diff_days_to_first_acceptance_completed",
-                "x_axis_label": "初めて受入完了状態になるまでの日数",
-                "title": "初めて受入完了状態になるまでの日数",
-            },
-            # 差し戻し回数
-            {
-                "column": "number_of_rejections_by_inspection",
-                "x_axis_label": "検査フェーズでの差し戻し回数",
-                "title": "検査フェーズでの差し戻し回数",
-            },
-            {
-                "column": "number_of_rejections_by_acceptance",
-                "x_axis_label": "受入フェーズでの差し戻し回数",
-                "title": "受入フェーズでの差し戻し回数",
-            },
-        ]
+        histogram_list_per_category = {
+            "production_volume": [
+                {"column": "annotation_count", "x_axis_label": "アノテーション数", "title": "アノテーション数"},
+                {"column": "input_data_count", "x_axis_label": "入力データ数", "title": "入力データ数"},
+            ],
+            "inspection_comment": [
+                {"column": "inspection_comment_count", "x_axis_label": "検査コメント数", "title": "検査コメント数"},
+                {
+                    "column": "inspection_comment_count_in_inspection_phase",
+                    "x_axis_label": "検査コメント数",
+                    "title": "検査フェーズで付与された検査コメント数",
+                },
+                {
+                    "column": "inspection_comment_count_in_acceptance_phase",
+                    "x_axis_label": "検査コメント数",
+                    "title": "受入フェーズで付与された検査コメント数",
+                },
+            ],
+            "number_of_rejections": [
+                {
+                    "column": "number_of_rejections_by_inspection",
+                    "x_axis_label": "差し戻し回数",
+                    "title": "検査フェーズでの差し戻し回数",
+                },
+                {
+                    "column": "number_of_rejections_by_acceptance",
+                    "x_axis_label": "差し戻し回数",
+                    "title": "受入フェーズでの差し戻し回数",
+                },
+            ],
+            "days": [
+                {
+                    "column": "diff_days_to_first_inspection_started",
+                    "x_axis_label": "最初の検査を着手するまでの日数",
+                    "title": "最初の検査を着手するまでの日数",
+                },
+                {
+                    "column": "diff_days_to_first_acceptance_started",
+                    "x_axis_label": "最初の受入を着手するまでの日数",
+                    "title": "最初の受入を着手するまでの日数",
+                },
+                {
+                    "column": "diff_days_to_first_acceptance_completed",
+                    "x_axis_label": "初めて受入完了状態になるまでの日数",
+                    "title": "初めて受入完了状態になるまでの日数",
+                },
+            ],
+        }
 
-        figure_list = []
+        figure_list_per_category: dict[str, list[figure]] = {}
 
-        for histogram in histogram_list:
-            column = histogram["column"]
-            title = histogram["title"]
-            x_axis_label = histogram["x_axis_label"]
-            ser = df[column].dropna()
-            sub_title = get_sub_title_from_series(ser, decimals=2)
-            hist, bin_edges = numpy.histogram(ser, bins=BIN_COUNT)
-            fig = create_histogram_figure(hist, bin_edges, x_axis_label=x_axis_label, y_axis_label="タスク数", title=title, sub_title=sub_title)
-            figure_list.append(fig)
+        for category, histogram_list in histogram_list_per_category.items():
+            figure_list = []
+            for histogram in histogram_list:
+                column = histogram["column"]
+                title = histogram["title"]
+                x_axis_label = histogram["x_axis_label"]
+                ser = df[column].dropna()
+                sub_title = get_sub_title_from_series(ser, decimals=2)
+                hist, bin_edges = numpy.histogram(ser, bins=BIN_COUNT)
+                fig = create_histogram_figure(hist, bin_edges, x_axis_label=x_axis_label, y_axis_label="タスク数", title=title, sub_title=sub_title)
+                figure_list.append(fig)
+            figure_list_per_category[category] = figure_list
 
-        bokeh_obj = bokeh.layouts.gridplot(figure_list, ncols=4)  # type: ignore[arg-type]
+        nested_figure_list = []
+        for figure_list in figure_list_per_category.values():
+            sub_nested_figure_list = convert_1d_figure_list_to_2d(figure_list)
+            nested_figure_list.extend(sub_nested_figure_list)
+
+        bokeh_obj = bokeh.layouts.gridplot(nested_figure_list)
         output_file.parent.mkdir(exist_ok=True, parents=True)
         bokeh.plotting.reset_output()
         bokeh.plotting.output_file(output_file, title=output_file.stem)

@@ -33,6 +33,7 @@ class CustomProductionVolume:
 
     def __init__(self, df: pandas.DataFrame, *, custom_production_volume_columns: list[str]) -> None:
         self.custom_production_volume_columns = custom_production_volume_columns
+        assert len(custom_production_volume_columns) > 0
         if not self.required_columns_exist(df):
             raise ValueError(f"引数`df`には、{self.columns}の列が必要です。 :: {df.columns=}")
         self.df = df
@@ -56,4 +57,4 @@ class CustomProductionVolume:
         }
         columns = ["project_id", "task_id", *custom_production_volume_columns]
         df = pandas.DataFrame(columns=columns).astype(df_dtype)
-        return cls(df,custom_production_volume_columns=custom_production_volume_columns)
+        return cls(df, custom_production_volume_columns=custom_production_volume_columns)
