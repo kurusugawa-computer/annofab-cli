@@ -69,7 +69,13 @@ class TestTask:
         obj.plot_histogram_of_others(output_dir / "ヒストグラム.html")
 
     def test__plot_histogram_of_others__ユーザー独自の生産量をプロット(self):
-        obj = Task.from_csv(data_dir / "task.csv", custom_production_volume_list=[CustomProductionVolumeColumn("custom_production_volume1","custom_生産量1"), CustomProductionVolumeColumn("custom_production_volume2", "custom_生産量2")])
+        obj = Task.from_csv(
+            data_dir / "task.csv",
+            custom_production_volume_list=[
+                CustomProductionVolumeColumn("custom_production_volume1", "custom_生産量1"),
+                CustomProductionVolumeColumn("custom_production_volume2", "custom_生産量2"),
+            ],
+        )
         obj.plot_histogram_of_others(output_dir / "ヒストグラム.html")
 
     def test__merge(self):

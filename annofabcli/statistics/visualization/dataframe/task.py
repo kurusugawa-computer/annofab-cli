@@ -399,6 +399,7 @@ class Task:
             "production_volume": [
                 {"column": "annotation_count", "x_axis_label": "アノテーション数", "title": "アノテーション数"},
                 {"column": "input_data_count", "x_axis_label": "入力データ数", "title": "入力データ数"},
+                *[{"column": e.column, "x_axis_label": e.name, "title": e.name} for e in self.custom_production_volume_list],
             ],
             "inspection_comment": [
                 {"column": "inspection_comment_count", "x_axis_label": "検査コメント数", "title": "検査コメント数"},
