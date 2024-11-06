@@ -462,7 +462,7 @@ class WholeProductivityPerCompletedDate:
                             "monitored_inspection_worktime_hour",
                             "monitored_acceptance_worktime_hour",
                             f"actual_worktime_minute/{info.value}",
-                            "monitored_worktime_minute/input_data_count",
+                            f"monitored_worktime_minute/{info.value}",
                             f"monitored_annotation_worktime_minute/{info.value}",
                             f"monitored_inspection_worktime_minute/{info.value}",
                             f"monitored_acceptance_worktime_minute/{info.value}",
@@ -775,22 +775,25 @@ class WholeProductivityPerCompletedDate:
 class WholeProductivityPerFirstAnnotationStartedDate:
     """教師付開始日ごとの全体の生産量と生産性に関する情報"""
 
-    def __init__(self, df: pandas.DataFrame) -> None:
+    def __init__(self, df: pandas.DataFrame, *, custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None) -> None:
+        self.custom_production_volume_list = custom_production_volume_list
         self.df = df
 
     @classmethod
-    def from_csv(cls, csv_file: Path) -> WholeProductivityPerFirstAnnotationStartedDate:
+    def from_csv(
+        cls, csv_file: Path, *, custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None
+    ) -> WholeProductivityPerFirstAnnotationStartedDate:
         """CSVファイルからインスタンスを生成します。"""
         df = pandas.read_csv(str(csv_file))
-        return cls(df)
+        return cls(df, custom_production_volume_list=custom_production_volume_list)
 
     @classmethod
-    def _add_velocity_columns(cls, df: pandas.DataFrame) -> None:
+    def _add_velocity_columns(cls, df: pandas.DataFrame, production_volume_columns: list[str]) -> None:
         """
         日毎の全体の生産量から、累計情報、生産性の列を追加する。
         """
 
-        def add_velocity_column(df: pandas.DataFrame, numerator_column: str, denominator_column: str):  # noqa: ANN202
+        def add_velocity_column(df: pandas.DataFrame, numerator_column: str, denominator_column: str) -> None:
             df[f"{numerator_column}/{denominator_column}"] = df[numerator_column] / df[denominator_column]
 
             df[f"{numerator_column}/{denominator_column}{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}"] = get_weekly_moving_average(
@@ -798,25 +801,23 @@ class WholeProductivityPerFirstAnnotationStartedDate:
             ) / get_weekly_moving_average(df[denominator_column])
 
         # annofab 計測時間から算出したvelocityを追加
-        add_velocity_column(df, numerator_column="worktime_hour", denominator_column="input_data_count")
-        add_velocity_column(df, numerator_column="annotation_worktime_hour", denominator_column="input_data_count")
-        add_velocity_column(df, numerator_column="inspection_worktime_hour", denominator_column="input_data_count")
-        add_velocity_column(df, numerator_column="acceptance_worktime_hour", denominator_column="input_data_count")
-
-        add_velocity_column(df, numerator_column="worktime_hour", denominator_column="annotation_count")
-        add_velocity_column(df, numerator_column="annotation_worktime_hour", denominator_column="annotation_count")
-        add_velocity_column(df, numerator_column="inspection_worktime_hour", denominator_column="annotation_count")
-        add_velocity_column(df, numerator_column="acceptance_worktime_hour", denominator_column="annotation_count")
+        for column in production_volume_columns:
+            add_velocity_column(df, numerator_column="worktime_hour", denominator_column=column)
+            add_velocity_column(df, numerator_column="annotation_worktime_hour", denominator_column=column)
+            add_velocity_column(df, numerator_column="inspection_worktime_hour", denominator_column=column)
+            add_velocity_column(df, numerator_column="acceptance_worktime_hour", denominator_column=column)
 
     @classmethod
     def from_task(cls, task: Task) -> WholeProductivityPerFirstAnnotationStartedDate:
+        # 生産量を表す列名
+        production_volume_columns = ["input_data_count", "annotation_count", *[e.value for e in task.custom_production_volume_list]]
+
         df_task = task.df
         df_sub_task = df_task[df_task["status"] == TaskStatus.COMPLETE.value][
             [
                 "task_id",
                 "first_annotation_started_datetime",
-                "input_data_count",
-                "annotation_count",
+                *production_volume_columns,
                 "worktime_hour",
                 "annotation_worktime_hour",
                 "inspection_worktime_hour",
@@ -828,8 +829,7 @@ class WholeProductivityPerFirstAnnotationStartedDate:
         )
 
         value_columns = [
-            "input_data_count",
-            "annotation_count",
+            *production_volume_columns,
             "worktime_hour",
             "annotation_worktime_hour",
             "inspection_worktime_hour",
@@ -861,8 +861,8 @@ class WholeProductivityPerFirstAnnotationStartedDate:
         df_date["first_annotation_started_date"] = df_date.index
 
         # 生産性情報などの列を追加する
-        cls._add_velocity_columns(df_date)
-        return cls(df_date)
+        cls._add_velocity_columns(df_date, production_volume_columns)
+        return cls(df_date, custom_production_volume_list=task.custom_production_volume_list)
 
     def _validate_df_for_output(self, output_file: Path) -> bool:
         if len(self.df) == 0:
