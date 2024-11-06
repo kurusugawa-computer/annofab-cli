@@ -514,8 +514,6 @@ class UserPerformance:
         cls,
         worktime_per_date: WorktimePerDate,
         task_worktime_by_phase_user: TaskWorktimeByPhaseUser,
-        *,
-        custom_production_volume_list: Optional[list[CustomProductionVolumeColumn]] = None,
     ) -> UserPerformance:
         """
         pandas.DataFrameをラップしたオブジェクトから、インスタンスを生成します。
@@ -584,7 +582,7 @@ class UserPerformance:
 
         df = df.sort_values(["user_id"])
         # `df.reset_index()`を実行する理由：indexである`account_id`を列にするため
-        return cls(df.reset_index(), custom_production_volume_list=custom_production_volume_list)
+        return cls(df.reset_index(), custom_production_volume_list=task_worktime_by_phase_user.custom_production_volume_list)
 
     @classmethod
     def _convert_column_dtypes(cls, df: pandas.DataFrame) -> pandas.DataFrame:

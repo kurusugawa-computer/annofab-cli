@@ -51,7 +51,7 @@ from annofabcli.statistics.visualization.dataframe.whole_productivity_per_date i
 )
 from annofabcli.statistics.visualization.dataframe.worktime_per_date import WorktimePerDate
 from annofabcli.statistics.visualization.filtering_query import FilteringQuery, filter_tasks
-from annofabcli.statistics.visualization.model import WorktimeColumn
+from annofabcli.statistics.visualization.model import CustomProductionVolumeColumn, WorktimeColumn
 from annofabcli.statistics.visualization.project_dir import ProjectDir, ProjectInfo
 from annofabcli.statistics.visualization.visualization_source_files import VisualizationSourceFiles
 
@@ -354,6 +354,13 @@ class VisualizingStatisticsMain:
                 is_latest=self.download_latest, should_get_task_histories_one_of_each=self.is_get_task_histories_one_of_each
             )
 
+        custom_production_volume = CustomProductionVolume(
+            df=pandas.read_csv("out/glico/custom_production_volume.csv"),
+            custom_production_volume_list=[
+                CustomProductionVolumeColumn("video_duration_minute", "動画長さ[分]"),
+                CustomProductionVolumeColumn("segment_area", "塗りつぶし面積"),
+            ],
+        )
         write_obj = WriteCsvGraph(
             self.service,
             project_id,
@@ -362,6 +369,7 @@ class VisualizingStatisticsMain:
             output_dir=output_project_dir,
             actual_worktime=ActualWorktime(df_actual_worktime),
             annotation_count=annotation_count,
+            custom_production_volume=custom_production_volume,
             minimal_output=self.minimal_output,
             output_only_text=self.output_only_text,
         )
