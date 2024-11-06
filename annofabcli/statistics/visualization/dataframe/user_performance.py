@@ -617,6 +617,9 @@ class UserPerformance:
     def get_productivity_columns(phase_list: Sequence[TaskPhaseString], production_volume_columns: list[str]) -> list[tuple[str, str]]:
         """
         生産性に関する情報（作業時間、生産量、生産量あたり作業時間）の列を取得します。
+
+        Args:
+            production_volume_columns: 生産量を表す列。ただし`task_count`は除く。
         """
         # `phase_list`を参照しない理由： `phase_list`は集計対象のタスクから求めた作業時間を元に決めている
         # `real_monitored_worktime_hour`は実際に作業した時間を表すため、`phase_list`を参照していない。
@@ -634,11 +637,9 @@ class UserPerformance:
             + [("monitored_worktime_hour", phase) for phase in phase_list]
             + [("monitored_worktime_ratio", phase) for phase in phase_list]
         )
-        production_columns = (
-            [("task_count", phase) for phase in phase_list]
-            + [("input_data_count", phase) for phase in phase_list]
-            + [("annotation_count", phase) for phase in phase_list]
-        )
+        production_columns = [("task_count", phase) for phase in phase_list]
+        for production_volume_column in production_volume_columns:
+            production_columns.extend([(production_volume_column, phase) for phase in phase_list])
 
         real_actual_worktime_columns = [
             ("real_actual_worktime_hour", "sum"),
