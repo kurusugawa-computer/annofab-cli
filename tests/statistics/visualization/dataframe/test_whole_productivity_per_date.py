@@ -74,11 +74,23 @@ class TestWholeProductivityPerFirstAnnotationStartedDate:
         cls.output_dir.mkdir(exist_ok=True, parents=True)
 
     def test__from_task__and__to_csv(self):
-        task = Task.from_csv(data_dir / "task.csv")
+        task = Task.from_csv(
+            data_dir / "task.csv",
+            custom_production_volume_list=[
+                ProductionVolumeColumn("custom_production_volume1", "custom_生産量1"),
+                ProductionVolumeColumn("custom_production_volume2", "custom_生産量2"),
+            ],
+        )
         obj = WholeProductivityPerFirstAnnotationStartedDate.from_task(task)
         obj.to_csv(self.output_dir / "test__from_task__and__to_csv.csv")
 
     def test__from_task__and__plot(self):
-        task = Task.from_csv(data_dir / "task.csv")
+        task = Task.from_csv(
+            data_dir / "task.csv",
+            custom_production_volume_list=[
+                ProductionVolumeColumn("custom_production_volume1", "custom_生産量1"),
+                ProductionVolumeColumn("custom_production_volume2", "custom_生産量2"),
+            ],
+        )
         obj = WholeProductivityPerFirstAnnotationStartedDate.from_task(task)
         obj.plot(self.output_dir / "test__from_task__and__plot.html")

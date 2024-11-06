@@ -918,7 +918,7 @@ class WholeProductivityPerFirstAnnotationStartedDate:
             ]:
                 df[f"{column}{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}"] = get_weekly_moving_average(df[column])
 
-            for denominator in ["input_data_count", "annotation_count"]:
+            for denominator in [e.value for e in production_volume_list]:
                 for numerator in ["worktime", "annotation_worktime", "inspection_worktime", "acceptance_worktime"]:
                     df[f"{numerator}_minute/{denominator}"] = df[f"{numerator}_hour"] * 60 / df[denominator]
                     df[f"{numerator}_minute/{denominator}{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}"] = (
@@ -1025,17 +1025,18 @@ class WholeProductivityPerFirstAnnotationStartedDate:
         if not self._validate_df_for_output(output_file):
             return
 
+        production_volume_list = [
+            ProductionVolumeColumn("input_data_count", "入力データ"),
+            ProductionVolumeColumn("annotation_count", "アノテーション"),
+            *self.custom_production_volume_list,
+        ]
+
         df = self.df.copy()
         df["dt_first_annotation_started_date"] = df["first_annotation_started_date"].map(lambda e: parse(e).date())
         add_velocity_and_weekly_moving_average_columns(df)
 
         logger.debug(f"{output_file} を出力します。")
 
-        production_volume_list = [
-            ProductionVolumeColumn("input_data_count", "入力データ"),
-            ProductionVolumeColumn("annotation_count", "アノテーション"),
-            *self.custom_production_volume_list,
-        ]
 
         @dataclass
         class LegendInfo:
@@ -1076,7 +1077,7 @@ class WholeProductivityPerFirstAnnotationStartedDate:
                         y_axis_label=f"{info.name}あたり作業時間[分/{info.name}]",
                         tooltip_columns=[
                             "first_annotation_started_date",
-                            "annotation_count",
+                            info.value,
                             "worktime_hour",
                             "annotation_worktime_hour",
                             "inspection_worktime_hour",
