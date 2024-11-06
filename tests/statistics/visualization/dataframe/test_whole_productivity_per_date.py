@@ -1,7 +1,5 @@
 from pathlib import Path
 
-import pandas
-
 from annofabcli.statistics.visualization.dataframe.task import Task
 from annofabcli.statistics.visualization.dataframe.whole_productivity_per_date import (
     WholeProductivityPerCompletedDate,
@@ -56,12 +54,6 @@ class TestWholeProductivityPerCompletedDate:
 
     def test__plot_cumulatively(self):
         self.main_obj.plot_cumulatively(self.output_dir / "test__plot_cumulatively.html")
-
-    def test_merge(self):
-        df1 = pandas.read_csv(str(data_dir / "productivity-per-date.csv"))
-        df2 = pandas.read_csv(str(data_dir / "productivity-per-date2.csv"))
-        sum_obj = WholeProductivityPerCompletedDate.merge(WholeProductivityPerCompletedDate(df1), WholeProductivityPerCompletedDate(df2))
-        sum_obj.to_csv(self.output_dir / "merge-productivity-per-date.csv")
 
 
 class TestWholeProductivityPerFirstAnnotationStartedDate:

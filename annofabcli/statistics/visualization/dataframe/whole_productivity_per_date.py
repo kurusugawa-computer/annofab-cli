@@ -150,7 +150,7 @@ class WholeProductivityPerCompletedDate:
         if custom_production_volume_list is not None:
             production_volume_columns.extend([e.value for e in custom_production_volume_list])
 
-        df_sub_task = task.df[["task_id", "first_acceptance_completed_datetime", *custom_production_volume_list]].copy()
+        df_sub_task = task.df[["task_id", "first_acceptance_completed_datetime", *production_volume_columns]].copy()
         df_sub_task["first_acceptance_completed_date"] = df_sub_task["first_acceptance_completed_datetime"].map(
             lambda e: datetime_to_date(e) if not pandas.isna(e) else None
         )
@@ -249,62 +249,6 @@ class WholeProductivityPerCompletedDate:
         for category in ["monitored_annotation", "monitored_inspection", "monitored_acceptance", "unmonitored"]:
             for unit in production_volume_columns:
                 add_velocity_column(df, numerator_column=f"{category}_worktime_hour", denominator_column=unit)
-
-    @classmethod
-    def merge(cls, obj1: WholeProductivityPerCompletedDate, obj2: WholeProductivityPerCompletedDate) -> WholeProductivityPerCompletedDate:
-        """
-        日毎の全体の生産量、生産性が格納されたDataFrameを結合する。
-
-        Args:
-            df1:
-            df2:
-
-        Returns:
-            マージ済のユーザごとの生産性・品質情報
-        """
-        df1 = obj1.df
-        df2 = obj2.df
-
-        def merge_row(str_date: str, columns: pandas.Index, row1: Optional[pandas.Series], row2: Optional[pandas.Series]) -> pandas.Series:
-            if row1 is not None and row2 is not None:
-                sum_row = row1.fillna(0) + row2.fillna(0)
-            elif row1 is not None and row2 is None:
-                sum_row = row1.fillna(0)
-            elif row1 is None and row2 is not None:
-                sum_row = row2.fillna(0)
-            else:
-                sum_row = pandas.Series(index=columns)
-
-            sum_row.name = str_date
-            return sum_row
-
-        def date_range():  # noqa: ANN202
-            lower_date = min(df1["date"].min(), df2["date"].min())
-            upper_date = max(df1["date"].max(), df2["date"].max())
-            return pandas.date_range(start=lower_date, end=upper_date)
-
-        tmp_df1 = df1.set_index("date")
-        tmp_df2 = df2.set_index("date")
-
-        row_list: list[pandas.Series] = []
-        for dt in date_range():
-            str_date = str(dt.date())
-            if str_date in tmp_df1.index:  # noqa: SIM108
-                row1 = tmp_df1.loc[str_date]
-            else:
-                row1 = None
-            if str_date in tmp_df2.index:  # noqa: SIM108
-                row2 = tmp_df2.loc[str_date]
-            else:
-                row2 = None
-
-            sum_row = merge_row(str_date=str_date, columns=tmp_df1.columns, row1=row1, row2=row2)
-            row_list.append(sum_row)
-
-        sum_df = pandas.DataFrame(row_list)
-        sum_df.index.name = "date"
-        cls._add_velocity_columns(sum_df)
-        return WholeProductivityPerCompletedDate(sum_df.reset_index())
 
     @staticmethod
     def _create_div_element() -> Div:
