@@ -191,7 +191,7 @@ class AnnotatorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
         """
         `タスクlist.csv`に相当する情報から、インスタンスを生成します。
         """
-        return cls(task.df)
+        return cls(task.df,custom_production_volume_list=task.custom_production_volume_list )
 
     def _get_cumulative_dataframe(self) -> pandas.DataFrame:
         """
