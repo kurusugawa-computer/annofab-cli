@@ -250,12 +250,12 @@ class Task:
         return cls(df)
 
     @classmethod
-    def from_csv(cls, csv_file: Path) -> Task:
+    def from_csv(cls, csv_file: Path, *, custom_production_volume_columns: Optional[list[str]] = None) -> Task:
         df = pandas.read_csv(str(csv_file))
-        return cls(df)
+        return cls(df, custom_production_volume_columns=custom_production_volume_columns)
 
     @staticmethod
-    def merge(*obj: Task) -> Task:
+    def merge(*obj: Task, custom_production_volume_columns: Optional[list[str]] = None) -> Task:
         """
         複数のインスタンスをマージします。
 
@@ -264,7 +264,7 @@ class Task:
         """
         df_list = [task.df for task in obj]
         df_merged = pandas.concat(df_list)
-        return Task(df_merged)
+        return Task(df_merged, custom_production_volume_columns=custom_production_volume_columns)
 
     def plot_histogram_of_worktime(
         self,
