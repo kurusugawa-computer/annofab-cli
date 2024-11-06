@@ -25,6 +25,7 @@ from annofabcli.statistics.linegraph import (
     write_bokeh_graph,
 )
 from annofabcli.statistics.visualization.dataframe.task import Task
+from annofabcli.statistics.visualization.model import ProductionVolumeColumn
 
 logger = logging.getLogger(__name__)
 
@@ -32,11 +33,14 @@ logger = logging.getLogger(__name__)
 class AbstractPhaseCumulativeProductivity(abc.ABC):
     """ロールごとの累積の生産性をプロットするための抽象クラス"""
 
-    def __init__(self, df: pandas.DataFrame, phase: TaskPhase) -> None:
+    def __init__(
+        self, df: pandas.DataFrame, phase: TaskPhase, *, custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None
+    ) -> None:
         self.df = df
         self.phase = phase
         self.phase_name = self._get_phase_name(phase)
         self.default_user_id_list = self._get_default_user_id_list()
+        self.custom_production_volume_list = custom_production_volume_list if custom_production_volume_list is not None else []
 
         self._df_cumulative = self._get_cumulative_dataframe()
 
@@ -168,8 +172,8 @@ class AbstractPhaseCumulativeProductivity(abc.ABC):
 
 
 class AnnotatorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
-    def __init__(self, df: pandas.DataFrame) -> None:
-        super().__init__(df, phase=TaskPhase.ANNOTATION)
+    def __init__(self, df: pandas.DataFrame, *, custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None) -> None:
+        super().__init__(df, phase=TaskPhase.ANNOTATION, custom_production_volume_list=custom_production_volume_list)
 
     @classmethod
     def from_task(cls, task: Task) -> AnnotatorCumulativeProductivity:
@@ -194,11 +198,15 @@ class AnnotatorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
         df["cumulative_acceptance_worktime_hour"] = groupby_obj["acceptance_worktime_hour"].cumsum()
         df["cumulative_inspection_worktime_hour"] = groupby_obj["inspection_worktime_hour"].cumsum()
 
+        # 生産量
+        df["cumulative_task_count"] = groupby_obj["task_count"].cumsum()
+        df["cumulative_input_data_count"] = groupby_obj["input_data_count"].cumsum()
+        df["cumulative_annotation_count"] = groupby_obj["annotation_count"].cumsum()
+        for column in [e.value for e in self.custom_production_volume_list]:
+            df[f"cumulative_{column}"] = groupby_obj[column].cumsum()
+
         # タスク完了数、差し戻し数など
         df["cumulative_inspection_comment_count"] = groupby_obj["inspection_comment_count"].cumsum()
-        df["cumulative_annotation_count"] = groupby_obj["annotation_count"].cumsum()
-        df["cumulative_input_data_count"] = groupby_obj["input_data_count"].cumsum()
-        df["cumulative_task_count"] = groupby_obj["task_count"].cumsum()
         df["cumulative_number_of_rejections_by_inspection"] = groupby_obj["number_of_rejections_by_inspection"].cumsum()
         df["cumulative_number_of_rejections_by_acceptance"] = groupby_obj["number_of_rejections_by_acceptance"].cumsum()
 
@@ -214,6 +222,74 @@ class AnnotatorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
         # 元に戻す
         df = df.drop(["task_count"], axis=1)
         return df
+
+    def plot_production_volume_metrics(
+        self,
+        output_file: Path,
+        *,
+        target_user_id_list: Optional[list[str]] = None,
+    ) -> None:
+        """
+        生産性を教師付作業者ごとにプロットする。
+
+        Args:
+            df:
+            first_annotation_user_id_list:
+
+        Returns:
+
+        """
+
+        if not self._validate_df_for_output(output_file):
+            return
+
+        logger.debug(f"{output_file} を出力します。")
+
+        if target_user_id_list is not None:  # noqa: SIM108
+            user_id_list = target_user_id_list
+        else:
+            user_id_list = self.default_user_id_list
+
+        user_id_list = get_plotted_user_id_list(user_id_list)
+
+        x_axis_label = "アノテーション数"
+
+        line_graph_list = [
+            LineGraph(
+                title="累積のアノテーション数と教師付作業時間",
+                y_axis_label="教師付作業時間[時間]",
+                tooltip_columns=[
+                    "task_id",
+                    "first_annotation_user_id",
+                    "first_annotation_username",
+                    "first_annotation_started_date",
+                    "annotation_worktime_hour",
+                    "annotation_count",
+                    "inspection_comment_count",
+                ],
+                x_axis_label=x_axis_label,
+            ),
+            LineGraph(
+                title="累積のアノテーション数と検査コメント数",
+                y_axis_label="検査コメント数",
+                tooltip_columns=[
+                    "task_id",
+                    "first_annotation_user_id",
+                    "first_annotation_username",
+                    "first_annotation_started_date",
+                    "annotation_count",
+                    "inspection_comment_count",
+                ],
+                x_axis_label=x_axis_label,
+            ),
+        ]
+
+        x_column = "cumulative_annotation_count"
+        columns_list = [
+            (x_column, "cumulative_annotation_worktime_hour"),
+            (x_column, "cumulative_inspection_comment_count"),
+        ]
+        self._plot(line_graph_list, columns_list, user_id_list, output_file)
 
     def plot_annotation_metrics(  # noqa: ANN201
         self,
@@ -410,8 +486,8 @@ class AnnotatorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
 
 
 class InspectorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
-    def __init__(self, df: pandas.DataFrame) -> None:
-        super().__init__(df, phase=TaskPhase.INSPECTION)
+    def __init__(self, df: pandas.DataFrame, *, custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None) -> None:
+        super().__init__(df, phase=TaskPhase.INSPECTION, custom_production_volume_list=custom_production_volume_list)
 
     @classmethod
     def from_task(cls, task: Task) -> InspectorCumulativeProductivity:
@@ -437,9 +513,13 @@ class InspectorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
         df["cumulative_inspection_worktime_hour"] = groupby_obj["inspection_worktime_hour"].cumsum()
 
         df["cumulative_inspection_comment_count"] = groupby_obj["inspection_comment_count"].cumsum()
-        df["cumulative_annotation_count"] = groupby_obj["annotation_count"].cumsum()
-        df["cumulative_input_data_count"] = groupby_obj["input_data_count"].cumsum()
+
+        # 生産量
         df["cumulative_task_count"] = groupby_obj["task_count"].cumsum()
+        df["cumulative_input_data_count"] = groupby_obj["input_data_count"].cumsum()
+        df["cumulative_annotation_count"] = groupby_obj["annotation_count"].cumsum()
+        for column in [e.value for e in self.custom_production_volume_list]:
+            df[f"cumulative_{column}"] = groupby_obj[column].cumsum()
 
         # 追加理由：ツールチップでは時間情報は不要なので、作業開始「日」のみ表示するため
         # `YYYY-MM-DDThh:mm:ss.sss+09:00`から`YYYY-MM-DD`を取得する
@@ -607,8 +687,8 @@ class InspectorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
 
 
 class AcceptorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
-    def __init__(self, df: pandas.DataFrame) -> None:
-        super().__init__(df, phase=TaskPhase.ACCEPTANCE)
+    def __init__(self, df: pandas.DataFrame, *, custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None) -> None:
+        super().__init__(df, phase=TaskPhase.ACCEPTANCE, custom_production_volume_list=custom_production_volume_list)
 
     @classmethod
     def from_task(cls, task: Task) -> AcceptorCumulativeProductivity:
@@ -629,9 +709,13 @@ class AcceptorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
 
         # 作業時間の累積値
         df["cumulative_acceptance_worktime_hour"] = groupby_obj["acceptance_worktime_hour"].cumsum()
-        df["cumulative_annotation_count"] = groupby_obj["annotation_count"].cumsum()
-        df["cumulative_input_data_count"] = groupby_obj["input_data_count"].cumsum()
+
+        # 生産量
         df["cumulative_task_count"] = groupby_obj["task_count"].cumsum()
+        df["cumulative_input_data_count"] = groupby_obj["input_data_count"].cumsum()
+        df["cumulative_annotation_count"] = groupby_obj["annotation_count"].cumsum()
+        for column in [e.value for e in self.custom_production_volume_list]:
+            df[f"cumulative_{column}"] = groupby_obj[column].cumsum()
 
         # 追加理由：ツールチップでは時間情報は不要なので、作業開始「日」のみ表示するため
         # `YYYY-MM-DDThh:mm:ss.sss+09:00`から`YYYY-MM-DD`を取得する
