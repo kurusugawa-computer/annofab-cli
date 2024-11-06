@@ -65,7 +65,9 @@ class TestTaskWorktimeByPhaseUser:
     def test___create_annotation_count_ratio_df(self):
         df_task_history = pandas.read_csv(str(data_dir / "task-history-df.csv"))
         df_task = pandas.read_csv(str(data_dir / "task.csv"))
-        actual = TaskWorktimeByPhaseUser._create_annotation_count_ratio_df(task_df=df_task, task_history_df=df_task_history)
+        actual = TaskWorktimeByPhaseUser._create_annotation_count_ratio_df(
+            task_df=df_task, task_history_df=df_task_history, custom_production_volume_columns=None
+        )
         assert len(actual) == 10
 
         actual2 = actual.set_index(["task_id", "phase", "phase_stage", "account_id"])

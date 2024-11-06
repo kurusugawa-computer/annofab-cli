@@ -28,6 +28,7 @@ from annofabcli.statistics.visualization.dataframe.cumulative_productivity impor
     AnnotatorCumulativeProductivity,
     InspectorCumulativeProductivity,
 )
+from annofabcli.statistics.visualization.dataframe.custom_production_volume import CustomProductionVolume
 from annofabcli.statistics.visualization.dataframe.inspection_comment_count import InspectionCommentCount
 from annofabcli.statistics.visualization.dataframe.productivity_per_date import (
     AcceptorProductivityPerDate,
@@ -72,6 +73,7 @@ class WriteCsvGraph:
         actual_worktime: ActualWorktime,
         *,
         annotation_count: Optional[AnnotationCount] = None,
+        custom_production_volume: Optional[CustomProductionVolume] = None,
         minimal_output: bool = False,
         output_only_text: bool = False,
     ) -> None:
@@ -84,6 +86,7 @@ class WriteCsvGraph:
         self.minimal_output = minimal_output
         self.output_only_text = output_only_text
         self.annotation_count = annotation_count
+        self.custom_production_volume = custom_production_volume
 
         self.project_dir = ProjectDir(output_dir)
 
@@ -126,6 +129,7 @@ class WriteCsvGraph:
                 annotation_count=annotation_count,
                 project_id=self.project_id,
                 annofab_service=self.service,
+                custom_production_volume=self.custom_production_volume,
             )
 
         return self.task
