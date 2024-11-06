@@ -261,12 +261,12 @@ class ProjectDir(DataClassJsonMixin):
             obj.plot_productivity(
                 output_dir / f"散布図-{custom_production_volume.name}あたり作業時間と累計作業時間の関係-計測時間.html",
                 worktime_type=WorktimeType.MONITORED,
-                production_volume_column=custom_production_volume.column,
+                production_volume_column=custom_production_volume.value,
             )
             obj.plot_quality_and_productivity(
                 output_dir / f"散布図-{custom_production_volume.name}あたり作業時間と品質の関係-計測時間-教師付者用.html",
                 worktime_type=WorktimeType.MONITORED,
-                production_volume_column=custom_production_volume.column,
+                production_volume_column=custom_production_volume.value,
             )
 
         if obj.actual_worktime_exists():
@@ -295,12 +295,12 @@ class ProjectDir(DataClassJsonMixin):
                 obj.plot_productivity(
                     output_dir / f"散布図-{custom_production_volume.name}あたり作業時間と累計作業時間の関係-実績時間.html",
                     worktime_type=WorktimeType.ACTUAL,
-                    production_volume_column=custom_production_volume.column,
+                    production_volume_column=custom_production_volume.value,
                 )
                 obj.plot_quality_and_productivity(
                     output_dir / f"散布図-{custom_production_volume.name}あたり作業時間と品質の関係-実績時間-教師付者用.html",
                     worktime_type=WorktimeType.ACTUAL,
-                    production_volume_column=custom_production_volume.column,
+                    production_volume_column=custom_production_volume.value,
                 )
 
         else:

@@ -37,7 +37,7 @@ class TaskWorktimeByPhaseUser:
         Notes:
             `task_count`も生産量に該当するが、`input_data_count`や`annotation_count`と比較すると生産量として評価するのは厳しいので、`production_volume_columns`には含めない
         """
-        return ["input_data_count", "annotation_count", *[e.column for e in self.custom_production_volume_list]]
+        return ["input_data_count", "annotation_count", *[e.value for e in self.custom_production_volume_list]]
 
     @property
     def quantity_columns(self) -> list[str]:
@@ -129,7 +129,7 @@ class TaskWorktimeByPhaseUser:
         """
         df_task = task.df
         df_worktime_ratio = cls._create_annotation_count_ratio_df(
-            task_history.df, task.df, custom_production_volume_columns=[e.column for e in task.custom_production_volume_list]
+            task_history.df, task.df, custom_production_volume_columns=[e.value for e in task.custom_production_volume_list]
         )
         if len(df_worktime_ratio) == 0:
             return cls.empty()
@@ -180,7 +180,7 @@ class TaskWorktimeByPhaseUser:
             "rejected_count": "float64",
         }
         if custom_production_volume_list is not None:
-            df_dtype.update({e.column: "float64" for e in custom_production_volume_list})
+            df_dtype.update({e.value: "float64" for e in custom_production_volume_list})
 
         df = pandas.DataFrame(columns=df_dtype.keys()).astype(df_dtype)
         return cls(df, custom_production_volume_list=custom_production_volume_list)

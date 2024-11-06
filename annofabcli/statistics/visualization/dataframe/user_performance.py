@@ -701,7 +701,7 @@ class UserPerformance:
 
     @property
     def columns(self) -> list[tuple[str, str]]:
-        production_volume_columns = ["input_data_count", "annotation_count", *[e.column for e in self.custom_production_volume_list]]
+        production_volume_columns = ["input_data_count", "annotation_count", *[e.value for e in self.custom_production_volume_list]]
         value_columns = self.get_productivity_columns(self.phase_list, production_volume_columns=production_volume_columns)
 
         user_columns = [
@@ -865,7 +865,7 @@ class UserPerformance:
         """
         生産量を表す列名から、名前を取得します。
         """
-        column_to_name: dict[str, str] = {e.column: e.name for e in self.custom_production_volume_list}
+        column_to_name: dict[str, str] = {e.value: e.name for e in self.custom_production_volume_list}
         column_to_name.update(
             {
                 "input_data_count": "入力データ",

@@ -102,7 +102,7 @@ class ProjectPerformance:
 
         first_columns = [("dirname", ""), ("project_title", ""), ("project_id", ""), ("input_data_type", "")]
 
-        production_volume_columns = ["input_data_count", "annotation_count", *[e.column for e in self.custom_production_volume_list]]
+        production_volume_columns = ["input_data_count", "annotation_count", *[e.value for e in self.custom_production_volume_list]]
         value_columns = WholePerformance.get_series_index(phase_list, production_volume_columns=production_volume_columns)
 
         columns = first_columns + value_columns

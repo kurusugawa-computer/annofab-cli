@@ -21,7 +21,7 @@ class CustomProductionVolume:
         return [
             "project_id",
             "task_id",
-            *[e.column for e in self.custom_production_volume_list],
+            *[e.value for e in self.custom_production_volume_list],
         ]
 
     def required_columns_exist(self, df: pandas.DataFrame) -> bool:
@@ -57,6 +57,6 @@ class CustomProductionVolume:
             "project_id": "string",
             "task_id": "string",
         }
-        columns = ["project_id", "task_id", *[e.column for e in custom_production_volume_list]]
+        columns = ["project_id", "task_id", *[e.value for e in custom_production_volume_list]]
         df = pandas.DataFrame(columns=columns).astype(df_dtype)
         return cls(df, custom_production_volume_list=custom_production_volume_list)
