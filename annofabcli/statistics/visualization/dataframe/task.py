@@ -29,6 +29,10 @@ class Task:
     'タスクlist.csv'に該当するデータフレームをラップしたクラス
 
     `project_id`,`task_id`のペアがユニークなキーです。
+
+    Args:
+        custom_production_volume_columns: ユーザー独自の生産量を表す列名のlist
+
     """
 
     @staticmethod
@@ -39,32 +43,31 @@ class Task:
         duplicated = df.duplicated(subset=["project_id", "task_id"])
         return duplicated.any()
 
-    @classmethod
-    def required_columns_exist(cls, df: pandas.DataFrame) -> bool:
+    def required_columns_exist(self, df: pandas.DataFrame) -> bool:
         """
         必須の列が存在するかどうかを返します。
 
         Returns:
             必須の列が存在するかどうか
         """
-        return len(set(cls.columns()) - set(df.columns)) == 0
+        return len(set(self.columns) - set(df.columns)) == 0
 
-    @classmethod
-    def missing_columns(cls, df: pandas.DataFrame) -> list[str]:
+    def missing_columns(self, df: pandas.DataFrame) -> list[str]:
         """
         欠損している列名を取得します。
 
         """
-        return list(set(cls.columns()) - set(df.columns))
+        return list(set(self.columns) - set(df.columns))
 
-    def __init__(self, df: pandas.DataFrame) -> None:
+    def __init__(self, df: pandas.DataFrame, *, custom_production_volume_columns: Optional[list[str]] = None) -> None:
+        self.custom_production_volume_columns = custom_production_volume_columns if custom_production_volume_columns is not None else []
+
         if self._duplicated_keys(df):
             logger.warning("引数`df`に重複したキー（project_id, task_id）が含まれています。")
 
         if not self.required_columns_exist(df):
             raise ValueError(
-                f"引数'df'の'columns'に次の列が存在していません。 {self.missing_columns(df)} :: "
-                f"次の列が必須です。{self.columns()}の列が必要です。"
+                f"引数'df'の'columns'に次の列が存在していません。 {self.missing_columns(df)} :: " f"次の列が必須です。{self.columns}の列が必要です。"
             )
 
         self.df = df
@@ -75,8 +78,8 @@ class Task:
             return False
         return True
 
-    @classmethod
-    def columns(cls) -> list[str]:
+    @property
+    def columns(self) -> list[str]:
         return [
             # 基本的な情報
             "project_id",
@@ -113,6 +116,7 @@ class Task:
             # 個数
             "input_data_count",
             "annotation_count",
+            *self.custom_production_volume_columns,
             "inspection_comment_count",
             "inspection_comment_count_in_inspection_phase",
             "inspection_comment_count_in_acceptance_phase",
@@ -187,15 +191,15 @@ class Task:
         return len(self.df) == 0
 
     @classmethod
-    def empty(cls) -> Task:
+    def empty(cls, *, custom_production_volume_columns: Optional[list[str]] = None) -> Task:
         """空のデータフレームを持つインスタンスを生成します。"""
 
-        bool_columns = {
+        bool_columns = [
             "inspection_is_skipped",
             "acceptance_is_skipped",
-        }
+        ]
 
-        string_columns = {
+        string_columns = [
             "project_id",
             "task_id",
             "phase",
@@ -212,9 +216,27 @@ class Task:
             "first_acceptance_username",
             "first_acceptance_started_datetime",
             "first_acceptance_completed_datetime",
-        }
+        ]
 
-        numeric_columns = set(cls.columns()) - bool_columns - string_columns
+        numeric_columns = [
+            "number_of_rejections_by_inspection",
+            "number_of_rejections_by_acceptance",
+            "first_annotation_worktime_hour",
+            "first_inspection_worktime_hour",
+            "first_acceptance_worktime_hour",
+            "worktime_hour",
+            "annotation_worktime_hour",
+            "inspection_worktime_hour",
+            "acceptance_worktime_hour",
+            "input_data_count",
+            "annotation_count",
+            "inspection_comment_count",
+            "inspection_comment_count_in_inspection_phase",
+            "inspection_comment_count_in_acceptance_phase",
+        ]
+        if custom_production_volume_columns is not None:
+            numeric_columns.extend(custom_production_volume_columns)
+
         df_dtype: dict[str, str] = {}
         for col in numeric_columns:
             df_dtype[col] = "float"
@@ -223,7 +245,8 @@ class Task:
         for col in bool_columns:
             df_dtype[col] = "boolean"
 
-        df = pandas.DataFrame(columns=cls.columns()).astype(df_dtype)
+        columns = string_columns + numeric_columns + bool_columns
+        df = pandas.DataFrame(columns=columns).astype(df_dtype)
         return cls(df)
 
     @classmethod
@@ -418,7 +441,7 @@ class Task:
         if not self._validate_df_for_output(output_file):
             return
 
-        print_csv(self.df[self.columns()], str(output_file))
+        print_csv(self.df[self.columns], str(output_file))
 
     def mask_user_info(
         self,
