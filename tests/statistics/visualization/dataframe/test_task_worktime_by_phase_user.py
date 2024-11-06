@@ -6,6 +6,7 @@ from annofabcli.statistics.visualization.dataframe.task import Task
 from annofabcli.statistics.visualization.dataframe.task_history import TaskHistory
 from annofabcli.statistics.visualization.dataframe.task_worktime_by_phase_user import TaskWorktimeByPhaseUser
 from annofabcli.statistics.visualization.dataframe.user import User
+from annofabcli.statistics.visualization.model import CustomProductionVolumeColumn
 
 output_dir = Path("./tests/out/statistics/visualization/dataframe/task_worktime_by_phase_user")
 data_dir = Path("./tests/data/statistics")
@@ -16,9 +17,16 @@ class TestTaskWorktimeByPhaseUser:
     def test__from_df__and__to_csv(self):
         task_history = TaskHistory(pandas.read_csv(str(data_dir / "task-history-df.csv")))
         user = User(pandas.read_csv(str(data_dir / "user.csv")))
-        task = Task.from_csv(data_dir / "task.csv")
+        task = Task.from_csv(
+            data_dir / "task.csv",
+            custom_production_volume_list=[
+                CustomProductionVolumeColumn("custom_production_volume1", "custom_生産量1"),
+                CustomProductionVolumeColumn("custom_production_volume2", "custom_生産量2"),
+            ],
+        )
         actual = TaskWorktimeByPhaseUser.from_df_wrapper(task_history=task_history, user=user, task=task, project_id="prj1")
-
+        assert "custom_production_volume1" in actual.columns
+        assert "custom_production_volume2" in actual.columns
         assert len(actual.df) == 10
         target_row = actual.df[(actual.df["task_id"] == "task1") & (actual.df["phase"] == "annotation") & (actual.df["user_id"] == "alice")].iloc[0]
         assert target_row["worktime_hour"] == 2

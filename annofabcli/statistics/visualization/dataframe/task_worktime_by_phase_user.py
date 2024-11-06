@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+from functools import partial
 from pathlib import Path
 from typing import Optional
 
@@ -93,9 +94,18 @@ class TaskWorktimeByPhaseUser:
             logger.warning("引数`df`に重複したキー（project_id, task_id, phase, phase_stage, account_id）が含まれています。")
 
         if not self.required_columns_exist(df):
-            raise ValueError(f"引数`df`には、{self.columns}の列が必要です。 :: {df.columns=}")
+            raise ValueError(
+                f"引数'df'の'columns'に次の列が存在していません。 {self.missing_columns(df)} :: " f"次の列が必須です。{self.columns}の列が必要です。"
+            )
 
         self.df = df
+
+    def missing_columns(self, df: pandas.DataFrame) -> list[str]:
+        """
+        欠損している列名を取得します。
+
+        """
+        return list(set(self.columns) - set(df.columns))
 
     def _validate_df_for_output(self, output_file: Path) -> bool:
         if len(self.df) == 0:
@@ -234,33 +244,17 @@ class TaskWorktimeByPhaseUser:
             row["task_id"]: {
                 "annotation_count": row["annotation_count"],
                 "input_data_count": row["input_data_count"],
-                "inspection_comment_count": row["inspection_comment_count"],
+                "pointed_out_inspection_comment_count": row["inspection_comment_count"],
                 **({col: row[col] for col in custom_production_volume_columns} if custom_production_volume_columns is not None else {}),
                 "rejected_count": row["number_of_rejections_by_inspection"] + row["number_of_rejections_by_acceptance"],
             }
             for _, row in task_df.iterrows()
         }
 
-        def get_inspection_comment_count(row: pandas.Series) -> float:
+        def get_quantity_value(row: pandas.Series, column: str) -> float:
             task_id = row.name[0]
-            inspection_comment_count = annotation_count_dict[task_id]["inspection_comment_count"]
-            return row["task_count"] * inspection_comment_count
-
-        def get_rejected_count(row: pandas.Series) -> float:
-            task_id = row.name[0]
-            rejected_count = annotation_count_dict[task_id]["rejected_count"]
-            return row["task_count"] * rejected_count
-
-        def get_annotation_count(row: pandas.Series) -> float:
-            task_id = row.name[0]
-            annotation_count = annotation_count_dict[task_id]["annotation_count"]
-            result = row["task_count"] * annotation_count
-            return result
-
-        def get_input_data_count(row: pandas.Series) -> float:
-            task_id = row.name[0]
-            annotation_count = annotation_count_dict[task_id]["input_data_count"]
-            return row["task_count"] * annotation_count
+            value = annotation_count_dict[task_id][column]
+            return row["task_count"] * value
 
         if len(task_df) == 0:
             logger.warning("タスク一覧が0件です。")
@@ -292,10 +286,19 @@ class TaskWorktimeByPhaseUser:
         group_obj["task_count"] = group_obj.groupby(level=["task_id", "phase", "phase_stage"], group_keys=False).apply(
             lambda e: e / e["worktime_hour"].sum()
         )
-        group_obj["annotation_count"] = group_obj.apply(get_annotation_count, axis="columns")
-        group_obj["input_data_count"] = group_obj.apply(get_input_data_count, axis="columns")
-        group_obj["pointed_out_inspection_comment_count"] = group_obj.apply(get_inspection_comment_count, axis="columns")
-        group_obj["rejected_count"] = group_obj.apply(get_rejected_count, axis="columns")
+
+        quantity_columns = [
+            "annotation_count",
+            "input_data_count",
+            "pointed_out_inspection_comment_count",
+            "rejected_count",
+            *(custom_production_volume_columns if custom_production_volume_columns is not None else []),
+        ]
+
+        for col in quantity_columns:
+            sub_get_quantity_value = partial(get_quantity_value, column=col)
+            group_obj[col] = group_obj.apply(sub_get_quantity_value, axis="columns")
+
         new_df = group_obj.reset_index()
         new_df["pointed_out_inspection_comment_count"] = new_df["pointed_out_inspection_comment_count"] * new_df["phase"].apply(
             lambda e: 1 if e == TaskPhase.ANNOTATION.value else 0
