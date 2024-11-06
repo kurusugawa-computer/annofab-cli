@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from enum import Enum
 
 
@@ -8,3 +9,15 @@ class WorktimeColumn(Enum):
     """実績作業時間"""
     MONITORED_WORKTIME_HOUR = "monitored_worktime_hour"
     """計測作業時間"""
+
+
+@dataclass(frozen=True)
+class CustomProductionVolumeColumn:
+    """
+    入力データ数やアノテーション数以外の、ユーザー独自の生産量
+    """
+
+    column: str
+    """CSVに使われる列名"""
+    name: str
+    """グラフに使われる名前"""

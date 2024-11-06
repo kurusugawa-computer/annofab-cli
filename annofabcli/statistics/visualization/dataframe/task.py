@@ -19,6 +19,7 @@ from annofabcli.statistics.histogram import create_histogram_figure, get_sub_tit
 from annofabcli.statistics.visualization.dataframe.annotation_count import AnnotationCount
 from annofabcli.statistics.visualization.dataframe.custom_production_volume import CustomProductionVolume
 from annofabcli.statistics.visualization.dataframe.inspection_comment_count import InspectionCommentCount
+from annofabcli.statistics.visualization.model import CustomProductionVolumeColumn
 from annofabcli.task.list_all_tasks_added_task_history import AddingAdditionalInfoToTask
 
 logger = logging.getLogger(__name__)
@@ -62,8 +63,8 @@ class Task:
         """
         return list(set(self.columns) - set(df.columns))
 
-    def __init__(self, df: pandas.DataFrame, *, custom_production_volume_columns: Optional[list[str]] = None) -> None:
-        self.custom_production_volume_columns = custom_production_volume_columns if custom_production_volume_columns is not None else []
+    def __init__(self, df: pandas.DataFrame, *, custom_production_volume_list: Optional[list[CustomProductionVolumeColumn]] = None) -> None:
+        self.custom_production_volume_list = custom_production_volume_list if custom_production_volume_list is not None else []
 
         if self._duplicated_keys(df):
             logger.warning("引数`df`に重複したキー（project_id, task_id）が含まれています。")
@@ -119,7 +120,7 @@ class Task:
             # 個数
             "input_data_count",
             "annotation_count",
-            *self.custom_production_volume_columns,
+            *[e.column for e in self.custom_production_volume_list],
             "inspection_comment_count",
             "inspection_comment_count_in_inspection_phase",
             "inspection_comment_count_in_acceptance_phase",
@@ -186,13 +187,13 @@ class Task:
         )
 
         # ユーザー独自の生産量を追加する
-        custom_production_volume_columns = None
+        custom_production_volume_list = None
         if custom_production_volume is not None:
             df = df.merge(custom_production_volume.df, on=["project_id", "task_id"], how="left")
-            custom_production_volume_columns = custom_production_volume.custom_production_volume_columns
-            df = df.fillna({col: 0 for col in custom_production_volume_columns})
+            custom_production_volume_list = custom_production_volume.custom_production_volume_list
+            df = df.fillna({e.column: 0 for e in custom_production_volume_list})
 
-        return cls(df, custom_production_volume_columns=custom_production_volume_columns)
+        return cls(df, custom_production_volume_list=custom_production_volume_list)
 
     def is_empty(self) -> bool:
         """
@@ -204,7 +205,7 @@ class Task:
         return len(self.df) == 0
 
     @classmethod
-    def empty(cls, *, custom_production_volume_columns: Optional[list[str]] = None) -> Task:
+    def empty(cls, *, custom_production_volume_list: Optional[list[CustomProductionVolumeColumn]] = None) -> Task:
         """空のデータフレームを持つインスタンスを生成します。"""
 
         bool_columns = [
@@ -247,8 +248,8 @@ class Task:
             "inspection_comment_count_in_inspection_phase",
             "inspection_comment_count_in_acceptance_phase",
         ]
-        if custom_production_volume_columns is not None:
-            numeric_columns.extend(custom_production_volume_columns)
+        if custom_production_volume_list is not None:
+            numeric_columns.extend([e.column for e in custom_production_volume_list])
 
         df_dtype: dict[str, str] = {}
         for col in numeric_columns:
@@ -260,15 +261,15 @@ class Task:
 
         columns = string_columns + numeric_columns + bool_columns
         df = pandas.DataFrame(columns=columns).astype(df_dtype)
-        return cls(df)
+        return cls(df, custom_production_volume_list=custom_production_volume_list)
 
     @classmethod
-    def from_csv(cls, csv_file: Path, *, custom_production_volume_columns: Optional[list[str]] = None) -> Task:
+    def from_csv(cls, csv_file: Path, *, custom_production_volume_list: Optional[list[CustomProductionVolumeColumn]] = None) -> Task:
         df = pandas.read_csv(str(csv_file))
-        return cls(df, custom_production_volume_columns=custom_production_volume_columns)
+        return cls(df, custom_production_volume_list=custom_production_volume_list)
 
     @staticmethod
-    def merge(*obj: Task, custom_production_volume_columns: Optional[list[str]] = None) -> Task:
+    def merge(*obj: Task, custom_production_volume_list: Optional[list[CustomProductionVolumeColumn]] = None) -> Task:
         """
         複数のインスタンスをマージします。
 
@@ -277,7 +278,7 @@ class Task:
         """
         df_list = [task.df for task in obj]
         df_merged = pandas.concat(df_list)
-        return Task(df_merged, custom_production_volume_columns=custom_production_volume_columns)
+        return Task(df_merged, custom_production_volume_list=custom_production_volume_list)
 
     def plot_histogram_of_worktime(
         self,

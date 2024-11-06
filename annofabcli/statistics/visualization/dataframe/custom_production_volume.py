@@ -4,6 +4,8 @@ import logging
 
 import pandas
 
+from annofabcli.statistics.visualization.model import CustomProductionVolumeColumn
+
 logger = logging.getLogger(__name__)
 
 
@@ -19,7 +21,7 @@ class CustomProductionVolume:
         return [
             "project_id",
             "task_id",
-            *self.custom_production_volume_columns,
+            *[e.column for e in self.custom_production_volume_list],
         ]
 
     def required_columns_exist(self, df: pandas.DataFrame) -> bool:
@@ -31,9 +33,9 @@ class CustomProductionVolume:
         """
         return len(set(self.columns) - set(df.columns)) == 0
 
-    def __init__(self, df: pandas.DataFrame, *, custom_production_volume_columns: list[str]) -> None:
-        self.custom_production_volume_columns = custom_production_volume_columns
-        assert len(custom_production_volume_columns) > 0
+    def __init__(self, df: pandas.DataFrame, *, custom_production_volume_list: list[CustomProductionVolumeColumn]) -> None:
+        self.custom_production_volume_list = custom_production_volume_list
+        assert len(custom_production_volume_list) > 0
         if not self.required_columns_exist(df):
             raise ValueError(f"引数`df`には、{self.columns}の列が必要です。 :: {df.columns=}")
         self.df = df
@@ -48,13 +50,13 @@ class CustomProductionVolume:
         return len(self.df) == 0
 
     @classmethod
-    def empty(cls, *, custom_production_volume_columns: list[str]) -> CustomProductionVolume:
+    def empty(cls, *, custom_production_volume_list: list[CustomProductionVolumeColumn]) -> CustomProductionVolume:
         """空のデータフレームを持つインスタンスを生成します。"""
 
         df_dtype: dict[str, str] = {
             "project_id": "string",
             "task_id": "string",
         }
-        columns = ["project_id", "task_id", *custom_production_volume_columns]
+        columns = ["project_id", "task_id", *[e.column for e in custom_production_volume_list]]
         df = pandas.DataFrame(columns=columns).astype(df_dtype)
-        return cls(df, custom_production_volume_columns=custom_production_volume_columns)
+        return cls(df, custom_production_volume_list=custom_production_volume_list)
