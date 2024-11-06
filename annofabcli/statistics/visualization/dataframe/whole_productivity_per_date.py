@@ -6,6 +6,7 @@
 from __future__ import annotations
 
 import logging
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
 
@@ -43,7 +44,7 @@ SECONDARY_Y_RANGE_RATIO = 1.05
 """
 
 
-def _plot_and_moving_average(  # noqa: ANN202
+def _plot_and_moving_average(
     line_graph: LineGraph,
     source: ColumnDataSource,
     x_column: str,
@@ -52,7 +53,7 @@ def _plot_and_moving_average(  # noqa: ANN202
     color: str,
     is_secondary_y_axis: bool = False,  # noqa: FBT001, FBT002
     **kwargs,  # noqa: ANN003
-):
+) -> None:
     """
     折れ線と1週間移動平均をプロットします。
 
@@ -217,11 +218,11 @@ class WholeProductivityPerCompletedDate:
         生産性情報などの列を追加する。
         """
 
-        def add_cumsum_column(df: pandas.DataFrame, column: str):  # noqa: ANN202
+        def add_cumsum_column(df: pandas.DataFrame, column: str) -> None:
             """累積情報の列を追加"""
             df[f"cumsum_{column}"] = df[column].cumsum()
 
-        def add_velocity_column(df: pandas.DataFrame, numerator_column: str, denominator_column: str):  # noqa: ANN202
+        def add_velocity_column(df: pandas.DataFrame, numerator_column: str, denominator_column: str) -> None:
             """速度情報の列を追加"""
             df[f"{numerator_column}/{denominator_column}"] = df[numerator_column] / df[denominator_column]
             # 1週間移動平均も出力
@@ -261,7 +262,7 @@ class WholeProductivityPerCompletedDate:
         全体の生産量や生産性をプロットする
         """
 
-        def add_velocity_columns(df: pandas.DataFrame):  # noqa: ANN202
+        def add_velocity_columns(df: pandas.DataFrame) -> None:
             for denominator in [e.value for e in production_volume_list]:
                 for category in [
                     "actual",
@@ -462,7 +463,7 @@ class WholeProductivityPerCompletedDate:
                             "monitored_inspection_worktime_hour",
                             "monitored_acceptance_worktime_hour",
                             f"actual_worktime_minute/{info.value}",
-                            "monitored_worktime_minute/input_data_count",
+                            f"monitored_worktime_minute/{info.value}",
                             f"monitored_annotation_worktime_minute/{info.value}",
                             f"monitored_inspection_worktime_minute/{info.value}",
                             f"monitored_acceptance_worktime_minute/{info.value}",
@@ -775,22 +776,25 @@ class WholeProductivityPerCompletedDate:
 class WholeProductivityPerFirstAnnotationStartedDate:
     """教師付開始日ごとの全体の生産量と生産性に関する情報"""
 
-    def __init__(self, df: pandas.DataFrame) -> None:
+    def __init__(self, df: pandas.DataFrame, *, custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None) -> None:
+        self.custom_production_volume_list = custom_production_volume_list if custom_production_volume_list is not None else []
         self.df = df
 
     @classmethod
-    def from_csv(cls, csv_file: Path) -> WholeProductivityPerFirstAnnotationStartedDate:
+    def from_csv(
+        cls, csv_file: Path, *, custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None
+    ) -> WholeProductivityPerFirstAnnotationStartedDate:
         """CSVファイルからインスタンスを生成します。"""
         df = pandas.read_csv(str(csv_file))
-        return cls(df)
+        return cls(df, custom_production_volume_list=custom_production_volume_list)
 
     @classmethod
-    def _add_velocity_columns(cls, df: pandas.DataFrame) -> None:
+    def _add_velocity_columns(cls, df: pandas.DataFrame, production_volume_columns: list[str]) -> None:
         """
         日毎の全体の生産量から、累計情報、生産性の列を追加する。
         """
 
-        def add_velocity_column(df: pandas.DataFrame, numerator_column: str, denominator_column: str):  # noqa: ANN202
+        def add_velocity_column(df: pandas.DataFrame, numerator_column: str, denominator_column: str) -> None:
             df[f"{numerator_column}/{denominator_column}"] = df[numerator_column] / df[denominator_column]
 
             df[f"{numerator_column}/{denominator_column}{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}"] = get_weekly_moving_average(
@@ -798,25 +802,23 @@ class WholeProductivityPerFirstAnnotationStartedDate:
             ) / get_weekly_moving_average(df[denominator_column])
 
         # annofab 計測時間から算出したvelocityを追加
-        add_velocity_column(df, numerator_column="worktime_hour", denominator_column="input_data_count")
-        add_velocity_column(df, numerator_column="annotation_worktime_hour", denominator_column="input_data_count")
-        add_velocity_column(df, numerator_column="inspection_worktime_hour", denominator_column="input_data_count")
-        add_velocity_column(df, numerator_column="acceptance_worktime_hour", denominator_column="input_data_count")
-
-        add_velocity_column(df, numerator_column="worktime_hour", denominator_column="annotation_count")
-        add_velocity_column(df, numerator_column="annotation_worktime_hour", denominator_column="annotation_count")
-        add_velocity_column(df, numerator_column="inspection_worktime_hour", denominator_column="annotation_count")
-        add_velocity_column(df, numerator_column="acceptance_worktime_hour", denominator_column="annotation_count")
+        for column in production_volume_columns:
+            add_velocity_column(df, numerator_column="worktime_hour", denominator_column=column)
+            add_velocity_column(df, numerator_column="annotation_worktime_hour", denominator_column=column)
+            add_velocity_column(df, numerator_column="inspection_worktime_hour", denominator_column=column)
+            add_velocity_column(df, numerator_column="acceptance_worktime_hour", denominator_column=column)
 
     @classmethod
     def from_task(cls, task: Task) -> WholeProductivityPerFirstAnnotationStartedDate:
+        # 生産量を表す列名
+        production_volume_columns = ["input_data_count", "annotation_count", *[e.value for e in task.custom_production_volume_list]]
+
         df_task = task.df
         df_sub_task = df_task[df_task["status"] == TaskStatus.COMPLETE.value][
             [
                 "task_id",
                 "first_annotation_started_datetime",
-                "input_data_count",
-                "annotation_count",
+                *production_volume_columns,
                 "worktime_hour",
                 "annotation_worktime_hour",
                 "inspection_worktime_hour",
@@ -828,8 +830,7 @@ class WholeProductivityPerFirstAnnotationStartedDate:
         )
 
         value_columns = [
-            "input_data_count",
-            "annotation_count",
+            *production_volume_columns,
             "worktime_hour",
             "annotation_worktime_hour",
             "inspection_worktime_hour",
@@ -861,8 +862,8 @@ class WholeProductivityPerFirstAnnotationStartedDate:
         df_date["first_annotation_started_date"] = df_date.index
 
         # 生産性情報などの列を追加する
-        cls._add_velocity_columns(df_date)
-        return cls(df_date)
+        cls._add_velocity_columns(df_date, production_volume_columns)
+        return cls(df_date, custom_production_volume_list=task.custom_production_volume_list)
 
     def _validate_df_for_output(self, output_file: Path) -> bool:
         if len(self.df) == 0:
@@ -874,11 +875,11 @@ class WholeProductivityPerFirstAnnotationStartedDate:
         if not self._validate_df_for_output(output_file):
             return
 
+        production_volume_columns = ["input_data_count", "annotation_count", *[e.value for e in self.custom_production_volume_list]]
         basic_columns = [
             "first_annotation_started_date",
             "task_count",
-            "input_data_count",
-            "annotation_count",
+            *production_volume_columns,
             "worktime_hour",
             "annotation_worktime_hour",
             "inspection_worktime_hour",
@@ -888,7 +889,7 @@ class WholeProductivityPerFirstAnnotationStartedDate:
         velocity_columns = [
             f"{numerator}/{denominator}{suffix}"
             for suffix in ["", WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX]
-            for denominator in ["input_data_count", "annotation_count"]
+            for denominator in production_volume_columns
             for numerator in [
                 "worktime_hour",
                 "annotation_worktime_hour",
@@ -901,55 +902,7 @@ class WholeProductivityPerFirstAnnotationStartedDate:
 
         print_csv(self.df[columns], str(output_file))
 
-    @classmethod
-    def merge(
-        cls, obj1: WholeProductivityPerFirstAnnotationStartedDate, obj2: WholeProductivityPerFirstAnnotationStartedDate
-    ) -> WholeProductivityPerFirstAnnotationStartedDate:
-        def merge_row(str_date: str, columns: pandas.Index, row1: Optional[pandas.Series], row2: Optional[pandas.Series]) -> pandas.Series:
-            if row1 is not None and row2 is not None:
-                sum_row = row1.fillna(0) + row2.fillna(0)
-            elif row1 is not None and row2 is None:
-                sum_row = row1.fillna(0)
-            elif row1 is None and row2 is not None:
-                sum_row = row2.fillna(0)
-            else:
-                sum_row = pandas.Series(index=columns)
-
-            sum_row.name = str_date
-            return sum_row
-
-        def date_range():  # noqa: ANN202
-            lower_date = min(df1["first_annotation_started_date"].min(), df2["first_annotation_started_date"].min())
-            upper_date = max(df1["first_annotation_started_date"].max(), df2["first_annotation_started_date"].max())
-            return pandas.date_range(start=lower_date, end=upper_date)
-
-        df1 = obj1.df
-        df2 = obj2.df
-        tmp_df1 = df1.set_index("first_annotation_started_date")
-        tmp_df2 = df2.set_index("first_annotation_started_date")
-
-        row_list: list[pandas.Series] = []
-        for dt in date_range():
-            str_date = str(dt.date())
-            if str_date in tmp_df1.index:  # noqa: SIM108
-                row1 = tmp_df1.loc[str_date]
-            else:
-                row1 = None
-            if str_date in tmp_df2.index:  # noqa: SIM108
-                row2 = tmp_df2.loc[str_date]
-            else:
-                row2 = None
-
-            sum_row = merge_row(str_date=str_date, columns=tmp_df1.columns, row1=row1, row2=row2)
-            row_list.append(sum_row)
-
-        sum_df = pandas.DataFrame(row_list)
-        sum_df.index.name = "first_annotation_started_date"
-        sum_df.reset_index(inplace=True)
-        cls._add_velocity_columns(sum_df)
-        return cls(sum_df)
-
-    def plot(self, output_file: Path):  # noqa: ANN201
+    def plot(self, output_file: Path) -> None:
         """
         全体の生産量や生産性をプロットする
         """
@@ -965,7 +918,7 @@ class WholeProductivityPerFirstAnnotationStartedDate:
             ]:
                 df[f"{column}{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}"] = get_weekly_moving_average(df[column])
 
-            for denominator in ["input_data_count", "annotation_count"]:
+            for denominator in [e.value for e in production_volume_list]:
                 for numerator in ["worktime", "annotation_worktime", "inspection_worktime", "acceptance_worktime"]:
                     df[f"{numerator}_minute/{denominator}"] = df[f"{numerator}_hour"] * 60 / df[denominator]
                     df[f"{numerator}_minute/{denominator}{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}"] = (
@@ -1072,102 +1025,94 @@ class WholeProductivityPerFirstAnnotationStartedDate:
         if not self._validate_df_for_output(output_file):
             return
 
+        production_volume_list = [
+            ProductionVolumeColumn("input_data_count", "入力データ"),
+            ProductionVolumeColumn("annotation_count", "アノテーション"),
+            *self.custom_production_volume_list,
+        ]
+
         df = self.df.copy()
         df["dt_first_annotation_started_date"] = df["first_annotation_started_date"].map(lambda e: parse(e).date())
         add_velocity_and_weekly_moving_average_columns(df)
 
         logger.debug(f"{output_file} を出力します。")
 
-        fig_info_list = [
-            {
-                "y_info_list": [
-                    {"column": "worktime_hour", "legend": "計測作業時間"},
-                    {"column": "annotation_worktime_hour", "legend": "計測作業時間(教師付)"},
-                    {"column": "inspection_worktime_hour", "legend": "計測作業時間(検査)"},
-                    {"column": "acceptance_worktime_hour", "legend": "計測作業時間(受入)"},
-                ],
-            },
-            {
-                "y_info_list": [
-                    {"column": "worktime_minute/input_data_count", "legend": "入力データあたり計測作業時間"},
-                    {"column": "annotation_worktime_minute/input_data_count", "legend": "入力データあたり計測作業時間(教師付)"},
-                    {"column": "inspection_worktime_minute/input_data_count", "legend": "入力データあたり計測作業時間(検査)"},
-                    {"column": "acceptance_worktime_minute/input_data_count", "legend": "入力データあたり計測作業時間(受入)"},
-                ],
-            },
-            {
-                "y_info_list": [
-                    {"column": "worktime_minute/annotation_count", "legend": "アノテーションあたり計測作業時間"},
-                    {"column": "annotation_worktime_minute/annotation_count", "legend": "アノテーションあたり計測作業時間(教師付)"},
-                    {"column": "inspection_worktime_minute/annotation_count", "legend": "アノテーションあたり計測作業時間(検査)"},
-                    {"column": "acceptance_worktime_minute/annotation_count", "legend": "アノテーションあたり計測作業時間(受入)"},
-                ],
-            },
-        ]
+        @dataclass
+        class LegendInfo:
+            column: str
+            legend: str
 
-        line_graph_list = [
-            create_line_graph(
-                title="教師付開始日ごとの計測作業時間",
-                y_axis_label="作業時間[時間]",
-                tooltip_columns=[
-                    "first_annotation_started_date",
-                    "worktime_hour",
-                    "annotation_worktime_hour",
-                    "inspection_worktime_hour",
-                    "acceptance_worktime_hour",
+        @dataclass
+        class GraphInfo:
+            line_graph: LineGraph
+            y_info_list: list[LegendInfo]
+
+        graph_info_list = [
+            GraphInfo(
+                line_graph=create_line_graph(
+                    title="教師付開始日ごとの計測作業時間",
+                    y_axis_label="作業時間[時間]",
+                    tooltip_columns=[
+                        "first_annotation_started_date",
+                        "worktime_hour",
+                        "annotation_worktime_hour",
+                        "inspection_worktime_hour",
+                        "acceptance_worktime_hour",
+                    ],
+                ),
+                y_info_list=[
+                    LegendInfo("worktime_hour", "計測作業時間"),
+                    LegendInfo("annotation_worktime_hour", "計測作業時間(教師付)"),
+                    LegendInfo("inspection_worktime_hour", "計測作業時間(検査)"),
+                    LegendInfo("acceptance_worktime_hour", "計測作業時間(受入)"),
                 ],
-            ),
-            create_line_graph(
-                title="教師付開始日ごとの入力データあたり計測作業時間",
-                y_axis_label="入力データあたり作業時間[分/入力データ]",
-                tooltip_columns=[
-                    "first_annotation_started_date",
-                    "input_data_count",
-                    "worktime_hour",
-                    "annotation_worktime_hour",
-                    "inspection_worktime_hour",
-                    "acceptance_worktime_hour",
-                    "worktime_minute/input_data_count",
-                    "annotation_worktime_minute/input_data_count",
-                    "inspection_worktime_minute/input_data_count",
-                    "acceptance_worktime_minute/input_data_count",
-                ],
-            ),
-            create_line_graph(
-                title="教師付開始日ごとのアノテーションあたり計測作業時間",
-                y_axis_label="アノテーションあたり作業時間[分/アノテーション]",
-                tooltip_columns=[
-                    "first_annotation_started_date",
-                    "annotation_count",
-                    "worktime_hour",
-                    "annotation_worktime_hour",
-                    "inspection_worktime_hour",
-                    "acceptance_worktime_hour",
-                    "worktime_minute/annotation_count",
-                    "annotation_worktime_minute/annotation_count",
-                    "inspection_worktime_minute/annotation_count",
-                    "acceptance_worktime_minute/annotation_count",
-                ],
-            ),
+            )
         ]
+        for info in production_volume_list:
+            graph_info_list.append(  # noqa: PERF401
+                GraphInfo(
+                    line_graph=create_line_graph(
+                        title=f"教師付開始日ごとの{info.name}あたり計測作業時間",
+                        y_axis_label=f"{info.name}あたり作業時間[分/{info.name}]",
+                        tooltip_columns=[
+                            "first_annotation_started_date",
+                            info.value,
+                            "worktime_hour",
+                            "annotation_worktime_hour",
+                            "inspection_worktime_hour",
+                            "acceptance_worktime_hour",
+                            f"worktime_minute/{info.value}",
+                            f"annotation_worktime_minute/{info.value}",
+                            f"inspection_worktime_minute/{info.value}",
+                            f"acceptance_worktime_minute/{info.value}",
+                        ],
+                    ),
+                    y_info_list=[
+                        LegendInfo(f"worktime_minute/{info.value}", f"{info.name}あたり計測作業時間"),
+                        LegendInfo(f"annotation_worktime_minute/{info.value}", f"{info.name}あたり計測作業時間(教師付)"),
+                        LegendInfo(f"inspection_worktime_minute/{info.value}", f"{info.name}あたり計測作業時間(検査)"),
+                        LegendInfo(f"acceptance_worktime_minute/{info.value}", f"{info.name}あたり計測作業時間(受入)"),
+                    ],
+                )
+            )
 
         source = ColumnDataSource(data=df)
 
-        for line_graph, fig_info in zip(line_graph_list, fig_info_list):
-            y_info_list: list[dict[str, str]] = fig_info["y_info_list"]
+        for graph_info in graph_info_list:
+            y_info_list = graph_info.y_info_list
             for index, y_info in enumerate(y_info_list):
                 color = get_color_from_small_palette(index)
 
                 _plot_and_moving_average(
-                    line_graph,
+                    graph_info.line_graph,
                     x_column="dt_first_annotation_started_date",
-                    y_column=y_info["column"],
-                    legend_name=y_info["legend"],
+                    y_column=y_info.column,
+                    legend_name=y_info.legend,
                     source=source,
                     color=color,
                 )
 
-        line_graph_list = [create_task_graph(), create_input_data_graph(), *line_graph_list]
+        line_graph_list = [create_task_graph(), create_input_data_graph(), *[e.line_graph for e in graph_info_list]]
 
         for line_graph in line_graph_list:
             line_graph.process_after_adding_glyphs()
