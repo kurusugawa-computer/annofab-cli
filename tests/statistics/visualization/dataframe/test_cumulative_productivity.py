@@ -24,14 +24,10 @@ class TestAnnotatorCumulativeProductivity:
         task = Task.from_csv(data_dir / "task.csv")
         cls.obj = AnnotatorCumulativeProductivity.from_task(task)
 
-    def test_plot_annotation_metrics(self):
-        self.obj.plot_annotation_metrics(output_dir / "累積折れ線-横軸_アノテーション数-教師付者用.html")
-
-    def test_plot_input_data_metrics(self):
-        self.obj.plot_input_data_metrics(output_dir / "累積折れ線-横軸_入力データ数-教師付者用.html")
-
-    def test_plot_task_metrics(self):
-        self.obj.plot_task_metrics(output_dir / "累積折れ線-横軸_タスク数-教師付者用.html")
+    def test_plot_production_volume_metrics(self):
+        self.obj.plot_production_volume_metrics(
+            "annotation_count", "アノテーション数", output_dir / "累積折れ線-横軸_アノテーション数-教師付者用.html"
+        )
 
 
 class TestInspectorCumulativeProductivity:
@@ -42,14 +38,8 @@ class TestInspectorCumulativeProductivity:
         df_task = pandas.read_csv(str(data_dir / "task.csv"))
         cls.obj = InspectorCumulativeProductivity(df_task)
 
-    def test_plot_annotation_metrics(self):
-        self.obj.plot_annotation_metrics(output_dir / "累積折れ線-横軸_アノテーション数-検査者用.html")
-
-    def test_plot_input_data_metrics(self):
-        self.obj.plot_input_data_metrics(output_dir / "累積折れ線-横軸_入力データ数-検査者用.html")
-
-    def test_plot_task_metrics(self):
-        self.obj.plot_task_metrics(output_dir / "累積折れ線-横軸_タスク数-検査者用.html")
+    def test_plot_production_volume_metrics(self):
+        self.obj.plot_production_volume_metrics("annotation_count", "アノテーション数", output_dir / "累積折れ線-横軸_アノテーション数-検査者用.html")
 
 
 class TestAcceptorCumulativeProductivity:
@@ -60,11 +50,5 @@ class TestAcceptorCumulativeProductivity:
         df_task = pandas.read_csv(str(data_dir / "task.csv"))
         cls.obj = AcceptorCumulativeProductivity(df_task)
 
-    def test_plot_annotation_metrics(self):
-        self.obj.plot_annotation_metrics(output_dir / "累積折れ線-横軸_アノテーション数-受入者用.html")
-
-    def test_plot_input_data_metrics(self):
-        self.obj.plot_input_data_metrics(output_dir / "累積折れ線-横軸_入力データ数-受入者用.html")
-
-    def test_plot_task_metrics(self):
-        self.obj.plot_task_metrics(output_dir / "累積折れ線-横軸_タスク数-受入者用.html")
+    def test_plot_production_volume_metrics(self):
+        self.obj.plot_production_volume_metrics("annotation_count", "アノテーション数", output_dir / "累積折れ線-横軸_アノテーション数-受入者用.html")
