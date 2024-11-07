@@ -308,7 +308,7 @@ class VisualizingStatisticsMain:
         project_info = self.get_project_info(project_id)
         logger.info(f"project_title='{project_info.project_title}'")
 
-        project_dir = ProjectDir(output_project_dir, metadata=project_info.to_dict())
+        project_dir = ProjectDir(output_project_dir, metadata=project_info.to_dict(encode_json=True))
         project_dir.write_project_info(project_info)
 
         if self.actual_worktime is not None:
