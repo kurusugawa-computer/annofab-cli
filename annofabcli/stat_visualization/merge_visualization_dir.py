@@ -9,7 +9,11 @@ from typing import List, Optional
 from annofabapi.models import TaskPhase
 
 import annofabcli
-from annofabcli.common.cli import COMMAND_LINE_ERROR_STATUS_CODE, get_list_from_args
+from annofabcli.common.cli import (
+    COMMAND_LINE_ERROR_STATUS_CODE,
+    get_json_from_args,
+    get_list_from_args,
+)
 from annofabcli.common.utils import _catch_exception
 from annofabcli.statistics.visualization.dataframe.cumulative_productivity import (
     AcceptorCumulativeProductivity,
@@ -30,6 +34,7 @@ from annofabcli.statistics.visualization.dataframe.whole_productivity_per_date i
     WholeProductivityPerFirstAnnotationStartedDate,
 )
 from annofabcli.statistics.visualization.dataframe.worktime_per_date import WorktimePerDate
+from annofabcli.statistics.visualization.model import ProductionVolumeColumn
 from annofabcli.statistics.visualization.project_dir import MergingInfo, ProjectDir
 
 logger = logging.getLogger(__name__)
@@ -138,8 +143,9 @@ class WritingVisualizationFile:
 
 
 class MergingVisualizationFile:
-    def __init__(self, project_dir_list: List[ProjectDir]) -> None:
+    def __init__(self, project_dir_list: List[ProjectDir], *, custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None) -> None:
         self.project_dir_list = project_dir_list
+        self.custom_production_volume_list = custom_production_volume_list
 
     def merge_worktime_per_date(self) -> WorktimePerDate:
         merged_obj: Optional[WorktimePerDate] = None
@@ -159,7 +165,7 @@ class MergingVisualizationFile:
             tmp_obj = project_dir.read_task_list()
             task_list.append(tmp_obj)
 
-        merged_obj = Task.merge(*task_list)
+        merged_obj = Task.merge(*task_list, custom_production_volume_list=self.custom_production_volume_list)
         return merged_obj
 
     def merge_task_worktime_by_phase_user(self) -> TaskWorktimeByPhaseUser:
@@ -168,7 +174,7 @@ class MergingVisualizationFile:
             tmp_obj = project_dir.read_task_worktime_list()
             tmp_list.append(tmp_obj)
 
-        merged_obj = TaskWorktimeByPhaseUser.merge(*tmp_list)
+        merged_obj = TaskWorktimeByPhaseUser.merge(*tmp_list, custom_production_volume_list=self.custom_production_volume_list)
         return merged_obj
 
     def create_merging_info(self) -> MergingInfo:
@@ -185,13 +191,19 @@ class MergingVisualizationFile:
         return merge_info
 
 
-def merge_visualization_dir(  # pylint: disable=too-many-statements  # noqa: ANN201
+def merge_visualization_dir(  # pylint: disable=too-many-statements
     project_dir_list: List[ProjectDir],
     output_project_dir: ProjectDir,
+    *,
+    custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None,
     user_id_list: Optional[List[str]] = None,
-    minimal_output: bool = False,  # noqa: FBT001, FBT002
-):
-    merging_obj = MergingVisualizationFile(project_dir_list)
+    minimal_output: bool = False,
+) -> None:
+    merging_obj = MergingVisualizationFile(project_dir_list, custom_production_volume_list=custom_production_volume_list)
+
+    merging_info = merging_obj.create_merging_info()
+    output_project_dir.metadata = merging_info.to_dict(encode_json=True)
+
     # 基本となるCSVファイルを読み込みマージする
     task_worktime_by_phase_user = merging_obj.merge_task_worktime_by_phase_user()
     task = merging_obj.merge_task_list()
@@ -214,7 +226,6 @@ def merge_visualization_dir(  # pylint: disable=too-many-statements  # noqa: ANN
     writing_obj.write_performance_per_first_annotation_started_date(task)
 
     # info.jsonを出力
-    merging_info = merging_obj.create_merging_info()
     writing_obj.write_merge_info(merging_info)
 
 
@@ -227,15 +238,32 @@ def validate(args: argparse.Namespace) -> bool:
     return True
 
 
+def create_custom_production_volume_list(cli_value: str) -> list[ProductionVolumeColumn]:
+    """
+    コマンドラインから渡された文字列を元に、独自の生産量を表す列情報を生成します。
+    """
+    dict_data = get_json_from_args(cli_value)
+
+    column_list = dict_data["column_list"]
+    custom_production_volume_list = [ProductionVolumeColumn(column["value"], column["name"]) for column in column_list]
+
+    return custom_production_volume_list
+
+
 def main(args: argparse.Namespace) -> None:
     if not validate(args):
         sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
     user_id_list = get_list_from_args(args.user_id) if args.user_id is not None else None
 
+    custom_production_volume_list = (
+        create_custom_production_volume_list(args.custom_production_volume) if args.custom_production_volume is not None else None
+    )
+
     merge_visualization_dir(
         project_dir_list=[ProjectDir(e) for e in args.dir],
         user_id_list=user_id_list,
+        custom_production_volume_list=custom_production_volume_list,
         minimal_output=args.minimal,
         output_project_dir=ProjectDir(args.output_dir),
     )
@@ -260,6 +288,12 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--minimal",
         action="store_true",
         help="必要最小限のファイルを出力します。",
+    )
+
+    parser.add_argument(
+        "--custom_production_volume",
+        type=str,
+        help=("プロジェクト独自の生産量の指標をJSON形式で指定します。"),
     )
 
     parser.set_defaults(subcommand_func=main)

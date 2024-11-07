@@ -876,7 +876,6 @@ class WholeProductivityPerFirstAnnotationStartedDate:
         df_date = df_date_base.join(df_agg_sub_task).fillna(0)
 
         df_date["first_annotation_started_date"] = df_date.index
-
         # 生産性情報などの列を追加する
         cls._add_velocity_columns(df_date, production_volume_columns)
         return cls(df_date, custom_production_volume_list=task.custom_production_volume_list)
