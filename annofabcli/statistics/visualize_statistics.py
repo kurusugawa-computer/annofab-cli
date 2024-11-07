@@ -65,7 +65,7 @@ class WriteCsvGraph:
         project_id: str,
         filtering_query: FilteringQuery,
         visualization_source_files: VisualizationSourceFiles,
-        output_dir: Path,
+        project_dir: ProjectDir,
         actual_worktime: ActualWorktime,
         *,
         annotation_count: Optional[AnnotationCount] = None,
@@ -75,7 +75,7 @@ class WriteCsvGraph:
     ) -> None:
         self.service = service
         self.project_id = project_id
-        self.output_dir = output_dir
+        self.project_dir = project_dir
         self.filtering_query = filtering_query
         self.visualize_source_files = visualization_source_files
         self.actual_worktime = actual_worktime
@@ -83,8 +83,6 @@ class WriteCsvGraph:
         self.output_only_text = output_only_text
         self.annotation_count = annotation_count
         self.custom_production_volume = custom_production_volume
-
-        self.project_dir = ProjectDir(output_dir)
 
         self.task: Optional[Task] = None
         self.worktime_per_date: Optional[WorktimePerDate] = None
@@ -283,13 +281,9 @@ class VisualizingStatisticsMain:
         self.user_ids = user_ids
         self.not_download_visualization_source_files = not_download_visualization_source_files
 
-    def write_project_info_json(self, project_id: str, project_dir: ProjectDir) -> None:
-        """
-        プロジェクト情報をJSONファイルに出力します。
-        """
+    def get_project_info(self, project_id: str) -> ProjectInfo:
         project_info = self.service.api.get_project(project_id)[0]
         project_title = project_info["title"]
-        logger.info(f"project_title = {project_title}")
 
         project_summary = ProjectInfo(
             project_id=project_id,
@@ -298,13 +292,9 @@ class VisualizingStatisticsMain:
             measurement_datetime=annofabapi.utils.str_now(),
             query=self.filtering_query,
         )
-        project_dir.write_project_info(project_summary)
+        return project_summary
 
-    def visualize_statistics(  # noqa: ANN201
-        self,
-        project_id: str,
-        output_project_dir: Path,
-    ):
+    def visualize_statistics(self, project_id: str, output_project_dir: Path) -> None:
         """
         プロジェクトの統計情報を出力する。
 
@@ -315,9 +305,11 @@ class VisualizingStatisticsMain:
         """
 
         self.facade.validate_project(project_id, project_member_roles=[ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER])
+        project_info = self.get_project_info(project_id)
+        logger.info(f"project_title='{project_info.project_title}'")
 
-        project_dir = ProjectDir(output_project_dir)
-        self.write_project_info_json(project_id=project_id, project_dir=project_dir)
+        project_dir = ProjectDir(output_project_dir, metadata=project_info.to_dict())
+        project_dir.write_project_info(project_info)
 
         if self.actual_worktime is not None:
             df_actual_worktime = self.actual_worktime.df
@@ -358,7 +350,7 @@ class VisualizingStatisticsMain:
             project_id,
             filtering_query=self.filtering_query,
             visualization_source_files=visualization_source_files,
-            output_dir=output_project_dir,
+            project_dir=project_dir,
             actual_worktime=ActualWorktime(df_actual_worktime),
             annotation_count=annotation_count,
             custom_production_volume=self.custom_production_volume,

@@ -8,7 +8,7 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
 
 import bokeh
 import bokeh.layouts
@@ -20,6 +20,7 @@ from bokeh.models.widgets.markups import Div
 from bokeh.plotting import ColumnDataSource
 from dateutil.parser import parse
 
+from annofabcli.common.bokeh import create_pretext_from_metadata
 from annofabcli.common.utils import datetime_to_date, print_csv
 from annofabcli.statistics.linegraph import (
     LineGraph,
@@ -257,7 +258,12 @@ class WholeProductivityPerCompletedDate:
             """
         )
 
-    def plot(self, output_file: Path) -> None:
+    def plot(
+        self,
+        output_file: Path,
+        *,
+        metadata: Optional[dict[str, Any]] = None,
+    ) -> None:
         """
         全体の生産量や生産性をプロットする
         """
@@ -499,9 +505,13 @@ class WholeProductivityPerCompletedDate:
             line_graph.process_after_adding_glyphs()
 
         div_element = self._create_div_element()
-        write_bokeh_graph(bokeh.layouts.column([div_element] + [e.figure for e in line_graph_list]), output_file)
+        element_list = [div_element] + [e.figure for e in line_graph_list]
+        if metadata is not None:
+            element_list.insert(0, create_pretext_from_metadata(metadata))
 
-    def plot_cumulatively(self, output_file: Path) -> None:
+        write_bokeh_graph(bokeh.layouts.column(element_list), output_file)
+
+    def plot_cumulatively(self, output_file: Path, *, metadata: Optional[dict[str, Any]] = None) -> None:
         """
         全体の生産量や作業時間の累積折れ線グラフを出力する
         """
@@ -716,6 +726,11 @@ class WholeProductivityPerCompletedDate:
             line_graph.process_after_adding_glyphs()
 
         div_element = self._create_div_element()
+
+        element_list = [div_element] + [e.figure for e in line_graph_list]
+        if metadata is not None:
+            element_list.insert(0, create_pretext_from_metadata(metadata))
+
         write_bokeh_graph(bokeh.layouts.column([div_element] + [e.figure for e in line_graph_list]), output_file)
 
     def to_csv(self, output_file: Path) -> None:
@@ -902,7 +917,7 @@ class WholeProductivityPerFirstAnnotationStartedDate:
 
         print_csv(self.df[columns], str(output_file))
 
-    def plot(self, output_file: Path) -> None:
+    def plot(self, output_file: Path, *, metadata: Optional[dict[str, Any]] = None) -> None:
         """
         全体の生産量や生産性をプロットする
         """
@@ -1117,4 +1132,8 @@ class WholeProductivityPerFirstAnnotationStartedDate:
         for line_graph in line_graph_list:
             line_graph.process_after_adding_glyphs()
 
-        write_bokeh_graph(bokeh.layouts.column([create_div_element()] + [e.figure for e in line_graph_list]), output_file)
+        element_list = [create_div_element()] + [e.figure for e in line_graph_list]
+        if metadata is not None:
+            element_list.insert(0, create_pretext_from_metadata(metadata))
+
+        write_bokeh_graph(bokeh.layouts.column(element_list), output_file)
