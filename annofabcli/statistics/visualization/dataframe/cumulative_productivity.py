@@ -16,6 +16,7 @@ import bokeh.layouts
 import bokeh.palettes
 import pandas
 from annofabapi.models import TaskPhase
+from bokeh.models.ui import UIElement
 from bokeh.plotting import ColumnDataSource
 
 from annofabcli.common.bokeh import create_pretext_from_metadata
@@ -135,7 +136,7 @@ class AbstractPhaseCumulativeProductivity(abc.ABC):
             logger.warning(f"プロットするデータがなかっため、'{output_file}'は出力しません。")
             return
 
-        graph_group_list = []
+        graph_group_list: list[UIElement] = []
         for line_graph in line_graph_list:
             line_graph.process_after_adding_glyphs()
             hide_all_button = line_graph.create_button_hiding_showing_all_lines(is_hiding=True)

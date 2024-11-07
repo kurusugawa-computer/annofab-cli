@@ -7,17 +7,19 @@ from __future__ import annotations
 import abc
 import logging
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
 
 import bokeh
 import bokeh.layouts
 import bokeh.palettes
 import pandas
 from annofabapi.models import TaskPhase
+from bokeh.models.ui import UIElement
 from bokeh.models.widgets.widget import Widget
 from bokeh.plotting import ColumnDataSource
 from dateutil.parser import parse
 
+from annofabcli.common.bokeh import create_pretext_from_metadata
 from annofabcli.common.utils import datetime_to_date, print_csv
 from annofabcli.statistics.linegraph import (
     WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX,
@@ -54,11 +56,16 @@ class AbstractPhaseProductivityPerDate(abc.ABC):
         return True
 
     @staticmethod
-    def _plot(line_graph_list: list[LineGraph], plotted_users: list[tuple[str, str]], output_file: Path) -> None:
+    def _plot(
+        line_graph_list: list[LineGraph],
+        plotted_users: list[tuple[str, str]],
+        output_file: Path,
+        metadata: Optional[dict[str, Any]],
+    ) -> None:
         """
         折れ線グラフを、HTMLファイルに出力します。
         """
-        graph_group_list = []
+        graph_group_list: list[UIElement] = []
         for line_graph in line_graph_list:
             line_graph.process_after_adding_glyphs()
 
@@ -79,6 +86,9 @@ class AbstractPhaseProductivityPerDate(abc.ABC):
             graph_group = bokeh.layouts.row([line_graph.figure, widgets])
             graph_group_list.append(graph_group)
 
+        if metadata is not None:
+            graph_group_list.insert(0, create_pretext_from_metadata(metadata))
+
         write_bokeh_graph(bokeh.layouts.layout(graph_group_list), output_file)
 
     @classmethod
@@ -98,6 +108,7 @@ class AbstractPhaseProductivityPerDate(abc.ABC):
         output_file: Path,
         *,
         target_user_id_list: Optional[list[str]] = None,
+        metadata: Optional[dict[str, Any]] = None,
     ) -> None:
         raise NotImplementedError()
 
@@ -199,6 +210,7 @@ class AnnotatorProductivityPerDate(AbstractPhaseProductivityPerDate):
         output_file: Path,
         *,
         target_user_id_list: Optional[list[str]] = None,
+        metadata: Optional[dict[str, Any]] = None,
     ) -> None:
         """
         生産性を教師付作業者ごとにプロットする。
@@ -332,7 +344,7 @@ class AnnotatorProductivityPerDate(AbstractPhaseProductivityPerDate):
             logger.warning(f"プロットするデータがなかっため、'{output_file}'は出力しません。")
             return
 
-        self._plot(line_graph_list, plotted_users, output_file)
+        self._plot(line_graph_list, plotted_users, output_file, metadata=metadata)
 
     def to_csv(self, output_file: Path) -> None:
         if not self._validate_df_for_output(output_file):
@@ -437,6 +449,7 @@ class InspectorProductivityPerDate(AbstractPhaseProductivityPerDate):
         output_file: Path,
         *,
         target_user_id_list: Optional[list[str]] = None,
+        metadata: Optional[dict[str, Any]] = None,
     ) -> None:
         """
         アノテーション単位の生産性を受入作業者ごとにプロットする。
@@ -543,7 +556,7 @@ class InspectorProductivityPerDate(AbstractPhaseProductivityPerDate):
             logger.warning(f"プロットするデータがなかっため、'{output_file}'は出力しません。")
             return
 
-        self._plot(line_graph_list, plotted_users, output_file)
+        self._plot(line_graph_list, plotted_users, output_file, metadata=metadata)
 
     def to_csv(self, output_file: Path) -> None:
         """
@@ -642,6 +655,7 @@ class AcceptorProductivityPerDate(AbstractPhaseProductivityPerDate):
         output_file: Path,
         *,
         target_user_id_list: Optional[list[str]] = None,
+        metadata: Optional[dict[str, Any]] = None,
     ) -> None:
         """
         アノテーション単位の生産性を受入作業者ごとにプロットする。
@@ -751,7 +765,7 @@ class AcceptorProductivityPerDate(AbstractPhaseProductivityPerDate):
             logger.warning(f"プロットするデータがなかっため、'{output_file}'は出力しません。")
             return
 
-        self._plot(line_graph_list, plotted_users, output_file)
+        self._plot(line_graph_list, plotted_users, output_file, metadata=metadata)
 
     def to_csv(self, output_file: Path) -> None:
         """
