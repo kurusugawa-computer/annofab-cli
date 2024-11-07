@@ -680,8 +680,7 @@ class InspectorProductivityPerDate(AbstractPhaseProductivityPerDate):
 
         return cls(sum_df, custom_production_volume_list=task.custom_production_volume_list)
 
-    @staticmethod
-    def _get_df_sequential_date(df: pandas.DataFrame) -> pandas.DataFrame:
+    def _get_df_sequential_date(self, df: pandas.DataFrame) -> pandas.DataFrame:
         """連続した日付のDataFrameを生成する。"""
         df_date = pandas.DataFrame(
             {
@@ -703,16 +702,7 @@ class InspectorProductivityPerDate(AbstractPhaseProductivityPerDate):
         df2["first_inspection_username"] = first_row["first_inspection_username"]
 
         df2.fillna(
-            {
-                key: 0
-                for key in [
-                    "first_inspection_worktime_hour",
-                    "inspection_worktime_hour",
-                    "task_count",
-                    "input_data_count",
-                    "annotation_count",
-                ]
-            },
+            {key: 0 for key in ["first_inspection_worktime_hour", "inspection_worktime_hour", "task_count", *self.production_volume_columns]},
             inplace=True,
         )
         return df2
@@ -1065,12 +1055,11 @@ class InspectorProductivityPerDate(AbstractPhaseProductivityPerDate):
             "first_inspection_user_id",
             "first_inspection_username",
             "task_count",
-            "input_data_count",
-            "annotation_count",
+            *self.production_volume_columns,
             "inspection_worktime_hour",
         ]
 
-        velocity_columns = [f"inspection_worktime_hour/{denominator}" for denominator in ["input_data_count", "annotation_count"]]
+        velocity_columns = [f"inspection_worktime_hour/{denominator}" for denominator in self.production_volume_columns]
 
         columns = production_columns + velocity_columns
 
@@ -1116,8 +1105,7 @@ class AcceptorProductivityPerDate(AbstractPhaseProductivityPerDate):
 
         return AcceptorProductivityPerDate(sum_df, custom_production_volume_list=task.custom_production_volume_list)
 
-    @staticmethod
-    def _get_df_sequential_date(df: pandas.DataFrame) -> pandas.DataFrame:
+    def _get_df_sequential_date(self, df: pandas.DataFrame) -> pandas.DataFrame:
         """連続した日付のDataFrameを生成する。"""
         df_date = pandas.DataFrame(
             {
@@ -1139,16 +1127,7 @@ class AcceptorProductivityPerDate(AbstractPhaseProductivityPerDate):
         df2["first_acceptance_username"] = first_row["first_acceptance_username"]
 
         df2.fillna(
-            {
-                key: 0
-                for key in [
-                    "first_acceptance_worktime_hour",
-                    "acceptance_worktime_hour",
-                    "task_count",
-                    "input_data_count",
-                    "annotation_count",
-                ]
-            },
+            {key: 0 for key in ["first_acceptance_worktime_hour", "acceptance_worktime_hour", "task_count", *self.production_volume_columns]},
             inplace=True,
         )
         return df2
@@ -1506,12 +1485,11 @@ class AcceptorProductivityPerDate(AbstractPhaseProductivityPerDate):
             "first_acceptance_user_id",
             "first_acceptance_username",
             "task_count",
-            "input_data_count",
-            "annotation_count",
+            *self.production_volume_columns,
             "acceptance_worktime_hour",
         ]
 
-        velocity_columns = [f"acceptance_worktime_hour/{denominator}" for denominator in ["input_data_count", "annotation_count"]]
+        velocity_columns = [f"acceptance_worktime_hour/{denominator}" for denominator in self.production_volume_columns]
 
         columns = production_columns + velocity_columns
 
