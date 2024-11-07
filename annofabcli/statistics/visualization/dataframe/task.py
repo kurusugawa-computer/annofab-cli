@@ -13,7 +13,7 @@ import pandas
 import pytz
 from bokeh.plotting import figure
 
-from annofabcli.common.bokeh import convert_1d_figure_list_to_2d
+from annofabcli.common.bokeh import convert_1d_figure_list_to_2d, create_pretext_from_metadata
 from annofabcli.common.utils import print_csv
 from annofabcli.statistics.histogram import create_histogram_figure, get_sub_title_from_series
 from annofabcli.statistics.visualization.dataframe.annotation_count import AnnotationCount
@@ -280,10 +280,7 @@ class Task:
         df_merged = pandas.concat(df_list)
         return Task(df_merged, custom_production_volume_list=custom_production_volume_list)
 
-    def plot_histogram_of_worktime(
-        self,
-        output_file: Path,
-    ) -> None:
+    def plot_histogram_of_worktime(self, output_file: Path, *, metadata: Optional[dict[str, Any]] = None) -> None:
         """作業時間に関する情報をヒストグラムでプロットする。
 
         Args:
@@ -353,17 +350,18 @@ class Task:
             )
         )
 
-        bokeh_obj = bokeh.layouts.gridplot(figure_list, ncols=3)  # type: ignore[arg-type]
+        nested_figure_list = convert_1d_figure_list_to_2d(figure_list, ncols=3)
+        if metadata is not None:
+            nested_figure_list.insert(0, [create_pretext_from_metadata(metadata)])
+
+        bokeh_obj = bokeh.layouts.gridplot(nested_figure_list)
         output_file.parent.mkdir(exist_ok=True, parents=True)
         bokeh.plotting.reset_output()
         bokeh.plotting.output_file(output_file, title=output_file.stem)
         bokeh.plotting.save(bokeh_obj)
         logger.debug(f"'{output_file}'を出力しました。")
 
-    def plot_histogram_of_others(
-        self,
-        output_file: Path,
-    ) -> None:
+    def plot_histogram_of_others(self, output_file: Path, *, metadata: Optional[dict[str, Any]] = None) -> None:
         """アノテーション数や、検査コメント数など、作業時間以外の情報をヒストグラムで表示する。
 
         Args:
@@ -464,6 +462,9 @@ class Task:
         for figure_list in figure_list_per_category.values():
             sub_nested_figure_list = convert_1d_figure_list_to_2d(figure_list)
             nested_figure_list.extend(sub_nested_figure_list)
+
+        if metadata is not None:
+            nested_figure_list.insert(0, [create_pretext_from_metadata(metadata)])
 
         bokeh_obj = bokeh.layouts.gridplot(nested_figure_list)
         output_file.parent.mkdir(exist_ok=True, parents=True)

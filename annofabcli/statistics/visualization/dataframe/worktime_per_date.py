@@ -8,7 +8,7 @@ from __future__ import annotations
 import datetime
 import logging
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
 
 import annofabapi
 import bokeh
@@ -16,8 +16,10 @@ import bokeh.layouts
 import bokeh.palettes
 import numpy
 import pandas
+from bokeh.models.ui import UIElement
 from bokeh.plotting import ColumnDataSource
 
+from annofabcli.common.bokeh import create_pretext_from_metadata
 from annofabcli.common.utils import print_csv
 from annofabcli.statistics.linegraph import (
     LineGraph,
@@ -341,11 +343,13 @@ class WorktimePerDate:
 
         return df
 
-    def plot_cumulatively(  # noqa: ANN201
+    def plot_cumulatively(
         self,
         output_file: Path,
+        *,
         target_user_id_list: Optional[list[str]] = None,
-    ):
+        metadata: Optional[dict[str, Any]] = None,
+    ) -> None:
         """
         作業時間の累積値をプロットする。
         """
@@ -460,7 +464,7 @@ class WorktimePerDate:
 
             plotted_users.append((user_id, username))
 
-        graph_group_list = []
+        graph_group_list: list[UIElement] = []
         for line_graph in line_graph_list:
             line_graph.process_after_adding_glyphs()
             hide_all_button = line_graph.create_button_hiding_showing_all_lines(is_hiding=True)
@@ -475,6 +479,9 @@ class WorktimePerDate:
         if line_count == 0:
             logger.warning(f"プロットするデータがなかっため、'{output_file}'は出力しません。")
             return
+
+        if metadata is not None:
+            graph_group_list.insert(0, create_pretext_from_metadata(metadata))
 
         write_bokeh_graph(bokeh.layouts.layout(graph_group_list), output_file)
 

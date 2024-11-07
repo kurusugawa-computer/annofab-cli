@@ -4,7 +4,7 @@ import json
 import logging
 from dataclasses import dataclass
 from pathlib import Path
-from typing import List, Optional
+from typing import Any, List, Optional
 
 from annofabapi.models import TaskPhase
 from dataclasses_json import DataClassJsonMixin
@@ -35,6 +35,7 @@ class ProjectDir(DataClassJsonMixin):
 
     Args:
         project_dir: ``annofabcli statistics visualize``コマンドによって出力されたプロジェクトディレクトリ
+        metadata:
     """
 
     FILENAME_WHOLE_PERFORMANCE = "全体の生産性と品質.csv"
@@ -48,8 +49,9 @@ class ProjectDir(DataClassJsonMixin):
     FILENAME_PROJECT_INFO = "project_info.json"
     FILENAME_MERGE_INFO = "merge_info.json"
 
-    def __init__(self, project_dir: Path) -> None:
+    def __init__(self, project_dir: Path, *, metadata: Optional[dict[str, Any]] = None) -> None:
         self.project_dir = project_dir
+        self.metadata = metadata
 
     def __repr__(self) -> str:
         return f"ProjectDir(project_dir={self.project_dir!r})"
@@ -104,8 +106,8 @@ class ProjectDir(DataClassJsonMixin):
         """
         タスク単位のヒストグラムを出力します。
         """
-        obj.plot_histogram_of_worktime(self.project_dir / "histogram/ヒストグラム-作業時間.html")
-        obj.plot_histogram_of_others(self.project_dir / "histogram/ヒストグラム.html")
+        obj.plot_histogram_of_worktime(self.project_dir / "histogram/ヒストグラム-作業時間.html", metadata=self.metadata)
+        obj.plot_histogram_of_others(self.project_dir / "histogram/ヒストグラム.html", metadata=self.metadata)
 
     def write_cumulative_line_graph(
         self,
@@ -133,6 +135,7 @@ class ProjectDir(DataClassJsonMixin):
             production_volume_name="アノテーション数",
             output_file=output_dir / f"{phase_name}者用/累積折れ線-横軸_アノテーション数-{phase_name}者用.html",
             target_user_id_list=user_id_list,
+            metadata=self.metadata,
         )
         for custom_production_volume in obj.custom_production_volume_list:
             obj.plot_production_volume_metrics(
@@ -140,6 +143,7 @@ class ProjectDir(DataClassJsonMixin):
                 production_volume_name=custom_production_volume.name,
                 output_file=output_dir / f"{phase_name}者用/累積折れ線-横軸_{custom_production_volume.name}-{phase_name}者用.html",
                 target_user_id_list=user_id_list,
+                metadata=self.metadata,
             )
 
         if not minimal_output:
@@ -149,6 +153,7 @@ class ProjectDir(DataClassJsonMixin):
                 production_volume_name="入力データ数",
                 output_file=output_dir / f"{phase_name}者用/累積折れ線-横軸_入力データ数-{phase_name}者用.html",
                 target_user_id_list=user_id_list,
+                metadata=self.metadata,
             )
 
     def write_performance_per_started_date_csv(self, obj: AbstractPhaseProductivityPerDate, phase: TaskPhase) -> None:
@@ -171,12 +176,14 @@ class ProjectDir(DataClassJsonMixin):
             production_volume_name="アノテーション",
             output_file=output_dir / Path(f"{phase_name}者用/折れ線-横軸_{phase_name}開始日-縦軸_アノテーション単位の指標-{phase_name}者用.html"),
             target_user_id_list=user_id_list,
+            metadata=self.metadata,
         )
         obj.plot_production_volume_metrics(
             production_volume_column="input_data_count",
             production_volume_name="入力データ",
             output_file=output_dir / Path(f"{phase_name}者用/折れ線-横軸_{phase_name}開始日-縦軸_入力データ単位の指標-{phase_name}者用.html"),
             target_user_id_list=user_id_list,
+            metadata=self.metadata,
         )
         for custom_production_volume in obj.custom_production_volume_list:
             obj.plot_production_volume_metrics(
@@ -185,6 +192,7 @@ class ProjectDir(DataClassJsonMixin):
                 output_file=output_dir
                 / Path(f"{phase_name}者用/折れ線-横軸_{phase_name}開始日-縦軸_{custom_production_volume.name}単位の指標-{phase_name}者用.html"),
                 target_user_id_list=user_id_list,
+                metadata=self.metadata,
             )
 
     def read_whole_performance(self) -> WholePerformance:
@@ -216,8 +224,8 @@ class ProjectDir(DataClassJsonMixin):
         """
         横軸が日付、縦軸が全体の生産性などをプロットした折れ線グラフを出力します。
         """
-        obj.plot(self.project_dir / "line-graph/折れ線-横軸_日-全体.html")
-        obj.plot_cumulatively(self.project_dir / "line-graph/累積折れ線-横軸_日-全体.html")
+        obj.plot(self.project_dir / "line-graph/折れ線-横軸_日-全体.html", metadata=self.metadata)
+        obj.plot_cumulatively(self.project_dir / "line-graph/累積折れ線-横軸_日-全体.html", metadata=self.metadata)
 
     def read_whole_productivity_per_first_annotation_started_date(
         self,
@@ -239,7 +247,7 @@ class ProjectDir(DataClassJsonMixin):
         """
         横軸が教師付開始日、縦軸が全体の生産性などをプロットした折れ線グラフを出力します。
         """
-        obj.plot(self.project_dir / "line-graph/折れ線-横軸_教師付開始日-全体.html")
+        obj.plot(self.project_dir / "line-graph/折れ線-横軸_教師付開始日-全体.html", metadata=self.metadata)
 
     def read_user_performance(self) -> UserPerformance:
         """
@@ -268,21 +276,25 @@ class ProjectDir(DataClassJsonMixin):
             output_dir / "散布図-アノテーションあたり作業時間と累計作業時間の関係-計測時間.html",
             worktime_type=WorktimeType.MONITORED,
             production_volume_column="annotation_count",
+            metadata=self.metadata,
         )
         obj.plot_productivity(
             output_dir / "散布図-入力データあたり作業時間と累計作業時間の関係-計測時間.html",
             worktime_type=WorktimeType.MONITORED,
             production_volume_column="input_data_count",
+            metadata=self.metadata,
         )
         obj.plot_quality_and_productivity(
             output_dir / "散布図-アノテーションあたり作業時間と品質の関係-計測時間-教師付者用.html",
             worktime_type=WorktimeType.MONITORED,
             production_volume_column="annotation_count",
+            metadata=self.metadata,
         )
         obj.plot_quality_and_productivity(
             output_dir / "散布図-入力データあたり作業時間と品質の関係-計測時間-教師付者用.html",
             worktime_type=WorktimeType.MONITORED,
             production_volume_column="input_data_count",
+            metadata=self.metadata,
         )
 
         for custom_production_volume in obj.custom_production_volume_list:
@@ -290,11 +302,13 @@ class ProjectDir(DataClassJsonMixin):
                 output_dir / f"散布図-{custom_production_volume.name}あたり作業時間と累計作業時間の関係-計測時間.html",
                 worktime_type=WorktimeType.MONITORED,
                 production_volume_column=custom_production_volume.value,
+                metadata=self.metadata,
             )
             obj.plot_quality_and_productivity(
                 output_dir / f"散布図-{custom_production_volume.name}あたり作業時間と品質の関係-計測時間-教師付者用.html",
                 worktime_type=WorktimeType.MONITORED,
                 production_volume_column=custom_production_volume.value,
+                metadata=self.metadata,
             )
 
         if obj.actual_worktime_exists():
@@ -302,33 +316,39 @@ class ProjectDir(DataClassJsonMixin):
                 output_dir / "散布図-アノテーションあたり作業時間と累計作業時間の関係-実績時間.html",
                 worktime_type=WorktimeType.ACTUAL,
                 production_volume_column="annotation_count",
+                metadata=self.metadata,
             )
             obj.plot_productivity(
                 output_dir / "散布図-入力データあたり作業時間と累計作業時間の関係-実績時間.html",
                 worktime_type=WorktimeType.ACTUAL,
                 production_volume_column="input_data_count",
+                metadata=self.metadata,
             )
 
             obj.plot_quality_and_productivity(
                 output_dir / "散布図-アノテーションあたり作業時間と品質の関係-実績時間-教師付者用.html",
                 worktime_type=WorktimeType.ACTUAL,
                 production_volume_column="annotation_count",
+                metadata=self.metadata,
             )
             obj.plot_quality_and_productivity(
                 output_dir / "散布図-入力データあたり作業時間と品質の関係-実績時間-教師付者用.html",
                 worktime_type=WorktimeType.ACTUAL,
                 production_volume_column="input_data_count",
+                metadata=self.metadata,
             )
             for custom_production_volume in obj.custom_production_volume_list:
                 obj.plot_productivity(
                     output_dir / f"散布図-{custom_production_volume.name}あたり作業時間と累計作業時間の関係-実績時間.html",
                     worktime_type=WorktimeType.ACTUAL,
                     production_volume_column=custom_production_volume.value,
+                    metadata=self.metadata,
                 )
                 obj.plot_quality_and_productivity(
                     output_dir / f"散布図-{custom_production_volume.name}あたり作業時間と品質の関係-実績時間-教師付者用.html",
                     worktime_type=WorktimeType.ACTUAL,
                     production_volume_column=custom_production_volume.value,
+                    metadata=self.metadata,
                 )
 
         else:
@@ -353,7 +373,9 @@ class ProjectDir(DataClassJsonMixin):
 
     def write_worktime_line_graph(self, obj: WorktimePerDate, user_id_list: Optional[list[str]] = None) -> None:
         """横軸が日付、縦軸がユーザごとの作業時間である折れ線グラフを出力します。"""
-        obj.plot_cumulatively(self.project_dir / "line-graph/累積折れ線-横軸_日-縦軸_作業時間.html", user_id_list)
+        obj.plot_cumulatively(
+            self.project_dir / "line-graph/累積折れ線-横軸_日-縦軸_作業時間.html", target_user_id_list=user_id_list, metadata=self.metadata
+        )
 
     def read_project_info(self) -> ProjectInfo:
         """

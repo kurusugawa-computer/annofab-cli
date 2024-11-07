@@ -9,15 +9,17 @@ import abc
 import itertools
 import logging
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
 
 import bokeh
 import bokeh.layouts
 import bokeh.palettes
 import pandas
 from annofabapi.models import TaskPhase
+from bokeh.models.ui import UIElement
 from bokeh.plotting import ColumnDataSource
 
+from annofabcli.common.bokeh import create_pretext_from_metadata
 from annofabcli.statistics.linegraph import (
     LineGraph,
     get_color_from_palette,
@@ -81,6 +83,8 @@ class AbstractPhaseCumulativeProductivity(abc.ABC):
         columns_list: list[tuple[str, str]],
         user_id_list: list[str],
         output_file: Path,
+        *,
+        metadata: Optional[dict[str, Any]],
     ) -> None:
         """
         折れ線グラフを、HTMLファイルに出力します。
@@ -110,7 +114,7 @@ class AbstractPhaseCumulativeProductivity(abc.ABC):
         required_columns = get_required_columns()
 
         line_count = 0
-        ploted_users: list[tuple[str, str]] = []
+        plotted_users: list[tuple[str, str]] = []
 
         for user_index, user_id in enumerate(user_id_list):
             df_subset = df[df[f"first_{self.phase.value}_user_id"] == user_id]
@@ -126,24 +130,27 @@ class AbstractPhaseCumulativeProductivity(abc.ABC):
             for line_graph, (x_column, y_column) in zip(line_graph_list, columns_list):
                 line_graph.add_line(source, x_column=x_column, y_column=y_column, legend_label=username, color=color)
 
-            ploted_users.append((user_id, username))
+            plotted_users.append((user_id, username))
 
         if line_count == 0:
             logger.warning(f"プロットするデータがなかっため、'{output_file}'は出力しません。")
             return
 
-        graph_group_list = []
+        graph_group_list: list[UIElement] = []
         for line_graph in line_graph_list:
             line_graph.process_after_adding_glyphs()
             hide_all_button = line_graph.create_button_hiding_showing_all_lines(is_hiding=True)
             show_all_button = line_graph.create_button_hiding_showing_all_lines(is_hiding=False)
             checkbox_group = line_graph.create_checkbox_displaying_markers()
 
-            multi_choice_widget = line_graph.create_multi_choice_widget_for_searching_user(ploted_users)
+            multi_choice_widget = line_graph.create_multi_choice_widget_for_searching_user(plotted_users)
 
             widgets = bokeh.layouts.column([hide_all_button, show_all_button, checkbox_group, multi_choice_widget])
             graph_group = bokeh.layouts.row([line_graph.figure, widgets])
             graph_group_list.append(graph_group)
+
+        if metadata is not None:
+            graph_group_list.insert(0, create_pretext_from_metadata(metadata))
 
         write_bokeh_graph(bokeh.layouts.layout(graph_group_list), output_file)
 
@@ -166,6 +173,7 @@ class AbstractPhaseCumulativeProductivity(abc.ABC):
         output_file: Path,
         *,
         target_user_id_list: Optional[list[str]] = None,
+        metadata: Optional[dict[str, Any]] = None,
     ) -> None:
         raise NotImplementedError()
 
@@ -229,6 +237,7 @@ class AnnotatorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
         output_file: Path,
         *,
         target_user_id_list: Optional[list[str]] = None,
+        metadata: Optional[dict[str, Any]] = None,
     ) -> None:
         """
         生産性を教師付作業者ごとにプロットする。
@@ -287,7 +296,7 @@ class AnnotatorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
             (x_column, "cumulative_annotation_worktime_hour"),
             (x_column, "cumulative_inspection_comment_count"),
         ]
-        self._plot(line_graph_list, columns_list, user_id_list, output_file)
+        self._plot(line_graph_list, columns_list, user_id_list, output_file, metadata=metadata)
 
 
 class InspectorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
@@ -348,6 +357,7 @@ class InspectorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
         output_file: Path,
         *,
         target_user_id_list: Optional[list[str]] = None,
+        metadata: Optional[dict[str, Any]] = None,
     ) -> None:
         """
         生産性を検査作業者ごとにプロットする。
@@ -394,7 +404,7 @@ class InspectorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
             (x_column, "cumulative_inspection_worktime_hour"),
         ]
 
-        self._plot(line_graph_list, columns_list, user_id_list, output_file)
+        self._plot(line_graph_list, columns_list, user_id_list, output_file, metadata=metadata)
 
 
 class AcceptorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
@@ -449,6 +459,7 @@ class AcceptorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
         output_file: Path,
         *,
         target_user_id_list: Optional[list[str]] = None,
+        metadata: Optional[dict[str, Any]] = None,
     ) -> None:
         """
         生産性を受入作業者ごとにプロットする。
@@ -494,4 +505,4 @@ class AcceptorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
             (x_column, "cumulative_acceptance_worktime_hour"),
         ]
 
-        self._plot(line_graph_list, columns_list, user_id_list, output_file)
+        self._plot(line_graph_list, columns_list, user_id_list, output_file, metadata=metadata)

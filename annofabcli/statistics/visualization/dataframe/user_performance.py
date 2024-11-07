@@ -9,7 +9,7 @@ import logging
 import math
 from enum import Enum
 from pathlib import Path
-from typing import Literal, Optional, Sequence
+from typing import Any, Literal, Optional, Sequence
 
 import bokeh
 import bokeh.layouts
@@ -20,6 +20,7 @@ from annofabapi.models import TaskPhase
 from bokeh.models.widgets.markups import Div
 from bokeh.plotting import ColumnDataSource
 
+from annofabcli.common.bokeh import create_pretext_from_metadata
 from annofabcli.common.utils import print_csv, read_multiheader_csv
 from annofabcli.statistics.scatter import ScatterGraph, get_color_from_palette, write_bokeh_graph
 from annofabcli.statistics.visualization.dataframe.task_worktime_by_phase_user import TaskWorktimeByPhaseUser
@@ -875,8 +876,20 @@ class UserPerformance:
         )
         return column_to_name[production_volume_column]
 
-    def plot_productivity(self, output_file: Path, worktime_type: WorktimeType, production_volume_column: str) -> None:
-        """作業時間と生産性の関係をメンバごとにプロットする。"""
+    def plot_productivity(
+        self,
+        output_file: Path,
+        worktime_type: WorktimeType,
+        production_volume_column: str,
+        *,
+        metadata: Optional[dict[str, Any]] = None,
+    ) -> None:
+        """作業時間と生産性の関係をメンバごとにプロットする。
+
+        Args:
+            metadata: HTMLファイルの上部に表示するメタデータです。
+
+        """
 
         if not self._validate_df_for_output(output_file):
             return
@@ -957,9 +970,13 @@ class UserPerformance:
             scatter_obj.process_after_adding_glyphs()
 
         div_element = self._create_div_element()
-        write_bokeh_graph(bokeh.layouts.column([div_element, *[e.layout for e in scatter_obj_list]]), output_file)
+        element_list = [div_element, *[e.layout for e in scatter_obj_list]]
+        if metadata is not None:
+            element_list.insert(0, create_pretext_from_metadata(metadata))
 
-    def plot_quality(self, output_file: Path) -> None:
+        write_bokeh_graph(bokeh.layouts.column(element_list), output_file)
+
+    def plot_quality(self, output_file: Path, *, metadata: Optional[dict[str, Any]] = None) -> None:
         """
         メンバごとに品質を散布図でプロットする
 
@@ -1055,9 +1072,15 @@ class UserPerformance:
             scatter_obj.process_after_adding_glyphs()
 
         div_element = self._create_div_element()
-        write_bokeh_graph(bokeh.layouts.column([div_element, *[e.layout for e in scatter_obj_list]]), output_file)
+        element_list = [div_element, *[e.layout for e in scatter_obj_list]]
+        if metadata is not None:
+            element_list.insert(0, create_pretext_from_metadata(metadata))
 
-    def plot_quality_and_productivity(self, output_file: Path, worktime_type: WorktimeType, production_volume_column: str) -> None:
+        write_bokeh_graph(bokeh.layouts.column(element_list), output_file)
+
+    def plot_quality_and_productivity(
+        self, output_file: Path, worktime_type: WorktimeType, production_volume_column: str, *, metadata: Optional[dict[str, Any]] = None
+    ) -> None:
         """
         作業時間を元に算出した生産性と品質の関係を、メンバごとにプロットする
         """
@@ -1196,4 +1219,9 @@ class UserPerformance:
 
         div_element = self._create_div_element()
         div_element.text = div_element.text + """円の大きさ：作業時間<br>"""  # type: ignore[operator]
-        write_bokeh_graph(bokeh.layouts.column([div_element, *[e.layout for e in scatter_obj_list]]), output_file)
+
+        element_list = [div_element, *[e.layout for e in scatter_obj_list]]
+        if metadata is not None:
+            element_list.insert(0, create_pretext_from_metadata(metadata))
+
+        write_bokeh_graph(bokeh.layouts.column(element_list), output_file)
