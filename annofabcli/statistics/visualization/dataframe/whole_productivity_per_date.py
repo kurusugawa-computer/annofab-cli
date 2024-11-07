@@ -734,15 +734,21 @@ class WholeProductivityPerCompletedDate:
 
         write_bokeh_graph(bokeh.layouts.column(element_list), output_file)
 
-    def to_csv(self, output_file: Path) -> None:
-        """
-        日毎の全体の生産量、生産性を出力する。
+    @classmethod
+    def empty(cls, *, custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None) -> WholeProductivityPerCompletedDate:
+        df = pandas.DataFrame(columns=cls.get_columns(custom_production_volume_list=custom_production_volume_list))
+        return cls(df, custom_production_volume_list=custom_production_volume_list)
 
-        """
-        if not self._validate_df_for_output(output_file):
-            return
+    @property
+    def columns(self) -> list[str]:
+        return self.get_columns(custom_production_volume_list=self.custom_production_volume_list)
 
-        production_volume_columns = ["input_data_count", "annotation_count", *[e.value for e in self.custom_production_volume_list]]
+    @staticmethod
+    def get_columns(custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None) -> list[str]:
+        production_volume_columns = ["input_data_count", "annotation_count"]
+        if custom_production_volume_list is not None:
+            production_volume_columns.extend([e.value for e in custom_production_volume_list])
+
         worktime_columns = [
             "actual_worktime_hour",
             "monitored_worktime_hour",
@@ -785,8 +791,17 @@ class WholeProductivityPerCompletedDate:
             *velocity_details_columns,
             "working_user_count",
         ]
+        return columns
 
-        print_csv(self.df[columns], output=str(output_file))
+    def to_csv(self, output_file: Path) -> None:
+        """
+        日毎の全体の生産量、生産性を出力する。
+
+        """
+        if not self._validate_df_for_output(output_file):
+            return
+
+        print_csv(self.df[self.columns], output=str(output_file))
 
 
 class WholeProductivityPerFirstAnnotationStartedDate:

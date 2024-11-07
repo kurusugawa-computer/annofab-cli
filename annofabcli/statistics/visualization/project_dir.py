@@ -215,9 +215,13 @@ class ProjectDir(DataClassJsonMixin):
         """
         日ごとの生産性と品質の情報を読み込みます。
         """
-        return WholeProductivityPerCompletedDate.from_csv(
-            self.project_dir / self.FILENAME_WHOLE_PRODUCTIVITY_PER_DATE, custom_production_volume_list=custom_production_volume_list
-        )
+        file = self.project_dir / self.FILENAME_WHOLE_PRODUCTIVITY_PER_DATE
+        if file.exists():
+            return WholeProductivityPerCompletedDate.from_csv(
+                self.project_dir / self.FILENAME_WHOLE_PRODUCTIVITY_PER_DATE, custom_production_volume_list=custom_production_volume_list
+            )
+        else:
+            return WholeProductivityPerCompletedDate.empty(custom_production_volume_list=custom_production_volume_list)
 
     def write_whole_productivity_per_date(self, obj: WholeProductivityPerCompletedDate) -> None:
         """
