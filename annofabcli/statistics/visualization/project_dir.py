@@ -151,11 +151,6 @@ class ProjectDir(DataClassJsonMixin):
                 target_user_id_list=user_id_list,
             )
 
-            if phase == TaskPhase.ANNOTATION:
-                # 教師付フェーズの場合は、「差し戻し回数」で品質を評価した場合があるので、タスク単位の指標も出力する
-                obj.plot_task_metrics(
-                    output_dir / f"{phase_name}者用/累積折れ線-横軸_タスク数-{phase_name}者用.html", target_user_id_list=user_id_list
-                )
 
     def write_performance_per_started_date_csv(self, obj: AbstractPhaseProductivityPerDate, phase: TaskPhase) -> None:
         """
