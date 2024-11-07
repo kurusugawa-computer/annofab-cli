@@ -204,6 +204,147 @@ class AnnotatorProductivityPerDate(AbstractPhaseProductivityPerDate):
 
         return df2
 
+    def plot_production_volume_metrics(  # noqa: ANN201
+        self,
+        production_volume_column: str,
+        production_volume_name: str,
+        output_file: Path,
+        *,
+        target_user_id_list: Optional[list[str]] = None,
+    ):
+        """
+        生産性を教師付作業者ごとにプロットする。
+
+        Args:
+            df:
+            first_annotation_user_id_list:
+
+        Returns:
+
+        """
+
+        if not self._validate_df_for_output(output_file):
+            return
+
+        df = self.df.copy()
+
+        if target_user_id_list is not None:
+            user_id_list = target_user_id_list
+        else:
+            user_id_list = df.sort_values(by="first_annotation_started_date", ascending=False)["first_annotation_user_id"].dropna().unique().tolist()
+
+        user_id_list = get_plotted_user_id_list(user_id_list)
+
+        x_axis_label = "教師付開始日"
+        tooltip_columns = [
+            "first_annotation_user_id",
+            "first_annotation_username",
+            "first_annotation_started_date",
+            "annotation_worktime_hour",
+            "task_count",
+            "input_data_count",
+            "annotation_count",
+            "inspection_comment_count",
+        ]
+        line_graph_list = [
+            LineGraph(
+                title="教師付開始日ごとの教師付作業時間",
+                y_axis_label="教師付作業時間[時間]",
+                tooltip_columns=tooltip_columns,
+                x_axis_label=x_axis_label,
+                x_axis_type="datetime",
+            ),
+            LineGraph(
+                title=f"教師付開始日ごとの{production_volume_name}あたり教師付作業時間",
+                y_axis_label=f"アノテーションあたり教師付時間[分/{production_volume_name}]",
+                tooltip_columns=tooltip_columns,
+                x_axis_label=x_axis_label,
+                x_axis_type="datetime",
+            ),
+            LineGraph(
+                title=f"教師付開始日ごとの{production_volume_name}あたり教師付作業時間(1週間移動平均)",
+                y_axis_label=f"アノテーションあたり教師付時間[分/{production_volume_name}]",
+                tooltip_columns=tooltip_columns,
+                x_axis_label=x_axis_label,
+                x_axis_type="datetime",
+            ),
+            LineGraph(
+                title=f"教師付開始日ごとの{production_volume_name}あたり検査コメント数",
+                y_axis_label=f"{production_volume_name}あたり検査コメント数",
+                tooltip_columns=tooltip_columns,
+                x_axis_label=x_axis_label,
+                x_axis_type="datetime",
+            ),
+            LineGraph(
+                title=f"教師付開始日ごとの{production_volume_name}あたり検査コメント数(1週間移動平均)",
+                y_axis_label=f"{production_volume_name}あたり検査コメント数",
+                tooltip_columns=tooltip_columns,
+                x_axis_label=x_axis_label,
+                x_axis_type="datetime",
+            ),
+        ]
+
+        x_column = "dt_first_annotation_started_date"
+        columns_list = [
+            (x_column, "annotation_worktime_hour"),
+            (x_column, f"annotation_worktime_minute/{production_volume_column}"),
+            (x_column, f"annotation_worktime_minute/{production_volume_column}{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}"),
+            (x_column, f"inspection_comment_count/{production_volume_column}"),
+            (x_column, f"inspection_comment_count/{production_volume_column}{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}"),
+        ]
+
+        logger.debug(f"{output_file} を出力します。")
+
+        line_count = 0
+        plotted_users: list[tuple[str, str]] = []
+        for user_index, user_id in enumerate(user_id_list):
+            df_subset = df[df["first_annotation_user_id"] == user_id]
+            if df_subset.empty:
+                logger.debug(f"dataframe is empty. user_id = {user_id}")
+                continue
+
+            df_subset = self._get_df_sequential_date(df_subset)
+            df_subset[f"annotation_worktime_minute/{production_volume_column}"] = (
+                df_subset["annotation_worktime_hour"] * 60 / df_subset[production_volume_column]
+            )
+            df_subset[f"annotation_worktime_minute/{production_volume_column}{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}"] = (
+                get_weekly_sum(df_subset["annotation_worktime_hour"]) * 60 / get_weekly_sum(df_subset[production_volume_column])
+            )
+            df_subset[f"inspection_comment_count/{production_volume_column}{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}"] = get_weekly_sum(
+                df_subset["inspection_comment_count"]
+            ) / get_weekly_sum(df_subset[production_volume_column])
+
+            source = ColumnDataSource(data=df_subset)
+            color = get_color_from_palette(user_index)
+            username = df_subset.iloc[0]["first_annotation_username"]
+
+            line_count += 1
+            for line_graph, (x_column, y_column) in zip(line_graph_list, columns_list):
+                if y_column.endswith(WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX):
+                    line_graph.add_moving_average_line(
+                        source=source,
+                        x_column=x_column,
+                        y_column=y_column,
+                        legend_label=username,
+                        color=color,
+                    )
+
+                else:
+                    line_graph.add_line(
+                        source=source,
+                        x_column=x_column,
+                        y_column=y_column,
+                        legend_label=username,
+                        color=color,
+                    )
+            plotted_users.append((user_id, username))
+
+        if line_count == 0:
+            logger.warning(f"プロットするデータがなかっため、'{output_file}'は出力しません。")
+            return
+
+        self._plot(line_graph_list, plotted_users, output_file)
+
     def plot_annotation_metrics(  # noqa: ANN201
         self,
         output_file: Path,
