@@ -1,11 +1,11 @@
 from pathlib import Path
 
-import pandas
-
 from annofabcli.statistics.visualization.dataframe.productivity_per_date import (
     AcceptorProductivityPerDate,
     AnnotatorProductivityPerDate,
     InspectorProductivityPerDate,
+    ProductionVolumeColumn,
+    Task,
 )
 
 output_dir = Path("./tests/out/statistics/visualization/dataframe")
@@ -20,8 +20,14 @@ class TestAnnotatorProductivityPerDate:
 
     @classmethod
     def setup_class(cls):
-        df_task = pandas.read_csv(str(data_dir / "task.csv"))
-        cls.obj = AnnotatorProductivityPerDate.from_task(df_task)
+        task = Task.from_csv(
+            str(data_dir / "task.csv"),
+            custom_production_volume_list=[
+                ProductionVolumeColumn("custom_production_volume1", "custom_生産量1"),
+                ProductionVolumeColumn("custom_production_volume2", "custom_生産量2"),
+            ],
+        )
+        cls.obj = AnnotatorProductivityPerDate.from_task(task)
 
     def test_to_csv(self):
         self.obj.to_csv(output_dir / "教師付開始日ごとの教師付者の生産性.csv")
@@ -38,9 +44,15 @@ class TestInspectorProductivityPerDate:
 
     @classmethod
     def setup_class(cls):
-        df_task = pandas.read_csv(str(data_dir / "task.csv"))
+        task = Task.from_csv(
+            str(data_dir / "task.csv"),
+            custom_production_volume_list=[
+                ProductionVolumeColumn("custom_production_volume1", "custom_生産量1"),
+                ProductionVolumeColumn("custom_production_volume2", "custom_生産量2"),
+            ],
+        )
 
-        cls.obj = InspectorProductivityPerDate.from_task(df_task)
+        cls.obj = InspectorProductivityPerDate.from_task(task)
 
     def test_to_csv(self):
         self.obj.to_csv(output_dir / "検査開始日ごとの検査者の生産性.csv")
@@ -57,9 +69,15 @@ class TestAcceptorProductivityPerDate:
 
     @classmethod
     def setup_class(cls):
-        df_task = pandas.read_csv(str(data_dir / "task.csv"))
+        task = Task.from_csv(
+            str(data_dir / "task.csv"),
+            custom_production_volume_list=[
+                ProductionVolumeColumn("custom_production_volume1", "custom_生産量1"),
+                ProductionVolumeColumn("custom_production_volume2", "custom_生産量2"),
+            ],
+        )
 
-        cls.obj = AcceptorProductivityPerDate.from_task(df_task)
+        cls.obj = AcceptorProductivityPerDate.from_task(task)
 
     def test_to_csv(self):
         self.obj.to_csv(output_dir / "受入開始日ごとの受入者の生産性.csv")

@@ -152,7 +152,6 @@ class AnnotatorProductivityPerDate(AbstractPhaseProductivityPerDate):
                 "task_count",
                 *production_volume_columns,
                 "inspection_comment_count",
-                *[e.value for e in task.custom_production_volume_list],
             ]
         ].sum(numeric_only=True)
 
@@ -637,7 +636,6 @@ class AnnotatorProductivityPerDate(AbstractPhaseProductivityPerDate):
         quality_columns = [f"inspection_comment_count/{denominator}" for denominator in self.production_volume_columns]
 
         columns = production_columns + velocity_columns + quality_columns
-
         print_csv(self.df[columns], output=str(output_file))
 
 
