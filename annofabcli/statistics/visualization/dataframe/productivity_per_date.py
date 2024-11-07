@@ -46,6 +46,7 @@ class AbstractPhaseProductivityPerDate(abc.ABC):
         self.df = df
         self.phase = phase
         self.custom_production_volume_list = custom_production_volume_list if custom_production_volume_list is not None else []
+        self.production_volume_columns = ["input_data_count", "annotation_count", *[e.value for e in self.custom_production_volume_list]]
 
     def _validate_df_for_output(self, output_file: Path) -> bool:
         if len(self.df) == 0:
@@ -83,7 +84,7 @@ class AbstractPhaseProductivityPerDate(abc.ABC):
 
     @classmethod
     @abc.abstractmethod
-    def from_task(cls, df_task: pandas.DataFrame) -> AbstractPhaseProductivityPerDate:
+    def from_task(cls, task: Task) -> AbstractPhaseProductivityPerDate:
         raise NotImplementedError()
 
     @abc.abstractmethod
@@ -161,8 +162,7 @@ class AnnotatorProductivityPerDate(AbstractPhaseProductivityPerDate):
 
         return cls(sum_df)
 
-    @staticmethod
-    def _get_df_sequential_date(df: pandas.DataFrame) -> pandas.DataFrame:
+    def _get_df_sequential_date(self, df: pandas.DataFrame) -> pandas.DataFrame:
         """連続した日付のDataFrameを生成する。"""
         df_date = pandas.DataFrame(
             {
@@ -194,8 +194,7 @@ class AnnotatorProductivityPerDate(AbstractPhaseProductivityPerDate):
                     "worktime_hour",
                     "inspection_comment_count",
                     "task_count",
-                    "input_data_count",
-                    "annotation_count",
+                    *self.production_volume_columns,
                     "inspection_comment",
                 ]
             },
@@ -621,8 +620,7 @@ class AnnotatorProductivityPerDate(AbstractPhaseProductivityPerDate):
             "first_annotation_user_id",
             "first_annotation_username",
             "task_count",
-            "input_data_count",
-            "annotation_count",
+            *self.production_volume_columns,
             "inspection_comment_count",
             "worktime_hour",
             "annotation_worktime_hour",
@@ -633,10 +631,12 @@ class AnnotatorProductivityPerDate(AbstractPhaseProductivityPerDate):
         velocity_columns = [
             f"{numerator}/{denominator}"
             for numerator in ["annotation_worktime_hour", "inspection_worktime_hour", "acceptance_worktime_hour"]
-            for denominator in ["input_data_count", "annotation_count"]
+            for denominator in self.production_volume_columns
         ]
 
-        columns = production_columns + velocity_columns + ["inspection_comment_count/input_data_count", "inspection_comment_count/annotation_count"]
+        quality_columns = [f"inspection_comment_count/{denominator}" for denominator in self.production_volume_columns]
+
+        columns = production_columns + velocity_columns + quality_columns
 
         print_csv(self.df[columns], output=str(output_file))
 
