@@ -732,7 +732,7 @@ class WholeProductivityPerCompletedDate:
         if metadata is not None:
             element_list.insert(0, create_pretext_from_metadata(metadata))
 
-        write_bokeh_graph(bokeh.layouts.column([div_element] + [e.figure for e in line_graph_list]), output_file)
+        write_bokeh_graph(bokeh.layouts.column(element_list), output_file)
 
     def to_csv(self, output_file: Path) -> None:
         """

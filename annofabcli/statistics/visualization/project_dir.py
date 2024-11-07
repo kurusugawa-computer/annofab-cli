@@ -106,8 +106,8 @@ class ProjectDir(DataClassJsonMixin):
         """
         タスク単位のヒストグラムを出力します。
         """
-        obj.plot_histogram_of_worktime(self.project_dir / "histogram/ヒストグラム-作業時間.html")
-        obj.plot_histogram_of_others(self.project_dir / "histogram/ヒストグラム.html")
+        obj.plot_histogram_of_worktime(self.project_dir / "histogram/ヒストグラム-作業時間.html", metadata=self.metadata)
+        obj.plot_histogram_of_others(self.project_dir / "histogram/ヒストグラム.html", metadata=self.metadata)
 
     def write_cumulative_line_graph(
         self,
@@ -135,6 +135,7 @@ class ProjectDir(DataClassJsonMixin):
             production_volume_name="アノテーション数",
             output_file=output_dir / f"{phase_name}者用/累積折れ線-横軸_アノテーション数-{phase_name}者用.html",
             target_user_id_list=user_id_list,
+            metadata=self.metadata,
         )
         for custom_production_volume in obj.custom_production_volume_list:
             obj.plot_production_volume_metrics(
@@ -142,6 +143,7 @@ class ProjectDir(DataClassJsonMixin):
                 production_volume_name=custom_production_volume.name,
                 output_file=output_dir / f"{phase_name}者用/累積折れ線-横軸_{custom_production_volume.name}-{phase_name}者用.html",
                 target_user_id_list=user_id_list,
+                metadata=self.metadata,
             )
 
         if not minimal_output:
@@ -151,6 +153,7 @@ class ProjectDir(DataClassJsonMixin):
                 production_volume_name="入力データ数",
                 output_file=output_dir / f"{phase_name}者用/累積折れ線-横軸_入力データ数-{phase_name}者用.html",
                 target_user_id_list=user_id_list,
+                metadata=self.metadata,
             )
 
     def write_performance_per_started_date_csv(self, obj: AbstractPhaseProductivityPerDate, phase: TaskPhase) -> None:
@@ -173,12 +176,14 @@ class ProjectDir(DataClassJsonMixin):
             production_volume_name="アノテーション",
             output_file=output_dir / Path(f"{phase_name}者用/折れ線-横軸_{phase_name}開始日-縦軸_アノテーション単位の指標-{phase_name}者用.html"),
             target_user_id_list=user_id_list,
+            metadata=self.metadata,
         )
         obj.plot_production_volume_metrics(
             production_volume_column="input_data_count",
             production_volume_name="入力データ",
             output_file=output_dir / Path(f"{phase_name}者用/折れ線-横軸_{phase_name}開始日-縦軸_入力データ単位の指標-{phase_name}者用.html"),
             target_user_id_list=user_id_list,
+            metadata=self.metadata,
         )
         for custom_production_volume in obj.custom_production_volume_list:
             obj.plot_production_volume_metrics(
@@ -187,6 +192,7 @@ class ProjectDir(DataClassJsonMixin):
                 output_file=output_dir
                 / Path(f"{phase_name}者用/折れ線-横軸_{phase_name}開始日-縦軸_{custom_production_volume.name}単位の指標-{phase_name}者用.html"),
                 target_user_id_list=user_id_list,
+                metadata=self.metadata,
             )
 
     def read_whole_performance(self) -> WholePerformance:
@@ -367,7 +373,7 @@ class ProjectDir(DataClassJsonMixin):
 
     def write_worktime_line_graph(self, obj: WorktimePerDate, user_id_list: Optional[list[str]] = None) -> None:
         """横軸が日付、縦軸がユーザごとの作業時間である折れ線グラフを出力します。"""
-        obj.plot_cumulatively(self.project_dir / "line-graph/累積折れ線-横軸_日-縦軸_作業時間.html", user_id_list)
+        obj.plot_cumulatively(self.project_dir / "line-graph/累積折れ線-横軸_日-縦軸_作業時間.html", user_id_list, metadata=self.metadata)
 
     def read_project_info(self) -> ProjectInfo:
         """
