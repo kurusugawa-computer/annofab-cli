@@ -59,9 +59,9 @@ class WritingGraph:
         )
 
         if not self.minimal_output:
-            annotator_per_date_obj = AnnotatorProductivityPerDate.from_df_task(task.df)
-            inspector_per_date_obj = InspectorProductivityPerDate.from_df_task(task.df)
-            acceptor_per_date_obj = AcceptorProductivityPerDate.from_df_task(task.df)
+            annotator_per_date_obj = AnnotatorProductivityPerDate.from_task(task)
+            inspector_per_date_obj = InspectorProductivityPerDate.from_task(task)
+            acceptor_per_date_obj = AcceptorProductivityPerDate.from_task(task)
 
             self.output_project_dir.write_performance_line_graph_per_date(
                 annotator_per_date_obj, phase=TaskPhase.ANNOTATION, user_id_list=self.user_id_list

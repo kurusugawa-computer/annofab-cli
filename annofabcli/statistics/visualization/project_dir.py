@@ -164,21 +164,34 @@ class ProjectDir(DataClassJsonMixin):
         phase_name = self.get_phase_name_for_filename(phase)
         obj.to_csv(self.project_dir / Path(f"{phase_name}者_{phase_name}開始日list.csv"))
 
-    def write_performance_line_graph_per_date(  # noqa: ANN201
-        self, obj: AbstractPhaseProductivityPerDate, phase: TaskPhase, user_id_list: Optional[List[str]] = None
-    ):
+    def write_performance_line_graph_per_date(
+        self, obj: AbstractPhaseProductivityPerDate, phase: TaskPhase, *, user_id_list: Optional[List[str]] = None
+    ) -> None:
         """
         指定したフェーズの開始日ごとの作業時間や生産性情報を、折れ線グラフとして出力します。
         """
         output_dir = self.project_dir / "line-graph"
         phase_name = self.get_phase_name_for_filename(phase)
-        obj.plot_annotation_metrics(
-            output_dir / Path(f"{phase_name}者用/折れ線-横軸_{phase_name}開始日-縦軸_アノテーション単位の指標-{phase_name}者用.html"),
-            user_id_list,
+        obj.plot_production_volume_metrics(
+            production_volume_column="annotation_count",
+            production_volume_name="アノテーション",
+            output_file=output_dir / Path(f"{phase_name}者用/折れ線-横軸_{phase_name}開始日-縦軸_アノテーション単位の指標-{phase_name}者用.html"),
+            target_user_id_list=user_id_list,
         )
-        obj.plot_input_data_metrics(
-            output_dir / Path(f"{phase_name}者用/折れ線-横軸_{phase_name}開始日-縦軸_入力データ単位の指標-{phase_name}者用.html"), user_id_list
+        obj.plot_production_volume_metrics(
+            production_volume_column="input_data_count",
+            production_volume_name="入力データ",
+            output_file=output_dir / Path(f"{phase_name}者用/折れ線-横軸_{phase_name}開始日-縦軸_入力データ単位の指標-{phase_name}者用.html"),
+            target_user_id_list=user_id_list,
         )
+        for custom_production_volume in obj.custom_production_volume_list:
+            obj.plot_production_volume_metrics(
+                production_volume_column=custom_production_volume.value,
+                production_volume_name=custom_production_volume.name,
+                output_file=output_dir
+                / Path(f"{phase_name}者用/折れ線-横軸_{phase_name}開始日-縦軸_{custom_production_volume.name}単位の指標-{phase_name}者用.html"),
+                target_user_id_list=user_id_list,
+            )
 
     def read_whole_performance(self) -> WholePerformance:
         """`全体の生産性と品質.csv`を読み込む。"""
