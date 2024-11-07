@@ -151,7 +151,6 @@ class ProjectDir(DataClassJsonMixin):
                 target_user_id_list=user_id_list,
             )
 
-
     def write_performance_per_started_date_csv(self, obj: AbstractPhaseProductivityPerDate, phase: TaskPhase) -> None:
         """
         指定したフェーズの開始日ごとの作業時間や生産性情報を、CSVに出力します。

@@ -170,7 +170,6 @@ class AbstractPhaseCumulativeProductivity(abc.ABC):
         raise NotImplementedError()
 
 
-
 class AnnotatorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
     def __init__(self, df: pandas.DataFrame, *, custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None) -> None:
         super().__init__(df, phase=TaskPhase.ANNOTATION, custom_production_volume_list=custom_production_volume_list)
@@ -291,7 +290,6 @@ class AnnotatorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
         self._plot(line_graph_list, columns_list, user_id_list, output_file)
 
 
-
 class InspectorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
     def __init__(self, df: pandas.DataFrame, *, custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None) -> None:
         super().__init__(df, phase=TaskPhase.INSPECTION, custom_production_volume_list=custom_production_volume_list)
@@ -397,7 +395,6 @@ class InspectorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
         ]
 
         self._plot(line_graph_list, columns_list, user_id_list, output_file)
-
 
 
 class AcceptorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
