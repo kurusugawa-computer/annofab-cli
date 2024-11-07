@@ -886,11 +886,17 @@ class WholeProductivityPerFirstAnnotationStartedDate:
             return False
         return True
 
-    def to_csv(self, output_file: Path) -> pandas.DataFrame:
-        if not self._validate_df_for_output(output_file):
-            return
+    @classmethod
+    def empty(cls, *, custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None) -> WholeProductivityPerFirstAnnotationStartedDate:
+        df = pandas.DataFrame(columns=cls.get_columns(custom_production_volume_list=custom_production_volume_list))
+        return cls(df, custom_production_volume_list=custom_production_volume_list)
 
-        production_volume_columns = ["input_data_count", "annotation_count", *[e.value for e in self.custom_production_volume_list]]
+    @staticmethod
+    def get_columns(*, custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None) -> list[str]:
+        production_volume_columns = ["input_data_count", "annotation_count"]
+        if custom_production_volume_list is not None:
+            production_volume_columns.extend([e.value for e in custom_production_volume_list])
+
         basic_columns = [
             "first_annotation_started_date",
             "task_count",
@@ -912,10 +918,18 @@ class WholeProductivityPerFirstAnnotationStartedDate:
                 "acceptance_worktime_hour",
             ]
         ]
-
         columns = basic_columns + velocity_columns
+        return columns
 
-        print_csv(self.df[columns], str(output_file))
+    @property
+    def columns(self) -> list[str]:
+        return self.get_columns(custom_production_volume_list=self.custom_production_volume_list)
+
+    def to_csv(self, output_file: Path) -> pandas.DataFrame:
+        if not self._validate_df_for_output(output_file):
+            return
+
+        print_csv(self.df[self.columns], str(output_file))
 
     def plot(self, output_file: Path, *, metadata: Optional[dict[str, Any]] = None) -> None:
         """

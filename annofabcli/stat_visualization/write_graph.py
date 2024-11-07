@@ -89,7 +89,7 @@ class WritingGraph:
             logger.warning("'メンバごとの生産性と品質.csv'から生成できるグラフの出力に失敗しました。", exc_info=True)
 
         try:
-            task = self.project_dir.read_task_list()
+            task = self.project_dir.read_task_list(custom_production_volume_list=self.custom_production_volume_list)
             # ヒストグラムを出力
             self.output_project_dir.write_task_histogram(task)
             # ユーザごとにプロットした折れ線グラフを出力
@@ -98,13 +98,17 @@ class WritingGraph:
             logger.warning("'タスクlist.csv'から生成できるグラフの出力に失敗しました。", exc_info=True)
 
         try:
-            self.output_project_dir.write_whole_productivity_line_graph_per_date(self.project_dir.read_whole_productivity_per_date())
+            self.output_project_dir.write_whole_productivity_line_graph_per_date(
+                self.project_dir.read_whole_productivity_per_date(custom_production_volume_list=self.custom_production_volume_list)
+            )
         except Exception:
             logger.warning("'日毎の生産量と生産性.csv'から生成できるグラフの出力に失敗しました。", exc_info=True)
 
         try:
             self.output_project_dir.write_whole_productivity_line_graph_per_annotation_started_date(
-                self.project_dir.read_whole_productivity_per_first_annotation_started_date()
+                self.project_dir.read_whole_productivity_per_first_annotation_started_date(
+                    custom_production_volume_list=self.custom_production_volume_list
+                )
             )
         except Exception:
             logger.warning("'教師付者_教師付開始日list.csv'から生成できるグラフの出力に失敗しました。", exc_info=True)
@@ -133,9 +137,13 @@ def main(args: argparse.Namespace) -> None:
     custom_production_volume_list = (
         create_custom_production_volume_list(args.custom_production_volume) if args.custom_production_volume is not None else None
     )
+
+    input_project_dir = ProjectDir(args.dir)
+    project_info = input_project_dir.read_project_info()
+    output_project_dir = ProjectDir(args.output_dir, metadata=project_info.to_dict(encode_json=True))
     main_obj = WritingGraph(
-        project_dir=ProjectDir(args.dir),
-        output_project_dir=ProjectDir(args.output_dir),
+        project_dir=input_project_dir,
+        output_project_dir=output_project_dir,
         minimal_output=args.minimal,
         user_id_list=user_id_list,
         custom_production_volume_list=custom_production_volume_list,

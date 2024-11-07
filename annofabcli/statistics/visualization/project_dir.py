@@ -203,17 +203,21 @@ class ProjectDir(DataClassJsonMixin):
             return WholePerformance.from_csv(file, custom_production_volume_list=custom_production_volume_list)
         else:
             logger.warning(f"'{file!s}'を読み込もうとしましたが、ファイルは存在しません。")
-            return WholePerformance.empty()
+            return WholePerformance.empty(custom_production_volume_list=custom_production_volume_list)
 
     def write_whole_performance(self, whole_performance: WholePerformance) -> None:
         """`全体の生産性と品質.csv`を出力します。"""
         whole_performance.to_csv(self.project_dir / self.FILENAME_WHOLE_PERFORMANCE)
 
-    def read_whole_productivity_per_date(self) -> WholeProductivityPerCompletedDate:
+    def read_whole_productivity_per_date(
+        self, *, custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None
+    ) -> WholeProductivityPerCompletedDate:
         """
         日ごとの生産性と品質の情報を読み込みます。
         """
-        return WholeProductivityPerCompletedDate.from_csv(self.project_dir / self.FILENAME_WHOLE_PRODUCTIVITY_PER_DATE)
+        return WholeProductivityPerCompletedDate.from_csv(
+            self.project_dir / self.FILENAME_WHOLE_PRODUCTIVITY_PER_DATE, custom_production_volume_list=custom_production_volume_list
+        )
 
     def write_whole_productivity_per_date(self, obj: WholeProductivityPerCompletedDate) -> None:
         """
@@ -229,14 +233,19 @@ class ProjectDir(DataClassJsonMixin):
         obj.plot_cumulatively(self.project_dir / "line-graph/累積折れ線-横軸_日-全体.html", metadata=self.metadata)
 
     def read_whole_productivity_per_first_annotation_started_date(
-        self,
+        self, custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None
     ) -> WholeProductivityPerFirstAnnotationStartedDate:
         """
         教師付開始日ごとの生産性と品質の情報を読み込みます。
         """
-        return WholeProductivityPerFirstAnnotationStartedDate.from_csv(
-            self.project_dir / self.FILENAME_WHOLE_PRODUCTIVITY_PER_FIRST_ANNOTATION_STARTED_DATE
-        )
+        file = self.project_dir / self.FILENAME_WHOLE_PRODUCTIVITY_PER_FIRST_ANNOTATION_STARTED_DATE
+        if file.exists():
+            return WholeProductivityPerFirstAnnotationStartedDate.from_csv(
+                file,
+                custom_production_volume_list=custom_production_volume_list,
+            )
+        else:
+            return WholeProductivityPerFirstAnnotationStartedDate.empty(custom_production_volume_list=custom_production_volume_list)
 
     def write_whole_productivity_per_first_annotation_started_date(self, obj: WholeProductivityPerFirstAnnotationStartedDate):  # noqa: ANN201
         """
@@ -272,7 +281,7 @@ class ProjectDir(DataClassJsonMixin):
         メンバごとの生産性と品質に関する散布図を出力します。
         """
         output_dir = self.project_dir / "scatter"
-        obj.plot_quality(output_dir / "散布図-教師付者の品質と作業量の関係.html")
+        obj.plot_quality(output_dir / "散布図-教師付者の品質と作業量の関係.html", metadata=self.metadata)
         obj.plot_productivity(
             output_dir / "散布図-アノテーションあたり作業時間と累計作業時間の関係-計測時間.html",
             worktime_type=WorktimeType.MONITORED,
