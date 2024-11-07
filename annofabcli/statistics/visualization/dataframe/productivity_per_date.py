@@ -140,6 +140,7 @@ class AnnotatorProductivityPerDate(AbstractPhaseProductivityPerDate):
             as_index=False,
         )
 
+        production_volume_columns = ["input_data_count", "annotation_count", *[e.value for e in task.custom_production_volume_list]]
         sum_df = group_obj[
             [
                 "first_annotation_worktime_hour",
@@ -148,19 +149,15 @@ class AnnotatorProductivityPerDate(AbstractPhaseProductivityPerDate):
                 "acceptance_worktime_hour",
                 "worktime_hour",
                 "task_count",
-                "input_data_count",
-                "annotation_count",
+                *production_volume_columns,
                 "inspection_comment_count",
+                *[e.value for e in task.custom_production_volume_list],
             ]
         ].sum(numeric_only=True)
 
-        for denominator_column in ["input_data_count", "annotation_count"]:
-            for phase in ["annotation", "inspection", "acceptance"]:
-                numerator_column = f"{phase}_worktime_hour"
+        for denominator_column in production_volume_columns:
+            for numerator_column in ["annotation_worktime_hour", "inspection_worktime_hour", "acceptance_worktime_hour", "inspection_comment_count"]:
                 sum_df[f"{numerator_column}/{denominator_column}"] = sum_df[numerator_column] / sum_df[denominator_column]
-
-        sum_df["inspection_comment_count/annotation_count"] = sum_df["inspection_comment_count"] / sum_df["annotation_count"]
-        sum_df["inspection_comment_count/input_data_count"] = sum_df["inspection_comment_count"] / sum_df["annotation_count"]
 
         return cls(sum_df)
 
@@ -507,11 +504,11 @@ class AnnotatorProductivityPerDate(AbstractPhaseProductivityPerDate):
 class InspectorProductivityPerDate(AbstractPhaseProductivityPerDate):
     """検査開始日ごとの検査者の生産性に関する情報"""
 
-    def __init__(self, df: pandas.DataFrame) -> None:
-        super().__init__(df, phase=TaskPhase.INSPECTION)
+    def __init__(self, df: pandas.DataFrame, *, custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None) -> None:
+        super().__init__(df, phase=TaskPhase.INSPECTION, custom_production_volume_list=custom_production_volume_list)
 
     @classmethod
-    def from_task(cls, df_task: pandas.DataFrame) -> InspectorProductivityPerDate:
+    def from_task(cls, task: Task) -> InspectorProductivityPerDate:
         """
         検査開始日ごとの受入者の生産性に関するDataFrameを生成する。
 
@@ -521,7 +518,7 @@ class InspectorProductivityPerDate(AbstractPhaseProductivityPerDate):
         Returns:
 
         """
-        new_df = df_task.copy()
+        new_df = task.df.copy()
         new_df["first_inspection_started_date"] = new_df["first_inspection_started_datetime"].map(
             lambda e: datetime_to_date(e) if e is not None and isinstance(e, str) else None
         )
@@ -533,20 +530,15 @@ class InspectorProductivityPerDate(AbstractPhaseProductivityPerDate):
             as_index=False,
         )
 
-        sum_df = group_obj[
-            [
-                "first_inspection_worktime_hour",
-                "inspection_worktime_hour",
-                "task_count",
-                "input_data_count",
-                "annotation_count",
-            ]
-        ].sum(numeric_only=True)
+        production_volume_columns = ["input_data_count", "annotation_count", *[e.value for e in task.custom_production_volume_list]]
+        sum_df = group_obj[["first_inspection_worktime_hour", "inspection_worktime_hour", "task_count", *production_volume_columns]].sum(
+            numeric_only=True
+        )
 
-        sum_df["inspection_worktime_hour/annotation_count"] = sum_df["inspection_worktime_hour"] / sum_df["annotation_count"]
-        sum_df["inspection_worktime_hour/input_data_count"] = sum_df["inspection_worktime_hour"] / sum_df["input_data_count"]
+        for denominator_column in production_volume_columns:
+            sum_df[f"inspection_worktime_hour/{denominator_column}"] = sum_df["inspection_worktime_hour"] / sum_df[denominator_column]
 
-        return cls(sum_df)
+        return cls(sum_df, custom_production_volume_list=task.custom_production_volume_list)
 
     @staticmethod
     def _get_df_sequential_date(df: pandas.DataFrame) -> pandas.DataFrame:
@@ -834,11 +826,11 @@ class InspectorProductivityPerDate(AbstractPhaseProductivityPerDate):
 class AcceptorProductivityPerDate(AbstractPhaseProductivityPerDate):
     """受入開始日ごとの受入者の生産性に関する情報"""
 
-    def __init__(self, df: pandas.DataFrame) -> None:
-        super().__init__(df, phase=TaskPhase.ACCEPTANCE)
+    def __init__(self, df: pandas.DataFrame, *, custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None) -> None:
+        super().__init__(df, phase=TaskPhase.ACCEPTANCE, custom_production_volume_list=custom_production_volume_list)
 
     @classmethod
-    def from_task(cls, df_task: pandas.DataFrame) -> AcceptorProductivityPerDate:
+    def from_task(cls, task: Task) -> AcceptorProductivityPerDate:
         """
         受入開始日ごとの受入者の生産性に関するDataFrameを生成する。
 
@@ -848,7 +840,7 @@ class AcceptorProductivityPerDate(AbstractPhaseProductivityPerDate):
         Returns:
 
         """
-        new_df = df_task.copy()
+        new_df = task.df.copy()
         new_df["first_acceptance_started_date"] = new_df["first_acceptance_started_datetime"].map(
             lambda e: datetime_to_date(e) if e is not None and isinstance(e, str) else None
         )
@@ -860,20 +852,15 @@ class AcceptorProductivityPerDate(AbstractPhaseProductivityPerDate):
             as_index=False,
         )
 
-        sum_df = group_obj[
-            [
-                "first_acceptance_worktime_hour",
-                "acceptance_worktime_hour",
-                "task_count",
-                "input_data_count",
-                "annotation_count",
-            ]
-        ].sum(numeric_only=True)
+        production_volume_columns = ["input_data_count", "annotation_count", *[e.value for e in task.custom_production_volume_list]]
+        sum_df = group_obj[["first_acceptance_worktime_hour", "acceptance_worktime_hour", "task_count", *production_volume_columns]].sum(
+            numeric_only=True
+        )
 
-        sum_df["acceptance_worktime_hour/annotation_count"] = sum_df["acceptance_worktime_hour"] / sum_df["annotation_count"]
-        sum_df["acceptance_worktime_hour/input_data_count"] = sum_df["acceptance_worktime_hour"] / sum_df["input_data_count"]
+        for denominator_column in production_volume_columns:
+            sum_df[f"acceptance_worktime_hour/{denominator_column}"] = sum_df["acceptance_worktime_hour"] / sum_df[denominator_column]
 
-        return AcceptorProductivityPerDate(sum_df)
+        return AcceptorProductivityPerDate(sum_df, custom_production_volume_list=task.custom_production_volume_list)
 
     @staticmethod
     def _get_df_sequential_date(df: pandas.DataFrame) -> pandas.DataFrame:
