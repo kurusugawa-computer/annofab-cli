@@ -21,7 +21,7 @@ class TestAnnotatorProductivityPerDate:
     @classmethod
     def setup_class(cls):
         df_task = pandas.read_csv(str(data_dir / "task.csv"))
-        cls.obj = AnnotatorProductivityPerDate.from_df_task(df_task)
+        cls.obj = AnnotatorProductivityPerDate.from_task(df_task)
 
     def test_to_csv(self):
         self.obj.to_csv(output_dir / "教師付開始日ごとの教師付者の生産性.csv")
@@ -40,7 +40,7 @@ class TestInspectorProductivityPerDate:
     def setup_class(cls):
         df_task = pandas.read_csv(str(data_dir / "task.csv"))
 
-        cls.obj = InspectorProductivityPerDate.from_df_task(df_task)
+        cls.obj = InspectorProductivityPerDate.from_task(df_task)
 
     def test_to_csv(self):
         self.obj.to_csv(output_dir / "検査開始日ごとの検査者の生産性.csv")
@@ -59,7 +59,7 @@ class TestAcceptorProductivityPerDate:
     def setup_class(cls):
         df_task = pandas.read_csv(str(data_dir / "task.csv"))
 
-        cls.obj = AcceptorProductivityPerDate.from_df_task(df_task)
+        cls.obj = AcceptorProductivityPerDate.from_task(df_task)
 
     def test_to_csv(self):
         self.obj.to_csv(output_dir / "受入開始日ごとの受入者の生産性.csv")

@@ -164,9 +164,9 @@ class ProjectDir(DataClassJsonMixin):
         phase_name = self.get_phase_name_for_filename(phase)
         obj.to_csv(self.project_dir / Path(f"{phase_name}者_{phase_name}開始日list.csv"))
 
-    def write_performance_line_graph_per_date(  # noqa: ANN201
+    def write_performance_line_graph_per_date(
         self, obj: AbstractPhaseProductivityPerDate, phase: TaskPhase, user_id_list: Optional[List[str]] = None
-    ):
+    ) -> None:
         """
         指定したフェーズの開始日ごとの作業時間や生産性情報を、折れ線グラフとして出力します。
         """

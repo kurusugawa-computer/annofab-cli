@@ -28,6 +28,8 @@ from annofabcli.statistics.linegraph import (
     get_weekly_sum,
     write_bokeh_graph,
 )
+from annofabcli.statistics.visualization.dataframe.task import Task
+from annofabcli.statistics.visualization.model import ProductionVolumeColumn
 
 logger = logging.getLogger(__name__)
 
@@ -38,9 +40,12 @@ class AbstractPhaseProductivityPerDate(abc.ABC):
     PLOT_WIDTH = 1200
     PLOT_HEIGHT = 600
 
-    def __init__(self, df: pandas.DataFrame, phase: TaskPhase) -> None:
+    def __init__(
+        self, df: pandas.DataFrame, phase: TaskPhase, *, custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None
+    ) -> None:
         self.df = df
         self.phase = phase
+        self.custom_production_volume_list = custom_production_volume_list if custom_production_volume_list is not None else []
 
     def _validate_df_for_output(self, output_file: Path) -> bool:
         if len(self.df) == 0:
@@ -78,11 +83,11 @@ class AbstractPhaseProductivityPerDate(abc.ABC):
 
     @classmethod
     @abc.abstractmethod
-    def from_df_task(cls, df_task: pandas.DataFrame) -> AbstractPhaseProductivityPerDate:
+    def from_task(cls, df_task: pandas.DataFrame) -> AbstractPhaseProductivityPerDate:
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def to_csv(self, output_file: Path):  # noqa: ANN201
+    def to_csv(self, output_file: Path) -> None:
         raise NotImplementedError()
 
     @abc.abstractmethod
@@ -93,15 +98,26 @@ class AbstractPhaseProductivityPerDate(abc.ABC):
     def plot_annotation_metrics(self, output_file: Path, target_user_id_list: Optional[list[str]] = None) -> None:
         raise NotImplementedError()
 
+    @abc.abstractmethod
+    def plot_production_volume_metrics(
+        self,
+        production_volume_column: str,
+        production_volume_name: str,
+        output_file: Path,
+        *,
+        target_user_id_list: Optional[list[str]] = None,
+    ) -> None:
+        raise NotImplementedError()
+
 
 class AnnotatorProductivityPerDate(AbstractPhaseProductivityPerDate):
     """教師付開始日ごとの教師付者の生産性に関する情報"""
 
-    def __init__(self, df: pandas.DataFrame) -> None:
-        super().__init__(df, phase=TaskPhase.ANNOTATION)
+    def __init__(self, df: pandas.DataFrame, *, custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None) -> None:
+        super().__init__(df, phase=TaskPhase.ANNOTATION, custom_production_volume_list=custom_production_volume_list)
 
     @classmethod
-    def from_df_task(cls, df_task: pandas.DataFrame) -> AnnotatorProductivityPerDate:
+    def from_task(cls, task: Task) -> AnnotatorProductivityPerDate:
         """
         日毎、ユーザごとの情報を出力する。
 
@@ -111,7 +127,7 @@ class AnnotatorProductivityPerDate(AbstractPhaseProductivityPerDate):
         Returns:
 
         """
-        new_df = df_task.copy()
+        new_df = task.df.copy()
         new_df["first_annotation_started_date"] = new_df["first_annotation_started_datetime"].map(
             lambda e: datetime_to_date(e) if e is not None and isinstance(e, str) else None
         )
@@ -495,7 +511,7 @@ class InspectorProductivityPerDate(AbstractPhaseProductivityPerDate):
         super().__init__(df, phase=TaskPhase.INSPECTION)
 
     @classmethod
-    def from_df_task(cls, df_task: pandas.DataFrame) -> InspectorProductivityPerDate:
+    def from_task(cls, df_task: pandas.DataFrame) -> InspectorProductivityPerDate:
         """
         検査開始日ごとの受入者の生産性に関するDataFrameを生成する。
 
@@ -822,7 +838,7 @@ class AcceptorProductivityPerDate(AbstractPhaseProductivityPerDate):
         super().__init__(df, phase=TaskPhase.ACCEPTANCE)
 
     @classmethod
-    def from_df_task(cls, df_task: pandas.DataFrame) -> AcceptorProductivityPerDate:
+    def from_task(cls, df_task: pandas.DataFrame) -> AcceptorProductivityPerDate:
         """
         受入開始日ごとの受入者の生産性に関するDataFrameを生成する。
 

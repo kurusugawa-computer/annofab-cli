@@ -87,9 +87,9 @@ class WritingVisualizationFile:
     def write_line_graph(self, task: Task) -> None:
         """ユーザごとにプロットした折れ線グラフを出力する。"""
 
-        annotator_per_date_obj = AnnotatorProductivityPerDate.from_df_task(task.df)
-        inspector_per_date_obj = InspectorProductivityPerDate.from_df_task(task.df)
-        acceptor_per_date_obj = AcceptorProductivityPerDate.from_df_task(task.df)
+        annotator_per_date_obj = AnnotatorProductivityPerDate.from_task(task)
+        inspector_per_date_obj = InspectorProductivityPerDate.from_task(task)
+        acceptor_per_date_obj = AcceptorProductivityPerDate.from_task(task)
 
         self.output_project_dir.write_performance_per_started_date_csv(annotator_per_date_obj, phase=TaskPhase.ANNOTATION)
         self.output_project_dir.write_performance_per_started_date_csv(inspector_per_date_obj, phase=TaskPhase.INSPECTION)
