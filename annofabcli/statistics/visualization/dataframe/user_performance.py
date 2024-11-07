@@ -190,8 +190,11 @@ class UserPerformance:
         return cls(df, custom_production_volume_list=custom_production_volume_list)
 
     @classmethod
-    def empty(cls) -> UserPerformance:
+    def empty(cls, *, custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None) -> UserPerformance:
         """空のデータフレームを持つインスタンスを生成します。"""
+        production_volume_columns = ["input_data_count", "annotation_count"]
+        if custom_production_volume_list is not None:
+            production_volume_columns.extend([e.value for e in custom_production_volume_list])
 
         df_dtype: dict[tuple[str, str], str] = {
             ("account_id", ""): "string",
@@ -218,6 +221,7 @@ class UserPerformance:
             ("monitored_worktime_hour", "annotation"): "float64",
             ("monitored_worktime_hour", "sum"): "float64",
             ("task_count", "annotation"): "float64",
+            **{(col, "annotation"): "float64" for col in production_volume_columns},
             ("input_data_count", "annotation"): "float64",
             ("annotation_count", "annotation"): "float64",
             ("real_actual_worktime_hour", "sum"): "float64",
@@ -229,7 +233,7 @@ class UserPerformance:
         }
 
         df = pandas.DataFrame(columns=pandas.MultiIndex.from_tuples(df_dtype.keys())).astype(df_dtype)
-        return cls(df)
+        return cls(df, custom_production_volume_list=custom_production_volume_list)
 
     def actual_worktime_exists(self) -> bool:
         """実績作業時間が入力されているか否か"""

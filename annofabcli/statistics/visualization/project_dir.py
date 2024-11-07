@@ -25,6 +25,7 @@ from annofabcli.statistics.visualization.dataframe.whole_productivity_per_date i
 )
 from annofabcli.statistics.visualization.dataframe.worktime_per_date import WorktimePerDate
 from annofabcli.statistics.visualization.filtering_query import FilteringQuery
+from annofabcli.statistics.visualization.model import ProductionVolumeColumn
 
 logger = logging.getLogger(__name__)
 
@@ -76,27 +77,27 @@ class ProjectDir(DataClassJsonMixin):
         """
         return (self.project_dir / self.FILENAME_MERGE_INFO).exists()
 
-    def read_task_list(self) -> Task:
+    def read_task_list(self, *, custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None) -> Task:
         """`タスクlist.csv`を読み込む。"""
         file = self.project_dir / self.FILENAME_TASK_LIST
         if file.exists():
-            return Task.from_csv(file)
+            return Task.from_csv(file, custom_production_volume_list=custom_production_volume_list)
         else:
             logger.warning(f"'{file!s}'を読み込もうとしましたが、ファイルは存在しません。")
-            return Task.empty()
+            return Task.empty(custom_production_volume_list=custom_production_volume_list)
 
     def write_task_list(self, obj: Task) -> None:
         """`タスクlist.csv`を書き込む。"""
         obj.to_csv(self.project_dir / self.FILENAME_TASK_LIST)
 
-    def read_task_worktime_list(self) -> TaskWorktimeByPhaseUser:
+    def read_task_worktime_list(self, *, custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None) -> TaskWorktimeByPhaseUser:
         """`task-worktime-list.csv`を読み込む。"""
         file = self.project_dir / self.FILENAME_TASK_WORKTIME_LIST
         if file.exists():
-            return TaskWorktimeByPhaseUser.from_csv(file)
+            return TaskWorktimeByPhaseUser.from_csv(file, custom_production_volume_list=custom_production_volume_list)
         else:
             logger.warning(f"'{file!s}'を読み込もうとしましたが、ファイルは存在しません。")
-            return TaskWorktimeByPhaseUser.empty()
+            return TaskWorktimeByPhaseUser.empty(custom_production_volume_list=custom_production_volume_list)
 
     def write_task_worktime_list(self, obj: TaskWorktimeByPhaseUser) -> None:
         """`task-worktime-list.csv`を書き込む。"""
@@ -195,11 +196,11 @@ class ProjectDir(DataClassJsonMixin):
                 metadata=self.metadata,
             )
 
-    def read_whole_performance(self) -> WholePerformance:
+    def read_whole_performance(self, *, custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None) -> WholePerformance:
         """`全体の生産性と品質.csv`を読み込む。"""
         file = self.project_dir / self.FILENAME_WHOLE_PERFORMANCE
         if file.exists():
-            return WholePerformance.from_csv(file)
+            return WholePerformance.from_csv(file, custom_production_volume_list=custom_production_volume_list)
         else:
             logger.warning(f"'{file!s}'を読み込もうとしましたが、ファイルは存在しません。")
             return WholePerformance.empty()
@@ -249,16 +250,16 @@ class ProjectDir(DataClassJsonMixin):
         """
         obj.plot(self.project_dir / "line-graph/折れ線-横軸_教師付開始日-全体.html", metadata=self.metadata)
 
-    def read_user_performance(self) -> UserPerformance:
+    def read_user_performance(self, *, custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None) -> UserPerformance:
         """
         メンバごとの生産性と品質の情報を読み込みます。
         """
         file = self.project_dir / self.FILENAME_USER_PERFORMANCE
         if file.exists():
-            return UserPerformance.from_csv(file)
+            return UserPerformance.from_csv(file, custom_production_volume_list=custom_production_volume_list)
         else:
             logger.warning(f"'{file!s}'を読み込もうとしましたが、ファイルは存在しません。")
-            return UserPerformance.empty()
+            return UserPerformance.empty(custom_production_volume_list=custom_production_volume_list)
 
     def write_user_performance(self, user_performance: UserPerformance) -> None:
         """
