@@ -131,8 +131,13 @@ class WholePerformance:
         return cls(df_all.iloc[0], custom_production_volume_list=task_worktime_by_phase_user.custom_production_volume_list)
 
     @classmethod
-    def empty(cls) -> WholePerformance:
+    def empty(cls, *, custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None) -> WholePerformance:
         """空のデータフレームを持つインスタンスを生成します。"""
+
+        production_volume_columns = ["input_data_count", "annotation_count"]
+        if custom_production_volume_list is not None:
+            production_volume_columns.extend([e.value for e in custom_production_volume_list])
+
         phase = TaskPhase.ANNOTATION.value
 
         worktime_columns = [
@@ -150,8 +155,7 @@ class WholePerformance:
 
         count_columns = [
             ("task_count", phase),
-            ("input_data_count", phase),
-            ("annotation_count", phase),
+            *[(col, phase) for col in production_volume_columns],
             ("pointed_out_inspection_comment_count", phase),
             ("rejected_count", phase),
             # 常に全フェーズを出力する
@@ -163,20 +167,15 @@ class WholePerformance:
         ratio_columns = [
             ("monitored_worktime_ratio", phase),
             ("real_monitored_worktime_hour/real_actual_worktime_hour", "sum"),
-            ("monitored_worktime_hour/input_data_count", phase),
-            ("actual_worktime_hour/input_data_count", phase),
-            ("monitored_worktime_hour/annotation_count", phase),
-            ("actual_worktime_hour/annotation_count", phase),
-            ("pointed_out_inspection_comment_count/input_data_count", phase),
-            ("pointed_out_inspection_comment_count/annotation_count", phase),
+            *[(f"monitored_worktime_hour/{col}", phase) for col in production_volume_columns],
+            *[(f"actual_worktime_hour/{col}", phase) for col in production_volume_columns],
+            *[(f"pointed_out_inspection_comment_count/{col}", phase) for col in production_volume_columns],
             ("rejected_count/task_count", phase),
         ]
 
         stdev_columns = [
-            ("stdev__monitored_worktime_hour/input_data_count", phase),
-            ("stdev__actual_worktime_hour/input_data_count", phase),
-            ("stdev__monitored_worktime_hour/annotation_count", phase),
-            ("stdev__actual_worktime_hour/annotation_count", phase),
+            *[(f"stdev__monitored_worktime_hour/{col}", phase) for col in production_volume_columns],
+            *[(f"stdev__actual_worktime_hour/{col}", phase) for col in production_volume_columns],
         ]
 
         date_columns = [
@@ -188,10 +187,10 @@ class WholePerformance:
         data: dict[tuple[str, str], float] = {key: 0 for key in worktime_columns + count_columns}
         data.update({key: numpy.nan for key in ratio_columns + stdev_columns + date_columns})
 
-        return cls(pandas.Series(data))
+        return cls(pandas.Series(data), custom_production_volume_list=custom_production_volume_list)
 
     @classmethod
-    def from_csv(cls, csv_file: Path) -> WholePerformance:
+    def from_csv(cls, csv_file: Path, *, custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None) -> WholePerformance:
         """CSVファイルからインスタンスを生成します。"""
         df = pandas.read_csv(str(csv_file), header=None, index_col=[0, 1])
         # 3列目を値としたpandas.Series を取得する。
@@ -213,7 +212,7 @@ class WholePerformance:
 
             data[key2] = value2
 
-        return cls(pandas.Series(data))
+        return cls(pandas.Series(data), custom_production_volume_list=custom_production_volume_list)
 
     def to_csv(self, output_file: Path) -> None:
         """

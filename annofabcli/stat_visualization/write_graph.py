@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import argparse
 import logging
 from pathlib import Path
@@ -6,7 +8,7 @@ from typing import List, Optional
 from annofabapi.models import TaskPhase
 
 import annofabcli
-from annofabcli.common.cli import get_list_from_args
+from annofabcli.common.cli import get_json_from_args, get_list_from_args
 from annofabcli.statistics.visualization.dataframe.cumulative_productivity import (
     AcceptorCumulativeProductivity,
     AnnotatorCumulativeProductivity,
@@ -18,6 +20,7 @@ from annofabcli.statistics.visualization.dataframe.productivity_per_date import 
     InspectorProductivityPerDate,
 )
 from annofabcli.statistics.visualization.dataframe.task import Task
+from annofabcli.statistics.visualization.model import ProductionVolumeColumn
 from annofabcli.statistics.visualization.project_dir import ProjectDir
 
 logger = logging.getLogger(__name__)
@@ -28,12 +31,15 @@ class WritingGraph:
         self,
         project_dir: ProjectDir,
         output_project_dir: ProjectDir,
+        *,
         user_id_list: Optional[List[str]] = None,
-        minimal_output: bool = False,  # noqa: FBT001, FBT002
+        custom_production_volume_list: Optional[List[ProductionVolumeColumn]] = None,
+        minimal_output: bool = False,
     ) -> None:
         self.project_dir = project_dir
         self.output_project_dir = output_project_dir
         self.user_id_list = user_id_list
+        self.custom_production_volume_list = custom_production_volume_list
         self.minimal_output = minimal_output
 
     def write_line_graph(self, task: Task) -> None:
@@ -76,12 +82,14 @@ class WritingGraph:
     def main(self) -> None:
         try:
             # メンバのパフォーマンスを散布図で出力する
-            self.output_project_dir.write_user_performance_scatter_plot(self.project_dir.read_user_performance())
+            self.output_project_dir.write_user_performance_scatter_plot(
+                self.project_dir.read_user_performance(custom_production_volume_list=self.custom_production_volume_list)
+            )
         except Exception:
             logger.warning("'メンバごとの生産性と品質.csv'から生成できるグラフの出力に失敗しました。", exc_info=True)
 
         try:
-            task = self.project_dir.read_task_list()
+            task = self.project_dir.read_task_list(custom_production_volume_list=self.custom_production_volume_list)
             # ヒストグラムを出力
             self.output_project_dir.write_task_histogram(task)
             # ユーザごとにプロットした折れ線グラフを出力
@@ -90,13 +98,17 @@ class WritingGraph:
             logger.warning("'タスクlist.csv'から生成できるグラフの出力に失敗しました。", exc_info=True)
 
         try:
-            self.output_project_dir.write_whole_productivity_line_graph_per_date(self.project_dir.read_whole_productivity_per_date())
+            self.output_project_dir.write_whole_productivity_line_graph_per_date(
+                self.project_dir.read_whole_productivity_per_date(custom_production_volume_list=self.custom_production_volume_list)
+            )
         except Exception:
             logger.warning("'日毎の生産量と生産性.csv'から生成できるグラフの出力に失敗しました。", exc_info=True)
 
         try:
             self.output_project_dir.write_whole_productivity_line_graph_per_annotation_started_date(
-                self.project_dir.read_whole_productivity_per_first_annotation_started_date()
+                self.project_dir.read_whole_productivity_per_first_annotation_started_date(
+                    custom_production_volume_list=self.custom_production_volume_list
+                )
             )
         except Exception:
             logger.warning("'教師付者_教師付開始日list.csv'から生成できるグラフの出力に失敗しました。", exc_info=True)
@@ -107,13 +119,34 @@ class WritingGraph:
             logger.warning("'ユーザ_日付list-作業時間.csv'から生成できるグラフの出力に失敗しました。", exc_info=True)
 
 
+def create_custom_production_volume_list(cli_value: str) -> list[ProductionVolumeColumn]:
+    """
+    コマンドラインから渡された文字列を元に、独自の生産量を表す列情報を生成します。
+    """
+    dict_data = get_json_from_args(cli_value)
+
+    column_list = dict_data["column_list"]
+    custom_production_volume_list = [ProductionVolumeColumn(column["value"], column["name"]) for column in column_list]
+
+    return custom_production_volume_list
+
+
 def main(args: argparse.Namespace) -> None:
     user_id_list = get_list_from_args(args.user_id) if args.user_id is not None else None
+
+    custom_production_volume_list = (
+        create_custom_production_volume_list(args.custom_production_volume) if args.custom_production_volume is not None else None
+    )
+
+    input_project_dir = ProjectDir(args.dir)
+    project_info = input_project_dir.read_project_info()
+    output_project_dir = ProjectDir(args.output_dir, metadata=project_info.to_dict(encode_json=True))
     main_obj = WritingGraph(
-        project_dir=ProjectDir(args.dir),
-        output_project_dir=ProjectDir(args.output_dir),
+        project_dir=input_project_dir,
+        output_project_dir=output_project_dir,
         minimal_output=args.minimal,
         user_id_list=user_id_list,
+        custom_production_volume_list=custom_production_volume_list,
     )
     main_obj.main()
 
@@ -140,6 +173,12 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--minimal",
         action="store_true",
         help="必要最小限のファイルを出力します。",
+    )
+
+    parser.add_argument(
+        "--custom_production_volume",
+        type=str,
+        help=("プロジェクト独自の生産量の指標をJSON形式で指定します。"),
     )
 
     parser.add_argument("-o", "--output_dir", type=Path, required=True, help="出力先ディレクトリ。配下にプロジェクトディレクトリが生成されます。")
