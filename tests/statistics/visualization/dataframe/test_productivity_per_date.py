@@ -21,7 +21,7 @@ class TestAnnotatorProductivityPerDate:
     @classmethod
     def setup_class(cls):
         task = Task.from_csv(
-            str(data_dir / "task.csv"),
+            data_dir / "task.csv",
             custom_production_volume_list=[
                 ProductionVolumeColumn("custom_production_volume1", "custom_生産量1"),
                 ProductionVolumeColumn("custom_production_volume2", "custom_生産量2"),
@@ -45,7 +45,7 @@ class TestInspectorProductivityPerDate:
     @classmethod
     def setup_class(cls):
         task = Task.from_csv(
-            str(data_dir / "task.csv"),
+            data_dir / "task.csv",
             custom_production_volume_list=[
                 ProductionVolumeColumn("custom_production_volume1", "custom_生産量1"),
                 ProductionVolumeColumn("custom_production_volume2", "custom_生産量2"),
@@ -70,7 +70,7 @@ class TestAcceptorProductivityPerDate:
     @classmethod
     def setup_class(cls):
         task = Task.from_csv(
-            str(data_dir / "task.csv"),
+            data_dir / "task.csv",
             custom_production_volume_list=[
                 ProductionVolumeColumn("custom_production_volume1", "custom_生産量1"),
                 ProductionVolumeColumn("custom_production_volume2", "custom_生産量2"),
