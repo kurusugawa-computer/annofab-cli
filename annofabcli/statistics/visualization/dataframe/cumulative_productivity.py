@@ -169,10 +169,6 @@ class AbstractPhaseCumulativeProductivity(abc.ABC):
     ) -> None:
         raise NotImplementedError()
 
-    @abc.abstractmethod
-    def plot_task_metrics(self, output_file: Path, *, target_user_id_list: Optional[list[str]] = None) -> None:
-        raise NotImplementedError()
-
 
 class AnnotatorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
     def __init__(self, df: pandas.DataFrame, *, custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None) -> None:
@@ -293,70 +289,6 @@ class AnnotatorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
         ]
         self._plot(line_graph_list, columns_list, user_id_list, output_file)
 
-    def plot_task_metrics(  # noqa: ANN201
-        self,
-        output_file: Path,
-        *,
-        target_user_id_list: Optional[list[str]] = None,
-    ):
-        """
-        教師付者の累積値をタスク単位でプロットする。
-
-        """
-
-        if not self._validate_df_for_output(output_file):
-            return
-
-        logger.debug(f"{output_file} を出力します。")
-
-        if target_user_id_list is not None:  # noqa: SIM108
-            user_id_list = target_user_id_list
-        else:
-            user_id_list = self.default_user_id_list
-
-        user_id_list = get_plotted_user_id_list(user_id_list)
-
-        x_axis_label = "タスク数"
-        tooltip_columns = [
-            "task_id",
-            "first_annotation_user_id",
-            "first_annotation_username",
-            "first_annotation_started_date",
-            "annotation_worktime_hour",
-            "number_of_rejections_by_inspection",
-            "number_of_rejections_by_acceptance",
-        ]
-
-        line_graph_list = [
-            LineGraph(
-                title="累積のタスク数と教師付作業時間",
-                y_axis_label="教師付作業時間[時間]",
-                tooltip_columns=tooltip_columns,
-                x_axis_label=x_axis_label,
-            ),
-            LineGraph(
-                title="累積のタスク数と差し戻し回数(検査フェーズ)",
-                y_axis_label="差し戻し回数(検査フェーズ)",
-                tooltip_columns=tooltip_columns,
-                x_axis_label=x_axis_label,
-            ),
-            LineGraph(
-                title="累積のタスク数と差し戻し回数(受入フェーズ)",
-                y_axis_label="差し戻し回数(受入フェーズ)",
-                tooltip_columns=tooltip_columns,
-                x_axis_label=x_axis_label,
-            ),
-        ]
-
-        x_column = "cumulative_task_count"
-        columns_list = [
-            (x_column, "cumulative_annotation_worktime_hour"),
-            (x_column, "cumulative_number_of_rejections_by_inspection"),
-            (x_column, "cumulative_number_of_rejections_by_acceptance"),
-        ]
-
-        self._plot(line_graph_list, columns_list, user_id_list, output_file)
-
 
 class InspectorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
     def __init__(self, df: pandas.DataFrame, *, custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None) -> None:
@@ -464,54 +396,6 @@ class InspectorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
 
         self._plot(line_graph_list, columns_list, user_id_list, output_file)
 
-    def plot_task_metrics(  # noqa: ANN201
-        self,
-        output_file: Path,
-        *,
-        target_user_id_list: Optional[list[str]] = None,
-    ):
-        """
-        検査者者の累積値をタスク単位でプロットする。
-
-        """
-
-        if not self._validate_df_for_output(output_file):
-            return
-
-        logger.debug(f"{output_file} を出力します。")
-
-        if target_user_id_list is not None:  # noqa: SIM108
-            user_id_list = target_user_id_list
-        else:
-            user_id_list = self.default_user_id_list
-
-        user_id_list = get_plotted_user_id_list(user_id_list)
-
-        x_axis_label = "タスク数"
-
-        line_graph_list = [
-            LineGraph(
-                title="累積のタスク数と検査作業時間",
-                y_axis_label="検査作業時間[時間]",
-                tooltip_columns=[
-                    "task_id",
-                    "first_inspection_user_id",
-                    "first_inspection_username",
-                    "first_inspection_started_date",
-                    "inspection_worktime_hour",
-                    "inspection_comment_count",
-                ],
-                x_axis_label=x_axis_label,
-            ),
-        ]
-
-        x_column = "cumulative_task_count"
-        columns_list = [
-            (x_column, "cumulative_inspection_worktime_hour"),
-        ]
-
-        self._plot(line_graph_list, columns_list, user_id_list, output_file)
-
 
 class AcceptorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
     def __init__(self, df: pandas.DataFrame, *, custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None) -> None:
@@ -606,52 +490,6 @@ class AcceptorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
         ]
 
         x_column = f"cumulative_{production_volume_column}"
-        columns_list = [
-            (x_column, "cumulative_acceptance_worktime_hour"),
-        ]
-
-        self._plot(line_graph_list, columns_list, user_id_list, output_file)
-
-    def plot_task_metrics(  # noqa: ANN201
-        self,
-        output_file: Path,
-        *,
-        target_user_id_list: Optional[list[str]] = None,
-    ):
-        """
-        受入者の累積値をタスク単位でプロットする。
-        """
-        if not self._validate_df_for_output(output_file):
-            return
-
-        logger.debug(f"{output_file} を出力します。")
-
-        if target_user_id_list is not None:  # noqa: SIM108
-            user_id_list = target_user_id_list
-        else:
-            user_id_list = self.default_user_id_list
-
-        user_id_list = get_plotted_user_id_list(user_id_list)
-
-        x_axis_label = "タスク数"
-
-        line_graph_list = [
-            LineGraph(
-                title="累積のタスク数と受入作業時間",
-                y_axis_label="受入作業時間[時間]",
-                tooltip_columns=[
-                    "task_id",
-                    "first_acceptance_user_id",
-                    "first_acceptance_username",
-                    "first_acceptance_started_date",
-                    "acceptance_worktime_hour",
-                    "inspection_comment_count",
-                ],
-                x_axis_label=x_axis_label,
-            ),
-        ]
-
-        x_column = "cumulative_task_count"
         columns_list = [
             (x_column, "cumulative_acceptance_worktime_hour"),
         ]
