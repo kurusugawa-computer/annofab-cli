@@ -185,7 +185,6 @@ class AnnotatorProductivityPerDate(AbstractPhaseProductivityPerDate):
                     "inspection_comment_count",
                     "task_count",
                     *self.production_volume_columns,
-                    "inspection_comment",
                 ]
             },
             inplace=True,
