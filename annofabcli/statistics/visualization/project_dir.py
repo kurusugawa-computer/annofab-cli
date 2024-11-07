@@ -373,7 +373,9 @@ class ProjectDir(DataClassJsonMixin):
 
     def write_worktime_line_graph(self, obj: WorktimePerDate, user_id_list: Optional[list[str]] = None) -> None:
         """横軸が日付、縦軸がユーザごとの作業時間である折れ線グラフを出力します。"""
-        obj.plot_cumulatively(self.project_dir / "line-graph/累積折れ線-横軸_日-縦軸_作業時間.html", user_id_list, metadata=self.metadata)
+        obj.plot_cumulatively(
+            self.project_dir / "line-graph/累積折れ線-横軸_日-縦軸_作業時間.html", target_user_id_list=user_id_list, metadata=self.metadata
+        )
 
     def read_project_info(self) -> ProjectInfo:
         """
