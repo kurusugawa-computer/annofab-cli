@@ -200,6 +200,10 @@ def merge_visualization_dir(  # pylint: disable=too-many-statements
     minimal_output: bool = False,
 ) -> None:
     merging_obj = MergingVisualizationFile(project_dir_list, custom_production_volume_list=custom_production_volume_list)
+
+    merging_info = merging_obj.create_merging_info()
+    output_project_dir.metadata = merging_info.to_dict(encode_json=True)
+
     # 基本となるCSVファイルを読み込みマージする
     task_worktime_by_phase_user = merging_obj.merge_task_worktime_by_phase_user()
     task = merging_obj.merge_task_list()
@@ -222,7 +226,6 @@ def merge_visualization_dir(  # pylint: disable=too-many-statements
     writing_obj.write_performance_per_first_annotation_started_date(task)
 
     # info.jsonを出力
-    merging_info = merging_obj.create_merging_info()
     writing_obj.write_merge_info(merging_info)
 
 
