@@ -16,6 +16,7 @@ import bokeh.palettes
 import pandas
 from annofabapi.models import TaskStatus
 from bokeh.models import DataRange1d
+from bokeh.models.ui import UIElement
 from bokeh.models.widgets.markups import Div
 from bokeh.plotting import ColumnDataSource
 from dateutil.parser import parse
@@ -505,7 +506,7 @@ class WholeProductivityPerCompletedDate:
             line_graph.process_after_adding_glyphs()
 
         div_element = self._create_div_element()
-        element_list = [div_element] + [e.figure for e in line_graph_list]
+        element_list:list[UIElement] = [div_element] + [e.figure for e in line_graph_list]
         if metadata is not None:
             element_list.insert(0, create_pretext_from_metadata(metadata))
 
@@ -727,7 +728,7 @@ class WholeProductivityPerCompletedDate:
 
         div_element = self._create_div_element()
 
-        element_list = [div_element] + [e.figure for e in line_graph_list]
+        element_list:list[UIElement] = [div_element] + [e.figure for e in line_graph_list]
         if metadata is not None:
             element_list.insert(0, create_pretext_from_metadata(metadata))
 
@@ -1132,7 +1133,7 @@ class WholeProductivityPerFirstAnnotationStartedDate:
         for line_graph in line_graph_list:
             line_graph.process_after_adding_glyphs()
 
-        element_list = [create_div_element()] + [e.figure for e in line_graph_list]
+        element_list:list[UIElement] = [create_div_element()] + [e.figure for e in line_graph_list]
         if metadata is not None:
             element_list.insert(0, create_pretext_from_metadata(metadata))
 
