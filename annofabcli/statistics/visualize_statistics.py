@@ -296,6 +296,7 @@ class VisualizingStatisticsMain:
             project_title=project_title,
             input_data_type=project_info["input_data_type"],
             measurement_datetime=annofabapi.utils.str_now(),
+            task_completion_criteria=self.task_completion_criteria,
             query=self.filtering_query,
         )
         return project_summary

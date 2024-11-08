@@ -178,7 +178,7 @@ class MergingVisualizationFile:
         merged_obj = TaskWorktimeByPhaseUser.merge(*tmp_list, custom_production_volume_list=self.custom_production_volume_list)
         return merged_obj
 
-    def create_merging_info(self) -> MergingInfo:
+    def create_merging_info(self, task_completion_criteria: TaskCompletionCriteria) -> MergingInfo:
         """
         `project_info.json`の内容から、どのようにマージしたかを示す情報を作成する。
         """
@@ -188,7 +188,9 @@ class MergingVisualizationFile:
             project_info = project_dir.read_project_info()
             project_info_list.append(project_info)
 
-        merge_info = MergingInfo(target_dir_list=target_dir_list, project_info_list=project_info_list)
+        merge_info = MergingInfo(
+            target_dir_list=target_dir_list, project_info_list=project_info_list, task_completion_criteria=task_completion_criteria
+        )
         return merge_info
 
 
@@ -203,7 +205,7 @@ def merge_visualization_dir(  # pylint: disable=too-many-statements
 ) -> None:
     merging_obj = MergingVisualizationFile(project_dir_list, custom_production_volume_list=custom_production_volume_list)
 
-    merging_info = merging_obj.create_merging_info()
+    merging_info = merging_obj.create_merging_info(task_completion_criteria)
     output_project_dir.metadata = merging_info.to_dict(encode_json=True)
 
     # 基本となるCSVファイルを読み込みマージする
