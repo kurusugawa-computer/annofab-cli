@@ -26,7 +26,7 @@ def test__create_threshold_infos_per_project():
 
 def test__create_productivity_indicator_by_directory():
     actual = create_productivity_indicator_by_directory('{"dirname": "monitored_worktime_hour/annotation_count"}')
-    assert actual == {"dirname": ProductivityIndicator.MONITORED_WORKTIME_HOUR_PER_ANNOTATION_COUNT}
+    assert actual == {"dirname": ProductivityIndicator("monitored_worktime_hour/annotation_count")}
 
 
 def test__create_quality_indicator_by_directory():
@@ -70,14 +70,14 @@ class TestCollectingPerformanceInfo:
         assert df_actual.columns[3] == ("project1", "actual_worktime_hour/annotation_count__annotation")
         assert df_actual.iloc[0][("project1", "actual_worktime_hour/annotation_count__annotation")] == approx(0.00070, rel=1e-2)
 
-        obj2 = CollectingPerformanceInfo(productivity_indicator=ProductivityIndicator.MONITORED_WORKTIME_HOUR_PER_ANNOTATION_COUNT)
+        obj2 = CollectingPerformanceInfo(productivity_indicator=ProductivityIndicator("monitored_worktime_hour/annotation_count"))
         df_actual2 = obj2.join_annotation_productivity(df=df_user, df_performance=user_performance.df, project_title="project1")
         assert df_actual2.columns[3] == ("project1", "monitored_worktime_hour/annotation_count__annotation")
 
         # productivity_indicator_by_directoryが優先されることを確認
         obj3 = CollectingPerformanceInfo(
-            productivity_indicator=ProductivityIndicator.ACTUAL_WORKTIME_HOUR_PER_ANNOTATION_COUNT,
-            productivity_indicator_by_directory={"project1": ProductivityIndicator.MONITORED_WORKTIME_HOUR_PER_ANNOTATION_COUNT},
+            productivity_indicator=ProductivityIndicator("actual_worktime_hour/annotation_count"),
+            productivity_indicator_by_directory={"project1": ProductivityIndicator("monitored_worktime_hour/annotation_count")},
         )
         df_actual3 = obj3.join_annotation_productivity(df=df_user, df_performance=user_performance.df, project_title="project1")
         assert df_actual3.columns[3] == ("project1", "monitored_worktime_hour/annotation_count__annotation")
@@ -88,14 +88,14 @@ class TestCollectingPerformanceInfo:
         assert df_actual.columns[3] == ("project1", "actual_worktime_hour/annotation_count__acceptance")
         assert df_actual.iloc[1][("project1", "actual_worktime_hour/annotation_count__acceptance")] == approx(0.000145, rel=1e-2)
 
-        obj2 = CollectingPerformanceInfo(productivity_indicator=ProductivityIndicator.MONITORED_WORKTIME_HOUR_PER_ANNOTATION_COUNT)
+        obj2 = CollectingPerformanceInfo(productivity_indicator=ProductivityIndicator("monitored_worktime_hour/annotation_count"))
         df_actual2 = obj2.join_inspection_acceptance_productivity(df=df_user, df_performance=user_performance.df, project_title="project1")
         assert df_actual2.columns[3] == ("project1", "monitored_worktime_hour/annotation_count__acceptance")
 
         # productivity_indicator_by_directoryが優先されることを確認
         obj3 = CollectingPerformanceInfo(
-            productivity_indicator=ProductivityIndicator.ACTUAL_WORKTIME_HOUR_PER_ANNOTATION_COUNT,
-            productivity_indicator_by_directory={"project1": ProductivityIndicator.MONITORED_WORKTIME_HOUR_PER_ANNOTATION_COUNT},
+            productivity_indicator=ProductivityIndicator("actual_worktime_hour/annotation_count"),
+            productivity_indicator_by_directory={"project1": ProductivityIndicator("monitored_worktime_hour/annotation_count")},
         )
         df_actual3 = obj3.join_inspection_acceptance_productivity(df=df_user, df_performance=user_performance.df, project_title="project1")
         assert df_actual3.columns[3] == ("project1", "monitored_worktime_hour/annotation_count__acceptance")

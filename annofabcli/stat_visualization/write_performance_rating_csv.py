@@ -66,24 +66,27 @@ class WorktimeType(Enum):
     MONITORED_WORKTIME_HOUR = "monitored_worktime_hour"
     """計測作業時間"""
 
-
-class ProductivityIndicator(Enum):
+@dataclass(frozen=True)
+class ProductivityIndicator:
     """
     生産性の指標
     """
-
-    MONITORED_WORKTIME_HOUR_PER_INPUT_DATA_COUNT = "monitored_worktime_hour/input_data_count"
-    ACTUAL_WORKTIME_HOUR_PER_INPUT_DATA_COUNT = "actual_worktime_hour/input_data_count"
-    MONITORED_WORKTIME_HOUR_PER_ANNOTATION_COUNT = "monitored_worktime_hour/annotation_count"
-    ACTUAL_WORKTIME_HOUR_PER_ANNOTATION_COUNT = "actual_worktime_hour/annotation_count"
+    column: str
 
     @property
     def worktime_type(self) -> WorktimeType:
         """
         作業時間の種類
         """
-        denominator = self.value.split("/")[0]
+        denominator = self.column.split("/")[0]
         return WorktimeType(denominator)
+
+    @property
+    def production_volume(self) -> str:
+        """
+        生産量（`annotation_count`など）を表す文字列
+        """
+        return self.column.split("/")[1]
 
 
 class QualityIndicator(Enum):
@@ -145,15 +148,19 @@ class CollectingPerformanceInfo:
     def __init__(
         self,
         *,
-        productivity_indicator: ProductivityIndicator = ProductivityIndicator.ACTUAL_WORKTIME_HOUR_PER_ANNOTATION_COUNT,
-        quality_indicator: QualityIndicator = QualityIndicator.POINTED_OUT_INSPECTION_COMMENT_COUNT_PER_ANNOTATION_COUNT,
+        productivity_indicator: Optional[ProductivityIndicator] = None,
+        quality_indicator: Optional[QualityIndicator] = None,
         threshold_info: Optional[ThresholdInfo] = None,
         productivity_indicator_by_directory: Optional[ProductivityIndicatorByDirectory] = None,
         quality_indicator_by_directory: Optional[QualityIndicatorByDirectory] = None,
         threshold_infos_by_directory: Optional[ThresholdInfoSettings] = None,
     ) -> None:
-        self.quality_indicator = quality_indicator
-        self.productivity_indicator = productivity_indicator
+        self.quality_indicator = (
+            quality_indicator if quality_indicator is not None else QualityIndicator.POINTED_OUT_INSPECTION_COMMENT_COUNT_PER_ANNOTATION_COUNT
+        )
+        self.productivity_indicator = (
+            productivity_indicator if productivity_indicator is not None else ProductivityIndicator("actual_worktime_hour/annotation_count")
+        )
         self.threshold_info = threshold_info if threshold_info is not None else ThresholdInfo()
         self.threshold_infos_by_directory = threshold_infos_by_directory if threshold_infos_by_directory is not None else {}
         self.productivity_indicator_by_directory = productivity_indicator_by_directory if productivity_indicator_by_directory is not None else {}
@@ -207,8 +214,8 @@ class CollectingPerformanceInfo:
         df_joined = self.filter_df_with_threshold(df_joined, phase, project_title=project_title)
 
         productivity_indicator = self.productivity_indicator_by_directory.get(project_title, self.productivity_indicator)
-        df_tmp = df_joined[[(productivity_indicator.value, phase.value)]]
-        df_tmp.columns = pandas.MultiIndex.from_tuples([(project_title, f"{productivity_indicator.value}__{phase.value}")])
+        df_tmp = df_joined[[(productivity_indicator.column, phase.value)]]
+        df_tmp.columns = pandas.MultiIndex.from_tuples([(project_title, f"{productivity_indicator.column}__{phase.value}")])
         return df.join(df_tmp)
 
     def join_inspection_acceptance_productivity(self, df: pandas.DataFrame, df_performance: pandas.DataFrame, project_title: str) -> pandas.DataFrame:
@@ -223,29 +230,29 @@ class CollectingPerformanceInfo:
 
         productivity_indicator = self.productivity_indicator_by_directory.get(project_title, self.productivity_indicator)
 
-        def _join_inspection():  # noqa: ANN202
+        def _join_inspection() -> pandas.DataFrame:
             phase = TaskPhase.INSPECTION
-            if (self.productivity_indicator.value, phase.value) not in df_performance.columns:
+            if (self.productivity_indicator.column, phase.value) not in df_performance.columns:
                 return df
 
             df_joined = df_performance
             df_joined = self.filter_df_with_threshold(df_joined, phase, project_title=project_title)
 
-            df_tmp = df_joined[[(productivity_indicator.value, phase.value)]]
-            df_tmp.columns = pandas.MultiIndex.from_tuples([(project_title, f"{productivity_indicator.value}__{phase.value}")])
+            df_tmp = df_joined[[(productivity_indicator.column, phase.value)]]
+            df_tmp.columns = pandas.MultiIndex.from_tuples([(project_title, f"{productivity_indicator.column}__{phase.value}")])
 
             return df.join(df_tmp)
 
-        def _join_acceptance():  # noqa: ANN202
+        def _join_acceptance() -> pandas.DataFrame:
             phase = TaskPhase.ACCEPTANCE
-            if (productivity_indicator.value, phase.value) not in df_performance.columns:
+            if (productivity_indicator.column, phase.value) not in df_performance.columns:
                 return df
 
             df_joined = df_performance
             df_joined = self.filter_df_with_threshold(df_joined, phase, project_title=project_title)
 
-            df_tmp = df_joined[[(productivity_indicator.value, phase.value)]]
-            df_tmp.columns = pandas.MultiIndex.from_tuples([(project_title, f"{productivity_indicator.value}__{phase.value}")])
+            df_tmp = df_joined[[(productivity_indicator.column, phase.value)]]
+            df_tmp.columns = pandas.MultiIndex.from_tuples([(project_title, f"{productivity_indicator.column}__{phase.value}")])
 
             return df.join(df_tmp)
 
@@ -553,7 +560,9 @@ class WritePerformanceRatingCsv(CommandLineWithoutWebapi):
         user_id_list = get_list_from_args(args.user_id) if args.user_id is not None else None
         df_user = create_user_df(target_dir)
         custom_production_volume_by_directory = (
-            create_custom_production_volume_by_directory(args.custom_production_volume_by_directory) if args.custom_production_volume_by_directory is not None else None
+            create_custom_production_volume_by_directory(args.custom_production_volume_by_directory)
+            if args.custom_production_volume_by_directory is not None
+            else None
         )
         result = CollectingPerformanceInfo(
             productivity_indicator=ProductivityIndicator(args.productivity_indicator),
@@ -614,8 +623,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--productivity_indicator",
         type=str,
-        choices=[e.value for e in ProductivityIndicator],
-        default=ProductivityIndicator.ACTUAL_WORKTIME_HOUR_PER_ANNOTATION_COUNT.value,
+        default="actual_worktime_hour/annotation_count",
         help="生産性の指標",
     )
 
