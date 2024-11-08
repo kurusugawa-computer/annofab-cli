@@ -220,7 +220,9 @@ class WriteCsvGraph:
 
         self.project_dir.write_whole_productivity_per_date(productivity_per_completed_date_obj)
 
-        productivity_per_started_date_obj = WholeProductivityPerFirstAnnotationStartedDate.from_task(task, task_completion_criteria=self.task_completion_criteria)
+        productivity_per_started_date_obj = WholeProductivityPerFirstAnnotationStartedDate.from_task(
+            task, task_completion_criteria=self.task_completion_criteria
+        )
         self.project_dir.write_whole_productivity_per_first_annotation_started_date(productivity_per_started_date_obj)
 
         if not self.output_only_text:
@@ -630,7 +632,9 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         type=str,
         choices=[e.value for e in TaskCompletionCriteria],
         default=TaskCompletionCriteria.ACCEPTANCE_COMPLETED.value,
-        help="タスクの完了条件を指定します。",
+        help="タスクの完了条件を指定します。\n"
+        "* ``acceptance_completed``: タスクが受入フェーズの完了状態であれば「タスクの完了」とみなす\n"
+        "* ``acceptance_reached``: タスクが受入フェーズに到達したら「タスクの完了」とみなす\n",
     )
 
     parser.add_argument("-o", "--output_dir", type=Path, required=True, help="出力先ディレクトリのパスを指定してください。")
