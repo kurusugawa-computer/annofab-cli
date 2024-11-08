@@ -497,7 +497,12 @@ class VisualizeStatistics(CommandLine):
 
             if len(output_project_dir_list) > 0:
                 project_dir_list = [ProjectDir(e) for e in output_project_dir_list]
-                project_performance = ProjectPerformance.from_project_dirs(project_dir_list)
+                custom_production_volume_list = (
+                    custom_production_volume.custom_production_volume_list if custom_production_volume is not None else None
+                )
+                project_performance = ProjectPerformance.from_project_dirs(
+                    project_dir_list, custom_production_volume_list=custom_production_volume_list
+                )
                 project_performance.to_csv(root_output_dir / "プロジェクトごとの生産性と品質.csv")
 
                 project_actual_worktime = ProjectWorktimePerMonth.from_project_dirs(project_dir_list, WorktimeColumn.ACTUAL_WORKTIME_HOUR)
