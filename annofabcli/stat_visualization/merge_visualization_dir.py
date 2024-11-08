@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import logging
 import sys
 from pathlib import Path
@@ -288,10 +289,14 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         help="必要最小限のファイルを出力します。",
     )
 
+    custom_production_volume_sample = {
+        "column_list": [{"value": "video_duration_minute", "name": "動画長さ"}],
+    }
+
     parser.add_argument(
         "--custom_production_volume",
         type=str,
-        help=("プロジェクト独自の生産量の指標をJSON形式で指定します。"),
+        help=("プロジェクト独自の生産量をJSON形式で指定します。" f"(例) ``{json.dumps(custom_production_volume_sample, ensure_ascii=False)}`` \n"),
     )
 
     parser.set_defaults(subcommand_func=main)

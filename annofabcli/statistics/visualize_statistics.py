@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import functools
+import json
 import logging.handlers
 import re
 import sys
@@ -412,11 +413,11 @@ def create_custom_production_volume(cli_value: str) -> CustomProductionVolume:
     コマンドラインから渡された文字列を元に、`CustomProductionVolume`インスタンスを生成します。
     """
     dict_data = get_json_from_args(cli_value)
-    csv_path = dict_data["csv_path"]
-    df = pandas.read_csv(csv_path)
-
     column_list = dict_data["column_list"]
     custom_production_volume_list = [ProductionVolumeColumn(column["value"], column["name"]) for column in column_list]
+
+    csv_path = dict_data["csv_path"]
+    df = pandas.read_csv(csv_path)
 
     return CustomProductionVolume(df=df, custom_production_volume_list=custom_production_volume_list)
 
@@ -496,7 +497,12 @@ class VisualizeStatistics(CommandLine):
 
             if len(output_project_dir_list) > 0:
                 project_dir_list = [ProjectDir(e) for e in output_project_dir_list]
-                project_performance = ProjectPerformance.from_project_dirs(project_dir_list)
+                custom_production_volume_list = (
+                    custom_production_volume.custom_production_volume_list if custom_production_volume is not None else None
+                )
+                project_performance = ProjectPerformance.from_project_dirs(
+                    project_dir_list, custom_production_volume_list=custom_production_volume_list
+                )
                 project_performance.to_csv(root_output_dir / "プロジェクトごとの生産性と品質.csv")
 
                 project_actual_worktime = ProjectWorktimePerMonth.from_project_dirs(project_dir_list, WorktimeColumn.ACTUAL_WORKTIME_HOUR)
@@ -671,10 +677,19 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         ),
     )
 
+    custom_production_volume_sample = {
+        "csv_path": "custom_production_volume.csv",
+        "column_list": [{"value": "video_duration_minute", "name": "動画長さ"}],
+    }
+
     parser.add_argument(
         "--custom_production_volume",
         type=str,
-        help=("プロジェクト独自の生産量の指標をJSON形式で指定します。"),
+        help=(
+            "プロジェクト独自の生産量をJSON形式で指定します。"
+            f"(例) ``{json.dumps(custom_production_volume_sample, ensure_ascii=False)}`` \n"
+            "詳細は https://annofab-cli.readthedocs.io/ja/latest/command_reference/statistics/visualize.html#custom-project-volume を参照してください。"  # noqa: E501
+        ),
     )
 
     parser.add_argument(

@@ -86,8 +86,6 @@ Examples
 
 
 
-
-
 複数のプロジェクトをマージする
 ----------------------------------------------
 ``--project_id`` に複数のproject_idを指定したときに ``--merge`` を指定すると、指定したプロジェクトをマージしたディレクトリも出力します。ディレクトリ名は ``merge`` です。
@@ -96,6 +94,8 @@ Examples
 
     $ annofabcli input_data put --project_id prj1 prj2 --output out_dir/
     --merge
+
+
 
 
 
@@ -110,6 +110,72 @@ Examples
     --parallelism 4
 
 
+
+生産量のカスタマイズ
+=================================
+
+.. _annotation_count_csv:
+
+アノテーション数を変更する
+----------------------------------------------
+デフォルトでは、アノテーションZIPからアノテーション数を算出します。
+しかし、プリアノテーションを用いたプロジェクトなどでは、実際に生産していないプリアノテーションも「アノテーション数」に含まれてしまい、正しい生産性が算出できない場合があります。
+
+``--annotation_count_csv`` に実際に生産したアノテーションの個数が記載CSVファイルを指定することで、正しい生産量と生産性を算出できます。
+
+以下はCSVファイルのサンプルです。
+
+.. code-block::
+    :caption: annotation_count.csv
+
+    project_id,task_id,annotation_count
+    prj1,task1,10
+    prj1,task2,20
+
+
+CSVには以下の列が存在している必要があります。
+
+* ``project_id``
+* ``task_id``
+* ``annotation_count``
+
+
+.. _custom_project_volume:
+
+独自の生産量を指定する
+----------------------------------------------
+デフォルトでは、入力データ数とアノテーション数を生産量としています。しかし、この生産量はプロジェクトによっては適切でない場合があります。
+たとえば、動画プロジェクトでは動画時間が生産量として適切かもしれません。また、セマンティックセグメンテーションプロジェクトでは塗りつぶしの面積や輪郭線の方が生産量として適切かもしれません。
+
+``--custom_project_volume`` に以下のようなJSON文字列を指定することで、入力データ数とアノテーション数以外の生産量を指定することができます。
+
+.. code-block:: json
+
+    {
+      "csv_path": "custom_production_volume.csv", // 生産量が記載されたCSVファイルのパス
+      "column_list":[  // 生産量の情報
+        {
+          "value": "video_duration_minute",  // CSVの列名
+          "name": "動画長さ"  // CSVの列名を補足する内容。出力されるグラフなどに用いられる。
+        }
+      ]
+    }
+
+
+以下は、 ``csv_path`` キーに指定するCSVファイルのサンプルです。
+
+.. code-block::
+    :caption: custom_production_volume.csv
+        
+    project_id,task_id,video_duration_minute
+    prj1,task1,10
+    prj1,task2,20
+
+CSVには以下の列が存在している必要があります。
+
+* ``project_id``
+* ``task_id``
+* ``column_list[].value`` で指定した列名
 
 
 
@@ -240,3 +306,4 @@ Usage Details
    :prog: annofabcli statistics visualize
    :nosubcommands:
    :nodefaultconst:
+
