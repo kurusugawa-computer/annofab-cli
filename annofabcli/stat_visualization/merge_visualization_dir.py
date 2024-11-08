@@ -35,7 +35,7 @@ from annofabcli.statistics.visualization.dataframe.whole_productivity_per_date i
     WholeProductivityPerFirstAnnotationStartedDate,
 )
 from annofabcli.statistics.visualization.dataframe.worktime_per_date import WorktimePerDate
-from annofabcli.statistics.visualization.model import ProductionVolumeColumn
+from annofabcli.statistics.visualization.model import ProductionVolumeColumn, TaskCompletionCriteria
 from annofabcli.statistics.visualization.project_dir import MergingInfo, ProjectDir
 
 logger = logging.getLogger(__name__)
@@ -45,11 +45,13 @@ class WritingVisualizationFile:
     def __init__(
         self,
         output_project_dir: ProjectDir,
+        task_completion_criteria: TaskCompletionCriteria,
         *,
         user_id_list: Optional[List[str]] = None,
         minimal_output: bool = False,
     ) -> None:
         self.output_project_dir = output_project_dir
+        self.task_completion_criteria = task_completion_criteria
         self.user_id_list = user_id_list
         self.minimal_output = minimal_output
 
@@ -132,7 +134,7 @@ class WritingVisualizationFile:
 
     @_catch_exception
     def write_merge_performance_per_date(self, task: Task, worktime_per_date: WorktimePerDate) -> None:
-        obj = WholeProductivityPerCompletedDate.from_df_wrapper(task, worktime_per_date)
+        obj = WholeProductivityPerCompletedDate.from_df_wrapper(task, worktime_per_date, task_completion_criteria=self.task_completion_criteria)
         self.output_project_dir.write_whole_productivity_per_date(obj)
         self.output_project_dir.write_whole_productivity_line_graph_per_date(obj)
 
@@ -192,6 +194,7 @@ class MergingVisualizationFile:
 
 def merge_visualization_dir(  # pylint: disable=too-many-statements
     project_dir_list: List[ProjectDir],
+    task_completion_criteria: TaskCompletionCriteria,
     output_project_dir: ProjectDir,
     *,
     custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None,
@@ -210,7 +213,9 @@ def merge_visualization_dir(  # pylint: disable=too-many-statements
 
     user_performance = UserPerformance.from_df_wrapper(task_worktime_by_phase_user=task_worktime_by_phase_user, worktime_per_date=worktime_per_date)
     whole_performance = WholePerformance.from_df_wrapper(task_worktime_by_phase_user=task_worktime_by_phase_user, worktime_per_date=worktime_per_date)
-    writing_obj = WritingVisualizationFile(output_project_dir, user_id_list=user_id_list, minimal_output=minimal_output)
+    writing_obj = WritingVisualizationFile(
+        output_project_dir, user_id_list=user_id_list, minimal_output=minimal_output, task_completion_criteria=task_completion_criteria
+    )
 
     writing_obj.write_task_list_and_histogram(task)
     writing_obj.write_worktime_per_date(worktime_per_date)
@@ -258,9 +263,10 @@ def main(args: argparse.Namespace) -> None:
     custom_production_volume_list = (
         create_custom_production_volume_list(args.custom_production_volume) if args.custom_production_volume is not None else None
     )
-
+    task_completion_criteria = TaskCompletionCriteria(args.task_completion_criteria)
     merge_visualization_dir(
         project_dir_list=[ProjectDir(e) for e in args.dir],
+        task_completion_criteria=task_completion_criteria,
         user_id_list=user_id_list,
         custom_production_volume_list=custom_production_volume_list,
         minimal_output=args.minimal,
@@ -271,6 +277,14 @@ def main(args: argparse.Namespace) -> None:
 def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--dir", type=Path, nargs="+", required=True, help="マージ対象ディレクトリ。2つ以上指定してください。")
     parser.add_argument("-o", "--output_dir", type=Path, required=True, help="出力先ディレクトリ。配下にプロジェクト名のディレクトリが出力される。")
+
+    parser.add_argument(
+        "--task_completion_criteria",
+        type=str,
+        choices=[e.value for e in TaskCompletionCriteria],
+        default=TaskCompletionCriteria.ACCEPTANCE_COMPLETED.value,
+        help="タスクの完了条件を指定します。",
+    )
 
     parser.add_argument(
         "-u",

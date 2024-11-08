@@ -22,6 +22,7 @@ from bokeh.plotting import ColumnDataSource
 from dateutil.parser import parse
 
 from annofabcli.common.bokeh import create_pretext_from_metadata
+from annofabcli.common.type_util import assert_noreturn
 from annofabcli.common.utils import datetime_to_date, print_csv
 from annofabcli.statistics.linegraph import (
     LineGraph,
@@ -32,7 +33,7 @@ from annofabcli.statistics.linegraph import (
 )
 from annofabcli.statistics.visualization.dataframe.task import Task
 from annofabcli.statistics.visualization.dataframe.worktime_per_date import WorktimePerDate
-from annofabcli.statistics.visualization.model import ProductionVolumeColumn
+from annofabcli.statistics.visualization.model import ProductionVolumeColumn, TaskCompletionCriteria
 
 logger = logging.getLogger(__name__)
 
@@ -129,7 +130,9 @@ class WholeProductivityPerCompletedDate:
         return pandas.DataFrame(index=[e.strftime("%Y-%m-%d") for e in pandas.date_range(start_date, end_date)])
 
     @classmethod
-    def from_df_wrapper(cls, task: Task, worktime_per_date: WorktimePerDate) -> WholeProductivityPerCompletedDate:
+    def from_df_wrapper(
+        cls, task: Task, worktime_per_date: WorktimePerDate, task_completion_criteria: TaskCompletionCriteria
+    ) -> WholeProductivityPerCompletedDate:
         """
         受入完了日毎の全体の生産量、生産性を算出する。
 
@@ -148,21 +151,25 @@ class WholeProductivityPerCompletedDate:
         # 生産量を表す列名
         production_volume_columns = ["input_data_count", "annotation_count", *[e.value for e in task.custom_production_volume_list]]
 
-        df_sub_task = task.df[["task_id", "first_acceptance_completed_datetime", *production_volume_columns]].copy()
-        df_sub_task["first_acceptance_completed_date"] = df_sub_task["first_acceptance_completed_datetime"].map(
-            lambda e: datetime_to_date(e) if not pandas.isna(e) else None
-        )
+        if task_completion_criteria == TaskCompletionCriteria.ACCEPTANCE_COMPLETED:
+            datetime_column = "first_acceptance_completed_datetime"
+        elif task_completion_criteria == TaskCompletionCriteria.ACCEPTANCE_REACHED:
+            datetime_column = "first_acceptance_reached_datetime"
+        else:
+            assert_noreturn(task_completion_criteria)
 
-        # タスク完了日を軸にして集計する
+        df_sub_task = task.df[["task_id", datetime_column, *production_volume_columns]].copy()
+        date_column = datetime_column.replace("_datetime", "_date")
+        df_sub_task[date_column] = df_sub_task[datetime_column].map(lambda e: datetime_to_date(e) if not pandas.isna(e) else None)
+
+        # 完了日を軸にして集計する
         df_agg_sub_task = df_sub_task.pivot_table(
             values=production_volume_columns,
-            index="first_acceptance_completed_date",
+            index=date_column,
             aggfunc="sum",
         ).fillna(0)
         if len(df_agg_sub_task) > 0:
-            df_agg_sub_task["task_count"] = df_sub_task.pivot_table(
-                values=["task_id"], index="first_acceptance_completed_date", aggfunc="count"
-            ).fillna(0)
+            df_agg_sub_task["task_count"] = df_sub_task.pivot_table(values=["task_id"], index=date_column, aggfunc="count").fillna(0)
         else:
             # 列だけ作る
             df_agg_sub_task = df_agg_sub_task.assign(**{key: 0 for key in production_volume_columns}, task_count=0)
