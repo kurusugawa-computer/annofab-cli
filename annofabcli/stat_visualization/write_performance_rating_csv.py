@@ -91,14 +91,30 @@ class ProductivityIndicator:
         return self.column.split("/")[1]
 
 
-class QualityIndicator(Enum):
+@dataclass(frozen=True)
+class QualityIndicator:
     """
     品質の指標
     """
 
-    POINTED_OUT_INSPECTION_COMMENT_COUNT_PER_ANNOTATION_COUNT = "pointed_out_inspection_comment_count/annotation_count"
-    POINTED_OUT_INSPECTION_COMMENT_COUNT_PER_INPUT_DATA_COUNT = "pointed_out_inspection_comment_count/input_data_count"
-    REJECTED_COUNT_PER_TASK_COUNT = "rejected_count/task_count"
+    column: str
+
+    def quality_penalty(self) -> str:
+        """
+        品質の悪さ（`pointed_out_inspection_comment_count`など）を表す文字列
+        """
+        return self.column.split("/")[0]
+
+    @property
+    def production_volume(self) -> str:
+        """
+        生産量（`annotation_count`など）を表す文字列
+        """
+        return self.column.split("/")[1]
+
+    # POINTED_OUT_INSPECTION_COMMENT_COUNT_PER_ANNOTATION_COUNT = "pointed_out_inspection_comment_count/annotation_count"
+    # POINTED_OUT_INSPECTION_COMMENT_COUNT_PER_INPUT_DATA_COUNT = "pointed_out_inspection_comment_count/input_data_count"
+    # REJECTED_COUNT_PER_TASK_COUNT = "rejected_count/task_count"
 
 
 class ProductivityType(Enum):
@@ -158,7 +174,7 @@ class CollectingPerformanceInfo:
         threshold_infos_by_directory: Optional[ThresholdInfoSettings] = None,
     ) -> None:
         self.quality_indicator = (
-            quality_indicator if quality_indicator is not None else QualityIndicator.POINTED_OUT_INSPECTION_COMMENT_COUNT_PER_ANNOTATION_COUNT
+            quality_indicator if quality_indicator is not None else QualityIndicator("pointed_out_inspection_comment_count/annotation_count")
         )
         self.productivity_indicator = (
             productivity_indicator if productivity_indicator is not None else ProductivityIndicator("actual_worktime_hour/annotation_count")
@@ -284,9 +300,9 @@ class CollectingPerformanceInfo:
 
         quality_indicator = self.quality_indicator_by_directory.get(project_title, self.quality_indicator)
 
-        df_tmp = df_joined[[(quality_indicator.value, phase.value)]]
+        df_tmp = df_joined[[(quality_indicator.column, phase.value)]]
 
-        df_tmp.columns = pandas.MultiIndex.from_tuples([(project_title, f"{quality_indicator.value}__{phase.value}")])
+        df_tmp.columns = pandas.MultiIndex.from_tuples([(project_title, f"{quality_indicator.column}__{phase.value}")])
         return df.join(df_tmp)
 
     def create_rating_df(
@@ -648,8 +664,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--quality_indicator",
         type=str,
-        choices=[e.value for e in QualityIndicator],
-        default=QualityIndicator.POINTED_OUT_INSPECTION_COMMENT_COUNT_PER_ANNOTATION_COUNT.value,
+        default="pointed_out_inspection_comment_count/annotation_count",
         help="品質の指標",
     )
 
