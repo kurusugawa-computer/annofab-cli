@@ -33,32 +33,28 @@ class WritingGraph:
         output_project_dir: ProjectDir,
         *,
         user_id_list: Optional[List[str]] = None,
-        custom_production_volume_list: Optional[List[ProductionVolumeColumn]] = None,
         minimal_output: bool = False,
     ) -> None:
         self.project_dir = project_dir
         self.output_project_dir = output_project_dir
         self.user_id_list = user_id_list
-        self.custom_production_volume_list = custom_production_volume_list
         self.minimal_output = minimal_output
 
     def write_line_graph(self, task: Task) -> None:
-        df = task.df.copy()
-
         self.output_project_dir.write_cumulative_line_graph(
-            AnnotatorCumulativeProductivity(df),
+            AnnotatorCumulativeProductivity.from_task(task),
             phase=TaskPhase.ANNOTATION,
             user_id_list=self.user_id_list,
             minimal_output=self.minimal_output,
         )
         self.output_project_dir.write_cumulative_line_graph(
-            InspectorCumulativeProductivity(df),
+            InspectorCumulativeProductivity.from_task(task),
             phase=TaskPhase.INSPECTION,
             user_id_list=self.user_id_list,
             minimal_output=self.minimal_output,
         )
         self.output_project_dir.write_cumulative_line_graph(
-            AcceptorCumulativeProductivity(df),
+            AcceptorCumulativeProductivity.from_task(task),
             phase=TaskPhase.ACCEPTANCE,
             user_id_list=self.user_id_list,
             minimal_output=self.minimal_output,
@@ -82,14 +78,12 @@ class WritingGraph:
     def main(self) -> None:
         try:
             # メンバのパフォーマンスを散布図で出力する
-            self.output_project_dir.write_user_performance_scatter_plot(
-                self.project_dir.read_user_performance(custom_production_volume_list=self.custom_production_volume_list)
-            )
+            self.output_project_dir.write_user_performance_scatter_plot(self.project_dir.read_user_performance())
         except Exception:
             logger.warning("'メンバごとの生産性と品質.csv'から生成できるグラフの出力に失敗しました。", exc_info=True)
 
         try:
-            task = self.project_dir.read_task_list(custom_production_volume_list=self.custom_production_volume_list)
+            task = self.project_dir.read_task_list()
             # ヒストグラムを出力
             self.output_project_dir.write_task_histogram(task)
             # ユーザごとにプロットした折れ線グラフを出力
@@ -98,17 +92,13 @@ class WritingGraph:
             logger.warning("'タスクlist.csv'から生成できるグラフの出力に失敗しました。", exc_info=True)
 
         try:
-            self.output_project_dir.write_whole_productivity_line_graph_per_date(
-                self.project_dir.read_whole_productivity_per_date(custom_production_volume_list=self.custom_production_volume_list)
-            )
+            self.output_project_dir.write_whole_productivity_line_graph_per_date(self.project_dir.read_whole_productivity_per_date())
         except Exception:
             logger.warning("'日毎の生産量と生産性.csv'から生成できるグラフの出力に失敗しました。", exc_info=True)
 
         try:
             self.output_project_dir.write_whole_productivity_line_graph_per_annotation_started_date(
-                self.project_dir.read_whole_productivity_per_first_annotation_started_date(
-                    custom_production_volume_list=self.custom_production_volume_list
-                )
+                self.project_dir.read_whole_productivity_per_first_annotation_started_date()
             )
         except Exception:
             logger.warning("'教師付者_教師付開始日list.csv'から生成できるグラフの出力に失敗しました。", exc_info=True)
@@ -138,14 +128,13 @@ def main(args: argparse.Namespace) -> None:
         create_custom_production_volume_list(args.custom_production_volume) if args.custom_production_volume is not None else None
     )
 
-    input_project_dir = ProjectDir(args.dir)
+    input_project_dir = ProjectDir(args.dir, custom_production_volume_list=custom_production_volume_list)
     output_project_dir = ProjectDir(args.output_dir, metadata=input_project_dir.read_metadata())
     main_obj = WritingGraph(
         project_dir=input_project_dir,
         output_project_dir=output_project_dir,
         minimal_output=args.minimal,
         user_id_list=user_id_list,
-        custom_production_volume_list=custom_production_volume_list,
     )
     main_obj.main()
 

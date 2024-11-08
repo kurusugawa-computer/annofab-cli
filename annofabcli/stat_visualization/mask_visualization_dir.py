@@ -151,10 +151,9 @@ def mask_visualization_dir(
     not_masked_biography_set: Optional[Set[str]] = None,
     not_masked_user_id_set: Optional[Set[str]] = None,
     minimal_output: bool = False,
-    custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None,
 ) -> None:
     worktime_per_date = project_dir.read_worktime_per_date_user()
-    task_worktime_by_phase_user = project_dir.read_task_worktime_list(custom_production_volume_list=custom_production_volume_list)
+    task_worktime_by_phase_user = project_dir.read_task_worktime_list()
     df_user = create_df_user(worktime_per_date, task_worktime_by_phase_user)
     replacement_dict = create_replacement_dict(
         df_user,
@@ -182,7 +181,7 @@ def mask_visualization_dir(
     # メンバのパフォーマンスを散布図で出力する
     output_project_dir.write_user_performance_scatter_plot(masked_user_performance)
 
-    masked_task = project_dir.read_task_list(custom_production_volume_list=custom_production_volume_list).mask_user_info(
+    masked_task = project_dir.read_task_list().mask_user_info(
         to_replace_for_user_id=replacement_dict.user_id, to_replace_for_username=replacement_dict.username
     )
     output_project_dir.write_task_list(masked_task)
@@ -223,15 +222,20 @@ def main(args: argparse.Namespace) -> None:
         create_custom_production_volume_list(args.custom_production_volume) if args.custom_production_volume is not None else None
     )
 
-    input_project_dir = ProjectDir(args.dir)
-    output_project_dir = ProjectDir(args.output_dir, metadata=input_project_dir.read_metadata())
+    input_project_dir = ProjectDir(
+        args.dir,
+        custom_production_volume_list=custom_production_volume_list,
+    )
+    output_project_dir = ProjectDir(
+        args.output_dir,
+        metadata=input_project_dir.read_metadata(),
+    )
     mask_visualization_dir(
         project_dir=input_project_dir,
         output_project_dir=output_project_dir,
         not_masked_biography_set=not_masked_biography_set,
         not_masked_user_id_set=not_masked_user_id_set,
         minimal_output=args.minimal,
-        custom_production_volume_list=custom_production_volume_list,
     )
 
 

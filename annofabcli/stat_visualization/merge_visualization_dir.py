@@ -67,22 +67,20 @@ class WritingVisualizationFile:
     @_catch_exception
     def write_cumulative_line_graph(self, task: Task) -> None:
         """ユーザごとにプロットした累積折れ線グラフを出力する。"""
-        df = task.df.copy()
-
         self.output_project_dir.write_cumulative_line_graph(
-            AnnotatorCumulativeProductivity(df),
+            AnnotatorCumulativeProductivity.from_task(task),
             phase=TaskPhase.ANNOTATION,
             user_id_list=self.user_id_list,
             minimal_output=self.minimal_output,
         )
         self.output_project_dir.write_cumulative_line_graph(
-            InspectorCumulativeProductivity(df),
+            InspectorCumulativeProductivity.from_task(task),
             phase=TaskPhase.INSPECTION,
             user_id_list=self.user_id_list,
             minimal_output=self.minimal_output,
         )
         self.output_project_dir.write_cumulative_line_graph(
-            AcceptorCumulativeProductivity(df),
+            AcceptorCumulativeProductivity.from_task(task),
             phase=TaskPhase.ACCEPTANCE,
             user_id_list=self.user_id_list,
             minimal_output=self.minimal_output,

@@ -50,9 +50,16 @@ class ProjectDir(DataClassJsonMixin):
     FILENAME_PROJECT_INFO = "project_info.json"
     FILENAME_MERGE_INFO = "merge_info.json"
 
-    def __init__(self, project_dir: Path, *, metadata: Optional[dict[str, Any]] = None) -> None:
+    def __init__(
+        self,
+        project_dir: Path,
+        *,
+        metadata: Optional[dict[str, Any]] = None,
+        custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None,
+    ) -> None:
         self.project_dir = project_dir
         self.metadata = metadata
+        self.custom_production_volume_list = custom_production_volume_list
 
     def __repr__(self) -> str:
         return f"ProjectDir(project_dir={self.project_dir!r})"
@@ -77,27 +84,27 @@ class ProjectDir(DataClassJsonMixin):
         """
         return (self.project_dir / self.FILENAME_MERGE_INFO).exists()
 
-    def read_task_list(self, *, custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None) -> Task:
+    def read_task_list(self) -> Task:
         """`タスクlist.csv`を読み込む。"""
         file = self.project_dir / self.FILENAME_TASK_LIST
         if file.exists():
-            return Task.from_csv(file, custom_production_volume_list=custom_production_volume_list)
+            return Task.from_csv(file, custom_production_volume_list=self.custom_production_volume_list)
         else:
             logger.warning(f"'{file!s}'を読み込もうとしましたが、ファイルは存在しません。")
-            return Task.empty(custom_production_volume_list=custom_production_volume_list)
+            return Task.empty(custom_production_volume_list=self.custom_production_volume_list)
 
     def write_task_list(self, obj: Task) -> None:
         """`タスクlist.csv`を書き込む。"""
         obj.to_csv(self.project_dir / self.FILENAME_TASK_LIST)
 
-    def read_task_worktime_list(self, *, custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None) -> TaskWorktimeByPhaseUser:
+    def read_task_worktime_list(self) -> TaskWorktimeByPhaseUser:
         """`task-worktime-list.csv`を読み込む。"""
         file = self.project_dir / self.FILENAME_TASK_WORKTIME_LIST
         if file.exists():
-            return TaskWorktimeByPhaseUser.from_csv(file, custom_production_volume_list=custom_production_volume_list)
+            return TaskWorktimeByPhaseUser.from_csv(file, custom_production_volume_list=self.custom_production_volume_list)
         else:
             logger.warning(f"'{file!s}'を読み込もうとしましたが、ファイルは存在しません。")
-            return TaskWorktimeByPhaseUser.empty(custom_production_volume_list=custom_production_volume_list)
+            return TaskWorktimeByPhaseUser.empty(custom_production_volume_list=self.custom_production_volume_list)
 
     def write_task_worktime_list(self, obj: TaskWorktimeByPhaseUser) -> None:
         """`task-worktime-list.csv`を書き込む。"""
@@ -196,32 +203,30 @@ class ProjectDir(DataClassJsonMixin):
                 metadata=self.metadata,
             )
 
-    def read_whole_performance(self, *, custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None) -> WholePerformance:
+    def read_whole_performance(self) -> WholePerformance:
         """`全体の生産性と品質.csv`を読み込む。"""
         file = self.project_dir / self.FILENAME_WHOLE_PERFORMANCE
         if file.exists():
-            return WholePerformance.from_csv(file, custom_production_volume_list=custom_production_volume_list)
+            return WholePerformance.from_csv(file, custom_production_volume_list=self.custom_production_volume_list)
         else:
             logger.warning(f"'{file!s}'を読み込もうとしましたが、ファイルは存在しません。")
-            return WholePerformance.empty(custom_production_volume_list=custom_production_volume_list)
+            return WholePerformance.empty(custom_production_volume_list=self.custom_production_volume_list)
 
     def write_whole_performance(self, whole_performance: WholePerformance) -> None:
         """`全体の生産性と品質.csv`を出力します。"""
         whole_performance.to_csv(self.project_dir / self.FILENAME_WHOLE_PERFORMANCE)
 
-    def read_whole_productivity_per_date(
-        self, *, custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None
-    ) -> WholeProductivityPerCompletedDate:
+    def read_whole_productivity_per_date(self) -> WholeProductivityPerCompletedDate:
         """
         日ごとの生産性と品質の情報を読み込みます。
         """
         file = self.project_dir / self.FILENAME_WHOLE_PRODUCTIVITY_PER_DATE
         if file.exists():
             return WholeProductivityPerCompletedDate.from_csv(
-                self.project_dir / self.FILENAME_WHOLE_PRODUCTIVITY_PER_DATE, custom_production_volume_list=custom_production_volume_list
+                self.project_dir / self.FILENAME_WHOLE_PRODUCTIVITY_PER_DATE, custom_production_volume_list=self.custom_production_volume_list
             )
         else:
-            return WholeProductivityPerCompletedDate.empty(custom_production_volume_list=custom_production_volume_list)
+            return WholeProductivityPerCompletedDate.empty(custom_production_volume_list=self.custom_production_volume_list)
 
     def write_whole_productivity_per_date(self, obj: WholeProductivityPerCompletedDate) -> None:
         """
@@ -236,9 +241,7 @@ class ProjectDir(DataClassJsonMixin):
         obj.plot(self.project_dir / "line-graph/折れ線-横軸_日-全体.html", metadata=self.metadata)
         obj.plot_cumulatively(self.project_dir / "line-graph/累積折れ線-横軸_日-全体.html", metadata=self.metadata)
 
-    def read_whole_productivity_per_first_annotation_started_date(
-        self, custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None
-    ) -> WholeProductivityPerFirstAnnotationStartedDate:
+    def read_whole_productivity_per_first_annotation_started_date(self) -> WholeProductivityPerFirstAnnotationStartedDate:
         """
         教師付開始日ごとの生産性と品質の情報を読み込みます。
         """
@@ -246,33 +249,33 @@ class ProjectDir(DataClassJsonMixin):
         if file.exists():
             return WholeProductivityPerFirstAnnotationStartedDate.from_csv(
                 file,
-                custom_production_volume_list=custom_production_volume_list,
+                custom_production_volume_list=self.custom_production_volume_list,
             )
         else:
-            return WholeProductivityPerFirstAnnotationStartedDate.empty(custom_production_volume_list=custom_production_volume_list)
+            return WholeProductivityPerFirstAnnotationStartedDate.empty(custom_production_volume_list=self.custom_production_volume_list)
 
-    def write_whole_productivity_per_first_annotation_started_date(self, obj: WholeProductivityPerFirstAnnotationStartedDate):  # noqa: ANN201
+    def write_whole_productivity_per_first_annotation_started_date(self, obj: WholeProductivityPerFirstAnnotationStartedDate) -> None:
         """
         教師付開始日ごとの生産性と品質の情報を書き込みます。
         """
         obj.to_csv(self.project_dir / self.FILENAME_WHOLE_PRODUCTIVITY_PER_FIRST_ANNOTATION_STARTED_DATE)
 
-    def write_whole_productivity_line_graph_per_annotation_started_date(self, obj: WholeProductivityPerFirstAnnotationStartedDate):  # noqa: ANN201
+    def write_whole_productivity_line_graph_per_annotation_started_date(self, obj: WholeProductivityPerFirstAnnotationStartedDate) -> None:
         """
         横軸が教師付開始日、縦軸が全体の生産性などをプロットした折れ線グラフを出力します。
         """
         obj.plot(self.project_dir / "line-graph/折れ線-横軸_教師付開始日-全体.html", metadata=self.metadata)
 
-    def read_user_performance(self, *, custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None) -> UserPerformance:
+    def read_user_performance(self) -> UserPerformance:
         """
         メンバごとの生産性と品質の情報を読み込みます。
         """
         file = self.project_dir / self.FILENAME_USER_PERFORMANCE
         if file.exists():
-            return UserPerformance.from_csv(file, custom_production_volume_list=custom_production_volume_list)
+            return UserPerformance.from_csv(file, custom_production_volume_list=self.custom_production_volume_list)
         else:
             logger.warning(f"'{file!s}'を読み込もうとしましたが、ファイルは存在しません。")
-            return UserPerformance.empty(custom_production_volume_list=custom_production_volume_list)
+            return UserPerformance.empty(custom_production_volume_list=self.custom_production_volume_list)
 
     def write_user_performance(self, user_performance: UserPerformance) -> None:
         """
