@@ -25,7 +25,7 @@ from annofabcli.statistics.visualization.dataframe.whole_productivity_per_date i
 )
 from annofabcli.statistics.visualization.dataframe.worktime_per_date import WorktimePerDate
 from annofabcli.statistics.visualization.filtering_query import FilteringQuery
-from annofabcli.statistics.visualization.model import ProductionVolumeColumn
+from annofabcli.statistics.visualization.model import ProductionVolumeColumn, TaskCompletionCriteria
 
 logger = logging.getLogger(__name__)
 
@@ -453,6 +453,8 @@ class ProjectInfo(DataClassJsonMixin):
     """入力データの種類"""
     measurement_datetime: str
     """計測日時。（2004-04-01T12:00+09:00形式）"""
+    task_completion_criteria: TaskCompletionCriteria
+    """タスクの完了条件"""
     query: FilteringQuery
     """集計対象を絞り込むためのクエリ"""
 
@@ -465,3 +467,5 @@ class MergingInfo(DataClassJsonMixin):
     """マージ対象のディレクトリ名"""
     project_info_list: List[ProjectInfo]
     """マージ対象のプロジェクト情報"""
+    task_completion_criteria: TaskCompletionCriteria
+    """タスクの完了条件"""
