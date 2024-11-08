@@ -21,7 +21,7 @@ from annofabcli.statistics.visualization.dataframe.project_performance import (
     ProjectPerformance,
     ProjectWorktimePerMonth,
 )
-from annofabcli.statistics.visualization.model import WorktimeColumn
+from annofabcli.statistics.visualization.model import ProductionVolumeColumn, WorktimeColumn
 from annofabcli.statistics.visualization.project_dir import ProjectDir
 
 logger = logging.getLogger(__name__)
@@ -279,6 +279,7 @@ class CollectingPerformanceInfo:
         self,
         df_user: pandas.DataFrame,
         target_dir: Path,
+        custom_production_volume_list_by_directory: Optional[dict[str, list[ProductionVolumeColumn]]],
     ) -> ResultDataframe:
         """対象ディレクトリから、評価対象の指標になる情報を取得します。"""
         df_annotation_productivity = df_user
@@ -290,8 +291,11 @@ class CollectingPerformanceInfo:
             if not p_project_dir.is_dir():
                 continue
 
+            custom_production_volume_list = (
+                custom_production_volume_list_by_directory.get(p_project_dir.name) if custom_production_volume_list_by_directory is not None else None
+            )
             project_title = p_project_dir.name
-            project_dir = ProjectDir(p_project_dir)
+            project_dir = ProjectDir(p_project_dir, custom_production_volume_list=custom_production_volume_list)
             project_dir_list.append(project_dir)
 
             try:
@@ -456,12 +460,23 @@ def create_user_df(target_dir: Path) -> pandas.DataFrame:
     return df_user.sort_values("user_id").set_index("user_id")
 
 
+def create_custom_production_volume_by_directory(cli_value: str) -> dict[str, list[ProductionVolumeColumn]]:
+    """
+    コマンドラインから渡された文字列を元に、独自の生産量を表す列情報を生成します。
+
+    Returns:
+        keyはディレクトリ名, valueは独自の生産量の列名
+    """
+    dict_data = get_json_from_args(cli_value)
+    return {dirname: [ProductionVolumeColumn(col, col) for col in column_list] for dirname, column_list in dict_data.items()}
+
+
 class WritingCsv:
     def __init__(self, threshold_deviation_user_count: Optional[int] = None, user_ids: Optional[Collection[str]] = None) -> None:
         self.threshold_deviation_user_count = threshold_deviation_user_count
         self.user_ids = user_ids
 
-    def write(self, df: pandas.DataFrame, csv_basename: str, output_dir: Path):  # noqa: ANN201
+    def write(self, df: pandas.DataFrame, csv_basename: str, output_dir: Path) -> None:
         print_csv(df, str(output_dir / f"{csv_basename}__original.csv"))
 
         # 偏差値のCSVを出力
@@ -537,7 +552,9 @@ class WritePerformanceRatingCsv(CommandLineWithoutWebapi):
         target_dir: Path = args.dir
         user_id_list = get_list_from_args(args.user_id) if args.user_id is not None else None
         df_user = create_user_df(target_dir)
-
+        custom_production_volume_by_directory = (
+            create_custom_production_volume_by_directory(args.custom_production_volume_by_directory) if args.custom_production_volume_by_directory is not None else None
+        )
         result = CollectingPerformanceInfo(
             productivity_indicator=ProductivityIndicator(args.productivity_indicator),
             productivity_indicator_by_directory=create_productivity_indicator_by_directory(args.productivity_indicator_by_directory),
@@ -548,10 +565,7 @@ class WritePerformanceRatingCsv(CommandLineWithoutWebapi):
                 threshold_task_count=args.threshold_task_count,
             ),
             threshold_infos_by_directory=create_threshold_infos_per_project(args.threshold_settings),
-        ).create_rating_df(
-            df_user,
-            target_dir,
-        )
+        ).create_rating_df(df_user, target_dir, custom_production_volume_by_directory)
 
         output_dir: Path = args.output_dir
 
@@ -660,6 +674,17 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--threshold_settings",
         type=str,
         help=f"JSON形式で、ディレクトリ名ごとに閾値を指定してください。\n(ex) ``{json.dumps(THRESHOLD_SETTINGS_SAMPLE)}``",
+    )
+
+    custom_production_volume_sample = {
+        "dirname1": ["video_duration_minute"],
+        "dirname2": ["segment_area"],
+    }
+
+    parser.add_argument(
+        "--custom_production_volume_by_directory",
+        type=str,
+        help=("プロジェクト独自の生産量をJSON形式で指定します。" f"(例) ``{json.dumps(custom_production_volume_sample, ensure_ascii=False)}`` \n"),
     )
 
     parser.add_argument("-o", "--output_dir", required=True, type=Path, help="出力ディレクトリ")
