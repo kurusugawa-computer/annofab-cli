@@ -139,8 +139,7 @@ def main(args: argparse.Namespace) -> None:
     )
 
     input_project_dir = ProjectDir(args.dir)
-    project_info = input_project_dir.read_project_info()
-    output_project_dir = ProjectDir(args.output_dir, metadata=project_info.to_dict(encode_json=True))
+    output_project_dir = ProjectDir(args.output_dir, metadata=input_project_dir.read_metadata())
     main_obj = WritingGraph(
         project_dir=input_project_dir,
         output_project_dir=output_project_dir,
