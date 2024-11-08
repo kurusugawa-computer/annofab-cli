@@ -1,20 +1,42 @@
+from __future__ import annotations
+
 import argparse
+import json
 import logging
 from pathlib import Path
 from typing import Optional
 
 import annofabcli
+from annofabcli.common.cli import (
+    get_json_from_args,
+)
 from annofabcli.statistics.visualization.dataframe.project_performance import ProjectPerformance
+from annofabcli.statistics.visualization.model import ProductionVolumeColumn
 from annofabcli.statistics.visualization.project_dir import ProjectDir
 
 logger = logging.getLogger(__name__)
+
+
+def create_custom_production_volume_list(cli_value: str) -> list[ProductionVolumeColumn]:
+    """
+    コマンドラインから渡された文字列を元に、独自の生産量を表す列情報を生成します。
+    """
+    dict_data = get_json_from_args(cli_value)
+
+    column_list = dict_data["column_list"]
+    custom_production_volume_list = [ProductionVolumeColumn(column["value"], column["name"]) for column in column_list]
+
+    return custom_production_volume_list
 
 
 def main(args: argparse.Namespace) -> None:
     root_dir: Path = args.dir
     project_dir_list = [ProjectDir(elm) for elm in root_dir.iterdir() if elm.is_dir()]
 
-    project_performance = ProjectPerformance.from_project_dirs(project_dir_list)
+    custom_production_volume_list = (
+        create_custom_production_volume_list(args.custom_production_volume) if args.custom_production_volume is not None else None
+    )
+    project_performance = ProjectPerformance.from_project_dirs(project_dir_list, custom_production_volume_list=custom_production_volume_list)
     project_performance.to_csv(args.output)
 
 
@@ -27,6 +49,18 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     )
 
     parser.add_argument("-o", "--output", type=Path, required=True, help="出力先のファイルパスを指定します。")
+
+    custom_production_volume_sample = {
+        "column_list": [{"value": "video_duration_minute", "name": "動画長さ"}],
+    }
+
+    parser.add_argument(
+        "--custom_production_volume",
+        type=str,
+        help=("プロジェクト独自の生産量をJSON形式で指定します。" f"(例) ``{json.dumps(custom_production_volume_sample, ensure_ascii=False)}`` \n"),
+    )
+
+    parser.set_defaults(subcommand_func=main)
 
     parser.set_defaults(subcommand_func=main)
 

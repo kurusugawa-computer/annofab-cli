@@ -84,12 +84,11 @@ class ProjectPerformance:
         return series
 
     @classmethod
-    def from_project_dirs(cls, project_dir_list: list[ProjectDir]) -> ProjectPerformance:
-        row_list: list[pandas.Series] = []
-        for project_dir in project_dir_list:
-            row_list.append(cls._get_series_from_project_dir(project_dir))  # noqa: PERF401
-
-        return cls(pandas.DataFrame(row_list))
+    def from_project_dirs(
+        cls, project_dir_list: list[ProjectDir], *, custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None
+    ) -> ProjectPerformance:
+        row_list: list[pandas.Series] = [cls._get_series_from_project_dir(project_dir) for project_dir in project_dir_list]
+        return cls(pandas.DataFrame(row_list), custom_production_volume_list=custom_production_volume_list)
 
     def to_csv(self, output_file: Path) -> None:
         """
