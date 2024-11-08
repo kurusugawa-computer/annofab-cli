@@ -92,7 +92,7 @@ def _plot_and_moving_average(
 
 
 class WholeProductivityPerCompletedDate:
-    """受入完了日ごとの全体の生産量と生産性に関する情報"""
+    """完了日ごとの全体の生産量と生産性に関する情報"""
 
     def __init__(self, df: pandas.DataFrame, *, custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None) -> None:
         self.df = df
@@ -134,7 +134,7 @@ class WholeProductivityPerCompletedDate:
         cls, task: Task, worktime_per_date: WorktimePerDate, task_completion_criteria: TaskCompletionCriteria
     ) -> WholeProductivityPerCompletedDate:
         """
-        受入完了日毎の全体の生産量、生産性を算出する。
+        完了日毎の全体の生産量、生産性を算出する。
 
         Args:
             task: タスク情報が格納されたDataFrameをラップするクラスのインスタンス

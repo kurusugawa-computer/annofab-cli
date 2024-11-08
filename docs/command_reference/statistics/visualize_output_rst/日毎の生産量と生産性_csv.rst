@@ -7,17 +7,31 @@
 
 `日毎の生産量と生産性.csv <https://github.com/kurusugawa-computer/annofab-cli/blob/main/docs/command_reference/statistics/visualize/out_dir/日毎の生産量と生産性.csv>`_
 
-参照頻度が高い列の詳細を、以下に記載します。
 
-* monitored_worktime_hour: 計測作業時間[hour](アノテーションエディタ画面を触っていた作業時間）
-* actual_worktime_hour: 実績作業時間[hour](労務管理画面から入力した作業時間）
-* task_count: 作業したタスク数。タスクが初めて受入完了状態になったときに「作業した」とみなしている。
-* input_data_count: 作業したタスクに含まれている入力データ数
-* actual_worktime/annotation_count: アノテーションあたりの実績作業時間[hour]。生産性の指標になる。
+列名だけでは内容が判断しづらい列名を、以下に記載します。
+
+* ``actual_worktime_hour`` : 実績作業時間（ ``--labor_csv`` で渡された実際の作業時間）。単位は時間。
+* ``monitored_worktime_hour`` : 計測作業時間（アノテーションエディタ画面を触っていた作業の時間）。単位は時間。
+* ``task_count`` : 作業が完了したタスクの数
+* ``input_data_count`` : 作業が完了したタスクに含まれている入力データの数
+* ``annotation_count`` : 作業が完了したタスクに含まれているアノテーションの数
+* ``actual_worktime_hour/annotation_count`` : アノテーションあたりの実績作業時間。単位は時間。
+* ``working_user_count`` : 作業したユーザーの数
 
 
-.. note::
+.. note:: 
 
-    task_count は「その日に初めて受入完了状態になったタスクの個数」です。受入完了状態のタスクが差し戻されても、task_countは変わりません。
-    受入完了状態の差し戻し後の作業量が多い場合、task_countの値が実際と合わないケースがあります。
-    
+    ``--task_completion_criteria`` で指定した値によって、 ``task_count`` の算出方法が異なります。
+     
+    ``--task_completion_criteria acceptance_completed`` を指定すると、 ``task_count`` は、その日に初めて受入フェーズ完了状態になったタスクの数になります。
+    受入取消によって完了状態でないタスクも、「作業が完了したタスク」に含まれます。    なお、受入取消されたタスクが多いと、 ``task_count`` は生産量の推移を正しく表現できないときがあります。
+    その場合は :doc:`教師付開始日毎の生産量と生産性_csv` の ``task_count`` 方が生産量の推移を正しく表現できているかもしれません。
+    * ``--task_completion_criteria acceptance_reached`` : 「その日に初めて受入フェーズになったタスクの個数」です。受入フェーズで差し戻されたタスクも「作業が完了したタスク」に含まれます。
+ 
+
+
+:doc:`.index`
+:doc:`../index.rst`
+
+:doc:`教師付開始日毎の生産量と生産性_csv.rst`
+
