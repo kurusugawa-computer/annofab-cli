@@ -455,7 +455,6 @@ class InspectorProductivityPerDate(AbstractPhaseProductivityPerDate):
         アノテーション単位の生産性を受入作業者ごとにプロットする。
 
         """
-
         if not self._validate_df_for_output(output_file):
             return
 
@@ -532,6 +531,7 @@ class InspectorProductivityPerDate(AbstractPhaseProductivityPerDate):
             color = get_color_from_palette(user_index)
             username = df_subset.iloc[0]["first_inspection_username"]
 
+            line_count += 1
             for line_graph, (x_column, y_column) in zip(line_graph_list, columns_list):
                 if y_column.endswith(WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX):
                     line_graph.add_moving_average_line(
