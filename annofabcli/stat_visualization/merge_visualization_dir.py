@@ -128,7 +128,7 @@ class WritingVisualizationFile:
 
     @_catch_exception
     def write_performance_per_first_annotation_started_date(self, task: Task) -> None:
-        obj = WholeProductivityPerFirstAnnotationStartedDate.from_task(task)
+        obj = WholeProductivityPerFirstAnnotationStartedDate.from_task(task, self.task_completion_criteria)
         self.output_project_dir.write_whole_productivity_per_first_annotation_started_date(obj)
         self.output_project_dir.write_whole_productivity_line_graph_per_annotation_started_date(obj)
 

@@ -14,7 +14,7 @@ import bokeh
 import bokeh.layouts
 import bokeh.palettes
 import pandas
-from annofabapi.models import TaskStatus
+from annofabapi.models import TaskPhase, TaskStatus
 from bokeh.models import DataRange1d
 from bokeh.models.ui import UIElement
 from bokeh.models.widgets.markups import Div
@@ -847,12 +847,19 @@ class WholeProductivityPerFirstAnnotationStartedDate:
             add_velocity_column(df, numerator_column="acceptance_worktime_hour", denominator_column=column)
 
     @classmethod
-    def from_task(cls, task: Task) -> WholeProductivityPerFirstAnnotationStartedDate:
+    def from_task(cls, task: Task, task_completion_criteria: TaskCompletionCriteria) -> WholeProductivityPerFirstAnnotationStartedDate:
         # 生産量を表す列名
         production_volume_columns = ["input_data_count", "annotation_count", *[e.value for e in task.custom_production_volume_list]]
 
         df_task = task.df
-        df_sub_task = df_task[df_task["status"] == TaskStatus.COMPLETE.value][
+        if task_completion_criteria == TaskCompletionCriteria.ACCEPTANCE_COMPLETED:
+            df_sub_task = df_task[df_task["status"] == TaskStatus.COMPLETE.value]
+        elif task_completion_criteria == TaskCompletionCriteria.ACCEPTANCE_REACHED:
+            df_sub_task = df_task[df_task["phase"] == TaskPhase.ACCEPTANCE.value]
+        else:
+            assert_noreturn(task_completion_criteria)
+
+        df_sub_task = df_sub_task[
             [
                 "task_id",
                 "first_annotation_started_datetime",

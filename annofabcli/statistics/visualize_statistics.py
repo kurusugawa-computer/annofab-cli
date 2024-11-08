@@ -220,7 +220,7 @@ class WriteCsvGraph:
 
         self.project_dir.write_whole_productivity_per_date(productivity_per_completed_date_obj)
 
-        productivity_per_started_date_obj = WholeProductivityPerFirstAnnotationStartedDate.from_task(task)
+        productivity_per_started_date_obj = WholeProductivityPerFirstAnnotationStartedDate.from_task(task, task_completion_criteria=self.task_completion_criteria)
         self.project_dir.write_whole_productivity_per_first_annotation_started_date(productivity_per_started_date_obj)
 
         if not self.output_only_text:
