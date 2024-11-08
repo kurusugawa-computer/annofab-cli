@@ -66,11 +66,13 @@ class WorktimeType(Enum):
     MONITORED_WORKTIME_HOUR = "monitored_worktime_hour"
     """計測作業時間"""
 
+
 @dataclass(frozen=True)
 class ProductivityIndicator:
     """
     生産性の指標
     """
+
     column: str
 
     @property
@@ -214,7 +216,12 @@ class CollectingPerformanceInfo:
         df_joined = self.filter_df_with_threshold(df_joined, phase, project_title=project_title)
 
         productivity_indicator = self.productivity_indicator_by_directory.get(project_title, self.productivity_indicator)
-        df_tmp = df_joined[[(productivity_indicator.column, phase.value)]]
+        column = (productivity_indicator.column, phase.value)
+        if column in df_joined.columns:
+            df_tmp = df_joined[[column]]
+        else:
+            logger.warning(f"'{project_title}'に生産性の指標である'{column}'の列が存在しませんでした。")
+            df_tmp = pandas.DataFrame(index=df_joined.index, columns=[column])
         df_tmp.columns = pandas.MultiIndex.from_tuples([(project_title, f"{productivity_indicator.column}__{phase.value}")])
         return df.join(df_tmp)
 
