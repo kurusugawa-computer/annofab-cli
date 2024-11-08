@@ -187,7 +187,8 @@ class AnnotatorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
         """
         `タスクlist.csv`に相当する情報から、インスタンスを生成します。
         """
-        return cls(task.df, custom_production_volume_list=task.custom_production_volume_list)
+        # task.df
+        return cls(task.df.copy(), custom_production_volume_list=task.custom_production_volume_list)
 
     def _get_cumulative_dataframe(self) -> pandas.DataFrame:
         """
@@ -308,7 +309,7 @@ class InspectorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
         """
         `タスクlist.csv`に相当する情報から、インスタンスを生成します。
         """
-        return cls(task.df, custom_production_volume_list=task.custom_production_volume_list)
+        return cls(task.df.copy(), custom_production_volume_list=task.custom_production_volume_list)
 
     def _get_cumulative_dataframe(self) -> pandas.DataFrame:
         """
@@ -416,7 +417,7 @@ class AcceptorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
         """
         `タスクlist.csv`に相当する情報から、インスタンスを生成します。
         """
-        return cls(task.df, custom_production_volume_list=task.custom_production_volume_list)
+        return cls(task.df.copy(), custom_production_volume_list=task.custom_production_volume_list)
 
     def _get_cumulative_dataframe(self) -> pandas.DataFrame:
         """

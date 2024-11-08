@@ -189,11 +189,9 @@ class WriteCsvGraph:
     def write_cumulative_linegraph_by_user(self, user_id_list: Optional[List[str]] = None) -> None:
         """ユーザごとの累積折れ線グラフをプロットする。"""
         task = self._get_task()
-        df_task = task.df
-
-        annotator_obj = AnnotatorCumulativeProductivity(df_task, custom_production_volume_list=task.custom_production_volume_list)
-        inspector_obj = InspectorCumulativeProductivity(df_task, custom_production_volume_list=task.custom_production_volume_list)
-        acceptor_obj = AcceptorCumulativeProductivity(df_task, custom_production_volume_list=task.custom_production_volume_list)
+        annotator_obj = AnnotatorCumulativeProductivity.from_task(task)
+        inspector_obj = InspectorCumulativeProductivity.from_task(task)
+        acceptor_obj = AcceptorCumulativeProductivity.from_task(task)
 
         if not self.output_only_text:
             self.project_dir.write_cumulative_line_graph(
