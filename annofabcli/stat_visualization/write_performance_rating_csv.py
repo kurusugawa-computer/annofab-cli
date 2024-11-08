@@ -112,10 +112,6 @@ class QualityIndicator:
         """
         return self.column.split("/")[1]
 
-    # POINTED_OUT_INSPECTION_COMMENT_COUNT_PER_ANNOTATION_COUNT = "pointed_out_inspection_comment_count/annotation_count"
-    # POINTED_OUT_INSPECTION_COMMENT_COUNT_PER_INPUT_DATA_COUNT = "pointed_out_inspection_comment_count/input_data_count"
-    # REJECTED_COUNT_PER_TASK_COUNT = "rejected_count/task_count"
-
 
 class ProductivityType(Enum):
     """生産性情報の種類"""
@@ -300,7 +296,12 @@ class CollectingPerformanceInfo:
 
         quality_indicator = self.quality_indicator_by_directory.get(project_title, self.quality_indicator)
 
-        df_tmp = df_joined[[(quality_indicator.column, phase.value)]]
+        column = (quality_indicator.column, phase.value)
+        if column in df_joined.columns:
+            df_tmp = df_joined[[column]]
+        else:
+            logger.warning(f"'{project_title}'に品質の指標である'{column}'の列が存在しませんでした。")
+            df_tmp = pandas.DataFrame(index=df_joined.index, columns=[column])
 
         df_tmp.columns = pandas.MultiIndex.from_tuples([(project_title, f"{quality_indicator.column}__{phase.value}")])
         return df.join(df_tmp)
