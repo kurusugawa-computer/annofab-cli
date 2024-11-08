@@ -505,4 +505,4 @@ class Task:
             "first_acceptance_username": to_replace_for_username,
         }
         df = self.df.replace(to_replace_info)
-        return Task(df)
+        return Task(df, custom_production_volume_list=self.custom_production_volume_list)

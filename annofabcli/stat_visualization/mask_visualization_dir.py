@@ -10,7 +10,10 @@ import pandas
 from annofabapi.models import TaskPhase
 
 import annofabcli
-from annofabcli.common.cli import get_list_from_args
+from annofabcli.common.cli import (
+    get_json_from_args,
+    get_list_from_args,
+)
 from annofabcli.filesystem.mask_user_info import (
     create_replacement_dict_by_biography,
     create_replacement_dict_by_user_id,
@@ -29,6 +32,7 @@ from annofabcli.statistics.visualization.dataframe.task import Task
 from annofabcli.statistics.visualization.dataframe.task_worktime_by_phase_user import TaskWorktimeByPhaseUser
 from annofabcli.statistics.visualization.dataframe.user_performance import UserPerformance
 from annofabcli.statistics.visualization.dataframe.worktime_per_date import WorktimePerDate
+from annofabcli.statistics.visualization.model import ProductionVolumeColumn
 from annofabcli.statistics.visualization.project_dir import ProjectDir
 
 logger = logging.getLogger(__name__)
@@ -147,9 +151,10 @@ def mask_visualization_dir(
     not_masked_biography_set: Optional[Set[str]] = None,
     not_masked_user_id_set: Optional[Set[str]] = None,
     minimal_output: bool = False,
+    custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None,
 ) -> None:
     worktime_per_date = project_dir.read_worktime_per_date_user()
-    task_worktime_by_phase_user = project_dir.read_task_worktime_list()
+    task_worktime_by_phase_user = project_dir.read_task_worktime_list(custom_production_volume_list=custom_production_volume_list)
     df_user = create_df_user(worktime_per_date, task_worktime_by_phase_user)
     replacement_dict = create_replacement_dict(
         df_user,
@@ -177,7 +182,7 @@ def mask_visualization_dir(
     # メンバのパフォーマンスを散布図で出力する
     output_project_dir.write_user_performance_scatter_plot(masked_user_performance)
 
-    masked_task = project_dir.read_task_list().mask_user_info(
+    masked_task = project_dir.read_task_list(custom_production_volume_list=custom_production_volume_list).mask_user_info(
         to_replace_for_user_id=replacement_dict.user_id, to_replace_for_username=replacement_dict.username
     )
     output_project_dir.write_task_list(masked_task)
@@ -198,16 +203,35 @@ def mask_visualization_dir(
     logger.debug(f"'{project_dir}'のマスクした結果を'{output_project_dir}'に出力しました。")
 
 
+def create_custom_production_volume_list(cli_value: str) -> list[ProductionVolumeColumn]:
+    """
+    コマンドラインから渡された文字列を元に、独自の生産量を表す列情報を生成します。
+    """
+    dict_data = get_json_from_args(cli_value)
+
+    column_list = dict_data["column_list"]
+    custom_production_volume_list = [ProductionVolumeColumn(column["value"], column["name"]) for column in column_list]
+
+    return custom_production_volume_list
+
+
 def main(args: argparse.Namespace) -> None:
     not_masked_biography_set = set(get_list_from_args(args.not_masked_biography)) if args.not_masked_biography is not None else None
     not_masked_user_id_set = set(get_list_from_args(args.not_masked_user_id)) if args.not_masked_user_id is not None else None
 
+    custom_production_volume_list = (
+        create_custom_production_volume_list(args.custom_production_volume) if args.custom_production_volume is not None else None
+    )
+
+    input_project_dir = ProjectDir(args.dir)
+    output_project_dir = ProjectDir(args.output_dir, metadata=input_project_dir.read_metadata())
     mask_visualization_dir(
-        project_dir=ProjectDir(args.dir),
-        output_project_dir=ProjectDir(args.output_dir),
+        project_dir=input_project_dir,
+        output_project_dir=output_project_dir,
         not_masked_biography_set=not_masked_biography_set,
         not_masked_user_id_set=not_masked_user_id_set,
         minimal_output=args.minimal,
+        custom_production_volume_list=custom_production_volume_list,
     )
 
 
@@ -237,6 +261,12 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--minimal",
         action="store_true",
         help="必要最小限のファイルを出力します。",
+    )
+
+    parser.add_argument(
+        "--custom_production_volume",
+        type=str,
+        help=("プロジェクト独自の生産量の指標をJSON形式で指定します。"),
     )
 
     parser.add_argument("-o", "--output_dir", type=Path, required=True, help="出力先ディレクトリ。")

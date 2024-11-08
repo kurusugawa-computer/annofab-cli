@@ -420,6 +420,25 @@ class ProjectDir(DataClassJsonMixin):
         """
         print_json(obj.to_dict(encode_json=True), output=self.project_dir / self.FILENAME_MERGE_INFO, is_pretty=True)
 
+    def read_metadata(self) -> Optional[dict[str, Any]]:
+        """
+        `project_info`または`merge_info`の内容をメタデータとして読み込む。
+        どちらも存在しない場合はNoneを返す。
+        """
+        try:
+            project_info = self.read_project_info()
+            return project_info.to_dict(encode_json=True)
+        except FileNotFoundError:
+            pass
+
+        try:
+            merge_info = self.read_merge_info()
+            return merge_info.to_dict(encode_json=True)
+        except FileNotFoundError:
+            pass
+
+        return None
+
 
 @dataclass
 class ProjectInfo(DataClassJsonMixin):

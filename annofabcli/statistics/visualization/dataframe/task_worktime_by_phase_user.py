@@ -199,6 +199,7 @@ class TaskWorktimeByPhaseUser:
 
     def mask_user_info(
         self,
+        *,
         to_replace_for_user_id: Optional[dict[str, str]] = None,
         to_replace_for_username: Optional[dict[str, str]] = None,
         to_replace_for_account_id: Optional[dict[str, str]] = None,
@@ -221,7 +222,7 @@ class TaskWorktimeByPhaseUser:
             "biography": to_replace_for_biography,
         }
         df = self.df.replace(to_replace_info)
-        return TaskWorktimeByPhaseUser(df)
+        return TaskWorktimeByPhaseUser(df, custom_production_volume_list=self.custom_production_volume_list)
 
     @staticmethod
     def _create_annotation_count_ratio_df(
