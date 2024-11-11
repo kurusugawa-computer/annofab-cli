@@ -48,7 +48,7 @@ from annofabcli.statistics.visualization.dataframe.whole_productivity_per_date i
 )
 from annofabcli.statistics.visualization.dataframe.worktime_per_date import WorktimePerDate
 from annofabcli.statistics.visualization.filtering_query import FilteringQuery, filter_tasks
-from annofabcli.statistics.visualization.model import ProductionVolumeColumn, WorktimeColumn
+from annofabcli.statistics.visualization.model import ProductionVolumeColumn, TaskCompletionCriteria, WorktimeColumn
 from annofabcli.statistics.visualization.project_dir import ProjectDir, ProjectInfo
 from annofabcli.statistics.visualization.visualization_source_files import VisualizationSourceFiles
 
@@ -60,10 +60,11 @@ def get_project_output_dir(project_title: str) -> str:
 
 
 class WriteCsvGraph:
-    def __init__(
+    def __init__(  # noqa: PLR0913
         self,
         service: annofabapi.Resource,
         project_id: str,
+        task_completion_criteria: TaskCompletionCriteria,
         filtering_query: FilteringQuery,
         visualization_source_files: VisualizationSourceFiles,
         project_dir: ProjectDir,
@@ -76,6 +77,7 @@ class WriteCsvGraph:
     ) -> None:
         self.service = service
         self.project_id = project_id
+        self.task_completion_criteria = task_completion_criteria
         self.project_dir = project_dir
         self.filtering_query = filtering_query
         self.visualize_source_files = visualization_source_files
@@ -212,11 +214,15 @@ class WriteCsvGraph:
         self.project_dir.write_worktime_per_date_user(worktime_per_date_obj)
 
         task = self._get_task()
-        productivity_per_completed_date_obj = WholeProductivityPerCompletedDate.from_df_wrapper(task, worktime_per_date_obj)
+        productivity_per_completed_date_obj = WholeProductivityPerCompletedDate.from_df_wrapper(
+            task, worktime_per_date_obj, task_completion_criteria=self.task_completion_criteria
+        )
 
         self.project_dir.write_whole_productivity_per_date(productivity_per_completed_date_obj)
 
-        productivity_per_started_date_obj = WholeProductivityPerFirstAnnotationStartedDate.from_task(task)
+        productivity_per_started_date_obj = WholeProductivityPerFirstAnnotationStartedDate.from_task(
+            task, task_completion_criteria=self.task_completion_criteria
+        )
         self.project_dir.write_whole_productivity_per_first_annotation_started_date(productivity_per_started_date_obj)
 
         if not self.output_only_text:
@@ -250,6 +256,7 @@ class VisualizingStatisticsMain:
         *,
         temp_dir: Path,
         # タスクの絞り込み関係
+        task_completion_criteria: TaskCompletionCriteria,
         task_query: Optional[TaskQuery],
         start_date: Optional[str] = None,
         end_date: Optional[str] = None,
@@ -268,7 +275,7 @@ class VisualizingStatisticsMain:
         self.service = service
         self.facade = AnnofabApiFacade(service)
         self.temp_dir = temp_dir
-
+        self.task_completion_criteria = task_completion_criteria
         self.filtering_query = FilteringQuery(task_query=task_query, start_date=start_date, end_date=end_date)
         self.minimal_output = minimal_output
         self.output_only_text = output_only_text
@@ -289,6 +296,7 @@ class VisualizingStatisticsMain:
             project_title=project_title,
             input_data_type=project_info["input_data_type"],
             measurement_datetime=annofabapi.utils.str_now(),
+            task_completion_criteria=self.task_completion_criteria,
             query=self.filtering_query,
         )
         return project_summary
@@ -307,7 +315,7 @@ class VisualizingStatisticsMain:
         project_info = self.get_project_info(project_id)
         logger.info(f"project_title='{project_info.project_title}'")
 
-        project_dir = ProjectDir(output_project_dir, metadata=project_info.to_dict(encode_json=True))
+        project_dir = ProjectDir(output_project_dir, self.task_completion_criteria, metadata=project_info.to_dict(encode_json=True))
         project_dir.write_project_info(project_info)
 
         if self.actual_worktime is not None:
@@ -347,6 +355,7 @@ class VisualizingStatisticsMain:
         write_obj = WriteCsvGraph(
             self.service,
             project_id,
+            task_completion_criteria=self.task_completion_criteria,
             filtering_query=self.filtering_query,
             visualization_source_files=visualization_source_files,
             project_dir=project_dir,
@@ -452,6 +461,7 @@ class VisualizeStatistics(CommandLine):
         self,
         temp_dir: Path,
         task_query: Optional[TaskQuery],
+        task_completion_criteria: TaskCompletionCriteria,
         user_id_list: Optional[list[str]],
         actual_worktime: ActualWorktime,
         annotation_count: Optional[AnnotationCount],
@@ -470,6 +480,7 @@ class VisualizeStatistics(CommandLine):
         main_obj = VisualizingStatisticsMain(
             service=self.service,
             temp_dir=temp_dir,
+            task_completion_criteria=task_completion_criteria,
             task_query=task_query,
             user_ids=user_id_list,
             actual_worktime=actual_worktime,
@@ -496,7 +507,7 @@ class VisualizeStatistics(CommandLine):
             )
 
             if len(output_project_dir_list) > 0:
-                project_dir_list = [ProjectDir(e) for e in output_project_dir_list]
+                project_dir_list = [ProjectDir(e, task_completion_criteria) for e in output_project_dir_list]
                 custom_production_volume_list = (
                     custom_production_volume.custom_production_volume_list if custom_production_volume is not None else None
                 )
@@ -554,11 +565,13 @@ class VisualizeStatistics(CommandLine):
             create_custom_production_volume(args.custom_production_volume) if args.custom_production_volume is not None else None
         )
 
+        task_completion_criteria = TaskCompletionCriteria(args.task_completion_criteria)
         if args.temp_dir is None:
             with tempfile.TemporaryDirectory() as str_temp_dir:
                 self.visualize_statistics(
                     temp_dir=Path(str_temp_dir),
                     task_query=task_query,
+                    task_completion_criteria=task_completion_criteria,
                     user_id_list=user_id_list,
                     actual_worktime=actual_worktime,
                     annotation_count=annotation_count,
@@ -578,6 +591,7 @@ class VisualizeStatistics(CommandLine):
         else:
             self.visualize_statistics(
                 temp_dir=args.temp_dir,
+                task_completion_criteria=task_completion_criteria,
                 task_query=task_query,
                 user_id_list=user_id_list,
                 actual_worktime=actual_worktime,
@@ -612,6 +626,16 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
             "対象のプロジェクトのproject_idを指定してください。複数指定した場合、プロジェクトごとに統計情報が出力されます。\n"
             "``file://`` を先頭に付けると、project_idが記載されたファイルを指定できます。"
         ),
+    )
+
+    parser.add_argument(
+        "--task_completion_criteria",
+        type=str,
+        choices=[e.value for e in TaskCompletionCriteria],
+        default=TaskCompletionCriteria.ACCEPTANCE_COMPLETED.value,
+        help="タスクの完了条件を指定します。\n"
+        "* ``acceptance_completed``: タスクが受入フェーズの完了状態であれば「タスクの完了」とみなす\n"
+        "* ``acceptance_reached``: タスクが受入フェーズに到達したら「タスクの完了」とみなす\n",
     )
 
     parser.add_argument("-o", "--output_dir", type=Path, required=True, help="出力先ディレクトリのパスを指定してください。")

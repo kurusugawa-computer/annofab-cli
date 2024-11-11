@@ -14,7 +14,7 @@ from annofabcli.stat_visualization.write_performance_rating_csv import (
     create_quality_indicator_by_directory,
     create_threshold_infos_per_project,
 )
-from annofabcli.statistics.visualization.project_dir import ProjectDir
+from annofabcli.statistics.visualization.project_dir import ProjectDir, TaskCompletionCriteria
 
 data_dir = Path("tests/data/stat_visualization")
 
@@ -41,7 +41,7 @@ df_user = pandas.DataFrame(
         ("biography", ""): ["category-KK", "category-KT", "category-KT", "category-KT"],
     }
 )
-project_dir = ProjectDir(data_dir / "visualization-dir")
+project_dir = ProjectDir(data_dir / "visualization-dir", TaskCompletionCriteria.ACCEPTANCE_COMPLETED)
 
 user_performance = project_dir.read_user_performance()
 

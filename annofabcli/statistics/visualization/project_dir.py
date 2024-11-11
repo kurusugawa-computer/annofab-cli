@@ -25,7 +25,7 @@ from annofabcli.statistics.visualization.dataframe.whole_productivity_per_date i
 )
 from annofabcli.statistics.visualization.dataframe.worktime_per_date import WorktimePerDate
 from annofabcli.statistics.visualization.filtering_query import FilteringQuery
-from annofabcli.statistics.visualization.model import ProductionVolumeColumn
+from annofabcli.statistics.visualization.model import ProductionVolumeColumn, TaskCompletionCriteria
 
 logger = logging.getLogger(__name__)
 
@@ -53,11 +53,13 @@ class ProjectDir(DataClassJsonMixin):
     def __init__(
         self,
         project_dir: Path,
+        task_completion_criteria: TaskCompletionCriteria,
         *,
         metadata: Optional[dict[str, Any]] = None,
         custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None,
     ) -> None:
         self.project_dir = project_dir
+        self.task_completion_criteria = task_completion_criteria
         self.metadata = metadata
         self.custom_production_volume_list = custom_production_volume_list
 
@@ -223,10 +225,14 @@ class ProjectDir(DataClassJsonMixin):
         file = self.project_dir / self.FILENAME_WHOLE_PRODUCTIVITY_PER_DATE
         if file.exists():
             return WholeProductivityPerCompletedDate.from_csv(
-                self.project_dir / self.FILENAME_WHOLE_PRODUCTIVITY_PER_DATE, custom_production_volume_list=self.custom_production_volume_list
+                self.project_dir / self.FILENAME_WHOLE_PRODUCTIVITY_PER_DATE,
+                task_completion_criteria=self.task_completion_criteria,
+                custom_production_volume_list=self.custom_production_volume_list,
             )
         else:
-            return WholeProductivityPerCompletedDate.empty(custom_production_volume_list=self.custom_production_volume_list)
+            return WholeProductivityPerCompletedDate.empty(
+                task_completion_criteria=self.task_completion_criteria, custom_production_volume_list=self.custom_production_volume_list
+            )
 
     def write_whole_productivity_per_date(self, obj: WholeProductivityPerCompletedDate) -> None:
         """
@@ -249,10 +255,13 @@ class ProjectDir(DataClassJsonMixin):
         if file.exists():
             return WholeProductivityPerFirstAnnotationStartedDate.from_csv(
                 file,
+                self.task_completion_criteria,
                 custom_production_volume_list=self.custom_production_volume_list,
             )
         else:
-            return WholeProductivityPerFirstAnnotationStartedDate.empty(custom_production_volume_list=self.custom_production_volume_list)
+            return WholeProductivityPerFirstAnnotationStartedDate.empty(
+                self.task_completion_criteria, custom_production_volume_list=self.custom_production_volume_list
+            )
 
     def write_whole_productivity_per_first_annotation_started_date(self, obj: WholeProductivityPerFirstAnnotationStartedDate) -> None:
         """
@@ -453,6 +462,8 @@ class ProjectInfo(DataClassJsonMixin):
     """入力データの種類"""
     measurement_datetime: str
     """計測日時。（2004-04-01T12:00+09:00形式）"""
+    task_completion_criteria: TaskCompletionCriteria
+    """タスクの完了条件"""
     query: FilteringQuery
     """集計対象を絞り込むためのクエリ"""
 
@@ -465,3 +476,5 @@ class MergingInfo(DataClassJsonMixin):
     """マージ対象のディレクトリ名"""
     project_info_list: List[ProjectInfo]
     """マージ対象のプロジェクト情報"""
+    task_completion_criteria: TaskCompletionCriteria
+    """タスクの完了条件"""

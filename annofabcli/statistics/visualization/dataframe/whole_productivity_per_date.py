@@ -14,7 +14,7 @@ import bokeh
 import bokeh.layouts
 import bokeh.palettes
 import pandas
-from annofabapi.models import TaskStatus
+from annofabapi.models import TaskPhase, TaskStatus
 from bokeh.models import DataRange1d
 from bokeh.models.ui import UIElement
 from bokeh.models.widgets.markups import Div
@@ -22,6 +22,7 @@ from bokeh.plotting import ColumnDataSource
 from dateutil.parser import parse
 
 from annofabcli.common.bokeh import create_pretext_from_metadata
+from annofabcli.common.type_util import assert_noreturn
 from annofabcli.common.utils import datetime_to_date, print_csv
 from annofabcli.statistics.linegraph import (
     LineGraph,
@@ -32,7 +33,7 @@ from annofabcli.statistics.linegraph import (
 )
 from annofabcli.statistics.visualization.dataframe.task import Task
 from annofabcli.statistics.visualization.dataframe.worktime_per_date import WorktimePerDate
-from annofabcli.statistics.visualization.model import ProductionVolumeColumn
+from annofabcli.statistics.visualization.model import ProductionVolumeColumn, TaskCompletionCriteria
 
 logger = logging.getLogger(__name__)
 
@@ -91,10 +92,17 @@ def _plot_and_moving_average(
 
 
 class WholeProductivityPerCompletedDate:
-    """受入完了日ごとの全体の生産量と生産性に関する情報"""
+    """完了日ごとの全体の生産量と生産性に関する情報"""
 
-    def __init__(self, df: pandas.DataFrame, *, custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None) -> None:
+    def __init__(
+        self,
+        df: pandas.DataFrame,
+        task_completion_criteria: TaskCompletionCriteria,
+        *,
+        custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None,
+    ) -> None:
         self.df = df
+        self.task_completion_criteria = task_completion_criteria
         self.custom_production_volume_list = custom_production_volume_list if custom_production_volume_list is not None else []
 
     def _validate_df_for_output(self, output_file: Path) -> bool:
@@ -105,11 +113,15 @@ class WholeProductivityPerCompletedDate:
 
     @classmethod
     def from_csv(
-        cls, csv_file: Path, *, custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None
+        cls,
+        csv_file: Path,
+        task_completion_criteria: TaskCompletionCriteria,
+        *,
+        custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None,
     ) -> WholeProductivityPerCompletedDate:
         """CSVファイルからインスタンスを生成します。"""
         df = pandas.read_csv(str(csv_file))
-        return cls(df, custom_production_volume_list=custom_production_volume_list)
+        return cls(df, task_completion_criteria, custom_production_volume_list=custom_production_volume_list)
 
     @staticmethod
     def _create_df_date(date_index1: pandas.Index, date_index2: pandas.Index) -> pandas.DataFrame:
@@ -129,9 +141,11 @@ class WholeProductivityPerCompletedDate:
         return pandas.DataFrame(index=[e.strftime("%Y-%m-%d") for e in pandas.date_range(start_date, end_date)])
 
     @classmethod
-    def from_df_wrapper(cls, task: Task, worktime_per_date: WorktimePerDate) -> WholeProductivityPerCompletedDate:
+    def from_df_wrapper(
+        cls, task: Task, worktime_per_date: WorktimePerDate, task_completion_criteria: TaskCompletionCriteria
+    ) -> WholeProductivityPerCompletedDate:
         """
-        受入完了日毎の全体の生産量、生産性を算出する。
+        完了日毎の全体の生産量、生産性を算出する。
 
         Args:
             task: タスク情報が格納されたDataFrameをラップするクラスのインスタンス
@@ -148,21 +162,25 @@ class WholeProductivityPerCompletedDate:
         # 生産量を表す列名
         production_volume_columns = ["input_data_count", "annotation_count", *[e.value for e in task.custom_production_volume_list]]
 
-        df_sub_task = task.df[["task_id", "first_acceptance_completed_datetime", *production_volume_columns]].copy()
-        df_sub_task["first_acceptance_completed_date"] = df_sub_task["first_acceptance_completed_datetime"].map(
-            lambda e: datetime_to_date(e) if not pandas.isna(e) else None
-        )
+        if task_completion_criteria == TaskCompletionCriteria.ACCEPTANCE_COMPLETED:
+            datetime_column = "first_acceptance_completed_datetime"
+        elif task_completion_criteria == TaskCompletionCriteria.ACCEPTANCE_REACHED:
+            datetime_column = "first_acceptance_reached_datetime"
+        else:
+            assert_noreturn(task_completion_criteria)
 
-        # タスク完了日を軸にして集計する
+        df_sub_task = task.df[["task_id", datetime_column, *production_volume_columns]].copy()
+        date_column = datetime_column.replace("_datetime", "_date")
+        df_sub_task[date_column] = df_sub_task[datetime_column].map(lambda e: datetime_to_date(e) if not pandas.isna(e) else None)
+
+        # 完了日を軸にして集計する
         df_agg_sub_task = df_sub_task.pivot_table(
             values=production_volume_columns,
-            index="first_acceptance_completed_date",
+            index=date_column,
             aggfunc="sum",
         ).fillna(0)
         if len(df_agg_sub_task) > 0:
-            df_agg_sub_task["task_count"] = df_sub_task.pivot_table(
-                values=["task_id"], index="first_acceptance_completed_date", aggfunc="count"
-            ).fillna(0)
+            df_agg_sub_task["task_count"] = df_sub_task.pivot_table(values=["task_id"], index=date_column, aggfunc="count").fillna(0)
         else:
             # 列だけ作る
             df_agg_sub_task = df_agg_sub_task.assign(**{key: 0 for key in production_volume_columns}, task_count=0)
@@ -212,7 +230,7 @@ class WholeProductivityPerCompletedDate:
         df_date["date"] = df_date.index
 
         cls._add_velocity_columns(df_date, production_volume_columns)
-        return cls(df_date, custom_production_volume_list=task.custom_production_volume_list)
+        return cls(df_date, task_completion_criteria, custom_production_volume_list=task.custom_production_volume_list)
 
     @classmethod
     def _add_velocity_columns(cls, df: pandas.DataFrame, production_volume_columns: list[str]) -> None:
@@ -248,16 +266,17 @@ class WholeProductivityPerCompletedDate:
             for unit in production_volume_columns:
                 add_velocity_column(df, numerator_column=f"{category}_worktime_hour", denominator_column=unit)
 
-    @staticmethod
-    def _create_div_element() -> Div:
+    def _create_div_element(self) -> Div:
         """
         HTMLページの先頭に付与するdiv要素を生成する。
         """
-        return Div(
-            text="""<h4>用語</h4>
-            <p>「X日のタスク数」とは、X日に初めて受入完了状態になったタスクの個数です。</p>
-            """
-        )
+        if self.task_completion_criteria == TaskCompletionCriteria.ACCEPTANCE_COMPLETED:
+            str_task = "受入フェーズ完了状態"
+        elif self.task_completion_criteria == TaskCompletionCriteria.ACCEPTANCE_REACHED:
+            str_task = "受入フェーズ"
+        else:
+            assert_noreturn(self.task_completion_criteria)
+        return Div(text="<h4>注意</h4>" f"<p>「X日のタスク数」は、X日に初めて{str_task}になったタスクの個数です。</p>")
 
     def plot(
         self,
@@ -735,9 +754,11 @@ class WholeProductivityPerCompletedDate:
         write_bokeh_graph(bokeh.layouts.column(element_list), output_file)
 
     @classmethod
-    def empty(cls, *, custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None) -> WholeProductivityPerCompletedDate:
+    def empty(
+        cls, *, task_completion_criteria: TaskCompletionCriteria, custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None
+    ) -> WholeProductivityPerCompletedDate:
         df = pandas.DataFrame(columns=cls.get_columns(custom_production_volume_list=custom_production_volume_list))
-        return cls(df, custom_production_volume_list=custom_production_volume_list)
+        return cls(df, task_completion_criteria, custom_production_volume_list=custom_production_volume_list)
 
     @property
     def columns(self) -> list[str]:
@@ -807,17 +828,28 @@ class WholeProductivityPerCompletedDate:
 class WholeProductivityPerFirstAnnotationStartedDate:
     """教師付開始日ごとの全体の生産量と生産性に関する情報"""
 
-    def __init__(self, df: pandas.DataFrame, *, custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None) -> None:
+    def __init__(
+        self,
+        df: pandas.DataFrame,
+        task_completion_criteria: TaskCompletionCriteria,
+        *,
+        custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None,
+    ) -> None:
+        self.task_completion_criteria = task_completion_criteria
         self.custom_production_volume_list = custom_production_volume_list if custom_production_volume_list is not None else []
         self.df = df
 
     @classmethod
     def from_csv(
-        cls, csv_file: Path, *, custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None
+        cls,
+        csv_file: Path,
+        task_completion_criteria: TaskCompletionCriteria,
+        *,
+        custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None,
     ) -> WholeProductivityPerFirstAnnotationStartedDate:
         """CSVファイルからインスタンスを生成します。"""
         df = pandas.read_csv(str(csv_file))
-        return cls(df, custom_production_volume_list=custom_production_volume_list)
+        return cls(df, task_completion_criteria, custom_production_volume_list=custom_production_volume_list)
 
     @classmethod
     def _add_velocity_columns(cls, df: pandas.DataFrame, production_volume_columns: list[str]) -> None:
@@ -840,12 +872,19 @@ class WholeProductivityPerFirstAnnotationStartedDate:
             add_velocity_column(df, numerator_column="acceptance_worktime_hour", denominator_column=column)
 
     @classmethod
-    def from_task(cls, task: Task) -> WholeProductivityPerFirstAnnotationStartedDate:
+    def from_task(cls, task: Task, task_completion_criteria: TaskCompletionCriteria) -> WholeProductivityPerFirstAnnotationStartedDate:
         # 生産量を表す列名
         production_volume_columns = ["input_data_count", "annotation_count", *[e.value for e in task.custom_production_volume_list]]
 
         df_task = task.df
-        df_sub_task = df_task[df_task["status"] == TaskStatus.COMPLETE.value][
+        if task_completion_criteria == TaskCompletionCriteria.ACCEPTANCE_COMPLETED:
+            df_sub_task = df_task[df_task["status"] == TaskStatus.COMPLETE.value]
+        elif task_completion_criteria == TaskCompletionCriteria.ACCEPTANCE_REACHED:
+            df_sub_task = df_task[df_task["phase"] == TaskPhase.ACCEPTANCE.value]
+        else:
+            assert_noreturn(task_completion_criteria)
+
+        df_sub_task = df_sub_task[
             [
                 "task_id",
                 "first_annotation_started_datetime",
@@ -893,7 +932,7 @@ class WholeProductivityPerFirstAnnotationStartedDate:
         df_date["first_annotation_started_date"] = df_date.index
         # 生産性情報などの列を追加する
         cls._add_velocity_columns(df_date, production_volume_columns)
-        return cls(df_date, custom_production_volume_list=task.custom_production_volume_list)
+        return cls(df_date, task_completion_criteria, custom_production_volume_list=task.custom_production_volume_list)
 
     def _validate_df_for_output(self, output_file: Path) -> bool:
         if len(self.df) == 0:
@@ -902,9 +941,11 @@ class WholeProductivityPerFirstAnnotationStartedDate:
         return True
 
     @classmethod
-    def empty(cls, *, custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None) -> WholeProductivityPerFirstAnnotationStartedDate:
+    def empty(
+        cls, task_completion_criteria: TaskCompletionCriteria, *, custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None
+    ) -> WholeProductivityPerFirstAnnotationStartedDate:
         df = pandas.DataFrame(columns=cls.get_columns(custom_production_volume_list=custom_production_volume_list))
-        return cls(df, custom_production_volume_list=custom_production_volume_list)
+        return cls(df, task_completion_criteria, custom_production_volume_list=custom_production_volume_list)
 
     @staticmethod
     def get_columns(*, custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None) -> list[str]:
@@ -973,12 +1014,16 @@ class WholeProductivityPerFirstAnnotationStartedDate:
             """
             HTMLページの先頭に付与するdiv要素を生成する。
             """
+            if self.task_completion_criteria == TaskCompletionCriteria.ACCEPTANCE_COMPLETED:
+                str_task = "受入フェーズ完了状態"
+            elif self.task_completion_criteria == TaskCompletionCriteria.ACCEPTANCE_REACHED:
+                str_task = "受入フェーズ"
+            else:
+                assert_noreturn(self.task_completion_criteria)
             return Div(
-                text="""<h4>注意</h4>
-                <p>「X日の作業時間」とは、「X日に教師付開始したタスクにかけた作業時間」です。
-                「X日に作業した時間」ではありません。
-                </p>
-                """
+                text="<h4>注意</h4>"
+                f"<p>「X日のタスク数」は、X日に教師付フェーズを開始したタスクの内、{str_task}であるタスクの個数です。</p>"
+                f"<p>「X日の作業時間」は、X日のタスク数にかけた作業時間です。X日に作業した時間ではないことに注意してください。</p>"
             )
 
         def create_line_graph(title: str, y_axis_label: str, tooltip_columns: list[str]) -> LineGraph:

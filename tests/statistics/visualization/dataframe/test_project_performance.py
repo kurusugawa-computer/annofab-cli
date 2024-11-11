@@ -6,7 +6,7 @@ from annofabcli.statistics.visualization.dataframe.project_performance import (
     ProjectPerformance,
     ProjectWorktimePerMonth,
 )
-from annofabcli.statistics.visualization.model import WorktimeColumn
+from annofabcli.statistics.visualization.model import TaskCompletionCriteria, WorktimeColumn
 from annofabcli.statistics.visualization.project_dir import ProjectDir
 
 output_dir = Path("./tests/out/statistics/visualization/dataframe/project_performance")
@@ -16,7 +16,7 @@ output_dir.mkdir(exist_ok=True, parents=True)
 
 class TestProjectPerformance:
     def test__from_project_dirs__and__to_csv(self):
-        actual = ProjectPerformance.from_project_dirs([ProjectDir(data_dir / "visualization-dir1")])
+        actual = ProjectPerformance.from_project_dirs([ProjectDir(data_dir / "visualization-dir1", TaskCompletionCriteria.ACCEPTANCE_COMPLETED)])
         df = actual.df
         assert len(df) == 1
         row = df.iloc[0]
@@ -30,7 +30,7 @@ class TestProjectPerformance:
         actual.to_csv(output_dir / "test__from_project_dirs__and__to_csv.csv")
 
     def test__from_project_dirs__空ディレクトから生成する(self):
-        actual = ProjectPerformance.from_project_dirs([ProjectDir(data_dir / "empty")])
+        actual = ProjectPerformance.from_project_dirs([ProjectDir(data_dir / "empty", TaskCompletionCriteria.ACCEPTANCE_COMPLETED)])
         df = actual.df
         assert len(df) == 1
         row = df.iloc[0]
@@ -46,7 +46,8 @@ class TestProjectPerformance:
 class TestProjectWorktimePerMonth:
     def test__from_project_dirs__and_to_csv(self):
         actual_worktime = ProjectWorktimePerMonth.from_project_dirs(
-            [ProjectDir(data_dir / "visualization-dir1")], worktime_column=WorktimeColumn.ACTUAL_WORKTIME_HOUR
+            [ProjectDir(data_dir / "visualization-dir1", TaskCompletionCriteria.ACCEPTANCE_COMPLETED)],
+            worktime_column=WorktimeColumn.ACTUAL_WORKTIME_HOUR,
         )
         df = actual_worktime.df
         assert len(df) == 1
@@ -59,7 +60,7 @@ class TestProjectWorktimePerMonth:
 
     def test__from_project_dirs__空ディレクトリから生成(self):
         actual_worktime = ProjectWorktimePerMonth.from_project_dirs(
-            [ProjectDir(data_dir / "empty")], worktime_column=WorktimeColumn.ACTUAL_WORKTIME_HOUR
+            [ProjectDir(data_dir / "empty", TaskCompletionCriteria.ACCEPTANCE_COMPLETED)], worktime_column=WorktimeColumn.ACTUAL_WORKTIME_HOUR
         )
         df = actual_worktime.df
         assert len(df) == 1

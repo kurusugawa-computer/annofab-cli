@@ -35,7 +35,7 @@ from annofabcli.statistics.visualization.dataframe.whole_productivity_per_date i
     WholeProductivityPerFirstAnnotationStartedDate,
 )
 from annofabcli.statistics.visualization.dataframe.worktime_per_date import WorktimePerDate
-from annofabcli.statistics.visualization.model import ProductionVolumeColumn
+from annofabcli.statistics.visualization.model import ProductionVolumeColumn, TaskCompletionCriteria
 from annofabcli.statistics.visualization.project_dir import MergingInfo, ProjectDir
 
 logger = logging.getLogger(__name__)
@@ -45,11 +45,13 @@ class WritingVisualizationFile:
     def __init__(
         self,
         output_project_dir: ProjectDir,
+        task_completion_criteria: TaskCompletionCriteria,
         *,
         user_id_list: Optional[List[str]] = None,
         minimal_output: bool = False,
     ) -> None:
         self.output_project_dir = output_project_dir
+        self.task_completion_criteria = task_completion_criteria
         self.user_id_list = user_id_list
         self.minimal_output = minimal_output
 
@@ -126,13 +128,13 @@ class WritingVisualizationFile:
 
     @_catch_exception
     def write_performance_per_first_annotation_started_date(self, task: Task) -> None:
-        obj = WholeProductivityPerFirstAnnotationStartedDate.from_task(task)
+        obj = WholeProductivityPerFirstAnnotationStartedDate.from_task(task, self.task_completion_criteria)
         self.output_project_dir.write_whole_productivity_per_first_annotation_started_date(obj)
         self.output_project_dir.write_whole_productivity_line_graph_per_annotation_started_date(obj)
 
     @_catch_exception
     def write_merge_performance_per_date(self, task: Task, worktime_per_date: WorktimePerDate) -> None:
-        obj = WholeProductivityPerCompletedDate.from_df_wrapper(task, worktime_per_date)
+        obj = WholeProductivityPerCompletedDate.from_df_wrapper(task, worktime_per_date, task_completion_criteria=self.task_completion_criteria)
         self.output_project_dir.write_whole_productivity_per_date(obj)
         self.output_project_dir.write_whole_productivity_line_graph_per_date(obj)
 
@@ -176,7 +178,7 @@ class MergingVisualizationFile:
         merged_obj = TaskWorktimeByPhaseUser.merge(*tmp_list, custom_production_volume_list=self.custom_production_volume_list)
         return merged_obj
 
-    def create_merging_info(self) -> MergingInfo:
+    def create_merging_info(self, task_completion_criteria: TaskCompletionCriteria) -> MergingInfo:
         """
         `project_info.json`の内容から、どのようにマージしたかを示す情報を作成する。
         """
@@ -186,12 +188,15 @@ class MergingVisualizationFile:
             project_info = project_dir.read_project_info()
             project_info_list.append(project_info)
 
-        merge_info = MergingInfo(target_dir_list=target_dir_list, project_info_list=project_info_list)
+        merge_info = MergingInfo(
+            target_dir_list=target_dir_list, project_info_list=project_info_list, task_completion_criteria=task_completion_criteria
+        )
         return merge_info
 
 
 def merge_visualization_dir(  # pylint: disable=too-many-statements
     project_dir_list: List[ProjectDir],
+    task_completion_criteria: TaskCompletionCriteria,
     output_project_dir: ProjectDir,
     *,
     custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None,
@@ -200,7 +205,7 @@ def merge_visualization_dir(  # pylint: disable=too-many-statements
 ) -> None:
     merging_obj = MergingVisualizationFile(project_dir_list, custom_production_volume_list=custom_production_volume_list)
 
-    merging_info = merging_obj.create_merging_info()
+    merging_info = merging_obj.create_merging_info(task_completion_criteria)
     output_project_dir.metadata = merging_info.to_dict(encode_json=True)
 
     # 基本となるCSVファイルを読み込みマージする
@@ -210,7 +215,9 @@ def merge_visualization_dir(  # pylint: disable=too-many-statements
 
     user_performance = UserPerformance.from_df_wrapper(task_worktime_by_phase_user=task_worktime_by_phase_user, worktime_per_date=worktime_per_date)
     whole_performance = WholePerformance.from_df_wrapper(task_worktime_by_phase_user=task_worktime_by_phase_user, worktime_per_date=worktime_per_date)
-    writing_obj = WritingVisualizationFile(output_project_dir, user_id_list=user_id_list, minimal_output=minimal_output)
+    writing_obj = WritingVisualizationFile(
+        output_project_dir, user_id_list=user_id_list, minimal_output=minimal_output, task_completion_criteria=task_completion_criteria
+    )
 
     writing_obj.write_task_list_and_histogram(task)
     writing_obj.write_worktime_per_date(worktime_per_date)
@@ -258,19 +265,30 @@ def main(args: argparse.Namespace) -> None:
     custom_production_volume_list = (
         create_custom_production_volume_list(args.custom_production_volume) if args.custom_production_volume is not None else None
     )
-
+    task_completion_criteria = TaskCompletionCriteria(args.task_completion_criteria)
     merge_visualization_dir(
-        project_dir_list=[ProjectDir(e) for e in args.dir],
+        project_dir_list=[ProjectDir(e, task_completion_criteria) for e in args.dir],
+        task_completion_criteria=task_completion_criteria,
         user_id_list=user_id_list,
         custom_production_volume_list=custom_production_volume_list,
         minimal_output=args.minimal,
-        output_project_dir=ProjectDir(args.output_dir),
+        output_project_dir=ProjectDir(args.output_dir, task_completion_criteria),
     )
 
 
 def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--dir", type=Path, nargs="+", required=True, help="マージ対象ディレクトリ。2つ以上指定してください。")
     parser.add_argument("-o", "--output_dir", type=Path, required=True, help="出力先ディレクトリ。配下にプロジェクト名のディレクトリが出力される。")
+
+    parser.add_argument(
+        "--task_completion_criteria",
+        type=str,
+        choices=[e.value for e in TaskCompletionCriteria],
+        default=TaskCompletionCriteria.ACCEPTANCE_COMPLETED.value,
+        help="タスクの完了条件を指定します。\n"
+        "* ``acceptance_completed``: タスクが受入フェーズの完了状態であれば「タスクの完了」とみなす\n"
+        "* ``acceptance_reached``: タスクが受入フェーズに到達したら「タスクの完了」とみなす\n",
+    )
 
     parser.add_argument(
         "-u",

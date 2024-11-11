@@ -116,6 +116,25 @@ class AddingAdditionalInfoToTask:
         return None
 
     @staticmethod
+    def get_first_acceptance_reached_datetime(task_histories: list[TaskHistory]) -> Optional[str]:
+        """はじめて受入フェーズに到達した日時を取得する。
+        受入フェーズを着手した日時とは異なる。
+        必ず`first_acceptance_started_datetime`よりも前の日時になる。
+
+        Args:
+            task_histories (List[TaskHistory]): [description]
+
+        """
+        for index, history in enumerate(task_histories):
+            if history["phase"] != TaskPhase.ACCEPTANCE.value:
+                continue
+
+            first_acceptance_reached_datetime = task_histories[index - 1]["ended_datetime"]
+            assert first_acceptance_reached_datetime is not None
+            return first_acceptance_reached_datetime
+        return None
+
+    @staticmethod
     def is_acceptance_phase_skipped(task_histories: list[TaskHistory]) -> bool:
         """抜取受入によって、受入フェーズでスキップされたことがあるかを取得する。
 
@@ -269,6 +288,7 @@ class AddingAdditionalInfoToTask:
         self._add_task_history_info_by_phase(task, task_histories, phase=TaskPhase.ACCEPTANCE)
 
         # 初めて受入が完了した日時
+        task["first_acceptance_reached_datetime"] = self.get_first_acceptance_reached_datetime(task_histories)
         task["first_acceptance_completed_datetime"] = self.get_first_acceptance_completed_datetime(task_histories)
 
         # 受入完了日時を設定
@@ -339,6 +359,7 @@ class TasksAddedTaskHistoryOutput:
             # 差し戻し回数
             "number_of_rejections_by_inspection",
             "number_of_rejections_by_acceptance",
+            "first_acceptance_reached_datetime",
             "first_acceptance_completed_datetime",
             "completed_datetime",
             "inspection_is_skipped",
