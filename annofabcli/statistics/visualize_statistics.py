@@ -13,11 +13,12 @@ from typing import Any, Callable, List, Optional
 
 import annofabapi
 import pandas
-from annofabapi.models import ProjectMemberRole, TaskPhase
+from annofabapi.models import ProjectMemberRole, TaskPhase, TaskStatus
 
 import annofabcli
 from annofabcli.common.cli import COMMAND_LINE_ERROR_STATUS_CODE, CommandLine, build_annofabapi_resource_and_login, get_json_from_args
 from annofabcli.common.facade import AnnofabApiFacade, TaskQuery
+from annofabcli.common.type_util import assert_noreturn
 from annofabcli.statistics.visualization.dataframe.actual_worktime import ActualWorktime
 from annofabcli.statistics.visualization.dataframe.annotation_count import AnnotationCount
 from annofabcli.statistics.visualization.dataframe.cumulative_productivity import (
@@ -527,13 +528,24 @@ class VisualizeStatistics(CommandLine):
             else:
                 logger.warning("出力した統計情報は0件なので、`プロジェクトごとの生産性と品質.csv`を出力しません。")
 
-    def main(self) -> None:  # pylint: disable=too-many-branches
+    def main(self) -> None:  # pylint: disable=too-many-branches, # noqa: PLR0912
         args = self.args
         if not self.validate(args):
             sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
+
+        task_completion_criteria = TaskCompletionCriteria(args.task_completion_criteria)
+        if task_completion_criteria == TaskCompletionCriteria.ACCEPTANCE_COMPLETED:
+            task_query = TaskQuery(phase=TaskPhase.ACCEPTANCE, status=TaskStatus.COMPLETE)
+        elif task_completion_criteria == TaskCompletionCriteria.ACCEPTANCE_REACHED:
+            task_query = TaskQuery(phase=TaskPhase.ACCEPTANCE)
+        else:
+            assert_noreturn(task_completion_criteria)
+
         dict_task_query = annofabcli.common.cli.get_json_from_args(args.task_query)
-        task_query: Optional[TaskQuery] = TaskQuery.from_dict(dict_task_query) if dict_task_query is not None else None
+        if dict_task_query is not None:
+            task_query = TaskQuery.from_dict(dict_task_query)
+            logger.warning("引数 '--task_query' は非推奨です。代わりに '--task_completion_criteria' を指定してください。")
 
         user_id_list = annofabcli.common.cli.get_list_from_args(args.user_id) if args.user_id is not None else None
         project_id_list = annofabcli.common.cli.get_list_from_args(args.project_id)
@@ -567,7 +579,6 @@ class VisualizeStatistics(CommandLine):
             create_custom_production_volume(args.custom_production_volume) if args.custom_production_volume is not None else None
         )
 
-        task_completion_criteria = TaskCompletionCriteria(args.task_completion_criteria)
         if args.temp_dir is None:
             with tempfile.TemporaryDirectory() as str_temp_dir:
                 self.visualize_statistics(
@@ -657,9 +668,10 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "-tq",
         "--task_query",
         type=str,
-        help="タスクの検索クエリをJSON形式で指定します。指定しない場合はすべてのタスクを取得します。\n"
+        help="[DEPRECATED] タスクの検索クエリをJSON形式で指定します。指定しない場合は '--task_completion_criteria' から決まった値になります。\n"
         "``file://`` を先頭に付けると、JSON形式のファイルを指定できます。"
-        "クエリのキーは、``task_id`` , ``phase`` , ``phase_stage`` , ``status`` のみです。",
+        "クエリのキーは、``task_id`` , ``phase`` , ``phase_stage`` , ``status`` のみです。\n"
+        "'--task_query' は非推奨です。代わりに '--task_completion_criteria' を指定してください。",
     )
 
     parser.add_argument("--start_date", type=str, help="指定した日付（ ``YYYY-MM-DD`` ）以降に教師付を開始したタスクから生産性を算出します。")
