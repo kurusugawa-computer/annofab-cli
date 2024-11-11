@@ -2,9 +2,9 @@
 メンバごとの生産性と品質.csv
 ==========================================
 
-メンバごとの生産量（作業したタスク数など）や生産性、教師付の品質が分かります。
+メンバごとの生産量（作業したタスク数など）や生産性、教師付の品質が記載されています。
 
-`メンバごとの生産性と品質.csv <https://github.com/kurusugawa-computer/annofab-cli/blob/main/docs/command_reference/statistics/visualize/out_dir/メンバごとの生産性と品質.csv>`_
+`メンバごとの生産性と品質.csvのサンプル <https://github.com/kurusugawa-computer/annofab-cli/blob/main/docs/command_reference/statistics/visualize/out_dir/メンバごとの生産性と品質.csv>`_
 
 
 列の内容
@@ -25,6 +25,15 @@
 
 * ``--task_completion_criteria acceptance_completed`` : 受入フェーズ完了状態のタスク
 * ``--task_completion_criteria acceptance_reached`` : 受入フェーズのタスク
+
+
+
+
+.. warning::
+
+    ``--task_completion_criteria acceptance_reached`` を指定した場合、受入作業時間は0になります。
+    受入フェーズに到達したタスクを「生産したタスク（作業が完了したタスク）」とする場合、受入作業時間は生産量に影響しないためです。
+
 
 
 生産量
@@ -73,10 +82,3 @@
 * ``working_days`` : 作業した日数
 
 
-
-
-
-``--task_completion_criteria acceptance_reached`` を指定した場合
-===================================================================================================
-``--task_completion_criteria acceptance_reached`` を指定した場合、受入作業時間は0になります。
-受入フェーズに到達したタスクを「生産したタスク（作業が完了したタスク）」とする場合、受入作業時間は生産量に影響しないからです。
