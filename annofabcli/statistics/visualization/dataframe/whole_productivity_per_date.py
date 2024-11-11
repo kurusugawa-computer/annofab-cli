@@ -159,6 +159,10 @@ class WholeProductivityPerCompletedDate:
                 monitored_acceptance_worktime_hour
         """
 
+        if task_completion_criteria == TaskCompletionCriteria.ACCEPTANCE_REACHED:
+            # 受入フェーズに到達したらタスクの作業が完了したとみなす場合、受入フェーズの作業時間や生産量は不要な情報なので、受入作業時間を0にする
+            worktime_per_date = worktime_per_date.to_non_acceptance()
+
         # 生産量を表す列名
         production_volume_columns = ["input_data_count", "annotation_count", *[e.value for e in task.custom_production_volume_list]]
 
@@ -875,6 +879,10 @@ class WholeProductivityPerFirstAnnotationStartedDate:
     def from_task(cls, task: Task, task_completion_criteria: TaskCompletionCriteria) -> WholeProductivityPerFirstAnnotationStartedDate:
         # 生産量を表す列名
         production_volume_columns = ["input_data_count", "annotation_count", *[e.value for e in task.custom_production_volume_list]]
+
+        if task_completion_criteria == TaskCompletionCriteria.ACCEPTANCE_REACHED:
+            # 受入フェーズに到達したらタスクの作業が完了したとみなす場合、受入フェーズの作業時間や生産量は不要な情報なので、受入作業時間を0にする
+            task = task.to_non_acceptance()
 
         df_task = task.df
         if task_completion_criteria == TaskCompletionCriteria.ACCEPTANCE_COMPLETED:

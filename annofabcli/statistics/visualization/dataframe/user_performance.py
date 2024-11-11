@@ -306,7 +306,7 @@ class UserPerformance:
             df2 = df2[[col for col in df2.columns if col[1] != TaskPhase.ACCEPTANCE.value]]
 
         phase_list = list(df2["monitored_worktime_hour"].columns)
-        
+
         # 計測作業時間の合計値を算出する
         df2[("monitored_worktime_hour", "sum")] = df2[[("monitored_worktime_hour", phase) for phase in phase_list]].sum(axis=1)
         return df2
@@ -378,7 +378,7 @@ class UserPerformance:
         return df_stdev3
 
     @staticmethod
-    def _create_df_real_worktime(worktime_per_date: WorktimePerDate) -> pandas.DataFrame:
+    def _create_df_real_worktime(worktime_per_date: WorktimePerDate, task_completion_criteria: TaskCompletionCriteria) -> pandas.DataFrame:
         """
         集計対象タスクに影響されない実際の計測作業時間と実績作業時間が格納されたDataFrameを生成します。
 
@@ -440,6 +440,15 @@ class UserPerformance:
                 ("real_monitored_worktime_hour", "acceptance"),
             ]
         )
+
+        if task_completion_criteria == TaskCompletionCriteria.ACCEPTANCE_REACHED:
+            # 受入フェーズに到達したらタスクの作業が完了したとみなす場合、
+            # 受入フェーズの作業時間や生産量は不要な情報なので、受入作業時間を0にする
+            df_agg_worktime[("real_monitored_worktime_hour", TaskPhase.ACCEPTANCE.value)] = 0
+            df_agg_worktime[("real_monitored_worktime_hour", "sum")] = (
+                df_agg_worktime[("real_monitored_worktime_hour", TaskPhase.ANNOTATION.value)]
+                + df_agg_worktime[("real_monitored_worktime_hour", TaskPhase.INSPECTION.value)]
+            )
 
         df_agg_worktime[("real_monitored_worktime_hour/real_actual_worktime_hour", "sum")] = (
             df_agg_worktime[("real_monitored_worktime_hour", "sum")] / df_agg_worktime[("real_actual_worktime_hour", "sum")]
@@ -581,8 +590,14 @@ class UserPerformance:
 
             return df.fillna({col: 0 for col in columns})
 
+        if task_completion_criteria == TaskCompletionCriteria.ACCEPTANCE_REACHED:
+            # 受入フェーズに到達したらタスクの作業が完了したとみなす場合、
+            # 受入フェーズの作業時間や生産量は不要な情報なので、受入作業時間を0にする
+            worktime_per_date = worktime_per_date.to_non_acceptance()
+            task_worktime_by_phase_user = task_worktime_by_phase_user.to_non_acceptance()
+
         # 実際の計測作業時間情報（集計タスクに影響されない作業時間）と実績作業時間を算出する
-        df = cls._create_df_real_worktime(worktime_per_date)
+        df = cls._create_df_real_worktime(worktime_per_date, task_completion_criteria)
 
         # 集計対象タスクから計測作業時間や生産量を算出する
         df = df.join(cls._create_df_monitored_worktime_and_production_amount(task_worktime_by_phase_user, task_completion_criteria))

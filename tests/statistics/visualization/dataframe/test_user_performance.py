@@ -47,14 +47,13 @@ class TestUserPerformance:
         actual = UserPerformance.from_df_wrapper(
             task_worktime_by_phase_user=task_worktime_by_phase_user,
             worktime_per_date=worktime_per_date,
-            task_completion_criteria=TaskCompletionCriteria.ACCEPTANCE_COMPLETED
+            task_completion_criteria=TaskCompletionCriteria.ACCEPTANCE_COMPLETED,
         )
         actual.to_csv(output_dir / "test__from_df__集計対象タスクが0件のとき.csv")
         assert len(actual.df) == 2
         assert actual.df[("user_id", "")][0] == "alice"
         assert actual.df[("real_actual_worktime_hour", "sum")][0] == 6
         assert actual.df[("task_count", "annotation")][0] == 0
-
 
     def test__from_df_wrapper__task_completion_criteria_is_acceptance_reached(self):
         task_worktime_by_phase_user = TaskWorktimeByPhaseUser.from_csv(
@@ -70,9 +69,7 @@ class TestUserPerformance:
             worktime_per_date=worktime_per_date,
             task_completion_criteria=TaskCompletionCriteria.ACCEPTANCE_REACHED,
         )
-        assert ("task_count","acceptance") not in actual.df.columns
-
-
+        assert ("task_count", "acceptance") not in actual.df.columns
 
     def test___create_df_working_period(self) -> None:
         worktime_per_date = WorktimePerDate.from_csv(data_dir / "worktime-per-date.csv")
