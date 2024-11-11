@@ -303,10 +303,10 @@ class UserPerformance:
 
         if task_completion_criteria == TaskCompletionCriteria.ACCEPTANCE_REACHED:
             # 受入フェーズに到達したらタスクの作業が完了したとみなす場合、受入フェーズの作業時間や生産量は不要な情報なので、削除する
-            df2 = df2[[col for col in df2.columns if col[0] != TaskPhase.ACCEPTANCE.value]]
+            df2 = df2[[col for col in df2.columns if col[1] != TaskPhase.ACCEPTANCE.value]]
 
         phase_list = list(df2["monitored_worktime_hour"].columns)
-
+        
         # 計測作業時間の合計値を算出する
         df2[("monitored_worktime_hour", "sum")] = df2[[("monitored_worktime_hour", phase) for phase in phase_list]].sum(axis=1)
         return df2
