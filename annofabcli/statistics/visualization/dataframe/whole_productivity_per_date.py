@@ -280,7 +280,11 @@ class WholeProductivityPerCompletedDate:
             str_task = "受入フェーズ"
         else:
             assert_noreturn(self.task_completion_criteria)
-        return Div(text="<h4>注意</h4>" f"<p>「X日のタスク数」は、X日に初めて{str_task}になったタスクの個数です。</p>")
+
+        elm_list = ["<h4>注意</h4>", f"<p>「X日のタスク数」は、X日に初めて{str_task}になったタスクの個数です。</p>"]
+        if self.task_completion_criteria == TaskCompletionCriteria.ACCEPTANCE_REACHED:
+            elm_list.append("<p>タスクが受入フェーズに到達したら作業が完了したとみなしているため、受入作業時間は0にしています。</p>")
+        return Div(text=" ".join(elm_list))
 
     def plot(
         self,
@@ -995,7 +999,7 @@ class WholeProductivityPerFirstAnnotationStartedDate:
 
         print_csv(self.df[self.columns], str(output_file))
 
-    def plot(self, output_file: Path, *, metadata: Optional[dict[str, Any]] = None) -> None:
+    def plot(self, output_file: Path, *, metadata: Optional[dict[str, Any]] = None) -> None:  # noqa: PLR0915
         """
         全体の生産量や生産性をプロットする
         """
@@ -1028,11 +1032,12 @@ class WholeProductivityPerFirstAnnotationStartedDate:
                 str_task = "受入フェーズ"
             else:
                 assert_noreturn(self.task_completion_criteria)
-            return Div(
-                text="<h4>注意</h4>"
-                f"<p>「X日のタスク数」は、X日に教師付フェーズを開始したタスクの内、{str_task}であるタスクの個数です。</p>"
-                f"<p>「X日の作業時間」は、X日のタスク数にかけた作業時間です。X日に作業した時間ではないことに注意してください。</p>"
-            )
+
+            elm_list = ["<h4>注意</h4>", f"<p>「X日のタスク数」は、X日に教師付フェーズを開始したタスクの内、{str_task}であるタスクの個数です。</p>"]
+            if self.task_completion_criteria == TaskCompletionCriteria.ACCEPTANCE_REACHED:
+                elm_list.append("<p>タスクが受入フェーズに到達したら作業が完了したとみなしているため、受入作業時間は0にしています。</p>")
+
+            return Div(text=" ".join(elm_list))
 
         def create_line_graph(title: str, y_axis_label: str, tooltip_columns: list[str]) -> LineGraph:
             return LineGraph(

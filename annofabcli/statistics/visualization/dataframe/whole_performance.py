@@ -241,7 +241,7 @@ class WholePerformance:
             return
 
         # 列の順番を整える
-        phase_list = UserPerformance.get_phase_list(self.series.index, self.task_completion_criteria)
+        phase_list = UserPerformance.get_phase_list(self.series.index)
         production_volume_columns = ["input_data_count", "annotation_count", *[e.value for e in self.custom_production_volume_list]]
         indexes = self.get_series_index(phase_list, production_volume_columns=production_volume_columns)
         series = self.series[indexes]

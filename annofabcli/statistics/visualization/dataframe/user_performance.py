@@ -95,7 +95,7 @@ class UserPerformance:
         custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None,
     ) -> None:
         self.task_completion_criteria = task_completion_criteria
-        phase_list = self.get_phase_list(df.columns, task_completion_criteria)
+        phase_list = self.get_phase_list(df.columns)
         self.custom_production_volume_list = custom_production_volume_list if custom_production_volume_list is not None else []
         self.phase_list = phase_list
         if not self.required_columns_exist(df):
@@ -176,7 +176,7 @@ class UserPerformance:
         df[("rejected_count/task_count", phase)] = df[("rejected_count", phase)] / df[("task_count", phase)]
 
     @staticmethod
-    def get_phase_list(columns: list[tuple[str, str]], task_completion_criteria: TaskCompletionCriteria) -> list[TaskPhaseString]:
+    def get_phase_list(columns: list[tuple[str, str]]) -> list[TaskPhaseString]:
         """
         サポートしているフェーズのlistを取得します。
         `monitored_worktime_hour`列情報を見て、サポートしているフェーズを判断します。
@@ -256,7 +256,7 @@ class UserPerformance:
 
     @staticmethod
     def _create_df_monitored_worktime_and_production_amount(
-        task_worktime_by_phase_user: TaskWorktimeByPhaseUser, task_completion_criteria: TaskCompletionCriteria
+        task_worktime_by_phase_user: TaskWorktimeByPhaseUser,
     ) -> pandas.DataFrame:
         """
         タスク情報から算出した計測作業時間や生産量、指摘数などの情報が格納されたDataFrameを生成します。
@@ -367,7 +367,9 @@ class UserPerformance:
         return df_stdev3
 
     @staticmethod
-    def _create_df_real_worktime(worktime_per_date: WorktimePerDate, task_completion_criteria: TaskCompletionCriteria) -> pandas.DataFrame:
+    def _create_df_real_worktime(
+        worktime_per_date: WorktimePerDate,
+    ) -> pandas.DataFrame:
         """
         集計対象タスクに影響されない実際の計測作業時間と実績作業時間が格納されたDataFrameを生成します。
 
@@ -577,14 +579,14 @@ class UserPerformance:
             task_worktime_by_phase_user = task_worktime_by_phase_user.to_non_acceptance()
 
         # 実際の計測作業時間情報（集計タスクに影響されない作業時間）と実績作業時間を算出する
-        df = cls._create_df_real_worktime(worktime_per_date, task_completion_criteria)
+        df = cls._create_df_real_worktime(worktime_per_date)
 
         # 集計対象タスクから計測作業時間や生産量を算出する
-        df = df.join(cls._create_df_monitored_worktime_and_production_amount(task_worktime_by_phase_user, task_completion_criteria))
+        df = df.join(cls._create_df_monitored_worktime_and_production_amount(task_worktime_by_phase_user))
         # 左結合でjoinした結果、生産量や指摘回数がNaNになる可能性があるので、fillnaで0を埋める
         df = fillna_for_production_amount(df)
 
-        phase_list = cls.get_phase_list(list(df.columns), task_completion_criteria)
+        phase_list = cls.get_phase_list(list(df.columns))
 
         # 集計対象タスクから単位量あたり計測作業時間の標準偏差を算出する
         df = df.join(cls._create_df_stdev_monitored_worktime(task_worktime_by_phase_user))
