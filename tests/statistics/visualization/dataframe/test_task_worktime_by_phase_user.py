@@ -86,6 +86,7 @@ class TestTaskWorktimeByPhaseUser:
             "input_data_count": 10.0,
             "pointed_out_inspection_comment_count": 9,
             "rejected_count": 1,
+            "started_datetime": "2024-10-25T11:00:00.000+09:00",
         }
 
         assert actual2.loc["task1", "inspection", 1, "bob"].to_dict() == {
@@ -95,4 +96,5 @@ class TestTaskWorktimeByPhaseUser:
             "input_data_count": 5,
             "pointed_out_inspection_comment_count": 0.0,
             "rejected_count": 0.0,
+            "started_datetime": "2024-10-26T11:00:00.000+09:00",
         }

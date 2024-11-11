@@ -533,7 +533,6 @@ class VisualizeStatistics(CommandLine):
         if not self.validate(args):
             sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
-
         task_completion_criteria = TaskCompletionCriteria(args.task_completion_criteria)
         if task_completion_criteria == TaskCompletionCriteria.ACCEPTANCE_COMPLETED:
             task_query = TaskQuery(phase=TaskPhase.ACCEPTANCE, status=TaskStatus.COMPLETE)
