@@ -8,7 +8,6 @@
 `日毎の生産量と生産性.csv <https://github.com/kurusugawa-computer/annofab-cli/blob/main/docs/command_reference/statistics/visualize/out_dir/日毎の生産量と生産性.csv>`_
 
 
-列名だけでは内容が判断しづらい列名を、以下に記載します。
 
 * ``actual_worktime_hour`` : 実績作業時間（ ``--labor_csv`` で渡された実際の作業時間）。単位は時間。
 * ``monitored_worktime_hour`` : 計測作業時間（アノテーションエディタ画面を触っていた作業の時間）。単位は時間。
