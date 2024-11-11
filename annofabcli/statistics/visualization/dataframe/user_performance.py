@@ -5,7 +5,6 @@
 
 from __future__ import annotations
 
-import contextlib
 import logging
 import math
 from enum import Enum
@@ -189,12 +188,6 @@ class UserPerformance:
             if phase.value in tmp_set:
                 phase_list.append(phase.value)  # noqa: PERF401
 
-        if task_completion_criteria == TaskCompletionCriteria.ACCEPTANCE_REACHED:
-            # 受入フェーズに到達したらタスクの作業が完了したとみなす場合、
-            # 受入フェーズの作業時間や生産量は不要な情報なので、受入フェーズは出力しないようにする
-            with contextlib.suppress(ValueError):
-                phase_list.remove(TaskPhase.ACCEPTANCE.value)
-
         # mypyはTaskPhaseStringが返ることを認識できないため'return-value'を無視する
         return phase_list  # type: ignore[return-value]
 
@@ -300,10 +293,6 @@ class UserPerformance:
             aggfunc="sum",
         ).fillna(0)
         df2 = df2.rename(columns={"worktime_hour": "monitored_worktime_hour"})
-
-        if task_completion_criteria == TaskCompletionCriteria.ACCEPTANCE_REACHED:
-            # 受入フェーズに到達したらタスクの作業が完了したとみなす場合、受入フェーズの作業時間や生産量は不要な情報なので、削除する
-            df2 = df2[[col for col in df2.columns if col[1] != TaskPhase.ACCEPTANCE.value]]
 
         phase_list = list(df2["monitored_worktime_hour"].columns)
 
@@ -440,15 +429,6 @@ class UserPerformance:
                 ("real_monitored_worktime_hour", "acceptance"),
             ]
         )
-
-        if task_completion_criteria == TaskCompletionCriteria.ACCEPTANCE_REACHED:
-            # 受入フェーズに到達したらタスクの作業が完了したとみなす場合、
-            # 受入フェーズの作業時間や生産量は不要な情報なので、受入作業時間を0にする
-            df_agg_worktime[("real_monitored_worktime_hour", TaskPhase.ACCEPTANCE.value)] = 0
-            df_agg_worktime[("real_monitored_worktime_hour", "sum")] = (
-                df_agg_worktime[("real_monitored_worktime_hour", TaskPhase.ANNOTATION.value)]
-                + df_agg_worktime[("real_monitored_worktime_hour", TaskPhase.INSPECTION.value)]
-            )
 
         df_agg_worktime[("real_monitored_worktime_hour/real_actual_worktime_hour", "sum")] = (
             df_agg_worktime[("real_monitored_worktime_hour", "sum")] / df_agg_worktime[("real_actual_worktime_hour", "sum")]
