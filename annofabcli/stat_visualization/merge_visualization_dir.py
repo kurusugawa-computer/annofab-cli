@@ -267,12 +267,12 @@ def main(args: argparse.Namespace) -> None:
     )
     task_completion_criteria = TaskCompletionCriteria(args.task_completion_criteria)
     merge_visualization_dir(
-        project_dir_list=[ProjectDir(e) for e in args.dir],
+        project_dir_list=[ProjectDir(e, task_completion_criteria) for e in args.dir],
         task_completion_criteria=task_completion_criteria,
         user_id_list=user_id_list,
         custom_production_volume_list=custom_production_volume_list,
         minimal_output=args.minimal,
-        output_project_dir=ProjectDir(args.output_dir),
+        output_project_dir=ProjectDir(args.output_dir, task_completion_criteria),
     )
 
 

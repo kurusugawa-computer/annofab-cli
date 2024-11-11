@@ -315,7 +315,7 @@ class VisualizingStatisticsMain:
         project_info = self.get_project_info(project_id)
         logger.info(f"project_title='{project_info.project_title}'")
 
-        project_dir = ProjectDir(output_project_dir, metadata=project_info.to_dict(encode_json=True))
+        project_dir = ProjectDir(output_project_dir, self.task_completion_criteria, metadata=project_info.to_dict(encode_json=True))
         project_dir.write_project_info(project_info)
 
         if self.actual_worktime is not None:
@@ -507,7 +507,7 @@ class VisualizeStatistics(CommandLine):
             )
 
             if len(output_project_dir_list) > 0:
-                project_dir_list = [ProjectDir(e) for e in output_project_dir_list]
+                project_dir_list = [ProjectDir(e, task_completion_criteria) for e in output_project_dir_list]
                 custom_production_volume_list = (
                     custom_production_volume.custom_production_volume_list if custom_production_volume is not None else None
                 )

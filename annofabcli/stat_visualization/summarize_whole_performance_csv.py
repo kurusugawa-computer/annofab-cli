@@ -11,7 +11,7 @@ from annofabcli.common.cli import (
     get_json_from_args,
 )
 from annofabcli.statistics.visualization.dataframe.project_performance import ProjectPerformance
-from annofabcli.statistics.visualization.model import ProductionVolumeColumn
+from annofabcli.statistics.visualization.model import ProductionVolumeColumn, TaskCompletionCriteria
 from annofabcli.statistics.visualization.project_dir import ProjectDir
 
 logger = logging.getLogger(__name__)
@@ -31,7 +31,10 @@ def create_custom_production_volume_list(cli_value: str) -> list[ProductionVolum
 
 def main(args: argparse.Namespace) -> None:
     root_dir: Path = args.dir
-    project_dir_list = [ProjectDir(elm) for elm in root_dir.iterdir() if elm.is_dir()]
+    # task_completion_criteriaは何でもよいので、とりあえずACCEPTANCE_COMPLETEDを指定
+    project_dir_list = [
+        ProjectDir(elm, task_completion_criteria=TaskCompletionCriteria.ACCEPTANCE_COMPLETED) for elm in root_dir.iterdir() if elm.is_dir()
+    ]
 
     custom_production_volume_list = (
         create_custom_production_volume_list(args.custom_production_volume) if args.custom_production_volume is not None else None

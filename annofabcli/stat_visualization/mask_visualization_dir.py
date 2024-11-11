@@ -33,7 +33,7 @@ from annofabcli.statistics.visualization.dataframe.task import Task
 from annofabcli.statistics.visualization.dataframe.task_worktime_by_phase_user import TaskWorktimeByPhaseUser
 from annofabcli.statistics.visualization.dataframe.user_performance import UserPerformance
 from annofabcli.statistics.visualization.dataframe.worktime_per_date import WorktimePerDate
-from annofabcli.statistics.visualization.model import ProductionVolumeColumn
+from annofabcli.statistics.visualization.model import ProductionVolumeColumn, TaskCompletionCriteria
 from annofabcli.statistics.visualization.project_dir import ProjectDir
 
 logger = logging.getLogger(__name__)
@@ -223,12 +223,15 @@ def main(args: argparse.Namespace) -> None:
         create_custom_production_volume_list(args.custom_production_volume) if args.custom_production_volume is not None else None
     )
 
+    task_completion_criteria = TaskCompletionCriteria(args.task_completion_criteria)
     input_project_dir = ProjectDir(
         args.dir,
+        task_completion_criteria,
         custom_production_volume_list=custom_production_volume_list,
     )
     output_project_dir = ProjectDir(
         args.output_dir,
+        task_completion_criteria,
         metadata=input_project_dir.read_metadata(),
     )
     mask_visualization_dir(
@@ -270,6 +273,16 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     custom_production_volume_sample = {
         "column_list": [{"value": "video_duration_minute", "name": "動画長さ"}],
     }
+
+    parser.add_argument(
+        "--task_completion_criteria",
+        type=str,
+        choices=[e.value for e in TaskCompletionCriteria],
+        default=TaskCompletionCriteria.ACCEPTANCE_COMPLETED.value,
+        help="タスクの完了条件を指定します。\n"
+        "* ``acceptance_completed``: タスクが受入フェーズの完了状態であれば「タスクの完了」とみなす\n"
+        "* ``acceptance_reached``: タスクが受入フェーズに到達したら「タスクの完了」とみなす\n",
+    )
 
     parser.add_argument(
         "--custom_production_volume",

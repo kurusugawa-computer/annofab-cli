@@ -21,7 +21,7 @@ from annofabcli.statistics.visualization.dataframe.project_performance import (
     ProjectPerformance,
     ProjectWorktimePerMonth,
 )
-from annofabcli.statistics.visualization.model import ProductionVolumeColumn, WorktimeColumn
+from annofabcli.statistics.visualization.model import ProductionVolumeColumn, TaskCompletionCriteria, WorktimeColumn
 from annofabcli.statistics.visualization.project_dir import ProjectDir
 
 logger = logging.getLogger(__name__)
@@ -326,7 +326,11 @@ class CollectingPerformanceInfo:
                 custom_production_volume_list_by_directory.get(p_project_dir.name) if custom_production_volume_list_by_directory is not None else None
             )
             project_title = p_project_dir.name
-            project_dir = ProjectDir(p_project_dir, custom_production_volume_list=custom_production_volume_list)
+            project_dir = ProjectDir(
+                p_project_dir,
+                task_completion_criteria=TaskCompletionCriteria.ACCEPTANCE_COMPLETED,
+                custom_production_volume_list=custom_production_volume_list,
+            )
             project_dir_list.append(project_dir)
 
             try:
@@ -471,7 +475,8 @@ def create_user_df(target_dir: Path) -> pandas.DataFrame:
         if not p_project_dir.is_dir():
             continue
 
-        project_dir = ProjectDir(p_project_dir)
+        # task_completion_criteriaは何でもよいので、とりあえずACCEPTANCE_COMPLETEDを指定
+        project_dir = ProjectDir(p_project_dir, task_completion_criteria=TaskCompletionCriteria.ACCEPTANCE_COMPLETED)
 
         try:
             user_performance = project_dir.read_user_performance()

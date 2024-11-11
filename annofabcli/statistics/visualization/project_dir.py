@@ -53,11 +53,13 @@ class ProjectDir(DataClassJsonMixin):
     def __init__(
         self,
         project_dir: Path,
+        task_completion_criteria: TaskCompletionCriteria,
         *,
         metadata: Optional[dict[str, Any]] = None,
         custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None,
     ) -> None:
         self.project_dir = project_dir
+        self.task_completion_criteria = task_completion_criteria
         self.metadata = metadata
         self.custom_production_volume_list = custom_production_volume_list
 
@@ -223,10 +225,14 @@ class ProjectDir(DataClassJsonMixin):
         file = self.project_dir / self.FILENAME_WHOLE_PRODUCTIVITY_PER_DATE
         if file.exists():
             return WholeProductivityPerCompletedDate.from_csv(
-                self.project_dir / self.FILENAME_WHOLE_PRODUCTIVITY_PER_DATE, custom_production_volume_list=self.custom_production_volume_list
+                self.project_dir / self.FILENAME_WHOLE_PRODUCTIVITY_PER_DATE,
+                task_completion_criteria=self.task_completion_criteria,
+                custom_production_volume_list=self.custom_production_volume_list,
             )
         else:
-            return WholeProductivityPerCompletedDate.empty(custom_production_volume_list=self.custom_production_volume_list)
+            return WholeProductivityPerCompletedDate.empty(
+                task_completion_criteria=self.task_completion_criteria, custom_production_volume_list=self.custom_production_volume_list
+            )
 
     def write_whole_productivity_per_date(self, obj: WholeProductivityPerCompletedDate) -> None:
         """
