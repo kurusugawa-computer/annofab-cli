@@ -6,7 +6,7 @@ from annofabcli.statistics.visualization.dataframe.user_performance import (
     WorktimeType,
 )
 from annofabcli.statistics.visualization.dataframe.worktime_per_date import WorktimePerDate
-from annofabcli.statistics.visualization.model import ProductionVolumeColumn
+from annofabcli.statistics.visualization.model import ProductionVolumeColumn, TaskCompletionCriteria
 
 output_dir = Path("./tests/out/statistics/visualization/dataframe/user_perforamance")
 data_dir = Path("./tests/data/statistics")
@@ -18,7 +18,7 @@ class TestUserPerformance:
 
     @classmethod
     def setup_class(cls) -> None:
-        cls.obj = UserPerformance.from_csv(data_dir / "productivity-per-user2.csv")
+        cls.obj = UserPerformance.from_csv(data_dir / "productivity-per-user2.csv", TaskCompletionCriteria.ACCEPTANCE_COMPLETED)
 
     def test__from_df_wrapper__to_csv(self):
         task_worktime_by_phase_user = TaskWorktimeByPhaseUser.from_csv(
@@ -32,6 +32,7 @@ class TestUserPerformance:
         actual = UserPerformance.from_df_wrapper(
             task_worktime_by_phase_user=task_worktime_by_phase_user,
             worktime_per_date=worktime_per_date,
+            task_completion_criteria=TaskCompletionCriteria.ACCEPTANCE_COMPLETED,
         )
         actual.to_csv(output_dir / "test__from_df__to_csv.csv")
         assert len(actual.df) == 2
@@ -49,6 +50,7 @@ class TestUserPerformance:
         actual = UserPerformance.from_df_wrapper(
             task_worktime_by_phase_user=task_worktime_by_phase_user,
             worktime_per_date=worktime_per_date,
+            task_completion_criteria=TaskCompletionCriteria.ACCEPTANCE_COMPLETED
         )
         actual.to_csv(output_dir / "test__from_df__集計対象タスクが0件のとき.csv")
         assert len(actual.df) == 2

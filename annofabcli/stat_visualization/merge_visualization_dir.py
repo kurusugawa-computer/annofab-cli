@@ -213,8 +213,16 @@ def merge_visualization_dir(  # pylint: disable=too-many-statements
     task = merging_obj.merge_task_list()
     worktime_per_date = merging_obj.merge_worktime_per_date()
 
-    user_performance = UserPerformance.from_df_wrapper(task_worktime_by_phase_user=task_worktime_by_phase_user, worktime_per_date=worktime_per_date)
-    whole_performance = WholePerformance.from_df_wrapper(task_worktime_by_phase_user=task_worktime_by_phase_user, worktime_per_date=worktime_per_date)
+    user_performance = UserPerformance.from_df_wrapper(
+        task_worktime_by_phase_user=task_worktime_by_phase_user,
+        worktime_per_date=worktime_per_date,
+        task_completion_criteria=task_completion_criteria,
+    )
+    whole_performance = WholePerformance.from_df_wrapper(
+        task_worktime_by_phase_user=task_worktime_by_phase_user,
+        worktime_per_date=worktime_per_date,
+        task_completion_criteria=task_completion_criteria,
+    )
     writing_obj = WritingVisualizationFile(
         output_project_dir, user_id_list=user_id_list, minimal_output=minimal_output, task_completion_criteria=task_completion_criteria
     )

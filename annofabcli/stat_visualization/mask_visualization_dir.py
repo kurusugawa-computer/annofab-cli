@@ -176,7 +176,9 @@ def mask_visualization_dir(
     )
 
     # CSVのユーザ情報をマスクする
-    masked_user_performance = UserPerformance.from_df_wrapper(masked_worktime_per_date, masked_task_worktime_by_phase_user)
+    masked_user_performance = UserPerformance.from_df_wrapper(
+        masked_worktime_per_date, masked_task_worktime_by_phase_user, task_completion_criteria=project_dir.task_completion_criteria
+    )
     output_project_dir.write_user_performance(masked_user_performance)
 
     # メンバのパフォーマンスを散布図で出力する

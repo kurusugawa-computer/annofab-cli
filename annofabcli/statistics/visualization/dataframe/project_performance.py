@@ -6,12 +6,13 @@ from typing import Optional
 
 import numpy
 import pandas
+from annofabapi.models import TaskPhase
 
 from annofabcli.common.pandas import get_frequency_of_monthend
 from annofabcli.common.utils import print_csv
-from annofabcli.statistics.visualization.dataframe.user_performance import ProductionVolumeColumn, UserPerformance
+from annofabcli.statistics.visualization.dataframe.user_performance import ProductionVolumeColumn
 from annofabcli.statistics.visualization.dataframe.whole_performance import WholePerformance
-from annofabcli.statistics.visualization.model import WorktimeColumn
+from annofabcli.statistics.visualization.model import TaskCompletionCriteria, WorktimeColumn
 from annofabcli.statistics.visualization.project_dir import ProjectDir
 
 logger = logging.getLogger(__name__)
@@ -79,9 +80,13 @@ class ProjectPerformance:
             series = pandas.concat([series, whole_performance_obj.series])
         except Exception:
             logger.warning(f"'{project_dir}'の全体の生産性と品質を取得するのに失敗しました。", exc_info=True)
-            series = pandas.concat([series, WholePerformance.empty().series])
+            series = pandas.concat([series, WholePerformance.empty(TaskCompletionCriteria.ACCEPTANCE_COMPLETED).series])
 
         return series
+
+    def get_phase_list(self) -> list[str]:
+        tmp_set = {c1 for c0, c1 in self.df.columns if c0 == "monitored_worktime_hour"}
+        return [e.value for e in TaskPhase if e.value in tmp_set]
 
     @classmethod
     def from_project_dirs(
@@ -97,12 +102,12 @@ class ProjectPerformance:
         if not self._validate_df_for_output(output_file):
             return
 
-        phase_list = UserPerformance.get_phase_list(self.df)
+        phase_list = self.get_phase_list()
 
         first_columns = [("dirname", ""), ("project_title", ""), ("project_id", ""), ("input_data_type", "")]
 
         production_volume_columns = ["input_data_count", "annotation_count", *[e.value for e in self.custom_production_volume_list]]
-        value_columns = WholePerformance.get_series_index(phase_list, production_volume_columns=production_volume_columns)
+        value_columns = WholePerformance.get_series_index(phase_list, production_volume_columns=production_volume_columns)  # type: ignore[arg-type]
 
         columns = first_columns + value_columns
         print_csv(self.df[columns], output=str(output_file))

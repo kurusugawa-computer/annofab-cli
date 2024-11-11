@@ -5,6 +5,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import logging
 import math
 from enum import Enum
@@ -25,7 +26,7 @@ from annofabcli.common.utils import print_csv, read_multiheader_csv
 from annofabcli.statistics.scatter import ScatterGraph, get_color_from_palette, write_bokeh_graph
 from annofabcli.statistics.visualization.dataframe.task_worktime_by_phase_user import TaskWorktimeByPhaseUser
 from annofabcli.statistics.visualization.dataframe.worktime_per_date import WorktimePerDate
-from annofabcli.statistics.visualization.model import ProductionVolumeColumn
+from annofabcli.statistics.visualization.model import ProductionVolumeColumn, TaskCompletionCriteria
 
 logger = logging.getLogger(__name__)
 
@@ -87,8 +88,15 @@ class UserPerformance:
     PLOT_WIDTH = 1200
     PLOT_HEIGHT = 800
 
-    def __init__(self, df: pandas.DataFrame, *, custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None) -> None:
-        phase_list = self.get_phase_list(df.columns)
+    def __init__(
+        self,
+        df: pandas.DataFrame,
+        task_completion_criteria: TaskCompletionCriteria,
+        *,
+        custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None,
+    ) -> None:
+        self.task_completion_criteria = task_completion_criteria
+        phase_list = self.get_phase_list(df.columns, task_completion_criteria)
         self.custom_production_volume_list = custom_production_volume_list if custom_production_volume_list is not None else []
         self.phase_list = phase_list
         if not self.required_columns_exist(df):
@@ -169,7 +177,7 @@ class UserPerformance:
         df[("rejected_count/task_count", phase)] = df[("rejected_count", phase)] / df[("task_count", phase)]
 
     @staticmethod
-    def get_phase_list(columns: list[tuple[str, str]]) -> list[TaskPhaseString]:
+    def get_phase_list(columns: list[tuple[str, str]], task_completion_criteria: TaskCompletionCriteria) -> list[TaskPhaseString]:
         """
         サポートしているフェーズのlistを取得します。
         `monitored_worktime_hour`列情報を見て、サポートしているフェーズを判断します。
@@ -181,16 +189,30 @@ class UserPerformance:
             if phase.value in tmp_set:
                 phase_list.append(phase.value)  # noqa: PERF401
 
+        if task_completion_criteria == TaskCompletionCriteria.ACCEPTANCE_REACHED:
+            # 受入フェーズに到達したらタスクの作業が完了したとみなす場合、
+            # 受入フェーズの作業時間や生産量は不要な情報なので、受入フェーズは出力しないようにする
+            with contextlib.suppress(ValueError):
+                phase_list.remove(TaskPhase.ACCEPTANCE.value)
+
         # mypyはTaskPhaseStringが返ることを認識できないため'return-value'を無視する
         return phase_list  # type: ignore[return-value]
 
     @classmethod
-    def from_csv(cls, csv_file: Path, *, custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None) -> UserPerformance:
+    def from_csv(
+        cls,
+        csv_file: Path,
+        task_completion_criteria: TaskCompletionCriteria,
+        *,
+        custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None,
+    ) -> UserPerformance:
         df = read_multiheader_csv(str(csv_file))
-        return cls(df, custom_production_volume_list=custom_production_volume_list)
+        return cls(df, task_completion_criteria, custom_production_volume_list=custom_production_volume_list)
 
     @classmethod
-    def empty(cls, *, custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None) -> UserPerformance:
+    def empty(
+        cls, task_completion_criteria: TaskCompletionCriteria, *, custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None
+    ) -> UserPerformance:
         """空のデータフレームを持つインスタンスを生成します。"""
         production_volume_columns = ["input_data_count", "annotation_count"]
         if custom_production_volume_list is not None:
@@ -233,7 +255,7 @@ class UserPerformance:
         }
 
         df = pandas.DataFrame(columns=pandas.MultiIndex.from_tuples(df_dtype.keys())).astype(df_dtype)
-        return cls(df, custom_production_volume_list=custom_production_volume_list)
+        return cls(df, task_completion_criteria, custom_production_volume_list=custom_production_volume_list)
 
     def actual_worktime_exists(self) -> bool:
         """実績作業時間が入力されているか否か"""
@@ -241,7 +263,7 @@ class UserPerformance:
 
     @staticmethod
     def _create_df_monitored_worktime_and_production_amount(
-        task_worktime_by_phase_user: TaskWorktimeByPhaseUser,
+        task_worktime_by_phase_user: TaskWorktimeByPhaseUser, task_completion_criteria: TaskCompletionCriteria
     ) -> pandas.DataFrame:
         """
         タスク情報から算出した計測作業時間や生産量、指摘数などの情報が格納されたDataFrameを生成します。
@@ -279,11 +301,14 @@ class UserPerformance:
         ).fillna(0)
         df2 = df2.rename(columns={"worktime_hour": "monitored_worktime_hour"})
 
+        if task_completion_criteria == TaskCompletionCriteria.ACCEPTANCE_REACHED:
+            # 受入フェーズに到達したらタスクの作業が完了したとみなす場合、受入フェーズの作業時間や生産量は不要な情報なので、削除する
+            df2 = df2[[col for col in df2.columns if col[0] != TaskPhase.ACCEPTANCE.value]]
+
         phase_list = list(df2["monitored_worktime_hour"].columns)
 
         # 計測作業時間の合計値を算出する
         df2[("monitored_worktime_hour", "sum")] = df2[[("monitored_worktime_hour", phase) for phase in phase_list]].sum(axis=1)
-
         return df2
 
     @staticmethod
@@ -519,6 +544,7 @@ class UserPerformance:
         cls,
         worktime_per_date: WorktimePerDate,
         task_worktime_by_phase_user: TaskWorktimeByPhaseUser,
+        task_completion_criteria: TaskCompletionCriteria,
     ) -> UserPerformance:
         """
         pandas.DataFrameをラップしたオブジェクトから、インスタンスを生成します。
@@ -559,11 +585,11 @@ class UserPerformance:
         df = cls._create_df_real_worktime(worktime_per_date)
 
         # 集計対象タスクから計測作業時間や生産量を算出する
-        df = df.join(cls._create_df_monitored_worktime_and_production_amount(task_worktime_by_phase_user))
+        df = df.join(cls._create_df_monitored_worktime_and_production_amount(task_worktime_by_phase_user, task_completion_criteria))
         # 左結合でjoinした結果、生産量や指摘回数がNaNになる可能性があるので、fillnaで0を埋める
         df = fillna_for_production_amount(df)
 
-        phase_list = cls.get_phase_list(list(df.columns))
+        phase_list = cls.get_phase_list(list(df.columns), task_completion_criteria)
 
         # 集計対象タスクから単位量あたり計測作業時間の標準偏差を算出する
         df = df.join(cls._create_df_stdev_monitored_worktime(task_worktime_by_phase_user))
@@ -587,7 +613,9 @@ class UserPerformance:
 
         df = df.sort_values(["user_id"])
         # `df.reset_index()`を実行する理由：indexである`account_id`を列にするため
-        return cls(df.reset_index(), custom_production_volume_list=task_worktime_by_phase_user.custom_production_volume_list)
+        return cls(
+            df.reset_index(), task_completion_criteria, custom_production_volume_list=task_worktime_by_phase_user.custom_production_volume_list
+        )
 
     @classmethod
     def _convert_column_dtypes(cls, df: pandas.DataFrame) -> pandas.DataFrame:
