@@ -79,6 +79,7 @@ class TaskWorktimeByPhaseUser:
             "username",
             "biography",
             "worktime_hour",
+            "started_datetime",
             *self.quantity_columns,
         ]
 
@@ -183,6 +184,7 @@ class TaskWorktimeByPhaseUser:
             "username": "string",
             "biography": "string",
             "worktime_hour": "float64",
+            "started_datetime": "string",
             "task_count": "float64",
             "input_data_count": "float64",
             "annotation_count": "float64",
@@ -271,7 +273,11 @@ class TaskWorktimeByPhaseUser:
 
         task_history_df = task_history_df[task_history_df["task_id"].isin(set(task_df["task_id"]))]
 
-        group_obj = task_history_df.groupby(["task_id", "phase", "phase_stage", "account_id"]).agg({"worktime_hour": "sum"})
+        group_obj = (
+            task_history_df.sort_values("started_datetime")
+            .groupby(["task_id", "phase", "phase_stage", "account_id"])
+            .agg({"worktime_hour": "sum", "started_datetime": "first"})
+        )
         # 担当者だけ変更して作業していないケースを除外する
         group_obj = group_obj[group_obj["worktime_hour"] > 0]
 
@@ -279,7 +285,7 @@ class TaskWorktimeByPhaseUser:
             logger.warning("タスク履歴情報に作業しているタスクがありませんでした。タスク履歴全件ファイルが更新されていない可能性があります。")
             return pandas.DataFrame()
 
-        group_obj["task_count"] = group_obj.groupby(level=["task_id", "phase", "phase_stage"], group_keys=False).apply(
+        group_obj["task_count"] = group_obj.groupby(level=["task_id", "phase", "phase_stage"], group_keys=False)[["worktime_hour"]].apply(
             lambda e: e / e["worktime_hour"].sum()
         )
 
@@ -300,4 +306,5 @@ class TaskWorktimeByPhaseUser:
             lambda e: 1 if e == TaskPhase.ANNOTATION.value else 0
         )
         new_df["rejected_count"] = new_df["rejected_count"] * new_df["phase"].apply(lambda e: 1 if e == TaskPhase.ANNOTATION.value else 0)
+
         return new_df
