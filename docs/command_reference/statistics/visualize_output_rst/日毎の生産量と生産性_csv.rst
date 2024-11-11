@@ -19,19 +19,28 @@
 * ``working_user_count`` : 作業したユーザーの数
 
 
+``task_count`` の算出方法
+=================================
+``--task_completion_criteria`` で指定した値によって、 ``task_count`` の算出方法が異なります。
+
+``--task_completion_criteria acceptance_completed`` を指定すると、 ``task_count`` は、初めて受入フェーズ完了状態になったタスクの数になります。
+受入取消によって完了状態でないタスクも、「作業が完了したタスク」に含まれます。
+
+``--task_completion_criteria acceptance_reached`` を指定すると、 ``task_count`` は、初めて受入フェーズになったタスクの数になります。
+受入フェーズでの差し戻しによって受入フェーズでないタスクも、「作業が完了したタスク」に含まれます。
+
+
+
 .. note:: 
 
-    ``--task_completion_criteria`` で指定した値によって、 ``task_count`` の算出方法が異なります。
      
-    ``--task_completion_criteria acceptance_completed`` を指定すると、 ``task_count`` は、その日に初めて受入フェーズ完了状態になったタスクの数になります。
-    受入取消によって完了状態でないタスクも、「作業が完了したタスク」に含まれます。    なお、受入取消されたタスクが多いと、 ``task_count`` は生産量の推移を正しく表現できないときがあります。
-    その場合は :doc:`教師付開始日毎の生産量と生産性_csv` の ``task_count`` 方が生産量の推移を正しく表現できているかもしれません。
-    * ``--task_completion_criteria acceptance_reached`` : 「その日に初めて受入フェーズになったタスクの個数」です。受入フェーズで差し戻されたタスクも「作業が完了したタスク」に含まれます。
- 
-
-
-:doc:`.index`
-:doc:`../index.rst`
-
-:doc:`教師付開始日毎の生産量と生産性_csv.rst`
-
+    以下のタスクが多いと、 ``task_count`` の推移は実際よりも早い日にタスクが完了したように見えます。
+    
+    * 受入取消されたタスク（ ``--task_completion_criteria acceptance_completed`` の場合）
+    * 受入フェーズで差し戻されたタスク（ ``--task_completion_criteria acceptance_reached`` の場合）
+    
+    その場合は :doc:`教師付開始日毎の生産量と生産性_csv` も参照することをお勧めします。
+    :doc:`教師付開始日毎の生産量と生産性_csv` の ``task_count`` は、教師付フェーズを開始した日ごとに集計しています。
+    一度に大量のタスクの教師付けフェーズを開始する運用でなければ、 :doc:`教師付開始日毎の生産量と生産性_csv` の方が生産量の推移を正しく表しているかもしれません。
+    
+    
