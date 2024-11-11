@@ -28,17 +28,6 @@ Examples
 
     $ annofabcli statistics visualize --project_id prj1 --output_dir out_dir
 
-集計対象のタスクの条件を ``--task_query`` で指定してください。
-
-.. code-block::
-
-    $ annofabcli statistics visualize --project_id prj1 --output_dir out_dir
-    --task_query '{"status": "complete"}' 
-
-.. note::
-
-    できるだけ正しい生産性を求める場合は、``--task_query '{"status": "complete"}'`` を指定して、完了状態のタスクのみを集計対象としてください。
-    デフォルトでは完了状態でないタスクも「生産した」とみなします。
 
 
 集計期間も指定できます。``--start_date`` は、指定した日付以降に教師付を開始したタスクを集計します。``--end_date`` は、指定した日付以前に更新されたタスクを集計します。
@@ -50,12 +39,38 @@ Examples
     --start_date 2020-04-01
 
 
-デフォルトでは10個以上のファイルを出力します。よく利用するファイルのみ出力する場合は、 ``--minimal`` を指定してください。
 
-.. code-block::
+タスクの完了条件を指定する
+----------------------------------------------
+``--task_completion_criteria`` で、集計対象のタスクの完了条件を指定できます。
 
-    $ annofabcli input_data put --project_id prj1 --output out_dir/
-    --minimal
+
+``acceptance_completed``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+``acceptance_completed`` を指定すると、受入フェーズで完了状態のタスクを「生産したタスク（作業が完了したタスク）」とみなして、受入フェーズ完了状態のタスクを集計対象にします。
+デフォルトはこの値です。
+
+
+``acceptance_reached``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+``acceptance_reached`` を指定すると、受入フェーズに到達したタスクを「生産したタスク（作業が完了したタスク）」とみなして、受入フェーズのタスクを集計対象にします。
+
+また、以下のCSVとグラフでは、受入フェーズの作業時間と生産量は0になります。
+受入フェーズに到達したタスクを「生産したタスク（作業が完了したタスク）」とする場合、受入フェーズの作業は生産量に影響しないためです。
+
+* :doc:`visualize_output_rst/メンバごとの生産性と品質_csv`
+* :doc:`visualize_output_rst/日毎の生産量と生産性_csv`
+* :doc:`visualize_output_rst/教師付開始日毎の生産量と生産性_csv`
+* :doc:`visualize_output_rst/全体の生産性と品質_csv`
+* :doc:`visualize_output_rst/折れ線-横軸_日-全体_html`
+* :doc:`visualize_output_rst/累積折れ線-横軸_日-全体_html`
+* :doc:`visualize_output_rst/折れ線-横軸_教師付開始日-全体_html`
+
+
+
 
 
 実績作業時間情報から生産性を算出する
