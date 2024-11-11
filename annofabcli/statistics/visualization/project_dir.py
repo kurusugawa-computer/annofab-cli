@@ -209,10 +209,14 @@ class ProjectDir(DataClassJsonMixin):
         """`全体の生産性と品質.csv`を読み込む。"""
         file = self.project_dir / self.FILENAME_WHOLE_PERFORMANCE
         if file.exists():
-            return WholePerformance.from_csv(file, custom_production_volume_list=self.custom_production_volume_list)
+            return WholePerformance.from_csv(
+                file, custom_production_volume_list=self.custom_production_volume_list, task_completion_criteria=self.task_completion_criteria
+            )
         else:
             logger.warning(f"'{file!s}'を読み込もうとしましたが、ファイルは存在しません。")
-            return WholePerformance.empty(custom_production_volume_list=self.custom_production_volume_list)
+            return WholePerformance.empty(
+                custom_production_volume_list=self.custom_production_volume_list, task_completion_criteria=self.task_completion_criteria
+            )
 
     def write_whole_performance(self, whole_performance: WholePerformance) -> None:
         """`全体の生産性と品質.csv`を出力します。"""
@@ -281,10 +285,14 @@ class ProjectDir(DataClassJsonMixin):
         """
         file = self.project_dir / self.FILENAME_USER_PERFORMANCE
         if file.exists():
-            return UserPerformance.from_csv(file, custom_production_volume_list=self.custom_production_volume_list)
+            return UserPerformance.from_csv(
+                file, custom_production_volume_list=self.custom_production_volume_list, task_completion_criteria=self.task_completion_criteria
+            )
         else:
             logger.warning(f"'{file!s}'を読み込もうとしましたが、ファイルは存在しません。")
-            return UserPerformance.empty(custom_production_volume_list=self.custom_production_volume_list)
+            return UserPerformance.empty(
+                custom_production_volume_list=self.custom_production_volume_list, task_completion_criteria=self.task_completion_criteria
+            )
 
     def write_user_performance(self, user_performance: UserPerformance) -> None:
         """

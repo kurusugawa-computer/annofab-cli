@@ -51,6 +51,18 @@ class TaskWorktimeByPhaseUser:
             "rejected_count",
         ]
 
+    def to_non_acceptance(self) -> TaskWorktimeByPhaseUser:
+        """
+        受入フェーズの作業時間を0にした新しいインスタンスを生成します。
+
+        `--task_completion_criteria acceptance_reached`を指定したときに利用します。
+        この場合、受入フェーズの作業時間を無視して集計する必要があるためです。
+
+        """
+        df = self.df.copy()
+        df = df[df["phase"] != TaskPhase.ACCEPTANCE.value]
+        return TaskWorktimeByPhaseUser(df, custom_production_volume_list=self.custom_production_volume_list)
+
     @property
     def columns(self) -> list[str]:
         """

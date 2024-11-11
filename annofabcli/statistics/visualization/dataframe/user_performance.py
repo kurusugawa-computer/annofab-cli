@@ -25,7 +25,7 @@ from annofabcli.common.utils import print_csv, read_multiheader_csv
 from annofabcli.statistics.scatter import ScatterGraph, get_color_from_palette, write_bokeh_graph
 from annofabcli.statistics.visualization.dataframe.task_worktime_by_phase_user import TaskWorktimeByPhaseUser
 from annofabcli.statistics.visualization.dataframe.worktime_per_date import WorktimePerDate
-from annofabcli.statistics.visualization.model import ProductionVolumeColumn
+from annofabcli.statistics.visualization.model import ProductionVolumeColumn, TaskCompletionCriteria
 
 logger = logging.getLogger(__name__)
 
@@ -87,7 +87,14 @@ class UserPerformance:
     PLOT_WIDTH = 1200
     PLOT_HEIGHT = 800
 
-    def __init__(self, df: pandas.DataFrame, *, custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None) -> None:
+    def __init__(
+        self,
+        df: pandas.DataFrame,
+        task_completion_criteria: TaskCompletionCriteria,
+        *,
+        custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None,
+    ) -> None:
+        self.task_completion_criteria = task_completion_criteria
         phase_list = self.get_phase_list(df.columns)
         self.custom_production_volume_list = custom_production_volume_list if custom_production_volume_list is not None else []
         self.phase_list = phase_list
@@ -185,12 +192,20 @@ class UserPerformance:
         return phase_list  # type: ignore[return-value]
 
     @classmethod
-    def from_csv(cls, csv_file: Path, *, custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None) -> UserPerformance:
+    def from_csv(
+        cls,
+        csv_file: Path,
+        task_completion_criteria: TaskCompletionCriteria,
+        *,
+        custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None,
+    ) -> UserPerformance:
         df = read_multiheader_csv(str(csv_file))
-        return cls(df, custom_production_volume_list=custom_production_volume_list)
+        return cls(df, task_completion_criteria, custom_production_volume_list=custom_production_volume_list)
 
     @classmethod
-    def empty(cls, *, custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None) -> UserPerformance:
+    def empty(
+        cls, task_completion_criteria: TaskCompletionCriteria, *, custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None
+    ) -> UserPerformance:
         """空のデータフレームを持つインスタンスを生成します。"""
         production_volume_columns = ["input_data_count", "annotation_count"]
         if custom_production_volume_list is not None:
@@ -233,7 +248,7 @@ class UserPerformance:
         }
 
         df = pandas.DataFrame(columns=pandas.MultiIndex.from_tuples(df_dtype.keys())).astype(df_dtype)
-        return cls(df, custom_production_volume_list=custom_production_volume_list)
+        return cls(df, task_completion_criteria, custom_production_volume_list=custom_production_volume_list)
 
     def actual_worktime_exists(self) -> bool:
         """実績作業時間が入力されているか否か"""
@@ -283,7 +298,6 @@ class UserPerformance:
 
         # 計測作業時間の合計値を算出する
         df2[("monitored_worktime_hour", "sum")] = df2[[("monitored_worktime_hour", phase) for phase in phase_list]].sum(axis=1)
-
         return df2
 
     @staticmethod
@@ -353,7 +367,9 @@ class UserPerformance:
         return df_stdev3
 
     @staticmethod
-    def _create_df_real_worktime(worktime_per_date: WorktimePerDate) -> pandas.DataFrame:
+    def _create_df_real_worktime(
+        worktime_per_date: WorktimePerDate,
+    ) -> pandas.DataFrame:
         """
         集計対象タスクに影響されない実際の計測作業時間と実績作業時間が格納されたDataFrameを生成します。
 
@@ -519,6 +535,7 @@ class UserPerformance:
         cls,
         worktime_per_date: WorktimePerDate,
         task_worktime_by_phase_user: TaskWorktimeByPhaseUser,
+        task_completion_criteria: TaskCompletionCriteria,
     ) -> UserPerformance:
         """
         pandas.DataFrameをラップしたオブジェクトから、インスタンスを生成します。
@@ -555,6 +572,12 @@ class UserPerformance:
 
             return df.fillna({col: 0 for col in columns})
 
+        if task_completion_criteria == TaskCompletionCriteria.ACCEPTANCE_REACHED:
+            # 受入フェーズに到達したらタスクの作業が完了したとみなす場合、
+            # 受入フェーズの作業時間や生産量は不要な情報なので、受入作業時間を0にする
+            worktime_per_date = worktime_per_date.to_non_acceptance()
+            task_worktime_by_phase_user = task_worktime_by_phase_user.to_non_acceptance()
+
         # 実際の計測作業時間情報（集計タスクに影響されない作業時間）と実績作業時間を算出する
         df = cls._create_df_real_worktime(worktime_per_date)
 
@@ -587,7 +610,9 @@ class UserPerformance:
 
         df = df.sort_values(["user_id"])
         # `df.reset_index()`を実行する理由：indexである`account_id`を列にするため
-        return cls(df.reset_index(), custom_production_volume_list=task_worktime_by_phase_user.custom_production_volume_list)
+        return cls(
+            df.reset_index(), task_completion_criteria, custom_production_volume_list=task_worktime_by_phase_user.custom_production_volume_list
+        )
 
     @classmethod
     def _convert_column_dtypes(cls, df: pandas.DataFrame) -> pandas.DataFrame:
