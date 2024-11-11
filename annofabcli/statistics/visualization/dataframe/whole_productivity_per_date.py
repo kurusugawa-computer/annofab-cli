@@ -276,7 +276,7 @@ class WholeProductivityPerCompletedDate:
             str_task = "受入フェーズ"
         else:
             assert_noreturn(self.task_completion_criteria)
-        return Div(text="<h4>注意</h4>" f"<p>「X日のタスク数」とは、X日に初めて{str_task}になったタスクの個数です。</p>")
+        return Div(text="<h4>注意</h4>" f"<p>「X日のタスク数」は、X日に初めて{str_task}になったタスクの個数です。</p>")
 
     def plot(
         self,
@@ -828,17 +828,28 @@ class WholeProductivityPerCompletedDate:
 class WholeProductivityPerFirstAnnotationStartedDate:
     """教師付開始日ごとの全体の生産量と生産性に関する情報"""
 
-    def __init__(self, df: pandas.DataFrame, *, custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None) -> None:
+    def __init__(
+        self,
+        df: pandas.DataFrame,
+        task_completion_criteria: TaskCompletionCriteria,
+        *,
+        custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None,
+    ) -> None:
+        self.task_completion_criteria = task_completion_criteria
         self.custom_production_volume_list = custom_production_volume_list if custom_production_volume_list is not None else []
         self.df = df
 
     @classmethod
     def from_csv(
-        cls, csv_file: Path, *, custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None
+        cls,
+        csv_file: Path,
+        task_completion_criteria: TaskCompletionCriteria,
+        *,
+        custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None,
     ) -> WholeProductivityPerFirstAnnotationStartedDate:
         """CSVファイルからインスタンスを生成します。"""
         df = pandas.read_csv(str(csv_file))
-        return cls(df, custom_production_volume_list=custom_production_volume_list)
+        return cls(df, task_completion_criteria, custom_production_volume_list=custom_production_volume_list)
 
     @classmethod
     def _add_velocity_columns(cls, df: pandas.DataFrame, production_volume_columns: list[str]) -> None:
@@ -921,7 +932,7 @@ class WholeProductivityPerFirstAnnotationStartedDate:
         df_date["first_annotation_started_date"] = df_date.index
         # 生産性情報などの列を追加する
         cls._add_velocity_columns(df_date, production_volume_columns)
-        return cls(df_date, custom_production_volume_list=task.custom_production_volume_list)
+        return cls(df_date, task_completion_criteria, custom_production_volume_list=task.custom_production_volume_list)
 
     def _validate_df_for_output(self, output_file: Path) -> bool:
         if len(self.df) == 0:
@@ -930,9 +941,11 @@ class WholeProductivityPerFirstAnnotationStartedDate:
         return True
 
     @classmethod
-    def empty(cls, *, custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None) -> WholeProductivityPerFirstAnnotationStartedDate:
+    def empty(
+        cls, task_completion_criteria: TaskCompletionCriteria, *, custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None
+    ) -> WholeProductivityPerFirstAnnotationStartedDate:
         df = pandas.DataFrame(columns=cls.get_columns(custom_production_volume_list=custom_production_volume_list))
-        return cls(df, custom_production_volume_list=custom_production_volume_list)
+        return cls(df, task_completion_criteria, custom_production_volume_list=custom_production_volume_list)
 
     @staticmethod
     def get_columns(*, custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None) -> list[str]:
@@ -1001,12 +1014,16 @@ class WholeProductivityPerFirstAnnotationStartedDate:
             """
             HTMLページの先頭に付与するdiv要素を生成する。
             """
+            if self.task_completion_criteria == TaskCompletionCriteria.ACCEPTANCE_COMPLETED:
+                str_task = "受入フェーズ完了状態"
+            elif self.task_completion_criteria == TaskCompletionCriteria.ACCEPTANCE_REACHED:
+                str_task = "受入フェーズ"
+            else:
+                assert_noreturn(self.task_completion_criteria)
             return Div(
-                text="""<h4>注意</h4>
-                <p>「X日の作業時間」とは、「X日に教師付開始したタスクにかけた作業時間」です。
-                「X日に作業した時間」ではありません。
-                </p>
-                """
+                text="<h4>注意</h4>"
+                f"<p>「X日のタスク数」は、X日に教師付フェーズを開始したタスクの内、{str_task}であるタスクの個数です。</p>"
+                f"<p>「X日の作業時間」は、X日のタスク数にかけた作業時間です。X日に作業した時間ではないことに注意してください。</p>"
             )
 
         def create_line_graph(title: str, y_axis_label: str, tooltip_columns: list[str]) -> LineGraph:

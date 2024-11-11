@@ -255,10 +255,13 @@ class ProjectDir(DataClassJsonMixin):
         if file.exists():
             return WholeProductivityPerFirstAnnotationStartedDate.from_csv(
                 file,
+                self.task_completion_criteria,
                 custom_production_volume_list=self.custom_production_volume_list,
             )
         else:
-            return WholeProductivityPerFirstAnnotationStartedDate.empty(custom_production_volume_list=self.custom_production_volume_list)
+            return WholeProductivityPerFirstAnnotationStartedDate.empty(
+                self.task_completion_criteria, custom_production_volume_list=self.custom_production_volume_list
+            )
 
     def write_whole_productivity_per_first_annotation_started_date(self, obj: WholeProductivityPerFirstAnnotationStartedDate) -> None:
         """
