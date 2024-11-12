@@ -6,6 +6,9 @@ from annofabcli.statistics.visualization.dataframe.productivity_per_date import 
     InspectorProductivityPerDate,
     ProductionVolumeColumn,
     Task,
+    TaskPhase,
+    TaskWorktimeByPhaseUser,
+    create_df_productivity_per_date,
 )
 
 output_dir = Path("./tests/out/statistics/visualization/dataframe/productivity_per_date")
@@ -15,25 +18,22 @@ output_dir.mkdir(exist_ok=True, parents=True)
 # 出力できることを確認する
 
 
-class TestAnnotatorProductivityPerDate:
-    obj: AnnotatorProductivityPerDate
+def test_foo():
+    task_worktime_by_phase_user = TaskWorktimeByPhaseUser.from_csv(data_dir / "task-worktime-by-user-phase.csv")
+    df = create_df_productivity_per_date(task_worktime_by_phase_user, TaskPhase.ANNOTATION)
+    df.to_csv("out/foo.csv")
 
-    @classmethod
-    def setup_class(cls):
-        task = Task.from_csv(
-            data_dir / "task.csv",
-            custom_production_volume_list=[
+
+class TestAnnotatorProductivityPerDate:
+    def test_scenario(self):
+        task_worktime_by_phase_user = TaskWorktimeByPhaseUser.from_csv(data_dir / "task-worktime-by-user-phase.csv",             custom_production_volume_list=[
                 ProductionVolumeColumn("custom_production_volume1", "custom_生産量1"),
                 ProductionVolumeColumn("custom_production_volume2", "custom_生産量2"),
-            ],
-        )
-        cls.obj = AnnotatorProductivityPerDate.from_task(task)
-
-    def test_to_csv(self):
-        self.obj.to_csv(output_dir / "教師付開始日ごとの教師付者の生産性.csv")
-
-    def test__plot_production_volume_metrics(self):
-        self.obj.plot_production_volume_metrics(
+            ],)
+        
+        obj = AnnotatorProductivityPerDate.from_df_wrapper(task_worktime_by_phase_user)
+        obj.to_csv(output_dir / "教師付開始日ごとの教師付者の生産性.csv")
+        obj.plot_production_volume_metrics(
             "annotation_count", "アノテーション", output_dir / "折れ線-横軸_教師付開始日-縦軸_アノテーションあたりの指標-教師付者用.html"
         )
 

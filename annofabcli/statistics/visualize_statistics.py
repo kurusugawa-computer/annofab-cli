@@ -90,6 +90,7 @@ class WriteCsvGraph:
 
         self.task: Optional[Task] = None
         self.worktime_per_date: Optional[WorktimePerDate] = None
+        self.task_worktime_obj: Optional[TaskWorktimeByPhaseUser] = None
 
     def _catch_exception(self, function: Callable[..., Any]) -> Callable[..., Any]:
         """
@@ -132,6 +133,22 @@ class WriteCsvGraph:
 
         return self.task
 
+    def _get_task_worktime_obj(self) -> TaskWorktimeByPhaseUser:
+        if self.task_worktime_obj is None:
+            task_history = TaskHistory.from_api_content(self.visualize_source_files.read_task_histories_json())
+
+            project_members = self.service.wrapper.get_all_project_members(self.project_id, query_params={"include_inactive_member": True})
+            user = User(pandas.DataFrame(project_members))
+
+            # タスク、フェーズ、ユーザごとの作業時間を出力する
+            self.task_worktime_obj = TaskWorktimeByPhaseUser.from_df_wrapper(
+                task_history=task_history,
+                user=user,
+                task=self._get_task(),
+                project_id=self.project_id,
+            )
+        return self.task_worktime_obj
+
     def _get_worktime_per_date(self) -> WorktimePerDate:
         if self.worktime_per_date is None:
             self.worktime_per_date = WorktimePerDate.from_webapi(
@@ -160,18 +177,9 @@ class WriteCsvGraph:
         """
         ユーザごとの生産性と品質に関する情報を出力する。
         """
-        task_history = TaskHistory.from_api_content(self.visualize_source_files.read_task_histories_json())
-
-        project_members = self.service.wrapper.get_all_project_members(self.project_id, query_params={"include_inactive_member": True})
-        user = User(pandas.DataFrame(project_members))
 
         # タスク、フェーズ、ユーザごとの作業時間を出力する
-        task_worktime_obj = TaskWorktimeByPhaseUser.from_df_wrapper(
-            task_history=task_history,
-            user=user,
-            task=self._get_task(),
-            project_id=self.project_id,
-        )
+        task_worktime_obj = self._get_task_worktime_obj()
         self.project_dir.write_task_worktime_list(task_worktime_obj)
 
         user_performance = UserPerformance.from_df_wrapper(
@@ -194,10 +202,10 @@ class WriteCsvGraph:
 
     def write_cumulative_linegraph_by_user(self, user_id_list: Optional[List[str]] = None) -> None:
         """ユーザごとの累積折れ線グラフをプロットする。"""
-        task = self._get_task()
-        annotator_obj = AnnotatorCumulativeProductivity.from_task(task)
-        inspector_obj = InspectorCumulativeProductivity.from_task(task)
-        acceptor_obj = AcceptorCumulativeProductivity.from_task(task)
+        task_worktime_obj = self._get_task_worktime_obj()
+        annotator_obj = AnnotatorCumulativeProductivity.from_df_wrapper(task_worktime_obj)
+        inspector_obj = InspectorCumulativeProductivity.from_df_wrapper(task_worktime_obj)
+        acceptor_obj = AcceptorCumulativeProductivity.from_df_wrapper(task_worktime_obj)
 
         if not self.output_only_text:
             self.project_dir.write_cumulative_line_graph(

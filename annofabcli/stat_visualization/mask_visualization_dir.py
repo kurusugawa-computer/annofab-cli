@@ -29,7 +29,6 @@ from annofabcli.statistics.visualization.dataframe.productivity_per_date import 
     AnnotatorProductivityPerDate,
     InspectorProductivityPerDate,
 )
-from annofabcli.statistics.visualization.dataframe.task import Task
 from annofabcli.statistics.visualization.dataframe.task_worktime_by_phase_user import TaskWorktimeByPhaseUser
 from annofabcli.statistics.visualization.dataframe.user_performance import UserPerformance
 from annofabcli.statistics.visualization.dataframe.worktime_per_date import WorktimePerDate
@@ -94,21 +93,27 @@ def create_replacement_dict(
     )
 
 
-def write_line_graph(task: Task, output_project_dir: ProjectDir, user_id_list: Optional[List[str]] = None, minimal_output: bool = False):  # noqa: ANN201, FBT001, FBT002
+def write_line_graph(
+    task_worktime_by_phase_user: TaskWorktimeByPhaseUser,
+    output_project_dir: ProjectDir,
+    *,
+    user_id_list: Optional[List[str]] = None,
+    minimal_output: bool = False,
+) -> None:
     output_project_dir.write_cumulative_line_graph(
-        AnnotatorCumulativeProductivity.from_task(task),
+        AnnotatorCumulativeProductivity.from_df_wrapper(task_worktime_by_phase_user),
         phase=TaskPhase.ANNOTATION,
         user_id_list=user_id_list,
         minimal_output=minimal_output,
     )
     output_project_dir.write_cumulative_line_graph(
-        InspectorCumulativeProductivity.from_task(task),
+        InspectorCumulativeProductivity.from_df_wrapper(task_worktime_by_phase_user),
         phase=TaskPhase.INSPECTION,
         user_id_list=user_id_list,
         minimal_output=minimal_output,
     )
     output_project_dir.write_cumulative_line_graph(
-        AcceptorCumulativeProductivity.from_task(task),
+        AcceptorCumulativeProductivity.from_df_wrapper(task_worktime_by_phase_user),
         phase=TaskPhase.ACCEPTANCE,
         user_id_list=user_id_list,
         minimal_output=minimal_output,
@@ -189,7 +194,7 @@ def mask_visualization_dir(
     )
     output_project_dir.write_task_list(masked_task)
 
-    write_line_graph(masked_task, output_project_dir, minimal_output=minimal_output)
+    write_line_graph(masked_task_worktime_by_phase_user, output_project_dir, minimal_output=minimal_output)
 
     if not masked_worktime_per_date.is_empty():
         output_project_dir.write_worktime_per_date_user(masked_worktime_per_date)
