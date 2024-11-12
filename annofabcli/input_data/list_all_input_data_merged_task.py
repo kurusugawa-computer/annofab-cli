@@ -130,7 +130,7 @@ def match_parent_task_list_of_input_data_with(input_data: Dict[str, Any], *, is_
 class ListInputDataMergedTask(CommandLine):
     @staticmethod
     def validate(args: argparse.Namespace) -> bool:
-        COMMON_MESSAGE = "annofabcli input_data list_merged_task: error:"  # noqa: N806
+        COMMON_MESSAGE = "annofabcli input_data list_all_merged_task: error:"  # noqa: N806
         if args.project_id is None and (args.input_data_json is None or args.task_json is None):
             print(  # noqa: T201
                 f"{COMMON_MESSAGE} '--project_id' か、'--task_json'/'--input_data_json'ペアのいずれかを指定する必要があります。",
