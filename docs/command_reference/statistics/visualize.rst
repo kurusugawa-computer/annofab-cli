@@ -251,11 +251,13 @@ CSVには以下の列が存在している必要があります。
    visualize_output_rst/教師付開始日毎の生産量と生産性_csv.rst
    visualize_output_rst/全体の生産性と品質_csv.rst
    visualize_output_rst/ユーザ_日付list-作業時間_csv.rst
+   visualize_output_rst/task-worktime-list-by-user-phase_csv
 
    visualize_output_rst/折れ線-横軸_日-全体_html.rst
    visualize_output_rst/累積折れ線-横軸_日-全体_html.rst
    visualize_output_rst/折れ線-横軸_教師付開始日-全体_html.rst
    visualize_output_rst/累積折れ線-横軸_アノテーション数-phase者用_html.rst
+   visualize_output_rst/折れ線-横軸_教師付開始日-縦軸_アノテーション単位の指標-phase用.html
    visualize_output_rst/累積折れ線-横軸_日-縦軸_作業時間_html.rst
 
    visualize_output_rst/散布図-アノテーションあたり作業時間と品質の関係-教師付者用_html.rst
