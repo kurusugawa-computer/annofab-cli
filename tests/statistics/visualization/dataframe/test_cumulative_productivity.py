@@ -23,6 +23,22 @@ def test_foo():
     obj.plot_production_volume_metrics("annotation_count", "アノテーション数", Path("out/foo.html"))
 
 
+def test_foo2():
+    task_worktime_by_phase_user = TaskWorktimeByPhaseUser.from_csv(data_dir / "task-worktime-by-user-phase.csv")
+    obj = InspectorCumulativeProductivity.from_df_wrapper(task_worktime_by_phase_user)
+    assert len(obj.df) == 2
+    obj.df.to_csv("out/foo2.csv")
+    obj.plot_production_volume_metrics("annotation_count", "アノテーション数", Path("out/foo.html"))
+
+
+def test_foo3():
+    task_worktime_by_phase_user = TaskWorktimeByPhaseUser.from_csv(data_dir / "task-worktime-by-user-phase.csv")
+    obj = AcceptorCumulativeProductivity.from_df_wrapper(task_worktime_by_phase_user)
+    assert len(obj.df) == 2
+    obj.df.to_csv("out/foo3.csv")
+    obj.plot_production_volume_metrics("annotation_count", "アノテーション数", Path("out/foo.html"))
+
+
 class TestAnnotatorCumulativeProductivity:
     obj: AnnotatorCumulativeProductivity
 
