@@ -5,22 +5,12 @@ from annofabcli.statistics.visualization.dataframe.productivity_per_date import 
     AnnotatorProductivityPerDate,
     InspectorProductivityPerDate,
     ProductionVolumeColumn,
-    TaskPhase,
     TaskWorktimeByPhaseUser,
-    create_df_productivity_per_date,
 )
 
 output_dir = Path("./tests/out/statistics/visualization/dataframe/productivity_per_date")
 data_dir = Path("./tests/data/statistics")
 output_dir.mkdir(exist_ok=True, parents=True)
-
-# 出力できることを確認する
-
-
-def test_foo():
-    task_worktime_by_phase_user = TaskWorktimeByPhaseUser.from_csv(data_dir / "task-worktime-by-user-phase.csv")
-    df = create_df_productivity_per_date(task_worktime_by_phase_user, TaskPhase.ANNOTATION)
-    df.to_csv("out/foo.csv")
 
 
 class TestAnnotatorProductivityPerDate:
