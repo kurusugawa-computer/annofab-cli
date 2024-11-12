@@ -26,11 +26,14 @@ def test_foo():
 
 class TestAnnotatorProductivityPerDate:
     def test_scenario(self):
-        task_worktime_by_phase_user = TaskWorktimeByPhaseUser.from_csv(data_dir / "task-worktime-by-user-phase.csv",             custom_production_volume_list=[
+        task_worktime_by_phase_user = TaskWorktimeByPhaseUser.from_csv(
+            data_dir / "task-worktime-by-user-phase.csv",
+            custom_production_volume_list=[
                 ProductionVolumeColumn("custom_production_volume1", "custom_生産量1"),
                 ProductionVolumeColumn("custom_production_volume2", "custom_生産量2"),
-            ],)
-        
+            ],
+        )
+
         obj = AnnotatorProductivityPerDate.from_df_wrapper(task_worktime_by_phase_user)
         obj.to_csv(output_dir / "教師付開始日ごとの教師付者の生産性.csv")
         obj.plot_production_volume_metrics(
@@ -39,28 +42,22 @@ class TestAnnotatorProductivityPerDate:
 
 
 class TestInspectorProductivityPerDate:
-    obj: InspectorProductivityPerDate
 
-    @classmethod
-    def setup_class(cls):
-        task = Task.from_csv(
-            data_dir / "task.csv",
+
+    def test_scenario(self):
+        task_worktime_by_phase_user = TaskWorktimeByPhaseUser.from_csv(
+            data_dir / "task-worktime-by-user-phase.csv",
             custom_production_volume_list=[
                 ProductionVolumeColumn("custom_production_volume1", "custom_生産量1"),
                 ProductionVolumeColumn("custom_production_volume2", "custom_生産量2"),
             ],
         )
 
-        cls.obj = InspectorProductivityPerDate.from_task(task)
-
-    def test_to_csv(self):
-        self.obj.to_csv(output_dir / "検査開始日ごとの検査者の生産性.csv")
-
-    def test__plot_production_volume_metrics(self):
-        self.obj.plot_production_volume_metrics(
+        obj = InspectorProductivityPerDate.from_df_wrapper(task_worktime_by_phase_user)
+        obj.to_csv(output_dir / "検査開始日ごとの検査者の生産性.csv")
+        obj.plot_production_volume_metrics(
             "annotation_count", "アノテーション", output_dir / "折れ線-横軸_検査開始日-縦軸_アノテーションあたりの指標-検査者用.html"
         )
-
 
 class TestAcceptorProductivityPerDate:
     obj: AcceptorProductivityPerDate
