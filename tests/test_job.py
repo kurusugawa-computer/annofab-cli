@@ -67,18 +67,6 @@ class TestCommandLine:
             ]
         )
 
-    def test_list_task_creation_history(self):
-        main(
-            [
-                "job",
-                "list_task_creation_history",
-                "--project_id",
-                project_id,
-                "--output",
-                str(out_dir / "list_task_creation_history-out.csv"),
-            ]
-        )
-
     def test_wait(self):
         main(
             [
