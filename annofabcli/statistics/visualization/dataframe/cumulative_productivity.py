@@ -37,9 +37,8 @@ def _create_cumulative_dataframe(task_worktime_by_phase_user: TaskWorktimeByPhas
     累積情報が格納されたDataFrameを生成する。
     """
     df = task_worktime_by_phase_user.df.copy()
-    str_phase = phase
+    str_phase = phase.value
     df = df[df["phase"] == str_phase]
-
     df = df.rename(columns={"pointed_out_inspection_comment_count": "inspection_comment_count", "worktime_hour": f"{str_phase}_worktime_hour"})
 
     # 教師付の開始時刻でソートして、indexを更新する
@@ -67,7 +66,6 @@ def _create_cumulative_dataframe(task_worktime_by_phase_user: TaskWorktimeByPhas
     # TODO この問題が解決されたら、削除する
     # https://qiita.com/yuji38kwmt/items/b5da6ed521e827620186
     df[f"first_{str_phase}_started_date"] = df[f"first_{str_phase}_started_date"].astype("object")
-
     return df
 
 
