@@ -233,8 +233,8 @@ def merge_visualization_dir(  # pylint: disable=too-many-statements
     writing_obj.write_user_performance(user_performance)
     writing_obj.write_whole_performance(whole_performance)
 
-    writing_obj.write_cumulative_line_graph(task)
-    writing_obj.write_line_graph(task)
+    writing_obj.write_cumulative_line_graph(task_worktime_by_phase_user)
+    writing_obj.write_line_graph(task_worktime_by_phase_user)
 
     writing_obj.write_merge_performance_per_date(task, worktime_per_date)
     writing_obj.write_performance_per_first_annotation_started_date(task)
