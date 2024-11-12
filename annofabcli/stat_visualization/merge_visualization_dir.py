@@ -68,34 +68,34 @@ class WritingVisualizationFile:
         self.output_project_dir.write_whole_performance(whole_performance)
 
     @_catch_exception
-    def write_cumulative_line_graph(self, task: Task) -> None:
+    def write_cumulative_line_graph(self, task_worktime_by_phase_user: TaskWorktimeByPhaseUser) -> None:
         """ユーザごとにプロットした累積折れ線グラフを出力する。"""
         self.output_project_dir.write_cumulative_line_graph(
-            AnnotatorCumulativeProductivity.from_task(task),
+            AnnotatorCumulativeProductivity.from_df_wrapper(task_worktime_by_phase_user),
             phase=TaskPhase.ANNOTATION,
             user_id_list=self.user_id_list,
             minimal_output=self.minimal_output,
         )
         self.output_project_dir.write_cumulative_line_graph(
-            InspectorCumulativeProductivity.from_task(task),
+            InspectorCumulativeProductivity.from_df_wrapper(task_worktime_by_phase_user),
             phase=TaskPhase.INSPECTION,
             user_id_list=self.user_id_list,
             minimal_output=self.minimal_output,
         )
         self.output_project_dir.write_cumulative_line_graph(
-            AcceptorCumulativeProductivity.from_task(task),
+            AcceptorCumulativeProductivity.from_df_wrapper(task_worktime_by_phase_user),
             phase=TaskPhase.ACCEPTANCE,
             user_id_list=self.user_id_list,
             minimal_output=self.minimal_output,
         )
 
     @_catch_exception
-    def write_line_graph(self, task: Task) -> None:
+    def write_line_graph(self, task_worktime_by_phase_user: TaskWorktimeByPhaseUser) -> None:
         """ユーザごとにプロットした折れ線グラフを出力する。"""
 
-        annotator_per_date_obj = AnnotatorProductivityPerDate.from_task(task)
-        inspector_per_date_obj = InspectorProductivityPerDate.from_task(task)
-        acceptor_per_date_obj = AcceptorProductivityPerDate.from_task(task)
+        annotator_per_date_obj = AnnotatorProductivityPerDate.from_df_wrapper(task_worktime_by_phase_user)
+        inspector_per_date_obj = InspectorProductivityPerDate.from_df_wrapper(task_worktime_by_phase_user)
+        acceptor_per_date_obj = AcceptorProductivityPerDate.from_df_wrapper(task_worktime_by_phase_user)
 
         self.output_project_dir.write_performance_per_started_date_csv(annotator_per_date_obj, phase=TaskPhase.ANNOTATION)
         self.output_project_dir.write_performance_per_started_date_csv(inspector_per_date_obj, phase=TaskPhase.INSPECTION)
@@ -233,8 +233,8 @@ def merge_visualization_dir(  # pylint: disable=too-many-statements
     writing_obj.write_user_performance(user_performance)
     writing_obj.write_whole_performance(whole_performance)
 
-    writing_obj.write_cumulative_line_graph(task)
-    writing_obj.write_line_graph(task)
+    writing_obj.write_cumulative_line_graph(task_worktime_by_phase_user)
+    writing_obj.write_line_graph(task_worktime_by_phase_user)
 
     writing_obj.write_merge_performance_per_date(task, worktime_per_date)
     writing_obj.write_performance_per_first_annotation_started_date(task)

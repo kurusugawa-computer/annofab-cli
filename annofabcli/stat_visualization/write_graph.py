@@ -20,7 +20,7 @@ from annofabcli.statistics.visualization.dataframe.productivity_per_date import 
     AnnotatorProductivityPerDate,
     InspectorProductivityPerDate,
 )
-from annofabcli.statistics.visualization.dataframe.task import Task
+from annofabcli.statistics.visualization.dataframe.task_worktime_by_phase_user import TaskWorktimeByPhaseUser
 from annofabcli.statistics.visualization.model import ProductionVolumeColumn, TaskCompletionCriteria
 from annofabcli.statistics.visualization.project_dir import ProjectDir
 
@@ -41,30 +41,30 @@ class WritingGraph:
         self.user_id_list = user_id_list
         self.minimal_output = minimal_output
 
-    def write_line_graph(self, task: Task) -> None:
+    def write_line_graph(self, task_worktime_list: TaskWorktimeByPhaseUser) -> None:
         self.output_project_dir.write_cumulative_line_graph(
-            AnnotatorCumulativeProductivity.from_task(task),
+            AnnotatorCumulativeProductivity.from_df_wrapper(task_worktime_list),
             phase=TaskPhase.ANNOTATION,
             user_id_list=self.user_id_list,
             minimal_output=self.minimal_output,
         )
         self.output_project_dir.write_cumulative_line_graph(
-            InspectorCumulativeProductivity.from_task(task),
+            InspectorCumulativeProductivity.from_df_wrapper(task_worktime_list),
             phase=TaskPhase.INSPECTION,
             user_id_list=self.user_id_list,
             minimal_output=self.minimal_output,
         )
         self.output_project_dir.write_cumulative_line_graph(
-            AcceptorCumulativeProductivity.from_task(task),
+            AcceptorCumulativeProductivity.from_df_wrapper(task_worktime_list),
             phase=TaskPhase.ACCEPTANCE,
             user_id_list=self.user_id_list,
             minimal_output=self.minimal_output,
         )
 
         if not self.minimal_output:
-            annotator_per_date_obj = AnnotatorProductivityPerDate.from_task(task)
-            inspector_per_date_obj = InspectorProductivityPerDate.from_task(task)
-            acceptor_per_date_obj = AcceptorProductivityPerDate.from_task(task)
+            annotator_per_date_obj = AnnotatorProductivityPerDate.from_df_wrapper(task_worktime_list)
+            inspector_per_date_obj = InspectorProductivityPerDate.from_df_wrapper(task_worktime_list)
+            acceptor_per_date_obj = AcceptorProductivityPerDate.from_df_wrapper(task_worktime_list)
 
             self.output_project_dir.write_performance_line_graph_per_date(
                 annotator_per_date_obj, phase=TaskPhase.ANNOTATION, user_id_list=self.user_id_list
@@ -87,10 +87,15 @@ class WritingGraph:
             task = self.project_dir.read_task_list()
             # ヒストグラムを出力
             self.output_project_dir.write_task_histogram(task)
-            # ユーザごとにプロットした折れ線グラフを出力
-            self.write_line_graph(task)
         except Exception:
             logger.warning("'タスクlist.csv'から生成できるグラフの出力に失敗しました。", exc_info=True)
+
+        try:
+            task_worktime_list = self.project_dir.read_task_worktime_list()
+            # ユーザごとにプロットした折れ線グラフを出力
+            self.write_line_graph(task_worktime_list)
+        except Exception:
+            logger.warning("'task-worktime-by-user-phase.csv'から生成できるグラフの出力に失敗しました。", exc_info=True)
 
         try:
             self.output_project_dir.write_whole_productivity_line_graph_per_date(self.project_dir.read_whole_productivity_per_date())

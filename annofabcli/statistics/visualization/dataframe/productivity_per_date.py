@@ -29,10 +29,51 @@ from annofabcli.statistics.linegraph import (
     get_weekly_sum,
     write_bokeh_graph,
 )
-from annofabcli.statistics.visualization.dataframe.task import Task
+from annofabcli.statistics.visualization.dataframe.task_worktime_by_phase_user import TaskWorktimeByPhaseUser
 from annofabcli.statistics.visualization.model import ProductionVolumeColumn
 
 logger = logging.getLogger(__name__)
+
+
+def create_df_productivity_per_date(task_worktime_by_phase_user: TaskWorktimeByPhaseUser, phase: TaskPhase) -> pandas.DataFrame:
+    df = task_worktime_by_phase_user.df.copy()
+    str_phase = phase.value
+    df = df[df["phase"] == str_phase]
+    df = df.rename(columns={"pointed_out_inspection_comment_count": "inspection_comment_count", "worktime_hour": f"{str_phase}_worktime_hour"})
+
+    df[f"first_{str_phase}_started_date"] = df["started_datetime"].map(
+        lambda e: datetime_to_date(e) if e is not None and isinstance(e, str) else None
+    )
+
+    # first_annotation_user_id と first_annotation_usernameの両方を指定している理由：
+    # first_annotation_username を取得するため
+    # , "first_annotation_username" TODO
+    group_obj = df.groupby(
+        [f"first_{str_phase}_started_date", "user_id"],
+        as_index=False,
+    )
+
+    production_volume_columns = [
+        "input_data_count",
+        "annotation_count",
+        *[e.value for e in task_worktime_by_phase_user.custom_production_volume_list],
+    ]
+    sum_df = group_obj[
+        [
+            f"{str_phase}_worktime_hour",
+            "task_count",
+            *production_volume_columns,
+            "inspection_comment_count",
+        ]
+    ].sum(numeric_only=True)
+
+    for denominator_column in production_volume_columns:
+        for numerator_column in [f"{str_phase}_worktime_hour", "inspection_comment_count"]:
+            sum_df[f"{numerator_column}/{denominator_column}"] = sum_df[numerator_column] / sum_df[denominator_column]
+
+    df_user = df.drop_duplicates(subset=["user_id"])[["user_id", "username", "biography"]]
+    sum_df = sum_df.merge(df_user, how="left", on="user_id")
+    return sum_df
 
 
 class AbstractPhaseProductivityPerDate(abc.ABC):
@@ -91,11 +132,6 @@ class AbstractPhaseProductivityPerDate(abc.ABC):
 
         write_bokeh_graph(bokeh.layouts.layout(graph_group_list), output_file)
 
-    @classmethod
-    @abc.abstractmethod
-    def from_task(cls, task: Task) -> AbstractPhaseProductivityPerDate:
-        raise NotImplementedError()
-
     @abc.abstractmethod
     def to_csv(self, output_file: Path) -> None:
         raise NotImplementedError()
@@ -112,6 +148,67 @@ class AbstractPhaseProductivityPerDate(abc.ABC):
     ) -> None:
         raise NotImplementedError()
 
+    def _get_df_sequential_date(self, df: pandas.DataFrame) -> pandas.DataFrame:
+        """
+        グラフにプロットするために、連続した日付のDataFrameを生成する。
+
+        Args:
+            df: １人のユーザーに関する生産量や作業時間が格納されたDataFrame（`user_id`などのユーザー情報はすべて同じ値）
+
+        """
+        str_phase = self.phase.value
+
+        # 日付の最小と最大から連続した日付のDataFrameを生成する
+        df_date = pandas.DataFrame(
+            {
+                f"first_{str_phase}_started_date": [
+                    str(e.date())
+                    for e in pandas.date_range(
+                        df[f"first_{str_phase}_started_date"].min(),
+                        df[f"first_{str_phase}_started_date"].max(),
+                    )
+                ]
+            }
+        )
+
+        df2 = df_date.merge(df, how="left", on=f"first_{str_phase}_started_date")
+        df2[f"dt_first_{str_phase}_started_date"] = df2[f"first_{str_phase}_started_date"].map(lambda e: parse(e).date())
+
+        # 欠損値にユーザー情報を追加
+        assert len(df) > 0
+        for user_column in ["user_id", "username", "biography"]:
+            df2[user_column] = df[user_column].iloc[0]
+
+        # その他の欠損値（作業時間や生産量）を0で埋める
+        df2.fillna(0, inplace=True)
+        return df2
+
+    @property
+    def columns(self) -> list[str]:
+        str_phase = self.phase.value
+        production_columns = [
+            f"first_{str_phase}_started_date",
+            "user_id",
+            "username",
+            "biography",
+            f"{str_phase}_worktime_hour",
+            "task_count",
+            *self.production_volume_columns,
+        ]
+
+        velocity_columns = [
+            f"{numerator}/{denominator}" for numerator in [f"{str_phase}_worktime_hour"] for denominator in self.production_volume_columns
+        ]
+
+        columns = production_columns + velocity_columns
+
+        if self.phase == TaskPhase.ANNOTATION:
+            # 教師付作業の品質の指標を追加
+            quality_columns = [f"inspection_comment_count/{denominator}" for denominator in self.production_volume_columns]
+            columns.extend(["inspection_comment_count", *quality_columns])
+
+        return columns
+
 
 class AnnotatorProductivityPerDate(AbstractPhaseProductivityPerDate):
     """教師付開始日ごとの教師付者の生産性に関する情報"""
@@ -120,88 +217,9 @@ class AnnotatorProductivityPerDate(AbstractPhaseProductivityPerDate):
         super().__init__(df, phase=TaskPhase.ANNOTATION, custom_production_volume_list=custom_production_volume_list)
 
     @classmethod
-    def from_task(cls, task: Task) -> AnnotatorProductivityPerDate:
-        """
-        日毎、ユーザごとの情報を出力する。
-
-        Args:
-            task_df:
-
-        Returns:
-
-        """
-        new_df = task.df.copy()
-        new_df["first_annotation_started_date"] = new_df["first_annotation_started_datetime"].map(
-            lambda e: datetime_to_date(e) if e is not None and isinstance(e, str) else None
-        )
-        new_df["task_count"] = 1  # 集計用
-
-        # first_annotation_user_id と first_annotation_usernameの両方を指定している理由：
-        # first_annotation_username を取得するため
-        group_obj = new_df.groupby(
-            ["first_annotation_started_date", "first_annotation_user_id", "first_annotation_username"],
-            as_index=False,
-        )
-
-        production_volume_columns = ["input_data_count", "annotation_count", *[e.value for e in task.custom_production_volume_list]]
-        sum_df = group_obj[
-            [
-                "first_annotation_worktime_hour",
-                "annotation_worktime_hour",
-                "inspection_worktime_hour",
-                "acceptance_worktime_hour",
-                "worktime_hour",
-                "task_count",
-                *production_volume_columns,
-                "inspection_comment_count",
-            ]
-        ].sum(numeric_only=True)
-
-        for denominator_column in production_volume_columns:
-            for numerator_column in ["annotation_worktime_hour", "inspection_worktime_hour", "acceptance_worktime_hour", "inspection_comment_count"]:
-                sum_df[f"{numerator_column}/{denominator_column}"] = sum_df[numerator_column] / sum_df[denominator_column]
-
-        return cls(sum_df, custom_production_volume_list=task.custom_production_volume_list)
-
-    def _get_df_sequential_date(self, df: pandas.DataFrame) -> pandas.DataFrame:
-        """連続した日付のDataFrameを生成する。"""
-        df_date = pandas.DataFrame(
-            {
-                "first_annotation_started_date": [
-                    str(e.date())
-                    for e in pandas.date_range(
-                        df["first_annotation_started_date"].min(),
-                        df["first_annotation_started_date"].max(),
-                    )
-                ]
-            }
-        )
-        df2 = df_date.merge(df, how="left", on="first_annotation_started_date")
-        df2["dt_first_annotation_started_date"] = df2["first_annotation_started_date"].map(lambda e: parse(e).date())
-
-        assert len(df) > 0
-        first_row = df.iloc[0]
-        df2["first_annotation_user_id"] = first_row["first_annotation_user_id"]
-        df2["first_annotation_username"] = first_row["first_annotation_username"]
-
-        df2.fillna(
-            {
-                key: 0
-                for key in [
-                    "first_annotation_worktime_hour",
-                    "annotation_worktime_hour",
-                    "inspection_worktime_hour",
-                    "acceptance_worktime_hour",
-                    "worktime_hour",
-                    "inspection_comment_count",
-                    "task_count",
-                    *self.production_volume_columns,
-                ]
-            },
-            inplace=True,
-        )
-
-        return df2
+    def from_df_wrapper(cls, task_worktime_by_phase_user: TaskWorktimeByPhaseUser) -> AnnotatorProductivityPerDate:
+        df = create_df_productivity_per_date(task_worktime_by_phase_user, TaskPhase.ANNOTATION)
+        return cls(df, custom_production_volume_list=task_worktime_by_phase_user.custom_production_volume_list)
 
     def plot_production_volume_metrics(
         self,
@@ -228,17 +246,18 @@ class AnnotatorProductivityPerDate(AbstractPhaseProductivityPerDate):
 
         df = self.df.copy()
 
-        if target_user_id_list is not None:
+        if target_user_id_list is not None:  # noqa: SIM108
             user_id_list = target_user_id_list
         else:
-            user_id_list = df.sort_values(by="first_annotation_started_date", ascending=False)["first_annotation_user_id"].dropna().unique().tolist()
+            user_id_list = df.sort_values(by="user_id")["user_id"].dropna().unique().tolist()
 
         user_id_list = get_plotted_user_id_list(user_id_list)
 
         x_axis_label = "教師付開始日"
         tooltip_columns = [
-            "first_annotation_user_id",
-            "first_annotation_username",
+            "user_id",
+            "username",
+            "biography",
             "first_annotation_started_date",
             "annotation_worktime_hour",
             "task_count",
@@ -299,7 +318,7 @@ class AnnotatorProductivityPerDate(AbstractPhaseProductivityPerDate):
         line_count = 0
         plotted_users: list[tuple[str, str]] = []
         for user_index, user_id in enumerate(user_id_list):
-            df_subset = df[df["first_annotation_user_id"] == user_id]
+            df_subset = df[df["user_id"] == user_id]
             if df_subset.empty:
                 logger.debug(f"dataframe is empty. user_id = {user_id}")
                 continue
@@ -317,7 +336,7 @@ class AnnotatorProductivityPerDate(AbstractPhaseProductivityPerDate):
 
             source = ColumnDataSource(data=df_subset)
             color = get_color_from_palette(user_index)
-            username = df_subset.iloc[0]["first_annotation_username"]
+            username = df_subset.iloc[0]["username"]
 
             line_count += 1
             for line_graph, (x_column, y_column) in zip(line_graph_list, columns_list):
@@ -350,30 +369,7 @@ class AnnotatorProductivityPerDate(AbstractPhaseProductivityPerDate):
         if not self._validate_df_for_output(output_file):
             return
 
-        production_columns = [
-            "first_annotation_started_date",
-            "first_annotation_user_id",
-            "first_annotation_username",
-            "task_count",
-            *self.production_volume_columns,
-            "inspection_comment_count",
-            "worktime_hour",
-            "annotation_worktime_hour",
-            # 品質の指標として検査者/受入者が使った時間を使うときがあるので、検査時間と受入時間も出力する
-            "inspection_worktime_hour",
-            "acceptance_worktime_hour",
-        ]
-
-        velocity_columns = [
-            f"{numerator}/{denominator}"
-            for numerator in ["annotation_worktime_hour", "inspection_worktime_hour", "acceptance_worktime_hour"]
-            for denominator in self.production_volume_columns
-        ]
-
-        quality_columns = [f"inspection_comment_count/{denominator}" for denominator in self.production_volume_columns]
-
-        columns = production_columns + velocity_columns + quality_columns
-        print_csv(self.df[columns], output=str(output_file))
+        print_csv(self.df[self.columns], output=str(output_file))
 
 
 class InspectorProductivityPerDate(AbstractPhaseProductivityPerDate):
@@ -383,64 +379,9 @@ class InspectorProductivityPerDate(AbstractPhaseProductivityPerDate):
         super().__init__(df, phase=TaskPhase.INSPECTION, custom_production_volume_list=custom_production_volume_list)
 
     @classmethod
-    def from_task(cls, task: Task) -> InspectorProductivityPerDate:
-        """
-        検査開始日ごとの受入者の生産性に関するDataFrameを生成する。
-
-        Args:
-            df_task:
-
-        Returns:
-
-        """
-        new_df = task.df.copy()
-        new_df["first_inspection_started_date"] = new_df["first_inspection_started_datetime"].map(
-            lambda e: datetime_to_date(e) if e is not None and isinstance(e, str) else None
-        )
-        new_df["task_count"] = 1  # 集計用
-
-        # first_inspection_username を列に追加するために、first_inspection_user_idだけでなくfirst_inspection_usernameもgroupby関数のキーに指定した
-        group_obj = new_df.groupby(
-            ["first_inspection_started_date", "first_inspection_user_id", "first_inspection_username"],
-            as_index=False,
-        )
-
-        production_volume_columns = ["input_data_count", "annotation_count", *[e.value for e in task.custom_production_volume_list]]
-        sum_df = group_obj[["first_inspection_worktime_hour", "inspection_worktime_hour", "task_count", *production_volume_columns]].sum(
-            numeric_only=True
-        )
-
-        for denominator_column in production_volume_columns:
-            sum_df[f"inspection_worktime_hour/{denominator_column}"] = sum_df["inspection_worktime_hour"] / sum_df[denominator_column]
-
-        return cls(sum_df, custom_production_volume_list=task.custom_production_volume_list)
-
-    def _get_df_sequential_date(self, df: pandas.DataFrame) -> pandas.DataFrame:
-        """連続した日付のDataFrameを生成する。"""
-        df_date = pandas.DataFrame(
-            {
-                "first_inspection_started_date": [
-                    str(e.date())
-                    for e in pandas.date_range(
-                        df["first_inspection_started_date"].min(),
-                        df["first_inspection_started_date"].max(),
-                    )
-                ]
-            }
-        )
-        df2 = df_date.merge(df, how="left", on="first_inspection_started_date")
-        df2["dt_first_inspection_started_date"] = df2["first_inspection_started_date"].map(lambda e: parse(e).date())
-
-        assert len(df) > 0
-        first_row = df.iloc[0]
-        df2["first_inspection_user_id"] = first_row["first_inspection_user_id"]
-        df2["first_inspection_username"] = first_row["first_inspection_username"]
-
-        df2.fillna(
-            {key: 0 for key in ["first_inspection_worktime_hour", "inspection_worktime_hour", "task_count", *self.production_volume_columns]},
-            inplace=True,
-        )
-        return df2
+    def from_df_wrapper(cls, task_worktime_by_phase_user: TaskWorktimeByPhaseUser) -> InspectorProductivityPerDate:
+        df = create_df_productivity_per_date(task_worktime_by_phase_user, TaskPhase.INSPECTION)
+        return cls(df, custom_production_volume_list=task_worktime_by_phase_user.custom_production_volume_list)
 
     def plot_production_volume_metrics(
         self,
@@ -463,14 +404,15 @@ class InspectorProductivityPerDate(AbstractPhaseProductivityPerDate):
         if target_user_id_list is not None:
             user_id_list = target_user_id_list
         else:
-            user_id_list = df.sort_values(by="first_inspection_started_date", ascending=False)["first_inspection_user_id"].dropna().unique().tolist()
+            user_id_list = df.sort_values(by="user_id", ascending=False)["user_id"].dropna().unique().tolist()
 
         user_id_list = get_plotted_user_id_list(user_id_list)
 
         x_axis_label = "検査開始日"
         tooltip_columns = [
-            "first_inspection_user_id",
-            "first_inspection_username",
+            "user_id",
+            "username",
+            "biography",
             "first_inspection_started_date",
             "inspection_worktime_hour",
             "task_count",
@@ -514,7 +456,7 @@ class InspectorProductivityPerDate(AbstractPhaseProductivityPerDate):
         line_count = 0
         plotted_users: list[tuple[str, str]] = []
         for user_index, user_id in enumerate(user_id_list):
-            df_subset = df[df["first_inspection_user_id"] == user_id]
+            df_subset = df[df["user_id"] == user_id]
             if df_subset.empty:
                 logger.debug(f"dataframe is empty. user_id = {user_id}")
                 continue
@@ -529,7 +471,7 @@ class InspectorProductivityPerDate(AbstractPhaseProductivityPerDate):
 
             source = ColumnDataSource(data=df_subset)
             color = get_color_from_palette(user_index)
-            username = df_subset.iloc[0]["first_inspection_username"]
+            username = df_subset.iloc[0]["username"]
 
             line_count += 1
             for line_graph, (x_column, y_column) in zip(line_graph_list, columns_list):
@@ -566,20 +508,7 @@ class InspectorProductivityPerDate(AbstractPhaseProductivityPerDate):
         if not self._validate_df_for_output(output_file):
             return
 
-        production_columns = [
-            "first_inspection_started_date",
-            "first_inspection_user_id",
-            "first_inspection_username",
-            "task_count",
-            *self.production_volume_columns,
-            "inspection_worktime_hour",
-        ]
-
-        velocity_columns = [f"inspection_worktime_hour/{denominator}" for denominator in self.production_volume_columns]
-
-        columns = production_columns + velocity_columns
-
-        print_csv(self.df[columns], output=str(output_file))
+        print_csv(self.df[self.columns], output=str(output_file))
 
 
 class AcceptorProductivityPerDate(AbstractPhaseProductivityPerDate):
@@ -589,64 +518,9 @@ class AcceptorProductivityPerDate(AbstractPhaseProductivityPerDate):
         super().__init__(df, phase=TaskPhase.ACCEPTANCE, custom_production_volume_list=custom_production_volume_list)
 
     @classmethod
-    def from_task(cls, task: Task) -> AcceptorProductivityPerDate:
-        """
-        受入開始日ごとの受入者の生産性に関するDataFrameを生成する。
-
-        Args:
-            df_task:
-
-        Returns:
-
-        """
-        new_df = task.df.copy()
-        new_df["first_acceptance_started_date"] = new_df["first_acceptance_started_datetime"].map(
-            lambda e: datetime_to_date(e) if e is not None and isinstance(e, str) else None
-        )
-        new_df["task_count"] = 1  # 集計用
-
-        # first_acceptance_username を列に追加するために、first_acceptance_user_idだけでなくfirst_acceptance_usernameもgroupby関数のキーに指定した
-        group_obj = new_df.groupby(
-            ["first_acceptance_started_date", "first_acceptance_user_id", "first_acceptance_username"],
-            as_index=False,
-        )
-
-        production_volume_columns = ["input_data_count", "annotation_count", *[e.value for e in task.custom_production_volume_list]]
-        sum_df = group_obj[["first_acceptance_worktime_hour", "acceptance_worktime_hour", "task_count", *production_volume_columns]].sum(
-            numeric_only=True
-        )
-
-        for denominator_column in production_volume_columns:
-            sum_df[f"acceptance_worktime_hour/{denominator_column}"] = sum_df["acceptance_worktime_hour"] / sum_df[denominator_column]
-
-        return AcceptorProductivityPerDate(sum_df, custom_production_volume_list=task.custom_production_volume_list)
-
-    def _get_df_sequential_date(self, df: pandas.DataFrame) -> pandas.DataFrame:
-        """連続した日付のDataFrameを生成する。"""
-        df_date = pandas.DataFrame(
-            {
-                "first_acceptance_started_date": [
-                    str(e.date())
-                    for e in pandas.date_range(
-                        df["first_acceptance_started_date"].min(),
-                        df["first_acceptance_started_date"].max(),
-                    )
-                ]
-            }
-        )
-        df2 = df_date.merge(df, how="left", on="first_acceptance_started_date")
-        df2["dt_first_acceptance_started_date"] = df2["first_acceptance_started_date"].map(lambda e: parse(e).date())
-
-        assert len(df) > 0
-        first_row = df.iloc[0]
-        df2["first_acceptance_user_id"] = first_row["first_acceptance_user_id"]
-        df2["first_acceptance_username"] = first_row["first_acceptance_username"]
-
-        df2.fillna(
-            {key: 0 for key in ["first_acceptance_worktime_hour", "acceptance_worktime_hour", "task_count", *self.production_volume_columns]},
-            inplace=True,
-        )
-        return df2
+    def from_df_wrapper(cls, task_worktime_by_phase_user: TaskWorktimeByPhaseUser) -> AcceptorProductivityPerDate:
+        df = create_df_productivity_per_date(task_worktime_by_phase_user, TaskPhase.ACCEPTANCE)
+        return cls(df, custom_production_volume_list=task_worktime_by_phase_user.custom_production_volume_list)
 
     def plot_production_volume_metrics(
         self,
@@ -670,15 +544,16 @@ class AcceptorProductivityPerDate(AbstractPhaseProductivityPerDate):
         if target_user_id_list is not None:
             user_id_list = target_user_id_list
         else:
-            user_id_list = df.sort_values(by="first_acceptance_started_date", ascending=False)["first_acceptance_user_id"].dropna().unique().tolist()
+            user_id_list = df.sort_values(by="user_id", ascending=False)["user_id"].dropna().unique().tolist()
 
         user_id_list = get_plotted_user_id_list(user_id_list)
 
         x_axis_label = "受入開始日"
         x_column = "dt_first_acceptance_started_date"
         tooltip_columns = [
-            "first_acceptance_user_id",
-            "first_acceptance_username",
+            "user_id",
+            "username",
+            "biography",
             "first_acceptance_started_date",
             "acceptance_worktime_hour",
             "task_count",
@@ -722,7 +597,7 @@ class AcceptorProductivityPerDate(AbstractPhaseProductivityPerDate):
         line_count = 0
         plotted_users: list[tuple[str, str]] = []
         for user_index, user_id in enumerate(user_id_list):
-            df_subset = df[df["first_acceptance_user_id"] == user_id]
+            df_subset = df[df["user_id"] == user_id]
             if df_subset.empty:
                 logger.debug(f"dataframe is empty. user_id = {user_id}")
                 continue
@@ -738,7 +613,7 @@ class AcceptorProductivityPerDate(AbstractPhaseProductivityPerDate):
 
             source = ColumnDataSource(data=df_subset)
             color = get_color_from_palette(user_index)
-            username = df_subset.iloc[0]["first_acceptance_username"]
+            username = df_subset.iloc[0]["username"]
 
             line_count += 1
             for line_graph, (x_column, y_column) in zip(line_graph_list, columns_list):
@@ -775,17 +650,4 @@ class AcceptorProductivityPerDate(AbstractPhaseProductivityPerDate):
         if not self._validate_df_for_output(output_file):
             return
 
-        production_columns = [
-            "first_acceptance_started_date",
-            "first_acceptance_user_id",
-            "first_acceptance_username",
-            "task_count",
-            *self.production_volume_columns,
-            "acceptance_worktime_hour",
-        ]
-
-        velocity_columns = [f"acceptance_worktime_hour/{denominator}" for denominator in self.production_volume_columns]
-
-        columns = production_columns + velocity_columns
-
-        print_csv(self.df[columns], output=str(output_file))
+        print_csv(self.df[self.columns], output=str(output_file))
