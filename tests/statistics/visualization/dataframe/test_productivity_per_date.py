@@ -5,7 +5,6 @@ from annofabcli.statistics.visualization.dataframe.productivity_per_date import 
     AnnotatorProductivityPerDate,
     InspectorProductivityPerDate,
     ProductionVolumeColumn,
-    Task,
     TaskPhase,
     TaskWorktimeByPhaseUser,
     create_df_productivity_per_date,
@@ -42,8 +41,6 @@ class TestAnnotatorProductivityPerDate:
 
 
 class TestInspectorProductivityPerDate:
-
-
     def test_scenario(self):
         task_worktime_by_phase_user = TaskWorktimeByPhaseUser.from_csv(
             data_dir / "task-worktime-by-user-phase.csv",
@@ -59,25 +56,19 @@ class TestInspectorProductivityPerDate:
             "annotation_count", "アノテーション", output_dir / "折れ線-横軸_検査開始日-縦軸_アノテーションあたりの指標-検査者用.html"
         )
 
-class TestAcceptorProductivityPerDate:
-    obj: AcceptorProductivityPerDate
 
-    @classmethod
-    def setup_class(cls):
-        task = Task.from_csv(
-            data_dir / "task.csv",
+class TestAcceptorProductivityPerDate:
+    def test_scenario(self):
+        task_worktime_by_phase_user = TaskWorktimeByPhaseUser.from_csv(
+            data_dir / "task-worktime-by-user-phase.csv",
             custom_production_volume_list=[
                 ProductionVolumeColumn("custom_production_volume1", "custom_生産量1"),
                 ProductionVolumeColumn("custom_production_volume2", "custom_生産量2"),
             ],
         )
 
-        cls.obj = AcceptorProductivityPerDate.from_task(task)
-
-    def test_to_csv(self):
-        self.obj.to_csv(output_dir / "受入開始日ごとの受入者の生産性.csv")
-
-    def test__plot_production_volume_metrics(self):
-        self.obj.plot_production_volume_metrics(
+        obj = AcceptorProductivityPerDate.from_df_wrapper(task_worktime_by_phase_user)
+        obj.to_csv(output_dir / "受入開始日ごとの受入者の生産性.csv")
+        obj.plot_production_volume_metrics(
             "annotation_count", "アノテーション", output_dir / "折れ線-横軸_受入開始日-縦軸_アノテーションあたりの指標-受入者用.html"
         )

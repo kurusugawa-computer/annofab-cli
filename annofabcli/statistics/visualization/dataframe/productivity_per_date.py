@@ -29,7 +29,6 @@ from annofabcli.statistics.linegraph import (
     get_weekly_sum,
     write_bokeh_graph,
 )
-from annofabcli.statistics.visualization.dataframe.task import Task
 from annofabcli.statistics.visualization.dataframe.task_worktime_by_phase_user import TaskWorktimeByPhaseUser
 from annofabcli.statistics.visualization.model import ProductionVolumeColumn
 
@@ -195,7 +194,6 @@ class AbstractPhaseProductivityPerDate(abc.ABC):
             f"{str_phase}_worktime_hour",
             "task_count",
             *self.production_volume_columns,
-            "inspection_comment_count",
         ]
 
         velocity_columns = [
@@ -520,64 +518,9 @@ class AcceptorProductivityPerDate(AbstractPhaseProductivityPerDate):
         super().__init__(df, phase=TaskPhase.ACCEPTANCE, custom_production_volume_list=custom_production_volume_list)
 
     @classmethod
-    def from_task(cls, task: Task) -> AcceptorProductivityPerDate:
-        """
-        受入開始日ごとの受入者の生産性に関するDataFrameを生成する。
-
-        Args:
-            df_task:
-
-        Returns:
-
-        """
-        new_df = task.df.copy()
-        new_df["first_acceptance_started_date"] = new_df["first_acceptance_started_datetime"].map(
-            lambda e: datetime_to_date(e) if e is not None and isinstance(e, str) else None
-        )
-        new_df["task_count"] = 1  # 集計用
-
-        # first_acceptance_username を列に追加するために、first_acceptance_user_idだけでなくfirst_acceptance_usernameもgroupby関数のキーに指定した
-        group_obj = new_df.groupby(
-            ["first_acceptance_started_date", "first_acceptance_user_id", "first_acceptance_username"],
-            as_index=False,
-        )
-
-        production_volume_columns = ["input_data_count", "annotation_count", *[e.value for e in task.custom_production_volume_list]]
-        sum_df = group_obj[["first_acceptance_worktime_hour", "acceptance_worktime_hour", "task_count", *production_volume_columns]].sum(
-            numeric_only=True
-        )
-
-        for denominator_column in production_volume_columns:
-            sum_df[f"acceptance_worktime_hour/{denominator_column}"] = sum_df["acceptance_worktime_hour"] / sum_df[denominator_column]
-
-        return AcceptorProductivityPerDate(sum_df, custom_production_volume_list=task.custom_production_volume_list)
-
-    def _get_df_sequential_date(self, df: pandas.DataFrame) -> pandas.DataFrame:
-        """連続した日付のDataFrameを生成する。"""
-        df_date = pandas.DataFrame(
-            {
-                "first_acceptance_started_date": [
-                    str(e.date())
-                    for e in pandas.date_range(
-                        df["first_acceptance_started_date"].min(),
-                        df["first_acceptance_started_date"].max(),
-                    )
-                ]
-            }
-        )
-        df2 = df_date.merge(df, how="left", on="first_acceptance_started_date")
-        df2["dt_first_acceptance_started_date"] = df2["first_acceptance_started_date"].map(lambda e: parse(e).date())
-
-        assert len(df) > 0
-        first_row = df.iloc[0]
-        df2["first_acceptance_user_id"] = first_row["first_acceptance_user_id"]
-        df2["first_acceptance_username"] = first_row["first_acceptance_username"]
-
-        df2.fillna(
-            {key: 0 for key in ["first_acceptance_worktime_hour", "acceptance_worktime_hour", "task_count", *self.production_volume_columns]},
-            inplace=True,
-        )
-        return df2
+    def from_df_wrapper(cls, task_worktime_by_phase_user: TaskWorktimeByPhaseUser) -> AcceptorProductivityPerDate:
+        df = create_df_productivity_per_date(task_worktime_by_phase_user, TaskPhase.ACCEPTANCE)
+        return cls(df, custom_production_volume_list=task_worktime_by_phase_user.custom_production_volume_list)
 
     def plot_production_volume_metrics(
         self,
@@ -601,15 +544,16 @@ class AcceptorProductivityPerDate(AbstractPhaseProductivityPerDate):
         if target_user_id_list is not None:
             user_id_list = target_user_id_list
         else:
-            user_id_list = df.sort_values(by="first_acceptance_started_date", ascending=False)["first_acceptance_user_id"].dropna().unique().tolist()
+            user_id_list = df.sort_values(by="user_id", ascending=False)["user_id"].dropna().unique().tolist()
 
         user_id_list = get_plotted_user_id_list(user_id_list)
 
         x_axis_label = "受入開始日"
         x_column = "dt_first_acceptance_started_date"
         tooltip_columns = [
-            "first_acceptance_user_id",
-            "first_acceptance_username",
+            "user_id",
+            "username",
+            "biography",
             "first_acceptance_started_date",
             "acceptance_worktime_hour",
             "task_count",
@@ -653,7 +597,7 @@ class AcceptorProductivityPerDate(AbstractPhaseProductivityPerDate):
         line_count = 0
         plotted_users: list[tuple[str, str]] = []
         for user_index, user_id in enumerate(user_id_list):
-            df_subset = df[df["first_acceptance_user_id"] == user_id]
+            df_subset = df[df["user_id"] == user_id]
             if df_subset.empty:
                 logger.debug(f"dataframe is empty. user_id = {user_id}")
                 continue
@@ -669,7 +613,7 @@ class AcceptorProductivityPerDate(AbstractPhaseProductivityPerDate):
 
             source = ColumnDataSource(data=df_subset)
             color = get_color_from_palette(user_index)
-            username = df_subset.iloc[0]["first_acceptance_username"]
+            username = df_subset.iloc[0]["username"]
 
             line_count += 1
             for line_graph, (x_column, y_column) in zip(line_graph_list, columns_list):
@@ -706,17 +650,4 @@ class AcceptorProductivityPerDate(AbstractPhaseProductivityPerDate):
         if not self._validate_df_for_output(output_file):
             return
 
-        production_columns = [
-            "first_acceptance_started_date",
-            "first_acceptance_user_id",
-            "first_acceptance_username",
-            "task_count",
-            *self.production_volume_columns,
-            "acceptance_worktime_hour",
-        ]
-
-        velocity_columns = [f"acceptance_worktime_hour/{denominator}" for denominator in self.production_volume_columns]
-
-        columns = production_columns + velocity_columns
-
-        print_csv(self.df[columns], output=str(output_file))
+        print_csv(self.df[self.columns], output=str(output_file))
