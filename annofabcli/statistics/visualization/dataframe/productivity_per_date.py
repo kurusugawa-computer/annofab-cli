@@ -180,8 +180,20 @@ class AbstractPhaseProductivityPerDate(abc.ABC):
             df2[user_column] = df[user_column].iloc[0]
 
         # その他の欠損値（作業時間や生産量）を0で埋める
-        df2 = df2.infer_objects(copy=False)
-        df2.fillna(0, inplace=True)
+        df2 = df2.fillna(
+            {
+                col: 0
+                for col in [
+                    "annotation_worktime_hour",
+                    "inspection_worktime_hour",
+                    "acceptance_worktime_hour",
+                    "task_count",
+                    "inspection_comment_count",
+                    *self.production_volume_columns,
+                ]
+            }
+        )
+
         return df2
 
     @property
