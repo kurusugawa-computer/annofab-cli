@@ -8,12 +8,19 @@ from annofabcli.statistics.visualization.dataframe.cumulative_productivity impor
     InspectorCumulativeProductivity,
 )
 from annofabcli.statistics.visualization.dataframe.task import Task
+from annofabcli.statistics.visualization.dataframe.task_worktime_by_phase_user import TaskWorktimeByPhaseUser
 
 output_dir = Path("./tests/out/statistics/visualization/dataframe")
 data_dir = Path("./tests/data/statistics")
 output_dir.mkdir(exist_ok=True, parents=True)
 
-# 出力できることを確認する
+
+def test_foo():
+    task_worktime_by_phase_user = TaskWorktimeByPhaseUser.from_csv(data_dir / "task-worktime-by-user-phase.csv")
+    obj = AnnotatorCumulativeProductivity.from_df_wrapper(task_worktime_by_phase_user)
+    assert len(obj.df) == 2
+    obj.df.to_csv("out/foo.csv")
+    obj.plot_production_volume_metrics("annotation_count", "アノテーション数", Path("out/foo.html"))
 
 
 class TestAnnotatorCumulativeProductivity:

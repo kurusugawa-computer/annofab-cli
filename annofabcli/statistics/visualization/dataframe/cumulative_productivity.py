@@ -27,6 +27,7 @@ from annofabcli.statistics.linegraph import (
     write_bokeh_graph,
 )
 from annofabcli.statistics.visualization.dataframe.task import Task
+from annofabcli.statistics.visualization.dataframe.task_worktime_by_phase_user import TaskWorktimeByPhaseUser
 from annofabcli.statistics.visualization.model import ProductionVolumeColumn
 
 logger = logging.getLogger(__name__)
@@ -44,8 +45,6 @@ class AbstractPhaseCumulativeProductivity(abc.ABC):
         self.default_user_id_list = self._get_default_user_id_list()
         self.custom_production_volume_list = custom_production_volume_list if custom_production_volume_list is not None else []
 
-        self._df_cumulative = self._get_cumulative_dataframe()
-
     @staticmethod
     def _get_phase_name(phase: TaskPhase) -> str:
         if phase == TaskPhase.ANNOTATION:
@@ -57,12 +56,11 @@ class AbstractPhaseCumulativeProductivity(abc.ABC):
         raise RuntimeError(f"phase='{phase}'が対象外です。")
 
     def _get_default_user_id_list(self) -> list[str]:
-        return (
-            self.df.sort_values(by=f"first_{self.phase.value}_started_datetime", ascending=False)[f"first_{self.phase.value}_user_id"]
-            .dropna()
-            .unique()
-            .tolist()
-        )
+        """
+        プロット対象ユーザーのuser_idのリストを取得します。
+        """
+        array = self.df["user_id"].dropna().unique()
+        return sorted(array)
 
     def _validate_df_for_output(self, output_file: Path) -> bool:
         if len(self.df) == 0:
@@ -109,22 +107,21 @@ class AbstractPhaseCumulativeProductivity(abc.ABC):
             )
             return list(xy_columns | tooltip_columns)
 
-        df = self._df_cumulative
-
+        df = self.df
         required_columns = get_required_columns()
 
         line_count = 0
         plotted_users: list[tuple[str, str]] = []
 
         for user_index, user_id in enumerate(user_id_list):
-            df_subset = df[df[f"first_{self.phase.value}_user_id"] == user_id]
+            df_subset = df[df["user_id"] == user_id]
             if df_subset.empty:
                 logger.debug(f"dataframe is empty. user_id = {user_id}")
                 continue
 
             source = ColumnDataSource(df_subset[required_columns])
             color = get_color_from_palette(user_index)
-            username = df_subset.iloc[0][f"first_{self.phase.value}_username"]
+            username = df_subset.iloc[0]["username"]
 
             line_count += 1
             for line_graph, (x_column, y_column) in zip(line_graph_list, columns_list):
@@ -190,6 +187,56 @@ class AnnotatorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
         # task.df
         return cls(task.df.copy(), custom_production_volume_list=task.custom_production_volume_list)
 
+    @classmethod
+    def from_df_wrapper(cls, task_worktime_by_phase_user: TaskWorktimeByPhaseUser) -> AnnotatorCumulativeProductivity:
+        """
+        `タスクlist.csv`に相当する情報から、インスタンスを生成します。
+        """
+        # task.df
+        df = cls._create_cumulative_dataframe(task_worktime_by_phase_user)
+        return cls(df, custom_production_volume_list=task_worktime_by_phase_user.custom_production_volume_list)
+
+    @staticmethod
+    def _create_cumulative_dataframe(task_worktime_by_phase_user: TaskWorktimeByPhaseUser) -> pandas.DataFrame:
+        """
+        累積情報が格納されたDataFrameを生成する。
+        """
+        df = task_worktime_by_phase_user.df.copy()
+        str_phase = TaskPhase.ANNOTATION.value
+        df = df[df["phase"] == str_phase]
+
+        df = df.rename(columns={"pointed_out_inspection_comment_count": "inspection_comment_count", "worktime_hour": f"{str_phase}_worktime_hour"})
+
+        # 教師付の開始時刻でソートして、indexを更新する
+
+        df = df.sort_values(["user_id", "started_datetime"]).reset_index(drop=True)
+
+        # groupby_obj = df.groupby("first_annotation_user_id")
+        # TODO sort
+        groupby_obj = df.groupby("user_id")
+        df[f"cumulative_{str_phase}_worktime_hour"] = groupby_obj[f"{str_phase}_worktime_hour"].cumsum()
+
+        # 生産量の累積値を算出
+        df["cumulative_task_count"] = groupby_obj["task_count"].cumsum()
+        df["cumulative_input_data_count"] = groupby_obj["input_data_count"].cumsum()
+        df["cumulative_annotation_count"] = groupby_obj["annotation_count"].cumsum()
+        for column in [e.value for e in task_worktime_by_phase_user.custom_production_volume_list]:
+            df[f"cumulative_{column}"] = groupby_obj[column].cumsum()
+
+        # タスク完了数、差し戻し数など
+        df["cumulative_inspection_comment_count"] = groupby_obj["inspection_comment_count"].cumsum()
+
+        # 追加理由：ツールチップでは時間情報は不要なので、作業開始「日」のみ表示するため
+        # `YYYY-MM-DDThh:mm:ss.sss+09:00`から`YYYY-MM-DD`を取得する
+        # キャストする理由: 全部nanだとfloat型になって、".str"にアクセスできないため
+        df["first_annotation_started_date"] = df["started_datetime"].astype("string").str[:10]
+        # bokeh3.0.3では、string型の列を持つpandas.DataFrameを描画できないため、改めてobject型に戻す
+        # TODO この問題が解決されたら、削除する
+        # https://qiita.com/yuji38kwmt/items/b5da6ed521e827620186
+        df["first_annotation_started_date"] = df["first_annotation_started_date"].astype("object")
+
+        return df
+
     def _get_cumulative_dataframe(self) -> pandas.DataFrame:
         """
         累積情報が格納されたDataFrameを生成する。
@@ -231,7 +278,7 @@ class AnnotatorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
         df = df.drop(["task_count"], axis=1)
         return df
 
-    def plot_production_volume_metrics(
+    def plot_production_volume_metrics__old(
         self,
         production_volume_column: str,
         production_volume_name: str,
@@ -284,6 +331,76 @@ class AnnotatorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
                     "task_id",
                     "first_annotation_user_id",
                     "first_annotation_username",
+                    "first_annotation_started_date",
+                    production_volume_column,
+                    "inspection_comment_count",
+                ],
+                x_axis_label=production_volume_name,
+            ),
+        ]
+
+        x_column = f"cumulative_{production_volume_column}"
+        columns_list = [
+            (x_column, "cumulative_annotation_worktime_hour"),
+            (x_column, "cumulative_inspection_comment_count"),
+        ]
+        self._plot(line_graph_list, columns_list, user_id_list, output_file, metadata=metadata)
+
+    def plot_production_volume_metrics(
+        self,
+        production_volume_column: str,
+        production_volume_name: str,
+        output_file: Path,
+        *,
+        target_user_id_list: Optional[list[str]] = None,
+        metadata: Optional[dict[str, Any]] = None,
+    ) -> None:
+        """
+        生産性を教師付作業者ごとにプロットする。
+
+        Args:
+            df:
+            first_annotation_user_id_list:
+
+        Returns:
+
+        """
+
+        if not self._validate_df_for_output(output_file):
+            return
+
+        logger.debug(f"{output_file} を出力します。")
+
+        if target_user_id_list is not None:  # noqa: SIM108
+            user_id_list = target_user_id_list
+        else:
+            user_id_list = self.default_user_id_list
+
+        user_id_list = get_plotted_user_id_list(user_id_list)
+
+        line_graph_list = [
+            LineGraph(
+                title=f"累積の{production_volume_name}と教師付作業時間",
+                y_axis_label="教師付作業時間[時間]",
+                tooltip_columns=[
+                    "task_id",
+                    "user_id",
+                    "username",
+                    "biography",
+                    "first_annotation_started_date",
+                    production_volume_column,
+                    "annotation_worktime_hour",
+                ],
+                x_axis_label=production_volume_name,
+            ),
+            LineGraph(
+                title=f"累積の{production_volume_name}と検査コメント数",
+                y_axis_label="検査コメント数",
+                tooltip_columns=[
+                    "task_id",
+                    "user_id",
+                    "username",
+                    "biography",
                     "first_annotation_started_date",
                     production_volume_column,
                     "inspection_comment_count",
