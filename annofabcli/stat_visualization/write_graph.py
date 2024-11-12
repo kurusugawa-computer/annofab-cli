@@ -87,8 +87,6 @@ class WritingGraph:
             task = self.project_dir.read_task_list()
             # ヒストグラムを出力
             self.output_project_dir.write_task_histogram(task)
-            # ユーザごとにプロットした折れ線グラフを出力
-            self.write_line_graph(task)
         except Exception:
             logger.warning("'タスクlist.csv'から生成できるグラフの出力に失敗しました。", exc_info=True)
 
@@ -97,7 +95,7 @@ class WritingGraph:
             # ユーザごとにプロットした折れ線グラフを出力
             self.write_line_graph(task_worktime_list)
         except Exception:
-            logger.warning("'タスクlist.csv'から生成できるグラフの出力に失敗しました。", exc_info=True)
+            logger.warning("'task-worktime-by-user-phase.csv'から生成できるグラフの出力に失敗しました。", exc_info=True)
 
         try:
             self.output_project_dir.write_whole_productivity_line_graph_per_date(self.project_dir.read_whole_productivity_per_date())
