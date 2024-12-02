@@ -179,8 +179,9 @@ def get_video_durations(input_data_json: Path, task_json: Path) -> tuple[list[fl
         first_input_data_id = task["input_data_id_list"][0]
         duration = video_durations_dict_for_input_data.get(first_input_data_id)
         if duration is None:
-            logger.warning(f"task_id='{task_id}' :: input_data='{first_input_data_id}'のinput_durationがNoneです。")
-        video_durations_dict_for_task[task_id] = duration
+            logger.warning(f"task_id='{task_id}' :: input_data_id='{first_input_data_id}'のinput_durationがNoneです。")
+        else:
+            video_durations_dict_for_task[task_id] = duration
 
     return list(video_durations_dict_for_input_data.values()), list(video_durations_dict_for_task.values())
 
