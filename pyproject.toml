@@ -39,6 +39,12 @@ bokeh = [
     {version="^3.3", python=">=3.9"}
     ]
 
+# 'markupsafe'の最新バージョンはPython3.8に対応していないので、Python 3.8のときはバージョンを固定する
+markupsafe = [
+    {version="^2", python="=3.8"},
+]
+
+
 Pillow = "*"
 typing-extensions="^4.5"
 
@@ -68,7 +74,7 @@ pytest-cov = "*"
 
 [tool.poetry.group.linter.dependencies]
 # pythonバージョンを指定している理由：Python3.12（開発環境）でしかlintを実行していないため
-ruff = {version="^0.6", python=">=3.12"}
+ruff = {version="^0.8", python=">=3.12"}
 mypy = {version="^1", python=">=3.12"}
 pylint = {version="^3", python=">=3.12"}
 
