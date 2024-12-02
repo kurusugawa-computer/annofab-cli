@@ -39,6 +39,12 @@ bokeh = [
     {version="^3.3", python=">=3.9"}
     ]
 
+# 'markupsafe'の最新バージョンはPython3.8に対応していないので、Python 3.8のときはバージョンを固定する
+markupsafe = [
+    {version="^2", python="=3.8"},
+]
+
+
 Pillow = "*"
 typing-extensions="^4.5"
 
