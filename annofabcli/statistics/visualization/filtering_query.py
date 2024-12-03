@@ -3,7 +3,7 @@ from __future__ import annotations
 import datetime
 import logging
 from dataclasses import dataclass
-from typing import Any, List, Optional
+from typing import Any, Collection, List, Optional
 
 import dateutil
 import dateutil.parser
@@ -25,6 +25,7 @@ class FilteringQuery:
     task_query: Optional[TaskQuery] = None
     start_date: Optional[str] = None
     end_date: Optional[str] = None
+    ignored_task_ids: Optional[Collection[str]] = None
 
 
 def _to_datetime_with_tz(str_date: str) -> datetime.datetime:
