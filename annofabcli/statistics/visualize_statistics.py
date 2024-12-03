@@ -586,9 +586,9 @@ class VisualizeStatistics(CommandLine):
             create_custom_production_volume(args.custom_production_volume) if args.custom_production_volume is not None else None
         )
 
-        ignored_task_id_list = get_list_from_args(args.ignored_task_ids) if args.ignored_task_id is not None else None
+        ignored_task_id_set = set(get_list_from_args(args.ignored_task_ids)) if args.ignored_task_id is not None else None
         filtering_query = FilteringQuery(
-            task_query=task_query, start_date=args.start_date, end_date=args.end_date, ignored_task_ids=ignored_task_id_list
+            task_query=task_query, start_date=args.start_date, end_date=args.end_date, ignored_task_ids=ignored_task_id_set
         )
 
         if args.temp_dir is None:
@@ -657,6 +657,12 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         help="タスクの完了条件を指定します。\n"
         "* ``acceptance_completed``: タスクが受入フェーズの完了状態であれば「タスクの完了」とみなす\n"
         "* ``acceptance_reached``: タスクが受入フェーズに到達したら「タスクの完了」とみなす\n",
+    )
+
+    parser.add_argument(
+        "--ignored_task_id",
+        nargs="+",
+        help=("集計対象タスクから除外するタスクのtask_idを指定します。\n" "``file://`` を先頭に付けると、一覧が記載されたファイルを指定できます。"),
     )
 
     parser.add_argument("-o", "--output_dir", type=Path, required=True, help="出力先ディレクトリのパスを指定してください。")
