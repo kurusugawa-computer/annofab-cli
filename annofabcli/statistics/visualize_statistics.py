@@ -16,7 +16,13 @@ import pandas
 from annofabapi.models import ProjectMemberRole, TaskPhase, TaskStatus
 
 import annofabcli
-from annofabcli.common.cli import COMMAND_LINE_ERROR_STATUS_CODE, CommandLine, build_annofabapi_resource_and_login, get_json_from_args
+from annofabcli.common.cli import (
+    COMMAND_LINE_ERROR_STATUS_CODE,
+    CommandLine,
+    build_annofabapi_resource_and_login,
+    get_json_from_args,
+    get_list_from_args,
+)
 from annofabcli.common.facade import AnnofabApiFacade, TaskQuery
 from annofabcli.common.type_util import assert_noreturn
 from annofabcli.statistics.visualization.dataframe.actual_worktime import ActualWorktime
@@ -268,9 +274,7 @@ class VisualizingStatisticsMain:
         temp_dir: Path,
         # タスクの絞り込み関係
         task_completion_criteria: TaskCompletionCriteria,
-        task_query: Optional[TaskQuery],
-        start_date: Optional[str] = None,
-        end_date: Optional[str] = None,
+        filtering_query: FilteringQuery,
         # 出力方法
         minimal_output: bool = False,
         output_only_text: bool = False,
@@ -287,7 +291,7 @@ class VisualizingStatisticsMain:
         self.facade = AnnofabApiFacade(service)
         self.temp_dir = temp_dir
         self.task_completion_criteria = task_completion_criteria
-        self.filtering_query = FilteringQuery(task_query=task_query, start_date=start_date, end_date=end_date)
+        self.filtering_query = filtering_query
         self.minimal_output = minimal_output
         self.output_only_text = output_only_text
         self.download_latest = download_latest
@@ -471,7 +475,7 @@ class VisualizeStatistics(CommandLine):
     def visualize_statistics(  # noqa: PLR0913  # pylint: disable=too-many-positional-arguments
         self,
         temp_dir: Path,
-        task_query: Optional[TaskQuery],
+        filtering_query: FilteringQuery,
         task_completion_criteria: TaskCompletionCriteria,
         user_id_list: Optional[list[str]],
         actual_worktime: ActualWorktime,
@@ -479,8 +483,6 @@ class VisualizeStatistics(CommandLine):
         custom_production_volume: Optional[CustomProductionVolume],
         download_latest: bool,  # noqa: FBT001
         is_get_task_histories_one_of_each: bool,  # noqa: FBT001
-        start_date: Optional[str],
-        end_date: Optional[str],
         minimal_output: bool,  # noqa: FBT001
         output_only_text: bool,  # noqa: FBT001
         not_download_visualization_source_files: bool,  # noqa: FBT001
@@ -492,15 +494,13 @@ class VisualizeStatistics(CommandLine):
             service=self.service,
             temp_dir=temp_dir,
             task_completion_criteria=task_completion_criteria,
-            task_query=task_query,
+            filtering_query=filtering_query,
             user_ids=user_id_list,
             actual_worktime=actual_worktime,
             annotation_count=annotation_count,
             custom_production_volume=custom_production_volume,
             download_latest=download_latest,
             is_get_task_histories_one_of_each=is_get_task_histories_one_of_each,
-            start_date=start_date,
-            end_date=end_date,
             minimal_output=minimal_output,
             output_only_text=output_only_text,
             not_download_visualization_source_files=not_download_visualization_source_files,
@@ -586,11 +586,16 @@ class VisualizeStatistics(CommandLine):
             create_custom_production_volume(args.custom_production_volume) if args.custom_production_volume is not None else None
         )
 
+        ignored_task_id_set = set(get_list_from_args(args.ignored_task_id)) if args.ignored_task_id is not None else None
+        filtering_query = FilteringQuery(
+            task_query=task_query, start_date=args.start_date, end_date=args.end_date, ignored_task_ids=ignored_task_id_set
+        )
+
         if args.temp_dir is None:
             with tempfile.TemporaryDirectory() as str_temp_dir:
                 self.visualize_statistics(
                     temp_dir=Path(str_temp_dir),
-                    task_query=task_query,
+                    filtering_query=filtering_query,
                     task_completion_criteria=task_completion_criteria,
                     user_id_list=user_id_list,
                     actual_worktime=actual_worktime,
@@ -598,8 +603,6 @@ class VisualizeStatistics(CommandLine):
                     custom_production_volume=custom_production_volume,
                     download_latest=args.latest,
                     is_get_task_histories_one_of_each=args.get_task_histories_one_of_each,
-                    start_date=args.start_date,
-                    end_date=args.end_date,
                     minimal_output=args.minimal,
                     output_only_text=args.output_only_text,
                     project_id_list=project_id_list,
@@ -612,15 +615,13 @@ class VisualizeStatistics(CommandLine):
             self.visualize_statistics(
                 temp_dir=args.temp_dir,
                 task_completion_criteria=task_completion_criteria,
-                task_query=task_query,
+                filtering_query=filtering_query,
                 user_id_list=user_id_list,
                 actual_worktime=actual_worktime,
                 annotation_count=annotation_count,
                 custom_production_volume=custom_production_volume,
                 download_latest=args.latest,
                 is_get_task_histories_one_of_each=args.get_task_histories_one_of_each,
-                start_date=args.start_date,
-                end_date=args.end_date,
                 minimal_output=args.minimal,
                 output_only_text=args.output_only_text,
                 project_id_list=project_id_list,
@@ -656,6 +657,12 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         help="タスクの完了条件を指定します。\n"
         "* ``acceptance_completed``: タスクが受入フェーズの完了状態であれば「タスクの完了」とみなす\n"
         "* ``acceptance_reached``: タスクが受入フェーズに到達したら「タスクの完了」とみなす\n",
+    )
+
+    parser.add_argument(
+        "--ignored_task_id",
+        nargs="+",
+        help=("集計対象タスクから除外するタスクのtask_idを指定します。\n" "``file://`` を先頭に付けると、一覧が記載されたファイルを指定できます。"),
     )
 
     parser.add_argument("-o", "--output_dir", type=Path, required=True, help="出力先ディレクトリのパスを指定してください。")
