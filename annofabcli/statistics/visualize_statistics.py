@@ -586,7 +586,7 @@ class VisualizeStatistics(CommandLine):
             create_custom_production_volume(args.custom_production_volume) if args.custom_production_volume is not None else None
         )
 
-        ignored_task_id_set = set(get_list_from_args(args.ignored_task_ids)) if args.ignored_task_id is not None else None
+        ignored_task_id_set = set(get_list_from_args(args.ignored_task_id)) if args.ignored_task_id is not None else None
         filtering_query = FilteringQuery(
             task_query=task_query, start_date=args.start_date, end_date=args.end_date, ignored_task_ids=ignored_task_id_set
         )
