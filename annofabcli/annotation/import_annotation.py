@@ -381,7 +381,7 @@ class ImportAnnotationMain(CommandLineWithConfirm):
                 )
                 return False
 
-        logger.info(f"task_id={task_id}, input_data_id={input_data_id} : アノテーションを登録します。")
+        logger.info(f"task_id='{task_id}', input_data_id='{input_data_id}' :: {len(simple_annotation.details)} 件のアノテーションを登録します。")
         if self.is_merge:
             request_body = self.parser_to_request_body_with_merge(parser, simple_annotation.details, old_annotation=old_annotation)
         else:
