@@ -391,8 +391,6 @@ class ImportAnnotationMain(CommandLineWithConfirm):
         return True
 
     def put_annotation_for_task(self, task_parser: SimpleAnnotationParserByTask) -> int:
-        logger.info(f"タスク'{task_parser.task_id}'に対してアノテーションを登録します。")
-
         success_count = 0
         for parser in task_parser.lazy_parse():
             try:
