@@ -381,7 +381,7 @@ class ImportAnnotationMain(CommandLineWithConfirm):
                 )
                 return False
 
-        logger.info(f"task_id={task_id}, input_data_id={input_data_id} : アノテーションを登録します。")
+        logger.info(f"task_id='{task_id}', input_data_id='{input_data_id}' :: {len(simple_annotation.details)} 件のアノテーションを登録します。")
         if self.is_merge:
             request_body = self.parser_to_request_body_with_merge(parser, simple_annotation.details, old_annotation=old_annotation)
         else:
@@ -391,8 +391,6 @@ class ImportAnnotationMain(CommandLineWithConfirm):
         return True
 
     def put_annotation_for_task(self, task_parser: SimpleAnnotationParserByTask) -> int:
-        logger.info(f"タスク'{task_parser.task_id}'に対してアノテーションを登録します。")
-
         success_count = 0
         for parser in task_parser.lazy_parse():
             try:
