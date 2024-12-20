@@ -102,7 +102,7 @@ def plot_video_duration(
         if time_unit == TimeUnit.MINUTE:
             bin_width = bin_width / 60
 
-        max_duration = max(*durations_for_input_data)
+        max_duration = max(durations_for_input_data)
         bins_sequence = numpy.arange(0, max_duration + bin_width, bin_width)
 
         if bins_sequence[-1] == max_duration:
@@ -113,7 +113,7 @@ def plot_video_duration(
         bins = BIN_COUNT
 
     x_axis_label = "動画の長さ[分]" if time_unit == TimeUnit.MINUTE else "動画の長さ[秒]"
-    histogram_range = (min(*durations_for_input_data), max(*durations_for_input_data))
+    histogram_range = (min(durations_for_input_data), max(durations_for_input_data))
 
     layout_list: list[LayoutDOM] = [
         PreText(text=f"project_id='{project_id}'\nproject_title='{project_title}'"),
