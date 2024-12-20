@@ -11,15 +11,12 @@ durations_for_input_task = durations_for_input_data[0:-2]
 
 
 def test__plot_video_duration() -> None:
-    plot_video_duration(
-        durations_for_input_data, durations_for_input_task, output_file=output_dir / "test__plot_video_duration.html", time_unit=TimeUnit.SECOND
-    )
+    plot_video_duration(durations_for_input_data, output_file=output_dir / "test__plot_video_duration.html", time_unit=TimeUnit.SECOND)
 
 
 def test__plot_video_duration__bin_widthを指定する() -> None:
     plot_video_duration(
         durations_for_input_data,
-        durations_for_input_task,
         output_file=output_dir / "test__plot_video_duration__bin_widthを指定する.html",
         bin_width=60,
         time_unit=TimeUnit.SECOND,
@@ -29,7 +26,6 @@ def test__plot_video_duration__bin_widthを指定する() -> None:
 def test__plot_video_duration__time_unitにminuteを指定する() -> None:
     plot_video_duration(
         durations_for_input_data,
-        durations_for_input_task,
         output_file=output_dir / "test__plot_video_duration__time_unitにminuteを指定する.html",
         bin_width=60,
         time_unit=TimeUnit.MINUTE,

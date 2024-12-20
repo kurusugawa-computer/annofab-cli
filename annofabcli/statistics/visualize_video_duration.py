@@ -1,10 +1,13 @@
 from __future__ import annotations
 
 import argparse
+import datetime
+import itertools
 import json
 import logging
 import sys
 import tempfile
+from collections.abc import Collection
 from enum import Enum
 from functools import partial
 from pathlib import Path
@@ -16,7 +19,7 @@ import pandas
 from annofabapi.models import InputDataType, ProjectMemberRole
 from bokeh.models import HoverTool, LayoutDOM
 from bokeh.models.annotations.labels import Title
-from bokeh.models.widgets.markups import Div, PreText
+from bokeh.models.widgets.markups import PreText
 from bokeh.plotting import ColumnDataSource, figure
 
 import annofabcli
@@ -25,6 +28,7 @@ from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
     CommandLine,
     build_annofabapi_resource_and_login,
+    get_list_from_args,
 )
 from annofabcli.common.download import DownloadingFile
 from annofabcli.common.facade import AnnofabApiFacade
@@ -42,7 +46,6 @@ class TimeUnit(Enum):
 
 def plot_video_duration(
     durations_for_input_data: Sequence[float],
-    durations_for_task: Sequence[float],
     output_file: Path,
     *,
     time_unit: TimeUnit,
@@ -55,7 +58,6 @@ def plot_video_duration(
 
     Args:
         durations_for_input_data: 動画の長さの一覧。単位は「秒」です。
-        durations_for_task: タスクに含まれる動画の長さの一覧。単位は「秒」です。
         output_file: 出力先のファイルのパス
         time_unit: ヒストグラムに表示する時間の単位
         bin_width_second: ヒストグラムのビンの幅。単位は「秒」です。
@@ -95,13 +97,12 @@ def plot_video_duration(
 
     if time_unit == TimeUnit.MINUTE:
         durations_for_input_data = [duration / 60 for duration in durations_for_input_data]
-        durations_for_task = [duration / 60 for duration in durations_for_task]
 
     if bin_width is not None:
         if time_unit == TimeUnit.MINUTE:
             bin_width = bin_width / 60
 
-        max_duration = max(*durations_for_input_data, *durations_for_task)
+        max_duration = max(durations_for_input_data)
         bins_sequence = numpy.arange(0, max_duration + bin_width, bin_width)
 
         if bins_sequence[-1] == max_duration:
@@ -112,26 +113,17 @@ def plot_video_duration(
         bins = BIN_COUNT
 
     x_axis_label = "動画の長さ[分]" if time_unit == TimeUnit.MINUTE else "動画の長さ[秒]"
-    histogram_range = (min(*durations_for_input_data, *durations_for_task), max(*durations_for_input_data, *durations_for_task))
+    histogram_range = (min(durations_for_input_data), max(durations_for_input_data))
 
     layout_list: list[LayoutDOM] = [
-        Div(text="<h3>動画の長さの分布</h3>"),
         PreText(text=f"project_id='{project_id}'\nproject_title='{project_title}'"),
         create_figure(
             durations_for_input_data,
             bins=bins,
             histogram_range=histogram_range,
-            title="全ての入力データ",
+            title="動画の長さの分布",
             x_axis_label=x_axis_label,
-            y_axis_label="入力データ数",
-        ),
-        create_figure(
-            durations_for_task,
-            bins=bins,
-            histogram_range=histogram_range,
-            title="タスクに含まれる入力データ",
-            x_axis_label=x_axis_label,
-            y_axis_label="タスク数",
+            y_axis_label="動画数",
         ),
     ]
 
@@ -146,44 +138,66 @@ def plot_video_duration(
     logger.info(f"'{output_file}'を出力しました。")
 
 
-def get_video_durations(input_data_json: Path, task_json: Path) -> tuple[list[float], list[float]]:
+def get_video_duration_list(
+    input_data_json: Path,
+    task_json: Path,
+    *,
+    input_data_ids: Optional[Collection[str]] = None,
+    from_datetime: datetime.datetime | None = None,
+    to_datetime: datetime.datetime | None = None,
+    task_ids: Optional[Collection[str]] = None,
+) -> list[float]:
     """
-    入力データの動画の長さと、タスクの動画の長さを取得する。
+    入力データである動画の長さ（単位は秒）の一覧を取得します。
 
     Args:
         input_data_json: 入力データ全件ファイル
         task_json: タスク全件ファイル
+        from_datetime: 入力データの更新日時が`from_datetime`以降のデータのみを集計対象にします。
+        to_datetime: 入力データの更新日時が`from_datetime`以前のデータのみを集計対象にします。
 
-    Returns:
-        tuple[0]: 動画の長さのリスト（入力データ全件ファイル内の個数に一致する）
-        tuple[1]: タスクに含まれる動画の長さのリスト（タスク全件ファイル内の個数に一致する）
     """
     with input_data_json.open(encoding="utf-8") as f:
         input_data_list = json.load(f)
+        logger.debug(f"'{input_data_json}'に含まれる入力データは {len(input_data_list)} 件です。")
 
-    with task_json.open(encoding="utf-8") as f:
-        task_list = json.load(f)
+    if input_data_ids is not None:
+        input_data_list = [input_data for input_data in input_data_list if input_data["input_data_id"] in input_data_ids]
+        logger.debug(
+            f"「入力データのinput_data_idが引数'input_data_ids'に一致する」という条件で、入力データを {len(input_data_list)} 件に絞り込みました。  :: 引数'input_data_ids'は {len(input_data_ids)} 件"  # noqa: E501
+        )
 
-    video_durations_dict_for_input_data: dict[str, float] = {}
+    if from_datetime is not None:
+        input_data_list = [
+            input_data for input_data in input_data_list if datetime.datetime.fromisoformat(input_data["updated_datetime"]) >= from_datetime
+        ]
+        logger.debug(f"「入力データの更新日時が'{from_datetime}'以降」という条件で、入力データを {len(input_data_list)} 件に絞り込みました。")
 
+    if to_datetime is not None:
+        input_data_list = [
+            input_data for input_data in input_data_list if datetime.datetime.fromisoformat(input_data["updated_datetime"]) <= to_datetime
+        ]
+        logger.debug(f"「入力データの更新日時が'{to_datetime}'以前」という条件で、入力データを {len(input_data_list)} 件に絞り込みました。")
+
+    if task_ids is not None:
+        with task_json.open(encoding="utf-8") as f:
+            task_list = json.load(f)
+        input_data_id_list_list = [task["input_data_id_list"] for task in task_list if task["task_id"] in task_ids]
+        input_data_ids_included_task = set(itertools.chain.from_iterable(input_data_id_list_list))
+        input_data_list = [input_data for input_data in input_data_list if input_data["input_data_id"] in input_data_ids_included_task]
+        logger.debug(
+            f"「引数'task_ids'に対応するタスクに含まれている入力データ」という条件で、入力データを {len(input_data_list)} 件に絞り込みました。  :: 引数'task_ids'は {len(task_ids)} 件"  # noqa: E501
+        )
+
+    video_duration_list = []
     for input_data in input_data_list:
         input_data_id = input_data["input_data_id"]
         duration = input_data["system_metadata"]["input_duration"]
         if duration is None:
             logger.warning(f"input_data_id='{input_data_id}' :: 'system_metadata.input_duration'がNoneです。")
-        video_durations_dict_for_input_data[input_data_id] = duration
+        video_duration_list.append(duration)
 
-    video_durations_dict_for_task: dict[str, float] = {}
-    for task in task_list:
-        task_id = task["task_id"]
-        first_input_data_id = task["input_data_id_list"][0]
-        duration = video_durations_dict_for_input_data.get(first_input_data_id)
-        if duration is None:
-            logger.warning(f"task_id='{task_id}' :: input_data_id='{first_input_data_id}'のinput_durationがNoneです。")
-        else:
-            video_durations_dict_for_task[task_id] = duration
-
-    return list(video_durations_dict_for_input_data.values()), list(video_durations_dict_for_task.values())
+    return video_duration_list
 
 
 class VisualizeVideoDuration(CommandLine):
@@ -199,7 +213,7 @@ class VisualizeVideoDuration(CommandLine):
 
         return True
 
-    def visualize_video_duration(
+    def visualize_video_duration(  # noqa: PLR0913
         self,
         input_data_json: Path,
         task_json: Path,
@@ -209,12 +223,26 @@ class VisualizeVideoDuration(CommandLine):
         project_id: Optional[str] = None,
         project_title: Optional[str] = None,
         bin_width: Optional[float] = None,
+        input_data_ids: Optional[Collection[str]] = None,
+        task_ids: Optional[Collection[str]] = None,
+        from_date: Optional[str] = None,
+        to_date: Optional[str] = None,
     ) -> None:
-        durations_for_input_data, durations_for_task = get_video_durations(input_data_json, task_json)
+        tz_info = datetime.datetime.now().astimezone().tzinfo
+        from_datetime = datetime.datetime.fromisoformat(from_date).astimezone(tz_info) if from_date is not None else None
+        to_datetime = datetime.datetime.fromisoformat(to_date).astimezone(tz_info) if to_date is not None else None
+
+        durations_for_input_data = get_video_duration_list(
+            input_data_json,
+            task_json,
+            input_data_ids=input_data_ids,
+            from_datetime=from_datetime,
+            to_datetime=to_datetime,
+            task_ids=task_ids,
+        )
 
         plot_video_duration(
             durations_for_input_data,
-            durations_for_task,
             output_html,
             project_id=project_id,
             project_title=project_title,
@@ -239,6 +267,9 @@ class VisualizeVideoDuration(CommandLine):
                 )
                 sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
+        input_data_id_set = set(get_list_from_args(args.input_data_id)) if args.input_data_id is not None else None
+        task_id_set = set(get_list_from_args(args.task_id)) if args.task_id is not None else None
+
         func = partial(
             self.visualize_video_duration,
             project_id=project_id,
@@ -246,6 +277,10 @@ class VisualizeVideoDuration(CommandLine):
             output_html=args.output,
             time_unit=TimeUnit(args.time_unit),
             bin_width=args.bin_width,
+            input_data_ids=input_data_id_set,
+            task_ids=task_id_set,
+            to_date=args.to_date,
+            from_date=args.from_date,
         )
 
         def wrapper_func(temp_dir: Path) -> None:
@@ -325,6 +360,27 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         choices=[e.value for e in TimeUnit],
         help="動画の長さの時間単位を指定します。",
     )
+
+    parser.add_argument(
+        "-t",
+        "--task_id",
+        nargs="+",
+        help=(
+            "指定したtask_idのタスクに含まれている入力データを可視化対象にします。 ``file://`` を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。"  # noqa: E501
+        ),
+    )
+
+    parser.add_argument(
+        "-i",
+        "--input_data_id",
+        nargs="+",
+        help=(
+            "指定したinput_data_idである入力データを可視化対象にします。 ``file://`` を先頭に付けると、input_data_idの一覧が記載されたファイルを指定できます。"  # noqa: E501
+        ),
+    )
+
+    parser.add_argument("--from_date", type=str, help="指定した日付（ ``YYYY-MM-DD`` ）以降に更新された入力データを可視化対象にします。")
+    parser.add_argument("--to_date", type=str, help="指定した日付（ ``YYYY-MM-DD`` ）以前に更新された入力データを可視化対象にします。")
 
     parser.add_argument(
         "--latest",
