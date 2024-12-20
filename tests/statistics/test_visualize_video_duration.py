@@ -11,9 +11,7 @@ durations_for_input_task = durations_for_input_data[0:-2]
 
 
 def test__plot_video_duration() -> None:
-    plot_video_duration(
-        durations_for_input_data, output_file=output_dir / "test__plot_video_duration.html", time_unit=TimeUnit.SECOND
-    )
+    plot_video_duration(durations_for_input_data, output_file=output_dir / "test__plot_video_duration.html", time_unit=TimeUnit.SECOND)
 
 
 def test__plot_video_duration__bin_widthを指定する() -> None:

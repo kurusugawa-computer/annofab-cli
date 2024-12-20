@@ -1,5 +1,12 @@
 from __future__ import annotations
-
+from annofabcli.common.cli import (
+    COMMAND_LINE_ERROR_STATUS_CODE,
+    ArgumentParser,
+    CommandLine,
+    CommandLineWithConfirm,
+    build_annofabapi_resource_and_login,
+    get_list_from_args,
+)
 import argparse
 import datetime
 import itertools
@@ -265,6 +272,9 @@ class VisualizeVideoDuration(CommandLine):
                 )
                 sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
+        input_data_id_set = set(get_list_from_args(args.input_data_id)) if args.input_data_id is not None else None
+        task_id_set = set(get_list_from_args(args.task_id)) if args.task_id is not None else None
+        
         func = partial(
             self.visualize_video_duration,
             project_id=project_id,
@@ -272,6 +282,10 @@ class VisualizeVideoDuration(CommandLine):
             output_html=args.output,
             time_unit=TimeUnit(args.time_unit),
             bin_width=args.bin_width,
+            input_data_ids=input_data_id_set,
+            task_ids=task_id_set,
+            to_date=args.to_date,
+            from_date=args.from_date,
         )
 
         def wrapper_func(temp_dir: Path) -> None:
