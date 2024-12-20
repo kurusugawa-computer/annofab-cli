@@ -1,12 +1,5 @@
 from __future__ import annotations
-from annofabcli.common.cli import (
-    COMMAND_LINE_ERROR_STATUS_CODE,
-    ArgumentParser,
-    CommandLine,
-    CommandLineWithConfirm,
-    build_annofabapi_resource_and_login,
-    get_list_from_args,
-)
+
 import argparse
 import datetime
 import itertools
@@ -14,6 +7,7 @@ import json
 import logging
 import sys
 import tempfile
+from collections.abc import Collection
 from enum import Enum
 from functools import partial
 from pathlib import Path
@@ -34,6 +28,7 @@ from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
     CommandLine,
     build_annofabapi_resource_and_login,
+    get_list_from_args,
 )
 from annofabcli.common.download import DownloadingFile
 from annofabcli.common.facade import AnnofabApiFacade
@@ -147,10 +142,10 @@ def get_video_duration_list(
     input_data_json: Path,
     task_json: Path,
     *,
-    input_data_ids: Optional[Sequence[str]] = None,
+    input_data_ids: Optional[Collection[str]] = None,
     from_datetime: datetime.datetime | None = None,
     to_datetime: datetime.datetime | None = None,
-    task_ids: Optional[Sequence[str]] = None,
+    task_ids: Optional[Collection[str]] = None,
 ) -> list[float]:
     """
     入力データである動画の長さ（単位は秒）の一覧を取得します。
@@ -228,8 +223,8 @@ class VisualizeVideoDuration(CommandLine):
         project_id: Optional[str] = None,
         project_title: Optional[str] = None,
         bin_width: Optional[float] = None,
-        input_data_ids: Optional[Sequence[str]] = None,
-        task_ids: Optional[Sequence[str]] = None,
+        input_data_ids: Optional[Collection[str]] = None,
+        task_ids: Optional[Collection[str]] = None,
         from_date: Optional[str] = None,
         to_date: Optional[str] = None,
     ) -> None:
@@ -274,7 +269,7 @@ class VisualizeVideoDuration(CommandLine):
 
         input_data_id_set = set(get_list_from_args(args.input_data_id)) if args.input_data_id is not None else None
         task_id_set = set(get_list_from_args(args.task_id)) if args.task_id is not None else None
-        
+
         func = partial(
             self.visualize_video_duration,
             project_id=project_id,
@@ -366,21 +361,21 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         help="動画の長さの時間単位を指定します。",
     )
 
-    id_group = parser.add_mutually_exclusive_group()
-
-    id_group.add_argument(
+    parser.add_argument(
         "-t",
         "--task_id",
         nargs="+",
-        help=("集計対象のタスクのtask_idを指定します。 ``file://`` を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。"),
+        help=(
+            "指定したtask_idのタスクに含まれている入力データを可視化対象にします。 ``file://`` を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。"  # noqa: E501
+        ),
     )
 
-    id_group.add_argument(
+    parser.add_argument(
         "-i",
         "--input_data_id",
         nargs="+",
         help=(
-            "集計対象の入力データのinput_data_idを指定します。 ``file://`` を先頭に付けると、input_data_idの一覧が記載されたファイルを指定できます。"
+            "指定したinput_data_idである入力データを可視化対象にします。 ``file://`` を先頭に付けると、input_data_idの一覧が記載されたファイルを指定できます。"  # noqa: E501
         ),
     )
 
