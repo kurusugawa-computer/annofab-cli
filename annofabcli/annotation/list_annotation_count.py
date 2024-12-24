@@ -1,8 +1,10 @@
+from __future__ import annotations
+
 import argparse
 import logging
 import sys
 from enum import Enum
-from typing import List, Optional
+from typing import Optional
 
 import annofabapi
 import pandas
@@ -19,6 +21,7 @@ from annofabcli.common.cli import (
     get_json_from_args,
     get_list_from_args,
 )
+from annofabcli.common.enums import FormatArgument
 from annofabcli.common.facade import AnnofabApiFacade
 from annofabcli.common.type_util import assert_noreturn
 from annofabcli.common.visualize import AddProps
@@ -31,6 +34,36 @@ class GroupBy(Enum):
     INPUT_DATA_ID = "input_data_id"
 
 
+def aggregate_annotations(annotations: list[SingleAnnotation], group_by: GroupBy) -> pandas.DataFrame:
+    """
+    アノテーションの一覧からタスクごと、入力データごとに集計したDataFrameを返す。
+
+    Returns:
+        - group_byがTASK_IDの場合: task_id, annotation_countの2列
+        - group_byがINPUT_DATA_IDの場合: task_id, input_data_idのannotation_countの3列
+
+    """
+    if len(annotations) == 0:
+        df = pandas.DataFrame(columns=["task_id", "input_data_id", "annotation_count"])
+        df.astype({"task_id": str, "input_data_id": str, "annotation_count": int})
+        if group_by == GroupBy.TASK_ID:
+            df = df[["task_id", "annotation_count"]]
+        return df
+
+    df = pandas.DataFrame(annotations)
+    df = df[["task_id", "input_data_id"]]
+    df["annotation_count"] = 1
+
+    if group_by == GroupBy.INPUT_DATA_ID:
+        return df.groupby(["task_id", "input_data_id"], as_index=False).count()
+
+    elif group_by == GroupBy.TASK_ID:
+        return df.groupby(["task_id"], as_index=False).count().drop(["input_data_id"], axis=1)
+
+    else:
+        assert_noreturn(group_by)
+
+
 class ListAnnotationCount(CommandLine):
     COMMON_MESSAGE = "annofabcli annotation list_count: error:"
 
@@ -39,27 +72,12 @@ class ListAnnotationCount(CommandLine):
         self.visualize = AddProps(self.service, args.project_id)
         self.list_annotation_main_obj = ListAnnotationMain(service, project_id=args.project_id)
 
-    @staticmethod
-    def aggregate_annotations(annotations: List[SingleAnnotation], group_by: GroupBy) -> pandas.DataFrame:
-        df = pandas.DataFrame(annotations)
-        df = df[["task_id", "input_data_id"]]
-        df["annotation_count"] = 1
-
-        if group_by == GroupBy.INPUT_DATA_ID:
-            return df.groupby(["task_id", "input_data_id"], as_index=False).count()
-
-        elif group_by == GroupBy.TASK_ID:
-            return df.groupby(["task_id"], as_index=False).count().drop(["input_data_id"], axis=1)
-
-        else:
-            assert_noreturn(group_by)
-
     def main(self) -> None:
         args = self.args
         project_id = args.project_id
 
         if args.annotation_query is not None:
-            annotation_specs, _ = self.service.api.get_annotation_specs(project_id, query_params={"v": "2"})
+            annotation_specs, _ = self.service.api.get_annotation_specs(project_id, query_params={"v": "3"})
             try:
                 dict_annotation_query = get_json_from_args(args.annotation_query)
                 annotation_query_for_cli = AnnotationQueryForCLI.from_dict(dict_annotation_query)
@@ -81,14 +99,15 @@ class ListAnnotationCount(CommandLine):
             input_data_id_list=input_data_id_list,
         )
 
-        group_by = GroupBy(args.group_by)
-
         logger.debug(f"アノテーション一覧の件数: {len(all_annotation_list)}")
-        if len(all_annotation_list) > 0:
-            df = self.aggregate_annotations(all_annotation_list, group_by)
+
+        group_by = GroupBy(args.group_by)
+        df = aggregate_annotations(all_annotation_list, group_by)
+
+        if self.str_format == FormatArgument.CSV.value:
             self.print_csv(df)
         else:
-            logger.info("アノテーション一覧が0件のため出力しません。")
+            self.print_according_to_format(df.to_dict(orient="records"))
 
 
 def main(args: argparse.Namespace) -> None:
@@ -134,7 +153,11 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     )
 
     argument_parser.add_output()
-    argument_parser.add_csv_format()
+
+    argument_parser.add_format(
+        choices=[FormatArgument.CSV, FormatArgument.JSON, FormatArgument.PRETTY_JSON],
+        default=FormatArgument.CSV,
+    )
 
     parser.set_defaults(subcommand_func=main)
 
