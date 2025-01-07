@@ -1,4 +1,3 @@
-
 # 型タイプ
 RGB = tuple[int, int, int]
 """RGB Type (Red, Blue, Green)"""
