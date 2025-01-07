@@ -10,7 +10,7 @@ import logging
 import os
 import pkgutil
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Optional
 
 import annofabapi
 import jmespath
@@ -164,7 +164,7 @@ def add_parser(
     return parser
 
 
-def get_list_from_args(str_list: Optional[List[str]] = None) -> List[str]:
+def get_list_from_args(str_list: Optional[list[str]] = None) -> list[str]:
     """
     文字列のListのサイズが1で、プレフィックスが`file://`ならば、ファイルパスとしてファイルを読み込み、行をListとして返す。
     そうでなければ、引数の値をそのまま返す。
@@ -190,7 +190,7 @@ def get_list_from_args(str_list: Optional[List[str]] = None) -> List[str]:
         return str_list
 
 
-def get_csv_format_from_args(target: Optional[str] = None) -> Dict[str, Any]:
+def get_csv_format_from_args(target: Optional[str] = None) -> dict[str, Any]:
     """
     コマンドライン引数の値から csv_format を取得する。
     Default: {"encoding": "utf_8_sig", "index": False}
@@ -230,7 +230,7 @@ def get_input_data_size(str_input_data_size: str) -> Optional[InputDataSize]:
     return (int(splitted_list[0]), int(splitted_list[1]))
 
 
-def get_wait_options_from_args(dict_wait_options: Optional[Dict[str, Any]], default_wait_options: WaitOptions) -> WaitOptions:
+def get_wait_options_from_args(dict_wait_options: Optional[dict[str, Any]], default_wait_options: WaitOptions) -> WaitOptions:
     """
     デフォルト値とマージして、wait_optionsを取得する。
 
@@ -388,7 +388,7 @@ def prompt_yesno(msg: str) -> bool:
             return False
 
 
-def prompt_yesnoall(msg: str) -> Tuple[bool, bool]:
+def prompt_yesnoall(msg: str) -> tuple[bool, bool]:
     """
     標準入力で yes, no, all(すべてyes)を選択できるようにする。
     Args:
@@ -448,7 +448,7 @@ class ArgumentParser:
 
         self.parser.add_argument("-i", "--input_data_id", type=str, required=required, nargs="+", help=help_message)
 
-    def add_format(self, choices: List[FormatArgument], default: FormatArgument, help_message: Optional[str] = None):  # noqa: ANN201
+    def add_format(self, choices: list[FormatArgument], default: FormatArgument, help_message: Optional[str] = None):  # noqa: ANN201
         """
         '--format` 引数を追加
         """
@@ -545,7 +545,7 @@ class CommandLineWithoutWebapi:
     output: Optional[str] = None
 
     #: CSVのフォーマット
-    csv_format: Optional[Dict[str, Any]] = None
+    csv_format: Optional[dict[str, Any]] = None
 
     #: 出力フォーマット
     str_format: Optional[str] = None
@@ -690,8 +690,8 @@ class CommandLine(CommandLineWithoutWebapi):
     def validate_project(  # noqa: ANN201
         self,
         project_id: str,
-        project_member_roles: Optional[List[ProjectMemberRole]] = None,
-        organization_member_roles: Optional[List[OrganizationMemberRole]] = None,
+        project_member_roles: Optional[list[ProjectMemberRole]] = None,
+        organization_member_roles: Optional[list[OrganizationMemberRole]] = None,
     ):
         """
         プロジェクト or 組織に対して、必要な権限が付与されているかを確認する。

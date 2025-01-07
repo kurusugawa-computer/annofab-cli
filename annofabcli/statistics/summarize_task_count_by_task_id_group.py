@@ -4,7 +4,7 @@ import argparse
 import json
 import logging
 from enum import Enum
-from typing import List, Optional
+from typing import Optional
 
 import pandas
 from annofabapi.models import ProjectMemberRole, Task, TaskPhase, TaskStatus
@@ -99,7 +99,7 @@ def get_task_id_prefix(task_id: str, delimiter: str) -> str:
 
 
 def create_task_count_summary_df(
-    task_list: List[Task], task_id_delimiter: Optional[str], task_id_groups: Optional[dict[str, list[str]]]
+    task_list: list[Task], task_id_delimiter: Optional[str], task_id_groups: Optional[dict[str, list[str]]]
 ) -> pandas.DataFrame:
     """
     タスク数を集計したDataFrameを生成する。

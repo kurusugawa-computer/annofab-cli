@@ -1,7 +1,7 @@
 import argparse
 import logging
 import sys
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 import annofabapi
 import pandas
@@ -22,7 +22,7 @@ from annofabcli.common.utils import get_columns_with_priority
 logger = logging.getLogger(__name__)
 
 
-def create_minimal_dataframe(project_list: List[Project]):  # noqa: ANN201
+def create_minimal_dataframe(project_list: list[Project]):  # noqa: ANN201
     """必要最小限の列であるDataFrameを作成する"""
     df = pandas.DataFrame(project_list)
     df["last_tasks_updated_datetime"] = [e["summary"]["last_tasks_updated_datetime"] for e in project_list]
@@ -45,14 +45,14 @@ class ListProjectMain:
         self.facade = AnnofabApiFacade(service)
 
     @staticmethod
-    def get_account_id_from_user_id(organization_member_list: List[OrganizationMember], user_id: str) -> Optional[str]:
+    def get_account_id_from_user_id(organization_member_list: list[OrganizationMember], user_id: str) -> Optional[str]:
         member = first_true(organization_member_list, pred=lambda e: e["user_id"] == user_id)
         if member is not None:
             return member["account_id"]
         else:
             return None
 
-    def get_project_list_from_project_id(self, project_id_list: List[str]) -> List[Project]:
+    def get_project_list_from_project_id(self, project_id_list: list[str]) -> list[Project]:
         """
         project_idからプロジェクト一覧を取得する。
         """
@@ -72,7 +72,7 @@ class ListProjectMain:
 
         return project_list
 
-    def _modify_project_query(self, organization_name: str, project_query: Dict[str, Any]) -> Dict[str, Any]:
+    def _modify_project_query(self, organization_name: str, project_query: dict[str, Any]) -> dict[str, Any]:
         """
         プロジェクト索クエリを修正する。
         ``user_id`` から ``account_id`` に変換する。
@@ -116,7 +116,7 @@ class ListProjectMain:
 
         return project_query
 
-    def get_project_list_from_organization(self, organization_name: str, project_query: Optional[Dict[str, Any]] = None) -> List[Project]:
+    def get_project_list_from_organization(self, organization_name: str, project_query: Optional[dict[str, Any]] = None) -> list[Project]:
         """
         組織名からプロジェクト一覧を取得する。
         """

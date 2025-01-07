@@ -3,7 +3,7 @@ import logging
 import multiprocessing
 import sys
 from functools import partial
-from typing import List, Optional, Tuple
+from typing import Optional
 
 import annofabapi
 import requests
@@ -76,7 +76,7 @@ class ChangeStatusToBreakMain(CommandLineWithConfirm):
 
     def change_status_to_break_for_task_wrapper(
         self,
-        tpl: Tuple[int, str],
+        tpl: tuple[int, str],
         project_id: str,
         task_query: Optional[TaskQuery] = None,
     ) -> bool:
@@ -95,7 +95,7 @@ class ChangeStatusToBreakMain(CommandLineWithConfirm):
     def change_status_to_break(  # noqa: ANN201
         self,
         project_id: str,
-        task_id_list: List[str],
+        task_id_list: list[str],
         task_query: Optional[TaskQuery] = None,
         parallelism: Optional[int] = None,
     ):

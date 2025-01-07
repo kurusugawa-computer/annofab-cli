@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import enum
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 import annofabapi
 import more_itertools
@@ -33,8 +33,8 @@ class AddProps:
     """
 
     #: 組織メンバ一覧のキャッシュ
-    _organization_members: Optional[List[OrganizationMember]] = None
-    _project_member_list: Optional[List[ProjectMember]] = None
+    _organization_members: Optional[list[OrganizationMember]] = None
+    _project_member_list: Optional[list[ProjectMember]] = None
 
     def __init__(self, service: annofabapi.Resource, project_id: str) -> None:
         self.service = service
@@ -87,8 +87,8 @@ class AddProps:
         return millisecond / 1000 / 3600
 
     @staticmethod
-    def get_message(i18n_messages: Dict[str, Any], locale: MessageLocale) -> Optional[str]:
-        messages: List[Dict[str, Any]] = i18n_messages["messages"]
+    def get_message(i18n_messages: dict[str, Any], locale: MessageLocale) -> Optional[str]:
+        messages: list[dict[str, Any]] = i18n_messages["messages"]
         dict_message = more_itertools.first_true(messages, pred=lambda e: e["lang"] == locale.value)
         if dict_message is not None:
             return dict_message["message"]
@@ -96,7 +96,7 @@ class AddProps:
             return None
 
     @staticmethod
-    def add_properties_of_project(target: Dict[str, Any], project_title: str) -> Dict[str, Any]:
+    def add_properties_of_project(target: dict[str, Any], project_title: str) -> dict[str, Any]:
         target["project_title"] = project_title
         return target
 
@@ -132,7 +132,7 @@ class AddProps:
         return organization["organization_name"]
 
     def get_phrase_name(self, phrase_id: str, locale: MessageLocale) -> Optional[str]:
-        phrase: Optional[Dict[str, Any]] = more_itertools.first_true(self.specs_inspection_phrases, pred=lambda e: e["id"] == phrase_id)
+        phrase: Optional[dict[str, Any]] = more_itertools.first_true(self.specs_inspection_phrases, pred=lambda e: e["id"] == phrase_id)
         if phrase is None:
             return None
 
@@ -146,7 +146,7 @@ class AddProps:
         return self.get_message(label["label_name"], locale)
 
     def get_additional_data_name(self, additional_data_definition_id: str, locale: MessageLocale, label_id: Optional[str] = None) -> Optional[str]:
-        def _get_additional_data_name(arg_additional_data_definitions: List[Dict[str, Any]]) -> Optional[str]:
+        def _get_additional_data_name(arg_additional_data_definitions: list[dict[str, Any]]) -> Optional[str]:
             additional_data = more_itertools.first_true(
                 arg_additional_data_definitions,
                 pred=lambda e: e["additional_data_definition_id"] == additional_data_definition_id,
@@ -197,7 +197,7 @@ class AddProps:
         """
         return self._add_user_info(instruction_history)
 
-    def add_properties_to_inspection(self, inspection: Inspection, detail: Optional[Dict[str, Any]] = None) -> Inspection:
+    def add_properties_to_inspection(self, inspection: Inspection, detail: Optional[dict[str, Any]] = None) -> Inspection:
         """
         検査コメントに、以下のキーを追加する.
         commenter_user_id
@@ -241,7 +241,7 @@ class AddProps:
 
         return inspection
 
-    def add_properties_to_comment(self, comment: Dict[str, Any]) -> Dict[str, Any]:
+    def add_properties_to_comment(self, comment: dict[str, Any]) -> dict[str, Any]:
         """
         検査コメントに、以下のキーを追加する.
         user_id
@@ -372,7 +372,7 @@ class AddProps:
         task_history["worktime_hour"] = isoduration_to_hour(task_history["accumulated_labor_time_milliseconds"])
         return task_history
 
-    def add_properties_to_task_history_event(self, task_history_event: Dict[str, Any]) -> Dict[str, Any]:
+    def add_properties_to_task_history_event(self, task_history_event: dict[str, Any]) -> dict[str, Any]:
         """
         タスク履歴イベント情報に、以下のキーを追加する.
 
@@ -390,7 +390,7 @@ class AddProps:
         return task_history_event
 
     @staticmethod
-    def add_properties_to_input_data(input_data: InputData, task_id_list: List[str]) -> InputData:
+    def add_properties_to_input_data(input_data: InputData, task_id_list: list[str]) -> InputData:
         """
         入力データ情報に、以下のキーを追加する。
 

@@ -5,8 +5,9 @@ import copy
 import logging
 import multiprocessing
 import sys
+from collections.abc import Iterator
 from pathlib import Path
-from typing import Any, Dict, Iterator, List, Optional
+from typing import Any, Optional
 
 import annofabapi
 from annofabapi.dataclass.annotation import AnnotationDetailV1, AnnotationV1
@@ -72,11 +73,11 @@ class RestoreAnnotationMain(CommandLineWithConfirm):
 
         return detail
 
-    def parser_to_request_body(self, parser: SimpleAnnotationParser) -> Dict[str, Any]:
+    def parser_to_request_body(self, parser: SimpleAnnotationParser) -> dict[str, Any]:
         # infer_missing=Trueを指定する理由：Optional型のキーが存在しない場合でも、AnnotationV1データクラスのインスタンスを生成できるようにするため
         # https://qiita.com/yuji38kwmt/items/c5b56f70da3b8a70ba31
         annotation: AnnotationV1 = AnnotationV1.from_dict(parser.load_json(), infer_missing=True)
-        request_details: List[Dict[str, Any]] = []
+        request_details: list[dict[str, Any]] = []
         for detail in annotation.details:
             request_detail = self._to_annotation_detail_for_request(parser, detail)
 

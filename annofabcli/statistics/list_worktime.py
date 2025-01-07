@@ -5,7 +5,7 @@ import datetime
 import logging
 from collections import defaultdict
 from pathlib import Path
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Optional
 
 import pandas
 from dateutil.parser import parse
@@ -20,7 +20,7 @@ from annofabcli.task_history_event.list_worktime import (
 
 logger = logging.getLogger(__name__)
 
-WorktimeDict = Dict[Tuple[str, str, str], float]
+WorktimeDict = dict[tuple[str, str, str], float]
 """key: date, account_id, phase"""
 
 

@@ -7,7 +7,7 @@ import multiprocessing
 import sys
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 import annofabapi
 from annofabapi.models import ProjectMemberRole, SingleAnnotation, TaskStatus
@@ -54,7 +54,7 @@ class ChangePropertiesOfAnnotationMain(CommandLineWithConfirm):
     def change_annotation_properties(  # noqa: ANN201
         self,
         task_id: str,
-        annotation_list: List[SingleAnnotation],
+        annotation_list: list[SingleAnnotation],
         properties: AnnotationDetailForCli,
     ):
         """
@@ -68,9 +68,9 @@ class ChangePropertiesOfAnnotationMain(CommandLineWithConfirm):
 
         now_datetime = str_now()
 
-        def to_properties_from_cli(annotation_list: List[SingleAnnotation], properties: AnnotationDetailForCli) -> List[Dict[str, Any]]:
+        def to_properties_from_cli(annotation_list: list[SingleAnnotation], properties: AnnotationDetailForCli) -> list[dict[str, Any]]:
             annotations_for_api = []
-            annotation_details_by_input_data: Dict[str, List[Dict[str, Any]]] = {}
+            annotation_details_by_input_data: dict[str, list[dict[str, Any]]] = {}
 
             # input_data_idごとにannotation_listを分ける
             for annotation in annotation_list:
@@ -93,7 +93,7 @@ class ChangePropertiesOfAnnotationMain(CommandLineWithConfirm):
                 annotations_for_api.append(annotations)
             return annotations_for_api
 
-        def _to_request_body_elm(annotation: Dict[str, Any]):  # noqa: ANN202
+        def _to_request_body_elm(annotation: dict[str, Any]):  # noqa: ANN202
             return self.service.api.put_annotation(
                 annotation["project_id"],
                 annotation["task_id"],
@@ -238,7 +238,7 @@ class ChangePropertiesOfAnnotationMain(CommandLineWithConfirm):
 
     def change_annotation_properties_task_list(  # noqa: ANN201
         self,
-        task_id_list: List[str],
+        task_id_list: list[str],
         properties: AnnotationDetailForCli,
         annotation_query: Optional[AnnotationQueryForAPI] = None,
         backup_dir: Optional[Path] = None,

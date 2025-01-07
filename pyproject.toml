@@ -111,7 +111,7 @@ warn_unused_ignores = true
 warn_unreachable = true
 
 [tool.ruff]
-target-version = "py38"
+target-version = "py39"
 line-length = 150
 
 

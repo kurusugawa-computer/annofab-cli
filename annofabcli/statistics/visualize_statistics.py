@@ -9,7 +9,7 @@ import sys
 import tempfile
 from multiprocessing import Pool
 from pathlib import Path
-from typing import Any, Callable, List, Optional
+from typing import Any, Callable, Optional
 
 import annofabapi
 import pandas
@@ -206,7 +206,7 @@ class WriteCsvGraph:
         if not self.output_only_text:
             self.project_dir.write_user_performance_scatter_plot(user_performance)
 
-    def write_cumulative_linegraph_by_user(self, user_id_list: Optional[List[str]] = None) -> None:
+    def write_cumulative_linegraph_by_user(self, user_id_list: Optional[list[str]] = None) -> None:
         """ユーザごとの累積折れ線グラフをプロットする。"""
         task_worktime_obj = self._get_task_worktime_obj()
         annotator_obj = AnnotatorCumulativeProductivity.from_df_wrapper(task_worktime_obj)
@@ -224,7 +224,7 @@ class WriteCsvGraph:
                 acceptor_obj, phase=TaskPhase.ACCEPTANCE, user_id_list=user_id_list, minimal_output=self.minimal_output
             )
 
-    def write_worktime_per_date(self, user_id_list: Optional[List[str]] = None) -> None:
+    def write_worktime_per_date(self, user_id_list: Optional[list[str]] = None) -> None:
         """日ごとの作業時間情報を出力する。"""
         worktime_per_date_obj = self._get_worktime_per_date()
 
@@ -247,7 +247,7 @@ class WriteCsvGraph:
             self.project_dir.write_whole_productivity_line_graph_per_date(productivity_per_completed_date_obj)
             self.project_dir.write_whole_productivity_line_graph_per_annotation_started_date(productivity_per_started_date_obj)
 
-    def write_user_productivity_per_date(self, user_id_list: Optional[List[str]] = None) -> None:
+    def write_user_productivity_per_date(self, user_id_list: Optional[list[str]] = None) -> None:
         """ユーザごとの日ごとの生産性情報を出力する。"""
         task_worktime_obj = self._get_task_worktime_obj()
 
@@ -284,7 +284,7 @@ class VisualizingStatisticsMain:
         actual_worktime: Optional[ActualWorktime] = None,
         annotation_count: Optional[AnnotationCount] = None,
         custom_production_volume: Optional[CustomProductionVolume] = None,
-        user_ids: Optional[List[str]] = None,
+        user_ids: Optional[list[str]] = None,
         not_download_visualization_source_files: bool = False,
     ) -> None:
         self.service = service
@@ -411,12 +411,12 @@ class VisualizingStatisticsMain:
 
     def visualize_statistics_for_project_list(
         self,
-        project_id_list: List[str],
+        project_id_list: list[str],
         root_output_dir: Path,
         *,
         parallelism: Optional[int] = None,
-    ) -> List[Path]:
-        output_project_dir_list: List[Path] = []
+    ) -> list[Path]:
+        output_project_dir_list: list[Path] = []
 
         wrap = functools.partial(self.visualize_statistics_wrapper, root_output_dir=root_output_dir)
         if parallelism is not None:

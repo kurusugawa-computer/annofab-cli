@@ -10,12 +10,13 @@ import logging
 import sys
 import tempfile
 import zipfile
-from collections import defaultdict
+from collections import Counter, defaultdict
+from collections.abc import Collection, Iterator
 from dataclasses import dataclass, field
 from enum import Enum
 from functools import partial
 from pathlib import Path
-from typing import Any, Collection, Counter, Iterator, Optional, Tuple, Union
+from typing import Any, Optional, Union
 
 import annofabapi
 import pandas
@@ -51,7 +52,7 @@ from annofabcli.common.visualize import AddProps, MessageLocale
 
 logger = logging.getLogger(__name__)
 
-AttributeValueKey = Tuple[str, str, str]
+AttributeValueKey = tuple[str, str, str]
 """
 属性のキー.
 tuple[label_name_en, attribute_name_en, attribute_value] で表す。
@@ -59,7 +60,7 @@ tuple[label_name_en, attribute_name_en, attribute_value] で表す。
 
 LabelKeys = Collection[str]
 
-AttributeNameKey = Tuple[str, str]
+AttributeNameKey = tuple[str, str]
 """
 属性名のキー.
 tuple[label_name_en, attribute_name_en] で表す。
@@ -336,7 +337,7 @@ class ListAnnotationCounterByTask:
         """
 
         annotation_count_by_label: Counter[str] = collections.Counter()
-        annotation_count_by_attribute: Counter[Tuple[str, str, str]] = collections.Counter()
+        annotation_count_by_attribute: Counter[tuple[str, str, str]] = collections.Counter()
 
         last_simple_annotation = None
         input_data_count = 0

@@ -3,7 +3,7 @@ import json
 import logging
 import multiprocessing
 import sys
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Optional
 
 import annofabapi
 import annofabapi.utils
@@ -24,13 +24,13 @@ from annofabcli.common.facade import AnnofabApiFacade
 logger = logging.getLogger(__name__)
 
 
-DeletedCommentsForTask = Dict[str, List[str]]
+DeletedCommentsForTask = dict[str, list[str]]
 """
 タスク配下の削除対象のコメント
 keyはinput_data_id, value: comment_idのlist
 """
 
-DeletedComments = Dict[str, DeletedCommentsForTask]
+DeletedComments = dict[str, DeletedCommentsForTask]
 """
 削除対象のコメント
 keyはtask_id, value: `DeletedCommentsForTask`
@@ -45,10 +45,10 @@ class DeleteCommentMain(CommandLineWithConfirm):
 
         CommandLineWithConfirm.__init__(self, all_yes)
 
-    def _create_request_body(self, task: Dict[str, Any], input_data_id: str, comment_ids: List[str]) -> List[Dict[str, Any]]:
+    def _create_request_body(self, task: dict[str, Any], input_data_id: str, comment_ids: list[str]) -> list[dict[str, Any]]:
         """batch_update_comments に渡すリクエストボディを作成する。"""
 
-        def _convert(comment_id: str) -> Dict[str, Any]:
+        def _convert(comment_id: str) -> dict[str, Any]:
             return {
                 "comment_id": comment_id,
                 "_type": "Delete",
@@ -66,7 +66,7 @@ class DeleteCommentMain(CommandLineWithConfirm):
             request_body.append(_convert(comment_id))
         return request_body
 
-    def change_to_working_status(self, project_id: str, task: Dict[str, Any]) -> Dict[str, Any]:
+    def change_to_working_status(self, project_id: str, task: dict[str, Any]) -> dict[str, Any]:
         """
         作業中状態に遷移する。必要ならば担当者を自分自身に変更する。
 
@@ -93,7 +93,7 @@ class DeleteCommentMain(CommandLineWithConfirm):
 
     def _can_delete_comment(
         self,
-        task: Dict[str, Any],
+        task: dict[str, Any],
     ) -> bool:
         task_id = task["task_id"]
         if task["status"] not in [TaskStatus.NOT_STARTED.value, TaskStatus.WORKING.value, TaskStatus.BREAK.value]:
@@ -167,7 +167,7 @@ class DeleteCommentMain(CommandLineWithConfirm):
 
     def delete_comments_for_task_wrapper(
         self,
-        tpl: Tuple[int, Tuple[str, DeletedCommentsForTask]],
+        tpl: tuple[int, tuple[str, DeletedCommentsForTask]],
     ) -> int:
         task_index, (task_id, comment_ids_for_task) = tpl
         return self.delete_comments_for_task(task_id=task_id, comment_ids_for_task=comment_ids_for_task, task_index=task_index)

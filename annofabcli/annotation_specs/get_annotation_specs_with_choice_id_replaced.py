@@ -3,7 +3,8 @@ from __future__ import annotations
 import argparse
 import logging
 import re
-from typing import Any, Collection, Optional
+from collections.abc import Collection
+from typing import Any, Optional
 
 import more_itertools
 

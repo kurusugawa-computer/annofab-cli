@@ -6,7 +6,7 @@ import multiprocessing
 import sys
 from dataclasses import dataclass
 from functools import partial
-from typing import Any, List, Optional, Tuple
+from typing import Any, Optional
 
 import annofabapi
 import more_itertools
@@ -118,7 +118,7 @@ class CancelAcceptanceMain(CommandLineWithConfirm):
 
     def cancel_acceptance_for_wrapper(
         self,
-        tpl: Tuple[int, str],
+        tpl: tuple[int, str],
         acceptor: Optional[User] = None,
         assign_last_acceptor: bool = True,  # noqa: FBT001, FBT002
         task_query: Optional[TaskQuery] = None,
@@ -140,7 +140,7 @@ class CancelAcceptanceMain(CommandLineWithConfirm):
 
     def cancel_acceptance_for_task_list(  # noqa: ANN201
         self,
-        task_id_list: List[str],
+        task_id_list: list[str],
         acceptor: Optional[User] = None,
         assign_last_acceptor: bool = True,  # noqa: FBT001, FBT002
         task_query: Optional[TaskQuery] = None,

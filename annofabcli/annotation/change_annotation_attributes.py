@@ -7,7 +7,7 @@ import multiprocessing
 import sys
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 import annofabapi
 from annofabapi.dataclass.task import Task
@@ -57,8 +57,8 @@ class ChangeAnnotationAttributesMain(CommandLineWithConfirm):
         self.dump_annotation_obj = DumpAnnotationMain(service, project_id)
 
     def change_annotation_attributes(
-        self, annotation_list: List[Dict[str, Any]], additional_data_list: list[dict[str, Any]]
-    ) -> Optional[List[Dict[str, Any]]]:
+        self, annotation_list: list[dict[str, Any]], additional_data_list: list[dict[str, Any]]
+    ) -> Optional[list[dict[str, Any]]]:
         """
         アノテーション属性値を変更する。
 
@@ -71,7 +71,7 @@ class ChangeAnnotationAttributesMain(CommandLineWithConfirm):
 
         """
 
-        def _to_request_body_elm(annotation: Dict[str, Any]) -> Dict[str, Any]:
+        def _to_request_body_elm(annotation: dict[str, Any]) -> dict[str, Any]:
             detail = annotation["detail"]
             return {
                 "data": {
@@ -186,7 +186,7 @@ class ChangeAnnotationAttributesMain(CommandLineWithConfirm):
 
     def change_annotation_attributes_for_task_list(
         self,
-        task_id_list: List[str],
+        task_id_list: list[str],
         annotation_query: AnnotationQueryForAPI,
         additional_data_list: list[dict[str, Any]],
         *,

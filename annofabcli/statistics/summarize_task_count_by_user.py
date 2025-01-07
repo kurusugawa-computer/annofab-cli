@@ -2,7 +2,7 @@ import argparse
 import json
 import logging
 from enum import Enum
-from typing import List, Optional
+from typing import Optional
 
 import pandas
 from annofabapi.models import ProjectMemberRole, Task, TaskPhase, TaskStatus
@@ -66,7 +66,7 @@ def add_info_to_task(task: Task) -> Task:
     return task
 
 
-def create_task_count_summary_df(task_list: List[Task]) -> pandas.DataFrame:
+def create_task_count_summary_df(task_list: list[Task]) -> pandas.DataFrame:
     """
     タスク数の集計結果が格納されたDataFrameを取得する。
 
@@ -92,7 +92,7 @@ def create_task_count_summary_df(task_list: List[Task]) -> pandas.DataFrame:
 
 
 class SummarizeTaskCountByUser(CommandLine):
-    def create_user_df(self, project_id: str, account_id_list: List[str]) -> pandas.DataFrame:
+    def create_user_df(self, project_id: str, account_id_list: list[str]) -> pandas.DataFrame:
         user_list = []
         for account_id in account_id_list:
             user = self.facade.get_project_member_from_account_id(project_id=project_id, account_id=account_id)
@@ -100,7 +100,7 @@ class SummarizeTaskCountByUser(CommandLine):
                 user_list.append(user)
         return pandas.DataFrame(user_list, columns=["account_id", "user_id", "username", "biography"])
 
-    def create_summary_df(self, project_id: str, task_list: List[Task]) -> pandas.DataFrame:
+    def create_summary_df(self, project_id: str, task_list: list[Task]) -> pandas.DataFrame:
         df_task_count = create_task_count_summary_df(task_list)
         df_user = self.create_user_df(project_id, df_task_count["account_id"])
         if len(df_user) == 0:

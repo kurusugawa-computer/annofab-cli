@@ -6,7 +6,7 @@
 import logging
 import zipfile
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Optional
 
 import PIL
 import PIL.Image
@@ -44,7 +44,7 @@ def get_data_uri_of_outer_file(annotation: SimpleAnnotationDetail) -> Optional[s
 def fill_annotation(
     draw: PIL.ImageDraw.ImageDraw,
     annotation: SimpleAnnotationDetail,
-    label_color_dict: Dict[str, RGB],
+    label_color_dict: dict[str, RGB],
     outer_image: Optional[Any] = None,  # noqa: ANN401
 ) -> PIL.ImageDraw.ImageDraw:
     """
@@ -93,8 +93,8 @@ def fill_annotation(
 def fill_annotation_list(
     draw: PIL.ImageDraw.ImageDraw,
     parser: SimpleAnnotationParser,
-    label_color_dict: Dict[str, RGB],
-    label_name_list: Optional[List[str]] = None,
+    label_color_dict: dict[str, RGB],
+    label_name_list: Optional[list[str]] = None,
 ) -> PIL.ImageDraw.ImageDraw:
     """
     1個の入力データに属するアノテーションlistを描画する
@@ -140,10 +140,10 @@ def fill_annotation_list(
 def write_annotation_image(  # noqa: ANN201
     parser: SimpleAnnotationParser,
     image_size: InputDataSize,
-    label_color_dict: Dict[str, RGB],
+    label_color_dict: dict[str, RGB],
     output_image_file: Path,
     background_color: Optional[Any] = None,  # noqa: ANN401
-    label_name_list: Optional[List[str]] = None,
+    label_name_list: Optional[list[str]] = None,
 ):
     """
     JSONファイルに記載されているアノテーション情報を、画像化する。
@@ -191,7 +191,7 @@ def write_annotation_grayscale_image(
     parser: SimpleAnnotationParser,
     image_size: InputDataSize,
     output_image_file: Path,
-    label_name_list: Optional[List[str]] = None,
+    label_name_list: Optional[list[str]] = None,
 ) -> None:
     """
     JSONファイルに記載されているアノテーション情報を、グレースケール(8bit 1channel)で画像化します。
@@ -267,13 +267,13 @@ def write_annotation_grayscale_image(
 
 def write_annotation_images_from_path(
     annotation_path: Path,
-    label_color_dict: Dict[str, RGB],
+    label_color_dict: dict[str, RGB],
     output_dir_path: Path,
     image_size: Optional[InputDataSize] = None,
-    input_data_dict: Optional[Dict[str, InputData]] = None,
+    input_data_dict: Optional[dict[str, InputData]] = None,
     output_image_extension: str = "png",
     background_color: Optional[Any] = None,  # noqa: ANN401
-    label_name_list: Optional[List[str]] = None,
+    label_name_list: Optional[list[str]] = None,
     is_target_parser_func: Optional[IsParserFunc] = None,
 ) -> bool:
     """
@@ -300,7 +300,7 @@ def write_annotation_images_from_path(
     """  # noqa: E501
 
     def _get_image_size(input_data_id: str) -> Optional[InputDataSize]:
-        def _get_image_size_from_system_metadata(arg_input_data: Dict[str, Any]):  # noqa: ANN202
+        def _get_image_size_from_system_metadata(arg_input_data: dict[str, Any]):  # noqa: ANN202
             # 入力データの`input_data.system_metadata.original_resolution`を参照して、画像サイズを決める。
             original_resolution = arg_input_data["system_metadata"]["original_resolution"]
             if original_resolution is not None and (original_resolution.get("width") is not None and original_resolution.get("height") is not None):

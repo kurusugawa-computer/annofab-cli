@@ -7,7 +7,7 @@ import logging
 import multiprocessing
 import tempfile
 from pathlib import Path
-from typing import Any, List, Optional
+from typing import Any, Optional
 
 import annofabapi
 from annofabapi.models import SupplementaryData
@@ -72,11 +72,11 @@ class ListSupplementaryDataMain:
             logger.warning(f"input_data_id='{input_data_index}': 補助情報の取得に失敗しました。", exc_info=True)
             return []
 
-    def get_all_supplementary_data_list(self, input_data_id_list: List[str], *, parallelism: Optional[int] = None) -> List[SupplementaryData]:
+    def get_all_supplementary_data_list(self, input_data_id_list: list[str], *, parallelism: Optional[int] = None) -> list[SupplementaryData]:
         """
         補助情報一覧を取得する。
         """
-        all_supplementary_data_list: List[SupplementaryData] = []
+        all_supplementary_data_list: list[SupplementaryData] = []
         logger.info(f"{len(input_data_id_list)} 件の入力データに紐づく補助情報を取得します。")
 
         if parallelism is not None:

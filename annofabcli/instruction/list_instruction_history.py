@@ -1,6 +1,6 @@
 import argparse
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 import annofabcli
 from annofabcli.common.cli import ArgumentParser, CommandLine, build_annofabapi_resource_and_login
@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 
 class ListInstructionHistories(CommandLine):
-    def get_instruction_histories(self, project_id: str) -> List[Dict[str, Any]]:
+    def get_instruction_histories(self, project_id: str) -> list[dict[str, Any]]:
         # limitを指定する理由：上限がわからないので大きい値を指定する
         histories, _ = self.service.api.get_instruction_history(project_id, query_params={"limit": 200})
         visualize = AddProps(self.service, project_id)

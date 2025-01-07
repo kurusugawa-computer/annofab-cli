@@ -3,7 +3,7 @@ import json
 import logging
 import tempfile
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Optional
 
 import annofabapi
 from annofabapi.models import TaskHistory
@@ -17,7 +17,7 @@ from annofabcli.common.visualize import AddProps
 
 logger = logging.getLogger(__name__)
 
-TaskHistoryDict = Dict[str, List[TaskHistory]]
+TaskHistoryDict = dict[str, list[TaskHistory]]
 """全タスクのタスク履歴一覧の集合体。keyはtask_id"""
 
 
@@ -27,7 +27,7 @@ class ListTaskHistoryWithJsonMain:
         self.facade = AnnofabApiFacade(service)
 
     @staticmethod
-    def filter_task_history_dict(task_history_dict: TaskHistoryDict, task_id_list: Optional[List[str]] = None) -> TaskHistoryDict:
+    def filter_task_history_dict(task_history_dict: TaskHistoryDict, task_id_list: Optional[list[str]] = None) -> TaskHistoryDict:
         if task_id_list is None:
             return task_history_dict
 
@@ -41,7 +41,7 @@ class ListTaskHistoryWithJsonMain:
         return filtered_task_history_dict
 
     def get_task_history_dict(
-        self, project_id: str, task_history_json: Optional[Path] = None, task_id_list: Optional[List[str]] = None
+        self, project_id: str, task_history_json: Optional[Path] = None, task_id_list: Optional[list[str]] = None
     ) -> TaskHistoryDict:
         """出力対象のタスク履歴情報を取得する"""
         if task_history_json is None:
@@ -69,7 +69,7 @@ class ListTaskHistoryWithJsonMain:
         return task_history_dict
 
     @staticmethod
-    def to_all_task_history_list_from_dict(task_history_dict: TaskHistoryDict) -> List[TaskHistory]:
+    def to_all_task_history_list_from_dict(task_history_dict: TaskHistoryDict) -> list[TaskHistory]:
         all_task_history_list = []
         for task_history_list in task_history_dict.values():
             all_task_history_list.extend(task_history_list)
@@ -81,7 +81,7 @@ class ListTaskHistoryWithJson(CommandLine):
         self,
         project_id: str,
         task_history_json: Optional[Path],
-        task_id_list: Optional[List[str]],
+        task_id_list: Optional[list[str]],
         arg_format: FormatArgument,
     ):
         """

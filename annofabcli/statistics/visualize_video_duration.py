@@ -7,11 +7,11 @@ import json
 import logging
 import sys
 import tempfile
-from collections.abc import Collection
+from collections.abc import Collection, Sequence
 from enum import Enum
 from functools import partial
 from pathlib import Path
-from typing import Optional, Sequence, Union
+from typing import Optional, Union
 
 import bokeh
 import numpy

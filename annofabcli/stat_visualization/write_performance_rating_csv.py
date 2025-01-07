@@ -3,10 +3,11 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+from collections.abc import Collection
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
-from typing import Any, Collection, Dict, List, Optional, Tuple
+from typing import Any, Optional
 
 import numpy
 import pandas
@@ -122,7 +123,7 @@ class ProductivityType(Enum):
     """検査または受入"""
 
 
-ThresholdInfoSettings: TypeAlias = Dict[Tuple[str, ProductivityType], ThresholdInfo]
+ThresholdInfoSettings: TypeAlias = dict[tuple[str, ProductivityType], ThresholdInfo]
 """
 閾値の設定情報
 key: tuple(ディレクトリ名, 生産性の種類)
@@ -130,7 +131,7 @@ value: 閾値情報
 """
 
 
-ProductivityIndicatorByDirectory: TypeAlias = Dict[str, ProductivityIndicator]
+ProductivityIndicatorByDirectory: TypeAlias = dict[str, ProductivityIndicator]
 """
 ディレクトリごとの生産性の指標
 key: ディレクトリ名
@@ -138,7 +139,7 @@ value: 生産性の指標
 """
 
 
-QualityIndicatorByDirectory: TypeAlias = Dict[str, QualityIndicator]
+QualityIndicatorByDirectory: TypeAlias = dict[str, QualityIndicator]
 """
 ディレクトリごとの品質の指標
 key: ディレクトリ名
@@ -470,7 +471,7 @@ def create_user_df(target_dir: Path) -> pandas.DataFrame:
         ユーザのDataFrame. columnは("username", ""), ("biography", "") , indexが"user_id"
 
     """
-    all_user_list: List[Dict[str, Any]] = []
+    all_user_list: list[dict[str, Any]] = []
     for p_project_dir in target_dir.iterdir():
         if not p_project_dir.is_dir():
             continue

@@ -1,7 +1,7 @@
 import argparse
 import copy
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from annofabapi.models import ProjectJobInfo, ProjectJobType
 
@@ -18,7 +18,7 @@ class ListJob(CommandLine):
     ジョブ一覧を表示する。
     """
 
-    def get_job_list(self, project_id: str, job_type: ProjectJobType, job_query: Optional[Dict[str, Any]] = None) -> List[ProjectJobInfo]:
+    def get_job_list(self, project_id: str, job_type: ProjectJobType, job_query: Optional[dict[str, Any]] = None) -> list[ProjectJobInfo]:
         """
         ジョブ一覧を取得する。
         """
@@ -34,7 +34,7 @@ class ListJob(CommandLine):
         job_list = self.service.wrapper.get_all_project_job(project_id, query_params=query_params)
         return job_list
 
-    def print_job_list(self, project_id: str, job_type: ProjectJobType, job_query: Optional[Dict[str, Any]] = None) -> None:
+    def print_job_list(self, project_id: str, job_type: ProjectJobType, job_query: Optional[dict[str, Any]] = None) -> None:
         """
         ジョブ一覧を出力する
 

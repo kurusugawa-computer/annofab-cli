@@ -7,7 +7,7 @@ import multiprocessing
 import sys
 from dataclasses import dataclass
 from functools import partial
-from typing import Any, Dict, Optional, Union
+from typing import Any, Optional, Union
 
 import annofabapi
 from annofabapi.models import ProjectMemberRole
@@ -25,7 +25,7 @@ from annofabcli.common.facade import AnnofabApiFacade
 
 logger = logging.getLogger(__name__)
 
-Metadata = Dict[str, Union[str, bool, int]]
+Metadata = dict[str, Union[str, bool, int]]
 
 
 @dataclass(frozen=True)
@@ -58,7 +58,7 @@ class UpdateMetadataOfTaskMain(CommandLineWithConfirm):
         self,
         project_id: str,
         task_id: str,
-        metadata: Dict[str, Any],
+        metadata: dict[str, Any],
         task_index: Optional[int] = None,
     ) -> bool:
         logging_prefix = f"{task_index+1} 件目" if task_index is not None else ""

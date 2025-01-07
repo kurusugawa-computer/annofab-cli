@@ -7,7 +7,7 @@ import zipfile
 from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set
+from typing import Any, Optional
 
 from annofabapi.parser import lazy_parse_simple_annotation_dir, lazy_parse_simple_annotation_zip
 
@@ -22,16 +22,16 @@ logger = logging.getLogger(__name__)
 @dataclass
 class FilterQuery:
     task_query: Optional[TaskQuery] = None
-    task_id_set: Optional[Set[str]] = None
-    exclude_task_id_set: Optional[Set[str]] = None
-    input_data_id_set: Optional[Set[str]] = None
-    exclude_input_data_id_set: Optional[Set[str]] = None
-    input_data_name_set: Optional[Set[str]] = None
-    exclude_input_data_name_set: Optional[Set[str]] = None
+    task_id_set: Optional[set[str]] = None
+    exclude_task_id_set: Optional[set[str]] = None
+    input_data_id_set: Optional[set[str]] = None
+    exclude_input_data_id_set: Optional[set[str]] = None
+    input_data_name_set: Optional[set[str]] = None
+    exclude_input_data_name_set: Optional[set[str]] = None
 
 
 def match_query(  # pylint: disable=too-many-return-statements  # noqa: PLR0911
-    annotation: Dict[str, Any], filter_query: FilterQuery
+    annotation: dict[str, Any], filter_query: FilterQuery
 ) -> bool:
     if filter_query.task_query is not None and not match_annotation_with_task_query(annotation, filter_query.task_query):
         return False
@@ -53,7 +53,7 @@ def match_query(  # pylint: disable=too-many-return-statements  # noqa: PLR0911
     return True
 
 
-def create_outer_filepath_dict(namelist: List[str]) -> Dict[str, List[str]]:
+def create_outer_filepath_dict(namelist: list[str]) -> dict[str, list[str]]:
     """
     外部アノテーションのファイルパス一覧
 

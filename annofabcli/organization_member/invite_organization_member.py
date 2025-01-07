@@ -1,6 +1,7 @@
 import argparse
 import logging
-from typing import Collection, Optional
+from collections.abc import Collection
+from typing import Optional
 
 import annofabapi
 from annofabapi.models import OrganizationMemberRole

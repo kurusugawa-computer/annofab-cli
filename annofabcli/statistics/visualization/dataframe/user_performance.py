@@ -7,9 +7,10 @@ from __future__ import annotations
 
 import logging
 import math
+from collections.abc import Sequence
 from enum import Enum
 from pathlib import Path
-from typing import Any, Literal, Optional, Sequence
+from typing import Any, Literal, Optional
 
 import bokeh
 import bokeh.layouts

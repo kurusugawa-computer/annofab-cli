@@ -3,7 +3,7 @@ from __future__ import annotations
 import argparse
 import logging
 from dataclasses import dataclass
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Optional
 
 import annofabapi
 
@@ -21,8 +21,8 @@ from annofabcli.common.facade import AnnofabApiFacade
 logger = logging.getLogger(__name__)
 
 
-Color = Tuple[int, int, int]
-LabelColorDict = Dict[str, Color]
+Color = tuple[int, int, int]
+LabelColorDict = dict[str, Color]
 
 
 @dataclass(frozen=True)

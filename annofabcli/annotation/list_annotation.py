@@ -3,7 +3,7 @@ from __future__ import annotations
 import argparse
 import logging
 import sys
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 import annofabapi
 import pandas
@@ -56,7 +56,7 @@ class ListAnnotationMain:
         *,
         task_id: Optional[str] = None,
         input_data_id: Optional[str] = None,
-    ) -> List[SingleAnnotation]:
+    ) -> list[SingleAnnotation]:
         dict_query = {}
         if annotation_query is not None:
             dict_query.update(annotation_query.to_dict())
@@ -75,9 +75,9 @@ class ListAnnotationMain:
         project_id: str,
         annotation_query: Optional[AnnotationQueryForAPI],
         *,
-        task_id_list: Optional[List[str]],
-        input_data_id_list: Optional[List[str]],
-    ) -> List[SingleAnnotation]:
+        task_id_list: Optional[list[str]],
+        input_data_id_list: Optional[list[str]],
+    ) -> list[SingleAnnotation]:
         assert task_id_list is None or input_data_id_list is None, "task_id_listとinput_data_listのどちらかはNoneにしてください。"
 
         all_annotation_list = []
@@ -116,7 +116,7 @@ class ListAnnotationMain:
             return annotation_list
 
 
-def to_annotation_list_for_csv(annotation_list: List[SingleAnnotation]) -> List[SingleAnnotation]:
+def to_annotation_list_for_csv(annotation_list: list[SingleAnnotation]) -> list[SingleAnnotation]:
     """
 
     Args:
@@ -126,7 +126,7 @@ def to_annotation_list_for_csv(annotation_list: List[SingleAnnotation]) -> List[
 
     """
 
-    def to_new_annotation(annotation: Dict[str, Any]) -> Dict[str, Any]:
+    def to_new_annotation(annotation: dict[str, Any]) -> dict[str, Any]:
         detail = annotation["detail"]
         for key, value in detail.items():
             annotation[f"detail.{key}"] = value

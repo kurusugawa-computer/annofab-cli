@@ -7,7 +7,7 @@ import tempfile
 from collections import defaultdict
 from enum import Enum
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Optional
 
 import annofabapi
 import pandas
@@ -34,7 +34,7 @@ TASK_THRESHOLD_FOR_JSON = 230
 https://github.com/kurusugawa-computer/annofab-cli/pull/738#issuecomment-1077013844
 """
 
-TaskInputRelation = Dict[str, List[str]]
+TaskInputRelation = dict[str, list[str]]
 """task_idとinput_data_idの構造を表現する型"""
 
 

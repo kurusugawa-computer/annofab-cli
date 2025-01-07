@@ -8,7 +8,7 @@ import functools
 import logging
 import pprint
 from enum import Enum
-from typing import Any, Dict, List, Optional, Set, Tuple
+from typing import Any, Optional
 
 import annofabapi
 import dictdiffer
@@ -20,7 +20,7 @@ import annofabcli.common.cli
 from annofabcli.common.cli import CommandLine, build_annofabapi_resource_and_login
 from annofabcli.common.facade import AnnofabApiFacade, convert_annotation_specs_labels_v2_to_v1
 
-DiffResult = Tuple[bool, str]
+DiffResult = tuple[bool, str]
 """差分があるかどうかと、差分メッセージ"""
 
 logger = logging.getLogger(__name__)
@@ -37,15 +37,15 @@ class DiffTarget(Enum):
     SETTINGS = "settings"
 
 
-def sorted_inspection_phrases(phrases: List[Dict[str, Any]]):  # noqa: ANN201
+def sorted_inspection_phrases(phrases: list[dict[str, Any]]):  # noqa: ANN201
     return sorted(phrases, key=lambda e: e["id"])
 
 
-def sorted_project_members(project_members: List[Dict[str, Any]]):  # noqa: ANN201
+def sorted_project_members(project_members: list[dict[str, Any]]):  # noqa: ANN201
     return sorted(project_members, key=lambda e: e["user_id"])
 
 
-def create_ignored_label(label: Dict[str, Any]):  # noqa: ANN201
+def create_ignored_label(label: dict[str, Any]):  # noqa: ANN201
     """
     比較対象外のkeyを削除したラベル情報を生成する
     """
@@ -126,7 +126,7 @@ class DiffProjects(CommandLine):
 
         return is_different, diff_message
 
-    def validate_duplicated(self, label_names1: List[str], label_names2: List[str]) -> DiffResult:
+    def validate_duplicated(self, label_names1: list[str], label_names2: list[str]) -> DiffResult:
         """
         label_nameが重複しているか確認する
         Args:
@@ -155,7 +155,7 @@ class DiffProjects(CommandLine):
 
         return flag, diff_message
 
-    def diff_labels_of_annotation_specs(self, labels1: List[Dict[str, Any]], labels2: List[Dict[str, Any]]) -> DiffResult:
+    def diff_labels_of_annotation_specs(self, labels1: list[dict[str, Any]], labels2: list[dict[str, Any]]) -> DiffResult:
         """
         アノテーションラベル情報の差分を表示する。ラベル名(英語)を基準に差分を表示する。
         以下の項目は無視して比較する。
@@ -195,7 +195,7 @@ class DiffProjects(CommandLine):
 
         for label_name in label_names:
 
-            def get_label_func(label_name: str, label: Dict[str, Any]):  # noqa: ANN202
+            def get_label_func(label_name: str, label: dict[str, Any]):  # noqa: ANN202
                 return AnnofabApiFacade.get_label_name_en(label) == label_name
 
             label1 = more_itertools.first_true(labels1, pred=functools.partial(get_label_func, label_name))
@@ -217,7 +217,7 @@ class DiffProjects(CommandLine):
         return is_different, diff_message
 
     @staticmethod
-    def diff_inspection_phrases(inspection_phrases1: List[Dict[str, Any]], inspection_phrases2: List[Dict[str, Any]]) -> DiffResult:
+    def diff_inspection_phrases(inspection_phrases1: list[dict[str, Any]], inspection_phrases2: list[dict[str, Any]]) -> DiffResult:
         """
         定型指摘の差分を表示する。定型指摘IDを基準に差分を表示する。
 
@@ -260,7 +260,7 @@ class DiffProjects(CommandLine):
 
         return is_different, diff_message
 
-    def diff_annotation_specs(self, project_id1: str, project_id2: str, diff_targets: Set[DiffTarget]) -> DiffResult:
+    def diff_annotation_specs(self, project_id1: str, project_id2: str, diff_targets: set[DiffTarget]) -> DiffResult:
         """
         プロジェクト間のアノテーション仕様の差分を表示する。
         Args:
@@ -343,7 +343,7 @@ class DiffProjects(CommandLine):
         super().validate_project(project_id1, roles)
         super().validate_project(project_id2, roles)
 
-    def diff(self, project_id1: str, project_id2: str, diff_targets: Set[DiffTarget]) -> DiffResult:
+    def diff(self, project_id1: str, project_id2: str, diff_targets: set[DiffTarget]) -> DiffResult:
         self.validate_projects(project_id1, project_id2)
 
         logger.info(f"=== {self.project_title1}({project_id1}) と {self.project_title2}({project_id2}) の差分を表示")

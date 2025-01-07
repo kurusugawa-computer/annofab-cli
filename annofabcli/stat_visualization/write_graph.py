@@ -4,7 +4,7 @@ import argparse
 import json
 import logging
 from pathlib import Path
-from typing import List, Optional
+from typing import Optional
 
 from annofabapi.models import TaskPhase
 
@@ -33,7 +33,7 @@ class WritingGraph:
         project_dir: ProjectDir,
         output_project_dir: ProjectDir,
         *,
-        user_id_list: Optional[List[str]] = None,
+        user_id_list: Optional[list[str]] = None,
         minimal_output: bool = False,
     ) -> None:
         self.project_dir = project_dir

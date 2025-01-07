@@ -1,6 +1,6 @@
 import argparse
 import logging
-from typing import List, Optional
+from typing import Optional
 
 import annofabapi
 import requests
@@ -19,7 +19,7 @@ class DropProjectMembersMain:
         self.service = service
         self.facade = AnnofabApiFacade(service)
 
-    def drop_project_members(self, project_id: str, user_id_list: List[str]):  # noqa: ANN201
+    def drop_project_members(self, project_id: str, user_id_list: list[str]):  # noqa: ANN201
         """
         複数ユーザをプロジェクトメンバから脱退させる
 
@@ -54,13 +54,13 @@ class DropProjectMembersMain:
                 logger.warning(e)
                 logger.warning(f"{project_title}({project_id}) のプロジェクトメンバから、{user_id} を脱退させられませんでした。")
 
-    def drop_role_with_organization(self, organization_name: str, user_id_list: List[str]):  # noqa: ANN201
+    def drop_role_with_organization(self, organization_name: str, user_id_list: list[str]):  # noqa: ANN201
         projects = self.service.wrapper.get_all_projects_of_organization(organization_name, query_params={"account_id": self.service.api.account_id})
 
         project_id_list = [e["project_id"] for e in projects]
         self.drop_role_with_project_id(project_id_list, user_id_list=user_id_list)
 
-    def drop_role_with_project_id(self, project_id_list: List[str], user_id_list: List[str]):  # noqa: ANN201
+    def drop_role_with_project_id(self, project_id_list: list[str], user_id_list: list[str]):  # noqa: ANN201
         for project_id in project_id_list:
             try:
                 if not self.facade.my_role_is_owner(project_id):

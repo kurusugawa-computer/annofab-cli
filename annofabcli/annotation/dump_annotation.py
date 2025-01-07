@@ -6,7 +6,7 @@ import json
 import logging
 import multiprocessing
 from pathlib import Path
-from typing import List, Optional
+from typing import Optional
 
 import annofabapi
 from annofabapi.models import AnnotationDataHoldingType
@@ -84,7 +84,7 @@ class DumpAnnotationMain:
             logger.warning(f"タスク'{task_id}'のアノテーション情報のダンプに失敗しました。", exc_info=True)
             return False
 
-    def dump_annotation(self, task_id_list: List[str], output_dir: Path, parallelism: Optional[int] = None):  # noqa: ANN201
+    def dump_annotation(self, task_id_list: list[str], output_dir: Path, parallelism: Optional[int] = None):  # noqa: ANN201
         project_title = self.facade.get_project_title(self.project_id)
         logger.info(f"プロジェクト'{project_title}'に対して、タスク{len(task_id_list)} 件のアノテーションをファイルに保存します。")
 

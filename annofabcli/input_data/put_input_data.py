@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from functools import partial
 from multiprocessing import Pool
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 import annofabapi
 import pandas
@@ -121,7 +121,7 @@ class SubPutInputData:
         self.all_yes = all_yes
 
     def put_input_data(self, project_id: str, csv_input_data: InputDataForPut, last_updated_datetime: Optional[str] = None):  # noqa: ANN201
-        request_body: Dict[str, Any] = {"last_updated_datetime": last_updated_datetime}
+        request_body: dict[str, Any] = {"last_updated_datetime": last_updated_datetime}
 
         file_path = get_file_scheme_path(csv_input_data.input_data_path)
         if file_path is not None:
@@ -240,7 +240,7 @@ class PutInputData(CommandLine):
     def put_input_data_list(
         self,
         project_id: str,
-        input_data_list: List[CsvInputData],
+        input_data_list: list[CsvInputData],
         overwrite: bool = False,  # noqa: FBT001, FBT002
         parallelism: Optional[int] = None,
     ) -> None:
@@ -276,7 +276,7 @@ class PutInputData(CommandLine):
         logger.info(f"{project_title} に、{count_put_input_data} / {len(input_data_list)} 件の入力データを登録しました。")
 
     @staticmethod
-    def get_input_data_list_from_df(df: pandas.DataFrame) -> List[CsvInputData]:
+    def get_input_data_list_from_df(df: pandas.DataFrame) -> list[CsvInputData]:
         def create_input_data(e: Any):  # noqa: ANN202, ANN401
             input_data_id = e.input_data_id if not pandas.isna(e.input_data_id) else None
             sign_required: Optional[bool] = e.sign_required if pandas.notna(e.sign_required) else None
@@ -292,7 +292,7 @@ class PutInputData(CommandLine):
         return input_data_list
 
     @staticmethod
-    def get_input_data_list_from_dict(input_data_dict_list: List[Dict[str, Any]], allow_duplicated_input_data: bool) -> List[CsvInputData]:  # noqa: FBT001
+    def get_input_data_list_from_dict(input_data_dict_list: list[dict[str, Any]], allow_duplicated_input_data: bool) -> list[CsvInputData]:  # noqa: FBT001
         # 重複チェック
         df = pandas.DataFrame(input_data_dict_list)
         df_duplicated_input_data_name = df[df["input_data_name"].duplicated()]

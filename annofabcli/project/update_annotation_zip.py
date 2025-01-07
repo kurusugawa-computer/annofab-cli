@@ -2,7 +2,7 @@ import argparse
 import logging
 import multiprocessing
 from functools import partial
-from typing import List, Optional
+from typing import Optional
 
 import annofabapi
 import dateutil
@@ -146,7 +146,7 @@ class SubUpdateAnnotationZip:
 class UpdateAnnotationZip(CommandLine):
     def update_annotation_zip(
         self,
-        project_id_list: List[str],
+        project_id_list: list[str],
         force: bool = False,  # noqa: FBT001, FBT002
         wait: bool = False,  # noqa: FBT001, FBT002
         wait_options: Optional[WaitOptions] = None,

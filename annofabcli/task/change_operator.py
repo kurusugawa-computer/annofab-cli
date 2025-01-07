@@ -3,7 +3,7 @@ import logging
 import multiprocessing
 import sys
 from functools import partial
-from typing import List, Optional, Tuple
+from typing import Optional
 
 import annofabapi
 import requests
@@ -108,7 +108,7 @@ class ChangeOperatorMain:
 
     def change_operator_for_task_wrapper(
         self,
-        tpl: Tuple[int, str],
+        tpl: tuple[int, str],
         project_id: str,
         task_query: Optional[TaskQuery] = None,
         new_account_id: Optional[str] = None,
@@ -129,7 +129,7 @@ class ChangeOperatorMain:
     def change_operator(
         self,
         project_id: str,
-        task_id_list: List[str],
+        task_id_list: list[str],
         new_user_id: Optional[str] = None,
         task_query: Optional[TaskQuery] = None,
         parallelism: Optional[int] = None,

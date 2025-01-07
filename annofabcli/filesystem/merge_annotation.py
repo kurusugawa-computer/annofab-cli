@@ -3,8 +3,9 @@ import json
 import logging
 import sys
 import zipfile
+from collections.abc import Collection, Iterator
 from pathlib import Path
-from typing import Any, Callable, Collection, Dict, Iterator, List, Optional, Set
+from typing import Any, Callable, Optional
 
 from annofabapi.parser import (
     SimpleAnnotationDirParser,
@@ -40,7 +41,7 @@ class MergeAnnotationMain:
             raise RuntimeError(f"{annotation_path} はサポート対象外です。")
 
     @staticmethod
-    def _write_outer_file(parser: SimpleAnnotationParser, anno: Dict[str, Any], output_json: Path) -> None:
+    def _write_outer_file(parser: SimpleAnnotationParser, anno: dict[str, Any], output_json: Path) -> None:
         data_uri = anno["data"]["data_uri"]
 
         with parser.open_outer_file(data_uri) as src_f:
@@ -51,7 +52,7 @@ class MergeAnnotationMain:
                 dest_f.write(data)
 
     @staticmethod
-    def _is_segmentation(anno: Dict[str, Any]) -> bool:
+    def _is_segmentation(anno: dict[str, Any]) -> bool:
         return anno["data"]["_type"] in ["Segmentation", "SegmentationV2"]
 
     def write_merged_annotation(self, parser1: SimpleAnnotationParser, parser2: SimpleAnnotationParser, output_json: Path):  # noqa: ANN201
@@ -156,7 +157,7 @@ class MergeAnnotationMain:
         if annotation_path2.is_file():
             zip_file2 = zipfile.ZipFile(str(annotation_path2), "r")  # pylint: disable=consider-using-with
 
-        excluded_json_path2: Set[str] = set()
+        excluded_json_path2: set[str] = set()
         for parser1 in iter_parser1:
             if is_target_parser_func is not None and not is_target_parser_func(parser1):
                 continue
@@ -198,7 +199,7 @@ class MergeAnnotation(CommandLineWithoutWebapi):
     def validate(args: argparse.Namespace) -> bool:
         COMMON_MESSAGE = "annofabcli filesystem merge_annotation: error:"  # noqa: N806
         if args.annotation is not None:
-            annotation_paths: List[Path] = args.annotation
+            annotation_paths: list[Path] = args.annotation
             for path in annotation_paths:
                 if not path.exists():
                     print(  # noqa: T201

@@ -4,7 +4,7 @@ import logging
 import sys
 from enum import Enum
 from pathlib import Path
-from typing import List, Optional
+from typing import Optional
 
 import pandas
 from annofabapi.models import ProjectMemberRole, Task, TaskPhase, TaskStatus
@@ -80,7 +80,7 @@ def get_step_for_current_phase(task: Task, number_of_inspections: int) -> int:
         raise RuntimeError(f"フェーズ'{current_phase}'は不正な値です。")
 
 
-def create_task_count_summary(task_list: List[Task], number_of_inspections: int) -> pandas.DataFrame:
+def create_task_count_summary(task_list: list[Task], number_of_inspections: int) -> pandas.DataFrame:
     """
 
     Args:
@@ -159,7 +159,7 @@ class SummarizeTaskCount(CommandLine):
         task_count_df = create_task_count_summary(task_list, number_of_inspections=number_of_inspections)
         annofabcli.common.utils.print_csv(task_count_df, output=self.output, to_csv_kwargs=self.csv_format)
 
-    def get_task_list_with_downloading_file(self, project_id: str, task_json_path: Optional[Path], is_latest: bool) -> List[Task]:  # noqa: FBT001
+    def get_task_list_with_downloading_file(self, project_id: str, task_json_path: Optional[Path], is_latest: bool) -> list[Task]:  # noqa: FBT001
         if task_json_path is None:
             cache_dir = annofabcli.common.utils.get_cache_dir()
             task_json_path = cache_dir / f"task-{project_id}.json"

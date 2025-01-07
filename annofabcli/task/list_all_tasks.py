@@ -3,7 +3,7 @@ import json
 import logging
 import tempfile
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set
+from typing import Any, Optional
 
 import annofabapi
 import pandas
@@ -28,8 +28,8 @@ class ListTasksWithJsonMain:
 
     @staticmethod
     def match_task_with_conditions(
-        task: Dict[str, Any],
-        task_id_set: Optional[Set[str]] = None,
+        task: dict[str, Any],
+        task_id_set: Optional[set[str]] = None,
         task_query: Optional[TaskQuery] = None,
     ) -> bool:
         result = True
@@ -44,10 +44,10 @@ class ListTasksWithJsonMain:
         self,
         project_id: str,
         task_json: Optional[Path],
-        task_id_list: Optional[List[str]] = None,
+        task_id_list: Optional[list[str]] = None,
         task_query: Optional[TaskQuery] = None,
         is_latest: bool = False,  # noqa: FBT001, FBT002
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         if task_json is None:
             downloading_obj = DownloadingFile(self.service)
             # `NamedTemporaryFile`を使わない理由: Windowsで`PermissionError`が発生するため

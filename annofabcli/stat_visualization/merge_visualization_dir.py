@@ -5,7 +5,7 @@ import json
 import logging
 import sys
 from pathlib import Path
-from typing import List, Optional
+from typing import Optional
 
 from annofabapi.models import TaskPhase
 
@@ -47,7 +47,7 @@ class WritingVisualizationFile:
         output_project_dir: ProjectDir,
         task_completion_criteria: TaskCompletionCriteria,
         *,
-        user_id_list: Optional[List[str]] = None,
+        user_id_list: Optional[list[str]] = None,
         minimal_output: bool = False,
     ) -> None:
         self.output_project_dir = output_project_dir
@@ -144,7 +144,7 @@ class WritingVisualizationFile:
 
 
 class MergingVisualizationFile:
-    def __init__(self, project_dir_list: List[ProjectDir], *, custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None) -> None:
+    def __init__(self, project_dir_list: list[ProjectDir], *, custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None) -> None:
         self.project_dir_list = project_dir_list
         self.custom_production_volume_list = custom_production_volume_list
 
@@ -195,12 +195,12 @@ class MergingVisualizationFile:
 
 
 def merge_visualization_dir(  # pylint: disable=too-many-statements
-    project_dir_list: List[ProjectDir],
+    project_dir_list: list[ProjectDir],
     task_completion_criteria: TaskCompletionCriteria,
     output_project_dir: ProjectDir,
     *,
     custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None,
-    user_id_list: Optional[List[str]] = None,
+    user_id_list: Optional[list[str]] = None,
     minimal_output: bool = False,
 ) -> None:
     merging_obj = MergingVisualizationFile(project_dir_list, custom_production_volume_list=custom_production_volume_list)

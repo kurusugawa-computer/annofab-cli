@@ -1,6 +1,6 @@
 import argparse
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 import pandas
 import requests
@@ -30,7 +30,7 @@ class ListOrganizationMember(CommandLine):
         "status",
     ]
 
-    def get_organization_member_list(self, organization_name: str) -> List[Dict[str, Any]]:
+    def get_organization_member_list(self, organization_name: str) -> list[dict[str, Any]]:
         organization_member_list = self.service.wrapper.get_all_organization_members(organization_name)
         logger.debug(f"組織メンバ一覧の件数: {len(organization_member_list)}")
         if len(organization_member_list) == 10000:

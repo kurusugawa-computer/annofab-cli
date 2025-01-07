@@ -4,7 +4,7 @@ import argparse
 import logging
 import sys
 from pathlib import Path
-from typing import Any, List, Optional
+from typing import Any, Optional
 
 import annofabapi
 import requests
@@ -143,7 +143,7 @@ class DeleteAnnotationMain(CommandLineWithConfirm):
 
     def delete_annotation_for_task_list(  # noqa: ANN201
         self,
-        task_id_list: List[str],
+        task_id_list: list[str],
         annotation_query: Optional[AnnotationQueryForAPI] = None,
         backup_dir: Optional[Path] = None,
     ):

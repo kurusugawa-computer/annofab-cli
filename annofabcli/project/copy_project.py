@@ -3,8 +3,9 @@ from __future__ import annotations
 import argparse
 import logging
 import uuid
+from collections.abc import Collection
 from enum import Enum
-from typing import Any, Collection, Dict, Optional
+from typing import Any, Optional
 
 from annofabapi.models import OrganizationMemberRole, ProjectJobType, ProjectMemberRole
 
@@ -86,7 +87,7 @@ class CopyProject(CommandLine):
             logger.info(f"{src_project_title} ({src_project_id} をコピーせずに終了します。")
             return
 
-        request_body: Dict[str, Any] = {}
+        request_body: dict[str, Any] = {}
 
         if set_copied_targets is not None:
             for target in set_copied_targets:

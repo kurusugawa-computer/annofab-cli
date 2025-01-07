@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from functools import partial
 from multiprocessing import Pool
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 import annofabapi
 import pandas
@@ -74,7 +74,7 @@ class SubPutSupplementaryData:
         self.service = service
         self.facade = facade
         self.all_yes = all_yes
-        self.supplementary_data_cache: Dict[str, List[SupplementaryData]] = {}
+        self.supplementary_data_cache: dict[str, list[SupplementaryData]] = {}
 
     def put_supplementary_data(self, project_id: str, supplementary_data: SupplementaryDataForPut):  # noqa: ANN201
         file_path = get_file_scheme_path(supplementary_data.supplementary_data_path)
@@ -146,7 +146,7 @@ class SubPutSupplementaryData:
             message_for_confirm += f"supplementary_data_id={csv_supplementary_data.supplementary_data_id} を上書きします。"
         return self.confirm_processing(message_for_confirm)
 
-    def get_supplementary_data_list_cached(self, project_id: str, input_data_id: str) -> List[SupplementaryData]:
+    def get_supplementary_data_list_cached(self, project_id: str, input_data_id: str) -> list[SupplementaryData]:
         key = f"{project_id},{input_data_id}"
         if key not in self.supplementary_data_cache:
             supplementary_data_list, _ = self.service.api.get_supplementary_data_list(project_id, input_data_id)
@@ -238,7 +238,7 @@ class PutSupplementaryData(CommandLine):
     def put_supplementary_data_list(
         self,
         project_id: str,
-        supplementary_data_list: List[CsvSupplementaryData],
+        supplementary_data_list: list[CsvSupplementaryData],
         overwrite: bool = False,  # noqa: FBT001, FBT002
         parallelism: Optional[int] = None,
     ) -> None:
@@ -274,11 +274,11 @@ class PutSupplementaryData(CommandLine):
         logger.info(f"{project_title} に、{count_put_supplementary_data} / {len(supplementary_data_list)} 件の補助情報を登録しました。")
 
     @staticmethod
-    def get_supplementary_data_list_from_dict(supplementary_data_dict_list: List[Dict[str, Any]]) -> List[CsvSupplementaryData]:
+    def get_supplementary_data_list_from_dict(supplementary_data_dict_list: list[dict[str, Any]]) -> list[CsvSupplementaryData]:
         return [CsvSupplementaryData.from_dict(e) for e in supplementary_data_dict_list]
 
     @staticmethod
-    def get_supplementary_data_list_from_csv(csv_path: Path) -> List[CsvSupplementaryData]:
+    def get_supplementary_data_list_from_csv(csv_path: Path) -> list[CsvSupplementaryData]:
         def create_supplementary_data(e: Any):  # noqa: ANN202, ANN401
             supplementary_data_id = e.supplementary_data_id if not pandas.isna(e.supplementary_data_id) else None
             supplementary_data_type = e.supplementary_data_type if not pandas.isna(e.supplementary_data_type) else None
