@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import argparse
-import asyncio
 import copy
 import json
 import logging
@@ -147,18 +146,14 @@ class ListInputDataMergedTask(CommandLine):
 
         return True
 
-    def download_json_files(self, project_id: str, output_dir: Path, is_latest: bool) -> None:  # noqa: FBT001
-        loop = asyncio.get_event_loop()
+    def download_json_files(self, project_id: str, output_dir: Path, *, is_latest: bool) -> None:
         downloading_obj = DownloadingFile(self.service)
-        gather = asyncio.gather(
-            downloading_obj.download_input_data_json_with_async(
-                project_id,
-                dest_path=str(output_dir / "input_data.json"),
-                is_latest=is_latest,
-            ),
-            downloading_obj.download_task_json_with_async(project_id, dest_path=str(output_dir / "task.json"), is_latest=is_latest),
+        downloading_obj.download_input_data_json(
+            project_id,
+            dest_path=str(output_dir / "input_data.json"),
+            is_latest=is_latest,
         )
-        loop.run_until_complete(gather)
+        downloading_obj.download_task_json(project_id, dest_path=str(output_dir / "task.json"), is_latest=is_latest)
 
     def main(self) -> None:
         args = self.args
@@ -169,7 +164,7 @@ class ListInputDataMergedTask(CommandLine):
         if project_id is not None:
             super().validate_project(project_id, None)
             cache_dir = annofabcli.common.utils.get_cache_dir()
-            self.download_json_files(project_id, cache_dir, args.latest)
+            self.download_json_files(project_id, cache_dir, is_latest=args.latest)
             task_json_path = cache_dir / "task.json"
             input_data_json_path = cache_dir / "input_data.json"
         else:
