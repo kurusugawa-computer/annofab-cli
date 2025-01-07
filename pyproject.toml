@@ -17,7 +17,7 @@ classifiers = [
 
 
 [tool.poetry.dependencies]
-python = "^3.8"
+python = "^3.9"
 requests = "*"
 pyyaml = "*"
 dictdiffer = "*"
@@ -25,7 +25,7 @@ more-itertools = "*"
 jmespath = "*"
 pyquery = "*"
 isodate = "*"
-annofabapi = "^1"
+annofabapi = "^1.1"
 python-datauri = "*"
 numpy = "*"
 pandas = "^2"
