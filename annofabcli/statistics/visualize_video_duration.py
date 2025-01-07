@@ -106,7 +106,7 @@ def plot_video_duration(
         bins_sequence = numpy.arange(0, max_duration + bin_width, bin_width)
 
         if bins_sequence[-1] == max_duration:
-            bins_sequence = numpy.append(bins_sequence, bins_sequence[-1] + bin_width)
+            bins_sequence = numpy.append(bins_sequence, bins_sequence[-1] + bin_width)  # type: ignore[assignment]
 
         bins: Union[int, numpy.ndarray] = bins_sequence
     else:
