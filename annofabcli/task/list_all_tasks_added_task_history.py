@@ -6,7 +6,7 @@ import logging
 import sys
 import tempfile
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set
+from typing import Any, Optional
 
 import annofabapi
 from annofabapi.models import ProjectMemberRole, TaskHistory
@@ -27,7 +27,7 @@ from annofabcli.task.list_tasks_added_task_history import AddingAdditionalInfoTo
 logger = logging.getLogger(__name__)
 
 
-TaskHistoryDict = Dict[str, List[TaskHistory]]
+TaskHistoryDict = dict[str, list[TaskHistory]]
 """タスク履歴の辞書（key: task_id, value: タスク履歴一覧）"""
 
 DEFAULT_WAIT_OPTIONS = WaitOptions(interval=60, max_tries=360)
@@ -87,8 +87,8 @@ class ListAllTasksAddedTaskHistoryMain:
 
     @staticmethod
     def match_task_with_conditions(
-        task: Dict[str, Any],
-        task_id_set: Optional[Set[str]] = None,
+        task: dict[str, Any],
+        task_id_set: Optional[set[str]] = None,
         task_query: Optional[TaskQuery] = None,
     ) -> bool:
         result = True
@@ -101,10 +101,10 @@ class ListAllTasksAddedTaskHistoryMain:
 
     def filter_task_list(
         self,
-        task_list: List[Dict[str, Any]],
-        task_id_list: Optional[List[str]] = None,
+        task_list: list[dict[str, Any]],
+        task_id_list: Optional[list[str]] = None,
         task_query: Optional[TaskQuery] = None,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         if task_query is not None:
             task_query = self.facade.set_account_id_of_task_query(self.project_id, task_query)
 

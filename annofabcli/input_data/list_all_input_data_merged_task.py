@@ -8,7 +8,7 @@ import logging
 import sys
 from collections import defaultdict
 from pathlib import Path
-from typing import Any, Dict, Optional, Set
+from typing import Any, Optional
 
 import pandas
 from annofabapi.dataclass.input import InputData
@@ -105,8 +105,8 @@ def create_df_input_data_with_merged_task(input_data_list: list[dict[str, Any]])
 
 
 def match_input_data(
-    input_data: Dict[str, Any],
-    input_data_id_set: Optional[Set[str]] = None,
+    input_data: dict[str, Any],
+    input_data_id_set: Optional[set[str]] = None,
     input_data_query: Optional[InputDataQuery] = None,
 ) -> bool:
     result = True
@@ -118,7 +118,7 @@ def match_input_data(
     return result
 
 
-def match_parent_task_list_of_input_data_with(input_data: Dict[str, Any], *, is_not_used_by_task: bool, is_used_by_multiple_task: bool) -> bool:
+def match_parent_task_list_of_input_data_with(input_data: dict[str, Any], *, is_not_used_by_task: bool, is_used_by_multiple_task: bool) -> bool:
     parent_task_list = input_data["parent_task_list"]
     if is_not_used_by_task:
         return len(parent_task_list) == 0

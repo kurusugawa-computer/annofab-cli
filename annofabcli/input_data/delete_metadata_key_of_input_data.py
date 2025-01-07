@@ -6,8 +6,9 @@ import json
 import logging
 import multiprocessing
 import sys
+from collections.abc import Collection
 from functools import partial
-from typing import Collection, Dict, Optional
+from typing import Optional
 
 import annofabapi
 from annofabapi.models import ProjectMemberRole
@@ -25,7 +26,7 @@ from annofabcli.common.facade import AnnofabApiFacade
 
 logger = logging.getLogger(__name__)
 
-Metadata = Dict[str, str]
+Metadata = dict[str, str]
 """
 入力データのメタデータ。
 値はstr型しか指定できない。

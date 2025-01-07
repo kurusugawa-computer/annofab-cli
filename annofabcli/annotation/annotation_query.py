@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Optional, Union
 
 import more_itertools
 from annofabapi.dataclass.annotation import AdditionalDataV1
@@ -272,7 +272,7 @@ class AnnotationQueryForCLI(DataClassJsonMixin):
     label: Optional[str] = None
     """ラベル名（英語）"""
 
-    attributes: Optional[Dict[str, AttributeValue]] = None
+    attributes: Optional[dict[str, AttributeValue]] = None
     """
     keyが属性名(英語),valueが属性値のdict。
     属性が排他選択の場合、属性値は選択肢名(英語)。
@@ -327,7 +327,7 @@ class AnnotationQueryForAPI(DataClassJsonMixin):
     label_id: Optional[str] = None
     """ラベルID"""
 
-    attributes: Optional[List[AdditionalDataV1]] = None
+    attributes: Optional[list[AdditionalDataV1]] = None
     """属性IDと属性値のList"""
 
     def __post_init__(self) -> None:

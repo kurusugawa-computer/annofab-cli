@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import argparse
 import logging
-from typing import Any, Collection, Optional
+from collections.abc import Collection
+from typing import Any, Optional
 
 import annofabapi
 import more_itertools

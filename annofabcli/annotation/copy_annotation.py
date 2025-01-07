@@ -7,7 +7,7 @@ import multiprocessing
 import sys
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Any, Optional, Tuple
+from typing import Any, Optional
 
 import annofabapi
 from annofabapi.utils import can_put_annotation
@@ -77,7 +77,7 @@ def parse_copy_target(str_copy_target: str) -> CopyTarget:
     * `task1/input5:task2/input6`
     """
 
-    def _parse_with_slash(target: str) -> Tuple[str, Optional[str]]:
+    def _parse_with_slash(target: str) -> tuple[str, Optional[str]]:
         tmp = target.split("/")
         if len(tmp) == 1:
             return (tmp[0], None)

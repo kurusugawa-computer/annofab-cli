@@ -4,7 +4,7 @@ import logging
 import multiprocessing
 import uuid
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Optional
 
 import annofabapi
 import annofabapi.utils
@@ -29,23 +29,23 @@ class AddedComment(DataClassJsonMixin):
     comment: str
     """コメントの中身"""
 
-    data: Optional[Dict[str, Any]]
+    data: Optional[dict[str, Any]]
     """コメントを付与する位置や区間"""
 
     annotation_id: Optional[str]
     """コメントに紐付けるアノテーションID"""
 
-    phrases: Optional[List[str]]
+    phrases: Optional[list[str]]
     """参照している定型指摘ID"""
 
 
-AddedCommentsForTask = Dict[str, List[AddedComment]]
+AddedCommentsForTask = dict[str, list[AddedComment]]
 """
 タスク配下の追加対象のコメント
 keyはinput_data_id
 """
 
-AddedComments = Dict[str, AddedCommentsForTask]
+AddedComments = dict[str, AddedCommentsForTask]
 """
 追加対象のコメント
 keyはtask_id
@@ -63,17 +63,17 @@ class PutCommentMain(CommandLineWithConfirm):
 
         CommandLineWithConfirm.__init__(self, all_yes)
 
-    def _create_request_body(self, task: Dict[str, Any], input_data_id: str, comments: List[AddedComment]) -> List[Dict[str, Any]]:
+    def _create_request_body(self, task: dict[str, Any], input_data_id: str, comments: list[AddedComment]) -> list[dict[str, Any]]:
         """batch_update_comments に渡すリクエストボディを作成する。"""
 
-        def _create_dict_annotation_id() -> Dict[str, str]:
+        def _create_dict_annotation_id() -> dict[str, str]:
             content, _ = self.service.api.get_editor_annotation(self.project_id, task["task_id"], input_data_id)
             details = content["details"]
             return {e["annotation_id"]: e["label_id"] for e in details}
 
         dict_annotation_id_label_id = _create_dict_annotation_id()
 
-        def _convert(comment: AddedComment) -> Dict[str, Any]:
+        def _convert(comment: AddedComment) -> dict[str, Any]:
             return {
                 "comment_id": str(uuid.uuid4()),
                 "phase": task["phase"],
@@ -94,7 +94,7 @@ class PutCommentMain(CommandLineWithConfirm):
 
         return [_convert(e) for e in comments]
 
-    def change_to_working_status(self, project_id: str, task: Dict[str, Any]) -> Dict[str, Any]:
+    def change_to_working_status(self, project_id: str, task: dict[str, Any]) -> dict[str, Any]:
         """
         作業中状態に遷移する。必要ならば担当者を自分自身に変更する。
 
@@ -121,7 +121,7 @@ class PutCommentMain(CommandLineWithConfirm):
 
     def _can_add_comment(
         self,
-        task: Dict[str, Any],
+        task: dict[str, Any],
     ) -> bool:
         task_id = task["task_id"]
 
@@ -203,7 +203,7 @@ class PutCommentMain(CommandLineWithConfirm):
 
     def add_comments_for_task_wrapper(
         self,
-        tpl: Tuple[int, Tuple[str, AddedCommentsForTask]],
+        tpl: tuple[int, tuple[str, AddedCommentsForTask]],
     ) -> int:
         task_index, (task_id, comments_for_task) = tpl
         return self.add_comments_for_task(task_id=task_id, comments_for_task=comments_for_task, task_index=task_index)
@@ -242,7 +242,7 @@ class PutCommentMain(CommandLineWithConfirm):
         logger.info(f"{added_comments_count} / {comments_count} 件の入力データに{self.comment_type_name}を付与しました。")
 
 
-def convert_cli_comments(dict_comments: Dict[str, Any], *, comment_type: CommentType) -> AddedComments:
+def convert_cli_comments(dict_comments: dict[str, Any], *, comment_type: CommentType) -> AddedComments:
     """
     CLIから受け取ったコメント情報を、データクラスに変換する。
     """
@@ -256,13 +256,13 @@ def convert_cli_comments(dict_comments: Dict[str, Any], *, comment_type: Comment
         comment: str
         """コメントの中身"""
 
-        data: Dict[str, Any]
+        data: dict[str, Any]
         """コメントを付与する位置や区間"""
 
         annotation_id: Optional[str] = None
         """コメントに紐付けるアノテーションID"""
 
-        phrases: Optional[List[str]] = None
+        phrases: Optional[list[str]] = None
         """参照している定型指摘ID"""
 
     @dataclass

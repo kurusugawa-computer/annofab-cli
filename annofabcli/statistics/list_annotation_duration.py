@@ -10,10 +10,11 @@ import sys
 import tempfile
 import zipfile
 from collections import defaultdict
+from collections.abc import Collection, Iterator
 from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
-from typing import Any, Collection, Iterator, Optional, Tuple, Union
+from typing import Any, Optional, Union
 
 import annofabapi
 import pandas
@@ -45,7 +46,7 @@ from annofabcli.statistics.list_annotation_count import AnnotationSpecs
 
 logger = logging.getLogger(__name__)
 
-AttributeValueKey = Tuple[str, str, str]
+AttributeValueKey = tuple[str, str, str]
 """
 属性のキー.
 tuple[label_name_en, attribute_name_en, attribute_value] で表す。
@@ -53,7 +54,7 @@ tuple[label_name_en, attribute_name_en, attribute_value] で表す。
 
 LabelKeys = Collection[str]
 
-AttributeNameKey = Tuple[str, str]
+AttributeNameKey = tuple[str, str]
 """
 属性名のキー.
 tuple[label_name_en, attribute_name_en] で表す。

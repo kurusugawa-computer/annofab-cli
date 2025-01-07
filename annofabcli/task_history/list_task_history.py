@@ -1,6 +1,6 @@
 import argparse
 import logging
-from typing import Dict, List, Optional
+from typing import Optional
 
 import annofabapi
 from annofabapi.models import TaskHistory
@@ -13,7 +13,7 @@ from annofabcli.common.visualize import AddProps
 
 logger = logging.getLogger(__name__)
 
-TaskHistoryDict = Dict[str, List[TaskHistory]]
+TaskHistoryDict = dict[str, list[TaskHistory]]
 """全タスクのタスク履歴一覧の集合体。keyはtask_id"""
 
 
@@ -23,7 +23,7 @@ class ListTaskHistoryMain:
         self.facade = AnnofabApiFacade(service)
 
     @staticmethod
-    def filter_task_history_dict(task_history_dict: TaskHistoryDict, task_id_list: List[str]) -> TaskHistoryDict:
+    def filter_task_history_dict(task_history_dict: TaskHistoryDict, task_id_list: list[str]) -> TaskHistoryDict:
         filtered_task_history_dict: TaskHistoryDict = {}
         for task_id in task_id_list:
             task_history_list = task_history_dict.get(task_id)
@@ -33,7 +33,7 @@ class ListTaskHistoryMain:
                 filtered_task_history_dict[task_id] = task_history_list
         return filtered_task_history_dict
 
-    def get_task_history_dict_from_project_id(self, project_id: str, task_id_list: List[str]) -> TaskHistoryDict:
+    def get_task_history_dict_from_project_id(self, project_id: str, task_id_list: list[str]) -> TaskHistoryDict:
         logger.info(f"{len(task_id_list)} 件のタスクの履歴情報を取得します。")
         task_history_dict: TaskHistoryDict = {}
         for task_index, task_id in enumerate(task_id_list):
@@ -49,11 +49,11 @@ class ListTaskHistoryMain:
 
         return task_history_dict
 
-    def get_all_task_id_list(self, project_id: str) -> List[str]:
+    def get_all_task_id_list(self, project_id: str) -> list[str]:
         all_task_list = self.service.wrapper.get_all_tasks(project_id)
         return [e["task_id"] for e in all_task_list]
 
-    def get_task_history_dict_for_output(self, project_id: str, task_id_list: Optional[List[str]] = None) -> TaskHistoryDict:
+    def get_task_history_dict_for_output(self, project_id: str, task_id_list: Optional[list[str]] = None) -> TaskHistoryDict:
         """出力対象のタスク履歴情報を取得する"""
         if task_id_list is None:
             task_id_list = self.get_all_task_id_list(project_id)
@@ -67,7 +67,7 @@ class ListTaskHistoryMain:
         return task_history_dict
 
     @staticmethod
-    def to_all_task_history_list_from_dict(task_history_dict: TaskHistoryDict) -> List[TaskHistory]:
+    def to_all_task_history_list_from_dict(task_history_dict: TaskHistoryDict) -> list[TaskHistory]:
         all_task_history_list = []
         for task_history_list in task_history_dict.values():
             all_task_history_list.extend(task_history_list)
@@ -78,7 +78,7 @@ class ListTaskHistory(CommandLine):
     def print_task_history_list(
         self,
         project_id: str,
-        task_id_list: Optional[List[str]],
+        task_id_list: Optional[list[str]],
         arg_format: FormatArgument,
     ) -> None:
         """

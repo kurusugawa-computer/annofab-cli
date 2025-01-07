@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import argparse
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 import annofabapi
 from annofabapi.dataclass.task import Task
@@ -210,14 +210,14 @@ class DeleteTaskMain(CommandLineWithConfirm):
         message_for_confirm = f"タスク'{task_id}' を削除しますか？"
         return self.confirm_processing(message_for_confirm)
 
-    def get_annotation_list(self, task_id: str) -> List[Dict[str, Any]]:
+    def get_annotation_list(self, task_id: str) -> list[dict[str, Any]]:
         query_params = {"query": {"task_id": task_id, "exact_match_task_id": True}}
         annotation_list = self.service.wrapper.get_all_annotation_list(self.project_id, query_params=query_params)
         return annotation_list
 
     def delete_task_list(  # noqa: ANN201
         self,
-        task_id_list: List[str],
+        task_id_list: list[str],
         task_query: Optional[TaskQuery] = None,
     ):
         """

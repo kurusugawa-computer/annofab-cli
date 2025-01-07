@@ -6,9 +6,10 @@ import json
 import logging
 import multiprocessing
 import sys
+from collections.abc import Collection
 from dataclasses import dataclass
 from functools import partial
-from typing import Collection, Dict, Optional, Union
+from typing import Optional, Union
 
 import annofabapi
 from annofabapi.models import ProjectMemberRole
@@ -26,7 +27,7 @@ from annofabcli.common.facade import AnnofabApiFacade
 
 logger = logging.getLogger(__name__)
 
-Metadata = Dict[str, Union[str, bool, int]]
+Metadata = dict[str, Union[str, bool, int]]
 
 
 @dataclass(frozen=True)

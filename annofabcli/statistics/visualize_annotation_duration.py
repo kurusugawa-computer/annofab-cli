@@ -5,10 +5,11 @@ import logging
 import sys
 import tempfile
 from collections import defaultdict
+from collections.abc import Collection, Sequence
 from enum import Enum
 from functools import partial
 from pathlib import Path
-from typing import Any, Collection, Optional, Sequence
+from typing import Any, Optional
 
 import bokeh
 import numpy

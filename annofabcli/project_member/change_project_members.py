@@ -1,7 +1,8 @@
 import argparse
 import logging
 import sys
-from typing import Any, Collection, Dict, List, Optional
+from collections.abc import Collection
+from typing import Any, Optional
 
 import requests
 from annofabapi.models import ProjectMember, ProjectMemberRole, ProjectMemberStatus
@@ -30,7 +31,7 @@ class ChangeProjectMembers(CommandLine):
         user_id: str,
         old_member: ProjectMember,
         member_role: Optional[ProjectMemberRole] = None,
-        member_info: Optional[Dict[str, Any]] = None,
+        member_info: Optional[dict[str, Any]] = None,
     ) -> ProjectMember:
         """
         1人のプロジェクトメンバを変更する。
@@ -73,7 +74,7 @@ class ChangeProjectMembers(CommandLine):
         project_id: str,
         user_id_list: Collection[str],
         member_role: Optional[ProjectMemberRole] = None,
-        member_info: Optional[Dict[str, Any]] = None,
+        member_info: Optional[dict[str, Any]] = None,
     ):
         """
         プロジェクトメンバのメンバ情報を更新する。
@@ -120,13 +121,13 @@ class ChangeProjectMembers(CommandLine):
 
         logger.info(f"{project_title} に、{count_invite_members} / {len(user_id_list)} 件のプロジェクトメンバを変更しました。")
 
-    def get_all_user_id_list_except_myself(self, project_id: str) -> List[str]:
+    def get_all_user_id_list_except_myself(self, project_id: str) -> list[str]:
         """自分自身を除いた、すべてのプロジェクトメンバを取得する"""
         member_list = self.service.wrapper.get_all_project_members(project_id)
         return [e["user_id"] for e in member_list if e["user_id"] != self.service.api.login_user_id]
 
     @staticmethod
-    def validate(args: argparse.Namespace, member_info: Optional[Dict[str, Any]] = None) -> bool:
+    def validate(args: argparse.Namespace, member_info: Optional[dict[str, Any]] = None) -> bool:
         COMMON_MESSAGE = "annofabcli project_member change: error:"  # noqa: N806
         if args.role is None and args.member_info is None:
             print(f"{COMMON_MESSAGE} argument `--role`または`--member_info`のどちらかは、必ず指定してください。", file=sys.stderr)  # noqa: T201
@@ -140,7 +141,7 @@ class ChangeProjectMembers(CommandLine):
             return True
 
     @staticmethod
-    def validate_member_info(member_info: Dict[str, Any]) -> bool:
+    def validate_member_info(member_info: dict[str, Any]) -> bool:
         KEYS = ["sampling_inspection_rate", "sampling_acceptance_rate"]  # noqa: N806
         return any(k in member_info for k in KEYS)
 

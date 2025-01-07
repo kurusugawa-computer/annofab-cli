@@ -4,9 +4,10 @@ import argparse
 import json
 import logging
 import sys
+from collections.abc import Collection, Iterator
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Callable, Collection, Dict, Iterator, Optional, Tuple, Union
+from typing import Any, Callable, Optional, Union
 
 import pandas
 from annofabapi.parser import SimpleAnnotationParser, lazy_parse_simple_annotation_dir, lazy_parse_simple_annotation_zip
@@ -26,7 +27,7 @@ from annofabcli.common.facade import TaskQuery, match_annotation_with_task_query
 logger = logging.getLogger(__name__)
 
 
-Color = Union[str, Tuple[int, int, int]]
+Color = Union[str, tuple[int, int, int]]
 IsParserFunc = Callable[[SimpleAnnotationParser], bool]
 
 
@@ -58,7 +59,7 @@ class DrawingAnnotationForOneImage:
 
     def __init__(
         self,
-        label_color_dict: Optional[Dict[str, Color]] = None,
+        label_color_dict: Optional[dict[str, Color]] = None,
         target_label_names: Optional[Collection[str]] = None,
         polyline_labels: Optional[Collection[str]] = None,
         drawing_options: Optional[DrawingOptions] = None,
@@ -102,25 +103,25 @@ class DrawingAnnotationForOneImage:
                 with Image.open(f) as outer_image:
                     draw.bitmap([0, 0], outer_image, fill=color)
 
-        def draw_bounding_box(data: Dict[str, Any], color: Color):  # noqa: ANN202
+        def draw_bounding_box(data: dict[str, Any], color: Color):  # noqa: ANN202
             xy = [
                 (data["left_top"]["x"], data["left_top"]["y"]),
                 (data["right_bottom"]["x"], data["right_bottom"]["y"]),
             ]
             draw.rectangle(xy, outline=color, width=self.drawing_options.line_width)
 
-        def draw_single_point(data: Dict[str, Any], color: Color, radius: int = 2):  # noqa: ANN202
+        def draw_single_point(data: dict[str, Any], color: Color, radius: int = 2):  # noqa: ANN202
             point_x = data["point"]["x"]
             point_y = data["point"]["y"]
             draw.ellipse([(point_x - radius, point_y - radius), (point_x + radius, point_y + radius)], fill=color)
 
-        def draw_closed_polyline(data: Dict[str, Any], color: Color):  # noqa: ANN202
+        def draw_closed_polyline(data: dict[str, Any], color: Color):  # noqa: ANN202
             points = data["points"]
             first_point = points[0]
             xy = [(e["x"], e["y"]) for e in points] + [(first_point["x"], first_point["y"])]
             draw.line(xy, fill=color, width=self.drawing_options.line_width)
 
-        def draw_polyline(data: Dict[str, Any], color: Color):  # noqa: ANN202
+        def draw_polyline(data: dict[str, Any], color: Color):  # noqa: ANN202
             xy = [(e["x"], e["y"]) for e in data["points"]]
             draw.line(xy, fill=color, width=self.drawing_options.line_width)
 
@@ -215,12 +216,12 @@ def create_is_target_parser_func(
 def draw_annotation_all(  # noqa: ANN201, PLR0913
     iter_parser: Iterator[SimpleAnnotationParser],
     image_dir: Optional[Path],
-    input_data_id_relation_dict: Optional[Dict[str, str]],
+    input_data_id_relation_dict: Optional[dict[str, str]],
     output_dir: Path,
     *,
     target_task_ids: Optional[Collection[str]] = None,
     task_query: Optional[TaskQuery] = None,
-    label_color_dict: Optional[Dict[str, Color]] = None,
+    label_color_dict: Optional[dict[str, Color]] = None,
     target_label_names: Optional[Collection[str]] = None,
     polyline_labels: Optional[Collection[str]] = None,
     drawing_options: Optional[DrawingOptions] = None,
@@ -284,7 +285,7 @@ class DrawAnnotation(CommandLineWithoutWebapi):
     COMMON_MESSAGE = "annofabcli filesystem draw_annotation:"
 
     @staticmethod
-    def _create_label_color(args_label_color: str) -> Dict[str, Color]:
+    def _create_label_color(args_label_color: str) -> dict[str, Color]:
         label_color_dict = get_json_from_args(args_label_color)
         for label_name, color in label_color_dict.items():
             if isinstance(color, list):

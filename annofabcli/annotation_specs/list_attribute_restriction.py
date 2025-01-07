@@ -4,9 +4,10 @@ import argparse
 import json
 import logging
 import sys
+from collections.abc import Collection
 from enum import Enum
 from pathlib import Path
-from typing import Any, Collection, Optional
+from typing import Any, Optional
 
 from more_itertools import first_true
 

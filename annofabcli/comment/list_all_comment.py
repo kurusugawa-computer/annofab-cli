@@ -8,8 +8,9 @@ import argparse
 import json
 import logging
 import tempfile
+from collections.abc import Collection
 from pathlib import Path
-from typing import Any, Collection, Optional
+from typing import Any, Optional
 
 import annofabapi
 import pandas

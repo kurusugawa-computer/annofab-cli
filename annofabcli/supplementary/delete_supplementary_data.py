@@ -3,7 +3,7 @@ import logging
 import sys
 from collections import defaultdict
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 import annofabapi
 import pandas
@@ -23,7 +23,7 @@ from annofabcli.common.facade import AnnofabApiFacade
 
 logger = logging.getLogger(__name__)
 
-InputDataSupplementaryDataDict = Dict[str, List[str]]
+InputDataSupplementaryDataDict = dict[str, list[str]]
 """
 input_data_idとsupplementary_data_idの関係を表したdict.
 key: input_data_id, value: supplementary_data_idのList
@@ -48,7 +48,7 @@ def get_input_data_supplementary_data_dict_from_csv(csv_path: Path) -> InputData
     return input_data_dict
 
 
-def get_input_data_supplementary_data_dict_from_list(supplementary_data_list: List[Dict[str, Any]]) -> InputDataSupplementaryDataDict:
+def get_input_data_supplementary_data_dict_from_list(supplementary_data_list: list[dict[str, Any]]) -> InputDataSupplementaryDataDict:
     input_data_dict = defaultdict(list)
     for supplementary_data in supplementary_data_list:
         input_data_id = supplementary_data["input_data_id"]
@@ -63,7 +63,7 @@ class DeleteSupplementaryDataMain(CommandLineWithConfirm):
         self.facade = AnnofabApiFacade(service)
         CommandLineWithConfirm.__init__(self, all_yes)
 
-    def delete_supplementary_data_list_for_input_data(self, project_id: str, input_data_id: str, supplementary_data_id_list: List[str]) -> int:
+    def delete_supplementary_data_list_for_input_data(self, project_id: str, input_data_id: str, supplementary_data_id_list: list[str]) -> int:
         """
         入力データ配下の補助情報を削除する。
 
@@ -77,7 +77,7 @@ class DeleteSupplementaryDataMain(CommandLineWithConfirm):
 
         """
 
-        def _get_supplementary_data_list(supplementary_data_id: str) -> Optional[Dict[str, Any]]:
+        def _get_supplementary_data_list(supplementary_data_id: str) -> Optional[dict[str, Any]]:
             return first_true(supplementary_data_list, pred=lambda e: e["supplementary_data_id"] == supplementary_data_id)
 
         input_data = self.service.wrapper.get_input_data_or_none(project_id, input_data_id)
@@ -135,7 +135,7 @@ class DeleteSupplementaryDataMain(CommandLineWithConfirm):
         logger.info(f"{deleted_count} / {total_count} 件の補助情報を削除しました。")
 
     def delete_supplementary_data_list_for_input_data2(
-        self, project_id: str, input_data_id: str, supplementary_data_list: List[Dict[str, Any]]
+        self, project_id: str, input_data_id: str, supplementary_data_list: list[dict[str, Any]]
     ) -> int:
         """
         入力データ配下の補助情報を削除する。
@@ -169,8 +169,8 @@ class DeleteSupplementaryDataMain(CommandLineWithConfirm):
 
         return deleted_count
 
-    def delete_supplementary_data_list_by_input_data_id(self, project_id: str, input_data_id_list: List[str]):  # noqa: ANN201
-        dict_deleted_count: Dict[str, int] = {}
+    def delete_supplementary_data_list_by_input_data_id(self, project_id: str, input_data_id_list: list[str]):  # noqa: ANN201
+        dict_deleted_count: dict[str, int] = {}
         for input_data_id in input_data_id_list:
             input_data = self.service.wrapper.get_input_data_or_none(project_id, input_data_id)
             if input_data is None:

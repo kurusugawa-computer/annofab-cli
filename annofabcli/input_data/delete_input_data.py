@@ -1,6 +1,6 @@
 import argparse
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 import requests
 from annofabapi.models import ProjectMemberRole
@@ -18,7 +18,7 @@ class DeleteInputData(CommandLine):
     """
 
     def delete_supplementary_data_list_for_input_data(
-        self, project_id: str, input_data_id: str, supplementary_data_list: List[Dict[str, Any]]
+        self, project_id: str, input_data_id: str, supplementary_data_list: list[dict[str, Any]]
     ) -> int:
         """
         入力データ配下の補助情報を削除する。
@@ -52,13 +52,13 @@ class DeleteInputData(CommandLine):
 
         return deleted_count
 
-    def confirm_delete_input_data(self, input_data_id: str, input_data_name: str, used_task_id_list: List[str]) -> bool:
+    def confirm_delete_input_data(self, input_data_id: str, input_data_name: str, used_task_id_list: list[str]) -> bool:
         message_for_confirm = f"入力データ(input_data_id='{input_data_id}', input_data_name='{input_data_name}') を削除しますか？"
         if len(used_task_id_list) > 0:
             message_for_confirm += f"タスク{used_task_id_list}に使われています。"
         return self.confirm_processing(message_for_confirm)
 
-    def confirm_delete_supplementary(self, input_data_id: str, input_data_name: str, supplementary_data_list: List[Dict[str, Any]]) -> bool:
+    def confirm_delete_supplementary(self, input_data_id: str, input_data_name: str, supplementary_data_list: list[dict[str, Any]]) -> bool:
         message_for_confirm = (
             f"入力データに紐づく補助情報 {len(supplementary_data_list)} 件を削除しますか？ "
             f"(input_data_id='{input_data_id}', "
@@ -115,7 +115,7 @@ class DeleteInputData(CommandLine):
                 )
         return True
 
-    def delete_input_data_list(self, project_id: str, input_data_id_list: List[str], delete_supplementary: bool, force: bool):  # noqa: ANN201, FBT001
+    def delete_input_data_list(self, project_id: str, input_data_id_list: list[str], delete_supplementary: bool, force: bool):  # noqa: ANN201, FBT001
         """
         タスクに使われていない入力データを削除する。
         """

@@ -4,7 +4,7 @@
 
 import argparse
 import logging
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Optional
 
 import annofabcli
 import annofabcli.common.cli
@@ -25,7 +25,7 @@ class PrintLabelColor(CommandLine):
     """
 
     @staticmethod
-    def get_rgb(label: Dict[str, Any]) -> Tuple[int, int, int]:
+    def get_rgb(label: dict[str, Any]) -> tuple[int, int, int]:
         color = label["color"]
         return color["red"], color["green"], color["blue"]
 

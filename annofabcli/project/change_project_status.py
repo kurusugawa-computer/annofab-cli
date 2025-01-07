@@ -1,6 +1,6 @@
 import argparse
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 import annofabapi
 import pandas
@@ -15,7 +15,7 @@ from annofabcli.common.facade import AnnofabApiFacade
 logger = logging.getLogger(__name__)
 
 
-def create_minimal_dataframe(project_list: List[Project]):  # noqa: ANN201
+def create_minimal_dataframe(project_list: list[Project]):  # noqa: ANN201
     """必要最小限の列であるDataFrameを作成する"""
     df = pandas.DataFrame(project_list)
     df["last_tasks_updated_datetime"] = [e["summary"]["last_tasks_updated_datetime"] for e in project_list]
@@ -38,14 +38,14 @@ class ChanegProjectStatusMain:
         self.facade = AnnofabApiFacade(service)
 
     @staticmethod
-    def get_account_id_from_user_id(organization_member_list: List[OrganizationMember], user_id: str) -> Optional[str]:
+    def get_account_id_from_user_id(organization_member_list: list[OrganizationMember], user_id: str) -> Optional[str]:
         member = first_true(organization_member_list, pred=lambda e: e["user_id"] == user_id)
         if member is not None:
             return member["account_id"]
         else:
             return None
 
-    def get_project_list_from_project_id(self, project_id_list: List[str]) -> List[Project]:
+    def get_project_list_from_project_id(self, project_id_list: list[str]) -> list[Project]:
         """
         project_idからプロジェクト一覧を取得する。
         """
@@ -61,7 +61,7 @@ class ChanegProjectStatusMain:
 
         return project_list
 
-    def _modify_project_query(self, organization_name: str, project_query: Dict[str, Any]) -> Dict[str, Any]:
+    def _modify_project_query(self, organization_name: str, project_query: dict[str, Any]) -> dict[str, Any]:
         """
         プロジェクト索クエリを修正する。
         ``user_id`` から ``account_id`` に変換する。
@@ -122,7 +122,7 @@ class ChanegProjectStatusMain:
         self.service.api.put_project(project_id, request_body=project)
         return True
 
-    def change_status_for_project_list(self, project_id_list: List[str], status: ProjectStatus, force_suspend: bool = False):  # noqa: ANN201, FBT001, FBT002
+    def change_status_for_project_list(self, project_id_list: list[str], status: ProjectStatus, force_suspend: bool = False):  # noqa: ANN201, FBT001, FBT002
         """
         複数のプロジェクトに対して、プロジェクトのステータスを変更する。
 

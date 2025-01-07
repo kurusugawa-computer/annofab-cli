@@ -1,7 +1,7 @@
 import argparse
 import logging
 import sys
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from annofabapi.models import Project, ProjectJobInfo, ProjectJobType
 
@@ -37,7 +37,7 @@ class ListLastJob(CommandLine):
         else:
             return job_list[-1]
 
-    def get_project_info(self, project_id: str, project: Project, add_details: bool = False) -> Dict[str, Any]:  # noqa: FBT001, FBT002
+    def get_project_info(self, project_id: str, project: Project, add_details: bool = False) -> dict[str, Any]:  # noqa: FBT001, FBT002
         """
         出力対象であるプロジェクトに関する情報を取得する。
 
@@ -61,7 +61,7 @@ class ListLastJob(CommandLine):
 
         return project_info
 
-    def get_last_job_list(self, project_id_list: List[str], job_type: ProjectJobType, add_details: bool = False) -> List[ProjectJobInfo]:  # noqa: FBT001, FBT002
+    def get_last_job_list(self, project_id_list: list[str], job_type: ProjectJobType, add_details: bool = False) -> list[ProjectJobInfo]:  # noqa: FBT001, FBT002
         job_list = []
         for project_id in project_id_list:
             project = self.service.wrapper.get_project_or_none(project_id)
@@ -79,7 +79,7 @@ class ListLastJob(CommandLine):
 
         return job_list
 
-    def print_job_list(self, project_id_list: List[str], job_type: ProjectJobType, add_details: bool = False) -> None:  # noqa: FBT001, FBT002
+    def print_job_list(self, project_id_list: list[str], job_type: ProjectJobType, add_details: bool = False) -> None:  # noqa: FBT001, FBT002
         """
         ジョブ一覧を出力する
 
@@ -92,7 +92,7 @@ class ListLastJob(CommandLine):
         logger.info(f"{len(job_list)} 個のプロジェクトの, job_type={job_type.value} の最新ジョブを出力します。")
         self.print_according_to_format(job_list)
 
-    def get_project_id_list(self, organization_name: str) -> List[str]:
+    def get_project_id_list(self, organization_name: str) -> list[str]:
         """
         進行中で自分自身が所属する project_id を取得する
 

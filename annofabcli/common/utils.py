@@ -6,7 +6,7 @@ import os
 import re
 import sys
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Set, TypeVar, Union
+from typing import Any, Callable, Optional, TypeVar, Union
 
 import dateutil.parser
 import isodate
@@ -22,7 +22,7 @@ T = TypeVar("T")  # Can be anything
 DEFAULT_CSV_FORMAT = {"encoding": "utf_8_sig", "index": False}
 
 
-def read_lines(filepath: str) -> List[str]:
+def read_lines(filepath: str) -> list[str]:
     """ファイルを行単位で読み込む。改行コードを除く"""
     # BOM付きUTF-8のファイルも読み込めるようにする
     # annofabcliが出力するCSVはデフォルトでBOM付きUTF-8。これを加工してannofabcliに読み込ませる場合もあるので、BOM付きUTF-8に対応させた
@@ -31,13 +31,13 @@ def read_lines(filepath: str) -> List[str]:
     return [e.rstrip("\r\n") for e in lines]
 
 
-def read_lines_except_blank_line(filepath: str) -> List[str]:
+def read_lines_except_blank_line(filepath: str) -> list[str]:
     """ファイルを行単位で読み込む。ただし、改行コード、空行を除く"""
     lines = read_lines(filepath)
     return [line for line in lines if line != ""]
 
 
-def duplicated_set(target_list: List[T]) -> Set[T]:
+def duplicated_set(target_list: list[T]) -> set[T]:
     """
     重複しているsetを返す
     Args:
@@ -84,7 +84,7 @@ def print_json(target: Any, is_pretty: bool = False, output: Optional[Union[str,
         output_string(json.dumps(target, ensure_ascii=False), output)
 
 
-def print_csv(df: pandas.DataFrame, output: Optional[Union[str, Path]] = None, to_csv_kwargs: Optional[Dict[str, Any]] = None) -> None:
+def print_csv(df: pandas.DataFrame, output: Optional[Union[str, Path]] = None, to_csv_kwargs: Optional[dict[str, Any]] = None) -> None:
     if output is not None:
         Path(output).parent.mkdir(parents=True, exist_ok=True)
 
@@ -101,7 +101,7 @@ def print_csv(df: pandas.DataFrame, output: Optional[Union[str, Path]] = None, t
         logger.info(f"'{output}'を出力しました。")
 
 
-def print_id_list(id_list: List[Any], output: Optional[Union[str, Path]]) -> None:
+def print_id_list(id_list: list[Any], output: Optional[Union[str, Path]]) -> None:
     s = "\n".join(id_list)
     output_string(s, output)
 
@@ -110,7 +110,7 @@ def print_according_to_format(
     target: Any,  # noqa: ANN401
     format: FormatArgument,  # noqa: A002
     output: Optional[Union[str, Path]] = None,
-    csv_format: Optional[Dict[str, Any]] = None,
+    csv_format: Optional[dict[str, Any]] = None,
 ) -> None:
     """
     コマンドライン引数 ``--format`` の値にしたがって、内容を出力する。
@@ -256,7 +256,7 @@ def read_multiheader_csv(csv_file: str, header_row_count: int = 2, **kwargs) -> 
     return df
 
 
-def get_columns_with_priority(df: pandas.DataFrame, prior_columns: List[Any]) -> List[str]:
+def get_columns_with_priority(df: pandas.DataFrame, prior_columns: list[Any]) -> list[str]:
     """
     優先順位の高い列を先頭にした、列名リストを取得します。
 

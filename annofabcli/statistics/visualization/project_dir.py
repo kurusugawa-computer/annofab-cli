@@ -4,7 +4,7 @@ import json
 import logging
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, List, Optional
+from typing import Any, Optional
 
 from annofabapi.models import TaskPhase
 from dataclasses_json import DataClassJsonMixin
@@ -124,7 +124,7 @@ class ProjectDir(DataClassJsonMixin):
         obj: AbstractPhaseCumulativeProductivity,
         phase: TaskPhase,
         *,
-        user_id_list: Optional[List[str]] = None,
+        user_id_list: Optional[list[str]] = None,
         minimal_output: bool = False,
     ) -> None:
         """
@@ -174,7 +174,7 @@ class ProjectDir(DataClassJsonMixin):
         obj.to_csv(self.project_dir / Path(f"{phase_name}者_{phase_name}開始日list.csv"))
 
     def write_performance_line_graph_per_date(
-        self, obj: AbstractPhaseProductivityPerDate, phase: TaskPhase, *, user_id_list: Optional[List[str]] = None
+        self, obj: AbstractPhaseProductivityPerDate, phase: TaskPhase, *, user_id_list: Optional[list[str]] = None
     ) -> None:
         """
         指定したフェーズの開始日ごとの作業時間や生産性情報を、折れ線グラフとして出力します。
@@ -480,9 +480,9 @@ class ProjectInfo(DataClassJsonMixin):
 class MergingInfo(DataClassJsonMixin):
     """可視化結果のファイルをマージする際の情報"""
 
-    target_dir_list: List[str]
+    target_dir_list: list[str]
     """マージ対象のディレクトリ名"""
-    project_info_list: List[ProjectInfo]
+    project_info_list: list[ProjectInfo]
     """マージ対象のプロジェクト情報"""
     task_completion_criteria: TaskCompletionCriteria
     """タスクの完了条件"""

@@ -3,7 +3,7 @@ from __future__ import annotations
 import argparse
 import logging
 from pathlib import Path
-from typing import Any, List, Optional
+from typing import Any, Optional
 
 import annofabapi
 import more_itertools
@@ -334,7 +334,7 @@ class TasksAddedTaskHistoryOutput:
         self.task_list = task_list
 
     @staticmethod
-    def _get_output_target_columns() -> List[str]:
+    def _get_output_target_columns() -> list[str]:
         base_columns = [
             # タスクの基本情報
             "task_id",

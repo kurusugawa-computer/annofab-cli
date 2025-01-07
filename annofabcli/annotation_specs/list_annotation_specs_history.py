@@ -1,6 +1,6 @@
 import argparse
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 import annofabapi
 
@@ -22,7 +22,7 @@ class AnnotationSpecsHistories(CommandLine):
         super().__init__(service, facade, args)
         self.visualize = AddProps(self.service, args.project_id)
 
-    def get_annotation_specs_histories(self, project_id: str) -> List[Dict[str, Any]]:
+    def get_annotation_specs_histories(self, project_id: str) -> list[dict[str, Any]]:
         annotation_specs_histories, _ = self.service.api.get_annotation_specs_histories(project_id)
         return [self.visualize.add_properties_to_annotation_specs_history(e) for e in annotation_specs_histories]
 

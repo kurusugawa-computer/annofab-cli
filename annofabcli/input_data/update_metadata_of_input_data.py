@@ -7,7 +7,7 @@ import multiprocessing
 import sys
 from dataclasses import dataclass
 from functools import partial
-from typing import Dict, Optional, Tuple
+from typing import Optional
 
 import annofabapi
 from annofabapi.models import ProjectMemberRole
@@ -25,7 +25,7 @@ from annofabcli.common.facade import AnnofabApiFacade
 
 logger = logging.getLogger(__name__)
 
-Metadata = Dict[str, str]
+Metadata = dict[str, str]
 """
 入力データのメタデータ。
 値はstr型しか指定できない。
@@ -83,7 +83,7 @@ class UpdateMetadataMain(CommandLineWithConfirm):
         return True
 
     def set_metadata_to_input_data_wrapper(
-        self, tpl: Tuple[int, InputDataMetadataInfo], project_id: str, *, overwrite_metadata: bool = False
+        self, tpl: tuple[int, InputDataMetadataInfo], project_id: str, *, overwrite_metadata: bool = False
     ) -> bool:
         input_data_index, info = tpl
         return self.set_metadata_to_input_data(

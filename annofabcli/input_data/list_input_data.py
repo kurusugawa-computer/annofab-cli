@@ -1,7 +1,7 @@
 import argparse
 import logging
 import urllib.parse
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 import annofabapi
 import pandas
@@ -37,7 +37,7 @@ class ListInputDataMain:
         self.average_input_data_id_length = average_input_data_id_length
 
     @staticmethod
-    def _find_task_id_list(task_list: List[Task], input_data_id: str) -> List[str]:
+    def _find_task_id_list(task_list: list[Task], input_data_id: str) -> list[str]:
         """
         タスク一覧から、該当のinput_data_idを持つtask_id_listを返す。
         """
@@ -47,7 +47,7 @@ class ListInputDataMain:
                 task_id_list.append(task["task_id"])  # noqa: PERF401
         return task_id_list
 
-    def get_input_data_from_input_data_id(self, input_data_id_list: List[str]) -> List[InputData]:
+    def get_input_data_from_input_data_id(self, input_data_id_list: list[str]) -> list[InputData]:
         input_data_list = []
         logger.debug(f"{len(input_data_id_list)}件の入力データを取得します。")
         for index, input_data_id in enumerate(input_data_id_list):
@@ -62,7 +62,7 @@ class ListInputDataMain:
 
         return input_data_list
 
-    def add_details_to_input_data_list(self, input_data_list: List[InputData]) -> List[InputData]:
+    def add_details_to_input_data_list(self, input_data_list: list[InputData]) -> list[InputData]:
         """
         `input_data_list`に詳細情報（どのタスクに使われているか）を付与する。
 
@@ -120,10 +120,10 @@ class ListInputDataMain:
     def get_input_data_list(
         self,
         *,
-        input_data_id_list: Optional[List[str]] = None,
-        input_data_query: Optional[Dict[str, Any]] = None,
+        input_data_id_list: Optional[list[str]] = None,
+        input_data_query: Optional[dict[str, Any]] = None,
         add_details: bool = False,
-    ) -> List[InputData]:
+    ) -> list[InputData]:
         """
         入力データ一覧を取得する。
         """

@@ -2,7 +2,7 @@ import argparse
 import logging
 from functools import partial
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set, Tuple, Union
+from typing import Any, Optional, Union
 
 import numpy
 import pandas
@@ -18,7 +18,7 @@ ALPHABET_SIZE = 26
 DIGIT = 2
 
 
-def _create_unique_masked_name(masked_name_set: Set[str], masked_name: str) -> str:
+def _create_unique_masked_name(masked_name_set: set[str], masked_name: str) -> str:
     """
     マスクされたユニークな名前を返す。
     `masked_name_set` に含まれている名前なら、末尾に数字をつけて、ユニークにする。
@@ -40,7 +40,7 @@ def _create_unique_masked_name(masked_name_set: Set[str], masked_name: str) -> s
         return _create_unique_masked_name(masked_name_set, new_masked_name)
 
 
-def _create_replaced_dict(name_set: Set[str]) -> Dict[str, str]:
+def _create_replaced_dict(name_set: set[str]) -> dict[str, str]:
     """
     keyがマスク対象の名前で、valueがマスクしたあとの名前であるdictを返します。
 
@@ -51,7 +51,7 @@ def _create_replaced_dict(name_set: Set[str]) -> Dict[str, str]:
 
     """
     replaced_dict = {}
-    masked_name_set: Set[str] = set()
+    masked_name_set: set[str] = set()
     for name in name_set:
         masked_name = create_masked_name(name)
         unique_masked_name = _create_unique_masked_name(masked_name_set, masked_name)
@@ -59,9 +59,9 @@ def _create_replaced_dict(name_set: Set[str]) -> Dict[str, str]:
     return replaced_dict
 
 
-def create_replaced_biography_dict(name_set: Set[str]) -> Dict[str, str]:
+def create_replaced_biography_dict(name_set: set[str]) -> dict[str, str]:
     replaced_dict = {}
-    masked_name_set: Set[str] = set()
+    masked_name_set: set[str] = set()
     for name in name_set:
         masked_name = create_masked_name(name)
         unique_masked_name = _create_unique_masked_name(masked_name_set, masked_name)
@@ -98,7 +98,7 @@ def create_masked_name(name: str) -> str:
     return _num2alpha(hash_value)
 
 
-def get_replaced_user_id_set_from_biography(df: pandas.DataFrame, not_masked_location_set: Optional[Set[str]] = None) -> Set[str]:
+def get_replaced_user_id_set_from_biography(df: pandas.DataFrame, not_masked_location_set: Optional[set[str]] = None) -> set[str]:
     if not_masked_location_set is None:  # noqa: SIM108
         filtered_df = df
     else:
@@ -115,7 +115,7 @@ def _get_header_row_count(df: pandas.DataFrame) -> int:
         return 1
 
 
-def _get_tuple_column(df: pandas.DataFrame, column: str) -> Union[str, Tuple]:
+def _get_tuple_column(df: pandas.DataFrame, column: str) -> Union[str, tuple]:
     """
     列名を返します。ヘッダ行が複数行の場合は、タプルで返します。
 
@@ -135,9 +135,9 @@ def _get_tuple_column(df: pandas.DataFrame, column: str) -> Union[str, Tuple]:
 
 def replace_by_columns(  # noqa: ANN201
     df: pandas.DataFrame,
-    replacement_dict: Dict[str, str],
-    main_column: Union[str, Tuple],
-    sub_columns: Optional[List[Any]] = None,
+    replacement_dict: dict[str, str],
+    main_column: Union[str, tuple],
+    sub_columns: Optional[list[Any]] = None,
 ):
     """引数dfの中のユーザ情報を、指定した列名を元に置換します。
 
@@ -148,7 +148,7 @@ def replace_by_columns(  # noqa: ANN201
         sub_column: main_columnと同じ値で置換する列(ex: username)
     """
 
-    def _get_username(row: pandas.Series, main_column: Union[str, Tuple], sub_column: Union[str, Tuple]) -> str:
+    def _get_username(row: pandas.Series, main_column: Union[str, tuple], sub_column: Union[str, tuple]) -> str:
         if row[main_column] in replacement_dict:
             return replacement_dict[row[main_column]]
         else:
@@ -164,7 +164,7 @@ def replace_by_columns(  # noqa: ANN201
         df[main_column] = df[main_column].replace(replacement_dict)
 
 
-def get_masked_username_series(df: pandas.DataFrame, replace_dict_by_user_id: Dict[str, str]) -> pandas.Series:
+def get_masked_username_series(df: pandas.DataFrame, replace_dict_by_user_id: dict[str, str]) -> pandas.Series:
     """
     マスク後のusernameのSeriesを返す
     """
@@ -180,7 +180,7 @@ def get_masked_username_series(df: pandas.DataFrame, replace_dict_by_user_id: Di
     return df.apply(_get_username, axis=1)
 
 
-def get_masked_account_id(df: pandas.DataFrame, replace_dict_by_user_id: Dict[str, str]) -> pandas.Series:
+def get_masked_account_id(df: pandas.DataFrame, replace_dict_by_user_id: dict[str, str]) -> pandas.Series:
     """
     マスク後のaccount_idのSeriesを返す
     """
@@ -196,7 +196,7 @@ def get_masked_account_id(df: pandas.DataFrame, replace_dict_by_user_id: Dict[st
     return df.apply(_get_account_id, axis=1)
 
 
-def get_replaced_biography_set(df: pandas.DataFrame, not_masked_location_set: Optional[Set[str]] = None) -> Set[str]:
+def get_replaced_biography_set(df: pandas.DataFrame, not_masked_location_set: Optional[set[str]] = None) -> set[str]:
     biography_set = set(df["biography"].dropna())
 
     if not_masked_location_set is None:
@@ -209,9 +209,9 @@ def get_replaced_biography_set(df: pandas.DataFrame, not_masked_location_set: Op
 
 def create_replacement_dict_by_user_id(
     df: pandas.DataFrame,
-    not_masked_biography_set: Optional[Set[str]] = None,
-    not_masked_user_id_set: Optional[Set[str]] = None,
-) -> Dict[str, str]:
+    not_masked_biography_set: Optional[set[str]] = None,
+    not_masked_user_id_set: Optional[set[str]] = None,
+) -> dict[str, str]:
     """
     keyが置換対象のuser_id、valueが置換後のマスクされたuser_idであるdictを作成する。
     """
@@ -227,8 +227,8 @@ def create_replacement_dict_by_user_id(
 
 def create_replacement_dict_by_biography(
     df: pandas.DataFrame,
-    not_masked_biography_set: Optional[Set[str]] = None,
-) -> Dict[str, str]:
+    not_masked_biography_set: Optional[set[str]] = None,
+) -> dict[str, str]:
     """
     keyが置換対象のbiography、valueが置換後のマスクされた biography であるdictを作成する。
     """
@@ -237,7 +237,7 @@ def create_replacement_dict_by_biography(
     return {key: f"category-{value}" for key, value in tmp_replace_dict_by_biography.items()}
 
 
-def replace_user_info_by_user_id(df: pandas.DataFrame, replacement_dict_by_user_id: Dict[str, str]):  # noqa: ANN201
+def replace_user_info_by_user_id(df: pandas.DataFrame, replacement_dict_by_user_id: dict[str, str]):  # noqa: ANN201
     """
     user_id, username, account_id 列を, マスクする。
 
@@ -258,7 +258,7 @@ def replace_user_info_by_user_id(df: pandas.DataFrame, replacement_dict_by_user_
     replace_by_columns(df, replacement_dict_by_user_id, main_column=user_id_column, sub_columns=sub_columns)
 
 
-def replace_biography(df: pandas.DataFrame, replacement_dict_by_user_id: Dict[str, str], replacement_dict_by_biography: Dict[str, str]):  # noqa: ANN201
+def replace_biography(df: pandas.DataFrame, replacement_dict_by_user_id: dict[str, str], replacement_dict_by_biography: dict[str, str]):  # noqa: ANN201
     """
     biography 列を, マスクする。
 
@@ -270,7 +270,7 @@ def replace_biography(df: pandas.DataFrame, replacement_dict_by_user_id: Dict[st
     user_id_column = _get_tuple_column(df, "user_id")
     biography_column = _get_tuple_column(df, "biography")
 
-    def _get_biography(row: pandas.Series, user_id_column: Union[str, Tuple], biography_column: Union[str, Tuple]) -> str:
+    def _get_biography(row: pandas.Series, user_id_column: Union[str, tuple], biography_column: Union[str, tuple]) -> str:
         if row[user_id_column] in replacement_dict_by_user_id:
             # マスク対象のユーザなら biographyをマスクする
             biography = row[biography_column]
@@ -288,8 +288,8 @@ def replace_biography(df: pandas.DataFrame, replacement_dict_by_user_id: Dict[st
 def create_masked_user_info_df(
     df: pandas.DataFrame,
     *,
-    not_masked_biography_set: Optional[Set[str]] = None,
-    not_masked_user_id_set: Optional[Set[str]] = None,
+    not_masked_biography_set: Optional[set[str]] = None,
+    not_masked_user_id_set: Optional[set[str]] = None,
 ) -> pandas.DataFrame:
     if "user_id" not in df:
         logger.warning("引数`df`に`user_id`列が存在しないため、ユーザ情報をマスクできません。")

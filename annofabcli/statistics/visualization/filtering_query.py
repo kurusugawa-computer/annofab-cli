@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import logging
+from collections.abc import Collection
 from dataclasses import dataclass
-from typing import Any, Collection, List, Optional
+from typing import Any, Optional
 
 from annofabapi.dataclass.task import Task as DcTask
 from annofabapi.models import Task
@@ -75,7 +76,7 @@ def filter_task_histories(
     return {task_id: sub_task_history_list for task_id, sub_task_history_list in task_histories.items() if pred(sub_task_history_list)}
 
 
-def filter_tasks(tasks: list[dict[str, Any]], query: FilteringQuery, *, task_histories: dict[str, list[dict[str, Any]]]) -> List[Task]:
+def filter_tasks(tasks: list[dict[str, Any]], query: FilteringQuery, *, task_histories: dict[str, list[dict[str, Any]]]) -> list[Task]:
     """
     タスク一覧を絞り込みます。
 

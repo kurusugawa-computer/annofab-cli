@@ -7,7 +7,7 @@ from __future__ import annotations
 import copy
 import logging
 from pathlib import Path
-from typing import Any, List, Optional
+from typing import Any, Optional
 
 import bokeh
 import bokeh.layouts
@@ -50,7 +50,7 @@ class LineGraph:
     """マーカーのサイズ"""
 
     @staticmethod
-    def _create_hover_tool(tool_tip_items: Optional[List[str]] = None) -> HoverTool:
+    def _create_hover_tool(tool_tip_items: Optional[list[str]] = None) -> HoverTool:
         """
         HoverTool用のオブジェクトを生成する。
         """
@@ -361,8 +361,8 @@ def get_color_from_small_palette(index: int) -> str:
 
 
 def get_plotted_user_id_list(
-    user_id_list: List[str],
-) -> List[str]:
+    user_id_list: list[str],
+) -> list[str]:
     """
     グラフに表示するユーザのuser_idを生成する。最大値を超えていたら、超えている部分を切り捨てる。
 

@@ -6,7 +6,7 @@ import json
 import logging
 import tempfile
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set, Tuple
+from typing import Any, Optional
 
 import annofabapi
 import pandas
@@ -22,7 +22,7 @@ from annofabcli.input_data.utils import remove_unnecessary_keys_from_input_data
 
 logger = logging.getLogger(__name__)
 
-DatetimeRange = Tuple[Optional[datetime.datetime], Optional[datetime.datetime]]
+DatetimeRange = tuple[Optional[datetime.datetime], Optional[datetime.datetime]]
 
 
 class ListInputDataWithJsonMain:
@@ -31,8 +31,8 @@ class ListInputDataWithJsonMain:
 
     @staticmethod
     def filter_input_data_list(
-        input_data: Dict[str, Any],
-        input_data_id_set: Optional[Set[str]] = None,
+        input_data: dict[str, Any],
+        input_data_id_set: Optional[set[str]] = None,
         input_data_query: Optional[InputDataQuery] = None,
     ) -> bool:
         result = True
@@ -64,10 +64,10 @@ class ListInputDataWithJsonMain:
         self,
         project_id: str,
         input_data_json: Optional[Path],
-        input_data_id_list: Optional[List[str]] = None,
+        input_data_id_list: Optional[list[str]] = None,
         input_data_query: Optional[InputDataQuery] = None,
         is_latest: bool = False,  # noqa: FBT001, FBT002
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         if input_data_json is None:
             downloading_obj = DownloadingFile(self.service)
             # `NamedTemporaryFile`を使わない理由: Windowsで`PermissionError`が発生するため
