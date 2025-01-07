@@ -153,7 +153,7 @@ class ListInputDataMergedTask(CommandLine):
             dest_path=str(output_dir / "input_data.json"),
             is_latest=is_latest,
         )
-        (downloading_obj.download_task_json(project_id, dest_path=str(output_dir / "task.json"), is_latest=is_latest),)
+        downloading_obj.download_task_json(project_id, dest_path=str(output_dir / "task.json"), is_latest=is_latest)
 
     def main(self) -> None:
         args = self.args
