@@ -190,8 +190,9 @@ select = [
 convention = "google"
 
 [tool.ruff.lint.pyupgrade]
-# Python3.8をサポートしているため、`typing.List`などの型ヒントは警告しないようにする
+# `typing.Optional`を使っているため、UP007のルールを無視する
 # https://beta.ruff.rs/docs/settings/#keep-runtime-typing
+# Python 3.9のサポートを終了したら、この設定を除去する
 keep-runtime-typing = true
 
 [tool.ruff.lint.pylint]
