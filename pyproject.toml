@@ -17,7 +17,7 @@ classifiers = [
 
 
 [tool.poetry.dependencies]
-python = "^3.8"
+python = "^3.9"
 requests = "*"
 pyyaml = "*"
 dictdiffer = "*"
@@ -25,24 +25,11 @@ more-itertools = "*"
 jmespath = "*"
 pyquery = "*"
 isodate = "*"
-annofabapi = "^1"
+annofabapi = "^1.1"
 python-datauri = "*"
 numpy = "*"
 pandas = "^2"
-
-# Python3.8以下で、bokehのバージョンを3.0に固定している理由
-# 3.2以上だとPython3.8をサポートしていない
-# しかし3.1だと、以下のバグがあって正しくグラフを描画できないため
-# https://github.com/bokeh/bokeh/issues/13133#event-9277282834
-bokeh = [
-    {version="~3.0.0", python="=3.8"},
-    {version="^3.3", python=">=3.9"}
-    ]
-
-# 'markupsafe'の最新バージョンはPython3.8に対応していないので、Python 3.8のときはバージョンを固定する
-markupsafe = [
-    {version="^2", python="=3.8"},
-]
+bokeh = "^3.3"
 
 
 Pillow = "*"
@@ -58,10 +45,11 @@ pandas = [
     {version=">=2.2", python=">=3.12"}
 ]
 
-# pandas 2.2以上を利用する場合、numpyのバージョンを指定しないとpoetryが依存解決できないので、panda2.2が要求するnumpyのバージョンを指定する
-# 補足: numpy1.26.0はPython3.8に対応していない。したがって、"python>=3.12"という条件を指定して、numpy1.26.0以上を指定する必要がある
+# Numpy 2.1以上でないと、PyPIにはPython 3.13でビルドされたwheelファイルが存在しない
+# 以下の指定がないと、Python 3.13ではnumpy 2.0をビルドしようとして`poetry install`に時間がかかる
+# poetry installに時間をかけないようにするため、バージョンを指定する
 numpy = [
-    {version=">=1.26.0", python=">=3.12"}
+    {version=">=2.1", python=">=3.13"}
 ]
 
 

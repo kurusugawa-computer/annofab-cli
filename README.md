@@ -28,7 +28,7 @@
 * `--wait_options`を削除します。使いどころがあまりないためです。
 
 # Requirements
-* Python 3.8+
+* Python 3.9
 
 # Install
 
