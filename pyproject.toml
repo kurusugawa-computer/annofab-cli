@@ -45,6 +45,11 @@ pandas = [
     {version=">=2.2", python=">=3.12"}
 ]
 
+# 開発時には最新のバージョンを利用するため、以下のバージョンを指定する
+bokeh = [
+    {version=">=3.5", python=">=3.10"}
+]
+
 # Numpy 2.1以上でないと、PyPIにはPython 3.13でビルドされたwheelファイルが存在しない
 # 以下の指定がないと、Python 3.13ではnumpy 2.0をビルドしようとして`poetry install`に時間がかかる
 # poetry installに時間をかけないようにするため、バージョンを指定する

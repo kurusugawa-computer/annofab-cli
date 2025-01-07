@@ -806,40 +806,6 @@ class UserPerformance:
         # https://qiita.com/yuji38kwmt/items/16ce548248c5c71fab3a
         df = df.fillna({"biography": ""})
 
-        # bokeh 3.0.3では、dtypeが`string`である列を含むDataFrameを描画できないので、dtypeが`string`である列のdtypeを`object`変換する
-        # https://qiita.com/yuji38kwmt/items/b5da6ed521e827620186
-        # TODO python3.8のサポートを終了したら、このコードを削除する
-
-        df = df.astype(
-            {
-                ("account_id", ""): "object",
-                ("user_id", ""): "object",
-                ("username", ""): "object",
-                ("biography", ""): "object",
-                ("first_working_date", ""): "object",
-                ("last_working_date", ""): "object",
-                ("first_working_date", "annotation"): "object",
-                ("last_working_date", "annotation"): "object",
-                ("first_working_date", "inspection"): "object",
-                ("last_working_date", "inspection"): "object",
-                ("first_working_date", "acceptance"): "object",
-                ("last_working_date", "acceptance"): "object",
-            }
-        )
-
-        # bokeh 3.0.3ではpandas.NAを含むDataFrameを描画できないので、`numpy.nan`に変換する
-        # https://qiita.com/yuji38kwmt/items/b5da6ed521e827620186
-        # TODO python3.8のサポートを終了したら、このコードを削除する
-        try:
-            # "no_silent_downcasting" option をTrueにする理由:
-            # `pandas.NA`を`numpy.nan`にすることで、dtypeが`string`から`float64`になる列があるため、`FutureWarning`が発生する
-            # このdowncastingが将来なくなっても困ることはないので、警告を抑制した
-            with pandas.option_context("future.no_silent_downcasting", True):  # noqa: FBT003
-                df = df.replace({pandas.NA: numpy.nan})
-        except pandas.errors.OptionError:
-            # pandas 2.2未満では"future.no_silent_downcasting"が存在しないため、OptionErrorが発生する
-            df = df.replace({pandas.NA: numpy.nan})
-
         return df
 
     @staticmethod
