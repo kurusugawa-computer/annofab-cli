@@ -123,7 +123,7 @@ line-length = 150
 [tool.ruff.lint]
 
 ignore = [
-    "A005" # stdlib-module-shadowing: 標準ライブラリと同じ名前のモジュールはあるが、基本的には混乱しないはずなので無視する。
+    "A005", # stdlib-module-shadowing: 標準ライブラリと同じ名前のモジュールはあるが、基本的には混乱しないはずなので無視する。
     "G004", # `logging-f-string` : loggingでf-stringを使いたいので無視する
     "PD901", #すでに`df`という変数をいろんなところで使っているため
     "PD002", #すでにpandasで`inplace=True`はいろんなところで使っているため
