@@ -74,7 +74,7 @@ class CopyTasksMain(CommandLineWithConfirm):
         self.is_copy_metadata = is_copy_metadata
 
     def copy_task(self, project_id: str, src_task_id: str, dest_task_id: str, task_index: Optional[int] = None) -> bool:
-        logging_prefix = f"{task_index+1} 件目" if task_index is not None else ""
+        logging_prefix = f"{task_index + 1} 件目" if task_index is not None else ""
         src_task = self.service.wrapper.get_task_or_none(project_id, src_task_id)
         if src_task is None:
             logger.warning(f"{logging_prefix}: コピー元タスク'{src_task_id}'は存在しないので、スキップします。")

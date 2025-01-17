@@ -290,7 +290,7 @@ class ListAnnotationCounterByInputData:
         logger.debug("アノテーションzip/ディレクトリを読み込み中")
         for index, parser in enumerate(iter_parser):
             if (index + 1) % 1000 == 0:
-                logger.debug(f"{index+1}  件目のJSONを読み込み中")
+                logger.debug(f"{index + 1}  件目のJSONを読み込み中")
 
             if target_task_ids is not None and parser.task_id not in target_task_ids:
                 continue
@@ -384,7 +384,7 @@ class ListAnnotationCounterByTask:
         logger.debug("アノテーションzip/ディレクトリを読み込み中")
         for task_index, task_parser in enumerate(iter_task_parser):
             if (task_index + 1) % 1000 == 0:
-                logger.debug(f"{task_index+1}  件目のタスクディレクトリを読み込み中")
+                logger.debug(f"{task_index + 1}  件目のタスクディレクトリを読み込み中")
 
             if target_task_ids is not None and task_parser.task_id not in target_task_ids:
                 continue
@@ -433,8 +433,7 @@ class AttributeCountCsv:
         }
         if len(non_selective_attribute_names) > 0:
             logger.debug(
-                f"以下の属性は値の個数が{self.selective_attribute_value_max_count}を超えていたため、集計しません。 :: "
-                f"{non_selective_attribute_names}"
+                f"以下の属性は値の個数が{self.selective_attribute_value_max_count}を超えていたため、集計しません。 :: {non_selective_attribute_names}"
             )
 
         return [

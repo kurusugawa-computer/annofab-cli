@@ -58,7 +58,7 @@ class UpdateMetadataMain(CommandLineWithConfirm):
             else:
                 return f"入力データ(input_data_id='{input_data_id}')のメタデータに'{json.dumps(metadata)}'を追加しますか？ "
 
-        logging_prefix = f"{input_data_index+1} 件目" if input_data_index is not None else ""
+        logging_prefix = f"{input_data_index + 1} 件目" if input_data_index is not None else ""
 
         input_data = self.service.wrapper.get_input_data_or_none(project_id, input_data_id)
         if input_data is None:

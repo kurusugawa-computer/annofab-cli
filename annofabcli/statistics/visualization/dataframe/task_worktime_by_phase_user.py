@@ -108,7 +108,7 @@ class TaskWorktimeByPhaseUser:
 
         if not self.required_columns_exist(df):
             raise ValueError(
-                f"引数'df'の'columns'に次の列が存在していません。 {self.missing_columns(df)} :: " f"次の列が必須です。{self.columns}の列が必要です。"
+                f"引数'df'の'columns'に次の列が存在していません。 {self.missing_columns(df)} :: 次の列が必須です。{self.columns}の列が必要です。"
             )
 
         self.df = df

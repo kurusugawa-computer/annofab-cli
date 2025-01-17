@@ -67,8 +67,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         nargs="+",
         required=True,
         help=(
-            "コメントを付与するタスクのtask_idを指定してください。\n"
-            "``file://`` を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。"
+            "コメントを付与するタスクのtask_idを指定してください。\n``file://`` を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。"
         ),
     )
 

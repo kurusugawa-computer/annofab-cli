@@ -267,7 +267,7 @@ def draw_annotation_all(  # noqa: ANN201, PLR0913
         try:
             drawing.main(parser, image_file=image_file, output_file=output_file, image_size=default_image_size)
             logger.debug(
-                f"{success_count+1}件目: {output_file!s} を出力しました。image_file={image_file}, アノテーションJSON={parser.json_file_path}"
+                f"{success_count + 1}件目: {output_file!s} を出力しました。image_file={image_file}, アノテーションJSON={parser.json_file_path}"
             )
             success_count += 1
         except Exception:  # pylint: disable=broad-except

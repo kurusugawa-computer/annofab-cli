@@ -71,7 +71,7 @@ class ListOutOfRangeAnnotationForMovieMain:
                 task["max_begin_second"] = max_seconds[0]
                 task["max_end_second"] = max_seconds[1]
                 if (task_index + 1) % 100 == 0:
-                    logger.info(f"{task_index+1} 件のアノテーション情報を取得しました。")
+                    logger.info(f"{task_index + 1} 件のアノテーション情報を取得しました。")
         else:
             logger.info(f"{len(task_list)} 件のアノテーション情報を {annotation_zip!s} から取得します。")
             with zipfile.ZipFile(str(annotation_zip), "r") as zip_file:
@@ -86,7 +86,7 @@ class ListOutOfRangeAnnotationForMovieMain:
                     task["max_end_second"] = max_seconds[1]
 
                     if (task_index + 1) % 100 == 0:
-                        logger.info(f"{task_index+1} 件のアノテーション情報を取得しました。")
+                        logger.info(f"{task_index + 1} 件のアノテーション情報を取得しました。")
 
         df_task = pandas.DataFrame(
             task_list,

@@ -68,7 +68,7 @@ class ListProjectMain:
             project_list.append(project)
 
             if (index + 1) % 100 == 0:
-                logger.debug(f"{index+1} 件のプロジェクト情報を取得しました。")
+                logger.debug(f"{index + 1} 件のプロジェクト情報を取得しました。")
 
         return project_list
 

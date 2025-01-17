@@ -52,7 +52,7 @@ class ListInputDataMain:
         logger.debug(f"{len(input_data_id_list)}件の入力データを取得します。")
         for index, input_data_id in enumerate(input_data_id_list):
             if (index + 1) % 100 == 0:
-                logger.debug(f"{index+1} 件目の入力データを取得します。")
+                logger.debug(f"{index + 1} 件目の入力データを取得します。")
 
             input_data = self.service.wrapper.get_input_data_or_none(self.project_id, input_data_id)
             if input_data is not None:
@@ -102,7 +102,7 @@ class ListInputDataMain:
 
                 continue
 
-            logger.debug(f"input_data_list[{initial_index}:{initial_index+chunk_size}] を使用しているタスクを取得する。")
+            logger.debug(f"input_data_list[{initial_index}:{initial_index + chunk_size}] を使用しているタスクを取得する。")
             task_list = self.service.wrapper.get_all_tasks(self.project_id, query_params={"input_data_ids": str_input_data_id_list})
 
             for input_data in sub_input_data_list:

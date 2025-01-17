@@ -148,7 +148,7 @@ class ChangePropertiesOfAnnotationMain(CommandLineWithConfirm):
             backup_dir: アノテーションをバックアップとして保存するディレクトリ。指定しない場合は、バックアップを取得しない。
 
         """
-        logger_prefix = f"{task_index+1!s} 件目: " if task_index is not None else ""
+        logger_prefix = f"{task_index + 1!s} 件目: " if task_index is not None else ""
         dict_task = self.service.wrapper.get_task_or_none(self.project_id, task_id)
         if dict_task is None:
             logger.warning(f"task_id = '{task_id}' は存在しません。")
@@ -264,7 +264,7 @@ class ChangePropertiesOfAnnotationMain(CommandLineWithConfirm):
 
         else:
             for task_index, task_id in enumerate(task_id_list):
-                logger.debug(f"{task_index+1} / {len(task_id_list)} 件目: タスク '{task_id}' のアノテーションのプロパティを変更します。")
+                logger.debug(f"{task_index + 1} / {len(task_id_list)} 件目: タスク '{task_id}' のアノテーションのプロパティを変更します。")
 
                 try:
                     result = self.change_properties_for_task(

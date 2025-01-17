@@ -28,7 +28,7 @@ class ListTasksMain:
         logger.debug(f"{len(task_id_list)}件のタスクを取得します。")
         for index, task_id in enumerate(task_id_list):
             if (index + 1) % 100 == 0:
-                logger.debug(f"{index+1} 件のタスクを取得します。")
+                logger.debug(f"{index + 1} 件のタスクを取得します。")
 
             task = self.service.wrapper.get_task_or_none(project_id, task_id)
             if task is not None:

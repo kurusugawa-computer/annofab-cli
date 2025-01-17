@@ -39,7 +39,7 @@ class ListTaskHistoryMain:
         for task_index, task_id in enumerate(task_id_list):
             task_history_list = self.service.wrapper.get_task_histories_or_none(project_id, task_id)
             if (task_index + 1) % 100 == 0:
-                logger.info(f"{task_index+1} 件のタスクの履歴情報を取得しました。")
+                logger.info(f"{task_index + 1} 件のタスクの履歴情報を取得しました。")
             if task_history_list is not None:
                 if len(task_history_list) == 0:
                     logger.debug(f"task_id='{task_id}`の履歴情報は0件でした。")

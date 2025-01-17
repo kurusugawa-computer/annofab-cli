@@ -61,7 +61,7 @@ class DeleteMetadataKeysOfTaskMain(CommandLineWithConfirm):
         Returns:
             メタデータのキーを削除した場合はTrueを返します。
         """
-        logging_prefix = f"{task_index+1} 件目" if task_index is not None else ""
+        logging_prefix = f"{task_index + 1} 件目" if task_index is not None else ""
         task = self.service.wrapper.get_task_or_none(self.project_id, task_id)
         if task is None:
             logger.warning(f"{logging_prefix} task_id='{task_id}'であるタスクは存在しません。")

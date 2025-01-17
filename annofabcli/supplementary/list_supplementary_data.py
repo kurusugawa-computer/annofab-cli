@@ -51,7 +51,7 @@ class ListSupplementaryDataMain:
             input_data_index: 0始まりのインデックス
         """
         if (input_data_index + 1) % 100 == 0:
-            logger.debug(f"{input_data_index+1} 件目の入力データに紐づく補助情報を取得します。")
+            logger.debug(f"{input_data_index + 1} 件目の入力データに紐づく補助情報を取得します。")
 
         supplementary_data_list = self.service.wrapper.get_supplementary_data_list_or_none(self.project_id, input_data_id)
 

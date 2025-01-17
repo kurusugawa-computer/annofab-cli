@@ -52,7 +52,7 @@ class DeleteMetadataKeyOfInputDataMain(CommandLineWithConfirm):
         Returns:
             メタデータのキーを削除した場合はTrueを返します。
         """
-        logging_prefix = f"{input_data_index+1} 件目" if input_data_index is not None else ""
+        logging_prefix = f"{input_data_index + 1} 件目" if input_data_index is not None else ""
         input_data = self.service.wrapper.get_input_data_or_none(self.project_id, input_data_id)
         if input_data is None:
             logger.warning(f"{logging_prefix} input_data_id='{input_data_id}'である入力データは存在しません。")

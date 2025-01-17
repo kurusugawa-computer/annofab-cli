@@ -72,8 +72,7 @@ class DeleteTaskMain(CommandLineWithConfirm):
                 continue
 
         logger.debug(
-            f"task_id='{task_id}', input_data_id='{input_data_id}' :: "
-            f"補助情報 {deleted_count} / {len(supplementary_data_list)} 件を削除しました。"
+            f"task_id='{task_id}', input_data_id='{input_data_id}' :: 補助情報 {deleted_count} / {len(supplementary_data_list)} 件を削除しました。"
         )
 
         return deleted_count
@@ -116,8 +115,7 @@ class DeleteTaskMain(CommandLineWithConfirm):
         if not self.dryrun:
             self.service.api.delete_input_data(self.project_id, input_data_id)
         logger.debug(
-            f"task_id='{task_id}' :: 入力データを削除しました。 :: "
-            f"input_data_id='{input_data_id}', input_data_name='{input_data['input_data_name']}'"
+            f"task_id='{task_id}' :: 入力データを削除しました。 :: input_data_id='{input_data_id}', input_data_name='{input_data['input_data_name']}'"
         )
         return True
 
@@ -173,7 +171,7 @@ class DeleteTaskMain(CommandLineWithConfirm):
 
         """
         if task_index is not None:  # noqa: SIM108
-            log_prefix = f"{task_index+1} 件目, task_id='{task_id}'"
+            log_prefix = f"{task_index + 1} 件目, task_id='{task_id}'"
         else:
             log_prefix = f"task_id='{task_id}'"
 
