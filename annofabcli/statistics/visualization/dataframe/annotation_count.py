@@ -72,7 +72,7 @@ class AnnotationCount:
             annotation_count = get_annotation_count(simple_annotation)
             result[(project_id, parser.task_id)] += annotation_count
             if (index + 1) % 10000 == 0:
-                logger.debug(f"{index+1}件のアノテーションJSONを読み込みました。 :: project_id='{project_id}', file='{annotation_zip!s}'")
+                logger.debug(f"{index + 1}件のアノテーションJSONを読み込みました。 :: project_id='{project_id}', file='{annotation_zip!s}'")
 
         result2 = [(project_id, task_id, count) for (project_id, task_id), count in result.items()]
 

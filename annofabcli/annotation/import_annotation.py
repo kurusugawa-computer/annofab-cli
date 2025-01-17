@@ -420,7 +420,7 @@ class ImportAnnotationMain(CommandLineWithConfirm):
         if not self.confirm_processing(f"task_id={task_id} のアノテーションをインポートしますか？"):
             return False
 
-        logger_prefix = f"{task_index+1!s} 件目: " if task_index is not None else ""
+        logger_prefix = f"{task_index + 1!s} 件目: " if task_index is not None else ""
         logger.info(f"{logger_prefix}task_id={task_id} に対して処理します。")
 
         task = self.service.wrapper.get_task_or_none(self.project_id, task_id)

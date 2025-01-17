@@ -721,7 +721,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--custom_production_volume_by_directory",
         type=str,
-        help=("プロジェクト独自の生産量をJSON形式で指定します。" f"(例) ``{json.dumps(custom_production_volume_sample, ensure_ascii=False)}`` \n"),
+        help=(f"プロジェクト独自の生産量をJSON形式で指定します。(例) ``{json.dumps(custom_production_volume_sample, ensure_ascii=False)}`` \n"),
     )
 
     parser.add_argument("-o", "--output_dir", required=True, type=Path, help="出力ディレクトリ")

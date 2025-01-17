@@ -120,7 +120,7 @@ class DeleteCommentMain(CommandLineWithConfirm):
         Returns:
             削除したコメントが所属する入力データ数
         """
-        logging_prefix = f"{task_index+1} 件目" if task_index is not None else ""
+        logging_prefix = f"{task_index + 1} 件目" if task_index is not None else ""
 
         task = self.service.wrapper.get_task_or_none(self.project_id, task_id)
         if task is None:

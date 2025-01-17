@@ -87,7 +87,7 @@ class CopyProjectMembers(CommandLine):
 
             command_name = "追加" if last_updated_datetime is None else "更新"
             logger.debug(
-                f"プロジェクトメンバの'{command_name}'が完了しました。 :: project_id='{project_id}', user_id='{ member['user_id']}'",
+                f"プロジェクトメンバの'{command_name}'が完了しました。 :: project_id='{project_id}', user_id='{member['user_id']}'",
             )
 
         return updated_project_members

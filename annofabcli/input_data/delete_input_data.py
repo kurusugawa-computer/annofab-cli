@@ -97,7 +97,7 @@ class DeleteInputData(CommandLine):
 
         self.service.api.delete_input_data(project_id, input_data_id)
         logger.debug(
-            f"{input_data_index+1!s} 件目: 入力データ(input_data_id='{input_data_id}', input_data_name='{input_data_name}') を削除しました。"
+            f"{input_data_index + 1!s} 件目: 入力データ(input_data_id='{input_data_id}', input_data_name='{input_data_name}') を削除しました。"
         )
 
         if delete_supplementary:

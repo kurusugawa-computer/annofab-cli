@@ -312,7 +312,7 @@ class ListTasksAddedTaskHistoryMain:
 
         for index, task in enumerate(task_list):
             if (index + 1) % 1000 == 0:
-                logger.debug(f"{index+1} 件目のタスク履歴情報を取得します。")
+                logger.debug(f"{index + 1} 件目のタスク履歴情報を取得します。")
 
             obj.add_additional_info_to_task(task)
             task_id = task["task_id"]

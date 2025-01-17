@@ -70,9 +70,9 @@ def create_replacement_dict(
         not_masked_biography_set: マスクしないbiographyの集合。指定したbiographyに該当するユーザーのuser_id,username,account_idはマスクしません。
     """
 
-    assert {"user_id", "username", "account_id", "biography"} - set(
-        df_user.columns
-    ) == set(), "df_userには'user_id','username','account_id','biography'の列が必要です。"
+    assert {"user_id", "username", "account_id", "biography"} - set(df_user.columns) == set(), (
+        "df_userには'user_id','username','account_id','biography'の列が必要です。"
+    )
 
     replacement_dict_for_user_id = create_replacement_dict_by_user_id(
         df_user, not_masked_biography_set=not_masked_biography_set, not_masked_user_id_set=not_masked_user_id_set
@@ -294,7 +294,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--custom_production_volume",
         type=str,
-        help=("プロジェクト独自の生産量をJSON形式で指定します。" f"(例) ``{json.dumps(custom_production_volume_sample, ensure_ascii=False)}`` \n"),
+        help=(f"プロジェクト独自の生産量をJSON形式で指定します。(例) ``{json.dumps(custom_production_volume_sample, ensure_ascii=False)}`` \n"),
     )
 
     parser.add_argument("-o", "--output_dir", type=Path, required=True, help="出力先ディレクトリ。")

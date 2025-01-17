@@ -67,7 +67,7 @@ pytest-cov = "*"
 
 [tool.poetry.group.linter.dependencies]
 # pythonバージョンを指定している理由：Python3.12（開発環境）でしかlintを実行していないため
-ruff = {version="^0.8", python=">=3.12"}
+ruff = {version="^0.9", python=">=3.12"}
 mypy = {version="^1", python=">=3.12"}
 pylint = {version="^3", python=">=3.12"}
 
@@ -123,6 +123,7 @@ line-length = 150
 [tool.ruff.lint]
 
 ignore = [
+    "A005", # stdlib-module-shadowing: 標準ライブラリと同じ名前のモジュールはあるが、基本的には混乱しないはずなので無視する。
     "G004", # `logging-f-string` : loggingでf-stringを使いたいので無視する
     "PD901", #すでに`df`という変数をいろんなところで使っているため
     "PD002", #すでにpandasで`inplace=True`はいろんなところで使っているため

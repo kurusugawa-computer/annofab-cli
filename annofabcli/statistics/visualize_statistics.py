@@ -662,7 +662,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--ignored_task_id",
         nargs="+",
-        help=("集計対象タスクから除外するタスクのtask_idを指定します。\n" "``file://`` を先頭に付けると、一覧が記載されたファイルを指定できます。"),
+        help=("集計対象タスクから除外するタスクのtask_idを指定します。\n``file://`` を先頭に付けると、一覧が記載されたファイルを指定できます。"),
     )
 
     parser.add_argument("-o", "--output_dir", type=Path, required=True, help="出力先ディレクトリのパスを指定してください。")

@@ -129,7 +129,7 @@ class ChangeAnnotationAttributesMain(CommandLineWithConfirm):
         Returns:
             アノテーションの属性を変更するAPI ``change_annotation_attributes`` を実行したか否か
         """
-        logger_prefix = f"{task_index+1!s} 件目: " if task_index is not None else ""
+        logger_prefix = f"{task_index + 1!s} 件目: " if task_index is not None else ""
         dict_task = self.service.wrapper.get_task_or_none(self.project_id, task_id)
         if dict_task is None:
             logger.warning(f"task_id = '{task_id}' は存在しません。")
@@ -360,9 +360,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--attributes",
         type=str,
         required=True,
-        help="変更後の属性をJSON形式で指定します。"
-        "``file://`` を先頭に付けると、JSON形式のファイルを指定できます。"
-        f"(ex): ``{EXAMPLE_ATTRIBUTES}``",
+        help=f"変更後の属性をJSON形式で指定します。``file://`` を先頭に付けると、JSON形式のファイルを指定できます。(ex): ``{EXAMPLE_ATTRIBUTES}``",
     )
 
     parser.add_argument(

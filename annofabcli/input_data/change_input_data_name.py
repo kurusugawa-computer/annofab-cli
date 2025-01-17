@@ -78,7 +78,7 @@ class ChangeInputDataNameMain(CommandLineWithConfirm):
 
         for input_data_index, changed_input_data in enumerate(changed_input_data_list):
             if (input_data_index + 1) % 100 == 0:
-                logger.info(f"{input_data_index+1}件目の入力データの名前を変更します。")
+                logger.info(f"{input_data_index + 1}件目の入力データの名前を変更します。")
 
             try:
                 result = self.change_input_data_name(

@@ -136,7 +136,7 @@ class RestoreAnnotationMain(CommandLineWithConfirm):
             1個以上の入力データのアノテーションを変更したか
 
         """
-        logger_prefix = f"{task_index+1!s} 件目: " if task_index is not None else ""
+        logger_prefix = f"{task_index + 1!s} 件目: " if task_index is not None else ""
         task_id = task_parser.task_id
         if not self.confirm_processing(f"task_id={task_id} のアノテーションをリストアしますか？"):
             return False

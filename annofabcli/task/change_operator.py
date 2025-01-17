@@ -65,7 +65,7 @@ class ChangeOperatorMain:
         task_query: Optional[TaskQuery] = None,
         task_index: Optional[int] = None,
     ) -> bool:
-        logging_prefix = f"{task_index+1} 件目" if task_index is not None else ""
+        logging_prefix = f"{task_index + 1} 件目" if task_index is not None else ""
         dict_task = self.service.wrapper.get_task_or_none(project_id, task_id)
         if dict_task is None:
             logger.warning(f"{logging_prefix}: task_id='{task_id}'のタスクは存在しないので、スキップします。")

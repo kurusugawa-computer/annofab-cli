@@ -61,7 +61,7 @@ class UpdateMetadataOfTaskMain(CommandLineWithConfirm):
         metadata: dict[str, Any],
         task_index: Optional[int] = None,
     ) -> bool:
-        logging_prefix = f"{task_index+1} 件目" if task_index is not None else ""
+        logging_prefix = f"{task_index + 1} 件目" if task_index is not None else ""
         task = self.service.wrapper.get_task_or_none(project_id, task_id)
         if task is None:
             logger.warning(f"{logging_prefix} タスク '{task_id}' は存在しないのでスキップします。")
@@ -98,7 +98,7 @@ class UpdateMetadataOfTaskMain(CommandLineWithConfirm):
 
     def _update_metadata_with_patch_tasks_metadata_api_wrapper(self, tpl: tuple[int, int, list[TaskMetadataInfo]], project_id: str) -> None:
         global_start_position, global_stop_position, info_list = tpl
-        logger.debug(f"{global_start_position+1} 〜 {global_stop_position} 件目のタスクのメタデータを更新します。")
+        logger.debug(f"{global_start_position + 1} 〜 {global_stop_position} 件目のタスクのメタデータを更新します。")
         request_body = {info.task_id: info.metadata for info in info_list}
         self.service.api.patch_tasks_metadata(project_id, request_body=request_body)
 
@@ -115,7 +115,7 @@ class UpdateMetadataOfTaskMain(CommandLineWithConfirm):
 
         if self.parallelism is None:
             while first_index < len(metadata_info_list):
-                logger.info(f"{first_index+1} 〜 {min(first_index+BATCH_SIZE, len(metadata_info_list))} 件目のタスクのメタデータを更新します。")
+                logger.info(f"{first_index + 1} 〜 {min(first_index + BATCH_SIZE, len(metadata_info_list))} 件目のタスクのメタデータを更新します。")
                 request_body = {info.task_id: info.metadata for info in metadata_info_list[first_index : first_index + BATCH_SIZE]}
                 self.service.api.patch_tasks_metadata(project_id, request_body=request_body)
                 first_index += BATCH_SIZE

@@ -331,8 +331,7 @@ class CompleteTasksMain(CommandLineWithConfirm):
 
         task: Task = Task.from_dict(dict_task)
         logger.info(
-            f"{logging_prefix} : タスク情報 task_id={task_id}, "
-            f"phase={task.phase.value}, phase_stage={task.phase_stage}, status={task.status.value}"
+            f"{logging_prefix} : タスク情報 task_id={task_id}, phase={task.phase.value}, phase_stage={task.phase_stage}, status={task.status.value}"
         )
         if not self._validate_task(task, target_phase=target_phase, target_phase_stage=target_phase_stage, task_query=task_query):
             return False
