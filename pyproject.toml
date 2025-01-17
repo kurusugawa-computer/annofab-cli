@@ -78,8 +78,8 @@ types-PyYAML = "*"
 
 [tool.poetry.group.documentation.dependencies]
 # ドキュメント生成用のライブラリ
-# `python=">=3.11"`を指定している理由：Pytyhon3.11を利用している開発環境かReadTheDocsでしかドキュメントを生成しないため
-sphinx = {version="^7", python=">=3.12"}
+# `python=">=3.12"`を指定している理由：Pytyhon3.11を利用している開発環境かReadTheDocsでしかドキュメントを生成しないため
+sphinx = {version="^8", python=">=3.12"}
 pydata-sphinx-theme = {version=">=0.13", python=">=3.12"}
 sphinx-last-updated-by-git = {version="*", python=">=3.12"}
 sphinx-argparse = {version="*", python=">=3.12"}
