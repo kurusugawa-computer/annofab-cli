@@ -13,6 +13,7 @@ import numpy
 import pandas
 from annofabapi.models import TaskPhase
 from dataclasses_json import DataClassJsonMixin
+from pandas.api.typing import NAType
 from typing_extensions import TypeAlias
 
 import annofabcli
@@ -381,9 +382,9 @@ class CollectingPerformanceInfo:
 def to_rank(series: pandas.Series) -> pandas.Series:
     quantile = list(series.quantile([0.25, 0.5, 0.75]))
 
-    def _to_point(value: float):  # noqa: ANN202
+    def _to_point(value: float) -> str | NAType:
         if numpy.isnan(value):
-            return numpy.nan
+            return pandas.NA
         elif value < quantile[0]:
             return "A"
         elif quantile[0] <= value < quantile[1]:
@@ -393,7 +394,7 @@ def to_rank(series: pandas.Series) -> pandas.Series:
         elif quantile[2] <= value:
             return "D"
         else:
-            return numpy.nan
+            return pandas.NA
 
     if len([v for v in series if not numpy.isnan(v)]) >= 4:
         return series.map(_to_point)
@@ -514,6 +515,8 @@ class WritingCsv:
         self.user_ids = user_ids
 
     def write(self, df: pandas.DataFrame, csv_basename: str, output_dir: Path) -> None:
+        # infが存在すると、統計情報を算出する際にwarningが発生するため、infをnanに置換する
+        df = df.replace([numpy.inf, -numpy.inf], numpy.nan)
         print_csv(df, str(output_dir / f"{csv_basename}__original.csv"))
 
         # 偏差値のCSVを出力
