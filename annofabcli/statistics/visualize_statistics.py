@@ -364,7 +364,9 @@ class VisualizingStatisticsMain:
         )
         if not self.not_download_visualization_source_files:
             visualization_source_files.write_files(
-                is_latest=self.download_latest, should_get_task_histories_one_of_each=self.is_get_task_histories_one_of_each
+                is_latest=self.download_latest,
+                should_get_task_histories_one_of_each=self.is_get_task_histories_one_of_each,
+                should_download_annotation_zip=(annotation_count is None),
             )
 
         write_obj = WriteCsvGraph(
