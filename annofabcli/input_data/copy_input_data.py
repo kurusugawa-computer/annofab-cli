@@ -5,8 +5,8 @@ import json
 import logging
 import multiprocessing
 import sys
-from dataclasses import dataclass
-from functools import partial
+import tempfile
+from pathlib import Path
 from typing import Any, Optional
 
 import annofabapi
@@ -26,20 +26,8 @@ from annofabcli.common.facade import AnnofabApiFacade
 
 logger = logging.getLogger(__name__)
 
-Metadata = dict[str, str]
-"""
-入力データのメタデータ。
-値はstr型しか指定できない。
-"""
 
-
-@dataclass(frozen=True)
-class InputDataMetadataInfo:
-    input_data_id: str
-    metadata: Metadata
-
-
-class UpdateMetadataMain(CommandLineWithConfirm):
+class CopyInputDataMain(CommandLineWithConfirm):
     def __init__(
         self, service: annofabapi.Resource, *, src_project_id: str, dest_project_id: str, should_overwrite: bool, all_yes: bool = False
     ) -> None:
@@ -71,24 +59,30 @@ class UpdateMetadataMain(CommandLineWithConfirm):
         dest_supplementary_data_list: list[dict[str, Any]],
         *,
         logging_prefix: Optional[str] = None,
-    ) -> dict[str, Any]:
+    ) -> None:
         for src_supplementary_data in src_supplementary_data_list:
             dest_supplementary_data = more_itertools.first_true(
-                dest_supplementary_data_list, pred=lambda e: e["supplementary_data_id"] == src_supplementary_data["supplementary_data_id"]
+                dest_supplementary_data_list, pred=lambda e, s=src_supplementary_data: e["supplementary_data_id"] == s["supplementary_data_id"]
             )
             last_updated_datetime_for_supplementary_data = (
                 dest_supplementary_data["updated_datetime"] if dest_supplementary_data is not None else None
             )
             self.copy_supplementary_data(src_supplementary_data, last_updated_datetime=last_updated_datetime_for_supplementary_data)
             logger.debug(
-                f"{logging_prefix}補助情報をコピーしました。 :: input_data_id='{src_supplementary_data['input_data_id']}', supplementary_data_id='{src_supplementary_data['supplementary_data_id']}', supplementary_data_name='{src_supplementary_data['supplementary_data_name']}', src_project_id='{self.src_project_id}', dest_project_id='{self.dest_project_id}'"
+                f"{logging_prefix}補助情報をコピーしました。 :: "
+                f"input_data_id='{src_supplementary_data['input_data_id']}', "
+                f"supplementary_data_id='{src_supplementary_data['supplementary_data_id']}', "
+                f"supplementary_data_name='{src_supplementary_data['supplementary_data_name']}', "
+                f"src_project_id='{self.src_project_id}', dest_project_id='{self.dest_project_id}'"
             )
 
         logger.debug(
-            f"{logging_prefix}補助情報を{len(src_supplementary_data_list)}件コピーしました。 :: input_data_id='{src_supplementary_data_list[0]['input_data_id']}', src_project_id='{self.src_project_id}', dest_project_id='{self.dest_project_id}'"
+            f"{logging_prefix}補助情報を{len(src_supplementary_data_list)}件コピーしました。 :: "
+            f"input_data_id='{src_supplementary_data_list[0]['input_data_id']}', "
+            f"src_project_id='{self.src_project_id}', dest_project_id='{self.dest_project_id}'"
         )
 
-    def copy_foo(self, src_input_data: dict[str, Any], last_updated_datetime: Optional[str]):
+    def copy_input_data(self, src_input_data: dict[str, Any], last_updated_datetime: Optional[str]) -> dict[str, Any]:
         request_body = {
             "input_data_name": src_input_data["input_data_name"],
             "input_data_path": src_input_data["input_data_path"],
@@ -96,47 +90,51 @@ class UpdateMetadataMain(CommandLineWithConfirm):
             "sign_required": src_input_data["sign_required"],
             "metadata": src_input_data["metadata"],
         }
-        content, _ = self.service.api.put_input_data(self.dest_project_id, request_body=request_body)
+        new_input_data, _ = self.service.api.put_input_data(self.dest_project_id, src_input_data["input_data_id"], request_body=request_body)
+        return new_input_data
 
-    def copy_input_data(
+    def copy_input_data_and_supplementary_data(
         self,
-        src_project_id: str,
         input_data_id: str,
         *,
-        should_overwrite: bool = False,
         input_data_index: Optional[int] = None,
-    ):
-        def get_confirm_message(exists_in_dest_project: bool, supplementary_data_count: int) -> str:
+    ) -> bool:
+        def get_confirm_message(supplementary_data_count: int, *, exists_in_dest_project: bool) -> str:
             message = f"入力データ(input_data_id='{input_data_id}')と補助情報{supplementary_data_count}件をコピーしますか？"
             if exists_in_dest_project:
                 message += "コピー先プロジェクトにすでに入力データが存在します。"
-            message += f" :: input_data_id='{input_data_id}', src_project_id='{src_project_id}', dest_project_id='{self.dest_project_id}'"
+            message += f" :: input_data_id='{input_data_id}', src_project_id='{self.src_project_id}', dest_project_id='{self.dest_project_id}'"
+            return message
 
         logging_prefix = f"{input_data_index + 1} 件目" if input_data_index is not None else ""
 
-        src_input_data = self.service.wrapper.get_input_data_or_none(src_project_id, input_data_id)
+        src_input_data = self.service.wrapper.get_input_data_or_none(self.src_project_id, input_data_id)
         if src_input_data is None:
             logger.warning(f"{logging_prefix}入力データは存在しないのでコピーをスキップします。 :: input_data_id='{input_data_id}'")
             return False
 
-        src_supplementary_data_list, _ = self.service.api.get_supplementary_data_list(src_project_id, input_data_id)
+        src_supplementary_data_list, _ = self.service.api.get_supplementary_data_list(self.src_project_id, input_data_id)
 
         input_data_name = src_input_data["input_data_name"]
         dest_input_data = self.service.wrapper.get_input_data_or_none(self.dest_project_id, input_data_id)
         if dest_input_data is not None and not self.should_overwrite:
             logger.debug(
-                f"{logging_prefix}入力データはコピー先プロジェクトにすでに存在するので、コピーをスキップします。 :: input_data_id='{input_data_id}', input_data_name='{input_data_name}', src_project_id='{src_project_id}', dest_project_id='{self.dest_project_id}'"
+                f"{logging_prefix}入力データはコピー先プロジェクトにすでに存在するので、コピーをスキップします。 :: "
+                f"input_data_id='{input_data_id}', input_data_name='{input_data_name}', "
+                f"src_project_id='{self.src_project_id}', dest_project_id='{self.dest_project_id}'"
             )
             return False
 
-        if not self.confirm_processing(get_confirm_message(dest_input_data is not None), len(src_supplementary_data_list)):
+        if not self.confirm_processing(get_confirm_message(len(src_supplementary_data_list), exists_in_dest_project=dest_input_data is not None)):
             return False
 
         last_updated_datetime = dest_input_data["updated_datetime"] if dest_input_data is not None else None
-        self.copy_foo(src_input_data, last_updated_datetime=last_updated_datetime)
+        self.copy_input_data(src_input_data, last_updated_datetime=last_updated_datetime)
 
         logger.debug(
-            f"{logging_prefix}入力データをコピーしました。 :: input_data_id='{input_data_id}', input_data_name='{input_data_name}', src_project_id='{src_project_id}', dest_project_id='{self.dest_project_id}'"
+            f"{logging_prefix}入力データをコピーしました。 :: "
+            f"input_data_id='{input_data_id}', input_data_name='{input_data_name}', "
+            f"src_project_id='{self.src_project_id}', dest_project_id='{self.dest_project_id}'"
         )
 
         if dest_input_data is not None:
@@ -144,135 +142,72 @@ class UpdateMetadataMain(CommandLineWithConfirm):
         else:
             dest_supplementary_data_list = []
 
-        for src_supplementary_data in src_supplementary_data_list:
-            dest_supplementary_data = more_itertools.first_true(
-                dest_supplementary_data_list, pred=lambda e: e["supplementary_data_id"] == src_supplementary_data["supplementary_data_id"]
-            )
-            last_updated_datetime_for_supplementary_data = (
-                dest_supplementary_data["updated_datetime"] if dest_supplementary_data is not None else None
-            )
-            self.copy_supplementary_data(src_supplementary_data, last_updated_datetime=last_updated_datetime_for_supplementary_data)
-        logger.debug(
-            f"{logging_prefix}入力データをコピーしました。 :: input_data_id='{input_data_id}', input_data_name='{input_data_name}', src_project_id='{src_project_id}', dest_project_id='{self.dest_project_id}'"
-        )
+        self.copy_supplementary_data_list(src_supplementary_data_list, dest_supplementary_data_list, logging_prefix=logging_prefix)
 
         return True
 
-    def set_metadata_to_input_data(
-        self,
-        project_id: str,
-        input_data_id: str,
-        metadata: Metadata,
-        *,
-        overwrite_metadata: bool = False,
-        input_data_index: Optional[int] = None,
-    ) -> bool:
-        def get_confirm_message() -> str:
-            if overwrite_metadata:
-                return f"入力データ(input_data_id='{input_data_id}')のメタデータを'{json.dumps(metadata)}'に変更しますか？ "
-            else:
-                return f"入力データ(input_data_id='{input_data_id}')のメタデータに'{json.dumps(metadata)}'を追加しますか？ "
-
-        logging_prefix = f"{input_data_index + 1} 件目" if input_data_index is not None else ""
-
-        input_data = self.service.wrapper.get_input_data_or_none(project_id, input_data_id)
-        if input_data is None:
-            logger.warning(f"{logging_prefix} 入力データは存在しないのでスキップします。input_data_id={input_data_id}")
-            return False
-
-        logger.debug(
-            f"{logging_prefix} input_data_id='{input_data['input_data_id']}', "
-            f"input_data_name='{input_data['input_data_name']}', metadata='{json.dumps(input_data['metadata'])}'"
-        )
-        if not self.confirm_processing(get_confirm_message()):
-            return False
-
-        input_data["last_updated_datetime"] = input_data["updated_datetime"]
-        if overwrite_metadata:
-            input_data["metadata"] = metadata
-        else:
-            input_data["metadata"].update(metadata)
-
-        self.service.api.put_input_data(project_id, input_data_id, request_body=input_data)
-        logger.debug(f"{logging_prefix} 入力データのメタデータを更新しました。input_data_id='{input_data['input_data_id']}'")
-        return True
-
-    def set_metadata_to_input_data_wrapper(
-        self, tpl: tuple[int, InputDataMetadataInfo], project_id: str, *, overwrite_metadata: bool = False
-    ) -> bool:
-        input_data_index, info = tpl
-        return self.set_metadata_to_input_data(
-            project_id,
-            info.input_data_id,
-            metadata=info.metadata,
-            overwrite_metadata=overwrite_metadata,
+    def copy_input_data_and_supplementary_data_wrapper(self, tpl: tuple[int, str]) -> bool:
+        input_data_index, input_data_id = tpl
+        return self.copy_input_data_and_supplementary_data(
+            input_data_id,
             input_data_index=input_data_index,
         )
 
-    def update_metadata_of_input_data(
+    def get_all_input_data_id_list(self, project_id: str) -> list[str]:
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            input_data_json = Path(tmp_dir) / f"{project_id}_input_data.json"
+            self.service.wrapper.download_project_inputs_url(project_id, dest_path=input_data_json)
+
+        input_data_list = json.loads(input_data_json.load_text())
+        return [e["input_data_id"] for e in input_data_list]
+
+    def copy_input_data_list(
         self,
-        project_id: str,
-        metadata_by_input_data_id: dict[str, Metadata],
+        input_data_id_list: Optional[list[str]],
         *,
-        overwrite_metadata: bool = False,
         parallelism: Optional[int] = None,
     ) -> None:
-        metadata_info_list = [InputDataMetadataInfo(input_data_id, metadata) for input_data_id, metadata in metadata_by_input_data_id.items()]
-        if overwrite_metadata:
-            logger.info(f"{len(metadata_info_list)} 件の入力データのメタデータを変更します（上書き）。")
-        else:
-            logger.info(f"{len(metadata_info_list)} 件の入力データのメタデータを変更します（追記）。")
+        if input_data_id_list is None:
+            input_data_id_list = self.get_all_input_data_id_list(self.src_project_id)
 
-        success_count = 0
+        logger.info(
+            f"{len(input_data_id_list)} 件の入力データをコピーします。 :: "
+            f"src_project_id='{self.src_project_id}', dest_project_id='{self.dest_project_id}'"
+        )
 
         if parallelism is not None:
-            partial_func = partial(
-                self.set_metadata_to_input_data_wrapper,
-                project_id=project_id,
-                overwrite_metadata=overwrite_metadata,
-            )
             with multiprocessing.Pool(parallelism) as pool:
-                result_bool_list = pool.map(partial_func, enumerate(metadata_info_list))
+                result_bool_list = pool.map(self.copy_input_data_and_supplementary_data_wrapper, enumerate(input_data_id_list))
                 success_count = len([e for e in result_bool_list if e])
 
         else:
             # 逐次処理
-            for input_data_index, info in enumerate(metadata_info_list):
-                result = self.set_metadata_to_input_data(
-                    project_id,
-                    info.input_data_id,
-                    metadata=info.metadata,
-                    overwrite_metadata=overwrite_metadata,
-                    input_data_index=input_data_index,
-                )
-                if result:
-                    success_count += 1
+            for input_data_index, input_data_id in enumerate(input_data_id_list):
+                try:
+                    result = self.copy_input_data_and_supplementary_data(input_data_id, input_data_index=input_data_index)
+                    if result:
+                        success_count += 1
+                except Exception:
+                    logger.warning(
+                        f"入力データのコピーに失敗しました。 :: "
+                        f"input_data_id='{input_data_id}', "
+                        f"src_project_id='{self.src_project_id}', dest_project_id='{self.dest_project_id}'",
+                        exc_info=True,
+                    )
 
-        logger.info(f"{success_count} / {len(metadata_info_list)} 件の入力データのmetadataを変更しました。")
-
-
-def validate_metadata(metadata: Metadata) -> bool:
-    """
-    メタデータの値を検証します。
-    * メタデータの値がstr型であること
-    """
-    return all(isinstance(value, str) for value in metadata.values())
+        logger.info(
+            f"{success_count} / {len(input_data_id_list)} 件の入力データをコピーしました。 :: "
+            f"src_project_id='{self.src_project_id}', dest_project_id='{self.dest_project_id}'"
+        )
 
 
-class UpdateMetadata(CommandLine):
-    COMMON_MESSAGE = "annofabcli input_data update_metadata: error:"
+class CopyInputData(CommandLine):
+    COMMON_MESSAGE = "annofabcli input_data copy: error:"
 
     def validate(self, args: argparse.Namespace) -> bool:
         if args.parallelism is not None and not args.yes:
             print(  # noqa: T201
                 f"{self.COMMON_MESSAGE} argument --parallelism: '--parallelism'を指定するときは、必ず ``--yes`` を指定してください。",
-                file=sys.stderr,
-            )
-            return False
-
-        if args.metadata is not None and args.input_data_id is None:
-            print(  # noqa: T201
-                f"{self.COMMON_MESSAGE} argument --input_data_id: '--metadata' を指定するときは、 '--input_data_id' が必須です。",
                 file=sys.stderr,
             )
             return False
@@ -286,67 +221,36 @@ class UpdateMetadata(CommandLine):
 
         input_data_id_list = annofabcli.common.cli.get_list_from_args(args.input_data_id) if args.input_data_id is not None else None
 
-        if args.metadata is not None:
-            metadata = annofabcli.common.cli.get_json_from_args(args.metadata)
-            if not validate_metadata(metadata):
-                print(  # noqa: T201
-                    f"{self.COMMON_MESSAGE} argument --metadata: メタデータは不正な形式です。メタデータの値は文字列である必要があります。",
-                    file=sys.stderr,
-                )
-                sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
+        src_project_id = args.project_id
+        dest_project_id = args.dest_project_id
 
-            assert input_data_id_list is not None, "'--metadata'を指定したときは'--input_data_id'は必須です。"
-            metadata_by_input_data_id = {input_data_id: metadata for input_data_id in input_data_id_list}
-
-        elif args.metadata_by_input_data_id is not None:
-            metadata_by_input_data_id = annofabcli.common.cli.get_json_from_args(args.metadata_by_input_data_id)
-
-            input_data_ids_containing_invalid_metadata = []
-            for input_data_id, metadata in metadata_by_input_data_id.items():
-                if not validate_metadata(metadata):
-                    input_data_ids_containing_invalid_metadata.append(input_data_id)
-
-            if len(input_data_ids_containing_invalid_metadata) > 0:
-                print(  # noqa: T201
-                    f"{self.COMMON_MESSAGE} argument --metadata: 以下の入力データIDに対応するメタデータは不正な形式です。"
-                    f"メタデータの値は文字列である必要があります。 :: {input_data_ids_containing_invalid_metadata}",
-                    file=sys.stderr,
-                )
-                sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
-
-            if input_data_id_list is not None:
-                metadata_by_input_data_id = {
-                    input_data_id: metadata for input_data_id, metadata in metadata_by_input_data_id.items() if input_data_id in input_data_id_list
-                }
-        else:
-            raise RuntimeError("'--metadata'か'--metadata_by_input_data_id'のどちらかを指定する必要があります。")
-
-        super().validate_project(args.project_id, [ProjectMemberRole.OWNER])
-        main_obj = UpdateMetadataMain(self.service, all_yes=args.yes)
-        main_obj.update_metadata_of_input_data(
-            args.project_id,
-            metadata_by_input_data_id=metadata_by_input_data_id,
-            overwrite_metadata=args.overwrite,
-            parallelism=args.parallelism,
+        super().validate_project(dest_project_id, [ProjectMemberRole.OWNER])
+        main_obj = CopyInputDataMain(
+            self.service, src_project_id=src_project_id, dest_project_id=dest_project_id, should_overwrite=args.overwrite, all_yes=args.yes
         )
+        main_obj.copy_input_data_list(input_data_id_list)
 
 
 def main(args: argparse.Namespace) -> None:
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
-    UpdateMetadata(service, facade, args).main()
+    CopyInputData(service, facade, args).main()
 
 
 def parse_args(parser: argparse.ArgumentParser) -> None:
     argument_parser = ArgumentParser(parser)
-    argument_parser.add_project_id()
-    argument_parser.add_project_id()
     argument_parser.add_input_data_id(required=False)
+
+    parser.add_argument(
+        "--src_project_id",
+        type=str,
+        help=("コピー元プロジェクトのproject_id"),
+    )
 
     parser.add_argument(
         "--dest_project_id",
         type=str,
-        help=("コピー先のプロジェクトのproject_id"),
+        help=("コピー先プロジェクトのproject_id"),
     )
 
     parser.add_argument(
