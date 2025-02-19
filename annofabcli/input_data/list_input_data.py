@@ -5,70 +5,38 @@ from typing import Any, Optional
 
 import annofabapi
 import pandas
-from annofabapi.models import InputData, Task
+from annofabapi.models import InputData
 
 import annofabcli
 from annofabcli.common.cli import ArgumentParser, CommandLine, build_annofabapi_resource_and_login, print_according_to_format, print_csv
 from annofabcli.common.enums import FormatArgument
 from annofabcli.common.facade import AnnofabApiFacade
-from annofabcli.common.visualize import AddProps
 from annofabcli.input_data.utils import remove_unnecessary_keys_from_input_data
 
 logger = logging.getLogger(__name__)
 
 
-class ListInputDataMain:
+class AddingDetailsToInputData:
+    """
+    入力データに詳細情報を追加するためのクラス
     """
 
-    Args:
-        average_input_data_id_length: 入力データIDの平均長さ。この値を元にして、`getTasks` APIの実行回数を決めます。
-            `getTasks` APIはクエリパラメータに`input_data_ids`で複数の入力データIDを指定できます。
-            クエリパラメータのサイズには上限があるため、たとえば10,000個の入力データIDを指定することはできません。
-            したがって、入力データIDの平均サイズから、`getTasks` APIの実行回数を決めます。
-
-    """
-
-    def __init__(self, service: annofabapi.Resource, project_id: str, *, average_input_data_id_length: int = 36) -> None:
+    def __init__(self, service: annofabapi.Resource, project_id: str) -> None:
         self.service = service
         self.project_id = project_id
-        self.facade = AnnofabApiFacade(service)
-        self.visualize = AddProps(service, project_id)
 
-        self.average_input_data_id_length = average_input_data_id_length
-
-    @staticmethod
-    def _find_task_id_list(task_list: list[Task], input_data_id: str) -> list[str]:
+    def add_parent_task_id_list_to_input_data_list(
+        self, input_data_list: list[InputData], *, average_input_data_id_length: int = 36
+    ) -> list[InputData]:
         """
-        タスク一覧から、該当のinput_data_idを持つtask_id_listを返す。
-        """
-        task_id_list = []
-        for task in task_list:
-            if input_data_id in task["input_data_id_list"]:
-                task_id_list.append(task["task_id"])  # noqa: PERF401
-        return task_id_list
-
-    def get_input_data_from_input_data_id(self, input_data_id_list: list[str]) -> list[InputData]:
-        input_data_list = []
-        logger.debug(f"{len(input_data_id_list)}件の入力データを取得します。")
-        for index, input_data_id in enumerate(input_data_id_list):
-            if (index + 1) % 100 == 0:
-                logger.debug(f"{index + 1} 件目の入力データを取得します。")
-
-            input_data = self.service.wrapper.get_input_data_or_none(self.project_id, input_data_id)
-            if input_data is not None:
-                input_data_list.append(input_data)
-            else:
-                logger.warning(f"入力データ '{input_data_id}' は見つかりませんでした。")
-
-        return input_data_list
-
-    def add_details_to_input_data_list(self, input_data_list: list[InputData]) -> list[InputData]:
-        """
-        `input_data_list`に詳細情報（どのタスクに使われているか）を付与する。
+        `input_data_list`に"どのタスクに使われているか"という情報を付与します。
 
         Args:
-            project_id:
             input_data_list: 入力データList(In/Out)
+            average_input_data_id_length: 入力データIDの平均長さ。この値を元にして、`getTasks` APIの実行回数を決めます。
+                `getTasks` APIはクエリパラメータに`input_data_ids`で複数の入力データIDを指定できます。
+                クエリパラメータのサイズには上限があるため、たとえば10,000個の入力データIDを指定することはできません。
+                したがって、入力データIDの平均サイズから、`getTasks` APIの実行回数を決めます。
 
         Returns:
 
@@ -76,12 +44,10 @@ class ListInputDataMain:
         if len(input_data_list) == 0:
             return input_data_list
 
-        logger.debug(f"入力データ一覧の件数: {len(input_data_list)}")
-
         # AWS CloudFrontのURLの上限が8,192byte
         # https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/cloudfront-limits.html
         MAX_URL_QUERY_LENGTH = 8000  # input_dat_ids部分のURLクエリの最大値  # noqa: N806
-        average_input_data_id_length = self.average_input_data_id_length + 1  # カンマの分だけ長さを増やす
+        average_input_data_id_length = average_input_data_id_length + 1  # カンマの分だけ長さを増やす
         chunk_size = MAX_URL_QUERY_LENGTH // average_input_data_id_length
         initial_index = 0
         while True:
@@ -102,18 +68,59 @@ class ListInputDataMain:
 
                 continue
 
-            logger.debug(f"input_data_list[{initial_index}:{initial_index + chunk_size}] を使用しているタスクを取得する。")
+            logger.debug(f"入力データの{initial_index}件目から{initial_index + chunk_size - 1}件目を参照しているタスクのtask_idを取得します。")
             task_list = self.service.wrapper.get_all_tasks(self.project_id, query_params={"input_data_ids": str_input_data_id_list})
 
             for input_data in sub_input_data_list:
-                # input_data_idで絞り込んでいるが、大文字小文字を区別しない。
-                # したがって、確認のため `_find_task_id_list`を実行する
-                task_id_list = self._find_task_id_list(task_list, input_data["input_data_id"])
-                self.visualize.add_properties_to_input_data(input_data, task_id_list)
+                task_id_list = [t["task_id"] for t in task_list if input_data["input_data_id"] in t["input_data_id_list"]]
+                input_data["parent_task_id_list"] = task_id_list
 
             initial_index = initial_index + chunk_size
             if initial_index >= len(input_data_list):
                 break
+
+        return input_data_list
+
+    def add_supplementary_data_count_to_input_data_list(self, input_data_list: list[InputData]) -> list[InputData]:
+        """
+        `input_data_list`に補助情報の個数（`supplementary_data_count`）を付与します。
+
+        Args:
+            input_data_list: 入力データList(In/Out)
+
+        Returns:
+
+        """
+        if len(input_data_list) == 0:
+            return input_data_list
+
+        logger.info(f"入力データ {len(input_data_list)} 件に紐づく補助情報の個数を取得します。")
+        for index, input_data in enumerate(input_data_list):
+            supplementary_data_list, _ = self.service.api.get_supplementary_data_list(self.project_id, input_data["input_data_id"])
+            input_data["supplementary_data_count"] = len(supplementary_data_list)
+            if (index + 1) % 100 == 0:
+                logger.debug(f"{index + 1} 件の入力データに紐づく補助情報の個数を取得しました。")
+
+        return input_data_list
+
+
+class ListInputDataMain:
+    def __init__(self, service: annofabapi.Resource, project_id: str) -> None:
+        self.service = service
+        self.project_id = project_id
+
+    def get_input_data_from_input_data_id(self, input_data_id_list: list[str]) -> list[InputData]:
+        input_data_list = []
+        logger.debug(f"{len(input_data_id_list)}件の入力データを取得します。")
+        for index, input_data_id in enumerate(input_data_id_list):
+            if (index + 1) % 100 == 0:
+                logger.debug(f"{index + 1} 件目の入力データを取得します。")
+
+            input_data = self.service.wrapper.get_input_data_or_none(self.project_id, input_data_id)
+            if input_data is not None:
+                input_data_list.append(input_data)
+            else:
+                logger.warning(f"入力データ '{input_data_id}' は見つかりませんでした。")
 
         return input_data_list
 
@@ -122,7 +129,8 @@ class ListInputDataMain:
         *,
         input_data_id_list: Optional[list[str]] = None,
         input_data_query: Optional[dict[str, Any]] = None,
-        add_details: bool = False,
+        contain_parent_task_id_list: bool = False,
+        contain_supplementary_data_count: bool = False,
     ) -> list[InputData]:
         """
         入力データ一覧を取得する。
@@ -133,9 +141,12 @@ class ListInputDataMain:
             logger.debug(f"input_data_query: {input_data_query}")
             input_data_list = self.service.wrapper.get_all_input_data_list(self.project_id, query_params=input_data_query)
 
-        # 詳細な情報を追加する
-        if add_details:
-            self.add_details_to_input_data_list(input_data_list)
+        adding_obj = AddingDetailsToInputData(self.service, self.project_id)
+        if contain_parent_task_id_list:
+            adding_obj.add_parent_task_id_list_to_input_data_list(input_data_list)
+
+        if contain_supplementary_data_count:
+            adding_obj.add_supplementary_data_count_to_input_data_list(input_data_list)
 
         # 入力データの不要なキーを削除する
         for input_data in input_data_list:
@@ -159,7 +170,8 @@ class ListInputData(CommandLine):
         input_data_list = main_obj.get_input_data_list(
             input_data_id_list=input_data_id_list,
             input_data_query=input_data_query,
-            add_details=args.add_details,
+            contain_parent_task_id_list=args.with_parent_task_id_list,
+            contain_supplementary_data_count=args.with_supplementary_data_count,
         )
 
         logger.info(f"入力データ一覧の件数: {len(input_data_list)}")
@@ -212,7 +224,11 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     )
 
     parser.add_argument(
-        "--add_details", action="store_true", help="入力データの詳細情報を表示します。以下の列を追加します。\n\n * parent_task_id_list"
+        "--with_parent_task_id_list", action="store_true", help="入力データを参照しているタスクのIDのlist( ``parent_task_id_list`` )も出力します。"
+    )
+
+    parser.add_argument(
+        "--with_supplementary_data_count", action="store_true", help="入力データに紐づく補助情報の個数( ``supplementary_data_count`` )も出力します。"
     )
 
     argument_parser.add_format(

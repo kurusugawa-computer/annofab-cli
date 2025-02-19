@@ -7,7 +7,6 @@ import annofabapi
 import more_itertools
 from annofabapi.models import (
     AnnotationSpecsHistory,
-    InputData,
     Inspection,
     OrganizationMember,
     ProjectMember,
@@ -388,21 +387,3 @@ class AddProps:
         """
         self._add_user_info(task_history_event)
         return task_history_event
-
-    @staticmethod
-    def add_properties_to_input_data(input_data: InputData, task_id_list: list[str]) -> InputData:
-        """
-        入力データ情報に、以下のキーを追加する。
-
-        * parent_task_id_list
-
-        Args:
-            input_data:
-            task_id_list:
-
-        Returns:
-            入力データ情報
-
-        """
-        input_data["parent_task_id_list"] = task_id_list
-        return input_data
