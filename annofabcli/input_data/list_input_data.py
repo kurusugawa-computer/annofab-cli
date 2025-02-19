@@ -5,69 +5,38 @@ from typing import Any, Optional
 
 import annofabapi
 import pandas
-from annofabapi.models import InputData, Task
+from annofabapi.models import InputData
 
 import annofabcli
 from annofabcli.common.cli import ArgumentParser, CommandLine, build_annofabapi_resource_and_login, print_according_to_format, print_csv
 from annofabcli.common.enums import FormatArgument
 from annofabcli.common.facade import AnnofabApiFacade
-from annofabcli.common.visualize import AddProps
 from annofabcli.input_data.utils import remove_unnecessary_keys_from_input_data
 
 logger = logging.getLogger(__name__)
 
 
-class ListInputDataMain:
+class AddingDetailsToInputData:
+    """
+    入力データに詳細情報を追加するためのクラス
     """
 
-    Args:
-        average_input_data_id_length: 入力データIDの平均長さ。この値を元にして、`getTasks` APIの実行回数を決めます。
-            `getTasks` APIはクエリパラメータに`input_data_ids`で複数の入力データIDを指定できます。
-            クエリパラメータのサイズには上限があるため、たとえば10,000個の入力データIDを指定することはできません。
-            したがって、入力データIDの平均サイズから、`getTasks` APIの実行回数を決めます。
-
-    """
-
-    def __init__(self, service: annofabapi.Resource, project_id: str, *, average_input_data_id_length: int = 36) -> None:
+    def __init__(self, service: annofabapi.Resource, project_id: str) -> None:
         self.service = service
         self.project_id = project_id
-        self.facade = AnnofabApiFacade(service)
-        self.visualize = AddProps(service, project_id)
 
-        self.average_input_data_id_length = average_input_data_id_length
-
-    @staticmethod
-    def _find_task_id_list(task_list: list[Task], input_data_id: str) -> list[str]:
-        """
-        タスク一覧から、該当のinput_data_idを持つtask_id_listを返す。
-        """
-        task_id_list = []
-        for task in task_list:
-            if input_data_id in task["input_data_id_list"]:
-                task_id_list.append(task["task_id"])  # noqa: PERF401
-        return task_id_list
-
-    def get_input_data_from_input_data_id(self, input_data_id_list: list[str]) -> list[InputData]:
-        input_data_list = []
-        logger.debug(f"{len(input_data_id_list)}件の入力データを取得します。")
-        for index, input_data_id in enumerate(input_data_id_list):
-            if (index + 1) % 100 == 0:
-                logger.debug(f"{index + 1} 件目の入力データを取得します。")
-
-            input_data = self.service.wrapper.get_input_data_or_none(self.project_id, input_data_id)
-            if input_data is not None:
-                input_data_list.append(input_data)
-            else:
-                logger.warning(f"入力データ '{input_data_id}' は見つかりませんでした。")
-
-        return input_data_list
-
-    def add_parent_task_id_list_to_input_data_list(self, input_data_list: list[InputData]) -> list[InputData]:
+    def add_parent_task_id_list_to_input_data_list(
+        self, input_data_list: list[InputData], *, average_input_data_id_length: int = 36
+    ) -> list[InputData]:
         """
         `input_data_list`に"どのタスクに使われているか"という情報を付与します。
 
         Args:
             input_data_list: 入力データList(In/Out)
+            average_input_data_id_length: 入力データIDの平均長さ。この値を元にして、`getTasks` APIの実行回数を決めます。
+                `getTasks` APIはクエリパラメータに`input_data_ids`で複数の入力データIDを指定できます。
+                クエリパラメータのサイズには上限があるため、たとえば10,000個の入力データIDを指定することはできません。
+                したがって、入力データIDの平均サイズから、`getTasks` APIの実行回数を決めます。
 
         Returns:
 
@@ -78,7 +47,7 @@ class ListInputDataMain:
         # AWS CloudFrontのURLの上限が8,192byte
         # https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/cloudfront-limits.html
         MAX_URL_QUERY_LENGTH = 8000  # input_dat_ids部分のURLクエリの最大値  # noqa: N806
-        average_input_data_id_length = self.average_input_data_id_length + 1  # カンマの分だけ長さを増やす
+        average_input_data_id_length = average_input_data_id_length + 1  # カンマの分だけ長さを増やす
         chunk_size = MAX_URL_QUERY_LENGTH // average_input_data_id_length
         initial_index = 0
         while True:
@@ -103,10 +72,8 @@ class ListInputDataMain:
             task_list = self.service.wrapper.get_all_tasks(self.project_id, query_params={"input_data_ids": str_input_data_id_list})
 
             for input_data in sub_input_data_list:
-                # input_data_idで絞り込んでいるが、大文字小文字を区別しない。
-                # したがって、確認のため `_find_task_id_list`を実行する
-                task_id_list = self._find_task_id_list(task_list, input_data["input_data_id"])
-                self.visualize.add_properties_to_input_data(input_data, task_id_list)
+                task_id_list = [t["task_id"] for t in task_list if input_data["input_data_id"] in t["input_data_id_list"]]
+                input_data["parent_task_id_list"] = task_id_list
 
             initial_index = initial_index + chunk_size
             if initial_index >= len(input_data_list):
@@ -136,6 +103,29 @@ class ListInputDataMain:
 
         return input_data_list
 
+
+class ListInputDataMain:
+    """ """
+
+    def __init__(self, service: annofabapi.Resource, project_id: str) -> None:
+        self.service = service
+        self.project_id = project_id
+
+    def get_input_data_from_input_data_id(self, input_data_id_list: list[str]) -> list[InputData]:
+        input_data_list = []
+        logger.debug(f"{len(input_data_id_list)}件の入力データを取得します。")
+        for index, input_data_id in enumerate(input_data_id_list):
+            if (index + 1) % 100 == 0:
+                logger.debug(f"{index + 1} 件目の入力データを取得します。")
+
+            input_data = self.service.wrapper.get_input_data_or_none(self.project_id, input_data_id)
+            if input_data is not None:
+                input_data_list.append(input_data)
+            else:
+                logger.warning(f"入力データ '{input_data_id}' は見つかりませんでした。")
+
+        return input_data_list
+
     def get_input_data_list(
         self,
         *,
@@ -153,11 +143,12 @@ class ListInputDataMain:
             logger.debug(f"input_data_query: {input_data_query}")
             input_data_list = self.service.wrapper.get_all_input_data_list(self.project_id, query_params=input_data_query)
 
+        adding_obj = AddingDetailsToInputData(self.service, self.project_id)
         if contain_parent_task_id_list:
-            self.add_parent_task_id_list_to_input_data_list(input_data_list)
+            adding_obj.add_parent_task_id_list_to_input_data_list(input_data_list)
 
         if contain_supplementary_data_count:
-            self.add_supplementary_data_count_to_input_data_list(input_data_list)
+            adding_obj.add_supplementary_data_count_to_input_data_list(input_data_list)
 
         # 入力データの不要なキーを削除する
         for input_data in input_data_list:
