@@ -18,7 +18,6 @@ import annofabcli.common.cli
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
     PARALLELISM_CHOICES,
-    ArgumentParser,
     CommandLine,
     CommandLineWithConfirm,
     build_annofabapi_resource_and_login,
@@ -250,25 +249,34 @@ def main(args: argparse.Namespace) -> None:
 
 
 def parse_args(parser: argparse.ArgumentParser) -> None:
-    argument_parser = ArgumentParser(parser)
-    argument_parser.add_input_data_id(required=False)
-
     parser.add_argument(
         "--src_project_id",
         type=str,
-        help=("コピー元プロジェクトのproject_id"),
+        required=True,
+        help="コピー元プロジェクトのproject_id",
     )
 
     parser.add_argument(
         "--dest_project_id",
         type=str,
-        help=("コピー先プロジェクトのproject_id"),
+        required=True,
+        help="コピー先プロジェクトのproject_id",
+    )
+
+    parser.add_argument(
+        "-i",
+        "--input_data_id",
+        type=str,
+        nargs="+",
+        required=False,
+        help="コピー対象の入力データのinput_data_idを指定します。 "
+        "``file://`` を先頭に付けると、input_data_idの一覧が記載されたファイルを指定できます。",
     )
 
     parser.add_argument(
         "--overwrite",
         action="store_true",
-        help="コピー先プロジェクトにすでに入力データが存在する場合、入力データを更新します。",
+        help="コピー先プロジェクトにすでに入力データが存在する場合、入力データを更新してコピーします。",
     )
 
     parser.add_argument(

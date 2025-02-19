@@ -16,6 +16,7 @@ Available Commands
    :titlesonly:
 
    change_name
+   copy
    delete
    delete_metadata_key
    download
