@@ -53,6 +53,12 @@ class ExitCode:
 COMMAND_LINE_ERROR_STATUS_CODE = 2
 """コマンドラインエラーが発生したときに返すステータスコード"""
 
+PARALLELISM_CHOICES = range(1, 5)
+"""
+`--parallelism`に指定できる値
+AnnofabのRate Limit的に最大4並列なので（これ以上並列度を上げてもRate Limitにひっかかる）ので、1-4の範囲にしている。
+"""
+
 
 def build_annofabapi_resource_and_login(args: argparse.Namespace) -> annofabapi.Resource:
     """
