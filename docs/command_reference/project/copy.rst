@@ -11,7 +11,7 @@ Examples
 
 基本的な使い方
 --------------------------
-``--project_id`` にコピー元プロジェクトのproject_id、``--dest_title`` にコピー先プロジェクトの名前を指定してください。
+``--project_id`` にコピー元プロジェクトのproject_id、 ``--dest_title`` にコピー先プロジェクトの名前を指定してください。
 コピー元プロジェクトの以下の情報がコピーされます。
 
 * プロジェクト設定
@@ -22,18 +22,17 @@ Examples
 
     $ annofabcli project copy --project_id prj1 --dest_title prj2-title
 
-コピー先プロジェクトのproject_idは、デフォルトではUUIDv4になります。project_idを指定する場合は、``dest_project_id`` を指定してください。
+コピー先プロジェクトのproject_idは、デフォルトではUUIDv4になります。project_idを指定する場合は、 ``dest_project_id`` を指定してください。
 
 .. code-block::
 
     $ annofabcli project copy --project_id prj1 --dest_title prj2-title  --dest_project_id prj2
 
-デフォルトでは、タスクや入力データなどはコピーされません。コピー対象のデータを指定する場合は、``--copied_target`` 引数に以下の値を複数指定してください。
+デフォルトでは、タスクや入力データなどはコピーされません。コピー対象のデータを指定する場合は、 ``--copied_target`` 引数に以下の値を複数指定してください。
 指定できる値は以下の通りです。
 
 
-* ``input_data`` : 入力データ
-* ``supplementary_data`` : 補助情報
+* ``input_data`` : 入力データと関連する補助情報
 * ``task`` : タスク
 * ``annotation`` : アノテーション
 * ``webhook`` : Webhook
@@ -44,11 +43,6 @@ Examples
 
     $ annofabcli project copy --project_id prj1 --dest_title prj2-title  --copied_target annotation
 
-デフォルトではコピーの完了を待たずに処理が終了します。コピーがが完了するまで処理を継続する場合は、 ``--wait`` を指定してください。
-
-.. code-block::
-
-    $ annofabcli project copy --project_id prj1 --dest_title prj2-title  --wait
 
 Usage Details
 =================================

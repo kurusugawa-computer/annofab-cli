@@ -29,12 +29,24 @@ logger = logging.getLogger(__name__)
 
 class CopyInputDataMain(CommandLineWithConfirm):
     def __init__(
-        self, service: annofabapi.Resource, *, src_project_id: str, dest_project_id: str, should_overwrite: bool, all_yes: bool = False
+        self,
+        service: annofabapi.Resource,
+        *,
+        src_project_id: str,
+        dest_project_id: str,
+        should_overwrite: bool,
+        all_yes: bool = False,
     ) -> None:
         self.service = service
         self.src_project_id = src_project_id
         self.dest_project_id = dest_project_id
         self.should_overwrite = should_overwrite
+
+        src_project, _ = service.api.get_project(src_project_id)
+        self.src_project_title = src_project["title"]
+        dest_project, _ = service.api.get_project(dest_project_id)
+        self.dest_project_title = dest_project["title"]
+
         CommandLineWithConfirm.__init__(self, all_yes)
 
     def copy_supplementary_data(self, src_supplementary_data: dict[str, Any], last_updated_datetime: Optional[str]) -> dict[str, Any]:
@@ -181,7 +193,8 @@ class CopyInputDataMain(CommandLineWithConfirm):
             input_data_id_list = self.get_all_input_data_id_list(self.src_project_id)
 
         logger.info(
-            f"{len(input_data_id_list)} 件の入力データをコピーします。 :: "
+            f"プロジェクト'{self.src_project_title}'配下の{len(input_data_id_list)} 件の入力データと関連する補助情報を、"
+            f"プロジェクト'{self.dest_project_title}'にコピーします。 :: "
             f"src_project_id='{self.src_project_id}', dest_project_id='{self.dest_project_id}'"
         )
 
@@ -207,7 +220,7 @@ class CopyInputDataMain(CommandLineWithConfirm):
                     )
 
         logger.info(
-            f"{success_count} / {len(input_data_id_list)} 件の入力データをコピーしました。 :: "
+            f"{success_count} / {len(input_data_id_list)} 件の入力データと関連する補助情報をコピーしました。 :: "
             f"src_project_id='{self.src_project_id}', dest_project_id='{self.dest_project_id}'"
         )
 
@@ -237,7 +250,11 @@ class CopyInputData(CommandLine):
 
         super().validate_project(dest_project_id, [ProjectMemberRole.OWNER])
         main_obj = CopyInputDataMain(
-            self.service, src_project_id=src_project_id, dest_project_id=dest_project_id, should_overwrite=args.overwrite, all_yes=args.yes
+            self.service,
+            src_project_id=src_project_id,
+            dest_project_id=dest_project_id,
+            should_overwrite=args.overwrite,
+            all_yes=args.yes,
         )
         main_obj.copy_input_data_list(input_data_id_list, parallelism=args.parallelism)
 
