@@ -17,6 +17,7 @@ import annofabcli
 import annofabcli.common.cli
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
+    PARALLELISM_CHOICES,
     ArgumentParser,
     CommandLine,
     CommandLineWithConfirm,
@@ -62,7 +63,8 @@ class CopyInputDataMain(CommandLineWithConfirm):
     ) -> None:
         for src_supplementary_data in src_supplementary_data_list:
             dest_supplementary_data = more_itertools.first_true(
-                dest_supplementary_data_list, pred=lambda e, s=src_supplementary_data: e["supplementary_data_id"] == s["supplementary_data_id"]
+                dest_supplementary_data_list,
+                pred=lambda e, s=src_supplementary_data: e["supplementary_data_id"] == s["supplementary_data_id"],  # type: ignore[misc]
             )
             last_updated_datetime_for_supplementary_data = (
                 dest_supplementary_data["updated_datetime"] if dest_supplementary_data is not None else None
@@ -113,8 +115,6 @@ class CopyInputDataMain(CommandLineWithConfirm):
             logger.warning(f"{logging_prefix}入力データは存在しないのでコピーをスキップします。 :: input_data_id='{input_data_id}'")
             return False
 
-        src_supplementary_data_list, _ = self.service.api.get_supplementary_data_list(self.src_project_id, input_data_id)
-
         input_data_name = src_input_data["input_data_name"]
         dest_input_data = self.service.wrapper.get_input_data_or_none(self.dest_project_id, input_data_id)
         if dest_input_data is not None and not self.should_overwrite:
@@ -125,6 +125,7 @@ class CopyInputDataMain(CommandLineWithConfirm):
             )
             return False
 
+        src_supplementary_data_list, _ = self.service.api.get_supplementary_data_list(self.src_project_id, input_data_id)
         if not self.confirm_processing(get_confirm_message(len(src_supplementary_data_list), exists_in_dest_project=dest_input_data is not None)):
             return False
 
@@ -137,12 +138,14 @@ class CopyInputDataMain(CommandLineWithConfirm):
             f"src_project_id='{self.src_project_id}', dest_project_id='{self.dest_project_id}'"
         )
 
-        if dest_input_data is not None:
-            dest_supplementary_data_list, _ = self.service.api.get_supplementary_data_list(self.dest_project_id, input_data_id)
-        else:
-            dest_supplementary_data_list = []
+        if len(src_supplementary_data_list) > 0:
+            # 補助情報が存在する場合は、補助情報もコピーする
+            if dest_input_data is not None:
+                dest_supplementary_data_list, _ = self.service.api.get_supplementary_data_list(self.dest_project_id, input_data_id)
+            else:
+                dest_supplementary_data_list = []
 
-        self.copy_supplementary_data_list(src_supplementary_data_list, dest_supplementary_data_list, logging_prefix=logging_prefix)
+            self.copy_supplementary_data_list(src_supplementary_data_list, dest_supplementary_data_list, logging_prefix=logging_prefix)
 
         return True
 
@@ -271,7 +274,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--parallelism",
         type=int,
-        choices=[1,2,3,4],
+        choices=PARALLELISM_CHOICES,
         help="使用するプロセス数（並列度）を指定してください。指定する場合は必ず ``--yes`` を指定してください。指定しない場合は、逐次的に処理します。",  # noqa: E501
     )
 
@@ -280,8 +283,15 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
 
 def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     subcommand_name = "copy"
-    subcommand_help = "入力データと関連する補助情報をコピーします。"
+    subcommand_help = "入力データと関連する補助情報を別プロジェクトにコピーします。"
+    description = (
+        "入力データと関連する補助情報を別プロジェクトにコピーします。\n"
+        "【注意】プライベートストレージを参照している入力データをコピーできます。"
+        "Annofabストレージを参照している入力データはコピーできません。"
+        "コピー先プロジェクトは、プライベートストレージが利用可能である必要があります。"
+    )
+
     epilog = "コピー先プロジェクトに対してオーナロールを持つユーザで実行してください。"
-    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, epilog=epilog)
+    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description=description, epilog=epilog)
     parse_args(parser)
     return parser
