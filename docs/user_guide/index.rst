@@ -10,5 +10,4 @@ User Guide
    configurations
    cli_usage_output
    command_line_options
-   command_line_global_options
    3dpc-editor
