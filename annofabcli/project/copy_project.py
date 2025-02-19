@@ -21,10 +21,12 @@ logger = logging.getLogger(__name__)
 
 
 class CopiedTarget(Enum):
-    """コピー対象のリソース"""
+    """
+    コピー対象のリソース
+    補助情報をコピーする際は`input_data`を指定する必要があります。
+    """
 
     INPUT_DATA = "input_data"
-    SUPPLEMENTARY_DATA = "supplementary_data"
     TASK = "task"
     ANNOTATION = "annotation"
     WEBHOOK = "webhook"
@@ -32,14 +34,18 @@ class CopiedTarget(Enum):
 
 
 COPIED_TARGET_AND_KEY_MAP = {
-    CopiedTarget.INPUT_DATA: "copy_inputs",
-    CopiedTarget.SUPPLEMENTARY_DATA: "copy_supplementary_data",
-    CopiedTarget.TASK: "copy_tasks",
-    CopiedTarget.ANNOTATION: "copy_annotations",
-    CopiedTarget.WEBHOOK: "copy_webhooks",
-    CopiedTarget.INSTRUCTION: "copy_instructions",
+    CopiedTarget.INPUT_DATA: {"copy_inputs", "copy_supplementary_data"},
+    CopiedTarget.TASK: {"copy_inputs", "copy_supplementary_data", "copy_tasks"},
+    CopiedTarget.ANNOTATION: {"copy_inputs", "copy_supplementary_data", "copy_tasks", "copy_annotations"},
+    CopiedTarget.WEBHOOK: {"copy_webhooks"},
+    CopiedTarget.INSTRUCTION: {"copy_instructions"},
 }
-"""コピー対象とリクエストボディに渡すキーの関係"""
+"""
+コピー対象とリクエストボディに渡すキーの関係
+
+入力データを指定した場合は、必ず補助情報もコピーするようにしています。
+入力データのみコピーするユースケースがないためです。
+"""
 
 
 class CopyProject(CommandLine):
@@ -47,15 +53,14 @@ class CopyProject(CommandLine):
     プロジェクトをコピーする
     """
 
-    def copy_project(  # noqa: ANN201
+    def copy_project(
         self,
         src_project_id: str,
         dest_project_id: str,
         dest_title: str,
         dest_overview: Optional[str] = None,
         copied_targets: Optional[Collection[CopiedTarget]] = None,
-        wait_for_completion: bool = False,  # noqa: FBT001, FBT002
-    ):
+    ) -> None:
         """
         プロジェクトメンバを、別のプロジェクトにコピーする。
 
@@ -66,7 +71,6 @@ class CopyProject(CommandLine):
             wait_options: 待つときのオプション
             dest_overview: 新しいプロジェクトの概要
             copy_options: 各項目についてコピーするかどうかのオプション
-            wait_for_completion: プロジェクトのコピーが完了するまで待つかかどうか
         """
 
         self.validate_project(
@@ -77,63 +81,39 @@ class CopyProject(CommandLine):
 
         src_project_title = self.facade.get_project_title(src_project_id)
 
-        set_copied_targets = self._get_completion_copied_targets(copied_targets) if copied_targets is not None else None
-        if set_copied_targets is not None:
-            str_copied_targets = ", ".join([e.value for e in set_copied_targets])
-            logger.info(f"コピー対象: {str_copied_targets}")
+        if copied_targets is not None:
+            logger.info(f"コピー対象: {e.value for e in copied_targets}")
 
-        confirm_message = f"{src_project_title} ({src_project_id} を、{dest_title} ({dest_project_id}) にコピーしますか？"
+        confirm_message = f"プロジェクト'{src_project_title}'（project_id='{src_project_id}'）を、プロジェクト'{dest_title}'（project_id='{dest_project_id}'） にコピーしますか？"
         if not self.confirm_processing(confirm_message):
             logger.info(f"{src_project_title} ({src_project_id} をコピーせずに終了します。")
             return
 
         request_body: dict[str, Any] = {}
 
-        if set_copied_targets is not None:
-            for target in set_copied_targets:
-                key = COPIED_TARGET_AND_KEY_MAP[target]
-                request_body[key] = True
+        if copied_targets is not None:
+            for target in copied_targets:
+                for key in COPIED_TARGET_AND_KEY_MAP[target]:
+                    request_body[key] = True
 
         request_body.update({"dest_project_id": dest_project_id, "dest_title": dest_title, "dest_overview": dest_overview})
 
         self.service.api.initiate_project_copy(src_project_id, request_body=request_body)
         logger.info("プロジェクトのコピーを実施しています。")
 
-        if wait_for_completion:
-            MAX_WAIT_MINUTE = DEFAULT_WAIT_OPTIONS.max_tries * DEFAULT_WAIT_OPTIONS.interval / 60  # noqa: N806
-            logger.info(f"最大{MAX_WAIT_MINUTE}分間、コピーが完了するまで待ちます。")
+        MAX_WAIT_MINUTE = DEFAULT_WAIT_OPTIONS.max_tries * DEFAULT_WAIT_OPTIONS.interval / 60  # noqa: N806
+        logger.info(f"最大{MAX_WAIT_MINUTE}分間、コピーが完了するまで待ちます。")
 
-            result = self.service.wrapper.wait_for_completion(
-                src_project_id,
-                job_type=ProjectJobType.COPY_PROJECT,
-                job_access_interval=DEFAULT_WAIT_OPTIONS.interval,
-                max_job_access=DEFAULT_WAIT_OPTIONS.max_tries,
-            )
-            if result:
-                logger.info("プロジェクトのコピーが完了しました。")
-            else:
-                logger.info("プロジェクトのコピーは実行中 または 失敗しました。")
+        result = self.service.wrapper.wait_for_completion(
+            src_project_id,
+            job_type=ProjectJobType.COPY_PROJECT,
+            job_access_interval=DEFAULT_WAIT_OPTIONS.interval,
+            max_job_access=DEFAULT_WAIT_OPTIONS.max_tries,
+        )
+        if result:
+            logger.info("プロジェクトのコピーが完了しました。")
         else:
-            logger.info("コピーの完了を待たずに終了します。")
-
-    @staticmethod
-    def _get_completion_copied_targets(copied_targets: Collection[CopiedTarget]) -> set[CopiedTarget]:
-        """
-        コピー対象から、補完したコピー対象を取得する。
-        """
-        result = set(copied_targets)
-
-        if CopiedTarget.ANNOTATION in result:
-            result.add(CopiedTarget.TASK)
-            result.add(CopiedTarget.INPUT_DATA)
-
-        if CopiedTarget.TASK in result:
-            result.add(CopiedTarget.INPUT_DATA)
-
-        if CopiedTarget.SUPPLEMENTARY_DATA in result:
-            result.add(CopiedTarget.INPUT_DATA)
-
-        return result
+            logger.info("プロジェクトのコピーは実行中 または 失敗しました。")
 
     def main(self) -> None:
         args = self.args
@@ -145,7 +125,6 @@ class CopyProject(CommandLine):
             dest_title=args.dest_title,
             dest_overview=args.dest_overview,
             copied_targets=copied_targets,
-            wait_for_completion=args.wait,
         )
 
 
@@ -167,8 +146,6 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--dest_overview", type=str, help="新しいプロジェクトの概要を指定してください。")
 
     parser.add_argument("--copied_target", type=str, nargs="+", choices=[e.value for e in CopiedTarget], help="コピー対象を指定してください。")
-
-    parser.add_argument("--wait", action="store_true", help="プロジェクトのコピーが完了するまで待ちます。")
 
     parser.set_defaults(subcommand_func=main)
 
