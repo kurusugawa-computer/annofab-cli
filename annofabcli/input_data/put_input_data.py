@@ -18,6 +18,7 @@ from dataclasses_json import DataClassJsonMixin
 import annofabcli
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
+    PARALLELISM_CHOICES,
     ArgumentParser,
     CommandLine,
     build_annofabapi_resource_and_login,
@@ -415,6 +416,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--parallelism",
         type=int,
+        choices=PARALLELISM_CHOICES,
         help="並列度。指定しない場合は、逐次的に処理します。"
         "``--csv`` , ``--json`` を指定したときのみ有効なオプションです。また、必ず ``--yes`` を指定してください。",
     )

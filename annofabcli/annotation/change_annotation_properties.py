@@ -19,6 +19,7 @@ from annofabcli.annotation.annotation_query import AnnotationQueryForAPI, Annota
 from annofabcli.annotation.dump_annotation import DumpAnnotationMain
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
+    PARALLELISM_CHOICES,
     ArgumentParser,
     CommandLine,
     CommandLineWithConfirm,
@@ -394,6 +395,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--parallelism",
         type=int,
+        choices=PARALLELISM_CHOICES,
         help="並列度。指定しない場合は、逐次的に処理します。指定した場合は、``--yes`` も指定してください。",
     )
 

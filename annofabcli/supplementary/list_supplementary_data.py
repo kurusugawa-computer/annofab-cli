@@ -13,7 +13,7 @@ import annofabapi
 from annofabapi.models import SupplementaryData
 
 import annofabcli
-from annofabcli.common.cli import ArgumentParser, CommandLine, build_annofabapi_resource_and_login
+from annofabcli.common.cli import PARALLELISM_CHOICES, ArgumentParser, CommandLine, build_annofabapi_resource_and_login
 from annofabcli.common.download import DownloadingFile
 from annofabcli.common.enums import FormatArgument
 from annofabcli.common.facade import AnnofabApiFacade
@@ -161,6 +161,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--parallelism",
         type=int,
+        choices=PARALLELISM_CHOICES,
         help="並列度。指定しない場合は、逐次的に処理します。",
     )
 
