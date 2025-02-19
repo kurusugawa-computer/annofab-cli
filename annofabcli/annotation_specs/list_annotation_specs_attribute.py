@@ -24,15 +24,16 @@ from annofabcli.common.cli import (
 )
 from annofabcli.common.enums import FormatArgument
 from annofabcli.common.facade import AnnofabApiFacade
-from annofabcli.common.utils import print_csv
+from annofabcli.common.utils import print_according_to_format, print_csv
 
 logger = logging.getLogger(__name__)
 
 
 @dataclass
-class AttributeForCsv(DataClassJsonMixin):
+class FlattenAttribute(DataClassJsonMixin):
     """
-    CSV用の属性情報を格納するクラスです。
+    ネストされていないフラットな属性情報を格納するクラスです。
+    選択肢の一覧などは格納できません。
     """
 
     attribute_id: str
@@ -78,9 +79,9 @@ def create_relationship_between_attribute_and_label(labels_v3: list[dict[str, An
     return result
 
 
-def create_df_from_additionals(
+def create_flatten_attribute_list_from_additionals(
     additionals_v3: list[dict[str, Any]], labels_v3: list[dict[str, Any]], restrictions: list[dict[str, Any]]
-) -> pandas.DataFrame:
+) -> list[FlattenAttribute]:
     """
     APIから取得した属性情報（v3版）から、pandas.DataFrameを生成します。
 
@@ -98,13 +99,13 @@ def create_df_from_additionals(
     # keyが属性ID、valueが属性に紐づくラベルのIDのsetであるdict
     dict_label_ids = create_relationship_between_attribute_and_label(labels_v3)
 
-    def dict_additional_to_dataclass(additional: dict[str, Any]) -> AttributeForCsv:
+    def dict_additional_to_dataclass(additional: dict[str, Any]) -> FlattenAttribute:
         """
         辞書の属性情報をDataClassのラベル情報に変換します。
         """
         attribute_id = additional["additional_data_definition_id"]
         additional_name = additional["name"]
-        return AttributeForCsv(
+        return FlattenAttribute(
             attribute_id=attribute_id,
             attribute_name_en=get_message_with_lang(additional_name, lang=Lang.EN_US),
             attribute_name_ja=get_message_with_lang(additional_name, lang=Lang.JA_JP),
@@ -117,32 +118,39 @@ def create_df_from_additionals(
             reference_label_count=len(dict_label_ids[attribute_id]),
         )
 
-    new_labels = [dict_additional_to_dataclass(e) for e in additionals_v3]
-
-    columns = [
-        "attribute_id",
-        "attribute_name_en",
-        "attribute_name_ja",
-        "attribute_name_vi",
-        "type",
-        "default",
-        "read_only",
-        "choice_count",
-        "restriction_count",
-        "reference_label_count",
-    ]
-
-    df = pandas.DataFrame(new_labels, columns=columns)
-    return df
+    logger.debug("yuji")
+    return [dict_additional_to_dataclass(e) for e in additionals_v3]
 
 
 class PrintAnnotationSpecsAttribute(CommandLine):
     COMMON_MESSAGE = "annofabcli annotation_specs list_attribute: error:"
 
-    def print_annotation_specs_attribute(self, annotation_specs_v3: dict[str, Any], arg_format: str, output: Optional[str] = None) -> None:
-        if arg_format == FormatArgument.CSV.value:
-            df = create_df_from_additionals(annotation_specs_v3["additionals"], annotation_specs_v3["labels"], annotation_specs_v3["restrictions"])
+    def print_annotation_specs_attribute(
+        self, annotation_specs_v3: dict[str, Any], output_format: FormatArgument, output: Optional[str] = None
+    ) -> None:
+        attribute_list = create_flatten_attribute_list_from_additionals(
+            annotation_specs_v3["additionals"], annotation_specs_v3["labels"], annotation_specs_v3["restrictions"]
+        )
+        logger.info(f"{len(attribute_list)} 件の属性情報を出力します。")
+        if output_format == FormatArgument.CSV:
+            columns = [
+                "attribute_id",
+                "attribute_name_en",
+                "attribute_name_ja",
+                "attribute_name_vi",
+                "type",
+                "default",
+                "read_only",
+                "choice_count",
+                "restriction_count",
+                "reference_label_count",
+            ]
+
+            df = pandas.DataFrame(attribute_list, columns=columns)
             print_csv(df, output)
+
+        elif output_format in [FormatArgument.JSON, FormatArgument.PRETTY_JSON]:
+            print_according_to_format([e.to_dict() for e in attribute_list], format=output_format, output=output)
 
     def get_history_id_from_before_index(self, project_id: str, before: int) -> Optional[str]:
         histories, _ = self.service.api.get_annotation_specs_histories(project_id)
@@ -177,7 +185,7 @@ class PrintAnnotationSpecsAttribute(CommandLine):
         else:
             raise RuntimeError("'--project_id'か'--annotation_specs_json'のどちらかを指定する必要があります。")
 
-        self.print_annotation_specs_attribute(annotation_specs, arg_format=args.format, output=args.output)
+        self.print_annotation_specs_attribute(annotation_specs, output_format=FormatArgument(args.format), output=args.output)
 
 
 def parse_args(parser: argparse.ArgumentParser) -> None:
@@ -216,7 +224,14 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         ),
     )
 
-    parser.add_argument("-f", "--format", type=str, choices=[FormatArgument.CSV.value], default=FormatArgument.CSV.value, help="出力フォーマット ")
+    parser.add_argument(
+        "-f",
+        "--format",
+        type=str,
+        choices=[FormatArgument.CSV.value, FormatArgument.JSON.value, FormatArgument.PRETTY_JSON.value],
+        default=FormatArgument.CSV.value,
+        help="出力フォーマット ",
+    )
 
     argument_parser.add_output()
 
@@ -232,7 +247,7 @@ def main(args: argparse.Namespace) -> None:
 def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     subcommand_name = "list_attribute"
 
-    subcommand_help = "アノテーション仕様の属性情報を出力する"
+    subcommand_help = "アノテーション仕様の属性情報を出力します。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help)
     parse_args(parser)
