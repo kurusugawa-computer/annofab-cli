@@ -20,15 +20,18 @@ Examples
 
 .. code-block::
 
-    $ annofabcli annotation copy -p prj1 --input src_task_id1:dest_task_id1 src_task_id2:dest_task_id2
+    $ annofabcli task copy --project_id prj1 \
+     --input src_task_id1:dest_task_id1 src_task_id2:dest_task_id2
 
 
 ``--copy_metadata`` を指定すれば、タスクのメタデータもコピーされます。
 
 .. code-block::
 
-    $ annofabcli task copy --project_id prj1 --task_id t1 t2 \
-    --dest_task_id t3 t4 --copy_metadata
+    $ annofabcli task copy --project_id prj1 \
+     --input src_task_id1:dest_task_id1 src_task_id2:dest_task_id2 \
+     --copy_metadata
+
 
 Usage Details
 =================================
