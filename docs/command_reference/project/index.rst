@@ -20,7 +20,6 @@ Available Commands
    diff
    list
    put
-   update_annotation_zip
 
 Usage Details
 =================================
