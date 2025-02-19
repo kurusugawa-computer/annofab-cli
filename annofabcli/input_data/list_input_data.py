@@ -105,8 +105,6 @@ class AddingDetailsToInputData:
 
 
 class ListInputDataMain:
-    """ """
-
     def __init__(self, service: annofabapi.Resource, project_id: str) -> None:
         self.service = service
         self.project_id = project_id

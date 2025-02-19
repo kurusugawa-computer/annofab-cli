@@ -18,6 +18,7 @@ from annofabcli.common.cli import ArgumentParser, CommandLine, build_annofabapi_
 from annofabcli.common.download import DownloadingFile
 from annofabcli.common.enums import FormatArgument
 from annofabcli.common.facade import AnnofabApiFacade, InputDataQuery, match_input_data_with_query
+from annofabcli.input_data.list_input_data import AddingDetailsToInputData
 from annofabcli.input_data.utils import remove_unnecessary_keys_from_input_data
 
 logger = logging.getLogger(__name__)
@@ -64,9 +65,12 @@ class ListInputDataWithJsonMain:
         self,
         project_id: str,
         input_data_json: Optional[Path],
+        *,
         input_data_id_list: Optional[list[str]] = None,
         input_data_query: Optional[InputDataQuery] = None,
-        is_latest: bool = False,  # noqa: FBT001, FBT002
+        contain_parent_task_id_list: bool = False,
+        contain_supplementary_data_count: bool = False,
+        is_latest: bool = False,
     ) -> list[dict[str, Any]]:
         if input_data_json is None:
             downloading_obj = DownloadingFile(self.service)
@@ -92,13 +96,20 @@ class ListInputDataWithJsonMain:
             e for e in input_data_list if self.filter_input_data_list(e, input_data_query=input_data_query, input_data_id_set=input_data_id_set)
         ]
 
+        adding_obj = AddingDetailsToInputData(self.service, project_id)
+        if contain_parent_task_id_list:
+            adding_obj.add_parent_task_id_list_to_input_data_list(input_data_list)
+
+        if contain_supplementary_data_count:
+            adding_obj.add_supplementary_data_count_to_input_data_list(input_data_list)
+
         # 入力データの不要なキーを削除する
         for input_data in input_data_list:
             remove_unnecessary_keys_from_input_data(input_data)
         return filtered_input_data_list
 
 
-class ListInputDataWithJson(CommandLine):
+class ListAllInputData(CommandLine):
     def main(self) -> None:
         args = self.args
 
@@ -117,6 +128,8 @@ class ListInputDataWithJson(CommandLine):
             input_data_id_list=input_data_id_list,
             input_data_query=input_data_query,
             is_latest=args.latest,
+            contain_parent_task_id_list=args.with_parent_task_id_list,
+            contain_supplementary_data_count=args.with_supplementary_data_count,
         )
 
         logger.debug(f"入力データ一覧の件数: {len(input_data_list)}")
@@ -138,7 +151,7 @@ class ListInputDataWithJson(CommandLine):
 def main(args: argparse.Namespace) -> None:
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
-    ListInputDataWithJson(service, facade, args).main()
+    ListAllInputData(service, facade, args).main()
 
 
 def parse_args(parser: argparse.ArgumentParser) -> None:
@@ -181,6 +194,14 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         help="最新の入力データの情報を出力します。"
         "このオプションを指定すると数分待ちます。Annofabからダウンロードする「入力データ全件ファイル」に、最新の情報を反映させるのに時間がかかるためです。\n"
         "指定しない場合は、コマンドを実行した日の02:00(JST)頃の入力データの一覧が出力されます。",
+    )
+
+    parser.add_argument(
+        "--with_parent_task_id_list", action="store_true", help="入力データを参照しているタスクのIDのlist( ``parent_task_id_list`` )も出力します。"
+    )
+
+    parser.add_argument(
+        "--with_supplementary_data_count", action="store_true", help="入力データに紐づく補助情報の個数( ``supplementary_data_count`` )も出力します。"
     )
 
     argument_parser.add_format(
