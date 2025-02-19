@@ -6,6 +6,7 @@ import pandas
 import pytest
 
 from annofabcli.statistics.visualization.dataframe.annotation_count import AnnotationCount
+from annofabcli.statistics.visualization.dataframe.input_data_count import InputDataCount
 from annofabcli.statistics.visualization.dataframe.inspection_comment_count import InspectionCommentCount
 from annofabcli.statistics.visualization.dataframe.task import Task
 from annofabcli.statistics.visualization.model import ProductionVolumeColumn
@@ -41,19 +42,37 @@ class TestTask:
             }
         )
         inspection_comment_count = InspectionCommentCount(df_inspection_comment_count)
-        actual = Task.from_api_content(
+        actual1 = Task.from_api_content(
+            tasks,
+            task_histories,
+            annotation_count=annotation_count,
+            input_data_count=None,
+            inspection_comment_count=inspection_comment_count,
+            project_id=project_id,
+            annofab_service=annofabapi.build(),
+        )
+        actual1.df.to_csv("out/df.csv")
+        assert len(actual1.df) == 2
+        row1 = actual1.df.iloc[0]
+        assert row1["annotation_count"] == 10
+        assert row1["inspection_comment_count"] == 5
+        assert row1["input_data_count"] == 2
+
+        input_data_count = InputDataCount(
+            pandas.DataFrame({"project_id": [project_id, project_id], "task_id": ["sample_0", "sample_1"], "input_data_count": [1, 1]})
+        )
+        actual2 = Task.from_api_content(
             tasks,
             task_histories,
             annotation_count=annotation_count,
             inspection_comment_count=inspection_comment_count,
             project_id=project_id,
             annofab_service=annofabapi.build(),
+            input_data_count=input_data_count,
         )
-        actual.df.to_csv("out/df.csv")
-        assert len(actual.df) == 2
-        row = actual.df.iloc[0]
-        assert row["annotation_count"] == 10
-        assert row["inspection_comment_count"] == 5
+        assert len(actual2.df) == 2
+        row2 = actual2.df.iloc[0]
+        assert row2["input_data_count"] == 1
 
     def test__from_csv__and__to_csv(cls) -> None:
         actual = Task.from_csv(data_dir / "task.csv")
