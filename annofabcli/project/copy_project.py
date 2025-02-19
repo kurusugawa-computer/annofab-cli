@@ -84,7 +84,8 @@ class CopyProject(CommandLine):
         if copied_targets is not None:
             logger.info(f"コピー対象: {[e.value for e in copied_targets]}")
 
-        confirm_message = f"プロジェクト'{src_project_title}'（project_id='{src_project_id}'）を、プロジェクト'{dest_title}'（project_id='{dest_project_id}'） にコピーしますか？"
+        confirm_message = f"プロジェクト'{src_project_title}'（project_id='{src_project_id}'）を、"
+        f"プロジェクト'{dest_title}'（project_id='{dest_project_id}'） にコピーしますか？"
         if not self.confirm_processing(confirm_message):
             logger.info(f"プロジェクト'{src_project_title}'（project_id='{src_project_id}'）をコピーせずに終了します。")
             return
