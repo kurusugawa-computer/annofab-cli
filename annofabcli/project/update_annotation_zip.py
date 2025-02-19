@@ -11,6 +11,7 @@ from annofabapi.models import JobStatus, ProjectJobType, ProjectMemberRole
 import annofabcli
 import annofabcli.common.cli
 from annofabcli.common.cli import (
+    PARALLELISM_CHOICES,
     CommandLine,
     build_annofabapi_resource_and_login,
     get_json_from_args,
@@ -217,7 +218,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         " ``max_tires`` :完了したかの問い合わせを最大何回行うか。",
     )
 
-    parser.add_argument("--parallelism", type=int, help="並列度。指定しない場合は、project_idの個数が並列度になります。")
+    parser.add_argument("--parallelism", type=int, choices=PARALLELISM_CHOICES, help="並列度。指定しない場合は、project_idの個数が並列度になります。")
     parser.set_defaults(subcommand_func=main)
 
 

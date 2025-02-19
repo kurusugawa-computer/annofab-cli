@@ -18,6 +18,7 @@ from annofabapi.models import ProjectMemberRole, TaskPhase, TaskStatus
 import annofabcli
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
+    PARALLELISM_CHOICES,
     CommandLine,
     build_annofabapi_resource_and_login,
     get_json_from_args,
@@ -775,6 +776,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--parallelism",
         type=int,
+        choices=PARALLELISM_CHOICES,
         help="並列度。 ``--project_id`` に複数のproject_idを指定したときのみ有効なオプションです。指定しない場合は、逐次的に処理します。",
     )
 

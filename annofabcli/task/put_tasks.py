@@ -15,6 +15,7 @@ from annofabapi.models import JobStatus, ProjectJobType, ProjectMemberRole
 
 import annofabcli
 from annofabcli.common.cli import (
+    PARALLELISM_CHOICES,
     ArgumentParser,
     CommandLine,
     build_annofabapi_resource_and_login,
@@ -287,6 +288,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--parallelism",
         type=int,
+        choices=PARALLELISM_CHOICES,
         help="並列度。指定しない場合は、逐次的に処理します。``put_task`` WebAPIを使うときのみ有効なオプションです。",
     )
 

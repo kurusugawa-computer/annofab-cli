@@ -19,6 +19,7 @@ from more_itertools import first_true
 import annofabcli
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
+    PARALLELISM_CHOICES,
     ArgumentParser,
     CommandLine,
     build_annofabapi_resource_and_login,
@@ -410,7 +411,12 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         help="指定した場合、supplementary_data_id（省略時はsupplementary_data_number）がすでに存在していたら上書きします。指定しなければ、スキップします。",
     )
 
-    parser.add_argument("--parallelism", type=int, help="並列度。指定しない場合は、逐次的に処理します。必ず ``--yes`` を指定してください。")
+    parser.add_argument(
+        "--parallelism",
+        type=int,
+        choices=PARALLELISM_CHOICES,
+        help="並列度。指定しない場合は、逐次的に処理します。必ず ``--yes`` を指定してください。",
+    )
 
     parser.set_defaults(subcommand_func=main)
 
