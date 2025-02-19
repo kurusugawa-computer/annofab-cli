@@ -106,7 +106,7 @@ class CopyInputDataMain(CommandLineWithConfirm):
             message += f" :: input_data_id='{input_data_id}', src_project_id='{self.src_project_id}', dest_project_id='{self.dest_project_id}'"
             return message
 
-        logging_prefix = f"{input_data_index + 1} 件目" if input_data_index is not None else ""
+        logging_prefix = f"{input_data_index + 1} 件目 :: " if input_data_index is not None else ""
 
         src_input_data = self.service.wrapper.get_input_data_or_none(self.src_project_id, input_data_id)
         if src_input_data is None:
@@ -148,17 +148,25 @@ class CopyInputDataMain(CommandLineWithConfirm):
 
     def copy_input_data_and_supplementary_data_wrapper(self, tpl: tuple[int, str]) -> bool:
         input_data_index, input_data_id = tpl
-        return self.copy_input_data_and_supplementary_data(
-            input_data_id,
-            input_data_index=input_data_index,
-        )
+        try:
+            return self.copy_input_data_and_supplementary_data(
+                input_data_id,
+                input_data_index=input_data_index,
+            )
+        except Exception:
+            logger.warning(
+                f"入力データのコピーに失敗しました。 :: "
+                f"input_data_id='{input_data_id}', "
+                f"src_project_id='{self.src_project_id}', dest_project_id='{self.dest_project_id}'",
+                exc_info=True,
+            )
+            return False
 
     def get_all_input_data_id_list(self, project_id: str) -> list[str]:
         with tempfile.TemporaryDirectory() as tmp_dir:
             input_data_json = Path(tmp_dir) / f"{project_id}_input_data.json"
             self.service.wrapper.download_project_inputs_url(project_id, dest_path=input_data_json)
-
-        input_data_list = json.loads(input_data_json.load_text())
+            input_data_list = json.loads(input_data_json.read_text())
         return [e["input_data_id"] for e in input_data_list]
 
     def copy_input_data_list(
@@ -182,6 +190,7 @@ class CopyInputDataMain(CommandLineWithConfirm):
 
         else:
             # 逐次処理
+            success_count = 0
             for input_data_index, input_data_id in enumerate(input_data_id_list):
                 try:
                     result = self.copy_input_data_and_supplementary_data(input_data_id, input_data_index=input_data_index)
@@ -221,14 +230,14 @@ class CopyInputData(CommandLine):
 
         input_data_id_list = annofabcli.common.cli.get_list_from_args(args.input_data_id) if args.input_data_id is not None else None
 
-        src_project_id = args.project_id
+        src_project_id = args.src_project_id
         dest_project_id = args.dest_project_id
 
         super().validate_project(dest_project_id, [ProjectMemberRole.OWNER])
         main_obj = CopyInputDataMain(
             self.service, src_project_id=src_project_id, dest_project_id=dest_project_id, should_overwrite=args.overwrite, all_yes=args.yes
         )
-        main_obj.copy_input_data_list(input_data_id_list)
+        main_obj.copy_input_data_list(input_data_id_list, parallelism=args.parallelism)
 
 
 def main(args: argparse.Namespace) -> None:
@@ -262,6 +271,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--parallelism",
         type=int,
+        choices=[1,2,3,4],
         help="使用するプロセス数（並列度）を指定してください。指定する場合は必ず ``--yes`` を指定してください。指定しない場合は、逐次的に処理します。",  # noqa: E501
     )
 
