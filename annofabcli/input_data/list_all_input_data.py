@@ -90,7 +90,6 @@ class ListInputDataWithJsonMain:
             with json_path.open(encoding="utf-8") as f:
                 input_data_list = json.load(f)
 
-        logger.debug("入力データを絞り込み中")
         input_data_id_set = set(input_data_id_list) if input_data_id_list is not None else None
         filtered_input_data_list = [
             e for e in input_data_list if self.filter_input_data_list(e, input_data_query=input_data_query, input_data_id_set=input_data_id_set)
