@@ -601,7 +601,7 @@ class VisualizeStatistics(CommandLine):
                     "引数`--input_data_count_csv`のCSVには以下の列が存在しないので、終了します。\n`project_id`, `task_id`, `input_data_count`"
                 )
                 sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
-            input_data_count = InputDataCount(df_annotation_count)
+            input_data_count = InputDataCount(df_input_data_count)
         else:
             input_data_count = None
 
@@ -751,6 +751,20 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
             "* project_id\n"
             "* task_id\n"
             "* annotation_count\n"
+        ),
+    )
+
+    parser.add_argument(
+        "--input_data_count_csv",
+        type=Path,
+        help=(
+            "指定されたCSVに記載されている入力データ数を参照して、生産量や生産性を算出します。未指定の場合はタスクに含まれている入力データ数から算出します。"
+            "タスクに、作業しない参照用のフレームが含まれている場合に有用なオプションです。"
+            "CSVには以下の列が必要です。\n"
+            "\n"
+            "* project_id\n"
+            "* task_id\n"
+            "* input_data_count\n"
         ),
     )
 
