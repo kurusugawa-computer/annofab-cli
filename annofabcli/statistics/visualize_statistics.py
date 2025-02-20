@@ -34,6 +34,7 @@ from annofabcli.statistics.visualization.dataframe.cumulative_productivity impor
     InspectorCumulativeProductivity,
 )
 from annofabcli.statistics.visualization.dataframe.custom_production_volume import CustomProductionVolume
+from annofabcli.statistics.visualization.dataframe.input_data_count import InputDataCount
 from annofabcli.statistics.visualization.dataframe.inspection_comment_count import InspectionCommentCount
 from annofabcli.statistics.visualization.dataframe.productivity_per_date import (
     AcceptorProductivityPerDate,
@@ -79,6 +80,7 @@ class WriteCsvGraph:
         actual_worktime: ActualWorktime,
         *,
         annotation_count: Optional[AnnotationCount] = None,
+        input_data_count: Optional[InputDataCount] = None,
         custom_production_volume: Optional[CustomProductionVolume] = None,
         minimal_output: bool = False,
         output_only_text: bool = False,
@@ -93,6 +95,7 @@ class WriteCsvGraph:
         self.minimal_output = minimal_output
         self.output_only_text = output_only_text
         self.annotation_count = annotation_count
+        self.input_data_count = input_data_count
         self.custom_production_volume = custom_production_volume
 
         self.task: Optional[Task] = None
@@ -133,6 +136,7 @@ class WriteCsvGraph:
                 task_histories=task_histories,
                 inspection_comment_count=inspection_comment_count,
                 annotation_count=annotation_count,
+                input_data_count=self.input_data_count,
                 project_id=self.project_id,
                 annofab_service=self.service,
                 custom_production_volume=self.custom_production_volume,
@@ -284,6 +288,7 @@ class VisualizingStatisticsMain:
         is_get_task_histories_one_of_each: bool = False,
         actual_worktime: Optional[ActualWorktime] = None,
         annotation_count: Optional[AnnotationCount] = None,
+        input_data_count: Optional[InputDataCount] = None,
         custom_production_volume: Optional[CustomProductionVolume] = None,
         user_ids: Optional[list[str]] = None,
         not_download_visualization_source_files: bool = False,
@@ -299,6 +304,7 @@ class VisualizingStatisticsMain:
         self.is_get_task_histories_one_of_each = is_get_task_histories_one_of_each
         self.actual_worktime = actual_worktime
         self.annotation_count = annotation_count
+        self.input_data_count = input_data_count
         self.custom_production_volume = custom_production_volume
         self.user_ids = user_ids
         self.not_download_visualization_source_files = not_download_visualization_source_files
@@ -379,6 +385,7 @@ class VisualizingStatisticsMain:
             project_dir=project_dir,
             actual_worktime=ActualWorktime(df_actual_worktime),
             annotation_count=annotation_count,
+            input_data_count=self.input_data_count,
             custom_production_volume=self.custom_production_volume,
             minimal_output=self.minimal_output,
             output_only_text=self.output_only_text,
@@ -483,6 +490,7 @@ class VisualizeStatistics(CommandLine):
         user_id_list: Optional[list[str]],
         actual_worktime: ActualWorktime,
         annotation_count: Optional[AnnotationCount],
+        input_data_count: Optional[InputDataCount],
         custom_production_volume: Optional[CustomProductionVolume],
         download_latest: bool,  # noqa: FBT001
         is_get_task_histories_one_of_each: bool,  # noqa: FBT001
@@ -501,6 +509,7 @@ class VisualizeStatistics(CommandLine):
             user_ids=user_id_list,
             actual_worktime=actual_worktime,
             annotation_count=annotation_count,
+            input_data_count=input_data_count,
             custom_production_volume=custom_production_volume,
             download_latest=download_latest,
             is_get_task_histories_one_of_each=is_get_task_histories_one_of_each,
@@ -585,6 +594,17 @@ class VisualizeStatistics(CommandLine):
         else:
             annotation_count = None
 
+        if args.input_data_count_csv is not None:
+            df_input_data_count = pandas.read_csv(args.input_data_count_csv)
+            if not InputDataCount.required_columns_exist(df_input_data_count):
+                logger.error(
+                    "引数`--input_data_count_csv`のCSVには以下の列が存在しないので、終了します。\n`project_id`, `task_id`, `input_data_count`"
+                )
+                sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
+            input_data_count = InputDataCount(df_input_data_count)
+        else:
+            input_data_count = None
+
         custom_production_volume = (
             create_custom_production_volume(args.custom_production_volume) if args.custom_production_volume is not None else None
         )
@@ -603,6 +623,7 @@ class VisualizeStatistics(CommandLine):
                     user_id_list=user_id_list,
                     actual_worktime=actual_worktime,
                     annotation_count=annotation_count,
+                    input_data_count=input_data_count,
                     custom_production_volume=custom_production_volume,
                     download_latest=args.latest,
                     is_get_task_histories_one_of_each=args.get_task_histories_one_of_each,
@@ -622,6 +643,7 @@ class VisualizeStatistics(CommandLine):
                 user_id_list=user_id_list,
                 actual_worktime=actual_worktime,
                 annotation_count=annotation_count,
+                input_data_count=input_data_count,
                 custom_production_volume=custom_production_volume,
                 download_latest=args.latest,
                 is_get_task_histories_one_of_each=args.get_task_histories_one_of_each,
@@ -729,6 +751,20 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
             "* project_id\n"
             "* task_id\n"
             "* annotation_count\n"
+        ),
+    )
+
+    parser.add_argument(
+        "--input_data_count_csv",
+        type=Path,
+        help=(
+            "指定されたCSVに記載されている入力データ数を参照して、生産量や生産性を算出します。未指定の場合はタスクに含まれている入力データ数から算出します。"
+            "タスクに、作業しない参照用のフレームが含まれている場合に有用なオプションです。"
+            "CSVには以下の列が必要です。\n"
+            "\n"
+            "* project_id\n"
+            "* task_id\n"
+            "* input_data_count\n"
         ),
     )
 

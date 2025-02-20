@@ -18,6 +18,7 @@ from annofabcli.common.utils import print_csv
 from annofabcli.statistics.histogram import create_histogram_figure, get_sub_title_from_series
 from annofabcli.statistics.visualization.dataframe.annotation_count import AnnotationCount
 from annofabcli.statistics.visualization.dataframe.custom_production_volume import CustomProductionVolume
+from annofabcli.statistics.visualization.dataframe.input_data_count import InputDataCount
 from annofabcli.statistics.visualization.dataframe.inspection_comment_count import InspectionCommentCount
 from annofabcli.statistics.visualization.model import ProductionVolumeColumn
 from annofabcli.task.list_all_tasks_added_task_history import AddingAdditionalInfoToTask
@@ -153,6 +154,7 @@ class Task:
         project_id: str,
         annofab_service: annofabapi.Resource,
         *,
+        input_data_count: Optional[InputDataCount] = None,
         custom_production_volume: Optional[CustomProductionVolume] = None,
     ) -> Task:
         """
@@ -163,6 +165,7 @@ class Task:
             task_histories: APIから取得したタスク履歴情報
             inspection_comment_count: 検査コメント数を格納したDataFrameのラッパー
             annotation_count: アノテーション数を格納したDataFrameのラッパー
+            input_data_count: 入力データ数を格納したDataFrameのラッパー（タスクに作業対象外のフレームが含まれているときなどに有用なオプション）
             annofab_service: TODO `AddingAdditionalInfoToTask`を修正したら、この引数を削除する。このクラスからAPIに直接アクセスさせたくない。
             custom_production_volume: ユーザー独自の生産量を格納したDataFrameのラッパー
         """
@@ -189,6 +192,8 @@ class Task:
         # https://github.com/bokeh/bokeh/issues/9620
         df = df.drop(["histories_by_phase"], axis=1)
 
+        if input_data_count is not None:
+            df = df.merge(input_data_count.df, on=["project_id", "task_id"], how="left", suffixes=("_tmp", None))
         df = df.merge(annotation_count.df, on=["project_id", "task_id"], how="left")
         df = df.merge(inspection_comment_count.df, on=["project_id", "task_id"], how="left")
         df = df.fillna(
@@ -197,6 +202,7 @@ class Task:
                 "inspection_comment_count_in_inspection_phase": 0,
                 "inspection_comment_count_in_acceptance_phase": 0,
                 "annotation_count": 0,
+                "input_data_count": 1,  # 必ず入力データは1個以上あるので0でなく1にする
             }
         )
 

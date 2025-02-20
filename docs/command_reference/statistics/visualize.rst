@@ -156,6 +156,31 @@ CSVには以下の列が存在している必要があります。
 * ``annotation_count``
 
 
+.. _input_data_count_csv:
+
+入力データ数を変更する
+----------------------------------------------
+タスクに作業しない参照用のフレームが含まれている場合に有用なオプションです。
+
+``--input_data_count_csv`` に実際に作業したフレーム数（入力データ数）が記載されたCSVファイルを指定します。
+
+以下はCSVファイルのサンプルです。
+
+.. code-block::
+    :caption: annotation_count.csv
+
+    project_id,task_id,input_data_count
+    prj1,task1,5
+    prj1,task2,6
+
+
+CSVには以下の列が存在している必要があります。
+
+* ``project_id``
+* ``task_id``
+* ``input_data_count``
+
+
 .. _custom_project_volume:
 
 独自の生産量を指定する
