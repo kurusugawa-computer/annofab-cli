@@ -3,7 +3,6 @@ Command Line Interfaceの共通部分
 """
 
 import argparse
-import dataclasses
 import getpass
 import json
 import logging
@@ -22,7 +21,6 @@ from annofabapi.exceptions import AnnofabApiException
 from annofabapi.models import OrganizationMemberRole, ProjectMemberRole
 from more_itertools import first_true
 
-from annofabcli.common.dataclasses import WaitOptions
 from annofabcli.common.enums import FormatArgument
 from annofabcli.common.exceptions import AnnofabCliException, AuthenticationError
 from annofabcli.common.facade import AnnofabApiFacade
@@ -229,25 +227,6 @@ def get_input_data_size(str_input_data_size: str) -> Optional[InputDataSize]:
         return None
 
     return (int(splitted_list[0]), int(splitted_list[1]))
-
-
-def get_wait_options_from_args(dict_wait_options: Optional[dict[str, Any]], default_wait_options: WaitOptions) -> WaitOptions:
-    """
-    デフォルト値とマージして、wait_optionsを取得する。
-
-    Args:
-        dict_wait_options: dictのwait_options(コマンドラインから取得した値など）
-        default_wait_options: デフォルトのwait_options
-
-    Returns:
-        デフォルト値とマージしたwait_options
-
-    """
-    if dict_wait_options is not None:
-        dataclasses.asdict(default_wait_options)
-        return WaitOptions.from_dict({**dataclasses.asdict(default_wait_options), **dict_wait_options})
-    else:
-        return default_wait_options
 
 
 def load_logging_config_from_args(args: argparse.Namespace) -> None:
