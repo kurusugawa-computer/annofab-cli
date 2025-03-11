@@ -20,15 +20,18 @@ from annofabcli.common.utils import print_according_to_format
 logger = logging.getLogger(__name__)
 
 
-class ListAttributeRestriction(CommandLine):
+class ExportAnnotationSpecs(CommandLine):
     COMMON_MESSAGE = "annofabcli annotation_specs export: error:"
 
     def get_history_id_from_before_index(self, project_id: str, before: int) -> Optional[str]:
         histories, _ = self.service.api.get_annotation_specs_histories(project_id)
-        if before + 1 > len(histories):
+        sorted_histories = sorted(histories, key=lambda x: x["updated_datetime"], reverse=True)
+
+        if before + 1 > len(sorted_histories):
             logger.warning(f"アノテーション仕様の履歴は{len(histories)}個のため、最新より{before}個前のアノテーション仕様は見つかりませんでした。")
             return None
-        history = histories[-(before + 1)]
+
+        history = sorted_histories[before]
         return history["history_id"]
 
     def get_exported_annotation_specs(self, project_id: str, history_id: Optional[str]) -> dict[str, Any]:
@@ -107,7 +110,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
 def main(args: argparse.Namespace) -> None:
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
-    ListAttributeRestriction(service, facade, args).main()
+    ExportAnnotationSpecs(service, facade, args).main()
 
 
 def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
