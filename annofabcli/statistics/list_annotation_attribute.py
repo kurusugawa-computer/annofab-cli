@@ -80,8 +80,6 @@ def get_annotation_attribute_list_from_annotation_json(
         target_labels: 絞り込むラベルのcollection
     """
     details = simple_annotation["details"]
-    if target_labels is not None:
-        details = [e for e in details if e["label"] in target_labels]
 
     result = []
     for detail in details:
