@@ -159,27 +159,18 @@ def print_annotation_attribute_list_as_csv(annotation_attribute_list: list, outp
     print_csv(df, output_file)
 
 
-def print_annotation_attribute_list_as_json(annotation_attribute_list: list, output_file: Path, *, is_pretty: bool) -> None:
-    print_json(
-        [e.to_dict(encode_json=True) for e in annotation_attribute_list],
-        is_pretty=is_pretty,
-        output=output_file,
-    )
-
-
 def print_annotation_attribute_list(
     annotation_duration_list: list[AnnotationAttribute],
     output_file: Path,
     output_format: Literal[FormatArgument.CSV, FormatArgument.JSON, FormatArgument.PRETTY_JSON],
 ) -> None:
-    print(f"{len(annotation_duration_list)} 件のアノテーション属性を取得しました。")
     tmp_annotation_duration_list = [e.model_dump() for e in annotation_duration_list]
     if output_format == FormatArgument.CSV:
         print_annotation_attribute_list_as_csv(tmp_annotation_duration_list, output_file)
     elif output_format == FormatArgument.JSON:
-        print_annotation_attribute_list_as_json(tmp_annotation_duration_list, output_file, is_pretty=False)
+        print_json(tmp_annotation_duration_list, output=output_file, is_pretty=False)
     elif output_format == FormatArgument.PRETTY_JSON:
-        print_annotation_attribute_list_as_json(tmp_annotation_duration_list, output_file, is_pretty=True)
+        print_json(tmp_annotation_duration_list, output=output_file, is_pretty=True)
     else:
         raise assert_noreturn(output_format)
 
@@ -256,7 +247,7 @@ class ListAnnotationAttribute(CommandLine):
 
 def parse_args(parser: argparse.ArgumentParser) -> None:
     argument_parser = ArgumentParser(parser)
-    
+
     annotation_group = parser.add_mutually_exclusive_group(required=True)
     annotation_group.add_argument(
         "--annotation",
@@ -264,12 +255,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         help="アノテーションzip、またはzipを展開したディレクトリを指定します。指定しない場合はAnnofabからダウンロードします。",
     )
 
-    annotation_group.add_argument(
-        "-p",
-        "--project_id",
-        type=str,
-        help="対象プロジェクトの project_id"
-    )
+    annotation_group.add_argument("-p", "--project_id", type=str, help="対象プロジェクトの project_id")
 
     argument_parser.add_format(
         choices=[FormatArgument.CSV, FormatArgument.JSON, FormatArgument.PRETTY_JSON],
@@ -292,7 +278,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         type=str,
         nargs="+",
         required=False,
-        help="出力対象のアノテーションのラメル名(英語)を指定します。指定しない場合はラベル名で絞り込みません。"
+        help="出力対象のアノテーションのラベル名(英語)を指定します。指定しない場合はラベル名で絞り込みません。"
         " ``file://`` を先頭に付けると、ラベル名の一覧が記載されたファイルを指定できます。",
     )
 
@@ -319,7 +305,7 @@ def main(args: argparse.Namespace) -> None:
 
 def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     subcommand_name = "list_annotation_attribute"
-    subcommand_help = "アノテーションの属性値の一覧を出力します。"
+    subcommand_help = "アノテーションZIPを読み込み、アノテーションの属性値の一覧を出力します。"
     epilog = "オーナロールまたはアノテーションユーザロールを持つユーザで実行してください。"
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description=subcommand_help, epilog=epilog)
     parse_args(parser)

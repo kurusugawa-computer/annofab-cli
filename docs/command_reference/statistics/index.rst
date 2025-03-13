@@ -16,6 +16,7 @@ Available Commands
    :titlesonly:
 
 
+   list_annotation_attribute
    list_annotation_count
    list_annotation_duration
    list_video_duration
