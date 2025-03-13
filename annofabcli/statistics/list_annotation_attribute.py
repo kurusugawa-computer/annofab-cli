@@ -158,17 +158,17 @@ def print_annotation_attribute_list_as_csv(annotation_attribute_list: list, outp
 
 
 def print_annotation_attribute_list(
-    annotation_duration_list: list[AnnotationAttribute],
+    annotation_attribute_list: list[AnnotationAttribute],
     output_file: Path,
     output_format: Literal[FormatArgument.CSV, FormatArgument.JSON, FormatArgument.PRETTY_JSON],
 ) -> None:
-    tmp_annotation_duration_list = [e.model_dump() for e in annotation_duration_list]
+    tmp_annotation_attribute_list = [e.model_dump() for e in annotation_attribute_list]
     if output_format == FormatArgument.CSV:
-        print_annotation_attribute_list_as_csv(tmp_annotation_duration_list, output_file)
+        print_annotation_attribute_list_as_csv(tmp_annotation_attribute_list, output_file)
     elif output_format == FormatArgument.JSON:
-        print_json(tmp_annotation_duration_list, output=output_file, is_pretty=False)
+        print_json(tmp_annotation_attribute_list, output=output_file, is_pretty=False)
     elif output_format == FormatArgument.PRETTY_JSON:
-        print_json(tmp_annotation_duration_list, output=output_file, is_pretty=True)
+        print_json(tmp_annotation_attribute_list, output=output_file, is_pretty=True)
     else:
         raise assert_noreturn(output_format)
 
