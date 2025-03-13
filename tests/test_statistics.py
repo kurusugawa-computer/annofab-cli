@@ -26,6 +26,21 @@ video_project_id = annofab_config["video_project_id"]
 
 
 class TestCommandLine:
+    def test_list_annotation_attribute(self):
+        main(
+            [
+                "statistics",
+                "list_annotation_attribute",
+                "--project_id",
+                project_id,
+                "--output",
+                str(out_dir / "test_list_annotation_attribute-out.csv"),
+                "--format",
+                "csv",
+            ]
+        )
+
+    
     def test_list_annotation_count_by_task(self):
         main(
             [
