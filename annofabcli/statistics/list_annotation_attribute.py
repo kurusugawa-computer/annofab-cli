@@ -1,6 +1,6 @@
 # pylint: disable=too-many-lines
 from __future__ import annotations
-from typing import Union
+
 import argparse
 import logging
 import sys
@@ -8,7 +8,7 @@ import tempfile
 import zipfile
 from collections.abc import Collection, Iterator
 from pathlib import Path
-from typing import Any, Literal, Optional
+from typing import Any, Literal, Optional, Union
 
 import pandas
 import pydantic
@@ -66,7 +66,7 @@ class AnnotationAttribute(pydantic.BaseModel):
     input_data_name: str
     annotation_id: str
     label: str
-    attributes: dict[str, Union[str,int,bool]]
+    attributes: dict[str, Union[str, int, bool]]
 
 
 def get_annotation_attribute_list_from_annotation_json(

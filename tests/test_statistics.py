@@ -40,7 +40,6 @@ class TestCommandLine:
             ]
         )
 
-    
     def test_list_annotation_count_by_task(self):
         main(
             [
