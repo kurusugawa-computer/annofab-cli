@@ -4,6 +4,7 @@ from typing import Optional
 import annofabcli
 import annofabcli.common.cli
 import annofabcli.stat_visualization.merge_visualization_dir
+import annofabcli.statistics.list_annotation_attribute
 import annofabcli.statistics.list_annotation_count
 import annofabcli.statistics.list_annotation_duration
 import annofabcli.statistics.list_video_duration
@@ -21,6 +22,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     subparsers = parser.add_subparsers(dest="subcommand_name")
 
     # サブコマンドの定義
+    annofabcli.statistics.list_annotation_attribute.add_parser(subparsers)
     annofabcli.statistics.list_annotation_count.add_parser(subparsers)
     annofabcli.statistics.list_annotation_duration.add_parser(subparsers)
     annofabcli.statistics.list_video_duration.add_parser(subparsers)
