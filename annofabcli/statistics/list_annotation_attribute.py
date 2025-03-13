@@ -142,19 +142,19 @@ def get_annotation_attribute_list_from_annotation_zipdir_path(
 def print_annotation_attribute_list_as_csv(annotation_attribute_list: list, output_file: Optional[Path]) -> None:
     df = pandas.json_normalize(annotation_attribute_list)
 
-    # columns = [
-    #     "task_id",
-    #     "task_status"
-    #     "task_phase",
-    #     "task_phase_stage",
-    #     "input_data_id",
-    #     "input_data_name",
-    #     "annotation_id",
-    #     "label",
-
-    # ]
-
-    print_csv(df, output_file)
+    base_columns = [
+        "task_id",
+        "task_status",
+        "task_phase",
+        "task_phase_stage",
+        "input_data_id",
+        "input_data_name",
+        "annotation_id",
+        "label",
+    ]
+    attribute_columns = [col for col in df.columns if col.startswith("attributes.")]
+    columns = base_columns + attribute_columns
+    print_csv(df[columns], output_file)
 
 
 def print_annotation_attribute_list(
