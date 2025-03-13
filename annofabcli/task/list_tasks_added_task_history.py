@@ -309,9 +309,10 @@ class ListTasksAddedTaskHistoryMain:
         task_list = list_task_obj.get_task_list(self.project_id, task_id_list=task_id_list, task_query=task_query)
 
         obj = AddingAdditionalInfoToTask(self.service, project_id=self.project_id)
+        logger.info(f"{len(task_list)} 件のタスクの履歴情報を取得します。")
 
         for index, task in enumerate(task_list):
-            if (index + 1) % 1000 == 0:
+            if (index + 1) % 100 == 0:
                 logger.debug(f"{index + 1} 件目のタスク履歴情報を取得します。")
 
             obj.add_additional_info_to_task(task)
