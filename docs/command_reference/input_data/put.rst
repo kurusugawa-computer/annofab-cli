@@ -76,7 +76,7 @@ JSON文字列を指定する場合
     [
         {
             "input_data_name":"data1",
-            "input_data_path":"file://sample.jpg",
+            "input_data_path":"file://sample.jpg"
         },
         {
             "input_data_name":"data2",
