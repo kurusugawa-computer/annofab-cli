@@ -25,13 +25,10 @@ from annofabcli.common.cli import (
     get_json_from_args,
     prompt_yesnoall,
 )
-from annofabcli.common.dataclasses import WaitOptions
 from annofabcli.common.facade import AnnofabApiFacade
 from annofabcli.common.utils import get_file_scheme_path
 
 logger = logging.getLogger(__name__)
-
-DEFAULT_WAIT_OPTIONS = WaitOptions(interval=60, max_tries=360)
 
 
 @dataclass
@@ -43,7 +40,6 @@ class CsvInputData(DataClassJsonMixin):
     input_data_name: str
     input_data_path: str
     input_data_id: Optional[str] = None
-    sign_required: Optional[bool] = None
 
 
 @dataclass
@@ -55,7 +51,6 @@ class InputDataForPut(DataClassJsonMixin):
     input_data_name: str
     input_data_path: str
     input_data_id: str
-    sign_required: Optional[bool]
 
 
 def read_input_data_csv(csv_file: Path) -> pandas.DataFrame:
@@ -64,7 +59,6 @@ def read_input_data_csv(csv_file: Path) -> pandas.DataFrame:
     * input_data_name
     * input_data_path
     * input_data_id
-    * sign_required
 
     Args:
         csv_file (Path): CSVファイルのパス
@@ -76,6 +70,12 @@ def read_input_data_csv(csv_file: Path) -> pandas.DataFrame:
         str(csv_file),
         sep=",",
         header=None,
+        # names引数に"sign_required"を指定している理由：
+        # v1.96.0以前では、`sign_required`列を読み込んでいた。したがって、4列のCSVを使っているユーザーは存在する
+        # CSVの列数が`names`引数で指定した列数より大きい場合、右側から列名が割り当てられる。
+        # （https://qiita.com/yuji38kwmt/items/ac46c3d0ccac109410ba）
+        # したがって、"sign_required"がないと4列のCSVは読み込めない。
+        # 4列のCSVもしばらくサポートするため、"sign_required"を指定している。
         names=("input_data_name", "input_data_path", "input_data_id", "sign_required"),
         # IDと名前は必ず文字列として読み込むようにする
         dtype={"input_data_id": str, "input_data_name": str},
@@ -126,8 +126,8 @@ class SubPutInputData:
 
         file_path = get_file_scheme_path(csv_input_data.input_data_path)
         if file_path is not None:
-            request_body.update({"input_data_name": csv_input_data.input_data_name, "sign_required": csv_input_data.sign_required})
-            logger.debug(f"'{file_path}'を入力データとして登録します。input_data_name={csv_input_data.input_data_name}")
+            request_body.update({"input_data_name": csv_input_data.input_data_name})
+            logger.debug(f"'{file_path}'を入力データとして登録します。input_data_name='{csv_input_data.input_data_name}'")
             self.service.wrapper.put_input_data_from_file(
                 project_id, input_data_id=csv_input_data.input_data_id, file_path=file_path, request_body=request_body
             )
@@ -137,7 +137,6 @@ class SubPutInputData:
                 {
                     "input_data_name": csv_input_data.input_data_name,
                     "input_data_path": csv_input_data.input_data_path,
-                    "sign_required": csv_input_data.sign_required,
                 }
             )
 
@@ -186,7 +185,6 @@ class SubPutInputData:
             input_data_name=csv_input_data.input_data_name,
             input_data_path=csv_input_data.input_data_path,
             input_data_id=csv_input_data.input_data_id if csv_input_data.input_data_id is not None else str(uuid.uuid4()),
-            sign_required=csv_input_data.sign_required,
         )
 
         last_updated_datetime = None
@@ -194,10 +192,10 @@ class SubPutInputData:
 
         if dict_input_data is not None:
             if overwrite:
-                logger.debug(f"input_data_id={input_data.input_data_id} はすでに存在します。")
+                logger.debug(f"input_data_id='{input_data.input_data_id}' はすでに存在します。")
                 last_updated_datetime = dict_input_data["updated_datetime"]
             else:
-                logger.debug(f"input_data_id={input_data.input_data_id} がすでに存在するのでスキップします。")
+                logger.debug(f"input_data_id='{input_data.input_data_id}' がすでに存在するのでスキップします。")
                 return False
 
         file_path = get_file_scheme_path(input_data.input_data_path)
@@ -278,14 +276,12 @@ class PutInputData(CommandLine):
 
     @staticmethod
     def get_input_data_list_from_df(df: pandas.DataFrame) -> list[CsvInputData]:
-        def create_input_data(e: Any):  # noqa: ANN202, ANN401
+        def create_input_data(e: Any) -> CsvInputData:  # noqa: ANN401
             input_data_id = e.input_data_id if not pandas.isna(e.input_data_id) else None
-            sign_required: Optional[bool] = e.sign_required if pandas.notna(e.sign_required) else None
             return CsvInputData(
                 input_data_name=e.input_data_name,
                 input_data_path=e.input_data_path,
                 input_data_id=input_data_id,
-                sign_required=sign_required,
             )
 
         input_data_list = [create_input_data(e) for e in df.itertuples()]
@@ -381,7 +377,6 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
             " * 1列目: input_data_name (required)\n"
             " * 2列目: input_data_path (required)\n"
             " * 3列目: input_data_id\n"
-            " * 4列目: sign_required (bool)\n"
         ),
     )
 
@@ -400,25 +395,20 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--overwrite",
         action="store_true",
-        help="指定した場合、input_data_idがすでに存在していたら上書きします。指定しなければ、スキップします。"
-        " ``--csv`` , ``--json`` を指定したときのみ有効なオプションです。",
+        help="指定した場合、input_data_idがすでに存在していたら上書きします。指定しなければ、スキップします。",
     )
 
     parser.add_argument(
         "--allow_duplicated_input_data",
         action="store_true",
-        help=(
-            "``--csv`` , ``--json`` に渡した入力データの重複（input_data_name, input_data_path）を許可します。\n"
-            "``--csv`` , ``--json`` を指定したときのみ有効なオプションです。"
-        ),
+        help=("``--csv`` , ``--json`` に渡した入力データの重複（input_data_name, input_data_path）を許可します。\n"),
     )
 
     parser.add_argument(
         "--parallelism",
         type=int,
         choices=PARALLELISM_CHOICES,
-        help="並列度。指定しない場合は、逐次的に処理します。"
-        "``--csv`` , ``--json`` を指定したときのみ有効なオプションです。また、必ず ``--yes`` を指定してください。",
+        help="並列度。指定しない場合は、逐次的に処理します。指定する場合は、 ``--yes`` も指定してください。",
     )
 
     parser.set_defaults(subcommand_func=main)
@@ -427,9 +417,8 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
 def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     subcommand_name = "put"
     subcommand_help = "入力データを登録します。"
-    description = "CSVに記載された情報から、入力データを登録します。"
     epilog = "オーナロールを持つユーザで実行してください。"
 
-    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
+    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, epilog=epilog)
     parse_args(parser)
     return parser

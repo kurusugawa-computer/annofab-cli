@@ -28,7 +28,6 @@ CSVのフォーマットは以下の通りです。
     1列目,input_data_name,Yes,
     2列目,input_data_path,Yes,先頭が ``file://`` の場合、ローカルのファイルを入力データに使用します。
     3列目,input_data_id,No,省略した場合はUUID(v4)になります。
-    4列目,sign_required,No,``true`` または ``false`` を指定してください。省略した場合は ``null`` です。
 
 各項目の詳細は `AnnofabのWebAPIドキュメント <https://annofab.com/docs/api/#operation/putInputData>`_ を参照してください。
 
