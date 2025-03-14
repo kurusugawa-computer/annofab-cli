@@ -400,25 +400,20 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--overwrite",
         action="store_true",
-        help="指定した場合、input_data_idがすでに存在していたら上書きします。指定しなければ、スキップします。"
-        " ``--csv`` , ``--json`` を指定したときのみ有効なオプションです。",
+        help="指定した場合、input_data_idがすでに存在していたら上書きします。指定しなければ、スキップします。",
     )
 
     parser.add_argument(
         "--allow_duplicated_input_data",
         action="store_true",
-        help=(
-            "``--csv`` , ``--json`` に渡した入力データの重複（input_data_name, input_data_path）を許可します。\n"
-            "``--csv`` , ``--json`` を指定したときのみ有効なオプションです。"
-        ),
+        help=("``--csv`` , ``--json`` に渡した入力データの重複（input_data_name, input_data_path）を許可します。\n"),
     )
 
     parser.add_argument(
         "--parallelism",
         type=int,
         choices=PARALLELISM_CHOICES,
-        help="並列度。指定しない場合は、逐次的に処理します。"
-        "``--csv`` , ``--json`` を指定したときのみ有効なオプションです。また、必ず ``--yes`` を指定してください。",
+        help="並列度。指定しない場合は、逐次的に処理します。指定する場合は、 ``--yes`` も指定してください。",
     )
 
     parser.set_defaults(subcommand_func=main)
