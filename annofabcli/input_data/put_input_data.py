@@ -56,7 +56,7 @@ class InputDataForPut(DataClassJsonMixin):
 def convert_input_data_name_to_input_data_id(input_data_name: str) -> str:
     """
     入力データ名から、入力データIDを生成します。
-    * IDに使えない文字以外は`__`に変換する。 
+    * IDに使えない文字以外は`__`に変換する。
     """
     return re.sub(r"[^a-zA-Z0-9_.-]", "__", input_data_name)
 
