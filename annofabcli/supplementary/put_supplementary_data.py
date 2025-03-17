@@ -374,13 +374,13 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         help=(
             "補助情報が記載されたCVファイルのパスを指定してください。CSVのフォーマットは、以下の通りです。\n"
             "\n"
-            " * ヘッダ行なし, カンマ区切り\n"
-            " * 1列目: input_data_id (required)\n"
-            " * 2列目: supplementary_data_number (required)\n"
-            " * 3列目: supplementary_data_name (required)\n"
-            " * 4列目: supplementary_data_path (required)\n"
-            " * 5列目: supplementary_data_id\n"
-            " * 6列目: supplementary_data_type\n"
+            " * ヘッダ行あり, カンマ区切り\n"
+            " * input_data_id (required)\n"
+            " * supplementary_data_name (required)\n"
+            " * supplementary_data_path (required)\n"
+            " * supplementary_data_id\n"
+            " * supplementary_data_type\n"
+            " * supplementary_data_number\n"
             "\n"
             "各項目の詳細は https://annofab-cli.readthedocs.io/ja/latest/command_reference/supplementary/put.html を参照してください。"
         ),
@@ -389,7 +389,6 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     JSON_SAMPLE = [  # noqa: N806
         {
             "input_data_id": "input1",
-            "supplementary_data_number": 1,
             "supplementary_data_name": "foo",
             "supplementary_data_path": "file://foo.jpg",
         }
@@ -410,7 +409,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--overwrite",
         action="store_true",
-        help="指定した場合、supplementary_data_id（省略時はsupplementary_data_number）がすでに存在していたら上書きします。指定しなければ、スキップします。",
+        help="指定した場合、supplementary_data_idがすでに存在していたら上書きします。指定しなければ、スキップします。",
     )
 
     parser.add_argument(
@@ -427,7 +426,7 @@ def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argpa
     subcommand_name = "put"
     subcommand_help = "補助情報を登録します。"
     description = "補助情報を登録します。"
-    epilog = "オーナロールを持つユーザで実行してください。"
+    epilog = "オーナーロールを持つユーザで実行してください。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
     parse_args(parser)
