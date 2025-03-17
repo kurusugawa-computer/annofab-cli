@@ -308,7 +308,6 @@ class PutSupplementaryData(CommandLine):
                 "supplementary_data_number": "Int64",
             },
         )
-        print(df.dtypes)
         supplementary_data_list = [CliSupplementaryData.from_dict(e) for e in df.to_dict("records")]
         return supplementary_data_list
 
