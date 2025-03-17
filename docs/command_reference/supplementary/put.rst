@@ -60,7 +60,7 @@ CSVのフォーマットは以下の通りです。
     $ annofabcli supplementary put --project_id prj1 --csv supplementary_data.csv
 
 
-supplementary_data_id（省略時は supplementary_data_number）が一致する補助情報が既に存在する場合は、デフォルトではスキップします。補助情報を上書きする場合は、 ``--overwrite`` を指定してください。
+supplementary_data_idが一致する補助情報が既に存在する場合は、デフォルトではスキップします。補助情報を上書きする場合は、 ``--overwrite`` を指定してください。
 
 .. code-block::
     
