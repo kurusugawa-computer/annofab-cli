@@ -31,18 +31,11 @@ key: input_data_id, value: supplementary_data_idのList
 
 
 def get_input_data_supplementary_data_dict_from_csv(csv_path: Path) -> InputDataSupplementaryDataDict:
-    df = pandas.read_csv(
-        str(csv_path),
-        sep=",",
-        header=None,
-        names=[
-            "input_data_id",
-            "supplementary_data_id",
-        ],
-        # IDは必ず文字列として読み込むようにする
-        dtype={"input_data_id": str, "supplementary_data_id": str},
+    df: pandas.DataFrame = pandas.read_csv(
+        csv_path,
+        dtype={"input_data_id": "string", "supplementary_data_id": "string"},
     )
-    input_data_dict = defaultdict(list)
+    input_data_dict: InputDataSupplementaryDataDict = defaultdict(list)
     for input_data_id, supplementary_data_id in zip(df["input_data_id"], df["supplementary_data_id"]):
         input_data_dict[input_data_id].append(supplementary_data_id)
     return input_data_dict
@@ -58,7 +51,7 @@ def get_input_data_supplementary_data_dict_from_list(supplementary_data_list: li
 
 
 class DeleteSupplementaryDataMain(CommandLineWithConfirm):
-    def __init__(self, service: annofabapi.Resource, all_yes: bool = False) -> None:  # noqa: FBT001, FBT002
+    def __init__(self, service: annofabapi.Resource, *, all_yes: bool = False) -> None:
         self.service = service
         self.facade = AnnofabApiFacade(service)
         CommandLineWithConfirm.__init__(self, all_yes)
@@ -82,7 +75,7 @@ class DeleteSupplementaryDataMain(CommandLineWithConfirm):
 
         input_data = self.service.wrapper.get_input_data_or_none(project_id, input_data_id)
         if input_data is None:
-            logger.warning(f"input_data_id={input_data_id} の入力データは存在しないのでスキップします。")
+            logger.warning(f"input_data_id='{input_data_id}' の入力データは存在しないのでスキップします。")
             return 0
 
         supplementary_data_list, _ = self.service.api.get_supplementary_data_list(project_id, input_data_id)
@@ -122,7 +115,7 @@ class DeleteSupplementaryDataMain(CommandLineWithConfirm):
                 continue
         return deleted_count
 
-    def delete_supplementary_data_list(self, project_id: str, input_data_dict: InputDataSupplementaryDataDict):  # noqa: ANN201
+    def delete_supplementary_data_list(self, project_id: str, input_data_dict: InputDataSupplementaryDataDict) -> None:
         deleted_count = 0
         total_count = sum(len(e) for e in input_data_dict.values())
         for input_data_id, supplementary_data_id_list in input_data_dict.items():
@@ -168,7 +161,7 @@ class DeleteSupplementaryDataMain(CommandLineWithConfirm):
 
         return deleted_count
 
-    def delete_supplementary_data_list_by_input_data_id(self, project_id: str, input_data_id_list: list[str]):  # noqa: ANN201
+    def delete_supplementary_data_list_by_input_data_id(self, project_id: str, input_data_id_list: list[str]) -> None:
         dict_deleted_count: dict[str, int] = {}
         for input_data_id in input_data_id_list:
             input_data = self.service.wrapper.get_input_data_or_none(project_id, input_data_id)
@@ -261,9 +254,9 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
             "削除する補助情報が記載されたCSVファイルのパスを指定してください。\n"
             "CSVのフォーマットは以下の通りです。"
             "詳細は https://annofab-cli.readthedocs.io/ja/latest/command_reference/supplementary/delete.html を参照してください。\n"
-            " * ヘッダ行なし, カンマ区切り\n"
-            " * 1列目: input_data_id (required)\n"
-            " * 2列目: supplementary_data_id (required)\n"
+            " * ヘッダ行あり, カンマ区切り\n"
+            " * input_data_id (required)\n"
+            " * supplementary_data_id (required)\n"
         ),
     )
 

@@ -24,14 +24,14 @@ Examples
 CSVのフォーマットは以下の通りです。
 
 * カンマ区切り
-* ヘッダ行なし
+* ヘッダ行あり
 
 
 .. csv-table::
-   :header: 列番号,名前,必須,備考
+   :header: 名前,必須,備考
 
-    1列目,input_data_id,Yes,
-    2列目,supplementary_data_id,Yes,
+    input_data_id,Yes,
+    supplementary_data_id,Yes,
     
 
 以下はCSVファイルのサンプルです。
@@ -39,6 +39,7 @@ CSVのフォーマットは以下の通りです。
 .. code-block::
     :caption: supplementary_data.csv
 
+    input_data_id,supplementary_data_id
     input1,supplementary1
     input1,supplementary2
     input2,supplementary3
