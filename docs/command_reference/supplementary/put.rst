@@ -19,30 +19,31 @@ CSVから補助情報を登録する
 
 CSVのフォーマットは以下の通りです。
 
+* ヘッダ行あり
 * カンマ区切り
-* ヘッダ行なし
 
 .. csv-table::
-   :header: 列番号,名前,必須,備考
+   :header: 列名,必須,備考
 
-    1列目,input_data_id,Yes,
-    2列目,supplementary_data_number,Yes,表示順を表す数値を指定してください。
-    3列目,supplementary_data_name,Yes,
-    4列目,supplementary_data_path,Yes,先頭が ``file://`` の場合、ローカルのファイルを補助情報に使用します。
-    5列目,supplementary_data_id,No,省略した場合はsupplementary_data_nameに近い値（IDに使えない文字を加工した値）になります。
-    6列目,supplementary_data_type,No,``image`` 、 ``text`` または ``custom`` を指定ください。省略した場合は、ファイル名から推測します。
+    input_data_id,Yes,
+    supplementary_data_path,Yes,先頭が ``file://`` の場合、ローカルのファイルを補助情報に使用します。
+    supplementary_data_name,Yes,
+    supplementary_data_id,No,省略した場合はsupplementary_data_nameに近い値（IDに使えない文字を加工した値）になります。
+    supplementary_data_type,No,補助情報の種類。 ``image`` 、 ``text`` または ``custom`` のいずれかを指定ください。省略した場合は、ファイル名から推測します。
+    supplementary_data_number,Yes,補助情報の表示順
 
 以下はCSVファイルのサンプルです。
 
 .. code-block::
     :caption: supplementary_data.csv
 
-    input1,1,data1-1,s3://example.com/data1,id1,
-    input1,2,data1-2,s3://example.com/data2,id2,image
-    input1,3,data1-3,s3://example.com/data3,id3,text
-    input2,1,data2-1,https://example.com/data4,,
-    input2,2,data2-2,file://sample.jpg,,
-    input2,3,data2-3,file:///tmp/sample.jpg,,
+    input_data_id,supplementary_data_name,supplementary_data_path,supplementary_data_id,supplementary_data_type,supplementary_data_number
+    input1,data1-1,s3://example.com/data1,id1,
+    input1,data1-2,s3://example.com/data2,id2,image,1
+    input1,data1-3,s3://example.com/data3,id3,text,2
+    input2,data2-1,https://example.com/data4,,
+    input2,data2-2,file://sample.jpg,,
+    input2,data2-3,file:///tmp/sample.jpg,,
 
 
 .. warning::

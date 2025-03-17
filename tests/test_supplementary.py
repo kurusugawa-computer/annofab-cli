@@ -46,7 +46,6 @@ class TestCommandLine:
         json_args = [
             {
                 "input_data_id": input_data_id,
-                "supplementary_data_number": 1,
                 "supplementary_data_name": "foo-data",
                 "supplementary_data_path": "file://tests/data/small-lenna.png",
             }
