@@ -20,13 +20,13 @@ CSVファイルを指定する場合
 CSVのフォーマットは以下の通りです。
 
 * カンマ区切り
-* ヘッダ行なし
+* ヘッダ行あり
 
 .. csv-table::
-   :header: 列番号,名前,必須,備考
+   :header: 列名,必須,備考
 
-    1列目,input_data_id,Yes,
-    2列目,input_data_name,Yes,変更後の入力データ名
+    input_data_id,Yes,
+    input_data_name,Yes,変更後の入力データ名
 
 
 以下はCSVファイルのサンプルです。
@@ -34,6 +34,7 @@ CSVのフォーマットは以下の通りです。
 .. code-block::
     :caption: input_data.csv
 
+    input_data_id,input_data_name
     id1,new_name1
     id2,new_name2
 
