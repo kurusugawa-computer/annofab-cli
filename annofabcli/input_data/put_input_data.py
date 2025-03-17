@@ -1,5 +1,6 @@
 import argparse
 import logging
+import os
 import re
 import sys
 from dataclasses import dataclass
@@ -60,7 +61,8 @@ def convert_input_data_name_to_input_data_id(input_data_name: str) -> str:
     * 拡張子を取り除きます。アノテーションZIP内のJSONは、`{input_data_id}.json`として保存さるため、input_data_idから拡張子を除きます。
     """
     # 拡張子を取り除く
-    tmp = str(Path(input_data_name).with_suffix(""))
+    # pathlibを使うと、"https://example"が"https:/example"になってしまうので、`os.path`で拡張子を取り除く
+    tmp, _ = os.path.splitext(input_data_name)  # noqa: PTH122
     return re.sub(r"[^a-zA-Z0-9_.-]", "__", tmp)
 
 

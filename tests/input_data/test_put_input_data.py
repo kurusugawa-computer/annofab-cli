@@ -17,6 +17,7 @@ def test_get_input_data_list_from_csv():
 
 
 def test__convert_input_data_name_to_input_data_id():
-    convert_input_data_name_to_input_data_id("a/b/c.png") == "a__b__c"
-    convert_input_data_name_to_input_data_id("s3://foo.png") == "s3______foo"
-    convert_input_data_name_to_input_data_id("あ.png") == "__"
+    assert convert_input_data_name_to_input_data_id("a/b/c.png") == "a__b__c"
+    assert convert_input_data_name_to_input_data_id("s3://foo.png") == "s3______foo"
+    "s3____foo"
+    assert convert_input_data_name_to_input_data_id("あ.png") == "__"
