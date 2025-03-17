@@ -27,7 +27,7 @@ CSVのフォーマットは以下の通りです。
 
     1列目,input_data_name,Yes,
     2列目,input_data_path,Yes,先頭が ``file://`` の場合、ローカルのファイルを入力データに使用します。
-    3列目,input_data_id,No,省略した場合はUUID(v4)になります。
+    3列目,input_data_id,No,省略した場合はinput_data_nameに近い値（IDに使えない文字を加工した値）になります。
 
 各項目の詳細は `AnnofabのWebAPIドキュメント <https://annofab.com/docs/api/#operation/putInputData>`_ を参照してください。
 
@@ -43,6 +43,11 @@ CSVのフォーマットは以下の通りです。
     data5,file://sample.jpg,,
     data6,file:///tmp/sample.jpg,,
 
+.. warning::
+
+    プライベートストレージが利用可能な組織配下のプロジェクトでしか、 ``input_data_path`` に ``https`` または ``s3`` スキームを利用できません。
+    プライベートストレージを利用するには、Annofabサポート窓口への問い合わせが必要です。
+    詳細は https://annofab.readme.io/docs/external-storage を参照してください。
 
 
 ``--csv`` に、CSVファイルのパスを指定してください。
