@@ -30,7 +30,6 @@ key: input_data_id, value: supplementary_data_idのList
 """
 
 
-
 def get_input_data_supplementary_data_dict_from_csv(csv_path: Path) -> InputDataSupplementaryDataDict:
     df: pandas.DataFrame = pandas.read_csv(
         csv_path,
