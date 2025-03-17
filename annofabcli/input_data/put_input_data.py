@@ -58,7 +58,7 @@ def convert_input_data_name_to_input_data_id(input_data_name: str) -> str:
     """
     入力データ名から、入力データIDを生成します。
     * IDに使えない文字以外は`__`に変換する。
-    * 拡張子を取り除きます。アノテーションZIP内のJSONは、`{input_data_id}.json`として保存さるため、input_data_idから拡張子を除きます。
+    * 拡張子を取り除きます。アノテーションZIP内のJSONは、`{input_data_id}.json`として保存されるため、input_data_idから拡張子を除きます。
     """
     # 拡張子を取り除く
     # pathlibを使うと、"https://example"が"https:/example"になってしまうので、`os.path`で拡張子を取り除く

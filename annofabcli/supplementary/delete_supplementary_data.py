@@ -92,14 +92,14 @@ class DeleteSupplementaryDataMain(CommandLineWithConfirm):
             supplementary_data = _get_supplementary_data_list(supplementary_data_id)
             if supplementary_data is None:
                 logger.warning(
-                    f"input_data_id={input_data_id} の入力データに、"
-                    f"supplementary_data_id={supplementary_data_id} の補助情報は存在しないのでスキップします。"
+                    f"input_data_id='{input_data_id}' の入力データに、"
+                    f"supplementary_data_id='{supplementary_data_id}' の補助情報は存在しないのでスキップします。"
                 )
                 continue
 
             message_for_confirm = (
-                f"補助情報 supplementary_data_id={supplementary_data_id}, "
-                f"supplementary_data_name={supplementary_data['supplementary_data_name']} を削除しますか？"
+                f"補助情報 supplementary_data_id='{supplementary_data_id}', "
+                f"supplementary_data_name='{supplementary_data['supplementary_data_name']}' を削除しますか？"
             )
             if not self.confirm_processing(message_for_confirm):
                 continue
@@ -107,17 +107,17 @@ class DeleteSupplementaryDataMain(CommandLineWithConfirm):
             try:
                 self.service.api.delete_supplementary_data(project_id, input_data_id=input_data_id, supplementary_data_id=supplementary_data_id)
                 logger.debug(
-                    f"補助情報 supplementary_data_id={supplementary_data_id}, "
-                    f"supplementary_data_name={supplementary_data['supplementary_data_name']} を削除しました。"
-                    f"(入力データ input_data_id={input_data_id}, "
-                    f"input_data_name={input_data['input_data_name']} に紐付いている)"
+                    f"補助情報 supplementary_data_id='{supplementary_data_id}', "
+                    f"supplementary_data_name='{supplementary_data['supplementary_data_name']}' を削除しました。"
+                    f"(入力データ input_data_id='{input_data_id}', "
+                    f"input_data_name='{input_data['input_data_name']}' に紐付いている)"
                 )
                 deleted_count += 1
-            except requests.HTTPError as e:
-                logger.warning(e)
+            except requests.HTTPError:
                 logger.warning(
-                    f"補助情報 supplementary_data_id={supplementary_data_id}, "
-                    f"supplementary_data_name={supplementary_data['supplementary_data_name']} の削除に失敗しました。"
+                    f"補助情報 supplementary_data_id='{supplementary_data_id}', "
+                    f"supplementary_data_name='{supplementary_data['supplementary_data_name']}' の削除に失敗しました。",
+                    exc_info=True,
                 )
                 continue
         return deleted_count
@@ -128,9 +128,8 @@ class DeleteSupplementaryDataMain(CommandLineWithConfirm):
         for input_data_id, supplementary_data_id_list in input_data_dict.items():
             try:
                 deleted_count += self.delete_supplementary_data_list_for_input_data(project_id, input_data_id, supplementary_data_id_list)
-            except Exception as e:  # pylint: disable=broad-except
-                logger.warning(e)
-                logger.warning(f"入力データ(input_data_id={input_data_id})配下の補助情報の削除に失敗しました。")
+            except Exception:  # pylint: disable=broad-except
+                logger.warning(f"入力データ(input_data_id='{input_data_id}')配下の補助情報の削除に失敗しました。", exc_info=True)
 
         logger.info(f"{deleted_count} / {total_count} 件の補助情報を削除しました。")
 
@@ -155,15 +154,15 @@ class DeleteSupplementaryDataMain(CommandLineWithConfirm):
             try:
                 self.service.api.delete_supplementary_data(project_id, input_data_id=input_data_id, supplementary_data_id=supplementary_data_id)
                 logger.debug(
-                    f"補助情報を削除しました。input_data_id={input_data_id}, supplementary_data_id={supplementary_data_id}, "
+                    f"補助情報を削除しました。input_data_id='{input_data_id}', supplementary_data_id='{supplementary_data_id}', "
                     f"supplementary_data_name={supplementary_data['supplementary_data_name']}"
                 )
                 deleted_count += 1
-            except requests.HTTPError as e:
-                logger.warning(e)
+            except requests.HTTPError:
                 logger.warning(
-                    f"補助情報の削除に失敗しました。input_data_id={input_data_id}, supplementary_data_id={supplementary_data_id}, "
-                    f"supplementary_data_name={supplementary_data['supplementary_data_name']}"
+                    f"補助情報の削除に失敗しました。input_data_id='{input_data_id}', supplementary_data_id='{supplementary_data_id}', "
+                    f"supplementary_data_name='{supplementary_data['supplementary_data_name']}'",
+                    exc_info=True,
                 )
                 continue
 
@@ -174,7 +173,7 @@ class DeleteSupplementaryDataMain(CommandLineWithConfirm):
         for input_data_id in input_data_id_list:
             input_data = self.service.wrapper.get_input_data_or_none(project_id, input_data_id)
             if input_data is None:
-                logger.warning(f"input_data_id={input_data_id} の入力データは存在しないので、補助情報の削除をスキップします。")
+                logger.warning(f"input_data_id='{input_data_id}' の入力データは存在しないので、補助情報の削除をスキップします。")
                 continue
             input_data_name = input_data["input_data_name"]
 
@@ -202,9 +201,8 @@ class DeleteSupplementaryDataMain(CommandLineWithConfirm):
                     f"input_data_name='{input_data_name}') "
                 )
 
-            except Exception as e:  # pylint: disable=broad-except
-                logger.warning(e)
-                logger.warning(f"入力データ(input_data_id={input_data_id})配下の補助情報の削除に失敗しました。")
+            except Exception:  # pylint: disable=broad-except
+                logger.warning(f"入力データ(input_data_id='{input_data_id}')配下の補助情報の削除に失敗しました。", exc_info=True)
 
         logger.info(f"{len(dict_deleted_count)} / {len(input_data_id_list)} 件の入力データに紐づく補助情報を削除しました。")
 

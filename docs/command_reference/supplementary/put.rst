@@ -29,7 +29,7 @@ CSVのフォーマットは以下の通りです。
     2列目,supplementary_data_number,Yes,表示順を表す数値を指定してください。
     3列目,supplementary_data_name,Yes,
     4列目,supplementary_data_path,Yes,先頭が ``file://`` の場合、ローカルのファイルを補助情報に使用します。
-    5列目,supplementary_data_id,No,省略した場合はUUID(v4)になります。
+    5列目,supplementary_data_id,No,省略した場合はsupplementary_data_nameに近い値（IDに使えない文字を加工した値）になります。
     6列目,supplementary_data_type,No,``image`` 、 ``text`` または ``custom`` を指定ください。省略した場合は、ファイル名から推測します。
 
 以下はCSVファイルのサンプルです。
@@ -45,6 +45,14 @@ CSVのフォーマットは以下の通りです。
     input2,3,data2-3,file:///tmp/sample.jpg,,
 
 
+.. warning::
+
+    プライベートストレージが利用可能な組織配下のプロジェクトでしか、 ``input_data_path`` に ``https`` または ``s3`` スキームを利用できません。
+    プライベートストレージを利用するには、Annofabサポート窓口への問い合わせが必要です。
+    詳細は https://annofab.readme.io/docs/external-storage を参照してください。
+
+
+
 ``--csv`` に、CSVファイルのパスを指定してください。
 
 .. code-block::
@@ -52,7 +60,7 @@ CSVのフォーマットは以下の通りです。
     $ annofabcli supplementary put --project_id prj1 --csv supplementary_data.csv
 
 
-supplementary_data_id（省略時は supplementary_data_number）が一致する補助情報が既に存在する場合は、デフォルトではスキップします。補助情報を上書きする場合は、 ``--overwrite`` を指定してください。
+supplementary_data_idが一致する補助情報が既に存在する場合は、デフォルトではスキップします。補助情報を上書きする場合は、 ``--overwrite`` を指定してください。
 
 .. code-block::
     
