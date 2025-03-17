@@ -143,11 +143,9 @@ def create_changed_input_data_list_from_csv(csv_file: Path) -> list[ChangedInput
         変更対象の入力データのlist
     """
     df_input_data = pandas.read_csv(
-        str(csv_file),
-        header=None,
-        names=("input_data_id", "input_data_name"),
+        csv_file,
         # 文字列として読み込むようにする
-        dtype={"input_data_id": str, "input_data_name": str},
+        dtype={"input_data_id": "string", "input_data_name": "string"},
     )
 
     input_data_dict_list = df_input_data.to_dict("records")
@@ -211,9 +209,9 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
             "変更対象の入力データが記載されたCSVファイルのパスを指定してください。\n"
             "CSVのフォーマットは以下の通りです。"
             "\n"
-            " * ヘッダ行なし, カンマ区切り\n"
-            " * 1列目: input_data_id (required)\n"
-            " * 2列目: input_data_name (required)\n"
+            " * ヘッダ行あり, カンマ区切り\n"
+            " * input_data_id (required)\n"
+            " * input_data_name (required)\n"
         ),
     )
 

@@ -28,7 +28,7 @@ CSVのフォーマットは以下の通りです。
 
 
 .. csv-table::
-   :header: 名前,必須,備考
+   :header: 列名,必須,備考
 
     input_data_id,Yes,
     supplementary_data_id,Yes,
