@@ -1,8 +1,8 @@
 import argparse
 import json
 import logging
+import re
 import sys
-import uuid
 from dataclasses import dataclass
 from functools import partial
 from multiprocessing import Pool
@@ -30,6 +30,14 @@ from annofabcli.common.facade import AnnofabApiFacade
 from annofabcli.common.utils import get_file_scheme_path
 
 logger = logging.getLogger(__name__)
+
+
+def convert_supplementary_data_name_to_supplementary_data_id(supplementary_data_name: str) -> str:
+    """
+    補助情報データ名から、補助情報データIDを生成します。
+    * IDに使えない文字以外は`__`に変換する。
+    """
+    return re.sub(r"[^a-zA-Z0-9_.-]", "__", supplementary_data_name)
 
 
 @dataclass
@@ -71,13 +79,13 @@ class SubPutSupplementaryData:
         all_yes:
     """
 
-    def __init__(self, service: annofabapi.Resource, facade: AnnofabApiFacade, all_yes: bool = False) -> None:  # noqa: FBT001, FBT002
+    def __init__(self, service: annofabapi.Resource, facade: AnnofabApiFacade, *, all_yes: bool = False) -> None:
         self.service = service
         self.facade = facade
         self.all_yes = all_yes
         self.supplementary_data_cache: dict[str, list[SupplementaryData]] = {}
 
-    def put_supplementary_data(self, project_id: str, supplementary_data: SupplementaryDataForPut):  # noqa: ANN201
+    def put_supplementary_data(self, project_id: str, supplementary_data: SupplementaryDataForPut) -> None:
         file_path = get_file_scheme_path(supplementary_data.supplementary_data_path)
         if file_path is not None:
             request_body = {
@@ -141,7 +149,7 @@ class SubPutSupplementaryData:
 
         return yes
 
-    def confirm_put_supplementary_data(self, csv_supplementary_data: CsvSupplementaryData, already_exists: bool = False) -> bool:  # noqa: FBT001, FBT002
+    def confirm_put_supplementary_data(self, csv_supplementary_data: CsvSupplementaryData, *, already_exists: bool = False) -> bool:
         message_for_confirm = f"supplementary_data_name='{csv_supplementary_data.supplementary_data_name}' の補助情報を登録しますか？"
         if already_exists:
             message_for_confirm += f"supplementary_data_id={csv_supplementary_data.supplementary_data_id} を上書きします。"
@@ -162,7 +170,7 @@ class SubPutSupplementaryData:
         cached_list = self.get_supplementary_data_list_cached(project_id, input_data_id)
         return first_true(cached_list, pred=lambda e: e["supplementary_data_number"] == supplementary_data_number)
 
-    def put_supplementary_data_main(self, project_id: str, csv_supplementary_data: CsvSupplementaryData, overwrite: bool = False) -> bool:  # noqa: FBT001, FBT002
+    def put_supplementary_data_main(self, project_id: str, csv_supplementary_data: CsvSupplementaryData, *, overwrite: bool = False) -> bool:
         last_updated_datetime = None
         input_data_id = csv_supplementary_data.input_data_id
         supplementary_data_id = csv_supplementary_data.supplementary_data_id
@@ -180,7 +188,11 @@ class SubPutSupplementaryData:
             supplementary_data_number = csv_supplementary_data.supplementary_data_number
             old_supplementary_data_key = f"input_data_id={input_data_id}, supplementary_data_number={supplementary_data_number}"
             old_supplementary_data = self.get_supplementary_data_by_number(project_id, input_data_id, supplementary_data_number)
-            supplementary_data_id = old_supplementary_data["supplementary_data_id"] if old_supplementary_data is not None else str(uuid.uuid4())
+            supplementary_data_id = (
+                old_supplementary_data["supplementary_data_id"]
+                if old_supplementary_data is not None
+                else csv_supplementary_data.supplementary_data_name
+            )
 
         if old_supplementary_data is not None:
             if overwrite:
@@ -240,7 +252,8 @@ class PutSupplementaryData(CommandLine):
         self,
         project_id: str,
         supplementary_data_list: list[CsvSupplementaryData],
-        overwrite: bool = False,  # noqa: FBT001, FBT002
+        *,
+        overwrite: bool = False,
         parallelism: Optional[int] = None,
     ) -> None:
         """
@@ -280,7 +293,7 @@ class PutSupplementaryData(CommandLine):
 
     @staticmethod
     def get_supplementary_data_list_from_csv(csv_path: Path) -> list[CsvSupplementaryData]:
-        def create_supplementary_data(e: Any):  # noqa: ANN202, ANN401
+        def create_supplementary_data(e: Any) -> CsvSupplementaryData:  # noqa: ANN401
             supplementary_data_id = e.supplementary_data_id if not pandas.isna(e.supplementary_data_id) else None
             supplementary_data_type = e.supplementary_data_type if not pandas.isna(e.supplementary_data_type) else None
             return CsvSupplementaryData(
