@@ -371,7 +371,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--csv",
         type=str,
         help=(
-            "補助情報が記載されたCVファイルのパスを指定してください。CSVのフォーマットは、以下の通りです。\n"
+            "補助情報が記載されたCSVファイルのパスを指定してください。CSVのフォーマットは、以下の通りです。\n"
             "\n"
             " * ヘッダ行あり, カンマ区切り\n"
             " * input_data_id (required)\n"

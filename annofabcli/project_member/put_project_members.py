@@ -184,7 +184,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         type=str,
         required=True,
         help=(
-            "プロジェクトメンバが記載されたCVファイルのパスを指定してください。"
+            "プロジェクトメンバが記載されたCSVファイルのパスを指定してください。"
             "CSVのフォーマットは、「1列目:user_id(required), 2列目:member_role(required), "
             "3列目:sampling_inspection_rate, 4列目:sampling_acceptance_rate, ヘッダ行なし, カンマ区切り」です。"
             "member_roleは ``owner``, ``worker``, ``accepter``, ``training_data_user`` のいずれかです。"
