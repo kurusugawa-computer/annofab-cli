@@ -1,7 +1,7 @@
 import argparse
 import logging
+import re
 import sys
-import uuid
 from dataclasses import dataclass
 from functools import partial
 from multiprocessing import Pool
@@ -51,6 +51,14 @@ class InputDataForPut(DataClassJsonMixin):
     input_data_name: str
     input_data_path: str
     input_data_id: str
+
+
+def convert_input_data_name_to_input_data_id(input_data_name: str) -> str:
+    """
+    入力データ名から、入力データIDを生成する。
+    IDに使えない文字以外は`__`に変換する。
+    """
+    return re.sub(r"[^a-zA-Z0-9_.-]", "__", input_data_name)
 
 
 def read_input_data_csv(csv_file: Path) -> pandas.DataFrame:
@@ -180,11 +188,13 @@ class SubPutInputData:
 
         return self.confirm_processing(message_for_confirm)
 
-    def put_input_data_main(self, project_id: str, csv_input_data: CsvInputData, overwrite: bool = False) -> bool:  # noqa: FBT001, FBT002
+    def put_input_data_main(self, project_id: str, csv_input_data: CsvInputData, *, overwrite: bool = False) -> bool:
         input_data = InputDataForPut(
             input_data_name=csv_input_data.input_data_name,
             input_data_path=csv_input_data.input_data_path,
-            input_data_id=csv_input_data.input_data_id if csv_input_data.input_data_id is not None else str(uuid.uuid4()),
+            input_data_id=csv_input_data.input_data_id
+            if csv_input_data.input_data_id is not None
+            else convert_input_data_name_to_input_data_id(csv_input_data.input_data_name),
         )
 
         last_updated_datetime = None
