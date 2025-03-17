@@ -82,7 +82,7 @@ class DeleteSupplementaryDataMain(CommandLineWithConfirm):
 
         input_data = self.service.wrapper.get_input_data_or_none(project_id, input_data_id)
         if input_data is None:
-            logger.warning(f"input_data_id={input_data_id} の入力データは存在しないのでスキップします。")
+            logger.warning(f"input_data_id='{input_data_id}' の入力データは存在しないのでスキップします。")
             return 0
 
         supplementary_data_list, _ = self.service.api.get_supplementary_data_list(project_id, input_data_id)
