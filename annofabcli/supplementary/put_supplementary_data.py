@@ -97,7 +97,12 @@ class SubPutSupplementaryData:
             if supplementary_data.supplementary_data_type is not None:
                 request_body.update({"supplementary_data_type": supplementary_data.supplementary_data_type})
 
-            logger.debug(f"'{file_path}'を補助情報として登録します。supplementary_data_name='{supplementary_data.supplementary_data_name}'")
+            logger.debug(
+                f"'{file_path}'を補助情報として登録します。 :: "
+                f"input_data_id='{supplementary_data.input_data_id}', "
+                f"supplementary_data_id='{supplementary_data.supplementary_data_id}', "
+                f"supplementary_data_name='{supplementary_data.supplementary_data_name}'"
+            )
             self.service.wrapper.put_supplementary_data_from_file(
                 project_id,
                 input_data_id=supplementary_data.input_data_id,
@@ -149,10 +154,20 @@ class SubPutSupplementaryData:
 
         return yes
 
-    def confirm_put_supplementary_data(self, csv_supplementary_data: CsvSupplementaryData, *, already_exists: bool = False) -> bool:
-        message_for_confirm = f"supplementary_data_name='{csv_supplementary_data.supplementary_data_name}' の補助情報を登録しますか？"
+    def confirm_put_supplementary_data(
+        self, csv_supplementary_data: CsvSupplementaryData, supplementary_data_id: str, *, already_exists: bool = False
+    ) -> bool:
         if already_exists:
-            message_for_confirm += f"supplementary_data_id={csv_supplementary_data.supplementary_data_id} を上書きします。"
+            message_for_confirm = (
+                f"supplementary_data_name='{csv_supplementary_data.supplementary_data_name}', "
+                f"supplementary_data_id='{supplementary_data_id}'の補助情報を更新しますか？"
+            )
+        else:
+            message_for_confirm = (
+                f"supplementary_data_name='{csv_supplementary_data.supplementary_data_name}', "
+                f"supplementary_data_id='{supplementary_data_id}'の補助情報を登録しますか？"
+            )
+
         return self.confirm_processing(message_for_confirm)
 
     def get_supplementary_data_list_cached(self, project_id: str, input_data_id: str) -> list[SupplementaryData]:
@@ -166,14 +181,14 @@ class SubPutSupplementaryData:
         cached_list = self.get_supplementary_data_list_cached(project_id, input_data_id)
         return first_true(cached_list, pred=lambda e: e["supplementary_data_id"] == supplementary_data_id)
 
-    def get_supplementary_data_by_number(self, project_id: str, input_data_id: str, supplementary_data_number: int) -> Optional[SupplementaryData]:
-        cached_list = self.get_supplementary_data_list_cached(project_id, input_data_id)
-        return first_true(cached_list, pred=lambda e: e["supplementary_data_number"] == supplementary_data_number)
-
     def put_supplementary_data_main(self, project_id: str, csv_supplementary_data: CsvSupplementaryData, *, overwrite: bool = False) -> bool:
         last_updated_datetime = None
         input_data_id = csv_supplementary_data.input_data_id
-        supplementary_data_id = csv_supplementary_data.supplementary_data_id
+        supplementary_data_id = (
+            csv_supplementary_data.supplementary_data_id
+            if csv_supplementary_data.supplementary_data_id is not None
+            else convert_supplementary_data_name_to_supplementary_data_id(csv_supplementary_data.supplementary_data_name)
+        )
         supplementary_data_path = csv_supplementary_data.supplementary_data_path
 
         # input_data_idの存在確認
@@ -181,25 +196,20 @@ class SubPutSupplementaryData:
             logger.warning(f"input_data_id='{input_data_id}'である入力データは存在しないため、補助情報の登録をスキップします。")
             return False
 
-        if supplementary_data_id is not None:
-            old_supplementary_data_key = f"supplementary_data_id={supplementary_data_id}"
-            old_supplementary_data = self.get_supplementary_data_by_id(project_id, input_data_id, supplementary_data_id)
-        else:
-            supplementary_data_number = csv_supplementary_data.supplementary_data_number
-            old_supplementary_data_key = f"input_data_id={input_data_id}, supplementary_data_number={supplementary_data_number}"
-            old_supplementary_data = self.get_supplementary_data_by_number(project_id, input_data_id, supplementary_data_number)
-            supplementary_data_id = (
-                old_supplementary_data["supplementary_data_id"]
-                if old_supplementary_data is not None
-                else csv_supplementary_data.supplementary_data_name
-            )
+        old_supplementary_data = self.get_supplementary_data_by_id(project_id, input_data_id, supplementary_data_id)
 
         if old_supplementary_data is not None:
             if overwrite:
-                logger.debug(f"'{old_supplementary_data_key}' はすでに存在します。")
+                logger.debug(
+                    f"supplementary_data_id='{supplementary_data_id}'である補助情報がすでに存在します。 :: "
+                    f"input_data_id='{input_data_id}', supplementary_data_name='{csv_supplementary_data.supplementary_data_name}'"
+                )
                 last_updated_datetime = old_supplementary_data["updated_datetime"]
             else:
-                logger.debug(f"'{old_supplementary_data_key}' がすでに存在するのでスキップします。")
+                logger.debug(
+                    f"supplementary_data_id='{supplementary_data_id}'である補助情報がすでに存在するので、補助情報の登録をスキップします。 :: "
+                    f"input_data_id='{input_data_id}', supplementary_data_name='{csv_supplementary_data.supplementary_data_name}'"
+                )
                 return False
 
         file_path = get_file_scheme_path(supplementary_data_path)
@@ -209,7 +219,7 @@ class SubPutSupplementaryData:
                 logger.warning(f"'{supplementary_data_path}' は存在しません。")
                 return False
 
-        if not self.confirm_put_supplementary_data(csv_supplementary_data, already_exists=last_updated_datetime is not None):
+        if not self.confirm_put_supplementary_data(csv_supplementary_data, supplementary_data_id, already_exists=last_updated_datetime is not None):
             return False
 
         # 補助情報を登録
@@ -225,8 +235,8 @@ class SubPutSupplementaryData:
         try:
             self.put_supplementary_data(project_id, supplementary_data_for_put)
             logger.debug(
-                f"補助情報を登録しました。"
-                f"input_data_id='{supplementary_data_for_put.input_data_id}',"
+                f"補助情報を登録しました。 :: "
+                f"input_data_id='{supplementary_data_for_put.input_data_id}', "
                 f"supplementary_data_id='{supplementary_data_for_put.supplementary_data_id}', "
                 f"supplementary_data_name='{supplementary_data_for_put.supplementary_data_name}'"
             )
@@ -234,7 +244,7 @@ class SubPutSupplementaryData:
 
         except requests.exceptions.HTTPError:
             logger.warning(
-                f"補助情報の登録に失敗しました。"
+                f"補助情報の登録に失敗しました。 ::"
                 f"input_data_id='{supplementary_data_for_put.input_data_id}',"
                 f"supplementary_data_id='{supplementary_data_for_put.supplementary_data_id}', "
                 f"supplementary_data_name='{supplementary_data_for_put.supplementary_data_name}'",
