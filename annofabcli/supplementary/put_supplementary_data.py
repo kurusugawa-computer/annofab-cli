@@ -47,11 +47,11 @@ class CsvSupplementaryData(DataClassJsonMixin):
     """
 
     input_data_id: str
-    supplementary_data_number: int
     supplementary_data_name: str
     supplementary_data_path: str
     supplementary_data_id: Optional[str] = None
     supplementary_data_type: Optional[str] = None
+    supplementary_data_number: Optional[int] = None
 
 
 @dataclass
@@ -83,7 +83,7 @@ class SubPutSupplementaryData:
         self.service = service
         self.facade = facade
         self.all_yes = all_yes
-        self.supplementary_data_cache: dict[str, list[SupplementaryData]] = {}
+        self.supplementary_data_cache: dict[tuple[str, str], list[SupplementaryData]] = {}
 
     def put_supplementary_data(self, project_id: str, supplementary_data: SupplementaryDataForPut) -> None:
         file_path = get_file_scheme_path(supplementary_data.supplementary_data_path)
@@ -171,7 +171,7 @@ class SubPutSupplementaryData:
         return self.confirm_processing(message_for_confirm)
 
     def get_supplementary_data_list_cached(self, project_id: str, input_data_id: str) -> list[SupplementaryData]:
-        key = f"{project_id},{input_data_id}"
+        key = (project_id, input_data_id)
         if key not in self.supplementary_data_cache:
             supplementary_data_list, _ = self.service.api.get_supplementary_data_list(project_id, input_data_id)
             self.supplementary_data_cache[key] = supplementary_data_list if supplementary_data_list is not None else []
@@ -181,55 +181,58 @@ class SubPutSupplementaryData:
         cached_list = self.get_supplementary_data_list_cached(project_id, input_data_id)
         return first_true(cached_list, pred=lambda e: e["supplementary_data_id"] == supplementary_data_id)
 
-    def put_supplementary_data_main(self, project_id: str, csv_supplementary_data: CsvSupplementaryData, *, overwrite: bool = False) -> bool:
+    def put_supplementary_data_main(self, project_id: str, csv_data: CsvSupplementaryData, *, overwrite: bool = False) -> bool:
         last_updated_datetime = None
-        input_data_id = csv_supplementary_data.input_data_id
+        input_data_id = csv_data.input_data_id
         supplementary_data_id = (
-            csv_supplementary_data.supplementary_data_id
-            if csv_supplementary_data.supplementary_data_id is not None
-            else convert_supplementary_data_name_to_supplementary_data_id(csv_supplementary_data.supplementary_data_name)
+            csv_data.supplementary_data_id
+            if csv_data.supplementary_data_id is not None
+            else convert_supplementary_data_name_to_supplementary_data_id(csv_data.supplementary_data_name)
         )
-        supplementary_data_path = csv_supplementary_data.supplementary_data_path
 
-        # input_data_idの存在確認
-        if self.service.wrapper.get_input_data_or_none(project_id, input_data_id) is None:
+        supplementary_data_list = self.service.wrapper.get_supplementary_data_list_or_none(project_id, input_data_id)
+        if supplementary_data_list is None:
+            # 入力データが存在しない場合は、`supplementary_data_list`はNoneになる
             logger.warning(f"input_data_id='{input_data_id}'である入力データは存在しないため、補助情報の登録をスキップします。")
             return False
 
-        old_supplementary_data = self.get_supplementary_data_by_id(project_id, input_data_id, supplementary_data_id)
+        old_supplementary_data = first_true(supplementary_data_list, pred=lambda e: e["supplementary_data_id"] == supplementary_data_id)
+        max_supplementary_data_number = max((e["supplementary_data_number"] for e in supplementary_data_list), default=0)
+        supplementary_data_number = (
+            csv_data.supplementary_data_number if csv_data.supplementary_data_number is not None else max_supplementary_data_number + 1
+        )
 
         if old_supplementary_data is not None:
             if overwrite:
                 logger.debug(
                     f"supplementary_data_id='{supplementary_data_id}'である補助情報がすでに存在します。 :: "
-                    f"input_data_id='{input_data_id}', supplementary_data_name='{csv_supplementary_data.supplementary_data_name}'"
+                    f"input_data_id='{input_data_id}', supplementary_data_name='{csv_data.supplementary_data_name}'"
                 )
                 last_updated_datetime = old_supplementary_data["updated_datetime"]
             else:
                 logger.debug(
                     f"supplementary_data_id='{supplementary_data_id}'である補助情報がすでに存在するので、補助情報の登録をスキップします。 :: "
-                    f"input_data_id='{input_data_id}', supplementary_data_name='{csv_supplementary_data.supplementary_data_name}'"
+                    f"input_data_id='{input_data_id}', supplementary_data_name='{csv_data.supplementary_data_name}'"
                 )
                 return False
 
-        file_path = get_file_scheme_path(supplementary_data_path)
-        logger.debug(f"csv_supplementary_data='{csv_supplementary_data}'")
+        file_path = get_file_scheme_path(csv_data.supplementary_data_path)
         if file_path is not None:  # noqa: SIM102
             if not Path(file_path).exists():
-                logger.warning(f"'{supplementary_data_path}' は存在しません。")
+                logger.warning(f"'{csv_data.supplementary_data_path}' は存在しません。補助情報の登録をスキップします。")
                 return False
 
-        if not self.confirm_put_supplementary_data(csv_supplementary_data, supplementary_data_id, already_exists=last_updated_datetime is not None):
+        if not self.confirm_put_supplementary_data(csv_data, supplementary_data_id, already_exists=last_updated_datetime is not None):
             return False
 
         # 補助情報を登録
         supplementary_data_for_put = SupplementaryDataForPut(
-            input_data_id=csv_supplementary_data.input_data_id,
+            input_data_id=csv_data.input_data_id,
             supplementary_data_id=supplementary_data_id,
-            supplementary_data_name=csv_supplementary_data.supplementary_data_name,
-            supplementary_data_path=csv_supplementary_data.supplementary_data_path,
-            supplementary_data_type=csv_supplementary_data.supplementary_data_type,
-            supplementary_data_number=csv_supplementary_data.supplementary_data_number,
+            supplementary_data_name=csv_data.supplementary_data_name,
+            supplementary_data_path=csv_data.supplementary_data_path,
+            supplementary_data_type=csv_data.supplementary_data_type,
+            supplementary_data_number=supplementary_data_number,
             last_updated_datetime=last_updated_datetime,
         )
         try:
@@ -291,7 +294,7 @@ class PutSupplementaryData(CommandLine):
 
         else:
             for csv_supplementary_data in supplementary_data_list:
-                result = obj.put_supplementary_data_main(project_id, csv_supplementary_data=csv_supplementary_data, overwrite=overwrite)
+                result = obj.put_supplementary_data_main(project_id, csv_data=csv_supplementary_data, overwrite=overwrite)
                 if result:
                     count_put_supplementary_data += 1
 
@@ -321,14 +324,14 @@ class PutSupplementaryData(CommandLine):
             header=None,
             names=(
                 "input_data_id",
-                "supplementary_data_number",
                 "supplementary_data_name",
                 "supplementary_data_path",
                 "supplementary_data_id",
+                "supplementary_data_number",
                 "supplementary_data_type",
             ),
             # IDは必ず文字列として読み込むようにする
-            dtype={"input_data_id": str, "supplementary_data_id": str, "supplementary_data_name": str},
+            dtype={"input_data_id": str, "supplementary_data_id": str, "supplementary_data_name": str, "supplementary_data_path": str},
         )
         supplementary_data_list = [create_supplementary_data(e) for e in df.itertuples()]
         return supplementary_data_list
