@@ -197,8 +197,8 @@ class WholePerformance:
             ("working_days", ""),
         ]
 
-        data: dict[tuple[str, str], float] = {key: 0 for key in worktime_columns + count_columns}
-        data.update({key: numpy.nan for key in ratio_columns + stdev_columns + date_columns})
+        data: dict[tuple[str, str], float] = dict.fromkeys(worktime_columns + count_columns, 0)
+        data.update(dict.fromkeys(ratio_columns + stdev_columns + date_columns, numpy.nan))
 
         return cls(pandas.Series(data), task_completion_criteria, custom_production_volume_list=custom_production_volume_list)
 

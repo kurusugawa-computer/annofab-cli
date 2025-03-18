@@ -182,7 +182,7 @@ class UpdateMetadata(CommandLine):
                 sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
             assert input_data_id_list is not None, "'--metadata'を指定したときは'--input_data_id'は必須です。"
-            metadata_by_input_data_id = {input_data_id: metadata for input_data_id in input_data_id_list}
+            metadata_by_input_data_id = dict.fromkeys(input_data_id_list, metadata)
 
         elif args.metadata_by_input_data_id is not None:
             metadata_by_input_data_id = annofabcli.common.cli.get_json_from_args(args.metadata_by_input_data_id)

@@ -200,7 +200,7 @@ class WorktimePerDate:
             "monitored_inspection_worktime_hour",
             "monitored_acceptance_worktime_hour",
         ]
-        df.fillna({c: 0 for c in value_columns}, inplace=True)
+        df.fillna(dict.fromkeys(value_columns, 0), inplace=True)
 
         df = df.merge(df_member, how="left", on="account_id")
         return df[

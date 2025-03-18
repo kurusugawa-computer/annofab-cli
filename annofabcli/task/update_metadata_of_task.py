@@ -212,7 +212,7 @@ class UpdateMetadataOfTask(CommandLine):
         if args.metadata is not None:
             metadata = annofabcli.common.cli.get_json_from_args(args.metadata)
             assert task_id_list is not None, "'--metadata'を指定したときは'--task_id'は必須です。"
-            metadata_by_task_id = {task_id: metadata for task_id in task_id_list}
+            metadata_by_task_id = dict.fromkeys(task_id_list, metadata)
         elif args.metadata_by_task_id is not None:
             metadata_by_task_id = annofabcli.common.cli.get_json_from_args(args.metadata_by_task_id)
             if task_id_list is not None:

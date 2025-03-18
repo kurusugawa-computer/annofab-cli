@@ -571,7 +571,7 @@ class UserPerformance:
             level0_columns = ["monitored_worktime_hour", *task_worktime_by_phase_user.quantity_columns]
             columns = [(c0, c1) for c0, c1 in df.columns if c0 in level0_columns]
 
-            return df.fillna({col: 0 for col in columns})
+            return df.fillna(dict.fromkeys(columns, 0))
 
         if task_completion_criteria == TaskCompletionCriteria.ACCEPTANCE_REACHED:
             # 受入フェーズに到達したらタスクの作業が完了したとみなす場合、
@@ -634,8 +634,8 @@ class UserPerformance:
         ]
 
         value_columns = columns - set(basic_columns)
-        dtypes = {col: "string" for col in basic_columns}
-        dtypes.update({col: "float64" for col in value_columns})
+        dtypes = dict.fromkeys(basic_columns, "string")
+        dtypes.update(dict.fromkeys(value_columns, "float64"))
         return df.astype(dtypes)
 
     def _validate_df_for_output(self, output_file: Path) -> bool:
