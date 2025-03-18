@@ -25,8 +25,8 @@ class Member(DataClassJsonMixin):
 
     user_id: str
     member_role: ProjectMemberRole
-    sampling_inspection_rate: Optional[int]=None
-    sampling_acceptance_rate: Optional[int]=None
+    sampling_inspection_rate: Optional[int] = None
+    sampling_acceptance_rate: Optional[int] = None
 
 
 class PutProjectMembers(CommandLine):
