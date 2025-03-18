@@ -1,3 +1,4 @@
+user_id,member_role,sampling_inspection_rate,sampling_acceptance_rate
 user1,owner
 user2,accepter,10,20
 user3,worker,,20
