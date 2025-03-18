@@ -5,7 +5,6 @@ from pathlib import Path
 from typing import Any, Optional
 
 import more_itertools
-import numpy
 import pandas
 import requests
 from annofabapi.models import ProjectMemberRole, ProjectMemberStatus
@@ -26,8 +25,8 @@ class Member(DataClassJsonMixin):
 
     user_id: str
     member_role: ProjectMemberRole
-    sampling_inspection_rate: Optional[int]
-    sampling_acceptance_rate: Optional[int]
+    sampling_inspection_rate: Optional[int]=None
+    sampling_acceptance_rate: Optional[int]=None
 
 
 class PutProjectMembers(CommandLine):
@@ -44,7 +43,7 @@ class PutProjectMembers(CommandLine):
     def member_exists(members: list[dict[str, Any]], user_id: str) -> bool:
         return PutProjectMembers.find_member(members, user_id) is not None
 
-    def invite_project_member(self, project_id: str, member: Member, old_project_members: list[dict[str, Any]]):  # noqa: ANN201
+    def invite_project_member(self, project_id: str, member: Member, old_project_members: list[dict[str, Any]]) -> dict[str, Any]:
         old_member = self.find_member(old_project_members, member.user_id)
         last_updated_datetime = old_member["updated_datetime"] if old_member is not None else None
 
@@ -58,7 +57,7 @@ class PutProjectMembers(CommandLine):
         updated_project_member = self.service.api.put_project_member(project_id, member.user_id, request_body=request_body)[0]
         return updated_project_member
 
-    def delete_project_member(self, project_id: str, deleted_member: dict[str, Any]):  # noqa: ANN201
+    def delete_project_member(self, project_id: str, deleted_member: dict[str, Any]) -> dict[str, Any]:
         request_body = {
             "member_status": ProjectMemberStatus.INACTIVE.value,
             "member_role": deleted_member["member_role"],
@@ -67,7 +66,7 @@ class PutProjectMembers(CommandLine):
         updated_project_member = self.service.api.put_project_member(project_id, deleted_member["user_id"], request_body=request_body)[0]
         return updated_project_member
 
-    def put_project_members(self, project_id: str, members: list[Member], delete: bool = False):  # noqa: ANN201, FBT001, FBT002
+    def put_project_members(self, project_id: str, members: list[Member], *, delete: bool = False) -> None:
         """
         プロジェクトメンバを一括で登録する。
 
@@ -88,7 +87,7 @@ class PutProjectMembers(CommandLine):
 
         count_invite_members = 0
         # プロジェクトメンバを登録
-        logger.info(f"{project_title} に、{len(members)} 件のプロジェクトメンバを登録します。")
+        logger.info(f"プロジェクト '{project_title}' に、{len(members)} 件のプロジェクトメンバを登録します。")
         for member in members:
             if member.user_id == self.service.api.login_user_id:
                 logger.debug(f"ユーザ '{member.user_id}'は自分自身なので、登録しません。")
@@ -99,7 +98,7 @@ class PutProjectMembers(CommandLine):
                 continue
 
             message_for_confirm = (
-                f"ユーザ '{member.user_id}'を、{project_title} プロジェクトのメンバに登録しますか？member_role={member.member_role.value}"
+                f"ユーザ '{member.user_id}'を、プロジェクト'{project_title}'のメンバーに登録しますか？ member_role='{member.member_role.value}'"
             )
             if not self.confirm_processing(message_for_confirm):
                 continue
@@ -107,14 +106,15 @@ class PutProjectMembers(CommandLine):
             # メンバを登録
             try:
                 self.invite_project_member(project_id, member, old_project_members)
-                logger.debug(f"user_id = {member.user_id}, member_role = {member.member_role.value} のユーザをプロジェクトメンバに登録しました。")
+                logger.debug(f"user_id = '{member.user_id}', member_role = '{member.member_role.value}' のユーザをプロジェクトメンバに登録しました。")
                 count_invite_members += 1
 
-            except requests.exceptions.HTTPError as e:
-                logger.warning(e)
-                logger.warning(f"プロジェクトメンバの登録に失敗しました。user_id = {member.user_id}, member_role = {member.member_role.value}")
+            except requests.exceptions.HTTPError:
+                logger.warning(
+                    f"プロジェクトメンバの登録に失敗しました。user_id = '{member.user_id}', member_role = '{member.member_role.value}'", exc_info=True
+                )
 
-        logger.info(f"{project_title} に、{count_invite_members} / {len(members)} 件のプロジェクトメンバを登録しました。")
+        logger.info(f"プロジェクト'{project_title}' に、{count_invite_members} / {len(members)} 件のプロジェクトメンバを登録しました。")
 
         # プロジェクトメンバを削除
         if delete:
@@ -125,7 +125,7 @@ class PutProjectMembers(CommandLine):
             ]
 
             count_delete_members = 0
-            logger.info(f"{project_title} から、{len(deleted_members)} 件のプロジェクトメンバを削除します。")
+            logger.info(f"プロジェクト '{project_title}' から、{len(deleted_members)} 件のプロジェクトメンバを削除します。")
             for deleted_member in deleted_members:
                 message_for_confirm = f"ユーザ '{deleted_member['user_id']}'を、{project_title} のプロジェクトメンバから削除しますか？"
                 if not self.confirm_processing(message_for_confirm):
@@ -135,31 +135,18 @@ class PutProjectMembers(CommandLine):
                     self.delete_project_member(project_id, deleted_member)
                     logger.debug(f"ユーザ '{deleted_member['user_id']}' をプロジェクトメンバから削除しました。")
                     count_delete_members += 1
-                except requests.exceptions.HTTPError as e:
-                    logger.warning(e)
-                    logger.warning(f"プロジェクトメンバの削除に失敗しました。user_id = '{deleted_member['user_id']}' ")
+                except requests.exceptions.HTTPError:
+                    logger.warning(f"プロジェクトメンバの削除に失敗しました。user_id = '{deleted_member['user_id']}' ", exc_info=True)
 
-            logger.info(f"{project_title} から {count_delete_members} / {len(deleted_members)} 件のプロジェクトメンバを削除しました。")
+            logger.info(f"プロジェクト '{project_title}' から {count_delete_members} / {len(deleted_members)} 件のプロジェクトメンバを削除しました。")
 
     @staticmethod
     def get_members_from_csv(csv_path: Path) -> list[Member]:
-        def create_member(e):  # noqa: ANN001, ANN202
-            return Member(
-                user_id=e.user_id,
-                member_role=ProjectMemberRole(e.member_role),
-                sampling_inspection_rate=e.sampling_inspection_rate,
-                sampling_acceptance_rate=e.sampling_acceptance_rate,
-            )
-
         df = pandas.read_csv(
-            str(csv_path),
-            sep=",",
-            header=None,
-            names=("user_id", "member_role", "sampling_inspection_rate", "sampling_acceptance_rate"),
-            # IDは必ず文字列として読み込むようにする
-            dtype={"user_id": str},
-        ).replace({numpy.nan: None})
-        members = [create_member(e) for e in df.itertuples()]
+            csv_path,
+            dtype={"user_id": "string", "member_role": "string", "sampling_inspection_rate": "Int64", "sampling_acceptance_rate": "Int64"},
+        )
+        members = [Member.from_dict(e) for e in df.to_dict("records")]
         return members
 
     def main(self) -> None:
@@ -185,11 +172,13 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         required=True,
         help=(
             "プロジェクトメンバが記載されたCSVファイルのパスを指定してください。"
-            "CSVのフォーマットは、「1列目:user_id(required), 2列目:member_role(required), "
-            "3列目:sampling_inspection_rate, 4列目:sampling_acceptance_rate, ヘッダ行なし, カンマ区切り」です。"
-            "member_roleは ``owner``, ``worker``, ``accepter``, ``training_data_user`` のいずれかです。"
-            "sampling_inspection_rate, sampling_acceptance_rate を省略した場合は未設定になります。"
-            "ただし自分自身は登録しません。"
+            "CSVのフォーマットは、ヘッダあり、カンマ区切りです。\n"
+            " * user_id (required)\n"
+            " * member_role (required)\n"
+            " * sampling_inspection_rate\n"
+            " * sampling_acceptance_rate\n"
+            "member_roleには ``owner``, ``worker``, ``accepter``, ``training_data_user`` のいずれかを指定します。\n"
+            "自分自身は登録できません。"
         ),
     )
 
@@ -202,10 +191,9 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
 
 def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     subcommand_name = "put"
-    subcommand_help = "プロジェクトメンバを登録する。"
-    description = "プロジェクトメンバを登録する。"
-    epilog = "オーナロールを持つユーザで実行してください。"
+    subcommand_help = "プロジェクトメンバを登録します。"
+    epilog = "オーナーロールを持つユーザで実行してください。"
 
-    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
+    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, epilog=epilog)
     parse_args(parser)
     return parser
