@@ -411,7 +411,7 @@ class AnnotationDurationCsvByAttribute:
 
         # アノテーション数の列のNaNを0に変換する
         value_columns = self._value_columns(annotation_duration_list, prior_attribute_columns)
-        df = df.fillna({column: 0 for column in value_columns})
+        df = df.fillna(dict.fromkeys(value_columns, 0))
         return df
 
 
@@ -473,7 +473,7 @@ class AnnotationDurationCsvByLabel:
 
         # アノテーション数列のNaNを0に変換する
         value_columns = self._value_columns(annotation_duration_list, prior_label_columns)
-        df = df.fillna({column: 0 for column in value_columns})
+        df = df.fillna(dict.fromkeys(value_columns, 0))
 
         return df
 

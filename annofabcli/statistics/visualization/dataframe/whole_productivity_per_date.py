@@ -187,7 +187,7 @@ class WholeProductivityPerCompletedDate:
             df_agg_sub_task["task_count"] = df_sub_task.pivot_table(values=["task_id"], index=date_column, aggfunc="count").fillna(0)
         else:
             # 列だけ作る
-            df_agg_sub_task = df_agg_sub_task.assign(**{key: 0 for key in production_volume_columns}, task_count=0)
+            df_agg_sub_task = df_agg_sub_task.assign(**dict.fromkeys(production_volume_columns, 0), task_count=0)
 
         df_worktime = worktime_per_date.df
         if len(df_worktime) > 0:
@@ -929,7 +929,7 @@ class WholeProductivityPerFirstAnnotationStartedDate:
             ).fillna(0)
         else:
             # 列だけ作る
-            df_agg_sub_task = df_agg_sub_task.assign(**{key: 0 for key in value_columns}, task_count=0)
+            df_agg_sub_task = df_agg_sub_task.assign(**dict.fromkeys(value_columns, 0), task_count=0)
 
         # 日付の一覧を生成
         if len(df_agg_sub_task) > 0:
