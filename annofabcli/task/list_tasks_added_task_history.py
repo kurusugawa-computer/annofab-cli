@@ -243,7 +243,7 @@ class AddingAdditionalInfoToTask:
 
         return task
 
-    def add_additional_info_to_task(self, task: dict[str, Any]):  # noqa: ANN201
+    def add_additional_info_to_task(self, task: dict[str, Any]) -> None:
         """タスクの付加的情報を、タスクに追加する。
         以下の列を追加する。
         * user_id
@@ -375,7 +375,7 @@ class TasksAddedTaskHistoryOutput:
 
         return base_columns + task_history_columns
 
-    def output(self, output_path: Path, output_format: FormatArgument):  # noqa: ANN201
+    def output(self, output_path: Path, output_format: FormatArgument) -> None:
         task_list = self.task_list
         if len(task_list) == 0:
             logger.info("タスク一覧の件数が0件のため、出力しません。")
