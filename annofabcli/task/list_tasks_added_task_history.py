@@ -9,17 +9,94 @@ import annofabapi
 import more_itertools
 import pandas
 from annofabapi.models import Task, TaskHistory, TaskPhase, TaskStatus
+from annofabapi.util.task_history import find_rejected_task_history_indices
 from annofabapi.utils import get_task_history_index_skipped_acceptance, get_task_history_index_skipped_inspection
 
 import annofabcli
 from annofabcli.common.cli import ArgumentParser, CommandLine, build_annofabapi_resource_and_login
 from annofabcli.common.enums import FormatArgument
 from annofabcli.common.facade import AnnofabApiFacade
-from annofabcli.common.utils import print_csv, print_json
+from annofabcli.common.utils import isoduration_to_hour, print_csv, print_json
 from annofabcli.common.visualize import AddProps
 from annofabcli.task.list_tasks import ListTasksMain
 
 logger = logging.getLogger(__name__)
+
+
+def get_post_rejection_annotation_worktime_hour(task_histories: list[TaskHistory]) -> float:
+    """
+    検査/受入フェーズでの差し戻し後の教師付作業時間を算出します。
+    指摘による修正にかかった時間を把握するのに利用できます。
+
+    Args:
+        task_histories: タスク履歴
+
+    """
+    rejected_task_history_indices = find_rejected_task_history_indices(task_histories)
+    if len(rejected_task_history_indices) == 0:
+        return 0.0
+
+    # 差し戻された履歴の直後で、教師付フェーズの作業時間を算出する
+    min_rejected_task_history_index = min(rejected_task_history_indices)
+    return sum(
+        [
+            isoduration_to_hour(history["accumulated_labor_time_milliseconds"])
+            for history in task_histories[min_rejected_task_history_index + 1]
+            if history["phase"] == TaskPhase.ANNOTATION.value
+        ]
+    )
+
+
+def get_post_rejection_inspection_worktime_hour(task_histories: list[TaskHistory]) -> float:
+    """
+    検査/受入フェーズでの差し戻し後の検査作業時間を算出します。
+
+    Args:
+        task_histories: タスク履歴
+
+    """
+    rejected_task_history_indices = find_rejected_task_history_indices(task_histories)
+    if len(rejected_task_history_indices) == 0:
+        return 0.0
+
+    # 差し戻された履歴の直後で、教師付フェーズの作業時間を算出する
+    min_rejected_task_history_index = min(rejected_task_history_indices)
+    return sum(
+        isoduration_to_hour(history["accumulated_labor_time_milliseconds"])
+        for history in task_histories[min_rejected_task_history_index + 1]
+        if history["phase"] == TaskPhase.INSPECTION.value
+    )
+
+
+def get_post_rejection_acceptance_worktime_hour(task_histories: list[TaskHistory]) -> float:
+    """
+    受入フェーズでの差し戻し後の受入作業時間を算出します。
+
+
+    Args:
+        task_histories: タスク履歴
+
+    """
+    rejected_task_history_indices = find_rejected_task_history_indices(task_histories)
+    if len(rejected_task_history_indices) == 0:
+        return 0.0
+
+    # 検査フェーズでの差し戻しは除外する
+    # 検査フェーズでの差し戻しは、受入作業の回数に影響しないため
+    min_rejected_task_history_index = None
+    for index in rejected_task_history_indices:
+        if task_histories[index]["phase"] == TaskPhase.ACCEPTANCE.value:
+            min_rejected_task_history_index = index
+
+    if min_rejected_task_history_index is None:
+        return 0.0
+
+    # 差し戻された履歴の直後以降で、教師付フェーズの作業時間を算出する
+    return sum(
+        isoduration_to_hour(history["accumulated_labor_time_milliseconds"])
+        for history in task_histories[min_rejected_task_history_index + 1]
+        if history["phase"] == TaskPhase.ACCEPTANCE.value
+    )
 
 
 class AddingAdditionalInfoToTask:
@@ -298,6 +375,10 @@ class AddingAdditionalInfoToTask:
         task["inspection_is_skipped"] = self.is_inspection_phase_skipped(task_histories)
         task["acceptance_is_skipped"] = self.is_acceptance_phase_skipped(task_histories)
 
+        task["post_rejection_annotation_worktime_hour"] = get_post_rejection_annotation_worktime_hour(task_histories)
+        task["post_rejection_inspection_worktime_hour"] = get_post_rejection_inspection_worktime_hour(task_histories)
+        task["post_rejection_acceptance_worktime_hour"] = get_post_rejection_acceptance_worktime_hour(task_histories)
+
 
 class ListTasksAddedTaskHistoryMain:
     def __init__(self, service: annofabapi.Resource, project_id: str) -> None:
@@ -373,7 +454,15 @@ class TasksAddedTaskHistoryOutput:
             for info in ["user_id", "username", "started_datetime", "worktime_hour"]
         ]
 
-        return base_columns + task_history_columns
+        return (
+            base_columns
+            + task_history_columns
+            + [
+                "post_rejection_annotation_worktime_hour",
+                "post_rejection_inspection_worktime_hour",
+                "post_rejection_acceptance_worktime_hour",
+            ]
+        )
 
     def output(self, output_path: Path, output_format: FormatArgument) -> None:
         task_list = self.task_list
