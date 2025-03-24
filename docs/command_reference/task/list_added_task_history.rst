@@ -148,7 +148,9 @@ JSON出力
 * first_annotation_user_id: 最初の教師付フェーズを担当したユーザのuser_id
 * first_annotation_username: 最初の教師付フェーズを担当したユーザの名前
 * first_annotation_started_datetime: 最初の教師付フェーズを開始した日時
-* ...
+* post_rejection_annotation_worktime_hour : 検査/受入フェーズでの差し戻し以降の教師付フェーズの作業時間[hour]
+* post_rejection_inspection_worktime_hour : 検査/受入フェーズでの差し戻し以降の検査フェーズの作業時間[hour]
+* post_rejection_acceptance_worktime_hour : 受入フェーズでの差し戻し以降の検査フェーズの作業時間[hour]
 
 
 

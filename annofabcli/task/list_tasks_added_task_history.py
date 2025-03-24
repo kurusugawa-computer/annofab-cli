@@ -39,11 +39,9 @@ def get_post_rejection_annotation_worktime_hour(task_histories: list[TaskHistory
     # 差し戻された履歴の直後で、教師付フェーズの作業時間を算出する
     min_rejected_task_history_index = min(rejected_task_history_indices)
     return sum(
-        [
-            isoduration_to_hour(history["accumulated_labor_time_milliseconds"])
-            for history in task_histories[min_rejected_task_history_index + 1]
-            if history["phase"] == TaskPhase.ANNOTATION.value
-        ]
+        isoduration_to_hour(history["accumulated_labor_time_milliseconds"])
+        for history in task_histories[min_rejected_task_history_index + 1 :]
+        if history["phase"] == TaskPhase.ANNOTATION.value
     )
 
 
@@ -63,7 +61,7 @@ def get_post_rejection_inspection_worktime_hour(task_histories: list[TaskHistory
     min_rejected_task_history_index = min(rejected_task_history_indices)
     return sum(
         isoduration_to_hour(history["accumulated_labor_time_milliseconds"])
-        for history in task_histories[min_rejected_task_history_index + 1]
+        for history in task_histories[min_rejected_task_history_index + 1 :]
         if history["phase"] == TaskPhase.INSPECTION.value
     )
 
@@ -94,7 +92,7 @@ def get_post_rejection_acceptance_worktime_hour(task_histories: list[TaskHistory
     # 差し戻された履歴の直後以降で、教師付フェーズの作業時間を算出する
     return sum(
         isoduration_to_hour(history["accumulated_labor_time_milliseconds"])
-        for history in task_histories[min_rejected_task_history_index + 1]
+        for history in task_histories[min_rejected_task_history_index + 1 :]
         if history["phase"] == TaskPhase.ACCEPTANCE.value
     )
 
@@ -287,12 +285,12 @@ class AddingAdditionalInfoToTask:
             }
         )
 
-        organization_member = self.visualize.get_project_member_from_account_id(account_id)
-        if organization_member is not None:
+        member = self.visualize.get_project_member_from_account_id(account_id)
+        if member is not None:
             task.update(
                 {
-                    f"{column_prefix}_user_id": organization_member["user_id"],
-                    f"{column_prefix}_username": organization_member["username"],
+                    f"{column_prefix}_user_id": member["user_id"],
+                    f"{column_prefix}_username": member["username"],
                 }
             )
         else:
