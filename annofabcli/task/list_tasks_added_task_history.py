@@ -57,7 +57,7 @@ def get_post_rejection_inspection_worktime_hour(task_histories: list[TaskHistory
     if len(rejected_task_history_indices) == 0:
         return 0.0
 
-    # 差し戻された履歴の直後で、教師付フェーズの作業時間を算出する
+    # 差し戻された履歴の直後で、検査フェーズの作業時間を算出する
     min_rejected_task_history_index = min(rejected_task_history_indices)
     return sum(
         isoduration_to_hour(history["accumulated_labor_time_milliseconds"])
@@ -89,7 +89,7 @@ def get_post_rejection_acceptance_worktime_hour(task_histories: list[TaskHistory
     if min_rejected_task_history_index is None:
         return 0.0
 
-    # 差し戻された履歴の直後以降で、教師付フェーズの作業時間を算出する
+    # 差し戻された履歴の直後以降で、受入フェーズの作業時間を算出する
     return sum(
         isoduration_to_hour(history["accumulated_labor_time_milliseconds"])
         for history in task_histories[min_rejected_task_history_index + 1 :]
