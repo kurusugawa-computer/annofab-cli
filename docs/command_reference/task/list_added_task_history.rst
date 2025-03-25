@@ -9,9 +9,7 @@ Description
 
 * フェーズごとの作業時間
 * 各フェーズの最初の担当者と開始日時
-* 各フェーズの最後の担当者と開始日時
 
-最初に教師付けを開始した日時や担当者などを調べるのに、便利です。
 
 
 Examples
@@ -127,28 +125,63 @@ JSON出力
         "first_acceptance_completed_datetime": "2022-10-25T15:14:18.967+09:00",
         "completed_datetime": "2022-10-25T15:14:18.967+09:00",
         "inspection_is_skipped": false,
-        "acceptance_is_skipped": false
+        "acceptance_is_skipped": false,
+        "post_rejection_annotation_worktime_hour": 0.0,
+        "post_rejection_inspection_worktime_hour": 0.0,
+        "post_rejection_acceptance_worktime_hour": 0.0
+        
     },
     ...
     ]
 
+以下の項目は、タスク履歴から算出した情報です。
 
 
-以下の項目は、タスク履歴から取得した情報です。
+日時
+^^^^^^^^^^^^^^^^^^^^^^^
 
-* created_datetime: タスクの作成日時
-* annotation_worktime_hour: 教師付フェーズの作業時間[hour]
-* inspection_worktime_hour: 検査フェーズの作業時間[hour]
-* acceptance_worktime_hour: 受入フェーズの作業時間[hour]
-* first_acceptance_reached_datetime: はじめて受入フェーズに到達した日時。 ``first_annotation_started_datetime`` より前の日時になる
-* first_acceptance_completed_datetime: はじめて受入完了状態になった日時
-* completed_datetime: 受入完了状態になった日時
-* inspection_is_skipped: 抜取検査により検査フェーズがスキップされたかどうか
-* acceptance_is_skipped: 抜取受入により受入フェーズがスキップされたかどうか
-* first_annotation_user_id: 最初の教師付フェーズを担当したユーザのuser_id
-* first_annotation_username: 最初の教師付フェーズを担当したユーザの名前
-* first_annotation_started_datetime: 最初の教師付フェーズを開始した日時
-* ...
+* ``created_datetime`` : タスクの作成日時
+* ``first_annotation_started_datetime`` : 初めて教師付フェーズを着手した日時
+* ``first_inspection_started_datetime`` : 初めて検査フェーズを着手した日時
+* ``first_acceptance_started_datetime`` : 初めて受入フェーズを着手した日時
+* ``first_acceptance_reached_datetime`` : 初めて受入フェーズに到達した日時。 ``first_acceptance_started_datetime`` より前の日時になる
+* ``first_acceptance_completed_datetime`` : 初めて受入フェーズかつ完了状態になった日時
+* ``completed_datetime`` : 受入フェーズかつ完了状態になった日時
+
+
+
+作業時間
+^^^^^^^^^^^^^^^^^^^^^^^
+
+* ``annotation_worktime_hour`` : 教師付フェーズの作業時間
+* ``inspection_worktime_hour`` : 検査フェーズの作業時間
+* ``acceptance_worktime_hour`` : 受入フェーズの作業時間
+* ``first_annotation_worktime_hour`` : 最初の教師付フェーズの作業時間
+* ``first_inspection_worktime_hour`` : 最初の検査フェーズの作業時間
+* ``first_acceptance_worktime_hour`` : 最初の受入フェーズの作業時間
+* ``post_rejection_annotation_worktime_hour`` : 検査/受入フェーズでの差し戻し以降の教師付フェーズの作業時間[hour]
+* ``post_rejection_inspection_worktime_hour`` : 検査/受入フェーズでの差し戻し以降の検査フェーズの作業時間[hour]
+* ``post_rejection_acceptance_worktime_hour`` : 受入フェーズでの差し戻し以降の検査フェーズの作業時間[hour]
+
+
+
+ユーザー情報
+^^^^^^^^^^^^^^^^^^^^^^^
+
+* ``first_annotation_user_id`` : 最初の教師付フェーズを担当したユーザのuser_id
+* ``first_annotation_username`` : 最初の教師付フェーズを担当したユーザの名前
+* ``first_inspection_user_id`` : 最初の検査フェーズを担当したユーザのuser_id
+* ``first_inspection_username`` : 最初の検査フェーズを担当したユーザの名前
+* ``first_acceptance_user_id`` : 最初の受入フェーズを担当したユーザのuser_id
+* ``first_acceptance_username`` : 最初の受入フェーズを担当したユーザの名前
+
+
+その他
+^^^^^^^^^^^^^^^^^^^^^^^
+
+* ``inspection_is_skipped`` : 抜取検査により検査フェーズがスキップされたかどうか
+* ``acceptance_is_skipped`` : 抜取受入により受入フェーズがスキップされたかどうか
+
 
 
 

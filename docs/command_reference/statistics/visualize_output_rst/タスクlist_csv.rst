@@ -57,5 +57,10 @@
 * ``number_of_rejections_by_acceptance`` : 受入フェーズで差し戻された回数
 * ``inspection_is_skipped`` : 抜取検査により検査フェーズがスキップされたか
 * ``acceptance_is_skipped`` : 抜取受入により受入フェーズがスキップされたか
+* ``post_rejection_annotation_worktime_hour`` : 検査/受入フェーズでの差し戻し以降の教師付フェーズの作業時間[hour]
+* ``post_rejection_inspection_worktime_hour`` : 検査/受入フェーズでの差し戻し以降の検査フェーズの作業時間[hour]
+* ``post_rejection_acceptance_worktime_hour`` : 受入フェーズでの差し戻し以降の検査フェーズの作業時間[hour]
+
+
 
 
