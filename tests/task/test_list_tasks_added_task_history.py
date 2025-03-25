@@ -187,15 +187,18 @@ task_histories: list[dict[str, Any]] = [
 
 
 def test__get_post_rejection_annotation_worktime_hour():
+    assert get_post_rejection_annotation_worktime_hour([]) == 0
     actual_seconds = get_post_rejection_annotation_worktime_hour(task_histories) * 3600
     assert int(actual_seconds) == 23
 
 
 def test__get_post_rejection_inspection_worktime_hour():
+    assert get_post_rejection_inspection_worktime_hour([]) == 0
     actual_seconds = get_post_rejection_inspection_worktime_hour(task_histories) * 3600
     assert int(actual_seconds) == 39
 
 
 def test__get_post_rejection_acceptance_worktime_hour():
+    assert get_post_rejection_acceptance_worktime_hour([]) == 0
     actual_seconds = get_post_rejection_acceptance_worktime_hour(task_histories) * 3600
     assert int(actual_seconds) == 7
