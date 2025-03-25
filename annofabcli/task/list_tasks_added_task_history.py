@@ -76,23 +76,19 @@ def get_post_rejection_acceptance_worktime_hour(task_histories: list[TaskHistory
 
     """
     rejected_task_history_indices = find_rejected_task_history_indices(task_histories)
-    if len(rejected_task_history_indices) == 0:
-        return 0.0
 
     # 検査フェーズでの差し戻しは除外する
     # 検査フェーズでの差し戻しは、受入作業の回数に影響しないため
-    min_rejected_task_history_index = None
-    for index in rejected_task_history_indices:
-        if task_histories[index]["phase"] == TaskPhase.ACCEPTANCE.value:
-            min_rejected_task_history_index = index
-
-    if min_rejected_task_history_index is None:
+    acceptance_rejected_indices = [index for index in rejected_task_history_indices if task_histories[index]["phase"] == TaskPhase.ACCEPTANCE.value]
+    if len(acceptance_rejected_indices) == 0:
         return 0.0
+
+    min_rejected_acceptance_task_history_index = min(acceptance_rejected_indices)
 
     # 差し戻された履歴の直後以降で、受入フェーズの作業時間を算出する
     return sum(
         isoduration_to_hour(history["accumulated_labor_time_milliseconds"])
-        for history in task_histories[min_rejected_task_history_index + 1 :]
+        for history in task_histories[min_rejected_acceptance_task_history_index + 1 :]
         if history["phase"] == TaskPhase.ACCEPTANCE.value
     )
 
