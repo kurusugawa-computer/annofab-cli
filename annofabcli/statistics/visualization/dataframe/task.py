@@ -55,14 +55,14 @@ class Task:
         Returns:
             必須の列が存在するかどうか
         """
-        return len(set(self.columns) - set(df.columns)) == 0
+        return len(set(self.required_columns) - set(df.columns)) == 0
 
-    def missing_columns(self, df: pandas.DataFrame) -> list[str]:
+    def missing_required_columns(self, df: pandas.DataFrame) -> list[str]:
         """
-        欠損している列名を取得します。
+        欠損している必須の列名を取得します。
 
         """
-        return list(set(self.columns) - set(df.columns))
+        return list(set(self.required_columns) - set(df.columns))
 
     def __init__(self, df: pandas.DataFrame, *, custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None) -> None:
         self.custom_production_volume_list = custom_production_volume_list if custom_production_volume_list is not None else []
@@ -72,7 +72,8 @@ class Task:
 
         if not self.required_columns_exist(df):
             raise ValueError(
-                f"引数'df'の'columns'に次の列が存在していません。 {self.missing_columns(df)} :: 次の列が必須です。{self.columns}の列が必要です。"
+                f"引数'df'の'columns'に次の列が存在していません。 {self.missing_required_columns(df)} :: "
+                f"次の列が必須です。{self.columns}の列が必要です。"
             )
 
         self.df = df
@@ -97,7 +98,19 @@ class Task:
         return Task(df, custom_production_volume_list=self.custom_production_volume_list)
 
     @property
-    def columns(self) -> list[str]:
+    def optional_columns(self) -> list[str]:
+        return [
+            # 抜取検査または抜取受入によりスキップされたか
+            "inspection_is_skipped",
+            "acceptance_is_skipped",
+            # 差し戻し後の作業時間
+            "post_rejection_annotation_worktime_hour",
+            "post_rejection_inspection_worktime_hour",
+            "post_rejection_acceptance_worktime_hour",
+        ]
+
+    @property
+    def required_columns(self) -> list[str]:
         return [
             # 基本的な情報
             "project_id",
@@ -143,6 +156,10 @@ class Task:
             "inspection_is_skipped",
             "acceptance_is_skipped",
         ]
+
+    @property
+    def columns(self) -> list[str]:
+        return self.required_columns + self.optional_columns
 
     @classmethod
     def from_api_content(
@@ -502,7 +519,9 @@ class Task:
         if not self._validate_df_for_output(output_file):
             return
 
-        print_csv(self.df[self.columns], str(output_file))
+        existing_optional_columns = [col for col in self.optional_columns if col in set(self.df.columns)]
+        columns = self.required_columns + existing_optional_columns
+        print_csv(self.df[columns], str(output_file))
 
     def mask_user_info(
         self,
