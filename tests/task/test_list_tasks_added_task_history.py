@@ -415,7 +415,7 @@ class TestListTasksAddedTaskHistoryMain:
 class TestTasksAddedTaskHistoryOutput:
     def test_output_csv(self):
         # テスト用のタスクリスト - 必要なすべてのカラムを含める
-        task_list = [
+        task_list: list[dict[str, Any]] = [
             {
                 "task_id": "20250323-1",
                 "phase": "annotation",
@@ -502,7 +502,7 @@ class TestTasksAddedTaskHistoryOutput:
 
     def test_output_empty(self):
         # 空のタスクリスト
-        task_list = []
+        task_list: list[dict[str, Any]] = []
 
         # TasksAddedTaskHistoryOutputのインスタンス作成
         output_obj = TasksAddedTaskHistoryOutput(task_list)
