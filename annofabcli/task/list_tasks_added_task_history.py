@@ -114,7 +114,7 @@ def get_completed_datetime(task: dict[str, Any], task_histories: list[TaskHistor
 
 
 def get_task_created_datetime(task: dict[str, Any], task_histories: list[TaskHistory]) -> Optional[str]:
-    """タスクの作成日時を取得する。
+    """タスクが作成日時を取得する。
 
     Args:
         task_histories (List[TaskHistory]): タスク履歴
