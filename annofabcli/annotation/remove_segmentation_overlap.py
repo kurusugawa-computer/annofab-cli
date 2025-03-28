@@ -165,7 +165,7 @@ class RemoveSegmentationOverlapMain(CommandLineWithConfirm):
         self.annofab_service.api.put_annotation(self.project_id, task_id, input_data_id, query_params={"v": "2"}, request_body=request_body)
         logger.debug(
             f"{log_message_prefix}{len(updated_annotation_id_list)} 件の塗りつぶしアノテーションを更新しました。 :: "
-            f"task_id='{task_id}, input_data_id='{input_data_id}'"
+            f"task_id='{task_id}', input_data_id='{input_data_id}'"
         )
         return True
 
@@ -176,7 +176,7 @@ class RemoveSegmentationOverlapMain(CommandLineWithConfirm):
         Returns:
             アノテーションを更新した入力データ数（フレーム数）
         """
-        log_message_prefix = f"{task_index+1} 件目 :: " if task_index is not None else ""
+        log_message_prefix = f"{task_index + 1} 件目 :: " if task_index is not None else ""
 
         task = self.annofab_service.wrapper.get_task_or_none(project_id=self.project_id, task_id=task_id)
         if task is None:
