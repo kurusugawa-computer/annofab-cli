@@ -330,7 +330,10 @@ class MergeSegmentation(CommandLine):
             label_id_list.append(label["label_id"])
 
         if len(invalid_label_name_list) > 0:
-            print(f"{self.COMMON_MESSAGE} --label_name: 次のラベル名(英語)はアノテーション仕様に存在しません。", file=sys.stderr)  # noqa: T201
+            print(
+                f"{self.COMMON_MESSAGE} --label_name: 次のラベル名(英語)はアノテーション仕様に存在しません。 :: {invalid_label_name_list}",
+                file=sys.stderr,
+            )
             sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
         main_obj = RemoveSegmentationOverlapMain(
