@@ -107,7 +107,7 @@ class RemoveSegmentationOverlapMain(CommandLineWithConfirm):
                 return None, []
 
             merged_binary_image_array = merge_binary_image_array(binary_image_array_list)
-            output_file_path = output_dir / f"{annotation_id}.png"
+            output_file_path = output_dir / f"{updated_annotation_id}.png"
             write_binary_image(merged_binary_image_array, output_file_path)
             return updated_annotation_id, deleted_annotation_id_list
 
@@ -360,7 +360,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--label_name",
         type=str,
         nargs="+",
-        required=False,
+        required=True,
         help="変更対象のアノテーションのラベル名(英語)を指定します。",
     )
 
