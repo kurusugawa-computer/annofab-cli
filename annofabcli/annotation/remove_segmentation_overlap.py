@@ -135,7 +135,7 @@ class RemoveSegmentationOverlapMain(CommandLineWithConfirm):
 
             logger.debug(
                 f"{log_message_prefix}{len(updated_annotation_id_list)} 件の塗りつぶしアノテーションを更新します。 :: "
-                f"task_id='{task_id}, input_data_id='{input_data_id}', annotation_id_list={updated_annotation_id_list}"
+                f"task_id='{task_id}', input_data_id='{input_data_id}', annotation_id_list={updated_annotation_id_list}"
             )
             new_details = []
             for detail in old_details:
