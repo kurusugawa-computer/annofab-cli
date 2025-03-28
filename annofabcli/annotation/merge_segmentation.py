@@ -117,7 +117,6 @@ class RemoveSegmentationOverlapMain(CommandLineWithConfirm):
             updated_annotation_id, sub_deleted_annotation_id_list = func(label_id)
             if updated_annotation_id is not None:
                 updated_annotation_id_list.append(updated_annotation_id)
-                assert len(sub_deleted_annotation_id_list) > 0
 
             deleted_annotation_id_list.extend(sub_deleted_annotation_id_list)
 
