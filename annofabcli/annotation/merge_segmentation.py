@@ -12,6 +12,7 @@ from typing import Any, Optional
 
 import annofabapi
 import numpy
+from annofabapi.pydantic_models.default_annotation_type import DefaultAnnotationType
 from annofabapi.pydantic_models.task_status import TaskStatus
 from annofabapi.segmentation import read_binary_image, write_binary_image
 from annofabapi.util.annotation_specs import AnnotationSpecsAccessor
@@ -86,25 +87,16 @@ class RemoveSegmentationOverlapMain(CommandLineWithConfirm):
             updated_annotation_id = None
             deleted_annotation_id_list = []
             binary_image_array_list = []
-            for detail in details:
-                if detail["label_id"] != label_id:
-                    continue
+            segmentation_details = [e for e in details if e["label_id"] == label_id]
+            if len(segmentation_details) <= 1:
+                return None, []
 
-                assert detail["body"]["_type"] == "Outer"
-
-                annotation_id = detail["annotation_id"]
-                if updated_annotation_id is None:
-                    updated_annotation_id = annotation_id
-                else:
-                    deleted_annotation_id_list.append(annotation_id)
-
+            updated_annotation_id = segmentation_details[0]["annotation_id"]
+            deleted_annotation_id_list = [e["annotation_id"] for e in segmentation_details[1:]]
+            for detail in segmentation_details:
                 segmentation_response = self.annofab_service.wrapper.execute_http_get(detail["body"]["url"], stream=True)
                 segmentation_response.raw.decode_content = True
                 binary_image_array_list.append(read_binary_image(segmentation_response.raw))
-
-            if len(binary_image_array_list) == 0:
-                logger.debug("塗りつぶし画像が存在しないため、スキップします。")
-                return None, []
 
             merged_binary_image_array = merge_binary_image_array(binary_image_array_list)
             output_file_path = output_dir / f"{updated_annotation_id}.png"
@@ -322,6 +314,9 @@ class MergeSegmentation(CommandLine):
         for label_name in label_name_list:
             try:
                 label = accessor.get_label(label_name=label_name)
+                if label["annotation_type"] not in {DefaultAnnotationType.SEGMENTATION.value, DefaultAnnotationType.SEGMENTATION_V2.value}:
+                    invalid_label_name_list.append(label_name)
+
             except ValueError:
                 invalid_label_name_list.append(label_name)
                 continue
@@ -330,7 +325,8 @@ class MergeSegmentation(CommandLine):
 
         if len(invalid_label_name_list) > 0:
             print(  # noqa: T201
-                f"{self.COMMON_MESSAGE} --label_name: 次のラベル名(英語)はアノテーション仕様に存在しません。 :: {invalid_label_name_list}",
+                f"{self.COMMON_MESSAGE} --label_name: 次のラベル名(英語)はアノテーション仕様に存在しないか、"
+                f"アノテーションの種類が「塗りつぶし」ではありません。 :: {invalid_label_name_list}",
                 file=sys.stderr,
             )
             sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
