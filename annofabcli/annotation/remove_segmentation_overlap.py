@@ -92,7 +92,7 @@ class RemoveSegmentationOverlapMain(CommandLineWithConfirm):
                 continue
 
             segmentation_response = self.annofab_service.wrapper.execute_http_get(detail["body"]["url"], stream=True)
-            segmentation_response.raw.decode_content = True
+            # segmentation_response.raw.decode_content = True
             input_binary_image_array_by_annotation[detail["annotation_id"]] = read_binary_image(segmentation_response.raw)
             segmentation_annotation_id_list.append(detail["annotation_id"])
 
@@ -135,7 +135,7 @@ class RemoveSegmentationOverlapMain(CommandLineWithConfirm):
 
             logger.debug(
                 f"{log_message_prefix}{len(updated_annotation_id_list)} 件の塗りつぶしアノテーションを更新します。 :: "
-                f"task_id='{task_id}, input_data_id='{input_data_id}', {updated_annotation_id_list}"
+                f"task_id='{task_id}, input_data_id='{input_data_id}', annotation_id_list={updated_annotation_id_list}"
             )
             new_details = []
             for detail in old_details:
@@ -176,7 +176,7 @@ class RemoveSegmentationOverlapMain(CommandLineWithConfirm):
         Returns:
             アノテーションを更新した入力データ数（フレーム数）
         """
-        log_message_prefix = f"{task_index} 件目 :: " if task_index is not None else ""
+        log_message_prefix = f"{task_index+1} 件目 :: " if task_index is not None else ""
 
         task = self.annofab_service.wrapper.get_task_or_none(project_id=self.project_id, task_id=task_id)
         if task is None:
