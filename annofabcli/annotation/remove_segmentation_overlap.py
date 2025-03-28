@@ -12,7 +12,6 @@ from typing import Any, Optional
 
 import annofabapi
 import numpy
-import numpy as np
 from annofabapi.pydantic_models.task_status import TaskStatus
 from annofabapi.segmentation import read_binary_image, write_binary_image
 from annofabapi.utils import can_put_annotation
@@ -32,8 +31,8 @@ logger = logging.getLogger(__name__)
 
 
 def remove_overlap_of_binary_image_array(
-    binary_image_array_by_annotation: dict[str, np.ndarray], annotation_id_list: list[str]
-) -> dict[str, np.ndarray]:
+    binary_image_array_by_annotation: dict[str, numpy.ndarray], annotation_id_list: list[str]
+) -> dict[str, numpy.ndarray]:
     """
     塗りつぶし画像の重なりを除去したbool配列をdictで返します。
 
@@ -55,7 +54,7 @@ def remove_overlap_of_binary_image_array(
         if whole_2d_array is None:
             whole_2d_array = numpy.full(input_binary_image_array.shape, "", dtype=str)
 
-        whole_2d_array = np.where(input_binary_image_array, annotation_id, whole_2d_array)
+        whole_2d_array = numpy.where(input_binary_image_array, annotation_id, whole_2d_array)
 
     output_binary_image_array_by_annotation = {}
     for annotation_id in annotation_id_list:
@@ -70,7 +69,7 @@ class RemoveSegmentationOverlapMain(CommandLineWithConfirm):
         self.annofab_service = annofab_service
         self.project_id = project_id
         self.is_force = is_force
-        self.all_yes = all_yes
+        super().__init__(all_yes)
 
     def remove_segmentation_overlap_and_save(self, details: list[dict[str, Any]], output_dir: Path) -> list[str]:
         """
@@ -87,11 +86,12 @@ class RemoveSegmentationOverlapMain(CommandLineWithConfirm):
         """
         input_binary_image_array_by_annotation = {}
         segmentation_annotation_id_list = []
+
         for detail in details:
             if detail["body"]["_type"] != "Outer":
                 continue
 
-            segmentation_response = self.annofab_service.api._execute_http_request("get", detail["body"]["url"], stream=True)  # noqa: SLF001
+            segmentation_response = self.annofab_service.wrapper.execute_http_get(detail["body"]["url"], stream=True)
             segmentation_response.raw.decode_content = True
             input_binary_image_array_by_annotation[detail["annotation_id"]] = read_binary_image(segmentation_response.raw)
             segmentation_annotation_id_list.append(detail["annotation_id"])
@@ -105,10 +105,11 @@ class RemoveSegmentationOverlapMain(CommandLineWithConfirm):
         updated_annotation_id_list = []
         for annotation_id, output_binary_image_array in output_binary_image_array_by_annotation.items():
             input_binary_image_array = input_binary_image_array_by_annotation[annotation_id]
-            if not np.array_equal(input_binary_image_array, output_binary_image_array):
+            if not numpy.array_equal(input_binary_image_array, output_binary_image_array):
                 output_file_path = output_dir / f"{annotation_id}.png"
                 write_binary_image(output_binary_image_array, output_file_path)
                 updated_annotation_id_list.append(annotation_id)
+
         return updated_annotation_id_list
 
     def update_segmentation_annotation(self, task_id: str, input_data_id: str, log_message_prefix: str = "") -> bool:
