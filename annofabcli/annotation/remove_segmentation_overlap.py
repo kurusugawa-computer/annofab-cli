@@ -1,11 +1,14 @@
 from __future__ import annotations
-import annofabapi
+
 import argparse
+import copy
 import logging
 import sys
+import tempfile
 from pathlib import Path
 from typing import Any, Optional
 
+import annofabapi
 import numpy
 import numpy as np
 from annofabapi.segmentation import read_binary_image, write_binary_image
@@ -16,6 +19,7 @@ from annofabcli.common.cli import (
     PARALLELISM_CHOICES,
     ArgumentParser,
     CommandLine,
+    CommandLineWithConfirm,
     build_annofabapi_resource_and_login,
 )
 from annofabcli.common.facade import AnnofabApiFacade
@@ -56,7 +60,13 @@ def remove_overlap_of_binary_image_array(
 
     return output_binary_image_array_by_annotation
 
-class RemoveSegmentationOverlapMain:
+
+class RemoveSegmentationOverlapMain(CommandLineWithConfirm):
+    def __init__(self, service: annofabapi.Resource, *, project_id: str, all_yes: bool, is_force: bool) -> None:
+        self.service = service
+        self.project_id = project_id
+        self.is_force = is_force
+
     def get_and_process_annotations(self, project_id: str, task_id: str, output_dir: Path) -> list[str]:
         """
         `getEditorAnnotation` APIを使用してアノテーションを取得し、重なりを除去して保存します。
@@ -74,19 +84,16 @@ class RemoveSegmentationOverlapMain:
 
         # 重なりを除去して保存
         return self.remove_segmentation_overlap_and_save(details, output_dir)
-    def __init__(self, annofab_service: annofabapi.Resource):
-        self.annofab_service = annofab_service
-        
-        
+
     def remove_segmentation_overlap_and_save(self, details: list[dict[str, Any]], output_dir: Path) -> list[str]:
         """
         `getEditorAnnotation` APIで取得した`details`から、塗りつぶし画像の重なりの除去が必要な場合に、重なりを除去した塗りつぶし画像を`output_dir`に出力します。
         塗りつぶし画像のファイル名は`${annotation_id}.png`です。
-        
+
         Args:
             details: `getEditorAnnotation` APIで取得した`details`
             output_dir: 塗りつぶし画像の出力先のディレクトリ。
-            
+
         Returns:
             重なりの除去が必要な塗りつぶし画像のannotation_idのlist
         """
@@ -100,87 +107,66 @@ class RemoveSegmentationOverlapMain:
             input_binary_image_array_by_annotation[detail["annotation_id"]] = read_binary_image(segmentation_response.raw)
 
         output_binary_image_array_by_annotation = remove_overlap_of_binary_image_array(input_binary_image_array_by_annotation)
-        
+
         annotation_id_list = []
         for annotation_id, output_binary_image_array in output_binary_image_array_by_annotation.items():
             input_binary_image_array = input_binary_image_array_by_annotation[annotation_id]
-            if not np.array_equal(input_binary_image_array, output_binary_image_array):                
+            if not np.array_equal(input_binary_image_array, output_binary_image_array):
                 output_file_path = output_dir / f"{annotation_id}.png"
                 write_binary_image(output_binary_image_array, output_file_path)
                 annotation_id_list.append(annotation_id)
         return annotation_id_list
-    
 
-    # def __to_dest_annotation_detail(
-    #     self,
-    #     dest_project_id: str,
-    #     detail: dict[str, Any],
-    #     account_id: str,
-    # ) -> dict[str, Any]:
-    #     """
-    #     コピー元の１個のアノテーションを、コピー先用に変換する。
-    #     塗りつぶし画像などの外部アノテーションファイルがある場合、S3にアップロードする。
+    def update_segmentation_annotation(self, task_id: str, input_data_id: str) -> None:
+        """
+        `updateAnnotation` APIを使用して、重なりを除去した塗りつぶし画像を更新します。
 
-    #     Notes:
-    #         annotation_id をUUIDv4で生成すると、アノテーションリンク属性をコピーしたときに対応できないので、暫定的にannotation_idは維持するようにする。
+        Args:
+            project_id: プロジェクトID
+            task_id: タスクID
+            annotation_id_list: 更新する塗りつぶし画像のannotation_idのlist
+        """
+        old_annotation, _ = self.annofab_service.api.get_editor_annotation(self.project_id, task_id, input_data_id, query_params={"v": "2"})
+        old_details = old_annotation["details"]
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_dir_path = Path(temp_dir)
+            updated_annotation_id_list = self.remove_segmentation_overlap_and_save(old_details, temp_dir_path)
 
-    #     Raises:
-    #         CheckSumError: アップロードした外部アノテーションファイルのMD5ハッシュ値が、S3にアップロードしたときのレスポンスのETagに一致しない
+            logger.debug(
+                f"{len(updated_annotation_id_list)} 件の塗りつぶしアノテーションを更新します。 :: task_id='{task_id}, input_data_id='{input_data_id}', {updated_annotation_id_list}"
+            )
+            new_details = []
+            for detail in old_details:
+                annotation_id = detail["annotation_id"]
+                new_detail = copy.deepcopy(detail)
+                new_detail["_type"] = "Update"
+                if annotation_id in updated_annotation_id_list:
+                    with open(temp_dir_path / f"{annotation_id}.png", "rb") as f:
+                        s3_path = self.annofab_service.wrapper.upload_data_to_s3(self.project_id, data=f, content_type="image/png")
 
-    #     """  # noqa: E501
-    #     dest_detail = detail
-    #     dest_detail["account_id"] = account_id
-    #     if detail["data_holding_type"] == AnnotationDataHoldingType.OUTER.value:
-    #         try:
-    #             outer_file_url = detail["url"]
-    #             src_response = self.api.("get", outer_file_url)
-    #             s3_path = self.upload_data_to_s3(dest_project_id, data=src_response.content, content_type=src_response.headers["Content-Type"])
-    #             dest_detail["path"] = s3_path
-    #             dest_detail["url"] = None
-    #             dest_detail["etag"] = None
+                    new_detail["body"]["path"] = s3_path
 
-    #         except CheckSumError as e:
-    #             message = (
-    #                 f"外部アノテーションファイル {outer_file_url} のレスポンスのMD5ハッシュ値('{e.uploaded_data_hash}')が、"
-    #                 f"AWS S3にアップロードしたときのレスポンスのETag('{e.response_etag}')に一致しませんでした。アップロード時にデータが破損した可能性があります。"  # noqa: E501
-    #             )
-    #             raise CheckSumError(message=message, uploaded_data_hash=e.uploaded_data_hash, response_etag=e.response_etag) from e
+                else:
+                    # 更新しない場合は、`body`をNoneにする
+                    new_detail["body"] = None
+                    new_details.append(new_detail)
+                    continue
 
-    #     return dest_detail
+                # 塗りつぶし画像の更新
+                new_detail = detail.copy()
+                new_detail["url"] = str(temp_dir_path / f"{detail['annotation_id']}.png")
+                new_details.append(new_detail)
 
-    # def _create_request_body_for_copy_annotation(
-    #     self,
-    #     project_id: str,
-    #     task_id: str,
-    #     input_data_id: str,
-    #     src_details: list[dict[str, Any]],
-    #     account_id: Optional[str] = None,
-    #     annotation_specs_relation: Optional[AnnotationSpecsRelation] = None,
-    # ) -> dict[str, Any]:
-    #     if account_id is None:
-    #         account_id = self.api.account_id
-    #     dest_details: list[dict[str, Any]] = []
-
-    #     for src_detail in src_details:
-    #         if annotation_specs_relation is not None:
-    #             tmp_detail = self.__replace_annotation_specs_id(src_detail, annotation_specs_relation)
-    #             if tmp_detail is None:
-    #                 continue
-    #             src_detail = tmp_detail  # noqa: PLW2901
-
-    #         dest_detail = self.__to_dest_annotation_detail(project_id, src_detail, account_id=account_id)
-    #         dest_details.append(dest_detail)
-
-    #     request_body = {
-    #         "project_id": project_id,
-    #         "task_id": task_id,
-    #         "input_data_id": input_data_id,
-    #         "details": dest_details,
-    #     }
-    #     return request_body
-
-
-
+        new_details
+        request_body = {
+            "project_id": self.project_id,
+            "task_id": task_id,
+            "input_data_id": input_data_id,
+            "details": new_details,
+            # "format_version": "2.0.0",
+            "updated_datetime": old_annotation["updated_datetime"],
+        }
+        self.annofab_service.api.put_annotation(self.project_id, task_id, input_data_id, query_params={"v": 2}, request_body=request_body)
 
 
 class CopyAnnotation(CommandLine):
