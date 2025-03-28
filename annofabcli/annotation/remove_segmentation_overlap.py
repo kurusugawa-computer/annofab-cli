@@ -3,15 +3,19 @@ from __future__ import annotations
 import argparse
 import copy
 import logging
+import multiprocessing
 import sys
 import tempfile
+from collections.abc import Collection
 from pathlib import Path
 from typing import Any, Optional
 
 import annofabapi
 import numpy
 import numpy as np
+from annofabapi.pydantic_models.task_status import TaskStatus
 from annofabapi.segmentation import read_binary_image, write_binary_image
+from annofabapi.utils import can_put_annotation
 
 import annofabcli
 from annofabcli.common.cli import (
@@ -55,39 +59,23 @@ def remove_overlap_of_binary_image_array(
 
     output_binary_image_array_by_annotation = {}
     for annotation_id in annotation_id_list:
-        output_binary_image_array = whole_2d_array == annotation_id
+        output_binary_image_array: numpy.ndarray = whole_2d_array == annotation_id  # type: ignore[assignment]
         output_binary_image_array_by_annotation[annotation_id] = output_binary_image_array
 
     return output_binary_image_array_by_annotation
 
 
 class RemoveSegmentationOverlapMain(CommandLineWithConfirm):
-    def __init__(self, service: annofabapi.Resource, *, project_id: str, all_yes: bool, is_force: bool) -> None:
-        self.service = service
+    def __init__(self, annofab_service: annofabapi.Resource, *, project_id: str, all_yes: bool, is_force: bool) -> None:
+        self.annofab_service = annofab_service
         self.project_id = project_id
         self.is_force = is_force
-
-    def get_and_process_annotations(self, project_id: str, task_id: str, output_dir: Path) -> list[str]:
-        """
-        `getEditorAnnotation` APIを使用してアノテーションを取得し、重なりを除去して保存します。
-
-        Args:
-            project_id: プロジェクトID
-            task_id: タスクID
-            output_dir: 塗りつぶし画像の出力先のディレクトリ。
-
-        Returns:
-            重なりの除去が必要な塗りつぶし画像のannotation_idのlist
-        """
-        # Annofab APIを使用してアノテーションを取得
-        details = self.annofab_service.api.get_editor_annotation(project_id, task_id)
-
-        # 重なりを除去して保存
-        return self.remove_segmentation_overlap_and_save(details, output_dir)
+        self.all_yes = all_yes
 
     def remove_segmentation_overlap_and_save(self, details: list[dict[str, Any]], output_dir: Path) -> list[str]:
         """
-        `getEditorAnnotation` APIで取得した`details`から、塗りつぶし画像の重なりの除去が必要な場合に、重なりを除去した塗りつぶし画像を`output_dir`に出力します。
+        `getEditorAnnotation` APIで取得した`details`から、塗りつぶし画像の重なりの除去が必要な場合に、
+        重なりを除去した塗りつぶし画像を`output_dir`に出力します。
         塗りつぶし画像のファイル名は`${annotation_id}.png`です。
 
         Args:
@@ -98,28 +86,34 @@ class RemoveSegmentationOverlapMain(CommandLineWithConfirm):
             重なりの除去が必要な塗りつぶし画像のannotation_idのlist
         """
         input_binary_image_array_by_annotation = {}
+        segmentation_annotation_id_list = []
         for detail in details:
             if detail["body"]["_type"] != "Outer":
                 continue
 
-            segmentation_response = self.annofab_service.api._execute_http_request("get", detail["body"]["url"], stream=True)
+            segmentation_response = self.annofab_service.api._execute_http_request("get", detail["body"]["url"], stream=True)  # noqa: SLF001
             segmentation_response.raw.decode_content = True
             input_binary_image_array_by_annotation[detail["annotation_id"]] = read_binary_image(segmentation_response.raw)
+            segmentation_annotation_id_list.append(detail["annotation_id"])
 
-        output_binary_image_array_by_annotation = remove_overlap_of_binary_image_array(input_binary_image_array_by_annotation)
+        # reversedを使っている理由:
+        # `details`には、前面から背面の順にアノテーションが格納されているため、
+        output_binary_image_array_by_annotation = remove_overlap_of_binary_image_array(
+            input_binary_image_array_by_annotation, list(reversed(segmentation_annotation_id_list))
+        )
 
-        annotation_id_list = []
+        updated_annotation_id_list = []
         for annotation_id, output_binary_image_array in output_binary_image_array_by_annotation.items():
             input_binary_image_array = input_binary_image_array_by_annotation[annotation_id]
             if not np.array_equal(input_binary_image_array, output_binary_image_array):
                 output_file_path = output_dir / f"{annotation_id}.png"
                 write_binary_image(output_binary_image_array, output_file_path)
-                annotation_id_list.append(annotation_id)
-        return annotation_id_list
+                updated_annotation_id_list.append(annotation_id)
+        return updated_annotation_id_list
 
-    def update_segmentation_annotation(self, task_id: str, input_data_id: str) -> None:
+    def update_segmentation_annotation(self, task_id: str, input_data_id: str, log_message_prefix: str = "") -> bool:
         """
-        `updateAnnotation` APIを使用して、重なりを除去した塗りつぶし画像を更新します。
+        塗りつぶしアノテーションの重なりがあれば、`putAnnotation` APIを使用して重なりを除去します。
 
         Args:
             project_id: プロジェクトID
@@ -131,9 +125,16 @@ class RemoveSegmentationOverlapMain(CommandLineWithConfirm):
         with tempfile.TemporaryDirectory() as temp_dir:
             temp_dir_path = Path(temp_dir)
             updated_annotation_id_list = self.remove_segmentation_overlap_and_save(old_details, temp_dir_path)
+            if len(updated_annotation_id_list) == 0:
+                logger.debug(
+                    f"{log_message_prefix}塗りつぶしアノテーションの重なりはなかったので、スキップします。 :: "
+                    f"task_id='{task_id}', input_data_id='{input_data_id}'"
+                )
+                return False
 
             logger.debug(
-                f"{len(updated_annotation_id_list)} 件の塗りつぶしアノテーションを更新します。 :: task_id='{task_id}, input_data_id='{input_data_id}', {updated_annotation_id_list}"
+                f"{log_message_prefix}{len(updated_annotation_id_list)} 件の塗りつぶしアノテーションを更新します。 :: "
+                f"task_id='{task_id}, input_data_id='{input_data_id}', {updated_annotation_id_list}"
             )
             new_details = []
             for detail in old_details:
@@ -141,7 +142,7 @@ class RemoveSegmentationOverlapMain(CommandLineWithConfirm):
                 new_detail = copy.deepcopy(detail)
                 new_detail["_type"] = "Update"
                 if annotation_id in updated_annotation_id_list:
-                    with open(temp_dir_path / f"{annotation_id}.png", "rb") as f:
+                    with (temp_dir_path / f"{annotation_id}.png").open("rb") as f:
                         s3_path = self.annofab_service.wrapper.upload_data_to_s3(self.project_id, data=f, content_type="image/png")
 
                     new_detail["body"]["path"] = s3_path
@@ -149,28 +150,128 @@ class RemoveSegmentationOverlapMain(CommandLineWithConfirm):
                 else:
                     # 更新しない場合は、`body`をNoneにする
                     new_detail["body"] = None
-                    new_details.append(new_detail)
-                    continue
 
-                # 塗りつぶし画像の更新
-                new_detail = detail.copy()
-                new_detail["url"] = str(temp_dir_path / f"{detail['annotation_id']}.png")
                 new_details.append(new_detail)
 
-        new_details
         request_body = {
             "project_id": self.project_id,
             "task_id": task_id,
             "input_data_id": input_data_id,
             "details": new_details,
-            # "format_version": "2.0.0",
+            "format_version": "2.0.0",
             "updated_datetime": old_annotation["updated_datetime"],
         }
-        self.annofab_service.api.put_annotation(self.project_id, task_id, input_data_id, query_params={"v": 2}, request_body=request_body)
+        self.annofab_service.api.put_annotation(self.project_id, task_id, input_data_id, query_params={"v": "2"}, request_body=request_body)
+        logger.debug(
+            f"{log_message_prefix}{len(updated_annotation_id_list)} 件の塗りつぶしアノテーションを更新しました。 :: "
+            f"task_id='{task_id}, input_data_id='{input_data_id}'"
+        )
+        return True
+
+    def update_segmentation_annotation_for_task(self, task_id: str, *, task_index: Optional[int] = None) -> int:
+        """
+        1個のタスクに対して、塗りつぶしアノテーションの重なりを除去します。
+
+        Returns:
+            アノテーションを更新した入力データ数（フレーム数）
+        """
+        log_message_prefix = f"{task_index} 件目 :: " if task_index is not None else ""
+
+        task = self.annofab_service.wrapper.get_task_or_none(project_id=self.project_id, task_id=task_id)
+        if task is None:
+            logger.warning(f"{log_message_prefix}task_id='{task_id}'であるタスクは存在しません。")
+            return False
+
+        if task["status"] in {TaskStatus.WORKING.value, TaskStatus.COMPLETE.value}:
+            logger.debug(
+                f"{log_message_prefix}task_id='{task_id}'のタスクの状態は「作業中」または「完了」であるため、"
+                f"アノテーションの更新をスキップします。  :: status='{task['status']}'"
+            )
+            return False
+
+        if not self.confirm_processing(f"task_id='{task_id}'の塗りつぶしアノテーションの重なりを除去しますか？"):
+            return False
+
+        # 担当者割り当て変更チェック
+        changed_operator = False
+        original_operator_account_id = task["account_id"]
+        if not can_put_annotation(task, self.annofab_service.api.account_id):
+            if self.is_force:
+                logger.debug(f"{log_message_prefix}task_id='{task_id}' のタスクの担当者を自分自身に変更します。")
+                changed_operator = True
+                task = self.annofab_service.wrapper.change_task_operator(
+                    self.project_id,
+                    task_id,
+                    self.annofab_service.api.account_id,
+                    last_updated_datetime=task["updated_datetime"],
+                )
+            else:
+                logger.debug(
+                    f"{log_message_prefix}task_id='{task_id}' のタスクは、過去に誰かに割り当てられたタスクで、"
+                    f"現在の担当者が自分自身でないため、アノテーションの更新をスキップします。"
+                    f"担当者を自分自身に変更してアノテーションを更新する場合は、コマンドライン引数 '--force' を指定してください。"
+                )
+                return False
+
+        success_input_data_count = 0
+        for input_data_id in task["input_data_id_list"]:
+            try:
+                result = self.update_segmentation_annotation(task_id, input_data_id, log_message_prefix=log_message_prefix)
+                if result:
+                    success_input_data_count += 1
+            except Exception:
+                logger.warning(
+                    f"{log_message_prefix}task_id='{task_id}', input_data_id='{input_data_id}'のアノテーションの更新に失敗しました。", exc_info=True
+                )
+                continue
+
+        # 担当者を元に戻す
+        if changed_operator:
+            logger.debug(
+                f"{log_message_prefix}task_id='{task_id}' のタスクの担当者を、元の担当者（account_id='{original_operator_account_id}'）に変更します。"
+            )
+            self.annofab_service.wrapper.change_task_operator(
+                self.project_id,
+                task_id,
+                original_operator_account_id,
+                last_updated_datetime=task["updated_datetime"],
+            )
+
+        return success_input_data_count
+
+    def update_segmentation_annotation_for_task_wrapper(self, tpl: tuple[int, str]) -> int:
+        try:
+            task_index, task_id = tpl
+            return self.update_segmentation_annotation_for_task(task_id, task_index=task_index)
+        except Exception:
+            logger.warning(f"task_id='{task_id}' のアノテーションの更新に失敗しました。", exc_info=True)
+            return 0
+
+    def main(
+        self,
+        task_ids: Collection[str],
+        parallelism: Optional[int] = None,
+    ) -> None:
+        success_input_data_count = 0
+        if parallelism is not None:
+            with multiprocessing.Pool(parallelism) as pool:
+                result_count_list = pool.map(self.update_segmentation_annotation_for_task_wrapper, enumerate(task_ids))
+                success_input_data_count = sum(result_count_list)
+
+        else:
+            for task_index, task_id in enumerate(task_ids):
+                try:
+                    result = self.update_segmentation_annotation_for_task(task_id, task_index=task_index)
+                    success_input_data_count += result
+                except Exception:
+                    logger.warning(f"task_id='{task_id}' のアノテーションの更新に失敗しました。", exc_info=True)
+                    continue
+
+        logger.info(f"{task_ids} 件のタスクに含まれる入力データ {success_input_data_count} 件の塗りつぶしアノテーションを更新しました。")
 
 
 class CopyAnnotation(CommandLine):
-    COMMON_MESSAGE = "annofabcli annotation copy: error:"
+    COMMON_MESSAGE = "annofabcli annotation fix_segmentation_overlap: error:"
 
     def validate(self, args: argparse.Namespace) -> bool:
         if args.parallelism is not None and not args.yes:
@@ -188,16 +289,16 @@ class CopyAnnotation(CommandLine):
             sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
         project_id = args.project_id
+        task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id)
 
-        # main_obj = CopyAnnotationMain(
-        #     self.service,
-        #     project_id=project_id,
-        #     all_yes=self.all_yes,
-        #     overwrite=args.overwrite,
-        #     merge=args.merge,
-        #     force=args.force,
-        # )
-        # main_obj.copy_annotations(copy_target_list, parallelism=args.parallelism)
+        main_obj = RemoveSegmentationOverlapMain(
+            self.service,
+            project_id=project_id,
+            all_yes=self.all_yes,
+            is_force=args.force,
+        )
+
+        main_obj.main(task_id_list, parallelism=args.parallelism)
 
 
 def main(args: argparse.Namespace) -> None:
@@ -209,34 +310,12 @@ def main(args: argparse.Namespace) -> None:
 def parse_args(parser: argparse.ArgumentParser) -> None:
     argument_parser = ArgumentParser(parser)
     argument_parser.add_project_id()
+    argument_parser.add_task_id()
 
-    INPUT_HELP_MESSAGE = """
-    アノテーションのコピー元とコピー先を':'で区切って指定します。
-
-    タスク単位でコピーする場合の例： ``src_task_id:dest_task_id``
-    入力データ単位でコピーする場合： ``src_task_id/src_input_data_id:dest_task_id/dest_input_data_id``
-    ``file://`` を先頭に付けると、コピー元とコピー先が記載されているファイルを指定できます。
-    """  # noqa: N806
-    parser.add_argument("--input", type=str, nargs="+", required=True, help=INPUT_HELP_MESSAGE)
-
-    overwrite_merge_group = parser.add_mutually_exclusive_group()
-    overwrite_merge_group.add_argument(
-        "--overwrite",
-        action="store_true",
-        help="コピー先にアノテーションが存在する場合、 ``--overwrite`` を指定していれば、すでに存在するアノテーションを削除してコピーします。"
-        "指定しなければ、アノテーションのコピーをスキップします。",
-    )
-    overwrite_merge_group.add_argument(
-        "--merge",
-        action="store_true",
-        help="コピー先にアノテーションが存在する場合、 ``--merge`` を指定していればアノテーションをannotation_id単位でマージしながらコピーします。"
-        "annotation_idが一致すればアノテーションを上書き、一致しなければアノテーションを追加します。"
-        "指定しなければ、アノテーションのコピーをスキップします。",
-    )
     parser.add_argument(
         "--force",
         action="store_true",
-        help="過去に割り当てられていて現在の担当者が自分自身でない場合、タスクの担当者を一時的に自分自身に変更してからアノテーションをコピーします。",
+        help="過去に担当者を割り当てられていて、かつ現在の担当者が自分自身でない場合、タスクの担当者を一時的に自分自身に変更してからアノテーションをコピーします。",
     )
 
     parser.add_argument(
@@ -250,10 +329,12 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
 
 
 def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
-    subcommand_name = "fix_segmentation_overlap"
+    subcommand_name = "remove_segmentation_overlap"
     subcommand_help = "塗りつぶしアノテーションの重なりを除去します。"
     description = (
-        "塗りつぶしアノテーションの重なりを除去します。インスタンスセグメンテーションは重ねることができてしまいます。この重なりを除去できます。"
+        "塗りつぶしアノテーションの重なりを除去します。"
+        "Annofabでインスタンスセグメンテーションは重ねることができてしまいます。"
+        "重なりをなくしたいときに、このコマンドは有用です。"
     )
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
     parse_args(parser)
