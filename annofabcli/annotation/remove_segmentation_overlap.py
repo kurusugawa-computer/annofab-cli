@@ -253,7 +253,7 @@ class RemoveSegmentationOverlapMain(CommandLineWithConfirm):
         task_ids: Collection[str],
         parallelism: Optional[int] = None,
     ) -> None:
-        logger.info(f"{len(task_ids)} 件のタスク塗りつぶしアノテーションの重なりを除去します。")
+        logger.info(f"{len(task_ids)} 件のタスクの塗りつぶしアノテーションの重なりを除去します。")
         success_input_data_count = 0
         if parallelism is not None:
             with multiprocessing.Pool(parallelism) as pool:
