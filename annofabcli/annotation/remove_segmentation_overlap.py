@@ -181,17 +181,17 @@ class RemoveSegmentationOverlapMain(CommandLineWithConfirm):
         task = self.annofab_service.wrapper.get_task_or_none(project_id=self.project_id, task_id=task_id)
         if task is None:
             logger.warning(f"{log_message_prefix}task_id='{task_id}'であるタスクは存在しません。")
-            return False
+            return 0
 
         if task["status"] in {TaskStatus.WORKING.value, TaskStatus.COMPLETE.value}:
             logger.debug(
                 f"{log_message_prefix}task_id='{task_id}'のタスクの状態は「作業中」または「完了」であるため、"
                 f"アノテーションの更新をスキップします。  :: status='{task['status']}'"
             )
-            return False
+            return 0
 
         if not self.confirm_processing(f"task_id='{task_id}'の塗りつぶしアノテーションの重なりを除去しますか？"):
-            return False
+            return 0
 
         # 担当者割り当て変更チェック
         changed_operator = False
@@ -212,7 +212,7 @@ class RemoveSegmentationOverlapMain(CommandLineWithConfirm):
                     f"現在の担当者が自分自身でないため、アノテーションの更新をスキップします。"
                     f"担当者を自分自身に変更してアノテーションを更新する場合は、コマンドライン引数 '--force' を指定してください。"
                 )
-                return False
+                return 0
 
         success_input_data_count = 0
         for input_data_id in task["input_data_id_list"]:
@@ -253,6 +253,7 @@ class RemoveSegmentationOverlapMain(CommandLineWithConfirm):
         task_ids: Collection[str],
         parallelism: Optional[int] = None,
     ) -> None:
+        logger.info(f"{len(task_ids)} 件のタスク塗りつぶしアノテーションの重なりを除去します。")
         success_input_data_count = 0
         if parallelism is not None:
             with multiprocessing.Pool(parallelism) as pool:
@@ -268,7 +269,7 @@ class RemoveSegmentationOverlapMain(CommandLineWithConfirm):
                     logger.warning(f"task_id='{task_id}' のアノテーションの更新に失敗しました。", exc_info=True)
                     continue
 
-        logger.info(f"{task_ids} 件のタスクに含まれる入力データ {success_input_data_count} 件の塗りつぶしアノテーションを更新しました。")
+        logger.info(f"{len(task_ids)} 件のタスクに含まれる入力データ {success_input_data_count} 件の塗りつぶしアノテーションを更新しました。")
 
 
 class CopyAnnotation(CommandLine):
