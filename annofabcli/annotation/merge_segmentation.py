@@ -48,7 +48,7 @@ def merge_binary_image_array(binary_image_array_list: list[numpy.ndarray]) -> nu
     return merged_array
 
 
-class RemoveSegmentationOverlapMain(CommandLineWithConfirm):
+class MergeSegmentationMain(CommandLineWithConfirm):
     def __init__(
         self,
         annofab_service: annofabapi.Resource,
@@ -331,7 +331,7 @@ class MergeSegmentation(CommandLine):
             )
             sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
-        main_obj = RemoveSegmentationOverlapMain(
+        main_obj = MergeSegmentationMain(
             self.service,
             project_id=project_id,
             label_ids=label_id_list,
