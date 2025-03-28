@@ -274,6 +274,7 @@ class RemoveSegmentationOverlapMain(CommandLineWithConfirm):
 
 class CopyAnnotation(CommandLine):
     COMMON_MESSAGE = "annofabcli annotation remove_segmentation_overlap: error:"
+
     def validate(self, args: argparse.Namespace) -> bool:
         if args.parallelism is not None and not args.yes:
             print(  # noqa: T201
