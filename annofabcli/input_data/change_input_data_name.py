@@ -178,6 +178,9 @@ class ChangeInputDataName(CommandLine):
 
         elif args.json is not None:
             input_data_dict_list: list[dict[str, str]] = get_json_from_args(args.json)
+            if not isinstance(input_data_dict_list, list):
+                print("annofabcli input_data change_name: error: JSON形式が不正です。オブジェクトの配列を指定してください。", file=sys.stderr)
+                sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
             changed_input_data_list = create_changed_input_data_list_from_dict(input_data_dict_list)
         else:
             raise RuntimeError("'--csv'または'--json'のいずれかを指定してください。")

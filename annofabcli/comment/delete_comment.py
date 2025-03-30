@@ -225,6 +225,9 @@ class DeleteComment(CommandLine):
         super().validate_project(args.project_id, [ProjectMemberRole.ACCEPTER, ProjectMemberRole.OWNER])
 
         dict_comments = annofabcli.common.cli.get_json_from_args(args.json)
+        if not isinstance(dict_comments, dict):
+            print(f"{self.COMMON_MESSAGE} argument --json: JSON形式が不正です。オブジェクトの辞書を指定してください。", file=sys.stderr)
+            sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
         main_obj = DeleteCommentMain(self.service, project_id=args.project_id, all_yes=self.all_yes)
         main_obj.delete_comments_for_task_list(
             comment_ids_for_task_list=dict_comments,
