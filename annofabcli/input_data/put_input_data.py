@@ -356,6 +356,10 @@ class PutInputData(CommandLine):
 
         elif args.json is not None:
             input_data_dict_list = get_json_from_args(args.json)
+            if not isinstance(input_data_dict_list, list):
+                print(f"{self.COMMON_MESSAGE} argument --json: JSON形式が不正です。オブジェクトの配列を指定してください。", file=sys.stderr)  # noqa: T201
+                sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
+
             input_data_list = self.get_input_data_list_from_dict(input_data_dict_list, allow_duplicated_input_data=args.allow_duplicated_input_data)
             self.put_input_data_list(project_id, input_data_list=input_data_list, overwrite=args.overwrite, parallelism=args.parallelism)
 
