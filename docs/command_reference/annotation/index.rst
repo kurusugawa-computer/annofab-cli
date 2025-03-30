@@ -24,9 +24,9 @@ Available Commands
    import
    list
    list_count
-   restore
    merge_segmentation
    remove_segmentation_overlap
+   restore
 
 Usage Details
 =================================

@@ -17,6 +17,14 @@ Examples
     $ annofabcli annotation remove_segmentation_overlap --project_id prj1 --task_id task1
 
 
+.. figure:: remove_segmentation_overlap/before.png
+    
+    コマンドの実行前の状態。塗りつぶしアノテーションは重なっている。
+
+.. figure:: remove_segmentation_overlap/after.png
+    
+    コマンドの実行後の状態。塗りつぶしアノテーションは重なりが削除されている。
+
 Usage Details
 =================================
 
