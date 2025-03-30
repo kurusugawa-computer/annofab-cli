@@ -1,15 +1,10 @@
-import copy
-from pathlib import Path
 from typing import Any
 from unittest import mock
 
 from annofabapi.models import TaskPhase, TaskStatus
 
-from annofabcli.common.enums import FormatArgument
 from annofabcli.task.list_tasks_added_task_history import (
     AddingAdditionalInfoToTask,
-    ListTasksAddedTaskHistoryMain,
-    TasksAddedTaskHistoryOutput,
     get_completed_datetime,
     get_first_acceptance_completed_datetime,
     get_first_acceptance_reached_datetime,
@@ -201,18 +196,16 @@ class TestPostRejectionWorktime:
             "account_id": "00589ed0-dd63-40db-abb2-dfe5e13c8299",
         },
     ]
-    
+
     def test__get_post_rejection_annotation_worktime_hour(self):
         assert get_post_rejection_annotation_worktime_hour([]) == 0
         actual_seconds = get_post_rejection_annotation_worktime_hour(self.task_histories) * 3600
         assert int(actual_seconds) == 23
 
-
     def test__get_post_rejection_inspection_worktime_hour(self):
         assert get_post_rejection_inspection_worktime_hour([]) == 0
         actual_seconds = get_post_rejection_inspection_worktime_hour(self.task_histories) * 3600
         assert int(actual_seconds) == 39
-
 
     def test__get_post_rejection_acceptance_worktime_hour(self):
         assert get_post_rejection_acceptance_worktime_hour([]) == 0
@@ -230,7 +223,7 @@ not_skipped_task_histories = [
         "accumulated_labor_time_milliseconds": "PT0S",
         "phase": "annotation",
         "phase_stage": 1,
-        "account_id": None
+        "account_id": None,
     },
     {
         "project_id": "58a2a621-7d4b-41e7-927b-cdc570c1114a",
@@ -241,7 +234,7 @@ not_skipped_task_histories = [
         "accumulated_labor_time_milliseconds": "PT2.935S",
         "phase": "annotation",
         "phase_stage": 1,
-        "account_id": "00589ed0-dd63-40db-abb2-dfe5e13c8299"
+        "account_id": "00589ed0-dd63-40db-abb2-dfe5e13c8299",
     },
     {
         "project_id": "58a2a621-7d4b-41e7-927b-cdc570c1114a",
@@ -252,7 +245,7 @@ not_skipped_task_histories = [
         "accumulated_labor_time_milliseconds": "PT0S",
         "phase": "inspection",
         "phase_stage": 1,
-        "account_id": None
+        "account_id": None,
     },
     {
         "project_id": "58a2a621-7d4b-41e7-927b-cdc570c1114a",
@@ -263,7 +256,7 @@ not_skipped_task_histories = [
         "accumulated_labor_time_milliseconds": "PT2.392S",
         "phase": "inspection",
         "phase_stage": 1,
-        "account_id": "00589ed0-dd63-40db-abb2-dfe5e13c8299"
+        "account_id": "00589ed0-dd63-40db-abb2-dfe5e13c8299",
     },
     {
         "project_id": "58a2a621-7d4b-41e7-927b-cdc570c1114a",
@@ -274,7 +267,7 @@ not_skipped_task_histories = [
         "accumulated_labor_time_milliseconds": "PT0S",
         "phase": "acceptance",
         "phase_stage": 1,
-        "account_id": None
+        "account_id": None,
     },
     {
         "project_id": "58a2a621-7d4b-41e7-927b-cdc570c1114a",
@@ -285,8 +278,8 @@ not_skipped_task_histories = [
         "accumulated_labor_time_milliseconds": "PT2.38S",
         "phase": "acceptance",
         "phase_stage": 1,
-        "account_id": "00589ed0-dd63-40db-abb2-dfe5e13c8299"
-    }
+        "account_id": "00589ed0-dd63-40db-abb2-dfe5e13c8299",
+    },
 ]
 
 skipped_task_histories = [
@@ -299,7 +292,7 @@ skipped_task_histories = [
         "accumulated_labor_time_milliseconds": "PT0S",
         "phase": "annotation",
         "phase_stage": 1,
-        "account_id": None
+        "account_id": None,
     },
     {
         "project_id": "58a2a621-7d4b-41e7-927b-cdc570c1114a",
@@ -310,7 +303,7 @@ skipped_task_histories = [
         "accumulated_labor_time_milliseconds": "PT2.603S",
         "phase": "annotation",
         "phase_stage": 1,
-        "account_id": "00589ed0-dd63-40db-abb2-dfe5e13c8299"
+        "account_id": "00589ed0-dd63-40db-abb2-dfe5e13c8299",
     },
     {
         "project_id": "58a2a621-7d4b-41e7-927b-cdc570c1114a",
@@ -321,7 +314,7 @@ skipped_task_histories = [
         "accumulated_labor_time_milliseconds": "PT0S",
         "phase": "inspection",
         "phase_stage": 1,
-        "account_id": None
+        "account_id": None,
     },
     {
         "project_id": "58a2a621-7d4b-41e7-927b-cdc570c1114a",
@@ -332,10 +325,11 @@ skipped_task_histories = [
         "accumulated_labor_time_milliseconds": "PT0S",
         "phase": "acceptance",
         "phase_stage": 1,
-        "account_id": None
-    }
+        "account_id": None,
+    },
 ]
-        
+
+
 def test__is_acceptance_phase_skipped():
     assert is_acceptance_phase_skipped(skipped_task_histories)
     assert not is_acceptance_phase_skipped(not_skipped_task_histories)
@@ -365,16 +359,133 @@ def test__get_completed_datetime():
     assert get_completed_datetime(task, task_histories) is None
 
 
-def test__get_task_created_datetime():
-    task = {
-        "task_id": "20250323-1",
-        "operation_updated_datetime": "2025-03-23T16:00:00.000+09:00",
-    }
-    # 先頭の履歴のstarted_datetimeがタスク作成日時
-    assert get_task_created_datetime(task, task_histories) == "2025-03-23T16:14:33.796+09:00"
+class TaskInfo:
+    task: dict[str, Any]
+    task_histories: list[dict[str, Any]]
 
-    # 履歴が空の場合
-    assert get_task_created_datetime(task, []) is None
+
+# タスク作成直後の状態
+task_created_immediately = TaskInfo(
+    task={
+        "project_id": "58a2a621-7d4b-41e7-927b-cdc570c1114a",
+        "task_id": "20250327_02",
+        "phase": "annotation",
+        "phase_stage": 1,
+        "status": "not_started",
+        "input_data_id_list": ["bbc5faf4-f22f-48ac-9393-b524cb3e0034"],
+        "account_id": None,
+        "histories_by_phase": [],
+        "work_time_span": 0,
+        "number_of_rejections": 0,
+        "started_datetime": None,
+        "updated_datetime": "2025-03-27T11:31:23.513+09:00",
+        "operation_updated_datetime": "2025-03-27T11:31:23.513+09:00",
+        "sampling": None,
+        "metadata": {},
+    },
+    task_histories=[
+        {
+            "project_id": "58a2a621-7d4b-41e7-927b-cdc570c1114a",
+            "task_id": "20250327_02",
+            "task_history_id": "f8e21d05-4726-4706-865c-52a85fd8f2ae",
+            "started_datetime": None,
+            "ended_datetime": None,
+            "accumulated_labor_time_milliseconds": "PT0S",
+            "phase": "annotation",
+            "phase_stage": 1,
+            "account_id": None,
+        }
+    ],
+)
+
+
+complete_task = TaskInfo(
+    task={
+        "project_id": "58a2a621-7d4b-41e7-927b-cdc570c1114a",
+        "task_id": "20250327_07",
+        "phase": "acceptance",
+        "phase_stage": 1,
+        "status": "complete",
+        "input_data_id_list": ["8dcb2786-d818-463f-ac73-b728cd65837c"],
+        "account_id": "00589ed0-dd63-40db-abb2-dfe5e13c8299",
+        "histories_by_phase": [
+            {"account_id": "00589ed0-dd63-40db-abb2-dfe5e13c8299", "phase": "annotation", "phase_stage": 1, "worked": True},
+            {"account_id": "00589ed0-dd63-40db-abb2-dfe5e13c8299", "phase": "acceptance", "phase_stage": 1, "worked": True},
+        ],
+        "work_time_span": 6099,
+        "number_of_rejections": 0,
+        "started_datetime": "2025-03-30T13:53:23.546+09:00",
+        "updated_datetime": "2025-03-30T13:53:27.067+09:00",
+        "operation_updated_datetime": "2025-03-30T13:53:27.067+09:00",
+        "sampling": None,
+        "metadata": {},
+    },
+    task_histtories=[
+        {
+            "project_id": "58a2a621-7d4b-41e7-927b-cdc570c1114a",
+            "task_id": "20250327_07",
+            "task_history_id": "74b8fe69-e397-4b13-8a50-f34a72c3074b",
+            "started_datetime": "2025-03-27T11:31:22.91+09:00",
+            "ended_datetime": None,
+            "accumulated_labor_time_milliseconds": "PT0S",
+            "phase": "annotation",
+            "phase_stage": 1,
+            "account_id": None,
+        },
+        {
+            "project_id": "58a2a621-7d4b-41e7-927b-cdc570c1114a",
+            "task_id": "20250327_07",
+            "task_history_id": "49d47a78-1fe9-4c67-b852-c75306c35a34",
+            "started_datetime": "2025-03-27T11:35:53.332+09:00",
+            "ended_datetime": "2025-03-27T11:35:55.935+09:00",
+            "accumulated_labor_time_milliseconds": "PT2.603S",
+            "phase": "annotation",
+            "phase_stage": 1,
+            "account_id": "00589ed0-dd63-40db-abb2-dfe5e13c8299",
+        },
+        {
+            "project_id": "58a2a621-7d4b-41e7-927b-cdc570c1114a",
+            "task_id": "20250327_07",
+            "task_history_id": "45e862f9-a5be-4e20-ae4d-69178e6f1be3",
+            "started_datetime": "2025-03-27T11:35:55.937+09:00",
+            "ended_datetime": "2025-03-27T11:35:55.937+09:00",
+            "accumulated_labor_time_milliseconds": "PT0S",
+            "phase": "inspection",
+            "phase_stage": 1,
+            "account_id": None,
+        },
+        {
+            "project_id": "58a2a621-7d4b-41e7-927b-cdc570c1114a",
+            "task_id": "20250327_07",
+            "task_history_id": "a30f77be-1d68-418b-bf71-b4cbaafc2c27",
+            "started_datetime": "2025-03-27T11:35:55.939+09:00",
+            "ended_datetime": "2025-03-27T11:35:55.939+09:00",
+            "accumulated_labor_time_milliseconds": "PT0S",
+            "phase": "acceptance",
+            "phase_stage": 1,
+            "account_id": None,
+        },
+        {
+            "project_id": "58a2a621-7d4b-41e7-927b-cdc570c1114a",
+            "task_id": "20250327_07",
+            "task_history_id": "520845d7-d362-400b-afbb-571b484535e0",
+            "started_datetime": "2025-03-30T13:53:23.546+09:00",
+            "ended_datetime": "2025-03-30T13:53:27.042+09:00",
+            "accumulated_labor_time_milliseconds": "PT3.496S",
+            "phase": "acceptance",
+            "phase_stage": 1,
+            "account_id": "00589ed0-dd63-40db-abb2-dfe5e13c8299",
+        },
+    ],
+)
+
+
+def test__get_task_created_datetime():
+    # タスクの作成直後の場合（一度も作業されていない）
+    assert get_task_created_datetime(task_created_immediately.task, task_created_immediately.task_histories) == "2025-03-27T11:31:23.513+09:00"
+
+    # 1度以上作業されたタスク
+    assert get_task_created_datetime(complete_task.task, complete_task.task_histories) == "2025-03-27T11:31:22.91+09:00"
 
 
 def test__get_first_acceptance_completed_datetime():
@@ -401,8 +512,6 @@ def test__get_first_acceptance_reached_datetime():
     # 受入フェーズがない場合
     task_histories_without_acceptance = [h for h in task_histories if h["phase"] != "acceptance"]
     assert get_first_acceptance_reached_datetime(task_histories_without_acceptance) is None
-
-
 
 
 class TestAddingAdditionalInfoToTask:
