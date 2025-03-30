@@ -186,6 +186,41 @@ def is_acceptance_phase_skipped(task_histories: list[TaskHistory]) -> bool:
     )
 
 
+def calculate_total_worktime_in_phase(task_histories: list[TaskHistory], phase: TaskPhase) -> float:
+    """指定したフェーズの合計作業時間を計算する。
+
+    Args:
+        task_histories: タスク履歴
+        phase: 計算対象のフェーズ
+
+    Returns:
+        合計作業時間
+    """
+    return sum(isoduration_to_hour(history["accumulated_labor_time_milliseconds"]) for history in task_histories if history["phase"] == phase.value)
+
+
+def get_first_task_history(task_histories: list[TaskHistory], phase: TaskPhase) -> Optional[TaskHistory]:
+    """
+    指定したフェーズの最初に作業したタスク履歴を取得します。
+    取得したタスク履歴には、account_idはnot Noneで、作業時間は0より大きいです。
+
+    Args:
+        task_histories: タスク履歴
+        phase: フェーズ
+
+    Returns:
+        最初のタスク履歴
+    """
+    for history in task_histories:
+        if (
+            history["phase"] == phase.value
+            and history["account_id"] is not None
+            and isoduration_to_hour(history["accumulated_labor_time_milliseconds"]) > 0
+        ):
+            return history
+    return None
+
+
 def is_inspection_phase_skipped(task_histories: list[TaskHistory]) -> bool:
     """抜取検査によって、検査フェーズでスキップされたことがあるかを取得する。
 
@@ -262,26 +297,6 @@ class AddingAdditionalInfoToTask:
 
         return task
 
-    def _add_task_history_info_by_phase(self, task: dict[str, Any], task_histories: list[TaskHistory], phase: TaskPhase) -> Task:
-        task_history_by_phase = [
-            e
-            for e in task_histories
-            if e["phase"] == phase.value
-            and e["account_id"] is not None
-            and annofabcli.common.utils.isoduration_to_hour(e["accumulated_labor_time_milliseconds"]) > 0
-        ]
-
-        # 最初の対象フェーズに関する情報を設定
-        first_task_history = task_history_by_phase[0] if len(task_history_by_phase) > 0 else None
-        self._add_task_history_info(task, first_task_history, column_prefix=f"first_{phase.value}")
-
-        # 作業時間に関する情報を設定
-        task[f"{phase.value}_worktime_hour"] = sum(
-            annofabcli.common.utils.isoduration_to_hour(e["accumulated_labor_time_milliseconds"]) for e in task_history_by_phase
-        )
-
-        return task
-
     def add_additional_info_to_task(self, task: dict[str, Any]) -> None:
         """タスクの付加的情報を、タスクに追加する。
         以下の列を追加する。
@@ -322,9 +337,11 @@ class AddingAdditionalInfoToTask:
         task["created_datetime"] = get_task_creation_datetime(task, task_histories)
 
         # フェーズごとのタスク履歴情報を追加する
-        self._add_task_history_info_by_phase(task, task_histories, phase=TaskPhase.ANNOTATION)
-        self._add_task_history_info_by_phase(task, task_histories, phase=TaskPhase.INSPECTION)
-        self._add_task_history_info_by_phase(task, task_histories, phase=TaskPhase.ACCEPTANCE)
+        for phase in TaskPhase:
+            # タスク履歴から取得した作業時間を設定
+            task[f"{phase.value}_worktime_hour"] = calculate_total_worktime_in_phase(task_histories, phase)
+            first_task_history = get_first_task_history(task_histories, phase)
+            self._add_task_history_info(task, first_task_history, column_prefix=f"first_{phase.value}")
 
         # 初めて受入が完了した日時
         task["first_acceptance_reached_datetime"] = get_first_acceptance_reached_datetime(task_histories)
