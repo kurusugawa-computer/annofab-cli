@@ -8,7 +8,6 @@ from annofabcli.task.list_tasks_added_task_history import (
     get_post_rejection_acceptance_worktime_hour,
     get_post_rejection_annotation_worktime_hour,
     get_post_rejection_inspection_worktime_hour,
-    get_task_created_datetime,
     is_acceptance_phase_skipped,
     is_inspection_phase_skipped,
 )
@@ -540,14 +539,6 @@ def test__is_acceptance_phase_skipped():
 def test__is_inspection_phase_skipped():
     assert is_inspection_phase_skipped(skipped_task_histories)
     assert not is_inspection_phase_skipped(not_skipped_task_histories)
-
-
-def test__get_task_created_datetime():
-    # タスクの作成直後の場合（一度も作業されていない）
-    assert get_task_created_datetime(task_created_immediately.task, task_created_immediately.task_histories) == "2025-03-27T11:31:23.513+09:00"
-
-    # 1度以上作業されたタスク
-    assert get_task_created_datetime(complete_task.task, complete_task.task_histories) == "2025-03-27T11:31:22.91+09:00"
 
 
 def test__get_first_acceptance_completed_datetime():

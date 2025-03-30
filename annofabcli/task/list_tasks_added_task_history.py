@@ -9,7 +9,7 @@ import annofabapi
 import more_itertools
 import pandas
 from annofabapi.models import Task, TaskHistory, TaskPhase, TaskStatus
-from annofabapi.util.task_history import find_rejected_task_history_indices
+from annofabapi.util.task_history import find_rejected_task_history_indices, get_task_creation_datetime
 from annofabapi.utils import get_task_history_index_skipped_acceptance, get_task_history_index_skipped_inspection
 
 import annofabcli
@@ -111,36 +111,6 @@ def get_completed_datetime(task: dict[str, Any], task_histories: list[TaskHistor
         return task_histories[-1]["ended_datetime"]
     else:
         return None
-
-
-def get_task_created_datetime(task: dict[str, Any], task_histories: list[TaskHistory]) -> Optional[str]:
-    """タスクが作成日時を取得する。
-
-    Args:
-        task_histories (List[TaskHistory]): タスク履歴
-
-    Returns:
-        タスクの作成日時
-    """
-    # 受入フェーズで完了日時がnot Noneの場合は、受入を合格したか差し戻したとき。
-    # したがって、後続のタスク履歴を見て、初めて受入完了状態になった日時を取得する。
-    if len(task_histories) == 0:
-        return None
-
-    first_history = task_histories[0]
-    # 2020年以前は、先頭のタスク履歴はタスク作成ではなく、教師付けの履歴である。2020年以前はタスク作成日時を取得できないのでNoneを返す。
-    # https://annofab.com/docs/releases/2020.html#v01020
-    if (
-        first_history["account_id"] is None
-        and first_history["accumulated_labor_time_milliseconds"] == "PT0S"
-        and first_history["phase"] == TaskPhase.ANNOTATION.value
-    ):
-        if len(task_histories) == 1:
-            # 一度も作業されていないタスクは、先頭のタスク履歴のstarted_datetimeはNoneである
-            # 替わりにタスクの`operation_updated_datetime`をタスク作成日時とする
-            return task["operation_updated_datetime"]
-        return first_history["started_datetime"]
-    return None
 
 
 def get_first_acceptance_completed_datetime(task_histories: list[TaskHistory]) -> Optional[str]:
@@ -349,7 +319,7 @@ class AddingAdditionalInfoToTask:
 
         """
         # タスク作成日時
-        task["created_datetime"] = get_task_created_datetime(task, task_histories)
+        task["created_datetime"] = get_task_creation_datetime(task, task_histories)
 
         # フェーズごとのタスク履歴情報を追加する
         self._add_task_history_info_by_phase(task, task_histories, phase=TaskPhase.ANNOTATION)
