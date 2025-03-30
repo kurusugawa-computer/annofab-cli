@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import logging
 import multiprocessing
+import sys
 import tempfile
 from collections import defaultdict
 from enum import Enum
@@ -15,6 +16,7 @@ from annofabapi.models import JobStatus, ProjectJobType, ProjectMemberRole
 
 import annofabcli
 from annofabcli.common.cli import (
+    COMMAND_LINE_ERROR_STATUS_CODE,
     PARALLELISM_CHOICES,
     ArgumentParser,
     CommandLine,
@@ -230,16 +232,16 @@ class PutTask(CommandLine):
 
         if args.csv is not None:
             csv_file = args.csv
-            task_relation_dict = get_task_relation_dict(csv_file)
-            if not isinstance(task_relation_dict, dict):
-                print("annofabcli task put: error: JSON形式が不正です。オブジェクトの辞書を指定してください。", file=sys.stderr)
-                sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
-            main_obj.generate_task(api_with_creating_task, task_relation_dict)
+            task_relation_dict_from_csv = get_task_relation_dict(csv_file)
+            main_obj.generate_task(api_with_creating_task, task_relation_dict_from_csv)
 
         elif args.json is not None:
             # CSVファイルに変換する
-            task_relation_dict = get_json_from_args(args.json)
-            main_obj.generate_task(api_with_creating_task, task_relation_dict)
+            task_relation_dict_from_json = get_json_from_args(args.json)
+            if not isinstance(task_relation_dict_from_json, dict):
+                print("annofabcli task put: error: JSON形式が不正です。オブジェクトを指定してください。", file=sys.stderr)  # noqa: T201
+                sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
+            main_obj.generate_task(api_with_creating_task, task_relation_dict_from_json)
 
 
 def main(args: argparse.Namespace) -> None:

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import logging
+import sys
 from dataclasses import dataclass
 from typing import Any, Optional
 
@@ -10,6 +11,7 @@ import annofabapi
 import annofabcli
 import annofabcli.common.cli
 from annofabcli.common.cli import (
+    COMMAND_LINE_ERROR_STATUS_CODE,
     ArgumentParser,
     CommandLine,
     CommandLineWithConfirm,
@@ -101,7 +103,7 @@ class PutLabelColor(CommandLine):
         label_color = get_json_from_args(args.json)
 
         if not isinstance(label_color, dict):
-            print("annofabcli annotation_specs put_label_color: error: JSON形式が不正です。オブジェクトの辞書を指定してください。", file=sys.stderr)
+            print("annofabcli annotation_specs put_label_color: error: JSON形式が不正です。オブジェクトを指定してください。", file=sys.stderr)  # noqa: T201
             sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
         main_obj = PuttingLabelColorMain(service=self.service, project_id=args.project_id, all_yes=args.yes)
         main_obj.main(label_color, comment=args.comment)
