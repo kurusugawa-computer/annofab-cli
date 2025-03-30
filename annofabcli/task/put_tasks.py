@@ -231,6 +231,9 @@ class PutTask(CommandLine):
         if args.csv is not None:
             csv_file = args.csv
             task_relation_dict = get_task_relation_dict(csv_file)
+            if not isinstance(task_relation_dict, dict):
+                print("annofabcli task put: error: JSON形式が不正です。オブジェクトの辞書を指定してください。", file=sys.stderr)
+                sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
             main_obj.generate_task(api_with_creating_task, task_relation_dict)
 
         elif args.json is not None:
