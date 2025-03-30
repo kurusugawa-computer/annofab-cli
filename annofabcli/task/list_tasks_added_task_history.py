@@ -173,12 +173,12 @@ def get_first_acceptance_completed_datetime(task_histories: list[TaskHistory]) -
 
 
 def get_first_acceptance_reached_datetime(task_histories: list[TaskHistory]) -> Optional[str]:
-    """はじめて受入フェーズに到達した日時を取得する。
+    """
+    はじめて受入フェーズに到達した日時を取得する。
     受入フェーズを着手した日時とは異なる。
     必ず`first_acceptance_started_datetime`よりも前の日時になる。
 
-    Args:
-        task_histories (List[TaskHistory]): [description]
+    たとえば教師付フェーズで提出して受入フェーズに到達した場合、教師付フェーズを提出した日時が「受入フェーズに到達した日時」になる。
 
     """
     for index, history in enumerate(task_histories):
