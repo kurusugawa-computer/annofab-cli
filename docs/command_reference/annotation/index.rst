@@ -25,6 +25,8 @@ Available Commands
    list
    list_count
    restore
+   merge_segmentation
+   remove_segmentation_overlap
 
 Usage Details
 =================================
