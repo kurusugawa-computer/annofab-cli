@@ -44,6 +44,9 @@ class PutInspectionComment(CommandLine):
         super().validate_project(args.project_id, [ProjectMemberRole.ACCEPTER, ProjectMemberRole.OWNER])
 
         dict_comments = annofabcli.common.cli.get_json_from_args(args.json)
+        if not isinstance(dict_comments, dict):
+            print(f"{self.COMMON_MESSAGE} argument --json: JSON形式が不正です。オブジェクトを指定してください。", file=sys.stderr)  # noqa: T201
+            sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
         comments_for_task_list = convert_cli_comments(dict_comments, comment_type=CommentType.INSPECTION)
         main_obj = PutCommentMain(self.service, project_id=args.project_id, comment_type=CommentType.INSPECTION, all_yes=self.all_yes)
         main_obj.add_comments_for_task_list(
