@@ -315,7 +315,7 @@ class AnnotationCountCsvByAttribute:
         self.selective_attribute_value_max_count = selective_attribute_value_max_count
 
     def _value_columns(
-        self, annotation_count_list: Collection[AnnotationCountByInputData], *, prior_attribute_columns: Optional[list[AttributeValueKey]]
+        self, annotation_count_list: list[AnnotationCountByInputData], *, prior_attribute_columns: Optional[list[AttributeValueKey]]
     ) -> list[AttributeValueKey]:
         """
         CSVの数値列を取得します。
@@ -347,7 +347,7 @@ class AnnotationCountCsvByAttribute:
             ("frame_no", "", ""),
         ]
         value_columns = self._value_columns(annotation_count_list, prior_attribute_columns=prior_attribute_columns)
-        return basic_columns + value_columns
+        return basic_columns + value_columns  # type: ignore[operator]
 
     def get_columns_by_task(
         self,
@@ -362,7 +362,7 @@ class AnnotationCountCsvByAttribute:
             ("input_data_count", "", ""),
         ]
         value_columns = self._value_columns(annotation_count_list, prior_attribute_columns=prior_attribute_columns)
-        return basic_columns + value_columns
+        return basic_columns + value_columns  # type: ignore[operator]
 
     def create_df_by_input_data(
         self,
@@ -371,7 +371,7 @@ class AnnotationCountCsvByAttribute:
         prior_attribute_columns: Optional[list[AttributeValueKey]] = None,
     ) -> pandas.DataFrame:
         def to_cell(c: AnnotationCountByInputData) -> dict[tuple[str, str, str], Any]:
-            cell: dict[AttributeValueKey, Any] = {
+            cell: dict[tuple[str, str, str], Any] = {
                 ("task_id", "", ""): c.task_id,
                 ("task_status", "", ""): c.task_status.value,
                 ("task_phase", "", ""): c.task_phase.value,
@@ -399,7 +399,7 @@ class AnnotationCountCsvByAttribute:
         prior_attribute_columns: Optional[list[AttributeValueKey]] = None,
     ) -> pandas.DataFrame:
         def to_cell(c: AnnotationCountByTask) -> dict[tuple[str, str, str], Any]:
-            cell: dict[AttributeValueKey, Any] = {
+            cell: dict[tuple[str, str, str], Any] = {
                 ("task_id", "", ""): c.task_id,
                 ("task_status", "", ""): c.task_status.value,
                 ("task_phase", "", ""): c.task_phase.value,
