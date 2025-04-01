@@ -2,13 +2,14 @@ from __future__ import annotations
 
 import argparse
 import collections
+import json
 import logging
 import sys
 import tempfile
 import zipfile
 from collections import defaultdict
 from collections.abc import Collection, Iterator
-from dataclasses import field
+from dataclasses import dataclass, field
 from enum import Enum
 from functools import partial
 from pathlib import Path
@@ -86,6 +87,7 @@ def encode_annotation_count_by_attribute(
     return result
 
 
+@dataclass(frozen=True)
 class AnnotationCountByInputData(DataClassJsonMixin):
     """
     入力データ単位のアノテーション数の情報。
@@ -111,6 +113,7 @@ class AnnotationCountByInputData(DataClassJsonMixin):
     """フレーム番号（1始まり）。アノテーションJSONには含まれていない情報なので、Optionalにする"""
 
 
+@dataclass(frozen=True)
 class AnnotationCountByTask(DataClassJsonMixin):
     """
     タスク単位のアノテーション数の情報。
@@ -172,6 +175,7 @@ def convert_annotation_count_list_by_input_data_to_by_task(annotation_count_list
                 annotation_attribute_counts=annotation_attribute_counts,
             )
         )
+    return result
 
 
 class ListAnnotationCounterByInputData:
@@ -247,8 +251,9 @@ class ListAnnotationCounterByInputData:
                 attribute_key = (label, attribute_name, convert_attribute_value_to_type(attribute_value))
                 annotation_count_by_attribute[attribute_key] += 1
 
+        frame_no: Optional[int] = None
         if self.frame_no_map is not None:
-            frame_no = self.frame_no_map.get((task_id, input_data_id))
+            frame_no = self.frame_no_map.get((simple_annotation["task_id"], simple_annotation["input_data_id"]))
 
         return AnnotationCountByInputData(
             task_id=simple_annotation["task_id"],
@@ -257,7 +262,7 @@ class ListAnnotationCounterByInputData:
             task_status=TaskStatus(simple_annotation["task_status"]),
             input_data_id=simple_annotation["input_data_id"],
             input_data_name=simple_annotation["input_data_name"],
-            annotation_count_by_attribute=annotation_count_by_attribute,
+            annotation_attribute_counts=annotation_count_by_attribute,
             frame_no=frame_no,
         )
 
@@ -297,108 +302,6 @@ class ListAnnotationCounterByInputData:
         return annotation_duration_list
 
 
-class ListAnnotationCounterByTask:
-    """タスク単位で、属性ごとのアノテーション数を集計情報を取得するメソッドの集まり。"""
-
-    def __init__(
-        self,
-        *,
-        target_labels: Optional[Collection[str]] = None,
-        non_target_labels: Optional[Collection[str]] = None,
-        target_attribute_names: Optional[Collection[AttributeNameKey]] = None,
-        non_target_attribute_names: Optional[Collection[AttributeNameKey]] = None,
-    ) -> None:
-        self.counter_by_input_data = ListAnnotationCounterByInputData(
-            target_labels=target_labels,
-            non_target_labels=non_target_labels,
-            target_attribute_names=target_attribute_names,
-            non_target_attribute_names=non_target_attribute_names,
-        )
-
-    def get_annotation_counter(self, task_parser: SimpleAnnotationParserByTask) -> AnnotationCounterByTask:
-        """
-        1個のタスクに対して、ラベルごと/属性ごとのアノテーション数を集計情報を取得する。
-
-        Args:
-            simple_annotation: JSONファイルの内容
-            target_labels: 集計対象のラベル（label_name_en）
-            target_attributes: 集計対象の属性
-
-
-        """
-
-        annotation_count_by_label: Counter[str] = collections.Counter()
-        annotation_count_by_attribute: Counter[tuple[str, str, str]] = collections.Counter()
-
-        last_simple_annotation = None
-        input_data_count = 0
-        for parser in task_parser.lazy_parse():
-            # parse()メソッドは遅いので、使わない
-            simple_annotation_dict = parser.load_json()
-            input_data = self.counter_by_input_data.get_annotation_counter(simple_annotation_dict)
-            annotation_count_by_label += input_data.annotation_count_by_label
-            annotation_count_by_attribute += input_data.annotation_count_by_attribute
-            last_simple_annotation = simple_annotation_dict
-            input_data_count += 1
-
-        if last_simple_annotation is None:
-            raise RuntimeError(f"{task_parser.task_id} ディレクトリにはjsonファイルが1つも含まれていません。")
-
-        return AnnotationCounterByTask(
-            task_id=last_simple_annotation["task_id"],
-            status=TaskStatus(last_simple_annotation["task_status"]),
-            phase=TaskPhase(last_simple_annotation["task_phase"]),
-            phase_stage=last_simple_annotation["task_phase_stage"],
-            input_data_count=input_data_count,
-            annotation_count=sum(annotation_count_by_label.values()),
-            annotation_count_by_label=annotation_count_by_label,
-            annotation_count_by_attribute=annotation_count_by_attribute,
-        )
-
-    def get_annotation_counter_list(
-        self,
-        annotation_path: Path,
-        *,
-        target_task_ids: Optional[Collection[str]] = None,
-        task_query: Optional[TaskQuery] = None,
-    ) -> list[AnnotationCountByTask]:
-        """
-        アノテーションzipまたはそれを展開したディレクトリから、属性ごとのアノテーション数を集計情報を取得する。
-
-        """
-        annotation_count_list_by_input_data = self.counter_by_input_data.get_annotation_count_list(
-            annotation_path, target_task_ids=target_task_ids, task_query=task_query
-        )
-
-        counter_list = []
-        iter_task_parser = lazy_parse_simple_annotation_by_task(annotation_path)
-
-        target_task_ids = set(target_task_ids) if target_task_ids is not None else None
-
-        logger.debug("アノテーションzip/ディレクトリを読み込み中")
-        for task_index, task_parser in enumerate(iter_task_parser):
-            if (task_index + 1) % 1000 == 0:
-                logger.debug(f"{task_index + 1}  件目のタスクディレクトリを読み込み中")
-
-            if target_task_ids is not None and task_parser.task_id not in target_task_ids:
-                continue
-
-            if task_query is not None:
-                json_file_path_list = task_parser.json_file_path_list
-                if len(json_file_path_list) == 0:
-                    continue
-
-                input_data_parser = task_parser.get_parser(json_file_path_list[0])
-                dict_simple_annotation = input_data_parser.load_json()
-                if not match_annotation_with_task_query(dict_simple_annotation, task_query):
-                    continue
-
-            task_counter = self.get_annotation_counter(task_parser)
-            counter_list.append(task_counter)
-
-        return counter_list
-
-
 class AnnotationCountCsvByAttribute:
     """
     属性値ごとのアノテーション数をCSVに出力するためのクラス
@@ -433,7 +336,7 @@ class AnnotationCountCsvByAttribute:
         self,
         annotation_count_list: list[AnnotationCountByInputData],
         prior_attribute_columns: Optional[list[AttributeValueKey]] = None,
-    ) -> list[AttributeValueKey]:
+    ) -> list[tuple[str, str, str]]:
         basic_columns = [
             ("task_id", "", ""),
             ("task_status", "", ""),
@@ -450,7 +353,7 @@ class AnnotationCountCsvByAttribute:
         self,
         annotation_count_list: list[AnnotationCountByTask],
         prior_attribute_columns: Optional[list[AttributeValueKey]] = None,
-    ) -> list[AttributeValueKey]:
+    ) -> list[tuple[str, str, str]]:
         basic_columns = [
             ("task_id", "", ""),
             ("task_status", "", ""),
@@ -485,7 +388,7 @@ class AnnotationCountCsvByAttribute:
         df = pandas.DataFrame([to_cell(e) for e in annotation_count_list], columns=pandas.MultiIndex.from_tuples(columns))
 
         # アノテーション数の列のNaNを0に変換する
-        value_columns = self._value_columns(annotation_count_list, prior_attribute_columns)
+        value_columns = self._value_columns(annotation_count_list, prior_attribute_columns=prior_attribute_columns)
         df = df.fillna(dict.fromkeys(value_columns, 0))
         return df
 
@@ -511,7 +414,7 @@ class AnnotationCountCsvByAttribute:
         df = pandas.DataFrame([to_cell(e) for e in annotation_count_list], columns=pandas.MultiIndex.from_tuples(columns))
 
         # アノテーション数の列のNaNを0に変換する
-        value_columns = self._value_columns(annotation_count_list, prior_attribute_columns)
+        value_columns = self._value_columns(annotation_count_list, prior_attribute_columns=prior_attribute_columns)
         df = df.fillna(dict.fromkeys(value_columns, 0))
         return df
 
@@ -658,7 +561,9 @@ class ListAnnotationAttributeFilledCount(CommandLine):
         # https://qiita.com/yuji38kwmt/items/c6f50e1fc03dafdcdda0 参考
         with tempfile.TemporaryDirectory() as str_temp_dir:
             # タスク全件ファイルは、フレーム番号を参照するのに利用する
-            if project_id is not None:
+            if project_id is not None and group_by == GroupBy.INPUT_DATA_ID:
+                # group_byで条件を絞り込んでいる理由：
+                # タスクIDで集計する際は、フレーム番号は出力しないので、タスク全件ファイルをダウンロードする必要はないため
                 task_json_path = Path(str_temp_dir) / f"{project_id}__task.json"
                 downloading_obj.download_task_json(
                     project_id,
@@ -670,8 +575,8 @@ class ListAnnotationAttributeFilledCount(CommandLine):
             func = partial(
                 main_obj.print_annotation_count,
                 project_id=project_id,
-                # task_json_path=task_json_path,
-                # group_by=group_by,
+                task_json_path=task_json_path,
+                group_by=group_by,
                 output_format=output_format,
                 output_file=output_file,
                 target_task_ids=task_id_list,
