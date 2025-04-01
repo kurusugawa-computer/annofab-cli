@@ -483,7 +483,7 @@ class ListAnnotationAttributeFilledCountMain:
         task_query: Optional[TaskQuery] = None,
     ) -> None:
         annotation_specs: Optional[AnnotationSpecs] = None
-        target_attribute_names: Optional[Collection[AttributeNameKey]] = None
+        target_attribute_names: Optional[list[AttributeNameKey]] = None
         if project_id is not None:
             annotation_specs = AnnotationSpecs(self.service, project_id)
             if not include_flag_attribute:
