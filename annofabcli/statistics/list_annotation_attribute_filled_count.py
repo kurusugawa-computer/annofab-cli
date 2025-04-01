@@ -1,33 +1,6 @@
 from __future__ import annotations
 
 import argparse
-import logging
-import sys
-from typing import Optional
-
-import annofabapi
-import pandas
-from annofabapi.models import SingleAnnotation
-
-import annofabcli
-from annofabcli.annotation.annotation_query import AnnotationQueryForCLI
-from annofabcli.annotation.list_annotation import ListAnnotationMain
-from annofabcli.common.cli import (
-    COMMAND_LINE_ERROR_STATUS_CODE,
-    ArgumentParser,
-    CommandLine,
-    build_annofabapi_resource_and_login,
-    get_json_from_args,
-    get_list_from_args,
-)
-from annofabcli.common.enums import FormatArgument
-from annofabcli.common.facade import AnnofabApiFacade
-
-logger = logging.getLogger(__name__)
-
-
-
-import argparse
 import collections
 import copy
 import json
@@ -37,14 +10,15 @@ import tempfile
 import zipfile
 from collections import defaultdict
 from collections.abc import Collection, Iterator
-from dataclasses import dataclass, field
+from dataclasses import field
 from enum import Enum
+from functools import partial
 from pathlib import Path
-from typing import Any, Optional, Union
+from typing import Any, Literal, Optional, Union
 
 import annofabapi
 import pandas
-from annofabapi.models import DefaultAnnotationType, InputDataType, ProjectMemberRole, TaskPhase, TaskStatus
+from annofabapi.models import DefaultAnnotationType, ProjectMemberRole, TaskPhase, TaskStatus
 from annofabapi.parser import (
     SimpleAnnotationParser,
     lazy_parse_simple_annotation_dir,
@@ -69,8 +43,9 @@ from annofabcli.common.facade import (
 )
 from annofabcli.common.utils import print_csv, print_json
 from annofabcli.statistics.list_annotation_count import AnnotationSpecs
-from typing import Literal
+
 logger = logging.getLogger(__name__)
+
 
 AttributeValueType = Literal["filled", "empty"]
 AttributeValueKey = tuple[str, str, AttributeValueType]
@@ -90,6 +65,11 @@ tuple[label_name_en, attribute_name_en] で表す。
 AttributeKeys = Collection[Collection]
 
 
+class GroupBy(Enum):
+    TASK_ID = "task_id"
+    INPUT_DATA_ID = "input_data_id"
+
+
 def encode_annotation_count_by_attribute(
     annotation_count_by_attribute: dict[AttributeValueKey, int],
 ) -> dict[str, dict[str, dict[str, int]]]:
@@ -105,8 +85,6 @@ def encode_annotation_count_by_attribute(
     for (label_name, attribute_name, attribute_value_type), annotation_count in annotation_count_by_attribute.items():
         result[label_name][attribute_name][attribute_value_type] = annotation_count
     return result
-
-
 
 
 class AnnotationCount(DataClassJsonMixin):
@@ -132,10 +110,6 @@ class AnnotationCount(DataClassJsonMixin):
     """
 
 
-
-
-
-
 def lazy_parse_simple_annotation_by_input_data(annotation_path: Path) -> Iterator[SimpleAnnotationParser]:
     if not annotation_path.exists():
         raise RuntimeError(f"'{annotation_path}' は存在しません。")
@@ -148,9 +122,7 @@ def lazy_parse_simple_annotation_by_input_data(annotation_path: Path) -> Iterato
         raise RuntimeError(f"'{annotation_path}'は、zipファイルまたはディレクトリではありません。")
 
 
-
-
-class ListAnnotationDurationByInputData:
+class ListAnnotationCountByInputData:
     """入力データ単位で、ラベルごと/属性ごとのアノテーション数を集計情報を取得するメソッドの集まり。
 
     Args:
@@ -158,7 +130,6 @@ class ListAnnotationDurationByInputData:
         target_attribute_names: 集計対象の属性名
         non_target_labels: 集計対象外のラベル
         non_target_attribute_names: 集計対象外の属性名のキー。
-        frame_no_map: key:task_id,input_data_idのtuple, value:フレーム番号
 
     """
 
@@ -181,10 +152,9 @@ class ListAnnotationDurationByInputData:
 
         Args:
             simple_annotation: アノテーションJSONファイルの内容
-            
+
         TODO アノテーションの種類を限定する？チェックボックスに関しては興味がないはず
         """
-
 
         def convert_attribute_value_to_type(value: Optional[Union[bool, str, float]]) -> AttributeValueType:  # noqa: FBT001
             """
@@ -196,25 +166,13 @@ class ListAnnotationDurationByInputData:
             """
             if value is None:
                 return "empty"
-            
+
             if isinstance(value, str) and value == "":
                 return "empty"
-            
+
             return "filled"
 
         details: list[dict[str, Any]] = simple_annotation["details"]
-        annotation_duration_by_label: dict[str, float] = defaultdict(float)
-
-
-        if self.target_labels is not None:
-            annotation_duration_by_label = {
-                label: duration for label, duration in annotation_duration_by_label.items() if label in self.target_labels
-            }
-
-        if self.non_target_labels is not None:
-            annotation_duration_by_label = {
-                label: duration for label, duration in annotation_duration_by_label.items() if label not in self.non_target_labels
-            }
 
         annotation_count_by_attribute: dict[AttributeValueKey, int] = defaultdict(int)
         for detail in details:
@@ -226,17 +184,15 @@ class ListAnnotationDurationByInputData:
             if self.non_target_labels is not None and label in self.non_target_labels:
                 continue
 
-
             for attribute_name, attribute_value in detail["attributes"].items():
-                if self.target_attribute_names is not None and  (label, attribute_name) not in self.target_attribute_names:
+                if self.target_attribute_names is not None and (label, attribute_name) not in self.target_attribute_names:
                     continue
 
-                if self.non_target_attribute_names is not None and  (label, attribute_name) in self.non_target_attribute_names:
+                if self.non_target_attribute_names is not None and (label, attribute_name) in self.non_target_attribute_names:
                     continue
 
                 attribute_key = (label, attribute_name, convert_attribute_value_to_type(attribute_value))
                 annotation_count_by_attribute[attribute_key] += 1
-
 
         return AnnotationCount(
             task_id=simple_annotation["task_id"],
@@ -248,7 +204,7 @@ class ListAnnotationDurationByInputData:
             annotation_count_by_attribute=annotation_count_by_attribute,
         )
 
-    def get_annotation_duration_list(
+    def get_annotation_count_list(
         self,
         annotation_path: Path,
         *,
@@ -257,7 +213,7 @@ class ListAnnotationDurationByInputData:
         task_query: Optional[TaskQuery] = None,
     ) -> list[AnnotationCount]:
         """
-        アノテーションzipまたはそれを展開したディレクトリから、ラベルごと/属性ごとの区間アノテーションの長さを取得する。
+        アノテーションzipまたはそれを展開したディレクトリから、属性値ごとのアノテーション数を取得する。
 
         Args:
             input_data_json_path: 入力データ全件ファイルのパス。動画の長さを取得するのに利用します。
@@ -287,20 +243,15 @@ class ListAnnotationDurationByInputData:
                 if not match_annotation_with_task_query(simple_annotation_dict, task_query):
                     continue
 
-            video_duration_second: Optional[float] = None
-            if dict_input_data is not None:
-                input_data = dict_input_data[parser.input_data_id]
-                video_duration_second = input_data["system_metadata"]["input_duration"]
-
-            annotation_duration = self.get_annotation_count(simple_annotation_dict, video_duration_second=video_duration_second)
-            annotation_duration_list.append(annotation_duration)
+            annotation_count = self.get_annotation_count(simple_annotation_dict)
+            annotation_duration_list.append(annotation_count)
 
         return annotation_duration_list
 
 
-class AnnotationDurationCsvByAttribute:
+class AnnotationCountCsvByAttribute:
     """
-    属性値ごとのアノテーション長さをCSVに出力するためのクラス
+    属性値ごとのアノテーション数をCSVに出力するためのクラス
 
     Args:
         selective_attribute_value_max_count: 選択肢系の属性の値の個数の上限。これを超えた場合は、非選択肢系属性（トラッキングIDやアノテーションリンクなど）とみなす
@@ -337,6 +288,9 @@ class AnnotationDurationCsvByAttribute:
     def _value_columns(
         self, annotation_duration_list: Collection[AnnotationCount], prior_attribute_columns: Optional[list[AttributeValueKey]]
     ) -> list[AttributeValueKey]:
+        """
+        TODO 見直す
+        """
         all_attr_key_set = {attr_key for c in annotation_duration_list for attr_key in c.annotation_duration_second_by_attribute}
         if prior_attribute_columns is not None:
             remaining_columns = sorted(all_attr_key_set - set(prior_attribute_columns))
@@ -368,25 +322,23 @@ class AnnotationDurationCsvByAttribute:
 
     def get_columns(
         self,
-        annotation_duration_list: list[AnnotationCount],
+        annotation_count_list: list[AnnotationCount],
         prior_attribute_columns: Optional[list[AttributeValueKey]] = None,
     ) -> list[AttributeValueKey]:
         basic_columns = [
             ("task_id", "", ""),
-            ("status", "", ""),
-            ("phase", "", ""),
-            ("phase_stage", "", ""),
+            ("task_status", "", ""),
+            ("task_phase", "", ""),
+            ("task_phase_stage", "", ""),
             ("input_data_id", "", ""),
             ("input_data_name", "", ""),
-            ("video_duration_second", "", ""),
-            ("annotation_duration_second", "", ""),
         ]
-        value_columns = self._value_columns(annotation_duration_list, prior_attribute_columns)
+        value_columns = self._value_columns(annotation_count_list, prior_attribute_columns)
         return basic_columns + value_columns
 
     def create_df(
         self,
-        annotation_duration_list: list[AnnotationCount],
+        annotation_count_list: list[AnnotationCount],
         prior_attribute_columns: Optional[list[AttributeValueKey]] = None,
     ) -> pandas.DataFrame:
         def to_cell(c: AnnotationCount) -> dict[tuple[str, str, str], Any]:
@@ -394,125 +346,49 @@ class AnnotationDurationCsvByAttribute:
                 ("input_data_id", "", ""): c.input_data_id,
                 ("input_data_name", "", ""): c.input_data_name,
                 ("task_id", "", ""): c.task_id,
-                ("status", "", ""): c.status.value,
-                ("phase", "", ""): c.phase.value,
-                ("phase_stage", "", ""): c.phase_stage,
-                ("video_duration_second", "", ""): c.video_duration_second,
-                ("annotation_duration_second", "", ""): c.annotation_duration_second,
+                ("task_status", "", ""): c.status.value,
+                ("task_phase", "", ""): c.phase.value,
+                ("task_phase_stage", "", ""): c.phase_stage,
             }
-            cell.update(c.annotation_duration_second_by_attribute)
+            cell.update(c.annotation_attribute_counts)
 
             return cell
 
-        columns = self.get_columns(annotation_duration_list, prior_attribute_columns)
-        df = pandas.DataFrame([to_cell(e) for e in annotation_duration_list], columns=pandas.MultiIndex.from_tuples(columns))
+        columns = self.get_columns(annotation_count_list, prior_attribute_columns)
+        df = pandas.DataFrame([to_cell(e) for e in annotation_count_list], columns=pandas.MultiIndex.from_tuples(columns))
 
         # アノテーション数の列のNaNを0に変換する
-        value_columns = self._value_columns(annotation_duration_list, prior_attribute_columns)
+        value_columns = self._value_columns(annotation_count_list, prior_attribute_columns)
         df = df.fillna(dict.fromkeys(value_columns, 0))
         return df
 
 
-class AnnotationDurationCsvByLabel:
-    """
-    ラベルごとのアノテーション長さをCSVとして出力するためのクラス。
-    """
-
-    def _value_columns(self, annotation_duration_list: list[AnnotationCount], prior_label_columns: Optional[list[str]]) -> list[str]:
-        all_attr_key_set = {attr_key for elm in annotation_duration_list for attr_key in elm.annotation_duration_second_by_label.keys()}  # noqa: SIM118
-        if prior_label_columns is not None:
-            remaining_columns = sorted(all_attr_key_set - set(prior_label_columns))
-            value_columns = prior_label_columns + remaining_columns
-        else:
-            remaining_columns = sorted(all_attr_key_set)
-            value_columns = remaining_columns
-
-        return value_columns
-
-    def get_columns(
-        self,
-        annotation_duration_list: list[AnnotationCount],
-        prior_label_columns: Optional[list[str]] = None,
-    ) -> list[str]:
-        basic_columns = [
-            "task_id",
-            "status",
-            "phase",
-            "phase_stage",
-            "input_data_id",
-            "input_data_name",
-            "video_duration_second",
-            "annotation_duration_second",
-        ]
-        value_columns = self._value_columns(annotation_duration_list, prior_label_columns)
-        return basic_columns + value_columns
-
-    def create_df(
-        self,
-        annotation_duration_list: list[AnnotationCount],
-        prior_label_columns: Optional[list[str]] = None,
-    ) -> pandas.DataFrame:
-        def to_dict(c: AnnotationCount) -> dict[str, Any]:
-            d: dict[str, Any] = {
-                "input_data_id": c.input_data_id,
-                "input_data_name": c.input_data_name,
-                "task_id": c.task_id,
-                "status": c.status.value,
-                "phase": c.phase.value,
-                "phase_stage": c.phase_stage,
-                "video_duration_second": c.video_duration_second,
-                "annotation_duration_second": c.annotation_duration_second,
-            }
-            d.update(c.annotation_duration_second_by_label)
-            return d
-
-        columns = self.get_columns(annotation_duration_list, prior_label_columns)
-        df = pandas.DataFrame([to_dict(e) for e in annotation_duration_list], columns=columns)
-
-        # アノテーション数列のNaNを0に変換する
-        value_columns = self._value_columns(annotation_duration_list, prior_label_columns)
-        df = df.fillna(dict.fromkeys(value_columns, 0))
-
-        return df
-
-
-class ListAnnotationDurationMain:
+class ListAnnotationAttributeFilledCountMain:
     def __init__(self, service: annofabapi.Resource) -> None:
         self.service = service
 
-    def print_annotation_duration_csv(
-        self, annotation_duration_list: list[AnnotationCount], csv_type: CsvType, output_file: Path, *, annotation_specs: Optional[AnnotationSpecs]
+    def print_annotation_count_csv(
+        self, annotation_count_list: list[AnnotationCount], output_file: Path, *, annotation_specs: Optional[AnnotationSpecs]
     ) -> None:
-        if csv_type == CsvType.LABEL:
-            # ラベル名の列順が、アノテーション仕様にあるラベル名の順番に対応するようにする。
-            label_columns: Optional[list[str]] = None
-            if annotation_specs is not None:
-                label_columns = annotation_specs.label_keys()
+        # TODO 見直す
+        # attribute_columns: Optional[list[AttributeValueKey]] = None
+        # if annotation_specs is not None:
+        #     attribute_columns = annotation_specs.selective_attribute_value_keys()
 
-            df = AnnotationDurationCsvByLabel().create_df(annotation_duration_list, prior_label_columns=label_columns)
-        elif csv_type == CsvType.ATTRIBUTE:
-            attribute_columns: Optional[list[AttributeValueKey]] = None
-            if annotation_specs is not None:
-                attribute_columns = annotation_specs.selective_attribute_value_keys()
-
-            df = AnnotationDurationCsvByAttribute().create_df(annotation_duration_list, prior_attribute_columns=attribute_columns)
-
-        else:
-            raise RuntimeError(f"{csv_type=}はサポートしていません。")
-
+        # df = AnnotationCountCsvByAttribute().create_df(annotation_count_list, prior_attribute_columns=attribute_columns)
+        df = AnnotationCountCsvByAttribute().create_df(annotation_count_list)
         print_csv(df, output_file)
 
-    def print_annotation_duration(
+    def print_annotation_count(
         self,
         annotation_path: Path,
         output_file: Path,
-        arg_format: FormatArgument,
+        output_format: FormatArgument,
         *,
         project_id: Optional[str] = None,
         input_data_json_path: Optional[Path] = None,
         target_task_ids: Optional[Collection[str]] = None,
         task_query: Optional[TaskQuery] = None,
-        csv_type: Optional[CsvType] = None,
     ) -> None:
         annotation_specs: Optional[AnnotationSpecs] = None
         non_selective_attribute_name_keys: Optional[list[AttributeNameKey]] = None
@@ -520,139 +396,161 @@ class ListAnnotationDurationMain:
             annotation_specs = AnnotationSpecs(self.service, project_id, annotation_type=DefaultAnnotationType.RANGE.value)
             non_selective_attribute_name_keys = annotation_specs.non_selective_attribute_name_keys()
 
-        annotation_duration_list = ListAnnotationDurationByInputData(
+        annotation_count_list = ListAnnotationCountByInputData(
             non_target_attribute_names=non_selective_attribute_name_keys
-        ).get_annotation_duration_list(
+        ).get_annotation_count_list(
             annotation_path,
             input_data_json_path=input_data_json_path,
             target_task_ids=target_task_ids,
             task_query=task_query,
         )
 
-        logger.info(f"{len(annotation_duration_list)} 件のタスクに含まれる区間アノテーションの長さ情報を出力します。")
+        logger.info(f"{len(annotation_count_list)} 件のタスクに含まれるアノテーション数を出力します。")
 
-        if arg_format == FormatArgument.CSV:
-            assert csv_type is not None
-            self.print_annotation_duration_csv(
-                annotation_duration_list, output_file=output_file, csv_type=csv_type, annotation_specs=annotation_specs
-            )
+        if output_format == FormatArgument.CSV:
+            self.print_annotation_count_csv(annotation_count_list, output_file=output_file, annotation_specs=annotation_specs)
 
-        elif arg_format in [FormatArgument.PRETTY_JSON, FormatArgument.JSON]:
-            json_is_pretty = arg_format == FormatArgument.PRETTY_JSON
+        elif output_format in [FormatArgument.PRETTY_JSON, FormatArgument.JSON]:
+            json_is_pretty = output_format == FormatArgument.PRETTY_JSON
 
             print_json(
-                [e.to_dict(encode_json=True) for e in annotation_duration_list],
+                [e.to_dict(encode_json=True) for e in annotation_count_list],
                 is_pretty=json_is_pretty,
                 output=output_file,
             )
 
 
-
-def aggregate_filled_annotations(annotations: list[SingleAnnotation]) -> pandas.DataFrame:
-    """
-    アノテーションの一覧から属性が空でないものを集計したDataFrameを返す。
-
-    Returns:
-        - task_id, input_data_id, filled_annotation_countの3列
-    """
-    if len(annotations) == 0:
-        return pandas.DataFrame(columns=["task_id", "input_data_id", "filled_annotation_count"])
-
-    df = pandas.DataFrame(annotations)
-    df = df[["task_id", "input_data_id", "attributes"]]
-    df["filled_annotation_count"] = df["attributes"].apply(lambda attrs: sum(1 for attr in attrs.values() if attr != ""))
-
-    return df.groupby(["task_id", "input_data_id"], as_index=False)["filled_annotation_count"].sum()
-
 class ListAnnotationAttributeFilledCount(CommandLine):
     COMMON_MESSAGE = "annofabcli annotation list_annotation_attribute_filled_count: error:"
 
-    def __init__(self, service: annofabapi.Resource, facade: AnnofabApiFacade, args: argparse.Namespace) -> None:
-        super().__init__(service, facade, args)
-        self.list_annotation_main_obj = ListAnnotationMain(service, project_id=args.project_id)
+    def validate(self, args: argparse.Namespace) -> bool:
+        if args.project_id is None and args.annotation is None:
+            print(  # noqa: T201
+                f"{self.COMMON_MESSAGE} argument --project_id: '--annotation'が未指定のときは、'--project_id' を指定してください。",
+                file=sys.stderr,
+            )
+            return False
+
+        return True
 
     def main(self) -> None:
         args = self.args
-        project_id = args.project_id
 
-        if args.annotation_query is not None:
-            annotation_specs, _ = self.service.api.get_annotation_specs(project_id, query_params={"v": "3"})
-            try:
-                dict_annotation_query = get_json_from_args(args.annotation_query)
-                annotation_query_for_cli = AnnotationQueryForCLI.from_dict(dict_annotation_query)
-                annotation_query = annotation_query_for_cli.to_query_for_api(annotation_specs)
-            except ValueError as e:
-                print(f"{self.COMMON_MESSAGE} argument '--annotation_query' の値が不正です。{e}", file=sys.stderr)  # noqa: T201
-                sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
-        else:
-            annotation_query = None
+        if not self.validate(args):
+            sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
-        task_id_list = get_list_from_args(args.task_id) if args.task_id is not None else None
-        input_data_id_list = get_list_from_args(args.input_data_id) if args.input_data_id is not None else None
+        project_id: Optional[str] = args.project_id
+        if project_id is not None:
+            super().validate_project(project_id, project_member_roles=[ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER])
 
-        super().validate_project(project_id, project_member_roles=None)
-        all_annotation_list = self.list_annotation_main_obj.get_all_annotation_list(
-            project_id,
-            annotation_query=annotation_query,
-            task_id_list=task_id_list,
-            input_data_id_list=input_data_id_list,
-        )
+        annotation_path = Path(args.annotation) if args.annotation is not None else None
 
-        logger.debug(f"アノテーション一覧の件数: {len(all_annotation_list)}")
+        task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id) if args.task_id is not None else None
+        task_query = TaskQuery.from_dict(annofabcli.common.cli.get_json_from_args(args.task_query)) if args.task_query is not None else None
 
-        df = aggregate_filled_annotations(all_annotation_list)
+        group_by = GroupBy(args.group_by)
+        output_file: Path = args.output
+        output_format = FormatArgument(args.format)
+        main_obj = ListAnnotationAttributeFilledCountMain(self.service)
 
-        if self.str_format == FormatArgument.CSV.value:
-            self.print_csv(df)
-        else:
-            self.print_according_to_format(df.to_dict(orient="records"))
+        downloading_obj = DownloadingFile(self.service)
+
+        # `NamedTemporaryFile`を使わない理由: Windowsで`PermissionError`が発生するため
+        # https://qiita.com/yuji38kwmt/items/c6f50e1fc03dafdcdda0 参考
+        with tempfile.TemporaryDirectory() as str_temp_dir:
+            # タスク全件ファイルは、フレーム番号を参照するのに利用する
+            if project_id is not None:
+                task_json_path = Path(str_temp_dir) / f"{project_id}__task.json"
+                downloading_obj.download_task_json(
+                    project_id,
+                    dest_path=str(task_json_path),
+                )
+            else:
+                task_json_path = None
+
+            func = partial(
+                main_obj.print_annotation_count,
+                project_id=project_id,
+                task_json_path=task_json_path,
+                group_by=group_by,
+                arg_format=output_format,
+                output_file=output_file,
+                target_task_ids=task_id_list,
+                task_query=task_query,
+            )
+
+            if annotation_path is None:
+                assert project_id is not None
+                annotation_path = Path(str_temp_dir) / f"{project_id}__annotation.zip"
+                downloading_obj.download_annotation_zip(
+                    project_id,
+                    dest_path=str(annotation_path),
+                    is_latest=args.latest,
+                )
+                func(annotation_path=annotation_path)
+            else:
+                func(annotation_path=annotation_path)
+
 
 def main(args: argparse.Namespace) -> None:
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
     ListAnnotationAttributeFilledCount(service, facade, args).main()
 
+
 def parse_args(parser: argparse.ArgumentParser) -> None:
     argument_parser = ArgumentParser(parser)
 
-    argument_parser.add_project_id()
+    parser.add_argument(
+        "--annotation",
+        type=str,
+        help="アノテーションzip、またはzipを展開したディレクトリを指定します。指定しない場合はAnnofabからダウンロードします。",
+    )
 
     parser.add_argument(
-        "-aq",
-        "--annotation_query",
+        "-p",
+        "--project_id",
         type=str,
-        help="アノテーションの検索クエリをJSON形式で指定します。 ``file://`` を先頭に付けると、JSON形式のファイルを指定できます。",
+        help="project_id。``--annotation`` が未指定のときは必須です。``--annotation`` が指定されているときに ``--project_id`` を指定すると、アノテーション仕様を参照して、集計対象の属性やCSV列順が決まります。",  # noqa: E501
     )
 
-    id_group = parser.add_mutually_exclusive_group()
-
-    id_group.add_argument(
-        "-t",
-        "--task_id",
-        nargs="+",
-        help=("対象のタスクのtask_idを指定します。 ``file://`` を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。"),
+    parser.add_argument(
+        "--group_by",
+        type=str,
+        choices=[GroupBy.TASK_ID.value, GroupBy.INPUT_DATA_ID.value],
+        default=GroupBy.TASK_ID.value,
+        help="アノテーションの個数をどの単位で集約するかを指定してます。",
     )
-
-    id_group.add_argument(
-        "-i",
-        "--input_data_id",
-        nargs="+",
-        help=("対象の入力データのinput_data_idを指定します。 ``file://`` を先頭に付けると、input_data_idの一覧が記載されたファイルを指定できます。"),
-    )
-
-    argument_parser.add_output()
 
     argument_parser.add_format(
         choices=[FormatArgument.CSV, FormatArgument.JSON, FormatArgument.PRETTY_JSON],
         default=FormatArgument.CSV,
     )
 
+    argument_parser.add_output()
+
+    parser.add_argument(
+        "-tq",
+        "--task_query",
+        type=str,
+        help="集計対象タスクを絞り込むためのクエリ条件をJSON形式で指定します。使用できるキーは task_id, status, phase, phase_stage です。"
+        " ``file://`` を先頭に付けると、JSON形式のファイルを指定できます。",
+    )
+    argument_parser.add_task_id(required=False)
+
+    parser.add_argument(
+        "--latest",
+        action="store_true",
+        help="``--annotation`` を指定しないとき、最新のアノテーションzipを参照します。このオプションを指定すると、アノテーションzipを更新するのに数分待ちます。",  # noqa: E501
+    )
+
     parser.set_defaults(subcommand_func=main)
+
 
 def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     subcommand_name = "list_annotation_attribute_filled_count"
     subcommand_help = "各属性に対して値が空である場合と空でない場合のアノテーションの個数を、タスクごとまたは入力データごとに集計します。"
-    
+
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help)
     parse_args(parser)
     return parser
