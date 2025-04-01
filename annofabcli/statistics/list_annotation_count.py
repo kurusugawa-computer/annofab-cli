@@ -697,6 +697,25 @@ class AnnotationSpecs:
             )
         return result
 
+    def attribute_name_keys(self) -> list[tuple[str, str]]:
+        result = []
+        for label in self._labels_v1:
+            label_name_en = AddProps.get_message(label["label_name"], MessageLocale.EN)
+            assert label_name_en is not None
+
+            for attribute in label["additional_data_definitions"]:
+                attribute_name_en = AddProps.get_message(attribute["name"], MessageLocale.EN)
+                assert attribute_name_en is not None
+                result.append((label_name_en, attribute_name_en))
+
+        duplicated_attribute_names = [key for key, value in collections.Counter(result).items() if value > 1]
+        if len(duplicated_attribute_names) > 0:
+            logger.warning(
+                f"アノテーション仕様の属性情報（ラベル英語名、属性英語名）が重複しています。アノテーション個数が正しく算出できない可能性があります。:: {duplicated_attribute_names}"  # noqa: E501
+            )
+
+        return result
+
     def selective_attribute_value_keys(self) -> list[AttributeValueKey]:
         """
         選択系の属性の属性値のキーの一覧。

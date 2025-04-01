@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import argparse
 import collections
-import copy
 import json
 import logging
 import sys
@@ -261,60 +260,19 @@ class AnnotationCountCsvByAttribute:
     def __init__(self, selective_attribute_value_max_count: int = 20) -> None:
         self.selective_attribute_value_max_count = selective_attribute_value_max_count
 
-    def _only_selective_attribute(self, columns: list[AttributeValueKey]) -> list[AttributeValueKey]:
-        """
-        選択肢系の属性に対応する列のみ抽出する。
-        属性値の個数が多い場合、非選択肢系の属性（トラッキングIDやアノテーションリンクなど）の可能性があるため、それらを除外する。
-        CSVの列数を増やしすぎないための対策。
-        """
-        attribute_name_list: list[AttributeNameKey] = []
-        for label, attribute_name, _ in columns:
-            attribute_name_list.append((label, attribute_name))
-
-        non_selective_attribute_names = {
-            key for key, value in collections.Counter(attribute_name_list).items() if value > self.selective_attribute_value_max_count
-        }
-        if len(non_selective_attribute_names) > 0:
-            logger.debug(
-                f"以下の属性は値の個数が{self.selective_attribute_value_max_count}を超えていたため、集計しません。 :: {non_selective_attribute_names}"
-            )
-
-        return [
-            (label, attribute_name, attribute_value)
-            for (label, attribute_name, attribute_value) in columns
-            if (label, attribute_name) not in non_selective_attribute_names
-        ]
-
     def _value_columns(
-        self, annotation_duration_list: Collection[AnnotationCount], prior_attribute_columns: Optional[list[AttributeValueKey]]
+        self, annotation_count_list: Collection[AnnotationCount], *, prior_attribute_columns: Optional[list[AttributeValueKey]]
     ) -> list[AttributeValueKey]:
         """
-        TODO 見直す
+        CSVの数値列を取得します。
         """
-        all_attr_key_set = {attr_key for c in annotation_duration_list for attr_key in c.annotation_duration_second_by_attribute}
+        all_attr_key_set = {attr_key for c in annotation_count_list for attr_key in c.annotation_attribute_counts.keys()}
         if prior_attribute_columns is not None:
             remaining_columns = sorted(all_attr_key_set - set(prior_attribute_columns))
-            remaining_columns_only_selective_attribute = self._only_selective_attribute(remaining_columns)
-
-            # `remaining_columns_only_selective_attribute`には、属性値が空である列などが格納されている
-            # `remaining_columns_only_selective_attribute`を、`value_columns`の関連している位置に挿入する。
-            value_columns = copy.deepcopy(prior_attribute_columns)
-            for remaining_column in remaining_columns_only_selective_attribute:
-                is_inserted = False
-                for i in range(len(value_columns) - 1, -1, -1):
-                    col = value_columns[i]
-                    if col[0:2] == remaining_column[0:2]:
-                        value_columns.insert(i + 1, remaining_column)
-                        is_inserted = True
-                        break
-                if not is_inserted:
-                    value_columns.append(remaining_column)
-
-            assert len(value_columns) == len(prior_attribute_columns) + len(remaining_columns_only_selective_attribute)
+            value_columns = prior_attribute_columns + remaining_columns
 
         else:
-            remaining_columns = sorted(all_attr_key_set)
-            value_columns = self._only_selective_attribute(remaining_columns)
+            value_columns = sorted(all_attr_key_set)
 
         # 重複している場合は、重複要素を取り除く。ただし元の順番は維持する
         value_columns = list(dict.fromkeys(value_columns).keys())
@@ -339,6 +297,7 @@ class AnnotationCountCsvByAttribute:
     def create_df(
         self,
         annotation_count_list: list[AnnotationCount],
+        *,
         prior_attribute_columns: Optional[list[AttributeValueKey]] = None,
     ) -> pandas.DataFrame:
         def to_cell(c: AnnotationCount) -> dict[tuple[str, str, str], Any]:
@@ -370,12 +329,16 @@ class ListAnnotationAttributeFilledCountMain:
     def print_annotation_count_csv(
         self, annotation_count_list: list[AnnotationCount], output_file: Path, *, annotation_specs: Optional[AnnotationSpecs]
     ) -> None:
-        # TODO 見直す
-        # attribute_columns: Optional[list[AttributeValueKey]] = None
-        # if annotation_specs is not None:
-        #     attribute_columns = annotation_specs.selective_attribute_value_keys()
+        attribute_columns: Optional[list[AttributeValueKey]] = None
+        if annotation_specs is not None:
+            attribute_name_keys = annotation_specs.attribute_name_keys()
+            attribute_columns = [
+                (label_name, attribute_name, value_type)
+                for label_name, attribute_name in attribute_name_keys.keys()
+                for value_type in ["filled", "empty"]
+            ]
 
-        # df = AnnotationCountCsvByAttribute().create_df(annotation_count_list, prior_attribute_columns=attribute_columns)
+        df = AnnotationCountCsvByAttribute().create_df(annotation_count_list, prior_attribute_columns=attribute_columns)
         df = AnnotationCountCsvByAttribute().create_df(annotation_count_list)
         print_csv(df, output_file)
 
