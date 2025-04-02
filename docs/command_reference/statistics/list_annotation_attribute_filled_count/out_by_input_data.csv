@@ -1,0 +1,5 @@
+﻿task_id,task_status,task_phase,task_phase_stage,input_data_id,input_data_name,frame_no,car,car
+,,,,,,,direction,direction
+,,,,,,,filled,empty
+sample1,not_started,annotation,1,input1,input1,1,10,4
+sample1,not_started,annotation,1,input2,input2,2,20,3

@@ -647,7 +647,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         action="store_true",
         help="指定した場合は、On/Off属性（チェックボックス）も集計対象にします。"
         "On/Off属性は基本的に常に「入力されている」と判定されるため、デフォルトでは集計対象外にしています。"
-        "'--project_id' が指定されているときのみ有効なオプションです。",
+        "``--project_id`` が指定されているときのみ有効なオプションです。",
     )
 
     argument_parser.add_format(

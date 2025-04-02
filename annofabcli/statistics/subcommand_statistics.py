@@ -24,9 +24,9 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
 
     # サブコマンドの定義
     annofabcli.statistics.list_annotation_attribute.add_parser(subparsers)
+    annofabcli.statistics.list_annotation_attribute_filled_count.add_parser(subparsers)
     annofabcli.statistics.list_annotation_count.add_parser(subparsers)
     annofabcli.statistics.list_annotation_duration.add_parser(subparsers)
-    annofabcli.statistics.list_annotation_attribute_filled_count.add_parser(subparsers)
 
     annofabcli.statistics.list_video_duration.add_parser(subparsers)
     annofabcli.statistics.list_worktime.add_parser(subparsers)

@@ -1,0 +1,5 @@
+﻿task_id,task_status,task_phase,task_phase_stage,input_data_count,car,car
+,,,,,direction,direction
+,,,,,filled,empty
+20250325_0,not_started,annotation,1,1,10,4
+20250327_00,not_started,annotation,1,1,20,3
