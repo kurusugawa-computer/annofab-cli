@@ -109,9 +109,9 @@ class AnnotationDuration(DataClassJsonMixin):
     """
 
     task_id: str
-    status: TaskStatus
-    phase: TaskPhase
-    phase_stage: int
+    task_status: TaskStatus
+    task_phase: TaskPhase
+    task_phase_stage: int
 
     input_data_id: str
     input_data_name: str
@@ -239,9 +239,9 @@ class ListAnnotationDurationByInputData:
 
         return AnnotationDuration(
             task_id=simple_annotation["task_id"],
-            phase=TaskPhase(simple_annotation["task_phase"]),
-            phase_stage=simple_annotation["task_phase_stage"],
-            status=TaskStatus(simple_annotation["task_status"]),
+            task_phase=TaskPhase(simple_annotation["task_phase"]),
+            task_phase_stage=simple_annotation["task_phase_stage"],
+            task_status=TaskStatus(simple_annotation["task_status"]),
             input_data_id=simple_annotation["input_data_id"],
             input_data_name=simple_annotation["input_data_name"],
             video_duration_second=video_duration_second,
@@ -375,9 +375,9 @@ class AnnotationDurationCsvByAttribute:
     ) -> list[AttributeValueKey]:
         basic_columns = [
             ("task_id", "", ""),
-            ("status", "", ""),
-            ("phase", "", ""),
-            ("phase_stage", "", ""),
+            ("task_status", "", ""),
+            ("task_phase", "", ""),
+            ("task_phase_stage", "", ""),
             ("input_data_id", "", ""),
             ("input_data_name", "", ""),
             ("video_duration_second", "", ""),
@@ -396,9 +396,9 @@ class AnnotationDurationCsvByAttribute:
                 ("input_data_id", "", ""): c.input_data_id,
                 ("input_data_name", "", ""): c.input_data_name,
                 ("task_id", "", ""): c.task_id,
-                ("status", "", ""): c.status.value,
-                ("phase", "", ""): c.phase.value,
-                ("phase_stage", "", ""): c.phase_stage,
+                ("task_status", "", ""): c.task_status.value,
+                ("task_phase", "", ""): c.task_phase.value,
+                ("task_phase_stage", "", ""): c.task_phase_stage,
                 ("video_duration_second", "", ""): c.video_duration_second,
                 ("annotation_duration_second", "", ""): c.annotation_duration_second,
             }
@@ -438,9 +438,9 @@ class AnnotationDurationCsvByLabel:
     ) -> list[str]:
         basic_columns = [
             "task_id",
-            "status",
-            "phase",
-            "phase_stage",
+            "task_status",
+            "task_phase",
+            "task_phase_stage",
             "input_data_id",
             "input_data_name",
             "video_duration_second",
@@ -459,9 +459,9 @@ class AnnotationDurationCsvByLabel:
                 "input_data_id": c.input_data_id,
                 "input_data_name": c.input_data_name,
                 "task_id": c.task_id,
-                "status": c.status.value,
-                "phase": c.phase.value,
-                "phase_stage": c.phase_stage,
+                "task_status": c.task_status.value,
+                "task_phase": c.task_phase.value,
+                "task_phase_stage": c.task_phase_stage,
                 "video_duration_second": c.video_duration_second,
                 "annotation_duration_second": c.annotation_duration_second,
             }
