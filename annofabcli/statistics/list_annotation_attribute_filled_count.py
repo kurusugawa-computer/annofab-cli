@@ -17,13 +17,15 @@ from typing import Any, Literal, Optional, Protocol, Union
 
 import annofabapi
 import pandas
-from annofabapi.models import ProjectMemberRole, TaskPhase, TaskStatus
+from annofabapi.models import ProjectMemberRole
 from annofabapi.parser import (
     SimpleAnnotationParser,
     lazy_parse_simple_annotation_dir,
     lazy_parse_simple_annotation_zip,
 )
 from annofabapi.pydantic_models.additional_data_definition_type import AdditionalDataDefinitionType
+from annofabapi.pydantic_models.task_phase import TaskPhase
+from annofabapi.pydantic_models.task_status import TaskStatus
 from dataclasses_json import DataClassJsonMixin, config
 
 import annofabcli

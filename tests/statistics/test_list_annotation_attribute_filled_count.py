@@ -1,8 +1,14 @@
+import collections
 from pathlib import Path
 
+from annofabapi.pydantic_models.task_phase import TaskPhase
+from annofabapi.pydantic_models.task_status import TaskStatus
+
 from annofabcli.statistics.list_annotation_attribute_filled_count import (
-    ListAnnotationAttributeFilledCountMain,
+    AnnotationCountByInputData,
+    AnnotationCountByTask,
     ListAnnotationCounterByInputData,
+    convert_annotation_count_list_by_input_data_to_by_task,
 )
 
 output_dir = Path("./tests/out/statistics/list_annotation_attribute_filled_count")
@@ -23,49 +29,76 @@ class TestListAnnotationCounterByInputData:
                 {
                     "label": "bird",
                     "attributes": {
-                        "notes": "foo",
+                        "weight": 4,
                         "occluded": True,
                     },
                 },
                 {
                     "label": "bird",
                     "attributes": {
-                        "notes": "",
+                        "weight": 3,
                         "occluded": True,
                     },
                 },
-                {"label": "climatic", "attributes": {"weather": None}},
+                {"label": "climatic", "attributes": {"weather": "sunny"}},
             ],
         }
 
         counter = ListAnnotationCounterByInputData().get_annotation_count(annotation)
         assert counter.input_data_id == "input1"
         assert counter.task_id == "task1"
-        assert counter.annotation_attribute_counts == {
-            ("bird", "notes", "filled"): 1,
-            ("bird", "notes", "empty"): 1,
-            ("bird", "occluded", "filled"): 2,
-            ("climatic", "weather", "empty"): 1,
-        }
+        assert counter.annotation_attribute_counts == collections.Counter(
+            {
+                ("bird", "weight", "filled"): 2,
+                ("bird", "occluded", "filled"): 2,
+                ("climatic", "weather", "filled"): 1,
+            }
+        )
 
     def test_get_annotation_count_list(self):
         counter_list = ListAnnotationCounterByInputData().get_annotation_count_list(data_dir / "simple-annotations.zip")
-        print(counter_list)
+        assert len(counter_list) == 4
 
 
-class TestListAnnotationAttributeFilledCountMain:
-    def test_print_annotation_count_csv_by_input_data(self):
-        counter_list = ListAnnotationCounterByInputData().get_annotation_count_list(data_dir / "simple-annotations.zip")
-        ListAnnotationAttributeFilledCountMain(None).print_annotation_count_csv_by_input_data(
-            counter_list,
-            output_file=output_dir / "attributes_filled_count_by_input_data.csv",
-            attribute_names=None,
-        )
+def test_convert_annotation_count_list_by_input_data_to_by_task():
+    input_data_list = [
+        AnnotationCountByInputData(
+            task_id="task1",
+            task_status=TaskStatus.COMPLETE,
+            task_phase=TaskPhase.ACCEPTANCE,
+            task_phase_stage=1,
+            input_data_id="input1",
+            input_data_name="input1",
+            annotation_attribute_counts={
+                ("bird", "notes", "filled"): 1,
+                ("bird", "notes", "empty"): 1,
+            },
+        ),
+        AnnotationCountByInputData(
+            task_id="task1",
+            task_status=TaskStatus.COMPLETE,
+            task_phase=TaskPhase.ACCEPTANCE,
+            task_phase_stage=1,
+            input_data_id="input2",
+            input_data_name="input2",
+            annotation_attribute_counts={
+                ("bird", "notes", "filled"): 1,
+            },
+        ),
+    ]
 
-    def test_print_annotation_count_csv_by_task(self):
-        counter_list = ListAnnotationCounterByInputData().get_annotation_count_list(data_dir / "simple-annotations.zip")
-        ListAnnotationAttributeFilledCountMain(None).print_annotation_count_csv_by_task(
-            counter_list,
-            output_file=output_dir / "attributes_filled_count_by_task.csv",
-            attribute_names=None,
-        )
+    task_list = convert_annotation_count_list_by_input_data_to_by_task(input_data_list)
+    assert len(task_list) == 1
+    task = task_list[0]
+
+    assert task == AnnotationCountByTask(
+        task_id="task1",
+        task_status=TaskStatus.COMPLETE,
+        task_phase=TaskPhase.ACCEPTANCE,
+        task_phase_stage=1,
+        input_data_count=2,
+        annotation_attribute_counts={
+            ("bird", "notes", "filled"): 2,
+            ("bird", "notes", "empty"): 1,
+        },
+    )
