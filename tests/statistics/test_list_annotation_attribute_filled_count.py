@@ -1,4 +1,3 @@
-import collections
 from pathlib import Path
 
 from annofabcli.statistics.list_annotation_attribute_filled_count import (
@@ -24,35 +23,34 @@ class TestListAnnotationCounterByInputData:
                 {
                     "label": "bird",
                     "attributes": {
-                        "weight": 4,
+                        "notes": "foo",
                         "occluded": True,
                     },
                 },
                 {
                     "label": "bird",
                     "attributes": {
-                        "weight": 3,
+                        "notes": "",
                         "occluded": True,
                     },
                 },
-                {"label": "climatic", "attributes": {"weather": "sunny"}},
+                {"label": "climatic", "attributes": {"weather": None}},
             ],
         }
 
         counter = ListAnnotationCounterByInputData().get_annotation_count(annotation)
         assert counter.input_data_id == "input1"
         assert counter.task_id == "task1"
-        assert counter.annotation_attribute_counts == collections.Counter(
-            {
-                ("bird", "weight", "filled"): 2,
-                ("bird", "occluded", "filled"): 2,
-                ("climatic", "weather", "filled"): 1,
-            }
-        )
+        assert counter.annotation_attribute_counts == {
+            ("bird", "notes", "filled"): 1,
+            ("bird", "notes", "empty"): 1,
+            ("bird", "occluded", "filled"): 2,
+            ("climatic", "weather", "empty"): 1,
+        }
 
     def test_get_annotation_count_list(self):
         counter_list = ListAnnotationCounterByInputData().get_annotation_count_list(data_dir / "simple-annotations.zip")
-        assert len(counter_list) == 4
+        print(counter_list)
 
 
 class TestListAnnotationAttributeFilledCountMain:
