@@ -116,18 +116,18 @@ class AnnotationCounter(abc.ABC):
 @dataclass(frozen=True)
 class AnnotationCounterByTask(AnnotationCounter, DataClassJsonMixin):
     task_id: str
-    status: TaskStatus
-    phase: TaskPhase
-    phase_stage: int
+    task_status: TaskStatus
+    task_phase: TaskPhase
+    task_phase_stage: int
     input_data_count: int
 
 
 @dataclass(frozen=True)
 class AnnotationCounterByInputData(AnnotationCounter, DataClassJsonMixin):
     task_id: str
-    status: TaskStatus
-    phase: TaskPhase
-    phase_stage: int
+    task_status: TaskStatus
+    task_phase: TaskPhase
+    task_phase_stage: int
 
     input_data_id: str
     input_data_name: str
@@ -259,9 +259,9 @@ class ListAnnotationCounterByInputData:
 
         return AnnotationCounterByInputData(
             task_id=simple_annotation["task_id"],
-            phase=TaskPhase(simple_annotation["task_phase"]),
-            phase_stage=simple_annotation["task_phase_stage"],
-            status=TaskStatus(simple_annotation["task_status"]),
+            task_phase=TaskPhase(simple_annotation["task_phase"]),
+            task_phase_stage=simple_annotation["task_phase_stage"],
+            task_status=TaskStatus(simple_annotation["task_status"]),
             input_data_id=simple_annotation["input_data_id"],
             input_data_name=simple_annotation["input_data_name"],
             annotation_count=sum(annotation_count_by_label.values()),
@@ -356,9 +356,9 @@ class ListAnnotationCounterByTask:
 
         return AnnotationCounterByTask(
             task_id=last_simple_annotation["task_id"],
-            status=TaskStatus(last_simple_annotation["task_status"]),
-            phase=TaskPhase(last_simple_annotation["task_phase"]),
-            phase_stage=last_simple_annotation["task_phase_stage"],
+            task_status=TaskStatus(last_simple_annotation["task_status"]),
+            task_phase=TaskPhase(last_simple_annotation["task_phase"]),
+            task_phase_stage=last_simple_annotation["task_phase_stage"],
             input_data_count=input_data_count,
             annotation_count=sum(annotation_count_by_label.values()),
             annotation_count_by_label=annotation_count_by_label,
@@ -484,9 +484,9 @@ class AttributeCountCsv:
         def get_columns() -> list[AttributeValueKey]:
             basic_columns = [
                 ("task_id", "", ""),
-                ("status", "", ""),
-                ("phase", "", ""),
-                ("phase_stage", "", ""),
+                ("task_status", "", ""),
+                ("task_phase", "", ""),
+                ("task_phase_stage", "", ""),
                 ("input_data_count", "", ""),
                 ("annotation_count", "", ""),
             ]
@@ -496,9 +496,9 @@ class AttributeCountCsv:
         def to_cell(c: AnnotationCounterByTask) -> dict[AttributeValueKey, Any]:
             cell = {
                 ("task_id", "", ""): c.task_id,
-                ("status", "", ""): c.status.value,
-                ("phase", "", ""): c.phase.value,
-                ("phase_stage", "", ""): c.phase_stage,
+                ("task_status", "", ""): c.task_status.value,
+                ("task_phase", "", ""): c.task_phase.value,
+                ("task_phase_stage", "", ""): c.task_phase_stage,
                 ("input_data_count", "", ""): c.input_data_count,
                 ("annotation_count", "", ""): c.annotation_count,
             }
@@ -522,9 +522,9 @@ class AttributeCountCsv:
         def get_columns() -> list[AttributeValueKey]:
             basic_columns = [
                 ("task_id", "", ""),
-                ("status", "", ""),
-                ("phase", "", ""),
-                ("phase_stage", "", ""),
+                ("task_status", "", ""),
+                ("task_phase", "", ""),
+                ("task_phase_stage", "", ""),
                 ("input_data_id", "", ""),
                 ("input_data_name", "", ""),
                 ("frame_no", "", ""),
@@ -539,9 +539,9 @@ class AttributeCountCsv:
                 ("input_data_name", "", ""): c.input_data_name,
                 ("frame_no", "", ""): c.frame_no,
                 ("task_id", "", ""): c.task_id,
-                ("status", "", ""): c.status.value,
-                ("phase", "", ""): c.phase.value,
-                ("phase_stage", "", ""): c.phase_stage,
+                ("task_status", "", ""): c.task_status.value,
+                ("task_phase", "", ""): c.task_phase.value,
+                ("task_phase_stage", "", ""): c.task_phase_stage,
                 ("annotation_count", "", ""): c.annotation_count,
             }
             cell.update(c.annotation_count_by_attribute)
@@ -588,9 +588,9 @@ class LabelCountCsv:
         def get_columns() -> list[str]:
             basic_columns = [
                 "task_id",
-                "status",
-                "phase",
-                "phase_stage",
+                "task_status",
+                "task_phase",
+                "task_phase_stage",
                 "input_data_count",
                 "annotation_count",
             ]
@@ -600,9 +600,9 @@ class LabelCountCsv:
         def to_dict(c: AnnotationCounterByTask) -> dict[str, Any]:
             d = {
                 "task_id": c.task_id,
-                "status": c.status.value,
-                "phase": c.phase.value,
-                "phase_stage": c.phase_stage,
+                "task_status": c.task_status.value,
+                "task_phase": c.task_phase.value,
+                "task_phase_stage": c.task_phase_stage,
                 "input_data_count": c.input_data_count,
                 "annotation_count": c.annotation_count,
             }
@@ -626,9 +626,9 @@ class LabelCountCsv:
         def get_columns() -> list[str]:
             basic_columns = [
                 "task_id",
-                "status",
-                "phase",
-                "phase_stage",
+                "task_status",
+                "task_phase",
+                "task_phase_stage",
                 "input_data_id",
                 "input_data_name",
                 "frame_no",
@@ -643,9 +643,9 @@ class LabelCountCsv:
                 "input_data_name": c.input_data_name,
                 "frame_no": c.frame_no,
                 "task_id": c.task_id,
-                "status": c.status.value,
-                "phase": c.phase.value,
-                "phase_stage": c.phase_stage,
+                "task_status": c.task_status.value,
+                "task_phase": c.task_phase.value,
+                "task_phase_stage": c.task_phase_stage,
                 "annotation_count": c.annotation_count,
             }
             d.update(c.annotation_count_by_label)
