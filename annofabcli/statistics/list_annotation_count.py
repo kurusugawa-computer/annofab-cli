@@ -20,7 +20,7 @@ from typing import Any, Optional, Union
 
 import annofabapi
 import pandas
-from annofabapi.models import AdditionalDataDefinitionType, ProjectMemberRole, TaskPhase, TaskStatus
+from annofabapi.models import ProjectMemberRole, TaskPhase, TaskStatus
 from annofabapi.parser import (
     SimpleAnnotationParser,
     SimpleAnnotationParserByTask,
@@ -29,6 +29,7 @@ from annofabapi.parser import (
     lazy_parse_simple_annotation_zip,
     lazy_parse_simple_annotation_zip_by_task,
 )
+from annofabapi.pydantic_models.additional_data_definition_type import AdditionalDataDefinitionType
 from dataclasses_json import DataClassJsonMixin, config
 
 import annofabcli
@@ -695,6 +696,48 @@ class AnnotationSpecs:
             logger.warning(
                 f"アノテーション仕様のラベル英語名が重複しています。アノテーション個数が正しく算出できない可能性があります。:: {duplicated_labels}"
             )
+        return result
+
+    def attribute_name_keys(
+        self,
+        excluded_attribute_types: Optional[Collection[AdditionalDataDefinitionType]] = None,
+        include_attribute_types: Optional[Collection[AdditionalDataDefinitionType]] = None,
+    ) -> list[tuple[str, str]]:
+        """
+        属性名の一覧を取得します。
+
+        Args:
+            include_attribute_types: 指定した属性の種類に合致した属性名の一覧を取得します。
+            excluded_attribute_types: 指定した属性の種類に合致していない属性名の一覧を取得します。
+
+        Raise:
+            ValueError: `include_attribute_types`と`excluded_attribute_types`の両方が指定された場合に発生します。
+        """
+        if excluded_attribute_types is not None and include_attribute_types is not None:
+            raise ValueError("`include_attribute_types`と`excluded_attribute_types`の両方が指定されています。")
+
+        result = []
+        for label in self._labels_v1:
+            label_name_en = AddProps.get_message(label["label_name"], MessageLocale.EN)
+            assert label_name_en is not None
+
+            for attribute in label["additional_data_definitions"]:
+                if excluded_attribute_types is not None and AdditionalDataDefinitionType(attribute["type"]) in excluded_attribute_types:
+                    continue
+
+                if include_attribute_types is not None and AdditionalDataDefinitionType(attribute["type"]) not in include_attribute_types:
+                    continue
+
+                attribute_name_en = AddProps.get_message(attribute["name"], MessageLocale.EN)
+                assert attribute_name_en is not None
+                result.append((label_name_en, attribute_name_en))
+
+        duplicated_attribute_names = [key for key, value in collections.Counter(result).items() if value > 1]
+        if len(duplicated_attribute_names) > 0:
+            logger.warning(
+                f"アノテーション仕様の属性情報（ラベル英語名、属性英語名）が重複しています。アノテーション個数が正しく算出できない可能性があります。:: {duplicated_attribute_names}"  # noqa: E501
+            )
+
         return result
 
     def selective_attribute_value_keys(self) -> list[AttributeValueKey]:
