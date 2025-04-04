@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import copy
+import json
 import logging
 import sys
 from typing import Any, Optional
@@ -57,7 +58,7 @@ class AddAttributeRestrictionMain(CommandLineWithConfirm):
         new_restriction_text_list = []
         for restriction in restrictions:
             try:
-                restriction_text = msg_obj.get_restriction_text(restriction["attribute_id"], restriction["condition"])
+                restriction_text = msg_obj.get_restriction_text(restriction["additional_data_definition_id"], restriction["condition"])
             except ValueError as e:
                 logger.warning(
                     f"次の属性制約は存在しないIDが含まれていたため、アノテーション仕様に追加しません。 :: "
@@ -88,6 +89,7 @@ class AddAttributeRestrictionMain(CommandLineWithConfirm):
         if comment is None:
             comment = create_comment_from_restriction_text(new_restriction_text_list)
         request_body["comment"] = comment
+        request_body["last_updated_datetime"] = old_annotation_specs["updated_datetime"]
         self.service.api.put_annotation_specs(self.project_id, query_params={"v": "3"}, request_body=request_body)
         logger.info(f"{len(new_restrictions)} 件の属性制約をアノテーション仕様に追加しました。")
         return True
@@ -117,14 +119,21 @@ class AddAttributeRestriction(CommandLine):
 
 
 def parse_args(parser: argparse.ArgumentParser) -> None:
-    required_group = parser.add_mutually_exclusive_group(required=True)
-    required_group.add_argument("-p", "--project_id", help="対象のプロジェクトのproject_idを指定します。", required=True)
+    parser.add_argument("-p", "--project_id", help="対象のプロジェクトのproject_idを指定します。", required=True)
 
+    sample_json = [
+        {
+            "additional_data_definition_id": "a1",
+            "condition": {"value": "true", "_type": "Equals"},
+        }
+    ]
     parser.add_argument(
         "--json",
         type=str,
+        required=True,
         help="追加する属性の制約情報のJSONを指定します。"
         "JSON形式は ... を参照してください。\n"
+        f"(例) ``{json.dumps(sample_json)}``\n"
         "``file://`` を先頭に付けるとjsonファイルを指定できます。",
     )
 
