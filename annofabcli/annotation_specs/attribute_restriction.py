@@ -161,7 +161,7 @@ class AttributeRestrictionMessage:
             verb = "DOES NOT MATCH"
             str_object = f"'{condition['value']}'"
         else:
-            raise RuntimeError(f"{str_type=}はサポートしていません。")
+            raise ValueError(f"condition._type='{str_type}'はサポートしていません。")
 
         tmp = f"{subject} {verb}"
         if str_object != "":

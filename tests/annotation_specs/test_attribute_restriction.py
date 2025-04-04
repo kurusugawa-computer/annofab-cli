@@ -56,7 +56,6 @@ class Test__AttributeRestrictionMessage:
         with pytest.raises(ValueError):
             obj.get_restriction_text(attribute_id, condition)
 
-
     def test_get_restriction_text__存在しない選択肢IDを指定したときにValueErrorが発生する(self):
         attribute_id = "71620647-98cf-48ad-b43b-4af425a24f32"  # Assuming this is a valid attribute ID for a dropdown
         condition = {"value": "non-existent-choice-id", "_type": "Equals"}
