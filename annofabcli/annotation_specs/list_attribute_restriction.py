@@ -65,7 +65,7 @@ class ListAttributeRestriction(CommandLine):
         main_obj = AttributeRestrictionMessage(
             labels=annotation_specs["labels"],
             additionals=annotation_specs["additionals"],
-            format=OutputFormat(args.format),
+            output_format=OutputFormat(args.format),
         )
         target_attribute_names = get_list_from_args(args.attribute_name) if args.attribute_name is not None else None
         target_label_names = get_list_from_args(args.label_name) if args.label_name is not None else None

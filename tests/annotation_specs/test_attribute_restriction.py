@@ -23,7 +23,7 @@ class Test__AttributeRestrictionMessage:
         cls.obj = AttributeRestrictionMessage(
             labels=annotation_specs["labels"],
             additionals=annotation_specs["additionals"],
-            format=OutputFormat.DETAILED_TEXT,
+            output_format=OutputFormat.DETAILED_TEXT,
         )
         cls.annotation_specs = annotation_specs
 
