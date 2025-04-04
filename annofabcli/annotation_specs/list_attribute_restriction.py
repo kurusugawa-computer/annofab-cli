@@ -9,7 +9,7 @@ from typing import Optional
 
 import annofabcli
 import annofabcli.common.cli
-from annofabcli.annotation_specs.attribute_restriction import ListAttributeRestrictionMain, OutputFormat
+from annofabcli.annotation_specs.attribute_restriction import AttributeRestrictionMessage, OutputFormat
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
     ArgumentParser,
@@ -62,7 +62,7 @@ class ListAttributeRestriction(CommandLine):
         else:
             raise RuntimeError("'--project_id'か'--annotation_specs_json'のどちらかを指定する必要があります。")
 
-        main_obj = ListAttributeRestrictionMain(
+        main_obj = AttributeRestrictionMessage(
             labels=annotation_specs["labels"],
             additionals=annotation_specs["additionals"],
             format=OutputFormat(args.format),
