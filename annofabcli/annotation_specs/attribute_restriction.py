@@ -54,7 +54,13 @@ class AttributeRestrictionMessage:
         label_message_list = []
         for label_id in label_ids:
             label = self.label_dict.get(label_id)
-            label_name = AnnofabApiFacade.get_label_name_en(label) if label is not None else ""
+            if label is not None:
+                label_name = AnnofabApiFacade.get_label_name_en(label)
+            else:
+                logger.warning(f"ラベルIDが'{label_id}'であるラベルは存在しません。")
+                if self.raise_if_not_found:
+                    raise ValueError(f"ラベルIDが'{label_id}'であるラベルは存在しません。")
+                label_name = ""
 
             label_message = f"'{label_name}'"
             if self.output_format == OutputFormat.DETAILED_TEXT:
@@ -86,11 +92,14 @@ class AttributeRestrictionMessage:
                 return tmp
 
             else:
-                logger.warning(
+                message = (
                     f"選択肢IDが'{value}'である選択肢は存在しません。 :: "
                     f"属性名='{AnnofabApiFacade.get_additional_data_definition_name_en(attribute)}', "
                     f"属性ID='{attribute['additional_data_definition_id']}'"
                 )
+                logger.warning(message)
+                if self.raise_if_not_found:
+                    raise ValueError(message)
                 return f"'{value}'"
         else:
             return f"'{value}'"
@@ -120,7 +129,9 @@ class AttributeRestrictionMessage:
             if self.output_format == OutputFormat.DETAILED_TEXT:
                 subject = f"{subject} (id='{attribute_id}', type='{attribute['type']}')"
         else:
-            logger.warning(f"属性IDが'{attribute_id}'の属性は存在しません。")
+            logger.warning(f"属性IDが'{attribute_id}'である属性は存在しません。")
+            if self.raise_if_not_found:
+                raise ValueError(f"属性IDが'{attribute_id}'である属性は存在しません。")
 
             subject = "''"
             if self.output_format == OutputFormat.DETAILED_TEXT:
