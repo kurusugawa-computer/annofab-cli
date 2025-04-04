@@ -1,8 +1,10 @@
 from __future__ import annotations
-import pytest
+
 import json
 from pathlib import Path
 from typing import Any
+
+import pytest
 
 from annofabcli.annotation_specs.attribute_restriction import AttributeRestrictionMessage, OutputFormat
 
@@ -27,18 +29,36 @@ class Test__AttributeRestrictionMessage:
         )
         cls.annotation_specs = annotation_specs
 
-    def test_get_restriction_text__ValueErrorが発生すること(self):
+    def test_get_restriction_text__存在しない属性IDを指定するとValueErrorが発生する(self):
         attribute_id = "non-existent-id"
         condition = {"value": "foo", "_type": "Equals"}
-        obj_with_raise = AttributeRestrictionMessage(
+        obj = AttributeRestrictionMessage(
             labels=self.annotation_specs["labels"],
             additionals=self.annotation_specs["additionals"],
             raise_if_not_found=True,
             output_format=OutputFormat.DETAILED_TEXT,
         )
         with pytest.raises(ValueError):
-            obj_with_raise.get_restriction_text(attribute_id, condition)
+            obj.get_restriction_text(attribute_id, condition)
 
+    def test_get_restriction_text__存在しないラベルIDを指定したときにValueErrorが発生する(self):
+        attribute_id = "15235360-4f46-42ac-927d-0e046bf52ddd"
+        condition = {
+            "labels": ["non-existent-label-id"],
+            "_type": "HasLabel",
+        }
+        obj = AttributeRestrictionMessage(
+            labels=self.annotation_specs["labels"],
+            additionals=self.annotation_specs["additionals"],
+            raise_if_not_found=True,
+            output_format=OutputFormat.DETAILED_TEXT,
+        )
+        with pytest.raises(ValueError):
+            obj.get_restriction_text(attribute_id, condition)
+
+    def test_get_restriction_text__存在しない選択肢IDを指定したときにValueErrorが発生する(self):
+        pass
+    
     def test_get_restriction_text__equals(self):
         attribute_id = "54fa5e97-6f88-49a4-aeb0-a91a15d11528"
         condition = {"value": "foo", "_type": "Equals"}
