@@ -1,5 +1,5 @@
 from __future__ import annotations
-
+import pytest
 import json
 from pathlib import Path
 from typing import Any
@@ -26,6 +26,18 @@ class Test__AttributeRestrictionMessage:
             output_format=OutputFormat.DETAILED_TEXT,
         )
         cls.annotation_specs = annotation_specs
+
+    def test_get_restriction_text__ValueErrorが発生すること(self):
+        attribute_id = "non-existent-id"
+        condition = {"value": "foo", "_type": "Equals"}
+        obj_with_raise = AttributeRestrictionMessage(
+            labels=self.annotation_specs["labels"],
+            additionals=self.annotation_specs["additionals"],
+            raise_if_not_found=True,
+            output_format=OutputFormat.DETAILED_TEXT,
+        )
+        with pytest.raises(ValueError):
+            obj_with_raise.get_restriction_text(attribute_id, condition)
 
     def test_get_restriction_text__equals(self):
         attribute_id = "54fa5e97-6f88-49a4-aeb0-a91a15d11528"
