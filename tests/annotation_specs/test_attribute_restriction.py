@@ -4,15 +4,15 @@ import json
 from pathlib import Path
 from typing import Any
 
-from annofabcli.annotation_specs.list_attribute_restriction import FormatArgument, ListAttributeRestrictionMain
+from annofabcli.annotation_specs.attribute_restriction import AttributeRestrictionMessage, OutputFormat
 
 data_dir = Path("./tests/data/annotation_specs")
 out_dir = Path("./tests/out/annotation_specs")
 out_dir.mkdir(exist_ok=True, parents=True)
 
 
-class TestListAttributeRestrictionMain:
-    obj: ListAttributeRestrictionMain
+class Test__AttributeRestrictionMessage:
+    obj: AttributeRestrictionMessage
     annotation_specs: dict[str, Any]
 
     @classmethod
@@ -20,10 +20,10 @@ class TestListAttributeRestrictionMain:
         with (data_dir / "annotation_specs.json").open(encoding="utf-8") as f:
             annotation_specs = json.load(f)
 
-        cls.obj = ListAttributeRestrictionMain(
+        cls.obj = AttributeRestrictionMessage(
             labels=annotation_specs["labels"],
             additionals=annotation_specs["additionals"],
-            format=FormatArgument.DETAILED_TEXT,
+            format=OutputFormat.DETAILED_TEXT,
         )
         cls.annotation_specs = annotation_specs
 
