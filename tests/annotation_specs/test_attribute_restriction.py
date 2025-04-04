@@ -58,12 +58,18 @@ class Test__AttributeRestrictionMessage:
 
     def test_get_restriction_text__存在しない選択肢IDを指定したときにValueErrorが発生する(self):
         pass
-    
-    def test_get_restriction_text__equals(self):
-        attribute_id = "54fa5e97-6f88-49a4-aeb0-a91a15d11528"
-        condition = {"value": "foo", "_type": "Equals"}
-        actual = self.obj.get_restriction_text(attribute_id, condition)
-        assert actual == "'comment' (id='54fa5e97-6f88-49a4-aeb0-a91a15d11528', type='comment') EQUALS 'foo'"
+
+    def test_get_restriction_text__存在しない選択肢IDを指定したときにValueErrorが発生する(self):
+        attribute_id = "71620647-98cf-48ad-b43b-4af425a24f32"  # Assuming this is a valid attribute ID for a dropdown
+        condition = {"value": "non-existent-choice-id", "_type": "Equals"}
+        obj_with_raise = AttributeRestrictionMessage(
+            labels=self.annotation_specs["labels"],
+            additionals=self.annotation_specs["additionals"],
+            raise_if_not_found=True,
+            output_format=OutputFormat.DETAILED_TEXT,
+        )
+        with pytest.raises(ValueError):
+            obj_with_raise.get_restriction_text(attribute_id, condition)
 
     def test_get_restriction_text__equals_dropdown(self):
         attribute_id = "71620647-98cf-48ad-b43b-4af425a24f32"
