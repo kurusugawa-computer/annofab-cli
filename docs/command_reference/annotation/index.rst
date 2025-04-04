@@ -15,6 +15,7 @@ Available Commands
    :maxdepth: 1
    :titlesonly:
 
+   add_attribute_restriction
    change_attributes
    change_properties
    copy

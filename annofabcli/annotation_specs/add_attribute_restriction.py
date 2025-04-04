@@ -61,19 +61,19 @@ class AddAttributeRestrictionMain(CommandLineWithConfirm):
                 restriction_text = msg_obj.get_restriction_text(restriction["additional_data_definition_id"], restriction["condition"])
             except ValueError as e:
                 logger.warning(
-                    f"{index+1}件目 :: 次の属性制約は存在しないIDが含まれていたため、アノテーション仕様に追加しません。 :: "
+                    f"{index + 1}件目 :: 次の属性制約は存在しないIDが含まれていたため、アノテーション仕様に追加しません。 :: "
                     f"restriction=`{restriction}`, error_message=`{e!s}`"
                 )
                 continue
 
             if restriction in old_restrictions:
-                logger.warning(f"{index+1}件目 :: 次の属性制約は既に存在するため、アノテーション仕様に追加しません。  :: `{restriction_text}`")
+                logger.warning(f"{index + 1}件目 :: 次の属性制約は既に存在するため、アノテーション仕様に追加しません。  :: `{restriction_text}`")
                 continue
 
             if not self.confirm_processing(f"次の属性制約を追加しますか？ :: `{restriction_text}`"):
                 continue
 
-            logger.debug(f"{index+1}件目 :: 次の属性制約を追加します。 :: `{restriction_text}`")
+            logger.debug(f"{index + 1}件目 :: 次の属性制約を追加します。 :: `{restriction_text}`")
             new_restrictions.append(restriction)
             new_restriction_text_list.append(restriction_text)
 
@@ -152,7 +152,7 @@ def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argpa
     subcommand_name = "add_attribute_restriction"
 
     subcommand_help = "アノテーション仕様に属性の制約を追加します。"
-
-    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help)
+    description = subcommand_help + "アノテーション仕様画面では設定できない「属性間の制約」を追加するときに有用です。"
+    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description=description)
     parse_args(parser)
     return parser
