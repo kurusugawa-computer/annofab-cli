@@ -49,10 +49,9 @@ class DropProjectMembersMain:
             }
             try:
                 self.service.api.put_project_member(project_id, user_id, request_body=request_body)
-                logger.debug(f"{project_title}({project_id}) のプロジェクトメンバから、{user_id} を脱退させました。")
+                logger.debug(f"プロジェクト'{project_title}'(project_id='{project_id}') から、user_id='{user_id}'のユーザーを脱退させました。")
             except requests.HTTPError as e:
-                logger.warning(e)
-                logger.warning(f"{project_title}({project_id}) のプロジェクトメンバから、{user_id} を脱退させられませんでした。")
+                logger.warning(f"プロジェクト'{project_title}'(project_id='{project_id}') から、user_id='{user_id}'のユーザーを脱退させられませんでした。")
 
     def drop_role_with_organization(self, organization_name: str, user_id_list: list[str]):  # noqa: ANN201
         projects = self.service.wrapper.get_all_projects_of_organization(organization_name, query_params={"account_id": self.service.api.account_id})
@@ -64,14 +63,13 @@ class DropProjectMembersMain:
         for project_id in project_id_list:
             try:
                 if not self.facade.my_role_is_owner(project_id):
-                    logger.warning(f"オーナではないため、プロジェクトメンバを脱退させられません。project_id = {project_id}")
+                    logger.warning(f"オーナではないため、プロジェクトメンバを脱退させられません。 :: project_id='{project_id}'")
                     continue
 
                 self.drop_project_members(project_id, user_id_list)
 
             except requests.HTTPError as e:
-                logger.warning(e)
-                logger.warning(f"project_id='{project_id}' のプロジェクトメンバからユーザを脱退させられませんでした。")
+                logger.warning(f"project_id='{project_id}' のプロジェクトメンバからユーザを脱退させられませんでした。", exc_info=True)
 
 
 class DropProjectMembers(CommandLine):

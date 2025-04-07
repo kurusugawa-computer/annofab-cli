@@ -116,8 +116,7 @@ class ChangeProjectMembers(CommandLine):
                 count_invite_members += 1
 
             except requests.exceptions.HTTPError as e:
-                logger.warning(e)
-                logger.warning(f"プロジェクトメンバの登録に失敗しました。user_id='{user_id}'")
+                logger.warning(f"プロジェクトメンバの登録に失敗しました。 :: user_id='{user_id}'", exc_info=True)
 
         logger.info(f"{project_title} に、{count_invite_members} / {len(user_id_list)} 件のプロジェクトメンバを変更しました。")
 

@@ -36,7 +36,7 @@ class DeleteJobMain:
                 logger.debug(f"job_type={job_type.value}, job_id='{job_id}' のジョブを削除しました。")
                 count += 1
             except Exception as e:  # pylint: disable=broad-except
-                logger.warning(e)
+                logger.warning(f"job_type={job_type.value}, job_id='{job_id}' のジョブの削除に失敗しました。", exc_info=True)
         logger.info(f"{count} / {len(job_id_list)} 件のジョブを削除しました。")
 
 

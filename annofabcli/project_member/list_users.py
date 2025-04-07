@@ -49,9 +49,8 @@ class ListUser(CommandLine):
             try:
                 project, _ = self.service.api.get_project(project_id)
             except requests.exceptions.HTTPError as e:
-                logger.warning(e)
                 logger.warning(
-                    f"project_id = {project_id} のプロジェクトにアクセスできなかった（存在しないproject_id、またはプロジェクトメンバでない）"
+                    f"project_id='{project_id}' のプロジェクトにアクセスできなかった（存在しないproject_id、またはプロジェクトメンバでない）", exc_info=True
                 )
                 continue
 

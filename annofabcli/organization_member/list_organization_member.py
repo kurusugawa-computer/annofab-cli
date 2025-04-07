@@ -49,8 +49,7 @@ class ListOrganizationMember(CommandLine):
             try:
                 organization_member_list.extend(self.get_organization_member_list(organization_name))
             except requests.HTTPError as e:
-                logger.warning(e)
-                logger.warning(f"{organization_name} の組織メンバを取得できませんでした。")
+                logger.warning(f"組織'{organization_name}'のメンバー一覧を取得できませんでした。", exc_info=True)
                 continue
 
         if args.format == FormatArgument.CSV.value:

@@ -56,9 +56,8 @@ class InviteProjectMemberMain:
                 self.service.api.put_project_member(project_id, user_id, request_body=request_body)
                 logger.debug(f"{project_title}({project_id}) のプロジェクトメンバに、{user_id} を {member_role.value} ロールで追加しました。")
             except requests.HTTPError as e:
-                logger.warning(e)
                 logger.warning(
-                    f"{project_title}({project_id}) のプロジェクトメンバに、{user_id} を {member_role.value} ロールで追加できませんでした。"
+                    f"{project_title}({project_id}) のプロジェクトメンバに、{user_id} を {member_role.value} ロールで追加できませんでした。", exc_info=True
                 )
 
     def assign_role_with_organization(self, organization_name: str, user_id_list: list[str], member_role: ProjectMemberRole):  # noqa: ANN201
@@ -76,7 +75,6 @@ class InviteProjectMemberMain:
                 self.invite_project_members(project_id, user_id_list, member_role)
 
             except requests.HTTPError as e:
-                logger.warning(e)
                 logger.warning(f"project_id='{project_id}' のプロジェクトメンバにユーザを招待できませんでした。")
 
 
