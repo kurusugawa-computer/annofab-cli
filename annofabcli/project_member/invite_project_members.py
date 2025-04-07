@@ -77,7 +77,7 @@ class InviteProjectMemberMain:
 
             except requests.HTTPError as e:
                 logger.warning(e)
-                logger.warning(f"project_id={project_id} のプロジェクトメンバにユーザを招待できませんでした。")
+                logger.warning(f"project_id='{project_id}' のプロジェクトメンバにユーザを招待できませんでした。")
 
 
 class InviteUser(CommandLine):

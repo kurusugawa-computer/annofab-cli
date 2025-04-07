@@ -85,7 +85,7 @@ def fill_annotation(
         if outer_image is not None:
             draw.bitmap([0, 0], outer_image, fill=color)
         else:
-            logger.warning(f"アノテーション種類が`{data_type}`ですが、`outer_image`がNoneです。 annotation_id={annotation.annotation_id}")
+            logger.warning(f"アノテーション種類が`{data_type}`ですが、`outer_image`がNoneです。 annotation_id='{annotation.annotation_id}'")
 
     return draw
 
@@ -344,7 +344,7 @@ def write_annotation_images_from_path(
         output_image_file = output_dir_path / f"{Path(parser.json_file_path).stem}.{output_image_extension}"
         tmp_image_size = _get_image_size(parser.input_data_id)
         if tmp_image_size is None:
-            logger.warning(f"task_id={parser.task_id}, input_data_id={parser.input_data_id}: 画像サイズを取得できなかったので、スキップします。")
+            logger.warning(f"task_id='{parser.task_id}', input_data_id='{parser.input_data_id}': 画像サイズを取得できなかったので、スキップします。")
             continue
 
         write_annotation_image(

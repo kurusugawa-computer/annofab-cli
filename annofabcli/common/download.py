@@ -50,7 +50,7 @@ class DownloadingFile:
 
         max_wait_minutes = self.get_max_wait_minutes(wait_options)
         filetype = DOWNLOADING_FILETYPE_DICT[job_type]
-        logger.info(f"{filetype}の更新処理が完了するまで、最大{max_wait_minutes}分間待ちます。job_id={job_id}")
+        logger.info(f"{filetype}の更新処理が完了するまで、最大{max_wait_minutes}分間待ちます。job_id='{job_id}'")
         result = self.service.wrapper.wait_for_completion(
             project_id,
             job_type=job_type,

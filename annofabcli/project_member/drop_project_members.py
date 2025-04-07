@@ -71,7 +71,7 @@ class DropProjectMembersMain:
 
             except requests.HTTPError as e:
                 logger.warning(e)
-                logger.warning(f"project_id={project_id} のプロジェクトメンバからユーザを脱退させられませんでした。")
+                logger.warning(f"project_id='{project_id}' のプロジェクトメンバからユーザを脱退させられませんでした。")
 
 
 class DropProjectMembers(CommandLine):

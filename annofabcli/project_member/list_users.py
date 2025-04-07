@@ -57,7 +57,7 @@ class ListUser(CommandLine):
 
             project_title = project["title"]
             project_members = self.get_all_project_members(project_id, include_inactive=include_inactive)
-            logger.info(f"{project_title} のプロジェクトメンバを {len(project_members)} 件取得した。project_id={project_id}")
+            logger.info(f"{project_title} のプロジェクトメンバを {len(project_members)} 件取得した。project_id='{project_id}'")
 
             for member in project_members:
                 AddProps.add_properties_of_project(member, project_title)

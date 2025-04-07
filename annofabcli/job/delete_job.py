@@ -29,11 +29,11 @@ class DeleteJobMain:
         count = 0
         for job_id in job_id_list:
             if job_id not in exists_job_id_set:
-                logger.debug(f"job_id={job_id} のジョブは存在しなかったのでスキップします。")
+                logger.debug(f"job_id='{job_id}' のジョブは存在しなかったのでスキップします。")
                 continue
             try:
                 self.service.api.delete_project_job(project_id, job_type.value, job_id)
-                logger.debug(f"job_type={job_type.value}, job_id={job_id} のジョブを削除しました。")
+                logger.debug(f"job_type={job_type.value}, job_id='{job_id}' のジョブを削除しました。")
                 count += 1
             except Exception as e:  # pylint: disable=broad-except
                 logger.warning(e)
