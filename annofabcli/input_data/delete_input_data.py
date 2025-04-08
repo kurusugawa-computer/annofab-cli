@@ -42,10 +42,11 @@ class DeleteInputData(CommandLine):
                     f"supplementary_data_name={supplementary_data['supplementary_data_name']}"
                 )
                 deleted_count += 1
-            except requests.HTTPError as e:
+            except requests.HTTPError:
                 logger.warning(
                     f"補助情報の削除に失敗しました。input_data_id={input_data_id}, supplementary_data_id={supplementary_data_id}, "
-                    f"supplementary_data_name={supplementary_data['supplementary_data_name']}", exc_info=True
+                    f"supplementary_data_name={supplementary_data['supplementary_data_name']}",
+                    exc_info=True,
                 )
                 continue
 
@@ -136,7 +137,7 @@ class DeleteInputData(CommandLine):
                 if result:
                     count_delete_input_data += 1
 
-            except requests.exceptions.HTTPError as e:
+            except requests.exceptions.HTTPError:
                 logger.warning(f"input_data_id='{input_data_id}'である入力データの削除に失敗しました。", exc_info=True)
                 continue
 

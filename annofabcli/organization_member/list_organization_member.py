@@ -48,7 +48,7 @@ class ListOrganizationMember(CommandLine):
         for organization_name in organization_name_list:
             try:
                 organization_member_list.extend(self.get_organization_member_list(organization_name))
-            except requests.HTTPError as e:
+            except requests.HTTPError:
                 logger.warning(f"組織'{organization_name}'のメンバー一覧を取得できませんでした。", exc_info=True)
                 continue
 
