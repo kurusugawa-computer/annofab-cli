@@ -42,11 +42,11 @@ class DeleteInputData(CommandLine):
                     f"supplementary_data_name={supplementary_data['supplementary_data_name']}"
                 )
                 deleted_count += 1
-            except requests.HTTPError as e:
-                logger.warning(e)
+            except requests.HTTPError:
                 logger.warning(
                     f"補助情報の削除に失敗しました。input_data_id={input_data_id}, supplementary_data_id={supplementary_data_id}, "
-                    f"supplementary_data_name={supplementary_data['supplementary_data_name']}"
+                    f"supplementary_data_name={supplementary_data['supplementary_data_name']}",
+                    exc_info=True,
                 )
                 continue
 
@@ -69,7 +69,7 @@ class DeleteInputData(CommandLine):
     def delete_input_data(self, project_id: str, input_data_id: str, input_data_index: int, delete_supplementary: bool, force: bool):  # noqa: ANN201, FBT001
         input_data = self.service.wrapper.get_input_data_or_none(project_id, input_data_id)
         if input_data is None:
-            logger.info(f"input_data_id={input_data_id} は存在しません。")
+            logger.info(f"input_data_id='{input_data_id}'である入力データは存在しません。")
             return False
 
         task_list = self.service.wrapper.get_all_tasks(project_id, query_params={"input_data_ids": input_data_id})
@@ -137,9 +137,8 @@ class DeleteInputData(CommandLine):
                 if result:
                     count_delete_input_data += 1
 
-            except requests.exceptions.HTTPError as e:
-                logger.warning(e)
-                logger.warning(f"input_data_id='{input_data_id}'の削除に失敗しました。")
+            except requests.exceptions.HTTPError:
+                logger.warning(f"input_data_id='{input_data_id}'である入力データの削除に失敗しました。", exc_info=True)
                 continue
 
         logger.info(f"プロジェクト'{project_title}'から 、{count_delete_input_data}/{len(input_data_id_list)} 件の入力データを削除しました。")
