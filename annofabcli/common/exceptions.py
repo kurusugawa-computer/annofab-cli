@@ -46,7 +46,7 @@ class ProjectAuthorizationError(AuthorizationError):
 
     def __init__(self, project_title: str, roles: list[ProjectMemberRole]) -> None:
         role_values = [e.value for e in roles]
-        msg = f"プロジェクト: {project_title} に、ロール: {role_values} のいずれかが付与されていません。"
+        msg = f"プロジェクト'{project_title}'に対して、ロール'{role_values}'のいずれかが必要です。"
         super().__init__(msg)
 
 
@@ -57,7 +57,7 @@ class OrganizationAuthorizationError(AuthorizationError):
 
     def __init__(self, organization_name: str, roles: list[OrganizationMemberRole]) -> None:
         role_values = [e.value for e in roles]
-        msg = f"組織: {organization_name} に、ロール: {role_values} のいずれかが付与されていません。"
+        msg = f"組織'{organization_name}'に対して、ロール'{role_values}'のいずれかが必要です。"
         super().__init__(msg)
 
 
