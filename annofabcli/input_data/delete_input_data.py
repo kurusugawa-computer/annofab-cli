@@ -68,7 +68,7 @@ class DeleteInputData(CommandLine):
     def delete_input_data(self, project_id: str, input_data_id: str, input_data_index: int, delete_supplementary: bool, force: bool):  # noqa: ANN201, FBT001
         input_data = self.service.wrapper.get_input_data_or_none(project_id, input_data_id)
         if input_data is None:
-            logger.info(f"input_data_id={input_data_id} は存在しません。")
+            logger.info(f"input_data_id='{input_data_id}'である入力データは存在しません。")
             return False
 
         task_list = self.service.wrapper.get_all_tasks(project_id, query_params={"input_data_ids": input_data_id})
