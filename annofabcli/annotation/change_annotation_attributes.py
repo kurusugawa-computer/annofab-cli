@@ -138,12 +138,12 @@ class ChangeAnnotationAttributesMain(CommandLineWithConfirm):
 
         task: Task = Task.from_dict(dict_task)
         if task.status == TaskStatus.WORKING:
-            logger.warning(f"task_id={task_id}: タスクが作業中状態のため、スキップします。")
+            logger.warning(f"task_id='{task_id}': タスクが作業中状態のため、スキップします。")
             return False
 
         if not self.is_force:  # noqa: SIM102
             if task.status == TaskStatus.COMPLETE:
-                logger.warning(f"task_id={task_id}: タスクが完了状態のため、スキップします。")
+                logger.warning(f"task_id='{task_id}': タスクが完了状態のため、スキップします。")
                 return False
 
         annotation_list = self.get_annotation_list_for_task(task_id, annotation_query)

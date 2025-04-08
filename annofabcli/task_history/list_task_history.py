@@ -42,7 +42,7 @@ class ListTaskHistoryMain:
                 logger.info(f"{task_index + 1} 件のタスクの履歴情報を取得しました。")
             if task_history_list is not None:
                 if len(task_history_list) == 0:
-                    logger.debug(f"task_id='{task_id}`の履歴情報は0件でした。")
+                    logger.debug(f"task_id='{task_id}'の履歴情報は0件でした。")
                 task_history_dict[task_id] = task_history_list
             else:
                 logger.warning(f"task_id='{task_id}'のタスク履歴は見つかりませんでした。")
