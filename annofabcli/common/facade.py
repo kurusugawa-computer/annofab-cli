@@ -499,12 +499,12 @@ class AnnofabApiFacade:
             task_query.account_id = self.get_account_id_from_user_id(project_id, task_query.user_id)
         return task_query
 
-    def validate_project(  # noqa: ANN201
+    def validate_project(
         self,
         project_id: str,
         project_member_roles: Optional[list[ProjectMemberRole]] = None,
         organization_member_roles: Optional[list[OrganizationMemberRole]] = None,
-    ):
+    ) -> None:
         """
         プロジェクト or 組織に対して、必要な権限が付与されているかを確認する。
 

@@ -76,7 +76,7 @@ class CompleteTasksMain(CommandLineWithConfirm):
         comment_status: CommentStatus,
     ):
         if comment_list is None or len(comment_list) == 0:
-            logger.warning(f"変更対象の検査コメントはなかった。task_id = {task.task_id}, input_data_id = {input_data_id}")
+            logger.warning(f"変更対象の検査コメントはなかった。task_id='{task.task_id}', input_data_id='{input_data_id}'")
             return
 
         def to_req_inspection(comment: dict[str, Any]) -> dict[str, Any]:
@@ -332,7 +332,7 @@ class CompleteTasksMain(CommandLineWithConfirm):
 
         task: Task = Task.from_dict(dict_task)
         logger.info(
-            f"{logging_prefix} : タスク情報 task_id={task_id}, phase={task.phase.value}, phase_stage={task.phase_stage}, status={task.status.value}"
+            f"{logging_prefix} : タスク情報 task_id='{task_id}', phase={task.phase.value}, phase_stage={task.phase_stage}, status={task.status.value}"
         )
         if not self._validate_task(task, target_phase=target_phase, target_phase_stage=target_phase_stage, task_query=task_query):
             return False

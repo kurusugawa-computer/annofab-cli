@@ -77,9 +77,9 @@ class RejectTasksMain(CommandLineWithConfirm):
     def confirm_reject_task(self, task_id: str, assign_last_annotator: bool, assigned_annotator_user_id: Optional[str]) -> bool:  # noqa: FBT001
         confirm_message = f"task_id='{task_id}' のタスクを差し戻しますか？"
         if assign_last_annotator:
-            confirm_message += "最後のannotation phaseの担当者を割り当てます。"
+            confirm_message += "最後の教師付フェーズの担当者を割り当てます。"
         elif assigned_annotator_user_id is not None:
-            confirm_message += f"ユーザ '{assigned_annotator_user_id}' を担当者に割り当てます。"
+            confirm_message += f"user_id='{assigned_annotator_user_id}'のユーザーを担当者に割り当てます。"
         else:
             confirm_message += "担当者は割り当てません。"
 
@@ -108,41 +108,42 @@ class RejectTasksMain(CommandLineWithConfirm):
                     last_updated_datetime=last_updated_datetime,
                 )
                 last_updated_datetime = _task["updated_datetime"]
-                logger.debug(f"{task_id}: 担当者を自分自身に変更しました。")
+                logger.debug(f"'{task_id}' :: 担当者を自分自身に変更しました。")
 
             changed_task = self.service.wrapper.change_task_status_to_working(project_id, task_id, last_updated_datetime=last_updated_datetime)
             return changed_task  # noqa: TRY300
 
         except requests.HTTPError:
-            logger.warning(f"{task_id}: 担当者の変更、または作業中状態への変更に失敗しました。", exc_info=True)
+            logger.warning(f"'{task_id}' :: 担当者の変更、または作業中状態への変更に失敗しました。", exc_info=True)
             raise
 
-    def _can_reject_task(  # noqa: ANN202
+    def _can_reject_task(
         self,
         task: dict[str, Any],
-        assign_last_annotator: bool,  # noqa: FBT001
+        *,
+        assign_last_annotator: bool,
         assigned_annotator_user_id: Optional[str],
-        cancel_acceptance: bool = False,  # noqa: FBT001, FBT002
+        cancel_acceptance: bool = False,
         task_query: Optional[TaskQuery] = None,
-    ):
+    ) -> bool:
         task_id = task["task_id"]
         if task["phase"] == TaskPhase.ANNOTATION.value:
-            logger.warning(f"task_id='{task_id}': annotation phaseのため、差し戻しできません。")
+            logger.warning(f"task_id='{task_id}' :: 教師付フェーズのため、差し戻しできません。")
             return False
 
         if task["status"] == TaskStatus.WORKING.value:
-            logger.warning(f"task_id='{task_id}' : タスクのstatusが'作業中'なので、差し戻しできません。")
+            logger.warning(f"task_id='{task_id}' :: タスクのstatusが'作業中'なので、差し戻しできません。")
             return False
 
         if task["status"] == TaskStatus.COMPLETE.value and not cancel_acceptance:
             logger.warning(
-                f"task_id='{task_id}' : タスクのstatusが'完了'なので、差し戻しできません。"
+                f"task_id='{task_id}' :: タスクのstatusが'完了'なので、差し戻しできません。"
                 f"受入完了を取消す場合は、コマンドライン引数に'--cancel_acceptance'を追加してください。"
             )
             return False
 
         if not match_task_with_query(Task.from_dict(task), task_query):
-            logger.debug(f"task_id='{task_id}' : `--task_query`の条件にマッチしないため、スキップします。task_query={task_query}")
+            logger.debug(f"task_id='{task_id}' : `--task_query`の条件にマッチしないため、スキップします。 :: task_query='{task_query}'")
             return False
 
         if not self.confirm_reject_task(task_id, assign_last_annotator=assign_last_annotator, assigned_annotator_user_id=assigned_annotator_user_id):  # noqa: SIM103
@@ -165,12 +166,12 @@ class RejectTasksMain(CommandLineWithConfirm):
         task_id: str,
         *,
         inspection_comment: Optional[str] = None,
-        assign_last_annotator: bool = True,  # noqa: FBT001, FBT002
+        assign_last_annotator: bool = True,
         assigned_annotator_user_id: Optional[str] = None,
-        cancel_acceptance: bool = False,  # noqa: FBT001, FBT002
+        cancel_acceptance: bool = False,
         task_query: Optional[TaskQuery] = None,
         task_index: Optional[int] = None,
-        dryrun: bool = False,  # noqa: FBT001, FBT002
+        dryrun: bool = False,
     ) -> bool:
         """
         タスクを強制的に差し戻す
@@ -196,26 +197,26 @@ class RejectTasksMain(CommandLineWithConfirm):
                     self.add_inspection_comment(project_id, task, inspection_comment)
                     # 作業時間が増えすぎないようにするため、すぐに休憩中状態にする
                     task = self.service.wrapper.change_task_status_to_break(project_id, task_id, last_updated_datetime=task["updated_datetime"])
-                    logger.debug(f"{logging_prefix} : task_id='{task_id}', 検査コメントを付与しました。")
+                    logger.debug(f"{logging_prefix} :: task_id='{task_id}', 検査コメントを付与しました。")
                     return task  # noqa: TRY300
                 except requests.exceptions.HTTPError:
-                    logger.warning(f"{logging_prefix} : task_id='{task_id}' 検査コメントの付与に失敗しました。", exc_info=True)
+                    logger.warning(f"{logging_prefix} :: task_id='{task_id}' 検査コメントの付与に失敗しました。", exc_info=True)
                     # 作業時間が増えすぎないようにするため、すぐに休憩中状態にする
                     self.service.wrapper.change_task_status_to_break(project_id, task_id, last_updated_datetime=task["updated_datetime"])
                     raise
             else:
                 task, _ = self.service.api.get_task(project_id, task_id)
-                logger.debug(f"{logging_prefix} : task_id='{task_id}', 検査コメントを付与しました。")
+                logger.debug(f"{logging_prefix} :: task_id='{task_id}', 検査コメントを付与しました。")
             return task
 
         logging_prefix = f"{task_index + 1} 件目" if task_index is not None else ""
 
         task = self.service.wrapper.get_task_or_none(project_id, task_id)
         if task is None:
-            logger.warning(f"{logging_prefix} : task_id='{task_id}'のタスクをは存在しないので、スキップします。")
+            logger.warning(f"{logging_prefix} :: task_id='{task_id}'のタスクをは存在しないので、スキップします。")
             return False
 
-        logger.debug(f"{logging_prefix} : task_id='{task['task_id']}', status = {task['status']}, phase = {task['phase']}, ")
+        logger.debug(f"{logging_prefix} :: task_id='{task['task_id']}', status='{task['status']}', phase='{task['phase']}'")
 
         if not self._can_reject_task(
             task=task,
