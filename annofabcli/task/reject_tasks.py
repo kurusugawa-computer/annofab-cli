@@ -239,7 +239,7 @@ class RejectTasksMain(CommandLineWithConfirm):
                 self.service.wrapper.reject_task(project_id, task_id, force=True, last_updated_datetime=task["updated_datetime"])
 
             if assign_last_annotator:
-                logger.info(f"{logging_prefix} : task_id='{task_id}' のタスクを差し戻しました。タスクの担当者は直前の教師付フェーズの担当者です。")
+                logger.info(f"{logging_prefix} :: task_id='{task_id}' のタスクを差し戻しました。タスクの担当者は直前の教師付フェーズの担当者です。")
                 return True
 
             else:
@@ -252,7 +252,7 @@ class RejectTasksMain(CommandLineWithConfirm):
                 if not dryrun:
                     self.service.wrapper.change_task_operator(project_id, task_id, operator_account_id=assigned_annotator_account_id)
 
-                logger.info(f"{logging_prefix} : task_id='{task_id}' のタスクを差し戻しました。タスクの担当者: {assigned_annotator_user_id}")
+                logger.info(f"{logging_prefix} :: task_id='{task_id}' のタスクを差し戻しました。タスクの担当者: {assigned_annotator_user_id}")
                 return True
 
         except requests.exceptions.HTTPError:
