@@ -459,12 +459,11 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
 def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     subcommand_name = "reject"
     subcommand_help = "タスクを差し戻します。"
-    description = (
-        "タスクを差し戻します。差し戻す際、検査コメントを付与することもできます。"
-        "作業中状態のタスクに対しては指し戻せません。"
-        "このコマンドで差し戻したタスクは、画面から差し戻したタスクとは異なり、抜取検査・抜取受入のスキップ判定に影響を及ぼしません。"
+    description = "タスクを差し戻します。差し戻す際、検査コメントを付与することもできます。作業中状態のタスクに対しては差し戻せません。"
+    epilog = (
+        "オーナロールを持つユーザで実行してください。"
+        "``--cancel_acceptance`` を指定していない AND ``--comment`` を指定している場合は、チェッカーロールを持つユーザーも実行できます。"
     )
-    epilog = "オーナロールを持つユーザで実行してください。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
     parse_args(parser)
