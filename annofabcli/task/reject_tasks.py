@@ -27,7 +27,6 @@ from annofabcli.common.cli import (
 )
 from annofabcli.common.enums import CustomProjectType
 from annofabcli.common.facade import AnnofabApiFacade, TaskQuery, match_task_with_query
-from annofabcli.common.utils import add_dryrun_prefix
 
 logger = logging.getLogger(__name__)
 
@@ -39,12 +38,12 @@ class RejectTasksMain(CommandLineWithConfirm):
         self.comment_data = comment_data
         CommandLineWithConfirm.__init__(self, all_yes)
 
-    def add_inspection_comment(  # noqa: ANN201
+    def add_inspection_comment(
         self,
         project_id: str,
         task: dict[str, Any],
         inspection_comment: str,
-    ):
+    ) -> None:
         """
         検査コメントを付与する。
 
@@ -52,9 +51,6 @@ class RejectTasksMain(CommandLineWithConfirm):
             project_id:
             task:
             inspection_comment:
-
-        Returns:
-            更新した検査コメントの一覧
 
         """
         first_input_data_id = task["input_data_id_list"][0]
@@ -72,7 +68,7 @@ class RejectTasksMain(CommandLineWithConfirm):
             }
         ]
 
-        return self.service.api.batch_update_comments(project_id, task["task_id"], first_input_data_id, request_body=req_inspection)[0]
+        self.service.api.batch_update_comments(project_id, task["task_id"], first_input_data_id, request_body=req_inspection)
 
     def confirm_reject_task(self, task_id: str, assign_last_annotator: bool, assigned_annotator_user_id: Optional[str]) -> bool:  # noqa: FBT001
         confirm_message = f"task_id='{task_id}' のタスクを差し戻しますか？"
@@ -99,23 +95,19 @@ class RejectTasksMain(CommandLineWithConfirm):
 
         task_id = task["task_id"]
         last_updated_datetime = task["updated_datetime"]
-        try:
-            if task["account_id"] != self.service.api.account_id:
-                _task = self.service.wrapper.change_task_operator(
-                    project_id,
-                    task_id,
-                    operator_account_id=self.service.api.account_id,
-                    last_updated_datetime=last_updated_datetime,
-                )
-                last_updated_datetime = _task["updated_datetime"]
-                logger.debug(f"'{task_id}' :: 担当者を自分自身に変更しました。")
+        if task["account_id"] != self.service.api.account_id:
+            _task = self.service.wrapper.change_task_operator(
+                project_id,
+                task_id,
+                operator_account_id=self.service.api.account_id,
+                last_updated_datetime=last_updated_datetime,
+            )
+            last_updated_datetime = _task["updated_datetime"]
+            logger.debug(f"task_id='{task_id}'のタスクの担当者を自分自身に変更しました。")
 
-            changed_task = self.service.wrapper.change_task_status_to_working(project_id, task_id, last_updated_datetime=last_updated_datetime)
-            return changed_task  # noqa: TRY300
-
-        except requests.HTTPError:
-            logger.warning(f"'{task_id}' :: 担当者の変更、または作業中状態への変更に失敗しました。", exc_info=True)
-            raise
+        changed_task = self.service.wrapper.change_task_status_to_working(project_id, task_id, last_updated_datetime=last_updated_datetime)
+        logger.debug(f"task_id='{task_id}'のタスクのステータスを作業中に変更しました。")
+        return changed_task
 
     def _can_reject_task(
         self,
@@ -126,6 +118,12 @@ class RejectTasksMain(CommandLineWithConfirm):
         cancel_acceptance: bool = False,
         task_query: Optional[TaskQuery] = None,
     ) -> bool:
+        """
+        以下の状態を見て、差し戻し可能かどうかを判断します。
+        * タスクのフェーズやステータス
+        * `--task_query`の条件にマッチするかどうか
+        * 差し戻しの確認メッセージに対して、ユーザがOKしたかどうか
+        """
         task_id = task["task_id"]
         if task["phase"] == TaskPhase.ANNOTATION.value:
             logger.warning(f"task_id='{task_id}' :: 教師付フェーズのため、差し戻しできません。")
@@ -151,15 +149,6 @@ class RejectTasksMain(CommandLineWithConfirm):
 
         return True
 
-    def _cancel_acceptance(self, task: dict[str, Any]) -> dict[str, Any]:
-        request_body = {
-            "status": "not_started",
-            "account_id": self.service.api.account_id,
-            "last_updated_datetime": task["updated_datetime"],
-        }
-        content, _ = self.service.api.operate_task(task["project_id"], task["task_id"], request_body=request_body)
-        return content
-
     def reject_task_with_adding_comment(
         self,
         project_id: str,
@@ -171,10 +160,9 @@ class RejectTasksMain(CommandLineWithConfirm):
         cancel_acceptance: bool = False,
         task_query: Optional[TaskQuery] = None,
         task_index: Optional[int] = None,
-        dryrun: bool = False,
     ) -> bool:
         """
-        タスクを強制的に差し戻す
+        タスクを差し戻します。
 
         Args:
             project_id:
@@ -186,28 +174,6 @@ class RejectTasksMain(CommandLineWithConfirm):
         Returns:
             タスクを差し戻したかどうか
         """
-
-        def _add_inspection_comment(task: dict[str, Any], inspection_comment: str) -> dict[str, Any]:
-            # 検査コメントを付与する
-            if not dryrun:
-                # 検査コメントを付与するには「作業中」状態にする必要があるので、担当者を自分自身に変更して作業中状態にする
-                task = self.change_to_working_status(project_id, task)
-
-                try:
-                    self.add_inspection_comment(project_id, task, inspection_comment)
-                    # 作業時間が増えすぎないようにするため、すぐに休憩中状態にする
-                    task = self.service.wrapper.change_task_status_to_break(project_id, task_id, last_updated_datetime=task["updated_datetime"])
-                    logger.debug(f"{logging_prefix} :: task_id='{task_id}', 検査コメントを付与しました。")
-                    return task  # noqa: TRY300
-                except requests.exceptions.HTTPError:
-                    logger.warning(f"{logging_prefix} :: task_id='{task_id}' 検査コメントの付与に失敗しました。", exc_info=True)
-                    # 作業時間が増えすぎないようにするため、すぐに休憩中状態にする
-                    self.service.wrapper.change_task_status_to_break(project_id, task_id, last_updated_datetime=task["updated_datetime"])
-                    raise
-            else:
-                task, _ = self.service.api.get_task(project_id, task_id)
-                logger.debug(f"{logging_prefix} :: task_id='{task_id}', 検査コメントを付与しました。")
-            return task
 
         logging_prefix = f"{task_index + 1} 件目" if task_index is not None else ""
 
@@ -227,19 +193,27 @@ class RejectTasksMain(CommandLineWithConfirm):
         ):
             return False
 
-        if task["status"] == TaskStatus.COMPLETE.value and cancel_acceptance and not dryrun:
-            task = self._cancel_acceptance(task)
+        if task["status"] == TaskStatus.COMPLETE.value and cancel_acceptance:
+            task = self.service.wrapper.cancel_completed_task(
+                project_id, task_id, operator_account_id=self.service.api.account_id, last_updated_datetime=task["updated_datetime"]
+            )
+            logger.debug(f"{logging_prefix} :: task_id='{task_id}'のタスクに対して受入取消を実施（完了状態から未着手状態に変更）しました。")
 
-        if inspection_comment is not None:
-            task = _add_inspection_comment(task, inspection_comment)
         try:
-            if not dryrun:
-                # タスクを差し戻す
-                # 担当者やステータスに関係なく差し戻すため、`force=True`を指定する
-                self.service.wrapper.reject_task(project_id, task_id, force=True, last_updated_datetime=task["updated_datetime"])
+            if inspection_comment is not None:
+                # タスクを作業中状態にして、検査コメントを付与できる状態にする
+                task = self.change_to_working_status(project_id, task)
+                # 検査コメントを付与する
+                self.add_inspection_comment(project_id, task, inspection_comment)
+                logger.debug(f"{logging_prefix} :: task_id='{task_id}'のタスクに検査コメントを付与しました。")
+
+            # `reject_task`の`force`引数について
+            # 検査コメントを付与しない場合は、強制差し戻しが必要なのでTrueを指定する
+            # 検査コメントを付与する場合は、 強制差し戻しは不要。チェッカーロールでも実行できるようにするため、Falseにする
+            self.service.wrapper.reject_task(project_id, task_id, force=(inspection_comment is None), last_updated_datetime=task["updated_datetime"])
 
             if assign_last_annotator:
-                logger.info(f"{logging_prefix} :: task_id='{task_id}' のタスクを差し戻しました。タスクの担当者は直前の教師付フェーズの担当者です。")
+                logger.debug(f"{logging_prefix} :: task_id='{task_id}' のタスクを差し戻しました。タスクの担当者は直前の教師付フェーズの担当者です。")
                 return True
 
             else:
@@ -249,14 +223,21 @@ class RejectTasksMain(CommandLineWithConfirm):
                     else None
                 )
 
-                if not dryrun:
-                    self.service.wrapper.change_task_operator(project_id, task_id, operator_account_id=assigned_annotator_account_id)
+                self.service.wrapper.change_task_operator(project_id, task_id, operator_account_id=assigned_annotator_account_id)
 
-                logger.info(f"{logging_prefix} :: task_id='{task_id}' のタスクを差し戻しました。タスクの担当者: {assigned_annotator_user_id}")
+                logger.debug(f"{logging_prefix} :: task_id='{task_id}' のタスクを差し戻しました。タスクの担当者: '{assigned_annotator_user_id}'")
                 return True
 
         except requests.exceptions.HTTPError:
-            logger.warning(f"{logging_prefix} : task_id='{task_id}' タスクの差し戻しに失敗しました。", exc_info=True)
+            logger.warning(f"{logging_prefix} : task_id='{task_id}'のタスクの差し戻しに失敗しました。", exc_info=True)
+
+            task, _ = self.service.api.get_task(project_id, task_id)
+            assert task is not None
+            # 作業中状態のまま放置すると、作業時間が超過してしまうため、休憩状態にする
+            if task["status"] == TaskStatus.WORKING.value:
+                self.service.wrapper.change_task_status_to_break(project_id, task_id, last_updated_datetime=task["updated_datetime"])
+                logger.debug(f"{logging_prefix} :: task_id='{task_id}' のタスクを休憩状態に戻しました。")
+
             return False
 
     def reject_task_for_task_wrapper(
@@ -268,7 +249,6 @@ class RejectTasksMain(CommandLineWithConfirm):
         assigned_annotator_user_id: Optional[str] = None,
         cancel_acceptance: bool = False,  # noqa: FBT001, FBT002
         task_query: Optional[TaskQuery] = None,
-        dryrun: bool = False,  # noqa: FBT001, FBT002
     ) -> bool:
         task_index, task_id = tpl
         try:
@@ -281,7 +261,6 @@ class RejectTasksMain(CommandLineWithConfirm):
                 assigned_annotator_user_id=assigned_annotator_user_id,
                 cancel_acceptance=cancel_acceptance,
                 task_query=task_query,
-                dryrun=dryrun,
             )
         except Exception:  # pylint: disable=broad-except
             logger.warning(f"タスク'{task_id}'の差し戻しに失敗しました。", exc_info=True)
@@ -297,7 +276,6 @@ class RejectTasksMain(CommandLineWithConfirm):
         cancel_acceptance: bool = False,  # noqa: FBT001, FBT002
         task_query: Optional[TaskQuery] = None,
         parallelism: Optional[int] = None,
-        dryrun: bool = False,  # noqa: FBT001, FBT002
     ) -> None:
         if task_query is not None:
             task_query = self.facade.set_account_id_of_task_query(project_id, task_query)
@@ -313,7 +291,6 @@ class RejectTasksMain(CommandLineWithConfirm):
                 assigned_annotator_user_id=assigned_annotator_user_id,
                 cancel_acceptance=cancel_acceptance,
                 task_query=task_query,
-                dryrun=dryrun,
             )
             with multiprocessing.Pool(parallelism) as pool:
                 result_bool_list = pool.map(partial_func, enumerate(task_id_list))
@@ -333,7 +310,6 @@ class RejectTasksMain(CommandLineWithConfirm):
                         assigned_annotator_user_id=assigned_annotator_user_id,
                         cancel_acceptance=cancel_acceptance,
                         task_query=task_query,
-                        dryrun=dryrun,
                     )
                     if result:
                         success_count += 1
@@ -362,13 +338,14 @@ class RejectTasks(CommandLine):
         if not self.validate(args):
             sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
-        if args.dryrun:
-            add_dryrun_prefix(logger)
-
         task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id)
         assign_last_annotator = not args.not_assign and args.assigned_annotator_user_id is None
 
-        super().validate_project(args.project_id, [ProjectMemberRole.OWNER])
+        if not args.cancel_acceptance and args.comment is not None:
+            # 受入取消を実施しない AND 検査コメントを付与する場合はチェッカーロールでも実行できる
+            super().validate_project(args.project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.ACCEPTER])
+        else:
+            super().validate_project(args.project_id, [ProjectMemberRole.OWNER])
 
         dict_task_query = annofabcli.common.cli.get_json_from_args(args.task_query)
         task_query: Optional[TaskQuery] = TaskQuery.from_dict(dict_task_query) if dict_task_query is not None else None
@@ -407,7 +384,6 @@ class RejectTasks(CommandLine):
             cancel_acceptance=args.cancel_acceptance,
             task_query=task_query,
             parallelism=args.parallelism,
-            dryrun=args.dryrun,
         )
 
 
@@ -476,7 +452,6 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         choices=PARALLELISM_CHOICES,
         help="使用するプロセス数（並列度）を指定してください。指定する場合は必ず ``--yes`` を指定してください。指定しない場合は、逐次的に処理します。",  # noqa: E501
     )
-    parser.add_argument("--dryrun", action="store_true", help="差し戻しが行われた時の結果を表示しますが、実際はタスクを差し戻しません。")
 
     parser.set_defaults(subcommand_func=main)
 
@@ -484,12 +459,11 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
 def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     subcommand_name = "reject"
     subcommand_help = "タスクを差し戻します。"
-    description = (
-        "タスクを差し戻します。差し戻す際、検査コメントを付与することもできます。"
-        "作業中状態のタスクに対しては指し戻せません。"
-        "このコマンドで差し戻したタスクは、画面から差し戻したタスクとは異なり、抜取検査・抜取受入のスキップ判定に影響を及ぼしません。"
+    description = "タスクを差し戻します。差し戻す際、検査コメントを付与することもできます。作業中状態のタスクに対しては差し戻せません。"
+    epilog = (
+        "オーナロールを持つユーザで実行してください。"
+        "``--cancel_acceptance`` を指定していない AND ``--comment`` を指定している場合は、チェッカーロールを持つユーザーも実行できます。"
     )
-    epilog = "オーナロールを持つユーザで実行してください。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
     parse_args(parser)
