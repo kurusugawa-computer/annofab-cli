@@ -83,7 +83,7 @@ def create_flatten_attribute_list_from_additionals(
     additionals_v3: list[dict[str, Any]], labels_v3: list[dict[str, Any]], restrictions: list[dict[str, Any]]
 ) -> list[FlattenAttribute]:
     """
-    APIから取得した属性情報（v3版）から、pandas.DataFrameを生成します。
+    APIから取得した属性情報（v3版）から、属性情報の一覧を生成します。
 
     Args:
         additionals_v3: APIから取得した属性情報（v3版）
@@ -118,7 +118,6 @@ def create_flatten_attribute_list_from_additionals(
             reference_label_count=len(dict_label_ids[attribute_id]),
         )
 
-    logger.debug("yuji")
     return [dict_additional_to_dataclass(e) for e in additionals_v3]
 
 
