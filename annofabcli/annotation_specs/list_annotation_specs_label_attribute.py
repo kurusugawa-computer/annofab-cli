@@ -60,7 +60,7 @@ def create_label_attribute_list(labels_v3: list[dict[str, Any]], additionals_v3:
     def to_dataclass_list(label: dict[str, Any]) -> list[LabelAndAttribute]:
         result = []
         for attribute_id in label["additional_data_definitions"]:
-            attribute = dict_attribtues[attribute_id]
+            attribute = dict_attributes[attribute_id]
 
             result.append(
                 LabelAndAttribute(
