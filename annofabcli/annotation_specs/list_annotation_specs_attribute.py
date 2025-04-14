@@ -16,6 +16,7 @@ from dataclasses_json import DataClassJsonMixin
 
 import annofabcli
 import annofabcli.common.cli
+from annofabcli.common.annofab.annotation_specs import keybind_to_text
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
     ArgumentParser,
@@ -46,7 +47,7 @@ class FlattenAttribute(DataClassJsonMixin):
     attribute_name_en: Optional[str]
     attribute_name_ja: Optional[str]
     attribute_name_vi: Optional[str]
-    type: str
+    attribute_type: str
     """属性の種類"""
     default: Optional[Union[str, bool, int]]
     """デフォルト値"""
@@ -61,6 +62,7 @@ class FlattenAttribute(DataClassJsonMixin):
     """制約の個数"""
     reference_label_count: int
     """参照されているラベルの個数"""
+    keybind: Optional[str]
 
 
 def create_relationship_between_attribute_and_label(labels_v3: list[dict[str, Any]]) -> dict[str, set[str]]:
@@ -110,12 +112,13 @@ def create_flatten_attribute_list_from_additionals(
             attribute_name_en=get_message_with_lang(additional_name, lang=Lang.EN_US),
             attribute_name_ja=get_message_with_lang(additional_name, lang=Lang.JA_JP),
             attribute_name_vi=get_message_with_lang(additional_name, lang=Lang.VI_VN),
-            type=additional["type"],
+            attribute_type=additional["type"],
             default=additional["default"],
             read_only=additional["read_only"],
             choice_count=len(additional["choices"]),
             restriction_count=dict_restriction_count[attribute_id],
             reference_label_count=len(dict_label_ids[attribute_id]),
+            keybind=keybind_to_text(additional["keybind"]),
         )
 
     return [dict_additional_to_dataclass(e) for e in additionals_v3]
@@ -143,6 +146,7 @@ class PrintAnnotationSpecsAttribute(CommandLine):
                 "choice_count",
                 "restriction_count",
                 "reference_label_count",
+                "keybind",
             ]
 
             df = pandas.DataFrame(attribute_list, columns=columns)

@@ -10,12 +10,11 @@ from typing import Any, Optional
 
 import pandas
 from annofabapi.models import Lang
-from annofabapi.util.annotation_specs import get_english_message, get_message_with_lang
+from annofabapi.util.annotation_specs import get_message_with_lang
 from dataclasses_json import DataClassJsonMixin
 
 import annofabcli
 import annofabcli.common.cli
-from annofabcli.common.annofab.annotation_specs import keybind_to_text
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
     ArgumentParser,
@@ -30,102 +29,91 @@ logger = logging.getLogger(__name__)
 
 
 @dataclass
-class FlattenChoice(DataClassJsonMixin):
-    """
-    CSV用の選択肢情報を格納するクラスです。
-    """
+class LabelAndAttribute(DataClassJsonMixin):
+    label_id: str
+    label_name_en: Optional[str]
+    label_name_ja: Optional[str]
+    label_name_vi: Optional[str]
+    annotation_type: str
 
     attribute_id: str
-    """
-    属性ID
-    どの属性に属しているか分かるようにするため追加した。
-    """
+    """属性ID
 
+    Notes:
+        APIレスポンスの ``additional_data_definition_id`` に相当します。
+        ``additional_data_definition_id`` という名前がアノテーションJSONの `attributes` と対応していることが分かりにくかったので、`attribute_id`という名前に変えました。
+    """  # noqa: E501
     attribute_name_en: Optional[str]
-    """
-    属性名（英語）
-    どの属性に属しているか分かるようにするため追加した。
-    """
-
+    attribute_name_ja: Optional[str]
+    attribute_name_vi: Optional[str]
     attribute_type: str
-    """属性の種類"""
-    choice_id: str
-    choice_name_en: Optional[str]
-    choice_name_ja: Optional[str]
-    choice_name_vi: Optional[str]
-    is_default: bool
-    """初期値として設定されているかどうか"""
-    keybind: Optional[str]
-    """キーバインド"""
 
 
-def create_flatten_choice_list_from_additionals(additionals_v3: list[dict[str, Any]]) -> list[FlattenChoice]:
+def create_label_attribute_list(labels_v3: list[dict[str, Any]], additionals_v3: list[dict[str, Any]]) -> list[LabelAndAttribute]:
     """
-    APIから取得した属性情報（v3版）から、選択肢情報の一覧を生成します。
+    APIから取得したラベル情報（v3版）から、`LabelAndAttribute`のlistを生成します。
 
     Args:
-        additionals_v3: APIから取得した属性情報（v3版）
+        labels_v3: APIから取得したラベル情報（v3版）
     """
 
-    def dict_choice_to_dataclass(
-        choice: dict[str, Any],
-        additional: dict[str, Any],
-    ) -> FlattenChoice:
-        """
-        辞書の選択肢情報をDataClassの選択肢情報に変換します。
-        """
-        attribute_id = additional["additional_data_definition_id"]
-        additional_name = additional["name"]
+    def to_dataclass_list(label: dict[str, Any]) -> list[LabelAndAttribute]:
+        result = []
+        for attribute_id in label["additional_data_definitions"]:
+            attribute = dict_attribtues[attribute_id]
 
-        choice_id = choice["choice_id"]
-        choice_name = choice["name"]
-        is_default = additional["default"] == choice_id
-        return FlattenChoice(
-            attribute_id=attribute_id,
-            attribute_name_en=get_english_message(additional_name),
-            attribute_type=additional["type"],
-            choice_id=choice_id,
-            choice_name_en=get_message_with_lang(choice_name, lang=Lang.EN_US),
-            choice_name_ja=get_message_with_lang(choice_name, lang=Lang.JA_JP),
-            choice_name_vi=get_message_with_lang(choice_name, lang=Lang.VI_VN),
-            is_default=is_default,
-            keybind=keybind_to_text(choice["keybind"]),
-        )
+            result.append(
+                LabelAndAttribute(
+                    label_id=label["label_id"],
+                    label_name_en=get_message_with_lang(label["label_name"], lang=Lang.EN_US),
+                    label_name_ja=get_message_with_lang(label["label_name"], lang=Lang.JA_JP),
+                    label_name_vi=get_message_with_lang(label["label_name"], lang=Lang.VI_VN),
+                    annotation_type=label["annotation_type"],
+                    attribute_id=attribute_id,
+                    attribute_name_en=get_message_with_lang(attribute["name"], lang=Lang.EN_US),
+                    attribute_name_ja=get_message_with_lang(attribute["name"], lang=Lang.JA_JP),
+                    attribute_name_vi=get_message_with_lang(attribute["name"], lang=Lang.VI_VN),
+                    attribute_type=attribute["type"],
+                )
+            )
+        return result
 
-    tmp_list = []
-    for additional in additionals_v3:
-        choices = additional["choices"]
-        if len(choices) == 0:
-            continue
-        for choice in choices:
-            tmp_list.append(dict_choice_to_dataclass(choice, additional))  # noqa: PERF401
-    return tmp_list
+    dict_attribtues = {}
+    for elm in additionals_v3:
+        dict_attribtues[elm["additional_data_definition_id"]] = elm
+
+    result = []
+    for label in labels_v3:
+        result.extend(to_dataclass_list(label))
+    return result
 
 
-class PrintAnnotationSpecsAttribute(CommandLine):
-    COMMON_MESSAGE = "annofabcli annotation_specs list_choice: error:"
+class PrintAnnotationSpecsLabelAndAttribute(CommandLine):
+    COMMON_MESSAGE = "annofabcli annotation_specs list_label: error:"
 
-    def print_annotation_specs_choice(self, annotation_specs_v3: dict[str, Any], output_format: FormatArgument, output: Optional[str] = None) -> None:
-        choice_list = create_flatten_choice_list_from_additionals(annotation_specs_v3["additionals"])
-        logger.info(f"{len(choice_list)} 件の選択肢情報を出力します。")
+    def print_annotation_specs_label(self, annotation_specs_v3: dict[str, Any], output_format: FormatArgument, output: Optional[str] = None) -> None:
+        # アノテーション仕様のv2とv3はほとんど同じなので、`convert_annotation_specs_labels_v2_to_v1`にはV3のアノテーション仕様を渡す
+        label_attribute_list = create_label_attribute_list(annotation_specs_v3["labels"], annotation_specs_v3["additionals"])
 
         if output_format == FormatArgument.CSV:
-            df = pandas.DataFrame(choice_list)
             columns = [
+                "label_id",
+                "label_name_en",
+                "label_name_ja",
+                "label_name_vi",
+                "annotation_type",
                 "attribute_id",
                 "attribute_name_en",
+                "attribute_name_ja",
+                "attribute_name_vi",
                 "attribute_type",
-                "choice_id",
-                "choice_name_en",
-                "choice_name_ja",
-                "choice_name_vi",
-                "is_default",
-                "keybind",
             ]
-            print_csv(df[columns], output)
+
+            df = pandas.DataFrame(label_attribute_list, columns=columns)
+            print_csv(df, output)
 
         elif output_format in [FormatArgument.JSON, FormatArgument.PRETTY_JSON]:
-            print_according_to_format([e.to_dict() for e in choice_list], format=output_format, output=output)
+            print_according_to_format([e.to_dict() for e in label_attribute_list], format=output_format, output=output)
 
     def get_history_id_from_before_index(self, project_id: str, before: int) -> Optional[str]:
         histories, _ = self.service.api.get_annotation_specs_histories(project_id)
@@ -151,6 +139,7 @@ class PrintAnnotationSpecsAttribute(CommandLine):
                     )
                     sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
             else:
+                # args.beforeがNoneならば、必ずargs.history_idはNoneでない
                 history_id = args.history_id
 
             annotation_specs, _ = self.service.api.get_annotation_specs(args.project_id, query_params={"history_id": history_id, "v": "3"})
@@ -162,7 +151,7 @@ class PrintAnnotationSpecsAttribute(CommandLine):
         else:
             raise RuntimeError("'--project_id'か'--annotation_specs_json'のどちらかを指定する必要があります。")
 
-        self.print_annotation_specs_choice(annotation_specs, output_format=FormatArgument(args.format), output=args.output)
+        self.print_annotation_specs_label(annotation_specs, arg_format=args.format, output=args.output)
 
 
 def parse_args(parser: argparse.ArgumentParser) -> None:
@@ -218,13 +207,13 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
 def main(args: argparse.Namespace) -> None:
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
-    PrintAnnotationSpecsAttribute(service, facade, args).main()
+    PrintAnnotationSpecsLabelAndAttribute(service, facade, args).main()
 
 
 def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
-    subcommand_name = "list_choice"
+    subcommand_name = "list_label_attribute"
 
-    subcommand_help = "アノテーション仕様のドロップダウンまたはラジオボタン属性の選択肢情報を出力します。"
+    subcommand_help = "アノテーション仕様のラベルと属性の属性のペアを出力します。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help)
     parse_args(parser)
