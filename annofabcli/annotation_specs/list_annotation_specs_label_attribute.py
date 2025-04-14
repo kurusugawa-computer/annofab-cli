@@ -78,9 +78,9 @@ def create_label_attribute_list(labels_v3: list[dict[str, Any]], additionals_v3:
             )
         return result
 
-    dict_attribtues = {}
+    dict_attributes = {}
     for elm in additionals_v3:
-        dict_attribtues[elm["additional_data_definition_id"]] = elm
+        dict_attributes[elm["additional_data_definition_id"]] = elm
 
     result = []
     for label in labels_v3:
