@@ -53,7 +53,13 @@ def get_video_duration_list(task_list: list[dict[str, Any]], input_data_list: li
                 logger.warning(f"input_data_id='{input_data_id}' :: 'system_metadata.input_duration'がNoneです。")
                 video_duration_second = 0
 
-            elm.update({"input_data_name": input_data["input_data_name"], "video_duration_second": video_duration_second})
+            elm.update(
+                {
+                    "input_data_name": input_data["input_data_name"],
+                    "video_duration_second": video_duration_second,
+                    "input_data_updated_datetime": input_data["updated_datetime"],
+                }
+            )
 
         result.append(elm)
     return result
@@ -87,7 +93,16 @@ class ListVideoDuration(CommandLine):
         video_duration_list = get_video_duration_list(task_list=task_list, input_data_list=input_data_list)
         logger.info(f"{len(video_duration_list)} 件のタスクの動画長さを出力します。")
         if output_format == FormatArgument.CSV:
-            columns = ["task_id", "task_status", "task_phase", "task_phase_stage", "input_data_id", "input_data_name", "video_duration_second"]
+            columns = [
+                "task_id",
+                "task_status",
+                "task_phase",
+                "task_phase_stage",
+                "input_data_id",
+                "input_data_name",
+                "video_duration_second",
+                "input_data_updated_datetime",
+            ]
             df = pandas.DataFrame(video_duration_list, columns=columns)
             print_csv(df, output=output_file)
         else:

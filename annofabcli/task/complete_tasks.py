@@ -6,7 +6,7 @@ import multiprocessing
 import sys
 import uuid
 from functools import partial
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Optional
 
 import annofabapi.utils
 import dateutil
@@ -19,6 +19,7 @@ import annofabcli
 import annofabcli.common.cli
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
+    PARALLELISM_CHOICES,
     ArgumentParser,
     CommandLine,
     CommandLineWithConfirm,
@@ -28,7 +29,7 @@ from annofabcli.common.facade import AnnofabApiFacade, TaskQuery, match_task_wit
 
 logger = logging.getLogger(__name__)
 
-InspectionJson = Dict[str, Dict[str, List[Inspection]]]
+InspectionJson = dict[str, dict[str, list[Inspection]]]
 """
 Dict[task_id, Dict[input_data_id, List[Inspection]]] の検査コメント情報
 """
@@ -44,14 +45,14 @@ class CompleteTasksMain(CommandLineWithConfirm):
         self,
         task: Task,
         input_data_id: str,
-        unanswered_comment_list: List[Inspection],
+        unanswered_comment_list: list[Inspection],
         comment: str,
     ) -> None:
         """
         未回答の検査コメントに対して、返信を付与する。
         """
 
-        def to_req_inspection(i: Inspection) -> Dict[str, Any]:
+        def to_req_inspection(i: Inspection) -> dict[str, Any]:
             return {
                 "comment": comment,
                 "comment_id": str(uuid.uuid4()),
@@ -71,11 +72,11 @@ class CompleteTasksMain(CommandLineWithConfirm):
         self,
         task: Task,
         input_data_id: str,
-        comment_list: List[dict[str, Any]],
+        comment_list: list[dict[str, Any]],
         comment_status: CommentStatus,
     ):
         if comment_list is None or len(comment_list) == 0:
-            logger.warning(f"変更対象の検査コメントはなかった。task_id = {task.task_id}, input_data_id = {input_data_id}")
+            logger.warning(f"変更対象の検査コメントはなかった。task_id='{task.task_id}', input_data_id='{input_data_id}'")
             return
 
         def to_req_inspection(comment: dict[str, Any]) -> dict[str, Any]:
@@ -103,7 +104,7 @@ class CompleteTasksMain(CommandLineWithConfirm):
 
         logger.debug(f"{task.task_id}, {input_data_id}, {len(comment_list)}件 検査コメントの状態を変更")
 
-    def get_unprocessed_inspection_list(self, task: Task, input_data_id: str) -> List[Inspection]:
+    def get_unprocessed_inspection_list(self, task: Task, input_data_id: str) -> list[Inspection]:
         """
         未処置の検査コメントリストを取得する。
         ただし、現在のタスクフェーズで編集できる検査コメントのみである。
@@ -158,7 +159,7 @@ class CompleteTasksMain(CommandLineWithConfirm):
             logger.warning(f"{task.task_id}: 担当者の変更、または作業中状態への変更に失敗しました。", exc_info=True)
             raise
 
-    def get_unanswered_comment_list(self, task: Task, input_data_id: str) -> List[Inspection]:
+    def get_unanswered_comment_list(self, task: Task, input_data_id: str) -> list[Inspection]:
         """
         未回答の検査コメントのリストを取得する。
 
@@ -217,7 +218,7 @@ class CompleteTasksMain(CommandLineWithConfirm):
             成功したかどうか
         """
 
-        unanswered_comment_list_dict: Dict[str, List[Inspection]] = {}
+        unanswered_comment_list_dict: dict[str, list[Inspection]] = {}
         for input_data_id in task.input_data_id_list:
             unanswered_comment_list = self.get_unanswered_comment_list(task, input_data_id)
             unanswered_comment_list_dict[input_data_id] = unanswered_comment_list
@@ -258,7 +259,7 @@ class CompleteTasksMain(CommandLineWithConfirm):
         task: Task,
         inspection_status: Optional[CommentStatus] = None,
     ) -> bool:
-        unprocessed_inspection_list_dict: Dict[str, List[Inspection]] = {}
+        unprocessed_inspection_list_dict: dict[str, list[Inspection]] = {}
         for input_data_id in task.input_data_id_list:
             unprocessed_inspection_list = self.get_unprocessed_inspection_list(task, input_data_id)
             unprocessed_inspection_list_dict[input_data_id] = unprocessed_inspection_list
@@ -331,8 +332,7 @@ class CompleteTasksMain(CommandLineWithConfirm):
 
         task: Task = Task.from_dict(dict_task)
         logger.info(
-            f"{logging_prefix} : タスク情報 task_id={task_id}, "
-            f"phase={task.phase.value}, phase_stage={task.phase_stage}, status={task.status.value}"
+            f"{logging_prefix} : タスク情報 task_id='{task_id}', phase={task.phase.value}, phase_stage={task.phase_stage}, status={task.status.value}"
         )
         if not self._validate_task(task, target_phase=target_phase, target_phase_stage=target_phase_stage, task_query=task_query):
             return False
@@ -352,7 +352,7 @@ class CompleteTasksMain(CommandLineWithConfirm):
 
     def complete_task_for_task_wrapper(
         self,
-        tpl: Tuple[int, str],
+        tpl: tuple[int, str],
         project_id: str,
         target_phase: TaskPhase,
         target_phase_stage: int,
@@ -379,7 +379,7 @@ class CompleteTasksMain(CommandLineWithConfirm):
     def complete_task_list(  # noqa: ANN201
         self,
         project_id: str,
-        task_id_list: List[str],
+        task_id_list: list[str],
         target_phase: TaskPhase,
         target_phase_stage: int,
         reply_comment: Optional[str] = None,
@@ -546,6 +546,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--parallelism",
         type=int,
+        choices=PARALLELISM_CHOICES,
         help="使用するプロセス数（並列度）を指定してください。指定する場合は必ず ``--yes`` を指定してください。指定しない場合は、逐次的に処理します。",  # noqa: E501
     )
 

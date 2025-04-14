@@ -10,16 +10,17 @@ import logging
 import sys
 import tempfile
 import zipfile
-from collections import defaultdict
+from collections import Counter, defaultdict
+from collections.abc import Collection, Iterator
 from dataclasses import dataclass, field
 from enum import Enum
 from functools import partial
 from pathlib import Path
-from typing import Any, Collection, Counter, Iterator, Optional, Tuple, Union
+from typing import Any, Optional, Union
 
 import annofabapi
 import pandas
-from annofabapi.models import AdditionalDataDefinitionType, ProjectMemberRole, TaskPhase, TaskStatus
+from annofabapi.models import ProjectMemberRole, TaskPhase, TaskStatus
 from annofabapi.parser import (
     SimpleAnnotationParser,
     SimpleAnnotationParserByTask,
@@ -28,6 +29,7 @@ from annofabapi.parser import (
     lazy_parse_simple_annotation_zip,
     lazy_parse_simple_annotation_zip_by_task,
 )
+from annofabapi.pydantic_models.additional_data_definition_type import AdditionalDataDefinitionType
 from dataclasses_json import DataClassJsonMixin, config
 
 import annofabcli
@@ -51,7 +53,7 @@ from annofabcli.common.visualize import AddProps, MessageLocale
 
 logger = logging.getLogger(__name__)
 
-AttributeValueKey = Tuple[str, str, str]
+AttributeValueKey = tuple[str, str, str]
 """
 属性のキー.
 tuple[label_name_en, attribute_name_en, attribute_value] で表す。
@@ -59,7 +61,7 @@ tuple[label_name_en, attribute_name_en, attribute_value] で表す。
 
 LabelKeys = Collection[str]
 
-AttributeNameKey = Tuple[str, str]
+AttributeNameKey = tuple[str, str]
 """
 属性名のキー.
 tuple[label_name_en, attribute_name_en] で表す。
@@ -114,18 +116,18 @@ class AnnotationCounter(abc.ABC):
 @dataclass(frozen=True)
 class AnnotationCounterByTask(AnnotationCounter, DataClassJsonMixin):
     task_id: str
-    status: TaskStatus
-    phase: TaskPhase
-    phase_stage: int
+    task_status: TaskStatus
+    task_phase: TaskPhase
+    task_phase_stage: int
     input_data_count: int
 
 
 @dataclass(frozen=True)
 class AnnotationCounterByInputData(AnnotationCounter, DataClassJsonMixin):
     task_id: str
-    status: TaskStatus
-    phase: TaskPhase
-    phase_stage: int
+    task_status: TaskStatus
+    task_phase: TaskPhase
+    task_phase_stage: int
 
     input_data_id: str
     input_data_name: str
@@ -257,9 +259,9 @@ class ListAnnotationCounterByInputData:
 
         return AnnotationCounterByInputData(
             task_id=simple_annotation["task_id"],
-            phase=TaskPhase(simple_annotation["task_phase"]),
-            phase_stage=simple_annotation["task_phase_stage"],
-            status=TaskStatus(simple_annotation["task_status"]),
+            task_phase=TaskPhase(simple_annotation["task_phase"]),
+            task_phase_stage=simple_annotation["task_phase_stage"],
+            task_status=TaskStatus(simple_annotation["task_status"]),
             input_data_id=simple_annotation["input_data_id"],
             input_data_name=simple_annotation["input_data_name"],
             annotation_count=sum(annotation_count_by_label.values()),
@@ -289,7 +291,7 @@ class ListAnnotationCounterByInputData:
         logger.debug("アノテーションzip/ディレクトリを読み込み中")
         for index, parser in enumerate(iter_parser):
             if (index + 1) % 1000 == 0:
-                logger.debug(f"{index+1}  件目のJSONを読み込み中")
+                logger.debug(f"{index + 1}  件目のJSONを読み込み中")
 
             if target_task_ids is not None and parser.task_id not in target_task_ids:
                 continue
@@ -336,7 +338,7 @@ class ListAnnotationCounterByTask:
         """
 
         annotation_count_by_label: Counter[str] = collections.Counter()
-        annotation_count_by_attribute: Counter[Tuple[str, str, str]] = collections.Counter()
+        annotation_count_by_attribute: Counter[tuple[str, str, str]] = collections.Counter()
 
         last_simple_annotation = None
         input_data_count = 0
@@ -354,9 +356,9 @@ class ListAnnotationCounterByTask:
 
         return AnnotationCounterByTask(
             task_id=last_simple_annotation["task_id"],
-            status=TaskStatus(last_simple_annotation["task_status"]),
-            phase=TaskPhase(last_simple_annotation["task_phase"]),
-            phase_stage=last_simple_annotation["task_phase_stage"],
+            task_status=TaskStatus(last_simple_annotation["task_status"]),
+            task_phase=TaskPhase(last_simple_annotation["task_phase"]),
+            task_phase_stage=last_simple_annotation["task_phase_stage"],
             input_data_count=input_data_count,
             annotation_count=sum(annotation_count_by_label.values()),
             annotation_count_by_label=annotation_count_by_label,
@@ -383,7 +385,7 @@ class ListAnnotationCounterByTask:
         logger.debug("アノテーションzip/ディレクトリを読み込み中")
         for task_index, task_parser in enumerate(iter_task_parser):
             if (task_index + 1) % 1000 == 0:
-                logger.debug(f"{task_index+1}  件目のタスクディレクトリを読み込み中")
+                logger.debug(f"{task_index + 1}  件目のタスクディレクトリを読み込み中")
 
             if target_task_ids is not None and task_parser.task_id not in target_task_ids:
                 continue
@@ -432,8 +434,7 @@ class AttributeCountCsv:
         }
         if len(non_selective_attribute_names) > 0:
             logger.debug(
-                f"以下の属性は値の個数が{self.selective_attribute_value_max_count}を超えていたため、集計しません。 :: "
-                f"{non_selective_attribute_names}"
+                f"以下の属性は値の個数が{self.selective_attribute_value_max_count}を超えていたため、集計しません。 :: {non_selective_attribute_names}"
             )
 
         return [
@@ -483,9 +484,9 @@ class AttributeCountCsv:
         def get_columns() -> list[AttributeValueKey]:
             basic_columns = [
                 ("task_id", "", ""),
-                ("status", "", ""),
-                ("phase", "", ""),
-                ("phase_stage", "", ""),
+                ("task_status", "", ""),
+                ("task_phase", "", ""),
+                ("task_phase_stage", "", ""),
                 ("input_data_count", "", ""),
                 ("annotation_count", "", ""),
             ]
@@ -495,9 +496,9 @@ class AttributeCountCsv:
         def to_cell(c: AnnotationCounterByTask) -> dict[AttributeValueKey, Any]:
             cell = {
                 ("task_id", "", ""): c.task_id,
-                ("status", "", ""): c.status.value,
-                ("phase", "", ""): c.phase.value,
-                ("phase_stage", "", ""): c.phase_stage,
+                ("task_status", "", ""): c.task_status.value,
+                ("task_phase", "", ""): c.task_phase.value,
+                ("task_phase_stage", "", ""): c.task_phase_stage,
                 ("input_data_count", "", ""): c.input_data_count,
                 ("annotation_count", "", ""): c.annotation_count,
             }
@@ -521,9 +522,9 @@ class AttributeCountCsv:
         def get_columns() -> list[AttributeValueKey]:
             basic_columns = [
                 ("task_id", "", ""),
-                ("status", "", ""),
-                ("phase", "", ""),
-                ("phase_stage", "", ""),
+                ("task_status", "", ""),
+                ("task_phase", "", ""),
+                ("task_phase_stage", "", ""),
                 ("input_data_id", "", ""),
                 ("input_data_name", "", ""),
                 ("frame_no", "", ""),
@@ -538,9 +539,9 @@ class AttributeCountCsv:
                 ("input_data_name", "", ""): c.input_data_name,
                 ("frame_no", "", ""): c.frame_no,
                 ("task_id", "", ""): c.task_id,
-                ("status", "", ""): c.status.value,
-                ("phase", "", ""): c.phase.value,
-                ("phase_stage", "", ""): c.phase_stage,
+                ("task_status", "", ""): c.task_status.value,
+                ("task_phase", "", ""): c.task_phase.value,
+                ("task_phase_stage", "", ""): c.task_phase_stage,
                 ("annotation_count", "", ""): c.annotation_count,
             }
             cell.update(c.annotation_count_by_attribute)
@@ -552,7 +553,7 @@ class AttributeCountCsv:
 
         # アノテーション数の列のNaNを0に変換する
         value_columns = self._value_columns(counter_list, prior_attribute_columns)
-        df = df.fillna({column: 0 for column in value_columns})
+        df = df.fillna(dict.fromkeys(value_columns, 0))
 
         print_csv(df, output=str(output_file), to_csv_kwargs=self.csv_format)
 
@@ -587,9 +588,9 @@ class LabelCountCsv:
         def get_columns() -> list[str]:
             basic_columns = [
                 "task_id",
-                "status",
-                "phase",
-                "phase_stage",
+                "task_status",
+                "task_phase",
+                "task_phase_stage",
                 "input_data_count",
                 "annotation_count",
             ]
@@ -599,9 +600,9 @@ class LabelCountCsv:
         def to_dict(c: AnnotationCounterByTask) -> dict[str, Any]:
             d = {
                 "task_id": c.task_id,
-                "status": c.status.value,
-                "phase": c.phase.value,
-                "phase_stage": c.phase_stage,
+                "task_status": c.task_status.value,
+                "task_phase": c.task_phase.value,
+                "task_phase_stage": c.task_phase_stage,
                 "input_data_count": c.input_data_count,
                 "annotation_count": c.annotation_count,
             }
@@ -625,9 +626,9 @@ class LabelCountCsv:
         def get_columns() -> list[str]:
             basic_columns = [
                 "task_id",
-                "status",
-                "phase",
-                "phase_stage",
+                "task_status",
+                "task_phase",
+                "task_phase_stage",
                 "input_data_id",
                 "input_data_name",
                 "frame_no",
@@ -642,9 +643,9 @@ class LabelCountCsv:
                 "input_data_name": c.input_data_name,
                 "frame_no": c.frame_no,
                 "task_id": c.task_id,
-                "status": c.status.value,
-                "phase": c.phase.value,
-                "phase_stage": c.phase_stage,
+                "task_status": c.task_status.value,
+                "task_phase": c.task_phase.value,
+                "task_phase_stage": c.task_phase_stage,
                 "annotation_count": c.annotation_count,
             }
             d.update(c.annotation_count_by_label)
@@ -655,7 +656,7 @@ class LabelCountCsv:
 
         # アノテーション数列のNaNを0に変換する
         value_columns = self._value_columns(counter_list, prior_label_columns)
-        df = df.fillna({column: 0 for column in value_columns})
+        df = df.fillna(dict.fromkeys(value_columns, 0))
 
         print_csv(df, output=str(output_file), to_csv_kwargs=self.csv_format)
 
@@ -695,6 +696,48 @@ class AnnotationSpecs:
             logger.warning(
                 f"アノテーション仕様のラベル英語名が重複しています。アノテーション個数が正しく算出できない可能性があります。:: {duplicated_labels}"
             )
+        return result
+
+    def attribute_name_keys(
+        self,
+        excluded_attribute_types: Optional[Collection[AdditionalDataDefinitionType]] = None,
+        include_attribute_types: Optional[Collection[AdditionalDataDefinitionType]] = None,
+    ) -> list[tuple[str, str]]:
+        """
+        属性名の一覧を取得します。
+
+        Args:
+            include_attribute_types: 指定した属性の種類に合致した属性名の一覧を取得します。
+            excluded_attribute_types: 指定した属性の種類に合致していない属性名の一覧を取得します。
+
+        Raise:
+            ValueError: `include_attribute_types`と`excluded_attribute_types`の両方が指定された場合に発生します。
+        """
+        if excluded_attribute_types is not None and include_attribute_types is not None:
+            raise ValueError("`include_attribute_types`と`excluded_attribute_types`の両方が指定されています。")
+
+        result = []
+        for label in self._labels_v1:
+            label_name_en = AddProps.get_message(label["label_name"], MessageLocale.EN)
+            assert label_name_en is not None
+
+            for attribute in label["additional_data_definitions"]:
+                if excluded_attribute_types is not None and AdditionalDataDefinitionType(attribute["type"]) in excluded_attribute_types:
+                    continue
+
+                if include_attribute_types is not None and AdditionalDataDefinitionType(attribute["type"]) not in include_attribute_types:
+                    continue
+
+                attribute_name_en = AddProps.get_message(attribute["name"], MessageLocale.EN)
+                assert attribute_name_en is not None
+                result.append((label_name_en, attribute_name_en))
+
+        duplicated_attribute_names = [key for key, value in collections.Counter(result).items() if value > 1]
+        if len(duplicated_attribute_names) > 0:
+            logger.warning(
+                f"アノテーション仕様の属性情報（ラベル英語名、属性英語名）が重複しています。アノテーション個数が正しく算出できない可能性があります。:: {duplicated_attribute_names}"  # noqa: E501
+            )
+
         return result
 
     def selective_attribute_value_keys(self) -> list[AttributeValueKey]:

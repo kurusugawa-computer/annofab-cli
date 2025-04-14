@@ -1,12 +1,12 @@
 import argparse
 import logging
+import re
 import sys
-import uuid
 from dataclasses import dataclass
 from functools import partial
 from multiprocessing import Pool
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 import annofabapi
 import pandas
@@ -18,19 +18,17 @@ from dataclasses_json import DataClassJsonMixin
 import annofabcli
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
+    PARALLELISM_CHOICES,
     ArgumentParser,
     CommandLine,
     build_annofabapi_resource_and_login,
     get_json_from_args,
     prompt_yesnoall,
 )
-from annofabcli.common.dataclasses import WaitOptions
 from annofabcli.common.facade import AnnofabApiFacade
 from annofabcli.common.utils import get_file_scheme_path
 
 logger = logging.getLogger(__name__)
-
-DEFAULT_WAIT_OPTIONS = WaitOptions(interval=60, max_tries=360)
 
 
 @dataclass
@@ -42,7 +40,6 @@ class CsvInputData(DataClassJsonMixin):
     input_data_name: str
     input_data_path: str
     input_data_id: Optional[str] = None
-    sign_required: Optional[bool] = None
 
 
 @dataclass
@@ -54,7 +51,14 @@ class InputDataForPut(DataClassJsonMixin):
     input_data_name: str
     input_data_path: str
     input_data_id: str
-    sign_required: Optional[bool]
+
+
+def convert_input_data_name_to_input_data_id(input_data_name: str) -> str:
+    """
+    入力データ名から、入力データIDを生成します。
+    * IDに使えない文字以外は`__`に変換する。
+    """
+    return re.sub(r"[^a-zA-Z0-9_.-]", "__", input_data_name)
 
 
 def read_input_data_csv(csv_file: Path) -> pandas.DataFrame:
@@ -63,7 +67,6 @@ def read_input_data_csv(csv_file: Path) -> pandas.DataFrame:
     * input_data_name
     * input_data_path
     * input_data_id
-    * sign_required
 
     Args:
         csv_file (Path): CSVファイルのパス
@@ -75,6 +78,12 @@ def read_input_data_csv(csv_file: Path) -> pandas.DataFrame:
         str(csv_file),
         sep=",",
         header=None,
+        # names引数に"sign_required"を指定している理由：
+        # v1.96.0以前では、`sign_required`列を読み込んでいた。したがって、4列のCSVを使っているユーザーは存在する
+        # CSVの列数が`names`引数で指定した列数より大きい場合、右側から列名が割り当てられる。
+        # （https://qiita.com/yuji38kwmt/items/ac46c3d0ccac109410ba）
+        # したがって、"sign_required"がないと4列のCSVは読み込めない。
+        # 4列のCSVもしばらくサポートするため、"sign_required"を指定している。
         names=("input_data_name", "input_data_path", "input_data_id", "sign_required"),
         # IDと名前は必ず文字列として読み込むようにする
         dtype={"input_data_id": str, "input_data_name": str},
@@ -121,12 +130,12 @@ class SubPutInputData:
         self.all_yes = all_yes
 
     def put_input_data(self, project_id: str, csv_input_data: InputDataForPut, last_updated_datetime: Optional[str] = None):  # noqa: ANN201
-        request_body: Dict[str, Any] = {"last_updated_datetime": last_updated_datetime}
+        request_body: dict[str, Any] = {"last_updated_datetime": last_updated_datetime}
 
         file_path = get_file_scheme_path(csv_input_data.input_data_path)
         if file_path is not None:
-            request_body.update({"input_data_name": csv_input_data.input_data_name, "sign_required": csv_input_data.sign_required})
-            logger.debug(f"'{file_path}'を入力データとして登録します。input_data_name={csv_input_data.input_data_name}")
+            request_body.update({"input_data_name": csv_input_data.input_data_name})
+            logger.debug(f"'{file_path}'を入力データとして登録します。input_data_name='{csv_input_data.input_data_name}'")
             self.service.wrapper.put_input_data_from_file(
                 project_id, input_data_id=csv_input_data.input_data_id, file_path=file_path, request_body=request_body
             )
@@ -136,7 +145,6 @@ class SubPutInputData:
                 {
                     "input_data_name": csv_input_data.input_data_name,
                     "input_data_path": csv_input_data.input_data_path,
-                    "sign_required": csv_input_data.sign_required,
                 }
             )
 
@@ -180,12 +188,13 @@ class SubPutInputData:
 
         return self.confirm_processing(message_for_confirm)
 
-    def put_input_data_main(self, project_id: str, csv_input_data: CsvInputData, overwrite: bool = False) -> bool:  # noqa: FBT001, FBT002
+    def put_input_data_main(self, project_id: str, csv_input_data: CsvInputData, *, overwrite: bool = False) -> bool:
         input_data = InputDataForPut(
             input_data_name=csv_input_data.input_data_name,
             input_data_path=csv_input_data.input_data_path,
-            input_data_id=csv_input_data.input_data_id if csv_input_data.input_data_id is not None else str(uuid.uuid4()),
-            sign_required=csv_input_data.sign_required,
+            input_data_id=csv_input_data.input_data_id
+            if csv_input_data.input_data_id is not None
+            else convert_input_data_name_to_input_data_id(csv_input_data.input_data_name),
         )
 
         last_updated_datetime = None
@@ -193,10 +202,10 @@ class SubPutInputData:
 
         if dict_input_data is not None:
             if overwrite:
-                logger.debug(f"input_data_id={input_data.input_data_id} はすでに存在します。")
+                logger.debug(f"input_data_id='{input_data.input_data_id}' はすでに存在します。")
                 last_updated_datetime = dict_input_data["updated_datetime"]
             else:
-                logger.debug(f"input_data_id={input_data.input_data_id} がすでに存在するのでスキップします。")
+                logger.debug(f"input_data_id='{input_data.input_data_id}' がすでに存在するのでスキップします。")
                 return False
 
         file_path = get_file_scheme_path(input_data.input_data_path)
@@ -240,7 +249,7 @@ class PutInputData(CommandLine):
     def put_input_data_list(
         self,
         project_id: str,
-        input_data_list: List[CsvInputData],
+        input_data_list: list[CsvInputData],
         overwrite: bool = False,  # noqa: FBT001, FBT002
         parallelism: Optional[int] = None,
     ) -> None:
@@ -276,15 +285,13 @@ class PutInputData(CommandLine):
         logger.info(f"{project_title} に、{count_put_input_data} / {len(input_data_list)} 件の入力データを登録しました。")
 
     @staticmethod
-    def get_input_data_list_from_df(df: pandas.DataFrame) -> List[CsvInputData]:
-        def create_input_data(e: Any):  # noqa: ANN202, ANN401
+    def get_input_data_list_from_df(df: pandas.DataFrame) -> list[CsvInputData]:
+        def create_input_data(e: Any) -> CsvInputData:  # noqa: ANN401
             input_data_id = e.input_data_id if not pandas.isna(e.input_data_id) else None
-            sign_required: Optional[bool] = e.sign_required if pandas.notna(e.sign_required) else None
             return CsvInputData(
                 input_data_name=e.input_data_name,
                 input_data_path=e.input_data_path,
                 input_data_id=input_data_id,
-                sign_required=sign_required,
             )
 
         input_data_list = [create_input_data(e) for e in df.itertuples()]
@@ -292,7 +299,7 @@ class PutInputData(CommandLine):
         return input_data_list
 
     @staticmethod
-    def get_input_data_list_from_dict(input_data_dict_list: List[Dict[str, Any]], allow_duplicated_input_data: bool) -> List[CsvInputData]:  # noqa: FBT001
+    def get_input_data_list_from_dict(input_data_dict_list: list[dict[str, Any]], allow_duplicated_input_data: bool) -> list[CsvInputData]:  # noqa: FBT001
         # 重複チェック
         df = pandas.DataFrame(input_data_dict_list)
         df_duplicated_input_data_name = df[df["input_data_name"].duplicated()]
@@ -349,6 +356,10 @@ class PutInputData(CommandLine):
 
         elif args.json is not None:
             input_data_dict_list = get_json_from_args(args.json)
+            if not isinstance(input_data_dict_list, list):
+                print(f"{self.COMMON_MESSAGE} argument --json: JSON形式が不正です。オブジェクトの配列を指定してください。", file=sys.stderr)  # noqa: T201
+                sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
+
             input_data_list = self.get_input_data_list_from_dict(input_data_dict_list, allow_duplicated_input_data=args.allow_duplicated_input_data)
             self.put_input_data_list(project_id, input_data_list=input_data_list, overwrite=args.overwrite, parallelism=args.parallelism)
 
@@ -380,7 +391,6 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
             " * 1列目: input_data_name (required)\n"
             " * 2列目: input_data_path (required)\n"
             " * 3列目: input_data_id\n"
-            " * 4列目: sign_required (bool)\n"
         ),
     )
 
@@ -399,24 +409,20 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--overwrite",
         action="store_true",
-        help="指定した場合、input_data_idがすでに存在していたら上書きします。指定しなければ、スキップします。"
-        " ``--csv`` , ``--json`` を指定したときのみ有効なオプションです。",
+        help="指定した場合、input_data_idがすでに存在していたら上書きします。指定しなければ、スキップします。",
     )
 
     parser.add_argument(
         "--allow_duplicated_input_data",
         action="store_true",
-        help=(
-            "``--csv`` , ``--json`` に渡した入力データの重複（input_data_name, input_data_path）を許可します。\n"
-            "``--csv`` , ``--json`` を指定したときのみ有効なオプションです。"
-        ),
+        help=("``--csv`` , ``--json`` に渡した入力データの重複（input_data_name, input_data_path）を許可します。\n"),
     )
 
     parser.add_argument(
         "--parallelism",
         type=int,
-        help="並列度。指定しない場合は、逐次的に処理します。"
-        "``--csv`` , ``--json`` を指定したときのみ有効なオプションです。また、必ず ``--yes`` を指定してください。",
+        choices=PARALLELISM_CHOICES,
+        help="並列度。指定しない場合は、逐次的に処理します。指定する場合は、 ``--yes`` も指定してください。",
     )
 
     parser.set_defaults(subcommand_func=main)
@@ -425,9 +431,8 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
 def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     subcommand_name = "put"
     subcommand_help = "入力データを登録します。"
-    description = "CSVに記載された情報から、入力データを登録します。"
     epilog = "オーナロールを持つユーザで実行してください。"
 
-    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
+    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, epilog=epilog)
     parse_args(parser)
     return parser

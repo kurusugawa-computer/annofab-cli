@@ -1,9 +1,10 @@
 import logging
 import multiprocessing
 import uuid
+from collections.abc import Collection
 from dataclasses import dataclass
 from functools import partial
-from typing import Any, Collection, Dict, List, Optional, Tuple
+from typing import Any, Optional
 
 import annofabapi
 import annofabapi.utils
@@ -25,10 +26,10 @@ class AddedSimpleComment:
     comment: str
     """コメントの中身"""
 
-    data: Optional[Dict[str, Any]]
+    data: Optional[dict[str, Any]]
     """コメントを付与する位置や区間"""
 
-    phrases: Optional[List[str]] = None
+    phrases: Optional[list[str]] = None
     """参照している定型指摘ID"""
 
 
@@ -43,10 +44,10 @@ class PutCommentSimplyMain(CommandLineWithConfirm):
 
         CommandLineWithConfirm.__init__(self, all_yes)
 
-    def _create_request_body(self, task: Dict[str, Any], comment_info: AddedSimpleComment) -> List[Dict[str, Any]]:
+    def _create_request_body(self, task: dict[str, Any], comment_info: AddedSimpleComment) -> list[dict[str, Any]]:
         """batch_update_comments に渡すリクエストボディを作成する。"""
 
-        def _convert(comment: AddedSimpleComment) -> Dict[str, Any]:
+        def _convert(comment: AddedSimpleComment) -> dict[str, Any]:
             return {
                 "comment": comment.comment,
                 "comment_id": str(uuid.uuid4()),
@@ -61,7 +62,7 @@ class PutCommentSimplyMain(CommandLineWithConfirm):
 
         return [_convert(comment_info)]
 
-    def change_to_working_status(self, project_id: str, task: Dict[str, Any]) -> Dict[str, Any]:
+    def change_to_working_status(self, project_id: str, task: dict[str, Any]) -> dict[str, Any]:
         """
         作業中状態に遷移する。必要ならば担当者を自分自身に変更する。
 
@@ -84,7 +85,7 @@ class PutCommentSimplyMain(CommandLineWithConfirm):
 
     def _can_add_comment(
         self,
-        task: Dict[str, Any],
+        task: dict[str, Any],
     ) -> bool:
         task_id = task["task_id"]
 
@@ -117,7 +118,7 @@ class PutCommentSimplyMain(CommandLineWithConfirm):
         Returns:
             付与したコメントの数
         """
-        logging_prefix = f"{task_index+1} 件目" if task_index is not None else ""
+        logging_prefix = f"{task_index + 1} 件目" if task_index is not None else ""
 
         task = self.service.wrapper.get_task_or_none(self.project_id, task_id)
         if task is None:
@@ -155,7 +156,7 @@ class PutCommentSimplyMain(CommandLineWithConfirm):
                 self.service.wrapper.change_task_operator(self.project_id, task_id, task["account_id"])
                 logger.debug(f"{task_id}: 担当者を元のユーザ( account_id={task['account_id']}）に戻しました。")
 
-    def add_comments_for_task_wrapper(self, tpl: Tuple[int, str], comment_info: AddedSimpleComment) -> bool:
+    def add_comments_for_task_wrapper(self, tpl: tuple[int, str], comment_info: AddedSimpleComment) -> bool:
         task_index, task_id = tpl
         try:
             return self.put_comment_for_task(task_id=task_id, comment_info=comment_info, task_index=task_index)

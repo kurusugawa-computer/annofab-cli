@@ -4,7 +4,7 @@ import argparse
 import json
 import logging
 from enum import Enum
-from typing import List, Optional
+from typing import Optional
 
 import pandas
 from annofabapi.models import ProjectMemberRole, Task, TaskPhase, TaskStatus
@@ -16,7 +16,6 @@ from annofabcli.common.cli import (
     CommandLine,
     build_annofabapi_resource_and_login,
     get_json_from_args,
-    get_wait_options_from_args,
 )
 from annofabcli.common.dataclasses import WaitOptions
 from annofabcli.common.download import DownloadingFile
@@ -99,7 +98,7 @@ def get_task_id_prefix(task_id: str, delimiter: str) -> str:
 
 
 def create_task_count_summary_df(
-    task_list: List[Task], task_id_delimiter: Optional[str], task_id_groups: Optional[dict[str, list[str]]]
+    task_list: list[Task], task_id_delimiter: Optional[str], task_id_groups: Optional[dict[str, list[str]]]
 ) -> pandas.DataFrame:
     """
     タスク数を集計したDataFrameを生成する。
@@ -164,12 +163,11 @@ class SummarizeTaskCountByTaskId(CommandLine):
         if args.task_json is not None:
             task_json_path = args.task_json
         else:
-            wait_options = get_wait_options_from_args(get_json_from_args(args.wait_options), DEFAULT_WAIT_OPTIONS)
             cache_dir = annofabcli.common.utils.get_cache_dir()
             task_json_path = cache_dir / f"{project_id}-task.json"
 
             downloading_obj = DownloadingFile(self.service)
-            downloading_obj.download_task_json(project_id, dest_path=str(task_json_path), is_latest=args.latest, wait_options=wait_options)
+            downloading_obj.download_task_json(project_id, dest_path=str(task_json_path), is_latest=args.latest, wait_options=DEFAULT_WAIT_OPTIONS)
 
         with open(task_json_path, encoding="utf-8") as f:  # noqa: PTH123
             task_list = json.load(f)
@@ -207,16 +205,6 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--latest",
         action="store_true",
         help="最新のタスク一覧ファイルを参照します。このオプションを指定すると、タスク一覧ファイルを更新するのに数分待ちます。",
-    )
-
-    parser.add_argument(
-        "--wait_options",
-        type=str,
-        help="タスク一覧ファイルの更新が完了するまで待つ際のオプションを、JSON形式で指定してください。"
-        " ``file://`` を先頭に付けるとjsonファイルを指定できます。"
-        'デフォルは ``{"interval":60, "max_tries":360}`` です。'
-        " ``interval`` :完了したかを問い合わせる間隔[秒], "
-        "``max_tires`` :完了したかの問い合わせを最大何回行うか。",
     )
 
     argument_parser.add_csv_format()

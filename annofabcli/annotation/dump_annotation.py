@@ -6,13 +6,13 @@ import json
 import logging
 import multiprocessing
 from pathlib import Path
-from typing import List, Optional
+from typing import Optional
 
 import annofabapi
 from annofabapi.models import AnnotationDataHoldingType
 
 import annofabcli
-from annofabcli.common.cli import ArgumentParser, CommandLine, build_annofabapi_resource_and_login
+from annofabcli.common.cli import PARALLELISM_CHOICES, ArgumentParser, CommandLine, build_annofabapi_resource_and_login
 from annofabcli.common.facade import AnnofabApiFacade
 
 logger = logging.getLogger(__name__)
@@ -54,7 +54,7 @@ class DumpAnnotationMain:
         Returns:
             アノテーション情報をファイルに保存したかどうか。
         """
-        logger_prefix = f"{task_index+1!s} 件目: " if task_index is not None else ""
+        logger_prefix = f"{task_index + 1!s} 件目: " if task_index is not None else ""
         task = self.service.wrapper.get_task_or_none(self.project_id, task_id)
         if task is None:
             logger.warning(f"task_id = '{task_id}' のタスクは存在しません。スキップします。")
@@ -84,7 +84,7 @@ class DumpAnnotationMain:
             logger.warning(f"タスク'{task_id}'のアノテーション情報のダンプに失敗しました。", exc_info=True)
             return False
 
-    def dump_annotation(self, task_id_list: List[str], output_dir: Path, parallelism: Optional[int] = None):  # noqa: ANN201
+    def dump_annotation(self, task_id_list: list[str], output_dir: Path, parallelism: Optional[int] = None):  # noqa: ANN201
         project_title = self.facade.get_project_title(self.project_id)
         logger.info(f"プロジェクト'{project_title}'に対して、タスク{len(task_id_list)} 件のアノテーションをファイルに保存します。")
 
@@ -144,6 +144,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--parallelism",
         type=int,
+        choices=PARALLELISM_CHOICES,
         help="並列度。指定しない場合は、逐次的に処理します。",
     )
 

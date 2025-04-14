@@ -4,7 +4,7 @@ import logging
 import multiprocessing
 import uuid
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Optional
 
 import annofabapi
 import annofabapi.utils
@@ -15,6 +15,7 @@ from dataclasses_json import DataClassJsonMixin
 from annofabcli.comment.utils import get_comment_type_name
 from annofabcli.common.cli import CommandLineWithConfirm
 from annofabcli.common.facade import AnnofabApiFacade
+from annofabcli.common.type_util import assert_noreturn
 
 logger = logging.getLogger(__name__)
 
@@ -28,23 +29,23 @@ class AddedComment(DataClassJsonMixin):
     comment: str
     """コメントの中身"""
 
-    data: Optional[Dict[str, Any]]
+    data: Optional[dict[str, Any]]
     """コメントを付与する位置や区間"""
 
     annotation_id: Optional[str]
     """コメントに紐付けるアノテーションID"""
 
-    phrases: Optional[List[str]]
+    phrases: Optional[list[str]]
     """参照している定型指摘ID"""
 
 
-AddedCommentsForTask = Dict[str, List[AddedComment]]
+AddedCommentsForTask = dict[str, list[AddedComment]]
 """
 タスク配下の追加対象のコメント
 keyはinput_data_id
 """
 
-AddedComments = Dict[str, AddedCommentsForTask]
+AddedComments = dict[str, AddedCommentsForTask]
 """
 追加対象のコメント
 keyはtask_id
@@ -62,17 +63,17 @@ class PutCommentMain(CommandLineWithConfirm):
 
         CommandLineWithConfirm.__init__(self, all_yes)
 
-    def _create_request_body(self, task: Dict[str, Any], input_data_id: str, comments: List[AddedComment]) -> List[Dict[str, Any]]:
+    def _create_request_body(self, task: dict[str, Any], input_data_id: str, comments: list[AddedComment]) -> list[dict[str, Any]]:
         """batch_update_comments に渡すリクエストボディを作成する。"""
 
-        def _create_dict_annotation_id() -> Dict[str, str]:
+        def _create_dict_annotation_id() -> dict[str, str]:
             content, _ = self.service.api.get_editor_annotation(self.project_id, task["task_id"], input_data_id)
             details = content["details"]
             return {e["annotation_id"]: e["label_id"] for e in details}
 
         dict_annotation_id_label_id = _create_dict_annotation_id()
 
-        def _convert(comment: AddedComment) -> Dict[str, Any]:
+        def _convert(comment: AddedComment) -> dict[str, Any]:
             return {
                 "comment_id": str(uuid.uuid4()),
                 "phase": task["phase"],
@@ -93,7 +94,7 @@ class PutCommentMain(CommandLineWithConfirm):
 
         return [_convert(e) for e in comments]
 
-    def change_to_working_status(self, project_id: str, task: Dict[str, Any]) -> Dict[str, Any]:
+    def change_to_working_status(self, project_id: str, task: dict[str, Any]) -> dict[str, Any]:
         """
         作業中状態に遷移する。必要ならば担当者を自分自身に変更する。
 
@@ -109,29 +110,29 @@ class PutCommentMain(CommandLineWithConfirm):
         try:
             if task["account_id"] != self.service.api.account_id:
                 self.service.wrapper.change_task_operator(project_id, task_id, self.service.api.account_id)
-                logger.debug(f"{task_id}: 担当者を自分自身に変更しました。")
+                logger.debug(f"task_id='{task_id}' :: 担当者を自分自身に変更しました。")
 
             changed_task = self.service.wrapper.change_task_status_to_working(project_id, task_id)
             return changed_task  # noqa: TRY300
 
         except requests.HTTPError:
-            logger.warning(f"{task_id}: 担当者の変更、または作業中状態への変更に失敗しました。", exc_info=True)
+            logger.warning(f"task_id='{task_id}' :: 担当者の変更、または作業中状態への変更に失敗しました。", exc_info=True)
             raise
 
     def _can_add_comment(
         self,
-        task: Dict[str, Any],
+        task: dict[str, Any],
     ) -> bool:
         task_id = task["task_id"]
 
         if self.comment_type == CommentType.INSPECTION:  # noqa: SIM102
             if task["phase"] == TaskPhase.ANNOTATION.value:
-                logger.warning(f"task_id='{task_id}': 教師付フェーズなので、検査コメントを付与できません。")
+                logger.warning(f"task_id='{task_id}' :: フェーズが検査/受入でないため検査コメントを付与できません。 :: task_phase='{task['phase']}'")
                 return False
 
         if task["status"] not in [TaskStatus.NOT_STARTED.value, TaskStatus.WORKING.value, TaskStatus.BREAK.value]:
             logger.warning(
-                f"task_id='{task_id}' : タスクの状態が未着手,作業中,休憩中 以外の状態なので、コメントを付与できません。（task_status='{task['status']}'）"  # noqa: E501
+                f"task_id='{task_id}' :: タスクの状態が未着手,作業中,休憩中 以外の状態なので、コメントを付与できません。 :: task_status='{task['status']}'"  # noqa: E501
             )
             return False
         return True
@@ -151,16 +152,16 @@ class PutCommentMain(CommandLineWithConfirm):
             task_index: タスクの連番
 
         Returns:
-            付与したコメントの数
+            コメントを付与した入力データの個数
         """
-        logging_prefix = f"{task_index+1} 件目" if task_index is not None else ""
+        logging_prefix = f"{task_index + 1} 件目" if task_index is not None else ""
 
         task = self.service.wrapper.get_task_or_none(self.project_id, task_id)
         if task is None:
-            logger.warning(f"{logging_prefix} : task_id='{task_id}' のタスクは存在しないので、スキップします。")
+            logger.warning(f"{logging_prefix} :: task_id='{task_id}' のタスクは存在しないので、スキップします。")
             return 0
 
-        logger.debug(f"{logging_prefix} : task_id = {task['task_id']}, status = {task['status']}, phase = {task['phase']}, ")
+        logger.debug(f"{logging_prefix} : task_id='{task['task_id']}', status='{task['status']}', phase='{task['phase']}'")
 
         if not self._can_add_comment(
             task=task,
@@ -175,31 +176,34 @@ class PutCommentMain(CommandLineWithConfirm):
         added_comments_count = 0
         for input_data_id, comments in comments_for_task.items():
             if input_data_id not in task["input_data_id_list"]:
-                logger.warning(f"{logging_prefix} : task_id='{task_id}'のタスクに input_data_id='{input_data_id}'の入力データは存在しません。")
+                logger.warning(f"{logging_prefix} :: task_id='{task_id}'のタスクに input_data_id='{input_data_id}'の入力データは存在しません。")
                 continue
             try:
                 # コメントを付与する
-                request_body = self._create_request_body(task=changed_task, input_data_id=input_data_id, comments=comments)
-                self.service.api.batch_update_comments(self.project_id, task_id, input_data_id, request_body=request_body)
-                added_comments_count += 1
-                logger.debug(f"{logging_prefix} : task_id={task_id}, input_data_id={input_data_id}: {len(comments)}件のコメントを付与しました。")
+                if len(comments) > 0:
+                    request_body = self._create_request_body(task=changed_task, input_data_id=input_data_id, comments=comments)
+                    self.service.api.batch_update_comments(self.project_id, task_id, input_data_id, request_body=request_body)
+                    added_comments_count += 1
+                    logger.debug(
+                        f"{logging_prefix} :: task_id='{task_id}', input_data_id='{input_data_id}' :: {len(comments)}件のコメントを付与しました。"
+                    )
             except Exception:  # pylint: disable=broad-except
                 logger.warning(
-                    f"{logging_prefix} : task_id={task_id}, input_data_id={input_data_id}: コメントの付与に失敗しました。",
+                    f"{logging_prefix} :: task_id={task_id}, input_data_id={input_data_id}: コメントの付与に失敗しました。",
                     exc_info=True,
                 )
-            finally:
-                self.service.wrapper.change_task_status_to_break(self.project_id, task_id)
-                # 担当者が変えている場合は、元に戻す
-                if task["account_id"] != changed_task["account_id"]:
-                    self.service.wrapper.change_task_operator(self.project_id, task_id, task["account_id"])
-                    logger.debug(f"{task_id}: 担当者を元のユーザ( account_id={task['account_id']}）に戻しました。")
+
+        self.service.wrapper.change_task_status_to_break(self.project_id, task_id)
+        # 担当者が変えている場合は、元に戻す
+        if task["account_id"] != changed_task["account_id"]:
+            self.service.wrapper.change_task_operator(self.project_id, task_id, task["account_id"])
+            logger.debug(f"{logging_prefix} :: task_id='{task_id}' :: 担当者を元のユーザ( account_id='{task['account_id']}'）に戻しました。")
 
         return added_comments_count
 
     def add_comments_for_task_wrapper(
         self,
-        tpl: Tuple[int, Tuple[str, AddedCommentsForTask]],
+        tpl: tuple[int, tuple[str, AddedCommentsForTask]],
     ) -> int:
         task_index, (task_id, comments_for_task) = tpl
         return self.add_comments_for_task(task_id=task_id, comments_for_task=comments_for_task, task_index=task_index)
@@ -232,13 +236,13 @@ class PutCommentMain(CommandLineWithConfirm):
                     )
                     added_comments_count += result
                 except Exception:  # pylint: disable=broad-except
-                    logger.warning(f"task_id={task_id}: コメントの付与に失敗しました。", exc_info=True)
+                    logger.warning(f"task_id='{task_id}' :: コメントの付与に失敗しました。", exc_info=True)
                     continue
 
         logger.info(f"{added_comments_count} / {comments_count} 件の入力データに{self.comment_type_name}を付与しました。")
 
 
-def convert_cli_comments(dict_comments: Dict[str, Any], *, comment_type: CommentType) -> AddedComments:
+def convert_cli_comments(dict_comments: dict[str, Any], *, comment_type: CommentType) -> AddedComments:
     """
     CLIから受け取ったコメント情報を、データクラスに変換する。
     """
@@ -252,13 +256,13 @@ def convert_cli_comments(dict_comments: Dict[str, Any], *, comment_type: Comment
         comment: str
         """コメントの中身"""
 
-        data: Dict[str, Any]
+        data: dict[str, Any]
         """コメントを付与する位置や区間"""
 
         annotation_id: Optional[str] = None
         """コメントに紐付けるアノテーションID"""
 
-        phrases: Optional[List[str]] = None
+        phrases: Optional[list[str]] = None
         """参照している定型指摘ID"""
 
     @dataclass
@@ -286,10 +290,12 @@ def convert_cli_comments(dict_comments: Dict[str, Any], *, comment_type: Comment
     elif comment_type == CommentType.ONHOLD:
         func_convert = convert_onhold_comment
     else:
-        raise RuntimeError(f"{comment_type=}が無効な値です。")
+        assert_noreturn(comment_type)
 
-    return {
-        task_id: {input_data_id: [func_convert(e) for e in comments]}
-        for task_id, comments_for_task in dict_comments.items()
-        for input_data_id, comments in comments_for_task.items()
-    }
+    result = {}
+    for task_id, comments_for_task in dict_comments.items():
+        sub_result = {
+            input_data_id: [func_convert(e) for e in comments] for input_data_id, comments in comments_for_task.items() if len(comments) > 0
+        }
+        result.update({task_id: sub_result})
+    return result

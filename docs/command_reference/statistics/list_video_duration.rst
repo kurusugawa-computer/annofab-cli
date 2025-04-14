@@ -60,7 +60,8 @@ JSON出力
         "task_phase_stage": 1,
         "input_data_id": "c37be9c2-c8e7-472b-8766-7f16e197c6ce",
         "input_data_name": "video1",
-        "video_duration_second": 5.294
+        "video_duration_second": 5.294,
+        "input_data_updated_datetime": "2024-10-04T09:18:02.416+09:00"
     }
     ]
 

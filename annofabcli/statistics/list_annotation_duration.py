@@ -10,10 +10,11 @@ import sys
 import tempfile
 import zipfile
 from collections import defaultdict
+from collections.abc import Collection, Iterator
 from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
-from typing import Any, Collection, Iterator, Optional, Tuple, Union
+from typing import Any, Optional, Union
 
 import annofabapi
 import pandas
@@ -45,7 +46,7 @@ from annofabcli.statistics.list_annotation_count import AnnotationSpecs
 
 logger = logging.getLogger(__name__)
 
-AttributeValueKey = Tuple[str, str, str]
+AttributeValueKey = tuple[str, str, str]
 """
 属性のキー.
 tuple[label_name_en, attribute_name_en, attribute_value] で表す。
@@ -53,7 +54,7 @@ tuple[label_name_en, attribute_name_en, attribute_value] で表す。
 
 LabelKeys = Collection[str]
 
-AttributeNameKey = Tuple[str, str]
+AttributeNameKey = tuple[str, str]
 """
 属性名のキー.
 tuple[label_name_en, attribute_name_en] で表す。
@@ -108,9 +109,9 @@ class AnnotationDuration(DataClassJsonMixin):
     """
 
     task_id: str
-    status: TaskStatus
-    phase: TaskPhase
-    phase_stage: int
+    task_status: TaskStatus
+    task_phase: TaskPhase
+    task_phase_stage: int
 
     input_data_id: str
     input_data_name: str
@@ -238,9 +239,9 @@ class ListAnnotationDurationByInputData:
 
         return AnnotationDuration(
             task_id=simple_annotation["task_id"],
-            phase=TaskPhase(simple_annotation["task_phase"]),
-            phase_stage=simple_annotation["task_phase_stage"],
-            status=TaskStatus(simple_annotation["task_status"]),
+            task_phase=TaskPhase(simple_annotation["task_phase"]),
+            task_phase_stage=simple_annotation["task_phase_stage"],
+            task_status=TaskStatus(simple_annotation["task_status"]),
             input_data_id=simple_annotation["input_data_id"],
             input_data_name=simple_annotation["input_data_name"],
             video_duration_second=video_duration_second,
@@ -278,7 +279,7 @@ class ListAnnotationDurationByInputData:
         logger.debug("アノテーションzip/ディレクトリを読み込み中")
         for index, parser in enumerate(iter_parser):
             if (index + 1) % 1000 == 0:
-                logger.debug(f"{index+1}  件目のJSONを読み込み中")
+                logger.debug(f"{index + 1}  件目のJSONを読み込み中")
 
             if target_task_ids is not None and parser.task_id not in target_task_ids:
                 continue
@@ -326,8 +327,7 @@ class AnnotationDurationCsvByAttribute:
         }
         if len(non_selective_attribute_names) > 0:
             logger.debug(
-                f"以下の属性は値の個数が{self.selective_attribute_value_max_count}を超えていたため、集計しません。 :: "
-                f"{non_selective_attribute_names}"
+                f"以下の属性は値の個数が{self.selective_attribute_value_max_count}を超えていたため、集計しません。 :: {non_selective_attribute_names}"
             )
 
         return [
@@ -375,9 +375,9 @@ class AnnotationDurationCsvByAttribute:
     ) -> list[AttributeValueKey]:
         basic_columns = [
             ("task_id", "", ""),
-            ("status", "", ""),
-            ("phase", "", ""),
-            ("phase_stage", "", ""),
+            ("task_status", "", ""),
+            ("task_phase", "", ""),
+            ("task_phase_stage", "", ""),
             ("input_data_id", "", ""),
             ("input_data_name", "", ""),
             ("video_duration_second", "", ""),
@@ -396,9 +396,9 @@ class AnnotationDurationCsvByAttribute:
                 ("input_data_id", "", ""): c.input_data_id,
                 ("input_data_name", "", ""): c.input_data_name,
                 ("task_id", "", ""): c.task_id,
-                ("status", "", ""): c.status.value,
-                ("phase", "", ""): c.phase.value,
-                ("phase_stage", "", ""): c.phase_stage,
+                ("task_status", "", ""): c.task_status.value,
+                ("task_phase", "", ""): c.task_phase.value,
+                ("task_phase_stage", "", ""): c.task_phase_stage,
                 ("video_duration_second", "", ""): c.video_duration_second,
                 ("annotation_duration_second", "", ""): c.annotation_duration_second,
             }
@@ -411,7 +411,7 @@ class AnnotationDurationCsvByAttribute:
 
         # アノテーション数の列のNaNを0に変換する
         value_columns = self._value_columns(annotation_duration_list, prior_attribute_columns)
-        df = df.fillna({column: 0 for column in value_columns})
+        df = df.fillna(dict.fromkeys(value_columns, 0))
         return df
 
 
@@ -438,9 +438,9 @@ class AnnotationDurationCsvByLabel:
     ) -> list[str]:
         basic_columns = [
             "task_id",
-            "status",
-            "phase",
-            "phase_stage",
+            "task_status",
+            "task_phase",
+            "task_phase_stage",
             "input_data_id",
             "input_data_name",
             "video_duration_second",
@@ -459,9 +459,9 @@ class AnnotationDurationCsvByLabel:
                 "input_data_id": c.input_data_id,
                 "input_data_name": c.input_data_name,
                 "task_id": c.task_id,
-                "status": c.status.value,
-                "phase": c.phase.value,
-                "phase_stage": c.phase_stage,
+                "task_status": c.task_status.value,
+                "task_phase": c.task_phase.value,
+                "task_phase_stage": c.task_phase_stage,
                 "video_duration_second": c.video_duration_second,
                 "annotation_duration_second": c.annotation_duration_second,
             }
@@ -473,7 +473,7 @@ class AnnotationDurationCsvByLabel:
 
         # アノテーション数列のNaNを0に変換する
         value_columns = self._value_columns(annotation_duration_list, prior_label_columns)
-        df = df.fillna({column: 0 for column in value_columns})
+        df = df.fillna(dict.fromkeys(value_columns, 0))
 
         return df
 

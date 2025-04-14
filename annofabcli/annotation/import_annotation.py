@@ -7,9 +7,10 @@ import multiprocessing
 import sys
 import uuid
 import zipfile
+from collections.abc import Iterator
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, Iterator, List, Optional, Union
+from typing import Any, Optional, Union
 
 import annofabapi
 from annofabapi.dataclass.annotation import AdditionalDataV1, AnnotationDetailV1
@@ -36,6 +37,7 @@ from more_itertools import first_true
 import annofabcli
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
+    PARALLELISM_CHOICES,
     ArgumentParser,
     CommandLine,
     CommandLineWithConfirm,
@@ -56,10 +58,10 @@ class ImportedSimpleAnnotationDetail(DataClassJsonMixin):
     label: str
     """アノテーション仕様のラベル名(英語)"""
 
-    data: Dict[str, Any]
+    data: dict[str, Any]
     """"""
 
-    attributes: Optional[Dict[str, Union[str, bool, int]]] = None
+    attributes: Optional[dict[str, Union[str, bool, int]]] = None
     """属性情報。キーは属性の名前、値は属性の値。 """
 
     annotation_id: Optional[str] = None
@@ -72,7 +74,7 @@ class ImportedSimpleAnnotation(DataClassJsonMixin):
     ``annofabapi.dataclass.annotation.SimpleAnnotation`` に対応するインポート用のDataClass。
     """
 
-    details: List[ImportedSimpleAnnotationDetail]
+    details: list[ImportedSimpleAnnotationDetail]
     """矩形、ポリゴン、全体アノテーションなど個々のアノテーションの配列。"""
 
 
@@ -116,7 +118,7 @@ class ImportAnnotationMain(CommandLineWithConfirm):
 
         return None
 
-    def _get_choice_id_from_name(self, name: str, choices: List[Dict[str, Any]]) -> Optional[str]:
+    def _get_choice_id_from_name(self, name: str, choices: list[dict[str, Any]]) -> Optional[str]:
         choice_info = first_true(choices, pred=lambda e: self.facade.get_choice_name_en(e) == name)
         if choice_info is not None:
             return choice_info["choice_id"]
@@ -124,7 +126,7 @@ class ImportAnnotationMain(CommandLineWithConfirm):
             return None
 
     @classmethod
-    def _get_3dpc_segment_data_uri(cls, annotation_data: Dict[str, Any]) -> str:
+    def _get_3dpc_segment_data_uri(cls, annotation_data: dict[str, Any]) -> str:
         """
         3DセグメントのURIを取得する
 
@@ -138,7 +140,7 @@ class ImportAnnotationMain(CommandLineWithConfirm):
         return str(path.relative_to(path.parts[0]))
 
     @classmethod
-    def _is_3dpc_segment_label(cls, label_info: Dict[str, Any]) -> bool:
+    def _is_3dpc_segment_label(cls, label_info: dict[str, Any]) -> bool:
         """
         3次元のセグメントかどうか
         """
@@ -160,7 +162,7 @@ class ImportAnnotationMain(CommandLineWithConfirm):
         return False
 
     @classmethod
-    def _get_data_holding_type_from_data(cls, label_info: Dict[str, Any]) -> AnnotationDataHoldingType:
+    def _get_data_holding_type_from_data(cls, label_info: dict[str, Any]) -> AnnotationDataHoldingType:
         annotation_type = label_info["annotation_type"]
         if annotation_type in [DefaultAnnotationType.SEGMENTATION.value, DefaultAnnotationType.SEGMENTATION_V2.value]:
             return AnnotationDataHoldingType.OUTER
@@ -171,8 +173,8 @@ class ImportAnnotationMain(CommandLineWithConfirm):
 
         return AnnotationDataHoldingType.INNER
 
-    def _to_additional_data_list(self, attributes: Dict[str, Any], label_info: LabelV1) -> List[AdditionalDataV1]:
-        additional_data_list: List[AdditionalDataV1] = []
+    def _to_additional_data_list(self, attributes: dict[str, Any], label_info: LabelV1) -> list[AdditionalDataV1]:
+        additional_data_list: list[AdditionalDataV1] = []
         for key, value in attributes.items():
             specs_additional_data = self._get_additional_data_from_attribute_name(key, label_info)
             if specs_additional_data is None:
@@ -270,10 +272,10 @@ class ImportAnnotationMain(CommandLineWithConfirm):
     def parser_to_request_body(
         self,
         parser: SimpleAnnotationParser,
-        details: List[ImportedSimpleAnnotationDetail],
-        old_annotation: Optional[Dict[str, Any]] = None,
-    ) -> Dict[str, Any]:
-        request_details: List[Dict[str, Any]] = []
+        details: list[ImportedSimpleAnnotationDetail],
+        old_annotation: Optional[dict[str, Any]] = None,
+    ) -> dict[str, Any]:
+        request_details: list[dict[str, Any]] = []
         now_datetime = str_now()
         for detail in details:
             try:
@@ -304,9 +306,9 @@ class ImportAnnotationMain(CommandLineWithConfirm):
     def parser_to_request_body_with_merge(
         self,
         parser: SimpleAnnotationParser,
-        details: List[ImportedSimpleAnnotationDetail],
-        old_annotation: Dict[str, Any],
-    ) -> Dict[str, Any]:
+        details: list[ImportedSimpleAnnotationDetail],
+        old_annotation: dict[str, Any],
+    ) -> dict[str, Any]:
         old_details = old_annotation["details"]
         old_dict_detail = {}
         INDEX_KEY = "_index"  # noqa: N806
@@ -319,7 +321,7 @@ class ImportAnnotationMain(CommandLineWithConfirm):
             old_detail.update({INDEX_KEY: index})
             old_dict_detail[old_detail["annotation_id"]] = old_detail
 
-        new_request_details: List[Dict[str, Any]] = []
+        new_request_details: list[dict[str, Any]] = []
         now_datetime = str_now()
         for detail in details:
             try:
@@ -381,7 +383,7 @@ class ImportAnnotationMain(CommandLineWithConfirm):
                 )
                 return False
 
-        logger.info(f"task_id={task_id}, input_data_id={input_data_id} : アノテーションを登録します。")
+        logger.info(f"task_id='{task_id}', input_data_id='{input_data_id}' :: {len(simple_annotation.details)} 件のアノテーションを登録します。")
         if self.is_merge:
             request_body = self.parser_to_request_body_with_merge(parser, simple_annotation.details, old_annotation=old_annotation)
         else:
@@ -391,8 +393,6 @@ class ImportAnnotationMain(CommandLineWithConfirm):
         return True
 
     def put_annotation_for_task(self, task_parser: SimpleAnnotationParserByTask) -> int:
-        logger.info(f"タスク'{task_parser.task_id}'に対してアノテーションを登録します。")
-
         success_count = 0
         for parser in task_parser.lazy_parse():
             try:
@@ -421,7 +421,7 @@ class ImportAnnotationMain(CommandLineWithConfirm):
         if not self.confirm_processing(f"task_id={task_id} のアノテーションをインポートしますか？"):
             return False
 
-        logger_prefix = f"{task_index+1!s} 件目: " if task_index is not None else ""
+        logger_prefix = f"{task_index + 1!s} 件目: " if task_index is not None else ""
         logger.info(f"{logger_prefix}task_id={task_id} に対して処理します。")
 
         task = self.service.wrapper.get_task_or_none(self.project_id, task_id)
@@ -641,6 +641,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--parallelism",
         type=int,
+        choices=PARALLELISM_CHOICES,
         help="並列度。指定しない場合は、逐次的に処理します。指定した場合は、``--yes`` も指定してください。",
     )
 

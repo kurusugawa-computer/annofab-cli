@@ -5,15 +5,18 @@
 from __future__ import annotations
 
 import logging
+from collections.abc import Sequence
 from pathlib import Path
+from typing import Optional
 
 import numpy
 import pandas
 from annofabapi.models import TaskPhase
 
 from annofabcli.statistics.visualization.dataframe.task_worktime_by_phase_user import TaskWorktimeByPhaseUser
-from annofabcli.statistics.visualization.dataframe.user_performance import UserPerformance
+from annofabcli.statistics.visualization.dataframe.user_performance import TaskPhaseString, UserPerformance
 from annofabcli.statistics.visualization.dataframe.worktime_per_date import WorktimePerDate
+from annofabcli.statistics.visualization.model import ProductionVolumeColumn, TaskCompletionCriteria
 
 logger = logging.getLogger(__name__)
 
@@ -29,8 +32,16 @@ class WholePerformance:
     STRING_KEYS = {("first_working_date", ""), ("last_working_date", "")}  # noqa: RUF012
     """文字列が格納されているキー"""
 
-    def __init__(self, series: pandas.Series) -> None:
+    def __init__(
+        self,
+        series: pandas.Series,
+        task_completion_criteria: TaskCompletionCriteria,
+        *,
+        custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None,
+    ) -> None:
         self.series = series
+        self.task_completion_criteria = task_completion_criteria
+        self.custom_production_volume_list = custom_production_volume_list if custom_production_volume_list is not None else []
 
     def _validate_df_for_output(self, output_file: Path) -> bool:
         if len(self.series) == 0:
@@ -42,6 +53,7 @@ class WholePerformance:
     def _create_all_user_performance(
         worktime_per_date: WorktimePerDate,
         task_worktime_by_phase_user: TaskWorktimeByPhaseUser,
+        task_completion_criteria: TaskCompletionCriteria,
     ) -> UserPerformance:
         """
         1人が作業した場合のパフォーマンス情報を生成します。
@@ -83,7 +95,10 @@ class WholePerformance:
 
         return UserPerformance.from_df_wrapper(
             worktime_per_date=WorktimePerDate(df_worktime_per_date),
-            task_worktime_by_phase_user=TaskWorktimeByPhaseUser(df_task_worktime_by_phase_user),
+            task_worktime_by_phase_user=TaskWorktimeByPhaseUser(
+                df_task_worktime_by_phase_user, custom_production_volume_list=task_worktime_by_phase_user.custom_production_volume_list
+            ),
+            task_completion_criteria=task_completion_criteria,
         )
 
     @classmethod
@@ -91,6 +106,7 @@ class WholePerformance:
         cls,
         worktime_per_date: WorktimePerDate,
         task_worktime_by_phase_user: TaskWorktimeByPhaseUser,
+        task_completion_criteria: TaskCompletionCriteria,
     ) -> WholePerformance:
         """
         pandas.DataFrameをラップしたオブジェクトから、インスタンスを生成します。
@@ -101,12 +117,12 @@ class WholePerformance:
 
         """  # noqa: E501
         # 1人が作業した場合のパフォーマンス情報を生成する
-        all_user_performance = cls._create_all_user_performance(worktime_per_date, task_worktime_by_phase_user)
+        all_user_performance = cls._create_all_user_performance(worktime_per_date, task_worktime_by_phase_user, task_completion_criteria)
 
         df_all = all_user_performance.df
         # タスクは存在するが合計の作業時間が0時間の場合
         if len(df_all) == 0:
-            return WholePerformance.empty()
+            return WholePerformance.empty(task_completion_criteria)
 
         # 1人が作業した場合のパフォーマンス情報を生成しているので、lengthは1のはず
         assert len(df_all) == 1
@@ -123,11 +139,18 @@ class WholePerformance:
             df_all[("working_user_count", phase.value)] = (df_worktime2[f"monitored_{phase.value}_worktime_hour"] > 0).sum()
 
         df_all = df_all.drop([("account_id", ""), ("user_id", ""), ("username", ""), ("biography", "")], axis=1, errors="ignore")
-        return cls(df_all.iloc[0])
+        return cls(df_all.iloc[0], task_completion_criteria, custom_production_volume_list=task_worktime_by_phase_user.custom_production_volume_list)
 
     @classmethod
-    def empty(cls) -> WholePerformance:
+    def empty(
+        cls, task_completion_criteria: TaskCompletionCriteria, *, custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None
+    ) -> WholePerformance:
         """空のデータフレームを持つインスタンスを生成します。"""
+
+        production_volume_columns = ["input_data_count", "annotation_count"]
+        if custom_production_volume_list is not None:
+            production_volume_columns.extend([e.value for e in custom_production_volume_list])
+
         phase = TaskPhase.ANNOTATION.value
 
         worktime_columns = [
@@ -145,8 +168,7 @@ class WholePerformance:
 
         count_columns = [
             ("task_count", phase),
-            ("input_data_count", phase),
-            ("annotation_count", phase),
+            *[(col, phase) for col in production_volume_columns],
             ("pointed_out_inspection_comment_count", phase),
             ("rejected_count", phase),
             # 常に全フェーズを出力する
@@ -158,20 +180,15 @@ class WholePerformance:
         ratio_columns = [
             ("monitored_worktime_ratio", phase),
             ("real_monitored_worktime_hour/real_actual_worktime_hour", "sum"),
-            ("monitored_worktime_hour/input_data_count", phase),
-            ("actual_worktime_hour/input_data_count", phase),
-            ("monitored_worktime_hour/annotation_count", phase),
-            ("actual_worktime_hour/annotation_count", phase),
-            ("pointed_out_inspection_comment_count/input_data_count", phase),
-            ("pointed_out_inspection_comment_count/annotation_count", phase),
+            *[(f"monitored_worktime_hour/{col}", phase) for col in production_volume_columns],
+            *[(f"actual_worktime_hour/{col}", phase) for col in production_volume_columns],
+            *[(f"pointed_out_inspection_comment_count/{col}", phase) for col in production_volume_columns],
             ("rejected_count/task_count", phase),
         ]
 
         stdev_columns = [
-            ("stdev__monitored_worktime_hour/input_data_count", phase),
-            ("stdev__actual_worktime_hour/input_data_count", phase),
-            ("stdev__monitored_worktime_hour/annotation_count", phase),
-            ("stdev__actual_worktime_hour/annotation_count", phase),
+            *[(f"stdev__monitored_worktime_hour/{col}", phase) for col in production_volume_columns],
+            *[(f"stdev__actual_worktime_hour/{col}", phase) for col in production_volume_columns],
         ]
 
         date_columns = [
@@ -180,13 +197,19 @@ class WholePerformance:
             ("working_days", ""),
         ]
 
-        data: dict[tuple[str, str], float] = {key: 0 for key in worktime_columns + count_columns}
-        data.update({key: numpy.nan for key in ratio_columns + stdev_columns + date_columns})
+        data: dict[tuple[str, str], float] = dict.fromkeys(worktime_columns + count_columns, 0)
+        data.update(dict.fromkeys(ratio_columns + stdev_columns + date_columns, numpy.nan))
 
-        return cls(pandas.Series(data))
+        return cls(pandas.Series(data), task_completion_criteria, custom_production_volume_list=custom_production_volume_list)
 
     @classmethod
-    def from_csv(cls, csv_file: Path) -> WholePerformance:
+    def from_csv(
+        cls,
+        csv_file: Path,
+        task_completion_criteria: TaskCompletionCriteria,
+        *,
+        custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None,
+    ) -> WholePerformance:
         """CSVファイルからインスタンスを生成します。"""
         df = pandas.read_csv(str(csv_file), header=None, index_col=[0, 1])
         # 3列目を値としたpandas.Series を取得する。
@@ -208,7 +231,7 @@ class WholePerformance:
 
             data[key2] = value2
 
-        return cls(pandas.Series(data))
+        return cls(pandas.Series(data), task_completion_criteria, custom_production_volume_list=custom_production_volume_list)
 
     def to_csv(self, output_file: Path) -> None:
         """
@@ -220,7 +243,8 @@ class WholePerformance:
 
         # 列の順番を整える
         phase_list = UserPerformance.get_phase_list(self.series.index)
-        indexes = self.get_series_index(phase_list)
+        production_volume_columns = ["input_data_count", "annotation_count", *[e.value for e in self.custom_production_volume_list]]
+        indexes = self.get_series_index(phase_list, production_volume_columns=production_volume_columns)
         series = self.series[indexes]
 
         output_file.parent.mkdir(exist_ok=True, parents=True)
@@ -228,7 +252,7 @@ class WholePerformance:
         series.to_csv(str(output_file), sep=",", encoding="utf_8_sig", header=False)
 
     @staticmethod
-    def get_series_index(phase_list: list[str]) -> list[tuple[str, str]]:
+    def get_series_index(phase_list: Sequence[TaskPhaseString], production_volume_columns: list[str]) -> list[tuple[str, str]]:
         """
         格納しているpandas.Seriesのindexを取得する。
         """
@@ -237,7 +261,7 @@ class WholePerformance:
             ("first_working_date", ""),
             ("last_working_date", ""),
             ("working_days", ""),
-            *UserPerformance.get_productivity_columns(phase_list),
+            *UserPerformance.get_productivity_columns(phase_list, production_volume_columns),
             ("working_user_count", TaskPhase.ANNOTATION.value),
             ("working_user_count", TaskPhase.INSPECTION.value),
             ("working_user_count", TaskPhase.ACCEPTANCE.value),

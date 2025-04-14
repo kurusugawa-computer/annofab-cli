@@ -3,7 +3,8 @@ from __future__ import annotations
 import argparse
 import logging
 import re
-from typing import Any, Collection, Optional
+from collections.abc import Collection
+from typing import Any, Optional
 
 import more_itertools
 
@@ -62,8 +63,7 @@ class ReplacingChoiceId(CommandLineWithConfirm):
             choice_list = attribute["choices"]
 
             if not self.confirm_processing(
-                f"属性英語名='{attribute_name_en}'の{len(choice_list)}個の選択肢IDを、"
-                "選択肢英語名に変更したアノテーション仕様のJSONを出力しますか？"
+                f"属性英語名='{attribute_name_en}'の{len(choice_list)}個の選択肢IDを、選択肢英語名に変更したアノテーション仕様のJSONを出力しますか？"
             ):
                 continue
 

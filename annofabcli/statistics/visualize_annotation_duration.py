@@ -5,10 +5,11 @@ import logging
 import sys
 import tempfile
 from collections import defaultdict
+from collections.abc import Collection, Sequence
 from enum import Enum
 from functools import partial
 from pathlib import Path
-from typing import Any, Collection, Optional, Sequence
+from typing import Any, Optional
 
 import bokeh
 import numpy
@@ -150,7 +151,7 @@ def plot_annotation_duration_histogram_by_label(  # noqa: PLR0915
 
     figure_list_2d.extend(convert_1d_figure_list_to_2d(histogram_list))
 
-    bokeh_obj = bokeh.layouts.gridplot(figure_list_2d)  # type: ignore[arg-type]
+    bokeh_obj = bokeh.layouts.gridplot(figure_list_2d)
     output_file.parent.mkdir(exist_ok=True, parents=True)
     bokeh.plotting.reset_output()
     html_title = "区間アノテーションの長さの分布（ラベル名ごと）"
@@ -265,7 +266,7 @@ def plot_annotation_duration_histogram_by_attribute(  # noqa: PLR0915
 
     figure_list_2d.extend(convert_to_2d_figure_list(figures_dict))
 
-    bokeh_obj = bokeh.layouts.gridplot(figure_list_2d)  # type: ignore[arg-type]
+    bokeh_obj = bokeh.layouts.gridplot(figure_list_2d)
     output_file.parent.mkdir(exist_ok=True, parents=True)
     bokeh.plotting.reset_output()
     html_title = "区間アノテーションの長さの分布（属性値ごと）"

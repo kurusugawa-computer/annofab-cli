@@ -4,7 +4,7 @@ import argparse
 import logging
 import sys
 from pathlib import Path
-from typing import Any, List, Optional
+from typing import Any, Optional
 
 import annofabapi
 import requests
@@ -143,7 +143,7 @@ class DeleteAnnotationMain(CommandLineWithConfirm):
 
     def delete_annotation_for_task_list(  # noqa: ANN201
         self,
-        task_id_list: List[str],
+        task_id_list: list[str],
         annotation_query: Optional[AnnotationQueryForAPI] = None,
         backup_dir: Optional[Path] = None,
     ):
@@ -154,7 +154,7 @@ class DeleteAnnotationMain(CommandLineWithConfirm):
             backup_dir.mkdir(exist_ok=True, parents=True)
 
         for task_index, task_id in enumerate(task_id_list):
-            logger.info(f"{task_index+1} / {len(task_id_list)} 件目: タスク '{task_id}' を削除します。")
+            logger.info(f"{task_index + 1} / {len(task_id_list)} 件目: タスク '{task_id}' を削除します。")
             self.delete_annotation_for_task(
                 task_id,
                 annotation_query=annotation_query,

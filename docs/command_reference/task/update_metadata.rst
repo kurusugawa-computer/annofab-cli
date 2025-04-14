@@ -24,7 +24,7 @@ Examples
 .. code-block::
 
     $ annofabcli task update_metadata --project_id prj1 --task_id task1 task2 \
-     --metadata '{"priority":2, "rquired":true, "category":"202010"}'
+     --metadata '{"priority":2, "required":true, "category":"202010"}'
 
 
 
@@ -41,14 +41,14 @@ Examples
     .. code-block::
         
         $ annofabcli task list --project_id prj1 --task_id task1 --format json |
-            jq '.[] | {task_id,metadata}'
+            jq '[.[] | {task_id,metadata}]'
         [
             {
                 "task_id": "task1",
                 "metadata": {
                     "category": "202010",
                     "priority": 2,
-                    "rquired": true
+                    "required": true
                 }
             }
         ]  
@@ -63,40 +63,46 @@ Examples
      --metadata '{"category":"202010"}'
 
     $ annofabcli task list --project_id prj1 --task_id task1 --format json | \
-    jq '.[].metadata'
-    {
-        "task_id": "task1",
-        "metadata": {
-            "category": "202010"
+    jq '[.[] | {task_id,metadata}]'
+    [
+        {
+            "task_id": "task1",
+            "metadata": {
+                "category": "202010"
+            }
         }
-    }
+    ]
     
     # メタデータの一部のキーのみ更新する
     $ annofabcli task update_metadata --project_id prj1 --task_id task1 \
      --metadata '{"country":"Japan"}'
     
     $ annofabcli task list --project_id prj1 --task_id task1 --format json | \
-    jq '.[].metadata'
-    {
-        "task_id": "task1",
-        "metadata": {
-            "category": "202010",
+    jq '[.[] | {task_id,metadata}]'
+    [ 
+        {
+            "task_id": "task1",
+            "metadata": {
+                "category": "202010",
                 "country":"Japan"
+            }
         }
-    }
+     ]
 
     # メタデータ自体を上書きする
     $ annofabcli task update_metadata --project_id prj1 --task_id task1 \
      --metadata '{"weather":"sunny"}' --overwrite
      
     $ annofabcli task list --project_id prj1 --task_id task1 --format json | \
-    jq '.[].metadata'
+    jq '[.[] | {task_id,metadata}]'
+    [
     {
         "task_id": "task1",
         "metadata": {
-            "weather": "sunny",
+            "weather": "sunny"
         }
     }
+    ]
 
 
 

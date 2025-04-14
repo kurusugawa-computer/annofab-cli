@@ -1,6 +1,7 @@
 import argparse
+import dataclasses
 import logging
-from typing import Optional
+from typing import Any, Optional
 
 import annofabapi
 from annofabapi.models import ProjectJobType
@@ -12,12 +13,31 @@ from annofabcli.common.cli import (
     CommandLine,
     build_annofabapi_resource_and_login,
     get_json_from_args,
-    get_wait_options_from_args,
 )
 from annofabcli.common.dataclasses import WaitOptions
 from annofabcli.common.facade import AnnofabApiFacade
 
 logger = logging.getLogger(__name__)
+
+
+def get_wait_options_from_args(dict_wait_options: Optional[dict[str, Any]]) -> WaitOptions:
+    """
+    デフォルト値とマージして、wait_optionsを取得する。
+
+    Args:
+        dict_wait_options: dictのwait_options(コマンドラインから取得した値など）
+        default_wait_options: デフォルトのwait_options
+
+    Returns:
+        デフォルト値とマージしたwait_options
+
+    """
+    default_wait_options = WaitOptions(interval=60, max_tries=360)
+    if dict_wait_options is not None:
+        dataclasses.asdict(default_wait_options)
+        return WaitOptions.from_dict({**dataclasses.asdict(default_wait_options), **dict_wait_options})
+    else:
+        return default_wait_options
 
 
 class WaitJobMain:
@@ -45,8 +65,7 @@ class WaitJob(CommandLine):
         project_id = args.project_id
         job_type = ProjectJobType(args.job_type)
 
-        DEFAULT_WAIT_OPTIONS = WaitOptions(interval=60, max_tries=360)  # noqa: N806
-        wait_options = get_wait_options_from_args(get_json_from_args(args.wait_options), DEFAULT_WAIT_OPTIONS)
+        wait_options = get_wait_options_from_args(get_json_from_args(args.wait_options))
 
         main_obj = WaitJobMain(self.service)
         main_obj.wait_job(project_id, job_type=job_type, job_id=args.job_id, wait_options=wait_options)

@@ -1,6 +1,6 @@
-﻿project_id,task_id,status,phase,phase_stage,account_id,user_id,username,biography,worktime_hour,task_count,input_data_count,annotation_count,pointed_out_inspection_comment_count,rejected_count
-prj1,task1,complete,annotation,1,alice,alice,Alice,USA,2.0,1.0,2,100,5,1
-prj1,task1,complete,inspection,1,bob,bob,Bob,USA,0.5,0.5,1,50,0,0
-prj1,task2,complete,annotation,1,bob,bob,Bob,USA,2.0,1.0,4,200,6,1
-prj1,task2,complete,inspection,1,alice,alice,Alice,USA,0.5,0.5,2,100,0,0
-prj1,task2,complete,acceptance,1,alice,alice,Alice,USA,0.1,1.0,4,200,0,0
+﻿project_id,task_id,status,phase,phase_stage,account_id,user_id,username,biography,worktime_hour,task_count,input_data_count,annotation_count,custom_production_volume1,custom_production_volume2,pointed_out_inspection_comment_count,rejected_count,custom_production_volume1,started_datetime
+prj1,task1,complete,annotation,1,alice,alice,Alice,USA,2,1,2,100,10,20,5,1,102,2024-10-25T11:00:00.000+09:00
+prj1,task1,complete,inspection,1,bob,bob,Bob,USA,0.5,0.5,1,50,4,8,0,0,40,2024-10-26T11:00:00.000+09:00
+prj1,task2,complete,annotation,1,bob,bob,Bob,USA,2,1,4,200,21,40,6,1,399,2024-10-27T11:00:00.000+09:00
+prj1,task2,complete,inspection,1,alice,alice,Alice,USA,0.5,0.5,2,100,10,30,0,0,123,2024-10-28T11:00:00.000+09:00
+prj1,task2,complete,acceptance,1,alice,alice,Alice,USA,0.1,1,4,200,20,23,0,0,242,2024-10-29T11:00:00.000+09:00

@@ -5,59 +5,37 @@ on:
   release:
     types:
     - published
+
+permissions:
+  contents: write
+  
+  
 jobs:
-  windows-build: # Windows向けビルド
+  build-and-release: 
     runs-on: windows-latest
     steps:
-      - name: Checkout commit
-        uses: actions/checkout@main
-
-      - name: Set up Python 3.9
-        uses: actions/setup-python@main
-        with: { python-version: 3.9 }
-
-      - name: Upgrade pip, and install poetry, pyinstaller
-        run: |
-          python -m pip install --upgrade pip 
-          python -m pip install "poetry<1.5"
-      - name: poetry install
-        run: poetry install --only main,publish
-      - name: create executable file
-        run: |
-          mv annofabcli\__main__.py annofabcli\annofabcli.py
-          poetry run pyinstaller annofabcli\annofabcli.py --add-data "annofabcli/data/logging.yaml;annofabcli/data"
-
-      - name: upload
-        uses: actions/upload-artifact@v1
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
-          name: annofabcli-windows
-          path: dist
+          python-version: 3.12
 
-  release:
-    needs: [windows-build]
-    runs-on: ubuntu-latest
+      - name: Install Poetry and dependencies
+        run: |
+          python -m pip install --upgrade pip "poetry<1.9"
+          poetry install --only main,publish
 
-    steps:
-      - name: Set version
-        id: version
+      - name: Create executable file with pyinstaller and zip
         run: |
-          REPOSITORY=$(echo ${{ github.repository }} | sed -e "s#.*/##")
-          VERSION=$(echo ${{ github.ref }} | sed -e "s#refs/tags/##g")
-          echo ::set-output name=version::$VERSION
-          echo ::set-output name=filename::$REPOSITORY-$VERSION
-      - name: Download Windows
-        uses: actions/download-artifact@v1
+          poetry run pyinstaller annofabcli/__main__.py  --name annofabcli --add-data "annofabcli/data:annofabcli/data"          
+          pushd dist
+          Compress-Archive -Path annofabcli  -DestinationPath annofabcli-windows.zip
+          popd
+          
+      - name: Upload a executable file to GitHub Releases
+        uses: softprops/action-gh-release@v2
         with:
-          name: annofabcli-windows
-      - name: Zip
-        run: |
-          zip -r  annofabcli-windows.zip annofabcli-windows
-      - name: Append Binary
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ./annofabcli-windows.zip
-          asset_name: annofabcli-${{ steps.version.outputs.version }}-windows.zip
-          asset_content_type: application/zip
+          files: |
+            dist/annofabcli-windows.zip
+            
+            

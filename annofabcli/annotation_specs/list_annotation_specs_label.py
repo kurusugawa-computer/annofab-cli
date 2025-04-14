@@ -6,7 +6,7 @@ import logging
 import sys
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 import pandas
 from annofabapi.models import Lang
@@ -126,7 +126,7 @@ class PrintAnnotationSpecsLabel(CommandLine):
             annofabcli.common.utils.print_according_to_format(target=labels_v1, format=FormatArgument(arg_format), output=output)
 
     @staticmethod
-    def _get_name_tuple(messages: List[Dict[str, Any]]) -> tuple[str, str]:
+    def _get_name_tuple(messages: list[dict[str, Any]]) -> tuple[str, str]:
         """
         日本語名、英語名のタプルを取得する。
         """

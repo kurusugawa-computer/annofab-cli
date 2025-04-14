@@ -3,6 +3,7 @@
   "project_title": "test-project",
   "input_data_type": "image",
   "measurement_datetime": "2022-06-14T15:56:10.634+09:00",
+  "task_completion_criteria": "acceptance_reached",
   "query": {
     "task_query": null,
     "task_ids": null,

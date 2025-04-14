@@ -2,15 +2,17 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
+from typing import Optional
 
 import numpy
 import pandas
+from annofabapi.models import TaskPhase
 
 from annofabcli.common.pandas import get_frequency_of_monthend
 from annofabcli.common.utils import print_csv
-from annofabcli.statistics.visualization.dataframe.user_performance import UserPerformance
+from annofabcli.statistics.visualization.dataframe.user_performance import ProductionVolumeColumn
 from annofabcli.statistics.visualization.dataframe.whole_performance import WholePerformance
-from annofabcli.statistics.visualization.model import WorktimeColumn
+from annofabcli.statistics.visualization.model import TaskCompletionCriteria, WorktimeColumn
 from annofabcli.statistics.visualization.project_dir import ProjectDir
 
 logger = logging.getLogger(__name__)
@@ -21,8 +23,9 @@ class ProjectPerformance:
     プロジェクトごとの生産性と品質
     """
 
-    def __init__(self, df: pandas.DataFrame) -> None:
+    def __init__(self, df: pandas.DataFrame, *, custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None) -> None:
         self.df = df
+        self.custom_production_volume_list = custom_production_volume_list if custom_production_volume_list is not None else []
 
     def _validate_df_for_output(self, output_file: Path) -> bool:
         if len(self.df) == 0:
@@ -77,17 +80,20 @@ class ProjectPerformance:
             series = pandas.concat([series, whole_performance_obj.series])
         except Exception:
             logger.warning(f"'{project_dir}'の全体の生産性と品質を取得するのに失敗しました。", exc_info=True)
-            series = pandas.concat([series, WholePerformance.empty().series])
+            series = pandas.concat([series, WholePerformance.empty(TaskCompletionCriteria.ACCEPTANCE_COMPLETED).series])
 
         return series
 
-    @classmethod
-    def from_project_dirs(cls, project_dir_list: list[ProjectDir]) -> ProjectPerformance:
-        row_list: list[pandas.Series] = []
-        for project_dir in project_dir_list:
-            row_list.append(cls._get_series_from_project_dir(project_dir))  # noqa: PERF401
+    def get_phase_list(self) -> list[str]:
+        tmp_set = {c1 for c0, c1 in self.df.columns if c0 == "monitored_worktime_hour"}
+        return [e.value for e in TaskPhase if e.value in tmp_set]
 
-        return cls(pandas.DataFrame(row_list))
+    @classmethod
+    def from_project_dirs(
+        cls, project_dir_list: list[ProjectDir], *, custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None
+    ) -> ProjectPerformance:
+        row_list: list[pandas.Series] = [cls._get_series_from_project_dir(project_dir) for project_dir in project_dir_list]
+        return cls(pandas.DataFrame(row_list), custom_production_volume_list=custom_production_volume_list)
 
     def to_csv(self, output_file: Path) -> None:
         """
@@ -96,10 +102,12 @@ class ProjectPerformance:
         if not self._validate_df_for_output(output_file):
             return
 
-        phase_list = UserPerformance.get_phase_list(self.df)
+        phase_list = self.get_phase_list()
 
         first_columns = [("dirname", ""), ("project_title", ""), ("project_id", ""), ("input_data_type", "")]
-        value_columns = WholePerformance.get_series_index(phase_list)
+
+        production_volume_columns = ["input_data_count", "annotation_count", *[e.value for e in self.custom_production_volume_list]]
+        value_columns = WholePerformance.get_series_index(phase_list, production_volume_columns=production_volume_columns)  # type: ignore[arg-type]
 
         columns = first_columns + value_columns
         print_csv(self.df[columns], output=str(output_file))

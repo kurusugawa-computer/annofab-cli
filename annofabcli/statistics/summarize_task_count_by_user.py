@@ -2,7 +2,7 @@ import argparse
 import json
 import logging
 from enum import Enum
-from typing import List, Optional
+from typing import Optional
 
 import pandas
 from annofabapi.models import ProjectMemberRole, Task, TaskPhase, TaskStatus
@@ -13,8 +13,6 @@ from annofabcli.common.cli import (
     ArgumentParser,
     CommandLine,
     build_annofabapi_resource_and_login,
-    get_json_from_args,
-    get_wait_options_from_args,
 )
 from annofabcli.common.dataclasses import WaitOptions
 from annofabcli.common.download import DownloadingFile
@@ -66,7 +64,7 @@ def add_info_to_task(task: Task) -> Task:
     return task
 
 
-def create_task_count_summary_df(task_list: List[Task]) -> pandas.DataFrame:
+def create_task_count_summary_df(task_list: list[Task]) -> pandas.DataFrame:
     """
     タスク数の集計結果が格納されたDataFrameを取得する。
 
@@ -92,7 +90,7 @@ def create_task_count_summary_df(task_list: List[Task]) -> pandas.DataFrame:
 
 
 class SummarizeTaskCountByUser(CommandLine):
-    def create_user_df(self, project_id: str, account_id_list: List[str]) -> pandas.DataFrame:
+    def create_user_df(self, project_id: str, account_id_list: list[str]) -> pandas.DataFrame:
         user_list = []
         for account_id in account_id_list:
             user = self.facade.get_project_member_from_account_id(project_id=project_id, account_id=account_id)
@@ -100,7 +98,7 @@ class SummarizeTaskCountByUser(CommandLine):
                 user_list.append(user)
         return pandas.DataFrame(user_list, columns=["account_id", "user_id", "username", "biography"])
 
-    def create_summary_df(self, project_id: str, task_list: List[Task]) -> pandas.DataFrame:
+    def create_summary_df(self, project_id: str, task_list: list[Task]) -> pandas.DataFrame:
         df_task_count = create_task_count_summary_df(task_list)
         df_user = self.create_user_df(project_id, df_task_count["account_id"])
         if len(df_user) == 0:
@@ -129,12 +127,11 @@ class SummarizeTaskCountByUser(CommandLine):
         if args.task_json is not None:
             task_json_path = args.task_json
         else:
-            wait_options = get_wait_options_from_args(get_json_from_args(args.wait_options), DEFAULT_WAIT_OPTIONS)
             cache_dir = annofabcli.common.utils.get_cache_dir()
             task_json_path = cache_dir / f"{project_id}-task.json"
 
             downloading_obj = DownloadingFile(self.service)
-            downloading_obj.download_task_json(project_id, dest_path=str(task_json_path), is_latest=args.latest, wait_options=wait_options)
+            downloading_obj.download_task_json(project_id, dest_path=str(task_json_path), is_latest=args.latest, wait_options=DEFAULT_WAIT_OPTIONS)
 
         with open(task_json_path, encoding="utf-8") as f:  # noqa: PTH123
             task_list = json.load(f)
@@ -161,16 +158,6 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--latest",
         action="store_true",
         help="最新のタスク一覧ファイルを参照します。このオプションを指定すると、タスク一覧ファイルを更新するのに数分待ちます。",
-    )
-
-    parser.add_argument(
-        "--wait_options",
-        type=str,
-        help="タスク一覧ファイルの更新が完了するまで待つ際のオプションを、JSON形式で指定してください。"
-        "`file://`を先頭に付けるとjsonファイルを指定できます。"
-        'デフォルは`{"interval":60, "max_tries":360}` です。'
-        "`interval`:完了したかを問い合わせる間隔[秒], "
-        "`max_tires`:完了したかの問い合わせを最大何回行うか。",
     )
 
     argument_parser.add_csv_format()

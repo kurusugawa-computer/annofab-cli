@@ -11,11 +11,16 @@ import bokeh.palettes
 import numpy
 import pandas
 import pytz
+from bokeh.plotting import figure
 
+from annofabcli.common.bokeh import convert_1d_figure_list_to_2d, create_pretext_from_metadata
 from annofabcli.common.utils import print_csv
 from annofabcli.statistics.histogram import create_histogram_figure, get_sub_title_from_series
 from annofabcli.statistics.visualization.dataframe.annotation_count import AnnotationCount
+from annofabcli.statistics.visualization.dataframe.custom_production_volume import CustomProductionVolume
+from annofabcli.statistics.visualization.dataframe.input_data_count import InputDataCount
 from annofabcli.statistics.visualization.dataframe.inspection_comment_count import InspectionCommentCount
+from annofabcli.statistics.visualization.model import ProductionVolumeColumn
 from annofabcli.task.list_all_tasks_added_task_history import AddingAdditionalInfoToTask
 
 logger = logging.getLogger(__name__)
@@ -29,6 +34,10 @@ class Task:
     'タスクlist.csv'に該当するデータフレームをラップしたクラス
 
     `project_id`,`task_id`のペアがユニークなキーです。
+
+    Args:
+        custom_production_volume_columns: ユーザー独自の生産量を表す列名のlist
+
     """
 
     @staticmethod
@@ -39,22 +48,33 @@ class Task:
         duplicated = df.duplicated(subset=["project_id", "task_id"])
         return duplicated.any()
 
-    @classmethod
-    def required_columns_exist(cls, df: pandas.DataFrame) -> bool:
+    def required_columns_exist(self, df: pandas.DataFrame) -> bool:
         """
         必須の列が存在するかどうかを返します。
 
         Returns:
             必須の列が存在するかどうか
         """
-        return len(set(cls.columns()) - set(df.columns)) == 0
+        return len(set(self.required_columns) - set(df.columns)) == 0
 
-    def __init__(self, df: pandas.DataFrame) -> None:
+    def missing_required_columns(self, df: pandas.DataFrame) -> list[str]:
+        """
+        欠損している必須の列名を取得します。
+
+        """
+        return list(set(self.required_columns) - set(df.columns))
+
+    def __init__(self, df: pandas.DataFrame, *, custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None) -> None:
+        self.custom_production_volume_list = custom_production_volume_list if custom_production_volume_list is not None else []
+
         if self._duplicated_keys(df):
             logger.warning("引数`df`に重複したキー（project_id, task_id）が含まれています。")
 
         if not self.required_columns_exist(df):
-            raise ValueError(f"引数`df`には、{self.columns()}の列が必要です。 :: {df.columns=}")
+            raise ValueError(
+                f"引数'df'の'columns'に次の列が存在していません。 {self.missing_required_columns(df)} :: "
+                f"次の列が必須です。{self.required_columns} の列が必要です。"
+            )
 
         self.df = df
 
@@ -64,8 +84,33 @@ class Task:
             return False
         return True
 
-    @classmethod
-    def columns(cls) -> list[str]:
+    def to_non_acceptance(self) -> Task:
+        """
+        受入フェーズの作業時間を0にした新しいインスタンスを生成します。
+
+        `--task_completion_criteria acceptance_reached`を指定したときに利用します。
+        この場合、受入フェーズの作業時間を無視して集計する必要があるためです。
+
+        """
+        df = self.df.copy()
+        df["first_acceptance_worktime_hour"] = 0
+        df["acceptance_worktime_hour"] = 0
+        return Task(df, custom_production_volume_list=self.custom_production_volume_list)
+
+    @property
+    def optional_columns(self) -> list[str]:
+        return [
+            # 抜取検査または抜取受入によりスキップされたか
+            "inspection_is_skipped",
+            "acceptance_is_skipped",
+            # 差し戻し後の作業時間
+            "post_rejection_annotation_worktime_hour",
+            "post_rejection_inspection_worktime_hour",
+            "post_rejection_acceptance_worktime_hour",
+        ]
+
+    @property
+    def required_columns(self) -> list[str]:
         return [
             # 基本的な情報
             "project_id",
@@ -92,7 +137,8 @@ class Task:
             "first_acceptance_username",
             "first_acceptance_worktime_hour",
             "first_acceptance_started_datetime",
-            # 最後の受入
+            # 受入フェーズの日時
+            "first_acceptance_reached_datetime",
             "first_acceptance_completed_datetime",
             # 作業時間に関する内容
             "worktime_hour",
@@ -102,6 +148,7 @@ class Task:
             # 個数
             "input_data_count",
             "annotation_count",
+            *[e.value for e in self.custom_production_volume_list],
             "inspection_comment_count",
             "inspection_comment_count_in_inspection_phase",
             "inspection_comment_count_in_acceptance_phase",
@@ -109,6 +156,10 @@ class Task:
             "inspection_is_skipped",
             "acceptance_is_skipped",
         ]
+
+    @property
+    def columns(self) -> list[str]:
+        return self.required_columns + self.optional_columns
 
     @classmethod
     def from_api_content(
@@ -119,6 +170,9 @@ class Task:
         annotation_count: AnnotationCount,
         project_id: str,
         annofab_service: annofabapi.Resource,
+        *,
+        input_data_count: Optional[InputDataCount] = None,
+        custom_production_volume: Optional[CustomProductionVolume] = None,
     ) -> Task:
         """
         APIから取得した情報と、DataFrameのラッパーからインスタンスを生成します。
@@ -128,8 +182,9 @@ class Task:
             task_histories: APIから取得したタスク履歴情報
             inspection_comment_count: 検査コメント数を格納したDataFrameのラッパー
             annotation_count: アノテーション数を格納したDataFrameのラッパー
+            input_data_count: 入力データ数を格納したDataFrameのラッパー（タスクに作業対象外のフレームが含まれているときなどに有用なオプション）
             annofab_service: TODO `AddingAdditionalInfoToTask`を修正したら、この引数を削除する。このクラスからAPIに直接アクセスさせたくない。
-
+            custom_production_volume: ユーザー独自の生産量を格納したDataFrameのラッパー
         """
 
         adding_obj = AddingAdditionalInfoToTask(annofab_service, project_id=project_id)
@@ -154,6 +209,8 @@ class Task:
         # https://github.com/bokeh/bokeh/issues/9620
         df = df.drop(["histories_by_phase"], axis=1)
 
+        if input_data_count is not None:
+            df = df.merge(input_data_count.df, on=["project_id", "task_id"], how="left", suffixes=("_tmp", None))
         df = df.merge(annotation_count.df, on=["project_id", "task_id"], how="left")
         df = df.merge(inspection_comment_count.df, on=["project_id", "task_id"], how="left")
         df = df.fillna(
@@ -162,9 +219,18 @@ class Task:
                 "inspection_comment_count_in_inspection_phase": 0,
                 "inspection_comment_count_in_acceptance_phase": 0,
                 "annotation_count": 0,
+                "input_data_count": 1,  # 必ず入力データは1個以上あるので0でなく1にする
             }
         )
-        return cls(df)
+
+        # ユーザー独自の生産量を追加する
+        custom_production_volume_list = None
+        if custom_production_volume is not None:
+            df = df.merge(custom_production_volume.df, on=["project_id", "task_id"], how="left")
+            custom_production_volume_list = custom_production_volume.custom_production_volume_list
+            df = df.fillna({e.value: 0 for e in custom_production_volume_list})
+
+        return cls(df, custom_production_volume_list=custom_production_volume_list)
 
     def is_empty(self) -> bool:
         """
@@ -176,15 +242,15 @@ class Task:
         return len(self.df) == 0
 
     @classmethod
-    def empty(cls) -> Task:
+    def empty(cls, *, custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None) -> Task:
         """空のデータフレームを持つインスタンスを生成します。"""
 
-        bool_columns = {
+        bool_columns = [
             "inspection_is_skipped",
             "acceptance_is_skipped",
-        }
+        ]
 
-        string_columns = {
+        string_columns = [
             "project_id",
             "task_id",
             "phase",
@@ -200,10 +266,29 @@ class Task:
             "first_acceptance_user_id",
             "first_acceptance_username",
             "first_acceptance_started_datetime",
+            "first_acceptance_reached_datetime",
             "first_acceptance_completed_datetime",
-        }
+        ]
 
-        numeric_columns = set(cls.columns()) - bool_columns - string_columns
+        numeric_columns = [
+            "number_of_rejections_by_inspection",
+            "number_of_rejections_by_acceptance",
+            "first_annotation_worktime_hour",
+            "first_inspection_worktime_hour",
+            "first_acceptance_worktime_hour",
+            "worktime_hour",
+            "annotation_worktime_hour",
+            "inspection_worktime_hour",
+            "acceptance_worktime_hour",
+            "input_data_count",
+            "annotation_count",
+            "inspection_comment_count",
+            "inspection_comment_count_in_inspection_phase",
+            "inspection_comment_count_in_acceptance_phase",
+        ]
+        if custom_production_volume_list is not None:
+            numeric_columns.extend([e.value for e in custom_production_volume_list])
+
         df_dtype: dict[str, str] = {}
         for col in numeric_columns:
             df_dtype[col] = "float"
@@ -212,16 +297,17 @@ class Task:
         for col in bool_columns:
             df_dtype[col] = "boolean"
 
-        df = pandas.DataFrame(columns=cls.columns()).astype(df_dtype)
-        return cls(df)
+        columns = string_columns + numeric_columns + bool_columns
+        df = pandas.DataFrame(columns=columns).astype(df_dtype)
+        return cls(df, custom_production_volume_list=custom_production_volume_list)
 
     @classmethod
-    def from_csv(cls, csv_file: Path) -> Task:
+    def from_csv(cls, csv_file: Path, *, custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None) -> Task:
         df = pandas.read_csv(str(csv_file))
-        return cls(df)
+        return cls(df, custom_production_volume_list=custom_production_volume_list)
 
     @staticmethod
-    def merge(*obj: Task) -> Task:
+    def merge(*obj: Task, custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None) -> Task:
         """
         複数のインスタンスをマージします。
 
@@ -230,12 +316,9 @@ class Task:
         """
         df_list = [task.df for task in obj]
         df_merged = pandas.concat(df_list)
-        return Task(df_merged)
+        return Task(df_merged, custom_production_volume_list=custom_production_volume_list)
 
-    def plot_histogram_of_worktime(
-        self,
-        output_file: Path,
-    ) -> None:
+    def plot_histogram_of_worktime(self, output_file: Path, *, metadata: Optional[dict[str, Any]] = None) -> None:
         """作業時間に関する情報をヒストグラムでプロットする。
 
         Args:
@@ -271,7 +354,7 @@ class Task:
             sub_title = get_sub_title_from_series(df[column], decimals=decimals)
 
             hist, bin_edges = numpy.histogram(df[column], bins=BIN_COUNT)
-            fig = create_histogram_figure(hist, bin_edges, x_axis_label="作業時間[hour]", y_axis_label="タスク数", title=title, sub_title=sub_title)
+            fig = create_histogram_figure(hist, bin_edges, x_axis_label="作業時間[時間]", y_axis_label="タスク数", title=title, sub_title=sub_title)
             figure_list.append(fig)
 
         # 自動検査したタスクを除外して、検査時間をグラフ化する
@@ -283,7 +366,7 @@ class Task:
             create_histogram_figure(
                 hist,
                 bin_edges,
-                x_axis_label="作業時間[hour]",
+                x_axis_label="作業時間[時間]",
                 y_axis_label="タスク数",
                 title="検査作業時間(自動検査されたタスクを除外)",
                 sub_title=sub_title,
@@ -298,24 +381,25 @@ class Task:
             create_histogram_figure(
                 hist,
                 bin_edges,
-                x_axis_label="作業時間[hour]",
+                x_axis_label="作業時間[時間]",
                 y_axis_label="タスク数",
                 title="受入作業時間(自動受入されたタスクを除外)",
                 sub_title=sub_title,
             )
         )
 
-        bokeh_obj = bokeh.layouts.gridplot(figure_list, ncols=3)  # type: ignore[arg-type]
+        nested_figure_list = convert_1d_figure_list_to_2d(figure_list, ncols=3)
+        if metadata is not None:
+            nested_figure_list.insert(0, [create_pretext_from_metadata(metadata)])
+
+        bokeh_obj = bokeh.layouts.gridplot(nested_figure_list)
         output_file.parent.mkdir(exist_ok=True, parents=True)
         bokeh.plotting.reset_output()
         bokeh.plotting.output_file(output_file, title=output_file.stem)
         bokeh.plotting.save(bokeh_obj)
         logger.debug(f"'{output_file}'を出力しました。")
 
-    def plot_histogram_of_others(
-        self,
-        output_file: Path,
-    ) -> None:
+    def plot_histogram_of_others(self, output_file: Path, *, metadata: Optional[dict[str, Any]] = None) -> None:
         """アノテーション数や、検査コメント数など、作業時間以外の情報をヒストグラムで表示する。
 
         Args:
@@ -347,52 +431,80 @@ class Task:
 
         df["diff_days_to_first_acceptance_completed"] = diff_days(df["first_acceptance_completed_datetime"], df["first_annotation_started_datetime"])
 
-        histogram_list = [
-            {"column": "annotation_count", "x_axis_label": "アノテーション数", "title": "アノテーション数"},
-            {"column": "input_data_count", "x_axis_label": "入力データ数", "title": "入力データ数"},
-            {"column": "inspection_comment_count", "x_axis_label": "検査コメント数", "title": "検査コメント数"},
-            # 経過日数
-            {
-                "column": "diff_days_to_first_inspection_started",
-                "x_axis_label": "最初の検査を着手するまでの日数",
-                "title": "最初の検査を着手するまでの日数",
-            },
-            {
-                "column": "diff_days_to_first_acceptance_started",
-                "x_axis_label": "最初の受入を着手するまでの日数",
-                "title": "最初の受入を着手するまでの日数",
-            },
-            {
-                "column": "diff_days_to_first_acceptance_completed",
-                "x_axis_label": "初めて受入完了状態になるまでの日数",
-                "title": "初めて受入完了状態になるまでの日数",
-            },
-            # 差し戻し回数
-            {
-                "column": "number_of_rejections_by_inspection",
-                "x_axis_label": "検査フェーズでの差し戻し回数",
-                "title": "検査フェーズでの差し戻し回数",
-            },
-            {
-                "column": "number_of_rejections_by_acceptance",
-                "x_axis_label": "受入フェーズでの差し戻し回数",
-                "title": "受入フェーズでの差し戻し回数",
-            },
-        ]
+        histogram_list_per_category = {
+            "production_volume": [
+                {"column": "annotation_count", "x_axis_label": "アノテーション数", "title": "アノテーション数"},
+                {"column": "input_data_count", "x_axis_label": "入力データ数", "title": "入力データ数"},
+                *[{"column": e.value, "x_axis_label": e.name, "title": e.name} for e in self.custom_production_volume_list],
+            ],
+            "inspection_comment": [
+                {"column": "inspection_comment_count", "x_axis_label": "検査コメント数", "title": "検査コメント数"},
+                {
+                    "column": "inspection_comment_count_in_inspection_phase",
+                    "x_axis_label": "検査コメント数",
+                    "title": "検査フェーズで付与された検査コメント数",
+                },
+                {
+                    "column": "inspection_comment_count_in_acceptance_phase",
+                    "x_axis_label": "検査コメント数",
+                    "title": "受入フェーズで付与された検査コメント数",
+                },
+            ],
+            "number_of_rejections": [
+                {
+                    "column": "number_of_rejections_by_inspection",
+                    "x_axis_label": "差し戻し回数",
+                    "title": "検査フェーズでの差し戻し回数",
+                },
+                {
+                    "column": "number_of_rejections_by_acceptance",
+                    "x_axis_label": "差し戻し回数",
+                    "title": "受入フェーズでの差し戻し回数",
+                },
+            ],
+            "days": [
+                {
+                    "column": "diff_days_to_first_inspection_started",
+                    "x_axis_label": "最初の検査を着手するまでの日数",
+                    "title": "最初の検査を着手するまでの日数",
+                },
+                {
+                    "column": "diff_days_to_first_acceptance_started",
+                    "x_axis_label": "最初の受入を着手するまでの日数",
+                    "title": "最初の受入を着手するまでの日数",
+                },
+                {
+                    "column": "diff_days_to_first_acceptance_completed",
+                    "x_axis_label": "初めて受入完了状態になるまでの日数",
+                    "title": "初めて受入完了状態になるまでの日数",
+                },
+            ],
+        }
 
-        figure_list = []
+        figure_list_per_category: dict[str, list[figure]] = {}
 
-        for histogram in histogram_list:
-            column = histogram["column"]
-            title = histogram["title"]
-            x_axis_label = histogram["x_axis_label"]
-            ser = df[column].dropna()
-            sub_title = get_sub_title_from_series(ser, decimals=2)
-            hist, bin_edges = numpy.histogram(ser, bins=BIN_COUNT)
-            fig = create_histogram_figure(hist, bin_edges, x_axis_label=x_axis_label, y_axis_label="タスク数", title=title, sub_title=sub_title)
-            figure_list.append(fig)
+        for category, histogram_list in histogram_list_per_category.items():
+            figure_list = []
+            for histogram in histogram_list:
+                column = histogram["column"]
+                title = histogram["title"]
+                x_axis_label = histogram["x_axis_label"]
+                ser = df[column].dropna()
+                sub_title = get_sub_title_from_series(ser, decimals=2)
+                hist, bin_edges = numpy.histogram(ser, bins=BIN_COUNT)
+                fig = create_histogram_figure(hist, bin_edges, x_axis_label=x_axis_label, y_axis_label="タスク数", title=title, sub_title=sub_title)
+                figure_list.append(fig)
+            figure_list_per_category[category] = figure_list
 
-        bokeh_obj = bokeh.layouts.gridplot(figure_list, ncols=4)  # type: ignore[arg-type]
+        nested_figure_list = []
+        for figure_list in figure_list_per_category.values():
+            sub_nested_figure_list = convert_1d_figure_list_to_2d(figure_list)
+            nested_figure_list.extend(sub_nested_figure_list)
+
+        if metadata is not None:
+            nested_figure_list.insert(0, [create_pretext_from_metadata(metadata)])
+
+        bokeh_obj = bokeh.layouts.gridplot(nested_figure_list)
         output_file.parent.mkdir(exist_ok=True, parents=True)
         bokeh.plotting.reset_output()
         bokeh.plotting.output_file(output_file, title=output_file.stem)
@@ -407,7 +519,9 @@ class Task:
         if not self._validate_df_for_output(output_file):
             return
 
-        print_csv(self.df[self.columns()], str(output_file))
+        existing_optional_columns = [col for col in self.optional_columns if col in set(self.df.columns)]
+        columns = self.required_columns + existing_optional_columns
+        print_csv(self.df[columns], str(output_file))
 
     def mask_user_info(
         self,
@@ -431,4 +545,4 @@ class Task:
             "first_acceptance_username": to_replace_for_username,
         }
         df = self.df.replace(to_replace_info)
-        return Task(df)
+        return Task(df, custom_production_volume_list=self.custom_production_volume_list)

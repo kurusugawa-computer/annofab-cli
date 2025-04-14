@@ -6,9 +6,10 @@ import json
 import logging
 import multiprocessing
 import sys
+from collections.abc import Collection
 from dataclasses import dataclass
 from functools import partial
-from typing import Collection, Dict, Optional, Union
+from typing import Optional, Union
 
 import annofabapi
 from annofabapi.models import ProjectMemberRole
@@ -17,6 +18,7 @@ import annofabcli
 import annofabcli.common.cli
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
+    PARALLELISM_CHOICES,
     ArgumentParser,
     CommandLine,
     CommandLineWithConfirm,
@@ -26,7 +28,7 @@ from annofabcli.common.facade import AnnofabApiFacade
 
 logger = logging.getLogger(__name__)
 
-Metadata = Dict[str, Union[str, bool, int]]
+Metadata = dict[str, Union[str, bool, int]]
 
 
 @dataclass(frozen=True)
@@ -60,7 +62,7 @@ class DeleteMetadataKeysOfTaskMain(CommandLineWithConfirm):
         Returns:
             メタデータのキーを削除した場合はTrueを返します。
         """
-        logging_prefix = f"{task_index+1} 件目" if task_index is not None else ""
+        logging_prefix = f"{task_index + 1} 件目" if task_index is not None else ""
         task = self.service.wrapper.get_task_or_none(self.project_id, task_id)
         if task is None:
             logger.warning(f"{logging_prefix} task_id='{task_id}'であるタスクは存在しません。")
@@ -187,6 +189,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--parallelism",
         type=int,
+        choices=PARALLELISM_CHOICES,
         help="使用するプロセス数（並列度）を指定します。指定する場合は ``--yes`` を指定してください。指定しない場合は、逐次的に処理します。",
     )
 

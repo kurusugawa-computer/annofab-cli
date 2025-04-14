@@ -7,7 +7,7 @@ import multiprocessing
 import sys
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 import annofabapi
 from annofabapi.dataclass.task import Task
@@ -22,6 +22,7 @@ from annofabcli.annotation.annotation_query import (
 from annofabcli.annotation.dump_annotation import DumpAnnotationMain
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
+    PARALLELISM_CHOICES,
     ArgumentParser,
     CommandLine,
     CommandLineWithConfirm,
@@ -57,8 +58,8 @@ class ChangeAnnotationAttributesMain(CommandLineWithConfirm):
         self.dump_annotation_obj = DumpAnnotationMain(service, project_id)
 
     def change_annotation_attributes(
-        self, annotation_list: List[Dict[str, Any]], additional_data_list: list[dict[str, Any]]
-    ) -> Optional[List[Dict[str, Any]]]:
+        self, annotation_list: list[dict[str, Any]], additional_data_list: list[dict[str, Any]]
+    ) -> Optional[list[dict[str, Any]]]:
         """
         アノテーション属性値を変更する。
 
@@ -71,7 +72,7 @@ class ChangeAnnotationAttributesMain(CommandLineWithConfirm):
 
         """
 
-        def _to_request_body_elm(annotation: Dict[str, Any]) -> Dict[str, Any]:
+        def _to_request_body_elm(annotation: dict[str, Any]) -> dict[str, Any]:
             detail = annotation["detail"]
             return {
                 "data": {
@@ -129,7 +130,7 @@ class ChangeAnnotationAttributesMain(CommandLineWithConfirm):
         Returns:
             アノテーションの属性を変更するAPI ``change_annotation_attributes`` を実行したか否か
         """
-        logger_prefix = f"{task_index+1!s} 件目: " if task_index is not None else ""
+        logger_prefix = f"{task_index + 1!s} 件目: " if task_index is not None else ""
         dict_task = self.service.wrapper.get_task_or_none(self.project_id, task_id)
         if dict_task is None:
             logger.warning(f"task_id = '{task_id}' は存在しません。")
@@ -137,12 +138,12 @@ class ChangeAnnotationAttributesMain(CommandLineWithConfirm):
 
         task: Task = Task.from_dict(dict_task)
         if task.status == TaskStatus.WORKING:
-            logger.warning(f"task_id={task_id}: タスクが作業中状態のため、スキップします。")
+            logger.warning(f"task_id='{task_id}': タスクが作業中状態のため、スキップします。")
             return False
 
         if not self.is_force:  # noqa: SIM102
             if task.status == TaskStatus.COMPLETE:
-                logger.warning(f"task_id={task_id}: タスクが完了状態のため、スキップします。")
+                logger.warning(f"task_id='{task_id}': タスクが完了状態のため、スキップします。")
                 return False
 
         annotation_list = self.get_annotation_list_for_task(task_id, annotation_query)
@@ -186,7 +187,7 @@ class ChangeAnnotationAttributesMain(CommandLineWithConfirm):
 
     def change_annotation_attributes_for_task_list(
         self,
-        task_id_list: List[str],
+        task_id_list: list[str],
         annotation_query: AnnotationQueryForAPI,
         additional_data_list: list[dict[str, Any]],
         *,
@@ -360,9 +361,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--attributes",
         type=str,
         required=True,
-        help="変更後の属性をJSON形式で指定します。"
-        "``file://`` を先頭に付けると、JSON形式のファイルを指定できます。"
-        f"(ex): ``{EXAMPLE_ATTRIBUTES}``",
+        help=f"変更後の属性をJSON形式で指定します。``file://`` を先頭に付けると、JSON形式のファイルを指定できます。(ex): ``{EXAMPLE_ATTRIBUTES}``",
     )
 
     parser.add_argument(
@@ -380,6 +379,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--parallelism",
         type=int,
+        choices=PARALLELISM_CHOICES,
         help="並列度。指定しない場合は、逐次的に処理します。指定した場合は、``--yes`` も指定してください。",
     )
 

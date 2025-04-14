@@ -1,6 +1,6 @@
 import argparse
 import logging
-from typing import List, Optional
+from typing import Optional
 
 import pandas
 import requests
@@ -42,22 +42,22 @@ class ListUser(CommandLine):
         project_members = self.service.wrapper.get_all_project_members(project_id, query_params=query_params)
         return project_members
 
-    def get_project_members_with_project_id(self, project_id_list: List[str], include_inactive: bool = False) -> List[ProjectMember]:  # noqa: FBT001, FBT002
-        all_project_members: List[ProjectMember] = []
+    def get_project_members_with_project_id(self, project_id_list: list[str], include_inactive: bool = False) -> list[ProjectMember]:  # noqa: FBT001, FBT002
+        all_project_members: list[ProjectMember] = []
 
         for project_id in project_id_list:
             try:
                 project, _ = self.service.api.get_project(project_id)
-            except requests.exceptions.HTTPError as e:
-                logger.warning(e)
+            except requests.exceptions.HTTPError:
                 logger.warning(
-                    f"project_id = {project_id} のプロジェクトにアクセスできなかった（存在しないproject_id、またはプロジェクトメンバでない）"
+                    f"project_id='{project_id}' のプロジェクトにアクセスできなかった（存在しないproject_id、またはプロジェクトメンバでない）",
+                    exc_info=True,
                 )
                 continue
 
             project_title = project["title"]
             project_members = self.get_all_project_members(project_id, include_inactive=include_inactive)
-            logger.info(f"{project_title} のプロジェクトメンバを {len(project_members)} 件取得した。project_id={project_id}")
+            logger.info(f"{project_title} のプロジェクトメンバを {len(project_members)} 件取得した。project_id='{project_id}'")
 
             for member in project_members:
                 AddProps.add_properties_of_project(member, project_title)

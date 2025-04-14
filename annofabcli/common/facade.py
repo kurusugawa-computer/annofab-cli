@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import logging
+from collections.abc import Collection
 from dataclasses import dataclass
-from typing import Any, Callable, Collection, Dict, List, Optional, Tuple
+from typing import Any, Callable, Optional
 
 import annofabapi
 import annofabapi.utils
@@ -32,7 +33,7 @@ class AnnotationQuery(DataClassJsonMixin):
     """
 
     label_id: str
-    attributes: Optional[List[AdditionalDataV1]] = None
+    attributes: Optional[list[AdditionalDataV1]] = None
 
 
 @dataclass
@@ -65,7 +66,7 @@ class AnnotationQueryForCli(DataClassJsonMixin):
     label_name_en: Optional[str] = None
     """ラベルの英語名"""
     label_id: Optional[str] = None
-    attributes: Optional[List[AdditionalDataForCli]] = None
+    attributes: Optional[list[AdditionalDataForCli]] = None
 
 
 @dataclass
@@ -95,7 +96,7 @@ class InputDataQuery(DataClassJsonMixin):
     input_data_path: Optional[str] = None
 
 
-def match_annotation_with_task_query(annotation: Dict[str, Any], task_query: Optional[TaskQuery]) -> bool:
+def match_annotation_with_task_query(annotation: dict[str, Any], task_query: Optional[TaskQuery]) -> bool:
     """
     Simple Annotationが、タスククエリ条件に合致するか
 
@@ -210,7 +211,7 @@ def match_input_data_with_query(  # pylint: disable=too-many-return-statements
     return True
 
 
-def convert_annotation_specs_labels_v2_to_v1(labels_v2: List[Dict[str, Any]], additionals_v2: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+def convert_annotation_specs_labels_v2_to_v1(labels_v2: list[dict[str, Any]], additionals_v2: list[dict[str, Any]]) -> list[dict[str, Any]]:
     """アノテーション仕様のV2(またはV3)版からV1版に変換する。V1版の方が扱いやすいので。
 
     Args:
@@ -221,10 +222,10 @@ def convert_annotation_specs_labels_v2_to_v1(labels_v2: List[Dict[str, Any]], ad
         List[LabelV1]: V1版のラベル情報
     """
 
-    def get_additional(additional_data_definition_id: str) -> Optional[Dict[str, Any]]:
+    def get_additional(additional_data_definition_id: str) -> Optional[dict[str, Any]]:
         return more_itertools.first_true(additionals_v2, pred=lambda e: e["additional_data_definition_id"] == additional_data_definition_id)
 
-    def to_label_v1(label_v2: dict[str, Any]) -> Dict[str, Any]:
+    def to_label_v1(label_v2: dict[str, Any]) -> dict[str, Any]:
         additional_data_definition_id_list = label_v2["additional_data_definitions"]
         new_additional_data_definitions = []
         for additional_data_definition_id in additional_data_definition_id_list:
@@ -248,16 +249,16 @@ class AnnofabApiFacade:
     """
 
     #: 組織メンバ一覧のキャッシュ
-    _organization_members: Optional[Tuple[str, List[OrganizationMember]]] = None
+    _organization_members: Optional[tuple[str, list[OrganizationMember]]] = None
 
-    _project_members_dict: Dict[str, List[ProjectMember]] = {}  # noqa: RUF012
+    _project_members_dict: dict[str, list[ProjectMember]] = {}  # noqa: RUF012
     """プロジェクトメンバ一覧の情報。key:project_id, value:プロジェクトメンバ一覧"""
 
     def __init__(self, service: annofabapi.Resource) -> None:
         self.service = service
 
     @staticmethod
-    def get_account_id_last_annotation_phase(task_histories: List[Dict[str, Any]]) -> Optional[str]:
+    def get_account_id_last_annotation_phase(task_histories: list[dict[str, Any]]) -> Optional[str]:
         """
         タスク履歴の最後のannotation phaseを担当したaccount_idを取得する. なければNoneを返す
         Args:
@@ -275,19 +276,19 @@ class AnnofabApiFacade:
             return None
 
     @staticmethod
-    def get_label_name_en(label: Dict[str, Any]) -> str:
+    def get_label_name_en(label: dict[str, Any]) -> str:
         """label情報から英語名を取得する"""
         label_name_messages = label["label_name"]["messages"]
         return [e["message"] for e in label_name_messages if e["lang"] == "en-US"][0]  # noqa: RUF015
 
     @staticmethod
-    def get_additional_data_definition_name_en(additional_data_definition: Dict[str, Any]) -> str:
+    def get_additional_data_definition_name_en(additional_data_definition: dict[str, Any]) -> str:
         """additional_data_definitionから英語名を取得する"""
         messages = additional_data_definition["name"]["messages"]
         return [e["message"] for e in messages if e["lang"] == "en-US"][0]  # noqa: RUF015
 
     @staticmethod
-    def get_choice_name_en(choice: Dict[str, Any]) -> str:
+    def get_choice_name_en(choice: dict[str, Any]) -> str:
         """choiceから英語名を取得する"""
         messages = choice["name"]["messages"]
         return [e["message"] for e in messages if e["lang"] == "en-US"][0]  # noqa: RUF015
@@ -436,7 +437,7 @@ class AnnofabApiFacade:
         organization, _ = self.service.api.get_organization_of_project(project_id)
         return organization["organization_name"]
 
-    def get_organization_members_from_project_id(self, project_id: str) -> List[OrganizationMember]:
+    def get_organization_members_from_project_id(self, project_id: str) -> list[OrganizationMember]:
         organization_name = self.get_organization_name_from_project_id(project_id)
         return self.service.wrapper.get_all_organization_members(organization_name)
 
@@ -498,12 +499,12 @@ class AnnofabApiFacade:
             task_query.account_id = self.get_account_id_from_user_id(project_id, task_query.user_id)
         return task_query
 
-    def validate_project(  # noqa: ANN201
+    def validate_project(
         self,
         project_id: str,
-        project_member_roles: Optional[List[ProjectMemberRole]] = None,
-        organization_member_roles: Optional[List[OrganizationMemberRole]] = None,
-    ):
+        project_member_roles: Optional[list[ProjectMemberRole]] = None,
+        organization_member_roles: Optional[list[OrganizationMemberRole]] = None,
+    ) -> None:
         """
         プロジェクト or 組織に対して、必要な権限が付与されているかを確認する。
 

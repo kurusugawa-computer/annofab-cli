@@ -7,7 +7,7 @@ import multiprocessing
 import sys
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Any, Optional, Tuple
+from typing import Any, Optional
 
 import annofabapi
 from annofabapi.utils import can_put_annotation
@@ -15,6 +15,7 @@ from annofabapi.utils import can_put_annotation
 import annofabcli
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
+    PARALLELISM_CHOICES,
     ArgumentParser,
     CommandLine,
     CommandLineWithConfirm,
@@ -77,7 +78,7 @@ def parse_copy_target(str_copy_target: str) -> CopyTarget:
     * `task1/input5:task2/input6`
     """
 
-    def _parse_with_slash(target: str) -> Tuple[str, Optional[str]]:
+    def _parse_with_slash(target: str) -> tuple[str, Optional[str]]:
         tmp = target.split("/")
         if len(tmp) == 1:
             return (tmp[0], None)
@@ -409,6 +410,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--parallelism",
         type=int,
+        choices=PARALLELISM_CHOICES,
         help="並列度。指定しない場合は、逐次的に処理します。指定した場合は、``--yes`` も指定してください。",
     )
 

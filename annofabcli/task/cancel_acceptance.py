@@ -6,7 +6,7 @@ import multiprocessing
 import sys
 from dataclasses import dataclass
 from functools import partial
-from typing import Any, List, Optional, Tuple
+from typing import Any, Optional
 
 import annofabapi
 import more_itertools
@@ -18,6 +18,7 @@ import annofabcli
 import annofabcli.common.cli
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
+    PARALLELISM_CHOICES,
     ArgumentParser,
     CommandLine,
     CommandLineWithConfirm,
@@ -118,7 +119,7 @@ class CancelAcceptanceMain(CommandLineWithConfirm):
 
     def cancel_acceptance_for_wrapper(
         self,
-        tpl: Tuple[int, str],
+        tpl: tuple[int, str],
         acceptor: Optional[User] = None,
         assign_last_acceptor: bool = True,  # noqa: FBT001, FBT002
         task_query: Optional[TaskQuery] = None,
@@ -140,7 +141,7 @@ class CancelAcceptanceMain(CommandLineWithConfirm):
 
     def cancel_acceptance_for_task_list(  # noqa: ANN201
         self,
-        task_id_list: List[str],
+        task_id_list: list[str],
         acceptor: Optional[User] = None,
         assign_last_acceptor: bool = True,  # noqa: FBT001, FBT002
         task_query: Optional[TaskQuery] = None,
@@ -295,6 +296,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--parallelism",
         type=int,
+        choices=PARALLELISM_CHOICES,
         help="使用するプロセス数（並列度）を指定してください。指定する場合は必ず ``--yes`` を指定してください。指定しない場合は、逐次的に処理します。",  # noqa: E501
     )
 

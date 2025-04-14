@@ -3,7 +3,7 @@ import logging
 import sys
 from collections import defaultdict
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 import annofabapi
 import pandas
@@ -23,7 +23,7 @@ from annofabcli.common.facade import AnnofabApiFacade
 
 logger = logging.getLogger(__name__)
 
-InputDataSupplementaryDataDict = Dict[str, List[str]]
+InputDataSupplementaryDataDict = dict[str, list[str]]
 """
 input_data_idとsupplementary_data_idの関係を表したdict.
 key: input_data_id, value: supplementary_data_idのList
@@ -31,24 +31,17 @@ key: input_data_id, value: supplementary_data_idのList
 
 
 def get_input_data_supplementary_data_dict_from_csv(csv_path: Path) -> InputDataSupplementaryDataDict:
-    df = pandas.read_csv(
-        str(csv_path),
-        sep=",",
-        header=None,
-        names=[
-            "input_data_id",
-            "supplementary_data_id",
-        ],
-        # IDは必ず文字列として読み込むようにする
-        dtype={"input_data_id": str, "supplementary_data_id": str},
+    df: pandas.DataFrame = pandas.read_csv(
+        csv_path,
+        dtype={"input_data_id": "string", "supplementary_data_id": "string"},
     )
-    input_data_dict = defaultdict(list)
+    input_data_dict: InputDataSupplementaryDataDict = defaultdict(list)
     for input_data_id, supplementary_data_id in zip(df["input_data_id"], df["supplementary_data_id"]):
         input_data_dict[input_data_id].append(supplementary_data_id)
     return input_data_dict
 
 
-def get_input_data_supplementary_data_dict_from_list(supplementary_data_list: List[Dict[str, Any]]) -> InputDataSupplementaryDataDict:
+def get_input_data_supplementary_data_dict_from_list(supplementary_data_list: list[dict[str, Any]]) -> InputDataSupplementaryDataDict:
     input_data_dict = defaultdict(list)
     for supplementary_data in supplementary_data_list:
         input_data_id = supplementary_data["input_data_id"]
@@ -58,12 +51,12 @@ def get_input_data_supplementary_data_dict_from_list(supplementary_data_list: Li
 
 
 class DeleteSupplementaryDataMain(CommandLineWithConfirm):
-    def __init__(self, service: annofabapi.Resource, all_yes: bool = False) -> None:  # noqa: FBT001, FBT002
+    def __init__(self, service: annofabapi.Resource, *, all_yes: bool = False) -> None:
         self.service = service
         self.facade = AnnofabApiFacade(service)
         CommandLineWithConfirm.__init__(self, all_yes)
 
-    def delete_supplementary_data_list_for_input_data(self, project_id: str, input_data_id: str, supplementary_data_id_list: List[str]) -> int:
+    def delete_supplementary_data_list_for_input_data(self, project_id: str, input_data_id: str, supplementary_data_id_list: list[str]) -> int:
         """
         入力データ配下の補助情報を削除する。
 
@@ -77,12 +70,12 @@ class DeleteSupplementaryDataMain(CommandLineWithConfirm):
 
         """
 
-        def _get_supplementary_data_list(supplementary_data_id: str) -> Optional[Dict[str, Any]]:
+        def _get_supplementary_data_list(supplementary_data_id: str) -> Optional[dict[str, Any]]:
             return first_true(supplementary_data_list, pred=lambda e: e["supplementary_data_id"] == supplementary_data_id)
 
         input_data = self.service.wrapper.get_input_data_or_none(project_id, input_data_id)
         if input_data is None:
-            logger.warning(f"input_data_id={input_data_id} の入力データは存在しないのでスキップします。")
+            logger.warning(f"input_data_id='{input_data_id}' の入力データは存在しないのでスキップします。")
             return 0
 
         supplementary_data_list, _ = self.service.api.get_supplementary_data_list(project_id, input_data_id)
@@ -92,14 +85,14 @@ class DeleteSupplementaryDataMain(CommandLineWithConfirm):
             supplementary_data = _get_supplementary_data_list(supplementary_data_id)
             if supplementary_data is None:
                 logger.warning(
-                    f"input_data_id={input_data_id} の入力データに、"
-                    f"supplementary_data_id={supplementary_data_id} の補助情報は存在しないのでスキップします。"
+                    f"input_data_id='{input_data_id}' の入力データに、"
+                    f"supplementary_data_id='{supplementary_data_id}' の補助情報は存在しないのでスキップします。"
                 )
                 continue
 
             message_for_confirm = (
-                f"補助情報 supplementary_data_id={supplementary_data_id}, "
-                f"supplementary_data_name={supplementary_data['supplementary_data_name']} を削除しますか？"
+                f"補助情報 supplementary_data_id='{supplementary_data_id}', "
+                f"supplementary_data_name='{supplementary_data['supplementary_data_name']}' を削除しますか？"
             )
             if not self.confirm_processing(message_for_confirm):
                 continue
@@ -107,35 +100,34 @@ class DeleteSupplementaryDataMain(CommandLineWithConfirm):
             try:
                 self.service.api.delete_supplementary_data(project_id, input_data_id=input_data_id, supplementary_data_id=supplementary_data_id)
                 logger.debug(
-                    f"補助情報 supplementary_data_id={supplementary_data_id}, "
-                    f"supplementary_data_name={supplementary_data['supplementary_data_name']} を削除しました。"
-                    f"(入力データ input_data_id={input_data_id}, "
-                    f"input_data_name={input_data['input_data_name']} に紐付いている)"
+                    f"補助情報 supplementary_data_id='{supplementary_data_id}', "
+                    f"supplementary_data_name='{supplementary_data['supplementary_data_name']}' を削除しました。"
+                    f"(入力データ input_data_id='{input_data_id}', "
+                    f"input_data_name='{input_data['input_data_name']}' に紐付いている)"
                 )
                 deleted_count += 1
-            except requests.HTTPError as e:
-                logger.warning(e)
+            except requests.HTTPError:
                 logger.warning(
-                    f"補助情報 supplementary_data_id={supplementary_data_id}, "
-                    f"supplementary_data_name={supplementary_data['supplementary_data_name']} の削除に失敗しました。"
+                    f"補助情報 supplementary_data_id='{supplementary_data_id}', "
+                    f"supplementary_data_name='{supplementary_data['supplementary_data_name']}' の削除に失敗しました。",
+                    exc_info=True,
                 )
                 continue
         return deleted_count
 
-    def delete_supplementary_data_list(self, project_id: str, input_data_dict: InputDataSupplementaryDataDict):  # noqa: ANN201
+    def delete_supplementary_data_list(self, project_id: str, input_data_dict: InputDataSupplementaryDataDict) -> None:
         deleted_count = 0
         total_count = sum(len(e) for e in input_data_dict.values())
         for input_data_id, supplementary_data_id_list in input_data_dict.items():
             try:
                 deleted_count += self.delete_supplementary_data_list_for_input_data(project_id, input_data_id, supplementary_data_id_list)
-            except Exception as e:  # pylint: disable=broad-except
-                logger.warning(e)
-                logger.warning(f"入力データ(input_data_id={input_data_id})配下の補助情報の削除に失敗しました。")
+            except Exception:  # pylint: disable=broad-except
+                logger.warning(f"入力データ(input_data_id='{input_data_id}')配下の補助情報の削除に失敗しました。", exc_info=True)
 
         logger.info(f"{deleted_count} / {total_count} 件の補助情報を削除しました。")
 
     def delete_supplementary_data_list_for_input_data2(
-        self, project_id: str, input_data_id: str, supplementary_data_list: List[Dict[str, Any]]
+        self, project_id: str, input_data_id: str, supplementary_data_list: list[dict[str, Any]]
     ) -> int:
         """
         入力データ配下の補助情報を削除する。
@@ -155,26 +147,26 @@ class DeleteSupplementaryDataMain(CommandLineWithConfirm):
             try:
                 self.service.api.delete_supplementary_data(project_id, input_data_id=input_data_id, supplementary_data_id=supplementary_data_id)
                 logger.debug(
-                    f"補助情報を削除しました。input_data_id={input_data_id}, supplementary_data_id={supplementary_data_id}, "
+                    f"補助情報を削除しました。input_data_id='{input_data_id}', supplementary_data_id='{supplementary_data_id}', "
                     f"supplementary_data_name={supplementary_data['supplementary_data_name']}"
                 )
                 deleted_count += 1
-            except requests.HTTPError as e:
-                logger.warning(e)
+            except requests.HTTPError:
                 logger.warning(
-                    f"補助情報の削除に失敗しました。input_data_id={input_data_id}, supplementary_data_id={supplementary_data_id}, "
-                    f"supplementary_data_name={supplementary_data['supplementary_data_name']}"
+                    f"補助情報の削除に失敗しました。input_data_id='{input_data_id}', supplementary_data_id='{supplementary_data_id}', "
+                    f"supplementary_data_name='{supplementary_data['supplementary_data_name']}'",
+                    exc_info=True,
                 )
                 continue
 
         return deleted_count
 
-    def delete_supplementary_data_list_by_input_data_id(self, project_id: str, input_data_id_list: List[str]):  # noqa: ANN201
-        dict_deleted_count: Dict[str, int] = {}
+    def delete_supplementary_data_list_by_input_data_id(self, project_id: str, input_data_id_list: list[str]) -> None:
+        dict_deleted_count: dict[str, int] = {}
         for input_data_id in input_data_id_list:
             input_data = self.service.wrapper.get_input_data_or_none(project_id, input_data_id)
             if input_data is None:
-                logger.warning(f"input_data_id={input_data_id} の入力データは存在しないので、補助情報の削除をスキップします。")
+                logger.warning(f"input_data_id='{input_data_id}' の入力データは存在しないので、補助情報の削除をスキップします。")
                 continue
             input_data_name = input_data["input_data_name"]
 
@@ -202,9 +194,8 @@ class DeleteSupplementaryDataMain(CommandLineWithConfirm):
                     f"input_data_name='{input_data_name}') "
                 )
 
-            except Exception as e:  # pylint: disable=broad-except
-                logger.warning(e)
-                logger.warning(f"入力データ(input_data_id={input_data_id})配下の補助情報の削除に失敗しました。")
+            except Exception:  # pylint: disable=broad-except
+                logger.warning(f"入力データ(input_data_id='{input_data_id}')配下の補助情報の削除に失敗しました。", exc_info=True)
 
         logger.info(f"{len(dict_deleted_count)} / {len(input_data_id_list)} 件の入力データに紐づく補助情報を削除しました。")
 
@@ -263,9 +254,9 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
             "削除する補助情報が記載されたCSVファイルのパスを指定してください。\n"
             "CSVのフォーマットは以下の通りです。"
             "詳細は https://annofab-cli.readthedocs.io/ja/latest/command_reference/supplementary/delete.html を参照してください。\n"
-            " * ヘッダ行なし, カンマ区切り\n"
-            " * 1列目: input_data_id (required)\n"
-            " * 2列目: supplementary_data_id (required)\n"
+            " * ヘッダ行あり, カンマ区切り\n"
+            " * input_data_id (required)\n"
+            " * supplementary_data_id (required)\n"
         ),
     )
 

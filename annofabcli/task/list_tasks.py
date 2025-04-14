@@ -1,6 +1,6 @@
 import argparse
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 import annofabapi
 import pandas
@@ -23,12 +23,12 @@ class ListTasksMain:
         self.project_id = project_id
         self.visualize = AddProps(self.service, project_id)
 
-    def get_task_list_from_task_id(self, project_id: str, task_id_list: List[str]) -> List[Task]:
+    def get_task_list_from_task_id(self, project_id: str, task_id_list: list[str]) -> list[Task]:
         task_list = []
         logger.debug(f"{len(task_id_list)}件のタスクを取得します。")
         for index, task_id in enumerate(task_id_list):
             if (index + 1) % 100 == 0:
-                logger.debug(f"{index+1} 件のタスクを取得します。")
+                logger.debug(f"{index + 1} 件のタスクを取得します。")
 
             task = self.service.wrapper.get_task_or_none(project_id, task_id)
             if task is not None:
@@ -38,7 +38,7 @@ class ListTasksMain:
 
         return task_list
 
-    def _modify_task_query(self, project_id: str, task_query: Dict[str, Any]) -> Dict[str, Any]:
+    def _modify_task_query(self, project_id: str, task_query: dict[str, Any]) -> dict[str, Any]:
         """
         タスク検索クエリを修正する。
         ``user_id`` から ``account_id`` に変換する。
@@ -80,8 +80,8 @@ class ListTasksMain:
         return task_query
 
     def get_task_list_with_api(
-        self, project_id: str, task_query: Optional[Dict[str, Any]] = None, user_id_list: Optional[List[str]] = None
-    ) -> List[Task]:
+        self, project_id: str, task_query: Optional[dict[str, Any]] = None, user_id_list: Optional[list[str]] = None
+    ) -> list[Task]:
         """
         タスク一覧を取得する。
 
@@ -120,10 +120,10 @@ class ListTasksMain:
         self,
         project_id: str,
         *,
-        task_id_list: Optional[List[str]] = None,
-        task_query: Optional[Dict[str, Any]] = None,
-        user_id_list: Optional[List[str]] = None,
-    ) -> List[Task]:
+        task_id_list: Optional[list[str]] = None,
+        task_query: Optional[dict[str, Any]] = None,
+        user_id_list: Optional[list[str]] = None,
+    ) -> list[Task]:
         """
 
 

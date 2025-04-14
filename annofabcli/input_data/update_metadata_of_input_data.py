@@ -1,13 +1,14 @@
 from __future__ import annotations
 
 import argparse
+import copy
 import json
 import logging
 import multiprocessing
 import sys
 from dataclasses import dataclass
 from functools import partial
-from typing import Dict, Optional, Tuple
+from typing import Optional
 
 import annofabapi
 from annofabapi.models import ProjectMemberRole
@@ -16,6 +17,7 @@ import annofabcli
 import annofabcli.common.cli
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
+    PARALLELISM_CHOICES,
     ArgumentParser,
     CommandLine,
     CommandLineWithConfirm,
@@ -25,7 +27,7 @@ from annofabcli.common.facade import AnnofabApiFacade
 
 logger = logging.getLogger(__name__)
 
-Metadata = Dict[str, str]
+Metadata = dict[str, str]
 """
 入力データのメタデータ。
 値はstr型しか指定できない。
@@ -58,7 +60,7 @@ class UpdateMetadataMain(CommandLineWithConfirm):
             else:
                 return f"入力データ(input_data_id='{input_data_id}')のメタデータに'{json.dumps(metadata)}'を追加しますか？ "
 
-        logging_prefix = f"{input_data_index+1} 件目" if input_data_index is not None else ""
+        logging_prefix = f"{input_data_index + 1} 件目" if input_data_index is not None else ""
 
         input_data = self.service.wrapper.get_input_data_or_none(project_id, input_data_id)
         if input_data is None:
@@ -83,7 +85,7 @@ class UpdateMetadataMain(CommandLineWithConfirm):
         return True
 
     def set_metadata_to_input_data_wrapper(
-        self, tpl: Tuple[int, InputDataMetadataInfo], project_id: str, *, overwrite_metadata: bool = False
+        self, tpl: tuple[int, InputDataMetadataInfo], project_id: str, *, overwrite_metadata: bool = False
     ) -> bool:
         input_data_index, info = tpl
         return self.set_metadata_to_input_data(
@@ -181,7 +183,7 @@ class UpdateMetadata(CommandLine):
                 sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
             assert input_data_id_list is not None, "'--metadata'を指定したときは'--input_data_id'は必須です。"
-            metadata_by_input_data_id = {input_data_id: metadata for input_data_id in input_data_id_list}
+            metadata_by_input_data_id = {input_data_id: copy.deepcopy(metadata) for input_data_id in input_data_id_list}
 
         elif args.metadata_by_input_data_id is not None:
             metadata_by_input_data_id = annofabcli.common.cli.get_json_from_args(args.metadata_by_input_data_id)
@@ -255,6 +257,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--parallelism",
         type=int,
+        choices=PARALLELISM_CHOICES,
         help="使用するプロセス数（並列度）を指定してください。指定する場合は必ず ``--yes`` を指定してください。指定しない場合は、逐次的に処理します。",  # noqa: E501
     )
 

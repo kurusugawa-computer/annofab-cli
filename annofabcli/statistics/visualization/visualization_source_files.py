@@ -2,8 +2,9 @@ from __future__ import annotations
 
 import json
 import logging
+from collections.abc import Collection
 from pathlib import Path
-from typing import Any, Collection
+from typing import Any
 
 import annofabapi.utils
 
@@ -103,7 +104,9 @@ class VisualizationSourceFiles:
         logger.debug(f"{self.logging_prefix}: '{self.comment_json_path}'を読み込みました。{len(comment_list)}件のコメントが含まれています。")
         return comment_list
 
-    def write_files(self, *, is_latest: bool = False, should_get_task_histories_one_of_each: bool = False) -> None:
+    def write_files(
+        self, *, is_latest: bool = False, should_get_task_histories_one_of_each: bool = False, should_download_annotation_zip: bool = True
+    ) -> None:
         """
         可視化に必要なファイルを作成します。
         原則、全件ファイルをダウンロードしてファイルを作成します。必要に応じて個別にAPIを実行してファイルを作成します。
@@ -120,12 +123,14 @@ class VisualizationSourceFiles:
         wait_options = WaitOptions(interval=60, max_tries=360)
 
         downloading_obj.download_task_json(self.project_id, dest_path=self.task_json_path, is_latest=is_latest, wait_options=wait_options)
-        downloading_obj.download_annotation_zip(
-            self.project_id,
-            dest_path=self.annotation_zip_path,
-            is_latest=is_latest,
-            wait_options=wait_options,
-        )
+
+        if should_download_annotation_zip:
+            downloading_obj.download_annotation_zip(
+                self.project_id,
+                dest_path=self.annotation_zip_path,
+                is_latest=is_latest,
+                wait_options=wait_options,
+            )
 
         try:
             downloading_obj.download_comment_json(self.project_id, dest_path=self.comment_json_path)

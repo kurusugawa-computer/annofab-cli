@@ -1,13 +1,14 @@
 from __future__ import annotations
 
 import argparse
+import copy
 import json
 import logging
 import multiprocessing
 import sys
 from dataclasses import dataclass
 from functools import partial
-from typing import Any, Dict, Optional, Union
+from typing import Any, Optional, Union
 
 import annofabapi
 from annofabapi.models import ProjectMemberRole
@@ -16,6 +17,7 @@ import annofabcli
 import annofabcli.common.cli
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
+    PARALLELISM_CHOICES,
     ArgumentParser,
     CommandLine,
     CommandLineWithConfirm,
@@ -25,7 +27,7 @@ from annofabcli.common.facade import AnnofabApiFacade
 
 logger = logging.getLogger(__name__)
 
-Metadata = Dict[str, Union[str, bool, int]]
+Metadata = dict[str, Union[str, bool, int]]
 
 
 @dataclass(frozen=True)
@@ -58,10 +60,10 @@ class UpdateMetadataOfTaskMain(CommandLineWithConfirm):
         self,
         project_id: str,
         task_id: str,
-        metadata: Dict[str, Any],
+        metadata: dict[str, Any],
         task_index: Optional[int] = None,
     ) -> bool:
-        logging_prefix = f"{task_index+1} 件目" if task_index is not None else ""
+        logging_prefix = f"{task_index + 1} 件目" if task_index is not None else ""
         task = self.service.wrapper.get_task_or_none(project_id, task_id)
         if task is None:
             logger.warning(f"{logging_prefix} タスク '{task_id}' は存在しないのでスキップします。")
@@ -98,7 +100,7 @@ class UpdateMetadataOfTaskMain(CommandLineWithConfirm):
 
     def _update_metadata_with_patch_tasks_metadata_api_wrapper(self, tpl: tuple[int, int, list[TaskMetadataInfo]], project_id: str) -> None:
         global_start_position, global_stop_position, info_list = tpl
-        logger.debug(f"{global_start_position+1} 〜 {global_stop_position} 件目のタスクのメタデータを更新します。")
+        logger.debug(f"{global_start_position + 1} 〜 {global_stop_position} 件目のタスクのメタデータを更新します。")
         request_body = {info.task_id: info.metadata for info in info_list}
         self.service.api.patch_tasks_metadata(project_id, request_body=request_body)
 
@@ -115,7 +117,7 @@ class UpdateMetadataOfTaskMain(CommandLineWithConfirm):
 
         if self.parallelism is None:
             while first_index < len(metadata_info_list):
-                logger.info(f"{first_index+1} 〜 {min(first_index+BATCH_SIZE, len(metadata_info_list))} 件目のタスクのメタデータを更新します。")
+                logger.info(f"{first_index + 1} 〜 {min(first_index + BATCH_SIZE, len(metadata_info_list))} 件目のタスクのメタデータを更新します。")
                 request_body = {info.task_id: info.metadata for info in metadata_info_list[first_index : first_index + BATCH_SIZE]}
                 self.service.api.patch_tasks_metadata(project_id, request_body=request_body)
                 first_index += BATCH_SIZE
@@ -211,7 +213,7 @@ class UpdateMetadataOfTask(CommandLine):
         if args.metadata is not None:
             metadata = annofabcli.common.cli.get_json_from_args(args.metadata)
             assert task_id_list is not None, "'--metadata'を指定したときは'--task_id'は必須です。"
-            metadata_by_task_id = {task_id: metadata for task_id in task_id_list}
+            metadata_by_task_id = {task_id: copy.deepcopy(metadata) for task_id in task_id_list}
         elif args.metadata_by_task_id is not None:
             metadata_by_task_id = annofabcli.common.cli.get_json_from_args(args.metadata_by_task_id)
             if task_id_list is not None:
@@ -257,12 +259,13 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--overwrite",
         action="store_true",
-        help="指定した場合、メタデータを上書きして更新します（すでに設定されているメタデータは削除されます）。指定しない場合、 ``--metadata`` に指定されたキーのみ更新されます。",  # noqa: E501
+        help="指定した場合、メタデータを上書きして更新します（すでに設定されているメタデータは削除されます）。指定しない場合、 ``--metadata`` に指定されたキーのみ更新されます。 ``--yes`` と一緒に指定すると、処理時間は大幅に短くなります。",  # noqa: E501
     )
 
     parser.add_argument(
         "--parallelism",
         type=int,
+        choices=PARALLELISM_CHOICES,
         help="使用するプロセス数（並列度）を指定してください。指定する場合は必ず ``--yes`` を指定してください。指定しない場合は、逐次的に処理します。",  # noqa: E501
     )
 

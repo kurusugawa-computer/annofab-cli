@@ -1,12 +1,10 @@
 from __future__ import annotations
 
-import datetime
 import logging
+from collections.abc import Collection
 from dataclasses import dataclass
-from typing import Any, List, Optional
+from typing import Any, Optional
 
-import dateutil
-import dateutil.parser
 from annofabapi.dataclass.task import Task as DcTask
 from annofabapi.models import Task
 
@@ -25,12 +23,7 @@ class FilteringQuery:
     task_query: Optional[TaskQuery] = None
     start_date: Optional[str] = None
     end_date: Optional[str] = None
-
-
-def _to_datetime_with_tz(str_date: str) -> datetime.datetime:
-    dt = dateutil.parser.parse(str_date)
-    dt = dt.replace(tzinfo=dateutil.tz.tzlocal())
-    return dt
+    ignored_task_ids: Optional[Collection[str]] = None
 
 
 def _get_first_annotation_started_datetime(sub_task_history_list: list[dict[str, Any]]) -> Optional[str]:
@@ -83,7 +76,7 @@ def filter_task_histories(
     return {task_id: sub_task_history_list for task_id, sub_task_history_list in task_histories.items() if pred(sub_task_history_list)}
 
 
-def filter_tasks(tasks: list[dict[str, Any]], query: FilteringQuery, *, task_histories: dict[str, list[dict[str, Any]]]) -> List[Task]:
+def filter_tasks(tasks: list[dict[str, Any]], query: FilteringQuery, *, task_histories: dict[str, list[dict[str, Any]]]) -> list[Task]:
     """
     タスク一覧を絞り込みます。
 
@@ -108,6 +101,9 @@ def filter_tasks(tasks: list[dict[str, Any]], query: FilteringQuery, *, task_his
         flag = True
         if query.task_query is not None:
             flag = flag and match_task_with_query(DcTask.from_dict(arg_task), query.task_query)
+
+        if query.ignored_task_ids is not None:
+            flag = flag and arg_task["task_id"] not in query.ignored_task_ids
 
         return flag
 

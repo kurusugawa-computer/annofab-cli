@@ -5,8 +5,9 @@ import copy
 import logging
 import multiprocessing
 import sys
+from collections.abc import Iterator
 from pathlib import Path
-from typing import Any, Dict, Iterator, List, Optional
+from typing import Any, Optional
 
 import annofabapi
 from annofabapi.dataclass.annotation import AnnotationDetailV1, AnnotationV1
@@ -21,6 +22,7 @@ from annofabapi.utils import can_put_annotation
 import annofabcli
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
+    PARALLELISM_CHOICES,
     ArgumentParser,
     CommandLine,
     CommandLineWithConfirm,
@@ -72,11 +74,11 @@ class RestoreAnnotationMain(CommandLineWithConfirm):
 
         return detail
 
-    def parser_to_request_body(self, parser: SimpleAnnotationParser) -> Dict[str, Any]:
+    def parser_to_request_body(self, parser: SimpleAnnotationParser) -> dict[str, Any]:
         # infer_missing=Trueを指定する理由：Optional型のキーが存在しない場合でも、AnnotationV1データクラスのインスタンスを生成できるようにするため
         # https://qiita.com/yuji38kwmt/items/c5b56f70da3b8a70ba31
         annotation: AnnotationV1 = AnnotationV1.from_dict(parser.load_json(), infer_missing=True)
-        request_details: List[Dict[str, Any]] = []
+        request_details: list[dict[str, Any]] = []
         for detail in annotation.details:
             request_detail = self._to_annotation_detail_for_request(parser, detail)
 
@@ -135,7 +137,7 @@ class RestoreAnnotationMain(CommandLineWithConfirm):
             1個以上の入力データのアノテーションを変更したか
 
         """
-        logger_prefix = f"{task_index+1!s} 件目: " if task_index is not None else ""
+        logger_prefix = f"{task_index + 1!s} 件目: " if task_index is not None else ""
         task_id = task_parser.task_id
         if not self.confirm_processing(f"task_id={task_id} のアノテーションをリストアしますか？"):
             return False
@@ -320,6 +322,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--parallelism",
         type=int,
+        choices=PARALLELISM_CHOICES,
         help="並列度。指定しない場合は、逐次的に処理します。指定した場合は、``--yes`` も指定してください。",
     )
 

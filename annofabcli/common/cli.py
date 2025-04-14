@@ -3,14 +3,13 @@ Command Line Interfaceの共通部分
 """
 
 import argparse
-import dataclasses
 import getpass
 import json
 import logging
 import os
 import pkgutil
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Optional
 
 import annofabapi
 import jmespath
@@ -22,7 +21,6 @@ from annofabapi.exceptions import AnnofabApiException
 from annofabapi.models import OrganizationMemberRole, ProjectMemberRole
 from more_itertools import first_true
 
-from annofabcli.common.dataclasses import WaitOptions
 from annofabcli.common.enums import FormatArgument
 from annofabcli.common.exceptions import AnnofabCliException, AuthenticationError
 from annofabcli.common.facade import AnnofabApiFacade
@@ -53,6 +51,12 @@ class ExitCode:
 COMMAND_LINE_ERROR_STATUS_CODE = 2
 """コマンドラインエラーが発生したときに返すステータスコード"""
 
+PARALLELISM_CHOICES = range(2, 5)
+"""
+`--parallelism`に指定できる値
+AnnofabのRate Limit的に最大4並列なので（これ以上並列度を上げてもRate Limitにひっかかる）ので、2-4の範囲にしている。
+"""
+
 
 def build_annofabapi_resource_and_login(args: argparse.Namespace) -> annofabapi.Resource:
     """
@@ -69,10 +73,7 @@ def build_annofabapi_resource_and_login(args: argparse.Namespace) -> annofabapi.
     service = build_annofabapi_resource(args)
 
     try:
-        if args.mfa_code is not None:
-            service.api.login(mfa_code=args.mfa_code)
-        else:
-            service.api.login()
+        service.api.login()
         return service  # noqa: TRY300
 
     except requests.exceptions.HTTPError as e:
@@ -119,7 +120,7 @@ def add_parser(
 
         group.add_argument("--annofab_user_id", type=str, help="Annofabにログインする際のユーザーID")
         group.add_argument("--annofab_password", type=str, help="Annofabにログインする際のパスワード")
-        group.add_argument("--mfa_code", type=str, help="Annofabにログインする際のMFAコード")
+        group.add_argument("--annofab_pat", type=str, help="Annofabにログインする際のパーソナルアクセストークン")
 
         group.add_argument(
             "--logdir",
@@ -162,7 +163,7 @@ def add_parser(
     return parser
 
 
-def get_list_from_args(str_list: Optional[List[str]] = None) -> List[str]:
+def get_list_from_args(str_list: Optional[list[str]] = None) -> list[str]:
     """
     文字列のListのサイズが1で、プレフィックスが`file://`ならば、ファイルパスとしてファイルを読み込み、行をListとして返す。
     そうでなければ、引数の値をそのまま返す。
@@ -188,7 +189,7 @@ def get_list_from_args(str_list: Optional[List[str]] = None) -> List[str]:
         return str_list
 
 
-def get_csv_format_from_args(target: Optional[str] = None) -> Dict[str, Any]:
+def get_csv_format_from_args(target: Optional[str] = None) -> dict[str, Any]:
     """
     コマンドライン引数の値から csv_format を取得する。
     Default: {"encoding": "utf_8_sig", "index": False}
@@ -226,25 +227,6 @@ def get_input_data_size(str_input_data_size: str) -> Optional[InputDataSize]:
         return None
 
     return (int(splitted_list[0]), int(splitted_list[1]))
-
-
-def get_wait_options_from_args(dict_wait_options: Optional[Dict[str, Any]], default_wait_options: WaitOptions) -> WaitOptions:
-    """
-    デフォルト値とマージして、wait_optionsを取得する。
-
-    Args:
-        dict_wait_options: dictのwait_options(コマンドラインから取得した値など）
-        default_wait_options: デフォルトのwait_options
-
-    Returns:
-        デフォルト値とマージしたwait_options
-
-    """
-    if dict_wait_options is not None:
-        dataclasses.asdict(default_wait_options)
-        return WaitOptions.from_dict({**dataclasses.asdict(default_wait_options), **dict_wait_options})
-    else:
-        return default_wait_options
 
 
 def load_logging_config_from_args(args: argparse.Namespace) -> None:
@@ -326,6 +308,11 @@ def build_annofabapi_resource(args: argparse.Namespace) -> annofabapi.Resource:
         logger.info(f"Annofab WebAPIのエンドポイントURL: {endpoint_url}")
 
     kwargs = {"endpoint_url": endpoint_url, "input_mfa_code_via_stdin": True}
+
+    # コマンドライン引数からパーソナルアクセストークンが指定された場合
+    if args.annofab_pat is not None:
+        return annofabapi.build(pat=args.annofab_pat, **kwargs)  # type: ignore[arg-type]
+
     # コマンドライン引数からユーザーIDが指定された場合
     if args.annofab_user_id is not None:
         login_user_id: str = args.annofab_user_id
@@ -381,7 +368,7 @@ def prompt_yesno(msg: str) -> bool:
             return False
 
 
-def prompt_yesnoall(msg: str) -> Tuple[bool, bool]:
+def prompt_yesnoall(msg: str) -> tuple[bool, bool]:
     """
     標準入力で yes, no, all(すべてyes)を選択できるようにする。
     Args:
@@ -435,13 +422,12 @@ class ArgumentParser:
         """
         if help_message is None:
             help_message = (
-                "対象の入力データのinput_data_idを指定します。"
-                " ``file://`` を先頭に付けると、input_data_idの一覧が記載されたファイルを指定できます。"
+                "対象の入力データのinput_data_idを指定します。 ``file://`` を先頭に付けると、input_data_idの一覧が記載されたファイルを指定できます。"
             )
 
         self.parser.add_argument("-i", "--input_data_id", type=str, required=required, nargs="+", help=help_message)
 
-    def add_format(self, choices: List[FormatArgument], default: FormatArgument, help_message: Optional[str] = None):  # noqa: ANN201
+    def add_format(self, choices: list[FormatArgument], default: FormatArgument, help_message: Optional[str] = None):  # noqa: ANN201
         """
         '--format` 引数を追加
         """
@@ -538,7 +524,7 @@ class CommandLineWithoutWebapi:
     output: Optional[str] = None
 
     #: CSVのフォーマット
-    csv_format: Optional[Dict[str, Any]] = None
+    csv_format: Optional[dict[str, Any]] = None
 
     #: 出力フォーマット
     str_format: Optional[str] = None
@@ -683,8 +669,8 @@ class CommandLine(CommandLineWithoutWebapi):
     def validate_project(  # noqa: ANN201
         self,
         project_id: str,
-        project_member_roles: Optional[List[ProjectMemberRole]] = None,
-        organization_member_roles: Optional[List[OrganizationMemberRole]] = None,
+        project_member_roles: Optional[list[ProjectMemberRole]] = None,
+        organization_member_roles: Optional[list[OrganizationMemberRole]] = None,
     ):
         """
         プロジェクト or 組織に対して、必要な権限が付与されているかを確認する。

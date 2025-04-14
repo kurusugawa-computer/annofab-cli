@@ -1,6 +1,6 @@
 import argparse
 import logging
-from typing import List, Optional
+from typing import Optional
 
 import annofabapi
 import requests
@@ -20,7 +20,7 @@ class InviteProjectMemberMain:
         self.service = service
         self.facade = AnnofabApiFacade(service)
 
-    def invite_project_members(self, project_id: str, user_id_list: List[str], member_role: ProjectMemberRole):  # noqa: ANN201
+    def invite_project_members(self, project_id: str, user_id_list: list[str], member_role: ProjectMemberRole):  # noqa: ANN201
         """
         プロジェクトに、複数ユーザをプロジェクトメンバに追加する
 
@@ -55,18 +55,18 @@ class InviteProjectMemberMain:
             try:
                 self.service.api.put_project_member(project_id, user_id, request_body=request_body)
                 logger.debug(f"{project_title}({project_id}) のプロジェクトメンバに、{user_id} を {member_role.value} ロールで追加しました。")
-            except requests.HTTPError as e:
-                logger.warning(e)
+            except requests.HTTPError:
                 logger.warning(
-                    f"{project_title}({project_id}) のプロジェクトメンバに、{user_id} を {member_role.value} ロールで追加できませんでした。"
+                    f"{project_title}({project_id}) のプロジェクトメンバに、{user_id} を {member_role.value} ロールで追加できませんでした。",
+                    exc_info=True,
                 )
 
-    def assign_role_with_organization(self, organization_name: str, user_id_list: List[str], member_role: ProjectMemberRole):  # noqa: ANN201
+    def assign_role_with_organization(self, organization_name: str, user_id_list: list[str], member_role: ProjectMemberRole):  # noqa: ANN201
         projects = self.service.wrapper.get_all_projects_of_organization(organization_name, query_params={"account_id": self.service.api.account_id})
         project_id_list = [e["project_id"] for e in projects]
         self.assign_role_with_project_id(project_id_list, user_id_list=user_id_list, member_role=member_role)
 
-    def assign_role_with_project_id(self, project_id_list: List[str], user_id_list: List[str], member_role: ProjectMemberRole):  # noqa: ANN201
+    def assign_role_with_project_id(self, project_id_list: list[str], user_id_list: list[str], member_role: ProjectMemberRole):  # noqa: ANN201
         for project_id in project_id_list:
             try:
                 if not self.facade.my_role_is_owner(project_id):
@@ -75,9 +75,8 @@ class InviteProjectMemberMain:
 
                 self.invite_project_members(project_id, user_id_list, member_role)
 
-            except requests.HTTPError as e:
-                logger.warning(e)
-                logger.warning(f"project_id={project_id} のプロジェクトメンバにユーザを招待できませんでした。")
+            except requests.HTTPError:
+                logger.warning(f"project_id='{project_id}' のプロジェクトメンバにユーザを招待できませんでした。")
 
 
 class InviteUser(CommandLine):

@@ -17,7 +17,7 @@ classifiers = [
 
 
 [tool.poetry.dependencies]
-python = "^3.8"
+python = "^3.9"
 requests = "*"
 pyyaml = "*"
 dictdiffer = "*"
@@ -25,19 +25,13 @@ more-itertools = "*"
 jmespath = "*"
 pyquery = "*"
 isodate = "*"
-annofabapi = ">=0.74.0"
+annofabapi = "^1.4.1"
 python-datauri = "*"
-
+numpy = "*"
 pandas = "^2"
+# 3.7.0だと凡例が期待通りグラフ外に表示されないので、一旦3.7未満にする
+bokeh = "^3.3,<3.7"
 
-# Python3.8以下で、bokehのバージョンを3.0に固定している理由
-# 3.2以上だとPython3.8をサポートしていない
-# しかし3.1だと、以下のバグがあって正しくグラフを描画できないため
-# https://github.com/bokeh/bokeh/issues/13133#event-9277282834
-bokeh = [
-    {version="~3.0.0", python="=3.8"},
-    {version="^3.3", python=">=3.9"}
-    ]
 
 Pillow = "*"
 typing-extensions="^4.5"
@@ -49,13 +43,19 @@ typing-extensions="^4.5"
 # pandsaのCopy-on-Writeの警告を出すために、pandas2.2以上を利用する
 # https://pandas.pydata.org/docs/user_guide/copy_on_write.html
 pandas = [
-    {version=">=2.2", python=">=3.11"}
+    {version=">=2.2", python=">=3.12"}
 ]
 
-# pandas 2.2以上を利用する場合、numpyのバージョンを指定しないとpoetryが依存解決できないので、panda2.2が要求するnumpyのバージョンを指定する
-# 補足: numpy1.26.0はPython3.8に対応していない。したがって、"python>=3.11"という条件を指定して、numpy1.26.0を指定する必要がある
+# 開発時には最新のバージョンを利用するため、以下のバージョンを指定する
+bokeh = [
+    {version=">=3.5", python=">=3.10"}
+]
+
+# Numpy 2.1以上でないと、PyPIにはPython 3.13でビルドされたwheelファイルが存在しない
+# 以下の指定がないと、Python 3.13ではnumpy 2.0をビルドしようとして`poetry install`に時間がかかる
+# poetry installに時間をかけないようにするため、バージョンを指定する
 numpy = [
-    {version=">=1.26.0", python=">=3.11"}
+    {version=">=2.1", python=">=3.13"}
 ]
 
 
@@ -68,7 +68,7 @@ pytest-cov = "*"
 
 [tool.poetry.group.linter.dependencies]
 # pythonバージョンを指定している理由：Python3.12（開発環境）でしかlintを実行していないため
-ruff = {version="^0.5", python=">=3.12"}
+ruff = {version="^0.11", python=">=3.12"}
 mypy = {version="^1", python=">=3.12"}
 pylint = {version="^3", python=">=3.12"}
 
@@ -79,8 +79,8 @@ types-PyYAML = "*"
 
 [tool.poetry.group.documentation.dependencies]
 # ドキュメント生成用のライブラリ
-# `python=">=3.11"`を指定している理由：Pytyhon3.11を利用している開発環境かReadTheDocsでしかドキュメントを生成しないため
-sphinx = {version="^7", python=">=3.12"}
+# `python=">=3.12"`を指定している理由：Pytyhon3.11を利用している開発環境かReadTheDocsでしかドキュメントを生成しないため
+sphinx = {version="^8", python=">=3.12"}
 pydata-sphinx-theme = {version=">=0.13", python=">=3.12"}
 sphinx-last-updated-by-git = {version="*", python=">=3.12"}
 sphinx-argparse = {version="*", python=">=3.12"}
@@ -102,7 +102,7 @@ optional = true
 # GitHubでリリース時に、 GitHub Actionでannofabcliのexeを公開している
 # pythonバージョンを指定している理由: pyinstaller5.9はPython3.12未満までしかサポートしていない。
 # pythonバージョンを指定しないと、annofabcli自体のpython requirementが3.12未満になってしまうため。
-pyinstaller = { version = "^5.9", python = "<3.12" }
+pyinstaller = { version = "^6.10", python = "==3.12" }
 
 [tool.poetry.scripts]
 annofabcli = "annofabcli.__main__:main"
@@ -112,15 +112,23 @@ annofabcli = "annofabcli.__main__:main"
 ignore_missing_imports = true
 
 check_untyped_defs = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_unreachable = true
+
+show_column_numbers = true
+warn_unused_configs = true
+
 
 [tool.ruff]
-target-version = "py38"
+target-version = "py39"
 line-length = 150
 
 
 [tool.ruff.lint]
 
 ignore = [
+    "A005", # stdlib-module-shadowing: 標準ライブラリと同じ名前のモジュールはあるが、基本的には混乱しないはずなので無視する。
     "G004", # `logging-f-string` : loggingでf-stringを使いたいので無視する
     "PD901", #すでに`df`という変数をいろんなところで使っているため
     "PD002", #すでにpandasで`inplace=True`はいろんなところで使っているため
@@ -142,7 +150,6 @@ ignore = [
     "D", # pydocstyle, Docstringを中途半端にしか書いていないので、除外する
     "C90", # mccabe
     "BLE", # flake8-blind-except
-    # "TRY", # tryceratops
     "S", # flake8-bandit
     "EM",#flake8-errmsg
     "EXE", # flake8-executable
@@ -189,8 +196,9 @@ select = [
 convention = "google"
 
 [tool.ruff.lint.pyupgrade]
-# Python3.8をサポートしているため、`typing.List`などの型ヒントは警告しないようにする
+# `typing.Optional`を使っているため、UP007のルールを無視する
 # https://beta.ruff.rs/docs/settings/#keep-runtime-typing
+# Python 3.9のサポートを終了したら、この設定を除去する
 keep-runtime-typing = true
 
 [tool.ruff.lint.pylint]
@@ -198,7 +206,6 @@ max-args = 10
 
 [tool.poetry-dynamic-versioning]
 enable = true
-format = "{base}"
 
 [build-system]
 requires = ["poetry-core>=1.0.0", "poetry-dynamic-versioning"]

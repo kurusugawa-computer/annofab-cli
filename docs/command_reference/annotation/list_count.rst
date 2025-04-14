@@ -18,16 +18,18 @@ Examples
 基本的な使い方
 --------------------------
 ``--annotation_query`` に、集計対象のアノテーションを検索するする条件をJSON形式で指定してください。
-``--annotation_query`` のサンプルは、`Command line options <../../user_guide/command_line_options.html#annotation-query-aq>`_ を参照してください。
+``--annotation_query`` のサンプルは、 `Command line options <../../user_guide/command_line_options.html#annotation-query-aq>`_ を参照してください。
 
 
 
-以下のコマンドは、ラベル名（英語)が"car"であるアノテーションの個数をタスクごとに出力します。
+以下のコマンドは、ラベル名（英語）が"car"であるアノテーションの個数をタスクごとに出力します。
 
 .. code-block::
 
     $ annofabcli annotation list_count --project_id prj1 \
     --annotation_query '{"label": "car"}' --output out_by_task.csv
+
+
 
 
 .. csv-table:: out_by_task.csv
@@ -36,6 +38,8 @@ Examples
 
     task1,1
     task2,2
+
+
 
 
 デフォルトではタスクごとに集計します。入力データごとに出力する場合は、``--group_by input_data_id`` を指定しでください。
@@ -62,6 +66,13 @@ Examples
     $ annofabcli annotation list_count --project_id prj1 \
     --annotation_query '{"label": "car"}'  --task_id file://task.txt
 
+
+
+.. note::
+
+    ``--annotation_query`` にマッチするアノテーションの一覧から、アノテーションの個数を算出しいています。
+    したがって、 ``annotation_count`` 列の値は必ず0より大きいです。
+    
 
 .. warning::
 

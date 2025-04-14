@@ -3,7 +3,7 @@ import logging
 import multiprocessing
 import sys
 from functools import partial
-from typing import List, Optional, Tuple
+from typing import Optional
 
 import annofabapi
 import requests
@@ -14,6 +14,7 @@ import annofabcli
 import annofabcli.common.cli
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
+    PARALLELISM_CHOICES,
     ArgumentParser,
     CommandLine,
     build_annofabapi_resource_and_login,
@@ -65,7 +66,7 @@ class ChangeOperatorMain:
         task_query: Optional[TaskQuery] = None,
         task_index: Optional[int] = None,
     ) -> bool:
-        logging_prefix = f"{task_index+1} 件目" if task_index is not None else ""
+        logging_prefix = f"{task_index + 1} 件目" if task_index is not None else ""
         dict_task = self.service.wrapper.get_task_or_none(project_id, task_id)
         if dict_task is None:
             logger.warning(f"{logging_prefix}: task_id='{task_id}'のタスクは存在しないので、スキップします。")
@@ -108,7 +109,7 @@ class ChangeOperatorMain:
 
     def change_operator_for_task_wrapper(
         self,
-        tpl: Tuple[int, str],
+        tpl: tuple[int, str],
         project_id: str,
         task_query: Optional[TaskQuery] = None,
         new_account_id: Optional[str] = None,
@@ -129,7 +130,7 @@ class ChangeOperatorMain:
     def change_operator(
         self,
         project_id: str,
-        task_id_list: List[str],
+        task_id_list: list[str],
         new_user_id: Optional[str] = None,
         task_query: Optional[TaskQuery] = None,
         parallelism: Optional[int] = None,
@@ -252,6 +253,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--parallelism",
         type=int,
+        choices=PARALLELISM_CHOICES,
         help="使用するプロセス数（並列度）を指定してください。指定する場合は必ず ``--yes`` を指定してください。指定しない場合は、逐次的に処理します。",  # noqa: E501
     )
 

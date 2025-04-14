@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import argparse
 import logging
-from typing import Any, List, Optional
+from typing import Any, Optional
 
 import pandas
 import requests
@@ -25,9 +25,9 @@ class ListingComments(CommandLine):
         return comments
 
     def get_comment_list(
-        self, project_id: str, task_id_list: List[str], *, comment_type: Optional[CommentType], exclude_reply: bool
+        self, project_id: str, task_id_list: list[str], *, comment_type: Optional[CommentType], exclude_reply: bool
     ) -> list[dict[str, Any]]:
-        all_comments: List[Comment] = []
+        all_comments: list[Comment] = []
 
         for task_id in task_id_list:
             try:

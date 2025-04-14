@@ -7,7 +7,7 @@ import multiprocessing
 import sys
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 import annofabapi
 from annofabapi.models import ProjectMemberRole, SingleAnnotation, TaskStatus
@@ -19,6 +19,7 @@ from annofabcli.annotation.annotation_query import AnnotationQueryForAPI, Annota
 from annofabcli.annotation.dump_annotation import DumpAnnotationMain
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
+    PARALLELISM_CHOICES,
     ArgumentParser,
     CommandLine,
     CommandLineWithConfirm,
@@ -54,7 +55,7 @@ class ChangePropertiesOfAnnotationMain(CommandLineWithConfirm):
     def change_annotation_properties(  # noqa: ANN201
         self,
         task_id: str,
-        annotation_list: List[SingleAnnotation],
+        annotation_list: list[SingleAnnotation],
         properties: AnnotationDetailForCli,
     ):
         """
@@ -68,9 +69,9 @@ class ChangePropertiesOfAnnotationMain(CommandLineWithConfirm):
 
         now_datetime = str_now()
 
-        def to_properties_from_cli(annotation_list: List[SingleAnnotation], properties: AnnotationDetailForCli) -> List[Dict[str, Any]]:
+        def to_properties_from_cli(annotation_list: list[SingleAnnotation], properties: AnnotationDetailForCli) -> list[dict[str, Any]]:
             annotations_for_api = []
-            annotation_details_by_input_data: Dict[str, List[Dict[str, Any]]] = {}
+            annotation_details_by_input_data: dict[str, list[dict[str, Any]]] = {}
 
             # input_data_idごとにannotation_listを分ける
             for annotation in annotation_list:
@@ -93,7 +94,7 @@ class ChangePropertiesOfAnnotationMain(CommandLineWithConfirm):
                 annotations_for_api.append(annotations)
             return annotations_for_api
 
-        def _to_request_body_elm(annotation: Dict[str, Any]):  # noqa: ANN202
+        def _to_request_body_elm(annotation: dict[str, Any]):  # noqa: ANN202
             return self.service.api.put_annotation(
                 annotation["project_id"],
                 annotation["task_id"],
@@ -148,7 +149,7 @@ class ChangePropertiesOfAnnotationMain(CommandLineWithConfirm):
             backup_dir: アノテーションをバックアップとして保存するディレクトリ。指定しない場合は、バックアップを取得しない。
 
         """
-        logger_prefix = f"{task_index+1!s} 件目: " if task_index is not None else ""
+        logger_prefix = f"{task_index + 1!s} 件目: " if task_index is not None else ""
         dict_task = self.service.wrapper.get_task_or_none(self.project_id, task_id)
         if dict_task is None:
             logger.warning(f"task_id = '{task_id}' は存在しません。")
@@ -238,7 +239,7 @@ class ChangePropertiesOfAnnotationMain(CommandLineWithConfirm):
 
     def change_annotation_properties_task_list(  # noqa: ANN201
         self,
-        task_id_list: List[str],
+        task_id_list: list[str],
         properties: AnnotationDetailForCli,
         annotation_query: Optional[AnnotationQueryForAPI] = None,
         backup_dir: Optional[Path] = None,
@@ -264,7 +265,7 @@ class ChangePropertiesOfAnnotationMain(CommandLineWithConfirm):
 
         else:
             for task_index, task_id in enumerate(task_id_list):
-                logger.debug(f"{task_index+1} / {len(task_id_list)} 件目: タスク '{task_id}' のアノテーションのプロパティを変更します。")
+                logger.debug(f"{task_index + 1} / {len(task_id_list)} 件目: タスク '{task_id}' のアノテーションのプロパティを変更します。")
 
                 try:
                     result = self.change_properties_for_task(
@@ -394,6 +395,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--parallelism",
         type=int,
+        choices=PARALLELISM_CHOICES,
         help="並列度。指定しない場合は、逐次的に処理します。指定した場合は、``--yes`` も指定してください。",
     )
 

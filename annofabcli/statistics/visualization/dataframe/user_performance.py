@@ -7,9 +7,10 @@ from __future__ import annotations
 
 import logging
 import math
+from collections.abc import Sequence
 from enum import Enum
 from pathlib import Path
-from typing import Optional
+from typing import Any, Literal, Optional
 
 import bokeh
 import bokeh.layouts
@@ -20,12 +21,16 @@ from annofabapi.models import TaskPhase
 from bokeh.models.widgets.markups import Div
 from bokeh.plotting import ColumnDataSource
 
+from annofabcli.common.bokeh import create_pretext_from_metadata
 from annofabcli.common.utils import print_csv, read_multiheader_csv
 from annofabcli.statistics.scatter import ScatterGraph, get_color_from_palette, write_bokeh_graph
 from annofabcli.statistics.visualization.dataframe.task_worktime_by_phase_user import TaskWorktimeByPhaseUser
 from annofabcli.statistics.visualization.dataframe.worktime_per_date import WorktimePerDate
+from annofabcli.statistics.visualization.model import ProductionVolumeColumn, TaskCompletionCriteria
 
 logger = logging.getLogger(__name__)
+
+TaskPhaseString = Literal["annotation", "inspection", "acceptance"]
 
 
 class WorktimeType(Enum):
@@ -83,8 +88,22 @@ class UserPerformance:
     PLOT_WIDTH = 1200
     PLOT_HEIGHT = 800
 
-    def __init__(self, df: pandas.DataFrame) -> None:
-        self.phase_list = self.get_phase_list(df.columns)
+    def __init__(
+        self,
+        df: pandas.DataFrame,
+        task_completion_criteria: TaskCompletionCriteria,
+        *,
+        custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None,
+    ) -> None:
+        self.task_completion_criteria = task_completion_criteria
+        phase_list = self.get_phase_list(df.columns)
+        self.custom_production_volume_list = custom_production_volume_list if custom_production_volume_list is not None else []
+        self.phase_list = phase_list
+        if not self.required_columns_exist(df):
+            raise ValueError(
+                f"引数'df'の'columns'に次の列が存在していません。 {self.missing_columns(df)} :: 次の列が必須です。{self.columns}の列が必要です。"
+            )
+
         self.df = df
 
     def is_empty(self) -> bool:
@@ -97,7 +116,9 @@ class UserPerformance:
         return len(self.df) == 0
 
     @staticmethod
-    def _add_ratio_column_for_productivity_per_user(df: pandas.DataFrame, phase_list: list[str]) -> None:
+    def _add_ratio_column_for_productivity_per_user(
+        df: pandas.DataFrame, phase_list: Sequence[TaskPhaseString], production_volume_columns: list[str]
+    ) -> None:
         """
         ユーザーの生産性に関する列を、DataFrameに追加します。
         """
@@ -133,35 +154,33 @@ class UserPerformance:
             df[("actual_worktime_hour", phase)] = df[("actual_worktime_hour", "sum")] * df[("monitored_worktime_ratio", phase)]
 
             # 生産性を算出
-            df[("monitored_worktime_hour/input_data_count", phase)] = df[("monitored_worktime_hour", phase)] / df[("input_data_count", phase)]
-            df[("actual_worktime_hour/input_data_count", phase)] = df[("actual_worktime_hour", phase)] / df[("input_data_count", phase)]
-
-            df[("monitored_worktime_hour/annotation_count", phase)] = df[("monitored_worktime_hour", phase)] / df[("annotation_count", phase)]
-            df[("actual_worktime_hour/annotation_count", phase)] = df[("actual_worktime_hour", phase)] / df[("annotation_count", phase)]
-
             ratio__actual_vs_monitored_worktime = df[("actual_worktime_hour", phase)] / df[("monitored_worktime_hour", phase)]
-            df[("stdev__actual_worktime_hour/input_data_count", phase)] = (
-                df[("stdev__monitored_worktime_hour/input_data_count", phase)] * ratio__actual_vs_monitored_worktime
-            )
-            df[("stdev__actual_worktime_hour/annotation_count", phase)] = (
-                df[("stdev__monitored_worktime_hour/annotation_count", phase)] * ratio__actual_vs_monitored_worktime
+            for production_volume_column in production_volume_columns:
+                df[(f"monitored_worktime_hour/{production_volume_column}", phase)] = (
+                    df[("monitored_worktime_hour", phase)] / df[(production_volume_column, phase)]
+                )
+                df[(f"actual_worktime_hour/{production_volume_column}", phase)] = (
+                    df[("actual_worktime_hour", phase)] / df[(production_volume_column, phase)]
+                )
+
+                df[(f"stdev__actual_worktime_hour/{production_volume_column}", phase)] = (
+                    df[(f"stdev__monitored_worktime_hour/{production_volume_column}", phase)] * ratio__actual_vs_monitored_worktime
+                )
+
+        # 品質に関する情報
+        phase = TaskPhase.ANNOTATION.value
+        for production_volume_column in production_volume_columns:
+            df[(f"pointed_out_inspection_comment_count/{production_volume_column}", phase)] = (
+                df[("pointed_out_inspection_comment_count", phase)] / df[(production_volume_column, phase)]
             )
 
-        phase = TaskPhase.ANNOTATION.value
-        df[("pointed_out_inspection_comment_count/annotation_count", phase)] = (
-            df[("pointed_out_inspection_comment_count", phase)] / df[("annotation_count", phase)]
-        )
-        df[("pointed_out_inspection_comment_count/input_data_count", phase)] = (
-            df[("pointed_out_inspection_comment_count", phase)] / df[("input_data_count", phase)]
-        )
         df[("rejected_count/task_count", phase)] = df[("rejected_count", phase)] / df[("task_count", phase)]
 
     @staticmethod
-    def get_phase_list(columns: list[tuple[str, str]]) -> list[str]:
+    def get_phase_list(columns: list[tuple[str, str]]) -> list[TaskPhaseString]:
         """
         サポートしているフェーズのlistを取得します。
         `monitored_worktime_hour`列情報を見て、サポートしているフェーズを判断します。
-
         """
         tmp_set = {c1 for c0, c1 in columns if c0 == "monitored_worktime_hour"}
         phase_list = []
@@ -170,16 +189,28 @@ class UserPerformance:
             if phase.value in tmp_set:
                 phase_list.append(phase.value)  # noqa: PERF401
 
-        return phase_list
+        # mypyはTaskPhaseStringが返ることを認識できないため'return-value'を無視する
+        return phase_list  # type: ignore[return-value]
 
     @classmethod
-    def from_csv(cls, csv_file: Path) -> UserPerformance:
+    def from_csv(
+        cls,
+        csv_file: Path,
+        task_completion_criteria: TaskCompletionCriteria,
+        *,
+        custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None,
+    ) -> UserPerformance:
         df = read_multiheader_csv(str(csv_file))
-        return cls(df)
+        return cls(df, task_completion_criteria, custom_production_volume_list=custom_production_volume_list)
 
     @classmethod
-    def empty(cls) -> UserPerformance:
+    def empty(
+        cls, task_completion_criteria: TaskCompletionCriteria, *, custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None
+    ) -> UserPerformance:
         """空のデータフレームを持つインスタンスを生成します。"""
+        production_volume_columns = ["input_data_count", "annotation_count"]
+        if custom_production_volume_list is not None:
+            production_volume_columns.extend([e.value for e in custom_production_volume_list])
 
         df_dtype: dict[tuple[str, str], str] = {
             ("account_id", ""): "string",
@@ -206,6 +237,7 @@ class UserPerformance:
             ("monitored_worktime_hour", "annotation"): "float64",
             ("monitored_worktime_hour", "sum"): "float64",
             ("task_count", "annotation"): "float64",
+            **{(col, "annotation"): "float64" for col in production_volume_columns},
             ("input_data_count", "annotation"): "float64",
             ("annotation_count", "annotation"): "float64",
             ("real_actual_worktime_hour", "sum"): "float64",
@@ -217,40 +249,11 @@ class UserPerformance:
         }
 
         df = pandas.DataFrame(columns=pandas.MultiIndex.from_tuples(df_dtype.keys())).astype(df_dtype)
-        return cls(df)
+        return cls(df, task_completion_criteria, custom_production_volume_list=custom_production_volume_list)
 
     def actual_worktime_exists(self) -> bool:
         """実績作業時間が入力されているか否か"""
         return self.df[("actual_worktime_hour", "sum")].sum() > 0
-
-    @staticmethod
-    def create_df_stdev_worktime(df_worktime_ratio: pandas.DataFrame) -> pandas.DataFrame:
-        """
-        単位量あたり作業時間の標準偏差のDataFrameを生成する
-        """
-        df_worktime_ratio2 = df_worktime_ratio.copy()
-        df_worktime_ratio2["worktime_hour/input_data_count"] = df_worktime_ratio2["worktime_hour"] / df_worktime_ratio2["input_data_count"]
-        df_worktime_ratio2["worktime_hour/annotation_count"] = df_worktime_ratio2["worktime_hour"] / df_worktime_ratio2["annotation_count"]
-
-        # 母標準偏差を算出する
-        df_stdev = df_worktime_ratio2.groupby(["account_id", "phase"])[["worktime_hour/input_data_count", "worktime_hour/annotation_count"]].std(
-            ddof=0
-        )
-
-        df_stdev2 = pandas.pivot_table(
-            df_stdev,
-            values=["worktime_hour/input_data_count", "worktime_hour/annotation_count"],
-            index="account_id",
-            columns="phase",
-        )
-        df_stdev3 = df_stdev2.rename(
-            columns={
-                "worktime_hour/input_data_count": "stdev__monitored_worktime_hour/input_data_count",
-                "worktime_hour/annotation_count": "stdev__monitored_worktime_hour/annotation_count",
-            }
-        )
-
-        return df_stdev3
 
     @staticmethod
     def _create_df_monitored_worktime_and_production_amount(
@@ -262,11 +265,8 @@ class UserPerformance:
         Returns: 生成されるDataFrame
             columns(level0):
                 * monitored_worktime_hour
-                * task_count
-                * input_data_count
-                * annotation_count
-                * pointed_out_inspection_comment_count
-                * rejected_count
+                * {task_worktime_by_phase_user.quantity_columns}
+
             columns(level1): ${phase}
             index: account_id
         """
@@ -279,11 +279,7 @@ class UserPerformance:
                 [
                     ("monitored_worktime_hour", "sum"),
                     ("monitored_worktime_hour", phase),
-                    ("task_count", phase),
-                    ("input_data_count", phase),
-                    ("annotation_count", phase),
-                    ("pointed_out_inspection_comment_count", phase),
-                    ("rejected_count", phase),
+                    *[(quantity_column, phase) for quantity_column in task_worktime_by_phase_user.quantity_columns],
                 ]
             )
 
@@ -292,14 +288,7 @@ class UserPerformance:
 
         # TODO もしかしたら  `["worktime_hour"]>0]`を指定する必要があるかもしれない。分からないので、いったん指定しない
         df2 = df.pivot_table(
-            values=[
-                "worktime_hour",
-                "task_count",
-                "input_data_count",
-                "annotation_count",
-                "pointed_out_inspection_comment_count",
-                "rejected_count",
-            ],
+            values=["worktime_hour", *task_worktime_by_phase_user.quantity_columns],
             columns="phase",
             index="account_id",
             aggfunc="sum",
@@ -310,7 +299,6 @@ class UserPerformance:
 
         # 計測作業時間の合計値を算出する
         df2[("monitored_worktime_hour", "sum")] = df2[[("monitored_worktime_hour", phase) for phase in phase_list]].sum(axis=1)
-
         return df2
 
     @staticmethod
@@ -334,49 +322,55 @@ class UserPerformance:
             phase = TaskPhase.ANNOTATION.value
             columns = pandas.MultiIndex.from_tuples(
                 [
-                    ("stdev__monitored_worktime_hour/input_data_count", phase),
-                    ("stdev__monitored_worktime_hour/annotation_count", phase),
+                    (f"stdev__monitored_worktime_hour/{production_volume_column}", phase)
+                    for production_volume_column in task_worktime_by_phase_user.production_volume_columns
                 ]
             )
             df_empty = pandas.DataFrame(columns=columns, index=pandas.Index([], name="account_id"), dtype="float64")
             return df_empty
 
         df2 = df.copy()
-        df2["worktime_hour/input_data_count"] = df2["worktime_hour"] / df2["input_data_count"]
-        df2["worktime_hour/annotation_count"] = df2["worktime_hour"] / df2["annotation_count"]
+        for production_volume_column in task_worktime_by_phase_user.production_volume_columns:
+            df2[f"worktime_hour/{production_volume_column}"] = df2["worktime_hour"] / df2[production_volume_column]
 
         # 母標準偏差(ddof=0)を算出する
         # 標準偏差を算出する際"inf"を除外する理由：annotation_countが0の場合、"worktime_hour/annotation_count"はinfになる。
         # infが含まれるデータから標準偏差を求めようとするNaNになる。したがって、infを除外する。
         # 原則annotation_countが0のときに場合は、作業時間も小さいためこのデータを除外しても、標準偏差には影響がないはず
-        df_stdev_per_input_data_count = (
-            df2[df2["worktime_hour/input_data_count"] != float("inf")]
-            .groupby(["account_id", "phase"])[["worktime_hour/input_data_count"]]
-            .std(ddof=0)
-        )
-        df_stdev_per_annotation_count = (
-            df2[df2["worktime_hour/annotation_count"] != float("inf")]
-            .groupby(["account_id", "phase"])[["worktime_hour/annotation_count"]]
-            .std(ddof=0)
-        )
-        df_stdev = pandas.concat([df_stdev_per_input_data_count, df_stdev_per_annotation_count], axis=1)
+        df_stdev_per_volume_count_list = []
+        for production_volume_column in task_worktime_by_phase_user.production_volume_columns:
+            df_stdev_per_input_data_count = (
+                df2[df2[f"worktime_hour/{production_volume_column}"] != float("inf")]
+                .groupby(["account_id", "phase"])[[f"worktime_hour/{production_volume_column}"]]
+                .std(ddof=0)
+            )
+            df_stdev_per_volume_count_list.append(df_stdev_per_input_data_count)
+        df_stdev = pandas.concat(df_stdev_per_volume_count_list, axis=1)
 
         # `dropna=False`を指定する理由：NaNが含まれることにより、列に"annotation"などが含まれないと、後続の処理で失敗するため
         # 前述の処理でinfを除外しているので、NaNが含まれることはないはず
         df_stdev2 = pandas.pivot_table(
-            df_stdev, values=["worktime_hour/input_data_count", "worktime_hour/annotation_count"], index="account_id", columns="phase", dropna=False
+            df_stdev,
+            values=[
+                f"worktime_hour/{production_volume_column}" for production_volume_column in task_worktime_by_phase_user.production_volume_columns
+            ],
+            index="account_id",
+            columns="phase",
+            dropna=False,
         )
         df_stdev3 = df_stdev2.rename(
             columns={
-                "worktime_hour/input_data_count": "stdev__monitored_worktime_hour/input_data_count",
-                "worktime_hour/annotation_count": "stdev__monitored_worktime_hour/annotation_count",
+                f"worktime_hour/{production_volume_column}": f"stdev__monitored_worktime_hour/{production_volume_column}"
+                for production_volume_column in task_worktime_by_phase_user.production_volume_columns
             }
         )
 
         return df_stdev3
 
     @staticmethod
-    def _create_df_real_worktime(worktime_per_date: WorktimePerDate) -> pandas.DataFrame:
+    def _create_df_real_worktime(
+        worktime_per_date: WorktimePerDate,
+    ) -> pandas.DataFrame:
         """
         集計対象タスクに影響されない実際の計測作業時間と実績作業時間が格納されたDataFrameを生成します。
 
@@ -542,6 +536,7 @@ class UserPerformance:
         cls,
         worktime_per_date: WorktimePerDate,
         task_worktime_by_phase_user: TaskWorktimeByPhaseUser,
+        task_completion_criteria: TaskCompletionCriteria,
     ) -> UserPerformance:
         """
         pandas.DataFrameをラップしたオブジェクトから、インスタンスを生成します。
@@ -573,17 +568,16 @@ class UserPerformance:
             """
             生産量や指摘数などの情報が欠損している場合は、0で埋めます。そうしないと、生産性や品質情報を計算する際にエラーになるためです。
             """
-            level0_columns = [
-                "monitored_worktime_hour",
-                "task_count",
-                "input_data_count",
-                "annotation_count",
-                "pointed_out_inspection_comment_count",
-                "rejected_count",
-            ]
+            level0_columns = ["monitored_worktime_hour", *task_worktime_by_phase_user.quantity_columns]
             columns = [(c0, c1) for c0, c1 in df.columns if c0 in level0_columns]
 
-            return df.fillna({col: 0 for col in columns})
+            return df.fillna(dict.fromkeys(columns, 0))
+
+        if task_completion_criteria == TaskCompletionCriteria.ACCEPTANCE_REACHED:
+            # 受入フェーズに到達したらタスクの作業が完了したとみなす場合、
+            # 受入フェーズの作業時間や生産量は不要な情報なので、受入作業時間を0にする
+            worktime_per_date = worktime_per_date.to_non_acceptance()
+            task_worktime_by_phase_user = task_worktime_by_phase_user.to_non_acceptance()
 
         # 実際の計測作業時間情報（集計タスクに影響されない作業時間）と実績作業時間を算出する
         df = cls._create_df_real_worktime(worktime_per_date)
@@ -599,7 +593,9 @@ class UserPerformance:
         df = df.join(cls._create_df_stdev_monitored_worktime(task_worktime_by_phase_user))
 
         # 比例関係の列を計算して追加する
-        cls._add_ratio_column_for_productivity_per_user(df, phase_list=phase_list)
+        cls._add_ratio_column_for_productivity_per_user(
+            df, phase_list=phase_list, production_volume_columns=task_worktime_by_phase_user.production_volume_columns
+        )
 
         # 出力に不要な列を削除する
         df = drop_unnecessary_columns(df)
@@ -615,7 +611,9 @@ class UserPerformance:
 
         df = df.sort_values(["user_id"])
         # `df.reset_index()`を実行する理由：indexである`account_id`を列にするため
-        return cls(df.reset_index())
+        return cls(
+            df.reset_index(), task_completion_criteria, custom_production_volume_list=task_worktime_by_phase_user.custom_production_volume_list
+        )
 
     @classmethod
     def _convert_column_dtypes(cls, df: pandas.DataFrame) -> pandas.DataFrame:
@@ -636,8 +634,8 @@ class UserPerformance:
         ]
 
         value_columns = columns - set(basic_columns)
-        dtypes = {col: "string" for col in basic_columns}
-        dtypes.update({col: "float64" for col in value_columns})
+        dtypes = dict.fromkeys(basic_columns, "string")
+        dtypes.update(dict.fromkeys(value_columns, "float64"))
         return df.astype(dtypes)
 
     def _validate_df_for_output(self, output_file: Path) -> bool:
@@ -647,9 +645,12 @@ class UserPerformance:
         return True
 
     @staticmethod
-    def get_productivity_columns(phase_list: list[str]) -> list[tuple[str, str]]:
+    def get_productivity_columns(phase_list: Sequence[TaskPhaseString], production_volume_columns: list[str]) -> list[tuple[str, str]]:
         """
         生産性に関する情報（作業時間、生産量、生産量あたり作業時間）の列を取得します。
+
+        Args:
+            production_volume_columns: 生産量を表す列。ただし`task_count`は除く。
         """
         # `phase_list`を参照しない理由： `phase_list`は集計対象のタスクから求めた作業時間を元に決めている
         # `real_monitored_worktime_hour`は実際に作業した時間を表すため、`phase_list`を参照していない。
@@ -667,11 +668,9 @@ class UserPerformance:
             + [("monitored_worktime_hour", phase) for phase in phase_list]
             + [("monitored_worktime_ratio", phase) for phase in phase_list]
         )
-        production_columns = (
-            [("task_count", phase) for phase in phase_list]
-            + [("input_data_count", phase) for phase in phase_list]
-            + [("annotation_count", phase) for phase in phase_list]
-        )
+        production_columns = [("task_count", phase) for phase in phase_list]
+        for production_volume_column in production_volume_columns:
+            production_columns.extend([(production_volume_column, phase) for phase in phase_list])
 
         real_actual_worktime_columns = [
             ("real_actual_worktime_hour", "sum"),
@@ -679,17 +678,17 @@ class UserPerformance:
         ]
         actual_worktime_columns = [("actual_worktime_hour", "sum")] + [("actual_worktime_hour", phase) for phase in phase_list]
 
-        productivity_columns = (
-            [("monitored_worktime_hour/input_data_count", phase) for phase in phase_list]
-            + [("actual_worktime_hour/input_data_count", phase) for phase in phase_list]
-            + [("monitored_worktime_hour/annotation_count", phase) for phase in phase_list]
-            + [("actual_worktime_hour/annotation_count", phase) for phase in phase_list]
-        )
+        productivity_columns = []
+        for production_volume_column in production_volume_columns:
+            productivity_columns.extend([(f"monitored_worktime_hour/{production_volume_column}", phase) for phase in phase_list])
+            productivity_columns.extend([(f"actual_worktime_hour/{production_volume_column}", phase) for phase in phase_list])
 
         inspection_comment_columns = [
             ("pointed_out_inspection_comment_count", TaskPhase.ANNOTATION.value),
-            ("pointed_out_inspection_comment_count/input_data_count", TaskPhase.ANNOTATION.value),
-            ("pointed_out_inspection_comment_count/annotation_count", TaskPhase.ANNOTATION.value),
+            *[
+                (f"pointed_out_inspection_comment_count/{production_volume_column}", TaskPhase.ANNOTATION.value)
+                for production_volume_column in production_volume_columns
+            ],
         ]
 
         rejected_count_columns = [
@@ -697,12 +696,10 @@ class UserPerformance:
             ("rejected_count/task_count", TaskPhase.ANNOTATION.value),
         ]
 
-        stdev_columns = (
-            [("stdev__monitored_worktime_hour/input_data_count", phase) for phase in phase_list]
-            + [("stdev__actual_worktime_hour/input_data_count", phase) for phase in phase_list]
-            + [("stdev__monitored_worktime_hour/annotation_count", phase) for phase in phase_list]
-            + [("stdev__actual_worktime_hour/annotation_count", phase) for phase in phase_list]
-        )
+        stdev_columns = []
+        for production_volume_column in production_volume_columns:
+            stdev_columns.extend([(f"stdev__monitored_worktime_hour/{production_volume_column}", phase) for phase in phase_list])
+            stdev_columns.extend([(f"stdev__actual_worktime_hour/{production_volume_column}", phase) for phase in phase_list])
 
         prior_columns = (
             real_monitored_worktime_columns
@@ -718,11 +715,26 @@ class UserPerformance:
 
         return prior_columns
 
-    def to_csv(self, output_file: Path) -> None:
-        if not self._validate_df_for_output(output_file):
-            return
+    def required_columns_exist(self, df: pandas.DataFrame) -> bool:
+        """
+        必須の列が存在するかどうかを返します。
 
-        value_columns = self.get_productivity_columns(self.phase_list)
+        Returns:
+            必須の列が存在するかどうか
+        """
+        return len(set(self.columns) - set(df.columns)) == 0
+
+    def missing_columns(self, df: pandas.DataFrame) -> list[tuple[str, str]]:
+        """
+        欠損している列名を取得します。
+
+        """
+        return list(set(self.columns) - set(df.columns))
+
+    @property
+    def columns(self) -> list[tuple[str, str]]:
+        production_volume_columns = ["input_data_count", "annotation_count", *[e.value for e in self.custom_production_volume_list]]
+        value_columns = self.get_productivity_columns(self.phase_list, production_volume_columns=production_volume_columns)
 
         user_columns = [
             ("account_id", ""),
@@ -740,8 +752,13 @@ class UserPerformance:
                     ("working_days", phase_column),
                 ]
             )
-        columns = user_columns + working_date_columns + value_columns
-        print_csv(self.df[columns], str(output_file))
+        return user_columns + working_date_columns + value_columns
+
+    def to_csv(self, output_file: Path) -> None:
+        if not self._validate_df_for_output(output_file):
+            return
+
+        print_csv(self.df[self.columns], str(output_file))
 
     @staticmethod
     def _get_average_value(df: pandas.DataFrame, numerator_column: tuple[str, str], denominator_column: tuple[str, str]) -> Optional[float]:
@@ -789,43 +806,10 @@ class UserPerformance:
         # https://qiita.com/yuji38kwmt/items/16ce548248c5c71fab3a
         df = df.fillna({"biography": ""})
 
-        # bokeh 3.0.3では、dtypeが`string`である列を含むDataFrameを描画できないので、dtypeが`string`である列のdtypeを`object`変換する
-        # https://qiita.com/yuji38kwmt/items/b5da6ed521e827620186
-        # TODO python3.8のサポートを終了したら、このコードを削除する
-        df = df.astype(
-            {
-                ("account_id", ""): "object",
-                ("user_id", ""): "object",
-                ("username", ""): "object",
-                ("biography", ""): "object",
-                ("first_working_date", ""): "object",
-                ("last_working_date", ""): "object",
-                ("first_working_date", "annotation"): "object",
-                ("last_working_date", "annotation"): "object",
-                ("first_working_date", "inspection"): "object",
-                ("last_working_date", "inspection"): "object",
-                ("first_working_date", "acceptance"): "object",
-                ("last_working_date", "acceptance"): "object",
-            }
-        )
-
-        # bokeh 3.0.3ではpandas.NAを含むDataFrameを描画できないので、`numpy.nan`に変換する
-        # https://qiita.com/yuji38kwmt/items/b5da6ed521e827620186
-        # TODO python3.8のサポートを終了したら、このコードを削除する
-        try:
-            # "no_silent_downcasting" option をTrueにする理由:
-            # `pandas.NA`を`numpy.nan`にすることで、dtypeが`string`から`float64`になる列があるため、`FutureWarning`が発生する
-            # このdowncastingが将来なくなっても困ることはないので、警告を抑制した
-            with pandas.option_context("future.no_silent_downcasting", True):  # noqa: FBT003
-                df = df.replace({pandas.NA: numpy.nan})
-        except pandas.errors.OptionError:
-            # pandas 2.2未満では"future.no_silent_downcasting"が存在しないため、OptionErrorが発生する
-            df = df.replace({pandas.NA: numpy.nan})
-
         return df
 
     @staticmethod
-    def _add_ratio_key_for_whole_productivity(series: pandas.Series, phase_list: list[str]) -> None:
+    def _add_ratio_key_for_whole_productivity(series: pandas.Series, phase_list: Sequence[str]) -> None:
         """
         プロジェクト全体の生産性に関するkeyを、pandas.Seriesに追加します。
         """
@@ -875,15 +859,40 @@ class UserPerformance:
             )
             series[("rejected_count/task_count", phase)] = series[("rejected_count", phase)] / series[("task_count", phase)]
 
-    def plot_productivity(self, output_file: Path, worktime_type: WorktimeType, performance_unit: PerformanceUnit) -> None:
-        """作業時間と生産性の関係をメンバごとにプロットする。"""
+    def get_production_volume_name(self, production_volume_column: str) -> str:
+        """
+        生産量を表す列名から、名前を取得します。
+        """
+        column_to_name: dict[str, str] = {e.value: e.name for e in self.custom_production_volume_list}
+        column_to_name.update(
+            {
+                "input_data_count": "入力データ",
+                "annotation_count": "アノテーション",
+            }
+        )
+        return column_to_name[production_volume_column]
+
+    def plot_productivity(
+        self,
+        output_file: Path,
+        worktime_type: WorktimeType,
+        production_volume_column: str,
+        *,
+        metadata: Optional[dict[str, Any]] = None,
+    ) -> None:
+        """作業時間と生産性の関係をメンバごとにプロットする。
+
+        Args:
+            metadata: HTMLファイルの上部に表示するメタデータです。
+
+        """
 
         if not self._validate_df_for_output(output_file):
             return
 
         df = self.convert_df_suitable_for_bokeh(self.df)
 
-        performance_unit_name = performance_unit.performance_unit_name
+        production_volume_name = self.get_production_volume_name(production_volume_column)
 
         logger.debug(f"{output_file} を出力します。")
 
@@ -895,21 +904,19 @@ class UserPerformance:
 
         scatter_obj_list = [
             ScatterGraph(
-                title=f"{DICT_PHASE_NAME[phase]}の{performance_unit_name}あたり作業時間と累計作業時間の関係({worktime_type.worktime_type_name})",
+                title=f"{DICT_PHASE_NAME[phase]}の{production_volume_name}あたり作業時間と累計作業時間の関係({worktime_type.worktime_type_name})",
                 width=self.PLOT_WIDTH,
                 height=self.PLOT_HEIGHT,
-                x_axis_label="累計作業時間[hour]",
-                y_axis_label=f"{performance_unit_name}あたり作業時間[minute/annotation]",
+                x_axis_label="累計作業時間[時間]",
+                y_axis_label=f"{production_volume_name}あたり作業時間[分/{production_volume_name}]",
                 tooltip_columns=[
                     "user_id_",
                     "username_",
                     "biography_",
                     f"{worktime_type.value}_worktime_hour_{phase}",
                     f"task_count_{phase}",
-                    f"input_data_count_{phase}",
-                    f"annotation_count_{phase}",
-                    f"{worktime_type.value}_worktime_hour/input_data_count_{phase}",
-                    f"{worktime_type.value}_worktime_hour/annotation_count_{phase}",
+                    f"{production_volume_column}_{phase}",
+                    f"{worktime_type.value}_worktime_hour/{production_volume_column}_{phase}",
                     f"first_working_date_{phase}",
                     f"last_working_date_{phase}",
                     f"working_days_{phase}",
@@ -919,11 +926,11 @@ class UserPerformance:
         ]
 
         x_column = f"{worktime_type.value}_worktime_hour"
-        y_column = f"{worktime_type.value}_worktime_minute/{performance_unit.value}"
+        y_column = f"{worktime_type.value}_worktime_minute/{production_volume_column}"
         # 分単位の生産性を算出する
         for phase in self.phase_list:
-            df[(f"{worktime_type.value}_worktime_minute/{performance_unit.value}", phase)] = (
-                df[(f"{worktime_type.value}_worktime_hour/{performance_unit.value}", phase)] * 60
+            df[(f"{worktime_type.value}_worktime_minute/{production_volume_column}", phase)] = (
+                df[(f"{worktime_type.value}_worktime_hour/{production_volume_column}", phase)] * 60
             )
 
         for biography_index, biography in enumerate(sorted(set(df["biography"]))):
@@ -946,22 +953,26 @@ class UserPerformance:
             average_hour = self._get_average_value(
                 df,
                 numerator_column=(f"{worktime_type.value}_worktime_hour", phase),
-                denominator_column=(performance_unit.value, phase),
+                denominator_column=(production_volume_column, phase),
             )
             if average_hour is not None:
                 average_minute = average_hour * 60
                 scatter_obj.plot_average_line(average_minute, dimension="width")
 
-            quartile = self._get_quartile_value(df[(f"{worktime_type.value}_worktime_minute/{performance_unit.value}", phase)])
+            quartile = self._get_quartile_value(df[(f"{worktime_type.value}_worktime_minute/{production_volume_column}", phase)])
             scatter_obj.plot_quartile_line(quartile, dimension="width")
 
             scatter_obj.add_multi_choice_widget_for_searching_user(list(zip(df[("user_id", "")], df[("username", "")])))
             scatter_obj.process_after_adding_glyphs()
 
         div_element = self._create_div_element()
-        write_bokeh_graph(bokeh.layouts.column([div_element, *[e.layout for e in scatter_obj_list]]), output_file)
+        element_list = [div_element, *[e.layout for e in scatter_obj_list]]
+        if metadata is not None:
+            element_list.insert(0, create_pretext_from_metadata(metadata))
 
-    def plot_quality(self, output_file: Path) -> None:
+        write_bokeh_graph(bokeh.layouts.column(element_list), output_file)
+
+    def plot_quality(self, output_file: Path, *, metadata: Optional[dict[str, Any]] = None) -> None:
         """
         メンバごとに品質を散布図でプロットする
 
@@ -1057,9 +1068,15 @@ class UserPerformance:
             scatter_obj.process_after_adding_glyphs()
 
         div_element = self._create_div_element()
-        write_bokeh_graph(bokeh.layouts.column([div_element, *[e.layout for e in scatter_obj_list]]), output_file)
+        element_list = [div_element, *[e.layout for e in scatter_obj_list]]
+        if metadata is not None:
+            element_list.insert(0, create_pretext_from_metadata(metadata))
 
-    def plot_quality_and_productivity(self, output_file: Path, worktime_type: WorktimeType, performance_unit: PerformanceUnit) -> None:
+        write_bokeh_graph(bokeh.layouts.column(element_list), output_file)
+
+    def plot_quality_and_productivity(
+        self, output_file: Path, worktime_type: WorktimeType, production_volume_column: str, *, metadata: Optional[dict[str, Any]] = None
+    ) -> None:
         """
         作業時間を元に算出した生産性と品質の関係を、メンバごとにプロットする
         """
@@ -1090,14 +1107,12 @@ class UserPerformance:
                     "biography_",
                     f"{worktime_type.value}_worktime_hour_{PHASE}",
                     f"task_count_{PHASE}",
-                    f"input_data_count_{PHASE}",
-                    f"annotation_count_{PHASE}",
-                    f"{worktime_type.value}_worktime_hour/input_data_count_{PHASE}",
-                    f"{worktime_type.value}_worktime_hour/annotation_count_{PHASE}",
+                    f"{production_volume_column}_{PHASE}",
+                    f"{worktime_type.value}_worktime_minute/{production_volume_column}_{PHASE}",
                     f"rejected_count_{PHASE}",
                     f"pointed_out_inspection_comment_count_{PHASE}",
                     f"rejected_count/task_count_{PHASE}",
-                    f"pointed_out_inspection_comment_count/annotation_count_{PHASE}",
+                    f"pointed_out_inspection_comment_count/{production_volume_column}_{PHASE}",
                     f"first_working_date_{PHASE}",
                     f"last_working_date_{PHASE}",
                     f"working_days_{PHASE}",
@@ -1108,12 +1123,12 @@ class UserPerformance:
             x_average_hour = self._get_average_value(
                 df,
                 numerator_column=(f"{worktime_type.value}_worktime_hour", PHASE),
-                denominator_column=(performance_unit.value, PHASE),
+                denominator_column=(production_volume_column, PHASE),
             )
             x_average_minute = x_average_hour * 60 if x_average_hour is not None else None
 
             for column_pair, scatter_obj in zip(
-                [("rejected_count", "task_count"), ("pointed_out_inspection_comment_count", performance_unit.value)],
+                [("rejected_count", "task_count"), ("pointed_out_inspection_comment_count", production_volume_column)],
                 scatter_obj_list,
             ):
                 if x_average_minute is not None:
@@ -1127,9 +1142,9 @@ class UserPerformance:
                 if y_average is not None:
                     scatter_obj.plot_average_line(y_average, dimension="width")
 
-            x_quartile = self._get_quartile_value(df[(f"{worktime_type.value}_worktime_minute/{performance_unit.value}", PHASE)])
+            x_quartile = self._get_quartile_value(df[(f"{worktime_type.value}_worktime_minute/{production_volume_column}", PHASE)])
             for column, scatter_obj in zip(
-                ["rejected_count/task_count", f"pointed_out_inspection_comment_count/{performance_unit.value}"],
+                ["rejected_count/task_count", f"pointed_out_inspection_comment_count/{production_volume_column}"],
                 scatter_obj_list,
             ):
                 scatter_obj.plot_quartile_line(x_quartile, dimension="height")
@@ -1142,30 +1157,31 @@ class UserPerformance:
         df = self.convert_df_suitable_for_bokeh(self.df)
         PHASE = TaskPhase.ANNOTATION.value  # noqa: N806
 
-        df[(f"{worktime_type.value}_worktime_minute/{performance_unit.value}", PHASE)] = (
-            df[(f"{worktime_type.value}_worktime_hour/{performance_unit.value}", PHASE)] * 60
+        df[(f"{worktime_type.value}_worktime_minute/{production_volume_column}", PHASE)] = (
+            df[(f"{worktime_type.value}_worktime_hour/{production_volume_column}", PHASE)] * 60
         )
         logger.debug(f"{output_file} を出力します。")
 
-        performance_unit_name = performance_unit.performance_unit_name
+        production_volume_name = self.get_production_volume_name(production_volume_column)
+
         worktime_type_name = worktime_type.worktime_type_name
         scatter_obj_list = [
             create_scatter(
-                title=f"{performance_unit_name}あたり作業時間({worktime_type_name})とタスクあたり差し戻し回数の関係",
-                x_axis_label=f"{performance_unit_name}あたり作業時間[minute/{performance_unit.value}]",
+                title=f"{production_volume_name}あたり作業時間({worktime_type_name})とタスクあたり差し戻し回数の関係",
+                x_axis_label=f"{production_volume_name}あたり作業時間[分/{production_volume_name}]",
                 y_axis_label="タスクあたり差し戻し回数",
             ),
             create_scatter(
-                title=f"{performance_unit_name}あたり作業時間({worktime_type_name})と{performance_unit_name}あたり検査コメント数の関係",
-                x_axis_label=f"{performance_unit_name}あたり作業時間[minute/{performance_unit.value}]",
-                y_axis_label=f"{performance_unit_name}あたり検査コメント数",
+                title=f"{production_volume_name}あたり作業時間({worktime_type_name})と{production_volume_name}あたり検査コメント数の関係",
+                x_axis_label=f"{production_volume_name}あたり作業時間[分/{production_volume_name}]",
+                y_axis_label=f"{production_volume_name}あたり検査コメント数",
             ),
         ]
         column_pair_list = [
-            (f"{worktime_type.value}_worktime_minute/{performance_unit.value}", "rejected_count/task_count"),
+            (f"{worktime_type.value}_worktime_minute/{production_volume_column}", "rejected_count/task_count"),
             (
-                f"{worktime_type.value}_worktime_minute/{performance_unit.value}",
-                f"pointed_out_inspection_comment_count/{performance_unit.value}",
+                f"{worktime_type.value}_worktime_minute/{production_volume_column}",
+                f"pointed_out_inspection_comment_count/{production_volume_column}",
             ),
         ]
 
@@ -1197,4 +1213,9 @@ class UserPerformance:
 
         div_element = self._create_div_element()
         div_element.text = div_element.text + """円の大きさ：作業時間<br>"""  # type: ignore[operator]
-        write_bokeh_graph(bokeh.layouts.column([div_element, *[e.layout for e in scatter_obj_list]]), output_file)
+
+        element_list = [div_element, *[e.layout for e in scatter_obj_list]]
+        if metadata is not None:
+            element_list.insert(0, create_pretext_from_metadata(metadata))
+
+        write_bokeh_graph(bokeh.layouts.column(element_list), output_file)

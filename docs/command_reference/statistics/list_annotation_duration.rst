@@ -31,9 +31,9 @@ JSON出力
     [
     {
         "task_id": "sample_task_00",
-        "status": "not_started",
-        "phase": "annotation",
-        "phase_stage": 1,
+        "task_status": "not_started",
+        "task_phase": "annotation",
+        "task_phase_stage": 1,
         "input_data_id": "sample_video_00.mp4",
         "input_data_name": "sample_video_00.mp4",
         "video_duration_second": 30,
@@ -104,4 +104,3 @@ Usage Details
    :prog: annofabcli statistics list_annotation_duration
    :nosubcommands:
    :nodefaultconst:
-

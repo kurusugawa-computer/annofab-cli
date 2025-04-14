@@ -1,16 +1,20 @@
 from __future__ import annotations
 
 import argparse
+import json
 import logging
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, List, Optional, Set
+from typing import Optional
 
 import pandas
 from annofabapi.models import TaskPhase
 
 import annofabcli
-from annofabcli.common.cli import get_list_from_args
+from annofabcli.common.cli import (
+    get_json_from_args,
+    get_list_from_args,
+)
 from annofabcli.filesystem.mask_user_info import (
     create_replacement_dict_by_biography,
     create_replacement_dict_by_user_id,
@@ -25,10 +29,10 @@ from annofabcli.statistics.visualization.dataframe.productivity_per_date import 
     AnnotatorProductivityPerDate,
     InspectorProductivityPerDate,
 )
-from annofabcli.statistics.visualization.dataframe.task import Task
 from annofabcli.statistics.visualization.dataframe.task_worktime_by_phase_user import TaskWorktimeByPhaseUser
 from annofabcli.statistics.visualization.dataframe.user_performance import UserPerformance
 from annofabcli.statistics.visualization.dataframe.worktime_per_date import WorktimePerDate
+from annofabcli.statistics.visualization.model import ProductionVolumeColumn, TaskCompletionCriteria
 from annofabcli.statistics.visualization.project_dir import ProjectDir
 
 logger = logging.getLogger(__name__)
@@ -41,17 +45,17 @@ class ReplacementDict:
     各プロパティは、keyが置換前の値、valueが置換後の値を持つdict。
     """
 
-    user_id: Dict[str, str]
-    username: Dict[str, str]
-    account_id: Dict[str, str]
-    biography: Dict[str, str]
+    user_id: dict[str, str]
+    username: dict[str, str]
+    account_id: dict[str, str]
+    biography: dict[str, str]
 
 
 def create_replacement_dict(
     df_user: pandas.DataFrame,
     *,
-    not_masked_biography_set: Optional[Set[str]],
-    not_masked_user_id_set: Optional[Set[str]],
+    not_masked_biography_set: Optional[set[str]],
+    not_masked_user_id_set: Optional[set[str]],
 ) -> ReplacementDict:
     """
     ユーザー情報を置換するためのインスタンスを生成します。
@@ -66,9 +70,9 @@ def create_replacement_dict(
         not_masked_biography_set: マスクしないbiographyの集合。指定したbiographyに該当するユーザーのuser_id,username,account_idはマスクしません。
     """
 
-    assert {"user_id", "username", "account_id", "biography"} - set(
-        df_user.columns
-    ) == set(), "df_userには'user_id','username','account_id','biography'の列が必要です。"
+    assert {"user_id", "username", "account_id", "biography"} - set(df_user.columns) == set(), (
+        "df_userには'user_id','username','account_id','biography'の列が必要です。"
+    )
 
     replacement_dict_for_user_id = create_replacement_dict_by_user_id(
         df_user, not_masked_biography_set=not_masked_biography_set, not_masked_user_id_set=not_masked_user_id_set
@@ -89,29 +93,35 @@ def create_replacement_dict(
     )
 
 
-def write_line_graph(task: Task, output_project_dir: ProjectDir, user_id_list: Optional[List[str]] = None, minimal_output: bool = False):  # noqa: ANN201, FBT001, FBT002
+def write_line_graph(
+    task_worktime_by_phase_user: TaskWorktimeByPhaseUser,
+    output_project_dir: ProjectDir,
+    *,
+    user_id_list: Optional[list[str]] = None,
+    minimal_output: bool = False,
+) -> None:
     output_project_dir.write_cumulative_line_graph(
-        AnnotatorCumulativeProductivity.from_task(task),
+        AnnotatorCumulativeProductivity.from_df_wrapper(task_worktime_by_phase_user),
         phase=TaskPhase.ANNOTATION,
         user_id_list=user_id_list,
         minimal_output=minimal_output,
     )
     output_project_dir.write_cumulative_line_graph(
-        InspectorCumulativeProductivity.from_task(task),
+        InspectorCumulativeProductivity.from_df_wrapper(task_worktime_by_phase_user),
         phase=TaskPhase.INSPECTION,
         user_id_list=user_id_list,
         minimal_output=minimal_output,
     )
     output_project_dir.write_cumulative_line_graph(
-        AcceptorCumulativeProductivity.from_task(task),
+        AcceptorCumulativeProductivity.from_df_wrapper(task_worktime_by_phase_user),
         phase=TaskPhase.ACCEPTANCE,
         user_id_list=user_id_list,
         minimal_output=minimal_output,
     )
 
-    annotator_per_date_obj = AnnotatorProductivityPerDate.from_df_task(task.df)
-    inspector_per_date_obj = InspectorProductivityPerDate.from_df_task(task.df)
-    acceptor_per_date_obj = AcceptorProductivityPerDate.from_df_task(task.df)
+    annotator_per_date_obj = AnnotatorProductivityPerDate.from_df_wrapper(task_worktime_by_phase_user)
+    inspector_per_date_obj = InspectorProductivityPerDate.from_df_wrapper(task_worktime_by_phase_user)
+    acceptor_per_date_obj = AcceptorProductivityPerDate.from_df_wrapper(task_worktime_by_phase_user)
 
     output_project_dir.write_performance_per_started_date_csv(annotator_per_date_obj, phase=TaskPhase.ANNOTATION)
     output_project_dir.write_performance_per_started_date_csv(inspector_per_date_obj, phase=TaskPhase.INSPECTION)
@@ -144,8 +154,8 @@ def mask_visualization_dir(
     project_dir: ProjectDir,
     output_project_dir: ProjectDir,
     *,
-    not_masked_biography_set: Optional[Set[str]] = None,
-    not_masked_user_id_set: Optional[Set[str]] = None,
+    not_masked_biography_set: Optional[set[str]] = None,
+    not_masked_user_id_set: Optional[set[str]] = None,
     minimal_output: bool = False,
 ) -> None:
     worktime_per_date = project_dir.read_worktime_per_date_user()
@@ -171,7 +181,9 @@ def mask_visualization_dir(
     )
 
     # CSVのユーザ情報をマスクする
-    masked_user_performance = UserPerformance.from_df_wrapper(masked_worktime_per_date, masked_task_worktime_by_phase_user)
+    masked_user_performance = UserPerformance.from_df_wrapper(
+        masked_worktime_per_date, masked_task_worktime_by_phase_user, task_completion_criteria=project_dir.task_completion_criteria
+    )
     output_project_dir.write_user_performance(masked_user_performance)
 
     # メンバのパフォーマンスを散布図で出力する
@@ -182,7 +194,7 @@ def mask_visualization_dir(
     )
     output_project_dir.write_task_list(masked_task)
 
-    write_line_graph(masked_task, output_project_dir, minimal_output=minimal_output)
+    write_line_graph(masked_task_worktime_by_phase_user, output_project_dir, minimal_output=minimal_output)
 
     if not masked_worktime_per_date.is_empty():
         output_project_dir.write_worktime_per_date_user(masked_worktime_per_date)
@@ -198,13 +210,40 @@ def mask_visualization_dir(
     logger.debug(f"'{project_dir}'のマスクした結果を'{output_project_dir}'に出力しました。")
 
 
+def create_custom_production_volume_list(cli_value: str) -> list[ProductionVolumeColumn]:
+    """
+    コマンドラインから渡された文字列を元に、独自の生産量を表す列情報を生成します。
+    """
+    dict_data = get_json_from_args(cli_value)
+
+    column_list = dict_data["column_list"]
+    custom_production_volume_list = [ProductionVolumeColumn(column["value"], column["name"]) for column in column_list]
+
+    return custom_production_volume_list
+
+
 def main(args: argparse.Namespace) -> None:
     not_masked_biography_set = set(get_list_from_args(args.not_masked_biography)) if args.not_masked_biography is not None else None
     not_masked_user_id_set = set(get_list_from_args(args.not_masked_user_id)) if args.not_masked_user_id is not None else None
 
+    custom_production_volume_list = (
+        create_custom_production_volume_list(args.custom_production_volume) if args.custom_production_volume is not None else None
+    )
+
+    task_completion_criteria = TaskCompletionCriteria(args.task_completion_criteria)
+    input_project_dir = ProjectDir(
+        args.dir,
+        task_completion_criteria,
+        custom_production_volume_list=custom_production_volume_list,
+    )
+    output_project_dir = ProjectDir(
+        args.output_dir,
+        task_completion_criteria,
+        metadata=input_project_dir.read_metadata(),
+    )
     mask_visualization_dir(
-        project_dir=ProjectDir(args.dir),
-        output_project_dir=ProjectDir(args.output_dir),
+        project_dir=input_project_dir,
+        output_project_dir=output_project_dir,
         not_masked_biography_set=not_masked_biography_set,
         not_masked_user_id_set=not_masked_user_id_set,
         minimal_output=args.minimal,
@@ -237,6 +276,25 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--minimal",
         action="store_true",
         help="必要最小限のファイルを出力します。",
+    )
+    custom_production_volume_sample = {
+        "column_list": [{"value": "video_duration_minute", "name": "動画長さ"}],
+    }
+
+    parser.add_argument(
+        "--task_completion_criteria",
+        type=str,
+        choices=[e.value for e in TaskCompletionCriteria],
+        default=TaskCompletionCriteria.ACCEPTANCE_COMPLETED.value,
+        help="タスクの完了条件を指定します。\n"
+        "* ``acceptance_completed``: タスクが受入フェーズの完了状態であれば「タスクの完了」とみなす\n"
+        "* ``acceptance_reached``: タスクが受入フェーズに到達したら「タスクの完了」とみなす\n",
+    )
+
+    parser.add_argument(
+        "--custom_production_volume",
+        type=str,
+        help=(f"プロジェクト独自の生産量をJSON形式で指定します。(例) ``{json.dumps(custom_production_volume_sample, ensure_ascii=False)}`` \n"),
     )
 
     parser.add_argument("-o", "--output_dir", type=Path, required=True, help="出力先ディレクトリ。")

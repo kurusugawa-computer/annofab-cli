@@ -11,6 +11,7 @@ import annofabcli.common.cli
 from annofabcli.comment.put_comment import PutCommentMain, convert_cli_comments
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
+    PARALLELISM_CHOICES,
     ArgumentParser,
     CommandLine,
     build_annofabapi_resource_and_login,
@@ -41,6 +42,9 @@ class PutInspectionComment(CommandLine):
         super().validate_project(args.project_id)
 
         dict_comments = annofabcli.common.cli.get_json_from_args(args.json)
+        if not isinstance(dict_comments, dict):
+            print(f"{self.COMMON_MESSAGE} argument --json: JSON形式が不正です。オブジェクトを指定してください。", file=sys.stderr)  # noqa: T201
+            sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
         comments_for_task_list = convert_cli_comments(
             dict_comments,
             comment_type=CommentType.ONHOLD,
@@ -77,6 +81,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--parallelism",
         type=int,
+        choices=PARALLELISM_CHOICES,
         help="使用するプロセス数（並列度）を指定してください。指定する場合は必ず ``--yes`` を指定してください。指定しない場合は、逐次的に処理します。",  # noqa: E501
     )
 

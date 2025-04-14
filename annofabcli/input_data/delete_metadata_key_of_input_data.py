@@ -6,8 +6,9 @@ import json
 import logging
 import multiprocessing
 import sys
+from collections.abc import Collection
 from functools import partial
-from typing import Collection, Dict, Optional
+from typing import Optional
 
 import annofabapi
 from annofabapi.models import ProjectMemberRole
@@ -16,6 +17,7 @@ import annofabcli
 import annofabcli.common.cli
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
+    PARALLELISM_CHOICES,
     ArgumentParser,
     CommandLine,
     CommandLineWithConfirm,
@@ -25,7 +27,7 @@ from annofabcli.common.facade import AnnofabApiFacade
 
 logger = logging.getLogger(__name__)
 
-Metadata = Dict[str, str]
+Metadata = dict[str, str]
 """
 入力データのメタデータ。
 値はstr型しか指定できない。
@@ -51,7 +53,7 @@ class DeleteMetadataKeyOfInputDataMain(CommandLineWithConfirm):
         Returns:
             メタデータのキーを削除した場合はTrueを返します。
         """
-        logging_prefix = f"{input_data_index+1} 件目" if input_data_index is not None else ""
+        logging_prefix = f"{input_data_index + 1} 件目" if input_data_index is not None else ""
         input_data = self.service.wrapper.get_input_data_or_none(self.project_id, input_data_id)
         if input_data is None:
             logger.warning(f"{logging_prefix} input_data_id='{input_data_id}'である入力データは存在しません。")
@@ -187,6 +189,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--parallelism",
         type=int,
+        choices=PARALLELISM_CHOICES,
         help="使用するプロセス数（並列度）を指定します。指定する場合は ``--yes`` を指定してください。指定しない場合は、逐次的に処理します。",
     )
 

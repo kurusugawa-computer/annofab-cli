@@ -8,7 +8,7 @@ from __future__ import annotations
 import datetime
 import logging
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
 
 import annofabapi
 import bokeh
@@ -16,8 +16,10 @@ import bokeh.layouts
 import bokeh.palettes
 import numpy
 import pandas
+from bokeh.models.ui import UIElement
 from bokeh.plotting import ColumnDataSource
 
+from annofabcli.common.bokeh import create_pretext_from_metadata
 from annofabcli.common.utils import print_csv
 from annofabcli.statistics.linegraph import (
     LineGraph,
@@ -97,6 +99,21 @@ class WorktimePerDate:
         "monitored_inspection_worktime_hour",
         "monitored_acceptance_worktime_hour",
     ]
+
+    def to_non_acceptance(self) -> WorktimePerDate:
+        """
+        受入フェーズの作業時間を0にした新しいインスタンスを生成します。
+
+        `--task_completion_criteria acceptance_reached`を指定したときに利用します。
+        この場合、受入フェーズの作業時間を無視して集計する必要があるためです。
+
+        """
+        df = self.df.copy()
+        df["monitored_acceptance_worktime_hour"] = 0
+        df["monitored_worktime_hour"] = (
+            df["monitored_annotation_worktime_hour"] + df["monitored_inspection_worktime_hour"] + df["monitored_acceptance_worktime_hour"]
+        )
+        return WorktimePerDate(df)
 
     def is_empty(self) -> bool:
         """
@@ -183,7 +200,7 @@ class WorktimePerDate:
             "monitored_inspection_worktime_hour",
             "monitored_acceptance_worktime_hour",
         ]
-        df.fillna({c: 0 for c in value_columns}, inplace=True)
+        df.fillna(dict.fromkeys(value_columns, 0), inplace=True)
 
         df = df.merge(df_member, how="left", on="account_id")
         return df[
@@ -299,7 +316,7 @@ class WorktimePerDate:
         return True
 
     def _get_default_user_id_list(self) -> list[str]:
-        return list(self.df.sort_values(by="date", ascending=False)["user_id"].dropna().unique())
+        return list(self.df.sort_values(by="user_id", ascending=False)["user_id"].dropna().unique())
 
     def _get_continuous_date_dataframe(self) -> pandas.DataFrame:
         """
@@ -341,11 +358,13 @@ class WorktimePerDate:
 
         return df
 
-    def plot_cumulatively(  # noqa: ANN201
+    def plot_cumulatively(
         self,
         output_file: Path,
+        *,
         target_user_id_list: Optional[list[str]] = None,
-    ):
+        metadata: Optional[dict[str, Any]] = None,
+    ) -> None:
         """
         作業時間の累積値をプロットする。
         """
@@ -379,35 +398,35 @@ class WorktimePerDate:
         line_graph_list = [
             LineGraph(
                 title="実績作業時間の累積値",
-                y_axis_label="作業時間[hour]",
+                y_axis_label="作業時間[時間]",
                 tooltip_columns=tooltip_columns,
                 x_axis_label=x_axis_label,
                 x_axis_type="datetime",
             ),
             LineGraph(
                 title="計測作業時間の累積値",
-                y_axis_label="作業時間[hour]",
+                y_axis_label="作業時間[時間]",
                 tooltip_columns=tooltip_columns,
                 x_axis_label=x_axis_label,
                 x_axis_type="datetime",
             ),
             LineGraph(
                 title="計測作業時間(教師付)の累積値",
-                y_axis_label="作業時間[hour]",
+                y_axis_label="作業時間[時間]",
                 tooltip_columns=tooltip_columns,
                 x_axis_label=x_axis_label,
                 x_axis_type="datetime",
             ),
             LineGraph(
                 title="計測作業時間(検査)の累積値",
-                y_axis_label="作業時間[hour]",
+                y_axis_label="作業時間[時間]",
                 tooltip_columns=tooltip_columns,
                 x_axis_label=x_axis_label,
                 x_axis_type="datetime",
             ),
             LineGraph(
                 title="計測作業時間(受入)の累積値",
-                y_axis_label="作業時間[hour]",
+                y_axis_label="作業時間[時間]",
                 tooltip_columns=tooltip_columns,
                 x_axis_label=x_axis_label,
                 x_axis_type="datetime",
@@ -460,7 +479,7 @@ class WorktimePerDate:
 
             plotted_users.append((user_id, username))
 
-        graph_group_list = []
+        graph_group_list: list[UIElement] = []
         for line_graph in line_graph_list:
             line_graph.process_after_adding_glyphs()
             hide_all_button = line_graph.create_button_hiding_showing_all_lines(is_hiding=True)
@@ -468,13 +487,16 @@ class WorktimePerDate:
             checkbox_group = line_graph.create_checkbox_displaying_markers()
             multi_choice_widget = line_graph.create_multi_choice_widget_for_searching_user(plotted_users)
 
-            widgets = bokeh.layouts.column([hide_all_button, show_all_button, checkbox_group, multi_choice_widget])  # type: ignore[list-item]
-            graph_group = bokeh.layouts.row([line_graph.figure, widgets])  # type: ignore[list-item]
+            widgets = bokeh.layouts.column([hide_all_button, show_all_button, checkbox_group, multi_choice_widget])
+            graph_group = bokeh.layouts.row([line_graph.figure, widgets])
             graph_group_list.append(graph_group)
 
         if line_count == 0:
             logger.warning(f"プロットするデータがなかっため、'{output_file}'は出力しません。")
             return
+
+        if metadata is not None:
+            graph_group_list.insert(0, create_pretext_from_metadata(metadata))
 
         write_bokeh_graph(bokeh.layouts.layout(graph_group_list), output_file)
 

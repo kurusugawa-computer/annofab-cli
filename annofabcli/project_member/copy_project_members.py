@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import argparse
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 import annofabapi
 from annofabapi.models import OrganizationMember, ProjectMember, ProjectMemberRole
@@ -42,19 +42,19 @@ class CopyProjectMembers(CommandLine):
         super().validate_project(src_project_id, project_member_roles=None)
         super().validate_project(dest_project_id, project_member_roles=[ProjectMemberRole.OWNER])
 
-    def get_organization_members_from_project_id(self, project_id: str) -> List[OrganizationMember]:
+    def get_organization_members_from_project_id(self, project_id: str) -> list[OrganizationMember]:
         organization_name = self.facade.get_organization_name_from_project_id(project_id)
         return self.service.wrapper.get_all_organization_members(organization_name)
 
     @staticmethod
-    def find_member(members: List[Dict[str, Any]], account_id: str) -> Optional[Dict[str, Any]]:
+    def find_member(members: list[dict[str, Any]], account_id: str) -> Optional[dict[str, Any]]:
         for m in members:
             if m["account_id"] == account_id:
                 return m
 
         return None
 
-    def put_project_members(self, project_id: str, project_members: List[Dict[str, Any]]) -> List[ProjectMember]:
+    def put_project_members(self, project_id: str, project_members: list[dict[str, Any]]) -> list[ProjectMember]:
         """
         複数のプロジェクトメンバを追加/更新/削除する.
 
@@ -87,7 +87,7 @@ class CopyProjectMembers(CommandLine):
 
             command_name = "追加" if last_updated_datetime is None else "更新"
             logger.debug(
-                f"プロジェクトメンバの'{command_name}'が完了しました。 :: project_id='{project_id}', user_id='{ member['user_id']}'",
+                f"プロジェクトメンバの'{command_name}'が完了しました。 :: project_id='{project_id}', user_id='{member['user_id']}'",
             )
 
         return updated_project_members
@@ -133,7 +133,7 @@ class CopyProjectMembers(CommandLine):
 
         # 更新対象のプロジェクトメンバ
         updated_members = added_members
-        deleted_dest_members: List[ProjectMember] = []
+        deleted_dest_members: list[ProjectMember] = []
 
         if delete_dest:
             # コピー先にしかいないメンバを削除する

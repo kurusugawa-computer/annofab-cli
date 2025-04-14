@@ -4,7 +4,7 @@ import json
 import logging
 import zipfile
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Optional
 
 import annofabapi
 import pandas
@@ -33,7 +33,7 @@ class ListOutOfRangeAnnotationForMovieMain:
         self.service = service
 
     @staticmethod
-    def get_max_seconds_for_webapi(annotation: Dict[str, Any]) -> Tuple[float, float]:
+    def get_max_seconds_for_webapi(annotation: dict[str, Any]) -> tuple[float, float]:
         details = annotation["details"]
         range_list = [_get_time_range(e["data"]) for e in details if e["data"] is not None]
         if len(range_list) == 0:
@@ -44,7 +44,7 @@ class ListOutOfRangeAnnotationForMovieMain:
             return max_begin, max_end
 
     @staticmethod
-    def get_max_seconds_for_zip(annotation: Dict[str, Any]) -> Tuple[float, float]:
+    def get_max_seconds_for_zip(annotation: dict[str, Any]) -> tuple[float, float]:
         details = annotation["details"]
         range_list = [(e["data"]["begin"], e["data"]["end"]) for e in details if e["data"]["_type"] == "Range"]
         if len(range_list) == 0:
@@ -57,8 +57,8 @@ class ListOutOfRangeAnnotationForMovieMain:
     def create_dataframe(
         self,
         project_id: str,
-        task_list: List[Dict[str, Any]],
-        input_data_list: List[Dict[str, Any]],
+        task_list: list[dict[str, Any]],
+        input_data_list: list[dict[str, Any]],
         annotation_zip: Optional[Path],
     ) -> pandas.DataFrame:
         if annotation_zip is None:
@@ -71,7 +71,7 @@ class ListOutOfRangeAnnotationForMovieMain:
                 task["max_begin_second"] = max_seconds[0]
                 task["max_end_second"] = max_seconds[1]
                 if (task_index + 1) % 100 == 0:
-                    logger.info(f"{task_index+1} 件のアノテーション情報を取得しました。")
+                    logger.info(f"{task_index + 1} 件のアノテーション情報を取得しました。")
         else:
             logger.info(f"{len(task_list)} 件のアノテーション情報を {annotation_zip!s} から取得します。")
             with zipfile.ZipFile(str(annotation_zip), "r") as zip_file:
@@ -86,7 +86,7 @@ class ListOutOfRangeAnnotationForMovieMain:
                     task["max_end_second"] = max_seconds[1]
 
                     if (task_index + 1) % 100 == 0:
-                        logger.info(f"{task_index+1} 件のアノテーション情報を取得しました。")
+                        logger.info(f"{task_index + 1} 件のアノテーション情報を取得しました。")
 
         df_task = pandas.DataFrame(
             task_list,
@@ -105,7 +105,7 @@ class ListOutOfRangeAnnotationForMovieMain:
         return df_merged
 
     @staticmethod
-    def filter_task_list(task_list: List[Dict[str, Any]], task_id_list: List[str]) -> List[Dict[str, Any]]:
+    def filter_task_list(task_list: list[dict[str, Any]], task_id_list: list[str]) -> list[dict[str, Any]]:
         def _exists(task_id: str) -> bool:
             if task_id in task_id_set:
                 task_id_set.remove(task_id)
@@ -123,7 +123,7 @@ class ListOutOfRangeAnnotationForMovieMain:
     def list_out_of_range_annotation_for_movie(
         self,
         project_id: str,
-        task_id_list: Optional[List[str]],
+        task_id_list: Optional[list[str]],
         parse_annotation_zip: bool = False,  # noqa: FBT001, FBT002
     ) -> pandas.DataFrame:
         cache_dir = annofabcli.common.utils.get_cache_dir()

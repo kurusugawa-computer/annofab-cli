@@ -3,11 +3,12 @@ from __future__ import annotations
 import argparse
 import logging
 import multiprocessing
+import sys
 import tempfile
 from collections import defaultdict
 from enum import Enum
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Optional
 
 import annofabapi
 import pandas
@@ -15,6 +16,8 @@ from annofabapi.models import JobStatus, ProjectJobType, ProjectMemberRole
 
 import annofabcli
 from annofabcli.common.cli import (
+    COMMAND_LINE_ERROR_STATUS_CODE,
+    PARALLELISM_CHOICES,
     ArgumentParser,
     CommandLine,
     build_annofabapi_resource_and_login,
@@ -34,7 +37,7 @@ TASK_THRESHOLD_FOR_JSON = 230
 https://github.com/kurusugawa-computer/annofab-cli/pull/738#issuecomment-1077013844
 """
 
-TaskInputRelation = Dict[str, List[str]]
+TaskInputRelation = dict[str, list[str]]
 """task_idとinput_data_idの構造を表現する型"""
 
 
@@ -229,13 +232,16 @@ class PutTask(CommandLine):
 
         if args.csv is not None:
             csv_file = args.csv
-            task_relation_dict = get_task_relation_dict(csv_file)
-            main_obj.generate_task(api_with_creating_task, task_relation_dict)
+            task_relation_dict_from_csv = get_task_relation_dict(csv_file)
+            main_obj.generate_task(api_with_creating_task, task_relation_dict_from_csv)
 
         elif args.json is not None:
             # CSVファイルに変換する
-            task_relation_dict = get_json_from_args(args.json)
-            main_obj.generate_task(api_with_creating_task, task_relation_dict)
+            task_relation_dict_from_json = get_json_from_args(args.json)
+            if not isinstance(task_relation_dict_from_json, dict):
+                print("annofabcli task put: error: JSON形式が不正です。オブジェクトを指定してください。", file=sys.stderr)  # noqa: T201
+                sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
+            main_obj.generate_task(api_with_creating_task, task_relation_dict_from_json)
 
 
 def main(args: argparse.Namespace) -> None:
@@ -287,6 +293,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--parallelism",
         type=int,
+        choices=PARALLELISM_CHOICES,
         help="並列度。指定しない場合は、逐次的に処理します。``put_task`` WebAPIを使うときのみ有効なオプションです。",
     )
 

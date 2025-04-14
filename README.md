@@ -25,10 +25,10 @@
 
 ### 2022-11-01 以降
 * JMESPathを指定できる `--query`を削除します。使いどころがあまりないのと、`jq`コマンドでも対応できるためです。
-* `--wait_options`を削除します。使いどころがあまりないためです。
+
 
 # Requirements
-* Python 3.8+
+* Python 3.9
 
 # Install
 

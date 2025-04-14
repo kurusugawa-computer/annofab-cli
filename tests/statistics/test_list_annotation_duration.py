@@ -115,9 +115,9 @@ class Test__AnnotationDurationCsvByLabel:
         row = df.iloc[0]
         assert row.to_dict() == {
             "task_id": "task1",
-            "phase": "acceptance",
-            "phase_stage": 1,
-            "status": "complete",
+            "task_phase": "acceptance",
+            "task_phase_stage": 1,
+            "task_status": "complete",
             "input_data_id": "input1",
             "input_data_name": "input1",
             "video_duration_second": None,
@@ -135,9 +135,9 @@ class Test__AnnotationDurationCsvByAttribute:
         row = df.iloc[0]
         assert row.to_dict() == {
             ("task_id", "", ""): "task1",
-            ("phase", "", ""): "acceptance",
-            ("phase_stage", "", ""): 1,
-            ("status", "", ""): "complete",
+            ("task_phase", "", ""): "acceptance",
+            ("task_phase_stage", "", ""): 1,
+            ("task_status", "", ""): "complete",
             ("input_data_id", "", ""): "input1",
             ("input_data_name", "", ""): "input1",
             ("video_duration_second", "", ""): None,

@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import argparse
 import logging
-from typing import Any, Collection, Optional
+from collections.abc import Collection
+from typing import Any, Optional
 
 import annofabapi
 import more_itertools
@@ -49,8 +50,7 @@ class ChangeOrganizationMemberMain(CommandLineWithConfirm):
                 continue
 
             if not self.confirm_processing(
-                f"user_id='{user_id}'のユーザの組織メンバロールを'{role}'に変更しますか？"
-                f" :: username='{member['username']}', role='{member['role']}'"
+                f"user_id='{user_id}'のユーザの組織メンバロールを'{role}'に変更しますか？ :: username='{member['username']}', role='{member['role']}'"
             ):
                 continue
 

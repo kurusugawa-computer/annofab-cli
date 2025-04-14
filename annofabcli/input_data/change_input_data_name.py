@@ -17,6 +17,7 @@ import annofabcli
 import annofabcli.common.cli
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
+    PARALLELISM_CHOICES,
     ArgumentParser,
     CommandLine,
     CommandLineWithConfirm,
@@ -78,7 +79,7 @@ class ChangeInputDataNameMain(CommandLineWithConfirm):
 
         for input_data_index, changed_input_data in enumerate(changed_input_data_list):
             if (input_data_index + 1) % 100 == 0:
-                logger.info(f"{input_data_index+1}件目の入力データの名前を変更します。")
+                logger.info(f"{input_data_index + 1}件目の入力データの名前を変更します。")
 
             try:
                 result = self.change_input_data_name(
@@ -142,11 +143,9 @@ def create_changed_input_data_list_from_csv(csv_file: Path) -> list[ChangedInput
         変更対象の入力データのlist
     """
     df_input_data = pandas.read_csv(
-        str(csv_file),
-        header=None,
-        names=("input_data_id", "input_data_name"),
+        csv_file,
         # 文字列として読み込むようにする
-        dtype={"input_data_id": str, "input_data_name": str},
+        dtype={"input_data_id": "string", "input_data_name": "string"},
     )
 
     input_data_dict_list = df_input_data.to_dict("records")
@@ -178,7 +177,10 @@ class ChangeInputDataName(CommandLine):
             changed_input_data_list = create_changed_input_data_list_from_csv(args.csv)
 
         elif args.json is not None:
-            input_data_dict_list: list[dict[str, str]] = get_json_from_args(args.json)
+            input_data_dict_list = get_json_from_args(args.json)
+            if not isinstance(input_data_dict_list, list):
+                print("annofabcli input_data change_name: error: JSON形式が不正です。オブジェクトの配列を指定してください。", file=sys.stderr)  # noqa: T201
+                sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
             changed_input_data_list = create_changed_input_data_list_from_dict(input_data_dict_list)
         else:
             raise RuntimeError("'--csv'または'--json'のいずれかを指定してください。")
@@ -210,9 +212,9 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
             "変更対象の入力データが記載されたCSVファイルのパスを指定してください。\n"
             "CSVのフォーマットは以下の通りです。"
             "\n"
-            " * ヘッダ行なし, カンマ区切り\n"
-            " * 1列目: input_data_id (required)\n"
-            " * 2列目: input_data_name (required)\n"
+            " * ヘッダ行あり, カンマ区切り\n"
+            " * input_data_id (required)\n"
+            " * input_data_name (required)\n"
         ),
     )
 
@@ -231,6 +233,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--parallelism",
         type=int,
+        choices=PARALLELISM_CHOICES,
         help="使用するプロセス数（並列度）を指定してください。指定する場合は必ず ``--yes`` を指定してください。指定しない場合は、逐次的に処理します。",  # noqa: E501
     )
 

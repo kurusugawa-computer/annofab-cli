@@ -222,7 +222,7 @@ class TestCommandLine:
         main(
             [
                 "input_data",
-                "list_merged_task",
+                "list_all_merged_task",
                 "--project_id",
                 project_id,
                 "--output",

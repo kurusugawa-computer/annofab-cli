@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import argparse
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 import annofabapi
 from annofabapi.dataclass.task import Task
@@ -72,8 +72,7 @@ class DeleteTaskMain(CommandLineWithConfirm):
                 continue
 
         logger.debug(
-            f"task_id='{task_id}', input_data_id='{input_data_id}' :: "
-            f"補助情報 {deleted_count} / {len(supplementary_data_list)} 件を削除しました。"
+            f"task_id='{task_id}', input_data_id='{input_data_id}' :: 補助情報 {deleted_count} / {len(supplementary_data_list)} 件を削除しました。"
         )
 
         return deleted_count
@@ -116,8 +115,7 @@ class DeleteTaskMain(CommandLineWithConfirm):
         if not self.dryrun:
             self.service.api.delete_input_data(self.project_id, input_data_id)
         logger.debug(
-            f"task_id='{task_id}' :: 入力データを削除しました。 :: "
-            f"input_data_id='{input_data_id}', input_data_name='{input_data['input_data_name']}'"
+            f"task_id='{task_id}' :: 入力データを削除しました。 :: input_data_id='{input_data_id}', input_data_name='{input_data['input_data_name']}'"
         )
         return True
 
@@ -173,7 +171,7 @@ class DeleteTaskMain(CommandLineWithConfirm):
 
         """
         if task_index is not None:  # noqa: SIM108
-            log_prefix = f"{task_index+1} 件目, task_id='{task_id}'"
+            log_prefix = f"{task_index + 1} 件目, task_id='{task_id}'"
         else:
             log_prefix = f"task_id='{task_id}'"
 
@@ -210,14 +208,14 @@ class DeleteTaskMain(CommandLineWithConfirm):
         message_for_confirm = f"タスク'{task_id}' を削除しますか？"
         return self.confirm_processing(message_for_confirm)
 
-    def get_annotation_list(self, task_id: str) -> List[Dict[str, Any]]:
+    def get_annotation_list(self, task_id: str) -> list[dict[str, Any]]:
         query_params = {"query": {"task_id": task_id, "exact_match_task_id": True}}
         annotation_list = self.service.wrapper.get_all_annotation_list(self.project_id, query_params=query_params)
         return annotation_list
 
     def delete_task_list(  # noqa: ANN201
         self,
-        task_id_list: List[str],
+        task_id_list: list[str],
         task_query: Optional[TaskQuery] = None,
     ):
         """

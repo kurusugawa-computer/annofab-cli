@@ -24,6 +24,8 @@ Available Commands
    import
    list
    list_count
+   merge_segmentation
+   remove_segmentation_overlap
    restore
 
 Usage Details
