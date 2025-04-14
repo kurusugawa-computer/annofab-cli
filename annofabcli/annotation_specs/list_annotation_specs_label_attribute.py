@@ -151,7 +151,7 @@ class PrintAnnotationSpecsLabelAndAttribute(CommandLine):
         else:
             raise RuntimeError("'--project_id'か'--annotation_specs_json'のどちらかを指定する必要があります。")
 
-        self.print_annotation_specs_label(annotation_specs, arg_format=args.format, output=args.output)
+        self.print_annotation_specs_label(annotation_specs, output_format=FormatArgument(args.format), output=args.output)
 
 
 def parse_args(parser: argparse.ArgumentParser) -> None:
@@ -213,7 +213,7 @@ def main(args: argparse.Namespace) -> None:
 def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     subcommand_name = "list_label_attribute"
 
-    subcommand_help = "アノテーション仕様のラベルと属性の属性のペアを出力します。"
+    subcommand_help = "アノテーション仕様のラベルとラベルに含まれている属性の一覧を出力します。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help)
     parse_args(parser)
