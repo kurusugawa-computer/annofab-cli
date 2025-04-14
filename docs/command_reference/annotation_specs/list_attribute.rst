@@ -47,7 +47,8 @@ JSON出力
         "read_only": false,
         "choice_count": 0,
         "restriction_count": 0,
-        "reference_label_count": 2
+        "reference_label_count": 2,
+        "keybind": "Ctrl+Digit1"
     },
     {
         "attribute_id": "a0f7c8ed-38dc-41e6-a18c-29a36d3e28f2",
@@ -59,7 +60,8 @@ JSON出力
         "read_only": false,
         "choice_count": 6,
         "restriction_count": 1,
-        "reference_label_count": 2
+        "reference_label_count": 2,
+        "keybind": ""
     }
     ]
 
@@ -68,7 +70,7 @@ JSON出力
 * ``attribute_name_en`` : 属性名（英語）。
 * ``attribute_name_ja`` : 属性名（日本語）。
 * ``attribute_name_vi`` : 属性名（ベトナム語）。
-* ``type`` : 属性の種類。WebAPIの ``AdditionalDataDefinitionType`` に対応しています。 ``type`` の値は以下のいずれかです。
+* ``attribute_type`` : 属性の種類。WebAPIの ``AdditionalDataDefinitionType`` に対応しています。 ``type`` の値は以下のいずれかです。
 
   * ``flag`` : チェックボックス
   * ``integer`` : 整数
@@ -84,23 +86,9 @@ JSON出力
 * ``choice_count`` : 選択肢の個数。ドロップダウン属性またはラジオボタン属性以外では0個です。
 * ``restriction_count`` : 制約の個数。
 * ``reference_label_count`` : 参照されているラベルの個数
+* ``keybind`` : キーボードショートカット
 
 
-
-
-
-CSV出力
-----------------------------------------------
-
-
-.. code-block::
-
-    $ annofabcli annotation_specs list_attribute --project_id prj1  --format csv --output out.csv
-
-
-.. csv-table:: out.csv 
-    :header-rows: 1
-    :file: list_attribute/out.csv
 
 
 Usage Details

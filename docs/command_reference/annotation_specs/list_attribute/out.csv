@@ -1,3 +1,0 @@
-﻿attribute_id,attribute_name_en,attribute_name_ja,attribute_name_vi,type,default,read_only,choice_count,restriction_count,reference_label_count
-0f739b17-c22b-4f4a-a791-d142eb0bcd41,truncation,truncation,truncation,flag,False,False,0,0,2
-a0f7c8ed-38dc-41e6-a18c-29a36d3e28f2,direction,車の向き,direction,select,f98a9545-5864-4e5b-a945-d327001a0179,False,6,1,2
