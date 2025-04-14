@@ -54,6 +54,7 @@
         "itertools",
         "itertuples",
         "jmespath",
+        "keybind",
         "lenna",
         "linegraph",
         "multiheader",

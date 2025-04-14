@@ -15,6 +15,7 @@ from dataclasses_json import DataClassJsonMixin
 
 import annofabcli
 import annofabcli.common.cli
+from annofabcli.common.annofab.annotation_specs import keybind_to_text
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
     ArgumentParser,
@@ -22,16 +23,16 @@ from annofabcli.common.cli import (
     build_annofabapi_resource_and_login,
 )
 from annofabcli.common.enums import FormatArgument
-from annofabcli.common.facade import AnnofabApiFacade, convert_annotation_specs_labels_v2_to_v1
+from annofabcli.common.facade import AnnofabApiFacade
 from annofabcli.common.utils import print_csv
 
 logger = logging.getLogger(__name__)
 
 
 @dataclass
-class LabelForCsv(DataClassJsonMixin):
+class FlattenLabel(DataClassJsonMixin):
     """
-    CSV用のラベル情報を格納するクラスです。
+    ラベル情報を格納するクラスです。
     """
 
     label_id: str
@@ -50,6 +51,8 @@ class LabelForCsv(DataClassJsonMixin):
     Notes:
         APIでは`additional_data_definitions`のような名前だが、分かりにくかったので"attribute"という名前に変えた。
     """
+    keybind: Optional[str]
+    """キーバインド"""
 
 
 def decimal_to_hex_color(red: int, green: int, blue: int) -> str:
@@ -63,22 +66,22 @@ def decimal_to_hex_color(red: int, green: int, blue: int) -> str:
     return f"#{red:02X}{green:02X}{blue:02X}"
 
 
-def create_df_from_labels(labels_v3: list[dict[str, Any]]) -> pandas.DataFrame:
+def create_label_list(labels_v3: list[dict[str, Any]]) -> list[FlattenLabel]:
     """
-    APIから取得したラベル情報（v3版）から、pandas.DataFrameを生成します。
+    APIから取得したラベル情報（v3版）から、`FlattenLabel`のlistを生成します。
 
     Args:
         labels_v3: APIから取得したラベル情報（v3版）
     """
 
-    def dict_label_to_dataclass(label: dict[str, Any]) -> LabelForCsv:
+    def dict_label_to_dataclass(label: dict[str, Any]) -> FlattenLabel:
         """
         辞書のラベル情報をDataClassのラベル情報に変換します。
         """
         label_color = label["color"]
         hex_color_code = decimal_to_hex_color(label_color["red"], label_color["green"], label_color["blue"])
         additional_data_definitions = label["additional_data_definitions"]
-        return LabelForCsv(
+        return FlattenLabel(
             label_id=label["label_id"],
             label_name_en=get_message_with_lang(label["label_name"], lang=Lang.EN_US),
             label_name_ja=get_message_with_lang(label["label_name"], lang=Lang.JA_JP),
@@ -86,21 +89,10 @@ def create_df_from_labels(labels_v3: list[dict[str, Any]]) -> pandas.DataFrame:
             annotation_type=label["annotation_type"],
             color=hex_color_code,
             attribute_count=len(additional_data_definitions),
+            keybind=keybind_to_text(label["keybind"]),
         )
 
-    new_labels = [dict_label_to_dataclass(e) for e in labels_v3]
-
-    columns = [
-        "label_id",
-        "label_name_en",
-        "label_name_ja",
-        "label_name_vi",
-        "annotation_type",
-        "color",
-        "attribute_count",
-    ]
-    df = pandas.DataFrame(new_labels, columns=columns)
-    return df
+    return [dict_label_to_dataclass(e) for e in labels_v3]
 
 
 class PrintAnnotationSpecsLabel(CommandLine):
@@ -110,69 +102,16 @@ class PrintAnnotationSpecsLabel(CommandLine):
 
     COMMON_MESSAGE = "annofabcli annotation_specs list_label: error:"
 
-    def print_annotation_specs_label(self, annotation_specs_v3: dict[str, Any], arg_format: str, output: Optional[str] = None) -> None:
-        # アノテーション仕様のv2とv3はほとんど同じなので、`convert_annotation_specs_labels_v2_to_v1`にはV3のアノテーション仕様を渡す
-        labels_v1 = convert_annotation_specs_labels_v2_to_v1(
-            labels_v2=annotation_specs_v3["labels"], additionals_v2=annotation_specs_v3["additionals"]
-        )
-        if arg_format == "text":
-            self._print_text_format_labels(labels_v1, output=output)
+    def print_annotation_specs_label(self, annotation_specs_v3: dict[str, Any], output_format: FormatArgument, output: Optional[str] = None) -> None:
+        label_list = create_label_list(annotation_specs_v3["labels"])
+        if output_format == FormatArgument.CSV:
+            df = pandas.DataFrame(label_list)
 
-        elif arg_format == FormatArgument.CSV.value:
-            df = create_df_from_labels(annotation_specs_v3["labels"])
-            print_csv(df, output)
+            columns = ["label_id", "label_name_en", "label_name_ja", "label_name_vi", "annotation_type", "color", "attribute_count", "keybind"]
+            print_csv(df[columns], output)
 
-        elif arg_format in [FormatArgument.JSON.value, FormatArgument.PRETTY_JSON.value]:
-            annofabcli.common.utils.print_according_to_format(target=labels_v1, format=FormatArgument(arg_format), output=output)
-
-    @staticmethod
-    def _get_name_tuple(messages: list[dict[str, Any]]) -> tuple[str, str]:
-        """
-        日本語名、英語名のタプルを取得する。
-        """
-        ja_name = [e["message"] for e in messages if e["lang"] == "ja-JP"][0]  # noqa: RUF015
-        en_name = [e["message"] for e in messages if e["lang"] == "en-US"][0]  # noqa: RUF015
-        return (ja_name, en_name)
-
-    @staticmethod
-    def _print_text_format_labels(labels: list[dict[str, Any]], output: Optional[str] = None) -> None:
-        output_lines = []
-        for label in labels:
-            output_lines.append(
-                "\t".join(
-                    [
-                        label["label_id"],
-                        label["annotation_type"],
-                        *PrintAnnotationSpecsLabel._get_name_tuple(label["label_name"]["messages"]),
-                    ]
-                )
-            )
-            for additional_data_definition in label["additional_data_definitions"]:
-                output_lines.append(
-                    "\t".join(
-                        [
-                            "",
-                            additional_data_definition["additional_data_definition_id"],
-                            additional_data_definition["type"],
-                            *PrintAnnotationSpecsLabel._get_name_tuple(additional_data_definition["name"]["messages"]),
-                        ]
-                    )
-                )
-                if additional_data_definition["type"] in ["choice", "select"]:
-                    for choice in additional_data_definition["choices"]:
-                        output_lines.append(  # noqa: PERF401
-                            "\t".join(
-                                [
-                                    "",
-                                    "",
-                                    choice["choice_id"],
-                                    "",
-                                    *PrintAnnotationSpecsLabel._get_name_tuple(choice["name"]["messages"]),
-                                ]
-                            )
-                        )
-
-        annofabcli.common.utils.output_string("\n".join(output_lines), output)
+        elif output_format in [FormatArgument.JSON, FormatArgument.PRETTY_JSON]:
+            annofabcli.common.utils.print_according_to_format([e.to_dict() for e in label_list], format=FormatArgument(output_format), output=output)
 
     def get_history_id_from_before_index(self, project_id: str, before: int) -> Optional[str]:
         histories, _ = self.service.api.get_annotation_specs_histories(project_id)
@@ -210,7 +149,7 @@ class PrintAnnotationSpecsLabel(CommandLine):
         else:
             raise RuntimeError("'--project_id'か'--annotation_specs_json'のどちらかを指定する必要があります。")
 
-        self.print_annotation_specs_label(annotation_specs, arg_format=args.format, output=args.output)
+        self.print_annotation_specs_label(annotation_specs, output_format=FormatArgument(args.format), output=args.output)
 
 
 def parse_args(parser: argparse.ArgumentParser) -> None:
@@ -253,13 +192,9 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "-f",
         "--format",
         type=str,
-        choices=["text", FormatArgument.CSV.value, FormatArgument.PRETTY_JSON.value, FormatArgument.JSON.value],
-        default="text",
-        help=f"出力フォーマット "
-        "text: 人が見やすい形式, "
-        f"{FormatArgument.CSV.value}: ラベル情報の一覧が記載されたCSV, "
-        f"{FormatArgument.PRETTY_JSON.value}: インデントされたJSON, "
-        f"{FormatArgument.JSON.value}: フラットなJSON",
+        choices=[FormatArgument.CSV.value, FormatArgument.JSON.value, FormatArgument.PRETTY_JSON.value],
+        default=FormatArgument.CSV.value,
+        help="出力フォーマット ",
     )
 
     argument_parser.add_output()

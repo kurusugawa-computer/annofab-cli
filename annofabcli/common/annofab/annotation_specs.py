@@ -18,7 +18,7 @@ def keybind_to_text(keybind: list[dict[str, Any]]) -> str:
         code = one_keybind.get("code", "")
         assert code is not None
 
-        keys.append(f"`{code}`")
+        keys.append(f"{code}")
         return "+".join(keys)
 
     tmp_list = [to_str(elm) for elm in keybind]
