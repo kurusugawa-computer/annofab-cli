@@ -1,5 +1,5 @@
 ==========================================
-annotation add_attribute_restriction
+annotation_specs add_attribute_restriction
 ==========================================
 
 Description
