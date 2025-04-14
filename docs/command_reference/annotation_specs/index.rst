@@ -25,6 +25,7 @@ Available Commands
    list_choice
    list_history
    list_label
+   list_label_attribute
    list_label_color
    put_label_color
 
