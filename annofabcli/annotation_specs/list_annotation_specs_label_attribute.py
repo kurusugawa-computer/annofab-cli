@@ -15,7 +15,6 @@ from dataclasses_json import DataClassJsonMixin
 
 import annofabcli
 import annofabcli.common.cli
-from annofabcli.common.annofab.annotation_specs import keybind_to_text
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
     ArgumentParser,
@@ -24,94 +23,97 @@ from annofabcli.common.cli import (
 )
 from annofabcli.common.enums import FormatArgument
 from annofabcli.common.facade import AnnofabApiFacade
-from annofabcli.common.utils import print_csv
+from annofabcli.common.utils import print_according_to_format, print_csv
 
 logger = logging.getLogger(__name__)
 
 
 @dataclass
-class FlattenLabel(DataClassJsonMixin):
-    """
-    ラベル情報を格納するクラスです。
-    """
-
+class LabelAndAttribute(DataClassJsonMixin):
     label_id: str
     label_name_en: Optional[str]
     label_name_ja: Optional[str]
     label_name_vi: Optional[str]
     annotation_type: str
-    color: str
-    """16進数カラーコード
-    例: `#000000`
-    """
-    attribute_count: int
-    """
-    参照している属性の個数
+
+    attribute_id: str
+    """属性ID
 
     Notes:
-        APIでは`additional_data_definitions`のような名前だが、分かりにくかったので"attribute"という名前に変えた。
+        APIレスポンスの ``additional_data_definition_id`` に相当します。
+        ``additional_data_definition_id`` という名前がアノテーションJSONの `attributes` と対応していることが分かりにくかったので、`attribute_id`という名前に変えました。
+    """  # noqa: E501
+    attribute_name_en: Optional[str]
+    attribute_name_ja: Optional[str]
+    attribute_name_vi: Optional[str]
+    attribute_type: str
+
+
+def create_label_attribute_list(labels_v3: list[dict[str, Any]], additionals_v3: list[dict[str, Any]]) -> list[LabelAndAttribute]:
     """
-    keybind: Optional[str]
-    """キーバインド"""
-
-
-def decimal_to_hex_color(red: int, green: int, blue: int) -> str:
-    """
-    10進数のRGB値を16進数のColor Codeに変換します。
-    """
-    # 各値が0から255の範囲内にあるか確認
-    if not (0 <= red <= 255 and 0 <= green <= 255 and 0 <= blue <= 255):
-        raise ValueError(f"RGB values must be in the range 0-255 :: {red=}, {blue=}, {green=}")
-
-    return f"#{red:02X}{green:02X}{blue:02X}"
-
-
-def create_label_list(labels_v3: list[dict[str, Any]]) -> list[FlattenLabel]:
-    """
-    APIから取得したラベル情報（v3版）から、`FlattenLabel`のlistを生成します。
+    APIから取得したラベル情報（v3版）から、`LabelAndAttribute`のlistを生成します。
 
     Args:
         labels_v3: APIから取得したラベル情報（v3版）
     """
 
-    def dict_label_to_dataclass(label: dict[str, Any]) -> FlattenLabel:
-        """
-        辞書のラベル情報をDataClassのラベル情報に変換します。
-        """
-        label_color = label["color"]
-        hex_color_code = decimal_to_hex_color(label_color["red"], label_color["green"], label_color["blue"])
-        additional_data_definitions = label["additional_data_definitions"]
-        return FlattenLabel(
-            label_id=label["label_id"],
-            label_name_en=get_message_with_lang(label["label_name"], lang=Lang.EN_US),
-            label_name_ja=get_message_with_lang(label["label_name"], lang=Lang.JA_JP),
-            label_name_vi=get_message_with_lang(label["label_name"], lang=Lang.VI_VN),
-            annotation_type=label["annotation_type"],
-            color=hex_color_code,
-            attribute_count=len(additional_data_definitions),
-            keybind=keybind_to_text(label["keybind"]),
-        )
+    def to_dataclass_list(label: dict[str, Any]) -> list[LabelAndAttribute]:
+        result = []
+        for attribute_id in label["additional_data_definitions"]:
+            attribute = dict_attributes[attribute_id]
 
-    return [dict_label_to_dataclass(e) for e in labels_v3]
+            result.append(
+                LabelAndAttribute(
+                    label_id=label["label_id"],
+                    label_name_en=get_message_with_lang(label["label_name"], lang=Lang.EN_US),
+                    label_name_ja=get_message_with_lang(label["label_name"], lang=Lang.JA_JP),
+                    label_name_vi=get_message_with_lang(label["label_name"], lang=Lang.VI_VN),
+                    annotation_type=label["annotation_type"],
+                    attribute_id=attribute_id,
+                    attribute_name_en=get_message_with_lang(attribute["name"], lang=Lang.EN_US),
+                    attribute_name_ja=get_message_with_lang(attribute["name"], lang=Lang.JA_JP),
+                    attribute_name_vi=get_message_with_lang(attribute["name"], lang=Lang.VI_VN),
+                    attribute_type=attribute["type"],
+                )
+            )
+        return result
+
+    dict_attributes = {}
+    for elm in additionals_v3:
+        dict_attributes[elm["additional_data_definition_id"]] = elm
+
+    result = []
+    for label in labels_v3:
+        result.extend(to_dataclass_list(label))
+    return result
 
 
-class PrintAnnotationSpecsLabel(CommandLine):
-    """
-    アノテーション仕様を出力する
-    """
-
+class PrintAnnotationSpecsLabelAndAttribute(CommandLine):
     COMMON_MESSAGE = "annofabcli annotation_specs list_label: error:"
 
     def print_annotation_specs_label(self, annotation_specs_v3: dict[str, Any], output_format: FormatArgument, output: Optional[str] = None) -> None:
-        label_list = create_label_list(annotation_specs_v3["labels"])
-        if output_format == FormatArgument.CSV:
-            df = pandas.DataFrame(label_list)
+        # アノテーション仕様のv2とv3はほとんど同じなので、`convert_annotation_specs_labels_v2_to_v1`にはV3のアノテーション仕様を渡す
+        label_attribute_list = create_label_attribute_list(annotation_specs_v3["labels"], annotation_specs_v3["additionals"])
 
-            columns = ["label_id", "label_name_en", "label_name_ja", "label_name_vi", "annotation_type", "color", "attribute_count", "keybind"]
-            print_csv(df[columns], output)
+        if output_format == FormatArgument.CSV:
+            columns = [
+                "label_id",
+                "label_name_en",
+                "label_name_ja",
+                "label_name_vi",
+                "annotation_type",
+                "attribute_id",
+                "attribute_name_en",
+                "attribute_name_ja",
+                "attribute_name_vi",
+                "attribute_type",
+            ]
+
+            df = pandas.DataFrame(label_attribute_list, columns=columns)
+            print_csv(df, output)
 
         elif output_format in [FormatArgument.JSON, FormatArgument.PRETTY_JSON]:
-            annofabcli.common.utils.print_according_to_format([e.to_dict() for e in label_list], format=FormatArgument(output_format), output=output)
+            print_according_to_format([e.to_dict() for e in label_attribute_list], format=output_format, output=output)
 
     def get_history_id_from_before_index(self, project_id: str, before: int) -> Optional[str]:
         histories, _ = self.service.api.get_annotation_specs_histories(project_id)
@@ -205,13 +207,13 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
 def main(args: argparse.Namespace) -> None:
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
-    PrintAnnotationSpecsLabel(service, facade, args).main()
+    PrintAnnotationSpecsLabelAndAttribute(service, facade, args).main()
 
 
 def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
-    subcommand_name = "list_label"
+    subcommand_name = "list_label_attribute"
 
-    subcommand_help = "アノテーション仕様のラベル情報を出力します。"
+    subcommand_help = "アノテーション仕様のラベルとラベルに含まれている属性の一覧を出力します。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help)
     parse_args(parser)

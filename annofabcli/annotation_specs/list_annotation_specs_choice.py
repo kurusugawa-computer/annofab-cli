@@ -15,6 +15,7 @@ from dataclasses_json import DataClassJsonMixin
 
 import annofabcli
 import annofabcli.common.cli
+from annofabcli.common.annofab.annotation_specs import keybind_to_text
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
     ArgumentParser,
@@ -23,13 +24,13 @@ from annofabcli.common.cli import (
 )
 from annofabcli.common.enums import FormatArgument
 from annofabcli.common.facade import AnnofabApiFacade
-from annofabcli.common.utils import print_csv
+from annofabcli.common.utils import print_according_to_format, print_csv
 
 logger = logging.getLogger(__name__)
 
 
 @dataclass
-class ChoiceForCsv(DataClassJsonMixin):
+class FlattenChoice(DataClassJsonMixin):
     """
     CSV用の選択肢情報を格納するクラスです。
     """
@@ -54,11 +55,13 @@ class ChoiceForCsv(DataClassJsonMixin):
     choice_name_vi: Optional[str]
     is_default: bool
     """初期値として設定されているかどうか"""
+    keybind: Optional[str]
+    """キーバインド"""
 
 
-def create_df_from_additionals(additionals_v3: list[dict[str, Any]]) -> pandas.DataFrame:
+def create_flatten_choice_list_from_additionals(additionals_v3: list[dict[str, Any]]) -> list[FlattenChoice]:
     """
-    APIから取得した属性情報（v3版）から、pandas.DataFrameを生成します。
+    APIから取得した属性情報（v3版）から、選択肢情報の一覧を生成します。
 
     Args:
         additionals_v3: APIから取得した属性情報（v3版）
@@ -67,7 +70,7 @@ def create_df_from_additionals(additionals_v3: list[dict[str, Any]]) -> pandas.D
     def dict_choice_to_dataclass(
         choice: dict[str, Any],
         additional: dict[str, Any],
-    ) -> ChoiceForCsv:
+    ) -> FlattenChoice:
         """
         辞書の選択肢情報をDataClassの選択肢情報に変換します。
         """
@@ -77,7 +80,7 @@ def create_df_from_additionals(additionals_v3: list[dict[str, Any]]) -> pandas.D
         choice_id = choice["choice_id"]
         choice_name = choice["name"]
         is_default = additional["default"] == choice_id
-        return ChoiceForCsv(
+        return FlattenChoice(
             attribute_id=attribute_id,
             attribute_name_en=get_english_message(additional_name),
             attribute_type=additional["type"],
@@ -86,6 +89,7 @@ def create_df_from_additionals(additionals_v3: list[dict[str, Any]]) -> pandas.D
             choice_name_ja=get_message_with_lang(choice_name, lang=Lang.JA_JP),
             choice_name_vi=get_message_with_lang(choice_name, lang=Lang.VI_VN),
             is_default=is_default,
+            keybind=keybind_to_text(choice["keybind"]),
         )
 
     tmp_list = []
@@ -95,19 +99,33 @@ def create_df_from_additionals(additionals_v3: list[dict[str, Any]]) -> pandas.D
             continue
         for choice in choices:
             tmp_list.append(dict_choice_to_dataclass(choice, additional))  # noqa: PERF401
-
-    columns = ["attribute_id", "attribute_name_en", "attribute_type", "choice_id", "choice_name_en", "choice_name_ja", "choice_name_vi", "is_default"]
-    df = pandas.DataFrame(tmp_list, columns=columns)
-    return df
+    return tmp_list
 
 
 class PrintAnnotationSpecsAttribute(CommandLine):
     COMMON_MESSAGE = "annofabcli annotation_specs list_choice: error:"
 
-    def print_annotation_specs_choice(self, annotation_specs_v3: dict[str, Any], arg_format: str, output: Optional[str] = None) -> None:
-        if arg_format == FormatArgument.CSV.value:
-            df = create_df_from_additionals(annotation_specs_v3["additionals"])
-            print_csv(df, output)
+    def print_annotation_specs_choice(self, annotation_specs_v3: dict[str, Any], output_format: FormatArgument, output: Optional[str] = None) -> None:
+        choice_list = create_flatten_choice_list_from_additionals(annotation_specs_v3["additionals"])
+        logger.info(f"{len(choice_list)} 件の選択肢情報を出力します。")
+
+        if output_format == FormatArgument.CSV:
+            df = pandas.DataFrame(choice_list)
+            columns = [
+                "attribute_id",
+                "attribute_name_en",
+                "attribute_type",
+                "choice_id",
+                "choice_name_en",
+                "choice_name_ja",
+                "choice_name_vi",
+                "is_default",
+                "keybind",
+            ]
+            print_csv(df[columns], output)
+
+        elif output_format in [FormatArgument.JSON, FormatArgument.PRETTY_JSON]:
+            print_according_to_format([e.to_dict() for e in choice_list], format=output_format, output=output)
 
     def get_history_id_from_before_index(self, project_id: str, before: int) -> Optional[str]:
         histories, _ = self.service.api.get_annotation_specs_histories(project_id)
@@ -144,7 +162,7 @@ class PrintAnnotationSpecsAttribute(CommandLine):
         else:
             raise RuntimeError("'--project_id'か'--annotation_specs_json'のどちらかを指定する必要があります。")
 
-        self.print_annotation_specs_choice(annotation_specs, arg_format=args.format, output=args.output)
+        self.print_annotation_specs_choice(annotation_specs, output_format=FormatArgument(args.format), output=args.output)
 
 
 def parse_args(parser: argparse.ArgumentParser) -> None:
@@ -183,7 +201,14 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         ),
     )
 
-    parser.add_argument("-f", "--format", type=str, choices=[FormatArgument.CSV.value], default=FormatArgument.CSV.value, help="出力フォーマット ")
+    parser.add_argument(
+        "-f",
+        "--format",
+        type=str,
+        choices=[FormatArgument.CSV.value, FormatArgument.JSON.value, FormatArgument.PRETTY_JSON.value],
+        default=FormatArgument.CSV.value,
+        help="出力フォーマット ",
+    )
 
     argument_parser.add_output()
 
@@ -199,7 +224,7 @@ def main(args: argparse.Namespace) -> None:
 def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     subcommand_name = "list_choice"
 
-    subcommand_help = "アノテーション仕様のドロップダウンまたはラジオボタン属性の選択肢情報を出力する"
+    subcommand_help = "アノテーション仕様のドロップダウンまたはラジオボタン属性の選択肢情報を出力します。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help)
     parse_args(parser)
