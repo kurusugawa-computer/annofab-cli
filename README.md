@@ -21,14 +21,10 @@
 
 
 ## 廃止予定
-
-
-### 2022-11-01 以降
-* JMESPathを指定できる `--query`を削除します。使いどころがあまりないのと、`jq`コマンドでも対応できるためです。
-
+* TODO
 
 # Requirements
-* Python 3.9
+* Python 3.9+
 
 # Install
 

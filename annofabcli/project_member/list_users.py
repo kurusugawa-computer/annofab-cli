@@ -77,7 +77,6 @@ class ListUser(CommandLine):
 
         logger.info(f"プロジェトメンバ一覧の件数: {len(project_members)}")
         if args.format == FormatArgument.CSV.value:
-            project_members = self.search_with_jmespath_expression(project_members)
             df = pandas.DataFrame(project_members)
             columns = get_columns_with_priority(df, prior_columns=self.PRIOR_COLUMNS)
             self.print_csv(df[columns])
@@ -111,7 +110,6 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     )
     argument_parser.add_output()
     argument_parser.add_csv_format()
-    argument_parser.add_query()
 
     parser.set_defaults(subcommand_func=main)
 

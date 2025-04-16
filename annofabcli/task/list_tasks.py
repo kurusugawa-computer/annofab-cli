@@ -196,7 +196,6 @@ class ListTasks(CommandLine):
 
         if len(task_list) > 0:
             if self.str_format == FormatArgument.CSV.value:
-                task_list = self.search_with_jmespath_expression(task_list)
                 df = pandas.DataFrame(task_list)
                 columns = get_columns_with_priority(df, prior_columns=self.PRIOR_COLUMNS)
                 self.print_csv(df[columns])
@@ -255,7 +254,6 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     argument_parser.add_output()
     argument_parser.add_csv_format()
 
-    argument_parser.add_query()
     parser.set_defaults(subcommand_func=main)
 
 

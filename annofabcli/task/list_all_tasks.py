@@ -97,7 +97,6 @@ class ListTasksWithJson(CommandLine):
 
         if len(task_list) > 0:
             if self.str_format == FormatArgument.CSV.value:
-                task_list = self.search_with_jmespath_expression(task_list)
                 df = pandas.DataFrame(task_list)
                 columns = get_columns_with_priority(df, prior_columns=ListTasks.PRIOR_COLUMNS)
                 self.print_csv(df[columns])
