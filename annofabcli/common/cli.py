@@ -12,7 +12,6 @@ from pathlib import Path
 from typing import Any, Optional
 
 import annofabapi
-import jmespath
 import pandas
 import requests
 import yaml
@@ -458,15 +457,6 @@ class ArgumentParser:
 
         self.parser.add_argument("-o", "--output", type=str, required=required, help=help_message)
 
-    def add_query(self, help_message: Optional[str] = None):  # noqa: ANN201
-        """
-        '--query` 引数を追加
-        """
-        if help_message is None:
-            help_message = "JMESPath形式で指定します。出力結果の抽出や、出力内容の変更に利用できます。"
-
-        self.parser.add_argument("-q", "--query", type=str, help=help_message)
-
     def add_task_query(self, required: bool = False, help_message: Optional[str] = None):  # noqa: ANN201, FBT001, FBT002
         if help_message is None:
             help_message = (
@@ -516,9 +506,6 @@ class CommandLineWithoutWebapi:
 
     #: Trueならば、処理中に現れる問い合わせに対して、常に'yes'と回答したものとして処理する。
     all_yes: bool = False
-
-    #: JMesPath
-    query: Optional[str] = None
 
     #: 出力先
     output: Optional[str] = None
@@ -602,26 +589,10 @@ class CommandLineWithoutWebapi:
 
         return True
 
-    def search_with_jmespath_expression(self, target: Any) -> Any:  # noqa: ANN401
-        """
-        インスタンスで保持しているJMespath情報で、targetの中身を探す。
-        Args:
-            target: 検索対象
-
-        Returns:
-            JMesPathで検索した結果。``self.query`` がNoneなら引数 ``target`` を返す。
-
-        """
-        if self.query is not None:
-            return jmespath.search(self.query, target)
-        return target
-
     def print_csv(self, df: pandas.DataFrame) -> None:
         print_csv(df, output=self.output, to_csv_kwargs=self.csv_format)
 
     def print_according_to_format(self, target: Any) -> None:  # noqa: ANN401
-        target = self.search_with_jmespath_expression(target)
-
         print_according_to_format(target, format=FormatArgument(self.str_format), output=self.output, csv_format=self.csv_format)
 
 

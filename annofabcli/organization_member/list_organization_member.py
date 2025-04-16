@@ -53,7 +53,6 @@ class ListOrganizationMember(CommandLine):
                 continue
 
         if args.format == FormatArgument.CSV.value:
-            organization_member_list = self.search_with_jmespath_expression(organization_member_list)
             df = pandas.DataFrame(organization_member_list)
             columns = get_columns_with_priority(df, prior_columns=self.PRIOR_COLUMNS)
             self.print_csv(df[columns])
@@ -85,7 +84,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     )
     argument_parser.add_output()
     argument_parser.add_csv_format()
-    argument_parser.add_query()
+
     parser.set_defaults(subcommand_func=main)
 
 
