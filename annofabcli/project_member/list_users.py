@@ -75,7 +75,7 @@ class ListUser(CommandLine):
             include_inactive=args.include_inactive,
         )
 
-        logger.info(f"プロジェトメンバ一覧の件数: {len(project_members)}")
+        logger.info(f"プロジェクトメンバ一覧の件数: {len(project_members)}")
         if args.format == FormatArgument.CSV.value:
             df = pandas.DataFrame(project_members)
             columns = get_columns_with_priority(df, prior_columns=self.PRIOR_COLUMNS)
