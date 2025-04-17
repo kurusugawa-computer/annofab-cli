@@ -152,9 +152,6 @@ class Task:
             "inspection_comment_count",
             "inspection_comment_count_in_inspection_phase",
             "inspection_comment_count_in_acceptance_phase",
-            # タスクの状態
-            "inspection_is_skipped",
-            "acceptance_is_skipped",
         ]
 
     @property
