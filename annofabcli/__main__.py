@@ -80,6 +80,7 @@ def main(arguments: Optional[list[str]] = None) -> None:
         args = parser.parse_args(arguments)
 
     if hasattr(args, "subcommand_func"):
+        print(f"{args=}")
         try:
             annofabcli.common.cli.load_logging_config_from_args(args)
             argv = sys.argv
