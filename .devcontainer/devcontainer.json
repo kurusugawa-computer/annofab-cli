@@ -1,7 +1,7 @@
 // For format details, see https://aka.ms/devcontainer.json. For config options, see the README at:
 // https://github.com/microsoft/vscode-dev-containers/tree/v0.154.0/containers/docker-existing-dockerfile
 {
-	"name": "Existing Dockerfile",
+	"name": "${localWorkspaceFolderBasename}",
 	"build": {
 		"dockerfile": "Dockerfile",
 		"context": ".",
@@ -38,7 +38,7 @@
 				"ms-python.vscode-pylance",
 				"charliermarsh.ruff",
 				"streetsidesoftware.code-spell-checker",
-				"bungcip.better-toml",
+				"tamasfe.even-better-toml",
 				"njpwerner.autodocstring",
 				"mechatroner.rainbow-csv",
 				"lextudio.restructuredtext"
