@@ -1,111 +1,72 @@
-[tool.poetry]
+[project]
 name = "annofabcli"
-version = "0.0.0"  # `poetry-dynamic-versioning`を使ってGitHubのバージョンタグを取得している。変更不要
+dynamic = ["version"]
 description = "Utility Command Line Interface for AnnoFab"
-authors = ["yuji38kwmt"]
-license = "MIT"
-keywords=["annofab", "cli"]
-readme="README.md"
-repository="https://github.com/kurusugawa-computer/annofab-cli"
+authors = [{ name = "Kurusugawa Computer Inc." }]
+license = { text = "MIT" }
+keywords = ["annofab", "cli"]
+readme = "README.md"
+requires-python = ">=3.9"
 classifiers = [
-        "Development Status :: 4 - Beta",
-        "Intended Audience :: Developers",
-        "Environment :: Console",
-        "Topic :: Utilities",
-        "Operating System :: OS Independent",
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Environment :: Console",
+    "Topic :: Utilities",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "requests",
+    "pyyaml",
+    "dictdiffer",
+    "more-itertools",
+    "pyquery",
+    "isodate",
+    "annofabapi>=1.4.1",
+    "python-datauri",
+    "numpy",
+    "pandas>=2,<3",
+    # 3.7.0だと凡例が期待通りグラフ外に表示されないので、一旦3.7未満にする
+    "bokeh>=3.3,<3.7",
+    "Pillow",
+    "typing-extensions>=4.5",
 ]
 
-
-[tool.poetry.dependencies]
-python = "^3.9"
-requests = "*"
-pyyaml = "*"
-dictdiffer = "*"
-more-itertools = "*"
-pyquery = "*"
-isodate = "*"
-annofabapi = "^1.4.1"
-python-datauri = "*"
-numpy = "*"
-pandas = "^2"
-# 3.7.0だと凡例が期待通りグラフ外に表示されないので、一旦3.7未満にする
-bokeh = "^3.3,<3.7"
-
-
-Pillow = "*"
-typing-extensions="^4.5"
-
-[tool.poetry.group.dev-only.dependencies]
-# 開発時のみバージョンを指定したライブラリを記載する
-
-
-# pandsaのCopy-on-Writeの警告を出すために、pandas2.2以上を利用する
-# https://pandas.pydata.org/docs/user_guide/copy_on_write.html
-pandas = [
-    {version=">=2.2", python=">=3.12"}
+[project.optional-dependencies]
+dev = [
+    "ipython",
+    # pandas2.2以上はPython3.12以上
+    "pandas>=2.2; python_version>='3.12'",
+    # bokeh3.5以上はPython3.10以上
+    "bokeh>=3.5; python_version>='3.10'",
+    # numpy2.1以上はPython3.13以上
+    "numpy>=2.1; python_version>='3.13'",
+]
+test = [
+    "pytest>=7",
+    "pytest-xdist",
+    "pytest-cov",
+]
+linter = [
+    "ruff>=0.11; python_version>='3.12'",
+    "mypy>=1; python_version>='3.12'",
+    "pylint>=3; python_version>='3.12'",
+    "types-pytz",
+    "types-requests",
+    "types-python-dateutil",
+    "types-PyYAML",
+]
+docs = [
+    "sphinx>=8; python_version>='3.12'",
+    "pydata-sphinx-theme>=0.13; python_version>='3.12'",
+    "sphinx-last-updated-by-git; python_version>='3.12'",
+    "sphinx-argparse; python_version>='3.12'",
+]
+publish = [
+    "pyinstaller==6.10; python_version=='3.12'",
 ]
 
-# 開発時には最新のバージョンを利用するため、以下のバージョンを指定する
-bokeh = [
-    {version=">=3.5", python=">=3.10"}
-]
-
-# Numpy 2.1以上でないと、PyPIにはPython 3.13でビルドされたwheelファイルが存在しない
-# 以下の指定がないと、Python 3.13ではnumpy 2.0をビルドしようとして`poetry install`に時間がかかる
-# poetry installに時間をかけないようにするため、バージョンを指定する
-numpy = [
-    {version=">=2.1", python=">=3.13"}
-]
-
-
-[tool.poetry.group.test.dependencies]
-pytest = "^7"
-pytest-xdist = "*"
-pytest-cov = "*"
-
-[tool.poetry.group.formatter.dependencies]
-
-[tool.poetry.group.linter.dependencies]
-# pythonバージョンを指定している理由：Python3.12（開発環境）でしかlintを実行していないため
-ruff = {version="^0.11", python=">=3.12"}
-mypy = {version="^1", python=">=3.12"}
-pylint = {version="^3", python=">=3.12"}
-
-types-pytz = "*"
-types-requests = "*"
-types-python-dateutil = "*"
-types-PyYAML = "*"
-
-[tool.poetry.group.documentation.dependencies]
-# ドキュメント生成用のライブラリ
-# `python=">=3.12"`を指定している理由：Pytyhon3.11を利用している開発環境かReadTheDocsでしかドキュメントを生成しないため
-sphinx = {version="^8", python=">=3.12"}
-pydata-sphinx-theme = {version=">=0.13", python=">=3.12"}
-sphinx-last-updated-by-git = {version="*", python=">=3.12"}
-sphinx-argparse = {version="*", python=">=3.12"}
-
-
-
-[tool.poetry.group.dev]
-# 開発するときのみ必要なライブラリ。インストールしなくても開発はできるので、オプショナルにする
-optional = true
-
-[tool.poetry.group.dev.dependencies]
-ipython = "*"
-
-[tool.poetry.group.publish]
-# リリース時に必要なツール。インストールしなくても開発できるので、オプショナルにする
-optional = true
-
-[tool.poetry.group.publish.dependencies]
-# GitHubでリリース時に、 GitHub Actionでannofabcliのexeを公開している
-# pythonバージョンを指定している理由: pyinstaller5.9はPython3.12未満までしかサポートしていない。
-# pythonバージョンを指定しないと、annofabcli自体のpython requirementが3.12未満になってしまうため。
-pyinstaller = { version = "^6.10", python = "==3.12" }
-
-[tool.poetry.scripts]
+[project.scripts]
 annofabcli = "annofabcli.__main__:main"
-
 
 [tool.mypy]
 ignore_missing_imports = true
@@ -203,11 +164,19 @@ keep-runtime-typing = true
 [tool.ruff.lint.pylint]
 max-args = 10
 
+
 [tool.poetry-dynamic-versioning]
 enable = true
 
+# [build-system]
+# requires = ["setuptools>=61.0", "wheel", "poetry-dynamic-versioning"]
+# build-backend = "poetry_dynamic_versioning.backend"
+
+
 [build-system]
-requires = ["poetry-core>=1.0.0", "poetry-dynamic-versioning"]
-build-backend = "poetry_dynamic_versioning.backend"
+requires = ["hatchling", "uv-dynamic-versioning"]
+build-backend = "hatchling.build"
 
 
+[tool.hatch.version]
+source = "uv-dynamic-versioning"
