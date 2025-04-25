@@ -15,19 +15,17 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - name: Install uv and set the python version
+        uses: astral-sh/setup-uv@v5
         with:
-          python-version: 3.12
-
-      - name: Install Poetry and dependencies
-        run: |
-          python -m pip install --upgrade pip "poetry<1.9"
-          poetry install --only main,publish
-
+          python-version: "3.12"
+          # Install a specific version of uv.
+          version: "0.6.14"
+      - name: Install the project
+        run: uv sync --extra publish
       - name: Create executable file with pyinstaller and zip
         run: |
-          poetry run pyinstaller annofabcli/__main__.py  --name annofabcli --add-data "annofabcli/data:annofabcli/data"          
+          uv run pyinstaller annofabcli/__main__.py  --name annofabcli --add-data "annofabcli/data:annofabcli/data"          
           pushd dist
           Compress-Archive -Path annofabcli  -DestinationPath annofabcli-windows.zip
           popd

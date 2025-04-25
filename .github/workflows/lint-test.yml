@@ -35,7 +35,7 @@ jobs:
         run: uv sync
       - name: Test
         run: |
-            poetry run pytest -n auto -m "not access_webapi"
+            uv run pytest -n auto -m "not access_webapi"
           
   lint:
     runs-on: ubuntu-latest
