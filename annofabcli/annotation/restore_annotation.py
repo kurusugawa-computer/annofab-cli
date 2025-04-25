@@ -100,7 +100,7 @@ class RestoreAnnotationMain(CommandLineWithConfirm):
 
         old_annotation, _ = self.service.api.get_editor_annotation(self.project_id, task_id, input_data_id)
 
-        logger.info(f"task_id={task_id}, input_data_id={input_data_id} : アノテーションをリストアします。")
+        logger.info(f"task_id='{task_id}', input_data_id='{input_data_id}' :: アノテーションをリストアします。")
         request_body = self.parser_to_request_body(parser)
 
         updated_datetime = old_annotation["updated_datetime"] if old_annotation is not None else None
@@ -139,10 +139,10 @@ class RestoreAnnotationMain(CommandLineWithConfirm):
         """
         logger_prefix = f"{task_index + 1!s} 件目: " if task_index is not None else ""
         task_id = task_parser.task_id
-        if not self.confirm_processing(f"task_id={task_id} のアノテーションをリストアしますか？"):
+        if not self.confirm_processing(f"task_id='{task_id}' のアノテーションをリストアしますか？"):
             return False
 
-        logger.info(f"{logger_prefix}task_id={task_id} に対して処理します。")
+        logger.info(f"{logger_prefix}task_id='{task_id}' に対して処理します。")
 
         task = self.service.wrapper.get_task_or_none(self.project_id, task_id)
         if task is None:
