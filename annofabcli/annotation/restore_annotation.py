@@ -70,7 +70,7 @@ class RestoreAnnotationMain(CommandLineWithConfirm):
                     s3_path = self.service.wrapper.upload_data_to_s3(self.project_id, f, content_type="image/png")
                     detail.path = s3_path
             else:
-                logger.warning(f"annotation_id={detail.annotation_id}: data_holding_typeが'outer'なのにpathがNoneです。")
+                logger.warning(f"annotation_id='{detail.annotation_id}' :: data_holding_typeが'outer'なのにpathがNoneです。")
 
         return detail
 
@@ -246,7 +246,7 @@ class RestoreAnnotationMain(CommandLineWithConfirm):
                     if result:
                         success_count += 1
                 except Exception:
-                    logger.warning(f"task_id={task_parser.task_id} のアノテーションのリストアに失敗しました。", exc_info=True)
+                    logger.warning(f"task_id='{task_parser.task_id}' :: アノテーションのリストアに失敗しました。", exc_info=True)
                     continue
                 finally:
                     task_count += 1

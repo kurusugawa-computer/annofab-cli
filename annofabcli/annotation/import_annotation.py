@@ -364,7 +364,7 @@ class ImportAnnotationMain(CommandLineWithConfirm):
         simple_annotation: ImportedSimpleAnnotation = ImportedSimpleAnnotation.from_dict(parser.load_json())
         if len(simple_annotation.details) == 0:
             logger.debug(
-                f"task_id='{task_id}', input_data_id={input_data_id} : インポート元にアノテーションデータがないため、アノテーションの登録をスキップします。"  # noqa: E501
+                f"task_id='{task_id}', input_data_id='{input_data_id}' :: インポート元にアノテーションデータがないため、アノテーションの登録をスキップします。"  # noqa: E501
             )
             return False
 
@@ -377,7 +377,7 @@ class ImportAnnotationMain(CommandLineWithConfirm):
         if len(old_annotation["details"]) > 0:  # noqa: SIM102
             if not self.is_overwrite and not self.is_merge:
                 logger.debug(
-                    f"task_id='{task_id}', input_data_id={input_data_id} :: "
+                    f"task_id='{task_id}', input_data_id='{input_data_id}' :: "
                     f"インポート先のタスク内の入力データに既にアノテーションが存在するため、アノテーションの登録をスキップします。"
                     f"アノテーションをインポートする場合は、`--overwrite` または '--merge' を指定してください。"
                 )
