@@ -13,6 +13,11 @@ classifiers = [
     "Environment :: Console",
     "Topic :: Utilities",
     "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13"
 ]
 dependencies = [
     "requests",
@@ -177,3 +182,10 @@ build-backend = "hatchling.build"
 
 [tool.hatch.version]
 source = "uv-dynamic-versioning"
+
+[tool.hatch.build.hooks.version]
+# https://github.com/ninoseki/uv-dynamic-versioning/blob/main/docs/version_source.md#version-build-hook 参照
+path = "annofabcli/__version__.py"
+template = '''
+__version__ = "{version}"
+'''
