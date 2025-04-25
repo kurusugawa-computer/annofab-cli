@@ -364,21 +364,21 @@ class ImportAnnotationMain(CommandLineWithConfirm):
         simple_annotation: ImportedSimpleAnnotation = ImportedSimpleAnnotation.from_dict(parser.load_json())
         if len(simple_annotation.details) == 0:
             logger.debug(
-                f"task_id={task_id}, input_data_id={input_data_id} : インポート元にアノテーションデータがないため、アノテーションの登録をスキップします。"  # noqa: E501
+                f"task_id='{task_id}', input_data_id={input_data_id} : インポート元にアノテーションデータがないため、アノテーションの登録をスキップします。"  # noqa: E501
             )
             return False
 
         input_data = self.service.wrapper.get_input_data_or_none(self.project_id, input_data_id)
         if input_data is None:
-            logger.warning(f"task_id= '{task_id}, input_data_id = '{input_data_id}' は存在しません。")
+            logger.warning(f"input_data_id='{input_data_id}'という入力データは存在しません。 :: task_id='{task_id}'")
             return False
 
         old_annotation, _ = self.service.api.get_editor_annotation(self.project_id, task_id, input_data_id)
         if len(old_annotation["details"]) > 0:  # noqa: SIM102
             if not self.is_overwrite and not self.is_merge:
                 logger.debug(
-                    f"task_id={task_id}, input_data_id={input_data_id} : "
-                    f"インポート先のタスクに既にアノテーションが存在するため、アノテーションの登録をスキップします。"
+                    f"task_id='{task_id}', input_data_id={input_data_id} :: "
+                    f"インポート先のタスク内の入力データに既にアノテーションが存在するため、アノテーションの登録をスキップします。"
                     f"アノテーションをインポートする場合は、`--overwrite` または '--merge' を指定してください。"
                 )
                 return False
@@ -418,15 +418,15 @@ class ImportAnnotationMain(CommandLineWithConfirm):
 
         """
         task_id = task_parser.task_id
-        if not self.confirm_processing(f"task_id={task_id} のアノテーションをインポートしますか？"):
+        if not self.confirm_processing(f"task_id='{task_id}' のアノテーションをインポートしますか？"):
             return False
 
         logger_prefix = f"{task_index + 1!s} 件目: " if task_index is not None else ""
-        logger.info(f"{logger_prefix}task_id={task_id} に対して処理します。")
+        logger.info(f"{logger_prefix}task_id='{task_id}' に対して処理します。")
 
         task = self.service.wrapper.get_task_or_none(self.project_id, task_id)
         if task is None:
-            logger.warning(f"task_id = '{task_id}' は存在しません。")
+            logger.warning(f"task_id='{task_id}'であるタスクは存在しません。")
             return False
 
         if task["status"] in [TaskStatus.WORKING.value, TaskStatus.COMPLETE.value]:
