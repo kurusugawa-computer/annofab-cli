@@ -198,7 +198,7 @@ class DeleteCommentMain(CommandLineWithConfirm):
                     )
                     added_comments_count += result
                 except Exception:  # pylint: disable=broad-except
-                    logger.warning(f"task_id={task_id}: コメントの削除に失敗しました。", exc_info=True)
+                    logger.warning(f"task_id='{task_id}' :: コメントの削除に失敗しました。", exc_info=True)
                     continue
 
         logger.info(f"{added_comments_count} / {comments_count} 件の入力データからコメントを削除しました。")

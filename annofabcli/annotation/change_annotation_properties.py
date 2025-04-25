@@ -234,7 +234,7 @@ class ChangePropertiesOfAnnotationMain(CommandLineWithConfirm):
                 task_index=task_index,
             )
         except Exception:  # pylint: disable=broad-except
-            logger.warning(f"task_id={task_id}: アノテーションのプロパティの変更に失敗しました。", exc_info=True)
+            logger.warning(f"task_id='{task_id}' :: アノテーションのプロパティの変更に失敗しました。", exc_info=True)
             return False
 
     def change_annotation_properties_task_list(  # noqa: ANN201
@@ -277,7 +277,7 @@ class ChangePropertiesOfAnnotationMain(CommandLineWithConfirm):
                     if result:
                         success_count += 1
                 except Exception:  # pylint: disable=broad-except
-                    logger.warning(f"task_id={task_id}: アノテーションのプロパティの変更に失敗しました。", exc_info=True)
+                    logger.warning(f"task_id='{task_id}' :: アノテーションのプロパティの変更に失敗しました。", exc_info=True)
                     continue
 
         logger.info(f"{success_count} / {len(task_id_list)} 件のタスクに対してアノテーションのプロパティを変更しました。")

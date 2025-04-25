@@ -118,7 +118,7 @@ class RestoreAnnotationMain(CommandLineWithConfirm):
                     success_count += 1
             except Exception:  # pylint: disable=broad-except
                 logger.warning(
-                    f"task_id={parser.task_id}, input_data_id={parser.input_data_id} のアノテーションのリストアに失敗しました。",
+                    f"task_id='{parser.task_id}', input_data_id='{parser.input_data_id}' のアノテーションのリストアに失敗しました。",
                     exc_info=True,
                 )
 
@@ -197,7 +197,7 @@ class RestoreAnnotationMain(CommandLineWithConfirm):
         try:
             return self.execute_task(task_parser, task_index=task_index)
         except Exception:  # pylint: disable=broad-except
-            logger.warning(f"task_id={task_parser.task_id} のアノテーションのリストアに失敗しました。", exc_info=True)
+            logger.warning(f"task_id='{task_parser.task_id}' のアノテーションのリストアに失敗しました。", exc_info=True)
             return False
 
     def main(  # noqa: ANN201

@@ -161,7 +161,7 @@ class PutCommentSimplyMain(CommandLineWithConfirm):
         try:
             return self.put_comment_for_task(task_id=task_id, comment_info=comment_info, task_index=task_index)
         except Exception:  # pylint: disable=broad-except
-            logger.warning(f"task_id={task_id}: コメントの付与に失敗しました。", exc_info=True)
+            logger.warning(f"task_id='{task_id}' :: コメントの付与に失敗しました。", exc_info=True)
             return False
 
     def put_comment_for_task_list(
@@ -191,7 +191,7 @@ class PutCommentSimplyMain(CommandLineWithConfirm):
                     if result:
                         success_count += 1
                 except Exception:  # pylint: disable=broad-except
-                    logger.warning(f"task_id={task_id}: {self.comment_type_name}の付与に失敗しました。", exc_info=True)
+                    logger.warning(f"task_id='{task_id}' :: {self.comment_type_name}の付与に失敗しました。", exc_info=True)
                     continue
 
         logger.info(f"{success_count} / {len(task_ids)} 件のタスクに{self.comment_type_name}を付与しました。")
