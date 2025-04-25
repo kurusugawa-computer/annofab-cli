@@ -31,7 +31,7 @@ dependencies = [
     "typing-extensions>=4.5",
 ]
 
-[project.optional-dependencies]
+[dependency-groups]
 dev = [
     "ipython",
     # pandas2.2以上はPython3.12以上
@@ -50,10 +50,10 @@ linter = [
     "ruff>=0.11; python_version>='3.12'",
     "mypy>=1; python_version>='3.12'",
     "pylint>=3; python_version>='3.12'",
-    "types-pytz",
-    "types-requests",
-    "types-python-dateutil",
-    "types-PyYAML",
+    "types-pytz; python_version>='3.12'",
+    "types-requests; python_version>='3.12'",
+    "types-python-dateutil; python_version>='3.12'",
+    "types-PyYAML; python_version>='3.12'",
 ]
 docs = [
     "sphinx>=8; python_version>='3.12'",
@@ -64,6 +64,11 @@ docs = [
 publish = [
     "pyinstaller==6.10; python_version=='3.12'",
 ]
+
+[tool.uv]
+default-groups = ["dev", "test", "linter", "docs"]
+package = true
+
 
 [project.scripts]
 annofabcli = "annofabcli.__main__:main"
@@ -163,14 +168,6 @@ keep-runtime-typing = true
 
 [tool.ruff.lint.pylint]
 max-args = 10
-
-
-[tool.poetry-dynamic-versioning]
-enable = true
-
-# [build-system]
-# requires = ["setuptools>=61.0", "wheel", "poetry-dynamic-versioning"]
-# build-backend = "poetry_dynamic_versioning.backend"
 
 
 [build-system]

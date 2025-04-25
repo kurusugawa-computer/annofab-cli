@@ -29,7 +29,7 @@
 	},
 	"workspaceMount": "source=${localWorkspaceFolder},target=/workspaces/annofab-cli,type=bind,consistency=cached",
 	"workspaceFolder": "/workspaces/annofab-cli",
-	"postStartCommand": "poetry install",
+	"postStartCommand": "uv sync",
 	"customizations": {
 		"vscode": {
 			"extensions": [
