@@ -155,7 +155,9 @@ class DeleteCommentMain(CommandLineWithConfirm):
                         f"{logging_prefix} :: task_id='{task_id}', input_data_id='{input_data_id}' :: {len(request_body)}件のコメントを削除しました。"
                     )
                 else:
-                    logger.warning(f"{logging_prefix} :: task_id='{task_id}', input_data_id='{input_data_id}' :: 削除できるコメントは存在しませんでした。")
+                    logger.warning(
+                        f"{logging_prefix} :: task_id='{task_id}', input_data_id='{input_data_id}' :: 削除できるコメントは存在しませんでした。"
+                    )
 
             except Exception:  # pylint: disable=broad-except
                 logger.warning(

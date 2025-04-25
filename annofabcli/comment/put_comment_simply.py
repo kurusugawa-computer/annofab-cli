@@ -147,7 +147,9 @@ class PutCommentSimplyMain(CommandLineWithConfirm):
             logger.debug(f"{logging_prefix} :: task_id='{task_id}' のタスクにコメントを付与しました。")
             return True  # noqa: TRY300
         except Exception:  # pylint: disable=broad-except
-            logger.warning(f"{logging_prefix} :: task_id='{task_id}', input_data_id='{input_data_id}' :: コメントの付与に失敗しました。", exc_info=True)
+            logger.warning(
+                f"{logging_prefix} :: task_id='{task_id}', input_data_id='{input_data_id}' :: コメントの付与に失敗しました。", exc_info=True
+            )
             return False
         finally:
             self.service.wrapper.change_task_status_to_break(self.project_id, task_id)
