@@ -177,3 +177,10 @@ build-backend = "hatchling.build"
 
 [tool.hatch.version]
 source = "uv-dynamic-versioning"
+
+[tool.hatch.build.hooks.version]
+# https://github.com/ninoseki/uv-dynamic-versioning/blob/main/docs/version_source.md#version-build-hook 参照
+path = "annofabcli/__version__.py"
+template = '''
+__version__ = "{version}"
+'''

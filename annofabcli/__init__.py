@@ -1,5 +1,7 @@
-from .__version__ import __version__
+from importlib.metadata import PackageNotFoundError, version
 
-__all__ = [
-    "__version__",
-]
+try:
+    __version__ = version(__name__)
+except PackageNotFoundError:
+    # `uv run annofabcli --version`では、メタデータからバージョン情報を取得できないため、fallbackしたバージョンを設定する
+    __version__ = "0.0.0"
