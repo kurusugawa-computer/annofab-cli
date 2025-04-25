@@ -64,7 +64,7 @@ class UpdateMetadataMain(CommandLineWithConfirm):
 
         input_data = self.service.wrapper.get_input_data_or_none(project_id, input_data_id)
         if input_data is None:
-            logger.warning(f"{logging_prefix} 入力データは存在しないのでスキップします。input_data_id={input_data_id}")
+            logger.warning(f"{logging_prefix} 入力データは存在しないのでスキップします。 :: input_data_id='{input_data_id}'")
             return False
 
         logger.debug(

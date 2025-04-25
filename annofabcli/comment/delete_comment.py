@@ -61,7 +61,7 @@ class DeleteCommentMain(CommandLineWithConfirm):
         for comment_id in comment_ids:
             if comment_id not in old_comment_ids:
                 logger.warning(
-                    f"task_id={task['task_id']}, input_data_id={input_data_id}: comment_id='{comment_id}'のコメントは存在しません。",
+                    f"task_id='{task['task_id']}', input_data_id='{input_data_id}' :: comment_id='{comment_id}'のコメントは存在しません。",
                 )
                 continue
             request_body.append(_convert(comment_id))
@@ -152,14 +152,16 @@ class DeleteCommentMain(CommandLineWithConfirm):
                     self.service.api.batch_update_comments(self.project_id, task_id, input_data_id, request_body=request_body)
                     added_comments_count += 1
                     logger.debug(
-                        f"{logging_prefix} : task_id={task_id}, input_data_id={input_data_id}: {len(request_body)}件のコメントを削除しました。"
+                        f"{logging_prefix} :: task_id='{task_id}', input_data_id='{input_data_id}' :: {len(request_body)}件のコメントを削除しました。"
                     )
                 else:
-                    logger.warning(f"{logging_prefix} : task_id={task_id}, input_data_id={input_data_id}: 削除できるコメントは存在しませんでした。")
+                    logger.warning(
+                        f"{logging_prefix} :: task_id='{task_id}', input_data_id='{input_data_id}' :: 削除できるコメントは存在しませんでした。"
+                    )
 
             except Exception:  # pylint: disable=broad-except
                 logger.warning(
-                    f"{logging_prefix} : task_id={task_id}, input_data_id={input_data_id}: コメントの削除に失敗しました。",
+                    f"{logging_prefix} :: task_id='{task_id}', input_data_id='{input_data_id}' :: コメントの削除に失敗しました。",
                     exc_info=True,
                 )
 
@@ -198,7 +200,7 @@ class DeleteCommentMain(CommandLineWithConfirm):
                     )
                     added_comments_count += result
                 except Exception:  # pylint: disable=broad-except
-                    logger.warning(f"task_id={task_id}: コメントの削除に失敗しました。", exc_info=True)
+                    logger.warning(f"task_id='{task_id}' :: コメントの削除に失敗しました。", exc_info=True)
                     continue
 
         logger.info(f"{added_comments_count} / {comments_count} 件の入力データからコメントを削除しました。")

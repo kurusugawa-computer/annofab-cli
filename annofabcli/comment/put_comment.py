@@ -189,7 +189,7 @@ class PutCommentMain(CommandLineWithConfirm):
                     )
             except Exception:  # pylint: disable=broad-except
                 logger.warning(
-                    f"{logging_prefix} :: task_id={task_id}, input_data_id={input_data_id}: コメントの付与に失敗しました。",
+                    f"{logging_prefix} :: task_id='{task_id}', input_data_id='{input_data_id}' :: コメントの付与に失敗しました。",
                     exc_info=True,
                 )
 
