@@ -20,7 +20,7 @@ https://code.visualstudio.com/docs/remote/containers
 
 ```
 $ git clone https://github.com/kurusugawa-computer/annofab-api-python-client.git
-$ poetry run python annofab-api-python-client/tests/create_test_project.py --organization ${MY_ORGANIZATION}
+$ uv run python annofab-api-python-client/tests/create_test_project.py --organization ${MY_ORGANIZATION}
 ```
 
 3. `pytest.ini`に、テスト対象のプロジェクトとタスクを指定するを指定する。
@@ -32,7 +32,6 @@ $ poetry run python annofab-api-python-client/tests/create_test_project.py --org
 annofabcliのバージョンはSemantic Versioning 2.0に従います。
 
 annofabcliのバージョンは以下のファイルで定義しています。
-* `annofabcli/__version__.py`
 * `pyproject.toml`
 
 # Release
@@ -40,7 +39,7 @@ GitHubのReleasesからリリースしてください。
 バージョンはSemantic Versioningに従います。
 リリースすると、以下の状態になります。
 
-* ソース内のバージョン情報（`pyproject.toml`, `__version__.py`）は、https://github.com/mtkennerly/poetry-dynamic-versioning でGitHubのバージョンタグから生成されます。
+* ソース内のバージョン情報（`pyproject.toml`）は、https://github.com/ninoseki/uv-dynamic-versioning でGitHubのバージョンタグから生成されます。
 * 自動でPyPIに公開されます。
 
 # 開発フロー

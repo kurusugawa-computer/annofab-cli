@@ -138,13 +138,13 @@ Getting Help
 
 .. code-block::
 
-  $ poetry run annofabcli project list -org kurusugawa -o out/project.csv
+  $ annofabcli project list -org kurusugawa -o out/project.csv
   INFO     : 2022-01-24 12:27:32,145 : annofabcli.__main__            : sys.argv='['annofabcli', 'project', 'list', '-org', 'kurusugawa', '-o', 'out/project.csv']'
   DEBUG    : 2022-01-24 12:27:34,206 : annofabcli.project.list_project : project_query: {'user_id': 'xxx', 'account_id': 'xxx'}
   INFO     : 2022-01-24 12:27:42,240 : annofabcli.project.list_project : プロジェクト一覧の件数: 384
   INFO     : 2022-01-24 12:27:42,281 : annofabcli.common.utils        : out/project.csv を出力しました。
 
-  $ poetry run annofabcli project list -org kurusugawa --debug -o out/project.csv
+  $ annofabcli project list -org kurusugawa --debug -o out/project.csv
   INFO     : 2022-01-24 12:28:22,630 : annofabcli.__main__            : sys.argv='['annofabcli', 'project', 'list', '-org', 'kurusugawa', '--debug', '-o', 'out/project.csv']'
   DEBUG    : 2022-01-24 12:28:22,631 : annofabapi.resource            : Create annofabapi resource instance :: {'login_user_id': 'xxx', 'endpoint_url': 'https://annofab.com'}
   DEBUG    : 2022-01-24 12:28:23,133 : annofabapi.api                 : Sent a request :: {'requests': {'http_method': 'post', 'url': 'https://annofab.com/api/v1/login', 'query_params': None, 'request_body_json': {'user_id': 'xxx', 'password': '***'}, 'request_body_data': None, 'header_params': None}, 'response': {'status_code': 200, 'content_length': 4374}}

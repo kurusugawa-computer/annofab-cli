@@ -4,8 +4,6 @@
     "python.autoComplete.extraPaths": [
         ".venv/lib/python3.12/site-packages/"
     ],
-    // "poetry run"コマンドで実行することを想定しているので、venv環境を自動的にactivateしないようにする
-    "python.terminal.activateEnvironment": false,
     "python.analysis.extraPaths": [
         ".venv/lib/python3.12/site-packages/"
     ],
