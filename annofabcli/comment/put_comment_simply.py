@@ -144,24 +144,26 @@ class PutCommentSimplyMain(CommandLineWithConfirm):
             # コメントを付与する
             request_body = self._create_request_body(task=changed_task, comment_info=comment_info)
             self.service.api.batch_update_comments(self.project_id, task_id, input_data_id, request_body=request_body)
-            logger.debug(f"{logging_prefix} : task_id={task_id} のタスクにコメントを付与しました。")
+            logger.debug(f"{logging_prefix} :: task_id='{task_id}' のタスクにコメントを付与しました。")
             return True  # noqa: TRY300
         except Exception:  # pylint: disable=broad-except
-            logger.warning(f"{logging_prefix} : task_id={task_id}, input_data_id={input_data_id}: コメントの付与に失敗しました。", exc_info=True)
+            logger.warning(
+                f"{logging_prefix} :: task_id='{task_id}', input_data_id='{input_data_id}' :: コメントの付与に失敗しました。", exc_info=True
+            )
             return False
         finally:
             self.service.wrapper.change_task_status_to_break(self.project_id, task_id)
             # 担当者が変えている場合は、元に戻す
             if task["account_id"] != changed_task["account_id"]:
                 self.service.wrapper.change_task_operator(self.project_id, task_id, task["account_id"])
-                logger.debug(f"{task_id}: 担当者を元のユーザ( account_id={task['account_id']}）に戻しました。")
+                logger.debug(f"task_id'{task_id}' :: 担当者を元のユーザ( account_id='{task['account_id']}'）に戻しました。")
 
     def add_comments_for_task_wrapper(self, tpl: tuple[int, str], comment_info: AddedSimpleComment) -> bool:
         task_index, task_id = tpl
         try:
             return self.put_comment_for_task(task_id=task_id, comment_info=comment_info, task_index=task_index)
         except Exception:  # pylint: disable=broad-except
-            logger.warning(f"task_id={task_id}: コメントの付与に失敗しました。", exc_info=True)
+            logger.warning(f"task_id='{task_id}' :: コメントの付与に失敗しました。", exc_info=True)
             return False
 
     def put_comment_for_task_list(
@@ -191,7 +193,7 @@ class PutCommentSimplyMain(CommandLineWithConfirm):
                     if result:
                         success_count += 1
                 except Exception:  # pylint: disable=broad-except
-                    logger.warning(f"task_id={task_id}: {self.comment_type_name}の付与に失敗しました。", exc_info=True)
+                    logger.warning(f"task_id='{task_id}' :: {self.comment_type_name}の付与に失敗しました。", exc_info=True)
                     continue
 
         logger.info(f"{success_count} / {len(task_ids)} 件のタスクに{self.comment_type_name}を付与しました。")

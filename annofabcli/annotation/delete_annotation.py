@@ -108,19 +108,19 @@ class DeleteAnnotationMain(CommandLineWithConfirm):
         """
         dict_task = self.service.wrapper.get_task_or_none(self.project_id, task_id)
         if dict_task is None:
-            logger.warning(f"task_id = '{task_id}' は存在しません。")
+            logger.warning(f"task_id='{task_id}'であるタスクは存在しません。")
             return
 
         task: Task = Task.from_dict(dict_task)
-        logger.info(f"task_id={task.task_id}, phase={task.phase.value}, status={task.status.value}, updated_datetime={task.updated_datetime}")
+        logger.info(f"task_id='{task.task_id}', phase='{task.phase.value}', status='{task.status.value}', updated_datetime='{task.updated_datetime}'")
 
         if task.status == TaskStatus.WORKING:
-            logger.warning(f"task_id={task_id}: タスクが作業中状態のため、スキップします。")
+            logger.warning(f"task_id='{task_id}' :: タスクが作業中状態のため、スキップします。")
             return
 
         if not self.is_force:  # noqa: SIM102
             if task.status == TaskStatus.COMPLETE:
-                logger.warning(f"task_id={task_id}: タスクが完了状態のため、スキップします。")
+                logger.warning(f"task_id='{task_id}' :: タスクが完了状態のため、スキップします。")
                 return
 
         annotation_list = self.get_annotation_list_for_task(task_id, annotation_query=annotation_query)
@@ -137,9 +137,9 @@ class DeleteAnnotationMain(CommandLineWithConfirm):
 
         try:
             self.delete_annotation_list(annotation_list=annotation_list)
-            logger.info(f"task_id={task_id}: アノテーションを削除しました。")
+            logger.info(f"task_id='{task_id}' :: アノテーションを削除しました。")
         except requests.HTTPError:
-            logger.warning(f"task_id={task_id}: アノテーションの削除に失敗しました。", exc_info=True)
+            logger.warning(f"task_id='{task_id}' :: アノテーションの削除に失敗しました。", exc_info=True)
 
     def delete_annotation_for_task_list(  # noqa: ANN201
         self,

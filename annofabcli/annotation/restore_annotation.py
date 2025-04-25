@@ -70,7 +70,7 @@ class RestoreAnnotationMain(CommandLineWithConfirm):
                     s3_path = self.service.wrapper.upload_data_to_s3(self.project_id, f, content_type="image/png")
                     detail.path = s3_path
             else:
-                logger.warning(f"annotation_id={detail.annotation_id}: data_holding_typeが'outer'なのにpathがNoneです。")
+                logger.warning(f"annotation_id='{detail.annotation_id}' :: data_holding_typeが'outer'なのにpathがNoneです。")
 
         return detail
 
@@ -100,7 +100,7 @@ class RestoreAnnotationMain(CommandLineWithConfirm):
 
         old_annotation, _ = self.service.api.get_editor_annotation(self.project_id, task_id, input_data_id)
 
-        logger.info(f"task_id={task_id}, input_data_id={input_data_id} : アノテーションをリストアします。")
+        logger.info(f"task_id='{task_id}', input_data_id='{input_data_id}' :: アノテーションをリストアします。")
         request_body = self.parser_to_request_body(parser)
 
         updated_datetime = old_annotation["updated_datetime"] if old_annotation is not None else None
@@ -118,7 +118,7 @@ class RestoreAnnotationMain(CommandLineWithConfirm):
                     success_count += 1
             except Exception:  # pylint: disable=broad-except
                 logger.warning(
-                    f"task_id={parser.task_id}, input_data_id={parser.input_data_id} のアノテーションのリストアに失敗しました。",
+                    f"task_id='{parser.task_id}', input_data_id='{parser.input_data_id}' のアノテーションのリストアに失敗しました。",
                     exc_info=True,
                 )
 
@@ -139,10 +139,10 @@ class RestoreAnnotationMain(CommandLineWithConfirm):
         """
         logger_prefix = f"{task_index + 1!s} 件目: " if task_index is not None else ""
         task_id = task_parser.task_id
-        if not self.confirm_processing(f"task_id={task_id} のアノテーションをリストアしますか？"):
+        if not self.confirm_processing(f"task_id='{task_id}' のアノテーションをリストアしますか？"):
             return False
 
-        logger.info(f"{logger_prefix}task_id={task_id} に対して処理します。")
+        logger.info(f"{logger_prefix}task_id='{task_id}' に対して処理します。")
 
         task = self.service.wrapper.get_task_or_none(self.project_id, task_id)
         if task is None:
@@ -197,7 +197,7 @@ class RestoreAnnotationMain(CommandLineWithConfirm):
         try:
             return self.execute_task(task_parser, task_index=task_index)
         except Exception:  # pylint: disable=broad-except
-            logger.warning(f"task_id={task_parser.task_id} のアノテーションのリストアに失敗しました。", exc_info=True)
+            logger.warning(f"task_id='{task_parser.task_id}' のアノテーションのリストアに失敗しました。", exc_info=True)
             return False
 
     def main(  # noqa: ANN201
@@ -246,7 +246,7 @@ class RestoreAnnotationMain(CommandLineWithConfirm):
                     if result:
                         success_count += 1
                 except Exception:
-                    logger.warning(f"task_id={task_parser.task_id} のアノテーションのリストアに失敗しました。", exc_info=True)
+                    logger.warning(f"task_id='{task_parser.task_id}' :: アノテーションのリストアに失敗しました。", exc_info=True)
                     continue
                 finally:
                     task_count += 1
