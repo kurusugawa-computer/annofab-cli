@@ -305,6 +305,7 @@ class PutSupplementaryData(CommandLine):
                 "supplementary_data_id": "string",
                 "supplementary_data_name": "string",
                 "supplementary_data_path": "string",
+                "supplementary_data_type": "string",
                 "supplementary_data_number": "Int64",
             },
         )
