@@ -51,7 +51,7 @@ class UploadInstruction(CommandLine):
     作業ガイドをアップロードする
     """
 
-    def upload_html_to_instruction(self, project_id: str, html_path: Path, temp_dir: Path):  # noqa: ANN201, PLR0912
+    def upload_html_to_instruction(self, project_id: str, html_path: Path, temp_dir: Path) -> None:  # noqa: PLR0912
         with html_path.open(encoding="utf-8") as f:
             file_content = f.read()
         pq_html = pyquery.PyQuery(file_content)
@@ -106,7 +106,7 @@ class UploadInstruction(CommandLine):
         self.update_instruction(project_id, html_data)
         logger.info("作業ガイドを更新しました。")
 
-    def update_instruction(self, project_id: str, html_data: str):  # noqa: ANN201
+    def update_instruction(self, project_id: str, html_data: str) -> None:
         histories, _ = self.service.api.get_instruction_history(project_id)
         if len(histories) > 0:  # noqa: SIM108
             last_updated_datetime = histories[0]["updated_datetime"]
