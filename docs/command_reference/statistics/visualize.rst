@@ -299,16 +299,16 @@ CSVには以下の列が存在している必要があります。
 
     $ annofabcli statistics visualize --project_id prj1 prj2 --output_dir out_dir --minimal
 
-プロジェクトごとにディレクトリが生成されます。
+プロジェクトごとにディレクトリが生成されます。ディレクトリ名は project_id です。
 
 .. code-block::
 
     out_dir/
-    ├── prj_title1
+    ├── project_id1/
     │   ├── タスクlist.csv
     │   ├── メンバごとの生産性と品質.csv
     │   └── ...
-    ├── prj_title2
+    ├── project_id2/
     │   ├── タスクlist.csv
     │   ├── メンバごとの生産性と品質.csv
     │   └── ...
@@ -328,11 +328,11 @@ prj1とprj2の出力結果をマージしたファイルが、``merge`` ディ�
 .. code-block::
 
     out_dir/
-    ├── prj_title1
+    ├── project_id1/
     │   ├── タスクlist.csv
     │   ├── メンバごとの生産性と品質.csv
     │   └── ...
-    ├── prj_title2
+    ├── project_id2/
     │   ├── タスクlist.csv
     │   ├── メンバごとの生産性と品質.csv
     │   └── ...
