@@ -4,7 +4,6 @@ import argparse
 import functools
 import json
 import logging.handlers
-import re
 import sys
 import tempfile
 from multiprocessing import Pool
@@ -62,10 +61,6 @@ from annofabcli.statistics.visualization.project_dir import ProjectDir, ProjectI
 from annofabcli.statistics.visualization.visualization_source_files import VisualizationSourceFiles
 
 logger = logging.getLogger(__name__)
-
-
-def get_project_output_dir(project_title: str) -> str:
-    return re.sub(r'[\\/:*?"<>|]+', "__", project_title)
 
 
 class WriteCsvGraph:
@@ -408,8 +403,7 @@ class VisualizingStatisticsMain:
         root_output_dir: Path,
     ) -> Optional[Path]:
         try:
-            project_title = self.facade.get_project_title(project_id)
-            output_project_dir = root_output_dir / get_project_output_dir(project_title)
+            output_project_dir = root_output_dir / project_id
             self.visualize_statistics(
                 project_id=project_id,
                 output_project_dir=output_project_dir,
