@@ -26,7 +26,7 @@ dependencies = [
     "more-itertools",
     "pyquery",
     "isodate",
-    "annofabapi>=1.4.1",
+    "annofabapi>=1.4.7",
     "python-datauri",
     "numpy",
     "pandas>=2,<3",
@@ -34,6 +34,7 @@ dependencies = [
     "bokeh>=3.3,<3.7",
     "Pillow",
     "typing-extensions>=4.5",
+    "ulid-py>=1.1.0",
 ]
 
 [dependency-groups]
