@@ -78,6 +78,36 @@ class ImportedSimpleAnnotation(DataClassJsonMixin):
     """矩形、ポリゴン、全体アノテーションなど個々のアノテーションの配列。"""
 
 
+def is_image_segmentation_label(label_info: dict[str, Any]) -> bool:
+    """
+    ラベルの種類が、画像プロジェクトのセグメンテーションかどうか
+    """
+    annotation_type = label_info["annotation_type"]
+    return annotation_type in {DefaultAnnotationType.SEGMENTATION.value, DefaultAnnotationType.SEGMENTATION_V2.value}
+
+
+def is_3dpc_segment_label(label_info: dict[str, Any]) -> bool:
+    """
+    3次元のセグメントかどうか
+    """
+    # 理想はプラグイン情報を見て、3次元アノテーションの種類かどうか判定した方がよい
+    # が、当分は文字列判定だけでも十分なので、文字列で判定する
+    if label_info["annotation_type"] in {
+        ThreeDimensionAnnotationType.INSTANCE_SEGMENT.value,
+        ThreeDimensionAnnotationType.SEMANTIC_SEGMENT.value,
+    }:
+        return True
+
+    # 標準の3次元アノテーション仕様用のプラグインを利用していない場合
+    # TODO すべての3次元プロジェクトが、標準の3次元アノテーション仕様用のプラグインを利用するようになったら、この処理を削除する
+    if label_info["annotation_type"] == DefaultAnnotationType.CUSTOM.value:
+        metadata = label_info["metadata"]
+        if metadata.get("type") == "SEGMENT":
+            return True
+
+    return False
+
+
 class ImportAnnotationMain(CommandLineWithConfirm):
     def __init__(
         self,
@@ -140,45 +170,25 @@ class ImportAnnotationMain(CommandLineWithConfirm):
         return str(path.relative_to(path.parts[0]))
 
     @classmethod
-    def _is_3dpc_segment_label(cls, label_info: dict[str, Any]) -> bool:
-        """
-        3次元のセグメントかどうか
-        """
-        # 理想はプラグイン情報を見て、3次元アノテーションの種類かどうか判定した方がよい
-        # が、当分は文字列判定だけでも十分なので、文字列で判定する
-        if label_info["annotation_type"] in {
-            ThreeDimensionAnnotationType.INSTANCE_SEGMENT.value,
-            ThreeDimensionAnnotationType.SEMANTIC_SEGMENT.value,
-        }:
-            return True
-
-        # 標準の3次元アノテーション仕様用のプラグインを利用していない場合
-        # TODO すべての3次元プロジェクトが、標準の3次元アノテーション仕様用のプラグインを利用するようになったら、この処理を削除する
-        if label_info["annotation_type"] == DefaultAnnotationType.CUSTOM.value:
-            metadata = label_info["metadata"]
-            if metadata.get("type") == "SEGMENT":
-                return True
-
-        return False
-
-    @classmethod
     def _get_data_holding_type_from_data(cls, label_info: dict[str, Any]) -> AnnotationDataHoldingType:
         annotation_type = label_info["annotation_type"]
         if annotation_type in [DefaultAnnotationType.SEGMENTATION.value, DefaultAnnotationType.SEGMENTATION_V2.value]:
             return AnnotationDataHoldingType.OUTER
 
         # TODO: 3dpc editorに依存したコード。annofab側でSimple Annotationのフォーマットが改善されたら、このコードを削除する
-        if cls._is_3dpc_segment_label(label_info):
+        if is_3dpc_segment_label(label_info):
             return AnnotationDataHoldingType.OUTER
 
         return AnnotationDataHoldingType.INNER
 
-    def _to_additional_data_list(self, attributes: dict[str, Any], label_info: LabelV1) -> list[AdditionalDataV1]:
+    def _to_additional_data_list(self, attributes: dict[str, Any], label_info: LabelV1, log_message_suffix: str) -> list[AdditionalDataV1]:
         additional_data_list: list[AdditionalDataV1] = []
         for key, value in attributes.items():
             specs_additional_data = self._get_additional_data_from_attribute_name(key, label_info)
             if specs_additional_data is None:
-                logger.warning(f"アノテーション仕様に attribute_name='{key}' が存在しません。")
+                logger.warning(
+                    f"アノテーション仕様に属性名(英語)が'{key}'である属性情報が存在しません。属性'{key}'の登録をスキップします。 :: {log_message_suffix}"  # noqa: E501
+                )
                 continue
 
             additional_data = AdditionalDataV1(
@@ -203,7 +213,7 @@ class ImportAnnotationMain(CommandLineWithConfirm):
             elif additional_data_type in [AdditionalDataDefinitionType.CHOICE, AdditionalDataDefinitionType.SELECT]:
                 additional_data.choice = self._get_choice_id_from_name(value, specs_additional_data["choices"])
             else:
-                logger.warning(f"additional_data_type='{additional_data_type}'が不正です。")
+                logger.warning(f"additional_data_type='{additional_data_type}'が不正です。 :: {log_message_suffix}")
                 continue
 
             additional_data_list.append(additional_data)
@@ -238,8 +248,9 @@ class ImportAnnotationMain(CommandLineWithConfirm):
                 else:
                     return str(uuid.uuid4())
 
-        if detail.attributes is not None:  # noqa: SIM108
-            additional_data_list = self._to_additional_data_list(detail.attributes, label_info)
+        log_message_suffix = f"task_id='{parser.task_id}', input_data_id='{parser.input_data_id}', annotation_id='{detail.annotation_id}'"
+        if detail.attributes is not None:
+            additional_data_list = self._to_additional_data_list(detail.attributes, label_info, log_message_suffix=log_message_suffix)
         else:
             additional_data_list = []
 
@@ -260,10 +271,14 @@ class ImportAnnotationMain(CommandLineWithConfirm):
             updated_datetime=now_datetime,
         )
 
-        if data_holding_type == AnnotationDataHoldingType.OUTER:
+        if is_3dpc_segment_label(label_info):
             # TODO: 3dpc editorに依存したコード。annofab側でSimple Annotationのフォーマットが改善されたら、このコードを削除する
-            data_uri = detail.data["data_uri"] if not self._is_3dpc_segment_label(label_info) else self._get_3dpc_segment_data_uri(detail.data)
-            with parser.open_outer_file(data_uri) as f:
+            with parser.open_outer_file(self._get_3dpc_segment_data_uri(detail.data)) as f:
+                s3_path = self.service.wrapper.upload_data_to_s3(self.project_id, f, content_type="application/json")
+                dest_obj.path = s3_path
+
+        elif is_image_segmentation_label(label_info):
+            with parser.open_outer_file(detail.data["data_uri"]) as f:
                 s3_path = self.service.wrapper.upload_data_to_s3(self.project_id, f, content_type="image/png")
                 dest_obj.path = s3_path
 
