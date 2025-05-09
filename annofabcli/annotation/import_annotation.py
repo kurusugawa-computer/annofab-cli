@@ -13,7 +13,7 @@ from pathlib import Path
 from typing import Any, Optional, Union
 
 import annofabapi
-from annofabapi.dataclass.annotation import AdditionalDataV1, AnnotationDetailV1
+import ulid
 from annofabapi.models import (
     AdditionalDataDefinitionType,
     AdditionalDataDefinitionV1,
@@ -29,7 +29,9 @@ from annofabapi.parser import (
     lazy_parse_simple_annotation_dir_by_task,
     lazy_parse_simple_annotation_zip_by_task,
 )
-from annofabapi.plugin import ThreeDimensionAnnotationType
+from annofabapi.plugin import EditorPluginId, ThreeDimensionAnnotationType
+from annofabapi.pydantic_models.input_data_type import InputDataType
+from annofabapi.util.annotation_specs import AnnotationSpecsAccessor, get_choice
 from annofabapi.utils import can_put_annotation, str_now
 from dataclasses_json import DataClassJsonMixin
 from more_itertools import first_true
@@ -44,6 +46,7 @@ from annofabcli.common.cli import (
     build_annofabapi_resource_and_login,
 )
 from annofabcli.common.facade import AnnofabApiFacade
+from annofabcli.common.type_util import assert_noreturn
 from annofabcli.common.visualize import AddProps, MessageLocale
 
 logger = logging.getLogger(__name__)
@@ -92,20 +95,29 @@ def is_3dpc_segment_label(label_info: dict[str, Any]) -> bool:
     """
     # 理想はプラグイン情報を見て、3次元アノテーションの種類かどうか判定した方がよい
     # が、当分は文字列判定だけでも十分なので、文字列で判定する
-    if label_info["annotation_type"] in {
+    return label_info["annotation_type"] in {
         ThreeDimensionAnnotationType.INSTANCE_SEGMENT.value,
         ThreeDimensionAnnotationType.SEMANTIC_SEGMENT.value,
-    }:
-        return True
+    }
 
-    # 標準の3次元アノテーション仕様用のプラグインを利用していない場合
-    # TODO すべての3次元プロジェクトが、標準の3次元アノテーション仕様用のプラグインを利用するようになったら、この処理を削除する
-    if label_info["annotation_type"] == DefaultAnnotationType.CUSTOM.value:
-        metadata = label_info["metadata"]
-        if metadata.get("type") == "SEGMENT":
-            return True
+def is_3dpc_project(project: dict[str, Any]) -> bool:
+    """3次元プロジェクトか否か"""
+    editor_plugin_id = project["configuration"]["plugin_id"]
+    return project["input_data_type"] == InputDataType.CUSTOM.value and editor_plugin_id == EditorPluginId.THREE_DIMENSION.value
 
-    return False
+
+def create_default_annotation_id(label_info: dict[str, Any], project: dict[str, Any]) -> str:
+    """
+    デフォルトのアノテーションIDを生成します。
+    """
+    if is_3dpc_project(project):
+        # 3次元エディタ画面ではULIDが発行されるので、それに合わせる
+        return str(ulid.new())
+    elif label_info["annotation_type"] == DefaultAnnotationType.CLASSIFICATION.value:
+        # 全体アノテーションの場合、annotation_idはlabel_idである必要がある
+        return label_info["label_id"]
+    else:
+        return str(uuid.uuid4())
 
 
 class ImportAnnotationMain(CommandLineWithConfirm):
@@ -128,6 +140,11 @@ class ImportAnnotationMain(CommandLineWithConfirm):
         self.is_merge = is_merge
         self.is_overwrite = is_overwrite
         self.visualize = AddProps(service, project_id)
+        annotation_specs_v3, _ = self.service.api.get_annotation_specs(project_id, query_params={"v": "3"})
+        self.annotation_specs_accessor = AnnotationSpecsAccessor(annotation_specs_v3)
+        self.project, _ = self.service.api.get_project(project_id)
+
+        self.is_strict = False
 
     def get_label_info_from_label_name(self, label_name: str) -> Optional[LabelV1]:
         for label in self.visualize.specs_labels:
@@ -181,74 +198,106 @@ class ImportAnnotationMain(CommandLineWithConfirm):
 
         return AnnotationDataHoldingType.INNER
 
-    def _to_additional_data_list(self, attributes: dict[str, Any], label_info: LabelV1, log_message_suffix: str) -> list[AdditionalDataV1]:
-        additional_data_list: list[AdditionalDataV1] = []
-        for key, value in attributes.items():
-            specs_additional_data = self._get_additional_data_from_attribute_name(key, label_info)
-            if specs_additional_data is None:
-                logger.warning(
-                    f"アノテーション仕様に属性名(英語)が'{key}'である属性情報が存在しません。属性'{key}'の登録をスキップします。 :: {log_message_suffix}"  # noqa: E501
-                )
-                continue
+    def _to_additional_data_list(self, attributes: dict[str, Any], label: dict[str, Any], log_message_suffix: str) -> list[dict[str, Any]]:
+        """
+        インポート対象のアノテーションJSONに格納されている`attributes`を`AdditionalDataListV2`のlistに変換します。
+        """
+        additional_data_list: list[dict[str, Any]] = []
+        for attribute_name, attribute_value in attributes.items():
+            try:
+                specs_additional_data = self.annotation_specs_accessor.get_attribute(attribute_name=attribute_name, label=label)
+            except ValueError:
+                logger.warning(f"アノテーション仕様に属性名(英語)が'{attribute_name}'である属性情報が存在しません。 :: {log_message_suffix}")
+                if self.is_strict:
+                    raise
+                else:
+                    continue
 
-            additional_data = AdditionalDataV1(
-                additional_data_definition_id=specs_additional_data["additional_data_definition_id"],
-                flag=None,
-                integer=None,
-                choice=None,
-                comment=None,
-            )
-            additional_data_type = AdditionalDataDefinitionType(specs_additional_data["type"])
-            if additional_data_type == AdditionalDataDefinitionType.FLAG:
-                additional_data.flag = value
-            elif additional_data_type == AdditionalDataDefinitionType.INTEGER:
-                additional_data.integer = value
-            elif additional_data_type in [
-                AdditionalDataDefinitionType.TEXT,
-                AdditionalDataDefinitionType.COMMENT,
-                AdditionalDataDefinitionType.TRACKING,
-                AdditionalDataDefinitionType.LINK,
-            ]:
-                additional_data.comment = value
-            elif additional_data_type in [AdditionalDataDefinitionType.CHOICE, AdditionalDataDefinitionType.SELECT]:
-                additional_data.choice = self._get_choice_id_from_name(value, specs_additional_data["choices"])
+            additional_data = {
+                "definition_id": specs_additional_data["additional_data_definition_id"],
+            }
+            additional_data_type = specs_additional_data["type"]
+            if additional_data_type == AdditionalDataDefinitionType.FLAG.value:
+                if not isinstance(attribute_value, bool):
+                    message = f"属性'{attribute_name}'に対応する属性値の型は bool である必要があります。 :: attribute_value='{attribute_value}', additional_data_type='{additional_data_type}'  :: {log_message_suffix}"  # noqa: E501
+                    logger.warning(message)
+                    if self.is_strict:
+                        raise ValueError(message)
+                    else:
+                        continue
+                additional_data["value"] = {"_type": "Flag", "value": attribute_value}
+
+            elif specs_additional_data["type"] == AdditionalDataDefinitionType.INTEGER.value:
+                if not isinstance(attribute_value, int):
+                    message = f"属性'{attribute_name}'に対応する属性値の型は int である必要があります。 :: attribute_value='{attribute_value}', additional_data_type='{additional_data_type}'  :: {log_message_suffix}"  # noqa: E501
+                    logger.warning(message)
+                    if self.is_strict:
+                        raise ValueError(message)
+                    else:
+                        continue
+                additional_data["value"] = {"_type": "Integer", "value": attribute_value}
+
+            elif specs_additional_data["type"] in AdditionalDataDefinitionType.COMMENT.value:
+                additional_data["value"] = {"_type": "Comment", "value": str(attribute_value)}
+
+            elif specs_additional_data["type"] in AdditionalDataDefinitionType.TEXT.value:
+                additional_data["value"] = {"_type": "Text", "value": str(attribute_value)}
+
+            elif specs_additional_data["type"] in AdditionalDataDefinitionType.TRACKING.value:
+                additional_data["value"] = {"_type": "Tracking", "value": str(attribute_value)}
+
+            elif specs_additional_data["type"] in AdditionalDataDefinitionType.LINK.value:
+                additional_data["value"] = {"_type": "Link", "annotation_id": str(attribute_value)}
+
+            elif specs_additional_data["type"] in {AdditionalDataDefinitionType.CHOICE.value, AdditionalDataDefinitionType.SELECT.value}:
+                choice = get_choice(specs_additional_data["choices"], choice_name=attribute_value)
+                if choice is None:
+                    logger.warning(
+                        f"アノテーション仕様の属性'{attribute_name}'に選択肢名(英語)が'{attribute_value}'である選択肢情報は存在しません。 :: {log_message_suffix}"  # noqa: E501
+                    )
+                    if self.is_strict:
+                        raise
+                    else:
+                        continue
+
+                if specs_additional_data["type"] in AdditionalDataDefinitionType.CHOICE.value:
+                    additional_data["value"] = {"_type": "Choice", "choice_id": choice["choice_id"]}
+                elif specs_additional_data["type"] in AdditionalDataDefinitionType.SELECT.value:
+                    additional_data["value"] = {"_type": "Select", "choice_id": choice["choice_id"]}
+
             else:
-                logger.warning(f"additional_data_type='{additional_data_type}'が不正です。 :: {log_message_suffix}")
-                continue
+                assert_noreturn(additional_data_type)
 
             additional_data_list.append(additional_data)
 
         return additional_data_list
 
     def _to_annotation_detail_for_request(
-        self, parser: SimpleAnnotationParser, detail: ImportedSimpleAnnotationDetail, now_datetime: str
-    ) -> Optional[AnnotationDetailV1]:
+        self,
+        parser: SimpleAnnotationParser,
+        detail: ImportedSimpleAnnotationDetail,
+    ) -> dict[str, Any]:
         """
-        Request Bodyに渡すDataClassに変換する。塗りつぶし画像があれば、それをS3にアップロードする。
+        アノテーションJSONに記載された1個のアノテーション情報を、`put_annotation` APIに渡す形式に変換する。
+        Outerアノテーションならば、AWS S3に外部ファイルをアップロードします。
+
 
         Args:
             parser:
-            detail:
+            detail: インポート対象の1個のアノテーション情報
 
         Returns:
-            変換できない場合はNoneを返す
+            `put_annotation` API（v2）のリクエストボディに格納するアノテーション情報（`AnnotationDetailV2Input`）
+
+        Raises:
+            ValueError:
 
         """
-        label_info = self.get_label_info_from_label_name(detail.label)
-        if label_info is None:
-            return None
+        label_info = self.annotation_specs_accessor.get_label(label_name=detail.label)
 
-        def _get_annotation_id(arg_label_info: LabelV1) -> str:
-            if detail.annotation_id is not None:
-                return detail.annotation_id
-            else:  # noqa: PLR5501
-                if arg_label_info["annotation_type"] == DefaultAnnotationType.CLASSIFICATION.value:
-                    # 全体アノテーションの場合、annotation_idはlabel_idである必要がある
-                    return arg_label_info["label_id"]
-                else:
-                    return str(uuid.uuid4())
-
-        log_message_suffix = f"task_id='{parser.task_id}', input_data_id='{parser.input_data_id}', annotation_id='{detail.annotation_id}'"
+        log_message_suffix = (
+            f"task_id='{parser.task_id}', input_data_id='{parser.input_data_id}', label_name='{detail.label}', annotation_id='{detail.annotation_id}'"
+        )
         if detail.attributes is not None:
             additional_data_list = self._to_additional_data_list(detail.attributes, label_info, log_message_suffix=log_message_suffix)
         else:
@@ -256,33 +305,29 @@ class ImportAnnotationMain(CommandLineWithConfirm):
 
         data_holding_type = self._get_data_holding_type_from_data(label_info)
 
-        dest_obj = AnnotationDetailV1(
-            label_id=label_info["label_id"],
-            annotation_id=_get_annotation_id(label_info),
-            account_id=self.service.api.account_id,
-            data_holding_type=data_holding_type,
-            data=detail.data,
-            additional_data_list=additional_data_list,
-            is_protected=False,
-            etag=None,
-            url=None,
-            path=None,
-            created_datetime=now_datetime,
-            updated_datetime=now_datetime,
-        )
+        result = {
+            "_type": "Create",
+            "label_id": label_info["label_id"],
+            "annotation_id": detail.annotation_id if detail.annotation_id is not None else create_default_annotation_id(label_info, self.project),
+            "data_holding_type": data_holding_type.value,
+            "additional_data_list": additional_data_list,
+            "editor_pros": {},
+        }
 
         if is_3dpc_segment_label(label_info):
             # TODO: 3dpc editorに依存したコード。annofab側でSimple Annotationのフォーマットが改善されたら、このコードを削除する
             with parser.open_outer_file(self._get_3dpc_segment_data_uri(detail.data)) as f:
                 s3_path = self.service.wrapper.upload_data_to_s3(self.project_id, f, content_type="application/json")
-                dest_obj.path = s3_path
+                result["body"] = {"_type": "Outer", "path": s3_path}
 
         elif is_image_segmentation_label(label_info):
             with parser.open_outer_file(detail.data["data_uri"]) as f:
                 s3_path = self.service.wrapper.upload_data_to_s3(self.project_id, f, content_type="image/png")
-                dest_obj.path = s3_path
+                result["body"] = {"_type": "Outer", "path": s3_path}
 
-        return dest_obj
+        else:
+            result["body"] = {"_type": "Inner", "data": detail.data}
+        return result
 
     def parser_to_request_body(
         self,
@@ -295,6 +340,7 @@ class ImportAnnotationMain(CommandLineWithConfirm):
         for detail in details:
             try:
                 request_detail = self._to_annotation_detail_for_request(parser, detail, now_datetime=now_datetime)
+                # TODO except ValueError
             except Exception:
                 logger.warning(
                     f"{parser.task_id}/{parser.input_data_id} :: アノテーションをrequest_bodyに変換するのに失敗しました。 :: "
@@ -368,6 +414,60 @@ class ImportAnnotationMain(CommandLineWithConfirm):
             "input_data_id": parser.input_data_id,
             "details": new_details,
             "updated_datetime": old_annotation["updated_datetime"],
+        }
+
+        return request_body
+
+    def parser_to_request_body_with_merge2(
+        self,
+        parser: SimpleAnnotationParser,
+        details: list[ImportedSimpleAnnotationDetail],
+        old_annotation: dict[str, Any],
+    ) -> dict[str, Any]:
+        old_details = old_annotation["details"]
+        old_dict_detail = {}
+        INDEX_KEY = "_index"  # noqa: N806
+        for index, old_detail in enumerate(old_details):
+            if old_detail["data_holding_type"] == AnnotationDataHoldingType.OUTER.value:
+                # 外部アノテーションを利用する際はurlが不要でpathが必要なので、対応する
+                old_detail.pop("url", None)
+
+            # 一時的にインデックスを格納
+            old_detail.update({INDEX_KEY: index})
+            old_dict_detail[old_detail["annotation_id"]] = old_detail
+
+        new_request_details: list[dict[str, Any]] = []
+        for detail in details:
+            try:
+                request_detail = self._to_annotation_detail_for_request(parser, detail, now_datetime=now_datetime)
+            except Exception:
+                logger.warning(
+                    f"{parser.task_id}/{parser.input_data_id} :: アノテーションをrequest_bodyに変換するのに失敗しました。 :: "
+                    f"annotation_id='{detail.annotation_id}', label='{detail.label}'",
+                    exc_info=True,
+                )
+                continue
+
+            if request_detail is None:
+                continue
+
+            if detail.annotation_id in old_dict_detail:
+                # アノテーションを上書き
+                old_detail = old_dict_detail[detail.annotation_id]
+                old_details[old_detail[INDEX_KEY]] = request_detail.to_dict(encode_json=True)
+            else:
+                # アノテーションの追加
+                new_request_details.append(request_detail.to_dict(encode_json=True))
+
+        new_details = old_details + new_request_details
+
+        request_body = {
+            "project_id": self.project_id,
+            "task_id": parser.task_id,
+            "input_data_id": parser.input_data_id,
+            "details": new_details,
+            "updated_datetime": old_annotation["updated_datetime"],
+            "format_version": "2.0.0",
         }
 
         return request_body
