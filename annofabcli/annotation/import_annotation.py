@@ -16,7 +16,6 @@ import annofabapi
 import ulid
 from annofabapi.models import (
     AdditionalDataDefinitionType,
-    AnnotationDataHoldingType,
     DefaultAnnotationType,
     ProjectMemberRole,
     TaskStatus,
@@ -118,6 +117,20 @@ def create_annotation_id(label_info: dict[str, Any], project: dict[str, Any]) ->
         return str(uuid.uuid4())
 
 
+def get_3dpc_segment_data_uri(annotation_data: dict[str, Any]) -> str:
+    """
+    3DセグメントのURIを取得する
+
+    Notes:
+        3dpc editorに依存したコード。annofab側でSimple Annotationのフォーマットが改善されたら、このコードを削除する
+    """
+    data_uri = annotation_data["data"]
+    # この時点で data_uriは f"./{input_data_id}/{annotation_id}"
+    # parser.open_data_uriメソッドに渡す値は、先頭のinput_data_idは不要なので、これを取り除く
+    path = Path(data_uri)
+    return str(path.relative_to(path.parts[0]))
+
+
 class AnnotationConverter:
     """
     Simpleアノテーションを、`put_annotation` API(v2)のリクエストボディに変換するクラスです。
@@ -125,13 +138,16 @@ class AnnotationConverter:
     Args:
         project: プロジェクト情報
         annotation_specs: アノテーション仕様情報(v3)
+        is_strict: Trueの場合、存在しない属性名や属性値の型不一致があった場合に例外を発生させる
+        service: Annofab APIにアクセスするためのサービスオブジェクト。外部アノテーションをアップロードするのに利用する。
     """
 
-    def __init__(self, project: dict[str, Any], annotation_specs: dict[str, Any], *, is_strict: bool = False) -> None:
+    def __init__(self, *, project: dict[str, Any], annotation_specs: dict[str, Any], service: annofabapi.Resource, is_strict: bool = False) -> None:
         self.project = project
         self.annotation_specs = annotation_specs
         self.annotation_specs_accessor = AnnotationSpecsAccessor(annotation_specs)
         self.is_strict = is_strict
+        self.service = service
 
     def _convert_attribute_value(  # noqa: PLR0911, PLR0912
         self,
@@ -241,59 +257,7 @@ class AnnotationConverter:
 
         return additional_data_list
 
-
-class ImportAnnotationMain(CommandLineWithConfirm):
-    def __init__(
-        self,
-        service: annofabapi.Resource,
-        *,
-        project_id: str,
-        all_yes: bool,
-        is_force: bool,
-        is_merge: bool,
-        is_overwrite: bool,
-    ) -> None:
-        self.service = service
-        self.facade = AnnofabApiFacade(service)
-        CommandLineWithConfirm.__init__(self, all_yes)
-
-        self.project_id = project_id
-        self.is_force = is_force
-        self.is_merge = is_merge
-        self.is_overwrite = is_overwrite
-        annotation_specs_v3, _ = self.service.api.get_annotation_specs(project_id, query_params={"v": "3"})
-        self.annotation_specs_accessor = AnnotationSpecsAccessor(annotation_specs_v3)
-        self.project, _ = self.service.api.get_project(project_id)
-
-        self.is_strict = False
-
-    @classmethod
-    def _get_3dpc_segment_data_uri(cls, annotation_data: dict[str, Any]) -> str:
-        """
-        3DセグメントのURIを取得する
-
-        Notes:
-            3dpc editorに依存したコード。annofab側でSimple Annotationのフォーマットが改善されたら、このコードを削除する
-        """
-        data_uri = annotation_data["data"]
-        # この時点で data_uriは f"./{input_data_id}/{annotation_id}"
-        # parser.open_data_uriメソッドに渡す値は、先頭のinput_data_idは不要なので、これを取り除く
-        path = Path(data_uri)
-        return str(path.relative_to(path.parts[0]))
-
-    @classmethod
-    def _get_data_holding_type_from_data(cls, label_info: dict[str, Any]) -> AnnotationDataHoldingType:
-        annotation_type = label_info["annotation_type"]
-        if annotation_type in [DefaultAnnotationType.SEGMENTATION.value, DefaultAnnotationType.SEGMENTATION_V2.value]:
-            return AnnotationDataHoldingType.OUTER
-
-        # TODO: 3dpc editorに依存したコード。annofab側でSimple Annotationのフォーマットが改善されたら、このコードを削除する
-        if is_3dpc_segment_label(label_info):
-            return AnnotationDataHoldingType.OUTER
-
-        return AnnotationDataHoldingType.INNER
-
-    def _to_annotation_detail_for_request(
+    def convert_annotation_detail(
         self,
         parser: SimpleAnnotationParser,
         detail: ImportedSimpleAnnotationDetail,
@@ -330,24 +294,21 @@ class ImportAnnotationMain(CommandLineWithConfirm):
                 return None
 
         if detail.attributes is not None:
-            additional_data_list = self._to_additional_data_list(detail.attributes, label_info, log_message_suffix=log_message_suffix)
+            additional_data_list = self.convert_attributes(detail.attributes, label_name=detail.label, log_message_suffix=log_message_suffix)
         else:
             additional_data_list = []
-
-        data_holding_type = self._get_data_holding_type_from_data(label_info)
 
         result = {
             "_type": "Create",
             "label_id": label_info["label_id"],
             "annotation_id": detail.annotation_id if detail.annotation_id is not None else create_annotation_id(label_info, self.project),
-            "data_holding_type": data_holding_type.value,
             "additional_data_list": additional_data_list,
             "editor_pros": {},
         }
 
         if is_3dpc_segment_label(label_info):
             # TODO: 3dpc editorに依存したコード。annofab側でSimple Annotationのフォーマットが改善されたら、このコードを削除する
-            with parser.open_outer_file(self._get_3dpc_segment_data_uri(detail.data)) as f:
+            with parser.open_outer_file(get_3dpc_segment_data_uri(detail.data)) as f:
                 s3_path = self.service.wrapper.upload_data_to_s3(self.project_id, f, content_type="application/json")
                 result["body"] = {"_type": "Outer", "path": s3_path}
 
@@ -360,49 +321,14 @@ class ImportAnnotationMain(CommandLineWithConfirm):
             result["body"] = {"_type": "Inner", "data": detail.data}
         return result
 
-    def parser_to_request_body(
+    def convert_annotation_details(
         self,
         parser: SimpleAnnotationParser,
         details: list[ImportedSimpleAnnotationDetail],
-        old_annotation: Optional[dict[str, Any]] = None,
+        old_details: list[dict[str, Any]],
+        *,
+        updated_datetime: Optional[str] = None,
     ) -> dict[str, Any]:
-        request_details: list[dict[str, Any]] = []
-        for detail in details:
-            try:
-                request_detail = self._to_annotation_detail_for_request(parser, detail)
-            except Exception:
-                logger.warning(
-                    f"{parser.task_id}/{parser.input_data_id}.json :: アノテーション情報を`putAnnotation`APIのリクエストボディへ変換するのに失敗しました。 :: "
-                    f"task_id='{parser.task_id}', input_data_id='{parser.input_data_id}', label_name='{detail.label}', annotation_id='{detail.annotation_id}'",
-                    exc_info=True,
-                )
-                if self.is_strict:
-                    raise
-                else:
-                    continue
-
-            if request_detail is not None:
-                request_details.append(request_detail.to_dict(encode_json=True))
-
-        updated_datetime = old_annotation["updated_datetime"] if old_annotation is not None else None
-
-        request_body = {
-            "project_id": self.project_id,
-            "task_id": parser.task_id,
-            "input_data_id": parser.input_data_id,
-            "details": request_details,
-            "updated_datetime": updated_datetime,
-        }
-
-        return request_body
-
-    def parser_to_request_body_with_merge(
-        self,
-        parser: SimpleAnnotationParser,
-        details: list[ImportedSimpleAnnotationDetail],
-        old_annotation: dict[str, Any],
-    ) -> dict[str, Any]:
-        old_details = old_annotation["details"]
         old_dict_detail = {}
         INDEX_KEY = "_index"  # noqa: N806
         for index, old_detail in enumerate(old_details):
@@ -419,7 +345,7 @@ class ImportAnnotationMain(CommandLineWithConfirm):
             except Exception:
                 logger.warning(
                     f"アノテーション情報を`putAnnotation`APIのリクエストボディへ変換するのに失敗しました。 :: "
-                    f"task_id='{parser.task_id}', input_data_id='{parser.input_data_id}', label_name='{detail.label}', annotation_id='{detail.annotation_id}'",
+                    f"task_id='{parser.task_id}', input_data_id='{parser.input_data_id}', label_name='{detail.label}', annotation_id='{detail.annotation_id}'",  # noqa: E501
                     exc_info=True,
                 )
                 if self.is_strict:
@@ -443,11 +369,34 @@ class ImportAnnotationMain(CommandLineWithConfirm):
             "task_id": parser.task_id,
             "input_data_id": parser.input_data_id,
             "details": new_details,
-            "updated_datetime": old_annotation["updated_datetime"],
+            "updated_datetime": updated_datetime,
             "format_version": "2.0.0",
         }
 
         return request_body
+
+
+class ImportAnnotationMain(CommandLineWithConfirm):
+    def __init__(
+        self,
+        service: annofabapi.Resource,
+        *,
+        project_id: str,
+        all_yes: bool,
+        is_force: bool,
+        is_merge: bool,
+        is_overwrite: bool,
+        converter: AnnotationConverter,
+    ) -> None:
+        self.service = service
+        self.facade = AnnofabApiFacade(service)
+        CommandLineWithConfirm.__init__(self, all_yes)
+
+        self.project_id = project_id
+        self.is_force = is_force
+        self.is_merge = is_merge
+        self.is_overwrite = is_overwrite
+        self.converter = converter
 
     def put_annotation_for_input_data(self, parser: SimpleAnnotationParser) -> bool:
         task_id = parser.task_id
@@ -477,9 +426,13 @@ class ImportAnnotationMain(CommandLineWithConfirm):
 
         logger.info(f"task_id='{task_id}', input_data_id='{input_data_id}' :: {len(simple_annotation.details)} 件のアノテーションを登録します。")
         if self.is_merge:
-            request_body = self.parser_to_request_body_with_merge(parser, simple_annotation.details, old_annotation=old_annotation)
+            request_body = self.converter.convert_annotation_details(
+                parser, simple_annotation.details, old_details=old_annotation["details"], updated_datetime=old_annotation["updated_datetime"]
+            )
         else:
-            request_body = self.parser_to_request_body(parser, simple_annotation.details, old_annotation=old_annotation)
+            request_body = self.converter.convert_annotation_details(
+                parser, simple_annotation.details, old_details=None, updated_datetime=old_annotation["updated_datetime"]
+            )
 
         self.service.api.put_annotation(self.project_id, task_id, input_data_id, request_body=request_body)
         return True
@@ -674,6 +627,10 @@ class ImportAnnotation(CommandLine):
             logger.warning(f"annotation_path: '{annotation_path}' は、zipファイルまたはディレクトリではありませんでした。")
             return
 
+        annotation_specs_v3, _ = self.service.api.get_annotation_specs(project_id, query_params={"v": "3"})
+        project, _ = self.service.api.get_project(project_id)
+        converter = AnnotationConverter(project=project, annotation_specs=annotation_specs_v3, is_strict=args.strict, service=self.service)
+
         main_obj = ImportAnnotationMain(
             self.service,
             project_id=project_id,
@@ -681,6 +638,7 @@ class ImportAnnotation(CommandLine):
             is_merge=args.merge,
             is_overwrite=args.overwrite,
             is_force=args.force,
+            converter=converter,
         )
 
         main_obj.main(iter_task_parser, target_task_ids=target_task_ids, parallelism=args.parallelism)

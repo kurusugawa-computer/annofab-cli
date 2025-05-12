@@ -1,12 +1,11 @@
 import json
 from pathlib import Path
 
+import pytest
+
 from annofabcli.annotation.import_annotation import AnnotationConverter
 
-annotation_specs = json.loads(Path("tests/data/annotation/import_annotation/annotation_specs.json").read_text())
-
-
-import pytest
+annotation_specs = json.loads(Path("tests/data/annotation/import_annotation/annotation_specs.json").read_text(encoding="utf-8"))
 
 
 class Test__AnnotationConverter:
