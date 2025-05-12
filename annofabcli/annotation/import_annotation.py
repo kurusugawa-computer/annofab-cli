@@ -144,6 +144,7 @@ class AnnotationConverter:
 
     def __init__(self, project: dict[str, Any], annotation_specs: dict[str, Any], *, service: annofabapi.Resource, is_strict: bool = False) -> None:
         self.project = project
+        self.project_id = project["project_id"]
         self.annotation_specs = annotation_specs
         self.annotation_specs_accessor = AnnotationSpecsAccessor(annotation_specs)
         self.is_strict = is_strict
@@ -192,9 +193,9 @@ class AnnotationConverter:
         elif additional_data_type == AdditionalDataDefinitionType.LINK:
             return {"_type": "Link", "annotation_id": str(attribute_value)}
 
-        elif additional_data_type in {AdditionalDataDefinitionType.CHOICE, AdditionalDataDefinitionType.SELECT}:
+        elif additional_data_type == AdditionalDataDefinitionType.CHOICE:
             try:
-                choice = get_choice(choices, choice_name=attribute_value)
+                choice = get_choice(choices, choice_name=str(attribute_value))
             except ValueError:
                 logger.warning(
                     f"アノテーション仕様の属性'{attribute_name}'に選択肢名(英語)が'{attribute_value}'である選択肢情報は存在しないか、複数存在します。 :: {log_message_suffix}"  # noqa: E501
@@ -204,10 +205,20 @@ class AnnotationConverter:
                 else:
                     return None
 
-            if additional_data_type == AdditionalDataDefinitionType.CHOICE:
-                return {"_type": "Choice", "choice_id": choice["choice_id"]}
-            elif additional_data_type == AdditionalDataDefinitionType.SELECT:
-                return {"_type": "Select", "choice_id": choice["choice_id"]}
+            return {"_type": "Choice", "choice_id": choice["choice_id"]}
+        elif additional_data_type == AdditionalDataDefinitionType.SELECT:
+            try:
+                choice = get_choice(choices, choice_name=str(attribute_value))
+            except ValueError:
+                logger.warning(
+                    f"アノテーション仕様の属性'{attribute_name}'に選択肢名(英語)が'{attribute_value}'である選択肢情報は存在しないか、複数存在します。 :: {log_message_suffix}"  # noqa: E501
+                )
+                if self.is_strict:
+                    raise
+                else:
+                    return None
+
+            return {"_type": "Select", "choice_id": choice["choice_id"]}
 
         else:
             assert_noreturn(additional_data_type)
@@ -261,6 +272,8 @@ class AnnotationConverter:
         self,
         parser: SimpleAnnotationParser,
         detail: ImportedSimpleAnnotationDetail,
+        *,
+        log_message_suffix: str = "",
     ) -> dict[str, Any]:
         """
         アノテーションJSONに記載された1個のアノテーション情報を、`put_annotation` APIに渡す形式に変換する。
@@ -275,7 +288,7 @@ class AnnotationConverter:
             `put_annotation` API（v2）のリクエストボディに格納するアノテーション情報（`AnnotationDetailV2Input`）
 
         Raises:
-            ValueError:
+            ValueError: 存在しないラベル名が指定された場合（`self.is_strict`がFalseでもraiseされる９
 
         """
         log_message_suffix = (
@@ -288,10 +301,7 @@ class AnnotationConverter:
             logger.warning(
                 f"アノテーション仕様にラベル名(英語)が'{detail.label}'であるラベル情報が存在しないか、または複数存在します。 :: {log_message_suffix}"
             )
-            if self.is_strict:
-                raise
-            else:
-                return None
+            raise
 
         if detail.attributes is not None:
             additional_data_list = self.convert_attributes(detail.attributes, label_name=detail.label, log_message_suffix=log_message_suffix)
@@ -341,11 +351,12 @@ class AnnotationConverter:
         new_request_details: list[dict[str, Any]] = []
         for detail in details:
             try:
-                request_detail = self._to_annotation_detail_for_request(parser, detail)
+                log_message_suffix = f"task_id='{parser.task_id}', input_data_id='{parser.input_data_id}', label_name='{detail.label}', annotation_id='{detail.annotation_id}'"  # noqa: E501
+
+                request_detail = self.convert_annotation_detail(parser, detail, log_message_suffix=log_message_suffix)
             except Exception:
                 logger.warning(
-                    f"アノテーション情報を`putAnnotation`APIのリクエストボディへ変換するのに失敗しました。 :: "
-                    f"task_id='{parser.task_id}', input_data_id='{parser.input_data_id}', label_name='{detail.label}', annotation_id='{detail.annotation_id}'",  # noqa: E501
+                    f"アノテーション情報を`putAnnotation`APIのリクエストボディへ変換するのに失敗しました。 :: {log_message_suffix}",
                     exc_info=True,
                 )
                 if self.is_strict:
@@ -360,7 +371,7 @@ class AnnotationConverter:
                 old_details[old_detail[INDEX_KEY]] = request_detail
             else:
                 # アノテーションの追加
-                new_request_details.append(request_detail.to_dict(encode_json=True))
+                new_request_details.append(request_detail)
 
         new_details = old_details + new_request_details
 
@@ -431,7 +442,7 @@ class ImportAnnotationMain(CommandLineWithConfirm):
             )
         else:
             request_body = self.converter.convert_annotation_details(
-                parser, simple_annotation.details, old_details=None, updated_datetime=old_annotation["updated_datetime"]
+                parser, simple_annotation.details, old_details=[], updated_datetime=old_annotation["updated_datetime"]
             )
 
         self.service.api.put_annotation(self.project_id, task_id, input_data_id, request_body=request_body)
