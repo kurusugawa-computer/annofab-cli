@@ -16,10 +16,8 @@ import annofabapi
 import ulid
 from annofabapi.models import (
     AdditionalDataDefinitionType,
-    AdditionalDataDefinitionV1,
     AnnotationDataHoldingType,
     DefaultAnnotationType,
-    LabelV1,
     ProjectMemberRole,
     TaskStatus,
 )
@@ -32,9 +30,8 @@ from annofabapi.parser import (
 from annofabapi.plugin import EditorPluginId, ThreeDimensionAnnotationType
 from annofabapi.pydantic_models.input_data_type import InputDataType
 from annofabapi.util.annotation_specs import AnnotationSpecsAccessor, get_choice
-from annofabapi.utils import can_put_annotation, str_now
+from annofabapi.utils import can_put_annotation
 from dataclasses_json import DataClassJsonMixin
-from more_itertools import first_true
 
 import annofabcli
 from annofabcli.common.cli import (
@@ -47,7 +44,7 @@ from annofabcli.common.cli import (
 )
 from annofabcli.common.facade import AnnofabApiFacade
 from annofabcli.common.type_util import assert_noreturn
-from annofabcli.common.visualize import AddProps, MessageLocale
+from annofabcli.common.visualize import AddProps
 
 logger = logging.getLogger(__name__)
 
@@ -100,6 +97,7 @@ def is_3dpc_segment_label(label_info: dict[str, Any]) -> bool:
         ThreeDimensionAnnotationType.SEMANTIC_SEGMENT.value,
     }
 
+
 def is_3dpc_project(project: dict[str, Any]) -> bool:
     """3次元プロジェクトか否か"""
     editor_plugin_id = project["configuration"]["plugin_id"]
@@ -118,6 +116,120 @@ def create_annotation_id(label_info: dict[str, Any], project: dict[str, Any]) ->
         return label_info["label_id"]
     else:
         return str(uuid.uuid4())
+
+
+class AnnotationConverter:
+    """
+    Simpleアノテーションを、`put_annotation` API(v2)のリクエストボディに変換するクラスです。
+
+    Args:
+        project: プロジェクト情報
+        annotation_specs: アノテーション仕様情報(v3)
+    """
+
+    def __init__(self, project: dict[str, Any], annotation_specs: dict[str, Any], *, is_strict: bool = False) -> None:
+        self.project = project
+        self.annotation_specs = annotation_specs
+        self.annotation_specs_accessor = AnnotationSpecsAccessor(annotation_specs)
+        self.is_strict = is_strict
+
+    def _convert_attribute_value(  # noqa: PLR0911, PLR0912
+        self,
+        attribute_value: tuple[str, int, bool],
+        additional_data_type: str,
+        attribute_name: str,
+        choices: list[dict[str, Any]],
+        *,
+        log_message_suffix: str,
+    ) -> Optional[dict[str, Any]]:
+        if additional_data_type == AdditionalDataDefinitionType.FLAG.value:
+            if not isinstance(attribute_value, bool):
+                message = f"属性'{attribute_name}'に対応する属性値の型は bool である必要があります。 :: attribute_value='{attribute_value}', additional_data_type='{additional_data_type}'  :: {log_message_suffix}"  # noqa: E501
+                logger.warning(message)
+                if self.is_strict:
+                    raise ValueError(message)
+                else:
+                    return None
+            return {"_type": "Flag", "value": attribute_value}
+
+        elif additional_data_type == AdditionalDataDefinitionType.INTEGER.value:
+            if not isinstance(attribute_value, int):
+                message = f"属性'{attribute_name}'に対応する属性値の型は int である必要があります。 :: attribute_value='{attribute_value}', additional_data_type='{additional_data_type}'  :: {log_message_suffix}"  # noqa: E501
+                logger.warning(message)
+                if self.is_strict:
+                    raise ValueError(message)
+                else:
+                    return None
+            return {"_type": "Integer", "value": attribute_value}
+
+        # 以降の属性は、属性値の型はstr型であるが、型をチェックしない。
+        # str型に変換しても、特に期待していない動作にならないと思われるため
+        elif additional_data_type in AdditionalDataDefinitionType.COMMENT.value:
+            return {"_type": "Comment", "value": str(attribute_value)}
+
+        elif additional_data_type in AdditionalDataDefinitionType.TEXT.value:
+            return {"_type": "Text", "value": str(attribute_value)}
+
+        elif additional_data_type in AdditionalDataDefinitionType.TRACKING.value:
+            return {"_type": "Tracking", "value": str(attribute_value)}
+
+        elif additional_data_type in AdditionalDataDefinitionType.LINK.value:
+            return {"_type": "Link", "annotation_id": str(attribute_value)}
+
+        elif additional_data_type in {AdditionalDataDefinitionType.CHOICE.value, AdditionalDataDefinitionType.SELECT.value}:
+            try:
+                choice = get_choice(choices, choice_name=attribute_value)
+            except ValueError:
+                logger.warning(
+                    f"アノテーション仕様の属性'{attribute_name}'に選択肢名(英語)が'{attribute_value}'である選択肢情報は存在しないか、複数存在します。 :: {log_message_suffix}"  # noqa: E501
+                )
+                if self.is_strict:
+                    raise
+                else:
+                    return None
+
+            if additional_data_type in AdditionalDataDefinitionType.CHOICE.value:
+                return {"_type": "Choice", "choice_id": choice["choice_id"]}
+            elif additional_data_type in AdditionalDataDefinitionType.SELECT.value:
+                return {"_type": "Select", "choice_id": choice["choice_id"]}
+
+        else:
+            assert_noreturn(additional_data_type)
+
+    def convert_attributes(self, attributes: dict[str, Any], label: dict[str, Any], log_message_suffix: str) -> list[dict[str, Any]]:
+        """
+        インポート対象のアノテーションJSONに格納されている`attributes`を`AdditionalDataListV2`のlistに変換します。
+
+        Raises:
+            ValueError: `self.is_strict`がTrueの場合：存在しない属性名が指定されたり、属性値の型が適切でない
+        """
+        additional_data_list: list[dict[str, Any]] = []
+        for attribute_name, attribute_value in attributes.items():
+            try:
+                specs_additional_data = self.annotation_specs_accessor.get_attribute(attribute_name=attribute_name, label=label)
+            except ValueError:
+                logger.warning(
+                    f"アノテーション仕様に属性名(英語)が'{attribute_name}'である属性情報が存在しないか、複数存在します。 :: {log_message_suffix}"
+                )
+                if self.is_strict:
+                    raise
+                else:
+                    continue
+
+            additional_data = {
+                "definition_id": specs_additional_data["additional_data_definition_id"],
+                "value": self._convert_attribute_value(
+                    attribute_value,
+                    specs_additional_data["type"],
+                    attribute_name,
+                    specs_additional_data["choices"],
+                    log_message_suffix=log_message_suffix,
+                ),
+            }
+
+            additional_data_list.append(additional_data)
+
+        return additional_data_list
 
 
 class ImportAnnotationMain(CommandLineWithConfirm):
@@ -145,7 +257,6 @@ class ImportAnnotationMain(CommandLineWithConfirm):
 
         self.is_strict = False
 
-
     @classmethod
     def _get_3dpc_segment_data_uri(cls, annotation_data: dict[str, Any]) -> str:
         """
@@ -171,91 +282,6 @@ class ImportAnnotationMain(CommandLineWithConfirm):
             return AnnotationDataHoldingType.OUTER
 
         return AnnotationDataHoldingType.INNER
-
-    def _to_additional_data_list(self, attributes: dict[str, Any], label: dict[str, Any], log_message_suffix: str) -> list[dict[str, Any]]:
-        """
-        インポート対象のアノテーションJSONに格納されている`attributes`を`AdditionalDataListV2`のlistに変換します。
-        
-        Raises:
-            ValueError: `self.is_strict`がTrueの場合：存在しない属性名が指定されたり、属性値の型が適切でない
-        """
-        additional_data_list: list[dict[str, Any]] = []
-        for attribute_name, attribute_value in attributes.items():
-            try:
-                specs_additional_data = self.annotation_specs_accessor.get_attribute(attribute_name=attribute_name, label=label)
-            except ValueError:
-                logger.warning(f"アノテーション仕様に属性名(英語)が'{attribute_name}'である属性情報が存在しないか、複数存在します。 :: {log_message_suffix}")
-                if self.is_strict:
-                    raise
-                else:
-                    continue
-
-            additional_data = {
-                "definition_id": specs_additional_data["additional_data_definition_id"],
-            }
-            if attribute_value is None:
-                additional_data["value"] = None
-                additional_data_list.append(additional_data)
-                continue
-
-            additional_data_type = specs_additional_data["type"]
-            if additional_data_type == AdditionalDataDefinitionType.FLAG.value:
-                if not isinstance(attribute_value, bool):
-                    message = f"属性'{attribute_name}'に対応する属性値の型は bool である必要があります。 :: attribute_value='{attribute_value}', additional_data_type='{additional_data_type}'  :: {log_message_suffix}"  # noqa: E501
-                    logger.warning(message)
-                    if self.is_strict:
-                        raise ValueError(message)
-                    else:
-                        continue
-                additional_data["value"] = {"_type": "Flag", "value": attribute_value}
-
-            elif additional_data_type == AdditionalDataDefinitionType.INTEGER.value:
-                if not isinstance(attribute_value, int):
-                    message = f"属性'{attribute_name}'に対応する属性値の型は int である必要があります。 :: attribute_value='{attribute_value}', additional_data_type='{additional_data_type}'  :: {log_message_suffix}"  # noqa: E501
-                    logger.warning(message)
-                    if self.is_strict:
-                        raise ValueError(message)
-                    else:
-                        continue
-                additional_data["value"] = {"_type": "Integer", "value": attribute_value}
-
-            # 以降の属性は、属性値の型はstr型であるが、型をチェックしない。
-            # str型に変換しても、特に期待していない動作にならないと思われるため
-            elif additional_data_type in AdditionalDataDefinitionType.COMMENT.value:
-                additional_data["value"] = {"_type": "Comment", "value": str(attribute_value)}
-
-            elif additional_data_type in AdditionalDataDefinitionType.TEXT.value:
-                additional_data["value"] = {"_type": "Text", "value": str(attribute_value)}
-
-            elif additional_data_type in AdditionalDataDefinitionType.TRACKING.value:
-                additional_data["value"] = {"_type": "Tracking", "value": str(attribute_value)}
-
-            elif additional_data_type in AdditionalDataDefinitionType.LINK.value:
-                additional_data["value"] = {"_type": "Link", "annotation_id": str(attribute_value)}
-
-            elif additional_data_type in {AdditionalDataDefinitionType.CHOICE.value, AdditionalDataDefinitionType.SELECT.value}:
-                try:
-                    choice = get_choice(specs_additional_data["choices"], choice_name=attribute_value)
-                except ValueError:
-                    logger.warning(
-                        f"アノテーション仕様の属性'{attribute_name}'に選択肢名(英語)が'{attribute_value}'である選択肢情報は存在しないか、複数存在します。 :: {log_message_suffix}"  # noqa: E501
-                    )
-                    if self.is_strict:
-                        raise
-                    else:
-                        continue
-
-                if additional_data_type in AdditionalDataDefinitionType.CHOICE.value:
-                    additional_data["value"] = {"_type": "Choice", "choice_id": choice["choice_id"]}
-                elif additional_data_type in AdditionalDataDefinitionType.SELECT.value:
-                    additional_data["value"] = {"_type": "Select", "choice_id": choice["choice_id"]}
-
-            else:
-                assert_noreturn(additional_data_type)
-
-            additional_data_list.append(additional_data)
-
-        return additional_data_list
 
     def _to_annotation_detail_for_request(
         self,
@@ -285,7 +311,9 @@ class ImportAnnotationMain(CommandLineWithConfirm):
         try:
             label_info = self.annotation_specs_accessor.get_label(label_name=detail.label)
         except ValueError:
-            logger.warning(f"アノテーション仕様にラベル名(英語)が'{detail.label}'であるラベル情報が存在しないか、または複数存在します。 :: {log_message_suffix}")
+            logger.warning(
+                f"アノテーション仕様にラベル名(英語)が'{detail.label}'であるラベル情報が存在しないか、または複数存在します。 :: {log_message_suffix}"
+            )
             if self.is_strict:
                 raise
             else:
@@ -358,7 +386,6 @@ class ImportAnnotationMain(CommandLineWithConfirm):
 
         return request_body
 
-
     def parser_to_request_body_with_merge(
         self,
         parser: SimpleAnnotationParser,
@@ -369,7 +396,7 @@ class ImportAnnotationMain(CommandLineWithConfirm):
         old_dict_detail = {}
         INDEX_KEY = "_index"  # noqa: N806
         for index, old_detail in enumerate(old_details):
-            old_detail.update({"_type": "Update", "body":None})
+            old_detail.update({"_type": "Update", "body": None})
 
             # 一時的にインデックスを格納
             old_detail.update({INDEX_KEY: index})
