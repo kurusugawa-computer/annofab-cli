@@ -359,7 +359,7 @@ class ImportAnnotationMain(CommandLineWithConfirm):
         return request_body
 
 
-    def parser_to_request_body_with_merge2(
+    def parser_to_request_body_with_merge(
         self,
         parser: SimpleAnnotationParser,
         details: list[ImportedSimpleAnnotationDetail],
