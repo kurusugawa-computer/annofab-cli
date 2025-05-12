@@ -165,8 +165,7 @@ class AnnotationConverter:
                 logger.warning(message)
                 if self.is_strict:
                     raise ValueError(message)
-                else:
-                    return None
+                return None
             return {"_type": "Flag", "value": attribute_value}
 
         elif additional_data_type == AdditionalDataDefinitionType.INTEGER:
@@ -175,8 +174,7 @@ class AnnotationConverter:
                 logger.warning(message)
                 if self.is_strict:
                     raise ValueError(message)
-                else:
-                    return None
+                return None
             return {"_type": "Integer", "value": attribute_value}
 
         # 以降の属性は、属性値の型はstr型であるが、型をチェックしない。
@@ -202,8 +200,7 @@ class AnnotationConverter:
                 )
                 if self.is_strict:
                     raise
-                else:
-                    return None
+                return None
 
             return {"_type": "Choice", "choice_id": choice["choice_id"]}
         elif additional_data_type == AdditionalDataDefinitionType.SELECT:
@@ -215,8 +212,7 @@ class AnnotationConverter:
                 )
                 if self.is_strict:
                     raise
-                else:
-                    return None
+                return None
 
             return {"_type": "Select", "choice_id": choice["choice_id"]}
 
@@ -250,8 +246,7 @@ class AnnotationConverter:
                 )
                 if self.is_strict:
                     raise
-                else:
-                    continue
+                continue
 
             additional_data = {
                 "definition_id": specs_additional_data["additional_data_definition_id"],
@@ -361,8 +356,7 @@ class AnnotationConverter:
                 )
                 if self.is_strict:
                     raise
-                else:
-                    continue
+                continue
 
             if detail.annotation_id in old_dict_detail:
                 # アノテーションを上書き
