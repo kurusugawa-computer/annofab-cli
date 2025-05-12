@@ -136,13 +136,13 @@ class AnnotationConverter:
     def _convert_attribute_value(  # noqa: PLR0911, PLR0912
         self,
         attribute_value: tuple[str, int, bool],
-        additional_data_type: str,
+        additional_data_type: AdditionalDataDefinitionType,
         attribute_name: str,
         choices: list[dict[str, Any]],
         *,
         log_message_suffix: str,
     ) -> Optional[dict[str, Any]]:
-        if additional_data_type == AdditionalDataDefinitionType.FLAG.value:
+        if additional_data_type == AdditionalDataDefinitionType.FLAG:
             if not isinstance(attribute_value, bool):
                 message = f"属性'{attribute_name}'に対応する属性値の型は bool である必要があります。 :: attribute_value='{attribute_value}', additional_data_type='{additional_data_type}'  :: {log_message_suffix}"  # noqa: E501
                 logger.warning(message)
@@ -152,7 +152,7 @@ class AnnotationConverter:
                     return None
             return {"_type": "Flag", "value": attribute_value}
 
-        elif additional_data_type == AdditionalDataDefinitionType.INTEGER.value:
+        elif additional_data_type == AdditionalDataDefinitionType.INTEGER:
             if not isinstance(attribute_value, int):
                 message = f"属性'{attribute_name}'に対応する属性値の型は int である必要があります。 :: attribute_value='{attribute_value}', additional_data_type='{additional_data_type}'  :: {log_message_suffix}"  # noqa: E501
                 logger.warning(message)
@@ -164,19 +164,19 @@ class AnnotationConverter:
 
         # 以降の属性は、属性値の型はstr型であるが、型をチェックしない。
         # str型に変換しても、特に期待していない動作にならないと思われるため
-        elif additional_data_type in AdditionalDataDefinitionType.COMMENT.value:
+        elif additional_data_type == AdditionalDataDefinitionType.COMMENT:
             return {"_type": "Comment", "value": str(attribute_value)}
 
-        elif additional_data_type in AdditionalDataDefinitionType.TEXT.value:
+        elif additional_data_type == AdditionalDataDefinitionType.TEXT:
             return {"_type": "Text", "value": str(attribute_value)}
 
-        elif additional_data_type in AdditionalDataDefinitionType.TRACKING.value:
+        elif additional_data_type == AdditionalDataDefinitionType.TRACKING:
             return {"_type": "Tracking", "value": str(attribute_value)}
 
-        elif additional_data_type in AdditionalDataDefinitionType.LINK.value:
+        elif additional_data_type in AdditionalDataDefinitionType.LINK:
             return {"_type": "Link", "annotation_id": str(attribute_value)}
 
-        elif additional_data_type in {AdditionalDataDefinitionType.CHOICE.value, AdditionalDataDefinitionType.SELECT.value}:
+        elif additional_data_type in {AdditionalDataDefinitionType.CHOICE, AdditionalDataDefinitionType.SELECT}:
             try:
                 choice = get_choice(choices, choice_name=attribute_value)
             except ValueError:
@@ -188,22 +188,32 @@ class AnnotationConverter:
                 else:
                     return None
 
-            if additional_data_type in AdditionalDataDefinitionType.CHOICE.value:
+            if additional_data_type in AdditionalDataDefinitionType.CHOICE:
                 return {"_type": "Choice", "choice_id": choice["choice_id"]}
-            elif additional_data_type in AdditionalDataDefinitionType.SELECT.value:
+            elif additional_data_type in AdditionalDataDefinitionType.SELECT:
                 return {"_type": "Select", "choice_id": choice["choice_id"]}
 
         else:
             assert_noreturn(additional_data_type)
 
-    def convert_attributes(self, attributes: dict[str, Any], label: dict[str, Any], log_message_suffix: str) -> list[dict[str, Any]]:
+    def convert_attributes(
+        self, attributes: dict[str, Any], *, label_name: Optional[str] = None, log_message_suffix: str = ""
+    ) -> list[dict[str, Any]]:
         """
         インポート対象のアノテーションJSONに格納されている`attributes`を`AdditionalDataListV2`のlistに変換します。
+
+        Args:
+            attributes: インポート対象のアノテーションJSONに格納されている`attributes`
+            label_name: `attributes`に紐づくラベルの名前。指定した場合は、指定したラベルに紐づく属性を探します。
+            log_message_suffix: ログメッセージのサフィックス
 
         Raises:
             ValueError: `self.is_strict`がTrueの場合：存在しない属性名が指定されたり、属性値の型が適切でない
         """
         additional_data_list: list[dict[str, Any]] = []
+
+        label = self.annotation_specs_accessor.get_label(label_name=label_name) if label_name is not None else None
+
         for attribute_name, attribute_value in attributes.items():
             try:
                 specs_additional_data = self.annotation_specs_accessor.get_attribute(attribute_name=attribute_name, label=label)
@@ -220,7 +230,7 @@ class AnnotationConverter:
                 "definition_id": specs_additional_data["additional_data_definition_id"],
                 "value": self._convert_attribute_value(
                     attribute_value,
-                    specs_additional_data["type"],
+                    AdditionalDataDefinitionType(specs_additional_data["type"]),
                     attribute_name,
                     specs_additional_data["choices"],
                     log_message_suffix=log_message_suffix,
