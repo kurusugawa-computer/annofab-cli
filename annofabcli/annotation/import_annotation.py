@@ -173,7 +173,7 @@ class AnnotationConverter:
         elif additional_data_type == AdditionalDataDefinitionType.TRACKING:
             return {"_type": "Tracking", "value": str(attribute_value)}
 
-        elif additional_data_type in AdditionalDataDefinitionType.LINK:
+        elif additional_data_type == AdditionalDataDefinitionType.LINK:
             return {"_type": "Link", "annotation_id": str(attribute_value)}
 
         elif additional_data_type in {AdditionalDataDefinitionType.CHOICE, AdditionalDataDefinitionType.SELECT}:
@@ -188,9 +188,9 @@ class AnnotationConverter:
                 else:
                     return None
 
-            if additional_data_type in AdditionalDataDefinitionType.CHOICE:
+            if additional_data_type == AdditionalDataDefinitionType.CHOICE:
                 return {"_type": "Choice", "choice_id": choice["choice_id"]}
-            elif additional_data_type in AdditionalDataDefinitionType.SELECT:
+            elif additional_data_type == AdditionalDataDefinitionType.SELECT:
                 return {"_type": "Select", "choice_id": choice["choice_id"]}
 
         else:
