@@ -152,7 +152,7 @@ class AnnotationConverter:
 
     def _convert_attribute_value(  # noqa: PLR0911, PLR0912
         self,
-        attribute_value: tuple[str, int, bool],
+        attribute_value: Union[str, int, bool],  # noqa: FBT001
         additional_data_type: AdditionalDataDefinitionType,
         attribute_name: str,
         choices: list[dict[str, Any]],
