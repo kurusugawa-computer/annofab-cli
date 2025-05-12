@@ -1,16 +1,19 @@
 import json
 from pathlib import Path
 
+import annofabapi
 import pytest
 
 from annofabcli.annotation.import_annotation import AnnotationConverter
+
+service = annofabapi.build()
 
 annotation_specs = json.loads(Path("tests/data/annotation/import_annotation/annotation_specs.json").read_text(encoding="utf-8"))
 
 
 class Test__AnnotationConverter:
     def test__convert_attributes__期待通りの値が格納されている(self):
-        converter = AnnotationConverter(None, annotation_specs, is_strict=False)
+        converter = AnnotationConverter(None, annotation_specs, is_strict=False, service=service)
         actual = converter.convert_attributes(
             attributes={
                 "traffic_lane": 3,
@@ -37,7 +40,7 @@ class Test__AnnotationConverter:
         assert actual == expected
 
     def test__convert_attributes__存在しない属性名はis_strict_falseなら無視される(self):
-        converter = AnnotationConverter(None, annotation_specs, is_strict=False)
+        converter = AnnotationConverter(None, annotation_specs, is_strict=False, service=service)
         actual = converter.convert_attributes(
             attributes={
                 "traffic_lane": 3,
@@ -50,7 +53,7 @@ class Test__AnnotationConverter:
         ]
 
     def test__convert_attributes__存在しない属性名はis_strict_trueなら例外(self):
-        converter = AnnotationConverter(None, annotation_specs, is_strict=True)
+        converter = AnnotationConverter(None, annotation_specs, is_strict=True, service=service)
         with pytest.raises(ValueError):
             converter.convert_attributes(
                 attributes={
@@ -60,7 +63,7 @@ class Test__AnnotationConverter:
             )
 
     def test__convert_attributes__int属性の型不一致はis_strict_falseなら無視される(self):
-        converter = AnnotationConverter(None, annotation_specs, is_strict=False)
+        converter = AnnotationConverter(None, annotation_specs, is_strict=False, service=service)
         # "traffic_lane"はint型だがstrを渡す
         actual = converter.convert_attributes(
             attributes={
@@ -74,7 +77,7 @@ class Test__AnnotationConverter:
         ]
 
     def test__convert_attributes__int属性の型不一致はis_strict_trueなら例外(self):
-        converter = AnnotationConverter(None, annotation_specs, is_strict=True)
+        converter = AnnotationConverter(None, annotation_specs, is_strict=True, service=service)
         with pytest.raises(ValueError):
             converter.convert_attributes(
                 attributes={
@@ -83,7 +86,7 @@ class Test__AnnotationConverter:
             )
 
     def test__convert_attributes__bool属性の型不一致はis_strict_falseなら無視される(self):
-        converter = AnnotationConverter(None, annotation_specs, is_strict=False)
+        converter = AnnotationConverter(None, annotation_specs, is_strict=False, service=service)
         # "occluded"はbool型だがstrを渡す
         actual = converter.convert_attributes(
             attributes={
@@ -96,7 +99,7 @@ class Test__AnnotationConverter:
         ]
 
     def test__convert_attributes__bool属性の型不一致はis_strict_trueなら例外(self):
-        converter = AnnotationConverter(None, annotation_specs, is_strict=True)
+        converter = AnnotationConverter(None, annotation_specs, is_strict=True, service=service)
         with pytest.raises(ValueError):
             converter.convert_attributes(
                 attributes={
@@ -105,7 +108,7 @@ class Test__AnnotationConverter:
             )
 
     def test__convert_attributes__radiobutton属性の選択肢不一致はis_strict_falseなら無視される(self):
-        converter = AnnotationConverter(None, annotation_specs, is_strict=False)
+        converter = AnnotationConverter(None, annotation_specs, is_strict=False, service=service)
         actual = converter.convert_attributes(
             attributes={
                 "car_kind": "not_exist_choice",
@@ -116,7 +119,7 @@ class Test__AnnotationConverter:
         ]
 
     def test__convert_attributes__radiobutton属性の選択肢不一致はis_strict_trueなら例外(self):
-        converter = AnnotationConverter(None, annotation_specs, is_strict=True)
+        converter = AnnotationConverter(None, annotation_specs, is_strict=True, service=service)
         with pytest.raises(ValueError):
             converter.convert_attributes(
                 attributes={
@@ -125,7 +128,7 @@ class Test__AnnotationConverter:
             )
 
     def test__convert_attributes__dropdown属性の選択肢不一致はis_strict_falseなら無視される(self):
-        converter = AnnotationConverter(None, annotation_specs, is_strict=False)
+        converter = AnnotationConverter(None, annotation_specs, is_strict=False, service=service)
         actual = converter.convert_attributes(
             attributes={
                 "condition": "not_exist_choice",
@@ -136,7 +139,7 @@ class Test__AnnotationConverter:
         ]
 
     def test__convert_attributes__dropdown属性の選択肢不一致はis_strict_trueなら例外(self):
-        converter = AnnotationConverter(None, annotation_specs, is_strict=True)
+        converter = AnnotationConverter(None, annotation_specs, is_strict=True, service=service)
         with pytest.raises(ValueError):
             converter.convert_attributes(
                 attributes={

@@ -142,7 +142,7 @@ class AnnotationConverter:
         service: Annofab APIにアクセスするためのサービスオブジェクト。外部アノテーションをアップロードするのに利用する。
     """
 
-    def __init__(self, *, project: dict[str, Any], annotation_specs: dict[str, Any], service: annofabapi.Resource, is_strict: bool = False) -> None:
+    def __init__(self, project: dict[str, Any], annotation_specs: dict[str, Any], *, service: annofabapi.Resource, is_strict: bool = False) -> None:
         self.project = project
         self.annotation_specs = annotation_specs
         self.annotation_specs_accessor = AnnotationSpecsAccessor(annotation_specs)
