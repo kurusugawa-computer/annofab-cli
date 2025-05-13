@@ -26,25 +26,6 @@ project = {
 }
 
 
-class DummyParser:
-    def __init__(self, task_id="task1", input_data_id="input1"):
-        self.task_id = task_id
-        self.input_data_id = input_data_id
-
-    def open_outer_file(self, data_uri):
-        # 画像セグメンテーションや3DPC用のテストで使う場合はここを拡張
-        raise NotImplementedError("outer file not supported in this dummy")
-
-
-class DummyService:
-    class Wrapper:
-        def upload_data_to_s3(self, project_id, f, content_type):
-            return "s3://dummy/path"
-
-    wrapper = Wrapper()
-    api = type("api", (), {"account_id": "dummy_account"})()
-
-
 class Test__AnnotationConverter:
     def test_xxx(self):
         converter = AnnotationConverter(project, annotation_specs, is_strict=False, service=DummyService())
@@ -139,15 +120,14 @@ class Test__AnnotationConverter:
         assert actual == expected
 
     def test__convert_annotation_detail__基本(self):
-        converter = AnnotationConverter(project, annotation_specs, is_strict=False, service=DummyService())
-        parser = DummyParser()
+        converter = AnnotationConverter(project, annotation_specs, is_strict=False, service=service)
         detail = ImportedSimpleAnnotationDetail(
             label="car",
             data={"left_top": {"x": 10, "y": 7}, "right_bottom": {"x": 36, "y": 36}, "_type": "BoundingBox"},
             attributes={"traffic_lane": 3, "occluded": True},
             annotation_id=None,
         )
-        actual = converter.convert_annotation_detail(parser, detail)
+        actual = converter.convert_annotation_detail(SimpleAnnotationDirParser("foo.json"), detail)
         expected = {
             "_type": "Create",
             "label_id": "b6e6e2e2-2e7c-4e2e-8e2e-2e7c4e2e8e2e",  # annotation_specs.jsonのcarラベルIDに合わせて修正が必要
