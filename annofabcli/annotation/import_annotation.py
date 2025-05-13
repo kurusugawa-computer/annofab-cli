@@ -308,7 +308,7 @@ class AnnotationConverter:
             "label_id": label_info["label_id"],
             "annotation_id": detail.annotation_id if detail.annotation_id is not None else create_annotation_id(label_info, self.project),
             "additional_data_list": additional_data_list,
-            "editor_pros": {},
+            "editor_props": {},
         }
 
         if is_3dpc_segment_label(label_info):
@@ -439,7 +439,7 @@ class ImportAnnotationMain(CommandLineWithConfirm):
                 parser, simple_annotation.details, old_details=[], updated_datetime=old_annotation["updated_datetime"]
             )
 
-        self.service.api.put_annotation(self.project_id, task_id, input_data_id, request_body=request_body)
+        self.service.api.put_annotation(self.project_id, task_id, input_data_id, request_body=request_body, query_params={"v": "2"})
         return True
 
     def put_annotation_for_task(self, task_parser: SimpleAnnotationParserByTask) -> int:
@@ -691,6 +691,13 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--force",
         action="store_true",
         help="過去に割り当てられていて現在の担当者が自分自身でない場合、タスクの担当者を自分自身に変更してからアノテーションをインポートします。",
+    )
+
+    overwrite_merge_group.add_argument(
+        "--strict",
+        action="store_true",
+        help="アノテーションJSONに、存在しないラベル名や属性名など適切でない記載が場合、そのアノテーションJSONの登録をスキップします。"
+        "デフォルトでは、適切でない箇所のみスキップして、できるだけアノテーションを登録するようにします。"
     )
 
     parser.add_argument(
