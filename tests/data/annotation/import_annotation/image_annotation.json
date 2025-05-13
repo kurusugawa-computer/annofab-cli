@@ -1,0 +1,103 @@
+{
+    "details": [
+        {
+            "label": "traffic_sign",
+            "annotation_id": "61637acf-4b95-45d6-9954-d88195547cec",
+            "data": {
+                "points": [
+                    {
+                        "x": 1968,
+                        "y": 828
+                    },
+                    {
+                        "x": 1629,
+                        "y": 448
+                    },
+                    {
+                        "x": 2037,
+                        "y": 414
+                    }
+                ],
+                "_type": "Points"
+            },
+            "attributes": {}
+        },
+        {
+            "label": "white_line",
+            "annotation_id": "7bef9886-5e3f-4d86-8749-6220dc93ec74",
+            "data": {
+                "points": [
+                    {
+                        "x": 1857,
+                        "y": 467
+                    },
+                    {
+                        "x": 1732,
+                        "y": 870
+                    },
+                    {
+                        "x": 2196,
+                        "y": 928
+                    }
+                ],
+                "_type": "Points"
+            },
+            "attributes": {}
+        },
+        {
+            "label": "number_plate",
+            "annotation_id": "5152a850-8357-4933-9f58-511d2974cf44",
+            "data": {
+                "left_top": {
+                    "x": 1382,
+                    "y": 753
+                },
+                "right_bottom": {
+                    "x": 1565,
+                    "y": 945
+                },
+                "_type": "BoundingBox"
+            },
+            "attributes": {
+                "link_car": ""
+            }
+        },
+        {
+            "label": "car",
+            "annotation_id": "67c0c3df-c90d-4e62-aa5e-a5db3998c1af",
+            "data": {
+                "left_top": {
+                    "x": 626,
+                    "y": 217
+                },
+                "right_bottom": {
+                    "x": 1262,
+                    "y": 620
+                },
+                "_type": "BoundingBox"
+            },
+            "attributes": {
+                "truncated": true,
+                "condition": "stopping",
+                "note": "test",
+                "occluded": true,
+                "traffic_lane": 3,
+                "car_kind": "general_car",
+                "number_plate": "5152a850-8357-4933-9f58-511d2974cf44",
+                "tracking": "67c0c3df-c90d-4e62-aa5e-a5db3998c1af",
+                "status": "aaaaa"
+            }
+        },
+        {
+            "label": "whole",
+            "annotation_id": "fcb847a5-5607-4467-a72b-fc11fb5cfbab",
+            "data": {
+                "_type": "Classification"
+            },
+            "attributes": {
+                "weater": "fine"
+            }
+        }
+    ],
+    "updated_datetime": "2025-05-13T13:19:21.295+09:00"
+}

@@ -189,9 +189,14 @@ class AnnotationConverter:
             return {"_type": "Tracking", "value": str(attribute_value)}
 
         elif additional_data_type == AdditionalDataDefinitionType.LINK:
+            if attribute_value == "":
+                # `annotation_id`に空文字を設定すると、エディタ画面ではエラーになるため、Noneを返す
+                return None
             return {"_type": "Link", "annotation_id": str(attribute_value)}
 
         elif additional_data_type == AdditionalDataDefinitionType.CHOICE:
+            if attribute_value == "":
+                return None
             try:
                 choice = get_choice(choices, choice_name=str(attribute_value))
             except ValueError:
@@ -204,6 +209,8 @@ class AnnotationConverter:
 
             return {"_type": "Choice", "choice_id": choice["choice_id"]}
         elif additional_data_type == AdditionalDataDefinitionType.SELECT:
+            if attribute_value == "":
+                return None
             try:
                 choice = get_choice(choices, choice_name=str(attribute_value))
             except ValueError:
@@ -334,6 +341,15 @@ class AnnotationConverter:
         *,
         updated_datetime: Optional[str] = None,
     ) -> dict[str, Any]:
+        """
+        アノテーションJSONに記載されたアノテーション情報を、`put_annotation` APIに渡す形式に変換します。
+
+        Args:
+            parser: アノテーションJSONをパースするためのクラス
+            details: インポート対象のアノテーション情報
+            old_details: 既存のアノテーション情報。既存のアノテーション情報に加えて、インポート対象のアノテーションを登録するためのリクエストボディを作成します。
+            updated_datetime: 更新日時
+        """
         old_dict_detail = {}
         INDEX_KEY = "_index"  # noqa: N806
         for index, old_detail in enumerate(old_details):
@@ -349,10 +365,9 @@ class AnnotationConverter:
                 log_message_suffix = f"task_id='{parser.task_id}', input_data_id='{parser.input_data_id}', label_name='{detail.label}', annotation_id='{detail.annotation_id}'"  # noqa: E501
 
                 request_detail = self.convert_annotation_detail(parser, detail, log_message_suffix=log_message_suffix)
-            except Exception:
+            except Exception as e:
                 logger.warning(
-                    f"アノテーション情報を`putAnnotation`APIのリクエストボディへ変換するのに失敗しました。 :: {log_message_suffix}",
-                    exc_info=True,
+                    f"アノテーション情報を`putAnnotation`APIのリクエストボディへ変換するのに失敗しました。 :: {e!r} :: {log_message_suffix}",
                 )
                 if self.is_strict:
                     raise
@@ -419,7 +434,7 @@ class ImportAnnotationMain(CommandLineWithConfirm):
             logger.warning(f"input_data_id='{input_data_id}'という入力データは存在しません。 :: task_id='{task_id}'")
             return False
 
-        old_annotation, _ = self.service.api.get_editor_annotation(self.project_id, task_id, input_data_id)
+        old_annotation, _ = self.service.api.get_editor_annotation(self.project_id, task_id, input_data_id, query_params={"v": "2"})
         if len(old_annotation["details"]) > 0:  # noqa: SIM102
             if not self.is_overwrite and not self.is_merge:
                 logger.debug(
@@ -693,11 +708,11 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         help="過去に割り当てられていて現在の担当者が自分自身でない場合、タスクの担当者を自分自身に変更してからアノテーションをインポートします。",
     )
 
-    overwrite_merge_group.add_argument(
+    parser.add_argument(
         "--strict",
         action="store_true",
         help="アノテーションJSONに、存在しないラベル名や属性名など適切でない記載が場合、そのアノテーションJSONの登録をスキップします。"
-        "デフォルトでは、適切でない箇所のみスキップして、できるだけアノテーションを登録するようにします。"
+        "デフォルトでは、適切でない箇所のみスキップして、できるだけアノテーションを登録するようにします。",
     )
 
     parser.add_argument(
