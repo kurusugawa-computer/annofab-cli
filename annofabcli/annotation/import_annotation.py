@@ -349,7 +349,7 @@ class AnnotationConverter:
             details: インポート対象のアノテーション情報
             old_details: 既存のアノテーション情報。既存のアノテーション情報に加えて、インポート対象のアノテーションを登録するためのリクエストボディを作成します。
             updated_datetime: 更新日時
-        """
+        """  # noqa: E501
         old_dict_detail = {}
         INDEX_KEY = "_index"  # noqa: N806
         for index, old_detail in enumerate(old_details):

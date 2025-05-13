@@ -28,8 +28,8 @@ project = {
 
 class Test__AnnotationConverter:
     def test_xxx(self):
-        converter = AnnotationConverter(project, annotation_specs, is_strict=False, service=DummyService())
-        parser = SimpleAnnotationDirParser("tests/data/annotation/import_annotation/image_annotation.json")
+        converter = AnnotationConverter(project, annotation_specs, is_strict=False, service=service)
+        parser = SimpleAnnotationDirParser(Path("tests/data/annotation/import_annotation/image_annotation.json"))
         simple_annotation: ImportedSimpleAnnotation = ImportedSimpleAnnotation.from_dict(parser.load_json())
         actual = converter.convert_annotation_details(parser=parser, details=simple_annotation.details, old_details=[], updated_datetime=None)
         expected = {
@@ -127,7 +127,7 @@ class Test__AnnotationConverter:
             attributes={"traffic_lane": 3, "occluded": True},
             annotation_id=None,
         )
-        actual = converter.convert_annotation_detail(SimpleAnnotationDirParser("foo.json"), detail)
+        actual = converter.convert_annotation_detail(SimpleAnnotationDirParser(Path("foo.json")), detail)
         expected = {
             "_type": "Create",
             "label_id": "b6e6e2e2-2e7c-4e2e-8e2e-2e7c4e2e8e2e",  # annotation_specs.jsonのcarラベルIDに合わせて修正が必要
