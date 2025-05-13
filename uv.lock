@@ -41,7 +41,7 @@ wheels = [
 
 [[package]]
 name = "annofabapi"
-version = "1.4.6"
+version = "1.4.7"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "backoff" },
@@ -52,9 +52,9 @@ dependencies = [
     { name = "python-dateutil" },
     { name = "requests" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/fc/f9/f32f718735abf355e0b5526f9d9303202f5c2a7ec61b7944b6a8bfe11149/annofabapi-1.4.6.tar.gz", hash = "sha256:d4851951ca8f59692d88140959914ba36243076607c7911fbc0ceaf6f1cb88d7", size = 268630 }
+sdist = { url = "https://files.pythonhosted.org/packages/41/4c/6f630fc34f3e5b50b8cbe145778b644bc63f6274538cff2554fb21b29f9b/annofabapi-1.4.7.tar.gz", hash = "sha256:5a7163f07885d8ce67757fce21cc7ef433ff1622470722f310292602b5360526", size = 483711 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/7b/53/f7e072edabe43372661378bca8c8beaaa098c4f77a6b9a857acb48c7dcbf/annofabapi-1.4.6-py3-none-any.whl", hash = "sha256:696f6b466e7c90e78bcc745728226d1610be51fc8d6aba57ddb9fa8695ee3605", size = 780683 },
+    { url = "https://files.pythonhosted.org/packages/93/9b/ee2c18f591b31f27ec99df856089abe5f0ed632d97099deaefd996a4e1fe/annofabapi-1.4.7-py3-none-any.whl", hash = "sha256:9bf0966f4e16d0b125b2f6a2b5e65ead0c43fff3b9b41fbd9fcca7ade61ba034", size = 780618 },
 ]
 
 [[package]]
@@ -76,6 +76,7 @@ dependencies = [
     { name = "pyyaml" },
     { name = "requests" },
     { name = "typing-extensions" },
+    { name = "ulid-py" },
 ]
 
 [package.dev-dependencies]
@@ -113,7 +114,7 @@ test = [
 
 [package.metadata]
 requires-dist = [
-    { name = "annofabapi", specifier = ">=1.4.1" },
+    { name = "annofabapi", specifier = ">=1.4.7" },
     { name = "bokeh", specifier = ">=3.3,<3.7" },
     { name = "dictdiffer" },
     { name = "isodate" },
@@ -126,6 +127,7 @@ requires-dist = [
     { name = "pyyaml" },
     { name = "requests" },
     { name = "typing-extensions", specifier = ">=4.5" },
+    { name = "ulid-py", specifier = ">=1.1.0" },
 ]
 
 [package.metadata.requires-dev]
@@ -2184,6 +2186,15 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/95/32/1a225d6164441be760d75c2c42e2780dc0873fe382da3e98a2e1e48361e5/tzdata-2025.2.tar.gz", hash = "sha256:b60a638fcc0daffadf82fe0f57e53d06bdec2f36c4df66280ae79bce6bd6f2b9", size = 196380 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/5c/23/c7abc0ca0a1526a0774eca151daeb8de62ec457e77262b66b359c3c7679e/tzdata-2025.2-py2.py3-none-any.whl", hash = "sha256:1a403fada01ff9221ca8044d701868fa132215d84beb92242d9acd2147f667a8", size = 347839 },
+]
+
+[[package]]
+name = "ulid-py"
+version = "1.1.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/3b/53/d14a8ec344048e21431821cb49e9a6722384f982b889c2dd449428dbdcc1/ulid-py-1.1.0.tar.gz", hash = "sha256:dc6884be91558df077c3011b9fb0c87d1097cb8fc6534b11f310161afd5738f0", size = 22514 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/42/7c/a12c879fe6c2b136a718c142115ff99397fbf62b4929d970d58ae386d55f/ulid_py-1.1.0-py2.py3-none-any.whl", hash = "sha256:b56a0f809ef90d6020b21b89a87a48edc7c03aea80e5ed5174172e82d76e3987", size = 25753 },
 ]
 
 [[package]]

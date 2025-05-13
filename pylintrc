@@ -36,4 +36,4 @@ disable=
   too-many-statements, # ruffの`PLR0915`でチェックしている
   too-many-branches, # ruffの`R0912`でチェックしている
   cell-var-from-loop, # ruffの`B023`でチェックしている
-  
+  too-many-return-statements, # ruffの`PLR0916`でチェックしている

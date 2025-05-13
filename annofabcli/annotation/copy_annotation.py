@@ -48,11 +48,11 @@ class CopyTarget(CopyTargetMixin, ABC):
 @dataclass(frozen=True)
 class CopyTargetByTask(CopyTarget):
     @property
-    def src(self):  # noqa: ANN201
+    def src(self) -> str:
         return f"{self.src_task_id}"
 
     @property
-    def dest(self):  # noqa: ANN201
+    def dest(self) -> str:
         return f"{self.dest_task_id}"
 
 
@@ -62,11 +62,11 @@ class CopyTargetByInputData(CopyTarget):
     dest_input_data_id: str
 
     @property
-    def src(self):  # noqa: ANN201
+    def src(self) -> str:
         return f"{self.src_task_id}/{self.src_input_data_id}"
 
     @property
-    def dest(self):  # noqa: ANN201
+    def dest(self) -> str:
         return f"{self.dest_task_id}/{self.dest_input_data_id}"
 
 
