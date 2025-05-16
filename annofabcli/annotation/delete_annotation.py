@@ -191,7 +191,8 @@ class DeleteAnnotationMain(CommandLineWithConfirm):
             削除したアノテーションの件数
             削除しなかったアノテーションの件数
         """
-        assert len(annotation_ids) > 0
+        if not annotation_ids:
+            raise ValueError("`annotation_ids` に少なくとも1件のIDを指定してください。")
 
         task_id = editor_annotation["task_id"]
         input_data_id = editor_annotation["input_data_id"]
