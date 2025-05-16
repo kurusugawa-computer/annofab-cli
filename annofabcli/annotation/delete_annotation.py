@@ -425,7 +425,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         help="削除対象のアノテーションを記載したCSVファイルを指定します。例: task_id,input_data_id,annotation_id",
     )
 
-    EXAMPLE_ANNOTATION_QUERY = '{"label": "car", "attributes":{"occluded" true} }'  # noqa: N806
+    EXAMPLE_ANNOTATION_QUERY = {"label": "car", "attributes": {"occluded": True}}  # noqa: N806
     parser.add_argument(
         "-aq",
         "--annotation_query",
@@ -434,7 +434,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         help="削除対象のアノテーションを検索する条件をJSON形式で指定します。"
         "``--csv`` または ``--json`` を指定した場合は、このオプションは無視されます。"
         "``file://`` を先頭に付けると、JSON形式のファイルを指定できます。"
-        f"(ex): ``{EXAMPLE_ANNOTATION_QUERY}``",
+        f"(ex): ``{json.dumps(EXAMPLE_ANNOTATION_QUERY)}``",
     )
 
     parser.add_argument("--force", action="store_true", help="指定した場合は、完了状態のタスクのアノテーションも削除します。")
