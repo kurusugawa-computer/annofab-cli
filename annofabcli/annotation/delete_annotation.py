@@ -214,8 +214,6 @@ class DeleteAnnotationMain(CommandLineWithConfirm):
             return 0, len(annotation_ids)
 
         # annotation_idでフィルタ
-        filtered_details = []
-
         filtered_details = [e for e in editor_annotation["details"] if e["annotation_id"] in annotation_ids]
         existent_annotation_ids = {detail["annotation_id"] for detail in filtered_details}
         nonexistent_annotation_ids = annotation_ids - existent_annotation_ids
