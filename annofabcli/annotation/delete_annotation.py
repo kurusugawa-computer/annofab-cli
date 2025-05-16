@@ -3,6 +3,8 @@ from __future__ import annotations
 import argparse
 import logging
 import sys
+from collections import defaultdict
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Optional
 
@@ -27,6 +29,17 @@ from annofabcli.common.facade import AnnofabApiFacade
 logger = logging.getLogger(__name__)
 
 
+@dataclass(frozen=True)
+class DeletedAnnotationInfo:
+    """
+    削除対象のアノテーション情報
+    """
+
+    task_id: str
+    input_data_id: str
+    annotation_id: str
+
+
 class DeleteAnnotationMain(CommandLineWithConfirm):
     """アノテーション削除処理用のクラス
 
@@ -49,7 +62,7 @@ class DeleteAnnotationMain(CommandLineWithConfirm):
         self.project_id = project_id
         self.dump_annotation_obj = DumpAnnotationMain(service, project_id)
 
-    def delete_annotation_list(self, annotation_list: list[dict[str, Any]]):  # noqa: ANN201
+    def delete_annotation_list(self, annotation_list: list[dict[str, Any]]) -> None:
         """
         アノテーション一覧を削除する。
 
@@ -163,38 +176,89 @@ class DeleteAnnotationMain(CommandLineWithConfirm):
 
     def delete_annotation_by_id_list(
         self,
-        annotation_id_list: list[dict[str, Any]],
+        annotation_list: list[DeletedAnnotationInfo],
         backup_dir: Optional[Path] = None,
-    ):
+    ) -> None:
         """
         task_id, input_data_id, annotation_id のリストで指定されたアノテーションのみ削除する
 
         Args:
-            annotation_id_list: dictのリスト。各dictは'task_id', 'input_data_id', 'annotation_id'を含む
+            annotation_list: 削除対象のアノテーションlist
             backup_dir: バックアップディレクトリ
         """
-        from collections import defaultdict
 
         # task_id, input_data_idごとにまとめる
         grouped = defaultdict(list)
-        for item in annotation_id_list:
-            grouped[(item["task_id"], item["input_data_id"])].append(item["annotation_id"])
+        for item in annotation_list:
+            grouped[(item.task_id, item.input_data_id)].append(item.annotation_id)
 
-        total = len(annotation_id_list)
+        total = len(annotation_list)
         processed = 0
+
+        failed_to_delete_annotation_list = []  # 削除できなかったアノテーションの一覧
+        failed_to_delete_frame_list = []  # アノテーションの削除に失敗したフレームの一覧
 
         for (task_id, input_data_id), annotation_ids in grouped.items():
             # 指定input_data_idの全annotationを取得
-            query = {"input_data_id": input_data_id}
-            annotation_list = self.get_annotation_list_for_task(task_id, annotation_query=AnnotationQueryForAPI(**query))
+            editor_annotation = self.service.wrapper.get_editor_annotation_or_none(
+                self.project_id, task_id=task_id, input_data_id=input_data_id, query_params={"v": "2"}
+            )
+            if editor_annotation is None:
+                # TODO 確認する
+                logger.warning(
+                    f"task_id='{task_id}'のタスクが存在しないか、input_data_id='{input_data_id}'の入力データが含まれていません。 :: "
+                    f"annotation_ids={annotation_ids}"
+                )
+                failed_to_delete_annotation_list.extend(
+                    [
+                        DeletedAnnotationInfo(task_id=task_id, input_data_id=input_data_id, annotation_id=annotation_id)
+                        for annotation_id in annotation_ids
+                    ]
+                )
+                continue
+
+            if len(editor_annotation["details"]) == 0:
+                logger.warning(
+                    f"task_id='{task_id}', input_data_id='{input_data_id}' にはアノテーションが存在しません。以下のアノテーションの削除をスキップします。 :: "  # noqa: E501
+                    f"annotation_ids={annotation_ids}"
+                )
+                failed_to_delete_annotation_list.extend(
+                    [
+                        DeletedAnnotationInfo(task_id=task_id, input_data_id=input_data_id, annotation_id=annotation_id)
+                        for annotation_id in annotation_ids
+                    ]
+                )
+                continue
+
             # annotation_idでフィルタ
-            filtered = [a for a in annotation_list if a.get("detail", {}).get("annotation_id") in annotation_ids]
-            logger.info(f"task_id='{task_id}', input_data_id='{input_data_id}' の削除対象アノテーション数：{len(filtered)}")
-            if len(filtered) == 0:
+            filtered_details = []
+
+            nonexistent_annotation_id_list = []
+            for detail in editor_annotation["details"]:
+                if detail["annotation_id"] in annotation_ids:
+                    filtered_details.append(detail)
+                else:
+                    nonexistent_annotation_id_list.append(detail["annotation_id"])
+
+            if len(nonexistent_annotation_id_list) > 0:
+                logger.warning(
+                    f"次のアノテーションは存在しません。アノテーションの削除をスキップします。 :: task_id='{task_id}', input_data_id='{input_data_id}', annotation_id='{nonexistent_annotation_id_list}'"
+                )
+
+            failed_to_delete_annotation_list.extend(
+                [
+                    DeletedAnnotationInfo(task_id=task_id, input_data_id=input_data_id, annotation_id=annotation_id)
+                    for annotation_id in nonexistent_annotation_id_list
+                ]
+            )
+
+            if len(filtered_details) == 0:
                 logger.info(f"task_id='{task_id}', input_data_id='{input_data_id}' には削除対象のアノテーションが存在しないので、スキップします。")
                 continue
 
-            if not self.confirm_processing(f"task_id='{task_id}', input_data_id='{input_data_id}' のアノテーション{annotation_ids}を削除しますか？"):
+            if not self.confirm_processing(
+                f"task_id='{task_id}', input_data_id='{input_data_id}' のアノテーション {len(annotation_ids)} 件を削除しますか？"
+            ):
                 continue
 
             if backup_dir is not None:
@@ -202,14 +266,37 @@ class DeleteAnnotationMain(CommandLineWithConfirm):
                 self.dump_annotation_obj.dump_annotation_for_task(task_id, output_dir=backup_dir)
 
             try:
-                self.delete_annotation_list(annotation_list=filtered)
-                logger.info(f"task_id='{task_id}', input_data_id='{input_data_id}' :: アノテーション{annotation_ids}を削除しました。")
+                def _to_request_body_elm(detail: dict[str, Any]) -> dict[str, Any]:
+                    return {
+                        "project_id": self.project_id,
+                        "task_id": task_id,
+                        "input_data_id": input_data_id,
+                        "updated_datetime": detail["updated_datetime"],
+                        "annotation_id": detail["annotation_id"],
+                        "_type": "Delete",
+                    }
+
+                request_body = [_to_request_body_elm(detail) for detail in filtered_details]
+                self.service.api.batch_update_annotations(self.project_id, request_body=request_body)
+
+                logger.info(f"task_id='{task_id}', input_data_id='{input_data_id}' のアノテーション {len(annotation_ids)} 件を削除しました。")
             except requests.HTTPError:
                 logger.warning(f"task_id='{task_id}', input_data_id='{input_data_id}' :: アノテーションの削除に失敗しました。", exc_info=True)
+                # `batchUpdateAnnotations` APIでエラーになった場合、途中までは削除されるので、`len(annotation_ids)` 件削除に失敗したとは限らない。
+                # そのため、アノテーションの削除に失敗した、フレーム情報を保持する
+                failed_to_delete_frame_list.append({"task_id": task_id, "input_data_id": input_data_id})
+                continue
 
-            processed += len(filtered)
-        logger.info(f"指定された{total}件のアノテーション削除処理が完了しました。")
+            processed += len(filtered_details)
 
+        logger.info(
+            f" {processed} / {total} 件のアノテーションを削除しました。削除処理が完了しました。"
+        )
+        if len(failed_to_delete_annotation_list) > 0:
+            logger.warning(f"{len(failed_to_delete_annotation_list)} 件のアノテーションは存在しないため、削除できませんでした。")
+        if len(failed_to_delete_frame_list) > 0:
+            logger.warning(f"{len(failed_to_delete_frame_list)} 件のフレームでアノテーションの削除に失敗しました。ただし、途中までアノテーションの削除は成功している可能性があります。"  # noqa: E501)
+            
 
 class DeleteAnnotation(CommandLine):
     """
@@ -220,16 +307,15 @@ class DeleteAnnotation(CommandLine):
 
     def main(self) -> None:
         import csv
-        import json
 
         args = self.args
         project_id = args.project_id
 
-        # --json, --csv, --annotation_query, --task_id の排他制御
-        specified = [bool(args.json), bool(args.csv), bool(args.annotation_query), bool(args.task_id)]
-        if sum(specified) > 1:
-            print(f"{self.COMMON_MESSAGE} --json, --csv, --annotation_query, --task_id は同時に指定できません。", file=sys.stderr)
-            sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
+        # # --json, --csv, --annotation_query, --task_id の排他制御
+        # specified = [bool(args.json), bool(args.csv), bool(args.annotation_query), bool(args.task_id)]
+        # if sum(specified) > 1:
+        #     print(f"{self.COMMON_MESSAGE} --json, --csv, --annotation_query, --task_id は同時に指定できません。", file=sys.stderr)
+        #     sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
         if args.backup is None:
             print(  # noqa: T201
@@ -247,14 +333,9 @@ class DeleteAnnotation(CommandLine):
 
         # --json
         if args.json is not None:
-            try:
-                annotation_id_list = json.loads(args.json)
-                if not isinstance(annotation_id_list, list):
-                    raise ValueError("JSONはリスト形式で指定してください。")
-            except Exception as e:
-                print(f"{self.COMMON_MESSAGE} --json の値が不正です。{e}", file=sys.stderr)
-                sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
-            main_obj.delete_annotation_by_id_list(annotation_id_list, backup_dir=backup_dir)
+            dict_annotation_list = get_json_from_args(args.json)
+            annotation_list = [DeletedAnnotationInfo(**eml) for eml in dict_annotation_list]
+            main_obj.delete_annotation_by_id_list(annotation_list, backup_dir=backup_dir)
             return
 
         # --csv
