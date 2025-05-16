@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import logging
 import sys
 from collections import defaultdict
@@ -158,12 +159,12 @@ class DeleteAnnotationMain(CommandLineWithConfirm):
         except requests.HTTPError:
             logger.warning(f"task_id='{task_id}' :: アノテーションの削除に失敗しました。", exc_info=True)
 
-    def delete_annotation_for_task_list(  # noqa: ANN201
+    def delete_annotation_for_task_list(
         self,
         task_id_list: list[str],
         annotation_query: Optional[AnnotationQueryForAPI] = None,
         backup_dir: Optional[Path] = None,
-    ):
+    ) -> None:
         project_title = self.facade.get_project_title(self.project_id)
         logger.info(f"プロジェクト'{project_title}'に対して、タスク{len(task_id_list)} 件のアノテーションを削除します。")
 
@@ -283,6 +284,11 @@ class DeleteAnnotationMain(CommandLineWithConfirm):
         deleted_annotation_count = 0
         failed_to_delete_annotation_count = 0
 
+        task_count = len(grouped)
+        deleted_task_count = 0
+
+        logger.info(f"{task_count} 件のタスクに含まれるアノテーションを削除します。")
+
         for task_id, sub_grouped in grouped.items():
             annotation_count = sum(len(v) for v in sub_grouped.values())
             task = self.service.wrapper.get_task_or_none(self.project_id, task_id)
@@ -313,6 +319,7 @@ class DeleteAnnotationMain(CommandLineWithConfirm):
                 # input_data_id単位でバックアップ
                 self.dump_annotation_obj.dump_annotation_for_task(task_id, output_dir=backup_dir)
 
+            deleted_task_count += 1
             for input_data_id, annotation_ids in sub_grouped.items():
                 sub_deleted_annotation_count, sub_failed_to_delete_annotation_count = self.delete_annotation_by_annotation_ids(
                     task_id, input_data_id, set(annotation_ids)
@@ -321,7 +328,7 @@ class DeleteAnnotationMain(CommandLineWithConfirm):
                 failed_to_delete_annotation_count += sub_failed_to_delete_annotation_count
 
         logger.info(
-            f"{deleted_annotation_count} / {total} 件のアノテーションを削除しました。"
+            f"{deleted_task_count}/{task_count} 件のタスクに含まれている {deleted_annotation_count}/{total} 件のアノテーションを削除しました。"
             f"{failed_to_delete_annotation_count} 件のアノテーションは削除できませんでした。"
         )
 
@@ -353,6 +360,10 @@ class DeleteAnnotation(CommandLine):
 
         if args.json is not None:
             dict_annotation_list = get_json_from_args(args.json)
+            if not isinstance(dict_annotation_list, list):
+                print(f"{self.COMMON_MESSAGE} argument --json: JSON形式が不正です。オブジェクトの配列を指定してください。", file=sys.stderr)  # noqa: T201
+                sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
+
             annotation_list = [DeletedAnnotationInfo(**eml) for eml in dict_annotation_list]
             main_obj.delete_annotation_by_id_list(annotation_list, backup_dir=backup_dir)
 
@@ -402,10 +413,11 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         help="削除対象のタスクのtask_idを指定します。 ``file://`` を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。",
     )
 
+    example_json = [{"task_id": "t1", "input_data_id": "i1", "annotation_id": "a1"}]
     group.add_argument(
         "--json",
         type=str,
-        help='削除対象のアノテーションをJSON配列で指定します。例: \'[{"task_id":"t1","input_data_id":"i1","annotation_id":"a1"}]\'',
+        help=f"削除対象のアノテーションをJSON配列で指定します。例: ``{json.dumps(example_json)}``",
     )
     group.add_argument(
         "--csv",
