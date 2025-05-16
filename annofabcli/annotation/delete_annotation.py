@@ -363,7 +363,11 @@ class DeleteAnnotation(CommandLine):
                 sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
             annotation_list = [DeletedAnnotationInfo(**eml) for eml in dict_annotation_list]
-            main_obj.delete_annotation_by_id_list(annotation_list, backup_dir=backup_dir)
+            try:
+                annotation_list = [DeletedAnnotationInfo(**eml) for eml in dict_annotation_list]
+            except TypeError as e:
+                print(f"{self.COMMON_MESSAGE} argument --json: 無効なオブジェクト形式です。{e}", file=sys.stderr)
+                sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
         elif args.csv is not None:
             try:
