@@ -128,12 +128,15 @@ class DeleteAnnotationMain(CommandLineWithConfirm):
         logger.info(f"task_id='{task.task_id}', phase='{task.phase.value}', status='{task.status.value}', updated_datetime='{task.updated_datetime}'")
 
         if task.status == TaskStatus.WORKING:
-            logger.warning(f"task_id='{task_id}' :: タスクが作業中状態のため、スキップします。")
+            logger.info(f"task_id='{task_id}' :: タスクが作業中状態のため、スキップします。")
             return
 
         if not self.is_force:  # noqa: SIM102
             if task.status == TaskStatus.COMPLETE:
-                logger.warning(f"task_id='{task_id}' :: タスクが完了状態のため、スキップします。")
+                logger.info(
+                    f"task_id='{task_id}' :: タスクが完了状態のため、スキップします。"
+                    f"完了状態のタスクのアノテーションを削除するには、`--force`オプションを指定してください。"
+                )
                 return
 
         annotation_list = self.get_annotation_list_for_task(task_id, annotation_query=annotation_query)
@@ -224,11 +227,6 @@ class DeleteAnnotationMain(CommandLineWithConfirm):
             logger.info(f"task_id='{task_id}', input_data_id='{input_data_id}' には削除対象のアノテーションが存在しないので、スキップします。")
             return 0, len(annotation_ids)
 
-        if not self.confirm_processing(
-            f"task_id='{task_id}', input_data_id='{input_data_id}' に含まれるアノテーション {len(filtered_details)} 件を削除しますか？"
-        ):
-            return 0, len(annotation_ids)
-
         try:
 
             def _to_request_body_elm(detail: dict[str, Any]) -> dict[str, Any]:
@@ -242,6 +240,7 @@ class DeleteAnnotationMain(CommandLineWithConfirm):
                 }
 
             request_body = [_to_request_body_elm(detail) for detail in filtered_details]
+            # APIを呼び出してアノテーションを削除
             self.service.api.batch_update_annotations(self.project_id, request_body=request_body, query_params={"v": "2"})
 
             logger.info(f"task_id='{task_id}', input_data_id='{input_data_id}' のアノテーション {len(filtered_details)} 件を削除しました。")
@@ -255,14 +254,9 @@ class DeleteAnnotationMain(CommandLineWithConfirm):
             new_editor_annotation, _ = self.service.api.get_editor_annotation(
                 self.project_id, task_id=task_id, input_data_id=input_data_id, query_params={"v": "2"}
             )
-            deleted_annotation_count = 0
-            failed_to_delete_annotation_count = 0
-            for detail in new_editor_annotation["details"]:
-                if detail["annotation_id"] in existent_annotation_ids:
-                    failed_to_delete_annotation_count += 1
-                else:
-                    deleted_annotation_count += 1
-
+            new_annotation_ids = {e["annotation_id"] for e in new_editor_annotation["details"]}
+            deleted_annotation_count = len(existent_annotation_ids - new_annotation_ids)
+            failed_to_delete_annotation_count = len(existent_annotation_ids) - deleted_annotation_count
             return deleted_annotation_count, failed_to_delete_annotation_count + len(nonexistent_annotation_ids)
 
     def delete_annotation_by_id_list(
@@ -289,6 +283,27 @@ class DeleteAnnotationMain(CommandLineWithConfirm):
         failed_to_delete_annotation_count = 0
 
         for task_id, sub_grouped in grouped.items():
+            annotation_count = sum(len(v) for v in sub_grouped.values())
+            task = self.service.wrapper.get_task_or_none(self.project_id, task_id)
+            if task is None:
+                logger.warning(f"task_id='{task_id}' :: タスクが存在しないため、アノテーション {annotation_count} 件の削除をスキップします。")
+                continue
+
+            if task["status"] == TaskStatus.WORKING.value:
+                logger.info(f"task_id='{task_id}' :: タスクが作業中状態のため、アノテーション {annotation_count} 件の削除をスキップします。")
+                continue
+
+            if not self.is_force:  # noqa: SIM102
+                if task["status"] == TaskStatus.COMPLETE.value:
+                    logger.info(
+                        f"task_id='{task_id}' :: タスクが完了状態のため、アノテーション {annotation_count} 件の削除をスキップします。"
+                        f"完了状態のタスクのアノテーションを削除するには、`--force`オプションを指定してください。"
+                    )
+                    continue
+
+            if not self.confirm_processing(f"task_id='{task_id}'のタスクに含まれるアノテーション {annotation_count} 件を削除しますか？"):
+                continue
+
             if backup_dir is not None:
                 # input_data_id単位でバックアップ
                 self.dump_annotation_obj.dump_annotation_for_task(task_id, output_dir=backup_dir)
