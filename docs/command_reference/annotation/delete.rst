@@ -5,7 +5,6 @@ annotation delete
 Description
 =================================
 タスク配下のアノテーションを削除します。
-ただし、作業中状態のタスクに含まれるアノテーションは削除できません。
 
 
 Examples
@@ -35,7 +34,7 @@ Examples
 削除するアノテーションを絞り込む場合は、 ``--annotation_query`` を指定してください。
 ``--annotation_query`` のサンプルは、 `Command line options <../../user_guide/command_line_options.html#annotation-query-aq>`_ を参照してください。
 
-以下のコマンドは、ラベル名（英語）の値が"car"で、属性名(英語)が"occluded"である値をfalse（"occluded"チェックボックスをOFF）であるアノテーションを削除します。
+以下のコマンドは、ラベル名（英語）の値が "car" で、属性名(英語)が "occluded" である値が ``false``（"occluded"チェックボックスをOFF）であるアノテーションを削除します。
 
 
 .. code-block::
@@ -45,7 +44,10 @@ Examples
     --backup backup_dir/
 
 
-デフォルトでは完了状態のタスクのアノテーションを削除できません。完了状態のタスクのアノテーションも変更する場合は、 ``--force`` を指定してください。
+.. note::
+    
+    作業中状態のタスクに含まれるアノテーションは削除できません。
+    完了状態のタスクのアノテーションは、デフォルトでは削除できません。 ``--force`` を指定すれば、完了状態のタスクに含まれるアノテーションも削除できます。
 
 
 CSVに ``annotation_id`` を指定して削除する
@@ -96,7 +98,7 @@ CSVのフォーマットは以下の通りです。
         {
             "task_id": "t1",
             "input_data_id":"i1",
-            "annotation_id": "a1",
+            "annotation_id": "a1"
         }
     ]
 
