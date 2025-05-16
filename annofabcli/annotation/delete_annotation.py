@@ -181,8 +181,7 @@ class DeleteAnnotationMain(CommandLineWithConfirm):
 
     def delete_annotation_by_annotation_ids(
         self,
-        task_id: str,
-        input_data_id: str,
+        editor_annotation: dict[str, Any],
         annotation_ids: set[str],
     ) -> tuple[int, int]:
         """
@@ -194,18 +193,8 @@ class DeleteAnnotationMain(CommandLineWithConfirm):
         """
         assert len(annotation_ids) > 0
 
-        # 指定input_data_idの全annotationを取得
-        editor_annotation = self.service.wrapper.get_editor_annotation_or_none(
-            self.project_id, task_id=task_id, input_data_id=input_data_id, query_params={"v": "2"}
-        )
-        if editor_annotation is None:
-            # TODO 確認する
-            logger.warning(
-                f"task_id='{task_id}'のタスクに、input_data_id='{input_data_id}'の入力データが含まれていません。 アノテーションの削除をスキップします。 :: "  # noqa: E501
-                f"annotation_ids={annotation_ids}"
-            )
-            return 0, len(annotation_ids)
-
+        task_id = editor_annotation["task_id"]
+        input_data_id = editor_annotation["input_data_id"]
         if len(editor_annotation["details"]) == 0:
             logger.warning(
                 f"task_id='{task_id}', input_data_id='{input_data_id}' にはアノテーションが存在しません。以下のアノテーションの削除をスキップします。 :: "  # noqa: E501
@@ -313,14 +302,27 @@ class DeleteAnnotationMain(CommandLineWithConfirm):
                 failed_to_delete_annotation_count += annotation_count
                 continue
 
-            if backup_dir is not None:
-                # input_data_id単位でバックアップ
-                self.dump_annotation_obj.dump_annotation_for_task(task_id, output_dir=backup_dir)
-
             deleted_task_count += 1
             for input_data_id, annotation_ids in sub_grouped.items():
+                # 指定input_data_idの全annotationを取得
+                # TODO どこかのタイミングで、"v=2"のアノテーションを取得するようにする
+                editor_annotation = self.service.wrapper.get_editor_annotation_or_none(
+                    self.project_id, task_id=task_id, input_data_id=input_data_id, query_params={"v": "1"}
+                )
+                if editor_annotation is None:
+                    logger.warning(
+                        f"task_id='{task_id}'のタスクに、input_data_id='{input_data_id}'の入力データが含まれていません。 アノテーションの削除をスキップします。 :: "  # noqa: E501
+                        f"annotation_ids={annotation_ids}"
+                    )
+                    failed_to_delete_annotation_count += len(annotation_ids)
+                    continue
+
+                if backup_dir is not None:
+                    (backup_dir / task_id).mkdir(exist_ok=True, parents=True)
+                    self.dump_annotation_obj.dump_editor_annotation(editor_annotation, json_path=backup_dir / task_id / f"{input_data_id}.json")
+
                 sub_deleted_annotation_count, sub_failed_to_delete_annotation_count = self.delete_annotation_by_annotation_ids(
-                    task_id, input_data_id, set(annotation_ids)
+                    editor_annotation, set(annotation_ids)
                 )
                 deleted_annotation_count += sub_deleted_annotation_count
                 failed_to_delete_annotation_count += sub_failed_to_delete_annotation_count
@@ -367,6 +369,7 @@ class DeleteAnnotation(CommandLine):
             except TypeError as e:
                 print(f"{self.COMMON_MESSAGE} argument --json: 無効なオブジェクト形式です。{e}", file=sys.stderr)  # noqa: T201
                 sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
+            main_obj.delete_annotation_by_id_list(annotation_list, backup_dir=backup_dir)
 
         elif args.csv is not None:
             csv_path = Path(args.csv)
