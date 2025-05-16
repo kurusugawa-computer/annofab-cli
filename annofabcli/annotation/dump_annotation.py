@@ -6,7 +6,7 @@ import json
 import logging
 import multiprocessing
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
 
 import annofabapi
 from annofabapi.models import AnnotationDataHoldingType
@@ -24,17 +24,19 @@ class DumpAnnotationMain:
         self.facade = AnnofabApiFacade(service)
         self.project_id = project_id
 
-    def dump_annotation_for_input_data(self, task_id: str, input_data_id: str, task_dir: Path) -> None:
-        annotation, _ = self.service.api.get_editor_annotation(self.project_id, task_id, input_data_id)
-        json_path = task_dir / f"{input_data_id}.json"
-        json_path.write_text(json.dumps(annotation, ensure_ascii=False), encoding="utf-8")
+    def dump_editor_annotation(self, editor_annotation: dict[str, Any], json_path: Path) -> None:
+        """
+        `getEditorAnnotation` APIのレスポンスをファイルに保存する。
+        """
+        json_path.write_text(json.dumps(editor_annotation, ensure_ascii=False), encoding="utf-8")
 
-        details = annotation["details"]
+        details = editor_annotation["details"]
         outer_details = [e for e in details if e["data_holding_type"] == AnnotationDataHoldingType.OUTER.value]
         if len(outer_details) == 0:
             return
 
-        outer_dir = task_dir / input_data_id
+        input_data_id = editor_annotation["input_data_id"]
+        outer_dir = json_path.parent / input_data_id
         outer_dir.mkdir(exist_ok=True, parents=True)
 
         # 塗りつぶし画像など外部リソースに保存されているファイルをダウンロードする
@@ -42,6 +44,11 @@ class DumpAnnotationMain:
             annotation_id = detail["annotation_id"]
             outer_file_path = outer_dir / f"{annotation_id}"
             self.service.wrapper.download(detail["url"], outer_file_path)
+
+    def dump_annotation_for_input_data(self, task_id: str, input_data_id: str, task_dir: Path) -> None:
+        editor_annotation, _ = self.service.api.get_editor_annotation(self.project_id, task_id, input_data_id)
+        json_path = task_dir / f"{input_data_id}.json"
+        self.dump_editor_annotation(editor_annotation=editor_annotation, json_path=json_path)
 
     def dump_annotation_for_task(self, task_id: str, output_dir: Path, *, task_index: Optional[int] = None) -> bool:
         """

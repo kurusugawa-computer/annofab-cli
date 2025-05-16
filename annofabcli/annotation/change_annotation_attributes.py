@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import functools
+import json
 import logging
 import multiprocessing
 import sys
@@ -345,7 +346,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     argument_parser.add_project_id()
     argument_parser.add_task_id()
 
-    EXAMPLE_ANNOTATION_QUERY = '{"label": "car", "attributes":{"occluded" true} }'  # noqa: N806
+    EXAMPLE_ANNOTATION_QUERY = {"label": "car", "attributes": {"occluded": True}}  # noqa: N806
     parser.add_argument(
         "-aq",
         "--annotation_query",
@@ -353,7 +354,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         required=True,
         help="変更対象のアノテーションを検索する条件をJSON形式で指定します。"
         "``file://`` を先頭に付けると、JSON形式のファイルを指定できます。"
-        f"(ex): ``{EXAMPLE_ANNOTATION_QUERY}``",
+        f"(ex): ``{json.dumps(EXAMPLE_ANNOTATION_QUERY)}``",
     )
 
     EXAMPLE_ATTRIBUTES = '{"occluded": false}'  # noqa: N806
