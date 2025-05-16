@@ -366,10 +366,22 @@ class DeleteAnnotation(CommandLine):
             main_obj.delete_annotation_by_id_list(annotation_list, backup_dir=backup_dir)
 
         elif args.csv is not None:
-            df: pandas.DataFrame = pandas.read_csv(
-                args.csv,
-                dtype={"task_id": "string", "input_data_id": "string", "annotation_id": "string"},
-            )
+            try:
+                csv_path = Path(args.csv)
+                if not csv_path.exists():
+                    print(f"{self.COMMON_MESSAGE} argument --csv: ファイルパスが存在しません。 '{args.csv}'", file=sys.stderr)
+                    sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
+                df: pandas.DataFrame = pandas.read_csv(
+                    args.csv,
+                    dtype={"task_id": "string", "input_data_id": "string", "annotation_id": "string"},
+                )
+                required_cols = {"task_id", "input_data_id", "annotation_id"}
+                if not required_cols.issubset(df.columns):
+                    print(f"{self.COMMON_MESSAGE} CSVに必須列がありません。{required_cols}", file=sys.stderr)
+                    sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
+            except (FileNotFoundError, pandas.errors.ParserError) as e:
+                print(f"{self.COMMON_MESSAGE} CSVの読み込みに失敗しました: {e}", file=sys.stderr)
+                sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
             annotation_list = [DeletedAnnotationInfo(**eml) for eml in df.to_dict(orient="records")]
             main_obj.delete_annotation_by_id_list(annotation_list, backup_dir=backup_dir)
 
