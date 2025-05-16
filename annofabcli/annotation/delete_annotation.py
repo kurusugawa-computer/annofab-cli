@@ -202,7 +202,7 @@ class DeleteAnnotationMain(CommandLineWithConfirm):
             # TODO 確認する
             logger.warning(
                 f"task_id='{task_id}'のタスクに、input_data_id='{input_data_id}'の入力データが含まれていません。 アノテーションの削除をスキップします。 :: "  # noqa: E501
-                f"annotation_id_list={annotation_ids}"
+                f"annotation_ids={annotation_ids}"
             )
             return 0, len(annotation_ids)
 
