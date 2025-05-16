@@ -200,7 +200,7 @@ class DeleteAnnotationMain(CommandLineWithConfirm):
         if editor_annotation is None:
             # TODO 確認する
             logger.warning(
-                f"task_id='{task_id}'のタスクが存在しないか、input_data_id='{input_data_id}'の入力データがタスクに含まれていません。 アノテーションの削除をスキップします。 :: "  # noqa: E501
+                f"task_id='{task_id}'のタスクに、input_data_id='{input_data_id}'の入力データが含まれていません。 アノテーションの削除をスキップします。 :: "  # noqa: E501
                 f"annotation_id_list={annotation_ids}"
             )
             return 0, len(annotation_ids)
@@ -221,7 +221,7 @@ class DeleteAnnotationMain(CommandLineWithConfirm):
 
         if len(nonexistent_annotation_ids) > 0:
             logger.warning(
-                f"次のアノテーションは存在しないので、削除しません。 :: task_id='{task_id}', input_data_id='{input_data_id}', annotation_id='{nonexistent_annotation_ids}'"  # noqa: E501
+                f"次のアノテーションは存在しないので、削除できません。 :: task_id='{task_id}', input_data_id='{input_data_id}', annotation_id='{nonexistent_annotation_ids}'"  # noqa: E501
             )
 
         if len(filtered_details) == 0:
@@ -244,7 +244,7 @@ class DeleteAnnotationMain(CommandLineWithConfirm):
             # APIを呼び出してアノテーションを削除
             self.service.api.batch_update_annotations(self.project_id, request_body=request_body, query_params={"v": "2"})
 
-            logger.info(f"task_id='{task_id}', input_data_id='{input_data_id}' のアノテーション {len(filtered_details)} 件を削除しました。")
+            logger.info(f"task_id='{task_id}', input_data_id='{input_data_id}' に含まれるアノテーション {len(filtered_details)} 件を削除しました。")
 
             return len(filtered_details), len(nonexistent_annotation_ids)
 
