@@ -174,6 +174,104 @@ class DeleteAnnotationMain(CommandLineWithConfirm):
                 backup_dir=backup_dir,
             )
 
+    def delete_annotation_by_annotation_id_list(
+        self,
+        task_id: str,
+        input_data_id: str,
+        annotation_ids: set[str],
+    ) -> tuple[int, int]:
+        """
+        指定してフレームに対して、annotation_idのリストで指定されたアノテーションを削除する。
+        
+        Returns:
+            削除したアノテーションの件数
+            削除しなかったアノテーションの件数
+        """
+        assert len(annotation_ids) > 0
+        
+        # 指定input_data_idの全annotationを取得
+        editor_annotation = self.service.wrapper.get_editor_annotation_or_none(
+            self.project_id, task_id=task_id, input_data_id=input_data_id, query_params={"v": "2"}
+        )
+        if editor_annotation is None:
+            # TODO 確認する
+            logger.warning(
+                f"task_id='{task_id}'のタスクが存在しないか、input_data_id='{input_data_id}'の入力データが含まれていません。 :: "
+                f"annotation_id_list={annotation_ids}"
+            )
+            return 0, len(annotation_ids)
+
+        if len(editor_annotation["details"]) == 0:
+            logger.warning(
+                f"task_id='{task_id}', input_data_id='{input_data_id}' にはアノテーションが存在しません。以下のアノテーションの削除をスキップします。 :: "  # noqa: E501
+                f"annotation_ids={annotation_ids}"
+            )
+            return 0, len(annotation_ids)
+        
+        # annotation_idでフィルタ
+        filtered_details = []
+
+        nonexistent_annotation_id_list = []
+        for detail in editor_annotation["details"]:
+            if detail["annotation_id"] in annotation_ids:
+                filtered_details.append(detail)
+            else:
+                nonexistent_annotation_id_list.append(detail["annotation_id"])
+
+        if len(nonexistent_annotation_id_list) > 0:
+            logger.warning(
+                f"次のアノテーションは存在しないので、削除しません。 :: task_id='{task_id}', input_data_id='{input_data_id}', annotation_id='{nonexistent_annotation_id_list}'"
+            )
+
+
+        if len(filtered_details) == 0:
+            logger.info(f"task_id='{task_id}', input_data_id='{input_data_id}' には削除対象のアノテーションが存在しないので、スキップします。")
+            assert len(annotation_ids) == len(nonexistent_annotation_id_list)
+            return 0, len(annotation_ids)
+
+        if not self.confirm_processing(
+            f"task_id='{task_id}', input_data_id='{input_data_id}' のアノテーション {len(filtered_details)} 件を削除しますか？"
+        ):
+            return 0, len(annotation_ids)
+
+        try:
+            def _to_request_body_elm(detail: dict[str, Any]) -> dict[str, Any]:
+                return {
+                    "project_id": self.project_id,
+                    "task_id": task_id,
+                    "input_data_id": input_data_id,
+                    "updated_datetime": detail["updated_datetime"],
+                    "annotation_id": detail["annotation_id"],
+                    "_type": "Delete",
+                }
+
+            request_body = [_to_request_body_elm(detail) for detail in filtered_details]
+            self.service.api.batch_update_annotations(self.project_id, request_body=request_body, query_params={"v": "2"})
+
+            logger.info(f"task_id='{task_id}', input_data_id='{input_data_id}' のアノテーション {len(filtered_details)} 件を削除しました。")
+            
+            return len(filtered_details), len(nonexistent_annotation_id_list)
+        
+        except requests.HTTPError:
+            logger.warning(f"task_id='{task_id}', input_data_id='{input_data_id}' :: アノテーションの削除に失敗しました。", exc_info=True)
+            # `batchUpdateAnnotations` APIでエラーになった場合、途中までは削除されるので、`len(annotation_ids)` 件削除に失敗したとは限らない。
+            # そのため、再度アノテーション情報を取得して、削除できたアノテーション数と削除できなかったアノテーション数を取得する。
+            new_editor_annotation, _ = self.service.wrapper.get_editor_annotation(
+                self.project_id, task_id=task_id, input_data_id=input_data_id, query_params={"v": "2"}
+            )
+            filtered_annotation_ids = {detail["annotation_id"] for detail in filtered_details}
+            deleted_annotation_count = 0
+            failed_to_delete_annotation_count = 0            
+            for detail in  new_editor_annotation["details"]:
+                if detail["annotation_id"] in filtered_annotation_ids:
+                    failed_to_delete_annotation_count += 1
+                else:
+                    deleted_annotation_count += 1
+            
+            return deleted_annotation_count, failed_to_delete_annotation_count + nonexistent_annotation_id_list
+
+
+
     def delete_annotation_by_id_list(
         self,
         annotation_list: list[DeletedAnnotationInfo],
