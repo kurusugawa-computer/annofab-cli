@@ -82,14 +82,7 @@ def main(args: argparse.Namespace) -> None:
 
 
 def parse_args(parser: argparse.ArgumentParser) -> None:
-    parser.add_argument(
-        "-org",
-        "--organization",
-        required=True,
-        nargs="+",
-        type=str,
-        help="対象の組織の組織名を指定してください。``file://`` を先頭に付けると、一覧が記載されたファイルを指定できます。",
-    )
+    parser.add_argument("-org", "--organization", required=True, type=str, help="対象の組織の組織名を指定してください。")
 
     parser.add_argument(
         "-u",
