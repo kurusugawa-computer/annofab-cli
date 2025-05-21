@@ -84,7 +84,7 @@ def get_annotation_area_info_list(parser: SimpleAnnotationParser, simple_annotat
     result = []
     for detail in simple_annotation["details"]:
         if detail["data"]["_type"] in {"Segmentation", "SegmentationV2"}:
-            annotation_area = calculate_segmentation_area(parser.open_outer_file(detail["data"]["path"]))
+            annotation_area = calculate_segmentation_area(parser.open_outer_file(detail["data"]["data_uri"]))
         elif detail["data"]["_type"] == "BoundingBox":
             annotation_area = calculate_bounding_box_area(detail["data"])
 

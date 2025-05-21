@@ -7,6 +7,7 @@ import annofabcli.stat_visualization.merge_visualization_dir
 import annofabcli.statistics.list_annotation_attribute
 import annofabcli.statistics.list_annotation_attribute_filled_count
 import annofabcli.statistics.list_annotation_count
+import annofabcli.statistics.list_annotation_area
 import annofabcli.statistics.list_annotation_duration
 import annofabcli.statistics.list_video_duration
 import annofabcli.statistics.list_worktime
@@ -27,6 +28,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     annofabcli.statistics.list_annotation_attribute_filled_count.add_parser(subparsers)
     annofabcli.statistics.list_annotation_count.add_parser(subparsers)
     annofabcli.statistics.list_annotation_duration.add_parser(subparsers)
+    annofabcli.statistics.list_annotation_area.add_parser(subparsers)
 
     annofabcli.statistics.list_video_duration.add_parser(subparsers)
     annofabcli.statistics.list_worktime.add_parser(subparsers)
