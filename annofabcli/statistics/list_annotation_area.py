@@ -145,7 +145,7 @@ def create_df(
         "annotation_id",
         "annotation_area",
     ]
-    df = pandas.DataFrame([e.to_dict() for e in annotation_area_list])
+    df = pandas.DataFrame((e.to_dict() for e in annotation_area_list))
     if len(df) == 0:
         df = pandas.DataFrame(columns=columns)
 
