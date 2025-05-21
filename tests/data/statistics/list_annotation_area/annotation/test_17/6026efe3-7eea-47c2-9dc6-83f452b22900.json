@@ -1,0 +1,99 @@
+{
+    "project_id": "87dde4e1-f434-444c-8cd9-c262bf02999b",
+    "annotation_format_version": "1.2.0",
+    "task_id": "test_17",
+    "task_phase": "annotation",
+    "task_phase_stage": 1,
+    "task_status": "break",
+    "input_data_id": "6026efe3-7eea-47c2-9dc6-83f452b22900",
+    "input_data_name": "val.zip/val/ab1d5abf-00000000.jpg",
+    "details": [
+        {
+            "label": "car",
+            "annotation_id": "7168a1be-684a-48ca-a0ba-167fd49b76ce",
+            "data": {
+                "left_top": {
+                    "x": 667,
+                    "y": 143
+                },
+                "right_bottom": {
+                    "x": 709,
+                    "y": 183
+                },
+                "_type": "BoundingBox"
+            },
+            "attributes": {
+                "number": 0,
+                "20240906-text": "",
+                "direction": "aslant",
+                "comment": "",
+                "link": "",
+                "truncation": false,
+                "tracking_id": "7168a1be-684a-48ca-a0ba-167fd49b76ce",
+                "20240906-check": false
+            }
+        },
+        {
+            "label": "road_segment",
+            "annotation_id": "7604d4ea-4288-4f31-bed9-d5624571e52f",
+            "data": {
+                "data_uri": "7604d4ea-4288-4f31-bed9-d5624571e52f",
+                "_type": "SegmentationV2"
+            },
+            "attributes": {}
+        },
+        {
+            "label": "road_instance",
+            "annotation_id": "2d9884e3-6926-47dc-97d4-d9f55d113625",
+            "data": {
+                "data_uri": "2d9884e3-6926-47dc-97d4-d9f55d113625",
+                "_type": "Segmentation"
+            },
+            "attributes": {
+                "type": "a"
+            }
+        },
+        {
+            "label": "road_instance",
+            "annotation_id": "1b3f0069-9d88-4781-8406-023180822407",
+            "data": {
+                "data_uri": "1b3f0069-9d88-4781-8406-023180822407",
+                "_type": "Segmentation"
+            },
+            "attributes": {
+                "type": "a"
+            }
+        },
+        {
+            "label": "天気",
+            "annotation_id": "46069020-12ab-4698-92d0-818d8cf0cf3d",
+            "data": {
+                "_type": "Classification"
+            },
+            "attributes": {
+                "truncation": false
+            }
+        },
+        {
+            "label": "現場",
+            "annotation_id": "dbcff52c-fb2d-4a76-b5fc-2af8e9e56cc6",
+            "data": {
+                "_type": "Classification"
+            },
+            "attributes": {
+                "type": "a"
+            }
+        },
+        {
+            "label": "foo",
+            "annotation_id": "53530a8f-e48f-46e9-833f-8e48becb25af",
+            "data": {
+                "_type": "Classification"
+            },
+            "attributes": {
+                "truncation": false
+            }
+        }
+    ],
+    "updated_datetime": "2025-05-21T12:37:42.187+09:00"
+}

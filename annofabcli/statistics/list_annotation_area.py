@@ -10,7 +10,6 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Optional
 
-import annofabapi
 import numpy
 import pandas
 from annofabapi.models import InputDataType, ProjectMemberRole
@@ -70,8 +69,8 @@ class AnnotationAreaInfo(DataClassJsonMixin):
 
 
 def calculate_bounding_box_area(data: dict[str, Any]) -> int:
-    width = data["right_bottom"]["x"] - data["left_top"]["x"]
-    height = data["right_bottom"]["y"] - data["left_top"]["y"]
+    width = abs(data["right_bottom"]["x"] - data["left_top"]["x"])
+    height = abs(data["right_bottom"]["y"] - data["left_top"]["y"])
     return width * height
 
 
@@ -182,10 +181,8 @@ def print_annotation_area(
             output=output_file,
         )
 
-
-class ListAnnotationAreaMain:
-    def __init__(self, service: annofabapi.Resource) -> None:
-        self.service = service
+    else:
+        raise RuntimeError(f"出力形式 '{output_format}' はサポートされていません。")
 
 
 class ListAnnotationArea(CommandLine):
@@ -316,7 +313,7 @@ def main(args: argparse.Namespace) -> None:
 
 def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     subcommand_name = "list_annotation_area"
-    subcommand_help = "ラベルごとまたは属性値ごとに塗りつぶしアノテーションのピクセル数（面積）を出力します。"
+    subcommand_help = "塗りつぶしアノテーションまたは矩形アノテーションの面積を出力します。"
     epilog = "オーナロールまたはアノテーションユーザロールを持つユーザで実行してください。"
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description=subcommand_help, epilog=epilog)
     parse_args(parser)
