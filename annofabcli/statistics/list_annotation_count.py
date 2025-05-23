@@ -219,13 +219,9 @@ class ListAnnotationCounterByInputData:
 
         annotation_count_by_label = collections.Counter([e["label"] for e in details])
         if self.target_labels is not None:
-            annotation_count_by_label = collections.Counter(
-                {label: count for label, count in annotation_count_by_label.items() if label in self.target_labels}
-            )
+            annotation_count_by_label = collections.Counter({label: count for label, count in annotation_count_by_label.items() if label in self.target_labels})
         if self.non_target_labels is not None:
-            annotation_count_by_label = collections.Counter(
-                {label: count for label, count in annotation_count_by_label.items() if label not in self.non_target_labels}
-            )
+            annotation_count_by_label = collections.Counter({label: count for label, count in annotation_count_by_label.items() if label not in self.non_target_labels})
 
         attributes_list: list[AttributeValueKey] = []
         for detail in details:
@@ -413,7 +409,7 @@ class AttributeCountCsv:
     Args:
         selective_attribute_value_max_count: 選択肢系の属性の値の個数の上限。これを超えた場合は、非選択肢系属性（トラッキングIDやアノテーションリンクなど）とみなす
 
-    """  # noqa: E501
+    """
 
     def __init__(self, selective_attribute_value_max_count: int = 20) -> None:
         self.selective_attribute_value_max_count = selective_attribute_value_max_count
@@ -428,23 +424,13 @@ class AttributeCountCsv:
         for label, attribute_name, _ in columns:
             attribute_name_list.append((label, attribute_name))
 
-        non_selective_attribute_names = {
-            key for key, value in collections.Counter(attribute_name_list).items() if value > self.selective_attribute_value_max_count
-        }
+        non_selective_attribute_names = {key for key, value in collections.Counter(attribute_name_list).items() if value > self.selective_attribute_value_max_count}
         if len(non_selective_attribute_names) > 0:
-            logger.debug(
-                f"以下の属性は値の個数が{self.selective_attribute_value_max_count}を超えていたため、集計しません。 :: {non_selective_attribute_names}"
-            )
+            logger.debug(f"以下の属性は値の個数が{self.selective_attribute_value_max_count}を超えていたため、集計しません。 :: {non_selective_attribute_names}")
 
-        return [
-            (label, attribute_name, attribute_value)
-            for (label, attribute_name, attribute_value) in columns
-            if (label, attribute_name) not in non_selective_attribute_names
-        ]
+        return [(label, attribute_name, attribute_value) for (label, attribute_name, attribute_value) in columns if (label, attribute_name) not in non_selective_attribute_names]
 
-    def _value_columns(
-        self, counter_list: Collection[AnnotationCounter], prior_attribute_columns: Optional[list[AttributeValueKey]]
-    ) -> list[AttributeValueKey]:
+    def _value_columns(self, counter_list: Collection[AnnotationCounter], prior_attribute_columns: Optional[list[AttributeValueKey]]) -> list[AttributeValueKey]:
         all_attr_key_set = {attr_key for c in counter_list for attr_key in c.annotation_count_by_attribute}
         if prior_attribute_columns is not None:
             remaining_columns = sorted(all_attr_key_set - set(prior_attribute_columns))
@@ -689,9 +675,7 @@ class AnnotationSpecs:
         result = [to_label_name(label) for label in self._labels_v1]
         duplicated_labels = [key for key, value in collections.Counter(result).items() if value > 1]
         if len(duplicated_labels) > 0:
-            logger.warning(
-                f"アノテーション仕様のラベル英語名が重複しています。アノテーション個数が正しく算出できない可能性があります。:: {duplicated_labels}"
-            )
+            logger.warning(f"アノテーション仕様のラベル英語名が重複しています。アノテーション個数が正しく算出できない可能性があります。:: {duplicated_labels}")
         return result
 
     def attribute_name_keys(
@@ -730,9 +714,7 @@ class AnnotationSpecs:
 
         duplicated_attribute_names = [key for key, value in collections.Counter(result).items() if value > 1]
         if len(duplicated_attribute_names) > 0:
-            logger.warning(
-                f"アノテーション仕様の属性情報（ラベル英語名、属性英語名）が重複しています。アノテーション個数が正しく算出できない可能性があります。:: {duplicated_attribute_names}"  # noqa: E501
-            )
+            logger.warning(f"アノテーション仕様の属性情報（ラベル英語名、属性英語名）が重複しています。アノテーション個数が正しく算出できない可能性があります。:: {duplicated_attribute_names}")
 
         return result
 
@@ -772,7 +754,7 @@ class AnnotationSpecs:
         duplicated_attributes = [key for key, value in collections.Counter(target_attribute_value_keys).items() if value > 1]
         if len(duplicated_attributes) > 0:
             logger.warning(
-                f"アノテーション仕様の属性情報（ラベル英語名、属性英語名、選択肢英語名）が重複しています。アノテーション個数が正しく算出できない可能性があります。:: {duplicated_attributes}"  # noqa: E501
+                f"アノテーション仕様の属性情報（ラベル英語名、属性英語名、選択肢英語名）が重複しています。アノテーション個数が正しく算出できない可能性があります。:: {duplicated_attributes}"
             )
 
         return target_attribute_value_keys
@@ -870,9 +852,7 @@ class ListAnnotationCountMain:
             non_selective_attribute_name_keys = annotation_specs.non_selective_attribute_name_keys()
 
         frame_no_map = self.get_frame_no_map(task_json_path) if task_json_path is not None else None
-        counter_by_input_data = ListAnnotationCounterByInputData(
-            non_target_attribute_names=non_selective_attribute_name_keys, frame_no_map=frame_no_map
-        )
+        counter_by_input_data = ListAnnotationCounterByInputData(non_target_attribute_names=non_selective_attribute_name_keys, frame_no_map=frame_no_map)
         counter_list_by_input_data = counter_by_input_data.get_annotation_counter_list(
             annotation_path,
             target_task_ids=target_task_ids,
@@ -953,9 +933,7 @@ class ListAnnotationCountMain:
             non_selective_attribute_name_keys = None
 
         frame_no_map = self.get_frame_no_map(task_json_path) if task_json_path is not None else None
-        counter_list_by_input_data = ListAnnotationCounterByInputData(
-            non_target_attribute_names=non_selective_attribute_name_keys, frame_no_map=frame_no_map
-        ).get_annotation_counter_list(
+        counter_list_by_input_data = ListAnnotationCounterByInputData(non_target_attribute_names=non_selective_attribute_name_keys, frame_no_map=frame_no_map).get_annotation_counter_list(
             annotation_path,
             target_task_ids=target_task_ids,
             task_query=task_query,
@@ -1194,7 +1172,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--latest",
         action="store_true",
-        help="``--annotation`` を指定しないとき、最新のアノテーションzipを参照します。このオプションを指定すると、アノテーションzipを更新するのに数分待ちます。",  # noqa: E501
+        help="``--annotation`` を指定しないとき、最新のアノテーションzipを参照します。このオプションを指定すると、アノテーションzipを更新するのに数分待ちます。",
     )
 
     parser.set_defaults(subcommand_func=main)

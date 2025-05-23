@@ -147,7 +147,7 @@ class ChangeProjectMembers(CommandLine):
     def main(self) -> None:
         args = self.args
         project_id = args.project_id
-        if args.all_user:
+        if args.all_user:  # noqa: SIM108
             user_id_list = self.get_all_user_id_list_except_myself(project_id)
         else:
             user_id_list = annofabcli.common.cli.get_list_from_args(args.user_id)
@@ -193,7 +193,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--member_info",
         type=str,
-        help="プロジェクトメンバに対して設定するメンバ情報を、JSON形式で指定します。 ``file://`` を先頭に付けると、JSON形式のファイルを指定できます。 "  # noqa: E501
+        help="プロジェクトメンバに対して設定するメンバ情報を、JSON形式で指定します。 ``file://`` を先頭に付けると、JSON形式のファイルを指定できます。 "
         "以下のキーが指定可能です。sampling_inspection_rate, sampling_acceptance_rate, "
         "未設定にする場合は、値にnullを指定してください。"
         "詳細は https://annofab.com/docs/api/#operation/putProjectMember を参照ください。 ",

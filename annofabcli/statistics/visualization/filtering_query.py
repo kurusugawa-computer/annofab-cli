@@ -31,9 +31,7 @@ def _get_first_annotation_started_datetime(sub_task_history_list: list[dict[str,
     1個のタスクのタスク履歴一覧から、最初に教師付フェーズを作業した日時を取得します。
     """
     task_history_list_with_annotation_phase = [
-        e
-        for e in sub_task_history_list
-        if e["phase"] == "annotation" and e["account_id"] is not None and isoduration_to_hour(e["accumulated_labor_time_milliseconds"]) > 0
+        e for e in sub_task_history_list if e["phase"] == "annotation" and e["account_id"] is not None and isoduration_to_hour(e["accumulated_labor_time_milliseconds"]) > 0
     ]
     if len(task_history_list_with_annotation_phase) == 0:
         return None
@@ -41,9 +39,7 @@ def _get_first_annotation_started_datetime(sub_task_history_list: list[dict[str,
     return task_history_list_with_annotation_phase[0]["started_datetime"]
 
 
-def filter_task_histories(
-    task_histories: dict[str, list[dict[str, Any]]], *, start_date: Optional[str] = None, end_date: Optional[str] = None
-) -> dict[str, list[dict[str, Any]]]:
+def filter_task_histories(task_histories: dict[str, list[dict[str, Any]]], *, start_date: Optional[str] = None, end_date: Optional[str] = None) -> dict[str, list[dict[str, Any]]]:
     """
     タスク履歴を絞り込みます。
 

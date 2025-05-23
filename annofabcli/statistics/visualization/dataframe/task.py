@@ -71,10 +71,7 @@ class Task:
             logger.warning("引数`df`に重複したキー（project_id, task_id）が含まれています。")
 
         if not self.required_columns_exist(df):
-            raise ValueError(
-                f"引数'df'の'columns'に次の列が存在していません。 {self.missing_required_columns(df)} :: "
-                f"次の列が必須です。{self.required_columns} の列が必要です。"
-            )
+            raise ValueError(f"引数'df'の'columns'に次の列が存在していません。 {self.missing_required_columns(df)} :: 次の列が必須です。{self.required_columns} の列が必要です。")
 
         self.df = df
 
@@ -409,7 +406,7 @@ class Task:
 
             # タイムゾーンを指定している理由::
             # すべてがNaNのseriesをdatetimeに変換すると、型にタイムゾーンが指定されない。
-            # その状態で加算すると、`TypeError: DatetimeArray subtraction must have the same timezones or no timezones`というエラーが発生するため  # noqa: E501
+            # その状態で加算すると、`TypeError: DatetimeArray subtraction must have the same timezones or no timezones`というエラーが発生するため
             if not isinstance(dt1.dtype, pandas.DatetimeTZDtype):
                 dt1 = dt1.dt.tz_localize(pytz.FixedOffset(540))
             if not isinstance(dt2.dtype, pandas.DatetimeTZDtype):

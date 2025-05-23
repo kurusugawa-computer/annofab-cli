@@ -67,10 +67,7 @@ class UpdateMetadataMain(CommandLineWithConfirm):
             logger.warning(f"{logging_prefix} 入力データは存在しないのでスキップします。 :: input_data_id='{input_data_id}'")
             return False
 
-        logger.debug(
-            f"{logging_prefix} input_data_id='{input_data['input_data_id']}', "
-            f"input_data_name='{input_data['input_data_name']}', metadata='{json.dumps(input_data['metadata'])}'"
-        )
+        logger.debug(f"{logging_prefix} input_data_id='{input_data['input_data_id']}', input_data_name='{input_data['input_data_name']}', metadata='{json.dumps(input_data['metadata'])}'")
         if not self.confirm_processing(get_confirm_message()):
             return False
 
@@ -84,9 +81,7 @@ class UpdateMetadataMain(CommandLineWithConfirm):
         logger.debug(f"{logging_prefix} 入力データのメタデータを更新しました。input_data_id='{input_data['input_data_id']}'")
         return True
 
-    def set_metadata_to_input_data_wrapper(
-        self, tpl: tuple[int, InputDataMetadataInfo], project_id: str, *, overwrite_metadata: bool = False
-    ) -> bool:
+    def set_metadata_to_input_data_wrapper(self, tpl: tuple[int, InputDataMetadataInfo], project_id: str, *, overwrite_metadata: bool = False) -> bool:
         input_data_index, info = tpl
         return self.set_metadata_to_input_data(
             project_id,
@@ -202,9 +197,7 @@ class UpdateMetadata(CommandLine):
                 sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
             if input_data_id_list is not None:
-                metadata_by_input_data_id = {
-                    input_data_id: metadata for input_data_id, metadata in metadata_by_input_data_id.items() if input_data_id in input_data_id_list
-                }
+                metadata_by_input_data_id = {input_data_id: metadata for input_data_id, metadata in metadata_by_input_data_id.items() if input_data_id in input_data_id_list}
         else:
             raise RuntimeError("'--metadata'か'--metadata_by_input_data_id'のどちらかを指定する必要があります。")
 
@@ -233,8 +226,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     metadata_group_parser.add_argument(
         "--metadata",
         type=str,
-        help="入力データに設定する ``metadata`` をJSON形式で指定してください。メタデータの値は文字列です。"
-        " ``file://`` を先頭に付けると、JSON形式のファイルを指定できます。",
+        help="入力データに設定する ``metadata`` をJSON形式で指定してください。メタデータの値は文字列です。 ``file://`` を先頭に付けると、JSON形式のファイルを指定できます。",
     )
 
     sample_metadata_by_input_data_id = {"input_data1": {"country": "japan"}}
@@ -251,14 +243,14 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--overwrite",
         action="store_true",
-        help="指定した場合、メタデータを上書きして更新します（すでに設定されているメタデータは削除されます）。指定しない場合、 ``--metadata`` に指定されたキーのみ更新されます。",  # noqa: E501
+        help="指定した場合、メタデータを上書きして更新します（すでに設定されているメタデータは削除されます）。指定しない場合、 ``--metadata`` に指定されたキーのみ更新されます。",
     )
 
     parser.add_argument(
         "--parallelism",
         type=int,
         choices=PARALLELISM_CHOICES,
-        help="使用するプロセス数（並列度）を指定してください。指定する場合は必ず ``--yes`` を指定してください。指定しない場合は、逐次的に処理します。",  # noqa: E501
+        help="使用するプロセス数（並列度）を指定してください。指定する場合は必ず ``--yes`` を指定してください。指定しない場合は、逐次的に処理します。",
     )
 
     parser.set_defaults(subcommand_func=main)

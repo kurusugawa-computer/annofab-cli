@@ -46,6 +46,4 @@ class TestListWorktime:
                 "acceptance_worktime_hour": [0, 0, 1.0],
             }
         )
-        assert df_actual[["date", "user_id", "annotation_worktime_hour", "acceptance_worktime_hour"]].equals(
-            df_expected[["date", "user_id", "annotation_worktime_hour", "acceptance_worktime_hour"]]
-        )
+        assert df_actual[["date", "user_id", "annotation_worktime_hour", "acceptance_worktime_hour"]].equals(df_expected[["date", "user_id", "annotation_worktime_hour", "acceptance_worktime_hour"]])

@@ -51,9 +51,7 @@ def main() -> None:
 
 
 def create_parser() -> ArgumentParser:
-    parser = ArgumentParser(
-        description="`stat_visualization write_performance_rating_csv`コマンドの出力結果である複数のCSVに対して、`filesystem mask_user_info`コマンドを実行します。"  # noqa: E501
-    )
+    parser = ArgumentParser(description="`stat_visualization write_performance_rating_csv`コマンドの出力結果である複数のCSVに対して、`filesystem mask_user_info`コマンドを実行します。")
     parser.add_argument(
         "root_dir",
         type=Path,

@@ -107,9 +107,7 @@ class TaskWorktimeByPhaseUser:
             logger.warning("引数`df`に重複したキー（project_id, task_id, phase, phase_stage, account_id）が含まれています。")
 
         if not self.required_columns_exist(df):
-            raise ValueError(
-                f"引数'df'の'columns'に次の列が存在していません。 {self.missing_columns(df)} :: 次の列が必須です。{self.columns}の列が必要です。"
-            )
+            raise ValueError(f"引数'df'の'columns'に次の列が存在していません。 {self.missing_columns(df)} :: 次の列が必須です。{self.columns}の列が必要です。")
 
         self.df = df
 
@@ -141,9 +139,7 @@ class TaskWorktimeByPhaseUser:
             project_id
         """
         df_task = task.df
-        df_worktime_ratio = cls._create_annotation_count_ratio_df(
-            task_history.df, task.df, custom_production_volume_columns=[e.value for e in task.custom_production_volume_list]
-        )
+        df_worktime_ratio = cls._create_annotation_count_ratio_df(task_history.df, task.df, custom_production_volume_columns=[e.value for e in task.custom_production_volume_list])
         if len(df_worktime_ratio) == 0:
             return cls.empty()
 
@@ -239,9 +235,7 @@ class TaskWorktimeByPhaseUser:
         return TaskWorktimeByPhaseUser(df, custom_production_volume_list=self.custom_production_volume_list)
 
     @staticmethod
-    def _create_annotation_count_ratio_df(
-        task_history_df: pandas.DataFrame, task_df: pandas.DataFrame, *, custom_production_volume_columns: Optional[list[str]]
-    ) -> pandas.DataFrame:
+    def _create_annotation_count_ratio_df(task_history_df: pandas.DataFrame, task_df: pandas.DataFrame, *, custom_production_volume_columns: Optional[list[str]]) -> pandas.DataFrame:
         """
         task_id, phase, (phase_index), user_idの作業時間比から、アノテーション数などの生産量を求める
 
@@ -273,11 +267,7 @@ class TaskWorktimeByPhaseUser:
 
         task_history_df = task_history_df[task_history_df["task_id"].isin(set(task_df["task_id"]))]
 
-        group_obj = (
-            task_history_df.sort_values("started_datetime")
-            .groupby(["task_id", "phase", "phase_stage", "account_id"])
-            .agg({"worktime_hour": "sum", "started_datetime": "first"})
-        )
+        group_obj = task_history_df.sort_values("started_datetime").groupby(["task_id", "phase", "phase_stage", "account_id"]).agg({"worktime_hour": "sum", "started_datetime": "first"})
         # 担当者だけ変更して作業していないケースを除外する
         group_obj = group_obj[group_obj["worktime_hour"] > 0]
 
@@ -285,9 +275,7 @@ class TaskWorktimeByPhaseUser:
             logger.warning("タスク履歴情報に作業しているタスクがありませんでした。タスク履歴全件ファイルが更新されていない可能性があります。")
             return pandas.DataFrame()
 
-        group_obj["task_count"] = group_obj.groupby(level=["task_id", "phase", "phase_stage"], group_keys=False)[["worktime_hour"]].apply(
-            lambda e: e / e["worktime_hour"].sum()
-        )
+        group_obj["task_count"] = group_obj.groupby(level=["task_id", "phase", "phase_stage"], group_keys=False)[["worktime_hour"]].apply(lambda e: e / e["worktime_hour"].sum())
 
         quantity_columns = [
             "annotation_count",
@@ -302,9 +290,7 @@ class TaskWorktimeByPhaseUser:
             group_obj[col] = group_obj.apply(sub_get_quantity_value, axis="columns")
 
         new_df = group_obj.reset_index()
-        new_df["pointed_out_inspection_comment_count"] = new_df["pointed_out_inspection_comment_count"] * new_df["phase"].apply(
-            lambda e: 1 if e == TaskPhase.ANNOTATION.value else 0
-        )
+        new_df["pointed_out_inspection_comment_count"] = new_df["pointed_out_inspection_comment_count"] * new_df["phase"].apply(lambda e: 1 if e == TaskPhase.ANNOTATION.value else 0)
         new_df["rejected_count"] = new_df["rejected_count"] * new_df["phase"].apply(lambda e: 1 if e == TaskPhase.ANNOTATION.value else 0)
 
         return new_df

@@ -86,9 +86,7 @@ class ReplacingLabelId(CommandLineWithConfirm):
                     continue
 
             if not self.validate_label_id(label_name_en):
-                logger.warning(
-                    f"label_name_en='{label_name_en}'はlabel_idにできない文字を含むため、label_id='{label_id}'を'{label_name_en}'に変更しません。"
-                )
+                logger.warning(f"label_name_en='{label_name_en}'はlabel_idにできない文字を含むため、label_id='{label_id}'を'{label_name_en}'に変更しません。")
                 continue
 
             if self.exists_label_with_label_id(label_list, label_id=label_name_en):

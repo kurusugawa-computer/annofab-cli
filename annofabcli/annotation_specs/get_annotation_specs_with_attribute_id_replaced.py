@@ -101,16 +101,11 @@ class ReplacingAttributeId(CommandLineWithConfirm):
                     continue
 
             if not self.validate_attribute_id(attribute_name_en):
-                logger.warning(
-                    f"属性英語名='{attribute_name_en}'は属性IDに利用できない文字を含むため、"
-                    f"属性ID='{attribute_id}'を'{attribute_name_en}'に変更しません。"
-                )
+                logger.warning(f"属性英語名='{attribute_name_en}'は属性IDに利用できない文字を含むため、属性ID='{attribute_id}'を'{attribute_name_en}'に変更しません。")
                 continue
 
             if self.exists_attribute_with_attribute_id(attribute_list, attribute_id=attribute_name_en):
-                logger.warning(
-                    f"属性ID='{attribute_name_en}'である属性が既に存在するため、属性ID='{attribute_id}'を'{attribute_name_en}'に変更しません。"
-                )
+                logger.warning(f"属性ID='{attribute_name_en}'である属性が既に存在するため、属性ID='{attribute_id}'を'{attribute_name_en}'に変更しません。")
                 continue
 
             if not self.confirm_processing(f"属性ID='{attribute_id}'を'{attribute_name_en}'に変更したアノテーション仕様のJSONを出力しますか？"):
@@ -118,9 +113,7 @@ class ReplacingAttributeId(CommandLineWithConfirm):
 
             attribute["additional_data_definition_id"] = attribute_name_en
             self.replace_attribute_id_of_labels(old_attribute_id=attribute_id, new_attribute_id=attribute_name_en, label_list=label_list)
-            self.replace_attribute_id_of_restrictions(
-                old_attribute_id=attribute_id, new_attribute_id=attribute_name_en, restriction_list=restriction_list
-            )
+            self.replace_attribute_id_of_restrictions(old_attribute_id=attribute_id, new_attribute_id=attribute_name_en, restriction_list=restriction_list)
             replaced_count += 1
 
         logger.info(f"{replaced_count} 個の属性の属性IDを変更しました。")

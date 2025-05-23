@@ -82,17 +82,13 @@ class DeleteMetadataKeysOfTaskMain(CommandLineWithConfirm):
             # メタデータを更新する必要がないのでreturnします。
             return False
 
-        if not self.all_yes and not self.confirm_processing(
-            f"task_id='{task_id}' :: metadata='{str_old_metadata}' からキー'{deleted_keys}'を削除しますか？"
-        ):
+        if not self.all_yes and not self.confirm_processing(f"task_id='{task_id}' :: metadata='{str_old_metadata}' からキー'{deleted_keys}'を削除しますか？"):
             return False
 
         request_body = {task_id: new_metadata}
         self.service.api.patch_tasks_metadata(self.project_id, request_body=request_body)
         str_new_metadata = json.dumps(new_metadata)
-        logger.debug(
-            f"{logging_prefix} task_id='{task_id}' :: タスクのメタデータからキー'{deleted_keys}'を削除しました。 :: metadata='{str_new_metadata}'"
-        )
+        logger.debug(f"{logging_prefix} task_id='{task_id}' :: タスクのメタデータからキー'{deleted_keys}'を削除しました。 :: metadata='{str_new_metadata}'")
         return True
 
     def delete_metadata_keys_for_one_task_wrapper(self, tpl: tuple[int, str], metadata_keys: Collection[str]) -> bool:

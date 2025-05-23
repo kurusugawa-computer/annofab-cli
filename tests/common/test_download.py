@@ -37,12 +37,8 @@ def test_download_all_file_with_async():
             is_latest=is_latest,
             wait_options=wait_options,
         ),
-        downloading_obj.download_task_json_with_async(
-            project_id, dest_path=str(out_path / "task.json"), is_latest=is_latest, wait_options=wait_options
-        ),
-        downloading_obj.download_annotation_zip_with_async(
-            project_id, dest_path=str(out_path / "annotation.zip"), is_latest=is_latest, wait_options=wait_options
-        ),
+        downloading_obj.download_task_json_with_async(project_id, dest_path=str(out_path / "task.json"), is_latest=is_latest, wait_options=wait_options),
+        downloading_obj.download_annotation_zip_with_async(project_id, dest_path=str(out_path / "annotation.zip"), is_latest=is_latest, wait_options=wait_options),
         return_exceptions=True,
     )
     loop.run_until_complete(gather)

@@ -120,10 +120,7 @@ class CopyProjectMembers(CommandLine):
             account_id = member["account_id"]
             if self.find_member(dest_organization_members, account_id) is None:
                 # コピー先の組織メンバでないので、コピーしない
-                logger.debug(
-                    f"コピーしないメンバ: {member['user_id']} , {member['username']} : "
-                    f"(コピー先の所属組織 {dest_organization_name} の組織メンバでないため)"
-                )
+                logger.debug(f"コピーしないメンバ: {member['user_id']} , {member['username']} : (コピー先の所属組織 {dest_organization_name} の組織メンバでないため)")
                 continue
 
             added_members.append(member)
@@ -152,9 +149,7 @@ class CopyProjectMembers(CommandLine):
 
         if len(added_members) > 0:
             if self.confirm_processing(
-                f"'{self.src_project_title}' のプロジェクトのメンバを、"
-                f"'{self.dest_project_title}' にコピーしますか？"
-                f"追加対象: {len(added_members)} 件, 削除対象: {len(deleted_dest_members)} 件"
+                f"'{self.src_project_title}' のプロジェクトのメンバを、'{self.dest_project_title}' にコピーしますか？追加対象: {len(added_members)} 件, 削除対象: {len(deleted_dest_members)} 件"
             ):
                 self.put_project_members(dest_project_id, updated_members)
         else:

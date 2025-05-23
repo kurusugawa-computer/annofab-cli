@@ -60,10 +60,7 @@ class AddAttributeRestrictionMain(CommandLineWithConfirm):
             try:
                 restriction_text = msg_obj.get_restriction_text(restriction["additional_data_definition_id"], restriction["condition"])
             except ValueError as e:
-                logger.warning(
-                    f"{index + 1}件目 :: 次の属性制約は存在しないIDが含まれていたため、アノテーション仕様に追加しません。 :: "
-                    f"restriction=`{restriction}`, error_message=`{e!s}`"
-                )
+                logger.warning(f"{index + 1}件目 :: 次の属性制約は存在しないIDが含まれていたため、アノテーション仕様に追加しません。 :: restriction=`{restriction}`, error_message=`{e!s}`")
                 continue
 
             if restriction in old_restrictions:
@@ -131,10 +128,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--json",
         type=str,
         required=True,
-        help="追加する属性の制約情報のJSONを指定します。"
-        "JSON形式は ... を参照してください。\n"
-        f"(例) ``{json.dumps(sample_json)}``\n"
-        "``file://`` を先頭に付けるとjsonファイルを指定できます。",
+        help=f"追加する属性の制約情報のJSONを指定します。JSON形式は ... を参照してください。\n(例) ``{json.dumps(sample_json)}``\n``file://`` を先頭に付けるとjsonファイルを指定できます。",
     )
 
     parser.add_argument("--comment", type=str, help="アノテーション仕様の変更時に指定できるコメント。未指定の場合、自動でコメントが生成されます。")

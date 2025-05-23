@@ -39,9 +39,7 @@ def get_post_rejection_annotation_worktime_hour(task_histories: list[TaskHistory
     # 差し戻された履歴の直後で、教師付フェーズの作業時間を算出する
     min_rejected_task_history_index = min(rejected_task_history_indices)
     return sum(
-        isoduration_to_hour(history["accumulated_labor_time_milliseconds"])
-        for history in task_histories[min_rejected_task_history_index + 1 :]
-        if history["phase"] == TaskPhase.ANNOTATION.value
+        isoduration_to_hour(history["accumulated_labor_time_milliseconds"]) for history in task_histories[min_rejected_task_history_index + 1 :] if history["phase"] == TaskPhase.ANNOTATION.value
     )
 
 
@@ -60,9 +58,7 @@ def get_post_rejection_inspection_worktime_hour(task_histories: list[TaskHistory
     # 差し戻された履歴の直後で、検査フェーズの作業時間を算出する
     min_rejected_task_history_index = min(rejected_task_history_indices)
     return sum(
-        isoduration_to_hour(history["accumulated_labor_time_milliseconds"])
-        for history in task_histories[min_rejected_task_history_index + 1 :]
-        if history["phase"] == TaskPhase.INSPECTION.value
+        isoduration_to_hour(history["accumulated_labor_time_milliseconds"]) for history in task_histories[min_rejected_task_history_index + 1 :] if history["phase"] == TaskPhase.INSPECTION.value
     )
 
 
@@ -104,10 +100,7 @@ def get_completed_datetime(task: dict[str, Any], task_histories: list[TaskHistor
     """
     # 受入完了日時を設定
     if task["phase"] == TaskPhase.ACCEPTANCE.value and task["status"] == TaskStatus.COMPLETE.value:
-        assert len(task_histories) > 0, (
-            f"task_id='{task['task_id']}'のタスク履歴が0件です。参照しているタスク履歴情報が古い可能性があります。 "
-            f":: phase='{task['phase']}', status='{task['status']}'"
-        )
+        assert len(task_histories) > 0, f"task_id='{task['task_id']}'のタスク履歴が0件です。参照しているタスク履歴情報が古い可能性があります。 :: phase='{task['phase']}', status='{task['status']}'"
         return task_histories[-1]["ended_datetime"]
     else:
         return None
@@ -175,7 +168,7 @@ def is_acceptance_phase_skipped(task_histories: list[TaskHistory]) -> bool:
         return False
 
     # スキップされた履歴より後に受入フェーズがなければ、受入がスキップされたタスクとみなす
-    # ただし、スキップされた履歴より後で、「アノテーション一覧で修正された」受入フェーズがある場合（account_id is None）は、スキップされた受入とみなす。  # noqa: E501
+    # ただし、スキップされた履歴より後で、「アノテーション一覧で修正された」受入フェーズがある場合（account_id is None）は、スキップされた受入とみなす。
     last_task_history_index = task_history_index_list[-1]
     return (
         more_itertools.first_true(
@@ -212,11 +205,7 @@ def get_first_task_history(task_histories: list[TaskHistory], phase: TaskPhase) 
         最初のタスク履歴
     """
     for history in task_histories:
-        if (
-            history["phase"] == phase.value
-            and history["account_id"] is not None
-            and isoduration_to_hour(history["accumulated_labor_time_milliseconds"]) > 0
-        ):
+        if history["phase"] == phase.value and history["account_id"] is not None and isoduration_to_hour(history["accumulated_labor_time_milliseconds"]) > 0:
             return history
     return None
 
@@ -428,9 +417,7 @@ class TasksAddedTaskHistoryOutput:
         ]
 
         task_history_columns = [
-            f"first_{phase.value}_{info}"
-            for phase in [TaskPhase.ANNOTATION, TaskPhase.INSPECTION, TaskPhase.ACCEPTANCE]
-            for info in ["user_id", "username", "started_datetime", "worktime_hour"]
+            f"first_{phase.value}_{info}" for phase in [TaskPhase.ANNOTATION, TaskPhase.INSPECTION, TaskPhase.ACCEPTANCE] for info in ["user_id", "username", "started_datetime", "worktime_hour"]
         ]
 
         return (
@@ -505,8 +492,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--task_id",
         type=str,
         nargs="+",
-        help="対象のタスクのtask_idを指定します。 ``--task_query`` 引数とは同時に指定できません。"
-        " ``file://`` を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。",
+        help="対象のタスクのtask_idを指定します。 ``--task_query`` 引数とは同時に指定できません。 ``file://`` を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。",
     )
 
     argument_parser.add_output()

@@ -238,14 +238,10 @@ class ListAnnotationArea(CommandLine):
 
         if project_id is not None:
             if args.temp_dir is not None:
-                download_and_print_annotation_area(
-                    project_id=project_id, temp_dir=args.temp_dir, is_latest=args.latest, annotation_path=annotation_path
-                )
+                download_and_print_annotation_area(project_id=project_id, temp_dir=args.temp_dir, is_latest=args.latest, annotation_path=annotation_path)
             else:
                 with tempfile.TemporaryDirectory() as str_temp_dir:
-                    download_and_print_annotation_area(
-                        project_id=project_id, temp_dir=Path(str_temp_dir), is_latest=args.latest, annotation_path=annotation_path
-                    )
+                    download_and_print_annotation_area(project_id=project_id, temp_dir=Path(str_temp_dir), is_latest=args.latest, annotation_path=annotation_path)
         else:
             assert annotation_path is not None
             print_annotation_area(
@@ -293,7 +289,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--latest",
         action="store_true",
-        help="``--annotation`` を指定しないとき、最新のアノテーションzipを参照します。このオプションを指定すると、アノテーションzipを更新するのに数分待ちます。",  # noqa: E501
+        help="``--annotation`` を指定しないとき、最新のアノテーションzipを参照します。このオプションを指定すると、アノテーションzipを更新するのに数分待ちます。",
     )
 
     parser.add_argument(

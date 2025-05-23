@@ -44,7 +44,7 @@ class ReplacingChoiceId(CommandLineWithConfirm):
             annotation_specs: (IN/OUT) アノテーション仕様情報。中身が変更されます。
             target_attribute_names: 変更対象のラジオボタン/ドロップダウン属性の英語名。Noneならすべてのラジオボタン/ドロップダウン属性の選択肢IDを変更します。
 
-        """  # noqa: E501
+        """
         attribute_list = annotation_specs["additionals"]
 
         replaced_count = 0
@@ -62,9 +62,7 @@ class ReplacingChoiceId(CommandLineWithConfirm):
 
             choice_list = attribute["choices"]
 
-            if not self.confirm_processing(
-                f"属性英語名='{attribute_name_en}'の{len(choice_list)}個の選択肢IDを、選択肢英語名に変更したアノテーション仕様のJSONを出力しますか？"
-            ):
+            if not self.confirm_processing(f"属性英語名='{attribute_name_en}'の{len(choice_list)}個の選択肢IDを、選択肢英語名に変更したアノテーション仕様のJSONを出力しますか？"):
                 continue
 
             replaced_choice_id_count = 0
@@ -74,16 +72,12 @@ class ReplacingChoiceId(CommandLineWithConfirm):
 
                 if not self.validate_choice_id(choice_name_en):
                     logger.warning(
-                        f"属性英語名='{attribute_name_en}', 選択肢英語名='{choice_name_en}'は選択肢IDに利用できない文字を含むため、"
-                        f"選択肢ID='{choice_id}'を'{choice_name_en}'に変更しません。"
+                        f"属性英語名='{attribute_name_en}', 選択肢英語名='{choice_name_en}'は選択肢IDに利用できない文字を含むため、選択肢ID='{choice_id}'を'{choice_name_en}'に変更しません。"
                     )
                     continue
 
                 if self.exists_choice_with_choice_id(choice_list, choice_id=choice_name_en):
-                    logger.warning(
-                        f"属性英語名='{attribute_name_en}', 選択肢ID='{choice_name_en}'である選択肢が既に存在するため、"
-                        f"選択肢ID='{choice_id}'を'{choice_name_en}'に変更しません。"
-                    )
+                    logger.warning(f"属性英語名='{attribute_name_en}', 選択肢ID='{choice_name_en}'である選択肢が既に存在するため、選択肢ID='{choice_id}'を'{choice_name_en}'に変更しません。")
                     continue
 
                 choice["choice_id"] = choice_name_en

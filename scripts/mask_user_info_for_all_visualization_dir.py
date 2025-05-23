@@ -47,9 +47,7 @@ def main() -> None:
 
 
 def create_parser() -> ArgumentParser:
-    parser = ArgumentParser(
-        description="`statistics visualize`コマンドの出力結果である複数のプロジェクトディレクトリに対して、`stat_visualization mask_user_info`コマンドを実行します。"  # noqa: E501
-    )
+    parser = ArgumentParser(description="`statistics visualize`コマンドの出力結果である複数のプロジェクトディレクトリに対して、`stat_visualization mask_user_info`コマンドを実行します。")
     parser.add_argument(
         "root_dir",
         type=Path,

@@ -203,14 +203,10 @@ class ListAnnotationDurationByInputData:
             annotation_duration_by_label[detail["label"]] += calculate_annotation_duration_second(detail)
 
         if self.target_labels is not None:
-            annotation_duration_by_label = {
-                label: duration for label, duration in annotation_duration_by_label.items() if label in self.target_labels
-            }
+            annotation_duration_by_label = {label: duration for label, duration in annotation_duration_by_label.items() if label in self.target_labels}
 
         if self.non_target_labels is not None:
-            annotation_duration_by_label = {
-                label: duration for label, duration in annotation_duration_by_label.items() if label not in self.non_target_labels
-            }
+            annotation_duration_by_label = {label: duration for label, duration in annotation_duration_by_label.items() if label not in self.non_target_labels}
 
         annotation_duration_by_attribute: dict[AttributeValueKey, float] = defaultdict(float)
         for detail in range_details:
@@ -307,7 +303,7 @@ class AnnotationDurationCsvByAttribute:
     Args:
         selective_attribute_value_max_count: 選択肢系の属性の値の個数の上限。これを超えた場合は、非選択肢系属性（トラッキングIDやアノテーションリンクなど）とみなす
 
-    """  # noqa: E501
+    """
 
     def __init__(self, selective_attribute_value_max_count: int = 20) -> None:
         self.selective_attribute_value_max_count = selective_attribute_value_max_count
@@ -322,23 +318,13 @@ class AnnotationDurationCsvByAttribute:
         for label, attribute_name, _ in columns:
             attribute_name_list.append((label, attribute_name))
 
-        non_selective_attribute_names = {
-            key for key, value in collections.Counter(attribute_name_list).items() if value > self.selective_attribute_value_max_count
-        }
+        non_selective_attribute_names = {key for key, value in collections.Counter(attribute_name_list).items() if value > self.selective_attribute_value_max_count}
         if len(non_selective_attribute_names) > 0:
-            logger.debug(
-                f"以下の属性は値の個数が{self.selective_attribute_value_max_count}を超えていたため、集計しません。 :: {non_selective_attribute_names}"
-            )
+            logger.debug(f"以下の属性は値の個数が{self.selective_attribute_value_max_count}を超えていたため、集計しません。 :: {non_selective_attribute_names}")
 
-        return [
-            (label, attribute_name, attribute_value)
-            for (label, attribute_name, attribute_value) in columns
-            if (label, attribute_name) not in non_selective_attribute_names
-        ]
+        return [(label, attribute_name, attribute_value) for (label, attribute_name, attribute_value) in columns if (label, attribute_name) not in non_selective_attribute_names]
 
-    def _value_columns(
-        self, annotation_duration_list: Collection[AnnotationDuration], prior_attribute_columns: Optional[list[AttributeValueKey]]
-    ) -> list[AttributeValueKey]:
+    def _value_columns(self, annotation_duration_list: Collection[AnnotationDuration], prior_attribute_columns: Optional[list[AttributeValueKey]]) -> list[AttributeValueKey]:
         all_attr_key_set = {attr_key for c in annotation_duration_list for attr_key in c.annotation_duration_second_by_attribute}
         if prior_attribute_columns is not None:
             remaining_columns = sorted(all_attr_key_set - set(prior_attribute_columns))
@@ -482,9 +468,7 @@ class ListAnnotationDurationMain:
     def __init__(self, service: annofabapi.Resource) -> None:
         self.service = service
 
-    def print_annotation_duration_csv(
-        self, annotation_duration_list: list[AnnotationDuration], csv_type: CsvType, output_file: Path, *, annotation_specs: Optional[AnnotationSpecs]
-    ) -> None:
+    def print_annotation_duration_csv(self, annotation_duration_list: list[AnnotationDuration], csv_type: CsvType, output_file: Path, *, annotation_specs: Optional[AnnotationSpecs]) -> None:
         if csv_type == CsvType.LABEL:
             # ラベル名の列順が、アノテーション仕様にあるラベル名の順番に対応するようにする。
             label_columns: Optional[list[str]] = None
@@ -522,9 +506,7 @@ class ListAnnotationDurationMain:
             annotation_specs = AnnotationSpecs(self.service, project_id, annotation_type=DefaultAnnotationType.RANGE.value)
             non_selective_attribute_name_keys = annotation_specs.non_selective_attribute_name_keys()
 
-        annotation_duration_list = ListAnnotationDurationByInputData(
-            non_target_attribute_names=non_selective_attribute_name_keys
-        ).get_annotation_duration_list(
+        annotation_duration_list = ListAnnotationDurationByInputData(non_target_attribute_names=non_selective_attribute_name_keys).get_annotation_duration_list(
             annotation_path,
             input_data_json_path=input_data_json_path,
             target_task_ids=target_task_ids,
@@ -535,9 +517,7 @@ class ListAnnotationDurationMain:
 
         if arg_format == FormatArgument.CSV:
             assert csv_type is not None
-            self.print_annotation_duration_csv(
-                annotation_duration_list, output_file=output_file, csv_type=csv_type, annotation_specs=annotation_specs
-            )
+            self.print_annotation_duration_csv(annotation_duration_list, output_file=output_file, csv_type=csv_type, annotation_specs=annotation_specs)
 
         elif arg_format in [FormatArgument.PRETTY_JSON, FormatArgument.JSON]:
             json_is_pretty = arg_format == FormatArgument.PRETTY_JSON
@@ -577,9 +557,7 @@ class ListAnnotationDuration(CommandLine):
             super().validate_project(project_id, project_member_roles=[ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER])
             project, _ = self.service.api.get_project(project_id)
             if project["input_data_type"] != InputDataType.MOVIE.value:
-                logger.warning(
-                    f"project_id='{project_id}'であるプロジェクトは、動画プロジェクトでないので、出力される区間アノテーションの長さはすべて0秒になります。"
-                )
+                logger.warning(f"project_id='{project_id}'であるプロジェクトは、動画プロジェクトでないので、出力される区間アノテーションの長さはすべて0秒になります。")
 
         annotation_path = Path(args.annotation) if args.annotation is not None else None
 
@@ -622,16 +600,12 @@ class ListAnnotationDuration(CommandLine):
 
         if project_id is not None:
             if args.temp_dir is not None:
-                download_and_print_annotation_duration(
-                    project_id=project_id, temp_dir=args.temp_dir, is_latest=args.latest, annotation_path=annotation_path
-                )
+                download_and_print_annotation_duration(project_id=project_id, temp_dir=args.temp_dir, is_latest=args.latest, annotation_path=annotation_path)
             else:
                 # `NamedTemporaryFile`を使わない理由: Windowsで`PermissionError`が発生するため
                 # https://qiita.com/yuji38kwmt/items/c6f50e1fc03dafdcdda0 参考
                 with tempfile.TemporaryDirectory() as str_temp_dir:
-                    download_and_print_annotation_duration(
-                        project_id=project_id, temp_dir=Path(str_temp_dir), is_latest=args.latest, annotation_path=annotation_path
-                    )
+                    download_and_print_annotation_duration(project_id=project_id, temp_dir=Path(str_temp_dir), is_latest=args.latest, annotation_path=annotation_path)
         else:
             assert annotation_path is not None
             main_obj.print_annotation_duration(
@@ -694,7 +668,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--latest",
         action="store_true",
-        help="``--annotation`` を指定しないとき、最新のアノテーションzipを参照します。このオプションを指定すると、アノテーションzipを更新するのに数分待ちます。",  # noqa: E501
+        help="``--annotation`` を指定しないとき、最新のアノテーションzipを参照します。このオプションを指定すると、アノテーションzipを更新するのに数分待ちます。",
     )
 
     parser.add_argument(

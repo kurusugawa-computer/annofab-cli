@@ -180,21 +180,13 @@ class ListInputDataMergedTask(CommandLine):
             input_data_list = json.load(f)
 
         input_data_id_set = set(get_list_from_args(args.input_data_id)) if args.input_data_id is not None else None
-        input_data_query = (
-            InputDataQuery.from_dict(annofabcli.common.cli.get_json_from_args(args.input_data_query)) if args.input_data_query is not None else None
-        )
-        filtered_input_data_list = [
-            e for e in input_data_list if match_input_data(e, input_data_query=input_data_query, input_data_id_set=input_data_id_set)
-        ]
+        input_data_query = InputDataQuery.from_dict(annofabcli.common.cli.get_json_from_args(args.input_data_query)) if args.input_data_query is not None else None
+        filtered_input_data_list = [e for e in input_data_list if match_input_data(e, input_data_query=input_data_query, input_data_id_set=input_data_id_set)]
 
         input_data_list_with_merged_task = create_input_data_list_with_merged_task(input_data_list=filtered_input_data_list, task_list=task_list)
 
         filtered_input_data_list_with_merged_task = [
-            e
-            for e in input_data_list_with_merged_task
-            if match_parent_task_list_of_input_data_with(
-                e, is_not_used_by_task=args.not_used_by_task, is_used_by_multiple_task=args.used_by_multiple_task
-            )
+            e for e in input_data_list_with_merged_task if match_parent_task_list_of_input_data_with(e, is_not_used_by_task=args.not_used_by_task, is_used_by_multiple_task=args.used_by_multiple_task)
         ]
 
         logger.debug(f"入力データ {len(filtered_input_data_list_with_merged_task)} 件を出力します。")
@@ -224,9 +216,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     )
 
     parser.add_argument("-i", "--input_data_id", type=str, nargs="+", help="指定したinput_data_idに完全一致する入力データを絞り込みます。")
-    parser.add_argument(
-        "--input_data_name", type=str, nargs="+", help="指定したinput_data_nameに部分一致(大文字小文字区別しない）する入力データを絞り込みます。"
-    )
+    parser.add_argument("--input_data_name", type=str, nargs="+", help="指定したinput_data_nameに部分一致(大文字小文字区別しない）する入力データを絞り込みます。")
 
     parser.add_argument(
         "-iq",
@@ -242,8 +232,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     used_by_task_group.add_argument(
         "--not_used_by_task",
         action="store_true",
-        help="タスクから使われていない入力データのみ出力します。\n"
-        "「入力データは登録したがタスクは登録していなかった」などのデータ登録のミスを探すときに利用できます。",
+        help="タスクから使われていない入力データのみ出力します。\n「入力データは登録したがタスクは登録していなかった」などのデータ登録のミスを探すときに利用できます。",
     )
 
     used_by_task_group.add_argument(
@@ -256,22 +245,19 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--input_data_json",
         type=str,
-        help="入力データ情報が記載されたJSONファイルのパスを指定してください。JSONに記載された情報を元に出力します。"
-        "JSONファイルは ``$ annofabcli input_data download`` コマンドで取得できます。",
+        help="入力データ情報が記載されたJSONファイルのパスを指定してください。JSONに記載された情報を元に出力します。JSONファイルは ``$ annofabcli input_data download`` コマンドで取得できます。",
     )
 
     parser.add_argument(
         "--task_json",
         type=str,
-        help="タスク情報が記載されたJSONファイルのパスを指定してください。JSONに記載された情報を元に出力します。"
-        "JSONファイルは ``$ annofabcli task download`` コマンドで取得できます。",
+        help="タスク情報が記載されたJSONファイルのパスを指定してください。JSONに記載された情報を元に出力します。JSONファイルは ``$ annofabcli task download`` コマンドで取得できます。",
     )
 
     parser.add_argument(
         "--latest",
         action="store_true",
-        help="入力データ一覧ファイル、タスク一覧ファイルの更新が完了するまで待って、最新のファイルをダウンロードします。"
-        " ``--project_id`` を指定したときのみ有効です。",
+        help="入力データ一覧ファイル、タスク一覧ファイルの更新が完了するまで待って、最新のファイルをダウンロードします。 ``--project_id`` を指定したときのみ有効です。",
     )
 
     argument_parser.add_format(

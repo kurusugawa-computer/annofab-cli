@@ -17,9 +17,7 @@ class DeleteInputData(CommandLine):
     入力データを削除する。
     """
 
-    def delete_supplementary_data_list_for_input_data(
-        self, project_id: str, input_data_id: str, supplementary_data_list: list[dict[str, Any]]
-    ) -> int:
+    def delete_supplementary_data_list_for_input_data(self, project_id: str, input_data_id: str, supplementary_data_list: list[dict[str, Any]]) -> int:
         """
         入力データ配下の補助情報を削除する。
 
@@ -59,11 +57,7 @@ class DeleteInputData(CommandLine):
         return self.confirm_processing(message_for_confirm)
 
     def confirm_delete_supplementary(self, input_data_id: str, input_data_name: str, supplementary_data_list: list[dict[str, Any]]) -> bool:
-        message_for_confirm = (
-            f"入力データに紐づく補助情報 {len(supplementary_data_list)} 件を削除しますか？ "
-            f"(input_data_id='{input_data_id}', "
-            f"input_data_name='{input_data_name}') "
-        )
+        message_for_confirm = f"入力データに紐づく補助情報 {len(supplementary_data_list)} 件を削除しますか？ (input_data_id='{input_data_id}', input_data_name='{input_data_name}') "
         return self.confirm_processing(message_for_confirm)
 
     def delete_input_data(self, project_id: str, input_data_id: str, input_data_index: int, delete_supplementary: bool, force: bool):  # noqa: ANN201, FBT001
@@ -86,28 +80,18 @@ class DeleteInputData(CommandLine):
                 )
                 return False
             else:
-                logger.debug(
-                    f"入力データ(input_data_id='{input_data_id}', "
-                    f"input_data_name='{input_data_name}')はタスクに使われています。"
-                    f"task_id_list='{used_task_id_list}'"
-                )
+                logger.debug(f"入力データ(input_data_id='{input_data_id}', input_data_name='{input_data_name}')はタスクに使われています。task_id_list='{used_task_id_list}'")
 
         if not self.confirm_delete_input_data(input_data_id, input_data_name, used_task_id_list=used_task_id_list):
             return False
 
         self.service.api.delete_input_data(project_id, input_data_id)
-        logger.debug(
-            f"{input_data_index + 1!s} 件目: 入力データ(input_data_id='{input_data_id}', input_data_name='{input_data_name}') を削除しました。"
-        )
+        logger.debug(f"{input_data_index + 1!s} 件目: 入力データ(input_data_id='{input_data_id}', input_data_name='{input_data_name}') を削除しました。")
 
         if delete_supplementary:
             supplementary_data_list, _ = self.service.api.get_supplementary_data_list(project_id, input_data_id)
-            if len(supplementary_data_list) > 0 and self.confirm_delete_supplementary(
-                input_data_id, input_data_name, supplementary_data_list=supplementary_data_list
-            ):
-                deleted_supplementary_data = self.delete_supplementary_data_list_for_input_data(
-                    project_id, input_data_id, supplementary_data_list=supplementary_data_list
-                )
+            if len(supplementary_data_list) > 0 and self.confirm_delete_supplementary(input_data_id, input_data_name, supplementary_data_list=supplementary_data_list):
+                deleted_supplementary_data = self.delete_supplementary_data_list_for_input_data(project_id, input_data_id, supplementary_data_list=supplementary_data_list)
                 logger.debug(
                     f"{input_data_index + 1!s} 件目: 入力データ(input_data_id='{input_data_id}', "
                     f"input_data_name='{input_data_name}') に紐づく補助情報を"
@@ -170,8 +154,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         type=str,
         required=True,
         nargs="+",
-        help="削除対象の入力データのinput_data_idを指定します。"
-        " ``file://`` を先頭に付けると、input_data_idの一覧が記載されたファイルを指定できます。",
+        help="削除対象の入力データのinput_data_idを指定します。 ``file://`` を先頭に付けると、input_data_idの一覧が記載されたファイルを指定できます。",
     )
 
     parser.add_argument("--force", action="store_true", help="タスクに使われている入力データも削除します。")

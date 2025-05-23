@@ -200,9 +200,7 @@ class AnnotationConverter:
             try:
                 choice = get_choice(choices, choice_name=str(attribute_value))
             except ValueError:
-                logger.warning(
-                    f"アノテーション仕様の属性'{attribute_name}'に選択肢名(英語)が'{attribute_value}'である選択肢情報は存在しないか、複数存在します。 :: {log_message_suffix}"  # noqa: E501
-                )
+                logger.warning(f"アノテーション仕様の属性'{attribute_name}'に選択肢名(英語)が'{attribute_value}'である選択肢情報は存在しないか、複数存在します。 :: {log_message_suffix}")
                 if self.is_strict:
                     raise
                 return None
@@ -214,9 +212,7 @@ class AnnotationConverter:
             try:
                 choice = get_choice(choices, choice_name=str(attribute_value))
             except ValueError:
-                logger.warning(
-                    f"アノテーション仕様の属性'{attribute_name}'に選択肢名(英語)が'{attribute_value}'である選択肢情報は存在しないか、複数存在します。 :: {log_message_suffix}"  # noqa: E501
-                )
+                logger.warning(f"アノテーション仕様の属性'{attribute_name}'に選択肢名(英語)が'{attribute_value}'である選択肢情報は存在しないか、複数存在します。 :: {log_message_suffix}")
                 if self.is_strict:
                     raise
                 return None
@@ -226,9 +222,7 @@ class AnnotationConverter:
         else:
             assert_noreturn(additional_data_type)
 
-    def convert_attributes(
-        self, attributes: dict[str, Any], *, label_name: Optional[str] = None, log_message_suffix: str = ""
-    ) -> list[dict[str, Any]]:
+    def convert_attributes(self, attributes: dict[str, Any], *, label_name: Optional[str] = None, log_message_suffix: str = "") -> list[dict[str, Any]]:
         """
         インポート対象のアノテーションJSONに格納されている`attributes`を`AdditionalDataListV2`のlistに変換します。
 
@@ -248,9 +242,7 @@ class AnnotationConverter:
             try:
                 specs_additional_data = self.annotation_specs_accessor.get_attribute(attribute_name=attribute_name, label=label)
             except ValueError:
-                logger.warning(
-                    f"アノテーション仕様に属性名(英語)が'{attribute_name}'である属性情報が存在しないか、複数存在します。 :: {log_message_suffix}"
-                )
+                logger.warning(f"アノテーション仕様に属性名(英語)が'{attribute_name}'である属性情報が存在しないか、複数存在します。 :: {log_message_suffix}")
                 if self.is_strict:
                     raise
                 continue
@@ -293,19 +285,15 @@ class AnnotationConverter:
             ValueError: 存在しないラベル名が指定された場合（`self.is_strict`がFalseでもraiseされる９
 
         """
-        log_message_suffix = (
-            f"task_id='{parser.task_id}', input_data_id='{parser.input_data_id}', label_name='{detail.label}', annotation_id='{detail.annotation_id}'"
-        )
+        log_message_suffix = f"task_id='{parser.task_id}', input_data_id='{parser.input_data_id}', label_name='{detail.label}', annotation_id='{detail.annotation_id}'"
 
         try:
             label_info = self.annotation_specs_accessor.get_label(label_name=detail.label)
         except ValueError:
-            logger.warning(
-                f"アノテーション仕様にラベル名(英語)が'{detail.label}'であるラベル情報が存在しないか、または複数存在します。 :: {log_message_suffix}"
-            )
+            logger.warning(f"アノテーション仕様にラベル名(英語)が'{detail.label}'であるラベル情報が存在しないか、または複数存在します。 :: {log_message_suffix}")
             raise
 
-        if detail.attributes is not None:
+        if detail.attributes is not None:  # noqa: SIM108
             additional_data_list = self.convert_attributes(detail.attributes, label_name=detail.label, log_message_suffix=log_message_suffix)
         else:
             additional_data_list = []
@@ -349,7 +337,7 @@ class AnnotationConverter:
             details: インポート対象のアノテーション情報
             old_details: 既存のアノテーション情報。既存のアノテーション情報に加えて、インポート対象のアノテーションを登録するためのリクエストボディを作成します。
             updated_datetime: 更新日時
-        """  # noqa: E501
+        """
         old_dict_detail = {}
         INDEX_KEY = "_index"  # noqa: N806
         for index, old_detail in enumerate(old_details):
@@ -362,7 +350,7 @@ class AnnotationConverter:
         new_request_details: list[dict[str, Any]] = []
         for detail in details:
             try:
-                log_message_suffix = f"task_id='{parser.task_id}', input_data_id='{parser.input_data_id}', label_name='{detail.label}', annotation_id='{detail.annotation_id}'"  # noqa: E501
+                log_message_suffix = f"task_id='{parser.task_id}', input_data_id='{parser.input_data_id}', label_name='{detail.label}', annotation_id='{detail.annotation_id}'"
 
                 request_detail = self.convert_annotation_detail(parser, detail, log_message_suffix=log_message_suffix)
             except Exception as e:
@@ -424,9 +412,7 @@ class ImportAnnotationMain(CommandLineWithConfirm):
 
         simple_annotation: ImportedSimpleAnnotation = ImportedSimpleAnnotation.from_dict(parser.load_json())
         if len(simple_annotation.details) == 0:
-            logger.debug(
-                f"task_id='{task_id}', input_data_id='{input_data_id}' :: インポート元にアノテーションデータがないため、アノテーションの登録をスキップします。"  # noqa: E501
-            )
+            logger.debug(f"task_id='{task_id}', input_data_id='{input_data_id}' :: インポート元にアノテーションデータがないため、アノテーションの登録をスキップします。")
             return False
 
         input_data = self.service.wrapper.get_input_data_or_none(self.project_id, input_data_id)
@@ -446,13 +432,9 @@ class ImportAnnotationMain(CommandLineWithConfirm):
 
         logger.info(f"task_id='{task_id}', input_data_id='{input_data_id}' :: {len(simple_annotation.details)} 件のアノテーションを登録します。")
         if self.is_merge:
-            request_body = self.converter.convert_annotation_details(
-                parser, simple_annotation.details, old_details=old_annotation["details"], updated_datetime=old_annotation["updated_datetime"]
-            )
+            request_body = self.converter.convert_annotation_details(parser, simple_annotation.details, old_details=old_annotation["details"], updated_datetime=old_annotation["updated_datetime"])
         else:
-            request_body = self.converter.convert_annotation_details(
-                parser, simple_annotation.details, old_details=[], updated_datetime=old_annotation["updated_datetime"]
-            )
+            request_body = self.converter.convert_annotation_details(parser, simple_annotation.details, old_details=[], updated_datetime=old_annotation["updated_datetime"])
 
         self.service.api.put_annotation(self.project_id, task_id, input_data_id, request_body=request_body, query_params={"v": "2"})
         return True
@@ -551,9 +533,7 @@ class ImportAnnotationMain(CommandLineWithConfirm):
         target_task_ids: Optional[set[str]] = None,
         parallelism: Optional[int] = None,
     ):
-        def get_iter_task_parser_from_task_ids(
-            _iter_task_parser: Iterator[SimpleAnnotationParserByTask], _target_task_ids: set[str]
-        ) -> Iterator[SimpleAnnotationParserByTask]:
+        def get_iter_task_parser_from_task_ids(_iter_task_parser: Iterator[SimpleAnnotationParserByTask], _target_task_ids: set[str]) -> Iterator[SimpleAnnotationParserByTask]:
             for task_parser in _iter_task_parser:
                 if task_parser.task_id in _target_task_ids:
                     _target_task_ids.remove(task_parser.task_id)
@@ -586,9 +566,7 @@ class ImportAnnotationMain(CommandLineWithConfirm):
                     task_count += 1
 
         if target_task_ids is not None and len(tmp_target_task_ids) > 0:
-            logger.warning(
-                f"'--task_id'で指定したタスクの内 {len(tmp_target_task_ids)} 件は、インポート対象のアノテーションデータに含まれていません。 :: {tmp_target_task_ids}"  # noqa: E501
-            )
+            logger.warning(f"'--task_id'で指定したタスクの内 {len(tmp_target_task_ids)} 件は、インポート対象のアノテーションデータに含まれていません。 :: {tmp_target_task_ids}")
 
         logger.info(f"{success_count} / {task_count} 件のタスクに対してアノテーションをインポートしました。")
 
@@ -679,8 +657,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--annotation",
         type=Path,
         required=True,
-        help="Simpleアノテーションと同じフォルダ構成のzipファイル or ディレクトリのパスを指定してください。"
-        "タスクの状態が作業中/完了の場合はインポートしません。",
+        help="Simpleアノテーションと同じフォルダ構成のzipファイル or ディレクトリのパスを指定してください。タスクの状態が作業中/完了の場合はインポートしません。",
     )
 
     argument_parser.add_task_id(required=False)
@@ -690,8 +667,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     overwrite_merge_group.add_argument(
         "--overwrite",
         action="store_true",
-        help="アノテーションが存在する場合、 ``--overwrite`` を指定していれば、すでに存在するアノテーションを削除してインポートします。"
-        "指定しなければ、アノテーションのインポートをスキップします。",
+        help="アノテーションが存在する場合、 ``--overwrite`` を指定していれば、すでに存在するアノテーションを削除してインポートします。指定しなければ、アノテーションのインポートをスキップします。",
     )
 
     overwrite_merge_group.add_argument(

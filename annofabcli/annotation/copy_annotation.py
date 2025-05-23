@@ -158,8 +158,7 @@ class CopyAnnotationMain(CommandLineWithConfirm):
         if len(src_input_data_id_list) != len(dest_input_data_id_list):
             max_frame_number = min(len(src_input_data_id_list), len(dest_input_data_id_list))
             logger.debug(
-                f"コピー元タスク'{copy_target.src_task_id}'の1〜{max_frame_number}フレームのアノテーションを、"
-                f"コピー先タスク'{copy_target.dest_task_id}'の1〜{max_frame_number}フレームにコピーします。"
+                f"コピー元タスク'{copy_target.src_task_id}'の1〜{max_frame_number}フレームのアノテーションを、コピー先タスク'{copy_target.dest_task_id}'の1〜{max_frame_number}フレームにコピーします。"
             )
 
         copy_count = 0
@@ -207,9 +206,7 @@ class CopyAnnotationMain(CommandLineWithConfirm):
             アノテーションをコピーしたかどうか。
 
         """
-        src_annotation = self.service.wrapper.get_editor_annotation_or_none(
-            project_id=self.project_id, task_id=copy_target.src_task_id, input_data_id=copy_target.src_input_data_id
-        )
+        src_annotation = self.service.wrapper.get_editor_annotation_or_none(project_id=self.project_id, task_id=copy_target.src_task_id, input_data_id=copy_target.src_input_data_id)
         if src_annotation is None:
             logger.warning(
                 f"task_id='{copy_target.src_task_id}'のタスクが存在しないか、またはtask_id='{copy_target.src_task_id}'のタスクにinput_data_id='{copy_target.src_input_data_id}'の入力データが存在しません。"
@@ -218,9 +215,7 @@ class CopyAnnotationMain(CommandLineWithConfirm):
 
         src_anno_details = src_annotation["details"]
 
-        dest_annotation = self.service.wrapper.get_editor_annotation_or_none(
-            project_id=self.project_id, task_id=copy_target.dest_task_id, input_data_id=copy_target.dest_input_data_id
-        )
+        dest_annotation = self.service.wrapper.get_editor_annotation_or_none(project_id=self.project_id, task_id=copy_target.dest_task_id, input_data_id=copy_target.dest_input_data_id)
         if dest_annotation is None:
             logger.warning(
                 f"task_id='{copy_target.dest_task_id}'のタスクが存在しないか、またはtask_id='{copy_target.dest_task_id}'のタスクにinput_data_id='{copy_target.dest_input_data_id}'の入力データが存在しません。"
@@ -394,8 +389,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     overwrite_merge_group.add_argument(
         "--overwrite",
         action="store_true",
-        help="コピー先にアノテーションが存在する場合、 ``--overwrite`` を指定していれば、すでに存在するアノテーションを削除してコピーします。"
-        "指定しなければ、アノテーションのコピーをスキップします。",
+        help="コピー先にアノテーションが存在する場合、 ``--overwrite`` を指定していれば、すでに存在するアノテーションを削除してコピーします。指定しなければ、アノテーションのコピーをスキップします。",
     )
     overwrite_merge_group.add_argument(
         "--merge",

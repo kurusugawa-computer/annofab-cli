@@ -98,9 +98,7 @@ class DeleteCommentMain(CommandLineWithConfirm):
     ) -> bool:
         task_id = task["task_id"]
         if task["status"] not in [TaskStatus.NOT_STARTED.value, TaskStatus.WORKING.value, TaskStatus.BREAK.value]:
-            logger.warning(
-                f"task_id='{task_id}' : タスクの状態が未着手,作業中,休憩中 以外の状態なので、コメントを削除できません。（task_status='{task['status']}'）"  # noqa: E501
-            )
+            logger.warning(f"task_id='{task_id}' : タスクの状態が未着手,作業中,休憩中 以外の状態なので、コメントを削除できません。（task_status='{task['status']}'）")
             return False
         return True
 
@@ -151,13 +149,9 @@ class DeleteCommentMain(CommandLineWithConfirm):
                 if len(request_body) > 0:
                     self.service.api.batch_update_comments(self.project_id, task_id, input_data_id, request_body=request_body)
                     added_comments_count += 1
-                    logger.debug(
-                        f"{logging_prefix} :: task_id='{task_id}', input_data_id='{input_data_id}' :: {len(request_body)}件のコメントを削除しました。"
-                    )
+                    logger.debug(f"{logging_prefix} :: task_id='{task_id}', input_data_id='{input_data_id}' :: {len(request_body)}件のコメントを削除しました。")
                 else:
-                    logger.warning(
-                        f"{logging_prefix} :: task_id='{task_id}', input_data_id='{input_data_id}' :: 削除できるコメントは存在しませんでした。"
-                    )
+                    logger.warning(f"{logging_prefix} :: task_id='{task_id}', input_data_id='{input_data_id}' :: 削除できるコメントは存在しませんでした。")
 
             except Exception:  # pylint: disable=broad-except
                 logger.warning(

@@ -71,18 +71,14 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--json",
         type=str,
-        help=(
-            "付与する保留コメントの情報をJSON形式で指定してください。"
-            "``file://`` を先頭に付けると、JSON形式のファイルを指定できます。\n\n"
-            f"(ex)  ``{json.dumps(SAMPLE_JSON, ensure_ascii=False)}``"
-        ),
+        help=(f"付与する保留コメントの情報をJSON形式で指定してください。``file://`` を先頭に付けると、JSON形式のファイルを指定できます。\n\n(ex)  ``{json.dumps(SAMPLE_JSON, ensure_ascii=False)}``"),
     )
 
     parser.add_argument(
         "--parallelism",
         type=int,
         choices=PARALLELISM_CHOICES,
-        help="使用するプロセス数（並列度）を指定してください。指定する場合は必ず ``--yes`` を指定してください。指定しない場合は、逐次的に処理します。",  # noqa: E501
+        help="使用するプロセス数（並列度）を指定してください。指定する場合は必ず ``--yes`` を指定してください。指定しない場合は、逐次的に処理します。",
     )
 
     parser.set_defaults(subcommand_func=main)

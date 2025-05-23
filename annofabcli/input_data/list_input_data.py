@@ -25,9 +25,7 @@ class AddingDetailsToInputData:
         self.service = service
         self.project_id = project_id
 
-    def add_parent_task_id_list_to_input_data_list(
-        self, input_data_list: list[InputData], *, average_input_data_id_length: int = 36
-    ) -> list[InputData]:
+    def add_parent_task_id_list_to_input_data_list(self, input_data_list: list[InputData], *, average_input_data_id_length: int = 36) -> list[InputData]:
         """
         `input_data_list`に"どのタスクに使われているか"という情報を付与します。
 
@@ -58,10 +56,7 @@ class AddingDetailsToInputData:
             if len(encoded_input_data_id_list) > MAX_URL_QUERY_LENGTH:
                 differential_length = len(encoded_input_data_id_list) - MAX_URL_QUERY_LENGTH
                 decreasing_size = (differential_length // average_input_data_id_length) + 1
-                logger.debug(
-                    f"chunk_sizeを {chunk_size} から、{chunk_size - decreasing_size} に減らした. "
-                    f"len(encoded_input_data_id_list) = {len(encoded_input_data_id_list)}"
-                )
+                logger.debug(f"chunk_sizeを {chunk_size} から、{chunk_size - decreasing_size} に減らした. len(encoded_input_data_id_list) = {len(encoded_input_data_id_list)}")
                 chunk_size = chunk_size - decreasing_size
                 if chunk_size <= 0:
                     chunk_size = 1
@@ -219,17 +214,12 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--input_data_id",
         type=str,
         nargs="+",
-        help="対象のinput_data_idを指定します。 ``--input_data_query`` 引数とは同時に指定できません。"
-        " ``file://`` を先頭に付けると、input_data_idの一覧が記載されたファイルを指定できます。",
+        help="対象のinput_data_idを指定します。 ``--input_data_query`` 引数とは同時に指定できません。 ``file://`` を先頭に付けると、input_data_idの一覧が記載されたファイルを指定できます。",
     )
 
-    parser.add_argument(
-        "--with_parent_task_id_list", action="store_true", help="入力データを参照しているタスクのIDのlist( ``parent_task_id_list`` )も出力します。"
-    )
+    parser.add_argument("--with_parent_task_id_list", action="store_true", help="入力データを参照しているタスクのIDのlist( ``parent_task_id_list`` )も出力します。")
 
-    parser.add_argument(
-        "--with_supplementary_data_count", action="store_true", help="入力データに紐づく補助情報の個数( ``supplementary_data_count`` )も出力します。"
-    )
+    parser.add_argument("--with_supplementary_data_count", action="store_true", help="入力データに紐づく補助情報の個数( ``supplementary_data_count`` )も出力します。")
 
     argument_parser.add_format(
         choices=[

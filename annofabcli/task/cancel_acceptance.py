@@ -101,8 +101,7 @@ class CancelAcceptanceMain(CommandLineWithConfirm):
                 return False
 
             logger.debug(
-                f"{logging_prefix}: task_id = {task_id} のタスクの受入完了状態を取り消します。"
-                f"タスクの担当者は {actual_acceptor.username}({actual_acceptor.user_id}) です。"
+                f"{logging_prefix}: task_id = {task_id} のタスクの受入完了状態を取り消します。タスクの担当者は {actual_acceptor.username}({actual_acceptor.user_id}) です。"
                 if actual_acceptor is not None
                 else "タスクの担当者は未割り当てです。"
             )
@@ -234,7 +233,7 @@ class CancelAcceptance(CommandLine):
             member = more_itertools.first_true(project_member_list, pred=lambda e: e["user_id"] == assigned_acceptor_user_id)
             if member is None:
                 print(  # noqa: T201
-                    f"{self.COMMON_MESSAGE} argument --assigned_acceptor_user_id: プロジェクトメンバーに user_id='{assigned_acceptor_user_id}'メンバーは存在しません",  # noqa: E501
+                    f"{self.COMMON_MESSAGE} argument --assigned_acceptor_user_id: プロジェクトメンバーに user_id='{assigned_acceptor_user_id}'メンバーは存在しません",
                     file=sys.stderr,
                 )
                 sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
@@ -297,7 +296,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--parallelism",
         type=int,
         choices=PARALLELISM_CHOICES,
-        help="使用するプロセス数（並列度）を指定してください。指定する場合は必ず ``--yes`` を指定してください。指定しない場合は、逐次的に処理します。",  # noqa: E501
+        help="使用するプロセス数（並列度）を指定してください。指定する場合は必ず ``--yes`` を指定してください。指定しない場合は、逐次的に処理します。",
     )
 
     parser.add_argument("--dryrun", action="store_true", help="取り消しが行われた時の結果を表示しますが、実際は受け入れを取り消しません。")

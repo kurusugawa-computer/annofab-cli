@@ -144,15 +144,11 @@ class CompleteTasksMain(CommandLineWithConfirm):
         try:
             last_updated_datetime = None
             if task.account_id != my_account_id:
-                _task = self.service.wrapper.change_task_operator(
-                    task.project_id, task.task_id, my_account_id, last_updated_datetime=task.updated_datetime
-                )
+                _task = self.service.wrapper.change_task_operator(task.project_id, task.task_id, my_account_id, last_updated_datetime=task.updated_datetime)
                 last_updated_datetime = _task["updated_datetime"]
                 logger.debug(f"{task.task_id}: 担当者を自分自身に変更しました。")
 
-            dict_task = self.service.wrapper.change_task_status_to_working(
-                project_id=task.project_id, task_id=task.task_id, last_updated_datetime=last_updated_datetime
-            )
+            dict_task = self.service.wrapper.change_task_status_to_working(project_id=task.project_id, task_id=task.task_id, last_updated_datetime=last_updated_datetime)
             return Task.from_dict(dict_task)
 
         except requests.HTTPError:
@@ -192,11 +188,7 @@ class CompleteTasksMain(CommandLineWithConfirm):
 
         comment_list, _ = self.service.api.get_comments(task.project_id, task.task_id, input_data_id, query_params={"v": "2"})
         # 未処置の検査コメント
-        unprocessed_inspection_list = [
-            e
-            for e in comment_list
-            if e["comment_type"] == "inspection" and e["comment_node"]["_type"] == "Root" and e["comment_node"]["status"] == "open"
-        ]
+        unprocessed_inspection_list = [e for e in comment_list if e["comment_type"] == "inspection" and e["comment_node"]["_type"] == "Root" and e["comment_node"]["status"] == "open"]
 
         unanswered_comment_list = [e for e in unprocessed_inspection_list if not exists_answered_comment(e["comment_id"])]
         return unanswered_comment_list
@@ -228,9 +220,7 @@ class CompleteTasksMain(CommandLineWithConfirm):
         logger.debug(f"{task.task_id}: 未回答の検査コメントが {unanswered_comment_count_for_task} 件あります。")
         if unanswered_comment_count_for_task > 0:  # noqa: SIM102
             if reply_comment is None:
-                logger.warning(
-                    f"{task.task_id}: 未回答の検査コメントに対する返信コメント（'--reply_comment'）が指定されていないので、スキップします。"
-                )
+                logger.warning(f"{task.task_id}: 未回答の検査コメントに対する返信コメント（'--reply_comment'）が指定されていないので、スキップします。")
                 return False
 
         if not self.confirm_processing(f"タスク'{task.task_id}'の教師付フェーズを次のフェーズに進めますか？"):
@@ -269,9 +259,7 @@ class CompleteTasksMain(CommandLineWithConfirm):
         logger.debug(f"{task.task_id}: 未処置の検査コメントが {unprocessed_inspection_count} 件あります。")
         if unprocessed_inspection_count > 0:  # noqa: SIM102
             if inspection_status is None:
-                logger.warning(
-                    f"{task.task_id}: 未処置の検査コメントに対する対応方法（'--inspection_status'）が指定されていないので、スキップします。"
-                )
+                logger.warning(f"{task.task_id}: 未処置の検査コメントに対する対応方法（'--inspection_status'）が指定されていないので、スキップします。")
                 return False
 
         if not self.confirm_processing(f"タスク'{task.task_id}'の検査/受入フェーズを次のフェーズに進めますか？"):
@@ -331,9 +319,7 @@ class CompleteTasksMain(CommandLineWithConfirm):
             return False
 
         task: Task = Task.from_dict(dict_task)
-        logger.info(
-            f"{logging_prefix} : タスク情報 task_id='{task_id}', phase={task.phase.value}, phase_stage={task.phase_stage}, status={task.status.value}"
-        )
+        logger.info(f"{logging_prefix} : タスク情報 task_id='{task_id}', phase={task.phase.value}, phase_stage={task.phase_stage}, status={task.status.value}")
         if not self._validate_task(task, target_phase=target_phase, target_phase_stage=target_phase_stage, task_query=task_query):
             return False
 
@@ -456,10 +442,7 @@ class CompleteTasks(CommandLine):
                 logger.warning(f"'--phase'に'{TaskPhase.ANNOTATION.value}'を指定しているとき、'--inspection_status'の値は無視されます。")
         elif args.phase in [TaskPhase.INSPECTION.value, TaskPhase.ACCEPTANCE.value]:  # noqa: SIM102
             if args.reply_comment is not None:
-                logger.warning(
-                    f"'--phase'に'{TaskPhase.INSPECTION.value}'または'{TaskPhase.ACCEPTANCE.value}'を指定しているとき、"
-                    f"'--reply_comment'の値は無視されます。"
-                )
+                logger.warning(f"'--phase'に'{TaskPhase.INSPECTION.value}'または'{TaskPhase.ACCEPTANCE.value}'を指定しているとき、'--reply_comment'の値は無視されます。")
 
         if args.parallelism is not None and not args.yes:
             print(  # noqa: T201
@@ -547,7 +530,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--parallelism",
         type=int,
         choices=PARALLELISM_CHOICES,
-        help="使用するプロセス数（並列度）を指定してください。指定する場合は必ず ``--yes`` を指定してください。指定しない場合は、逐次的に処理します。",  # noqa: E501
+        help="使用するプロセス数（並列度）を指定してください。指定する場合は必ず ``--yes`` を指定してください。指定しない場合は、逐次的に処理します。",
     )
 
     parser.set_defaults(subcommand_func=main)

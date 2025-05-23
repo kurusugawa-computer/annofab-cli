@@ -69,9 +69,7 @@ class AnnotationAttribute(pydantic.BaseModel):
     attributes: dict[str, Union[str, int, bool]]
 
 
-def get_annotation_attribute_list_from_annotation_json(
-    simple_annotation: dict[str, Any], *, target_labels: Collection[str] | None = None
-) -> list[AnnotationAttribute]:
+def get_annotation_attribute_list_from_annotation_json(simple_annotation: dict[str, Any], *, target_labels: Collection[str] | None = None) -> list[AnnotationAttribute]:
     """
     1個のアノテーションJSONに対して、アノテーションの属性情報を取得します。
 
@@ -207,9 +205,7 @@ class ListAnnotationAttribute(CommandLine):
 
         downloading_obj = DownloadingFile(self.service)
 
-        def download_and_print_annotation_attribute_list(
-            project_id: str, temp_dir: Path, *, is_latest: bool, annotation_path: Optional[Path]
-        ) -> None:
+        def download_and_print_annotation_attribute_list(project_id: str, temp_dir: Path, *, is_latest: bool, annotation_path: Optional[Path]) -> None:
             if annotation_path is None:
                 annotation_path = temp_dir / f"{project_id}__annotation.zip"
                 downloading_obj.download_annotation_zip(
@@ -225,16 +221,12 @@ class ListAnnotationAttribute(CommandLine):
 
         if project_id is not None:
             if args.temp_dir is not None:
-                download_and_print_annotation_attribute_list(
-                    project_id=project_id, temp_dir=args.temp_dir, is_latest=args.latest, annotation_path=annotation_path
-                )
+                download_and_print_annotation_attribute_list(project_id=project_id, temp_dir=args.temp_dir, is_latest=args.latest, annotation_path=annotation_path)
             else:
                 # `NamedTemporaryFile`を使わない理由: Windowsで`PermissionError`が発生するため
                 # https://qiita.com/yuji38kwmt/items/c6f50e1fc03dafdcdda0 参考
                 with tempfile.TemporaryDirectory() as str_temp_dir:
-                    download_and_print_annotation_attribute_list(
-                        project_id=project_id, temp_dir=Path(str_temp_dir), is_latest=args.latest, annotation_path=annotation_path
-                    )
+                    download_and_print_annotation_attribute_list(project_id=project_id, temp_dir=Path(str_temp_dir), is_latest=args.latest, annotation_path=annotation_path)
         else:
             assert annotation_path is not None
             annotation_attribute_list = get_annotation_attribute_list_from_annotation_zipdir_path(
@@ -276,14 +268,13 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         type=str,
         nargs="+",
         required=False,
-        help="出力対象のアノテーションのラベル名(英語)を指定します。指定しない場合はラベル名で絞り込みません。"
-        " ``file://`` を先頭に付けると、ラベル名の一覧が記載されたファイルを指定できます。",
+        help="出力対象のアノテーションのラベル名(英語)を指定します。指定しない場合はラベル名で絞り込みません。 ``file://`` を先頭に付けると、ラベル名の一覧が記載されたファイルを指定できます。",
     )
 
     parser.add_argument(
         "--latest",
         action="store_true",
-        help="``--annotation`` を指定しないとき、最新のアノテーションzipを参照します。このオプションを指定すると、アノテーションzipを更新するのに数分待ちます。",  # noqa: E501
+        help="``--annotation`` を指定しないとき、最新のアノテーションzipを参照します。このオプションを指定すると、アノテーションzipを更新するのに数分待ちます。",
     )
 
     parser.add_argument(

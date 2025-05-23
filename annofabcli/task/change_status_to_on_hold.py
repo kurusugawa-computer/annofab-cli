@@ -40,10 +40,7 @@ class ChangingStatusToOnHoldMain(CommandLineWithConfirm):
         if task.account_id is not None:
             user_id = self.facade.get_user_id_from_account_id(self.project_id, task.account_id)
 
-        confirm_message = (
-            f"task_id='{task.task_id}' のタスクのステータスを保留中に変更しますか？"
-            f"(status='{task.status.value}, phase='{task.phase.value}', user_id='{user_id}')"
-        )
+        confirm_message = f"task_id='{task.task_id}' のタスクのステータスを保留中に変更しますか？(status='{task.status.value}, phase='{task.phase.value}', user_id='{user_id}')"
         return self.confirm_processing(confirm_message)
 
     def add_comment(self, task: Task, comment: str) -> None:
@@ -83,16 +80,11 @@ class ChangingStatusToOnHoldMain(CommandLineWithConfirm):
 
         def preprocess() -> bool:
             if not match_task_with_query(task, task_query):
-                logger.debug(
-                    f"{logging_prefix} : task_id = {task_id} : `--task_query` の条件にマッチしないため、スキップします。 :: task_query={task_query}"
-                )
+                logger.debug(f"{logging_prefix} : task_id = {task_id} : `--task_query` の条件にマッチしないため、スキップします。 :: task_query={task_query}")
                 return False
 
             if task.status not in [TaskStatus.NOT_STARTED, TaskStatus.BREAK]:
-                logger.warning(
-                    f"{logging_prefix}: task_id = '{task_id}' のタスクのステータスが未着手または休憩中でないので、スキップします。 :: "
-                    f"status='{task.status.value}'"
-                )
+                logger.warning(f"{logging_prefix}: task_id = '{task_id}' のタスクのステータスが未着手または休憩中でないので、スキップします。 :: status='{task.status.value}'")
                 return False
 
             if not self.confirm_change_status_to_on_hold(task):  # noqa: SIM103
@@ -115,10 +107,7 @@ class ChangingStatusToOnHoldMain(CommandLineWithConfirm):
         if task.account_id is not None:
             task_user_id = self.facade.get_user_id_from_account_id(self.project_id, task.account_id)
 
-        logger.debug(
-            f"{logging_prefix}: task_id='{task_id}'のステータスを保留中に変更します。 :: "
-            f"status='{task.status.value}, phase='{task.phase.value}', user_id='{task_user_id}'"
-        )
+        logger.debug(f"{logging_prefix}: task_id='{task_id}'のステータスを保留中に変更します。 :: status='{task.status.value}, phase='{task.phase.value}', user_id='{task_user_id}'")
 
         task_last_updated_datetime = None
 
@@ -130,9 +119,7 @@ class ChangingStatusToOnHoldMain(CommandLineWithConfirm):
                 task_last_updated_datetime = updated_task["updated_datetime"]
                 logger.debug(f"{logging_prefix}: task_id='{task_id}' のタスクの担当者を'{task_user_id}'から自分自身に変更しました。")
 
-            updated_task = self.service.wrapper.change_task_status_to_working(
-                self.project_id, task_id, last_updated_datetime=task_last_updated_datetime
-            )
+            updated_task = self.service.wrapper.change_task_status_to_working(self.project_id, task_id, last_updated_datetime=task_last_updated_datetime)
             task_last_updated_datetime = updated_task["updated_datetime"]
             logger.debug(f"{logging_prefix}: task_id='{task_id}'のタスクのステータスを作業中に変更しました。")
 

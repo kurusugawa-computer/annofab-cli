@@ -28,9 +28,7 @@ class ExportAnnotationSpecs(CommandLine):
         sorted_histories = sorted(histories, key=lambda x: x["updated_datetime"], reverse=True)
 
         if before + 1 > len(sorted_histories):
-            logger.warning(
-                f"アノテーション仕様の履歴は{len(sorted_histories)}個のため、最新より{before}個前のアノテーション仕様は見つかりませんでした。"
-            )
+            logger.warning(f"アノテーション仕様の履歴は{len(sorted_histories)}個のため、最新より{before}個前のアノテーション仕様は見つかりませんでした。")
             return None
 
         history = sorted_histories[before]

@@ -32,9 +32,7 @@ def test_plot_label_histogram__arrange_bin_edgeにTrueを指定() -> None:
 def test_plot_label_histogram__bin_widthを指定() -> None:
     counter_list = ListAnnotationCounterByInputData().get_annotation_counter_list(data_dir / "simple-annotations.zip")
 
-    plot_label_histogram(
-        counter_list, group_by=GroupBy.INPUT_DATA_ID, output_file=output_dir / "test_plot_label_histogram__bin_widthを指定.html", bin_width=10
-    )
+    plot_label_histogram(counter_list, group_by=GroupBy.INPUT_DATA_ID, output_file=output_dir / "test_plot_label_histogram__bin_widthを指定.html", bin_width=10)
 
 
 def test_plot_label_histogram__metadataを指定() -> None:

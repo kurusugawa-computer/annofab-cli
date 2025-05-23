@@ -105,11 +105,7 @@ class DiffProjects(CommandLine):
         user_ids2 = [e["user_id"] for e in sorted_members2]
 
         if user_ids1 != user_ids2:
-            diff_message += (
-                f"### user_idのListに差分あり\n"
-                f"set(user_ids1) - set(user_ids2) = {set(user_ids1) - set(user_ids2)}\n"
-                f"set(user_ids2) - set(user_ids1) = {set(user_ids2) - set(user_ids1)}\n"
-            )
+            diff_message += f"### user_idのListに差分あり\nset(user_ids1) - set(user_ids2) = {set(user_ids1) - set(user_ids2)}\nset(user_ids2) - set(user_ids1) = {set(user_ids2) - set(user_ids1)}\n"
 
             return True, diff_message
 
@@ -286,12 +282,8 @@ class DiffProjects(CommandLine):
             diff_message += message
 
         if DiffTarget.ANNOTATION_LABELS in diff_targets:
-            labels1_v1 = convert_annotation_specs_labels_v2_to_v1(
-                labels_v2=annotation_specs1["labels"], additionals_v2=annotation_specs1["additionals"]
-            )
-            labels2_v1 = convert_annotation_specs_labels_v2_to_v1(
-                labels_v2=annotation_specs2["labels"], additionals_v2=annotation_specs2["additionals"]
-            )
+            labels1_v1 = convert_annotation_specs_labels_v2_to_v1(labels_v2=annotation_specs1["labels"], additionals_v2=annotation_specs1["additionals"])
+            labels2_v1 = convert_annotation_specs_labels_v2_to_v1(labels_v2=annotation_specs2["labels"], additionals_v2=annotation_specs2["additionals"])
 
             bool_result, message = self.diff_labels_of_annotation_specs(labels1_v1, labels2_v1)
             is_different = is_different or bool_result
@@ -393,11 +385,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         nargs="+",
         choices=[e.value for e in choices],
         default=["annotation_labels", "inspection_phrases", "members", "settings"],
-        help="比較する項目。指定しなければ全項目を比較する。"
-        "annotation_labels: アノテーション仕様のラベル情報, "
-        "inspection_phrases: 定型指摘,"
-        "members: プロジェクトメンバ,"
-        "settings: プロジェクト設定,",
+        help="比較する項目。指定しなければ全項目を比較する。annotation_labels: アノテーション仕様のラベル情報, inspection_phrases: 定型指摘,members: プロジェクトメンバ,settings: プロジェクト設定,",
     )
 
     parser.set_defaults(subcommand_func=main)

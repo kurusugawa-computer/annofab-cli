@@ -70,13 +70,9 @@ def create_replacement_dict(
         not_masked_biography_set: マスクしないbiographyの集合。指定したbiographyに該当するユーザーのuser_id,username,account_idはマスクしません。
     """
 
-    assert {"user_id", "username", "account_id", "biography"} - set(df_user.columns) == set(), (
-        "df_userには'user_id','username','account_id','biography'の列が必要です。"
-    )
+    assert {"user_id", "username", "account_id", "biography"} - set(df_user.columns) == set(), "df_userには'user_id','username','account_id','biography'の列が必要です。"
 
-    replacement_dict_for_user_id = create_replacement_dict_by_user_id(
-        df_user, not_masked_biography_set=not_masked_biography_set, not_masked_user_id_set=not_masked_user_id_set
-    )
+    replacement_dict_for_user_id = create_replacement_dict_by_user_id(df_user, not_masked_biography_set=not_masked_biography_set, not_masked_user_id_set=not_masked_user_id_set)
 
     df2 = df_user.set_index("user_id")
     df3 = df2.loc[replacement_dict_for_user_id.keys()]
@@ -181,17 +177,13 @@ def mask_visualization_dir(
     )
 
     # CSVのユーザ情報をマスクする
-    masked_user_performance = UserPerformance.from_df_wrapper(
-        masked_worktime_per_date, masked_task_worktime_by_phase_user, task_completion_criteria=project_dir.task_completion_criteria
-    )
+    masked_user_performance = UserPerformance.from_df_wrapper(masked_worktime_per_date, masked_task_worktime_by_phase_user, task_completion_criteria=project_dir.task_completion_criteria)
     output_project_dir.write_user_performance(masked_user_performance)
 
     # メンバのパフォーマンスを散布図で出力する
     output_project_dir.write_user_performance_scatter_plot(masked_user_performance)
 
-    masked_task = project_dir.read_task_list().mask_user_info(
-        to_replace_for_user_id=replacement_dict.user_id, to_replace_for_username=replacement_dict.username
-    )
+    masked_task = project_dir.read_task_list().mask_user_info(to_replace_for_user_id=replacement_dict.user_id, to_replace_for_username=replacement_dict.username)
     output_project_dir.write_task_list(masked_task)
 
     write_line_graph(masked_task_worktime_by_phase_user, output_project_dir, minimal_output=minimal_output)
@@ -226,9 +218,7 @@ def main(args: argparse.Namespace) -> None:
     not_masked_biography_set = set(get_list_from_args(args.not_masked_biography)) if args.not_masked_biography is not None else None
     not_masked_user_id_set = set(get_list_from_args(args.not_masked_user_id)) if args.not_masked_user_id is not None else None
 
-    custom_production_volume_list = (
-        create_custom_production_volume_list(args.custom_production_volume) if args.custom_production_volume is not None else None
-    )
+    custom_production_volume_list = create_custom_production_volume_list(args.custom_production_volume) if args.custom_production_volume is not None else None
 
     task_completion_criteria = TaskCompletionCriteria(args.task_completion_criteria)
     input_project_dir = ProjectDir(
@@ -255,7 +245,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--dir",
         type=Path,
         required=True,
-        help="マスクしたいプロジェクトディレクトリを指定してください。プロジェクトディレクトリは  ``annofabcli statistics visualize`` コマンドの出力結果です。",  # noqa: E501
+        help="マスクしたいプロジェクトディレクトリを指定してください。プロジェクトディレクトリは  ``annofabcli statistics visualize`` コマンドの出力結果です。",
     )
 
     parser.add_argument(

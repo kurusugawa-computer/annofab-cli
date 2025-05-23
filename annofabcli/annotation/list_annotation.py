@@ -104,9 +104,7 @@ class ListAnnotationMain:
 
                 logger.debug(f"入力データ(input_data_id='{input_data_id}')のアノテーション一覧の件数: {len(annotation_list)}")
                 if len(annotation_list) == UPPER_BOUND:
-                    logger.warning(
-                        f"入力データ(input_data_id='{input_data_id}')のアノテーション一覧は{UPPER_BOUND}件で打ち切られている可能性があります。"
-                    )
+                    logger.warning(f"入力データ(input_data_id='{input_data_id}')のアノテーション一覧は{UPPER_BOUND}件で打ち切られている可能性があります。")
                 all_annotation_list.extend(annotation_list)
             return all_annotation_list
         else:

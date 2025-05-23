@@ -47,9 +47,7 @@ class AddProps:
         アノテーション仕様に関する情報をインスタンス変数に格納します。
         """
         annotation_specs, _ = self.service.api.get_annotation_specs(self.project_id, query_params={"v": "2"})
-        self._specs_labels = convert_annotation_specs_labels_v2_to_v1(
-            labels_v2=annotation_specs["labels"], additionals_v2=annotation_specs["additionals"]
-        )
+        self._specs_labels = convert_annotation_specs_labels_v2_to_v1(labels_v2=annotation_specs["labels"], additionals_v2=annotation_specs["additionals"])
         self._specs_inspection_phrases = annotation_specs["inspection_phrases"]
 
     @property
@@ -345,7 +343,7 @@ class AddProps:
         task["number_of_rejections_by_inspection"] = get_number_of_rejections(histories, TaskPhase.INSPECTION)
         task["number_of_rejections_by_acceptance"] = get_number_of_rejections(histories, TaskPhase.ACCEPTANCE)
 
-        # number_of_rejectionsは非推奨なプロパティで、number_of_rejections_by_inspection/number_of_rejections_by_acceptanceと矛盾する場合があるので、削除する  # noqa: E501
+        # number_of_rejectionsは非推奨なプロパティで、number_of_rejections_by_inspection/number_of_rejections_by_acceptanceと矛盾する場合があるので、削除する
         task.pop("number_of_rejections", None)
 
         task["input_data_count"] = len(task["input_data_id_list"])

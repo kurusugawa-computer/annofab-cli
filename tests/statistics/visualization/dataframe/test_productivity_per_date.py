@@ -25,9 +25,7 @@ class TestAnnotatorProductivityPerDate:
 
         obj = AnnotatorProductivityPerDate.from_df_wrapper(task_worktime_by_phase_user)
         obj.to_csv(output_dir / "教師付開始日ごとの教師付者の生産性.csv")
-        obj.plot_production_volume_metrics(
-            "annotation_count", "アノテーション", output_dir / "折れ線-横軸_教師付開始日-縦軸_アノテーションあたりの指標-教師付者用.html"
-        )
+        obj.plot_production_volume_metrics("annotation_count", "アノテーション", output_dir / "折れ線-横軸_教師付開始日-縦軸_アノテーションあたりの指標-教師付者用.html")
 
 
 class TestInspectorProductivityPerDate:
@@ -42,9 +40,7 @@ class TestInspectorProductivityPerDate:
 
         obj = InspectorProductivityPerDate.from_df_wrapper(task_worktime_by_phase_user)
         obj.to_csv(output_dir / "検査開始日ごとの検査者の生産性.csv")
-        obj.plot_production_volume_metrics(
-            "annotation_count", "アノテーション", output_dir / "折れ線-横軸_検査開始日-縦軸_アノテーションあたりの指標-検査者用.html"
-        )
+        obj.plot_production_volume_metrics("annotation_count", "アノテーション", output_dir / "折れ線-横軸_検査開始日-縦軸_アノテーションあたりの指標-検査者用.html")
 
 
 class TestAcceptorProductivityPerDate:
@@ -59,6 +55,4 @@ class TestAcceptorProductivityPerDate:
 
         obj = AcceptorProductivityPerDate.from_df_wrapper(task_worktime_by_phase_user)
         obj.to_csv(output_dir / "受入開始日ごとの受入者の生産性.csv")
-        obj.plot_production_volume_metrics(
-            "annotation_count", "アノテーション", output_dir / "折れ線-横軸_受入開始日-縦軸_アノテーションあたりの指標-受入者用.html"
-        )
+        obj.plot_production_volume_metrics("annotation_count", "アノテーション", output_dir / "折れ線-横軸_受入開始日-縦軸_アノテーションあたりの指標-受入者用.html")

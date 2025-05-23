@@ -97,9 +97,7 @@ class PutProjectMembers(CommandLine):
                 logger.warning(f"ユーザ '{member.user_id}' は、'{organization_name}' 組織の組織メンバでないため、登録できませんでした。")
                 continue
 
-            message_for_confirm = (
-                f"ユーザ '{member.user_id}'を、プロジェクト'{project_title}'のメンバーに登録しますか？ member_role='{member.member_role.value}'"
-            )
+            message_for_confirm = f"ユーザ '{member.user_id}'を、プロジェクト'{project_title}'のメンバーに登録しますか？ member_role='{member.member_role.value}'"
             if not self.confirm_processing(message_for_confirm):
                 continue
 
@@ -110,9 +108,7 @@ class PutProjectMembers(CommandLine):
                 count_invite_members += 1
 
             except requests.exceptions.HTTPError:
-                logger.warning(
-                    f"プロジェクトメンバの登録に失敗しました。user_id = '{member.user_id}', member_role = '{member.member_role.value}'", exc_info=True
-                )
+                logger.warning(f"プロジェクトメンバの登録に失敗しました。user_id = '{member.user_id}', member_role = '{member.member_role.value}'", exc_info=True)
 
         logger.info(f"プロジェクト'{project_title}' に、{count_invite_members} / {len(members)} 件のプロジェクトメンバを登録しました。")
 
@@ -120,9 +116,7 @@ class PutProjectMembers(CommandLine):
         if delete:
             user_id_list = [e.user_id for e in members]
             # 自分自身は削除しないようにする
-            deleted_members = [
-                e for e in old_project_members if (e["user_id"] not in user_id_list and e["user_id"] != self.service.api.login_user_id)
-            ]
+            deleted_members = [e for e in old_project_members if (e["user_id"] not in user_id_list and e["user_id"] != self.service.api.login_user_id)]
 
             count_delete_members = 0
             logger.info(f"プロジェクト '{project_title}' から、{len(deleted_members)} 件のプロジェクトメンバを削除します。")
@@ -182,9 +176,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         ),
     )
 
-    parser.add_argument(
-        "--delete", action="store_true", help="CSVファイルに記載されていないプロジェクトメンバを削除します。ただし自分自身は削除しません。"
-    )
+    parser.add_argument("--delete", action="store_true", help="CSVファイルに記載されていないプロジェクトメンバを削除します。ただし自分自身は削除しません。")
 
     parser.set_defaults(subcommand_func=main)
 

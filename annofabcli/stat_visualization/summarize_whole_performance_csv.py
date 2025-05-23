@@ -32,13 +32,9 @@ def create_custom_production_volume_list(cli_value: str) -> list[ProductionVolum
 def main(args: argparse.Namespace) -> None:
     root_dir: Path = args.dir
     # task_completion_criteriaは何でもよいので、とりあえずACCEPTANCE_COMPLETEDを指定
-    project_dir_list = [
-        ProjectDir(elm, task_completion_criteria=TaskCompletionCriteria.ACCEPTANCE_COMPLETED) for elm in root_dir.iterdir() if elm.is_dir()
-    ]
+    project_dir_list = [ProjectDir(elm, task_completion_criteria=TaskCompletionCriteria.ACCEPTANCE_COMPLETED) for elm in root_dir.iterdir() if elm.is_dir()]
 
-    custom_production_volume_list = (
-        create_custom_production_volume_list(args.custom_production_volume) if args.custom_production_volume is not None else None
-    )
+    custom_production_volume_list = create_custom_production_volume_list(args.custom_production_volume) if args.custom_production_volume is not None else None
     project_performance = ProjectPerformance.from_project_dirs(project_dir_list, custom_production_volume_list=custom_production_volume_list)
     project_performance.to_csv(args.output)
 
@@ -70,7 +66,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
 
 def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     subcommand_name = "summarize_whole_performance_csv"
-    subcommand_help = "``annofabcli statistics visualize`` コマンドの出力結果であるプロジェクトディレクトリから、プロジェクトごとの生産性や品質の一覧を出力します。。"  # noqa: E501
+    subcommand_help = "``annofabcli statistics visualize`` コマンドの出力結果であるプロジェクトディレクトリから、プロジェクトごとの生産性や品質の一覧を出力します。。"
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description=subcommand_help)
     parse_args(parser)
     return parser

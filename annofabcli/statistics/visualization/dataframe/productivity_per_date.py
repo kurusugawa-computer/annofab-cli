@@ -41,9 +41,7 @@ def create_df_productivity_per_date(task_worktime_by_phase_user: TaskWorktimeByP
     df = df[df["phase"] == str_phase]
     df = df.rename(columns={"pointed_out_inspection_comment_count": "inspection_comment_count", "worktime_hour": f"{str_phase}_worktime_hour"})
 
-    df[f"first_{str_phase}_started_date"] = df["started_datetime"].map(
-        lambda e: datetime_to_date(e) if e is not None and isinstance(e, str) else None
-    )
+    df[f"first_{str_phase}_started_date"] = df["started_datetime"].map(lambda e: datetime_to_date(e) if e is not None and isinstance(e, str) else None)
 
     # first_annotation_user_id と first_annotation_usernameの両方を指定している理由：
     # first_annotation_username を取得するため
@@ -82,9 +80,7 @@ class AbstractPhaseProductivityPerDate(abc.ABC):
     PLOT_WIDTH = 1200
     PLOT_HEIGHT = 600
 
-    def __init__(
-        self, df: pandas.DataFrame, phase: TaskPhase, *, custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None
-    ) -> None:
+    def __init__(self, df: pandas.DataFrame, phase: TaskPhase, *, custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None) -> None:
         self.df = df
         self.phase = phase
         self.custom_production_volume_list = custom_production_volume_list if custom_production_volume_list is not None else []
@@ -209,9 +205,7 @@ class AbstractPhaseProductivityPerDate(abc.ABC):
             *self.production_volume_columns,
         ]
 
-        velocity_columns = [
-            f"{numerator}/{denominator}" for numerator in [f"{str_phase}_worktime_hour"] for denominator in self.production_volume_columns
-        ]
+        velocity_columns = [f"{numerator}/{denominator}" for numerator in [f"{str_phase}_worktime_hour"] for denominator in self.production_volume_columns]
 
         columns = production_columns + velocity_columns
 
@@ -337,15 +331,13 @@ class AnnotatorProductivityPerDate(AbstractPhaseProductivityPerDate):
                 continue
 
             df_subset = self._get_df_sequential_date(df_subset)
-            df_subset[f"annotation_worktime_minute/{production_volume_column}"] = (
-                df_subset["annotation_worktime_hour"] * 60 / df_subset[production_volume_column]
-            )
+            df_subset[f"annotation_worktime_minute/{production_volume_column}"] = df_subset["annotation_worktime_hour"] * 60 / df_subset[production_volume_column]
             df_subset[f"annotation_worktime_minute/{production_volume_column}{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}"] = (
                 get_weekly_sum(df_subset["annotation_worktime_hour"]) * 60 / get_weekly_sum(df_subset[production_volume_column])
             )
-            df_subset[f"inspection_comment_count/{production_volume_column}{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}"] = get_weekly_sum(
-                df_subset["inspection_comment_count"]
-            ) / get_weekly_sum(df_subset[production_volume_column])
+            df_subset[f"inspection_comment_count/{production_volume_column}{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}"] = get_weekly_sum(df_subset["inspection_comment_count"]) / get_weekly_sum(
+                df_subset[production_volume_column]
+            )
 
             source = ColumnDataSource(data=df_subset)
             color = get_color_from_palette(user_index)
@@ -414,7 +406,7 @@ class InspectorProductivityPerDate(AbstractPhaseProductivityPerDate):
 
         df = self.df.copy()
 
-        if target_user_id_list is not None:
+        if target_user_id_list is not None:  # noqa: SIM108
             user_id_list = target_user_id_list
         else:
             user_id_list = df.sort_values(by="user_id", ascending=False)["user_id"].dropna().unique().tolist()
@@ -475,9 +467,7 @@ class InspectorProductivityPerDate(AbstractPhaseProductivityPerDate):
                 continue
 
             df_subset = self._get_df_sequential_date(df_subset)
-            df_subset[f"inspection_worktime_minute/{production_volume_column}"] = (
-                df_subset["inspection_worktime_hour"] * 60 / df_subset[production_volume_column]
-            )
+            df_subset[f"inspection_worktime_minute/{production_volume_column}"] = df_subset["inspection_worktime_hour"] * 60 / df_subset[production_volume_column]
             df_subset[f"inspection_worktime_minute/{production_volume_column}{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}"] = (
                 get_weekly_sum(df_subset["inspection_worktime_hour"]) * 60 / get_weekly_sum(df_subset[production_volume_column])
             )
@@ -554,7 +544,7 @@ class AcceptorProductivityPerDate(AbstractPhaseProductivityPerDate):
 
         df = self.df.copy()
 
-        if target_user_id_list is not None:
+        if target_user_id_list is not None:  # noqa: SIM108
             user_id_list = target_user_id_list
         else:
             user_id_list = df.sort_values(by="user_id", ascending=False)["user_id"].dropna().unique().tolist()
@@ -616,9 +606,7 @@ class AcceptorProductivityPerDate(AbstractPhaseProductivityPerDate):
                 continue
 
             df_subset = self._get_df_sequential_date(df_subset)
-            df_subset[f"acceptance_worktime_minute/{production_volume_column}"] = (
-                df_subset["acceptance_worktime_hour"] * 60 / df_subset[production_volume_column]
-            )
+            df_subset[f"acceptance_worktime_minute/{production_volume_column}"] = df_subset["acceptance_worktime_hour"] * 60 / df_subset[production_volume_column]
 
             df_subset[f"acceptance_worktime_minute/{production_volume_column}{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}"] = (
                 get_weekly_sum(df_subset["acceptance_worktime_hour"]) * 60 / get_weekly_sum(df_subset[production_volume_column])

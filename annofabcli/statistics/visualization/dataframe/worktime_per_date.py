@@ -110,9 +110,7 @@ class WorktimePerDate:
         """
         df = self.df.copy()
         df["monitored_acceptance_worktime_hour"] = 0
-        df["monitored_worktime_hour"] = (
-            df["monitored_annotation_worktime_hour"] + df["monitored_inspection_worktime_hour"] + df["monitored_acceptance_worktime_hour"]
-        )
+        df["monitored_worktime_hour"] = df["monitored_annotation_worktime_hour"] + df["monitored_inspection_worktime_hour"] + df["monitored_acceptance_worktime_hour"]
         return WorktimePerDate(df)
 
     def is_empty(self) -> bool:
@@ -180,9 +178,7 @@ class WorktimePerDate:
             if f"monitored_{phase}_worktime_hour" not in df.columns:
                 df[f"monitored_{phase}_worktime_hour"] = 0
 
-        df["monitored_worktime_hour"] = (
-            df["monitored_annotation_worktime_hour"] + df["monitored_inspection_worktime_hour"] + df["monitored_acceptance_worktime_hour"]
-        )
+        df["monitored_worktime_hour"] = df["monitored_annotation_worktime_hour"] + df["monitored_inspection_worktime_hour"] + df["monitored_acceptance_worktime_hour"]
 
         if not actual_worktime.is_empty():
             df = df.merge(
@@ -450,9 +446,7 @@ class WorktimePerDate:
         # またpandas.NAを持つDataFrameも描画できないので、numpy.nanに変換する
         # TODO この問題が解決されたら、削除する
         # https://qiita.com/yuji38kwmt/items/b5da6ed521e827620186
-        df_cumulative = df_cumulative.astype(
-            {"date": "object", "account_id": "object", "user_id": "object", "username": "object", "biography": "object"}
-        )
+        df_cumulative = df_cumulative.astype({"date": "object", "account_id": "object", "user_id": "object", "username": "object", "biography": "object"})
         df_cumulative.replace(pandas.NA, numpy.nan, inplace=True)
 
         line_count = 0

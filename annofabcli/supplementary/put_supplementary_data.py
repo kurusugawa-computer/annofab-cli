@@ -152,19 +152,11 @@ class SubPutSupplementaryData:
 
         return yes
 
-    def confirm_put_supplementary_data(
-        self, csv_supplementary_data: CliSupplementaryData, supplementary_data_id: str, *, already_exists: bool = False
-    ) -> bool:
+    def confirm_put_supplementary_data(self, csv_supplementary_data: CliSupplementaryData, supplementary_data_id: str, *, already_exists: bool = False) -> bool:
         if already_exists:
-            message_for_confirm = (
-                f"supplementary_data_name='{csv_supplementary_data.supplementary_data_name}', "
-                f"supplementary_data_id='{supplementary_data_id}'の補助情報を更新しますか？"
-            )
+            message_for_confirm = f"supplementary_data_name='{csv_supplementary_data.supplementary_data_name}', supplementary_data_id='{supplementary_data_id}'の補助情報を更新しますか？"
         else:
-            message_for_confirm = (
-                f"supplementary_data_name='{csv_supplementary_data.supplementary_data_name}', "
-                f"supplementary_data_id='{supplementary_data_id}'の補助情報を登録しますか？"
-            )
+            message_for_confirm = f"supplementary_data_name='{csv_supplementary_data.supplementary_data_name}', supplementary_data_id='{supplementary_data_id}'の補助情報を登録しますか？"
 
         return self.confirm_processing(message_for_confirm)
 
@@ -172,9 +164,7 @@ class SubPutSupplementaryData:
         last_updated_datetime = None
         input_data_id = csv_data.input_data_id
         supplementary_data_id = (
-            csv_data.supplementary_data_id
-            if csv_data.supplementary_data_id is not None
-            else convert_supplementary_data_name_to_supplementary_data_id(csv_data.supplementary_data_name)
+            csv_data.supplementary_data_id if csv_data.supplementary_data_id is not None else convert_supplementary_data_name_to_supplementary_data_id(csv_data.supplementary_data_name)
         )
 
         supplementary_data_list = self.service.wrapper.get_supplementary_data_list_or_none(project_id, input_data_id)
@@ -270,7 +260,7 @@ class PutSupplementaryData(CommandLine):
             overwrite: Trueならば、supplementary_data_id（省略時はsupplementary_data_number）がすでに存在していたら上書きします。Falseならばスキップします。
             parallelism: 並列度
 
-        """  # noqa: E501
+        """
 
         project_title = self.facade.get_project_title(project_id)
         logger.info(f"{project_title} に、{len(supplementary_data_list)} 件の補助情報を登録します。")
