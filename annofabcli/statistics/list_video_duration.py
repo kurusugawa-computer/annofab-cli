@@ -71,7 +71,7 @@ class ListVideoDuration(CommandLine):
     def validate(self, args: argparse.Namespace) -> bool:
         if args.project_id is None and (args.input_data_json is None or args.task_json is None):
             print(  # noqa: T201
-                f"{self.COMMON_MESSAGE} argument --project_id: '--input_data_json'または'--task_json'が未指定のときは、'--project_id' を指定してください。",  # noqa: E501
+                f"{self.COMMON_MESSAGE} argument --project_id: '--input_data_json'または'--task_json'が未指定のときは、'--project_id' を指定してください。",
                 file=sys.stderr,
             )
             return False
@@ -171,8 +171,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--input_data_json",
         type=Path,
         required=False,
-        help="入力データ情報が記載されたJSONファイルのパスを指定します。\n"
-        "JSONファイルは ``$ annofabcli input_data download`` コマンドで取得できます。",
+        help="入力データ情報が記載されたJSONファイルのパスを指定します。\nJSONファイルは ``$ annofabcli input_data download`` コマンドで取得できます。",
     )
 
     parser.add_argument(

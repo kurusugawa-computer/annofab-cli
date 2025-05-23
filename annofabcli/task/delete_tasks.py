@@ -53,9 +53,7 @@ class DeleteTaskMain(CommandLineWithConfirm):
             supplementary_data_id = supplementary_data["supplementary_data_id"]
             try:
                 if not self.dryrun:
-                    self.service.api.delete_supplementary_data(
-                        self.project_id, input_data_id=input_data_id, supplementary_data_id=supplementary_data_id
-                    )
+                    self.service.api.delete_supplementary_data(self.project_id, input_data_id=input_data_id, supplementary_data_id=supplementary_data_id)
                 logger.debug(
                     f"task_id='{task_id}', input_data_id='{input_data_id}' :: 補助情報を削除しました。 :: "
                     f"supplementary_data_id='{supplementary_data_id}', "
@@ -71,18 +69,12 @@ class DeleteTaskMain(CommandLineWithConfirm):
                 )
                 continue
 
-        logger.debug(
-            f"task_id='{task_id}', input_data_id='{input_data_id}' :: 補助情報 {deleted_count} / {len(supplementary_data_list)} 件を削除しました。"
-        )
+        logger.debug(f"task_id='{task_id}', input_data_id='{input_data_id}' :: 補助情報 {deleted_count} / {len(supplementary_data_list)} 件を削除しました。")
 
         return deleted_count
 
     def confirm_deleting_input_data(self, task_id: str, input_data_id: str, input_data_name: str) -> bool:
-        message_for_confirm = (
-            f"task_id='{task_id}'のタスクから参照されている入力データと補助情報を削除しますか？  :: "
-            f"input_data_id='{input_data_id}', "
-            f"input_data_name='{input_data_name}'"
-        )
+        message_for_confirm = f"task_id='{task_id}'のタスクから参照されている入力データと補助情報を削除しますか？  :: input_data_id='{input_data_id}', input_data_name='{input_data_name}'"
         return self.confirm_processing(message_for_confirm)
 
     def delete_input_data_and_supplementary_data(self, task_id: str, input_data_id: str) -> bool:
@@ -98,10 +90,7 @@ class DeleteTaskMain(CommandLineWithConfirm):
         other_task_list = [e for e in task_list if e["task_id"] != task_id and input_data_id in e["input_data_id_list"]]
         if len(other_task_list) > 0:
             other_task_id_list = [e["task_id"] for e in other_task_list]
-            logger.info(
-                f"task_id='{task_id}' :: input_data_id='{input_data_id}'の入力データは、"
-                f"他のタスクから参照されているため、削除しません。 :: 参照しているタスク = {other_task_id_list}"
-            )
+            logger.info(f"task_id='{task_id}' :: input_data_id='{input_data_id}'の入力データは、他のタスクから参照されているため、削除しません。 :: 参照しているタスク = {other_task_id_list}")
             return False
 
         input_data, _ = self.service.api.get_input_data(self.project_id, input_data_id)
@@ -114,9 +103,7 @@ class DeleteTaskMain(CommandLineWithConfirm):
         # 入力データに紐づく補助情報を削除
         if not self.dryrun:
             self.service.api.delete_input_data(self.project_id, input_data_id)
-        logger.debug(
-            f"task_id='{task_id}' :: 入力データを削除しました。 :: input_data_id='{input_data_id}', input_data_name='{input_data['input_data_name']}'"
-        )
+        logger.debug(f"task_id='{task_id}' :: 入力データを削除しました。 :: input_data_id='{input_data_id}', input_data_name='{input_data['input_data_name']}'")
         return True
 
     def _should_delete_task(
@@ -138,10 +125,7 @@ class DeleteTaskMain(CommandLineWithConfirm):
         logger.debug(f"{log_prefix} :: アノテーションが{len(annotation_list)}個付与されています。")
         if not self.force:  # noqa: SIM102
             if len(annotation_list) > 0:
-                logger.info(
-                    f"{log_prefix} :: アノテーションが付与されているため（{len(annotation_list)}個）、タスクの削除をスキップします。"
-                    f"削除するには`--force`を指定してください。"
-                )
+                logger.info(f"{log_prefix} :: アノテーションが付与されているため（{len(annotation_list)}個）、タスクの削除をスキップします。削除するには`--force`を指定してください。")
                 return False
 
         if not match_task_with_query(Task.from_dict(task), task_query):
@@ -295,9 +279,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
 def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     subcommand_name = "delete"
     subcommand_help = "タスクを削除します。"
-    description = (
-        "タスクを削除します。ただし、作業中/完了状態のタスクは削除できません。デフォルトは、アノテーションが付与されているタスクは削除できません。"
-    )
+    description = "タスクを削除します。ただし、作業中/完了状態のタスクは削除できません。デフォルトは、アノテーションが付与されているタスクは削除できません。"
     epilog = "オーナロールを持つユーザで実行してください。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)

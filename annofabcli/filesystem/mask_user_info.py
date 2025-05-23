@@ -296,9 +296,7 @@ def create_masked_user_info_df(
         return df
 
     df_output = df.copy()
-    replacement_dict_by_user_id = create_replacement_dict_by_user_id(
-        df, not_masked_biography_set=not_masked_biography_set, not_masked_user_id_set=not_masked_user_id_set
-    )
+    replacement_dict_by_user_id = create_replacement_dict_by_user_id(df, not_masked_biography_set=not_masked_biography_set, not_masked_user_id_set=not_masked_user_id_set)
 
     if "biography" in df_output:
         replacement_dict_by_biography = create_replacement_dict_by_biography(df_output, not_masked_biography_set=not_masked_biography_set)

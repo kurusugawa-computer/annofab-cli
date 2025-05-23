@@ -37,9 +37,7 @@ class DeleteOrganizationMemberMain(CommandLineWithConfirm):
         return more_itertools.first_true(organization_member_list, pred=lambda e: e["user_id"] == user_id)
 
     def delete_organization_members_from_organization(self, organization_name: str, user_ids: Collection[str]) -> None:
-        if not self.facade.contains_any_organization_member_role(
-            organization_name, {OrganizationMemberRole.ADMINISTRATOR, OrganizationMemberRole.OWNER}
-        ):
+        if not self.facade.contains_any_organization_member_role(organization_name, {OrganizationMemberRole.ADMINISTRATOR, OrganizationMemberRole.OWNER}):
             logger.warning(f"組織'{organization_name}'に所属していないか、組織メンバーを脱退できるロールを持たないため、スキップします。")
             return
 
@@ -55,9 +53,7 @@ class DeleteOrganizationMemberMain(CommandLineWithConfirm):
                 logger.warning(f"組織'{organization_name}'に user_id='{user_id}'のメンバーが存在しません。")
                 continue
 
-            if not self.confirm_processing(
-                f"組織'{organization_name}'に所属する user_id='{user_id}'のメンバーを脱退させますか？ :: username='{member['username']}'"
-            ):
+            if not self.confirm_processing(f"組織'{organization_name}'に所属する user_id='{user_id}'のメンバーを脱退させますか？ :: username='{member['username']}'"):
                 continue
 
             try:

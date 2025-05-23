@@ -88,20 +88,12 @@ def get_only_selective_attribute(columns: list[AttributeValueKey]) -> list[Attri
     for label, attribute_name, _ in columns:
         attribute_name_list.append((label, attribute_name))
 
-    non_selective_attribute_names = {
-        key for key, value in collections.Counter(attribute_name_list).items() if value > SELECTIVE_ATTRIBUTE_VALUE_MAX_COUNT
-    }
+    non_selective_attribute_names = {key for key, value in collections.Counter(attribute_name_list).items() if value > SELECTIVE_ATTRIBUTE_VALUE_MAX_COUNT}
 
     if len(non_selective_attribute_names) > 0:
-        logger.debug(
-            f"以下の属性は値の個数が{SELECTIVE_ATTRIBUTE_VALUE_MAX_COUNT}を超えていたため、集計しません。 :: {non_selective_attribute_names}"
-        )
+        logger.debug(f"以下の属性は値の個数が{SELECTIVE_ATTRIBUTE_VALUE_MAX_COUNT}を超えていたため、集計しません。 :: {non_selective_attribute_names}")
 
-    return [
-        (label, attribute_name, attribute_value)
-        for (label, attribute_name, attribute_value) in columns
-        if (label, attribute_name) not in non_selective_attribute_names
-    ]
+    return [(label, attribute_name, attribute_value) for (label, attribute_name, attribute_value) in columns if (label, attribute_name) not in non_selective_attribute_names]
 
 
 def plot_label_histogram(
@@ -154,9 +146,7 @@ def plot_label_histogram(
         # すべての値が0である列を除外する
         columns = [col for col in df.columns if df[col].sum() > 0]
         if len(columns) < len(df.columns):
-            logger.debug(
-                f"以下のラベルは、すべてのタスクでアノテーション数が0であるためヒストグラムを描画しません。 :: {set(df.columns) - set(columns)}"
-            )
+            logger.debug(f"以下のラベルは、すべてのタスクでアノテーション数が0であるためヒストグラムを描画しません。 :: {set(df.columns) - set(columns)}")
     else:
         columns = df.columns
 
@@ -260,9 +250,7 @@ def plot_attribute_histogram(  # noqa: PLR0915
         # すべての値が0である列を除外する
         columns = [col for col in df.columns if df[col].sum() > 0]
         if len(columns) < len(df.columns):
-            logger.debug(
-                f"以下の属性値は、すべてのタスクでアノテーション数が0であるためヒストグラムを描画しません。 :: {set(df.columns) - set(columns)}"
-            )
+            logger.debug(f"以下の属性値は、すべてのタスクでアノテーション数が0であるためヒストグラムを描画しません。 :: {set(df.columns) - set(columns)}")
     else:
         columns = df.columns
 
@@ -387,9 +375,7 @@ class VisualizeAnnotationCount(CommandLine):
         metadata = {
             "project_id": project_id,
             "project_title": project_title,
-            "task_query": {k: v for k, v in task_query.to_dict(encode_json=True).items() if v is not None and v is not False}
-            if task_query is not None
-            else None,
+            "task_query": {k: v for k, v in task_query.to_dict(encode_json=True).items() if v is not None and v is not False} if task_query is not None else None,
             "target_task_ids": target_task_ids,
         }
 
@@ -530,7 +516,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--latest",
         action="store_true",
-        help="``--annotation`` を指定しないとき、最新のアノテーションzipを参照します。このオプションを指定すると、アノテーションzipを更新するのに数分待ちます。",  # noqa: E501
+        help="``--annotation`` を指定しないとき、最新のアノテーションzipを参照します。このオプションを指定すると、アノテーションzipを更新するのに数分待ちます。",
     )
 
     parser.add_argument(

@@ -27,9 +27,7 @@ class TestTask:
 
         project_id = "1186bb00-16e6-4d20-8e24-310322911850"
 
-        df_annotation_count = pandas.DataFrame(
-            {"project_id": [project_id, project_id], "task_id": ["sample_0", "sample_1"], "annotation_count": [10, 20]}
-        )
+        df_annotation_count = pandas.DataFrame({"project_id": [project_id, project_id], "task_id": ["sample_0", "sample_1"], "annotation_count": [10, 20]})
         annotation_count = AnnotationCount(df_annotation_count)
 
         df_inspection_comment_count = pandas.DataFrame(
@@ -58,9 +56,7 @@ class TestTask:
         assert row1["inspection_comment_count"] == 5
         assert row1["input_data_count"] == 2
 
-        input_data_count = InputDataCount(
-            pandas.DataFrame({"project_id": [project_id, project_id], "task_id": ["sample_0", "sample_1"], "input_data_count": [1, 1]})
-        )
+        input_data_count = InputDataCount(pandas.DataFrame({"project_id": [project_id, project_id], "task_id": ["sample_0", "sample_1"], "input_data_count": [1, 1]}))
         actual2 = Task.from_api_content(
             tasks,
             task_histories,

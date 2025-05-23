@@ -142,15 +142,11 @@ class ScatterGraph:
         if legend_label == "":
             legend_label = "none"
 
-        self._scatter_glyphs[legend_label] = self.figure.scatter(
-            x=x_column_name, y=y_column_name, source=source, legend_label=legend_label, color=color, muted_alpha=0.2, size=6
-        )
+        self._scatter_glyphs[legend_label] = self.figure.scatter(x=x_column_name, y=y_column_name, source=source, legend_label=legend_label, color=color, muted_alpha=0.2, size=6)
 
         # 1点ごとに`text`で名前を表示している理由：
         # `add_multi_choice_widget_for_searching_user`関数で追加したMultiChoice Widgetで、名前の表示スタイルを変更するため
-        for x, y, username, user_id in zip(
-            source.data[x_column_name], source.data[y_column_name], source.data[username_column_name], source.data[user_id_column_name]
-        ):
+        for x, y, username, user_id in zip(source.data[x_column_name], source.data[y_column_name], source.data[username_column_name], source.data[user_id_column_name]):
             self.text_glyphs[user_id] = self.figure.text(
                 x=x,
                 y=y,
@@ -204,9 +200,7 @@ class ScatterGraph:
 
         # 1点ごとに`text`で名前を表示している理由：
         # `add_multi_choice_widget_for_searching_user`関数で追加したMultiChoice Widgetで、名前の表示スタイルを変更するため
-        for x, y, username, user_id in zip(
-            source.data[x_column_name], source.data[y_column_name], source.data[username_column_name], source.data[user_id_column_name]
-        ):
+        for x, y, username, user_id in zip(source.data[x_column_name], source.data[y_column_name], source.data[username_column_name], source.data[user_id_column_name]):
             self.text_glyphs[user_id] = self.figure.text(
                 x=x,
                 y=y,

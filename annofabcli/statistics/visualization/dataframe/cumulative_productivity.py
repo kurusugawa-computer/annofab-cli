@@ -72,9 +72,7 @@ def _create_cumulative_dataframe(task_worktime_by_phase_user: TaskWorktimeByPhas
 class AbstractPhaseCumulativeProductivity(abc.ABC):
     """ロールごとの累積の生産性をプロットするための抽象クラス"""
 
-    def __init__(
-        self, df: pandas.DataFrame, phase: TaskPhase, *, custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None
-    ) -> None:
+    def __init__(self, df: pandas.DataFrame, phase: TaskPhase, *, custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None) -> None:
         self.df = df
         self.phase = phase
         self.phase_name = self._get_phase_name(phase)
@@ -104,9 +102,7 @@ class AbstractPhaseCumulativeProductivity(abc.ABC):
             return False
 
         if len(self.default_user_id_list) == 0:
-            logger.info(
-                f"{self.phase_name}作業したタスクが0件なので（'first_{self.phase.value}_user_id'がすべて空欄）、{output_file} を出力しません。"
-            )
+            logger.info(f"{self.phase_name}作業したタスクが0件なので（'first_{self.phase.value}_user_id'がすべて空欄）、{output_file} を出力しません。")
             return False
 
         return True
@@ -138,9 +134,7 @@ class AbstractPhaseCumulativeProductivity(abc.ABC):
             たとえば、20000件をプロットする際、すべての列を出力すると、そうでないときに比べてファイルサイズが3倍以上になる
             """
             xy_columns = set(itertools.chain.from_iterable(columns for columns in columns_list))
-            tooltip_columns = set(
-                itertools.chain.from_iterable(line_graph.tooltip_columns for line_graph in line_graph_list if line_graph.tooltip_columns is not None)
-            )
+            tooltip_columns = set(itertools.chain.from_iterable(line_graph.tooltip_columns for line_graph in line_graph_list if line_graph.tooltip_columns is not None))
             return list(xy_columns | tooltip_columns)
 
         df = self.df

@@ -82,14 +82,11 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     argument_parser = ArgumentParser(parser)
 
     required_group = parser.add_mutually_exclusive_group(required=True)
-    required_group.add_argument(
-        "-p", "--project_id", help="対象のプロジェクトのproject_idを指定します。APIで取得したアノテーション仕様情報を元に出力します。"
-    )
+    required_group.add_argument("-p", "--project_id", help="対象のプロジェクトのproject_idを指定します。APIで取得したアノテーション仕様情報を元に出力します。")
     required_group.add_argument(
         "--annotation_specs_json",
         type=Path,
-        help="指定したアノテーション仕様のJSONファイルを指定します。"
-        "JSONファイルに記載された情報を元に出力します。ただしアノテーション仕様の ``format_version`` は ``3`` である必要があります。",
+        help="指定したアノテーション仕様のJSONファイルを指定します。JSONファイルに記載された情報を元に出力します。ただしアノテーション仕様の ``format_version`` は ``3`` である必要があります。",
     )
 
     # 過去のアノテーション仕様を参照するためのオプション
@@ -124,10 +121,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         type=str,
         choices=[e.value for e in OutputFormat],
         default=OutputFormat.TEXT.value,
-        help=f"出力フォーマット\n"
-        "\n"
-        f"* {OutputFormat.TEXT.value}: 英語名のみ出力する形式\n"
-        f"* {OutputFormat.DETAILED_TEXT.value}: 属性IDや属性種類などの詳細情報を出力する形式\n",
+        help=f"出力フォーマット\n\n* {OutputFormat.TEXT.value}: 英語名のみ出力する形式\n* {OutputFormat.DETAILED_TEXT.value}: 属性IDや属性種類などの詳細情報を出力する形式\n",
     )
 
     parser.set_defaults(subcommand_func=main)

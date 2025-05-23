@@ -266,18 +266,14 @@ def draw_annotation_all(  # noqa: ANN201, PLR0913
 
         try:
             drawing.main(parser, image_file=image_file, output_file=output_file, image_size=default_image_size)
-            logger.debug(
-                f"{success_count + 1}件目: {output_file!s} を出力しました。image_file={image_file}, アノテーションJSON={parser.json_file_path}"
-            )
+            logger.debug(f"{success_count + 1}件目: {output_file!s} を出力しました。image_file={image_file}, アノテーションJSON={parser.json_file_path}")
             success_count += 1
         except Exception:  # pylint: disable=broad-except
             logger.warning(f"{parser.json_file_path} のアノテーションの描画に失敗しました。", exc_info=True)
 
     logger.info(f"{success_count} / {total_count} 件、アノテーションを描画しました。")
 
-    new_label_color_dict = {
-        label_name: ImageColor.getrgb(color) if isinstance(color, str) else color for label_name, color in drawing.label_color_dict.items()
-    }
+    new_label_color_dict = {label_name: ImageColor.getrgb(color) if isinstance(color, str) else color for label_name, color in drawing.label_color_dict.items()}
     logger.info(f"label_color={json.dumps(new_label_color_dict, ensure_ascii=False)}")
 
 
@@ -367,9 +363,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         help="Annofabからダウンロードしたアノテーションzip、またはzipを展開したディレクトリを指定してください。",
     )
 
-    parser.add_argument(
-        "--image_dir", type=Path, help="画像が存在するディレクトリを指定してください。\n'--input_data_id_csv'を指定したときは必須です。"
-    )
+    parser.add_argument("--image_dir", type=Path, help="画像が存在するディレクトリを指定してください。\n'--input_data_id_csv'を指定したときは必須です。")
 
     parser.add_argument(
         "--input_data_id_csv",
@@ -380,17 +374,13 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "詳細は https://annofab-cli.readthedocs.io/ja/latest/command_reference/filesystem/draw_annotation.html を参照してください。",
     )
 
-    parser.add_argument(
-        "--default_image_size", type=str, help="デフォルトの画像サイズ。 ``--input_data_id_csv`` を指定しないときは必須です。\n(例) 1280x720"
-    )
+    parser.add_argument("--default_image_size", type=str, help="デフォルトの画像サイズ。 ``--input_data_id_csv`` を指定しないときは必須です。\n(例) 1280x720")
 
     LABEL_COLOR_SAMPLE = {"dog": [255, 128, 64], "cat": "blue"}  # noqa: N806
     parser.add_argument(
         "--label_color",
         type=str,
-        help="label_nameとRGBの関係をJSON形式で指定します。\n"
-        f"(例) ``{json.dumps(LABEL_COLOR_SAMPLE)}``\n"
-        "``file://`` を先頭に付けると、JSON形式のファイルを指定できます。",
+        help=f"label_nameとRGBの関係をJSON形式で指定します。\n(例) ``{json.dumps(LABEL_COLOR_SAMPLE)}``\n``file://`` を先頭に付けると、JSON形式のファイルを指定できます。",
     )
 
     parser.add_argument(
@@ -425,9 +415,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--drawing_options",
         type=str,
-        help="描画オプションをJSON形式で指定します。\n"
-        f"(例) ``{json.dumps(DRAWING_OPTIONS_SAMPLE)}``\n\n"
-        "``file://`` を先頭に付けると、JSON形式のファイルを指定できます。",
+        help=f"描画オプションをJSON形式で指定します。\n(例) ``{json.dumps(DRAWING_OPTIONS_SAMPLE)}``\n\n``file://`` を先頭に付けると、JSON形式のファイルを指定できます。",
     )
 
     argument_parser.add_task_id(

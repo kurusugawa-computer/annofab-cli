@@ -64,15 +64,13 @@ def get_step_for_current_phase(task: Task, number_of_inspections: int) -> int:
 
     elif current_phase == TaskPhase.ANNOTATION:
         number_of_rejections_by_inspection = sum(
-            get_number_of_rejections(histories_by_phase, phase=TaskPhase.INSPECTION, phase_stage=phase_stage)
-            for phase_stage in range(1, number_of_inspections + 1)
+            get_number_of_rejections(histories_by_phase, phase=TaskPhase.INSPECTION, phase_stage=phase_stage) for phase_stage in range(1, number_of_inspections + 1)
         )
         return number_of_rejections_by_inspection + number_of_rejections_by_acceptance + 1
 
     elif current_phase == TaskPhase.INSPECTION:
         number_of_rejections_by_inspection = sum(
-            get_number_of_rejections(histories_by_phase, phase=TaskPhase.INSPECTION, phase_stage=phase_stage)
-            for phase_stage in range(current_phase_stage, number_of_inspections + 1)
+            get_number_of_rejections(histories_by_phase, phase=TaskPhase.INSPECTION, phase_stage=phase_stage) for phase_stage in range(current_phase_stage, number_of_inspections + 1)
         )
         return number_of_rejections_by_inspection + number_of_rejections_by_acceptance + 1
 
@@ -119,9 +117,7 @@ def create_task_count_summary(task_list: list[Task], number_of_inspections: int)
     # `observed=True`を指定する理由：以下の警告に対応するため
     # FutureWarning: The default value of observed=False is deprecated and will change to observed=True in a future version of pandas.
     # Specify observed=False to silence this warning and retain the current behavior
-    summary_df = df.pivot_table(
-        values="task_id", index=["step", "phase", "phase_stage", "simple_status"], aggfunc="count", observed=False
-    ).reset_index()
+    summary_df = df.pivot_table(values="task_id", index=["step", "phase", "phase_stage", "simple_status"], aggfunc="count", observed=False).reset_index()
     summary_df.rename(columns={"task_id": "task_count"}, inplace=True)
 
     summary_df.sort_values(["step", "phase", "phase_stage"])
@@ -207,7 +203,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--execute_get_tasks_api",
         action="store_true",
-        help="[EXPERIMENTAL] ``getTasks`` APIを実行して、タスク情報を参照します。タスク数が少ないプロジェクトで、最新のタスク情報を参照したいときに利用できます。",  # noqa: E501
+        help="[EXPERIMENTAL] ``getTasks`` APIを実行して、タスク情報を参照します。タスク数が少ないプロジェクトで、最新のタスク情報を参照したいときに利用できます。",
     )
 
     argument_parser.add_output()
@@ -225,7 +221,7 @@ def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argpa
     subcommand_name = "summarize_task_count"
     subcommand_help = "タスクのフェーズ、ステータス、ステップごとにタスク数を出力します。"
     description = "タスクのフェーズ、ステータス、ステップごとにタスク数を、CSV形式で出力します。"
-    epilog = "アノテーションユーザまたはオーナロールを持つユーザで実行できます。ただし``--execute_get_tasks_api``を指定した場合は、どのロールでも実行できます。"  # noqa: E501
+    epilog = "アノテーションユーザまたはオーナロールを持つユーザで実行できます。ただし``--execute_get_tasks_api``を指定した場合は、どのロールでも実行できます。"
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description=description, epilog=epilog)
     parse_args(parser)
     return parser

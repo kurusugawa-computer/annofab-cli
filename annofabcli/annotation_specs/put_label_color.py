@@ -119,12 +119,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--json",
         type=str,
         required=True,
-        help=(
-            "変更したいラベルの色をJSON形式で指定してください。"
-            "keyがラベル英語名, valueがRGB値の配列です。\n"
-            f"(ex) ``{JSON_SAMPLE}`` \n"
-            "``file://`` を先頭に付けるとjsonファイルを指定できます。"
-        ),
+        help=(f"変更したいラベルの色をJSON形式で指定してください。keyがラベル英語名, valueがRGB値の配列です。\n(ex) ``{JSON_SAMPLE}`` \n``file://`` を先頭に付けるとjsonファイルを指定できます。"),
     )
 
     parser.add_argument(

@@ -114,10 +114,7 @@ def plot_annotation_duration_histogram_by_label(  # noqa: PLR0915
         # すべての値が0である列を除外する
         columns = [col for col in df.columns if df[col].sum() > 0]
         if len(columns) < len(df.columns):
-            logger.debug(
-                f"以下の属性値は、すべてのタスクで区間アノテーションの長さが0であるためヒストグラムを描画しません。 :: "
-                f"{set(df.columns) - set(columns)}"
-            )
+            logger.debug(f"以下の属性値は、すべてのタスクで区間アノテーションの長さが0であるためヒストグラムを描画しません。 :: {set(df.columns) - set(columns)}")
         df = df[columns]
 
     if bin_width is not None:  # noqa: SIM102
@@ -220,10 +217,7 @@ def plot_annotation_duration_histogram_by_attribute(  # noqa: PLR0915
         # すべての値が0である列を除外する
         columns = [col for col in df.columns if df[col].sum() > 0]
         if len(columns) < len(df.columns):
-            logger.debug(
-                f"以下のラベルは、すべてのタスクで区間アノテーションの長さが0であるためヒストグラムを描画しません。 :: "
-                f"{set(df.columns) - set(columns)}"
-            )
+            logger.debug(f"以下のラベルは、すべてのタスクで区間アノテーションの長さが0であるためヒストグラムを描画しません。 :: {set(df.columns) - set(columns)}")
         df = df[columns]
 
     histogram_range = get_histogram_range(df)
@@ -335,9 +329,7 @@ class VisualizeAnnotationDuration(CommandLine):
         metadata = {
             "project_id": project_id,
             "project_title": project_title,
-            "task_query": {k: v for k, v in task_query.to_dict(encode_json=True).items() if v is not None and v is not False}
-            if task_query is not None
-            else None,
+            "task_query": {k: v for k, v in task_query.to_dict(encode_json=True).items() if v is not None and v is not False} if task_query is not None else None,
             "target_task_ids": target_task_ids,
         }
         plot_annotation_duration_histogram_by_label(
@@ -372,9 +364,7 @@ class VisualizeAnnotationDuration(CommandLine):
             super().validate_project(project_id, project_member_roles=[ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER])
             project, _ = self.service.api.get_project(project_id)
             if project["input_data_type"] != InputDataType.MOVIE.value:
-                logger.warning(
-                    f"project_id='{project_id}'であるプロジェクトは、動画プロジェクトでないので、出力される区間アノテーションの長さはすべて0秒になります。"
-                )
+                logger.warning(f"project_id='{project_id}'であるプロジェクトは、動画プロジェクトでないので、出力される区間アノテーションの長さはすべて0秒になります。")
 
         output_dir: Path = args.output_dir
         annotation_path = Path(args.annotation) if args.annotation is not None else None
@@ -479,7 +469,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--latest",
         action="store_true",
-        help="``--annotation`` を指定しないとき、最新のアノテーションzipを参照します。このオプションを指定すると、アノテーションzipを更新するのに数分待ちます。",  # noqa: E501
+        help="``--annotation`` を指定しないとき、最新のアノテーションzipを参照します。このオプションを指定すると、アノテーションzipを更新するのに数分待ちます。",
     )
 
     parser.add_argument(

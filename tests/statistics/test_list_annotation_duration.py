@@ -80,9 +80,7 @@ class TestListAnnotationDurationByInputData:
         }
 
     def test_get_annotation_duration__target_attribute_names引数を指定する(self) -> None:
-        annotation_duration = ListAnnotationDurationByInputData(target_attribute_names=[("traffic_light", "color")]).get_annotation_duration(
-            ANNOTATION
-        )
+        annotation_duration = ListAnnotationDurationByInputData(target_attribute_names=[("traffic_light", "color")]).get_annotation_duration(ANNOTATION)
         assert annotation_duration.annotation_duration_second == 26.0
         assert annotation_duration.annotation_duration_second_by_label == {
             "traffic_light": 21.0,
@@ -94,9 +92,7 @@ class TestListAnnotationDurationByInputData:
         }
 
     def test_get_annotation_duration__non_target_attribute_names引数を指定する(self) -> None:
-        annotation_duration = ListAnnotationDurationByInputData(non_target_attribute_names=[("traffic_light", "color")]).get_annotation_duration(
-            ANNOTATION
-        )
+        annotation_duration = ListAnnotationDurationByInputData(non_target_attribute_names=[("traffic_light", "color")]).get_annotation_duration(ANNOTATION)
         assert annotation_duration.annotation_duration_second == 26.0
         assert annotation_duration.annotation_duration_second_by_label == {
             "traffic_light": 21.0,

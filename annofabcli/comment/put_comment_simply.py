@@ -96,7 +96,7 @@ class PutCommentSimplyMain(CommandLineWithConfirm):
 
         if task["status"] not in [TaskStatus.NOT_STARTED.value, TaskStatus.WORKING.value, TaskStatus.BREAK.value]:
             logger.warning(
-                f"task_id='{task_id}' : タスクの状態が未着手,作業中,休憩中 以外の状態なので、コメントを付与できません。（task_status='{task['status']}'）"  # noqa: E501
+                f"task_id='{task_id}' : タスクの状態が未着手,作業中,休憩中 以外の状態なので、コメントを付与できません。（task_status='{task['status']}'）"
             )
             return False
         return True
@@ -147,9 +147,7 @@ class PutCommentSimplyMain(CommandLineWithConfirm):
             logger.debug(f"{logging_prefix} :: task_id='{task_id}' のタスクにコメントを付与しました。")
             return True  # noqa: TRY300
         except Exception:  # pylint: disable=broad-except
-            logger.warning(
-                f"{logging_prefix} :: task_id='{task_id}', input_data_id='{input_data_id}' :: コメントの付与に失敗しました。", exc_info=True
-            )
+            logger.warning(f"{logging_prefix} :: task_id='{task_id}', input_data_id='{input_data_id}' :: コメントの付与に失敗しました。", exc_info=True)
             return False
         finally:
             self.service.wrapper.change_task_status_to_break(self.project_id, task_id)

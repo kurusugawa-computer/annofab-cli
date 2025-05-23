@@ -156,15 +156,10 @@ class ChangePropertiesOfAnnotationMain(CommandLineWithConfirm):
             logger.warning(f"task_id = '{task_id}' は存在しません。")
             return False
 
-        logger.debug(
-            f"{logger_prefix}task_id='{task_id}', phase={dict_task['phase']}, status={dict_task['status']}, "
-            f"updated_datetime={dict_task['updated_datetime']}"
-        )
+        logger.debug(f"{logger_prefix}task_id='{task_id}', phase={dict_task['phase']}, status={dict_task['status']}, updated_datetime={dict_task['updated_datetime']}")
 
         if dict_task["status"] in [TaskStatus.WORKING.value, TaskStatus.COMPLETE.value]:
-            logger.info(
-                f"タスク'{task_id}'は作業中または受入完了状態のため、アノテーションプロパティの変更をスキップします。 status={dict_task['status']}"
-            )
+            logger.info(f"タスク'{task_id}'は作業中または受入完了状態のため、アノテーションプロパティの変更をスキップします。 status={dict_task['status']}")
             return False
 
         old_account_id: Optional[str] = dict_task["account_id"]
@@ -375,9 +370,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--properties",
         type=str,
         required=True,
-        help="変更後のプロパティをJSON形式で指定します。変更可能なキーは ``is_protected`` です。"
-        "``file://`` を先頭に付けると、JSON形式のファイルを指定できます。"
-        f"(ex): ``{EXAMPLE_PROPERTIES}``",
+        help=f"変更後のプロパティをJSON形式で指定します。変更可能なキーは ``is_protected`` です。``file://`` を先頭に付けると、JSON形式のファイルを指定できます。(ex): ``{EXAMPLE_PROPERTIES}``",
     )
 
     parser.add_argument(
@@ -390,7 +383,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--backup",
         type=str,
         required=False,
-        help="アノテーションのバックアップを保存するディレクトリを指定してください。アノテーションの復元は ``annotation restore`` コマンドで実現できます。",  # noqa: E501
+        help="アノテーションのバックアップを保存するディレクトリを指定してください。アノテーションの復元は ``annotation restore`` コマンドで実現できます。",
     )
 
     parser.add_argument(
@@ -408,7 +401,7 @@ def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argpa
     subcommand_help = "アノテーションのプロパティを変更します。"
     description = (
         "アノテーションのプロパティを一括で変更します。ただし、作業中状態のタスクのアノテーションのプロパティは変更できません。"
-        "間違えてアノテーションのプロパティを変更したときに復元できるようにするため、 ``--backup`` でバックアップ用のディレクトリを指定することを推奨します。"  # noqa: E501
+        "間違えてアノテーションのプロパティを変更したときに復元できるようにするため、 ``--backup`` でバックアップ用のディレクトリを指定することを推奨します。"
     )
     epilog = "オーナロールを持つユーザで実行してください。"
 

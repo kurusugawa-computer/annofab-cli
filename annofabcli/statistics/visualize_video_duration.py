@@ -164,19 +164,15 @@ def get_video_duration_list(
     if input_data_ids is not None:
         input_data_list = [input_data for input_data in input_data_list if input_data["input_data_id"] in input_data_ids]
         logger.debug(
-            f"「入力データのinput_data_idが引数'input_data_ids'に一致する」という条件で、入力データを {len(input_data_list)} 件に絞り込みました。  :: 引数'input_data_ids'は {len(input_data_ids)} 件"  # noqa: E501
+            f"「入力データのinput_data_idが引数'input_data_ids'に一致する」という条件で、入力データを {len(input_data_list)} 件に絞り込みました。  :: 引数'input_data_ids'は {len(input_data_ids)} 件"
         )
 
     if from_datetime is not None:
-        input_data_list = [
-            input_data for input_data in input_data_list if datetime.datetime.fromisoformat(input_data["updated_datetime"]) >= from_datetime
-        ]
+        input_data_list = [input_data for input_data in input_data_list if datetime.datetime.fromisoformat(input_data["updated_datetime"]) >= from_datetime]
         logger.debug(f"「入力データの更新日時が'{from_datetime}'以降」という条件で、入力データを {len(input_data_list)} 件に絞り込みました。")
 
     if to_datetime is not None:
-        input_data_list = [
-            input_data for input_data in input_data_list if datetime.datetime.fromisoformat(input_data["updated_datetime"]) <= to_datetime
-        ]
+        input_data_list = [input_data for input_data in input_data_list if datetime.datetime.fromisoformat(input_data["updated_datetime"]) <= to_datetime]
         logger.debug(f"「入力データの更新日時が'{to_datetime}'以前」という条件で、入力データを {len(input_data_list)} 件に絞り込みました。")
 
     if task_ids is not None:
@@ -186,7 +182,7 @@ def get_video_duration_list(
         input_data_ids_included_task = set(itertools.chain.from_iterable(input_data_id_list_list))
         input_data_list = [input_data for input_data in input_data_list if input_data["input_data_id"] in input_data_ids_included_task]
         logger.debug(
-            f"「引数'task_ids'に対応するタスクに含まれている入力データ」という条件で、入力データを {len(input_data_list)} 件に絞り込みました。  :: 引数'task_ids'は {len(task_ids)} 件"  # noqa: E501
+            f"「引数'task_ids'に対応するタスクに含まれている入力データ」という条件で、入力データを {len(input_data_list)} 件に絞り込みました。  :: 引数'task_ids'は {len(task_ids)} 件"
         )
 
     video_duration_list = []
@@ -206,7 +202,7 @@ class VisualizeVideoDuration(CommandLine):
     def validate(self, args: argparse.Namespace) -> bool:
         if args.project_id is None and (args.input_data_json is None or args.task_json is None):
             print(  # noqa: T201
-                f"{self.COMMON_MESSAGE} argument --project_id: '--input_data_json'または'--task_json'が未指定のときは、'--project_id' を指定してください。",  # noqa: E501
+                f"{self.COMMON_MESSAGE} argument --project_id: '--input_data_json'または'--task_json'が未指定のときは、'--project_id' を指定してください。",
                 file=sys.stderr,
             )
             return False
@@ -326,8 +322,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--input_data_json",
         type=Path,
         required=False,
-        help="入力データ情報が記載されたJSONファイルのパスを指定します。\n"
-        "JSONファイルは ``$ annofabcli input_data download`` コマンドで取得できます。",
+        help="入力データ情報が記載されたJSONファイルのパスを指定します。\nJSONファイルは ``$ annofabcli input_data download`` コマンドで取得できます。",
     )
 
     parser.add_argument(
@@ -366,7 +361,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--task_id",
         nargs="+",
         help=(
-            "指定したtask_idのタスクに含まれている入力データを可視化対象にします。 ``file://`` を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。"  # noqa: E501
+            "指定したtask_idのタスクに含まれている入力データを可視化対象にします。 ``file://`` を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。"
         ),
     )
 
@@ -375,7 +370,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--input_data_id",
         nargs="+",
         help=(
-            "指定したinput_data_idである入力データを可視化対象にします。 ``file://`` を先頭に付けると、input_data_idの一覧が記載されたファイルを指定できます。"  # noqa: E501
+            "指定したinput_data_idである入力データを可視化対象にします。 ``file://`` を先頭に付けると、input_data_idの一覧が記載されたファイルを指定できます。"
         ),
     )
 

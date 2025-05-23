@@ -62,7 +62,7 @@ class PuttingTaskByCountMain:
             self.wait_for_completion(job["job_id"])
         else:
             logger.info(
-                f"以下のコマンドを実行すれば、タスク登録ジョブが終了するまで待ちます。 :: `annofabcli job wait --project_id {self.project_id} --job_type {job['job_type']} --job_id {job['job_id']}`"  # noqa: E501
+                f"以下のコマンドを実行すれば、タスク登録ジョブが終了するまで待ちます。 :: `annofabcli job wait --project_id {self.project_id} --job_type {job['job_type']} --job_id {job['job_id']}`"
             )
 
     def wait_for_completion(self, job_id: str) -> None:
@@ -124,13 +124,9 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
 
     parser.add_argument("--task_id_prefix", type=str, required=True, help="生成するタスクIDのプレフィックス")
 
-    parser.add_argument(
-        "--input_data_count", type=int, required=True, help="タスクに割り当てる入力データの個数。動画プロジェクトの場合は1を指定してください。"
-    )
+    parser.add_argument("--input_data_count", type=int, required=True, help="タスクに割り当てる入力データの個数。動画プロジェクトの場合は1を指定してください。")
 
-    parser.add_argument(
-        "--allow_duplicate_input_data", action="store_true", help="指定すると、既にタスクに使われている入力データを使ってタスクを作成します。"
-    )
+    parser.add_argument("--allow_duplicate_input_data", action="store_true", help="指定すると、既にタスクに使われている入力データを使ってタスクを作成します。")
 
     parser.add_argument(
         "--input_data_order",

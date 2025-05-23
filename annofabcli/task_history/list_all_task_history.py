@@ -40,9 +40,7 @@ class ListTaskHistoryWithJsonMain:
                 filtered_task_history_dict[task_id] = task_history_list
         return filtered_task_history_dict
 
-    def get_task_history_dict(
-        self, project_id: str, task_history_json: Optional[Path] = None, task_id_list: Optional[list[str]] = None
-    ) -> TaskHistoryDict:
+    def get_task_history_dict(self, project_id: str, task_history_json: Optional[Path] = None, task_id_list: Optional[list[str]] = None) -> TaskHistoryDict:
         """出力対象のタスク履歴情報を取得する"""
         if task_history_json is None:
             downloading_obj = DownloadingFile(self.service)
@@ -158,7 +156,7 @@ def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argpa
     subcommand_help = "すべてのタスク履歴の一覧を出力します。"
     description = (
         "すべてのタスク履歴の一覧を出力します。\n"
-        "出力されるタスク履歴は、コマンドを実行した日の02:00(JST)頃の状態です。最新の情報を出力したい場合は、 ``annofabcli task_history list`` コマンドを実行してください。"  # noqa: E501
+        "出力されるタスク履歴は、コマンドを実行した日の02:00(JST)頃の状態です。最新の情報を出力したい場合は、 ``annofabcli task_history list`` コマンドを実行してください。"
     )
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)

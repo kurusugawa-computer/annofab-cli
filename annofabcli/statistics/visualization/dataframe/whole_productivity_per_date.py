@@ -141,9 +141,7 @@ class WholeProductivityPerCompletedDate:
         return pandas.DataFrame(index=[e.strftime("%Y-%m-%d") for e in pandas.date_range(start_date, end_date)])
 
     @classmethod
-    def from_df_wrapper(
-        cls, task: Task, worktime_per_date: WorktimePerDate, task_completion_criteria: TaskCompletionCriteria
-    ) -> WholeProductivityPerCompletedDate:
+    def from_df_wrapper(cls, task: Task, worktime_per_date: WorktimePerDate, task_completion_criteria: TaskCompletionCriteria) -> WholeProductivityPerCompletedDate:
         """
         完了日毎の全体の生産量、生産性を算出する。
 
@@ -250,9 +248,7 @@ class WholeProductivityPerCompletedDate:
             """速度情報の列を追加"""
             df[f"{numerator_column}/{denominator_column}"] = df[numerator_column] / df[denominator_column]
             # 1週間移動平均も出力
-            df[f"{numerator_column}/{denominator_column}{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}"] = get_weekly_sum(
-                df[numerator_column]
-            ) / get_weekly_sum(df[denominator_column])
+            df[f"{numerator_column}/{denominator_column}{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}"] = get_weekly_sum(df[numerator_column]) / get_weekly_sum(df[denominator_column])
 
         # 累計情報を追加
         add_cumsum_column(df, column="task_count")
@@ -307,16 +303,10 @@ class WholeProductivityPerCompletedDate:
                     "unmonitored",
                 ]:
                     df[f"{category}_worktime_minute/{denominator}"] = df[f"{category}_worktime_hour"] * 60 / df[denominator]
-                    df[f"{category}_worktime_minute/{denominator}{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}"] = (
-                        get_weekly_sum(df[f"{category}_worktime_hour"]) * 60 / get_weekly_sum(df[denominator])
-                    )
+                    df[f"{category}_worktime_minute/{denominator}{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}"] = get_weekly_sum(df[f"{category}_worktime_hour"]) * 60 / get_weekly_sum(df[denominator])
 
-            df[f"actual_worktime_hour/task_count{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}"] = get_weekly_sum(df["actual_worktime_hour"]) / get_weekly_sum(
-                df["task_count"]
-            )
-            df[f"monitored_worktime_hour/task_count{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}"] = get_weekly_sum(
-                df["monitored_worktime_hour"]
-            ) / get_weekly_sum(df["task_count"])
+            df[f"actual_worktime_hour/task_count{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}"] = get_weekly_sum(df["actual_worktime_hour"]) / get_weekly_sum(df["task_count"])
+            df[f"monitored_worktime_hour/task_count{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}"] = get_weekly_sum(df["monitored_worktime_hour"]) / get_weekly_sum(df["task_count"])
 
             for column in [
                 "task_count",
@@ -349,9 +339,7 @@ class WholeProductivityPerCompletedDate:
             )
             line_graph.add_secondary_y_axis(
                 "作業時間[時間]",
-                secondary_y_axis_range=DataRange1d(
-                    end=max(df["actual_worktime_hour"].max(), df["monitored_worktime_hour"].max()) * SECONDARY_Y_RANGE_RATIO
-                ),
+                secondary_y_axis_range=DataRange1d(end=max(df["actual_worktime_hour"].max(), df["monitored_worktime_hour"].max()) * SECONDARY_Y_RANGE_RATIO),
                 primary_y_axis_range=DataRange1d(end=df["task_count"].max() * SECONDARY_Y_RANGE_RATIO),
             )
 
@@ -396,9 +384,7 @@ class WholeProductivityPerCompletedDate:
             )
             line_graph.add_secondary_y_axis(
                 "作業時間[時間]",
-                secondary_y_axis_range=DataRange1d(
-                    end=max(df["actual_worktime_hour"].max(), df["monitored_worktime_hour"].max()) * SECONDARY_Y_RANGE_RATIO
-                ),
+                secondary_y_axis_range=DataRange1d(end=max(df["actual_worktime_hour"].max(), df["monitored_worktime_hour"].max()) * SECONDARY_Y_RANGE_RATIO),
                 primary_y_axis_range=DataRange1d(end=df["input_data_count"].max() * SECONDARY_Y_RANGE_RATIO),
             )
 
@@ -460,7 +446,7 @@ class WholeProductivityPerCompletedDate:
             ("monitored_acceptance_worktime", "計測作業時間(受入)"),
         ]
         if df["actual_worktime_hour"].sum() > 0:
-            # 条件分岐の理由：実績作業時間がないときは、非計測作業時間がマイナス値になり、分かりづらいグラフになるため。必要なときのみ非計測作業時間をプロットする  # noqa: E501
+            # 条件分岐の理由：実績作業時間がないときは、非計測作業時間がマイナス値になり、分かりづらいグラフになるため。必要なときのみ非計測作業時間をプロットする
             phase_prefix.append(("unmonitored_worktime", "非計測作業時間"))
 
         fig_info_list = [
@@ -572,9 +558,7 @@ class WholeProductivityPerCompletedDate:
             )
             line_graph.add_secondary_y_axis(
                 "作業時間[時間]",
-                secondary_y_axis_range=DataRange1d(
-                    end=max(df["cumsum_actual_worktime_hour"].max(), df["cumsum_monitored_worktime_hour"].max()) * SECONDARY_Y_RANGE_RATIO
-                ),
+                secondary_y_axis_range=DataRange1d(end=max(df["cumsum_actual_worktime_hour"].max(), df["cumsum_monitored_worktime_hour"].max()) * SECONDARY_Y_RANGE_RATIO),
                 primary_y_axis_range=DataRange1d(end=df["cumsum_task_count"].max() * SECONDARY_Y_RANGE_RATIO),
             )
 
@@ -628,9 +612,7 @@ class WholeProductivityPerCompletedDate:
             )
             line_graph.add_secondary_y_axis(
                 "作業時間[時間]",
-                secondary_y_axis_range=DataRange1d(
-                    end=max(df["cumsum_actual_worktime_hour"].max(), df["cumsum_monitored_worktime_hour"].max()) * SECONDARY_Y_RANGE_RATIO
-                ),
+                secondary_y_axis_range=DataRange1d(end=max(df["cumsum_actual_worktime_hour"].max(), df["cumsum_monitored_worktime_hour"].max()) * SECONDARY_Y_RANGE_RATIO),
                 primary_y_axis_range=DataRange1d(end=df["cumsum_input_data_count"].max() * SECONDARY_Y_RANGE_RATIO),
             )
 
@@ -762,9 +744,7 @@ class WholeProductivityPerCompletedDate:
         write_bokeh_graph(bokeh.layouts.column(element_list), output_file)
 
     @classmethod
-    def empty(
-        cls, *, task_completion_criteria: TaskCompletionCriteria, custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None
-    ) -> WholeProductivityPerCompletedDate:
+    def empty(cls, *, task_completion_criteria: TaskCompletionCriteria, custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None) -> WholeProductivityPerCompletedDate:
         df = pandas.DataFrame(columns=cls.get_columns(custom_production_volume_list=custom_production_volume_list))
         return cls(df, task_completion_criteria, custom_production_volume_list=custom_production_volume_list)
 
@@ -868,9 +848,7 @@ class WholeProductivityPerFirstAnnotationStartedDate:
         def add_velocity_column(df: pandas.DataFrame, numerator_column: str, denominator_column: str) -> None:
             df[f"{numerator_column}/{denominator_column}"] = df[numerator_column] / df[denominator_column]
 
-            df[f"{numerator_column}/{denominator_column}{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}"] = get_weekly_moving_average(
-                df[numerator_column]
-            ) / get_weekly_moving_average(df[denominator_column])
+            df[f"{numerator_column}/{denominator_column}{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}"] = get_weekly_moving_average(df[numerator_column]) / get_weekly_moving_average(df[denominator_column])
 
         # annofab 計測時間から算出したvelocityを追加
         for column in production_volume_columns:
@@ -907,9 +885,7 @@ class WholeProductivityPerFirstAnnotationStartedDate:
                 "acceptance_worktime_hour",
             ]
         ].copy()
-        df_sub_task["first_annotation_started_date"] = df_sub_task["first_annotation_started_datetime"].map(
-            lambda e: datetime_to_date(e) if not pandas.isna(e) else None
-        )
+        df_sub_task["first_annotation_started_date"] = df_sub_task["first_annotation_started_datetime"].map(lambda e: datetime_to_date(e) if not pandas.isna(e) else None)
 
         value_columns = [
             *production_volume_columns,
@@ -924,18 +900,14 @@ class WholeProductivityPerFirstAnnotationStartedDate:
             aggfunc="sum",
         ).fillna(0)
         if len(df_agg_sub_task) > 0:
-            df_agg_sub_task["task_count"] = df_sub_task.pivot_table(
-                values=["task_id"], index="first_annotation_started_date", aggfunc="count"
-            ).fillna(0)
+            df_agg_sub_task["task_count"] = df_sub_task.pivot_table(values=["task_id"], index="first_annotation_started_date", aggfunc="count").fillna(0)
         else:
             # 列だけ作る
             df_agg_sub_task = df_agg_sub_task.assign(**dict.fromkeys(value_columns, 0), task_count=0)
 
         # 日付の一覧を生成
         if len(df_agg_sub_task) > 0:
-            df_date_base = pandas.DataFrame(
-                index=[e.strftime("%Y-%m-%d") for e in pandas.date_range(start=df_agg_sub_task.index.min(), end=df_agg_sub_task.index.max())]
-            )
+            df_date_base = pandas.DataFrame(index=[e.strftime("%Y-%m-%d") for e in pandas.date_range(start=df_agg_sub_task.index.min(), end=df_agg_sub_task.index.max())])
         else:
             df_date_base = pandas.DataFrame()
 
@@ -953,9 +925,7 @@ class WholeProductivityPerFirstAnnotationStartedDate:
         return True
 
     @classmethod
-    def empty(
-        cls, task_completion_criteria: TaskCompletionCriteria, *, custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None
-    ) -> WholeProductivityPerFirstAnnotationStartedDate:
+    def empty(cls, task_completion_criteria: TaskCompletionCriteria, *, custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None) -> WholeProductivityPerFirstAnnotationStartedDate:
         df = pandas.DataFrame(columns=cls.get_columns(custom_production_volume_list=custom_production_volume_list))
         return cls(df, task_completion_criteria, custom_production_volume_list=custom_production_volume_list)
 
@@ -1018,9 +988,7 @@ class WholeProductivityPerFirstAnnotationStartedDate:
             for denominator in [e.value for e in production_volume_list]:
                 for numerator in ["worktime", "annotation_worktime", "inspection_worktime", "acceptance_worktime"]:
                     df[f"{numerator}_minute/{denominator}"] = df[f"{numerator}_hour"] * 60 / df[denominator]
-                    df[f"{numerator}_minute/{denominator}{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}"] = (
-                        get_weekly_sum(df[f"{numerator}_hour"]) * 60 / get_weekly_sum(df[denominator])
-                    )
+                    df[f"{numerator}_minute/{denominator}{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}"] = get_weekly_sum(df[f"{numerator}_hour"]) * 60 / get_weekly_sum(df[denominator])
 
         def create_div_element() -> Div:
             """

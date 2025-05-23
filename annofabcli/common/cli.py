@@ -129,9 +129,7 @@ def add_parser(
 
         group.add_argument("--disable_log", action="store_true", help="ログを無効にします。")
 
-        group.add_argument(
-            "--debug", action="store_true", help="HTTPリクエストの内容やレスポンスのステータスコードなど、デバッグ用のログが出力されます。"
-        )
+        group.add_argument("--debug", action="store_true", help="HTTPリクエストの内容やレスポンスのステータスコードなど、デバッグ用のログが出力されます。")
 
         return parent_parser
 
@@ -149,7 +147,7 @@ def add_parser(
     )
     parser.set_defaults(command_help=parser.print_help)
 
-    # 引数グループに"global optional group"がある場合は、"--help"オプションをデフォルトの"optional"グループから、"global optional arguments"グループに移動する  # noqa: E501
+    # 引数グループに"global optional group"がある場合は、"--help"オプションをデフォルトの"optional"グループから、"global optional arguments"グループに移動する
     # https://ja.stackoverflow.com/a/57313/19524
     global_optional_argument_group = first_true(parser._action_groups, pred=lambda e: e.title == GLOBAL_OPTIONAL_ARGUMENTS_TITLE)  # noqa: SLF001
     if global_optional_argument_group is not None:
@@ -405,9 +403,7 @@ class ArgumentParser:
         '--input_data_id` 引数を追加
         """
         if help_message is None:
-            help_message = (
-                "対象の入力データのinput_data_idを指定します。 ``file://`` を先頭に付けると、input_data_idの一覧が記載されたファイルを指定できます。"
-            )
+            help_message = "対象の入力データのinput_data_idを指定します。 ``file://`` を先頭に付けると、input_data_idの一覧が記載されたファイルを指定できます。"
 
         self.parser.add_argument("-i", "--input_data_id", type=str, required=required, nargs="+", help=help_message)
 

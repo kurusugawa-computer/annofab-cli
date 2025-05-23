@@ -238,11 +238,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
 
     argument_parser.add_task_id(
         required=False,
-        help_message=(
-            "マージ対象であるタスクのtask_idを指定します。"
-            "指定しない場合、すべてのタスクがマージ対象です。"
-            " ``file://`` を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。"
-        ),
+        help_message=("マージ対象であるタスクのtask_idを指定します。指定しない場合、すべてのタスクがマージ対象です。 ``file://`` を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。"),
     )
 
     parser.set_defaults(subcommand_func=main)
@@ -253,7 +249,7 @@ def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argpa
 
     subcommand_help = "2つのアノテーションzip（またはzipを展開したディレクトリ）をマージします。"
 
-    description = "2つのアノテーションzip（またはzipを展開したディレクトリ）をマージします。具体的にはアノテーションjsonの'details'キー配下の情報をマージします。"  # noqa: E501
+    description = "2つのアノテーションzip（またはzipを展開したディレクトリ）をマージします。具体的にはアノテーションjsonの'details'キー配下の情報をマージします。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
     parse_args(parser)

@@ -126,13 +126,9 @@ class FilterAnnotation:
         task_id_set = set(annofabcli.common.cli.get_list_from_args(args.task_id)) if args.task_id is not None else None
         exclude_task_id_set = set(annofabcli.common.cli.get_list_from_args(args.exclude_task_id)) if args.exclude_task_id is not None else None
         input_data_id_set = set(annofabcli.common.cli.get_list_from_args(args.input_data_id)) if args.input_data_id is not None else None
-        exclude_input_data_id_set = (
-            set(annofabcli.common.cli.get_list_from_args(args.exclude_input_data_id)) if args.exclude_input_data_id is not None else None
-        )
+        exclude_input_data_id_set = set(annofabcli.common.cli.get_list_from_args(args.exclude_input_data_id)) if args.exclude_input_data_id is not None else None
         input_data_name_set = set(annofabcli.common.cli.get_list_from_args(args.input_data_name)) if args.input_data_name is not None else None
-        exclude_input_data_name_set = (
-            set(annofabcli.common.cli.get_list_from_args(args.exclude_input_data_name)) if args.exclude_input_data_name is not None else None
-        )
+        exclude_input_data_name_set = set(annofabcli.common.cli.get_list_from_args(args.exclude_input_data_name)) if args.exclude_input_data_name is not None else None
 
         return FilterQuery(
             task_query=task_query,
@@ -173,8 +169,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "-tq",
         "--task_query",
         type=str,
-        help="タスクを絞り込むためのクエリ条件をJSON形式で指定します。使用できるキーは task_id, status, phase, phase_stage です。"
-        " ``file://`` を先頭に付けると、JSON形式のファイルを指定できます。",
+        help="タスクを絞り込むためのクエリ条件をJSON形式で指定します。使用できるキーは task_id, status, phase, phase_stage です。 ``file://`` を先頭に付けると、JSON形式のファイルを指定できます。",
     )
 
     id_name_list_group = parser.add_mutually_exclusive_group()
@@ -198,38 +193,26 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--input_data_id",
         type=str,
         nargs="+",
-        help=(
-            "抽出する入力データのinput_data_idを指定してください。"
-            " ``file://`` を先頭に付けると、input_data_id の一覧が記載されたファイルを指定できます。"
-        ),
+        help=("抽出する入力データのinput_data_idを指定してください。 ``file://`` を先頭に付けると、input_data_id の一覧が記載されたファイルを指定できます。"),
     )
     id_name_list_group.add_argument(
         "--exclude_input_data_id",
         type=str,
         nargs="+",
-        help=(
-            "除外する入力データのinput_data_idを指定してください。"
-            " ``file://`` を先頭に付けると、input_data_id の一覧が記載されたファイルを指定できます。"
-        ),
+        help=("除外する入力データのinput_data_idを指定してください。 ``file://`` を先頭に付けると、input_data_id の一覧が記載されたファイルを指定できます。"),
     )
 
     id_name_list_group.add_argument(
         "--input_data_name",
         type=str,
         nargs="+",
-        help=(
-            "抽出する入力データのinput_data_nameを指定してください。"
-            " ``file://`` を先頭に付けると、input_data_name の一覧が記載されたファイルを指定できます。"
-        ),
+        help=("抽出する入力データのinput_data_nameを指定してください。 ``file://`` を先頭に付けると、input_data_name の一覧が記載されたファイルを指定できます。"),
     )
     id_name_list_group.add_argument(
         "--exclude_input_data_name",
         type=str,
         nargs="+",
-        help=(
-            "除外する入力データのinput_data_nameを指定してください。"
-            " ``file://`` を先頭に付けると、input_data_name の一覧が記載されたファイルを指定できます。"
-        ),
+        help=("除外する入力データのinput_data_nameを指定してください。 ``file://`` を先頭に付けると、input_data_name の一覧が記載されたファイルを指定できます。"),
     )
 
     parser.add_argument("-o", "--output_dir", type=Path, required=True, help="出力先ディレクトリのパス")

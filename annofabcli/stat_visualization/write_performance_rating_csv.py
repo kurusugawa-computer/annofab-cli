@@ -171,12 +171,8 @@ class CollectingPerformanceInfo:
         quality_indicator_by_directory: Optional[QualityIndicatorByDirectory] = None,
         threshold_infos_by_directory: Optional[ThresholdInfoSettings] = None,
     ) -> None:
-        self.quality_indicator = (
-            quality_indicator if quality_indicator is not None else QualityIndicator("pointed_out_inspection_comment_count/annotation_count")
-        )
-        self.productivity_indicator = (
-            productivity_indicator if productivity_indicator is not None else ProductivityIndicator("actual_worktime_hour/annotation_count")
-        )
+        self.quality_indicator = quality_indicator if quality_indicator is not None else QualityIndicator("pointed_out_inspection_comment_count/annotation_count")
+        self.productivity_indicator = productivity_indicator if productivity_indicator is not None else ProductivityIndicator("actual_worktime_hour/annotation_count")
         self.threshold_info = threshold_info if threshold_info is not None else ThresholdInfo()
         self.threshold_infos_by_directory = threshold_infos_by_directory if threshold_infos_by_directory is not None else {}
         self.productivity_indicator_by_directory = productivity_indicator_by_directory if productivity_indicator_by_directory is not None else {}
@@ -324,9 +320,7 @@ class CollectingPerformanceInfo:
             if not p_project_dir.is_dir():
                 continue
 
-            custom_production_volume_list = (
-                custom_production_volume_list_by_directory.get(p_project_dir.name) if custom_production_volume_list_by_directory is not None else None
-            )
+            custom_production_volume_list = custom_production_volume_list_by_directory.get(p_project_dir.name) if custom_production_volume_list_by_directory is not None else None
             project_title = p_project_dir.name
             project_dir = ProjectDir(
                 p_project_dir,
@@ -593,9 +587,7 @@ class WritePerformanceRatingCsv(CommandLineWithoutWebapi):
         user_id_list = get_list_from_args(args.user_id) if args.user_id is not None else None
         df_user = create_user_df(target_dir)
         custom_production_volume_by_directory = (
-            create_custom_production_volume_by_directory(args.custom_production_volume_by_directory)
-            if args.custom_production_volume_by_directory is not None
-            else None
+            create_custom_production_volume_by_directory(args.custom_production_volume_by_directory) if args.custom_production_volume_by_directory is not None else None
         )
         result = CollectingPerformanceInfo(
             productivity_indicator=ProductivityIndicator(args.productivity_indicator),

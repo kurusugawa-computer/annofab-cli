@@ -132,7 +132,7 @@ class PutCommentMain(CommandLineWithConfirm):
 
         if task["status"] not in [TaskStatus.NOT_STARTED.value, TaskStatus.WORKING.value, TaskStatus.BREAK.value]:
             logger.warning(
-                f"task_id='{task_id}' :: タスクの状態が未着手,作業中,休憩中 以外の状態なので、コメントを付与できません。 :: task_status='{task['status']}'"  # noqa: E501
+                f"task_id='{task_id}' :: タスクの状態が未着手,作業中,休憩中 以外の状態なので、コメントを付与できません。 :: task_status='{task['status']}'"
             )
             return False
         return True
@@ -184,9 +184,7 @@ class PutCommentMain(CommandLineWithConfirm):
                     request_body = self._create_request_body(task=changed_task, input_data_id=input_data_id, comments=comments)
                     self.service.api.batch_update_comments(self.project_id, task_id, input_data_id, request_body=request_body)
                     added_comments_count += 1
-                    logger.debug(
-                        f"{logging_prefix} :: task_id='{task_id}', input_data_id='{input_data_id}' :: {len(comments)}件のコメントを付与しました。"
-                    )
+                    logger.debug(f"{logging_prefix} :: task_id='{task_id}', input_data_id='{input_data_id}' :: {len(comments)}件のコメントを付与しました。")
             except Exception:  # pylint: disable=broad-except
                 logger.warning(
                     f"{logging_prefix} :: task_id='{task_id}', input_data_id='{input_data_id}' :: コメントの付与に失敗しました。",
@@ -214,10 +212,7 @@ class PutCommentMain(CommandLineWithConfirm):
         parallelism: Optional[int] = None,
     ) -> None:
         comments_count = sum(len(e) for e in comments_for_task_list.values())
-        logger.info(
-            f"{self.comment_type_name}を付与するタスク数: {len(comments_for_task_list)}, "
-            f"{self.comment_type_name}を付与する入力データ数: {comments_count}"
-        )
+        logger.info(f"{self.comment_type_name}を付与するタスク数: {len(comments_for_task_list)}, {self.comment_type_name}を付与する入力データ数: {comments_count}")
 
         if parallelism is not None:
             with multiprocessing.Pool(parallelism) as pool:
@@ -294,8 +289,6 @@ def convert_cli_comments(dict_comments: dict[str, Any], *, comment_type: Comment
 
     result = {}
     for task_id, comments_for_task in dict_comments.items():
-        sub_result = {
-            input_data_id: [func_convert(e) for e in comments] for input_data_id, comments in comments_for_task.items() if len(comments) > 0
-        }
+        sub_result = {input_data_id: [func_convert(e) for e in comments] for input_data_id, comments in comments_for_task.items() if len(comments) > 0}
         result.update({task_id: sub_result})
     return result

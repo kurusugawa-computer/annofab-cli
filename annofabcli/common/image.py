@@ -225,9 +225,7 @@ def write_annotation_grayscale_image(
         annotation_list = list(reversed(simple_annotation["details"]))
 
     # 描画対象のアノテーションを絞り込む
-    annotation_list = [
-        e for e in annotation_list if e["data"] is not None and e["data"]["_type"] in ["BoundingBox", "Points", "SegmentationV2", "Segmentation"]
-    ]
+    annotation_list = [e for e in annotation_list if e["data"] is not None and e["data"]["_type"] in ["BoundingBox", "Points", "SegmentationV2", "Segmentation"]]
 
     if len(annotation_list) > 255:
         # channel depthは8bitなので、255個のアノテーションまでしか描画できない
@@ -297,7 +295,7 @@ def write_annotation_images_from_path(
     Returns:
         True: アノテーション情報の画像化に成功した。False: アノテーション情報の画像化に失敗した。
 
-    """  # noqa: E501
+    """
 
     def _get_image_size(input_data_id: str) -> Optional[InputDataSize]:
         def _get_image_size_from_system_metadata(arg_input_data: dict[str, Any]):  # noqa: ANN202
@@ -306,9 +304,7 @@ def write_annotation_images_from_path(
             if original_resolution is not None and (original_resolution.get("width") is not None and original_resolution.get("height") is not None):
                 return original_resolution.get("width"), original_resolution.get("height")
             else:
-                logger.warning(
-                    f"input_data_id='{input_data_id}'のプロパティ`system_metadata.original_resolution`には画像サイズが設定されていません。"
-                )
+                logger.warning(f"input_data_id='{input_data_id}'のプロパティ`system_metadata.original_resolution`には画像サイズが設定されていません。")
                 return None
 
         if image_size is not None:

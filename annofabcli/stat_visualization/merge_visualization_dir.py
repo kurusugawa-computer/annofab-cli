@@ -102,15 +102,9 @@ class WritingVisualizationFile:
         self.output_project_dir.write_performance_per_started_date_csv(acceptor_per_date_obj, phase=TaskPhase.ACCEPTANCE)
 
         # 折れ線グラフを出力
-        self.output_project_dir.write_performance_line_graph_per_date(
-            annotator_per_date_obj, phase=TaskPhase.ANNOTATION, user_id_list=self.user_id_list
-        )
-        self.output_project_dir.write_performance_line_graph_per_date(
-            inspector_per_date_obj, phase=TaskPhase.INSPECTION, user_id_list=self.user_id_list
-        )
-        self.output_project_dir.write_performance_line_graph_per_date(
-            acceptor_per_date_obj, phase=TaskPhase.ACCEPTANCE, user_id_list=self.user_id_list
-        )
+        self.output_project_dir.write_performance_line_graph_per_date(annotator_per_date_obj, phase=TaskPhase.ANNOTATION, user_id_list=self.user_id_list)
+        self.output_project_dir.write_performance_line_graph_per_date(inspector_per_date_obj, phase=TaskPhase.INSPECTION, user_id_list=self.user_id_list)
+        self.output_project_dir.write_performance_line_graph_per_date(acceptor_per_date_obj, phase=TaskPhase.ACCEPTANCE, user_id_list=self.user_id_list)
 
     @_catch_exception
     def write_task_list_and_histogram(self, task: Task) -> None:
@@ -188,9 +182,7 @@ class MergingVisualizationFile:
             project_info = project_dir.read_project_info()
             project_info_list.append(project_info)
 
-        merge_info = MergingInfo(
-            target_dir_list=target_dir_list, project_info_list=project_info_list, task_completion_criteria=task_completion_criteria
-        )
+        merge_info = MergingInfo(target_dir_list=target_dir_list, project_info_list=project_info_list, task_completion_criteria=task_completion_criteria)
         return merge_info
 
 
@@ -223,9 +215,7 @@ def merge_visualization_dir(  # pylint: disable=too-many-statements
         worktime_per_date=worktime_per_date,
         task_completion_criteria=task_completion_criteria,
     )
-    writing_obj = WritingVisualizationFile(
-        output_project_dir, user_id_list=user_id_list, minimal_output=minimal_output, task_completion_criteria=task_completion_criteria
-    )
+    writing_obj = WritingVisualizationFile(output_project_dir, user_id_list=user_id_list, minimal_output=minimal_output, task_completion_criteria=task_completion_criteria)
 
     writing_obj.write_task_list_and_histogram(task)
     writing_obj.write_worktime_per_date(worktime_per_date)
@@ -270,9 +260,7 @@ def main(args: argparse.Namespace) -> None:
 
     user_id_list = get_list_from_args(args.user_id) if args.user_id is not None else None
 
-    custom_production_volume_list = (
-        create_custom_production_volume_list(args.custom_production_volume) if args.custom_production_volume is not None else None
-    )
+    custom_production_volume_list = create_custom_production_volume_list(args.custom_production_volume) if args.custom_production_volume is not None else None
     task_completion_criteria = TaskCompletionCriteria(args.task_completion_criteria)
     merge_visualization_dir(
         project_dir_list=[ProjectDir(e, task_completion_criteria) for e in args.dir],

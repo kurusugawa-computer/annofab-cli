@@ -84,10 +84,7 @@ class CopyProject(CommandLine):
         if copied_targets is not None:
             logger.info(f"コピー対象: {[e.value for e in copied_targets]}")
 
-        confirm_message = (
-            f"プロジェクト'{src_project_title}'（project_id='{src_project_id}'）を、"
-            f"プロジェクト'{dest_title}'（project_id='{dest_project_id}'） にコピーしますか？"
-        )
+        confirm_message = f"プロジェクト'{src_project_title}'（project_id='{src_project_id}'）を、プロジェクト'{dest_title}'（project_id='{dest_project_id}'） にコピーしますか？"
         if not self.confirm_processing(confirm_message):
             logger.info(f"プロジェクト'{src_project_title}'（project_id='{src_project_id}'）をコピーせずに終了します。")
             return
@@ -142,9 +139,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
 
     argument_parser.add_project_id(help_message="コピー元のプロジェクトのproject_idを指定してください。")
 
-    parser.add_argument(
-        "--dest_project_id", type=str, help="新しいプロジェクトのproject_idを指定してください。省略した場合は UUIDv4 フォーマットになります。"
-    )
+    parser.add_argument("--dest_project_id", type=str, help="新しいプロジェクトのproject_idを指定してください。省略した場合は UUIDv4 フォーマットになります。")
     parser.add_argument("--dest_title", type=str, required=True, help="新しいプロジェクトのタイトルを指定してください。")
     parser.add_argument("--dest_overview", type=str, help="新しいプロジェクトの概要を指定してください。")
 
