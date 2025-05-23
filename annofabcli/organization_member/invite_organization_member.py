@@ -30,6 +30,12 @@ class InviteOrganizationMemberMain(CommandLineWithConfirm):
         super().__init__(all_yes)
 
     def invite_members_to_organization(self, organization_name: str, user_ids: Collection[str], role: str) -> None:
+        if not self.facade.contains_any_organization_member_role(
+            organization_name, {OrganizationMemberRole.ADMINISTRATOR, OrganizationMemberRole.OWNER}
+        ):
+            logger.warning(f"組織'{organization_name}'に所属していないか、組織メンバーを招待できるロールを持たないため、スキップします。")
+            return
+        
         logger.info(f"{len(user_ids)} 件のメンバーを組織'{organization_name}'に招待して、ロール'{role}'を付与します。")
 
         organization_member_list = self.service.wrapper.get_all_organization_members(organization_name)

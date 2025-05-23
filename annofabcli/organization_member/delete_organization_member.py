@@ -40,7 +40,7 @@ class DeleteOrganizationMemberMain(CommandLineWithConfirm):
         if not self.facade.contains_any_organization_member_role(
             organization_name, {OrganizationMemberRole.ADMINISTRATOR, OrganizationMemberRole.OWNER}
         ):
-            logger.warning(f"組織'{organization_name}'に所属していないか、組織メンバーを脱退できるロールがないため、スキップします。")
+            logger.warning(f"組織'{organization_name}'に所属していないか、組織メンバーを脱退できるロールを持たないため、スキップします。")
             return
 
         logger.info(f"{len(user_ids)} 件のメンバーを組織'{organization_name}'から脱退させます。")
