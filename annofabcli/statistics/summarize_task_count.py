@@ -157,7 +157,7 @@ class SummarizeTaskCount(CommandLine):
 
         number_of_inspections = self.get_number_of_inspections_for_project(project_id)
         task_count_df = create_task_count_summary(task_list, number_of_inspections=number_of_inspections)
-        annofabcli.common.utils.print_csv(task_count_df, output=self.output, to_csv_kwargs=self.csv_format)
+        annofabcli.common.utils.print_csv(task_count_df, output=self.output)
 
     def get_task_list_with_downloading_file(self, project_id: str, task_json_path: Optional[Path], is_latest: bool) -> list[Task]:  # noqa: FBT001
         if task_json_path is None:

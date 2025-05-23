@@ -415,8 +415,7 @@ class AttributeCountCsv:
 
     """  # noqa: E501
 
-    def __init__(self, selective_attribute_value_max_count: int = 20, csv_format: Optional[dict[str, Any]] = None) -> None:
-        self.csv_format = csv_format
+    def __init__(self, selective_attribute_value_max_count: int = 20) -> None:
         self.selective_attribute_value_max_count = selective_attribute_value_max_count
 
     def _only_selective_attribute(self, columns: list[AttributeValueKey]) -> list[AttributeValueKey]:
@@ -511,7 +510,7 @@ class AttributeCountCsv:
         # `task_id`列など`basic_columns`も`fillna`対象だが、nanではないはずので問題ない
         df.fillna(0, inplace=True)
 
-        print_csv(df, output=str(output_file), to_csv_kwargs=self.csv_format)
+        print_csv(df, output=str(output_file))
 
     def print_csv_by_input_data(
         self,
@@ -555,7 +554,7 @@ class AttributeCountCsv:
         value_columns = self._value_columns(counter_list, prior_attribute_columns)
         df = df.fillna(dict.fromkeys(value_columns, 0))
 
-        print_csv(df, output=str(output_file), to_csv_kwargs=self.csv_format)
+        print_csv(df, output=str(output_file))
 
 
 class LabelCountCsv:
@@ -564,9 +563,6 @@ class LabelCountCsv:
 
 
     """
-
-    def __init__(self, csv_format: Optional[dict[str, Any]] = None) -> None:
-        self.csv_format = csv_format
 
     def _value_columns(self, counter_list: Collection[AnnotationCounter], prior_label_columns: Optional[list[str]]) -> list[str]:
         all_attr_key_set = {attr_key for c in counter_list for attr_key in c.annotation_count_by_label}
@@ -615,7 +611,7 @@ class LabelCountCsv:
         # NaNを0に変換する
         # `basic_columns`は必ずnanではないので、すべての列に対してfillnaを実行しても問題ないはず
         df.fillna(0, inplace=True)
-        print_csv(df, output=str(output_file), to_csv_kwargs=self.csv_format)
+        print_csv(df, output=str(output_file))
 
     def print_csv_by_input_data(
         self,
@@ -658,7 +654,7 @@ class LabelCountCsv:
         value_columns = self._value_columns(counter_list, prior_label_columns)
         df = df.fillna(dict.fromkeys(value_columns, 0))
 
-        print_csv(df, output=str(output_file), to_csv_kwargs=self.csv_format)
+        print_csv(df, output=str(output_file))
 
 
 class AnnotationSpecs:

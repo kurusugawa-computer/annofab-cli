@@ -116,7 +116,6 @@ class SummarizeTaskCountByUser(CommandLine):
             target_df,
             format=FormatArgument(FormatArgument.CSV),
             output=self.output,
-            csv_format=self.csv_format,
         )
 
     def main(self) -> None:

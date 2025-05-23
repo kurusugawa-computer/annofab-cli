@@ -25,7 +25,6 @@ from annofabcli.common.exceptions import AnnofabCliException, AuthenticationErro
 from annofabcli.common.facade import AnnofabApiFacade
 from annofabcli.common.typing import InputDataSize
 from annofabcli.common.utils import (
-    DEFAULT_CSV_FORMAT,
     get_file_scheme_path,
     print_according_to_format,
     print_csv,
@@ -186,20 +185,6 @@ def get_list_from_args(str_list: Optional[list[str]] = None) -> list[str]:
         return read_lines_except_blank_line(path)
     else:
         return str_list
-
-
-def get_csv_format_from_args(target: Optional[str] = None) -> dict[str, Any]:
-    """
-    コマンドライン引数の値から csv_format を取得する。
-    Default: {"encoding": "utf_8_sig", "index": False}
-
-    """
-    csv_format = DEFAULT_CSV_FORMAT.copy()
-    if target is not None:
-        arg_csv_format = get_json_from_args(target)
-        csv_format.update(arg_csv_format)
-
-    return csv_format
 
 
 def get_json_from_args(target: Optional[str] = None) -> Any:  # noqa: ANN401
@@ -497,9 +482,6 @@ class CommandLineWithoutWebapi:
     #: 出力先
     output: Optional[str] = None
 
-    #: CSVのフォーマット
-    csv_format: Optional[dict[str, Any]] = None
-
     #: 出力フォーマット
     str_format: Optional[str] = None
 
@@ -516,9 +498,6 @@ class CommandLineWithoutWebapi:
         self.all_yes = args.yes
         if hasattr(args, "query"):
             self.query = args.query
-
-        if hasattr(args, "csv_format"):
-            self.csv_format = get_csv_format_from_args(args.csv_format)
 
         if hasattr(args, "output"):
             self.output = args.output
@@ -577,10 +556,10 @@ class CommandLineWithoutWebapi:
         return True
 
     def print_csv(self, df: pandas.DataFrame) -> None:
-        print_csv(df, output=self.output, to_csv_kwargs=self.csv_format)
+        print_csv(df, output=self.output)
 
     def print_according_to_format(self, target: Any) -> None:  # noqa: ANN401
-        print_according_to_format(target, format=FormatArgument(self.str_format), output=self.output, csv_format=self.csv_format)
+        print_according_to_format(target, format=FormatArgument(self.str_format), output=self.output)
 
 
 class PrettyHelpFormatter(argparse.RawTextHelpFormatter, argparse.ArgumentDefaultsHelpFormatter):
