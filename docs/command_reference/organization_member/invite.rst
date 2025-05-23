@@ -4,7 +4,7 @@ organization_member invite
 
 Description
 =================================
-組織にユーザを招待します。
+組織にメンバーを招待します。
 
 
 Examples
@@ -14,7 +14,7 @@ Examples
 基本的な使い方
 --------------------------
 
-対象組織の名前を ``--organization`` に、招待するユーザのuser_idを ``--user_id`` に、組織メンバロールを ``--role`` に指定します。
+対象組織の名前を ``--organization`` に、招待するメンバーのuser_idを ``--user_id`` に、組織メンバーロールを ``--role`` に指定します。
 
 
 .. code-block::
