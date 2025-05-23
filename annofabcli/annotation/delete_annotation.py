@@ -480,7 +480,7 @@ def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argpa
         "タスク配下のアノテーションを削除します。ただし、作業中状態のタスクのアノテーションは削除できません。"
         "間違えてアノテーションを削除したときに復元できるようにするため、 ``--backup`` でバックアップ用のディレクトリを指定することを推奨します。"
     )
-    epilog = "オーナーまたはチェッカーロールを持つユーザで実行してください。"
+    epilog = "オーナーまたはチェッカーロールを持つユーザで実行してください。ただし``--force``オプションを指定した場合は、オーナーロールを持つユーザで実行してください。"  # noqa: E501
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
     parse_args(parser)
