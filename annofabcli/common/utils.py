@@ -110,7 +110,6 @@ def print_according_to_format(
     target: Any,  # noqa: ANN401
     format: FormatArgument,  # noqa: A002
     output: Optional[Union[str, Path]] = None,
-    csv_format: Optional[dict[str, Any]] = None,
 ) -> None:
     """
     コマンドライン引数 ``--format`` の値にしたがって、内容を出力する。
@@ -119,7 +118,6 @@ def print_according_to_format(
         target: 出力する内容
         format: 出力フォーマット
         output: 出力先（オプション）
-        csv_format: CSVのフォーマット（オプション）
 
 
     """
@@ -132,7 +130,7 @@ def print_according_to_format(
 
     elif format == FormatArgument.CSV:
         df = pandas.DataFrame(target)
-        print_csv(df, output=output, to_csv_kwargs=csv_format)
+        print_csv(df, output=output)
 
     elif format == FormatArgument.TASK_ID_LIST:
         task_id_list = [e["task_id"] for e in target]

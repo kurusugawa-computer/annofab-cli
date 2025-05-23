@@ -107,7 +107,6 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         default=FormatArgument.CSV,
     )
     argument_parser.add_output()
-    argument_parser.add_csv_format()
 
     parser.set_defaults(subcommand_func=main)
 

@@ -358,7 +358,6 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--csv_header_row_count", type=int, help="CSVのヘッダ行数", default=1)
 
     argument_parser.add_output()
-    argument_parser.add_csv_format()
 
     parser.set_defaults(subcommand_func=main)
 

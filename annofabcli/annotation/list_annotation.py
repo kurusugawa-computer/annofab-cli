@@ -248,7 +248,6 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         choices=[FormatArgument.CSV, FormatArgument.JSON, FormatArgument.PRETTY_JSON],
         default=FormatArgument.CSV,
     )
-    argument_parser.add_csv_format()
 
     argument_parser.add_output()
 

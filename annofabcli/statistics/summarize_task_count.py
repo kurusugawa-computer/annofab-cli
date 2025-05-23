@@ -157,7 +157,7 @@ class SummarizeTaskCount(CommandLine):
 
         number_of_inspections = self.get_number_of_inspections_for_project(project_id)
         task_count_df = create_task_count_summary(task_list, number_of_inspections=number_of_inspections)
-        annofabcli.common.utils.print_csv(task_count_df, output=self.output, to_csv_kwargs=self.csv_format)
+        annofabcli.common.utils.print_csv(task_count_df, output=self.output)
 
     def get_task_list_with_downloading_file(self, project_id: str, task_json_path: Optional[Path], is_latest: bool) -> list[Task]:  # noqa: FBT001
         if task_json_path is None:
@@ -210,7 +210,6 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         help="[EXPERIMENTAL] ``getTasks`` APIを実行して、タスク情報を参照します。タスク数が少ないプロジェクトで、最新のタスク情報を参照したいときに利用できます。",  # noqa: E501
     )
 
-    argument_parser.add_csv_format()
     argument_parser.add_output()
 
     parser.set_defaults(subcommand_func=main)
