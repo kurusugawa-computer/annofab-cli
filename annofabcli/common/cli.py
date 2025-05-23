@@ -435,7 +435,6 @@ class ArgumentParser:
 
         self.parser.add_argument("-f", "--format", type=str, choices=[e.value for e in choices], default=default.value, help=help_message)
 
-
     def add_output(self, *, required: bool = False, help_message: Optional[str] = None) -> None:
         """
         '--output` 引数を追加
