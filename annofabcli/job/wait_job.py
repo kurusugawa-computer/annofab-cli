@@ -3,9 +3,6 @@ import dataclasses
 import logging
 from typing import Any, Optional
 
-import asyncio
-import concurrent.futures
-
 import annofabapi
 from annofabapi.models import ProjectJobType
 
@@ -60,7 +57,6 @@ class WaitJobMain:
         )
         if result is None:
             logger.warning(f"job_type='{job_type.value}', job_id='{job_id}' :: ジョブは存在しませんでした。")
-
 
 
 class WaitJob(CommandLine):

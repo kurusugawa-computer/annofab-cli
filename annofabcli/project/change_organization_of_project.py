@@ -1,36 +1,34 @@
 import argparse
+import asyncio
+import copy
 import logging
 from typing import Any, Optional
 
 import annofabapi
 import requests
-from annofabapi.models import Project, ProjectMemberRole, OrganizationMemberRole, ProjectJobType, JobStatus
-from more_itertools import first_true
+from annofabapi.models import JobStatus, OrganizationMemberRole, ProjectJobType
 
 import annofabcli
-from annofabcli.common.cli import CommandLine, build_annofabapi_resource_and_login
-from annofabcli.common.facade import AnnofabApiFacade
 from annofabcli.common.cli import (
-    COMMAND_LINE_ERROR_STATUS_CODE,
-    PARALLELISM_CHOICES,
-    ArgumentParser,
     CommandLine,
     CommandLineWithConfirm,
     build_annofabapi_resource_and_login,
-    get_json_from_args,
 )
-import asyncio
-import copy
+from annofabcli.common.facade import AnnofabApiFacade
 
 logger = logging.getLogger(__name__)
 
 
 class ChangeProjectOrganizationMain(CommandLineWithConfirm):
-    def __init__(self, service: annofabapi.Resource,*,all_yes: bool = False,) -> None:
+    def __init__(
+        self,
+        service: annofabapi.Resource,
+        *,
+        all_yes: bool = False,
+    ) -> None:
         self.service = service
         self.facade = AnnofabApiFacade(service)
         super().__init__(all_yes)
-        
 
     async def wait_until_jobs_finished_async(self, jobs: list[dict[str, Any]]) -> None:
         tasks = [
@@ -48,9 +46,8 @@ class ChangeProjectOrganizationMain(CommandLineWithConfirm):
         for result in results:
             if result is not None and result == JobStatus.SUCCEEDED:
                 success_count += 1
-        
-        logger.info(f"{success_count} 件のプロジェクトの組織の変更が成功しました。")
 
+        logger.info(f"{success_count} 件のプロジェクトの組織の変更が成功しました。")
 
     async def wait_until_job_finished_async(
         self,
@@ -75,7 +72,9 @@ class ChangeProjectOrganizationMain(CommandLineWithConfirm):
             指定したジョブ（job_idがNoneの場合は現在進行中のジョブ）が存在しない場合は、Noneを返す。
         """
         import more_itertools
+
         JobStatus = annofabapi.models.JobStatus
+
         def get_latest_job():
             job_list = self.service.api.get_project_job(project_id, query_params={"type": job_type.value})[0]["list"]
             if len(job_list) > 0:
@@ -135,48 +134,53 @@ class ChangeProjectOrganizationMain(CommandLineWithConfirm):
                 )
                 return JobStatus.FAILED
 
+            elif job_access_count < max_job_access:
+                logger.info(
+                    "project_id='%s', job_id='%s', job_type='%s' のジョブは進行中です。%d 秒間待ちます。",
+                    project_id,
+                    job_id,
+                    job_type.value,
+                    job_access_interval,
+                )
+                await asyncio.sleep(job_access_interval)
             else:
-                if job_access_count < max_job_access:
-                    logger.info(
-                        "project_id='%s', job_id='%s', job_type='%s' のジョブは進行中です。%d 秒間待ちます。",
-                        project_id,
-                        job_id,
-                        job_type.value,
-                        job_access_interval,
-                    )
-                    await asyncio.sleep(job_access_interval)
-                else:
-                    logger.info(
-                        "project_id='%s', job_id='%s', job_type='%s' のジョブは %.1f 分以上経過しても、終了しませんでした。",
-                        project_id,
-                        job["job_id"],
-                        job_type.value,
-                        job_access_interval * job_access_count / 60,
-                    )
-                    return JobStatus.PROGRESS
-
+                logger.info(
+                    "project_id='%s', job_id='%s', job_type='%s' のジョブは %.1f 分以上経過しても、終了しませんでした。",
+                    project_id,
+                    job["job_id"],
+                    job_type.value,
+                    job_access_interval * job_access_count / 60,
+                )
+                return JobStatus.PROGRESS
 
     def change_organization_for_project(self, project_id: str, organization_name: str) -> bool:
         project = self.service.wrapper.get_project_or_none(project_id)
-        project_name = project['title']
+        project_name = project["title"]
         if project is None:
             logger.warning(f"project_id='{project_id}'のプロジェクトは存在しないので、スキップします。")
             return False
-        
+
         if project["project_status"] == "active":
-            logger.warning(f"project_id='{project_id}'のプロジェクトのステータスは「進行中」のため、組織を変更できません。 `--force`オプションを指定すれば、停止中状態に変更した後組織を変更できます。")
-            
+            logger.warning(
+                f"project_id='{project_id}'のプロジェクトのステータスは「進行中」のため、組織を変更できません。 `--force`オプションを指定すれば、停止中状態に変更した後組織を変更できます。"
+            )
+
             if self.is_force:
-                if not self.confirm_processing(f"project_id='{project_id}'のプロジェクトの状態を停止中にしたあと、所属する組織を'{organization_name}'に変更しますか？ :: project_name='{project_name}'"):
+                if not self.confirm_processing(
+                    f"project_id='{project_id}'のプロジェクトの状態を停止中にしたあと、所属する組織を'{organization_name}'に変更しますか？ :: project_name='{project_name}'"
+                ):
                     return False
                 logger.info(f"project_id='{project_id}'のプロジェクトのステータスを「停止中」に変更します。")
-                project, _ = self.service.api.put_project(project_id, request_body={"status": "suspend", "last_updated_datetime": project["updated_datetime"]})
+                project, _ = self.service.api.put_project(
+                    project_id, request_body={"status": "suspend", "last_updated_datetime": project["updated_datetime"]}
+                )
             else:
                 return False
-        else:            
-            if not self.confirm_processing(f"project_id='{project_id}'のプロジェクトの組織を'{organization_name}'に変更しますか？ :: project_name='{project_name}'"):
-                return False
-        
+        elif not self.confirm_processing(
+            f"project_id='{project_id}'のプロジェクトの組織を'{organization_name}'に変更しますか？ :: project_name='{project_name}'"
+        ):
+            return False
+
         logger.info(f"{project['title']} の組織を {organization_name} に変更します。project_id={project_id}")
         request_body = copy.deepcopy(project)
         request_body["organization_name"] = organization_name
@@ -188,12 +192,13 @@ class ChangeProjectOrganizationMain(CommandLineWithConfirm):
 
     def change_organization_for_project_list(self, project_id_list: list[str], organization_name: str):
         if not self.facade.contains_any_organization_member_role(project_id, [OrganizationMemberRole.OWNER, OrganizationMemberRole.ADMINISTRATOR]):
-            logger.warning(f"変更先組織'{organization_name}'に対して管理者ロールまたはオーナロールでないため、プロジェクトの所属する組織を変更できません。")
+            logger.warning(
+                f"変更先組織'{organization_name}'に対して管理者ロールまたはオーナロールでないため、プロジェクトの所属する組織を変更できません。"
+            )
             return
 
         logger.info(f"{len(project_id_list)} 件のプロジェクトの組織を {organization_name} に変更します。")
 
-        
         success_count = 0
         for project_id in project_id_list:
             try:
@@ -203,7 +208,7 @@ class ChangeProjectOrganizationMain(CommandLineWithConfirm):
             except requests.HTTPError as e:
                 logger.warning(f"project_id={project_id} の組織変更でHTTPエラー: {e}")
         logger.info(f"{success_count} 件のプロジェクトの組織を {organization_name} に変更しました。")
-        
+
     async def wait_until_jobs_finished(self, jobs: list[dict[str, Any]]) -> None:
         import asyncio
 
@@ -212,7 +217,7 @@ class ChangeProjectOrganizationMain(CommandLineWithConfirm):
                 self.service.wrapper.wait_until_job_finished,
                 project_id=job["project_id"],
                 job_id=job["job_id"],
-                job_type=ProjectJobType(job["job_type"])
+                job_type=ProjectJobType(job["job_type"]),
             )
 
         await asyncio.gather(*(wait_job(job) for job in jobs))
