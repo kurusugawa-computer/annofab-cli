@@ -714,9 +714,7 @@ class AnnotationSpecs:
 
         duplicated_attribute_names = [key for key, value in collections.Counter(result).items() if value > 1]
         if len(duplicated_attribute_names) > 0:
-            logger.warning(
-                f"アノテーション仕様の属性情報（ラベル英語名、属性英語名）が重複しています。アノテーション個数が正しく算出できない可能性があります。:: {duplicated_attribute_names}"
-            )
+            logger.warning(f"アノテーション仕様の属性情報（ラベル英語名、属性英語名）が重複しています。アノテーション個数が正しく算出できない可能性があります。:: {duplicated_attribute_names}")
 
         return result
 

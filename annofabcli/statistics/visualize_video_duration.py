@@ -181,9 +181,7 @@ def get_video_duration_list(
         input_data_id_list_list = [task["input_data_id_list"] for task in task_list if task["task_id"] in task_ids]
         input_data_ids_included_task = set(itertools.chain.from_iterable(input_data_id_list_list))
         input_data_list = [input_data for input_data in input_data_list if input_data["input_data_id"] in input_data_ids_included_task]
-        logger.debug(
-            f"「引数'task_ids'に対応するタスクに含まれている入力データ」という条件で、入力データを {len(input_data_list)} 件に絞り込みました。  :: 引数'task_ids'は {len(task_ids)} 件"
-        )
+        logger.debug(f"「引数'task_ids'に対応するタスクに含まれている入力データ」という条件で、入力データを {len(input_data_list)} 件に絞り込みました。  :: 引数'task_ids'は {len(task_ids)} 件")
 
     video_duration_list = []
     for input_data in input_data_list:
@@ -360,18 +358,14 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "-t",
         "--task_id",
         nargs="+",
-        help=(
-            "指定したtask_idのタスクに含まれている入力データを可視化対象にします。 ``file://`` を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。"
-        ),
+        help=("指定したtask_idのタスクに含まれている入力データを可視化対象にします。 ``file://`` を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。"),
     )
 
     parser.add_argument(
         "-i",
         "--input_data_id",
         nargs="+",
-        help=(
-            "指定したinput_data_idである入力データを可視化対象にします。 ``file://`` を先頭に付けると、input_data_idの一覧が記載されたファイルを指定できます。"
-        ),
+        help=("指定したinput_data_idである入力データを可視化対象にします。 ``file://`` を先頭に付けると、input_data_idの一覧が記載されたファイルを指定できます。"),
     )
 
     parser.add_argument("--from_date", type=str, help="指定した日付（ ``YYYY-MM-DD`` ）以降に更新された入力データを可視化対象にします。")

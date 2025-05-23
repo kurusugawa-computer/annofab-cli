@@ -200,9 +200,7 @@ class AnnotationConverter:
             try:
                 choice = get_choice(choices, choice_name=str(attribute_value))
             except ValueError:
-                logger.warning(
-                    f"アノテーション仕様の属性'{attribute_name}'に選択肢名(英語)が'{attribute_value}'である選択肢情報は存在しないか、複数存在します。 :: {log_message_suffix}"
-                )
+                logger.warning(f"アノテーション仕様の属性'{attribute_name}'に選択肢名(英語)が'{attribute_value}'である選択肢情報は存在しないか、複数存在します。 :: {log_message_suffix}")
                 if self.is_strict:
                     raise
                 return None
@@ -214,9 +212,7 @@ class AnnotationConverter:
             try:
                 choice = get_choice(choices, choice_name=str(attribute_value))
             except ValueError:
-                logger.warning(
-                    f"アノテーション仕様の属性'{attribute_name}'に選択肢名(英語)が'{attribute_value}'である選択肢情報は存在しないか、複数存在します。 :: {log_message_suffix}"
-                )
+                logger.warning(f"アノテーション仕様の属性'{attribute_name}'に選択肢名(英語)が'{attribute_value}'である選択肢情報は存在しないか、複数存在します。 :: {log_message_suffix}")
                 if self.is_strict:
                     raise
                 return None
@@ -416,9 +412,7 @@ class ImportAnnotationMain(CommandLineWithConfirm):
 
         simple_annotation: ImportedSimpleAnnotation = ImportedSimpleAnnotation.from_dict(parser.load_json())
         if len(simple_annotation.details) == 0:
-            logger.debug(
-                f"task_id='{task_id}', input_data_id='{input_data_id}' :: インポート元にアノテーションデータがないため、アノテーションの登録をスキップします。"
-            )
+            logger.debug(f"task_id='{task_id}', input_data_id='{input_data_id}' :: インポート元にアノテーションデータがないため、アノテーションの登録をスキップします。")
             return False
 
         input_data = self.service.wrapper.get_input_data_or_none(self.project_id, input_data_id)
@@ -572,9 +566,7 @@ class ImportAnnotationMain(CommandLineWithConfirm):
                     task_count += 1
 
         if target_task_ids is not None and len(tmp_target_task_ids) > 0:
-            logger.warning(
-                f"'--task_id'で指定したタスクの内 {len(tmp_target_task_ids)} 件は、インポート対象のアノテーションデータに含まれていません。 :: {tmp_target_task_ids}"
-            )
+            logger.warning(f"'--task_id'で指定したタスクの内 {len(tmp_target_task_ids)} 件は、インポート対象のアノテーションデータに含まれていません。 :: {tmp_target_task_ids}")
 
         logger.info(f"{success_count} / {task_count} 件のタスクに対してアノテーションをインポートしました。")
 

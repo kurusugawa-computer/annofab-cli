@@ -250,9 +250,7 @@ class RestoreAnnotationMain(CommandLineWithConfirm):
                     task_count += 1
 
         if target_task_ids is not None and len(tmp_target_task_ids) > 0:
-            logger.warning(
-                f"'--task_id'で指定したタスクの内 {len(tmp_target_task_ids)} 件は、リストア対象のアノテーションデータに含まれていません。 :: {tmp_target_task_ids}"
-            )
+            logger.warning(f"'--task_id'で指定したタスクの内 {len(tmp_target_task_ids)} 件は、リストア対象のアノテーションデータに含まれていません。 :: {tmp_target_task_ids}")
 
         logger.info(f"{success_count} / {task_count} 件のタスクに対してアノテーションをリストアしました。")
 

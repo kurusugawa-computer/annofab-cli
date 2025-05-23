@@ -97,9 +97,7 @@ def _get_additional_data_v2(additional_data: dict[str, Any], attribute_value: At
         if len(tmp) == 0:  # pylint: disable=no-else-raise
             raise ValueError(f"アノテーション仕様の'{get_attribute_name(additional_data)}'属性に、選択肢名(英語)が'{choice_name_en}'である選択肢は存在しません。")
         elif len(tmp) > 1:
-            raise ValueError(
-                f"アノテーション仕様の'{get_attribute_name(additional_data)}'属性に、選択肢名(英語)が'{choice_name_en}'である選択肢が複数（{len(tmp)} 個）存在します。"
-            )
+            raise ValueError(f"アノテーション仕様の'{get_attribute_name(additional_data)}'属性に、選択肢名(英語)が'{choice_name_en}'である選択肢が複数（{len(tmp)} 個）存在します。")
 
         return tmp[0]["choice_id"]
 

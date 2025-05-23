@@ -194,10 +194,7 @@ class DeleteAnnotationMain(CommandLineWithConfirm):
         task_id = editor_annotation["task_id"]
         input_data_id = editor_annotation["input_data_id"]
         if len(editor_annotation["details"]) == 0:
-            logger.warning(
-                f"task_id='{task_id}', input_data_id='{input_data_id}' にはアノテーションが存在しません。以下のアノテーションの削除をスキップします。 :: "
-                f"annotation_ids={annotation_ids}"
-            )
+            logger.warning(f"task_id='{task_id}', input_data_id='{input_data_id}' にはアノテーションが存在しません。以下のアノテーションの削除をスキップします。 :: annotation_ids={annotation_ids}")
             return 0, len(annotation_ids)
 
         # annotation_idでフィルタ
@@ -206,9 +203,7 @@ class DeleteAnnotationMain(CommandLineWithConfirm):
         nonexistent_annotation_ids = annotation_ids - existent_annotation_ids
 
         if len(nonexistent_annotation_ids) > 0:
-            logger.warning(
-                f"次のアノテーションは存在しないので、削除できません。 :: task_id='{task_id}', input_data_id='{input_data_id}', annotation_id='{nonexistent_annotation_ids}'"
-            )
+            logger.warning(f"次のアノテーションは存在しないので、削除できません。 :: task_id='{task_id}', input_data_id='{input_data_id}', annotation_id='{nonexistent_annotation_ids}'")
 
         if len(filtered_details) == 0:
             logger.info(f"task_id='{task_id}', input_data_id='{input_data_id}' には削除対象のアノテーションが存在しないので、スキップします。")
@@ -305,8 +300,7 @@ class DeleteAnnotationMain(CommandLineWithConfirm):
                 editor_annotation = self.service.wrapper.get_editor_annotation_or_none(self.project_id, task_id=task_id, input_data_id=input_data_id, query_params={"v": "1"})
                 if editor_annotation is None:
                     logger.warning(
-                        f"task_id='{task_id}'のタスクに、input_data_id='{input_data_id}'の入力データが含まれていません。 アノテーションの削除をスキップします。 :: "
-                        f"annotation_ids={annotation_ids}"
+                        f"task_id='{task_id}'のタスクに、input_data_id='{input_data_id}'の入力データが含まれていません。 アノテーションの削除をスキップします。 :: annotation_ids={annotation_ids}"
                     )
                     failed_to_delete_annotation_count += len(annotation_ids)
                     continue
