@@ -207,7 +207,6 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         help="最新のタスク一覧ファイルを参照します。このオプションを指定すると、タスク一覧ファイルを更新するのに数分待ちます。",
     )
 
-    argument_parser.add_csv_format()
     argument_parser.add_output()
 
     parser.set_defaults(subcommand_func=main)

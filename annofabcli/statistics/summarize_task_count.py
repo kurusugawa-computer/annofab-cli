@@ -210,7 +210,6 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         help="[EXPERIMENTAL] ``getTasks`` APIを実行して、タスク情報を参照します。タスク数が少ないプロジェクトで、最新のタスク情報を参照したいときに利用できます。",  # noqa: E501
     )
 
-    argument_parser.add_csv_format()
     argument_parser.add_output()
 
     parser.set_defaults(subcommand_func=main)

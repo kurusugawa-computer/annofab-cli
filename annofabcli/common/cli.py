@@ -435,18 +435,6 @@ class ArgumentParser:
 
         self.parser.add_argument("-f", "--format", type=str, choices=[e.value for e in choices], default=default.value, help=help_message)
 
-    def add_csv_format(self, help_message: Optional[str] = None) -> None:
-        """
-        '--csv_format` 引数を追加
-        """
-        if help_message is None:
-            help_message = (
-                "CSVのフォーマットをJSON形式で指定します。 ``--format`` が ``csv`` でないときは、このオプションは無視されます。\n"
-                "``file://`` を先頭に付けると、JSON形式のファイルを指定できます。\n"
-                "指定した値は ``pandas.DataFrame.to_csv`` の引数として渡されます。"
-            )
-
-        self.parser.add_argument("--csv_format", type=str, help=help_message)
 
     def add_output(self, *, required: bool = False, help_message: Optional[str] = None) -> None:
         """
