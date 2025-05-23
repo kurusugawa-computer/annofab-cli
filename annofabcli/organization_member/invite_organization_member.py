@@ -74,10 +74,10 @@ class InviteOrganizationMember(CommandLine):
         args = self.args
 
         user_id_list = annofabcli.common.cli.get_list_from_args(args.user_id)
-        organization_member_list = annofabcli.common.cli.get_list_from_args(args.organization)
+        organization_name_list = annofabcli.common.cli.get_list_from_args(args.organization)
 
         main_obj = InviteOrganizationMemberMain(self.service, all_yes=args.yes)
-        main_obj.invite_members_to_organizations(organization_member_list, user_id_list, role=args.role)
+        main_obj.invite_members_to_organizations(organization_name_list, user_id_list, role=args.role)
 
 
 def main(args: argparse.Namespace) -> None:
