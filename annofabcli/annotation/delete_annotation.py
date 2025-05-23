@@ -356,7 +356,13 @@ class DeleteAnnotation(CommandLine):
         else:
             backup_dir = Path(args.backup)
 
-        super().validate_project(project_id, [ProjectMemberRole.OWNER])
+        if args.force:
+            # --forceオプションが指定されている場合は、完了状態のタスクも削除する
+            # 完了状態のタスクを削除するには、オーナーロールである必要があるため、`args.force`で条件を分岐する
+            super().validate_project(project_id, [ProjectMemberRole.OWNER])
+        else:
+            super().validate_project(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.ACCEPTER])
+
         main_obj = DeleteAnnotationMain(self.service, project_id, all_yes=args.yes, is_force=args.force)
 
         if args.json is not None:
@@ -452,7 +458,12 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         f"(ex): ``{json.dumps(EXAMPLE_ANNOTATION_QUERY)}``",
     )
 
-    parser.add_argument("--force", action="store_true", help="指定した場合は、完了状態のタスクのアノテーションも削除します。")
+    parser.add_argument(
+        "--force",
+        action="store_true",
+        help="指定した場合は、完了状態のタスクのアノテーションも削除します。"
+        "ただし、完了状態のタスクを削除するには、オーナーロールを持つユーザーが実行する必要があります。",
+    )
     parser.add_argument(
         "--backup",
         type=str,
@@ -469,7 +480,7 @@ def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argpa
         "タスク配下のアノテーションを削除します。ただし、作業中状態のタスクのアノテーションは削除できません。"
         "間違えてアノテーションを削除したときに復元できるようにするため、 ``--backup`` でバックアップ用のディレクトリを指定することを推奨します。"
     )
-    epilog = "オーナロールを持つユーザで実行してください。"
+    epilog = "オーナーまたはチェッカーロールを持つユーザで実行してください。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
     parse_args(parser)
