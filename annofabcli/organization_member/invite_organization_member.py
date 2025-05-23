@@ -29,8 +29,8 @@ class InviteOrganizationMemberMain(CommandLineWithConfirm):
         self.facade = AnnofabApiFacade(service)
         super().__init__(all_yes)
 
-    def main(self, organization_name: str, user_ids: Collection[str], role: str) -> None:
-        logger.info(f"{len(user_ids)} 件のユーザを組織'{organization_name}'に招待して、ロール'{role}'を付与します。")
+    def invite_members_to_organization(self, organization_name: str, user_ids: Collection[str], role: str) -> None:
+        logger.info(f"{len(user_ids)} 件のメンバーを組織'{organization_name}'に招待して、ロール'{role}'を付与します。")
 
         organization_member_list = self.service.wrapper.get_all_organization_members(organization_name)
         all_user_ids = {e["user_id"] for e in organization_member_list}
@@ -39,21 +39,28 @@ class InviteOrganizationMemberMain(CommandLineWithConfirm):
         success_count = 0
         for user_id in user_ids:
             if user_id in all_user_ids:
-                logger.warning(f"user_id='{user_id}'のユーザは、すでに組織'{organization_name}'に存在しています。")
+                logger.warning(f"user_id='{user_id}'のメンバーは、すでに組織'{organization_name}'に存在しているため、スキップします。")
                 continue
 
-            if not self.confirm_processing(f"user_id='{user_id}'のユーザを組織'{organization_name}'に招待しますか？ :: role='{role}'"):
+            if not self.confirm_processing(f"user_id='{user_id}'のメンバーを組織'{organization_name}'に招待して、ロール'{role}'を付与しますか？"):
                 continue
 
             try:
                 self.service.api.invite_organization_member(organization_name, user_id, request_body={"role": role})
-                logger.debug(f"user_id='{user_id}'のユーザを組織'{organization_name}'に招待しました。")
+                logger.debug(f"user_id='{user_id}'のメンバーを組織'{organization_name}'に招待しました。")
                 success_count += 1
 
             except Exception:  # pylint: disable=broad-except
-                logger.warning(f"user_id='{user_id}'のユーザを組織'{organization_name}'に招待するのに失敗しました。", exc_info=True)
+                logger.warning(f"user_id='{user_id}'のメンバーを組織'{organization_name}'に招待するのに失敗しました。", exc_info=True)
 
-        logger.info(f"{success_count} / {len(user_ids)} 件のユーザを組織'{organization_name}'に招待しました。")
+        logger.info(f"{success_count} / {len(user_ids)} 件のメンバーを組織'{organization_name}'に招待しました。")
+
+    def invite_members_to_organizations(self, organization_names: list[str], user_ids: Collection[str], role: str) -> None:
+        for organization_name in organization_names:
+            try:
+                self.invite_members_to_organization(organization_name, user_ids, role)
+            except Exception:  # pylint
+                logger.warning(f"組織'{organization_name}'にメンバーを招待するのに失敗しました。", exc_info=True)
 
 
 class InviteOrganizationMember(CommandLine):
@@ -61,9 +68,10 @@ class InviteOrganizationMember(CommandLine):
         args = self.args
 
         user_id_list = annofabcli.common.cli.get_list_from_args(args.user_id)
+        organization_member_list = annofabcli.common.cli.get_list_from_args(args.organization)
 
         main_obj = InviteOrganizationMemberMain(self.service, all_yes=args.yes)
-        main_obj.main(organization_name=args.organization, user_ids=user_id_list, role=args.role)
+        main_obj.invite_members_to_organizations(organization_member_list, user_id_list, role=args.role)
 
 
 def main(args: argparse.Namespace) -> None:
@@ -73,7 +81,7 @@ def main(args: argparse.Namespace) -> None:
 
 
 def parse_args(parser: argparse.ArgumentParser) -> None:
-    parser.add_argument("-org", "--organization", required=True, type=str, help="対象の組織の組織名を指定してください。")
+    parser.add_argument("-org", "--organization", nargs="+", required=True, type=str, help="招待先の組織名を指定してください。")
 
     parser.add_argument(
         "-u",
@@ -81,7 +89,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         type=str,
         nargs="+",
         required=True,
-        help="組織に招待するユーザのuser_idを指定してください。 ``file://`` を先頭に付けると、一覧が記載されたファイルを指定できます。",
+        help="組織に招待するメンバーのuser_idを指定してます。 ``file://`` を先頭に付けると、一覧が記載されたファイルを指定できます。",
     )
 
     role_choices = [e.value for e in OrganizationMemberRole]
@@ -90,7 +98,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         type=str,
         choices=role_choices,
         required=True,
-        help="招待するユーザに割り当てる組織メンバのロールを指定してください。",
+        help="招待するメンバーに割り当てるロールを指定してください。",
     )
 
     parser.set_defaults(subcommand_func=main)
@@ -98,10 +106,9 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
 
 def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     subcommand_name = "invite"
-    subcommand_help = "組織にユーザを招待します。"
-    description = "組織にユーザを招待します。"
+    subcommand_help = "組織にメンバーを招待します。"
     epilog = "組織オーナまたは組織管理者ロールを持つユーザで実行してください。"
 
-    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, command_help=subcommand_help, description=description, epilog=epilog)
+    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, command_help=subcommand_help, epilog=epilog)
     parse_args(parser)
     return parser
