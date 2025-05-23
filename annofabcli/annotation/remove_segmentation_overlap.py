@@ -12,6 +12,7 @@ from typing import Any, Optional
 
 import annofabapi
 import numpy
+from annofabapi.models import ProjectMemberRole
 from annofabapi.pydantic_models.task_status import TaskStatus
 from annofabapi.segmentation import read_binary_image, write_binary_image
 from annofabapi.utils import can_put_annotation
@@ -291,7 +292,10 @@ class RemoveSegmentationOverlap(CommandLine):
             sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
         project_id = args.project_id
+
         task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id)
+
+        super().validate_project(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.ACCEPTER, ProjectMemberRole.WORKER])
 
         main_obj = RemoveSegmentationOverlapMain(
             self.service,
@@ -338,6 +342,7 @@ def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argpa
         "Annofabでインスタンスセグメンテーションは重ねることができてしまいます。"
         "この重なりをなくしたいときに有用です。"
     )
-    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
+    epilog = "オーナー、チェッカーまたはアノテータロールを持つユーザで実行してください。"
+    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
     parse_args(parser)
     return parser

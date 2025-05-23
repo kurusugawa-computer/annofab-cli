@@ -10,6 +10,7 @@ from dataclasses import dataclass
 from typing import Any, Optional
 
 import annofabapi
+from annofabapi.models import ProjectMemberRole
 from annofabapi.utils import can_put_annotation
 
 import annofabcli
@@ -350,6 +351,8 @@ class CopyAnnotation(CommandLine):
             sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
         project_id = args.project_id
+        super().validate_project(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.ACCEPTER, ProjectMemberRole.WORKER])
+
         str_copy_target_list = get_list_from_args(args.input)
 
         copy_target_list = get_copy_target_list(str_copy_target_list)
@@ -421,6 +424,7 @@ def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argpa
     subcommand_name = "copy"
     subcommand_help = "アノテーションをコピーします．"
     description = "タスク単位または入力データ単位で、アノテーションをコピーします。"
-    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
+    epilog = "オーナー、チェッカーまたはアノテータロールを持つユーザで実行してください。"
+    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
     parse_args(parser)
     return parser
