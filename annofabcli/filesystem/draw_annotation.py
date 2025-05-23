@@ -259,7 +259,7 @@ def draw_annotation_all(  # noqa: ANN201, PLR0913
                 continue
 
         json_file = Path(parser.json_file_path)
-        if image_file is not None:
+        if image_file is not None:  # noqa: SIM108
             output_file = output_dir / f"{json_file.parent.name}/{json_file.stem}{image_file.suffix}"
         else:
             output_file = output_dir / f"{json_file.parent.name}/{json_file.stem}.png"
@@ -317,7 +317,7 @@ class DrawAnnotation(CommandLineWithoutWebapi):
 
         annotation_path: Path = args.annotation
         # Simpleアノテーションの読み込み
-        if annotation_path.is_file():
+        if annotation_path.is_file():  # noqa: SIM108
             iter_parser = lazy_parse_simple_annotation_zip(annotation_path)
         else:
             iter_parser = lazy_parse_simple_annotation_dir(annotation_path)

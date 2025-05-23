@@ -142,7 +142,7 @@ class SummarizeTaskCount(CommandLine):
             # タスク全件ファイルをダウンロードするので、オーナロールかアノテーションユーザロールであることを確認する。
             super().validate_project(project_id, project_member_roles=[ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER])
 
-        if is_execute_get_tasks_api:
+        if is_execute_get_tasks_api:  # noqa: SIM108
             task_list = self.service.wrapper.get_all_tasks(project_id)
         else:
             task_list = self.get_task_list_with_downloading_file(project_id, task_json_path, is_latest=is_latest)

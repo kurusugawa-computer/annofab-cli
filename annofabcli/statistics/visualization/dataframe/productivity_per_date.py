@@ -406,7 +406,7 @@ class InspectorProductivityPerDate(AbstractPhaseProductivityPerDate):
 
         df = self.df.copy()
 
-        if target_user_id_list is not None:
+        if target_user_id_list is not None:  # noqa: SIM108
             user_id_list = target_user_id_list
         else:
             user_id_list = df.sort_values(by="user_id", ascending=False)["user_id"].dropna().unique().tolist()
@@ -544,7 +544,7 @@ class AcceptorProductivityPerDate(AbstractPhaseProductivityPerDate):
 
         df = self.df.copy()
 
-        if target_user_id_list is not None:
+        if target_user_id_list is not None:  # noqa: SIM108
             user_id_list = target_user_id_list
         else:
             user_id_list = df.sort_values(by="user_id", ascending=False)["user_id"].dropna().unique().tolist()

@@ -147,7 +147,7 @@ class ChangeProjectMembers(CommandLine):
     def main(self) -> None:
         args = self.args
         project_id = args.project_id
-        if args.all_user:
+        if args.all_user:  # noqa: SIM108
             user_id_list = self.get_all_user_id_list_except_myself(project_id)
         else:
             user_id_list = annofabcli.common.cli.get_list_from_args(args.user_id)

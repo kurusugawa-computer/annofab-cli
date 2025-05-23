@@ -112,7 +112,7 @@ def fill_annotation_list(
 
     # 下層レイヤにあるアノテーションから順に画像化する
     # reversed関数を使う理由：`simple_annotation.details`は上層レイヤのアノテーションから順に格納されているため
-    if label_name_list is not None:
+    if label_name_list is not None:  # noqa: SIM108
         annotation_list = [elm for elm in reversed(simple_annotation.details) if elm.label in label_name_list]
     else:
         annotation_list = list(reversed(simple_annotation.details))
@@ -219,7 +219,7 @@ def write_annotation_grayscale_image(
 
     # 下層レイヤにあるアノテーションから順に画像化する
     # reversed関数を使う理由：`simple_annotation.details`は上層レイヤのアノテーションから順に格納されているため
-    if label_name_list is not None:
+    if label_name_list is not None:  # noqa: SIM108
         annotation_list = [elm for elm in reversed(simple_annotation["details"]) if elm["label"] in set(label_name_list)]
     else:
         annotation_list = list(reversed(simple_annotation["details"]))

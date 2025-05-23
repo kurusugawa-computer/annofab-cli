@@ -293,7 +293,7 @@ class AnnotationConverter:
             logger.warning(f"アノテーション仕様にラベル名(英語)が'{detail.label}'であるラベル情報が存在しないか、または複数存在します。 :: {log_message_suffix}")
             raise
 
-        if detail.attributes is not None:
+        if detail.attributes is not None:  # noqa: SIM108
             additional_data_list = self.convert_attributes(detail.attributes, label_name=detail.label, log_message_suffix=log_message_suffix)
         else:
             additional_data_list = []
