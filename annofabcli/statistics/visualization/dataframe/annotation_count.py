@@ -42,9 +42,7 @@ class AnnotationCount:
         self.df = df
 
     @classmethod
-    def from_annotation_zip(
-        cls, annotation_zip: Path, project_id: str, *, get_annotation_count_func: Optional[Callable[[dict[str, Any]], int]] = None
-    ) -> AnnotationCount:
+    def from_annotation_zip(cls, annotation_zip: Path, project_id: str, *, get_annotation_count_func: Optional[Callable[[dict[str, Any]], int]] = None) -> AnnotationCount:
         """
         アノテーションZIPファイルからインスタンスを生成します。
 

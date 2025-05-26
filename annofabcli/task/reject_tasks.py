@@ -134,10 +134,7 @@ class RejectTasksMain(CommandLineWithConfirm):
             return False
 
         if task["status"] == TaskStatus.COMPLETE.value and not cancel_acceptance:
-            logger.warning(
-                f"task_id='{task_id}' :: タスクのstatusが'完了'なので、差し戻しできません。"
-                f"受入完了を取消す場合は、コマンドライン引数に'--cancel_acceptance'を追加してください。"
-            )
+            logger.warning(f"task_id='{task_id}' :: タスクのstatusが'完了'なので、差し戻しできません。受入完了を取消す場合は、コマンドライン引数に'--cancel_acceptance'を追加してください。")
             return False
 
         if not match_task_with_query(Task.from_dict(task), task_query):
@@ -194,9 +191,7 @@ class RejectTasksMain(CommandLineWithConfirm):
             return False
 
         if task["status"] == TaskStatus.COMPLETE.value and cancel_acceptance:
-            task = self.service.wrapper.cancel_completed_task(
-                project_id, task_id, operator_account_id=self.service.api.account_id, last_updated_datetime=task["updated_datetime"]
-            )
+            task = self.service.wrapper.cancel_completed_task(project_id, task_id, operator_account_id=self.service.api.account_id, last_updated_datetime=task["updated_datetime"])
             logger.debug(f"{logging_prefix} :: task_id='{task_id}'のタスクに対して受入取消を実施（完了状態から未着手状態に変更）しました。")
 
         try:
@@ -217,11 +212,7 @@ class RejectTasksMain(CommandLineWithConfirm):
                 return True
 
             else:
-                assigned_annotator_account_id = (
-                    self.facade.get_account_id_from_user_id(project_id, assigned_annotator_user_id)
-                    if assigned_annotator_user_id is not None
-                    else None
-                )
+                assigned_annotator_account_id = self.facade.get_account_id_from_user_id(project_id, assigned_annotator_user_id) if assigned_annotator_user_id is not None else None
 
                 self.service.wrapper.change_task_operator(project_id, task_id, operator_account_id=assigned_annotator_account_id)
 
@@ -403,7 +394,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "-c",
         "--comment",
         type=str,
-        help="差し戻すときに付与する検査コメントを指定します。検査コメントはタスク内の先頭画像に付与します。付与する位置は ``--comment_data`` で指定できます。\n"  # noqa: E501
+        help="差し戻すときに付与する検査コメントを指定します。検査コメントはタスク内の先頭画像に付与します。付与する位置は ``--comment_data`` で指定できます。\n"
         "未指定の場合は、検査コメントを付与せずに差し戻します。",
     )
 
@@ -424,7 +415,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--custom_project_type",
         type=str,
         choices=[e.value for e in CustomProjectType],
-        help="[BETA] カスタムプロジェクトの種類を指定します。ビルトインのエディタプラグインを使用していないカスタムプロジェクトに対して、検査コメントの位置を指定しない場合は必須です。\n",  # noqa: E501
+        help="[BETA] カスタムプロジェクトの種類を指定します。ビルトインのエディタプラグインを使用していないカスタムプロジェクトに対して、検査コメントの位置を指定しない場合は必須です。\n",
     )
 
     # 差し戻したタスクの担当者の割当に関して
@@ -450,7 +441,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--parallelism",
         type=int,
         choices=PARALLELISM_CHOICES,
-        help="使用するプロセス数（並列度）を指定してください。指定する場合は必ず ``--yes`` を指定してください。指定しない場合は、逐次的に処理します。",  # noqa: E501
+        help="使用するプロセス数（並列度）を指定してください。指定する場合は必ず ``--yes`` を指定してください。指定しない場合は、逐次的に処理します。",
     )
 
     parser.set_defaults(subcommand_func=main)
@@ -460,10 +451,7 @@ def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argpa
     subcommand_name = "reject"
     subcommand_help = "タスクを差し戻します。"
     description = "タスクを差し戻します。差し戻す際、検査コメントを付与することもできます。作業中状態のタスクに対しては差し戻せません。"
-    epilog = (
-        "オーナロールを持つユーザで実行してください。"
-        "``--cancel_acceptance`` を指定していない AND ``--comment`` を指定している場合は、チェッカーロールを持つユーザーも実行できます。"
-    )
+    epilog = "オーナロールを持つユーザで実行してください。``--cancel_acceptance`` を指定していない AND ``--comment`` を指定している場合は、チェッカーロールを持つユーザーも実行できます。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
     parse_args(parser)

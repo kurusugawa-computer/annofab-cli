@@ -151,7 +151,7 @@ class PuttingTaskMain:
             self.wait_for_completion(job["job_id"])
         else:
             logger.info(
-                f"以下のコマンドを実行すれば、タスク登録ジョブが終了するまで待ちます。 :: `annofabcli job wait --project_id {self.project_id} --job_type {job['job_type']} --job_id {job['job_id']}`"  # noqa: E501
+                f"以下のコマンドを実行すれば、タスク登録ジョブが終了するまで待ちます。 :: `annofabcli job wait --project_id {self.project_id} --job_type {job['job_type']} --job_id {job['job_id']}`"
             )
 
     def generate_task(
@@ -286,8 +286,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--api",
         type=str,
         choices=[e.value for e in ApiWithCreatingTask],
-        help="タスク作成に使うWebAPIを指定できます。 ``--csv`` or ``--json`` を指定したときのみ有効なオプションです。\n"
-        "未指定の場合は、作成するタスク数に応じて、適切なWebAPIを選択します。\n",
+        help="タスク作成に使うWebAPIを指定できます。 ``--csv`` or ``--json`` を指定したときのみ有効なオプションです。\n未指定の場合は、作成するタスク数に応じて、適切なWebAPIを選択します。\n",
     )
 
     parser.add_argument(

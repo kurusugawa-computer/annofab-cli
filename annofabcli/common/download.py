@@ -110,10 +110,7 @@ class DownloadingFile:
         except requests.HTTPError as e:
             # すでにジョブが進行中の場合は、無視する
             if e.response.status_code == requests.codes.conflict:
-                logger.warning(
-                    f"別のバックグラウンドジョブが既に実行されているので、アノテーションZIPの更新処理を実行できません。"
-                    f" :: error_message: {_get_annofab_error_message(e)}"
-                )
+                logger.warning(f"別のバックグラウンドジョブが既に実行されているので、アノテーションZIPの更新処理を実行できません。 :: error_message: {_get_annofab_error_message(e)}")
             else:
                 raise e  # noqa: TRY201
 
@@ -160,9 +157,7 @@ class DownloadingFile:
         except requests.HTTPError as e:
             # すでにジョブが進行中の場合は、無視する
             if e.response.status_code == requests.codes.conflict:
-                logger.warning(
-                    f"別のバックグラウンドジョブが既に実行されているので、更新処理を無視します。 :: error_message: {_get_annofab_error_message(e)}"
-                )
+                logger.warning(f"別のバックグラウンドジョブが既に実行されているので、更新処理を無視します。 :: error_message: {_get_annofab_error_message(e)}")
             else:
                 raise e  # noqa: TRY201
 
@@ -179,9 +174,7 @@ class DownloadingFile:
         partial_func = partial(self.download_task_json, project_id, dest_path, is_latest=is_latest, wait_options=wait_options)
         await loop.run_in_executor(None, partial_func)
 
-    def download_task_json(
-        self, project_id: str, dest_path: Union[str, Path], *, is_latest: bool = False, wait_options: Optional[WaitOptions] = None
-    ) -> None:
+    def download_task_json(self, project_id: str, dest_path: Union[str, Path], *, is_latest: bool = False, wait_options: Optional[WaitOptions] = None) -> None:
         if is_latest:
             self.wait_until_updated_task_json(project_id, wait_options)
             self.service.wrapper.download_project_tasks_url(project_id, dest_path)
@@ -205,9 +198,7 @@ class DownloadingFile:
         except requests.HTTPError as e:
             # すでにジョブが進行中の場合は、無視する
             if e.response.status_code == requests.codes.conflict:
-                logger.warning(
-                    f"別のバックグラウンドジョブが既に実行されているので、更新処理を無視します。 :: error_message={_get_annofab_error_message(e)}"
-                )
+                logger.warning(f"別のバックグラウンドジョブが既に実行されているので、更新処理を無視します。 :: error_message={_get_annofab_error_message(e)}")
             else:
                 raise e  # noqa: TRY201
 
@@ -237,9 +228,7 @@ class DownloadingFile:
             self.service.wrapper.download_project_task_histories_url(project_id, dest_path)
         except requests.HTTPError as e:
             if e.response.status_code == requests.codes.not_found:
-                raise DownloadingFileNotFoundError(
-                    f"project_id='{project_id}'のプロジェクトに、タスク履歴全件ファイルが存在しないため、ダウンロードできませんでした。"
-                ) from e
+                raise DownloadingFileNotFoundError(f"project_id='{project_id}'のプロジェクトに、タスク履歴全件ファイルが存在しないため、ダウンロードできませんでした。") from e
             raise e  # noqa: TRY201
 
     def download_task_history_event_json(self, project_id: str, dest_path: Union[str, Path]) -> None:
@@ -257,9 +246,7 @@ class DownloadingFile:
             self.service.wrapper.download_project_task_history_events_url(project_id, dest_path)
         except requests.HTTPError as e:
             if e.response.status_code == requests.codes.not_found:
-                raise DownloadingFileNotFoundError(
-                    f"project_id='{project_id}'のプロジェクトに、タスク履歴イベント全件ファイルが存在しないため、ダウンロードできませんでした。"
-                ) from e
+                raise DownloadingFileNotFoundError(f"project_id='{project_id}'のプロジェクトに、タスク履歴イベント全件ファイルが存在しないため、ダウンロードできませんでした。") from e
             raise e  # noqa: TRY201
 
     async def download_task_history_event_json_with_async(self, project_id: str, dest_path: Union[str, Path]) -> None:
@@ -294,9 +281,7 @@ class DownloadingFile:
             self.service.wrapper.download_project_inspections_url(project_id, dest_path)
         except requests.HTTPError as e:
             if e.response.status_code == requests.codes.not_found:
-                raise DownloadingFileNotFoundError(
-                    f"project_id='{project_id}'のプロジェクトに、検査コメント全件ファイルが存在しないため、ダウンロードできませんでした。"
-                ) from e
+                raise DownloadingFileNotFoundError(f"project_id='{project_id}'のプロジェクトに、検査コメント全件ファイルが存在しないため、ダウンロードできませんでした。") from e
             raise e  # noqa: TRY201
 
     async def download_comment_json_with_async(self, project_id: str, dest_path: Union[str, Path]) -> None:
@@ -321,7 +306,5 @@ class DownloadingFile:
             self.service.wrapper.download_project_comments_url(project_id, dest_path)
         except requests.HTTPError as e:
             if e.response.status_code == requests.codes.not_found:
-                raise DownloadingFileNotFoundError(
-                    f"project_id='{project_id}'のプロジェクトに、コメント全件ファイルが存在しないため、ダウンロードできませんでした。"
-                ) from e
+                raise DownloadingFileNotFoundError(f"project_id='{project_id}'のプロジェクトに、コメント全件ファイルが存在しないため、ダウンロードできませんでした。") from e
             raise e  # noqa: TRY201

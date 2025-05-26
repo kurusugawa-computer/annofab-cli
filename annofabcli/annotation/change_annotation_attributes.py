@@ -58,9 +58,7 @@ class ChangeAnnotationAttributesMain(CommandLineWithConfirm):
 
         self.dump_annotation_obj = DumpAnnotationMain(service, project_id)
 
-    def change_annotation_attributes(
-        self, annotation_list: list[dict[str, Any]], additional_data_list: list[dict[str, Any]]
-    ) -> Optional[list[dict[str, Any]]]:
+    def change_annotation_attributes(self, annotation_list: list[dict[str, Any]], additional_data_list: list[dict[str, Any]]) -> Optional[list[dict[str, Any]]]:
         """
         アノテーション属性値を変更する。
 
@@ -270,9 +268,7 @@ class ChangeAttributesOfAnnotation(CommandLine):
         return annotation_query_for_cli.to_query_for_api(annotation_specs)
 
     @classmethod
-    def get_additional_data_list_from_cli_attributes(
-        cls, str_attributes: str, annotation_specs: dict[str, Any], label_id: Optional[str]
-    ) -> list[dict[str, Any]]:
+    def get_additional_data_list_from_cli_attributes(cls, str_attributes: str, annotation_specs: dict[str, Any], label_id: Optional[str]) -> list[dict[str, Any]]:
         """
         CLIから受け取った`--attributes`の値から、APIに渡す属性情報(`AdditionalDataListV2`)を返します。
         """
@@ -297,9 +293,7 @@ class ChangeAttributesOfAnnotation(CommandLine):
             sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
         try:
-            additional_data_list = self.get_additional_data_list_from_cli_attributes(
-                args.attributes, annotation_specs, label_id=annotation_query.label_id
-            )
+            additional_data_list = self.get_additional_data_list_from_cli_attributes(args.attributes, annotation_specs, label_id=annotation_query.label_id)
         except ValueError as e:
             print(f"{self.COMMON_MESSAGE} argument '--attributes' の値が不正です。 :: {e}", file=sys.stderr)  # noqa: T201
             sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
@@ -319,7 +313,7 @@ class ChangeAttributesOfAnnotation(CommandLine):
         if args.force:  # noqa: SIM102
             if not self.facade.contains_any_project_member_role(project_id, [ProjectMemberRole.OWNER]):
                 print(  # noqa: T201
-                    f"{self.COMMON_MESSAGE} argument --force : '--force' 引数を利用するにはプロジェクトのオーナーロールを持つユーザーで実行する必要があります。",  # noqa: E501
+                    f"{self.COMMON_MESSAGE} argument --force : '--force' 引数を利用するにはプロジェクトのオーナーロールを持つユーザーで実行する必要があります。",
                     file=sys.stderr,
                 )
                 sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
@@ -352,9 +346,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--annotation_query",
         type=str,
         required=True,
-        help="変更対象のアノテーションを検索する条件をJSON形式で指定します。"
-        "``file://`` を先頭に付けると、JSON形式のファイルを指定できます。"
-        f"(ex): ``{json.dumps(EXAMPLE_ANNOTATION_QUERY)}``",
+        help=f"変更対象のアノテーションを検索する条件をJSON形式で指定します。``file://`` を先頭に付けると、JSON形式のファイルを指定できます。(ex): ``{json.dumps(EXAMPLE_ANNOTATION_QUERY)}``",
     )
 
     EXAMPLE_ATTRIBUTES = '{"occluded": false}'  # noqa: N806
@@ -375,7 +367,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--backup",
         type=str,
         required=False,
-        help="アノテーションのバックアップを保存するディレクトリを指定してください。アノテーションの復元は ``annotation restore`` コマンドで実現できます。",  # noqa: E501
+        help="アノテーションのバックアップを保存するディレクトリを指定してください。アノテーションの復元は ``annotation restore`` コマンドで実現できます。",
     )
     parser.add_argument(
         "--parallelism",

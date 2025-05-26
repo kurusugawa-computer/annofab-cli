@@ -77,9 +77,7 @@ class CopyInputDataMain(CommandLineWithConfirm):
                 dest_supplementary_data_list,
                 pred=lambda e, s=src_supplementary_data: e["supplementary_data_id"] == s["supplementary_data_id"],  # type: ignore[misc]
             )
-            last_updated_datetime_for_supplementary_data = (
-                dest_supplementary_data["updated_datetime"] if dest_supplementary_data is not None else None
-            )
+            last_updated_datetime_for_supplementary_data = dest_supplementary_data["updated_datetime"] if dest_supplementary_data is not None else None
             self.copy_supplementary_data(src_supplementary_data, last_updated_datetime=last_updated_datetime_for_supplementary_data)
             logger.debug(
                 f"{logging_prefix}補助情報をコピーしました。 :: "
@@ -169,9 +167,7 @@ class CopyInputDataMain(CommandLineWithConfirm):
             )
         except Exception:
             logger.warning(
-                f"入力データのコピーに失敗しました。 :: "
-                f"input_data_id='{input_data_id}', "
-                f"src_project_id='{self.src_project_id}', dest_project_id='{self.dest_project_id}'",
+                f"入力データのコピーに失敗しました。 :: input_data_id='{input_data_id}', src_project_id='{self.src_project_id}', dest_project_id='{self.dest_project_id}'",
                 exc_info=True,
             )
             return False
@@ -213,15 +209,12 @@ class CopyInputDataMain(CommandLineWithConfirm):
                         success_count += 1
                 except Exception:
                     logger.warning(
-                        f"入力データのコピーに失敗しました。 :: "
-                        f"input_data_id='{input_data_id}', "
-                        f"src_project_id='{self.src_project_id}', dest_project_id='{self.dest_project_id}'",
+                        f"入力データのコピーに失敗しました。 :: input_data_id='{input_data_id}', src_project_id='{self.src_project_id}', dest_project_id='{self.dest_project_id}'",
                         exc_info=True,
                     )
 
         logger.info(
-            f"{success_count} / {len(input_data_id_list)} 件の入力データと関連する補助情報をコピーしました。 :: "
-            f"src_project_id='{self.src_project_id}', dest_project_id='{self.dest_project_id}'"
+            f"{success_count} / {len(input_data_id_list)} 件の入力データと関連する補助情報をコピーしました。 :: src_project_id='{self.src_project_id}', dest_project_id='{self.dest_project_id}'"
         )
 
 
@@ -286,8 +279,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         type=str,
         nargs="+",
         required=False,
-        help="コピー対象の入力データのinput_data_idを指定します。 "
-        "``file://`` を先頭に付けると、input_data_idの一覧が記載されたファイルを指定できます。",
+        help="コピー対象の入力データのinput_data_idを指定します。 ``file://`` を先頭に付けると、input_data_idの一覧が記載されたファイルを指定できます。",
     )
 
     parser.add_argument(
@@ -300,7 +292,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--parallelism",
         type=int,
         choices=PARALLELISM_CHOICES,
-        help="使用するプロセス数（並列度）を指定してください。指定する場合は必ず ``--yes`` を指定してください。指定しない場合は、逐次的に処理します。",  # noqa: E501
+        help="使用するプロセス数（並列度）を指定してください。指定する場合は必ず ``--yes`` を指定してください。指定しない場合は、逐次的に処理します。",
     )
 
     parser.set_defaults(subcommand_func=main)

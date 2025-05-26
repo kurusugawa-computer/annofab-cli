@@ -43,7 +43,7 @@ class FlattenAttribute(DataClassJsonMixin):
     Notes:
         APIレスポンスの ``additional_data_definition_id`` に相当します。
         ``additional_data_definition_id`` という名前がアノテーションJSONの `attributes` と対応していることが分かりにくかったので、`attribute_id`という名前に変えました。
-    """  # noqa: E501
+    """
     attribute_name_en: Optional[str]
     attribute_name_ja: Optional[str]
     attribute_name_vi: Optional[str]
@@ -81,9 +81,7 @@ def create_relationship_between_attribute_and_label(labels_v3: list[dict[str, An
     return result
 
 
-def create_flatten_attribute_list_from_additionals(
-    additionals_v3: list[dict[str, Any]], labels_v3: list[dict[str, Any]], restrictions: list[dict[str, Any]]
-) -> list[FlattenAttribute]:
+def create_flatten_attribute_list_from_additionals(additionals_v3: list[dict[str, Any]], labels_v3: list[dict[str, Any]], restrictions: list[dict[str, Any]]) -> list[FlattenAttribute]:
     """
     APIから取得した属性情報（v3版）から、属性情報の一覧を生成します。
 
@@ -127,12 +125,8 @@ def create_flatten_attribute_list_from_additionals(
 class PrintAnnotationSpecsAttribute(CommandLine):
     COMMON_MESSAGE = "annofabcli annotation_specs list_attribute: error:"
 
-    def print_annotation_specs_attribute(
-        self, annotation_specs_v3: dict[str, Any], output_format: FormatArgument, output: Optional[str] = None
-    ) -> None:
-        attribute_list = create_flatten_attribute_list_from_additionals(
-            annotation_specs_v3["additionals"], annotation_specs_v3["labels"], annotation_specs_v3["restrictions"]
-        )
+    def print_annotation_specs_attribute(self, annotation_specs_v3: dict[str, Any], output_format: FormatArgument, output: Optional[str] = None) -> None:
+        attribute_list = create_flatten_attribute_list_from_additionals(annotation_specs_v3["additionals"], annotation_specs_v3["labels"], annotation_specs_v3["restrictions"])
         logger.info(f"{len(attribute_list)} 件の属性情報を出力します。")
         if output_format == FormatArgument.CSV:
             columns = [
@@ -161,9 +155,7 @@ class PrintAnnotationSpecsAttribute(CommandLine):
             logger.warning(f"アノテーション仕様の履歴は{len(histories)}個のため、最新より{before}個前のアノテーション仕様は見つかりませんでした。")
             return None
         history = histories[-(before + 1)]
-        logger.info(
-            f"{history['updated_datetime']}のアノテーション仕様を出力します。 :: history_id='{history['history_id']}', comment='{history['comment']}'"
-        )
+        logger.info(f"{history['updated_datetime']}のアノテーション仕様を出力します。 :: history_id='{history['history_id']}', comment='{history['comment']}'")
         return history["history_id"]
 
     def main(self) -> None:
@@ -195,14 +187,11 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     argument_parser = ArgumentParser(parser)
 
     required_group = parser.add_mutually_exclusive_group(required=True)
-    required_group.add_argument(
-        "-p", "--project_id", help="対象のプロジェクトのproject_idを指定します。APIで取得したアノテーション仕様情報を元に出力します。"
-    )
+    required_group.add_argument("-p", "--project_id", help="対象のプロジェクトのproject_idを指定します。APIで取得したアノテーション仕様情報を元に出力します。")
     required_group.add_argument(
         "--annotation_specs_json",
         type=Path,
-        help="指定したアノテーション仕様のJSONファイルを指定します。"
-        "JSONファイルに記載された情報を元に出力します。ただしアノテーション仕様の ``format_version`` は ``3`` である必要があります。",
+        help="指定したアノテーション仕様のJSONファイルを指定します。JSONファイルに記載された情報を元に出力します。ただしアノテーション仕様の ``format_version`` は ``3`` である必要があります。",
     )
 
     # 過去のアノテーション仕様を参照するためのオプション

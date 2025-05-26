@@ -74,12 +74,11 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         type=str,
         choices=job_choices,
         required=True,
-        help="ジョブタイプを指定します。指定できる値については https://annofab-cli.readthedocs.io/ja/latest/user_guide/command_line_options.html#job-type を参照してください。",  # noqa: E501
+        help="ジョブタイプを指定します。指定できる値については https://annofab-cli.readthedocs.io/ja/latest/user_guide/command_line_options.html#job-type を参照してください。",
     )
 
     argument_parser.add_format(choices=[FormatArgument.CSV, FormatArgument.JSON, FormatArgument.PRETTY_JSON], default=FormatArgument.CSV)
     argument_parser.add_output()
-    argument_parser.add_csv_format()
 
     parser.set_defaults(subcommand_func=main)
 

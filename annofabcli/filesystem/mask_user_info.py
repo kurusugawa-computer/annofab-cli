@@ -215,7 +215,7 @@ def create_replacement_dict_by_user_id(
     """
     keyが置換対象のuser_id、valueが置換後のマスクされたuser_idであるdictを作成する。
     """
-    if "biography" in df:
+    if "biography" in df:  # noqa: SIM108
         replaced_user_id_set = get_replaced_user_id_set_from_biography(df, not_masked_location_set=not_masked_biography_set)
     else:
         replaced_user_id_set = set()
@@ -296,9 +296,7 @@ def create_masked_user_info_df(
         return df
 
     df_output = df.copy()
-    replacement_dict_by_user_id = create_replacement_dict_by_user_id(
-        df, not_masked_biography_set=not_masked_biography_set, not_masked_user_id_set=not_masked_user_id_set
-    )
+    replacement_dict_by_user_id = create_replacement_dict_by_user_id(df, not_masked_biography_set=not_masked_biography_set, not_masked_user_id_set=not_masked_user_id_set)
 
     if "biography" in df_output:
         replacement_dict_by_biography = create_replacement_dict_by_biography(df_output, not_masked_biography_set=not_masked_biography_set)
@@ -322,7 +320,7 @@ class MaskUserInfo(CommandLineWithoutWebapi):
 
         csv_header_row_count: int = args.csv_header_row_count
         csv_path: Path = args.csv
-        if csv_header_row_count == 1:
+        if csv_header_row_count == 1:  # noqa: SIM108
             original_df = pandas.read_csv(str(csv_path))
         else:
             original_df = read_multiheader_csv(str(csv_path), header_row_count=csv_header_row_count)
@@ -358,7 +356,6 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--csv_header_row_count", type=int, help="CSVのヘッダ行数", default=1)
 
     argument_parser.add_output()
-    argument_parser.add_csv_format()
 
     parser.set_defaults(subcommand_func=main)
 

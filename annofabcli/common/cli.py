@@ -25,7 +25,6 @@ from annofabcli.common.exceptions import AnnofabCliException, AuthenticationErro
 from annofabcli.common.facade import AnnofabApiFacade
 from annofabcli.common.typing import InputDataSize
 from annofabcli.common.utils import (
-    DEFAULT_CSV_FORMAT,
     get_file_scheme_path,
     print_according_to_format,
     print_csv,
@@ -130,9 +129,7 @@ def add_parser(
 
         group.add_argument("--disable_log", action="store_true", help="ログを無効にします。")
 
-        group.add_argument(
-            "--debug", action="store_true", help="HTTPリクエストの内容やレスポンスのステータスコードなど、デバッグ用のログが出力されます。"
-        )
+        group.add_argument("--debug", action="store_true", help="HTTPリクエストの内容やレスポンスのステータスコードなど、デバッグ用のログが出力されます。")
 
         return parent_parser
 
@@ -150,7 +147,7 @@ def add_parser(
     )
     parser.set_defaults(command_help=parser.print_help)
 
-    # 引数グループに"global optional group"がある場合は、"--help"オプションをデフォルトの"optional"グループから、"global optional arguments"グループに移動する  # noqa: E501
+    # 引数グループに"global optional group"がある場合は、"--help"オプションをデフォルトの"optional"グループから、"global optional arguments"グループに移動する
     # https://ja.stackoverflow.com/a/57313/19524
     global_optional_argument_group = first_true(parser._action_groups, pred=lambda e: e.title == GLOBAL_OPTIONAL_ARGUMENTS_TITLE)  # noqa: SLF001
     if global_optional_argument_group is not None:
@@ -186,20 +183,6 @@ def get_list_from_args(str_list: Optional[list[str]] = None) -> list[str]:
         return read_lines_except_blank_line(path)
     else:
         return str_list
-
-
-def get_csv_format_from_args(target: Optional[str] = None) -> dict[str, Any]:
-    """
-    コマンドライン引数の値から csv_format を取得する。
-    Default: {"encoding": "utf_8_sig", "index": False}
-
-    """
-    csv_format = DEFAULT_CSV_FORMAT.copy()
-    if target is not None:
-        arg_csv_format = get_json_from_args(target)
-        csv_format.update(arg_csv_format)
-
-    return csv_format
 
 
 def get_json_from_args(target: Optional[str] = None) -> Any:  # noqa: ANN401
@@ -420,9 +403,7 @@ class ArgumentParser:
         '--input_data_id` 引数を追加
         """
         if help_message is None:
-            help_message = (
-                "対象の入力データのinput_data_idを指定します。 ``file://`` を先頭に付けると、input_data_idの一覧が記載されたファイルを指定できます。"
-            )
+            help_message = "対象の入力データのinput_data_idを指定します。 ``file://`` を先頭に付けると、input_data_idの一覧が記載されたファイルを指定できます。"
 
         self.parser.add_argument("-i", "--input_data_id", type=str, required=required, nargs="+", help=help_message)
 
@@ -434,19 +415,6 @@ class ArgumentParser:
             help_message = "出力フォーマットを指定します。"
 
         self.parser.add_argument("-f", "--format", type=str, choices=[e.value for e in choices], default=default.value, help=help_message)
-
-    def add_csv_format(self, help_message: Optional[str] = None) -> None:
-        """
-        '--csv_format` 引数を追加
-        """
-        if help_message is None:
-            help_message = (
-                "CSVのフォーマットをJSON形式で指定します。 ``--format`` が ``csv`` でないときは、このオプションは無視されます。\n"
-                "``file://`` を先頭に付けると、JSON形式のファイルを指定できます。\n"
-                "指定した値は ``pandas.DataFrame.to_csv`` の引数として渡されます。"
-            )
-
-        self.parser.add_argument("--csv_format", type=str, help=help_message)
 
     def add_output(self, *, required: bool = False, help_message: Optional[str] = None) -> None:
         """
@@ -510,9 +478,6 @@ class CommandLineWithoutWebapi:
     #: 出力先
     output: Optional[str] = None
 
-    #: CSVのフォーマット
-    csv_format: Optional[dict[str, Any]] = None
-
     #: 出力フォーマット
     str_format: Optional[str] = None
 
@@ -529,9 +494,6 @@ class CommandLineWithoutWebapi:
         self.all_yes = args.yes
         if hasattr(args, "query"):
             self.query = args.query
-
-        if hasattr(args, "csv_format"):
-            self.csv_format = get_csv_format_from_args(args.csv_format)
 
         if hasattr(args, "output"):
             self.output = args.output
@@ -590,10 +552,10 @@ class CommandLineWithoutWebapi:
         return True
 
     def print_csv(self, df: pandas.DataFrame) -> None:
-        print_csv(df, output=self.output, to_csv_kwargs=self.csv_format)
+        print_csv(df, output=self.output)
 
     def print_according_to_format(self, target: Any) -> None:  # noqa: ANN401
-        print_according_to_format(target, format=FormatArgument(self.str_format), output=self.output, csv_format=self.csv_format)
+        print_according_to_format(target, format=FormatArgument(self.str_format), output=self.output)
 
 
 class PrettyHelpFormatter(argparse.RawTextHelpFormatter, argparse.ArgumentDefaultsHelpFormatter):

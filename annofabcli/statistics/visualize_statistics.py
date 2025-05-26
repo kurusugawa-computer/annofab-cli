@@ -214,15 +214,9 @@ class WriteCsvGraph:
         acceptor_obj = AcceptorCumulativeProductivity.from_df_wrapper(task_worktime_obj)
 
         if not self.output_only_text:
-            self.project_dir.write_cumulative_line_graph(
-                annotator_obj, phase=TaskPhase.ANNOTATION, user_id_list=user_id_list, minimal_output=self.minimal_output
-            )
-            self.project_dir.write_cumulative_line_graph(
-                inspector_obj, phase=TaskPhase.INSPECTION, user_id_list=user_id_list, minimal_output=self.minimal_output
-            )
-            self.project_dir.write_cumulative_line_graph(
-                acceptor_obj, phase=TaskPhase.ACCEPTANCE, user_id_list=user_id_list, minimal_output=self.minimal_output
-            )
+            self.project_dir.write_cumulative_line_graph(annotator_obj, phase=TaskPhase.ANNOTATION, user_id_list=user_id_list, minimal_output=self.minimal_output)
+            self.project_dir.write_cumulative_line_graph(inspector_obj, phase=TaskPhase.INSPECTION, user_id_list=user_id_list, minimal_output=self.minimal_output)
+            self.project_dir.write_cumulative_line_graph(acceptor_obj, phase=TaskPhase.ACCEPTANCE, user_id_list=user_id_list, minimal_output=self.minimal_output)
 
     def write_worktime_per_date(self, user_id_list: Optional[list[str]] = None) -> None:
         """日ごとの作業時間情報を出力する。"""
@@ -231,15 +225,11 @@ class WriteCsvGraph:
         self.project_dir.write_worktime_per_date_user(worktime_per_date_obj)
 
         task = self._get_task()
-        productivity_per_completed_date_obj = WholeProductivityPerCompletedDate.from_df_wrapper(
-            task, worktime_per_date_obj, task_completion_criteria=self.task_completion_criteria
-        )
+        productivity_per_completed_date_obj = WholeProductivityPerCompletedDate.from_df_wrapper(task, worktime_per_date_obj, task_completion_criteria=self.task_completion_criteria)
 
         self.project_dir.write_whole_productivity_per_date(productivity_per_completed_date_obj)
 
-        productivity_per_started_date_obj = WholeProductivityPerFirstAnnotationStartedDate.from_task(
-            task, task_completion_criteria=self.task_completion_criteria
-        )
+        productivity_per_started_date_obj = WholeProductivityPerFirstAnnotationStartedDate.from_task(task, task_completion_criteria=self.task_completion_criteria)
         self.project_dir.write_whole_productivity_per_first_annotation_started_date(productivity_per_started_date_obj)
 
         if not self.output_only_text:
@@ -525,12 +515,8 @@ class VisualizeStatistics(CommandLine):
 
             if len(output_project_dir_list) > 0:
                 project_dir_list = [ProjectDir(e, task_completion_criteria) for e in output_project_dir_list]
-                custom_production_volume_list = (
-                    custom_production_volume.custom_production_volume_list if custom_production_volume is not None else None
-                )
-                project_performance = ProjectPerformance.from_project_dirs(
-                    project_dir_list, custom_production_volume_list=custom_production_volume_list
-                )
+                custom_production_volume_list = custom_production_volume.custom_production_volume_list if custom_production_volume is not None else None
+                project_performance = ProjectPerformance.from_project_dirs(project_dir_list, custom_production_volume_list=custom_production_volume_list)
                 project_performance.to_csv(root_output_dir / "プロジェクトごとの生産性と品質.csv")
 
                 project_actual_worktime = ProjectWorktimePerMonth.from_project_dirs(project_dir_list, WorktimeColumn.ACTUAL_WORKTIME_HOUR)
@@ -571,18 +557,14 @@ class VisualizeStatistics(CommandLine):
         else:
             df_actual_worktime = pandas.read_csv(args.labor_csv)
             if not ActualWorktime.required_columns_exist(df_actual_worktime):
-                logger.error(
-                    "引数`--labor_csv`のCSVには以下の列が存在しないので、終了します。\n`project_id`, `date`, `account_id`, `actual_worktime_hour`"
-                )
+                logger.error("引数`--labor_csv`のCSVには以下の列が存在しないので、終了します。\n`project_id`, `date`, `account_id`, `actual_worktime_hour`")
                 sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
             actual_worktime = ActualWorktime(df_actual_worktime)
 
         if args.annotation_count_csv is not None:
             df_annotation_count = pandas.read_csv(args.annotation_count_csv)
             if not AnnotationCount.required_columns_exist(df_annotation_count):
-                logger.error(
-                    "引数`--annotation_count_csv`のCSVには以下の列が存在しないので、終了します。\n`project_id`, `task_id`, `annotation_count`"
-                )
+                logger.error("引数`--annotation_count_csv`のCSVには以下の列が存在しないので、終了します。\n`project_id`, `task_id`, `annotation_count`")
                 sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
             annotation_count = AnnotationCount(df_annotation_count)
         else:
@@ -591,22 +573,16 @@ class VisualizeStatistics(CommandLine):
         if args.input_data_count_csv is not None:
             df_input_data_count = pandas.read_csv(args.input_data_count_csv)
             if not InputDataCount.required_columns_exist(df_input_data_count):
-                logger.error(
-                    "引数`--input_data_count_csv`のCSVには以下の列が存在しないので、終了します。\n`project_id`, `task_id`, `input_data_count`"
-                )
+                logger.error("引数`--input_data_count_csv`のCSVには以下の列が存在しないので、終了します。\n`project_id`, `task_id`, `input_data_count`")
                 sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
             input_data_count = InputDataCount(df_input_data_count)
         else:
             input_data_count = None
 
-        custom_production_volume = (
-            create_custom_production_volume(args.custom_production_volume) if args.custom_production_volume is not None else None
-        )
+        custom_production_volume = create_custom_production_volume(args.custom_production_volume) if args.custom_production_volume is not None else None
 
         ignored_task_id_set = set(get_list_from_args(args.ignored_task_id)) if args.ignored_task_id is not None else None
-        filtering_query = FilteringQuery(
-            task_query=task_query, start_date=args.start_date, end_date=args.end_date, ignored_task_ids=ignored_task_id_set
-        )
+        filtering_query = FilteringQuery(task_query=task_query, start_date=args.start_date, end_date=args.end_date, ignored_task_ids=ignored_task_id_set)
 
         if args.temp_dir is None:
             with tempfile.TemporaryDirectory() as str_temp_dir:
@@ -690,11 +666,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "-u",
         "--user_id",
         nargs="+",
-        help=(
-            "メンバごとの統計グラフに表示するユーザのuser_idを指定してください。"
-            "指定しない場合は、上位20人が表示されます。\n"
-            "``file://`` を先頭に付けると、一覧が記載されたファイルを指定できます。"
-        ),
+        help=("メンバごとの統計グラフに表示するユーザのuser_idを指定してください。指定しない場合は、上位20人が表示されます。\n``file://`` を先頭に付けると、一覧が記載されたファイルを指定できます。"),
     )
 
     parser.add_argument(
@@ -714,7 +686,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--latest",
         action="store_true",
         help="統計情報の元になるファイル（アノテーションzipなど）の最新版を参照します。このオプションを指定すると、各ファイルを更新するのに5分以上待ちます。\n"
-        "ただしWebAPIの都合上、'タスク履歴全件ファイル'は最新版を参照できません。タスク履歴の最新版を参照する場合は ``--get_task_histories_one_of_each`` を指定してください。",  # noqa: E501
+        "ただしWebAPIの都合上、'タスク履歴全件ファイル'は最新版を参照できません。タスク履歴の最新版を参照する場合は ``--get_task_histories_one_of_each`` を指定してください。",
     )
 
     parser.add_argument(
@@ -727,12 +699,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--labor_csv",
         type=Path,
         help=(
-            "実績作業時間情報が格納されたCSVを指定してください。指定しない場合は、実績作業時間は0とみなします。列名は以下の通りです。\n"
-            "\n"
-            "* date\n"
-            "* account_id\n"
-            "* actual_worktime_hour\n"
-            "* project_id \n"
+            "実績作業時間情報が格納されたCSVを指定してください。指定しない場合は、実績作業時間は0とみなします。列名は以下の通りです。\n\n* date\n* account_id\n* actual_worktime_hour\n* project_id \n"
         ),
     )
 
@@ -773,7 +740,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         help=(
             "プロジェクト独自の生産量をJSON形式で指定します。"
             f"(例) ``{json.dumps(custom_production_volume_sample, ensure_ascii=False)}`` \n"
-            "詳細は https://annofab-cli.readthedocs.io/ja/latest/command_reference/statistics/visualize.html#custom-project-volume を参照してください。"  # noqa: E501
+            "詳細は https://annofab-cli.readthedocs.io/ja/latest/command_reference/statistics/visualize.html#custom-project-volume を参照してください。"
         ),
     )
 
@@ -798,9 +765,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--not_download",
         action="store_true",
-        help=(
-            "指定した場合、アノテーションZIPなどのファイルをダウンロードせずに、`--temp_dir`で指定したディレクトリ内のファイルを読み込みます。`--temp_dir`は必須です。"
-        ),
+        help=("指定した場合、アノテーションZIPなどのファイルをダウンロードせずに、`--temp_dir`で指定したディレクトリ内のファイルを読み込みます。`--temp_dir`は必須です。"),
     )
 
     parser.add_argument(

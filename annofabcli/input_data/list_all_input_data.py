@@ -91,9 +91,7 @@ class ListInputDataWithJsonMain:
                 input_data_list = json.load(f)
 
         input_data_id_set = set(input_data_id_list) if input_data_id_list is not None else None
-        filtered_input_data_list = [
-            e for e in input_data_list if self.filter_input_data_list(e, input_data_query=input_data_query, input_data_id_set=input_data_id_set)
-        ]
+        filtered_input_data_list = [e for e in input_data_list if self.filter_input_data_list(e, input_data_query=input_data_query, input_data_id_set=input_data_id_set)]
 
         adding_obj = AddingDetailsToInputData(self.service, project_id)
         if contain_parent_task_id_list:
@@ -113,9 +111,7 @@ class ListAllInputData(CommandLine):
         args = self.args
 
         input_data_id_list = annofabcli.common.cli.get_list_from_args(args.input_data_id) if args.input_data_id is not None else None
-        input_data_query = (
-            InputDataQuery.from_dict(annofabcli.common.cli.get_json_from_args(args.input_data_query)) if args.input_data_query is not None else None
-        )
+        input_data_query = InputDataQuery.from_dict(annofabcli.common.cli.get_json_from_args(args.input_data_query)) if args.input_data_query is not None else None
 
         project_id = args.project_id
         super().validate_project(project_id, project_member_roles=[ProjectMemberRole.TRAINING_DATA_USER, ProjectMemberRole.OWNER])
@@ -195,13 +191,9 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "指定しない場合は、コマンドを実行した日の02:00(JST)頃の入力データの一覧が出力されます。",
     )
 
-    parser.add_argument(
-        "--with_parent_task_id_list", action="store_true", help="入力データを参照しているタスクのIDのlist( ``parent_task_id_list`` )も出力します。"
-    )
+    parser.add_argument("--with_parent_task_id_list", action="store_true", help="入力データを参照しているタスクのIDのlist( ``parent_task_id_list`` )も出力します。")
 
-    parser.add_argument(
-        "--with_supplementary_data_count", action="store_true", help="入力データに紐づく補助情報の個数( ``supplementary_data_count`` )も出力します。"
-    )
+    parser.add_argument("--with_supplementary_data_count", action="store_true", help="入力データに紐づく補助情報の個数( ``supplementary_data_count`` )も出力します。")
 
     argument_parser.add_format(
         choices=[
@@ -213,7 +205,6 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         default=FormatArgument.CSV,
     )
     argument_parser.add_output()
-    argument_parser.add_csv_format()
 
     parser.set_defaults(subcommand_func=main)
 
@@ -221,7 +212,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
 def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     subcommand_name = "list_all"
     subcommand_help = "すべての入力データの一覧を出力します。"
-    description = "すべての入力データの一覧を出力します。\n出力される入力データは、コマンドを実行した日の02:00(JST)頃の状態です。最新の情報を出力したい場合は、 ``--latest`` を指定してください。"  # noqa: E501
+    description = "すべての入力データの一覧を出力します。\n出力される入力データは、コマンドを実行した日の02:00(JST)頃の状態です。最新の情報を出力したい場合は、 ``--latest`` を指定してください。"
     epilog = "アノテーションユーザまたはオーナロールを持つユーザで実行してください。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)

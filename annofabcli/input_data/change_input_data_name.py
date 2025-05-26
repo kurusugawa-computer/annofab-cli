@@ -55,9 +55,7 @@ class ChangeInputDataNameMain(CommandLineWithConfirm):
             logger.warning(f"input_data_id='{input_data_id}'である入力データは存在しません。")
             return False
 
-        if not self.confirm_processing(
-            f"input_data_id='{input_data_id}' :: input_data_name='{old_input_data['input_data_name']}'を'{new_input_data_name}'に変更しますか？"
-        ):
+        if not self.confirm_processing(f"input_data_id='{input_data_id}' :: input_data_name='{old_input_data['input_data_name']}'を'{new_input_data_name}'に変更しますか？"):
             return False
 
         request_body = old_input_data
@@ -187,9 +185,7 @@ class ChangeInputDataName(CommandLine):
 
         project_id: str = args.project_id
         if args.parallelism is not None:
-            main_obj.change_input_data_name_list_in_parallel(
-                project_id, changed_input_data_list=changed_input_data_list, parallelism=args.parallelism
-            )
+            main_obj.change_input_data_name_list_in_parallel(project_id, changed_input_data_list=changed_input_data_list, parallelism=args.parallelism)
         else:
             main_obj.change_input_data_name_list_sequentially(project_id, changed_input_data_list=changed_input_data_list)
 
@@ -234,7 +230,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--parallelism",
         type=int,
         choices=PARALLELISM_CHOICES,
-        help="使用するプロセス数（並列度）を指定してください。指定する場合は必ず ``--yes`` を指定してください。指定しない場合は、逐次的に処理します。",  # noqa: E501
+        help="使用するプロセス数（並列度）を指定してください。指定する場合は必ず ``--yes`` を指定してください。指定しない場合は、逐次的に処理します。",
     )
 
     parser.set_defaults(subcommand_func=main)

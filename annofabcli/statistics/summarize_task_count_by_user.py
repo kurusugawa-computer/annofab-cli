@@ -80,9 +80,7 @@ def create_task_count_summary_df(task_list: list[Task]) -> pandas.DataFrame:
             df[column] = 0
 
     df_task = pandas.DataFrame([add_info_to_task(t) for t in task_list])
-    df_summary = df_task.pivot_table(
-        values="task_id", index=["account_id"], columns=["status_for_summary"], aggfunc="count", fill_value=0
-    ).reset_index()
+    df_summary = df_task.pivot_table(values="task_id", index=["account_id"], columns=["status_for_summary"], aggfunc="count", fill_value=0).reset_index()
     for status in TaskStatusForSummary:
         add_columns_if_not_exists(df_summary, status.value)
 
@@ -116,7 +114,6 @@ class SummarizeTaskCountByUser(CommandLine):
             target_df,
             format=FormatArgument(FormatArgument.CSV),
             output=self.output,
-            csv_format=self.csv_format,
         )
 
     def main(self) -> None:
@@ -160,7 +157,6 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         help="最新のタスク一覧ファイルを参照します。このオプションを指定すると、タスク一覧ファイルを更新するのに数分待ちます。",
     )
 
-    argument_parser.add_csv_format()
     argument_parser.add_output()
 
     parser.set_defaults(subcommand_func=main)

@@ -65,8 +65,7 @@ class PutProject(CommandLine):
         }
         new_project, _ = self.service.api.put_project(new_project_id, request_body=request_body)
         logger.info(
-            f"'{organization}'組織に、project_id='{new_project['project_id']}'のプロジェクトを作成しました。 :: "
-            f"title='{new_project['title']}', input_data_type='{new_project['input_data_type']}'"
+            f"'{organization}'組織に、project_id='{new_project['project_id']}'のプロジェクトを作成しました。 :: title='{new_project['title']}', input_data_type='{new_project['input_data_type']}'"
         )
 
     COMMON_MESSAGE = "annofabcli project put: error:"
@@ -114,10 +113,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         type=str,
         choices=[e.value for e in InputDataType],
         required=True,
-        help="プロジェクトに登録する入力データの種類\n\n"
-        f" * {InputDataType.IMAGE.value} : 画像\n"
-        f" * {InputDataType.MOVIE.value} : 動画\n"
-        f" * {InputDataType.CUSTOM.value} : カスタム（点群など）",
+        help=f"プロジェクトに登録する入力データの種類\n\n * {InputDataType.IMAGE.value} : 画像\n * {InputDataType.MOVIE.value} : 動画\n * {InputDataType.CUSTOM.value} : カスタム（点群など）",
     )
 
     parser.add_argument("-p", "--project_id", type=str, required=False, help="作成するプロジェクトのproject_id。未指定の場合はUUIDv4になります。")

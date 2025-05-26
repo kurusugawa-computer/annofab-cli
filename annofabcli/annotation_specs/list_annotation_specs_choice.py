@@ -133,9 +133,7 @@ class PrintAnnotationSpecsAttribute(CommandLine):
             logger.warning(f"アノテーション仕様の履歴は{len(histories)}個のため、最新より{before}個前のアノテーション仕様は見つかりませんでした。")
             return None
         history = histories[-(before + 1)]
-        logger.info(
-            f"{history['updated_datetime']}のアノテーション仕様を出力します。 :: history_id='{history['history_id']}', comment='{history['comment']}'"
-        )
+        logger.info(f"{history['updated_datetime']}のアノテーション仕様を出力します。 :: history_id='{history['history_id']}', comment='{history['comment']}'")
         return history["history_id"]
 
     def main(self) -> None:
@@ -169,14 +167,11 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     argument_parser = ArgumentParser(parser)
 
     required_group = parser.add_mutually_exclusive_group(required=True)
-    required_group.add_argument(
-        "-p", "--project_id", help="対象のプロジェクトのproject_idを指定します。APIで取得したアノテーション仕様情報を元に出力します。"
-    )
+    required_group.add_argument("-p", "--project_id", help="対象のプロジェクトのproject_idを指定します。APIで取得したアノテーション仕様情報を元に出力します。")
     required_group.add_argument(
         "--annotation_specs_json",
         type=Path,
-        help="指定したアノテーション仕様のJSONファイルを指定します。"
-        "JSONファイルに記載された情報を元に出力します。ただしアノテーション仕様の ``format_version`` は ``3`` である必要があります。",
+        help="指定したアノテーション仕様のJSONファイルを指定します。JSONファイルに記載された情報を元に出力します。ただしアノテーション仕様の ``format_version`` は ``3`` である必要があります。",
     )
 
     # 過去のアノテーション仕様を参照するためのオプション

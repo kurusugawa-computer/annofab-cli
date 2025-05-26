@@ -78,13 +78,7 @@ class ChangeOperatorMain:
         if task.account_id is not None:
             now_user_id = self.facade.get_user_id_from_account_id(project_id, task.account_id)
 
-        logger.debug(
-            f"{logging_prefix} : task_id = {task.task_id}, "
-            f"status = {task.status.value}, "
-            f"phase = {task.phase.value}, "
-            f"phase_stage = {task.phase_stage}, "
-            f"user_id = {now_user_id}"
-        )
+        logger.debug(f"{logging_prefix} : task_id = {task.task_id}, status = {task.status.value}, phase = {task.phase.value}, phase_stage = {task.phase_stage}, user_id = {now_user_id}")
 
         if task.status in [TaskStatus.COMPLETE, TaskStatus.WORKING]:
             logger.warning(f"{logging_prefix} : task_id = {task_id} : タスクのstatusがworking or complete なので、担当者を変更できません。")
@@ -174,9 +168,7 @@ class ChangeOperatorMain:
             # 逐次処理
             for task_index, task_id in enumerate(task_id_list):
                 try:
-                    result = self.change_operator_for_task(
-                        project_id, task_id, task_index=task_index, task_query=task_query, new_account_id=new_account_id
-                    )
+                    result = self.change_operator_for_task(project_id, task_id, task_index=task_index, task_query=task_query, new_account_id=new_account_id)
                     if result:
                         success_count += 1
                 except Exception:  # pylint: disable=broad-except
@@ -254,7 +246,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--parallelism",
         type=int,
         choices=PARALLELISM_CHOICES,
-        help="使用するプロセス数（並列度）を指定してください。指定する場合は必ず ``--yes`` を指定してください。指定しない場合は、逐次的に処理します。",  # noqa: E501
+        help="使用するプロセス数（並列度）を指定してください。指定する場合は必ず ``--yes`` を指定してください。指定しない場合は、逐次的に処理します。",
     )
 
     parser.set_defaults(subcommand_func=main)

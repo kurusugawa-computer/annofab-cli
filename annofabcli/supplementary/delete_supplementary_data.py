@@ -84,16 +84,10 @@ class DeleteSupplementaryDataMain(CommandLineWithConfirm):
         for supplementary_data_id in supplementary_data_id_list:
             supplementary_data = _get_supplementary_data_list(supplementary_data_id)
             if supplementary_data is None:
-                logger.warning(
-                    f"input_data_id='{input_data_id}' の入力データに、"
-                    f"supplementary_data_id='{supplementary_data_id}' の補助情報は存在しないのでスキップします。"
-                )
+                logger.warning(f"input_data_id='{input_data_id}' の入力データに、supplementary_data_id='{supplementary_data_id}' の補助情報は存在しないのでスキップします。")
                 continue
 
-            message_for_confirm = (
-                f"補助情報 supplementary_data_id='{supplementary_data_id}', "
-                f"supplementary_data_name='{supplementary_data['supplementary_data_name']}' を削除しますか？"
-            )
+            message_for_confirm = f"補助情報 supplementary_data_id='{supplementary_data_id}', supplementary_data_name='{supplementary_data['supplementary_data_name']}' を削除しますか？"
             if not self.confirm_processing(message_for_confirm):
                 continue
 
@@ -108,8 +102,7 @@ class DeleteSupplementaryDataMain(CommandLineWithConfirm):
                 deleted_count += 1
             except requests.HTTPError:
                 logger.warning(
-                    f"補助情報 supplementary_data_id='{supplementary_data_id}', "
-                    f"supplementary_data_name='{supplementary_data['supplementary_data_name']}' の削除に失敗しました。",
+                    f"補助情報 supplementary_data_id='{supplementary_data_id}', supplementary_data_name='{supplementary_data['supplementary_data_name']}' の削除に失敗しました。",
                     exc_info=True,
                 )
                 continue
@@ -126,9 +119,7 @@ class DeleteSupplementaryDataMain(CommandLineWithConfirm):
 
         logger.info(f"{deleted_count} / {total_count} 件の補助情報を削除しました。")
 
-    def delete_supplementary_data_list_for_input_data2(
-        self, project_id: str, input_data_id: str, supplementary_data_list: list[dict[str, Any]]
-    ) -> int:
+    def delete_supplementary_data_list_for_input_data2(self, project_id: str, input_data_id: str, supplementary_data_list: list[dict[str, Any]]) -> int:
         """
         入力データ配下の補助情報を削除する。
 
@@ -147,8 +138,7 @@ class DeleteSupplementaryDataMain(CommandLineWithConfirm):
             try:
                 self.service.api.delete_supplementary_data(project_id, input_data_id=input_data_id, supplementary_data_id=supplementary_data_id)
                 logger.debug(
-                    f"補助情報を削除しました。input_data_id='{input_data_id}', supplementary_data_id='{supplementary_data_id}', "
-                    f"supplementary_data_name={supplementary_data['supplementary_data_name']}"
+                    f"補助情報を削除しました。input_data_id='{input_data_id}', supplementary_data_id='{supplementary_data_id}', supplementary_data_name={supplementary_data['supplementary_data_name']}"
                 )
                 deleted_count += 1
             except requests.HTTPError:
@@ -175,18 +165,12 @@ class DeleteSupplementaryDataMain(CommandLineWithConfirm):
                 logger.debug("入力データに紐づく補助情報は存在しないので、削除をスキップします。")
                 continue
 
-            message_for_confirm = (
-                f"入力データに紐づく補助情報 {len(supplementary_data_list)} 件を削除しますか？ "
-                f"(input_data_id='{input_data_id}', "
-                f"input_data_name='{input_data_name}') "
-            )
+            message_for_confirm = f"入力データに紐づく補助情報 {len(supplementary_data_list)} 件を削除しますか？ (input_data_id='{input_data_id}', input_data_name='{input_data_name}') "
             if not self.confirm_processing(message_for_confirm):
                 continue
 
             try:
-                deleted_supplementary_data_count = self.delete_supplementary_data_list_for_input_data2(
-                    project_id, input_data_id, supplementary_data_list
-                )
+                deleted_supplementary_data_count = self.delete_supplementary_data_list_for_input_data2(project_id, input_data_id, supplementary_data_list)
                 dict_deleted_count[input_data_id] = deleted_supplementary_data_count
                 logger.debug(
                     f"入力データに紐づく補助情報を {deleted_supplementary_data_count} / {len(supplementary_data_list)} 件削除しました。"

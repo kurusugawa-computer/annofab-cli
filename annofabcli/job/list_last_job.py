@@ -148,8 +148,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "-org",
         "--organization",
         type=str,
-        help="組織配下のすべてのプロジェクトのジョブを出力したい場合は、組織名を指定してください。"
-        "自分が所属している進行中のプロジェクトが対象になります。",
+        help="組織配下のすべてのプロジェクトのジョブを出力したい場合は、組織名を指定してください。自分が所属している進行中のプロジェクトが対象になります。",
     )
 
     parser.add_argument(
@@ -160,7 +159,6 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
 
     argument_parser.add_format(choices=[FormatArgument.CSV, FormatArgument.JSON, FormatArgument.PRETTY_JSON], default=FormatArgument.CSV)
     argument_parser.add_output()
-    argument_parser.add_csv_format()
 
     parser.set_defaults(subcommand_func=main)
 

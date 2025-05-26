@@ -97,9 +97,7 @@ def get_task_id_prefix(task_id: str, delimiter: str) -> str:
         return delimiter.join(tmp_list[0 : len(tmp_list) - 1])
 
 
-def create_task_count_summary_df(
-    task_list: list[Task], task_id_delimiter: Optional[str], task_id_groups: Optional[dict[str, list[str]]]
-) -> pandas.DataFrame:
+def create_task_count_summary_df(task_list: list[Task], task_id_delimiter: Optional[str], task_id_groups: Optional[dict[str, list[str]]]) -> pandas.DataFrame:
     """
     タスク数を集計したDataFrameを生成する。
 
@@ -131,16 +129,12 @@ def create_task_count_summary_df(
 
     df_task.fillna({"task_id_group": TASK_ID_GROUP_UNKNOWN}, inplace=True)
 
-    df_summary = df_task.pivot_table(
-        values="task_id", index=["task_id_group"], columns=["status_for_summary"], aggfunc="count", fill_value=0
-    ).reset_index()
+    df_summary = df_task.pivot_table(values="task_id", index=["task_id_group"], columns=["status_for_summary"], aggfunc="count", fill_value=0).reset_index()
 
     for status in TaskStatusForSummary:
         add_columns_if_not_exists(df_summary, status.value)
 
-    df_summary["sum"] = (
-        df_task.pivot_table(values="task_id", index=["task_id_group"], aggfunc="count", fill_value=0).reset_index().fillna(0)["task_id"]
-    )
+    df_summary["sum"] = df_task.pivot_table(values="task_id", index=["task_id_group"], aggfunc="count", fill_value=0).reset_index().fillna(0)["task_id"]
 
     return df_summary
 
@@ -152,7 +146,6 @@ class SummarizeTaskCountByTaskId(CommandLine):
             df[columns],
             format=FormatArgument(FormatArgument.CSV),
             output=self.output,
-            csv_format=self.csv_format,
         )
 
     def main(self) -> None:
@@ -207,7 +200,6 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         help="最新のタスク一覧ファイルを参照します。このオプションを指定すると、タスク一覧ファイルを更新するのに数分待ちます。",
     )
 
-    argument_parser.add_csv_format()
     argument_parser.add_output()
 
     parser.set_defaults(subcommand_func=main)

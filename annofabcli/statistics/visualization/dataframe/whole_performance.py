@@ -84,9 +84,7 @@ class WholePerformance:
         df_task = df_task_worktime_by_phase_user[["project_id", "task_id", "status"]].drop_duplicates()
 
         unique_keys_for_worktime = ["project_id", "task_id", "phase", "phase_stage"]
-        addable_columns_for_task = list(
-            set(df_task_worktime_by_phase_user.columns) - set(user_info_columns) - set(unique_keys_for_worktime) - {"status"}
-        )
+        addable_columns_for_task = list(set(df_task_worktime_by_phase_user.columns) - set(user_info_columns) - set(unique_keys_for_worktime) - {"status"})
         df_task_worktime_by_phase_user = df_task_worktime_by_phase_user.groupby(unique_keys_for_worktime)[addable_columns_for_task].sum()
         df_task_worktime_by_phase_user[user_info_columns] = PSEUDO_VALUE
         df_task_worktime_by_phase_user = df_task_worktime_by_phase_user.reset_index()
@@ -95,9 +93,7 @@ class WholePerformance:
 
         return UserPerformance.from_df_wrapper(
             worktime_per_date=WorktimePerDate(df_worktime_per_date),
-            task_worktime_by_phase_user=TaskWorktimeByPhaseUser(
-                df_task_worktime_by_phase_user, custom_production_volume_list=task_worktime_by_phase_user.custom_production_volume_list
-            ),
+            task_worktime_by_phase_user=TaskWorktimeByPhaseUser(df_task_worktime_by_phase_user, custom_production_volume_list=task_worktime_by_phase_user.custom_production_volume_list),
             task_completion_criteria=task_completion_criteria,
         )
 
@@ -115,7 +111,7 @@ class WholePerformance:
             worktime_per_date: 日ごとの作業時間が記載されたDataFrameを格納したオブジェクト。ユーザー情報の取得や、実際の作業時間（集計タスクに影響しない）の算出に利用します。
             task_worktime_by_phase_user: タスク、フェーズ、ユーザーごとの作業時間や生産量が格納されたオブジェクト。生産量やタスクにかかった作業時間の取得に利用します。
 
-        """  # noqa: E501
+        """
         # 1人が作業した場合のパフォーマンス情報を生成する
         all_user_performance = cls._create_all_user_performance(worktime_per_date, task_worktime_by_phase_user, task_completion_criteria)
 
@@ -142,9 +138,7 @@ class WholePerformance:
         return cls(df_all.iloc[0], task_completion_criteria, custom_production_volume_list=task_worktime_by_phase_user.custom_production_volume_list)
 
     @classmethod
-    def empty(
-        cls, task_completion_criteria: TaskCompletionCriteria, *, custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None
-    ) -> WholePerformance:
+    def empty(cls, task_completion_criteria: TaskCompletionCriteria, *, custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None) -> WholePerformance:
         """空のデータフレームを持つインスタンスを生成します。"""
 
         production_volume_columns = ["input_data_count", "annotation_count"]

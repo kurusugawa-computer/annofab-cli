@@ -173,9 +173,7 @@ class ProjectDir(DataClassJsonMixin):
         phase_name = self.get_phase_name_for_filename(phase)
         obj.to_csv(self.project_dir / Path(f"{phase_name}者_{phase_name}開始日list.csv"))
 
-    def write_performance_line_graph_per_date(
-        self, obj: AbstractPhaseProductivityPerDate, phase: TaskPhase, *, user_id_list: Optional[list[str]] = None
-    ) -> None:
+    def write_performance_line_graph_per_date(self, obj: AbstractPhaseProductivityPerDate, phase: TaskPhase, *, user_id_list: Optional[list[str]] = None) -> None:
         """
         指定したフェーズの開始日ごとの作業時間や生産性情報を、折れ線グラフとして出力します。
         """
@@ -199,8 +197,7 @@ class ProjectDir(DataClassJsonMixin):
             obj.plot_production_volume_metrics(
                 production_volume_column=custom_production_volume.value,
                 production_volume_name=custom_production_volume.name,
-                output_file=output_dir
-                / Path(f"{phase_name}者用/折れ線-横軸_{phase_name}開始日-縦軸_{custom_production_volume.name}単位の指標-{phase_name}者用.html"),
+                output_file=output_dir / Path(f"{phase_name}者用/折れ線-横軸_{phase_name}開始日-縦軸_{custom_production_volume.name}単位の指標-{phase_name}者用.html"),
                 target_user_id_list=user_id_list,
                 metadata=self.metadata,
             )
@@ -209,14 +206,10 @@ class ProjectDir(DataClassJsonMixin):
         """`全体の生産性と品質.csv`を読み込む。"""
         file = self.project_dir / self.FILENAME_WHOLE_PERFORMANCE
         if file.exists():
-            return WholePerformance.from_csv(
-                file, custom_production_volume_list=self.custom_production_volume_list, task_completion_criteria=self.task_completion_criteria
-            )
+            return WholePerformance.from_csv(file, custom_production_volume_list=self.custom_production_volume_list, task_completion_criteria=self.task_completion_criteria)
         else:
             logger.warning(f"'{file!s}'を読み込もうとしましたが、ファイルは存在しません。")
-            return WholePerformance.empty(
-                custom_production_volume_list=self.custom_production_volume_list, task_completion_criteria=self.task_completion_criteria
-            )
+            return WholePerformance.empty(custom_production_volume_list=self.custom_production_volume_list, task_completion_criteria=self.task_completion_criteria)
 
     def write_whole_performance(self, whole_performance: WholePerformance) -> None:
         """`全体の生産性と品質.csv`を出力します。"""
@@ -234,9 +227,7 @@ class ProjectDir(DataClassJsonMixin):
                 custom_production_volume_list=self.custom_production_volume_list,
             )
         else:
-            return WholeProductivityPerCompletedDate.empty(
-                task_completion_criteria=self.task_completion_criteria, custom_production_volume_list=self.custom_production_volume_list
-            )
+            return WholeProductivityPerCompletedDate.empty(task_completion_criteria=self.task_completion_criteria, custom_production_volume_list=self.custom_production_volume_list)
 
     def write_whole_productivity_per_date(self, obj: WholeProductivityPerCompletedDate) -> None:
         """
@@ -263,9 +254,7 @@ class ProjectDir(DataClassJsonMixin):
                 custom_production_volume_list=self.custom_production_volume_list,
             )
         else:
-            return WholeProductivityPerFirstAnnotationStartedDate.empty(
-                self.task_completion_criteria, custom_production_volume_list=self.custom_production_volume_list
-            )
+            return WholeProductivityPerFirstAnnotationStartedDate.empty(self.task_completion_criteria, custom_production_volume_list=self.custom_production_volume_list)
 
     def write_whole_productivity_per_first_annotation_started_date(self, obj: WholeProductivityPerFirstAnnotationStartedDate) -> None:
         """
@@ -285,14 +274,10 @@ class ProjectDir(DataClassJsonMixin):
         """
         file = self.project_dir / self.FILENAME_USER_PERFORMANCE
         if file.exists():
-            return UserPerformance.from_csv(
-                file, custom_production_volume_list=self.custom_production_volume_list, task_completion_criteria=self.task_completion_criteria
-            )
+            return UserPerformance.from_csv(file, custom_production_volume_list=self.custom_production_volume_list, task_completion_criteria=self.task_completion_criteria)
         else:
             logger.warning(f"'{file!s}'を読み込もうとしましたが、ファイルは存在しません。")
-            return UserPerformance.empty(
-                custom_production_volume_list=self.custom_production_volume_list, task_completion_criteria=self.task_completion_criteria
-            )
+            return UserPerformance.empty(custom_production_volume_list=self.custom_production_volume_list, task_completion_criteria=self.task_completion_criteria)
 
     def write_user_performance(self, user_performance: UserPerformance) -> None:
         """
@@ -407,9 +392,7 @@ class ProjectDir(DataClassJsonMixin):
 
     def write_worktime_line_graph(self, obj: WorktimePerDate, user_id_list: Optional[list[str]] = None) -> None:
         """横軸が日付、縦軸がユーザごとの作業時間である折れ線グラフを出力します。"""
-        obj.plot_cumulatively(
-            self.project_dir / "line-graph/累積折れ線-横軸_日-縦軸_作業時間.html", target_user_id_list=user_id_list, metadata=self.metadata
-        )
+        obj.plot_cumulatively(self.project_dir / "line-graph/累積折れ線-横軸_日-縦軸_作業時間.html", target_user_id_list=user_id_list, metadata=self.metadata)
 
     def read_project_info(self) -> ProjectInfo:
         """

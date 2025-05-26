@@ -136,9 +136,7 @@ class SubPutInputData:
         if file_path is not None:
             request_body.update({"input_data_name": csv_input_data.input_data_name})
             logger.debug(f"'{file_path}'を入力データとして登録します。input_data_name='{csv_input_data.input_data_name}'")
-            self.service.wrapper.put_input_data_from_file(
-                project_id, input_data_id=csv_input_data.input_data_id, file_path=file_path, request_body=request_body
-            )
+            self.service.wrapper.put_input_data_from_file(project_id, input_data_id=csv_input_data.input_data_id, file_path=file_path, request_body=request_body)
 
         else:
             request_body.update(
@@ -174,17 +172,11 @@ class SubPutInputData:
         return yes
 
     def confirm_put_input_data(self, input_data: InputDataForPut, already_exists: bool = False) -> bool:  # noqa: FBT001, FBT002
-        message_for_confirm = (
-            f"input_data_name='{input_data.input_data_name}', input_data_id='{input_data.input_data_id}' の入力データを登録しますか？"
-        )
+        message_for_confirm = f"input_data_name='{input_data.input_data_name}', input_data_id='{input_data.input_data_id}' の入力データを登録しますか？"
         if already_exists:
-            message_for_confirm = (
-                f"input_data_name='{input_data.input_data_name}', input_data_id='{input_data.input_data_id}' の入力データを上書きして登録しますか？"
-            )
+            message_for_confirm = f"input_data_name='{input_data.input_data_name}', input_data_id='{input_data.input_data_id}' の入力データを上書きして登録しますか？"
         else:
-            message_for_confirm = (
-                f"input_data_name='{input_data.input_data_name}', input_data_id='{input_data.input_data_id}' の入力データを登録しますか？"
-            )
+            message_for_confirm = f"input_data_name='{input_data.input_data_name}', input_data_id='{input_data.input_data_id}' の入力データを登録しますか？"
 
         return self.confirm_processing(message_for_confirm)
 
@@ -192,9 +184,7 @@ class SubPutInputData:
         input_data = InputDataForPut(
             input_data_name=csv_input_data.input_data_name,
             input_data_path=csv_input_data.input_data_path,
-            input_data_id=csv_input_data.input_data_id
-            if csv_input_data.input_data_id is not None
-            else convert_input_data_name_to_input_data_id(csv_input_data.input_data_name),
+            input_data_id=csv_input_data.input_data_id if csv_input_data.input_data_id is not None else convert_input_data_name_to_input_data_id(csv_input_data.input_data_name),
         )
 
         last_updated_datetime = None
@@ -231,9 +221,7 @@ class SubPutInputData:
             return False
         except CheckSumError:
             logger.warning(
-                f"入力データを登録しましたが、データが破損している可能性があります。"
-                f"input_data_id='{input_data.input_data_id}', "
-                f"input_data_name='{input_data.input_data_name}',",
+                f"入力データを登録しましたが、データが破損している可能性があります。input_data_id='{input_data.input_data_id}', input_data_name='{input_data.input_data_name}',",
                 exc_info=True,
             )
             return False
@@ -345,7 +333,7 @@ class PutInputData(CommandLine):
             is_duplicated = is_duplicated_input_data(df)
             if not args.allow_duplicated_input_data and is_duplicated:
                 print(  # noqa: T201
-                    f"{self.COMMON_MESSAGE} argument --csv: '{args.csv}' に記載されている'input_data_name'または'input_data_path'が重複しているため、入力データを登録しません。"  # noqa: E501
+                    f"{self.COMMON_MESSAGE} argument --csv: '{args.csv}' に記載されている'input_data_name'または'input_data_path'が重複しているため、入力データを登録しません。"
                     f"重複している状態で入力データを登録する際は、'--allow_duplicated_input_data'を指定してください。",
                     file=sys.stderr,
                 )

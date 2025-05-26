@@ -31,9 +31,7 @@ class ListTaskHistoryEventWithJsonMain:
         self.service = service
 
     @staticmethod
-    def filter_task_history_event(
-        task_history_event_list: list[TaskHistoryEvent], task_id_list: Optional[list[str]] = None
-    ) -> list[TaskHistoryEvent]:
+    def filter_task_history_event(task_history_event_list: list[TaskHistoryEvent], task_id_list: Optional[list[str]] = None) -> list[TaskHistoryEvent]:
         if task_id_list is not None:
             result = []
             task_id_set = set(task_id_list)
@@ -45,9 +43,7 @@ class ListTaskHistoryEventWithJsonMain:
 
         return task_history_event_list
 
-    def get_task_history_event_list(
-        self, project_id: str, task_history_event_json: Optional[Path] = None, task_id_list: Optional[list[str]] = None
-    ) -> list[dict[str, Any]]:
+    def get_task_history_event_list(self, project_id: str, task_history_event_json: Optional[Path] = None, task_id_list: Optional[list[str]] = None) -> list[dict[str, Any]]:
         if task_history_event_json is None:
             downloading_obj = DownloadingFile(self.service)
             # `NamedTemporaryFile`を使わない理由: Windowsで`PermissionError`が発生するため
@@ -83,9 +79,7 @@ class ListTaskHistoryEventWithJson(CommandLine):
         super().validate_project(project_id, project_member_roles=None)
 
         main_obj = ListTaskHistoryEventWithJsonMain(self.service)
-        task_history_event_list = main_obj.get_task_history_event_list(
-            project_id, task_history_event_json=task_history_event_json, task_id_list=task_id_list
-        )
+        task_history_event_list = main_obj.get_task_history_event_list(project_id, task_history_event_json=task_history_event_json, task_id_list=task_id_list)
 
         logger.debug(f"タスク履歴イベント一覧の件数: {len(task_history_event_list)}")
 
@@ -149,7 +143,6 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         default=FormatArgument.CSV,
     )
     argument_parser.add_output()
-    argument_parser.add_csv_format()
 
     parser.set_defaults(subcommand_func=main)
 
@@ -157,7 +150,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
 def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     subcommand_name = "list_all"
     subcommand_help = "すべてのタスク履歴イベントの一覧を出力します。"
-    description = "すべてのタスク履歴イベントの一覧を出力します。\n出力されるタスク履歴イベントは、コマンドを実行した日の02:00(JST)頃の状態です。最新の情報を出力する方法はありません。"  # noqa: E501
+    description = "すべてのタスク履歴イベントの一覧を出力します。\n出力されるタスク履歴イベントは、コマンドを実行した日の02:00(JST)頃の状態です。最新の情報を出力する方法はありません。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
     parse_args(parser)

@@ -40,9 +40,7 @@ class DeleteMetadataKeyOfInputDataMain(CommandLineWithConfirm):
         self.project_id = project_id
         super().__init__(all_yes=all_yes)
 
-    def delete_metadata_keys_for_one_input_data(
-        self, input_data_id: str, metadata_keys: Collection[str], *, input_data_index: Optional[int] = None
-    ) -> bool:
+    def delete_metadata_keys_for_one_input_data(self, input_data_id: str, metadata_keys: Collection[str], *, input_data_index: Optional[int] = None) -> bool:
         """
         １個の入力データに対して、メタデータのキーを削除します。
 
@@ -63,10 +61,7 @@ class DeleteMetadataKeyOfInputDataMain(CommandLineWithConfirm):
         input_data_name = input_data["input_data_name"]
         str_old_metadata = json.dumps(old_metadata)
         deleted_keys = set(metadata_keys) & set(old_metadata.keys())  # 削除可能な（存在する）メタデータのキー
-        logger.debug(
-            f"{logging_prefix} input_data_id='{input_data_id}', input_data_name='{input_data_name}', metadata='{str_old_metadata}' :: "
-            f"削除対象のキーが {len(deleted_keys)} 件存在します。"
-        )
+        logger.debug(f"{logging_prefix} input_data_id='{input_data_id}', input_data_name='{input_data_name}', metadata='{str_old_metadata}' :: 削除対象のキーが {len(deleted_keys)} 件存在します。")
 
         if len(deleted_keys) == 0:
             # メタデータを更新する必要がないのでreturnします。
@@ -77,8 +72,7 @@ class DeleteMetadataKeyOfInputDataMain(CommandLineWithConfirm):
             new_metadata.pop(key, None)
 
         if not self.all_yes and not self.confirm_processing(
-            f"input_data_id='{input_data_id}', input_data_name='{input_data_name}'"
-            f" :: metadata='{str_old_metadata}' からキー'{deleted_keys}'を削除しますか？"
+            f"input_data_id='{input_data_id}', input_data_name='{input_data_name}' :: metadata='{str_old_metadata}' からキー'{deleted_keys}'を削除しますか？"
         ):
             return False
 
@@ -91,10 +85,7 @@ class DeleteMetadataKeyOfInputDataMain(CommandLineWithConfirm):
 
         self.service.api.put_input_data(self.project_id, input_data_id, request_body=input_data)
         str_new_metadata = json.dumps(new_metadata)
-        logger.debug(
-            f"{logging_prefix} input_data_id='{input_data_id}' :: 入力データのメタデータからキー'{deleted_keys}'を削除しました。"
-            f" :: metadata='{str_new_metadata}'"
-        )
+        logger.debug(f"{logging_prefix} input_data_id='{input_data_id}' :: 入力データのメタデータからキー'{deleted_keys}'を削除しました。 :: metadata='{str_new_metadata}'")
         return True
 
     def delete_metadata_keys_for_one_input_data_wrapper(self, tpl: tuple[int, str], metadata_keys: Collection[str]) -> bool:
@@ -109,9 +100,7 @@ class DeleteMetadataKeyOfInputDataMain(CommandLineWithConfirm):
             logger.warning(f"input_data_id='{input_data_id}' :: 入力データのメタデータのキーを削除するのに失敗しました。", exc_info=True)
             return False
 
-    def delete_metadata_keys_for_input_data_list(
-        self, input_data_id_list: list[str], metadata_keys: Collection[str], *, parallelism: Optional[int] = None
-    ) -> None:
+    def delete_metadata_keys_for_input_data_list(self, input_data_id_list: list[str], metadata_keys: Collection[str], *, parallelism: Optional[int] = None) -> None:
         logger.info(f"{len(input_data_id_list)} 件の入力データのメタデータから、キー'{metadata_keys}'を削除します。")
 
         success_count = 0

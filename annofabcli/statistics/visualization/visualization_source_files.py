@@ -70,9 +70,7 @@ class VisualizationSourceFiles:
         with open(str(self.task_history_json_path), encoding="utf-8") as f:  # noqa: PTH123
             task_histories_dict = json.load(f)
 
-        logger.debug(
-            f"{self.logging_prefix}: '{self.task_history_json_path}'を読み込みました。{len(task_histories_dict)}件のタスクの履歴が含まれています。"
-        )
+        logger.debug(f"{self.logging_prefix}: '{self.task_history_json_path}'を読み込みました。{len(task_histories_dict)}件のタスクの履歴が含まれています。")
         return task_histories_dict
 
     def read_task_history_events_json(self) -> list[dict[str, Any]]:
@@ -85,10 +83,7 @@ class VisualizationSourceFiles:
         with self.task_history_event_json_path.open(encoding="utf-8") as f:
             task_history_event_list = json.load(f)
 
-        logger.debug(
-            f"{self.logging_prefix}: '{self.task_history_event_json_path}'を読み込みました。"
-            f"{len(task_history_event_list)}件のタスク履歴イベントが含まれています。"
-        )
+        logger.debug(f"{self.logging_prefix}: '{self.task_history_event_json_path}'を読み込みました。{len(task_history_event_list)}件のタスク履歴イベントが含まれています。")
         return task_history_event_list
 
     def read_comments_json(self) -> list[dict[str, Any]]:
@@ -104,9 +99,7 @@ class VisualizationSourceFiles:
         logger.debug(f"{self.logging_prefix}: '{self.comment_json_path}'を読み込みました。{len(comment_list)}件のコメントが含まれています。")
         return comment_list
 
-    def write_files(
-        self, *, is_latest: bool = False, should_get_task_histories_one_of_each: bool = False, should_download_annotation_zip: bool = True
-    ) -> None:
+    def write_files(self, *, is_latest: bool = False, should_get_task_histories_one_of_each: bool = False, should_download_annotation_zip: bool = True) -> None:
         """
         可視化に必要なファイルを作成します。
         原則、全件ファイルをダウンロードしてファイルを作成します。必要に応じて個別にAPIを実行してファイルを作成します。

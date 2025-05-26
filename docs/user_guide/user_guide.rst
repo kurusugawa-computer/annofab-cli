@@ -73,7 +73,7 @@ Getting Help
 
     $ annofabcli task list --help
     usage: annofabcli task list [-h] [--yes] [--endpoint_url ENDPOINT_URL] [--logdir LOGDIR] [--disable_log] [--logging_yaml LOGGING_YAML] -p PROJECT_ID [-tq TASK_QUERY | -t TASK_ID [TASK_ID ...]] [-u USER_ID [USER_ID ...]] [-f {csv,json,pretty_json,task_id_list}]
-                                [-o OUTPUT] [--csv_format CSV_FORMAT] [-q QUERY]
+                                [-o OUTPUT]
 
     タスク一覧を出力します。
 

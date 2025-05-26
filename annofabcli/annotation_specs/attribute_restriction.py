@@ -169,11 +169,7 @@ class AttributeRestrictionMessage:
         return tmp
 
     def get_attribute_from_name(self, attribute_name: str) -> Optional[dict[str, Any]]:
-        tmp = [
-            attribute
-            for attribute in self.attribute_dict.values()
-            if AnnofabApiFacade.get_additional_data_definition_name_en(attribute) == attribute_name
-        ]
+        tmp = [attribute for attribute in self.attribute_dict.values() if AnnofabApiFacade.get_additional_data_definition_name_en(attribute) == attribute_name]
         if len(tmp) == 1:
             return tmp[0]
         elif len(tmp) == 0:
@@ -231,10 +227,6 @@ class AttributeRestrictionMessage:
         """
         if target_attribute_names is not None or target_label_names is not None:
             target_attribute_ids = self.get_target_attribute_ids(target_attribute_names=target_attribute_names, target_label_names=target_label_names)
-            return [
-                self.get_restriction_text(e["additional_data_definition_id"], e["condition"])
-                for e in restrictions
-                if e["additional_data_definition_id"] in target_attribute_ids
-            ]
+            return [self.get_restriction_text(e["additional_data_definition_id"], e["condition"]) for e in restrictions if e["additional_data_definition_id"] in target_attribute_ids]
         else:
             return [self.get_restriction_text(e["additional_data_definition_id"], e["condition"]) for e in restrictions]

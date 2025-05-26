@@ -24,9 +24,7 @@ class ListingComments(CommandLine):
         comments, _ = self.service.api.get_comments(project_id, task_id, input_data_id, query_params={"v": "2"})
         return comments
 
-    def get_comment_list(
-        self, project_id: str, task_id_list: list[str], *, comment_type: Optional[CommentType], exclude_reply: bool
-    ) -> list[dict[str, Any]]:
+    def get_comment_list(self, project_id: str, task_id_list: list[str], *, comment_type: Optional[CommentType], exclude_reply: bool) -> list[dict[str, Any]]:
         all_comments: list[Comment] = []
 
         for task_id in task_id_list:
@@ -107,7 +105,6 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         default=FormatArgument.CSV,
     )
     argument_parser.add_output()
-    argument_parser.add_csv_format()
 
     parser.set_defaults(subcommand_func=main)
 

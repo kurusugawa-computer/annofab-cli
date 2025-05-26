@@ -214,9 +214,7 @@ class RestoreAnnotationMain(CommandLineWithConfirm):
             parallelism: 並列度。Noneなら逐次処理
         """
 
-        def get_iter_task_parser_from_task_ids(
-            _iter_task_parser: Iterator[SimpleAnnotationParserByTask], _target_task_ids: set[str]
-        ) -> Iterator[SimpleAnnotationParserByTask]:
+        def get_iter_task_parser_from_task_ids(_iter_task_parser: Iterator[SimpleAnnotationParserByTask], _target_task_ids: set[str]) -> Iterator[SimpleAnnotationParserByTask]:
             for task_parser in _iter_task_parser:
                 if task_parser.task_id in _target_task_ids:
                     _target_task_ids.remove(task_parser.task_id)
@@ -252,9 +250,7 @@ class RestoreAnnotationMain(CommandLineWithConfirm):
                     task_count += 1
 
         if target_task_ids is not None and len(tmp_target_task_ids) > 0:
-            logger.warning(
-                f"'--task_id'で指定したタスクの内 {len(tmp_target_task_ids)} 件は、リストア対象のアノテーションデータに含まれていません。 :: {tmp_target_task_ids}"  # noqa: E501
-            )
+            logger.warning(f"'--task_id'で指定したタスクの内 {len(tmp_target_task_ids)} 件は、リストア対象のアノテーションデータに含まれていません。 :: {tmp_target_task_ids}")
 
         logger.info(f"{success_count} / {task_count} 件のタスクに対してアノテーションをリストアしました。")
 
@@ -288,9 +284,7 @@ class RestoreAnnotation(CommandLine):
 
         task_id_list = set(annofabcli.common.cli.get_list_from_args(args.task_id)) if args.task_id is not None else None
 
-        RestoreAnnotationMain(self.service, project_id=project_id, is_force=args.force, all_yes=args.yes).main(
-            args.annotation, target_task_ids=task_id_list, parallelism=args.parallelism
-        )
+        RestoreAnnotationMain(self.service, project_id=project_id, is_force=args.force, all_yes=args.yes).main(args.annotation, target_task_ids=task_id_list, parallelism=args.parallelism)
 
 
 def main(args: argparse.Namespace) -> None:

@@ -79,9 +79,7 @@ class ListTasksMain:
 
         return task_query
 
-    def get_task_list_with_api(
-        self, project_id: str, task_query: Optional[dict[str, Any]] = None, user_id_list: Optional[list[str]] = None
-    ) -> list[Task]:
+    def get_task_list_with_api(self, project_id: str, task_query: Optional[dict[str, Any]] = None, user_id_list: Optional[list[str]] = None) -> list[Task]:
         """
         タスク一覧を取得する。
 
@@ -235,8 +233,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--task_id",
         type=str,
         nargs="+",
-        help="対象のタスクのtask_idを指定します。 ``--task_query`` 引数とは同時に指定できません。"
-        " ``file://`` を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。",
+        help="対象のタスクのtask_idを指定します。 ``--task_query`` 引数とは同時に指定できません。 ``file://`` を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。",
     )
 
     parser.add_argument(
@@ -252,7 +249,6 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         default=FormatArgument.CSV,
     )
     argument_parser.add_output()
-    argument_parser.add_csv_format()
 
     parser.set_defaults(subcommand_func=main)
 

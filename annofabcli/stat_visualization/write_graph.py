@@ -66,15 +66,9 @@ class WritingGraph:
             inspector_per_date_obj = InspectorProductivityPerDate.from_df_wrapper(task_worktime_list)
             acceptor_per_date_obj = AcceptorProductivityPerDate.from_df_wrapper(task_worktime_list)
 
-            self.output_project_dir.write_performance_line_graph_per_date(
-                annotator_per_date_obj, phase=TaskPhase.ANNOTATION, user_id_list=self.user_id_list
-            )
-            self.output_project_dir.write_performance_line_graph_per_date(
-                inspector_per_date_obj, phase=TaskPhase.INSPECTION, user_id_list=self.user_id_list
-            )
-            self.output_project_dir.write_performance_line_graph_per_date(
-                acceptor_per_date_obj, phase=TaskPhase.ACCEPTANCE, user_id_list=self.user_id_list
-            )
+            self.output_project_dir.write_performance_line_graph_per_date(annotator_per_date_obj, phase=TaskPhase.ANNOTATION, user_id_list=self.user_id_list)
+            self.output_project_dir.write_performance_line_graph_per_date(inspector_per_date_obj, phase=TaskPhase.INSPECTION, user_id_list=self.user_id_list)
+            self.output_project_dir.write_performance_line_graph_per_date(acceptor_per_date_obj, phase=TaskPhase.ACCEPTANCE, user_id_list=self.user_id_list)
 
     def main(self) -> None:
         try:
@@ -103,9 +97,7 @@ class WritingGraph:
             logger.warning("'日毎の生産量と生産性.csv'から生成できるグラフの出力に失敗しました。", exc_info=True)
 
         try:
-            self.output_project_dir.write_whole_productivity_line_graph_per_annotation_started_date(
-                self.project_dir.read_whole_productivity_per_first_annotation_started_date()
-            )
+            self.output_project_dir.write_whole_productivity_line_graph_per_annotation_started_date(self.project_dir.read_whole_productivity_per_first_annotation_started_date())
         except Exception:
             logger.warning("'教師付者_教師付開始日list.csv'から生成できるグラフの出力に失敗しました。", exc_info=True)
 
@@ -130,9 +122,7 @@ def create_custom_production_volume_list(cli_value: str) -> list[ProductionVolum
 def main(args: argparse.Namespace) -> None:
     user_id_list = get_list_from_args(args.user_id) if args.user_id is not None else None
 
-    custom_production_volume_list = (
-        create_custom_production_volume_list(args.custom_production_volume) if args.custom_production_volume is not None else None
-    )
+    custom_production_volume_list = create_custom_production_volume_list(args.custom_production_volume) if args.custom_production_volume is not None else None
 
     task_completion_criteria = TaskCompletionCriteria(args.task_completion_criteria)
     input_project_dir = ProjectDir(args.dir, task_completion_criteria, custom_production_volume_list=custom_production_volume_list)

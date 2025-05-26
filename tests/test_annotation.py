@@ -46,9 +46,7 @@ class TestCommandLine:
         if car_label["annotation_type"] != "bounding_box":
             return False
 
-        truncation_attribute = more_itertools.first_true(
-            annotation_specs["additionals"], pred=lambda e: get_english_message(e["name"]) == "truncation"
-        )
+        truncation_attribute = more_itertools.first_true(annotation_specs["additionals"], pred=lambda e: get_english_message(e["name"]) == "truncation")
         if truncation_attribute is None:
             return False
 

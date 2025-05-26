@@ -2,36 +2,20 @@
 出力の制御
 ==========================================
 
-``annfoabcli task list`` コマンドなど、情報を出力するコマンドで出力を制御する方法について記載します。
+``annofabcli task list`` コマンドなど、情報を出力するコマンドで出力を制御する方法について記載します。
 
 
 出力形式の指定
 ==================================================================
 ``--format`` で出力形式を指定できます。原則以下の値を指定できます。
 
-* ``csv`` : CSV
-* ``json`` : インデントや空白がないJSON
-* ``pretty_json`` : インデントされたJSON
-
-
-
-CSVの出力形式
-==================================================================
-``--csv_format`` で、CSVの出力形式を指定できます。
-指定した値は、`pandas.DataFrame.to_csv <https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.to_csv.html>`_ の引数として渡されます。
-デフォルトでは「カンマ区切り、BOM付UTF-8」で出力します。
-
-以下のコマンドは、タブ区切りで出力します。
-
-.. code-block::
-
-    $ annofabcli task list --format csv --csv_format '{"sep": "\t"}'
-
+* ``csv`` : CSV（カンマ区切り、BOM付UTF-8）
+* ``json`` : インデントや空白がないJSON（UTF-8）
+* ``pretty_json`` : インデントされたJSON（UTF-8）
 
 .. note::
 
-    デフォルトのエンコーディングが「BOM付UTF-8」なのは、ExcelでCSVを開いたときに文字化けしないようにするためです。
-
+    CSVの文字コードが「BOM付UTF-8」なのは、ExcelでCSVを開いたときに文字化けしないようにするためです。
 
 
 

@@ -12,6 +12,7 @@ from typing import Any, Optional
 
 import annofabapi
 import numpy
+from annofabapi.models import ProjectMemberRole
 from annofabapi.pydantic_models.default_annotation_type import DefaultAnnotationType
 from annofabapi.pydantic_models.task_status import TaskStatus
 from annofabapi.segmentation import read_binary_image, write_binary_image
@@ -195,15 +196,10 @@ class MergeSegmentationMain(CommandLineWithConfirm):
             return 0
 
         if task["status"] in {TaskStatus.WORKING.value, TaskStatus.COMPLETE.value}:
-            logger.debug(
-                f"{log_message_prefix}task_id='{task_id}'のタスクの状態は「作業中」または「完了」であるため、"
-                f"アノテーションの更新をスキップします。  :: status='{task['status']}'"
-            )
+            logger.debug(f"{log_message_prefix}task_id='{task_id}'のタスクの状態は「作業中」または「完了」であるため、アノテーションの更新をスキップします。  :: status='{task['status']}'")
             return 0
 
-        if not self.confirm_processing(
-            f"task_id='{task_id}'の次のラベル名に対応する複数の塗りつぶしアノテーションを1つにまとめますか？ :: {self.label_names}"
-        ):
+        if not self.confirm_processing(f"task_id='{task_id}'の次のラベル名に対応する複数の塗りつぶしアノテーションを1つにまとめますか？ :: {self.label_names}"):
             return 0
 
         # 担当者割り当て変更チェック
@@ -234,16 +230,12 @@ class MergeSegmentationMain(CommandLineWithConfirm):
                 if result:
                     success_input_data_count += 1
             except Exception:
-                logger.warning(
-                    f"{log_message_prefix}task_id='{task_id}', input_data_id='{input_data_id}'のアノテーションの更新に失敗しました。", exc_info=True
-                )
+                logger.warning(f"{log_message_prefix}task_id='{task_id}', input_data_id='{input_data_id}'のアノテーションの更新に失敗しました。", exc_info=True)
                 continue
 
         # 担当者を元に戻す
         if changed_operator:
-            logger.debug(
-                f"{log_message_prefix}task_id='{task_id}' のタスクの担当者を、元の担当者（account_id='{original_operator_account_id}'）に変更します。"
-            )
+            logger.debug(f"{log_message_prefix}task_id='{task_id}' のタスクの担当者を、元の担当者（account_id='{original_operator_account_id}'）に変更します。")
             self.annofab_service.wrapper.change_task_operator(
                 self.project_id,
                 task_id,
@@ -304,6 +296,8 @@ class MergeSegmentation(CommandLine):
             sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
         project_id = args.project_id
+        super().validate_project(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.ACCEPTER, ProjectMemberRole.WORKER])
+
         task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id)
         label_name_list = annofabcli.common.cli.get_list_from_args(args.label_name)
 
@@ -325,8 +319,7 @@ class MergeSegmentation(CommandLine):
 
         if len(invalid_label_name_list) > 0:
             print(  # noqa: T201
-                f"{self.COMMON_MESSAGE} --label_name: 次のラベル名(英語)はアノテーション仕様に存在しないか、"
-                f"アノテーションの種類が「塗りつぶし」ではありません。 :: {invalid_label_name_list}",
+                f"{self.COMMON_MESSAGE} --label_name: 次のラベル名(英語)はアノテーション仕様に存在しないか、アノテーションの種類が「塗りつぶし」ではありません。 :: {invalid_label_name_list}",
                 file=sys.stderr,
             )
             sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
@@ -385,6 +378,7 @@ def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argpa
         "複数の塗りつぶしアノテーションを1つにまとめます。"
         "ラベルの種類を「塗りつぶし（インスタンスセグメンテーション）」から「塗りつぶしv2（セマンティックセグメンテーション）」に変更する場合などに有用です。"
     )
-    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
+    epilog = "オーナー、チェッカーまたはアノテータロールを持つユーザで実行してください。"
+    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
     parse_args(parser)
     return parser

@@ -135,10 +135,7 @@ class DeleteAnnotationMain(CommandLineWithConfirm):
 
         if not self.is_force:  # noqa: SIM102
             if task.status == TaskStatus.COMPLETE:
-                logger.info(
-                    f"task_id='{task_id}' :: タスクが完了状態のため、スキップします。"
-                    f"完了状態のタスクのアノテーションを削除するには、`--force`オプションを指定してください。"
-                )
+                logger.info(f"task_id='{task_id}' :: タスクが完了状態のため、スキップします。完了状態のタスクのアノテーションを削除するには、`--force`オプションを指定してください。")
                 return
 
         annotation_list = self.get_annotation_list_for_task(task_id, annotation_query=annotation_query)
@@ -197,10 +194,7 @@ class DeleteAnnotationMain(CommandLineWithConfirm):
         task_id = editor_annotation["task_id"]
         input_data_id = editor_annotation["input_data_id"]
         if len(editor_annotation["details"]) == 0:
-            logger.warning(
-                f"task_id='{task_id}', input_data_id='{input_data_id}' にはアノテーションが存在しません。以下のアノテーションの削除をスキップします。 :: "  # noqa: E501
-                f"annotation_ids={annotation_ids}"
-            )
+            logger.warning(f"task_id='{task_id}', input_data_id='{input_data_id}' にはアノテーションが存在しません。以下のアノテーションの削除をスキップします。 :: annotation_ids={annotation_ids}")
             return 0, len(annotation_ids)
 
         # annotation_idでフィルタ
@@ -209,9 +203,7 @@ class DeleteAnnotationMain(CommandLineWithConfirm):
         nonexistent_annotation_ids = annotation_ids - existent_annotation_ids
 
         if len(nonexistent_annotation_ids) > 0:
-            logger.warning(
-                f"次のアノテーションは存在しないので、削除できません。 :: task_id='{task_id}', input_data_id='{input_data_id}', annotation_id='{nonexistent_annotation_ids}'"  # noqa: E501
-            )
+            logger.warning(f"次のアノテーションは存在しないので、削除できません。 :: task_id='{task_id}', input_data_id='{input_data_id}', annotation_id='{nonexistent_annotation_ids}'")
 
         if len(filtered_details) == 0:
             logger.info(f"task_id='{task_id}', input_data_id='{input_data_id}' には削除対象のアノテーションが存在しないので、スキップします。")
@@ -241,9 +233,7 @@ class DeleteAnnotationMain(CommandLineWithConfirm):
             logger.warning(f"task_id='{task_id}', input_data_id='{input_data_id}' :: アノテーションの削除に失敗しました。", exc_info=True)
             # `batchUpdateAnnotations` APIでエラーになった場合、途中までは削除されるので、`len(annotation_ids)` 件削除に失敗したとは限らない。
             # そのため、再度アノテーション情報を取得して、削除できたアノテーション数と削除できなかったアノテーション数を取得する。
-            new_editor_annotation, _ = self.service.api.get_editor_annotation(
-                self.project_id, task_id=task_id, input_data_id=input_data_id, query_params={"v": "2"}
-            )
+            new_editor_annotation, _ = self.service.api.get_editor_annotation(self.project_id, task_id=task_id, input_data_id=input_data_id, query_params={"v": "2"})
             new_annotation_ids = {e["annotation_id"] for e in new_editor_annotation["details"]}
             deleted_annotation_count = len(existent_annotation_ids - new_annotation_ids)
             failed_to_delete_annotation_count = len(existent_annotation_ids) - deleted_annotation_count
@@ -307,13 +297,10 @@ class DeleteAnnotationMain(CommandLineWithConfirm):
             for input_data_id, annotation_ids in sub_grouped.items():
                 # 指定input_data_idの全annotationを取得
                 # TODO どこかのタイミングで、"v=2"のアノテーションを取得するようにする
-                editor_annotation = self.service.wrapper.get_editor_annotation_or_none(
-                    self.project_id, task_id=task_id, input_data_id=input_data_id, query_params={"v": "1"}
-                )
+                editor_annotation = self.service.wrapper.get_editor_annotation_or_none(self.project_id, task_id=task_id, input_data_id=input_data_id, query_params={"v": "1"})
                 if editor_annotation is None:
                     logger.warning(
-                        f"task_id='{task_id}'のタスクに、input_data_id='{input_data_id}'の入力データが含まれていません。 アノテーションの削除をスキップします。 :: "  # noqa: E501
-                        f"annotation_ids={annotation_ids}"
+                        f"task_id='{task_id}'のタスクに、input_data_id='{input_data_id}'の入力データが含まれていません。 アノテーションの削除をスキップします。 :: annotation_ids={annotation_ids}"
                     )
                     failed_to_delete_annotation_count += len(annotation_ids)
                     continue
@@ -322,9 +309,7 @@ class DeleteAnnotationMain(CommandLineWithConfirm):
                     (backup_dir / task_id).mkdir(exist_ok=True, parents=True)
                     self.dump_annotation_obj.dump_editor_annotation(editor_annotation, json_path=backup_dir / task_id / f"{input_data_id}.json")
 
-                sub_deleted_annotation_count, sub_failed_to_delete_annotation_count = self.delete_annotation_by_annotation_ids(
-                    editor_annotation, set(annotation_ids)
-                )
+                sub_deleted_annotation_count, sub_failed_to_delete_annotation_count = self.delete_annotation_by_annotation_ids(editor_annotation, set(annotation_ids))
                 deleted_annotation_count += sub_deleted_annotation_count
                 failed_to_delete_annotation_count += sub_failed_to_delete_annotation_count
 
@@ -356,7 +341,13 @@ class DeleteAnnotation(CommandLine):
         else:
             backup_dir = Path(args.backup)
 
-        super().validate_project(project_id, [ProjectMemberRole.OWNER])
+        if args.force:
+            # --forceオプションが指定されている場合は、完了状態のタスクも削除する
+            # 完了状態のタスクを削除するには、オーナーロールである必要があるため、`args.force`で条件を分岐する
+            super().validate_project(project_id, [ProjectMemberRole.OWNER])
+        else:
+            super().validate_project(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.ACCEPTER])
+
         main_obj = DeleteAnnotationMain(self.service, project_id, all_yes=args.yes, is_force=args.force)
 
         if args.json is not None:
@@ -452,12 +443,16 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         f"(ex): ``{json.dumps(EXAMPLE_ANNOTATION_QUERY)}``",
     )
 
-    parser.add_argument("--force", action="store_true", help="指定した場合は、完了状態のタスクのアノテーションも削除します。")
+    parser.add_argument(
+        "--force",
+        action="store_true",
+        help="指定した場合は、完了状態のタスクのアノテーションも削除します。ただし、完了状態のタスクを削除するには、オーナーロールを持つユーザーが実行する必要があります。",
+    )
     parser.add_argument(
         "--backup",
         type=str,
         required=False,
-        help="アノテーションのバックアップを保存するディレクトリを指定してください。アノテーションの復元は ``annotation restore`` コマンドで実現できます。",  # noqa: E501
+        help="アノテーションのバックアップを保存するディレクトリを指定してください。アノテーションの復元は ``annotation restore`` コマンドで実現できます。",
     )
     parser.set_defaults(subcommand_func=main)
 
@@ -469,7 +464,7 @@ def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argpa
         "タスク配下のアノテーションを削除します。ただし、作業中状態のタスクのアノテーションは削除できません。"
         "間違えてアノテーションを削除したときに復元できるようにするため、 ``--backup`` でバックアップ用のディレクトリを指定することを推奨します。"
     )
-    epilog = "オーナロールを持つユーザで実行してください。"
+    epilog = "オーナーまたはチェッカーロールを持つユーザで実行してください。ただし``--force``オプションを指定した場合は、オーナーロールを持つユーザで実行してください。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
     parse_args(parser)

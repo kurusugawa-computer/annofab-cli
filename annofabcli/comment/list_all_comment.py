@@ -117,8 +117,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--comment_json",
         type=Path,
-        help="コメント情報が記載されたJSONファイルのパスを指定すると、JSONに記載された情報を元にコメント一覧を出力します。\n"
-        "JSONファイルは ``$ annofabcli comment download`` コマンドで取得できます。",
+        help="コメント情報が記載されたJSONファイルのパスを指定すると、JSONに記載された情報を元にコメント一覧を出力します。\nJSONファイルは ``$ annofabcli comment download`` コマンドで取得できます。",
     )
 
     parser.add_argument("--exclude_reply", action="store_true", help="返信コメントを除外します。")
@@ -133,7 +132,6 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         default=FormatArgument.CSV,
     )
     argument_parser.add_output()
-    argument_parser.add_csv_format()
 
     parser.set_defaults(subcommand_func=main)
 
@@ -149,7 +147,7 @@ def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argpa
     subcommand_help = "すべてのコメントの一覧を出力します。"
     description = (
         "すべてのコメントの一覧を出力します。\n"
-        "コメント一覧は、コマンドを実行した日の02:00(JST)頃の状態です。最新のコメント情報を取得したい場合は、 ``annofabcli comment list`` コマンドを実行してください。"  # noqa: E501
+        "コメント一覧は、コマンドを実行した日の02:00(JST)頃の状態です。最新のコメント情報を取得したい場合は、 ``annofabcli comment list`` コマンドを実行してください。"
     )
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description=description)

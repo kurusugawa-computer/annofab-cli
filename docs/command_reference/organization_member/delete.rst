@@ -4,7 +4,7 @@ organization_member delete
 
 Description
 =================================
-組織からユーザを脱退させます。
+組織からメンバーを脱退させます。
 
 
 Examples
@@ -14,7 +14,7 @@ Examples
 基本的な使い方
 --------------------------
 
-対象組織の名前を ``--organization`` に、脱退させるユーザのuser_idを ``--user_id`` に指定します。
+対象組織の名前を ``--organization`` に、脱退させるメンバーのuser_idを ``--user_id`` に指定します。
 
 
 .. code-block::

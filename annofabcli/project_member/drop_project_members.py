@@ -51,9 +51,7 @@ class DropProjectMembersMain:
                 self.service.api.put_project_member(project_id, user_id, request_body=request_body)
                 logger.debug(f"プロジェクト'{project_title}'(project_id='{project_id}') から、user_id='{user_id}'のユーザーを脱退させました。")
             except requests.HTTPError:
-                logger.warning(
-                    f"プロジェクト'{project_title}'(project_id='{project_id}') から、user_id='{user_id}'のユーザーを脱退させられませんでした。"
-                )
+                logger.warning(f"プロジェクト'{project_title}'(project_id='{project_id}') から、user_id='{user_id}'のユーザーを脱退させられませんでした。")
 
     def drop_role_with_organization(self, organization_name: str, user_id_list: list[str]):  # noqa: ANN201
         projects = self.service.wrapper.get_all_projects_of_organization(organization_name, query_params={"account_id": self.service.api.account_id})

@@ -131,9 +131,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         nargs="+",
         help="招待するプロジェクトのproject_idを指定してください。 ``file://`` を先頭に付けると、一覧が記載されたファイルを指定できます。",
     )
-    assign_group.add_argument(
-        "-org", "--organization", type=str, help="組織名を指定すると、組織配下のすべてのプロジェクト（自分が所属している）に招待します。"
-    )
+    assign_group.add_argument("-org", "--organization", type=str, help="組織名を指定すると、組織配下のすべてのプロジェクト（自分が所属している）に招待します。")
 
     parser.set_defaults(subcommand_func=main)
 

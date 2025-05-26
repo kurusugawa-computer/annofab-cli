@@ -56,9 +56,7 @@ class ListWorktimeFromTaskHistoryEventMain:
         self.visualize = AddProps(service, project_id)
 
     @staticmethod
-    def filter_task_history_event(
-        task_history_event_list: list[TaskHistoryEvent], task_id_list: Optional[list[str]] = None
-    ) -> list[TaskHistoryEvent]:
+    def filter_task_history_event(task_history_event_list: list[TaskHistoryEvent], task_id_list: Optional[list[str]] = None) -> list[TaskHistoryEvent]:
         if task_id_list is not None:
             result = []
             task_id_set = set(task_id_list)
@@ -115,11 +113,7 @@ class ListWorktimeFromTaskHistoryEventMain:
     def _create_worktime(self, start_event: TaskHistoryEvent, end_event: TaskHistoryEvent) -> WorktimeFromTaskHistoryEvent:
         diff = parse(end_event["created_datetime"]) - parse(start_event["created_datetime"])
         worktime_hour = diff.total_seconds() / 3600
-        assert worktime_hour >= 0, (
-            f"worktime_hourが負の値です。"
-            f"start_event.created_datetime={start_event['created_datetime']}, "
-            f"end_event.created_datetime{end_event['created_datetime']}"
-        )
+        assert worktime_hour >= 0, f"worktime_hourが負の値です。start_event.created_datetime={start_event['created_datetime']}, end_event.created_datetime{end_event['created_datetime']}"
 
         member = self.visualize.get_project_member_from_account_id(start_event["account_id"])
         if member is not None:
@@ -163,7 +157,7 @@ class ListWorktimeFromTaskHistoryEventMain:
         while i < len(task_history_event_list):
             event = task_history_event_list[i]
             # account_idを判定している理由：
-            # 受入完了状態のタスクで作成されたアノテーションを、アノテーション一覧画面からオーナーが一括編集すると、account_idがnullのタスク履歴イベントが生成されるため  # noqa: E501
+            # 受入完了状態のタスクで作成されたアノテーションを、アノテーション一覧画面からオーナーが一括編集すると、account_idがnullのタスク履歴イベントが生成されるため
             if event["status"] != TaskStatus.WORKING.value or event["account_id"] is None:
                 i += 1
                 continue
@@ -180,10 +174,7 @@ class ListWorktimeFromTaskHistoryEventMain:
                 TaskStatus.ON_HOLD.value,
                 TaskStatus.COMPLETE.value,
             }:
-                logger.warning(
-                    "作業中状態のタスク履歴イベントに対応するタスク履歴イベントが存在しませんでした。"
-                    f":: start_event={start_event}, next_event={next_event}"
-                )
+                logger.warning(f"作業中状態のタスク履歴イベントに対応するタスク履歴イベントが存在しませんでした。:: start_event={start_event}, next_event={next_event}")
                 i += 1
                 continue
 
@@ -312,7 +303,6 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         default=FormatArgument.CSV,
     )
     argument_parser.add_output()
-    argument_parser.add_csv_format()
 
     parser.set_defaults(subcommand_func=main)
 
