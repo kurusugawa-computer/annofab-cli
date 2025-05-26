@@ -113,7 +113,7 @@ class ChanegProjectStatusMain:
 
         if not self.facade.contains_any_project_member_role(project_id, [ProjectMemberRole.OWNER]):
             logger.warning(
-                f"project_id={project_id}: オーナロールでないため、プロジェクトのステータスを変更できません。。project_title={project['title']}"
+                f"project_id={project_id}: オーナロールでないため、プロジェクトのステータスを変更できません。project_title={project['title']}"
             )
             return False
 
