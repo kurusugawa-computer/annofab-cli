@@ -144,7 +144,7 @@ class ChangeProjectOrganizationMain(CommandLineWithConfirm):
         if project["project_status"] == "active":
             if self.is_force:
                 if not self.confirm_processing(
-                    f"project_id='{project_id}'のプロジェクトの状態を停止中にしたあと、所属する組織を'{organization_name}'に変更しますか？ :: project_name='{project_name}'"  # noqa: E501
+                    f"project_id='{project_id}'のプロジェクトの状態を停止中にしたあと、所属する組織を'{organization_name}'に変更しますか？ :: project_name='{project_name}'"
                 ):
                     return None
                 request_body = copy.deepcopy(project)
@@ -158,12 +158,10 @@ class ChangeProjectOrganizationMain(CommandLineWithConfirm):
                 logger.info(f"project_id='{project_id}'のプロジェクトのステータスを「停止中」に変更しました。 :: project_name='{project_name}'")
             else:
                 logger.warning(
-                    f"project_id='{project_id}'のプロジェクトのステータスは「進行中」のため、組織を変更できません。 `--force`オプションを指定すれば、停止中状態に変更した後組織を変更できます。"  # noqa: E501
+                    f"project_id='{project_id}'のプロジェクトのステータスは「進行中」のため、組織を変更できません。 `--force`オプションを指定すれば、停止中状態に変更した後組織を変更できます。"
                 )
                 return None
-        elif not self.confirm_processing(
-            f"project_id='{project_id}'のプロジェクトの組織を'{organization_name}'に変更しますか？ :: project_name='{project_name}'"
-        ):
+        elif not self.confirm_processing(f"project_id='{project_id}'のプロジェクトの組織を'{organization_name}'に変更しますか？ :: project_name='{project_name}'"):
             return None
 
         assert project is not None
@@ -174,18 +172,12 @@ class ChangeProjectOrganizationMain(CommandLineWithConfirm):
 
         content, _ = self.service.api.put_project(project_id, request_body=request_body, query_params={"v": "2"})
         job = content["job"]
-        logger.info(
-            f"project_id='{project_id}'のプロジェクトの所属先組織を'{organization_name}'に変更するジョブを発行しました。 :: project_name='{project_name}', job_id='{job['job_id']}'"  # noqa: E501
-        )
+        logger.info(f"project_id='{project_id}'のプロジェクトの所属先組織を'{organization_name}'に変更するジョブを発行しました。 :: project_name='{project_name}', job_id='{job['job_id']}'")
         return job
 
     def change_organization_for_project_list(self, project_id_list: list[str], organization_name: str) -> list[dict[str, Any]]:
-        if not self.facade.contains_any_organization_member_role(
-            organization_name, [OrganizationMemberRole.OWNER, OrganizationMemberRole.ADMINISTRATOR]
-        ):
-            logger.warning(
-                f"変更先組織'{organization_name}'に対して管理者ロールまたはオーナロールでないため、プロジェクトの所属する組織を変更できません。"
-            )
+        if not self.facade.contains_any_organization_member_role(organization_name, [OrganizationMemberRole.OWNER, OrganizationMemberRole.ADMINISTRATOR]):
+            logger.warning(f"変更先組織'{organization_name}'に対して管理者ロールまたはオーナロールでないため、プロジェクトの所属する組織を変更できません。")
             return []
 
         logger.info(f"{len(project_id_list)} 件のプロジェクトの組織を'{organization_name}'に変更するジョブを発行します。")
