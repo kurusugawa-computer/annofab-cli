@@ -1,6 +1,7 @@
 import argparse
 from typing import Optional
 
+import annofabcli.project.change_organization_of_project
 import annofabcli.project.change_project_status
 import annofabcli.project.copy_project
 import annofabcli.project.diff_projects
@@ -13,6 +14,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     subparsers = parser.add_subparsers(dest="subcommand_name")
 
     # サブコマンドの定義
+    annofabcli.project.change_organization_of_project.add_parser(subparsers)
     annofabcli.project.change_project_status.add_parser(subparsers)
     annofabcli.project.copy_project.add_parser(subparsers)
     annofabcli.project.diff_projects.add_parser(subparsers)
