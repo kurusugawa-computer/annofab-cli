@@ -16,6 +16,7 @@ Available Commands
    :titlesonly:
 
    change_status
+   change_organization
    copy
    diff
    list
