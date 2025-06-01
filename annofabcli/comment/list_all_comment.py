@@ -19,6 +19,7 @@ from annofabapi.models import CommentType
 
 import annofabcli
 import annofabcli.common.cli
+from annofabcli.comment.list_comment import create_empty_df_comment
 from annofabcli.common.cli import ArgumentParser, CommandLine, build_annofabapi_resource_and_login
 from annofabcli.common.download import DownloadingFile
 from annofabcli.common.enums import FormatArgument
@@ -101,7 +102,11 @@ class ListAllComment(CommandLine):
 
         output_format = FormatArgument(args.format)
         if output_format == FormatArgument.CSV:
-            df = pandas.json_normalize(comment_list)
+            if len(comment_list) > 0:
+                df = pandas.json_normalize(comment_list)
+            else:
+                df = create_empty_df_comment()
+
             print_csv(df, output=args.output)
         else:
             print_according_to_format(comment_list, output_format, output=args.output)

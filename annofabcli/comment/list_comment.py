@@ -20,6 +20,28 @@ from annofabcli.common.visualize import AddProps
 logger = logging.getLogger(__name__)
 
 
+def create_empty_df_comment() -> pandas.DataFrame:
+    return pandas.DataFrame(
+        columns=[
+            "project_id",
+            "task_id",
+            "input_data_id",
+            "comment_id",
+            "phase",
+            "phase_stage",
+            "comment_type",
+            "account_id",
+            "user_id",
+            "username",
+            "phrases",
+            "comment",
+            "created_datetime",
+            "updated_datetime",
+            "reply_count",
+        ]
+    )
+
+
 class ListingComments(CommandLine):
     def get_comments(self, project_id: str, task_id: str, input_data_id: str) -> list[dict[str, Any]]:
         comments, _ = self.service.api.get_comments(project_id, task_id, input_data_id, query_params={"v": "2"})
@@ -72,7 +94,11 @@ class ListingComments(CommandLine):
 
         output_format = FormatArgument(args.format)
         if output_format == FormatArgument.CSV:
-            df = pandas.json_normalize(comment_list)
+            if len(comment_list) > 0:
+                df = pandas.json_normalize(comment_list)
+            else:
+                df = create_empty_df_comment()
+
             print_csv(df, output=args.output)
         else:
             print_according_to_format(comment_list, output_format, output=args.output)

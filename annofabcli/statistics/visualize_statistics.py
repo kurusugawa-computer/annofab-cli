@@ -342,7 +342,7 @@ class VisualizingStatisticsMain:
             df_annotation_count = self.annotation_count.df
             df_annotation_count = df_annotation_count[df_annotation_count["project_id"] == project_id]
             # `annotation_count = None`にする理由：後続の処理でアノテーションZIPからアノテーション数を算出するようにするため
-            if len(df_annotation_count) == 0:  # noqa: SIM108
+            if len(df_annotation_count) == 0:
                 annotation_count = None
             else:
                 annotation_count = AnnotationCount(df_annotation_count)
