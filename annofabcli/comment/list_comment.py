@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import logging
+from collections import Counter
 from typing import Any, Optional
 
 import pandas
@@ -20,14 +21,11 @@ logger = logging.getLogger(__name__)
 
 
 class ListingComments(CommandLine):
-    def get_comments(self, project_id: str, task_id: str, input_data_id: str):  # noqa: ANN201
+    def get_comments(self, project_id: str, task_id: str, input_data_id: str) -> list[dict[str, Any]]:
         comments, _ = self.service.api.get_comments(project_id, task_id, input_data_id, query_params={"v": "2"})
         # reply_countを付与
-        from collections import Counter
         # root_comment_idごとにカウント
-        root_comment_id_counter = Counter(
-            c["root_comment_id"] for c in comments if "root_comment_id" in c and c["root_comment_id"] is not None
-        )
+        root_comment_id_counter = Counter(c["comment_node"]["root_comment_id"] for c in comments if c["comment_node"]["_type"] == "Reply")
         for c in comments:
             c["reply_count"] = root_comment_id_counter.get(c["comment_id"], 0)
         return comments
