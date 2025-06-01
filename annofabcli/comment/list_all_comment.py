@@ -8,6 +8,7 @@ import argparse
 import json
 import logging
 import tempfile
+from collections import Counter
 from collections.abc import Collection
 from pathlib import Path
 from typing import Any, Optional
@@ -62,12 +63,19 @@ class ListAllCommentMain:
         if comment_type is not None:
             comment_list = [e for e in comment_list if e["comment_type"] == comment_type.value]
 
+        # 返信回数を算出する
+        root_comment_id_counter = Counter((c["task_id"], c["input_data_id"], c["comment_node"]["root_comment_id"]) for c in comment_list if c["comment_node"]["_type"] == "Reply")
+        for c in comment_list:
+            key = (c["task_id"], c["input_data_id"], c["comment_id"])
+            c["reply_count"] = root_comment_id_counter.get(key, 0)
+
         if exclude_reply:
             # 返信コメントを除外する
             comment_list = [e for e in comment_list if e["comment_node"]["_type"] != "Reply"]
 
         visualize = AddProps(self.service, project_id)
         comment_list = [visualize.add_properties_to_comment(e) for e in comment_list]
+
         return comment_list
 
 

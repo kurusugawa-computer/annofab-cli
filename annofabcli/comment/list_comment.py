@@ -23,9 +23,8 @@ logger = logging.getLogger(__name__)
 class ListingComments(CommandLine):
     def get_comments(self, project_id: str, task_id: str, input_data_id: str) -> list[dict[str, Any]]:
         comments, _ = self.service.api.get_comments(project_id, task_id, input_data_id, query_params={"v": "2"})
-        # reply_countを付与
-        # root_comment_idごとにカウント
-        root_comment_id_counter = Counter(c["comment_node"]["root_comment_id"] for c in comments if c["comment_node"]["_type"] == "Reply")
+        # 返信回数を算出する
+        root_comment_id_counter = Counter(c["comment_node"]["root_comment_id"] for c in comments if c["comment_node"]["_type"] == "Reply" and c["comment_node"].get("root_comment_id") is not None)
         for c in comments:
             c["reply_count"] = root_comment_id_counter.get(c["comment_id"], 0)
         return comments
@@ -55,7 +54,7 @@ class ListingComments(CommandLine):
                     all_comments.extend(comments)
 
             except requests.HTTPError:
-                logger.warning(f"タスク task_id = {task_id} のコメントを取得できませんでした。", exc_info=True)
+                logger.warning(f"task_id='{task_id}'のタスクのコメントの取得に失敗しました。", exc_info=True)
 
         visualize = AddProps(self.service, project_id)
         all_comments = [visualize.add_properties_to_comment(e) for e in all_comments]
