@@ -22,6 +22,14 @@ logger = logging.getLogger(__name__)
 class ListingComments(CommandLine):
     def get_comments(self, project_id: str, task_id: str, input_data_id: str):  # noqa: ANN201
         comments, _ = self.service.api.get_comments(project_id, task_id, input_data_id, query_params={"v": "2"})
+        # reply_countを付与
+        from collections import Counter
+        # root_comment_idごとにカウント
+        root_comment_id_counter = Counter(
+            c["root_comment_id"] for c in comments if "root_comment_id" in c and c["root_comment_id"] is not None
+        )
+        for c in comments:
+            c["reply_count"] = root_comment_id_counter.get(c["comment_id"], 0)
         return comments
 
     def get_comment_list(self, project_id: str, task_id_list: list[str], *, comment_type: Optional[CommentType], exclude_reply: bool) -> list[dict[str, Any]]:
@@ -53,18 +61,6 @@ class ListingComments(CommandLine):
 
         visualize = AddProps(self.service, project_id)
         all_comments = [visualize.add_properties_to_comment(e) for e in all_comments]
-
-        # reply_countを付与
-        from collections import Counter
-        # (task_id, input_data_id, root_comment_id) をキーにカウント
-        root_comment_id_counter = Counter(
-            (c["task_id"], c["input_data_id"], c["root_comment_id"])
-            for c in all_comments
-            if "root_comment_id" in c and c["root_comment_id"] is not None
-        )
-        for c in all_comments:
-            key = (c["task_id"], c["input_data_id"], c["comment_id"])
-            c["reply_count"] = root_comment_id_counter.get(key, 0)
 
         return all_comments
 
