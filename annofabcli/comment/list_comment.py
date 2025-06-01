@@ -53,6 +53,19 @@ class ListingComments(CommandLine):
 
         visualize = AddProps(self.service, project_id)
         all_comments = [visualize.add_properties_to_comment(e) for e in all_comments]
+
+        # reply_countを付与
+        from collections import Counter
+        # (task_id, input_data_id, root_comment_id) をキーにカウント
+        root_comment_id_counter = Counter(
+            (c["task_id"], c["input_data_id"], c["root_comment_id"])
+            for c in all_comments
+            if "root_comment_id" in c and c["root_comment_id"] is not None
+        )
+        for c in all_comments:
+            key = (c["task_id"], c["input_data_id"], c["comment_id"])
+            c["reply_count"] = root_comment_id_counter.get(key, 0)
+
         return all_comments
 
     def main(self) -> None:
