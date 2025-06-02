@@ -20,6 +20,15 @@ from annofabcli.common.visualize import AddProps
 logger = logging.getLogger(__name__)
 
 
+def create_reply_counter(comments: list[dict[str, Any]]) -> Counter[tuple[str, str, str]]:
+    """
+    返信コメントの回数を取得するcounterを生成します。
+
+    """
+    root_comment_id_counter = Counter((c["task_id"], c["input_data_id"], c["comment_node"]["root_comment_id"]) for c in comments if c["comment_node"]["_type"] == "Reply")
+    return root_comment_id_counter
+
+
 def create_empty_df_comment() -> pandas.DataFrame:
     return pandas.DataFrame(
         columns=[
@@ -46,9 +55,10 @@ class ListingComments(CommandLine):
     def get_comments(self, project_id: str, task_id: str, input_data_id: str) -> list[dict[str, Any]]:
         comments, _ = self.service.api.get_comments(project_id, task_id, input_data_id, query_params={"v": "2"})
         # 返信回数を算出する
-        root_comment_id_counter = Counter(c["comment_node"]["root_comment_id"] for c in comments if c["comment_node"]["_type"] == "Reply" and c["comment_node"].get("root_comment_id") is not None)
+        reply_counter = create_reply_counter(comments)
         for c in comments:
-            c["reply_count"] = root_comment_id_counter.get(c["comment_id"], 0)
+            key = (c["task_id"], c["input_data_id"], c["comment_id"])
+            c["reply_count"] = reply_counter.get(key, 0)
         return comments
 
     def get_comment_list(self, project_id: str, task_id_list: list[str], *, comment_type: Optional[CommentType], exclude_reply: bool) -> list[dict[str, Any]]:

@@ -8,7 +8,6 @@ import argparse
 import json
 import logging
 import tempfile
-from collections import Counter
 from collections.abc import Collection
 from pathlib import Path
 from typing import Any, Optional
@@ -19,7 +18,7 @@ from annofabapi.models import CommentType
 
 import annofabcli
 import annofabcli.common.cli
-from annofabcli.comment.list_comment import create_empty_df_comment
+from annofabcli.comment.list_comment import create_empty_df_comment, create_reply_counter
 from annofabcli.common.cli import ArgumentParser, CommandLine, build_annofabapi_resource_and_login
 from annofabcli.common.download import DownloadingFile
 from annofabcli.common.enums import FormatArgument
@@ -65,10 +64,10 @@ class ListAllCommentMain:
             comment_list = [e for e in comment_list if e["comment_type"] == comment_type.value]
 
         # 返信回数を算出する
-        root_comment_id_counter = Counter((c["task_id"], c["input_data_id"], c["comment_node"]["root_comment_id"]) for c in comment_list if c["comment_node"]["_type"] == "Reply")
+        reply_counter = create_reply_counter(comment_list)
         for c in comment_list:
             key = (c["task_id"], c["input_data_id"], c["comment_id"])
-            c["reply_count"] = root_comment_id_counter.get(key, 0)
+            c["reply_count"] = reply_counter.get(key, 0)
 
         if exclude_reply:
             # 返信コメントを除外する
