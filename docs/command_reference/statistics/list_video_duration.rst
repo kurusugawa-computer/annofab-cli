@@ -54,6 +54,7 @@ JSON出力
 
     [
     {
+        "project_id": "project1",
         "task_id": "test1",
         "task_status": "complete",
         "task_phase": "acceptance",

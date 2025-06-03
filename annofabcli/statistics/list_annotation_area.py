@@ -55,6 +55,7 @@ def lazy_parse_simple_annotation_by_input_data(annotation_path: Path) -> Iterato
 
 @dataclass(frozen=True)
 class AnnotationAreaInfo(DataClassJsonMixin):
+    project_id: str
     task_id: str
     task_status: str
     task_phase: str
@@ -92,6 +93,7 @@ def get_annotation_area_info_list(parser: SimpleAnnotationParser, simple_annotat
 
         result.append(
             AnnotationAreaInfo(
+                project_id=simple_annotation["project_id"],
                 task_id=simple_annotation["task_id"],
                 task_phase=simple_annotation["task_phase"],
                 task_phase_stage=simple_annotation["task_phase_stage"],
@@ -135,6 +137,7 @@ def create_df(
     annotation_area_list: list[AnnotationAreaInfo],
 ) -> pandas.DataFrame:
     columns = [
+        "project_id",
         "task_id",
         "task_status",
         "task_phase",

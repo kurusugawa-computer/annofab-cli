@@ -115,6 +115,7 @@ class AnnotationCounter(abc.ABC):
 
 @dataclass(frozen=True)
 class AnnotationCounterByTask(AnnotationCounter, DataClassJsonMixin):
+    project_id: str
     task_id: str
     task_status: TaskStatus
     task_phase: TaskPhase
@@ -124,6 +125,7 @@ class AnnotationCounterByTask(AnnotationCounter, DataClassJsonMixin):
 
 @dataclass(frozen=True)
 class AnnotationCounterByInputData(AnnotationCounter, DataClassJsonMixin):
+    project_id: str
     task_id: str
     task_status: TaskStatus
     task_phase: TaskPhase
@@ -254,6 +256,7 @@ class ListAnnotationCounterByInputData:
             frame_no = self.frame_no_map.get((task_id, input_data_id))
 
         return AnnotationCounterByInputData(
+            project_id=simple_annotation["project_id"],
             task_id=simple_annotation["task_id"],
             task_phase=TaskPhase(simple_annotation["task_phase"]),
             task_phase_stage=simple_annotation["task_phase_stage"],
@@ -351,6 +354,7 @@ class ListAnnotationCounterByTask:
             raise RuntimeError(f"{task_parser.task_id} ディレクトリにはjsonファイルが1つも含まれていません。")
 
         return AnnotationCounterByTask(
+            project_id=last_simple_annotation["project_id"],
             task_id=last_simple_annotation["task_id"],
             task_status=TaskStatus(last_simple_annotation["task_status"]),
             task_phase=TaskPhase(last_simple_annotation["task_phase"]),
@@ -468,6 +472,7 @@ class AttributeCountCsv:
     ) -> None:
         def get_columns() -> list[AttributeValueKey]:
             basic_columns = [
+                ("project_id", "", ""),
                 ("task_id", "", ""),
                 ("task_status", "", ""),
                 ("task_phase", "", ""),
@@ -480,6 +485,7 @@ class AttributeCountCsv:
 
         def to_cell(c: AnnotationCounterByTask) -> dict[AttributeValueKey, Any]:
             cell = {
+                ("project_id", "", ""): c.project_id,
                 ("task_id", "", ""): c.task_id,
                 ("task_status", "", ""): c.task_status.value,
                 ("task_phase", "", ""): c.task_phase.value,
@@ -506,6 +512,7 @@ class AttributeCountCsv:
     ) -> None:
         def get_columns() -> list[AttributeValueKey]:
             basic_columns = [
+                ("project_id", "", ""),
                 ("task_id", "", ""),
                 ("task_status", "", ""),
                 ("task_phase", "", ""),
@@ -520,6 +527,7 @@ class AttributeCountCsv:
 
         def to_cell(c: AnnotationCounterByInputData) -> dict[tuple[str, str, str], Any]:
             cell = {
+                ("project_id", "", ""): c.project_id,
                 ("input_data_id", "", ""): c.input_data_id,
                 ("input_data_name", "", ""): c.input_data_name,
                 ("frame_no", "", ""): c.frame_no,
@@ -569,6 +577,7 @@ class LabelCountCsv:
     ) -> None:
         def get_columns() -> list[str]:
             basic_columns = [
+                "project_id",
                 "task_id",
                 "task_status",
                 "task_phase",
@@ -581,6 +590,7 @@ class LabelCountCsv:
 
         def to_dict(c: AnnotationCounterByTask) -> dict[str, Any]:
             d = {
+                "project_id": c.project_id,
                 "task_id": c.task_id,
                 "task_status": c.task_status.value,
                 "task_phase": c.task_phase.value,
@@ -607,6 +617,7 @@ class LabelCountCsv:
     ) -> None:
         def get_columns() -> list[str]:
             basic_columns = [
+                "project_id",
                 "task_id",
                 "task_status",
                 "task_phase",
@@ -621,6 +632,7 @@ class LabelCountCsv:
 
         def to_dict(c: AnnotationCounterByInputData) -> dict[str, Any]:
             d = {
+                "project_id": c.project_id,
                 "input_data_id": c.input_data_id,
                 "input_data_name": c.input_data_name,
                 "frame_no": c.frame_no,

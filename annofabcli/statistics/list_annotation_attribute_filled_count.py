@@ -100,6 +100,7 @@ class AnnotationCountByInputData(DataClassJsonMixin, HasAnnotationAttributeCount
     入力データ単位のアノテーション数の情報。
     """
 
+    project_id: str
     task_id: str
     task_status: TaskStatus
     task_phase: TaskPhase
@@ -126,6 +127,7 @@ class AnnotationCountByTask(DataClassJsonMixin, HasAnnotationAttributeCounts):
     タスク単位のアノテーション数の情報。
     """
 
+    project_id: str
     task_id: str
     task_status: TaskStatus
     task_phase: TaskPhase
@@ -174,6 +176,7 @@ def convert_annotation_count_list_by_input_data_to_by_task(annotation_count_list
 
         result.append(
             AnnotationCountByTask(
+                project_id=first_elm.project_id,
                 task_id=task_id,
                 task_status=first_elm.task_status,
                 task_phase=first_elm.task_phase,
@@ -263,6 +266,7 @@ class ListAnnotationCounterByInputData:
             frame_no = self.frame_no_map.get((simple_annotation["task_id"], simple_annotation["input_data_id"]))
 
         return AnnotationCountByInputData(
+            project_id=simple_annotation["project_id"],
             task_id=simple_annotation["task_id"],
             task_phase=TaskPhase(simple_annotation["task_phase"]),
             task_phase_stage=simple_annotation["task_phase_stage"],
@@ -343,6 +347,7 @@ class AnnotationCountCsvByAttribute:
         prior_attribute_columns: Optional[list[tuple[str, str, str]]] = None,
     ) -> list[tuple[str, str, str]]:
         basic_columns = [
+            ("project_id", "", ""),
             ("task_id", "", ""),
             ("task_status", "", ""),
             ("task_phase", "", ""),
@@ -360,6 +365,7 @@ class AnnotationCountCsvByAttribute:
         prior_attribute_columns: Optional[list[tuple[str, str, str]]] = None,
     ) -> list[tuple[str, str, str]]:
         basic_columns = [
+            ("project_id", "", ""),
             ("task_id", "", ""),
             ("task_status", "", ""),
             ("task_phase", "", ""),
@@ -377,6 +383,7 @@ class AnnotationCountCsvByAttribute:
     ) -> pandas.DataFrame:
         def to_cell(c: AnnotationCountByInputData) -> dict[tuple[str, str, str], Any]:
             cell: dict[tuple[str, str, str], Any] = {
+                ("project_id", "", ""): c.project_id,
                 ("task_id", "", ""): c.task_id,
                 ("task_status", "", ""): c.task_status.value,
                 ("task_phase", "", ""): c.task_phase.value,
@@ -405,6 +412,7 @@ class AnnotationCountCsvByAttribute:
     ) -> pandas.DataFrame:
         def to_cell(c: AnnotationCountByTask) -> dict[tuple[str, str, str], Any]:
             cell: dict[tuple[str, str, str], Any] = {
+                ("project_id", "", ""): c.project_id,
                 ("task_id", "", ""): c.task_id,
                 ("task_status", "", ""): c.task_status.value,
                 ("task_phase", "", ""): c.task_phase.value,

@@ -38,7 +38,7 @@ def get_video_duration_list(task_list: list[dict[str, Any]], input_data_list: li
     result = []
     for task in task_list:
         task_id = task["task_id"]
-        elm = {"task_id": task_id, "task_status": task["status"], "task_phase": task["phase"], "task_phase_stage": task["phase_stage"]}
+        elm = {"project_id": task["project_id"], "task_id": task_id, "task_status": task["status"], "task_phase": task["phase"], "task_phase_stage": task["phase_stage"]}
         input_data_id_list = task["input_data_id_list"]
         assert len(input_data_id_list) == 1, f"task_id='{task_id}'には複数の入力データが含まれています。"
         input_data_id = input_data_id_list[0]
@@ -94,6 +94,7 @@ class ListVideoDuration(CommandLine):
         logger.info(f"{len(video_duration_list)} 件のタスクの動画長さを出力します。")
         if output_format == FormatArgument.CSV:
             columns = [
+                "project_id",
                 "task_id",
                 "task_status",
                 "task_phase",

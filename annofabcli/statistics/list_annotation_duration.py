@@ -108,6 +108,7 @@ class AnnotationDuration(DataClassJsonMixin):
     入力データまたはタスク単位の区間アノテーションの長さ情報。
     """
 
+    project_id: str
     task_id: str
     task_status: TaskStatus
     task_phase: TaskPhase
@@ -234,6 +235,7 @@ class ListAnnotationDurationByInputData:
             }
 
         return AnnotationDuration(
+            project_id=simple_annotation["project_id"],
             task_id=simple_annotation["task_id"],
             task_phase=TaskPhase(simple_annotation["task_phase"]),
             task_phase_stage=simple_annotation["task_phase_stage"],
@@ -360,6 +362,7 @@ class AnnotationDurationCsvByAttribute:
         prior_attribute_columns: Optional[list[AttributeValueKey]] = None,
     ) -> list[AttributeValueKey]:
         basic_columns = [
+            ("project_id", "", ""),
             ("task_id", "", ""),
             ("task_status", "", ""),
             ("task_phase", "", ""),
@@ -379,6 +382,7 @@ class AnnotationDurationCsvByAttribute:
     ) -> pandas.DataFrame:
         def to_cell(c: AnnotationDuration) -> dict[tuple[str, str, str], Any]:
             cell: dict[AttributeValueKey, Any] = {
+                ("project_id", "", ""): c.project_id,
                 ("input_data_id", "", ""): c.input_data_id,
                 ("input_data_name", "", ""): c.input_data_name,
                 ("task_id", "", ""): c.task_id,
@@ -423,6 +427,7 @@ class AnnotationDurationCsvByLabel:
         prior_label_columns: Optional[list[str]] = None,
     ) -> list[str]:
         basic_columns = [
+            "project_id",
             "task_id",
             "task_status",
             "task_phase",
@@ -442,6 +447,7 @@ class AnnotationDurationCsvByLabel:
     ) -> pandas.DataFrame:
         def to_dict(c: AnnotationDuration) -> dict[str, Any]:
             d: dict[str, Any] = {
+                "project_id": c.project_id,
                 "input_data_id": c.input_data_id,
                 "input_data_name": c.input_data_name,
                 "task_id": c.task_id,

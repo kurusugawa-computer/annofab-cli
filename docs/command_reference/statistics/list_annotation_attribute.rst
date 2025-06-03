@@ -28,6 +28,7 @@ JSON出力
 
     [
     {
+        "project_id": "project1",
         "task_id": "task1",
         "task_status": "not_started",
         "task_phase": "annotation",
@@ -69,5 +70,3 @@ Usage Details
    :prog: annofabcli statistics list_annotation_attribute
    :nosubcommands:
    :nodefaultconst:
-
-   

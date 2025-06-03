@@ -57,6 +57,7 @@ class AnnotationAttribute(pydantic.BaseModel):
     入力データまたはタスク単位の区間アノテーションの長さ情報。
     """
 
+    project_id: str
     task_id: str
     task_status: str
     task_phase: str
@@ -87,6 +88,7 @@ def get_annotation_attribute_list_from_annotation_json(simple_annotation: dict[s
 
         result.append(
             AnnotationAttribute(
+                project_id=simple_annotation["project_id"],
                 task_id=simple_annotation["task_id"],
                 task_status=simple_annotation["task_status"],
                 task_phase=simple_annotation["task_phase"],
@@ -141,6 +143,7 @@ def print_annotation_attribute_list_as_csv(annotation_attribute_list: list, outp
     df = pandas.json_normalize(annotation_attribute_list)
 
     base_columns = [
+        "project_id",
         "task_id",
         "task_status",
         "task_phase",

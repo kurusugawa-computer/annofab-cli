@@ -16,6 +16,7 @@ output_dir.mkdir(exist_ok=True, parents=True)
 class TestListAnnotationCounterByInputData:
     def test_get_annotation_counter(self):
         annotation = {
+            "project_id": "project1",
             "task_id": "task1",
             "task_phase": "acceptance",
             "task_phase_stage": 1,
