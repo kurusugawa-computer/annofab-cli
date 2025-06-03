@@ -30,6 +30,7 @@ JSON出力
 
     [
     {
+        "project_id": "project1",
         "task_id": "sample_task_00",
         "task_status": "not_started",
         "task_phase": "annotation",
