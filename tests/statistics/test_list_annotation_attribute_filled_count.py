@@ -63,6 +63,7 @@ class TestListAnnotationCounterByInputData:
 def test_convert_annotation_count_list_by_input_data_to_by_task():
     input_data_list = [
         AnnotationCountByInputData(
+            project_id="project1",
             task_id="task1",
             task_status=TaskStatus.COMPLETE,
             task_phase=TaskPhase.ACCEPTANCE,
@@ -75,6 +76,7 @@ def test_convert_annotation_count_list_by_input_data_to_by_task():
             },
         ),
         AnnotationCountByInputData(
+            project_id="project1",
             task_id="task1",
             task_status=TaskStatus.COMPLETE,
             task_phase=TaskPhase.ACCEPTANCE,
@@ -92,6 +94,7 @@ def test_convert_annotation_count_list_by_input_data_to_by_task():
     task = task_list[0]
 
     assert task == AnnotationCountByTask(
+        project_id="project1",
         task_id="task1",
         task_status=TaskStatus.COMPLETE,
         task_phase=TaskPhase.ACCEPTANCE,
