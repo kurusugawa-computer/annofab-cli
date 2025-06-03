@@ -99,7 +99,7 @@ def create_masked_name(name: str) -> str:
 
 
 def get_replaced_user_id_set_from_biography(df: pandas.DataFrame, not_masked_location_set: Optional[set[str]] = None) -> set[str]:
-    if not_masked_location_set is None:  # noqa: SIM108
+    if not_masked_location_set is None:
         filtered_df = df
     else:
         filtered_df = df[df["biography"].map(lambda e: e not in not_masked_location_set)]
@@ -215,7 +215,7 @@ def create_replacement_dict_by_user_id(
     """
     keyが置換対象のuser_id、valueが置換後のマスクされたuser_idであるdictを作成する。
     """
-    if "biography" in df:  # noqa: SIM108
+    if "biography" in df:
         replaced_user_id_set = get_replaced_user_id_set_from_biography(df, not_masked_location_set=not_masked_biography_set)
     else:
         replaced_user_id_set = set()
@@ -320,7 +320,7 @@ class MaskUserInfo(CommandLineWithoutWebapi):
 
         csv_header_row_count: int = args.csv_header_row_count
         csv_path: Path = args.csv
-        if csv_header_row_count == 1:  # noqa: SIM108
+        if csv_header_row_count == 1:
             original_df = pandas.read_csv(str(csv_path))
         else:
             original_df = read_multiheader_csv(str(csv_path), header_row_count=csv_header_row_count)

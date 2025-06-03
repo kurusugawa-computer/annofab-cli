@@ -114,6 +114,7 @@ ignore = [
     "TRY003", # raise-vanilla-args: `ValueError`にf-stringで長いメッセージを渡すことが多いので無視する
     "FIX", # TODOやFIXMEを使うため無視する
     "TD", # TODOコメントの書き方に気にしていないので無視する
+    "SIM108", # if-else-block-instead-of-if-exp : if-elseブロックを使うこともあるため無視する
     
 
     # 以下のルールはannofabcliのコードに合っていないので無効化した

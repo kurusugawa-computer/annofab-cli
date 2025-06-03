@@ -127,7 +127,7 @@ def plot_annotation_duration_histogram_by_label(  # noqa: PLR0915
     logger.debug(f"{len(df.columns)}個のラベルごとのヒストグラムを出力します。")
     for col in df.columns:
         if bin_width is not None:
-            if arrange_bin_edge:  # noqa: SIM108
+            if arrange_bin_edge:
                 bin_edges = get_bin_edges(min_value=0, max_value=max_duration, bin_width=bin_width)
             else:
                 bin_edges = get_bin_edges(min_value=0, max_value=df[col].max(), bin_width=bin_width)
@@ -238,7 +238,7 @@ def plot_annotation_duration_histogram_by_attribute(  # noqa: PLR0915
         header = (str(col[0]), str(col[1]))  # ラベル名, 属性名
 
         if bin_width is not None:
-            if arrange_bin_edge:  # noqa: SIM108
+            if arrange_bin_edge:
                 bin_edges = get_bin_edges(min_value=0, max_value=max_duration, bin_width=bin_width)
             else:
                 bin_edges = get_bin_edges(min_value=0, max_value=df[col].max(), bin_width=bin_width)
