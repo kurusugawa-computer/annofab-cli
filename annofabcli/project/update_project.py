@@ -20,12 +20,14 @@ from annofabcli.common.facade import AnnofabApiFacade
 logger = logging.getLogger(__name__)
 
 
-class ChangeProjectTitleMain:
-    def __init__(self, service: annofabapi.Resource) -> None:
+class ChangeProjectTitleMain(CommandLineWithConfirm):
+    def __init__(self, service: annofabapi.Resource,*,all_yes: bool = False,) -> None:
         self.service = service
         self.facade = AnnofabApiFacade(service)
+        super().__init__(all_yes)
+        
 
-    def change_title_for_project(self, project_id: str, new_title: str) -> bool:
+    def change_title_for_project(self, project_id: str, title: Optional[str]=None, overview:Optional[str]=None, configuration:Optional[dict[str,Any]]=None) -> bool:
         project: Project | None = self.service.wrapper.get_project_or_none(project_id)
         if project is None:
             logger.warning(f"project_id={project_id} のプロジェクトは存在しないので、スキップします。")
@@ -34,6 +36,14 @@ class ChangeProjectTitleMain:
         if not self.facade.contains_any_project_member_role(project_id, [ProjectMemberRole.OWNER]):
             logger.warning(f"project_id={project_id}: オーナロールでないため、プロジェクトのタイトルを変更できません。project_title={project['title']}")
             return False
+
+        request_body = copy.deepcopy(project)
+        if title is not None:
+            request_body["title"] = title
+        if overview is not None:
+            request_body["overview"] = overview
+        if configuration is not None:
+            request_body["configuration"] = request_body["configuration"].update(configuration)
 
         logger.debug(f"{project['title']} のタイトルを {new_title} に変更します。project_id={project_id}")
         project["title"] = new_title
@@ -136,26 +146,33 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     )
 
     parser.add_argument(
-        "--new_title",
+        "--title",
         type=str,
-        help="変更後のプロジェクトタイトルを指定してください。",
+        help="更新後のプロジェクトのタイトル",
     )
 
     parser.add_argument(
-        "--csv_path",
+        "--overview",
         type=str,
-        help="project_id, new_title カラムを持つCSVファイルのパスを指定してください。",
+        help="更新後のプロジェクトの概要",
+    )
+
+    parser.add_argument(
+        "--configuration",
+        type=str,
+        help="更新後のプロジェクトの設定情報。JSON形式で指定します。"
+        "JSONの構造については https://annofab.com/docs/api/#operation/putProject のリクエストボディを参照してください。\n"
+        "``file://`` を先頭に付けると、JSON形式のファイルを指定できます。",
     )
 
     parser.set_defaults(subcommand_func=main)
 
 
 def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
-    subcommand_name = "change_title"
-    subcommand_help = "プロジェクトのタイトルを変更します。"
-    description = "プロジェクトのタイトルを変更します。"
+    subcommand_name = "update"
+    subcommand_help = "プロジェクトのタイトルや概要を変更します。"
     epilog = "オーナロールを持つユーザで実行してください。"
 
-    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
+    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, epilog=epilog)
     parse_args(parser)
     return parser
