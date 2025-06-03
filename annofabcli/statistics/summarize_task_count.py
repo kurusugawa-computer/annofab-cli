@@ -96,7 +96,7 @@ def create_task_count_summary(task_list: list[Task], number_of_inspections: int)
     """
     for task in task_list:
         status = TaskStatus(task["status"])
-        if status == TaskStatus.COMPLETE:  # noqa: SIM108
+        if status == TaskStatus.COMPLETE:
             step_for_current_phase = sys.maxsize
         else:
             step_for_current_phase = get_step_for_current_phase(task, number_of_inspections)
@@ -142,7 +142,7 @@ class SummarizeTaskCount(CommandLine):
             # タスク全件ファイルをダウンロードするので、オーナロールかアノテーションユーザロールであることを確認する。
             super().validate_project(project_id, project_member_roles=[ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER])
 
-        if is_execute_get_tasks_api:  # noqa: SIM108
+        if is_execute_get_tasks_api:
             task_list = self.service.wrapper.get_all_tasks(project_id)
         else:
             task_list = self.get_task_list_with_downloading_file(project_id, task_json_path, is_latest=is_latest)

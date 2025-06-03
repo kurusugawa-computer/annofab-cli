@@ -86,7 +86,8 @@ JSON出力
         },
         "datetime_for_sorting": "2022-07-05T11:45:21.968+09:00",
         "created_datetime": "2022-07-05T11:45:32.88+09:00",
-        "updated_datetime": "2022-07-05T11:45:32.88+09:00"
+        "updated_datetime": "2022-07-05T11:45:32.88+09:00",
+        "reply_count": 1
     },
     {
         "project_id": "project1",
@@ -116,9 +117,11 @@ JSON出力
         },
         "datetime_for_sorting": "2022-07-05T11:45:08.506+09:00",
         "created_datetime": "2022-07-05T11:45:32.88+09:00",
-        "updated_datetime": "2022-07-05T11:45:32.88+09:00"
+        "updated_datetime": "2022-07-05T11:45:32.88+09:00",
+        "reply_count": 0
     }
     ]
+
 
 
 
@@ -130,4 +133,3 @@ Usage Details
     :prog: annofabcli comment list
     :nosubcommands:
     :nodefaultconst:
-

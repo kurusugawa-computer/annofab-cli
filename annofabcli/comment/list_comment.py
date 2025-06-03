@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import logging
+from collections import Counter
 from typing import Any, Optional
 
 import pandas
@@ -19,9 +20,45 @@ from annofabcli.common.visualize import AddProps
 logger = logging.getLogger(__name__)
 
 
+def create_reply_counter(comments: list[dict[str, Any]]) -> Counter[tuple[str, str, str]]:
+    """
+    返信コメントの回数を取得するcounterを生成します。
+
+    """
+    root_comment_id_counter = Counter((c["task_id"], c["input_data_id"], c["comment_node"]["root_comment_id"]) for c in comments if c["comment_node"]["_type"] == "Reply")
+    return root_comment_id_counter
+
+
+def create_empty_df_comment() -> pandas.DataFrame:
+    return pandas.DataFrame(
+        columns=[
+            "project_id",
+            "task_id",
+            "input_data_id",
+            "comment_id",
+            "phase",
+            "phase_stage",
+            "comment_type",
+            "account_id",
+            "user_id",
+            "username",
+            "phrases",
+            "comment",
+            "created_datetime",
+            "updated_datetime",
+            "reply_count",
+        ]
+    )
+
+
 class ListingComments(CommandLine):
-    def get_comments(self, project_id: str, task_id: str, input_data_id: str):  # noqa: ANN201
+    def get_comments(self, project_id: str, task_id: str, input_data_id: str) -> list[dict[str, Any]]:
         comments, _ = self.service.api.get_comments(project_id, task_id, input_data_id, query_params={"v": "2"})
+        # 返信回数を算出する
+        reply_counter = create_reply_counter(comments)
+        for c in comments:
+            key = (c["task_id"], c["input_data_id"], c["comment_id"])
+            c["reply_count"] = reply_counter.get(key, 0)
         return comments
 
     def get_comment_list(self, project_id: str, task_id_list: list[str], *, comment_type: Optional[CommentType], exclude_reply: bool) -> list[dict[str, Any]]:
@@ -49,10 +86,11 @@ class ListingComments(CommandLine):
                     all_comments.extend(comments)
 
             except requests.HTTPError:
-                logger.warning(f"タスク task_id = {task_id} のコメントを取得できませんでした。", exc_info=True)
+                logger.warning(f"task_id='{task_id}'のタスクのコメントの取得に失敗しました。", exc_info=True)
 
         visualize = AddProps(self.service, project_id)
         all_comments = [visualize.add_properties_to_comment(e) for e in all_comments]
+
         return all_comments
 
     def main(self) -> None:
@@ -66,7 +104,11 @@ class ListingComments(CommandLine):
 
         output_format = FormatArgument(args.format)
         if output_format == FormatArgument.CSV:
-            df = pandas.json_normalize(comment_list)
+            if len(comment_list) > 0:
+                df = pandas.json_normalize(comment_list)
+            else:
+                df = create_empty_df_comment()
+
             print_csv(df, output=args.output)
         else:
             print_according_to_format(comment_list, output_format, output=args.output)

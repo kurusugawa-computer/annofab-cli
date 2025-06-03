@@ -59,7 +59,7 @@ class AnnotationCount:
         def get_annotation_count_default(simple_annotation: dict[str, Any]) -> int:
             return len(simple_annotation["details"])
 
-        if get_annotation_count_func is not None:  # noqa: SIM108
+        if get_annotation_count_func is not None:
             get_annotation_count = get_annotation_count_func
         else:
             get_annotation_count = get_annotation_count_default
