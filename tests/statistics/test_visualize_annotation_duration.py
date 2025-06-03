@@ -14,6 +14,7 @@ output_dir.mkdir(exist_ok=True, parents=True)
 
 ANNOTATIONS = [
     {
+        "project_id": "project1",
         "task_id": "task1",
         "task_phase": "acceptance",
         "task_phase_stage": 1,
@@ -44,6 +45,7 @@ ANNOTATIONS = [
         ],
     },
     {
+        "project_id": "project1",
         "task_id": "task2",
         "task_phase": "acceptance",
         "task_phase_stage": 1,

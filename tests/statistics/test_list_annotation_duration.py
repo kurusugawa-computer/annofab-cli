@@ -11,6 +11,7 @@ data_dir = Path("./tests/data/statistics/")
 output_dir.mkdir(exist_ok=True, parents=True)
 
 ANNOTATION = {
+    "project_id": "project1",
     "task_id": "task1",
     "task_phase": "acceptance",
     "task_phase_stage": 1,
@@ -110,6 +111,7 @@ class Test__AnnotationDurationCsvByLabel:
         assert len(df) == 1
         row = df.iloc[0]
         assert row.to_dict() == {
+            "project_id": "project1",
             "task_id": "task1",
             "task_phase": "acceptance",
             "task_phase_stage": 1,
@@ -130,6 +132,7 @@ class Test__AnnotationDurationCsvByAttribute:
         assert len(df) == 1
         row = df.iloc[0]
         assert row.to_dict() == {
+            ("project_id", "", ""): "project1",
             ("task_id", "", ""): "task1",
             ("task_phase", "", ""): "acceptance",
             ("task_phase_stage", "", ""): 1,
