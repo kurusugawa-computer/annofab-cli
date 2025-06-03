@@ -50,6 +50,7 @@ Examples
                 }
             }
         },
+        "project_id": "project1",
         "task_id": "task1",
         "task_status": "complete",
         "task_phase": "acceptance",
@@ -132,6 +133,7 @@ JSON出力
                 }
             }
         },
+        "project_id": "project1",
         "task_id": "task1",
         "task_status": "complete",
         "task_phase": "acceptance",
@@ -180,6 +182,7 @@ JSON出力
                 }
             }
         },
+        "project_id": "project1",
         "task_id": "task1",
         "status": "complete",
         "phase": "acceptance",
