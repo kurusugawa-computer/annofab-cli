@@ -154,7 +154,7 @@ class DeleteTaskMain(CommandLineWithConfirm):
             True: タスクを削除した。False: タスクを削除しなかった。
 
         """
-        if task_index is not None:  # noqa: SIM108
+        if task_index is not None:
             log_prefix = f"{task_index + 1} 件目, task_id='{task_id}'"
         else:
             log_prefix = f"task_id='{task_id}'"

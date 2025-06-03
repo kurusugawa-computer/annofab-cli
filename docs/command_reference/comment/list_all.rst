@@ -52,8 +52,3 @@ Usage Details
     :prog: annofabcli comment list
     :nosubcommands:
     :nodefaultconst:
-
-
-
-
-

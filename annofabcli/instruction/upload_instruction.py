@@ -70,7 +70,7 @@ class UploadInstruction(CommandLine):
             if src_value.startswith("data:"):
                 img_path = save_image_from_data_uri_scheme(src_value, temp_dir=temp_dir)
             else:  # noqa: PLR5501
-                if src_value[0] == "/":  # noqa: SIM108
+                if src_value[0] == "/":
                     img_path = Path(src_value)
                 else:
                     img_path = html_path.parent / src_value
@@ -98,7 +98,7 @@ class UploadInstruction(CommandLine):
                 continue
 
         # body要素があればその中身、なければhtmlファイルの中身をアップロードする
-        if len(pq_html("body")) > 0:  # noqa: SIM108
+        if len(pq_html("body")) > 0:
             html_data = pq_html("body").html()
         else:
             html_data = pq_html.html()
@@ -108,7 +108,7 @@ class UploadInstruction(CommandLine):
 
     def update_instruction(self, project_id: str, html_data: str) -> None:
         histories, _ = self.service.api.get_instruction_history(project_id)
-        if len(histories) > 0:  # noqa: SIM108
+        if len(histories) > 0:
             last_updated_datetime = histories[0]["updated_datetime"]
         else:
             last_updated_datetime = None

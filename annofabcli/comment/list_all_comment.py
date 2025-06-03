@@ -18,6 +18,7 @@ from annofabapi.models import CommentType
 
 import annofabcli
 import annofabcli.common.cli
+from annofabcli.comment.list_comment import create_empty_df_comment, create_reply_counter
 from annofabcli.common.cli import ArgumentParser, CommandLine, build_annofabapi_resource_and_login
 from annofabcli.common.download import DownloadingFile
 from annofabcli.common.enums import FormatArgument
@@ -62,12 +63,19 @@ class ListAllCommentMain:
         if comment_type is not None:
             comment_list = [e for e in comment_list if e["comment_type"] == comment_type.value]
 
+        # 返信回数を算出する
+        reply_counter = create_reply_counter(comment_list)
+        for c in comment_list:
+            key = (c["task_id"], c["input_data_id"], c["comment_id"])
+            c["reply_count"] = reply_counter.get(key, 0)
+
         if exclude_reply:
             # 返信コメントを除外する
             comment_list = [e for e in comment_list if e["comment_node"]["_type"] != "Reply"]
 
         visualize = AddProps(self.service, project_id)
         comment_list = [visualize.add_properties_to_comment(e) for e in comment_list]
+
         return comment_list
 
 
@@ -93,7 +101,11 @@ class ListAllComment(CommandLine):
 
         output_format = FormatArgument(args.format)
         if output_format == FormatArgument.CSV:
-            df = pandas.json_normalize(comment_list)
+            if len(comment_list) > 0:
+                df = pandas.json_normalize(comment_list)
+            else:
+                df = create_empty_df_comment()
+
             print_csv(df, output=args.output)
         else:
             print_according_to_format(comment_list, output_format, output=args.output)
