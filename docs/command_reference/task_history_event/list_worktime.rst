@@ -20,7 +20,7 @@ Examples
 
     $ annofabcli task_history_event list_worktime --project_id prj1 --output out.csv
 
-
+TODO 各列の説明
 
 
 出力結果
