@@ -145,7 +145,7 @@ class ListWorktimeFromTaskHistoryEventMain:
             ),
         )
 
-    def _create_worktime_list(self, task_history_event_list: list[TaskHistoryEvent]) -> list[WorktimeFromTaskHistoryEvent]:
+    def _create_worktime_list(self, task_id: str, task_history_event_list: list[TaskHistoryEvent]) -> list[WorktimeFromTaskHistoryEvent]:
         """タスク履歴イベントから、作業時間のリストを生成する。
 
         Args:
@@ -174,7 +174,12 @@ class ListWorktimeFromTaskHistoryEventMain:
                 TaskStatus.ON_HOLD.value,
                 TaskStatus.COMPLETE.value,
             }:
-                logger.warning(f"作業中状態のタスク履歴イベントに対応するタスク履歴イベントが存在しませんでした。:: start_event={start_event}, next_event={next_event}")
+                logger.warning(
+                    f"task_id='{task_id}' :: 作業開始のイベント（task_history_id='{event['task_history_id']}'）の次のイベント（task_history_id='{next_event['task_history_id']}'）は、"
+                    f"作業終了のイベントではないため、作業時間を算出できません。スキップします。"
+                    f"タスク履歴イベントが不整合な状態なので、Annofabチームに問い合わせてください。 :: "
+                    f"start_event='{start_event}', next_event='{next_event}'"
+                )
                 i += 1
                 continue
 
@@ -204,8 +209,8 @@ class ListWorktimeFromTaskHistoryEventMain:
         task_history_event_dict = self._create_task_history_event_dict(all_task_history_event_list, task_ids=task_id_set, account_ids=account_id_set)
 
         worktime_list = []
-        for subset_event_list in task_history_event_dict.values():
-            subset_worktime_list = self._create_worktime_list(subset_event_list)
+        for task_id, subset_event_list in task_history_event_dict.items():
+            subset_worktime_list = self._create_worktime_list(task_id, subset_event_list)
             worktime_list.extend(subset_worktime_list)
         return worktime_list
 
