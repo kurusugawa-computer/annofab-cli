@@ -37,6 +37,20 @@ class SimpleTaskHistoryEvent(DataClassJsonMixin):
 
 
 @dataclass
+class RequestOfTaskHistoryEvent(DataClassJsonMixin):
+    """operateTask APIによってタスク履歴イベントが生成されたときのリクエストボディ
+
+    ただし、CLIユーザーにとって不要な情報は除いています。
+    """
+
+    status: str
+    force: bool
+    account_id: Optional[str]
+    user_id: Optional[str]
+    username: Optional[str]
+
+
+@dataclass
 class WorktimeFromTaskHistoryEvent(DataClassJsonMixin):
     project_id: str
     task_id: str
@@ -48,6 +62,8 @@ class WorktimeFromTaskHistoryEvent(DataClassJsonMixin):
     worktime_hour: float
     start_event: SimpleTaskHistoryEvent
     end_event: SimpleTaskHistoryEvent
+    end_event_request: RequestOfTaskHistoryEvent
+    """operateTask APIによってタスク履歴イベントが生成されたときのリクエストボディ"""
 
 
 class ListWorktimeFromTaskHistoryEventMain:
@@ -123,6 +139,15 @@ class ListWorktimeFromTaskHistoryEventMain:
             user_id = None
             username = None
 
+        end_event_request_account_id = end_event["request"]["account_id"]
+        end_event_request_member = self.visualize.get_project_member_from_account_id(end_event_request_account_id)
+        if end_event_request_member is not None:
+            end_event_request_user_id = end_event_request_member["user_id"]
+            end_event_request_username = end_event_request_member["username"]
+        else:
+            end_event_request_user_id = None
+            end_event_request_username = None
+
         return WorktimeFromTaskHistoryEvent(
             # start_eventとend_eventの以下の属性は同じなので、start_eventの値を参照する
             project_id=start_event["project_id"],
@@ -142,6 +167,13 @@ class ListWorktimeFromTaskHistoryEventMain:
                 task_history_id=end_event["task_history_id"],
                 created_datetime=end_event["created_datetime"],
                 status=end_event["status"],
+            ),
+            end_event_request=RequestOfTaskHistoryEvent(
+                status=end_event["request"]["status"],
+                force=end_event["request"]["force"],
+                account_id=end_event["request"]["account_id"],
+                user_id=end_event_request_user_id,
+                username=end_event_request_username,
             ),
         )
 
