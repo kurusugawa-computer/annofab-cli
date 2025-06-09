@@ -70,7 +70,7 @@ JSON出力
 
   * ``task_history_id`` : 作業終了イベントのID
   * ``created_datetime`` : 作業終了イベントの作成日時
-  * ``status`` : 作業終了イベントのステータス。 ``complete`` , ``break`` , ``not_started`` のいずれかです。
+  * ``status`` : 作業終了イベントのステータス。 ``complete`` , ``break`` , ``on_hold`` のいずれかです。
 
 * ``end_event_request`` : 作業終了イベントが発行された ``operateTask`` APIのリクエスト情報
 
