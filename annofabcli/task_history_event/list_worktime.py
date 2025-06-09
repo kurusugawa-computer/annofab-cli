@@ -267,16 +267,39 @@ class ListWorktimeFromTaskHistoryEvent(CommandLine):
         )
 
         logger.debug(f"作業時間一覧の件数: {len(worktime_list)}")
+        dict_worktime_list = [e.to_dict() for e in worktime_list]
 
-        if len(worktime_list) > 0:
-            dict_worktime_list = [e.to_dict() for e in worktime_list]
-            if arg_format == FormatArgument.CSV:
+        if arg_format == FormatArgument.CSV:
+            columns = [
+                "project_id",
+                "task_id",
+                "phase",
+                "phase_stage",
+                "account_id",
+                "user_id",
+                "username",
+                "worktime_hour",
+                "start_event.task_history_id",
+                "start_event.created_datetime",
+                "start_event.status",
+                "end_event.task_history_id",
+                "end_event.created_datetime",
+                "end_event.status",
+                "end_event_request.status",
+                "end_event_request.force",
+                "end_event_request.account_id",
+                "end_event_request.user_id",
+                "end_event_request.username",
+            ]
+
+            if len(dict_worktime_list) > 0:
                 df = pandas.json_normalize(dict_worktime_list)
-                self.print_csv(df)
+                df = df[columns]
             else:
-                self.print_according_to_format(dict_worktime_list)
+                df = pandas.DataFrame(columns=columns)
+            self.print_csv(df)
         else:
-            logger.warning("作業時間一覧の件数が0件であるため、出力しません。")
+            self.print_according_to_format(dict_worktime_list)
 
     def main(self) -> None:
         args = self.args
