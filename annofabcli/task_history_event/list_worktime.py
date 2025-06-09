@@ -207,7 +207,10 @@ class ListWorktimeFromTaskHistoryEventMain:
                 TaskStatus.COMPLETE.value,
             }:
                 logger.warning(
-                    f"task_id='{task_id}' :: 作業開始のイベント（task_history_id='{start_event['task_history_id']}'）の次のイベント（task_history_id='{next_event['task_history_id']}'）は、"
+                    f"task_id='{task_id}' :: 作業開始のイベント（task_history_id='{event['task_history_id']}'）の次のイベント（task_history_id='{next_event['task_history_id']}'）は、"
+                    f"作業終了のイベントではないため、作業時間を算出できません。スキップします。"
+                    f"タスク履歴イベントが不整合な状態なので、Annofabチームに問い合わせてください。 :: "
+                    f"start_event='{start_event}', next_event='{next_event}'"
                 )
                 i += 1
                 continue
