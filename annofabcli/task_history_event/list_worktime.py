@@ -293,8 +293,7 @@ class ListWorktimeFromTaskHistoryEvent(CommandLine):
             ]
 
             if len(dict_worktime_list) > 0:
-                df = pandas.json_normalize(dict_worktime_list)
-                df = df[columns]
+                df = pandas.json_normalize(dict_worktime_list)[columns]
             else:
                 df = pandas.DataFrame(columns=columns)
             self.print_csv(df)
