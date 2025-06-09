@@ -83,14 +83,32 @@ class ListTaskHistoryEventWithJson(CommandLine):
 
         logger.debug(f"タスク履歴イベント一覧の件数: {len(task_history_event_list)}")
 
-        if len(task_history_event_list) > 0:
-            if arg_format == FormatArgument.CSV:
+        if arg_format == FormatArgument.CSV:
+            columns = [
+                "project_id",
+                "task_id",
+                "task_history_id",
+                "created_datetime",
+                "phase",
+                "phase_stage",
+                "status",
+                "account_id",
+                "request.status",
+                "request.account_id",
+                "request.user_id",
+                "request.username",
+                "request.last_updated_datetime",
+                "request.force",
+            ]
+            if len(task_history_event_list) > 0:
                 df = pandas.json_normalize(task_history_event_list)
-                self.print_csv(df)
+                df = df[columns]
             else:
-                self.print_according_to_format(task_history_event_list)
+                df = pandas.DataFrame(columns=columns)
+
+            self.print_csv(df)
         else:
-            logger.warning("タスク履歴イベント一覧の件数が0件であるため、出力しません。")
+            self.print_according_to_format(task_history_event_list)
 
     def main(self) -> None:
         args = self.args
