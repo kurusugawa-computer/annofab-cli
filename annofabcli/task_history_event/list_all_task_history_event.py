@@ -81,7 +81,7 @@ class ListTaskHistoryEventWithJson(CommandLine):
         main_obj = ListTaskHistoryEventWithJsonMain(self.service)
         task_history_event_list = main_obj.get_task_history_event_list(project_id, task_history_event_json=task_history_event_json, task_id_list=task_id_list)
 
-        logger.debug(f"タスク履歴イベント一覧の件数: {len(task_history_event_list)}")
+        logger.debug(f"{len(task_history_event_list)} 件のタスク履歴イベントの情報を出力します。")
 
         if arg_format == FormatArgument.CSV:
             columns = [

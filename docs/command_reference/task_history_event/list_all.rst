@@ -46,7 +46,10 @@ CSV出力
 
     $ annofabcli task_history_event list_all --project_id prj1 --format csv --output out.csv
 
-`out.csv <https://github.com/kurusugawa-computer/annofab-cli/blob/main/docs/command_reference/task_history_event/list_all/out.csv>`_
+.. csv-table:: out.csv
+    :header-rows: 1
+    :file: list_all/out.csv
+
 
 
 JSON出力
@@ -72,32 +75,14 @@ JSON出力
         "status": "working",
         "account_id": "user1",
         "request": {
-        "status": "working",
-        "account_id": "user1",
-        "last_updated_datetime": "2021-05-20T13:37:28.179+09:00",
-        "force": false
+            "status": "working",
+            "account_id": "user1",
+            "last_updated_datetime": "2021-05-20T13:37:28.179+09:00",
+            "force": false
         },
         "user_id": "user1",
         "username": "user1"
     },
-    {
-        "project_id": "prj1",
-        "task_id": "task1",
-        "task_history_id": "c22ec069-a6a9-42f9-8438-53bd6145b91f",
-        "created_datetime": "2021-05-20T14:16:23.534+09:00",
-        "phase": "annotation",
-        "phase_stage": 1,
-        "status": "on_hold",
-        "account_id": "user1",
-        "request": {
-        "status": "on_hold",
-        "account_id": "user1",
-        "last_updated_datetime": "2021-05-20T13:37:52.296+09:00",
-        "force": false
-        },
-        "user_id": "user1",
-        "username": "user1"
-    }
     ]
 
 
@@ -112,8 +97,4 @@ Usage Details
    :nosubcommands:
    :nodefaultconst:
 
-
-See also
-=================================
-* `annofabcli task_history_event list_all <../task_history_event/list_all.html>`_
 
