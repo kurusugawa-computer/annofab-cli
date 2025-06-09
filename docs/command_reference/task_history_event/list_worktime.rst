@@ -87,7 +87,10 @@ CSV出力
 
     $ annofabcli task_history_event list_worktime --project_id prj1 --output out.csv
 
-`out.csv <https://github.com/kurusugawa-computer/annofab-cli/blob/main/docs/command_reference/task_history_event/list_worktime/out.csv>`_
+
+.. csv-table:: out.csv 
+    :header-rows: 1
+    :file: list_worktime/out.csv
 
 
 
