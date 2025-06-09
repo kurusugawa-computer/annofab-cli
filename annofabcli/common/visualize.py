@@ -375,13 +375,10 @@ class AddProps:
 
         * user_id
         * username
-
-        Args:
-            task:
-
-        Returns:
-            Task情報
+        * request.user_id
+        * request.username
 
         """
         self._add_user_info(task_history_event)
+        self._add_user_info(task_history_event["request"])
         return task_history_event

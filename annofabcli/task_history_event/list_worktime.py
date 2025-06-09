@@ -37,6 +37,20 @@ class SimpleTaskHistoryEvent(DataClassJsonMixin):
 
 
 @dataclass
+class RequestOfTaskHistoryEvent(DataClassJsonMixin):
+    """operateTask APIによってタスク履歴イベントが生成されたときのリクエストボディ
+
+    ただし、CLIユーザーにとって不要な情報は除いています。
+    """
+
+    status: str
+    force: bool
+    account_id: Optional[str]
+    user_id: Optional[str]
+    username: Optional[str]
+
+
+@dataclass
 class WorktimeFromTaskHistoryEvent(DataClassJsonMixin):
     project_id: str
     task_id: str
@@ -48,6 +62,8 @@ class WorktimeFromTaskHistoryEvent(DataClassJsonMixin):
     worktime_hour: float
     start_event: SimpleTaskHistoryEvent
     end_event: SimpleTaskHistoryEvent
+    end_event_request: RequestOfTaskHistoryEvent
+    """operateTask APIによってタスク履歴イベントが生成されたときのリクエストボディ"""
 
 
 class ListWorktimeFromTaskHistoryEventMain:
@@ -123,6 +139,15 @@ class ListWorktimeFromTaskHistoryEventMain:
             user_id = None
             username = None
 
+        end_event_request_account_id = end_event["request"]["account_id"]
+        end_event_request_member = self.visualize.get_project_member_from_account_id(end_event_request_account_id)
+        if end_event_request_member is not None:
+            end_event_request_user_id = end_event_request_member["user_id"]
+            end_event_request_username = end_event_request_member["username"]
+        else:
+            end_event_request_user_id = None
+            end_event_request_username = None
+
         return WorktimeFromTaskHistoryEvent(
             # start_eventとend_eventの以下の属性は同じなので、start_eventの値を参照する
             project_id=start_event["project_id"],
@@ -143,9 +168,16 @@ class ListWorktimeFromTaskHistoryEventMain:
                 created_datetime=end_event["created_datetime"],
                 status=end_event["status"],
             ),
+            end_event_request=RequestOfTaskHistoryEvent(
+                status=end_event["request"]["status"],
+                force=end_event["request"]["force"],
+                account_id=end_event["request"]["account_id"],
+                user_id=end_event_request_user_id,
+                username=end_event_request_username,
+            ),
         )
 
-    def _create_worktime_list(self, task_history_event_list: list[TaskHistoryEvent]) -> list[WorktimeFromTaskHistoryEvent]:
+    def _create_worktime_list(self, task_id: str, task_history_event_list: list[TaskHistoryEvent]) -> list[WorktimeFromTaskHistoryEvent]:
         """タスク履歴イベントから、作業時間のリストを生成する。
 
         Args:
@@ -174,7 +206,12 @@ class ListWorktimeFromTaskHistoryEventMain:
                 TaskStatus.ON_HOLD.value,
                 TaskStatus.COMPLETE.value,
             }:
-                logger.warning(f"作業中状態のタスク履歴イベントに対応するタスク履歴イベントが存在しませんでした。:: start_event={start_event}, next_event={next_event}")
+                logger.warning(
+                    f"task_id='{task_id}' :: 作業開始のイベント（task_history_id='{event['task_history_id']}'）の次のイベント（task_history_id='{next_event['task_history_id']}'）は、"
+                    f"作業終了のイベントではないため、作業時間を算出できません。スキップします。"
+                    f"タスク履歴イベントが不整合な状態なので、Annofabチームに問い合わせてください。 :: "
+                    f"start_event='{start_event}', next_event='{next_event}'"
+                )
                 i += 1
                 continue
 
@@ -204,8 +241,8 @@ class ListWorktimeFromTaskHistoryEventMain:
         task_history_event_dict = self._create_task_history_event_dict(all_task_history_event_list, task_ids=task_id_set, account_ids=account_id_set)
 
         worktime_list = []
-        for subset_event_list in task_history_event_dict.values():
-            subset_worktime_list = self._create_worktime_list(subset_event_list)
+        for task_id, subset_event_list in task_history_event_dict.items():
+            subset_worktime_list = self._create_worktime_list(task_id, subset_event_list)
             worktime_list.extend(subset_worktime_list)
         return worktime_list
 
@@ -230,16 +267,38 @@ class ListWorktimeFromTaskHistoryEvent(CommandLine):
         )
 
         logger.debug(f"作業時間一覧の件数: {len(worktime_list)}")
+        dict_worktime_list = [e.to_dict() for e in worktime_list]
 
-        if len(worktime_list) > 0:
-            dict_worktime_list = [e.to_dict() for e in worktime_list]
-            if arg_format == FormatArgument.CSV:
-                df = pandas.json_normalize(dict_worktime_list)
-                self.print_csv(df)
+        if arg_format == FormatArgument.CSV:
+            columns = [
+                "project_id",
+                "task_id",
+                "phase",
+                "phase_stage",
+                "account_id",
+                "user_id",
+                "username",
+                "worktime_hour",
+                "start_event.task_history_id",
+                "start_event.created_datetime",
+                "start_event.status",
+                "end_event.task_history_id",
+                "end_event.created_datetime",
+                "end_event.status",
+                "end_event_request.status",
+                "end_event_request.force",
+                "end_event_request.account_id",
+                "end_event_request.user_id",
+                "end_event_request.username",
+            ]
+
+            if len(dict_worktime_list) > 0:
+                df = pandas.json_normalize(dict_worktime_list)[columns]
             else:
-                self.print_according_to_format(dict_worktime_list)
+                df = pandas.DataFrame(columns=columns)
+            self.print_csv(df)
         else:
-            logger.warning("作業時間一覧の件数が0件であるため、出力しません。")
+            self.print_according_to_format(dict_worktime_list)
 
     def main(self) -> None:
         args = self.args
