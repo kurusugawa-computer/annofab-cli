@@ -8,6 +8,8 @@ Description
 タスク履歴イベント全件ファイルから、日ごとユーザごとの作業時間の一覧を出力します。
 
 
+タスクごとの作業時間を確認する場合は、 `annofabcli task_history_event list_worktime <../task_history_event/list_worktime.html>`_ を参照してください。
+
 
 Examples
 =================================
