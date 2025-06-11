@@ -25,7 +25,7 @@ Examples
 
 
 出力先ディレクトリの構成は以下の通りです。
-``{input_data_id}.json`` のフォーマットは、https://annofab.com/docs/api/#operation/getEditorAnnotation APIのレスポンス ``AnnotationV1`` と同じです。
+``{input_data_id}.json`` のフォーマットは、https://annofab.com/docs/api/#operation/getEditorAnnotation APIのレスポンス ``AnnotationV2Output`` と同じです。
 
 .. code-block::
 
