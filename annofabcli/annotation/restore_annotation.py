@@ -74,10 +74,17 @@ class RestoreAnnotationMain(CommandLineWithConfirm):
 
         return detail
 
-    def parser_to_request_body(self, parser: SimpleAnnotationParser) -> dict[str, Any]:
+    def editor_annotation_to_request_body_v1(self, editor_annotation: dict[str, Any], parser: SimpleAnnotationParser) -> dict[str, Any]:
+        """
+        `get_editor_annotation`で取得したアノテーション(v1)を、`put_annotation` APIに渡すリクエストボディ(v1)に変換する。
+
+        Args:
+            editor_annotation: `get_editor_annotation`で取得したアノテーション(v1)
+            parser: SimpleAnnotationParserインスタンス。アノテーションのファイルを開くために利用する。
+        """
         # infer_missing=Trueを指定する理由：Optional型のキーが存在しない場合でも、AnnotationV1データクラスのインスタンスを生成できるようにするため
         # https://qiita.com/yuji38kwmt/items/c5b56f70da3b8a70ba31
-        annotation: AnnotationV1 = AnnotationV1.from_dict(parser.load_json(), infer_missing=True)
+        annotation: AnnotationV1 = AnnotationV1.from_dict(editor_annotation, infer_missing=True)
         request_details: list[dict[str, Any]] = []
         for detail in annotation.details:
             request_detail = self._to_annotation_detail_for_request(parser, detail)
@@ -94,15 +101,48 @@ class RestoreAnnotationMain(CommandLineWithConfirm):
 
         return request_body
 
+    def editor_annotation_to_request_body_v2(self, editor_annotation: dict[str, Any], parser: SimpleAnnotationParser) -> dict[str, Any]:
+        """
+        `get_editor_annotation`で取得したアノテーション(v2)を、`put_annotation` APIに渡すリクエストボディ(v2)に変換する。
+
+        Args:
+            editor_annotation: `get_editor_annotation`で取得したアノテーション(v2)
+            parser: SimpleAnnotationParserインスタンス。アノテーションのファイルを開くために利用する。
+        """
+        request_details: list[dict[str, Any]] = []
+        for detail in editor_annotation["details"]:
+            new_detail = copy.deepcopy(detail)
+            new_detail["_type"] = "Import"
+            annotation_id = detail["annotation_id"]
+            detail_body_type = detail["body"]["_type"]
+            if detail_body_type == "Outer":
+                with parser.open_outer_file(annotation_id) as f:
+                    # TODO content typeを確認
+                    s3_path = self.service.wrapper.upload_data_to_s3(self.project_id, f, content_type="application/octet-stream")
+                    new_detail["body"] = {"path": s3_path, "_type": "Outer"}
+                    request_details.append(new_detail)
+            elif detail_body_type == "Inner":
+                request_details.append(new_detail)
+            else:
+                raise ValueError(f"detail_body_type がサポート対象外です。:: detail={detail}")
+
+        request_body = {"project_id": self.project_id, "task_id": parser.task_id, "input_data_id": parser.input_data_id, "details": request_details, "format_version": "2.0.0"}
+
+        return request_body
+
     def put_annotation_for_input_data(self, parser: SimpleAnnotationParser) -> bool:
         task_id = parser.task_id
         input_data_id = parser.input_data_id
 
-        old_annotation, _ = self.service.api.get_editor_annotation(self.project_id, task_id, input_data_id)
-
         logger.info(f"task_id='{task_id}', input_data_id='{input_data_id}' :: アノテーションをリストアします。")
-        request_body = self.parser_to_request_body(parser)
 
+        editor_annotation = parser.load_json()
+        if editor_annotation.get("format_version") == "2.0.0":
+            request_body = self.editor_annotation_to_request_body_v2(editor_annotation, parser)
+        else:
+            request_body = self.editor_annotation_to_request_body_v1(editor_annotation, parser)
+
+        old_annotation, _ = self.service.api.get_editor_annotation(self.project_id, task_id, input_data_id)
         updated_datetime = old_annotation["updated_datetime"] if old_annotation is not None else None
         request_body["updated_datetime"] = updated_datetime
         self.service.api.put_annotation(self.project_id, task_id, input_data_id, request_body=request_body)
