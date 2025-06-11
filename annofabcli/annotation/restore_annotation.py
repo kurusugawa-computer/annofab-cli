@@ -142,7 +142,7 @@ class RestoreAnnotationMain(CommandLineWithConfirm):
         else:
             request_body = self.editor_annotation_to_request_body_v1(editor_annotation, parser)
 
-        old_annotation, _ = self.service.api.get_editor_annotation(self.project_id, task_id, input_data_id)
+        old_annotation, _ = self.service.api.get_editor_annotation(self.project_id, task_id, input_data_id, query_params={"v": "2"})
         updated_datetime = old_annotation["updated_datetime"] if old_annotation is not None else None
         request_body["updated_datetime"] = updated_datetime
         self.service.api.put_annotation(self.project_id, task_id, input_data_id, request_body=request_body)

@@ -296,8 +296,7 @@ class DeleteAnnotationMain(CommandLineWithConfirm):
             deleted_task_count += 1
             for input_data_id, annotation_ids in sub_grouped.items():
                 # 指定input_data_idの全annotationを取得
-                # TODO どこかのタイミングで、"v=2"のアノテーションを取得するようにする
-                editor_annotation = self.service.wrapper.get_editor_annotation_or_none(self.project_id, task_id=task_id, input_data_id=input_data_id, query_params={"v": "1"})
+                editor_annotation = self.service.wrapper.get_editor_annotation_or_none(self.project_id, task_id=task_id, input_data_id=input_data_id, query_params={"v": "2"})
                 if editor_annotation is None:
                     logger.warning(
                         f"task_id='{task_id}'のタスクに、input_data_id='{input_data_id}'の入力データが含まれていません。 アノテーションの削除をスキップします。 :: annotation_ids={annotation_ids}"

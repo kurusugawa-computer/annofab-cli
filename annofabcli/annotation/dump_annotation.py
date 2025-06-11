@@ -64,7 +64,7 @@ class DumpAnnotationMain:
                 self.service.wrapper.download(detail["url"], outer_file_path)
 
     def dump_annotation_for_input_data(self, task_id: str, input_data_id: str, task_dir: Path) -> None:
-        editor_annotation, _ = self.service.api.get_editor_annotation(self.project_id, task_id, input_data_id)
+        editor_annotation, _ = self.service.api.get_editor_annotation(self.project_id, task_id, input_data_id, query_params={"v": "2"})
         json_path = task_dir / f"{input_data_id}.json"
         self.dump_editor_annotation(editor_annotation=editor_annotation, json_path=json_path)
 
