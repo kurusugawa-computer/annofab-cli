@@ -1,6 +1,15 @@
 from __future__ import annotations
-
+from annofabcli.common.cli import (
+    COMMAND_LINE_ERROR_STATUS_CODE,
+    PARALLELISM_CHOICES,
+    ArgumentParser,
+    CommandLine,
+    CommandLineWithConfirm,
+    build_annofabapi_resource_and_login,
+    get_json_from_args,
+)
 import argparse
+import json
 import logging
 import sys
 from collections import defaultdict
@@ -76,8 +85,6 @@ class ChangeAnnotationAttributesPerAnnotationMain(CommandLineWithConfirm):
             input_data_id: 入力データID
             additional_data_list: 変更後の属性値(`AdditionalDataListV2`スキーマ)
 
-        Returns:
-            変更後のアノテーション一覧
         """
         editor_annotation, _ = self.service.api.get_editor_annotation(self.project_id, task_id=task_id, input_data_id=input_data_id, query_params={"v": "2"})
 
@@ -85,7 +92,7 @@ class ChangeAnnotationAttributesPerAnnotationMain(CommandLineWithConfirm):
             (self.backup_dir / task_id).mkdir(exist_ok=True, parents=True)
             self.dump_annotation_obj.dump_editor_annotation(editor_annotation, json_path=self.backup_dir / task_id / f"{input_data_id}.json")
 
-        details_map = {anno["detail"]["annotation_id"]: anno for anno in editor_annotation["details"]}
+        details_map = {detail["annotation_id"]: detail for detail in editor_annotation["details"]}
 
         def _to_request_body_elm(anno: TargetAnnotation) -> dict[str, Any]:
             additional_data_list = convert_attributes_from_cli_to_additional_data_list_v2(anno.attributes, annotation_specs=self.annotation_specs)
@@ -96,16 +103,13 @@ class ChangeAnnotationAttributesPerAnnotationMain(CommandLineWithConfirm):
                     "input_data_id": editor_annotation["input_data_id"],
                     "updated_datetime": editor_annotation["updated_datetime"],
                     "annotation_id": anno.annotation_id,
-                    "label_id": details_map[anno.annotation_id],
+                    "label_id": details_map[anno.annotation_id]["label_id"],
                     "additional_data_list": additional_data_list,
                 },
                 "_type": "PutV2",
             }
 
         request_body = [_to_request_body_elm(annotation) for annotation in anno_list]
-
-        if not self.confirm_processing(f"task_id='{task_id}', input_data_id='{input_data_id}'のフレームに含まれるアノテーション{len(request_body)}件の属性値を変更しますか？"):
-            return False
 
         self.service.api.batch_update_annotations(self.project_id, request_body=request_body)
         logger.debug(f"task_id='{task_id}', input_data_id='{input_data_id}' :: {len(request_body)}件の属性値を変更しました。")
@@ -148,6 +152,9 @@ class ChangeAnnotationAttributesPerAnnotationMain(CommandLineWithConfirm):
                     failed_to_change_annotation_count += annotation_count
                     continue
 
+            if not self.confirm_processing(f"task_id='{task_id}'に含まれるアノテーション{annotation_count}件の属性値を変更しますか？"):
+                return
+
             changed_task_count += 1
             for input_data_id, sub_anno_list in input_data_dict.items():
                 try:
@@ -158,10 +165,12 @@ class ChangeAnnotationAttributesPerAnnotationMain(CommandLineWithConfirm):
                         failed_to_change_annotation_count += len(sub_anno_list)
                 except Exception:
                     logger.warning(f"task_id='{task_id}', input_data_id='{input_data_id}' :: アノテーションの属性値変更に失敗しました。", exc_info=True)
+                    failed_to_change_annotation_count += len(sub_anno_list)
                     continue
 
         logger.info(
-            f"{changed_task_count}/{total_task_count} 件のタスクに含まれている {changed_annotation_count}/{total_annotation_count} 件のアノテーションを変更しました。"
+            f"{changed_annotation_count}/{total_annotation_count} 件のアノテーションの属性値を変更しました。 :: "
+            f"アノテーションが変更されたタスク数は {changed_task_count}/{total_task_count} 件、フレーム数は {changed_frame_count} 件です。"
             f"{failed_to_change_annotation_count} 件のアノテーションは変更できませんでした。"
         )
 
@@ -185,10 +194,21 @@ class ChangeAttributesPerAnnotation(CommandLine):
 
         project_id = args.project_id
 
+        if args.backup is None:
+            print(  # noqa: T201
+                "間違えてアノテーションを変更してしまっときに復元できるようにするため、'--backup'でバックアップ用のディレクトリを指定することを推奨します。",
+                file=sys.stderr,
+            )
+            if not self.confirm_processing("復元用のバックアップディレクトリが指定されていません。処理を続行しますか？"):
+                sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
+            backup_dir = None
+        else:
+            backup_dir = Path(args.backup)
+
         # プロジェクト権限チェック
         super().validate_project(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.ACCEPTER])
 
-        main_obj = ChangeAnnotationAttributesPerAnnotationMain(self.service, project_id=project_id, all_yes=args.yes, is_force=args.force, backup_dir=args.backup)
+        main_obj = ChangeAnnotationAttributesPerAnnotationMain(self.service, project_id=project_id, all_yes=args.yes, is_force=args.force, backup_dir=backup_dir)
         main_obj.change_annotation_attributes(target_annotation_list)
 
 
@@ -201,11 +221,14 @@ def main(args: argparse.Namespace) -> None:
 def parse_args(parser: argparse.ArgumentParser) -> None:
     argument_parser = ArgumentParser(parser)
     argument_parser.add_project_id()
+
+    sample_json_obj = [{"task_id": "t1", "input_data_id": "i1", "annotation_id": "a1", "attributes": {"occluded": True}}]
     parser.add_argument(
         "--json",
         type=str,
         required=True,
-        help="各アノテーションごとに変更内容を記載したJSONリストを指定します。file:// でファイル指定も可。",
+        help="各アノテーションごとに変更内容を記載したJSONリストを指定します。 ``file://`` を先頭に付けるとJSON形式のファイルを指定できます。\n"
+        f"(例) '{json.dumps(sample_json_obj, ensure_ascii=False)}'",
     )
 
     parser.add_argument(
@@ -216,9 +239,16 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
 
     parser.add_argument(
         "--backup",
-        type=str,
+        type=Path,
         required=False,
-        help="アノテーションのバックアップを保存するディレクトリを指定してください。アノテーションの復元は ``annotation restore`` コマンドで実現できます。",
+        help="アノテーションのバックアップを保存するディレクトリのパス。アノテーションの復元は ``annotation restore`` コマンドで実現できます。",
+    )
+
+    parser.add_argument(
+        "--parallelism",
+        type=int,
+        choices=PARALLELISM_CHOICES,
+        help="並列度。指定しない場合は、逐次的に処理します。指定した場合は、``--yes`` も指定してください。",
     )
 
     parser.set_defaults(subcommand_func=main)
