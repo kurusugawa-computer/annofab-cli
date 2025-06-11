@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any, Optional, Union
 
 import annofabapi
+import pandas
 from annofabapi.models import ProjectMemberRole
 from annofabapi.pydantic_models.task_status import TaskStatus
 from pydantic import BaseModel
@@ -205,12 +206,23 @@ class ChangeAttributesPerAnnotation(CommandLine):
     def main(self) -> None:
         args = self.args
 
-        annotation_items = get_json_from_args(args.json)
-        if not isinstance(annotation_items, list):
-            print(f"{self.COMMON_MESSAGE} argument --json: JSON形式が不正です。オブジェクトの配列を指定してください。", file=sys.stderr)  # noqa: T201
-            sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
+        if args.json is not None:
+            annotation_items = get_json_from_args(args.json)
+            if not isinstance(annotation_items, list):
+                print(f"{self.COMMON_MESSAGE} argument --json: JSON形式が不正です。オブジェクトの配列を指定してください。", file=sys.stderr)  # noqa: T201
+                sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
-        target_annotation_list = [TargetAnnotation.model_validate(anno) for anno in annotation_items]
+            target_annotation_list = [TargetAnnotation.model_validate(anno) for anno in annotation_items]
+
+        elif args.csv is not None:
+            df_input = pandas.read_csv(args.csv)
+            target_annotation_list = [
+                TargetAnnotation(task_id=e["task_id"], input_data_id=e["input_data_id"], annotation_id=e["annotation_id"], attributes=json.loads(e["attributes"]))
+                for e in df_input.to_dict(orient="records")
+            ]
+        else:
+            print(f"{self.COMMON_MESSAGE} argument '--json' または '--csv' のいずれかを指定してください。", file=sys.stderr)  # noqa: T201
+            sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
         project_id = args.project_id
 
@@ -243,12 +255,19 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     argument_parser.add_project_id()
 
     sample_json_obj = [{"task_id": "t1", "input_data_id": "i1", "annotation_id": "a1", "attributes": {"occluded": True}}]
-    parser.add_argument(
+    input_group = parser.add_mutually_exclusive_group(required=True)
+    input_group.add_argument(
         "--json",
         type=str,
-        required=True,
         help="各アノテーションごとに変更内容を記載したJSONリストを指定します。 ``file://`` を先頭に付けるとJSON形式のファイルを指定できます。\n"
         f"(例) '{json.dumps(sample_json_obj, ensure_ascii=False)}'",
+    )
+    input_group.add_argument(
+        "--csv",
+        type=str,
+        help="各アノテーションごとに変更内容を記載したCSVファイルを指定します。 \n"
+        "* `task_id`, `input_data_id`, `annotation_id`, `attributes` の4つのカラムが必要です。\n"
+        f"`attributes` カラムには、属性名と値を '{json.dumps({'occluded': True})}' のようにJSON形式で指定します。\n",
     )
 
     parser.add_argument(
