@@ -14,4 +14,6 @@
 * Annofab Web API へのアクセスは、[annofabapi](https://github.com/kurusugawa-computer/annofab-api-python-client)を使ってください。
 * ユーザーにyes/noを問い合わせる場合は、`annofabcli.common.cli.CommandLineWithConfirm`を継承して、`confirm_processing`メソッドを使ってください。
 * `typing.Dict`や`typing.List`など、Python3.9で非推奨になったクラスは使わないでください。
+* 原則、`import`文はファイルの先頭に記述してください。関数の内部でimportしないでください。
+
 

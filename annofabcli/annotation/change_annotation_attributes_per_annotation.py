@@ -1,13 +1,5 @@
 from __future__ import annotations
-from annofabcli.common.cli import (
-    COMMAND_LINE_ERROR_STATUS_CODE,
-    PARALLELISM_CHOICES,
-    ArgumentParser,
-    CommandLine,
-    CommandLineWithConfirm,
-    build_annofabapi_resource_and_login,
-    get_json_from_args,
-)
+
 import argparse
 import json
 import logging
@@ -24,7 +16,14 @@ from pydantic import BaseModel
 import annofabcli
 from annofabcli.annotation.annotation_query import convert_attributes_from_cli_to_additional_data_list_v2
 from annofabcli.annotation.dump_annotation import DumpAnnotationMain
-from annofabcli.common.cli import COMMAND_LINE_ERROR_STATUS_CODE, ArgumentParser, CommandLine, CommandLineWithConfirm, build_annofabapi_resource_and_login, get_json_from_args
+from annofabcli.common.cli import (
+    COMMAND_LINE_ERROR_STATUS_CODE,
+    ArgumentParser,
+    CommandLine,
+    CommandLineWithConfirm,
+    build_annofabapi_resource_and_login,
+    get_json_from_args,
+)
 from annofabcli.common.facade import AnnofabApiFacade
 
 logger = logging.getLogger(__name__)
@@ -115,6 +114,61 @@ class ChangeAnnotationAttributesPerAnnotationMain(CommandLineWithConfirm):
         logger.debug(f"task_id='{task_id}', input_data_id='{input_data_id}' :: {len(request_body)}件の属性値を変更しました。")
         return True
 
+    def change_annotation_attributes_for_task(self, task_id: str, annotation_list_per_input_data_id: dict[str, list[TargetAnnotation]]) -> tuple[bool, int, int]:
+        """
+        1個のタスクに含まれるアノテーションの属性値を変更する。
+
+        Args:
+            task_id: タスクID
+            annotation_list_per_input_data_id: 入力データIDごとのアノテーションリスト
+
+        Returns:
+            tuple:
+                [0]: 属性値の変更可能なタスクかどうか
+                [1]: 属性値の変更に成功したアノテーション数
+                [2]: 属性値を変更できなかったアノテーション数
+
+        """
+        annotation_count = sum(len(v) for v in annotation_list_per_input_data_id.values())
+        task = self.service.wrapper.get_task_or_none(self.project_id, task_id)
+
+        succeed_to_change_annotation_count = 0
+        failed_to_change_annotation_count = 0
+
+        if task is None:
+            logger.warning(f"task_id='{task_id}' :: タスクが存在しないため、{annotation_count} 件のアノテーションの属性値の変更をスキップします。")
+            return False, 0, annotation_count
+
+        if task["status"] == TaskStatus.WORKING.value:
+            logger.info(f"task_id='{task_id}' :: タスクが作業中状態のため、{annotation_count} 件のアノテーションの属性値の変更をスキップします。")
+            failed_to_change_annotation_count += annotation_count
+            return False, 0, annotation_count
+
+        if not self.is_force:  # noqa: SIM102
+            if task["status"] == TaskStatus.COMPLETE.value:
+                logger.info(
+                    f"task_id='{task_id}' :: タスクが完了状態のため、アノテーション {annotation_count} 件のアノテーションの属性値の変更をスキップします。"
+                    f"完了状態のタスクのアノテーションを削除するには、`--force`オプションを指定してください。"
+                )
+                failed_to_change_annotation_count += annotation_count
+                return False, 0, annotation_count
+
+        if not self.confirm_processing(f"task_id='{task_id}'に含まれるアノテーション{annotation_count}件の属性値を変更しますか？"):
+            return False, 0, annotation_count
+
+        for input_data_id, sub_anno_list in annotation_list_per_input_data_id.items():
+            try:
+                if self.change_annotation_attributes_by_frame(task_id, input_data_id, sub_anno_list):
+                    succeed_to_change_annotation_count += len(sub_anno_list)
+                else:
+                    failed_to_change_annotation_count += len(sub_anno_list)
+            except Exception:
+                logger.warning(f"task_id='{task_id}', input_data_id='{input_data_id}' :: アノテーションの属性値変更に失敗しました。", exc_info=True)
+                failed_to_change_annotation_count += len(sub_anno_list)
+                continue
+
+        return True, succeed_to_change_annotation_count, failed_to_change_annotation_count
+
     def change_annotation_attributes(self, anno_list: list[TargetAnnotation]) -> None:
         """
         アノテーションごとに属性値を変更する。
@@ -122,8 +176,6 @@ class ChangeAnnotationAttributesPerAnnotationMain(CommandLineWithConfirm):
         Args:
             anno_list: 各アノテーションの変更内容リスト
         """
-        changed_frame_count = 0
-        changed_annotation_count = 0
         changed_task_count = 0
         failed_to_change_annotation_count = 0
         annotation_list_per_task_id_input_data_id = get_annotation_list_per_task_id_input_data_id(anno_list)
@@ -132,45 +184,13 @@ class ChangeAnnotationAttributesPerAnnotationMain(CommandLineWithConfirm):
         total_annotation_count = len(anno_list)
 
         for task_id, input_data_dict in annotation_list_per_task_id_input_data_id.items():
-            annotation_count = sum(len(v) for v in input_data_dict.values())
-            task = self.service.wrapper.get_task_or_none(self.project_id, task_id)
-            if task is None:
-                logger.warning(f"task_id='{task_id}' :: タスクが存在しないため、{annotation_count} 件のアノテーションの属性値の変更をスキップします。")
-                continue
-
-            if task["status"] == TaskStatus.WORKING.value:
-                logger.info(f"task_id='{task_id}' :: タスクが作業中状態のため、{annotation_count} 件のアノテーションの属性値の変更をスキップします。")
-                failed_to_change_annotation_count += annotation_count
-                continue
-
-            if not self.is_force:  # noqa: SIM102
-                if task["status"] == TaskStatus.COMPLETE.value:
-                    logger.info(
-                        f"task_id='{task_id}' :: タスクが完了状態のため、アノテーション {annotation_count} 件のアノテーションの属性値の変更をスキップします。"
-                        f"完了状態のタスクのアノテーションを削除するには、`--force`オプションを指定してください。"
-                    )
-                    failed_to_change_annotation_count += annotation_count
-                    continue
-
-            if not self.confirm_processing(f"task_id='{task_id}'に含まれるアノテーション{annotation_count}件の属性値を変更しますか？"):
-                return
-
-            changed_task_count += 1
-            for input_data_id, sub_anno_list in input_data_dict.items():
-                try:
-                    if self.change_annotation_attributes_by_frame(task_id, input_data_id, sub_anno_list):
-                        changed_frame_count += 1
-                        changed_annotation_count += len(sub_anno_list)
-                    else:
-                        failed_to_change_annotation_count += len(sub_anno_list)
-                except Exception:
-                    logger.warning(f"task_id='{task_id}', input_data_id='{input_data_id}' :: アノテーションの属性値変更に失敗しました。", exc_info=True)
-                    failed_to_change_annotation_count += len(sub_anno_list)
-                    continue
+            is_changeable_task, succeed_to_change_annotation_count, failed_to_change_annotation_count = self.change_annotation_attributes_for_task(task_id, input_data_dict)
+            if is_changeable_task:
+                changed_task_count += 1
 
         logger.info(
-            f"{changed_annotation_count}/{total_annotation_count} 件のアノテーションの属性値を変更しました。 :: "
-            f"アノテーションが変更されたタスク数は {changed_task_count}/{total_task_count} 件、フレーム数は {changed_frame_count} 件です。"
+            f"{succeed_to_change_annotation_count}/{total_annotation_count} 件のアノテーションの属性値を変更しました。 :: "
+            f"アノテーションが変更されたタスク数は {changed_task_count}/{total_task_count} 件です。"
             f"{failed_to_change_annotation_count} 件のアノテーションは変更できませんでした。"
         )
 
@@ -242,13 +262,6 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         type=Path,
         required=False,
         help="アノテーションのバックアップを保存するディレクトリのパス。アノテーションの復元は ``annotation restore`` コマンドで実現できます。",
-    )
-
-    parser.add_argument(
-        "--parallelism",
-        type=int,
-        choices=PARALLELISM_CHOICES,
-        help="並列度。指定しない場合は、逐次的に処理します。指定した場合は、``--yes`` も指定してください。",
     )
 
     parser.set_defaults(subcommand_func=main)
