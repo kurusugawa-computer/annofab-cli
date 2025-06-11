@@ -67,7 +67,7 @@ class PutCommentMain(CommandLineWithConfirm):
         """batch_update_comments に渡すリクエストボディを作成する。"""
 
         def _create_dict_annotation_id() -> dict[str, str]:
-            content, _ = self.service.api.get_editor_annotation(self.project_id, task["task_id"], input_data_id)
+            content, _ = self.service.api.get_editor_annotation(self.project_id, task["task_id"], input_data_id, query_params={"v": "2"})
             details = content["details"]
             return {e["annotation_id"]: e["label_id"] for e in details}
 

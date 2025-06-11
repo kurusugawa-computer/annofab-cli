@@ -27,26 +27,44 @@ class DumpAnnotationMain:
     def dump_editor_annotation(self, editor_annotation: dict[str, Any], json_path: Path) -> None:
         """
         `getEditorAnnotation` APIのレスポンスをファイルに保存する。
+
+        Args:
+            editor_annotation: v1, v2 のどちらの形式でも対応。
         """
         json_path.write_text(json.dumps(editor_annotation, ensure_ascii=False), encoding="utf-8")
-
         details = editor_annotation["details"]
-        outer_details = [e for e in details if e["data_holding_type"] == AnnotationDataHoldingType.OUTER.value]
-        if len(outer_details) == 0:
-            return
 
-        input_data_id = editor_annotation["input_data_id"]
-        outer_dir = json_path.parent / input_data_id
-        outer_dir.mkdir(exist_ok=True, parents=True)
+        if editor_annotation.get("format_version") == "2.0.0":
+            outer_details = [e for e in details if e["body"]["_type"] == "Outer"]
+            if len(outer_details) == 0:
+                return
 
-        # 塗りつぶし画像など外部リソースに保存されているファイルをダウンロードする
-        for detail in outer_details:
-            annotation_id = detail["annotation_id"]
-            outer_file_path = outer_dir / f"{annotation_id}"
-            self.service.wrapper.download(detail["url"], outer_file_path)
+            input_data_id = editor_annotation["input_data_id"]
+            outer_dir = json_path.parent / input_data_id
+            outer_dir.mkdir(exist_ok=True, parents=True)
+            # 塗りつぶし画像など外部リソースに保存されているファイルをダウンロードする
+            for detail in outer_details:
+                annotation_id = detail["annotation_id"]
+                outer_file_path = outer_dir / f"{annotation_id}"
+                self.service.wrapper.download(detail["body"]["url"], outer_file_path)
+
+        else:
+            outer_details = [e for e in details if e["data_holding_type"] == AnnotationDataHoldingType.OUTER.value]
+            if len(outer_details) == 0:
+                return
+
+            input_data_id = editor_annotation["input_data_id"]
+            outer_dir = json_path.parent / input_data_id
+            outer_dir.mkdir(exist_ok=True, parents=True)
+
+            # 塗りつぶし画像など外部リソースに保存されているファイルをダウンロードする
+            for detail in outer_details:
+                annotation_id = detail["annotation_id"]
+                outer_file_path = outer_dir / f"{annotation_id}"
+                self.service.wrapper.download(detail["url"], outer_file_path)
 
     def dump_annotation_for_input_data(self, task_id: str, input_data_id: str, task_dir: Path) -> None:
-        editor_annotation, _ = self.service.api.get_editor_annotation(self.project_id, task_id, input_data_id)
+        editor_annotation, _ = self.service.api.get_editor_annotation(self.project_id, task_id, input_data_id, query_params={"v": "2"})
         json_path = task_dir / f"{input_data_id}.json"
         self.dump_editor_annotation(editor_annotation=editor_annotation, json_path=json_path)
 

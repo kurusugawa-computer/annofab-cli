@@ -105,6 +105,11 @@ def _get_additional_data_v2(additional_data: dict[str, Any], attribute_value: At
         return get_english_message(additional_data["name"])
 
     additional_data_definition_id = additional_data["additional_data_definition_id"]
+    if attribute_value is None:
+        return {
+            "definition_id": additional_data_definition_id,
+            "value": None,
+        }
 
     additional_data_type: str = additional_data["type"]
 
