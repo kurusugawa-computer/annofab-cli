@@ -15,5 +15,5 @@
 * ユーザーにyes/noを問い合わせる場合は、`annofabcli.common.cli.CommandLineWithConfirm`を継承して、`confirm_processing`メソッドを使ってください。
 * `typing.Dict`や`typing.List`など、Python3.9で非推奨になったクラスは使わないでください。
 * 原則、`import`文はファイルの先頭に記述してください。関数の内部でimportしないでください。
-
+* 新しくコマンドを作成したら、`docs/command_reference`配下にreStructuredTextでドキュメントを記載してください。
 
