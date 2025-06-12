@@ -30,7 +30,8 @@
 * ``created_datetime`` : タスクの作成日時
 * ``first_acceptance_reached_datetime`` : 初めて受入フェーズに到達した日時
 * ``first_acceptance_completed_datetime`` : 初めて受入フェーズで完了状態になった日時
-
+* ``completed_datetime`` : タスクが完了状態になった日時
+* ``operation_updated_datetime`` : タスクのステータスやフェーズ、担当者などが更新されたときの日時
 
 
 作業時間

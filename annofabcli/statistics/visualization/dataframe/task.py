@@ -137,6 +137,8 @@ class Task:
             # 受入フェーズの日時
             "first_acceptance_reached_datetime",
             "first_acceptance_completed_datetime",
+            "completed_datetime",
+            "operation_updated_datetime",
             # 作業時間に関する内容
             "worktime_hour",
             "annotation_worktime_hour",

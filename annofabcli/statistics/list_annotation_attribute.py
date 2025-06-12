@@ -65,6 +65,8 @@ class AnnotationAttribute(pydantic.BaseModel):
 
     input_data_id: str
     input_data_name: str
+    updated_datetime: Optional[str]
+    """アノテーションJSONに格納されているアノテーションの更新日時"""
     annotation_id: str
     label: str
     attributes: dict[str, Union[str, int, bool]]
@@ -98,6 +100,7 @@ def get_annotation_attribute_list_from_annotation_json(simple_annotation: dict[s
                 label=detail["label"],
                 annotation_id=detail["annotation_id"],
                 attributes=detail["attributes"],
+                updated_datetime=simple_annotation["updated_datetime"],
             )
         )
     return result
@@ -150,7 +153,7 @@ def print_annotation_attribute_list_as_csv(annotation_attribute_list: list, outp
         "task_phase_stage",
         "input_data_id",
         "input_data_name",
-        "annotation_id",
+        "updated_datetimeannotation_id",
         "label",
     ]
     attribute_columns = [col for col in df.columns if col.startswith("attributes.")]
