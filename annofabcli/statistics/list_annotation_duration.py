@@ -439,6 +439,7 @@ class AnnotationDurationCsvByLabel:
             "task_phase_stage",
             "input_data_id",
             "input_data_name",
+            "updated_datetime",
             "video_duration_second",
             "annotation_duration_second",
         ]
@@ -461,6 +462,7 @@ class AnnotationDurationCsvByLabel:
                 "task_phase_stage": c.task_phase_stage,
                 "video_duration_second": c.video_duration_second,
                 "annotation_duration_second": c.annotation_duration_second,
+                "updated_datetime": c.updated_datetime,
             }
             d.update(c.annotation_duration_second_by_label)
             return d

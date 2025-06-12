@@ -358,6 +358,7 @@ class AnnotationCountCsvByAttribute:
             ("input_data_id", "", ""),
             ("input_data_name", "", ""),
             ("frame_no", "", ""),
+            ("updated_datetime", "", ""),
         ]
         value_columns = self._value_columns(annotation_count_list, prior_attribute_columns=prior_attribute_columns)
         return basic_columns + value_columns
