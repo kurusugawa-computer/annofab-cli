@@ -153,7 +153,8 @@ def print_annotation_attribute_list_as_csv(annotation_attribute_list: list, outp
         "task_phase_stage",
         "input_data_id",
         "input_data_name",
-        "updated_datetimeannotation_id",
+        "updated_datetime",
+        "annotation_id",
         "label",
     ]
     attribute_columns = [col for col in df.columns if col.startswith("attributes.")]

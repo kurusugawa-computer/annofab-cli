@@ -116,6 +116,10 @@ class AnnotationDuration(DataClassJsonMixin):
 
     input_data_id: str
     input_data_name: str
+
+    updated_datetime: Optional[str]
+    """アノテーションJSONに格納されているアノテーションの更新日時"""
+
     video_duration_second: Optional[float]
     """動画の長さ[秒]"""
 
@@ -242,6 +246,7 @@ class ListAnnotationDurationByInputData:
             task_status=TaskStatus(simple_annotation["task_status"]),
             input_data_id=simple_annotation["input_data_id"],
             input_data_name=simple_annotation["input_data_name"],
+            updated_datetime=simple_annotation["updated_datetime"],
             video_duration_second=video_duration_second,
             annotation_duration_second=sum(annotation_duration_by_label.values()),
             annotation_duration_second_by_label=annotation_duration_by_label,

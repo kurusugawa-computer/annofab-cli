@@ -71,6 +71,7 @@ def test_convert_annotation_count_list_by_input_data_to_by_task():
             task_phase_stage=1,
             input_data_id="input1",
             input_data_name="input1",
+            updated_datetime="2023-10-01T00:00:00Z",
             annotation_attribute_counts={
                 ("bird", "notes", "filled"): 1,
                 ("bird", "notes", "empty"): 1,
@@ -84,6 +85,7 @@ def test_convert_annotation_count_list_by_input_data_to_by_task():
             task_phase_stage=1,
             input_data_id="input2",
             input_data_name="input2",
+            updated_datetime="2023-10-01T00:00:00Z",
             annotation_attribute_counts={
                 ("bird", "notes", "filled"): 1,
             },

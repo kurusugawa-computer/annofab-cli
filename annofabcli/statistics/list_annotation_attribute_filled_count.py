@@ -108,6 +108,8 @@ class AnnotationCountByInputData(DataClassJsonMixin, HasAnnotationAttributeCount
 
     input_data_id: str
     input_data_name: str
+    updated_datetime: Optional[str]
+    """アノテーションJSONに格納されているアノテーションの更新日時"""
 
     annotation_attribute_counts: dict[AttributeValueKey, int] = field(
         metadata=config(
@@ -275,6 +277,7 @@ class ListAnnotationCounterByInputData:
             input_data_name=simple_annotation["input_data_name"],
             annotation_attribute_counts=annotation_count_by_attribute,
             frame_no=frame_no,
+            updated_datetime=simple_annotation["updated_datetime"],
         )
 
     def get_annotation_count_list(
@@ -390,6 +393,7 @@ class AnnotationCountCsvByAttribute:
                 ("task_phase_stage", "", ""): c.task_phase_stage,
                 ("input_data_id", "", ""): c.input_data_id,
                 ("input_data_name", "", ""): c.input_data_name,
+                ("updated_datetime", "", ""): c.updated_datetime,
                 ("frame_no", "", ""): c.frame_no,
             }
             cell.update(c.annotation_attribute_counts)  # type: ignore[arg-type]
