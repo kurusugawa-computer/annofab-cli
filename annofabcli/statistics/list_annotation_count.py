@@ -133,6 +133,8 @@ class AnnotationCounterByInputData(AnnotationCounter, DataClassJsonMixin):
 
     input_data_id: str
     input_data_name: str
+    updated_datetime: Optional[str]
+    """アノテーションJSONに格納されているアノテーションの更新日時"""
     frame_no: Optional[int] = None
     """アノテーションJSONには含まれていない情報なので、Optionalにする"""
 
@@ -263,6 +265,7 @@ class ListAnnotationCounterByInputData:
             task_status=TaskStatus(simple_annotation["task_status"]),
             input_data_id=simple_annotation["input_data_id"],
             input_data_name=simple_annotation["input_data_name"],
+            updated_datetime=simple_annotation["updated_datetime"],
             annotation_count=sum(annotation_count_by_label.values()),
             annotation_count_by_label=annotation_count_by_label,
             annotation_count_by_attribute=annotation_count_by_attribute,
@@ -520,6 +523,7 @@ class AttributeCountCsv:
                 ("input_data_id", "", ""),
                 ("input_data_name", "", ""),
                 ("frame_no", "", ""),
+                ("updated_datetime", "", ""),
                 ("annotation_count", "", ""),
             ]
             value_columns = self._value_columns(counter_list, prior_attribute_columns)
@@ -531,6 +535,7 @@ class AttributeCountCsv:
                 ("input_data_id", "", ""): c.input_data_id,
                 ("input_data_name", "", ""): c.input_data_name,
                 ("frame_no", "", ""): c.frame_no,
+                ("updated_datetime", "", ""): c.updated_datetime,
                 ("task_id", "", ""): c.task_id,
                 ("task_status", "", ""): c.task_status.value,
                 ("task_phase", "", ""): c.task_phase.value,
@@ -625,6 +630,7 @@ class LabelCountCsv:
                 "input_data_id",
                 "input_data_name",
                 "frame_no",
+                "updated_datetime",
                 "annotation_count",
             ]
             value_columns = self._value_columns(counter_list, prior_label_columns)
@@ -636,6 +642,7 @@ class LabelCountCsv:
                 "input_data_id": c.input_data_id,
                 "input_data_name": c.input_data_name,
                 "frame_no": c.frame_no,
+                "updated_datetime": c.updated_datetime,
                 "task_id": c.task_id,
                 "task_status": c.task_status.value,
                 "task_phase": c.task_phase.value,

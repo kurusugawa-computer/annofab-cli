@@ -104,6 +104,9 @@ class Task:
             "post_rejection_annotation_worktime_hour",
             "post_rejection_inspection_worktime_hour",
             "post_rejection_acceptance_worktime_hour",
+            # 作業時間に関する内容
+            "completed_datetime",
+            "operation_updated_datetime",
         ]
 
     @property

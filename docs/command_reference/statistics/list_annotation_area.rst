@@ -27,6 +27,7 @@ Examples
         "task_phase_stage": 1,
         "input_data_id": "i1",
         "input_data_name": "i1.jpg",
+        "updated_datetime": "2023-10-01T12:00:00.000+09:00",
         "label": "cat",
         "annotation_id": "ann1",
         "annotation_area": 1234

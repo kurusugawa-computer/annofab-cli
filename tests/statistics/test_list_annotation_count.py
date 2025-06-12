@@ -40,6 +40,7 @@ class TestListAnnotationCounterByInputData:
                 },
                 {"label": "climatic", "attributes": {"weather": "sunny"}},
             ],
+            "updated_datetime": "2023-10-01T00:00:00Z",
         }
 
         counter = ListAnnotationCounterByInputData().get_annotation_counter(annotation)

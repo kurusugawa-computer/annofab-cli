@@ -35,6 +35,7 @@ JSON出力
         "task_phase_stage": 1,
         "input_data_id": "input_data1",
         "input_data_name": "input_data1",
+        "updated_datetime": "2023-10-01T12:00:00.000+09:00",
         "annotation_id": "7c113d44-d927-4457-a1c5-45ba6e34bbc4",
         "label": "car",
         "attributes": {

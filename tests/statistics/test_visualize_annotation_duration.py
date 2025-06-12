@@ -43,6 +43,7 @@ ANNOTATIONS = [
                 "attributes": {"color": "green"},
             },
         ],
+        "updated_datetime": "2023-10-01T12:00:00Z",
     },
     {
         "project_id": "project1",
@@ -74,6 +75,7 @@ ANNOTATIONS = [
                 "attributes": {"color": "green"},
             },
         ],
+        "updated_datetime": "2023-10-02T12:00:00Z",
     },
 ]
 

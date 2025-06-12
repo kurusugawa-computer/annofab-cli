@@ -188,7 +188,8 @@ JSON出力
         "phase": "acceptance",
         "phase_stage": 1,
         "input_data_id": "input1",
-        "input_data_name": "input1"
+        "input_data_name": "input1",
+        "updated_datetime": "2023-10-01T12:00:00.000+09:00",
     }
     ]  
 
