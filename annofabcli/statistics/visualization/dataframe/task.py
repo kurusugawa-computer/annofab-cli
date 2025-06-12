@@ -104,6 +104,9 @@ class Task:
             "post_rejection_annotation_worktime_hour",
             "post_rejection_inspection_worktime_hour",
             "post_rejection_acceptance_worktime_hour",
+            # 作業時間に関する内容
+            "completed_datetime",
+            "operation_updated_datetime",
         ]
 
     @property
@@ -137,8 +140,6 @@ class Task:
             # 受入フェーズの日時
             "first_acceptance_reached_datetime",
             "first_acceptance_completed_datetime",
-            "completed_datetime",
-            "operation_updated_datetime",
             # 作業時間に関する内容
             "worktime_hour",
             "annotation_worktime_hour",
