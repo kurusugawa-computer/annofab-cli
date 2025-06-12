@@ -37,6 +37,7 @@ JSON出力
         "task_phase_stage": 1,
         "input_data_id": "sample_video_00.mp4",
         "input_data_name": "sample_video_00.mp4",
+        "updated_datetime": "2023-10-01T12:00:00.000+09:00",
         "video_duration_second": 30,
         "annotation_duration_second": 21.333,
         "annotation_duration_second_by_label": {

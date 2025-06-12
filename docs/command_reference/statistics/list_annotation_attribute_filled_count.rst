@@ -75,6 +75,7 @@ Examples
             "input_data_id": "input1",
             "input_data_name": "input1",
             "frame_no": 1,
+            "updated_datetime": "2023-10-01T12:00:00.000+09:00",
             "annotation_attribute_counts": {
                 "car": {
                     "occlusion": {
