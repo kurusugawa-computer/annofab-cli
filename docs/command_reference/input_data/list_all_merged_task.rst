@@ -6,10 +6,7 @@ Description
 =================================
 すべての入力データ一覧にタスク一覧を結合した情報を出力します。
 
-以下の情報などを知りたいときに利用できます。
-
-* 画像プロジェクト：画像データがどのタスクで使われているか。また、フレーム番号はいくつか。
-* 動画プロジェクト：タスクの動画時間の長さ
+入力データがどのタスクで使われているかを参照するときに有用です。
 
 
 .. note::
@@ -87,7 +84,10 @@ CSV出力
 
     $ annofabcli input_data list_all_merged_task --project_id prj1 --format csv --output out.csv
 
-`out.csv <https://github.com/kurusugawa-computer/annofab-cli/blob/main/docs/command_reference/input_data/list_all_merged_task/out.csv>`_
+
+.. csv-table:: out.csv 
+    :header-rows: 1
+    :file: list_all_merged_task/out.csv
 
 
 JSON出力
@@ -111,7 +111,6 @@ JSON出力
             "input_data_name": "data1",
             "input_data_path": "s3://af-production-input/organizations/...",
             "updated_datetime": "2021-01-04T21:21:28.169+09:00",
-            "original_input_data_path": "s3://af-production-input/organizations/...",
             "sign_required": false,
             "metadata": {},
             "system_metadata": {
