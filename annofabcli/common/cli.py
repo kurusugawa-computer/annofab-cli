@@ -524,33 +524,6 @@ class CommandLineWithoutWebapi:
 
         return yes
 
-    def confirm_processing_task(self, task_id: str, confirm_message: str) -> bool:
-        """
-        タスクに対して処理するかどうか問い合わせる。
-        `all_yes`属性も設定する。
-
-        Args:
-            task_id: 処理するtask_id
-            confirm_message: 確認メッセージ
-
-        Returns:
-            Trueならば対象のタスクを処理する。
-
-        """
-        if self.all_yes:
-            return True
-
-        yes, all_yes = prompt_yesnoall(confirm_message)
-
-        if not yes:
-            logger.info(f"task_id = {task_id} をスキップします。")
-            return False
-
-        if all_yes:
-            self.all_yes = True
-
-        return True
-
     def print_csv(self, df: pandas.DataFrame) -> None:
         print_csv(df, output=self.output)
 
