@@ -178,7 +178,8 @@ class ChangeAnnotationAttributesPerAnnotationMain(CommandLineWithConfirm):
             anno_list: 各アノテーションの変更内容リスト
         """
         changed_task_count = 0
-        failed_to_change_annotation_count = 0
+        total_failed_to_change_annotation_count = 0
+        total_succeed_to_change_annotation_count = 0
         annotation_list_per_task_id_input_data_id = get_annotation_list_per_task_id_input_data_id(anno_list)
 
         total_task_count = len(annotation_list_per_task_id_input_data_id)
@@ -186,13 +187,16 @@ class ChangeAnnotationAttributesPerAnnotationMain(CommandLineWithConfirm):
 
         for task_id, input_data_dict in annotation_list_per_task_id_input_data_id.items():
             is_changeable_task, succeed_to_change_annotation_count, failed_to_change_annotation_count = self.change_annotation_attributes_for_task(task_id, input_data_dict)
+            total_succeed_to_change_annotation_count += succeed_to_change_annotation_count
+            total_failed_to_change_annotation_count += failed_to_change_annotation_count
+
             if is_changeable_task:
                 changed_task_count += 1
 
         logger.info(
-            f"{succeed_to_change_annotation_count}/{total_annotation_count} 件のアノテーションの属性値を変更しました。 :: "
+            f"{total_succeed_to_change_annotation_count}/{total_annotation_count} 件のアノテーションの属性値を変更しました。 :: "
             f"アノテーションが変更されたタスク数は {changed_task_count}/{total_task_count} 件です。"
-            f"{failed_to_change_annotation_count} 件のアノテーションは変更できませんでした。"
+            f"{total_failed_to_change_annotation_count} 件のアノテーションは変更できませんでした。"
         )
 
 
