@@ -387,6 +387,7 @@ class TasksAddedTaskHistoryOutput:
     def _get_output_target_columns() -> list[str]:
         base_columns = [
             # タスクの基本情報
+            "project_id",
             "task_id",
             "phase",
             "phase_stage",
@@ -432,17 +433,17 @@ class TasksAddedTaskHistoryOutput:
 
     def output(self, output_path: Path, output_format: FormatArgument) -> None:
         task_list = self.task_list
-        if len(task_list) == 0:
-            logger.info("タスク一覧の件数が0件のため、出力しません。")
-            return
-
-        logger.debug(f"タスク一覧の件数: {len(task_list)}")
+        logger.debug(f"タスク {len(task_list)} 件の情報を出力します。")
         if output_format == FormatArgument.CSV:
-            df_task = pandas.DataFrame(task_list)
+            if len(task_list) > 0:
+                df_task = pandas.DataFrame(task_list)
+            else:
+                df_task = pandas.DataFrame(columns=self._get_output_target_columns())
             print_csv(
                 df_task[self._get_output_target_columns()],
                 output=output_path,
             )
+
         elif output_format == FormatArgument.JSON:
             print_json(task_list, is_pretty=False, output=output_path)
         elif output_format == FormatArgument.PRETTY_JSON:
