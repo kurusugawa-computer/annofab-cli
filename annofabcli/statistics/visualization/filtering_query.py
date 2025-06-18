@@ -10,6 +10,7 @@ from annofabapi.models import Task
 
 from annofabcli.common.facade import TaskQuery, match_task_with_query
 from annofabcli.common.utils import isoduration_to_hour
+from annofabcli.statistics.visualization.model import TaskCompletionCriteria
 
 logger = logging.getLogger(__name__)
 
@@ -72,7 +73,7 @@ def filter_task_histories(task_histories: dict[str, list[dict[str, Any]]], *, st
     return {task_id: sub_task_history_list for task_id, sub_task_history_list in task_histories.items() if pred(sub_task_history_list)}
 
 
-def filter_tasks(tasks: list[dict[str, Any]], query: FilteringQuery, *, task_histories: dict[str, list[dict[str, Any]]]) -> list[Task]:
+def filter_tasks(tasks: list[dict[str, Any]], task_completion_criteria: TaskCompletionCriteria, query: FilteringQuery, task_histories: dict[str, list[dict[str, Any]]]) -> list[Task]:
     """
     タスク一覧を絞り込みます。
 
@@ -95,6 +96,9 @@ def filter_tasks(tasks: list[dict[str, Any]], query: FilteringQuery, *, task_his
         """
 
         flag = True
+
+        flag = flag and task_completion_criteria.is_task_completed(arg_task)
+
         if query.task_query is not None:
             flag = flag and match_task_with_query(DcTask.from_dict(arg_task), query.task_query)
 

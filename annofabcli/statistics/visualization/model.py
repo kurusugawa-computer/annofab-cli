@@ -44,9 +44,9 @@ class TaskCompletionCriteria(Enum):
     ANNOTATION_STARTED = "annotation_started"
     """
     タスクの教師付フェーズを着手したら「タスクの完了」とみなす。
-    
+
     教師付フェーズで休憩状態や保留中状態のタスクを「完了」とみなして、生産性を算出したいときがあるので、このプロパティも用意した。
-    
+
     """
 
     def is_task_completed(self, task: dict[str, Any]) -> bool:
