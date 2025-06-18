@@ -273,6 +273,7 @@ class Task:
             "first_annotation_user_id",
             "first_annotation_username",
             "first_annotation_started_datetime",
+            "first_inspection_reached_datetime",
             "first_inspection_user_id",
             "first_inspection_username",
             "first_inspection_started_datetime",
@@ -385,7 +386,7 @@ class Task:
                 sub_title=sub_title,
             )
         )
-
+        
         df_ignore_acceptance_skipped = df.query("acceptance_worktime_hour.notnull() and not acceptance_is_skipped")
         sub_title = get_sub_title_from_series(df_ignore_acceptance_skipped["acceptance_worktime_hour"], decimals=decimals)
         hist, bin_edges = numpy.histogram(df_ignore_acceptance_skipped["acceptance_worktime_hour"], bins=BIN_COUNT)
