@@ -37,7 +37,7 @@ class ProjectDir(DataClassJsonMixin):
     Args:
         project_dir: ``annofabcli statistics visualize``コマンドによって出力されたプロジェクトディレクトリ
         metadata:
-    
+
     タスクの完了条件（task_completion_criteria）は以下のいずれかです。
         - acceptance_completed: 受入フェーズの完了状態
         - acceptance_reached: 受入フェーズに到達

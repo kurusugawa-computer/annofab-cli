@@ -152,7 +152,8 @@ class Task:
             "first_acceptance_username",
             "first_acceptance_worktime_hour",
             "first_acceptance_started_datetime",
-            # 受入フェーズの日時
+            # 初めて～になった日時
+            "first_inspection_reached_datetime",
             "first_acceptance_reached_datetime",
             "first_acceptance_completed_datetime",
             # 作業時間に関する内容

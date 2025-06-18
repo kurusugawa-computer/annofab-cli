@@ -535,6 +535,7 @@ class VisualizeStatistics(CommandLine):
         task_completion_criteria = TaskCompletionCriteria(args.task_completion_criteria)
 
         dict_task_query = annofabcli.common.cli.get_json_from_args(args.task_query)
+        task_query: Optional[TaskQuery] = None
         if dict_task_query is not None:
             task_query = TaskQuery.from_dict(dict_task_query)
             logger.warning("引数 '--task_query' は非推奨です。代わりに '--task_completion_criteria' を指定してください。")
