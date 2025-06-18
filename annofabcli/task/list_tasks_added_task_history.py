@@ -148,6 +148,7 @@ def get_first_acceptance_reached_datetime(task_histories: list[TaskHistory]) -> 
         if history["phase"] != TaskPhase.ACCEPTANCE.value:
             continue
 
+        assert index > 0
         first_acceptance_reached_datetime = task_histories[index - 1]["ended_datetime"]
         assert first_acceptance_reached_datetime is not None
         return first_acceptance_reached_datetime
@@ -164,9 +165,10 @@ def get_first_inspection_reached_datetime(task_histories: list[TaskHistory]) -> 
 
     """
     for index, history in enumerate(task_histories):
-        if history["phase"] not in {TaskPhase.INSPECTION.value, TaskPhase.ACCEPTANCE.value}:
+        if history["phase"] != TaskPhase.INSPECTION.value:
             continue
 
+        assert index > 0
         first_inspection_reached_datetime = task_histories[index - 1]["ended_datetime"]
         assert first_inspection_reached_datetime is not None
         return first_inspection_reached_datetime
