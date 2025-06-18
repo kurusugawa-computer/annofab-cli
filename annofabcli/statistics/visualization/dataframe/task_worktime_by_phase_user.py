@@ -63,6 +63,18 @@ class TaskWorktimeByPhaseUser:
         df = df[df["phase"] != TaskPhase.ACCEPTANCE.value]
         return TaskWorktimeByPhaseUser(df, custom_production_volume_list=self.custom_production_volume_list)
 
+    def to_non_inspection_acceptance(self) -> TaskWorktimeByPhaseUser:
+        """
+        検査/受入フェーズの作業時間を0にした新しいインスタンスを生成します。
+
+        `--task_completion_criteria inspection_reached`を指定したときに利用します。
+        この場合、検査/受入フェーズの作業時間を無視して集計する必要があるためです。
+
+        """
+        df = self.df.copy()
+        df = df[df["phase"] not in {TaskPhase.ACCEPTANCE.value, TaskPhase.INSPECTION.value}]
+        return TaskWorktimeByPhaseUser(df, custom_production_volume_list=self.custom_production_volume_list)
+
     @property
     def columns(self) -> list[str]:
         """
