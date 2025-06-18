@@ -38,7 +38,7 @@ def warn_pandas_copy_on_write() -> None:
     pandas 3.0で予期しない挙動になるのを防ぐため。
     https://pandas.pydata.org/docs/user_guide/copy_on_write.html
     """
-    logger.info(f"{pandas.__version__.split(".")=}")
+    print(f"{pandas.__version__.split(".")=}")
     major, minor, _ = pandas.__version__.split(".")
     if int(major) >= 2 and int(minor) >= 2:
         pandas.options.mode.copy_on_write = "warn"
