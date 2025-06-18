@@ -41,20 +41,11 @@ class TaskCompletionCriteria(Enum):
     INSPECTION_REACHED = "inspection_reached"
     """タスクが検査フェーズに到達したら「タスクの完了」とみなす"""
 
-    ANNOTATION_STARTED = "annotation_started"
-    """
-    タスクの教師付フェーズを着手したら「タスクの完了」とみなす。
-
-    教師付フェーズで休憩状態や保留中状態のタスクを「完了」とみなして、生産性を算出したいときがあるので、このプロパティも用意した。
-
-    """
-
     def is_task_completed(self, task: dict[str, Any]) -> bool:
         """指定したタスクが、タスクの完了条件に合致するかどうかを判定します。
 
         Args:
             task: タスク情報。以下のキーを参照します。
-                * work_time_span
                 * phase
                 * status
 
@@ -70,10 +61,6 @@ class TaskCompletionCriteria(Enum):
         elif self == TaskCompletionCriteria.INSPECTION_REACHED:
             # 受入フェーズも含む理由：検査フェーズに到達したタスクを「完了」とみなすならば、検査フェーズより後段フェーズである受入フェーズも「完了」とみなせるため
             return task["phase"] in {TaskPhase.INSPECTION.value, TaskPhase.ACCEPTANCE.value}
-
-        elif self == TaskCompletionCriteria.ANNOTATION_STARTED:
-            # 作業時間が0より大きい場合は、教師付フェーズを着手しているはずなので、フェーズは判定しない
-            return task["work_time_span"] > 0
 
         else:
             assert_noreturn(self)
