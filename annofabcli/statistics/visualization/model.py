@@ -69,7 +69,7 @@ class TaskCompletionCriteria(Enum):
 
         elif self == TaskCompletionCriteria.INSPECTION_REACHED:
             # 受入フェーズも含む理由：検査フェーズに到達したタスクを「完了」とみなすならば、検査フェーズより後段フェーズである受入フェーズも「完了」とみなせるため
-            return task["phase"] == {TaskPhase.INSPECTION.value, TaskPhase.ACCEPTANCE.value}
+            return task["phase"] in {TaskPhase.INSPECTION.value, TaskPhase.ACCEPTANCE.value}
 
         elif self == TaskCompletionCriteria.ANNOTATION_STARTED:
             # 作業時間が0より大きい場合は、教師付フェーズを着手しているはずなので、フェーズは判定しない
