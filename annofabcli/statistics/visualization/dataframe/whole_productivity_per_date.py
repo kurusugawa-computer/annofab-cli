@@ -156,10 +156,12 @@ class WholeProductivityPerCompletedDate:
                 monitored_inspection_worktime_hour
                 monitored_acceptance_worktime_hour
         """
-
         if task_completion_criteria == TaskCompletionCriteria.ACCEPTANCE_REACHED:
             # 受入フェーズに到達したらタスクの作業が完了したとみなす場合、受入フェーズの作業時間や生産量は不要な情報なので、受入作業時間を0にする
             worktime_per_date = worktime_per_date.to_non_acceptance()
+        if task_completion_criteria == TaskCompletionCriteria.INSPECTION_REACHED:
+            # 検査フェーズに到達したらタスクの作業が完了したとみなす場合、検査/受入フェーズの作業時間や生産量は不要な情報なので、検査/受入作業時間を0にする
+            worktime_per_date = worktime_per_date.to_non_inspection_acceptance()
 
         # 生産量を表す列名
         production_volume_columns = ["input_data_count", "annotation_count", *[e.value for e in task.custom_production_volume_list]]
@@ -168,6 +170,8 @@ class WholeProductivityPerCompletedDate:
             datetime_column = "first_acceptance_completed_datetime"
         elif task_completion_criteria == TaskCompletionCriteria.ACCEPTANCE_REACHED:
             datetime_column = "first_acceptance_reached_datetime"
+        elif task_completion_criteria == TaskCompletionCriteria.INSPECTION_REACHED:
+            datetime_column = "first_inspection_reached_datetime"
         else:
             assert_noreturn(task_completion_criteria)
 
@@ -271,15 +275,19 @@ class WholeProductivityPerCompletedDate:
         HTMLページの先頭に付与するdiv要素を生成する。
         """
         if self.task_completion_criteria == TaskCompletionCriteria.ACCEPTANCE_COMPLETED:
-            str_task = "受入フェーズ完了状態"
+            str_task = "受入フェーズ完了状態になった"
         elif self.task_completion_criteria == TaskCompletionCriteria.ACCEPTANCE_REACHED:
-            str_task = "受入フェーズ"
+            str_task = "受入フェーズに到達した"
+        elif self.task_completion_criteria == TaskCompletionCriteria.INSPECTION_REACHED:
+            str_task = "検査フェーズに到達した"
         else:
             assert_noreturn(self.task_completion_criteria)
 
-        elm_list = ["<h4>注意</h4>", f"<p>「X日のタスク数」は、X日に初めて{str_task}になったタスクの個数です。</p>"]
+        elm_list = ["<h4>注意</h4>", f"<p>「X日のタスク数」は、X日に初めて{str_task}タスクの個数です。</p>"]
         if self.task_completion_criteria == TaskCompletionCriteria.ACCEPTANCE_REACHED:
             elm_list.append("<p>タスクが受入フェーズに到達したら作業が完了したとみなしているため、受入作業時間は0にしています。</p>")
+        elif self.task_completion_criteria == TaskCompletionCriteria.INSPECTION_REACHED:
+            elm_list.append("<p>タスクが検査フェーズに到達したら作業が完了したとみなしているため、検査作業時間と受入作業時間は0にしています。</p>")
         return Div(text=" ".join(elm_list))
 
     def plot(
@@ -865,12 +873,17 @@ class WholeProductivityPerFirstAnnotationStartedDate:
         if task_completion_criteria == TaskCompletionCriteria.ACCEPTANCE_REACHED:
             # 受入フェーズに到達したらタスクの作業が完了したとみなす場合、受入フェーズの作業時間や生産量は不要な情報なので、受入作業時間を0にする
             task = task.to_non_acceptance()
+        elif task_completion_criteria == TaskCompletionCriteria.INSPECTION_REACHED:
+            # 検査フェーズに到達したらタスクの作業が完了したとみなす場合、検査/受入フェーズの作業時間や生産量は不要な情報なので、検査/受入作業時間を0にする
+            task = task.to_non_inspection_acceptance()
 
         df_task = task.df
         if task_completion_criteria == TaskCompletionCriteria.ACCEPTANCE_COMPLETED:
             df_sub_task = df_task[df_task["status"] == TaskStatus.COMPLETE.value]
         elif task_completion_criteria == TaskCompletionCriteria.ACCEPTANCE_REACHED:
             df_sub_task = df_task[df_task["phase"] == TaskPhase.ACCEPTANCE.value]
+        elif task_completion_criteria == TaskCompletionCriteria.INSPECTION_REACHED:
+            df_sub_task = df_task[df_task["phase"].isin([TaskPhase.INSPECTION.value, TaskPhase.ACCEPTANCE.value])]
         else:
             assert_noreturn(task_completion_criteria)
 
@@ -998,12 +1011,16 @@ class WholeProductivityPerFirstAnnotationStartedDate:
                 str_task = "受入フェーズ完了状態"
             elif self.task_completion_criteria == TaskCompletionCriteria.ACCEPTANCE_REACHED:
                 str_task = "受入フェーズ"
+            elif self.task_completion_criteria == TaskCompletionCriteria.INSPECTION_REACHED:
+                str_task = "検査フェーズまたは受入フェーズ"
             else:
                 assert_noreturn(self.task_completion_criteria)
 
             elm_list = ["<h4>注意</h4>", f"<p>「X日のタスク数」は、X日に教師付フェーズを開始したタスクの内、{str_task}であるタスクの個数です。</p>"]
             if self.task_completion_criteria == TaskCompletionCriteria.ACCEPTANCE_REACHED:
                 elm_list.append("<p>タスクが受入フェーズに到達したら作業が完了したとみなしているため、受入作業時間は0にしています。</p>")
+            elif self.task_completion_criteria == TaskCompletionCriteria.INSPECTION_REACHED:
+                elm_list.append("<p>タスクが検査フェーズまたは受入フェーズに到達したら作業が完了したとみなしているため、検査作業時間と受入作業時間は0にしています。</p>")
 
             return Div(text=" ".join(elm_list))
 
