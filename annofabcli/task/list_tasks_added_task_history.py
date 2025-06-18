@@ -154,6 +154,26 @@ def get_first_acceptance_reached_datetime(task_histories: list[TaskHistory]) -> 
     return None
 
 
+def get_first_inspection_reached_datetime(task_histories: list[TaskHistory]) -> Optional[str]:
+    """
+    はじめて検査フェーズに到達した日時を取得する。
+    検査フェーズを着手した日時とは異なる。
+    必ず`first_inspection_started_datetime`よりも前の日時になる。
+
+    たとえば教師付フェーズで提出して検査フェーズに到達した場合、教師付フェーズを提出した日時が「検査フェーズに到達した日時」になる。
+
+    """
+    for index, history in enumerate(task_histories):
+        if history["phase"] not in {TaskPhase.INSPECTION.value, TaskPhase.ACCEPTANCE.value}:
+            continue
+
+        first_inspection_reached_datetime = task_histories[index - 1]["ended_datetime"]
+        assert first_inspection_reached_datetime is not None
+        return first_inspection_reached_datetime
+    return None
+
+
+
 def is_acceptance_phase_skipped(task_histories: list[TaskHistory]) -> bool:
     """抜取受入によって、受入フェーズでスキップされたことがあるかを取得する。
 
