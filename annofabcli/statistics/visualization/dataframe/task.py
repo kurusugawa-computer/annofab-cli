@@ -94,6 +94,21 @@ class Task:
         df["acceptance_worktime_hour"] = 0
         return Task(df, custom_production_volume_list=self.custom_production_volume_list)
 
+    def to_non_inspection_acceptance(self) -> Task:
+        """
+        検査フェーズと受入フェーズの作業時間を0にした新しいインスタンスを生成します。
+
+        `--task_completion_criteria inspection_reached`を指定したときに利用します。
+        この場合、検査/受入フェーズの作業時間を無視して集計する必要があるためです。
+
+        """
+        df = self.df.copy()
+        df["first_inspection_worktime_hour"] = 0
+        df["first_acceptance_worktime_hour"] = 0
+        df["inspection_worktime_hour"] = 0
+        df["acceptance_worktime_hour"] = 0
+        return Task(df, custom_production_volume_list=self.custom_production_volume_list)
+
     @property
     def optional_columns(self) -> list[str]:
         return [
@@ -137,7 +152,8 @@ class Task:
             "first_acceptance_username",
             "first_acceptance_worktime_hour",
             "first_acceptance_started_datetime",
-            # 受入フェーズの日時
+            # 初めて～になった日時
+            "first_inspection_reached_datetime",
             "first_acceptance_reached_datetime",
             "first_acceptance_completed_datetime",
             # 作業時間に関する内容
@@ -257,6 +273,7 @@ class Task:
             "first_annotation_user_id",
             "first_annotation_username",
             "first_annotation_started_datetime",
+            "first_inspection_reached_datetime",
             "first_inspection_user_id",
             "first_inspection_username",
             "first_inspection_started_datetime",

@@ -5,6 +5,7 @@ from annofabcli.task.list_tasks_added_task_history import (
     get_completed_datetime,
     get_first_acceptance_completed_datetime,
     get_first_acceptance_reached_datetime,
+    get_first_inspection_reached_datetime,
     get_post_rejection_acceptance_worktime_hour,
     get_post_rejection_annotation_worktime_hour,
     get_post_rejection_inspection_worktime_hour,
@@ -553,6 +554,13 @@ def test__get_first_acceptance_reached_datetime():
 
     # タスク作成直後の状態
     assert get_first_acceptance_reached_datetime(task_created_immediately.task_histories) is None
+
+
+def test__get_first_inspection_reached_datetime():
+    # 検査フェーズに到達した場合
+    assert get_first_inspection_reached_datetime(rejected_task_histories) == "2025-03-30T14:04:32.805+09:00"
+    # タスク作成直後の状態
+    assert get_first_inspection_reached_datetime(task_created_immediately.task_histories) is None
 
 
 def test__get_completed_datetime():

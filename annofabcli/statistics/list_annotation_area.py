@@ -80,7 +80,7 @@ def calculate_bounding_box_area(data: dict[str, Any]) -> int:
 
 def calculate_segmentation_area(outer_file: Path) -> int:
     nd_array = read_binary_image(outer_file)
-    return numpy.count_nonzero(nd_array)
+    return int(numpy.count_nonzero(nd_array))
 
 
 def get_annotation_area_info_list(parser: SimpleAnnotationParser, simple_annotation: dict[str, Any]) -> list[AnnotationAreaInfo]:

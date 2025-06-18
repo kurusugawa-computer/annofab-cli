@@ -12,7 +12,7 @@ from typing import Any, Callable, Optional
 
 import annofabapi
 import pandas
-from annofabapi.models import ProjectMemberRole, TaskPhase, TaskStatus
+from annofabapi.models import ProjectMemberRole, TaskPhase
 
 import annofabcli
 from annofabcli.common.cli import (
@@ -24,7 +24,6 @@ from annofabcli.common.cli import (
     get_list_from_args,
 )
 from annofabcli.common.facade import AnnofabApiFacade, TaskQuery
-from annofabcli.common.type_util import assert_noreturn
 from annofabcli.statistics.visualization.dataframe.actual_worktime import ActualWorktime
 from annofabcli.statistics.visualization.dataframe.annotation_count import AnnotationCount
 from annofabcli.statistics.visualization.dataframe.cumulative_productivity import (
@@ -123,7 +122,7 @@ class WriteCsvGraph:
 
             tasks = self.visualize_source_files.read_tasks_json()
             task_histories = self.visualize_source_files.read_task_histories_json()
-            new_tasks = filter_tasks(tasks, self.filtering_query, task_histories=task_histories)
+            new_tasks = filter_tasks(tasks, self.task_completion_criteria, self.filtering_query, task_histories=task_histories)
             logger.debug(f"project_id='{self.project_id}' :: 集計対象タスクは {len(new_tasks)} / {len(tasks)} 件です。")
 
             self.task = Task.from_api_content(
@@ -534,14 +533,9 @@ class VisualizeStatistics(CommandLine):
             sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
         task_completion_criteria = TaskCompletionCriteria(args.task_completion_criteria)
-        if task_completion_criteria == TaskCompletionCriteria.ACCEPTANCE_COMPLETED:
-            task_query = TaskQuery(phase=TaskPhase.ACCEPTANCE, status=TaskStatus.COMPLETE)
-        elif task_completion_criteria == TaskCompletionCriteria.ACCEPTANCE_REACHED:
-            task_query = TaskQuery(phase=TaskPhase.ACCEPTANCE)
-        else:
-            assert_noreturn(task_completion_criteria)
 
         dict_task_query = annofabcli.common.cli.get_json_from_args(args.task_query)
+        task_query: Optional[TaskQuery] = None
         if dict_task_query is not None:
             task_query = TaskQuery.from_dict(dict_task_query)
             logger.warning("引数 '--task_query' は非推奨です。代わりに '--task_completion_criteria' を指定してください。")

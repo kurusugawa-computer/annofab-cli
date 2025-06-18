@@ -8,7 +8,10 @@ def get_frequency_of_monthend() -> str:
 
     https://github.com/pandas-dev/pandas/issues/9586
     """
-    major, minor, _ = pandas.__version__.split(".")
+    tmp = pandas.__version__.split(".")
+    major = tmp[0]
+    minor = tmp[1]
+
     if int(major) >= 2 and int(minor) >= 2:
         return "ME"
     return "M"

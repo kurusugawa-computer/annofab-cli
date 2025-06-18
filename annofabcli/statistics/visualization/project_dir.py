@@ -37,6 +37,12 @@ class ProjectDir(DataClassJsonMixin):
     Args:
         project_dir: ``annofabcli statistics visualize``コマンドによって出力されたプロジェクトディレクトリ
         metadata:
+
+    タスクの完了条件（task_completion_criteria）は以下のいずれかです。
+        - acceptance_completed: 受入フェーズの完了状態
+        - acceptance_reached: 受入フェーズに到達
+        - inspection_reached: 検査フェーズまたは受入フェーズに到達
+        - annotation_started: 教師付フェーズを着手
     """
 
     FILENAME_WHOLE_PERFORMANCE = "全体の生産性と品質.csv"
@@ -454,7 +460,7 @@ class ProjectInfo(DataClassJsonMixin):
     measurement_datetime: str
     """計測日時。（2004-04-01T12:00+09:00形式）"""
     task_completion_criteria: TaskCompletionCriteria
-    """タスクの完了条件"""
+    """タスクの完了条件（acceptance_completed / acceptance_reached / inspection_reached / annotation_started）"""
     query: FilteringQuery
     """集計対象を絞り込むためのクエリ"""
 

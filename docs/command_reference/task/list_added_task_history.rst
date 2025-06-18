@@ -121,6 +121,7 @@ JSON出力
         "first_acceptance_user_id": "alice",
         "first_acceptance_username": "Alice",
         "acceptance_worktime_hour": 0.16520972222222222,
+        "first_inspection_reached_datetime": "2022-10-25T12:00:00.000+09:00",
         "first_acceptance_reached_datetime": "2022-10-24T15:14:18.967+09:00",
         "first_acceptance_completed_datetime": "2022-10-25T15:14:18.967+09:00",
         "completed_datetime": "2022-10-25T15:14:18.967+09:00",
@@ -143,6 +144,7 @@ JSON出力
 * ``created_datetime`` : タスクの作成日時
 * ``first_annotation_started_datetime`` : 初めて教師付フェーズを着手した日時
 * ``first_inspection_started_datetime`` : 初めて検査フェーズを着手した日時
+* ``first_inspection_reached_datetime`` : 初めて検査フェーズに到達した日時。 ``first_inspection_started_datetime`` より前の日時になる
 * ``first_acceptance_started_datetime`` : 初めて受入フェーズを着手した日時
 * ``first_acceptance_reached_datetime`` : 初めて受入フェーズに到達した日時。 ``first_acceptance_started_datetime`` より前の日時になる
 * ``first_acceptance_completed_datetime`` : 初めて受入フェーズかつ完了状態になった日時

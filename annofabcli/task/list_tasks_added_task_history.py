@@ -148,9 +148,30 @@ def get_first_acceptance_reached_datetime(task_histories: list[TaskHistory]) -> 
         if history["phase"] != TaskPhase.ACCEPTANCE.value:
             continue
 
+        assert index > 0
         first_acceptance_reached_datetime = task_histories[index - 1]["ended_datetime"]
         assert first_acceptance_reached_datetime is not None
         return first_acceptance_reached_datetime
+    return None
+
+
+def get_first_inspection_reached_datetime(task_histories: list[TaskHistory]) -> Optional[str]:
+    """
+    はじめて検査フェーズに到達した日時を取得する。
+    検査フェーズを着手した日時とは異なる。
+    必ず`first_inspection_started_datetime`よりも前の日時になる。
+
+    たとえば教師付フェーズで提出して検査フェーズに到達した場合、教師付フェーズを提出した日時が「検査フェーズに到達した日時」になる。
+
+    """
+    for index, history in enumerate(task_histories):
+        if history["phase"] != TaskPhase.INSPECTION.value:
+            continue
+
+        assert index > 0
+        first_inspection_reached_datetime = task_histories[index - 1]["ended_datetime"]
+        assert first_inspection_reached_datetime is not None
+        return first_inspection_reached_datetime
     return None
 
 
@@ -332,7 +353,8 @@ class AddingAdditionalInfoToTask:
             first_task_history = get_first_task_history(task_histories, phase)
             self._add_task_history_info(task, first_task_history, column_prefix=f"first_{phase.value}")
 
-        # 初めて受入が完了した日時
+        # 初めて～になった日時
+        task["first_inspection_reached_datetime"] = get_first_inspection_reached_datetime(task_histories)
         task["first_acceptance_reached_datetime"] = get_first_acceptance_reached_datetime(task_histories)
         task["first_acceptance_completed_datetime"] = get_first_acceptance_completed_datetime(task_histories)
 
@@ -410,6 +432,7 @@ class TasksAddedTaskHistoryOutput:
             # 差し戻し回数
             "number_of_rejections_by_inspection",
             "number_of_rejections_by_acceptance",
+            "first_inspection_reached_datetime",
             "first_acceptance_reached_datetime",
             "first_acceptance_completed_datetime",
             "completed_datetime",

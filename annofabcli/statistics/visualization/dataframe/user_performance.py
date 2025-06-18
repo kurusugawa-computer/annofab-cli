@@ -553,6 +553,12 @@ class UserPerformance:
             worktime_per_date = worktime_per_date.to_non_acceptance()
             task_worktime_by_phase_user = task_worktime_by_phase_user.to_non_acceptance()
 
+        elif task_completion_criteria == TaskCompletionCriteria.INSPECTION_REACHED:
+            # 検査フェーズに到達したらタスクの作業が完了したとみなす場合、
+            # 検査フェーズと受入フェーズの作業時間や生産量は不要な情報なので、検査作業時間と受入作業時間を0にする
+            worktime_per_date = worktime_per_date.to_non_inspection_acceptance()
+            task_worktime_by_phase_user = task_worktime_by_phase_user.to_non_inspection_acceptance()
+
         # 実際の計測作業時間情報（集計タスクに影響されない作業時間）と実績作業時間を算出する
         df = cls._create_df_real_worktime(worktime_per_date)
 

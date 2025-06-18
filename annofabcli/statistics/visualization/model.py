@@ -1,5 +1,11 @@
 from dataclasses import dataclass
 from enum import Enum
+from typing import Any
+
+from annofabapi.pydantic_models.task_phase import TaskPhase
+from annofabapi.pydantic_models.task_status import TaskStatus
+
+from annofabcli.common.type_util import assert_noreturn
 
 
 class WorktimeColumn(Enum):
@@ -32,3 +38,29 @@ class TaskCompletionCriteria(Enum):
     """タスクが受入フェーズの完了状態であれば「タスクの完了」とみなす"""
     ACCEPTANCE_REACHED = "acceptance_reached"
     """タスクが受入フェーズに到達したら「タスクの完了」とみなす"""
+    INSPECTION_REACHED = "inspection_reached"
+    """タスクが検査フェーズに到達したら「タスクの完了」とみなす"""
+
+    def is_task_completed(self, task: dict[str, Any]) -> bool:
+        """指定したタスクが、タスクの完了条件に合致するかどうかを判定します。
+
+        Args:
+            task: タスク情報。以下のキーを参照します。
+                * phase
+                * status
+
+        Returns:
+            タスクの完了条件に合致する場合はTrue、そうでない場合はFalse
+        """
+        if self == TaskCompletionCriteria.ACCEPTANCE_COMPLETED:
+            return task["phase"] == TaskPhase.ACCEPTANCE.value and task["status"] == TaskStatus.COMPLETE.value
+
+        elif self == TaskCompletionCriteria.ACCEPTANCE_REACHED:
+            return task["phase"] == TaskPhase.ACCEPTANCE.value
+
+        elif self == TaskCompletionCriteria.INSPECTION_REACHED:
+            # 受入フェーズも含む理由：検査フェーズに到達したタスクを「完了」とみなすならば、検査フェーズより後段フェーズである受入フェーズも「完了」とみなせるため
+            return task["phase"] in {TaskPhase.INSPECTION.value, TaskPhase.ACCEPTANCE.value}
+
+        else:
+            assert_noreturn(self)

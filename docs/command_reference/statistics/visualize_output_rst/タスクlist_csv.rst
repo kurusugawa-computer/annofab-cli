@@ -5,7 +5,10 @@
 タスクごとの情報が記載されています。
 
 
-`タスクlist.csvのサンプル <https://github.com/kurusugawa-computer/annofab-cli/blob/main/docs/command_reference/statistics/visualize/out_dir/タスクlist.csv>`_
+.. csv-table:: タスクlist.csv
+    :header-rows: 1
+    :file: ../visualize/out_dir/タスクlist.csv
+
 
 
 列の内容
@@ -28,6 +31,7 @@
 --------------------------
 
 * ``created_datetime`` : タスクの作成日時
+* ``first_inspection_reached_datetime`` : 初めて検査フェーズに到達した日時
 * ``first_acceptance_reached_datetime`` : 初めて受入フェーズに到達した日時
 * ``first_acceptance_completed_datetime`` : 初めて受入フェーズで完了状態になった日時
 * ``completed_datetime`` : タスクが完了状態になった日時
