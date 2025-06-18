@@ -72,7 +72,8 @@ class TaskWorktimeByPhaseUser:
 
         """
         df = self.df.copy()
-        df = df[not df["phase"].isin({TaskPhase.ACCEPTANCE.value, TaskPhase.INSPECTION.value})]
+        # 教師付フェーズのみ残す
+        df = df[df["phase"] == TaskPhase.ANNOTATION.value]
         return TaskWorktimeByPhaseUser(df, custom_production_volume_list=self.custom_production_volume_list)
 
     @property
