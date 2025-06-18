@@ -72,7 +72,7 @@ class TaskWorktimeByPhaseUser:
 
         """
         df = self.df.copy()
-        df = df[~df["phase"].isin({TaskPhase.ACCEPTANCE.value, TaskPhase.INSPECTION.value})]
+        df = df[not df["phase"].isin({TaskPhase.ACCEPTANCE.value, TaskPhase.INSPECTION.value})]
         return TaskWorktimeByPhaseUser(df, custom_production_volume_list=self.custom_production_volume_list)
 
     @property
