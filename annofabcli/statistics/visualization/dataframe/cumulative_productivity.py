@@ -62,10 +62,6 @@ def _create_cumulative_dataframe(task_worktime_by_phase_user: TaskWorktimeByPhas
     # `YYYY-MM-DDThh:mm:ss.sss+09:00`から`YYYY-MM-DD`を取得する
     # キャストする理由: 全部nanだとfloat型になって、".str"にアクセスできないため
     df[f"first_{str_phase}_started_date"] = df["started_datetime"].astype("string").str[:10]
-    # bokeh3.0.3では、string型の列を持つpandas.DataFrameを描画できないため、改めてobject型に戻す
-    # TODO この問題が解決されたら、削除する
-    # https://qiita.com/yuji38kwmt/items/b5da6ed521e827620186
-    df[f"first_{str_phase}_started_date"] = df[f"first_{str_phase}_started_date"].astype("object")
     return df
 
 
