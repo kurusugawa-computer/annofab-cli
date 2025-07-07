@@ -63,12 +63,12 @@ class DumpAnnotationMain:
                 outer_file_path = outer_dir / f"{annotation_id}"
                 self.service.wrapper.download(detail["url"], outer_file_path)
 
-    def dump_annotation_for_input_data(self, task_id: str, input_data_id: str, task_dir: Path) -> None:
-        editor_annotation, _ = self.service.api.get_editor_annotation(self.project_id, task_id, input_data_id, query_params={"v": "2"})
+    def dump_annotation_for_input_data(self, task_id: str, input_data_id: str, task_dir: Path, *, task_history_id: Optional[str] = None) -> None:
+        editor_annotation, _ = self.service.api.get_editor_annotation(self.project_id, task_id, input_data_id, query_params={"v": "2", "task_history_id": task_history_id})
         json_path = task_dir / f"{input_data_id}.json"
         self.dump_editor_annotation(editor_annotation=editor_annotation, json_path=json_path)
 
-    def dump_annotation_for_task(self, task_id: str, output_dir: Path, *, task_index: Optional[int] = None) -> bool:
+    def dump_annotation_for_task(self, task_id: str, output_dir: Path, *, task_index: Optional[int] = None, task_history_index: Optional[int] = None) -> bool:
         """
         タスク配下のアノテーションをファイルに保存する。
 
@@ -85,6 +85,14 @@ class DumpAnnotationMain:
             logger.warning(f"task_id = '{task_id}' のタスクは存在しません。スキップします。")
             return False
 
+        task_history_id: Optional[str] = None
+        if task_history_index is not None:
+            task_histories = self.service.api.get_task_histories(self.project_id, task_id)
+            if len(task_histories) < task_history_index:
+                logger.warning(f"task_id='{task_id}' :: task_history_index='{task_history_index}'のタスク履歴は存在しません。タスク履歴は{len(task_histories)}件です。スキップします。")
+                return False
+            task_history_id = task_histories[task_history_index]["task_history_id"]
+
         input_data_id_list = task["input_data_id_list"]
         task_dir = output_dir / task_id
         task_dir.mkdir(exist_ok=True, parents=True)
@@ -93,7 +101,7 @@ class DumpAnnotationMain:
         is_failure = False
         for input_data_id in input_data_id_list:
             try:
-                self.dump_annotation_for_input_data(task_id, input_data_id, task_dir=task_dir)
+                self.dump_annotation_for_input_data(task_id, input_data_id, task_dir=task_dir, task_history_id=task_history_id)
             except Exception:
                 logger.warning(f"タスク'{task_id}', 入力データ'{input_data_id}' のアノテーション情報のダンプに失敗しました。", exc_info=True)
                 is_failure = True
