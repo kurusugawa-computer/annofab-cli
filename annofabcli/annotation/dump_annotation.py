@@ -96,7 +96,7 @@ class DumpAnnotationMain:
         input_data_id_list = task["input_data_id_list"]
         task_dir = output_dir / task_id
         task_dir.mkdir(exist_ok=True, parents=True)
-        logger.debug(f"{logger_prefix}task_id = '{task_id}' のアノテーション情報を '{task_dir}' ディレクトリに保存します。")
+        logger.debug(f"{logger_prefix}task_id = '{task_id}' のアノテーション情報を '{task_dir}' ディレクトリに保存します。 :: task_history_id='{task_history_id}'")
 
         is_failure = False
         for input_data_id in input_data_id_list:
@@ -157,7 +157,7 @@ class DumpAnnotation(CommandLine):
         super().validate_project(project_id, project_member_roles=None)
 
         main_obj = DumpAnnotationMain(self.service, project_id)
-        main_obj.dump_annotation(task_id_list, output_dir=output_dir, parallelism=args.parallelism)
+        main_obj.dump_annotation(task_id_list, output_dir=output_dir, parallelism=args.parallelism, task_history_index=args.task_history_index)
 
 
 def main(args: argparse.Namespace) -> None:
@@ -173,6 +173,13 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     argument_parser.add_task_id()
 
     parser.add_argument("-o", "--output_dir", type=str, required=True, help="出力先ディレクトリのパス")
+
+    parser.add_argument(
+        "--task_history_index",
+        type=int,
+        help="指定したタスク履歴のインデックス（ゼロ始まり）で付与されたアノテーション情報をダンプします。過去のアノテーション結果をダンプする場合に指定します。"
+        "ただし、過去のアノテーションデータは30日間しか保持されていません。30日より前に更新されたアノテーションをダンプした場合は、アノテーションが0件の状態でダンプされます。",
+    )
 
     parser.add_argument(
         "--parallelism",
