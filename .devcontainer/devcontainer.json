@@ -20,6 +20,7 @@
 	"runArgs": [
 		"--init",
 		"--net=host",
+		"--env=ANNOFAB_PAT",
 		"--env=ANNOFAB_USER_ID",
 		"--env=ANNOFAB_PASSWORD"
 	],

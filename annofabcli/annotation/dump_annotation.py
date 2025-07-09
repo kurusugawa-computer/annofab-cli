@@ -63,12 +63,12 @@ class DumpAnnotationMain:
                 outer_file_path = outer_dir / f"{annotation_id}"
                 self.service.wrapper.download(detail["url"], outer_file_path)
 
-    def dump_annotation_for_input_data(self, task_id: str, input_data_id: str, task_dir: Path) -> None:
-        editor_annotation, _ = self.service.api.get_editor_annotation(self.project_id, task_id, input_data_id, query_params={"v": "2"})
+    def dump_annotation_for_input_data(self, task_id: str, input_data_id: str, task_dir: Path, *, task_history_id: Optional[str] = None) -> None:
+        editor_annotation, _ = self.service.api.get_editor_annotation(self.project_id, task_id, input_data_id, query_params={"v": "2", "task_history_id": task_history_id})
         json_path = task_dir / f"{input_data_id}.json"
         self.dump_editor_annotation(editor_annotation=editor_annotation, json_path=json_path)
 
-    def dump_annotation_for_task(self, task_id: str, output_dir: Path, *, task_index: Optional[int] = None) -> bool:
+    def dump_annotation_for_task(self, task_id: str, output_dir: Path, *, task_index: Optional[int] = None, task_history_index: Optional[int] = None) -> bool:
         """
         タスク配下のアノテーションをファイルに保存する。
 
@@ -85,15 +85,23 @@ class DumpAnnotationMain:
             logger.warning(f"task_id = '{task_id}' のタスクは存在しません。スキップします。")
             return False
 
+        task_history_id: Optional[str] = None
+        if task_history_index is not None:
+            task_histories, _ = self.service.api.get_task_histories(self.project_id, task_id)
+            if task_history_index >= len(task_histories):
+                logger.warning(f"task_id='{task_id}' :: task_history_index='{task_history_index}'のタスク履歴は存在しません。タスク履歴は{len(task_histories)}件です。スキップします。")
+                return False
+            task_history_id = task_histories[task_history_index]["task_history_id"]
+
         input_data_id_list = task["input_data_id_list"]
         task_dir = output_dir / task_id
         task_dir.mkdir(exist_ok=True, parents=True)
-        logger.debug(f"{logger_prefix}task_id = '{task_id}' のアノテーション情報を '{task_dir}' ディレクトリに保存します。")
+        logger.debug(f"{logger_prefix}task_id = '{task_id}' のアノテーション情報を '{task_dir}' ディレクトリに保存します。 :: task_history_id='{task_history_id}'")
 
         is_failure = False
         for input_data_id in input_data_id_list:
             try:
-                self.dump_annotation_for_input_data(task_id, input_data_id, task_dir=task_dir)
+                self.dump_annotation_for_input_data(task_id, input_data_id, task_dir=task_dir, task_history_id=task_history_id)
             except Exception:
                 logger.warning(f"タスク'{task_id}', 入力データ'{input_data_id}' のアノテーション情報のダンプに失敗しました。", exc_info=True)
                 is_failure = True
@@ -101,15 +109,15 @@ class DumpAnnotationMain:
 
         return not is_failure
 
-    def dump_annotation_for_task_wrapper(self, tpl: tuple[int, str], output_dir: Path) -> bool:
+    def dump_annotation_for_task_wrapper(self, tpl: tuple[int, str], output_dir: Path, *, task_history_index: Optional[int] = None) -> bool:
         task_index, task_id = tpl
         try:
-            return self.dump_annotation_for_task(task_id, output_dir=output_dir, task_index=task_index)
+            return self.dump_annotation_for_task(task_id, output_dir=output_dir, task_index=task_index, task_history_index=task_history_index)
         except Exception:  # pylint: disable=broad-except
             logger.warning(f"タスク'{task_id}'のアノテーション情報のダンプに失敗しました。", exc_info=True)
             return False
 
-    def dump_annotation(self, task_id_list: list[str], output_dir: Path, parallelism: Optional[int] = None):  # noqa: ANN201
+    def dump_annotation(self, task_id_list: list[str], output_dir: Path, *, task_history_index: Optional[int] = None, parallelism: Optional[int] = None) -> None:
         project_title = self.facade.get_project_title(self.project_id)
         logger.info(f"プロジェクト'{project_title}'に対して、タスク{len(task_id_list)} 件のアノテーションをファイルに保存します。")
 
@@ -118,7 +126,7 @@ class DumpAnnotationMain:
         success_count = 0
 
         if parallelism is not None:
-            func = functools.partial(self.dump_annotation_for_task_wrapper, output_dir=output_dir)
+            func = functools.partial(self.dump_annotation_for_task_wrapper, task_history_index=task_history_index, output_dir=output_dir)
             with multiprocessing.Pool(parallelism) as pool:
                 result_bool_list = pool.map(func, enumerate(task_id_list))
                 success_count = len([e for e in result_bool_list if e])
@@ -126,7 +134,7 @@ class DumpAnnotationMain:
         else:
             for task_index, task_id in enumerate(task_id_list):
                 try:
-                    result = self.dump_annotation_for_task(task_id, output_dir=output_dir, task_index=task_index)
+                    result = self.dump_annotation_for_task(task_id, output_dir=output_dir, task_history_index=task_history_index, task_index=task_index)
                     if result:
                         success_count += 1
                 except Exception:
@@ -149,7 +157,7 @@ class DumpAnnotation(CommandLine):
         super().validate_project(project_id, project_member_roles=None)
 
         main_obj = DumpAnnotationMain(self.service, project_id)
-        main_obj.dump_annotation(task_id_list, output_dir=output_dir, parallelism=args.parallelism)
+        main_obj.dump_annotation(task_id_list, output_dir=output_dir, parallelism=args.parallelism, task_history_index=args.task_history_index)
 
 
 def main(args: argparse.Namespace) -> None:
@@ -165,6 +173,13 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     argument_parser.add_task_id()
 
     parser.add_argument("-o", "--output_dir", type=str, required=True, help="出力先ディレクトリのパス")
+
+    parser.add_argument(
+        "--task_history_index",
+        type=int,
+        help="指定したタスク履歴のインデックス（ゼロ始まり）で付与されたアノテーション情報をダンプします。過去のアノテーション結果をダンプする場合に指定します。"
+        "ただし、過去のアノテーションデータは30日間しか保持されません。30日より前に更新されたアノテーションをダンプした場合は、アノテーションが0件の状態でダンプされます。",
+    )
 
     parser.add_argument(
         "--parallelism",
