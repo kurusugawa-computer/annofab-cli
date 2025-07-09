@@ -88,7 +88,7 @@ class DumpAnnotationMain:
         task_history_id: Optional[str] = None
         if task_history_index is not None:
             task_histories, _ = self.service.api.get_task_histories(self.project_id, task_id)
-            if len(task_histories) < task_history_index:
+            if task_history_index >= len(task_histories):
                 logger.warning(f"task_id='{task_id}' :: task_history_index='{task_history_index}'のタスク履歴は存在しません。タスク履歴は{len(task_histories)}件です。スキップします。")
                 return False
             task_history_id = task_histories[task_history_index]["task_history_id"]
