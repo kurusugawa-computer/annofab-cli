@@ -48,12 +48,27 @@ Examples
 
     ``annotation dump`` コマンドの出力結果は、``annotation restore`` コマンドに読み込ませることを目的として作られています。
 
-    ``annotation dump`` コマンドの出力結果であるJSONの構造は、現在V1形式ですが今後V2形式へ移行する予定です。
-    V1形式のJSON構造に依存したプログラムは、V2形式へ移行した際に動くなる可能性があります。
+    ``annotation dump`` コマンドの出力結果であるJSONの構造は、現在 ``AnnotationV2Output`` 形式ですが、WebAPIの変更により今後変更する可能性はあります。
     ``annotation dump`` コマンドの出力結果であるJSONの構造に直接依存したプログラムを作成する場合は、ご注意ください。
 
 
 
+
+過去のアノテーション情報をダンプする
+----------------------------------------------------
+``--task_history_index`` を指定すると、該当するタスク履歴で付与されたアノテーション情報をダンプできます。
+
+たとえばタスク履歴が以下のような場合に ``--task_history_index 1`` （0始まり）を指定すると、2番目（1始まり）のタスク履歴の完了日時である ``2025/07/09 12:28:52`` 時点のアノテーション情報をダンプします。
+
+.. image:: dump/task_history.png
+        :alt: タスク履歴画面
+
+
+.. warning::
+
+    過去のアノテーション情報は30日間しか保存されません。
+    30日より前に保存されたアノテーション情報をダンプしようとした場合、アノテーションの結果（ ``details`` 配下）は0件の状態でダンプされます。
+    
 
 
 
@@ -66,8 +81,4 @@ Usage Details
     :nosubcommands:
     :nodefaultconst:
 
-
-See also
-=================================
-*  `annofabcli annotation restore <../annotation/restore.html>`_
 
