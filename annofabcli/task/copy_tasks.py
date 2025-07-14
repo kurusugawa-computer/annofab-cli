@@ -221,7 +221,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
 def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     subcommand_name = "copy"
     subcommand_help = "タスクをコピーします。"
-    description = "タスクをコピーします。"
+    description = "タスクをコピーします。タスクに含まれるアノテーションはコピーされません。"
     epilog = "オーナロールを持つユーザで実行してください。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
