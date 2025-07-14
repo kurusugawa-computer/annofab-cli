@@ -161,7 +161,7 @@ class AnnotationConverter:
     ) -> Optional[dict[str, Any]]:
         """
         JSONに記載されている属性値を、APIに渡すための `AdditionalDataValue`スキーマに変換します。
-        
+
         Args:
             attribute_value: 属性値。 `None`の場合は、Noneを返します。
             additional_data_type: 属性の型
