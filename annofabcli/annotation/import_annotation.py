@@ -159,6 +159,16 @@ class AnnotationConverter:
         *,
         log_message_suffix: str,
     ) -> Optional[dict[str, Any]]:
+        """
+        JSONに記載されている属性値を、APIに渡すための `AdditionalDataValue`スキーマに変換します。
+        
+        Args:
+            attribute_value: 属性値。 `None`の場合は、Noneを返します。
+            additional_data_type: 属性の型
+            attribute_name: 属性名
+            choices: 選択肢情報。`AdditionalDataDefinitionType.CHOICE`や`AdditionalDataDefinitionType.SELECT`の場合に利用する。
+            log_message_suffix: ログメッセージのサフィックス
+        """
         if attribute_value is None:
             return None
 
