@@ -152,13 +152,16 @@ class AnnotationConverter:
 
     def _convert_attribute_value(  # noqa: PLR0911, PLR0912
         self,
-        attribute_value: Union[str, int, bool],  # noqa: FBT001
+        attribute_value: Optional[Union[str, int, bool]],  # noqa: FBT001
         additional_data_type: AdditionalDataDefinitionType,
         attribute_name: str,
         choices: list[dict[str, Any]],
         *,
         log_message_suffix: str,
     ) -> Optional[dict[str, Any]]:
+        if attribute_value is None:
+            return None
+
         if additional_data_type == AdditionalDataDefinitionType.FLAG:
             if not isinstance(attribute_value, bool):
                 message = f"属性'{attribute_name}'に対応する属性値の型は bool である必要があります。 :: attribute_value='{attribute_value}', additional_data_type='{additional_data_type}'  :: {log_message_suffix}"  # noqa: E501
