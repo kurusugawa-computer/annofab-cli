@@ -225,7 +225,7 @@ class SubPutInputData:
             return False
         except CheckSumError:
             logger.warning(
-                f"{log_message_prefix}入力データを登録しましたが、データが破損している可能性があります。input_data_id='{input_data.input_data_id}', input_data_name='{input_data.input_data_name}',",
+                f"{log_message_prefix}入力データを登録しましたが、データが破損している可能性があります。input_data_id='{input_data.input_data_id}', input_data_name='{input_data.input_data_name}'",
                 exc_info=True,
             )
             return False
