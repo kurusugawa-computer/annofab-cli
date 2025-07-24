@@ -129,7 +129,7 @@ class SubPutInputData:
         self.facade = facade
         self.all_yes = all_yes
 
-    def put_input_data(self, project_id: str, csv_input_data: InputDataForPut, last_updated_datetime: Optional[str] = None):  # noqa: ANN201
+    def put_input_data(self, project_id: str, csv_input_data: InputDataForPut, last_updated_datetime: Optional[str] = None) -> None:
         request_body: dict[str, Any] = {"last_updated_datetime": last_updated_datetime}
 
         file_path = get_file_scheme_path(csv_input_data.input_data_path)
@@ -180,22 +180,26 @@ class SubPutInputData:
 
         return self.confirm_processing(message_for_confirm)
 
-    def put_input_data_main(self, project_id: str, csv_input_data: CsvInputData, *, overwrite: bool = False) -> bool:
+    def put_input_data_main_wrapper(self, tpl: tuple[int, CsvInputData], *, project_id: str, overwrite: bool) -> bool:
+        input_data_index, csv_input_data = tpl
+        return self.put_input_data_main(project_id, csv_input_data, input_data_index=input_data_index, overwrite=overwrite)
+
+    def put_input_data_main(self, project_id: str, csv_input_data: CsvInputData, *, input_data_index: int, overwrite: bool = False) -> bool:
         input_data = InputDataForPut(
             input_data_name=csv_input_data.input_data_name,
             input_data_path=csv_input_data.input_data_path,
             input_data_id=csv_input_data.input_data_id if csv_input_data.input_data_id is not None else convert_input_data_name_to_input_data_id(csv_input_data.input_data_name),
         )
-
+        log_message_prefix = f"{input_data_index + 1}件目 :: "
         last_updated_datetime = None
         dict_input_data = self.service.wrapper.get_input_data_or_none(project_id, input_data.input_data_id)
 
         if dict_input_data is not None:
             if overwrite:
-                logger.debug(f"input_data_id='{input_data.input_data_id}' はすでに存在します。")
+                logger.debug(f"{log_message_prefix}input_data_id='{input_data.input_data_id}' はすでに存在します。")
                 last_updated_datetime = dict_input_data["updated_datetime"]
             else:
-                logger.debug(f"input_data_id='{input_data.input_data_id}' がすでに存在するのでスキップします。")
+                logger.debug(f"{log_message_prefix}input_data_id='{input_data.input_data_id}' がすでに存在するのでスキップします。")
                 return False
 
         file_path = get_file_scheme_path(input_data.input_data_path)
@@ -210,18 +214,18 @@ class SubPutInputData:
         # 入力データを登録
         try:
             self.put_input_data(project_id, input_data, last_updated_datetime=last_updated_datetime)
-            logger.debug(f"入力データを登録しました。 :: input_data_id='{input_data.input_data_id}', input_data_name='{input_data.input_data_name}'")
+            logger.debug(f"{log_message_prefix}入力データを登録しました。 :: input_data_id='{input_data.input_data_id}', input_data_name='{input_data.input_data_name}'")
             return True  # noqa: TRY300
 
         except requests.exceptions.HTTPError:
             logger.warning(
-                f"入力データの登録に失敗しました。input_data_id='{input_data.input_data_id}', input_data_name='{input_data.input_data_name}'",
+                f"{log_message_prefix}入力データの登録に失敗しました。input_data_id='{input_data.input_data_id}', input_data_name='{input_data.input_data_name}'",
                 exc_info=True,
             )
             return False
         except CheckSumError:
             logger.warning(
-                f"入力データを登録しましたが、データが破損している可能性があります。input_data_id='{input_data.input_data_id}', input_data_name='{input_data.input_data_name}',",
+                f"{log_message_prefix}入力データを登録しましたが、データが破損している可能性があります。input_data_id='{input_data.input_data_id}', input_data_name='{input_data.input_data_name}',",
                 exc_info=True,
             )
             return False
@@ -259,14 +263,14 @@ class PutInputData(CommandLine):
 
         obj = SubPutInputData(service=self.service, facade=self.facade, all_yes=self.all_yes)
         if parallelism is not None:
-            partial_func = partial(obj.put_input_data_main, project_id, overwrite=overwrite)
+            partial_func = partial(obj.put_input_data_main_wrapper, project_id=project_id, overwrite=overwrite)
             with Pool(parallelism) as pool:
-                result_bool_list = pool.map(partial_func, input_data_list)
+                result_bool_list = pool.map(partial_func, enumerate(input_data_list))
                 count_put_input_data = len([e for e in result_bool_list if e])
 
         else:
-            for csv_input_data in input_data_list:
-                result = obj.put_input_data_main(project_id, csv_input_data=csv_input_data, overwrite=overwrite)
+            for input_data_index, csv_input_data in enumerate(input_data_list):
+                result = obj.put_input_data_main(project_id, csv_input_data=csv_input_data, input_data_index=input_data_index, overwrite=overwrite)
                 if result:
                     count_put_input_data += 1
 
