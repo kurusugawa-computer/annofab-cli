@@ -72,7 +72,7 @@ class Test__AttributeRestrictionMessage:
         attribute_id = "71620647-98cf-48ad-b43b-4af425a24f32"
         condition = {"value": "b690fa1a-7b3d-4181-95d8-f5c75927c3fc", "_type": "Equals"}
         actual = self.obj.get_restriction_text(attribute_id, condition)
-        assert actual == "'type' (id='71620647-98cf-48ad-b43b-4af425a24f32', type='select') EQUALS 'b690fa1a-7b3d-4181-95d8-f5c75927c3fc' (name='medium')"
+        assert actual == "'type' (id='71620647-98cf-48ad-b43b-4af425a24f32', type='select') EQUALS 'medium' (id='b690fa1a-7b3d-4181-95d8-f5c75927c3fc')"
 
     def test_get_restriction_text__caninput(self):
         attribute_id = "54fa5e97-6f88-49a4-aeb0-a91a15d11528"
@@ -120,7 +120,7 @@ class Test__AttributeRestrictionMessage:
         condition = {"value": "", "_type": "Equals"}
 
         actual = self.obj.get_restriction_text(attribute_id, condition)
-        assert actual == "'type' (id='71620647-98cf-48ad-b43b-4af425a24f32', type='select') EQUALS ''"
+        assert actual == "'type' (id='71620647-98cf-48ad-b43b-4af425a24f32', type='select') EQUALS '' (id='')"
 
     def test_get_restriction_text_list(self):
         actual1 = self.obj.get_restriction_text_list(self.annotation_specs["restrictions"], target_attribute_names=["link"])
