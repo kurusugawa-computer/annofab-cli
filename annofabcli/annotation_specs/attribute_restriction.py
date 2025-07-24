@@ -74,21 +74,26 @@ class AttributeRestrictionMessage:
         属性の種類がドロップダウンかセレクトボックスのときは、選択肢の名前を返す。
 
         Args:
-            value (str): _description_
-            attribute (Optional[dict[str,Any]]): _description_
+            value: 制約条件の値
+            attribute: 属性情報
 
         Returns:
-            str: _description_
+            valueが'foo'の場合：
+            -  属性の種類が排他選択でない場合： `'foo'` （valueを返す）
+            -  属性の種類が排他選択である場合： `'FOO'` （選択肢の名前を返す）
+            -  `OutputFormat.DETAILED_TEXT` AND 属性の種類が排他選択である場合： `'FOO' (id='foo')` （選択肢の名前とIDを返す）
+
         """
         if attribute is not None and attribute["type"] in ["choice", "select"]:
             # ラジオボタンかドロップダウンのとき
             choices = attribute["choices"]
             choice = first_true(choices, pred=lambda e: e["choice_id"] == value)
-            if choice is not None:
-                choice_name = AnnofabApiFacade.get_choice_name_en(choice)
-                tmp = f"'{value}'"
+            if value == "" or choice is not None:
+                # `value == ""`を判定条件に加える理由：「排他選択属性が空である/空でない」という制約の場合、`value`は空文字列になるため。
+                choice_name = AnnofabApiFacade.get_choice_name_en(choice) if choice is not None else ""
+                tmp = f"'{choice_name}'"
                 if self.output_format == OutputFormat.DETAILED_TEXT:
-                    tmp = f"{tmp} (name='{choice_name}')"
+                    tmp = f"{tmp} (id='{value}')"
                 return tmp
 
             else:
