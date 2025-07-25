@@ -55,7 +55,7 @@ class ChangeOperatorMain:
         return yes
 
     def confirm_change_operator(self, task: Task) -> bool:
-        confirm_message = f"task_id = {task.task_id} のタスクの担当者を変更しますか？"
+        confirm_message = f"task_id='{task.task_id}' のタスクの担当者を変更しますか？"
         return self.confirm_processing(confirm_message)
 
     def change_operator_for_task(
@@ -78,14 +78,14 @@ class ChangeOperatorMain:
         if task.account_id is not None:
             now_user_id = self.facade.get_user_id_from_account_id(project_id, task.account_id)
 
-        logger.debug(f"{logging_prefix} : task_id = {task.task_id}, status = {task.status.value}, phase = {task.phase.value}, phase_stage = {task.phase_stage}, user_id = {now_user_id}")
+        logger.debug(f"{logging_prefix} :: task_id='{task.task_id}', status='{task.status.value}', phase='{task.phase.value}', phase_stage='{task.phase_stage}', user_id='{now_user_id}'")
 
         if task.status in [TaskStatus.COMPLETE, TaskStatus.WORKING]:
-            logger.warning(f"{logging_prefix} : task_id = {task_id} : タスクのstatusがworking or complete なので、担当者を変更できません。")
+            logger.warning(f"{logging_prefix} :: task_id='{task_id}' :: タスクのstatusがworking or complete なので、担当者を変更できません。")
             return False
 
         if not match_task_with_query(task, task_query):
-            logger.debug(f"{logging_prefix} : task_id = {task_id} : `--task_query` の条件にマッチしないため、スキップします。task_query={task_query}")
+            logger.debug(f"{logging_prefix} :: task_id='{task_id}' :: `--task_query` の条件にマッチしないため、スキップします。task_query={task_query}")
             return False
 
         if not self.confirm_change_operator(task):
@@ -94,11 +94,11 @@ class ChangeOperatorMain:
         try:
             # 担当者を変更する
             self.service.wrapper.change_task_operator(project_id, task_id, operator_account_id=new_account_id)
-            logger.debug(f"{logging_prefix} : task_id = {task_id}, phase={dict_task['phase']} のタスクの担当者を変更しました。")
+            logger.debug(f"{logging_prefix} :: task_id='{task_id}', phase='{dict_task['phase']}' のタスクの担当者を変更しました。")
             return True  # noqa: TRY300
 
         except requests.exceptions.HTTPError:
-            logger.warning(f"{logging_prefix} : task_id = {task_id} の担当者を変更するのに失敗しました。", exc_info=True)
+            logger.warning(f"{logging_prefix} :: task_id='{task_id}' の担当者を変更するのに失敗しました。", exc_info=True)
             return False
 
     def change_operator_for_task_wrapper(
