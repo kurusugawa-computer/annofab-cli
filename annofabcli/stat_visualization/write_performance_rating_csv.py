@@ -490,7 +490,7 @@ def create_user_df(target_dir: Path) -> pandas.DataFrame:
     df_user.drop_duplicates(inplace=True)
     # 出力結果のCSV列に合わせて3行の列名に変更する
     df_user.columns = pandas.MultiIndex.from_tuples([("user_id", "", ""), ("username", "", ""), ("biography", "", "")])
-    return df_user.sort_values("user_id").set_index("user_id")
+    return df_user.sort_values(("user_id", "", "")).set_index(("user_id", "", ""))
 
 
 def create_custom_production_volume_by_directory(cli_value: str) -> dict[str, list[ProductionVolumeColumn]]:
