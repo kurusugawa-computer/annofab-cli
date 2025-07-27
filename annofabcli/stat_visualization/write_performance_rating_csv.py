@@ -413,7 +413,7 @@ def create_rank_df(df: pandas.DataFrame, *, user_ids: Optional[Collection[str]] 
         df_rank[col] = to_rank(df[col])
 
     if user_ids is not None:
-        return df_rank[df_rank[("user_id", "")].isin(user_ids)]
+        return df_rank[df_rank[("user_id", "", "")].isin(user_ids)]
     else:
         return df_rank
 
