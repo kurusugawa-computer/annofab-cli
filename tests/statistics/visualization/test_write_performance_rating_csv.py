@@ -36,9 +36,9 @@ def test__create_quality_indicator_by_directory():
 
 df_user = pandas.DataFrame(
     {
-        ("user_id", ""): ["QU", "KX", "BH", "NZ"],
-        ("username", ""): ["QU", "KX", "BH", "NZ"],
-        ("biography", ""): ["category-KK", "category-KT", "category-KT", "category-KT"],
+        ("user_id", "",""): ["QU", "KX", "BH", "NZ"],
+        ("username", "",""): ["QU", "KX", "BH", "NZ"],
+        ("biography", "",""): ["category-KK", "category-KT", "category-KT", "category-KT"],
     }
 )
 project_dir = ProjectDir(data_dir / "visualization-dir", TaskCompletionCriteria.ACCEPTANCE_COMPLETED)
