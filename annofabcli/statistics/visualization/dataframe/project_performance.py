@@ -147,7 +147,6 @@ class ProjectWorktimePerMonth:
             # 複数のプロジェクトをマージして生産性情報を出力した場合は、`project_info.json`は存在しないので、このブロックに入る
             logger.info(f"'{project_dir}'からプロジェクト情報を読み込むのに失敗しました。project_titleは空文字にします。", exc_info=True)
             project_title = ""
-        result["dirname"] = project_dir.project_dir.name
         result["project_title"] = project_title
         return result
 
