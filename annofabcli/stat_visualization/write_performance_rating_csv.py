@@ -210,7 +210,7 @@ class CollectingPerformanceInfo:
 
         return df
 
-    def join_annotation_productivity(self, df: pandas.DataFrame, df_performance: pandas.DataFrame, dirname: str, project_title:str) -> pandas.DataFrame:
+    def join_annotation_productivity(self, df: pandas.DataFrame, df_performance: pandas.DataFrame, dirname: str, project_title: str) -> pandas.DataFrame:
         """
         引数`df_performance`から教師付生産性を抽出して引数`df`にjoinした結果を返す
 
@@ -235,13 +235,14 @@ class CollectingPerformanceInfo:
         df_tmp.columns = pandas.MultiIndex.from_tuples([(dirname, project_title, f"{productivity_indicator.column}__{phase.value}")])
         return df.join(df_tmp)
 
-    def join_inspection_acceptance_productivity(self, df: pandas.DataFrame, df_performance: pandas.DataFrame, dirname: str) -> pandas.DataFrame:
+    def join_inspection_acceptance_productivity(self, df: pandas.DataFrame, df_performance: pandas.DataFrame, dirname: str, project_title: str) -> pandas.DataFrame:
         """
         引数`df_performance`から検査/受入の生産性を抽出して引数`df`にjoinした結果を返す
 
         Args:
             df: 検査/受入の生産性が格納されたDataFrame。行方向にユーザー、列方向にプロジェクトが並んでいる。
             dirname: 引数`df`にjoinする対象のプロジェクト名。列名に使用する。
+            project_title: プロジェクトのタイトル。列名に使用する。
             df_performance: 引数`dirname`のユーザーごとの生産性と品質が格納されたDataFrame。
         """
 
@@ -256,7 +257,7 @@ class CollectingPerformanceInfo:
             df_joined = self.filter_df_with_threshold(df_joined, phase, dirname=dirname)
 
             df_tmp = df_joined[[(productivity_indicator.column, phase.value)]]
-            df_tmp.columns = pandas.MultiIndex.from_tuples([(dirname, f"{productivity_indicator.column}__{phase.value}")])
+            df_tmp.columns = pandas.MultiIndex.from_tuples([(dirname, project_title, f"{productivity_indicator.column}__{phase.value}")])
 
             return df.join(df_tmp)
 
@@ -269,7 +270,7 @@ class CollectingPerformanceInfo:
             df_joined = self.filter_df_with_threshold(df_joined, phase, dirname=dirname)
 
             df_tmp = df_joined[[(productivity_indicator.column, phase.value)]]
-            df_tmp.columns = pandas.MultiIndex.from_tuples([(dirname, f"{productivity_indicator.column}__{phase.value}")])
+            df_tmp.columns = pandas.MultiIndex.from_tuples([(dirname, project_title, f"{productivity_indicator.column}__{phase.value}")])
 
             return df.join(df_tmp)
 
@@ -278,13 +279,14 @@ class CollectingPerformanceInfo:
 
         return df
 
-    def join_annotation_quality(self, df: pandas.DataFrame, df_performance: pandas.DataFrame, dirname: str) -> pandas.DataFrame:
+    def join_annotation_quality(self, df: pandas.DataFrame, df_performance: pandas.DataFrame, dirname: str, project_title: str) -> pandas.DataFrame:
         """
         引数`df_performance`から教師付の品質を抽出して引数`df`にjoinした結果を返す
 
         Args:
             df: 教師付の品質が格納されたDataFrame。行方向にユーザー、列方向にプロジェクトが並んでいる。
             dirname: 引数`df`にjoinする対象のプロジェクト名。列名に使用する。
+            project_title: プロジェクトのタイトル。列名に使用する。
             df_performance: 引数`dirname`のユーザーごとの生産性と品質が格納されたDataFrame。
         """
         phase = TaskPhase.ANNOTATION
@@ -301,7 +303,7 @@ class CollectingPerformanceInfo:
             logger.warning(f"'{dirname}'に品質の指標である'{column}'の列が存在しませんでした。")
             df_tmp = pandas.DataFrame(index=df_joined.index, columns=[column])
 
-        df_tmp.columns = pandas.MultiIndex.from_tuples([(dirname, f"{quality_indicator.column}__{phase.value}")])
+        df_tmp.columns = pandas.MultiIndex.from_tuples([(dirname, project_title, f"{quality_indicator.column}__{phase.value}")])
         return df.join(df_tmp)
 
     def create_rating_df(
@@ -349,24 +351,11 @@ class CollectingPerformanceInfo:
             df_performance = user_performance.df.copy()
             df_performance.set_index("user_id", inplace=True)
 
-            df_annotation_productivity = self.join_annotation_productivity(
-                df_annotation_productivity,
-                df_performance,
-                dirname=dirname,
-                project_title=project_title
-            )
+            df_annotation_productivity = self.join_annotation_productivity(df_annotation_productivity, df_performance, dirname=dirname, project_title=project_title)
 
-            df_annotation_quality = self.join_annotation_quality(
-                df_annotation_quality,
-                df_performance,
-                dirname=dirname,
-            )
+            df_annotation_quality = self.join_annotation_quality(df_annotation_quality, df_performance, dirname=dirname, project_title=project_title)
 
-            df_inspection_acceptance_productivity = self.join_inspection_acceptance_productivity(
-                df_inspection_acceptance_productivity,
-                df_performance,
-                dirname=dirname,
-            )
+            df_inspection_acceptance_productivity = self.join_inspection_acceptance_productivity(df_inspection_acceptance_productivity, df_performance, dirname=dirname, project_title=project_title)
 
         # プロジェクトの生産性と品質のDataFrameを生成する
         project_performance = ProjectPerformance.from_project_dirs(project_dir_list)
