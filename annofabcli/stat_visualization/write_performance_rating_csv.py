@@ -178,10 +178,10 @@ class CollectingPerformanceInfo:
         self.productivity_indicator_by_directory = productivity_indicator_by_directory if productivity_indicator_by_directory is not None else {}
         self.quality_indicator_by_directory = quality_indicator_by_directory if quality_indicator_by_directory is not None else {}
 
-    def get_threshold_info(self, project_title: str, productivity_type: ProductivityType) -> ThresholdInfo:
+    def get_threshold_info(self, dirname: str, productivity_type: ProductivityType) -> ThresholdInfo:
         """指定したプロジェクト名に対応する、閾値情報を取得する。"""
         global_info = self.threshold_info
-        local_info = self.threshold_infos_by_directory.get((project_title, productivity_type))
+        local_info = self.threshold_infos_by_directory.get((dirname, productivity_type))
         if local_info is None:
             return global_info
 
@@ -190,7 +190,7 @@ class CollectingPerformanceInfo:
 
         return ThresholdInfo(threshold_worktime=worktime, threshold_task_count=task_count)
 
-    def filter_df_with_threshold(self, df: pandas.DataFrame, phase: TaskPhase, project_title: str):  # noqa: ANN201
+    def filter_df_with_threshold(self, df: pandas.DataFrame, phase: TaskPhase, dirname: str):  # noqa: ANN201
         """
         引数`df`をインタンスとして持っている閾値情報でフィルタリングする。
         """
@@ -201,7 +201,7 @@ class CollectingPerformanceInfo:
         else:
             raise RuntimeError(f"未対応のフェーズです。phase={phase}")
 
-        threshold_info = self.get_threshold_info(project_title, productivity_type)
+        threshold_info = self.get_threshold_info(dirname, productivity_type)
         if threshold_info.threshold_worktime is not None:
             df = df[df[(self.productivity_indicator.worktime_type.value, phase.value)] > threshold_info.threshold_worktime]
 
@@ -210,42 +210,44 @@ class CollectingPerformanceInfo:
 
         return df
 
-    def join_annotation_productivity(self, df: pandas.DataFrame, df_performance: pandas.DataFrame, project_title: str) -> pandas.DataFrame:
+    def join_annotation_productivity(self, df: pandas.DataFrame, df_performance: pandas.DataFrame, dirname: str, project_title: str) -> pandas.DataFrame:
         """
         引数`df_performance`から教師付生産性を抽出して引数`df`にjoinした結果を返す
 
         Args:
             df: 教師付生産性が格納されたDataFrame。行方向にユーザー、列方向にプロジェクトが並んでいる。
-            project_title: 引数`df`にjoinする対象のプロジェクト名。列名に使用する。
-            df_performance: 引数`project_title`のユーザーごとの生産性と品質が格納されたDataFrame。
+            dirname: 引数`df`にjoinする対象のプロジェクト名。列名に使用する。
+            df_performance: 引数`dirname`のユーザーごとの生産性と品質が格納されたDataFrame。
         """
         phase = TaskPhase.ANNOTATION
 
         df_joined = df_performance
 
-        df_joined = self.filter_df_with_threshold(df_joined, phase, project_title=project_title)
+        df_joined = self.filter_df_with_threshold(df_joined, phase, dirname=dirname)
 
-        productivity_indicator = self.productivity_indicator_by_directory.get(project_title, self.productivity_indicator)
+        productivity_indicator = self.productivity_indicator_by_directory.get(dirname, self.productivity_indicator)
         column = (productivity_indicator.column, phase.value)
         if column in df_joined.columns:
             df_tmp = df_joined[[column]]
         else:
-            logger.warning(f"'{project_title}'に生産性の指標である'{column}'の列が存在しませんでした。")
+            logger.warning(f"'{dirname}'に生産性の指標である'{column}'の列が存在しませんでした。")
             df_tmp = pandas.DataFrame(index=df_joined.index, columns=[column])
-        df_tmp.columns = pandas.MultiIndex.from_tuples([(project_title, f"{productivity_indicator.column}__{phase.value}")])
+        df_tmp.columns = pandas.MultiIndex.from_tuples([(dirname, project_title, f"{productivity_indicator.column}__{phase.value}")])
+
         return df.join(df_tmp)
 
-    def join_inspection_acceptance_productivity(self, df: pandas.DataFrame, df_performance: pandas.DataFrame, project_title: str) -> pandas.DataFrame:
+    def join_inspection_acceptance_productivity(self, df: pandas.DataFrame, df_performance: pandas.DataFrame, dirname: str, project_title: str) -> pandas.DataFrame:
         """
         引数`df_performance`から検査/受入の生産性を抽出して引数`df`にjoinした結果を返す
 
         Args:
             df: 検査/受入の生産性が格納されたDataFrame。行方向にユーザー、列方向にプロジェクトが並んでいる。
-            project_title: 引数`df`にjoinする対象のプロジェクト名。列名に使用する。
-            df_performance: 引数`project_title`のユーザーごとの生産性と品質が格納されたDataFrame。
+            dirname: 引数`df`にjoinする対象のプロジェクト名。列名に使用する。
+            project_title: プロジェクトのタイトル。列名に使用する。
+            df_performance: 引数`dirname`のユーザーごとの生産性と品質が格納されたDataFrame。
         """
 
-        productivity_indicator = self.productivity_indicator_by_directory.get(project_title, self.productivity_indicator)
+        productivity_indicator = self.productivity_indicator_by_directory.get(dirname, self.productivity_indicator)
 
         def _join_inspection() -> pandas.DataFrame:
             phase = TaskPhase.INSPECTION
@@ -253,10 +255,10 @@ class CollectingPerformanceInfo:
                 return df
 
             df_joined = df_performance
-            df_joined = self.filter_df_with_threshold(df_joined, phase, project_title=project_title)
+            df_joined = self.filter_df_with_threshold(df_joined, phase, dirname=dirname)
 
             df_tmp = df_joined[[(productivity_indicator.column, phase.value)]]
-            df_tmp.columns = pandas.MultiIndex.from_tuples([(project_title, f"{productivity_indicator.column}__{phase.value}")])
+            df_tmp.columns = pandas.MultiIndex.from_tuples([(dirname, project_title, f"{productivity_indicator.column}__{phase.value}")])
 
             return df.join(df_tmp)
 
@@ -266,10 +268,10 @@ class CollectingPerformanceInfo:
                 return df
 
             df_joined = df_performance
-            df_joined = self.filter_df_with_threshold(df_joined, phase, project_title=project_title)
+            df_joined = self.filter_df_with_threshold(df_joined, phase, dirname=dirname)
 
             df_tmp = df_joined[[(productivity_indicator.column, phase.value)]]
-            df_tmp.columns = pandas.MultiIndex.from_tuples([(project_title, f"{productivity_indicator.column}__{phase.value}")])
+            df_tmp.columns = pandas.MultiIndex.from_tuples([(dirname, project_title, f"{productivity_indicator.column}__{phase.value}")])
 
             return df.join(df_tmp)
 
@@ -278,30 +280,31 @@ class CollectingPerformanceInfo:
 
         return df
 
-    def join_annotation_quality(self, df: pandas.DataFrame, df_performance: pandas.DataFrame, project_title: str) -> pandas.DataFrame:
+    def join_annotation_quality(self, df: pandas.DataFrame, df_performance: pandas.DataFrame, dirname: str, project_title: str) -> pandas.DataFrame:
         """
         引数`df_performance`から教師付の品質を抽出して引数`df`にjoinした結果を返す
 
         Args:
             df: 教師付の品質が格納されたDataFrame。行方向にユーザー、列方向にプロジェクトが並んでいる。
-            project_title: 引数`df`にjoinする対象のプロジェクト名。列名に使用する。
-            df_performance: 引数`project_title`のユーザーごとの生産性と品質が格納されたDataFrame。
+            dirname: 引数`df`にjoinする対象のプロジェクト名。列名に使用する。
+            project_title: プロジェクトのタイトル。列名に使用する。
+            df_performance: 引数`dirname`のユーザーごとの生産性と品質が格納されたDataFrame。
         """
         phase = TaskPhase.ANNOTATION
         df_joined = df_performance
 
-        df_joined = self.filter_df_with_threshold(df_joined, phase=TaskPhase.ANNOTATION, project_title=project_title)
+        df_joined = self.filter_df_with_threshold(df_joined, phase=TaskPhase.ANNOTATION, dirname=dirname)
 
-        quality_indicator = self.quality_indicator_by_directory.get(project_title, self.quality_indicator)
+        quality_indicator = self.quality_indicator_by_directory.get(dirname, self.quality_indicator)
 
         column = (quality_indicator.column, phase.value)
         if column in df_joined.columns:
             df_tmp = df_joined[[column]]
         else:
-            logger.warning(f"'{project_title}'に品質の指標である'{column}'の列が存在しませんでした。")
+            logger.warning(f"'{dirname}'に品質の指標である'{column}'の列が存在しませんでした。")
             df_tmp = pandas.DataFrame(index=df_joined.index, columns=[column])
 
-        df_tmp.columns = pandas.MultiIndex.from_tuples([(project_title, f"{quality_indicator.column}__{phase.value}")])
+        df_tmp.columns = pandas.MultiIndex.from_tuples([(dirname, project_title, f"{quality_indicator.column}__{phase.value}")])
         return df.join(df_tmp)
 
     def create_rating_df(
@@ -321,13 +324,21 @@ class CollectingPerformanceInfo:
                 continue
 
             custom_production_volume_list = custom_production_volume_list_by_directory.get(p_project_dir.name) if custom_production_volume_list_by_directory is not None else None
-            project_title = p_project_dir.name
+            dirname = p_project_dir.name
             project_dir = ProjectDir(
                 p_project_dir,
                 task_completion_criteria=TaskCompletionCriteria.ACCEPTANCE_COMPLETED,
                 custom_production_volume_list=custom_production_volume_list,
             )
             project_dir_list.append(project_dir)
+
+            try:
+                project_info = project_dir.read_project_info()
+                project_title = project_info.project_title
+            except Exception:
+                # 複数のプロジェクトをマージして生産性情報を出力した場合は、`project_info.json`は存在しないので、このブロックに入る
+                logger.info(f"'{project_dir}'からプロジェクト情報を読み込むのに失敗しました。project_titleは空文字にします。", exc_info=True)
+                project_title = ""
 
             try:
                 user_performance = project_dir.read_user_performance()
@@ -341,23 +352,11 @@ class CollectingPerformanceInfo:
             df_performance = user_performance.df.copy()
             df_performance.set_index("user_id", inplace=True)
 
-            df_annotation_productivity = self.join_annotation_productivity(
-                df_annotation_productivity,
-                df_performance,
-                project_title=project_title,
-            )
+            df_annotation_productivity = self.join_annotation_productivity(df_annotation_productivity, df_performance, dirname=dirname, project_title=project_title)
 
-            df_annotation_quality = self.join_annotation_quality(
-                df_annotation_quality,
-                df_performance,
-                project_title=project_title,
-            )
+            df_annotation_quality = self.join_annotation_quality(df_annotation_quality, df_performance, dirname=dirname, project_title=project_title)
 
-            df_inspection_acceptance_productivity = self.join_inspection_acceptance_productivity(
-                df_inspection_acceptance_productivity,
-                df_performance,
-                project_title=project_title,
-            )
+            df_inspection_acceptance_productivity = self.join_inspection_acceptance_productivity(df_inspection_acceptance_productivity, df_performance, dirname=dirname, project_title=project_title)
 
         # プロジェクトの生産性と品質のDataFrameを生成する
         project_performance = ProjectPerformance.from_project_dirs(project_dir_list)
@@ -443,9 +442,9 @@ def create_deviation_df(
 
     df_rank["mean_of_deviation"] = df_rank[project_columns].mean(axis=1)
     df_rank["count_of_project"] = df_rank[project_columns].count(axis=1)
-    df = df_rank[[*list(user_columns), ("mean_of_deviation", ""), ("count_of_project", ""), *list(project_columns)]]
+    df = df_rank[[*list(user_columns), ("mean_of_deviation", "", ""), ("count_of_project", "", ""), *list(project_columns)]]
     if user_ids is not None:
-        return df[df[("user_id", "")].isin(user_ids)]
+        return df[df[("user_id", "", "")].isin(user_ids)]
     else:
         return df
 
@@ -463,7 +462,7 @@ def create_user_df(target_dir: Path) -> pandas.DataFrame:
         target_dir:
 
     Returns:
-        ユーザのDataFrame. columnは("username", ""), ("biography", "") , indexが"user_id"
+        ユーザのDataFrame. columnは("username", "", ""), ("biography", "", "") , indexが"user_id"
 
     """
     all_user_list: list[dict[str, Any]] = []
@@ -486,10 +485,12 @@ def create_user_df(target_dir: Path) -> pandas.DataFrame:
         tmp_df_user = user_performance.df[[("user_id", ""), ("username", ""), ("biography", "")]].copy()
         all_user_list.extend(tmp_df_user.to_dict("records"))
 
-    index = pandas.MultiIndex.from_tuples([("user_id", ""), ("username", ""), ("biography", "")])
-    df_user = pandas.DataFrame(all_user_list, columns=index)
+    df_user = pandas.DataFrame(all_user_list, columns=pandas.MultiIndex.from_tuples([("user_id", ""), ("username", ""), ("biography", "")]))
+
     df_user.drop_duplicates(inplace=True)
-    return df_user.sort_values("user_id").set_index("user_id")
+    # 出力結果のCSV列に合わせて3行の列名に変更する
+    df_user.columns = pandas.MultiIndex.from_tuples([("user_id", "", ""), ("username", "", ""), ("biography", "", "")])
+    return df_user.sort_values(("user_id", "", "")).set_index(("user_id", "", ""))
 
 
 def create_custom_production_volume_by_directory(cli_value: str) -> dict[str, list[ProductionVolumeColumn]]:

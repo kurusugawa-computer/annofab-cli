@@ -74,8 +74,16 @@ Examples
         └── inspection_acceptance_productivity__summary.csv
 
 
-* `annotation_productivity_rank.csv <https://github.com/kurusugawa-computer/annofab-cli/blob/main/docs/command_reference/stat_visualization/write_performance_rating_csv/out/annotation_productivity_rank.csv>`_
-* `annotation_productivity_deviation.csv <https://github.com/kurusugawa-computer/annofab-cli/blob/main/docs/command_reference/stat_visualization/write_performance_rating_csv/out/annotation_productivity_deviation.csv>`_
+
+.. csv-table:: annotation_productivity_rank.csv
+    :header-rows: 3
+    :file: write_performance_rating_csv/out/annotation_productivity_rank.csv
+
+
+.. csv-table:: annotation_productivity_deviation.csv
+    :header-rows: 3
+    :file: write_performance_rating_csv/out/annotation_productivity_deviation.csv
+
 
 
 
