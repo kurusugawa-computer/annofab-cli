@@ -233,6 +233,7 @@ class CollectingPerformanceInfo:
             logger.warning(f"'{dirname}'に生産性の指標である'{column}'の列が存在しませんでした。")
             df_tmp = pandas.DataFrame(index=df_joined.index, columns=[column])
         df_tmp.columns = pandas.MultiIndex.from_tuples([(dirname, project_title, f"{productivity_indicator.column}__{phase.value}")])
+
         return df.join(df_tmp)
 
     def join_inspection_acceptance_productivity(self, df: pandas.DataFrame, df_performance: pandas.DataFrame, dirname: str, project_title: str) -> pandas.DataFrame:
@@ -441,7 +442,7 @@ def create_deviation_df(
 
     df_rank["mean_of_deviation"] = df_rank[project_columns].mean(axis=1)
     df_rank["count_of_project"] = df_rank[project_columns].count(axis=1)
-    df = df_rank[[*list(user_columns), ("mean_of_deviation", ""), ("count_of_project", ""), *list(project_columns)]]
+    df = df_rank[[*list(user_columns), ("mean_of_deviation", "", ""), ("count_of_project", "", ""), *list(project_columns)]]
     if user_ids is not None:
         return df[df[("user_id", "")].isin(user_ids)]
     else:
@@ -461,7 +462,7 @@ def create_user_df(target_dir: Path) -> pandas.DataFrame:
         target_dir:
 
     Returns:
-        ユーザのDataFrame. columnは("username", ""), ("biography", "") , indexが"user_id"
+        ユーザのDataFrame. columnは("username", "", ""), ("biography", "", "") , indexが"user_id"
 
     """
     all_user_list: list[dict[str, Any]] = []
@@ -484,9 +485,11 @@ def create_user_df(target_dir: Path) -> pandas.DataFrame:
         tmp_df_user = user_performance.df[[("user_id", ""), ("username", ""), ("biography", "")]].copy()
         all_user_list.extend(tmp_df_user.to_dict("records"))
 
-    index = pandas.MultiIndex.from_tuples([("user_id", ""), ("username", ""), ("biography", "")])
-    df_user = pandas.DataFrame(all_user_list, columns=index)
+    df_user = pandas.DataFrame(all_user_list, columns=pandas.MultiIndex.from_tuples([("user_id", ""), ("username", ""), ("biography", "")]))
+
     df_user.drop_duplicates(inplace=True)
+    # 出力結果のCSV列に合わせて3行の列名に変更する
+    df_user.columns = pandas.MultiIndex.from_tuples([("user_id", "", ""), ("username", "", ""), ("biography", "", "")])
     return df_user.sort_values("user_id").set_index("user_id")
 
 
