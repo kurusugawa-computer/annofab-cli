@@ -210,7 +210,7 @@ class CollectingPerformanceInfo:
 
         return df
 
-    def join_annotation_productivity(self, df: pandas.DataFrame, df_performance: pandas.DataFrame, dirname: str) -> pandas.DataFrame:
+    def join_annotation_productivity(self, df: pandas.DataFrame, df_performance: pandas.DataFrame, dirname: str, project_title:str) -> pandas.DataFrame:
         """
         引数`df_performance`から教師付生産性を抽出して引数`df`にjoinした結果を返す
 
@@ -232,7 +232,7 @@ class CollectingPerformanceInfo:
         else:
             logger.warning(f"'{dirname}'に生産性の指標である'{column}'の列が存在しませんでした。")
             df_tmp = pandas.DataFrame(index=df_joined.index, columns=[column])
-        df_tmp.columns = pandas.MultiIndex.from_tuples([(dirname, f"{productivity_indicator.column}__{phase.value}")])
+        df_tmp.columns = pandas.MultiIndex.from_tuples([(dirname, project_title, f"{productivity_indicator.column}__{phase.value}")])
         return df.join(df_tmp)
 
     def join_inspection_acceptance_productivity(self, df: pandas.DataFrame, df_performance: pandas.DataFrame, dirname: str) -> pandas.DataFrame:
@@ -329,7 +329,13 @@ class CollectingPerformanceInfo:
             )
             project_dir_list.append(project_dir)
 
-            # project_info = project_dir.read_project_info()
+            try:
+                project_info = project_dir.read_project_info()
+                project_title = project_info.project_title
+            except Exception:
+                # 複数のプロジェクトをマージして生産性情報を出力した場合は、`project_info.json`は存在しないので、このブロックに入る
+                logger.info(f"'{project_dir}'からプロジェクト情報を読み込むのに失敗しました。project_titleは空文字にします。", exc_info=True)
+                project_title = ""
 
             try:
                 user_performance = project_dir.read_user_performance()
@@ -347,6 +353,7 @@ class CollectingPerformanceInfo:
                 df_annotation_productivity,
                 df_performance,
                 dirname=dirname,
+                project_title=project_title
             )
 
             df_annotation_quality = self.join_annotation_quality(
