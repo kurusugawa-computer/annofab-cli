@@ -9,6 +9,7 @@ import uuid
 import zipfile
 from collections.abc import Iterator
 from dataclasses import dataclass
+from functools import partial
 from pathlib import Path
 from typing import Any, Optional, Union
 
@@ -407,7 +408,6 @@ class ImportAnnotationMain(CommandLineWithConfirm):
         is_force: bool,
         is_merge: bool,
         is_overwrite: bool,
-        converter: AnnotationConverter,
     ) -> None:
         self.service = service
         self.facade = AnnofabApiFacade(service)
@@ -417,9 +417,8 @@ class ImportAnnotationMain(CommandLineWithConfirm):
         self.is_force = is_force
         self.is_merge = is_merge
         self.is_overwrite = is_overwrite
-        self.converter = converter
 
-    def put_annotation_for_input_data(self, parser: SimpleAnnotationParser) -> bool:
+    def put_annotation_for_input_data(self, parser: SimpleAnnotationParser, converter: AnnotationConverter) -> bool:
         task_id = parser.task_id
         input_data_id = parser.input_data_id
 
@@ -445,18 +444,18 @@ class ImportAnnotationMain(CommandLineWithConfirm):
 
         logger.info(f"task_id='{task_id}', input_data_id='{input_data_id}' :: {len(simple_annotation.details)} 件のアノテーションを登録します。")
         if self.is_merge:
-            request_body = self.converter.convert_annotation_details(parser, simple_annotation.details, old_details=old_annotation["details"], updated_datetime=old_annotation["updated_datetime"])
+            request_body = converter.convert_annotation_details(parser, simple_annotation.details, old_details=old_annotation["details"], updated_datetime=old_annotation["updated_datetime"])
         else:
-            request_body = self.converter.convert_annotation_details(parser, simple_annotation.details, old_details=[], updated_datetime=old_annotation["updated_datetime"])
+            request_body = converter.convert_annotation_details(parser, simple_annotation.details, old_details=[], updated_datetime=old_annotation["updated_datetime"])
 
         self.service.api.put_annotation(self.project_id, task_id, input_data_id, request_body=request_body, query_params={"v": "2"})
         return True
 
-    def put_annotation_for_task(self, task_parser: SimpleAnnotationParserByTask) -> int:
+    def put_annotation_for_task(self, task_parser: SimpleAnnotationParserByTask, converter: AnnotationConverter) -> int:
         success_count = 0
         for parser in task_parser.lazy_parse():
             try:
-                if self.put_annotation_for_input_data(parser):
+                if self.put_annotation_for_input_data(parser, converter):
                     success_count += 1
             except Exception:  # pylint: disable=broad-except
                 logger.warning(
@@ -466,7 +465,7 @@ class ImportAnnotationMain(CommandLineWithConfirm):
 
         return success_count
 
-    def execute_task(self, task_parser: SimpleAnnotationParserByTask, task_index: Optional[int] = None) -> bool:
+    def execute_task(self, task_parser: SimpleAnnotationParserByTask, converter: AnnotationConverter, task_index: Optional[int] = None) -> bool:
         """
         1個のタスクに対してアノテーションを登録する。
 
@@ -515,7 +514,7 @@ class ImportAnnotationMain(CommandLineWithConfirm):
                 )
                 return False
 
-        result_count = self.put_annotation_for_task(task_parser)
+        result_count = self.put_annotation_for_task(task_parser, converter)
         logger.info(f"{logger_prefix}タスク'{task_parser.task_id}'の入力データ {result_count} 個に対してアノテーションをインポートしました。")
 
         if changed_operator:
@@ -532,20 +531,30 @@ class ImportAnnotationMain(CommandLineWithConfirm):
     def execute_task_wrapper(
         self,
         tpl: tuple[int, SimpleAnnotationParserByTask],
+        converter: AnnotationConverter,
     ) -> bool:
         task_index, task_parser = tpl
         try:
-            return self.execute_task(task_parser, task_index=task_index)
+            return self.execute_task(task_parser, converter=converter, task_index=task_index)
         except Exception:  # pylint: disable=broad-except
             logger.warning(f"task_id='{task_parser.task_id}' のアノテーションのインポートに失敗しました。", exc_info=True)
             return False
 
-    def main(  # noqa: ANN201
+    def main(
         self,
         iter_task_parser: Iterator[SimpleAnnotationParserByTask],
+        converter: AnnotationConverter,
         target_task_ids: Optional[set[str]] = None,
         parallelism: Optional[int] = None,
-    ):
+    ) -> None:
+        """
+        アノテーションのインポート処理を実行するメイン関数です。
+
+        Notes:
+            `converter`をインスタンス変数でなく引数として渡している理由：
+            `multiprocessing.Pool`でシリアライズ化する際、"TypeError: cannot pickle '_thread.RLock' object"というエラーが発生するため
+        """
+
         def get_iter_task_parser_from_task_ids(_iter_task_parser: Iterator[SimpleAnnotationParserByTask], _target_task_ids: set[str]) -> Iterator[SimpleAnnotationParserByTask]:
             for task_parser in _iter_task_parser:
                 if task_parser.task_id in _target_task_ids:
@@ -562,14 +571,15 @@ class ImportAnnotationMain(CommandLineWithConfirm):
         task_count = 0
         if parallelism is not None:
             with multiprocessing.Pool(parallelism) as pool:
-                result_bool_list = pool.map(self.execute_task_wrapper, enumerate(iter_task_parser))
+                func = partial(self.execute_task_wrapper, converter=converter)
+                result_bool_list = pool.map(func, enumerate(iter_task_parser))
                 success_count = len([e for e in result_bool_list if e])
                 task_count = len(result_bool_list)
 
         else:
             for task_index, task_parser in enumerate(iter_task_parser):
                 try:
-                    result = self.execute_task(task_parser, task_index=task_index)
+                    result = self.execute_task(task_parser, converter=converter, task_index=task_index)
                     if result:
                         success_count += 1
                 except Exception:
@@ -649,10 +659,9 @@ class ImportAnnotation(CommandLine):
             is_merge=args.merge,
             is_overwrite=args.overwrite,
             is_force=args.force,
-            converter=converter,
         )
 
-        main_obj.main(iter_task_parser, target_task_ids=target_task_ids, parallelism=args.parallelism)
+        main_obj.main(iter_task_parser, target_task_ids=target_task_ids, converter=converter, parallelism=args.parallelism)
 
 
 def main(args: argparse.Namespace) -> None:
