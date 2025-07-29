@@ -618,7 +618,7 @@ class ImportAnnotation(CommandLine):
             print(f"{COMMON_MESSAGE} argument --annotation: ZIPファイルまたはディレクトリを指定してください。", file=sys.stderr)  # noqa: T201
             return False
 
-        if args.parallelism is not None and zipfile.is_zipfile(str(annotation_path)):
+        if args.parallelism is not None and annotation_path.is_file() and zipfile.is_zipfile(annotation_path):
             print(  # noqa: T201
                 f"{COMMON_MESSAGE} argument --parallelism: '--annotation'にZIPファイルを指定した場合は、'--parallelism'を指定できません。",
                 file=sys.stderr,
