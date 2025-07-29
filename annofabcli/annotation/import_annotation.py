@@ -540,12 +540,12 @@ class ImportAnnotationMain(CommandLineWithConfirm):
             logger.warning(f"task_id='{task_parser.task_id}' のアノテーションのインポートに失敗しました。", exc_info=True)
             return False
 
-    def main(  # noqa: ANN201
+    def main(  
         self,
         iter_task_parser: Iterator[SimpleAnnotationParserByTask],
         target_task_ids: Optional[set[str]] = None,
         parallelism: Optional[int] = None,
-    ):
+    ) -> None:
         def get_iter_task_parser_from_task_ids(_iter_task_parser: Iterator[SimpleAnnotationParserByTask], _target_task_ids: set[str]) -> Iterator[SimpleAnnotationParserByTask]:
             for task_parser in _iter_task_parser:
                 if task_parser.task_id in _target_task_ids:
