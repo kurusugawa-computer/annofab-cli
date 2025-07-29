@@ -608,6 +608,13 @@ class ImportAnnotation(CommandLine):
             print(f"{COMMON_MESSAGE} argument --annotation: ZIPファイルまたはディレクトリを指定してください。", file=sys.stderr)  # noqa: T201
             return False
 
+        if args.parallelism is not None and annotation_path.is_file() and zipfile.is_zipfile(annotation_path):
+            print(  # noqa: T201
+                f"{COMMON_MESSAGE} argument --parallelism: '--annotation'にZIPファイルを指定した場合は、'--parallelism'を指定できません。",
+                file=sys.stderr,
+            )
+            return False
+
         if args.parallelism is not None and not args.yes:
             print(  # noqa: T201
                 f"{COMMON_MESSAGE} argument --parallelism: '--parallelism'を指定するときは、必ず '--yes' を指定してください。",
@@ -632,7 +639,7 @@ class ImportAnnotation(CommandLine):
         # Simpleアノテーションの読み込み
         if annotation_path.is_dir():
             iter_task_parser = lazy_parse_simple_annotation_dir_by_task(annotation_path)
-        elif zipfile.is_zipfile(str(annotation_path)):
+        elif zipfile.is_zipfile(annotation_path):
             iter_task_parser = lazy_parse_simple_annotation_zip_by_task(annotation_path)
         else:
             logger.warning(f"annotation_path: '{annotation_path}' は、zipファイルまたはディレクトリではありませんでした。")
@@ -708,7 +715,9 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--parallelism",
         type=int,
         choices=PARALLELISM_CHOICES,
-        help="並列度。指定しない場合は、逐次的に処理します。指定した場合は、``--yes`` も指定してください。",
+        help="並列度。指定しない場合は、逐次的に処理します。"
+        "ただし ``--annotation`` にZIPファイルを指定した場合は、``--parallelism`` を指定できません。"
+        "また、``--parallelism`` を指定した場合は、``--yes`` も指定してください。",
     )
 
     parser.set_defaults(subcommand_func=main)
