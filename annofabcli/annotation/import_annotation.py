@@ -540,7 +540,7 @@ class ImportAnnotationMain(CommandLineWithConfirm):
             logger.warning(f"task_id='{task_parser.task_id}' のアノテーションのインポートに失敗しました。", exc_info=True)
             return False
 
-    def main(  
+    def main(
         self,
         iter_task_parser: Iterator[SimpleAnnotationParserByTask],
         target_task_ids: Optional[set[str]] = None,
