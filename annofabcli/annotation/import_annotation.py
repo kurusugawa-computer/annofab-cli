@@ -573,7 +573,7 @@ class ImportAnnotationMain(CommandLineWithConfirm):
             with multiprocessing.Pool(parallelism) as pool:
                 func = partial(self.execute_task_wrapper, converter=converter)
                 result_bool_list = pool.map(func, enumerate(iter_task_parser))
-                success_count = len([e for e in result_bool_list if e])
+                success_count = sum(1 for e in result_bool_list if e)
                 task_count = len(result_bool_list)
 
         else:
