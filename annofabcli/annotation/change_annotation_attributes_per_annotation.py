@@ -6,7 +6,7 @@ import logging
 import sys
 from collections import defaultdict
 from pathlib import Path
-from typing import Any, Optional, Union
+from typing import Optional, Union
 
 import annofabapi
 import pandas
@@ -76,7 +76,7 @@ class ChangeAnnotationAttributesPerAnnotationMain(CommandLineWithConfirm):
         self.dump_annotation_obj = DumpAnnotationMain(service, project_id)
         super().__init__(all_yes)
 
-    def change_annotation_attributes_by_frame(self, task_id: str, input_data_id: str, anno_list: list[TargetAnnotation]) -> bool:
+    def change_annotation_attributes_by_frame(self, task_id: str, input_data_id: str, anno_list: list[TargetAnnotation]) -> tuple[int, int]:
         """
         フレームごとにアノテーション属性値を変更する。
 
@@ -84,6 +84,10 @@ class ChangeAnnotationAttributesPerAnnotationMain(CommandLineWithConfirm):
             task_id: タスクID
             input_data_id: 入力データID
             additional_data_list: 変更後の属性値(`AdditionalDataListV2`スキーマ)
+
+        Returns:
+            [1]: 属性値の変更に成功したアノテーション数
+            [2]: 属性値を変更できなかった（変更対象のアノテーションが存在しなかった）アノテーション数
 
         """
         editor_annotation, _ = self.service.api.get_editor_annotation(self.project_id, task_id=task_id, input_data_id=input_data_id, query_params={"v": "2"})
@@ -94,26 +98,47 @@ class ChangeAnnotationAttributesPerAnnotationMain(CommandLineWithConfirm):
 
         details_map = {detail["annotation_id"]: detail for detail in editor_annotation["details"]}
 
-        def _to_request_body_elm(anno: TargetAnnotation) -> dict[str, Any]:
+        request_body = []
+        non_target_annotation_count = 0
+        for anno in anno_list:
+            if anno.annotation_id not in details_map:
+                logger.warning(
+                    f"task_id='{task_id}', input_data_id='{input_data_id}' :: "
+                    f"annotation_id='{anno.annotation_id}'であるアノテーションが存在しないため、"
+                    "このアノテーションの属性値の変更をスキップします。"
+                )
+                non_target_annotation_count += 1
+                continue
+
+            label_id = details_map[anno.annotation_id]["label_id"]
             additional_data_list = convert_attributes_from_cli_to_additional_data_list_v2(anno.attributes, annotation_specs=self.annotation_specs)
-            return {
-                "data": {
-                    "project_id": editor_annotation["project_id"],
-                    "task_id": editor_annotation["task_id"],
-                    "input_data_id": editor_annotation["input_data_id"],
-                    "updated_datetime": editor_annotation["updated_datetime"],
-                    "annotation_id": anno.annotation_id,
-                    "label_id": details_map[anno.annotation_id]["label_id"],
-                    "additional_data_list": additional_data_list,
-                },
-                "_type": "PutV2",
-            }
+            request_body.append(
+                {
+                    "data": {
+                        "project_id": editor_annotation["project_id"],
+                        "task_id": editor_annotation["task_id"],
+                        "input_data_id": editor_annotation["input_data_id"],
+                        "updated_datetime": editor_annotation["updated_datetime"],
+                        "annotation_id": anno.annotation_id,
+                        "label_id": label_id,
+                        "additional_data_list": additional_data_list,
+                    },
+                    "_type": "PutV2",
+                }
+            )
 
-        request_body = [_to_request_body_elm(annotation) for annotation in anno_list]
+        if request_body:
+            self.service.api.batch_update_annotations(self.project_id, request_body=request_body)
+        else:
+            logger.debug(f"task_id='{task_id}', input_data_id='{input_data_id}' :: 変更対象のアノテーションがありませんでした。")
 
-        self.service.api.batch_update_annotations(self.project_id, request_body=request_body)
-        logger.debug(f"task_id='{task_id}', input_data_id='{input_data_id}' :: {len(request_body)}件の属性値を変更しました。")
-        return True
+        succeed_to_change_annotation_count = len(request_body)
+        logger.debug(
+            f"task_id='{task_id}', input_data_id='{input_data_id}' :: "
+            f"{succeed_to_change_annotation_count}/{len(anno_list)}件の属性値を変更しました。"
+            f"{non_target_annotation_count}件のアノテーションは存在しなかったため、属性値の変更をスキップしました。"
+        )
+        return succeed_to_change_annotation_count, non_target_annotation_count
 
     def change_annotation_attributes_for_task(self, task_id: str, annotation_list_per_input_data_id: dict[str, list[TargetAnnotation]]) -> tuple[bool, int, int]:
         """
@@ -159,10 +184,9 @@ class ChangeAnnotationAttributesPerAnnotationMain(CommandLineWithConfirm):
 
         for input_data_id, sub_anno_list in annotation_list_per_input_data_id.items():
             try:
-                if self.change_annotation_attributes_by_frame(task_id, input_data_id, sub_anno_list):
-                    succeed_to_change_annotation_count += len(sub_anno_list)
-                else:
-                    failed_to_change_annotation_count += len(sub_anno_list)
+                tmp_succeed_to_change_annotation_count, tmp_failed_to_change_annotation_count = self.change_annotation_attributes_by_frame(task_id, input_data_id, sub_anno_list)
+                succeed_to_change_annotation_count += tmp_succeed_to_change_annotation_count
+                failed_to_change_annotation_count += tmp_failed_to_change_annotation_count
             except Exception:
                 logger.warning(f"task_id='{task_id}', input_data_id='{input_data_id}' :: アノテーションの属性値変更に失敗しました。", exc_info=True)
                 failed_to_change_annotation_count += len(sub_anno_list)
