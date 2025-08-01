@@ -130,7 +130,7 @@ class ChangeAnnotationAttributesPerAnnotationMain(CommandLineWithConfirm):
         if request_body:
             self.service.api.batch_update_annotations(self.project_id, request_body=request_body)
         else:
-            logger.debug(f"task_id='{task_id}', input_data_id='{input_data_id}' :: 更新対象のアノテーションがありませんでした。")
+            logger.debug(f"task_id='{task_id}', input_data_id='{input_data_id}' :: 変更対象のアノテーションがありませんでした。")
 
         succeed_to_change_annotation_count = len(request_body)
         logger.debug(
