@@ -110,9 +110,36 @@ class ChangeAnnotationAttributesPerAnnotationMain(CommandLineWithConfirm):
             }
 
         request_body = [_to_request_body_elm(annotation) for annotation in anno_list]
+        non_target_annotation_count = 0
+        for anno in anno_list:
+            if anno.annotation_id not in details_map:
+                logger.warning(f"task_id='{task_id}', input_data_id='{input_data_id}' :: annotation_id='{anno.annotation_id}'が存在しないため、このアノテーションの属性値の変更をスキップします。")
+                non_target_annotation_count += 1
+                continue
+
+            label_id = details_map[anno.annotation_id]["label_id"]
+            additional_data_list = convert_attributes_from_cli_to_additional_data_list_v2(anno.attributes, annotation_specs=self.annotation_specs)
+            request_body.append(
+                {
+                    "data": {
+                        "project_id": editor_annotation["project_id"],
+                        "task_id": editor_annotation["task_id"],
+                        "input_data_id": editor_annotation["input_data_id"],
+                        "updated_datetime": editor_annotation["updated_datetime"],
+                        "annotation_id": anno.annotation_id,
+                        "label_id": label_id,
+                        "additional_data_list": additional_data_list,
+                    },
+                    "_type": "PutV2",
+                }
+            )
 
         self.service.api.batch_update_annotations(self.project_id, request_body=request_body)
-        logger.debug(f"task_id='{task_id}', input_data_id='{input_data_id}' :: {len(request_body)}件の属性値を変更しました。")
+        logger.debug(
+            f"task_id='{task_id}', input_data_id='{input_data_id}' :: "
+            f"{len(request_body)}/{len(anno_list)}件の属性値を変更しました。"
+            f"{non_target_annotation_count}件のアノテーションは存在しなかったため、属性値の変更をスキップしました。"
+        )
         return True
 
     def change_annotation_attributes_for_task(self, task_id: str, annotation_list_per_input_data_id: dict[str, list[TargetAnnotation]]) -> tuple[bool, int, int]:
