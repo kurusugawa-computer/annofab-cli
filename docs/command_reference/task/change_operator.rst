@@ -5,7 +5,10 @@ task change_operator
 Description
 =================================
 タスクの担当者を変更します。
-ただし作業中また完了状態のタスクは、担当者を変更できません。
+作業中状態、完了状態のタスクは、担当者を変更できません。
+保留中状態のタスクは、デフォルトでは担当者を変更できません。
+
+
 
 Examples
 =================================
@@ -55,6 +58,19 @@ Examples
     $ annofabcli task change_operator --project_id prj1 --task_id file://task_id.txt \
      --task_query '{"phase":"acceptance", "status:"not_started"}' --not_assign
 
+
+保留中状態のタスクの担当者を変更する
+----------------------------------------------
+
+保留中状態のタスクは、デフォルトでは担当者を変更できません。
+``--include_on_hold`` を指定すると、保留中状態のタスクも担当者を変更できます。
+
+
+
+.. code-block::
+
+    $ annofabcli task change_operator --project_id prj1 --task_id t1 t2 \
+     --user_id user1 include_on_hold
 
 
 並列処理
