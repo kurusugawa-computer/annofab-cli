@@ -79,20 +79,20 @@ class ChangeOperatorMain:
         if task.account_id is not None:
             now_user_id = self.facade.get_user_id_from_account_id(project_id, task.account_id)
 
-        logger.debug(f"{logging_prefix} : task_id = {task.task_id}, status = {task.status.value}, phase = {task.phase.value}, phase_stage = {task.phase_stage}, user_id = {now_user_id}")
+        logger.debug(f"{logging_prefix} : task_id='{task.task_id}', status='{task.status.value}', phase='{task.phase.value}', phase_stage='{task.phase_stage}', user_id='{now_user_id}'")
 
         if task.status in [TaskStatus.COMPLETE, TaskStatus.WORKING]:
-            logger.warning(f"{logging_prefix} : task_id = {task_id} : タスクが作業中状態または完了状態なので、担当者を変更できません。 :: status='{task.status.value}'")
+            logger.warning(f"{logging_prefix} : task_id='{task_id}' : タスクが作業中状態または完了状態なので、担当者を変更できません。 :: status='{task.status.value}'")
             return False
 
         if task.status == TaskStatus.ON_HOLD and not self.include_on_hold:
             logger.warning(
-                f"{logging_prefix} : task_id = {task_id} : タスクが保留中状態なので、担当者を変更できません。保留中状態のタスクの担当者も変更する場合は、'--include_on_hold'を指定してください。"
+                f"{logging_prefix} : task_id='{task_id}' : タスクが保留中状態なので、担当者を変更できません。保留中状態のタスクの担当者も変更する場合は、'--include_on_hold'を指定してください。"
             )
             return False
 
         if not match_task_with_query(task, task_query):
-            logger.debug(f"{logging_prefix} : task_id = {task_id} : `--task_query` の条件にマッチしないため、スキップします。task_query={task_query}")
+            logger.debug(f"{logging_prefix} : task_id='{task_id}' : `--task_query` の条件にマッチしないため、スキップします。task_query='{task_query}'")
             return False
 
         if not self.confirm_change_operator(task):
@@ -101,11 +101,11 @@ class ChangeOperatorMain:
         try:
             # 担当者を変更する
             self.service.wrapper.change_task_operator(project_id, task_id, operator_account_id=new_account_id)
-            logger.debug(f"{logging_prefix} : task_id = {task_id}, phase={dict_task['phase']} のタスクの担当者を変更しました。")
+            logger.debug(f"{logging_prefix} : task_id='{task_id}', phase='{dict_task['phase']}' のタスクの担当者を変更しました。")
             return True  # noqa: TRY300
 
         except requests.exceptions.HTTPError:
-            logger.warning(f"{logging_prefix} : task_id = {task_id} の担当者を変更するのに失敗しました。", exc_info=True)
+            logger.warning(f"{logging_prefix} : task_id='{task_id}' の担当者を変更するのに失敗しました。", exc_info=True)
             return False
 
     def change_operator_for_task_wrapper(
@@ -154,7 +154,7 @@ class ChangeOperatorMain:
                 logger.error(f"ユーザ '{new_user_id}' のaccount_idが見つかりませんでした。終了します。")
                 return
             else:
-                logger.info(f"{len(task_id_list)} 件のタスクの担当者を、{new_user_id}に変更します。")
+                logger.info(f"{len(task_id_list)} 件のタスクの担当者を、'{new_user_id}'に変更します。")
         else:
             new_account_id = None
             logger.info(f"{len(task_id_list)} 件のタスクの担当者を未割り当てに変更します。")
