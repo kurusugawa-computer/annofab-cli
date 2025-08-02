@@ -80,6 +80,9 @@ class ChangeOperatorMain:
             now_user_id = self.facade.get_user_id_from_account_id(project_id, task.account_id)
 
         logger.debug(f"{logging_prefix} :: task_id='{task.task_id}', status='{task.status.value}', phase='{task.phase.value}', phase_stage='{task.phase_stage}', user_id='{now_user_id}'")
+        if task.account_id == new_account_id:
+            logger.info(f"{logging_prefix} :: task_id='{task_id}' :: タスクの担当者はすでにuser_id='{now_user_id}'のユーザーです。担当者を変更する必要がないのでスキップします。")
+            return False
 
         if task.status in [TaskStatus.COMPLETE, TaskStatus.WORKING]:
             logger.warning(f"{logging_prefix} :: task_id='{task_id}' :: タスクが作業中状態または完了状態なので、担当者を変更できません。 :: status='{task.status.value}'")
