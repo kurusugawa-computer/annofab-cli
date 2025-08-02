@@ -26,10 +26,11 @@ logger = logging.getLogger(__name__)
 
 
 class ChangeOperatorMain:
-    def __init__(self, service: annofabapi.Resource, all_yes: bool) -> None:  # noqa: FBT001
+    def __init__(self, service: annofabapi.Resource, *, all_yes: bool, include_on_hold: bool = False) -> None:
         self.service = service
         self.facade = AnnofabApiFacade(service)
         self.all_yes = all_yes
+        self.include_on_hold = include_on_hold
 
     def confirm_processing(self, confirm_message: str) -> bool:
         """
@@ -55,10 +56,10 @@ class ChangeOperatorMain:
         return yes
 
     def confirm_change_operator(self, task: Task) -> bool:
-        confirm_message = f"task_id = {task.task_id} のタスクの担当者を変更しますか？"
+        confirm_message = f"task_id='{task.task_id}' のタスクの担当者を変更しますか？"
         return self.confirm_processing(confirm_message)
 
-    def change_operator_for_task(
+    def change_operator_for_task(  # noqa: PLR0911
         self,
         project_id: str,
         task_id: str,
@@ -81,7 +82,13 @@ class ChangeOperatorMain:
         logger.debug(f"{logging_prefix} : task_id = {task.task_id}, status = {task.status.value}, phase = {task.phase.value}, phase_stage = {task.phase_stage}, user_id = {now_user_id}")
 
         if task.status in [TaskStatus.COMPLETE, TaskStatus.WORKING]:
-            logger.warning(f"{logging_prefix} : task_id = {task_id} : タスクのstatusがworking or complete なので、担当者を変更できません。")
+            logger.warning(f"{logging_prefix} : task_id = {task_id} : タスクが作業中状態または完了状態なので、担当者を変更できません。 :: status='{task.status.value}'")
+            return False
+
+        if task.status == TaskStatus.ON_HOLD and not self.include_on_hold:
+            logger.warning(
+                f"{logging_prefix} : task_id = {task_id} : タスクが保留中状態なので、担当者を変更できません。保留中状態のタスクの担当者も変更する場合は、'--include_on_hold'を指定してください。"
+            )
             return False
 
         if not match_task_with_query(task, task_query):
@@ -125,6 +132,7 @@ class ChangeOperatorMain:
         self,
         project_id: str,
         task_id_list: list[str],
+        *,
         new_user_id: Optional[str] = None,
         task_query: Optional[TaskQuery] = None,
         parallelism: Optional[int] = None,
@@ -212,7 +220,7 @@ class ChangeOperator(CommandLine):
         project_id = args.project_id
         super().validate_project(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.ACCEPTER])
 
-        main_obj = ChangeOperatorMain(self.service, all_yes=self.all_yes)
+        main_obj = ChangeOperatorMain(self.service, all_yes=self.all_yes, include_on_hold=args.include_on_hold)
         main_obj.change_operator(
             project_id,
             task_id_list=task_id_list,
@@ -243,6 +251,12 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     argument_parser.add_task_query()
 
     parser.add_argument(
+        "--include_on_hold",
+        action="store_true",
+        help="指定した場合、保留中のタスクの担当者も変更します。指定しない場合、保留中のタスクはスキップされます。",
+    )
+
+    parser.add_argument(
         "--parallelism",
         type=int,
         choices=PARALLELISM_CHOICES,
@@ -255,7 +269,9 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
 def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     subcommand_name = "change_operator"
     subcommand_help = "タスクの担当者を変更します。"
-    description = "タスクの担当者を変更します。ただし、作業中また完了状態のタスクは、担当者を変更できません。"
+    description = (
+        "タスクの担当者を変更します。ただし、作業中、完了状態、保留中のタスクは、デフォルトでは担当者を変更できません。保留中のタスクの担当者も変更する場合は、--include_on_holdを指定してください。"
+    )
     epilog = "チェッカーまたはオーナロールを持つユーザで実行してください。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
