@@ -139,7 +139,7 @@ class ChangeOperatorMain:
     ) -> None:
         """
         指定した複数のタスクの担当者を変更します。
-        
+
         Args:
             project_id:
             task_id_list:
@@ -270,10 +270,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
 def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     subcommand_name = "change_operator"
     subcommand_help = "タスクの担当者を変更します。"
-    description = (
-        "タスクの担当者を変更します。作業中状態、完了状態のタスクは、担当者を変更できません。"
-        "保留中状態のタスクは、デフォルトでは担当者を変更できません。"
-    )
+    description = "タスクの担当者を変更します。作業中状態、完了状態のタスクは、担当者を変更できません。保留中状態のタスクは、デフォルトでは担当者を変更できません。"
     epilog = "チェッカーまたはオーナロールを持つユーザで実行してください。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
