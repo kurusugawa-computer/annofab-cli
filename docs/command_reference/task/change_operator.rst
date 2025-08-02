@@ -70,7 +70,7 @@ Examples
 .. code-block::
 
     $ annofabcli task change_operator --project_id prj1 --task_id t1 t2 \
-     --user_id user1 include_on_hold
+     --user_id user1 --include_on_hold
 
 
 並列処理
