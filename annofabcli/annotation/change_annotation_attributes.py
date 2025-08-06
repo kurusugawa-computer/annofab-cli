@@ -114,7 +114,7 @@ class ChangeAnnotationAttributesMain(CommandLineWithConfirm):
         *,
         backup_dir: Optional[Path] = None,
         task_index: Optional[int] = None,
-    ) -> bool:
+    ) -> tuple[bool, int]:
         """
         タスクに対してアノテーション属性を変更する。
 
@@ -127,23 +127,24 @@ class ChangeAnnotationAttributesMain(CommandLineWithConfirm):
             backup_dir: アノテーションをバックアップとして保存するディレクトリ。指定しない場合は、バックアップを取得しない。
 
         Returns:
-            アノテーションの属性を変更するAPI ``change_annotation_attributes`` を実行したか否か
+            tuple[0]: 成功した場合はTrue、失敗した場合はFalse
+            tuple[1]: 変更したアノテーションの個数
         """
         logger_prefix = f"{task_index + 1!s} 件目: " if task_index is not None else ""
         dict_task = self.service.wrapper.get_task_or_none(self.project_id, task_id)
         if dict_task is None:
             logger.warning(f"task_id = '{task_id}' は存在しません。")
-            return False
+            return False, 0
 
         task: Task = Task.from_dict(dict_task)
         if task.status == TaskStatus.WORKING:
             logger.warning(f"task_id='{task_id}': タスクが作業中状態のため、スキップします。")
-            return False
+            return False, 0
 
         if not self.is_force:  # noqa: SIM102
             if task.status == TaskStatus.COMPLETE:
                 logger.warning(f"task_id='{task_id}': タスクが完了状態のため、スキップします。")
-                return False
+                return False, 0
 
         annotation_list = self.get_annotation_list_for_task(task_id, annotation_query)
         logger.info(
@@ -151,17 +152,17 @@ class ChangeAnnotationAttributesMain(CommandLineWithConfirm):
         )
         if len(annotation_list) == 0:
             logger.info(f"{logger_prefix}task_id='{task_id}'には変更対象のアノテーションが存在しないので、スキップします。")
-            return False
+            return False, 0
 
         if not self.confirm_processing(f"task_id='{task_id}' のアノテーション属性を変更しますか？"):
-            return False
+            return False, 0
 
         if backup_dir is not None:
             self.dump_annotation_obj.dump_annotation_for_task(task_id, output_dir=backup_dir)
 
         self.change_annotation_attributes(annotation_list, additional_data_list)
         logger.info(f"{logger_prefix}task_id='{task_id}': {len(annotation_list)} 個のアノテーションの属性値を変更しました。")
-        return True
+        return True, len(annotation_list)
 
     def change_attributes_for_task_wrapper(
         self,
@@ -170,7 +171,7 @@ class ChangeAnnotationAttributesMain(CommandLineWithConfirm):
         additional_data_list: list[dict[str, Any]],
         *,
         backup_dir: Optional[Path] = None,
-    ) -> bool:
+    ) -> tuple[bool, int]:
         task_index, task_id = tpl
         try:
             return self.change_attributes_for_task(
@@ -182,7 +183,7 @@ class ChangeAnnotationAttributesMain(CommandLineWithConfirm):
             )
         except Exception:  # pylint: disable=broad-except
             logger.warning(f"タスク'{task_id}'のアノテーションの属性の変更に失敗しました。", exc_info=True)
-            return False
+            return False, 0
 
     def change_annotation_attributes_for_task_list(
         self,
@@ -211,6 +212,8 @@ class ChangeAnnotationAttributesMain(CommandLineWithConfirm):
             backup_dir.mkdir(exist_ok=True, parents=True)
 
         success_count = 0
+        # 変更したアノテーションの個数
+        changed_annotation_count = 0
         if parallelism is not None:
             func = functools.partial(
                 self.change_attributes_for_task_wrapper,
@@ -219,26 +222,28 @@ class ChangeAnnotationAttributesMain(CommandLineWithConfirm):
                 backup_dir=backup_dir,
             )
             with multiprocessing.Pool(parallelism) as pool:
-                result_bool_list = pool.map(func, enumerate(task_id_list))
-                success_count = len([e for e in result_bool_list if e])
+                result_tuple_list = pool.map(func, enumerate(task_id_list))
+                success_count = len([e for e in result_tuple_list if e[0]])
+                changed_annotation_count = sum(e[1] for e in result_tuple_list)
 
         else:
             for task_index, task_id in enumerate(task_id_list):
                 try:
-                    result = self.change_attributes_for_task(
+                    result, sub_changed_annotation_count = self.change_attributes_for_task(
                         task_id,
                         annotation_query=annotation_query,
                         additional_data_list=additional_data_list,
                         backup_dir=backup_dir,
                         task_index=task_index,
                     )
+                    changed_annotation_count += sub_changed_annotation_count
                     if result:
                         success_count += 1
                 except Exception:
-                    logger.warning(f"タスク'{task_id}'のアノテーションの属性の変更に失敗しました。", exc_info=True)
+                    logger.warning(f"タスク'{task_id}'のアノテーションの属性値の変更に失敗しました。", exc_info=True)
                     continue
 
-        logger.info(f"{success_count} / {len(task_id_list)} 件のタスクに対してアノテーションの属性を変更しました。")
+        logger.info(f"{success_count} / {len(task_id_list)} 件のタスクに対して {changed_annotation_count} 件のアノテーションの属性値を変更しました。")
 
 
 class ChangeAttributesOfAnnotation(CommandLine):
