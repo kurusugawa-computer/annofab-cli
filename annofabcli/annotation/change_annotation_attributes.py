@@ -46,7 +46,7 @@ class ChangeAnnotationAttributesMain(CommandLineWithConfirm):
         service: annofabapi.Resource,
         *,
         project_id: str,
-        is_force: bool,
+        include_completed: bool,
         all_yes: bool,
     ) -> None:
         self.service = service
@@ -54,7 +54,7 @@ class ChangeAnnotationAttributesMain(CommandLineWithConfirm):
         CommandLineWithConfirm.__init__(self, all_yes)
 
         self.project_id = project_id
-        self.is_force = is_force
+        self.include_completed = include_completed
 
         self.dump_annotation_obj = DumpAnnotationMain(service, project_id)
 
@@ -141,7 +141,7 @@ class ChangeAnnotationAttributesMain(CommandLineWithConfirm):
             logger.warning(f"task_id='{task_id}': タスクが作業中状態のため、スキップします。")
             return False, 0
 
-        if not self.is_force:  # noqa: SIM102
+        if not self.include_completed:  # noqa: SIM102
             if task.status == TaskStatus.COMPLETE:
                 logger.warning(f"task_id='{task_id}': タスクが完了状態のため、スキップします。")
                 return False, 0
@@ -315,15 +315,15 @@ class ChangeAttributesOfAnnotation(CommandLine):
             backup_dir = Path(args.backup)
 
         super().validate_project(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.ACCEPTER])
-        if args.force:  # noqa: SIM102
+        if args.include_completed:  # noqa: SIM102
             if not self.facade.contains_any_project_member_role(project_id, [ProjectMemberRole.OWNER]):
                 print(  # noqa: T201
-                    f"{self.COMMON_MESSAGE} argument --force : '--force' 引数を利用するにはプロジェクトのオーナーロールを持つユーザーで実行する必要があります。",
+                    f"{self.COMMON_MESSAGE} argument --include_completed : '--include_completed' 引数を利用するにはプロジェクトのオーナーロールを持つユーザーで実行する必要があります。",
                     file=sys.stderr,
                 )
                 sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
-        main_obj = ChangeAnnotationAttributesMain(self.service, project_id=project_id, is_force=args.force, all_yes=args.yes)
+        main_obj = ChangeAnnotationAttributesMain(self.service, project_id=project_id, include_completed=args.include_completed, all_yes=args.yes)
         main_obj.change_annotation_attributes_for_task_list(
             task_id_list,
             annotation_query=annotation_query,
@@ -362,8 +362,9 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         help=f"変更後の属性をJSON形式で指定します。``file://`` を先頭に付けると、JSON形式のファイルを指定できます。(ex): ``{EXAMPLE_ATTRIBUTES}``",
     )
 
+    # TODO deprecatedにする
     parser.add_argument(
-        "--force",
+        "--include_completed",
         action="store_true",
         help="完了状態のタスクのアノテーション属性も変更します。ただし、オーナーロールを持つユーザーでしか実行できません。",
     )
