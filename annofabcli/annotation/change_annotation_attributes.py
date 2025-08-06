@@ -116,7 +116,7 @@ class ChangeAnnotationAttributesMain(CommandLineWithConfirm):
         task_index: Optional[int] = None,
     ) -> tuple[bool, int]:
         """
-        タスクに対してアノテーション属性を変更する。
+        タスクに対してアノテーション属性値を変更する。
 
         Args:
             project_id:
@@ -143,7 +143,7 @@ class ChangeAnnotationAttributesMain(CommandLineWithConfirm):
 
         if not self.include_completed:  # noqa: SIM102
             if task.status == TaskStatus.COMPLETE:
-                logger.warning(f"task_id='{task_id}': タスクが完了状態のため、スキップします。")
+                logger.warning(f"task_id='{task_id}': タスクが完了状態のため、スキップします。完了状態のタスクのアノテーション属性値を変更するには、 ``--include_completed`` を指定してください。")
                 return False, 0
 
         annotation_list = self.get_annotation_list_for_task(task_id, annotation_query)
@@ -154,7 +154,7 @@ class ChangeAnnotationAttributesMain(CommandLineWithConfirm):
             logger.info(f"{logger_prefix}task_id='{task_id}'には変更対象のアノテーションが存在しないので、スキップします。")
             return False, 0
 
-        if not self.confirm_processing(f"task_id='{task_id}' のアノテーション属性を変更しますか？"):
+        if not self.confirm_processing(f"task_id='{task_id}' のアノテーション属性値を変更しますか？"):
             return False, 0
 
         if backup_dir is not None:
@@ -182,7 +182,7 @@ class ChangeAnnotationAttributesMain(CommandLineWithConfirm):
                 task_index=task_index,
             )
         except Exception:  # pylint: disable=broad-except
-            logger.warning(f"タスク'{task_id}'のアノテーションの属性の変更に失敗しました。", exc_info=True)
+            logger.warning(f"タスク'{task_id}'のアノテーションの属性値の変更に失敗しました。", exc_info=True)
             return False, 0
 
     def change_annotation_attributes_for_task_list(
@@ -210,7 +210,6 @@ class ChangeAnnotationAttributesMain(CommandLineWithConfirm):
 
         if backup_dir is not None:
             backup_dir.mkdir(exist_ok=True, parents=True)
-
         success_count = 0
         # 変更したアノテーションの個数
         changed_annotation_count = 0
@@ -362,7 +361,6 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         help=f"変更後の属性をJSON形式で指定します。``file://`` を先頭に付けると、JSON形式のファイルを指定できます。(ex): ``{EXAMPLE_ATTRIBUTES}``",
     )
 
-    # TODO deprecatedにする
     parser.add_argument(
         "--include_completed",
         action="store_true",
@@ -387,10 +385,11 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
 
 def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     subcommand_name = "change_attributes"
-    subcommand_help = "アノテーションの属性を変更します。"
+    subcommand_help = "アノテーションの属性値を変更します。"
     description = (
-        "アノテーションの属性を一括で変更します。ただし、作業中状態のタスクのアノテーションの属性は変更できません。"
-        "間違えてアノテーション属性を変更したときに復元できるようにするため、 ``--backup`` でバックアップ用のディレクトリを指定することを推奨します。"
+        "アノテーションの属性値を一括で変更します。ただし、作業中状態のタスクに含まれるアノテーションは変更できません。"
+        "完了状態のタスクに含まれるアノテーションは、デフォルトでは変更できません。"
+        "間違えてアノテーション属性値を変更したときに復元できるようにするため、 ``--backup`` でバックアップ用のディレクトリを指定することを推奨します。"
     )
     epilog = "オーナロールまたはチェッカーロールを持つユーザで実行してください。"
 
