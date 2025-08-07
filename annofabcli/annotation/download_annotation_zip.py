@@ -19,7 +19,7 @@ class DownloadingAnnotationZip(CommandLine):
         super().validate_project(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER])
 
         project_title = self.facade.get_project_title(project_id)
-        logger.info(f"{project_title} のアノテーションZIPをダウンロードします。")
+        logger.info(f"プロジェクト'{project_title}'のアノテーションZIPをダウンロードします。")
 
         obj = DownloadingFile(self.service)
         obj.download_annotation_zip(
@@ -28,7 +28,7 @@ class DownloadingAnnotationZip(CommandLine):
             is_latest=is_latest,
             should_download_full_annotation=should_download_full_annotation,
         )
-        logger.info(f"アノテーションZIPをダウンロードしました。output={output_zip}")
+        logger.info(f"アノテーションZIPをダウンロードして、'{output_zip}'に保存しました。")
 
     def main(self) -> None:
         args = self.args
