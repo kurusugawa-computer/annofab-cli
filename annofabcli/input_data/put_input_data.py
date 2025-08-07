@@ -199,7 +199,10 @@ class SubPutInputData:
                 logger.debug(f"{log_message_prefix}input_data_id='{input_data.input_data_id}' はすでに存在します。")
                 last_updated_datetime = dict_input_data["updated_datetime"]
             else:
-                logger.debug(f"{log_message_prefix}input_data_id='{input_data.input_data_id}' がすでに存在するのでスキップします。")
+                logger.debug(
+                    f"{log_message_prefix}input_data_id='{input_data.input_data_id}'の入力データがすでに存在するので入力データの登録をスキップします。"
+                    "入力データを上書きして登録する場合は、引数に '--overwrite' を指定してください。"
+                )
                 return False
 
         file_path = get_file_scheme_path(input_data.input_data_path)
