@@ -260,7 +260,7 @@ class PutInputData(CommandLine):
         """
 
         project_title = self.facade.get_project_title(project_id)
-        logger.info(f"{project_title} に、{len(input_data_list)} 件の入力データを登録します。")
+        logger.info(f"プロジェクト'{project_title}'に、{len(input_data_list)} 件の入力データを登録します。")
 
         count_put_input_data = 0
 
@@ -277,7 +277,7 @@ class PutInputData(CommandLine):
                 if result:
                     count_put_input_data += 1
 
-        logger.info(f"{project_title} に、{count_put_input_data} / {len(input_data_list)} 件の入力データを登録しました。")
+        logger.info(f"プロジェクト'{project_title}'に、{count_put_input_data} / {len(input_data_list)} 件の入力データを登録しました。")
 
     @staticmethod
     def get_input_data_list_from_df(df: pandas.DataFrame) -> list[CsvInputData]:
