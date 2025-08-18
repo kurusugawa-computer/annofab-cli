@@ -30,7 +30,7 @@ Examples
     │          ├── {annotation_id}............ 塗りつぶしPNG画像
 
 
-``{input_data_id}.json`` のサンプルをは以下の通りです。各キーの詳細は https://annofab.com/docs/api/#section/Simple-Annotation-ZIP を参照してください。
+``{input_data_id}.json`` のサンプルをは以下の通りです。詳細は https://annofab.readme.io/docs/annotation-format を参照してください。
 
 .. code-block::
     :caption: {input_data_id}.json
