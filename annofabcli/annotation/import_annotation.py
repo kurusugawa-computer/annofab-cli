@@ -460,7 +460,7 @@ class ImportAnnotationMain(CommandLineWithConfirm):
         self.service.api.put_annotation(self.project_id, task_id, input_data_id, request_body=request_body, query_params={"v": "2"})
         success_annotation_count = len(request_body["details"])
         logger.debug(f"task_id='{task_id}', input_data_id='{input_data_id}' :: {success_annotation_count}/{len(simple_annotation.details)} 件のアノテーションを登録しました。")
-        return len(request_body["details"])
+        return success_annotation_count
 
     def put_annotation_for_task(self, task_parser: SimpleAnnotationParserByTask) -> tuple[int, int]:
         """
