@@ -474,9 +474,10 @@ class ImportAnnotationMain(CommandLineWithConfirm):
         success_annotation_count = 0
         for parser in task_parser.lazy_parse():
             try:
-                success_annotation_count = self.put_annotation_for_input_data(parser)
-                if success_annotation_count > 0:
+                tmp_success_annotation_count = self.put_annotation_for_input_data(parser)
+                if tmp_success_annotation_count > 0:
                     success_input_data_count += 1
+                success_annotation_count += tmp_success_annotation_count
             except Exception:  # pylint: disable=broad-except
                 logger.warning(
                     f"task_id='{parser.task_id}', input_data_id='{parser.input_data_id}' のアノテーションのインポートに失敗しました。",
