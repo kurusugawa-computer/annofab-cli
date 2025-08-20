@@ -419,19 +419,25 @@ class ImportAnnotationMain(CommandLineWithConfirm):
         self.is_overwrite = is_overwrite
         self.converter = converter
 
-    def put_annotation_for_input_data(self, parser: SimpleAnnotationParser) -> bool:
+    def put_annotation_for_input_data(self, parser: SimpleAnnotationParser) -> int:
+        """
+        1個の入力データに対してアノテーションを登録します。
+
+        Returns:
+            登録したアノテーションの個数
+        """
         task_id = parser.task_id
         input_data_id = parser.input_data_id
 
         simple_annotation: ImportedSimpleAnnotation = ImportedSimpleAnnotation.from_dict(parser.load_json())
         if len(simple_annotation.details) == 0:
             logger.debug(f"task_id='{task_id}', input_data_id='{input_data_id}' :: インポート元にアノテーションデータがないため、アノテーションの登録をスキップします。")
-            return False
+            return 0
 
         input_data = self.service.wrapper.get_input_data_or_none(self.project_id, input_data_id)
         if input_data is None:
             logger.warning(f"input_data_id='{input_data_id}'という入力データは存在しません。 :: task_id='{task_id}'")
-            return False
+            return 0
 
         old_annotation, _ = self.service.api.get_editor_annotation(self.project_id, task_id, input_data_id, query_params={"v": "2"})
         if len(old_annotation["details"]) > 0:  # noqa: SIM102
@@ -441,30 +447,44 @@ class ImportAnnotationMain(CommandLineWithConfirm):
                     f"インポート先のタスク内の入力データに既にアノテーションが存在するため、アノテーションの登録をスキップします。"
                     f"アノテーションをインポートする場合は、`--overwrite` または '--merge' を指定してください。"
                 )
-                return False
+                return 0
 
-        logger.info(f"task_id='{task_id}', input_data_id='{input_data_id}' :: {len(simple_annotation.details)} 件のアノテーションを登録します。")
         if self.is_merge:
             request_body = self.converter.convert_annotation_details(parser, simple_annotation.details, old_details=old_annotation["details"], updated_datetime=old_annotation["updated_datetime"])
         else:
             request_body = self.converter.convert_annotation_details(parser, simple_annotation.details, old_details=[], updated_datetime=old_annotation["updated_datetime"])
 
+        if len(request_body["details"]) == 0:
+            logger.warning(f"task_id='{task_id}', input_data_id='{input_data_id}' :: 登録できるアノテーション数が0/{len(simple_annotation.details)}件なので、アノテーションの登録をスキップします。")
+            return 0
         self.service.api.put_annotation(self.project_id, task_id, input_data_id, request_body=request_body, query_params={"v": "2"})
-        return True
+        success_annotation_count = len(request_body["details"])
+        logger.debug(f"task_id='{task_id}', input_data_id='{input_data_id}' :: {success_annotation_count}/{len(simple_annotation.details)} 件のアノテーションを登録しました。")
+        return success_annotation_count
 
-    def put_annotation_for_task(self, task_parser: SimpleAnnotationParserByTask) -> int:
-        success_count = 0
+    def put_annotation_for_task(self, task_parser: SimpleAnnotationParserByTask) -> tuple[int, int]:
+        """
+        1個のタスクに対して、アノテーションを登録します。
+
+        Returns:
+            tuple[0]: アノテーションを登録した入力データの個数
+            tuple[1]: 登録したアノテーションの個数
+        """
+        success_input_data_count = 0
+        success_annotation_count = 0
         for parser in task_parser.lazy_parse():
             try:
-                if self.put_annotation_for_input_data(parser):
-                    success_count += 1
+                tmp_success_annotation_count = self.put_annotation_for_input_data(parser)
+                if tmp_success_annotation_count > 0:
+                    success_input_data_count += 1
+                success_annotation_count += tmp_success_annotation_count
             except Exception:  # pylint: disable=broad-except
                 logger.warning(
                     f"task_id='{parser.task_id}', input_data_id='{parser.input_data_id}' のアノテーションのインポートに失敗しました。",
                     exc_info=True,
                 )
 
-        return success_count
+        return success_input_data_count, success_annotation_count
 
     def execute_task(self, task_parser: SimpleAnnotationParserByTask, task_index: Optional[int] = None) -> bool:
         """
@@ -515,8 +535,10 @@ class ImportAnnotationMain(CommandLineWithConfirm):
                 )
                 return False
 
-        result_count = self.put_annotation_for_task(task_parser)
-        logger.info(f"{logger_prefix}タスク'{task_parser.task_id}'の入力データ {result_count} 個に対してアノテーションをインポートしました。")
+        success_input_data_count, success_annotation_count = self.put_annotation_for_task(task_parser)
+        logger.info(
+            f"{logger_prefix}task_id='{task_parser.task_id}'のタスクに含まれる入力データ {success_input_data_count} 個に対して、アノテーション{success_annotation_count}個をインポートしました。"
+        )
 
         if changed_operator:
             logger.debug(f"タスク'{task_id}' の担当者を元に戻します。")
@@ -527,7 +549,7 @@ class ImportAnnotationMain(CommandLineWithConfirm):
                 last_updated_datetime=task["updated_datetime"],
             )
 
-        return result_count > 0
+        return success_input_data_count > 0
 
     def execute_task_wrapper(
         self,
