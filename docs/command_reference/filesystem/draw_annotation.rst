@@ -155,7 +155,7 @@ CSVのフォーマットは以下の通りです。
 * 10進数（リスト）： ``[0, 0, 255]``
   
     
-アノテーション仕様画面で設定されている色を指定する場合は、`annofabcli annotation_specs list_label_color <../annotation_specs/list_label_color.html>`_ コマンドの出力結果を使用してください。
+アノテーション仕様画面で設定されている色を指定する場合は、 `annofabcli annotation_specs list_label_color <../annotation_specs/list_label_color.html>`_ コマンドの出力結果を使用してください。
 
 .. code-block::
 
@@ -234,10 +234,4 @@ Usage Details
    :nosubcommands:
    :nodefaultconst:
 
-
-See also
-=================================
-
-* `アノテーションzipの構造 <https://annofab.com/docs/api/#section/Simple-Annotation-ZIP>`_
-* `annofabcli annotation_specs list_label_color <../annotation_specs/list_label_color.html>`_
 

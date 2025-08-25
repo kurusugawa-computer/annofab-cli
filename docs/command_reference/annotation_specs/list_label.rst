@@ -72,7 +72,7 @@ JSON出力
 * ``label_name_en`` : ラベル名（英語）
 * ``label_name_ja`` : ラベル名（日本語）
 * ``label_name_vi`` : ラベル名（ベトナム語）
-* ``annotation_type`` : アノテーションの種類。Web APIの `AnnotationType <https://annofab.com/docs/api/#section/AnnotationType>`_ に対応しています。
+* ``annotation_type`` : アノテーションの種類。Web APIの `AnnotationType <https://annofab.com/docs/api/#tag/x-data-types/AnnotationType>`_ に対応しています。
 * ``color`` : ラベルの色（HEX形式）。
 * ``attribute_count`` : ラベルに紐づく属性の個数  
 * ``keybind`` : キーボードショートカット

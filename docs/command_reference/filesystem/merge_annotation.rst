@@ -118,9 +118,3 @@ Usage Details
    :nosubcommands:
    :nodefaultconst:
     
-
-See also
-=================================
-
-* `アノテーションzipの構造 <https://annofab.com/docs/api/#section/Simple-Annotation-ZIP>`_
-
