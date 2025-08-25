@@ -16,7 +16,7 @@ Examples
 --------------------------
 
 以下のコマンドを実行すると、タスク履歴イベント全件ファイルがダウンロードされます。
-タスク履歴イベント全件ファイルのフォーマットについては https://annofab.com/docs/api/#section/TaskHistoryEvent を参照してください。
+タスク履歴イベント全件ファイルのフォーマットについては https://annofab.com/docs/api/#tag/x-data-types/TaskHistoryEvent を参照してください。
 
 .. code-block::
 

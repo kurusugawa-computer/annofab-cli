@@ -270,7 +270,7 @@ class AnnotationQueryForCLI(DataClassJsonMixin):
 
     def to_query_for_api(self, annotation_specs: dict[str, Any]) -> AnnotationQueryForAPI:
         """
-        WebAPIのquery_params( https://annofab.com/docs/api/#section/AnnotationQuery )に渡すdictに変換する。
+        WebAPIのquery_params( https://annofab.com/docs/api/#tag/x-data-types/AnnotationQuery )に渡すdictに変換する。
 
         Args:
             annotation_specs: アノテーション仕様（V2,V3版）
@@ -306,7 +306,7 @@ class AnnotationQueryForCLI(DataClassJsonMixin):
 class AnnotationQueryForAPI(DataClassJsonMixin):
     """
     WebAPIでアノテーションを絞り込むためのクエリ。
-    https://annofab.com/docs/api/#section/AnnotationQuery に対応しています。
+    https://annofab.com/docs/api/#tag/x-data-types/AnnotationQuery に対応しています。
     """
 
     label_id: Optional[str] = None

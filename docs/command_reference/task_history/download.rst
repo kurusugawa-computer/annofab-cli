@@ -16,7 +16,7 @@ Examples
 --------------------------
 
 以下のコマンドを実行すると、タスク履歴全件ファイルがダウンロードされます。
-タスク履歴全件ファイルのフォーマットについては https://annofab.com/docs/api/#section/TaskHistory を参照してください。
+タスク履歴全件ファイルのフォーマットについては https://annofab.com/docs/api/#tag/x-data-types/TaskHistory を参照してください。
 
 .. code-block::
 

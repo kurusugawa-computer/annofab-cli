@@ -16,7 +16,7 @@ Examples
 --------------------------
 
 以下のコマンドを実行すると、アノテーションZIPがダウンロードされます。
-アノテーションZIPのフォーマットについては https://annofab.com/docs/api/#section/Simple-Annotation-ZIP を参照してください。
+アノテーションZIPのフォーマットについては https://annofab.com/docs/api/#tag/x-annotation-zip/Simple-Annotation-ZIP を参照してください。
 
 .. code-block::
 
@@ -38,7 +38,7 @@ FullアノテーションZIPダウンロード（非推奨）
 ----------------------------------------------------
 
 ``--download_full_annotation`` を指定すると、FullアノテーションZIPダウンロードされます。
-FullアノテーションZIPのフォーマットについては https://annofab.com/docs/api/#section/Full-Annotation-ZIP を参照してください。
+FullアノテーションZIPのフォーマットについては https://annofab.com/docs/api/#tag/x-annotation-zip/Full-Annotation-ZIP を参照してください。
 
 ただし、``--download_full_annotation`` は非推奨です。将来、廃止される可能性があります。
 

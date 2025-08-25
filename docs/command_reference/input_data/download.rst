@@ -16,7 +16,7 @@ Examples
 --------------------------
 
 以下のコマンドを実行すると、入力データ全件ファイルがダウンロードされます。
-入力データ全件ファイルのフォーマットについては https://annofab.com/docs/api/#section/InputData を参照してください。
+入力データ全件ファイルのフォーマットについては https://annofab.com/docs/api/#tag/x-data-types/InputData を参照してください。
 
 .. code-block::
 
