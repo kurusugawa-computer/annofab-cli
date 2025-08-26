@@ -30,6 +30,6 @@ def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argpa
     subcommand_name = "annotation_zip"
     subcommand_help = "アノテーションZIPに対する操作を行うサブコマンド"
 
-    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help)
+    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, is_subcommand=False)
     parse_args(parser)
     return parser

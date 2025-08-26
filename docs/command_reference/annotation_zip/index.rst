@@ -25,3 +25,4 @@ Usage Details
    :ref: annofabcli.annotation_zip.subcommand_annotation_zip.add_parser
    :prog: annofabcli annotation_zip
    :nosubcommands:
+
