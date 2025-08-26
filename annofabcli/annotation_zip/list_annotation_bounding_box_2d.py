@@ -50,10 +50,10 @@ class AnnotationBoundingBoxInfo(DataClassJsonMixin):
 
     label: str
     annotation_id: str
-    left_top: dict[str, float]
-    right_bottom: dict[str, float]
-    width: float
-    height: float
+    left_top: dict[str, int]
+    right_bottom: dict[str, int]
+    width: int
+    height: int
 
 
 def get_annotation_bounding_box_info_list(simple_annotation: dict[str, Any]) -> list[AnnotationBoundingBoxInfo]:
@@ -176,7 +176,7 @@ def print_annotation_bounding_box(
         task_query=task_query,
     )
 
-    logger.info(f"{len(annotation_bbox_list)} 件のタスクに含まれるバウンディングボックスの情報を出力します。 :: output='{output_file}")
+    logger.info(f"{len(annotation_bbox_list)} 件のバウンディングボックスアノテーションの情報を出力します。 :: output='{output_file}")
 
     if output_format == FormatArgument.CSV:
         df = create_df(annotation_bbox_list)
@@ -196,7 +196,7 @@ def print_annotation_bounding_box(
 
 
 class ListAnnotationBoundingBox2d(CommandLine):
-    COMMON_MESSAGE = "annofabcli annotation_zip list_bounding_box_2d: error:"
+    COMMON_MESSAGE = "annofabcli annotation_zip list_annotation_bounding_box_2d: error:"
 
     def validate(self, args: argparse.Namespace) -> bool:
         if args.project_id is None and args.annotation is None:
@@ -218,7 +218,8 @@ class ListAnnotationBoundingBox2d(CommandLine):
             super().validate_project(project_id, project_member_roles=[ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER])
             project, _ = self.service.api.get_project(project_id)
             if project["input_data_type"] != InputDataType.IMAGE.value:
-                logger.warning(f"project_id='{project_id}'であるプロジェクトは、画像プロジェクトでないので、出力されるデータは0件になります。")
+                print(f"project_id='{project_id}'であるプロジェクトは画像プロジェクトでないので、終了します", file=sys.stderr)  # noqa: T201
+                sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
         annotation_path = Path(args.annotation) if args.annotation is not None else None
 
@@ -230,14 +231,13 @@ class ListAnnotationBoundingBox2d(CommandLine):
 
         downloading_obj = DownloadingFile(self.service)
 
-        def download_and_print_annotation_bbox(project_id: str, temp_dir: Path, *, is_latest: bool, annotation_path: Optional[Path]) -> None:
-            if annotation_path is None:
-                annotation_path = temp_dir / f"{project_id}__annotation.zip"
-                downloading_obj.download_annotation_zip(
-                    project_id,
-                    dest_path=annotation_path,
-                    is_latest=is_latest,
-                )
+        def download_and_print_annotation_bbox(project_id: str, temp_dir: Path, *, is_latest: bool) -> None:
+            annotation_path = temp_dir / f"{project_id}__annotation.zip"
+            downloading_obj.download_annotation_zip(
+                project_id,
+                dest_path=annotation_path,
+                is_latest=is_latest,
+            )
             print_annotation_bounding_box(
                 output_format=output_format,
                 output_file=output_file,
@@ -248,10 +248,14 @@ class ListAnnotationBoundingBox2d(CommandLine):
 
         if project_id is not None:
             if args.temp_dir is not None:
-                download_and_print_annotation_bbox(project_id=project_id, temp_dir=args.temp_dir, is_latest=args.latest, annotation_path=annotation_path)
+                download_and_print_annotation_bbox(project_id=project_id, temp_dir=args.temp_dir, is_latest=args.latest)
             else:
                 with tempfile.TemporaryDirectory() as str_temp_dir:
-                    download_and_print_annotation_bbox(project_id=project_id, temp_dir=Path(str_temp_dir), is_latest=args.latest, annotation_path=annotation_path)
+                    download_and_print_annotation_bbox(
+                        project_id=project_id,
+                        temp_dir=Path(str_temp_dir),
+                        is_latest=args.latest,
+                    )
         else:
             assert annotation_path is not None
             print_annotation_bounding_box(
@@ -266,19 +270,14 @@ class ListAnnotationBoundingBox2d(CommandLine):
 def parse_args(parser: argparse.ArgumentParser) -> None:
     argument_parser = ArgumentParser(parser)
 
-    parser.add_argument(
+    group = parser.add_mutually_exclusive_group(required=True)
+    group.add_argument(
         "--annotation",
         type=str,
-        help="アノテーションzip、またはzipを展開したディレクトリを指定します。指定しない場合はAnnofabからダウンロードします。",
+        help="アノテーションzip、またはzipを展開したディレクトリを指定します。",
     )
 
-    parser.add_argument(
-        "-p",
-        "--project_id",
-        type=str,
-        help="project_id。``--annotation`` が未指定のときは必須です。\n"
-        "``--annotation`` が指定されているときに ``--project_id`` を指定すると、アノテーション仕様を参照して、集計対象の属性やCSV列順が決まります。",
-    )
+    group.add_argument("-p", "--project_id", type=str, help="project_id。アノテーションZIPをダウンロードします。")
 
     argument_parser.add_format(
         choices=[FormatArgument.CSV, FormatArgument.JSON, FormatArgument.PRETTY_JSON],
@@ -318,9 +317,9 @@ def main(args: argparse.Namespace) -> None:
 
 
 def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
-    subcommand_name = "list_bounding_box_2d"
+    subcommand_name = "list_annotation_bounding_box_2d"
     subcommand_help = "アノテーションZIPからバウンディングボックス（矩形）アノテーションの座標情報を出力します。"
-    epilog = "オーナロールまたはアノテーションユーザロールを持つユーザで実行してください。"
+    epilog = "アノテーションZIPをダウンロードする場合は、オーナロールまたはアノテーションユーザロールを持つユーザで実行してください。"
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description=subcommand_help, epilog=epilog)
     parse_args(parser)
     return parser

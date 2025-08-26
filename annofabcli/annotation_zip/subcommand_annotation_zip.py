@@ -13,7 +13,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     Args:
         parser: パーサー
     """
-    subparsers = parser.add_subparsers(dest="subcommand_name", description="notification_message_file_in_projectのサブコマンド")
+    subparsers = parser.add_subparsers(dest="subcommand_name")
 
     # サブコマンドの定義
     add_parser_list_annotation_bounding_box_2d(subparsers)
