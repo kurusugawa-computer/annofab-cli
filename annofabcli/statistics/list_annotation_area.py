@@ -264,19 +264,14 @@ class ListAnnotationArea(CommandLine):
 def parse_args(parser: argparse.ArgumentParser) -> None:
     argument_parser = ArgumentParser(parser)
 
-    parser.add_argument(
+    group = parser.add_mutually_exclusive_group(required=True)
+    group.add_argument(
         "--annotation",
         type=str,
         help="アノテーションzip、またはzipを展開したディレクトリを指定します。指定しない場合はAnnofabからダウンロードします。",
     )
 
-    parser.add_argument(
-        "-p",
-        "--project_id",
-        type=str,
-        help="project_id。``--annotation`` が未指定のときは必須です。\n"
-        "``--annotation`` が指定されているときに ``--project_id`` を指定すると、アノテーション仕様を参照して、集計対象の属性やCSV列順が決まります。",
-    )
+    group.add_argument("-p", "--project_id", type=str, help="project_id。``--annotation`` が未指定のときは必須です。\n")
 
     argument_parser.add_format(
         choices=[FormatArgument.CSV, FormatArgument.JSON, FormatArgument.PRETTY_JSON],
