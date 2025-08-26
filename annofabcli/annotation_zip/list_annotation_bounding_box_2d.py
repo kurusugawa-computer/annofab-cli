@@ -96,17 +96,16 @@ def get_annotation_bounding_box_info_list_from_annotation_path(
     annotation_bbox_list = []
     target_task_ids = set(target_task_ids) if target_task_ids is not None else None
     iter_parser = lazy_parse_simple_annotation_by_input_data(annotation_path)
-    logger.debug("アノテーションzip/ディレクトリを読み込み中")
+    logger.info(f"アノテーションZIPまたはディレクトリ'{annotation_path}'を読み込みます。")
     for index, parser in enumerate(iter_parser):
-        if (index + 1) % 1000 == 0:
-            logger.debug(f"{index + 1}  件目のJSONを読み込み中")
+        if (index + 1) % 10000 == 0:
+            logger.info(f"{index + 1}  件目のJSONを読み込み中")
         if target_task_ids is not None and parser.task_id not in target_task_ids:
             continue
-        simple_annotation_dict = parser.load_json()
-        if task_query is not None:  # noqa: SIM102
-            if not match_annotation_with_task_query(simple_annotation_dict, task_query):
-                continue
-        sub_annotation_bbox_list = get_annotation_bounding_box_info_list(simple_annotation_dict)
+        dict_simple_annotation = parser.load_json()
+        if task_query is not None and not match_annotation_with_task_query(dict_simple_annotation, task_query):
+            continue
+        sub_annotation_bbox_list = get_annotation_bounding_box_info_list(dict_simple_annotation)
         annotation_bbox_list.extend(sub_annotation_bbox_list)
     return annotation_bbox_list
 
@@ -177,7 +176,7 @@ def print_annotation_bounding_box(
         task_query=task_query,
     )
 
-    logger.info(f"{len(annotation_bbox_list)} 件のタスクに含まれるバウンディングボックスの情報を出力します。")
+    logger.info(f"{len(annotation_bbox_list)} 件のタスクに含まれるバウンディングボックスの情報を出力します。 :: output='{output_file}")
 
     if output_format == FormatArgument.CSV:
         df = create_df(annotation_bbox_list)
@@ -193,7 +192,7 @@ def print_annotation_bounding_box(
         )
 
     else:
-        raise RuntimeError(f"出力形式 '{output_format}' はサポートされていません。")
+        raise ValueError(f"出力形式 '{output_format}' はサポートされていません。")
 
 
 class ListAnnotationBoundingBox2d(CommandLine):
