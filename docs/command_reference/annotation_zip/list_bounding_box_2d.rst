@@ -44,7 +44,6 @@ Usage Details
 =================================
 
 .. argparse::
-    :ref: annofabcli.annotation_zip.list_annotation_bounding_box_2d.add_parser
-    :prog: annofabcli annotation_zip list_bounding_box_2d
+    :prog: annofabcli annotation_zip list_annotation_bounding_box_2d
     :nosubcommands:
     :nodefaultconst:
