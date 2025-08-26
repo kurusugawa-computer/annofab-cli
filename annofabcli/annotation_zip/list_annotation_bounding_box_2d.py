@@ -131,7 +131,6 @@ def create_df(
         "width",
         "height",
     ]
-    df = pandas.DataFrame()
     if len(annotation_bbox_list) > 0:
         df = pandas.DataFrame(
             [
