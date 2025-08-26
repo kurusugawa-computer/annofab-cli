@@ -48,5 +48,7 @@ Usage Details
     :nodefaultconst:
 ```
 
+* documentのタイトルは`task list`のようなコマンド名にする
+
 ## レビュー
 * PRレビューの際は、日本語でレビューを行う
