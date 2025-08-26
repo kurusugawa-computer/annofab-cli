@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 T = TypeVar("T")  # Can be anything
 
 
-# chunksizeについて: 90万行15列のCSVを出力しようとしたらメモリ不足で落ちたので、仮でchnksizeを10万行にする
+# chunksizeについて: 90万行15列のCSVを出力しようとしたらメモリ不足で落ちたので、仮でchunksizeを10万行にする
 DEFAULT_CSV_FORMAT = {"encoding": "utf_8_sig", "index": False, "chunksize": 100_000}
 
 
