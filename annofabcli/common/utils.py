@@ -19,7 +19,8 @@ logger = logging.getLogger(__name__)
 T = TypeVar("T")  # Can be anything
 
 
-DEFAULT_CSV_FORMAT = {"encoding": "utf_8_sig", "index": False}
+# chunksizeについて: 90万行15列のCSVを出力しようとしたらメモリ不足で落ちたので、仮でchnksizeを10万行にする
+DEFAULT_CSV_FORMAT = {"encoding": "utf_8_sig", "index": False, "chunksize": 100_000}
 
 
 def read_lines(filepath: str) -> list[str]:
