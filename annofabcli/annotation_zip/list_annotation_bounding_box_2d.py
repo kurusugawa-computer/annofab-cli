@@ -176,7 +176,7 @@ def print_annotation_bounding_box(
         task_query=task_query,
     )
 
-    logger.info(f"{len(annotation_bbox_list)} 件のバウンディングボックスアノテーションの情報を出力します。 :: output='{output_file}")
+    logger.info(f"{len(annotation_bbox_list)} 件のバウンディングボックスアノテーションの情報を出力します。 :: output='{output_file}'")
 
     if output_format == FormatArgument.CSV:
         df = create_df(annotation_bbox_list)
