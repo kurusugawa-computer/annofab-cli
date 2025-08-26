@@ -258,11 +258,11 @@ class ListAnnotationBoundingBox2d(CommandLine):
         else:
             assert annotation_path is not None
             print_annotation_bounding_box(
-                output_format=output_format,
-                output_file=output_file,
+                annotation_path,
+                output_file,
+                output_format,
                 target_task_ids=task_id_list,
                 task_query=task_query,
-                annotation_path=annotation_path,
             )
 
 
