@@ -4,23 +4,18 @@ import argparse
 import logging
 import sys
 import tempfile
-import zipfile
-from collections.abc import Collection, Iterator
+from collections.abc import Collection
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Optional
 
 import pandas
 from annofabapi.models import InputDataType, ProjectMemberRole
-from annofabapi.parser import (
-    SimpleAnnotationParser,
-    lazy_parse_simple_annotation_dir,
-    lazy_parse_simple_annotation_zip,
-)
 from dataclasses_json import DataClassJsonMixin
 
 import annofabcli
 import annofabcli.common.cli
+from annofabcli.common.annofab.annotation_zip import lazy_parse_simple_annotation_by_input_data
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
     ArgumentParser,
@@ -37,18 +32,6 @@ from annofabcli.common.facade import (
 from annofabcli.common.utils import print_csv, print_json
 
 logger = logging.getLogger(__name__)
-
-
-def lazy_parse_simple_annotation_by_input_data(annotation_path: Path) -> Iterator[SimpleAnnotationParser]:
-    if not annotation_path.exists():
-        raise RuntimeError(f"'{annotation_path}' は存在しません。")
-
-    if annotation_path.is_dir():
-        return lazy_parse_simple_annotation_dir(annotation_path)
-    elif zipfile.is_zipfile(str(annotation_path)):
-        return lazy_parse_simple_annotation_zip(annotation_path)
-    else:
-        raise RuntimeError(f"'{annotation_path}'は、zipファイルまたはディレクトリではありません。")
 
 
 @dataclass(frozen=True)
@@ -73,7 +56,7 @@ class AnnotationBoundingBoxInfo(DataClassJsonMixin):
     height: float
 
 
-def get_annotation_bounding_box_info_list(parser: SimpleAnnotationParser, simple_annotation: dict[str, Any]) -> list[AnnotationBoundingBoxInfo]:
+def get_annotation_bounding_box_info_list(simple_annotation: dict[str, Any]) -> list[AnnotationBoundingBoxInfo]:
     result = []
     for detail in simple_annotation["details"]:
         if detail["data"]["_type"] == "BoundingBox":
@@ -123,7 +106,7 @@ def get_annotation_bounding_box_info_list_from_annotation_path(
         if task_query is not None:  # noqa: SIM102
             if not match_annotation_with_task_query(simple_annotation_dict, task_query):
                 continue
-        sub_annotation_bbox_list = get_annotation_bounding_box_info_list(parser, simple_annotation_dict)
+        sub_annotation_bbox_list = get_annotation_bounding_box_info_list(simple_annotation_dict)
         annotation_bbox_list.extend(sub_annotation_bbox_list)
     return annotation_bbox_list
 
@@ -151,24 +134,29 @@ def create_df(
     ]
     df = pandas.DataFrame()
     if len(annotation_bbox_list) > 0:
-        df = pandas.DataFrame([{
-            "project_id": e.project_id,
-            "task_id": e.task_id,
-            "task_status": e.task_status,
-            "task_phase": e.task_phase,
-            "task_phase_stage": e.task_phase_stage,
-            "input_data_id": e.input_data_id,
-            "input_data_name": e.input_data_name,
-            "updated_datetime": e.updated_datetime,
-            "label": e.label,
-            "annotation_id": e.annotation_id,
-            "left_top.x": e.left_top["x"],
-            "left_top.y": e.left_top["y"],
-            "right_bottom.x": e.right_bottom["x"],
-            "right_bottom.y": e.right_bottom["y"],
-            "width": e.width,
-            "height": e.height,
-        } for e in annotation_bbox_list])
+        df = pandas.DataFrame(
+            [
+                {
+                    "project_id": e.project_id,
+                    "task_id": e.task_id,
+                    "task_status": e.task_status,
+                    "task_phase": e.task_phase,
+                    "task_phase_stage": e.task_phase_stage,
+                    "input_data_id": e.input_data_id,
+                    "input_data_name": e.input_data_name,
+                    "updated_datetime": e.updated_datetime,
+                    "label": e.label,
+                    "annotation_id": e.annotation_id,
+                    "left_top.x": e.left_top["x"],
+                    "left_top.y": e.left_top["y"],
+                    "right_bottom.x": e.right_bottom["x"],
+                    "right_bottom.y": e.right_bottom["y"],
+                    "width": e.width,
+                    "height": e.height,
+                }
+                for e in annotation_bbox_list
+            ]
+        )
     else:
         df = pandas.DataFrame(columns=columns)
 
@@ -209,7 +197,7 @@ def print_annotation_bounding_box(
 
 
 class ListAnnotationBoundingBox2d(CommandLine):
-    COMMON_MESSAGE = "annofabcli annotation_zip list_annotation_bounding_box_2d: error:"
+    COMMON_MESSAGE = "annofabcli annotation_zip list_bounding_box_2d: error:"
 
     def validate(self, args: argparse.Namespace) -> bool:
         if args.project_id is None and args.annotation is None:
@@ -331,8 +319,8 @@ def main(args: argparse.Namespace) -> None:
 
 
 def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
-    subcommand_name = "list_annotation_bounding_box_2d"
-    subcommand_help = "バウンディングボックス（矩形）アノテーションの座標情報を出力します。"
+    subcommand_name = "list_bounding_box_2d"
+    subcommand_help = "アノテーションZIPからバウンディングボックス（矩形）アノテーションの座標情報を出力します。"
     epilog = "オーナロールまたはアノテーションユーザロールを持つユーザで実行してください。"
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description=subcommand_help, epilog=epilog)
     parse_args(parser)
