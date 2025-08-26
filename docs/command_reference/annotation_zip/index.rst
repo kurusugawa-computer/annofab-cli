@@ -22,6 +22,6 @@ Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.annotation.subcommand_annotation_zip.add_parser
+   :ref: annofabcli.annotation_zip.subcommand_annotation_zip.add_parser
    :prog: annofabcli annotation_zip
    :nosubcommands:
