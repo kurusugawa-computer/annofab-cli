@@ -10,6 +10,7 @@ import pandas
 
 import annofabcli.annotation.subcommand_annotation
 import annofabcli.annotation_specs.subcommand_annotation_specs
+import annofabcli.annotation_zip.subcommand_annotation_zip
 import annofabcli.comment.subcommand_comment
 import annofabcli.common.cli
 import annofabcli.experimental.subcommand_experimental
@@ -107,6 +108,7 @@ def create_parser() -> argparse.ArgumentParser:
 
     annofabcli.annotation.subcommand_annotation.add_parser(subparsers)
     annofabcli.annotation_specs.subcommand_annotation_specs.add_parser(subparsers)
+    annofabcli.annotation_zip.subcommand_annotation_zip.add_parser(subparsers)
     annofabcli.comment.subcommand_comment.add_parser(subparsers)
     annofabcli.input_data.subcommand_input_data.add_parser(subparsers)
     annofabcli.instruction.subcommand_instruction.add_parser(subparsers)
