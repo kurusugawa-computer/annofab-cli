@@ -27,6 +27,7 @@
         "astype",
         "asyncio",
         "bokeh",
+        "chunksize",
         "cumsum",
         "dataclass",
         "Dataframe",

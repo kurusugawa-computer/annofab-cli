@@ -1,4 +1,3 @@
-import copy
 import json
 import logging
 import logging.config
@@ -17,9 +16,6 @@ from annofabcli.common.enums import FormatArgument
 logger = logging.getLogger(__name__)
 
 T = TypeVar("T")  # Can be anything
-
-
-DEFAULT_CSV_FORMAT = {"encoding": "utf_8_sig", "index": False}
 
 
 def read_lines(filepath: str) -> list[str]:
@@ -90,7 +86,8 @@ def print_csv(df: pandas.DataFrame, output: Optional[Union[str, Path]] = None, t
 
     path_or_buf = sys.stdout if output is None else str(output)
 
-    kwargs = copy.deepcopy(DEFAULT_CSV_FORMAT)
+    # chunksizeについて: 90万行15列のCSVを出力しようとしたらメモリ不足で落ちたので、仮でchunksizeを10万行にする
+    kwargs = {"encoding": "utf_8_sig", "index": False, "chunksize": 100_000}
     if to_csv_kwargs is None:
         df.to_csv(path_or_buf, **kwargs)
     else:
