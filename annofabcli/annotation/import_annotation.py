@@ -434,11 +434,6 @@ class ImportAnnotationMain(CommandLineWithConfirm):
             logger.debug(f"task_id='{task_id}', input_data_id='{input_data_id}' :: インポート元にアノテーションデータがないため、アノテーションの登録をスキップします。")
             return 0
 
-        input_data = self.service.wrapper.get_input_data_or_none(self.project_id, input_data_id)
-        if input_data is None:
-            logger.warning(f"input_data_id='{input_data_id}'という入力データは存在しません。 :: task_id='{task_id}'")
-            return 0
-
         old_annotation, _ = self.service.api.get_editor_annotation(self.project_id, task_id, input_data_id, query_params={"v": "2"})
         if len(old_annotation["details"]) > 0:  # noqa: SIM102
             if not self.is_overwrite and not self.is_merge:
