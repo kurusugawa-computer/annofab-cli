@@ -16,6 +16,7 @@ from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
     PARALLELISM_CHOICES,
     ArgumentParser,
+    CommandLine,
     CommandLineWithConfirm,
     build_annofabapi_resource_and_login,
 )
@@ -49,10 +50,11 @@ def execute_task_wrapper_global(args_tuple: tuple[int, str, list[str], str, bool
 
         created_count = main_obj.create_classification_annotation_for_task(task_id, labels)
         logger.info(f"{logger_prefix}task_id='{task_id}' :: {created_count} 件の全体アノテーションを作成しました。")
-        return created_count > 0
     except Exception:  # pylint: disable=broad-except
         logger.warning(f"task_id='{task_id}' の全体アノテーション作成に失敗しました。", exc_info=True)
         return False
+    else:
+        return created_count > 0
 
 
 class CreateClassificationAnnotationMain(CommandLineWithConfirm):
@@ -71,29 +73,28 @@ class CreateClassificationAnnotationMain(CommandLineWithConfirm):
         self.project_id = project_id
         self.is_force = is_force
 
-    def create_classification_annotation_for_task(self, task_id: str, labels: list[str]) -> int:
+    def _validate_and_prepare_task(self, task_id: str) -> tuple[Optional[dict], bool, Optional[str]]:
         """
-        1個のタスクに対して全体アノテーションを作成します。
-
-        Args:
-            task_id: タスクID
-            labels: ラベル名のリスト
+        タスクの検証と準備を行う
 
         Returns:
-            作成した全体アノテーションの個数
+            tuple[0]: タスク情報（Noneの場合は処理をスキップ）
+            tuple[1]: 担当者を変更したかどうか
+            tuple[2]: 元の担当者ID（担当者を変更した場合）
         """
         # タスク情報を取得
         task = self.service.wrapper.get_task_or_none(self.project_id, task_id)
         if task is None:
             logger.warning(f"task_id='{task_id}'であるタスクは存在しません。")
-            return 0
+            return None, False, None
 
         if task["status"] in [TaskStatus.WORKING.value, TaskStatus.COMPLETE.value]:
             logger.info(f"タスク'{task_id}'は作業中または受入完了状態のため、作成をスキップします。 status={task['status']}")
-            return 0
+            return None, False, None
 
         old_account_id: Optional[str] = None
         changed_operator = False
+
         if self.is_force:
             if not can_put_annotation(task, self.service.api.account_id):
                 logger.debug(f"タスク'{task_id}' の担当者を自分自身に変更します。")
@@ -105,26 +106,108 @@ class CreateClassificationAnnotationMain(CommandLineWithConfirm):
                     last_updated_datetime=task["updated_datetime"],
                 )
                 changed_operator = True
-
         else:  # noqa: PLR5501
             if not can_put_annotation(task, self.service.api.account_id):
                 logger.debug(
                     f"タスク'{task_id}'は、過去に誰かに割り当てられたタスクで、現在の担当者が自分自身でないため、全体アノテーションの作成をスキップします。"
                     f"担当者を自分自身に変更して全体アノテーションを作成する場合は `--force` を指定してください。"
                 )
-                return 0
+                return None, False, None
+
+        return task, changed_operator, old_account_id
+
+    def _create_annotation_details_for_labels(
+        self, task_id: str, input_data_id: str, labels: list[str], annotation_specs_accessor: AnnotationSpecsAccessor, existing_annotation_ids: set[str]
+    ) -> list[dict]:
+        """
+        ラベルリストから新しいアノテーション詳細を作成する
+        """
+        new_details = []
+        for label_name in labels:
+            try:
+                label_info = annotation_specs_accessor.get_label(label_name=label_name)
+            except ValueError:
+                logger.warning(f"アノテーション仕様にラベル名(英語)が'{label_name}'であるラベル情報が存在しないか、または複数存在します。 :: task_id='{task_id}', input_data_id='{input_data_id}'")
+                continue
+
+            # 全体アノテーション（Classification）かどうかチェック
+            if label_info["annotation_type"] != DefaultAnnotationType.CLASSIFICATION.value:
+                logger.warning(f"ラベル'{label_name}'は全体アノテーション（Classification）ではありません。 :: task_id='{task_id}', input_data_id='{input_data_id}'")
+                continue
+
+            # 全体アノテーションのannotation_idはlabel_idと同じ
+            annotation_id = label_info["label_id"]
+
+            # すでに同じannotation_idのアノテーションが存在するかチェック
+            if annotation_id in existing_annotation_ids:
+                logger.debug(f"task_id='{task_id}', input_data_id='{input_data_id}', label_name='{label_name}' :: 既に全体アノテーションが存在するため、作成をスキップします。")
+                continue
+
+            # 新しいアノテーション詳細を作成
+            annotation_detail = {
+                "_type": "Create",
+                "label_id": label_info["label_id"],
+                "annotation_id": annotation_id,
+                "additional_data_list": [],
+                "editor_props": {},
+                "body": {"_type": "Inner", "data": {}},
+            }
+            new_details.append(annotation_detail)
+
+        return new_details
+
+    def _put_annotations_for_input_data(self, task_id: str, input_data_id: str, new_details: list[dict], old_annotation: dict) -> int:
+        """
+        入力データに対してアノテーションを登録する
+        """
+        if len(new_details) == 0:
+            return 0
+
+        # 既存のアノテーションを更新モードに変更
+        for detail in old_annotation["details"]:
+            detail["_type"] = "Update"
+            detail["body"] = None
+
+        # リクエストボディを作成
+        request_body = {
+            "project_id": self.project_id,
+            "task_id": task_id,
+            "input_data_id": input_data_id,
+            "details": old_annotation["details"] + new_details,
+            "updated_datetime": old_annotation["updated_datetime"],
+            "format_version": "2.0.0",
+        }
+
+        # アノテーションを登録
+        self.service.api.put_annotation(self.project_id, task_id, input_data_id, request_body=request_body, query_params={"v": "2"})
+        logger.debug(f"task_id='{task_id}', input_data_id='{input_data_id}' :: {len(new_details)} 件の全体アノテーションを作成しました。")
+        return len(new_details)
+
+    def create_classification_annotation_for_task(self, task_id: str, labels: list[str]) -> int:
+        """
+        1個のタスクに対して全体アノテーションを作成します。
+
+        Args:
+            task_id: タスクID
+            labels: ラベル名のリスト
+
+        Returns:
+            作成した全体アノテーションの個数
+        """
+        # タスクの検証と準備
+        task, changed_operator, old_account_id = self._validate_and_prepare_task(task_id)
+        if task is None:
+            return 0
 
         # アノテーション仕様を取得
         annotation_specs_v3, _ = self.service.api.get_annotation_specs(self.project_id, query_params={"v": "3"})
         annotation_specs_accessor = AnnotationSpecsAccessor(annotation_specs_v3)
 
         # タスクの入力データリストを取得
-        input_data_list = self.service.wrapper.get_input_data_list(self.project_id, query_params={"task_id": task_id})
+        input_data_id_list = task["input_data_id_list"]
 
         created_count = 0
-        for input_data in input_data_list:
-            input_data_id = input_data["input_data_id"]
-
+        for input_data_id in input_data_id_list:
             # 既存のアノテーションを取得
             old_annotation, _ = self.service.api.get_editor_annotation(self.project_id, task_id, input_data_id, query_params={"v": "2"})
 
@@ -132,60 +215,12 @@ class CreateClassificationAnnotationMain(CommandLineWithConfirm):
             existing_annotation_ids = {detail["annotation_id"] for detail in old_annotation["details"]}
 
             # 新しいアノテーション詳細のリストを作成
-            new_details = []
-            for label_name in labels:
-                try:
-                    label_info = annotation_specs_accessor.get_label(label_name=label_name)
-                except ValueError:
-                    logger.warning(f"アノテーション仕様にラベル名(英語)が'{label_name}'であるラベル情報が存在しないか、または複数存在します。 :: task_id='{task_id}', input_data_id='{input_data_id}'")
-                    continue
+            new_details = self._create_annotation_details_for_labels(task_id, input_data_id, labels, annotation_specs_accessor, existing_annotation_ids)
 
-                # 全体アノテーション（Classification）かどうかチェック
-                if label_info["annotation_type"] != DefaultAnnotationType.CLASSIFICATION.value:
-                    logger.warning(f"ラベル'{label_name}'は全体アノテーション（Classification）ではありません。 :: task_id='{task_id}', input_data_id='{input_data_id}'")
-                    continue
+            # アノテーションを登録
+            created_count += self._put_annotations_for_input_data(task_id, input_data_id, new_details, old_annotation)
 
-                # 全体アノテーションのannotation_idはlabel_idと同じ
-                annotation_id = label_info["label_id"]
-
-                # すでに同じannotation_idのアノテーションが存在するかチェック
-                if annotation_id in existing_annotation_ids:
-                    logger.debug(f"task_id='{task_id}', input_data_id='{input_data_id}', label_name='{label_name}' :: 既に全体アノテーションが存在するため、作成をスキップします。")
-                    continue
-
-                # 新しいアノテーション詳細を作成
-                annotation_detail = {
-                    "_type": "Create",
-                    "label_id": label_info["label_id"],
-                    "annotation_id": annotation_id,
-                    "additional_data_list": [],
-                    "editor_props": {},
-                    "body": {"_type": "Inner", "data": {}},
-                }
-                new_details.append(annotation_detail)
-
-            # 新しいアノテーションがある場合のみ登録
-            if len(new_details) > 0:
-                # 既存のアノテーションを更新モードに変更
-                for detail in old_annotation["details"]:
-                    detail["_type"] = "Update"
-                    detail["body"] = None
-
-                # リクエストボディを作成
-                request_body = {
-                    "project_id": self.project_id,
-                    "task_id": task_id,
-                    "input_data_id": input_data_id,
-                    "details": old_annotation["details"] + new_details,
-                    "updated_datetime": old_annotation["updated_datetime"],
-                    "format_version": "2.0.0",
-                }
-
-                # アノテーションを登録
-                self.service.api.put_annotation(self.project_id, task_id, input_data_id, request_body=request_body, query_params={"v": "2"})
-                created_count += len(new_details)
-                logger.debug(f"task_id='{task_id}', input_data_id='{input_data_id}' :: {len(new_details)} 件の全体アノテーションを作成しました。")
-
+        # 担当者を元に戻す
         if changed_operator:
             logger.debug(f"タスク'{task_id}' の担当者を元に戻します。")
             self.service.wrapper.change_task_operator(
@@ -218,10 +253,11 @@ class CreateClassificationAnnotationMain(CommandLineWithConfirm):
         try:
             created_count = self.create_classification_annotation_for_task(task_id, labels)
             logger.info(f"{logger_prefix}task_id='{task_id}' :: {created_count} 件の全体アノテーションを作成しました。")
-            return created_count > 0
         except Exception:
             logger.warning(f"task_id='{task_id}' の全体アノテーション作成に失敗しました。", exc_info=True)
             return False
+        else:
+            return created_count > 0
 
     def main(self, task_ids: list[str], labels: list[str], parallelism: Optional[int] = None) -> None:
         """
@@ -248,15 +284,13 @@ class CreateClassificationAnnotationMain(CommandLineWithConfirm):
         logger.info(f"{success_count} / {len(task_ids)} 件のタスクに対して全体アノテーションを作成しました。")
 
 
-class CreateClassificationAnnotation(CommandLineWithConfirm):
+class CreateClassificationAnnotation(CommandLine):
     """
     全体アノテーション（Classification）を作成する
     """
 
     def __init__(self, service: annofabapi.Resource, facade: AnnofabApiFacade, args: argparse.Namespace) -> None:
-        super().__init__(args.yes)
-        self.service = service
-        self.facade = facade
+        super().__init__(service, facade, args)
         self.args = args
 
     @staticmethod
