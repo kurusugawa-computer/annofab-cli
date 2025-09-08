@@ -415,7 +415,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--task_id",
         type=str,
         nargs="+",
-        help="削除対象のタスクのtask_idを指定します。 ``file://`` を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。",
+        help="削除対象のアノテーションが含まれているタスクのtask_idを指定します。 ``file://`` を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。",
     )
 
     example_json = [{"task_id": "t1", "input_data_id": "i1", "annotation_id": "a1"}]

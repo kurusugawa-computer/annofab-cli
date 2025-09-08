@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import logging
+import multiprocessing
 import sys
 from typing import Optional
 
@@ -13,6 +14,7 @@ from annofabapi.utils import can_put_annotation
 import annofabcli
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
+    PARALLELISM_CHOICES,
     ArgumentParser,
     CommandLineWithConfirm,
     build_annofabapi_resource_and_login,
@@ -20,6 +22,37 @@ from annofabcli.common.cli import (
 from annofabcli.common.facade import AnnofabApiFacade
 
 logger = logging.getLogger(__name__)
+
+
+def execute_task_wrapper_global(args_tuple: tuple[int, str, list[str], str, bool, annofabapi.Resource]) -> bool:
+    """
+    並列処理用のグローバル関数
+
+    Args:
+        args_tuple: (task_index, task_id, labels, project_id, is_force, service)のタプル
+
+    Returns:
+        1個以上の全体アノテーションを作成したか
+    """
+    task_index, task_id, labels, project_id, is_force, service = args_tuple
+
+    try:
+        main_obj = CreateClassificationAnnotationMain(
+            service=service,
+            project_id=project_id,
+            all_yes=True,  # 並列処理では確認をスキップ
+            is_force=is_force,
+        )
+
+        logger_prefix = f"{task_index + 1!s} 件目: "
+        logger.info(f"{logger_prefix}task_id='{task_id}' に対して処理します。")
+
+        created_count = main_obj.create_classification_annotation_for_task(task_id, labels)
+        logger.info(f"{logger_prefix}task_id='{task_id}' :: {created_count} 件の全体アノテーションを作成しました。")
+        return created_count > 0
+    except Exception:  # pylint: disable=broad-except
+        logger.warning(f"task_id='{task_id}' の全体アノテーション作成に失敗しました。", exc_info=True)
+        return False
 
 
 class CreateClassificationAnnotationMain(CommandLineWithConfirm):
@@ -127,10 +160,7 @@ class CreateClassificationAnnotationMain(CommandLineWithConfirm):
                     "annotation_id": annotation_id,
                     "additional_data_list": [],
                     "editor_props": {},
-                    "body": {
-                        "_type": "Inner",
-                        "data": {}
-                    }
+                    "body": {"_type": "Inner", "data": {}},
                 }
                 new_details.append(annotation_detail)
 
@@ -193,20 +223,27 @@ class CreateClassificationAnnotationMain(CommandLineWithConfirm):
             logger.warning(f"task_id='{task_id}' の全体アノテーション作成に失敗しました。", exc_info=True)
             return False
 
-    def main(self, task_ids: list[str], labels: list[str]) -> None:
+    def main(self, task_ids: list[str], labels: list[str], parallelism: Optional[int] = None) -> None:
         """
         メイン処理
 
         Args:
             task_ids: タスクIDのリスト
             labels: ラベル名のリスト
+            parallelism: 並列度
         """
         success_count = 0
 
-        for task_index, task_id in enumerate(task_ids):
-            result = self.execute_task(task_id, labels, task_index=task_index)
-            if result:
-                success_count += 1
+        if parallelism is not None:
+            with multiprocessing.Pool(parallelism) as pool:
+                task_args = [(task_index, task_id, labels, self.project_id, self.is_force, self.service) for task_index, task_id in enumerate(task_ids)]
+                result_bool_list = pool.map(execute_task_wrapper_global, task_args)
+                success_count = len([e for e in result_bool_list if e])
+        else:
+            for task_index, task_id in enumerate(task_ids):
+                result = self.execute_task(task_id, labels, task_index=task_index)
+                if result:
+                    success_count += 1
 
         logger.info(f"{success_count} / {len(task_ids)} 件のタスクに対して全体アノテーションを作成しました。")
 
@@ -234,6 +271,13 @@ class CreateClassificationAnnotation(CommandLineWithConfirm):
             print(f"{COMMON_MESSAGE} argument --label: ラベル名を指定してください。", file=sys.stderr)  # noqa: T201
             return False
 
+        if args.parallelism is not None and not args.yes:
+            print(  # noqa: T201
+                f"{COMMON_MESSAGE} argument --parallelism: '--parallelism'を指定するときは、'--yes' を指定してください。",
+                file=sys.stderr,
+            )
+            return False
+
         return True
 
     def main(self) -> None:
@@ -255,7 +299,7 @@ class CreateClassificationAnnotation(CommandLineWithConfirm):
             is_force=args.force,
         )
 
-        main_obj.main(task_ids, labels)
+        main_obj.main(task_ids, labels, parallelism=args.parallelism)
 
 
 def main(args: argparse.Namespace) -> None:
@@ -269,14 +313,16 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
 
     argument_parser.add_project_id()
 
-    argument_parser.add_task_id(required=True, help_message="対象のタスクIDを指定してください。")
+    argument_parser.add_task_id(
+        required=True, help_message=("全体アノテーションの作成先であるタスクのtask_idを指定します。 ``file://`` を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。")
+    )
 
     parser.add_argument(
         "--label",
         type=str,
         required=True,
         nargs="+",
-        help="作成する全体アノテーションのラベル名（英語）を指定してください。",
+        help="作成する全体アノテーションのラベル名（英語）を指定します。",
     )
 
     parser.add_argument(
@@ -285,14 +331,21 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         help="過去に割り当てられていて現在の担当者が自分自身でない場合、タスクの担当者を自分自身に変更してから全体アノテーションを作成します。",
     )
 
+    parser.add_argument(
+        "--parallelism",
+        type=int,
+        choices=PARALLELISM_CHOICES,
+        help="並列度。指定しない場合は、逐次的に処理します。``--parallelism`` を指定した場合は、``--yes`` も指定してください。",
+    )
+
     parser.set_defaults(subcommand_func=main)
 
 
 def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     subcommand_name = "create_classification"
     subcommand_help = "全体アノテーション（Classification）を作成します。"
-    description = "指定したラベルの全体アノテーション（Classification）を作成します。既に存在する全体アノテーションは作成されません。作業中/完了状態のタスクには作成できません。"
-    epilog = "オーナロールを持つユーザで実行してください。"
+    description = "指定したラベルの全体アノテーション（Classification）を作成します。既に全体アノテーションが存在する場合はスキップします。作業中状態のタスクには作成できません。"
+    epilog = "オーナロールまたはチェッカーロールを持つユーザで実行してください。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
     parse_args(parser)
