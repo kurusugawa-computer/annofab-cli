@@ -25,24 +25,26 @@ from annofabcli.common.facade import AnnofabApiFacade
 logger = logging.getLogger(__name__)
 
 
-def execute_task_wrapper_global(args_tuple: tuple[int, str, list[str], str, bool, annofabapi.Resource]) -> bool:
+def execute_task_wrapper_global(args_tuple: tuple[int, str, list[str], str, bool, annofabapi.Resource, dict]) -> bool:
     """
     並列処理用のグローバル関数
 
     Args:
-        args_tuple: (task_index, task_id, labels, project_id, is_force, service)のタプル
+        args_tuple: (task_index, task_id, labels, project_id, is_force, service, annotation_specs_v3)のタプル
 
     Returns:
         1個以上の全体アノテーションを作成したか
     """
-    task_index, task_id, labels, project_id, is_force, service = args_tuple
+    task_index, task_id, labels, project_id, is_force, service, annotation_specs_v3 = args_tuple
 
     try:
+        # アノテーション仕様を渡してオブジェクトを作成
         main_obj = CreateClassificationAnnotationMain(
             service=service,
             project_id=project_id,
             all_yes=True,  # 並列処理では確認をスキップ
             is_force=is_force,
+            annotation_specs_v3=annotation_specs_v3,  # アノテーション仕様を渡す
         )
 
         logger_prefix = f"{task_index + 1!s} 件目: "
@@ -65,6 +67,7 @@ class CreateClassificationAnnotationMain(CommandLineWithConfirm):
         project_id: str,
         all_yes: bool,
         is_force: bool,
+        annotation_specs_v3: Optional[dict] = None,
     ) -> None:
         self.service = service
         self.facade = AnnofabApiFacade(service)
@@ -72,6 +75,15 @@ class CreateClassificationAnnotationMain(CommandLineWithConfirm):
 
         self.project_id = project_id
         self.is_force = is_force
+        
+        # アノテーション仕様を取得またはキャッシュを使用
+        if annotation_specs_v3 is not None:
+            # 並列処理時は渡されたアノテーション仕様を使用
+            self.annotation_specs_accessor = AnnotationSpecsAccessor(annotation_specs_v3)
+        else:
+            # 通常処理時は一度だけ取得してキャッシュ
+            annotation_specs_v3, _ = self.service.api.get_annotation_specs(self.project_id, query_params={"v": "3"})
+            self.annotation_specs_accessor = AnnotationSpecsAccessor(annotation_specs_v3)
 
     def _validate_and_prepare_task(self, task_id: str) -> tuple[Optional[dict], bool, Optional[str]]:
         """
@@ -199,10 +211,6 @@ class CreateClassificationAnnotationMain(CommandLineWithConfirm):
         if task is None:
             return 0
 
-        # アノテーション仕様を取得
-        annotation_specs_v3, _ = self.service.api.get_annotation_specs(self.project_id, query_params={"v": "3"})
-        annotation_specs_accessor = AnnotationSpecsAccessor(annotation_specs_v3)
-
         # タスクの入力データリストを取得
         input_data_id_list = task["input_data_id_list"]
 
@@ -215,7 +223,7 @@ class CreateClassificationAnnotationMain(CommandLineWithConfirm):
             existing_annotation_ids = {detail["annotation_id"] for detail in old_annotation["details"]}
 
             # 新しいアノテーション詳細のリストを作成
-            new_details = self._create_annotation_details_for_labels(task_id, input_data_id, labels, annotation_specs_accessor, existing_annotation_ids)
+            new_details = self._create_annotation_details_for_labels(task_id, input_data_id, labels, self.annotation_specs_accessor, existing_annotation_ids)
 
             # アノテーションを登録
             created_count += self._put_annotations_for_input_data(task_id, input_data_id, new_details, old_annotation)
@@ -271,8 +279,14 @@ class CreateClassificationAnnotationMain(CommandLineWithConfirm):
         success_count = 0
 
         if parallelism is not None:
+            # 並列処理時は、アノテーション仕様を一度取得して各プロセスに渡す
+            annotation_specs_v3, _ = self.service.api.get_annotation_specs(self.project_id, query_params={"v": "3"})
+            
             with multiprocessing.Pool(parallelism) as pool:
-                task_args = [(task_index, task_id, labels, self.project_id, self.is_force, self.service) for task_index, task_id in enumerate(task_ids)]
+                task_args = [
+                    (task_index, task_id, labels, self.project_id, self.is_force, self.service, annotation_specs_v3) 
+                    for task_index, task_id in enumerate(task_ids)
+                ]
                 result_bool_list = pool.map(execute_task_wrapper_global, task_args)
                 success_count = len([e for e in result_bool_list if e])
         else:
