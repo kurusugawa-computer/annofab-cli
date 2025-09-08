@@ -150,7 +150,7 @@ class CreateClassificationAnnotationMain(CommandLineWithConfirm):
                 "annotation_id": annotation_id,
                 "additional_data_list": [],
                 "editor_props": {},
-                "body": {"_type": "Inner", "data": {}},
+                "body": {"_type": "Inner", "data": {"_type":"Classification"}},
             }
             new_details.append(annotation_detail)
 
@@ -244,7 +244,7 @@ class CreateClassificationAnnotationMain(CommandLineWithConfirm):
         Returns:
             1個以上の全体アノテーションを作成したか
         """
-        if not self.confirm_processing(f"task_id='{task_id}' に全体アノテーション（ラベル: {', '.join(labels)}）を作成しますか？"):
+        if not self.confirm_processing(f"task_id='{task_id}' に全体アノテーション（label_name={labels}）を作成しますか？"):
             return False
 
         logger_prefix = f"{task_index + 1!s} 件目: " if task_index is not None else ""
@@ -301,8 +301,8 @@ class CreateClassificationAnnotation(CommandLine):
             print(f"{COMMON_MESSAGE} argument --task_id: タスクIDを指定してください。", file=sys.stderr)  # noqa: T201
             return False
 
-        if not args.label:
-            print(f"{COMMON_MESSAGE} argument --label: ラベル名を指定してください。", file=sys.stderr)  # noqa: T201
+        if not args.label_name:
+            print(f"{COMMON_MESSAGE} argument --label_name: ラベル名を指定してください。", file=sys.stderr)  # noqa: T201
             return False
 
         if args.parallelism is not None and not args.yes:
@@ -324,7 +324,7 @@ class CreateClassificationAnnotation(CommandLine):
         super().validate_project(project_id, [ProjectMemberRole.OWNER])
 
         task_ids = annofabcli.common.cli.get_list_from_args(args.task_id)
-        labels = annofabcli.common.cli.get_list_from_args(args.label)
+        labels = annofabcli.common.cli.get_list_from_args(args.label_name)
 
         main_obj = CreateClassificationAnnotationMain(
             self.service,
@@ -352,7 +352,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     )
 
     parser.add_argument(
-        "--label",
+        "--label_name",
         type=str,
         required=True,
         nargs="+",
