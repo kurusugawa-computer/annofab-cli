@@ -26,6 +26,7 @@ annotation_specs = {
         },
     ],
     "attributes": [],
+    "additionals": [],
 }
 
 project = {
@@ -74,7 +75,7 @@ class TestCreateClassificationAnnotationMain:
             service=self.mock_service,
             project_id="test_project_id",
             all_yes=True,  # 確認をスキップ
-            is_force=False,
+            is_change_operator_to_me=False,
         )
 
     def test_create_classification_annotation_for_task_success(self):
@@ -158,8 +159,8 @@ class TestCreateClassificationAnnotationMain:
 
         assert result == 0
 
-    def test_create_classification_annotation_for_task_with_force(self):
-        """--forceオプションで担当者を変更する場合"""
+    def test_create_classification_annotation_for_task_with_change_operator_to_me(self):
+        """--change_operator_to_meオプションで担当者を変更する場合"""
         # 他人が担当中のタスク
         assigned_task = task.copy()
         assigned_task["account_id"] = "other_account_id"
@@ -167,16 +168,16 @@ class TestCreateClassificationAnnotationMain:
         self.mock_service.wrapper.get_task_or_none.return_value = assigned_task
         self.mock_service.wrapper.change_task_operator.return_value = assigned_task
 
-        main_obj_with_force = CreateClassificationAnnotationMain(
+        main_obj_with_change_operator = CreateClassificationAnnotationMain(
             service=self.mock_service,
             project_id="test_project_id",
             all_yes=True,
-            is_force=True,
+            is_change_operator_to_me=True,
         )
 
         labels = ["label1"]
 
-        result = main_obj_with_force.create_classification_annotation_for_task("test_task_id", labels)
+        result = main_obj_with_change_operator.create_classification_annotation_for_task("test_task_id", labels)
 
         # 担当者変更が2回呼ばれる（変更と復元）
         assert self.mock_service.wrapper.change_task_operator.call_count == 2

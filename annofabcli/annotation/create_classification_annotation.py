@@ -30,12 +30,12 @@ def execute_task_wrapper_global(args_tuple: tuple[int, str, list[str], str, bool
     並列処理用のグローバル関数
 
     Args:
-        args_tuple: (task_index, task_id, labels, project_id, is_force, service, annotation_specs_v3)のタプル
+        args_tuple: (task_index, task_id, labels, project_id, is_change_operator_to_me, service, annotation_specs_v3)のタプル
 
     Returns:
         1個以上の全体アノテーションを作成したか
     """
-    task_index, task_id, labels, project_id, is_force, service, annotation_specs_v3 = args_tuple
+    task_index, task_id, labels, project_id, is_change_operator_to_me, service, annotation_specs_v3 = args_tuple
 
     try:
         # アノテーション仕様を渡してオブジェクトを作成
@@ -43,7 +43,7 @@ def execute_task_wrapper_global(args_tuple: tuple[int, str, list[str], str, bool
             service=service,
             project_id=project_id,
             all_yes=True,  # 並列処理では確認をスキップ
-            is_force=is_force,
+            is_change_operator_to_me=is_change_operator_to_me,
             annotation_specs_v3=annotation_specs_v3,  # アノテーション仕様を渡す
         )
 
@@ -66,15 +66,15 @@ class CreateClassificationAnnotationMain(CommandLineWithConfirm):
         *,
         project_id: str,
         all_yes: bool,
-        is_force: bool,
-        annotation_specs_v3: Optional[dict] = None,
+        is_change_operator_to_me: bool,
+        annotation_specs_v3: Optional[dict[str, Any]] = None,
     ) -> None:
         self.service = service
         self.facade = AnnofabApiFacade(service)
         CommandLineWithConfirm.__init__(self, all_yes)
 
         self.project_id = project_id
-        self.is_force = is_force
+        self.is_change_operator_to_me = is_change_operator_to_me
 
         # アノテーション仕様を取得またはキャッシュを使用
         if annotation_specs_v3 is not None:
@@ -107,7 +107,7 @@ class CreateClassificationAnnotationMain(CommandLineWithConfirm):
         old_account_id: Optional[str] = None
         changed_operator = False
 
-        if self.is_force:
+        if self.is_change_operator_to_me:
             if not can_put_annotation(task, self.service.api.account_id):
                 logger.debug(f"タスク'{task_id}' の担当者を自分自身に変更します。")
                 old_account_id = task["account_id"]
@@ -122,7 +122,7 @@ class CreateClassificationAnnotationMain(CommandLineWithConfirm):
             if not can_put_annotation(task, self.service.api.account_id):
                 logger.debug(
                     f"タスク'{task_id}'は、過去に誰かに割り当てられたタスクで、現在の担当者が自分自身でないため、全体アノテーションの作成をスキップします。"
-                    f"担当者を自分自身に変更して全体アノテーションを作成する場合は `--force` を指定してください。"
+                    f"担当者を自分自身に変更して全体アノテーションを作成する場合は `--change_operator_to_me` を指定してください。"
                 )
                 return None, False, None
 
@@ -286,7 +286,7 @@ class CreateClassificationAnnotationMain(CommandLineWithConfirm):
             annotation_specs_v3, _ = self.service.api.get_annotation_specs(self.project_id, query_params={"v": "3"})
 
             with multiprocessing.Pool(parallelism) as pool:
-                task_args = [(task_index, task_id, labels, self.project_id, self.is_force, self.service, annotation_specs_v3) for task_index, task_id in enumerate(task_ids)]
+                task_args = [(task_index, task_id, labels, self.project_id, self.is_change_operator_to_me, self.service, annotation_specs_v3) for task_index, task_id in enumerate(task_ids)]
                 result_bool_list = pool.map(execute_task_wrapper_global, task_args)
                 success_count = len([e for e in result_bool_list if e])
         else:
@@ -344,7 +344,7 @@ class CreateClassificationAnnotation(CommandLine):
             self.service,
             project_id=project_id,
             all_yes=self.all_yes,
-            is_force=args.force,
+            is_change_operator_to_me=args.change_operator_to_me,
         )
 
         main_obj.main(task_ids, labels, parallelism=args.parallelism)
@@ -374,7 +374,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     )
 
     parser.add_argument(
-        "--force",
+        "--change_operator_to_me",
         action="store_true",
         help="過去に割り当てられていて現在の担当者が自分自身でない場合、タスクの担当者を自分自身に変更してから全体アノテーションを作成します。",
     )
