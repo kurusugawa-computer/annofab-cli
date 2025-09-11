@@ -25,41 +25,6 @@ from annofabcli.common.facade import AnnofabApiFacade
 logger = logging.getLogger(__name__)
 
 
-def execute_task_wrapper_global(args_tuple: tuple[int, str, list[str], str, bool, bool, annofabapi.Resource, dict[str, Any]]) -> bool:
-    """
-    並列処理用のグローバル関数
-
-    Args:
-        args_tuple: (task_index, task_id, labels, project_id, is_change_operator_to_me, include_completed, service, annotation_specs_v3)のタプル
-
-    Returns:
-        1個以上の全体アノテーションを作成したか
-    """
-    task_index, task_id, labels, project_id, is_change_operator_to_me, include_completed, service, annotation_specs_v3 = args_tuple
-
-    try:
-        # アノテーション仕様を渡してオブジェクトを作成
-        main_obj = CreateClassificationAnnotationMain(
-            service=service,
-            project_id=project_id,
-            all_yes=True,  # 並列処理では確認をスキップ
-            is_change_operator_to_me=is_change_operator_to_me,
-            include_completed=include_completed,
-            annotation_specs_v3=annotation_specs_v3,  # アノテーション仕様を渡す
-        )
-
-        logger_prefix = f"{task_index + 1!s} 件目: "
-        logger.info(f"{logger_prefix}task_id='{task_id}' に対して処理します。")
-
-        created_count = main_obj.create_classification_annotation_for_task(task_id, labels)
-        logger.info(f"{logger_prefix}task_id='{task_id}' :: {created_count} 件の全体アノテーションを作成しました。")
-    except Exception:  # pylint: disable=broad-except
-        logger.warning(f"task_id='{task_id}' の全体アノテーション作成に失敗しました。", exc_info=True)
-        return False
-    else:
-        return created_count > 0
-
-
 class CreateClassificationAnnotationMain(CommandLineWithConfirm):
     def __init__(
         self,
@@ -281,6 +246,22 @@ class CreateClassificationAnnotationMain(CommandLineWithConfirm):
         else:
             return created_count > 0
 
+    def execute_task_wrapper(
+        self,
+        tpl: tuple[int, str, list[str]],
+    ) -> bool:
+        task_index, task_id, labels = tpl
+        try:
+            logger_prefix = f"{task_index + 1!s} 件目: "
+            logger.info(f"{logger_prefix}task_id='{task_id}' に対して処理します。")
+
+            created_count = self.create_classification_annotation_for_task(task_id, labels)
+            logger.info(f"{logger_prefix}task_id='{task_id}' :: {created_count} 件の全体アノテーションを作成しました。")
+            return created_count > 0
+        except Exception:  # pylint: disable=broad-except
+            logger.warning(f"task_id='{task_id}' の全体アノテーション作成に失敗しました。", exc_info=True)
+            return False
+
     def main(self, task_ids: list[str], labels: list[str], parallelism: Optional[int] = None) -> None:
         """
         メイン処理
@@ -293,15 +274,9 @@ class CreateClassificationAnnotationMain(CommandLineWithConfirm):
         success_count = 0
 
         if parallelism is not None:
-            # 並列処理時は、アノテーション仕様を一度取得して各プロセスに渡す
-            annotation_specs_v3, _ = self.service.api.get_annotation_specs(self.project_id, query_params={"v": "3"})
-
             with multiprocessing.Pool(parallelism) as pool:
-                task_args = [
-                    (task_index, task_id, labels, self.project_id, self.is_change_operator_to_me, self.include_completed, self.service, annotation_specs_v3)
-                    for task_index, task_id in enumerate(task_ids)
-                ]
-                result_bool_list = pool.map(execute_task_wrapper_global, task_args)
+                task_args = [(task_index, task_id, labels) for task_index, task_id in enumerate(task_ids)]
+                result_bool_list = pool.map(self.execute_task_wrapper, task_args)
                 success_count = len([e for e in result_bool_list if e])
         else:
             for task_index, task_id in enumerate(task_ids):
