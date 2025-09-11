@@ -168,13 +168,54 @@ class DeleteAnnotationMain(CommandLineWithConfirm):
         if backup_dir is not None:
             backup_dir.mkdir(exist_ok=True, parents=True)
 
+        deleted_task_count = 0
+        failed_task_count = 0
         for task_index, task_id in enumerate(task_id_list):
             logger.info(f"{task_index + 1} / {len(task_id_list)} 件目: タスク '{task_id}' を削除します。")
-            self.delete_annotation_for_task(
-                task_id,
-                annotation_query=annotation_query,
-                backup_dir=backup_dir,
-            )
+
+            # 削除前にタスクの状態を確認
+            dict_task = self.service.wrapper.get_task_or_none(self.project_id, task_id)
+            if dict_task is None:
+                failed_task_count += 1
+                continue
+
+            task: Task = Task.from_dict(dict_task)
+            if task.status == TaskStatus.WORKING:
+                failed_task_count += 1
+                continue
+
+            if not self.is_force and task.status == TaskStatus.COMPLETE:
+                failed_task_count += 1
+                continue
+
+            # アノテーション一覧を取得して、削除対象があるかチェック
+            annotation_list = self.get_annotation_list_for_task(task_id, annotation_query=annotation_query)
+            if len(annotation_list) == 0:
+                failed_task_count += 1
+                continue
+
+            # 確認処理でキャンセルされた場合はスキップ
+            if not self.confirm_processing(f"task_id='{task_id}'のタスクに含まれるアノテーション{len(annotation_list)}件を削除しますか？"):
+                failed_task_count += 1
+                continue
+
+            # 実際に削除処理を実行
+            if backup_dir is not None:
+                self.dump_annotation_obj.dump_annotation_for_task(task_id, output_dir=backup_dir)
+
+            try:
+                self.delete_annotation_list(annotation_list=annotation_list)
+                logger.info(f"task_id='{task_id}' :: アノテーション{len(annotation_list)}件を削除しました。")
+                deleted_task_count += 1
+            except requests.HTTPError:
+                logger.warning(f"task_id='{task_id}' :: アノテーション{len(annotation_list)}件の削除に失敗しました。一部のアノテーションは削除に成功している可能性があります。", exc_info=True)
+                failed_task_count += 1
+
+        # アノテーション削除処理の結果をログ出力
+        logger.info(
+            f"プロジェクト'{project_title}'に対して、{deleted_task_count}/{len(task_id_list)} 件のタスクのアノテーションを削除しました。 :: "
+            f"{failed_task_count}/{len(task_id_list)} 件のタスクはアノテーションの削除に失敗しました。"
+        )
 
     def delete_annotation_by_annotation_ids(
         self,

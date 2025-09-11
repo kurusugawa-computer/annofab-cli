@@ -75,7 +75,7 @@ class CreateClassificationAnnotationMain(CommandLineWithConfirm):
 
         self.project_id = project_id
         self.is_force = is_force
-        
+
         # アノテーション仕様を取得またはキャッシュを使用
         if annotation_specs_v3 is not None:
             # 並列処理時は渡されたアノテーション仕様を使用
@@ -162,7 +162,7 @@ class CreateClassificationAnnotationMain(CommandLineWithConfirm):
                 "annotation_id": annotation_id,
                 "additional_data_list": [],
                 "editor_props": {},
-                "body": {"_type": "Inner", "data": {"_type":"Classification"}},
+                "body": {"_type": "Inner", "data": {"_type": "Classification"}},
             }
             new_details.append(annotation_detail)
 
@@ -281,12 +281,9 @@ class CreateClassificationAnnotationMain(CommandLineWithConfirm):
         if parallelism is not None:
             # 並列処理時は、アノテーション仕様を一度取得して各プロセスに渡す
             annotation_specs_v3, _ = self.service.api.get_annotation_specs(self.project_id, query_params={"v": "3"})
-            
+
             with multiprocessing.Pool(parallelism) as pool:
-                task_args = [
-                    (task_index, task_id, labels, self.project_id, self.is_force, self.service, annotation_specs_v3) 
-                    for task_index, task_id in enumerate(task_ids)
-                ]
+                task_args = [(task_index, task_id, labels, self.project_id, self.is_force, self.service, annotation_specs_v3) for task_index, task_id in enumerate(task_ids)]
                 result_bool_list = pool.map(execute_task_wrapper_global, task_args)
                 success_count = len([e for e in result_bool_list if e])
         else:

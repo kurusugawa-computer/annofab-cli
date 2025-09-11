@@ -372,11 +372,11 @@ class AnnotationConverter:
                         f"アノテーション情報の一部を`putAnnotation`APIのリクエストボディへ変換できませんでした。 :: {e!r} :: {log_message_suffix}",
                     )
                     raise
-                else:
-                    logger.warning(
-                        f"アノテーション情報の一部を`putAnnotation`APIのリクエストボディへ変換できませんでした。変換できたアノテーション情報のみ登録します。 :: {e!r} :: {log_message_suffix}",
-                    )
-                    continue
+
+                logger.warning(
+                    f"アノテーション情報の一部を`putAnnotation`APIのリクエストボディへ変換できませんでした。変換できたアノテーション情報のみ登録します。 :: {e!r} :: {log_message_suffix}",
+                )
+                continue
 
             if detail.annotation_id in old_dict_detail:
                 # アノテーションを上書き
