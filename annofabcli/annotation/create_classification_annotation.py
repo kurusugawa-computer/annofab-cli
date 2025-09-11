@@ -63,14 +63,13 @@ class CreateClassificationAnnotationMain(CommandLineWithConfirm):
             return None, False, None
 
         if task["status"] == TaskStatus.WORKING.value:
-            logger.info(f"タスク'{task_id}'は作業中状態のため、作成をスキップします。 status={task['status']}")
+            logger.info(f"タスク'{task_id}'は作業中状態のため、全体アノテーションの作成をスキップします。")
             return None, False, None
 
         if not self.include_completed:  # noqa: SIM102
             if task["status"] == TaskStatus.COMPLETE.value:
                 logger.info(
-                    f"タスク'{task_id}'は受入完了状態のため、作成をスキップします。"
-                    f"完了状態のタスクに全体アノテーションを作成するには、 ``--include_completed`` を指定してください。 status={task['status']}"
+                    f"タスク'{task_id}'は完了状態のため、全体アノテーションの作成をスキップします。完了状態のタスクに全体アノテーションを作成するには、 ``--include_completed`` を指定してください。"
                 )
                 return None, False, None
 
@@ -92,7 +91,7 @@ class CreateClassificationAnnotationMain(CommandLineWithConfirm):
             if not can_put_annotation(task, self.service.api.account_id):
                 logger.debug(
                     f"タスク'{task_id}'は、過去に誰かに割り当てられたタスクで、現在の担当者が自分自身でないため、全体アノテーションの作成をスキップします。"
-                    f"担当者を自分自身に変更して全体アノテーションを作成する場合は `--change_operator_to_me` を指定してください。"
+                    f"担当者を自分自身に変更して全体アノテーションを作成する場合は `--change_task_operator_to_me` を指定してください。"
                 )
                 return None, False, None
 
@@ -251,10 +250,11 @@ class CreateClassificationAnnotationMain(CommandLineWithConfirm):
 
             created_count = self.create_classification_annotation_for_task(task_id, labels)
             logger.info(f"{logger_prefix}task_id='{task_id}' :: {created_count} 件の全体アノテーションを作成しました。")
-            return created_count > 0
         except Exception:  # pylint: disable=broad-except
             logger.warning(f"task_id='{task_id}' の全体アノテーション作成に失敗しました。", exc_info=True)
             return False
+        else:
+            return created_count > 0
 
     def main(self, task_ids: list[str], labels: list[str], parallelism: Optional[int] = None) -> None:
         """
@@ -369,7 +369,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--change_operator_to_me",
         action="store_true",
-        help="過去に割り当てられていて現在の担当者が自分自身でない場合、タスクの担当者を自分自身に変更してから全体アノテーションを作成します。",
+        help="タスクの担当者を自分自身にしないとアノテーションを作成できない場合（過去に担当者が割り当てられていて現在の担当者が自分自身でない場合）、タスクの担当者を自分自身に変更してから全体アノテーションを作成します。アノテーションの作成が完了したら、タスクの担当者を元に戻します。",
     )
 
     parser.add_argument(

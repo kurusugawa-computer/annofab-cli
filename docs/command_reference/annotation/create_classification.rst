@@ -29,20 +29,8 @@ Examples
 .. code-block::
 
     $ annofabcli annotation create_classification --project_id prj1 \
-    --task_id task1 --label_name weather
+    --task_id task1 task2 --label_name weather
 
-
-複数のタスクに対して実行する場合は、 ``--task_id`` にタスクIDのリストを指定するか、ファイルを指定してください。
-
-.. code-block::
-
-    $ annofabcli annotation create_classification --project_id prj1 \
-    --task_id task1 task2 task3 --label_name weather
-
-.. code-block::
-
-    $ annofabcli annotation create_classification --project_id prj1 \
-    --task_id file://task_id.txt --label_name weather
 
 
 複数のラベル名を指定することもできます。
@@ -56,13 +44,26 @@ Examples
 担当者の変更
 ----------------------------------------------------
 
-デフォルトでは「担当者が自分自身でない AND 担当者が割り当てられたことがある」タスクは、全体アノテーションの作成をスキップします。
+デフォルトでは、タスクの担当者を自分自身にしないとアノテーションを作成できないタスク（担当者が自分自身でない AND 過去に担当者が割り当てられたことがあるタスク）は、全体アノテーションの作成をスキップします。
 ``--change_operator_to_me`` を指定すると、担当者を一時的に自分自身に変更して、全体アノテーションを作成することができます。
 
 .. code-block::
 
     $ annofabcli annotation create_classification --project_id prj1 \
     --task_id task1 --label_name weather --change_operator_to_me
+
+
+完了状態のタスクへの作成
+----------------------------------------------------
+
+デフォルトでは、完了状態のタスクには全体アノテーションを作成しません。
+``--include_completed`` を指定すると、完了状態のタスクにも全体アノテーションを作成できます。
+ただし、このオプションはプロジェクトのオーナーロールを持つユーザーでのみ実行できます。
+
+.. code-block::
+
+    $ annofabcli annotation create_classification --project_id prj1 \
+    --task_id task1 --label_name weather --include_completed
 
 
 並列処理
