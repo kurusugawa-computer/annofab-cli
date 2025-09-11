@@ -34,7 +34,6 @@ class CreateClassificationAnnotationMain(CommandLineWithConfirm):
         all_yes: bool,
         is_change_operator_to_me: bool,
         include_completed: bool,
-        annotation_specs_v3: Optional[dict[str, Any]] = None,
     ) -> None:
         self.service = service
         self.facade = AnnofabApiFacade(service)
@@ -44,14 +43,9 @@ class CreateClassificationAnnotationMain(CommandLineWithConfirm):
         self.is_change_operator_to_me = is_change_operator_to_me
         self.include_completed = include_completed
 
-        # アノテーション仕様を取得またはキャッシュを使用
-        if annotation_specs_v3 is not None:
-            # 並列処理時は渡されたアノテーション仕様を使用
-            self.annotation_specs_accessor = AnnotationSpecsAccessor(annotation_specs_v3)
-        else:
-            # 通常処理時は一度だけ取得してキャッシュ
-            annotation_specs_v3, _ = self.service.api.get_annotation_specs(self.project_id, query_params={"v": "3"})
-            self.annotation_specs_accessor = AnnotationSpecsAccessor(annotation_specs_v3)
+        # アノテーション仕様を取得
+        annotation_specs_v3, _ = self.service.api.get_annotation_specs(self.project_id, query_params={"v": "3"})
+        self.annotation_specs_accessor = AnnotationSpecsAccessor(annotation_specs_v3)
 
     def _validate_and_prepare_task(self, task_id: str) -> tuple[Optional[dict[str, Any]], bool, Optional[str]]:
         """
