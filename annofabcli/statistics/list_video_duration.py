@@ -85,9 +85,9 @@ class ListVideoDuration(CommandLine):
         output_format: FormatArgument,
         output_file: Optional[Path],
     ) -> None:
-        with task_json.open() as f:
+        with task_json.open(encoding="utf-8") as f:
             task_list = json.load(f)
-        with input_data_json.open() as f:
+        with input_data_json.open(encoding="utf-8") as f:
             input_data_list = json.load(f)
 
         video_duration_list = get_video_duration_list(task_list=task_list, input_data_list=input_data_list)
