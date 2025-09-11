@@ -176,27 +176,22 @@ class DeleteAnnotationMain(CommandLineWithConfirm):
             # 削除前にタスクの状態を確認
             dict_task = self.service.wrapper.get_task_or_none(self.project_id, task_id)
             if dict_task is None:
-                failed_task_count += 1
                 continue
 
             task: Task = Task.from_dict(dict_task)
             if task.status == TaskStatus.WORKING:
-                failed_task_count += 1
                 continue
 
             if not self.is_force and task.status == TaskStatus.COMPLETE:
-                failed_task_count += 1
                 continue
 
             # アノテーション一覧を取得して、削除対象があるかチェック
             annotation_list = self.get_annotation_list_for_task(task_id, annotation_query=annotation_query)
             if len(annotation_list) == 0:
-                failed_task_count += 1
                 continue
 
             # 確認処理でキャンセルされた場合はスキップ
             if not self.confirm_processing(f"task_id='{task_id}'のタスクに含まれるアノテーション{len(annotation_list)}件を削除しますか？"):
-                failed_task_count += 1
                 continue
 
             # 実際に削除処理を実行
