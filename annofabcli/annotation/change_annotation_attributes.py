@@ -130,7 +130,7 @@ class ChangeAnnotationAttributesMain(CommandLineWithConfirm):
             tuple[0]: 成功した場合はTrue、失敗した場合はFalse
             tuple[1]: 変更したアノテーションの個数
         """
-        logger_prefix = f"{task_index + 1!s} 件目: " if task_index is not None else ""
+        logger_prefix = f"{task_index + 1!s} 件目 :: " if task_index is not None else ""
         dict_task = self.service.wrapper.get_task_or_none(self.project_id, task_id)
         if dict_task is None:
             logger.warning(f"task_id = '{task_id}' は存在しません。")

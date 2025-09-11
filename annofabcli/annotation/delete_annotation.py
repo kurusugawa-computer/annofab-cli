@@ -135,7 +135,7 @@ class DeleteAnnotationMain(CommandLineWithConfirm):
 
         if not self.is_force:  # noqa: SIM102
             if task.status == TaskStatus.COMPLETE:
-                logger.info(f"task_id='{task_id}' :: タスクが完了状態のため、スキップします。完了状態のタスクのアノテーションを削除するには、`--force`オプションを指定してください。")
+                logger.info(f"task_id='{task_id}' :: タスクが完了状態のため、スキップします。完了状態のタスクのアノテーションを削除するには、`--include_completed`オプションを指定してください。")
                 return
 
         annotation_list = self.get_annotation_list_for_task(task_id, annotation_query=annotation_query)
@@ -168,13 +168,49 @@ class DeleteAnnotationMain(CommandLineWithConfirm):
         if backup_dir is not None:
             backup_dir.mkdir(exist_ok=True, parents=True)
 
+        deleted_task_count = 0
+        failed_task_count = 0
         for task_index, task_id in enumerate(task_id_list):
             logger.info(f"{task_index + 1} / {len(task_id_list)} 件目: タスク '{task_id}' を削除します。")
-            self.delete_annotation_for_task(
-                task_id,
-                annotation_query=annotation_query,
-                backup_dir=backup_dir,
-            )
+
+            # 削除前にタスクの状態を確認
+            dict_task = self.service.wrapper.get_task_or_none(self.project_id, task_id)
+            if dict_task is None:
+                continue
+
+            task: Task = Task.from_dict(dict_task)
+            if task.status == TaskStatus.WORKING:
+                continue
+
+            if not self.is_force and task.status == TaskStatus.COMPLETE:
+                continue
+
+            # アノテーション一覧を取得して、削除対象があるかチェック
+            annotation_list = self.get_annotation_list_for_task(task_id, annotation_query=annotation_query)
+            if len(annotation_list) == 0:
+                continue
+
+            # 確認処理でキャンセルされた場合はスキップ
+            if not self.confirm_processing(f"task_id='{task_id}'のタスクに含まれるアノテーション{len(annotation_list)}件を削除しますか？"):
+                continue
+
+            # 実際に削除処理を実行
+            if backup_dir is not None:
+                self.dump_annotation_obj.dump_annotation_for_task(task_id, output_dir=backup_dir)
+
+            try:
+                self.delete_annotation_list(annotation_list=annotation_list)
+                logger.info(f"task_id='{task_id}' :: アノテーション{len(annotation_list)}件を削除しました。")
+                deleted_task_count += 1
+            except requests.HTTPError:
+                logger.warning(f"task_id='{task_id}' :: アノテーション{len(annotation_list)}件の削除に失敗しました。一部のアノテーションは削除に成功している可能性があります。", exc_info=True)
+                failed_task_count += 1
+
+        # アノテーション削除処理の結果をログ出力
+        logger.info(
+            f"プロジェクト'{project_title}'に対して、{deleted_task_count}/{len(task_id_list)} 件のタスクのアノテーションを削除しました。 :: "
+            f"{failed_task_count}/{len(task_id_list)} 件のタスクはアノテーションの削除に失敗しました。"
+        )
 
     def delete_annotation_by_annotation_ids(
         self,
@@ -284,7 +320,7 @@ class DeleteAnnotationMain(CommandLineWithConfirm):
                 if task["status"] == TaskStatus.COMPLETE.value:
                     logger.info(
                         f"task_id='{task_id}' :: タスクが完了状態のため、アノテーション {annotation_count} 件の削除をスキップします。"
-                        f"完了状態のタスクのアノテーションを削除するには、`--force`オプションを指定してください。"
+                        f"完了状態のタスクのアノテーションを削除するには、`--include_completed`オプションを指定してください。"
                     )
                     failed_to_delete_annotation_count += annotation_count
                     continue
@@ -340,14 +376,14 @@ class DeleteAnnotation(CommandLine):
         else:
             backup_dir = Path(args.backup)
 
-        if args.force:
-            # --forceオプションが指定されている場合は、完了状態のタスクも削除する
-            # 完了状態のタスクを削除するには、オーナーロールである必要があるため、`args.force`で条件を分岐する
+        if args.include_completed:
+            # --include_completedオプションが指定されている場合は、完了状態のタスクも削除する
+            # 完了状態のタスクを削除するには、オーナーロールである必要があるため、`args.include_completed`で条件を分岐する
             super().validate_project(project_id, [ProjectMemberRole.OWNER])
         else:
             super().validate_project(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.ACCEPTER])
 
-        main_obj = DeleteAnnotationMain(self.service, project_id, all_yes=args.yes, is_force=args.force)
+        main_obj = DeleteAnnotationMain(self.service, project_id, all_yes=args.yes, is_force=args.include_completed)
 
         if args.json is not None:
             dict_annotation_list = get_json_from_args(args.json)
@@ -415,7 +451,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--task_id",
         type=str,
         nargs="+",
-        help="削除対象のタスクのtask_idを指定します。 ``file://`` を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。",
+        help="削除対象のアノテーションが含まれているタスクのtask_idを指定します。 ``file://`` を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。",
     )
 
     example_json = [{"task_id": "t1", "input_data_id": "i1", "annotation_id": "a1"}]
@@ -443,7 +479,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     )
 
     parser.add_argument(
-        "--force",
+        "--include_completed",
         action="store_true",
         help="指定した場合は、完了状態のタスクのアノテーションも削除します。ただし、完了状態のタスクを削除するには、オーナーロールを持つユーザーが実行する必要があります。",
     )
@@ -463,7 +499,7 @@ def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argpa
         "タスク配下のアノテーションを削除します。ただし、作業中状態のタスクのアノテーションは削除できません。"
         "間違えてアノテーションを削除したときに復元できるようにするため、 ``--backup`` でバックアップ用のディレクトリを指定することを推奨します。"
     )
-    epilog = "オーナーまたはチェッカーロールを持つユーザで実行してください。ただし``--force``オプションを指定した場合は、オーナーロールを持つユーザで実行してください。"
+    epilog = "オーナーまたはチェッカーロールを持つユーザで実行してください。ただし``--include_completed``オプションを指定した場合は、オーナーロールを持つユーザで実行してください。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
     parse_args(parser)

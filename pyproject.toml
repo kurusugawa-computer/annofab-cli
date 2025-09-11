@@ -26,7 +26,7 @@ dependencies = [
     "more-itertools",
     "pyquery",
     "isodate",
-    "annofabapi>=1.4.7",
+    "annofabapi>=1.5.1",
     "python-datauri",
     "numpy",
     "pandas>=2,<3",
@@ -101,7 +101,6 @@ line-length = 200
 ignore = [
     "A005", # stdlib-module-shadowing: 標準ライブラリと同じ名前のモジュールはあるが、基本的には混乱しないはずなので無視する。
     "G004", # `logging-f-string` : loggingでf-stringを使いたいので無視する
-    "PD901", #すでに`df`という変数をいろんなところで使っているため
     "PD002", #すでにpandasで`inplace=True`はいろんなところで使っているため
     "RUF001", # 全角記号など`ambiguous unicode character`も使いたいため
     "RUF002",# 全角記号など`ambiguous unicode character`も使いたいため
