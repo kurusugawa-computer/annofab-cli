@@ -25,17 +25,17 @@ from annofabcli.common.facade import AnnofabApiFacade
 logger = logging.getLogger(__name__)
 
 
-def execute_task_wrapper_global(args_tuple: tuple[int, str, list[str], str, bool, annofabapi.Resource, dict[str, Any]]) -> bool:
+def execute_task_wrapper_global(args_tuple: tuple[int, str, list[str], str, bool, bool, annofabapi.Resource, dict[str, Any]]) -> bool:
     """
     並列処理用のグローバル関数
 
     Args:
-        args_tuple: (task_index, task_id, labels, project_id, is_change_operator_to_me, service, annotation_specs_v3)のタプル
+        args_tuple: (task_index, task_id, labels, project_id, is_change_operator_to_me, include_completed, service, annotation_specs_v3)のタプル
 
     Returns:
         1個以上の全体アノテーションを作成したか
     """
-    task_index, task_id, labels, project_id, is_change_operator_to_me, service, annotation_specs_v3 = args_tuple
+    task_index, task_id, labels, project_id, is_change_operator_to_me, include_completed, service, annotation_specs_v3 = args_tuple
 
     try:
         # アノテーション仕様を渡してオブジェクトを作成
@@ -44,6 +44,7 @@ def execute_task_wrapper_global(args_tuple: tuple[int, str, list[str], str, bool
             project_id=project_id,
             all_yes=True,  # 並列処理では確認をスキップ
             is_change_operator_to_me=is_change_operator_to_me,
+            include_completed=include_completed,
             annotation_specs_v3=annotation_specs_v3,  # アノテーション仕様を渡す
         )
 
@@ -67,6 +68,7 @@ class CreateClassificationAnnotationMain(CommandLineWithConfirm):
         project_id: str,
         all_yes: bool,
         is_change_operator_to_me: bool,
+        include_completed: bool,
         annotation_specs_v3: Optional[dict[str, Any]] = None,
     ) -> None:
         self.service = service
@@ -75,6 +77,7 @@ class CreateClassificationAnnotationMain(CommandLineWithConfirm):
 
         self.project_id = project_id
         self.is_change_operator_to_me = is_change_operator_to_me
+        self.include_completed = include_completed
 
         # アノテーション仕様を取得またはキャッシュを使用
         if annotation_specs_v3 is not None:
@@ -100,9 +103,17 @@ class CreateClassificationAnnotationMain(CommandLineWithConfirm):
             logger.warning(f"task_id='{task_id}'であるタスクは存在しません。")
             return None, False, None
 
-        if task["status"] in [TaskStatus.WORKING.value, TaskStatus.COMPLETE.value]:
-            logger.info(f"タスク'{task_id}'は作業中または受入完了状態のため、作成をスキップします。 status={task['status']}")
+        if task["status"] == TaskStatus.WORKING.value:
+            logger.info(f"タスク'{task_id}'は作業中状態のため、作成をスキップします。 status={task['status']}")
             return None, False, None
+
+        if not self.include_completed:  # noqa: SIM102
+            if task["status"] == TaskStatus.COMPLETE.value:
+                logger.info(
+                    f"タスク'{task_id}'は受入完了状態のため、作成をスキップします。"
+                    f"完了状態のタスクに全体アノテーションを作成するには、 ``--include_completed`` を指定してください。 status={task['status']}"
+                )
+                return None, False, None
 
         old_account_id: Optional[str] = None
         changed_operator = False
@@ -286,7 +297,10 @@ class CreateClassificationAnnotationMain(CommandLineWithConfirm):
             annotation_specs_v3, _ = self.service.api.get_annotation_specs(self.project_id, query_params={"v": "3"})
 
             with multiprocessing.Pool(parallelism) as pool:
-                task_args = [(task_index, task_id, labels, self.project_id, self.is_change_operator_to_me, self.service, annotation_specs_v3) for task_index, task_id in enumerate(task_ids)]
+                task_args = [
+                    (task_index, task_id, labels, self.project_id, self.is_change_operator_to_me, self.include_completed, self.service, annotation_specs_v3)
+                    for task_index, task_id in enumerate(task_ids)
+                ]
                 result_bool_list = pool.map(execute_task_wrapper_global, task_args)
                 success_count = len([e for e in result_bool_list if e])
         else:
@@ -337,6 +351,15 @@ class CreateClassificationAnnotation(CommandLine):
 
         super().validate_project(project_id, [ProjectMemberRole.OWNER])
 
+        if args.include_completed:  # noqa: SIM102
+            if not self.facade.contains_any_project_member_role(project_id, [ProjectMemberRole.OWNER]):
+                print(  # noqa: T201
+                    "annofabcli annotation create_classification: error: argument --include_completed : "
+                    "'--include_completed' 引数を利用するにはプロジェクトのオーナーロールを持つユーザーで実行する必要があります。",
+                    file=sys.stderr,
+                )
+                sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
+
         task_ids = annofabcli.common.cli.get_list_from_args(args.task_id)
         labels = annofabcli.common.cli.get_list_from_args(args.label_name)
 
@@ -345,6 +368,7 @@ class CreateClassificationAnnotation(CommandLine):
             project_id=project_id,
             all_yes=self.all_yes,
             is_change_operator_to_me=args.change_operator_to_me,
+            include_completed=args.include_completed,
         )
 
         main_obj.main(task_ids, labels, parallelism=args.parallelism)
@@ -380,6 +404,12 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     )
 
     parser.add_argument(
+        "--include_completed",
+        action="store_true",
+        help="完了状態のタスクにも全体アノテーションを作成します。ただし、オーナーロールを持つユーザーでしか実行できません。",
+    )
+
+    parser.add_argument(
         "--parallelism",
         type=int,
         choices=PARALLELISM_CHOICES,
@@ -392,7 +422,12 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
 def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     subcommand_name = "create_classification"
     subcommand_help = "全体アノテーション（Classification）を作成します。"
-    description = "指定したラベルの全体アノテーション（Classification）を作成します。既に全体アノテーションが存在する場合はスキップします。作業中状態のタスクには作成できません。"
+    description = (
+        "指定したラベルの全体アノテーション（Classification）を作成します。"
+        "既に全体アノテーションが存在する場合はスキップします。"
+        "作業中状態のタスクには作成できません。"
+        "完了状態のタスクには、デフォルトでは作成できません。"
+    )
     epilog = "オーナロールまたはチェッカーロールを持つユーザで実行してください。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
