@@ -231,7 +231,7 @@ class CreateClassificationAnnotationMain(CommandLineWithConfirm):
         if not self.confirm_processing(f"task_id='{task_id}' に全体アノテーション（label_name={labels}）を作成しますか？"):
             return False
 
-        logger_prefix = f"{task_index + 1!s} 件目: " if task_index is not None else ""
+        logger_prefix = f"{task_index + 1!s} 件目 :: " if task_index is not None else ""
         logger.info(f"{logger_prefix}task_id='{task_id}' に対して処理します。")
 
         try:
@@ -249,7 +249,7 @@ class CreateClassificationAnnotationMain(CommandLineWithConfirm):
     ) -> bool:
         task_index, task_id, labels = tpl
         try:
-            logger_prefix = f"{task_index + 1!s} 件目: "
+            logger_prefix = f"{task_index + 1!s} 件目 :: "
             logger.info(f"{logger_prefix}task_id='{task_id}' に対して処理します。")
 
             created_count = self.create_classification_annotation_for_task(task_id, labels)
