@@ -19,6 +19,7 @@ Available Commands
    change_attributes_per_annotation
    change_properties
    copy
+   create_classification
    delete
    download
    dump
