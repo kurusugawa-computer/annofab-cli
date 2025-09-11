@@ -26,7 +26,7 @@ dependencies = [
     "more-itertools",
     "pyquery",
     "isodate",
-    "annofabapi>=1.4.7",
+    "annofabapi>=1.5.1",
     "python-datauri",
     "numpy",
     "pandas>=2,<3",

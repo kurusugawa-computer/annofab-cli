@@ -47,6 +47,9 @@ class CreateClassificationAnnotationMain(CommandLineWithConfirm):
         annotation_specs_v3, _ = self.service.api.get_annotation_specs(self.project_id, query_params={"v": "3"})
         self.annotation_specs_accessor = AnnotationSpecsAccessor(annotation_specs_v3)
 
+        my_member, _ = self.service.api.get_my_member_in_project(project_id)
+        self.my_project_member_role = ProjectMemberRole(my_member["member_role"])
+
     def _validate_and_prepare_task(self, task_id: str) -> tuple[Optional[dict[str, Any]], bool, Optional[str]]:
         """
         タスクの検証と準備を行う
@@ -77,7 +80,7 @@ class CreateClassificationAnnotationMain(CommandLineWithConfirm):
         changed_operator = False
 
         if self.is_change_operator_to_me:
-            if not can_put_annotation(task, self.service.api.account_id):
+            if not can_put_annotation(task, self.service.api.account_id, project_member_role=self.my_project_member_role):
                 logger.debug(f"タスク'{task_id}' の担当者を自分自身に変更します。")
                 old_account_id = task["account_id"]
                 task = self.service.wrapper.change_task_operator(
@@ -88,7 +91,7 @@ class CreateClassificationAnnotationMain(CommandLineWithConfirm):
                 )
                 changed_operator = True
         else:  # noqa: PLR5501
-            if not can_put_annotation(task, self.service.api.account_id):
+            if not can_put_annotation(task, self.service.api.account_id, project_member_role=self.my_project_member_role):
                 logger.debug(
                     f"タスク'{task_id}'は、過去に誰かに割り当てられたタスクで、現在の担当者が自分自身でないため、全体アノテーションの作成をスキップします。"
                     f"担当者を自分自身に変更して全体アノテーションを作成する場合は `--change_task_operator_to_me` を指定してください。"
@@ -319,7 +322,7 @@ class CreateClassificationAnnotation(CommandLine):
 
         project_id = args.project_id
 
-        super().validate_project(project_id, [ProjectMemberRole.OWNER])
+        super().validate_project(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.ACCEPTER])
 
         if args.include_completed:  # noqa: SIM102
             if not self.facade.contains_any_project_member_role(project_id, [ProjectMemberRole.OWNER]):
