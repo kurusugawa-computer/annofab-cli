@@ -367,12 +367,16 @@ class AnnotationConverter:
 
                 request_detail = self.convert_annotation_detail(parser, detail, log_message_suffix=log_message_suffix)
             except Exception as e:
-                logger.warning(
-                    f"アノテーション情報を`putAnnotation`APIのリクエストボディへ変換するのに失敗しました。 :: {e!r} :: {log_message_suffix}",
-                )
                 if self.is_strict:
+                    logger.warning(
+                        f"アノテーション情報の一部を`putAnnotation`APIのリクエストボディへ変換できませんでした。 :: {e!r} :: {log_message_suffix}",
+                    )
                     raise
-                continue
+                else:
+                    logger.warning(
+                        f"アノテーション情報の一部を`putAnnotation`APIのリクエストボディへ変換できませんでした。変換できたアノテーション情報のみ登録します。 :: {e!r} :: {log_message_suffix}",
+                    )
+                    continue
 
             if detail.annotation_id in old_dict_detail:
                 # アノテーションを上書き
