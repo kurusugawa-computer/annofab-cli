@@ -4,7 +4,7 @@ import argparse
 import logging
 import multiprocessing
 import sys
-from typing import Optional
+from typing import Any, Optional
 
 import annofabapi
 from annofabapi.models import DefaultAnnotationType, ProjectMemberRole, TaskStatus
@@ -130,7 +130,7 @@ class CreateClassificationAnnotationMain(CommandLineWithConfirm):
 
     def _create_annotation_details_for_labels(
         self, task_id: str, input_data_id: str, labels: list[str], annotation_specs_accessor: AnnotationSpecsAccessor, existing_annotation_ids: set[str]
-    ) -> list[dict]:
+    ) -> list[dict[str, Any]]:
         """
         ラベルリストから新しいアノテーション詳細を作成する
         """
@@ -152,7 +152,10 @@ class CreateClassificationAnnotationMain(CommandLineWithConfirm):
 
             # すでに同じannotation_idのアノテーションが存在するかチェック
             if annotation_id in existing_annotation_ids:
-                logger.debug(f"task_id='{task_id}', input_data_id='{input_data_id}', label_name='{label_name}' :: 既に全体アノテーションが存在するため、作成をスキップします。")
+                logger.debug(
+                    f"task_id='{task_id}', input_data_id='{input_data_id}', label_name='{label_name}' :: "
+                    f"既に全体アノテーションが存在するため、label_name='{label_name}'の全体アノテーションの作成をスキップします。"
+                )
                 continue
 
             # 新しいアノテーション詳細を作成
