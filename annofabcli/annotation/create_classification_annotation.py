@@ -25,7 +25,7 @@ from annofabcli.common.facade import AnnofabApiFacade
 logger = logging.getLogger(__name__)
 
 
-def execute_task_wrapper_global(args_tuple: tuple[int, str, list[str], str, bool, annofabapi.Resource, dict]) -> bool:
+def execute_task_wrapper_global(args_tuple: tuple[int, str, list[str], str, bool, annofabapi.Resource, dict[str, Any]]) -> bool:
     """
     並列処理用のグローバル関数
 
@@ -85,7 +85,7 @@ class CreateClassificationAnnotationMain(CommandLineWithConfirm):
             annotation_specs_v3, _ = self.service.api.get_annotation_specs(self.project_id, query_params={"v": "3"})
             self.annotation_specs_accessor = AnnotationSpecsAccessor(annotation_specs_v3)
 
-    def _validate_and_prepare_task(self, task_id: str) -> tuple[Optional[dict], bool, Optional[str]]:
+    def _validate_and_prepare_task(self, task_id: str) -> tuple[Optional[dict[str, Any]], bool, Optional[str]]:
         """
         タスクの検証と準備を行う
 
@@ -171,7 +171,7 @@ class CreateClassificationAnnotationMain(CommandLineWithConfirm):
 
         return new_details
 
-    def _put_annotations_for_input_data(self, task_id: str, input_data_id: str, new_details: list[dict], old_annotation: dict) -> int:
+    def _put_annotations_for_input_data(self, task_id: str, input_data_id: str, new_details: list[dict[str, Any]], old_annotation: dict[str, Any]) -> int:
         """
         入力データに対してアノテーションを登録する
         """
