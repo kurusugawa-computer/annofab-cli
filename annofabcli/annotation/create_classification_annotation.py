@@ -187,28 +187,29 @@ class CreateClassificationAnnotationMain(CommandLineWithConfirm):
         input_data_id_list = task["input_data_id_list"]
 
         created_count = 0
-        for input_data_id in input_data_id_list:
-            # 既存のアノテーションを取得
-            old_annotation, _ = self.service.api.get_editor_annotation(self.project_id, task_id, input_data_id, query_params={"v": "2"})
+        try:
+            for input_data_id in input_data_id_list:
+                # 既存のアノテーションを取得
+                old_annotation, _ = self.service.api.get_editor_annotation(self.project_id, task_id, input_data_id, query_params={"v": "2"})
 
-            # 既存のアノテーションIDを収集（重複チェック用）
-            existing_annotation_ids = {detail["annotation_id"] for detail in old_annotation["details"]}
+                # 既存のアノテーションIDを収集（重複チェック用）
+                existing_annotation_ids = {detail["annotation_id"] for detail in old_annotation["details"]}
 
-            # 新しいアノテーション詳細のリストを作成
-            new_details = self._create_annotation_details_for_labels(task_id, input_data_id, labels, self.annotation_specs_accessor, existing_annotation_ids)
+                # 新しいアノテーション詳細のリストを作成
+                new_details = self._create_annotation_details_for_labels(task_id, input_data_id, labels, self.annotation_specs_accessor, existing_annotation_ids)
 
-            # アノテーションを登録
-            created_count += self._put_annotations_for_input_data(task_id, input_data_id, new_details, old_annotation)
-
-        # 担当者を元に戻す
-        if changed_operator:
-            logger.debug(f"タスク'{task_id}' の担当者を元に戻します。")
-            self.service.wrapper.change_task_operator(
-                self.project_id,
-                task_id,
-                operator_account_id=old_account_id,
-                last_updated_datetime=task["updated_datetime"],
-            )
+                # アノテーションを登録
+                created_count += self._put_annotations_for_input_data(task_id, input_data_id, new_details, old_annotation)
+        finally:
+            # 担当者を元に戻す
+            if changed_operator:
+                logger.debug(f"タスク'{task_id}' の担当者を元に戻します。")
+                self.service.wrapper.change_task_operator(
+                    self.project_id,
+                    task_id,
+                    operator_account_id=old_account_id,
+                    last_updated_datetime=task["updated_datetime"],
+                )
 
         return created_count
 
