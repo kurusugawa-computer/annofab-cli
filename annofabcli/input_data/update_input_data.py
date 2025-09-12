@@ -241,7 +241,7 @@ class UpdateInputData(CommandLine):
                 sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
             updated_input_data_list = create_updated_input_data_list_from_dict(input_data_dict_list)
         else:
-            raise RuntimeError("argparse により相互排他が保証されているため、ここには到達しません")  # noqa: B011
+            raise RuntimeError("argparse により相互排他が保証されているため、ここには到達しません")
 
         project_id: str = args.project_id
         if args.parallelism is not None:
