@@ -96,6 +96,7 @@ class UpdateInputDataMain(CommandLineWithConfirm):
     ) -> None:
         """複数の入力データを逐次的に更新します。"""
         success_count = 0
+        failure_count = 0
 
         logger.info(f"{len(updated_input_data_list)} 件の入力データを更新します。")
 
@@ -112,11 +113,14 @@ class UpdateInputDataMain(CommandLineWithConfirm):
                 )
                 if result:
                     success_count += 1
+                else:
+                    failure_count += 1
             except Exception:
                 logger.warning(f"input_data_id='{updated_input_data.input_data_id}'の入力データを更新するのに失敗しました。", exc_info=True)
+                failure_count += 1
                 continue
 
-        logger.info(f"{success_count} / {len(updated_input_data_list)} 件の入力データを更新しました。")
+        logger.info(f"{success_count} / {len(updated_input_data_list)} 件の入力データを更新しました。（成功: {success_count}件, 失敗: {failure_count}件）")
 
     def _update_input_data_wrapper(self, updated_input_data: UpdatedInputData, project_id: str) -> bool:
         try:
@@ -138,16 +142,15 @@ class UpdateInputDataMain(CommandLineWithConfirm):
     ) -> None:
         """複数の入力データを並列的に更新します。"""
 
-        success_count = 0
-
         logger.info(f"{len(updated_input_data_list)} 件の入力データを更新します。{parallelism}個のプロセスを使用して並列でに実行します。")
 
         partial_func = partial(self._update_input_data_wrapper, project_id=project_id)
         with multiprocessing.Pool(parallelism) as pool:
             result_bool_list = pool.map(partial_func, updated_input_data_list)
             success_count = len([e for e in result_bool_list if e])
+            failure_count = len([e for e in result_bool_list if not e])
 
-        logger.info(f"{success_count} / {len(updated_input_data_list)} 件の入力データを更新しました。")
+        logger.info(f"{success_count} / {len(updated_input_data_list)} 件の入力データを更新しました。（成功: {success_count}件, 失敗: {failure_count}件）")
 
 
 def create_updated_input_data_list_from_dict(input_data_dict_list: list[dict[str, str]]) -> list[UpdatedInputData]:
