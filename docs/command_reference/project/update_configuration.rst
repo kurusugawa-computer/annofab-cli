@@ -11,39 +11,32 @@ Description
 Examples
 =================================
 
-単一のプロジェクトの設定を更新する場合：
+以下のコマンドは、プロジェクトp1,p2に対して、アノテーションエディタのバージョンをプレビュー版に更新します。
 
 .. code-block::
 
-    $ annofabcli project update_configuration --project_id prj1 --configuration '{"max_tasks_per_member": 100}'
+    $ annofabcli project update_configuration --project_id p1 p2 \
+     --configuration '{"editor_version":"preview"}'
 
-複数のプロジェクトの設定を一括更新する場合：
-
-.. code-block::
-
-    $ annofabcli project update_configuration --project_id prj1 prj2 prj3 --configuration '{"max_tasks_per_member": 100, "enable_email_notification": true}'
-
-設定をファイルから読み込む場合：
-
-.. code-block::
-
-    $ annofabcli project update_configuration --project_id prj1 prj2 --configuration file://config.json
-
-プロジェクトIDをファイルから読み込む場合：
-
-.. code-block::
-
-    $ annofabcli project update_configuration --project_id file://project_list.txt --configuration '{"max_tasks_per_member": 50}'
+``--configuration`` のJSON構造は、 `putProject <https://annofab.com/docs/api/#operation/putProject>`_ APIのリクエストボディの ``configuration`` と同じです。
 
 
-Notes
-=================================
+よく利用するであろう ``--configuration`` の例を以下のJSONに記載します。
 
-* このコマンドは既存の設定を完全に置き換えるのではなく、指定された設定項目のみを更新します
-* 設定に変更がない場合、そのプロジェクトはスキップされます
-* プロジェクトのオーナまたは管理者ロールを持つユーザで実行してください
-* 設定の詳細については `Annofab API ドキュメント <https://annofab.com/docs/api/#operation/putProject>`_ のconfigurationフィールドを参照してください
 
+.. code-block:: 
+        
+    {
+        # アノテーションエディタのバージョンをプレビュー版
+        "editor_version":"preview",
+        # 保留中のタスクを除き、1人（オーナー以外）に割り当てられるタスク数の上限
+        "max_tasks_per_member": 100,
+        # 保留中のタスクを含めて、1人（オーナー以外）に割り当てられるタスク数上限
+        "max_tasks_per_member_including_hold": 100,
+        # S3プライベートストレージ認可用AWS IAMロールARN
+        "private_storage_aws_iam_role_arn": "arn:aws:iam::123456789012:role/YourRoleName",
+    }
+    
 
 Usage Details
 =================================

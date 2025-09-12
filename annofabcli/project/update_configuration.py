@@ -98,7 +98,7 @@ class UpdateProjectConfigurationMain(CommandLineWithConfirm):
                 failure_count += 1
                 logger.warning(f"{index}件目 :: project_id='{project_id}'の設定更新で予期しないエラーが発生しました。", exc_info=True)
 
-        logger.info(f"{success_count}/{len(project_id_list)}件のプロジェクト設定の更新が完了しました。 :: スキップ: {skip_count}件, 失敗: {failure_count}件")
+        logger.info(f"{success_count}/{len(project_id_list)}件のプロジェクトの設定の更新が完了しました。 :: スキップ: {skip_count}件, 失敗: {failure_count}件")
 
 
 class UpdateProjectConfiguration(CommandLine):
@@ -106,10 +106,6 @@ class UpdateProjectConfiguration(CommandLine):
         args = self.args
         project_id_list = get_list_from_args(args.project_id)
         configuration = get_json_from_args(args.configuration)
-
-        if configuration:
-            logger.error("--configuration パラメータで有効な設定を指定してください。")
-            return
 
         main_obj = UpdateProjectConfigurationMain(self.service, all_yes=args.yes)
         main_obj.update_configuration_for_project_list(project_id_list=project_id_list, configuration=configuration)
