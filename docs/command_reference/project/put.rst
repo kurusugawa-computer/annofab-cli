@@ -40,7 +40,7 @@ Examples
      --configuration '{"editor_version":"preview"}'
 
 
-JSONの構造については、 `putProject <https://annofab.com/docs/api/#operation/putProject>`_ APIのリクエストボディを参照してください。
+JSONの構造については、 `putProject <https://annofab.com/docs/api/#operation/putProject>`_ APIのリクエストボディ ``configuration`` を参照してください。
 
 
 

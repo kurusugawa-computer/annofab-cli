@@ -41,6 +41,13 @@ CSVのフォーマットは以下の通りです。
     id3,new_name3,https://example.com/new_image.jpg
 
 
+.. warning::
+
+    プライベートストレージが利用可能な組織配下のプロジェクトでしか、 ``input_data_path`` に ``https`` または ``s3`` スキームを利用できません。
+    プライベートストレージを利用するには、Annofabサポート窓口への問い合わせが必要です。
+    詳細は https://annofab.readme.io/docs/external-storage を参照してください。
+
+
 
 .. code-block::
 
@@ -82,6 +89,7 @@ JSONのキーは、 ``--csv`` に指定するCSVファイルの列に対応し�
 .. code-block::
 
     $ annofabcli input_data update --project_id prj1 --json file://input_data.json
+
 
 
 

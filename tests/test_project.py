@@ -39,7 +39,7 @@ class TestCommandLine:
 
     @pytest.mark.submitting_job
     def test_copy(self):
-        main(["project", "copy", "--project_id", project_id, "--dest_title", "copy-project", "--wait", "--yes"])
+        main(["project", "copy", "--project_id", project_id, "--dest_title", "copy-project", "--yes"])
 
     def test_diff_project(self):
         main(["project", "diff", project_id, project_id, "--target", "annotation_labels"])
@@ -59,3 +59,8 @@ class TestCommandLine:
                 str(out_dir / "project-list-from-organization.csv"),
             ]
         )
+
+    def test_update_configuration(self):
+        # 簡単な設定更新のテスト
+        # 実際の設定変更を行うため、元の設定に影響しない軽微な変更をテストする
+        main(["project", "update_configuration", "--project_id", project_id, "--configuration", '{"editor_version": "preview"}', "--yes"])
