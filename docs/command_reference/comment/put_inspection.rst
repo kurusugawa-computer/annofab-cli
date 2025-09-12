@@ -14,10 +14,17 @@ Description
 Examples
 =================================
 
-基本的な使い方
+
+comment_idを指定する場合
 --------------------------
 
-``--json`` に検査コメントの内容をJSON形式で指定すると、検査コメントを付与できます。
+コメントIDを明示的に指定したい場合は、--comment_idオプションを利用します。
+
+.. code-block::
+
+    $ annofabcli comment put_inspection --project_id prj1 --json file://comment.json --comment_id my-comment-id-001
+
+
 
 .. code-block:: json
     :caption: comment.json
@@ -56,6 +63,12 @@ Examples
   * ``data``：検査コメントの位置や区間。必須。詳細は後述を参照してください。
   * ``annotation_id``：検査コメントに紐づくアノテーションのannotation_id
   * ``phrases``：参照する定型指摘のIDの配列
+
+--comment_idオプションについて
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+* ``--comment_id``で指定したIDが、付与されるコメントのIDとなります。
+* 指定しない場合は自動生成されます。
 
 
 .. code-block::

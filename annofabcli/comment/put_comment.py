@@ -38,6 +38,9 @@ class AddedComment(DataClassJsonMixin):
     phrases: Optional[list[str]]
     """参照している定型指摘ID"""
 
+    comment_id: Optional[str] = None
+    """コメントID。指定がなければ自動生成。"""
+
 
 AddedCommentsForTask = dict[str, list[AddedComment]]
 """
@@ -75,7 +78,7 @@ class PutCommentMain(CommandLineWithConfirm):
 
         def _convert(comment: AddedComment) -> dict[str, Any]:
             return {
-                "comment_id": str(uuid.uuid4()),
+                "comment_id": comment.comment_id if comment.comment_id is not None else str(uuid.uuid4()),
                 "phase": task["phase"],
                 "phase_stage": task["phase_stage"],
                 "account_id": self.service.api.account_id,
@@ -235,7 +238,7 @@ class PutCommentMain(CommandLineWithConfirm):
         logger.info(f"{added_comments_count} / {comments_count} 件の入力データに{self.comment_type_name}を付与しました。")
 
 
-def convert_cli_comments(dict_comments: dict[str, Any], *, comment_type: CommentType) -> AddedComments:
+def convert_cli_comments(dict_comments: dict[str, Any], *, comment_type: CommentType, comment_id: Optional[str] = None) -> AddedComments:
     """
     CLIから受け取ったコメント情報を、データクラスに変換する。
     """
@@ -271,12 +274,12 @@ def convert_cli_comments(dict_comments: dict[str, Any], *, comment_type: Comment
         """コメントに紐付けるアノテーションID"""
 
     def convert_inspection_comment(comment: dict[str, Any]) -> AddedComment:
-        tmp = AddedInspectionComment.from_dict(comment)
-        return AddedComment(comment=tmp.comment, data=tmp.data, annotation_id=tmp.annotation_id, phrases=tmp.phrases)
+    tmp = AddedInspectionComment.from_dict(comment)
+    return AddedComment(comment=tmp.comment, data=tmp.data, annotation_id=tmp.annotation_id, phrases=tmp.phrases, comment_id=comment_id)
 
     def convert_onhold_comment(comment: dict[str, Any]) -> AddedComment:
-        tmp = AddedOnholdComment.from_dict(comment)
-        return AddedComment(comment=tmp.comment, annotation_id=tmp.annotation_id, data=None, phrases=None)
+    tmp = AddedOnholdComment.from_dict(comment)
+    return AddedComment(comment=tmp.comment, annotation_id=tmp.annotation_id, data=None, phrases=None, comment_id=comment_id)
 
     if comment_type == CommentType.INSPECTION:
         func_convert = convert_inspection_comment

@@ -155,7 +155,9 @@ class TestCommandLine:
             ]
         )
 
-        # put_inspection command
+
+        # put_inspection command (comment_id指定)
+        test_comment_id = "test-comment-id-001"
         dict_comments = {
             task_id: {
                 input_data_id: [
@@ -166,7 +168,9 @@ class TestCommandLine:
                 ]
             }
         }
-        main(["comment", "put_inspection", "--project_id", project_id, "--json", json.dumps(dict_comments), "--yes"])
+        main([
+            "comment", "put_inspection", "--project_id", project_id, "--json", json.dumps(dict_comments), "--comment_id", test_comment_id, "--yes"
+        ])
 
         # 検査コメントが登録されたことの確認
         comment_list, _ = service.api.get_comments(project_id, task_id, input_data_id, query_params={"v": 2})

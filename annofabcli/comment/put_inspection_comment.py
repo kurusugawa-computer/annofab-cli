@@ -47,7 +47,11 @@ class PutInspectionComment(CommandLine):
         if not isinstance(dict_comments, dict):
             print(f"{self.COMMON_MESSAGE} argument --json: JSON形式が不正です。オブジェクトを指定してください。", file=sys.stderr)  # noqa: T201
             sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
-        comments_for_task_list = convert_cli_comments(dict_comments, comment_type=CommentType.INSPECTION)
+        comments_for_task_list = convert_cli_comments(
+            dict_comments,
+            comment_type=CommentType.INSPECTION,
+            comment_id=args.comment_id if hasattr(args, "comment_id") and args.comment_id is not None else None,
+        )
         main_obj = PutCommentMain(self.service, project_id=args.project_id, comment_type=CommentType.INSPECTION, all_yes=self.all_yes)
         main_obj.add_comments_for_task_list(
             comments_for_task_list=comments_for_task_list,
@@ -71,6 +75,12 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--json",
         type=str,
         help=(f"付与する検査コメントの内容をJSON形式で指定してください。``file://`` を先頭に付けると、JSON形式のファイルを指定できます。\n\n(ex)  ``{json.dumps(SAMPLE_JSON, ensure_ascii=False)}``"),
+    )
+
+    parser.add_argument(
+        "--comment_id",
+        type=str,
+        help="コメントIDを指定します。指定しない場合は自動生成されます。",
     )
 
     parser.add_argument(
