@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import sys
 from logging import getLogger
 from typing import Optional
 
@@ -11,9 +12,7 @@ logger = getLogger(__name__)
 
 
 def main(args: argparse.Namespace) -> None:
-    logger.warning(
-        "[DEPRECATED] :: `project put` コマンドは非推奨です。代わりに `project create` コマンドを使用してください。`project put` コマンドは2026年01月01日以降に廃止予定です。",
-    )
+    print("[DEPRECATED] :: `project put` コマンドは非推奨です。代わりに `project create` コマンドを使用してください。`project put` コマンドは2026年01月01日以降に廃止予定です。", file=sys.stderr) # noqa: T201
     # create_project.py の実装を使用
     create_project.main(args)
 
@@ -28,9 +27,10 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
 def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     subcommand_name = "put"
     subcommand_help = "[DEPRECATED] プロジェクトを作成します。"
-    subcommand_description = subcommand_help + "\n 'project put'コマンドは非推奨です。"
-    
-    "[DEPRECATED] :: `project put` コマンドは非推奨です。代わりに 'project create'コマンドを使用してください。`project put` コマンドは2026年01月01日以降に廃止予定です。",
+    subcommand_description = (
+        subcommand_help + "\n[DEPRECATED] :: `project put` コマンドは非推奨です。代わりに 'project create'コマンドを使用してください。`project put` コマンドは2026年01月01日以降に廃止予定です。"
+    )
+
     epilog = "組織管理者、組織オーナを持つユーザで実行してください。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description=subcommand_description, epilog=epilog)
