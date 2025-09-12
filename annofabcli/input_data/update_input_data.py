@@ -1,14 +1,15 @@
 from __future__ import annotations
 
 import argparse
+import enum
 import logging
 import multiprocessing
 import sys
 from dataclasses import dataclass
+from enum import Enum
 from functools import partial
 from pathlib import Path
 from typing import Optional
-from enum import Enum
 
 import annofabapi
 import pandas
@@ -32,9 +33,13 @@ logger = logging.getLogger(__name__)
 
 class UpdateResult(Enum):
     """更新結果の種類"""
-    SUCCESS = "success"
-    INPUT_ERROR = "input_error"  # 入力情報エラー（存在しないinput_data_id等）
-    EXCEPTION_ERROR = "exception_error"  # 例外エラー
+
+    SUCCESS = enum.auto()
+    """更新に成功した"""
+    SKIPPED = enum.auto()
+    """更新を実行しなかった（存在しないinput_data_id、ユーザー拒否等）"""
+    FAILED = enum.auto()
+    """更新を試みたが例外で失敗"""
 
 
 @dataclass
@@ -69,7 +74,7 @@ class UpdateInputDataMain(CommandLineWithConfirm):
         old_input_data = self.service.wrapper.get_input_data_or_none(project_id, input_data_id)
         if old_input_data is None:
             logger.warning(f"input_data_id='{input_data_id}'である入力データは存在しません。")
-            return UpdateResult.INPUT_ERROR
+            return UpdateResult.SKIPPED
 
         # 更新する内容の確認メッセージを作成
         changes = []
@@ -79,12 +84,12 @@ class UpdateInputDataMain(CommandLineWithConfirm):
             changes.append(f"input_data_path='{old_input_data['input_data_path']}'を'{new_input_data_path}'に変更")
 
         if len(changes) == 0:
-            logger.warning(f"input_data_id='{input_data_id}': 更新する内容が指定されていません。")
-            return UpdateResult.INPUT_ERROR
+            logger.warning(f"input_data_id='{input_data_id}' :: 更新する内容が指定されていません。")
+            return UpdateResult.SKIPPED
 
         change_message = "、".join(changes)
         if not self.confirm_processing(f"input_data_id='{input_data_id}' :: {change_message}しますか？"):
-            return UpdateResult.INPUT_ERROR
+            return UpdateResult.SKIPPED
 
         request_body = old_input_data
         request_body["last_updated_datetime"] = old_input_data["updated_datetime"]
@@ -95,6 +100,7 @@ class UpdateInputDataMain(CommandLineWithConfirm):
             request_body["input_data_path"] = new_input_data_path
 
         self.service.api.put_input_data(project_id, input_data_id, request_body=request_body)
+        logger.warning(f"input_data_id='{input_data_id}' :: '{new_input_data_name}'に入力データの内容を更新しました。")
         return UpdateResult.SUCCESS
 
     def update_input_data_list_sequentially(
@@ -104,8 +110,8 @@ class UpdateInputDataMain(CommandLineWithConfirm):
     ) -> None:
         """複数の入力データを逐次的に更新します。"""
         success_count = 0
-        input_error_count = 0  # 入力情報エラー（存在しないinput_data_id等）
-        exception_count = 0    # 例外エラー
+        skipped_count = 0  # 更新を実行しなかった個数
+        failed_count = 0  # 更新に失敗した個数
 
         logger.info(f"{len(updated_input_data_list)} 件の入力データを更新します。")
 
@@ -122,15 +128,14 @@ class UpdateInputDataMain(CommandLineWithConfirm):
                 )
                 if result == UpdateResult.SUCCESS:
                     success_count += 1
-                else:
-                    input_error_count += 1
+                elif result == UpdateResult.SKIPPED:
+                    skipped_count += 1
             except Exception:
                 logger.warning(f"input_data_id='{updated_input_data.input_data_id}'の入力データを更新するのに失敗しました。", exc_info=True)
-                exception_count += 1
+                failed_count += 1
                 continue
 
-        total_failure_count = input_error_count + exception_count
-        logger.info(f"{success_count} / {len(updated_input_data_list)} 件の入力データを更新しました。（成功: {success_count}件, 失敗: {total_failure_count}件 [入力エラー: {input_error_count}件, 例外エラー: {exception_count}件]）")
+        logger.info(f"{success_count} / {len(updated_input_data_list)} 件の入力データを更新しました。（成功: {success_count}件, スキップ: {skipped_count}件, 失敗: {failed_count}件）")
 
     def _update_input_data_wrapper(self, updated_input_data: UpdatedInputData, project_id: str) -> UpdateResult:
         try:
@@ -142,7 +147,7 @@ class UpdateInputDataMain(CommandLineWithConfirm):
             )
         except Exception:
             logger.warning(f"input_data_id='{updated_input_data.input_data_id}'の入力データを更新するのに失敗しました。", exc_info=True)
-            return UpdateResult.EXCEPTION_ERROR
+            return UpdateResult.FAILED
 
     def update_input_data_list_in_parallel(
         self,
@@ -158,11 +163,10 @@ class UpdateInputDataMain(CommandLineWithConfirm):
         with multiprocessing.Pool(parallelism) as pool:
             result_list = pool.map(partial_func, updated_input_data_list)
             success_count = len([e for e in result_list if e == UpdateResult.SUCCESS])
-            input_error_count = len([e for e in result_list if e == UpdateResult.INPUT_ERROR])
-            exception_count = len([e for e in result_list if e == UpdateResult.EXCEPTION_ERROR])
+            skipped_count = len([e for e in result_list if e == UpdateResult.SKIPPED])
+            failed_count = len([e for e in result_list if e == UpdateResult.FAILED])
 
-        total_failure_count = input_error_count + exception_count
-        logger.info(f"{success_count} / {len(updated_input_data_list)} 件の入力データを更新しました。（成功: {success_count}件, 失敗: {total_failure_count}件 [入力エラー: {input_error_count}件, 例外エラー: {exception_count}件]）")
+        logger.info(f"{success_count} / {len(updated_input_data_list)} 件の入力データを更新しました。（成功: {success_count}件, スキップ: {skipped_count}件, 失敗: {failed_count}件）")
 
 
 def create_updated_input_data_list_from_dict(input_data_dict_list: list[dict[str, str]]) -> list[UpdatedInputData]:
