@@ -74,7 +74,10 @@ class UpdateInputDataMain(CommandLineWithConfirm):
         1個の入力データを更新します。
         """
         # ログメッセージの先頭の変数
-        log_prefix = f"{input_data_index + 1}件目 :: input_data_id='{input_data_id}' :: " if input_data_index is not None else f"input_data_id='{input_data_id}' :: "
+        log_prefix = f"input_data_id='{input_data_id}' :: "
+        if input_data_index is not None:
+            log_prefix = f"{input_data_index + 1}件目 :: {log_prefix}"
+
         old_input_data = self.service.wrapper.get_input_data_or_none(project_id, input_data_id)
         if old_input_data is None:
             logger.warning(f"{log_prefix}入力データは存在しません。")
