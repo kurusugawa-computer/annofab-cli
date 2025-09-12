@@ -100,7 +100,7 @@ class UpdateInputDataMain(CommandLineWithConfirm):
             request_body["input_data_path"] = new_input_data_path
 
         self.service.api.put_input_data(project_id, input_data_id, request_body=request_body)
-        logger.warning(f"input_data_id='{input_data_id}' :: '{new_input_data_name}'に入力データの内容を更新しました。")
+        logger.debug(f"input_data_id='{input_data_id}' の入力データを正常に更新しました。")
         return UpdateResult.SUCCESS
 
     def update_input_data_list_sequentially(
@@ -116,8 +116,11 @@ class UpdateInputDataMain(CommandLineWithConfirm):
         logger.info(f"{len(updated_input_data_list)} 件の入力データを更新します。")
 
         for input_data_index, updated_input_data in enumerate(updated_input_data_list):
-            if (input_data_index + 1) % 1000 == 0:
-                logger.info(f"{input_data_index + 1}件目の入力データを更新します。")
+            current_num = input_data_index + 1
+
+            # 進捗ログ出力
+            if current_num % 1000 == 0:
+                logger.info(f"{current_num} / {len(updated_input_data_list)} 件目の入力データを処理中...")
 
             try:
                 result = self.update_input_data(
@@ -128,10 +131,12 @@ class UpdateInputDataMain(CommandLineWithConfirm):
                 )
                 if result == UpdateResult.SUCCESS:
                     success_count += 1
+                    logger.debug(f"{current_num}件目 :: input_data_id='{updated_input_data.input_data_id}' の更新に成功しました。")
                 elif result == UpdateResult.SKIPPED:
                     skipped_count += 1
+                    logger.debug(f"{current_num}件目 :: input_data_id='{updated_input_data.input_data_id}' の更新をスキップしました。")
             except Exception:
-                logger.warning(f"input_data_id='{updated_input_data.input_data_id}'の入力データを更新するのに失敗しました。", exc_info=True)
+                logger.warning(f"{current_num}件目 :: input_data_id='{updated_input_data.input_data_id}'の入力データを更新するのに失敗しました。", exc_info=True)
                 failed_count += 1
                 continue
 
@@ -157,7 +162,7 @@ class UpdateInputDataMain(CommandLineWithConfirm):
     ) -> None:
         """複数の入力データを並列的に更新します。"""
 
-        logger.info(f"{len(updated_input_data_list)} 件の入力データを更新します。{parallelism}個のプロセスを使用して並列でに実行します。")
+        logger.info(f"{len(updated_input_data_list)} 件の入力データを更新します。{parallelism}個のプロセスを使用して並列実行します。")
 
         partial_func = partial(self._update_input_data_wrapper, project_id=project_id)
         with multiprocessing.Pool(parallelism) as pool:
@@ -166,6 +171,7 @@ class UpdateInputDataMain(CommandLineWithConfirm):
             skipped_count = len([e for e in result_list if e == UpdateResult.SKIPPED])
             failed_count = len([e for e in result_list if e == UpdateResult.FAILED])
 
+        logger.info(f"並列処理が完了しました。結果 :: 成功: {success_count}件, スキップ: {skipped_count}件, 失敗: {failed_count}件")
         logger.info(f"{success_count} / {len(updated_input_data_list)} 件の入力データを更新しました。（成功: {success_count}件, スキップ: {skipped_count}件, 失敗: {failed_count}件）")
 
 
