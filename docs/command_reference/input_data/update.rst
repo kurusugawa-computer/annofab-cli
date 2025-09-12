@@ -4,7 +4,7 @@ input_data update
 
 Description
 =================================
-入力データの名前やパスを更新します。
+入力データの名前または入力データのパスを更新します。
 
 
 Examples
@@ -37,16 +37,14 @@ CSVのフォーマットは以下の通りです。
 
     input_data_id,input_data_name,input_data_path
     id1,new_name1,
-    id2,,s3://new-bucket/path2
-    id3,new_name3,s3://new-bucket/path3
+    id2,,s3://bucket/new_image.jpg
+    id3,new_name3,https://example.com/new_image.jpg
 
 
 
 .. code-block::
 
     $ annofabcli input_data update --project_id prj1 --csv input_data.csv
-
-
 
 
 
@@ -67,16 +65,16 @@ JSON文字列を指定する場合
         },
         {
             "input_data_id": "id2",
-            "input_data_path": "s3://new-bucket/path2"
+            "input_data_path": "s3://bucket/new_image.jpg"
         },
         {
             "input_data_id": "id3",
             "input_data_name": "new_name3",
-            "input_data_path": "s3://new-bucket/path3"
+            "input_data_path": "https://example.com/new_image.jpg"
         }
     ]
 
-JSONのキーは、``--csv`` に指定するCSVファイルの列に対応します。
+JSONのキーは、 ``--csv`` に指定するCSVファイルの列に対応します。
 更新しないプロパティは、キーを記載しないか値をnullにしてください。
 
 ``--json`` にJSON形式の文字列、またはJSONファイルのパスを指定できます。
@@ -87,26 +85,6 @@ JSONのキーは、``--csv`` に指定するCSVファイルの列に対応しま
 
 
 
-
-並列処理
-----------------------------------------------
-
-以下のコマンドは、並列数4で実行します。
-
-.. code-block::
-
-    $ annofabcli input_data update --project_id prj1 \
-     --json file://input_data.json --parallelism 4 --yes
-
-
-注意事項
-=================================
-
-* このコマンドは、``input_data_name`` と ``input_data_path`` のみ更新可能です。
-* 存在しない ``input_data_id`` を指定した場合はスキップされます。
-* 更新内容が指定されていない場合もスキップされます。
-* 並列処理を使用する場合は ``--yes`` オプションが必要です。
-* オーナロールを持つユーザで実行してください。
 
 Usage Details
 =================================

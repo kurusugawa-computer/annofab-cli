@@ -297,7 +297,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
 
 def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     subcommand_name = "update"
-    subcommand_help = "入力データの名前やパスを更新します。"
+    subcommand_help = "入力データの名前または入力データのパスを更新します。"
     epilog = "オーナロールを持つユーザで実行してください。"
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, epilog=epilog)
     parse_args(parser)
