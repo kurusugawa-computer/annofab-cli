@@ -100,7 +100,7 @@ class UpdateInputDataMain(CommandLineWithConfirm):
         logger.info(f"{len(updated_input_data_list)} 件の入力データを更新します。")
 
         for input_data_index, updated_input_data in enumerate(updated_input_data_list):
-            if (input_data_index + 1) % 100 == 0:
+            if (input_data_index + 1) % 1000 == 0:
                 logger.info(f"{input_data_index + 1}件目の入力データを更新します。")
 
             try:
@@ -232,13 +232,14 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--csv",
         type=Path,
         help=(
-            "更新対象の入力データが記載されたCSVファイルのパスを指定してください。\n"
+            "更新対象の入力データと更新後の値が記載されたCSVファイルのパスを指定します。\n"
             "CSVのフォーマットは以下の通りです。"
             "\n"
             " * ヘッダ行あり, カンマ区切り\n"
             " * input_data_id (required)\n"
             " * input_data_name (optional)\n"
             " * input_data_path (optional)\n"
+            "更新しないプロパティは、セルの値を空欄にしてください。\n"
         ),
     )
 
@@ -247,10 +248,11 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--json",
         type=str,
         help=(
-            "更新対象の入力データと更新後の値をJSON形式で指定してください。\n"
+            "更新対象の入力データと更新後の値をJSON形式で指定します。\n"
             "JSONの各キーは ``--csv`` に渡すCSVの各列に対応しています。\n"
             "``file://`` を先頭に付けるとjsonファイルを指定できます。\n"
-            f"(ex) ``{JSON_SAMPLE}``"
+            f"(ex) ``{JSON_SAMPLE}`` \n"
+            "更新しないプロパティは、キーを記載しないか値をnullにしてください。\n"
         ),
     )
 
@@ -258,7 +260,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--parallelism",
         type=int,
         choices=PARALLELISM_CHOICES,
-        help="使用するプロセス数（並列度）を指定してください。指定する場合は必ず ``--yes`` を指定してください。指定しない場合は、逐次的に処理します。",
+        help="使用するプロセス数（並列度）。指定しない場合は、逐次的に処理します。指定する場合は ``--yes`` も一緒に指定する必要があります。",
     )
 
     parser.set_defaults(subcommand_func=main)
