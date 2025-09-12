@@ -59,3 +59,8 @@ class TestCommandLine:
                 str(out_dir / "project-list-from-organization.csv"),
             ]
         )
+
+    def test_update_configuration(self):
+        # 簡単な設定更新のテスト
+        # 実際の設定変更を行うため、元の設定に影響しない軽微な変更をテストする
+        main(["project", "update_configuration", "--project_id", project_id, "--configuration", '{"test_config": "test_value"}', "--yes"])
