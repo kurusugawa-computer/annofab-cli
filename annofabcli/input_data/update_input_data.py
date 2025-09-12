@@ -74,7 +74,7 @@ class UpdateInputDataMain(CommandLineWithConfirm):
         1個の入力データを更新します。
         """
         # ログメッセージの先頭の変数
-        log_prefix = f"{input_data_index+1}件目 :: input_data_id='{input_data_id}' :: " if input_data_index is not None else f"input_data_id='{input_data_id}' :: " 
+        log_prefix = f"{input_data_index + 1}件目 :: input_data_id='{input_data_id}' :: " if input_data_index is not None else f"input_data_id='{input_data_id}' :: "
         old_input_data = self.service.wrapper.get_input_data_or_none(project_id, input_data_id)
         if old_input_data is None:
             logger.warning(f"{log_prefix}入力データは存在しません。")
@@ -132,7 +132,7 @@ class UpdateInputDataMain(CommandLineWithConfirm):
                     updated_input_data.input_data_id,
                     new_input_data_name=updated_input_data.input_data_name,
                     new_input_data_path=updated_input_data.input_data_path,
-                    input_data_id=input_data_index
+                    input_data_index=input_data_index,
                 )
                 if result == UpdateResult.SUCCESS:
                     success_count += 1
@@ -145,16 +145,18 @@ class UpdateInputDataMain(CommandLineWithConfirm):
 
         logger.info(f"{success_count} / {len(updated_input_data_list)} 件の入力データを更新しました。（成功: {success_count}件, スキップ: {skipped_count}件, 失敗: {failed_count}件）")
 
-    def _update_input_data_wrapper(self, updated_input_data: UpdatedInputData, project_id: str) -> UpdateResult:
+    def _update_input_data_wrapper(self, args: tuple[int, UpdatedInputData], project_id: str) -> UpdateResult:
+        index, updated_input_data = args
         try:
             return self.update_input_data(
                 project_id,
                 input_data_id=updated_input_data.input_data_id,
                 new_input_data_name=updated_input_data.input_data_name,
                 new_input_data_path=updated_input_data.input_data_path,
+                input_data_index=index,
             )
         except Exception:
-            logger.warning(f"input_data_id='{updated_input_data.input_data_id}'の入力データを更新するのに失敗しました。", exc_info=True)
+            logger.warning(f"{index + 1}件目 :: input_data_id='{updated_input_data.input_data_id}'の入力データを更新するのに失敗しました。", exc_info=True)
             return UpdateResult.FAILED
 
     def update_input_data_list_in_parallel(
@@ -167,14 +169,16 @@ class UpdateInputDataMain(CommandLineWithConfirm):
 
         logger.info(f"{len(updated_input_data_list)} 件の入力データを更新します。{parallelism}個のプロセスを使用して並列実行します。")
 
+        # インデックス付きでデータを準備
+        indexed_data_list = [(updated_input_data, index) for index, updated_input_data in enumerate(updated_input_data_list)]
+
         partial_func = partial(self._update_input_data_wrapper, project_id=project_id)
         with multiprocessing.Pool(parallelism) as pool:
-            result_list = pool.map(partial_func, updated_input_data_list)
+            result_list = pool.map(partial_func, enumerate(updated_input_data_list))
             success_count = len([e for e in result_list if e == UpdateResult.SUCCESS])
             skipped_count = len([e for e in result_list if e == UpdateResult.SKIPPED])
             failed_count = len([e for e in result_list if e == UpdateResult.FAILED])
 
-        logger.info(f"並列処理が完了しました。結果 :: 成功: {success_count}件, スキップ: {skipped_count}件, 失敗: {failed_count}件")
         logger.info(f"{success_count} / {len(updated_input_data_list)} 件の入力データを更新しました。（成功: {success_count}件, スキップ: {skipped_count}件, 失敗: {failed_count}件）")
 
 
