@@ -87,6 +87,9 @@ class UpdateProjectConfigurationMain(CommandLineWithConfirm):
 
         for index, project_id in enumerate(project_id_list):
             try:
+                if (index + 1) % 1000 == 0:
+                    logger.info(f"{index + 1} / {len(project_id_list)} 件目のプロジェクトの設定を更新中...")
+
                 result = self.update_configuration_for_project(project_id, configuration, project_index=index - 1)
                 if result:
                     success_count += 1
