@@ -85,9 +85,8 @@ class UpdateProjectConfigurationMain(CommandLineWithConfirm):
         skip_count = 0
         failure_count = 0
 
-        for index, project_id in enumerate(project_id_list, start=1):
+        for index, project_id in enumerate(project_id_list):
             try:
-                logger.debug(f"{index}/{len(project_id_list)} 件目: project_id='{project_id}' の設定を更新します。")
                 result = self.update_configuration_for_project(project_id, configuration, project_index=index - 1)
                 if result:
                     success_count += 1
@@ -96,7 +95,7 @@ class UpdateProjectConfigurationMain(CommandLineWithConfirm):
 
             except Exception:
                 failure_count += 1
-                logger.warning(f"{index}件目 :: project_id='{project_id}'の設定更新で予期しないエラーが発生しました。", exc_info=True)
+                logger.warning(f"{index + 1}件目 :: project_id='{project_id}'の設定更新で予期しないエラーが発生しました。", exc_info=True)
 
         logger.info(f"{success_count}/{len(project_id_list)}件のプロジェクトの設定の更新が完了しました。 :: スキップ: {skip_count}件, 失敗: {failure_count}件")
 
