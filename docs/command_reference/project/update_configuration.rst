@@ -29,10 +29,13 @@ Examples
     {
         # アノテーションエディタのバージョンをプレビュー版
         "editor_version":"preview",
+        
         # 保留中のタスクを除き、1人（オーナー以外）に割り当てられるタスク数の上限
         "max_tasks_per_member": 100,
+        
         # 保留中のタスクを含めて、1人（オーナー以外）に割り当てられるタスク数上限
         "max_tasks_per_member_including_hold": 100,
+        
         # S3プライベートストレージ認可用AWS IAMロールARN
         "private_storage_aws_iam_role_arn": "arn:aws:iam::123456789012:role/YourRoleName",
     }
