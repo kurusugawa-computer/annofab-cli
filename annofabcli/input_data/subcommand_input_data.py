@@ -3,7 +3,6 @@ from typing import Optional
 
 import annofabcli
 import annofabcli.common.cli
-import annofabcli.input_data.change_input_data_name
 import annofabcli.input_data.copy_input_data
 import annofabcli.input_data.delete_input_data
 import annofabcli.input_data.delete_metadata_key_of_input_data
@@ -21,7 +20,6 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     subparsers = parser.add_subparsers(dest="subcommand_name")
 
     # サブコマンドの定義
-    annofabcli.input_data.change_input_data_name.add_parser(subparsers)
     annofabcli.input_data.copy_input_data.add_parser(subparsers)
     annofabcli.input_data.delete_input_data.add_parser(subparsers)
     annofabcli.input_data.delete_metadata_key_of_input_data.add_parser(subparsers)

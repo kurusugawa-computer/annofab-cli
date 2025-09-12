@@ -15,7 +15,6 @@ Available Commands
    :maxdepth: 1
    :titlesonly:
 
-   change_name
    copy
    delete
    delete_metadata_key
