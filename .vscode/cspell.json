@@ -22,6 +22,7 @@
         "annofabcli",
         "Annowork",
         "arange",
+        "argparse",
         "asdict",
         "astimezone",
         "astype",

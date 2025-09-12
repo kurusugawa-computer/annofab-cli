@@ -129,7 +129,7 @@ class TestCommandLine:
         main(
             [
                 "input_data",
-                "change_name",
+                "update",
                 "--project_id",
                 project_id,
                 "--json",

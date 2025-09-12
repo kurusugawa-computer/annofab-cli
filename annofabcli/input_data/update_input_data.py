@@ -169,9 +169,6 @@ class UpdateInputDataMain(CommandLineWithConfirm):
 
         logger.info(f"{len(updated_input_data_list)} 件の入力データを更新します。{parallelism}個のプロセスを使用して並列実行します。")
 
-        # インデックス付きでデータを準備
-        indexed_data_list = [(updated_input_data, index) for index, updated_input_data in enumerate(updated_input_data_list)]
-
         partial_func = partial(self._update_input_data_wrapper, project_id=project_id)
         with multiprocessing.Pool(parallelism) as pool:
             result_list = pool.map(partial_func, enumerate(updated_input_data_list))
