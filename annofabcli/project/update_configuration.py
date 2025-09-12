@@ -7,12 +7,7 @@ import annofabapi
 import requests
 
 import annofabcli
-from annofabcli.common.cli import (
-    CommandLine,
-    CommandLineWithConfirm,
-    build_annofabapi_resource_and_login,
-    get_json_from_args,
-)
+from annofabcli.common.cli import CommandLine, CommandLineWithConfirm, build_annofabapi_resource_and_login, get_json_from_args, get_list_from_args
 from annofabcli.common.facade import AnnofabApiFacade
 
 logger = logging.getLogger(__name__)
@@ -114,10 +109,10 @@ class UpdateProjectConfigurationMain(CommandLineWithConfirm):
 class UpdateProjectConfiguration(CommandLine):
     def main(self) -> None:
         args = self.args
-        project_id_list = annofabcli.common.cli.get_list_from_args(args.project_id)
+        project_id_list = get_list_from_args(args.project_id)
         configuration = get_json_from_args(args.configuration)
 
-        if not configuration:
+        if configuration:
             logger.error("--configuration パラメータで有効な設定を指定してください。")
             return
 
@@ -141,16 +136,15 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         type=str,
         required=True,
         nargs="+",
-        help="対象プロジェクトのproject_idを指定します。 ``file://`` を先頭に付けると、project_idの一覧が記載されたファイルを指定できます。",
+        help="変更対象プロジェクトのproject_idを指定します。 ``file://`` を先頭に付けると、project_idの一覧が記載されたファイルを指定できます。",
     )
 
     parser.add_argument(
-        "-c",
         "--configuration",
         type=str,
         required=True,
         help="更新するプロジェクト設定をJSON形式で指定します。既存の設定に対して部分的な更新を行います。"
-        "JSONの構造については https://annofab.com/docs/api/#operation/putProject のconfigurationフィールドを参照してください。\n"
+        "JSONの構造については https://annofab.com/docs/api/#operation/putProject のリクエストボディ'configuration'を参照してください。\n"
         "``file://`` を先頭に付けると、JSON形式のファイルを指定できます。",
     )
 
@@ -160,7 +154,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
 def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
     subcommand_name = "update_configuration"
     subcommand_help = "複数のプロジェクトの設定を一括で更新します。"
-    epilog = "プロジェクトのオーナまたは管理者ロールを持つユーザで実行してください。"
+    epilog = "プロジェクトのオーナロールを持つユーザで実行してください。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, epilog=epilog)
     parse_args(parser)

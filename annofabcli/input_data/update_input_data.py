@@ -209,14 +209,15 @@ def create_updated_input_data_list_from_csv(csv_file: Path) -> list[UpdatedInput
     return [UpdatedInputData.from_dict(e) for e in input_data_dict_list]
 
 
+CLI_COMMON_MESSAGE = "annofabcli input_data update: error:"
+
+
 class UpdateInputData(CommandLine):
     @staticmethod
     def validate(args: argparse.Namespace) -> bool:
-        COMMON_MESSAGE = "annofabcli input_data update: error:"  # noqa: N806
-
         if args.parallelism is not None and not args.yes:
             print(  # noqa: T201
-                f"{COMMON_MESSAGE} argument --parallelism: '--parallelism'を指定するときは、必ず ``--yes`` を指定してください。",
+                f"{CLI_COMMON_MESSAGE} argument --parallelism: '--parallelism'を指定するときは、必ず ``--yes`` を指定してください。",
                 file=sys.stderr,
             )
             return False
@@ -236,11 +237,11 @@ class UpdateInputData(CommandLine):
         elif args.json is not None:
             input_data_dict_list = get_json_from_args(args.json)
             if not isinstance(input_data_dict_list, list):
-                print("annofabcli input_data update: error: JSON形式が不正です。オブジェクトの配列を指定してください。", file=sys.stderr)  # noqa: T201
+                print(f"{CLI_COMMON_MESSAGE} JSON形式が不正です。オブジェクトの配列を指定してください。", file=sys.stderr)  # noqa: T201
                 sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
             updated_input_data_list = create_updated_input_data_list_from_dict(input_data_dict_list)
         else:
-            raise RuntimeError("'--csv'または'--json'のいずれかを指定してください。")
+            assert False, "argparse により相互排他が保証されているため、ここには到達しません"
 
         project_id: str = args.project_id
         if args.parallelism is not None:
