@@ -31,8 +31,8 @@ class CustomProjectType(Enum):
     """3次元データ"""
 
 
-class PutProject(CommandLine):
-    def put_project(  # noqa: ANN201
+class CreateProject(CommandLine):
+    def create_project(  # noqa: ANN201
         self,
         organization: str,
         title: str,
@@ -68,7 +68,7 @@ class PutProject(CommandLine):
             f"'{organization}'組織に、project_id='{new_project['project_id']}'のプロジェクトを作成しました。 :: title='{new_project['title']}', input_data_type='{new_project['input_data_type']}'"
         )
 
-    COMMON_MESSAGE = "annofabcli project put: error:"
+    COMMON_MESSAGE = "annofabcli project create: error:"
 
     def validate(self, args: argparse.Namespace) -> bool:
         if args.input_data_type == InputDataType.CUSTOM.value:  # noqa: SIM102
@@ -86,7 +86,7 @@ class PutProject(CommandLine):
         if not self.validate(args):
             sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
-        self.put_project(
+        self.create_project(
             args.organization,
             args.title,
             InputDataType(args.input_data_type),
@@ -99,14 +99,9 @@ class PutProject(CommandLine):
 
 
 def main(args: argparse.Namespace) -> None:
-    print(  # noqa: T201
-        "⚠ 警告: `project put` コマンドは非推奨です。代わりに `project create` コマンドを使用してください。"
-        "`project put` コマンドは2026年01月01日以降に廃止予定です。",
-        file=sys.stderr,
-    )
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
-    PutProject(service, facade, args).main()
+    CreateProject(service, facade, args).main()
 
 
 def parse_args(parser: argparse.ArgumentParser) -> None:
@@ -147,7 +142,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
 
 
 def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
-    subcommand_name = "put"
+    subcommand_name = "create"
     subcommand_help = "プロジェクトを作成します。"
     epilog = "組織管理者、組織オーナを持つユーザで実行してください。"
 

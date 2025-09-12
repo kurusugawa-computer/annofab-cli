@@ -18,6 +18,7 @@ Available Commands
    change_status
    change_organization
    copy
+   create
    diff
    list
    put

@@ -1,18 +1,10 @@
 =================================
-project put
+project create
 =================================
-
-.. warning::
-   
-   このコマンドは非推奨です。代わりに :doc:`create` コマンドを使用してください。
-   
-   ``project put`` コマンドは2026年01月01日以降に廃止予定です。
 
 Description
 =================================
 プロジェクトを作成します。
-
-詳細な使用方法は :doc:`create` コマンドのドキュメントを参照してください。
 
 Examples
 =================================
@@ -24,7 +16,7 @@ Examples
 
 .. code-block::
 
-    $ annofabcli project put --organization org --title foo --input_data_type image
+    $ annofabcli project create --organization org --title foo --input_data_type image
 
 
 デフォルトでは、作成したプロジェクトのproject_idのフォーマットはUUIDv4です。
@@ -32,7 +24,7 @@ Examples
 
 .. code-block::
 
-    $ annofabcli project put --organization org --title foo --input_data_type image \
+    $ annofabcli project create --organization org --title foo --input_data_type image \
      --project_id bar
 
 
@@ -44,7 +36,7 @@ Examples
 
 .. code-block::
 
-    $ annofabcli project put --organization org --title foo --input_data_type image \
+    $ annofabcli project create --organization org --title foo --input_data_type image \
      --configuration '{"editor_version":"preview"}'
 
 
@@ -59,7 +51,7 @@ JSONの構造については、 `putProject <https://annofab.com/docs/api/#opera
 
 .. code-block::
 
-    $ annofabcli project put --organization org --title foo --input_data_type custom \
+    $ annofabcli project create --organization org --title foo --input_data_type custom \
      --custom_project_type 3d
 
      
@@ -72,7 +64,7 @@ Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.project.put_project.add_parser
-   :prog: annofabcli project put
+   :ref: annofabcli.project.create_project.add_parser
+   :prog: annofabcli project create
    :nosubcommands:
    :nodefaultconst:
