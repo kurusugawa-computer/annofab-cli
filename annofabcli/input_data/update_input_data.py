@@ -65,15 +65,19 @@ class UpdateInputDataMain(CommandLineWithConfirm):
         self,
         project_id: str,
         input_data_id: str,
+        *,
         new_input_data_name: Optional[str] = None,
         new_input_data_path: Optional[str] = None,
+        input_data_index: Optional[int] = None,
     ) -> UpdateResult:
         """
         1個の入力データを更新します。
         """
+        # ログメッセージの先頭の変数
+        log_prefix = f"{input_data_index+1}件目 :: input_data_id='{input_data_id}' :: " if input_data_index is not None else f"input_data_id='{input_data_id}' :: " 
         old_input_data = self.service.wrapper.get_input_data_or_none(project_id, input_data_id)
         if old_input_data is None:
-            logger.warning(f"input_data_id='{input_data_id}'である入力データは存在しません。")
+            logger.warning(f"{log_prefix}入力データは存在しません。")
             return UpdateResult.SKIPPED
 
         # 更新する内容の確認メッセージを作成
@@ -84,11 +88,11 @@ class UpdateInputDataMain(CommandLineWithConfirm):
             changes.append(f"input_data_path='{old_input_data['input_data_path']}'を'{new_input_data_path}'に変更")
 
         if len(changes) == 0:
-            logger.warning(f"input_data_id='{input_data_id}' :: 更新する内容が指定されていません。")
+            logger.warning(f"{log_prefix}更新する内容が指定されていません。")
             return UpdateResult.SKIPPED
 
         change_message = "、".join(changes)
-        if not self.confirm_processing(f"input_data_id='{input_data_id}' :: {change_message}しますか？"):
+        if not self.confirm_processing(f"{log_prefix}{change_message}しますか？"):
             return UpdateResult.SKIPPED
 
         request_body = old_input_data
@@ -100,7 +104,7 @@ class UpdateInputDataMain(CommandLineWithConfirm):
             request_body["input_data_path"] = new_input_data_path
 
         self.service.api.put_input_data(project_id, input_data_id, request_body=request_body)
-        logger.debug(f"input_data_id='{input_data_id}' の入力データを正常に更新しました。")
+        logger.debug(f"{log_prefix} :: 入力データを更新しました。 :: {changes}")
         return UpdateResult.SUCCESS
 
     def update_input_data_list_sequentially(
@@ -128,13 +132,12 @@ class UpdateInputDataMain(CommandLineWithConfirm):
                     updated_input_data.input_data_id,
                     new_input_data_name=updated_input_data.input_data_name,
                     new_input_data_path=updated_input_data.input_data_path,
+                    input_data_id=input_data_index
                 )
                 if result == UpdateResult.SUCCESS:
                     success_count += 1
-                    logger.debug(f"{current_num}件目 :: input_data_id='{updated_input_data.input_data_id}' の更新に成功しました。")
                 elif result == UpdateResult.SKIPPED:
                     skipped_count += 1
-                    logger.debug(f"{current_num}件目 :: input_data_id='{updated_input_data.input_data_id}' の更新をスキップしました。")
             except Exception:
                 logger.warning(f"{current_num}件目 :: input_data_id='{updated_input_data.input_data_id}'の入力データを更新するのに失敗しました。", exc_info=True)
                 failed_count += 1
