@@ -71,6 +71,7 @@
         "notna",
         "numpy",
         "ONHOLD",
+        "pathlib",
         "pformat",
         "pickel",
         "pylint",
