@@ -4,6 +4,7 @@ from typing import Optional
 import annofabcli.project.change_organization_of_project
 import annofabcli.project.change_project_status
 import annofabcli.project.copy_project
+import annofabcli.project.create_project
 import annofabcli.project.diff_projects
 import annofabcli.project.list_project
 import annofabcli.project.put_project
@@ -18,6 +19,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     annofabcli.project.change_organization_of_project.add_parser(subparsers)
     annofabcli.project.change_project_status.add_parser(subparsers)
     annofabcli.project.copy_project.add_parser(subparsers)
+    annofabcli.project.create_project.add_parser(subparsers)
     annofabcli.project.diff_projects.add_parser(subparsers)
     annofabcli.project.list_project.add_parser(subparsers)
     annofabcli.project.put_project.add_parser(subparsers)
