@@ -22,6 +22,7 @@ Available Commands
    diff
    list
    put
+   update
    update_configuration
 
 Usage Details
