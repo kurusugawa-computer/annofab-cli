@@ -12,7 +12,7 @@ logger = getLogger(__name__)
 
 
 def main(args: argparse.Namespace) -> None:
-    print("[DEPRECATED] :: `project put` コマンドは非推奨です。代わりに `project create` コマンドを使用してください。`project put` コマンドは2026年01月01日以降に廃止予定です。", file=sys.stderr) # noqa: T201
+    print("[DEPRECATED] :: `project put` コマンドは非推奨です。代わりに `project create` コマンドを使用してください。`project put` コマンドは2026年01月01日以降に廃止予定です。", file=sys.stderr)  # noqa: T201
     # create_project.py の実装を使用
     create_project.main(args)
 
