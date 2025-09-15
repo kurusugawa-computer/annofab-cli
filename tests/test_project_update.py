@@ -10,28 +10,28 @@ test_dir = Path("./tests/data/project")
 
 
 class TestUpdatedProject:
-    def test_from_dict(self):
-        """UpdatedProjectのfrom_dictメソッドのテスト"""
+    def test_model_validate(self):
+        """UpdatedProjectのmodel_validateメソッドのテスト"""
         project_dict = {"project_id": "prj1", "title": "new_title", "overview": "new_overview"}
-        updated_project = UpdatedProject.from_dict(project_dict)
+        updated_project = UpdatedProject.model_validate(project_dict)
 
         assert updated_project.project_id == "prj1"
         assert updated_project.title == "new_title"
         assert updated_project.overview == "new_overview"
 
-    def test_from_dict_with_optional_fields(self):
+    def test_model_validate_with_optional_fields(self):
         """オプショナルフィールドがnullの場合のテスト"""
         project_dict = {"project_id": "prj1", "title": None, "overview": ""}
-        updated_project = UpdatedProject.from_dict(project_dict)
+        updated_project = UpdatedProject.model_validate(project_dict)
 
         assert updated_project.project_id == "prj1"
         assert updated_project.title is None
         assert updated_project.overview == ""
 
-    def test_from_dict_minimal(self):
+    def test_model_validate_minimal(self):
         """最小限のフィールドのみのテスト"""
         project_dict = {"project_id": "prj1"}
-        updated_project = UpdatedProject.from_dict(project_dict)
+        updated_project = UpdatedProject.model_validate(project_dict)
 
         assert updated_project.project_id == "prj1"
         assert updated_project.title is None

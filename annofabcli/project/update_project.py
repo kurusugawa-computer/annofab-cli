@@ -5,7 +5,6 @@ import enum
 import logging
 import multiprocessing
 import sys
-from dataclasses import dataclass
 from enum import Enum
 from functools import partial
 from pathlib import Path
@@ -13,7 +12,7 @@ from typing import Optional
 
 import annofabapi
 import pandas
-from dataclasses_json import DataClassJsonMixin
+from pydantic import BaseModel
 
 import annofabcli
 import annofabcli.common.cli
@@ -41,8 +40,7 @@ class UpdateResult(Enum):
     """更新を試みたが例外で失敗"""
 
 
-@dataclass
-class UpdatedProject(DataClassJsonMixin):
+class UpdatedProject(BaseModel):
     """
     更新されるプロジェクト
     """
@@ -86,7 +84,7 @@ class UpdateProjectMain(CommandLineWithConfirm):
         if new_title is not None:
             changes.append(f"title='{old_project['title']}'を'{new_title}'に変更")
         if new_overview is not None:
-            changes.append(f"overview='{old_project.get('overview', '')}'を'{new_overview}'に変更")
+            changes.append(f"overview='{old_project['overview']}'を'{new_overview}'に変更")
 
         if len(changes) == 0:
             logger.warning(f"{log_prefix}更新する内容が指定されていません。")
@@ -98,6 +96,7 @@ class UpdateProjectMain(CommandLineWithConfirm):
 
         request_body = old_project
         request_body["last_updated_datetime"] = old_project["updated_datetime"]
+        request_body["status"] = old_project["project_status"]
 
         if new_title is not None:
             request_body["title"] = new_title
@@ -177,7 +176,7 @@ class UpdateProjectMain(CommandLineWithConfirm):
 
 
 def create_updated_project_list_from_dict(project_dict_list: list[dict[str, str]]) -> list[UpdatedProject]:
-    return [UpdatedProject.from_dict(e) for e in project_dict_list]
+    return [UpdatedProject.model_validate(e) for e in project_dict_list]
 
 
 def create_updated_project_list_from_csv(csv_file: Path) -> list[UpdatedProject]:
@@ -200,7 +199,7 @@ def create_updated_project_list_from_csv(csv_file: Path) -> list[UpdatedProject]
     )
 
     project_dict_list = df_project.to_dict("records")
-    return [UpdatedProject.from_dict(e) for e in project_dict_list]
+    return [UpdatedProject.model_validate(e) for e in project_dict_list]
 
 
 CLI_COMMON_MESSAGE = "annofabcli project update: error:"
@@ -211,7 +210,7 @@ class UpdateProject(CommandLine):
     def validate(args: argparse.Namespace) -> bool:
         if args.parallelism is not None and not args.yes:
             print(  # noqa: T201
-                f"{CLI_COMMON_MESSAGE} argument --parallelism: '--parallelism'を指定するときは、必ず ``--yes`` を指定してください。",
+                f"{CLI_COMMON_MESSAGE} argument --parallelism: '--parallelism'を指定するときは、'--yes' も指定する必要があります。",
                 file=sys.stderr,
             )
             return False
