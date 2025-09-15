@@ -12,7 +12,6 @@ Examples
 
 
 
-
 CSVファイルを指定する場合
 --------------------------------------
 ``--csv`` に、更新対象のプロジェクト情報が記載されたCSVファイルのパスを指定してください。
@@ -82,45 +81,6 @@ JSONのキーは、 ``--csv`` に指定するCSVファイルの列に対応し�
 
     $ annofabcli project update --json file://project.json
 
-
-
-複数のプロジェクトにプレフィックスを付与する場合
---------------------------------------------------
-複数のプロジェクトのタイトルに一律でプレフィックスを付与したい場合などに便利です。
-
-.. code-block::
-    :caption: プレフィックス付与用のproject.json
-
-    [
-        {
-            "project_id": "prj1",
-            "title": "[2024年度] 既存プロジェクト1"
-        },
-        {
-            "project_id": "prj2", 
-            "title": "[2024年度] 既存プロジェクト2"
-        }
-    ]
-
-.. code-block::
-
-    $ annofabcli project update --json file://project.json --yes
-
-
-
-並列処理を使用する場合
---------------------------------------
-``--parallelism`` オプションを使用すると、複数のプロジェクトを並列で更新できます。
-大量のプロジェクトを更新する際に処理時間を短縮できます。
-
-.. code-block::
-
-    $ annofabcli project update --csv project.csv --parallelism 2 --yes
-
-
-.. note::
-
-    ``--parallelism`` を指定する場合は、必ず ``--yes`` も指定する必要があります。
 
 
 
