@@ -1,5 +1,5 @@
 from __future__ import annotations
-
+import copy
 import argparse
 import enum
 import logging
@@ -94,7 +94,7 @@ class UpdateProjectMain(CommandLineWithConfirm):
         if not self.confirm_processing(f"{log_prefix}{change_message}しますか？"):
             return UpdateResult.SKIPPED
 
-        request_body = old_project
+        request_body = copy.deepcopy(old_project)
         request_body["last_updated_datetime"] = old_project["updated_datetime"]
         request_body["status"] = old_project["project_status"]
 
