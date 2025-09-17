@@ -4,6 +4,7 @@ import argparse
 import json
 import logging
 from enum import Enum
+from pathlib import Path
 from typing import Optional
 
 import pandas
@@ -198,6 +199,12 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--latest",
         action="store_true",
         help="最新のタスク一覧ファイルを参照します。このオプションを指定すると、タスク一覧ファイルを更新するのに数分待ちます。",
+    )
+
+    parser.add_argument(
+        "--temp_dir",
+        type=Path,
+        help="指定したディレクトリに、一時ファイルをダウンロードします。",
     )
 
     argument_parser.add_output()

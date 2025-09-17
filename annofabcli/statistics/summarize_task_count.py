@@ -206,6 +206,12 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         help="[EXPERIMENTAL] ``getTasks`` APIを実行して、タスク情報を参照します。タスク数が少ないプロジェクトで、最新のタスク情報を参照したいときに利用できます。",
     )
 
+    parser.add_argument(
+        "--temp_dir",
+        type=Path,
+        help="指定したディレクトリに、一時ファイルをダウンロードします。",
+    )
+
     argument_parser.add_output()
 
     parser.set_defaults(subcommand_func=main)
