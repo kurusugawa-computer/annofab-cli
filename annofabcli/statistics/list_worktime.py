@@ -155,12 +155,6 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "JSONファイルは ``$ annofabcli task_history_event download`` コマンドで取得できます。",
     )
 
-    parser.add_argument(
-        "--temp_dir",
-        type=Path,
-        help="指定したディレクトリに、一時ファイルをダウンロードします。",
-    )
-
     argument_parser.add_output()
 
     parser.set_defaults(subcommand_func=main)
