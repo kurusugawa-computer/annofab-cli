@@ -162,20 +162,38 @@ class SummarizeTaskCount(CommandLine):
             timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")  # noqa: DTZ005
             if temp_dir is not None:
                 task_json_path = temp_dir / f"task-{project_id}-{timestamp}.json"
+
+                downloading_obj = DownloadingFile(self.service)
+                downloading_obj.download_task_json(
+                    project_id,
+                    dest_path=str(task_json_path),
+                    is_latest=is_latest,
+                )
+
+                with task_json_path.open(encoding="utf-8") as f:
+                    task_list = json.load(f)
+                    return task_list
             else:
-                cache_dir = annofabcli.common.utils.get_cache_dir()
-                task_json_path = cache_dir / f"task-{project_id}-{timestamp}.json"
+                # 一時ディレクトリを作成してその中でダウンロードと読み取りを完結
+                with tempfile.TemporaryDirectory() as str_temp_dir:
+                    temp_dir_path = Path(str_temp_dir)
+                    task_json_path = temp_dir_path / f"task-{project_id}-{timestamp}.json"
 
-            downloading_obj = DownloadingFile(self.service)
-            downloading_obj.download_task_json(
-                project_id,
-                dest_path=str(task_json_path),
-                is_latest=is_latest,
-            )
+                    downloading_obj = DownloadingFile(self.service)
+                    downloading_obj.download_task_json(
+                        project_id,
+                        dest_path=str(task_json_path),
+                        is_latest=is_latest,
+                    )
 
-        with task_json_path.open(encoding="utf-8") as f:
-            task_list = json.load(f)
-            return task_list
+                    with task_json_path.open(encoding="utf-8") as f:
+                        task_list = json.load(f)
+                        return task_list
+        else:
+            # task_json_pathが指定されている場合
+            with task_json_path.open(encoding="utf-8") as f:
+                task_list = json.load(f)
+                return task_list
 
     def main(self) -> None:
         args = self.args
