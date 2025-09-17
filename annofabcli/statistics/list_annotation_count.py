@@ -505,7 +505,7 @@ class AttributeCountCsv:
         # `task_id`列など`basic_columns`も`fillna`対象だが、nanではないはずので問題ない
         df.fillna(0, inplace=True)
 
-        print_csv(df, output=str(output_file))
+        print_csv(df, output=output_file)
 
     def print_csv_by_input_data(
         self,
@@ -553,7 +553,7 @@ class AttributeCountCsv:
         value_columns = self._value_columns(counter_list, prior_attribute_columns)
         df = df.fillna(dict.fromkeys(value_columns, 0))
 
-        print_csv(df, output=str(output_file))
+        print_csv(df, output=output_file)
 
 
 class LabelCountCsv:
@@ -612,7 +612,7 @@ class LabelCountCsv:
         # NaNを0に変換する
         # `basic_columns`は必ずnanではないので、すべての列に対してfillnaを実行しても問題ないはず
         df.fillna(0, inplace=True)
-        print_csv(df, output=str(output_file))
+        print_csv(df, output=output_file)
 
     def print_csv_by_input_data(
         self,
@@ -659,7 +659,7 @@ class LabelCountCsv:
         value_columns = self._value_columns(counter_list, prior_label_columns)
         df = df.fillna(dict.fromkeys(value_columns, 0))
 
-        print_csv(df, output=str(output_file))
+        print_csv(df, output=output_file)
 
 
 class AnnotationSpecs:
