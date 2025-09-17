@@ -1,4 +1,5 @@
 import asyncio
+import datetime
 import logging.config
 from functools import partial
 from pathlib import Path
@@ -308,3 +309,97 @@ class DownloadingFile:
             if e.response.status_code == requests.codes.not_found:
                 raise DownloadingFileNotFoundError(f"project_id='{project_id}'のプロジェクトに、コメント全件ファイルが存在しないため、ダウンロードできませんでした。") from e
             raise e  # noqa: TRY201
+
+    # 統一された命名規則でファイルをダウンロードする関数群
+    def download_annotation_zip_to_dir(
+        self,
+        project_id: str,
+        output_dir: Path,
+        *,
+        is_latest: bool = False,
+        wait_options: Optional[WaitOptions] = None,
+    ) -> Path:
+        """
+        アノテーションZIPをoutput_dirに統一された命名規則でダウンロードする。
+
+        Args:
+            project_id: プロジェクトID
+            output_dir: 出力ディレクトリ
+            is_latest: 最新版をダウンロードするかどうか
+            wait_options: 待機オプション
+
+        Returns:
+            ダウンロードされたファイルのパス
+        """
+        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")  # noqa: DTZ005
+        dest_path = output_dir / f"{project_id}__annotation-{timestamp}.zip"
+
+        self.download_annotation_zip(
+            project_id,
+            dest_path=str(dest_path),
+            is_latest=is_latest,
+            wait_options=wait_options,
+        )
+        return dest_path
+
+    def download_task_json_to_dir(
+        self,
+        project_id: str,
+        output_dir: Path,
+        *,
+        is_latest: bool = False,
+        wait_options: Optional[WaitOptions] = None,
+    ) -> Path:
+        """
+        タスクJSONをoutput_dirに統一された命名規則でダウンロードする。
+
+        Args:
+            project_id: プロジェクトID
+            output_dir: 出力ディレクトリ
+            is_latest: 最新版をダウンロードするかどうか
+            wait_options: 待機オプション
+
+        Returns:
+            ダウンロードされたファイルのパス
+        """
+        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")  # noqa: DTZ005
+        dest_path = output_dir / f"{project_id}__task-{timestamp}.json"
+
+        self.download_task_json(
+            project_id,
+            dest_path=str(dest_path),
+            is_latest=is_latest,
+            wait_options=wait_options,
+        )
+        return dest_path
+
+    def download_input_data_json_to_dir(
+        self,
+        project_id: str,
+        output_dir: Path,
+        *,
+        is_latest: bool = False,
+        wait_options: Optional[WaitOptions] = None,
+    ) -> Path:
+        """
+        入力データJSONをoutput_dirに統一された命名規則でダウンロードする。
+
+        Args:
+            project_id: プロジェクトID
+            output_dir: 出力ディレクトリ
+            is_latest: 最新版をダウンロードするかどうか
+            wait_options: 待機オプション
+
+        Returns:
+            ダウンロードされたファイルのパス
+        """
+        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")  # noqa: DTZ005
+        dest_path = output_dir / f"{project_id}__input_data-{timestamp}.json"
+
+        self.download_input_data_json(
+            project_id,
+            dest_path=str(dest_path),
+            is_latest=is_latest,
+            wait_options=wait_options,
+        )
+        return dest_path

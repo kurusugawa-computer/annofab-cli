@@ -5,7 +5,6 @@ import abc
 import argparse
 import collections
 import copy
-import datetime
 import json
 import logging
 import sys
@@ -1103,11 +1102,10 @@ class ListAnnotationCount(CommandLine):
         def download_and_process_annotation(temp_dir: Path, *, is_latest: bool, annotation_path: Optional[Path]) -> None:
             # タスク全件ファイルは、フレーム番号を参照するのに利用する
             if project_id is not None:
-                timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")  # noqa: DTZ005
-                task_json_path = temp_dir / f"{project_id}__task-{timestamp}.json"
-                downloading_obj.download_task_json(
+                task_json_path = downloading_obj.download_task_json_to_dir(
                     project_id,
-                    dest_path=str(task_json_path),
+                    temp_dir,
+                    is_latest=is_latest,
                 )
             else:
                 task_json_path = None
@@ -1126,11 +1124,9 @@ class ListAnnotationCount(CommandLine):
 
             if annotation_path is None:
                 assert project_id is not None
-                timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")  # noqa: DTZ005
-                annotation_path = temp_dir / f"{project_id}__annotation-{timestamp}.zip"
-                downloading_obj.download_annotation_zip(
+                annotation_path = downloading_obj.download_annotation_zip_to_dir(
                     project_id,
-                    dest_path=str(annotation_path),
+                    temp_dir,
                     is_latest=is_latest,
                 )
                 func(annotation_path=annotation_path)

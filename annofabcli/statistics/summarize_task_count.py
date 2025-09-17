@@ -1,5 +1,4 @@
 import argparse
-import datetime
 import json
 import logging
 import sys
@@ -159,14 +158,11 @@ class SummarizeTaskCount(CommandLine):
 
     def get_task_list_with_downloading_file(self, project_id: str, task_json_path: Optional[Path], is_latest: bool, temp_dir: Optional[Path] = None) -> list[Task]:  # noqa: FBT001
         if task_json_path is None:
-            timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")  # noqa: DTZ005
             if temp_dir is not None:
-                task_json_path = temp_dir / f"task-{project_id}-{timestamp}.json"
-
                 downloading_obj = DownloadingFile(self.service)
-                downloading_obj.download_task_json(
+                task_json_path = downloading_obj.download_task_json_to_dir(
                     project_id,
-                    dest_path=str(task_json_path),
+                    temp_dir,
                     is_latest=is_latest,
                 )
 
@@ -177,12 +173,10 @@ class SummarizeTaskCount(CommandLine):
                 # 一時ディレクトリを作成してその中でダウンロードと読み取りを完結
                 with tempfile.TemporaryDirectory() as str_temp_dir:
                     temp_dir_path = Path(str_temp_dir)
-                    task_json_path = temp_dir_path / f"task-{project_id}-{timestamp}.json"
-
                     downloading_obj = DownloadingFile(self.service)
-                    downloading_obj.download_task_json(
+                    task_json_path = downloading_obj.download_task_json_to_dir(
                         project_id,
-                        dest_path=str(task_json_path),
+                        temp_dir_path,
                         is_latest=is_latest,
                     )
 
