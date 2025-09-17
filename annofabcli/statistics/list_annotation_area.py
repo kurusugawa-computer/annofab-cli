@@ -231,7 +231,7 @@ class ListAnnotationArea(CommandLine):
 
         def download_and_print_annotation_area(project_id: str, temp_dir: Path, *, is_latest: bool, annotation_path: Optional[Path]) -> None:
             if annotation_path is None:
-                timestamp = datetime.datetime.now(tz=datetime.timezone.utc).strftime("%Y%m%d_%H%M%S")
+                timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")  # noqa: DTZ005
                 annotation_path = temp_dir / f"{project_id}__annotation-{timestamp}.zip"
                 downloading_obj.download_annotation_zip(
                     project_id,

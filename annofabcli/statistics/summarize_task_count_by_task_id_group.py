@@ -160,7 +160,7 @@ class SummarizeTaskCountByTaskId(CommandLine):
             if args.task_json is not None:
                 task_json_path = args.task_json
             else:
-                timestamp = datetime.datetime.now(tz=datetime.timezone.utc).strftime("%Y%m%d_%H%M%S")
+                timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")  # noqa: DTZ005
                 task_json_path = temp_dir / f"{project_id}-task-{timestamp}.json"
 
                 downloading_obj = DownloadingFile(self.service)

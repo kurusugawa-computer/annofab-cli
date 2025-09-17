@@ -159,7 +159,7 @@ class SummarizeTaskCount(CommandLine):
 
     def get_task_list_with_downloading_file(self, project_id: str, task_json_path: Optional[Path], is_latest: bool, temp_dir: Optional[Path] = None) -> list[Task]:  # noqa: FBT001
         if task_json_path is None:
-            timestamp = datetime.datetime.now(tz=datetime.timezone.utc).strftime("%Y%m%d_%H%M%S")
+            timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")  # noqa: DTZ005
             if temp_dir is not None:
                 task_json_path = temp_dir / f"task-{project_id}-{timestamp}.json"
             else:
