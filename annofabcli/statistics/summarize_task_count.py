@@ -1,4 +1,5 @@
 import argparse
+import datetime
 import json
 import logging
 import sys
@@ -158,11 +159,12 @@ class SummarizeTaskCount(CommandLine):
 
     def get_task_list_with_downloading_file(self, project_id: str, task_json_path: Optional[Path], is_latest: bool, temp_dir: Optional[Path] = None) -> list[Task]:  # noqa: FBT001
         if task_json_path is None:
+            timestamp = datetime.datetime.now(tz=datetime.timezone.utc).strftime("%Y%m%d_%H%M%S")
             if temp_dir is not None:
-                task_json_path = temp_dir / f"task-{project_id}.json"
+                task_json_path = temp_dir / f"task-{project_id}-{timestamp}.json"
             else:
                 cache_dir = annofabcli.common.utils.get_cache_dir()
-                task_json_path = cache_dir / f"task-{project_id}.json"
+                task_json_path = cache_dir / f"task-{project_id}-{timestamp}.json"
 
             downloading_obj = DownloadingFile(self.service)
             downloading_obj.download_task_json(

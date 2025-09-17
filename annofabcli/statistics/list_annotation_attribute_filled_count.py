@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import collections
+import datetime
 import json
 import logging
 import sys
@@ -576,7 +577,8 @@ class ListAnnotationAttributeFilledCount(CommandLine):
             if project_id is not None and group_by == GroupBy.INPUT_DATA_ID:
                 # group_byで条件を絞り込んでいる理由：
                 # タスクIDで集計する際は、フレーム番号は出力しないので、タスク全件ファイルをダウンロードする必要はないため
-                task_json_path = temp_dir / f"{project_id}__task.json"
+                timestamp = datetime.datetime.now(tz=datetime.timezone.utc).strftime("%Y%m%d_%H%M%S")
+                task_json_path = temp_dir / f"{project_id}__task-{timestamp}.json"
                 downloading_obj.download_task_json(
                     project_id,
                     dest_path=str(task_json_path),
@@ -598,7 +600,8 @@ class ListAnnotationAttributeFilledCount(CommandLine):
 
             if annotation_path is None:
                 assert project_id is not None
-                annotation_path = temp_dir / f"{project_id}__annotation.zip"
+                timestamp = datetime.datetime.now(tz=datetime.timezone.utc).strftime("%Y%m%d_%H%M%S")
+                annotation_path = temp_dir / f"{project_id}__annotation-{timestamp}.zip"
                 downloading_obj.download_annotation_zip(
                     project_id,
                     dest_path=str(annotation_path),

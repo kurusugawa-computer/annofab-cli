@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import datetime
 import logging
 import sys
 import tempfile
@@ -230,7 +231,8 @@ class ListAnnotationArea(CommandLine):
 
         def download_and_print_annotation_area(project_id: str, temp_dir: Path, *, is_latest: bool, annotation_path: Optional[Path]) -> None:
             if annotation_path is None:
-                annotation_path = temp_dir / f"{project_id}__annotation.zip"
+                timestamp = datetime.datetime.now(tz=datetime.timezone.utc).strftime("%Y%m%d_%H%M%S")
+                annotation_path = temp_dir / f"{project_id}__annotation-{timestamp}.zip"
                 downloading_obj.download_annotation_zip(
                     project_id,
                     dest_path=annotation_path,

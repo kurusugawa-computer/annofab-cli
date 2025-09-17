@@ -1,4 +1,5 @@
 import argparse
+import datetime
 import json
 import logging
 import tempfile
@@ -127,7 +128,8 @@ class SummarizeTaskCountByUser(CommandLine):
             if args.task_json is not None:
                 task_json_path = args.task_json
             else:
-                task_json_path = temp_dir / f"{project_id}-task.json"
+                timestamp = datetime.datetime.now(tz=datetime.timezone.utc).strftime("%Y%m%d_%H%M%S")
+                task_json_path = temp_dir / f"{project_id}-task-{timestamp}.json"
 
                 downloading_obj = DownloadingFile(self.service)
                 downloading_obj.download_task_json(project_id, dest_path=str(task_json_path), is_latest=args.latest, wait_options=DEFAULT_WAIT_OPTIONS)
