@@ -78,6 +78,8 @@ class WriteCsvGraph:
         custom_production_volume: Optional[CustomProductionVolume] = None,
         minimal_output: bool = False,
         output_only_text: bool = False,
+        production_volume_include_labels: Optional[list[str]] = None,
+        production_volume_exclude_labels: Optional[list[str]] = None,
     ) -> None:
         self.service = service
         self.project_id = project_id
@@ -91,6 +93,8 @@ class WriteCsvGraph:
         self.annotation_count = annotation_count
         self.input_data_count = input_data_count
         self.custom_production_volume = custom_production_volume
+        self.production_volume_include_labels = production_volume_include_labels
+        self.production_volume_exclude_labels = production_volume_exclude_labels
 
         self.task: Optional[Task] = None
         self.worktime_per_date: Optional[WorktimePerDate] = None
@@ -114,7 +118,12 @@ class WriteCsvGraph:
         if self.task is None:
             if self.annotation_count is None:
                 # アノテーションZIPからアノテーション数を取得
-                annotation_count = AnnotationCount.from_annotation_zip(self.visualize_source_files.annotation_zip_path, project_id=self.project_id)
+                annotation_count = AnnotationCount.from_annotation_zip(
+                    self.visualize_source_files.annotation_zip_path,
+                    project_id=self.project_id,
+                    include_labels=self.production_volume_include_labels,
+                    exclude_labels=self.production_volume_exclude_labels,
+                )
             else:
                 annotation_count = self.annotation_count
 
@@ -276,6 +285,8 @@ class VisualizingStatisticsMain:
         custom_production_volume: Optional[CustomProductionVolume] = None,
         user_ids: Optional[list[str]] = None,
         not_download_visualization_source_files: bool = False,
+        production_volume_include_labels: Optional[list[str]] = None,
+        production_volume_exclude_labels: Optional[list[str]] = None,
     ) -> None:
         self.service = service
         self.facade = AnnofabApiFacade(service)
@@ -292,6 +303,8 @@ class VisualizingStatisticsMain:
         self.custom_production_volume = custom_production_volume
         self.user_ids = user_ids
         self.not_download_visualization_source_files = not_download_visualization_source_files
+        self.production_volume_include_labels = production_volume_include_labels
+        self.production_volume_exclude_labels = production_volume_exclude_labels
 
     def get_project_info(self, project_id: str) -> ProjectInfo:
         project_info = self.service.api.get_project(project_id)[0]
@@ -373,6 +386,8 @@ class VisualizingStatisticsMain:
             custom_production_volume=self.custom_production_volume,
             minimal_output=self.minimal_output,
             output_only_text=self.output_only_text,
+            production_volume_include_labels=self.production_volume_include_labels,
+            production_volume_exclude_labels=self.production_volume_exclude_labels,
         )
 
         write_obj._catch_exception(write_obj.write_user_performance)()  # noqa: SLF001
@@ -483,6 +498,8 @@ class VisualizeStatistics(CommandLine):
         project_id_list: list[str],
         root_output_dir: Path,
         parallelism: Optional[int],
+        production_volume_include_labels: Optional[list[str]] = None,
+        production_volume_exclude_labels: Optional[list[str]] = None,
     ) -> None:
         main_obj = VisualizingStatisticsMain(
             service=self.service,
@@ -499,6 +516,8 @@ class VisualizeStatistics(CommandLine):
             minimal_output=minimal_output,
             output_only_text=output_only_text,
             not_download_visualization_source_files=not_download_visualization_source_files,
+            production_volume_include_labels=production_volume_include_labels,
+            production_volume_exclude_labels=production_volume_exclude_labels,
         )
 
         if len(project_id_list) == 1:
@@ -598,6 +617,8 @@ class VisualizeStatistics(CommandLine):
                     parallelism=args.parallelism,
                     # `tempfile.TemporaryDirectory`で作成したディレクトリを利用する場合は、必ずダウンロードが必要なの`False`を指定する
                     not_download_visualization_source_files=False,
+                    production_volume_include_labels=get_list_from_args(args.production_volume_include_label) if args.production_volume_include_label is not None else None,
+                    production_volume_exclude_labels=get_list_from_args(args.production_volume_exclude_label) if args.production_volume_exclude_label is not None else None,
                 )
         else:
             self.visualize_statistics(
@@ -617,6 +638,8 @@ class VisualizeStatistics(CommandLine):
                 root_output_dir=root_output_dir,
                 parallelism=args.parallelism,
                 not_download_visualization_source_files=args.not_download,
+                production_volume_include_labels=get_list_from_args(args.production_volume_include_label) if args.production_volume_include_label is not None else None,
+                production_volume_exclude_labels=get_list_from_args(args.production_volume_exclude_label) if args.production_volume_exclude_label is not None else None,
             )
 
 
@@ -767,6 +790,19 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         type=int,
         choices=PARALLELISM_CHOICES,
         help="並列度。 ``--project_id`` に複数のproject_idを指定したときのみ有効なオプションです。指定しない場合は、逐次的に処理します。",
+    )
+
+    production_volume_label_group = parser.add_mutually_exclusive_group()
+    production_volume_label_group.add_argument(
+        "--production_volume_include_label",
+        nargs="+",
+        help="生産量（'annotation_count'など）の集計対象に含めるラベル名（英語）を指定します。複数指定可能です。",
+    )
+
+    production_volume_label_group.add_argument(
+        "--production_volume_exclude_label",
+        nargs="+",
+        help="生産量（'annotation_count'など）の集計対象から除外するラベル名（英語）を指定します。複数指定可能です。",
     )
 
     parser.set_defaults(subcommand_func=main)

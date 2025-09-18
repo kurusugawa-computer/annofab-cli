@@ -42,7 +42,15 @@ class AnnotationCount:
         self.df = df
 
     @classmethod
-    def from_annotation_zip(cls, annotation_zip: Path, project_id: str, *, get_annotation_count_func: Optional[Callable[[dict[str, Any]], int]] = None) -> AnnotationCount:
+    def from_annotation_zip(
+        cls,
+        annotation_zip: Path,
+        project_id: str,
+        *,
+        get_annotation_count_func: Optional[Callable[[dict[str, Any]], int]] = None,
+        include_labels: Optional[list[str]] = None,
+        exclude_labels: Optional[list[str]] = None,
+    ) -> AnnotationCount:
         """
         アノテーションZIPファイルからインスタンスを生成します。
 
@@ -51,15 +59,35 @@ class AnnotationCount:
             project_id: プロジェクトID。DataFrameに格納するために使用します。
             get_annotation_count_func: アノテーション数を算出するための関数。
                 引数はdict, 戻り値はintの関数です。未指定の場合は、detailsの数をアノテーション数になります。
+            include_labels: 集計対象に含めるラベル名のリスト
+            exclude_labels: 集計対象から除外するラベル名のリスト
 
         """
-
         logger.debug(f"アノテーションZIPファイルを読み込みます。 :: project_id='{project_id}', file='{annotation_zip!s}'")
 
         def get_annotation_count_default(simple_annotation: dict[str, Any]) -> int:
             return len(simple_annotation["details"])
 
-        if get_annotation_count_func is not None:
+        def get_annotation_count_with_filter(simple_annotation: dict[str, Any]) -> int:
+            details = simple_annotation["details"]
+
+            if include_labels is not None:
+                details = [d for d in details if d["label"] in include_labels]
+            elif exclude_labels is not None:
+                details = [d for d in details if d["label"] not in exclude_labels]
+
+            if get_annotation_count_func is not None:
+                # カスタム関数にフィルタ済みのdetailsを渡すため、一時的にsimple_annotationを変更
+                filtered_annotation = simple_annotation.copy()
+                filtered_annotation["details"] = details
+                return get_annotation_count_func(filtered_annotation)
+            else:
+                return len(details)
+
+        get_annotation_count: Callable[[dict[str, Any]], int]
+        if include_labels is not None or exclude_labels is not None:
+            get_annotation_count = get_annotation_count_with_filter
+        elif get_annotation_count_func is not None:
             get_annotation_count = get_annotation_count_func
         else:
             get_annotation_count = get_annotation_count_default
