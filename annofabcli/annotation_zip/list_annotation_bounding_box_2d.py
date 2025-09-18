@@ -195,7 +195,7 @@ def print_annotation_bounding_box(
 
 
 class ListAnnotationBoundingBox2d(CommandLine):
-    COMMON_MESSAGE = "annofabcli annotation_zip list_annotation_bounding_box_2d: error:"
+    COMMON_MESSAGE = "annofabcli annotation_zip list_bounding_box_annotation: error:"
 
     def validate(self, args: argparse.Namespace) -> bool:
         if args.project_id is None and args.annotation is None:
@@ -316,7 +316,7 @@ def main(args: argparse.Namespace) -> None:
 
 
 def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
-    subcommand_name = "list_annotation_bounding_box_2d"
+    subcommand_name = "list_bounding_box_annotation"
     subcommand_help = "アノテーションZIPからバウンディングボックス（矩形）アノテーションの座標情報を出力します。"
     epilog = "アノテーションZIPをダウンロードする場合は、オーナロールまたはアノテーションユーザロールを持つユーザで実行してください。"
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description=subcommand_help, epilog=epilog)
