@@ -16,6 +16,7 @@ Available Commands
    :titlesonly:
 
    list_annotation_bounding_box_2d
+   list_range_annotation
 
 
 Usage Details

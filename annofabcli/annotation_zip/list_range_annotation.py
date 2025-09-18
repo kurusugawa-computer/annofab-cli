@@ -134,29 +134,7 @@ def create_df(
         "end_second",
         "duration_second",
     ]
-    if len(range_annotation_list) > 0:
-        df = pandas.DataFrame(
-            [
-                {
-                    "project_id": e.project_id,
-                    "task_id": e.task_id,
-                    "task_status": e.task_status,
-                    "task_phase": e.task_phase,
-                    "task_phase_stage": e.task_phase_stage,
-                    "input_data_id": e.input_data_id,
-                    "input_data_name": e.input_data_name,
-                    "updated_datetime": e.updated_datetime,
-                    "label": e.label,
-                    "annotation_id": e.annotation_id,
-                    "begin_second": e.begin_second,
-                    "end_second": e.end_second,
-                    "duration_second": e.duration_second,
-                }
-                for e in range_annotation_list
-            ]
-        )
-    else:
-        df = pandas.DataFrame(columns=columns)
+    df = pandas.DataFrame([e.to_dict(encode_json=True) for e in range_annotation_list], columns=columns)
 
     return df[columns]
 
