@@ -470,13 +470,6 @@ class VisualizeStatistics(CommandLine):
                 )
                 return False
 
-        if args.production_volume_include_label is not None and args.production_volume_exclude_label is not None:
-            print(  # noqa: T201
-                f"{COMMON_MESSAGE} argument --production_volume_include_label と --production_volume_exclude_label は同時に指定できません。",
-                file=sys.stderr,
-            )
-            return False
-
         if args.not_download:  # noqa: SIM102
             if args.temp_dir is None:
                 print(  # noqa: T201
@@ -624,8 +617,8 @@ class VisualizeStatistics(CommandLine):
                     parallelism=args.parallelism,
                     # `tempfile.TemporaryDirectory`で作成したディレクトリを利用する場合は、必ずダウンロードが必要なの`False`を指定する
                     not_download_visualization_source_files=False,
-                    production_volume_include_labels=args.production_volume_include_label,
-                    production_volume_exclude_labels=args.production_volume_exclude_label,
+                    production_volume_include_labels=get_list_from_args(args.production_volume_include_label) if args.production_volume_include_label is not None else None,
+                    production_volume_exclude_labels=get_list_from_args(args.production_volume_exclude_label) if args.production_volume_exclude_label is not None else None,
                 )
         else:
             self.visualize_statistics(
@@ -799,16 +792,17 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         help="並列度。 ``--project_id`` に複数のproject_idを指定したときのみ有効なオプションです。指定しない場合は、逐次的に処理します。",
     )
 
-    parser.add_argument(
+    production_volume_label_group = parser.add_mutually_exclusive_group()
+    production_volume_label_group.add_argument(
         "--production_volume_include_label",
         nargs="+",
-        help="生産量の集計対象に含めるラベル名を指定してください。複数指定可能です。",
+        help="生産量（'annotation_count'など）の集計対象に含めるラベル名（英語）を指定します。複数指定可能です。",
     )
 
-    parser.add_argument(
+    production_volume_label_group.add_argument(
         "--production_volume_exclude_label",
         nargs="+",
-        help="生産量の集計対象から除外するラベル名を指定してください。複数指定可能です。",
+        help="生産量（'annotation_count'など）の集計対象から除外するラベル名（英語）を指定します。複数指定可能です。",
     )
 
     parser.set_defaults(subcommand_func=main)

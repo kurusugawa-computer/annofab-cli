@@ -73,9 +73,9 @@ class AnnotationCount:
             details = simple_annotation["details"]
 
             if include_labels is not None:
-                details = [d for d in details if d.get("label") in include_labels]
+                details = [d for d in details if d["label"] in include_labels]
             elif exclude_labels is not None:
-                details = [d for d in details if d.get("label") not in exclude_labels]
+                details = [d for d in details if d["label"] not in exclude_labels]
 
             if get_annotation_count_func is not None:
                 # カスタム関数にフィルタ済みのdetailsを渡すため、一時的にsimple_annotationを変更
