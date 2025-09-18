@@ -85,6 +85,7 @@ class AnnotationCount:
             else:
                 return len(details)
 
+        get_annotation_count: Callable[[dict[str, Any]], int]
         if include_labels is not None or exclude_labels is not None:
             get_annotation_count = get_annotation_count_with_filter
         elif get_annotation_count_func is not None:
