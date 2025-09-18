@@ -55,10 +55,16 @@ class RangeAnnotationInfo(DataClassJsonMixin):
     duration_second: float
 
 
-def get_range_annotation_info_list(simple_annotation: dict[str, Any]) -> list[RangeAnnotationInfo]:
+def get_range_annotation_info_list(simple_annotation: dict[str, Any], *, target_label_names: Optional[Collection[str]] = None) -> list[RangeAnnotationInfo]:
     result = []
+    target_label_names_set = set(target_label_names) if target_label_names is not None else None
     for detail in simple_annotation["details"]:
         if detail["data"]["_type"] == "Range":
+            label = detail["label"]
+            # ラベル名によるフィルタリング
+            if target_label_names_set is not None and label not in target_label_names_set:
+                continue
+
             begin_millisecond = detail["data"]["begin"]
             end_millisecond = detail["data"]["end"]
             begin_second = begin_millisecond / 1000
@@ -74,7 +80,7 @@ def get_range_annotation_info_list(simple_annotation: dict[str, Any]) -> list[Ra
                     task_status=simple_annotation["task_status"],
                     input_data_id=simple_annotation["input_data_id"],
                     input_data_name=simple_annotation["input_data_name"],
-                    label=detail["label"],
+                    label=label,
                     annotation_id=detail["annotation_id"],
                     begin_second=begin_second,
                     end_second=end_second,
@@ -91,6 +97,7 @@ def get_range_annotation_info_list_from_annotation_path(
     *,
     target_task_ids: Optional[Collection[str]] = None,
     task_query: Optional[TaskQuery] = None,
+    target_label_names: Optional[Collection[str]] = None,
 ) -> list[RangeAnnotationInfo]:
     range_annotation_list = []
     target_task_ids = set(target_task_ids) if target_task_ids is not None else None
@@ -104,7 +111,7 @@ def get_range_annotation_info_list_from_annotation_path(
         dict_simple_annotation = parser.load_json()
         if task_query is not None and not match_annotation_with_task_query(dict_simple_annotation, task_query):
             continue
-        sub_range_annotation_list = get_range_annotation_info_list(dict_simple_annotation)
+        sub_range_annotation_list = get_range_annotation_info_list(dict_simple_annotation, target_label_names=target_label_names)
         range_annotation_list.extend(sub_range_annotation_list)
     return range_annotation_list
 
@@ -161,11 +168,13 @@ def print_range_annotation(
     *,
     target_task_ids: Optional[Collection[str]] = None,
     task_query: Optional[TaskQuery] = None,
+    target_label_names: Optional[Collection[str]] = None,
 ) -> None:
     range_annotation_list = get_range_annotation_info_list_from_annotation_path(
         annotation_path,
         target_task_ids=target_task_ids,
         task_query=task_query,
+        target_label_names=target_label_names,
     )
 
     logger.info(f"{len(range_annotation_list)} 件の区間アノテーションの情報を出力します。 :: output='{output_file}'")
@@ -217,6 +226,7 @@ class ListRangeAnnotation(CommandLine):
 
         task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id) if args.task_id is not None else None
         task_query = TaskQuery.from_dict(annofabcli.common.cli.get_json_from_args(args.task_query)) if args.task_query is not None else None
+        label_name_list = args.label_name if args.label_name is not None and len(args.label_name) > 0 else None
 
         output_file: Path = args.output
         output_format = FormatArgument(args.format)
@@ -224,10 +234,9 @@ class ListRangeAnnotation(CommandLine):
         downloading_obj = DownloadingFile(self.service)
 
         def download_and_print_range_annotation(project_id: str, temp_dir: Path, *, is_latest: bool) -> None:
-            annotation_path = temp_dir / f"{project_id}__annotation.zip"
-            downloading_obj.download_annotation_zip(
+            annotation_path = downloading_obj.download_annotation_zip_to_dir(
                 project_id,
-                dest_path=annotation_path,
+                temp_dir,
                 is_latest=is_latest,
             )
             print_range_annotation(
@@ -236,6 +245,7 @@ class ListRangeAnnotation(CommandLine):
                 output_format,
                 target_task_ids=task_id_list,
                 task_query=task_query,
+                target_label_names=label_name_list,
             )
 
         if project_id is not None:
@@ -256,6 +266,7 @@ class ListRangeAnnotation(CommandLine):
                 output_format,
                 target_task_ids=task_id_list,
                 task_query=task_query,
+                target_label_names=label_name_list,
             )
 
 
@@ -286,6 +297,13 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         " ``file://`` を先頭に付けると、JSON形式のファイルを指定できます。",
     )
     argument_parser.add_task_id(required=False)
+
+    parser.add_argument(
+        "--label_name",
+        type=str,
+        nargs="*",
+        help="指定したラベル名の区間アノテーションのみを対象にします。複数指定できます。",
+    )
 
     parser.add_argument(
         "--latest",
