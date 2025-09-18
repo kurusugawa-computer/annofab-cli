@@ -6,6 +6,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
+
 from annofabcli.__main__ import main
 from annofabcli.annotation_zip.list_annotation_bounding_box_2d import get_annotation_bounding_box_info_list
 
@@ -91,6 +93,7 @@ class TestGetAnnotationBoundingBoxInfoList:
         assert "car" not in labels
 
 
+@pytest.mark.access_webapi
 class TestCommandLine:
     def test__list_range_annotation(self):
         main(

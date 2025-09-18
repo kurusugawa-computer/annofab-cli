@@ -4,6 +4,8 @@ Test cases for annofabcli.annotation_zip.list_range_annotation module
 
 from pathlib import Path
 
+import pytest
+
 from annofabcli.__main__ import main
 from annofabcli.annotation_zip.list_range_annotation import get_range_annotation_info_list
 
@@ -87,6 +89,7 @@ class TestGetRangeAnnotationInfoList:
         assert "person" not in labels
 
 
+@pytest.mark.access_webapi
 class TestCommandLine:
     def test__list_range_annotation(self):
         main(
