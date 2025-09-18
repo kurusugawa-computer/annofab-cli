@@ -68,7 +68,7 @@ class AnnotationDuration:
             simple_annotation = parser.load_json()
 
             total_duration = 0.0
-            for detail in simple_annotation.get("details", []):
+            for detail in simple_annotation["details"]:
                 # ラベルフィルタリングの処理
                 if include_labels is not None:
                     if detail["label"] not in include_labels:
@@ -77,16 +77,13 @@ class AnnotationDuration:
                     continue
 
                 # データ形式に応じてアノテーション時間を計算
-                data = detail.get("data")
-                if data is None:
-                    continue
+                data = detail["data"]
 
-                if data.get("_type") == "Range":
+                if data["_type"] == "Range":
                     # 区間アノテーションの場合
-                    begin = data.get("begin")
-                    end = data.get("end")
-                    if begin is not None and end is not None:
-                        total_duration += (end - begin) / 1000.0  # ミリ秒から秒に変換
+                    begin = data["begin"]
+                    end = data["end"]
+                    total_duration += (end - begin) / 1000.0  # ミリ秒から秒に変換
 
             result[(project_id, parser.task_id)] += total_duration
 
@@ -98,7 +95,7 @@ class AnnotationDuration:
         if len(result_list) == 0:
             return cls.empty()
 
-        df = pandas.DataFrame(result_list, columns=["project_id", "task_id", "annotation_duration_second"])
+        df = pandas.DataFrame(result_list, columns=cls.columns())
         return cls(df)
 
     def is_empty(self) -> bool:
