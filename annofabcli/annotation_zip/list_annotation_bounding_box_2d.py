@@ -16,12 +16,7 @@ from dataclasses_json import DataClassJsonMixin
 import annofabcli
 import annofabcli.common.cli
 from annofabcli.common.annofab.annotation_zip import lazy_parse_simple_annotation_by_input_data
-from annofabcli.common.cli import (
-    COMMAND_LINE_ERROR_STATUS_CODE,
-    ArgumentParser,
-    CommandLine,
-    build_annofabapi_resource_and_login,
-)
+from annofabcli.common.cli import COMMAND_LINE_ERROR_STATUS_CODE, ArgumentParser, CommandLine, build_annofabapi_resource_and_login, get_list_from_args
 from annofabcli.common.download import DownloadingFile
 from annofabcli.common.enums import FormatArgument
 from annofabcli.common.facade import (
@@ -56,10 +51,16 @@ class AnnotationBoundingBoxInfo(DataClassJsonMixin):
     height: int
 
 
-def get_annotation_bounding_box_info_list(simple_annotation: dict[str, Any]) -> list[AnnotationBoundingBoxInfo]:
+def get_annotation_bounding_box_info_list(simple_annotation: dict[str, Any], *, target_label_names: Optional[Collection[str]] = None) -> list[AnnotationBoundingBoxInfo]:
     result = []
+    target_label_names_set = set(target_label_names) if target_label_names is not None else None
     for detail in simple_annotation["details"]:
         if detail["data"]["_type"] == "BoundingBox":
+            label = detail["label"]
+            # ラベル名によるフィルタリング
+            if target_label_names_set is not None and label not in target_label_names_set:
+                continue
+
             left_top = detail["data"]["left_top"]
             right_bottom = detail["data"]["right_bottom"]
             width = abs(right_bottom["x"] - left_top["x"])
@@ -74,7 +75,7 @@ def get_annotation_bounding_box_info_list(simple_annotation: dict[str, Any]) -> 
                     task_status=simple_annotation["task_status"],
                     input_data_id=simple_annotation["input_data_id"],
                     input_data_name=simple_annotation["input_data_name"],
-                    label=detail["label"],
+                    label=label,
                     annotation_id=detail["annotation_id"],
                     left_top=left_top,
                     right_bottom=right_bottom,
@@ -92,6 +93,7 @@ def get_annotation_bounding_box_info_list_from_annotation_path(
     *,
     target_task_ids: Optional[Collection[str]] = None,
     task_query: Optional[TaskQuery] = None,
+    target_label_names: Optional[Collection[str]] = None,
 ) -> list[AnnotationBoundingBoxInfo]:
     annotation_bbox_list = []
     target_task_ids = set(target_task_ids) if target_task_ids is not None else None
@@ -105,7 +107,7 @@ def get_annotation_bounding_box_info_list_from_annotation_path(
         dict_simple_annotation = parser.load_json()
         if task_query is not None and not match_annotation_with_task_query(dict_simple_annotation, task_query):
             continue
-        sub_annotation_bbox_list = get_annotation_bounding_box_info_list(dict_simple_annotation)
+        sub_annotation_bbox_list = get_annotation_bounding_box_info_list(dict_simple_annotation, target_label_names=target_label_names)
         annotation_bbox_list.extend(sub_annotation_bbox_list)
     return annotation_bbox_list
 
@@ -152,7 +154,8 @@ def create_df(
                 "height": e.height,
             }
             for e in annotation_bbox_list
-        ], columns=columns
+        ],
+        columns=columns,
     )
 
     return df[columns]
@@ -165,11 +168,13 @@ def print_annotation_bounding_box(
     *,
     target_task_ids: Optional[Collection[str]] = None,
     task_query: Optional[TaskQuery] = None,
+    target_label_names: Optional[Collection[str]] = None,
 ) -> None:
     annotation_bbox_list = get_annotation_bounding_box_info_list_from_annotation_path(
         annotation_path,
         target_task_ids=target_task_ids,
         task_query=task_query,
+        target_label_names=target_label_names,
     )
 
     logger.info(f"{len(annotation_bbox_list)} 件のバウンディングボックスアノテーションの情報を出力します。 :: output='{output_file}'")
@@ -221,6 +226,7 @@ class ListAnnotationBoundingBox2d(CommandLine):
 
         task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id) if args.task_id is not None else None
         task_query = TaskQuery.from_dict(annofabcli.common.cli.get_json_from_args(args.task_query)) if args.task_query is not None else None
+        label_name_list = get_list_from_args(args.label_name) if args.label_name is not None else None
 
         output_file: Path = args.output
         output_format = FormatArgument(args.format)
@@ -240,6 +246,7 @@ class ListAnnotationBoundingBox2d(CommandLine):
                 output_format,
                 target_task_ids=task_id_list,
                 task_query=task_query,
+                target_label_names=label_name_list,
             )
 
         if project_id is not None:
@@ -260,6 +267,7 @@ class ListAnnotationBoundingBox2d(CommandLine):
                 output_format,
                 target_task_ids=task_id_list,
                 task_query=task_query,
+                target_label_names=label_name_list,
             )
 
 
@@ -290,6 +298,13 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         " ``file://`` を先頭に付けると、JSON形式のファイルを指定できます。",
     )
     argument_parser.add_task_id(required=False)
+
+    parser.add_argument(
+        "--label_name",
+        type=str,
+        nargs="*",
+        help="指定したラベル名のバウンディングボックスアノテーションのみを対象にします。複数指定できます。",
+    )
 
     parser.add_argument(
         "--latest",
