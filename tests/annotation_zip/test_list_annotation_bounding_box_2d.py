@@ -3,9 +3,10 @@ Test cases for annofabcli.annotation_zip.list_annotation_bounding_box_2d module
 """
 
 from __future__ import annotations
-from annofabcli.__main__ import main
 
 from pathlib import Path
+
+from annofabcli.__main__ import main
 from annofabcli.annotation_zip.list_annotation_bounding_box_2d import get_annotation_bounding_box_info_list
 
 out_dir = Path("tests/out/annotation_zip")
