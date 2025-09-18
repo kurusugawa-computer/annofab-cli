@@ -199,7 +199,6 @@ class SummarizeTaskCount(CommandLine):
         if args.temp_dir is not None:
             process_task_count(temp_dir=args.temp_dir)
         else:
-            # ファイルダウンロードが必要な場合のみ一時ディレクトリを作成
             with tempfile.TemporaryDirectory() as str_temp_dir:
                 process_task_count(temp_dir=Path(str_temp_dir))
 
