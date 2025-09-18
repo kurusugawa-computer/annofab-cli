@@ -3,7 +3,9 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import tempfile
 from enum import Enum
+from pathlib import Path
 from typing import Optional
 
 import pandas
@@ -153,20 +155,29 @@ class SummarizeTaskCountByTaskId(CommandLine):
         project_id = args.project_id
         super().validate_project(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER])
 
-        if args.task_json is not None:
-            task_json_path = args.task_json
+        def download_and_process_task_data(temp_dir: Path) -> None:
+            if args.task_json is not None:
+                task_json_path = args.task_json
+            else:
+                downloading_obj = DownloadingFile(self.service)
+                task_json_path = downloading_obj.download_task_json_to_dir(
+                    project_id,
+                    temp_dir,
+                    is_latest=args.latest,
+                    wait_options=DEFAULT_WAIT_OPTIONS,
+                )
+
+            with open(task_json_path, encoding="utf-8") as f:  # noqa: PTH123
+                task_list = json.load(f)
+
+            df = create_task_count_summary_df(task_list, task_id_delimiter=args.task_id_delimiter, task_id_groups=get_json_from_args(args.task_id_groups))
+            self.print_summarize_task_count(df)
+
+        if args.temp_dir is not None:
+            download_and_process_task_data(temp_dir=args.temp_dir)
         else:
-            cache_dir = annofabcli.common.utils.get_cache_dir()
-            task_json_path = cache_dir / f"{project_id}-task.json"
-
-            downloading_obj = DownloadingFile(self.service)
-            downloading_obj.download_task_json(project_id, dest_path=str(task_json_path), is_latest=args.latest, wait_options=DEFAULT_WAIT_OPTIONS)
-
-        with open(task_json_path, encoding="utf-8") as f:  # noqa: PTH123
-            task_list = json.load(f)
-
-        df = create_task_count_summary_df(task_list, task_id_delimiter=args.task_id_delimiter, task_id_groups=get_json_from_args(args.task_id_groups))
-        self.print_summarize_task_count(df)
+            with tempfile.TemporaryDirectory() as str_temp_dir:
+                download_and_process_task_data(temp_dir=Path(str_temp_dir))
 
 
 def parse_args(parser: argparse.ArgumentParser) -> None:
@@ -198,6 +209,12 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--latest",
         action="store_true",
         help="最新のタスク一覧ファイルを参照します。このオプションを指定すると、タスク一覧ファイルを更新するのに数分待ちます。",
+    )
+
+    parser.add_argument(
+        "--temp_dir",
+        type=Path,
+        help="指定したディレクトリに、一時ファイルをダウンロードします。",
     )
 
     argument_parser.add_output()

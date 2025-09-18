@@ -2,6 +2,7 @@ import argparse
 import json
 import logging
 import sys
+import tempfile
 from enum import Enum
 from pathlib import Path
 from typing import Optional
@@ -135,17 +136,11 @@ class SummarizeTaskCount(CommandLine):
         project, _ = self.service.api.get_project(project_id)
         return project["configuration"]["number_of_inspections"]
 
-    def summarize_task_count(self, project_id: str, *, task_json_path: Optional[Path], is_latest: bool, is_execute_get_tasks_api: bool) -> None:
-        if is_execute_get_tasks_api:
-            super().validate_project(project_id)
-        else:
-            # タスク全件ファイルをダウンロードするので、オーナロールかアノテーションユーザロールであることを確認する。
-            super().validate_project(project_id, project_member_roles=[ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER])
+    def summarize_task_count(self, project_id: str, *, task_json_path: Optional[Path], is_latest: bool, temp_dir: Optional[Path] = None) -> None:
+        # タスク全件ファイルをダウンロードするので、オーナロールかアノテーションユーザロールであることを確認する。
+        super().validate_project(project_id, project_member_roles=[ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER])
 
-        if is_execute_get_tasks_api:
-            task_list = self.service.wrapper.get_all_tasks(project_id)
-        else:
-            task_list = self.get_task_list_with_downloading_file(project_id, task_json_path, is_latest=is_latest)
+        task_list = self.get_task_list_with_downloading_file(project_id, task_json_path, is_latest=is_latest, temp_dir=temp_dir)
 
         if len(task_list) == 0:
             logger.info("タスクが0件のため、出力しません。")
@@ -155,32 +150,57 @@ class SummarizeTaskCount(CommandLine):
         task_count_df = create_task_count_summary(task_list, number_of_inspections=number_of_inspections)
         annofabcli.common.utils.print_csv(task_count_df, output=self.output)
 
-    def get_task_list_with_downloading_file(self, project_id: str, task_json_path: Optional[Path], is_latest: bool) -> list[Task]:  # noqa: FBT001
+    def get_task_list_with_downloading_file(self, project_id: str, task_json_path: Optional[Path], is_latest: bool, temp_dir: Optional[Path] = None) -> list[Task]:  # noqa: FBT001
         if task_json_path is None:
-            cache_dir = annofabcli.common.utils.get_cache_dir()
-            task_json_path = cache_dir / f"task-{project_id}.json"
+            if temp_dir is not None:
+                downloading_obj = DownloadingFile(self.service)
+                task_json_path = downloading_obj.download_task_json_to_dir(
+                    project_id,
+                    temp_dir,
+                    is_latest=is_latest,
+                )
 
-            downloading_obj = DownloadingFile(self.service)
-            downloading_obj.download_task_json(
-                project_id,
-                dest_path=str(task_json_path),
-                is_latest=is_latest,
-            )
+                with task_json_path.open(encoding="utf-8") as f:
+                    task_list = json.load(f)
+                    return task_list
+            else:
+                # 一時ディレクトリを作成してその中でダウンロードと読み取りを完結
+                with tempfile.TemporaryDirectory() as str_temp_dir:
+                    temp_dir_path = Path(str_temp_dir)
+                    downloading_obj = DownloadingFile(self.service)
+                    task_json_path = downloading_obj.download_task_json_to_dir(
+                        project_id,
+                        temp_dir_path,
+                        is_latest=is_latest,
+                    )
 
-        with task_json_path.open(encoding="utf-8") as f:
-            task_list = json.load(f)
-            return task_list
+                    with task_json_path.open(encoding="utf-8") as f:
+                        task_list = json.load(f)
+                        return task_list
+        else:
+            # task_json_pathが指定されている場合
+            with task_json_path.open(encoding="utf-8") as f:
+                task_list = json.load(f)
+                return task_list
 
     def main(self) -> None:
         args = self.args
         project_id = args.project_id
         task_json_path = Path(args.task_json) if args.task_json is not None else None
-        self.summarize_task_count(
-            project_id,
-            task_json_path=task_json_path,
-            is_latest=args.latest,
-            is_execute_get_tasks_api=args.execute_get_tasks_api,
-        )
+
+        def process_task_count(temp_dir: Optional[Path]) -> None:
+            self.summarize_task_count(
+                project_id,
+                task_json_path=task_json_path,
+                is_latest=args.latest,
+                temp_dir=temp_dir,
+            )
+
+        if args.temp_dir is not None:
+            process_task_count(temp_dir=args.temp_dir)
+        else:
+            with tempfile.TemporaryDirectory() as str_temp_dir:
+                process_task_count(temp_dir=Path(str_temp_dir))
 
 
 def parse_args(parser: argparse.ArgumentParser) -> None:
@@ -201,9 +221,9 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     )
 
     parser.add_argument(
-        "--execute_get_tasks_api",
-        action="store_true",
-        help="[EXPERIMENTAL] ``getTasks`` APIを実行して、タスク情報を参照します。タスク数が少ないプロジェクトで、最新のタスク情報を参照したいときに利用できます。",
+        "--temp_dir",
+        type=Path,
+        help="指定したディレクトリに、一時ファイルをダウンロードします。",
     )
 
     argument_parser.add_output()
