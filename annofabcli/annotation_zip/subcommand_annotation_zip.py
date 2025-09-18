@@ -5,6 +5,7 @@ from typing import Optional
 
 import annofabcli
 from annofabcli.annotation_zip.list_annotation_bounding_box_2d import add_parser as add_parser_list_annotation_bounding_box_2d
+from annofabcli.annotation_zip.list_range_annotation import add_parser as add_parser_list_range_annotation
 
 
 def parse_args(parser: argparse.ArgumentParser) -> None:
@@ -17,6 +18,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
 
     # サブコマンドの定義
     add_parser_list_annotation_bounding_box_2d(subparsers)
+    add_parser_list_range_annotation(subparsers)
 
 
 def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
