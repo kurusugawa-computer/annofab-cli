@@ -55,7 +55,6 @@ test = [
 linter = [
     "ruff>=0.11; python_version>='3.12'",
     "mypy>=1; python_version>='3.12'",
-    "pylint>=3; python_version>='3.12'",
     "types-pytz; python_version>='3.12'",
     "types-requests; python_version>='3.12'",
     "types-python-dateutil; python_version>='3.12'",

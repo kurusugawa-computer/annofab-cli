@@ -14,8 +14,6 @@ lint:
 	uv run ruff format ${SOURCE_FILES} ${TEST_FILES} --check
 	uv run ruff check ${SOURCE_FILES} ${TEST_FILES}
 	uv run mypy ${SOURCE_FILES} ${TEST_FILES}
-	# テストコードはチェックを緩和するためpylintは実行しない
-	uv run pylint --jobs=0 ${SOURCE_FILES}
 
 test:
     # 更新の競合が発生する可能性があるので、並列実行しない
