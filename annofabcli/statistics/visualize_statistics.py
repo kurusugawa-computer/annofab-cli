@@ -638,8 +638,8 @@ class VisualizeStatistics(CommandLine):
                 root_output_dir=root_output_dir,
                 parallelism=args.parallelism,
                 not_download_visualization_source_files=args.not_download,
-                production_volume_include_labels=args.production_volume_include_label,
-                production_volume_exclude_labels=args.production_volume_exclude_label,
+                production_volume_include_labels=get_list_from_args(args.production_volume_include_label) if args.production_volume_include_label is not None else None,
+                production_volume_exclude_labels=get_list_from_args(args.production_volume_exclude_label) if args.production_volume_exclude_label is not None else None,
             )
 
 
