@@ -62,7 +62,7 @@ class AnnotationCount:
             include_labels: 集計対象に含めるラベル名のリスト
             exclude_labels: 集計対象から除外するラベル名のリスト
 
-        """        
+        """
         logger.debug(f"アノテーションZIPファイルを読み込みます。 :: project_id='{project_id}', file='{annotation_zip!s}'")
 
         def get_annotation_count_default(simple_annotation: dict[str, Any]) -> int:
