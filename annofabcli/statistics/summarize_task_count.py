@@ -193,7 +193,6 @@ class SummarizeTaskCount(CommandLine):
                 project_id,
                 task_json_path=task_json_path,
                 is_latest=args.latest,
-                is_execute_get_tasks_api=False,
                 temp_dir=temp_dir,
             )
 
