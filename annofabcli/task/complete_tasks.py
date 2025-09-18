@@ -146,13 +146,13 @@ class CompleteTasksMain(CommandLineWithConfirm):
             if task.account_id != my_account_id:
                 _task = self.service.wrapper.change_task_operator(task.project_id, task.task_id, my_account_id, last_updated_datetime=task.updated_datetime)
                 last_updated_datetime = _task["updated_datetime"]
-                logger.debug(f"{task.task_id}: 担当者を自分自身に変更しました。")
+                logger.debug(f"task_id='{task.task_id}' :: 担当者を自分自身に変更しました。")
 
             dict_task = self.service.wrapper.change_task_status_to_working(project_id=task.project_id, task_id=task.task_id, last_updated_datetime=last_updated_datetime)
             return Task.from_dict(dict_task)
 
         except requests.HTTPError:
-            logger.warning(f"{task.task_id}: 担当者の変更、または作業中状態への変更に失敗しました。", exc_info=True)
+            logger.warning(f"task_id='{task.task_id}' :: 担当者の変更、または作業中状態への変更に失敗しました。", exc_info=True)
             raise
 
     def get_unanswered_comment_list(self, task: Task, input_data_id: str) -> list[Inspection]:

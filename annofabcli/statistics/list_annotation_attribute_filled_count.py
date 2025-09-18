@@ -571,17 +571,15 @@ class ListAnnotationAttributeFilledCount(CommandLine):
 
         downloading_obj = DownloadingFile(self.service)
 
-        # `NamedTemporaryFile`を使わない理由: Windowsで`PermissionError`が発生するため
-        # https://qiita.com/yuji38kwmt/items/c6f50e1fc03dafdcdda0 参考
-        with tempfile.TemporaryDirectory() as str_temp_dir:
+        def download_and_process_annotation(temp_dir: Path, *, is_latest: bool, annotation_path: Optional[Path]) -> None:
             # タスク全件ファイルは、フレーム番号を参照するのに利用する
             if project_id is not None and group_by == GroupBy.INPUT_DATA_ID:
                 # group_byで条件を絞り込んでいる理由：
                 # タスクIDで集計する際は、フレーム番号は出力しないので、タスク全件ファイルをダウンロードする必要はないため
-                task_json_path = Path(str_temp_dir) / f"{project_id}__task.json"
-                downloading_obj.download_task_json(
+                task_json_path = downloading_obj.download_task_json_to_dir(
                     project_id,
-                    dest_path=str(task_json_path),
+                    temp_dir,
+                    is_latest=is_latest,
                 )
             else:
                 task_json_path = None
@@ -600,15 +598,36 @@ class ListAnnotationAttributeFilledCount(CommandLine):
 
             if annotation_path is None:
                 assert project_id is not None
-                annotation_path = Path(str_temp_dir) / f"{project_id}__annotation.zip"
-                downloading_obj.download_annotation_zip(
+                annotation_path = downloading_obj.download_annotation_zip_to_dir(
                     project_id,
-                    dest_path=str(annotation_path),
-                    is_latest=args.latest,
+                    temp_dir,
+                    is_latest=is_latest,
                 )
                 func(annotation_path=annotation_path)
             else:
                 func(annotation_path=annotation_path)
+
+        if project_id is not None:
+            if args.temp_dir is not None:
+                download_and_process_annotation(temp_dir=args.temp_dir, is_latest=args.latest, annotation_path=annotation_path)
+            else:
+                with tempfile.TemporaryDirectory() as str_temp_dir:
+                    download_and_process_annotation(temp_dir=Path(str_temp_dir), is_latest=args.latest, annotation_path=annotation_path)
+        else:
+            # プロジェクトIDが指定されていない場合は、アノテーションパスが必須なので、一時ディレクトリは不要
+            assert annotation_path is not None
+            func = partial(
+                main_obj.print_annotation_count,
+                project_id=project_id,
+                task_json_path=None,
+                group_by=group_by,
+                output_format=output_format,
+                output_file=output_file,
+                target_task_ids=task_id_list,
+                task_query=task_query,
+                include_flag_attribute=args.include_flag_attribute,
+            )
+            func(annotation_path=annotation_path)
 
 
 def main(args: argparse.Namespace) -> None:
@@ -669,6 +688,12 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--latest",
         action="store_true",
         help="``--annotation`` を指定しないとき、最新のアノテーションzipを参照します。このオプションを指定すると、アノテーションzipを更新するのに数分待ちます。",
+    )
+
+    parser.add_argument(
+        "--temp_dir",
+        type=Path,
+        help="指定したディレクトリに、アノテーションZIPなどの一時ファイルをダウンロードします。",
     )
 
     parser.set_defaults(subcommand_func=main)
