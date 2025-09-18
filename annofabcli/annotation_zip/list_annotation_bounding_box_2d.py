@@ -131,32 +131,29 @@ def create_df(
         "width",
         "height",
     ]
-    if len(annotation_bbox_list) > 0:
-        df = pandas.DataFrame(
-            [
-                {
-                    "project_id": e.project_id,
-                    "task_id": e.task_id,
-                    "task_status": e.task_status,
-                    "task_phase": e.task_phase,
-                    "task_phase_stage": e.task_phase_stage,
-                    "input_data_id": e.input_data_id,
-                    "input_data_name": e.input_data_name,
-                    "updated_datetime": e.updated_datetime,
-                    "label": e.label,
-                    "annotation_id": e.annotation_id,
-                    "left_top.x": e.left_top["x"],
-                    "left_top.y": e.left_top["y"],
-                    "right_bottom.x": e.right_bottom["x"],
-                    "right_bottom.y": e.right_bottom["y"],
-                    "width": e.width,
-                    "height": e.height,
-                }
-                for e in annotation_bbox_list
-            ]
-        )
-    else:
-        df = pandas.DataFrame(columns=columns)
+    df = pandas.DataFrame(
+        [
+            {
+                "project_id": e.project_id,
+                "task_id": e.task_id,
+                "task_status": e.task_status,
+                "task_phase": e.task_phase,
+                "task_phase_stage": e.task_phase_stage,
+                "input_data_id": e.input_data_id,
+                "input_data_name": e.input_data_name,
+                "updated_datetime": e.updated_datetime,
+                "label": e.label,
+                "annotation_id": e.annotation_id,
+                "left_top.x": e.left_top["x"],
+                "left_top.y": e.left_top["y"],
+                "right_bottom.x": e.right_bottom["x"],
+                "right_bottom.y": e.right_bottom["y"],
+                "width": e.width,
+                "height": e.height,
+            }
+            for e in annotation_bbox_list
+        ], columns=columns
+    )
 
     return df[columns]
 
