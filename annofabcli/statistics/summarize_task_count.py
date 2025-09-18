@@ -136,17 +136,11 @@ class SummarizeTaskCount(CommandLine):
         project, _ = self.service.api.get_project(project_id)
         return project["configuration"]["number_of_inspections"]
 
-    def summarize_task_count(self, project_id: str, *, task_json_path: Optional[Path], is_latest: bool, is_execute_get_tasks_api: bool, temp_dir: Optional[Path] = None) -> None:
-        if is_execute_get_tasks_api:
-            super().validate_project(project_id)
-        else:
-            # タスク全件ファイルをダウンロードするので、オーナロールかアノテーションユーザロールであることを確認する。
-            super().validate_project(project_id, project_member_roles=[ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER])
+    def summarize_task_count(self, project_id: str, *, task_json_path: Optional[Path], is_latest: bool, temp_dir: Optional[Path] = None) -> None:
+        # タスク全件ファイルをダウンロードするので、オーナロールかアノテーションユーザロールであることを確認する。
+        super().validate_project(project_id, project_member_roles=[ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER])
 
-        if is_execute_get_tasks_api:
-            task_list = self.service.wrapper.get_all_tasks(project_id)
-        else:
-            task_list = self.get_task_list_with_downloading_file(project_id, task_json_path, is_latest=is_latest, temp_dir=temp_dir)
+        task_list = self.get_task_list_with_downloading_file(project_id, task_json_path, is_latest=is_latest, temp_dir=temp_dir)
 
         if len(task_list) == 0:
             logger.info("タスクが0件のため、出力しません。")
@@ -199,15 +193,12 @@ class SummarizeTaskCount(CommandLine):
                 project_id,
                 task_json_path=task_json_path,
                 is_latest=args.latest,
-                is_execute_get_tasks_api=args.execute_get_tasks_api,
+                is_execute_get_tasks_api=False,
                 temp_dir=temp_dir,
             )
 
         if args.temp_dir is not None:
             process_task_count(temp_dir=args.temp_dir)
-        elif args.execute_get_tasks_api or task_json_path is not None:
-            # API経由取得またはJSONファイル指定の場合は一時ディレクトリ不要
-            process_task_count(temp_dir=None)
         else:
             # ファイルダウンロードが必要な場合のみ一時ディレクトリを作成
             with tempfile.TemporaryDirectory() as str_temp_dir:
@@ -229,12 +220,6 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--latest",
         action="store_true",
         help="最新のタスク一覧ファイルを参照します。このオプションを指定すると、タスク一覧ファイルを更新するのに数分待ちます。",
-    )
-
-    parser.add_argument(
-        "--execute_get_tasks_api",
-        action="store_true",
-        help="[EXPERIMENTAL] ``getTasks`` APIを実行して、タスク情報を参照します。タスク数が少ないプロジェクトで、最新のタスク情報を参照したいときに利用できます。",
     )
 
     parser.add_argument(
