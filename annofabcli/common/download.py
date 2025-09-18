@@ -31,6 +31,11 @@ def _get_annofab_error_message(http_error: requests.HTTPError) -> Optional[str]:
     return errors[0].get("message")
 
 
+def get_filename(project_id: str, file_type: str, extension: str) -> str:
+    timestamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S")  # noqa: DTZ005
+    return f"{timestamp}--{project_id}--{file_type}.{extension}"
+
+
 class DownloadingFile:
     def __init__(self, service: annofabapi.Resource) -> None:
         self.service = service
@@ -331,8 +336,7 @@ class DownloadingFile:
         Returns:
             ダウンロードされたファイルのパス
         """
-        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")  # noqa: DTZ005
-        dest_path = output_dir / f"{project_id}__annotation-{timestamp}.zip"
+        dest_path = output_dir / get_filename(project_id, "annotation", "zip")
 
         self.download_annotation_zip(
             project_id,
@@ -362,8 +366,7 @@ class DownloadingFile:
         Returns:
             ダウンロードされたファイルのパス
         """
-        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")  # noqa: DTZ005
-        dest_path = output_dir / f"{project_id}__task-{timestamp}.json"
+        dest_path = output_dir / get_filename(project_id, "task", "json")
 
         self.download_task_json(
             project_id,
@@ -393,8 +396,7 @@ class DownloadingFile:
         Returns:
             ダウンロードされたファイルのパス
         """
-        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")  # noqa: DTZ005
-        dest_path = output_dir / f"{project_id}__input_data-{timestamp}.json"
+        dest_path = output_dir / get_filename(project_id, "input_data", "json")
 
         self.download_input_data_json(
             project_id,
