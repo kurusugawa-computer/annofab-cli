@@ -1,0 +1,59 @@
+{
+    "project_id": "sample_project_video",
+    "annotation_format_version": "1.2.0",
+    "task_id": "sample_task_00",
+    "task_phase": "acceptance",
+    "task_phase_stage": 1,
+    "task_status": "not_started",
+    "input_data_id": "sample_video_00.mp4",
+    "input_data_name": "sample_video_00.mp4",
+    "details": [
+        {
+            "label": "entire_video",
+            "annotation_id": "7c113d44-d927-4457-a1c5-45ba6e34bbc4",
+            "data": {
+                "_type": "Classification"
+            },
+            "attributes": {
+                "weather": "fine"
+            }
+        },
+        {
+            "label": "traffic_light",
+            "annotation_id": "5cd3d1d1-0813-4964-b802-03ae18ed3dc9",
+            "data": {
+                "begin": 3633,
+                "end": 16833,
+                "_type": "Range"
+            },
+            "attributes": {
+                "color": "red"
+            }
+        },
+        {
+            "label": "traffic_light",
+            "annotation_id": "09412dc3-b359-45d9-9987-3bfac8f4e9d6",
+            "data": {
+                "begin": 16833,
+                "end": 24966,
+                "_type": "Range"
+            },
+            "attributes": {
+                "color": "green"
+            }
+        },
+        {
+            "label": "traffic_light",
+            "annotation_id": "9bdda999-1453-4856-ab4a-9ffc9d19ee15",
+            "data": {
+                "begin": 25000,
+                "end": 25033,
+                "_type": "Range"
+            },
+            "attributes": {
+                "color": ""
+            }
+        }
+    ],
+    "updated_datetime": "2022-04-26T15:47:13.897+09:00"
+}
