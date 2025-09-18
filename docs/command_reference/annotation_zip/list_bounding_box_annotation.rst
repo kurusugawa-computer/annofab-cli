@@ -1,5 +1,5 @@
 ====================================================================================
-annotation_zip list_annotation_bounding_box_2d
+annotation_zip list_bounding_box_annotation
 ====================================================================================
 
 
@@ -13,7 +13,7 @@ Examples
 .. code-block:: bash
 
 
-    $ annofabcli annotation_zip list_annotation_bounding_box_2d --project_id prj1 --output out.json --format pretty_json
+    $ annofabcli annotation_zip list_bounding_box_annotation --project_id prj1 --output out.json --format pretty_json
 
 
 
@@ -45,7 +45,7 @@ Usage Details
 
 .. argparse::
     :ref: annofabcli.annotation_zip.list_annotation_bounding_box_2d.add_parser
-    :prog: annofabcli annotation_zip list_annotation_bounding_box_2d
+    :prog: annofabcli annotation_zip list_bounding_box_annotation
     :nosubcommands:
     :nodefaultconst:
 

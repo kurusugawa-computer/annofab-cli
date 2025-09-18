@@ -16,12 +16,7 @@ from dataclasses_json import DataClassJsonMixin
 import annofabcli
 import annofabcli.common.cli
 from annofabcli.common.annofab.annotation_zip import lazy_parse_simple_annotation_by_input_data
-from annofabcli.common.cli import (
-    COMMAND_LINE_ERROR_STATUS_CODE,
-    ArgumentParser,
-    CommandLine,
-    build_annofabapi_resource_and_login,
-)
+from annofabcli.common.cli import COMMAND_LINE_ERROR_STATUS_CODE, ArgumentParser, CommandLine, build_annofabapi_resource_and_login, get_list_from_args
 from annofabcli.common.download import DownloadingFile
 from annofabcli.common.enums import FormatArgument
 from annofabcli.common.facade import (
@@ -204,7 +199,7 @@ class ListRangeAnnotation(CommandLine):
 
         task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id) if args.task_id is not None else None
         task_query = TaskQuery.from_dict(annofabcli.common.cli.get_json_from_args(args.task_query)) if args.task_query is not None else None
-        label_name_list = args.label_name if args.label_name is not None and len(args.label_name) > 0 else None
+        label_name_list = get_list_from_args(args.label_name) if args.label_name is not None else None
 
         output_file: Path = args.output
         output_format = FormatArgument(args.format)
