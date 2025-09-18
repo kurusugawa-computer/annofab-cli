@@ -6,7 +6,6 @@ import json
 import logging.handlers
 import sys
 import tempfile
-from collections import defaultdict
 from multiprocessing import Pool
 from pathlib import Path
 from typing import Any, Callable, Optional
@@ -14,7 +13,6 @@ from typing import Any, Callable, Optional
 import annofabapi
 import pandas
 from annofabapi.models import InputDataType, ProjectMemberRole, TaskPhase
-from annofabapi.parser import lazy_parse_simple_annotation_zip
 
 import annofabcli
 from annofabcli.common.cli import (
@@ -28,6 +26,7 @@ from annofabcli.common.cli import (
 from annofabcli.common.facade import AnnofabApiFacade, TaskQuery
 from annofabcli.statistics.visualization.dataframe.actual_worktime import ActualWorktime
 from annofabcli.statistics.visualization.dataframe.annotation_count import AnnotationCount
+from annofabcli.statistics.visualization.dataframe.annotation_duration import AnnotationDuration
 from annofabcli.statistics.visualization.dataframe.cumulative_productivity import (
     AcceptorCumulativeProductivity,
     AnnotatorCumulativeProductivity,
@@ -116,59 +115,6 @@ class WriteCsvGraph:
 
         return wrapped
 
-    def _calculate_annotation_duration_from_zip(self) -> pandas.DataFrame:
-        """
-        アノテーションZIPファイルからタスクごとのアノテーション時間を計算します。
-
-        Returns:
-            project_id, task_id, annotation_duration_second を含むDataFrame
-        """
-        result: dict[tuple[str, str], float] = defaultdict(float)  # key:(project_id, task_id), value:合計アノテーション時間（秒）
-
-        annotation_zip_path = self.visualize_source_files.annotation_zip_path
-        logger.debug(f"アノテーション時間を計算中 :: project_id='{self.project_id}', file='{annotation_zip_path!s}'")
-
-        for index, parser in enumerate(lazy_parse_simple_annotation_zip(annotation_zip_path)):
-            simple_annotation = parser.load_json()
-
-            total_duration = 0.0
-            for detail in simple_annotation.get("details", []):
-                # ラベルフィルタリングの処理
-                if self.production_volume_include_labels is not None:
-                    if detail["label"] not in self.production_volume_include_labels:
-                        continue
-                elif self.production_volume_exclude_labels is not None and detail["label"] in self.production_volume_exclude_labels:
-                    continue
-
-                # データ形式に応じてアノテーション時間を計算
-                data = detail.get("data")
-                if data is None:
-                    continue
-
-                if data.get("_type") == "Range":
-                    # 区間アノテーションの場合
-                    begin = data.get("begin")
-                    end = data.get("end")
-                    if begin is not None and end is not None:
-                        total_duration += (end - begin) / 1000.0  # ミリ秒から秒に変換
-
-            result[(self.project_id, parser.task_id)] += total_duration
-
-            if (index + 1) % 10000 == 0:
-                logger.debug(f"{index + 1}件のアノテーションJSONを読み込みました。 :: project_id='{self.project_id}'")
-
-        # DataFrameを作成
-        result_list = [(project_id, task_id, duration) for (project_id, task_id), duration in result.items()]
-
-        if len(result_list) == 0:
-            # 空の場合
-            df_dtype = {"project_id": "string", "task_id": "string", "annotation_duration_second": "float64"}
-            return pandas.DataFrame(columns=["project_id", "task_id", "annotation_duration_second"]).astype(df_dtype)
-
-        df = pandas.DataFrame(result_list, columns=["project_id", "task_id", "annotation_duration_second"])
-        logger.debug(f"アノテーション時間の計算が完了しました。 :: {len(df)}件のタスク")
-        return df
-
     def _get_task(self) -> Task:
         if self.task is None:
             if self.annotation_count is None:
@@ -196,10 +142,17 @@ class WriteCsvGraph:
                 annotation_duration_columns = [col for col in custom_production_volume.custom_production_volume_list if col.value == "annotation_duration_second"]
                 if annotation_duration_columns:
                     logger.debug(f"project_id='{self.project_id}' :: アノテーション時間を計算します。")
-                    annotation_duration_df = self._calculate_annotation_duration_from_zip()
+                    annotation_duration_obj = AnnotationDuration.from_annotation_zip(
+                        self.visualize_source_files.annotation_zip_path,
+                        project_id=self.project_id,
+                        include_labels=self.production_volume_include_labels,
+                        exclude_labels=self.production_volume_exclude_labels,
+                    )
                     # 既存のCustomProductionVolumeのデータと結合
                     if not custom_production_volume.is_empty():
-                        annotation_duration_df = pandas.merge(custom_production_volume.df, annotation_duration_df, on=["project_id", "task_id"], how="outer")
+                        annotation_duration_df = pandas.merge(custom_production_volume.df, annotation_duration_obj.df, on=["project_id", "task_id"], how="outer")
+                    else:
+                        annotation_duration_df = annotation_duration_obj.df
                     custom_production_volume = CustomProductionVolume(annotation_duration_df, custom_production_volume_list=custom_production_volume.custom_production_volume_list)
 
             self.task = Task.from_api_content(
