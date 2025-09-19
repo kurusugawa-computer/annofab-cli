@@ -12,7 +12,7 @@ from typing import Any, Callable, Optional
 
 import annofabapi
 import pandas
-from annofabapi.models import ProjectMemberRole, TaskPhase
+from annofabapi.models import InputDataType, ProjectMemberRole, TaskPhase
 
 import annofabcli
 from annofabcli.common.cli import (
@@ -26,6 +26,7 @@ from annofabcli.common.cli import (
 from annofabcli.common.facade import AnnofabApiFacade, TaskQuery
 from annofabcli.statistics.visualization.dataframe.actual_worktime import ActualWorktime
 from annofabcli.statistics.visualization.dataframe.annotation_count import AnnotationCount
+from annofabcli.statistics.visualization.dataframe.annotation_duration import AnnotationDuration
 from annofabcli.statistics.visualization.dataframe.cumulative_productivity import (
     AcceptorCumulativeProductivity,
     AnnotatorCumulativeProductivity,
@@ -80,6 +81,7 @@ class WriteCsvGraph:
         output_only_text: bool = False,
         production_volume_include_labels: Optional[list[str]] = None,
         production_volume_exclude_labels: Optional[list[str]] = None,
+        include_annotation_duration_seconds: bool = False,
     ) -> None:
         self.service = service
         self.project_id = project_id
@@ -95,6 +97,7 @@ class WriteCsvGraph:
         self.custom_production_volume = custom_production_volume
         self.production_volume_include_labels = production_volume_include_labels
         self.production_volume_exclude_labels = production_volume_exclude_labels
+        self.include_annotation_duration_seconds = include_annotation_duration_seconds
 
         self.task: Optional[Task] = None
         self.worktime_per_date: Optional[WorktimePerDate] = None
@@ -134,6 +137,36 @@ class WriteCsvGraph:
             new_tasks = filter_tasks(tasks, self.task_completion_criteria, self.filtering_query, task_histories=task_histories)
             logger.debug(f"project_id='{self.project_id}' :: 集計対象タスクは {len(new_tasks)} / {len(tasks)} 件です。")
 
+            # annotation_duration_secondsを生産量に含める場合、アノテーション時間を計算
+            custom_production_volume = self.custom_production_volume
+            if self.include_annotation_duration_seconds:
+                logger.debug(f"project_id='{self.project_id}' :: 区間アノテーションの長さ（'annotation_duration_second'）を計算します。")
+                annotation_duration_obj = AnnotationDuration.from_annotation_zip(
+                    self.visualize_source_files.annotation_zip_path,
+                    project_id=self.project_id,
+                    include_labels=self.production_volume_include_labels,
+                    exclude_labels=self.production_volume_exclude_labels,
+                )
+
+                if custom_production_volume is not None:
+                    # 既存のCustomProductionVolumeのデータと結合
+                    if not custom_production_volume.is_empty():
+                        annotation_duration_df = pandas.merge(custom_production_volume.df, annotation_duration_obj.df, on=["project_id", "task_id"], how="outer")
+                    else:
+                        annotation_duration_df = annotation_duration_obj.df
+
+                    # annotation_duration_secondを含む新しいProductionVolumeColumnリストを作成
+                    annotation_duration_column = ProductionVolumeColumn(value="annotation_duration_second", name="区間アノテーションの長さ（秒）")
+                    new_production_volume_list = list(custom_production_volume.custom_production_volume_list)
+                    if annotation_duration_column not in new_production_volume_list:
+                        new_production_volume_list.append(annotation_duration_column)
+
+                    custom_production_volume = CustomProductionVolume(annotation_duration_df, custom_production_volume_list=new_production_volume_list)
+                else:
+                    # CustomProductionVolumeが存在しない場合、新規作成
+                    annotation_duration_column = ProductionVolumeColumn(value="annotation_duration_second", name="区間アノテーションの長さ（秒）")
+                    custom_production_volume = CustomProductionVolume(annotation_duration_obj.df, custom_production_volume_list=[annotation_duration_column])
+
             self.task = Task.from_api_content(
                 tasks=new_tasks,
                 task_histories=task_histories,
@@ -142,7 +175,7 @@ class WriteCsvGraph:
                 input_data_count=self.input_data_count,
                 project_id=self.project_id,
                 annofab_service=self.service,
-                custom_production_volume=self.custom_production_volume,
+                custom_production_volume=custom_production_volume,
             )
 
         return self.task
@@ -334,7 +367,15 @@ class VisualizingStatisticsMain:
         project_info = self.get_project_info(project_id)
         logger.info(f"project_title='{project_info.project_title}'")
 
-        project_dir = ProjectDir(output_project_dir, self.task_completion_criteria, metadata=project_info.to_dict(encode_json=True))
+        # 動画プロジェクトの場合、annotation_duration_secondを生産量に含める
+        custom_production_volume = self.custom_production_volume
+
+        project_dir = ProjectDir(
+            output_project_dir,
+            self.task_completion_criteria,
+            metadata=project_info.to_dict(encode_json=True),
+            custom_production_volume_list=custom_production_volume.custom_production_volume_list if custom_production_volume is not None else None,
+        )
         project_dir.write_project_info(project_info)
 
         if self.actual_worktime is not None:
@@ -383,11 +424,12 @@ class VisualizingStatisticsMain:
             actual_worktime=ActualWorktime(df_actual_worktime),
             annotation_count=annotation_count,
             input_data_count=self.input_data_count,
-            custom_production_volume=self.custom_production_volume,
+            custom_production_volume=custom_production_volume,
             minimal_output=self.minimal_output,
             output_only_text=self.output_only_text,
             production_volume_include_labels=self.production_volume_include_labels,
             production_volume_exclude_labels=self.production_volume_exclude_labels,
+            include_annotation_duration_seconds=(project_info.input_data_type == InputDataType.MOVIE.value),
         )
 
         write_obj._catch_exception(write_obj.write_user_performance)()  # noqa: SLF001
