@@ -20,7 +20,8 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     # サブコマンドの定義
     add_parser_list_annotation_bounding_box_2d(subparsers)
     add_parser_list_range_annotation(subparsers)
-    add_parser_validate_annotation(subparsers)
+    # 作成中のためコメントアウト
+    # add_parser_validate_annotation(subparsers)
 
 
 def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
