@@ -38,6 +38,9 @@ Examples
         
         # S3プライベートストレージ認可用AWS IAMロールARN
         "private_storage_aws_iam_role_arn": "arn:aws:iam::123456789012:role/YourRoleName",
+
+        # S3プライベートストレージにアクセスする際に、AWS S3 Transfer Accelerationを使用する
+        "use_s3_transfer_acceleration": true
     }
     
 
