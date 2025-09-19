@@ -6,7 +6,6 @@ from typing import Optional
 import annofabcli
 from annofabcli.annotation_zip.list_annotation_bounding_box_2d import add_parser as add_parser_list_annotation_bounding_box_2d
 from annofabcli.annotation_zip.list_range_annotation import add_parser as add_parser_list_range_annotation
-from annofabcli.annotation_zip.validate_annotation import add_parser as add_parser_validate_annotation
 
 
 def parse_args(parser: argparse.ArgumentParser) -> None:
