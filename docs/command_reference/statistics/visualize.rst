@@ -226,7 +226,26 @@ CSVには以下の列が存在している必要があります。
 * ``column_list[].value`` で指定した列名
 
 
+.. note::
+    
+    動画プロジェクトでは、区間アノテーションの長さ ``annotation_duration_second`` が、生産量として追加されます。
+    
 
+
+.. _production_volume_include_or_exclude_label:
+
+生産量の集計対象に含めるラベルや除外するラベルを指定する
+--------------------------------------------------------------------------------------------
+
+``--production_volume_include_label`` または ``--production_volume_exclude_label`` にラベル名を指定することで、以下の生産量の集計対象に含めるラベルや除外するラベルを指定できます。
+
+* ``annotation_count``
+* ``annotation_duration_second`` （動画プロジェクトの場合のみ）
+
+
+
+
+    
 出力結果
 =================================
 

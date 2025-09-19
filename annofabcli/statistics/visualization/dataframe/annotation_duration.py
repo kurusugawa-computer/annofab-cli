@@ -60,7 +60,7 @@ class AnnotationDuration:
             exclude_labels: 集計対象から除外するラベル名のリスト
 
         """
-        logger.debug(f"アノテーションZIPファイルからアノテーション時間を計算します。 :: project_id='{project_id}', file='{annotation_zip!s}'")
+        logger.debug(f"アノテーションZIPファイルから区間アノテーションの長さを計算します。 :: project_id='{project_id}', file='{annotation_zip!s}'")
 
         result: dict[tuple[str, str], float] = defaultdict(float)  # key:(project_id, task_id), value:合計アノテーション時間（秒）
 

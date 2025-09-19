@@ -140,7 +140,7 @@ class WriteCsvGraph:
             # annotation_duration_secondsを生産量に含める場合、アノテーション時間を計算
             custom_production_volume = self.custom_production_volume
             if self.include_annotation_duration_seconds:
-                logger.debug(f"project_id='{self.project_id}' :: アノテーション時間を計算します。")
+                logger.debug(f"project_id='{self.project_id}' :: 区間アノテーションの長さ（'annotation_duration_second'）を計算します。")
                 annotation_duration_obj = AnnotationDuration.from_annotation_zip(
                     self.visualize_source_files.annotation_zip_path,
                     project_id=self.project_id,
@@ -156,7 +156,7 @@ class WriteCsvGraph:
                         annotation_duration_df = annotation_duration_obj.df
 
                     # annotation_duration_secondを含む新しいProductionVolumeColumnリストを作成
-                    annotation_duration_column = ProductionVolumeColumn(value="annotation_duration_second", name="アノテーション時間（秒）")
+                    annotation_duration_column = ProductionVolumeColumn(value="annotation_duration_second", name="区間アノテーションの長さ（秒）")
                     new_production_volume_list = list(custom_production_volume.custom_production_volume_list)
                     if annotation_duration_column not in new_production_volume_list:
                         new_production_volume_list.append(annotation_duration_column)
@@ -164,7 +164,7 @@ class WriteCsvGraph:
                     custom_production_volume = CustomProductionVolume(annotation_duration_df, custom_production_volume_list=new_production_volume_list)
                 else:
                     # CustomProductionVolumeが存在しない場合、新規作成
-                    annotation_duration_column = ProductionVolumeColumn(value="annotation_duration_second", name="アノテーション時間（秒）")
+                    annotation_duration_column = ProductionVolumeColumn(value="annotation_duration_second", name="区間アノテーションの長さ（秒）")
                     custom_production_volume = CustomProductionVolume(annotation_duration_obj.df, custom_production_volume_list=[annotation_duration_column])
 
             self.task = Task.from_api_content(
@@ -369,12 +369,6 @@ class VisualizingStatisticsMain:
 
         # 動画プロジェクトの場合、annotation_duration_secondを生産量に含める
         custom_production_volume = self.custom_production_volume
-        is_movie_project = project_info.input_data_type == InputDataType.MOVIE.value
-        if is_movie_project and custom_production_volume is None:
-            # 動画プロジェクトでcustom_production_volumeが指定されていない場合、annotation_duration_secondを追加
-            annotation_duration_column = ProductionVolumeColumn(value="annotation_duration_second", name="アノテーション時間（秒）")
-            custom_production_volume = CustomProductionVolume.empty(custom_production_volume_list=[annotation_duration_column])
-            logger.info("動画プロジェクトのため、生産量として'annotation_duration_second'を追加しました。")
 
         project_dir = ProjectDir(
             output_project_dir,
@@ -435,7 +429,7 @@ class VisualizingStatisticsMain:
             output_only_text=self.output_only_text,
             production_volume_include_labels=self.production_volume_include_labels,
             production_volume_exclude_labels=self.production_volume_exclude_labels,
-            include_annotation_duration_seconds=is_movie_project,
+            include_annotation_duration_seconds=(project_info.input_data_type == InputDataType.MOVIE.value),
         )
 
         write_obj._catch_exception(write_obj.write_user_performance)()  # noqa: SLF001
