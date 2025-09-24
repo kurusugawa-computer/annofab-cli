@@ -64,6 +64,7 @@ AnnofabのCLIです。
 
 ### ドキュメント
 * コマンドのドキュメントは、`docs/command_reference/`に作成する。
+* `docs/`配下のrstファイルを参照する場合は、`:doc:`ディレクティブを使う。URLを直接書かない。
 * コマンドの末尾には以下のように`.. argparse::`ディレクティブを追加して、`argparse`から自動生成されるUsage Detailsセクションを挿入する。
 
 ```
