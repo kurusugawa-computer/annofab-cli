@@ -286,7 +286,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--api",
         type=str,
         choices=[e.value for e in ApiWithCreatingTask],
-        help="タスク作成に使うWebAPIを指定できます。 ``--csv`` or ``--json`` を指定したときのみ有効なオプションです。\n未指定の場合は、作成するタスク数に応じて、適切なWebAPIを選択します。\n",
+        help="タスク作成に使うWebAPIを指定できます。未指定の場合は、作成するタスク数に応じて適切なWebAPIを選択します。",
     )
 
     parser.add_argument(
