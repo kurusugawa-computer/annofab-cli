@@ -90,11 +90,47 @@ class AddingDetailsToInputData:
             return input_data_list
 
         logger.info(f"入力データ {len(input_data_list)} 件に紐づく補助情報の個数を取得します。")
-        for index, input_data in enumerate(input_data_list):
-            supplementary_data_list, _ = self.service.api.get_supplementary_data_list(self.project_id, input_data["input_data_id"])
-            input_data["supplementary_data_count"] = len(supplementary_data_list)
-            if (index + 1) % 100 == 0:
-                logger.debug(f"{index + 1} 件の入力データに紐づく補助情報の個数を取得しました。")
+
+        # バルクAPIを使用して補助情報を効率的に取得
+        input_data_id_list = [input_data["input_data_id"] for input_data in input_data_list]
+
+        # URLクエリパラメータの上限を考慮してバッチ処理
+        # AWS CloudFrontのURLの上限が8,192byte
+        MAX_URL_QUERY_LENGTH = 8000  # noqa: N806
+        # 入力データIDの平均長さを36文字と仮定（UUID形式）+ カンマ区切り文字
+        average_input_data_id_length = 37
+        chunk_size = MAX_URL_QUERY_LENGTH // average_input_data_id_length
+
+        # 入力データIDごとの補助情報個数を格納する辞書
+        supplementary_data_count_dict: dict[str, int] = {}
+
+        # チャンク単位でバルクAPIを実行
+        for chunk_start in range(0, len(input_data_id_list), chunk_size):
+            chunk_end = min(chunk_start + chunk_size, len(input_data_id_list))
+            chunk_input_data_id_list = input_data_id_list[chunk_start:chunk_end]
+
+            logger.debug(f"入力データの{chunk_start + 1}件目から{chunk_end}件目の補助情報を取得します。")
+
+            # バルクAPIで補助情報を取得
+            query_params = {"input_data_ids": ",".join(chunk_input_data_id_list)}
+            supplementary_data_list, _ = self.service.api.get_supplementary_data_in_bulk(self.project_id, query_params=query_params)
+
+            # 入力データIDごとに補助情報の個数をカウント
+            for supplementary_data in supplementary_data_list:
+                input_data_id = supplementary_data["input_data_id"]
+                if input_data_id in supplementary_data_count_dict:
+                    supplementary_data_count_dict[input_data_id] += 1
+                else:
+                    supplementary_data_count_dict[input_data_id] = 1
+
+            # チャンクごとに進捗をログ出力
+            if chunk_end % 1000 == 0 or chunk_end == len(input_data_id_list):
+                logger.debug(f"{chunk_end} 件の入力データに紐づく補助情報の個数を取得しました。")
+
+        # 入力データに補助情報の個数を設定
+        for input_data in input_data_list:
+            input_data_id = input_data["input_data_id"]
+            input_data["supplementary_data_count"] = supplementary_data_count_dict.get(input_data_id, 0)
 
         return input_data_list
 
