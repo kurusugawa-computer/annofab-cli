@@ -305,3 +305,69 @@ def add_dryrun_prefix(lgr: logging.Logger) -> None:
     log_handler.setFormatter(log_formatter)
     lgr.addHandler(log_handler)
     lgr.propagate = False
+
+
+def expand_metadata_columns(df: pandas.DataFrame) -> pandas.DataFrame:
+    """
+    DataFrameのmetadata列を展開し、キーごとの列を追加する。
+
+    Args:
+        df: 対象のpandas.DataFrame。metadata列が存在する必要がある。
+
+    Returns:
+        metadata列を展開したpandas.DataFrame。
+        元のmetadata列は削除され、metadata.{key}形式の列名で展開される。
+    """
+    if "metadata" not in df.columns:
+        return df
+
+    # pandas.json_normalizeを使ってmetadata列を展開
+    metadata_normalized = pandas.json_normalize(df["metadata"], sep=".")
+
+    # 列名にmetadata.プレフィックスを追加
+    metadata_normalized.columns = [f"metadata.{col}" for col in metadata_normalized.columns]
+
+    # 元のDataFrameのインデックスを保持
+    metadata_normalized.index = df.index
+
+    # 元のDataFrameからmetadata列を削除し、正規化された列を結合
+    result_df = df.drop(columns=["metadata"]).join(metadata_normalized)
+
+    return result_df
+
+
+def get_columns_with_priority_for_expanded_metadata(
+    df: pandas.DataFrame,
+    prior_columns: list[Any],
+    expand_metadata: bool = False,  # noqa: FBT001, FBT002
+) -> list[str]:
+    """
+    優先順位の高い列を先頭にした列名リストを取得する。
+    expand_metadataがTrueの場合、metadata列の代わりにmetadata.{key}列を使用する。
+
+    Args:
+        df: 対象のpandas.DataFrame
+        prior_columns: 優先順位の高い列名リスト
+        expand_metadata: metadataを展開するかどうか
+
+    Returns:
+        列名リスト
+    """
+    if expand_metadata:
+        # prior_columnsからmetadataを除去し、代わりにmetadata.*列を追加
+        updated_prior_columns = []
+        metadata_columns = []
+
+        for column in prior_columns:
+            if column == "metadata":
+                # metadata.*列を収集
+                metadata_columns = [col for col in df.columns if col.startswith("metadata.")]
+                # ソートして一貫した順序を保つ
+                metadata_columns.sort()
+                updated_prior_columns.extend(metadata_columns)
+            else:
+                updated_prior_columns.append(column)
+
+        return get_columns_with_priority(df, updated_prior_columns)
+    else:
+        return get_columns_with_priority(df, prior_columns)

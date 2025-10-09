@@ -14,7 +14,7 @@ from annofabcli.common.cli import ArgumentParser, CommandLine, build_annofabapi_
 from annofabcli.common.download import DownloadingFile
 from annofabcli.common.enums import FormatArgument
 from annofabcli.common.facade import AnnofabApiFacade, TaskQuery, match_task_with_query
-from annofabcli.common.utils import get_columns_with_priority
+from annofabcli.common.utils import expand_metadata_columns, get_columns_with_priority_for_expanded_metadata
 from annofabcli.common.visualize import AddProps
 from annofabcli.task.list_tasks import ListTasks
 
@@ -98,7 +98,12 @@ class ListTasksWithJson(CommandLine):
         if len(task_list) > 0:
             if self.str_format == FormatArgument.CSV.value:
                 df = pandas.DataFrame(task_list)
-                columns = get_columns_with_priority(df, prior_columns=ListTasks.PRIOR_COLUMNS)
+
+                # metadataを展開するかどうかをチェック
+                if args.expand_metadata:
+                    df = expand_metadata_columns(df)
+
+                columns = get_columns_with_priority_for_expanded_metadata(df, prior_columns=ListTasks.PRIOR_COLUMNS, expand_metadata=args.expand_metadata)
                 self.print_csv(df[columns])
             else:
                 self.print_according_to_format(task_list)
@@ -132,6 +137,8 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "このオプションを指定すると数分待ちます。Annofabからダウンロードする「タスク全件ファイル」に、最新の情報を反映させるのに時間がかかるためです。\n"
         "指定しない場合は、コマンドを実行した日の02:00(JST)頃のタスクの一覧が出力されます。",
     )
+
+    parser.add_argument("--expand-metadata", action="store_true", help="CSV出力時に、metadata列をキーごとの列に展開します。metadata.{key}形式の列名になります。")
 
     argument_parser.add_format(
         choices=[FormatArgument.CSV, FormatArgument.JSON, FormatArgument.PRETTY_JSON, FormatArgument.TASK_ID_LIST],
