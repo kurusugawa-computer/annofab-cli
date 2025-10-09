@@ -17,6 +17,7 @@ Available Commands
 
    list_bounding_box_annotation
    list_range_annotation
+   list_single_point_annotation
 
 
 Usage Details
