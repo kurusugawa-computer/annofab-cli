@@ -215,14 +215,14 @@ class ListAnnotationSinglePoint(CommandLine):
         downloading_obj = DownloadingFile(self.service)
 
         def download_and_print_annotation_point(project_id: str, temp_dir: Path, *, is_latest: bool) -> None:
-            annotation_path = temp_dir / f"{project_id}__annotation.zip"
+            local_annotation_path = temp_dir / f"{project_id}__annotation.zip"
             downloading_obj.download_annotation_zip(
                 project_id,
-                dest_path=annotation_path,
+                dest_path=local_annotation_path,
                 is_latest=is_latest,
             )
             print_annotation_single_point(
-                annotation_path,
+                local_annotation_path,
                 output_file,
                 output_format,
                 target_task_ids=task_id_list,
