@@ -29,7 +29,7 @@ AnnofabのCLIです。
 * Noneの判定、空文字列の判定、長さが0のコレクションの判定は、falsyとして判定するのでなく、`if a is not None:`のように判定内容を明記してください。
 * 型ヒントを`dict`にする場合、`dict[str, Any]`のようにキーと値の型を指定する。
 * 変数などに対するコメントは行末に書くのでなく、docstringを使って下の行に書く。
-
+* `from __future__ import annotations`を使わない。
 
 ### ログメッセージ
 * 日本語で書く。
