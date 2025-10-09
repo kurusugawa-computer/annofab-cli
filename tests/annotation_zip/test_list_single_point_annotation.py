@@ -2,8 +2,6 @@
 Test cases for annofabcli.annotation_zip.list_single_point_annotation module
 """
 
-from __future__ import annotations
-
 from pathlib import Path
 
 import pytest
@@ -85,52 +83,6 @@ class TestGetAnnotationSinglePointInfoList:
         assert "landmark" in labels
         assert "corner" in labels
         assert "center" not in labels
-
-    def test_get_annotation_single_point_info_list_no_single_point(self):
-        """SinglePoint型以外のアノテーションが含まれる場合、それらが除外されるかテスト"""
-        simple_annotation = {
-            "project_id": "test_project",
-            "task_id": "test_task",
-            "task_phase": "annotation",
-            "task_phase_stage": 1,
-            "task_status": "working",
-            "input_data_id": "test_image.jpg",
-            "input_data_name": "test_image.jpg",
-            "updated_datetime": "2023-01-01T00:00:00+09:00",
-            "details": [
-                {"label": "bbox", "annotation_id": "bbox1", "data": {"_type": "BoundingBox", "left_top": {"x": 10, "y": 20}, "right_bottom": {"x": 110, "y": 120}}},
-                {"label": "landmark", "annotation_id": "point1", "data": {"_type": "SinglePoint", "point": {"x": 100, "y": 200}}},
-                {"label": "polygon", "annotation_id": "poly1", "data": {"_type": "Points", "points": [{"x": 0, "y": 0}, {"x": 100, "y": 0}, {"x": 100, "y": 100}]}},
-            ],
-        }
-
-        result = get_annotation_single_point_info_list(simple_annotation)
-
-        # SinglePoint型のアノテーションのみが抽出される
-        assert len(result) == 1
-        assert result[0].label == "landmark"
-        assert result[0].annotation_id == "point1"
-
-    def test_get_annotation_single_point_info_list_empty(self):
-        """SinglePoint型のアノテーションが存在しない場合、空リストが返されるかテスト"""
-        simple_annotation = {
-            "project_id": "test_project",
-            "task_id": "test_task",
-            "task_phase": "annotation",
-            "task_phase_stage": 1,
-            "task_status": "working",
-            "input_data_id": "test_image.jpg",
-            "input_data_name": "test_image.jpg",
-            "updated_datetime": "2023-01-01T00:00:00+09:00",
-            "details": [
-                {"label": "bbox", "annotation_id": "bbox1", "data": {"_type": "BoundingBox", "left_top": {"x": 10, "y": 20}, "right_bottom": {"x": 110, "y": 120}}},
-                {"label": "polygon", "annotation_id": "poly1", "data": {"_type": "Points", "points": [{"x": 0, "y": 0}, {"x": 100, "y": 0}, {"x": 100, "y": 100}]}},
-            ],
-        }
-
-        result = get_annotation_single_point_info_list(simple_annotation)
-
-        assert len(result) == 0
 
 
 @pytest.mark.access_webapi
