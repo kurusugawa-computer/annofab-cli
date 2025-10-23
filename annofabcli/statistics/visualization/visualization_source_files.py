@@ -39,6 +39,7 @@ class VisualizationSourceFiles:
         self.task_history_json_path = target_dir / f"{self.project_id}__task-history.json"
         self.task_history_event_json_path = target_dir / f"{self.project_id}__task-history-event.json"
         self.annotation_zip_path = target_dir / f"{self.project_id}__annotation.zip"
+        self.input_data_json_path = target_dir / f"{self.project_id}__input_data.json"
 
         self.logging_prefix = f"project_id='{project_id}'"
 
@@ -99,6 +100,63 @@ class VisualizationSourceFiles:
         logger.debug(f"{self.logging_prefix}: '{self.comment_json_path}'を読み込みました。{len(comment_list)}件のコメントが含まれています。")
         return comment_list
 
+    def read_input_data_json(self) -> list[dict[str, Any]]:
+        """
+        入力データ全件ファイルを読み込みます。
+
+        Returns:
+            全入力データの一覧
+        """
+        with self.input_data_json_path.open(encoding="utf-8") as f:
+            input_data_list = json.load(f)
+
+        logger.debug(f"{self.logging_prefix}: '{self.input_data_json_path}'を読み込みました。{len(input_data_list)}件の入力データが含まれています。")
+        return input_data_list
+
+    def get_video_duration_minutes_by_task_id(self) -> dict[str, float]:
+        """
+        動画プロジェクトの場合、タスクIDごとの動画の長さ（分単位）を取得します。
+
+        Returns:
+            key: task_id, value: 動画の長さ（分）
+        """
+        tasks = self.read_tasks_json()
+        input_data_list = self.read_input_data_json()
+
+        # 入力データIDをキーとした辞書を作成
+        dict_input_data_by_id = {input_data["input_data_id"]: input_data for input_data in input_data_list}
+
+        result = {}
+        for task in tasks:
+            task_id = task["task_id"]
+            input_data_id_list = task["input_data_id_list"]
+
+            # 1つのタスクには通常1つの入力データが含まれる
+            if len(input_data_id_list) != 1:
+                logger.warning(f"task_id='{task_id}' :: タスクに含まれる入力データ数が1ではありません。({len(input_data_id_list)}個)")
+                result[task_id] = 0.0
+                continue
+
+            input_data_id = input_data_id_list[0]
+            input_data = dict_input_data_by_id.get(input_data_id)
+
+            if input_data is None:
+                logger.warning(f"task_id='{task_id}' :: input_data_id='{input_data_id}'の入力データが見つかりません。")
+                result[task_id] = 0.0
+                continue
+
+            video_duration_second = input_data.get("system_metadata", {}).get("input_duration")
+
+            if video_duration_second is None:
+                logger.warning(f"task_id='{task_id}' :: input_data_id='{input_data_id}'の動画長さ（system_metadata.input_duration）がNoneです。")
+                result[task_id] = 0.0
+            else:
+                # 秒から分に変換
+                result[task_id] = video_duration_second / 60.0
+
+        logger.debug(f"{self.logging_prefix}: {len(result)}件のタスクの動画長さ（分）を計算しました。")
+        return result
+
     def write_files(self, *, is_latest: bool = False, should_get_task_histories_one_of_each: bool = False, should_download_annotation_zip: bool = True) -> None:
         """
         可視化に必要なファイルを作成します。
@@ -116,6 +174,8 @@ class VisualizationSourceFiles:
         wait_options = WaitOptions(interval=60, max_tries=360)
 
         downloading_obj.download_task_json(self.project_id, dest_path=self.task_json_path, is_latest=is_latest, wait_options=wait_options)
+
+        downloading_obj.download_input_data_json(self.project_id, dest_path=self.input_data_json_path, is_latest=is_latest, wait_options=wait_options)
 
         if should_download_annotation_zip:
             downloading_obj.download_annotation_zip(
