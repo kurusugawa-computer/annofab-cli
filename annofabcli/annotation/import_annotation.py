@@ -254,8 +254,8 @@ class AnnotationConverter:
         for attribute_name, attribute_value in attributes.items():
             try:
                 specs_additional_data = self.annotation_specs_accessor.get_attribute(attribute_name=attribute_name, label=label)
-            except ValueError:
-                logger.warning(f"アノテーション仕様に属性名(英語)が'{attribute_name}'である属性情報が存在しないか、複数存在します。 :: {log_message_suffix}")
+            except ValueError as e:
+                logger.warning(f"アノテーション仕様に属性名(英語)が'{attribute_name}'である属性情報が存在しないか、複数存在します。 :: {log_message_suffix} :: error={e}")
                 if self.is_strict:
                     raise
                 continue
@@ -298,12 +298,11 @@ class AnnotationConverter:
             ValueError: 存在しないラベル名が指定された場合（`self.is_strict`がFalseでもraiseされる９
 
         """
-        log_message_suffix = f"task_id='{parser.task_id}', input_data_id='{parser.input_data_id}', label_name='{detail.label}', annotation_id='{detail.annotation_id}'"
 
         try:
             label_info = self.annotation_specs_accessor.get_label(label_name=detail.label)
-        except ValueError:
-            logger.warning(f"アノテーション仕様にラベル名(英語)が'{detail.label}'であるラベル情報が存在しないか、または複数存在します。 :: {log_message_suffix}")
+        except ValueError as e:
+            logger.warning(f"アノテーション仕様にラベル名(英語)が'{detail.label}'であるラベル情報が存在しないか、または複数存在します。 :: {log_message_suffix} :: error={e}")
             raise
 
         if detail.attributes is not None:
@@ -361,9 +360,10 @@ class AnnotationConverter:
             old_dict_detail[old_detail["annotation_id"]] = old_detail
 
         new_request_details: list[dict[str, Any]] = []
-        for detail in details:
+        for detail_index, detail in enumerate(details):
             try:
-                log_message_suffix = f"task_id='{parser.task_id}', input_data_id='{parser.input_data_id}', label_name='{detail.label}', annotation_id='{detail.annotation_id}'"
+                # detail_indexを出力する理由: annotation_idはNoneだとどれが問題なのか分からないため
+                log_message_suffix = f"task_id='{parser.task_id}', input_data_id='{parser.input_data_id}', label_name='{detail.label}', annotation_id='{detail.annotation_id}', detail_index={detail_index}'"
 
                 request_detail = self.convert_annotation_detail(parser, detail, log_message_suffix=log_message_suffix)
             except Exception as e:
