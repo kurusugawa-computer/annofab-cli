@@ -364,7 +364,7 @@ class AnnotationConverter:
             try:
                 # detail_indexを出力する理由: annotation_idはNoneだとどれが問題なのか分からないため
                 log_message_suffix = (
-                    f"task_id='{parser.task_id}', input_data_id='{parser.input_data_id}', label_name='{detail.label}', annotation_id='{detail.annotation_id}', detail_index={detail_index}'"
+                    f"task_id='{parser.task_id}', input_data_id='{parser.input_data_id}', label_name='{detail.label}', annotation_id='{detail.annotation_id}', detail_index={detail_index}"
                 )
 
                 request_detail = self.convert_annotation_detail(parser, detail, log_message_suffix=log_message_suffix)
