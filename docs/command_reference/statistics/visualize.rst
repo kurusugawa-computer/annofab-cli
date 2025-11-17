@@ -243,7 +243,7 @@ CSVには以下の列が存在している必要があります。
     
     動画プロジェクトでは、以下の生産量が追加されます。
     
-    * ``annotation_duration_second`` ： 区間アノテーションの長さ（秒）
+    * ``annotation_duration_minute`` ： 区間アノテーションの長さ（分）
     * ``video_duration_minute`` ： 動画の長さ（分）
 
 
@@ -255,7 +255,7 @@ CSVには以下の列が存在している必要があります。
 ``--production_volume_include_label`` または ``--production_volume_exclude_label`` にラベル名を指定することで、以下の生産量の集計対象に含めるラベルや除外するラベルを指定できます。
 
 * ``annotation_count``
-* ``annotation_duration_second`` （動画プロジェクトの場合のみ）
+* ``annotation_duration_minute`` （動画プロジェクトの場合のみ）
 
 
 
