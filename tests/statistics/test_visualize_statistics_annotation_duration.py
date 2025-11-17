@@ -2,7 +2,6 @@
 区間アノテーションの長さに関するテスト
 """
 
-
 import pandas
 import pytest
 
