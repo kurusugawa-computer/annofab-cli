@@ -710,7 +710,9 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         default=TaskCompletionCriteria.ACCEPTANCE_COMPLETED.value,
         help="タスクの完了条件を指定します。\n"
         "* ``acceptance_completed``: タスクが受入フェーズの完了状態であれば「タスクの完了」とみなす\n"
-        "* ``acceptance_reached``: タスクが受入フェーズに到達したら「タスクの完了」とみなす\n",
+        "* ``acceptance_reached``: タスクが受入フェーズに到達したら「タスクの完了」とみなす\n"
+        "* ``inspection_reached``: タスクが検査フェーズに到達したら「タスクの完了」とみなす\n"
+        "* ``annotation_started``: 教師付フェーズが着手されたら「タスクの完了」とみなす\n",
     )
 
     parser.add_argument(
