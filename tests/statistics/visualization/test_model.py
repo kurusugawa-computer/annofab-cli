@@ -58,27 +58,27 @@ from annofabcli.statistics.visualization.model import TaskCompletionCriteria
         ),
         # ANNOTATION_STARTED
         (
-            {"phase": TaskPhase.ANNOTATION.value, "status": TaskStatus.WORKING.value, "first_annotation_started_datetime": "2021-01-01T00:00:00.000+09:00"},
+            {"phase": TaskPhase.ANNOTATION.value, "status": TaskStatus.WORKING.value, "work_time_span": 1},
             TaskCompletionCriteria.ANNOTATION_STARTED,
             True,
         ),
         (
-            {"phase": TaskPhase.INSPECTION.value, "status": TaskStatus.COMPLETE.value, "first_annotation_started_datetime": "2021-01-01T00:00:00.000+09:00"},
+            {"phase": TaskPhase.INSPECTION.value, "status": TaskStatus.COMPLETE.value, "work_time_span": 10},
             TaskCompletionCriteria.ANNOTATION_STARTED,
             True,
         ),
         (
-            {"phase": TaskPhase.ACCEPTANCE.value, "status": TaskStatus.COMPLETE.value, "first_annotation_started_datetime": "2021-01-01T00:00:00.000+09:00"},
+            {"phase": TaskPhase.ACCEPTANCE.value, "status": TaskStatus.COMPLETE.value, "work_time_span": 100},
             TaskCompletionCriteria.ANNOTATION_STARTED,
             True,
         ),
         (
-            {"phase": TaskPhase.ANNOTATION.value, "status": TaskStatus.NOT_STARTED.value, "first_annotation_started_datetime": None},
+            {"phase": TaskPhase.ANNOTATION.value, "status": TaskStatus.NOT_STARTED.value, "work_time_span": 0},
             TaskCompletionCriteria.ANNOTATION_STARTED,
             False,
         ),
         (
-            {"phase": TaskPhase.ANNOTATION.value, "status": TaskStatus.NOT_STARTED.value},
+            {"phase": TaskPhase.ANNOTATION.value, "status": TaskStatus.BREAK.value, "work_time_span": 0},
             TaskCompletionCriteria.ANNOTATION_STARTED,
             False,
         ),

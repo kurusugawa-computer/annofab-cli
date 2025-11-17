@@ -50,7 +50,7 @@ class TaskCompletionCriteria(Enum):
             task: タスク情報。以下のキーを参照します。
                 * phase
                 * status
-                * first_annotation_started_datetime (ANNOTATION_STARTEDの場合のみ)
+                * work_time_span (ANNOTATION_STARTEDの場合のみ)
 
         Returns:
             タスクの完了条件に合致する場合はTrue、そうでない場合はFalse
@@ -67,7 +67,7 @@ class TaskCompletionCriteria(Enum):
 
         elif self == TaskCompletionCriteria.ANNOTATION_STARTED:
             # 教師付フェーズが着手されたタスクを「完了」とみなす
-            # first_annotation_started_datetimeがNoneでない場合は教師付フェーズが着手されたとみなす
+            # work_time_span > 0 であれば教師付フェーズが着手されたとみなす
             return task["work_time_span"] > 0
 
         else:
