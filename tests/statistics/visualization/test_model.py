@@ -56,6 +56,32 @@ from annofabcli.statistics.visualization.model import TaskCompletionCriteria
             TaskCompletionCriteria.INSPECTION_REACHED,
             False,
         ),
+        # ANNOTATION_STARTED
+        (
+            {"phase": TaskPhase.ANNOTATION.value, "status": TaskStatus.WORKING.value, "first_annotation_started_datetime": "2021-01-01T00:00:00.000+09:00"},
+            TaskCompletionCriteria.ANNOTATION_STARTED,
+            True,
+        ),
+        (
+            {"phase": TaskPhase.INSPECTION.value, "status": TaskStatus.COMPLETE.value, "first_annotation_started_datetime": "2021-01-01T00:00:00.000+09:00"},
+            TaskCompletionCriteria.ANNOTATION_STARTED,
+            True,
+        ),
+        (
+            {"phase": TaskPhase.ACCEPTANCE.value, "status": TaskStatus.COMPLETE.value, "first_annotation_started_datetime": "2021-01-01T00:00:00.000+09:00"},
+            TaskCompletionCriteria.ANNOTATION_STARTED,
+            True,
+        ),
+        (
+            {"phase": TaskPhase.ANNOTATION.value, "status": TaskStatus.NOT_STARTED.value, "first_annotation_started_datetime": None},
+            TaskCompletionCriteria.ANNOTATION_STARTED,
+            False,
+        ),
+        (
+            {"phase": TaskPhase.ANNOTATION.value, "status": TaskStatus.NOT_STARTED.value},
+            TaskCompletionCriteria.ANNOTATION_STARTED,
+            False,
+        ),
     ],
 )
 def test_is_task_completed(task, criteria, expected):

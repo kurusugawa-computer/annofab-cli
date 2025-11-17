@@ -141,7 +141,7 @@ class WholeProductivityPerCompletedDate:
         return pandas.DataFrame(index=[e.strftime("%Y-%m-%d") for e in pandas.date_range(start_date, end_date)])
 
     @classmethod
-    def from_df_wrapper(cls, task: Task, worktime_per_date: WorktimePerDate, task_completion_criteria: TaskCompletionCriteria) -> WholeProductivityPerCompletedDate:
+    def from_df_wrapper(cls, task: Task, worktime_per_date: WorktimePerDate, task_completion_criteria: TaskCompletionCriteria) -> WholeProductivityPerCompletedDate:  # noqa: PLR0912
         """
         完了日毎の全体の生産量、生産性を算出する。
 
@@ -172,6 +172,8 @@ class WholeProductivityPerCompletedDate:
             datetime_column = "first_acceptance_reached_datetime"
         elif task_completion_criteria == TaskCompletionCriteria.INSPECTION_REACHED:
             datetime_column = "first_inspection_reached_datetime"
+        elif task_completion_criteria == TaskCompletionCriteria.ANNOTATION_STARTED:
+            datetime_column = "first_annotation_started_datetime"
         else:
             assert_noreturn(task_completion_criteria)
 
@@ -280,6 +282,8 @@ class WholeProductivityPerCompletedDate:
             str_task = "受入フェーズに到達した"
         elif self.task_completion_criteria == TaskCompletionCriteria.INSPECTION_REACHED:
             str_task = "検査フェーズに到達した"
+        elif self.task_completion_criteria == TaskCompletionCriteria.ANNOTATION_STARTED:
+            str_task = "教師付フェーズを着手した"
         else:
             assert_noreturn(self.task_completion_criteria)
 
@@ -884,6 +888,9 @@ class WholeProductivityPerFirstAnnotationStartedDate:
             df_sub_task = df_task[df_task["phase"] == TaskPhase.ACCEPTANCE.value]
         elif task_completion_criteria == TaskCompletionCriteria.INSPECTION_REACHED:
             df_sub_task = df_task[df_task["phase"].isin([TaskPhase.INSPECTION.value, TaskPhase.ACCEPTANCE.value])]
+        elif task_completion_criteria == TaskCompletionCriteria.ANNOTATION_STARTED:
+            # 教師付フェーズを着手したタスク（first_annotation_started_datetimeがNoneでない）を抽出する
+            df_sub_task = df_task[df_task["first_annotation_started_datetime"].notna()]
         else:
             assert_noreturn(task_completion_criteria)
 
@@ -1013,6 +1020,8 @@ class WholeProductivityPerFirstAnnotationStartedDate:
                 str_task = "受入フェーズ"
             elif self.task_completion_criteria == TaskCompletionCriteria.INSPECTION_REACHED:
                 str_task = "検査フェーズまたは受入フェーズ"
+            elif self.task_completion_criteria == TaskCompletionCriteria.ANNOTATION_STARTED:
+                str_task = "教師付フェーズを着手した"
             else:
                 assert_noreturn(self.task_completion_criteria)
 

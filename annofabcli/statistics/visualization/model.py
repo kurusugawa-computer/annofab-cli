@@ -40,6 +40,8 @@ class TaskCompletionCriteria(Enum):
     """タスクが受入フェーズに到達したら「タスクの完了」とみなす"""
     INSPECTION_REACHED = "inspection_reached"
     """タスクが検査フェーズに到達したら「タスクの完了」とみなす"""
+    ANNOTATION_STARTED = "annotation_started"
+    """タスクが教師付フェーズを着手したら「タスクの完了」とみなす"""
 
     def is_task_completed(self, task: dict[str, Any]) -> bool:
         """指定したタスクが、タスクの完了条件に合致するかどうかを判定します。
@@ -48,6 +50,7 @@ class TaskCompletionCriteria(Enum):
             task: タスク情報。以下のキーを参照します。
                 * phase
                 * status
+                * first_annotation_started_datetime (ANNOTATION_STARTEDの場合のみ)
 
         Returns:
             タスクの完了条件に合致する場合はTrue、そうでない場合はFalse
@@ -61,6 +64,11 @@ class TaskCompletionCriteria(Enum):
         elif self == TaskCompletionCriteria.INSPECTION_REACHED:
             # 受入フェーズも含む理由：検査フェーズに到達したタスクを「完了」とみなすならば、検査フェーズより後段フェーズである受入フェーズも「完了」とみなせるため
             return task["phase"] in {TaskPhase.INSPECTION.value, TaskPhase.ACCEPTANCE.value}
+
+        elif self == TaskCompletionCriteria.ANNOTATION_STARTED:
+            # 教師付フェーズを着手したタスクを「完了」とみなす
+            # first_annotation_started_datetimeがNoneでない場合は教師付フェーズを着手したとみなす
+            return task.get("first_annotation_started_datetime") is not None
 
         else:
             assert_noreturn(self)
