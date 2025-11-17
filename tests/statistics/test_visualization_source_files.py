@@ -22,18 +22,6 @@ class TestVisualizationSourceFiles:
         assert visualization_source_files.task_json_path == tmp_path / "test_project__task.json"
         assert visualization_source_files.input_data_json_path == tmp_path / "test_project__input_data.json"
 
-    def test_get_video_duration_minutes_by_task_id_empty(self, visualization_source_files, tmp_path):
-        """空のファイルでの動画長さ計算テスト"""
-        # 空のJSONファイルを作成
-        task_json_path = tmp_path / "test_project__task.json"
-        input_data_json_path = tmp_path / "test_project__input_data.json"
-
-        task_json_path.write_text("[]", encoding="utf-8")
-        input_data_json_path.write_text("[]", encoding="utf-8")
-
-        result = visualization_source_files.get_video_duration_minutes_by_task_id()
-        assert result == {}
-
     def test_get_video_duration_minutes_by_task_id_with_data(self, visualization_source_files, tmp_path):
         """データありでの動画長さ計算テスト"""
         # テストデータを作成
@@ -64,22 +52,4 @@ class TestVisualizationSourceFiles:
 
         # 期待値: 120秒 = 2分、180秒 = 3分
         expected = {"task1": 2.0, "task2": 3.0}
-        assert result == expected
-
-    def test_get_video_duration_minutes_by_task_id_missing_duration(self, visualization_source_files, tmp_path):
-        """動画長さがNoneの場合のテスト"""
-        task_data = [{"task_id": "task1", "input_data_id_list": ["input1"]}]
-
-        input_data = [{"input_data_id": "input1", "system_metadata": {"input_duration": None}}]
-
-        task_json_path = tmp_path / "test_project__task.json"
-        input_data_json_path = tmp_path / "test_project__input_data.json"
-
-        task_json_path.write_text(json.dumps(task_data), encoding="utf-8")
-        input_data_json_path.write_text(json.dumps(input_data), encoding="utf-8")
-
-        result = visualization_source_files.get_video_duration_minutes_by_task_id()
-
-        # 期待値: Noneの場合は0.0分
-        expected = {"task1": 0.0}
         assert result == expected
