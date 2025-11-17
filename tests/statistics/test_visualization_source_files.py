@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 from unittest.mock import Mock
 
@@ -70,7 +71,6 @@ class TestVisualizationSourceFiles:
         task_json_path = tmp_path / "test_project__task.json"
         input_data_json_path = tmp_path / "test_project__input_data.json"
         
-        import json
         task_json_path.write_text(json.dumps(task_data), encoding="utf-8")
         input_data_json_path.write_text(json.dumps(input_data), encoding="utf-8")
         
@@ -104,7 +104,6 @@ class TestVisualizationSourceFiles:
         task_json_path = tmp_path / "test_project__task.json"
         input_data_json_path = tmp_path / "test_project__input_data.json"
         
-        import json
         task_json_path.write_text(json.dumps(task_data), encoding="utf-8")
         input_data_json_path.write_text(json.dumps(input_data), encoding="utf-8")
         
