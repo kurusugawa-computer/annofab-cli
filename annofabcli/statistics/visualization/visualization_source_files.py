@@ -130,7 +130,7 @@ class VisualizationSourceFiles:
         for task in tasks:
             task_id = task["task_id"]
             input_data_id_list = task["input_data_id_list"]
-            assert len(input_data_id_list) == 1
+            assert len(input_data_id_list) == 1, f"task_id='{task_id}'には複数の入力データが含まれています。"
             input_data_id = input_data_id_list[0]
             input_data = dict_input_data_by_id.get(input_data_id)
 
