@@ -207,7 +207,7 @@ class WriteCsvGraph:
         # DataFrameの作成
         video_duration_data = [{"project_id": self.project_id, "task_id": task_id, "video_duration_minute": duration} for task_id, duration in video_duration_by_task_id.items()]
         video_duration_df = pandas.DataFrame(video_duration_data)
-        video_duration_column = ProductionVolumeColumn(value="video_duration_minute", name="動画の長さ1分")
+        video_duration_column = ProductionVolumeColumn(value="video_duration_minute", name="動画の長さ（分）")
 
         if custom_production_volume is not None:
             # 既存のCustomProductionVolumeのデータと結合
