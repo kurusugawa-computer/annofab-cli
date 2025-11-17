@@ -130,13 +130,7 @@ class VisualizationSourceFiles:
         for task in tasks:
             task_id = task["task_id"]
             input_data_id_list = task["input_data_id_list"]
-
-            # 1つのタスクには通常1つの入力データが含まれる
-            if len(input_data_id_list) != 1:
-                logger.warning(f"task_id='{task_id}' :: タスクに含まれる入力データ数が1ではありません。({len(input_data_id_list)}個)")
-                result[task_id] = 0.0
-                continue
-
+            assert len(input_data_id_list) == 1
             input_data_id = input_data_id_list[0]
             input_data = dict_input_data_by_id.get(input_data_id)
 
@@ -145,16 +139,11 @@ class VisualizationSourceFiles:
                 result[task_id] = 0.0
                 continue
 
-            video_duration_second = input_data.get("system_metadata", {}).get("input_duration")
+            video_duration_second = input_data["system_metadata"]["input_duration"]
 
-            if video_duration_second is None:
-                logger.warning(f"task_id='{task_id}' :: input_data_id='{input_data_id}'の動画長さ（system_metadata.input_duration）がNoneです。")
-                result[task_id] = 0.0
-            else:
-                # 秒から分に変換
-                result[task_id] = video_duration_second / 60.0
+            # 秒から分に変換
+            result[task_id] = video_duration_second / 60.0
 
-        logger.debug(f"{self.logging_prefix}: {len(result)}件のタスクの動画長さ（分）を計算しました。")
         return result
 
     def write_files(self, *, is_latest: bool = False, should_get_task_histories_one_of_each: bool = False, should_download_annotation_zip: bool = True) -> None:
