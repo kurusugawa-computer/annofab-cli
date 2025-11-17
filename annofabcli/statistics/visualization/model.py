@@ -68,7 +68,7 @@ class TaskCompletionCriteria(Enum):
         elif self == TaskCompletionCriteria.ANNOTATION_STARTED:
             # 教師付フェーズが着手されたタスクを「完了」とみなす
             # first_annotation_started_datetimeがNoneでない場合は教師付フェーズが着手されたとみなす
-            return task.get("first_annotation_started_datetime") is not None
+            return task["work_time_span"] > 0
 
         else:
             assert_noreturn(self)
