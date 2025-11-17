@@ -1021,7 +1021,7 @@ class WholeProductivityPerFirstAnnotationStartedDate:
             elif self.task_completion_criteria == TaskCompletionCriteria.INSPECTION_REACHED:
                 str_task = "検査フェーズまたは受入フェーズ"
             elif self.task_completion_criteria == TaskCompletionCriteria.ANNOTATION_STARTED:
-                str_task = "教師付フェーズが着手された"
+                str_task = "教師付フェーズが着手されたタスク"
             else:
                 assert_noreturn(self.task_completion_criteria)
 
