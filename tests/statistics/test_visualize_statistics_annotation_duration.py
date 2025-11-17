@@ -2,9 +2,6 @@
 区間アノテーションの長さに関するテスト
 """
 
-import tempfile
-import zipfile
-from pathlib import Path
 
 import pandas
 import pytest
