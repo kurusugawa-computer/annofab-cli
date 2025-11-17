@@ -172,7 +172,7 @@ class WriteCsvGraph:
 
     def _add_annotation_duration(self, custom_production_volume: Optional[CustomProductionVolume]) -> CustomProductionVolume:
         """区間アノテーションの長さを生産量に追加する"""
-        logger.debug(f"project_id='{self.project_id}' :: 区間アノテーションの長さ（'annotation_duration_second'）を計算します。")
+        logger.debug(f"project_id='{self.project_id}' :: 区間アノテーションの長さ（'annotation_duration_minute'）を計算します。")
         annotation_duration_obj = AnnotationDuration.from_annotation_zip(
             self.visualize_source_files.annotation_zip_path,
             project_id=self.project_id,
@@ -180,15 +180,18 @@ class WriteCsvGraph:
             exclude_labels=self.production_volume_exclude_labels,
         )
 
+        # 秒を分に変換し、カラム名を変更
+        annotation_duration_df = annotation_duration_obj.df.copy()
+        annotation_duration_df["annotation_duration_minute"] = annotation_duration_df["annotation_duration_second"] / 60.0
+        annotation_duration_df = annotation_duration_df.drop(columns=["annotation_duration_second"])
+
         if custom_production_volume is not None:
             # 既存のCustomProductionVolumeのデータと結合
             if not custom_production_volume.is_empty():
-                annotation_duration_df = pandas.merge(custom_production_volume.df, annotation_duration_obj.df, on=["project_id", "task_id"], how="outer")
-            else:
-                annotation_duration_df = annotation_duration_obj.df
+                annotation_duration_df = pandas.merge(custom_production_volume.df, annotation_duration_df, on=["project_id", "task_id"], how="outer")
 
-            # annotation_duration_secondを含む新しいProductionVolumeColumnリストを作成
-            annotation_duration_column = ProductionVolumeColumn(value="annotation_duration_second", name="区間アノテーションの長さ（秒）")
+            # annotation_duration_minuteを含む新しいProductionVolumeColumnリストを作成
+            annotation_duration_column = ProductionVolumeColumn(value="annotation_duration_minute", name="区間アノテーションの長さ（分）")
             new_production_volume_list = list(custom_production_volume.custom_production_volume_list)
             if annotation_duration_column not in new_production_volume_list:
                 new_production_volume_list.append(annotation_duration_column)
@@ -196,8 +199,8 @@ class WriteCsvGraph:
             return CustomProductionVolume(annotation_duration_df, custom_production_volume_list=new_production_volume_list)
         else:
             # CustomProductionVolumeが存在しない場合、新規作成
-            annotation_duration_column = ProductionVolumeColumn(value="annotation_duration_second", name="区間アノテーションの長さ（秒）")
-            return CustomProductionVolume(annotation_duration_obj.df, custom_production_volume_list=[annotation_duration_column])
+            annotation_duration_column = ProductionVolumeColumn(value="annotation_duration_minute", name="区間アノテーションの長さ（分）")
+            return CustomProductionVolume(annotation_duration_df, custom_production_volume_list=[annotation_duration_column])
 
     def _add_video_duration(self, custom_production_volume: Optional[CustomProductionVolume]) -> CustomProductionVolume:
         """動画の長さ（分）を生産量に追加する"""
