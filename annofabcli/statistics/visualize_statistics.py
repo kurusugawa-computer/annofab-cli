@@ -128,6 +128,8 @@ class WriteCsvGraph:
                     annotation_count = AnnotationCount.from_annotation_zip(
                         self.visualize_source_files.annotation_zip_path,
                         project_id=self.project_id,
+                        include_labels=self.production_volume_include_labels,
+                        exclude_labels=self.production_volume_exclude_labels,
                     )
                 else:
                     annotation_count = AnnotationCount.empty()
