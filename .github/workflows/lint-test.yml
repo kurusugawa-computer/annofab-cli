@@ -26,11 +26,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Install uv and set the python version
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v7
         with:
           python-version: ${{ matrix.python-version }}        
           # Install a specific version of uv.
-          version: "0.7.20"
+          version: "latest"
       - name: Install the project
         run: uv sync --only-group test
       - name: Test
@@ -42,11 +42,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Install uv and set the python version
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v7
         with:
           python-version: 3.13
           # Install a specific version of uv.
-          version: "0.7.20"
+          version: "latest"
       - name: Install the project
         run: uv sync --only-group linter
       - name: Lint
