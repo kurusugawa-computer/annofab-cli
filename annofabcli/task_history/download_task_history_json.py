@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 
 class DownloadingTaskHistory(CommandLine):
-    def download_task_history_json(self, project_id: str, output_file: Path):  # noqa: ANN201
+    def download_task_history_json(self, project_id: str, output_file: Path) -> None:
         super().validate_project(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER])
         project_title = self.facade.get_project_title(project_id)
         logger.info(f"project_id='{project_id}'のタスク履歴全件ファイルをダウンロードします。 :: project_id='{project_id}', project_title='{project_title}'")
