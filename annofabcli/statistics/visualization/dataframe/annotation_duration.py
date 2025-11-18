@@ -23,7 +23,7 @@ class AnnotationDuration:
         return [
             "project_id",
             "task_id",
-            "annotation_duration_second",
+            "annotation_duration_minute",
         ]
 
     @classmethod
@@ -62,7 +62,7 @@ class AnnotationDuration:
         """
         logger.debug(f"アノテーションZIPファイルから区間アノテーションの長さを計算します。 :: project_id='{project_id}', file='{annotation_zip!s}'")
 
-        result: dict[tuple[str, str], float] = defaultdict(float)  # key:(project_id, task_id), value:合計アノテーション時間（秒）
+        result: dict[tuple[str, str], float] = defaultdict(float)  # key:(project_id, task_id), value:合計アノテーション時間（分）
 
         for index, parser in enumerate(lazy_parse_simple_annotation_zip(annotation_zip)):
             simple_annotation = parser.load_json()
@@ -83,7 +83,7 @@ class AnnotationDuration:
                     # 区間アノテーションの場合
                     begin = data["begin"]
                     end = data["end"]
-                    total_duration += (end - begin) / 1000.0  # ミリ秒から秒に変換
+                    total_duration += (end - begin) / 1000.0 / 60.0  # ミリ秒から分に変換
 
             result[(project_id, parser.task_id)] += total_duration
 
@@ -114,7 +114,7 @@ class AnnotationDuration:
         df_dtype: dict[str, str] = {
             "project_id": "string",
             "task_id": "string",
-            "annotation_duration_second": "float64",
+            "annotation_duration_minute": "float64",
         }
 
         df = pandas.DataFrame(columns=cls.columns()).astype(df_dtype)

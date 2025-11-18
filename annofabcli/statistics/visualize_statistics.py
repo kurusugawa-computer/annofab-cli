@@ -172,13 +172,14 @@ class WriteCsvGraph:
 
     def _add_annotation_duration(self, custom_production_volume: Optional[CustomProductionVolume]) -> CustomProductionVolume:
         """区間アノテーションの長さを生産量に追加する"""
-        logger.debug(f"project_id='{self.project_id}' :: 区間アノテーションの長さ（'annotation_duration_second'）を計算します。")
+        logger.debug(f"project_id='{self.project_id}' :: 区間アノテーションの長さ（'annotation_duration_minute'）を計算します。")
         annotation_duration_obj = AnnotationDuration.from_annotation_zip(
             self.visualize_source_files.annotation_zip_path,
             project_id=self.project_id,
             include_labels=self.production_volume_include_labels,
             exclude_labels=self.production_volume_exclude_labels,
         )
+        annotation_duration_column = ProductionVolumeColumn(value="annotation_duration_minute", name="区間アノテーションの長さ（分）")
 
         if custom_production_volume is not None:
             # 既存のCustomProductionVolumeのデータと結合
@@ -187,8 +188,7 @@ class WriteCsvGraph:
             else:
                 annotation_duration_df = annotation_duration_obj.df
 
-            # annotation_duration_secondを含む新しいProductionVolumeColumnリストを作成
-            annotation_duration_column = ProductionVolumeColumn(value="annotation_duration_second", name="区間アノテーションの長さ（秒）")
+            # annotation_duration_minuteを含む新しいProductionVolumeColumnリストを作成
             new_production_volume_list = list(custom_production_volume.custom_production_volume_list)
             if annotation_duration_column not in new_production_volume_list:
                 new_production_volume_list.append(annotation_duration_column)
@@ -196,7 +196,6 @@ class WriteCsvGraph:
             return CustomProductionVolume(annotation_duration_df, custom_production_volume_list=new_production_volume_list)
         else:
             # CustomProductionVolumeが存在しない場合、新規作成
-            annotation_duration_column = ProductionVolumeColumn(value="annotation_duration_second", name="区間アノテーションの長さ（秒）")
             return CustomProductionVolume(annotation_duration_obj.df, custom_production_volume_list=[annotation_duration_column])
 
     def _add_video_duration(self, custom_production_volume: Optional[CustomProductionVolume]) -> CustomProductionVolume:
