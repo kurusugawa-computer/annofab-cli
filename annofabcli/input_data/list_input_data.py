@@ -76,17 +76,13 @@ class AddingDetailsToInputData:
 
         return input_data_list
 
-    def add_supplementary_data_count_to_input_data_list(self, input_data_list: list[InputData], *, average_input_data_id_length: int = 36) -> list[InputData]:
+    def add_supplementary_data_count_to_input_data_list(self, input_data_list: list[InputData]) -> list[InputData]:
         """
         `input_data_list`に補助情報の個数（`supplementary_data_count`）を付与します。
         バルク系API `get_supplementary_data_in_bulk` を使用して、複数の入力データIDの補助情報を一度に取得します。
 
         Args:
             input_data_list: 入力データList(In/Out)
-            average_input_data_id_length: 入力データIDの平均長さ。この値を元にして、`get_supplementary_data_in_bulk` APIの実行回数を決めます。
-                `get_supplementary_data_in_bulk` APIはクエリパラメータに`input_data_id`で複数の入力データIDを指定できます。
-                クエリパラメータのサイズには上限があるため、たとえば10,000個の入力データIDを指定することはできません。
-                したがって、入力データIDの平均サイズから、APIの実行回数を決めます。
 
         Returns:
 
@@ -96,32 +92,21 @@ class AddingDetailsToInputData:
 
         logger.info(f"入力データ {len(input_data_list)} 件に紐づく補助情報の個数を取得します。")
 
-        # AWS CloudFrontのURLの上限が8,192byte
-        # https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/cloudfront-limits.html
-        MAX_URL_QUERY_LENGTH = 8000  # input_data_id部分のURLクエリの最大値  # noqa: N806
-        average_input_data_id_length = average_input_data_id_length + 1  # カンマの分だけ長さを増やす
-        chunk_size = MAX_URL_QUERY_LENGTH // average_input_data_id_length
+        # get_supplementary_data_in_bulk APIは最大100個のinput_data_idを受け付ける
+        MAX_INPUT_DATA_IDS_PER_REQUEST = 100  # noqa: N806
         initial_index = 0
         api_call_count = 0
 
-        while True:
-            sub_input_data_list = input_data_list[initial_index : initial_index + chunk_size]
+        while initial_index < len(input_data_list):
+            # 最大100件ずつ処理
+            end_index = min(initial_index + MAX_INPUT_DATA_IDS_PER_REQUEST, len(input_data_list))
+            sub_input_data_list = input_data_list[initial_index:end_index]
             sub_input_data_id_list = [e["input_data_id"] for e in sub_input_data_list]
-            str_input_data_id_list = ",".join(sub_input_data_id_list)
-            encoded_input_data_id_list = urllib.parse.quote(str_input_data_id_list)
-            if len(encoded_input_data_id_list) > MAX_URL_QUERY_LENGTH:
-                differential_length = len(encoded_input_data_id_list) - MAX_URL_QUERY_LENGTH
-                decreasing_size = (differential_length // average_input_data_id_length) + 1
-                logger.debug(f"chunk_sizeを {chunk_size} から、{chunk_size - decreasing_size} に減らした. len(encoded_input_data_id_list) = {len(encoded_input_data_id_list)}")
-                chunk_size = chunk_size - decreasing_size
-                if chunk_size <= 0:
-                    chunk_size = 1
 
-                continue
-
-            logger.debug(f"入力データの{initial_index}件目から{initial_index + len(sub_input_data_list) - 1}件目に紐づく補助情報を取得します。")
+            logger.debug(f"入力データの{initial_index}件目から{end_index - 1}件目に紐づく補助情報を取得します。")
 
             # バルク系APIを使用して複数の入力データIDの補助情報を一度に取得
+            # input_data_idはカンマ区切りで指定
             supplementary_data_list, _ = self.service.api.get_supplementary_data_in_bulk(self.project_id, query_params={"input_data_id": sub_input_data_id_list})
             api_call_count += 1
 
@@ -135,12 +120,10 @@ class AddingDetailsToInputData:
             for input_data in sub_input_data_list:
                 input_data["supplementary_data_count"] = supplementary_count_dict.get(input_data["input_data_id"], 0)
 
-            if (initial_index + len(sub_input_data_list)) % 1000 == 0 or (initial_index + len(sub_input_data_list)) == len(input_data_list):
-                logger.info(f"{initial_index + len(sub_input_data_list)} / {len(input_data_list)} 件の入力データに紐づく補助情報の個数を取得しました。")
+            if (end_index) % 1000 == 0 or end_index == len(input_data_list):
+                logger.info(f"{end_index} / {len(input_data_list)} 件の入力データに紐づく補助情報の個数を取得しました。")
 
-            initial_index = initial_index + chunk_size
-            if initial_index >= len(input_data_list):
-                break
+            initial_index = end_index
 
         logger.info(f"補助情報の取得が完了しました。API呼び出し回数: {api_call_count} 回")
         return input_data_list
