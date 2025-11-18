@@ -65,7 +65,7 @@ Examples
 以下のオプションを指定すると、より詳細な情報を出力できます。ただし、実行するWeb APIが増えるため、出力するまでの時間が長くなります。
 
 * ``--with_parent_task_id_list`` : 入力データを参照しているタスクのtask_idのリスト
-* ``--with_supplementary_data_count`` : 入力データに紐づく補助情報の個数
+* ``--with_supplementary_data_count`` : 入力データに紐づく補助情報の個数（バルク系APIを使用して効率的に取得）
 
 
 
