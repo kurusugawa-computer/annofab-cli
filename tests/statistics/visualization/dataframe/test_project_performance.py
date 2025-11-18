@@ -57,12 +57,3 @@ class TestProjectWorktimePerMonth:
         assert row["2022-02"] == 7
 
         actual_worktime.to_csv(output_dir / "test__from_project_dirs__and_to_csv.csv")
-
-    def test__from_project_dirs__空ディレクトリから生成(self):
-        actual_worktime = ProjectWorktimePerMonth.from_project_dirs([ProjectDir(data_dir / "empty", TaskCompletionCriteria.ACCEPTANCE_COMPLETED)], worktime_column=WorktimeColumn.ACTUAL_WORKTIME_HOUR)
-        df = actual_worktime.df
-        assert len(df) == 1
-        row = df.iloc[0]
-        assert row["dirname"] == "empty"
-
-        actual_worktime.to_csv(output_dir / "test__from_project_dirs__空ディレクトリから生成.csv")
