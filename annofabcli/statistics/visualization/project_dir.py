@@ -42,7 +42,7 @@ class ProjectDir(DataClassJsonMixin):
         - acceptance_completed: 受入フェーズの完了状態
         - acceptance_reached: 受入フェーズに到達
         - inspection_reached: 検査フェーズまたは受入フェーズに到達
-        - annotation_started: 教師付フェーズを着手
+        - annotation_started: 教師付フェーズが着手された
     """
 
     FILENAME_WHOLE_PERFORMANCE = "全体の生産性と品質.csv"

@@ -12,7 +12,7 @@ from typing import Any, Callable, Optional
 
 import annofabapi
 import pandas
-from annofabapi.models import InputDataType, ProjectMemberRole, TaskPhase
+from annofabapi.models import ProjectMemberRole, TaskPhase
 
 import annofabcli
 from annofabcli.common.cli import (
@@ -82,6 +82,7 @@ class WriteCsvGraph:
         production_volume_include_labels: Optional[list[str]] = None,
         production_volume_exclude_labels: Optional[list[str]] = None,
         include_annotation_duration_seconds: bool = False,
+        include_video_duration_minutes: bool = False,
     ) -> None:
         self.service = service
         self.project_id = project_id
@@ -98,6 +99,7 @@ class WriteCsvGraph:
         self.production_volume_include_labels = production_volume_include_labels
         self.production_volume_exclude_labels = production_volume_exclude_labels
         self.include_annotation_duration_seconds = include_annotation_duration_seconds
+        self.include_video_duration_minutes = include_video_duration_minutes
 
         self.task: Optional[Task] = None
         self.worktime_per_date: Optional[WorktimePerDate] = None
@@ -119,14 +121,18 @@ class WriteCsvGraph:
 
     def _get_task(self) -> Task:
         if self.task is None:
+            custom_production_volume = self._prepare_custom_production_volume()
+
             if self.annotation_count is None:
-                # アノテーションZIPからアノテーション数を取得
-                annotation_count = AnnotationCount.from_annotation_zip(
-                    self.visualize_source_files.annotation_zip_path,
-                    project_id=self.project_id,
-                    include_labels=self.production_volume_include_labels,
-                    exclude_labels=self.production_volume_exclude_labels,
-                )
+                if self.visualize_source_files.annotation_zip_path.exists():
+                    annotation_count = AnnotationCount.from_annotation_zip(
+                        self.visualize_source_files.annotation_zip_path,
+                        project_id=self.project_id,
+                        include_labels=self.production_volume_include_labels,
+                        exclude_labels=self.production_volume_exclude_labels,
+                    )
+                else:
+                    annotation_count = AnnotationCount.empty()
             else:
                 annotation_count = self.annotation_count
 
@@ -136,36 +142,6 @@ class WriteCsvGraph:
             task_histories = self.visualize_source_files.read_task_histories_json()
             new_tasks = filter_tasks(tasks, self.task_completion_criteria, self.filtering_query, task_histories=task_histories)
             logger.debug(f"project_id='{self.project_id}' :: 集計対象タスクは {len(new_tasks)} / {len(tasks)} 件です。")
-
-            # annotation_duration_secondsを生産量に含める場合、アノテーション時間を計算
-            custom_production_volume = self.custom_production_volume
-            if self.include_annotation_duration_seconds:
-                logger.debug(f"project_id='{self.project_id}' :: 区間アノテーションの長さ（'annotation_duration_second'）を計算します。")
-                annotation_duration_obj = AnnotationDuration.from_annotation_zip(
-                    self.visualize_source_files.annotation_zip_path,
-                    project_id=self.project_id,
-                    include_labels=self.production_volume_include_labels,
-                    exclude_labels=self.production_volume_exclude_labels,
-                )
-
-                if custom_production_volume is not None:
-                    # 既存のCustomProductionVolumeのデータと結合
-                    if not custom_production_volume.is_empty():
-                        annotation_duration_df = pandas.merge(custom_production_volume.df, annotation_duration_obj.df, on=["project_id", "task_id"], how="outer")
-                    else:
-                        annotation_duration_df = annotation_duration_obj.df
-
-                    # annotation_duration_secondを含む新しいProductionVolumeColumnリストを作成
-                    annotation_duration_column = ProductionVolumeColumn(value="annotation_duration_second", name="区間アノテーションの長さ（秒）")
-                    new_production_volume_list = list(custom_production_volume.custom_production_volume_list)
-                    if annotation_duration_column not in new_production_volume_list:
-                        new_production_volume_list.append(annotation_duration_column)
-
-                    custom_production_volume = CustomProductionVolume(annotation_duration_df, custom_production_volume_list=new_production_volume_list)
-                else:
-                    # CustomProductionVolumeが存在しない場合、新規作成
-                    annotation_duration_column = ProductionVolumeColumn(value="annotation_duration_second", name="区間アノテーションの長さ（秒）")
-                    custom_production_volume = CustomProductionVolume(annotation_duration_obj.df, custom_production_volume_list=[annotation_duration_column])
 
             self.task = Task.from_api_content(
                 tasks=new_tasks,
@@ -179,6 +155,80 @@ class WriteCsvGraph:
             )
 
         return self.task
+
+    def _prepare_custom_production_volume(self) -> Optional[CustomProductionVolume]:
+        """カスタム生産量の準備を行う"""
+        custom_production_volume = self.custom_production_volume
+
+        # annotation_duration_secondsを生産量に含める場合、アノテーション時間を計算
+        if self.include_annotation_duration_seconds:
+            custom_production_volume = self._add_annotation_duration(custom_production_volume)
+
+        # 動画プロジェクトの場合、動画の長さ（分）を生産量に含める
+        if self.include_video_duration_minutes:
+            custom_production_volume = self._add_video_duration(custom_production_volume)
+
+        return custom_production_volume
+
+    def _add_annotation_duration(self, custom_production_volume: Optional[CustomProductionVolume]) -> CustomProductionVolume:
+        """区間アノテーションの長さを生産量に追加する"""
+        logger.debug(f"project_id='{self.project_id}' :: 区間アノテーションの長さ（'annotation_duration_minute'）を計算します。")
+        annotation_duration_obj = AnnotationDuration.from_annotation_zip(
+            self.visualize_source_files.annotation_zip_path,
+            project_id=self.project_id,
+            include_labels=self.production_volume_include_labels,
+            exclude_labels=self.production_volume_exclude_labels,
+        )
+        annotation_duration_column = ProductionVolumeColumn(value="annotation_duration_minute", name="区間アノテーションの長さ（分）")
+
+        if custom_production_volume is not None:
+            # 既存のCustomProductionVolumeのデータと結合
+            if not custom_production_volume.is_empty():
+                annotation_duration_df = pandas.merge(custom_production_volume.df, annotation_duration_obj.df, on=["project_id", "task_id"], how="outer")
+            else:
+                annotation_duration_df = annotation_duration_obj.df
+
+            # annotation_duration_minuteを含む新しいProductionVolumeColumnリストを作成
+            new_production_volume_list = list(custom_production_volume.custom_production_volume_list)
+            if annotation_duration_column not in new_production_volume_list:
+                new_production_volume_list.append(annotation_duration_column)
+
+            return CustomProductionVolume(annotation_duration_df, custom_production_volume_list=new_production_volume_list)
+        else:
+            # CustomProductionVolumeが存在しない場合、新規作成
+            return CustomProductionVolume(annotation_duration_obj.df, custom_production_volume_list=[annotation_duration_column])
+
+    def _add_video_duration(self, custom_production_volume: Optional[CustomProductionVolume]) -> CustomProductionVolume:
+        """動画の長さ（分）を生産量に追加する"""
+        logger.debug(f"project_id='{self.project_id}' :: 動画の長さ（'video_duration_minute'）を計算します。")
+        video_duration_by_task_id = self.visualize_source_files.get_video_duration_minutes_by_task_id()
+
+        # DataFrameの作成
+        video_duration_data = [{"project_id": self.project_id, "task_id": task_id, "video_duration_minute": duration} for task_id, duration in video_duration_by_task_id.items()]
+        if len(video_duration_data) == 0:
+            video_duration_df = pandas.DataFrame(columns=["project_id", "task_id", "video_duration_minute"])
+        else:
+            video_duration_df = pandas.DataFrame(video_duration_data)
+
+        video_duration_df = video_duration_df.astype({"project_id": "string", "task_id": "string", "video_duration_minute": "float64"})
+        video_duration_column = ProductionVolumeColumn(value="video_duration_minute", name="動画の長さ（分）")
+
+        if custom_production_volume is not None:
+            # 既存のCustomProductionVolumeのデータと結合
+            if not custom_production_volume.is_empty():
+                merged_df = pandas.merge(custom_production_volume.df, video_duration_df, on=["project_id", "task_id"], how="outer")
+            else:
+                merged_df = video_duration_df
+
+            # video_duration_minuteを含む新しいProductionVolumeColumnリストを作成
+            new_production_volume_list = list(custom_production_volume.custom_production_volume_list)
+            if video_duration_column not in new_production_volume_list:
+                new_production_volume_list.append(video_duration_column)
+
+            return CustomProductionVolume(merged_df, custom_production_volume_list=new_production_volume_list)
+        else:
+            # CustomProductionVolumeが存在しない場合、新規作成
+            return CustomProductionVolume(video_duration_df, custom_production_volume_list=[video_duration_column])
 
     def _get_task_worktime_obj(self) -> TaskWorktimeByPhaseUser:
         if self.task_worktime_obj is None:
@@ -370,6 +420,9 @@ class VisualizingStatisticsMain:
         # 動画プロジェクトの場合、annotation_duration_secondを生産量に含める
         custom_production_volume = self.custom_production_volume
 
+        # 動画プロジェクトかどうかを判定
+        is_video_project = project_info.input_data_type == "movie"
+
         project_dir = ProjectDir(
             output_project_dir,
             self.task_completion_criteria,
@@ -429,7 +482,8 @@ class VisualizingStatisticsMain:
             output_only_text=self.output_only_text,
             production_volume_include_labels=self.production_volume_include_labels,
             production_volume_exclude_labels=self.production_volume_exclude_labels,
-            include_annotation_duration_seconds=(project_info.input_data_type == InputDataType.MOVIE.value),
+            include_annotation_duration_seconds=is_video_project,
+            include_video_duration_minutes=is_video_project,
         )
 
         write_obj._catch_exception(write_obj.write_user_performance)()  # noqa: SLF001
@@ -710,7 +764,9 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         default=TaskCompletionCriteria.ACCEPTANCE_COMPLETED.value,
         help="タスクの完了条件を指定します。\n"
         "* ``acceptance_completed``: タスクが受入フェーズの完了状態であれば「タスクの完了」とみなす\n"
-        "* ``acceptance_reached``: タスクが受入フェーズに到達したら「タスクの完了」とみなす\n",
+        "* ``acceptance_reached``: タスクが受入フェーズに到達したら「タスクの完了」とみなす\n"
+        "* ``inspection_reached``: タスクが検査フェーズに到達したら「タスクの完了」とみなす\n"
+        "* ``annotation_started``: 教師付フェーズが着手されたら「タスクの完了」とみなす\n",
     )
 
     parser.add_argument(
