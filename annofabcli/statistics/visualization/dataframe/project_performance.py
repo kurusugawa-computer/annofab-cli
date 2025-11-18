@@ -127,6 +127,15 @@ class ProjectWorktimePerMonth:
         return True
 
     @classmethod
+    def _get_project_title(cls, project_dir: ProjectDir) -> str:
+        # 複数のプロジェクトをマージしたディレクトリの場合、`project_title`はないので、空文字を返す
+        if project_dir.is_merged():
+            return ""
+
+        project_info = project_dir.read_project_info()
+        return project_info.project_title
+
+    @classmethod
     def _get_series_from_project_dir(cls, project_dir: ProjectDir, worktime_column: WorktimeColumn) -> pandas.Series:
         """
         1個のプロジェクトディレクトリから、月ごとの作業時間を算出する
@@ -139,15 +148,7 @@ class ProjectWorktimePerMonth:
         new_index = [str(dt)[0:7] for dt in series.index]
         result = pandas.Series(series.values, index=new_index)
         result["dirname"] = project_dir.project_dir.name
-
-        try:
-            project_info = project_dir.read_project_info()
-            project_title = project_info.project_title
-        except Exception:
-            # 複数のプロジェクトをマージして生産性情報を出力した場合は、`project_info.json`は存在しないので、このブロックに入る
-            logger.info(f"'{project_dir}'からプロジェクト情報を読み込むのに失敗しました。project_titleは空文字にします。", exc_info=True)
-            project_title = ""
-        result["project_title"] = project_title
+        result["project_title"] = cls._get_project_title(project_dir)
         return result
 
     @classmethod

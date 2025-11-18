@@ -307,6 +307,14 @@ class CollectingPerformanceInfo:
         df_tmp.columns = pandas.MultiIndex.from_tuples([(dirname, project_title, f"{quality_indicator.column}__{phase.value}")])
         return df.join(df_tmp)
 
+    def _get_project_title(self, project_dir: ProjectDir) -> str:
+        # 複数のプロジェクトをマージしたディレクトリの場合、`project_title`はないので、空文字を返す
+        if project_dir.is_merged():
+            return ""
+
+        project_info = project_dir.read_project_info()
+        return project_info.project_title
+
     def create_rating_df(
         self,
         df_user: pandas.DataFrame,
@@ -332,13 +340,7 @@ class CollectingPerformanceInfo:
             )
             project_dir_list.append(project_dir)
 
-            try:
-                project_info = project_dir.read_project_info()
-                project_title = project_info.project_title
-            except Exception:
-                # 複数のプロジェクトをマージして生産性情報を出力した場合は、`project_info.json`は存在しないので、このブロックに入る
-                logger.info(f"'{project_dir}'からプロジェクト情報を読み込むのに失敗しました。project_titleは空文字にします。", exc_info=True)
-                project_title = ""
+            project_title = self._get_project_title(project_dir)
 
             try:
                 user_performance = project_dir.read_user_performance()
