@@ -460,10 +460,10 @@ class ProjectInfo(DataClassJsonMixin):
     query: FilteringQuery
     """集計対象を絞り込むためのクエリ"""
 
-    production_volume_include_labels: list[str] | None = None
+    production_volume_include_labels: Optional[list[str]] = None
     """生産量に含める「アノテーション仕様のラベル名（英語）」のリスト。Noneの場合、すべてのラベルを含む。"""
 
-    production_volume_exclude_labels: list[str] | None = None
+    production_volume_exclude_labels: Optional[list[str]] = None
     """生産量から除外する「アノテーション仕様のラベル名（英語）」のリスト。Noneの場合、除外しない。"""
 
 
