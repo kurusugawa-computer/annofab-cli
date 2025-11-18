@@ -10,7 +10,7 @@ import annofabcli
 from annofabcli.common.cli import ArgumentParser, CommandLine, build_annofabapi_resource_and_login
 from annofabcli.common.enums import FormatArgument
 from annofabcli.common.facade import AnnofabApiFacade
-from annofabcli.common.utils import get_columns_with_priority
+from annofabcli.common.utils import expand_metadata_columns, get_columns_with_priority_for_expanded_metadata
 from annofabcli.common.visualize import AddProps
 
 logger = logging.getLogger(__name__)
@@ -195,7 +195,12 @@ class ListTasks(CommandLine):
         if len(task_list) > 0:
             if self.str_format == FormatArgument.CSV.value:
                 df = pandas.DataFrame(task_list)
-                columns = get_columns_with_priority(df, prior_columns=self.PRIOR_COLUMNS)
+
+                # metadataを展開するかどうかをチェック
+                if args.expand_metadata:
+                    df = expand_metadata_columns(df)
+
+                columns = get_columns_with_priority_for_expanded_metadata(df, prior_columns=self.PRIOR_COLUMNS, expand_metadata=args.expand_metadata)
                 self.print_csv(df[columns])
             else:
                 self.print_according_to_format(task_list)
@@ -243,6 +248,8 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         nargs="+",
         help="絞り込み対象である担当者のuser_idを指定します。 ``file://`` を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。",
     )
+
+    parser.add_argument("--expand-metadata", action="store_true", help="CSV出力時に、metadata列をキーごとの列に展開します。metadata.{key}形式の列名になります。")
 
     argument_parser.add_format(
         choices=[FormatArgument.CSV, FormatArgument.JSON, FormatArgument.PRETTY_JSON, FormatArgument.TASK_ID_LIST],
