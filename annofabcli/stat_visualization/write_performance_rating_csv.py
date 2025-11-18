@@ -332,13 +332,7 @@ class CollectingPerformanceInfo:
             )
             project_dir_list.append(project_dir)
 
-            try:
-                project_info = project_dir.read_project_info()
-                project_title = project_info.project_title
-            except Exception:
-                # 複数のプロジェクトをマージして生産性情報を出力した場合は、`project_info.json`は存在しないので、このブロックに入る
-                logger.info(f"'{project_dir}'からプロジェクト情報を読み込むのに失敗しました。project_titleは空文字にします。", exc_info=True)
-                project_title = ""
+            project_title = project_dir.get_project_title()
 
             try:
                 user_performance = project_dir.read_user_performance()

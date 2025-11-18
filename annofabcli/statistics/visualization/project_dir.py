@@ -36,13 +36,9 @@ class ProjectDir(DataClassJsonMixin):
 
     Args:
         project_dir: ``annofabcli statistics visualize``コマンドによって出力されたプロジェクトディレクトリ
-        metadata:
-
-    タスクの完了条件（task_completion_criteria）は以下のいずれかです。
-        - acceptance_completed: 受入フェーズの完了状態
-        - acceptance_reached: 受入フェーズに到達
-        - inspection_reached: 検査フェーズまたは受入フェーズに到達
-        - annotation_started: 教師付フェーズが着手された
+        task_completion_criteria: タスクの完了条件
+        metadata: プロジェクトIDや絞り込み条件などの情報が含まれるメタデータ。この情報はグラフに埋め込まれます。
+        custom_production_volume_list: 独自の生産量に関する列情報のリスト
     """
 
     FILENAME_WHOLE_PERFORMANCE = "全体の生産性と品質.csv"
@@ -448,6 +444,17 @@ class ProjectDir(DataClassJsonMixin):
 
         return None
 
+    def get_project_title(self) -> str:
+        """
+        `project_info`に記載されているプジェクトのタイトルを返します。
+        ただし`self.is_merged()`がTrueの場合は、`project_info`が存在しないので空文字を返します。
+        """
+        if self.is_merged():
+            return ""
+
+        project_info = self.read_project_info()
+        return project_info.project_title
+
 
 @dataclass
 class ProjectInfo(DataClassJsonMixin):
@@ -463,6 +470,12 @@ class ProjectInfo(DataClassJsonMixin):
     """タスクの完了条件（acceptance_completed / acceptance_reached / inspection_reached / annotation_started）"""
     query: FilteringQuery
     """集計対象を絞り込むためのクエリ"""
+
+    production_volume_include_labels: Optional[list[str]] = None
+    """生産量に含める「アノテーション仕様のラベル名（英語）」のリスト。Noneの場合、すべてのラベルを含む。"""
+
+    production_volume_exclude_labels: Optional[list[str]] = None
+    """生産量から除外する「アノテーション仕様のラベル名（英語）」のリスト。Noneの場合、除外しない。"""
 
 
 @dataclass

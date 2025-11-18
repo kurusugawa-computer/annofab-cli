@@ -400,6 +400,8 @@ class VisualizingStatisticsMain:
             measurement_datetime=annofabapi.utils.str_now(),
             task_completion_criteria=self.task_completion_criteria,
             query=self.filtering_query,
+            production_volume_include_labels=self.production_volume_include_labels,
+            production_volume_exclude_labels=self.production_volume_exclude_labels,
         )
         return project_summary
 
