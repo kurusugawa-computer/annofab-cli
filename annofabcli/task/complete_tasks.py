@@ -6,7 +6,7 @@ import multiprocessing
 import sys
 import uuid
 from functools import partial
-from typing import Any, Optional
+from typing import Any
 
 import annofabapi.utils
 import dateutil
@@ -196,7 +196,7 @@ class CompleteTasksMain(CommandLineWithConfirm):
     def complete_task_for_annotation_phase(
         self,
         task: Task,
-        reply_comment: Optional[str] = None,
+        reply_comment: str | None = None,
     ) -> bool:
         """
         annotation phaseのタスクを完了状態にする。
@@ -247,7 +247,7 @@ class CompleteTasksMain(CommandLineWithConfirm):
     def complete_task_for_inspection_acceptance_phase(
         self,
         task: Task,
-        inspection_status: Optional[CommentStatus] = None,
+        inspection_status: CommentStatus | None = None,
     ) -> bool:
         unprocessed_inspection_list_dict: dict[str, list[Inspection]] = {}
         for input_data_id in task.input_data_id_list:
@@ -286,7 +286,7 @@ class CompleteTasksMain(CommandLineWithConfirm):
         return True
 
     @staticmethod
-    def _validate_task(task: Task, target_phase: TaskPhase, target_phase_stage: int, task_query: Optional[TaskQuery]) -> bool:
+    def _validate_task(task: Task, target_phase: TaskPhase, target_phase_stage: int, task_query: TaskQuery | None) -> bool:
         if not (task.phase == target_phase and task.phase_stage == target_phase_stage):
             logger.warning(f"task_id='{task.task_id}'のタスクは操作対象のフェーズ、フェーズステージではないため、スキップします。")
             return False
@@ -306,10 +306,10 @@ class CompleteTasksMain(CommandLineWithConfirm):
         task_id: str,
         target_phase: TaskPhase,
         target_phase_stage: int,
-        reply_comment: Optional[str] = None,
-        inspection_status: Optional[CommentStatus] = None,
-        task_query: Optional[TaskQuery] = None,
-        task_index: Optional[int] = None,
+        reply_comment: str | None = None,
+        inspection_status: CommentStatus | None = None,
+        task_query: TaskQuery | None = None,
+        task_index: int | None = None,
     ) -> bool:
         logging_prefix = f"{task_index + 1} 件目" if task_index is not None else ""
 
@@ -342,9 +342,9 @@ class CompleteTasksMain(CommandLineWithConfirm):
         project_id: str,
         target_phase: TaskPhase,
         target_phase_stage: int,
-        reply_comment: Optional[str] = None,
-        inspection_status: Optional[CommentStatus] = None,
-        task_query: Optional[TaskQuery] = None,
+        reply_comment: str | None = None,
+        inspection_status: CommentStatus | None = None,
+        task_query: TaskQuery | None = None,
     ) -> bool:
         task_index, task_id = tpl
         try:
@@ -368,10 +368,10 @@ class CompleteTasksMain(CommandLineWithConfirm):
         task_id_list: list[str],
         target_phase: TaskPhase,
         target_phase_stage: int,
-        reply_comment: Optional[str] = None,
-        inspection_status: Optional[CommentStatus] = None,
-        task_query: Optional[TaskQuery] = None,
-        parallelism: Optional[int] = None,
+        reply_comment: str | None = None,
+        inspection_status: CommentStatus | None = None,
+        task_query: TaskQuery | None = None,
+        parallelism: int | None = None,
     ):
         """
         検査コメントのstatusを変更（対応完了 or 対応不要）にした上で、タスクを受け入れ完了状態にする
@@ -465,7 +465,7 @@ class CompleteTasks(CommandLine):
         super().validate_project(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.ACCEPTER])
 
         dict_task_query = annofabcli.common.cli.get_json_from_args(args.task_query)
-        task_query: Optional[TaskQuery] = TaskQuery.from_dict(dict_task_query) if dict_task_query is not None else None
+        task_query: TaskQuery | None = TaskQuery.from_dict(dict_task_query) if dict_task_query is not None else None
 
         main_obj = CompleteTasksMain(self.service, all_yes=self.all_yes)
         main_obj.complete_task_list(
@@ -542,7 +542,7 @@ def main(args: argparse.Namespace) -> None:
     CompleteTasks(service, facade, args).main()
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
+def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "complete"
     subcommand_help = "タスクを次のフェーズに進めます。（教師付の提出、検査/受入の合格）"
     description = (

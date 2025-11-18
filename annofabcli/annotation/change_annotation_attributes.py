@@ -8,7 +8,7 @@ import multiprocessing
 import sys
 from enum import Enum
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import annofabapi
 from annofabapi.dataclass.task import Task
@@ -58,7 +58,7 @@ class ChangeAnnotationAttributesMain(CommandLineWithConfirm):
 
         self.dump_annotation_obj = DumpAnnotationMain(service, project_id)
 
-    def change_annotation_attributes(self, annotation_list: list[dict[str, Any]], additional_data_list: list[dict[str, Any]]) -> Optional[list[dict[str, Any]]]:
+    def change_annotation_attributes(self, annotation_list: list[dict[str, Any]], additional_data_list: list[dict[str, Any]]) -> list[dict[str, Any]] | None:
         """
         アノテーション属性値を変更する。
 
@@ -112,8 +112,8 @@ class ChangeAnnotationAttributesMain(CommandLineWithConfirm):
         annotation_query: AnnotationQueryForAPI,
         additional_data_list: list[dict[str, Any]],
         *,
-        backup_dir: Optional[Path] = None,
-        task_index: Optional[int] = None,
+        backup_dir: Path | None = None,
+        task_index: int | None = None,
     ) -> tuple[bool, int]:
         """
         タスクに対してアノテーション属性値を変更する。
@@ -170,7 +170,7 @@ class ChangeAnnotationAttributesMain(CommandLineWithConfirm):
         annotation_query: AnnotationQueryForAPI,
         additional_data_list: list[dict[str, Any]],
         *,
-        backup_dir: Optional[Path] = None,
+        backup_dir: Path | None = None,
     ) -> tuple[bool, int]:
         task_index, task_id = tpl
         try:
@@ -191,8 +191,8 @@ class ChangeAnnotationAttributesMain(CommandLineWithConfirm):
         annotation_query: AnnotationQueryForAPI,
         additional_data_list: list[dict[str, Any]],
         *,
-        backup_dir: Optional[Path] = None,
-        parallelism: Optional[int] = None,
+        backup_dir: Path | None = None,
+        parallelism: int | None = None,
     ) -> None:
         """
         複数のタスクに対してアノテーションの属性値を変更します。
@@ -272,7 +272,7 @@ class ChangeAttributesOfAnnotation(CommandLine):
         return annotation_query_for_cli.to_query_for_api(annotation_specs)
 
     @classmethod
-    def get_additional_data_list_from_cli_attributes(cls, str_attributes: str, annotation_specs: dict[str, Any], label_id: Optional[str]) -> list[dict[str, Any]]:
+    def get_additional_data_list_from_cli_attributes(cls, str_attributes: str, annotation_specs: dict[str, Any], label_id: str | None) -> list[dict[str, Any]]:
         """
         CLIから受け取った`--attributes`の値から、APIに渡す属性情報(`AdditionalDataListV2`)を返します。
         """
@@ -383,7 +383,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
+def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "change_attributes"
     subcommand_help = "アノテーションの属性値を変更します。"
     description = (

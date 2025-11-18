@@ -7,7 +7,7 @@ import sys
 from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import annofabapi
 import pandas
@@ -87,7 +87,7 @@ class DeleteAnnotationMain(CommandLineWithConfirm):
         request_body = [_to_request_body_elm(annotation) for annotation in annotation_list]
         self.service.api.batch_update_annotations(self.project_id, request_body=request_body)
 
-    def get_annotation_list_for_task(self, task_id: str, annotation_query: Optional[AnnotationQueryForAPI]) -> list[dict[str, Any]]:
+    def get_annotation_list_for_task(self, task_id: str, annotation_query: AnnotationQueryForAPI | None) -> list[dict[str, Any]]:
         """
         タスク内のアノテーション一覧を取得する。
 
@@ -109,8 +109,8 @@ class DeleteAnnotationMain(CommandLineWithConfirm):
     def delete_annotation_for_task(
         self,
         task_id: str,
-        annotation_query: Optional[AnnotationQueryForAPI] = None,
-        backup_dir: Optional[Path] = None,
+        annotation_query: AnnotationQueryForAPI | None = None,
+        backup_dir: Path | None = None,
     ) -> None:
         """
         タスクに対してアノテーションを削除する
@@ -159,8 +159,8 @@ class DeleteAnnotationMain(CommandLineWithConfirm):
     def delete_annotation_for_task_list(
         self,
         task_id_list: list[str],
-        annotation_query: Optional[AnnotationQueryForAPI] = None,
-        backup_dir: Optional[Path] = None,
+        annotation_query: AnnotationQueryForAPI | None = None,
+        backup_dir: Path | None = None,
     ) -> None:
         project_title = self.facade.get_project_title(self.project_id)
         logger.info(f"プロジェクト'{project_title}'に対して、タスク{len(task_id_list)} 件のアノテーションを削除します。")
@@ -278,7 +278,7 @@ class DeleteAnnotationMain(CommandLineWithConfirm):
     def delete_annotation_by_id_list(
         self,
         annotation_list: list[DeletedAnnotationInfo],
-        backup_dir: Optional[Path] = None,
+        backup_dir: Path | None = None,
     ) -> None:
         """
         task_id, input_data_id, annotation_id のリストで指定されたアノテーションのみ削除する
@@ -492,7 +492,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
+def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "delete"
     subcommand_help = "アノテーションを削除します。"
     description = (

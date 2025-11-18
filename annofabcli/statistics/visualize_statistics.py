@@ -6,9 +6,10 @@ import json
 import logging.handlers
 import sys
 import tempfile
+from collections.abc import Callable
 from multiprocessing import Pool
 from pathlib import Path
-from typing import Any, Callable, Optional
+from typing import Any
 
 import annofabapi
 import pandas
@@ -74,13 +75,13 @@ class WriteCsvGraph:
         project_dir: ProjectDir,
         actual_worktime: ActualWorktime,
         *,
-        annotation_count: Optional[AnnotationCount] = None,
-        input_data_count: Optional[InputDataCount] = None,
-        custom_production_volume: Optional[CustomProductionVolume] = None,
+        annotation_count: AnnotationCount | None = None,
+        input_data_count: InputDataCount | None = None,
+        custom_production_volume: CustomProductionVolume | None = None,
         minimal_output: bool = False,
         output_only_text: bool = False,
-        production_volume_include_labels: Optional[list[str]] = None,
-        production_volume_exclude_labels: Optional[list[str]] = None,
+        production_volume_include_labels: list[str] | None = None,
+        production_volume_exclude_labels: list[str] | None = None,
         include_annotation_duration_seconds: bool = False,
         include_video_duration_minutes: bool = False,
     ) -> None:
@@ -101,9 +102,9 @@ class WriteCsvGraph:
         self.include_annotation_duration_seconds = include_annotation_duration_seconds
         self.include_video_duration_minutes = include_video_duration_minutes
 
-        self.task: Optional[Task] = None
-        self.worktime_per_date: Optional[WorktimePerDate] = None
-        self.task_worktime_obj: Optional[TaskWorktimeByPhaseUser] = None
+        self.task: Task | None = None
+        self.worktime_per_date: WorktimePerDate | None = None
+        self.task_worktime_obj: TaskWorktimeByPhaseUser | None = None
 
     def _catch_exception(self, function: Callable[..., Any]) -> Callable[..., Any]:
         """
@@ -156,7 +157,7 @@ class WriteCsvGraph:
 
         return self.task
 
-    def _prepare_custom_production_volume(self) -> Optional[CustomProductionVolume]:
+    def _prepare_custom_production_volume(self) -> CustomProductionVolume | None:
         """カスタム生産量の準備を行う"""
         custom_production_volume = self.custom_production_volume
 
@@ -170,7 +171,7 @@ class WriteCsvGraph:
 
         return custom_production_volume
 
-    def _add_annotation_duration(self, custom_production_volume: Optional[CustomProductionVolume]) -> CustomProductionVolume:
+    def _add_annotation_duration(self, custom_production_volume: CustomProductionVolume | None) -> CustomProductionVolume:
         """区間アノテーションの長さを生産量に追加する"""
         logger.debug(f"project_id='{self.project_id}' :: 区間アノテーションの長さ（'annotation_duration_minute'）を計算します。")
         annotation_duration_obj = AnnotationDuration.from_annotation_zip(
@@ -198,7 +199,7 @@ class WriteCsvGraph:
             # CustomProductionVolumeが存在しない場合、新規作成
             return CustomProductionVolume(annotation_duration_obj.df, custom_production_volume_list=[annotation_duration_column])
 
-    def _add_video_duration(self, custom_production_volume: Optional[CustomProductionVolume]) -> CustomProductionVolume:
+    def _add_video_duration(self, custom_production_volume: CustomProductionVolume | None) -> CustomProductionVolume:
         """動画の長さ（分）を生産量に追加する"""
         logger.debug(f"project_id='{self.project_id}' :: 動画の長さ（'video_duration_minute'）を計算します。")
         video_duration_by_task_id = self.visualize_source_files.get_video_duration_minutes_by_task_id()
@@ -297,7 +298,7 @@ class WriteCsvGraph:
         if not self.output_only_text:
             self.project_dir.write_user_performance_scatter_plot(user_performance)
 
-    def write_cumulative_linegraph_by_user(self, user_id_list: Optional[list[str]] = None) -> None:
+    def write_cumulative_linegraph_by_user(self, user_id_list: list[str] | None = None) -> None:
         """ユーザごとの累積折れ線グラフをプロットする。"""
         task_worktime_obj = self._get_task_worktime_obj()
         annotator_obj = AnnotatorCumulativeProductivity.from_df_wrapper(task_worktime_obj)
@@ -309,7 +310,7 @@ class WriteCsvGraph:
             self.project_dir.write_cumulative_line_graph(inspector_obj, phase=TaskPhase.INSPECTION, user_id_list=user_id_list, minimal_output=self.minimal_output)
             self.project_dir.write_cumulative_line_graph(acceptor_obj, phase=TaskPhase.ACCEPTANCE, user_id_list=user_id_list, minimal_output=self.minimal_output)
 
-    def write_worktime_per_date(self, user_id_list: Optional[list[str]] = None) -> None:
+    def write_worktime_per_date(self, user_id_list: list[str] | None = None) -> None:
         """日ごとの作業時間情報を出力する。"""
         worktime_per_date_obj = self._get_worktime_per_date()
 
@@ -328,7 +329,7 @@ class WriteCsvGraph:
             self.project_dir.write_whole_productivity_line_graph_per_date(productivity_per_completed_date_obj)
             self.project_dir.write_whole_productivity_line_graph_per_annotation_started_date(productivity_per_started_date_obj)
 
-    def write_user_productivity_per_date(self, user_id_list: Optional[list[str]] = None) -> None:
+    def write_user_productivity_per_date(self, user_id_list: list[str] | None = None) -> None:
         """ユーザごとの日ごとの生産性情報を出力する。"""
         task_worktime_obj = self._get_task_worktime_obj()
 
@@ -362,14 +363,14 @@ class VisualizingStatisticsMain:
         # その他
         download_latest: bool = False,
         is_get_task_histories_one_of_each: bool = False,
-        actual_worktime: Optional[ActualWorktime] = None,
-        annotation_count: Optional[AnnotationCount] = None,
-        input_data_count: Optional[InputDataCount] = None,
-        custom_production_volume: Optional[CustomProductionVolume] = None,
-        user_ids: Optional[list[str]] = None,
+        actual_worktime: ActualWorktime | None = None,
+        annotation_count: AnnotationCount | None = None,
+        input_data_count: InputDataCount | None = None,
+        custom_production_volume: CustomProductionVolume | None = None,
+        user_ids: list[str] | None = None,
         not_download_visualization_source_files: bool = False,
-        production_volume_include_labels: Optional[list[str]] = None,
-        production_volume_exclude_labels: Optional[list[str]] = None,
+        production_volume_include_labels: list[str] | None = None,
+        production_volume_exclude_labels: list[str] | None = None,
     ) -> None:
         self.service = service
         self.facade = AnnofabApiFacade(service)
@@ -503,7 +504,7 @@ class VisualizingStatisticsMain:
         self,
         project_id: str,
         root_output_dir: Path,
-    ) -> Optional[Path]:
+    ) -> Path | None:
         try:
             output_project_dir = root_output_dir / project_id
             self.visualize_statistics(
@@ -520,7 +521,7 @@ class VisualizingStatisticsMain:
         project_id_list: list[str],
         root_output_dir: Path,
         *,
-        parallelism: Optional[int] = None,
+        parallelism: int | None = None,
     ) -> list[Path]:
         output_project_dir_list: list[Path] = []
 
@@ -583,11 +584,11 @@ class VisualizeStatistics(CommandLine):
         temp_dir: Path,
         filtering_query: FilteringQuery,
         task_completion_criteria: TaskCompletionCriteria,
-        user_id_list: Optional[list[str]],
+        user_id_list: list[str] | None,
         actual_worktime: ActualWorktime,
-        annotation_count: Optional[AnnotationCount],
-        input_data_count: Optional[InputDataCount],
-        custom_production_volume: Optional[CustomProductionVolume],
+        annotation_count: AnnotationCount | None,
+        input_data_count: InputDataCount | None,
+        custom_production_volume: CustomProductionVolume | None,
         download_latest: bool,  # noqa: FBT001
         is_get_task_histories_one_of_each: bool,  # noqa: FBT001
         minimal_output: bool,  # noqa: FBT001
@@ -595,9 +596,9 @@ class VisualizeStatistics(CommandLine):
         not_download_visualization_source_files: bool,  # noqa: FBT001
         project_id_list: list[str],
         root_output_dir: Path,
-        parallelism: Optional[int],
-        production_volume_include_labels: Optional[list[str]] = None,
-        production_volume_exclude_labels: Optional[list[str]] = None,
+        parallelism: int | None,
+        production_volume_include_labels: list[str] | None = None,
+        production_volume_exclude_labels: list[str] | None = None,
     ) -> None:
         main_obj = VisualizingStatisticsMain(
             service=self.service,
@@ -652,7 +653,7 @@ class VisualizeStatistics(CommandLine):
         task_completion_criteria = TaskCompletionCriteria(args.task_completion_criteria)
 
         dict_task_query = annofabcli.common.cli.get_json_from_args(args.task_query)
-        task_query: Optional[TaskQuery] = None
+        task_query: TaskQuery | None = None
         if dict_task_query is not None:
             task_query = TaskQuery.from_dict(dict_task_query)
             logger.warning("引数 '--task_query' は非推奨です。代わりに '--task_completion_criteria' を指定してください。")
@@ -908,7 +909,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
+def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "visualize"
     subcommand_help = "生産性に関するCSVファイルやグラフを出力します。"
     description = "生産性に関するCSVファイルやグラフを出力します。"

@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import logging
+from collections.abc import Callable
 from pathlib import Path
-from typing import Any, Callable, Literal, Optional
+from typing import Any, Literal
 
 import bokeh
 import bokeh.layouts
@@ -62,7 +63,7 @@ class ScatterGraph:
         y_axis_label: str,
         width: int = 1200,
         height: int = 1000,
-        tooltip_columns: Optional[list[str]] = None,
+        tooltip_columns: list[str] | None = None,
         **figure_kwargs,  # noqa: ANN003
     ) -> None:
         fig = figure(
@@ -82,7 +83,7 @@ class ScatterGraph:
 
         self.figure = fig
 
-        self.finding_user_widget: Optional[MultiChoice] = None
+        self.finding_user_widget: MultiChoice | None = None
         """ユーザーを探すためのWidget"""
 
         self.text_glyphs: dict[str, GlyphRenderer] = {}
@@ -146,7 +147,7 @@ class ScatterGraph:
 
         # 1点ごとに`text`で名前を表示している理由：
         # `add_multi_choice_widget_for_searching_user`関数で追加したMultiChoice Widgetで、名前の表示スタイルを変更するため
-        for x, y, username, user_id in zip(source.data[x_column_name], source.data[y_column_name], source.data[username_column_name], source.data[user_id_column_name]):
+        for x, y, username, user_id in zip(source.data[x_column_name], source.data[y_column_name], source.data[username_column_name], source.data[user_id_column_name], strict=False):
             self.text_glyphs[user_id] = self.figure.text(
                 x=x,
                 y=y,
@@ -200,7 +201,7 @@ class ScatterGraph:
 
         # 1点ごとに`text`で名前を表示している理由：
         # `add_multi_choice_widget_for_searching_user`関数で追加したMultiChoice Widgetで、名前の表示スタイルを変更するため
-        for x, y, username, user_id in zip(source.data[x_column_name], source.data[y_column_name], source.data[username_column_name], source.data[user_id_column_name]):
+        for x, y, username, user_id in zip(source.data[x_column_name], source.data[y_column_name], source.data[username_column_name], source.data[user_id_column_name], strict=False):
             self.text_glyphs[user_id] = self.figure.text(
                 x=x,
                 y=y,

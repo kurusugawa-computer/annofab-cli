@@ -3,7 +3,6 @@ from __future__ import annotations
 import argparse
 import sys
 from logging import getLogger
-from typing import Optional
 
 import annofabcli
 from annofabcli.project import create_project
@@ -24,7 +23,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
+def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "put"
     subcommand_help = "[DEPRECATED] プロジェクトを作成します。"
     subcommand_description = subcommand_help + "\n`project put` コマンドは非推奨です。代わりに 'project create'コマンドを使用してください。`project put` コマンドは2026年01月01日以降に廃止予定です。"

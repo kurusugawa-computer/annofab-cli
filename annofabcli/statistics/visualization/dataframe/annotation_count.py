@@ -2,8 +2,9 @@ from __future__ import annotations
 
 import logging
 from collections import defaultdict
+from collections.abc import Callable
 from pathlib import Path
-from typing import Any, Callable, Optional
+from typing import Any
 
 import pandas
 from annofabapi.parser import lazy_parse_simple_annotation_zip
@@ -47,9 +48,9 @@ class AnnotationCount:
         annotation_zip: Path,
         project_id: str,
         *,
-        get_annotation_count_func: Optional[Callable[[dict[str, Any]], int]] = None,
-        include_labels: Optional[list[str]] = None,
-        exclude_labels: Optional[list[str]] = None,
+        get_annotation_count_func: Callable[[dict[str, Any]], int] | None = None,
+        include_labels: list[str] | None = None,
+        exclude_labels: list[str] | None = None,
     ) -> AnnotationCount:
         """
         アノテーションZIPファイルからインスタンスを生成します。

@@ -1,6 +1,6 @@
 import argparse
 import logging
-from typing import Any, Optional
+from typing import Any
 
 import annofabapi
 import pandas
@@ -79,7 +79,7 @@ class ListTasksMain:
 
         return task_query
 
-    def get_task_list_with_api(self, project_id: str, task_query: Optional[dict[str, Any]] = None, user_id_list: Optional[list[str]] = None) -> list[Task]:
+    def get_task_list_with_api(self, project_id: str, task_query: dict[str, Any] | None = None, user_id_list: list[str] | None = None) -> list[Task]:
         """
         タスク一覧を取得する。
 
@@ -118,9 +118,9 @@ class ListTasksMain:
         self,
         project_id: str,
         *,
-        task_id_list: Optional[list[str]] = None,
-        task_query: Optional[dict[str, Any]] = None,
-        user_id_list: Optional[list[str]] = None,
+        task_id_list: list[str] | None = None,
+        task_query: dict[str, Any] | None = None,
+        user_id_list: list[str] | None = None,
     ) -> list[Task]:
         """
 
@@ -253,7 +253,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
+def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "list"
     subcommand_help = "タスク一覧を出力します。"
     description = "タスク一覧を出力します。"

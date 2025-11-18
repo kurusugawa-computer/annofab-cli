@@ -6,7 +6,6 @@ import logging
 import sys
 from collections import defaultdict
 from pathlib import Path
-from typing import Optional, Union
 
 import annofabapi
 import pandas
@@ -30,7 +29,7 @@ from annofabcli.common.facade import AnnofabApiFacade
 logger = logging.getLogger(__name__)
 
 
-Attributes = dict[str, Optional[Union[str, int, bool]]]
+Attributes = dict[str, str | int | bool | None]
 """属性情報"""
 
 
@@ -66,7 +65,7 @@ class ChangeAnnotationAttributesPerAnnotationMain(CommandLineWithConfirm):
         project_id: str,
         is_force: bool,
         all_yes: bool,
-        backup_dir: Optional[Path] = None,
+        backup_dir: Path | None = None,
     ) -> None:
         self.service = service
         self.project_id = project_id
@@ -314,7 +313,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
+def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "change_attributes_per_annotation"
     subcommand_help = "各アノテーションの属性値を変更します。"
     epilog = "オーナロールまたはチェッカーロールを持つユーザで実行してください。"

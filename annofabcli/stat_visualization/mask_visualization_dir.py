@@ -5,7 +5,6 @@ import json
 import logging
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional
 
 import pandas
 from annofabapi.models import TaskPhase
@@ -54,8 +53,8 @@ class ReplacementDict:
 def create_replacement_dict(
     df_user: pandas.DataFrame,
     *,
-    not_masked_biography_set: Optional[set[str]],
-    not_masked_user_id_set: Optional[set[str]],
+    not_masked_biography_set: set[str] | None,
+    not_masked_user_id_set: set[str] | None,
 ) -> ReplacementDict:
     """
     ユーザー情報を置換するためのインスタンスを生成します。
@@ -76,8 +75,8 @@ def create_replacement_dict(
 
     df2 = df_user.set_index("user_id")
     df3 = df2.loc[replacement_dict_for_user_id.keys()]
-    replacement_dict_for_username = dict(zip(df3["username"], replacement_dict_for_user_id.values()))
-    replacement_dict_for_account_id = dict(zip(df3["account_id"], replacement_dict_for_user_id.values()))
+    replacement_dict_for_username = dict(zip(df3["username"], replacement_dict_for_user_id.values(), strict=False))
+    replacement_dict_for_account_id = dict(zip(df3["account_id"], replacement_dict_for_user_id.values(), strict=False))
 
     replacement_dict_by_biography = create_replacement_dict_by_biography(df_user, not_masked_biography_set=not_masked_biography_set)
 
@@ -93,7 +92,7 @@ def write_line_graph(
     task_worktime_by_phase_user: TaskWorktimeByPhaseUser,
     output_project_dir: ProjectDir,
     *,
-    user_id_list: Optional[list[str]] = None,
+    user_id_list: list[str] | None = None,
     minimal_output: bool = False,
 ) -> None:
     output_project_dir.write_cumulative_line_graph(
@@ -150,8 +149,8 @@ def mask_visualization_dir(
     project_dir: ProjectDir,
     output_project_dir: ProjectDir,
     *,
-    not_masked_biography_set: Optional[set[str]] = None,
-    not_masked_user_id_set: Optional[set[str]] = None,
+    not_masked_biography_set: set[str] | None = None,
+    not_masked_user_id_set: set[str] | None = None,
     minimal_output: bool = False,
 ) -> None:
     worktime_per_date = project_dir.read_worktime_per_date_user()
@@ -292,7 +291,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
+def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "mask_user_info"
     subcommand_help = "`annofabcli statistics visualize` コマンドの出力結果のユーザ情報をマスクします。"
     description = "`annofabcli statistics visualize` コマンドの出力結果のユーザ情報をマスクします。マスク対象のファイルのみ出力します。"

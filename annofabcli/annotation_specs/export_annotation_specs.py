@@ -3,7 +3,7 @@ from __future__ import annotations
 import argparse
 import logging
 import sys
-from typing import Any, Optional
+from typing import Any
 
 import annofabcli
 import annofabcli.common.cli
@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 class ExportAnnotationSpecs(CommandLine):
     COMMON_MESSAGE = "annofabcli annotation_specs export: error:"
 
-    def get_history_id_from_before_index(self, project_id: str, before: int) -> Optional[str]:
+    def get_history_id_from_before_index(self, project_id: str, before: int) -> str | None:
         histories, _ = self.service.api.get_annotation_specs_histories(project_id)
         sorted_histories = sorted(histories, key=lambda x: x["updated_datetime"], reverse=True)
 
@@ -34,7 +34,7 @@ class ExportAnnotationSpecs(CommandLine):
         history = sorted_histories[before]
         return history["history_id"]
 
-    def get_exported_annotation_specs(self, project_id: str, history_id: Optional[str]) -> dict[str, Any]:
+    def get_exported_annotation_specs(self, project_id: str, history_id: str | None) -> dict[str, Any]:
         query_params = {"v": "3"}
         if history_id is not None:
             query_params["history_id"] = history_id
@@ -113,7 +113,7 @@ def main(args: argparse.Namespace) -> None:
     ExportAnnotationSpecs(service, facade, args).main()
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
+def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "export"
 
     subcommand_help = "アノテーション仕様の情報をエクスポートします。"

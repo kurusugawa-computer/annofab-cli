@@ -3,7 +3,6 @@ import logging
 import multiprocessing
 import sys
 from functools import partial
-from typing import Optional
 
 import annofabapi
 import requests
@@ -63,9 +62,9 @@ class ChangeOperatorMain:
         self,
         project_id: str,
         task_id: str,
-        new_account_id: Optional[str] = None,
-        task_query: Optional[TaskQuery] = None,
-        task_index: Optional[int] = None,
+        new_account_id: str | None = None,
+        task_query: TaskQuery | None = None,
+        task_index: int | None = None,
     ) -> bool:
         logging_prefix = f"{task_index + 1} 件目" if task_index is not None else ""
         dict_task = self.service.wrapper.get_task_or_none(project_id, task_id)
@@ -115,8 +114,8 @@ class ChangeOperatorMain:
         self,
         tpl: tuple[int, str],
         project_id: str,
-        task_query: Optional[TaskQuery] = None,
-        new_account_id: Optional[str] = None,
+        task_query: TaskQuery | None = None,
+        new_account_id: str | None = None,
     ) -> bool:
         task_index, task_id = tpl
         try:
@@ -136,9 +135,9 @@ class ChangeOperatorMain:
         project_id: str,
         task_id_list: list[str],
         *,
-        new_user_id: Optional[str] = None,
-        task_query: Optional[TaskQuery] = None,
-        parallelism: Optional[int] = None,
+        new_user_id: str | None = None,
+        task_query: TaskQuery | None = None,
+        parallelism: int | None = None,
     ) -> None:
         """
         指定した複数のタスクの担当者を変更します。
@@ -219,7 +218,7 @@ class ChangeOperator(CommandLine):
             return
 
         dict_task_query = annofabcli.common.cli.get_json_from_args(args.task_query)
-        task_query: Optional[TaskQuery] = TaskQuery.from_dict(dict_task_query) if dict_task_query is not None else None
+        task_query: TaskQuery | None = TaskQuery.from_dict(dict_task_query) if dict_task_query is not None else None
 
         project_id = args.project_id
         super().validate_project(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.ACCEPTER])
@@ -270,7 +269,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
+def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "change_operator"
     subcommand_help = "タスクの担当者を変更します。"
     description = "タスクの担当者を変更します。作業中状態、完了状態のタスクは、担当者を変更できません。保留中状態のタスクは、デフォルトでは担当者を変更できません。"

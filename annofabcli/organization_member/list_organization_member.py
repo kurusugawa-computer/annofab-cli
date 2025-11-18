@@ -1,6 +1,6 @@
 import argparse
 import logging
-from typing import Any, Optional
+from typing import Any
 
 import pandas
 import requests
@@ -87,7 +87,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
+def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "list"
     subcommand_help = "組織メンバ一覧を出力します。"
     description = "組織メンバ一覧を出力します。"

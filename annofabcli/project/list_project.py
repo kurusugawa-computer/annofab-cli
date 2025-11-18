@@ -1,7 +1,7 @@
 import argparse
 import logging
 import sys
-from typing import Any, Optional
+from typing import Any
 
 import annofabapi
 import pandas
@@ -45,7 +45,7 @@ class ListProjectMain:
         self.facade = AnnofabApiFacade(service)
 
     @staticmethod
-    def get_account_id_from_user_id(organization_member_list: list[OrganizationMember], user_id: str) -> Optional[str]:
+    def get_account_id_from_user_id(organization_member_list: list[OrganizationMember], user_id: str) -> str | None:
         member = first_true(organization_member_list, pred=lambda e: e["user_id"] == user_id)
         if member is not None:
             return member["account_id"]
@@ -116,7 +116,7 @@ class ListProjectMain:
 
         return project_query
 
-    def get_project_list_from_organization(self, organization_name: str, project_query: Optional[dict[str, Any]] = None) -> list[Project]:
+    def get_project_list_from_organization(self, organization_name: str, project_query: dict[str, Any] | None = None) -> list[Project]:
         """
         組織名からプロジェクト一覧を取得する。
         """
@@ -254,7 +254,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
+def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "list"
     subcommand_help = "プロジェクト一覧を出力します。"
     description = "プロジェクト一覧を出力します。"

@@ -76,7 +76,7 @@ class ChangeProjectOrganizationMain(CommandLineWithConfirm):
             指定したジョブ（job_idがNoneの場合は現在進行中のジョブ）が存在しない場合は、Noneを返す。
         """
 
-        def get_job_from_job_id(arg_job_id: str) -> Optional[dict[str, Any]]:
+        def get_job_from_job_id(arg_job_id: str) -> dict[str, Any] | None:
             content, _ = self.service.api.get_project_job(project_id, query_params={"type": job_type.value})
             job_list = content["list"]
             return more_itertools.first_true(job_list, pred=lambda e: e["job_id"] == arg_job_id)
@@ -134,7 +134,7 @@ class ChangeProjectOrganizationMain(CommandLineWithConfirm):
                 )
                 return JobStatus.PROGRESS
 
-    def change_organization_for_project(self, project_id: str, organization_name: str) -> Optional[dict[str, Any]]:
+    def change_organization_for_project(self, project_id: str, organization_name: str) -> dict[str, Any] | None:
         project = self.service.wrapper.get_project_or_none(project_id)
         if project is None:
             logger.warning(f"project_id='{project_id}'のプロジェクトは存在しないので、スキップします。")
@@ -247,7 +247,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
+def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "change_organization"
     subcommand_help = "プロジェクトの所属する組織を変更します。"
     epilog = "プロジェクトのオーナロール、変更先の組織の管理者またはオーナーロールを持つユーザで実行してください。"

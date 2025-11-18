@@ -5,7 +5,7 @@ import json
 import logging
 import tempfile
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import annofabapi
 import pandas
@@ -31,7 +31,7 @@ class ListTaskHistoryEventWithJsonMain:
         self.service = service
 
     @staticmethod
-    def filter_task_history_event(task_history_event_list: list[TaskHistoryEvent], task_id_list: Optional[list[str]] = None) -> list[TaskHistoryEvent]:
+    def filter_task_history_event(task_history_event_list: list[TaskHistoryEvent], task_id_list: list[str] | None = None) -> list[TaskHistoryEvent]:
         if task_id_list is not None:
             result = []
             task_id_set = set(task_id_list)
@@ -43,7 +43,7 @@ class ListTaskHistoryEventWithJsonMain:
 
         return task_history_event_list
 
-    def get_task_history_event_list(self, project_id: str, task_history_event_json: Optional[Path] = None, task_id_list: Optional[list[str]] = None) -> list[dict[str, Any]]:
+    def get_task_history_event_list(self, project_id: str, task_history_event_json: Path | None = None, task_id_list: list[str] | None = None) -> list[dict[str, Any]]:
         if task_history_event_json is None:
             downloading_obj = DownloadingFile(self.service)
             # `NamedTemporaryFile`を使わない理由: Windowsで`PermissionError`が発生するため
@@ -72,8 +72,8 @@ class ListTaskHistoryEventWithJson(CommandLine):
     def print_task_history_event_list(
         self,
         project_id: str,
-        task_history_event_json: Optional[Path],
-        task_id_list: Optional[list[str]],
+        task_history_event_json: Path | None,
+        task_id_list: list[str] | None,
         arg_format: FormatArgument,
     ) -> None:
         super().validate_project(project_id, project_member_roles=None)
@@ -165,7 +165,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
+def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "list_all"
     subcommand_help = "すべてのタスク履歴イベントの一覧を出力します。"
     description = "すべてのタスク履歴イベントの一覧を出力します。\n出力されるタスク履歴イベントは、コマンドを実行した日の02:00(JST)頃の状態です。最新の情報を出力する方法はありません。"

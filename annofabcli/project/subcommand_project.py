@@ -1,5 +1,4 @@
 import argparse
-from typing import Optional
 
 import annofabcli.project.change_organization_of_project
 import annofabcli.project.change_project_status
@@ -28,7 +27,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     annofabcli.project.update_project.add_parser(subparsers)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
+def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "project"
     subcommand_help = "プロジェクト関係のサブコマンド"
     description = "プロジェクト関係のサブコマンド"

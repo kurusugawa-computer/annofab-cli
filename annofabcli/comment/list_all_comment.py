@@ -10,7 +10,7 @@ import logging
 import tempfile
 from collections.abc import Collection
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import annofabapi
 import pandas
@@ -36,9 +36,9 @@ class ListAllCommentMain:
     def get_all_comment(
         self,
         project_id: str,
-        comment_json: Optional[Path],
-        task_ids: Optional[Collection[str]],
-        comment_type: Optional[CommentType],
+        comment_json: Path | None,
+        task_ids: Collection[str] | None,
+        comment_type: CommentType | None,
         exclude_reply: bool,  # noqa: FBT001
     ) -> list[dict[str, Any]]:
         if comment_json is None:
@@ -154,7 +154,7 @@ def main(args: argparse.Namespace) -> None:
     ListAllComment(service, facade, args).main()
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
+def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "list_all"
     subcommand_help = "すべてのコメントの一覧を出力します。"
     description = (

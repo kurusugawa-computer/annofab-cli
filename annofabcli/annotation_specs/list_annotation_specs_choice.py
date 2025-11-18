@@ -6,7 +6,7 @@ import logging
 import sys
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import pandas
 from annofabapi.models import Lang
@@ -41,7 +41,7 @@ class FlattenChoice(DataClassJsonMixin):
     どの属性に属しているか分かるようにするため追加した。
     """
 
-    attribute_name_en: Optional[str]
+    attribute_name_en: str | None
     """
     属性名（英語）
     どの属性に属しているか分かるようにするため追加した。
@@ -50,12 +50,12 @@ class FlattenChoice(DataClassJsonMixin):
     attribute_type: str
     """属性の種類"""
     choice_id: str
-    choice_name_en: Optional[str]
-    choice_name_ja: Optional[str]
-    choice_name_vi: Optional[str]
+    choice_name_en: str | None
+    choice_name_ja: str | None
+    choice_name_vi: str | None
     is_default: bool
     """初期値として設定されているかどうか"""
-    keybind: Optional[str]
+    keybind: str | None
     """キーバインド"""
 
 
@@ -105,7 +105,7 @@ def create_flatten_choice_list_from_additionals(additionals_v3: list[dict[str, A
 class PrintAnnotationSpecsAttribute(CommandLine):
     COMMON_MESSAGE = "annofabcli annotation_specs list_choice: error:"
 
-    def print_annotation_specs_choice(self, annotation_specs_v3: dict[str, Any], output_format: FormatArgument, output: Optional[str] = None) -> None:
+    def print_annotation_specs_choice(self, annotation_specs_v3: dict[str, Any], output_format: FormatArgument, output: str | None = None) -> None:
         choice_list = create_flatten_choice_list_from_additionals(annotation_specs_v3["additionals"])
         logger.info(f"{len(choice_list)} 件の選択肢情報を出力します。")
 
@@ -127,7 +127,7 @@ class PrintAnnotationSpecsAttribute(CommandLine):
         elif output_format in [FormatArgument.JSON, FormatArgument.PRETTY_JSON]:
             print_according_to_format([e.to_dict() for e in choice_list], format=output_format, output=output)
 
-    def get_history_id_from_before_index(self, project_id: str, before: int) -> Optional[str]:
+    def get_history_id_from_before_index(self, project_id: str, before: int) -> str | None:
         histories, _ = self.service.api.get_annotation_specs_histories(project_id)
         if before + 1 > len(histories):
             logger.warning(f"アノテーション仕様の履歴は{len(histories)}個のため、最新より{before}個前のアノテーション仕様は見つかりませんでした。")
@@ -216,7 +216,7 @@ def main(args: argparse.Namespace) -> None:
     PrintAnnotationSpecsAttribute(service, facade, args).main()
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
+def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "list_choice"
 
     subcommand_help = "アノテーション仕様のドロップダウンまたはラジオボタン属性の選択肢情報を出力します。"

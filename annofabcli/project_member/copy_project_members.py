@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import argparse
 import logging
-from typing import Any, Optional
+from typing import Any
 
 import annofabapi
 from annofabapi.models import OrganizationMember, ProjectMember, ProjectMemberRole
@@ -47,7 +47,7 @@ class CopyProjectMembers(CommandLine):
         return self.service.wrapper.get_all_organization_members(organization_name)
 
     @staticmethod
-    def find_member(members: list[dict[str, Any]], account_id: str) -> Optional[dict[str, Any]]:
+    def find_member(members: list[dict[str, Any]], account_id: str) -> dict[str, Any] | None:
         for m in members:
             if m["account_id"] == account_id:
                 return m
@@ -175,7 +175,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
+def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "copy"
     subcommand_help = "プロジェクトメンバをコピーする。"
     description = "プロジェクトメンバをコピーする。"

@@ -8,7 +8,7 @@ import multiprocessing
 import sys
 from dataclasses import dataclass
 from functools import partial
-from typing import Any, Optional, Union
+from typing import Any
 
 import annofabapi
 from annofabapi.models import ProjectMemberRole
@@ -27,7 +27,7 @@ from annofabcli.common.facade import AnnofabApiFacade
 
 logger = logging.getLogger(__name__)
 
-Metadata = dict[str, Union[str, bool, int]]
+Metadata = dict[str, str | bool | int]
 
 
 @dataclass(frozen=True)
@@ -42,7 +42,7 @@ class UpdateMetadataOfTaskMain(CommandLineWithConfirm):
         service: annofabapi.Resource,
         *,
         is_overwrite_metadata: bool,
-        parallelism: Optional[int] = None,
+        parallelism: int | None = None,
         all_yes: bool = False,
     ) -> None:
         self.service = service
@@ -61,7 +61,7 @@ class UpdateMetadataOfTaskMain(CommandLineWithConfirm):
         project_id: str,
         task_id: str,
         metadata: dict[str, Any],
-        task_index: Optional[int] = None,
+        task_index: int | None = None,
     ) -> bool:
         logging_prefix = f"{task_index + 1} 件目" if task_index is not None else ""
         task = self.service.wrapper.get_task_or_none(project_id, task_id)
@@ -272,7 +272,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
+def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "update_metadata"
     subcommand_help = "タスクのメタデータを更新します。"
     description = "タスクのメタデータを上書きして更新します。"

@@ -8,7 +8,7 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import bokeh
 import bokeh.layouts
@@ -99,7 +99,7 @@ class WholeProductivityPerCompletedDate:
         df: pandas.DataFrame,
         task_completion_criteria: TaskCompletionCriteria,
         *,
-        custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None,
+        custom_production_volume_list: list[ProductionVolumeColumn] | None = None,
     ) -> None:
         self.df = df
         self.task_completion_criteria = task_completion_criteria
@@ -117,7 +117,7 @@ class WholeProductivityPerCompletedDate:
         csv_file: Path,
         task_completion_criteria: TaskCompletionCriteria,
         *,
-        custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None,
+        custom_production_volume_list: list[ProductionVolumeColumn] | None = None,
     ) -> WholeProductivityPerCompletedDate:
         """CSVファイルからインスタンスを生成します。"""
         df = pandas.read_csv(str(csv_file))
@@ -298,7 +298,7 @@ class WholeProductivityPerCompletedDate:
         self,
         output_file: Path,
         *,
-        metadata: Optional[dict[str, Any]] = None,
+        metadata: dict[str, Any] | None = None,
     ) -> None:
         """
         全体の生産量や生産性をプロットする
@@ -537,7 +537,7 @@ class WholeProductivityPerCompletedDate:
 
         write_bokeh_graph(bokeh.layouts.column(element_list), output_file)
 
-    def plot_cumulatively(self, output_file: Path, *, metadata: Optional[dict[str, Any]] = None) -> None:
+    def plot_cumulatively(self, output_file: Path, *, metadata: dict[str, Any] | None = None) -> None:
         """
         全体の生産量や作業時間の累積折れ線グラフを出力する
         """
@@ -756,7 +756,7 @@ class WholeProductivityPerCompletedDate:
         write_bokeh_graph(bokeh.layouts.column(element_list), output_file)
 
     @classmethod
-    def empty(cls, *, task_completion_criteria: TaskCompletionCriteria, custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None) -> WholeProductivityPerCompletedDate:
+    def empty(cls, *, task_completion_criteria: TaskCompletionCriteria, custom_production_volume_list: list[ProductionVolumeColumn] | None = None) -> WholeProductivityPerCompletedDate:
         df = pandas.DataFrame(columns=cls.get_columns(custom_production_volume_list=custom_production_volume_list))
         return cls(df, task_completion_criteria, custom_production_volume_list=custom_production_volume_list)
 
@@ -765,7 +765,7 @@ class WholeProductivityPerCompletedDate:
         return self.get_columns(custom_production_volume_list=self.custom_production_volume_list)
 
     @staticmethod
-    def get_columns(custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None) -> list[str]:
+    def get_columns(custom_production_volume_list: list[ProductionVolumeColumn] | None = None) -> list[str]:
         production_volume_columns = ["input_data_count", "annotation_count"]
         if custom_production_volume_list is not None:
             production_volume_columns.extend([e.value for e in custom_production_volume_list])
@@ -833,7 +833,7 @@ class WholeProductivityPerFirstAnnotationStartedDate:
         df: pandas.DataFrame,
         task_completion_criteria: TaskCompletionCriteria,
         *,
-        custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None,
+        custom_production_volume_list: list[ProductionVolumeColumn] | None = None,
     ) -> None:
         self.task_completion_criteria = task_completion_criteria
         self.custom_production_volume_list = custom_production_volume_list if custom_production_volume_list is not None else []
@@ -845,7 +845,7 @@ class WholeProductivityPerFirstAnnotationStartedDate:
         csv_file: Path,
         task_completion_criteria: TaskCompletionCriteria,
         *,
-        custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None,
+        custom_production_volume_list: list[ProductionVolumeColumn] | None = None,
     ) -> WholeProductivityPerFirstAnnotationStartedDate:
         """CSVファイルからインスタンスを生成します。"""
         df = pandas.read_csv(str(csv_file))
@@ -945,12 +945,12 @@ class WholeProductivityPerFirstAnnotationStartedDate:
         return True
 
     @classmethod
-    def empty(cls, task_completion_criteria: TaskCompletionCriteria, *, custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None) -> WholeProductivityPerFirstAnnotationStartedDate:
+    def empty(cls, task_completion_criteria: TaskCompletionCriteria, *, custom_production_volume_list: list[ProductionVolumeColumn] | None = None) -> WholeProductivityPerFirstAnnotationStartedDate:
         df = pandas.DataFrame(columns=cls.get_columns(custom_production_volume_list=custom_production_volume_list))
         return cls(df, task_completion_criteria, custom_production_volume_list=custom_production_volume_list)
 
     @staticmethod
-    def get_columns(*, custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None) -> list[str]:
+    def get_columns(*, custom_production_volume_list: list[ProductionVolumeColumn] | None = None) -> list[str]:
         production_volume_columns = ["input_data_count", "annotation_count"]
         if custom_production_volume_list is not None:
             production_volume_columns.extend([e.value for e in custom_production_volume_list])
@@ -989,7 +989,7 @@ class WholeProductivityPerFirstAnnotationStartedDate:
 
         print_csv(self.df[self.columns], str(output_file))
 
-    def plot(self, output_file: Path, *, metadata: Optional[dict[str, Any]] = None) -> None:  # noqa: PLR0915
+    def plot(self, output_file: Path, *, metadata: dict[str, Any] | None = None) -> None:  # noqa: PLR0915
         """
         全体の生産量や生産性をプロットする
         """

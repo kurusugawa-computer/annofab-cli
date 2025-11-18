@@ -4,7 +4,6 @@ import argparse
 import json
 import logging
 from pathlib import Path
-from typing import Optional
 
 import annofabcli
 from annofabcli.common.cli import (
@@ -64,7 +63,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
+def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "summarize_whole_performance_csv"
     subcommand_help = "``annofabcli statistics visualize`` コマンドの出力結果であるプロジェクトディレクトリから、プロジェクトごとの生産性や品質の一覧を出力します。。"
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description=subcommand_help)

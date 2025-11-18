@@ -4,7 +4,6 @@ import argparse
 import copy
 import logging
 import sys
-from typing import Optional
 
 import pandas
 
@@ -65,7 +64,7 @@ def mask_sensitive_value_in_argv(argv: list[str]) -> list[str]:
     return tmp_argv
 
 
-def main(arguments: Optional[list[str]] = None) -> None:
+def main(arguments: list[str] | None = None) -> None:
     """
     annofabcliコマンドのメイン処理
     注意： `deprecated`なツールは、サブコマンド化しない。

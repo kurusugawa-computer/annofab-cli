@@ -7,7 +7,7 @@ import logging
 import sys
 from collections import defaultdict
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import pandas
 from annofabapi.dataclass.input import InputData
@@ -105,8 +105,8 @@ def create_df_input_data_with_merged_task(input_data_list: list[dict[str, Any]])
 
 def match_input_data(
     input_data: dict[str, Any],
-    input_data_id_set: Optional[set[str]] = None,
-    input_data_query: Optional[InputDataQuery] = None,
+    input_data_id_set: set[str] | None = None,
+    input_data_query: InputDataQuery | None = None,
 ) -> bool:
     result = True
 
@@ -273,7 +273,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
+def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "list_all_merged_task"
     subcommand_help = "タスク一覧と結合したすべての入力データ一覧の情報を出力します。"
 

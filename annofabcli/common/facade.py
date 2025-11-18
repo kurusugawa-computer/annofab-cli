@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 import logging
-from collections.abc import Collection
+from collections.abc import Callable, Collection
 from dataclasses import dataclass
-from typing import Any, Callable, Optional
+from typing import Any
 
 import annofabapi
 import annofabapi.utils
@@ -33,27 +33,27 @@ class AnnotationQuery(DataClassJsonMixin):
     """
 
     label_id: str
-    attributes: Optional[list[AdditionalDataV1]] = None
+    attributes: list[AdditionalDataV1] | None = None
 
 
 @dataclass
 class AdditionalDataForCli(DataClassJsonMixin):
-    additional_data_definition_id: Optional[str] = None
+    additional_data_definition_id: str | None = None
     """属性ID"""
 
-    additional_data_definition_name_en: Optional[str] = None
+    additional_data_definition_name_en: str | None = None
     """属性の英語名"""
 
-    flag: Optional[bool] = None
+    flag: bool | None = None
 
-    integer: Optional[int] = None
+    integer: int | None = None
 
-    comment: Optional[str] = None
+    comment: str | None = None
 
-    choice: Optional[str] = None
+    choice: str | None = None
     """選択肢ID"""
 
-    choice_name_en: Optional[str] = None
+    choice_name_en: str | None = None
     """選択肢の英語名"""
 
 
@@ -63,10 +63,10 @@ class AnnotationQueryForCli(DataClassJsonMixin):
     コマンドライン上で指定するアノテーション検索条件
     """
 
-    label_name_en: Optional[str] = None
+    label_name_en: str | None = None
     """ラベルの英語名"""
-    label_id: Optional[str] = None
-    attributes: Optional[list[AdditionalDataForCli]] = None
+    label_id: str | None = None
+    attributes: list[AdditionalDataForCli] | None = None
 
 
 @dataclass
@@ -75,12 +75,12 @@ class TaskQuery(DataClassJsonMixin):
     コマンドライン上で指定するタスクの検索条件
     """
 
-    task_id: Optional[str] = None
-    phase: Optional[TaskPhase] = None
-    status: Optional[TaskStatus] = None
-    phase_stage: Optional[int] = None
-    user_id: Optional[str] = None
-    account_id: Optional[str] = None
+    task_id: str | None = None
+    phase: TaskPhase | None = None
+    status: TaskStatus | None = None
+    phase_stage: int | None = None
+    user_id: str | None = None
+    account_id: str | None = None
     no_user: bool = False
     """Trueなら未割り当てのタスクで絞り込む"""
 
@@ -91,12 +91,12 @@ class InputDataQuery(DataClassJsonMixin):
     コマンドライン上で指定する入力データの検索条件
     """
 
-    input_data_id: Optional[str] = None
-    input_data_name: Optional[str] = None
-    input_data_path: Optional[str] = None
+    input_data_id: str | None = None
+    input_data_name: str | None = None
+    input_data_path: str | None = None
 
 
-def match_annotation_with_task_query(annotation: dict[str, Any], task_query: Optional[TaskQuery]) -> bool:
+def match_annotation_with_task_query(annotation: dict[str, Any], task_query: TaskQuery | None) -> bool:
     """
     Simple Annotationが、タスククエリ条件に合致するか
 
@@ -130,7 +130,7 @@ def match_annotation_with_task_query(annotation: dict[str, Any], task_query: Opt
 
 
 def match_task_with_query(  # pylint: disable=too-many-return-statements  # noqa: PLR0911
-    task: Task, task_query: Optional[TaskQuery]
+    task: Task, task_query: TaskQuery | None
 ) -> bool:
     """
     タスク情報が、タスククエリ条件に合致するかどうか。
@@ -175,7 +175,7 @@ def match_task_with_query(  # pylint: disable=too-many-return-statements  # noqa
 
 
 def match_input_data_with_query(  # pylint: disable=too-many-return-statements
-    input_data: InputData, input_data_query: Optional[InputDataQuery]
+    input_data: InputData, input_data_query: InputDataQuery | None
 ) -> bool:
     """
     入力データが、クエリ条件に合致するかどうか。
@@ -222,7 +222,7 @@ def convert_annotation_specs_labels_v2_to_v1(labels_v2: list[dict[str, Any]], ad
         List[LabelV1]: V1版のラベル情報
     """
 
-    def get_additional(additional_data_definition_id: str) -> Optional[dict[str, Any]]:
+    def get_additional(additional_data_definition_id: str) -> dict[str, Any] | None:
         return more_itertools.first_true(additionals_v2, pred=lambda e: e["additional_data_definition_id"] == additional_data_definition_id)
 
     def to_label_v1(label_v2: dict[str, Any]) -> dict[str, Any]:
@@ -249,7 +249,7 @@ class AnnofabApiFacade:
     """
 
     #: 組織メンバ一覧のキャッシュ
-    _organization_members: Optional[tuple[str, list[OrganizationMember]]] = None
+    _organization_members: tuple[str, list[OrganizationMember]] | None = None
 
     _project_members_dict: dict[str, list[ProjectMember]] = {}  # noqa: RUF012
     """プロジェクトメンバ一覧の情報。key:project_id, value:プロジェクトメンバ一覧"""
@@ -258,7 +258,7 @@ class AnnofabApiFacade:
         self.service = service
 
     @staticmethod
-    def get_account_id_last_annotation_phase(task_histories: list[dict[str, Any]]) -> Optional[str]:
+    def get_account_id_last_annotation_phase(task_histories: list[dict[str, Any]]) -> str | None:
         """
         タスク履歴の最後のannotation phaseを担当したaccount_idを取得する. なければNoneを返す
         Args:
@@ -303,7 +303,7 @@ class AnnofabApiFacade:
         project, _ = self.service.api.get_project(project_id)
         return project["title"]
 
-    def _get_organization_member_with_predicate(self, project_id: str, predicate: Callable[[Any], bool]) -> Optional[OrganizationMember]:
+    def _get_organization_member_with_predicate(self, project_id: str, predicate: Callable[[Any], bool]) -> OrganizationMember | None:
         """
         account_idから組織メンバを取得する。
         インスタンス変数に組織メンバがあれば、WebAPIは実行しない。
@@ -335,7 +335,7 @@ class AnnofabApiFacade:
             update_organization_members()
             return self._get_organization_member_with_predicate(project_id, predicate)
 
-    def _get_project_member_with_predicate(self, project_id: str, predicate: Callable[[Any], bool]) -> Optional[ProjectMember]:
+    def _get_project_member_with_predicate(self, project_id: str, predicate: Callable[[Any], bool]) -> ProjectMember | None:
         """
         project_memberを取得する
 
@@ -352,7 +352,7 @@ class AnnofabApiFacade:
             self._project_members_dict[project_id] = project_member_list
         return more_itertools.first_true(project_member_list, pred=predicate)
 
-    def get_project_member_from_account_id(self, project_id: str, account_id: str) -> Optional[ProjectMember]:
+    def get_project_member_from_account_id(self, project_id: str, account_id: str) -> ProjectMember | None:
         """
         account_idからプロジェクトメンバを取得する。
 
@@ -365,7 +365,7 @@ class AnnofabApiFacade:
         """
         return self._get_project_member_with_predicate(project_id, predicate=lambda e: e["account_id"] == account_id)
 
-    def get_project_member_from_user_id(self, project_id: str, user_id: str) -> Optional[ProjectMember]:
+    def get_project_member_from_user_id(self, project_id: str, user_id: str) -> ProjectMember | None:
         """
         user_idからプロジェクトメンバを取得する。
 
@@ -378,7 +378,7 @@ class AnnofabApiFacade:
         """
         return self._get_project_member_with_predicate(project_id, predicate=lambda e: e["user_id"] == user_id)
 
-    def get_organization_member_from_user_id(self, project_id: str, user_id: str) -> Optional[OrganizationMember]:
+    def get_organization_member_from_user_id(self, project_id: str, user_id: str) -> OrganizationMember | None:
         """
         user_idから組織メンバを取得する。
         インスタンス変数に組織メンバがあれば、WebAPIは実行しない。
@@ -392,7 +392,7 @@ class AnnofabApiFacade:
         """
         return self._get_organization_member_with_predicate(project_id, lambda e: e["user_id"] == user_id)
 
-    def get_user_id_from_account_id(self, project_id: str, account_id: str) -> Optional[str]:
+    def get_user_id_from_account_id(self, project_id: str, account_id: str) -> str | None:
         """
         account_idからuser_idを取得する.
         インスタンス変数に組織メンバがあれば、WebAPIは実行しない。
@@ -411,7 +411,7 @@ class AnnofabApiFacade:
         else:
             return member.get("user_id")
 
-    def get_account_id_from_user_id(self, project_id: str, user_id: str) -> Optional[str]:
+    def get_account_id_from_user_id(self, project_id: str, user_id: str) -> str | None:
         """
         user_idからaccount_idを取得する。
         インスタンス変数に組織メンバがあれば、WebAPIは実行しない。
@@ -502,8 +502,8 @@ class AnnofabApiFacade:
     def validate_project(
         self,
         project_id: str,
-        project_member_roles: Optional[list[ProjectMemberRole]] = None,
-        organization_member_roles: Optional[list[OrganizationMemberRole]] = None,
+        project_member_roles: list[ProjectMemberRole] | None = None,
+        organization_member_roles: list[OrganizationMemberRole] | None = None,
     ) -> None:
         """
         プロジェクト or 組織に対して、必要な権限が付与されているかを確認する。

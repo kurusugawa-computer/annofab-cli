@@ -4,7 +4,7 @@ import argparse
 import logging
 import re
 from collections.abc import Collection
-from typing import Any, Optional
+from typing import Any
 
 import more_itertools
 
@@ -36,7 +36,7 @@ class ReplacingChoiceId(CommandLineWithConfirm):
         """
         return re.fullmatch("[A-Za-z0-9_.\\-]+", str_id) is not None
 
-    def main(self, annotation_specs: dict[str, Any], *, target_attribute_names: Optional[Collection[str]] = None) -> None:
+    def main(self, annotation_specs: dict[str, Any], *, target_attribute_names: Collection[str] | None = None) -> None:
         """
         アノテーション仕様内の選択肢IDを英語名に変更します。
 
@@ -140,7 +140,7 @@ def main(args: argparse.Namespace) -> None:
     GetAnnotationSpecsWithAttributeIdReplaced(service, facade, args).main()
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
+def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "get_with_choice_id_replaced_english_name"
 
     subcommand_help = "選択肢IDをUUIDから英語名に置換したアノテーション仕様のJSONを出力します。"

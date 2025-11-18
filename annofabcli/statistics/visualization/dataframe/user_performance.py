@@ -10,7 +10,7 @@ import math
 from collections.abc import Sequence
 from enum import Enum
 from pathlib import Path
-from typing import Any, Literal, Optional
+from typing import Any, Literal
 
 import bokeh
 import bokeh.layouts
@@ -93,7 +93,7 @@ class UserPerformance:
         df: pandas.DataFrame,
         task_completion_criteria: TaskCompletionCriteria,
         *,
-        custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None,
+        custom_production_volume_list: list[ProductionVolumeColumn] | None = None,
     ) -> None:
         self.task_completion_criteria = task_completion_criteria
         phase_list = self.get_phase_list(df.columns)
@@ -184,13 +184,13 @@ class UserPerformance:
         csv_file: Path,
         task_completion_criteria: TaskCompletionCriteria,
         *,
-        custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None,
+        custom_production_volume_list: list[ProductionVolumeColumn] | None = None,
     ) -> UserPerformance:
         df = read_multiheader_csv(str(csv_file))
         return cls(df, task_completion_criteria, custom_production_volume_list=custom_production_volume_list)
 
     @classmethod
-    def empty(cls, task_completion_criteria: TaskCompletionCriteria, *, custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None) -> UserPerformance:
+    def empty(cls, task_completion_criteria: TaskCompletionCriteria, *, custom_production_volume_list: list[ProductionVolumeColumn] | None = None) -> UserPerformance:
         """空のデータフレームを持つインスタンスを生成します。"""
         production_volume_columns = ["input_data_count", "annotation_count"]
         if custom_production_volume_list is not None:
@@ -440,7 +440,7 @@ class UserPerformance:
                     ("working_days", "acceptance")
         """
 
-        def _create_df_first_last_working_date(phase: Optional[str]) -> pandas.DataFrame:
+        def _create_df_first_last_working_date(phase: str | None) -> pandas.DataFrame:
             """
             指定したフェーズに対応する作業開始日、作業終了日、作業日数を算出する
 
@@ -730,7 +730,7 @@ class UserPerformance:
         print_csv(self.df[self.columns], str(output_file))
 
     @staticmethod
-    def _get_average_value(df: pandas.DataFrame, numerator_column: tuple[str, str], denominator_column: tuple[str, str]) -> Optional[float]:
+    def _get_average_value(df: pandas.DataFrame, numerator_column: tuple[str, str], denominator_column: tuple[str, str]) -> float | None:
         numerator = df[numerator_column].sum()
         denominator = df[denominator_column].sum()
         if denominator > 0:
@@ -831,7 +831,7 @@ class UserPerformance:
         worktime_type: WorktimeType,
         production_volume_column: str,
         *,
-        metadata: Optional[dict[str, Any]] = None,
+        metadata: dict[str, Any] | None = None,
     ) -> None:
         """作業時間と生産性の関係をメンバごとにプロットする。
 
@@ -885,7 +885,7 @@ class UserPerformance:
             df[(f"{worktime_type.value}_worktime_minute/{production_volume_column}", phase)] = df[(f"{worktime_type.value}_worktime_hour/{production_volume_column}", phase)] * 60
 
         for biography_index, biography in enumerate(sorted(set(df["biography"]))):
-            for scatter_obj, phase in zip(scatter_obj_list, self.phase_list):
+            for scatter_obj, phase in zip(scatter_obj_list, self.phase_list, strict=False):
                 filtered_df = df[(df["biography"] == biography) & df[(x_column, phase)].notna() & df[(y_column, phase)].notna()]
                 if len(filtered_df) == 0:
                     continue
@@ -900,7 +900,7 @@ class UserPerformance:
                     color=get_color_from_palette(biography_index),
                 )
 
-        for scatter_obj, phase in zip(scatter_obj_list, self.phase_list):
+        for scatter_obj, phase in zip(scatter_obj_list, self.phase_list, strict=False):
             average_hour = self._get_average_value(
                 df,
                 numerator_column=(f"{worktime_type.value}_worktime_hour", phase),
@@ -913,7 +913,7 @@ class UserPerformance:
             quartile = self._get_quartile_value(df[(f"{worktime_type.value}_worktime_minute/{production_volume_column}", phase)])
             scatter_obj.plot_quartile_line(quartile, dimension="width")
 
-            scatter_obj.add_multi_choice_widget_for_searching_user(list(zip(df[("user_id", "")], df[("username", "")])))
+            scatter_obj.add_multi_choice_widget_for_searching_user(list(zip(df[("user_id", "")], df[("username", "")], strict=False)))
             scatter_obj.process_after_adding_glyphs()
 
         div_element = self._create_div_element()
@@ -923,7 +923,7 @@ class UserPerformance:
 
         write_bokeh_graph(bokeh.layouts.column(element_list), output_file)
 
-    def plot_quality(self, output_file: Path, *, metadata: Optional[dict[str, Any]] = None) -> None:
+    def plot_quality(self, output_file: Path, *, metadata: dict[str, Any] | None = None) -> None:
         """
         メンバごとに品質を散布図でプロットする
 
@@ -981,7 +981,7 @@ class UserPerformance:
         ]
 
         for biography_index, biography in enumerate(sorted(set(df["biography"]))):
-            for column_pair, scatter_obj in zip(column_pair_list, scatter_obj_list):
+            for column_pair, scatter_obj in zip(column_pair_list, scatter_obj_list, strict=False):
                 x_column = column_pair[0]
                 y_column = column_pair[1]
                 filtered_df = df[(df["biography"] == biography) & df[(x_column, PHASE)].notna() & df[(y_column, PHASE)].notna()]
@@ -1002,6 +1002,7 @@ class UserPerformance:
         for column_pair, scatter_obj in zip(
             [("rejected_count", "task_count"), ("pointed_out_inspection_comment_count", "annotation_count")],
             scatter_obj_list,
+            strict=False,
         ):
             average_value = self._get_average_value(df, numerator_column=(column_pair[0], PHASE), denominator_column=(column_pair[1], PHASE))
             if average_value is not None:
@@ -1010,12 +1011,13 @@ class UserPerformance:
         for column, scatter_obj in zip(
             ["rejected_count/task_count", "pointed_out_inspection_comment_count/annotation_count"],
             scatter_obj_list,
+            strict=False,
         ):
             quartile = self._get_quartile_value(df[(column, PHASE)])
             scatter_obj.plot_quartile_line(quartile, dimension="width")
 
         for scatter_obj in scatter_obj_list:
-            scatter_obj.add_multi_choice_widget_for_searching_user(list(zip(df[("user_id", "")], df[("username", "")])))
+            scatter_obj.add_multi_choice_widget_for_searching_user(list(zip(df[("user_id", "")], df[("username", "")], strict=False)))
             scatter_obj.process_after_adding_glyphs()
 
         div_element = self._create_div_element()
@@ -1025,7 +1027,7 @@ class UserPerformance:
 
         write_bokeh_graph(bokeh.layouts.column(element_list), output_file)
 
-    def plot_quality_and_productivity(self, output_file: Path, worktime_type: WorktimeType, production_volume_column: str, *, metadata: Optional[dict[str, Any]] = None) -> None:
+    def plot_quality_and_productivity(self, output_file: Path, worktime_type: WorktimeType, production_volume_column: str, *, metadata: dict[str, Any] | None = None) -> None:
         """
         作業時間を元に算出した生産性と品質の関係を、メンバごとにプロットする
         """
@@ -1079,6 +1081,7 @@ class UserPerformance:
             for column_pair, scatter_obj in zip(
                 [("rejected_count", "task_count"), ("pointed_out_inspection_comment_count", production_volume_column)],
                 scatter_obj_list,
+                strict=False,
             ):
                 if x_average_minute is not None:
                     scatter_obj.plot_average_line(x_average_minute, dimension="height")
@@ -1095,6 +1098,7 @@ class UserPerformance:
             for column, scatter_obj in zip(
                 ["rejected_count/task_count", f"pointed_out_inspection_comment_count/{production_volume_column}"],
                 scatter_obj_list,
+                strict=False,
             ):
                 scatter_obj.plot_quartile_line(x_quartile, dimension="height")
                 y_quartile = self._get_quartile_value(df[(column, PHASE)])
@@ -1133,7 +1137,7 @@ class UserPerformance:
         ]
 
         for biography_index, biography in enumerate(sorted(set(df["biography"]))):
-            for scatter_obj, column_pair in zip(scatter_obj_list, column_pair_list):
+            for scatter_obj, column_pair in zip(scatter_obj_list, column_pair_list, strict=False):
                 x_column, y_column = column_pair
                 filtered_df = df[(df["biography"] == biography) & df[(x_column, PHASE)].notna() & df[(y_column, PHASE)].notna()]
                 if len(filtered_df) == 0:
@@ -1155,7 +1159,7 @@ class UserPerformance:
         plot_average_and_quartile_line()
 
         for scatter_obj in scatter_obj_list:
-            scatter_obj.add_multi_choice_widget_for_searching_user(list(zip(df[("user_id", "")], df[("username", "")])))
+            scatter_obj.add_multi_choice_widget_for_searching_user(list(zip(df[("user_id", "")], df[("username", "")], strict=False)))
             scatter_obj.process_after_adding_glyphs()
 
         div_element = self._create_div_element()

@@ -3,7 +3,7 @@ from __future__ import annotations
 import argparse
 import logging
 import sys
-from typing import Any, Optional
+from typing import Any
 
 import annofabapi
 import pandas
@@ -52,10 +52,10 @@ class ListAnnotationMain:
     def get_annotation_list(
         self,
         project_id: str,
-        annotation_query: Optional[AnnotationQueryForAPI],
+        annotation_query: AnnotationQueryForAPI | None,
         *,
-        task_id: Optional[str] = None,
-        input_data_id: Optional[str] = None,
+        task_id: str | None = None,
+        input_data_id: str | None = None,
     ) -> list[SingleAnnotation]:
         dict_query = {}
         if annotation_query is not None:
@@ -73,10 +73,10 @@ class ListAnnotationMain:
     def get_all_annotation_list(
         self,
         project_id: str,
-        annotation_query: Optional[AnnotationQueryForAPI],
+        annotation_query: AnnotationQueryForAPI | None,
         *,
-        task_id_list: Optional[list[str]],
-        input_data_id_list: Optional[list[str]],
+        task_id_list: list[str] | None,
+        input_data_id_list: list[str] | None,
     ) -> list[SingleAnnotation]:
         assert task_id_list is None or input_data_id_list is None, "task_id_listとinput_data_listのどちらかはNoneにしてください。"
 
@@ -252,7 +252,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
+def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "list"
     subcommand_help = "アノテーションの一覧を出力します。"
     description = "アノテーションの一覧を出力します。"

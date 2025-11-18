@@ -5,7 +5,7 @@ import copy
 import json
 import logging
 import sys
-from typing import Any, Optional
+from typing import Any
 
 import annofabapi
 
@@ -43,7 +43,7 @@ class AddAttributeRestrictionMain(CommandLineWithConfirm):
         CommandLineWithConfirm.__init__(self, all_yes)
         self.project_id = project_id
 
-    def add_restrictions(self, restrictions: list[dict[str, Any]], comment: Optional[str] = None) -> bool:
+    def add_restrictions(self, restrictions: list[dict[str, Any]], comment: str | None = None) -> bool:
         old_annotation_specs, _ = self.service.api.get_annotation_specs(self.project_id, query_params={"v": "3"})
         old_restrictions = old_annotation_specs["restrictions"]
 
@@ -95,7 +95,7 @@ class AddAttributeRestrictionMain(CommandLineWithConfirm):
 class AddAttributeRestriction(CommandLine):
     COMMON_MESSAGE = "annofabcli annotation_specs add_restriction: error:"
 
-    def get_history_id_from_before_index(self, project_id: str, before: int) -> Optional[str]:
+    def get_history_id_from_before_index(self, project_id: str, before: int) -> str | None:
         histories, _ = self.service.api.get_annotation_specs_histories(project_id)
         if before + 1 > len(histories):
             logger.warning(f"アノテーション仕様の履歴は{len(histories)}個のため、最新より{before}個前のアノテーション仕様は見つかりませんでした。")
@@ -142,7 +142,7 @@ def main(args: argparse.Namespace) -> None:
     AddAttributeRestriction(service, facade, args).main()
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
+def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "add_attribute_restriction"
 
     subcommand_help = "アノテーション仕様に属性の制約を追加します。"

@@ -7,7 +7,7 @@ from __future__ import annotations
 import copy
 import logging
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import bokeh
 import bokeh.layouts
@@ -50,7 +50,7 @@ class LineGraph:
     """マーカーのサイズ"""
 
     @staticmethod
-    def _create_hover_tool(tool_tip_items: Optional[list[str]] = None) -> HoverTool:
+    def _create_hover_tool(tool_tip_items: list[str] | None = None) -> HoverTool:
         """
         HoverTool用のオブジェクトを生成する。
         """
@@ -69,7 +69,7 @@ class LineGraph:
         y_axis_label: str,
         width: int = 1200,
         height: int = 1000,
-        tooltip_columns: Optional[list[str]] = None,
+        tooltip_columns: list[str] | None = None,
         **figure_kwargs,  # noqa: ANN003
     ) -> None:
         fig = figure(
@@ -101,8 +101,8 @@ class LineGraph:
         self,
         axis_label: str,
         *,
-        secondary_y_axis_range: Optional[DataRange1d] = None,
-        primary_y_axis_range: Optional[DataRange1d] = None,
+        secondary_y_axis_range: DataRange1d | None = None,
+        primary_y_axis_range: DataRange1d | None = None,
     ):
         """
         第2のY軸を追加する。
@@ -140,7 +140,7 @@ class LineGraph:
         y_column: str,
         *,
         legend_label: str,
-        color: Optional[Any] = None,  # noqa: ANN401
+        color: Any | None = None,  # noqa: ANN401
         is_secondary_y_axis: bool = False,
         **kwargs,  # noqa: ANN003
     ) -> tuple[GlyphRenderer, GlyphRenderer]:
@@ -189,7 +189,7 @@ class LineGraph:
         y_column: str,
         *,
         legend_label: str,
-        color: Optional[Any] = None,  # noqa: ANN401
+        color: Any | None = None,  # noqa: ANN401
         is_secondary_y_axis: bool = False,
         **kwargs,  # noqa: ANN003
     ) -> tuple[GlyphRenderer, GlyphRenderer]:

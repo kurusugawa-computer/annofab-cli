@@ -1,6 +1,6 @@
 import argparse
 import logging
-from typing import Any, Optional
+from typing import Any
 
 import annofabapi
 import pandas
@@ -38,7 +38,7 @@ class ChanegProjectStatusMain:
         self.facade = AnnofabApiFacade(service)
 
     @staticmethod
-    def get_account_id_from_user_id(organization_member_list: list[OrganizationMember], user_id: str) -> Optional[str]:
+    def get_account_id_from_user_id(organization_member_list: list[OrganizationMember], user_id: str) -> str | None:
         member = first_true(organization_member_list, pred=lambda e: e["user_id"] == user_id)
         if member is not None:
             return member["account_id"]
@@ -193,7 +193,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
+def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "change_status"
     subcommand_help = "プロジェクトのステータスを変更します。"
     description = "プロジェクトのステータスを変更します。"

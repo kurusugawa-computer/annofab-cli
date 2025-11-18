@@ -1,5 +1,4 @@
 import argparse
-from typing import Optional
 
 import annofabcli
 import annofabcli.common.cli
@@ -20,7 +19,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     annofabcli.job.wait_job.add_parser(subparsers)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
+def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "job"
     subcommand_help = "ジョブ関係のサブコマンド"
     description = "ジョブ関係のサブコマンド"

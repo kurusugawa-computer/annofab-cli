@@ -11,7 +11,6 @@ from collections.abc import Collection, Sequence
 from enum import Enum
 from functools import partial
 from pathlib import Path
-from typing import Optional, Union
 
 import bokeh
 import numpy
@@ -49,9 +48,9 @@ def plot_video_duration(
     output_file: Path,
     *,
     time_unit: TimeUnit,
-    bin_width: Optional[float] = None,
-    project_id: Optional[str] = None,
-    project_title: Optional[str] = None,
+    bin_width: float | None = None,
+    project_id: str | None = None,
+    project_title: str | None = None,
 ) -> None:
     """
     ラベルごとの区間アノテーションの長さのヒストグラムを出力します。
@@ -66,7 +65,7 @@ def plot_video_duration(
 
     def create_figure(
         durations: Sequence[float],
-        bins: Union[int, numpy.ndarray],
+        bins: int | numpy.ndarray,
         histogram_range: tuple[float, float],
         title: str,
         x_axis_label: str,
@@ -75,7 +74,7 @@ def plot_video_duration(
         hist, bin_edges = numpy.histogram(durations, bins=bins, range=histogram_range)
 
         df_histogram = pandas.DataFrame({"frequency": hist, "left": bin_edges[:-1], "right": bin_edges[1:]})
-        df_histogram["interval"] = [f"{left:.1f} to {right:.1f}" for left, right in zip(df_histogram["left"], df_histogram["right"])]
+        df_histogram["interval"] = [f"{left:.1f} to {right:.1f}" for left, right in zip(df_histogram["left"], df_histogram["right"], strict=False)]
 
         source = ColumnDataSource(df_histogram)
         fig = figure(
@@ -108,7 +107,7 @@ def plot_video_duration(
         if bins_sequence[-1] == max_duration:
             bins_sequence = numpy.append(bins_sequence, bins_sequence[-1] + bin_width)
 
-        bins: Union[int, numpy.ndarray] = bins_sequence
+        bins: int | numpy.ndarray = bins_sequence
     else:
         bins = BIN_COUNT
 
@@ -142,10 +141,10 @@ def get_video_duration_list(
     input_data_json: Path,
     task_json: Path,
     *,
-    input_data_ids: Optional[Collection[str]] = None,
+    input_data_ids: Collection[str] | None = None,
     from_datetime: datetime.datetime | None = None,
     to_datetime: datetime.datetime | None = None,
-    task_ids: Optional[Collection[str]] = None,
+    task_ids: Collection[str] | None = None,
 ) -> list[float]:
     """
     入力データである動画の長さ（単位は秒）の一覧を取得します。
@@ -214,13 +213,13 @@ class VisualizeVideoDuration(CommandLine):
         output_html: Path,
         *,
         time_unit: TimeUnit,
-        project_id: Optional[str] = None,
-        project_title: Optional[str] = None,
-        bin_width: Optional[float] = None,
-        input_data_ids: Optional[Collection[str]] = None,
-        task_ids: Optional[Collection[str]] = None,
-        from_date: Optional[str] = None,
-        to_date: Optional[str] = None,
+        project_id: str | None = None,
+        project_title: str | None = None,
+        bin_width: float | None = None,
+        input_data_ids: Collection[str] | None = None,
+        task_ids: Collection[str] | None = None,
+        from_date: str | None = None,
+        to_date: str | None = None,
     ) -> None:
         tz_info = datetime.datetime.now().astimezone().tzinfo
         from_datetime = datetime.datetime.fromisoformat(from_date).astimezone(tz_info) if from_date is not None else None
@@ -250,7 +249,7 @@ class VisualizeVideoDuration(CommandLine):
         if not self.validate(args):
             sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
-        project_id: Optional[str] = args.project_id
+        project_id: str | None = args.project_id
         if project_id is not None:
             super().validate_project(project_id, project_member_roles=[ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER])
             project, _ = self.service.api.get_project(project_id)
@@ -392,7 +391,7 @@ def main(args: argparse.Namespace) -> None:
     VisualizeVideoDuration(service, facade, args).main()
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
+def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "visualize_video_duration"
     subcommand_help = "動画の長さをヒストグラムで可視化します。"
     epilog = "オーナロールまたはアノテーションユーザロールを持つユーザで実行してください。"

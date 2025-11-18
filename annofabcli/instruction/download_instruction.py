@@ -2,7 +2,6 @@ import argparse
 import logging.handlers
 import sys
 from pathlib import Path
-from typing import Optional
 
 import annofabapi
 import pyquery
@@ -62,7 +61,7 @@ class DownloadInstructionMain:
         img_dir = output_dir / "img"
         img_dir.mkdir(exist_ok=True, parents=True)
         for img_elm in pq_img:
-            src_value: Optional[str] = img_elm.attrib.get("src")
+            src_value: str | None = img_elm.attrib.get("src")
             if src_value is None:
                 continue
 
@@ -81,7 +80,7 @@ class DownloadInstructionMain:
 
         return pq.outer_html()
 
-    def download_instruction(self, project_id: str, output_dir: Path, history_id: Optional[str] = None, is_download_image: bool = False):  # noqa: ANN201, FBT001, FBT002
+    def download_instruction(self, project_id: str, output_dir: Path, history_id: str | None = None, is_download_image: bool = False):  # noqa: ANN201, FBT001, FBT002
         """
         作業ガイドをダウンロードする
 
@@ -115,7 +114,7 @@ class DownloadInstructionMain:
 class DownloadInstruction(CommandLine):
     COMMON_MESSAGE = "annofabcli instruction download"
 
-    def get_history_id_from_before_index(self, project_id: str, before: int) -> Optional[str]:
+    def get_history_id_from_before_index(self, project_id: str, before: int) -> str | None:
         histories, _ = self.service.api.get_instruction_history(project_id, query_params={"limit": 10000})
         if before + 1 > len(histories):
             logger.warning(f"作業ガイドの変更履歴は{len(histories)}個のため、最新より{before}個前の作業ガイドは見つかりませんでした。")
@@ -190,7 +189,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
+def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "download"
     subcommand_help = "作業ガイドをダウンロードします。"
     description = "作業ガイドをダウンロードします。HTMLファイルにはbodyタグの内部が記載されています。"

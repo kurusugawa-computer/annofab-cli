@@ -3,7 +3,7 @@ import json
 import logging
 import multiprocessing
 import sys
-from typing import Any, Optional
+from typing import Any
 
 import annofabapi
 import annofabapi.utils
@@ -106,7 +106,7 @@ class DeleteCommentMain(CommandLineWithConfirm):
         self,
         task_id: str,
         comment_ids_for_task: DeletedCommentsForTask,
-        task_index: Optional[int] = None,
+        task_index: int | None = None,
     ) -> int:
         """
         タスクに対してコメントを削除します。
@@ -172,7 +172,7 @@ class DeleteCommentMain(CommandLineWithConfirm):
     def delete_comments_for_task_list(
         self,
         comment_ids_for_task_list: DeletedComments,
-        parallelism: Optional[int] = None,
+        parallelism: int | None = None,
     ) -> None:
         comments_count = sum(len(e) for e in comment_ids_for_task_list.values())
         logger.info(f"削除対象のコメントを含むタスクの個数: {len(comment_ids_for_task_list)}, 削除対象のコメントを含む入力データ数: {comments_count}")
@@ -260,7 +260,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
+def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "delete"
     subcommand_help = "コメントを削除します。"
     description = "コメントを削除します。\n【注意】他人の付けたコメントも削除できてしまいます。"

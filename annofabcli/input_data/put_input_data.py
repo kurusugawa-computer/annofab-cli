@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from functools import partial
 from multiprocessing import Pool
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import annofabapi
 import pandas
@@ -39,7 +39,7 @@ class CsvInputData(DataClassJsonMixin):
 
     input_data_name: str
     input_data_path: str
-    input_data_id: Optional[str] = None
+    input_data_id: str | None = None
 
 
 @dataclass
@@ -129,7 +129,7 @@ class SubPutInputData:
         self.facade = facade
         self.all_yes = all_yes
 
-    def put_input_data(self, project_id: str, csv_input_data: InputDataForPut, last_updated_datetime: Optional[str] = None) -> None:
+    def put_input_data(self, project_id: str, csv_input_data: InputDataForPut, last_updated_datetime: str | None = None) -> None:
         request_body: dict[str, Any] = {"last_updated_datetime": last_updated_datetime}
 
         file_path = get_file_scheme_path(csv_input_data.input_data_path)
@@ -246,7 +246,7 @@ class PutInputData(CommandLine):
         project_id: str,
         input_data_list: list[CsvInputData],
         overwrite: bool = False,  # noqa: FBT001, FBT002
-        parallelism: Optional[int] = None,
+        parallelism: int | None = None,
     ) -> None:
         """
         入力データを一括で登録する。
@@ -423,7 +423,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
+def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "put"
     subcommand_help = "入力データを登録します。"
     epilog = "オーナロールを持つユーザで実行してください。"

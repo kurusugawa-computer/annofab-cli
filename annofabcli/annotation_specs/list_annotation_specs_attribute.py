@@ -7,7 +7,7 @@ import sys
 from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Optional, Union
+from typing import Any
 
 import pandas
 from annofabapi.models import Lang
@@ -44,12 +44,12 @@ class FlattenAttribute(DataClassJsonMixin):
         APIレスポンスの ``additional_data_definition_id`` に相当します。
         ``additional_data_definition_id`` という名前がアノテーションJSONの `attributes` と対応していることが分かりにくかったので、`attribute_id`という名前に変えました。
     """
-    attribute_name_en: Optional[str]
-    attribute_name_ja: Optional[str]
-    attribute_name_vi: Optional[str]
+    attribute_name_en: str | None
+    attribute_name_ja: str | None
+    attribute_name_vi: str | None
     attribute_type: str
     """属性の種類"""
-    default: Optional[Union[str, bool, int]]
+    default: str | bool | int | None
     """デフォルト値"""
     read_only: bool
     """読み込み専用の属性か否か"""
@@ -62,7 +62,7 @@ class FlattenAttribute(DataClassJsonMixin):
     """制約の個数"""
     reference_label_count: int
     """参照されているラベルの個数"""
-    keybind: Optional[str]
+    keybind: str | None
 
 
 def create_relationship_between_attribute_and_label(labels_v3: list[dict[str, Any]]) -> dict[str, set[str]]:
@@ -125,7 +125,7 @@ def create_flatten_attribute_list_from_additionals(additionals_v3: list[dict[str
 class PrintAnnotationSpecsAttribute(CommandLine):
     COMMON_MESSAGE = "annofabcli annotation_specs list_attribute: error:"
 
-    def print_annotation_specs_attribute(self, annotation_specs_v3: dict[str, Any], output_format: FormatArgument, output: Optional[str] = None) -> None:
+    def print_annotation_specs_attribute(self, annotation_specs_v3: dict[str, Any], output_format: FormatArgument, output: str | None = None) -> None:
         attribute_list = create_flatten_attribute_list_from_additionals(annotation_specs_v3["additionals"], annotation_specs_v3["labels"], annotation_specs_v3["restrictions"])
         logger.info(f"{len(attribute_list)} 件の属性情報を出力します。")
         if output_format == FormatArgument.CSV:
@@ -149,7 +149,7 @@ class PrintAnnotationSpecsAttribute(CommandLine):
         elif output_format in [FormatArgument.JSON, FormatArgument.PRETTY_JSON]:
             print_according_to_format([e.to_dict() for e in attribute_list], format=output_format, output=output)
 
-    def get_history_id_from_before_index(self, project_id: str, before: int) -> Optional[str]:
+    def get_history_id_from_before_index(self, project_id: str, before: int) -> str | None:
         histories, _ = self.service.api.get_annotation_specs_histories(project_id)
         if before + 1 > len(histories):
             logger.warning(f"アノテーション仕様の履歴は{len(histories)}個のため、最新より{before}個前のアノテーション仕様は見つかりませんでした。")
@@ -236,7 +236,7 @@ def main(args: argparse.Namespace) -> None:
     PrintAnnotationSpecsAttribute(service, facade, args).main()
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
+def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "list_attribute"
 
     subcommand_help = "アノテーション仕様の属性情報を出力します。"

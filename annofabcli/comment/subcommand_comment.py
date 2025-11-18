@@ -1,5 +1,4 @@
 import argparse
-from typing import Optional
 
 import annofabcli
 import annofabcli.comment.delete_comment
@@ -27,7 +26,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     annofabcli.comment.put_onhold_comment_simply.add_parser(subparsers)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
+def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "comment"
     subcommand_help = "コメント関係のサブコマンド"
 

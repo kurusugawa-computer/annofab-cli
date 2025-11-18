@@ -1,7 +1,7 @@
 import argparse
 import copy
 import logging
-from typing import Any, Optional
+from typing import Any
 
 import annofabapi
 
@@ -23,7 +23,7 @@ class UpdateProjectConfigurationMain(CommandLineWithConfirm):
         self.facade = AnnofabApiFacade(service)
         super().__init__(all_yes)
 
-    def update_configuration_for_project(self, project_id: str, configuration: dict[str, Any], *, project_index: Optional[int] = None) -> bool:
+    def update_configuration_for_project(self, project_id: str, configuration: dict[str, Any], *, project_index: int | None = None) -> bool:
         """
         指定されたプロジェクトの設定を更新する。
 
@@ -141,7 +141,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
+def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "update_configuration"
     subcommand_help = "複数のプロジェクトの設定を一括で更新します。"
     epilog = "プロジェクトのオーナロールを持つユーザで実行してください。"

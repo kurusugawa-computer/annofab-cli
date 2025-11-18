@@ -3,7 +3,7 @@ from __future__ import annotations
 import argparse
 import logging
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import annofabapi
 import more_itertools
@@ -89,7 +89,7 @@ def get_post_rejection_acceptance_worktime_hour(task_histories: list[TaskHistory
     )
 
 
-def get_completed_datetime(task: dict[str, Any], task_histories: list[TaskHistory]) -> Optional[str]:
+def get_completed_datetime(task: dict[str, Any], task_histories: list[TaskHistory]) -> str | None:
     """受入完了状態になった日時を取得する。
 
     Args:
@@ -106,7 +106,7 @@ def get_completed_datetime(task: dict[str, Any], task_histories: list[TaskHistor
         return None
 
 
-def get_first_acceptance_completed_datetime(task_histories: list[TaskHistory]) -> Optional[str]:
+def get_first_acceptance_completed_datetime(task_histories: list[TaskHistory]) -> str | None:
     """はじめて受入完了状態になった日時を取得する。
 
     Args:
@@ -135,7 +135,7 @@ def get_first_acceptance_completed_datetime(task_histories: list[TaskHistory]) -
     return None
 
 
-def get_first_acceptance_reached_datetime(task_histories: list[TaskHistory]) -> Optional[str]:
+def get_first_acceptance_reached_datetime(task_histories: list[TaskHistory]) -> str | None:
     """
     はじめて受入フェーズに到達した日時を取得する。
     受入フェーズを着手した日時とは異なる。
@@ -155,7 +155,7 @@ def get_first_acceptance_reached_datetime(task_histories: list[TaskHistory]) -> 
     return None
 
 
-def get_first_inspection_reached_datetime(task_histories: list[TaskHistory]) -> Optional[str]:
+def get_first_inspection_reached_datetime(task_histories: list[TaskHistory]) -> str | None:
     """
     はじめて検査フェーズに到達した日時を取得する。
     検査フェーズを着手した日時とは異なる。
@@ -213,7 +213,7 @@ def calculate_total_worktime_in_phase(task_histories: list[TaskHistory], phase: 
     return sum(isoduration_to_hour(history["accumulated_labor_time_milliseconds"]) for history in task_histories if history["phase"] == phase.value)
 
 
-def get_first_task_history(task_histories: list[TaskHistory], phase: TaskPhase) -> Optional[TaskHistory]:
+def get_first_task_history(task_histories: list[TaskHistory], phase: TaskPhase) -> TaskHistory | None:
     """
     指定したフェーズの最初に作業したタスク履歴を取得します。
     取得したタスク履歴には、account_idはnot Noneで、作業時間は0より大きいです。
@@ -263,7 +263,7 @@ class AddingAdditionalInfoToTask:
         self.project_id = project_id
         self.visualize = AddProps(self.service, project_id)
 
-    def _add_task_history_info(self, task: Task, task_history: Optional[TaskHistory], column_prefix: str) -> Task:
+    def _add_task_history_info(self, task: Task, task_history: TaskHistory | None, column_prefix: str) -> Task:
         """
         1個のタスク履歴情報を、タスクに設定する。
 
@@ -375,7 +375,7 @@ class ListTasksAddedTaskHistoryMain:
         self.service = service
         self.project_id = project_id
 
-    def main(self, *, task_query: Optional[dict[str, Any]], task_id_list: Optional[list[str]]) -> list[dict[str, Any]]:
+    def main(self, *, task_query: dict[str, Any] | None, task_id_list: list[str] | None) -> list[dict[str, Any]]:
         list_task_obj = ListTasksMain(self.service, self.project_id)
         task_list = list_task_obj.get_task_list(self.project_id, task_id_list=task_id_list, task_query=task_query)
 
@@ -526,7 +526,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
+def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "list_added_task_history"
     subcommand_help = "タスク履歴に関する情報を加えたタスク一覧を出力します。"
     description = "タスク履歴に関する情報（フェーズごとの作業時間、担当者、開始日時）を加えたタスク一覧を出力します。"

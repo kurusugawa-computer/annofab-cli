@@ -3,7 +3,6 @@ import logging
 import multiprocessing
 import sys
 from functools import partial
-from typing import Optional
 
 import annofabapi
 import requests
@@ -39,8 +38,8 @@ class ChangeStatusToBreakMain(CommandLineWithConfirm):
         self,
         project_id: str,
         task_id: str,
-        task_index: Optional[int] = None,
-        task_query: Optional[TaskQuery] = None,
+        task_index: int | None = None,
+        task_query: TaskQuery | None = None,
     ) -> bool:
         logging_prefix = f"{task_index + 1} 件目" if task_index is not None else ""
         dict_task = self.service.wrapper.get_task_or_none(project_id, task_id)
@@ -79,7 +78,7 @@ class ChangeStatusToBreakMain(CommandLineWithConfirm):
         self,
         tpl: tuple[int, str],
         project_id: str,
-        task_query: Optional[TaskQuery] = None,
+        task_query: TaskQuery | None = None,
     ) -> bool:
         task_index, task_id = tpl
         try:
@@ -97,8 +96,8 @@ class ChangeStatusToBreakMain(CommandLineWithConfirm):
         self,
         project_id: str,
         task_id_list: list[str],
-        task_query: Optional[TaskQuery] = None,
-        parallelism: Optional[int] = None,
+        task_query: TaskQuery | None = None,
+        parallelism: int | None = None,
     ):
         """
         タスクのステータスを休憩中に変更する。
@@ -172,7 +171,7 @@ class ChangeStatusToBreak(CommandLine):
         task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id)
 
         dict_task_query = annofabcli.common.cli.get_json_from_args(args.task_query)
-        task_query: Optional[TaskQuery] = TaskQuery.from_dict(dict_task_query) if dict_task_query is not None else None
+        task_query: TaskQuery | None = TaskQuery.from_dict(dict_task_query) if dict_task_query is not None else None
 
         project_id = args.project_id
         super().validate_project(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.ACCEPTER, ProjectMemberRole.WORKER])
@@ -210,7 +209,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
+def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "change_status_to_break"
     subcommand_help = "タスクのステータスを休憩中に変更します。"
     description = "タスクのステータスを休憩中に変更します。ただし、操作対象のタスクは作業中か保留中である必要があります。"

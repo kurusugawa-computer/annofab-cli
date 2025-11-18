@@ -7,7 +7,7 @@ import tempfile
 from collections.abc import Collection
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import pandas
 from annofabapi.models import InputDataType, ProjectMemberRole
@@ -40,7 +40,7 @@ class RangeAnnotationInfo(DataClassJsonMixin):
     input_data_id: str
     input_data_name: str
 
-    updated_datetime: Optional[str]
+    updated_datetime: str | None
     """アノテーションJSONに格納されているアノテーションの更新日時"""
 
     label: str
@@ -50,7 +50,7 @@ class RangeAnnotationInfo(DataClassJsonMixin):
     duration_second: float
 
 
-def get_range_annotation_info_list(simple_annotation: dict[str, Any], *, target_label_names: Optional[Collection[str]] = None) -> list[RangeAnnotationInfo]:
+def get_range_annotation_info_list(simple_annotation: dict[str, Any], *, target_label_names: Collection[str] | None = None) -> list[RangeAnnotationInfo]:
     result = []
     target_label_names_set = set(target_label_names) if target_label_names is not None else None
     for detail in simple_annotation["details"]:
@@ -90,9 +90,9 @@ def get_range_annotation_info_list(simple_annotation: dict[str, Any], *, target_
 def get_range_annotation_info_list_from_annotation_path(
     annotation_path: Path,
     *,
-    target_task_ids: Optional[Collection[str]] = None,
-    task_query: Optional[TaskQuery] = None,
-    target_label_names: Optional[Collection[str]] = None,
+    target_task_ids: Collection[str] | None = None,
+    task_query: TaskQuery | None = None,
+    target_label_names: Collection[str] | None = None,
 ) -> list[RangeAnnotationInfo]:
     range_annotation_list = []
     target_task_ids = set(target_task_ids) if target_task_ids is not None else None
@@ -139,9 +139,9 @@ def print_range_annotation(
     output_file: Path,
     output_format: FormatArgument,
     *,
-    target_task_ids: Optional[Collection[str]] = None,
-    task_query: Optional[TaskQuery] = None,
-    target_label_names: Optional[Collection[str]] = None,
+    target_task_ids: Collection[str] | None = None,
+    task_query: TaskQuery | None = None,
+    target_label_names: Collection[str] | None = None,
 ) -> None:
     range_annotation_list = get_range_annotation_info_list_from_annotation_path(
         annotation_path,
@@ -187,7 +187,7 @@ class ListRangeAnnotation(CommandLine):
         if not self.validate(args):
             sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
-        project_id: Optional[str] = args.project_id
+        project_id: str | None = args.project_id
         if project_id is not None:
             super().validate_project(project_id, project_member_roles=[ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER])
             project, _ = self.service.api.get_project(project_id)
@@ -299,7 +299,7 @@ def main(args: argparse.Namespace) -> None:
     ListRangeAnnotation(service, facade, args).main()
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
+def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "list_range_annotation"
     subcommand_help = "アノテーションZIPから動画プロジェクトの区間アノテーションの情報を出力します。"
     epilog = "アノテーションZIPをダウンロードする場合は、オーナロールまたはアノテーションユーザロールを持つユーザで実行してください。"

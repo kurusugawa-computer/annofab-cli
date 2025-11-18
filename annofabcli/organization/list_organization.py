@@ -1,6 +1,5 @@
 import argparse
 import logging
-from typing import Optional
 
 import annofabcli
 from annofabcli.common.cli import ArgumentParser, CommandLine, build_annofabapi_resource_and_login
@@ -39,7 +38,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
+def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "list"
     subcommand_help = "所属している組織の一覧を出力します。"
 

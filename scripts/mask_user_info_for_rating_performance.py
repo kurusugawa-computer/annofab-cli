@@ -5,10 +5,9 @@ import subprocess
 import traceback
 from argparse import ArgumentParser
 from pathlib import Path
-from typing import Optional
 
 
-def execute_mask_user_info_command(csv_path: Path, output_csv: Path, remainder_options: Optional[list[str]]) -> None:
+def execute_mask_user_info_command(csv_path: Path, output_csv: Path, remainder_options: list[str] | None) -> None:
     command = [
         "annofabcli",
         "filesystem",
@@ -26,7 +25,7 @@ def execute_mask_user_info_command(csv_path: Path, output_csv: Path, remainder_o
     subprocess.run(command, check=True)
 
 
-def mask_user_info_for_dir(root_dir: Path, output_dir: Path, remainder_options: Optional[list[str]]) -> None:
+def mask_user_info_for_dir(root_dir: Path, output_dir: Path, remainder_options: list[str] | None) -> None:
     for sub_dirname in [
         "annotation_productivity",
         "inspection_acceptance_productivity",

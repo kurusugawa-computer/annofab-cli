@@ -6,7 +6,7 @@ import json
 import logging
 import tempfile
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import annofabapi
 import pandas
@@ -23,7 +23,7 @@ from annofabcli.input_data.utils import remove_unnecessary_keys_from_input_data
 
 logger = logging.getLogger(__name__)
 
-DatetimeRange = tuple[Optional[datetime.datetime], Optional[datetime.datetime]]
+DatetimeRange = tuple[datetime.datetime | None, datetime.datetime | None]
 
 
 class ListInputDataWithJsonMain:
@@ -33,8 +33,8 @@ class ListInputDataWithJsonMain:
     @staticmethod
     def filter_input_data_list(
         input_data: dict[str, Any],
-        input_data_id_set: Optional[set[str]] = None,
-        input_data_query: Optional[InputDataQuery] = None,
+        input_data_id_set: set[str] | None = None,
+        input_data_query: InputDataQuery | None = None,
     ) -> bool:
         result = True
 
@@ -64,10 +64,10 @@ class ListInputDataWithJsonMain:
     def get_input_data_list(
         self,
         project_id: str,
-        input_data_json: Optional[Path],
+        input_data_json: Path | None,
         *,
-        input_data_id_list: Optional[list[str]] = None,
-        input_data_query: Optional[InputDataQuery] = None,
+        input_data_id_list: list[str] | None = None,
+        input_data_query: InputDataQuery | None = None,
         contain_parent_task_id_list: bool = False,
         contain_supplementary_data_count: bool = False,
         is_latest: bool = False,
@@ -209,7 +209,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
+def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "list_all"
     subcommand_help = "すべての入力データの一覧を出力します。"
     description = "すべての入力データの一覧を出力します。\n出力される入力データは、コマンドを実行した日の02:00(JST)頃の状態です。最新の情報を出力したい場合は、 ``--latest`` を指定してください。"

@@ -3,7 +3,7 @@ import logging
 import sys
 from collections import defaultdict
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import annofabapi
 import pandas
@@ -36,7 +36,7 @@ def get_input_data_supplementary_data_dict_from_csv(csv_path: Path) -> InputData
         dtype={"input_data_id": "string", "supplementary_data_id": "string"},
     )
     input_data_dict: InputDataSupplementaryDataDict = defaultdict(list)
-    for input_data_id, supplementary_data_id in zip(df["input_data_id"], df["supplementary_data_id"]):
+    for input_data_id, supplementary_data_id in zip(df["input_data_id"], df["supplementary_data_id"], strict=False):
         input_data_dict[input_data_id].append(supplementary_data_id)
     return input_data_dict
 
@@ -70,7 +70,7 @@ class DeleteSupplementaryDataMain(CommandLineWithConfirm):
 
         """
 
-        def _get_supplementary_data_list(supplementary_data_id: str) -> Optional[dict[str, Any]]:
+        def _get_supplementary_data_list(supplementary_data_id: str) -> dict[str, Any] | None:
             return first_true(supplementary_data_list, pred=lambda e: e["supplementary_data_id"] == supplementary_data_id)
 
         input_data = self.service.wrapper.get_input_data_or_none(project_id, input_data_id)
@@ -275,7 +275,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
+def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "delete"
     subcommand_help = "補助情報を削除します。"
     description = "補助情報を削除します。"

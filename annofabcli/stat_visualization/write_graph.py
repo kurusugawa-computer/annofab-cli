@@ -4,7 +4,6 @@ import argparse
 import json
 import logging
 from pathlib import Path
-from typing import Optional
 
 from annofabapi.models import TaskPhase
 
@@ -33,7 +32,7 @@ class WritingGraph:
         project_dir: ProjectDir,
         output_project_dir: ProjectDir,
         *,
-        user_id_list: Optional[list[str]] = None,
+        user_id_list: list[str] | None = None,
         minimal_output: bool = False,
     ) -> None:
         self.project_dir = project_dir
@@ -185,7 +184,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
+def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "write_graph"
     subcommand_help = "`annofabcli statistics visualize` コマンドの出力結果であるプロジェクトのディレクトリから、グラフを出力します。"
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description=subcommand_help)

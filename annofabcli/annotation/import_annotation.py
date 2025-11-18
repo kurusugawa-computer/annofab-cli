@@ -10,7 +10,7 @@ import zipfile
 from collections.abc import Iterator
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Optional, Union
+from typing import Any
 
 import annofabapi
 import ulid
@@ -60,10 +60,10 @@ class ImportedSimpleAnnotationDetail(DataClassJsonMixin):
     data: dict[str, Any]
     """"""
 
-    attributes: Optional[dict[str, Union[str, bool, int]]] = None
+    attributes: dict[str, str | bool | int] | None = None
     """属性情報。キーは属性の名前、値は属性の値。 """
 
-    annotation_id: Optional[str] = None
+    annotation_id: str | None = None
     """アノテーションID"""
 
 
@@ -152,13 +152,13 @@ class AnnotationConverter:
 
     def _convert_attribute_value(  # noqa: PLR0911, PLR0912
         self,
-        attribute_value: Optional[Union[str, int, bool]],  # noqa: FBT001
+        attribute_value: str | int | bool | None,  # noqa: FBT001
         additional_data_type: AdditionalDataDefinitionType,
         attribute_name: str,
         choices: list[dict[str, Any]],
         *,
         log_message_suffix: str,
-    ) -> Optional[dict[str, Any]]:
+    ) -> dict[str, Any] | None:
         """
         JSONに記載されている属性値を、APIに渡すための `AdditionalDataValue`スキーマに変換します。
 
@@ -235,7 +235,7 @@ class AnnotationConverter:
         else:
             assert_noreturn(additional_data_type)
 
-    def convert_attributes(self, attributes: dict[str, Any], *, label_name: Optional[str] = None, log_message_suffix: str = "") -> list[dict[str, Any]]:
+    def convert_attributes(self, attributes: dict[str, Any], *, label_name: str | None = None, log_message_suffix: str = "") -> list[dict[str, Any]]:
         """
         インポート対象のアノテーションJSONに格納されている`attributes`を`AdditionalDataListV2`のlistに変換します。
 
@@ -339,7 +339,7 @@ class AnnotationConverter:
         details: list[ImportedSimpleAnnotationDetail],
         old_details: list[dict[str, Any]],
         *,
-        updated_datetime: Optional[str] = None,
+        updated_datetime: str | None = None,
     ) -> dict[str, Any]:
         """
         アノテーションJSONに記載されたアノテーション情報を、`put_annotation` APIに渡す形式に変換します。
@@ -487,7 +487,7 @@ class ImportAnnotationMain(CommandLineWithConfirm):
 
         return success_input_data_count, success_annotation_count
 
-    def execute_task(self, task_parser: SimpleAnnotationParserByTask, task_index: Optional[int] = None) -> bool:
+    def execute_task(self, task_parser: SimpleAnnotationParserByTask, task_index: int | None = None) -> bool:
         """
         1個のタスクに対してアノテーションを登録する。
 
@@ -514,7 +514,7 @@ class ImportAnnotationMain(CommandLineWithConfirm):
             logger.info(f"タスク'{task_id}'は作業中または受入完了状態のため、インポートをスキップします。 status={task['status']}")
             return False
 
-        old_account_id: Optional[str] = None
+        old_account_id: str | None = None
         changed_operator = False
         if self.is_force:
             if not can_put_annotation(task, self.service.api.account_id):
@@ -566,8 +566,8 @@ class ImportAnnotationMain(CommandLineWithConfirm):
     def main(
         self,
         iter_task_parser: Iterator[SimpleAnnotationParserByTask],
-        target_task_ids: Optional[set[str]] = None,
-        parallelism: Optional[int] = None,
+        target_task_ids: set[str] | None = None,
+        parallelism: int | None = None,
     ) -> None:
         def get_iter_task_parser_from_task_ids(_iter_task_parser: Iterator[SimpleAnnotationParserByTask], _target_task_ids: set[str]) -> Iterator[SimpleAnnotationParserByTask]:
             for task_parser in _iter_task_parser:
@@ -746,7 +746,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
+def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "import"
     subcommand_help = "アノテーションをインポートします。"
     description = "アノテーションをインポートします。アノテーションのフォーマットは、Simpleアノテーションと同じフォルダ構成のzipファイルまたはディレクトリです。ただし、作業中/完了状態のタスクはインポートできません。"  # noqa: E501

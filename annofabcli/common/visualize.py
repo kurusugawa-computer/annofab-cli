@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import enum
-from typing import Any, Optional
+from typing import Any
 
 import annofabapi
 import more_itertools
@@ -32,15 +32,15 @@ class AddProps:
     """
 
     #: 組織メンバ一覧のキャッシュ
-    _organization_members: Optional[list[OrganizationMember]] = None
-    _project_member_list: Optional[list[ProjectMember]] = None
+    _organization_members: list[OrganizationMember] | None = None
+    _project_member_list: list[ProjectMember] | None = None
 
     def __init__(self, service: annofabapi.Resource, project_id: str) -> None:
         self.service = service
         self.project_id = project_id
 
-        self._specs_labels: Optional[list[dict[str, Any]]] = None
-        self._specs_inspection_phrases: Optional[list[dict[str, Any]]] = None
+        self._specs_labels: list[dict[str, Any]] | None = None
+        self._specs_inspection_phrases: list[dict[str, Any]] | None = None
 
     def _set_annotation_specs(self):  # noqa: ANN202
         """
@@ -84,7 +84,7 @@ class AddProps:
         return millisecond / 1000 / 3600
 
     @staticmethod
-    def get_message(i18n_messages: dict[str, Any], locale: MessageLocale) -> Optional[str]:
+    def get_message(i18n_messages: dict[str, Any], locale: MessageLocale) -> str | None:
         messages: list[dict[str, Any]] = i18n_messages["messages"]
         dict_message = more_itertools.first_true(messages, pred=lambda e: e["lang"] == locale.value)
         if dict_message is not None:
@@ -112,7 +112,7 @@ class AddProps:
         target["username"] = username
         return target
 
-    def get_project_member_from_account_id(self, account_id: str) -> Optional[ProjectMember]:
+    def get_project_member_from_account_id(self, account_id: str) -> ProjectMember | None:
         if self._project_member_list is None:
             project_member_list = self.service.wrapper.get_all_project_members(self.project_id, query_params={"include_inactive_member": True})
             self._project_member_list = project_member_list
@@ -128,22 +128,22 @@ class AddProps:
         organization, _ = self.service.api.get_organization_of_project(project_id)
         return organization["organization_name"]
 
-    def get_phrase_name(self, phrase_id: str, locale: MessageLocale) -> Optional[str]:
-        phrase: Optional[dict[str, Any]] = more_itertools.first_true(self.specs_inspection_phrases, pred=lambda e: e["id"] == phrase_id)
+    def get_phrase_name(self, phrase_id: str, locale: MessageLocale) -> str | None:
+        phrase: dict[str, Any] | None = more_itertools.first_true(self.specs_inspection_phrases, pred=lambda e: e["id"] == phrase_id)
         if phrase is None:
             return None
 
         return self.get_message(phrase["text"], locale)
 
-    def get_label_name(self, label_id: str, locale: MessageLocale) -> Optional[str]:
+    def get_label_name(self, label_id: str, locale: MessageLocale) -> str | None:
         label = more_itertools.first_true(self.specs_labels, pred=lambda e: e["label_id"] == label_id)
         if label is None:
             return None
 
         return self.get_message(label["label_name"], locale)
 
-    def get_additional_data_name(self, additional_data_definition_id: str, locale: MessageLocale, label_id: Optional[str] = None) -> Optional[str]:
-        def _get_additional_data_name(arg_additional_data_definitions: list[dict[str, Any]]) -> Optional[str]:
+    def get_additional_data_name(self, additional_data_definition_id: str, locale: MessageLocale, label_id: str | None = None) -> str | None:
+        def _get_additional_data_name(arg_additional_data_definitions: list[dict[str, Any]]) -> str | None:
             additional_data = more_itertools.first_true(
                 arg_additional_data_definitions,
                 pred=lambda e: e["additional_data_definition_id"] == additional_data_definition_id,
@@ -194,7 +194,7 @@ class AddProps:
         """
         return self._add_user_info(instruction_history)
 
-    def add_properties_to_inspection(self, inspection: Inspection, detail: Optional[dict[str, Any]] = None) -> Inspection:
+    def add_properties_to_inspection(self, inspection: Inspection, detail: dict[str, Any] | None = None) -> Inspection:
         """
         検査コメントに、以下のキーを追加する.
         commenter_user_id

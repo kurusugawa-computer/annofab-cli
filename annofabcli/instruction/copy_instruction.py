@@ -1,7 +1,6 @@
 import argparse
 import logging
 import mimetypes
-from typing import Optional
 
 import requests
 from annofabapi.models import ProjectMemberRole
@@ -36,7 +35,7 @@ class CopyInstruction(CommandLine):
         return url_without_query.split("/")[-1]
 
     @staticmethod
-    def _get_mime_type_from_filename(filename: Optional[str]) -> str:
+    def _get_mime_type_from_filename(filename: str | None) -> str:
         """
         ファイル名からMIME TYPEを取得する。
         """
@@ -47,7 +46,7 @@ class CopyInstruction(CommandLine):
         content_type = mimetypes.guess_type(filename)[0]
         return content_type if content_type is not None else DEFAULT_MIME_TYPE
 
-    def upload_instruction_image(self, src_project_id: str, dest_project_id: str, pq_img: PyQuery) -> Optional[str]:
+    def upload_instruction_image(self, src_project_id: str, dest_project_id: str, pq_img: PyQuery) -> str | None:
         """
         コピー元の作業ガイド画像を、コピー先にアップロードする。
         Args:
@@ -60,7 +59,7 @@ class CopyInstruction(CommandLine):
 
         """
 
-        src_instruction_image_url: Optional[str] = pq_img.attr["src"]
+        src_instruction_image_url: str | None = pq_img.attr["src"]
         if src_instruction_image_url is None:
             logger.warning(f"{pq_img=} にsrc属性がないのでスキップします。")
             return None
@@ -148,7 +147,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
+def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "copy"
     subcommand_help = "作業ガイドをコピーします。"
     description = "作業ガイドを別プロジェクトにコピーします。"

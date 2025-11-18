@@ -4,7 +4,7 @@ import json
 import logging
 import zipfile
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import annofabapi
 import pandas
@@ -59,7 +59,7 @@ class ListOutOfRangeAnnotationForMovieMain:
         project_id: str,
         task_list: list[dict[str, Any]],
         input_data_list: list[dict[str, Any]],
-        annotation_zip: Optional[Path],
+        annotation_zip: Path | None,
     ) -> pandas.DataFrame:
         if annotation_zip is None:
             logger.info(f"{len(task_list)} 件のアノテーション情報をWebAPIで取得します。")
@@ -123,7 +123,7 @@ class ListOutOfRangeAnnotationForMovieMain:
     def list_out_of_range_annotation_for_movie(
         self,
         project_id: str,
-        task_id_list: Optional[list[str]],
+        task_id_list: list[str] | None,
         parse_annotation_zip: bool = False,  # noqa: FBT001, FBT002
     ) -> pandas.DataFrame:
         cache_dir = annofabcli.common.utils.get_cache_dir()

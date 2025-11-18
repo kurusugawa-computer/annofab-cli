@@ -4,10 +4,10 @@ import argparse
 import json
 import logging
 import sys
-from collections.abc import Collection, Iterator
+from collections.abc import Callable, Collection, Iterator
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Callable, Optional, Union
+from typing import Any
 
 import pandas
 from annofabapi.parser import SimpleAnnotationParser, lazy_parse_simple_annotation_dir, lazy_parse_simple_annotation_zip
@@ -27,7 +27,7 @@ from annofabcli.common.facade import TaskQuery, match_annotation_with_task_query
 logger = logging.getLogger(__name__)
 
 
-Color = Union[str, tuple[int, int, int]]
+Color = str | tuple[int, int, int]
 IsParserFunc = Callable[[SimpleAnnotationParser], bool]
 
 
@@ -59,10 +59,10 @@ class DrawingAnnotationForOneImage:
 
     def __init__(
         self,
-        label_color_dict: Optional[dict[str, Color]] = None,
-        target_label_names: Optional[Collection[str]] = None,
-        polyline_labels: Optional[Collection[str]] = None,
-        drawing_options: Optional[DrawingOptions] = None,
+        label_color_dict: dict[str, Color] | None = None,
+        target_label_names: Collection[str] | None = None,
+        polyline_labels: Collection[str] | None = None,
+        drawing_options: DrawingOptions | None = None,
     ) -> None:
         self.label_color_dict = label_color_dict if label_color_dict is not None else {}
         self.target_label_names = set(target_label_names) if target_label_names is not None else None
@@ -161,9 +161,9 @@ class DrawingAnnotationForOneImage:
     def main(  # noqa: ANN201
         self,
         parser: SimpleAnnotationParser,
-        image_file: Optional[Path],
+        image_file: Path | None,
         output_file: Path,
-        image_size: Optional[tuple[int, int]] = None,
+        image_size: tuple[int, int] | None = None,
     ):
         """画像にアノテーションを描画したファイルを出力する。
 
@@ -190,9 +190,9 @@ class DrawingAnnotationForOneImage:
 
 
 def create_is_target_parser_func(
-    task_ids: Optional[Collection[str]] = None,
-    task_query: Optional[TaskQuery] = None,
-) -> Optional[IsParserFunc]:
+    task_ids: Collection[str] | None = None,
+    task_query: TaskQuery | None = None,
+) -> IsParserFunc | None:
     if task_ids is None and task_query is None:
         return None
 
@@ -215,17 +215,17 @@ def create_is_target_parser_func(
 
 def draw_annotation_all(  # noqa: ANN201, PLR0913
     iter_parser: Iterator[SimpleAnnotationParser],
-    image_dir: Optional[Path],
-    input_data_id_relation_dict: Optional[dict[str, str]],
+    image_dir: Path | None,
+    input_data_id_relation_dict: dict[str, str] | None,
     output_dir: Path,
     *,
-    target_task_ids: Optional[Collection[str]] = None,
-    task_query: Optional[TaskQuery] = None,
-    label_color_dict: Optional[dict[str, Color]] = None,
-    target_label_names: Optional[Collection[str]] = None,
-    polyline_labels: Optional[Collection[str]] = None,
-    drawing_options: Optional[DrawingOptions] = None,
-    default_image_size: Optional[tuple[int, int]] = None,
+    target_task_ids: Collection[str] | None = None,
+    task_query: TaskQuery | None = None,
+    label_color_dict: dict[str, Color] | None = None,
+    target_label_names: Collection[str] | None = None,
+    polyline_labels: Collection[str] | None = None,
+    drawing_options: DrawingOptions | None = None,
+    default_image_size: tuple[int, int] | None = None,
 ):
     drawing = DrawingAnnotationForOneImage(
         label_color_dict=label_color_dict,
@@ -251,7 +251,7 @@ def draw_annotation_all(  # noqa: ANN201, PLR0913
                 logger.warning(f"input_data_id='{input_data_id}'に対応する画像ファイルのパスが見つかりませんでした。")
                 continue
 
-        image_file: Optional[Path] = None
+        image_file: Path | None = None
         if image_dir is not None and input_data_id_relation_dict is not None:
             image_file = image_dir / input_data_id_relation_dict[input_data_id]
             if not image_file.exists():
@@ -291,7 +291,7 @@ class DrawAnnotation(CommandLineWithoutWebapi):
     def main(self) -> None:
         args = self.args
 
-        default_image_size: Optional[tuple[int, int]] = None
+        default_image_size: tuple[int, int] | None = None
         if args.default_image_size is not None:
             default_image_size = annofabcli.common.cli.get_input_data_size(args.default_image_size)
             if default_image_size is None:
@@ -322,7 +322,7 @@ class DrawAnnotation(CommandLineWithoutWebapi):
         else:
             iter_parser = lazy_parse_simple_annotation_dir(annotation_path)
 
-        input_data_id_relation_dict: Optional[dict[str, str]] = None
+        input_data_id_relation_dict: dict[str, str] | None = None
         if args.input_data_id_csv is not None:
             df = pandas.read_csv(
                 args.input_data_id_csv,
@@ -330,7 +330,7 @@ class DrawAnnotation(CommandLineWithoutWebapi):
                 header=None,
                 names=("input_data_id", "image_path"),
             )
-            input_data_id_relation_dict = dict(zip(df["input_data_id"], df["image_path"]))
+            input_data_id_relation_dict = dict(zip(df["input_data_id"], df["image_path"], strict=False))
 
         task_query = TaskQuery.from_dict(annofabcli.common.cli.get_json_from_args(args.task_query)) if args.task_query is not None else None
 
@@ -439,7 +439,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
+def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "draw_annotation"
 
     subcommand_help = "画像にアノテーションを描画します。"

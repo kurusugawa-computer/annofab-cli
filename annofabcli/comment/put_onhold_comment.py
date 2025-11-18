@@ -2,7 +2,6 @@ import argparse
 import json
 import logging
 import sys
-from typing import Optional
 
 from annofabapi.models import CommentType
 
@@ -84,7 +83,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
+def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "put_onhold"
     subcommand_help = "保留コメントを付与します"
 

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import argparse
 import logging
-from typing import Any, Optional
+from typing import Any
 
 import annofabapi
 from annofabapi.dataclass.task import Task
@@ -110,7 +110,7 @@ class DeleteTaskMain(CommandLineWithConfirm):
         self,
         task: dict[str, Any],
         log_prefix: str,
-        task_query: Optional[TaskQuery] = None,
+        task_query: TaskQuery | None = None,
     ) -> bool:
         """タスクを削除するかどうかを判定する"""
 
@@ -137,7 +137,7 @@ class DeleteTaskMain(CommandLineWithConfirm):
 
         return True
 
-    def delete_task(self, task_id: str, task_query: Optional[TaskQuery] = None, task_index: Optional[int] = None) -> bool:
+    def delete_task(self, task_id: str, task_query: TaskQuery | None = None, task_index: int | None = None) -> bool:
         """
         タスクを削除します。
 
@@ -200,7 +200,7 @@ class DeleteTaskMain(CommandLineWithConfirm):
     def delete_task_list(  # noqa: ANN201
         self,
         task_id_list: list[str],
-        task_query: Optional[TaskQuery] = None,
+        task_query: TaskQuery | None = None,
     ):
         """
         複数のタスクを削除する。
@@ -238,7 +238,7 @@ class DeleteTask(CommandLine):
         task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id)
 
         dict_task_query = annofabcli.common.cli.get_json_from_args(args.task_query)
-        task_query: Optional[TaskQuery] = TaskQuery.from_dict(dict_task_query) if dict_task_query is not None else None
+        task_query: TaskQuery | None = TaskQuery.from_dict(dict_task_query) if dict_task_query is not None else None
 
         super().validate_project(args.project_id, [ProjectMemberRole.OWNER])
 
@@ -276,7 +276,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
+def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "delete"
     subcommand_help = "タスクを削除します。"
     description = "タスクを削除します。ただし、作業中/完了状態のタスクは削除できません。デフォルトは、アノテーションが付与されているタスクは削除できません。"

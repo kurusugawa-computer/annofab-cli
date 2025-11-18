@@ -6,7 +6,7 @@ import json
 import logging
 import multiprocessing
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import annofabapi
 from annofabapi.models import AnnotationDataHoldingType
@@ -63,12 +63,12 @@ class DumpAnnotationMain:
                 outer_file_path = outer_dir / f"{annotation_id}"
                 self.service.wrapper.download(detail["url"], outer_file_path)
 
-    def dump_annotation_for_input_data(self, task_id: str, input_data_id: str, task_dir: Path, *, task_history_id: Optional[str] = None) -> None:
+    def dump_annotation_for_input_data(self, task_id: str, input_data_id: str, task_dir: Path, *, task_history_id: str | None = None) -> None:
         editor_annotation, _ = self.service.api.get_editor_annotation(self.project_id, task_id, input_data_id, query_params={"v": "2", "task_history_id": task_history_id})
         json_path = task_dir / f"{input_data_id}.json"
         self.dump_editor_annotation(editor_annotation=editor_annotation, json_path=json_path)
 
-    def dump_annotation_for_task(self, task_id: str, output_dir: Path, *, task_index: Optional[int] = None, task_history_index: Optional[int] = None) -> bool:
+    def dump_annotation_for_task(self, task_id: str, output_dir: Path, *, task_index: int | None = None, task_history_index: int | None = None) -> bool:
         """
         タスク配下のアノテーションをファイルに保存する。
 
@@ -85,7 +85,7 @@ class DumpAnnotationMain:
             logger.warning(f"task_id = '{task_id}' のタスクは存在しません。スキップします。")
             return False
 
-        task_history_id: Optional[str] = None
+        task_history_id: str | None = None
         if task_history_index is not None:
             task_histories, _ = self.service.api.get_task_histories(self.project_id, task_id)
             if task_history_index >= len(task_histories):
@@ -109,7 +109,7 @@ class DumpAnnotationMain:
 
         return not is_failure
 
-    def dump_annotation_for_task_wrapper(self, tpl: tuple[int, str], output_dir: Path, *, task_history_index: Optional[int] = None) -> bool:
+    def dump_annotation_for_task_wrapper(self, tpl: tuple[int, str], output_dir: Path, *, task_history_index: int | None = None) -> bool:
         task_index, task_id = tpl
         try:
             return self.dump_annotation_for_task(task_id, output_dir=output_dir, task_index=task_index, task_history_index=task_history_index)
@@ -117,7 +117,7 @@ class DumpAnnotationMain:
             logger.warning(f"タスク'{task_id}'のアノテーション情報のダンプに失敗しました。", exc_info=True)
             return False
 
-    def dump_annotation(self, task_id_list: list[str], output_dir: Path, *, task_history_index: Optional[int] = None, parallelism: Optional[int] = None) -> None:
+    def dump_annotation(self, task_id_list: list[str], output_dir: Path, *, task_history_index: int | None = None, parallelism: int | None = None) -> None:
         project_title = self.facade.get_project_title(self.project_id)
         logger.info(f"プロジェクト'{project_title}'に対して、タスク{len(task_id_list)} 件のアノテーションをファイルに保存します。")
 
@@ -191,7 +191,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
+def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "dump"
     subcommand_help = "``annotation restore`` コマンドに読み込ませることができるアノテーション情報を出力します。"
     description = "``annotation restore`` コマンドに読み込ませることができるアノテーション情報を出力します。アノテーションのバックアップ目的で利用することを想定しています。"

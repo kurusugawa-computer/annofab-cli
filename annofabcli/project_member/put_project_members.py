@@ -2,7 +2,7 @@ import argparse
 import logging
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import more_itertools
 import pandas
@@ -25,8 +25,8 @@ class Member(DataClassJsonMixin):
 
     user_id: str
     member_role: ProjectMemberRole
-    sampling_inspection_rate: Optional[int] = None
-    sampling_acceptance_rate: Optional[int] = None
+    sampling_inspection_rate: int | None = None
+    sampling_acceptance_rate: int | None = None
 
 
 class PutProjectMembers(CommandLine):
@@ -35,7 +35,7 @@ class PutProjectMembers(CommandLine):
     """
 
     @staticmethod
-    def find_member(members: list[dict[str, Any]], user_id: str) -> Optional[dict[str, Any]]:
+    def find_member(members: list[dict[str, Any]], user_id: str) -> dict[str, Any] | None:
         member = more_itertools.first_true(members, default=None, pred=lambda e: e["user_id"] == user_id)
         return member
 
@@ -181,7 +181,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
+def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "put"
     subcommand_help = "プロジェクトメンバを登録します。"
     epilog = "オーナーロールを持つユーザで実行してください。"

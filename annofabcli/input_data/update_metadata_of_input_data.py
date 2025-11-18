@@ -8,7 +8,6 @@ import multiprocessing
 import sys
 from dataclasses import dataclass
 from functools import partial
-from typing import Optional
 
 import annofabapi
 from annofabapi.models import ProjectMemberRole
@@ -52,7 +51,7 @@ class UpdateMetadataMain(CommandLineWithConfirm):
         metadata: Metadata,
         *,
         overwrite_metadata: bool = False,
-        input_data_index: Optional[int] = None,
+        input_data_index: int | None = None,
     ) -> bool:
         def get_confirm_message() -> str:
             if overwrite_metadata:
@@ -97,7 +96,7 @@ class UpdateMetadataMain(CommandLineWithConfirm):
         metadata_by_input_data_id: dict[str, Metadata],
         *,
         overwrite_metadata: bool = False,
-        parallelism: Optional[int] = None,
+        parallelism: int | None = None,
     ) -> None:
         metadata_info_list = [InputDataMetadataInfo(input_data_id, metadata) for input_data_id, metadata in metadata_by_input_data_id.items()]
         if overwrite_metadata:
@@ -256,7 +255,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
+def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "update_metadata"
     subcommand_help = "入力データのメタデータを更新します。"
     description = "入力データのメタデータを更新します。"

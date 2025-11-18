@@ -4,7 +4,7 @@
 
 import argparse
 import logging
-from typing import Any, Optional
+from typing import Any
 
 import annofabcli
 import annofabcli.common.cli
@@ -65,7 +65,7 @@ def main(args: argparse.Namespace) -> None:
     PrintLabelColor(service, facade, args).main()
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
+def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "list_label_color"
 
     subcommand_help = "label_name(英名)とRGBの関係をJSONで出力します。"

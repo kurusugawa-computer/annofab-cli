@@ -4,7 +4,6 @@ import sys
 import uuid
 import zipfile
 from pathlib import Path
-from typing import Optional
 
 from annofabapi.models import ProjectJobType, ProjectMemberRole
 
@@ -35,7 +34,7 @@ class PutInputData(CommandLine):
         project_id: str,
         zip_file: Path,
         wait_options: WaitOptions,
-        input_data_name_prefix: Optional[str] = None,
+        input_data_name_prefix: str | None = None,
         wait: bool = False,  # noqa: FBT001, FBT002
     ) -> None:
         """
@@ -137,7 +136,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
+def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "put_with_zip"
     subcommand_help = "zipファイルを入力データとして登録します。"
     description = "zipファイルを入力データとして登録します。"

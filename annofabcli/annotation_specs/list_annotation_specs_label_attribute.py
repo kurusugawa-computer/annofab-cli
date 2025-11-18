@@ -6,7 +6,7 @@ import logging
 import sys
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import pandas
 from annofabapi.models import Lang
@@ -31,9 +31,9 @@ logger = logging.getLogger(__name__)
 @dataclass
 class LabelAndAttribute(DataClassJsonMixin):
     label_id: str
-    label_name_en: Optional[str]
-    label_name_ja: Optional[str]
-    label_name_vi: Optional[str]
+    label_name_en: str | None
+    label_name_ja: str | None
+    label_name_vi: str | None
     annotation_type: str
 
     attribute_id: str
@@ -43,9 +43,9 @@ class LabelAndAttribute(DataClassJsonMixin):
         APIレスポンスの ``additional_data_definition_id`` に相当します。
         ``additional_data_definition_id`` という名前がアノテーションJSONの `attributes` と対応していることが分かりにくかったので、`attribute_id`という名前に変えました。
     """
-    attribute_name_en: Optional[str]
-    attribute_name_ja: Optional[str]
-    attribute_name_vi: Optional[str]
+    attribute_name_en: str | None
+    attribute_name_ja: str | None
+    attribute_name_vi: str | None
     attribute_type: str
 
 
@@ -91,7 +91,7 @@ def create_label_attribute_list(labels_v3: list[dict[str, Any]], additionals_v3:
 class PrintAnnotationSpecsLabelAndAttribute(CommandLine):
     COMMON_MESSAGE = "annofabcli annotation_specs list_label: error:"
 
-    def print_annotation_specs_label(self, annotation_specs_v3: dict[str, Any], output_format: FormatArgument, output: Optional[str] = None) -> None:
+    def print_annotation_specs_label(self, annotation_specs_v3: dict[str, Any], output_format: FormatArgument, output: str | None = None) -> None:
         # アノテーション仕様のv2とv3はほとんど同じなので、`convert_annotation_specs_labels_v2_to_v1`にはV3のアノテーション仕様を渡す
         label_attribute_list = create_label_attribute_list(annotation_specs_v3["labels"], annotation_specs_v3["additionals"])
 
@@ -115,7 +115,7 @@ class PrintAnnotationSpecsLabelAndAttribute(CommandLine):
         elif output_format in [FormatArgument.JSON, FormatArgument.PRETTY_JSON]:
             print_according_to_format([e.to_dict() for e in label_attribute_list], format=output_format, output=output)
 
-    def get_history_id_from_before_index(self, project_id: str, before: int) -> Optional[str]:
+    def get_history_id_from_before_index(self, project_id: str, before: int) -> str | None:
         histories, _ = self.service.api.get_annotation_specs_histories(project_id)
         if before + 1 > len(histories):
             logger.warning(f"アノテーション仕様の履歴は{len(histories)}個のため、最新より{before}個前のアノテーション仕様は見つかりませんでした。")
@@ -205,7 +205,7 @@ def main(args: argparse.Namespace) -> None:
     PrintAnnotationSpecsLabelAndAttribute(service, facade, args).main()
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
+def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "list_label_attribute"
 
     subcommand_help = "アノテーション仕様のラベルとラベルに含まれている属性の一覧を出力します。"

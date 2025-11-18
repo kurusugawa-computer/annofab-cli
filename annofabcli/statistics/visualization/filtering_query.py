@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 from collections.abc import Collection
 from dataclasses import dataclass
-from typing import Any, Optional
+from typing import Any
 
 from annofabapi.dataclass.task import Task as DcTask
 from annofabapi.models import Task
@@ -21,13 +21,13 @@ class FilteringQuery:
     絞り込み条件
     """
 
-    task_query: Optional[TaskQuery] = None
-    start_date: Optional[str] = None
-    end_date: Optional[str] = None
-    ignored_task_ids: Optional[Collection[str]] = None
+    task_query: TaskQuery | None = None
+    start_date: str | None = None
+    end_date: str | None = None
+    ignored_task_ids: Collection[str] | None = None
 
 
-def _get_first_annotation_started_datetime(sub_task_history_list: list[dict[str, Any]]) -> Optional[str]:
+def _get_first_annotation_started_datetime(sub_task_history_list: list[dict[str, Any]]) -> str | None:
     """
     1個のタスクのタスク履歴一覧から、最初に教師付フェーズを作業した日時を取得します。
     """
@@ -40,7 +40,7 @@ def _get_first_annotation_started_datetime(sub_task_history_list: list[dict[str,
     return task_history_list_with_annotation_phase[0]["started_datetime"]
 
 
-def filter_task_histories(task_histories: dict[str, list[dict[str, Any]]], *, start_date: Optional[str] = None, end_date: Optional[str] = None) -> dict[str, list[dict[str, Any]]]:
+def filter_task_histories(task_histories: dict[str, list[dict[str, Any]]], *, start_date: str | None = None, end_date: str | None = None) -> dict[str, list[dict[str, Any]]]:
     """
     タスク履歴を絞り込みます。
 

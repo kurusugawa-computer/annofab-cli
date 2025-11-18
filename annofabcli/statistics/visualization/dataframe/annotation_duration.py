@@ -3,7 +3,6 @@ from __future__ import annotations
 import logging
 from collections import defaultdict
 from pathlib import Path
-from typing import Optional
 
 import pandas
 from annofabapi.parser import lazy_parse_simple_annotation_zip
@@ -47,8 +46,8 @@ class AnnotationDuration:
         annotation_zip: Path,
         project_id: str,
         *,
-        include_labels: Optional[list[str]] = None,
-        exclude_labels: Optional[list[str]] = None,
+        include_labels: list[str] | None = None,
+        exclude_labels: list[str] | None = None,
     ) -> AnnotationDuration:
         """
         アノテーションZIPファイルからインスタンスを生成します。

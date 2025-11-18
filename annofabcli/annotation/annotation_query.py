@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Optional, Union
+from typing import Any
 
 import more_itertools
 from annofabapi.dataclass.annotation import AdditionalDataV1
@@ -9,7 +9,7 @@ from annofabapi.models import AdditionalDataDefinitionType
 from annofabapi.util.annotation_specs import get_english_message
 from dataclasses_json import DataClassJsonMixin
 
-AttributeValue = Optional[Union[str, int, bool]]
+AttributeValue = str | int | bool | None
 """属性値の型情報"""
 
 
@@ -138,7 +138,7 @@ def _get_additional_data_v2(additional_data: dict[str, Any], attribute_value: At
     return {"definition_id": additional_data_definition_id, "value": result_value}
 
 
-def convert_attributes_from_cli_to_api(attributes: dict[str, AttributeValue], annotation_specs: dict[str, Any], *, label_id: Optional[str] = None) -> list[AdditionalDataV1]:
+def convert_attributes_from_cli_to_api(attributes: dict[str, AttributeValue], annotation_specs: dict[str, Any], *, label_id: str | None = None) -> list[AdditionalDataV1]:
     """
     CLI用の属性をAPI用の属性に変換します。
 
@@ -193,7 +193,7 @@ def convert_attributes_from_cli_to_api(attributes: dict[str, AttributeValue], an
     return attributes_for_webapi
 
 
-def convert_attributes_from_cli_to_additional_data_list_v2(attributes: dict[str, AttributeValue], annotation_specs: dict[str, Any], *, label_id: Optional[str] = None) -> list[dict[str, Any]]:
+def convert_attributes_from_cli_to_additional_data_list_v2(attributes: dict[str, AttributeValue], annotation_specs: dict[str, Any], *, label_id: str | None = None) -> list[dict[str, Any]]:
     """
     CLI用の属性情報をAPI用の `AdditionalDataV2` に相当するdictに変換します。
 
@@ -254,10 +254,10 @@ class AnnotationQueryForCLI(DataClassJsonMixin):
     CLIでアノテーションを絞り込むためのクエリ。
     """
 
-    label: Optional[str] = None
+    label: str | None = None
     """ラベル名（英語）"""
 
-    attributes: Optional[dict[str, AttributeValue]] = None
+    attributes: dict[str, AttributeValue] | None = None
     """
     keyが属性名(英語),valueが属性値のdict。
     属性が排他選択の場合、属性値は選択肢名(英語)。
@@ -279,8 +279,8 @@ class AnnotationQueryForCLI(DataClassJsonMixin):
             dict[str,Any]: WebAPIのquery_paramsに渡すdict
         """
         assert self.label is not None or self.attributes is not None
-        label_id: Optional[str] = None
-        attributes_for_webapi: Optional[list[AdditionalDataV1]] = None
+        label_id: str | None = None
+        attributes_for_webapi: list[AdditionalDataV1] | None = None
 
         if self.label is not None:
             tmp = [e for e in annotation_specs["labels"] if get_english_message(e["label_name"]) == self.label]
@@ -309,10 +309,10 @@ class AnnotationQueryForAPI(DataClassJsonMixin):
     https://annofab.com/docs/api/#tag/x-data-types/AnnotationQuery に対応しています。
     """
 
-    label_id: Optional[str] = None
+    label_id: str | None = None
     """ラベルID"""
 
-    attributes: Optional[list[AdditionalDataV1]] = None
+    attributes: list[AdditionalDataV1] | None = None
     """属性IDと属性値のList"""
 
     def __post_init__(self) -> None:

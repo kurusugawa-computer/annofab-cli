@@ -3,7 +3,7 @@ from __future__ import annotations
 import argparse
 import logging
 from collections.abc import Collection
-from typing import Any, Optional
+from typing import Any
 
 import annofabapi
 import more_itertools
@@ -33,7 +33,7 @@ class ChangeOrganizationMemberMain(CommandLineWithConfirm):
         super().__init__(all_yes)
 
     @staticmethod
-    def get_member(organization_member_list: list[dict[str, Any]], user_id: str) -> Optional[dict[str, Any]]:
+    def get_member(organization_member_list: list[dict[str, Any]], user_id: str) -> dict[str, Any] | None:
         return more_itertools.first_true(organization_member_list, pred=lambda e: e["user_id"] == user_id)
 
     def main(self, organization_name: str, user_ids: Collection[str], role: str) -> None:
@@ -107,7 +107,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
+def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     # 2022/01時点でロールしか変更できないのに、change_roleという名前でなくchangeという名前にしたのは、将来的にロール以外も変更できるようにするため
     subcommand_name = "change"
     subcommand_help = "組織メンバの情報（ロールなど）を変更します。"

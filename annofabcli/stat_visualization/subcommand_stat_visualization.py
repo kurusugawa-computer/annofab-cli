@@ -1,5 +1,4 @@
 import argparse
-from typing import Optional
 
 import annofabcli.stat_visualization.mask_visualization_dir
 import annofabcli.stat_visualization.merge_visualization_dir
@@ -19,7 +18,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     annofabcli.stat_visualization.write_performance_rating_csv.add_parser(subparsers)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
+def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "stat_visualization"
     subcommand_help = "`annofabcli statistics visualization` コマンドの出力結果を加工するサブコマンド（アルファ版）"
     description = "`annofabcli statistics visualization` コマンドの出力結果を加工するサブコマンド（アルファ版）"
