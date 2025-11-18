@@ -307,14 +307,6 @@ class CollectingPerformanceInfo:
         df_tmp.columns = pandas.MultiIndex.from_tuples([(dirname, project_title, f"{quality_indicator.column}__{phase.value}")])
         return df.join(df_tmp)
 
-    def _get_project_title(self, project_dir: ProjectDir) -> str:
-        # 複数のプロジェクトをマージしたディレクトリの場合、`project_title`はないので、空文字を返す
-        if project_dir.is_merged():
-            return ""
-
-        project_info = project_dir.read_project_info()
-        return project_info.project_title
-
     def create_rating_df(
         self,
         df_user: pandas.DataFrame,
@@ -340,7 +332,7 @@ class CollectingPerformanceInfo:
             )
             project_dir_list.append(project_dir)
 
-            project_title = self._get_project_title(project_dir)
+            project_title = project_dir.get_project_title()
 
             try:
                 user_performance = project_dir.read_user_performance()

@@ -444,6 +444,17 @@ class ProjectDir(DataClassJsonMixin):
 
         return None
 
+    def get_project_title(self) -> str:
+        """
+        `project_info`に記載されているプジェクトのタイトルを返します。
+        ただし`self.is_merged()`がTrueの場合は、`project_info`が存在しないので空文字を返します。
+        """
+        if self.is_merged():
+            return ""
+
+        project_info = self.read_project_info()
+        return project_info.project_title
+
 
 @dataclass
 class ProjectInfo(DataClassJsonMixin):
