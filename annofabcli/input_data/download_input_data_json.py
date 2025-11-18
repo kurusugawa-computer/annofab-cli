@@ -18,7 +18,7 @@ class DownloadingInputData(CommandLine):
     def download_input_data_json(self, project_id: str, output_file: Path, is_latest: bool) -> None:  # noqa: FBT001
         super().validate_project(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER])
         project_title = self.facade.get_project_title(project_id)
-        logger.info(f"project_id='{project_id}'の入力データ全件ファイルをダウンロードします。 :: project_id='{project_id}', project_title='{project_title}'")
+        logger.info(f"project_id='{project_id}'の入力データ全件ファイルをダウンロードします。 :: project_title='{project_title}'")
 
         obj = DownloadingFile(self.service)
         obj.download_input_data_json(
