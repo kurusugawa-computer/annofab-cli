@@ -15,10 +15,10 @@ logger = logging.getLogger(__name__)
 
 
 class DownloadingTaskJson(CommandLine):
-    def download_task_json(self, project_id: str, output_file: Path, is_latest: bool):  # noqa: ANN201, FBT001
+    def download_task_json(self, project_id: str, output_file: Path, *, is_latest: bool) -> None:
         super().validate_project(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER])
         project_title = self.facade.get_project_title(project_id)
-        logger.info(f"{project_title} のタスク全件ファイルをダウンロードします。")
+        logger.info(f"project_id='{project_id}'のタスク全件ファイルをダウンロードします。 :: project_id='{project_id}', project_title='{project_title}'")
 
         obj = DownloadingFile(self.service)
         obj.download_task_json(
@@ -26,7 +26,7 @@ class DownloadingTaskJson(CommandLine):
             str(output_file),
             is_latest=is_latest,
         )
-        logger.info(f"タスク全件ファイルをダウンロードしました。output={output_file}")
+        logger.info(f"project_id='{project_id}'のタスク全件ファイルをダウンロードしました。 :: output='{output_file}', project_title='{project_title}'")
 
     def main(self) -> None:
         args = self.args
