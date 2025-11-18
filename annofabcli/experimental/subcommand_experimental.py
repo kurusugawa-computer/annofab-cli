@@ -1,5 +1,4 @@
 import argparse
-from typing import Optional
 
 import annofabcli
 import annofabcli.common.cli
@@ -13,7 +12,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     list_out_of_range_annotation_for_movie.add_parser(subparsers)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
+def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "experimental"
     subcommand_help = "アルファ版のサブコマンド"
     description = "アルファ版のサブコマンド。予告なしに削除されたり、コマンドライン引数が変わったりします。"

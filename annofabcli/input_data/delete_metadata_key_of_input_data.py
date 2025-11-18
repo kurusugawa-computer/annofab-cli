@@ -8,7 +8,6 @@ import multiprocessing
 import sys
 from collections.abc import Collection
 from functools import partial
-from typing import Optional
 
 import annofabapi
 from annofabapi.models import ProjectMemberRole
@@ -40,7 +39,7 @@ class DeleteMetadataKeyOfInputDataMain(CommandLineWithConfirm):
         self.project_id = project_id
         super().__init__(all_yes=all_yes)
 
-    def delete_metadata_keys_for_one_input_data(self, input_data_id: str, metadata_keys: Collection[str], *, input_data_index: Optional[int] = None) -> bool:
+    def delete_metadata_keys_for_one_input_data(self, input_data_id: str, metadata_keys: Collection[str], *, input_data_index: int | None = None) -> bool:
         """
         １個の入力データに対して、メタデータのキーを削除します。
 
@@ -100,7 +99,7 @@ class DeleteMetadataKeyOfInputDataMain(CommandLineWithConfirm):
             logger.warning(f"input_data_id='{input_data_id}' :: 入力データのメタデータのキーを削除するのに失敗しました。", exc_info=True)
             return False
 
-    def delete_metadata_keys_for_input_data_list(self, input_data_id_list: list[str], metadata_keys: Collection[str], *, parallelism: Optional[int] = None) -> None:
+    def delete_metadata_keys_for_input_data_list(self, input_data_id_list: list[str], metadata_keys: Collection[str], *, parallelism: int | None = None) -> None:
         logger.info(f"{len(input_data_id_list)} 件の入力データのメタデータから、キー'{metadata_keys}'を削除します。")
 
         success_count = 0
@@ -185,7 +184,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
+def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "delete_metadata_key"
     subcommand_help = "入力データのメタデータのキーを削除します。"
     epilog = "オーナロールを持つユーザで実行してください。"

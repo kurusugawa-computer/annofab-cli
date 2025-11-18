@@ -5,7 +5,6 @@ import sys
 import tempfile
 from enum import Enum
 from pathlib import Path
-from typing import Optional
 
 import pandas
 from annofabapi.models import ProjectMemberRole, Task, TaskPhase, TaskStatus
@@ -136,7 +135,7 @@ class SummarizeTaskCount(CommandLine):
         project, _ = self.service.api.get_project(project_id)
         return project["configuration"]["number_of_inspections"]
 
-    def summarize_task_count(self, project_id: str, *, task_json_path: Optional[Path], is_latest: bool, temp_dir: Optional[Path] = None) -> None:
+    def summarize_task_count(self, project_id: str, *, task_json_path: Path | None, is_latest: bool, temp_dir: Path | None = None) -> None:
         # タスク全件ファイルをダウンロードするので、オーナロールかアノテーションユーザロールであることを確認する。
         super().validate_project(project_id, project_member_roles=[ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER])
 
@@ -150,7 +149,7 @@ class SummarizeTaskCount(CommandLine):
         task_count_df = create_task_count_summary(task_list, number_of_inspections=number_of_inspections)
         annofabcli.common.utils.print_csv(task_count_df, output=self.output)
 
-    def get_task_list_with_downloading_file(self, project_id: str, task_json_path: Optional[Path], is_latest: bool, temp_dir: Optional[Path] = None) -> list[Task]:  # noqa: FBT001
+    def get_task_list_with_downloading_file(self, project_id: str, task_json_path: Path | None, is_latest: bool, temp_dir: Path | None = None) -> list[Task]:  # noqa: FBT001
         if task_json_path is None:
             if temp_dir is not None:
                 downloading_obj = DownloadingFile(self.service)
@@ -188,7 +187,7 @@ class SummarizeTaskCount(CommandLine):
         project_id = args.project_id
         task_json_path = Path(args.task_json) if args.task_json is not None else None
 
-        def process_task_count(temp_dir: Optional[Path]) -> None:
+        def process_task_count(temp_dir: Path | None) -> None:
             self.summarize_task_count(
                 project_id,
                 task_json_path=task_json_path,
@@ -237,7 +236,7 @@ def main(args: argparse.Namespace) -> None:
     SummarizeTaskCount(service, facade, args).main()
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
+def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "summarize_task_count"
     subcommand_help = "タスクのフェーズ、ステータス、ステップごとにタスク数を出力します。"
     description = "タスクのフェーズ、ステータス、ステップごとにタスク数を、CSV形式で出力します。"

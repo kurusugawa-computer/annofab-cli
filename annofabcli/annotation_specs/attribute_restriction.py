@@ -1,7 +1,7 @@
 import logging
 from collections.abc import Collection
 from enum import Enum
-from typing import Any, Optional
+from typing import Any
 
 from more_itertools import first_true
 
@@ -69,7 +69,7 @@ class AttributeRestrictionMessage:
 
         return ", ".join(label_message_list)
 
-    def get_object_for_equals_or_notequals(self, value: str, attribute: Optional[dict[str, Any]]) -> str:
+    def get_object_for_equals_or_notequals(self, value: str, attribute: dict[str, Any] | None) -> str:
         """制約条件が `Equals` or `NotEquals`のときの目的語を生成する。
         属性の種類がドロップダウンかセレクトボックスのときは、選択肢の名前を返す。
 
@@ -173,7 +173,7 @@ class AttributeRestrictionMessage:
             tmp = f"{tmp} {str_object}"
         return tmp
 
-    def get_attribute_from_name(self, attribute_name: str) -> Optional[dict[str, Any]]:
+    def get_attribute_from_name(self, attribute_name: str) -> dict[str, Any] | None:
         tmp = [attribute for attribute in self.attribute_dict.values() if AnnofabApiFacade.get_additional_data_definition_name_en(attribute) == attribute_name]
         if len(tmp) == 1:
             return tmp[0]
@@ -184,7 +184,7 @@ class AttributeRestrictionMessage:
             logger.warning(f"属性名(英語)が'{attribute_name}'の属性は複数存在します。")
             return None
 
-    def get_label_from_name(self, label_name: str) -> Optional[dict[str, Any]]:
+    def get_label_from_name(self, label_name: str) -> dict[str, Any] | None:
         tmp = [label for label in self.label_dict.values() if AnnofabApiFacade.get_label_name_en(label) == label_name]
         if len(tmp) == 1:
             return tmp[0]
@@ -197,8 +197,8 @@ class AttributeRestrictionMessage:
 
     def get_target_attribute_ids(
         self,
-        target_attribute_names: Optional[Collection[str]] = None,
-        target_label_names: Optional[Collection[str]] = None,
+        target_attribute_names: Collection[str] | None = None,
+        target_label_names: Collection[str] | None = None,
     ) -> set[str]:
         result: set[str] = set()
 
@@ -219,8 +219,8 @@ class AttributeRestrictionMessage:
         self,
         restrictions: list[dict[str, Any]],
         *,
-        target_attribute_names: Optional[Collection[str]] = None,
-        target_label_names: Optional[Collection[str]] = None,
+        target_attribute_names: Collection[str] | None = None,
+        target_label_names: Collection[str] | None = None,
     ) -> list[str]:
         """
         複数の属性制約から自然言語で記載されたメッセージのlistを返します。

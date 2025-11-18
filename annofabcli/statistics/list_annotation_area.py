@@ -8,7 +8,7 @@ import zipfile
 from collections.abc import Collection, Iterator
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import numpy
 import pandas
@@ -64,7 +64,7 @@ class AnnotationAreaInfo(DataClassJsonMixin):
     input_data_id: str
     input_data_name: str
 
-    updated_datetime: Optional[str]
+    updated_datetime: str | None
     """アノテーションJSONに格納されているアノテーションの更新日時"""
 
     label: str
@@ -116,8 +116,8 @@ def get_annotation_area_info_list(parser: SimpleAnnotationParser, simple_annotat
 def get_annotation_area_info_list_from_annotation_path(
     annotation_path: Path,
     *,
-    target_task_ids: Optional[Collection[str]] = None,
-    task_query: Optional[TaskQuery] = None,
+    target_task_ids: Collection[str] | None = None,
+    task_query: TaskQuery | None = None,
 ) -> list[AnnotationAreaInfo]:
     annotation_area_list = []
     target_task_ids = set(target_task_ids) if target_task_ids is not None else None
@@ -166,8 +166,8 @@ def print_annotation_area(
     output_file: Path,
     output_format: FormatArgument,
     *,
-    target_task_ids: Optional[Collection[str]] = None,
-    task_query: Optional[TaskQuery] = None,
+    target_task_ids: Collection[str] | None = None,
+    task_query: TaskQuery | None = None,
 ) -> None:
     annotation_area_list = get_annotation_area_info_list_from_annotation_path(
         annotation_path,
@@ -211,7 +211,7 @@ class ListAnnotationArea(CommandLine):
         if not self.validate(args):
             sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
-        project_id: Optional[str] = args.project_id
+        project_id: str | None = args.project_id
         if project_id is not None:
             super().validate_project(project_id, project_member_roles=[ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER])
             project, _ = self.service.api.get_project(project_id)
@@ -228,7 +228,7 @@ class ListAnnotationArea(CommandLine):
 
         downloading_obj = DownloadingFile(self.service)
 
-        def download_and_print_annotation_area(project_id: str, temp_dir: Path, *, is_latest: bool, annotation_path: Optional[Path]) -> None:
+        def download_and_print_annotation_area(project_id: str, temp_dir: Path, *, is_latest: bool, annotation_path: Path | None) -> None:
             if annotation_path is None:
                 annotation_path = downloading_obj.download_annotation_zip_to_dir(
                     project_id,
@@ -309,7 +309,7 @@ def main(args: argparse.Namespace) -> None:
     ListAnnotationArea(service, facade, args).main()
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
+def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "list_annotation_area"
     subcommand_help = "塗りつぶしアノテーションまたは矩形アノテーションの面積を出力します。"
     epilog = "オーナロールまたはアノテーションユーザロールを持つユーザで実行してください。"

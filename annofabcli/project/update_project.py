@@ -9,7 +9,6 @@ import sys
 from enum import Enum
 from functools import partial
 from pathlib import Path
-from typing import Optional
 
 import annofabapi
 import pandas
@@ -48,9 +47,9 @@ class UpdatedProject(BaseModel):
 
     project_id: str
     """更新対象のプロジェクトを表すID"""
-    title: Optional[str] = None
+    title: str | None = None
     """変更後のプロジェクトタイトル（指定した場合のみ更新）"""
-    overview: Optional[str] = None
+    overview: str | None = None
     """変更後のプロジェクト概要（指定した場合のみ更新）"""
 
 
@@ -63,9 +62,9 @@ class UpdateProjectMain(CommandLineWithConfirm):
         self,
         project_id: str,
         *,
-        new_title: Optional[str] = None,
-        new_overview: Optional[str] = None,
-        project_index: Optional[int] = None,
+        new_title: str | None = None,
+        new_overview: str | None = None,
+        project_index: int | None = None,
     ) -> UpdateResult:
         """
         1個のプロジェクトを更新します。
@@ -289,7 +288,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
+def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "update"
     subcommand_help = "プロジェクトのタイトルまたは概要を更新します。"
     epilog = "プロジェクトオーナロールを持つユーザで実行してください。"

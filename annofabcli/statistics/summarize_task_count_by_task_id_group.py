@@ -6,7 +6,6 @@ import logging
 import tempfile
 from enum import Enum
 from pathlib import Path
-from typing import Optional
 
 import pandas
 from annofabapi.models import ProjectMemberRole, Task, TaskPhase, TaskStatus
@@ -99,7 +98,7 @@ def get_task_id_prefix(task_id: str, delimiter: str) -> str:
         return delimiter.join(tmp_list[0 : len(tmp_list) - 1])
 
 
-def create_task_count_summary_df(task_list: list[Task], task_id_delimiter: Optional[str], task_id_groups: Optional[dict[str, list[str]]]) -> pandas.DataFrame:
+def create_task_count_summary_df(task_list: list[Task], task_id_delimiter: str | None, task_id_groups: dict[str, list[str]] | None) -> pandas.DataFrame:
     """
     タスク数を集計したDataFrameを生成する。
 
@@ -228,7 +227,7 @@ def main(args: argparse.Namespace) -> None:
     SummarizeTaskCountByTaskId(service, facade, args).main()
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
+def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "summarize_task_count_by_task_id_group"
     subcommand_help = "task_idのグループごとにタスク数を集計します。"
     epilog = "アノテーションユーザまたはオーナロールを持つユーザで実行してください。"

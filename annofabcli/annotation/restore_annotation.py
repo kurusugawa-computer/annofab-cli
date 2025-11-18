@@ -7,7 +7,7 @@ import multiprocessing
 import sys
 from collections.abc import Iterator
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import annofabapi
 from annofabapi.dataclass.annotation import AnnotationDetailV1, AnnotationV1
@@ -164,7 +164,7 @@ class RestoreAnnotationMain(CommandLineWithConfirm):
 
         return success_count
 
-    def execute_task(self, task_parser: SimpleAnnotationParserByTask, task_index: Optional[int] = None) -> bool:
+    def execute_task(self, task_parser: SimpleAnnotationParserByTask, task_index: int | None = None) -> bool:
         """
         1個のタスクに対してアノテーションを登録する。
 
@@ -193,7 +193,7 @@ class RestoreAnnotationMain(CommandLineWithConfirm):
             logger.info(f"タスク'{task_id}'は作業中または受入完了状態のため、アノテーションのリストアをスキップします。 status={task['status']}")
             return False
 
-        old_account_id: Optional[str] = None
+        old_account_id: str | None = None
         changed_operator = False
         if self.is_force:
             if not can_put_annotation(task, self.service.api.account_id):
@@ -243,8 +243,8 @@ class RestoreAnnotationMain(CommandLineWithConfirm):
     def main(  # noqa: ANN201
         self,
         annotation_dir: Path,
-        target_task_ids: Optional[set[str]] = None,
-        parallelism: Optional[int] = None,
+        target_task_ids: set[str] | None = None,
+        parallelism: int | None = None,
     ):
         """`annotation_dir`にあるファイルからアノテーションをリストアします。
 
@@ -363,7 +363,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
+def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "restore"
     subcommand_help = "'annotation dump'コマンドの出力結果から、アノテーション情報をリストアします。"
     description = "'annotation dump'コマンドの出力結果から、アノテーション情報をリストアします。ただし、作業中/完了状態のタスクはリストアできません。"

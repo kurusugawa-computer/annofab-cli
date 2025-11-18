@@ -1,5 +1,4 @@
 import argparse
-from typing import Optional
 
 import annofabcli
 import annofabcli.common.cli
@@ -19,7 +18,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     annofabcli.organization_member.list_organization_member.add_parser(subparsers)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
+def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "organization_member"
     subcommand_help = "組織メンバ関係のサブコマンド"
     description = "組織メンバ関係のサブコマンド"

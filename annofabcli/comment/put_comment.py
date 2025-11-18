@@ -4,7 +4,7 @@ import logging
 import multiprocessing
 import uuid
 from dataclasses import dataclass
-from typing import Any, Optional
+from typing import Any
 
 import annofabapi
 import annofabapi.utils
@@ -29,13 +29,13 @@ class AddedComment(DataClassJsonMixin):
     comment: str
     """コメントの中身"""
 
-    data: Optional[dict[str, Any]]
+    data: dict[str, Any] | None
     """コメントを付与する位置や区間"""
 
-    annotation_id: Optional[str]
+    annotation_id: str | None
     """コメントに紐付けるアノテーションID"""
 
-    phrases: Optional[list[str]]
+    phrases: list[str] | None
     """参照している定型指摘ID"""
 
 
@@ -139,7 +139,7 @@ class PutCommentMain(CommandLineWithConfirm):
         self,
         task_id: str,
         comments_for_task: AddedCommentsForTask,
-        task_index: Optional[int] = None,
+        task_index: int | None = None,
     ) -> int:
         """
         タスクにコメントを付与します。
@@ -207,7 +207,7 @@ class PutCommentMain(CommandLineWithConfirm):
     def add_comments_for_task_list(
         self,
         comments_for_task_list: AddedComments,
-        parallelism: Optional[int] = None,
+        parallelism: int | None = None,
     ) -> None:
         comments_count = sum(len(e) for e in comments_for_task_list.values())
         logger.info(f"{self.comment_type_name}を付与するタスク数: {len(comments_for_task_list)}, {self.comment_type_name}を付与する入力データ数: {comments_count}")
@@ -252,10 +252,10 @@ def convert_cli_comments(dict_comments: dict[str, Any], *, comment_type: Comment
         data: dict[str, Any]
         """コメントを付与する位置や区間"""
 
-        annotation_id: Optional[str] = None
+        annotation_id: str | None = None
         """コメントに紐付けるアノテーションID"""
 
-        phrases: Optional[list[str]] = None
+        phrases: list[str] | None = None
         """参照している定型指摘ID"""
 
     @dataclass
@@ -267,7 +267,7 @@ def convert_cli_comments(dict_comments: dict[str, Any], *, comment_type: Comment
         comment: str
         """コメントの中身"""
 
-        annotation_id: Optional[str] = None
+        annotation_id: str | None = None
         """コメントに紐付けるアノテーションID"""
 
     def convert_inspection_comment(comment: dict[str, Any]) -> AddedComment:

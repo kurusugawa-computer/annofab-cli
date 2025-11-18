@@ -4,7 +4,7 @@ import argparse
 import logging
 import sys
 from dataclasses import dataclass
-from typing import Any, Optional
+from typing import Any
 
 import annofabapi
 
@@ -78,7 +78,7 @@ class PuttingLabelColorMain(CommandLineWithConfirm):
         confirm_message = confirm_message + "\n" + str_changed_labels
         return self.confirm_processing(confirm_message)
 
-    def main(self, label_color: LabelColorDict, comment: Optional[str]) -> None:
+    def main(self, label_color: LabelColorDict, comment: str | None) -> None:
         request_body, changed_labels = self.create_request_body(label_color)
 
         if len(changed_labels) == 0:
@@ -138,7 +138,7 @@ def main(args: argparse.Namespace) -> None:
     PutLabelColor(service, facade, args).main()
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
+def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "put_label_color"
 
     subcommand_help = "ラベルの色を変更します。"

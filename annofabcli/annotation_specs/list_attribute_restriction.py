@@ -5,7 +5,6 @@ import json
 import logging
 import sys
 from pathlib import Path
-from typing import Optional
 
 import annofabcli
 import annofabcli.common.cli
@@ -25,7 +24,7 @@ logger = logging.getLogger(__name__)
 class ListAttributeRestriction(CommandLine):
     COMMON_MESSAGE = "annofabcli annotation_specs list_restriction: error:"
 
-    def get_history_id_from_before_index(self, project_id: str, before: int) -> Optional[str]:
+    def get_history_id_from_before_index(self, project_id: str, before: int) -> str | None:
         histories, _ = self.service.api.get_annotation_specs_histories(project_id)
         if before + 1 > len(histories):
             logger.warning(f"アノテーション仕様の履歴は{len(histories)}個のため、最新より{before}個前のアノテーション仕様は見つかりませんでした。")
@@ -133,7 +132,7 @@ def main(args: argparse.Namespace) -> None:
     ListAttributeRestriction(service, facade, args).main()
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
+def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "list_attribute_restriction"
 
     subcommand_help = "アノテーション仕様の属性の制約情報を出力します。"

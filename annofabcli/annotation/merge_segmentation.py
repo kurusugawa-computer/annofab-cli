@@ -8,7 +8,7 @@ import sys
 import tempfile
 from collections.abc import Collection
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import annofabapi
 import numpy
@@ -84,7 +84,7 @@ class MergeSegmentationMain(CommandLineWithConfirm):
             tuple[1]: 削除対象の塗りつぶしアノテーションのannotation_idのlist
         """
 
-        def func(label_id: str) -> tuple[Optional[str], list[str]]:
+        def func(label_id: str) -> tuple[str | None, list[str]]:
             updated_annotation_id = None
             deleted_annotation_id_list = []
             binary_image_array_list = []
@@ -181,7 +181,7 @@ class MergeSegmentationMain(CommandLineWithConfirm):
         )
         return True
 
-    def merge_segmentation_annotation_for_task(self, task_id: str, *, task_index: Optional[int] = None) -> int:
+    def merge_segmentation_annotation_for_task(self, task_id: str, *, task_index: int | None = None) -> int:
         """
         1個のタスクに対して、label_idに対応する複数の塗りつぶしアノテーションを1つにまとめます。
 
@@ -256,7 +256,7 @@ class MergeSegmentationMain(CommandLineWithConfirm):
     def main(
         self,
         task_ids: Collection[str],
-        parallelism: Optional[int] = None,
+        parallelism: int | None = None,
     ) -> None:
         logger.info(f"{len(task_ids)} 件のタスクに対して、複数の塗りつぶしアノテーションを1個にまとめます。")
         success_input_data_count = 0
@@ -371,7 +371,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
+def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "merge_segmentation"
     subcommand_help = "複数の塗りつぶしアノテーションを1つにまとめます。"
     description = (

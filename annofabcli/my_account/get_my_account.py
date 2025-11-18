@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import argparse
 import logging
-from typing import Optional
 
 import annofabcli
 from annofabcli.common.cli import (
@@ -44,7 +43,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
+def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "get"
     subcommand_help = "自分のアカウント情報を出力します。"
 

@@ -6,9 +6,10 @@ import json
 import logging
 import sys
 import tempfile
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Callable, Optional
+from typing import Any
 
 import annofabapi
 import pandas
@@ -37,8 +38,8 @@ class ValidationResult:
     label_name: str
     function_name: str
     is_valid: bool
-    error_message: Optional[str] = None
-    detail_data: Optional[dict[str, Any]] = None
+    error_message: str | None = None
+    detail_data: dict[str, Any] | None = None
 
 
 class ValidationFunctionLoader:
@@ -101,7 +102,7 @@ class AnnotationValidator:
         service: annofabapi.Resource,
         project_id: str,
         validation_functions: dict[str, Callable[[dict[str, Any]], bool]],
-        task_query: Optional[TaskQuery] = None,
+        task_query: TaskQuery | None = None,
     ) -> None:
         self.service = service
         self.project_id = project_id
@@ -233,7 +234,7 @@ class ValidateAnnotation(CommandLine):
         logger.info(f"読み込んだバリデーション関数: {list(validation_functions.keys())}")
 
         # タスク検索クエリ
-        task_query: Optional[TaskQuery] = None
+        task_query: TaskQuery | None = None
         if args.task_query is not None:
             dict_task_query = annofabcli.common.cli.get_json_from_args(args.task_query)
             task_query = TaskQuery.from_dict(dict_task_query)
@@ -277,7 +278,7 @@ class ValidateAnnotation(CommandLine):
         # サマリー表示
         self._print_summary(results)
 
-    def _output_results(self, results: list[ValidationResult], format_type: str, output_file: Optional[Path]) -> None:
+    def _output_results(self, results: list[ValidationResult], format_type: str, output_file: Path | None) -> None:
         """バリデーション結果を出力する"""
         if not results:
             logger.info("バリデーション結果はありません。")
@@ -382,7 +383,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
+def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "validate"
     subcommand_help = "ユーザー定義のバリデーション関数でアノテーションZIPを検証します。"
     description = "ユーザー定義のバリデーション関数でアノテーションZIPを検証します。\nバリデーション関数は 'validate_' から始まる関数名で定義してください。"

@@ -5,7 +5,7 @@ import logging
 import sys
 import uuid
 from enum import Enum
-from typing import Any, Optional
+from typing import Any
 
 from annofabapi.models import InputDataType
 from annofabapi.plugin import EditorPluginId, ExtendSpecsPluginId
@@ -38,11 +38,11 @@ class CreateProject(CommandLine):
         title: str,
         input_data_type: InputDataType,
         *,
-        project_id: Optional[str],
-        overview: Optional[str],
-        editor_plugin_id: Optional[str],
-        custom_project_type: Optional[CustomProjectType],
-        configuration: Optional[dict[str, Any]],
+        project_id: str | None,
+        overview: str | None,
+        editor_plugin_id: str | None,
+        custom_project_type: CustomProjectType | None,
+        configuration: dict[str, Any] | None,
     ):
         new_project_id = project_id if project_id is not None else str(uuid.uuid4())
         if configuration is None:
@@ -141,7 +141,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
+def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "create"
     subcommand_help = "プロジェクトを作成します。"
     epilog = "組織管理者、組織オーナを持つユーザで実行してください。"

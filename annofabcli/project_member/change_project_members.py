@@ -2,7 +2,7 @@ import argparse
 import logging
 import sys
 from collections.abc import Collection
-from typing import Any, Optional
+from typing import Any
 
 import requests
 from annofabapi.models import ProjectMember, ProjectMemberRole, ProjectMemberStatus
@@ -30,8 +30,8 @@ class ChangeProjectMembers(CommandLine):
         project_id: str,
         user_id: str,
         old_member: ProjectMember,
-        member_role: Optional[ProjectMemberRole] = None,
-        member_info: Optional[dict[str, Any]] = None,
+        member_role: ProjectMemberRole | None = None,
+        member_info: dict[str, Any] | None = None,
     ) -> ProjectMember:
         """
         1人のプロジェクトメンバを変更する。
@@ -73,8 +73,8 @@ class ChangeProjectMembers(CommandLine):
         self,
         project_id: str,
         user_id_list: Collection[str],
-        member_role: Optional[ProjectMemberRole] = None,
-        member_info: Optional[dict[str, Any]] = None,
+        member_role: ProjectMemberRole | None = None,
+        member_info: dict[str, Any] | None = None,
     ):
         """
         プロジェクトメンバのメンバ情報を更新する。
@@ -126,7 +126,7 @@ class ChangeProjectMembers(CommandLine):
         return [e["user_id"] for e in member_list if e["user_id"] != self.service.api.login_user_id]
 
     @staticmethod
-    def validate(args: argparse.Namespace, member_info: Optional[dict[str, Any]] = None) -> bool:
+    def validate(args: argparse.Namespace, member_info: dict[str, Any] | None = None) -> bool:
         COMMON_MESSAGE = "annofabcli project_member change: error:"  # noqa: N806
         if args.role is None and args.member_info is None:
             print(f"{COMMON_MESSAGE} argument `--role`または`--member_info`のどちらかは、必ず指定してください。", file=sys.stderr)  # noqa: T201
@@ -202,7 +202,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
+def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "change"
     subcommand_help = "プロジェクトメンバを変更します。"
     description = "複数のプロジェクトメンバに対して、メンバ情報を変更します。ただし、自分自身は変更できません。"

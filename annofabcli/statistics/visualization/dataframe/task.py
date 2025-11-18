@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import annofabapi
 import bokeh
@@ -64,7 +64,7 @@ class Task:
         """
         return list(set(self.required_columns) - set(df.columns))
 
-    def __init__(self, df: pandas.DataFrame, *, custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None) -> None:
+    def __init__(self, df: pandas.DataFrame, *, custom_production_volume_list: list[ProductionVolumeColumn] | None = None) -> None:
         self.custom_production_volume_list = custom_production_volume_list if custom_production_volume_list is not None else []
 
         if self._duplicated_keys(df):
@@ -184,8 +184,8 @@ class Task:
         project_id: str,
         annofab_service: annofabapi.Resource,
         *,
-        input_data_count: Optional[InputDataCount] = None,
-        custom_production_volume: Optional[CustomProductionVolume] = None,
+        input_data_count: InputDataCount | None = None,
+        custom_production_volume: CustomProductionVolume | None = None,
     ) -> Task:
         """
         APIから取得した情報と、DataFrameのラッパーからインスタンスを生成します。
@@ -255,7 +255,7 @@ class Task:
         return len(self.df) == 0
 
     @classmethod
-    def empty(cls, *, custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None) -> Task:
+    def empty(cls, *, custom_production_volume_list: list[ProductionVolumeColumn] | None = None) -> Task:
         """空のデータフレームを持つインスタンスを生成します。"""
 
         bool_columns = [
@@ -316,12 +316,12 @@ class Task:
         return cls(df, custom_production_volume_list=custom_production_volume_list)
 
     @classmethod
-    def from_csv(cls, csv_file: Path, *, custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None) -> Task:
+    def from_csv(cls, csv_file: Path, *, custom_production_volume_list: list[ProductionVolumeColumn] | None = None) -> Task:
         df = pandas.read_csv(str(csv_file))
         return cls(df, custom_production_volume_list=custom_production_volume_list)
 
     @staticmethod
-    def merge(*obj: Task, custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None) -> Task:
+    def merge(*obj: Task, custom_production_volume_list: list[ProductionVolumeColumn] | None = None) -> Task:
         """
         複数のインスタンスをマージします。
 
@@ -332,7 +332,7 @@ class Task:
         df_merged = pandas.concat(df_list)
         return Task(df_merged, custom_production_volume_list=custom_production_volume_list)
 
-    def plot_histogram_of_worktime(self, output_file: Path, *, metadata: Optional[dict[str, Any]] = None) -> None:
+    def plot_histogram_of_worktime(self, output_file: Path, *, metadata: dict[str, Any] | None = None) -> None:
         """作業時間に関する情報をヒストグラムでプロットする。
 
         Args:
@@ -413,7 +413,7 @@ class Task:
         bokeh.plotting.save(bokeh_obj)
         logger.debug(f"'{output_file}'を出力しました。")
 
-    def plot_histogram_of_others(self, output_file: Path, *, metadata: Optional[dict[str, Any]] = None) -> None:
+    def plot_histogram_of_others(self, output_file: Path, *, metadata: dict[str, Any] | None = None) -> None:
         """アノテーション数や、検査コメント数など、作業時間以外の情報をヒストグラムで表示する。
 
         Args:
@@ -539,8 +539,8 @@ class Task:
 
     def mask_user_info(
         self,
-        to_replace_for_user_id: Optional[dict[str, str]] = None,
-        to_replace_for_username: Optional[dict[str, str]] = None,
+        to_replace_for_user_id: dict[str, str] | None = None,
+        to_replace_for_username: dict[str, str] | None = None,
     ) -> Task:
         """
         引数から渡された情報を元に、インスタンス変数`df`内のユーザー情報をマスクして、新しいインスタンスを返します。

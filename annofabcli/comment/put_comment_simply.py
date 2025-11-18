@@ -4,7 +4,7 @@ import uuid
 from collections.abc import Collection
 from dataclasses import dataclass
 from functools import partial
-from typing import Any, Optional
+from typing import Any
 
 import annofabapi
 import annofabapi.utils
@@ -26,10 +26,10 @@ class AddedSimpleComment:
     comment: str
     """コメントの中身"""
 
-    data: Optional[dict[str, Any]]
+    data: dict[str, Any] | None
     """コメントを付与する位置や区間"""
 
-    phrases: Optional[list[str]] = None
+    phrases: list[str] | None = None
     """参照している定型指摘ID"""
 
 
@@ -103,7 +103,7 @@ class PutCommentSimplyMain(CommandLineWithConfirm):
         self,
         task_id: str,
         comment_info: AddedSimpleComment,
-        task_index: Optional[int] = None,
+        task_index: int | None = None,
     ) -> bool:
         """
         タスクにコメントを付与します。
@@ -166,7 +166,7 @@ class PutCommentSimplyMain(CommandLineWithConfirm):
         self,
         task_ids: Collection[str],
         comment_info: AddedSimpleComment,
-        parallelism: Optional[int] = None,
+        parallelism: int | None = None,
     ) -> None:
         logger.info(f"{len(task_ids)} 件のタスクに{self.comment_type_name}を付与します。")
 

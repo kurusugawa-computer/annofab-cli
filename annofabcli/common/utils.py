@@ -4,8 +4,9 @@ import logging.config
 import os
 import re
 import sys
+from collections.abc import Callable
 from pathlib import Path
-from typing import Any, Callable, Optional, TypeVar, Union
+from typing import Any, TypeVar
 
 import dateutil.parser
 import isodate
@@ -46,7 +47,7 @@ def duplicated_set(target_list: list[T]) -> set[T]:
     return {x for x in set(target_list) if target_list.count(x) > 1}
 
 
-def output_string(target: str, output: Optional[Union[str, Path]] = None) -> None:
+def output_string(target: str, output: str | Path | None = None) -> None:
     """
     文字列を出力する。
 
@@ -64,7 +65,7 @@ def output_string(target: str, output: Optional[Union[str, Path]] = None) -> Non
             logger.info(f"'{output}'を出力しました。")
 
 
-def print_json(target: Any, is_pretty: bool = False, output: Optional[Union[str, Path]] = None) -> None:  # noqa: ANN401, FBT001, FBT002
+def print_json(target: Any, is_pretty: bool = False, output: str | Path | None = None) -> None:  # noqa: ANN401, FBT001, FBT002
     """
     JSONを出力する。
 
@@ -80,7 +81,7 @@ def print_json(target: Any, is_pretty: bool = False, output: Optional[Union[str,
         output_string(json.dumps(target, ensure_ascii=False), output)
 
 
-def print_csv(df: pandas.DataFrame, output: Optional[Union[str, Path]] = None, to_csv_kwargs: Optional[dict[str, Any]] = None) -> None:
+def print_csv(df: pandas.DataFrame, output: str | Path | None = None, to_csv_kwargs: dict[str, Any] | None = None) -> None:
     if output is not None:
         Path(output).parent.mkdir(parents=True, exist_ok=True)
 
@@ -98,7 +99,7 @@ def print_csv(df: pandas.DataFrame, output: Optional[Union[str, Path]] = None, t
         logger.info(f"'{output}'を出力しました。")
 
 
-def print_id_list(id_list: list[Any], output: Optional[Union[str, Path]]) -> None:
+def print_id_list(id_list: list[Any], output: str | Path | None) -> None:
     s = "\n".join(id_list)
     output_string(s, output)
 
@@ -106,7 +107,7 @@ def print_id_list(id_list: list[Any], output: Optional[Union[str, Path]]) -> Non
 def print_according_to_format(
     target: Any,  # noqa: ANN401
     format: FormatArgument,  # noqa: A002
-    output: Optional[Union[str, Path]] = None,
+    output: str | Path | None = None,
 ) -> None:
     """
     コマンドライン引数 ``--format`` の値にしたがって、内容を出力する。
@@ -171,7 +172,7 @@ def is_file_scheme(str_value: str) -> bool:
     return str_value.startswith("file://")
 
 
-def get_file_scheme_path(str_value: str) -> Optional[str]:
+def get_file_scheme_path(str_value: str) -> str | None:
     """
     file schemaのパスを取得する。file schemeでない場合は、Noneを返す
 

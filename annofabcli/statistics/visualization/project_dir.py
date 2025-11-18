@@ -4,7 +4,7 @@ import json
 import logging
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 from annofabapi.models import TaskPhase
 from dataclasses_json import DataClassJsonMixin
@@ -57,8 +57,8 @@ class ProjectDir(DataClassJsonMixin):
         project_dir: Path,
         task_completion_criteria: TaskCompletionCriteria,
         *,
-        metadata: Optional[dict[str, Any]] = None,
-        custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None,
+        metadata: dict[str, Any] | None = None,
+        custom_production_volume_list: list[ProductionVolumeColumn] | None = None,
     ) -> None:
         self.project_dir = project_dir
         self.task_completion_criteria = task_completion_criteria
@@ -126,7 +126,7 @@ class ProjectDir(DataClassJsonMixin):
         obj: AbstractPhaseCumulativeProductivity,
         phase: TaskPhase,
         *,
-        user_id_list: Optional[list[str]] = None,
+        user_id_list: list[str] | None = None,
         minimal_output: bool = False,
     ) -> None:
         """
@@ -175,7 +175,7 @@ class ProjectDir(DataClassJsonMixin):
         phase_name = self.get_phase_name_for_filename(phase)
         obj.to_csv(self.project_dir / Path(f"{phase_name}者_{phase_name}開始日list.csv"))
 
-    def write_performance_line_graph_per_date(self, obj: AbstractPhaseProductivityPerDate, phase: TaskPhase, *, user_id_list: Optional[list[str]] = None) -> None:
+    def write_performance_line_graph_per_date(self, obj: AbstractPhaseProductivityPerDate, phase: TaskPhase, *, user_id_list: list[str] | None = None) -> None:
         """
         指定したフェーズの開始日ごとの作業時間や生産性情報を、折れ線グラフとして出力します。
         """
@@ -392,7 +392,7 @@ class ProjectDir(DataClassJsonMixin):
         """`ユーザ_日付list-作業時間.csvを書き込む"""
         obj.to_csv(self.project_dir / self.FILENAME_WORKTIME_PER_DATE_USER)
 
-    def write_worktime_line_graph(self, obj: WorktimePerDate, user_id_list: Optional[list[str]] = None) -> None:
+    def write_worktime_line_graph(self, obj: WorktimePerDate, user_id_list: list[str] | None = None) -> None:
         """横軸が日付、縦軸がユーザごとの作業時間である折れ線グラフを出力します。"""
         obj.plot_cumulatively(self.project_dir / "line-graph/累積折れ線-横軸_日-縦軸_作業時間.html", target_user_id_list=user_id_list, metadata=self.metadata)
 
@@ -425,7 +425,7 @@ class ProjectDir(DataClassJsonMixin):
         """
         print_json(obj.to_dict(encode_json=True), output=self.project_dir / self.FILENAME_MERGE_INFO, is_pretty=True)
 
-    def read_metadata(self) -> Optional[dict[str, Any]]:
+    def read_metadata(self) -> dict[str, Any] | None:
         """
         `project_info`または`merge_info`の内容をメタデータとして読み込む。
         どちらも存在しない場合はNoneを返す。
@@ -471,10 +471,10 @@ class ProjectInfo(DataClassJsonMixin):
     query: FilteringQuery
     """集計対象を絞り込むためのクエリ"""
 
-    production_volume_include_labels: Optional[list[str]] = None
+    production_volume_include_labels: list[str] | None = None
     """生産量に含める「アノテーション仕様のラベル名（英語）」のリスト。Noneの場合、すべてのラベルを含む。"""
 
-    production_volume_exclude_labels: Optional[list[str]] = None
+    production_volume_exclude_labels: list[str] | None = None
     """生産量から除外する「アノテーション仕様のラベル名（英語）」のリスト。Noneの場合、除外しない。"""
 
 

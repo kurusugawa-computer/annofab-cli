@@ -5,7 +5,6 @@ import json
 import logging
 import sys
 from pathlib import Path
-from typing import Optional
 
 from annofabapi.models import TaskPhase
 
@@ -47,7 +46,7 @@ class WritingVisualizationFile:
         output_project_dir: ProjectDir,
         task_completion_criteria: TaskCompletionCriteria,
         *,
-        user_id_list: Optional[list[str]] = None,
+        user_id_list: list[str] | None = None,
         minimal_output: bool = False,
     ) -> None:
         self.output_project_dir = output_project_dir
@@ -138,12 +137,12 @@ class WritingVisualizationFile:
 
 
 class MergingVisualizationFile:
-    def __init__(self, project_dir_list: list[ProjectDir], *, custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None) -> None:
+    def __init__(self, project_dir_list: list[ProjectDir], *, custom_production_volume_list: list[ProductionVolumeColumn] | None = None) -> None:
         self.project_dir_list = project_dir_list
         self.custom_production_volume_list = custom_production_volume_list
 
     def merge_worktime_per_date(self) -> WorktimePerDate:
-        merged_obj: Optional[WorktimePerDate] = None
+        merged_obj: WorktimePerDate | None = None
         for project_dir in self.project_dir_list:
             tmp_obj = project_dir.read_worktime_per_date_user()
 
@@ -191,8 +190,8 @@ def merge_visualization_dir(  # pylint: disable=too-many-statements
     task_completion_criteria: TaskCompletionCriteria,
     output_project_dir: ProjectDir,
     *,
-    custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None,
-    user_id_list: Optional[list[str]] = None,
+    custom_production_volume_list: list[ProductionVolumeColumn] | None = None,
+    user_id_list: list[str] | None = None,
     minimal_output: bool = False,
 ) -> None:
     merging_obj = MergingVisualizationFile(project_dir_list, custom_production_volume_list=custom_production_volume_list)
@@ -316,7 +315,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
+def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "merge"
     subcommand_help = "``annofabcli statistics visualize`` コマンドの出力結果をマージします。"
     description = "``annofabcli statistics visualize`` コマンドの出力結果をマージします。"

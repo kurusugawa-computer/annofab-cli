@@ -8,7 +8,7 @@ import multiprocessing
 import sys
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import annofabapi
 from annofabapi.models import ProjectMemberRole, SingleAnnotation, TaskStatus
@@ -34,7 +34,7 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class AnnotationDetailForCli(DataClassJsonMixin):
-    is_protected: Optional[bool] = None
+    is_protected: bool | None = None
 
 
 class ChangePropertiesOfAnnotationMain(CommandLineWithConfirm):
@@ -113,7 +113,7 @@ class ChangePropertiesOfAnnotationMain(CommandLineWithConfirm):
         for annotation in annotations:
             _to_request_body_elm(annotation)
 
-    def get_annotation_list_for_task(self, task_id: str, annotation_query: Optional[AnnotationQueryForAPI]) -> list[dict[str, Any]]:
+    def get_annotation_list_for_task(self, task_id: str, annotation_query: AnnotationQueryForAPI | None) -> list[dict[str, Any]]:
         """
         タスク内のアノテーション一覧を取得する。
 
@@ -136,9 +136,9 @@ class ChangePropertiesOfAnnotationMain(CommandLineWithConfirm):
         self,
         task_id: str,
         properties: AnnotationDetailForCli,
-        annotation_query: Optional[AnnotationQueryForAPI] = None,
-        backup_dir: Optional[Path] = None,
-        task_index: Optional[int] = None,
+        annotation_query: AnnotationQueryForAPI | None = None,
+        backup_dir: Path | None = None,
+        task_index: int | None = None,
     ) -> bool:
         """
         タスクに対してアノテーションのプロパティを変更する。
@@ -162,7 +162,7 @@ class ChangePropertiesOfAnnotationMain(CommandLineWithConfirm):
             logger.info(f"タスク'{task_id}'は作業中または受入完了状態のため、アノテーションプロパティの変更をスキップします。 status={dict_task['status']}")
             return False
 
-        old_account_id: Optional[str] = dict_task["account_id"]
+        old_account_id: str | None = dict_task["account_id"]
         changed_operator = False
 
         if self.is_force:
@@ -217,8 +217,8 @@ class ChangePropertiesOfAnnotationMain(CommandLineWithConfirm):
         self,
         tpl: tuple[int, str],
         properties: AnnotationDetailForCli,
-        annotation_query: Optional[AnnotationQueryForAPI] = None,
-        backup_dir: Optional[Path] = None,
+        annotation_query: AnnotationQueryForAPI | None = None,
+        backup_dir: Path | None = None,
     ) -> bool:
         task_index, task_id = tpl
         try:
@@ -237,9 +237,9 @@ class ChangePropertiesOfAnnotationMain(CommandLineWithConfirm):
         self,
         task_id_list: list[str],
         properties: AnnotationDetailForCli,
-        annotation_query: Optional[AnnotationQueryForAPI] = None,
-        backup_dir: Optional[Path] = None,
-        parallelism: Optional[int] = None,
+        annotation_query: AnnotationQueryForAPI | None = None,
+        backup_dir: Path | None = None,
+        parallelism: int | None = None,
     ):
         project_title = self.facade.get_project_title(self.project_id)
         logger.info(f"プロジェクト'{project_title}'に対して、タスク{len(task_id_list)} 件のアノテーションのプロパティを変更します")
@@ -396,7 +396,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
+def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "change_properties"
     subcommand_help = "アノテーションのプロパティを変更します。"
     description = (

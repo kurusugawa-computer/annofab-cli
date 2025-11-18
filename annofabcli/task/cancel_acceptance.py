@@ -6,7 +6,7 @@ import multiprocessing
 import sys
 from dataclasses import dataclass
 from functools import partial
-from typing import Any, Optional
+from typing import Any
 
 import annofabapi
 import more_itertools
@@ -43,12 +43,12 @@ class CancelAcceptanceMain(CommandLineWithConfirm):
         self.project_id = project_id
         self.facade = AnnofabApiFacade(service)
 
-        self._project_members_dict: Optional[dict[str, dict[str, Any]]] = None
+        self._project_members_dict: dict[str, dict[str, Any]] | None = None
         """プロジェクトメンバー情報を保持する変数"""
 
         CommandLineWithConfirm.__init__(self, all_yes)
 
-    def get_project_member_from_account_id(self, account_id: str) -> Optional[dict[str, Any]]:
+    def get_project_member_from_account_id(self, account_id: str) -> dict[str, Any] | None:
         """account_idからプロジェクトメンバを取得します。"""
         if self._project_members_dict is None:
             project_member_list = self.service.wrapper.get_all_project_members(self.project_id)
@@ -59,10 +59,10 @@ class CancelAcceptanceMain(CommandLineWithConfirm):
     def cancel_acceptance_for_task(
         self,
         task_id: str,
-        acceptor: Optional[User] = None,
+        acceptor: User | None = None,
         assign_last_acceptor: bool = True,  # noqa: FBT001, FBT002
-        task_query: Optional[TaskQuery] = None,
-        task_index: Optional[int] = None,
+        task_query: TaskQuery | None = None,
+        task_index: int | None = None,
         dryrun: bool = False,  # noqa: FBT001, FBT002
     ) -> bool:
         logging_prefix = f"{task_index + 1} 件目" if task_index is not None else ""
@@ -77,7 +77,7 @@ class CancelAcceptanceMain(CommandLineWithConfirm):
                 logger.warning(f"{logging_prefix}: task_id = {task_id} は受入完了でありません。status = {task['status']}, phase={task['phase']}")
                 return False
 
-            actual_acceptor: Optional[User] = None
+            actual_acceptor: User | None = None
             if assign_last_acceptor:
                 # 最後の受入フェーズの担当者の情報を取得する
                 acceptor_account_id = task["account_id"]
@@ -119,9 +119,9 @@ class CancelAcceptanceMain(CommandLineWithConfirm):
     def cancel_acceptance_for_wrapper(
         self,
         tpl: tuple[int, str],
-        acceptor: Optional[User] = None,
+        acceptor: User | None = None,
         assign_last_acceptor: bool = True,  # noqa: FBT001, FBT002
-        task_query: Optional[TaskQuery] = None,
+        task_query: TaskQuery | None = None,
         dryrun: bool = False,  # noqa: FBT001, FBT002
     ) -> bool:
         task_index, task_id = tpl
@@ -141,10 +141,10 @@ class CancelAcceptanceMain(CommandLineWithConfirm):
     def cancel_acceptance_for_task_list(  # noqa: ANN201
         self,
         task_id_list: list[str],
-        acceptor: Optional[User] = None,
+        acceptor: User | None = None,
         assign_last_acceptor: bool = True,  # noqa: FBT001, FBT002
-        task_query: Optional[TaskQuery] = None,
-        parallelism: Optional[int] = None,
+        task_query: TaskQuery | None = None,
+        parallelism: int | None = None,
         dryrun: bool = False,  # noqa: FBT001, FBT002
     ):
         """
@@ -221,13 +221,13 @@ class CancelAcceptance(CommandLine):
 
         task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id)
 
-        assigned_acceptor_user_id: Optional[str] = args.assigned_acceptor_user_id
+        assigned_acceptor_user_id: str | None = args.assigned_acceptor_user_id
 
         # 最後の受入フェーズの担当者に割り当てるか否か
         assign_last_acceptor = not args.not_assign and assigned_acceptor_user_id is None
 
         # 受入担当者の情報を取得する
-        acceptor: Optional[User] = None  # 受入担当者
+        acceptor: User | None = None  # 受入担当者
         if assigned_acceptor_user_id is not None:
             project_member_list = self.service.wrapper.get_all_project_members(args.project_id)
             member = more_itertools.first_true(project_member_list, pred=lambda e: e["user_id"] == assigned_acceptor_user_id)
@@ -241,7 +241,7 @@ class CancelAcceptance(CommandLine):
                 acceptor = User(account_id=member["account_id"], user_id=member["user_id"], username=member["username"])
 
         dict_task_query = annofabcli.common.cli.get_json_from_args(args.task_query)
-        task_query: Optional[TaskQuery] = TaskQuery.from_dict(dict_task_query) if dict_task_query is not None else None
+        task_query: TaskQuery | None = TaskQuery.from_dict(dict_task_query) if dict_task_query is not None else None
 
         super().validate_project(args.project_id, [ProjectMemberRole.OWNER])
         main_obj = CancelAcceptanceMain(self.service, project_id=args.project_id, all_yes=args.yes)
@@ -304,7 +304,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
+def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "cancel_acceptance"
     subcommand_help = "受入が完了したタスクに対して、受入を取り消します。"
     description = "受入が完了したタスクに対して、受入を取り消します。"

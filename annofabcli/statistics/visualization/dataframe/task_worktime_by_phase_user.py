@@ -3,7 +3,6 @@ from __future__ import annotations
 import logging
 from functools import partial
 from pathlib import Path
-from typing import Optional
 
 import pandas
 from annofabapi.models import TaskPhase
@@ -113,7 +112,7 @@ class TaskWorktimeByPhaseUser:
         duplicated = df.duplicated(subset=["project_id", "task_id", "phase", "phase_stage", "account_id"])
         return duplicated.any()
 
-    def __init__(self, df: pandas.DataFrame, *, custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None) -> None:
+    def __init__(self, df: pandas.DataFrame, *, custom_production_volume_list: list[ProductionVolumeColumn] | None = None) -> None:
         self.custom_production_volume_list = custom_production_volume_list if custom_production_volume_list is not None else []
 
         if self._duplicated_keys(df):
@@ -168,7 +167,7 @@ class TaskWorktimeByPhaseUser:
         print_csv(self.df[self.columns], str(output_file))
 
     @staticmethod
-    def merge(*obj: TaskWorktimeByPhaseUser, custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None) -> TaskWorktimeByPhaseUser:
+    def merge(*obj: TaskWorktimeByPhaseUser, custom_production_volume_list: list[ProductionVolumeColumn] | None = None) -> TaskWorktimeByPhaseUser:
         """
         複数のインスタンスをマージします。
 
@@ -179,7 +178,7 @@ class TaskWorktimeByPhaseUser:
         return TaskWorktimeByPhaseUser(df_merged, custom_production_volume_list=custom_production_volume_list)
 
     @classmethod
-    def empty(cls, *, custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None) -> TaskWorktimeByPhaseUser:
+    def empty(cls, *, custom_production_volume_list: list[ProductionVolumeColumn] | None = None) -> TaskWorktimeByPhaseUser:
         """空のデータフレームを持つインスタンスを生成します。"""
 
         df_dtype: dict[str, str] = {
@@ -216,17 +215,17 @@ class TaskWorktimeByPhaseUser:
         return len(self.df) == 0
 
     @classmethod
-    def from_csv(cls, csv_file: Path, *, custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None) -> TaskWorktimeByPhaseUser:
+    def from_csv(cls, csv_file: Path, *, custom_production_volume_list: list[ProductionVolumeColumn] | None = None) -> TaskWorktimeByPhaseUser:
         df = pandas.read_csv(str(csv_file))
         return cls(df, custom_production_volume_list=custom_production_volume_list)
 
     def mask_user_info(
         self,
         *,
-        to_replace_for_user_id: Optional[dict[str, str]] = None,
-        to_replace_for_username: Optional[dict[str, str]] = None,
-        to_replace_for_account_id: Optional[dict[str, str]] = None,
-        to_replace_for_biography: Optional[dict[str, str]] = None,
+        to_replace_for_user_id: dict[str, str] | None = None,
+        to_replace_for_username: dict[str, str] | None = None,
+        to_replace_for_account_id: dict[str, str] | None = None,
+        to_replace_for_biography: dict[str, str] | None = None,
     ) -> TaskWorktimeByPhaseUser:
         """
         引数から渡された情報を元に、インスタンス変数`df`内のユーザー情報をマスクして、新しいインスタンスを返します。
@@ -248,7 +247,7 @@ class TaskWorktimeByPhaseUser:
         return TaskWorktimeByPhaseUser(df, custom_production_volume_list=self.custom_production_volume_list)
 
     @staticmethod
-    def _create_annotation_count_ratio_df(task_history_df: pandas.DataFrame, task_df: pandas.DataFrame, *, custom_production_volume_columns: Optional[list[str]]) -> pandas.DataFrame:
+    def _create_annotation_count_ratio_df(task_history_df: pandas.DataFrame, task_df: pandas.DataFrame, *, custom_production_volume_columns: list[str] | None) -> pandas.DataFrame:
         """
         task_id, phase, (phase_index), user_idの作業時間比から、アノテーション数などの生産量を求める
 

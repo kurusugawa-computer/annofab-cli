@@ -6,7 +6,7 @@ import multiprocessing
 import sys
 import uuid
 from functools import partial
-from typing import Any, Optional
+from typing import Any
 
 import annofabapi
 import annofabapi.utils
@@ -32,7 +32,7 @@ logger = logging.getLogger(__name__)
 
 
 class RejectTasksMain(CommandLineWithConfirm):
-    def __init__(self, service: annofabapi.Resource, *, comment_data: Optional[dict[str, Any]], all_yes: bool = False) -> None:
+    def __init__(self, service: annofabapi.Resource, *, comment_data: dict[str, Any] | None, all_yes: bool = False) -> None:
         self.service = service
         self.facade = AnnofabApiFacade(service)
         self.comment_data = comment_data
@@ -70,7 +70,7 @@ class RejectTasksMain(CommandLineWithConfirm):
 
         self.service.api.batch_update_comments(project_id, task["task_id"], first_input_data_id, request_body=req_inspection)
 
-    def confirm_reject_task(self, task_id: str, assign_last_annotator: bool, assigned_annotator_user_id: Optional[str]) -> bool:  # noqa: FBT001
+    def confirm_reject_task(self, task_id: str, assign_last_annotator: bool, assigned_annotator_user_id: str | None) -> bool:  # noqa: FBT001
         confirm_message = f"task_id='{task_id}' のタスクを差し戻しますか？"
         if assign_last_annotator:
             confirm_message += "最後の教師付フェーズの担当者を割り当てます。"
@@ -114,9 +114,9 @@ class RejectTasksMain(CommandLineWithConfirm):
         task: dict[str, Any],
         *,
         assign_last_annotator: bool,
-        assigned_annotator_user_id: Optional[str],
+        assigned_annotator_user_id: str | None,
         cancel_acceptance: bool = False,
-        task_query: Optional[TaskQuery] = None,
+        task_query: TaskQuery | None = None,
     ) -> bool:
         """
         以下の状態を見て、差し戻し可能かどうかを判断します。
@@ -151,12 +151,12 @@ class RejectTasksMain(CommandLineWithConfirm):
         project_id: str,
         task_id: str,
         *,
-        inspection_comment: Optional[str] = None,
+        inspection_comment: str | None = None,
         assign_last_annotator: bool = True,
-        assigned_annotator_user_id: Optional[str] = None,
+        assigned_annotator_user_id: str | None = None,
         cancel_acceptance: bool = False,
-        task_query: Optional[TaskQuery] = None,
-        task_index: Optional[int] = None,
+        task_query: TaskQuery | None = None,
+        task_index: int | None = None,
     ) -> bool:
         """
         タスクを差し戻します。
@@ -235,11 +235,11 @@ class RejectTasksMain(CommandLineWithConfirm):
         self,
         tpl: tuple[int, str],
         project_id: str,
-        inspection_comment: Optional[str] = None,
+        inspection_comment: str | None = None,
         assign_last_annotator: bool = True,  # noqa: FBT001, FBT002
-        assigned_annotator_user_id: Optional[str] = None,
+        assigned_annotator_user_id: str | None = None,
         cancel_acceptance: bool = False,  # noqa: FBT001, FBT002
-        task_query: Optional[TaskQuery] = None,
+        task_query: TaskQuery | None = None,
     ) -> bool:
         task_index, task_id = tpl
         try:
@@ -261,12 +261,12 @@ class RejectTasksMain(CommandLineWithConfirm):
         self,
         project_id: str,
         task_id_list: list[str],
-        inspection_comment: Optional[str] = None,
+        inspection_comment: str | None = None,
         assign_last_annotator: bool = True,  # noqa: FBT001, FBT002
-        assigned_annotator_user_id: Optional[str] = None,
+        assigned_annotator_user_id: str | None = None,
         cancel_acceptance: bool = False,  # noqa: FBT001, FBT002
-        task_query: Optional[TaskQuery] = None,
-        parallelism: Optional[int] = None,
+        task_query: TaskQuery | None = None,
+        parallelism: int | None = None,
     ) -> None:
         if task_query is not None:
             task_query = self.facade.set_account_id_of_task_query(project_id, task_query)
@@ -339,7 +339,7 @@ class RejectTasks(CommandLine):
             super().validate_project(args.project_id, [ProjectMemberRole.OWNER])
 
         dict_task_query = annofabcli.common.cli.get_json_from_args(args.task_query)
-        task_query: Optional[TaskQuery] = TaskQuery.from_dict(dict_task_query) if dict_task_query is not None else None
+        task_query: TaskQuery | None = TaskQuery.from_dict(dict_task_query) if dict_task_query is not None else None
 
         comment_data = annofabcli.common.cli.get_json_from_args(args.comment_data)
         custom_project_type = CustomProjectType(args.custom_project_type) if args.custom_project_type is not None else None
@@ -447,7 +447,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
+def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "reject"
     subcommand_help = "タスクを差し戻します。"
     description = "タスクを差し戻します。差し戻す際、検査コメントを付与することもできます。作業中状態のタスクに対しては差し戻せません。"

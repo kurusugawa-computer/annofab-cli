@@ -5,7 +5,7 @@ import datetime
 import logging
 from collections import defaultdict
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import pandas
 from dateutil.parser import parse
@@ -110,7 +110,7 @@ class ListWorktimeFromTaskHistoryEvent(CommandLine):
     def print_worktime_list(
         self,
         project_id: str,
-        task_history_event_json: Optional[Path],
+        task_history_event_json: Path | None,
     ) -> None:
         super().validate_project(project_id, project_member_roles=None)
 
@@ -160,7 +160,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
+def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "list_worktime"
     subcommand_help = "日ごとユーザごとの作業時間の一覧を出力します。"
     description = "タスク履歴イベント全件ファイルから、日ごとユーザごとの作業時間の一覧を出力します。"

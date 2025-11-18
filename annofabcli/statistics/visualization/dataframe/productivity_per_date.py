@@ -7,7 +7,7 @@ from __future__ import annotations
 import abc
 import logging
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import bokeh
 import bokeh.layouts
@@ -80,7 +80,7 @@ class AbstractPhaseProductivityPerDate(abc.ABC):
     PLOT_WIDTH = 1200
     PLOT_HEIGHT = 600
 
-    def __init__(self, df: pandas.DataFrame, phase: TaskPhase, *, custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None) -> None:
+    def __init__(self, df: pandas.DataFrame, phase: TaskPhase, *, custom_production_volume_list: list[ProductionVolumeColumn] | None = None) -> None:
         self.df = df
         self.phase = phase
         self.custom_production_volume_list = custom_production_volume_list if custom_production_volume_list is not None else []
@@ -97,7 +97,7 @@ class AbstractPhaseProductivityPerDate(abc.ABC):
         line_graph_list: list[LineGraph],
         plotted_users: list[tuple[str, str]],
         output_file: Path,
-        metadata: Optional[dict[str, Any]],
+        metadata: dict[str, Any] | None,
     ) -> None:
         """
         折れ線グラフを、HTMLファイルに出力します。
@@ -139,8 +139,8 @@ class AbstractPhaseProductivityPerDate(abc.ABC):
         production_volume_name: str,
         output_file: Path,
         *,
-        target_user_id_list: Optional[list[str]] = None,
-        metadata: Optional[dict[str, Any]] = None,
+        target_user_id_list: list[str] | None = None,
+        metadata: dict[str, Any] | None = None,
     ) -> None:
         raise NotImplementedError()
 
@@ -220,7 +220,7 @@ class AbstractPhaseProductivityPerDate(abc.ABC):
 class AnnotatorProductivityPerDate(AbstractPhaseProductivityPerDate):
     """教師付開始日ごとの教師付者の生産性に関する情報"""
 
-    def __init__(self, df: pandas.DataFrame, *, custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None) -> None:
+    def __init__(self, df: pandas.DataFrame, *, custom_production_volume_list: list[ProductionVolumeColumn] | None = None) -> None:
         super().__init__(df, phase=TaskPhase.ANNOTATION, custom_production_volume_list=custom_production_volume_list)
 
     @classmethod
@@ -234,8 +234,8 @@ class AnnotatorProductivityPerDate(AbstractPhaseProductivityPerDate):
         production_volume_name: str,
         output_file: Path,
         *,
-        target_user_id_list: Optional[list[str]] = None,
-        metadata: Optional[dict[str, Any]] = None,
+        target_user_id_list: list[str] | None = None,
+        metadata: dict[str, Any] | None = None,
     ) -> None:
         """
         生産性を教師付作業者ごとにプロットする。
@@ -344,7 +344,7 @@ class AnnotatorProductivityPerDate(AbstractPhaseProductivityPerDate):
             username = df_subset.iloc[0]["username"]
 
             line_count += 1
-            for line_graph, (x_column, y_column) in zip(line_graph_list, columns_list):
+            for line_graph, (x_column, y_column) in zip(line_graph_list, columns_list, strict=False):
                 if y_column.endswith(WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX):
                     line_graph.add_moving_average_line(
                         source=source,
@@ -380,7 +380,7 @@ class AnnotatorProductivityPerDate(AbstractPhaseProductivityPerDate):
 class InspectorProductivityPerDate(AbstractPhaseProductivityPerDate):
     """検査開始日ごとの検査者の生産性に関する情報"""
 
-    def __init__(self, df: pandas.DataFrame, *, custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None) -> None:
+    def __init__(self, df: pandas.DataFrame, *, custom_production_volume_list: list[ProductionVolumeColumn] | None = None) -> None:
         super().__init__(df, phase=TaskPhase.INSPECTION, custom_production_volume_list=custom_production_volume_list)
 
     @classmethod
@@ -394,8 +394,8 @@ class InspectorProductivityPerDate(AbstractPhaseProductivityPerDate):
         production_volume_name: str,
         output_file: Path,
         *,
-        target_user_id_list: Optional[list[str]] = None,
-        metadata: Optional[dict[str, Any]] = None,
+        target_user_id_list: list[str] | None = None,
+        metadata: dict[str, Any] | None = None,
     ) -> None:
         """
         アノテーション単位の生産性を受入作業者ごとにプロットする。
@@ -477,7 +477,7 @@ class InspectorProductivityPerDate(AbstractPhaseProductivityPerDate):
             username = df_subset.iloc[0]["username"]
 
             line_count += 1
-            for line_graph, (x_column, y_column) in zip(line_graph_list, columns_list):
+            for line_graph, (x_column, y_column) in zip(line_graph_list, columns_list, strict=False):
                 if y_column.endswith(WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX):
                     line_graph.add_moving_average_line(
                         source=source,
@@ -517,7 +517,7 @@ class InspectorProductivityPerDate(AbstractPhaseProductivityPerDate):
 class AcceptorProductivityPerDate(AbstractPhaseProductivityPerDate):
     """受入開始日ごとの受入者の生産性に関する情報"""
 
-    def __init__(self, df: pandas.DataFrame, *, custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None) -> None:
+    def __init__(self, df: pandas.DataFrame, *, custom_production_volume_list: list[ProductionVolumeColumn] | None = None) -> None:
         super().__init__(df, phase=TaskPhase.ACCEPTANCE, custom_production_volume_list=custom_production_volume_list)
 
     @classmethod
@@ -531,8 +531,8 @@ class AcceptorProductivityPerDate(AbstractPhaseProductivityPerDate):
         production_volume_name: str,
         output_file: Path,
         *,
-        target_user_id_list: Optional[list[str]] = None,
-        metadata: Optional[dict[str, Any]] = None,
+        target_user_id_list: list[str] | None = None,
+        metadata: dict[str, Any] | None = None,
     ) -> None:
         """
         アノテーション単位の生産性を受入作業者ごとにプロットする。
@@ -617,7 +617,7 @@ class AcceptorProductivityPerDate(AbstractPhaseProductivityPerDate):
             username = df_subset.iloc[0]["username"]
 
             line_count += 1
-            for line_graph, (x_column, y_column) in zip(line_graph_list, columns_list):
+            for line_graph, (x_column, y_column) in zip(line_graph_list, columns_list, strict=False):
                 if y_column.endswith(WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX):
                     line_graph.add_moving_average_line(
                         source=source,

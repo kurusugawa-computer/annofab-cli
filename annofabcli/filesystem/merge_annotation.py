@@ -3,9 +3,9 @@ import json
 import logging
 import sys
 import zipfile
-from collections.abc import Collection, Iterator
+from collections.abc import Callable, Collection, Iterator
 from pathlib import Path
-from typing import Any, Callable, Optional
+from typing import Any
 
 from annofabapi.parser import (
     SimpleAnnotationDirParser,
@@ -110,7 +110,7 @@ class MergeAnnotationMain:
             json.dump(simple_annotation, f, ensure_ascii=False)
 
     @staticmethod
-    def _get_parser(annotation_path: Path, zip_file: Optional[zipfile.ZipFile], json_path: Path) -> Optional[SimpleAnnotationParser]:
+    def _get_parser(annotation_path: Path, zip_file: zipfile.ZipFile | None, json_path: Path) -> SimpleAnnotationParser | None:
         if annotation_path.is_dir():
             if (annotation_path / json_path).exists():
                 return SimpleAnnotationDirParser(annotation_path / json_path)
@@ -126,8 +126,8 @@ class MergeAnnotationMain:
 
     @staticmethod
     def create_is_target_parser_func(
-        task_ids: Optional[Collection[str]] = None,
-    ) -> Optional[IsParserFunc]:
+        task_ids: Collection[str] | None = None,
+    ) -> IsParserFunc | None:
         if task_ids is None:
             return None
 
@@ -147,13 +147,13 @@ class MergeAnnotationMain:
         annotation_path1: Path,
         annotation_path2: Path,
         output_dir: Path,
-        target_task_ids: Optional[Collection[str]] = None,
+        target_task_ids: Collection[str] | None = None,
     ):
         is_target_parser_func = self.create_is_target_parser_func(target_task_ids)
 
         iter_parser1 = self.create_iter_parser(annotation_path1)
 
-        zip_file2: Optional[zipfile.ZipFile] = None
+        zip_file2: zipfile.ZipFile | None = None
         if annotation_path2.is_file():
             zip_file2 = zipfile.ZipFile(str(annotation_path2), "r")  # pylint: disable=consider-using-with
 
@@ -244,7 +244,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
+def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "merge_annotation"
 
     subcommand_help = "2つのアノテーションzip（またはzipを展開したディレクトリ）をマージします。"

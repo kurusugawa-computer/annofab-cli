@@ -7,7 +7,6 @@ from __future__ import annotations
 import logging
 from collections.abc import Sequence
 from pathlib import Path
-from typing import Optional
 
 import numpy
 import pandas
@@ -37,7 +36,7 @@ class WholePerformance:
         series: pandas.Series,
         task_completion_criteria: TaskCompletionCriteria,
         *,
-        custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None,
+        custom_production_volume_list: list[ProductionVolumeColumn] | None = None,
     ) -> None:
         self.series = series
         self.task_completion_criteria = task_completion_criteria
@@ -138,7 +137,7 @@ class WholePerformance:
         return cls(df_all.iloc[0], task_completion_criteria, custom_production_volume_list=task_worktime_by_phase_user.custom_production_volume_list)
 
     @classmethod
-    def empty(cls, task_completion_criteria: TaskCompletionCriteria, *, custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None) -> WholePerformance:
+    def empty(cls, task_completion_criteria: TaskCompletionCriteria, *, custom_production_volume_list: list[ProductionVolumeColumn] | None = None) -> WholePerformance:
         """空のデータフレームを持つインスタンスを生成します。"""
 
         production_volume_columns = ["input_data_count", "annotation_count"]
@@ -202,7 +201,7 @@ class WholePerformance:
         csv_file: Path,
         task_completion_criteria: TaskCompletionCriteria,
         *,
-        custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None,
+        custom_production_volume_list: list[ProductionVolumeColumn] | None = None,
     ) -> WholePerformance:
         """CSVファイルからインスタンスを生成します。"""
         df = pandas.read_csv(str(csv_file), header=None, index_col=[0, 1])

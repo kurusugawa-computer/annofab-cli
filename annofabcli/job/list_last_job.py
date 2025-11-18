@@ -1,7 +1,7 @@
 import argparse
 import logging
 import sys
-from typing import Any, Optional
+from typing import Any
 
 from annofabapi.models import Project, ProjectJobInfo, ProjectJobType
 
@@ -23,7 +23,7 @@ class ListLastJob(CommandLine):
     ジョブ一覧を表示する。
     """
 
-    def get_last_job(self, project_id: str, job_type: ProjectJobType) -> Optional[ProjectJobInfo]:
+    def get_last_job(self, project_id: str, job_type: ProjectJobType) -> ProjectJobInfo | None:
         """
         最新のジョブを取得する。ジョブが存在しない場合はNoneを返す。
 
@@ -163,7 +163,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
+def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "list_last"
     subcommand_help = "複数のプロジェクトに対して、最新のジョブを出力します。"
     description = "複数のプロジェクトに対して、最新のジョブを出力します。"

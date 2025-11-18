@@ -9,7 +9,6 @@ import sys
 from collections.abc import Collection
 from dataclasses import dataclass
 from functools import partial
-from typing import Optional, Union
 
 import annofabapi
 from annofabapi.models import ProjectMemberRole
@@ -28,7 +27,7 @@ from annofabcli.common.facade import AnnofabApiFacade
 
 logger = logging.getLogger(__name__)
 
-Metadata = dict[str, Union[str, bool, int]]
+Metadata = dict[str, str | bool | int]
 
 
 @dataclass(frozen=True)
@@ -43,7 +42,7 @@ class DeleteMetadataKeysOfTaskMain(CommandLineWithConfirm):
         service: annofabapi.Resource,
         project_id: str,
         *,
-        parallelism: Optional[int] = None,
+        parallelism: int | None = None,
         all_yes: bool = False,
     ) -> None:
         self.service = service
@@ -51,7 +50,7 @@ class DeleteMetadataKeysOfTaskMain(CommandLineWithConfirm):
         self.parallelism = parallelism
         super().__init__(all_yes=all_yes)
 
-    def delete_metadata_keys_for_one_task(self, task_id: str, metadata_keys: Collection[str], *, task_index: Optional[int] = None) -> bool:
+    def delete_metadata_keys_for_one_task(self, task_id: str, metadata_keys: Collection[str], *, task_index: int | None = None) -> bool:
         """
         １個のタスクに対して、メタデータのキーを削除します。
 
@@ -192,7 +191,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
+def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "delete_metadata_key"
     subcommand_help = "タスクのメタデータのキーを削除します。"
     epilog = "オーナまたはアノテーションユーザロールを持つユーザで実行してください。"

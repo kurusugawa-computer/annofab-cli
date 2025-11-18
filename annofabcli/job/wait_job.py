@@ -1,7 +1,7 @@
 import argparse
 import dataclasses
 import logging
-from typing import Any, Optional
+from typing import Any
 
 import annofabapi
 from annofabapi.models import ProjectJobType
@@ -20,7 +20,7 @@ from annofabcli.common.facade import AnnofabApiFacade
 logger = logging.getLogger(__name__)
 
 
-def get_wait_options_from_args(dict_wait_options: Optional[dict[str, Any]]) -> WaitOptions:
+def get_wait_options_from_args(dict_wait_options: dict[str, Any] | None) -> WaitOptions:
     """
     デフォルト値とマージして、wait_optionsを取得する。
 
@@ -45,7 +45,7 @@ class WaitJobMain:
         self.service = service
         self.facade = AnnofabApiFacade(service)
 
-    def wait_job(self, project_id: str, job_type: ProjectJobType, wait_options: WaitOptions, job_id: Optional[str] = None) -> None:
+    def wait_job(self, project_id: str, job_type: ProjectJobType, wait_options: WaitOptions, job_id: str | None = None) -> None:
         MAX_WAIT_MINUTE = wait_options.max_tries * wait_options.interval / 60  # noqa: N806
         logger.info(f"job_type='{job_type.value}', job_id='{job_id}' :: ジョブが完了するまで、最大{MAX_WAIT_MINUTE}分間待ちます。")
         result = self.service.wrapper.wait_until_job_finished(
@@ -100,7 +100,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
+def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "wait"
     subcommand_help = "ジョブの終了を待ちます。"
     description = "ジョブの終了を待ちます。"

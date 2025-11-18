@@ -7,7 +7,7 @@ import sys
 import tempfile
 from functools import partial
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import pandas
 from annofabapi.models import InputDataType, ProjectMemberRole
@@ -83,7 +83,7 @@ class ListVideoDuration(CommandLine):
         task_json: Path,
         input_data_json: Path,
         output_format: FormatArgument,
-        output_file: Optional[Path],
+        output_file: Path | None,
     ) -> None:
         with task_json.open(encoding="utf-8") as f:
             task_list = json.load(f)
@@ -115,7 +115,7 @@ class ListVideoDuration(CommandLine):
         if not self.validate(args):
             sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
-        project_id: Optional[str] = args.project_id
+        project_id: str | None = args.project_id
         if project_id is not None:
             super().validate_project(project_id, project_member_roles=[ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER])
             project, _ = self.service.api.get_project(project_id)
@@ -218,7 +218,7 @@ def main(args: argparse.Namespace) -> None:
     ListVideoDuration(service, facade, args).main()
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
+def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "list_video_duration"
     subcommand_help = "各タスクの動画の長さを出力します。"
     epilog = "オーナロールまたはアノテーションユーザロールを持つユーザで実行してください。"

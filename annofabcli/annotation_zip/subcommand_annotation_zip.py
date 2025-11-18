@@ -1,7 +1,6 @@
 """サブコマンド annotation_zip"""
 
 import argparse
-from typing import Optional
 
 import annofabcli
 from annofabcli.annotation_zip.list_annotation_bounding_box_2d import add_parser as add_parser_list_annotation_bounding_box_2d
@@ -25,7 +24,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     # add_parser_validate_annotation(subparsers)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
+def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     """
     annotation_zipサブコマンドを追加する。
     Args:

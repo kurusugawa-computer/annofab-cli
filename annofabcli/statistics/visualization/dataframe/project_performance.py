@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
-from typing import Optional
 
 import numpy
 import pandas
@@ -23,7 +22,7 @@ class ProjectPerformance:
     プロジェクトごとの生産性と品質
     """
 
-    def __init__(self, df: pandas.DataFrame, *, custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None) -> None:
+    def __init__(self, df: pandas.DataFrame, *, custom_production_volume_list: list[ProductionVolumeColumn] | None = None) -> None:
         self.df = df
         self.custom_production_volume_list = custom_production_volume_list if custom_production_volume_list is not None else []
 
@@ -89,7 +88,7 @@ class ProjectPerformance:
         return [e.value for e in TaskPhase if e.value in tmp_set]
 
     @classmethod
-    def from_project_dirs(cls, project_dir_list: list[ProjectDir], *, custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None) -> ProjectPerformance:
+    def from_project_dirs(cls, project_dir_list: list[ProjectDir], *, custom_production_volume_list: list[ProductionVolumeColumn] | None = None) -> ProjectPerformance:
         row_list: list[pandas.Series] = [cls._get_series_from_project_dir(project_dir) for project_dir in project_dir_list]
         return cls(pandas.DataFrame(row_list), custom_production_volume_list=custom_production_volume_list)
 

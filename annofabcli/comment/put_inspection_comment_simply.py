@@ -1,7 +1,6 @@
 import argparse
 import logging
 import sys
-from typing import Optional
 
 from annofabapi.models import CommentType, InputDataType, ProjectMemberRole
 from annofabapi.plugin import EditorPluginId
@@ -135,7 +134,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
+def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "put_inspection_simply"
     subcommand_help = "``comment put_inspection`` コマンドよりも、簡単に検査コメントを付与します。"
     epilog = "チェッカーロールまたはオーナロールを持つユーザで実行してください。"

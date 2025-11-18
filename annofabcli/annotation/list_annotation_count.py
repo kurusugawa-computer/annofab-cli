@@ -4,7 +4,6 @@ import argparse
 import logging
 import sys
 from enum import Enum
-from typing import Optional
 
 import annofabapi
 import pandas
@@ -162,7 +161,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
+def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "list_count"
     subcommand_help = "task_idまたはinput_data_idで集約したアノテーションの個数を出力します。"
     description = "task_idまたはinput_data_idで集約したアノテーションの個数を出力します。"

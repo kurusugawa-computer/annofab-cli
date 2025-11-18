@@ -13,7 +13,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 from functools import partial
 from pathlib import Path
-from typing import Any, Literal, Optional, Protocol, Union
+from typing import Any, Literal, Protocol
 
 import annofabapi
 import pandas
@@ -108,7 +108,7 @@ class AnnotationCountByInputData(DataClassJsonMixin, HasAnnotationAttributeCount
 
     input_data_id: str
     input_data_name: str
-    updated_datetime: Optional[str]
+    updated_datetime: str | None
     """アノテーションJSONに格納されているアノテーションの更新日時"""
 
     annotation_attribute_counts: dict[AttributeValueKey, int] = field(
@@ -119,7 +119,7 @@ class AnnotationCountByInputData(DataClassJsonMixin, HasAnnotationAttributeCount
     """属性値ごとのアノテーションの個数
     key: tuple[ラベル名(英語),属性名(英語),属性値の種類], value: アノテーション数
     """
-    frame_no: Optional[int] = None
+    frame_no: int | None = None
     """フレーム番号（1始まり）。アノテーションJSONには含まれていない情報なので、Optionalにする"""
 
 
@@ -204,11 +204,11 @@ class ListAnnotationCounterByInputData:
     def __init__(
         self,
         *,
-        target_labels: Optional[Collection[str]] = None,
-        non_target_labels: Optional[Collection[str]] = None,
-        target_attribute_names: Optional[Collection[AttributeNameKey]] = None,
-        non_target_attribute_names: Optional[Collection[AttributeNameKey]] = None,
-        frame_no_map: Optional[dict[tuple[str, str], int]] = None,
+        target_labels: Collection[str] | None = None,
+        non_target_labels: Collection[str] | None = None,
+        target_attribute_names: Collection[AttributeNameKey] | None = None,
+        non_target_attribute_names: Collection[AttributeNameKey] | None = None,
+        frame_no_map: dict[tuple[str, str], int] | None = None,
     ) -> None:
         self.target_labels = set(target_labels) if target_labels is not None else None
         self.target_attribute_names = set(target_attribute_names) if target_attribute_names is not None else None
@@ -225,7 +225,7 @@ class ListAnnotationCounterByInputData:
 
         """
 
-        def convert_attribute_value_to_type(value: Optional[Union[bool, str, float]]) -> AttributeValueType:  # noqa: FBT001
+        def convert_attribute_value_to_type(value: bool | str | float | None) -> AttributeValueType:  # noqa: FBT001
             """
             アノテーションJSONに格納されている属性値を、dict用のkeyに変換する。
 
@@ -263,7 +263,7 @@ class ListAnnotationCounterByInputData:
                 attribute_key = (label, attribute_name, convert_attribute_value_to_type(attribute_value))
                 annotation_count_by_attribute[attribute_key] += 1
 
-        frame_no: Optional[int] = None
+        frame_no: int | None = None
         if self.frame_no_map is not None:
             frame_no = self.frame_no_map.get((simple_annotation["task_id"], simple_annotation["input_data_id"]))
 
@@ -284,8 +284,8 @@ class ListAnnotationCounterByInputData:
         self,
         annotation_path: Path,
         *,
-        target_task_ids: Optional[Collection[str]] = None,
-        task_query: Optional[TaskQuery] = None,
+        target_task_ids: Collection[str] | None = None,
+        task_query: TaskQuery | None = None,
     ) -> list[AnnotationCountByInputData]:
         """
         アノテーションzipまたはそれを展開したディレクトリから、属性値ごとのアノテーション数を取得する。
@@ -328,7 +328,7 @@ class AnnotationCountCsvByAttribute:
     def __init__(self, selective_attribute_value_max_count: int = 20) -> None:
         self.selective_attribute_value_max_count = selective_attribute_value_max_count
 
-    def _value_columns(self, annotation_count_list: Collection[HasAnnotationAttributeCounts], *, prior_attribute_columns: Optional[list[tuple[str, str, str]]]) -> list[tuple[str, str, str]]:
+    def _value_columns(self, annotation_count_list: Collection[HasAnnotationAttributeCounts], *, prior_attribute_columns: list[tuple[str, str, str]] | None) -> list[tuple[str, str, str]]:
         """
         CSVの数値列を取得します。
         """
@@ -347,7 +347,7 @@ class AnnotationCountCsvByAttribute:
     def get_columns_by_input_data(
         self,
         annotation_count_list: list[AnnotationCountByInputData],
-        prior_attribute_columns: Optional[list[tuple[str, str, str]]] = None,
+        prior_attribute_columns: list[tuple[str, str, str]] | None = None,
     ) -> list[tuple[str, str, str]]:
         basic_columns = [
             ("project_id", "", ""),
@@ -366,7 +366,7 @@ class AnnotationCountCsvByAttribute:
     def get_columns_by_task(
         self,
         annotation_count_list: list[AnnotationCountByTask],
-        prior_attribute_columns: Optional[list[tuple[str, str, str]]] = None,
+        prior_attribute_columns: list[tuple[str, str, str]] | None = None,
     ) -> list[tuple[str, str, str]]:
         basic_columns = [
             ("project_id", "", ""),
@@ -383,7 +383,7 @@ class AnnotationCountCsvByAttribute:
         self,
         annotation_count_list: list[AnnotationCountByInputData],
         *,
-        prior_attribute_columns: Optional[list[tuple[str, str, str]]] = None,
+        prior_attribute_columns: list[tuple[str, str, str]] | None = None,
     ) -> pandas.DataFrame:
         def to_cell(c: AnnotationCountByInputData) -> dict[tuple[str, str, str], Any]:
             cell: dict[tuple[str, str, str], Any] = {
@@ -413,7 +413,7 @@ class AnnotationCountCsvByAttribute:
         self,
         annotation_count_list: list[AnnotationCountByTask],
         *,
-        prior_attribute_columns: Optional[list[tuple[str, str, str]]] = None,
+        prior_attribute_columns: list[tuple[str, str, str]] | None = None,
     ) -> pandas.DataFrame:
         def to_cell(c: AnnotationCountByTask) -> dict[tuple[str, str, str], Any]:
             cell: dict[tuple[str, str, str], Any] = {
@@ -460,16 +460,16 @@ class ListAnnotationAttributeFilledCountMain:
     def __init__(self, service: annofabapi.Resource) -> None:
         self.service = service
 
-    def print_annotation_count_csv_by_input_data(self, annotation_count_list: list[AnnotationCountByInputData], output_file: Path, *, attribute_names: Optional[list[tuple[str, str]]]) -> None:
-        attribute_columns: Optional[list[tuple[str, str, str]]] = None
+    def print_annotation_count_csv_by_input_data(self, annotation_count_list: list[AnnotationCountByInputData], output_file: Path, *, attribute_names: list[tuple[str, str]] | None) -> None:
+        attribute_columns: list[tuple[str, str, str]] | None = None
         if attribute_names is not None:
             attribute_columns = get_attribute_columns(attribute_names)
 
         df = AnnotationCountCsvByAttribute().create_df_by_input_data(annotation_count_list, prior_attribute_columns=attribute_columns)
         print_csv(df, output_file)
 
-    def print_annotation_count_csv_by_task(self, annotation_count_list: list[AnnotationCountByTask], output_file: Path, *, attribute_names: Optional[list[tuple[str, str]]]) -> None:
-        attribute_columns: Optional[list[tuple[str, str, str]]] = None
+    def print_annotation_count_csv_by_task(self, annotation_count_list: list[AnnotationCountByTask], output_file: Path, *, attribute_names: list[tuple[str, str]] | None) -> None:
+        attribute_columns: list[tuple[str, str, str]] | None = None
         if attribute_names is not None:
             attribute_columns = get_attribute_columns(attribute_names)
 
@@ -483,14 +483,14 @@ class ListAnnotationAttributeFilledCountMain:
         group_by: GroupBy,
         output_format: FormatArgument,
         *,
-        project_id: Optional[str] = None,
+        project_id: str | None = None,
         include_flag_attribute: bool = False,
-        task_json_path: Optional[Path] = None,
-        target_task_ids: Optional[Collection[str]] = None,
-        task_query: Optional[TaskQuery] = None,
+        task_json_path: Path | None = None,
+        target_task_ids: Collection[str] | None = None,
+        task_query: TaskQuery | None = None,
     ) -> None:
-        annotation_specs: Optional[AnnotationSpecs] = None
-        target_attribute_names: Optional[list[AttributeNameKey]] = None
+        annotation_specs: AnnotationSpecs | None = None
+        target_attribute_names: list[AttributeNameKey] | None = None
         if project_id is not None:
             annotation_specs = AnnotationSpecs(self.service, project_id)
             if not include_flag_attribute:
@@ -555,7 +555,7 @@ class ListAnnotationAttributeFilledCount(CommandLine):
         if not self.validate(args):
             sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
-        project_id: Optional[str] = args.project_id
+        project_id: str | None = args.project_id
         if project_id is not None:
             super().validate_project(project_id, project_member_roles=[ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER])
 
@@ -571,7 +571,7 @@ class ListAnnotationAttributeFilledCount(CommandLine):
 
         downloading_obj = DownloadingFile(self.service)
 
-        def download_and_process_annotation(temp_dir: Path, *, is_latest: bool, annotation_path: Optional[Path]) -> None:
+        def download_and_process_annotation(temp_dir: Path, *, is_latest: bool, annotation_path: Path | None) -> None:
             # タスク全件ファイルは、フレーム番号を参照するのに利用する
             if project_id is not None and group_by == GroupBy.INPUT_DATA_ID:
                 # group_byで条件を絞り込んでいる理由：
@@ -699,7 +699,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
+def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "list_annotation_attribute_filled_count"
     subcommand_help = "値が入力されている属性の個数を、タスクごとまたは入力データごとに集計します。"
 

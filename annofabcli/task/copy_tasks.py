@@ -6,7 +6,6 @@ import logging
 import multiprocessing
 import sys
 from dataclasses import dataclass
-from typing import Optional
 
 import annofabapi
 from annofabapi.models import ProjectMemberRole
@@ -74,7 +73,7 @@ class CopyTasksMain(CommandLineWithConfirm):
         self.is_copy_annotations = is_copy_annotations
         self.is_copy_metadata = is_copy_metadata
 
-    def copy_task(self, project_id: str, src_task_id: str, dest_task_id: str, task_index: Optional[int] = None) -> bool:
+    def copy_task(self, project_id: str, src_task_id: str, dest_task_id: str, task_index: int | None = None) -> bool:
         logging_prefix = f"{task_index + 1} 件目" if task_index is not None else ""
         src_task = self.service.wrapper.get_task_or_none(project_id, src_task_id)
         if src_task is None:
@@ -115,7 +114,7 @@ class CopyTasksMain(CommandLineWithConfirm):
             logger.warning(f"タスク'{copy_target.src_task_id}'を'{copy_target.dest_task_id}'にコピーする際に失敗しました。", exc_info=True)
             return False
 
-    def main(self, project_id: str, copy_target_list: list[CopyTarget], parallelism: Optional[int] = None) -> None:
+    def main(self, project_id: str, copy_target_list: list[CopyTarget], parallelism: int | None = None) -> None:
         """
         タスクをコピーします
 
@@ -218,7 +217,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
+def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "copy"
     subcommand_help = "タスクをコピーします。"
     description = "タスクをコピーします。タスクに含まれるアノテーションはコピーされません。"

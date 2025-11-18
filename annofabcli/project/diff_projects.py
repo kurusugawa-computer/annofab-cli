@@ -8,7 +8,7 @@ import functools
 import logging
 import pprint
 from enum import Enum
-from typing import Any, Optional
+from typing import Any
 
 import annofabapi
 import dictdiffer
@@ -110,7 +110,7 @@ class DiffProjects(CommandLine):
             return True, diff_message
 
         is_different = False
-        for member1, member2 in zip(sorted_members1, sorted_members2):
+        for member1, member2 in zip(sorted_members1, sorted_members2, strict=False):
             ignored_key = {"updated_datetime", "created_datetime", "project_id"}
             diff_result = list(dictdiffer.diff(member1, member2, ignore=ignored_key))
             if len(diff_result) > 0:
@@ -245,7 +245,7 @@ class DiffProjects(CommandLine):
             return True, diff_message
 
         is_different = False
-        for phrase1, phrase2 in zip(sorted_inspection_phrases1, sorted_inspection_phrases2):
+        for phrase1, phrase2 in zip(sorted_inspection_phrases1, sorted_inspection_phrases2, strict=False):
             diff_result = list(dictdiffer.diff(phrase1, phrase2))
             if len(diff_result) > 0:
                 is_different = True
@@ -397,7 +397,7 @@ def main(args: argparse.Namespace) -> None:
     DiffProjects(service, facade, args).main()
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
+def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "diff"
     subcommand_help = "プロジェクト間の差分を表示する。"
     description = "プロジェクト間の差分を表示する。" + "ただし、Annofabで生成されるIDや、変化する日時などは比較しない。"

@@ -9,7 +9,7 @@ from collections.abc import Collection, Sequence
 from enum import Enum
 from functools import partial
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import bokeh
 import numpy
@@ -56,11 +56,11 @@ def plot_annotation_duration_histogram_by_label(  # noqa: PLR0915
     output_file: Path,
     *,
     time_unit: TimeUnit,
-    bin_width: Optional[float] = None,
-    prior_keys: Optional[list[str]] = None,
+    bin_width: float | None = None,
+    prior_keys: list[str] | None = None,
     exclude_empty_value: bool = False,
     arrange_bin_edge: bool = False,
-    metadata: Optional[dict[str, Any]] = None,
+    metadata: dict[str, Any] | None = None,
 ) -> None:
     """
     ラベルごとの区間アノテーションの長さのヒストグラムを出力します。
@@ -88,7 +88,7 @@ def plot_annotation_duration_histogram_by_label(  # noqa: PLR0915
             df = df / 60
         return df
 
-    def get_histogram_range(df: pandas.DataFrame) -> Optional[tuple[float, float]]:
+    def get_histogram_range(df: pandas.DataFrame) -> tuple[float, float] | None:
         if arrange_bin_edge:
             return (
                 df.min(numeric_only=True).min(),
@@ -101,7 +101,7 @@ def plot_annotation_duration_histogram_by_label(  # noqa: PLR0915
 
     max_duration = df.max(numeric_only=True).max()
 
-    figure_list_2d: list[list[Optional[LayoutDOM]]] = [
+    figure_list_2d: list[list[LayoutDOM | None]] = [
         [
             Div(text="<h3>区間アノテーションの長さの分布（ラベル名ごと）</h3>"),
         ]
@@ -165,11 +165,11 @@ def plot_annotation_duration_histogram_by_attribute(  # noqa: PLR0915
     output_file: Path,
     *,
     time_unit: TimeUnit,
-    bin_width: Optional[float] = None,
-    prior_keys: Optional[list[AttributeValueKey]] = None,
+    bin_width: float | None = None,
+    prior_keys: list[AttributeValueKey] | None = None,
     exclude_empty_value: bool = False,
     arrange_bin_edge: bool = False,
-    metadata: Optional[dict[str, Any]] = None,
+    metadata: dict[str, Any] | None = None,
 ) -> None:
     """
     属性値ごとの区間アノテーションの長さのヒストグラムを出力します。
@@ -198,7 +198,7 @@ def plot_annotation_duration_histogram_by_attribute(  # noqa: PLR0915
             df = df / 60
         return df
 
-    def get_histogram_range(df: pandas.DataFrame) -> Optional[tuple[float, float]]:
+    def get_histogram_range(df: pandas.DataFrame) -> tuple[float, float] | None:
         if arrange_bin_edge:
             return (
                 df.min(numeric_only=True).min(),
@@ -224,7 +224,7 @@ def plot_annotation_duration_histogram_by_attribute(  # noqa: PLR0915
     max_duration = df.max(numeric_only=True).max()
     x_axis_label = "区間アノテーションの長さ[分]" if time_unit == TimeUnit.MINUTE else "区間アノテーションの長さ[秒]"
 
-    figure_list_2d: list[list[Optional[LayoutDOM]]] = [
+    figure_list_2d: list[list[LayoutDOM | None]] = [
         [
             Div(text="<h3>区間アノテーションの長さの分布（属性値ごと）</h3>"),
         ]
@@ -290,10 +290,10 @@ class VisualizeAnnotationDuration(CommandLine):
         output_dir: Path,
         time_unit: TimeUnit,
         *,
-        bin_width: Optional[int] = None,
-        project_id: Optional[str] = None,
-        target_task_ids: Optional[Collection[str]] = None,
-        task_query: Optional[TaskQuery] = None,
+        bin_width: int | None = None,
+        project_id: str | None = None,
+        target_task_ids: Collection[str] | None = None,
+        task_query: TaskQuery | None = None,
         exclude_empty_value: bool = False,
         arrange_bin_edge: bool = False,
     ) -> None:
@@ -301,8 +301,8 @@ class VisualizeAnnotationDuration(CommandLine):
         duration_by_attribute_html = output_dir / "annotation_duration_by_attribute.html"
 
         # 集計対象の属性を、選択肢系の属性にする
-        annotation_specs: Optional[AnnotationSpecs] = None
-        non_selective_attribute_name_keys: Optional[list[AttributeNameKey]] = None
+        annotation_specs: AnnotationSpecs | None = None
+        non_selective_attribute_name_keys: list[AttributeNameKey] | None = None
         if project_id is not None:
             annotation_specs = AnnotationSpecs(self.service, project_id, annotation_type=DefaultAnnotationType.RANGE.value)
             non_selective_attribute_name_keys = annotation_specs.non_selective_attribute_name_keys()
@@ -315,8 +315,8 @@ class VisualizeAnnotationDuration(CommandLine):
             task_query=task_query,
         )
 
-        label_keys: Optional[list[str]] = None
-        attribute_value_keys: Optional[list[AttributeValueKey]] = None
+        label_keys: list[str] | None = None
+        attribute_value_keys: list[AttributeValueKey] | None = None
         if annotation_specs is not None:
             label_keys = annotation_specs.label_keys()
             attribute_value_keys = annotation_specs.selective_attribute_value_keys()
@@ -359,7 +359,7 @@ class VisualizeAnnotationDuration(CommandLine):
         if not self.validate(args):
             sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
-        project_id: Optional[str] = args.project_id
+        project_id: str | None = args.project_id
         if project_id is not None:
             super().validate_project(project_id, project_member_roles=[ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER])
             project, _ = self.service.api.get_project(project_id)
@@ -487,7 +487,7 @@ def main(args: argparse.Namespace) -> None:
     VisualizeAnnotationDuration(service, facade, args).main()
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
+def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "visualize_annotation_duration"
     subcommand_help = "ラベルごとまたは属性値ごとに区間アノテーションの長さをヒストグラムで可視化したファイルを出力します。"
     epilog = "オーナロールまたはアノテーションユーザロールを持つユーザで実行してください。"

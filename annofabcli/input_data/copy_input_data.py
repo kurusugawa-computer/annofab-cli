@@ -7,7 +7,7 @@ import multiprocessing
 import sys
 import tempfile
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import annofabapi
 import more_itertools
@@ -49,7 +49,7 @@ class CopyInputDataMain(CommandLineWithConfirm):
 
         CommandLineWithConfirm.__init__(self, all_yes)
 
-    def copy_supplementary_data(self, src_supplementary_data: dict[str, Any], last_updated_datetime: Optional[str]) -> dict[str, Any]:
+    def copy_supplementary_data(self, src_supplementary_data: dict[str, Any], last_updated_datetime: str | None) -> dict[str, Any]:
         request_body = {
             "supplementary_data_name": src_supplementary_data["supplementary_data_name"],
             "supplementary_data_path": src_supplementary_data["supplementary_data_path"],
@@ -70,7 +70,7 @@ class CopyInputDataMain(CommandLineWithConfirm):
         src_supplementary_data_list: list[dict[str, Any]],
         dest_supplementary_data_list: list[dict[str, Any]],
         *,
-        logging_prefix: Optional[str] = None,
+        logging_prefix: str | None = None,
     ) -> None:
         for src_supplementary_data in src_supplementary_data_list:
             dest_supplementary_data = more_itertools.first_true(
@@ -93,7 +93,7 @@ class CopyInputDataMain(CommandLineWithConfirm):
             f"src_project_id='{self.src_project_id}', dest_project_id='{self.dest_project_id}'"
         )
 
-    def copy_input_data(self, src_input_data: dict[str, Any], last_updated_datetime: Optional[str]) -> dict[str, Any]:
+    def copy_input_data(self, src_input_data: dict[str, Any], last_updated_datetime: str | None) -> dict[str, Any]:
         request_body = {
             "input_data_name": src_input_data["input_data_name"],
             "input_data_path": src_input_data["input_data_path"],
@@ -108,7 +108,7 @@ class CopyInputDataMain(CommandLineWithConfirm):
         self,
         input_data_id: str,
         *,
-        input_data_index: Optional[int] = None,
+        input_data_index: int | None = None,
     ) -> bool:
         def get_confirm_message(supplementary_data_count: int, *, exists_in_dest_project: bool) -> str:
             message = f"入力データ(input_data_id='{input_data_id}')と補助情報{supplementary_data_count}件をコピーしますか？"
@@ -181,9 +181,9 @@ class CopyInputDataMain(CommandLineWithConfirm):
 
     def copy_input_data_list(
         self,
-        input_data_id_list: Optional[list[str]],
+        input_data_id_list: list[str] | None,
         *,
-        parallelism: Optional[int] = None,
+        parallelism: int | None = None,
     ) -> None:
         if input_data_id_list is None:
             input_data_id_list = self.get_all_input_data_id_list(self.src_project_id)
@@ -298,7 +298,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
+def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "copy"
     subcommand_help = "入力データと関連する補助情報を別プロジェクトにコピーします。"
     description = (

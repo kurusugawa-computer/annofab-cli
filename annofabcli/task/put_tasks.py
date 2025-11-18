@@ -8,7 +8,6 @@ import tempfile
 from collections import defaultdict
 from enum import Enum
 from pathlib import Path
-from typing import Optional
 
 import annofabapi
 import pandas
@@ -54,7 +53,7 @@ def get_task_relation_dict(csv_file: Path) -> TaskInputRelation:
     # `dtype=str`を指定した理由：指定しないと、IDが`001`のときに`1`に変換されてしまうため
     df = pandas.read_csv(str(csv_file), header=None, usecols=(0, 1), names=("task_id", "input_data_id"), dtype=str)
     result: TaskInputRelation = defaultdict(list)
-    for task_id, input_data_id in zip(df["task_id"], df["input_data_id"]):
+    for task_id, input_data_id in zip(df["task_id"], df["input_data_id"], strict=False):
         result[task_id].append(input_data_id)
     return result
 
@@ -88,7 +87,7 @@ class PuttingTaskMain:
         service: annofabapi.Resource,
         project_id: str,
         *,
-        parallelism: Optional[int],
+        parallelism: int | None,
         should_wait: bool = False,
     ) -> None:
         self.service = service
@@ -156,7 +155,7 @@ class PuttingTaskMain:
 
     def generate_task(
         self,
-        api: Optional[ApiWithCreatingTask],
+        api: ApiWithCreatingTask | None,
         task_relation_dict: TaskInputRelation,
     ) -> None:
         """
@@ -305,7 +304,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
+def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "put"
     subcommand_help = "タスクを作成します。"
     description = "タスクを作成します。"

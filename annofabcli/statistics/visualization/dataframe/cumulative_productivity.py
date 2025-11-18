@@ -9,7 +9,7 @@ import abc
 import itertools
 import logging
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import bokeh
 import bokeh.layouts
@@ -68,7 +68,7 @@ def _create_cumulative_dataframe(task_worktime_by_phase_user: TaskWorktimeByPhas
 class AbstractPhaseCumulativeProductivity(abc.ABC):
     """ロールごとの累積の生産性をプロットするための抽象クラス"""
 
-    def __init__(self, df: pandas.DataFrame, phase: TaskPhase, *, custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None) -> None:
+    def __init__(self, df: pandas.DataFrame, phase: TaskPhase, *, custom_production_volume_list: list[ProductionVolumeColumn] | None = None) -> None:
         self.df = df
         self.phase = phase
         self.phase_name = self._get_phase_name(phase)
@@ -110,7 +110,7 @@ class AbstractPhaseCumulativeProductivity(abc.ABC):
         user_id_list: list[str],
         output_file: Path,
         *,
-        metadata: Optional[dict[str, Any]],
+        metadata: dict[str, Any] | None,
     ) -> None:
         """
         折れ線グラフを、HTMLファイルに出力します。
@@ -150,7 +150,7 @@ class AbstractPhaseCumulativeProductivity(abc.ABC):
             username = df_subset.iloc[0]["username"]
 
             line_count += 1
-            for line_graph, (x_column, y_column) in zip(line_graph_list, columns_list):
+            for line_graph, (x_column, y_column) in zip(line_graph_list, columns_list, strict=False):
                 line_graph.add_line(source, x_column=x_column, y_column=y_column, legend_label=username, color=color)
 
             plotted_users.append((user_id, username))
@@ -184,14 +184,14 @@ class AbstractPhaseCumulativeProductivity(abc.ABC):
         production_volume_name: str,
         output_file: Path,
         *,
-        target_user_id_list: Optional[list[str]] = None,
-        metadata: Optional[dict[str, Any]] = None,
+        target_user_id_list: list[str] | None = None,
+        metadata: dict[str, Any] | None = None,
     ) -> None:
         raise NotImplementedError()
 
 
 class AnnotatorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
-    def __init__(self, df: pandas.DataFrame, *, custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None) -> None:
+    def __init__(self, df: pandas.DataFrame, *, custom_production_volume_list: list[ProductionVolumeColumn] | None = None) -> None:
         super().__init__(df, phase=TaskPhase.ANNOTATION, custom_production_volume_list=custom_production_volume_list)
 
     @classmethod
@@ -205,8 +205,8 @@ class AnnotatorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
         production_volume_name: str,
         output_file: Path,
         *,
-        target_user_id_list: Optional[list[str]] = None,
-        metadata: Optional[dict[str, Any]] = None,
+        target_user_id_list: list[str] | None = None,
+        metadata: dict[str, Any] | None = None,
     ) -> None:
         """
         生産性を教師付作業者ごとにプロットする。
@@ -267,7 +267,7 @@ class AnnotatorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
 
 
 class InspectorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
-    def __init__(self, df: pandas.DataFrame, *, custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None) -> None:
+    def __init__(self, df: pandas.DataFrame, *, custom_production_volume_list: list[ProductionVolumeColumn] | None = None) -> None:
         super().__init__(df, phase=TaskPhase.INSPECTION, custom_production_volume_list=custom_production_volume_list)
 
     @classmethod
@@ -281,8 +281,8 @@ class InspectorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
         production_volume_name: str,
         output_file: Path,
         *,
-        target_user_id_list: Optional[list[str]] = None,
-        metadata: Optional[dict[str, Any]] = None,
+        target_user_id_list: list[str] | None = None,
+        metadata: dict[str, Any] | None = None,
     ) -> None:
         """
         生産性を検査作業者ごとにプロットする。
@@ -329,7 +329,7 @@ class InspectorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
 
 
 class AcceptorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
-    def __init__(self, df: pandas.DataFrame, *, custom_production_volume_list: Optional[list[ProductionVolumeColumn]] = None) -> None:
+    def __init__(self, df: pandas.DataFrame, *, custom_production_volume_list: list[ProductionVolumeColumn] | None = None) -> None:
         super().__init__(df, phase=TaskPhase.ACCEPTANCE, custom_production_volume_list=custom_production_volume_list)
 
     @classmethod
@@ -343,8 +343,8 @@ class AcceptorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
         production_volume_name: str,
         output_file: Path,
         *,
-        target_user_id_list: Optional[list[str]] = None,
-        metadata: Optional[dict[str, Any]] = None,
+        target_user_id_list: list[str] | None = None,
+        metadata: dict[str, Any] | None = None,
     ) -> None:
         """
         生産性を受入作業者ごとにプロットする。

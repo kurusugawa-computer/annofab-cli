@@ -7,7 +7,7 @@ import zipfile
 from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 from annofabapi.parser import lazy_parse_simple_annotation_dir, lazy_parse_simple_annotation_zip
 
@@ -21,13 +21,13 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class FilterQuery:
-    task_query: Optional[TaskQuery] = None
-    task_id_set: Optional[set[str]] = None
-    exclude_task_id_set: Optional[set[str]] = None
-    input_data_id_set: Optional[set[str]] = None
-    exclude_input_data_id_set: Optional[set[str]] = None
-    input_data_name_set: Optional[set[str]] = None
-    exclude_input_data_name_set: Optional[set[str]] = None
+    task_query: TaskQuery | None = None
+    task_id_set: set[str] | None = None
+    exclude_task_id_set: set[str] | None = None
+    input_data_id_set: set[str] | None = None
+    exclude_input_data_id_set: set[str] | None = None
+    input_data_name_set: set[str] | None = None
+    exclude_input_data_name_set: set[str] | None = None
 
 
 def match_query(  # pylint: disable=too-many-return-statements  # noqa: PLR0911
@@ -220,7 +220,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
+def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "filter_annotation"
 
     subcommand_help = "アノテーションzipから特定のファイルを絞り込んで、zip展開します。"

@@ -6,7 +6,7 @@ import logging
 import sys
 import tempfile
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import annofabapi
 from annofabapi.models import ProjectMemberRole, TaskHistory
@@ -59,7 +59,7 @@ class ListAllTasksAddedTaskHistoryMain:
 
         return task_list
 
-    def load_task_list(self, task_json_path: Optional[Path]) -> list[dict[str, Any]]:
+    def load_task_list(self, task_json_path: Path | None) -> list[dict[str, Any]]:
         if task_json_path is not None:
             with task_json_path.open(encoding="utf-8") as f:
                 return json.load(f)
@@ -72,7 +72,7 @@ class ListAllTasksAddedTaskHistoryMain:
             with task_json_path.open(encoding="utf-8") as f:
                 return json.load(f)
 
-    def load_task_history_dict(self, task_history_json_path: Optional[Path]) -> TaskHistoryDict:
+    def load_task_history_dict(self, task_history_json_path: Path | None) -> TaskHistoryDict:
         if task_history_json_path is not None:
             with task_history_json_path.open(encoding="utf-8") as f:
                 return json.load(f)
@@ -88,8 +88,8 @@ class ListAllTasksAddedTaskHistoryMain:
     @staticmethod
     def match_task_with_conditions(
         task: dict[str, Any],
-        task_id_set: Optional[set[str]] = None,
-        task_query: Optional[TaskQuery] = None,
+        task_id_set: set[str] | None = None,
+        task_query: TaskQuery | None = None,
     ) -> bool:
         result = True
 
@@ -102,8 +102,8 @@ class ListAllTasksAddedTaskHistoryMain:
     def filter_task_list(
         self,
         task_list: list[dict[str, Any]],
-        task_id_list: Optional[list[str]] = None,
-        task_query: Optional[TaskQuery] = None,
+        task_id_list: list[str] | None = None,
+        task_query: TaskQuery | None = None,
     ) -> list[dict[str, Any]]:
         if task_query is not None:
             task_query = self.facade.set_account_id_of_task_query(self.project_id, task_query)
@@ -115,10 +115,10 @@ class ListAllTasksAddedTaskHistoryMain:
 
     def get_task_list_added_task_history(  # noqa: ANN201
         self,
-        task_json_path: Optional[Path],
-        task_history_json_path: Optional[Path],
-        task_id_list: Optional[list[str]],
-        task_query: Optional[TaskQuery],
+        task_json_path: Path | None,
+        task_history_json_path: Path | None,
+        task_id_list: list[str] | None,
+        task_query: TaskQuery | None,
     ):
         """
         タスク履歴情報を加えたタスク一覧を取得する。
@@ -209,7 +209,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
+def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "list_all_added_task_history"
     subcommand_help = "タスク履歴に関する情報を加えたタスク一覧のすべてを出力します。"
     description = "タスク履歴に関する情報（フェーズごとの作業時間、担当者、開始日時）を加えたタスク一覧のすべてを出力します。"

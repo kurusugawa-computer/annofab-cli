@@ -14,7 +14,7 @@ from collections.abc import Collection, Iterator
 from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
-from typing import Any, Optional, Union
+from typing import Any
 
 import annofabapi
 import pandas
@@ -117,10 +117,10 @@ class AnnotationDuration(DataClassJsonMixin):
     input_data_id: str
     input_data_name: str
 
-    updated_datetime: Optional[str]
+    updated_datetime: str | None
     """アノテーションJSONに格納されているアノテーションの更新日時"""
 
-    video_duration_second: Optional[float]
+    video_duration_second: float | None
     """動画の長さ[秒]"""
 
     annotation_duration_second: float
@@ -158,17 +158,17 @@ class ListAnnotationDurationByInputData:
     def __init__(
         self,
         *,
-        target_labels: Optional[Collection[str]] = None,
-        non_target_labels: Optional[Collection[str]] = None,
-        target_attribute_names: Optional[Collection[AttributeNameKey]] = None,
-        non_target_attribute_names: Optional[Collection[AttributeNameKey]] = None,
+        target_labels: Collection[str] | None = None,
+        non_target_labels: Collection[str] | None = None,
+        target_attribute_names: Collection[AttributeNameKey] | None = None,
+        non_target_attribute_names: Collection[AttributeNameKey] | None = None,
     ) -> None:
         self.target_labels = set(target_labels) if target_labels is not None else None
         self.target_attribute_names = set(target_attribute_names) if target_attribute_names is not None else None
         self.non_target_labels = set(non_target_labels) if non_target_labels is not None else None
         self.non_target_attribute_names = set(non_target_attribute_names) if non_target_attribute_names is not None else None
 
-    def get_annotation_duration(self, simple_annotation: dict[str, Any], video_duration_second: Optional[float] = None) -> AnnotationDuration:
+    def get_annotation_duration(self, simple_annotation: dict[str, Any], video_duration_second: float | None = None) -> AnnotationDuration:
         """
         1個のアノテーションJSONに対して、ラベルごと/属性ごとの区間アノテーションの長さを取得する。
 
@@ -181,7 +181,7 @@ class ListAnnotationDurationByInputData:
             """区間アノテーションのdetail情報から、区間アノテーションの長さ（秒）を計算する"""
             return (detail["data"]["end"] - detail["data"]["begin"]) / 1000
 
-        def convert_attribute_value_to_key(value: Union[bool, str, float]) -> str:  # noqa: FBT001
+        def convert_attribute_value_to_key(value: bool | str | float) -> str:  # noqa: FBT001
             """
             アノテーションJSONに格納されている属性値を、dict用のkeyに変換する。
 
@@ -257,9 +257,9 @@ class ListAnnotationDurationByInputData:
         self,
         annotation_path: Path,
         *,
-        input_data_json_path: Optional[Path] = None,
-        target_task_ids: Optional[Collection[str]] = None,
-        task_query: Optional[TaskQuery] = None,
+        input_data_json_path: Path | None = None,
+        target_task_ids: Collection[str] | None = None,
+        task_query: TaskQuery | None = None,
     ) -> list[AnnotationDuration]:
         """
         アノテーションzipまたはそれを展開したディレクトリから、ラベルごと/属性ごとの区間アノテーションの長さを取得する。
@@ -267,7 +267,7 @@ class ListAnnotationDurationByInputData:
         Args:
             input_data_json_path: 入力データ全件ファイルのパス。動画の長さを取得するのに利用します。
         """
-        dict_input_data: Optional[dict[str, dict[str, Any]]] = None
+        dict_input_data: dict[str, dict[str, Any]] | None = None
         if input_data_json_path is not None:
             with input_data_json_path.open() as f:
                 input_data_list = json.load(f)
@@ -292,7 +292,7 @@ class ListAnnotationDurationByInputData:
                 if not match_annotation_with_task_query(simple_annotation_dict, task_query):
                     continue
 
-            video_duration_second: Optional[float] = None
+            video_duration_second: float | None = None
             if dict_input_data is not None:
                 input_data = dict_input_data[parser.input_data_id]
                 video_duration_second = input_data["system_metadata"]["input_duration"]
@@ -331,7 +331,7 @@ class AnnotationDurationCsvByAttribute:
 
         return [(label, attribute_name, attribute_value) for (label, attribute_name, attribute_value) in columns if (label, attribute_name) not in non_selective_attribute_names]
 
-    def _value_columns(self, annotation_duration_list: Collection[AnnotationDuration], prior_attribute_columns: Optional[list[AttributeValueKey]]) -> list[AttributeValueKey]:
+    def _value_columns(self, annotation_duration_list: Collection[AnnotationDuration], prior_attribute_columns: list[AttributeValueKey] | None) -> list[AttributeValueKey]:
         all_attr_key_set = {attr_key for c in annotation_duration_list for attr_key in c.annotation_duration_second_by_attribute}
         if prior_attribute_columns is not None:
             remaining_columns = sorted(all_attr_key_set - set(prior_attribute_columns))
@@ -364,7 +364,7 @@ class AnnotationDurationCsvByAttribute:
     def get_columns(
         self,
         annotation_duration_list: list[AnnotationDuration],
-        prior_attribute_columns: Optional[list[AttributeValueKey]] = None,
+        prior_attribute_columns: list[AttributeValueKey] | None = None,
     ) -> list[AttributeValueKey]:
         basic_columns = [
             ("project_id", "", ""),
@@ -383,7 +383,7 @@ class AnnotationDurationCsvByAttribute:
     def create_df(
         self,
         annotation_duration_list: list[AnnotationDuration],
-        prior_attribute_columns: Optional[list[AttributeValueKey]] = None,
+        prior_attribute_columns: list[AttributeValueKey] | None = None,
     ) -> pandas.DataFrame:
         def to_cell(c: AnnotationDuration) -> dict[tuple[str, str, str], Any]:
             cell: dict[AttributeValueKey, Any] = {
@@ -415,7 +415,7 @@ class AnnotationDurationCsvByLabel:
     ラベルごとのアノテーション長さをCSVとして出力するためのクラス。
     """
 
-    def _value_columns(self, annotation_duration_list: list[AnnotationDuration], prior_label_columns: Optional[list[str]]) -> list[str]:
+    def _value_columns(self, annotation_duration_list: list[AnnotationDuration], prior_label_columns: list[str] | None) -> list[str]:
         all_attr_key_set = {attr_key for elm in annotation_duration_list for attr_key in elm.annotation_duration_second_by_label.keys()}  # noqa: SIM118
         if prior_label_columns is not None:
             remaining_columns = sorted(all_attr_key_set - set(prior_label_columns))
@@ -429,7 +429,7 @@ class AnnotationDurationCsvByLabel:
     def get_columns(
         self,
         annotation_duration_list: list[AnnotationDuration],
-        prior_label_columns: Optional[list[str]] = None,
+        prior_label_columns: list[str] | None = None,
     ) -> list[str]:
         basic_columns = [
             "project_id",
@@ -449,7 +449,7 @@ class AnnotationDurationCsvByLabel:
     def create_df(
         self,
         annotation_duration_list: list[AnnotationDuration],
-        prior_label_columns: Optional[list[str]] = None,
+        prior_label_columns: list[str] | None = None,
     ) -> pandas.DataFrame:
         def to_dict(c: AnnotationDuration) -> dict[str, Any]:
             d: dict[str, Any] = {
@@ -481,16 +481,16 @@ class ListAnnotationDurationMain:
     def __init__(self, service: annofabapi.Resource) -> None:
         self.service = service
 
-    def print_annotation_duration_csv(self, annotation_duration_list: list[AnnotationDuration], csv_type: CsvType, output_file: Path, *, annotation_specs: Optional[AnnotationSpecs]) -> None:
+    def print_annotation_duration_csv(self, annotation_duration_list: list[AnnotationDuration], csv_type: CsvType, output_file: Path, *, annotation_specs: AnnotationSpecs | None) -> None:
         if csv_type == CsvType.LABEL:
             # ラベル名の列順が、アノテーション仕様にあるラベル名の順番に対応するようにする。
-            label_columns: Optional[list[str]] = None
+            label_columns: list[str] | None = None
             if annotation_specs is not None:
                 label_columns = annotation_specs.label_keys()
 
             df = AnnotationDurationCsvByLabel().create_df(annotation_duration_list, prior_label_columns=label_columns)
         elif csv_type == CsvType.ATTRIBUTE:
-            attribute_columns: Optional[list[AttributeValueKey]] = None
+            attribute_columns: list[AttributeValueKey] | None = None
             if annotation_specs is not None:
                 attribute_columns = annotation_specs.selective_attribute_value_keys()
 
@@ -507,14 +507,14 @@ class ListAnnotationDurationMain:
         output_file: Path,
         arg_format: FormatArgument,
         *,
-        project_id: Optional[str] = None,
-        input_data_json_path: Optional[Path] = None,
-        target_task_ids: Optional[Collection[str]] = None,
-        task_query: Optional[TaskQuery] = None,
-        csv_type: Optional[CsvType] = None,
+        project_id: str | None = None,
+        input_data_json_path: Path | None = None,
+        target_task_ids: Collection[str] | None = None,
+        task_query: TaskQuery | None = None,
+        csv_type: CsvType | None = None,
     ) -> None:
-        annotation_specs: Optional[AnnotationSpecs] = None
-        non_selective_attribute_name_keys: Optional[list[AttributeNameKey]] = None
+        annotation_specs: AnnotationSpecs | None = None
+        non_selective_attribute_name_keys: list[AttributeNameKey] | None = None
         if project_id is not None:
             annotation_specs = AnnotationSpecs(self.service, project_id, annotation_type=DefaultAnnotationType.RANGE.value)
             non_selective_attribute_name_keys = annotation_specs.non_selective_attribute_name_keys()
@@ -565,7 +565,7 @@ class ListAnnotationDuration(CommandLine):
         if not self.validate(args):
             sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
-        project_id: Optional[str] = args.project_id
+        project_id: str | None = args.project_id
         if project_id is not None:
             super().validate_project(project_id, project_member_roles=[ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER])
             project, _ = self.service.api.get_project(project_id)
@@ -584,7 +584,7 @@ class ListAnnotationDuration(CommandLine):
 
         downloading_obj = DownloadingFile(self.service)
 
-        def download_and_print_annotation_duration(project_id: str, temp_dir: Path, *, is_latest: bool, annotation_path: Optional[Path]) -> None:
+        def download_and_print_annotation_duration(project_id: str, temp_dir: Path, *, is_latest: bool, annotation_path: Path | None) -> None:
             if annotation_path is None:
                 annotation_path = downloading_obj.download_annotation_zip_to_dir(
                     project_id,
@@ -697,7 +697,7 @@ def main(args: argparse.Namespace) -> None:
     ListAnnotationDuration(service, facade, args).main()
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
+def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "list_annotation_duration"
     subcommand_help = "ラベルごとまたは属性値ごとに区間アノテーションの長さ（秒）を出力します。"
     epilog = "オーナロールまたはアノテーションユーザロールを持つユーザで実行してください。"

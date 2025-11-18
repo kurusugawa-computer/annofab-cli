@@ -7,14 +7,13 @@ from collections.abc import Collection
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any, TypeAlias
 
 import numpy
 import pandas
 from annofabapi.models import TaskPhase
 from dataclasses_json import DataClassJsonMixin
 from pandas.api.typing import NAType
-from typing_extensions import TypeAlias
 
 import annofabcli
 from annofabcli.common.cli import CommandLineWithoutWebapi, get_json_from_args, get_list_from_args
@@ -54,9 +53,9 @@ class ResultDataframe:
 class ThresholdInfo(DataClassJsonMixin):
     """閾値の情報"""
 
-    threshold_worktime: Optional[float] = None
+    threshold_worktime: float | None = None
     """作業時間の閾値。指定した時間以下の作業者は除外する。"""
-    threshold_task_count: Optional[int] = None
+    threshold_task_count: int | None = None
     """作業したタスク数の閾値。作業したタスク数が指定した数以下作業者は除外する。"""
 
 
@@ -164,12 +163,12 @@ class CollectingPerformanceInfo:
     def __init__(
         self,
         *,
-        productivity_indicator: Optional[ProductivityIndicator] = None,
-        quality_indicator: Optional[QualityIndicator] = None,
-        threshold_info: Optional[ThresholdInfo] = None,
-        productivity_indicator_by_directory: Optional[ProductivityIndicatorByDirectory] = None,
-        quality_indicator_by_directory: Optional[QualityIndicatorByDirectory] = None,
-        threshold_infos_by_directory: Optional[ThresholdInfoSettings] = None,
+        productivity_indicator: ProductivityIndicator | None = None,
+        quality_indicator: QualityIndicator | None = None,
+        threshold_info: ThresholdInfo | None = None,
+        productivity_indicator_by_directory: ProductivityIndicatorByDirectory | None = None,
+        quality_indicator_by_directory: QualityIndicatorByDirectory | None = None,
+        threshold_infos_by_directory: ThresholdInfoSettings | None = None,
     ) -> None:
         self.quality_indicator = quality_indicator if quality_indicator is not None else QualityIndicator("pointed_out_inspection_comment_count/annotation_count")
         self.productivity_indicator = productivity_indicator if productivity_indicator is not None else ProductivityIndicator("actual_worktime_hour/annotation_count")
@@ -311,7 +310,7 @@ class CollectingPerformanceInfo:
         self,
         df_user: pandas.DataFrame,
         target_dir: Path,
-        custom_production_volume_list_by_directory: Optional[dict[str, list[ProductionVolumeColumn]]],
+        custom_production_volume_list_by_directory: dict[str, list[ProductionVolumeColumn]] | None,
     ) -> ResultDataframe:
         """対象ディレクトリから、評価対象の指標になる情報を取得します。"""
         df_annotation_productivity = df_user
@@ -389,7 +388,7 @@ def to_rank(series: pandas.Series) -> pandas.Series:
         return pandas.Series([numpy.nan] * len(series))
 
 
-def to_deviation(series: pandas.Series, threshold_deviation_user_count: Optional[int] = None) -> pandas.Series:
+def to_deviation(series: pandas.Series, threshold_deviation_user_count: int | None = None) -> pandas.Series:
     if series.count() == 0 or (threshold_deviation_user_count is not None and series.count() <= threshold_deviation_user_count):
         return pandas.Series([numpy.nan] * len(series))
     else:
@@ -401,7 +400,7 @@ def to_deviation(series: pandas.Series, threshold_deviation_user_count: Optional
             return series.map(lambda x: 50 if not numpy.isnan(x) else numpy.nan)
 
 
-def create_rank_df(df: pandas.DataFrame, *, user_ids: Optional[Collection[str]] = None) -> pandas.DataFrame:
+def create_rank_df(df: pandas.DataFrame, *, user_ids: Collection[str] | None = None) -> pandas.DataFrame:
     df_rank = df.copy()
     for col in df.columns[3:]:
         df_rank[col] = to_rank(df[col])
@@ -415,8 +414,8 @@ def create_rank_df(df: pandas.DataFrame, *, user_ids: Optional[Collection[str]] 
 def create_deviation_df(
     df: pandas.DataFrame,
     *,
-    threshold_deviation_user_count: Optional[int] = None,
-    user_ids: Optional[Collection[str]] = None,
+    threshold_deviation_user_count: int | None = None,
+    user_ids: Collection[str] | None = None,
 ) -> pandas.DataFrame:
     """偏差値が格納されたDataFrameを返す。
 
@@ -499,7 +498,7 @@ def create_custom_production_volume_by_directory(cli_value: str) -> dict[str, li
 
 
 class WritingCsv:
-    def __init__(self, threshold_deviation_user_count: Optional[int] = None, user_ids: Optional[Collection[str]] = None) -> None:
+    def __init__(self, threshold_deviation_user_count: int | None = None, user_ids: Collection[str] | None = None) -> None:
         self.threshold_deviation_user_count = threshold_deviation_user_count
         self.user_ids = user_ids
 
@@ -529,7 +528,7 @@ class WritingCsv:
 
 
 def create_productivity_indicator_by_directory(
-    value: Optional[str],
+    value: str | None,
 ) -> ProductivityIndicatorByDirectory:
     """
     コマンドライン引数`--productivity_indicator_by_directory`から渡された文字列を、ProductivityIndicatorByDirectoryに変換する。
@@ -545,7 +544,7 @@ def create_productivity_indicator_by_directory(
 
 
 def create_quality_indicator_by_directory(
-    value: Optional[str],
+    value: str | None,
 ) -> QualityIndicatorByDirectory:
     """
     コマンドライン引数`--quality_indicator_by_directory`から渡された文字列を、ProductivityIndicatorByDirectoryに変換する。
@@ -560,7 +559,7 @@ def create_quality_indicator_by_directory(
     return result
 
 
-def create_threshold_infos_per_project(value: Optional[str]) -> ThresholdInfoSettings:
+def create_threshold_infos_per_project(value: str | None) -> ThresholdInfoSettings:
     if value is None:
         return {}
 
@@ -723,7 +722,7 @@ def main(args: argparse.Namespace) -> None:
     WritePerformanceRatingCsv(args).main()
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
+def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "write_performance_rating_csv"
     subcommand_help = "プロジェクトごとユーザごとにパフォーマンスを評価できる複数のCSVを出力します。"
     description = "プロジェクトごとユーザごとにパフォーマンスを評価できる複数のCSVを出力します。"

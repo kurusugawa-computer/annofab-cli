@@ -10,7 +10,7 @@ from collections import defaultdict
 from collections.abc import Collection, Sequence
 from functools import partial
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import bokeh
 import numpy
@@ -56,11 +56,11 @@ def _get_y_axis_label(group_by: GroupBy) -> str:
         raise RuntimeError(f"group_by='{group_by}'が対象外です。")
 
 
-def convert_to_2d_figure_list(figures_dict: dict[tuple[str, str], list[figure]], *, ncols: int = 4) -> list[list[Optional[LayoutDOM]]]:
+def convert_to_2d_figure_list(figures_dict: dict[tuple[str, str], list[figure]], *, ncols: int = 4) -> list[list[LayoutDOM | None]]:
     """
     grid layout用に2次元のfigureリストに変換する。
     """
-    row_list: list[list[Optional[LayoutDOM]]] = []
+    row_list: list[list[LayoutDOM | None]] = []
 
     for (label_name, attribute_name), figure_list in figures_dict.items():
         row_list.append([Div(text=f"<h3>ラベル名='{label_name}', 属性名='{attribute_name}'</h3>")])
@@ -68,7 +68,7 @@ def convert_to_2d_figure_list(figures_dict: dict[tuple[str, str], list[figure]],
         for i in range(math.ceil(len(figure_list) / ncols)):
             start = i * ncols
             end = (i + 1) * ncols
-            row: list[Optional[LayoutDOM]] = []
+            row: list[LayoutDOM | None] = []
             row.extend(figure_list[start:end])
             if len(row) < ncols:
                 row.extend([None] * (ncols - len(row)))
@@ -101,11 +101,11 @@ def plot_label_histogram(
     group_by: GroupBy,
     output_file: Path,
     *,
-    prior_keys: Optional[list[str]] = None,
-    bin_width: Optional[int] = None,
+    prior_keys: list[str] | None = None,
+    bin_width: int | None = None,
     exclude_empty_value: bool = False,
     arrange_bin_edge: bool = False,
-    metadata: Optional[dict[str, Any]] = None,
+    metadata: dict[str, Any] | None = None,
 ) -> None:
     """
     ラベルごとのアノテーション数のヒストグラムを出力する。
@@ -152,7 +152,7 @@ def plot_label_histogram(
 
     max_annotation_count = df.max(numeric_only=True).max()
 
-    figure_list_2d: list[list[Optional[LayoutDOM]]] = [
+    figure_list_2d: list[list[LayoutDOM | None]] = [
         [
             Div(text="<h3>アノテーション数の分布（ラベル名ごと）</h3>"),
         ]
@@ -203,11 +203,11 @@ def plot_attribute_histogram(  # noqa: PLR0915
     group_by: GroupBy,
     output_file: Path,
     *,
-    prior_keys: Optional[list[AttributeValueKey]] = None,
-    bin_width: Optional[int] = None,
+    prior_keys: list[AttributeValueKey] | None = None,
+    bin_width: int | None = None,
     exclude_empty_value: bool = False,
     arrange_bin_edge: bool = False,
-    metadata: Optional[dict[str, Any]] = None,
+    metadata: dict[str, Any] | None = None,
 ) -> None:
     """
     属性値ごとのアノテーション数のヒストグラムを出力する。
@@ -256,7 +256,7 @@ def plot_attribute_histogram(  # noqa: PLR0915
 
     max_annotation_count = df.max(numeric_only=True).max()
 
-    figure_list_2d: list[list[Optional[LayoutDOM]]] = [
+    figure_list_2d: list[list[LayoutDOM | None]] = [
         [
             Div(text="<h3>アノテーション数の分布（属性値ごと）</h3>"),
         ]
@@ -322,10 +322,10 @@ class VisualizeAnnotationCount(CommandLine):
         annotation_path: Path,
         output_dir: Path,
         *,
-        bin_width: Optional[int] = None,
-        project_id: Optional[str] = None,
-        target_task_ids: Optional[Collection[str]] = None,
-        task_query: Optional[TaskQuery] = None,
+        bin_width: int | None = None,
+        project_id: str | None = None,
+        target_task_ids: Collection[str] | None = None,
+        task_query: TaskQuery | None = None,
         exclude_empty_value: bool = False,
         arrange_bin_edge: bool = False,
     ) -> None:
@@ -333,8 +333,8 @@ class VisualizeAnnotationCount(CommandLine):
         attributes_count_html = output_dir / "attributes_count.html"
 
         # 集計対象の属性を、選択肢系の属性にする
-        annotation_specs: Optional[AnnotationSpecs] = None
-        non_selective_attribute_name_keys: Optional[list[AttributeNameKey]] = None
+        annotation_specs: AnnotationSpecs | None = None
+        non_selective_attribute_name_keys: list[AttributeNameKey] | None = None
         if project_id is not None:
             annotation_specs = AnnotationSpecs(self.service, project_id)
             non_selective_attribute_name_keys = annotation_specs.non_selective_attribute_name_keys()
@@ -361,8 +361,8 @@ class VisualizeAnnotationCount(CommandLine):
         else:
             raise RuntimeError(f"group_by='{group_by}'が対象外です。")
 
-        label_keys: Optional[list[str]] = None
-        attribute_value_keys: Optional[list[AttributeValueKey]] = None
+        label_keys: list[str] | None = None
+        attribute_value_keys: list[AttributeValueKey] | None = None
         if annotation_specs is not None:
             label_keys = annotation_specs.label_keys()
             attribute_value_keys = annotation_specs.selective_attribute_value_keys()
@@ -406,7 +406,7 @@ class VisualizeAnnotationCount(CommandLine):
         if not self.validate(args):
             sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
-        project_id: Optional[str] = args.project_id
+        project_id: str | None = args.project_id
         if project_id is not None:
             super().validate_project(project_id, project_member_roles=[ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER])
 
@@ -534,7 +534,7 @@ def main(args: argparse.Namespace) -> None:
     VisualizeAnnotationCount(service, facade, args).main()
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
+def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "visualize_annotation_count"
     subcommand_help = "各ラベル、各属性値のアノテーション数をヒストグラムで可視化します。"
     description = "各ラベル、各属性値のアノテーション数をヒストグラムで可視化したファイルを出力します。"

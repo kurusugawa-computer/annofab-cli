@@ -5,8 +5,9 @@
 
 import logging
 import zipfile
+from collections.abc import Callable
 from pathlib import Path
-from typing import Any, Callable, Optional
+from typing import Any
 
 import PIL
 import PIL.Image
@@ -24,7 +25,7 @@ IsParserFunc = Callable[[SimpleAnnotationParser], bool]
 """アノテーションparserに対してboolを返す関数"""
 
 
-def get_data_uri_of_outer_file(annotation: SimpleAnnotationDetail) -> Optional[str]:
+def get_data_uri_of_outer_file(annotation: SimpleAnnotationDetail) -> str | None:
     """
     外部ファイルの data_uri を取得する
     Args:
@@ -45,7 +46,7 @@ def fill_annotation(
     draw: PIL.ImageDraw.ImageDraw,
     annotation: SimpleAnnotationDetail,
     label_color_dict: dict[str, RGB],
-    outer_image: Optional[Any] = None,  # noqa: ANN401
+    outer_image: Any | None = None,  # noqa: ANN401
 ) -> PIL.ImageDraw.ImageDraw:
     """
     1個のアノテーションを、塗りつぶしで描画する。（矩形、ポリゴン、塗りつぶし、塗りつぶしv2）
@@ -94,7 +95,7 @@ def fill_annotation_list(
     draw: PIL.ImageDraw.ImageDraw,
     parser: SimpleAnnotationParser,
     label_color_dict: dict[str, RGB],
-    label_name_list: Optional[list[str]] = None,
+    label_name_list: list[str] | None = None,
 ) -> PIL.ImageDraw.ImageDraw:
     """
     1個の入力データに属するアノテーションlistを描画する
@@ -142,8 +143,8 @@ def write_annotation_image(  # noqa: ANN201
     image_size: InputDataSize,
     label_color_dict: dict[str, RGB],
     output_image_file: Path,
-    background_color: Optional[Any] = None,  # noqa: ANN401
-    label_name_list: Optional[list[str]] = None,
+    background_color: Any | None = None,  # noqa: ANN401
+    label_name_list: list[str] | None = None,
 ):
     """
     JSONファイルに記載されているアノテーション情報を、画像化する。
@@ -191,7 +192,7 @@ def write_annotation_grayscale_image(
     parser: SimpleAnnotationParser,
     image_size: InputDataSize,
     output_image_file: Path,
-    label_name_list: Optional[list[str]] = None,
+    label_name_list: list[str] | None = None,
 ) -> None:
     """
     JSONファイルに記載されているアノテーション情報を、グレースケール(8bit 1channel)で画像化します。
@@ -267,12 +268,12 @@ def write_annotation_images_from_path(
     annotation_path: Path,
     label_color_dict: dict[str, RGB],
     output_dir_path: Path,
-    image_size: Optional[InputDataSize] = None,
-    input_data_dict: Optional[dict[str, InputData]] = None,
+    image_size: InputDataSize | None = None,
+    input_data_dict: dict[str, InputData] | None = None,
     output_image_extension: str = "png",
-    background_color: Optional[Any] = None,  # noqa: ANN401
-    label_name_list: Optional[list[str]] = None,
-    is_target_parser_func: Optional[IsParserFunc] = None,
+    background_color: Any | None = None,  # noqa: ANN401
+    label_name_list: list[str] | None = None,
+    is_target_parser_func: IsParserFunc | None = None,
 ) -> bool:
     """
     Annofabからダウンロードしたアノテーションzipファイル、またはそのzipを展開したディレクトリから、アノテーション情報を画像化します。
@@ -297,7 +298,7 @@ def write_annotation_images_from_path(
 
     """
 
-    def _get_image_size(input_data_id: str) -> Optional[InputDataSize]:
+    def _get_image_size(input_data_id: str) -> InputDataSize | None:
         def _get_image_size_from_system_metadata(arg_input_data: dict[str, Any]):  # noqa: ANN202
             # 入力データの`input_data.system_metadata.original_resolution`を参照して、画像サイズを決める。
             original_resolution = arg_input_data["system_metadata"]["original_resolution"]

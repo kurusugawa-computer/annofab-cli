@@ -9,7 +9,6 @@ from dataclasses import dataclass
 from enum import Enum
 from functools import partial
 from pathlib import Path
-from typing import Optional
 
 import annofabapi
 import pandas
@@ -50,9 +49,9 @@ class UpdatedInputData(DataClassJsonMixin):
 
     input_data_id: str
     """更新対象の入力データを表すID"""
-    input_data_name: Optional[str] = None
+    input_data_name: str | None = None
     """変更後の入力データ名（指定した場合のみ更新）"""
-    input_data_path: Optional[str] = None
+    input_data_path: str | None = None
     """変更後の入力データパス（指定した場合のみ更新）"""
 
 
@@ -66,9 +65,9 @@ class UpdateInputDataMain(CommandLineWithConfirm):
         project_id: str,
         input_data_id: str,
         *,
-        new_input_data_name: Optional[str] = None,
-        new_input_data_path: Optional[str] = None,
-        input_data_index: Optional[int] = None,
+        new_input_data_name: str | None = None,
+        new_input_data_path: str | None = None,
+        input_data_index: int | None = None,
     ) -> UpdateResult:
         """
         1個の入力データを更新します。
@@ -299,7 +298,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
+def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "update"
     subcommand_help = "入力データの名前または入力データのパスを更新します。"
     epilog = "オーナロールを持つユーザで実行してください。"

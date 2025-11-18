@@ -6,7 +6,7 @@ import logging
 from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import annofabapi
 import pandas
@@ -45,9 +45,9 @@ class RequestOfTaskHistoryEvent(DataClassJsonMixin):
 
     status: str
     force: bool
-    account_id: Optional[str]
-    user_id: Optional[str]
-    username: Optional[str]
+    account_id: str | None
+    user_id: str | None
+    username: str | None
 
 
 @dataclass
@@ -72,7 +72,7 @@ class ListWorktimeFromTaskHistoryEventMain:
         self.visualize = AddProps(service, project_id)
 
     @staticmethod
-    def filter_task_history_event(task_history_event_list: list[TaskHistoryEvent], task_id_list: Optional[list[str]] = None) -> list[TaskHistoryEvent]:
+    def filter_task_history_event(task_history_event_list: list[TaskHistoryEvent], task_id_list: list[str] | None = None) -> list[TaskHistoryEvent]:
         if task_id_list is not None:
             result = []
             task_id_set = set(task_id_list)
@@ -84,7 +84,7 @@ class ListWorktimeFromTaskHistoryEventMain:
 
         return task_history_event_list
 
-    def get_task_history_event_list(self, project_id: str, task_history_event_json: Optional[Path] = None) -> list[dict[str, Any]]:
+    def get_task_history_event_list(self, project_id: str, task_history_event_json: Path | None = None) -> list[dict[str, Any]]:
         if task_history_event_json is None:
             downloading_obj = DownloadingFile(self.service)
             cache_dir = annofabcli.common.utils.get_cache_dir()
@@ -103,8 +103,8 @@ class ListWorktimeFromTaskHistoryEventMain:
     def _create_task_history_event_dict(
         task_history_event_list: list[TaskHistoryEvent],
         *,
-        task_ids: Optional[set[str]],
-        account_ids: Optional[set[str]],
+        task_ids: set[str] | None,
+        account_ids: set[str] | None,
     ) -> dict[str, list[TaskHistoryEvent]]:
         """
         keyがtask_id, valueがタスク履歴イベントのlistであるdictを生成する。
@@ -229,9 +229,9 @@ class ListWorktimeFromTaskHistoryEventMain:
     def get_worktime_list(
         self,
         project_id: str,
-        task_history_event_json: Optional[Path] = None,
-        task_id_list: Optional[list[str]] = None,
-        user_id_list: Optional[list[str]] = None,
+        task_history_event_json: Path | None = None,
+        task_id_list: list[str] | None = None,
+        user_id_list: list[str] | None = None,
     ) -> list[WorktimeFromTaskHistoryEvent]:
         all_task_history_event_list = self.get_task_history_event_list(project_id, task_history_event_json=task_history_event_json)
 
@@ -251,9 +251,9 @@ class ListWorktimeFromTaskHistoryEvent(CommandLine):
     def print_worktime_from_task_history_event(
         self,
         project_id: str,
-        task_history_event_json: Optional[Path],
-        task_id_list: Optional[list[str]],
-        user_id_list: Optional[list[str]],
+        task_history_event_json: Path | None,
+        task_id_list: list[str] | None,
+        user_id_list: list[str] | None,
         arg_format: FormatArgument,
     ) -> None:
         super().validate_project(project_id, project_member_roles=None)
@@ -366,7 +366,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
+def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "list_worktime"
     subcommand_help = "タスク履歴イベントから作業時間の一覧を出力します。"
     description = "タスク履歴イベントから作業時間の一覧を出力します。\nタスク履歴より詳細な作業時間の情報を出力します。"

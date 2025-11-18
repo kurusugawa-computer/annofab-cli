@@ -2,7 +2,7 @@ import argparse
 import logging
 from functools import partial
 from pathlib import Path
-from typing import Any, Optional, Union
+from typing import Any
 
 import numpy
 import pandas
@@ -98,7 +98,7 @@ def create_masked_name(name: str) -> str:
     return _num2alpha(hash_value)
 
 
-def get_replaced_user_id_set_from_biography(df: pandas.DataFrame, not_masked_location_set: Optional[set[str]] = None) -> set[str]:
+def get_replaced_user_id_set_from_biography(df: pandas.DataFrame, not_masked_location_set: set[str] | None = None) -> set[str]:
     if not_masked_location_set is None:
         filtered_df = df
     else:
@@ -115,7 +115,7 @@ def _get_header_row_count(df: pandas.DataFrame) -> int:
         return 1
 
 
-def _get_tuple_column(df: pandas.DataFrame, column: str) -> Union[str, tuple]:
+def _get_tuple_column(df: pandas.DataFrame, column: str) -> str | tuple:
     """
     列名を返します。ヘッダ行が複数行の場合は、タプルで返します。
 
@@ -136,8 +136,8 @@ def _get_tuple_column(df: pandas.DataFrame, column: str) -> Union[str, tuple]:
 def replace_by_columns(  # noqa: ANN201
     df: pandas.DataFrame,
     replacement_dict: dict[str, str],
-    main_column: Union[str, tuple],
-    sub_columns: Optional[list[Any]] = None,
+    main_column: str | tuple,
+    sub_columns: list[Any] | None = None,
 ):
     """引数dfの中のユーザ情報を、指定した列名を元に置換します。
 
@@ -148,7 +148,7 @@ def replace_by_columns(  # noqa: ANN201
         sub_column: main_columnと同じ値で置換する列(ex: username)
     """
 
-    def _get_username(row: pandas.Series, main_column: Union[str, tuple], sub_column: Union[str, tuple]) -> str:
+    def _get_username(row: pandas.Series, main_column: str | tuple, sub_column: str | tuple) -> str:
         if row[main_column] in replacement_dict:
             return replacement_dict[row[main_column]]
         else:
@@ -196,7 +196,7 @@ def get_masked_account_id(df: pandas.DataFrame, replace_dict_by_user_id: dict[st
     return df.apply(_get_account_id, axis=1)
 
 
-def get_replaced_biography_set(df: pandas.DataFrame, not_masked_location_set: Optional[set[str]] = None) -> set[str]:
+def get_replaced_biography_set(df: pandas.DataFrame, not_masked_location_set: set[str] | None = None) -> set[str]:
     biography_set = set(df["biography"].dropna())
 
     if not_masked_location_set is None:
@@ -209,8 +209,8 @@ def get_replaced_biography_set(df: pandas.DataFrame, not_masked_location_set: Op
 
 def create_replacement_dict_by_user_id(
     df: pandas.DataFrame,
-    not_masked_biography_set: Optional[set[str]] = None,
-    not_masked_user_id_set: Optional[set[str]] = None,
+    not_masked_biography_set: set[str] | None = None,
+    not_masked_user_id_set: set[str] | None = None,
 ) -> dict[str, str]:
     """
     keyが置換対象のuser_id、valueが置換後のマスクされたuser_idであるdictを作成する。
@@ -227,7 +227,7 @@ def create_replacement_dict_by_user_id(
 
 def create_replacement_dict_by_biography(
     df: pandas.DataFrame,
-    not_masked_biography_set: Optional[set[str]] = None,
+    not_masked_biography_set: set[str] | None = None,
 ) -> dict[str, str]:
     """
     keyが置換対象のbiography、valueが置換後のマスクされた biography であるdictを作成する。
@@ -270,7 +270,7 @@ def replace_biography(df: pandas.DataFrame, replacement_dict_by_user_id: dict[st
     user_id_column = _get_tuple_column(df, "user_id")
     biography_column = _get_tuple_column(df, "biography")
 
-    def _get_biography(row: pandas.Series, user_id_column: Union[str, tuple], biography_column: Union[str, tuple]) -> str:
+    def _get_biography(row: pandas.Series, user_id_column: str | tuple, biography_column: str | tuple) -> str:
         if row[user_id_column] in replacement_dict_by_user_id:
             # マスク対象のユーザなら biographyをマスクする
             biography = row[biography_column]
@@ -288,8 +288,8 @@ def replace_biography(df: pandas.DataFrame, replacement_dict_by_user_id: dict[st
 def create_masked_user_info_df(
     df: pandas.DataFrame,
     *,
-    not_masked_biography_set: Optional[set[str]] = None,
-    not_masked_user_id_set: Optional[set[str]] = None,
+    not_masked_biography_set: set[str] | None = None,
+    not_masked_user_id_set: set[str] | None = None,
 ) -> pandas.DataFrame:
     if "user_id" not in df:
         logger.warning("引数`df`に`user_id`列が存在しないため、ユーザ情報をマスクできません。")
@@ -360,7 +360,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
+def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "mask_user_info"
     subcommand_help = "CSVに記載されたユーザ情報をマスクします。"
     description = "CSVに記載されたユーザ情報をマスクします。CSVの`user_id`,`username`,`biography`,`account_id` 列をマスクします。"

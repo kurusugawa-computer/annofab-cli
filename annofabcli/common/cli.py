@@ -9,7 +9,7 @@ import logging
 import os
 import pkgutil
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import annofabapi
 import pandas
@@ -81,12 +81,12 @@ def build_annofabapi_resource_and_login(args: argparse.Namespace) -> annofabapi.
 
 
 def add_parser(
-    subparsers: Optional[argparse._SubParsersAction],
+    subparsers: argparse._SubParsersAction | None,
     command_name: str,
     command_help: str,
-    description: Optional[str] = None,
+    description: str | None = None,
     is_subcommand: bool = True,  # noqa: FBT001, FBT002
-    epilog: Optional[str] = None,
+    epilog: str | None = None,
 ) -> argparse.ArgumentParser:
     """
     サブコマンド用にparserを追加する
@@ -159,7 +159,7 @@ def add_parser(
     return parser
 
 
-def get_list_from_args(str_list: Optional[list[str]] = None) -> list[str]:
+def get_list_from_args(str_list: list[str] | None = None) -> list[str]:
     """
     文字列のListのサイズが1で、プレフィックスが`file://`ならば、ファイルパスとしてファイルを読み込み、行をListとして返す。
     そうでなければ、引数の値をそのまま返す。
@@ -185,7 +185,7 @@ def get_list_from_args(str_list: Optional[list[str]] = None) -> list[str]:
         return str_list
 
 
-def get_json_from_args(target: Optional[str] = None) -> Any:  # noqa: ANN401
+def get_json_from_args(target: str | None = None) -> Any:  # noqa: ANN401
     """
     JSON形式をPythonオブジェクトに変換する。
     プレフィックスが`file://`ならば、ファイルパスとしてファイルを読み込み、Pythonオブジェクトを返す。
@@ -202,7 +202,7 @@ def get_json_from_args(target: Optional[str] = None) -> Any:  # noqa: ANN401
         return json.loads(target)
 
 
-def get_input_data_size(str_input_data_size: str) -> Optional[InputDataSize]:
+def get_input_data_size(str_input_data_size: str) -> InputDataSize | None:
     """400x300を(400,300)に変換する"""
     splitted_list = str_input_data_size.split("x")
     if len(splitted_list) < 2:
@@ -380,7 +380,7 @@ class ArgumentParser:
     def __init__(self, parser: argparse.ArgumentParser) -> None:
         self.parser = parser
 
-    def add_project_id(self, help_message: Optional[str] = None) -> None:
+    def add_project_id(self, help_message: str | None = None) -> None:
         """
         '--project_id` 引数を追加
         """
@@ -389,7 +389,7 @@ class ArgumentParser:
 
         self.parser.add_argument("-p", "--project_id", type=str, required=True, help=help_message)
 
-    def add_task_id(self, *, required: bool = True, help_message: Optional[str] = None) -> None:
+    def add_task_id(self, *, required: bool = True, help_message: str | None = None) -> None:
         """
         '--task_id` 引数を追加
         """
@@ -398,7 +398,7 @@ class ArgumentParser:
 
         self.parser.add_argument("-t", "--task_id", type=str, required=required, nargs="+", help=help_message)
 
-    def add_input_data_id(self, *, required: bool = True, help_message: Optional[str] = None) -> None:
+    def add_input_data_id(self, *, required: bool = True, help_message: str | None = None) -> None:
         """
         '--input_data_id` 引数を追加
         """
@@ -407,7 +407,7 @@ class ArgumentParser:
 
         self.parser.add_argument("-i", "--input_data_id", type=str, required=required, nargs="+", help=help_message)
 
-    def add_format(self, choices: list[FormatArgument], default: FormatArgument, help_message: Optional[str] = None) -> None:
+    def add_format(self, choices: list[FormatArgument], default: FormatArgument, help_message: str | None = None) -> None:
         """
         '--format` 引数を追加
         """
@@ -416,7 +416,7 @@ class ArgumentParser:
 
         self.parser.add_argument("-f", "--format", type=str, choices=[e.value for e in choices], default=default.value, help=help_message)
 
-    def add_output(self, *, required: bool = False, help_message: Optional[str] = None) -> None:
+    def add_output(self, *, required: bool = False, help_message: str | None = None) -> None:
         """
         '--output` 引数を追加
         """
@@ -425,7 +425,7 @@ class ArgumentParser:
 
         self.parser.add_argument("-o", "--output", type=str, required=required, help=help_message)
 
-    def add_task_query(self, *, required: bool = False, help_message: Optional[str] = None) -> None:
+    def add_task_query(self, *, required: bool = False, help_message: str | None = None) -> None:
         if help_message is None:
             help_message = (
                 "タスクを絞り込むためのクエリ条件をJSON形式で指定します。"
@@ -476,10 +476,10 @@ class CommandLineWithoutWebapi:
     all_yes: bool = False
 
     #: 出力先
-    output: Optional[str] = None
+    output: str | None = None
 
     #: 出力フォーマット
-    str_format: Optional[str] = None
+    str_format: str | None = None
 
     def __init__(self, args: argparse.Namespace) -> None:
         self.args = args
@@ -575,8 +575,8 @@ class CommandLine(CommandLineWithoutWebapi):
     def validate_project(
         self,
         project_id: str,
-        project_member_roles: Optional[list[ProjectMemberRole]] = None,
-        organization_member_roles: Optional[list[OrganizationMemberRole]] = None,
+        project_member_roles: list[ProjectMemberRole] | None = None,
+        organization_member_roles: list[OrganizationMemberRole] | None = None,
     ) -> None:
         """
         プロジェクト or 組織に対して、必要な権限が付与されているかを確認する。

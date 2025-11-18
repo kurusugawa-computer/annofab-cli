@@ -3,7 +3,7 @@ import json
 import logging
 import tempfile
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import annofabapi
 import pandas
@@ -29,8 +29,8 @@ class ListTasksWithJsonMain:
     @staticmethod
     def match_task_with_conditions(
         task: dict[str, Any],
-        task_id_set: Optional[set[str]] = None,
-        task_query: Optional[TaskQuery] = None,
+        task_id_set: set[str] | None = None,
+        task_query: TaskQuery | None = None,
     ) -> bool:
         result = True
 
@@ -43,9 +43,9 @@ class ListTasksWithJsonMain:
     def get_task_list(
         self,
         project_id: str,
-        task_json: Optional[Path],
-        task_id_list: Optional[list[str]] = None,
-        task_query: Optional[TaskQuery] = None,
+        task_json: Path | None,
+        task_id_list: list[str] | None = None,
+        task_query: TaskQuery | None = None,
         is_latest: bool = False,  # noqa: FBT001, FBT002
     ) -> list[dict[str, Any]]:
         if task_json is None:
@@ -142,7 +142,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
+def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "list_all"
     subcommand_help = "すべてのタスクの一覧を出力します。"
     description = "すべてのタスクの一覧を出力します。\n出力されるタスクは、コマンドを実行した日の02:00(JST)頃の状態です。最新の情報を出力したい場合は、 ``--latest`` を指定してください。"

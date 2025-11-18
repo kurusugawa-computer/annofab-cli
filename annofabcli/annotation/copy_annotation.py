@@ -7,7 +7,7 @@ import multiprocessing
 import sys
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Any, Optional
+from typing import Any
 
 import annofabapi
 from annofabapi.models import ProjectMemberRole
@@ -79,7 +79,7 @@ def parse_copy_target(str_copy_target: str) -> CopyTarget:
     * `task1/input5:task2/input6`
     """
 
-    def _parse_with_slash(target: str) -> tuple[str, Optional[str]]:
+    def _parse_with_slash(target: str) -> tuple[str, str | None]:
         tmp = target.split("/")
         if len(tmp) == 1:
             return (tmp[0], None)
@@ -163,7 +163,7 @@ class CopyAnnotationMain(CommandLineWithConfirm):
 
         copy_count = 0
 
-        for src_input_data_id, dest_input_data_id in zip(src_input_data_id_list, dest_input_data_id_list):
+        for src_input_data_id, dest_input_data_id in zip(src_input_data_id_list, dest_input_data_id_list, strict=False):
             try:
                 result = self.copy_annotation_by_input_data(
                     CopyTargetByInputData(
@@ -304,7 +304,7 @@ class CopyAnnotationMain(CommandLineWithConfirm):
             logger.warning(f"'{copy_target.src}'のアノテーションを'{copy_target.dest}'へコピーするのに失敗しました。", exc_info=True)
             return False
 
-    def copy_annotations(self, copy_target_list: list[CopyTarget], *, parallelism: Optional[int] = None):  # noqa: ANN201
+    def copy_annotations(self, copy_target_list: list[CopyTarget], *, parallelism: int | None = None):  # noqa: ANN201
         if parallelism is not None:
             with multiprocessing.Pool(parallelism) as pool:
                 result_bool_list = pool.map(self.copy_annotation_wrapper, copy_target_list)
@@ -414,7 +414,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
+def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "copy"
     subcommand_help = "アノテーションをコピーします．"
     description = "タスク単位または入力データ単位で、アノテーションをコピーします。"

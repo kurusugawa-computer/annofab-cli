@@ -3,7 +3,7 @@ from __future__ import annotations
 import argparse
 import logging
 from collections import Counter
-from typing import Any, Optional
+from typing import Any
 
 import pandas
 import requests
@@ -61,7 +61,7 @@ class ListingComments(CommandLine):
             c["reply_count"] = reply_counter.get(key, 0)
         return comments
 
-    def get_comment_list(self, project_id: str, task_id_list: list[str], *, comment_type: Optional[CommentType], exclude_reply: bool) -> list[dict[str, Any]]:
+    def get_comment_list(self, project_id: str, task_id_list: list[str], *, comment_type: CommentType | None, exclude_reply: bool) -> list[dict[str, Any]]:
         all_comments: list[Comment] = []
 
         for task_id in task_id_list:
@@ -151,7 +151,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
+def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "list"
     subcommand_help = "コメント一覧を出力します。"
 

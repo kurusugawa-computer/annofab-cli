@@ -6,14 +6,13 @@ authors = [{ name = "Kurusugawa Computer Inc." }]
 license = { text = "MIT" }
 keywords = ["annofab", "cli"]
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
     "Environment :: Console",
     "Topic :: Utilities",
     "Operating System :: OS Independent",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
@@ -91,7 +90,7 @@ warn_unused_configs = true
 
 
 [tool.ruff]
-target-version = "py39"
+target-version = "py310"
 line-length = 200
 
 
@@ -168,7 +167,6 @@ convention = "google"
 [tool.ruff.lint.pyupgrade]
 # `typing.Optional`を使っているため、UP007のルールを無視する
 # https://beta.ruff.rs/docs/settings/#keep-runtime-typing
-# Python 3.9のサポートを終了したら、この設定を除去する
 keep-runtime-typing = true
 
 [tool.ruff.lint.pylint]

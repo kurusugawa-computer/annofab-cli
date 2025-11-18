@@ -1,6 +1,6 @@
 import argparse
 import logging
-from typing import Any, Optional
+from typing import Any
 
 import annofabapi
 
@@ -54,7 +54,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
+def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "list_history"
     subcommand_help = "アノテーション仕様の変更履歴を表示する。"
     description = "アノテーション仕様の変更履歴を表示する。"

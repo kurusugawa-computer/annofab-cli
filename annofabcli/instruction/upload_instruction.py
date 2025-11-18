@@ -7,7 +7,6 @@ import logging.handlers
 import tempfile
 import uuid
 from pathlib import Path
-from typing import Optional
 
 import pyquery
 from datauri import DataURI
@@ -60,7 +59,7 @@ class UploadInstruction(CommandLine):
         img_path_dict: dict[str, str] = {}
         # 画像をすべてアップロードして、img要素のsrc属性値を annofab urlに変更する
         for img_elm in pq_img:
-            src_value: Optional[str] = img_elm.attrib.get("src")
+            src_value: str | None = img_elm.attrib.get("src")
             if src_value is None:
                 continue
 
@@ -144,7 +143,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
+def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "upload"
     subcommand_help = "HTMLファイルを作業ガイドとして登録します。"
     description = "HTMLファイルを作業ガイドとして登録します。img要素のsrc属性がローカルの画像を参照している場合（http, https, dataスキーマが付与されていない）、画像もアップロードします。"

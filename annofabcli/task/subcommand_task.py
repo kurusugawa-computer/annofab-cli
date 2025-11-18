@@ -1,5 +1,4 @@
 import argparse
-from typing import Optional
 
 import annofabcli
 import annofabcli.common.cli
@@ -45,7 +44,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     annofabcli.task.update_metadata_of_task.add_parser(subparsers)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
+def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "task"
     subcommand_help = "タスク関係のサブコマンド"
     description = "タスク関係のサブコマンド"

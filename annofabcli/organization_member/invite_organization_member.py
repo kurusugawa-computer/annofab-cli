@@ -1,7 +1,6 @@
 import argparse
 import logging
 from collections.abc import Collection
-from typing import Optional
 
 import annofabapi
 from annofabapi.models import OrganizationMemberRole
@@ -108,7 +107,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
+def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "invite"
     subcommand_help = "組織にメンバーを招待します。"
     epilog = "組織オーナまたは組織管理者ロールを持つユーザで実行してください。"

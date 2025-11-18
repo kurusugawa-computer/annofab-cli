@@ -8,7 +8,7 @@ from __future__ import annotations
 import datetime
 import logging
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import annofabapi
 import bokeh
@@ -250,9 +250,9 @@ class WorktimePerDate:
         project_id: str,
         actual_worktime: ActualWorktime,
         *,
-        task_history_event_json: Optional[Path] = None,
-        start_date: Optional[str] = None,
-        end_date: Optional[str] = None,
+        task_history_event_json: Path | None = None,
+        start_date: str | None = None,
+        end_date: str | None = None,
     ) -> WorktimePerDate:
         """
 
@@ -371,8 +371,8 @@ class WorktimePerDate:
         self,
         output_file: Path,
         *,
-        target_user_id_list: Optional[list[str]] = None,
-        metadata: Optional[dict[str, Any]] = None,
+        target_user_id_list: list[str] | None = None,
+        metadata: dict[str, Any] | None = None,
     ) -> None:
         """
         作業時間の累積値をプロットする。
@@ -468,7 +468,7 @@ class WorktimePerDate:
             username = df_subset.iloc[0]["username"]
 
             line_count += 1
-            for line_graph, (x_column, y_column) in zip(line_graph_list, columns_list):
+            for line_graph, (x_column, y_column) in zip(line_graph_list, columns_list, strict=False):
                 line_graph.add_line(
                     source=source,
                     x_column=x_column,
@@ -510,10 +510,10 @@ class WorktimePerDate:
 
     def mask_user_info(
         self,
-        to_replace_for_user_id: Optional[dict[str, str]] = None,
-        to_replace_for_username: Optional[dict[str, str]] = None,
-        to_replace_for_account_id: Optional[dict[str, str]] = None,
-        to_replace_for_biography: Optional[dict[str, str]] = None,
+        to_replace_for_user_id: dict[str, str] | None = None,
+        to_replace_for_username: dict[str, str] | None = None,
+        to_replace_for_account_id: dict[str, str] | None = None,
+        to_replace_for_biography: dict[str, str] | None = None,
     ) -> WorktimePerDate:
         """
         引数から渡された情報を元に、インスタンス変数`df`内のユーザー情報をマスクして、新しいインスタンスを返します。

@@ -1,5 +1,4 @@
 import argparse
-from typing import Optional
 
 import annofabcli
 import annofabcli.common.cli
@@ -19,7 +18,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     annofabcli.filesystem.merge_annotation.add_parser(subparsers)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
+def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "filesystem"
     subcommand_help = "ファイル操作関係（Web APIにアクセスしない）のサブコマンド"
     description = "ファイル操作関係（Web APIにアクセスしない）のサブコマンド"

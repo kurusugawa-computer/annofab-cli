@@ -1,5 +1,4 @@
 import logging
-from typing import Optional
 
 import numpy
 import pandas
@@ -45,8 +44,8 @@ def create_histogram_figure(
     *,
     x_axis_label: str,
     y_axis_label: str,
-    title: Optional[str] = None,
-    sub_title: Optional[str] = None,
+    title: str | None = None,
+    sub_title: str | None = None,
     width: int = 400,
     height: int = 300,
 ) -> figure:
@@ -64,8 +63,8 @@ def create_histogram_figure(
         height: グラフの高さ
     """
     df_histogram = pandas.DataFrame({"frequency": hist, "left": bin_edges[:-1], "right": bin_edges[1:]})
-    df_histogram["interval"] = [f"{left:.1f} to {right:.1f}" for left, right in zip(df_histogram["left"], df_histogram["right"])]
-    df_histogram["width"] = [f"{(right - left):.1f}" for left, right in zip(df_histogram["left"], df_histogram["right"])]
+    df_histogram["interval"] = [f"{left:.1f} to {right:.1f}" for left, right in zip(df_histogram["left"], df_histogram["right"], strict=False)]
+    df_histogram["width"] = [f"{(right - left):.1f}" for left, right in zip(df_histogram["left"], df_histogram["right"], strict=False)]
 
     source = ColumnDataSource(df_histogram)
     fig = figure(

@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from functools import partial
 from multiprocessing import Pool
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import annofabapi
 import pandas
@@ -49,9 +49,9 @@ class CliSupplementaryData(DataClassJsonMixin):
     input_data_id: str
     supplementary_data_name: str
     supplementary_data_path: str
-    supplementary_data_id: Optional[str] = None
-    supplementary_data_type: Optional[str] = None
-    supplementary_data_number: Optional[int] = None
+    supplementary_data_id: str | None = None
+    supplementary_data_type: str | None = None
+    supplementary_data_number: int | None = None
 
 
 @dataclass
@@ -64,9 +64,9 @@ class SupplementaryDataForPut:
     supplementary_data_id: str
     supplementary_data_name: str
     supplementary_data_path: str
-    supplementary_data_type: Optional[str]
+    supplementary_data_type: str | None
     supplementary_data_number: int
-    last_updated_datetime: Optional[str]
+    last_updated_datetime: str | None
 
 
 class SubPutSupplementaryData:
@@ -249,7 +249,7 @@ class PutSupplementaryData(CommandLine):
         supplementary_data_list: list[CliSupplementaryData],
         *,
         overwrite: bool = False,
-        parallelism: Optional[int] = None,
+        parallelism: int | None = None,
     ) -> None:
         """
         補助情報を一括で登録する。
@@ -412,7 +412,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
+def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "put"
     subcommand_help = "補助情報を登録します。"
     description = "補助情報を登録します。"

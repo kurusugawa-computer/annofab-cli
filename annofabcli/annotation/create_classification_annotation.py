@@ -4,7 +4,7 @@ import argparse
 import logging
 import multiprocessing
 import sys
-from typing import Any, Optional
+from typing import Any
 
 import annofabapi
 from annofabapi.models import DefaultAnnotationType, ProjectMemberRole, TaskStatus
@@ -50,7 +50,7 @@ class CreateClassificationAnnotationMain(CommandLineWithConfirm):
         my_member, _ = self.service.api.get_my_member_in_project(project_id)
         self.my_project_member_role = ProjectMemberRole(my_member["member_role"])
 
-    def _validate_and_prepare_task(self, task_id: str) -> tuple[Optional[dict[str, Any]], bool, Optional[str]]:
+    def _validate_and_prepare_task(self, task_id: str) -> tuple[dict[str, Any] | None, bool, str | None]:
         """
         タスクの検証と準備を行う
 
@@ -76,7 +76,7 @@ class CreateClassificationAnnotationMain(CommandLineWithConfirm):
                 )
                 return None, False, None
 
-        old_account_id: Optional[str] = None
+        old_account_id: str | None = None
         changed_operator = False
 
         if self.is_change_operator_to_me:
@@ -216,7 +216,7 @@ class CreateClassificationAnnotationMain(CommandLineWithConfirm):
 
         return created_count
 
-    def execute_task(self, task_id: str, labels: list[str], task_index: Optional[int] = None) -> bool:
+    def execute_task(self, task_id: str, labels: list[str], task_index: int | None = None) -> bool:
         """
         1個のタスクに対して全体アノテーションを作成する。
 
@@ -260,7 +260,7 @@ class CreateClassificationAnnotationMain(CommandLineWithConfirm):
         else:
             return created_count > 0
 
-    def main(self, task_ids: list[str], labels: list[str], parallelism: Optional[int] = None) -> None:
+    def main(self, task_ids: list[str], labels: list[str], parallelism: int | None = None) -> None:
         """
         メイン処理
 
@@ -392,7 +392,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
+def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "create_classification"
     subcommand_help = "全体アノテーション（Classification）を作成します。"
     description = (

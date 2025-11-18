@@ -1,6 +1,5 @@
 import argparse
 import logging
-from typing import Optional
 
 import annofabapi
 from annofabapi.models import TaskHistory
@@ -53,7 +52,7 @@ class ListTaskHistoryMain:
         all_task_list = self.service.wrapper.get_all_tasks(project_id)
         return [e["task_id"] for e in all_task_list]
 
-    def get_task_history_dict_for_output(self, project_id: str, task_id_list: Optional[list[str]] = None) -> TaskHistoryDict:
+    def get_task_history_dict_for_output(self, project_id: str, task_id_list: list[str] | None = None) -> TaskHistoryDict:
         """出力対象のタスク履歴情報を取得する"""
         if task_id_list is None:
             task_id_list = self.get_all_task_id_list(project_id)
@@ -78,7 +77,7 @@ class ListTaskHistory(CommandLine):
     def print_task_history_list(
         self,
         project_id: str,
-        task_id_list: Optional[list[str]],
+        task_id_list: list[str] | None,
         arg_format: FormatArgument,
     ) -> None:
         """
@@ -143,7 +142,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
+def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "list"
     subcommand_help = "タスク履歴の一覧を出力します。"
     description = "タスク履歴の一覧を出力します。"

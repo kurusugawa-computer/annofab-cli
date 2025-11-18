@@ -5,7 +5,7 @@ import logging
 import uuid
 from collections.abc import Collection
 from enum import Enum
-from typing import Any, Optional
+from typing import Any
 
 from annofabapi.models import OrganizationMemberRole, ProjectJobType, ProjectMemberRole
 
@@ -58,8 +58,8 @@ class CopyProject(CommandLine):
         src_project_id: str,
         dest_project_id: str,
         dest_title: str,
-        dest_overview: Optional[str] = None,
-        copied_targets: Optional[Collection[CopiedTarget]] = None,
+        dest_overview: str | None = None,
+        copied_targets: Collection[CopiedTarget] | None = None,
     ) -> None:
         """
         プロジェクトメンバを、別のプロジェクトにコピーする。
@@ -150,7 +150,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
+def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "copy"
     subcommand_help = "プロジェクトをコピーします。"
     description = "プロジェクトをコピーします。'プロジェクト設定', 'プロジェクトメンバー', 'アノテーション仕様'は必ずコピーされます。"

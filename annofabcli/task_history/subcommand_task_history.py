@@ -1,5 +1,4 @@
 import argparse
-from typing import Optional
 
 import annofabcli
 import annofabcli.common.cli
@@ -17,7 +16,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     annofabcli.task_history.list_all_task_history.add_parser(subparsers)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
+def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "task_history"
     subcommand_help = "タスク履歴関係のサブコマンド"
     description = "タスク履歴関係のサブコマンド"

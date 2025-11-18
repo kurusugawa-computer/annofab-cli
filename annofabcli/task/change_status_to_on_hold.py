@@ -6,7 +6,6 @@ import multiprocessing
 import sys
 import uuid
 from functools import partial
-from typing import Optional
 
 import annofabapi
 import requests
@@ -68,9 +67,9 @@ class ChangingStatusToOnHoldMain(CommandLineWithConfirm):
         self,
         task_id: str,
         *,
-        comment: Optional[str] = None,
-        task_index: Optional[int] = None,
-        task_query: Optional[TaskQuery] = None,
+        comment: str | None = None,
+        task_index: int | None = None,
+        task_query: TaskQuery | None = None,
     ) -> bool:
         """
         Args:
@@ -155,8 +154,8 @@ class ChangingStatusToOnHoldMain(CommandLineWithConfirm):
         self,
         tpl: tuple[int, str],
         *,
-        comment: Optional[str] = None,
-        task_query: Optional[TaskQuery] = None,
+        comment: str | None = None,
+        task_query: TaskQuery | None = None,
     ) -> bool:
         task_index, task_id = tpl
         try:
@@ -174,9 +173,9 @@ class ChangingStatusToOnHoldMain(CommandLineWithConfirm):
         self,
         task_id_list: list[str],
         *,
-        comment: Optional[str] = None,
-        task_query: Optional[TaskQuery] = None,
-        parallelism: Optional[int] = None,
+        comment: str | None = None,
+        task_query: TaskQuery | None = None,
+        parallelism: int | None = None,
     ):
         """
         タスクのステータスを保留中に変更する。
@@ -246,7 +245,7 @@ class ChangingStatusToOnHold(CommandLine):
         task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id)
 
         dict_task_query = annofabcli.common.cli.get_json_from_args(args.task_query)
-        task_query: Optional[TaskQuery] = TaskQuery.from_dict(dict_task_query) if dict_task_query is not None else None
+        task_query: TaskQuery | None = TaskQuery.from_dict(dict_task_query) if dict_task_query is not None else None
 
         project_id = args.project_id
         super().validate_project(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.ACCEPTER, ProjectMemberRole.WORKER])
@@ -286,7 +285,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: Optional[argparse._SubParsersAction] = None) -> argparse.ArgumentParser:
+def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "change_status_to_on_hold"
     subcommand_help = "タスクのステータスを保留に変更します。"
     description = "タスクのステータスを保留に変更します。ただし、操作対象のタスクのステータスは休憩中か未着手である必要があります。"
