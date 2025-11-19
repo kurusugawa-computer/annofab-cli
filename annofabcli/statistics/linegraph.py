@@ -191,7 +191,7 @@ class LineGraph:
         color: Any | None = None,  # noqa: ANN401
         is_secondary_y_axis: bool = False,
         **kwargs,  # noqa: ANN003
-    ) -> tuple[GlyphRenderer, GlyphRenderer]:
+    ) -> GlyphRenderer:
         """
         移動平均用の折れ線を追加する
         """
@@ -212,7 +212,7 @@ class LineGraph:
         )
 
         self.line_glyphs[legend_label] = line
-        return line  # type: ignore[return-value]
+        return line
 
     def process_after_adding_glyphs(self) -> None:
         """
