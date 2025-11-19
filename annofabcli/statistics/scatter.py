@@ -276,7 +276,7 @@ class ScatterGraph:
         """
         code = code % (self.DEFAULT_USER_TEXT_FONT_STYLE, self.DEFAULT_USER_TEXT_FONT_SIZE)
         options = [(user_id, f"{user_id}:{username}") for user_id, username in users]
-        multi_choice = MultiChoice(options=options, title="Find User:", width=300)
+        multi_choice = MultiChoice(options=options, title="Find User:", width=300)  # type: ignore[arg-type]
         multi_choice.js_on_change(
             "value",
             CustomJS(code=code, args=args),

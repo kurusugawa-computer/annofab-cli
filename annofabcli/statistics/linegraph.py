@@ -71,7 +71,7 @@ class LineGraph:
         tooltip_columns: list[str] | None = None,
         **figure_kwargs,  # noqa: ANN003
     ) -> None:
-        fig = figure(
+        fig = figure(  # type: ignore[call-arg]
             title=title,
             x_axis_label=x_axis_label,
             y_axis_label=y_axis_label,
@@ -212,7 +212,7 @@ class LineGraph:
         )
 
         self.line_glyphs[legend_label] = line
-        return line
+        return line  # type: ignore[return-value]
 
     def process_after_adding_glyphs(self) -> None:
         """
@@ -316,7 +316,7 @@ class LineGraph:
         """
         code = code % (self.DEFAULT_LINE_WIDTH)
         options = [(username, f"{user_id}:{username}") for user_id, username in users]
-        multi_choice = MultiChoice(options=options, title="Find User:", width=300)
+        multi_choice = MultiChoice(options=options, title="Find User:", width=300)  # type: ignore[arg-type]
         multi_choice.js_on_change(
             "value",
             CustomJS(code=code, args=args),

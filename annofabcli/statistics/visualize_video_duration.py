@@ -76,7 +76,7 @@ def plot_video_duration(
         df_histogram["interval"] = [f"{left:.1f} to {right:.1f}" for left, right in zip(df_histogram["left"], df_histogram["right"], strict=False)]
 
         source = ColumnDataSource(df_histogram)
-        fig = figure(
+        fig = figure(  # type: ignore[call-arg]
             width=400,
             height=300,
             x_axis_label=x_axis_label,
