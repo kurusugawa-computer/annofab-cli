@@ -66,7 +66,7 @@ class ScatterGraph:
         tooltip_columns: list[str] | None = None,
         **figure_kwargs,  # noqa: ANN003
     ) -> None:
-        fig = figure(
+        fig = figure(  # type: ignore[call-arg]
             title=title,
             x_axis_label=x_axis_label,
             y_axis_label=y_axis_label,
@@ -229,7 +229,7 @@ class ScatterGraph:
         # 理由：名前の表示は`ColumnDataSource`を使っていない（`plot_scatter`メソッド参照）ため、ツールチップには値が"???"と表示される。
         # ユーザーが混乱しないようにするため、名前にカーソルを当てたときはツールチップが表示されないようにする。
         if self._hover_tool is not None and self._scatter_glyphs is not None:
-            self._hover_tool.renderers = list(self._scatter_glyphs.values())  # type: ignore[assignment]
+            self._hover_tool.renderers = list(self._scatter_glyphs.values())
 
     def configure_legend(self):  # noqa: ANN201
         """
@@ -276,7 +276,7 @@ class ScatterGraph:
         """
         code = code % (self.DEFAULT_USER_TEXT_FONT_STYLE, self.DEFAULT_USER_TEXT_FONT_SIZE)
         options = [(user_id, f"{user_id}:{username}") for user_id, username in users]
-        multi_choice = MultiChoice(options=options, title="Find User:", width=300)
+        multi_choice = MultiChoice(options=options, title="Find User:", width=300)  # type: ignore[arg-type]
         multi_choice.js_on_change(
             "value",
             CustomJS(code=code, args=args),

@@ -30,8 +30,7 @@ dependencies = [
     "python-datauri",
     "numpy",
     "pandas>=2,<3",
-    # 3.7.0だと凡例が期待通りグラフ外に表示されないので、一旦3.7未満にする
-    "bokeh>=3.3,<3.7",
+    "bokeh>=3.8",
     "Pillow",
     "typing-extensions>=4.5",
     "ulid-py>=1.1.0",
@@ -44,8 +43,6 @@ dev = [
     "ipython",
     # pandas2.2以上はPython3.12以上
     "pandas>=2.2; python_version>='3.12'",
-    # bokeh3.5以上はPython3.10以上
-    "bokeh>=3.5; python_version>='3.10'",
     # numpy2.1以上はPython3.13以上
     "numpy>=2.1; python_version>='3.13'",
 ]

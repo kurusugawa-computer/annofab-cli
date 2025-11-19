@@ -71,7 +71,7 @@ class LineGraph:
         tooltip_columns: list[str] | None = None,
         **figure_kwargs,  # noqa: ANN003
     ) -> None:
-        fig = figure(
+        fig = figure(  # type: ignore[call-arg]
             title=title,
             x_axis_label=x_axis_label,
             y_axis_label=y_axis_label,
@@ -123,12 +123,12 @@ class LineGraph:
             "right",
         )
         if secondary_y_axis_range is not None:
-            self.figure.extra_y_ranges = {self._SECONDARY_Y_RANGE_NAME: secondary_y_axis_range}  # type: ignore[assignment]
+            self.figure.extra_y_ranges = {self._SECONDARY_Y_RANGE_NAME: secondary_y_axis_range}
         else:
-            self.figure.extra_y_ranges = {self._SECONDARY_Y_RANGE_NAME: DataRange1d()}  # type: ignore[assignment]
+            self.figure.extra_y_ranges = {self._SECONDARY_Y_RANGE_NAME: DataRange1d()}
 
         if primary_y_axis_range is not None:
-            self.figure.y_range = primary_y_axis_range  # type: ignore[assignment]
+            self.figure.y_range = primary_y_axis_range
 
         self.exists_secondary_y_axis = True
 
@@ -191,7 +191,7 @@ class LineGraph:
         color: Any | None = None,  # noqa: ANN401
         is_secondary_y_axis: bool = False,
         **kwargs,  # noqa: ANN003
-    ) -> tuple[GlyphRenderer, GlyphRenderer]:
+    ) -> GlyphRenderer:
         """
         移動平均用の折れ線を追加する
         """
@@ -316,7 +316,7 @@ class LineGraph:
         """
         code = code % (self.DEFAULT_LINE_WIDTH)
         options = [(username, f"{user_id}:{username}") for user_id, username in users]
-        multi_choice = MultiChoice(options=options, title="Find User:", width=300)
+        multi_choice = MultiChoice(options=options, title="Find User:", width=300)  # type: ignore[arg-type]
         multi_choice.js_on_change(
             "value",
             CustomJS(code=code, args=args),
