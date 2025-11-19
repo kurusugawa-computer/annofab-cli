@@ -66,7 +66,7 @@ class ScatterGraph:
         tooltip_columns: list[str] | None = None,
         **figure_kwargs,  # noqa: ANN003
     ) -> None:
-        fig = figure(
+        fig = figure(  # type: ignore[call-arg]
             title=title,
             x_axis_label=x_axis_label,
             y_axis_label=y_axis_label,
@@ -229,7 +229,7 @@ class ScatterGraph:
         # 理由：名前の表示は`ColumnDataSource`を使っていない（`plot_scatter`メソッド参照）ため、ツールチップには値が"???"と表示される。
         # ユーザーが混乱しないようにするため、名前にカーソルを当てたときはツールチップが表示されないようにする。
         if self._hover_tool is not None and self._scatter_glyphs is not None:
-            self._hover_tool.renderers = list(self._scatter_glyphs.values())  # type: ignore[assignment]
+            self._hover_tool.renderers = list(self._scatter_glyphs.values())
 
     def configure_legend(self):  # noqa: ANN201
         """
