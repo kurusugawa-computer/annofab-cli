@@ -7,7 +7,6 @@ from functools import partial
 from typing import Any
 
 import annofabapi
-import annofabapi.utils
 from annofabapi.models import CommentType, TaskPhase, TaskStatus
 
 from annofabcli.comment.utils import get_comment_type_name

@@ -11,9 +11,7 @@ import logging
 from pathlib import Path
 from typing import Any
 
-import bokeh
 import bokeh.layouts
-import bokeh.palettes
 import pandas
 from annofabapi.models import TaskPhase
 from bokeh.models.ui import UIElement

@@ -19,7 +19,6 @@ from annofabapi.parser import (
     lazy_parse_simple_annotation_zip,
 )
 
-import annofabcli
 import annofabcli.common.cli
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,

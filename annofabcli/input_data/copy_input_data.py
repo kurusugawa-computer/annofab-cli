@@ -13,7 +13,6 @@ import annofabapi
 import more_itertools
 from annofabapi.models import ProjectMemberRole
 
-import annofabcli
 import annofabcli.common.cli
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,

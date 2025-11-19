@@ -11,7 +11,6 @@ from typing import Any
 
 from annofabapi.parser import lazy_parse_simple_annotation_dir, lazy_parse_simple_annotation_zip
 
-import annofabcli
 import annofabcli.common.cli
 from annofabcli.common.cli import COMMAND_LINE_ERROR_STATUS_CODE
 from annofabcli.common.facade import TaskQuery, match_annotation_with_task_query

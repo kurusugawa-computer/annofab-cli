@@ -9,7 +9,6 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
-import PIL
 import PIL.Image
 import PIL.ImageDraw
 from annofabapi.dataclass.annotation import SimpleAnnotationDetail

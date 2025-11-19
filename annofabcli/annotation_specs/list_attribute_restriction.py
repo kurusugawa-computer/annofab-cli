@@ -6,7 +6,6 @@ import logging
 import sys
 from pathlib import Path
 
-import annofabcli
 import annofabcli.common.cli
 from annofabcli.annotation_specs.attribute_restriction import AttributeRestrictionMessage, OutputFormat
 from annofabcli.common.cli import (

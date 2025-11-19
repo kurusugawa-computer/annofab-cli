@@ -10,7 +10,6 @@ from pathlib import Path
 import pandas
 from annofabapi.models import ProjectMemberRole, Task, TaskPhase, TaskStatus
 
-import annofabcli
 import annofabcli.common.cli
 from annofabcli.common.cli import (
     ArgumentParser,

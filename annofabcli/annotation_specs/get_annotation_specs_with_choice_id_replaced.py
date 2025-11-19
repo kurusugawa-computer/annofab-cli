@@ -8,7 +8,6 @@ from typing import Any
 
 import more_itertools
 
-import annofabcli
 import annofabcli.common.cli
 from annofabcli.common.cli import (
     ArgumentParser,

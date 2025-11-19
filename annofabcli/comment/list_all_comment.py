@@ -16,7 +16,6 @@ import annofabapi
 import pandas
 from annofabapi.models import CommentType
 
-import annofabcli
 import annofabcli.common.cli
 from annofabcli.comment.list_comment import create_empty_df_comment, create_reply_counter
 from annofabcli.common.cli import ArgumentParser, CommandLine, build_annofabapi_resource_and_login

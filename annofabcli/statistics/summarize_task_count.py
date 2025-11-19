@@ -10,7 +10,6 @@ import pandas
 from annofabapi.models import ProjectMemberRole, Task, TaskPhase, TaskStatus
 from annofabapi.utils import get_number_of_rejections
 
-import annofabcli
 import annofabcli.common.cli
 from annofabcli.common.cli import (
     ArgumentParser,

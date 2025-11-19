@@ -19,7 +19,6 @@ from bokeh.models import LayoutDOM
 from bokeh.models.widgets.markups import Div
 from bokeh.plotting import figure
 
-import annofabcli
 import annofabcli.common.cli
 from annofabcli.common.bokeh import convert_1d_figure_list_to_2d, create_pretext_from_metadata
 from annofabcli.common.cli import (

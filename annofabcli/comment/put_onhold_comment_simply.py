@@ -4,7 +4,6 @@ import sys
 
 from annofabapi.models import CommentType
 
-import annofabcli
 import annofabcli.common.cli
 from annofabcli.comment.put_comment_simply import AddedSimpleComment, PutCommentSimplyMain
 from annofabcli.common.cli import (

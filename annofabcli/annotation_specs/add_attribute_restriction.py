@@ -9,7 +9,6 @@ from typing import Any
 
 import annofabapi
 
-import annofabcli
 import annofabcli.common.cli
 from annofabcli.annotation_specs.attribute_restriction import AttributeRestrictionMessage, OutputFormat
 from annofabcli.common.cli import (

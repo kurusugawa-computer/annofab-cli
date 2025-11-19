@@ -15,7 +15,6 @@ import dictdiffer
 import more_itertools
 from annofabapi.models import ProjectMemberRole
 
-import annofabcli
 import annofabcli.common.cli
 from annofabcli.common.cli import CommandLine, build_annofabapi_resource_and_login
 from annofabcli.common.facade import AnnofabApiFacade, convert_annotation_specs_labels_v2_to_v1

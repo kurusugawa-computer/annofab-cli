@@ -26,7 +26,6 @@ from annofabapi.parser import (
 )
 from dataclasses_json import DataClassJsonMixin, config
 
-import annofabcli
 import annofabcli.common.cli
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
