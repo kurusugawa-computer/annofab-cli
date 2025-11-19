@@ -1,6 +1,5 @@
 import argparse
 
-import annofabcli
 import annofabcli.common.cli
 import annofabcli.project_member.change_project_members
 import annofabcli.project_member.copy_project_members

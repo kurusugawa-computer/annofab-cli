@@ -9,13 +9,11 @@ from functools import partial
 from typing import Any
 
 import annofabapi
-import annofabapi.utils
 import requests
 from annofabapi.dataclass.task import Task
 from annofabapi.models import InputDataType, ProjectMemberRole, TaskPhase, TaskStatus
 from annofabapi.plugin import EditorPluginId
 
-import annofabcli
 import annofabcli.common.cli
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,

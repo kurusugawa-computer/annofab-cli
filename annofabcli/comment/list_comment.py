@@ -9,7 +9,6 @@ import pandas
 import requests
 from annofabapi.models import Comment, CommentType
 
-import annofabcli
 import annofabcli.common.cli
 from annofabcli.common.cli import ArgumentParser, CommandLine, build_annofabapi_resource_and_login
 from annofabcli.common.enums import FormatArgument

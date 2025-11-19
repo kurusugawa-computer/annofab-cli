@@ -32,7 +32,6 @@ from annofabapi.parser import (
 from annofabapi.pydantic_models.additional_data_definition_type import AdditionalDataDefinitionType
 from dataclasses_json import DataClassJsonMixin, config
 
-import annofabcli
 import annofabcli.common.cli
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,

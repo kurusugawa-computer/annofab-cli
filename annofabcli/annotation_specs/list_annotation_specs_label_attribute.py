@@ -13,7 +13,6 @@ from annofabapi.models import Lang
 from annofabapi.util.annotation_specs import get_message_with_lang
 from dataclasses_json import DataClassJsonMixin
 
-import annofabcli
 import annofabcli.common.cli
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,

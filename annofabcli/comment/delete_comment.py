@@ -6,11 +6,9 @@ import sys
 from typing import Any
 
 import annofabapi
-import annofabapi.utils
 import requests
 from annofabapi.models import ProjectMemberRole, TaskStatus
 
-import annofabcli
 import annofabcli.common.cli
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,

@@ -10,9 +10,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-import bokeh
 import bokeh.layouts
-import bokeh.palettes
 import pandas
 from annofabapi.models import TaskPhase, TaskStatus
 from bokeh.models import DataRange1d

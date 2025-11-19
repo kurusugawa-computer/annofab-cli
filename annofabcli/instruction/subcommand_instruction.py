@@ -1,6 +1,5 @@
 import argparse
 
-import annofabcli
 import annofabcli.common.cli
 import annofabcli.instruction.copy_instruction
 import annofabcli.instruction.download_instruction

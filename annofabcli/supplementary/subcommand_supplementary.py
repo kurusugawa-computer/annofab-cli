@@ -1,6 +1,5 @@
 import argparse
 
-import annofabcli
 import annofabcli.common.cli
 import annofabcli.supplementary.delete_supplementary_data
 import annofabcli.supplementary.list_supplementary_data

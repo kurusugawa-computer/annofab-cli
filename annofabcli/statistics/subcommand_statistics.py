@@ -1,8 +1,6 @@
 import argparse
 
-import annofabcli
 import annofabcli.common.cli
-import annofabcli.stat_visualization.merge_visualization_dir
 import annofabcli.statistics.list_annotation_area
 import annofabcli.statistics.list_annotation_attribute
 import annofabcli.statistics.list_annotation_attribute_filled_count

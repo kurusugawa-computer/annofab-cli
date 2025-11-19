@@ -1,6 +1,5 @@
 import argparse
 
-import annofabcli
 import annofabcli.comment.delete_comment
 import annofabcli.comment.download_comment_json
 import annofabcli.comment.list_all_comment

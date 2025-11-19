@@ -1,6 +1,5 @@
 import argparse
 
-import annofabcli
 import annofabcli.common.cli
 import annofabcli.task.cancel_acceptance
 import annofabcli.task.change_operator

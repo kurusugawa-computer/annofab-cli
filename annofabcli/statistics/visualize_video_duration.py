@@ -21,7 +21,6 @@ from bokeh.models.annotations.labels import Title
 from bokeh.models.widgets.markups import PreText
 from bokeh.plotting import ColumnDataSource, figure
 
-import annofabcli
 import annofabcli.common.cli
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,

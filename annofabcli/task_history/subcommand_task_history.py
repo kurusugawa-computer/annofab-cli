@@ -1,6 +1,5 @@
 import argparse
 
-import annofabcli
 import annofabcli.common.cli
 import annofabcli.task_history.download_task_history_json
 import annofabcli.task_history.list_all_task_history

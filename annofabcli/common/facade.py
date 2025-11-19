@@ -6,7 +6,6 @@ from dataclasses import dataclass
 from typing import Any
 
 import annofabapi
-import annofabapi.utils
 import more_itertools
 from annofabapi.dataclass.annotation import AdditionalDataV1
 from annofabapi.dataclass.input import InputData

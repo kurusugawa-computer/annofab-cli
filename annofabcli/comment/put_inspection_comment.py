@@ -7,7 +7,6 @@ import sys
 
 from annofabapi.models import CommentType, ProjectMemberRole
 
-import annofabcli
 import annofabcli.common.cli
 from annofabcli.comment.put_comment import PutCommentMain, convert_cli_comments
 from annofabcli.common.cli import (

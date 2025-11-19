@@ -1,6 +1,5 @@
 import argparse
 
-import annofabcli
 import annofabcli.common.cli
 import annofabcli.filesystem.draw_annotation
 import annofabcli.filesystem.filter_annotation

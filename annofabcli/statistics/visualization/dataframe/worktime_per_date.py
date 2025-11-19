@@ -11,9 +11,7 @@ from pathlib import Path
 from typing import Any
 
 import annofabapi
-import bokeh
 import bokeh.layouts
-import bokeh.palettes
 import pandas
 from bokeh.models.ui import UIElement
 from bokeh.plotting import ColumnDataSource

@@ -12,9 +12,7 @@ from enum import Enum
 from pathlib import Path
 from typing import Any, Literal
 
-import bokeh
 import bokeh.layouts
-import bokeh.palettes
 import numpy
 import pandas
 from annofabapi.models import TaskPhase

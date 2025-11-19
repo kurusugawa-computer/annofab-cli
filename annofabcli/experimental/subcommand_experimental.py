@@ -1,6 +1,5 @@
 import argparse
 
-import annofabcli
 import annofabcli.common.cli
 from annofabcli.experimental import list_out_of_range_annotation_for_movie
 

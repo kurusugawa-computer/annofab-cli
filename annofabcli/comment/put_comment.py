@@ -7,7 +7,6 @@ from dataclasses import dataclass
 from typing import Any
 
 import annofabapi
-import annofabapi.utils
 import requests
 from annofabapi.models import CommentType, TaskPhase, TaskStatus
 from dataclasses_json import DataClassJsonMixin

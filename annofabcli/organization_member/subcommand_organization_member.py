@@ -1,6 +1,5 @@
 import argparse
 
-import annofabcli
 import annofabcli.common.cli
 import annofabcli.organization_member.change_organization_member
 import annofabcli.organization_member.delete_organization_member

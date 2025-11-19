@@ -13,7 +13,6 @@ import pandas
 from annofabapi.models import InputDataType, ProjectMemberRole
 from dataclasses_json import DataClassJsonMixin
 
-import annofabcli
 import annofabcli.common.cli
 from annofabcli.common.annofab.annotation_zip import lazy_parse_simple_annotation_by_input_data
 from annofabcli.common.cli import COMMAND_LINE_ERROR_STATUS_CODE, ArgumentParser, CommandLine, build_annofabapi_resource_and_login, get_list_from_args

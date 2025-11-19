@@ -7,7 +7,6 @@ from typing import Any
 import annofabapi
 import bokeh
 import bokeh.layouts
-import bokeh.palettes
 import numpy
 import pandas
 import pytz
