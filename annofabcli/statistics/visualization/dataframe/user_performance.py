@@ -1161,7 +1161,7 @@ class UserPerformance:
             scatter_obj.process_after_adding_glyphs()
 
         div_element = self._create_div_element()
-        div_element.text = div_element.text + """円の大きさ：作業時間<br>"""  # type: ignore[operator]
+        div_element.text = div_element.text + """円の大きさ：作業時間<br>"""
 
         element_list = [div_element, *[e.layout for e in scatter_obj_list]]
         if metadata is not None:
