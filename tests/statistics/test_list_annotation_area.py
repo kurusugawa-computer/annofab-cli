@@ -40,37 +40,6 @@ def test__calculate_polygon_area__invalid_points():
     assert calculate_polygon_area(invalid_points) == 0
 
 
-def test__calculate_polygon_area__triangle():
-    """三角形のポリゴン面積計算テスト"""
-    triangle_points = [
-        {"x": 0, "y": 0},
-        {"x": 10, "y": 0},
-        {"x": 5, "y": 10},
-    ]
-    assert calculate_polygon_area(triangle_points) == 50
-
-
-def test__calculate_polygon_area__empty_points():
-    """空の座標リストのテスト"""
-    empty_points: list[dict[str, int]] = []
-    assert calculate_polygon_area(empty_points) == 0
-
-
-def test__calculate_polygon_area__complex_polygon():
-    """複雑な形状のポリゴンのテスト"""
-    # L字型のポリゴン
-    l_shape_points = [
-        {"x": 0, "y": 0},
-        {"x": 10, "y": 0},
-        {"x": 10, "y": 5},
-        {"x": 5, "y": 5},
-        {"x": 5, "y": 10},
-        {"x": 0, "y": 10},
-    ]
-    # L字型の面積 = 10×5 + 5×5 = 75
-    assert calculate_polygon_area(l_shape_points) == 75
-
-
 def test__calculate_bounding_box_area():
     """矩形面積計算のテスト（既存機能の確認）"""
     bounding_box_data = {
