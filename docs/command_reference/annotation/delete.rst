@@ -34,7 +34,7 @@ Examples
 削除するアノテーションを絞り込む場合は、 ``--annotation_query`` を指定してください。
 ``--annotation_query`` のサンプルは、 `Command line options <../../user_guide/command_line_options.html#annotation-query-aq>`_ を参照してください。
 
-以下のコマンドは、ラベル名（英語）の値が "car" で、属性名(英語)が "occluded" である値が ``false``（"occluded"チェックボックスをOFF）であるアノテーションを削除します。
+以下のコマンドは、ラベル名（英語）の値が "car" で、属性名(英語)が "occluded" である値が ``false`` （"occluded"チェックボックスをOFF）であるアノテーションを削除します。
 
 
 .. code-block::
