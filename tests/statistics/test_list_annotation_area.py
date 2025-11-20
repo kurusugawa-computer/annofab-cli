@@ -21,18 +21,8 @@ def test__get_annotation_area_info_list_from_annotation_path():
     assert annotation_area_info_list[2].annotation_area == 0
 
 
-def test__calculate_polygon_area():
-    """ポリゴン面積計算のテスト"""
-    # 正方形のテスト（面積100）
-    square_points = [
-        {"x": 0, "y": 0},
-        {"x": 10, "y": 0},
-        {"x": 10, "y": 10},
-        {"x": 0, "y": 10},
-    ]
-    assert calculate_polygon_area(square_points) == 100
-
-    # 三角形のテスト（面積50）
+def test__calculate_polygon_area__triangle():
+    """三角形のポリゴン面積計算テスト"""
     triangle_points = [
         {"x": 0, "y": 0},
         {"x": 10, "y": 0},
@@ -40,16 +30,45 @@ def test__calculate_polygon_area():
     ]
     assert calculate_polygon_area(triangle_points) == 50
 
-    # 点が2個以下のテスト（面積0）
+
+def test__calculate_polygon_area__invalid_points():
+    """点が2個以下の無効なポリゴンのテスト"""
     invalid_points = [
         {"x": 0, "y": 0},
         {"x": 10, "y": 0},
     ]
     assert calculate_polygon_area(invalid_points) == 0
 
-    # 点が0個のテスト（面積0）
+
+def test__calculate_polygon_area__triangle():
+    """三角形のポリゴン面積計算テスト"""
+    triangle_points = [
+        {"x": 0, "y": 0},
+        {"x": 10, "y": 0},
+        {"x": 5, "y": 10},
+    ]
+    assert calculate_polygon_area(triangle_points) == 50
+
+
+def test__calculate_polygon_area__empty_points():
+    """空の座標リストのテスト"""
     empty_points: list[dict[str, int]] = []
     assert calculate_polygon_area(empty_points) == 0
+
+
+def test__calculate_polygon_area__complex_polygon():
+    """複雑な形状のポリゴンのテスト"""
+    # L字型のポリゴン
+    l_shape_points = [
+        {"x": 0, "y": 0},
+        {"x": 10, "y": 0},
+        {"x": 10, "y": 5},
+        {"x": 5, "y": 5},
+        {"x": 5, "y": 10},
+        {"x": 0, "y": 10},
+    ]
+    # L字型の面積 = 10×5 + 5×5 = 75
+    assert calculate_polygon_area(l_shape_points) == 75
 
 
 def test__calculate_bounding_box_area():

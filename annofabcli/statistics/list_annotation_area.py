@@ -94,22 +94,17 @@ def calculate_polygon_area(points: list[dict[str, int]]) -> int:
         int: ポリゴンの面積（ピクセル単位）
     """
     if len(points) < 3:
-        # 三角形未満の場合は面積0とする
+        # Annofabはポリゴンとポリラインの区別がないため、点が3個未満の場合はあり得る
+        # したがって、assertなどではなく、面積0を返す
         return 0
 
-    try:
-        # Shapelyのポリゴンオブジェクトを作成
-        coords = [(point["x"], point["y"]) for point in points]
-        polygon = Polygon(coords)
+    # Shapelyのポリゴンオブジェクトを作成
+    coords = [(point["x"], point["y"]) for point in points]
+    polygon = Polygon(coords)
 
-        # 面積を計算（自己交差がある場合も適切に処理される）
-        area = polygon.area
-        return round(area)
-
-    except Exception:
-        # ポリゴンの作成に失敗した場合は0を返す
-        logger.warning(f"ポリゴンの面積計算に失敗しました。座標: {points}")
-        return 0
+    # 面積を計算（自己交差がある場合も適切に処理される）
+    area = polygon.area
+    return round(area)
 
 
 def get_annotation_area_info_list(parser: SimpleAnnotationParser, simple_annotation: dict[str, Any]) -> list[AnnotationAreaInfo]:
@@ -120,7 +115,7 @@ def get_annotation_area_info_list(parser: SimpleAnnotationParser, simple_annotat
         elif detail["data"]["_type"] == "BoundingBox":
             annotation_area = calculate_bounding_box_area(detail["data"])
         elif detail["data"]["_type"] == "Points":
-            annotation_area = calculate_polygon_area(detail["data"].get("points", []))
+            annotation_area = calculate_polygon_area(detail["data"]["points"])
         else:
             continue
 
