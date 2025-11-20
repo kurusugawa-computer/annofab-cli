@@ -20,6 +20,7 @@ from annofabapi.parser import (
 )
 from annofabapi.segmentation import read_binary_image
 from dataclasses_json import DataClassJsonMixin
+from shapely.geometry import Polygon
 
 import annofabcli.common.cli
 from annofabcli.common.cli import (
@@ -82,6 +83,30 @@ def calculate_segmentation_area(outer_file: Path) -> int:
     return int(numpy.count_nonzero(nd_array))
 
 
+def calculate_polygon_area(points: list[dict[str, int]]) -> int:
+    """
+    Shapelyを使ってポリゴンの面積を計算する
+
+    Args:
+        points: ポリゴンの頂点座標のリスト [{"x": int, "y": int}, ...]
+
+    Returns:
+        int: ポリゴンの面積（ピクセル単位）
+    """
+    if len(points) < 3:
+        # Annofabはポリゴンとポリラインの区別がないため、点が3個未満の場合はあり得る
+        # したがって、assertなどではなく、面積0を返す
+        return 0
+
+    # Shapelyのポリゴンオブジェクトを作成
+    coords = [(point["x"], point["y"]) for point in points]
+    polygon = Polygon(coords)
+
+    # 面積を計算（自己交差がある場合も適切に処理される）
+    area = polygon.area
+    return round(area)
+
+
 def get_annotation_area_info_list(parser: SimpleAnnotationParser, simple_annotation: dict[str, Any]) -> list[AnnotationAreaInfo]:
     result = []
     for detail in simple_annotation["details"]:
@@ -89,7 +114,8 @@ def get_annotation_area_info_list(parser: SimpleAnnotationParser, simple_annotat
             annotation_area = calculate_segmentation_area(parser.open_outer_file(detail["data"]["data_uri"]))
         elif detail["data"]["_type"] == "BoundingBox":
             annotation_area = calculate_bounding_box_area(detail["data"])
-
+        elif detail["data"]["_type"] == "Points":
+            annotation_area = calculate_polygon_area(detail["data"]["points"])
         else:
             continue
 
@@ -174,7 +200,7 @@ def print_annotation_area(
         task_query=task_query,
     )
 
-    logger.info(f"{len(annotation_area_list)} 件のタスクに含まれる塗りつぶしアノテーションのピクセル数情報を出力します。")
+    logger.info(f"{len(annotation_area_list)} 件のタスクに含まれる塗りつぶし、矩形、ポリゴンアノテーションの面積情報を出力します。")
 
     if output_format == FormatArgument.CSV:
         df = create_df(annotation_area_list)
@@ -310,7 +336,7 @@ def main(args: argparse.Namespace) -> None:
 
 def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "list_annotation_area"
-    subcommand_help = "塗りつぶしアノテーションまたは矩形アノテーションの面積を出力します。"
+    subcommand_help = "塗りつぶし、矩形、ポリゴンアノテーションの面積を出力します。"
     epilog = "オーナロールまたはアノテーションユーザロールを持つユーザで実行してください。"
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description=subcommand_help, epilog=epilog)
     parse_args(parser)

@@ -32,6 +32,7 @@ dependencies = [
     "pandas>=2,<3",
     "bokeh>=3.8",
     "Pillow",
+    "shapely",
     "typing-extensions>=4.5",
     "ulid-py>=1.1.0",
     # Python 3.14サポートのためpydantic 2.12以上が必要
