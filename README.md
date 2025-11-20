@@ -76,12 +76,3 @@ $ annofabcli task reject --project_id prj1 --task_id file://tasks.txt --cancel_a
   --comment "carラベルのoccluded属性を見直してください"
 
 ```
-
-# 補足
-
-# Windowsでannofabcliを使う場合
-WindowsのコマンドプロンプトやPowerShellでannofabcliを使う場合、JSON文字列内の二重引用をエスケープする必要があります。
-
-```
-> annofabcli task list --project_id prj1  --task_query '{"\status\": \"complete\"}'
-```
