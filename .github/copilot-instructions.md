@@ -10,7 +10,7 @@ AnnofabのCLIです。
 * ドキュメントの実行: `make docs`
 
 ## 技術スタック
-* Python 3.9 以上
+* Python 3.10 以上
 * テストフレームワーク: Pytest v8 以上
 
 ## ディレクトリ構造概要
