@@ -83,17 +83,16 @@ def calculate_segmentation_area(outer_file: Path) -> int:
     return int(numpy.count_nonzero(nd_array))
 
 
-def calculate_polygon_area(data: dict[str, Any]) -> int:
+def calculate_polygon_area(points: list[dict[str, int]]) -> int:
     """
     Shapelyを使ってポリゴンの面積を計算する
 
     Args:
-        data: ポリゴンアノテーションのデータ（pointsを含む）
+        points: ポリゴンの頂点座標のリスト [{"x": int, "y": int}, ...]
 
     Returns:
         int: ポリゴンの面積（ピクセル単位）
     """
-    points = data.get("points", [])
     if len(points) < 3:
         # 三角形未満の場合は面積0とする
         return 0
@@ -109,7 +108,7 @@ def calculate_polygon_area(data: dict[str, Any]) -> int:
 
     except Exception:
         # ポリゴンの作成に失敗した場合は0を返す
-        logger.warning(f"ポリゴンの面積計算に失敗しました。データ: {data}")
+        logger.warning(f"ポリゴンの面積計算に失敗しました。座標: {points}")
         return 0
 
 
@@ -121,7 +120,7 @@ def get_annotation_area_info_list(parser: SimpleAnnotationParser, simple_annotat
         elif detail["data"]["_type"] == "BoundingBox":
             annotation_area = calculate_bounding_box_area(detail["data"])
         elif detail["data"]["_type"] == "Points":
-            annotation_area = calculate_polygon_area(detail["data"])
+            annotation_area = calculate_polygon_area(detail["data"].get("points", []))
         else:
             continue
 

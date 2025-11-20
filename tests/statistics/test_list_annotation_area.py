@@ -24,42 +24,32 @@ def test__get_annotation_area_info_list_from_annotation_path():
 def test__calculate_polygon_area():
     """ポリゴン面積計算のテスト"""
     # 正方形のテスト（面積100）
-    square_data = {
-        "points": [
-            {"x": 0, "y": 0},
-            {"x": 10, "y": 0},
-            {"x": 10, "y": 10},
-            {"x": 0, "y": 10},
-        ]
-    }
-    assert calculate_polygon_area(square_data) == 100
+    square_points = [
+        {"x": 0, "y": 0},
+        {"x": 10, "y": 0},
+        {"x": 10, "y": 10},
+        {"x": 0, "y": 10},
+    ]
+    assert calculate_polygon_area(square_points) == 100
 
     # 三角形のテスト（面積50）
-    triangle_data = {
-        "points": [
-            {"x": 0, "y": 0},
-            {"x": 10, "y": 0},
-            {"x": 5, "y": 10},
-        ]
-    }
-    assert calculate_polygon_area(triangle_data) == 50
+    triangle_points = [
+        {"x": 0, "y": 0},
+        {"x": 10, "y": 0},
+        {"x": 5, "y": 10},
+    ]
+    assert calculate_polygon_area(triangle_points) == 50
 
     # 点が2個以下のテスト（面積0）
-    invalid_data = {
-        "points": [
-            {"x": 0, "y": 0},
-            {"x": 10, "y": 0},
-        ]
-    }
-    assert calculate_polygon_area(invalid_data) == 0
+    invalid_points = [
+        {"x": 0, "y": 0},
+        {"x": 10, "y": 0},
+    ]
+    assert calculate_polygon_area(invalid_points) == 0
 
     # 点が0個のテスト（面積0）
-    empty_data = {"points": []}
-    assert calculate_polygon_area(empty_data) == 0
-
-    # pointsキーが存在しないテスト（面積0）  
-    no_points_data = {}
-    assert calculate_polygon_area(no_points_data) == 0
+    empty_points: list[dict[str, int]] = []
+    assert calculate_polygon_area(empty_points) == 0
 
 
 def test__calculate_bounding_box_area():
