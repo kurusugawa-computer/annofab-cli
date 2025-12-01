@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 
 from annofabcli.__main__ import main
-from annofabcli.annotation_zip.list_range_annotation import get_range_annotation_info_list
+from annofabcli.annotation_zip.list_range_annotation import create_df, get_range_annotation_info_list
 
 out_dir = Path("tests/out/annotation_zip")
 data_dir = Path("tests/data/annotation_zip")
@@ -110,6 +110,33 @@ class TestGetRangeAnnotationInfoList:
         assert "traffic_light" in labels
         assert "car" in labels
         assert "person" not in labels
+
+
+class TestCreateDf:
+    """create_df関数のテストクラス"""
+
+    def test_create_df_with_empty_list(self):
+        """空のリストで呼び出した場合に正しく空のDataFrameが返されることをテスト"""
+        result = create_df([])
+
+        assert result.empty
+        # 基本列が存在することを確認
+        expected_columns = [
+            "project_id",
+            "task_id",
+            "task_status",
+            "task_phase",
+            "task_phase_stage",
+            "input_data_id",
+            "input_data_name",
+            "updated_datetime",
+            "label",
+            "annotation_id",
+            "begin_second",
+            "end_second",
+            "duration_second",
+        ]
+        assert list(result.columns) == expected_columns
 
 
 @pytest.mark.access_webapi

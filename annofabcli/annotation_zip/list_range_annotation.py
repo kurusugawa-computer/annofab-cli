@@ -133,6 +133,11 @@ def create_df(
         "end_second",
         "duration_second",
     ]
+
+    if df.empty:
+        # 空のDataFrameの場合は、base_columnsのみで空のDataFrameを返す
+        return pandas.DataFrame(columns=base_columns)
+
     attribute_columns = [col for col in df.columns if col.startswith("attributes.")]
     columns = base_columns + attribute_columns
 
