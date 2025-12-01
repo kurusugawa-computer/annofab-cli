@@ -5,13 +5,12 @@ import logging
 import sys
 import tempfile
 from collections.abc import Collection
-from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
 import pandas
+import pydantic
 from annofabapi.models import InputDataType, ProjectMemberRole
-from dataclasses_json import DataClassJsonMixin
 from shapely.errors import ShapelyError
 from shapely.geometry import Polygon
 
@@ -30,8 +29,11 @@ from annofabcli.common.utils import print_csv, print_json
 logger = logging.getLogger(__name__)
 
 
-@dataclass(frozen=True)
-class AnnotationPolygonInfo(DataClassJsonMixin):
+class AnnotationPolygonInfo(pydantic.BaseModel):
+    """
+    ポリゴンアノテーションの情報
+    """
+
     project_id: str
     task_id: str
     task_status: str
@@ -240,9 +242,9 @@ def print_annotation_polygon(
 
     elif output_format in [FormatArgument.PRETTY_JSON, FormatArgument.JSON]:
         json_is_pretty = output_format == FormatArgument.PRETTY_JSON
-        # DataClassJsonMixinを使用したtoJSON処理
+        # Pydantic BaseModelを使用したJSON処理
         print_json(
-            [e.to_dict(encode_json=True) for e in annotation_polygon_list],
+            [e.model_dump() for e in annotation_polygon_list],
             is_pretty=json_is_pretty,
             output=output_file,
         )
