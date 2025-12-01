@@ -9,9 +9,8 @@ from pathlib import Path
 from typing import Any
 
 import pandas
-import pydantic
 from annofabapi.models import InputDataType, ProjectMemberRole
-from pydantic import ConfigDict
+from pydantic import BaseModel, ConfigDict
 from shapely.errors import ShapelyError
 from shapely.geometry import Polygon
 
@@ -30,7 +29,7 @@ from annofabcli.common.utils import print_csv, print_json
 logger = logging.getLogger(__name__)
 
 
-class AnnotationPolygonInfo(pydantic.BaseModel):
+class AnnotationPolygonInfo(BaseModel):
     """
     ポリゴンアノテーションの情報
     """
