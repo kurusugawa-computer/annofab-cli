@@ -115,9 +115,6 @@ def get_range_annotation_info_list_from_annotation_path(
 def create_df(
     range_annotation_list: list[RangeAnnotationInfo],
 ) -> pandas.DataFrame:
-    tmp_range_annotation_list = [e.to_dict(encode_json=True) for e in range_annotation_list]
-    df = pandas.json_normalize(tmp_range_annotation_list)
-
     base_columns = [
         "project_id",
         "task_id",
@@ -134,9 +131,12 @@ def create_df(
         "duration_second",
     ]
 
-    if df.empty:
-        # 空のDataFrameの場合は、base_columnsのみで空のDataFrameを返す
+    if not range_annotation_list:
+        # 空のリストの場合は、base_columnsのみで空のDataFrameを返す
         return pandas.DataFrame(columns=base_columns)
+
+    tmp_range_annotation_list = [e.to_dict(encode_json=True) for e in range_annotation_list]
+    df = pandas.json_normalize(tmp_range_annotation_list)
 
     attribute_columns = [col for col in df.columns if col.startswith("attributes.")]
     columns = base_columns + attribute_columns
