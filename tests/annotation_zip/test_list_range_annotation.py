@@ -63,6 +63,27 @@ class TestGetRangeAnnotationInfoList:
         assert second_annotation.duration_second == 5.0
         assert second_annotation.attributes == {"type": "adult"}
 
+    def test_get_range_annotation_info_list_with_missing_attributes(self):
+        """attributes フィールドが存在しない場合に空の辞書がセットされることをテスト"""
+        simple_annotation = {
+            "project_id": "test_project",
+            "task_id": "test_task",
+            "task_phase": "annotation",
+            "task_phase_stage": 1,
+            "task_status": "working",
+            "input_data_id": "test_video.mp4",
+            "input_data_name": "test_video.mp4",
+            "updated_datetime": "2023-01-01T00:00:00+09:00",
+            "details": [
+                {"label": "traffic_light", "annotation_id": "anno1", "data": {"_type": "Range", "begin": 5000, "end": 10000}},
+            ],
+        }
+
+        result = get_range_annotation_info_list(simple_annotation)
+
+        assert len(result) == 1
+        assert result[0].attributes == {}
+
     def test_get_range_annotation_info_list_with_label_filter(self):
         """target_label_names でフィルタリングが正しく機能するかテスト"""
         simple_annotation = {

@@ -81,7 +81,7 @@ def get_range_annotation_info_list(simple_annotation: dict[str, Any], *, target_
                     end_second=end_second,
                     duration_second=duration_second,
                     updated_datetime=simple_annotation["updated_datetime"],
-                    attributes=detail["attributes"],
+                    attributes=detail.get("attributes", {}),
                 )
             )
 
