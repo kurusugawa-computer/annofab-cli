@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import argparse
 import logging
 import sys
@@ -10,6 +12,7 @@ from typing import Any
 import pandas
 from annofabapi.models import InputDataType, ProjectMemberRole
 from dataclasses_json import DataClassJsonMixin
+from shapely.errors import ShapelyError
 from shapely.geometry import Polygon
 
 import annofabcli.common.cli
@@ -61,11 +64,12 @@ def calculate_polygon_properties(points: list[dict[str, int]]) -> tuple[float | 
     ポリゴンの面積、重心、外接矩形のサイズを計算する。
 
     Args:
-        points: ポリゴンの頂点リスト
+        points: ポリゴンの頂点リスト。各頂点は整数座標 {"x": int, "y": int} の形式。
 
     Returns:
         (面積, 重心, 外接矩形の幅, 外接矩形の高さ) のタプル。
-        2点のポリラインの場合は (None, None, None, None) を返す。
+        2点以下の場合はポリラインなので、(None, None, None, None) を返す。
+        無効なポリゴン（自己交差など）の場合も (None, None, None, None) を返す。
     """
     if len(points) < 3:
         # 2点以下の場合はポリラインなので、NA扱い
@@ -87,7 +91,7 @@ def calculate_polygon_properties(points: list[dict[str, int]]) -> tuple[float | 
         minx, miny, maxx, maxy = polygon.bounds
         bbox_width = maxx - minx
         bbox_height = maxy - miny
-    except Exception:
+    except (ValueError, ShapelyError):
         # 無効なポリゴン（例：自己交差など）の場合はNA扱い
         return None, None, None, None
     else:
