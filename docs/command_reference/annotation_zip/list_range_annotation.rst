@@ -46,7 +46,11 @@ Examples
         "annotation_id": "ann1",
         "begin_second": 10.5,
         "end_second": 15.8,
-        "duration_second": 5.3
+        "duration_second": 5.3,
+        "attributes": {
+          "speaker": "male",
+          "language": "ja"
+        }
       }
     ]
 
@@ -55,9 +59,9 @@ Examples
 -------------------------------
 
 .. csv-table::
-   :header: project_id,task_id,task_status,task_phase,task_phase_stage,input_data_id,input_data_name,updated_datetime,label,annotation_id,begin_second,end_second,duration_second
+   :header: project_id,task_id,task_status,task_phase,task_phase_stage,input_data_id,input_data_name,updated_datetime,label,annotation_id,begin_second,end_second,duration_second,attributes.speaker,attributes.language
 
-    proj1,task_00,complete,annotation,1,input1,video1.mp4,2023-10-01T12:00:00.000+09:00,音声,ann1,10.5,15.8,5.3
+    proj1,task_00,complete,annotation,1,input1,video1.mp4,2023-10-01T12:00:00.000+09:00,音声,ann1,10.5,15.8,5.3,male,ja
 
 
 出力項目
@@ -78,6 +82,8 @@ CSV形式およびJSON形式で以下の項目が出力されます：
 * ``begin_second``: 区間の開始時刻（秒）
 * ``end_second``: 区間の終了時刻（秒）
 * ``duration_second``: 区間の長さ（秒）
+* ``attributes``: アノテーションの属性情報（JSON形式）
+* ``attributes.{属性名}``: 各属性の値（CSV形式）
 
 
 Usage Details
