@@ -28,8 +28,8 @@ class TestGetRangeAnnotationInfoList:
             "input_data_name": "test_video.mp4",
             "updated_datetime": "2023-01-01T00:00:00+09:00",
             "details": [
-                {"label": "traffic_light", "annotation_id": "anno1", "data": {"_type": "Range", "begin": 5000, "end": 10000}},
-                {"label": "person", "annotation_id": "anno2", "data": {"_type": "Range", "begin": 15000, "end": 20000}},
+                {"label": "traffic_light", "annotation_id": "anno1", "data": {"_type": "Range", "begin": 5000, "end": 10000}, "attributes": {"color": "red", "occluded": False}},
+                {"label": "person", "annotation_id": "anno2", "data": {"_type": "Range", "begin": 15000, "end": 20000}, "attributes": {"type": "adult"}},
             ],
         }
 
@@ -52,6 +52,7 @@ class TestGetRangeAnnotationInfoList:
         assert first_annotation.begin_second == 5.0
         assert first_annotation.end_second == 10.0
         assert first_annotation.duration_second == 5.0
+        assert first_annotation.attributes == {"color": "red", "occluded": False}
 
         # 2番目のアノテーション
         second_annotation = result[1]
@@ -60,6 +61,7 @@ class TestGetRangeAnnotationInfoList:
         assert second_annotation.begin_second == 15.0
         assert second_annotation.end_second == 20.0
         assert second_annotation.duration_second == 5.0
+        assert second_annotation.attributes == {"type": "adult"}
 
     def test_get_range_annotation_info_list_with_label_filter(self):
         """target_label_names でフィルタリングが正しく機能するかテスト"""
@@ -73,9 +75,9 @@ class TestGetRangeAnnotationInfoList:
             "input_data_name": "test_video.mp4",
             "updated_datetime": "2023-01-01T00:00:00+09:00",
             "details": [
-                {"label": "traffic_light", "annotation_id": "anno1", "data": {"_type": "Range", "begin": 5000, "end": 10000}},
-                {"label": "person", "annotation_id": "anno2", "data": {"_type": "Range", "begin": 15000, "end": 20000}},
-                {"label": "car", "annotation_id": "anno3", "data": {"_type": "Range", "begin": 25000, "end": 30000}},
+                {"label": "traffic_light", "annotation_id": "anno1", "data": {"_type": "Range", "begin": 5000, "end": 10000}, "attributes": {"color": "red"}},
+                {"label": "person", "annotation_id": "anno2", "data": {"_type": "Range", "begin": 15000, "end": 20000}, "attributes": {"type": "adult"}},
+                {"label": "car", "annotation_id": "anno3", "data": {"_type": "Range", "begin": 25000, "end": 30000}, "attributes": {"type": "sedan"}},
             ],
         }
 

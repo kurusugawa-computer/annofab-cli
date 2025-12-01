@@ -47,6 +47,7 @@ class RangeAnnotationInfo(DataClassJsonMixin):
     begin_second: float
     end_second: float
     duration_second: float
+    attributes: dict[str, str | int | bool]
 
 
 def get_range_annotation_info_list(simple_annotation: dict[str, Any], *, target_label_names: Collection[str] | None = None) -> list[RangeAnnotationInfo]:
@@ -80,6 +81,7 @@ def get_range_annotation_info_list(simple_annotation: dict[str, Any], *, target_
                     end_second=end_second,
                     duration_second=duration_second,
                     updated_datetime=simple_annotation["updated_datetime"],
+                    attributes=detail["attributes"],
                 )
             )
 
@@ -113,7 +115,10 @@ def get_range_annotation_info_list_from_annotation_path(
 def create_df(
     range_annotation_list: list[RangeAnnotationInfo],
 ) -> pandas.DataFrame:
-    columns = [
+    tmp_range_annotation_list = [e.to_dict(encode_json=True) for e in range_annotation_list]
+    df = pandas.json_normalize(tmp_range_annotation_list)
+
+    base_columns = [
         "project_id",
         "task_id",
         "task_status",
@@ -128,7 +133,8 @@ def create_df(
         "end_second",
         "duration_second",
     ]
-    df = pandas.DataFrame([e.to_dict(encode_json=True) for e in range_annotation_list], columns=columns)
+    attribute_columns = [col for col in df.columns if col.startswith("attributes.")]
+    columns = base_columns + attribute_columns
 
     return df[columns]
 
