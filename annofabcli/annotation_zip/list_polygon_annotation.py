@@ -11,6 +11,7 @@ from typing import Any
 import pandas
 import pydantic
 from annofabapi.models import InputDataType, ProjectMemberRole
+from pydantic import ConfigDict
 from shapely.errors import ShapelyError
 from shapely.geometry import Polygon
 
@@ -33,6 +34,8 @@ class AnnotationPolygonInfo(pydantic.BaseModel):
     """
     ポリゴンアノテーションの情報
     """
+
+    model_config = ConfigDict(frozen=True)
 
     project_id: str
     task_id: str
