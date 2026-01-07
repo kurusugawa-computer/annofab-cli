@@ -114,13 +114,20 @@ CSVまたはJSON形式で以下の項目が出力されます。
 
 3Dバウンディングボックス情報
 ----------------------------------------------------------------------
+
+アノテーションJSONと同様の形式で出力されます。
+
 * dimensions: サイズ情報（width, height, depth）
 * location: 中心座標（x, y, z）
 * rotation: 回転情報（x=roll, y=pitch, z=yaw）
 * direction: 方向ベクトル（front, up）
+    * CSV形式では出力されません
+
 
 追加情報
 ----------------------------------------------------------------------
+アノテーションJSONに含まれていない以下の項目も出力されます。
+
 * volume: 体積（width × height × depth）
 * footprint_area: 底面積（width × depth）。地面占有面積。
 * bottom_z: 底面のZ座標（location.z - height/2）。回転は考慮していない。
