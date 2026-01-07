@@ -81,7 +81,7 @@ def get_range_annotation_info_list(simple_annotation: dict[str, Any], *, target_
                     end_second=end_second,
                     duration_second=duration_second,
                     updated_datetime=simple_annotation["updated_datetime"],
-                    attributes=detail.get("attributes", {}),
+                    attributes=detail["attributes"],
                 )
             )
 
@@ -138,7 +138,7 @@ def create_df(
     tmp_range_annotation_list = [e.to_dict(encode_json=True) for e in range_annotation_list]
     df = pandas.json_normalize(tmp_range_annotation_list)
 
-    attribute_columns = [col for col in df.columns if col.startswith("attributes.")]
+    attribute_columns = sorted(col for col in df.columns if col.startswith("attributes."))
     columns = base_columns + attribute_columns
 
     return df[columns]
