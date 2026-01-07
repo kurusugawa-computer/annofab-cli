@@ -152,7 +152,6 @@ def create_df(
     annotation_bbox_list: list[Annotation3DBoundingBoxInfo],
 ) -> pandas.DataFrame:
     tmp_annotation_bbox_list = [e.to_dict(encode_json=True) for e in annotation_bbox_list]
-    df = pandas.json_normalize(tmp_annotation_bbox_list)
 
     base_columns = [
         "project_id",
@@ -179,6 +178,12 @@ def create_df(
         "bottom_z",
         "top_z",
     ]
+
+    if len(tmp_annotation_bbox_list) == 0:
+        # 空のDataFrameの場合、base_columnsの列を持つ空のDataFrameを作成
+        return pandas.DataFrame(columns=base_columns)
+
+    df = pandas.json_normalize(tmp_annotation_bbox_list)
     attribute_columns = [col for col in df.columns if col.startswith("attributes.")]
     columns = base_columns + attribute_columns
 
