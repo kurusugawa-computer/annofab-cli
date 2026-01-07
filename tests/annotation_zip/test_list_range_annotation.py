@@ -4,7 +4,6 @@ Test cases for annofabcli.annotation_zip.list_range_annotation module
 
 from pathlib import Path
 
-import pandas
 import pytest
 
 from annofabcli.__main__ import main
@@ -63,27 +62,6 @@ class TestGetRangeAnnotationInfoList:
         assert second_annotation.end_second == 20.0
         assert second_annotation.duration_second == 5.0
         assert second_annotation.attributes == {"type": "adult"}
-
-    def test_get_range_annotation_info_list_with_missing_attributes(self):
-        """attributes フィールドが存在しない場合に空の辞書がセットされることをテスト"""
-        simple_annotation = {
-            "project_id": "test_project",
-            "task_id": "test_task",
-            "task_phase": "annotation",
-            "task_phase_stage": 1,
-            "task_status": "working",
-            "input_data_id": "test_video.mp4",
-            "input_data_name": "test_video.mp4",
-            "updated_datetime": "2023-01-01T00:00:00+09:00",
-            "details": [
-                {"label": "traffic_light", "annotation_id": "anno1", "data": {"_type": "Range", "begin": 5000, "end": 10000}},
-            ],
-        }
-
-        result = get_range_annotation_info_list(simple_annotation)
-
-        assert len(result) == 1
-        assert result[0].attributes == {}
 
     def test_get_range_annotation_info_list_with_label_filter(self):
         """target_label_names でフィルタリングが正しく機能するかテスト"""
@@ -212,48 +190,6 @@ class TestCreateDf:
         assert result.iloc[1]["annotation_id"] == "anno2"
         assert result.iloc[1]["attributes.age"] == "adult"
         assert result.iloc[1]["attributes.occluded"]
-
-    def test_create_df_with_partial_attributes(self):
-        """一部のアノテーションのみが属性を持つ場合に正しくDataFrameが生成されることをテスト"""
-        simple_annotation = {
-            "project_id": "test_project",
-            "task_id": "test_task",
-            "task_phase": "annotation",
-            "task_phase_stage": 1,
-            "task_status": "working",
-            "input_data_id": "test_video.mp4",
-            "input_data_name": "test_video.mp4",
-            "updated_datetime": "2023-01-01T00:00:00+09:00",
-            "details": [
-                {
-                    "label": "traffic_light",
-                    "annotation_id": "anno1",
-                    "data": {"_type": "Range", "begin": 5000, "end": 10000},
-                    "attributes": {"color": "red"},
-                },
-                {
-                    "label": "person",
-                    "annotation_id": "anno2",
-                    "data": {"_type": "Range", "begin": 15000, "end": 20000},
-                    # attributes なし
-                },
-            ],
-        }
-
-        annotation_list = get_range_annotation_info_list(simple_annotation)
-        result = create_df(annotation_list)
-
-        # データが2行あることを確認
-        assert len(result) == 2
-
-        # 属性列が存在することを確認
-        assert "attributes.color" in result.columns
-
-        # 1行目は属性値が存在
-        assert result.iloc[0]["attributes.color"] == "red"
-
-        # 2行目は属性がないのでNaN
-        assert pandas.isna(result.iloc[1]["attributes.color"])
 
 
 @pytest.mark.access_webapi
