@@ -38,9 +38,6 @@ class Annotation3DBoundingBoxInfo(DataClassJsonMixin):
     input_data_id: str
     input_data_name: str
 
-    updated_datetime: str | None
-    """アノテーションJSONに格納されているアノテーションの更新日時"""
-
     label: str
     annotation_id: str
 
@@ -67,6 +64,12 @@ class Annotation3DBoundingBoxInfo(DataClassJsonMixin):
 
     top_z: float
     """天面のZ座標（location.z + height/2）。回転は考慮していない。"""
+
+    attributes: dict[str, str | int | bool]
+    """属性情報"""
+
+    updated_datetime: str | None
+    """アノテーションJSONに格納されているアノテーションの更新日時"""
 
 
 def get_annotation_3d_bounding_box_info_list(simple_annotation: dict[str, Any], *, target_label_names: Collection[str] | None = None) -> list[Annotation3DBoundingBoxInfo]:
@@ -113,6 +116,7 @@ def get_annotation_3d_bounding_box_info_list(simple_annotation: dict[str, Any], 
                 footprint_area=footprint_area,
                 bottom_z=bottom_z,
                 top_z=top_z,
+                attributes=detail["attributes"],
                 updated_datetime=simple_annotation["updated_datetime"],
             )
         )
@@ -147,7 +151,9 @@ def get_annotation_3d_bounding_box_info_list_from_annotation_path(
 def create_df(
     annotation_bbox_list: list[Annotation3DBoundingBoxInfo],
 ) -> pandas.DataFrame:
-    columns = [
+    tmp_annotation_bbox_list = [e.to_dict(encode_json=True) for e in annotation_bbox_list]
+
+    base_columns = [
         "project_id",
         "task_id",
         "task_status",
@@ -172,37 +178,14 @@ def create_df(
         "bottom_z",
         "top_z",
     ]
-    df = pandas.DataFrame(
-        [
-            {
-                "project_id": e.project_id,
-                "task_id": e.task_id,
-                "task_status": e.task_status,
-                "task_phase": e.task_phase,
-                "task_phase_stage": e.task_phase_stage,
-                "input_data_id": e.input_data_id,
-                "input_data_name": e.input_data_name,
-                "updated_datetime": e.updated_datetime,
-                "label": e.label,
-                "annotation_id": e.annotation_id,
-                "dimensions.width": e.dimensions["width"],
-                "dimensions.height": e.dimensions["height"],
-                "dimensions.depth": e.dimensions["depth"],
-                "location.x": e.location["x"],
-                "location.y": e.location["y"],
-                "location.z": e.location["z"],
-                "rotation.x": e.rotation["x"],
-                "rotation.y": e.rotation["y"],
-                "rotation.z": e.rotation["z"],
-                "volume": e.volume,
-                "footprint_area": e.footprint_area,
-                "bottom_z": e.bottom_z,
-                "top_z": e.top_z,
-            }
-            for e in annotation_bbox_list
-        ],
-        columns=columns,
-    )
+
+    if len(tmp_annotation_bbox_list) == 0:
+        # 空のDataFrameの場合、base_columnsの列を持つ空のDataFrameを作成
+        return pandas.DataFrame(columns=base_columns)
+
+    df = pandas.json_normalize(tmp_annotation_bbox_list)
+    attribute_columns = sorted(col for col in df.columns if col.startswith("attributes."))
+    columns = base_columns + attribute_columns
 
     return df[columns]
 

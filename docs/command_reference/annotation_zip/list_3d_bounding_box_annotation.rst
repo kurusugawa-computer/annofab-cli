@@ -72,7 +72,11 @@ Examples
         "volume": 19.3,
         "footprint_area": 12.3,
         "bottom_z": -0.06,
-        "top_z": 1.49
+        "top_z": 1.49,
+        "attributes": {
+          "occluded": true,
+          "type": "sedan"
+        }
       }
     ]
 
@@ -132,6 +136,11 @@ CSVまたはJSON形式で以下の項目が出力されます。
 * footprint_area: 底面積（width × depth）。地面占有面積。
 * bottom_z: 底面のZ座標（location.z - height/2）。回転は考慮していない。
 * top_z: 天面のZ座標（location.z + height/2）。回転は考慮していない。
+
+
+属性情報
+----------------------------------------------------------------------
+* attributes: 属性情報。JSON形式ではオブジェクト、CSV形式では ``attributes.属性名`` の形式で列が追加されます。
 
 
 Usage Details
