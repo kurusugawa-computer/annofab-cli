@@ -291,7 +291,7 @@ class TestCreateDf:
 
     def test_create_df_empty_list(self):
         """空のリストの場合でもヘッダ行が出力されることをテスト"""
-        annotation_list = []
+        annotation_list: list = []
         df = create_df(annotation_list)
 
         # DataFrameは空だが、base_columnsの列は存在する
