@@ -184,7 +184,7 @@ def create_df(
         return pandas.DataFrame(columns=base_columns)
 
     df = pandas.json_normalize(tmp_annotation_bbox_list)
-    attribute_columns = [col for col in df.columns if col.startswith("attributes.")]
+    attribute_columns = sorted(col for col in df.columns if col.startswith("attributes."))
     columns = base_columns + attribute_columns
 
     return df[columns]
