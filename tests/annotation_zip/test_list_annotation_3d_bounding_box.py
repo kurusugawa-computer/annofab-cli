@@ -4,7 +4,6 @@ Test cases for annofabcli.annotation_zip.list_annotation_3d_bounding_box module
 
 from pathlib import Path
 
-import pandas
 import pytest
 
 from annofabcli.__main__ import main
