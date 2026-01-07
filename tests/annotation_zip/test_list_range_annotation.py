@@ -4,6 +4,7 @@ Test cases for annofabcli.annotation_zip.list_range_annotation module
 
 from pathlib import Path
 
+import pandas
 import pytest
 
 from annofabcli.__main__ import main
@@ -137,6 +138,122 @@ class TestCreateDf:
             "duration_second",
         ]
         assert list(result.columns) == expected_columns
+
+    def test_create_df_with_attributes(self):
+        """属性を持つアノテーションのリストで正しくDataFrameが生成されることをテスト"""
+        simple_annotation = {
+            "project_id": "test_project",
+            "task_id": "test_task",
+            "task_phase": "annotation",
+            "task_phase_stage": 1,
+            "task_status": "working",
+            "input_data_id": "test_video.mp4",
+            "input_data_name": "test_video.mp4",
+            "updated_datetime": "2023-01-01T00:00:00+09:00",
+            "details": [
+                {
+                    "label": "traffic_light",
+                    "annotation_id": "anno1",
+                    "data": {"_type": "Range", "begin": 5000, "end": 10000},
+                    "attributes": {"color": "red", "occluded": False, "type": "signal"},
+                },
+                {
+                    "label": "person",
+                    "annotation_id": "anno2",
+                    "data": {"_type": "Range", "begin": 15000, "end": 20000},
+                    "attributes": {"age": "adult", "occluded": True},
+                },
+            ],
+        }
+
+        annotation_list = get_range_annotation_info_list(simple_annotation)
+        result = create_df(annotation_list)
+
+        # データが2行あることを確認
+        assert len(result) == 2
+
+        # 基本列 + 属性列が存在することを確認
+        expected_base_columns = [
+            "project_id",
+            "task_id",
+            "task_status",
+            "task_phase",
+            "task_phase_stage",
+            "input_data_id",
+            "input_data_name",
+            "updated_datetime",
+            "label",
+            "annotation_id",
+            "begin_second",
+            "end_second",
+            "duration_second",
+        ]
+
+        # 属性列がアルファベット順にソートされていることを確認
+        expected_attribute_columns = ["attributes.age", "attributes.color", "attributes.occluded", "attributes.type"]
+        expected_columns = expected_base_columns + expected_attribute_columns
+
+        assert list(result.columns) == expected_columns
+
+        # 1行目のデータを確認
+        assert result.iloc[0]["project_id"] == "test_project"
+        assert result.iloc[0]["task_id"] == "test_task"
+        assert result.iloc[0]["label"] == "traffic_light"
+        assert result.iloc[0]["annotation_id"] == "anno1"
+        assert result.iloc[0]["begin_second"] == 5.0
+        assert result.iloc[0]["end_second"] == 10.0
+        assert result.iloc[0]["duration_second"] == 5.0
+        assert result.iloc[0]["attributes.color"] == "red"
+        assert not result.iloc[0]["attributes.occluded"]
+        assert result.iloc[0]["attributes.type"] == "signal"
+
+        # 2行目のデータを確認
+        assert result.iloc[1]["label"] == "person"
+        assert result.iloc[1]["annotation_id"] == "anno2"
+        assert result.iloc[1]["attributes.age"] == "adult"
+        assert result.iloc[1]["attributes.occluded"]
+
+    def test_create_df_with_partial_attributes(self):
+        """一部のアノテーションのみが属性を持つ場合に正しくDataFrameが生成されることをテスト"""
+        simple_annotation = {
+            "project_id": "test_project",
+            "task_id": "test_task",
+            "task_phase": "annotation",
+            "task_phase_stage": 1,
+            "task_status": "working",
+            "input_data_id": "test_video.mp4",
+            "input_data_name": "test_video.mp4",
+            "updated_datetime": "2023-01-01T00:00:00+09:00",
+            "details": [
+                {
+                    "label": "traffic_light",
+                    "annotation_id": "anno1",
+                    "data": {"_type": "Range", "begin": 5000, "end": 10000},
+                    "attributes": {"color": "red"},
+                },
+                {
+                    "label": "person",
+                    "annotation_id": "anno2",
+                    "data": {"_type": "Range", "begin": 15000, "end": 20000},
+                    # attributes なし
+                },
+            ],
+        }
+
+        annotation_list = get_range_annotation_info_list(simple_annotation)
+        result = create_df(annotation_list)
+
+        # データが2行あることを確認
+        assert len(result) == 2
+
+        # 属性列が存在することを確認
+        assert "attributes.color" in result.columns
+
+        # 1行目は属性値が存在
+        assert result.iloc[0]["attributes.color"] == "red"
+
+        # 2行目は属性がないのでNaN
+        assert pandas.isna(result.iloc[1]["attributes.color"])
 
 
 @pytest.mark.access_webapi
