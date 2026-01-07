@@ -282,11 +282,11 @@ class TestCreateDf:
         # データの内容を確認
         assert len(df) == 2
         assert df.iloc[0]["label"] == "Car"
-        assert df.iloc[0]["attributes.occluded"] == True  # noqa: E712
+        assert df.iloc[0]["attributes.occluded"]
         assert df.iloc[0]["attributes.type"] == "sedan"
 
         assert df.iloc[1]["label"] == "Truck"
-        assert df.iloc[1]["attributes.occluded"] == False  # noqa: E712
+        assert not df.iloc[1]["attributes.occluded"]
         assert df.iloc[1]["attributes.type"] == "delivery"
 
     def test_create_df_empty_list(self):
