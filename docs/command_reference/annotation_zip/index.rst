@@ -15,6 +15,7 @@ Available Commands
    :maxdepth: 1
    :titlesonly:
 
+   list_3d_bounding_box_annotation
    list_bounding_box_annotation
    list_range_annotation
    list_single_point_annotation

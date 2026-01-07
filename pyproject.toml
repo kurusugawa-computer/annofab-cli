@@ -35,6 +35,7 @@ dependencies = [
     "shapely",
     "typing-extensions>=4.5",
     "ulid-py>=1.1.0",
+    "annofabapi-3dpc-extensions",
     # Python 3.14サポートのためpydantic 2.12以上が必要
     "pydantic>=2.12; python_version>='3.14'",
 ]
