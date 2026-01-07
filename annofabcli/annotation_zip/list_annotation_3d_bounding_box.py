@@ -8,8 +8,8 @@ from pathlib import Path
 from typing import Any
 
 import pandas
+from annofab_3dpc.annotation import CuboidAnnotationDetailDataV2, convert_annotation_detail_data
 from annofabapi.models import InputDataType, ProjectMemberRole
-from annofabapi_3dpc_extensions.parser import parse_cuboid_from_detail
 from dataclasses_json import DataClassJsonMixin
 
 import annofabcli.common.cli
@@ -80,17 +80,17 @@ def get_annotation_3d_bounding_box_info_list(simple_annotation: dict[str, Any], 
 
         # CUBOIDデータのパース
         try:
-            cuboid = parse_cuboid_from_detail(detail)
+            annotation_data = convert_annotation_detail_data(detail["data"])
         except Exception:
             # CUBOIDでない場合はスキップ
             continue
 
-        if cuboid is None:
+        if not isinstance(annotation_data, CuboidAnnotationDetailDataV2):
             continue
 
         # 追加情報の計算
-        dimensions = cuboid.shape.dimensions
-        location = cuboid.shape.location
+        dimensions = annotation_data.shape.dimensions
+        location = annotation_data.shape.location
         width = dimensions.width
         height = dimensions.height
         depth = dimensions.depth
@@ -113,10 +113,10 @@ def get_annotation_3d_bounding_box_info_list(simple_annotation: dict[str, Any], 
                 annotation_id=detail["annotation_id"],
                 dimensions={"width": width, "height": height, "depth": depth},
                 location={"x": location.x, "y": location.y, "z": location.z},
-                rotation={"x": cuboid.shape.rotation.x, "y": cuboid.shape.rotation.y, "z": cuboid.shape.rotation.z},
+                rotation={"x": annotation_data.shape.rotation.x, "y": annotation_data.shape.rotation.y, "z": annotation_data.shape.rotation.z},
                 direction={
-                    "front": {"x": cuboid.shape.direction.front.x, "y": cuboid.shape.direction.front.y, "z": cuboid.shape.direction.front.z},
-                    "up": {"x": cuboid.shape.direction.up.x, "y": cuboid.shape.direction.up.y, "z": cuboid.shape.direction.up.z},
+                    "front": {"x": annotation_data.shape.direction.front.x, "y": annotation_data.shape.direction.front.y, "z": annotation_data.shape.direction.front.z},
+                    "up": {"x": annotation_data.shape.direction.up.x, "y": annotation_data.shape.direction.up.y, "z": annotation_data.shape.direction.up.z},
                 },
                 volume=volume,
                 footprint_area=footprint_area,
