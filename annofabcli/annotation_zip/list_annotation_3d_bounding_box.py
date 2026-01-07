@@ -171,12 +171,6 @@ def create_df(
         "footprint_area",
         "bottom_z",
         "top_z",
-        "direction.front.x",
-        "direction.front.y",
-        "direction.front.z",
-        "direction.up.x",
-        "direction.up.y",
-        "direction.up.z",
     ]
     df = pandas.DataFrame(
         [
@@ -204,12 +198,6 @@ def create_df(
                 "footprint_area": e.footprint_area,
                 "bottom_z": e.bottom_z,
                 "top_z": e.top_z,
-                "direction.front.x": e.direction["front"]["x"],
-                "direction.front.y": e.direction["front"]["y"],
-                "direction.front.z": e.direction["front"]["z"],
-                "direction.up.x": e.direction["up"]["x"],
-                "direction.up.y": e.direction["up"]["y"],
-                "direction.up.z": e.direction["up"]["z"],
             }
             for e in annotation_bbox_list
         ],
