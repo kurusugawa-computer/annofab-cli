@@ -78,13 +78,7 @@ def get_annotation_3d_bounding_box_info_list(simple_annotation: dict[str, Any], 
         if target_label_names_set is not None and label not in target_label_names_set:
             continue
 
-        # CUBOIDデータのパース
-        try:
-            annotation_data = convert_annotation_detail_data(detail["data"])
-        except Exception:
-            # CUBOIDでない場合はスキップ
-            continue
-
+        annotation_data = convert_annotation_detail_data(detail["data"])
         if not isinstance(annotation_data, CuboidAnnotationDetailDataV2):
             continue
 
@@ -111,13 +105,10 @@ def get_annotation_3d_bounding_box_info_list(simple_annotation: dict[str, Any], 
                 input_data_name=simple_annotation["input_data_name"],
                 label=label,
                 annotation_id=detail["annotation_id"],
-                dimensions={"width": width, "height": height, "depth": depth},
-                location={"x": location.x, "y": location.y, "z": location.z},
-                rotation={"x": annotation_data.shape.rotation.x, "y": annotation_data.shape.rotation.y, "z": annotation_data.shape.rotation.z},
-                direction={
-                    "front": {"x": annotation_data.shape.direction.front.x, "y": annotation_data.shape.direction.front.y, "z": annotation_data.shape.direction.front.z},
-                    "up": {"x": annotation_data.shape.direction.up.x, "y": annotation_data.shape.direction.up.y, "z": annotation_data.shape.direction.up.z},
-                },
+                dimensions=dimensions.to_dict(),  # type: ignore[arg-type]
+                location=location.to_dict(),  # type: ignore[arg-type]
+                rotation=annotation_data.shape.rotation.to_dict(),  # type: ignore[arg-type]
+                direction=annotation_data.shape.direction.to_dict(),  # type: ignore[arg-type]
                 volume=volume,
                 footprint_area=footprint_area,
                 bottom_z=bottom_z,
