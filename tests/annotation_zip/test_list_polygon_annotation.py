@@ -2,8 +2,6 @@
 Test cases for annofabcli.annotation_zip.list_polygon_annotation module
 """
 
-from __future__ import annotations
-
 from pathlib import Path
 
 import pytest

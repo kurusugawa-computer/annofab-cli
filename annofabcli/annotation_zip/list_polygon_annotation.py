@@ -178,36 +178,10 @@ def create_df(
     Notes:
         points列は含めない。CSVに含めると列の長さが非常に大きくなるため。
         attributes列は、キーごとに別々の列（attributes.<key>の形式）として出力する。
+        pandas.json_normalizeを使用してネストした辞書を自動的に展開する。
 
     """
-    data_list = []
-    for e in annotation_polygon_list:
-        row_dict = {
-            "project_id": e.project_id,
-            "task_id": e.task_id,
-            "task_status": e.task_status,
-            "task_phase": e.task_phase,
-            "task_phase_stage": e.task_phase_stage,
-            "input_data_id": e.input_data_id,
-            "input_data_name": e.input_data_name,
-            "updated_datetime": e.updated_datetime,
-            "label": e.label,
-            "annotation_id": e.annotation_id,
-            "point_count": e.point_count,
-            "area": e.area,
-            "centroid.x": e.centroid["x"] if e.centroid is not None else None,
-            "centroid.y": e.centroid["y"] if e.centroid is not None else None,
-            "bounding_box_width": e.bounding_box_width,
-            "bounding_box_height": e.bounding_box_height,
-        }
-        # attributesの各キーを別々の列として追加
-        for key, value in e.attributes.items():
-            row_dict[f"attributes.{key}"] = value
-        data_list.append(row_dict)
-
-    df = pandas.DataFrame(data_list)
-
-    # 列の順序を整理（基本列を先頭に、attributes列を後に配置）
+    # 基本列の定義
     base_columns = [
         "project_id",
         "task_id",
@@ -226,6 +200,15 @@ def create_df(
         "bounding_box_width",
         "bounding_box_height",
     ]
+
+    if len(annotation_polygon_list) == 0:
+        # 件数が0件のときも列ヘッダを出力する
+        return pandas.DataFrame(columns=base_columns)
+
+    # pandas.json_normalizeを使用してネストした辞書を展開
+    # centroid（辞書）とattributes（辞書）が自動的に展開される
+    df = pandas.json_normalize([e.model_dump() for e in annotation_polygon_list])
+
     # attributes列を抽出してソート
     attributes_columns = sorted([col for col in df.columns if col.startswith("attributes.")])
     # 列の順序を設定
