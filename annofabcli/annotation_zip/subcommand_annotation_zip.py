@@ -5,6 +5,7 @@ import argparse
 import annofabcli
 from annofabcli.annotation_zip.list_annotation_3d_bounding_box import add_parser as add_parser_list_annotation_3d_bounding_box
 from annofabcli.annotation_zip.list_annotation_bounding_box_2d import add_parser as add_parser_list_annotation_bounding_box_2d
+from annofabcli.annotation_zip.list_polygon_annotation import add_parser as add_parser_list_polygon_annotation
 from annofabcli.annotation_zip.list_range_annotation import add_parser as add_parser_list_range_annotation
 from annofabcli.annotation_zip.list_single_point_annotation import add_parser as add_parser_list_single_point_annotation
 
@@ -20,6 +21,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     # サブコマンドの定義
     add_parser_list_annotation_3d_bounding_box(subparsers)
     add_parser_list_annotation_bounding_box_2d(subparsers)
+    add_parser_list_polygon_annotation(subparsers)
     add_parser_list_range_annotation(subparsers)
     add_parser_list_single_point_annotation(subparsers)
     # 作成中のためコメントアウト

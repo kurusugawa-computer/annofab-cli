@@ -124,8 +124,7 @@ CSVまたはJSON形式で以下の項目が出力されます。
 * dimensions: サイズ情報（width, height, depth）
 * location: 中心座標（x, y, z）
 * rotation: 回転情報（x=roll, y=pitch, z=yaw）
-* direction: 方向ベクトル（front, up）
-    * CSV形式では出力されません
+* direction: 方向ベクトル（front, up）。CSV形式では出力されません
 
 
 追加情報
