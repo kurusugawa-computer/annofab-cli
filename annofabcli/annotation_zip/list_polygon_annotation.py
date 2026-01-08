@@ -385,7 +385,7 @@ def main(args: argparse.Namespace) -> None:
 
 def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "list_polygon_annotation"
-    subcommand_help = "アノテーションZIPからポリゴンアノテーションの座標情報を出力します。"
+    subcommand_help = "アノテーションZIPからポリゴンアノテーションの座標情報と属性情報を出力します。"
     epilog = "アノテーションZIPをダウンロードする場合は、オーナロールまたはアノテーションユーザロールを持つユーザで実行してください。"
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description=subcommand_help, epilog=epilog)
     parse_args(parser)
