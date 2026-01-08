@@ -7,9 +7,8 @@ from pathlib import Path
 import annofabapi
 from annofabapi.models import TaskHistory
 
-import annofabcli
 import annofabcli.common.cli
-from annofabcli.common.cli import ArgumentParser, CommandLine, build_annofabapi_resource_and_login, get_list_from_args
+from annofabcli.common.cli import ArgumentParser, CommandLine, build_annofabapi_resource_and_login
 from annofabcli.common.download import DownloadingFile
 from annofabcli.common.enums import FormatArgument
 from annofabcli.common.facade import AnnofabApiFacade

@@ -12,9 +12,8 @@ from annofabapi.models import Task, TaskHistory, TaskPhase, TaskStatus
 from annofabapi.util.task_history import find_rejected_task_history_indices, get_task_creation_datetime
 from annofabapi.utils import get_task_history_index_skipped_acceptance, get_task_history_index_skipped_inspection
 
-import annofabcli
 import annofabcli.common.cli
-from annofabcli.common.cli import ArgumentParser, CommandLine, build_annofabapi_resource_and_login, get_json_from_args, get_list_from_args
+from annofabcli.common.cli import ArgumentParser, CommandLine, build_annofabapi_resource_and_login
 from annofabcli.common.enums import FormatArgument
 from annofabcli.common.facade import AnnofabApiFacade
 from annofabcli.common.utils import isoduration_to_hour, print_csv, print_json

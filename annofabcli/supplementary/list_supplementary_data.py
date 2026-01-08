@@ -12,9 +12,8 @@ from typing import Any
 import annofabapi
 from annofabapi.models import SupplementaryData
 
-import annofabcli
 import annofabcli.common.cli
-from annofabcli.common.cli import ArgumentParser, CommandLine, PARALLELISM_CHOICES, build_annofabapi_resource_and_login, get_list_from_args
+from annofabcli.common.cli import PARALLELISM_CHOICES, ArgumentParser, CommandLine, build_annofabapi_resource_and_login
 from annofabcli.common.download import DownloadingFile
 from annofabcli.common.enums import FormatArgument
 from annofabcli.common.facade import AnnofabApiFacade

@@ -4,7 +4,6 @@ import argparse
 import sys
 from logging import getLogger
 
-import annofabcli
 import annofabcli.common.cli
 from annofabcli.project import create_project
 

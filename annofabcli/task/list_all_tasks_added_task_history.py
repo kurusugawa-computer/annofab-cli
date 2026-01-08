@@ -12,15 +12,12 @@ import annofabapi
 import annofabapi.dataclass.task
 from annofabapi.models import ProjectMemberRole, TaskHistory
 
-import annofabcli
 import annofabcli.common.cli
 from annofabcli.common.cli import (
-    ArgumentParser,
     COMMAND_LINE_ERROR_STATUS_CODE,
+    ArgumentParser,
     CommandLine,
     build_annofabapi_resource_and_login,
-    get_json_from_args,
-    get_list_from_args,
 )
 from annofabcli.common.dataclasses import WaitOptions
 from annofabcli.common.download import DownloadingFile

@@ -5,14 +5,12 @@ from typing import Any
 
 from annofabapi.models import Project, ProjectJobInfo, ProjectJobType
 
-import annofabcli
 import annofabcli.common.cli
 from annofabcli.common.cli import (
-    ArgumentParser,
     COMMAND_LINE_ERROR_STATUS_CODE,
+    ArgumentParser,
     CommandLine,
     build_annofabapi_resource_and_login,
-    get_list_from_args,
 )
 from annofabcli.common.enums import FormatArgument
 from annofabcli.common.facade import AnnofabApiFacade

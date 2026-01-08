@@ -12,20 +12,18 @@ from typing import Any
 import pandas
 from annofabapi.dataclass.input import InputData
 
-import annofabcli
 import annofabcli.common.cli
 from annofabcli.common.cli import (
-    ArgumentParser,
     COMMAND_LINE_ERROR_STATUS_CODE,
+    ArgumentParser,
     CommandLine,
     build_annofabapi_resource_and_login,
-    get_json_from_args,
     get_list_from_args,
 )
 from annofabcli.common.download import DownloadingFile
 from annofabcli.common.enums import FormatArgument
 from annofabcli.common.facade import AnnofabApiFacade, InputDataQuery, match_input_data_with_query
-from annofabcli.common.utils import get_cache_dir, print_csv
+from annofabcli.common.utils import print_csv
 from annofabcli.input_data.utils import remove_unnecessary_keys_from_input_data
 
 logger = logging.getLogger(__name__)

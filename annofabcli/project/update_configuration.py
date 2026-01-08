@@ -5,7 +5,6 @@ from typing import Any
 
 import annofabapi
 
-import annofabcli
 import annofabcli.common.cli
 from annofabcli.common.cli import CommandLine, CommandLineWithConfirm, build_annofabapi_resource_and_login, get_json_from_args, get_list_from_args
 from annofabcli.common.facade import AnnofabApiFacade

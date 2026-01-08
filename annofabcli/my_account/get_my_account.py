@@ -3,7 +3,6 @@ from __future__ import annotations
 import argparse
 import logging
 
-import annofabcli
 import annofabcli.common.cli
 from annofabcli.common.cli import (
     ArgumentParser,
