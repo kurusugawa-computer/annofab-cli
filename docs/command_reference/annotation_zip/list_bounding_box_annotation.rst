@@ -10,8 +10,10 @@ Description
 Examples
 =================================
 
-.. code-block:: bash
+基本的な使い方
+--------------------
 
+.. code-block:: bash
 
     $ annofabcli annotation_zip list_bounding_box_annotation --project_id prj1 --output out.json --format pretty_json
 
@@ -34,14 +36,58 @@ Examples
         "annotation_id": "ann1",
         "left_top": {"x": 0, "y": 0},
         "right_bottom": {"x": 100, "y": 200},
+        "center": {"x": 50.0, "y": 100.0},
         "width": 100,
         "height": 200,
+        "area": 20000,
         "attributes": {
           "occluded": true,
           "confidence": 0.95
         }
       }
     ]
+
+
+特定のラベルのみ出力
+--------------------
+
+.. code-block:: bash
+
+    $ annofabcli annotation_zip list_bounding_box_annotation --project_id prj1 --label_name cat dog --output out.csv
+
+
+
+出力項目について
+=================================
+
+基本情報
+--------------------
+
+* ``project_id`` : プロジェクトID
+* ``task_id`` : タスクID
+* ``task_status`` : タスクのステータス（not_started, working, complete, など）
+* ``task_phase`` : タスクのフェーズ（annotation, inspection, acceptance）
+* ``task_phase_stage`` : タスクのフェーズステージ（1から始まる整数）
+* ``input_data_id`` : 入力データID
+* ``input_data_name`` : 入力データ名
+* ``updated_datetime`` : アノテーションJSONの更新日時（ISO 8601形式）
+* ``label`` : ラベル名
+* ``annotation_id`` : アノテーションID
+
+バウンディングボックス情報
+--------------------
+
+* ``left_top`` : バウンディングボックスの左上座標（x, y）
+* ``right_bottom`` : バウンディングボックスの右下座標（x, y）
+* ``center`` : バウンディングボックスの中心座標（x, y）
+* ``width`` : バウンディングボックスの幅
+* ``height`` : バウンディングボックスの高さ
+* ``area`` : バウンディングボックスの面積
+
+属性情報
+--------------------
+
+* ``attributes`` : 属性情報。JSON形式ではオブジェクト、CSV形式では ``attributes.属性名`` の形式で列が追加されます。
 
 
 Usage Details

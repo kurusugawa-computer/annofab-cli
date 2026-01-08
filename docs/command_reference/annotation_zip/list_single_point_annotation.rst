@@ -10,8 +10,10 @@ Description
 Examples
 =================================
 
-.. code-block:: bash
+基本的な使い方
+--------------------
 
+.. code-block:: bash
 
     $ annofabcli annotation_zip list_single_point_annotation --project_id prj1 --output out.json --format pretty_json
 
@@ -39,6 +41,43 @@ Examples
         }
       }
     ]
+
+
+特定のラベルのみ出力
+--------------------
+
+.. code-block:: bash
+
+    $ annofabcli annotation_zip list_single_point_annotation --project_id prj1 --label_name cat dog --output out.csv
+
+
+
+出力項目について
+=================================
+
+基本情報
+--------------------
+
+* ``project_id`` : プロジェクトID
+* ``task_id`` : タスクID
+* ``task_status`` : タスクのステータス（not_started, working, complete, など）
+* ``task_phase`` : タスクのフェーズ（annotation, inspection, acceptance）
+* ``task_phase_stage`` : タスクのフェーズステージ（1から始まる整数）
+* ``input_data_id`` : 入力データID
+* ``input_data_name`` : 入力データ名
+* ``updated_datetime`` : アノテーションJSONの更新日時（ISO 8601形式）
+* ``label`` : ラベル名
+* ``annotation_id`` : アノテーションID
+
+点アノテーション情報
+--------------------
+
+* ``point`` : 点の座標（x, y）
+
+属性情報
+--------------------
+
+* ``attributes`` : 属性情報。JSON形式ではオブジェクト、CSV形式では ``attributes.属性名`` の形式で列が追加されます。
 
 
 Usage Details
