@@ -49,10 +49,25 @@ wheels = [
 ]
 
 [[package]]
+name = "annofabapi-3dpc-extensions"
+version = "0.3.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "dataclasses-json" },
+    { name = "numpy", version = "2.2.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
+    { name = "numpy", version = "2.3.5", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/91/7a/b9c92a9d70b6f271b15295ff7ddf80533bbe28256a1de55035d3f0db4bc7/annofabapi_3dpc_extensions-0.3.0.tar.gz", hash = "sha256:f7441d90431b2b1b2416a0db9edac24716261ebd1850366240cde8e031e8f98d", size = 7457, upload-time = "2025-01-07T09:06:33.692Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/18/0a/d7a5c7402a01850cba94e420e584f2d11386a5db10c2071443be9a34d6d9/annofabapi_3dpc_extensions-0.3.0-py3-none-any.whl", hash = "sha256:43f028fa94bf5de1824e6739b408e5cdc51b774fc8b840cdcf70ba34ead54614", size = 7269, upload-time = "2025-01-07T09:06:32.668Z" },
+]
+
+[[package]]
 name = "annofabcli"
 source = { editable = "." }
 dependencies = [
     { name = "annofabapi" },
+    { name = "annofabapi-3dpc-extensions" },
     { name = "bokeh" },
     { name = "dictdiffer" },
     { name = "isodate" },
@@ -101,6 +116,7 @@ test = [
 [package.metadata]
 requires-dist = [
     { name = "annofabapi", specifier = ">=1.5.1" },
+    { name = "annofabapi-3dpc-extensions" },
     { name = "bokeh", specifier = ">=3.8" },
     { name = "dictdiffer" },
     { name = "isodate" },

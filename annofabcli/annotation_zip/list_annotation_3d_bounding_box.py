@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import argparse
 import logging
 import sys
@@ -10,6 +8,7 @@ from pathlib import Path
 from typing import Any
 
 import pandas
+from annofab_3dpc.annotation import CuboidAnnotationDetailDataV2, convert_annotation_detail_data
 from annofabapi.models import InputDataType, ProjectMemberRole
 from dataclasses_json import DataClassJsonMixin
 
@@ -29,7 +28,7 @@ logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
-class RangeAnnotationInfo(DataClassJsonMixin):
+class Annotation3DBoundingBoxInfo(DataClassJsonMixin):
     project_id: str
     task_id: str
     task_status: str
@@ -39,82 +38,121 @@ class RangeAnnotationInfo(DataClassJsonMixin):
     input_data_id: str
     input_data_name: str
 
+    label: str
+    annotation_id: str
+
+    dimensions: dict[str, float]
+    """サイズ情報 (width, height, depth)"""
+
+    location: dict[str, float]
+    """中心座標 (x, y, z)"""
+
+    rotation: dict[str, float]
+    """回転情報 (x=roll, y=pitch, z=yaw)"""
+
+    direction: dict[str, dict[str, float]]
+    """方向ベクトル (front, up)"""
+
+    volume: float
+    """体積（width × height × depth）"""
+
+    footprint_area: float
+    """底面積（width × depth）。地面占有面積。"""
+
+    bottom_z: float
+    """底面のZ座標（location.z - height/2）。回転は考慮していない。"""
+
+    top_z: float
+    """天面のZ座標（location.z + height/2）。回転は考慮していない。"""
+
+    attributes: dict[str, str | int | bool]
+    """属性情報"""
+
     updated_datetime: str | None
     """アノテーションJSONに格納されているアノテーションの更新日時"""
 
-    label: str
-    annotation_id: str
-    begin_second: float
-    end_second: float
-    duration_second: float
-    attributes: dict[str, str | int | bool]
 
-
-def get_range_annotation_info_list(simple_annotation: dict[str, Any], *, target_label_names: Collection[str] | None = None) -> list[RangeAnnotationInfo]:
+def get_annotation_3d_bounding_box_info_list(simple_annotation: dict[str, Any], *, target_label_names: Collection[str] | None = None) -> list[Annotation3DBoundingBoxInfo]:
     result = []
     target_label_names_set = set(target_label_names) if target_label_names is not None else None
     for detail in simple_annotation["details"]:
-        if detail["data"]["_type"] == "Range":
-            label = detail["label"]
-            # ラベル名によるフィルタリング
-            if target_label_names_set is not None and label not in target_label_names_set:
-                continue
+        label = detail["label"]
+        # ラベル名によるフィルタリング
+        if target_label_names_set is not None and label not in target_label_names_set:
+            continue
 
-            begin_millisecond = detail["data"]["begin"]
-            end_millisecond = detail["data"]["end"]
-            begin_second = begin_millisecond / 1000
-            end_second = end_millisecond / 1000
-            duration_second = end_second - begin_second
+        annotation_data = convert_annotation_detail_data(detail["data"])
+        if not isinstance(annotation_data, CuboidAnnotationDetailDataV2):
+            continue
 
-            result.append(
-                RangeAnnotationInfo(
-                    project_id=simple_annotation["project_id"],
-                    task_id=simple_annotation["task_id"],
-                    task_phase=simple_annotation["task_phase"],
-                    task_phase_stage=simple_annotation["task_phase_stage"],
-                    task_status=simple_annotation["task_status"],
-                    input_data_id=simple_annotation["input_data_id"],
-                    input_data_name=simple_annotation["input_data_name"],
-                    label=label,
-                    annotation_id=detail["annotation_id"],
-                    begin_second=begin_second,
-                    end_second=end_second,
-                    duration_second=duration_second,
-                    updated_datetime=simple_annotation["updated_datetime"],
-                    attributes=detail["attributes"],
-                )
+        # 追加情報の計算
+        dimensions = annotation_data.shape.dimensions
+        location = annotation_data.shape.location
+        width = dimensions.width
+        height = dimensions.height
+        depth = dimensions.depth
+
+        volume = width * height * depth
+        footprint_area = width * depth
+        bottom_z = location.z - height / 2
+        top_z = location.z + height / 2
+
+        result.append(
+            Annotation3DBoundingBoxInfo(
+                project_id=simple_annotation["project_id"],
+                task_id=simple_annotation["task_id"],
+                task_phase=simple_annotation["task_phase"],
+                task_phase_stage=simple_annotation["task_phase_stage"],
+                task_status=simple_annotation["task_status"],
+                input_data_id=simple_annotation["input_data_id"],
+                input_data_name=simple_annotation["input_data_name"],
+                label=label,
+                annotation_id=detail["annotation_id"],
+                dimensions=dimensions.to_dict(),  # type: ignore[arg-type]
+                location=location.to_dict(),  # type: ignore[arg-type]
+                rotation=annotation_data.shape.rotation.to_dict(),  # type: ignore[arg-type]
+                direction=annotation_data.shape.direction.to_dict(),  # type: ignore[arg-type]
+                volume=volume,
+                footprint_area=footprint_area,
+                bottom_z=bottom_z,
+                top_z=top_z,
+                attributes=detail["attributes"],
+                updated_datetime=simple_annotation["updated_datetime"],
             )
+        )
 
     return result
 
 
-def get_range_annotation_info_list_from_annotation_path(
+def get_annotation_3d_bounding_box_info_list_from_annotation_path(
     annotation_path: Path,
     *,
     target_task_ids: Collection[str] | None = None,
     task_query: TaskQuery | None = None,
     target_label_names: Collection[str] | None = None,
-) -> list[RangeAnnotationInfo]:
-    range_annotation_list = []
-    target_task_ids = set(target_task_ids) if target_task_ids is not None else None
+) -> list[Annotation3DBoundingBoxInfo]:
+    annotation_bbox_list = []
+    target_task_ids_set = set(target_task_ids) if target_task_ids is not None else None
     iter_parser = lazy_parse_simple_annotation_by_input_data(annotation_path)
     logger.info(f"アノテーションZIPまたはディレクトリ'{annotation_path}'を読み込みます。")
     for index, parser in enumerate(iter_parser):
         if (index + 1) % 10000 == 0:
             logger.info(f"{index + 1}  件目のJSONを読み込み中")
-        if target_task_ids is not None and parser.task_id not in target_task_ids:
+        if target_task_ids_set is not None and parser.task_id not in target_task_ids_set:
             continue
         dict_simple_annotation = parser.load_json()
         if task_query is not None and not match_annotation_with_task_query(dict_simple_annotation, task_query):
             continue
-        sub_range_annotation_list = get_range_annotation_info_list(dict_simple_annotation, target_label_names=target_label_names)
-        range_annotation_list.extend(sub_range_annotation_list)
-    return range_annotation_list
+        sub_annotation_bbox_list = get_annotation_3d_bounding_box_info_list(dict_simple_annotation, target_label_names=target_label_names)
+        annotation_bbox_list.extend(sub_annotation_bbox_list)
+    return annotation_bbox_list
 
 
 def create_df(
-    range_annotation_list: list[RangeAnnotationInfo],
+    annotation_bbox_list: list[Annotation3DBoundingBoxInfo],
 ) -> pandas.DataFrame:
+    tmp_annotation_bbox_list = [e.to_dict(encode_json=True) for e in annotation_bbox_list]
+
     base_columns = [
         "project_id",
         "task_id",
@@ -126,25 +164,33 @@ def create_df(
         "updated_datetime",
         "label",
         "annotation_id",
-        "begin_second",
-        "end_second",
-        "duration_second",
+        "dimensions.width",
+        "dimensions.height",
+        "dimensions.depth",
+        "location.x",
+        "location.y",
+        "location.z",
+        "rotation.x",
+        "rotation.y",
+        "rotation.z",
+        "volume",
+        "footprint_area",
+        "bottom_z",
+        "top_z",
     ]
 
-    if not range_annotation_list:
-        # 空のリストの場合は、base_columnsのみで空のDataFrameを返す
+    if len(tmp_annotation_bbox_list) == 0:
+        # 空のDataFrameの場合、base_columnsの列を持つ空のDataFrameを作成
         return pandas.DataFrame(columns=base_columns)
 
-    tmp_range_annotation_list = [e.to_dict(encode_json=True) for e in range_annotation_list]
-    df = pandas.json_normalize(tmp_range_annotation_list)
-
+    df = pandas.json_normalize(tmp_annotation_bbox_list)
     attribute_columns = sorted(col for col in df.columns if col.startswith("attributes."))
     columns = base_columns + attribute_columns
 
     return df[columns]
 
 
-def print_range_annotation(
+def print_annotation_3d_bounding_box(
     annotation_path: Path,
     output_file: Path,
     output_format: FormatArgument,
@@ -153,24 +199,24 @@ def print_range_annotation(
     task_query: TaskQuery | None = None,
     target_label_names: Collection[str] | None = None,
 ) -> None:
-    range_annotation_list = get_range_annotation_info_list_from_annotation_path(
+    annotation_bbox_list = get_annotation_3d_bounding_box_info_list_from_annotation_path(
         annotation_path,
         target_task_ids=target_task_ids,
         task_query=task_query,
         target_label_names=target_label_names,
     )
 
-    logger.info(f"{len(range_annotation_list)} 件の区間アノテーションの情報を出力します。 :: output='{output_file}'")
+    logger.info(f"{len(annotation_bbox_list)} 件の3Dバウンディングボックスアノテーションの情報を出力します。 :: output='{output_file}'")
 
     if output_format == FormatArgument.CSV:
-        df = create_df(range_annotation_list)
+        df = create_df(annotation_bbox_list)
         print_csv(df, output_file)
 
     elif output_format in [FormatArgument.PRETTY_JSON, FormatArgument.JSON]:
         json_is_pretty = output_format == FormatArgument.PRETTY_JSON
         # DataClassJsonMixinを使用したtoJSON処理
         print_json(
-            [e.to_dict(encode_json=True) for e in range_annotation_list],
+            [e.to_dict(encode_json=True) for e in annotation_bbox_list],
             is_pretty=json_is_pretty,
             output=output_file,
         )
@@ -179,8 +225,8 @@ def print_range_annotation(
         raise ValueError(f"出力形式 '{output_format}' はサポートされていません。")
 
 
-class ListRangeAnnotation(CommandLine):
-    COMMON_MESSAGE = "annofabcli annotation_zip list_range_annotation: error:"
+class ListAnnotation3DBoundingBox(CommandLine):
+    COMMON_MESSAGE = "annofabcli annotation_zip list_3d_bounding_box_annotation: error:"
 
     def validate(self, args: argparse.Namespace) -> bool:
         if args.project_id is None and args.annotation is None:
@@ -201,8 +247,8 @@ class ListRangeAnnotation(CommandLine):
         if project_id is not None:
             super().validate_project(project_id, project_member_roles=[ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER])
             project, _ = self.service.api.get_project(project_id)
-            if project["input_data_type"] != InputDataType.MOVIE.value:
-                print(f"project_id='{project_id}'であるプロジェクトは動画プロジェクトでないので、終了します", file=sys.stderr)  # noqa: T201
+            if project["input_data_type"] != InputDataType.CUSTOM.value:
+                print(f"project_id='{project_id}'であるプロジェクトはカスタムプロジェクト（点群など）でないので、終了します", file=sys.stderr)  # noqa: T201
                 sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
         annotation_path = Path(args.annotation) if args.annotation is not None else None
@@ -216,13 +262,14 @@ class ListRangeAnnotation(CommandLine):
 
         downloading_obj = DownloadingFile(self.service)
 
-        def download_and_print_range_annotation(project_id: str, temp_dir: Path, *, is_latest: bool) -> None:
-            annotation_path = downloading_obj.download_annotation_zip_to_dir(
+        def download_and_print_annotation_bbox(project_id: str, temp_dir: Path, *, is_latest: bool) -> None:
+            annotation_path = temp_dir / f"{project_id}__annotation.zip"
+            downloading_obj.download_annotation_zip(
                 project_id,
-                temp_dir,
+                dest_path=annotation_path,
                 is_latest=is_latest,
             )
-            print_range_annotation(
+            print_annotation_3d_bounding_box(
                 annotation_path,
                 output_file,
                 output_format,
@@ -233,17 +280,17 @@ class ListRangeAnnotation(CommandLine):
 
         if project_id is not None:
             if args.temp_dir is not None:
-                download_and_print_range_annotation(project_id=project_id, temp_dir=args.temp_dir, is_latest=args.latest)
+                download_and_print_annotation_bbox(project_id=project_id, temp_dir=args.temp_dir, is_latest=args.latest)
             else:
                 with tempfile.TemporaryDirectory() as str_temp_dir:
-                    download_and_print_range_annotation(
+                    download_and_print_annotation_bbox(
                         project_id=project_id,
                         temp_dir=Path(str_temp_dir),
                         is_latest=args.latest,
                     )
         else:
             assert annotation_path is not None
-            print_range_annotation(
+            print_annotation_3d_bounding_box(
                 annotation_path,
                 output_file,
                 output_format,
@@ -285,7 +332,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--label_name",
         type=str,
         nargs="*",
-        help="指定したラベル名の区間アノテーションのみを対象にします。複数指定できます。",
+        help="指定したラベル名の3Dバウンディングボックスアノテーションのみを対象にします。複数指定できます。",
     )
 
     parser.add_argument(
@@ -306,12 +353,12 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
 def main(args: argparse.Namespace) -> None:
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
-    ListRangeAnnotation(service, facade, args).main()
+    ListAnnotation3DBoundingBox(service, facade, args).main()
 
 
 def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
-    subcommand_name = "list_range_annotation"
-    subcommand_help = "アノテーションZIPから動画プロジェクトの区間アノテーションの情報を出力します。"
+    subcommand_name = "list_3d_bounding_box_annotation"
+    subcommand_help = "アノテーションZIPから3Dバウンディングボックス（CUBOID）アノテーションの座標情報を出力します。"
     epilog = "アノテーションZIPをダウンロードする場合は、オーナロールまたはアノテーションユーザロールを持つユーザで実行してください。"
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description=subcommand_help, epilog=epilog)
     parse_args(parser)
