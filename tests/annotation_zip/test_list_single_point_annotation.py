@@ -28,8 +28,8 @@ class TestGetAnnotationSinglePointInfoList:
             "input_data_name": "test_image.jpg",
             "updated_datetime": "2023-01-01T00:00:00+09:00",
             "details": [
-                {"label": "landmark", "annotation_id": "point1", "data": {"_type": "SinglePoint", "point": {"x": 100, "y": 200}}},
-                {"label": "center", "annotation_id": "point2", "data": {"_type": "SinglePoint", "point": {"x": 50, "y": 75}}},
+                {"label": "landmark", "annotation_id": "point1", "data": {"_type": "SinglePoint", "point": {"x": 100, "y": 200}}, "attributes": {"key1": "value1"}},
+                {"label": "center", "annotation_id": "point2", "data": {"_type": "SinglePoint", "point": {"x": 50, "y": 75}}, "attributes": {}},
             ],
         }
 
@@ -69,9 +69,9 @@ class TestGetAnnotationSinglePointInfoList:
             "input_data_name": "test_image.jpg",
             "updated_datetime": "2023-01-01T00:00:00+09:00",
             "details": [
-                {"label": "landmark", "annotation_id": "point1", "data": {"_type": "SinglePoint", "point": {"x": 100, "y": 200}}},
-                {"label": "center", "annotation_id": "point2", "data": {"_type": "SinglePoint", "point": {"x": 50, "y": 75}}},
-                {"label": "corner", "annotation_id": "point3", "data": {"_type": "SinglePoint", "point": {"x": 0, "y": 0}}},
+                {"label": "landmark", "annotation_id": "point1", "data": {"_type": "SinglePoint", "point": {"x": 100, "y": 200}}, "attributes": {}},
+                {"label": "center", "annotation_id": "point2", "data": {"_type": "SinglePoint", "point": {"x": 50, "y": 75}}, "attributes": {}},
+                {"label": "corner", "annotation_id": "point3", "data": {"_type": "SinglePoint", "point": {"x": 0, "y": 0}}, "attributes": {}},
             ],
         }
 

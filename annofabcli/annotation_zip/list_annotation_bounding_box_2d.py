@@ -48,6 +48,7 @@ class AnnotationBoundingBoxInfo(DataClassJsonMixin):
     right_bottom: dict[str, int]
     width: int
     height: int
+    attributes: dict[str, str | int | bool]
 
 
 def get_annotation_bounding_box_info_list(simple_annotation: dict[str, Any], *, target_label_names: Collection[str] | None = None) -> list[AnnotationBoundingBoxInfo]:
@@ -81,6 +82,7 @@ def get_annotation_bounding_box_info_list(simple_annotation: dict[str, Any], *, 
                     width=width,
                     height=height,
                     updated_datetime=simple_annotation["updated_datetime"],
+                    attributes=detail["attributes"],
                 )
             )
 
@@ -114,7 +116,7 @@ def get_annotation_bounding_box_info_list_from_annotation_path(
 def create_df(
     annotation_bbox_list: list[AnnotationBoundingBoxInfo],
 ) -> pandas.DataFrame:
-    columns = [
+    base_columns = [
         "project_id",
         "task_id",
         "task_status",
@@ -132,30 +134,16 @@ def create_df(
         "width",
         "height",
     ]
-    df = pandas.DataFrame(
-        [
-            {
-                "project_id": e.project_id,
-                "task_id": e.task_id,
-                "task_status": e.task_status,
-                "task_phase": e.task_phase,
-                "task_phase_stage": e.task_phase_stage,
-                "input_data_id": e.input_data_id,
-                "input_data_name": e.input_data_name,
-                "updated_datetime": e.updated_datetime,
-                "label": e.label,
-                "annotation_id": e.annotation_id,
-                "left_top.x": e.left_top["x"],
-                "left_top.y": e.left_top["y"],
-                "right_bottom.x": e.right_bottom["x"],
-                "right_bottom.y": e.right_bottom["y"],
-                "width": e.width,
-                "height": e.height,
-            }
-            for e in annotation_bbox_list
-        ],
-        columns=columns,
-    )
+
+    if not annotation_bbox_list:
+        # 空のリストの場合は、base_columnsのみで空のDataFrameを返す
+        return pandas.DataFrame(columns=base_columns)
+
+    tmp_annotation_bbox_list = [e.to_dict(encode_json=True) for e in annotation_bbox_list]
+    df = pandas.json_normalize(tmp_annotation_bbox_list)
+
+    attribute_columns = sorted(col for col in df.columns if col.startswith("attributes."))
+    columns = base_columns + attribute_columns
 
     return df[columns]
 

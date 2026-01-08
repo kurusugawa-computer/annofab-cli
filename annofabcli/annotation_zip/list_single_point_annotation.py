@@ -43,6 +43,7 @@ class AnnotationSinglePointInfo(DataClassJsonMixin):
     label: str
     annotation_id: str
     point: dict[str, int]
+    attributes: dict[str, str | int | bool]
 
 
 def get_annotation_single_point_info_list(simple_annotation: dict[str, Any], *, target_label_names: Collection[str] | None = None) -> list[AnnotationSinglePointInfo]:
@@ -70,6 +71,7 @@ def get_annotation_single_point_info_list(simple_annotation: dict[str, Any], *, 
                     annotation_id=detail["annotation_id"],
                     point=point,
                     updated_datetime=simple_annotation["updated_datetime"],
+                    attributes=detail["attributes"],
                 )
             )
 
@@ -103,7 +105,7 @@ def get_annotation_single_point_info_list_from_annotation_path(
 def create_df(
     annotation_point_list: list[AnnotationSinglePointInfo],
 ) -> pandas.DataFrame:
-    columns = [
+    base_columns = [
         "project_id",
         "task_id",
         "task_status",
@@ -117,26 +119,16 @@ def create_df(
         "point.x",
         "point.y",
     ]
-    df = pandas.DataFrame(
-        [
-            {
-                "project_id": e.project_id,
-                "task_id": e.task_id,
-                "task_status": e.task_status,
-                "task_phase": e.task_phase,
-                "task_phase_stage": e.task_phase_stage,
-                "input_data_id": e.input_data_id,
-                "input_data_name": e.input_data_name,
-                "updated_datetime": e.updated_datetime,
-                "label": e.label,
-                "annotation_id": e.annotation_id,
-                "point.x": e.point["x"],
-                "point.y": e.point["y"],
-            }
-            for e in annotation_point_list
-        ],
-        columns=columns,
-    )
+
+    if not annotation_point_list:
+        # 空のリストの場合は、base_columnsのみで空のDataFrameを返す
+        return pandas.DataFrame(columns=base_columns)
+
+    tmp_annotation_point_list = [e.to_dict(encode_json=True) for e in annotation_point_list]
+    df = pandas.json_normalize(tmp_annotation_point_list)
+
+    attribute_columns = sorted(col for col in df.columns if col.startswith("attributes."))
+    columns = base_columns + attribute_columns
 
     return df[columns]
 

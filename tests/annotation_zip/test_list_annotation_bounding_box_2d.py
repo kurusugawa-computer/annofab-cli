@@ -30,8 +30,8 @@ class TestGetAnnotationBoundingBoxInfoList:
             "input_data_name": "test_image.jpg",
             "updated_datetime": "2023-01-01T00:00:00+09:00",
             "details": [
-                {"label": "person", "annotation_id": "bbox1", "data": {"_type": "BoundingBox", "left_top": {"x": 10, "y": 20}, "right_bottom": {"x": 110, "y": 120}}},
-                {"label": "car", "annotation_id": "bbox2", "data": {"_type": "BoundingBox", "left_top": {"x": 200, "y": 300}, "right_bottom": {"x": 400, "y": 500}}},
+                {"label": "person", "annotation_id": "bbox1", "data": {"_type": "BoundingBox", "left_top": {"x": 10, "y": 20}, "right_bottom": {"x": 110, "y": 120}}, "attributes": {"key1": "value1"}},
+                {"label": "car", "annotation_id": "bbox2", "data": {"_type": "BoundingBox", "left_top": {"x": 200, "y": 300}, "right_bottom": {"x": 400, "y": 500}}, "attributes": {}},
             ],
         }
 
@@ -77,9 +77,9 @@ class TestGetAnnotationBoundingBoxInfoList:
             "input_data_name": "test_image.jpg",
             "updated_datetime": "2023-01-01T00:00:00+09:00",
             "details": [
-                {"label": "person", "annotation_id": "bbox1", "data": {"_type": "BoundingBox", "left_top": {"x": 10, "y": 20}, "right_bottom": {"x": 110, "y": 120}}},
-                {"label": "car", "annotation_id": "bbox2", "data": {"_type": "BoundingBox", "left_top": {"x": 200, "y": 300}, "right_bottom": {"x": 400, "y": 500}}},
-                {"label": "bike", "annotation_id": "bbox3", "data": {"_type": "BoundingBox", "left_top": {"x": 50, "y": 60}, "right_bottom": {"x": 150, "y": 160}}},
+                {"label": "person", "annotation_id": "bbox1", "data": {"_type": "BoundingBox", "left_top": {"x": 10, "y": 20}, "right_bottom": {"x": 110, "y": 120}}, "attributes": {}},
+                {"label": "car", "annotation_id": "bbox2", "data": {"_type": "BoundingBox", "left_top": {"x": 200, "y": 300}, "right_bottom": {"x": 400, "y": 500}}, "attributes": {}},
+                {"label": "bike", "annotation_id": "bbox3", "data": {"_type": "BoundingBox", "left_top": {"x": 50, "y": 60}, "right_bottom": {"x": 150, "y": 160}}, "attributes": {}},
             ],
         }
 
