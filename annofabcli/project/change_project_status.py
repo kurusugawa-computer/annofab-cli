@@ -9,7 +9,8 @@ from annofabapi.models import OrganizationMember, Project, ProjectMemberRole, Pr
 from more_itertools import first_true
 
 import annofabcli
-from annofabcli.common.cli import CommandLine, build_annofabapi_resource_and_login
+import annofabcli.common.cli
+from annofabcli.common.cli import CommandLine, build_annofabapi_resource_and_login, get_list_from_args
 from annofabcli.common.facade import AnnofabApiFacade
 
 logger = logging.getLogger(__name__)

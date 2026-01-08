@@ -8,11 +8,14 @@ import requests
 from annofabapi.models import ProjectMember, ProjectMemberRole, ProjectMemberStatus
 
 import annofabcli
+import annofabcli.common.cli
 from annofabcli.common.cli import (
-    COMMAND_LINE_ERROR_STATUS_CODE,
     ArgumentParser,
+    COMMAND_LINE_ERROR_STATUS_CODE,
     CommandLine,
     build_annofabapi_resource_and_login,
+    get_json_from_args,
+    get_list_from_args,
 )
 from annofabcli.common.facade import AnnofabApiFacade
 from annofabcli.project_member.put_project_members import PutProjectMembers

@@ -12,6 +12,7 @@ import pandas
 from annofabapi.models import TaskHistoryEvent
 
 import annofabcli
+import annofabcli.common.cli
 from annofabcli.common.cli import (
     ArgumentParser,
     CommandLine,

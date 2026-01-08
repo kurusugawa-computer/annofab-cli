@@ -8,7 +8,8 @@ import pandas
 from annofabapi.models import InputData
 
 import annofabcli
-from annofabcli.common.cli import ArgumentParser, CommandLine, build_annofabapi_resource_and_login, print_according_to_format, print_csv
+import annofabcli.common.cli
+from annofabcli.common.cli import ArgumentParser, CommandLine, build_annofabapi_resource_and_login, get_json_from_args, get_list_from_args, print_according_to_format, print_csv
 from annofabcli.common.enums import FormatArgument
 from annofabcli.common.facade import AnnofabApiFacade
 from annofabcli.input_data.utils import remove_unnecessary_keys_from_input_data

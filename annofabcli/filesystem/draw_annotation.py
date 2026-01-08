@@ -15,10 +15,12 @@ from dataclasses_json import DataClassJsonMixin
 from PIL import Image, ImageColor, ImageDraw
 
 import annofabcli
+import annofabcli.common.cli
 from annofabcli.common.cli import (
-    COMMAND_LINE_ERROR_STATUS_CODE,
     ArgumentParser,
+    COMMAND_LINE_ERROR_STATUS_CODE,
     CommandLineWithoutWebapi,
+    get_input_data_size,
     get_json_from_args,
     get_list_from_args,
 )

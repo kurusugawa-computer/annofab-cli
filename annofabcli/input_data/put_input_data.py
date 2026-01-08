@@ -16,6 +16,7 @@ from annofabapi.models import ProjectMemberRole
 from dataclasses_json import DataClassJsonMixin
 
 import annofabcli
+import annofabcli.common.cli
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
     PARALLELISM_CHOICES,

@@ -11,6 +11,7 @@ from annofabapi.models import ProjectMemberRole, ProjectMemberStatus
 from dataclasses_json import DataClassJsonMixin
 
 import annofabcli
+import annofabcli.common.cli
 from annofabcli.common.cli import ArgumentParser, CommandLine, build_annofabapi_resource_and_login
 from annofabcli.common.facade import AnnofabApiFacade
 

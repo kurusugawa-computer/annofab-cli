@@ -14,6 +14,7 @@ from annofabapi.pydantic_models.task_status import TaskStatus
 from pydantic import BaseModel
 
 import annofabcli
+import annofabcli.common.cli
 from annofabcli.annotation.annotation_query import convert_attributes_from_cli_to_additional_data_list_v2
 from annofabcli.annotation.dump_annotation import DumpAnnotationMain
 from annofabcli.common.cli import (

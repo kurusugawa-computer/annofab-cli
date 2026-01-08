@@ -12,13 +12,15 @@ from annofabapi.util.annotation_specs import AnnotationSpecsAccessor
 from annofabapi.utils import can_put_annotation
 
 import annofabcli
+import annofabcli.common.cli
 from annofabcli.common.cli import (
-    COMMAND_LINE_ERROR_STATUS_CODE,
-    PARALLELISM_CHOICES,
     ArgumentParser,
+    COMMAND_LINE_ERROR_STATUS_CODE,
     CommandLine,
     CommandLineWithConfirm,
+    PARALLELISM_CHOICES,
     build_annofabapi_resource_and_login,
+    get_list_from_args,
 )
 from annofabcli.common.facade import AnnofabApiFacade
 

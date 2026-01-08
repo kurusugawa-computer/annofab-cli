@@ -9,11 +9,14 @@ from annofabapi.dataclass.task import Task
 from annofabapi.models import ProjectMemberRole, TaskStatus
 
 import annofabcli
+import annofabcli.common.cli
 from annofabcli.common.cli import (
     ArgumentParser,
     CommandLine,
     CommandLineWithConfirm,
     build_annofabapi_resource_and_login,
+    get_json_from_args,
+    get_list_from_args,
 )
 from annofabcli.common.facade import AnnofabApiFacade, TaskQuery, match_task_with_query
 from annofabcli.common.utils import add_dryrun_prefix

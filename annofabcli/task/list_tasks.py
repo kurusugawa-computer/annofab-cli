@@ -7,7 +7,8 @@ import pandas
 from annofabapi.models import Task
 
 import annofabcli
-from annofabcli.common.cli import ArgumentParser, CommandLine, build_annofabapi_resource_and_login
+import annofabcli.common.cli
+from annofabcli.common.cli import ArgumentParser, CommandLine, build_annofabapi_resource_and_login, get_json_from_args, get_list_from_args
 from annofabcli.common.enums import FormatArgument
 from annofabcli.common.facade import AnnofabApiFacade
 from annofabcli.common.utils import get_columns_with_priority

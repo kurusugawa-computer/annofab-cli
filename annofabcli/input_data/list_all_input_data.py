@@ -14,7 +14,8 @@ from annofabapi.dataclass.input import InputData
 from annofabapi.models import ProjectMemberRole
 
 import annofabcli
-from annofabcli.common.cli import ArgumentParser, CommandLine, build_annofabapi_resource_and_login, print_according_to_format, print_csv
+import annofabcli.common.cli
+from annofabcli.common.cli import ArgumentParser, CommandLine, build_annofabapi_resource_and_login, get_json_from_args, get_list_from_args, print_according_to_format, print_csv
 from annofabcli.common.download import DownloadingFile
 from annofabcli.common.enums import FormatArgument
 from annofabcli.common.facade import AnnofabApiFacade, InputDataQuery, match_input_data_with_query

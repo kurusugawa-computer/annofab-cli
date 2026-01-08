@@ -8,6 +8,7 @@ import numpy
 import pandas
 
 import annofabcli
+import annofabcli.common.cli
 from annofabcli.common.cli import ArgumentParser, CommandLineWithoutWebapi, get_list_from_args
 from annofabcli.common.utils import read_multiheader_csv
 

@@ -33,13 +33,15 @@ from annofabapi.utils import can_put_annotation
 from dataclasses_json import DataClassJsonMixin
 
 import annofabcli
+import annofabcli.common.cli
 from annofabcli.common.cli import (
-    COMMAND_LINE_ERROR_STATUS_CODE,
-    PARALLELISM_CHOICES,
     ArgumentParser,
+    COMMAND_LINE_ERROR_STATUS_CODE,
     CommandLine,
     CommandLineWithConfirm,
+    PARALLELISM_CHOICES,
     build_annofabapi_resource_and_login,
+    get_list_from_args,
 )
 from annofabcli.common.facade import AnnofabApiFacade
 from annofabcli.common.type_util import assert_noreturn
