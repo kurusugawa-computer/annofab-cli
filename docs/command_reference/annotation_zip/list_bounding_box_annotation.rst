@@ -34,8 +34,10 @@ Examples
         "annotation_id": "ann1",
         "left_top": {"x": 0, "y": 0},
         "right_bottom": {"x": 100, "y": 200},
+        "center": {"x": 50.0, "y": 100.0},
         "width": 100,
         "height": 200,
+        "area": 20000,
         "attributes": {
           "occluded": true,
           "confidence": 0.95

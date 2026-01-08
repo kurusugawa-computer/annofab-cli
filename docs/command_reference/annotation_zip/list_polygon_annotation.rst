@@ -81,7 +81,7 @@ Examples
 * ``task_phase_stage`` : タスクのフェーズステージ（1から始まる整数）
 * ``input_data_id`` : 入力データID
 * ``input_data_name`` : 入力データ名
-* ``updated_datetime`` : アノテーションの更新日時（ISO 8601形式）
+* ``updated_datetime`` : アノテーションJSONの更新日時（ISO 8601形式）
 * ``label`` : ラベル名
 * ``annotation_id`` : アノテーションID
 

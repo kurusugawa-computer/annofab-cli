@@ -76,7 +76,7 @@ CSV形式およびJSON形式で以下の項目が出力されます：
 * ``task_phase_stage``: タスクフェーズの段階
 * ``input_data_id``: 入力データID
 * ``input_data_name``: 入力データ名
-* ``updated_datetime``: アノテーションの更新日時
+* ``updated_datetime``: アノテーションJSONの更新日時
 * ``label``: アノテーションのラベル
 * ``annotation_id``: アノテーションID
 * ``begin_second``: 区間の開始時刻（秒）

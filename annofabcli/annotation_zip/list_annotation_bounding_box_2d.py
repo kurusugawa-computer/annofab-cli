@@ -46,8 +46,12 @@ class AnnotationBoundingBoxInfo(DataClassJsonMixin):
     annotation_id: str
     left_top: dict[str, int]
     right_bottom: dict[str, int]
+    center: dict[str, float]
+    """バウンディングボックスの中心座標"""
     width: int
     height: int
+    area: int
+    """バウンディングボックスの面積"""
     attributes: dict[str, str | int | bool]
 
 
@@ -65,6 +69,9 @@ def get_annotation_bounding_box_info_list(simple_annotation: dict[str, Any], *, 
             right_bottom = detail["data"]["right_bottom"]
             width = abs(right_bottom["x"] - left_top["x"])
             height = abs(right_bottom["y"] - left_top["y"])
+            center_x = (left_top["x"] + right_bottom["x"]) / 2
+            center_y = (left_top["y"] + right_bottom["y"]) / 2
+            area = width * height
 
             result.append(
                 AnnotationBoundingBoxInfo(
@@ -79,8 +86,10 @@ def get_annotation_bounding_box_info_list(simple_annotation: dict[str, Any], *, 
                     annotation_id=detail["annotation_id"],
                     left_top=left_top,
                     right_bottom=right_bottom,
+                    center={"x": center_x, "y": center_y},
                     width=width,
                     height=height,
+                    area=area,
                     updated_datetime=simple_annotation["updated_datetime"],
                     attributes=detail["attributes"],
                 )
@@ -131,8 +140,11 @@ def create_df(
         "left_top.y",
         "right_bottom.x",
         "right_bottom.y",
+        "center.x",
+        "center.y",
         "width",
         "height",
+        "area",
     ]
 
     if not annotation_bbox_list:
