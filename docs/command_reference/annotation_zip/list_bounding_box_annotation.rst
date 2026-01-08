@@ -35,7 +35,11 @@ Examples
         "left_top": {"x": 0, "y": 0},
         "right_bottom": {"x": 100, "y": 200},
         "width": 100,
-        "height": 200
+        "height": 200,
+        "attributes": {
+          "occluded": true,
+          "confidence": 0.95
+        }
       }
     ]
 

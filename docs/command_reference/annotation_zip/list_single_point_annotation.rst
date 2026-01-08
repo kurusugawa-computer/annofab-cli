@@ -32,7 +32,11 @@ Examples
         "updated_datetime": "2023-10-01T12:00:00.000+09:00",
         "label": "cat",
         "annotation_id": "ann1",
-        "point": {"x": 0, "y": 0}
+        "point": {"x": 0, "y": 0},
+        "attributes": {
+          "visible": true,
+          "size": "large"
+        }
       }
     ]
 
