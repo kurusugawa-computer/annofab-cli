@@ -61,6 +61,8 @@ class AnnotationPolygonInfo(BaseModel):
     """外接矩形の高さ。2点のポリラインの場合はNone"""
     attributes: dict[str, Any]
     points: list[dict[str, int]]
+    """ポリゴンの頂点リスト。各頂点は整数座標 {"x": int, "y": int} の形式。
+    """
 
 
 def calculate_polygon_properties(points: list[dict[str, int]]) -> tuple[float | None, dict[str, float] | None, float | None, float | None]:
@@ -134,7 +136,7 @@ def get_annotation_polygon_info_list(simple_annotation: dict[str, Any], *, targe
                     centroid=centroid,
                     bounding_box_width=bbox_width,
                     bounding_box_height=bbox_height,
-                    attributes=detail.get("attributes", {}),
+                    attributes=detail["attributes"],
                     points=points,
                     updated_datetime=simple_annotation["updated_datetime"],
                 )
@@ -170,7 +172,43 @@ def get_annotation_polygon_info_list_from_annotation_path(
 def create_df(
     annotation_polygon_list: list[AnnotationPolygonInfo],
 ) -> pandas.DataFrame:
-    columns = [
+    """
+    CSV出力用のDataFrameを作成する。
+
+    Notes:
+        points列は含めない。CSVに含めると列の長さが非常に大きくなるため。
+        attributes列は、キーごとに別々の列（attributes.<key>の形式）として出力する。
+
+    """
+    data_list = []
+    for e in annotation_polygon_list:
+        row_dict = {
+            "project_id": e.project_id,
+            "task_id": e.task_id,
+            "task_status": e.task_status,
+            "task_phase": e.task_phase,
+            "task_phase_stage": e.task_phase_stage,
+            "input_data_id": e.input_data_id,
+            "input_data_name": e.input_data_name,
+            "updated_datetime": e.updated_datetime,
+            "label": e.label,
+            "annotation_id": e.annotation_id,
+            "point_count": e.point_count,
+            "area": e.area,
+            "centroid.x": e.centroid["x"] if e.centroid is not None else None,
+            "centroid.y": e.centroid["y"] if e.centroid is not None else None,
+            "bounding_box_width": e.bounding_box_width,
+            "bounding_box_height": e.bounding_box_height,
+        }
+        # attributesの各キーを別々の列として追加
+        for key, value in e.attributes.items():
+            row_dict[f"attributes.{key}"] = value
+        data_list.append(row_dict)
+
+    df = pandas.DataFrame(data_list)
+
+    # 列の順序を整理（基本列を先頭に、attributes列を後に配置）
+    base_columns = [
         "project_id",
         "task_id",
         "task_status",
@@ -187,35 +225,11 @@ def create_df(
         "centroid.y",
         "bounding_box_width",
         "bounding_box_height",
-        "attributes",
-        "points",
     ]
-    df = pandas.DataFrame(
-        [
-            {
-                "project_id": e.project_id,
-                "task_id": e.task_id,
-                "task_status": e.task_status,
-                "task_phase": e.task_phase,
-                "task_phase_stage": e.task_phase_stage,
-                "input_data_id": e.input_data_id,
-                "input_data_name": e.input_data_name,
-                "updated_datetime": e.updated_datetime,
-                "label": e.label,
-                "annotation_id": e.annotation_id,
-                "point_count": e.point_count,
-                "area": e.area,
-                "centroid.x": e.centroid["x"] if e.centroid is not None else None,
-                "centroid.y": e.centroid["y"] if e.centroid is not None else None,
-                "bounding_box_width": e.bounding_box_width,
-                "bounding_box_height": e.bounding_box_height,
-                "attributes": e.attributes,
-                "points": e.points,
-            }
-            for e in annotation_polygon_list
-        ],
-        columns=columns,
-    )
+    # attributes列を抽出してソート
+    attributes_columns = sorted([col for col in df.columns if col.startswith("attributes.")])
+    # 列の順序を設定
+    columns = base_columns + attributes_columns
 
     return df[columns]
 
