@@ -122,7 +122,7 @@ def get_annotation_polyline_info_list(simple_annotation: dict[str, Any], *, targ
     result = []
     target_label_names_set = set(target_label_names) if target_label_names is not None else None
     for detail in simple_annotation["details"]:
-        if detail["data"]["_type"] == "Polyline":
+        if detail["data"]["_type"] == "Points":
             label = detail["label"]
             # ラベル名によるフィルタリング
             if target_label_names_set is not None and label not in target_label_names_set:
