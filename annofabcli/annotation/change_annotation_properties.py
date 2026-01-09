@@ -15,7 +15,7 @@ from annofabapi.models import ProjectMemberRole, SingleAnnotation, TaskStatus
 from annofabapi.utils import can_put_annotation, str_now
 from dataclasses_json import DataClassJsonMixin
 
-import annofabcli
+import annofabcli.common.cli
 from annofabcli.annotation.annotation_query import AnnotationQueryForAPI, AnnotationQueryForCLI
 from annofabcli.annotation.dump_annotation import DumpAnnotationMain
 from annofabcli.common.cli import (

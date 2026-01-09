@@ -11,7 +11,7 @@ from typing import Any
 import annofabapi
 from annofabapi.models import AnnotationDataHoldingType
 
-import annofabcli
+import annofabcli.common.cli
 from annofabcli.common.cli import PARALLELISM_CHOICES, ArgumentParser, CommandLine, build_annofabapi_resource_and_login
 from annofabcli.common.facade import AnnofabApiFacade
 

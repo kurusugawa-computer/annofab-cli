@@ -10,7 +10,7 @@ from typing import Any
 import pandas
 from dateutil.parser import parse
 
-import annofabcli
+import annofabcli.common.cli
 from annofabcli.common.cli import ArgumentParser, CommandLine, build_annofabapi_resource_and_login
 from annofabcli.common.facade import AnnofabApiFacade
 from annofabcli.task_history_event.list_worktime import (

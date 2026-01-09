@@ -10,7 +10,7 @@ import more_itertools
 import requests
 from annofabapi.models import JobStatus, OrganizationMemberRole, ProjectJobType
 
-import annofabcli
+import annofabcli.common.cli
 from annofabcli.common.cli import (
     CommandLine,
     CommandLineWithConfirm,

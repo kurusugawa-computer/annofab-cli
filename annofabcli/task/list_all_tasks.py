@@ -9,7 +9,7 @@ import annofabapi
 import pandas
 from annofabapi.dataclass.task import Task
 
-import annofabcli
+import annofabcli.common.cli
 from annofabcli.common.cli import ArgumentParser, CommandLine, build_annofabapi_resource_and_login
 from annofabcli.common.download import DownloadingFile
 from annofabcli.common.enums import FormatArgument

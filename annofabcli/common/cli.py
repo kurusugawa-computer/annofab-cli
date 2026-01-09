@@ -6,6 +6,7 @@ import argparse
 import getpass
 import json
 import logging
+import logging.config
 import os
 import pkgutil
 from pathlib import Path

@@ -4,7 +4,7 @@ import logging
 import annofabapi
 from annofabapi.models import TaskHistory
 
-import annofabcli
+import annofabcli.common.cli
 from annofabcli.common.cli import ArgumentParser, CommandLine, build_annofabapi_resource_and_login
 from annofabcli.common.enums import FormatArgument
 from annofabcli.common.facade import AnnofabApiFacade

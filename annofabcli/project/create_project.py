@@ -10,7 +10,7 @@ from typing import Any
 from annofabapi.models import InputDataType
 from annofabapi.plugin import EditorPluginId, ExtendSpecsPluginId
 
-import annofabcli
+import annofabcli.common.cli
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
     CommandLine,

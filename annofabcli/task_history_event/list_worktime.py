@@ -14,7 +14,8 @@ from annofabapi.models import TaskHistoryEvent, TaskStatus
 from dataclasses_json import DataClassJsonMixin
 from dateutil.parser import parse
 
-import annofabcli
+import annofabcli.common.cli
+import annofabcli.common.utils
 from annofabcli.common.cli import (
     ArgumentParser,
     CommandLine,

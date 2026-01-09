@@ -14,7 +14,7 @@ from annofabapi.parser import SimpleAnnotationParser, lazy_parse_simple_annotati
 from dataclasses_json import DataClassJsonMixin
 from PIL import Image, ImageColor, ImageDraw
 
-import annofabcli
+import annofabcli.common.cli
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
     ArgumentParser,

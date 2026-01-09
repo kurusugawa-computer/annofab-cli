@@ -9,7 +9,7 @@ import annofabapi
 import pandas
 from annofabapi.models import SingleAnnotation
 
-import annofabcli
+import annofabcli.common.cli
 from annofabcli.annotation.annotation_query import AnnotationQueryForAPI, AnnotationQueryForCLI
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,

@@ -9,9 +9,10 @@ from pathlib import Path
 from typing import Any
 
 import annofabapi
+import annofabapi.dataclass.task
 from annofabapi.models import ProjectMemberRole, TaskHistory
 
-import annofabcli
+import annofabcli.common.cli
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
     ArgumentParser,

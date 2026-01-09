@@ -8,7 +8,7 @@ import requests
 from annofabapi.models import OrganizationMember, Project, ProjectMemberRole, ProjectStatus
 from more_itertools import first_true
 
-import annofabcli
+import annofabcli.common.cli
 from annofabcli.common.cli import CommandLine, build_annofabapi_resource_and_login
 from annofabcli.common.facade import AnnofabApiFacade
 

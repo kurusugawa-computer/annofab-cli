@@ -32,7 +32,7 @@ from annofabapi.util.annotation_specs import AnnotationSpecsAccessor, get_choice
 from annofabapi.utils import can_put_annotation
 from dataclasses_json import DataClassJsonMixin
 
-import annofabcli
+import annofabcli.common.cli
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
     PARALLELISM_CHOICES,
