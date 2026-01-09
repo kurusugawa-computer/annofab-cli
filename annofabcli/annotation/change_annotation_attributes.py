@@ -14,7 +14,7 @@ import annofabapi
 from annofabapi.dataclass.task import Task
 from annofabapi.models import ProjectMemberRole, TaskStatus
 
-import annofabcli
+import annofabcli.common.cli
 from annofabcli.annotation.annotation_query import (
     AnnotationQueryForAPI,
     AnnotationQueryForCLI,

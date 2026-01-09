@@ -9,7 +9,7 @@ import annofabapi
 import pandas
 from annofabapi.models import SingleAnnotation
 
-import annofabcli
+import annofabcli.common.cli
 from annofabcli.annotation.annotation_query import AnnotationQueryForCLI
 from annofabcli.annotation.list_annotation import ListAnnotationMain
 from annofabcli.common.cli import (

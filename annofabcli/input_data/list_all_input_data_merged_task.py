@@ -12,7 +12,7 @@ from typing import Any
 import pandas
 from annofabapi.dataclass.input import InputData
 
-import annofabcli
+import annofabcli.common.cli
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
     ArgumentParser,

@@ -5,7 +5,7 @@ from typing import Any
 import requests
 from annofabapi.models import ProjectMemberRole
 
-import annofabcli
+import annofabcli.common.cli
 from annofabcli.common.cli import ArgumentParser, CommandLine, build_annofabapi_resource_and_login
 from annofabcli.common.facade import AnnofabApiFacade
 
