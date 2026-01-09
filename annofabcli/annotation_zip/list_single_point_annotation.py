@@ -274,7 +274,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--label_name",
         type=str,
-        nargs="*",
+        nargs="+",
         help="指定したラベル名の点アノテーションのみを対象にします。複数指定できます。",
     )
 

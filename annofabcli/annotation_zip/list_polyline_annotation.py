@@ -1,17 +1,15 @@
-from __future__ import annotations
-
 import argparse
 import logging
+import math
 import sys
 import tempfile
 from collections.abc import Collection
-from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
 import pandas
 from annofabapi.models import InputDataType, ProjectMemberRole
-from dataclasses_json import DataClassJsonMixin
+from pydantic import BaseModel, ConfigDict
 
 import annofabcli.common.cli
 from annofabcli.common.annofab.annotation_zip import lazy_parse_simple_annotation_by_input_data
@@ -28,8 +26,13 @@ from annofabcli.common.utils import print_csv, print_json
 logger = logging.getLogger(__name__)
 
 
-@dataclass(frozen=True)
-class RangeAnnotationInfo(DataClassJsonMixin):
+class AnnotationPolylineInfo(BaseModel):
+    """
+    ポリラインアノテーションの情報
+    """
+
+    model_config = ConfigDict(frozen=True)
+
     project_id: str
     task_id: str
     task_status: str
@@ -44,30 +47,85 @@ class RangeAnnotationInfo(DataClassJsonMixin):
 
     label: str
     annotation_id: str
-    begin_second: float
-    end_second: float
-    duration_second: float
-    attributes: dict[str, str | int | bool]
+    point_count: int
+    length: float
+    """ポリラインの総長（各線分の長さの合計）"""
+    start_point: dict[str, float]
+    """始点の座標"""
+    end_point: dict[str, float]
+    """終点の座標"""
+    midpoint: dict[str, float]
+    """中点（全頂点の座標平均）"""
+    bounding_box_width: float
+    """外接矩形の幅"""
+    bounding_box_height: float
+    """外接矩形の高さ"""
+    attributes: dict[str, Any]
+    points: list[dict[str, int]]
+    """ポリラインの頂点リスト。各頂点は整数座標 {"x": int, "y": int} の形式。
+    """
 
 
-def get_range_annotation_info_list(simple_annotation: dict[str, Any], *, target_label_names: Collection[str] | None = None) -> list[RangeAnnotationInfo]:
+def calculate_polyline_properties(points: list[dict[str, int]]) -> tuple[float, dict[str, float], dict[str, float], dict[str, float], float, float]:
+    """
+    ポリラインの長さ、始点、終点、中点、外接矩形のサイズを計算する。
+
+    Args:
+        points: ポリラインの頂点リスト。各頂点は整数座標 {"x": int, "y": int} の形式。2点以上が必須。
+
+    Returns:
+        (長さ, 始点, 終点, 中点, 外接矩形の幅, 外接矩形の高さ) のタプル。
+    """
+    # 始点と終点
+    start_point = {"x": float(points[0]["x"]), "y": float(points[0]["y"])}
+    end_point = {"x": float(points[-1]["x"]), "y": float(points[-1]["y"])}
+
+    # 中点（全頂点の座標平均）
+    sum_x = sum(p["x"] for p in points)
+    sum_y = sum(p["y"] for p in points)
+    midpoint = {"x": sum_x / len(points), "y": sum_y / len(points)}
+
+    # 線の長さを計算
+    total_length = 0.0
+    for i in range(len(points) - 1):
+        p1 = points[i]
+        p2 = points[i + 1]
+        dx = p2["x"] - p1["x"]
+        dy = p2["y"] - p1["y"]
+        segment_length = math.hypot(dx, dy)
+        total_length += segment_length
+
+    # 外接矩形を計算
+    x_coords = [p["x"] for p in points]
+    y_coords = [p["y"] for p in points]
+    min_x = min(x_coords)
+    max_x = max(x_coords)
+    min_y = min(y_coords)
+    max_y = max(y_coords)
+    bbox_width = float(max_x - min_x)
+    bbox_height = float(max_y - min_y)
+
+    return total_length, start_point, end_point, midpoint, bbox_width, bbox_height
+
+
+def get_annotation_polyline_info_list(simple_annotation: dict[str, Any], *, target_label_names: Collection[str] | None = None) -> list[AnnotationPolylineInfo]:
     result = []
     target_label_names_set = set(target_label_names) if target_label_names is not None else None
     for detail in simple_annotation["details"]:
-        if detail["data"]["_type"] == "Range":
+        if detail["data"]["_type"] == "Points":
             label = detail["label"]
             # ラベル名によるフィルタリング
             if target_label_names_set is not None and label not in target_label_names_set:
                 continue
 
-            begin_millisecond = detail["data"]["begin"]
-            end_millisecond = detail["data"]["end"]
-            begin_second = begin_millisecond / 1000
-            end_second = end_millisecond / 1000
-            duration_second = end_second - begin_second
+            points = detail["data"]["points"]
+            point_count = len(points)
+
+            # ポリラインのプロパティを計算
+            length, start_point, end_point, midpoint, bbox_width, bbox_height = calculate_polyline_properties(points)
 
             result.append(
-                RangeAnnotationInfo(
+                AnnotationPolylineInfo(
                     project_id=simple_annotation["project_id"],
                     task_id=simple_annotation["task_id"],
                     task_phase=simple_annotation["task_phase"],
@@ -77,25 +135,30 @@ def get_range_annotation_info_list(simple_annotation: dict[str, Any], *, target_
                     input_data_name=simple_annotation["input_data_name"],
                     label=label,
                     annotation_id=detail["annotation_id"],
-                    begin_second=begin_second,
-                    end_second=end_second,
-                    duration_second=duration_second,
-                    updated_datetime=simple_annotation["updated_datetime"],
+                    point_count=point_count,
+                    length=length,
+                    start_point=start_point,
+                    end_point=end_point,
+                    midpoint=midpoint,
+                    bounding_box_width=bbox_width,
+                    bounding_box_height=bbox_height,
                     attributes=detail["attributes"],
+                    points=points,
+                    updated_datetime=simple_annotation["updated_datetime"],
                 )
             )
 
     return result
 
 
-def get_range_annotation_info_list_from_annotation_path(
+def get_annotation_polyline_info_list_from_annotation_path(
     annotation_path: Path,
     *,
     target_task_ids: Collection[str] | None = None,
     task_query: TaskQuery | None = None,
     target_label_names: Collection[str] | None = None,
-) -> list[RangeAnnotationInfo]:
-    range_annotation_list = []
+) -> list[AnnotationPolylineInfo]:
+    annotation_polyline_list = []
     target_task_ids = set(target_task_ids) if target_task_ids is not None else None
     iter_parser = lazy_parse_simple_annotation_by_input_data(annotation_path)
     logger.info(f"アノテーションZIPまたはディレクトリ'{annotation_path}'を読み込みます。")
@@ -107,14 +170,24 @@ def get_range_annotation_info_list_from_annotation_path(
         dict_simple_annotation = parser.load_json()
         if task_query is not None and not match_annotation_with_task_query(dict_simple_annotation, task_query):
             continue
-        sub_range_annotation_list = get_range_annotation_info_list(dict_simple_annotation, target_label_names=target_label_names)
-        range_annotation_list.extend(sub_range_annotation_list)
-    return range_annotation_list
+        sub_annotation_polyline_list = get_annotation_polyline_info_list(dict_simple_annotation, target_label_names=target_label_names)
+        annotation_polyline_list.extend(sub_annotation_polyline_list)
+    return annotation_polyline_list
 
 
 def create_df(
-    range_annotation_list: list[RangeAnnotationInfo],
+    annotation_polyline_list: list[AnnotationPolylineInfo],
 ) -> pandas.DataFrame:
+    """
+    CSV出力用のDataFrameを作成する。
+
+    Notes:
+        points列は含めない。CSVに含めると列の長さが非常に大きくなるため。
+        attributes列は、キーごとに別々の列（attributes.<key>の形式）として出力する。
+        pandas.json_normalizeを使用してネストした辞書を自動的に展開する。
+
+    """
+    # 基本列の定義
     base_columns = [
         "project_id",
         "task_id",
@@ -126,25 +199,35 @@ def create_df(
         "updated_datetime",
         "label",
         "annotation_id",
-        "begin_second",
-        "end_second",
-        "duration_second",
+        "point_count",
+        "length",
+        "start_point.x",
+        "start_point.y",
+        "end_point.x",
+        "end_point.y",
+        "midpoint.x",
+        "midpoint.y",
+        "bounding_box_width",
+        "bounding_box_height",
     ]
 
-    if not range_annotation_list:
-        # 空のリストの場合は、base_columnsのみで空のDataFrameを返す
+    if len(annotation_polyline_list) == 0:
+        # 件数が0件のときも列ヘッダを出力する
         return pandas.DataFrame(columns=base_columns)
 
-    tmp_range_annotation_list = [e.to_dict(encode_json=True) for e in range_annotation_list]
-    df = pandas.json_normalize(tmp_range_annotation_list)
+    # pandas.json_normalizeを使用してネストした辞書を展開
+    # start_point, end_point, midpoint（辞書）とattributes（辞書）が自動的に展開される
+    df = pandas.json_normalize([e.model_dump() for e in annotation_polyline_list])
 
-    attribute_columns = sorted(col for col in df.columns if col.startswith("attributes."))
-    columns = base_columns + attribute_columns
+    # attributes列を抽出してソート
+    attributes_columns = sorted([col for col in df.columns if col.startswith("attributes.")])
+    # 列の順序を設定
+    columns = base_columns + attributes_columns
 
     return df[columns]
 
 
-def print_range_annotation(
+def print_annotation_polyline(
     annotation_path: Path,
     output_file: Path,
     output_format: FormatArgument,
@@ -153,24 +236,24 @@ def print_range_annotation(
     task_query: TaskQuery | None = None,
     target_label_names: Collection[str] | None = None,
 ) -> None:
-    range_annotation_list = get_range_annotation_info_list_from_annotation_path(
+    annotation_polyline_list = get_annotation_polyline_info_list_from_annotation_path(
         annotation_path,
         target_task_ids=target_task_ids,
         task_query=task_query,
         target_label_names=target_label_names,
     )
 
-    logger.info(f"{len(range_annotation_list)} 件の区間アノテーションの情報を出力します。 :: output='{output_file}'")
+    logger.info(f"{len(annotation_polyline_list)} 件のポリラインアノテーションの情報を出力します。 :: output='{output_file}'")
 
     if output_format == FormatArgument.CSV:
-        df = create_df(range_annotation_list)
+        df = create_df(annotation_polyline_list)
         print_csv(df, output_file)
 
     elif output_format in [FormatArgument.PRETTY_JSON, FormatArgument.JSON]:
         json_is_pretty = output_format == FormatArgument.PRETTY_JSON
-        # DataClassJsonMixinを使用したtoJSON処理
+        # Pydantic BaseModelを使用したJSON処理
         print_json(
-            [e.to_dict(encode_json=True) for e in range_annotation_list],
+            [e.model_dump() for e in annotation_polyline_list],
             is_pretty=json_is_pretty,
             output=output_file,
         )
@@ -179,8 +262,8 @@ def print_range_annotation(
         raise ValueError(f"出力形式 '{output_format}' はサポートされていません。")
 
 
-class ListRangeAnnotation(CommandLine):
-    COMMON_MESSAGE = "annofabcli annotation_zip list_range_annotation: error:"
+class ListAnnotationPolyline(CommandLine):
+    COMMON_MESSAGE = "annofabcli annotation_zip list_polyline_annotation: error:"
 
     def validate(self, args: argparse.Namespace) -> bool:
         if args.project_id is None and args.annotation is None:
@@ -201,13 +284,13 @@ class ListRangeAnnotation(CommandLine):
         if project_id is not None:
             super().validate_project(project_id, project_member_roles=[ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER])
             project, _ = self.service.api.get_project(project_id)
-            if project["input_data_type"] != InputDataType.MOVIE.value:
-                print(f"project_id='{project_id}'であるプロジェクトは動画プロジェクトでないので、終了します", file=sys.stderr)  # noqa: T201
+            if project["input_data_type"] != InputDataType.IMAGE.value:
+                print(f"project_id='{project_id}'であるプロジェクトは画像プロジェクトでないので、終了します", file=sys.stderr)  # noqa: T201
                 sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
         annotation_path = Path(args.annotation) if args.annotation is not None else None
 
-        task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id) if args.task_id is not None else None
+        task_id_list = get_list_from_args(args.task_id) if args.task_id is not None else None
         task_query = TaskQuery.from_dict(annofabcli.common.cli.get_json_from_args(args.task_query)) if args.task_query is not None else None
         label_name_list = get_list_from_args(args.label_name) if args.label_name is not None else None
 
@@ -216,14 +299,15 @@ class ListRangeAnnotation(CommandLine):
 
         downloading_obj = DownloadingFile(self.service)
 
-        def download_and_print_range_annotation(project_id: str, temp_dir: Path, *, is_latest: bool) -> None:
-            annotation_path = downloading_obj.download_annotation_zip_to_dir(
+        def download_and_print_annotation_polyline(project_id: str, temp_dir: Path, *, is_latest: bool) -> None:
+            local_annotation_path = temp_dir / f"{project_id}__annotation.zip"
+            downloading_obj.download_annotation_zip(
                 project_id,
-                temp_dir,
+                dest_path=local_annotation_path,
                 is_latest=is_latest,
             )
-            print_range_annotation(
-                annotation_path,
+            print_annotation_polyline(
+                local_annotation_path,
                 output_file,
                 output_format,
                 target_task_ids=task_id_list,
@@ -233,17 +317,17 @@ class ListRangeAnnotation(CommandLine):
 
         if project_id is not None:
             if args.temp_dir is not None:
-                download_and_print_range_annotation(project_id=project_id, temp_dir=args.temp_dir, is_latest=args.latest)
+                download_and_print_annotation_polyline(project_id=project_id, temp_dir=args.temp_dir, is_latest=args.latest)
             else:
                 with tempfile.TemporaryDirectory() as str_temp_dir:
-                    download_and_print_range_annotation(
+                    download_and_print_annotation_polyline(
                         project_id=project_id,
                         temp_dir=Path(str_temp_dir),
                         is_latest=args.latest,
                     )
         else:
             assert annotation_path is not None
-            print_range_annotation(
+            print_annotation_polyline(
                 annotation_path,
                 output_file,
                 output_format,
@@ -285,7 +369,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--label_name",
         type=str,
         nargs="+",
-        help="指定したラベル名の区間アノテーションのみを対象にします。複数指定できます。",
+        help="指定したラベル名のポリラインアノテーションのみを対象にします。複数指定できます。",
     )
 
     parser.add_argument(
@@ -306,12 +390,12 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
 def main(args: argparse.Namespace) -> None:
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
-    ListRangeAnnotation(service, facade, args).main()
+    ListAnnotationPolyline(service, facade, args).main()
 
 
 def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
-    subcommand_name = "list_range_annotation"
-    subcommand_help = "アノテーションZIPから動画プロジェクトの区間アノテーションの情報を出力します。"
+    subcommand_name = "list_polyline_annotation"
+    subcommand_help = "アノテーションZIPからポリラインアノテーションの座標情報と属性情報を出力します。"
     epilog = "アノテーションZIPをダウンロードする場合は、オーナロールまたはアノテーションユーザロールを持つユーザで実行してください。"
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description=subcommand_help, epilog=epilog)
     parse_args(parser)
