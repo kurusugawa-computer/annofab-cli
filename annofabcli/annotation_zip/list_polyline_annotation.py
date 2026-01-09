@@ -50,38 +50,34 @@ class AnnotationPolylineInfo(BaseModel):
     label: str
     annotation_id: str
     point_count: int
-    length: float | None
-    """ポリラインの総長（各線分の長さの合計）。1点以下の場合はNone"""
-    start_point: dict[str, float] | None
-    """始点の座標。1点以上ある場合に設定される"""
-    end_point: dict[str, float] | None
-    """終点の座標。1点以上ある場合に設定される"""
-    midpoint: dict[str, float] | None
-    """中点（全頂点の座標平均）。1点以上ある場合に設定される"""
-    bounding_box_width: float | None
-    """外接矩形の幅。1点以下の場合はNone"""
-    bounding_box_height: float | None
-    """外接矩形の高さ。1点以下の場合はNone"""
+    length: float
+    """ポリラインの総長（各線分の長さの合計）"""
+    start_point: dict[str, float]
+    """始点の座標"""
+    end_point: dict[str, float]
+    """終点の座標"""
+    midpoint: dict[str, float]
+    """中点（全頂点の座標平均）"""
+    bounding_box_width: float
+    """外接矩形の幅"""
+    bounding_box_height: float
+    """外接矩形の高さ"""
     attributes: dict[str, Any]
     points: list[dict[str, int]]
     """ポリラインの頂点リスト。各頂点は整数座標 {"x": int, "y": int} の形式。
     """
 
 
-def calculate_polyline_properties(points: list[dict[str, int]]) -> tuple[float | None, dict[str, float] | None, dict[str, float] | None, dict[str, float] | None, float | None, float | None]:
+def calculate_polyline_properties(points: list[dict[str, int]]) -> tuple[float, dict[str, float], dict[str, float], dict[str, float], float, float]:
     """
     ポリラインの長さ、始点、終点、中点、外接矩形のサイズを計算する。
 
     Args:
-        points: ポリラインの頂点リスト。各頂点は整数座標 {"x": int, "y": int} の形式。
+        points: ポリラインの頂点リスト。各頂点は整数座標 {"x": int, "y": int} の形式。2点以上が必須。
 
     Returns:
         (長さ, 始点, 終点, 中点, 外接矩形の幅, 外接矩形の高さ) のタプル。
-        1点以下の場合は、適切にNoneを返す。
     """
-    if len(points) == 0:
-        return None, None, None, None, None, None
-
     # 始点と終点
     start_point = {"x": float(points[0]["x"]), "y": float(points[0]["y"])}
     end_point = {"x": float(points[-1]["x"]), "y": float(points[-1]["y"])}
@@ -90,10 +86,6 @@ def calculate_polyline_properties(points: list[dict[str, int]]) -> tuple[float |
     sum_x = sum(p["x"] for p in points)
     sum_y = sum(p["y"] for p in points)
     midpoint = {"x": sum_x / len(points), "y": sum_y / len(points)}
-
-    if len(points) == 1:
-        # 1点の場合は長さと外接矩形はNone
-        return None, start_point, end_point, midpoint, None, None
 
     # 線の長さを計算
     total_length = 0.0

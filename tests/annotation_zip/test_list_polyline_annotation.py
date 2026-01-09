@@ -56,38 +56,6 @@ class TestCalculatePolylineProperties:
         assert bbox_width == pytest.approx(3.0)
         assert bbox_height == pytest.approx(4.0)
 
-    def test_calculate_polyline_properties_with_one_point(self):
-        """1点の場合はlengthとbboxがNoneになることをテスト"""
-        points = [{"x": 5, "y": 10}]
-
-        length, start_point, end_point, midpoint, bbox_width, bbox_height = calculate_polyline_properties(points)
-
-        assert length is None
-        assert start_point is not None
-        assert start_point["x"] == pytest.approx(5.0)
-        assert start_point["y"] == pytest.approx(10.0)
-        assert end_point is not None
-        assert end_point["x"] == pytest.approx(5.0)
-        assert end_point["y"] == pytest.approx(10.0)
-        assert midpoint is not None
-        assert midpoint["x"] == pytest.approx(5.0)
-        assert midpoint["y"] == pytest.approx(10.0)
-        assert bbox_width is None
-        assert bbox_height is None
-
-    def test_calculate_polyline_properties_with_zero_points(self):
-        """0点の場合はすべてNoneを返すことをテスト"""
-        points: list[dict[str, int]] = []
-
-        length, start_point, end_point, midpoint, bbox_width, bbox_height = calculate_polyline_properties(points)
-
-        assert length is None
-        assert start_point is None
-        assert end_point is None
-        assert midpoint is None
-        assert bbox_width is None
-        assert bbox_height is None
-
 
 class TestGetAnnotationPolylineInfoList:
     """get_annotation_polyline_info_list関数のテストクラス"""
@@ -170,45 +138,6 @@ class TestGetAnnotationPolylineInfoList:
         assert second_annotation.bounding_box_height == pytest.approx(4.0)
         assert second_annotation.attributes == {}
         assert len(second_annotation.points) == 2
-
-    def test_get_annotation_polyline_info_list_with_single_point(self):
-        """1点のポリラインの場合、一部プロパティがNoneになることをテスト"""
-        simple_annotation = {
-            "project_id": "test_project",
-            "task_id": "test_task",
-            "task_phase": "annotation",
-            "task_phase_stage": 1,
-            "task_status": "working",
-            "input_data_id": "test_image.jpg",
-            "input_data_name": "test_image.jpg",
-            "updated_datetime": "2023-01-01T00:00:00+09:00",
-            "details": [
-                {
-                    "label": "point",
-                    "annotation_id": "point1",
-                    "data": {"_type": "Points", "points": [{"x": 5, "y": 10}]},
-                    "attributes": {},
-                },
-            ],
-        }
-
-        result = get_annotation_polyline_info_list(simple_annotation)
-
-        assert len(result) == 1
-
-        annotation = result[0]
-        assert annotation.label == "point"
-        assert annotation.point_count == 1
-        assert annotation.length is None
-        assert annotation.start_point is not None
-        assert annotation.start_point["x"] == pytest.approx(5.0)
-        assert annotation.end_point is not None
-        assert annotation.end_point["x"] == pytest.approx(5.0)
-        assert annotation.midpoint is not None
-        assert annotation.midpoint["x"] == pytest.approx(5.0)
-        assert annotation.bounding_box_width is None
-        assert annotation.bounding_box_height is None
-        assert len(annotation.points) == 1
 
     def test_get_annotation_polyline_info_list_with_label_filter(self):
         """target_label_names でフィルタリングが正しく機能するかテスト"""
