@@ -93,7 +93,7 @@ class TestGetAnnotationPolylineInfoList:
     """get_annotation_polyline_info_list関数のテストクラス"""
 
     def test_get_annotation_polyline_info_list_basic(self):
-        """基本的な動作をテスト：Polyline型のアノテーションを正しく抽出できるか"""
+        """基本的な動作をテスト：Points型のアノテーションを正しく抽出できるか"""
         simple_annotation = {
             "project_id": "test_project",
             "task_id": "test_task",
@@ -238,7 +238,7 @@ class TestGetAnnotationPolylineInfoList:
         assert "lane" not in labels
 
     def test_get_annotation_polyline_info_list_ignores_non_polyline(self):
-        """Polyline型以外のアノテーション（Points、BoundingBoxなど）は無視されることをテスト"""
+        """Points型のアノテーション（ポリラインとポリゴン両方）が抽出され、BoundingBoxなどは無視されることをテスト"""
         simple_annotation = {
             "project_id": "test_project",
             "task_id": "test_task",
@@ -257,9 +257,11 @@ class TestGetAnnotationPolylineInfoList:
 
         result = get_annotation_polyline_info_list(simple_annotation)
 
-        # Polyline型のアノテーションのみが抽出される
-        assert len(result) == 1
-        assert result[0].label == "road"
+        # Points型のアノテーションはポリゴンも含めてすべて抽出される（Annofabの仕様上、ポリラインとポリゴンの区別がないため）
+        assert len(result) == 2
+        labels = [r.label for r in result]
+        assert "road" in labels
+        assert "polygon" in labels
 
 
 @pytest.mark.access_webapi
