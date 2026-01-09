@@ -107,13 +107,13 @@ class TestGetAnnotationPolylineInfoList:
                 {
                     "label": "road",
                     "annotation_id": "line1",
-                    "data": {"_type": "Polyline", "points": [{"x": 0, "y": 0}, {"x": 10, "y": 0}, {"x": 10, "y": 10}]},
+                    "data": {"_type": "Points", "points": [{"x": 0, "y": 0}, {"x": 10, "y": 0}, {"x": 10, "y": 10}]},
                     "attributes": {"type": "dashed", "color": "white"},
                 },
                 {
                     "label": "lane",
                     "annotation_id": "line2",
-                    "data": {"_type": "Polyline", "points": [{"x": 0, "y": 0}, {"x": 3, "y": 4}]},
+                    "data": {"_type": "Points", "points": [{"x": 0, "y": 0}, {"x": 3, "y": 4}]},
                     "attributes": {},
                 },
             ],
@@ -186,7 +186,7 @@ class TestGetAnnotationPolylineInfoList:
                 {
                     "label": "point",
                     "annotation_id": "point1",
-                    "data": {"_type": "Polyline", "points": [{"x": 5, "y": 10}]},
+                    "data": {"_type": "Points", "points": [{"x": 5, "y": 10}]},
                     "attributes": {},
                 },
             ],
@@ -222,9 +222,9 @@ class TestGetAnnotationPolylineInfoList:
             "input_data_name": "test_image.jpg",
             "updated_datetime": "2023-01-01T00:00:00+09:00",
             "details": [
-                {"label": "road", "annotation_id": "line1", "data": {"_type": "Polyline", "points": [{"x": 0, "y": 0}, {"x": 10, "y": 0}]}, "attributes": {}},
-                {"label": "lane", "annotation_id": "line2", "data": {"_type": "Polyline", "points": [{"x": 0, "y": 0}, {"x": 20, "y": 0}]}, "attributes": {}},
-                {"label": "boundary", "annotation_id": "line3", "data": {"_type": "Polyline", "points": [{"x": 5, "y": 5}, {"x": 15, "y": 5}]}, "attributes": {}},
+                {"label": "road", "annotation_id": "line1", "data": {"_type": "Points", "points": [{"x": 0, "y": 0}, {"x": 10, "y": 0}]}, "attributes": {}},
+                {"label": "lane", "annotation_id": "line2", "data": {"_type": "Points", "points": [{"x": 0, "y": 0}, {"x": 20, "y": 0}]}, "attributes": {}},
+                {"label": "boundary", "annotation_id": "line3", "data": {"_type": "Points", "points": [{"x": 5, "y": 5}, {"x": 15, "y": 5}]}, "attributes": {}},
             ],
         }
 
@@ -249,7 +249,7 @@ class TestGetAnnotationPolylineInfoList:
             "input_data_name": "test_image.jpg",
             "updated_datetime": "2023-01-01T00:00:00+09:00",
             "details": [
-                {"label": "road", "annotation_id": "line1", "data": {"_type": "Polyline", "points": [{"x": 0, "y": 0}, {"x": 10, "y": 0}]}, "attributes": {}},
+                {"label": "road", "annotation_id": "line1", "data": {"_type": "Points", "points": [{"x": 0, "y": 0}, {"x": 10, "y": 0}]}, "attributes": {}},
                 {"label": "polygon", "annotation_id": "poly1", "data": {"_type": "Points", "points": [{"x": 0, "y": 0}, {"x": 10, "y": 0}, {"x": 0, "y": 10}]}, "attributes": {}},
                 {"label": "bbox", "annotation_id": "bbox1", "data": {"_type": "BoundingBox", "left_top": {"x": 10, "y": 20}, "right_bottom": {"x": 110, "y": 120}}, "attributes": {}},
             ],
