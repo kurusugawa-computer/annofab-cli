@@ -102,7 +102,7 @@ def calculate_polyline_properties(points: list[dict[str, int]]) -> tuple[float |
         p2 = points[i + 1]
         dx = p2["x"] - p1["x"]
         dy = p2["y"] - p1["y"]
-        segment_length = math.sqrt(dx * dx + dy * dy)
+        segment_length = math.hypot(dx, dy)
         total_length += segment_length
 
     # 外接矩形を計算
