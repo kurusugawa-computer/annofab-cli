@@ -1,5 +1,6 @@
 import argparse
 import logging
+import math
 import sys
 import tempfile
 from collections.abc import Collection
@@ -65,6 +66,9 @@ class Annotation3DBoundingBoxInfo(DataClassJsonMixin):
     top_z: float
     """天面のZ座標（location.z + height/2）。回転は考慮していない。"""
 
+    horizontal_distance: float
+    """原点(0, 0)からのXY平面上の距離（sqrt(location.x² + location.y²)）"""
+
     attributes: dict[str, str | int | bool]
     """属性情報"""
 
@@ -96,6 +100,7 @@ def get_annotation_3d_bounding_box_info_list(simple_annotation: dict[str, Any], 
         footprint_area = width * depth
         bottom_z = location.z - height / 2
         top_z = location.z + height / 2
+        horizontal_distance = math.sqrt(location.x**2 + location.y**2)
 
         result.append(
             Annotation3DBoundingBoxInfo(
@@ -116,6 +121,7 @@ def get_annotation_3d_bounding_box_info_list(simple_annotation: dict[str, Any], 
                 footprint_area=footprint_area,
                 bottom_z=bottom_z,
                 top_z=top_z,
+                horizontal_distance=horizontal_distance,
                 attributes=detail["attributes"],
                 updated_datetime=simple_annotation["updated_datetime"],
             )
@@ -177,6 +183,7 @@ def create_df(
         "footprint_area",
         "bottom_z",
         "top_z",
+        "horizontal_distance",
     ]
 
     if len(tmp_annotation_bbox_list) == 0:

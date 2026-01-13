@@ -73,6 +73,7 @@ Examples
         "footprint_area": 12.3,
         "bottom_z": -0.06,
         "top_z": 1.49,
+        "horizontal_distance": 13.09,
         "attributes": {
           "occluded": true,
           "type": "sedan"
@@ -135,6 +136,7 @@ CSVまたはJSON形式で以下の項目が出力されます。
 * footprint_area: 底面積（width × depth）。地面占有面積。
 * bottom_z: 底面のZ座標（location.z - height/2）。回転は考慮していない。
 * top_z: 天面のZ座標（location.z + height/2）。回転は考慮していない。
+* horizontal_distance: 原点(0, 0)からのXY平面上の距離（sqrt(location.x² + location.y²)）
 
 
 属性情報
