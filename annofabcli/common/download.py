@@ -427,3 +427,49 @@ class DownloadingFile:
             dest_path=str(dest_path),
         )
         return dest_path
+
+    def download_task_history_event_json_to_dir(
+        self,
+        project_id: str,
+        output_dir: Path,
+    ) -> Path:
+        """
+        タスク履歴イベントJSONをoutput_dirに統一された命名規則でダウンロードする。
+
+        Args:
+            project_id: プロジェクトID
+            output_dir: 出力ディレクトリ
+
+        Returns:
+            ダウンロードされたファイルのパス
+        """
+        dest_path = output_dir / get_filename(project_id, "task_history_event", "json")
+
+        self.download_task_history_event_json(
+            project_id,
+            dest_path=str(dest_path),
+        )
+        return dest_path
+
+    def download_comment_json_to_dir(
+        self,
+        project_id: str,
+        output_dir: Path,
+    ) -> Path:
+        """
+        コメントJSONをoutput_dirに統一された命名規則でダウンロードする。
+
+        Args:
+            project_id: プロジェクトID
+            output_dir: 出力ディレクトリ
+
+        Returns:
+            ダウンロードされたファイルのパス
+        """
+        dest_path = output_dir / get_filename(project_id, "comment", "json")
+
+        self.download_comment_json(
+            project_id,
+            dest_path=str(dest_path),
+        )
+        return dest_path

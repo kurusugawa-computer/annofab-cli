@@ -39,16 +39,21 @@ class ListAllCommentMain:
         task_ids: Collection[str] | None,
         comment_type: CommentType | None,
         exclude_reply: bool,  # noqa: FBT001
+        temp_dir: Path | None,
     ) -> list[dict[str, Any]]:
         if comment_json is None:
             downloading_obj = DownloadingFile(self.service)
             # `NamedTemporaryFile`を使わない理由: Windowsで`PermissionError`が発生するため
             # https://qiita.com/yuji38kwmt/items/c6f50e1fc03dafdcdda0 参考
-            with tempfile.TemporaryDirectory() as str_temp_dir:
-                json_path = Path(str_temp_dir) / f"{project_id}__comment.json"
-                downloading_obj.download_comment_json(project_id, str(json_path))
+            if temp_dir is not None:
+                json_path = downloading_obj.download_comment_json_to_dir(project_id, temp_dir)
                 with json_path.open(encoding="utf-8") as f:
                     comment_list = json.load(f)
+            else:
+                with tempfile.TemporaryDirectory() as str_temp_dir:
+                    json_path = downloading_obj.download_comment_json_to_dir(project_id, Path(str_temp_dir))
+                    with json_path.open(encoding="utf-8") as f:
+                        comment_list = json.load(f)
 
         else:
             json_path = comment_json
@@ -86,6 +91,7 @@ class ListAllComment(CommandLine):
 
         task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id) if args.task_id is not None else None
         comment_type = CommentType(args.comment_type) if args.comment_type is not None else None
+        temp_dir = Path(args.temp_dir) if args.temp_dir is not None else None
 
         main_obj = ListAllCommentMain(self.service)
         comment_list = main_obj.get_all_comment(
@@ -94,6 +100,7 @@ class ListAllComment(CommandLine):
             task_ids=task_id_list,
             comment_type=comment_type,
             exclude_reply=args.exclude_reply,
+            temp_dir=temp_dir,
         )
 
         logger.info(f"コメントの件数: {len(comment_list)}")
@@ -132,6 +139,12 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     )
 
     parser.add_argument("--exclude_reply", action="store_true", help="返信コメントを除外します。")
+
+    parser.add_argument(
+        "--temp_dir",
+        type=str,
+        help="``--comment_json`` を指定しなかった場合、ダウンロードしたJSONファイルの保存先ディレクトリを指定できます。指定しない場合は、一時ディレクトリに保存されます。",
+    )
 
     argument_parser.add_format(
         choices=[

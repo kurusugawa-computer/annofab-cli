@@ -43,16 +43,20 @@ class ListTaskHistoryEventWithJsonMain:
 
         return task_history_event_list
 
-    def get_task_history_event_list(self, project_id: str, task_history_event_json: Path | None = None, task_id_list: list[str] | None = None) -> list[dict[str, Any]]:
+    def get_task_history_event_list(self, project_id: str, task_history_event_json: Path | None = None, task_id_list: list[str] | None = None, temp_dir: Path | None = None) -> list[dict[str, Any]]:
         if task_history_event_json is None:
             downloading_obj = DownloadingFile(self.service)
             # `NamedTemporaryFile`を使わない理由: Windowsで`PermissionError`が発生するため
             # https://qiita.com/yuji38kwmt/items/c6f50e1fc03dafdcdda0 参考
-            with tempfile.TemporaryDirectory() as str_temp_dir:
-                tmp_json_file = Path(str_temp_dir) / "task_history_event.json"
-                downloading_obj.download_task_history_event_json(project_id, str(tmp_json_file))
+            if temp_dir is not None:
+                tmp_json_file = downloading_obj.download_task_history_event_json_to_dir(project_id, temp_dir)
                 with tmp_json_file.open(encoding="utf-8") as f:
                     all_task_history_event_list = json.load(f)
+            else:
+                with tempfile.TemporaryDirectory() as str_temp_dir:
+                    tmp_json_file = downloading_obj.download_task_history_event_json_to_dir(project_id, Path(str_temp_dir))
+                    with tmp_json_file.open(encoding="utf-8") as f:
+                        all_task_history_event_list = json.load(f)
 
         else:
             with task_history_event_json.open(encoding="utf-8") as f:
@@ -75,11 +79,12 @@ class ListTaskHistoryEventWithJson(CommandLine):
         task_history_event_json: Path | None,
         task_id_list: list[str] | None,
         arg_format: FormatArgument,
+        temp_dir: Path | None,
     ) -> None:
         super().validate_project(project_id, project_member_roles=None)
 
         main_obj = ListTaskHistoryEventWithJsonMain(self.service)
-        task_history_event_list = main_obj.get_task_history_event_list(project_id, task_history_event_json=task_history_event_json, task_id_list=task_id_list)
+        task_history_event_list = main_obj.get_task_history_event_list(project_id, task_history_event_json=task_history_event_json, task_id_list=task_id_list, temp_dir=temp_dir)
 
         logger.debug(f"{len(task_history_event_list)} 件のタスク履歴イベントの情報を出力します。")
 
@@ -114,12 +119,14 @@ class ListTaskHistoryEventWithJson(CommandLine):
         args = self.args
 
         task_id_list = get_list_from_args(args.task_id) if args.task_id is not None else None
+        temp_dir = Path(args.temp_dir) if args.temp_dir is not None else None
 
         self.print_task_history_event_list(
             args.project_id,
             task_history_event_json=args.task_history_event_json,
             task_id_list=task_id_list,
             arg_format=FormatArgument(args.format),
+            temp_dir=temp_dir,
         )
 
     @staticmethod
@@ -154,6 +161,12 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         type=Path,
         help="タスク履歴イベント全件ファイルパスを指定すると、JSONに記載された情報を元にタスク履歴イベント一覧を出力します。\n"
         "JSONファイルは ``$ annofabcli task_history_event download`` コマンドで取得できます。",
+    )
+
+    parser.add_argument(
+        "--temp_dir",
+        type=str,
+        help="``--task_history_event_json`` を指定しなかった場合、ダウンロードしたJSONファイルの保存先ディレクトリを指定できます。指定しない場合は、一時ディレクトリに保存されます。",
     )
 
     argument_parser.add_format(
