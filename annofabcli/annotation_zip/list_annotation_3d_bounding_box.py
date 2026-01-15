@@ -100,7 +100,7 @@ def get_annotation_3d_bounding_box_info_list(simple_annotation: dict[str, Any], 
         footprint_area = width * depth
         bottom_z = location.z - height / 2
         top_z = location.z + height / 2
-        horizontal_distance = math.sqrt(location.x**2 + location.y**2)
+        horizontal_distance = math.hypot(location.x, location.y)
 
         result.append(
             Annotation3DBoundingBoxInfo(
