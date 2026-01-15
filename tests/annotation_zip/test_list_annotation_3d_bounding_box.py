@@ -2,6 +2,7 @@
 Test cases for annofabcli.annotation_zip.list_annotation_3d_bounding_box module
 """
 
+import math
 from pathlib import Path
 
 import pytest
@@ -79,6 +80,8 @@ class TestGetAnnotation3DBoundingBoxInfoList:
         assert first_annotation.bottom_z == pytest.approx(0.208 - 1.673 / 2, rel=1e-3)
         # top_z = location.z + height/2
         assert first_annotation.top_z == pytest.approx(0.208 + 1.673 / 2, rel=1e-3)
+        # horizontal_distance = sqrt(x^2 + y^2)
+        assert first_annotation.horizontal_distance == pytest.approx(math.sqrt((-7.878) ** 2 + 36.813**2), rel=1e-3)
 
         # 2番目のアノテーション（Pedestrian）
         second_annotation = result[1]
@@ -296,7 +299,7 @@ class TestCreateDf:
 
         # DataFrameは空だが、base_columnsの列は存在する
         assert len(df) == 0
-        assert len(df.columns) == 23  # base_columnsの数
+        assert len(df.columns) == 24  # base_columnsの数（horizontal_distance追加により24列）
 
         # 基本列が存在することを確認
         assert "project_id" in df.columns
