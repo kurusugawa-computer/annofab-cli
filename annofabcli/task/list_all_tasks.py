@@ -47,16 +47,21 @@ class ListTasksWithJsonMain:
         task_id_list: list[str] | None = None,
         task_query: TaskQuery | None = None,
         is_latest: bool = False,  # noqa: FBT001, FBT002
+        temp_dir: Path | None = None,
     ) -> list[dict[str, Any]]:
         if task_json is None:
             downloading_obj = DownloadingFile(self.service)
             # `NamedTemporaryFile`を使わない理由: Windowsで`PermissionError`が発生するため
             # https://qiita.com/yuji38kwmt/items/c6f50e1fc03dafdcdda0 参考
-            with tempfile.TemporaryDirectory() as str_temp_dir:
-                json_path = Path(str_temp_dir) / f"{project_id}__task.json"
-                downloading_obj.download_task_json(project_id, str(json_path), is_latest=is_latest)
+            if temp_dir is not None:
+                json_path = downloading_obj.download_task_json_to_dir(project_id, temp_dir, is_latest=is_latest)
                 with json_path.open(encoding="utf-8") as f:
                     task_list = json.load(f)
+            else:
+                with tempfile.TemporaryDirectory() as str_temp_dir:
+                    json_path = downloading_obj.download_task_json_to_dir(project_id, Path(str_temp_dir), is_latest=is_latest)
+                    with json_path.open(encoding="utf-8") as f:
+                        task_list = json.load(f)
 
         else:
             json_path = task_json
@@ -85,12 +90,14 @@ class ListTasksWithJson(CommandLine):
         super().validate_project(project_id, project_member_roles=None)
 
         main_obj = ListTasksWithJsonMain(self.service)
+        temp_dir = Path(args.temp_dir) if args.temp_dir is not None else None
         task_list = main_obj.get_task_list(
             project_id=project_id,
             task_json=args.task_json,
             task_id_list=task_id_list,
             task_query=task_query,
             is_latest=args.latest,
+            temp_dir=temp_dir,
         )
 
         logger.debug(f"タスク一覧の件数: {len(task_list)}")
@@ -131,6 +138,12 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         help="最新のタスクの情報を出力します。"
         "このオプションを指定すると数分待ちます。Annofabからダウンロードする「タスク全件ファイル」に、最新の情報を反映させるのに時間がかかるためです。\n"
         "指定しない場合は、コマンドを実行した日の02:00(JST)頃のタスクの一覧が出力されます。",
+    )
+
+    parser.add_argument(
+        "--temp_dir",
+        type=str,
+        help="``--task_json`` を指定しなかった場合、ダウンロードしたJSONファイルの保存先ディレクトリを指定できます。指定しない場合は、一時ディレクトリに保存されます。",
     )
 
     argument_parser.add_format(
