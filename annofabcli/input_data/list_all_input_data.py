@@ -79,17 +79,31 @@ class ListInputDataWithJsonMain:
             # https://qiita.com/yuji38kwmt/items/c6f50e1fc03dafdcdda0 参考
             if temp_dir is not None:
                 json_path = downloading_obj.download_input_data_json_to_dir(project_id, temp_dir, is_latest=is_latest)
-                with json_path.open(encoding="utf-8") as f:
-                    input_data_list = json.load(f)
             else:
                 with tempfile.TemporaryDirectory() as str_temp_dir:
                     json_path = downloading_obj.download_input_data_json_to_dir(project_id, Path(str_temp_dir), is_latest=is_latest)
                     with json_path.open(encoding="utf-8") as f:
                         input_data_list = json.load(f)
+                        # 一時ディレクトリの場合はここでフィルタリング処理まで行う
+                        input_data_id_set = set(input_data_id_list) if input_data_id_list is not None else None
+                        filtered_input_data_list = [e for e in input_data_list if self.filter_input_data_list(e, input_data_query=input_data_query, input_data_id_set=input_data_id_set)]
+
+                        adding_obj = AddingDetailsToInputData(self.service, project_id)
+                        if contain_parent_task_id_list:
+                            adding_obj.add_parent_task_id_list_to_input_data_list(input_data_list)
+
+                        if contain_supplementary_data_count:
+                            adding_obj.add_supplementary_data_count_to_input_data_list(input_data_list)
+
+                        # 入力データの不要なキーを削除する
+                        for input_data in input_data_list:
+                            remove_unnecessary_keys_from_input_data(input_data)
+                        return filtered_input_data_list
         else:
             json_path = input_data_json
-            with json_path.open(encoding="utf-8") as f:
-                input_data_list = json.load(f)
+
+        with json_path.open(encoding="utf-8") as f:
+            input_data_list = json.load(f)
 
         input_data_id_set = set(input_data_id_list) if input_data_id_list is not None else None
         filtered_input_data_list = [e for e in input_data_list if self.filter_input_data_list(e, input_data_query=input_data_query, input_data_id_set=input_data_id_set)]

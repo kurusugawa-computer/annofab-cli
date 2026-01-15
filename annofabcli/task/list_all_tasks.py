@@ -55,18 +55,26 @@ class ListTasksWithJsonMain:
             # https://qiita.com/yuji38kwmt/items/c6f50e1fc03dafdcdda0 参考
             if temp_dir is not None:
                 json_path = downloading_obj.download_task_json_to_dir(project_id, temp_dir, is_latest=is_latest)
-                with json_path.open(encoding="utf-8") as f:
-                    task_list = json.load(f)
             else:
                 with tempfile.TemporaryDirectory() as str_temp_dir:
                     json_path = downloading_obj.download_task_json_to_dir(project_id, Path(str_temp_dir), is_latest=is_latest)
                     with json_path.open(encoding="utf-8") as f:
                         task_list = json.load(f)
+                        # 一時ディレクトリの場合はここでフィルタリング処理まで行う
+                        if task_query is not None:
+                            task_query = self.facade.set_account_id_of_task_query(project_id, task_query)
 
+                        logger.debug("出力対象のタスクを抽出しています。")
+                        task_id_set = set(task_id_list) if task_id_list is not None else None
+                        filtered_task_list = [e for e in task_list if self.match_task_with_conditions(e, task_query=task_query, task_id_set=task_id_set)]
+
+                        visualize_obj = AddProps(self.service, project_id)
+                        return [visualize_obj.add_properties_to_task(e) for e in filtered_task_list]
         else:
             json_path = task_json
-            with json_path.open(encoding="utf-8") as f:
-                task_list = json.load(f)
+
+        with json_path.open(encoding="utf-8") as f:
+            task_list = json.load(f)
 
         if task_query is not None:
             task_query = self.facade.set_account_id_of_task_query(project_id, task_query)

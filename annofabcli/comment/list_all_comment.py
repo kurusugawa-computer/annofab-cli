@@ -47,18 +47,38 @@ class ListAllCommentMain:
             # https://qiita.com/yuji38kwmt/items/c6f50e1fc03dafdcdda0 参考
             if temp_dir is not None:
                 json_path = downloading_obj.download_comment_json_to_dir(project_id, temp_dir)
-                with json_path.open(encoding="utf-8") as f:
-                    comment_list = json.load(f)
             else:
                 with tempfile.TemporaryDirectory() as str_temp_dir:
                     json_path = downloading_obj.download_comment_json_to_dir(project_id, Path(str_temp_dir))
                     with json_path.open(encoding="utf-8") as f:
                         comment_list = json.load(f)
+                        # 一時ディレクトリの場合はここでフィルタリング処理まで行う
+                        if task_ids is not None:
+                            task_id_set = set(task_ids)
+                            comment_list = [e for e in comment_list if e["task_id"] in task_id_set]
 
+                        if comment_type is not None:
+                            comment_list = [e for e in comment_list if e["comment_type"] == comment_type.value]
+
+                        # 返信回数を算出する
+                        reply_counter = create_reply_counter(comment_list)
+                        for c in comment_list:
+                            key = (c["task_id"], c["input_data_id"], c["comment_id"])
+                            c["reply_count"] = reply_counter.get(key, 0)
+
+                        if exclude_reply:
+                            # 返信コメントを除外する
+                            comment_list = [e for e in comment_list if e["comment_node"]["_type"] != "Reply"]
+
+                        visualize = AddProps(self.service, project_id)
+                        comment_list = [visualize.add_properties_to_comment(e) for e in comment_list]
+
+                        return comment_list
         else:
             json_path = comment_json
-            with json_path.open(encoding="utf-8") as f:
-                comment_list = json.load(f)
+
+        with json_path.open(encoding="utf-8") as f:
+            comment_list = json.load(f)
 
         if task_ids is not None:
             task_id_set = set(task_ids)

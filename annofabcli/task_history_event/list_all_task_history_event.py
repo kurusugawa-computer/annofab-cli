@@ -50,17 +50,25 @@ class ListTaskHistoryEventWithJsonMain:
             # https://qiita.com/yuji38kwmt/items/c6f50e1fc03dafdcdda0 参考
             if temp_dir is not None:
                 tmp_json_file = downloading_obj.download_task_history_event_json_to_dir(project_id, temp_dir)
-                with tmp_json_file.open(encoding="utf-8") as f:
-                    all_task_history_event_list = json.load(f)
             else:
                 with tempfile.TemporaryDirectory() as str_temp_dir:
                     tmp_json_file = downloading_obj.download_task_history_event_json_to_dir(project_id, Path(str_temp_dir))
                     with tmp_json_file.open(encoding="utf-8") as f:
                         all_task_history_event_list = json.load(f)
+                        # 一時ディレクトリの場合はここでフィルタリング処理まで行う
+                        filtered_task_history_event_list = self.filter_task_history_event(all_task_history_event_list, task_id_list)
 
+                        visualize = AddProps(self.service, project_id)
+
+                        for event in filtered_task_history_event_list:
+                            visualize.add_properties_to_task_history_event(event)
+
+                        return filtered_task_history_event_list
         else:
-            with task_history_event_json.open(encoding="utf-8") as f:
-                all_task_history_event_list = json.load(f)
+            tmp_json_file = task_history_event_json
+
+        with tmp_json_file.open(encoding="utf-8") as f:
+            all_task_history_event_list = json.load(f)
 
         filtered_task_history_event_list = self.filter_task_history_event(all_task_history_event_list, task_id_list)
 

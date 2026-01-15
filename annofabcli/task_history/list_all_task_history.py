@@ -47,17 +47,26 @@ class ListTaskHistoryWithJsonMain:
             # https://qiita.com/yuji38kwmt/items/c6f50e1fc03dafdcdda0 参考
             if temp_dir is not None:
                 tmp_json_path = downloading_obj.download_task_history_json_to_dir(project_id, temp_dir)
-                with tmp_json_path.open(encoding="utf-8") as f:
-                    all_task_history_dict = json.load(f)
             else:
                 with tempfile.TemporaryDirectory() as str_temp_dir:
                     tmp_json_path = downloading_obj.download_task_history_json_to_dir(project_id, Path(str_temp_dir))
                     with tmp_json_path.open(encoding="utf-8") as f:
                         all_task_history_dict = json.load(f)
+                        # 一時ディレクトリの場合はここでフィルタリング処理まで行う
+                        task_history_dict = self.filter_task_history_dict(all_task_history_dict, task_id_list)
 
+                        visualize = AddProps(self.service, project_id)
+
+                        for task_history_list in task_history_dict.values():
+                            for task_history in task_history_list:
+                                visualize.add_properties_to_task_history(task_history)
+
+                        return task_history_dict
         else:
-            with task_history_json.open(encoding="utf-8") as f:
-                all_task_history_dict = json.load(f)
+            tmp_json_path = task_history_json
+
+        with tmp_json_path.open(encoding="utf-8") as f:
+            all_task_history_dict = json.load(f)
 
         task_history_dict = self.filter_task_history_dict(all_task_history_dict, task_id_list)
 
