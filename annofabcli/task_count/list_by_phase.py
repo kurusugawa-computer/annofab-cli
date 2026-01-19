@@ -408,9 +408,8 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--metadata_key",
         type=str,
-        nargs="*",
-        default=[],
-        help="集計対象のメタデータキーを指定します。複数指定可能です。指定したキーの値でグループ化してタスク数を集計します。",
+        nargs="+",
+        help="集計対象のメタデータキーを指定します。指定したキーの値でグループ化してタスク数を集計します。",
     )
 
     argument_parser.add_output()
@@ -426,9 +425,8 @@ def main(args: argparse.Namespace) -> None:
 
 def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "list_by_phase"
-    subcommand_help = "フェーズごとのタスク数を出力します。"
-    description = "フェーズごとのタスク数を、CSV形式で出力します。"
-    epilog = "オーナロールまたはアノテーションユーザロールを持つユーザで実行してください。"
-    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description=description, epilog=epilog)
+    subcommand_help = "フェーズごとのタスク数をCSV形式で出力します。"
+    epilog = "オーナロールまたはアノテーションユーザーロールを持つユーザで実行してください。"
+    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, epilog=epilog)
     parse_args(parser)
     return parser
