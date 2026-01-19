@@ -158,29 +158,42 @@ def get_step_for_current_phase(task: Task, number_of_inspections: int) -> int:
             assert_noreturn(unreachable)
 
 
-def create_df_task(task_list: list[dict[str, Any]], task_history_dict: dict[str, list[dict[str, Any]]]) -> pandas.DataFrame:
+def create_df_task(
+    task_list: list[dict[str, Any]], task_history_dict: dict[str, list[dict[str, Any]]], not_worked_threshold_second: float = 0, metadata_keys: list[str] | None = None
+) -> pandas.DataFrame:
     """
     以下の列が含まれたタスクのDataFrameを生成します。
      * task_id
      * phase
      * task_status_for_summary
+     * metadata.{key} (metadata_keysで指定された各キー)
 
     Args:
         task_list: タスク情報のlist
         task_history_dict: タスクIDをキーとしたタスク履歴のdict
+        not_worked_threshold_second: 作業していないとみなす作業時間の閾値（秒）
+        metadata_keys: 集計対象のメタデータキーのリスト
 
     Returns:
         タスク情報のDataFrame
     """
+    metadata_keys = metadata_keys or []
+
     for task in task_list:
         task_history = task_history_dict[task["task_id"]]
-        task["task_status_for_summary"] = TaskStatusForSummary.from_task(task, task_history).value
+        task["task_status_for_summary"] = TaskStatusForSummary.from_task(task, task_history, not_worked_threshold_second).value
 
-    df = pandas.DataFrame(task_list, columns=["task_id", "phase", "task_status_for_summary"])
+        # メタデータの値を抽出
+        metadata = task.get("metadata", {})
+        for key in metadata_keys:
+            task[f"metadata.{key}"] = metadata.get(key, "")
+
+    columns = ["task_id", "phase"] + [f"metadata.{key}" for key in metadata_keys] + ["task_status_for_summary"]
+    df = pandas.DataFrame(task_list, columns=columns)
     return df
 
 
-def aggregate_df(df: pandas.DataFrame) -> pandas.DataFrame:
+def aggregate_df(df: pandas.DataFrame, metadata_keys: list[str] | None = None) -> pandas.DataFrame:
     """
     タスク数を集計する。
 
@@ -188,36 +201,55 @@ def aggregate_df(df: pandas.DataFrame) -> pandas.DataFrame:
         df: 以下の列を持つDataFrame
             * phase
             * task_status_for_summary
+            * metadata.{key} (metadata_keysで指定された各キー)
+        metadata_keys: 集計対象のメタデータキーのリスト
 
     Returns:
-        indexがphase,列がtask_status_for_summaryであるDataFrame
+        indexがphase(とmetadata.*列),列がtask_status_for_summaryであるDataFrame
     """
+    metadata_keys = metadata_keys or []
+    metadata_columns = [f"metadata.{key}" for key in metadata_keys]
+
     df["task_count"] = 1
-    df2 = df.pivot_table(values="task_count", index="phase", columns="task_status_for_summary", aggfunc="sum", fill_value=0)
+    index_columns = ["phase", *metadata_columns]
+    df2 = df.pivot_table(values="task_count", index=index_columns, columns="task_status_for_summary", aggfunc="sum", fill_value=0)
+
     # 列数を固定する
     for status in TaskStatusForSummary:
         if status.value not in df2.columns:
             df2[status.value] = 0
 
+    # ソート処理
     sorted_phase = [
         TaskPhase.ANNOTATION.value,
         TaskPhase.INSPECTION.value,
         TaskPhase.ACCEPTANCE.value,
     ]
-    new_index = sorted(df2.index, key=lambda x: sorted_phase.index(x) if x in sorted_phase else len(sorted_phase))
-    df2 = df2.loc[new_index]
-    df2 = df2.reset_index()
-    df2 = df2[
-        [
-            "phase",
-            TaskStatusForSummary.NEVER_WORKED_UNASSIGNED.value,
-            TaskStatusForSummary.NEVER_WORKED_ASSIGNED.value,
-            TaskStatusForSummary.WORKED_NOT_REJECTED.value,
-            TaskStatusForSummary.WORKED_REJECTED.value,
-            TaskStatusForSummary.ON_HOLD.value,
-            TaskStatusForSummary.COMPLETE.value,
-        ]
+
+    if len(metadata_columns) > 0:
+        # メタデータ列がある場合は、phase列でソートし、その後メタデータ列でソート
+        df2 = df2.reset_index()
+        df2["_phase_order"] = df2["phase"].map(lambda x: sorted_phase.index(x) if x in sorted_phase else len(sorted_phase))
+        df2 = df2.sort_values(["_phase_order", *metadata_columns])
+        df2 = df2.drop(columns=["_phase_order"])
+    else:
+        # メタデータ列がない場合は既存のロジック
+        new_index = sorted(df2.index, key=lambda x: sorted_phase.index(x) if x in sorted_phase else len(sorted_phase))
+        df2 = df2.loc[new_index]
+        df2 = df2.reset_index()
+
+    # 列の順序を設定
+    result_columns = [
+        "phase",
+        *metadata_columns,
+        TaskStatusForSummary.NEVER_WORKED_UNASSIGNED.value,
+        TaskStatusForSummary.NEVER_WORKED_ASSIGNED.value,
+        TaskStatusForSummary.WORKED_NOT_REJECTED.value,
+        TaskStatusForSummary.WORKED_REJECTED.value,
+        TaskStatusForSummary.ON_HOLD.value,
+        TaskStatusForSummary.COMPLETE.value,
     ]
+    df2 = df2[result_columns]
     return df2
 
 
@@ -226,11 +258,22 @@ class GettingTaskCountSummary:
     タスク数のサマリーを取得するクラス
     """
 
-    def __init__(self, annofab_service: AnnofabResource, project_id: str, *, temp_dir: Path | None = None, should_execute_get_tasks_api: bool = False) -> None:
+    def __init__(
+        self,
+        annofab_service: AnnofabResource,
+        project_id: str,
+        *,
+        temp_dir: Path | None = None,
+        should_execute_get_tasks_api: bool = False,
+        not_worked_threshold_second: float = 0,
+        metadata_keys: list[str] | None = None,
+    ) -> None:
         self.annofab_service = annofab_service
         self.project_id = project_id
         self.temp_dir = temp_dir
         self.should_execute_get_tasks_api = should_execute_get_tasks_api
+        self.not_worked_threshold_second = not_worked_threshold_second
+        self.metadata_keys = metadata_keys or []
 
     def create_df_task(self) -> pandas.DataFrame:
         """
@@ -250,7 +293,7 @@ class GettingTaskCountSummary:
             task_list = self.get_task_list_with_downloading()
             task_history_dict = self.get_task_history_with_downloading()
 
-        df = create_df_task(task_list, task_history_dict)
+        df = create_df_task(task_list, task_history_dict, self.not_worked_threshold_second, self.metadata_keys)
         return df
 
     def _get_task_list_with_downloading(self, temp_dir: Path) -> list[dict[str, Any]]:
@@ -291,15 +334,26 @@ class ListTaskCountByPhase(CommandLine):
     フェーズごとのタスク数を一覧表示する。
     """
 
-    def list_task_count_by_phase(self, project_id: str, *, temp_dir: Path | None = None, should_execute_get_tasks_api: bool = False) -> None:
+    def list_task_count_by_phase(
+        self, project_id: str, *, temp_dir: Path | None = None, should_execute_get_tasks_api: bool = False, not_worked_threshold_second: float = 0, metadata_keys: list[str] | None = None
+    ) -> None:
         """
         フェーズごとのタスク数をCSV形式で出力する。
+
+        Args:
+            project_id: プロジェクトID
+            temp_dir: 一時ファイルの保存先ディレクトリ
+            should_execute_get_tasks_api: getTasks APIを実行するかどうか
+            not_worked_threshold_second: 作業していないとみなす作業時間の閾値（秒）
+            metadata_keys: 集計対象のメタデータキーのリスト
         """
         super().validate_project(project_id, project_member_roles=[ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER])
 
         logger.info(f"project_id={project_id}: フェーズごとのタスク数を集計します。")
 
-        getting_obj = GettingTaskCountSummary(self.service, project_id, temp_dir=temp_dir, should_execute_get_tasks_api=should_execute_get_tasks_api)
+        getting_obj = GettingTaskCountSummary(
+            self.service, project_id, temp_dir=temp_dir, should_execute_get_tasks_api=should_execute_get_tasks_api, not_worked_threshold_second=not_worked_threshold_second, metadata_keys=metadata_keys
+        )
         df_task = getting_obj.create_df_task()
 
         if len(df_task) == 0:
@@ -309,7 +363,7 @@ class ListTaskCountByPhase(CommandLine):
 
         logger.info(f"{len(df_task)} 件のタスクを集計しました。")
 
-        df_summary = aggregate_df(df_task)
+        df_summary = aggregate_df(df_task, metadata_keys)
         annofabcli.common.utils.print_csv(df_summary, output=self.output)
         logger.info(f"project_id={project_id}: フェーズごとのタスク数をCSV形式で出力しました。")
 
@@ -322,6 +376,8 @@ class ListTaskCountByPhase(CommandLine):
             project_id,
             temp_dir=temp_dir,
             should_execute_get_tasks_api=args.execute_get_tasks_api,
+            not_worked_threshold_second=args.not_worked_threshold_second,
+            metadata_keys=args.metadata_key,
         )
 
 
@@ -347,6 +403,14 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         type=float,
         default=0,
         help="作業していないとみなす作業時間の閾値を秒単位で指定します。この値以下の作業時間のタスクは、作業していないとみなします。",
+    )
+
+    parser.add_argument(
+        "--metadata_key",
+        type=str,
+        nargs="*",
+        default=[],
+        help="集計対象のメタデータキーを指定します。複数指定可能です。指定したキーの値でグループ化してタスク数を集計します。",
     )
 
     argument_parser.add_output()
