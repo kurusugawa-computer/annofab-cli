@@ -20,6 +20,7 @@ from annofabcli.common.cli import (
     build_annofabapi_resource_and_login,
 )
 from annofabcli.common.facade import AnnofabApiFacade
+from annofabcli.common.type_util import assert_noreturn
 
 logger = logging.getLogger(__name__)
 
@@ -33,7 +34,7 @@ def isoduration_to_second(duration: str) -> float:
 
 class TaskStatusForSummary(Enum):
     """
-    要約のために知りたいタスクの状態。
+    Annofabユーザーがタスクについて知りたい粒度でまとめて分解した、タスクの状態。
     """
 
     NEVER_WORKED_UNASSIGNED = "never_worked.unassigned"
@@ -41,36 +42,39 @@ class TaskStatusForSummary(Enum):
     NEVER_WORKED_ASSIGNED = "never_worked.assigned"
     """一度も作業していない状態かつ担当者割り当て済み"""
     WORKED_NOT_REJECTED = "worked.not_rejected"
-    """作業中または休憩中、まだrejectされていない"""
+    """タスクのstatusは作業中または休憩中 AND 次のフェーズでまだ差し戻されていない（次のフェーズに進んでいない）"""
     WORKED_REJECTED = "worked.rejected"
-    """作業中または休憩中、rejectされて差し戻された"""
+    """タスクのstatusは作業中または休憩中 AND 次のフェーズで差し戻された"""
     ON_HOLD = "on_hold"
     """保留中"""
     COMPLETE = "complete"
     """完了"""
 
     @staticmethod
-    def _get_not_started_status(task: Task, task_history_list: list[dict[str, Any]]) -> "TaskStatusForSummary":
+    def _get_not_started_status(task: Task, task_history_list: list[dict[str, Any]], not_worked_threshold_second: float) -> "TaskStatusForSummary":
         """
         NOT_STARTED状態のタスクについて、一度も作業されていないか、差し戻されて未着手かを判定する。
+
+        Args:
+            task: タスク情報
+            task_history_list: タスク履歴のリスト
+            not_worked_threshold_second: 作業していないとみなす作業時間の閾値（秒）。この値以下なら作業していないとみなす。
         """
         # `number_of_inspections=1`を指定する理由：多段検査を無視して、検査フェーズが１回目かどうかを知りたいため
         step = get_step_for_current_phase(task, number_of_inspections=1)
         if step == 1:
             phase = task["phase"]
             worktime_second = sum(isoduration_to_second(history["accumulated_labor_time_milliseconds"]) for history in task_history_list if history["phase"] == phase)
-            if worktime_second == 0:
-                # 一度も作業されていない
-                account_id = task.get("account_id")
+            if worktime_second <= not_worked_threshold_second:
+                # 一度も作業されていない（または閾値以下の作業時間）
+                account_id = task["account_id"]
                 if account_id is None:
                     return TaskStatusForSummary.NEVER_WORKED_UNASSIGNED
                 else:
                     return TaskStatusForSummary.NEVER_WORKED_ASSIGNED
             else:
-                # 差し戻されて未着手
                 return TaskStatusForSummary.WORKED_NOT_REJECTED
         else:
-            # 差し戻されて未着手
             return TaskStatusForSummary.WORKED_NOT_REJECTED
 
     @staticmethod
@@ -86,7 +90,7 @@ class TaskStatusForSummary(Enum):
             return TaskStatusForSummary.WORKED_REJECTED
 
     @staticmethod
-    def from_task(task: dict[str, Any], task_history_list: list[dict[str, Any]]) -> "TaskStatusForSummary":
+    def from_task(task: dict[str, Any], task_history_list: list[dict[str, Any]], not_worked_threshold_second: float = 0) -> "TaskStatusForSummary":
         """
         タスク情報(dict)からインスタンスを生成します。
 
@@ -98,6 +102,7 @@ class TaskStatusForSummary(Enum):
                 * histories_by_phase
                 * account_id (optional)
             task_history_list: タスク履歴のリスト
+            not_worked_threshold_second: 作業していないとみなす作業時間の閾値（秒）。この値以下なら作業していないとみなす。
 
         """
         status = TaskStatus(task["status"])
@@ -109,7 +114,7 @@ class TaskStatusForSummary(Enum):
                 return TaskStatusForSummary.ON_HOLD
 
             case TaskStatus.NOT_STARTED:
-                return TaskStatusForSummary._get_not_started_status(task, task_history_list)
+                return TaskStatusForSummary._get_not_started_status(task, task_history_list, not_worked_threshold_second)
 
             case TaskStatus.BREAK | TaskStatus.WORKING:
                 return TaskStatusForSummary._get_working_or_break_status(task)
@@ -133,23 +138,24 @@ def get_step_for_current_phase(task: Task, number_of_inspections: int) -> int:
     histories_by_phase = task["histories_by_phase"]
 
     number_of_rejections_by_acceptance = get_number_of_rejections(histories_by_phase, phase=TaskPhase.ACCEPTANCE)
-    if current_phase == TaskPhase.ACCEPTANCE:
-        return number_of_rejections_by_acceptance + 1
+    match current_phase:
+        case TaskPhase.ACCEPTANCE:
+            return number_of_rejections_by_acceptance + 1
 
-    elif current_phase == TaskPhase.ANNOTATION:
-        number_of_rejections_by_inspection = sum(
-            get_number_of_rejections(histories_by_phase, phase=TaskPhase.INSPECTION, phase_stage=phase_stage) for phase_stage in range(1, number_of_inspections + 1)
-        )
-        return number_of_rejections_by_inspection + number_of_rejections_by_acceptance + 1
+        case TaskPhase.ANNOTATION:
+            number_of_rejections_by_inspection = sum(
+                get_number_of_rejections(histories_by_phase, phase=TaskPhase.INSPECTION, phase_stage=phase_stage) for phase_stage in range(1, number_of_inspections + 1)
+            )
+            return number_of_rejections_by_inspection + number_of_rejections_by_acceptance + 1
 
-    elif current_phase == TaskPhase.INSPECTION:
-        number_of_rejections_by_inspection = sum(
-            get_number_of_rejections(histories_by_phase, phase=TaskPhase.INSPECTION, phase_stage=phase_stage) for phase_stage in range(current_phase_stage, number_of_inspections + 1)
-        )
-        return number_of_rejections_by_inspection + number_of_rejections_by_acceptance + 1
+        case TaskPhase.INSPECTION:
+            number_of_rejections_by_inspection = sum(
+                get_number_of_rejections(histories_by_phase, phase=TaskPhase.INSPECTION, phase_stage=phase_stage) for phase_stage in range(current_phase_stage, number_of_inspections + 1)
+            )
+            return number_of_rejections_by_inspection + number_of_rejections_by_acceptance + 1
 
-    else:
-        raise RuntimeError(f"フェーズ'{current_phase}'は不正な値です。")
+        case _ as unreachable:
+            assert_noreturn(unreachable)
 
 
 def create_df_task(task_list: list[dict[str, Any]], task_history_dict: dict[str, list[dict[str, Any]]]) -> pandas.DataFrame:
@@ -335,6 +341,13 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--temp_dir",
         type=str,
         help="指定したディレクトリに、一時ファイルをダウンロードします。",
+    )
+
+    parser.add_argument(
+        "--not_worked_threshold_second",
+        type=float,
+        default=0,
+        help="作業していないとみなす作業時間の閾値を秒単位で指定します。この値以下の作業時間のタスクは、作業していないとみなします。デフォルトは0秒です。",
     )
 
     argument_parser.add_output()
