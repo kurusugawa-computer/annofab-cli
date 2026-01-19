@@ -285,9 +285,11 @@ class GettingTaskCountSummary:
         if self.should_execute_get_tasks_api:
             task_list = self.annofab_service.wrapper.get_all_tasks(self.project_id)
             task_history_dict = {}
-            for task in task_list:
+            for index, task in enumerate(task_list, start=1):
                 task_id = task["task_id"]
                 task_history_dict[task_id], _ = self.annofab_service.api.get_task_histories(self.project_id, task_id)
+                if index % 100 == 0:
+                    logger.info(f"{index} 件目のタスク履歴を取得しました。")
 
         else:
             task_list = self.get_task_list_with_downloading()
