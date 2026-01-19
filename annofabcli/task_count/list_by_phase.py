@@ -1,5 +1,4 @@
 import argparse
-import datetime
 import json
 import logging
 import tempfile
@@ -19,6 +18,7 @@ from annofabcli.common.cli import (
     CommandLine,
     build_annofabapi_resource_and_login,
 )
+from annofabcli.common.download import DownloadingFile
 from annofabcli.common.facade import AnnofabApiFacade
 from annofabcli.common.type_util import assert_noreturn
 
@@ -100,7 +100,7 @@ class TaskStatusForSummary(Enum):
                 * phase
                 * phase_stage
                 * histories_by_phase
-                * account_id (optional)
+                * account_id
             task_history_list: タスク履歴のリスト
             not_worked_threshold_second: 作業していないとみなす作業時間の閾値（秒）。この値以下なら作業していないとみなす。
 
@@ -254,16 +254,15 @@ class GettingTaskCountSummary:
         return df
 
     def _get_task_list_with_downloading(self, temp_dir: Path) -> list[dict[str, Any]]:
-        task_json = temp_dir / f"{self.project_id}__task__{datetime.datetime.now().timestamp()}.json"  # noqa: DTZ005
-        self.annofab_service.wrapper.download_project_tasks_url(self.project_id, task_json)
-        with task_json.open() as f:
-            task_list = json.load(f)
-            return task_list
+        downloading_obj = DownloadingFile(self.annofab_service)
+        task_json = downloading_obj.download_task_json_to_dir(self.project_id, temp_dir)
+        with task_json.open(encoding="utf-8") as f:
+            return json.load(f)
 
     def _get_task_history_with_downloading(self, temp_dir: Path) -> dict[str, list[dict[str, Any]]]:
-        task_history_json = temp_dir / f"{self.project_id}__task_history__{datetime.datetime.now().timestamp()}.json"  # noqa: DTZ005
-        self.annofab_service.wrapper.download_project_task_histories_url(self.project_id, task_history_json)
-        with task_history_json.open() as f:
+        downloading_obj = DownloadingFile(self.annofab_service)
+        task_history_json = downloading_obj.download_task_history_json_to_dir(self.project_id, temp_dir)
+        with task_history_json.open(encoding="utf-8") as f:
             return json.load(f)
 
     def get_task_list_with_downloading(self) -> list[dict[str, Any]]:
@@ -347,7 +346,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--not_worked_threshold_second",
         type=float,
         default=0,
-        help="作業していないとみなす作業時間の閾値を秒単位で指定します。この値以下の作業時間のタスクは、作業していないとみなします。デフォルトは0秒です。",
+        help="作業していないとみなす作業時間の閾値を秒単位で指定します。この値以下の作業時間のタスクは、作業していないとみなします。",
     )
 
     argument_parser.add_output()
