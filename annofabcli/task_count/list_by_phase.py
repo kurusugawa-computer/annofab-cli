@@ -370,13 +370,11 @@ class ListTaskCountByPhase(CommandLine):
                 TaskStatusForSummary.ON_HOLD.value,
                 TaskStatusForSummary.COMPLETE.value,
             ]
-            empty_df = pandas.DataFrame(columns=result_columns)
-            annofabcli.common.utils.print_csv(empty_df, output=self.output)
-            return
+            df_summary = pandas.DataFrame(columns=result_columns)
+        else:
+            logger.info(f"{len(df_task)} 件のタスクを集計しました。")
+            df_summary = aggregate_df(df_task, metadata_keys)
 
-        logger.info(f"{len(df_task)} 件のタスクを集計しました。")
-
-        df_summary = aggregate_df(df_task, metadata_keys)
         annofabcli.common.utils.print_csv(df_summary, output=self.output)
         logger.info(f"project_id={project_id}: フェーズごとのタスク数をCSV形式で出力しました。")
 
