@@ -281,18 +281,18 @@ class GettingTaskCountSummary:
                 return self._get_task_history_with_downloading(Path(str_temp_dir))
 
 
-class ListPhaseStatus(CommandLine):
+class ListTaskCountByPhase(CommandLine):
     """
-    フェーズごとのタスクステータスを一覧表示する。
+    フェーズごとのタスク数を一覧表示する。
     """
 
-    def list_phase_status(self, project_id: str, *, temp_dir: Path | None = None, should_execute_get_tasks_api: bool = False) -> None:
+    def list_task_count_by_phase(self, project_id: str, *, temp_dir: Path | None = None, should_execute_get_tasks_api: bool = False) -> None:
         """
-        フェーズごとのタスクステータスをCSV形式で出力する。
+        フェーズごとのタスク数をCSV形式で出力する。
         """
         super().validate_project(project_id, project_member_roles=[ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER])
 
-        logger.info(f"project_id={project_id}: フェーズごとのタスクステータスを集計します。")
+        logger.info(f"project_id={project_id}: フェーズごとのタスク数を集計します。")
 
         getting_obj = GettingTaskCountSummary(self.service, project_id, temp_dir=temp_dir, should_execute_get_tasks_api=should_execute_get_tasks_api)
         df_task = getting_obj.create_df_task()
@@ -306,14 +306,14 @@ class ListPhaseStatus(CommandLine):
 
         df_summary = aggregate_df(df_task)
         annofabcli.common.utils.print_csv(df_summary, output=self.output)
-        logger.info(f"project_id={project_id}: フェーズごとのタスクステータスをCSV形式で出力しました。")
+        logger.info(f"project_id={project_id}: フェーズごとのタスク数をCSV形式で出力しました。")
 
     def main(self) -> None:
         args = self.args
         project_id = args.project_id
         temp_dir = Path(args.temp_dir) if args.temp_dir is not None else None
 
-        self.list_phase_status(
+        self.list_task_count_by_phase(
             project_id,
             temp_dir=temp_dir,
             should_execute_get_tasks_api=args.execute_get_tasks_api,
@@ -345,13 +345,13 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
 def main(args: argparse.Namespace) -> None:
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
-    ListPhaseStatus(service, facade, args).main()
+    ListTaskCountByPhase(service, facade, args).main()
 
 
 def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
-    subcommand_name = "phase_status"
-    subcommand_help = "フェーズごとのタスクステータスのサマリーを出力します。"
-    description = "フェーズごとのタスクステータスのサマリーを、CSV形式で出力します。"
+    subcommand_name = "list_by_phase"
+    subcommand_help = "フェーズごとのタスク数を出力します。"
+    description = "フェーズごとのタスク数を、CSV形式で出力します。"
     epilog = "オーナロールまたはアノテーションユーザロールを持つユーザで実行してください。"
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description=description, epilog=epilog)
     parse_args(parser)

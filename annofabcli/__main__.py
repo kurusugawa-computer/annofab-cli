@@ -26,9 +26,9 @@ import annofabcli.stat_visualization.subcommand_stat_visualization
 import annofabcli.statistics.subcommand_statistics
 import annofabcli.supplementary.subcommand_supplementary
 import annofabcli.task.subcommand_task
+import annofabcli.task_count.subcommand_task_count
 import annofabcli.task_history.subcommand_task_history
 import annofabcli.task_history_event.subcommand_task_history_event
-import annofabcli.task_summary.subcommand_task_summary
 
 logger = logging.getLogger(__name__)
 
@@ -122,9 +122,9 @@ def create_parser() -> argparse.ArgumentParser:
     annofabcli.stat_visualization.subcommand_stat_visualization.add_parser(subparsers)
     annofabcli.supplementary.subcommand_supplementary.add_parser(subparsers)
     annofabcli.task.subcommand_task.add_parser(subparsers)
+    annofabcli.task_count.subcommand_task_count.add_parser(subparsers)
     annofabcli.task_history.subcommand_task_history.add_parser(subparsers)
     annofabcli.task_history_event.subcommand_task_history_event.add_parser(subparsers)
-    annofabcli.task_summary.subcommand_task_summary.add_parser(subparsers)
 
     annofabcli.filesystem.subcommand_filesystem.add_parser(subparsers)
     annofabcli.experimental.subcommand_experimental.add_parser(subparsers)
