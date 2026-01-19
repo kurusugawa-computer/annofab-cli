@@ -349,7 +349,7 @@ class ListTaskCountByPhase(CommandLine):
         """
         super().validate_project(project_id, project_member_roles=[ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER])
 
-        logger.info(f"project_id={project_id}: フェーズごとのタスク数を集計します。")
+        logger.info(f"project_id='{project_id}' :: フェーズごとのタスク数を集計します。")
 
         getting_obj = GettingTaskCountSummary(
             self.service, project_id, temp_dir=temp_dir, should_execute_get_tasks_api=should_execute_get_tasks_api, not_worked_threshold_second=not_worked_threshold_second, metadata_keys=metadata_keys
@@ -376,7 +376,7 @@ class ListTaskCountByPhase(CommandLine):
             df_summary = aggregate_df(df_task, metadata_keys)
 
         annofabcli.common.utils.print_csv(df_summary, output=self.output)
-        logger.info(f"project_id={project_id}: フェーズごとのタスク数をCSV形式で出力しました。")
+        logger.info(f"project_id='{project_id}' :: フェーズごとのタスク数をCSV形式で出力しました。")
 
     def main(self) -> None:
         args = self.args
