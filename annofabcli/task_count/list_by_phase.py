@@ -357,8 +357,21 @@ class ListTaskCountByPhase(CommandLine):
         df_task = getting_obj.create_df_task()
 
         if len(df_task) == 0:
-            logger.info("タスクが0件のため、出力しません。")
-            annofabcli.common.utils.print_csv(pandas.DataFrame(), output=self.output)
+            logger.info("タスクが0件ですが、ヘッダ行を出力します。")
+            # aggregate_df関数と同じ列構成の空のDataFrameを作成
+            metadata_columns = [f"metadata.{key}" for key in (metadata_keys or [])]
+            result_columns = [
+                "phase",
+                *metadata_columns,
+                TaskStatusForSummary.NEVER_WORKED_UNASSIGNED.value,
+                TaskStatusForSummary.NEVER_WORKED_ASSIGNED.value,
+                TaskStatusForSummary.WORKED_NOT_REJECTED.value,
+                TaskStatusForSummary.WORKED_REJECTED.value,
+                TaskStatusForSummary.ON_HOLD.value,
+                TaskStatusForSummary.COMPLETE.value,
+            ]
+            empty_df = pandas.DataFrame(columns=result_columns)
+            annofabcli.common.utils.print_csv(empty_df, output=self.output)
             return
 
         logger.info(f"{len(df_task)} 件のタスクを集計しました。")
