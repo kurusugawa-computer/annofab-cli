@@ -281,6 +281,7 @@ class GettingTaskCountSummary:
         * task_id
         * phase
         * task_status_for_summary
+        * metadata.{key} （metadata_keys で指定した各メタデータキーに対応する列）
         """
         if self.should_execute_get_tasks_api:
             task_list = self.annofab_service.wrapper.get_all_tasks(self.project_id)
