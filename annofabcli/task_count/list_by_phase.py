@@ -12,7 +12,6 @@ from annofabapi.models import ProjectMemberRole, Task, TaskPhase, TaskStatus
 from annofabapi.resource import Resource as AnnofabResource
 from annofabapi.utils import get_number_of_rejections
 
-import annofabcli.common.cli
 from annofabcli.common.cli import (
     ArgumentParser,
     CommandLine,
