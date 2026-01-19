@@ -26,6 +26,7 @@ Command Reference
    stat_visualization/index
    supplementary/index
    task/index
+   task_count/index
    task_history/index
    task_history_event/index
 
