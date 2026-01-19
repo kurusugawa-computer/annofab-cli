@@ -378,7 +378,7 @@ class ListTaskCountByPhase(CommandLine):
             logger.info(f"{len(df_task)} 件のタスクを集計しました。")
             df_summary = aggregate_df(df_task, metadata_keys)
 
-        annofabcli.common.utils.print_csv(df_summary, output=self.output)
+        self.print_csv(df_summary)
         logger.info(f"project_id='{project_id}' :: フェーズごとのタスク数をCSV形式で出力しました。")
 
     def main(self) -> None:
