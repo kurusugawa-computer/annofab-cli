@@ -126,8 +126,9 @@ class TaskStatusForSummary(Enum):
 def get_step_for_current_phase(task: Task, number_of_inspections: int) -> int:
     """
     今のフェーズが何回目かを取得する。
+
     Args:
-        task:
+        task: 対象タスクの情報。phase, phase_stage, histories_by_phase を含む。
         number_of_inspections: 対象プロジェクトの検査フェーズの回数
 
     Returns:
