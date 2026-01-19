@@ -12,7 +12,6 @@ from annofabapi.models import ProjectMemberRole, Task, TaskPhase, TaskStatus
 from annofabapi.resource import Resource as AnnofabResource
 from annofabapi.utils import get_number_of_rejections
 
-import annofabcli.common.cli
 from annofabcli.common.cli import (
     ArgumentParser,
     CommandLine,
@@ -125,9 +124,10 @@ class TaskStatusForSummary(Enum):
 
 def get_step_for_current_phase(task: Task, number_of_inspections: int) -> int:
     """
-    今のフェーズが何回目かを記載する。
+    今のフェーズが何回目かを取得する。
+
     Args:
-        task:
+        task: 対象タスクの情報。phase, phase_stage, histories_by_phase を含む。
         number_of_inspections: 対象プロジェクトの検査フェーズの回数
 
     Returns:
@@ -281,6 +281,7 @@ class GettingTaskCountSummary:
         * task_id
         * phase
         * task_status_for_summary
+        * metadata.{key} （metadata_keys で指定した各メタデータキーに対応する列）
         """
         if self.should_execute_get_tasks_api:
             task_list = self.annofab_service.wrapper.get_all_tasks(self.project_id)
