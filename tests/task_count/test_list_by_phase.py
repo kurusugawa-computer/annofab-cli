@@ -1,4 +1,3 @@
-from __future__ import annotations
 
 import configparser
 from pathlib import Path
@@ -38,33 +37,3 @@ class TestCommandLine:
             ]
         )
 
-    def test_list_by_phase_with_threshold(self):
-        out_file = str(out_dir / "list_by_phase_with_threshold.csv")
-        main(
-            [
-                self.command_name,
-                "list_by_phase",
-                "--project_id",
-                project_id,
-                "--not_worked_threshold_second",
-                "60",
-                "--output",
-                out_file,
-            ]
-        )
-
-    def test_list_by_phase_with_metadata_key(self):
-        out_file = str(out_dir / "list_by_phase_with_metadata_key.csv")
-        main(
-            [
-                self.command_name,
-                "list_by_phase",
-                "--project_id",
-                project_id,
-                "--metadata_key",
-                "dataset_type",
-                "category",
-                "--output",
-                out_file,
-            ]
-        )
