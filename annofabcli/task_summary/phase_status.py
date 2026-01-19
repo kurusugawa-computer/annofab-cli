@@ -1,0 +1,358 @@
+import argparse
+import datetime
+import json
+import logging
+import tempfile
+from enum import Enum
+from pathlib import Path
+from typing import Any
+
+import isodate
+import pandas
+from annofabapi.models import ProjectMemberRole, Task, TaskPhase, TaskStatus
+from annofabapi.resource import Resource as AnnofabResource
+from annofabapi.utils import get_number_of_rejections
+
+import annofabcli.common.cli
+from annofabcli.common.cli import (
+    ArgumentParser,
+    CommandLine,
+    build_annofabapi_resource_and_login,
+)
+from annofabcli.common.facade import AnnofabApiFacade
+
+logger = logging.getLogger(__name__)
+
+
+def isoduration_to_second(duration: str) -> float:
+    """
+    ISO 8601 duration を 秒に変換する
+    """
+    return isodate.parse_duration(duration).total_seconds()
+
+
+class TaskStatusForSummary(Enum):
+    """
+    要約のために知りたいタスクの状態。
+    """
+
+    NEVER_WORKED_UNASSIGNED = "never_worked.unassigned"
+    """一度も作業していない状態かつ担当者未割り当て"""
+    NEVER_WORKED_ASSIGNED = "never_worked.assigned"
+    """一度も作業していない状態かつ担当者割り当て済み"""
+    WORKED_NOT_REJECTED = "worked.not_rejected"
+    """作業中または休憩中、まだrejectされていない"""
+    WORKED_REJECTED = "worked.rejected"
+    """作業中または休憩中、rejectされて差し戻された"""
+    ON_HOLD = "on_hold"
+    """保留中"""
+    COMPLETE = "complete"
+    """完了"""
+
+    @staticmethod
+    def _get_not_started_status(task: Task, task_history_list: list[dict[str, Any]]) -> "TaskStatusForSummary":
+        """
+        NOT_STARTED状態のタスクについて、一度も作業されていないか、差し戻されて未着手かを判定する。
+        """
+        # `number_of_inspections=1`を指定する理由：多段検査を無視して、検査フェーズが１回目かどうかを知りたいため
+        step = get_step_for_current_phase(task, number_of_inspections=1)
+        if step == 1:
+            phase = task["phase"]
+            worktime_second = sum(isoduration_to_second(history["accumulated_labor_time_milliseconds"]) for history in task_history_list if history["phase"] == phase)
+            if worktime_second == 0:
+                # 一度も作業されていない
+                account_id = task.get("account_id")
+                if account_id is None:
+                    return TaskStatusForSummary.NEVER_WORKED_UNASSIGNED
+                else:
+                    return TaskStatusForSummary.NEVER_WORKED_ASSIGNED
+            else:
+                # 差し戻されて未着手
+                return TaskStatusForSummary.WORKED_NOT_REJECTED
+        else:
+            # 差し戻されて未着手
+            return TaskStatusForSummary.WORKED_NOT_REJECTED
+
+    @staticmethod
+    def _get_working_or_break_status(task: Task) -> "TaskStatusForSummary":
+        """
+        WORKINGまたはBREAK状態のタスクについて、rejectされているかどうかを判定する。
+        """
+        # `number_of_inspections=1`を指定する理由：多段検査を無視して、検査フェーズが１回目かどうかを知りたいため
+        step = get_step_for_current_phase(task, number_of_inspections=1)
+        if step == 1:
+            return TaskStatusForSummary.WORKED_NOT_REJECTED
+        else:
+            return TaskStatusForSummary.WORKED_REJECTED
+
+    @staticmethod
+    def from_task(task: dict[str, Any], task_history_list: list[dict[str, Any]]) -> "TaskStatusForSummary":
+        """
+        タスク情報(dict)からインスタンスを生成します。
+
+        Args:
+            task: APIから取得したタスク情報. 以下のkeyが必要です。
+                * status
+                * phase
+                * phase_stage
+                * histories_by_phase
+                * account_id (optional)
+            task_history_list: タスク履歴のリスト
+
+        """
+        status = TaskStatus(task["status"])
+        match status:
+            case TaskStatus.COMPLETE:
+                return TaskStatusForSummary.COMPLETE
+
+            case TaskStatus.ON_HOLD:
+                return TaskStatusForSummary.ON_HOLD
+
+            case TaskStatus.NOT_STARTED:
+                return TaskStatusForSummary._get_not_started_status(task, task_history_list)
+
+            case TaskStatus.BREAK | TaskStatus.WORKING:
+                return TaskStatusForSummary._get_working_or_break_status(task)
+
+            case _:
+                raise RuntimeError(f"'{status}'は対象外です。")
+
+
+def get_step_for_current_phase(task: Task, number_of_inspections: int) -> int:
+    """
+    今のフェーズが何回目かを記載する。
+    Args:
+        task:
+        number_of_inspections: 対象プロジェクトの検査フェーズの回数
+
+    Returns:
+        現在のフェーズのステップ数
+    """
+    current_phase = TaskPhase(task["phase"])
+    current_phase_stage = task["phase_stage"]
+    histories_by_phase = task["histories_by_phase"]
+
+    number_of_rejections_by_acceptance = get_number_of_rejections(histories_by_phase, phase=TaskPhase.ACCEPTANCE)
+    if current_phase == TaskPhase.ACCEPTANCE:
+        return number_of_rejections_by_acceptance + 1
+
+    elif current_phase == TaskPhase.ANNOTATION:
+        number_of_rejections_by_inspection = sum(
+            get_number_of_rejections(histories_by_phase, phase=TaskPhase.INSPECTION, phase_stage=phase_stage) for phase_stage in range(1, number_of_inspections + 1)
+        )
+        return number_of_rejections_by_inspection + number_of_rejections_by_acceptance + 1
+
+    elif current_phase == TaskPhase.INSPECTION:
+        number_of_rejections_by_inspection = sum(
+            get_number_of_rejections(histories_by_phase, phase=TaskPhase.INSPECTION, phase_stage=phase_stage) for phase_stage in range(current_phase_stage, number_of_inspections + 1)
+        )
+        return number_of_rejections_by_inspection + number_of_rejections_by_acceptance + 1
+
+    else:
+        raise RuntimeError(f"フェーズ'{current_phase}'は不正な値です。")
+
+
+def create_df_task(task_list: list[dict[str, Any]], task_history_dict: dict[str, list[dict[str, Any]]]) -> pandas.DataFrame:
+    """
+    以下の列が含まれたタスクのDataFrameを生成します。
+     * task_id
+     * phase
+     * task_status_for_summary
+
+    Args:
+        task_list: タスク情報のlist
+        task_history_dict: タスクIDをキーとしたタスク履歴のdict
+
+    Returns:
+        タスク情報のDataFrame
+    """
+    for task in task_list:
+        task_history = task_history_dict[task["task_id"]]
+        task["task_status_for_summary"] = TaskStatusForSummary.from_task(task, task_history).value
+
+    df = pandas.DataFrame(task_list, columns=["task_id", "phase", "task_status_for_summary"])
+    return df
+
+
+def aggregate_df(df: pandas.DataFrame) -> pandas.DataFrame:
+    """
+    タスク数を集計する。
+
+    Args:
+        df: 以下の列を持つDataFrame
+            * phase
+            * task_status_for_summary
+
+    Returns:
+        indexがphase,列がtask_status_for_summaryであるDataFrame
+    """
+    df["task_count"] = 1
+    df2 = df.pivot_table(values="task_count", index="phase", columns="task_status_for_summary", aggfunc="sum", fill_value=0)
+    # 列数を固定する
+    for status in TaskStatusForSummary:
+        if status.value not in df2.columns:
+            df2[status.value] = 0
+
+    sorted_phase = [
+        TaskPhase.ANNOTATION.value,
+        TaskPhase.INSPECTION.value,
+        TaskPhase.ACCEPTANCE.value,
+    ]
+    new_index = sorted(df2.index, key=lambda x: sorted_phase.index(x) if x in sorted_phase else len(sorted_phase))
+    df2 = df2.loc[new_index]
+    df2 = df2.reset_index()
+    df2 = df2[
+        [
+            "phase",
+            TaskStatusForSummary.NEVER_WORKED_UNASSIGNED.value,
+            TaskStatusForSummary.NEVER_WORKED_ASSIGNED.value,
+            TaskStatusForSummary.WORKED_NOT_REJECTED.value,
+            TaskStatusForSummary.WORKED_REJECTED.value,
+            TaskStatusForSummary.ON_HOLD.value,
+            TaskStatusForSummary.COMPLETE.value,
+        ]
+    ]
+    return df2
+
+
+class GettingTaskCountSummary:
+    """
+    タスク数のサマリーを取得するクラス
+    """
+
+    def __init__(self, annofab_service: AnnofabResource, project_id: str, *, temp_dir: Path | None = None, should_execute_get_tasks_api: bool = False) -> None:
+        self.annofab_service = annofab_service
+        self.project_id = project_id
+        self.temp_dir = temp_dir
+        self.should_execute_get_tasks_api = should_execute_get_tasks_api
+
+    def create_df_task(self) -> pandas.DataFrame:
+        """
+        以下の列が含まれたタスクのDataFrameを生成します。
+        * task_id
+        * phase
+        * task_status_for_summary
+        """
+        if self.should_execute_get_tasks_api:
+            task_list = self.annofab_service.wrapper.get_all_tasks(self.project_id)
+            task_history_dict = {}
+            for task in task_list:
+                task_id = task["task_id"]
+                task_history_dict[task_id], _ = self.annofab_service.api.get_task_histories(self.project_id, task_id)
+
+        else:
+            task_list = self.get_task_list_with_downloading()
+            task_history_dict = self.get_task_history_with_downloading()
+
+        df = create_df_task(task_list, task_history_dict)
+        return df
+
+    def _get_task_list_with_downloading(self, temp_dir: Path) -> list[dict[str, Any]]:
+        task_json = temp_dir / f"{self.project_id}__task__{datetime.datetime.now().timestamp()}.json"  # noqa: DTZ005
+        self.annofab_service.wrapper.download_project_tasks_url(self.project_id, task_json)
+        with task_json.open() as f:
+            task_list = json.load(f)
+            return task_list
+
+    def _get_task_history_with_downloading(self, temp_dir: Path) -> dict[str, list[dict[str, Any]]]:
+        task_history_json = temp_dir / f"{self.project_id}__task_history__{datetime.datetime.now().timestamp()}.json"  # noqa: DTZ005
+        self.annofab_service.wrapper.download_project_task_histories_url(self.project_id, task_history_json)
+        with task_history_json.open() as f:
+            return json.load(f)
+
+    def get_task_list_with_downloading(self) -> list[dict[str, Any]]:
+        """
+        タスク全件ファイルをダウンロードしてタスク情報を取得する。
+        """
+        if self.temp_dir is not None:
+            return self._get_task_list_with_downloading(self.temp_dir)
+        else:
+            with tempfile.TemporaryDirectory() as str_temp_dir:
+                return self._get_task_list_with_downloading(Path(str_temp_dir))
+
+    def get_task_history_with_downloading(self) -> dict[str, list[dict[str, Any]]]:
+        """
+        タスク履歴全件ファイルをダウンロードしてタスク情報を取得する。
+        """
+        if self.temp_dir is not None:
+            return self._get_task_history_with_downloading(self.temp_dir)
+        else:
+            with tempfile.TemporaryDirectory() as str_temp_dir:
+                return self._get_task_history_with_downloading(Path(str_temp_dir))
+
+
+class ListPhaseStatus(CommandLine):
+    """
+    フェーズごとのタスクステータスを一覧表示する。
+    """
+
+    def list_phase_status(self, project_id: str, *, temp_dir: Path | None = None, should_execute_get_tasks_api: bool = False) -> None:
+        """
+        フェーズごとのタスクステータスをCSV形式で出力する。
+        """
+        super().validate_project(project_id, project_member_roles=[ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER])
+
+        logger.info(f"project_id={project_id}: フェーズごとのタスクステータスを集計します。")
+
+        getting_obj = GettingTaskCountSummary(self.service, project_id, temp_dir=temp_dir, should_execute_get_tasks_api=should_execute_get_tasks_api)
+        df_task = getting_obj.create_df_task()
+
+        if len(df_task) == 0:
+            logger.info("タスクが0件のため、出力しません。")
+            annofabcli.common.utils.print_csv(pandas.DataFrame(), output=self.output)
+            return
+
+        logger.info(f"{len(df_task)} 件のタスクを集計しました。")
+
+        df_summary = aggregate_df(df_task)
+        annofabcli.common.utils.print_csv(df_summary, output=self.output)
+        logger.info(f"project_id={project_id}: フェーズごとのタスクステータスをCSV形式で出力しました。")
+
+    def main(self) -> None:
+        args = self.args
+        project_id = args.project_id
+        temp_dir = Path(args.temp_dir) if args.temp_dir is not None else None
+
+        self.list_phase_status(
+            project_id,
+            temp_dir=temp_dir,
+            should_execute_get_tasks_api=args.execute_get_tasks_api,
+        )
+
+
+def parse_args(parser: argparse.ArgumentParser) -> None:
+    argument_parser = ArgumentParser(parser)
+
+    argument_parser.add_project_id()
+
+    parser.add_argument(
+        "--execute_get_tasks_api",
+        action="store_true",
+        help="タスク全件ファイルをダウンロードせずに、`getTasks` APIを実行してタスク一覧を取得します。`getTasks` APIを複数回実行するので、タスク全件ファイルをダウンロードするよりも時間がかかります。",
+    )
+
+    parser.add_argument(
+        "--temp_dir",
+        type=str,
+        help="指定したディレクトリに、一時ファイルをダウンロードします。",
+    )
+
+    argument_parser.add_output()
+
+    parser.set_defaults(subcommand_func=main)
+
+
+def main(args: argparse.Namespace) -> None:
+    service = build_annofabapi_resource_and_login(args)
+    facade = AnnofabApiFacade(service)
+    ListPhaseStatus(service, facade, args).main()
+
+
+def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
+    subcommand_name = "phase_status"
+    subcommand_help = "フェーズごとのタスクステータスのサマリーを出力します。"
+    description = "フェーズごとのタスクステータスのサマリーを、CSV形式で出力します。"
+    epilog = "オーナロールまたはアノテーションユーザロールを持つユーザで実行してください。"
+    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description=description, epilog=epilog)
+    parse_args(parser)
+    return parser
