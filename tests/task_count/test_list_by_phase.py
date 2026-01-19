@@ -1,4 +1,3 @@
-
 import configparser
 from pathlib import Path
 
@@ -36,4 +35,3 @@ class TestCommandLine:
                 out_file,
             ]
         )
-
