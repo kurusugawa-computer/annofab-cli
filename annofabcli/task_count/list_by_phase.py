@@ -34,8 +34,8 @@ class AggregationUnit(Enum):
     """タスク数"""
     INPUT_DATA = "input_data"
     """入力データ数"""
-    VIDEO_DURATION = "video_duration"
-    """動画の長さ（秒）"""
+    VIDEO_DURATION = "video_duration_hour"
+    """動画の長さ（時間）"""
 
 
 def isoduration_to_second(duration: str) -> float:
@@ -185,7 +185,7 @@ def create_df_task(
      * phase
      * task_status_for_summary
      * input_data_count
-     * video_duration_second
+     * video_duration_hour
      * metadata.{key} (metadata_keysで指定された各キー)
 
     Args:
@@ -208,21 +208,21 @@ def create_df_task(
         # 入力データ数を計算
         task["input_data_count"] = len(task.get("input_data_id_list", []))
 
-        # 動画の長さを計算（秒）
-        video_duration_second = 0
+        # 動画の長さを計算（時間）
+        video_duration_hour = 0
         for input_data_id in task.get("input_data_id_list", []):
             input_data = input_data_dict.get(input_data_id, {})
             system_metadata = input_data.get("system_metadata", {})
             if "duration_seconds" in system_metadata:
-                video_duration_second += system_metadata["duration_seconds"]
-        task["video_duration_second"] = video_duration_second
+                video_duration_hour += system_metadata["duration_seconds"] / 3600
+        task["video_duration_hour"] = video_duration_hour
 
         # メタデータの値を抽出
         metadata = task.get("metadata", {})
         for key in metadata_keys:
             task[f"metadata.{key}"] = metadata.get(key, "")
 
-    columns = ["task_id", "phase", "input_data_count", "video_duration_second"] + [f"metadata.{key}" for key in metadata_keys] + ["task_status_for_summary"]
+    columns = ["task_id", "phase", "input_data_count", "video_duration_hour"] + [f"metadata.{key}" for key in metadata_keys] + ["task_status_for_summary"]
     df = pandas.DataFrame(task_list, columns=columns)
     return df
 
@@ -236,7 +236,7 @@ def aggregate_df(df: pandas.DataFrame, metadata_keys: list[str] | None = None, u
             * phase
             * task_status_for_summary
             * input_data_count
-            * video_duration_second
+            * video_duration_hour
             * metadata.{key} (metadata_keysで指定された各キー)
         metadata_keys: 集計対象のメタデータキーのリスト
         unit: 集計の単位
@@ -254,7 +254,7 @@ def aggregate_df(df: pandas.DataFrame, metadata_keys: list[str] | None = None, u
         case AggregationUnit.INPUT_DATA:
             df["_aggregate_value"] = df["input_data_count"]
         case AggregationUnit.VIDEO_DURATION:
-            df["_aggregate_value"] = df["video_duration_second"]
+            df["_aggregate_value"] = df["video_duration_hour"]
         case _:
             raise ValueError(f"不正なunitです: {unit}")
 
@@ -417,7 +417,7 @@ class ListTaskCountByPhase(CommandLine):
                 raise ValueError(f"プロジェクトが見つかりませんでした: project_id={project_id}")
             input_data_type = project["input_data_type"]
             if input_data_type != "movie":
-                raise ValueError(f"--unit video_duration は動画プロジェクトでのみ使用できます。現在のプロジェクトの入力データタイプ: {input_data_type}")
+                raise ValueError(f"--unit video_duration_hour は動画プロジェクトでのみ使用できます。現在のプロジェクトの入力データタイプ: {input_data_type}")
 
         unit_name = unit.value
         logger.info(f"project_id='{project_id}' :: フェーズごとの{unit_name}を集計します。")
@@ -518,9 +518,9 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--unit",
         type=str,
-        choices=["task", "input_data", "video_duration"],
+        choices=["task", "input_data", "video_duration_hour"],
         default="task",
-        help="集計の単位を指定します。task: タスク数、input_data: 入力データ数、video_duration: 動画の長さ（秒）。デフォルトは task です。",
+        help="集計の単位を指定します。task: タスク数、input_data: 入力データ数、video_duration_hour: 動画の長さ（時間）。デフォルトは task です。",
     )
 
     argument_parser.add_output()

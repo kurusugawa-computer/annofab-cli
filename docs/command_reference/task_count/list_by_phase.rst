@@ -62,6 +62,44 @@ Examples
 
 
 
+入力データ数で集計
+--------------------------
+
+``--unit input_data`` を指定すると、タスク数ではなく入力データ数で集計します。
+
+.. code-block::
+
+    $ annofabcli task_count list_by_phase --project_id prj1 --unit input_data --output out.csv
+
+
+.. csv-table::
+   :header: phase,never_worked.unassigned,never_worked.assigned,worked.not_rejected,worked.rejected,on_hold,complete
+
+   annotation,15,8,12,3,2,110
+   inspection,0,0,18,5,0,127
+   acceptance,0,0,12,0,0,138
+
+
+動画の長さ（時間）で集計
+--------------------------
+
+``--unit video_duration_hour`` を指定すると、動画プロジェクトにおいて動画の長さ（時間単位）で集計します。
+このオプションは動画プロジェクトでのみ使用できます。
+
+.. code-block::
+
+    $ annofabcli task_count list_by_phase --project_id prj1 --unit video_duration_hour --output out.csv
+
+
+.. csv-table::
+   :header: phase,never_worked.unassigned,never_worked.assigned,worked.not_rejected,worked.rejected,on_hold,complete
+
+   annotation,2.5,1.8,3.2,0.6,0.4,18.5
+   inspection,0,0,4.2,1.1,0,22.7
+   acceptance,0,0,2.8,0,0,27.2
+
+
+
 
 Usage Details
 =================================
