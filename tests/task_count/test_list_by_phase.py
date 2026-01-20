@@ -35,3 +35,63 @@ class TestCommandLine:
                 out_file,
             ]
         )
+
+    def test_list_by_phase_with_input_data_unit(self):
+        out_file = str(out_dir / "list_by_phase_input_data.csv")
+        main(
+            [
+                self.command_name,
+                "list_by_phase",
+                "--project_id",
+                project_id,
+                "--unit",
+                "input_data",
+                "--output",
+                out_file,
+            ]
+        )
+
+    def test_list_by_phase_with_video_duration_hour_unit(self):
+        out_file = str(out_dir / "list_by_phase_video_duration_hour.csv")
+        main(
+            [
+                self.command_name,
+                "list_by_phase",
+                "--project_id",
+                project_id,
+                "--unit",
+                "video_duration_hour",
+                "--output",
+                out_file,
+            ]
+        )
+
+    def test_list_by_phase_with_video_duration_minute_unit(self):
+        out_file = str(out_dir / "list_by_phase_video_duration_minute.csv")
+        main(
+            [
+                self.command_name,
+                "list_by_phase",
+                "--project_id",
+                project_id,
+                "--unit",
+                "video_duration_minute",
+                "--output",
+                out_file,
+            ]
+        )
+
+    def test_list_by_phase_with_metadata_key(self):
+        out_file = str(out_dir / "list_by_phase_with_metadata.csv")
+        main(
+            [
+                self.command_name,
+                "list_by_phase",
+                "--project_id",
+                project_id,
+                "--metadata_key",
+                "test_key",
+                "--output",
+                out_file,
+            ]
+        )
