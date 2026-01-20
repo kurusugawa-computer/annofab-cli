@@ -30,12 +30,14 @@ class AggregationUnit(Enum):
     集計の単位。
     """
 
-    TASK = "task"
+    TASK = "task_count"
     """タスク数"""
-    INPUT_DATA = "input_data"
+    INPUT_DATA = "input_data_count"
     """入力データ数"""
     VIDEO_DURATION = "video_duration_hour"
     """動画の長さ（時間）"""
+    VIDEO_DURATION_MINUTE = "video_duration_minute"
+    """動画の長さ（分）"""
 
 
 def isoduration_to_second(duration: str) -> float:
@@ -187,6 +189,7 @@ def create_df_task(
      * task_status_for_summary
      * input_data_count
      * video_duration_hour
+     * video_duration_minute
      * metadata.{key} (metadata_keysで指定された各キー)
 
     Args:
@@ -211,18 +214,22 @@ def create_df_task(
 
         # 動画の長さを計算（時間）
         video_duration_hour = 0
+        video_duration_minute = 0
         for input_data_id in task["input_data_id_list"]:
             if input_data_id in input_data_dict:
-                video_duration_hour += input_data_dict[input_data_id]["system_metadata"]["duration_seconds"] / 3600
+                duration = input_data_dict[input_data_id]["system_metadata"]["input_duration"]
+                video_duration_hour += duration / 3600
+                video_duration_minute += duration / 60
 
         task["video_duration_hour"] = video_duration_hour
+        task["video_duration_minute"] = video_duration_minute
 
         # メタデータの値を抽出
         metadata = task["metadata"]
         for key in metadata_keys:
             task[f"metadata.{key}"] = metadata[key]
 
-    columns = ["task_id", "phase", "input_data_count", "video_duration_hour"] + [f"metadata.{key}" for key in metadata_keys] + ["task_status_for_summary"]
+    columns = ["task_id", "phase", "input_data_count", "video_duration_hour", "video_duration_minute"] + [f"metadata.{key}" for key in metadata_keys] + ["task_status_for_summary"]
     df = pandas.DataFrame(task_list, columns=columns)
     return df
 
@@ -237,6 +244,7 @@ def aggregate_df(df: pandas.DataFrame, metadata_keys: list[str] | None = None, u
             * task_status_for_summary
             * input_data_count
             * video_duration_hour
+            * video_duration_minute
             * metadata.{key} (metadata_keysで指定された各キー)
         metadata_keys: 集計対象のメタデータキーのリスト
         unit: 集計の単位
@@ -255,6 +263,8 @@ def aggregate_df(df: pandas.DataFrame, metadata_keys: list[str] | None = None, u
             df["_aggregate_value"] = df["input_data_count"]
         case AggregationUnit.VIDEO_DURATION:
             df["_aggregate_value"] = df["video_duration_hour"]
+        case AggregationUnit.VIDEO_DURATION_MINUTE:
+            df["_aggregate_value"] = df["video_duration_minute"]
         case _:
             raise ValueError(f"不正なunitです: {unit}")
 
@@ -347,7 +357,7 @@ class GettingTaskCountSummary:
 
         # 動画時間を集計する場合は入力データJSONをダウンロード
         input_data_dict = None
-        if self.unit == AggregationUnit.VIDEO_DURATION:
+        if self.unit in (AggregationUnit.VIDEO_DURATION, AggregationUnit.VIDEO_DURATION_MINUTE):
             input_data_dict = self.get_input_data_dict_with_downloading()
 
         df = create_df_task(task_list, task_history_dict, not_worked_threshold_second=self.not_worked_threshold_second, metadata_keys=self.metadata_keys, input_data_dict=input_data_dict)
@@ -412,7 +422,7 @@ class ListTaskCountByPhase(CommandLine):
 
         # 動画時間で集計する場合は、プロジェクトが動画プロジェクトかどうかをチェック
         if unit == AggregationUnit.VIDEO_DURATION:
-            project = self.service.wrapper.get_project_or_none(project_id)
+            project = self.service.api.get_project(project_id)
             if project is None:
                 raise ValueError(f"プロジェクトが見つかりませんでした: project_id={project_id}")
             input_data_type = project["input_data_type"]
@@ -520,7 +530,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         type=str,
         choices=[e.value for e in AggregationUnit],
         default=AggregationUnit.TASK.value,
-        help="集計の単位を指定します。task: タスク数、input_data: 入力データ数、video_duration_hour: 動画の長さ（時間）。デフォルトは task です。",
+        help="集計の単位を指定します。task_count: タスク数、input_data_count: 入力データ数、video_duration_hour: 動画の長さ（時間）、video_duration_minute: 動画の長さ（分）。",
     )
 
     argument_parser.add_output()
