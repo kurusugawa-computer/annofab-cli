@@ -396,7 +396,7 @@ class GettingTaskCountSummary:
 
 class ListTaskCountByPhase(CommandLine):
     """
-    フェーズごとのタスク数を一覧表示する。
+    フェーズごとにタスク数や入力データ数などを集計し、CSV形式で出力する。
     """
 
     def list_task_count_by_phase(
@@ -410,7 +410,7 @@ class ListTaskCountByPhase(CommandLine):
         unit: AggregationUnit = AggregationUnit.TASK,
     ) -> None:
         """
-        フェーズごとのタスク数をCSV形式で出力する。
+        フェーズごとにタスク数や入力データ数などを集計し、CSV形式で出力する。
 
         Args:
             project_id: プロジェクトID
@@ -548,7 +548,7 @@ def main(args: argparse.Namespace) -> None:
 
 def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "list_by_phase"
-    subcommand_help = "フェーズごとのタスク数をCSV形式で出力します。"
+    subcommand_help = "フェーズごとにタスク数や入力データ数などを集計し、CSV形式で出力します。"
     epilog = "オーナロールまたはアノテーションユーザーロールを持つユーザで実行してください。"
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, epilog=epilog)
     parse_args(parser)
