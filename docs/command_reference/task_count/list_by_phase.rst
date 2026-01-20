@@ -99,6 +99,20 @@ Examples
    acceptance,0,0,2.8,0,0,27.2
 
 
+作業時間の閾値を指定
+--------------------------
+
+``--not_worked_threshold_second`` を指定すると、指定した秒数以下の作業時間のタスクを「作業していない」とみなします。
+デフォルトは0秒です。
+
+.. code-block::
+
+    $ annofabcli task_count list_by_phase --project_id prj1 --not_worked_threshold_second 60 --output out.csv
+
+
+この例では、60秒以下の作業時間のタスクは ``never_worked.assigned`` または ``never_worked.unassigned`` に分類されます。
+
+
 
 
 Usage Details

@@ -175,6 +175,7 @@ def get_step_for_current_phase(task: Task, number_of_inspections: int) -> int:
 def create_df_task(
     task_list: list[dict[str, Any]],
     task_history_dict: dict[str, list[dict[str, Any]]],
+    *,
     not_worked_threshold_second: float = 0,
     metadata_keys: list[str] | None = None,
     input_data_dict: dict[str, dict[str, Any]] | None = None,
@@ -212,15 +213,15 @@ def create_df_task(
         video_duration_hour = 0
         for input_data_id in task["input_data_id_list"]:
             input_data = input_data_dict.get(input_data_id, {})
-            system_metadata = input_data.get("system_metadata", {})
+            system_metadata = input_data["system_metadata"]
             if "duration_seconds" in system_metadata:
                 video_duration_hour += system_metadata["duration_seconds"] / 3600
         task["video_duration_hour"] = video_duration_hour
 
         # メタデータの値を抽出
-        metadata = task.get("metadata", {})
+        metadata = task["metadata"]
         for key in metadata_keys:
-            task[f"metadata.{key}"] = metadata.get(key, "")
+            task[f"metadata.{key}"] = metadata[key]
 
     columns = ["task_id", "phase", "input_data_count", "video_duration_hour"] + [f"metadata.{key}" for key in metadata_keys] + ["task_status_for_summary"]
     df = pandas.DataFrame(task_list, columns=columns)
@@ -350,7 +351,7 @@ class GettingTaskCountSummary:
         if self.unit == AggregationUnit.VIDEO_DURATION:
             input_data_dict = self.get_input_data_dict_with_downloading()
 
-        df = create_df_task(task_list, task_history_dict, self.not_worked_threshold_second, self.metadata_keys, input_data_dict)
+        df = create_df_task(task_list, task_history_dict, not_worked_threshold_second=self.not_worked_threshold_second, metadata_keys=self.metadata_keys, input_data_dict=input_data_dict)
         return df
 
     def get_task_list_with_downloading(self) -> list[dict[str, Any]]:
@@ -518,8 +519,8 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--unit",
         type=str,
-        choices=["task", "input_data", "video_duration_hour"],
-        default="task",
+        choices=[e.value for e in AggregationUnit],
+        default=AggregationUnit.TASK.value,
         help="集計の単位を指定します。task: タスク数、input_data: 入力データ数、video_duration_hour: 動画の長さ（時間）。デフォルトは task です。",
     )
 

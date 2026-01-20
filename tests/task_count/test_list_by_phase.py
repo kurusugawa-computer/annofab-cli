@@ -65,3 +65,18 @@ class TestCommandLine:
                 out_file,
             ]
         )
+
+    def test_list_by_phase_with_metadata_key(self):
+        out_file = str(out_dir / "list_by_phase_with_metadata.csv")
+        main(
+            [
+                self.command_name,
+                "list_by_phase",
+                "--project_id",
+                project_id,
+                "--metadata_key",
+                "test_key",
+                "--output",
+                out_file,
+            ]
+        )
