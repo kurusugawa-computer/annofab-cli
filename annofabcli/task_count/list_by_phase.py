@@ -483,7 +483,7 @@ class ListTaskCountByPhase(CommandLine):
             project, _ = self.service.api.get_project(project_id)
             input_data_type = project["input_data_type"]
             if input_data_type != "movie":
-                print(f"'--unit {unit.value}' は動画プロジェクトでのみ使用できます。現在のプロジェクトの入力データタイプ: {input_data_type}", file=sys.stderr)  # noqa: T201
+                print(f"コマンドライン引数'--unit {unit.value}' は動画プロジェクトでのみ使用できます。現在のプロジェクトの入力データタイプは'{input_data_type}'です。", file=sys.stderr)  # noqa: T201
                 sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
         self.list_task_count_by_phase(
