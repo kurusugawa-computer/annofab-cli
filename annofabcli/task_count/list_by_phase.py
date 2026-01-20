@@ -25,6 +25,30 @@ from annofabcli.common.type_util import assert_noreturn
 logger = logging.getLogger(__name__)
 
 
+class AggregationUnit(Enum):
+    """
+    集計の単位。
+    """
+
+    TASK = "task"
+    """タスク数"""
+    INPUT_DATA = "input_data"
+    """入力データ数"""
+    VIDEO_DURATION = "video_duration"
+    """動画の長さ（秒）"""
+
+    def get_display_name(self) -> str:
+        """
+        表示用の名称を取得する。
+        """
+        display_names = {
+            AggregationUnit.TASK: "タスク数",
+            AggregationUnit.INPUT_DATA: "入力データ数",
+            AggregationUnit.VIDEO_DURATION: "動画の長さ（秒）",
+        }
+        return display_names[self]
+
+
 def isoduration_to_second(duration: str) -> float:
     """
     ISO 8601 duration を 秒に変換する
@@ -208,7 +232,7 @@ def create_df_task(
     return df
 
 
-def aggregate_df(df: pandas.DataFrame, metadata_keys: list[str] | None = None, unit: str = "task") -> pandas.DataFrame:
+def aggregate_df(df: pandas.DataFrame, metadata_keys: list[str] | None = None, unit: AggregationUnit = AggregationUnit.TASK) -> pandas.DataFrame:
     """
     タスクのフェーズとステータスごとに、指定された単位で集計する。
 
@@ -220,7 +244,7 @@ def aggregate_df(df: pandas.DataFrame, metadata_keys: list[str] | None = None, u
             * video_duration_second
             * metadata.{key} (metadata_keysで指定された各キー)
         metadata_keys: 集計対象のメタデータキーのリスト
-        unit: 集計の単位。task: タスク数、input_data: 入力データ数、video_duration: 動画の長さ（秒）
+        unit: 集計の単位
 
     Returns:
         indexがphase(とmetadata.*列),列がtask_status_for_summaryであるDataFrame
@@ -229,14 +253,15 @@ def aggregate_df(df: pandas.DataFrame, metadata_keys: list[str] | None = None, u
     metadata_columns = [f"metadata.{key}" for key in metadata_keys]
 
     # 集計対象の列を選択
-    if unit == "task":
-        df["_aggregate_value"] = 1
-    elif unit == "input_data":
-        df["_aggregate_value"] = df["input_data_count"]
-    elif unit == "video_duration":
-        df["_aggregate_value"] = df["video_duration_second"]
-    else:
-        raise ValueError(f"不正なunitです: {unit}")
+    match unit:
+        case AggregationUnit.TASK:
+            df["_aggregate_value"] = 1
+        case AggregationUnit.INPUT_DATA:
+            df["_aggregate_value"] = df["input_data_count"]
+        case AggregationUnit.VIDEO_DURATION:
+            df["_aggregate_value"] = df["video_duration_second"]
+        case _:
+            raise ValueError(f"不正なunitです: {unit}")
 
     index_columns = ["phase", *metadata_columns]
     df2 = df.pivot_table(values="_aggregate_value", index=index_columns, columns="task_status_for_summary", aggfunc="sum", fill_value=0)
@@ -294,7 +319,7 @@ class GettingTaskCountSummary:
         should_execute_get_tasks_api: bool = False,
         not_worked_threshold_second: float = 0,
         metadata_keys: list[str] | None = None,
-        unit: str = "task",
+        unit: AggregationUnit = AggregationUnit.TASK,
     ) -> None:
         self.annofab_service = annofab_service
         self.project_id = project_id
@@ -374,7 +399,7 @@ class ListTaskCountByPhase(CommandLine):
         should_execute_get_tasks_api: bool = False,
         not_worked_threshold_second: float = 0,
         metadata_keys: list[str] | None = None,
-        unit: str = "task",
+        unit: AggregationUnit = AggregationUnit.TASK,
     ) -> None:
         """
         フェーズごとのタスク数をCSV形式で出力する。
@@ -385,12 +410,11 @@ class ListTaskCountByPhase(CommandLine):
             should_execute_get_tasks_api: getTasks APIを実行するかどうか
             not_worked_threshold_second: 作業していないとみなす作業時間の閾値（秒）
             metadata_keys: 集計対象のメタデータキーのリスト
-            unit: 集計の単位。task: タスク数、input_data: 入力データ数、video_duration: 動画の長さ（秒）
+            unit: 集計の単位
         """
         super().validate_project(project_id, project_member_roles=[ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER])
 
-        unit_name_dict = {"task": "タスク数", "input_data": "入力データ数", "video_duration": "動画の長さ（秒）"}
-        unit_name = unit_name_dict.get(unit, unit)
+        unit_name = unit.get_display_name()
         logger.info(f"project_id='{project_id}' :: フェーズごとの{unit_name}を集計します。")
 
         getting_obj = GettingTaskCountSummary(
@@ -431,13 +455,14 @@ class ListTaskCountByPhase(CommandLine):
         project_id = args.project_id
         temp_dir = Path(args.temp_dir) if args.temp_dir is not None else None
 
+        unit = AggregationUnit(args.unit)
         self.list_task_count_by_phase(
             project_id,
             temp_dir=temp_dir,
             should_execute_get_tasks_api=args.execute_get_tasks_api,
             not_worked_threshold_second=args.not_worked_threshold_second,
             metadata_keys=args.metadata_key,
-            unit=args.unit,
+            unit=unit,
         )
 
 
