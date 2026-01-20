@@ -17,6 +17,7 @@ inifile.read("./pytest.ini", "UTF-8")
 annofab_config = dict(inifile.items("annofab"))
 
 project_id = annofab_config["project_id"]
+video_project_id = annofab_config["video_project_id"]
 service = annofabapi.build()
 
 
@@ -37,7 +38,7 @@ class TestCommandLine:
         )
 
     def test_list_by_phase_with_input_data_unit(self):
-        out_file = str(out_dir / "list_by_phase_input_data.csv")
+        out_file = str(out_dir / "list_by_phase_input_data_count.csv")
         main(
             [
                 self.command_name,
@@ -45,7 +46,7 @@ class TestCommandLine:
                 "--project_id",
                 project_id,
                 "--unit",
-                "input_data",
+                "input_data_count",
                 "--output",
                 out_file,
             ]
@@ -58,7 +59,7 @@ class TestCommandLine:
                 self.command_name,
                 "list_by_phase",
                 "--project_id",
-                project_id,
+                video_project_id,
                 "--unit",
                 "video_duration_hour",
                 "--output",
@@ -73,7 +74,7 @@ class TestCommandLine:
                 self.command_name,
                 "list_by_phase",
                 "--project_id",
-                project_id,
+                video_project_id,
                 "--unit",
                 "video_duration_minute",
                 "--output",

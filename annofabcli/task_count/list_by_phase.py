@@ -214,7 +214,7 @@ def create_df_task(
         # 入力データ数を計算
         task["input_data_count"] = len(task["input_data_id_list"])
 
-        # 動画の長さを計算（時間）
+        # 動画の長さを計算
         video_duration_hour = 0
         video_duration_minute = 0
         for input_data_id in task["input_data_id_list"]:
@@ -229,7 +229,7 @@ def create_df_task(
         # メタデータの値を抽出
         metadata = task["metadata"]
         for key in metadata_keys:
-            task[f"metadata.{key}"] = metadata[key]
+            task[f"metadata.{key}"] = metadata.get(key)
 
     columns = ["task_id", "phase", "input_data_count", "video_duration_hour", "video_duration_minute"] + [f"metadata.{key}" for key in metadata_keys] + ["task_status_for_summary"]
     df = pandas.DataFrame(task_list, columns=columns)
