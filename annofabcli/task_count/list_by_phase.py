@@ -37,17 +37,6 @@ class AggregationUnit(Enum):
     VIDEO_DURATION = "video_duration"
     """動画の長さ（秒）"""
 
-    def get_display_name(self) -> str:
-        """
-        表示用の名称を取得する。
-        """
-        display_names = {
-            AggregationUnit.TASK: "タスク数",
-            AggregationUnit.INPUT_DATA: "入力データ数",
-            AggregationUnit.VIDEO_DURATION: "動画の長さ（秒）",
-        }
-        return display_names[self]
-
 
 def isoduration_to_second(duration: str) -> float:
     """
@@ -414,8 +403,7 @@ class ListTaskCountByPhase(CommandLine):
         """
         super().validate_project(project_id, project_member_roles=[ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER])
 
-        unit_name = unit.get_display_name()
-        logger.info(f"project_id='{project_id}' :: フェーズごとの{unit_name}を集計します。")
+        logger.info(f"project_id='{project_id}' :: フェーズごとの{unit.value}を集計します。")
 
         getting_obj = GettingTaskCountSummary(
             self.service,
