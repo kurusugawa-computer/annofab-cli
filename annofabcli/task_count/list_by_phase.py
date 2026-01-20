@@ -309,8 +309,8 @@ class GettingTaskCountSummary:
         self,
         annofab_service: AnnofabResource,
         project_id: str,
+        temp_dir: Path,
         *,
-        temp_dir: Path | None = None,
         should_execute_get_tasks_api: bool = False,
         not_worked_threshold_second: float = 0,
         metadata_keys: list[str] | None = None,
@@ -353,57 +353,33 @@ class GettingTaskCountSummary:
         df = create_df_task(task_list, task_history_dict, self.not_worked_threshold_second, self.metadata_keys, input_data_dict)
         return df
 
-    def _get_task_list_with_downloading(self, temp_dir: Path) -> list[dict[str, Any]]:
-        downloading_obj = DownloadingFile(self.annofab_service)
-        task_json = downloading_obj.download_task_json_to_dir(self.project_id, temp_dir)
-        with task_json.open(encoding="utf-8") as f:
-            return json.load(f)
-
-    def _get_task_history_with_downloading(self, temp_dir: Path) -> dict[str, list[dict[str, Any]]]:
-        downloading_obj = DownloadingFile(self.annofab_service)
-        task_history_json = downloading_obj.download_task_history_json_to_dir(self.project_id, temp_dir)
-        with task_history_json.open(encoding="utf-8") as f:
-            return json.load(f)
-
     def get_task_list_with_downloading(self) -> list[dict[str, Any]]:
         """
         タスク全件ファイルをダウンロードしてタスク情報を取得する。
         """
-        if self.temp_dir is not None:
-            return self._get_task_list_with_downloading(self.temp_dir)
-        else:
-            with tempfile.TemporaryDirectory() as str_temp_dir:
-                return self._get_task_list_with_downloading(Path(str_temp_dir))
+        downloading_obj = DownloadingFile(self.annofab_service)
+        task_json = downloading_obj.download_task_json_to_dir(self.project_id, self.temp_dir)
+        with task_json.open(encoding="utf-8") as f:
+            return json.load(f)
 
     def get_task_history_with_downloading(self) -> dict[str, list[dict[str, Any]]]:
         """
         タスク履歴全件ファイルをダウンロードしてタスク情報を取得する。
         """
-        if self.temp_dir is not None:
-            return self._get_task_history_with_downloading(self.temp_dir)
-        else:
-            with tempfile.TemporaryDirectory() as str_temp_dir:
-                return self._get_task_history_with_downloading(Path(str_temp_dir))
-
-    def _get_input_data_dict_with_downloading(self, temp_dir: Path) -> dict[str, dict[str, Any]]:
-        """
-        入力データJSONをダウンロードして、入力データIDをキーとした辞書を返す。
-        """
         downloading_obj = DownloadingFile(self.annofab_service)
-        input_data_json = downloading_obj.download_input_data_json_to_dir(self.project_id, temp_dir)
-        with input_data_json.open(encoding="utf-8") as f:
-            input_data_list = json.load(f)
-        return {input_data["input_data_id"]: input_data for input_data in input_data_list}
+        task_history_json = downloading_obj.download_task_history_json_to_dir(self.project_id, self.temp_dir)
+        with task_history_json.open(encoding="utf-8") as f:
+            return json.load(f)
 
     def get_input_data_dict_with_downloading(self) -> dict[str, dict[str, Any]]:
         """
         入力データJSONをダウンロードして、入力データIDをキーとした辞書を返す。
         """
-        if self.temp_dir is not None:
-            return self._get_input_data_dict_with_downloading(self.temp_dir)
-        else:
-            with tempfile.TemporaryDirectory() as str_temp_dir:
-                return self._get_input_data_dict_with_downloading(Path(str_temp_dir))
+        downloading_obj = DownloadingFile(self.annofab_service)
+        input_data_json = downloading_obj.download_input_data_json_to_dir(self.project_id, self.temp_dir)
+        with input_data_json.open(encoding="utf-8") as f:
+            input_data_list = json.load(f)
+        return {input_data["input_data_id"]: input_data for input_data in input_data_list}
 
 
 class ListTaskCountByPhase(CommandLine):
@@ -446,16 +422,29 @@ class ListTaskCountByPhase(CommandLine):
         unit_name = unit.value
         logger.info(f"project_id='{project_id}' :: フェーズごとの{unit_name}を集計します。")
 
-        getting_obj = GettingTaskCountSummary(
-            self.service,
-            project_id,
-            temp_dir=temp_dir,
-            should_execute_get_tasks_api=should_execute_get_tasks_api,
-            not_worked_threshold_second=not_worked_threshold_second,
-            metadata_keys=metadata_keys,
-            unit=unit,
-        )
-        df_task = getting_obj.create_df_task()
+        if temp_dir is not None:
+            getting_obj = GettingTaskCountSummary(
+                self.service,
+                project_id,
+                temp_dir,
+                should_execute_get_tasks_api=should_execute_get_tasks_api,
+                not_worked_threshold_second=not_worked_threshold_second,
+                metadata_keys=metadata_keys,
+                unit=unit,
+            )
+            df_task = getting_obj.create_df_task()
+        else:
+            with tempfile.TemporaryDirectory() as str_temp_dir:
+                getting_obj = GettingTaskCountSummary(
+                    self.service,
+                    project_id,
+                    Path(str_temp_dir),
+                    should_execute_get_tasks_api=should_execute_get_tasks_api,
+                    not_worked_threshold_second=not_worked_threshold_second,
+                    metadata_keys=metadata_keys,
+                    unit=unit,
+                )
+                df_task = getting_obj.create_df_task()
 
         if len(df_task) == 0:
             logger.info("タスクが0件ですが、ヘッダ行を出力します。")
