@@ -66,6 +66,21 @@ class TestCommandLine:
             ]
         )
 
+    def test_list_by_phase_with_video_duration_minute_unit(self):
+        out_file = str(out_dir / "list_by_phase_video_duration_minute.csv")
+        main(
+            [
+                self.command_name,
+                "list_by_phase",
+                "--project_id",
+                project_id,
+                "--unit",
+                "video_duration_minute",
+                "--output",
+                out_file,
+            ]
+        )
+
     def test_list_by_phase_with_metadata_key(self):
         out_file = str(out_dir / "list_by_phase_with_metadata.csv")
         main(
