@@ -212,10 +212,9 @@ def create_df_task(
         # 動画の長さを計算（時間）
         video_duration_hour = 0
         for input_data_id in task["input_data_id_list"]:
-            input_data = input_data_dict.get(input_data_id, {})
-            system_metadata = input_data["system_metadata"]
-            if "duration_seconds" in system_metadata:
-                video_duration_hour += system_metadata["duration_seconds"] / 3600
+            if input_data_id in input_data_dict:
+                video_duration_hour += input_data_dict[input_data_id]["system_metadata"]["duration_seconds"] / 3600
+
         task["video_duration_hour"] = video_duration_hour
 
         # メタデータの値を抽出
