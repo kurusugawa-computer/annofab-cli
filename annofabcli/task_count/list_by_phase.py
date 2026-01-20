@@ -173,7 +173,11 @@ def get_step_for_current_phase(task: Task, number_of_inspections: int) -> int:
 
 
 def create_df_task(
-    task_list: list[dict[str, Any]], task_history_dict: dict[str, list[dict[str, Any]]], not_worked_threshold_second: float = 0, metadata_keys: list[str] | None = None
+    task_list: list[dict[str, Any]],
+    task_history_dict: dict[str, list[dict[str, Any]]],
+    not_worked_threshold_second: float = 0,
+    metadata_keys: list[str] | None = None,
+    input_data_dict: dict[str, dict[str, Any]] | None = None,
 ) -> pandas.DataFrame:
     """
     以下の列が含まれたタスクのDataFrameを生成します。
@@ -189,11 +193,13 @@ def create_df_task(
         task_history_dict: タスクIDをキーとしたタスク履歴のdict
         not_worked_threshold_second: 作業していないとみなす作業時間の閾値（秒）
         metadata_keys: 集計対象のメタデータキーのリスト
+        input_data_dict: 入力データIDをキーとした入力データ情報のdict。動画時間を計算する場合に必要。
 
     Returns:
         タスク情報のDataFrame
     """
     metadata_keys = metadata_keys or []
+    input_data_dict = input_data_dict or {}
 
     for task in task_list:
         task_history = task_history_dict[task["task_id"]]
@@ -205,7 +211,7 @@ def create_df_task(
         # 動画の長さを計算（秒）
         video_duration_second = 0
         for input_data_id in task.get("input_data_id_list", []):
-            input_data = task.get("_input_data_dict", {}).get(input_data_id, {})
+            input_data = input_data_dict.get(input_data_id, {})
             system_metadata = input_data.get("system_metadata", {})
             if "duration_seconds" in system_metadata:
                 video_duration_second += system_metadata["duration_seconds"]
@@ -339,7 +345,12 @@ class GettingTaskCountSummary:
             task_list = self.get_task_list_with_downloading()
             task_history_dict = self.get_task_history_with_downloading()
 
-        df = create_df_task(task_list, task_history_dict, self.not_worked_threshold_second, self.metadata_keys)
+        # 動画時間を集計する場合は入力データJSONをダウンロード
+        input_data_dict = None
+        if self.unit == AggregationUnit.VIDEO_DURATION:
+            input_data_dict = self.get_input_data_dict_with_downloading()
+
+        df = create_df_task(task_list, task_history_dict, self.not_worked_threshold_second, self.metadata_keys, input_data_dict)
         return df
 
     def _get_task_list_with_downloading(self, temp_dir: Path) -> list[dict[str, Any]]:
@@ -374,6 +385,26 @@ class GettingTaskCountSummary:
             with tempfile.TemporaryDirectory() as str_temp_dir:
                 return self._get_task_history_with_downloading(Path(str_temp_dir))
 
+    def _get_input_data_dict_with_downloading(self, temp_dir: Path) -> dict[str, dict[str, Any]]:
+        """
+        入力データJSONをダウンロードして、入力データIDをキーとした辞書を返す。
+        """
+        downloading_obj = DownloadingFile(self.annofab_service)
+        input_data_json = downloading_obj.download_input_data_json_to_dir(self.project_id, temp_dir)
+        with input_data_json.open(encoding="utf-8") as f:
+            input_data_list = json.load(f)
+        return {input_data["input_data_id"]: input_data for input_data in input_data_list}
+
+    def get_input_data_dict_with_downloading(self) -> dict[str, dict[str, Any]]:
+        """
+        入力データJSONをダウンロードして、入力データIDをキーとした辞書を返す。
+        """
+        if self.temp_dir is not None:
+            return self._get_input_data_dict_with_downloading(self.temp_dir)
+        else:
+            with tempfile.TemporaryDirectory() as str_temp_dir:
+                return self._get_input_data_dict_with_downloading(Path(str_temp_dir))
+
 
 class ListTaskCountByPhase(CommandLine):
     """
@@ -403,7 +434,17 @@ class ListTaskCountByPhase(CommandLine):
         """
         super().validate_project(project_id, project_member_roles=[ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER])
 
-        logger.info(f"project_id='{project_id}' :: フェーズごとの{unit.value}を集計します。")
+        # 動画時間で集計する場合は、プロジェクトが動画プロジェクトかどうかをチェック
+        if unit == AggregationUnit.VIDEO_DURATION:
+            project = self.service.wrapper.get_project_or_none(project_id)
+            if project is None:
+                raise ValueError(f"プロジェクトが見つかりませんでした: project_id={project_id}")
+            input_data_type = project["input_data_type"]
+            if input_data_type != "movie":
+                raise ValueError(f"--unit video_duration は動画プロジェクトでのみ使用できます。現在のプロジェクトの入力データタイプ: {input_data_type}")
+
+        unit_name = unit.value
+        logger.info(f"project_id='{project_id}' :: フェーズごとの{unit_name}を集計します。")
 
         getting_obj = GettingTaskCountSummary(
             self.service,
@@ -436,7 +477,7 @@ class ListTaskCountByPhase(CommandLine):
             df_summary = aggregate_df(df_task, metadata_keys, unit)
 
         self.print_csv(df_summary)
-        logger.info(f"project_id='{project_id}' :: フェーズごとの{unit_name}をCSV形式で出力しました。")
+        logger.info(f"project_id='{project_id}' :: フェーズごとの{unit}をCSV形式で出力しました。")
 
     def main(self) -> None:
         args = self.args
