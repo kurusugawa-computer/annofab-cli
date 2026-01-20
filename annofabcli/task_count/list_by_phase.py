@@ -342,6 +342,9 @@ class GettingTaskCountSummary:
         * task_id
         * phase
         * task_status_for_summary
+        * input_data_count
+        * video_duration_hour
+        * video_duration_minute
         * metadata.{key} （metadata_keys で指定した各メタデータキーに対応する列）
         """
         if self.should_execute_get_tasks_api:
