@@ -206,11 +206,11 @@ def create_df_task(
         task["task_status_for_summary"] = TaskStatusForSummary.from_task(task, task_history, not_worked_threshold_second).value
 
         # 入力データ数を計算
-        task["input_data_count"] = len(task.get("input_data_id_list", []))
+        task["input_data_count"] = len(task["input_data_id_list"])
 
         # 動画の長さを計算（時間）
         video_duration_hour = 0
-        for input_data_id in task.get("input_data_id_list", []):
+        for input_data_id in task["input_data_id_list"]:
             input_data = input_data_dict.get(input_data_id, {})
             system_metadata = input_data.get("system_metadata", {})
             if "duration_seconds" in system_metadata:
