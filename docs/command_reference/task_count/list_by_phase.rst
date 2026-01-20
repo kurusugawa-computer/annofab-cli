@@ -65,12 +65,11 @@ Examples
 入力データ数で集計
 --------------------------
 
-``--unit input_data`` を指定すると、タスク数ではなく入力データ数で集計します。
+``--unit input_data_count`` を指定すると、タスク数ではなく入力データ数で集計します。
 
 .. code-block::
 
-    $ annofabcli task_count list_by_phase --project_id prj1 --unit input_data --output out.csv
-
+    $ annofabcli task_count list_by_phase --project_id prj1 --unit input_data_count --output out.csv
 
 .. csv-table::
    :header: phase,never_worked.unassigned,never_worked.assigned,worked.not_rejected,worked.rejected,on_hold,complete

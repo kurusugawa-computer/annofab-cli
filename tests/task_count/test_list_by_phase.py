@@ -37,7 +37,7 @@ class TestCommandLine:
         )
 
     def test_list_by_phase_with_input_data_unit(self):
-        out_file = str(out_dir / "list_by_phase_input_data.csv")
+        out_file = str(out_dir / "list_by_phase_input_data_count.csv")
         main(
             [
                 self.command_name,
@@ -45,7 +45,7 @@ class TestCommandLine:
                 "--project_id",
                 project_id,
                 "--unit",
-                "input_data",
+                "input_data_count",
                 "--output",
                 out_file,
             ]
