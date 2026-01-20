@@ -167,6 +167,8 @@ def create_df_task(
      * task_id
      * phase
      * task_status_for_summary
+     * input_data_count
+     * video_duration_second
      * metadata.{key} (metadata_keysで指定された各キー)
 
     Args:
@@ -184,26 +186,41 @@ def create_df_task(
         task_history = task_history_dict[task["task_id"]]
         task["task_status_for_summary"] = TaskStatusForSummary.from_task(task, task_history, not_worked_threshold_second).value
 
+        # 入力データ数を計算
+        task["input_data_count"] = len(task.get("input_data_id_list", []))
+
+        # 動画の長さを計算（秒）
+        video_duration_second = 0
+        for input_data_id in task.get("input_data_id_list", []):
+            input_data = task.get("_input_data_dict", {}).get(input_data_id, {})
+            system_metadata = input_data.get("system_metadata", {})
+            if "duration_seconds" in system_metadata:
+                video_duration_second += system_metadata["duration_seconds"]
+        task["video_duration_second"] = video_duration_second
+
         # メタデータの値を抽出
         metadata = task.get("metadata", {})
         for key in metadata_keys:
             task[f"metadata.{key}"] = metadata.get(key, "")
 
-    columns = ["task_id", "phase"] + [f"metadata.{key}" for key in metadata_keys] + ["task_status_for_summary"]
+    columns = ["task_id", "phase", "input_data_count", "video_duration_second"] + [f"metadata.{key}" for key in metadata_keys] + ["task_status_for_summary"]
     df = pandas.DataFrame(task_list, columns=columns)
     return df
 
 
-def aggregate_df(df: pandas.DataFrame, metadata_keys: list[str] | None = None) -> pandas.DataFrame:
+def aggregate_df(df: pandas.DataFrame, metadata_keys: list[str] | None = None, unit: str = "task") -> pandas.DataFrame:
     """
-    タスク数を集計する。
+    タスクのフェーズとステータスごとに、指定された単位で集計する。
 
     Args:
         df: 以下の列を持つDataFrame
             * phase
             * task_status_for_summary
+            * input_data_count
+            * video_duration_second
             * metadata.{key} (metadata_keysで指定された各キー)
         metadata_keys: 集計対象のメタデータキーのリスト
+        unit: 集計の単位。task: タスク数、input_data: 入力データ数、video_duration: 動画の長さ（秒）
 
     Returns:
         indexがphase(とmetadata.*列),列がtask_status_for_summaryであるDataFrame
@@ -211,9 +228,18 @@ def aggregate_df(df: pandas.DataFrame, metadata_keys: list[str] | None = None) -
     metadata_keys = metadata_keys or []
     metadata_columns = [f"metadata.{key}" for key in metadata_keys]
 
-    df["task_count"] = 1
+    # 集計対象の列を選択
+    if unit == "task":
+        df["_aggregate_value"] = 1
+    elif unit == "input_data":
+        df["_aggregate_value"] = df["input_data_count"]
+    elif unit == "video_duration":
+        df["_aggregate_value"] = df["video_duration_second"]
+    else:
+        raise ValueError(f"不正なunitです: {unit}")
+
     index_columns = ["phase", *metadata_columns]
-    df2 = df.pivot_table(values="task_count", index=index_columns, columns="task_status_for_summary", aggfunc="sum", fill_value=0)
+    df2 = df.pivot_table(values="_aggregate_value", index=index_columns, columns="task_status_for_summary", aggfunc="sum", fill_value=0)
 
     # 列数を固定する
     for status in TaskStatusForSummary:
@@ -268,6 +294,7 @@ class GettingTaskCountSummary:
         should_execute_get_tasks_api: bool = False,
         not_worked_threshold_second: float = 0,
         metadata_keys: list[str] | None = None,
+        unit: str = "task",
     ) -> None:
         self.annofab_service = annofab_service
         self.project_id = project_id
@@ -275,6 +302,7 @@ class GettingTaskCountSummary:
         self.should_execute_get_tasks_api = should_execute_get_tasks_api
         self.not_worked_threshold_second = not_worked_threshold_second
         self.metadata_keys = metadata_keys or []
+        self.unit = unit
 
     def create_df_task(self) -> pandas.DataFrame:
         """
@@ -339,7 +367,14 @@ class ListTaskCountByPhase(CommandLine):
     """
 
     def list_task_count_by_phase(
-        self, project_id: str, *, temp_dir: Path | None = None, should_execute_get_tasks_api: bool = False, not_worked_threshold_second: float = 0, metadata_keys: list[str] | None = None
+        self,
+        project_id: str,
+        *,
+        temp_dir: Path | None = None,
+        should_execute_get_tasks_api: bool = False,
+        not_worked_threshold_second: float = 0,
+        metadata_keys: list[str] | None = None,
+        unit: str = "task",
     ) -> None:
         """
         フェーズごとのタスク数をCSV形式で出力する。
@@ -350,13 +385,22 @@ class ListTaskCountByPhase(CommandLine):
             should_execute_get_tasks_api: getTasks APIを実行するかどうか
             not_worked_threshold_second: 作業していないとみなす作業時間の閾値（秒）
             metadata_keys: 集計対象のメタデータキーのリスト
+            unit: 集計の単位。task: タスク数、input_data: 入力データ数、video_duration: 動画の長さ（秒）
         """
         super().validate_project(project_id, project_member_roles=[ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER])
 
-        logger.info(f"project_id='{project_id}' :: フェーズごとのタスク数を集計します。")
+        unit_name_dict = {"task": "タスク数", "input_data": "入力データ数", "video_duration": "動画の長さ（秒）"}
+        unit_name = unit_name_dict.get(unit, unit)
+        logger.info(f"project_id='{project_id}' :: フェーズごとの{unit_name}を集計します。")
 
         getting_obj = GettingTaskCountSummary(
-            self.service, project_id, temp_dir=temp_dir, should_execute_get_tasks_api=should_execute_get_tasks_api, not_worked_threshold_second=not_worked_threshold_second, metadata_keys=metadata_keys
+            self.service,
+            project_id,
+            temp_dir=temp_dir,
+            should_execute_get_tasks_api=should_execute_get_tasks_api,
+            not_worked_threshold_second=not_worked_threshold_second,
+            metadata_keys=metadata_keys,
+            unit=unit,
         )
         df_task = getting_obj.create_df_task()
 
@@ -377,10 +421,10 @@ class ListTaskCountByPhase(CommandLine):
             df_summary = pandas.DataFrame(columns=result_columns)
         else:
             logger.info(f"{len(df_task)} 件のタスクを集計しました。")
-            df_summary = aggregate_df(df_task, metadata_keys)
+            df_summary = aggregate_df(df_task, metadata_keys, unit)
 
         self.print_csv(df_summary)
-        logger.info(f"project_id='{project_id}' :: フェーズごとのタスク数をCSV形式で出力しました。")
+        logger.info(f"project_id='{project_id}' :: フェーズごとの{unit_name}をCSV形式で出力しました。")
 
     def main(self) -> None:
         args = self.args
@@ -393,6 +437,7 @@ class ListTaskCountByPhase(CommandLine):
             should_execute_get_tasks_api=args.execute_get_tasks_api,
             not_worked_threshold_second=args.not_worked_threshold_second,
             metadata_keys=args.metadata_key,
+            unit=args.unit,
         )
 
 
@@ -425,6 +470,14 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         type=str,
         nargs="+",
         help="集計対象のメタデータキーを指定します。指定したキーの値でグループ化してタスク数を集計します。",
+    )
+
+    parser.add_argument(
+        "--unit",
+        type=str,
+        choices=["task", "input_data", "video_duration"],
+        default="task",
+        help="集計の単位を指定します。task: タスク数、input_data: 入力データ数、video_duration: 動画の長さ（秒）。デフォルトは task です。",
     )
 
     argument_parser.add_output()
