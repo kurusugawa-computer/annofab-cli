@@ -1,6 +1,7 @@
 import argparse
 import json
 import logging
+import sys
 import tempfile
 from enum import Enum
 from pathlib import Path
@@ -14,6 +15,7 @@ from annofabapi.utils import get_number_of_rejections
 
 import annofabcli.common
 from annofabcli.common.cli import (
+    COMMAND_LINE_ERROR_STATUS_CODE,
     ArgumentParser,
     CommandLine,
     build_annofabapi_resource_and_login,
@@ -34,7 +36,7 @@ class AggregationUnit(Enum):
     """タスク数"""
     INPUT_DATA = "input_data_count"
     """入力データ数"""
-    VIDEO_DURATION = "video_duration_hour"
+    VIDEO_DURATION_HOUR = "video_duration_hour"
     """動画の長さ（時間）"""
     VIDEO_DURATION_MINUTE = "video_duration_minute"
     """動画の長さ（分）"""
@@ -261,7 +263,7 @@ def aggregate_df(df: pandas.DataFrame, metadata_keys: list[str] | None = None, u
             df["_aggregate_value"] = 1
         case AggregationUnit.INPUT_DATA:
             df["_aggregate_value"] = df["input_data_count"]
-        case AggregationUnit.VIDEO_DURATION:
+        case AggregationUnit.VIDEO_DURATION_HOUR:
             df["_aggregate_value"] = df["video_duration_hour"]
         case AggregationUnit.VIDEO_DURATION_MINUTE:
             df["_aggregate_value"] = df["video_duration_minute"]
@@ -357,7 +359,7 @@ class GettingTaskCountSummary:
 
         # 動画時間を集計する場合は入力データJSONをダウンロード
         input_data_dict = None
-        if self.unit in (AggregationUnit.VIDEO_DURATION, AggregationUnit.VIDEO_DURATION_MINUTE):
+        if self.unit in (AggregationUnit.VIDEO_DURATION_HOUR, AggregationUnit.VIDEO_DURATION_MINUTE):
             input_data_dict = self.get_input_data_dict_with_downloading()
 
         df = create_df_task(task_list, task_history_dict, not_worked_threshold_second=self.not_worked_threshold_second, metadata_keys=self.metadata_keys, input_data_dict=input_data_dict)
@@ -418,19 +420,8 @@ class ListTaskCountByPhase(CommandLine):
             metadata_keys: 集計対象のメタデータキーのリスト
             unit: 集計の単位
         """
-        super().validate_project(project_id, project_member_roles=[ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER])
 
-        # 動画時間で集計する場合は、プロジェクトが動画プロジェクトかどうかをチェック
-        if unit == AggregationUnit.VIDEO_DURATION:
-            project = self.service.api.get_project(project_id)
-            if project is None:
-                raise ValueError(f"プロジェクトが見つかりませんでした: project_id={project_id}")
-            input_data_type = project["input_data_type"]
-            if input_data_type != "movie":
-                raise ValueError(f"--unit video_duration_hour は動画プロジェクトでのみ使用できます。現在のプロジェクトの入力データタイプ: {input_data_type}")
-
-        unit_name = unit.value
-        logger.info(f"project_id='{project_id}' :: フェーズごとの{unit_name}を集計します。")
+        logger.info(f"project_id='{project_id}' :: フェーズごとの'{unit.value}'を集計します。")
 
         if temp_dir is not None:
             getting_obj = GettingTaskCountSummary(
@@ -476,7 +467,7 @@ class ListTaskCountByPhase(CommandLine):
             df_summary = aggregate_df(df_task, metadata_keys, unit)
 
         self.print_csv(df_summary)
-        logger.info(f"project_id='{project_id}' :: フェーズごとの{unit}をCSV形式で出力しました。")
+        logger.info(f"project_id='{project_id}' :: フェーズごとの'{unit.value}'をCSV形式で出力しました。")
 
     def main(self) -> None:
         args = self.args
@@ -484,6 +475,17 @@ class ListTaskCountByPhase(CommandLine):
         temp_dir = Path(args.temp_dir) if args.temp_dir is not None else None
 
         unit = AggregationUnit(args.unit)
+
+        super().validate_project(project_id, project_member_roles=[ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER])
+
+        # 動画時間で集計する場合は、プロジェクトが動画プロジェクトかどうかをチェック
+        if unit in [AggregationUnit.VIDEO_DURATION_HOUR, AggregationUnit.VIDEO_DURATION_MINUTE]:
+            project, _ = self.service.api.get_project(project_id)
+            input_data_type = project["input_data_type"]
+            if input_data_type != "movie":
+                print(f"'--unit {unit.value}' は動画プロジェクトでのみ使用できます。現在のプロジェクトの入力データタイプ: {input_data_type}", file=sys.stderr)  # noqa: T201
+                sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
+
         self.list_task_count_by_phase(
             project_id,
             temp_dir=temp_dir,
