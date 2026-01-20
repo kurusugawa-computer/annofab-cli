@@ -267,8 +267,8 @@ def aggregate_df(df: pandas.DataFrame, metadata_keys: list[str] | None = None, u
             df["_aggregate_value"] = df["video_duration_hour"]
         case AggregationUnit.VIDEO_DURATION_MINUTE:
             df["_aggregate_value"] = df["video_duration_minute"]
-        case _:
-            raise ValueError(f"不正なunitです: {unit}")
+        case _ as unreachable:
+            assert_noreturn(unreachable)
 
     index_columns = ["phase", *metadata_columns]
     df2 = df.pivot_table(values="_aggregate_value", index=index_columns, columns="task_status_for_summary", aggfunc="sum", fill_value=0)
