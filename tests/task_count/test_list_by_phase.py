@@ -17,6 +17,7 @@ inifile.read("./pytest.ini", "UTF-8")
 annofab_config = dict(inifile.items("annofab"))
 
 project_id = annofab_config["project_id"]
+video_project_id = annofab_config["video_project_id"]
 service = annofabapi.build()
 
 
@@ -58,7 +59,7 @@ class TestCommandLine:
                 self.command_name,
                 "list_by_phase",
                 "--project_id",
-                project_id,
+                video_project_id,
                 "--unit",
                 "video_duration_hour",
                 "--output",
@@ -73,7 +74,7 @@ class TestCommandLine:
                 self.command_name,
                 "list_by_phase",
                 "--project_id",
-                project_id,
+                video_project_id,
                 "--unit",
                 "video_duration_minute",
                 "--output",
