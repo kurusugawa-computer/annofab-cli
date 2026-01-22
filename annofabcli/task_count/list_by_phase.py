@@ -271,7 +271,8 @@ def aggregate_df(df: pandas.DataFrame, metadata_keys: list[str] | None = None, u
             assert_noreturn(unreachable)
 
     index_columns = ["phase", *metadata_columns]
-    df2 = df.pivot_table(values="_aggregate_value", index=index_columns, columns="task_status_for_summary", aggfunc="sum", fill_value=0)
+    # `dropna=False`を指定する理由: メタデータの値はNAである可能性があるため
+    df2 = df.pivot_table(values="_aggregate_value", index=index_columns, columns="task_status_for_summary", aggfunc="sum", fill_value=0, dropna=False)
 
     # 列数を固定する
     for status in TaskStatusForSummary:
@@ -309,6 +310,11 @@ def aggregate_df(df: pandas.DataFrame, metadata_keys: list[str] | None = None, u
         TaskStatusForSummary.COMPLETE.value,
     ]
     df2 = df2[result_columns]
+
+    # すべてのタスクステータス列が0の行を除外
+    status_columns = [status.value for status in TaskStatusForSummary]
+    df2 = df2[df2[status_columns].sum(axis=1) > 0]
+
     return df2
 
 
