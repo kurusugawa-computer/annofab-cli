@@ -63,12 +63,13 @@ class UpdateMetadataOfTaskMain(CommandLineWithConfirm):
         task_index: int | None = None,
     ) -> bool:
         logging_prefix = f"{task_index + 1} 件目" if task_index is not None else ""
+        logging_prefix += f" task_id='{task_id}' :: "
         task = self.service.wrapper.get_task_or_none(project_id, task_id)
         if task is None:
-            logger.warning(f"{logging_prefix} タスク '{task_id}' は存在しないのでスキップします。")
+            logger.warning(f"{logging_prefix}タスクは存在しないのでスキップします。")
             return False
 
-        logger.debug(f"task_id='{task_id}', metadata='{json.dumps(task['metadata'])}'")
+        logger.debug(f"{logging_prefix}現在のmetadata='{json.dumps(task['metadata'])}'")
 
         if not self.confirm_processing(self.get_confirm_message(task_id, metadata)):
             return False
@@ -81,7 +82,7 @@ class UpdateMetadataOfTaskMain(CommandLineWithConfirm):
         request_body = {task_id: new_metadata}
         self.service.api.patch_tasks_metadata(project_id, request_body=request_body)
 
-        logger.debug(f"{logging_prefix} タスク '{task_id}' のメタデータを更新しました。")
+        logger.debug(f"{logging_prefix}タスクのメタデータを更新しました。 :: 新しいmetadata={json.dumps(new_metadata)}")
         return True
 
     def set_metadata_to_task_wrapper(self, tpl: tuple[int, TaskMetadataInfo], project_id: str) -> bool:
