@@ -532,8 +532,16 @@ class Task:
         if not self._validate_df_for_output(output_file):
             return
 
-        # metadataを展開するために、DataFrameをdictのリストに変換してからjson_normalizeする
-        df_normalized = pandas.json_normalize(self.df.to_dict(orient="records"))
+        # metadata列が存在する場合は展開する
+        if "metadata" in self.df.columns:
+            # metadata列のみをjson_normalizeで展開
+            df_metadata = pandas.json_normalize(self.df["metadata"])
+            # 元のDataFrameからmetadata列を削除
+            df_without_metadata = self.df.drop(columns=["metadata"])
+            # 展開したmetadata列を結合
+            df_normalized = pandas.concat([df_without_metadata, df_metadata], axis=1)
+        else:
+            df_normalized = self.df
 
         # metadata.*列を検出
         metadata_columns = sorted([col for col in df_normalized.columns if col.startswith("metadata.")])
@@ -541,9 +549,6 @@ class Task:
         # 出力対象の列を定義
         existing_optional_columns = [col for col in self.optional_columns if col in set(df_normalized.columns)]
         columns = self.required_columns + existing_optional_columns + metadata_columns
-
-        # metadata列自体は除外（展開後の列のみ出力）
-        columns = [col for col in columns if col != "metadata"]
 
         print_csv(df_normalized[columns], str(output_file))
 
