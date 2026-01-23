@@ -532,9 +532,20 @@ class Task:
         if not self._validate_df_for_output(output_file):
             return
 
-        existing_optional_columns = [col for col in self.optional_columns if col in set(self.df.columns)]
-        columns = self.required_columns + existing_optional_columns
-        print_csv(self.df[columns], str(output_file))
+        # metadataを展開するために、DataFrameをdictのリストに変換してからjson_normalizeする
+        df_normalized = pandas.json_normalize(self.df.to_dict(orient="records"))
+
+        # metadata.*列を検出
+        metadata_columns = sorted([col for col in df_normalized.columns if col.startswith("metadata.")])
+
+        # 出力対象の列を定義
+        existing_optional_columns = [col for col in self.optional_columns if col in set(df_normalized.columns)]
+        columns = self.required_columns + existing_optional_columns + metadata_columns
+
+        # metadata列自体は除外（展開後の列のみ出力）
+        columns = [col for col in columns if col != "metadata"]
+
+        print_csv(df_normalized[columns], str(output_file))
 
     def mask_user_info(
         self,
