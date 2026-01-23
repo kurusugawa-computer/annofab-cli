@@ -16,7 +16,7 @@ import annofabcli.common.cli
 from annofabcli.common.cli import ArgumentParser, CommandLine, build_annofabapi_resource_and_login
 from annofabcli.common.enums import OutputFormat
 from annofabcli.common.facade import AnnofabApiFacade
-from annofabcli.common.utils import get_columns_with_priority, isoduration_to_hour, print_csv, print_json
+from annofabcli.common.utils import isoduration_to_hour, print_csv, print_json
 from annofabcli.common.visualize import AddProps
 from annofabcli.task.list_tasks import ListTasksMain
 
