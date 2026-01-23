@@ -384,7 +384,7 @@ class ListTasksAddedTaskHistoryMain:
 
         for index, task in enumerate(task_list):
             if (index + 1) % 100 == 0:
-                logger.debug(f"{index + 1} 件目のタスク履歴情報を取得します。")
+                logger.info(f"{index + 1} 件目のタスク履歴情報を取得します。")
 
             obj.add_additional_info_to_task(task)
             task_id = task["task_id"]
@@ -422,7 +422,6 @@ class TasksAddedTaskHistoryOutput:
             "user_id",
             "username",
             "input_data_count",
-            "metadata",
             "sampling",
             # 作業時間情報
             "worktime_hour",
@@ -458,19 +457,26 @@ class TasksAddedTaskHistoryOutput:
         task_list = self.task_list
         logger.debug(f"タスク {len(task_list)} 件の情報を出力します。")
         if output_format == OutputFormat.CSV:
-            output_columns = self._get_output_target_columns()
-            # work_time_span列を除外（worktime_hourと重複するため）
-            output_columns = [col for col in output_columns if col != "work_time_span"]
-            df_task = pandas.DataFrame(task_list, columns=output_columns)
-            print_csv(
-                df_task[output_columns],
-                output=output_path,
-            )
+            if len(task_list) > 0:
+                # json_normalizeでメタデータを自動展開
+                df = pandas.json_normalize(task_list)
+
+                # metadata.*列を検出して出力対象列リストに追加
+                metadata_columns = sorted([col for col in df.columns if col.startswith("metadata.")])
+                output_columns = self._get_output_target_columns() + metadata_columns
+                # 出力列を output_columns に含まれる列のみに限定（意図しない列の混入を防ぐ）
+                columns = [col for col in output_columns if col in df.columns]
+                print_csv(df[columns], output=output_path)
+            else:
+                df = pandas.DataFrame(columns=self._get_output_target_columns())
+                print_csv(df, output=output_path)
 
         elif output_format == OutputFormat.JSON:
             print_json(task_list, is_pretty=False, output=output_path)
         elif output_format == OutputFormat.PRETTY_JSON:
             print_json(task_list, is_pretty=True, output=output_path)
+        else:
+            raise ValueError(f"{output_format=}は不正な値です。")
 
 
 class ListTasksAddedTaskHistory(CommandLine):

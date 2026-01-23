@@ -62,7 +62,18 @@ task_id絞り込む
 出力結果
 =================================
 
+CSV出力
+----------------------------------------------
 
+.. code-block::
+
+    $ annofabcli task list_added_task_history --project_id prj1 --output task.csv
+
+
+CSV出力時は、タスクのメタデータ（``metadata``）が ``metadata.{key名}`` の形式で列ごとに展開されます。
+たとえば、タスクのmetadataが ``{"category": "foo", "priority": 1}`` の場合、``metadata.category`` と ``metadata.priority`` の2つの列が追加されます。
+
+また、 ``input_data_id_list`` 列は、リスト型のためCSV出力時には除外されます。入力データの件数は ``input_data_count`` 列で確認できます。
 
 
 JSON出力
@@ -96,9 +107,7 @@ JSON出力
         "updated_datetime": "2022-10-25T15:14:18.986+09:00",
         "operation_updated_datetime": "2022-10-25T15:14:18.986+09:00",
         "sampling": null,
-        "metadata": {
-        "input_data_count": 20
-        },
+        "metadata": {"category": "foo"},
         "user_id": "alice",
         "username": "Alice",
         "worktime_hour": 0.8641561111111111,

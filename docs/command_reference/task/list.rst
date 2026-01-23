@@ -114,6 +114,8 @@ CSV出力
 
     CSV形式で出力する場合、タスクのメタデータは ``metadata.{key}`` 形式の列として展開されます。
     例えば、メタデータに ``priority`` と ``category`` が含まれる場合、 ``metadata.priority`` と ``metadata.category`` という列が出力されます。
+    
+    また、 ``input_data_id_list`` 列は、リスト型のためCSV出力時には除外されます。入力データの件数は ``input_data_count`` 列で確認できます。
 
 JSON出力
 ----------------------------------------------

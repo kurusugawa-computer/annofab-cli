@@ -47,7 +47,6 @@ def print_task_list(
         "number_of_rejections_by_acceptance",
         "sampling",
         "input_data_count",
-        "input_data_id_list",
     ]
 
     if output_format == OutputFormat.CSV:
@@ -61,7 +60,8 @@ def print_task_list(
             columns = get_columns_with_priority(df, prior_columns=prior_columns_with_metadata)
             # work_time_span列を除外（worktime_hourと重複するため）
             # histories_by_phase列を除外（list型のためCSVでは扱いにくいため）
-            columns = [col for col in columns if col not in ["work_time_span", "histories_by_phase"]]
+            # input_data_id_list列を除外（list型のためCSVでは扱いにくいため。input_data_countで件数は把握できる）
+            columns = [col for col in columns if col not in ["work_time_span", "histories_by_phase", "input_data_id_list"]]
             print_csv(df[columns], output=output_file)
         else:
             df = pandas.DataFrame(columns=task_prior_columns)
