@@ -110,13 +110,22 @@ class ListTasksWithJson(CommandLine):
 
         logger.debug(f"タスク一覧の件数: {len(task_list)}")
 
-        if len(task_list) > 0:
-            if self.str_format == FormatArgument.CSV.value:
-                df = pandas.DataFrame(task_list)
-                columns = get_columns_with_priority(df, prior_columns=ListTasks.PRIOR_COLUMNS)
+        if self.str_format == FormatArgument.CSV.value:
+            if len(task_list) > 0:
+                # json_normalizeでメタデータを自動展開
+                df = pandas.json_normalize(task_list, sep=".")
+
+                # metadata.*列を検出して優先列リストに追加
+                metadata_columns = sorted([col for col in df.columns if col.startswith("metadata.")])
+                prior_columns_with_metadata = ListTasks.PRIOR_COLUMNS + metadata_columns
+                columns = get_columns_with_priority(df, prior_columns=prior_columns_with_metadata)
                 self.print_csv(df[columns])
             else:
-                self.print_according_to_format(task_list)
+                logger.info("タスク一覧の件数が0件ですが、ヘッダ行を出力します。")
+                df = pandas.DataFrame(columns=ListTasks.PRIOR_COLUMNS)
+                self.print_csv(df)
+        elif len(task_list) > 0:
+            self.print_according_to_format(task_list)
         else:
             logger.info("タスク一覧の件数が0件のため、出力しません。")
 
