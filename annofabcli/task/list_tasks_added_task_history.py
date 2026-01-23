@@ -461,11 +461,11 @@ class TasksAddedTaskHistoryOutput:
                 # json_normalizeでメタデータを自動展開
                 df = pandas.json_normalize(task_list)
 
-                # metadata.*列を検出して優先列リストに追加
+                # metadata.*列を検出して出力対象列リストに追加
                 metadata_columns = sorted([col for col in df.columns if col.startswith("metadata.")])
-                prior_columns = self._get_output_target_columns() + metadata_columns
-                # 出力列を prior_columns に含まれる列のみに限定（意図しない列の混入を防ぐ）
-                columns = [col for col in prior_columns if col in df.columns]
+                output_columns = self._get_output_target_columns() + metadata_columns
+                # 出力列を output_columns に含まれる列のみに限定（意図しない列の混入を防ぐ）
+                columns = [col for col in output_columns if col in df.columns]
                 print_csv(df[columns], output=output_path)
             else:
                 df = pandas.DataFrame(columns=self._get_output_target_columns())
