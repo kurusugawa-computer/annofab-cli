@@ -135,9 +135,6 @@ JSON出力
         "phase_stage": 1,
         "status": "complete",
         "input_data_count": 1,
-        "input_data_id_list": [
-          "input1"
-        ],
         "account_id": "12345678-abcd-1234-abcd-1234abcd5678",
         "histories_by_phase": [
           {

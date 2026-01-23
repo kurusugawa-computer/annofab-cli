@@ -384,7 +384,7 @@ class ListTasksAddedTaskHistoryMain:
 
         for index, task in enumerate(task_list):
             if (index + 1) % 100 == 0:
-                logger.debug(f"{index + 1} 件目のタスク履歴情報を取得します。")
+                logger.info(f"{index + 1} 件目のタスク履歴情報を取得します。")
 
             obj.add_additional_info_to_task(task)
             task_id = task["task_id"]
@@ -468,7 +468,8 @@ class TasksAddedTaskHistoryOutput:
                 columns = get_columns_with_priority(df, prior_columns=prior_columns)
                 # work_time_span列を除外（worktime_hourと重複するため）
                 # histories_by_phase列を除外（list型のためCSVでは扱いにくいため）
-                columns = [col for col in columns if col not in ["work_time_span", "histories_by_phase"]]
+                # input_data_id_list列を除外（list型のためCSVでは扱いにくいため。input_data_countで件数は把握できる）
+                columns = [col for col in columns if col not in ["work_time_span", "histories_by_phase", "input_data_id_list"]]
                 print_csv(df[columns], output=output_path)
             else:
                 df = pandas.DataFrame(columns=self._get_output_target_columns())
@@ -478,6 +479,8 @@ class TasksAddedTaskHistoryOutput:
             print_json(task_list, is_pretty=False, output=output_path)
         elif output_format == OutputFormat.PRETTY_JSON:
             print_json(task_list, is_pretty=True, output=output_path)
+        else:
+            raise ValueError(f"{output_format=}は不正な値です。")
 
 
 class ListTasksAddedTaskHistory(CommandLine):
