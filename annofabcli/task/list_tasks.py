@@ -10,7 +10,7 @@ import annofabcli.common.cli
 from annofabcli.common.cli import ArgumentParser, CommandLine, build_annofabapi_resource_and_login
 from annofabcli.common.enums import FormatArgument
 from annofabcli.common.facade import AnnofabApiFacade
-from annofabcli.common.utils import get_columns_with_priority, print_id_list, print_json
+from annofabcli.common.utils import get_columns_with_priority, print_csv, print_id_list, print_json
 from annofabcli.common.visualize import AddProps
 
 logger = logging.getLogger(__name__)
@@ -189,24 +189,24 @@ class ListTasks(CommandLine):
             user_id_list=user_id_list,
         )
 
-        logger.debug(f"タスク一覧の件数: {len(task_list)}")
+        logger.info(f"{len(task_list)}件のタスク情報を出力します。")
 
         output_file = args.output
         output_format = FormatArgument(args.format)
         if output_format == FormatArgument.CSV:
             if len(task_list) > 0:
                 # json_normalizeでメタデータを自動展開
-                df = pandas.json_normalize(task_list, sep=".")
+                df = pandas.json_normalize(task_list)
 
                 # metadata.*列を検出して優先列リストに追加
                 metadata_columns = sorted([col for col in df.columns if col.startswith("metadata.")])
                 prior_columns_with_metadata = self.PRIOR_COLUMNS + metadata_columns
                 columns = get_columns_with_priority(df, prior_columns=prior_columns_with_metadata)
-                self.print_csv(df[columns])
+                print_csv(df[columns], output=output_file)
             else:
                 logger.info("タスク一覧の件数が0件ですが、ヘッダ行を出力します。")
                 df = pandas.DataFrame(columns=self.PRIOR_COLUMNS)
-                self.print_csv(df)
+                print_csv(df, output=output_file)
 
         elif output_format == FormatArgument.PRETTY_JSON:
             print_json(task_list, is_pretty=True, output=output_file)
