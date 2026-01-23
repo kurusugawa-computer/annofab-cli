@@ -14,7 +14,7 @@ from annofabcli.common.download import DownloadingFile
 from annofabcli.common.enums import FormatArgument
 from annofabcli.common.facade import AnnofabApiFacade, TaskQuery, match_task_with_query
 from annofabcli.common.visualize import AddProps
-from annofabcli.task.list_tasks import TASK_PRIOR_COLUMNS, print_task_list
+from annofabcli.task.list_tasks import print_task_list
 
 logger = logging.getLogger(__name__)
 
@@ -42,9 +42,10 @@ class ListTasksWithJsonMain:
         self,
         project_id: str,
         task_json: Path | None,
+        *,
         task_id_list: list[str] | None = None,
         task_query: TaskQuery | None = None,
-        is_latest: bool = False,  # noqa: FBT001, FBT002
+        is_latest: bool = False,
         temp_dir: Path | None = None,
     ) -> list[dict[str, Any]]:
         if task_json is None:
@@ -107,7 +108,7 @@ class ListTasksWithJson(CommandLine):
         )
 
         logger.info(f"{len(task_list)}件のタスク情報を出力します。")
-        print_task_list(task_list, FormatArgument(args.format), args.output, TASK_PRIOR_COLUMNS)  # JSON形式での出力は常に行う。
+        print_task_list(task_list, FormatArgument(args.format), args.output)
 
 
 def main(args: argparse.Namespace) -> None:

@@ -1,5 +1,6 @@
 import argparse
 import logging
+from pathlib import Path
 from typing import Any
 
 import annofabapi
@@ -15,31 +16,11 @@ from annofabcli.common.visualize import AddProps
 
 logger = logging.getLogger(__name__)
 
-TASK_PRIOR_COLUMNS = [
-    "project_id",
-    "task_id",
-    "phase",
-    "phase_stage",
-    "status",
-    "started_datetime",
-    "updated_datetime",
-    "operation_updated_datetime",
-    "account_id",
-    "user_id",
-    "username",
-    "worktime_hour",
-    "number_of_rejections_by_inspection",
-    "number_of_rejections_by_acceptance",
-    "sampling",
-    "input_data_count",
-    "input_data_id_list",
-]
-
 
 def print_task_list(
     task_list: list[dict[str, Any]],
     output_format: FormatArgument,
-    output_file: Any,
+    output_file: Path | None,
 ) -> None:
     """
     タスク一覧を指定されたフォーマットで出力する。
@@ -49,6 +30,26 @@ def print_task_list(
         output_format: 出力フォーマット
         output_file: 出力先
     """
+    task_prior_columns = [
+        "project_id",
+        "task_id",
+        "phase",
+        "phase_stage",
+        "status",
+        "started_datetime",
+        "updated_datetime",
+        "operation_updated_datetime",
+        "account_id",
+        "user_id",
+        "username",
+        "worktime_hour",
+        "number_of_rejections_by_inspection",
+        "number_of_rejections_by_acceptance",
+        "sampling",
+        "input_data_count",
+        "input_data_id_list",
+    ]
+
     if output_format == FormatArgument.CSV:
         if len(task_list) > 0:
             # json_normalizeでメタデータを自動展開
@@ -56,14 +57,14 @@ def print_task_list(
 
             # metadata.*列を検出して優先列リストに追加
             metadata_columns = sorted([col for col in df.columns if col.startswith("metadata.")])
-            prior_columns_with_metadata = TASK_PRIOR_COLUMNS + metadata_columns
+            prior_columns_with_metadata = task_prior_columns + metadata_columns
             columns = get_columns_with_priority(df, prior_columns=prior_columns_with_metadata)
             # work_time_span列を除外（worktime_hourと重複するため）
             # histories_by_phase列を除外（list型のためCSVでは扱いにくいため）
             columns = [col for col in columns if col not in ["work_time_span", "histories_by_phase"]]
             print_csv(df[columns], output=output_file)
         else:
-            df = pandas.DataFrame(columns=TASK_PRIOR_COLUMNS)
+            df = pandas.DataFrame(columns=task_prior_columns)
             print_csv(df, output=output_file)
 
     elif output_format == FormatArgument.PRETTY_JSON:
