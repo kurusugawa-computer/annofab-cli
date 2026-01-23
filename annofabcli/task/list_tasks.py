@@ -53,7 +53,7 @@ class ListTasksMain:
 
         """
 
-        def remove_key(arg_key: str):  # noqa: ANN202
+        def remove_key(arg_key: str) -> None:
             if arg_key in task_query:
                 logger.info(f"タスク検索クエリから、`{arg_key}`　キーを削除しました。")
                 task_query.pop(arg_key)
@@ -96,7 +96,6 @@ class ListTasksMain:
             task_query = {}
 
         if user_id_list is None:
-            logger.debug(f"task_query: {task_query}")
             tasks = self.service.wrapper.get_all_tasks(project_id, query_params=task_query)
             if len(tasks) == 10000:
                 logger.warning("タスク一覧は10,000件で打ち切られている可能性があります。")
@@ -202,9 +201,10 @@ class ListTasks(CommandLine):
                 metadata_columns = sorted([col for col in df.columns if col.startswith("metadata.")])
                 prior_columns_with_metadata = self.PRIOR_COLUMNS + metadata_columns
                 columns = get_columns_with_priority(df, prior_columns=prior_columns_with_metadata)
+                # work_time_span列を除外（worktime_hourと重複するため）
+                columns = [col for col in columns if col != "work_time_span"]
                 print_csv(df[columns], output=output_file)
             else:
-                logger.info("タスク一覧の件数が0件ですが、ヘッダ行を出力します。")
                 df = pandas.DataFrame(columns=self.PRIOR_COLUMNS)
                 print_csv(df, output=output_file)
 
@@ -216,9 +216,9 @@ class ListTasks(CommandLine):
 
         elif output_format == FormatArgument.TASK_ID_LIST:
             task_id_list = [e["task_id"] for e in task_list]
-            print_id_list(task_id_list, output_file)
+            print_id_list(task_id_list, output=output_file)
         else:
-            raise ValueError(f"対応していないフォーマットです: {output_format}")
+            raise ValueError(f"{output_format}は対応していないフォーマットです。")
 
 
 def main(args: argparse.Namespace) -> None:
