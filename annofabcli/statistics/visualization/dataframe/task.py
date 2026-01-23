@@ -535,11 +535,13 @@ class Task:
         # metadata列が存在する場合は展開する
         if "metadata" in self.df.columns:
             # metadata列のみをjson_normalizeで展開
-            df_metadata = pandas.json_normalize(self.df["metadata"])
+            df_metadata = pandas.json_normalize(self.df["metadata"].tolist())
+            # 列名にmetadata.プレフィックスを追加
+            df_metadata.columns = [f"metadata.{col}" for col in df_metadata.columns]
             # 元のDataFrameからmetadata列を削除
             df_without_metadata = self.df.drop(columns=["metadata"])
             # 展開したmetadata列を結合
-            df_normalized = pandas.concat([df_without_metadata, df_metadata], axis=1)
+            df_normalized = pandas.concat([df_without_metadata.reset_index(drop=True), df_metadata.reset_index(drop=True)], axis=1)
         else:
             df_normalized = self.df
 

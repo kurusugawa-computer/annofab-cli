@@ -117,3 +117,82 @@ class TestTask:
         # 一部の列だけ置換されていることを確認する
         assert actual_first_row["first_annotation_user_id"] == "masked_user_id"
         assert actual_first_row["first_annotation_username"] == "masked_username"
+
+    def test__to_csv_with_metadata(self):
+        """metadata列が展開されてCSV出力されることを確認するテスト"""
+        # metadata列を持つDataFrameを作成
+        df = pandas.DataFrame(
+            {
+                "project_id": ["prj1", "prj2"],
+                "task_id": ["task1", "task2"],
+                "phase": ["acceptance", "acceptance"],
+                "phase_stage": [1, 1],
+                "status": ["complete", "complete"],
+                "number_of_rejections_by_inspection": [0, 1],
+                "number_of_rejections_by_acceptance": [0, 0],
+                "created_datetime": ["2021-01-01T00:00:00+09:00", "2021-01-02T00:00:00+09:00"],
+                "first_annotation_user_id": ["user1", "user2"],
+                "first_annotation_username": ["User1", "User2"],
+                "first_annotation_worktime_hour": [1.0, 2.0],
+                "first_annotation_started_datetime": ["2021-01-01T10:00:00+09:00", "2021-01-02T10:00:00+09:00"],
+                "first_inspection_user_id": ["user1", "user2"],
+                "first_inspection_username": ["User1", "User2"],
+                "first_inspection_worktime_hour": [0.5, 0.6],
+                "first_inspection_started_datetime": ["2021-01-01T11:00:00+09:00", "2021-01-02T11:00:00+09:00"],
+                "first_acceptance_user_id": ["user1", "user2"],
+                "first_acceptance_username": ["User1", "User2"],
+                "first_acceptance_worktime_hour": [0.2, 0.3],
+                "first_acceptance_started_datetime": ["2021-01-01T12:00:00+09:00", "2021-01-02T12:00:00+09:00"],
+                "first_inspection_reached_datetime": ["2021-01-01T11:00:00+09:00", "2021-01-02T11:00:00+09:00"],
+                "first_acceptance_reached_datetime": ["2021-01-01T12:00:00+09:00", "2021-01-02T12:00:00+09:00"],
+                "first_acceptance_completed_datetime": ["2021-01-01T13:00:00+09:00", "2021-01-02T13:00:00+09:00"],
+                "worktime_hour": [1.7, 2.9],
+                "annotation_worktime_hour": [1.0, 2.0],
+                "inspection_worktime_hour": [0.5, 0.6],
+                "acceptance_worktime_hour": [0.2, 0.3],
+                "input_data_count": [10, 20],
+                "annotation_count": [100, 200],
+                "inspection_comment_count": [5, 10],
+                "inspection_comment_count_in_inspection_phase": [3, 7],
+                "inspection_comment_count_in_acceptance_phase": [2, 3],
+                "metadata": [{"category": "A", "priority": 5}, {"category": "B", "priority": 3}],
+            }
+        )
+
+        obj = Task(df)
+        output_file = output_dir / "test__to_csv_with_metadata.csv"
+        obj.to_csv(output_file)
+
+        # 出力されたCSVを読み込んで検証
+        df_result = pandas.read_csv(output_file)
+        columns = df_result.columns.tolist()
+
+        # metadata.*列が展開されていることを確認
+        assert "metadata.category" in columns
+        assert "metadata.priority" in columns
+
+        # metadata列自体は含まれないことを確認
+        assert "metadata" not in columns
+
+        # 値が正しく展開されていることを確認
+        assert df_result.iloc[0]["metadata.category"] == "A"
+        assert df_result.iloc[0]["metadata.priority"] == 5
+        assert df_result.iloc[1]["metadata.category"] == "B"
+        assert df_result.iloc[1]["metadata.priority"] == 3
+
+    def test__to_csv_without_metadata(self):
+        """metadata列がない場合でもCSV出力が正常に動作することを確認するテスト"""
+        obj = Task.from_csv(data_dir / "task.csv")
+        output_file = output_dir / "test__to_csv_without_metadata.csv"
+        obj.to_csv(output_file)
+
+        # 出力されたCSVを読み込んで検証
+        df_result = pandas.read_csv(output_file)
+        columns = df_result.columns.tolist()
+
+        # metadata.*列が含まれないことを確認
+        metadata_columns = [col for col in columns if col.startswith("metadata.")]
+        assert len(metadata_columns) == 0
+
+        # metadata列も含まれないことを確認
+        assert "metadata" not in columns
