@@ -15,6 +15,69 @@ from annofabcli.common.visualize import AddProps
 
 logger = logging.getLogger(__name__)
 
+TASK_PRIOR_COLUMNS = [
+    "project_id",
+    "task_id",
+    "phase",
+    "phase_stage",
+    "status",
+    "started_datetime",
+    "updated_datetime",
+    "operation_updated_datetime",
+    "account_id",
+    "user_id",
+    "username",
+    "worktime_hour",
+    "number_of_rejections_by_inspection",
+    "number_of_rejections_by_acceptance",
+    "sampling",
+    "input_data_count",
+    "input_data_id_list",
+]
+
+
+def print_task_list(
+    task_list: list[dict[str, Any]],
+    output_format: FormatArgument,
+    output_file: Any,
+) -> None:
+    """
+    タスク一覧を指定されたフォーマットで出力する。
+
+    Args:
+        task_list: タスク一覧
+        output_format: 出力フォーマット
+        output_file: 出力先
+    """
+    if output_format == FormatArgument.CSV:
+        if len(task_list) > 0:
+            # json_normalizeでメタデータを自動展開
+            df = pandas.json_normalize(task_list)
+
+            # metadata.*列を検出して優先列リストに追加
+            metadata_columns = sorted([col for col in df.columns if col.startswith("metadata.")])
+            prior_columns_with_metadata = TASK_PRIOR_COLUMNS + metadata_columns
+            columns = get_columns_with_priority(df, prior_columns=prior_columns_with_metadata)
+            # work_time_span列を除外（worktime_hourと重複するため）
+            # histories_by_phase列を除外（list型のためCSVでは扱いにくいため）
+            columns = [col for col in columns if col not in ["work_time_span", "histories_by_phase"]]
+            print_csv(df[columns], output=output_file)
+        else:
+            df = pandas.DataFrame(columns=TASK_PRIOR_COLUMNS)
+            print_csv(df, output=output_file)
+
+    elif output_format == FormatArgument.PRETTY_JSON:
+        print_json(task_list, is_pretty=True, output=output_file)
+
+    elif output_format == FormatArgument.JSON:
+        print_json(task_list, is_pretty=False, output=output_file)
+
+    elif output_format == FormatArgument.TASK_ID_LIST:
+        task_id_list = [e["task_id"] for e in task_list]
+        print_id_list(task_id_list, output=output_file)
+    else:
+        raise ValueError(f"{output_format}は対応していないフォーマットです。")
+
 
 class ListTasksMain:
     def __init__(self, service: annofabapi.Resource, project_id: str) -> None:
@@ -150,26 +213,6 @@ class ListTasks(CommandLine):
         super().__init__(service, facade, args)
         self.visualize = AddProps(self.service, args.project_id)
 
-    PRIOR_COLUMNS = [  # noqa: RUF012
-        "project_id",
-        "task_id",
-        "phase",
-        "phase_stage",
-        "status",
-        "started_datetime",
-        "updated_datetime",
-        "operation_updated_datetime",
-        "account_id",
-        "user_id",
-        "username",
-        "worktime_hour",
-        "number_of_rejections_by_inspection",
-        "number_of_rejections_by_acceptance",
-        "sampling",
-        "input_data_count",
-        "input_data_id_list",
-    ]
-
     def main(self) -> None:
         args = self.args
 
@@ -192,34 +235,7 @@ class ListTasks(CommandLine):
 
         output_file = args.output
         output_format = FormatArgument(args.format)
-        if output_format == FormatArgument.CSV:
-            if len(task_list) > 0:
-                # json_normalizeでメタデータを自動展開
-                df = pandas.json_normalize(task_list)
-
-                # metadata.*列を検出して優先列リストに追加
-                metadata_columns = sorted([col for col in df.columns if col.startswith("metadata.")])
-                prior_columns_with_metadata = self.PRIOR_COLUMNS + metadata_columns
-                columns = get_columns_with_priority(df, prior_columns=prior_columns_with_metadata)
-                # work_time_span列を除外（worktime_hourと重複するため）
-                # histories_by_phase列を除外（list型のためCSVでは扱いにくいため）
-                columns = [col for col in columns if col not in ["work_time_span", "histories_by_phase"]]
-                print_csv(df[columns], output=output_file)
-            else:
-                df = pandas.DataFrame(columns=self.PRIOR_COLUMNS)
-                print_csv(df, output=output_file)
-
-        elif output_format == FormatArgument.PRETTY_JSON:
-            print_json(task_list, is_pretty=True, output=output_file)
-
-        elif output_format == FormatArgument.JSON:
-            print_json(task_list, is_pretty=False, output=output_file)
-
-        elif output_format == FormatArgument.TASK_ID_LIST:
-            task_id_list = [e["task_id"] for e in task_list]
-            print_id_list(task_id_list, output=output_file)
-        else:
-            raise ValueError(f"{output_format}は対応していないフォーマットです。")
+        print_task_list(task_list, output_format, output_file)
 
 
 def main(args: argparse.Namespace) -> None:
