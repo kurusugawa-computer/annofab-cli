@@ -110,13 +110,36 @@ class ListTasksWithJson(CommandLine):
 
         logger.debug(f"タスク一覧の件数: {len(task_list)}")
 
-        if len(task_list) > 0:
-            if self.str_format == FormatArgument.CSV.value:
+        if self.str_format == FormatArgument.CSV.value:
+            if len(task_list) > 0:
+                # メタデータキーを収集
+                metadata_keys = set()
+                for task in task_list:
+                    if isinstance(task.get("metadata"), dict):
+                        metadata_keys.update(task["metadata"].keys())
+
+                sorted_metadata_keys = sorted(metadata_keys)
+
                 df = pandas.DataFrame(task_list)
-                columns = get_columns_with_priority(df, prior_columns=ListTasks.PRIOR_COLUMNS)
+
+                # メタデータを展開してmetadata.*列を追加
+                for key in sorted_metadata_keys:
+                    df[f"metadata.{key}"] = df["metadata"].apply(lambda x, k=key: x.get(k) if isinstance(x, dict) else None)
+
+                # metadata列を削除
+                if "metadata" in df.columns:
+                    df = df.drop(columns=["metadata"])
+
+                # metadata.*列を優先列リストに追加
+                prior_columns_with_metadata = ListTasks.PRIOR_COLUMNS + [f"metadata.{key}" for key in sorted_metadata_keys]
+                columns = get_columns_with_priority(df, prior_columns=prior_columns_with_metadata)
                 self.print_csv(df[columns])
             else:
-                self.print_according_to_format(task_list)
+                logger.info("タスク一覧の件数が0件ですが、ヘッダ行を出力します。")
+                df = pandas.DataFrame(columns=ListTasks.PRIOR_COLUMNS)
+                self.print_csv(df)
+        elif len(task_list) > 0:
+            self.print_according_to_format(task_list)
         else:
             logger.info("タスク一覧の件数が0件のため、出力しません。")
 
