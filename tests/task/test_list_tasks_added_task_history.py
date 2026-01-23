@@ -1,7 +1,12 @@
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any
 
+import pandas
+
+from annofabcli.common.enums import OutputFormat
 from annofabcli.task.list_tasks_added_task_history import (
+    TasksAddedTaskHistoryOutput,
     get_completed_datetime,
     get_first_acceptance_completed_datetime,
     get_first_acceptance_reached_datetime,
@@ -567,3 +572,95 @@ def test__get_completed_datetime():
     # 最後の履歴の終了日時が受入完了日時になる
     assert get_completed_datetime(complete_task.task, complete_task.task_histories) == "2025-03-30T13:53:27.042+09:00"
     assert get_completed_datetime(task_created_immediately.task, task_created_immediately.task_histories) is None
+
+
+class TestTasksAddedTaskHistoryOutput:
+    """CSV出力のテスト"""
+
+    def test_csv_output_with_metadata(self, tmp_path: Path) -> None:
+        """metadataが含まれるタスクのCSV出力でmetadata.*列が展開されることを確認"""
+        task_list = [
+            {
+                "project_id": "prj1",
+                "task_id": "task1",
+                "phase": "annotation",
+                "status": "not_started",
+                "metadata": {"category": "A", "priority": 5},
+                "input_data_id_list": ["input1"],
+                "work_time_span": 1000,
+                "histories_by_phase": [],
+            }
+        ]
+
+        output_file = tmp_path / "output.csv"
+        output_obj = TasksAddedTaskHistoryOutput(task_list)
+        output_obj.output(output_file, OutputFormat.CSV)
+
+        # CSVを読み込んで検証
+        df = pandas.read_csv(output_file)
+        columns = df.columns.tolist()
+
+        # metadata.*列が展開されていることを確認
+        assert "metadata.category" in columns
+        assert "metadata.priority" in columns
+
+        # metadata列そのものは含まれないことを確認
+        assert "metadata" not in columns
+
+        # 除外対象の列が含まれないことを確認
+        assert "input_data_id_list" not in columns
+        assert "work_time_span" not in columns
+        assert "histories_by_phase" not in columns
+
+    def test_csv_output_empty(self, tmp_path: Path) -> None:
+        """タスクが0件のときのCSV出力で適切なヘッダが出力されることを確認"""
+        task_list: list[dict[str, Any]] = []
+
+        output_file = tmp_path / "output.csv"
+        output_obj = TasksAddedTaskHistoryOutput(task_list)
+        output_obj.output(output_file, OutputFormat.CSV)
+
+        # CSVを読み込んで検証
+        df = pandas.read_csv(output_file)
+        columns = df.columns.tolist()
+
+        # metadata列が含まれないことを確認
+        assert "metadata" not in columns
+
+        # 基本列が含まれることを確認
+        assert "project_id" in columns
+        assert "task_id" in columns
+        assert "input_data_count" in columns
+
+        # 除外対象の列が含まれないことを確認
+        assert "input_data_id_list" not in columns
+        assert "work_time_span" not in columns
+        assert "histories_by_phase" not in columns
+
+    def test_csv_output_without_metadata(self, tmp_path: Path) -> None:
+        """metadataが空のタスクのCSV出力でmetadata.*列が含まれないことを確認"""
+        task_list = [
+            {
+                "project_id": "prj1",
+                "task_id": "task1",
+                "phase": "annotation",
+                "status": "not_started",
+                "metadata": {},
+                "input_data_id_list": ["input1"],
+            }
+        ]
+
+        output_file = tmp_path / "output.csv"
+        output_obj = TasksAddedTaskHistoryOutput(task_list)
+        output_obj.output(output_file, OutputFormat.CSV)
+
+        # CSVを読み込んで検証
+        df = pandas.read_csv(output_file)
+        columns = df.columns.tolist()
+
+        # metadata.*列が含まれないことを確認
+        metadata_columns = [col for col in columns if col.startswith("metadata.")]
+        assert len(metadata_columns) == 0
+
+        # metadata列そのものも含まれないことを確認
+        assert "metadata" not in columns
