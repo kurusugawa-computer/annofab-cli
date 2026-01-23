@@ -464,11 +464,8 @@ class TasksAddedTaskHistoryOutput:
                 # metadata.*列を検出して優先列リストに追加
                 metadata_columns = sorted([col for col in df.columns if col.startswith("metadata.")])
                 prior_columns = self._get_output_target_columns() + metadata_columns
-                columns = get_columns_with_priority(df, prior_columns=prior_columns)
-                # work_time_span列を除外（worktime_hourと重複するため）
-                # histories_by_phase列を除外（list型のためCSVでは扱いにくいため）
-                # input_data_id_list列を除外（list型のためCSVでは扱いにくいため。input_data_countで件数は把握できる）
-                columns = [col for col in columns if col not in ["work_time_span", "histories_by_phase", "input_data_id_list"]]
+                # 出力列を prior_columns に含まれる列のみに限定（意図しない列の混入を防ぐ）
+                columns = [col for col in prior_columns if col in df.columns]
                 print_csv(df[columns], output=output_path)
             else:
                 df = pandas.DataFrame(columns=self._get_output_target_columns())
