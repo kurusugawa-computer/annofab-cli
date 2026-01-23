@@ -92,6 +92,10 @@ JSON出力
         "phase": "acceptance",
         "phase_stage": 1,
         "status": "complete",
+        "input_data_id_list": [
+            "input1",
+            ...
+        ],
         "account_id": "12bc2dca-d519-419b-8da1-cd431d91e193",
         "histories_by_phase": [
             ...
