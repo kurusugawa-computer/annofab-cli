@@ -16,7 +16,7 @@ import annofabcli.common.cli
 from annofabcli.common.cli import ArgumentParser, CommandLine, build_annofabapi_resource_and_login
 from annofabcli.common.enums import OutputFormat
 from annofabcli.common.facade import AnnofabApiFacade
-from annofabcli.common.utils import isoduration_to_hour, print_csv, print_json
+from annofabcli.common.utils import get_columns_with_priority, isoduration_to_hour, print_csv, print_json
 from annofabcli.common.visualize import AddProps
 from annofabcli.task.list_tasks import ListTasksMain
 
@@ -458,14 +458,21 @@ class TasksAddedTaskHistoryOutput:
         task_list = self.task_list
         logger.debug(f"タスク {len(task_list)} 件の情報を出力します。")
         if output_format == OutputFormat.CSV:
-            output_columns = self._get_output_target_columns()
-            # work_time_span列を除外（worktime_hourと重複するため）
-            output_columns = [col for col in output_columns if col != "work_time_span"]
-            df_task = pandas.DataFrame(task_list, columns=output_columns)
-            print_csv(
-                df_task[output_columns],
-                output=output_path,
-            )
+            if len(task_list) > 0:
+                # json_normalizeでメタデータを自動展開
+                df = pandas.json_normalize(task_list)
+
+                # metadata.*列を検出して優先列リストに追加
+                metadata_columns = sorted([col for col in df.columns if col.startswith("metadata.")])
+                prior_columns = self._get_output_target_columns() + metadata_columns
+                columns = get_columns_with_priority(df, prior_columns=prior_columns)
+                # work_time_span列を除外（worktime_hourと重複するため）
+                # histories_by_phase列を除外（list型のためCSVでは扱いにくいため）
+                columns = [col for col in columns if col not in ["work_time_span", "histories_by_phase"]]
+                print_csv(df[columns], output=output_path)
+            else:
+                df = pandas.DataFrame(columns=self._get_output_target_columns())
+                print_csv(df, output=output_path)
 
         elif output_format == OutputFormat.JSON:
             print_json(task_list, is_pretty=False, output=output_path)
