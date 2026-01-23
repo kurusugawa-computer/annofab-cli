@@ -107,6 +107,12 @@ CSV出力
 
 `out.csv <https://github.com/kurusugawa-computer/annofab-cli/blob/main/docs/command_reference/task/list/out.csv>`_
 
+.. note::
+
+    CSV形式で出力する場合、タスクのメタデータは ``metadata.{key}`` 形式の列として展開されます。
+    例えば、メタデータに ``priority`` と ``category`` が含まれる場合、 ``metadata.priority`` と ``metadata.category`` という列が出力されます。
+    これにより、ExcelなどのCSVツールでメタデータの各キーを簡単にソート・フィルタリングできます。
+
 JSON出力
 ----------------------------------------------
 
