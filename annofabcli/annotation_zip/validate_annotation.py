@@ -19,7 +19,7 @@ import annofabcli.common.cli
 from annofabcli.common.annofab.annotation_zip import lazy_parse_simple_annotation_by_input_data
 from annofabcli.common.cli import COMMAND_LINE_ERROR_STATUS_CODE, ArgumentParser, CommandLine, build_annofabapi_resource_and_login
 from annofabcli.common.download import DownloadingFile
-from annofabcli.common.enums import FormatArgument
+from annofabcli.common.enums import OutputFormat
 from annofabcli.common.facade import AnnofabApiFacade, TaskQuery, match_annotation_with_task_query
 from annofabcli.common.utils import print_csv, print_json
 
@@ -377,7 +377,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         ),
     )
 
-    argument_parser.add_format(choices=[FormatArgument.CSV, FormatArgument.JSON], default=FormatArgument.CSV)
+    argument_parser.add_format(choices=[OutputFormat.CSV, OutputFormat.JSON], default=OutputFormat.CSV)
     argument_parser.add_output()
 
     parser.set_defaults(subcommand_func=main)

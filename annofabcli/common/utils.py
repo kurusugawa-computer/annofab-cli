@@ -11,7 +11,7 @@ import dateutil.parser
 import isodate
 import pandas
 
-from annofabcli.common.enums import FormatArgument
+from annofabcli.common.enums import OutputFormat
 
 logger = logging.getLogger(__name__)
 
@@ -105,7 +105,7 @@ def print_id_list(id_list: list[Any], output: str | Path | None) -> None:
 
 def print_according_to_format(
     target: Any,  # noqa: ANN401
-    format: FormatArgument,  # noqa: A002
+    format: OutputFormat,  # noqa: A002
     output: str | Path | None = None,
 ) -> None:
     """
@@ -119,33 +119,33 @@ def print_according_to_format(
 
     """
 
-    if format == FormatArgument.PRETTY_JSON:
+    if format == OutputFormat.PRETTY_JSON:
         print_json(target, is_pretty=True, output=output)
 
-    elif format == FormatArgument.JSON:
+    elif format == OutputFormat.JSON:
         print_json(target, is_pretty=False, output=output)
 
-    elif format == FormatArgument.CSV:
+    elif format == OutputFormat.CSV:
         df = pandas.DataFrame(target)
         print_csv(df, output=output)
 
-    elif format == FormatArgument.TASK_ID_LIST:
+    elif format == OutputFormat.TASK_ID_LIST:
         task_id_list = [e["task_id"] for e in target]
         print_id_list(task_id_list, output)
 
-    elif format == FormatArgument.PROJECT_ID_LIST:
+    elif format == OutputFormat.PROJECT_ID_LIST:
         project_id_list = [e["project_id"] for e in target]
         print_id_list(project_id_list, output)
 
-    elif format == FormatArgument.INPUT_DATA_ID_LIST:
+    elif format == OutputFormat.INPUT_DATA_ID_LIST:
         input_data_id_list = [e["input_data_id"] for e in target]
         print_id_list(input_data_id_list, output)
 
-    elif format == FormatArgument.USER_ID_LIST:
+    elif format == OutputFormat.USER_ID_LIST:
         user_id_list = [e["user_id"] for e in target]
         print_id_list(user_id_list, output)
 
-    elif format == FormatArgument.INSPECTION_ID_LIST:
+    elif format == OutputFormat.INSPECTION_ID_LIST:
         inspection_id_list = [e["inspection_id"] for e in target]
         print_id_list(inspection_id_list, output)
 

@@ -20,7 +20,7 @@ import annofabcli.common.cli
 from annofabcli.comment.list_comment import create_empty_df_comment, create_reply_counter
 from annofabcli.common.cli import ArgumentParser, CommandLine, build_annofabapi_resource_and_login
 from annofabcli.common.download import DownloadingFile
-from annofabcli.common.enums import FormatArgument
+from annofabcli.common.enums import OutputFormat
 from annofabcli.common.facade import AnnofabApiFacade
 from annofabcli.common.utils import print_according_to_format, print_csv
 from annofabcli.common.visualize import AddProps
@@ -125,8 +125,8 @@ class ListAllComment(CommandLine):
 
         logger.info(f"コメントの件数: {len(comment_list)}")
 
-        output_format = FormatArgument(args.format)
-        if output_format == FormatArgument.CSV:
+        output_format = OutputFormat(args.format)
+        if output_format == OutputFormat.CSV:
             if len(comment_list) > 0:
                 df = pandas.json_normalize(comment_list)
             else:
@@ -168,12 +168,12 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
 
     argument_parser.add_format(
         choices=[
-            FormatArgument.CSV,
-            FormatArgument.JSON,
-            FormatArgument.PRETTY_JSON,
-            FormatArgument.COMMENT_ID_LIST,
+            OutputFormat.CSV,
+            OutputFormat.JSON,
+            OutputFormat.PRETTY_JSON,
+            OutputFormat.COMMENT_ID_LIST,
         ],
-        default=FormatArgument.CSV,
+        default=OutputFormat.CSV,
     )
     argument_parser.add_output()
 

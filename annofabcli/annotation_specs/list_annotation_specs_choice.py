@@ -21,7 +21,7 @@ from annofabcli.common.cli import (
     CommandLine,
     build_annofabapi_resource_and_login,
 )
-from annofabcli.common.enums import FormatArgument
+from annofabcli.common.enums import OutputFormat
 from annofabcli.common.facade import AnnofabApiFacade
 from annofabcli.common.utils import print_according_to_format, print_csv
 
@@ -104,11 +104,11 @@ def create_flatten_choice_list_from_additionals(additionals_v3: list[dict[str, A
 class PrintAnnotationSpecsAttribute(CommandLine):
     COMMON_MESSAGE = "annofabcli annotation_specs list_choice: error:"
 
-    def print_annotation_specs_choice(self, annotation_specs_v3: dict[str, Any], output_format: FormatArgument, output: str | None = None) -> None:
+    def print_annotation_specs_choice(self, annotation_specs_v3: dict[str, Any], output_format: OutputFormat, output: str | None = None) -> None:
         choice_list = create_flatten_choice_list_from_additionals(annotation_specs_v3["additionals"])
         logger.info(f"{len(choice_list)} 件の選択肢情報を出力します。")
 
-        if output_format == FormatArgument.CSV:
+        if output_format == OutputFormat.CSV:
             df = pandas.DataFrame(choice_list)
             columns = [
                 "attribute_id",
@@ -123,7 +123,7 @@ class PrintAnnotationSpecsAttribute(CommandLine):
             ]
             print_csv(df[columns], output)
 
-        elif output_format in [FormatArgument.JSON, FormatArgument.PRETTY_JSON]:
+        elif output_format in [OutputFormat.JSON, OutputFormat.PRETTY_JSON]:
             print_according_to_format([e.to_dict() for e in choice_list], format=output_format, output=output)
 
     def get_history_id_from_before_index(self, project_id: str, before: int) -> str | None:
@@ -159,7 +159,7 @@ class PrintAnnotationSpecsAttribute(CommandLine):
         else:
             raise RuntimeError("'--project_id'か'--annotation_specs_json'のどちらかを指定する必要があります。")
 
-        self.print_annotation_specs_choice(annotation_specs, output_format=FormatArgument(args.format), output=args.output)
+        self.print_annotation_specs_choice(annotation_specs, output_format=OutputFormat(args.format), output=args.output)
 
 
 def parse_args(parser: argparse.ArgumentParser) -> None:
@@ -199,8 +199,8 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "-f",
         "--format",
         type=str,
-        choices=[FormatArgument.CSV.value, FormatArgument.JSON.value, FormatArgument.PRETTY_JSON.value],
-        default=FormatArgument.CSV.value,
+        choices=[OutputFormat.CSV.value, OutputFormat.JSON.value, OutputFormat.PRETTY_JSON.value],
+        default=OutputFormat.CSV.value,
         help="出力フォーマット ",
     )
 

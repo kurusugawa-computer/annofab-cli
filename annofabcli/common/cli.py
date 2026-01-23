@@ -21,7 +21,7 @@ from annofabapi.exceptions import AnnofabApiException
 from annofabapi.models import OrganizationMemberRole, ProjectMemberRole
 from more_itertools import first_true
 
-from annofabcli.common.enums import FormatArgument
+from annofabcli.common.enums import OutputFormat
 from annofabcli.common.exceptions import AnnofabCliException, AuthenticationError
 from annofabcli.common.facade import AnnofabApiFacade
 from annofabcli.common.typing import InputDataSize
@@ -408,7 +408,7 @@ class ArgumentParser:
 
         self.parser.add_argument("-i", "--input_data_id", type=str, required=required, nargs="+", help=help_message)
 
-    def add_format(self, choices: list[FormatArgument], default: FormatArgument, help_message: str | None = None) -> None:
+    def add_format(self, choices: list[OutputFormat], default: OutputFormat, help_message: str | None = None) -> None:
         """
         '--format` 引数を追加
         """
@@ -529,7 +529,7 @@ class CommandLineWithoutWebapi:
         print_csv(df, output=self.output)
 
     def print_according_to_format(self, target: Any) -> None:  # noqa: ANN401
-        print_according_to_format(target, format=FormatArgument(self.str_format), output=self.output)
+        print_according_to_format(target, format=OutputFormat(self.str_format), output=self.output)
 
 
 class PrettyHelpFormatter(argparse.RawTextHelpFormatter, argparse.ArgumentDefaultsHelpFormatter):

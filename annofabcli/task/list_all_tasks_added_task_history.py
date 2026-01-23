@@ -21,7 +21,7 @@ from annofabcli.common.cli import (
 )
 from annofabcli.common.dataclasses import WaitOptions
 from annofabcli.common.download import DownloadingFile
-from annofabcli.common.enums import FormatArgument
+from annofabcli.common.enums import OutputFormat
 from annofabcli.common.facade import AnnofabApiFacade, TaskQuery, match_task_with_query
 from annofabcli.task.list_tasks_added_task_history import AddingAdditionalInfoToTask, TasksAddedTaskHistoryOutput
 
@@ -178,7 +178,7 @@ class ListAllTasksAddedTaskHistory(CommandLine):
         )
 
         logger.info(f"タスク一覧の件数: {len(task_list)}")
-        TasksAddedTaskHistoryOutput(task_list).output(output_path=args.output, output_format=FormatArgument(args.format))
+        TasksAddedTaskHistoryOutput(task_list).output(output_path=args.output, output_format=OutputFormat(args.format))
 
 
 def main(args: argparse.Namespace) -> None:
@@ -216,8 +216,8 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     argument_parser.add_output()
 
     argument_parser.add_format(
-        choices=[FormatArgument.CSV, FormatArgument.JSON, FormatArgument.PRETTY_JSON],
-        default=FormatArgument.CSV,
+        choices=[OutputFormat.CSV, OutputFormat.JSON, OutputFormat.PRETTY_JSON],
+        default=OutputFormat.CSV,
     )
 
     parser.set_defaults(subcommand_func=main)

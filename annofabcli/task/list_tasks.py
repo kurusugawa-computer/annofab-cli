@@ -9,7 +9,7 @@ from annofabapi.models import Task
 
 import annofabcli.common.cli
 from annofabcli.common.cli import ArgumentParser, CommandLine, build_annofabapi_resource_and_login
-from annofabcli.common.enums import FormatArgument
+from annofabcli.common.enums import OutputFormat
 from annofabcli.common.facade import AnnofabApiFacade
 from annofabcli.common.utils import get_columns_with_priority, print_csv, print_id_list, print_json
 from annofabcli.common.visualize import AddProps
@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 def print_task_list(
     task_list: list[dict[str, Any]],
-    output_format: FormatArgument,
+    output_format: OutputFormat,
     output_file: Path | None,
 ) -> None:
     """
@@ -50,7 +50,7 @@ def print_task_list(
         "input_data_id_list",
     ]
 
-    if output_format == FormatArgument.CSV:
+    if output_format == OutputFormat.CSV:
         if len(task_list) > 0:
             # json_normalizeでメタデータを自動展開
             df = pandas.json_normalize(task_list)
@@ -67,13 +67,13 @@ def print_task_list(
             df = pandas.DataFrame(columns=task_prior_columns)
             print_csv(df, output=output_file)
 
-    elif output_format == FormatArgument.PRETTY_JSON:
+    elif output_format == OutputFormat.PRETTY_JSON:
         print_json(task_list, is_pretty=True, output=output_file)
 
-    elif output_format == FormatArgument.JSON:
+    elif output_format == OutputFormat.JSON:
         print_json(task_list, is_pretty=False, output=output_file)
 
-    elif output_format == FormatArgument.TASK_ID_LIST:
+    elif output_format == OutputFormat.TASK_ID_LIST:
         task_id_list = [e["task_id"] for e in task_list]
         print_id_list(task_id_list, output=output_file)
     else:
@@ -235,7 +235,7 @@ class ListTasks(CommandLine):
         logger.info(f"{len(task_list)}件のタスク情報を出力します。")
 
         output_file = args.output
-        output_format = FormatArgument(args.format)
+        output_format = OutputFormat(args.format)
         print_task_list(task_list, output_format, output_file)
 
 
@@ -281,8 +281,8 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     )
 
     argument_parser.add_format(
-        choices=[FormatArgument.CSV, FormatArgument.JSON, FormatArgument.PRETTY_JSON, FormatArgument.TASK_ID_LIST],
-        default=FormatArgument.CSV,
+        choices=[OutputFormat.CSV, OutputFormat.JSON, OutputFormat.PRETTY_JSON, OutputFormat.TASK_ID_LIST],
+        default=OutputFormat.CSV,
     )
     argument_parser.add_output()
 

@@ -19,7 +19,7 @@ from annofabcli.common.cli import (
 )
 from annofabcli.common.dataclasses import WaitOptions
 from annofabcli.common.download import DownloadingFile
-from annofabcli.common.enums import FormatArgument
+from annofabcli.common.enums import OutputFormat
 from annofabcli.common.facade import AnnofabApiFacade
 from annofabcli.statistics.summarize_task_count import get_step_for_current_phase
 
@@ -144,7 +144,7 @@ class SummarizeTaskCountByTaskId(CommandLine):
         columns = ["task_id_group"] + [status.value for status in TaskStatusForSummary] + ["sum"]
         annofabcli.common.utils.print_according_to_format(
             df[columns],
-            format=FormatArgument(FormatArgument.CSV),
+            format=OutputFormat.CSV,
             output=self.output,
         )
 

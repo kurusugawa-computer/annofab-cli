@@ -15,7 +15,7 @@ from annofabcli.common.cli import (
     CommandLine,
     build_annofabapi_resource_and_login,
 )
-from annofabcli.common.enums import FormatArgument
+from annofabcli.common.enums import OutputFormat
 from annofabcli.common.facade import AnnofabApiFacade
 from annofabcli.common.utils import get_columns_with_priority
 
@@ -186,10 +186,10 @@ class ListProject(CommandLine):
 
         logger.info(f"プロジェクト一覧の件数: {len(project_list)}")
 
-        if args.format == FormatArgument.MINIMAL_CSV.value:
+        if args.format == OutputFormat.MINIMAL_CSV.value:
             df = create_minimal_dataframe(project_list)
             self.print_csv(df)
-        elif args.format == FormatArgument.CSV.value:
+        elif args.format == OutputFormat.CSV.value:
             df = pandas.DataFrame(project_list)
             columns = get_columns_with_priority(df, prior_columns=self.PRIOR_COLUMNS)
             self.print_csv(df[columns])
@@ -241,13 +241,13 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
 
     argument_parser.add_format(
         choices=[
-            FormatArgument.CSV,
-            FormatArgument.MINIMAL_CSV,
-            FormatArgument.JSON,
-            FormatArgument.PRETTY_JSON,
-            FormatArgument.PROJECT_ID_LIST,
+            OutputFormat.CSV,
+            OutputFormat.MINIMAL_CSV,
+            OutputFormat.JSON,
+            OutputFormat.PRETTY_JSON,
+            OutputFormat.PROJECT_ID_LIST,
         ],
-        default=FormatArgument.CSV,
+        default=OutputFormat.CSV,
     )
     argument_parser.add_output()
 

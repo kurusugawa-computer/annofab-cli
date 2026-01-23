@@ -20,7 +20,7 @@ from annofabcli.common.cli import (
     get_json_from_args,
     get_list_from_args,
 )
-from annofabcli.common.enums import FormatArgument
+from annofabcli.common.enums import OutputFormat
 from annofabcli.common.facade import AnnofabApiFacade
 from annofabcli.common.type_util import assert_noreturn
 from annofabcli.common.visualize import AddProps
@@ -103,7 +103,7 @@ class ListAnnotationCount(CommandLine):
         group_by = GroupBy(args.group_by)
         df = aggregate_annotations(all_annotation_list, group_by)
 
-        if self.str_format == FormatArgument.CSV.value:
+        if self.str_format == OutputFormat.CSV.value:
             self.print_csv(df)
         else:
             self.print_according_to_format(df.to_dict(orient="records"))
@@ -154,8 +154,8 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     argument_parser.add_output()
 
     argument_parser.add_format(
-        choices=[FormatArgument.CSV, FormatArgument.JSON, FormatArgument.PRETTY_JSON],
-        default=FormatArgument.CSV,
+        choices=[OutputFormat.CSV, OutputFormat.JSON, OutputFormat.PRETTY_JSON],
+        default=OutputFormat.CSV,
     )
 
     parser.set_defaults(subcommand_func=main)

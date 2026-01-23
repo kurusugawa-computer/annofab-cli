@@ -7,7 +7,7 @@ import requests
 
 import annofabcli.common.cli
 from annofabcli.common.cli import ArgumentParser, CommandLine, build_annofabapi_resource_and_login
-from annofabcli.common.enums import FormatArgument
+from annofabcli.common.enums import OutputFormat
 from annofabcli.common.facade import AnnofabApiFacade
 from annofabcli.common.utils import get_columns_with_priority
 
@@ -52,7 +52,7 @@ class ListOrganizationMember(CommandLine):
                 logger.warning(f"組織'{organization_name}'のメンバー一覧を取得できませんでした。", exc_info=True)
                 continue
 
-        if args.format == FormatArgument.CSV.value:
+        if args.format == OutputFormat.CSV.value:
             df = pandas.DataFrame(organization_member_list)
             columns = get_columns_with_priority(df, prior_columns=self.PRIOR_COLUMNS)
             self.print_csv(df[columns])
@@ -79,8 +79,8 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     )
 
     argument_parser.add_format(
-        choices=[FormatArgument.CSV, FormatArgument.JSON, FormatArgument.PRETTY_JSON, FormatArgument.USER_ID_LIST],
-        default=FormatArgument.CSV,
+        choices=[OutputFormat.CSV, OutputFormat.JSON, OutputFormat.PRETTY_JSON, OutputFormat.USER_ID_LIST],
+        default=OutputFormat.CSV,
     )
     argument_parser.add_output()
 

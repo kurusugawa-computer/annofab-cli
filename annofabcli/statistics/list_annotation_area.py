@@ -30,7 +30,7 @@ from annofabcli.common.cli import (
     build_annofabapi_resource_and_login,
 )
 from annofabcli.common.download import DownloadingFile
-from annofabcli.common.enums import FormatArgument
+from annofabcli.common.enums import OutputFormat
 from annofabcli.common.facade import (
     AnnofabApiFacade,
     TaskQuery,
@@ -189,7 +189,7 @@ def create_df(
 def print_annotation_area(
     annotation_path: Path,
     output_file: Path,
-    output_format: FormatArgument,
+    output_format: OutputFormat,
     *,
     target_task_ids: Collection[str] | None = None,
     task_query: TaskQuery | None = None,
@@ -202,12 +202,12 @@ def print_annotation_area(
 
     logger.info(f"{len(annotation_area_list)} 件のタスクに含まれる塗りつぶし、矩形、ポリゴンアノテーションの面積情報を出力します。")
 
-    if output_format == FormatArgument.CSV:
+    if output_format == OutputFormat.CSV:
         df = create_df(annotation_area_list)
         print_csv(df, output_file)
 
-    elif output_format in [FormatArgument.PRETTY_JSON, FormatArgument.JSON]:
-        json_is_pretty = output_format == FormatArgument.PRETTY_JSON
+    elif output_format in [OutputFormat.PRETTY_JSON, OutputFormat.JSON]:
+        json_is_pretty = output_format == OutputFormat.PRETTY_JSON
         print_json(
             [e.to_dict(encode_json=True) for e in annotation_area_list],
             is_pretty=json_is_pretty,
@@ -249,7 +249,7 @@ class ListAnnotationArea(CommandLine):
         task_query = TaskQuery.from_dict(annofabcli.common.cli.get_json_from_args(args.task_query)) if args.task_query is not None else None
 
         output_file: Path = args.output
-        output_format = FormatArgument(args.format)
+        output_format = OutputFormat(args.format)
 
         downloading_obj = DownloadingFile(self.service)
 
@@ -298,8 +298,8 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     group.add_argument("-p", "--project_id", type=str, help="project_id。``--annotation`` が未指定のときは必須です。\n")
 
     argument_parser.add_format(
-        choices=[FormatArgument.CSV, FormatArgument.JSON, FormatArgument.PRETTY_JSON],
-        default=FormatArgument.CSV,
+        choices=[OutputFormat.CSV, OutputFormat.JSON, OutputFormat.PRETTY_JSON],
+        default=OutputFormat.CSV,
     )
 
     argument_parser.add_output()

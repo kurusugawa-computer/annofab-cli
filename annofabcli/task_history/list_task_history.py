@@ -6,7 +6,7 @@ from annofabapi.models import TaskHistory
 
 import annofabcli.common.cli
 from annofabcli.common.cli import ArgumentParser, CommandLine, build_annofabapi_resource_and_login
-from annofabcli.common.enums import FormatArgument
+from annofabcli.common.enums import OutputFormat
 from annofabcli.common.facade import AnnofabApiFacade
 from annofabcli.common.visualize import AddProps
 
@@ -78,7 +78,7 @@ class ListTaskHistory(CommandLine):
         self,
         project_id: str,
         task_id_list: list[str] | None,
-        arg_format: FormatArgument,
+        arg_format: OutputFormat,
     ) -> None:
         """
         タスク一覧を出力する
@@ -94,7 +94,7 @@ class ListTaskHistory(CommandLine):
 
         main_obj = ListTaskHistoryMain(self.service)
         task_history_dict = main_obj.get_task_history_dict_for_output(project_id, task_id_list=task_id_list)
-        if arg_format == FormatArgument.CSV:
+        if arg_format == OutputFormat.CSV:
             all_task_history_list = main_obj.to_all_task_history_list_from_dict(task_history_dict)
             if len(all_task_history_list) > 0:
                 self.print_according_to_format(all_task_history_list)
@@ -111,7 +111,7 @@ class ListTaskHistory(CommandLine):
         self.print_task_history_list(
             args.project_id,
             task_id_list=task_id_list,
-            arg_format=FormatArgument(args.format),
+            arg_format=OutputFormat(args.format),
         )
 
 
@@ -134,8 +134,8 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     )
 
     argument_parser.add_format(
-        choices=[FormatArgument.CSV, FormatArgument.JSON, FormatArgument.PRETTY_JSON],
-        default=FormatArgument.CSV,
+        choices=[OutputFormat.CSV, OutputFormat.JSON, OutputFormat.PRETTY_JSON],
+        default=OutputFormat.CSV,
     )
     argument_parser.add_output()
 

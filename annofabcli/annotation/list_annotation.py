@@ -19,7 +19,7 @@ from annofabcli.common.cli import (
     get_json_from_args,
     get_list_from_args,
 )
-from annofabcli.common.enums import FormatArgument
+from annofabcli.common.enums import OutputFormat
 from annofabcli.common.facade import AnnofabApiFacade
 from annofabcli.common.utils import get_columns_with_priority
 from annofabcli.common.visualize import AddProps
@@ -194,7 +194,7 @@ class ListAnnotation(CommandLine):
 
         logger.debug(f"アノテーション {len(annotation_list)} 件を出力します。")
 
-        if self.str_format == FormatArgument.CSV.value:
+        if self.str_format == OutputFormat.CSV.value:
             annotation_list_for_csv = to_annotation_list_for_csv(annotation_list)
             df = pandas.DataFrame(annotation_list_for_csv)
             columns = get_columns_with_priority(df, prior_columns=self.PRIOR_COLUMNS)
@@ -243,8 +243,8 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     )
 
     argument_parser.add_format(
-        choices=[FormatArgument.CSV, FormatArgument.JSON, FormatArgument.PRETTY_JSON],
-        default=FormatArgument.CSV,
+        choices=[OutputFormat.CSV, OutputFormat.JSON, OutputFormat.PRETTY_JSON],
+        default=OutputFormat.CSV,
     )
 
     argument_parser.add_output()

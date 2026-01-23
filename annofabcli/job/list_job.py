@@ -7,7 +7,7 @@ from annofabapi.models import ProjectJobInfo, ProjectJobType
 
 import annofabcli.common.cli
 from annofabcli.common.cli import ArgumentParser, CommandLine, build_annofabapi_resource_and_login
-from annofabcli.common.enums import FormatArgument
+from annofabcli.common.enums import OutputFormat
 from annofabcli.common.facade import AnnofabApiFacade
 
 logger = logging.getLogger(__name__)
@@ -77,7 +77,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         help="ジョブタイプを指定します。指定できる値については https://annofab-cli.readthedocs.io/ja/latest/user_guide/command_line_options.html#job-type を参照してください。",
     )
 
-    argument_parser.add_format(choices=[FormatArgument.CSV, FormatArgument.JSON, FormatArgument.PRETTY_JSON], default=FormatArgument.CSV)
+    argument_parser.add_format(choices=[OutputFormat.CSV, OutputFormat.JSON, OutputFormat.PRETTY_JSON], default=OutputFormat.CSV)
     argument_parser.add_output()
 
     parser.set_defaults(subcommand_func=main)

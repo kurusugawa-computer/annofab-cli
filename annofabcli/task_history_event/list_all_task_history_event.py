@@ -19,7 +19,7 @@ from annofabcli.common.cli import (
     get_list_from_args,
 )
 from annofabcli.common.download import DownloadingFile
-from annofabcli.common.enums import FormatArgument
+from annofabcli.common.enums import OutputFormat
 from annofabcli.common.facade import AnnofabApiFacade
 from annofabcli.common.visualize import AddProps
 
@@ -86,7 +86,7 @@ class ListTaskHistoryEventWithJson(CommandLine):
         project_id: str,
         task_history_event_json: Path | None,
         task_id_list: list[str] | None,
-        arg_format: FormatArgument,
+        arg_format: OutputFormat,
         temp_dir: Path | None,
     ) -> None:
         super().validate_project(project_id, project_member_roles=None)
@@ -96,7 +96,7 @@ class ListTaskHistoryEventWithJson(CommandLine):
 
         logger.debug(f"{len(task_history_event_list)} 件のタスク履歴イベントの情報を出力します。")
 
-        if arg_format == FormatArgument.CSV:
+        if arg_format == OutputFormat.CSV:
             columns = [
                 "project_id",
                 "task_id",
@@ -133,7 +133,7 @@ class ListTaskHistoryEventWithJson(CommandLine):
             args.project_id,
             task_history_event_json=args.task_history_event_json,
             task_id_list=task_id_list,
-            arg_format=FormatArgument(args.format),
+            arg_format=OutputFormat(args.format),
             temp_dir=temp_dir,
         )
 
@@ -178,8 +178,8 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     )
 
     argument_parser.add_format(
-        choices=[FormatArgument.CSV, FormatArgument.JSON, FormatArgument.PRETTY_JSON],
-        default=FormatArgument.CSV,
+        choices=[OutputFormat.CSV, OutputFormat.JSON, OutputFormat.PRETTY_JSON],
+        default=OutputFormat.CSV,
     )
     argument_parser.add_output()
 
