@@ -422,7 +422,6 @@ class TasksAddedTaskHistoryOutput:
             "user_id",
             "username",
             "input_data_count",
-            "metadata",
             "sampling",
             # 作業時間情報
             "worktime_hour",
