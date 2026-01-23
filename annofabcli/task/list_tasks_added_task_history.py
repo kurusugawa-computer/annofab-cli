@@ -458,9 +458,12 @@ class TasksAddedTaskHistoryOutput:
         task_list = self.task_list
         logger.debug(f"タスク {len(task_list)} 件の情報を出力します。")
         if output_format == FormatArgument.CSV:
-            df_task = pandas.DataFrame(task_list, columns=self._get_output_target_columns())
+            output_columns = self._get_output_target_columns()
+            # work_time_span列を除外（worktime_hourと重複するため）
+            output_columns = [col for col in output_columns if col != "work_time_span"]
+            df_task = pandas.DataFrame(task_list, columns=output_columns)
             print_csv(
-                df_task[self._get_output_target_columns()],
+                df_task[output_columns],
                 output=output_path,
             )
 

@@ -6,7 +6,6 @@ from pathlib import Path
 from typing import Any
 
 import annofabapi
-import pandas
 from annofabapi.dataclass.task import Task
 
 import annofabcli.common.cli
@@ -14,9 +13,8 @@ from annofabcli.common.cli import ArgumentParser, CommandLine, build_annofabapi_
 from annofabcli.common.download import DownloadingFile
 from annofabcli.common.enums import FormatArgument
 from annofabcli.common.facade import AnnofabApiFacade, TaskQuery, match_task_with_query
-from annofabcli.common.utils import get_columns_with_priority
 from annofabcli.common.visualize import AddProps
-from annofabcli.task.list_tasks import ListTasks
+from annofabcli.task.list_tasks import print_task_list
 
 logger = logging.getLogger(__name__)
 
@@ -44,9 +42,10 @@ class ListTasksWithJsonMain:
         self,
         project_id: str,
         task_json: Path | None,
+        *,
         task_id_list: list[str] | None = None,
         task_query: TaskQuery | None = None,
-        is_latest: bool = False,  # noqa: FBT001, FBT002
+        is_latest: bool = False,
         temp_dir: Path | None = None,
     ) -> list[dict[str, Any]]:
         if task_json is None:
@@ -108,17 +107,8 @@ class ListTasksWithJson(CommandLine):
             temp_dir=temp_dir,
         )
 
-        logger.debug(f"タスク一覧の件数: {len(task_list)}")
-
-        if len(task_list) > 0:
-            if self.str_format == FormatArgument.CSV.value:
-                df = pandas.DataFrame(task_list)
-                columns = get_columns_with_priority(df, prior_columns=ListTasks.PRIOR_COLUMNS)
-                self.print_csv(df[columns])
-            else:
-                self.print_according_to_format(task_list)
-        else:
-            logger.info("タスク一覧の件数が0件のため、出力しません。")
+        logger.info(f"{len(task_list)}件のタスク情報を出力します。")
+        print_task_list(task_list, FormatArgument(args.format), args.output)
 
 
 def main(args: argparse.Namespace) -> None:

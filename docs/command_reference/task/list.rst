@@ -105,7 +105,15 @@ CSV出力
 
     $ annofabcli task list --project_id prj1 --format csv --output out.csv
 
-`out.csv <https://github.com/kurusugawa-computer/annofab-cli/blob/main/docs/command_reference/task/list/out.csv>`_
+.. csv-table:: out.csv 
+    :header-rows: 1
+    :file: list/out.csv
+
+
+.. note::
+
+    CSV形式で出力する場合、タスクのメタデータは ``metadata.{key}`` 形式の列として展開されます。
+    例えば、メタデータに ``priority`` と ``category`` が含まれる場合、 ``metadata.priority`` と ``metadata.category`` という列が出力されます。
 
 JSON出力
 ----------------------------------------------
