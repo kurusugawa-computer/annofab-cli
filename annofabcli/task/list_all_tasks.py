@@ -118,6 +118,26 @@ class ListTasksWithJson(CommandLine):
                 # metadata.*列を検出して優先列リストに追加
                 metadata_columns = sorted([col for col in df.columns if col.startswith("metadata.")])
                 prior_columns_with_metadata = ListTasks.PRIOR_COLUMNS + metadata_columns
+                # メタデータキーを収集
+                metadata_keys = set()
+                for task in task_list:
+                    if isinstance(task.get("metadata"), dict):
+                        metadata_keys.update(task["metadata"].keys())
+
+                sorted_metadata_keys = sorted(metadata_keys)
+
+                df = pandas.DataFrame(task_list)
+
+                # メタデータを展開してmetadata.*列を追加
+                for key in sorted_metadata_keys:
+                    df[f"metadata.{key}"] = df["metadata"].apply(lambda x, k=key: x.get(k) if isinstance(x, dict) else None)
+
+                # metadata列を削除
+                if "metadata" in df.columns:
+                    df = df.drop(columns=["metadata"])
+
+                # metadata.*列を優先列リストに追加
+                prior_columns_with_metadata = ListTasks.PRIOR_COLUMNS + [f"metadata.{key}" for key in sorted_metadata_keys]
                 columns = get_columns_with_priority(df, prior_columns=prior_columns_with_metadata)
                 self.print_csv(df[columns])
             else:
