@@ -36,7 +36,7 @@ from annofabcli.common.cli import (
     build_annofabapi_resource_and_login,
 )
 from annofabcli.common.download import DownloadingFile
-from annofabcli.common.enums import FormatArgument
+from annofabcli.common.enums import OutputFormat
 from annofabcli.common.facade import (
     AnnofabApiFacade,
     TaskQuery,
@@ -480,7 +480,7 @@ class ListAnnotationAttributeFilledCountMain:
         annotation_path: Path,
         output_file: Path,
         group_by: GroupBy,
-        output_format: FormatArgument,
+        output_format: OutputFormat,
         *,
         project_id: str | None = None,
         include_flag_attribute: bool = False,
@@ -505,11 +505,11 @@ class ListAnnotationAttributeFilledCountMain:
 
         if group_by == GroupBy.INPUT_DATA_ID:
             logger.info(f"{len(annotation_count_list_by_input_data)} 件の入力データに含まれるアノテーション数の情報を出力します。")
-            if output_format == FormatArgument.CSV:
+            if output_format == OutputFormat.CSV:
                 self.print_annotation_count_csv_by_input_data(annotation_count_list_by_input_data, output_file=output_file, attribute_names=target_attribute_names)
 
-            elif output_format in [FormatArgument.PRETTY_JSON, FormatArgument.JSON]:
-                json_is_pretty = output_format == FormatArgument.PRETTY_JSON
+            elif output_format in [OutputFormat.PRETTY_JSON, OutputFormat.JSON]:
+                json_is_pretty = output_format == OutputFormat.PRETTY_JSON
 
                 print_json(
                     [e.to_dict(encode_json=True) for e in annotation_count_list_by_input_data],
@@ -519,11 +519,11 @@ class ListAnnotationAttributeFilledCountMain:
         elif group_by == GroupBy.TASK_ID:
             annotation_count_list_by_task = convert_annotation_count_list_by_input_data_to_by_task(annotation_count_list_by_input_data)
             logger.info(f"{len(annotation_count_list_by_task)} 件のタスクに含まれるアノテーション数の情報を出力します。")
-            if output_format == FormatArgument.CSV:
+            if output_format == OutputFormat.CSV:
                 self.print_annotation_count_csv_by_task(annotation_count_list_by_task, output_file=output_file, attribute_names=target_attribute_names)
 
-            elif output_format in [FormatArgument.PRETTY_JSON, FormatArgument.JSON]:
-                json_is_pretty = output_format == FormatArgument.PRETTY_JSON
+            elif output_format in [OutputFormat.PRETTY_JSON, OutputFormat.JSON]:
+                json_is_pretty = output_format == OutputFormat.PRETTY_JSON
 
                 print_json(
                     [e.to_dict(encode_json=True) for e in annotation_count_list_by_task],
@@ -565,7 +565,7 @@ class ListAnnotationAttributeFilledCount(CommandLine):
 
         group_by = GroupBy(args.group_by)
         output_file: Path = args.output
-        output_format = FormatArgument(args.format)
+        output_format = OutputFormat(args.format)
         main_obj = ListAnnotationAttributeFilledCountMain(self.service)
 
         downloading_obj = DownloadingFile(self.service)
@@ -668,8 +668,8 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     )
 
     argument_parser.add_format(
-        choices=[FormatArgument.CSV, FormatArgument.JSON, FormatArgument.PRETTY_JSON],
-        default=FormatArgument.CSV,
+        choices=[OutputFormat.CSV, OutputFormat.JSON, OutputFormat.PRETTY_JSON],
+        default=OutputFormat.CSV,
     )
 
     argument_parser.add_output()

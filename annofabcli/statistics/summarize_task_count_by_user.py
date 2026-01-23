@@ -16,7 +16,7 @@ from annofabcli.common.cli import (
 )
 from annofabcli.common.dataclasses import WaitOptions
 from annofabcli.common.download import DownloadingFile
-from annofabcli.common.enums import FormatArgument
+from annofabcli.common.enums import OutputFormat
 from annofabcli.common.facade import AnnofabApiFacade
 
 logger = logging.getLogger(__name__)
@@ -112,7 +112,7 @@ class SummarizeTaskCountByUser(CommandLine):
         target_df = df[columns].sort_values("user_id")
         annofabcli.common.utils.print_according_to_format(
             target_df,
-            format=FormatArgument(FormatArgument.CSV),
+            format=OutputFormat(OutputFormat.CSV),
             output=self.output,
         )
 

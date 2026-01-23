@@ -1,7 +1,7 @@
 from enum import Enum
 
 
-class FormatArgument(Enum):
+class OutputFormat(Enum):
     """
     表示するフォーマット ``--format`` で指定できる値
 

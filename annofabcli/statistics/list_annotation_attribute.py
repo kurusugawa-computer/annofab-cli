@@ -27,7 +27,7 @@ from annofabcli.common.cli import (
     build_annofabapi_resource_and_login,
 )
 from annofabcli.common.download import DownloadingFile
-from annofabcli.common.enums import FormatArgument
+from annofabcli.common.enums import OutputFormat
 from annofabcli.common.facade import (
     AnnofabApiFacade,
     TaskQuery,
@@ -164,14 +164,14 @@ def print_annotation_attribute_list_as_csv(annotation_attribute_list: list, outp
 def print_annotation_attribute_list(
     annotation_attribute_list: list[AnnotationAttribute],
     output_file: Path,
-    output_format: Literal[FormatArgument.CSV, FormatArgument.JSON, FormatArgument.PRETTY_JSON],
+    output_format: Literal[OutputFormat.CSV, OutputFormat.JSON, OutputFormat.PRETTY_JSON],
 ) -> None:
     tmp_annotation_attribute_list = [e.model_dump() for e in annotation_attribute_list]
-    if output_format == FormatArgument.CSV:
+    if output_format == OutputFormat.CSV:
         print_annotation_attribute_list_as_csv(tmp_annotation_attribute_list, output_file)
-    elif output_format == FormatArgument.JSON:
+    elif output_format == OutputFormat.JSON:
         print_json(tmp_annotation_attribute_list, output=output_file, is_pretty=False)
-    elif output_format == FormatArgument.PRETTY_JSON:
+    elif output_format == OutputFormat.PRETTY_JSON:
         print_json(tmp_annotation_attribute_list, output=output_file, is_pretty=True)
     else:
         raise assert_noreturn(output_format)
@@ -207,7 +207,7 @@ class ListAnnotationAttribute(CommandLine):
         task_query = TaskQuery.from_dict(annofabcli.common.cli.get_json_from_args(args.task_query)) if args.task_query is not None else None
 
         output_file: Path = args.output
-        output_format = FormatArgument(args.format)
+        output_format = OutputFormat(args.format)
 
         downloading_obj = DownloadingFile(self.service)
 
@@ -254,8 +254,8 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     annotation_group.add_argument("-p", "--project_id", type=str, help="対象プロジェクトの project_id")
 
     argument_parser.add_format(
-        choices=[FormatArgument.CSV, FormatArgument.JSON, FormatArgument.PRETTY_JSON],
-        default=FormatArgument.CSV,
+        choices=[OutputFormat.CSV, OutputFormat.JSON, OutputFormat.PRETTY_JSON],
+        default=OutputFormat.CSV,
     )
 
     argument_parser.add_output()

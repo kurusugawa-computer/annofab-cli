@@ -16,7 +16,7 @@ from annofabcli.common.cli import (
     build_annofabapi_resource_and_login,
     get_list_from_args,
 )
-from annofabcli.common.enums import FormatArgument
+from annofabcli.common.enums import OutputFormat
 from annofabcli.common.facade import AnnofabApiFacade
 
 logger = logging.getLogger(__name__)
@@ -150,10 +150,10 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
 
     argument_parser.add_format(
         choices=[
-            FormatArgument.JSON,
-            FormatArgument.PRETTY_JSON,
+            OutputFormat.JSON,
+            OutputFormat.PRETTY_JSON,
         ],
-        default=FormatArgument.PRETTY_JSON,
+        default=OutputFormat.PRETTY_JSON,
     )
 
     parser.set_defaults(subcommand_func=main)

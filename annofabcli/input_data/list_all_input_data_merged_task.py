@@ -21,7 +21,7 @@ from annofabcli.common.cli import (
     get_list_from_args,
 )
 from annofabcli.common.download import DownloadingFile
-from annofabcli.common.enums import FormatArgument
+from annofabcli.common.enums import OutputFormat
 from annofabcli.common.facade import AnnofabApiFacade, InputDataQuery, match_input_data_with_query
 from annofabcli.common.utils import print_csv
 from annofabcli.input_data.utils import remove_unnecessary_keys_from_input_data
@@ -191,11 +191,11 @@ class ListInputDataMergedTask(CommandLine):
 
         logger.debug(f"入力データ {len(filtered_input_data_list_with_merged_task)} 件を出力します。")
 
-        if self.str_format == FormatArgument.CSV.value:
+        if self.str_format == OutputFormat.CSV.value:
             df_input_data = create_df_input_data_with_merged_task(filtered_input_data_list_with_merged_task)
             print_csv(df_input_data, output=args.output)
 
-        elif self.str_format in [FormatArgument.JSON.value, FormatArgument.PRETTY_JSON.value]:
+        elif self.str_format in [OutputFormat.JSON.value, OutputFormat.PRETTY_JSON.value]:
             self.print_according_to_format(filtered_input_data_list_with_merged_task)
 
 
@@ -262,11 +262,11 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
 
     argument_parser.add_format(
         choices=[
-            FormatArgument.CSV,
-            FormatArgument.JSON,
-            FormatArgument.PRETTY_JSON,
+            OutputFormat.CSV,
+            OutputFormat.JSON,
+            OutputFormat.PRETTY_JSON,
         ],
-        default=FormatArgument.CSV,
+        default=OutputFormat.CSV,
     )
     argument_parser.add_output()
 

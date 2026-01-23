@@ -14,7 +14,7 @@ from annofabapi.utils import get_task_history_index_skipped_acceptance, get_task
 
 import annofabcli.common.cli
 from annofabcli.common.cli import ArgumentParser, CommandLine, build_annofabapi_resource_and_login
-from annofabcli.common.enums import FormatArgument
+from annofabcli.common.enums import OutputFormat
 from annofabcli.common.facade import AnnofabApiFacade
 from annofabcli.common.utils import isoduration_to_hour, print_csv, print_json
 from annofabcli.common.visualize import AddProps
@@ -454,10 +454,10 @@ class TasksAddedTaskHistoryOutput:
             ]
         )
 
-    def output(self, output_path: Path, output_format: FormatArgument) -> None:
+    def output(self, output_path: Path, output_format: OutputFormat) -> None:
         task_list = self.task_list
         logger.debug(f"タスク {len(task_list)} 件の情報を出力します。")
-        if output_format == FormatArgument.CSV:
+        if output_format == OutputFormat.CSV:
             output_columns = self._get_output_target_columns()
             # work_time_span列を除外（worktime_hourと重複するため）
             output_columns = [col for col in output_columns if col != "work_time_span"]
@@ -467,9 +467,9 @@ class TasksAddedTaskHistoryOutput:
                 output=output_path,
             )
 
-        elif output_format == FormatArgument.JSON:
+        elif output_format == OutputFormat.JSON:
             print_json(task_list, is_pretty=False, output=output_path)
-        elif output_format == FormatArgument.PRETTY_JSON:
+        elif output_format == OutputFormat.PRETTY_JSON:
             print_json(task_list, is_pretty=True, output=output_path)
 
 
@@ -484,7 +484,7 @@ class ListTasksAddedTaskHistory(CommandLine):
         task_list = main_obj.main(task_query=task_query, task_id_list=task_id_list)
 
         output_obj = TasksAddedTaskHistoryOutput(task_list)
-        output_obj.output(args.output, output_format=FormatArgument(args.format))
+        output_obj.output(args.output, output_format=OutputFormat(args.format))
 
 
 def main(args: argparse.Namespace) -> None:
@@ -522,8 +522,8 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     argument_parser.add_output()
 
     argument_parser.add_format(
-        choices=[FormatArgument.CSV, FormatArgument.JSON, FormatArgument.PRETTY_JSON],
-        default=FormatArgument.CSV,
+        choices=[OutputFormat.CSV, OutputFormat.JSON, OutputFormat.PRETTY_JSON],
+        default=OutputFormat.CSV,
     )
 
     parser.set_defaults(subcommand_func=main)

@@ -20,7 +20,7 @@ from annofabcli.common.cli import (
     build_annofabapi_resource_and_login,
 )
 from annofabcli.common.download import DownloadingFile
-from annofabcli.common.enums import FormatArgument
+from annofabcli.common.enums import OutputFormat
 from annofabcli.common.facade import AnnofabApiFacade
 from annofabcli.common.utils import print_according_to_format, print_csv
 
@@ -81,7 +81,7 @@ class ListVideoDuration(CommandLine):
         self,
         task_json: Path,
         input_data_json: Path,
-        output_format: FormatArgument,
+        output_format: OutputFormat,
         output_file: Path | None,
     ) -> None:
         with task_json.open(encoding="utf-8") as f:
@@ -91,7 +91,7 @@ class ListVideoDuration(CommandLine):
 
         video_duration_list = get_video_duration_list(task_list=task_list, input_data_list=input_data_list)
         logger.info(f"{len(video_duration_list)} 件のタスクの動画長さを出力します。")
-        if output_format == FormatArgument.CSV:
+        if output_format == OutputFormat.CSV:
             columns = [
                 "project_id",
                 "task_id",
@@ -125,7 +125,7 @@ class ListVideoDuration(CommandLine):
                 )
                 sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
-        func = partial(self.list_video_duration, output_file=args.output, output_format=FormatArgument(args.format))
+        func = partial(self.list_video_duration, output_file=args.output, output_format=OutputFormat(args.format))
 
         def wrapper_func(temp_dir: Path) -> None:
             downloading_obj = DownloadingFile(self.service)
@@ -190,8 +190,8 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     )
 
     argument_parser.add_format(
-        choices=[FormatArgument.CSV, FormatArgument.JSON, FormatArgument.PRETTY_JSON],
-        default=FormatArgument.CSV,
+        choices=[OutputFormat.CSV, OutputFormat.JSON, OutputFormat.PRETTY_JSON],
+        default=OutputFormat.CSV,
     )
 
     argument_parser.add_output()

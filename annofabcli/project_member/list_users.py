@@ -7,7 +7,7 @@ from annofabapi.models import ProjectMember
 
 import annofabcli.common.cli
 from annofabcli.common.cli import ArgumentParser, CommandLine, build_annofabapi_resource_and_login
-from annofabcli.common.enums import FormatArgument
+from annofabcli.common.enums import OutputFormat
 from annofabcli.common.facade import AnnofabApiFacade
 from annofabcli.common.utils import get_columns_with_priority
 from annofabcli.common.visualize import AddProps
@@ -75,7 +75,7 @@ class ListUser(CommandLine):
         )
 
         logger.info(f"プロジェクトメンバ一覧の件数: {len(project_members)}")
-        if args.format == FormatArgument.CSV.value:
+        if args.format == OutputFormat.CSV.value:
             df = pandas.DataFrame(project_members)
             columns = get_columns_with_priority(df, prior_columns=self.PRIOR_COLUMNS)
             self.print_csv(df[columns])
@@ -104,8 +104,8 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--include_inactive", action="store_true", help="脱退しているメンバも出力します。")
 
     argument_parser.add_format(
-        choices=[FormatArgument.CSV, FormatArgument.JSON, FormatArgument.PRETTY_JSON, FormatArgument.USER_ID_LIST],
-        default=FormatArgument.CSV,
+        choices=[OutputFormat.CSV, OutputFormat.JSON, OutputFormat.PRETTY_JSON, OutputFormat.USER_ID_LIST],
+        default=OutputFormat.CSV,
     )
     argument_parser.add_output()
 

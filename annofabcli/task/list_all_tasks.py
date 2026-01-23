@@ -11,7 +11,7 @@ from annofabapi.dataclass.task import Task
 import annofabcli.common.cli
 from annofabcli.common.cli import ArgumentParser, CommandLine, build_annofabapi_resource_and_login
 from annofabcli.common.download import DownloadingFile
-from annofabcli.common.enums import FormatArgument
+from annofabcli.common.enums import OutputFormat
 from annofabcli.common.facade import AnnofabApiFacade, TaskQuery, match_task_with_query
 from annofabcli.common.visualize import AddProps
 from annofabcli.task.list_tasks import print_task_list
@@ -108,7 +108,7 @@ class ListTasksWithJson(CommandLine):
         )
 
         logger.info(f"{len(task_list)}件のタスク情報を出力します。")
-        print_task_list(task_list, FormatArgument(args.format), args.output)
+        print_task_list(task_list, OutputFormat(args.format), args.output)
 
 
 def main(args: argparse.Namespace) -> None:
@@ -145,8 +145,8 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     )
 
     argument_parser.add_format(
-        choices=[FormatArgument.CSV, FormatArgument.JSON, FormatArgument.PRETTY_JSON, FormatArgument.TASK_ID_LIST],
-        default=FormatArgument.CSV,
+        choices=[OutputFormat.CSV, OutputFormat.JSON, OutputFormat.PRETTY_JSON, OutputFormat.TASK_ID_LIST],
+        default=OutputFormat.CSV,
     )
     argument_parser.add_output()
 

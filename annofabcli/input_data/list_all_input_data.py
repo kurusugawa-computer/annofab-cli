@@ -16,7 +16,7 @@ from annofabapi.models import ProjectMemberRole
 import annofabcli.common.cli
 from annofabcli.common.cli import ArgumentParser, CommandLine, build_annofabapi_resource_and_login, print_according_to_format, print_csv
 from annofabcli.common.download import DownloadingFile
-from annofabcli.common.enums import FormatArgument
+from annofabcli.common.enums import OutputFormat
 from annofabcli.common.facade import AnnofabApiFacade, InputDataQuery, match_input_data_with_query
 from annofabcli.input_data.list_input_data import AddingDetailsToInputData
 from annofabcli.input_data.utils import remove_unnecessary_keys_from_input_data
@@ -147,8 +147,8 @@ class ListAllInputData(CommandLine):
         logger.debug(f"入力データ一覧の件数: {len(input_data_list)}")
 
         if len(input_data_list) > 0:
-            output_format = FormatArgument(args.format)
-            if output_format == FormatArgument.CSV:
+            output_format = OutputFormat(args.format)
+            if output_format == OutputFormat.CSV:
                 # pandas.DataFrameでなくpandas.json_normalizeを使う理由:
                 # ネストしたオブジェクトを`system_metadata.input_duration`のような列名でアクセスできるようにするため
                 df = pandas.json_normalize(input_data_list)
@@ -220,12 +220,12 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
 
     argument_parser.add_format(
         choices=[
-            FormatArgument.CSV,
-            FormatArgument.JSON,
-            FormatArgument.PRETTY_JSON,
-            FormatArgument.INPUT_DATA_ID_LIST,
+            OutputFormat.CSV,
+            OutputFormat.JSON,
+            OutputFormat.PRETTY_JSON,
+            OutputFormat.INPUT_DATA_ID_LIST,
         ],
-        default=FormatArgument.CSV,
+        default=OutputFormat.CSV,
     )
     argument_parser.add_output()
 

@@ -17,7 +17,7 @@ import annofabcli.common.cli
 from annofabcli.common.annofab.annotation_zip import lazy_parse_simple_annotation_by_input_data
 from annofabcli.common.cli import COMMAND_LINE_ERROR_STATUS_CODE, ArgumentParser, CommandLine, build_annofabapi_resource_and_login, get_list_from_args
 from annofabcli.common.download import DownloadingFile
-from annofabcli.common.enums import FormatArgument
+from annofabcli.common.enums import OutputFormat
 from annofabcli.common.facade import (
     AnnofabApiFacade,
     TaskQuery,
@@ -163,7 +163,7 @@ def create_df(
 def print_annotation_bounding_box(
     annotation_path: Path,
     output_file: Path,
-    output_format: FormatArgument,
+    output_format: OutputFormat,
     *,
     target_task_ids: Collection[str] | None = None,
     task_query: TaskQuery | None = None,
@@ -178,12 +178,12 @@ def print_annotation_bounding_box(
 
     logger.info(f"{len(annotation_bbox_list)} 件のバウンディングボックスアノテーションの情報を出力します。 :: output='{output_file}'")
 
-    if output_format == FormatArgument.CSV:
+    if output_format == OutputFormat.CSV:
         df = create_df(annotation_bbox_list)
         print_csv(df, output_file)
 
-    elif output_format in [FormatArgument.PRETTY_JSON, FormatArgument.JSON]:
-        json_is_pretty = output_format == FormatArgument.PRETTY_JSON
+    elif output_format in [OutputFormat.PRETTY_JSON, OutputFormat.JSON]:
+        json_is_pretty = output_format == OutputFormat.PRETTY_JSON
         # DataClassJsonMixinを使用したtoJSON処理
         print_json(
             [e.to_dict(encode_json=True) for e in annotation_bbox_list],
@@ -228,7 +228,7 @@ class ListAnnotationBoundingBox2d(CommandLine):
         label_name_list = get_list_from_args(args.label_name) if args.label_name is not None else None
 
         output_file: Path = args.output
-        output_format = FormatArgument(args.format)
+        output_format = OutputFormat(args.format)
 
         downloading_obj = DownloadingFile(self.service)
 
@@ -283,8 +283,8 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     group.add_argument("-p", "--project_id", type=str, help="project_id。アノテーションZIPをダウンロードします。")
 
     argument_parser.add_format(
-        choices=[FormatArgument.CSV, FormatArgument.JSON, FormatArgument.PRETTY_JSON],
-        default=FormatArgument.CSV,
+        choices=[OutputFormat.CSV, OutputFormat.JSON, OutputFormat.PRETTY_JSON],
+        default=OutputFormat.CSV,
     )
 
     argument_parser.add_output()

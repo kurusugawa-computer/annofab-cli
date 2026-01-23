@@ -34,7 +34,7 @@ from annofabcli.common.cli import (
     build_annofabapi_resource_and_login,
 )
 from annofabcli.common.download import DownloadingFile
-from annofabcli.common.enums import FormatArgument
+from annofabcli.common.enums import OutputFormat
 from annofabcli.common.facade import (
     AnnofabApiFacade,
     TaskQuery,
@@ -504,7 +504,7 @@ class ListAnnotationDurationMain:
         self,
         annotation_path: Path,
         output_file: Path,
-        arg_format: FormatArgument,
+        arg_format: OutputFormat,
         *,
         project_id: str | None = None,
         input_data_json_path: Path | None = None,
@@ -527,12 +527,12 @@ class ListAnnotationDurationMain:
 
         logger.info(f"{len(annotation_duration_list)} 件のタスクに含まれる区間アノテーションの長さ情報を出力します。")
 
-        if arg_format == FormatArgument.CSV:
+        if arg_format == OutputFormat.CSV:
             assert csv_type is not None
             self.print_annotation_duration_csv(annotation_duration_list, output_file=output_file, csv_type=csv_type, annotation_specs=annotation_specs)
 
-        elif arg_format in [FormatArgument.PRETTY_JSON, FormatArgument.JSON]:
-            json_is_pretty = arg_format == FormatArgument.PRETTY_JSON
+        elif arg_format in [OutputFormat.PRETTY_JSON, OutputFormat.JSON]:
+            json_is_pretty = arg_format == OutputFormat.PRETTY_JSON
 
             print_json(
                 [e.to_dict(encode_json=True) for e in annotation_duration_list],
@@ -578,7 +578,7 @@ class ListAnnotationDuration(CommandLine):
 
         csv_type = CsvType(args.type)
         output_file: Path = args.output
-        arg_format = FormatArgument(args.format)
+        arg_format = OutputFormat(args.format)
         main_obj = ListAnnotationDurationMain(self.service)
 
         downloading_obj = DownloadingFile(self.service)
@@ -660,8 +660,8 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     )
 
     argument_parser.add_format(
-        choices=[FormatArgument.CSV, FormatArgument.JSON, FormatArgument.PRETTY_JSON],
-        default=FormatArgument.CSV,
+        choices=[OutputFormat.CSV, OutputFormat.JSON, OutputFormat.PRETTY_JSON],
+        default=OutputFormat.CSV,
     )
 
     argument_parser.add_output()

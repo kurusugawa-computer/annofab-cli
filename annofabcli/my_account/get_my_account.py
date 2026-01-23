@@ -7,7 +7,7 @@ import annofabcli.common.cli
 from annofabcli.common.cli import (
     ArgumentParser,
     CommandLine,
-    FormatArgument,
+    OutputFormat,
     build_annofabapi_resource_and_login,
 )
 from annofabcli.common.facade import AnnofabApiFacade
@@ -32,10 +32,10 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
 
     argument_parser.add_format(
         choices=[
-            FormatArgument.JSON,
-            FormatArgument.PRETTY_JSON,
+            OutputFormat.JSON,
+            OutputFormat.PRETTY_JSON,
         ],
-        default=FormatArgument.PRETTY_JSON,
+        default=OutputFormat.PRETTY_JSON,
     )
 
     argument_parser.add_output()

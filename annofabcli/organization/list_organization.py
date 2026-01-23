@@ -3,7 +3,7 @@ import logging
 
 import annofabcli.common.cli
 from annofabcli.common.cli import ArgumentParser, CommandLine, build_annofabapi_resource_and_login
-from annofabcli.common.enums import FormatArgument
+from annofabcli.common.enums import OutputFormat
 from annofabcli.common.facade import AnnofabApiFacade
 
 logger = logging.getLogger(__name__)
@@ -27,11 +27,11 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
 
     argument_parser.add_format(
         choices=[
-            FormatArgument.CSV,
-            FormatArgument.JSON,
-            FormatArgument.PRETTY_JSON,
+            OutputFormat.CSV,
+            OutputFormat.JSON,
+            OutputFormat.PRETTY_JSON,
         ],
-        default=FormatArgument.CSV,
+        default=OutputFormat.CSV,
     )
     argument_parser.add_output()
 

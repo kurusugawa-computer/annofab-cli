@@ -12,7 +12,7 @@ from annofabcli.common.cli import (
     CommandLine,
     build_annofabapi_resource_and_login,
 )
-from annofabcli.common.enums import FormatArgument
+from annofabcli.common.enums import OutputFormat
 from annofabcli.common.facade import AnnofabApiFacade
 from annofabcli.common.utils import print_according_to_format
 
@@ -62,7 +62,7 @@ class ExportAnnotationSpecs(CommandLine):
 
         annotation_specs = self.get_exported_annotation_specs(args.project_id, history_id=history_id)
 
-        print_according_to_format(annotation_specs, format=FormatArgument(args.format), output=args.output)
+        print_according_to_format(annotation_specs, format=OutputFormat(args.format), output=args.output)
 
 
 def parse_args(parser: argparse.ArgumentParser) -> None:
@@ -98,8 +98,8 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "-f",
         "--format",
         type=str,
-        choices=[FormatArgument.JSON.value, FormatArgument.PRETTY_JSON.value],
-        default=FormatArgument.JSON.value,
+        choices=[OutputFormat.JSON.value, OutputFormat.PRETTY_JSON.value],
+        default=OutputFormat.JSON.value,
         help="出力フォーマット",
     )
 

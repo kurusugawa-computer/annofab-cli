@@ -40,7 +40,7 @@ from annofabcli.common.cli import (
     build_annofabapi_resource_and_login,
 )
 from annofabcli.common.download import DownloadingFile
-from annofabcli.common.enums import FormatArgument
+from annofabcli.common.enums import OutputFormat
 from annofabcli.common.facade import (
     AnnofabApiFacade,
     TaskQuery,
@@ -1001,7 +1001,7 @@ class ListAnnotationCountMain:
         annotation_path: Path,
         group_by: GroupBy,
         output_file: Path,
-        arg_format: FormatArgument,
+        arg_format: OutputFormat,
         *,
         project_id: str | None = None,
         task_json_path: Path | None = None,
@@ -1010,7 +1010,7 @@ class ListAnnotationCountMain:
         csv_type: CsvType | None = None,
     ) -> None:
         """ラベルごと/属性ごとのアノテーション数を出力します。"""
-        if arg_format == FormatArgument.CSV:
+        if arg_format == OutputFormat.CSV:
             assert csv_type is not None
             if group_by == GroupBy.INPUT_DATA_ID:
                 self.print_annotation_counter_csv_by_input_data(
@@ -1033,8 +1033,8 @@ class ListAnnotationCountMain:
                     csv_type=csv_type,
                 )
 
-        elif arg_format in [FormatArgument.PRETTY_JSON, FormatArgument.JSON]:
-            json_is_pretty = arg_format == FormatArgument.PRETTY_JSON
+        elif arg_format in [OutputFormat.PRETTY_JSON, OutputFormat.JSON]:
+            json_is_pretty = arg_format == OutputFormat.PRETTY_JSON
 
             if group_by == GroupBy.INPUT_DATA_ID:
                 self.print_annotation_counter_json_by_input_data(
@@ -1093,7 +1093,7 @@ class ListAnnotationCount(CommandLine):
         group_by = GroupBy(args.group_by)
         csv_type = CsvType(args.type)
         output_file: Path = args.output
-        arg_format = FormatArgument(args.format)
+        arg_format = OutputFormat(args.format)
         main_obj = ListAnnotationCountMain(self.service)
 
         downloading_obj = DownloadingFile(self.service)
@@ -1191,8 +1191,8 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     )
 
     argument_parser.add_format(
-        choices=[FormatArgument.CSV, FormatArgument.JSON, FormatArgument.PRETTY_JSON],
-        default=FormatArgument.CSV,
+        choices=[OutputFormat.CSV, OutputFormat.JSON, OutputFormat.PRETTY_JSON],
+        default=OutputFormat.CSV,
     )
 
     argument_parser.add_output()
