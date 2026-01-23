@@ -202,7 +202,8 @@ class ListTasks(CommandLine):
                 prior_columns_with_metadata = self.PRIOR_COLUMNS + metadata_columns
                 columns = get_columns_with_priority(df, prior_columns=prior_columns_with_metadata)
                 # work_time_span列を除外（worktime_hourと重複するため）
-                columns = [col for col in columns if col != "work_time_span"]
+                # histories_by_phase列を除外（list型のためCSVでは扱いにくいため）
+                columns = [col for col in columns if col not in ["work_time_span", "histories_by_phase"]]
                 print_csv(df[columns], output=output_file)
             else:
                 df = pandas.DataFrame(columns=self.PRIOR_COLUMNS)
