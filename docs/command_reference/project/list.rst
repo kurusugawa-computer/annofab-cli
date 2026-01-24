@@ -93,7 +93,9 @@ CSV出力
 
     $ annofabcli project list --organization org1 --format csv --output out.csv
 
-`out.csv <https://github.com/kurusugawa-computer/annofab-cli/blob/main/docs/command_reference/project/list/out.csv>`_
+.. csv-table:: out.csv
+   :header-rows: 1
+   :file: list/out.csv
 
 
 最小限の列のみ出力する場合は、``--format minimal_csv`` を指定してください。
@@ -102,7 +104,9 @@ CSV出力
 
     $ annofabcli project list --organization org1 --format minimal_csv --output out_minimal.csv
 
-`out_minimal.csv <https://github.com/kurusugawa-computer/annofab-cli/blob/main/docs/command_reference/project/list/out_minimal.csv>`_
+.. csv-table:: out_minimal.csv
+   :header-rows: 1
+   :file: list/out_minimal.csv
 
 
 
