@@ -11,6 +11,7 @@ import annofabcli.common.cli
 from annofabcli.common.cli import ArgumentParser, CommandLine, build_annofabapi_resource_and_login, print_according_to_format, print_csv
 from annofabcli.common.enums import OutputFormat
 from annofabcli.common.facade import AnnofabApiFacade
+from annofabcli.common.utils import get_columns_with_priority
 from annofabcli.input_data.utils import remove_unnecessary_keys_from_input_data
 
 logger = logging.getLogger(__name__)
@@ -174,16 +175,33 @@ class ListInputData(CommandLine):
             logger.warning("入力データ一覧は10,000件で打ち切られている可能性があります。")
 
         output_format = OutputFormat(args.format)
-        if len(input_data_list) > 0:
-            if output_format == OutputFormat.CSV:
+        if output_format == OutputFormat.CSV:
+            input_data_prior_columns = [
+                "project_id",
+                "input_data_id",
+                "input_data_name",
+                "input_data_path",
+                "url",
+                "etag",
+                "updated_datetime",
+                "sign_required",
+            ]
+
+            if len(input_data_list) > 0:
                 # pandas.DataFrameでなくpandas.json_normalizeを使う理由:
                 # ネストしたオブジェクトを`system_metadata.input_duration`のような列名でアクセスできるようにするため
                 df = pandas.json_normalize(input_data_list)
-                print_csv(df, output=args.output)
+
+                # metadata.*列を検出して優先列リストの末尾に追加
+                metadata_columns = sorted([col for col in df.columns if col.startswith("metadata.")])
+                prior_columns_with_metadata = input_data_prior_columns + metadata_columns
+                columns = get_columns_with_priority(df, prior_columns=prior_columns_with_metadata)
+                print_csv(df[columns], output=args.output)
             else:
-                print_according_to_format(input_data_list, format=output_format, output=args.output)
+                df = pandas.DataFrame(columns=input_data_prior_columns)
+                print_csv(df, output=args.output)
         else:
-            logger.info("入力データの件数が0件のため、出力しません。")
+            print_according_to_format(input_data_list, format=output_format, output=args.output)
 
 
 def main(args: argparse.Namespace) -> None:
