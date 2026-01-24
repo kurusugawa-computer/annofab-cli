@@ -532,9 +532,27 @@ class Task:
         if not self._validate_df_for_output(output_file):
             return
 
-        existing_optional_columns = [col for col in self.optional_columns if col in set(self.df.columns)]
-        columns = self.required_columns + existing_optional_columns
-        print_csv(self.df[columns], str(output_file))
+        # metadata列が存在する場合は展開する
+        if "metadata" in self.df.columns:
+            # metadata列のみをjson_normalizeで展開
+            df_metadata = pandas.json_normalize(self.df["metadata"].tolist())
+            # 列名にmetadata.プレフィックスを追加
+            df_metadata.columns = [f"metadata.{col}" for col in df_metadata.columns]
+            # 元のDataFrameからmetadata列を削除
+            df_without_metadata = self.df.drop(columns=["metadata"])
+            # 展開したmetadata列を結合
+            df_normalized = pandas.concat([df_without_metadata.reset_index(drop=True), df_metadata.reset_index(drop=True)], axis=1)
+        else:
+            df_normalized = self.df
+
+        # metadata.*列を検出
+        metadata_columns = sorted([col for col in df_normalized.columns if col.startswith("metadata.")])
+
+        # 出力対象の列を定義
+        existing_optional_columns = [col for col in self.optional_columns if col in set(df_normalized.columns)]
+        columns = self.required_columns + existing_optional_columns + metadata_columns
+
+        print_csv(df_normalized[columns], str(output_file))
 
     def mask_user_info(
         self,
