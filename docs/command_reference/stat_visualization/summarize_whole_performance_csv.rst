@@ -38,7 +38,9 @@ Examples
     $ annofabcli stat_visualization summarize_whole_performance_csv --dir out/ \
      --output プロジェクトごとの生産性と品質.csv
 
-`プロジェクトごとの生産性と品質.csv <https://github.com/kurusugawa-computer/annofab-cli/blob/main/docs/command_reference/stat_visualization/summarize_whole_performance_csv/プロジェクトごとの生産性と品質.csv>`_
+.. csv-table:: プロジェクトごとの生産性と品質.csv
+   :header-rows: 1
+   :file: summarise_whole_performance_csv/プロジェクトごとの生産性と品質.csv
 
 Usage Details
 =================================

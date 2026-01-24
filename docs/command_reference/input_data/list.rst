@@ -80,7 +80,9 @@ CSV出力
 
     $ annofabcli input_data list --format csv --output out.csv
 
-`out.csv <https://github.com/kurusugawa-computer/annofab-cli/blob/main/docs/command_reference/input_data/list/out.csv>`_
+.. csv-table:: out.csv
+   :header-rows: 1
+   :file: list/out.csv
 
 JSON出力
 ----------------------------------------------
