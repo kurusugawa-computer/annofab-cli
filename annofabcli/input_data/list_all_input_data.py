@@ -9,16 +9,15 @@ from pathlib import Path
 from typing import Any
 
 import annofabapi
-import pandas
 from annofabapi.dataclass.input import InputData
 from annofabapi.models import ProjectMemberRole
 
 import annofabcli.common.cli
-from annofabcli.common.cli import ArgumentParser, CommandLine, build_annofabapi_resource_and_login, print_according_to_format, print_csv
+from annofabcli.common.cli import ArgumentParser, CommandLine, build_annofabapi_resource_and_login
 from annofabcli.common.download import DownloadingFile
 from annofabcli.common.enums import OutputFormat
 from annofabcli.common.facade import AnnofabApiFacade, InputDataQuery, match_input_data_with_query
-from annofabcli.input_data.list_input_data import AddingDetailsToInputData
+from annofabcli.input_data.list_input_data import AddingDetailsToInputData, print_input_data_list
 from annofabcli.input_data.utils import remove_unnecessary_keys_from_input_data
 
 logger = logging.getLogger(__name__)
@@ -144,20 +143,10 @@ class ListAllInputData(CommandLine):
             temp_dir=temp_dir,
         )
 
-        logger.debug(f"入力データ一覧の件数: {len(input_data_list)}")
+        logger.info(f"入力データ一覧の件数: {len(input_data_list)}")
 
-        if len(input_data_list) > 0:
-            output_format = OutputFormat(args.format)
-            if output_format == OutputFormat.CSV:
-                # pandas.DataFrameでなくpandas.json_normalizeを使う理由:
-                # ネストしたオブジェクトを`system_metadata.input_duration`のような列名でアクセスできるようにするため
-                df = pandas.json_normalize(input_data_list)
-                print_csv(df, output=args.output)
-            else:
-                print_according_to_format(input_data_list, format=output_format, output=args.output)
-
-        else:
-            logger.info("入力データ一覧の件数が0件のため、出力しません。")
+        output_format = OutputFormat(args.format)
+        print_input_data_list(input_data_list, output_format=output_format, output_file=args.output)
 
 
 def main(args: argparse.Namespace) -> None:
