@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import datetime
 import logging
 from pathlib import Path
 from typing import Any
@@ -9,7 +10,6 @@ import bokeh
 import bokeh.layouts
 import numpy
 import pandas
-import pytz
 from bokeh.plotting import figure
 
 from annofabcli.common.bokeh import convert_1d_figure_list_to_2d, create_pretext_from_metadata
@@ -426,10 +426,11 @@ class Task:
             # タイムゾーンを指定している理由::
             # すべてがNaNのseriesをdatetimeに変換すると、型にタイムゾーンが指定されない。
             # その状態で加算すると、`TypeError: DatetimeArray subtraction must have the same timezones or no timezones`というエラーが発生するため
+            # pandas 3.0対応: pytz.FixedOffsetの代わりにdatetime.timezoneを使用
             if not isinstance(dt1.dtype, pandas.DatetimeTZDtype):
-                dt1 = dt1.dt.tz_localize(pytz.FixedOffset(540))
+                dt1 = dt1.dt.tz_localize(datetime.timezone(datetime.timedelta(hours=9)))
             if not isinstance(dt2.dtype, pandas.DatetimeTZDtype):
-                dt2 = dt2.dt.tz_localize(pytz.FixedOffset(540))
+                dt2 = dt2.dt.tz_localize(datetime.timezone(datetime.timedelta(hours=9)))
 
             return (dt1 - dt2).dt.total_seconds() / 3600 / 24
 

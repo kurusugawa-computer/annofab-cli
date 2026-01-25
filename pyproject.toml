@@ -29,7 +29,7 @@ dependencies = [
     "annofabapi>=1.5.1",
     "python-datauri",
     "numpy",
-    "pandas>=2,<3",
+    "pandas>=2",
     "bokeh>=3.8",
     "Pillow",
     "shapely",
@@ -43,10 +43,10 @@ dependencies = [
 [dependency-groups]
 dev = [
     "ipython",
-    # pandas2.2以上はPython3.12以上
-    "pandas>=2.2; python_version>='3.12'",
-    # numpy2.1以上はPython3.13以上
-    "numpy>=2.1; python_version>='3.13'",
+    # pandas3以上はPython3.12以上で動かす
+    "pandas>=3; python_version>='3.12'",
+    # numpy2.1以上はPython3.12以上
+    "numpy>=2.1; python_version>='3.12'",
 ]
 test = [
     "pytest>=7",
