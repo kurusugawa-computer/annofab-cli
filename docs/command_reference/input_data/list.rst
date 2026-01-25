@@ -76,6 +76,10 @@ Examples
 CSV出力
 ----------------------------------------------
 
+CSV形式で出力する場合、以下の特徴があります。
+
+* ``system_metadata`` や ``metadata`` のようなオブジェクト型のプロパティは、 ``system_metadata.original_resolution.width`` のように展開されて出力されます。
+
 .. code-block::
 
     $ annofabcli input_data list --format csv --output out.csv

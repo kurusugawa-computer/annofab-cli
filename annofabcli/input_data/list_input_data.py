@@ -1,6 +1,7 @@
 import argparse
 import logging
 import urllib.parse
+from pathlib import Path
 from typing import Any
 
 import annofabapi
@@ -8,12 +9,69 @@ import pandas
 from annofabapi.models import InputData
 
 import annofabcli.common.cli
-from annofabcli.common.cli import ArgumentParser, CommandLine, build_annofabapi_resource_and_login, print_according_to_format, print_csv
+from annofabcli.common.cli import ArgumentParser, CommandLine, build_annofabapi_resource_and_login
 from annofabcli.common.enums import OutputFormat
 from annofabcli.common.facade import AnnofabApiFacade
+from annofabcli.common.utils import get_columns_with_priority, print_csv, print_id_list, print_json
 from annofabcli.input_data.utils import remove_unnecessary_keys_from_input_data
 
 logger = logging.getLogger(__name__)
+
+
+def print_input_data_list(
+    input_data_list: list[dict[str, Any]],
+    output_format: OutputFormat,
+    output_file: Path | None,
+) -> None:
+    """
+    入力データ一覧を指定されたフォーマットで出力する。
+
+    Args:
+        input_data_list: 入力データ一覧
+        output_format: 出力フォーマット
+        output_file: 出力先
+    """
+    input_data_prior_columns = [
+        "organization_id",
+        "input_data_set_id",
+        "project_id",
+        "input_data_id",
+        "input_data_name",
+        "input_data_path",
+        "url",
+        "etag",
+        "updated_datetime",
+        "sign_required",
+    ]
+
+    if output_format == OutputFormat.CSV:
+        if len(input_data_list) > 0:
+            # pandas.DataFrameでなくpandas.json_normalizeを使う理由:
+            # ネストしたオブジェクトを`system_metadata.input_duration`のような列名でアクセスできるようにするため
+            df = pandas.json_normalize(input_data_list)
+
+            # system_metadata.*列とmetadata.*列を検出して優先列リストに追加
+            # 順序: input_data_prior_columns → system_metadata.* → metadata.*
+            system_metadata_columns = sorted([col for col in df.columns if col.startswith("system_metadata.")])
+            metadata_columns = sorted([col for col in df.columns if col.startswith("metadata.")])
+            prior_columns_with_metadata = input_data_prior_columns + system_metadata_columns + metadata_columns
+            columns = get_columns_with_priority(df, prior_columns=prior_columns_with_metadata)
+            print_csv(df[columns], output=output_file)
+        else:
+            df = pandas.DataFrame(columns=input_data_prior_columns)
+            print_csv(df, output=output_file)
+
+    elif output_format == OutputFormat.PRETTY_JSON:
+        print_json(input_data_list, is_pretty=True, output=output_file)
+
+    elif output_format == OutputFormat.JSON:
+        print_json(input_data_list, is_pretty=False, output=output_file)
+
+    elif output_format == OutputFormat.INPUT_DATA_ID_LIST:
+        input_data_id_list = [e["input_data_id"] for e in input_data_list]
+        print_id_list(input_data_id_list, output=output_file)
+    else:
+        raise ValueError(f"{output_format}は対応していないフォーマットです。")
 
 
 class AddingDetailsToInputData:
@@ -174,16 +232,7 @@ class ListInputData(CommandLine):
             logger.warning("入力データ一覧は10,000件で打ち切られている可能性があります。")
 
         output_format = OutputFormat(args.format)
-        if len(input_data_list) > 0:
-            if output_format == OutputFormat.CSV:
-                # pandas.DataFrameでなくpandas.json_normalizeを使う理由:
-                # ネストしたオブジェクトを`system_metadata.input_duration`のような列名でアクセスできるようにするため
-                df = pandas.json_normalize(input_data_list)
-                print_csv(df, output=args.output)
-            else:
-                print_according_to_format(input_data_list, format=output_format, output=args.output)
-        else:
-            logger.info("入力データの件数が0件のため、出力しません。")
+        print_input_data_list(input_data_list, output_format=output_format, output_file=args.output)
 
 
 def main(args: argparse.Namespace) -> None:
