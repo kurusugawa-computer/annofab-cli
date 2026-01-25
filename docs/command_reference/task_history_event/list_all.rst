@@ -77,6 +77,8 @@ JSON出力
         "request": {
             "status": "working",
             "account_id": "user1",
+            "user_id": "user1",
+            "username": "user1",
             "last_updated_datetime": "2021-05-20T13:37:28.179+09:00",
             "force": false
         },
