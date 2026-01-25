@@ -375,10 +375,10 @@ class AddProps:
 
         * user_id
         * username
-        * request.user_id
-        * request.username
+        * `request`キー配下のdictに、`user_id`と`username`を追加する.
 
         """
         self._add_user_info(task_history_event)
-        self._add_user_info(task_history_event["request"])
+        if task_history_event.get("request") is not None:
+            self._add_user_info(task_history_event["request"])
         return task_history_event

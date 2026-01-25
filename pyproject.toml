@@ -43,7 +43,7 @@ dependencies = [
 [dependency-groups]
 dev = [
     "ipython",
-    # pandas3以上はPython3.12以上で動かす
+    # pandas3以上はPython3.12以上で動かす。pandas 3.0特有の問題に気づけるようにするため
     "pandas>=3; python_version>='3.12'",
     # numpy2.1以上はPython3.12以上
     "numpy>=2.1; python_version>='3.12'",
@@ -61,7 +61,7 @@ linter = [
     "types-PyYAML; python_version>='3.12'",
 ]
 docs = [
-    "sphinx>=8; python_version>='3.12'",
+    "sphinx>=9.1; python_version>='3.12'",
     "pydata-sphinx-theme>=0.13; python_version>='3.12'",
     "sphinx-last-updated-by-git; python_version>='3.12'",
     "sphinx-argparse; python_version>='3.12'",

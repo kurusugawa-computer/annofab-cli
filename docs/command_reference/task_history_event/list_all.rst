@@ -31,7 +31,7 @@ Examples
 .. code-block::
 
     $ annofabcli task_history_event download --project_id prj1 --output task_history_event.json 
-    $ annofabcli task_history_event list_all --project_id prj1 --task_history_json task_history_event.json 
+    $ annofabcli task_history_event list_all --project_id prj1 --task_history_event_json task_history_event.json 
 
 
 
@@ -77,6 +77,8 @@ JSON出力
         "request": {
             "status": "working",
             "account_id": "user1",
+            "user_id": "user1",
+            "username": "user1",
             "last_updated_datetime": "2021-05-20T13:37:28.179+09:00",
             "force": false
         },
