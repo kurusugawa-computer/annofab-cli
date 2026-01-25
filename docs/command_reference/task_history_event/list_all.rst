@@ -31,7 +31,7 @@ Examples
 .. code-block::
 
     $ annofabcli task_history_event download --project_id prj1 --output task_history_event.json 
-    $ annofabcli task_history_event list_all --project_id prj1 --task_history_json task_history_event.json 
+    $ annofabcli task_history_event list_all --project_id prj1 --task_history_event_json task_history_event.json 
 
 
 
