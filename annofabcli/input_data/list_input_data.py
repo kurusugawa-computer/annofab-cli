@@ -1,6 +1,7 @@
 import argparse
 import logging
 import urllib.parse
+from pathlib import Path
 from typing import Any
 
 import annofabapi
@@ -8,7 +9,7 @@ import pandas
 from annofabapi.models import InputData
 
 import annofabcli.common.cli
-from annofabcli.common.cli import ArgumentParser, CommandLine, build_annofabapi_resource_and_login, print_according_to_format, print_csv
+from annofabcli.common.cli import ArgumentParser, CommandLine, build_annofabapi_resource_and_login, print_csv, print_id_list, print_json
 from annofabcli.common.enums import OutputFormat
 from annofabcli.common.facade import AnnofabApiFacade
 from annofabcli.common.utils import get_columns_with_priority
@@ -175,6 +176,7 @@ class ListInputData(CommandLine):
             logger.warning("入力データ一覧は10,000件で打ち切られている可能性があります。")
 
         output_format = OutputFormat(args.format)
+        output_file: Path = args.output
         if output_format == OutputFormat.CSV:
             input_data_prior_columns = [
                 "project_id",
@@ -196,12 +198,21 @@ class ListInputData(CommandLine):
                 metadata_columns = sorted([col for col in df.columns if col.startswith("metadata.")])
                 prior_columns_with_metadata = input_data_prior_columns + metadata_columns
                 columns = get_columns_with_priority(df, prior_columns=prior_columns_with_metadata)
-                print_csv(df[columns], output=args.output)
+                print_csv(df[columns], output=output_file)
             else:
                 df = pandas.DataFrame(columns=input_data_prior_columns)
-                print_csv(df, output=args.output)
+                print_csv(df, output=output_file)
+        elif output_format == OutputFormat.PRETTY_JSON:
+            print_json(input_data_list, is_pretty=True, output=output_file)
+
+        elif output_format == OutputFormat.JSON:
+            print_json(input_data_list, is_pretty=False, output=output_file)
+
+        elif output_format == OutputFormat.INPUT_DATA_ID_LIST:
+            input_data_id_list = [e["input_data_id"] for e in input_data_list]
+            print_id_list(input_data_id_list, output=output_file)
         else:
-            print_according_to_format(input_data_list, format=output_format, output=args.output)
+            raise ValueError(f"{output_format}は対応していないフォーマットです。")
 
 
 def main(args: argparse.Namespace) -> None:
