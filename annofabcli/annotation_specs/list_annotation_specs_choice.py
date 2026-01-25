@@ -109,7 +109,6 @@ class PrintAnnotationSpecsAttribute(CommandLine):
         logger.info(f"{len(choice_list)} 件の選択肢情報を出力します。")
 
         if output_format == OutputFormat.CSV:
-            df = pandas.DataFrame(choice_list)
             columns = [
                 "attribute_id",
                 "attribute_name_en",
@@ -121,7 +120,8 @@ class PrintAnnotationSpecsAttribute(CommandLine):
                 "is_default",
                 "keybind",
             ]
-            print_csv(df[columns], output)
+            df = pandas.DataFrame(choice_list, columns=columns)
+            print_csv(df, output)
 
         elif output_format in [OutputFormat.JSON, OutputFormat.PRETTY_JSON]:
             print_according_to_format([e.to_dict() for e in choice_list], format=output_format, output=output)
