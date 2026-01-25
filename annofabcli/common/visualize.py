@@ -379,6 +379,6 @@ class AddProps:
 
         """
         self._add_user_info(task_history_event)
-        if task_history_event["request"] is not None:
+        if task_history_event.get("request") is not None:
             self._add_user_info(task_history_event["request"])
         return task_history_event
