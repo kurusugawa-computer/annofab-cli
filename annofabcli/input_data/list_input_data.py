@@ -33,7 +33,7 @@ def print_input_data_list(
     """
     input_data_prior_columns = [
         "organization_id",
-        "input_data_id",
+        "input_data_set_id",
         "project_id",
         "input_data_id",
         "input_data_name",
