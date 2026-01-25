@@ -194,9 +194,11 @@ class ListInputData(CommandLine):
                 # ネストしたオブジェクトを`system_metadata.input_duration`のような列名でアクセスできるようにするため
                 df = pandas.json_normalize(input_data_list)
 
-                # metadata.*列を検出して優先列リストの末尾に追加
+                # system_metadata.*列とmetadata.*列を検出して優先列リストに追加
+                # 順序: input_data_prior_columns → system_metadata.* → metadata.*
+                system_metadata_columns = sorted([col for col in df.columns if col.startswith("system_metadata.")])
                 metadata_columns = sorted([col for col in df.columns if col.startswith("metadata.")])
-                prior_columns_with_metadata = input_data_prior_columns + metadata_columns
+                prior_columns_with_metadata = input_data_prior_columns + system_metadata_columns + metadata_columns
                 columns = get_columns_with_priority(df, prior_columns=prior_columns_with_metadata)
                 print_csv(df[columns], output=output_file)
             else:
