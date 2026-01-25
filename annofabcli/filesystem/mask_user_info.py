@@ -4,8 +4,8 @@ from functools import partial
 from pathlib import Path
 from typing import Any
 
-import numpy
 import pandas
+from pandas.api.types import is_string_dtype
 
 import annofabcli.common.cli
 from annofabcli.common.cli import ArgumentParser, CommandLineWithoutWebapi, get_list_from_args
@@ -160,7 +160,8 @@ def replace_by_columns(  # noqa: ANN201
             df[sub_column] = df.apply(get_username_func, axis=1)
 
     # 列の型を合わせないとreplaceに失敗するため, dtype を確認する
-    if df[main_column].dtype == numpy.dtype("object"):
+    # pandas 3.0対応: is_string_dtypeを使用してobject型と新しいstring型の両方に対応
+    if is_string_dtype(df[main_column].dtype):
         df[main_column] = df[main_column].replace(replacement_dict)
 
 
