@@ -70,31 +70,6 @@ tuple[label_name_en, attribute_name_en] で表す。
 AttributeKeys = Collection[Collection]
 
 
-def parse_attribute_name_keys(attribute_name_list: list[str]) -> list[AttributeNameKey]:
-    """
-    "label_name_en:attribute_name_en"形式の文字列のリストを、AttributeNameKeyのリストに変換します。
-
-    Args:
-        attribute_name_list: "label_name_en:attribute_name_en"形式の文字列のリスト
-
-    Returns:
-        AttributeNameKeyのリスト
-
-    Raises:
-        ValueError: 形式が不正な場合
-    """
-    result = []
-    for attribute_name_str in attribute_name_list:
-        parts = attribute_name_str.split(":")
-        if len(parts) != 2:
-            raise ValueError(f"属性名の形式が不正です。'label_name_en:attribute_name_en'の形式で指定してください。:: {attribute_name_str}")
-        label_name_en, attr_name_en = parts[0].strip(), parts[1].strip()
-        if not label_name_en or not attr_name_en:
-            raise ValueError(f"ラベル名または属性名が空です。:: {attribute_name_str}")
-        result.append((label_name_en, attr_name_en))
-    return result
-
-
 class CsvType(Enum):
     """出力するCSVの種類"""
 
