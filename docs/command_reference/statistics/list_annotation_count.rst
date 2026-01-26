@@ -70,6 +70,10 @@ Examples
 * ラジオボタン
 * チェックボックス
 
+上記以外の属性（数値、テキストなど）を集計したい場合は、 ``--additional_attribute_name`` または ``--attribute_name`` オプションを使用してください。
+
+* ``--additional_attribute_name`` : デフォルトの選択肢系属性に加えて、指定した属性を集計対象にします。
+* ``--attribute_name`` : 指定した属性のみを集計対象にします（デフォルトの選択肢系属性は含まれません）。
 
 デフォルトではタスク単位でアノテーション数を集計します。入力データ単位に集計する場合は、 ``--group_by input_data_id`` を指定してください。
 
@@ -86,6 +90,43 @@ CSV出力
 
 CSVを出力する場合は、``--type`` で列名をラベル( ``label`` )にするか属性値( ``attribute`` )にするかを指定してください。
 デフォルトは ``label`` です。
+
+
+追加の属性を集計対象に含める
+---------------------------------------------------------
+
+数値やテキストなどの非選択肢系属性も集計したい場合は、 ``--additional_attribute_name`` オプションで属性名を指定します。
+デフォルトの選択肢系属性（ドロップダウン、ラジオボタン、チェックボックス）に加えて、指定した属性が集計対象になります。
+
+.. code-block::
+
+    # "age"属性（数値）と"comment"属性（テキスト）を追加で集計
+    $ annofabcli statistics list_annotation_count --project_id prj1 \
+    --type attribute --additional_attribute_name age comment --output out.csv
+
+
+特定の属性のみを集計対象にする
+---------------------------------------------------------
+
+特定の属性のみを集計したい場合は、 ``--attribute_name`` オプションで属性名を指定します。
+デフォルトの選択肢系属性は含まれず、指定した属性のみが集計対象になります。
+
+.. code-block::
+
+    # "category"属性のみを集計
+    $ annofabcli statistics list_annotation_count --project_id prj1 \
+    --type attribute --attribute_name category --output out.csv
+
+    # 複数の属性を指定することも可能
+    $ annofabcli statistics list_annotation_count --project_id prj1 \
+    --type attribute --attribute_name category type --output out.csv
+
+属性名はファイルから読み込むこともできます。
+
+.. code-block::
+
+    $ annofabcli statistics list_annotation_count --project_id prj1 \
+    --type attribute --attribute_name file://attributes.txt --output out.csv
 
 
 
