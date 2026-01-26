@@ -1312,7 +1312,7 @@ def main(args: argparse.Namespace) -> None:
 
 
 def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
-    subcommand_name = "list_annotation_count"
+    subcommand_name = "additional_attribute_name"
     subcommand_help = "ラベルごとまたは属性値ごとにアノテーション数を出力します。"
     epilog = "オーナロールまたはアノテーションユーザロールを持つユーザで実行してください。"
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description=subcommand_help, epilog=epilog)
