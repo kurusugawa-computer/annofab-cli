@@ -1083,7 +1083,7 @@ class ListAnnotationCountMain:
             output=output_file,
         )
 
-    def print_annotation_counter(
+    def print_annotation_counter(  # noqa: PLR0913
         self,
         annotation_path: Path,
         group_by: GroupBy,
@@ -1168,7 +1168,7 @@ class ListAnnotationCount(CommandLine):
 
         return True
 
-    def main(self) -> None:
+    def main(self) -> None:  # noqa: PLR0915
         args = self.args
 
         if not self.validate(args):
