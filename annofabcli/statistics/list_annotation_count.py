@@ -796,12 +796,13 @@ class AnnotationSpecs:
 
     def selective_attribute_value_keys(self, additional_attribute_names: Collection[AttributeNameKey] | None = None) -> list[AttributeValueKey]:
         """
-        選択系の属性の属性値のキーの一覧。
+        選択系（ドロップダウン／ラジオボタン／チェックボックス／フラグ）の属性の属性値のキーの一覧。
 
-        以下の属性種類
+        対象となる属性種類:
         * ドロップダウン
         * ラジオボタン
         * チェックボックス
+        * フラグ（ON/OFF）
 
         Args:
             additional_attribute_names: デフォルトの選択系属性に加えて、集計対象とする属性名のキー。
