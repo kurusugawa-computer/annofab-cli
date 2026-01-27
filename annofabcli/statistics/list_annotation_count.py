@@ -825,7 +825,7 @@ class AnnotationSpecs:
 
         return target_attributes_columns
 
-    def get_attribute_name_keys_by_attribute_names(self, attribute_names: Collection[str]) -> list[AttributeNameKey]:
+    def get_attribute_name_keys_by_attribute_names(self, attribute_names: Collection[str]) -> tuple[list[AttributeNameKey], list[str]]:
         """
         指定された属性名を持つ全てのラベルと属性の組み合わせを取得します。
 
@@ -833,10 +833,11 @@ class AnnotationSpecs:
             attribute_names: 検索対象の属性名のリスト
 
         Returns:
-            指定された属性名を持つ全てのラベルと属性の組み合わせのリスト
+            (見つかった属性名キーのリスト, 見つからなかった属性名のリスト) のタプル
         """
         attribute_names_set = set(attribute_names)
         result = []
+        found_attribute_names = set()
         for label in self._labels_v1:
             label_name_en = AddProps.get_message(label["label_name"], MessageLocale.EN)
             label_name_en = label_name_en if label_name_en is not None else ""
@@ -847,8 +848,10 @@ class AnnotationSpecs:
 
                 if attribute_name_en in attribute_names_set:
                     result.append((label_name_en, attribute_name_en))
+                    found_attribute_names.add(attribute_name_en)
 
-        return result
+        not_found_attribute_names = list(attribute_names_set - found_attribute_names)
+        return result, not_found_attribute_names
 
     def non_selective_attribute_name_keys(self) -> list[AttributeNameKey]:
         """
@@ -925,7 +928,8 @@ class ListAnnotationCountMain:
                 # 追加属性が指定されている場合、それらを集計対象から除外しないようにする
                 all_non_selective_attributes = annotation_specs.non_selective_attribute_name_keys()
                 if additional_attribute_names is not None:
-                    non_selective_attribute_name_keys = [attr for attr in all_non_selective_attributes if attr not in additional_attribute_names]
+                    additional_attribute_names_set = set(additional_attribute_names)
+                    non_selective_attribute_name_keys = [attr for attr in all_non_selective_attributes if attr not in additional_attribute_names_set]
                 else:
                     non_selective_attribute_name_keys = all_non_selective_attributes
 
@@ -984,7 +988,8 @@ class ListAnnotationCountMain:
                 # 追加属性が指定されている場合、それらを集計対象から除外しないようにする
                 all_non_selective_attributes = annotation_specs.non_selective_attribute_name_keys()
                 if additional_attribute_names is not None:
-                    non_selective_attribute_name_keys = [attr for attr in all_non_selective_attributes if attr not in additional_attribute_names]
+                    additional_attribute_names_set = set(additional_attribute_names)
+                    non_selective_attribute_name_keys = [attr for attr in all_non_selective_attributes if attr not in additional_attribute_names_set]
                 else:
                     non_selective_attribute_name_keys = all_non_selective_attributes
 
@@ -1189,16 +1194,16 @@ class ListAnnotationCount(CommandLine):
             attribute_name_str_list = annofabcli.common.cli.get_list_from_args(args.additional_attribute_name)
             # アノテーション仕様から属性名を検索してAttributeNameKeyのリストに変換
             annotation_specs = AnnotationSpecs(self.service, project_id)
-            additional_attribute_names = annotation_specs.get_attribute_name_keys_by_attribute_names(attribute_name_str_list)
-            if len(additional_attribute_names) == 0:
-                logger.warning(f"指定された属性名がアノテーション仕様に見つかりませんでした。:: {attribute_name_str_list}")
+            additional_attribute_names, not_found_names = annotation_specs.get_attribute_name_keys_by_attribute_names(attribute_name_str_list)
+            if len(not_found_names) > 0:
+                logger.warning(f"指定された属性名のうち、アノテーション仕様に見つからなかった属性名があります。:: {not_found_names}")
         elif args.attribute_name is not None and project_id is not None:
             attribute_name_str_list = annofabcli.common.cli.get_list_from_args(args.attribute_name)
             # アノテーション仕様から属性名を検索してAttributeNameKeyのリストに変換
             annotation_specs = AnnotationSpecs(self.service, project_id)
-            specified_attribute_names = annotation_specs.get_attribute_name_keys_by_attribute_names(attribute_name_str_list)
-            if len(specified_attribute_names) == 0:
-                logger.warning(f"指定された属性名がアノテーション仕様に見つかりませんでした。:: {attribute_name_str_list}")
+            specified_attribute_names, not_found_names = annotation_specs.get_attribute_name_keys_by_attribute_names(attribute_name_str_list)
+            if len(not_found_names) > 0:
+                logger.warning(f"指定された属性名のうち、アノテーション仕様に見つからなかった属性名があります。:: {not_found_names}")
 
         group_by = GroupBy(args.group_by)
         csv_type = CsvType(args.type)
