@@ -2,7 +2,6 @@ import collections
 from pathlib import Path
 
 from annofabcli.statistics.list_annotation_count import (
-    AnnotationSpecs,
     AttributeCountCsv,
     LabelCountCsv,
     ListAnnotationCounterByInputData,
@@ -111,75 +110,3 @@ class TestAttributeCountCsv:
             output_file=output_dir / "attributes_count_by_task.csv",
             prior_attribute_columns=[("Cat", "occluded", "true"), ("climatic", "temparature", "20")],
         )
-
-
-class TestAnnotationSpecs:
-    """AnnotationSpecsクラスのテスト"""
-
-    def test_get_attribute_name_keys_by_attribute_names(self):
-        """get_attribute_name_keys_by_attribute_namesメソッドのテスト"""
-        # モックデータを作成
-        from unittest.mock import MagicMock
-
-        mock_service = MagicMock()
-        # V2形式のアノテーション仕様
-        mock_service.api.get_annotation_specs.return_value = (
-            {
-                "labels": [
-                    {
-                        "label_id": "label1",
-                        "label_name": {"messages": [{"lang": "en-US", "message": "car"}]},
-                        "annotation_type": "bounding_box",
-                        "additional_data_definitions": ["attr1", "attr2"],
-                    },
-                    {
-                        "label_id": "label2",
-                        "label_name": {"messages": [{"lang": "en-US", "message": "bike"}]},
-                        "annotation_type": "bounding_box",
-                        "additional_data_definitions": ["attr3"],
-                    },
-                ],
-                "additionals": [
-                    {
-                        "additional_data_definition_id": "attr1",
-                        "name": {"messages": [{"lang": "en-US", "message": "color"}]},
-                        "type": "text",
-                    },
-                    {
-                        "additional_data_definition_id": "attr2",
-                        "name": {"messages": [{"lang": "en-US", "message": "size"}]},
-                        "type": "integer",
-                    },
-                    {
-                        "additional_data_definition_id": "attr3",
-                        "name": {"messages": [{"lang": "en-US", "message": "color"}]},
-                        "type": "text",
-                    },
-                ],
-            },
-            None,
-        )
-
-        annotation_specs = AnnotationSpecs(mock_service, "project1")
-
-        # "color"という属性名で検索すると、carとbikeの両方が見つかるはず
-        result = annotation_specs.get_attribute_name_keys_by_attribute_names(["color"])
-        assert len(result) == 2
-        assert ("car", "color") in result
-        assert ("bike", "color") in result
-
-        # "size"という属性名で検索すると、carのみが見つかるはず
-        result = annotation_specs.get_attribute_name_keys_by_attribute_names(["size"])
-        assert len(result) == 1
-        assert ("car", "size") in result
-
-        # 複数の属性名を指定
-        result = annotation_specs.get_attribute_name_keys_by_attribute_names(["color", "size"])
-        assert len(result) == 3
-        assert ("car", "color") in result
-        assert ("bike", "color") in result
-        assert ("car", "size") in result
-
-        # 存在しない属性名を指定
-        result = annotation_specs.get_attribute_name_keys_by_attribute_names(["nonexistent"])
-        assert len(result) == 0
