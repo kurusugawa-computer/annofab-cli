@@ -170,6 +170,8 @@ class ListAnnotationCounterByInputData:
         target_attribute_names: 集計対象の属性名
         non_target_labels: 集計対象外のラベル
         non_target_attribute_names: 集計対象外の属性名のキー。
+        target_attribute_names_simple: 集計対象の属性名（属性名のみ、ラベルを問わない）
+        non_target_attribute_names_simple: 集計対象外の属性名（属性名のみ、ラベルを問わない）
         frame_no_map: key:task_id,input_data_idのtuple, value:フレーム番号
 
     """
@@ -181,12 +183,16 @@ class ListAnnotationCounterByInputData:
         non_target_labels: Collection[str] | None = None,
         target_attribute_names: Collection[AttributeNameKey] | None = None,
         non_target_attribute_names: Collection[AttributeNameKey] | None = None,
+        target_attribute_names_simple: Collection[str] | None = None,
+        non_target_attribute_names_simple: Collection[str] | None = None,
         frame_no_map: dict[tuple[str, str], int] | None = None,
     ) -> None:
         self.target_labels = set(target_labels) if target_labels is not None else None
         self.target_attribute_names = set(target_attribute_names) if target_attribute_names is not None else None
         self.non_target_labels = set(non_target_labels) if non_target_labels is not None else None
         self.non_target_attribute_names = set(non_target_attribute_names) if non_target_attribute_names is not None else None
+        self.target_attribute_names_simple = set(target_attribute_names_simple) if target_attribute_names_simple is not None else None
+        self.non_target_attribute_names_simple = set(non_target_attribute_names_simple) if non_target_attribute_names_simple is not None else None
         self.frame_no_map = frame_no_map
 
     def get_annotation_counter(
@@ -241,12 +247,28 @@ class ListAnnotationCounterByInputData:
                     if (label, attribute_name) in self.target_attribute_names
                 }
             )
+        elif self.target_attribute_names_simple is not None:
+            annotation_count_by_attribute = collections.Counter(
+                {
+                    (label, attribute_name, attribute_value): count
+                    for (label, attribute_name, attribute_value), count in annotation_count_by_attribute.items()
+                    if attribute_name in self.target_attribute_names_simple
+                }
+            )
         if self.non_target_attribute_names is not None:
             annotation_count_by_attribute = collections.Counter(
                 {
                     (label, attribute_name, attribute_value): count
                     for (label, attribute_name, attribute_value), count in annotation_count_by_attribute.items()
                     if (label, attribute_name) not in self.non_target_attribute_names
+                }
+            )
+        elif self.non_target_attribute_names_simple is not None:
+            annotation_count_by_attribute = collections.Counter(
+                {
+                    (label, attribute_name, attribute_value): count
+                    for (label, attribute_name, attribute_value), count in annotation_count_by_attribute.items()
+                    if attribute_name not in self.non_target_attribute_names_simple
                 }
             )
 
@@ -318,12 +340,16 @@ class ListAnnotationCounterByTask:
         non_target_labels: Collection[str] | None = None,
         target_attribute_names: Collection[AttributeNameKey] | None = None,
         non_target_attribute_names: Collection[AttributeNameKey] | None = None,
+        target_attribute_names_simple: Collection[str] | None = None,
+        non_target_attribute_names_simple: Collection[str] | None = None,
     ) -> None:
         self.counter_by_input_data = ListAnnotationCounterByInputData(
             target_labels=target_labels,
             non_target_labels=non_target_labels,
             target_attribute_names=target_attribute_names,
             non_target_attribute_names=non_target_attribute_names,
+            target_attribute_names_simple=target_attribute_names_simple,
+            non_target_attribute_names_simple=non_target_attribute_names_simple,
         )
 
     def get_annotation_counter(self, task_parser: SimpleAnnotationParserByTask) -> AnnotationCounterByTask:
@@ -914,11 +940,14 @@ class ListAnnotationCountMain:
         task_query: TaskQuery | None = None,
         additional_attribute_names: Collection[AttributeNameKey] | None = None,
         specified_attribute_names: Collection[AttributeNameKey] | None = None,
+        additional_attribute_names_simple: Collection[str] | None = None,
+        specified_attribute_names_simple: Collection[str] | None = None,
         annotation_specs: AnnotationSpecs | None = None,
     ) -> None:
         # アノテーション仕様の非選択系の属性は、集計しないようにする。集計しても意味がないため。
         non_selective_attribute_name_keys: list[AttributeNameKey] | None = None
         target_attribute_name_keys: list[AttributeNameKey] | None = None
+        target_attribute_names_simple: list[str] | None = None
         if annotation_specs is not None:
             if specified_attribute_names is not None:
                 # --attribute_nameが指定された場合は、指定された属性のみを集計対象とする
@@ -931,11 +960,16 @@ class ListAnnotationCountMain:
                     non_selective_attribute_name_keys = [attr for attr in all_non_selective_attributes if attr not in additional_attribute_names_set]
                 else:
                     non_selective_attribute_name_keys = all_non_selective_attributes
+        else:
+            # プロジェクトIDが未指定の場合は、属性名のみでフィルタリング
+            if specified_attribute_names_simple is not None:
+                target_attribute_names_simple = list(specified_attribute_names_simple)
 
         frame_no_map = self.get_frame_no_map(task_json_path) if task_json_path is not None else None
         counter_by_input_data = ListAnnotationCounterByInputData(
             target_attribute_names=target_attribute_name_keys,
             non_target_attribute_names=non_selective_attribute_name_keys,
+            target_attribute_names_simple=target_attribute_names_simple,
             frame_no_map=frame_no_map,
         )
         counter_list_by_input_data = counter_by_input_data.get_annotation_counter_list(
@@ -973,11 +1007,14 @@ class ListAnnotationCountMain:
         task_query: TaskQuery | None = None,
         additional_attribute_names: Collection[AttributeNameKey] | None = None,
         specified_attribute_names: Collection[AttributeNameKey] | None = None,
+        additional_attribute_names_simple: Collection[str] | None = None,
+        specified_attribute_names_simple: Collection[str] | None = None,
         annotation_specs: AnnotationSpecs | None = None,
     ) -> None:
         # アノテーション仕様の非選択系の属性は、集計しないようにする。集計しても意味がないため。
         non_selective_attribute_name_keys: list[AttributeNameKey] | None = None
         target_attribute_name_keys: list[AttributeNameKey] | None = None
+        target_attribute_names_simple: list[str] | None = None
         if annotation_specs is not None:
             if specified_attribute_names is not None:
                 # --attribute_nameが指定された場合は、指定された属性のみを集計対象とする
@@ -990,10 +1027,15 @@ class ListAnnotationCountMain:
                     non_selective_attribute_name_keys = [attr for attr in all_non_selective_attributes if attr not in additional_attribute_names_set]
                 else:
                     non_selective_attribute_name_keys = all_non_selective_attributes
+        else:
+            # プロジェクトIDが未指定の場合は、属性名のみでフィルタリング
+            if specified_attribute_names_simple is not None:
+                target_attribute_names_simple = list(specified_attribute_names_simple)
 
         counter_list_by_task = ListAnnotationCounterByTask(
             target_attribute_names=target_attribute_name_keys,
             non_target_attribute_names=non_selective_attribute_name_keys,
+            target_attribute_names_simple=target_attribute_names_simple,
         ).get_annotation_counter_list(
             annotation_path,
             target_task_ids=target_task_ids,
@@ -1100,6 +1142,8 @@ class ListAnnotationCountMain:
         csv_type: CsvType | None = None,
         additional_attribute_names: Collection[AttributeNameKey] | None = None,
         specified_attribute_names: Collection[AttributeNameKey] | None = None,
+        additional_attribute_names_simple: Collection[str] | None = None,
+        specified_attribute_names_simple: Collection[str] | None = None,
         annotation_specs: AnnotationSpecs | None = None,
     ) -> None:
         """ラベルごと/属性ごとのアノテーション数を出力します。"""
@@ -1116,6 +1160,8 @@ class ListAnnotationCountMain:
                     csv_type=csv_type,
                     additional_attribute_names=additional_attribute_names,
                     specified_attribute_names=specified_attribute_names,
+                    additional_attribute_names_simple=additional_attribute_names_simple,
+                    specified_attribute_names_simple=specified_attribute_names_simple,
                     annotation_specs=annotation_specs,
                 )
 
@@ -1129,6 +1175,8 @@ class ListAnnotationCountMain:
                     csv_type=csv_type,
                     additional_attribute_names=additional_attribute_names,
                     specified_attribute_names=specified_attribute_names,
+                    additional_attribute_names_simple=additional_attribute_names_simple,
+                    specified_attribute_names_simple=specified_attribute_names_simple,
                     annotation_specs=annotation_specs,
                 )
 
@@ -1198,18 +1246,29 @@ class ListAnnotationCount(CommandLine):
 
         additional_attribute_names: list[AttributeNameKey] | None = None
         specified_attribute_names: list[AttributeNameKey] | None = None
-        if args.additional_attribute_name is not None and annotation_specs is not None:
+        additional_attribute_names_simple: list[str] | None = None
+        specified_attribute_names_simple: list[str] | None = None
+        
+        if args.additional_attribute_name is not None:
             attribute_name_str_list = annofabcli.common.cli.get_list_from_args(args.additional_attribute_name)
-            # アノテーション仕様から属性名を検索してAttributeNameKeyのリストに変換
-            additional_attribute_names, not_found_names = annotation_specs.get_attribute_name_keys_by_attribute_names(attribute_name_str_list)
-            if len(not_found_names) > 0:
-                logger.warning(f"指定された属性名のうち、アノテーション仕様に見つからなかった属性名があります。:: {not_found_names}")
-        elif args.attribute_name is not None and annotation_specs is not None:
+            if annotation_specs is not None:
+                # アノテーション仕様から属性名を検索してAttributeNameKeyのリストに変換
+                additional_attribute_names, not_found_names = annotation_specs.get_attribute_name_keys_by_attribute_names(attribute_name_str_list)
+                if len(not_found_names) > 0:
+                    logger.warning(f"指定された属性名のうち、アノテーション仕様に見つからなかった属性名があります。:: {not_found_names}")
+            else:
+                # プロジェクトIDが未指定の場合は、属性名のみでフィルタリング
+                additional_attribute_names_simple = attribute_name_str_list
+        elif args.attribute_name is not None:
             attribute_name_str_list = annofabcli.common.cli.get_list_from_args(args.attribute_name)
-            # アノテーション仕様から属性名を検索してAttributeNameKeyのリストに変換
-            specified_attribute_names, not_found_names = annotation_specs.get_attribute_name_keys_by_attribute_names(attribute_name_str_list)
-            if len(not_found_names) > 0:
-                logger.warning(f"指定された属性名のうち、アノテーション仕様に見つからなかった属性名があります。:: {not_found_names}")
+            if annotation_specs is not None:
+                # アノテーション仕様から属性名を検索してAttributeNameKeyのリストに変換
+                specified_attribute_names, not_found_names = annotation_specs.get_attribute_name_keys_by_attribute_names(attribute_name_str_list)
+                if len(not_found_names) > 0:
+                    logger.warning(f"指定された属性名のうち、アノテーション仕様に見つからなかった属性名があります。:: {not_found_names}")
+            else:
+                # プロジェクトIDが未指定の場合は、属性名のみでフィルタリング
+                specified_attribute_names_simple = attribute_name_str_list
 
         group_by = GroupBy(args.group_by)
         csv_type = CsvType(args.type)
@@ -1242,6 +1301,8 @@ class ListAnnotationCount(CommandLine):
                 task_query=task_query,
                 additional_attribute_names=additional_attribute_names,
                 specified_attribute_names=specified_attribute_names,
+                additional_attribute_names_simple=additional_attribute_names_simple,
+                specified_attribute_names_simple=specified_attribute_names_simple,
                 annotation_specs=annotation_specs,
             )
 
@@ -1277,6 +1338,8 @@ class ListAnnotationCount(CommandLine):
                 task_query=task_query,
                 additional_attribute_names=additional_attribute_names,
                 specified_attribute_names=specified_attribute_names,
+                additional_attribute_names_simple=additional_attribute_names_simple,
+                specified_attribute_names_simple=specified_attribute_names_simple,
                 annotation_specs=annotation_specs,
             )
             func(annotation_path=annotation_path)
