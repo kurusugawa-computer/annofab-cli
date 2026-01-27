@@ -934,13 +934,11 @@ class ListAnnotationCountMain:
         csv_type: CsvType,
         output_file: Path,
         *,
-        project_id: str | None = None,
         task_json_path: Path | None = None,
         target_task_ids: Collection[str] | None = None,
         task_query: TaskQuery | None = None,
         additional_attribute_names: Collection[AttributeNameKey] | None = None,
         specified_attribute_names: Collection[AttributeNameKey] | None = None,
-        additional_attribute_names_simple: Collection[str] | None = None,
         specified_attribute_names_simple: Collection[str] | None = None,
         annotation_specs: AnnotationSpecs | None = None,
     ) -> None:
@@ -960,10 +958,9 @@ class ListAnnotationCountMain:
                     non_selective_attribute_name_keys = [attr for attr in all_non_selective_attributes if attr not in additional_attribute_names_set]
                 else:
                     non_selective_attribute_name_keys = all_non_selective_attributes
-        else:
-            # プロジェクトIDが未指定の場合は、属性名のみでフィルタリング
-            if specified_attribute_names_simple is not None:
-                target_attribute_names_simple = list(specified_attribute_names_simple)
+        # プロジェクトIDが未指定の場合は、属性名のみでフィルタリング
+        elif specified_attribute_names_simple is not None:
+            target_attribute_names_simple = list(specified_attribute_names_simple)
 
         frame_no_map = self.get_frame_no_map(task_json_path) if task_json_path is not None else None
         counter_by_input_data = ListAnnotationCounterByInputData(
@@ -1002,12 +999,10 @@ class ListAnnotationCountMain:
         csv_type: CsvType,
         output_file: Path,
         *,
-        project_id: str | None = None,
         target_task_ids: Collection[str] | None = None,
         task_query: TaskQuery | None = None,
         additional_attribute_names: Collection[AttributeNameKey] | None = None,
         specified_attribute_names: Collection[AttributeNameKey] | None = None,
-        additional_attribute_names_simple: Collection[str] | None = None,
         specified_attribute_names_simple: Collection[str] | None = None,
         annotation_specs: AnnotationSpecs | None = None,
     ) -> None:
@@ -1027,10 +1022,9 @@ class ListAnnotationCountMain:
                     non_selective_attribute_name_keys = [attr for attr in all_non_selective_attributes if attr not in additional_attribute_names_set]
                 else:
                     non_selective_attribute_name_keys = all_non_selective_attributes
-        else:
-            # プロジェクトIDが未指定の場合は、属性名のみでフィルタリング
-            if specified_attribute_names_simple is not None:
-                target_attribute_names_simple = list(specified_attribute_names_simple)
+        # プロジェクトIDが未指定の場合は、属性名のみでフィルタリング
+        elif specified_attribute_names_simple is not None:
+            target_attribute_names_simple = list(specified_attribute_names_simple)
 
         counter_list_by_task = ListAnnotationCounterByTask(
             target_attribute_names=target_attribute_name_keys,
@@ -1067,7 +1061,6 @@ class ListAnnotationCountMain:
         annotation_path: Path,
         output_file: Path,
         *,
-        project_id: str | None = None,
         task_json_path: Path | None = None,
         target_task_ids: Collection[str] | None = None,
         task_query: TaskQuery | None = None,
@@ -1100,7 +1093,6 @@ class ListAnnotationCountMain:
         annotation_path: Path,
         output_file: Path,
         *,
-        project_id: str | None = None,
         target_task_ids: Collection[str] | None = None,
         task_query: TaskQuery | None = None,
         json_is_pretty: bool = False,
@@ -1135,14 +1127,12 @@ class ListAnnotationCountMain:
         output_file: Path,
         arg_format: OutputFormat,
         *,
-        project_id: str | None = None,
         task_json_path: Path | None = None,
         target_task_ids: Collection[str] | None = None,
         task_query: TaskQuery | None = None,
         csv_type: CsvType | None = None,
         additional_attribute_names: Collection[AttributeNameKey] | None = None,
         specified_attribute_names: Collection[AttributeNameKey] | None = None,
-        additional_attribute_names_simple: Collection[str] | None = None,
         specified_attribute_names_simple: Collection[str] | None = None,
         annotation_specs: AnnotationSpecs | None = None,
     ) -> None:
@@ -1151,7 +1141,6 @@ class ListAnnotationCountMain:
             assert csv_type is not None
             if group_by == GroupBy.INPUT_DATA_ID:
                 self.print_annotation_counter_csv_by_input_data(
-                    project_id=project_id,
                     annotation_path=annotation_path,
                     task_json_path=task_json_path,
                     output_file=output_file,
@@ -1160,14 +1149,12 @@ class ListAnnotationCountMain:
                     csv_type=csv_type,
                     additional_attribute_names=additional_attribute_names,
                     specified_attribute_names=specified_attribute_names,
-                    additional_attribute_names_simple=additional_attribute_names_simple,
                     specified_attribute_names_simple=specified_attribute_names_simple,
                     annotation_specs=annotation_specs,
                 )
 
             elif group_by == GroupBy.TASK_ID:
                 self.print_annotation_counter_csv_by_task(
-                    project_id=project_id,
                     annotation_path=annotation_path,
                     output_file=output_file,
                     target_task_ids=target_task_ids,
@@ -1175,7 +1162,6 @@ class ListAnnotationCountMain:
                     csv_type=csv_type,
                     additional_attribute_names=additional_attribute_names,
                     specified_attribute_names=specified_attribute_names,
-                    additional_attribute_names_simple=additional_attribute_names_simple,
                     specified_attribute_names_simple=specified_attribute_names_simple,
                     annotation_specs=annotation_specs,
                 )
@@ -1185,7 +1171,6 @@ class ListAnnotationCountMain:
 
             if group_by == GroupBy.INPUT_DATA_ID:
                 self.print_annotation_counter_json_by_input_data(
-                    project_id=project_id,
                     annotation_path=annotation_path,
                     task_json_path=task_json_path,
                     output_file=output_file,
@@ -1197,7 +1182,6 @@ class ListAnnotationCountMain:
 
             elif group_by == GroupBy.TASK_ID:
                 self.print_annotation_counter_json_by_task(
-                    project_id=project_id,
                     annotation_path=annotation_path,
                     output_file=output_file,
                     target_task_ids=target_task_ids,
@@ -1224,7 +1208,7 @@ class ListAnnotationCount(CommandLine):
 
         return True
 
-    def main(self) -> None:  # noqa: PLR0915
+    def main(self) -> None:  # noqa: PLR0915, PLR0912
         args = self.args
 
         if not self.validate(args):
@@ -1246,9 +1230,8 @@ class ListAnnotationCount(CommandLine):
 
         additional_attribute_names: list[AttributeNameKey] | None = None
         specified_attribute_names: list[AttributeNameKey] | None = None
-        additional_attribute_names_simple: list[str] | None = None
         specified_attribute_names_simple: list[str] | None = None
-        
+
         if args.additional_attribute_name is not None:
             attribute_name_str_list = annofabcli.common.cli.get_list_from_args(args.additional_attribute_name)
             if annotation_specs is not None:
@@ -1256,9 +1239,7 @@ class ListAnnotationCount(CommandLine):
                 additional_attribute_names, not_found_names = annotation_specs.get_attribute_name_keys_by_attribute_names(attribute_name_str_list)
                 if len(not_found_names) > 0:
                     logger.warning(f"指定された属性名のうち、アノテーション仕様に見つからなかった属性名があります。:: {not_found_names}")
-            else:
-                # プロジェクトIDが未指定の場合は、属性名のみでフィルタリング
-                additional_attribute_names_simple = attribute_name_str_list
+            # プロジェクトIDが未指定の場合でも、additional_attribute_nameは現在対応していない
         elif args.attribute_name is not None:
             attribute_name_str_list = annofabcli.common.cli.get_list_from_args(args.attribute_name)
             if annotation_specs is not None:
@@ -1291,7 +1272,6 @@ class ListAnnotationCount(CommandLine):
 
             func = partial(
                 main_obj.print_annotation_counter,
-                project_id=project_id,
                 task_json_path=task_json_path,
                 group_by=group_by,
                 csv_type=csv_type,
@@ -1301,7 +1281,6 @@ class ListAnnotationCount(CommandLine):
                 task_query=task_query,
                 additional_attribute_names=additional_attribute_names,
                 specified_attribute_names=specified_attribute_names,
-                additional_attribute_names_simple=additional_attribute_names_simple,
                 specified_attribute_names_simple=specified_attribute_names_simple,
                 annotation_specs=annotation_specs,
             )
@@ -1328,7 +1307,6 @@ class ListAnnotationCount(CommandLine):
             assert annotation_path is not None
             func = partial(
                 main_obj.print_annotation_counter,
-                project_id=project_id,
                 task_json_path=None,
                 group_by=group_by,
                 csv_type=csv_type,
@@ -1338,7 +1316,6 @@ class ListAnnotationCount(CommandLine):
                 task_query=task_query,
                 additional_attribute_names=additional_attribute_names,
                 specified_attribute_names=specified_attribute_names,
-                additional_attribute_names_simple=additional_attribute_names_simple,
                 specified_attribute_names_simple=specified_attribute_names_simple,
                 annotation_specs=annotation_specs,
             )
