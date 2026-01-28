@@ -1574,7 +1574,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         help="デフォルトで集計される選択肢系の属性（ドロップダウン、ラジオボタン、チェックボックス）に加えて、集計したい属性の英語名を指定します。"
         "ラベル名に関係なく、デフォルト属性と指定した属性名を持つ属性が集計対象になります。"
         " ``file://`` を先頭に付けると、属性名が記載されたファイルを指定できます。"
-        " ``--type attribute`` および ``--format csv`` を指定したときのみ有効なオプションです。",
+        " ``--type attribute`` を指定したときのみ有効なオプションです。",
     )
 
     attribute_group.add_argument(
@@ -1584,7 +1584,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         help="集計対象とする属性の英語名を指定します。指定した属性名のみが集計対象になります（デフォルトの選択肢系属性は含まれません）。"
         "ラベル名に関係なく、指定した属性名を持つ属性のみが集計対象になります。"
         " ``file://`` を先頭に付けると、属性名が記載されたファイルを指定できます。"
-        " ``--type attribute`` および ``--format csv`` を指定したときのみ有効なオプションです。",
+        " ``--type attribute`` を指定したときのみ有効なオプションです。",
     )
 
     parser.set_defaults(subcommand_func=main)
