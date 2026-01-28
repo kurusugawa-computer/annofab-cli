@@ -1254,7 +1254,9 @@ class ListAnnotationCountMain:
             # 両方を組み合わせる
             target_attribute_names_only = list(default_attribute_names | additional_attr_names)
         else:
-            target_attribute_names_only = None
+            # デフォルトでは選択肢系の属性のみを集計対象とする
+            default_selective_attributes = self.annotation_specs.selective_attribute_name_keys()
+            target_attribute_names_only = list({attr_name for _, attr_name in default_selective_attributes})
 
         frame_no_map = self.get_frame_no_map(task_json_path) if task_json_path is not None else None
         counter_by_input_data = ListAnnotationCounterByInputData(
@@ -1314,7 +1316,9 @@ class ListAnnotationCountMain:
             # 両方を組み合わせる
             target_attribute_names_only = list(default_attribute_names | additional_attr_names)
         else:
-            target_attribute_names_only = None
+            # デフォルトでは選択肢系の属性のみを集計対象とする
+            default_selective_attributes = self.annotation_specs.selective_attribute_name_keys()
+            target_attribute_names_only = list({attr_name for _, attr_name in default_selective_attributes})
 
         counter_list_by_task = ListAnnotationCounterByTask(
             target_attribute_names_only=target_attribute_names_only,
