@@ -554,6 +554,7 @@ class AttributeCountCsv:
             output_file: 出力先CSVファイルのパス
             prior_attribute_columns: 優先的に配置する属性値のキーのリスト
         """
+
         def get_columns() -> list[AttributeValueKey]:
             basic_columns = [
                 ("project_id", "", ""),
@@ -602,6 +603,7 @@ class AttributeCountCsv:
             output_file: 出力先CSVファイルのパス
             prior_attribute_columns: 優先的に配置する属性値のキーのリスト
         """
+
         def get_columns() -> list[AttributeValueKey]:
             basic_columns = [
                 ("project_id", "", ""),
@@ -687,6 +689,7 @@ class LabelCountCsv:
             output_file: 出力先CSVファイルのパス
             prior_label_columns: 優先的に配置するラベル名のリスト
         """
+
         def get_columns() -> list[str]:
             basic_columns = [
                 "project_id",
@@ -735,6 +738,7 @@ class LabelCountCsv:
             output_file: 出力先CSVファイルのパス
             prior_label_columns: 優先的に配置するラベル名のリスト
         """
+
         def get_columns() -> list[str]:
             basic_columns = [
                 "project_id",
