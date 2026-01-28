@@ -984,7 +984,7 @@ class ListAnnotationCountMain:
         additional_attribute_names: Collection[AttributeNameKey] | None = None,
         specified_attribute_names: Collection[AttributeNameKey] | None = None,
     ) -> None:
-        target_attribute_name_keys = list(specified_attribute_names) if specified_attribute_names is not None else None
+        target_attribute_name_keys = specified_attribute_names
         non_selective_attribute_name_keys = None if specified_attribute_names is not None else self._get_non_selective_attribute_name_keys(additional_attribute_names=additional_attribute_names)
 
         frame_no_map = self.get_frame_no_map(task_json_path) if task_json_path is not None else None
@@ -1026,7 +1026,7 @@ class ListAnnotationCountMain:
         additional_attribute_names: Collection[AttributeNameKey] | None = None,
         specified_attribute_names: Collection[AttributeNameKey] | None = None,
     ) -> None:
-        target_attribute_name_keys = list(specified_attribute_names) if specified_attribute_names is not None else None
+        target_attribute_name_keys = specified_attribute_names
         non_selective_attribute_name_keys = None if specified_attribute_names is not None else self._get_non_selective_attribute_name_keys(additional_attribute_names=additional_attribute_names)
 
         counter_list_by_task = ListAnnotationCounterByTask(
@@ -1070,7 +1070,7 @@ class ListAnnotationCountMain:
     ) -> None:
         """ラベルごと/属性ごとのアノテーション数を入力データ単位でJSONファイルに出力します。"""
 
-        target_attribute_name_keys = list(specified_attribute_names) if specified_attribute_names is not None else None
+        target_attribute_name_keys = specified_attribute_names
         non_selective_attribute_name_keys = None if specified_attribute_names is not None else self._get_non_selective_attribute_name_keys(additional_attribute_names=additional_attribute_names)
 
         frame_no_map = self.get_frame_no_map(task_json_path) if task_json_path is not None else None
@@ -1104,7 +1104,7 @@ class ListAnnotationCountMain:
     ) -> None:
         """ラベルごと/属性ごとのアノテーション数をタスク単位でJSONファイルに出力します。"""
 
-        target_attribute_name_keys = list(specified_attribute_names) if specified_attribute_names is not None else None
+        target_attribute_name_keys = specified_attribute_names
         non_selective_attribute_name_keys = None if specified_attribute_names is not None else self._get_non_selective_attribute_name_keys(additional_attribute_names=additional_attribute_names)
 
         counter_list_by_task = ListAnnotationCounterByTask(
