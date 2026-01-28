@@ -1041,29 +1041,7 @@ class ListAnnotationCountMain:
                 result[(task_id, input_data_id)] = index + 1
         return result
 
-    def _get_non_selective_attribute_name_keys(
-        self,
-        *,
-        additional_attribute_names: Collection[AttributeNameKey] | None = None,
-    ) -> list[AttributeNameKey]:
-        """
-        集計対象外とする非選択系属性名のキーを取得する。
-
-        Args:
-            additional_attribute_names: 除外対象外とする追加の属性名。
-                これらの属性は非選択系であっても集計対象から除外されない。
-
-        Returns:
-            集計対象外とする非選択系属性名のキーのリスト
-        """
-        all_non_selective_attributes = self.annotation_specs.non_selective_attribute_name_keys()
-
-        if additional_attribute_names is not None:
-            additional_attribute_names_set = set(additional_attribute_names)
-            return [attr for attr in all_non_selective_attributes if attr not in additional_attribute_names_set]
-        else:
-            return all_non_selective_attributes
-
+ 
     def print_annotation_counter_csv_by_input_data(
         self,
         annotation_path: Path,
@@ -1447,13 +1425,13 @@ class ListAnnotationCount(CommandLine):
             # アノテーション仕様から属性名を検索してAttributeNameKeyのリストに変換
             additional_attribute_names, not_found_names = annotation_specs.get_attribute_name_keys_by_attribute_names(attribute_name_str_list)
             if len(not_found_names) > 0:
-                logger.warning(f"指定された属性名のうち、アノテーション仕様に見つからなかった属性名があります。:: {not_found_names}")
+                logger.warning(f"指定された属性名のうち、アノテーション仕様に見つからなかった属性名があります。 :: {not_found_names}")
         elif args.attribute_name is not None:
             attribute_name_str_list = annofabcli.common.cli.get_list_from_args(args.attribute_name)
             # アノテーション仕様から属性名を検索してAttributeNameKeyのリストに変換
             specified_attribute_names, not_found_names = annotation_specs.get_attribute_name_keys_by_attribute_names(attribute_name_str_list)
             if len(not_found_names) > 0:
-                logger.warning(f"指定された属性名のうち、アノテーション仕様に見つからなかった属性名があります。:: {not_found_names}")
+                logger.warning(f"指定された属性名のうち、アノテーション仕様に見つからなかった属性名があります。 :: {not_found_names}")
 
         group_by = GroupBy(args.group_by)
         csv_type = CsvType(args.type)
