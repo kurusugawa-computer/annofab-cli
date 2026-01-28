@@ -984,13 +984,10 @@ class ListAnnotationCountMain:
         additional_attribute_names: Collection[AttributeNameKey] | None = None,
         specified_attribute_names: Collection[AttributeNameKey] | None = None,
     ) -> None:
-        target_attribute_name_keys = specified_attribute_names
-        non_selective_attribute_name_keys = None if specified_attribute_names is not None else self._get_non_selective_attribute_name_keys(additional_attribute_names=additional_attribute_names)
-
         frame_no_map = self.get_frame_no_map(task_json_path) if task_json_path is not None else None
         counter_by_input_data = ListAnnotationCounterByInputData(
-            target_attribute_names=target_attribute_name_keys,
-            non_target_attribute_names=non_selective_attribute_name_keys,
+            target_attribute_names=specified_attribute_names,
+            non_target_attribute_names=None if specified_attribute_names is not None else self._get_non_selective_attribute_name_keys(additional_attribute_names=additional_attribute_names),
             frame_no_map=frame_no_map,
         )
         counter_list_by_input_data = counter_by_input_data.get_annotation_counter_list(
@@ -1026,12 +1023,9 @@ class ListAnnotationCountMain:
         additional_attribute_names: Collection[AttributeNameKey] | None = None,
         specified_attribute_names: Collection[AttributeNameKey] | None = None,
     ) -> None:
-        target_attribute_name_keys = specified_attribute_names
-        non_selective_attribute_name_keys = None if specified_attribute_names is not None else self._get_non_selective_attribute_name_keys(additional_attribute_names=additional_attribute_names)
-
         counter_list_by_task = ListAnnotationCounterByTask(
-            target_attribute_names=target_attribute_name_keys,
-            non_target_attribute_names=non_selective_attribute_name_keys,
+            target_attribute_names=specified_attribute_names,
+            non_target_attribute_names=None if specified_attribute_names is not None else self._get_non_selective_attribute_name_keys(additional_attribute_names=additional_attribute_names),
         ).get_annotation_counter_list(
             annotation_path,
             target_task_ids=target_task_ids,
@@ -1070,13 +1064,10 @@ class ListAnnotationCountMain:
     ) -> None:
         """ラベルごと/属性ごとのアノテーション数を入力データ単位でJSONファイルに出力します。"""
 
-        target_attribute_name_keys = specified_attribute_names
-        non_selective_attribute_name_keys = None if specified_attribute_names is not None else self._get_non_selective_attribute_name_keys(additional_attribute_names=additional_attribute_names)
-
         frame_no_map = self.get_frame_no_map(task_json_path) if task_json_path is not None else None
         counter_by_input_data = ListAnnotationCounterByInputData(
-            target_attribute_names=target_attribute_name_keys,
-            non_target_attribute_names=non_selective_attribute_name_keys,
+            target_attribute_names=specified_attribute_names,
+            non_target_attribute_names=None if specified_attribute_names is not None else self._get_non_selective_attribute_name_keys(additional_attribute_names=additional_attribute_names),
             frame_no_map=frame_no_map,
         )
         counter_list_by_input_data = counter_by_input_data.get_annotation_counter_list(
@@ -1104,12 +1095,9 @@ class ListAnnotationCountMain:
     ) -> None:
         """ラベルごと/属性ごとのアノテーション数をタスク単位でJSONファイルに出力します。"""
 
-        target_attribute_name_keys = specified_attribute_names
-        non_selective_attribute_name_keys = None if specified_attribute_names is not None else self._get_non_selective_attribute_name_keys(additional_attribute_names=additional_attribute_names)
-
         counter_list_by_task = ListAnnotationCounterByTask(
-            target_attribute_names=target_attribute_name_keys,
-            non_target_attribute_names=non_selective_attribute_name_keys,
+            target_attribute_names=specified_attribute_names,
+            non_target_attribute_names=None if specified_attribute_names is not None else self._get_non_selective_attribute_name_keys(additional_attribute_names=additional_attribute_names),
         ).get_annotation_counter_list(
             annotation_path,
             target_task_ids=target_task_ids,
