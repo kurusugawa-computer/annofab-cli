@@ -7,7 +7,6 @@ import collections
 import copy
 import json
 import logging
-import sys
 import tempfile
 import zipfile
 from collections import Counter, defaultdict
@@ -34,7 +33,6 @@ from dataclasses_json import DataClassJsonMixin, config
 
 import annofabcli.common.cli
 from annofabcli.common.cli import (
-    COMMAND_LINE_ERROR_STATUS_CODE,
     ArgumentParser,
     CommandLine,
     build_annofabapi_resource_and_login,
@@ -800,7 +798,6 @@ class AnnotationSpecs:
         * ドロップダウン
         * ラジオボタン
         * チェックボックス
-        * フラグ（ON/OFF）
 
         Args:
             additional_attribute_names: デフォルトの選択系属性に加えて、集計対象とする属性名のキー。
@@ -1047,14 +1044,33 @@ class ListAnnotationCountMain:
         target_task_ids: Collection[str] | None = None,
         task_query: TaskQuery | None = None,
         json_is_pretty: bool = False,
+        additional_attribute_names: Collection[AttributeNameKey] | None = None,
+        specified_attribute_names: Collection[AttributeNameKey] | None = None,
     ) -> None:
         """ラベルごと/属性ごとのアノテーション数を入力データ単位でJSONファイルに出力します。"""
 
         # アノテーション仕様の非選択系の属性は、集計しないようにする。集計しても意味がないため。
-        non_selective_attribute_name_keys = annotation_specs.non_selective_attribute_name_keys()
+        target_attribute_name_keys: list[AttributeNameKey] | None = None
+        non_selective_attribute_name_keys: list[AttributeNameKey] | None = None
+        if specified_attribute_names is not None:
+            # --attribute_nameが指定された場合は、指定された属性のみを集計対象とする
+            target_attribute_name_keys = list(specified_attribute_names)
+        else:
+            # 追加属性が指定されている場合、それらを集計対象から除外しないようにする
+            all_non_selective_attributes = annotation_specs.non_selective_attribute_name_keys()
+            if additional_attribute_names is not None:
+                additional_attribute_names_set = set(additional_attribute_names)
+                non_selective_attribute_name_keys = [attr for attr in all_non_selective_attributes if attr not in additional_attribute_names_set]
+            else:
+                non_selective_attribute_name_keys = all_non_selective_attributes
 
         frame_no_map = self.get_frame_no_map(task_json_path) if task_json_path is not None else None
-        counter_list_by_input_data = ListAnnotationCounterByInputData(non_target_attribute_names=non_selective_attribute_name_keys, frame_no_map=frame_no_map).get_annotation_counter_list(
+        counter_by_input_data = ListAnnotationCounterByInputData(
+            target_attribute_names=target_attribute_name_keys,
+            non_target_attribute_names=non_selective_attribute_name_keys,
+            frame_no_map=frame_no_map,
+        )
+        counter_list_by_input_data = counter_by_input_data.get_annotation_counter_list(
             annotation_path,
             target_task_ids=target_task_ids,
             task_query=task_query,
@@ -1075,13 +1091,28 @@ class ListAnnotationCountMain:
         target_task_ids: Collection[str] | None = None,
         task_query: TaskQuery | None = None,
         json_is_pretty: bool = False,
+        additional_attribute_names: Collection[AttributeNameKey] | None = None,
+        specified_attribute_names: Collection[AttributeNameKey] | None = None,
     ) -> None:
         """ラベルごと/属性ごとのアノテーション数をタスク単位でJSONファイルに出力します。"""
 
         # アノテーション仕様の非選択系の属性は、集計しないようにする。集計しても意味がないため。
-        non_selective_attribute_name_keys = annotation_specs.non_selective_attribute_name_keys()
+        target_attribute_name_keys: list[AttributeNameKey] | None = None
+        non_selective_attribute_name_keys: list[AttributeNameKey] | None = None
+        if specified_attribute_names is not None:
+            # --attribute_nameが指定された場合は、指定された属性のみを集計対象とする
+            target_attribute_name_keys = list(specified_attribute_names)
+        else:
+            # 追加属性が指定されている場合、それらを集計対象から除外しないようにする
+            all_non_selective_attributes = annotation_specs.non_selective_attribute_name_keys()
+            if additional_attribute_names is not None:
+                additional_attribute_names_set = set(additional_attribute_names)
+                non_selective_attribute_name_keys = [attr for attr in all_non_selective_attributes if attr not in additional_attribute_names_set]
+            else:
+                non_selective_attribute_name_keys = all_non_selective_attributes
 
         counter_list_by_task = ListAnnotationCounterByTask(
+            target_attribute_names=target_attribute_name_keys,
             non_target_attribute_names=non_selective_attribute_name_keys,
         ).get_annotation_counter_list(
             annotation_path,
@@ -1150,6 +1181,8 @@ class ListAnnotationCountMain:
                     target_task_ids=target_task_ids,
                     task_query=task_query,
                     json_is_pretty=json_is_pretty,
+                    additional_attribute_names=additional_attribute_names,
+                    specified_attribute_names=specified_attribute_names,
                 )
 
             elif group_by == GroupBy.TASK_ID:
@@ -1160,6 +1193,8 @@ class ListAnnotationCountMain:
                     target_task_ids=target_task_ids,
                     task_query=task_query,
                     json_is_pretty=json_is_pretty,
+                    additional_attribute_names=additional_attribute_names,
+                    specified_attribute_names=specified_attribute_names,
                 )
 
 
@@ -1168,7 +1203,7 @@ class ListAnnotationCount(CommandLine):
     アノテーション数情報を出力する。
     """
 
-    def main(self) -> None:  # noqa: PLR0915, PLR0912
+    def main(self) -> None:
         args = self.args
 
         project_id: str = args.project_id
