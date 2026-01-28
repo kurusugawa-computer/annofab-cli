@@ -64,6 +64,17 @@ class TestListAnnotationCounterByInputData:
             }
         )
 
+        counter3 = ListAnnotationCounterByInputData(non_target_labels=["bird"]).get_annotation_counter(annotation)
+        assert counter3.annotation_count_by_label == collections.Counter({"climatic": 1})
+
+        counter4 = ListAnnotationCounterByInputData(non_target_attribute_names=[("bird", "weight")]).get_annotation_counter(annotation)
+        assert counter4.annotation_count_by_attribute == collections.Counter(
+            {
+                ("bird", "occluded", "true"): 2,
+                ("climatic", "weather", "sunny"): 1,
+            }
+        )
+
     def test_get_annotation_counter_list(self):
         counter_list = ListAnnotationCounterByInputData().get_annotation_counter_list(data_dir / "simple-annotations.zip")
         assert len(counter_list) == 4

@@ -70,6 +70,10 @@ Examples
 * ラジオボタン
 * チェックボックス
 
+上記以外の属性（数値、テキストなど）を集計したい場合は、 ``--additional_attribute_name`` または ``--attribute_name`` オプションを使用してください。
+
+* ``--additional_attribute_name`` : デフォルトの選択肢系属性に加えて、指定した属性を集計対象にします。
+* ``--attribute_name`` : 指定した属性のみを集計対象にします（デフォルトの選択肢系属性は含まれません）。
 
 デフォルトではタスク単位でアノテーション数を集計します。入力データ単位に集計する場合は、 ``--group_by input_data_id`` を指定してください。
 
@@ -138,8 +142,7 @@ JSON出力
         "task_status": "complete",
         "task_phase": "acceptance",
         "task_phase_stage": 1,
-        "input_data_count": 10,
-        "frame_no": 1        
+        "input_data_count": 10
     }
     ]  
 

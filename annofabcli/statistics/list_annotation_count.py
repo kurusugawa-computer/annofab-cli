@@ -7,7 +7,6 @@ import collections
 import copy
 import json
 import logging
-import sys
 import tempfile
 import zipfile
 from collections import Counter, defaultdict
@@ -34,7 +33,6 @@ from dataclasses_json import DataClassJsonMixin, config
 
 import annofabcli.common.cli
 from annofabcli.common.cli import (
-    COMMAND_LINE_ERROR_STATUS_CODE,
     ArgumentParser,
     CommandLine,
     build_annofabapi_resource_and_login,
@@ -103,6 +101,15 @@ def encode_annotation_count_by_attribute(
 
 @dataclass(frozen=True)
 class AnnotationCounter(abc.ABC):
+    """
+    アノテーションの集計情報を保持する抽象基底クラス。
+
+    Attributes:
+        annotation_count: アノテーションの総数
+        annotation_count_by_label: ラベルごとのアノテーション数
+        annotation_count_by_attribute: 属性値ごとのアノテーション数
+    """
+
     annotation_count: int
     annotation_count_by_label: Counter[str]
     annotation_count_by_attribute: Counter[AttributeValueKey] = field(
@@ -114,6 +121,18 @@ class AnnotationCounter(abc.ABC):
 
 @dataclass(frozen=True)
 class AnnotationCounterByTask(AnnotationCounter, DataClassJsonMixin):
+    """
+    タスク単位でのアノテーション集計情報。
+
+    Attributes:
+        project_id: プロジェクトID
+        task_id: タスクID
+        task_status: タスクのステータス
+        task_phase: タスクのフェーズ
+        task_phase_stage: タスクフェーズのステージ番号
+        input_data_count: タスクに含まれる入力データの数
+    """
+
     project_id: str
     task_id: str
     task_status: TaskStatus
@@ -124,6 +143,21 @@ class AnnotationCounterByTask(AnnotationCounter, DataClassJsonMixin):
 
 @dataclass(frozen=True)
 class AnnotationCounterByInputData(AnnotationCounter, DataClassJsonMixin):
+    """
+    入力データ単位でのアノテーション集計情報。
+
+    Attributes:
+        project_id: プロジェクトID
+        task_id: タスクID
+        task_status: タスクのステータス
+        task_phase: タスクのフェーズ
+        task_phase_stage: タスクフェーズのステージ番号
+        input_data_id: 入力データID
+        input_data_name: 入力データ名
+        updated_datetime: アノテーションJSONに格納されているアノテーションの更新日時
+        frame_no: フレーム番号。アノテーションJSONには含まれていない情報なので、Optionalにする
+    """
+
     project_id: str
     task_id: str
     task_status: TaskStatus
@@ -139,6 +173,18 @@ class AnnotationCounterByInputData(AnnotationCounter, DataClassJsonMixin):
 
 
 def lazy_parse_simple_annotation_by_input_data(annotation_path: Path) -> Iterator[SimpleAnnotationParser]:
+    """
+    アノテーションzipまたはディレクトリから、入力データ単位でアノテーションを遅延パースするイテレータを返します。
+
+    Args:
+        annotation_path: アノテーションzipまたはzipを展開したディレクトリのパス
+
+    Returns:
+        SimpleAnnotationParserのイテレータ
+
+    Raises:
+        RuntimeError: 指定されたパスが存在しない場合、またはzipファイルでもディレクトリでもない場合
+    """
     if not annotation_path.exists():
         raise RuntimeError(f"'{annotation_path}' は存在しません。")
 
@@ -151,6 +197,18 @@ def lazy_parse_simple_annotation_by_input_data(annotation_path: Path) -> Iterato
 
 
 def lazy_parse_simple_annotation_by_task(annotation_path: Path) -> Iterator[SimpleAnnotationParserByTask]:
+    """
+    アノテーションzipまたはディレクトリから、タスク単位でアノテーションを遅延パースするイテレータを返します。
+
+    Args:
+        annotation_path: アノテーションzipまたはzipを展開したディレクトリのパス
+
+    Returns:
+        SimpleAnnotationParserByTaskのイテレータ
+
+    Raises:
+        RuntimeError: 指定されたパスが存在しない場合、またはzipファイルでもディレクトリでもない場合
+    """
     if not annotation_path.exists():
         raise RuntimeError(f"'{annotation_path}' は存在しません。")
 
@@ -166,11 +224,16 @@ class ListAnnotationCounterByInputData:
     """入力データ単位で、ラベルごと/属性ごとのアノテーション数を集計情報を取得するメソッドの集まり。
 
     Args:
-        target_labels: 集計対象のラベル（label_name_en）
-        target_attribute_names: 集計対象の属性名
-        non_target_labels: 集計対象外のラベル
-        non_target_attribute_names: 集計対象外の属性名のキー。
+        target_labels: 集計対象のラベル（label_name_en）。`non_target_labels`との同時指定不可。
+        target_attribute_names: 集計対象の属性名。`non_target_attribute_names`との同時指定不可。
+        non_target_labels: 集計対象外のラベル。`target_labels`との同時指定不可。
+        non_target_attribute_names: 集計対象外の属性名のキー。`target_attribute_names`との同時指定不可。
+        target_attribute_names_only: 集計対象の属性名（属性名のみでフィルタリング）。ラベル名に関係なく、指定された属性名のみが対象になります。
         frame_no_map: key:task_id,input_data_idのtuple, value:フレーム番号
+
+    Raises:
+        ValueError: `target_labels`と`non_target_labels`の両方が指定された場合、
+            または`target_attribute_names`と`non_target_attribute_names`の両方が指定された場合に発生します。
 
     """
 
@@ -181,12 +244,19 @@ class ListAnnotationCounterByInputData:
         non_target_labels: Collection[str] | None = None,
         target_attribute_names: Collection[AttributeNameKey] | None = None,
         non_target_attribute_names: Collection[AttributeNameKey] | None = None,
+        target_attribute_names_only: Collection[str] | None = None,
         frame_no_map: dict[tuple[str, str], int] | None = None,
     ) -> None:
+        if target_labels is not None and non_target_labels is not None:
+            raise ValueError("`target_labels`と`non_target_labels`の両方が指定されています。")
+        if target_attribute_names is not None and non_target_attribute_names is not None:
+            raise ValueError("`target_attribute_names`と`non_target_attribute_names`の両方が指定されています。")
+
         self.target_labels = set(target_labels) if target_labels is not None else None
         self.target_attribute_names = set(target_attribute_names) if target_attribute_names is not None else None
         self.non_target_labels = set(non_target_labels) if non_target_labels is not None else None
         self.non_target_attribute_names = set(non_target_attribute_names) if non_target_attribute_names is not None else None
+        self.target_attribute_names_only = set(target_attribute_names_only) if target_attribute_names_only is not None else None
         self.frame_no_map = frame_no_map
 
     def get_annotation_counter(
@@ -239,6 +309,14 @@ class ListAnnotationCounterByInputData:
                     (label, attribute_name, attribute_value): count
                     for (label, attribute_name, attribute_value), count in annotation_count_by_attribute.items()
                     if (label, attribute_name) in self.target_attribute_names
+                }
+            )
+        if self.target_attribute_names_only is not None:
+            annotation_count_by_attribute = collections.Counter(
+                {
+                    (label, attribute_name, attribute_value): count
+                    for (label, attribute_name, attribute_value), count in annotation_count_by_attribute.items()
+                    if attribute_name in self.target_attribute_names_only
                 }
             )
         if self.non_target_attribute_names is not None:
@@ -309,7 +387,20 @@ class ListAnnotationCounterByInputData:
 
 
 class ListAnnotationCounterByTask:
-    """タスク単位で、ラベルごと/属性ごとのアノテーション数を集計情報を取得するメソッドの集まり。"""
+    """タスク単位で、ラベルごと/属性ごとのアノテーション数を集計情報を取得するメソッドの集まり。
+
+    Args:
+        target_labels: 集計対象のラベル（label_name_en）。`non_target_labels`との同時指定不可。
+        target_attribute_names: 集計対象の属性名。`non_target_attribute_names`との同時指定不可。
+        non_target_labels: 集計対象外のラベル。`target_labels`との同時指定不可。
+        non_target_attribute_names: 集計対象外の属性名のキー。`target_attribute_names`との同時指定不可。
+        target_attribute_names_only: 集計対象の属性名（属性名のみでフィルタリング）。ラベル名に関係なく、指定された属性名のみが対象になります。
+
+    Raises:
+        ValueError: `target_labels`と`non_target_labels`の両方が指定された場合、
+            または`target_attribute_names`と`non_target_attribute_names`の両方が指定された場合に発生します。
+
+    """
 
     def __init__(
         self,
@@ -318,12 +409,19 @@ class ListAnnotationCounterByTask:
         non_target_labels: Collection[str] | None = None,
         target_attribute_names: Collection[AttributeNameKey] | None = None,
         non_target_attribute_names: Collection[AttributeNameKey] | None = None,
+        target_attribute_names_only: Collection[str] | None = None,
     ) -> None:
+        if target_labels is not None and non_target_labels is not None:
+            raise ValueError("`target_labels`と`non_target_labels`の両方が指定されています。")
+        if target_attribute_names is not None and non_target_attribute_names is not None:
+            raise ValueError("`target_attribute_names`と`non_target_attribute_names`の両方が指定されています。")
+
         self.counter_by_input_data = ListAnnotationCounterByInputData(
             target_labels=target_labels,
             non_target_labels=non_target_labels,
             target_attribute_names=target_attribute_names,
             non_target_attribute_names=non_target_attribute_names,
+            target_attribute_names_only=target_attribute_names_only,
         )
 
     def get_annotation_counter(self, task_parser: SimpleAnnotationParserByTask) -> AnnotationCounterByTask:
@@ -411,41 +509,31 @@ class ListAnnotationCounterByTask:
 class AttributeCountCsv:
     """
     属性値ごとのアノテーション数を記載するCSV。
-
-    Args:
-        selective_attribute_value_max_count: 選択肢系の属性の値の個数の上限。これを超えた場合は、非選択肢系属性（トラッキングIDやアノテーションリンクなど）とみなす
-
     """
 
-    def __init__(self, selective_attribute_value_max_count: int = 20) -> None:
-        self.selective_attribute_value_max_count = selective_attribute_value_max_count
-
-    def _only_selective_attribute(self, columns: list[AttributeValueKey]) -> list[AttributeValueKey]:
+    def _value_columns(
+        self,
+        counter_list: Collection[AnnotationCounter],
+        prior_attribute_columns: list[AttributeValueKey] | None,
+    ) -> list[AttributeValueKey]:
         """
-        選択肢系の属性に対応する列のみ抽出する。
-        属性値の個数が多い場合、非選択肢系の属性（トラッキングIDやアノテーションリンクなど）の可能性があるため、それらを除外する。
-        CSVの列数を増やしすぎないための対策。
+        CSV出力のための属性値列の順序を決定します。
+
+        Args:
+            counter_list: アノテーション集計情報のコレクション
+            prior_attribute_columns: 優先的に配置する属性値のキーのリスト。Noneの場合はソート順で配置されます。
+
+        Returns:
+            属性値のキーのリスト（CSV列の順序）
         """
-        attribute_name_list: list[AttributeNameKey] = []
-        for label, attribute_name, _ in columns:
-            attribute_name_list.append((label, attribute_name))
-
-        non_selective_attribute_names = {key for key, value in collections.Counter(attribute_name_list).items() if value > self.selective_attribute_value_max_count}
-        if len(non_selective_attribute_names) > 0:
-            logger.debug(f"以下の属性は値の個数が{self.selective_attribute_value_max_count}を超えていたため、集計しません。 :: {non_selective_attribute_names}")
-
-        return [(label, attribute_name, attribute_value) for (label, attribute_name, attribute_value) in columns if (label, attribute_name) not in non_selective_attribute_names]
-
-    def _value_columns(self, counter_list: Collection[AnnotationCounter], prior_attribute_columns: list[AttributeValueKey] | None) -> list[AttributeValueKey]:
         all_attr_key_set = {attr_key for c in counter_list for attr_key in c.annotation_count_by_attribute}
         if prior_attribute_columns is not None:
             remaining_columns = sorted(all_attr_key_set - set(prior_attribute_columns))
-            remaining_columns_only_selective_attribute = self._only_selective_attribute(remaining_columns)
 
-            # `remaining_columns_only_selective_attribute`には、属性値が空である列などが格納されている
-            # `remaining_columns_only_selective_attribute`を、`value_columns`の関連している位置に挿入する。
+            # `remaining_columns`には、属性値が空である列などが格納されている
+            # `remaining_columns`を、`value_columns`の関連している位置に挿入する。
             value_columns = copy.deepcopy(prior_attribute_columns)
-            for remaining_column in remaining_columns_only_selective_attribute:
+            for remaining_column in remaining_columns:
                 is_inserted = False
                 for i in range(len(value_columns) - 1, -1, -1):
                     col = value_columns[i]
@@ -456,11 +544,11 @@ class AttributeCountCsv:
                 if not is_inserted:
                     value_columns.append(remaining_column)
 
-            assert len(value_columns) == len(prior_attribute_columns) + len(remaining_columns_only_selective_attribute)
+            assert len(value_columns) == len(prior_attribute_columns) + len(remaining_columns)
 
         else:
             remaining_columns = sorted(all_attr_key_set)
-            value_columns = self._only_selective_attribute(remaining_columns)
+            value_columns = remaining_columns
 
         # 重複している場合は、重複要素を取り除く。ただし元の順番は維持する
         value_columns = list(dict.fromkeys(value_columns).keys())
@@ -472,6 +560,15 @@ class AttributeCountCsv:
         output_file: Path,
         prior_attribute_columns: list[AttributeValueKey] | None = None,
     ) -> None:
+        """
+        タスク単位の属性値ごとアノテーション数をCSVファイルに出力します。
+
+        Args:
+            counter_list: タスク単位のアノテーション集計情報のリスト
+            output_file: 出力先CSVファイルのパス
+            prior_attribute_columns: 優先的に配置する属性値のキーのリスト
+        """
+
         def get_columns() -> list[AttributeValueKey]:
             basic_columns = [
                 ("project_id", "", ""),
@@ -512,6 +609,15 @@ class AttributeCountCsv:
         output_file: Path,
         prior_attribute_columns: list[AttributeValueKey] | None = None,
     ) -> None:
+        """
+        入力データ単位の属性値ごとアノテーション数をCSVファイルに出力します。
+
+        Args:
+            counter_list: 入力データ単位のアノテーション集計情報のリスト
+            output_file: 出力先CSVファイルのパス
+            prior_attribute_columns: 優先的に配置する属性値のキーのリスト
+        """
+
         def get_columns() -> list[AttributeValueKey]:
             basic_columns = [
                 ("project_id", "", ""),
@@ -563,6 +669,16 @@ class LabelCountCsv:
     """
 
     def _value_columns(self, counter_list: Collection[AnnotationCounter], prior_label_columns: list[str] | None) -> list[str]:
+        """
+        CSV出力のためのラベル列の順序を決定します。
+
+        Args:
+            counter_list: アノテーション集計情報のコレクション
+            prior_label_columns: 優先的に配置するラベル名のリスト。Noneの場合はソート順で配置されます。
+
+        Returns:
+            ラベル名のリスト（CSV列の順序）
+        """
         all_attr_key_set = {attr_key for c in counter_list for attr_key in c.annotation_count_by_label}
         if prior_label_columns is not None:
             remaining_columns = sorted(all_attr_key_set - set(prior_label_columns))
@@ -579,6 +695,15 @@ class LabelCountCsv:
         output_file: Path,
         prior_label_columns: list[str] | None = None,
     ) -> None:
+        """
+        タスク単位のラベルごとアノテーション数をCSVファイルに出力します。
+
+        Args:
+            counter_list: タスク単位のアノテーション集計情報のリスト
+            output_file: 出力先CSVファイルのパス
+            prior_label_columns: 優先的に配置するラベル名のリスト
+        """
+
         def get_columns() -> list[str]:
             basic_columns = [
                 "project_id",
@@ -619,6 +744,15 @@ class LabelCountCsv:
         output_file: Path,
         prior_label_columns: list[str] | None = None,
     ) -> None:
+        """
+        入力データ単位のラベルごとアノテーション数をCSVファイルに出力します。
+
+        Args:
+            counter_list: 入力データ単位のアノテーション集計情報のリスト
+            output_file: 出力先CSVファイルのパス
+            prior_label_columns: 優先的に配置するラベル名のリスト
+        """
+
         def get_columns() -> list[str]:
             basic_columns = [
                 "project_id",
@@ -736,16 +870,15 @@ class AnnotationSpecs:
 
         return result
 
-    def selective_attribute_value_keys(self) -> list[AttributeValueKey]:
+    def get_attribute_value_keys_for_target_attributes(self, target_attribute_names: Collection[AttributeNameKey]) -> list[AttributeValueKey]:
         """
-        選択系の属性の属性値のキーの一覧。
+        指定された属性名のキーに対応する属性値のキーの一覧を取得します。
 
-        以下の属性種類
-        * ドロップダウン
-        * ラジオボタン
-        * チェックボックス
+        Args:
+            target_attribute_names: 属性値のキーを取得する対象の属性名のキー。
         """
         target_attribute_value_keys = []
+        target_attribute_names_set = set(target_attribute_names)
         for label in self._labels_v1:
             label_name_en = AddProps.get_message(label["label_name"], MessageLocale.EN)
             label_name_en = label_name_en if label_name_en is not None else ""
@@ -754,20 +887,33 @@ class AnnotationSpecs:
                 attribute_name_en = AddProps.get_message(attribute["name"], MessageLocale.EN)
                 attribute_name_en = attribute_name_en if attribute_name_en is not None else ""
 
-                if AdditionalDataDefinitionType(attribute["type"]) in [
-                    AdditionalDataDefinitionType.CHOICE,
-                    AdditionalDataDefinitionType.SELECT,
-                ]:
+                if (label_name_en, attribute_name_en) not in target_attribute_names_set:
+                    continue
+
+                attribute_type = AdditionalDataDefinitionType(attribute["type"])
+                if attribute_type in [AdditionalDataDefinitionType.CHOICE, AdditionalDataDefinitionType.SELECT]:
                     for choice in attribute["choices"]:
                         choice_name_en = AddProps.get_message(choice["name"], MessageLocale.EN)
                         choice_name_en = choice_name_en if choice_name_en is not None else ""
                         target_attribute_value_keys.append((label_name_en, attribute_name_en, choice_name_en))
 
-                elif AdditionalDataDefinitionType(attribute["type"]) == AdditionalDataDefinitionType.FLAG:
+                elif attribute_type == AdditionalDataDefinitionType.FLAG:
                     target_attribute_value_keys.extend([(label_name_en, attribute_name_en, "true"), (label_name_en, attribute_name_en, "false")])
 
-                else:
-                    continue
+        return target_attribute_value_keys
+
+    def selective_attribute_value_keys(self) -> list[AttributeValueKey]:
+        """
+        選択系（ドロップダウン／ラジオボタン／チェックボックス／フラグ）の属性の属性値のキーの一覧。
+
+        対象となる属性種類:
+        * ドロップダウン
+        * ラジオボタン
+        * チェックボックス
+        * フラグ
+        """
+        selective_attribute_names = self.selective_attribute_name_keys()
+        target_attribute_value_keys = self.get_attribute_value_keys_for_target_attributes(selective_attribute_names)
 
         duplicated_attributes = [key for key, value in collections.Counter(target_attribute_value_keys).items() if value > 1]
         if len(duplicated_attributes) > 0:
@@ -802,6 +948,34 @@ class AnnotationSpecs:
 
         return target_attributes_columns
 
+    def get_attribute_name_keys_by_attribute_names(self, attribute_names: Collection[str]) -> tuple[list[AttributeNameKey], list[str]]:
+        """
+        指定された属性名を持つ全てのラベルと属性の組み合わせを取得します。
+
+        Args:
+            attribute_names: 検索対象の属性名のリスト
+
+        Returns:
+            (見つかった属性名キーのリスト, 見つからなかった属性名のリスト) のタプル
+        """
+        attribute_names_set = set(attribute_names)
+        result = []
+        found_attribute_names = set()
+        for label in self._labels_v1:
+            label_name_en = AddProps.get_message(label["label_name"], MessageLocale.EN)
+            label_name_en = label_name_en if label_name_en is not None else ""
+
+            for attribute in label["additional_data_definitions"]:
+                attribute_name_en = AddProps.get_message(attribute["name"], MessageLocale.EN)
+                attribute_name_en = attribute_name_en if attribute_name_en is not None else ""
+
+                if attribute_name_en in attribute_names_set:
+                    result.append((label_name_en, attribute_name_en))
+                    found_attribute_names.add(attribute_name_en)
+
+        not_found_attribute_names = list(attribute_names_set - found_attribute_names)
+        return result, not_found_attribute_names
+
     def non_selective_attribute_name_keys(self) -> list[AttributeNameKey]:
         """
         非選択系の属性の名前のキー
@@ -834,11 +1008,27 @@ class AnnotationSpecs:
 
 
 class ListAnnotationCountMain:
-    def __init__(self, service: annofabapi.Resource) -> None:
+    def __init__(self, service: annofabapi.Resource, annotation_specs: AnnotationSpecs) -> None:
+        """
+        Args:
+            service: AnnofabのAPIリソース
+            annotation_specs: アノテーション仕様
+        """
         self.service = service
+        self.annotation_specs = annotation_specs
 
     @staticmethod
     def get_frame_no_map(task_json_path: Path) -> dict[tuple[str, str], int]:
+        """
+        タスクJSONファイルから、(task_id, input_data_id)をキーとし、フレーム番号を値とするマップを取得します。
+        フレーム番号は1始まりです。
+
+        Args:
+            task_json_path: タスクJSONファイルのパス
+
+        Returns:
+            key: (task_id, input_data_id)のタプル、value: フレーム番号のdict
+        """
         with task_json_path.open(encoding="utf-8") as f:
             task_list = json.load(f)
 
@@ -857,20 +1047,52 @@ class ListAnnotationCountMain:
         csv_type: CsvType,
         output_file: Path,
         *,
-        project_id: str | None = None,
         task_json_path: Path | None = None,
         target_task_ids: Collection[str] | None = None,
         task_query: TaskQuery | None = None,
+        additional_attribute_names: Collection[AttributeNameKey] | None = None,
+        specified_attribute_names: Collection[AttributeNameKey] | None = None,
     ) -> None:
-        # アノテーション仕様の非選択系の属性は、集計しないようにする。集計しても意味がないため。
-        annotation_specs: AnnotationSpecs | None = None
-        non_selective_attribute_name_keys: list[AttributeNameKey] | None = None
-        if project_id is not None:
-            annotation_specs = AnnotationSpecs(self.service, project_id)
-            non_selective_attribute_name_keys = annotation_specs.non_selective_attribute_name_keys()
+        """
+        ラベルごと/属性ごとのアノテーション数を入力データ単位でCSVファイルに出力します。
+
+        Args:
+            annotation_path: アノテーションzipまたはzipを展開したディレクトリのパス
+            csv_type: 出力するCSVの種類（ラベルごと/属性ごと）
+            output_file: 出力先のCSVファイルパス
+            task_json_path: タスクJSONファイルのパス。フレーム番号を出力する場合に指定します。
+            target_task_ids: 集計対象のタスクIDのコレクション
+            task_query: 集計対象タスクを絞り込むためのクエリ条件
+            additional_attribute_names: デフォルトの選択系属性に加えて集計対象とする属性名のキー
+            specified_attribute_names: 集計対象とする属性名のキー。指定した場合、これらの属性のみが集計対象になります。
+
+        Raises:
+            ValueError: `additional_attribute_names`と`specified_attribute_names`の両方が指定された場合に発生します。
+        """
+        if additional_attribute_names is not None and specified_attribute_names is not None:
+            raise ValueError("`additional_attribute_names`と`specified_attribute_names`の両方が指定されています。")
+
+        if specified_attribute_names is not None:
+            # specified_attribute_namesから属性名のみを抽出
+            target_attribute_names_only = list({attr_name for _, attr_name in specified_attribute_names})
+        elif additional_attribute_names is not None:
+            # デフォルトの選択系属性の属性名を取得
+            default_selective_attributes = self.annotation_specs.selective_attribute_name_keys()
+            default_attribute_names = {attr_name for _, attr_name in default_selective_attributes}
+            # additional_attribute_namesから属性名のみを抽出
+            additional_attr_names = {attr_name for _, attr_name in additional_attribute_names}
+            # 両方を組み合わせる
+            target_attribute_names_only = list(default_attribute_names | additional_attr_names)
+        else:
+            # デフォルトでは選択肢系の属性のみを集計対象とする
+            default_selective_attributes = self.annotation_specs.selective_attribute_name_keys()
+            target_attribute_names_only = list({attr_name for _, attr_name in default_selective_attributes})
 
         frame_no_map = self.get_frame_no_map(task_json_path) if task_json_path is not None else None
-        counter_by_input_data = ListAnnotationCounterByInputData(non_target_attribute_names=non_selective_attribute_name_keys, frame_no_map=frame_no_map)
+        counter_by_input_data = ListAnnotationCounterByInputData(
+            target_attribute_names_only=target_attribute_names_only,
+            frame_no_map=frame_no_map,
+        )
         counter_list_by_input_data = counter_by_input_data.get_annotation_counter_list(
             annotation_path,
             target_task_ids=target_task_ids,
@@ -879,16 +1101,19 @@ class ListAnnotationCountMain:
 
         if csv_type == CsvType.LABEL:
             # ラベル名の列順が、アノテーション仕様にあるラベル名の順番に対応するようにする。
-            label_columns: list[str] | None = None
-            if annotation_specs is not None:
-                label_columns = annotation_specs.label_keys()
-
+            label_columns = self.annotation_specs.label_keys()
             LabelCountCsv().print_csv_by_input_data(counter_list_by_input_data, output_file, prior_label_columns=label_columns)
         elif csv_type == CsvType.ATTRIBUTE:
-            attribute_columns: list[AttributeValueKey] | None = None
-            if annotation_specs is not None:
-                attribute_columns = annotation_specs.selective_attribute_value_keys()
-
+            if specified_attribute_names is not None:
+                # 指定された属性名に対応する属性値のキーのみを取得
+                attribute_columns = self.annotation_specs.get_attribute_value_keys_for_target_attributes(specified_attribute_names)
+            elif additional_attribute_names is not None:
+                # デフォルトの選択系属性とadditional_attribute_namesを組み合わせた属性値のキーを取得
+                default_selective_attributes = self.annotation_specs.selective_attribute_name_keys()
+                combined_attributes = list(set(default_selective_attributes) | set(additional_attribute_names))
+                attribute_columns = self.annotation_specs.get_attribute_value_keys_for_target_attributes(combined_attributes)
+            else:
+                attribute_columns = self.annotation_specs.selective_attribute_value_keys()
             AttributeCountCsv().print_csv_by_input_data(counter_list_by_input_data, output_file, prior_attribute_columns=attribute_columns)
 
     def print_annotation_counter_csv_by_task(
@@ -897,18 +1122,48 @@ class ListAnnotationCountMain:
         csv_type: CsvType,
         output_file: Path,
         *,
-        project_id: str | None = None,
         target_task_ids: Collection[str] | None = None,
         task_query: TaskQuery | None = None,
+        additional_attribute_names: Collection[AttributeNameKey] | None = None,
+        specified_attribute_names: Collection[AttributeNameKey] | None = None,
     ) -> None:
-        # アノテーション仕様の非選択系の属性は、集計しないようにする。集計しても意味がないため。
-        annotation_specs: AnnotationSpecs | None = None
-        non_selective_attribute_name_keys: list[AttributeNameKey] | None = None
-        if project_id is not None:
-            annotation_specs = AnnotationSpecs(self.service, project_id)
-            non_selective_attribute_name_keys = annotation_specs.non_selective_attribute_name_keys()
+        """
+        ラベルごと/属性ごとのアノテーション数をタスク単位でCSVファイルに出力します。
 
-        counter_list_by_task = ListAnnotationCounterByTask(non_target_attribute_names=non_selective_attribute_name_keys).get_annotation_counter_list(
+        Args:
+            annotation_path: アノテーションzipまたはzipを展開したディレクトリのパス
+            csv_type: 出力するCSVの種類（ラベルごと/属性ごと）
+            output_file: 出力先のCSVファイルパス
+            target_task_ids: 集計対象のタスクIDのコレクション
+            task_query: 集計対象タスクを絞り込むためのクエリ条件
+            additional_attribute_names: デフォルトの選択系属性に加えて集計対象とする属性名のキー
+            specified_attribute_names: 集計対象とする属性名のキー。指定した場合、これらの属性のみが集計対象になります。
+
+        Raises:
+            ValueError: `additional_attribute_names`と`specified_attribute_names`の両方が指定された場合に発生します。
+        """
+        if additional_attribute_names is not None and specified_attribute_names is not None:
+            raise ValueError("`additional_attribute_names`と`specified_attribute_names`の両方が指定されています。")
+
+        if specified_attribute_names is not None:
+            # specified_attribute_namesから属性名のみを抽出
+            target_attribute_names_only = list({attr_name for _, attr_name in specified_attribute_names})
+        elif additional_attribute_names is not None:
+            # デフォルトの選択系属性の属性名を取得
+            default_selective_attributes = self.annotation_specs.selective_attribute_name_keys()
+            default_attribute_names = {attr_name for _, attr_name in default_selective_attributes}
+            # additional_attribute_namesから属性名のみを抽出
+            additional_attr_names = {attr_name for _, attr_name in additional_attribute_names}
+            # 両方を組み合わせる
+            target_attribute_names_only = list(default_attribute_names | additional_attr_names)
+        else:
+            # デフォルトでは選択肢系の属性のみを集計対象とする
+            default_selective_attributes = self.annotation_specs.selective_attribute_name_keys()
+            target_attribute_names_only = list({attr_name for _, attr_name in default_selective_attributes})
+
+        counter_list_by_task = ListAnnotationCounterByTask(
+            target_attribute_names_only=target_attribute_names_only,
+        ).get_annotation_counter_list(
             annotation_path,
             target_task_ids=target_task_ids,
             task_query=task_query,
@@ -916,18 +1171,21 @@ class ListAnnotationCountMain:
 
         if csv_type == CsvType.LABEL:
             # 列順が、アノテーション仕様にあるラベル名の順番に対応するようにする。
-            label_columns: list[str] | None = None
-            if annotation_specs is not None:
-                label_columns = annotation_specs.label_keys()
-
+            label_columns = self.annotation_specs.label_keys()
             LabelCountCsv().print_csv_by_task(counter_list_by_task, output_file, prior_label_columns=label_columns)
 
         elif csv_type == CsvType.ATTRIBUTE:
             # 列順が、アノテーション仕様にある属性名と属性値の順番に対応するようにする。
-            attribute_columns: list[AttributeValueKey] | None = None
-            if annotation_specs is not None:
-                attribute_columns = annotation_specs.selective_attribute_value_keys()
-
+            if specified_attribute_names is not None:
+                # 指定された属性名に対応する属性値のキーのみを取得
+                attribute_columns = self.annotation_specs.get_attribute_value_keys_for_target_attributes(specified_attribute_names)
+            elif additional_attribute_names is not None:
+                # デフォルトの選択系属性とadditional_attribute_namesを組み合わせた属性値のキーを取得
+                default_selective_attributes = self.annotation_specs.selective_attribute_name_keys()
+                combined_attributes = list(set(default_selective_attributes) | set(additional_attribute_names))
+                attribute_columns = self.annotation_specs.get_attribute_value_keys_for_target_attributes(combined_attributes)
+            else:
+                attribute_columns = self.annotation_specs.selective_attribute_value_keys()
             AttributeCountCsv().print_csv_by_task(counter_list_by_task, output_file, prior_attribute_columns=attribute_columns)
 
     def print_annotation_counter_json_by_input_data(
@@ -935,23 +1193,54 @@ class ListAnnotationCountMain:
         annotation_path: Path,
         output_file: Path,
         *,
-        project_id: str | None = None,
         task_json_path: Path | None = None,
         target_task_ids: Collection[str] | None = None,
         task_query: TaskQuery | None = None,
         json_is_pretty: bool = False,
+        additional_attribute_names: Collection[AttributeNameKey] | None = None,
+        specified_attribute_names: Collection[AttributeNameKey] | None = None,
     ) -> None:
-        """ラベルごと/属性ごとのアノテーション数を入力データ単位でJSONファイルに出力します。"""
+        """
+        ラベルごと/属性ごとのアノテーション数を入力データ単位でJSONファイルに出力します。
 
-        # アノテーション仕様の非選択系の属性は、集計しないようにする。集計しても意味がないため。
-        if project_id is not None:
-            annotation_specs = AnnotationSpecs(self.service, project_id)
-            non_selective_attribute_name_keys = annotation_specs.non_selective_attribute_name_keys()
+        Args:
+            annotation_path: アノテーションzipまたはzipを展開したディレクトリのパス
+            output_file: 出力先のJSONファイルパス
+            task_json_path: タスクJSONファイルのパス。フレーム番号を出力する場合に指定します。
+            target_task_ids: 集計対象のタスクIDのコレクション
+            task_query: 集計対象タスクを絞り込むためのクエリ条件
+            json_is_pretty: Trueの場合、整形されたJSON（pretty print）を出力します
+            additional_attribute_names: デフォルトの選択系属性に加えて集計対象とする属性名のキー
+            specified_attribute_names: 集計対象とする属性名のキー。指定した場合、これらの属性のみが集計対象になります。
+
+        Raises:
+            ValueError: `additional_attribute_names`と`specified_attribute_names`の両方が指定された場合に発生します。
+        """
+        if additional_attribute_names is not None and specified_attribute_names is not None:
+            raise ValueError("`additional_attribute_names`と`specified_attribute_names`の両方が指定されています。")
+
+        if specified_attribute_names is not None:
+            # specified_attribute_namesから属性名のみを抽出
+            target_attribute_names_only = list({attr_name for _, attr_name in specified_attribute_names})
+        elif additional_attribute_names is not None:
+            # デフォルトの選択系属性の属性名を取得
+            default_selective_attributes = self.annotation_specs.selective_attribute_name_keys()
+            default_attribute_names = {attr_name for _, attr_name in default_selective_attributes}
+            # additional_attribute_namesから属性名のみを抽出
+            additional_attr_names = {attr_name for _, attr_name in additional_attribute_names}
+            # 両方を組み合わせる
+            target_attribute_names_only = list(default_attribute_names | additional_attr_names)
         else:
-            non_selective_attribute_name_keys = None
+            # デフォルトでは選択肢系の属性のみを集計対象とする
+            default_selective_attributes = self.annotation_specs.selective_attribute_name_keys()
+            target_attribute_names_only = list({attr_name for _, attr_name in default_selective_attributes})
 
         frame_no_map = self.get_frame_no_map(task_json_path) if task_json_path is not None else None
-        counter_list_by_input_data = ListAnnotationCounterByInputData(non_target_attribute_names=non_selective_attribute_name_keys, frame_no_map=frame_no_map).get_annotation_counter_list(
+        counter_by_input_data = ListAnnotationCounterByInputData(
+            target_attribute_names_only=target_attribute_names_only,
+            frame_no_map=frame_no_map,
+        )
+        counter_list_by_input_data = counter_by_input_data.get_annotation_counter_list(
             annotation_path,
             target_task_ids=target_task_ids,
             task_query=task_query,
@@ -968,22 +1257,48 @@ class ListAnnotationCountMain:
         annotation_path: Path,
         output_file: Path,
         *,
-        project_id: str | None = None,
         target_task_ids: Collection[str] | None = None,
         task_query: TaskQuery | None = None,
         json_is_pretty: bool = False,
+        additional_attribute_names: Collection[AttributeNameKey] | None = None,
+        specified_attribute_names: Collection[AttributeNameKey] | None = None,
     ) -> None:
-        """ラベルごと/属性ごとのアノテーション数をタスク単位でJSONファイルに出力します。"""
+        """
+        ラベルごと/属性ごとのアノテーション数をタスク単位でJSONファイルに出力します。
 
-        # アノテーション仕様の非選択系の属性は、集計しないようにする。集計しても意味がないため。
-        if project_id is not None:
-            annotation_specs = AnnotationSpecs(self.service, project_id)
-            non_selective_attribute_name_keys = annotation_specs.non_selective_attribute_name_keys()
+        Args:
+            annotation_path: アノテーションzipまたはzipを展開したディレクトリのパス
+            output_file: 出力先のJSONファイルパス
+            target_task_ids: 集計対象のタスクIDのコレクション
+            task_query: 集計対象タスクを絞り込むためのクエリ条件
+            json_is_pretty: Trueの場合、整形されたJSON（pretty print）を出力します
+            additional_attribute_names: デフォルトの選択系属性に加えて集計対象とする属性名のキー
+            specified_attribute_names: 集計対象とする属性名のキー。指定した場合、これらの属性のみが集計対象になります。
+
+        Raises:
+            ValueError: `additional_attribute_names`と`specified_attribute_names`の両方が指定された場合に発生します。
+        """
+        if additional_attribute_names is not None and specified_attribute_names is not None:
+            raise ValueError("`additional_attribute_names`と`specified_attribute_names`の両方が指定されています。")
+
+        if specified_attribute_names is not None:
+            # specified_attribute_namesから属性名のみを抽出
+            target_attribute_names_only = list({attr_name for _, attr_name in specified_attribute_names})
+        elif additional_attribute_names is not None:
+            # デフォルトの選択系属性の属性名を取得
+            default_selective_attributes = self.annotation_specs.selective_attribute_name_keys()
+            default_attribute_names = {attr_name for _, attr_name in default_selective_attributes}
+            # additional_attribute_namesから属性名のみを抽出
+            additional_attr_names = {attr_name for _, attr_name in additional_attribute_names}
+            # 両方を組み合わせる
+            target_attribute_names_only = list(default_attribute_names | additional_attr_names)
         else:
-            non_selective_attribute_name_keys = None
+            # デフォルトでは選択肢系の属性のみを集計対象とする
+            default_selective_attributes = self.annotation_specs.selective_attribute_name_keys()
+            target_attribute_names_only = list({attr_name for _, attr_name in default_selective_attributes})
 
         counter_list_by_task = ListAnnotationCounterByTask(
-            non_target_attribute_names=non_selective_attribute_name_keys,
+            target_attribute_names_only=target_attribute_names_only,
         ).get_annotation_counter_list(
             annotation_path,
             target_task_ids=target_task_ids,
@@ -1003,34 +1318,51 @@ class ListAnnotationCountMain:
         output_file: Path,
         arg_format: OutputFormat,
         *,
-        project_id: str | None = None,
         task_json_path: Path | None = None,
         target_task_ids: Collection[str] | None = None,
         task_query: TaskQuery | None = None,
         csv_type: CsvType | None = None,
+        additional_attribute_names: Collection[AttributeNameKey] | None = None,
+        specified_attribute_names: Collection[AttributeNameKey] | None = None,
     ) -> None:
-        """ラベルごと/属性ごとのアノテーション数を出力します。"""
+        """
+        ラベルごと/属性ごとのアノテーション数を出力します。
+
+        Args:
+            annotation_path: アノテーションzipまたはzipを展開したディレクトリのパス
+            group_by: 集計単位（タスク単位または入力データ単位）
+            output_file: 出力先ファイルのパス
+            arg_format: 出力形式（CSV、JSON、整形済みJSON）
+            task_json_path: タスクJSONファイルのパス。フレーム番号を出力する場合に指定します。
+            target_task_ids: 集計対象のタスクIDのコレクション
+            task_query: 集計対象タスクを絞り込むためのクエリ条件
+            csv_type: CSV出力時の種類（ラベルごと/属性ごと）。CSV形式の場合は必須です。
+            additional_attribute_names: デフォルトの選択系属性に加えて集計対象とする属性名のキー
+            specified_attribute_names: 集計対象とする属性名のキー。指定した場合、これらの属性のみが集計対象になります。
+        """
         if arg_format == OutputFormat.CSV:
             assert csv_type is not None
             if group_by == GroupBy.INPUT_DATA_ID:
                 self.print_annotation_counter_csv_by_input_data(
-                    project_id=project_id,
                     annotation_path=annotation_path,
                     task_json_path=task_json_path,
                     output_file=output_file,
+                    csv_type=csv_type,
                     target_task_ids=target_task_ids,
                     task_query=task_query,
-                    csv_type=csv_type,
+                    additional_attribute_names=additional_attribute_names,
+                    specified_attribute_names=specified_attribute_names,
                 )
 
             elif group_by == GroupBy.TASK_ID:
                 self.print_annotation_counter_csv_by_task(
-                    project_id=project_id,
                     annotation_path=annotation_path,
                     output_file=output_file,
+                    csv_type=csv_type,
                     target_task_ids=target_task_ids,
                     task_query=task_query,
-                    csv_type=csv_type,
+                    additional_attribute_names=additional_attribute_names,
+                    specified_attribute_names=specified_attribute_names,
                 )
 
         elif arg_format in [OutputFormat.PRETTY_JSON, OutputFormat.JSON]:
@@ -1038,23 +1370,25 @@ class ListAnnotationCountMain:
 
             if group_by == GroupBy.INPUT_DATA_ID:
                 self.print_annotation_counter_json_by_input_data(
-                    project_id=project_id,
                     annotation_path=annotation_path,
                     task_json_path=task_json_path,
                     output_file=output_file,
                     target_task_ids=target_task_ids,
                     task_query=task_query,
                     json_is_pretty=json_is_pretty,
+                    additional_attribute_names=additional_attribute_names,
+                    specified_attribute_names=specified_attribute_names,
                 )
 
             elif group_by == GroupBy.TASK_ID:
                 self.print_annotation_counter_json_by_task(
-                    project_id=project_id,
                     annotation_path=annotation_path,
                     output_file=output_file,
                     target_task_ids=target_task_ids,
                     task_query=task_query,
                     json_is_pretty=json_is_pretty,
+                    additional_attribute_names=additional_attribute_names,
+                    specified_attribute_names=specified_attribute_names,
                 )
 
 
@@ -1063,55 +1397,61 @@ class ListAnnotationCount(CommandLine):
     アノテーション数情報を出力する。
     """
 
-    COMMON_MESSAGE = "annofabcli statistics list_annotation_count: error:"
-
-    def validate(self, args: argparse.Namespace) -> bool:
-        if args.project_id is None and args.annotation is None:
-            print(  # noqa: T201
-                f"{self.COMMON_MESSAGE} argument --project_id: '--annotation'が未指定のときは、'--project_id' を指定してください。",
-                file=sys.stderr,
-            )
-            return False
-
-        return True
-
     def main(self) -> None:
+        """
+        アノテーション数情報を出力するメイン処理。
+        コマンドライン引数を解析し、アノテーションzip/ディレクトリから集計情報を取得して、
+        指定された形式（CSV/JSON）で出力します。
+        """
         args = self.args
 
-        if not self.validate(args):
-            sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
+        project_id: str = args.project_id
+        super().validate_project(project_id, project_member_roles=[ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER])
 
-        project_id: str | None = args.project_id
-        if project_id is not None:
-            super().validate_project(project_id, project_member_roles=[ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER])
-
-        annotation_path = Path(args.annotation) if args.annotation is not None else None
+        annotation_path = args.annotation
 
         task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id) if args.task_id is not None else None
         task_query = TaskQuery.from_dict(annofabcli.common.cli.get_json_from_args(args.task_query)) if args.task_query is not None else None
+
+        # アノテーション仕様を取得
+        annotation_specs = AnnotationSpecs(self.service, project_id)
+
+        additional_attribute_names: list[AttributeNameKey] | None = None
+        specified_attribute_names: list[AttributeNameKey] | None = None
+
+        if args.additional_attribute_name is not None:
+            attribute_name_str_list = annofabcli.common.cli.get_list_from_args(args.additional_attribute_name)
+            # アノテーション仕様から属性名を検索してAttributeNameKeyのリストに変換
+            additional_attribute_names, not_found_names = annotation_specs.get_attribute_name_keys_by_attribute_names(attribute_name_str_list)
+            if len(not_found_names) > 0:
+                logger.warning(f"指定された属性名のうち、アノテーション仕様に見つからなかった属性名があります。 :: {not_found_names}")
+        elif args.attribute_name is not None:
+            attribute_name_str_list = annofabcli.common.cli.get_list_from_args(args.attribute_name)
+            # アノテーション仕様から属性名を検索してAttributeNameKeyのリストに変換
+            specified_attribute_names, not_found_names = annotation_specs.get_attribute_name_keys_by_attribute_names(attribute_name_str_list)
+            if len(not_found_names) > 0:
+                logger.warning(f"指定された属性名のうち、アノテーション仕様に見つからなかった属性名があります。 :: {not_found_names}")
 
         group_by = GroupBy(args.group_by)
         csv_type = CsvType(args.type)
         output_file: Path = args.output
         arg_format = OutputFormat(args.format)
-        main_obj = ListAnnotationCountMain(self.service)
+        main_obj = ListAnnotationCountMain(self.service, annotation_specs)
 
         downloading_obj = DownloadingFile(self.service)
 
         def download_and_process_annotation(temp_dir: Path, *, is_latest: bool, annotation_path: Path | None) -> None:
-            # タスク全件ファイルは、フレーム番号を参照するのに利用する
-            if project_id is not None:
+            # タスク全件ファイルは、group_by=input_data_idの場合のみフレーム番号を参照するのに利用する
+            task_json_path: Path | None = None
+            if group_by == GroupBy.INPUT_DATA_ID:
                 task_json_path = downloading_obj.download_task_json_to_dir(
                     project_id,
                     temp_dir,
                     is_latest=is_latest,
                 )
-            else:
-                task_json_path = None
 
             func = partial(
                 main_obj.print_annotation_counter,
-                project_id=project_id,
                 task_json_path=task_json_path,
                 group_by=group_by,
                 csv_type=csv_type,
@@ -1119,10 +1459,11 @@ class ListAnnotationCount(CommandLine):
                 output_file=output_file,
                 target_task_ids=task_id_list,
                 task_query=task_query,
+                additional_attribute_names=additional_attribute_names,
+                specified_attribute_names=specified_attribute_names,
             )
 
             if annotation_path is None:
-                assert project_id is not None
                 annotation_path = downloading_obj.download_annotation_zip_to_dir(
                     project_id,
                     temp_dir,
@@ -1132,44 +1473,29 @@ class ListAnnotationCount(CommandLine):
             else:
                 func(annotation_path=annotation_path)
 
-        if project_id is not None:
-            if args.temp_dir is not None:
-                download_and_process_annotation(temp_dir=args.temp_dir, is_latest=args.latest, annotation_path=annotation_path)
-            else:
-                with tempfile.TemporaryDirectory() as str_temp_dir:
-                    download_and_process_annotation(temp_dir=Path(str_temp_dir), is_latest=args.latest, annotation_path=annotation_path)
+        if args.temp_dir is not None:
+            download_and_process_annotation(temp_dir=args.temp_dir, is_latest=args.latest, annotation_path=annotation_path)
         else:
-            # プロジェクトIDが指定されていない場合は、アノテーションパスが必須なので、一時ディレクトリは不要
-            assert annotation_path is not None
-            func = partial(
-                main_obj.print_annotation_counter,
-                project_id=project_id,
-                task_json_path=None,
-                group_by=group_by,
-                csv_type=csv_type,
-                arg_format=arg_format,
-                output_file=output_file,
-                target_task_ids=task_id_list,
-                task_query=task_query,
-            )
-            func(annotation_path=annotation_path)
+            with tempfile.TemporaryDirectory() as str_temp_dir:
+                download_and_process_annotation(temp_dir=Path(str_temp_dir), is_latest=args.latest, annotation_path=annotation_path)
 
 
 def parse_args(parser: argparse.ArgumentParser) -> None:
+    """
+    コマンドライン引数のパーサーを設定します。
+
+    Args:
+        parser: argparseのArgumentParserインスタンス
+    """
     argument_parser = ArgumentParser(parser)
 
     parser.add_argument(
         "--annotation",
-        type=str,
+        type=Path,
         help="アノテーションzip、またはzipを展開したディレクトリを指定します。指定しない場合はAnnofabからダウンロードします。",
     )
 
-    parser.add_argument(
-        "-p",
-        "--project_id",
-        type=str,
-        help="project_id。``--annotation`` が未指定のときは必須です。``--annotation`` が指定されているときに ``--project_id`` を指定すると、アノテーション仕様を参照して、集計対象の属性やCSV列順が決まります。",  # noqa: E501
-    )
+    argument_parser.add_project_id()
 
     parser.add_argument(
         "--group_by",
@@ -1218,16 +1544,53 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         help="指定したディレクトリに、アノテーションZIPなどの一時ファイルをダウンロードします。",
     )
 
+    # --attribute_nameと--additional_attribute_nameは排他的
+    attribute_group = parser.add_mutually_exclusive_group()
+    attribute_group.add_argument(
+        "--additional_attribute_name",
+        type=str,
+        nargs="+",
+        help="デフォルトで集計される選択肢系の属性（ドロップダウン、ラジオボタン、チェックボックス）に加えて、集計したい属性の英語名を指定します。"
+        "ラベル名に関係なく、デフォルト属性と指定した属性名を持つ属性が集計対象になります。"
+        " ``file://`` を先頭に付けると、属性名が記載されたファイルを指定できます。"
+        " ``--type attribute`` を指定したときのみ有効なオプションです。",
+    )
+
+    attribute_group.add_argument(
+        "--attribute_name",
+        type=str,
+        nargs="+",
+        help="集計対象とする属性の英語名を指定します。指定した属性名のみが集計対象になります（デフォルトの選択肢系属性は含まれません）。"
+        "ラベル名に関係なく、指定した属性名を持つ属性のみが集計対象になります。"
+        " ``file://`` を先頭に付けると、属性名が記載されたファイルを指定できます。"
+        " ``--type attribute`` を指定したときのみ有効なオプションです。",
+    )
+
     parser.set_defaults(subcommand_func=main)
 
 
 def main(args: argparse.Namespace) -> None:
+    """
+    list_annotation_countコマンドのエントリーポイント。
+
+    Args:
+        args: コマンドライン引数
+    """
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
     ListAnnotationCount(service, facade, args).main()
 
 
 def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
+    """
+    list_annotation_countサブコマンドのパーサーを追加します。
+
+    Args:
+        subparsers: 親パーサーのサブパーサーアクション
+
+    Returns:
+        作成されたArgumentParserインスタンス
+    """
     subcommand_name = "list_annotation_count"
     subcommand_help = "ラベルごとまたは属性値ごとにアノテーション数を出力します。"
     epilog = "オーナロールまたはアノテーションユーザロールを持つユーザで実行してください。"
