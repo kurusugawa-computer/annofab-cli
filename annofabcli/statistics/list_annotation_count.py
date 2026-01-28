@@ -949,40 +949,28 @@ class ListAnnotationCountMain:
                 result[(task_id, input_data_id)] = index + 1
         return result
 
-    def _determine_target_attributes(
+    def _get_non_selective_attribute_name_keys(
         self,
         *,
-        specified_attribute_names: Collection[AttributeNameKey] | None = None,
         additional_attribute_names: Collection[AttributeNameKey] | None = None,
-    ) -> tuple[list[AttributeNameKey] | None, list[AttributeNameKey] | None]:
+    ) -> list[AttributeNameKey]:
         """
-        集計対象の属性を決定する。
+        集計対象外とする非選択系属性名のキーを取得する。
 
         Args:
-            specified_attribute_names: 指定された属性名（--attribute_name）
-            additional_attribute_names: 追加の属性名（--additional_attribute_name）
+            additional_attribute_names: 除外対象外とする追加の属性名。
+                これらの属性は非選択系であっても集計対象から除外されない。
 
         Returns:
-            (target_attribute_name_keys, non_selective_attribute_name_keys) のタプル
-            - target_attribute_name_keys: 集計対象の属性名（ホワイトリスト）
-            - non_selective_attribute_name_keys: 集計対象外の非選択系属性名（ブラックリスト）
+            集計対象外とする非選択系属性名のキーのリスト
         """
-        target_attribute_name_keys: list[AttributeNameKey] | None = None
-        non_selective_attribute_name_keys: list[AttributeNameKey] | None = None
+        all_non_selective_attributes = self.annotation_specs.non_selective_attribute_name_keys()
 
-        if specified_attribute_names is not None:
-            # --attribute_nameが指定された場合は、指定された属性のみを集計対象とする
-            target_attribute_name_keys = list(specified_attribute_names)
+        if additional_attribute_names is not None:
+            additional_attribute_names_set = set(additional_attribute_names)
+            return [attr for attr in all_non_selective_attributes if attr not in additional_attribute_names_set]
         else:
-            # 追加属性が指定されている場合、それらを集計対象から除外しないようにする
-            all_non_selective_attributes = self.annotation_specs.non_selective_attribute_name_keys()
-            if additional_attribute_names is not None:
-                additional_attribute_names_set = set(additional_attribute_names)
-                non_selective_attribute_name_keys = [attr for attr in all_non_selective_attributes if attr not in additional_attribute_names_set]
-            else:
-                non_selective_attribute_name_keys = all_non_selective_attributes
-
-        return target_attribute_name_keys, non_selective_attribute_name_keys
+            return all_non_selective_attributes
 
     def print_annotation_counter_csv_by_input_data(
         self,
@@ -996,11 +984,8 @@ class ListAnnotationCountMain:
         additional_attribute_names: Collection[AttributeNameKey] | None = None,
         specified_attribute_names: Collection[AttributeNameKey] | None = None,
     ) -> None:
-        # 集計対象の属性を決定
-        target_attribute_name_keys, non_selective_attribute_name_keys = self._determine_target_attributes(
-            specified_attribute_names=specified_attribute_names,
-            additional_attribute_names=additional_attribute_names,
-        )
+        target_attribute_name_keys = list(specified_attribute_names) if specified_attribute_names is not None else None
+        non_selective_attribute_name_keys = None if specified_attribute_names is not None else self._get_non_selective_attribute_name_keys(additional_attribute_names=additional_attribute_names)
 
         frame_no_map = self.get_frame_no_map(task_json_path) if task_json_path is not None else None
         counter_by_input_data = ListAnnotationCounterByInputData(
@@ -1041,11 +1026,8 @@ class ListAnnotationCountMain:
         additional_attribute_names: Collection[AttributeNameKey] | None = None,
         specified_attribute_names: Collection[AttributeNameKey] | None = None,
     ) -> None:
-        # 集計対象の属性を決定
-        target_attribute_name_keys, non_selective_attribute_name_keys = self._determine_target_attributes(
-            specified_attribute_names=specified_attribute_names,
-            additional_attribute_names=additional_attribute_names,
-        )
+        target_attribute_name_keys = list(specified_attribute_names) if specified_attribute_names is not None else None
+        non_selective_attribute_name_keys = None if specified_attribute_names is not None else self._get_non_selective_attribute_name_keys(additional_attribute_names=additional_attribute_names)
 
         counter_list_by_task = ListAnnotationCounterByTask(
             target_attribute_names=target_attribute_name_keys,
@@ -1088,11 +1070,8 @@ class ListAnnotationCountMain:
     ) -> None:
         """ラベルごと/属性ごとのアノテーション数を入力データ単位でJSONファイルに出力します。"""
 
-        # 集計対象の属性を決定
-        target_attribute_name_keys, non_selective_attribute_name_keys = self._determine_target_attributes(
-            specified_attribute_names=specified_attribute_names,
-            additional_attribute_names=additional_attribute_names,
-        )
+        target_attribute_name_keys = list(specified_attribute_names) if specified_attribute_names is not None else None
+        non_selective_attribute_name_keys = None if specified_attribute_names is not None else self._get_non_selective_attribute_name_keys(additional_attribute_names=additional_attribute_names)
 
         frame_no_map = self.get_frame_no_map(task_json_path) if task_json_path is not None else None
         counter_by_input_data = ListAnnotationCounterByInputData(
@@ -1125,11 +1104,8 @@ class ListAnnotationCountMain:
     ) -> None:
         """ラベルごと/属性ごとのアノテーション数をタスク単位でJSONファイルに出力します。"""
 
-        # 集計対象の属性を決定
-        target_attribute_name_keys, non_selective_attribute_name_keys = self._determine_target_attributes(
-            specified_attribute_names=specified_attribute_names,
-            additional_attribute_names=additional_attribute_names,
-        )
+        target_attribute_name_keys = list(specified_attribute_names) if specified_attribute_names is not None else None
+        non_selective_attribute_name_keys = None if specified_attribute_names is not None else self._get_non_selective_attribute_name_keys(additional_attribute_names=additional_attribute_names)
 
         counter_list_by_task = ListAnnotationCounterByTask(
             target_attribute_names=target_attribute_name_keys,
