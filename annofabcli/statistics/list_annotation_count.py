@@ -1120,7 +1120,11 @@ class ListAnnotationCountMain:
             label_columns = self.annotation_specs.label_keys()
             LabelCountCsv().print_csv_by_input_data(counter_list_by_input_data, output_file, prior_label_columns=label_columns)
         elif csv_type == CsvType.ATTRIBUTE:
-            attribute_columns = self.annotation_specs.selective_attribute_value_keys()
+            if specified_attribute_names is not None:
+                # 指定された属性名に対応する属性値のキーのみを取得
+                attribute_columns = self.annotation_specs.get_attribute_value_keys_for_target_attributes(specified_attribute_names)
+            else:
+                attribute_columns = self.annotation_specs.selective_attribute_value_keys()
             AttributeCountCsv().print_csv_by_input_data(counter_list_by_input_data, output_file, prior_attribute_columns=attribute_columns)
 
     def print_annotation_counter_csv_by_task(
@@ -1176,7 +1180,11 @@ class ListAnnotationCountMain:
 
         elif csv_type == CsvType.ATTRIBUTE:
             # 列順が、アノテーション仕様にある属性名と属性値の順番に対応するようにする。
-            attribute_columns = self.annotation_specs.selective_attribute_value_keys()
+            if specified_attribute_names is not None:
+                # 指定された属性名に対応する属性値のキーのみを取得
+                attribute_columns = self.annotation_specs.get_attribute_value_keys_for_target_attributes(specified_attribute_names)
+            else:
+                attribute_columns = self.annotation_specs.selective_attribute_value_keys()
             AttributeCountCsv().print_csv_by_task(counter_list_by_task, output_file, prior_attribute_columns=attribute_columns)
 
     def print_annotation_counter_json_by_input_data(
