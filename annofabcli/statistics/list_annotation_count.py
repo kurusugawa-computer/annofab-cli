@@ -1427,7 +1427,7 @@ class ListAnnotationCount(CommandLine):
         project_id: str = args.project_id
         super().validate_project(project_id, project_member_roles=[ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER])
 
-        annotation_path = Path(args.annotation) if args.annotation is not None else None
+        annotation_path = args.annotation
 
         task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id) if args.task_id is not None else None
         task_query = TaskQuery.from_dict(annofabcli.common.cli.get_json_from_args(args.task_query)) if args.task_query is not None else None
@@ -1508,7 +1508,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
 
     parser.add_argument(
         "--annotation",
-        type=str,
+        type=Path,
         help="アノテーションzip、またはzipを展開したディレクトリを指定します。指定しない場合はAnnofabからダウンロードします。",
     )
 
