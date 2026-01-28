@@ -164,13 +164,15 @@ class ListAnnotationCounterByInputData:
     """入力データ単位で、ラベルごと/属性ごとのアノテーション数を集計情報を取得するメソッドの集まり。
 
     Args:
-        target_labels: 集計対象のラベル（label_name_en）
-        target_attribute_names: 集計対象の属性名
-        non_target_labels: 集計対象外のラベル
-        non_target_attribute_names: 集計対象外の属性名のキー。
-        target_attribute_names_simple: 集計対象の属性名（属性名のみ、ラベルを問わない）
-        non_target_attribute_names_simple: 集計対象外の属性名（属性名のみ、ラベルを問わない）
+        target_labels: 集計対象のラベル（label_name_en）。`non_target_labels`との同時指定不可。
+        target_attribute_names: 集計対象の属性名。`non_target_attribute_names`との同時指定不可。
+        non_target_labels: 集計対象外のラベル。`target_labels`との同時指定不可。
+        non_target_attribute_names: 集計対象外の属性名のキー。`target_attribute_names`との同時指定不可。
         frame_no_map: key:task_id,input_data_idのtuple, value:フレーム番号
+
+    Raises:
+        ValueError: `target_labels`と`non_target_labels`の両方が指定された場合、
+            または`target_attribute_names`と`non_target_attribute_names`の両方が指定された場合に発生します。
 
     """
 
@@ -183,6 +185,11 @@ class ListAnnotationCounterByInputData:
         non_target_attribute_names: Collection[AttributeNameKey] | None = None,
         frame_no_map: dict[tuple[str, str], int] | None = None,
     ) -> None:
+        if target_labels is not None and non_target_labels is not None:
+            raise ValueError("`target_labels`と`non_target_labels`の両方が指定されています。")
+        if target_attribute_names is not None and non_target_attribute_names is not None:
+            raise ValueError("`target_attribute_names`と`non_target_attribute_names`の両方が指定されています。")
+
         self.target_labels = set(target_labels) if target_labels is not None else None
         self.target_attribute_names = set(target_attribute_names) if target_attribute_names is not None else None
         self.non_target_labels = set(non_target_labels) if non_target_labels is not None else None
@@ -309,7 +316,19 @@ class ListAnnotationCounterByInputData:
 
 
 class ListAnnotationCounterByTask:
-    """タスク単位で、ラベルごと/属性ごとのアノテーション数を集計情報を取得するメソッドの集まり。"""
+    """タスク単位で、ラベルごと/属性ごとのアノテーション数を集計情報を取得するメソッドの集まり。
+
+    Args:
+        target_labels: 集計対象のラベル（label_name_en）。`non_target_labels`との同時指定不可。
+        target_attribute_names: 集計対象の属性名。`non_target_attribute_names`との同時指定不可。
+        non_target_labels: 集計対象外のラベル。`target_labels`との同時指定不可。
+        non_target_attribute_names: 集計対象外の属性名のキー。`target_attribute_names`との同時指定不可。
+
+    Raises:
+        ValueError: `target_labels`と`non_target_labels`の両方が指定された場合、
+            または`target_attribute_names`と`non_target_attribute_names`の両方が指定された場合に発生します。
+
+    """
 
     def __init__(
         self,
@@ -319,6 +338,11 @@ class ListAnnotationCounterByTask:
         target_attribute_names: Collection[AttributeNameKey] | None = None,
         non_target_attribute_names: Collection[AttributeNameKey] | None = None,
     ) -> None:
+        if target_labels is not None and non_target_labels is not None:
+            raise ValueError("`target_labels`と`non_target_labels`の両方が指定されています。")
+        if target_attribute_names is not None and non_target_attribute_names is not None:
+            raise ValueError("`target_attribute_names`と`non_target_attribute_names`の両方が指定されています。")
+
         self.counter_by_input_data = ListAnnotationCounterByInputData(
             target_labels=target_labels,
             non_target_labels=non_target_labels,
