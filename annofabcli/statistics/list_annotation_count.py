@@ -931,8 +931,9 @@ class AnnotationSpecs:
 
 
 class ListAnnotationCountMain:
-    def __init__(self, service: annofabapi.Resource) -> None:
+    def __init__(self, service: annofabapi.Resource, annotation_specs: AnnotationSpecs) -> None:
         self.service = service
+        self.annotation_specs = annotation_specs
 
     @staticmethod
     def get_frame_no_map(task_json_path: Path) -> dict[tuple[str, str], int]:
@@ -948,9 +949,8 @@ class ListAnnotationCountMain:
                 result[(task_id, input_data_id)] = index + 1
         return result
 
-    @staticmethod
     def _determine_target_attributes(
-        annotation_specs: AnnotationSpecs,
+        self,
         *,
         specified_attribute_names: Collection[AttributeNameKey] | None = None,
         additional_attribute_names: Collection[AttributeNameKey] | None = None,
@@ -959,7 +959,6 @@ class ListAnnotationCountMain:
         集計対象の属性を決定する。
 
         Args:
-            annotation_specs: アノテーション仕様
             specified_attribute_names: 指定された属性名（--attribute_name）
             additional_attribute_names: 追加の属性名（--additional_attribute_name）
 
@@ -976,7 +975,7 @@ class ListAnnotationCountMain:
             target_attribute_name_keys = list(specified_attribute_names)
         else:
             # 追加属性が指定されている場合、それらを集計対象から除外しないようにする
-            all_non_selective_attributes = annotation_specs.non_selective_attribute_name_keys()
+            all_non_selective_attributes = self.annotation_specs.non_selective_attribute_name_keys()
             if additional_attribute_names is not None:
                 additional_attribute_names_set = set(additional_attribute_names)
                 non_selective_attribute_name_keys = [attr for attr in all_non_selective_attributes if attr not in additional_attribute_names_set]
@@ -990,7 +989,6 @@ class ListAnnotationCountMain:
         annotation_path: Path,
         csv_type: CsvType,
         output_file: Path,
-        annotation_specs: AnnotationSpecs,
         *,
         task_json_path: Path | None = None,
         target_task_ids: Collection[str] | None = None,
@@ -1000,7 +998,6 @@ class ListAnnotationCountMain:
     ) -> None:
         # 集計対象の属性を決定
         target_attribute_name_keys, non_selective_attribute_name_keys = self._determine_target_attributes(
-            annotation_specs,
             specified_attribute_names=specified_attribute_names,
             additional_attribute_names=additional_attribute_names,
         )
@@ -1019,16 +1016,16 @@ class ListAnnotationCountMain:
 
         if csv_type == CsvType.LABEL:
             # ラベル名の列順が、アノテーション仕様にあるラベル名の順番に対応するようにする。
-            label_columns = annotation_specs.label_keys()
+            label_columns = self.annotation_specs.label_keys()
             LabelCountCsv().print_csv_by_input_data(counter_list_by_input_data, output_file, prior_label_columns=label_columns)
         elif csv_type == CsvType.ATTRIBUTE:
             if specified_attribute_names is not None:
                 # --attribute_nameが指定された場合は、指定された属性を除外対象外とし、
                 # 非選択肢系であっても除外されないようにする
-                attribute_columns = annotation_specs.selective_attribute_value_keys(additional_attribute_names=specified_attribute_names)
+                attribute_columns = self.annotation_specs.selective_attribute_value_keys(additional_attribute_names=specified_attribute_names)
                 allowlist_attribute_names: Collection[AttributeNameKey] | None = specified_attribute_names
             else:
-                attribute_columns = annotation_specs.selective_attribute_value_keys(additional_attribute_names=additional_attribute_names)
+                attribute_columns = self.annotation_specs.selective_attribute_value_keys(additional_attribute_names=additional_attribute_names)
                 allowlist_attribute_names = additional_attribute_names
 
             AttributeCountCsv().print_csv_by_input_data(counter_list_by_input_data, output_file, prior_attribute_columns=attribute_columns, allowlist_attribute_names=allowlist_attribute_names)
@@ -1038,7 +1035,6 @@ class ListAnnotationCountMain:
         annotation_path: Path,
         csv_type: CsvType,
         output_file: Path,
-        annotation_specs: AnnotationSpecs,
         *,
         target_task_ids: Collection[str] | None = None,
         task_query: TaskQuery | None = None,
@@ -1047,7 +1043,6 @@ class ListAnnotationCountMain:
     ) -> None:
         # 集計対象の属性を決定
         target_attribute_name_keys, non_selective_attribute_name_keys = self._determine_target_attributes(
-            annotation_specs,
             specified_attribute_names=specified_attribute_names,
             additional_attribute_names=additional_attribute_names,
         )
@@ -1063,7 +1058,7 @@ class ListAnnotationCountMain:
 
         if csv_type == CsvType.LABEL:
             # 列順が、アノテーション仕様にあるラベル名の順番に対応するようにする。
-            label_columns = annotation_specs.label_keys()
+            label_columns = self.annotation_specs.label_keys()
             LabelCountCsv().print_csv_by_task(counter_list_by_task, output_file, prior_label_columns=label_columns)
 
         elif csv_type == CsvType.ATTRIBUTE:
@@ -1071,10 +1066,10 @@ class ListAnnotationCountMain:
             if specified_attribute_names is not None:
                 # --attribute_nameが指定された場合は、指定された属性を除外対象外とし、
                 # 非選択肢系であっても除外されないようにする
-                attribute_columns = annotation_specs.selective_attribute_value_keys(additional_attribute_names=specified_attribute_names)
+                attribute_columns = self.annotation_specs.selective_attribute_value_keys(additional_attribute_names=specified_attribute_names)
                 allowlist_attribute_names: Collection[AttributeNameKey] | None = specified_attribute_names
             else:
-                attribute_columns = annotation_specs.selective_attribute_value_keys(additional_attribute_names=additional_attribute_names)
+                attribute_columns = self.annotation_specs.selective_attribute_value_keys(additional_attribute_names=additional_attribute_names)
                 allowlist_attribute_names = additional_attribute_names
 
             AttributeCountCsv().print_csv_by_task(counter_list_by_task, output_file, prior_attribute_columns=attribute_columns, allowlist_attribute_names=allowlist_attribute_names)
@@ -1083,7 +1078,6 @@ class ListAnnotationCountMain:
         self,
         annotation_path: Path,
         output_file: Path,
-        annotation_specs: AnnotationSpecs,
         *,
         task_json_path: Path | None = None,
         target_task_ids: Collection[str] | None = None,
@@ -1096,7 +1090,6 @@ class ListAnnotationCountMain:
 
         # 集計対象の属性を決定
         target_attribute_name_keys, non_selective_attribute_name_keys = self._determine_target_attributes(
-            annotation_specs,
             specified_attribute_names=specified_attribute_names,
             additional_attribute_names=additional_attribute_names,
         )
@@ -1123,7 +1116,6 @@ class ListAnnotationCountMain:
         self,
         annotation_path: Path,
         output_file: Path,
-        annotation_specs: AnnotationSpecs,
         *,
         target_task_ids: Collection[str] | None = None,
         task_query: TaskQuery | None = None,
@@ -1135,7 +1127,6 @@ class ListAnnotationCountMain:
 
         # 集計対象の属性を決定
         target_attribute_name_keys, non_selective_attribute_name_keys = self._determine_target_attributes(
-            annotation_specs,
             specified_attribute_names=specified_attribute_names,
             additional_attribute_names=additional_attribute_names,
         )
@@ -1155,13 +1146,12 @@ class ListAnnotationCountMain:
             output=output_file,
         )
 
-    def print_annotation_counter(  # noqa: PLR0913
+    def print_annotation_counter(
         self,
         annotation_path: Path,
         group_by: GroupBy,
         output_file: Path,
         arg_format: OutputFormat,
-        annotation_specs: AnnotationSpecs,
         *,
         task_json_path: Path | None = None,
         target_task_ids: Collection[str] | None = None,
@@ -1179,7 +1169,6 @@ class ListAnnotationCountMain:
                     task_json_path=task_json_path,
                     output_file=output_file,
                     csv_type=csv_type,
-                    annotation_specs=annotation_specs,
                     target_task_ids=target_task_ids,
                     task_query=task_query,
                     additional_attribute_names=additional_attribute_names,
@@ -1191,7 +1180,6 @@ class ListAnnotationCountMain:
                     annotation_path=annotation_path,
                     output_file=output_file,
                     csv_type=csv_type,
-                    annotation_specs=annotation_specs,
                     target_task_ids=target_task_ids,
                     task_query=task_query,
                     additional_attribute_names=additional_attribute_names,
@@ -1206,7 +1194,6 @@ class ListAnnotationCountMain:
                     annotation_path=annotation_path,
                     task_json_path=task_json_path,
                     output_file=output_file,
-                    annotation_specs=annotation_specs,
                     target_task_ids=target_task_ids,
                     task_query=task_query,
                     json_is_pretty=json_is_pretty,
@@ -1218,7 +1205,6 @@ class ListAnnotationCountMain:
                 self.print_annotation_counter_json_by_task(
                     annotation_path=annotation_path,
                     output_file=output_file,
-                    annotation_specs=annotation_specs,
                     target_task_ids=target_task_ids,
                     task_query=task_query,
                     json_is_pretty=json_is_pretty,
@@ -1266,7 +1252,7 @@ class ListAnnotationCount(CommandLine):
         csv_type = CsvType(args.type)
         output_file: Path = args.output
         arg_format = OutputFormat(args.format)
-        main_obj = ListAnnotationCountMain(self.service)
+        main_obj = ListAnnotationCountMain(self.service, annotation_specs)
 
         downloading_obj = DownloadingFile(self.service)
 
@@ -1285,7 +1271,6 @@ class ListAnnotationCount(CommandLine):
                 csv_type=csv_type,
                 arg_format=arg_format,
                 output_file=output_file,
-                annotation_specs=annotation_specs,
                 target_task_ids=task_id_list,
                 task_query=task_query,
                 additional_attribute_names=additional_attribute_names,
