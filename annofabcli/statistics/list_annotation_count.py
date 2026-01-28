@@ -1041,7 +1041,6 @@ class ListAnnotationCountMain:
                 result[(task_id, input_data_id)] = index + 1
         return result
 
- 
     def print_annotation_counter_csv_by_input_data(
         self,
         annotation_path: Path,
