@@ -101,6 +101,15 @@ def encode_annotation_count_by_attribute(
 
 @dataclass(frozen=True)
 class AnnotationCounter(abc.ABC):
+    """
+    アノテーションの集計情報を保持する抽象基底クラス。
+
+    Attributes:
+        annotation_count: アノテーションの総数
+        annotation_count_by_label: ラベルごとのアノテーション数
+        annotation_count_by_attribute: 属性値ごとのアノテーション数
+    """
+
     annotation_count: int
     annotation_count_by_label: Counter[str]
     annotation_count_by_attribute: Counter[AttributeValueKey] = field(
@@ -112,6 +121,18 @@ class AnnotationCounter(abc.ABC):
 
 @dataclass(frozen=True)
 class AnnotationCounterByTask(AnnotationCounter, DataClassJsonMixin):
+    """
+    タスク単位でのアノテーション集計情報。
+
+    Attributes:
+        project_id: プロジェクトID
+        task_id: タスクID
+        task_status: タスクのステータス
+        task_phase: タスクのフェーズ
+        task_phase_stage: タスクフェーズのステージ番号
+        input_data_count: タスクに含まれる入力データの数
+    """
+
     project_id: str
     task_id: str
     task_status: TaskStatus
@@ -122,6 +143,21 @@ class AnnotationCounterByTask(AnnotationCounter, DataClassJsonMixin):
 
 @dataclass(frozen=True)
 class AnnotationCounterByInputData(AnnotationCounter, DataClassJsonMixin):
+    """
+    入力データ単位でのアノテーション集計情報。
+
+    Attributes:
+        project_id: プロジェクトID
+        task_id: タスクID
+        task_status: タスクのステータス
+        task_phase: タスクのフェーズ
+        task_phase_stage: タスクフェーズのステージ番号
+        input_data_id: 入力データID
+        input_data_name: 入力データ名
+        updated_datetime: アノテーションJSONに格納されているアノテーションの更新日時
+        frame_no: フレーム番号。アノテーションJSONには含まれていない情報なので、Optionalにする
+    """
+
     project_id: str
     task_id: str
     task_status: TaskStatus
@@ -137,6 +173,18 @@ class AnnotationCounterByInputData(AnnotationCounter, DataClassJsonMixin):
 
 
 def lazy_parse_simple_annotation_by_input_data(annotation_path: Path) -> Iterator[SimpleAnnotationParser]:
+    """
+    アノテーションzipまたはディレクトリから、入力データ単位でアノテーションを遅延パースするイテレータを返します。
+
+    Args:
+        annotation_path: アノテーションzipまたはzipを展開したディレクトリのパス
+
+    Returns:
+        SimpleAnnotationParserのイテレータ
+
+    Raises:
+        RuntimeError: 指定されたパスが存在しない場合、またはzipファイルでもディレクトリでもない場合
+    """
     if not annotation_path.exists():
         raise RuntimeError(f"'{annotation_path}' は存在しません。")
 
@@ -149,6 +197,18 @@ def lazy_parse_simple_annotation_by_input_data(annotation_path: Path) -> Iterato
 
 
 def lazy_parse_simple_annotation_by_task(annotation_path: Path) -> Iterator[SimpleAnnotationParserByTask]:
+    """
+    アノテーションzipまたはディレクトリから、タスク単位でアノテーションを遅延パースするイテレータを返します。
+
+    Args:
+        annotation_path: アノテーションzipまたはzipを展開したディレクトリのパス
+
+    Returns:
+        SimpleAnnotationParserByTaskのイテレータ
+
+    Raises:
+        RuntimeError: 指定されたパスが存在しない場合、またはzipファイルでもディレクトリでもない場合
+    """
     if not annotation_path.exists():
         raise RuntimeError(f"'{annotation_path}' は存在しません。")
 
@@ -442,6 +502,16 @@ class AttributeCountCsv:
         counter_list: Collection[AnnotationCounter],
         prior_attribute_columns: list[AttributeValueKey] | None,
     ) -> list[AttributeValueKey]:
+        """
+        CSV出力のための属性値列の順序を決定します。
+
+        Args:
+            counter_list: アノテーション集計情報のコレクション
+            prior_attribute_columns: 優先的に配置する属性値のキーのリスト。Noneの場合はソート順で配置されます。
+
+        Returns:
+            属性値のキーのリスト（CSV列の順序）
+        """
         all_attr_key_set = {attr_key for c in counter_list for attr_key in c.annotation_count_by_attribute}
         if prior_attribute_columns is not None:
             remaining_columns = sorted(all_attr_key_set - set(prior_attribute_columns))
@@ -476,6 +546,14 @@ class AttributeCountCsv:
         output_file: Path,
         prior_attribute_columns: list[AttributeValueKey] | None = None,
     ) -> None:
+        """
+        タスク単位の属性値ごとアノテーション数をCSVファイルに出力します。
+
+        Args:
+            counter_list: タスク単位のアノテーション集計情報のリスト
+            output_file: 出力先CSVファイルのパス
+            prior_attribute_columns: 優先的に配置する属性値のキーのリスト
+        """
         def get_columns() -> list[AttributeValueKey]:
             basic_columns = [
                 ("project_id", "", ""),
@@ -516,6 +594,14 @@ class AttributeCountCsv:
         output_file: Path,
         prior_attribute_columns: list[AttributeValueKey] | None = None,
     ) -> None:
+        """
+        入力データ単位の属性値ごとアノテーション数をCSVファイルに出力します。
+
+        Args:
+            counter_list: 入力データ単位のアノテーション集計情報のリスト
+            output_file: 出力先CSVファイルのパス
+            prior_attribute_columns: 優先的に配置する属性値のキーのリスト
+        """
         def get_columns() -> list[AttributeValueKey]:
             basic_columns = [
                 ("project_id", "", ""),
@@ -567,6 +653,16 @@ class LabelCountCsv:
     """
 
     def _value_columns(self, counter_list: Collection[AnnotationCounter], prior_label_columns: list[str] | None) -> list[str]:
+        """
+        CSV出力のためのラベル列の順序を決定します。
+
+        Args:
+            counter_list: アノテーション集計情報のコレクション
+            prior_label_columns: 優先的に配置するラベル名のリスト。Noneの場合はソート順で配置されます。
+
+        Returns:
+            ラベル名のリスト（CSV列の順序）
+        """
         all_attr_key_set = {attr_key for c in counter_list for attr_key in c.annotation_count_by_label}
         if prior_label_columns is not None:
             remaining_columns = sorted(all_attr_key_set - set(prior_label_columns))
@@ -583,6 +679,14 @@ class LabelCountCsv:
         output_file: Path,
         prior_label_columns: list[str] | None = None,
     ) -> None:
+        """
+        タスク単位のラベルごとアノテーション数をCSVファイルに出力します。
+
+        Args:
+            counter_list: タスク単位のアノテーション集計情報のリスト
+            output_file: 出力先CSVファイルのパス
+            prior_label_columns: 優先的に配置するラベル名のリスト
+        """
         def get_columns() -> list[str]:
             basic_columns = [
                 "project_id",
@@ -623,6 +727,14 @@ class LabelCountCsv:
         output_file: Path,
         prior_label_columns: list[str] | None = None,
     ) -> None:
+        """
+        入力データ単位のラベルごとアノテーション数をCSVファイルに出力します。
+
+        Args:
+            counter_list: 入力データ単位のアノテーション集計情報のリスト
+            output_file: 出力先CSVファイルのパス
+            prior_label_columns: 優先的に配置するラベル名のリスト
+        """
         def get_columns() -> list[str]:
             basic_columns = [
                 "project_id",
@@ -890,11 +1002,26 @@ class AnnotationSpecs:
 
 class ListAnnotationCountMain:
     def __init__(self, service: annofabapi.Resource, annotation_specs: AnnotationSpecs) -> None:
+        """
+        Args:
+            service: AnnofabのAPIリソース
+            annotation_specs: アノテーション仕様
+        """
         self.service = service
         self.annotation_specs = annotation_specs
 
     @staticmethod
     def get_frame_no_map(task_json_path: Path) -> dict[tuple[str, str], int]:
+        """
+        タスクJSONファイルから、(task_id, input_data_id)をキーとし、フレーム番号を値とするマップを取得します。
+        フレーム番号は1始まりです。
+
+        Args:
+            task_json_path: タスクJSONファイルのパス
+
+        Returns:
+            key: (task_id, input_data_id)のタプル、value: フレーム番号のdict
+        """
         with task_json_path.open(encoding="utf-8") as f:
             task_list = json.load(f)
 
@@ -942,6 +1069,19 @@ class ListAnnotationCountMain:
         additional_attribute_names: Collection[AttributeNameKey] | None = None,
         specified_attribute_names: Collection[AttributeNameKey] | None = None,
     ) -> None:
+        """
+        ラベルごと/属性ごとのアノテーション数を入力データ単位でCSVファイルに出力します。
+
+        Args:
+            annotation_path: アノテーションzipまたはzipを展開したディレクトリのパス
+            csv_type: 出力するCSVの種類（ラベルごと/属性ごと）
+            output_file: 出力先のCSVファイルパス
+            task_json_path: タスクJSONファイルのパス。フレーム番号を出力する場合に指定します。
+            target_task_ids: 集計対象のタスクIDのコレクション
+            task_query: 集計対象タスクを絞り込むためのクエリ条件
+            additional_attribute_names: デフォルトの選択系属性に加えて集計対象とする属性名のキー
+            specified_attribute_names: 集計対象とする属性名のキー。指定した場合、これらの属性のみが集計対象になります。
+        """
         frame_no_map = self.get_frame_no_map(task_json_path) if task_json_path is not None else None
         counter_by_input_data = ListAnnotationCounterByInputData(
             target_attribute_names=specified_attribute_names,
@@ -977,6 +1117,18 @@ class ListAnnotationCountMain:
         additional_attribute_names: Collection[AttributeNameKey] | None = None,
         specified_attribute_names: Collection[AttributeNameKey] | None = None,
     ) -> None:
+        """
+        ラベルごと/属性ごとのアノテーション数をタスク単位でCSVファイルに出力します。
+
+        Args:
+            annotation_path: アノテーションzipまたはzipを展開したディレクトリのパス
+            csv_type: 出力するCSVの種類（ラベルごと/属性ごと）
+            output_file: 出力先のCSVファイルパス
+            target_task_ids: 集計対象のタスクIDのコレクション
+            task_query: 集計対象タスクを絞り込むためのクエリ条件
+            additional_attribute_names: デフォルトの選択系属性に加えて集計対象とする属性名のキー
+            specified_attribute_names: 集計対象とする属性名のキー。指定した場合、これらの属性のみが集計対象になります。
+        """
         counter_list_by_task = ListAnnotationCounterByTask(
             target_attribute_names=specified_attribute_names,
             non_target_attribute_names=None if specified_attribute_names is not None else self._get_non_selective_attribute_name_keys(additional_attribute_names=additional_attribute_names),
@@ -1133,6 +1285,11 @@ class ListAnnotationCount(CommandLine):
     """
 
     def main(self) -> None:
+        """
+        アノテーション数情報を出力するメイン処理。
+        コマンドライン引数を解析し、アノテーションzip/ディレクトリから集計情報を取得して、
+        指定された形式（CSV/JSON）で出力します。
+        """
         args = self.args
 
         project_id: str = args.project_id
@@ -1209,6 +1366,12 @@ class ListAnnotationCount(CommandLine):
 
 
 def parse_args(parser: argparse.ArgumentParser) -> None:
+    """
+    コマンドライン引数のパーサーを設定します。
+
+    Args:
+        parser: argparseのArgumentParserインスタンス
+    """
     argument_parser = ArgumentParser(parser)
 
     parser.add_argument(
@@ -1292,12 +1455,27 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
 
 
 def main(args: argparse.Namespace) -> None:
+    """
+    list_annotation_countコマンドのエントリーポイント。
+
+    Args:
+        args: コマンドライン引数
+    """
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
     ListAnnotationCount(service, facade, args).main()
 
 
 def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
+    """
+    list_annotation_countサブコマンドのパーサーを追加します。
+
+    Args:
+        subparsers: 親パーサーのサブパーサーアクション
+
+    Returns:
+        作成されたArgumentParserインスタンス
+    """
     subcommand_name = "list_annotation_count"
     subcommand_help = "ラベルごとまたは属性値ごとにアノテーション数を出力します。"
     epilog = "オーナロールまたはアノテーションユーザロールを持つユーザで実行してください。"
