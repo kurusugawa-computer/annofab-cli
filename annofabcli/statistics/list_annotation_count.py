@@ -884,7 +884,7 @@ class AnnotationSpecs:
 
         return target_attribute_value_keys
 
-    def selective_attribute_value_keys(self, additional_attribute_names: Collection[AttributeNameKey] | None = None) -> list[AttributeValueKey]:
+    def selective_attribute_value_keys(self) -> list[AttributeValueKey]:
         """
         選択系（ドロップダウン／ラジオボタン／チェックボックス／フラグ）の属性の属性値のキーの一覧。
 
@@ -892,21 +892,10 @@ class AnnotationSpecs:
         * ドロップダウン
         * ラジオボタン
         * チェックボックス
-
-        Args:
-            additional_attribute_names: デフォルトの選択系属性に加えて、集計対象とする属性名のキー。
+        * フラグ
         """
-        # デフォルトの選択系属性名を取得
         selective_attribute_names = self.selective_attribute_name_keys()
         target_attribute_value_keys = self.get_attribute_value_keys_for_target_attributes(selective_attribute_names)
-
-        # 追加属性の処理
-        if additional_attribute_names is not None:
-            # デフォルトで既に含まれている選択系属性は無視する
-            unique_additional_names = set(additional_attribute_names) - set(selective_attribute_names)
-            if len(unique_additional_names) > 0:
-                additional_attribute_value_keys = self.get_attribute_value_keys_for_target_attributes(unique_additional_names)
-                target_attribute_value_keys.extend(additional_attribute_value_keys)
 
         duplicated_attributes = [key for key, value in collections.Counter(target_attribute_value_keys).items() if value > 1]
         if len(duplicated_attributes) > 0:
@@ -1081,11 +1070,22 @@ class ListAnnotationCountMain:
             task_query: 集計対象タスクを絞り込むためのクエリ条件
             additional_attribute_names: デフォルトの選択系属性に加えて集計対象とする属性名のキー
             specified_attribute_names: 集計対象とする属性名のキー。指定した場合、これらの属性のみが集計対象になります。
+
+        Raises:
+            ValueError: `additional_attribute_names`と`specified_attribute_names`の両方が指定された場合に発生します。
         """
+        if additional_attribute_names is not None and specified_attribute_names is not None:
+            raise ValueError("`additional_attribute_names`と`specified_attribute_names`の両方が指定されています。")
+
+        if specified_attribute_names is not None:
+            non_target_attribute_names = None
+        else:
+            non_target_attribute_names = self._get_non_selective_attribute_name_keys(additional_attribute_names=additional_attribute_names)
+
         frame_no_map = self.get_frame_no_map(task_json_path) if task_json_path is not None else None
         counter_by_input_data = ListAnnotationCounterByInputData(
             target_attribute_names=specified_attribute_names,
-            non_target_attribute_names=None if specified_attribute_names is not None else self._get_non_selective_attribute_name_keys(additional_attribute_names=additional_attribute_names),
+            non_target_attribute_names=non_target_attribute_names,
             frame_no_map=frame_no_map,
         )
         counter_list_by_input_data = counter_by_input_data.get_annotation_counter_list(
@@ -1099,11 +1099,7 @@ class ListAnnotationCountMain:
             label_columns = self.annotation_specs.label_keys()
             LabelCountCsv().print_csv_by_input_data(counter_list_by_input_data, output_file, prior_label_columns=label_columns)
         elif csv_type == CsvType.ATTRIBUTE:
-            if specified_attribute_names is not None:
-                attribute_columns = self.annotation_specs.selective_attribute_value_keys(additional_attribute_names=specified_attribute_names)
-            else:
-                attribute_columns = self.annotation_specs.selective_attribute_value_keys(additional_attribute_names=additional_attribute_names)
-
+            attribute_columns = self.annotation_specs.selective_attribute_value_keys()
             AttributeCountCsv().print_csv_by_input_data(counter_list_by_input_data, output_file, prior_attribute_columns=attribute_columns)
 
     def print_annotation_counter_csv_by_task(
@@ -1128,10 +1124,21 @@ class ListAnnotationCountMain:
             task_query: 集計対象タスクを絞り込むためのクエリ条件
             additional_attribute_names: デフォルトの選択系属性に加えて集計対象とする属性名のキー
             specified_attribute_names: 集計対象とする属性名のキー。指定した場合、これらの属性のみが集計対象になります。
+
+        Raises:
+            ValueError: `additional_attribute_names`と`specified_attribute_names`の両方が指定された場合に発生します。
         """
+        if additional_attribute_names is not None and specified_attribute_names is not None:
+            raise ValueError("`additional_attribute_names`と`specified_attribute_names`の両方が指定されています。")
+
+        if specified_attribute_names is not None:
+            non_target_attribute_names = None
+        else:
+            non_target_attribute_names = self._get_non_selective_attribute_name_keys(additional_attribute_names=additional_attribute_names)
+
         counter_list_by_task = ListAnnotationCounterByTask(
             target_attribute_names=specified_attribute_names,
-            non_target_attribute_names=None if specified_attribute_names is not None else self._get_non_selective_attribute_name_keys(additional_attribute_names=additional_attribute_names),
+            non_target_attribute_names=non_target_attribute_names,
         ).get_annotation_counter_list(
             annotation_path,
             target_task_ids=target_task_ids,
@@ -1145,11 +1152,7 @@ class ListAnnotationCountMain:
 
         elif csv_type == CsvType.ATTRIBUTE:
             # 列順が、アノテーション仕様にある属性名と属性値の順番に対応するようにする。
-            if specified_attribute_names is not None:
-                attribute_columns = self.annotation_specs.selective_attribute_value_keys(additional_attribute_names=specified_attribute_names)
-            else:
-                attribute_columns = self.annotation_specs.selective_attribute_value_keys(additional_attribute_names=additional_attribute_names)
-
+            attribute_columns = self.annotation_specs.selective_attribute_value_keys()
             AttributeCountCsv().print_csv_by_task(counter_list_by_task, output_file, prior_attribute_columns=attribute_columns)
 
     def print_annotation_counter_json_by_input_data(
@@ -1176,12 +1179,22 @@ class ListAnnotationCountMain:
             json_is_pretty: Trueの場合、整形されたJSON（pretty print）を出力します
             additional_attribute_names: デフォルトの選択系属性に加えて集計対象とする属性名のキー
             specified_attribute_names: 集計対象とする属性名のキー。指定した場合、これらの属性のみが集計対象になります。
+
+        Raises:
+            ValueError: `additional_attribute_names`と`specified_attribute_names`の両方が指定された場合に発生します。
         """
+        if additional_attribute_names is not None and specified_attribute_names is not None:
+            raise ValueError("`additional_attribute_names`と`specified_attribute_names`の両方が指定されています。")
+
+        if specified_attribute_names is not None:
+            non_target_attribute_names = None
+        else:
+            non_target_attribute_names = self._get_non_selective_attribute_name_keys(additional_attribute_names=additional_attribute_names)
 
         frame_no_map = self.get_frame_no_map(task_json_path) if task_json_path is not None else None
         counter_by_input_data = ListAnnotationCounterByInputData(
             target_attribute_names=specified_attribute_names,
-            non_target_attribute_names=None if specified_attribute_names is not None else self._get_non_selective_attribute_name_keys(additional_attribute_names=additional_attribute_names),
+            non_target_attribute_names=non_target_attribute_names,
             frame_no_map=frame_no_map,
         )
         counter_list_by_input_data = counter_by_input_data.get_annotation_counter_list(
@@ -1218,11 +1231,21 @@ class ListAnnotationCountMain:
             json_is_pretty: Trueの場合、整形されたJSON（pretty print）を出力します
             additional_attribute_names: デフォルトの選択系属性に加えて集計対象とする属性名のキー
             specified_attribute_names: 集計対象とする属性名のキー。指定した場合、これらの属性のみが集計対象になります。
+
+        Raises:
+            ValueError: `additional_attribute_names`と`specified_attribute_names`の両方が指定された場合に発生します。
         """
+        if additional_attribute_names is not None and specified_attribute_names is not None:
+            raise ValueError("`additional_attribute_names`と`specified_attribute_names`の両方が指定されています。")
+
+        if specified_attribute_names is not None:
+            non_target_attribute_names = None
+        else:
+            non_target_attribute_names = self._get_non_selective_attribute_name_keys(additional_attribute_names=additional_attribute_names)
 
         counter_list_by_task = ListAnnotationCounterByTask(
             target_attribute_names=specified_attribute_names,
-            non_target_attribute_names=None if specified_attribute_names is not None else self._get_non_selective_attribute_name_keys(additional_attribute_names=additional_attribute_names),
+            non_target_attribute_names=non_target_attribute_names,
         ).get_annotation_counter_list(
             annotation_path,
             target_task_ids=target_task_ids,
