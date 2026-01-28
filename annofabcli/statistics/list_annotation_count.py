@@ -228,6 +228,7 @@ class ListAnnotationCounterByInputData:
         target_attribute_names: 集計対象の属性名。`non_target_attribute_names`との同時指定不可。
         non_target_labels: 集計対象外のラベル。`target_labels`との同時指定不可。
         non_target_attribute_names: 集計対象外の属性名のキー。`target_attribute_names`との同時指定不可。
+        target_attribute_names_only: 集計対象の属性名（属性名のみでフィルタリング）。ラベル名に関係なく、指定された属性名のみが対象になります。
         frame_no_map: key:task_id,input_data_idのtuple, value:フレーム番号
 
     Raises:
@@ -243,6 +244,7 @@ class ListAnnotationCounterByInputData:
         non_target_labels: Collection[str] | None = None,
         target_attribute_names: Collection[AttributeNameKey] | None = None,
         non_target_attribute_names: Collection[AttributeNameKey] | None = None,
+        target_attribute_names_only: Collection[str] | None = None,
         frame_no_map: dict[tuple[str, str], int] | None = None,
     ) -> None:
         if target_labels is not None and non_target_labels is not None:
@@ -254,6 +256,7 @@ class ListAnnotationCounterByInputData:
         self.target_attribute_names = set(target_attribute_names) if target_attribute_names is not None else None
         self.non_target_labels = set(non_target_labels) if non_target_labels is not None else None
         self.non_target_attribute_names = set(non_target_attribute_names) if non_target_attribute_names is not None else None
+        self.target_attribute_names_only = set(target_attribute_names_only) if target_attribute_names_only is not None else None
         self.frame_no_map = frame_no_map
 
     def get_annotation_counter(
@@ -306,6 +309,14 @@ class ListAnnotationCounterByInputData:
                     (label, attribute_name, attribute_value): count
                     for (label, attribute_name, attribute_value), count in annotation_count_by_attribute.items()
                     if (label, attribute_name) in self.target_attribute_names
+                }
+            )
+        if self.target_attribute_names_only is not None:
+            annotation_count_by_attribute = collections.Counter(
+                {
+                    (label, attribute_name, attribute_value): count
+                    for (label, attribute_name, attribute_value), count in annotation_count_by_attribute.items()
+                    if attribute_name in self.target_attribute_names_only
                 }
             )
         if self.non_target_attribute_names is not None:
@@ -383,6 +394,7 @@ class ListAnnotationCounterByTask:
         target_attribute_names: 集計対象の属性名。`non_target_attribute_names`との同時指定不可。
         non_target_labels: 集計対象外のラベル。`target_labels`との同時指定不可。
         non_target_attribute_names: 集計対象外の属性名のキー。`target_attribute_names`との同時指定不可。
+        target_attribute_names_only: 集計対象の属性名（属性名のみでフィルタリング）。ラベル名に関係なく、指定された属性名のみが対象になります。
 
     Raises:
         ValueError: `target_labels`と`non_target_labels`の両方が指定された場合、
@@ -397,6 +409,7 @@ class ListAnnotationCounterByTask:
         non_target_labels: Collection[str] | None = None,
         target_attribute_names: Collection[AttributeNameKey] | None = None,
         non_target_attribute_names: Collection[AttributeNameKey] | None = None,
+        target_attribute_names_only: Collection[str] | None = None,
     ) -> None:
         if target_labels is not None and non_target_labels is not None:
             raise ValueError("`target_labels`と`non_target_labels`の両方が指定されています。")
@@ -408,6 +421,7 @@ class ListAnnotationCounterByTask:
             non_target_labels=non_target_labels,
             target_attribute_names=target_attribute_names,
             non_target_attribute_names=non_target_attribute_names,
+            target_attribute_names_only=target_attribute_names_only,
         )
 
     def get_annotation_counter(self, task_parser: SimpleAnnotationParserByTask) -> AnnotationCounterByTask:
@@ -1083,12 +1097,15 @@ class ListAnnotationCountMain:
 
         if specified_attribute_names is not None:
             non_target_attribute_names = None
+            # specified_attribute_namesから属性名のみを抽出
+            target_attribute_names_only = list({attr_name for _, attr_name in specified_attribute_names})
         else:
             non_target_attribute_names = self._get_non_selective_attribute_name_keys(additional_attribute_names=additional_attribute_names)
+            target_attribute_names_only = None
 
         frame_no_map = self.get_frame_no_map(task_json_path) if task_json_path is not None else None
         counter_by_input_data = ListAnnotationCounterByInputData(
-            target_attribute_names=specified_attribute_names,
+            target_attribute_names_only=target_attribute_names_only,
             non_target_attribute_names=non_target_attribute_names,
             frame_no_map=frame_no_map,
         )
@@ -1137,11 +1154,14 @@ class ListAnnotationCountMain:
 
         if specified_attribute_names is not None:
             non_target_attribute_names = None
+            # specified_attribute_namesから属性名のみを抽出
+            target_attribute_names_only = list({attr_name for _, attr_name in specified_attribute_names})
         else:
             non_target_attribute_names = self._get_non_selective_attribute_name_keys(additional_attribute_names=additional_attribute_names)
+            target_attribute_names_only = None
 
         counter_list_by_task = ListAnnotationCounterByTask(
-            target_attribute_names=specified_attribute_names,
+            target_attribute_names_only=target_attribute_names_only,
             non_target_attribute_names=non_target_attribute_names,
         ).get_annotation_counter_list(
             annotation_path,
@@ -1192,12 +1212,15 @@ class ListAnnotationCountMain:
 
         if specified_attribute_names is not None:
             non_target_attribute_names = None
+            # specified_attribute_namesから属性名のみを抽出
+            target_attribute_names_only = list({attr_name for _, attr_name in specified_attribute_names})
         else:
             non_target_attribute_names = self._get_non_selective_attribute_name_keys(additional_attribute_names=additional_attribute_names)
+            target_attribute_names_only = None
 
         frame_no_map = self.get_frame_no_map(task_json_path) if task_json_path is not None else None
         counter_by_input_data = ListAnnotationCounterByInputData(
-            target_attribute_names=specified_attribute_names,
+            target_attribute_names_only=target_attribute_names_only,
             non_target_attribute_names=non_target_attribute_names,
             frame_no_map=frame_no_map,
         )
@@ -1244,11 +1267,14 @@ class ListAnnotationCountMain:
 
         if specified_attribute_names is not None:
             non_target_attribute_names = None
+            # specified_attribute_namesから属性名のみを抽出
+            target_attribute_names_only = list({attr_name for _, attr_name in specified_attribute_names})
         else:
             non_target_attribute_names = self._get_non_selective_attribute_name_keys(additional_attribute_names=additional_attribute_names)
+            target_attribute_names_only = None
 
         counter_list_by_task = ListAnnotationCounterByTask(
-            target_attribute_names=specified_attribute_names,
+            target_attribute_names_only=target_attribute_names_only,
             non_target_attribute_names=non_target_attribute_names,
         ).get_annotation_counter_list(
             annotation_path,
@@ -1509,8 +1535,8 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--attribute_name",
         type=str,
         nargs="+",
-        help="集計対象とする属性の英語名を指定します。指定した属性のみが集計対象になります（デフォルトの選択肢系属性は含まれません）。"
-        "指定した属性名を持つ全てのラベルの属性が集計対象になります。"
+        help="集計対象とする属性の英語名を指定します。指定した属性名のみが集計対象になります（デフォルトの選択肢系属性は含まれません）。"
+        "ラベル名に関係なく、指定した属性名を持つ属性のみが集計対象になります。"
         " ``file://`` を先頭に付けると、属性名が記載されたファイルを指定できます。"
         " ``--type attribute`` および ``--format csv`` を指定したときのみ有効なオプションです。",
     )
