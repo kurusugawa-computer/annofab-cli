@@ -1164,7 +1164,19 @@ class ListAnnotationCountMain:
         additional_attribute_names: Collection[AttributeNameKey] | None = None,
         specified_attribute_names: Collection[AttributeNameKey] | None = None,
     ) -> None:
-        """ラベルごと/属性ごとのアノテーション数を入力データ単位でJSONファイルに出力します。"""
+        """
+        ラベルごと/属性ごとのアノテーション数を入力データ単位でJSONファイルに出力します。
+
+        Args:
+            annotation_path: アノテーションzipまたはzipを展開したディレクトリのパス
+            output_file: 出力先のJSONファイルパス
+            task_json_path: タスクJSONファイルのパス。フレーム番号を出力する場合に指定します。
+            target_task_ids: 集計対象のタスクIDのコレクション
+            task_query: 集計対象タスクを絞り込むためのクエリ条件
+            json_is_pretty: Trueの場合、整形されたJSON（pretty print）を出力します
+            additional_attribute_names: デフォルトの選択系属性に加えて集計対象とする属性名のキー
+            specified_attribute_names: 集計対象とする属性名のキー。指定した場合、これらの属性のみが集計対象になります。
+        """
 
         frame_no_map = self.get_frame_no_map(task_json_path) if task_json_path is not None else None
         counter_by_input_data = ListAnnotationCounterByInputData(
@@ -1195,7 +1207,18 @@ class ListAnnotationCountMain:
         additional_attribute_names: Collection[AttributeNameKey] | None = None,
         specified_attribute_names: Collection[AttributeNameKey] | None = None,
     ) -> None:
-        """ラベルごと/属性ごとのアノテーション数をタスク単位でJSONファイルに出力します。"""
+        """
+        ラベルごと/属性ごとのアノテーション数をタスク単位でJSONファイルに出力します。
+
+        Args:
+            annotation_path: アノテーションzipまたはzipを展開したディレクトリのパス
+            output_file: 出力先のJSONファイルパス
+            target_task_ids: 集計対象のタスクIDのコレクション
+            task_query: 集計対象タスクを絞り込むためのクエリ条件
+            json_is_pretty: Trueの場合、整形されたJSON（pretty print）を出力します
+            additional_attribute_names: デフォルトの選択系属性に加えて集計対象とする属性名のキー
+            specified_attribute_names: 集計対象とする属性名のキー。指定した場合、これらの属性のみが集計対象になります。
+        """
 
         counter_list_by_task = ListAnnotationCounterByTask(
             target_attribute_names=specified_attribute_names,
@@ -1226,7 +1249,21 @@ class ListAnnotationCountMain:
         additional_attribute_names: Collection[AttributeNameKey] | None = None,
         specified_attribute_names: Collection[AttributeNameKey] | None = None,
     ) -> None:
-        """ラベルごと/属性ごとのアノテーション数を出力します。"""
+        """
+        ラベルごと/属性ごとのアノテーション数を出力します。
+
+        Args:
+            annotation_path: アノテーションzipまたはzipを展開したディレクトリのパス
+            group_by: 集計単位（タスク単位または入力データ単位）
+            output_file: 出力先ファイルのパス
+            arg_format: 出力形式（CSV、JSON、整形済みJSON）
+            task_json_path: タスクJSONファイルのパス。フレーム番号を出力する場合に指定します。
+            target_task_ids: 集計対象のタスクIDのコレクション
+            task_query: 集計対象タスクを絞り込むためのクエリ条件
+            csv_type: CSV出力時の種類（ラベルごと/属性ごと）。CSV形式の場合は必須です。
+            additional_attribute_names: デフォルトの選択系属性に加えて集計対象とする属性名のキー
+            specified_attribute_names: 集計対象とする属性名のキー。指定した場合、これらの属性のみが集計対象になります。
+        """
         if arg_format == OutputFormat.CSV:
             assert csv_type is not None
             if group_by == GroupBy.INPUT_DATA_ID:
