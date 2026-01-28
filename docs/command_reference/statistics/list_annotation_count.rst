@@ -179,8 +179,7 @@ JSON出力
         "task_status": "complete",
         "task_phase": "acceptance",
         "task_phase_stage": 1,
-        "input_data_count": 10,
-        "frame_no": 1        
+        "input_data_count": 10
     }
     ]  
 
