@@ -1441,12 +1441,14 @@ class ListAnnotationCount(CommandLine):
         downloading_obj = DownloadingFile(self.service)
 
         def download_and_process_annotation(temp_dir: Path, *, is_latest: bool, annotation_path: Path | None) -> None:
-            # タスク全件ファイルは、フレーム番号を参照するのに利用する
-            task_json_path = downloading_obj.download_task_json_to_dir(
-                project_id,
-                temp_dir,
-                is_latest=is_latest,
-            )
+            # タスク全件ファイルは、group_by=input_data_idの場合のみフレーム番号を参照するのに利用する
+            task_json_path: Path | None = None
+            if group_by == GroupBy.INPUT_DATA_ID:
+                task_json_path = downloading_obj.download_task_json_to_dir(
+                    project_id,
+                    temp_dir,
+                    is_latest=is_latest,
+                )
 
             func = partial(
                 main_obj.print_annotation_counter,
