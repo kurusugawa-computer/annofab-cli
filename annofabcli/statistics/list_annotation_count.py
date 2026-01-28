@@ -446,27 +446,37 @@ class AttributeCountCsv:
     def __init__(self, selective_attribute_value_max_count: int = 20) -> None:
         self.selective_attribute_value_max_count = selective_attribute_value_max_count
 
-    def _only_selective_attribute(self, columns: list[AttributeValueKey]) -> list[AttributeValueKey]:
+    def _only_selective_attribute(self, columns: list[AttributeValueKey], allowlist_attribute_names: Collection[AttributeNameKey] | None = None) -> list[AttributeValueKey]:
         """
         選択肢系の属性に対応する列のみ抽出する。
         属性値の個数が多い場合、非選択肢系の属性（トラッキングIDやアノテーションリンクなど）の可能性があるため、それらを除外する。
         CSVの列数を増やしすぎないための対策。
+
+        Args:
+            columns: 対象の列
+            allowlist_attribute_names: 除外対象外とする属性名のキー。これらの属性は値の個数が多くても除外されない。
         """
         attribute_name_list: list[AttributeNameKey] = []
         for label, attribute_name, _ in columns:
             attribute_name_list.append((label, attribute_name))
 
-        non_selective_attribute_names = {key for key, value in collections.Counter(attribute_name_list).items() if value > self.selective_attribute_value_max_count}
+        allowlist_set = set(allowlist_attribute_names) if allowlist_attribute_names is not None else set()
+        non_selective_attribute_names = {key for key, value in collections.Counter(attribute_name_list).items() if value > self.selective_attribute_value_max_count and key not in allowlist_set}
         if len(non_selective_attribute_names) > 0:
             logger.debug(f"以下の属性は値の個数が{self.selective_attribute_value_max_count}を超えていたため、集計しません。 :: {non_selective_attribute_names}")
 
         return [(label, attribute_name, attribute_value) for (label, attribute_name, attribute_value) in columns if (label, attribute_name) not in non_selective_attribute_names]
 
-    def _value_columns(self, counter_list: Collection[AnnotationCounter], prior_attribute_columns: list[AttributeValueKey] | None) -> list[AttributeValueKey]:
+    def _value_columns(
+        self,
+        counter_list: Collection[AnnotationCounter],
+        prior_attribute_columns: list[AttributeValueKey] | None,
+        allowlist_attribute_names: Collection[AttributeNameKey] | None = None,
+    ) -> list[AttributeValueKey]:
         all_attr_key_set = {attr_key for c in counter_list for attr_key in c.annotation_count_by_attribute}
         if prior_attribute_columns is not None:
             remaining_columns = sorted(all_attr_key_set - set(prior_attribute_columns))
-            remaining_columns_only_selective_attribute = self._only_selective_attribute(remaining_columns)
+            remaining_columns_only_selective_attribute = self._only_selective_attribute(remaining_columns, allowlist_attribute_names)
 
             # `remaining_columns_only_selective_attribute`には、属性値が空である列などが格納されている
             # `remaining_columns_only_selective_attribute`を、`value_columns`の関連している位置に挿入する。
@@ -486,7 +496,7 @@ class AttributeCountCsv:
 
         else:
             remaining_columns = sorted(all_attr_key_set)
-            value_columns = self._only_selective_attribute(remaining_columns)
+            value_columns = self._only_selective_attribute(remaining_columns, allowlist_attribute_names)
 
         # 重複している場合は、重複要素を取り除く。ただし元の順番は維持する
         value_columns = list(dict.fromkeys(value_columns).keys())
@@ -497,7 +507,13 @@ class AttributeCountCsv:
         counter_list: list[AnnotationCounterByTask],
         output_file: Path,
         prior_attribute_columns: list[AttributeValueKey] | None = None,
+        allowlist_attribute_names: Collection[AttributeNameKey] | None = None,
     ) -> None:
+        """
+        Args:
+            allowlist_attribute_names: 除外対象外とする属性名のキー。これらの属性は値の個数が多くても除外されない。
+        """
+
         def get_columns() -> list[AttributeValueKey]:
             basic_columns = [
                 ("project_id", "", ""),
@@ -508,7 +524,7 @@ class AttributeCountCsv:
                 ("input_data_count", "", ""),
                 ("annotation_count", "", ""),
             ]
-            value_columns = self._value_columns(counter_list, prior_attribute_columns)
+            value_columns = self._value_columns(counter_list, prior_attribute_columns, allowlist_attribute_names)
             return basic_columns + value_columns
 
         def to_cell(c: AnnotationCounterByTask) -> dict[AttributeValueKey, Any]:
@@ -537,7 +553,13 @@ class AttributeCountCsv:
         counter_list: list[AnnotationCounterByInputData],
         output_file: Path,
         prior_attribute_columns: list[AttributeValueKey] | None = None,
+        allowlist_attribute_names: Collection[AttributeNameKey] | None = None,
     ) -> None:
+        """
+        Args:
+            allowlist_attribute_names: 除外対象外とする属性名のキー。これらの属性は値の個数が多くても除外されない。
+        """
+
         def get_columns() -> list[AttributeValueKey]:
             basic_columns = [
                 ("project_id", "", ""),
@@ -551,7 +573,7 @@ class AttributeCountCsv:
                 ("updated_datetime", "", ""),
                 ("annotation_count", "", ""),
             ]
-            value_columns = self._value_columns(counter_list, prior_attribute_columns)
+            value_columns = self._value_columns(counter_list, prior_attribute_columns, allowlist_attribute_names)
             return basic_columns + value_columns
 
         def to_cell(c: AnnotationCounterByInputData) -> dict[tuple[str, str, str], Any]:
@@ -575,7 +597,7 @@ class AttributeCountCsv:
         df = pandas.DataFrame([to_cell(e) for e in counter_list], columns=pandas.MultiIndex.from_tuples(columns))
 
         # アノテーション数の列のNaNを0に変換する
-        value_columns = self._value_columns(counter_list, prior_attribute_columns)
+        value_columns = self._value_columns(counter_list, prior_attribute_columns, allowlist_attribute_names)
         df = df.fillna(dict.fromkeys(value_columns, 0))
 
         print_csv(df, output=output_file)
@@ -985,14 +1007,18 @@ class ListAnnotationCountMain:
             LabelCountCsv().print_csv_by_input_data(counter_list_by_input_data, output_file, prior_label_columns=label_columns)
         elif csv_type == CsvType.ATTRIBUTE:
             attribute_columns: list[AttributeValueKey] | None = None
+            allowlist_attribute_names: Collection[AttributeNameKey] | None = None
             if annotation_specs is not None:
                 if specified_attribute_names is not None:
-                    # --attribute_nameが指定された場合は、指定された属性のみを列として出力
-                    attribute_columns = annotation_specs.get_attribute_value_keys_for_target_attributes(specified_attribute_names)
+                    # --attribute_nameが指定された場合は、指定された属性を除外対象外とし、
+                    # 非選択肢系であっても除外されないようにする
+                    attribute_columns = annotation_specs.selective_attribute_value_keys(additional_attribute_names=specified_attribute_names)
+                    allowlist_attribute_names = specified_attribute_names
                 else:
                     attribute_columns = annotation_specs.selective_attribute_value_keys(additional_attribute_names=additional_attribute_names)
+                    allowlist_attribute_names = additional_attribute_names
 
-            AttributeCountCsv().print_csv_by_input_data(counter_list_by_input_data, output_file, prior_attribute_columns=attribute_columns)
+            AttributeCountCsv().print_csv_by_input_data(counter_list_by_input_data, output_file, prior_attribute_columns=attribute_columns, allowlist_attribute_names=allowlist_attribute_names)
 
     def print_annotation_counter_csv_by_task(
         self,
@@ -1048,14 +1074,18 @@ class ListAnnotationCountMain:
         elif csv_type == CsvType.ATTRIBUTE:
             # 列順が、アノテーション仕様にある属性名と属性値の順番に対応するようにする。
             attribute_columns: list[AttributeValueKey] | None = None
+            allowlist_attribute_names: Collection[AttributeNameKey] | None = None
             if annotation_specs is not None:
                 if specified_attribute_names is not None:
-                    # --attribute_nameが指定された場合は、指定された属性のみを列として出力
-                    attribute_columns = annotation_specs.get_attribute_value_keys_for_target_attributes(specified_attribute_names)
+                    # --attribute_nameが指定された場合は、指定された属性を除外対象外とし、
+                    # 非選択肢系であっても除外されないようにする
+                    attribute_columns = annotation_specs.selective_attribute_value_keys(additional_attribute_names=specified_attribute_names)
+                    allowlist_attribute_names = specified_attribute_names
                 else:
                     attribute_columns = annotation_specs.selective_attribute_value_keys(additional_attribute_names=additional_attribute_names)
+                    allowlist_attribute_names = additional_attribute_names
 
-            AttributeCountCsv().print_csv_by_task(counter_list_by_task, output_file, prior_attribute_columns=attribute_columns)
+            AttributeCountCsv().print_csv_by_task(counter_list_by_task, output_file, prior_attribute_columns=attribute_columns, allowlist_attribute_names=allowlist_attribute_names)
 
     def print_annotation_counter_json_by_input_data(
         self,
