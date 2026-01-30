@@ -103,9 +103,9 @@ class TestCreateDf:
         expected_columns = [
             "project_id",
             "task_id",
-            "task_status",
             "task_phase",
             "task_phase_stage",
+            "task_status",
             "input_data_id",
             "input_data_name",
             "updated_datetime",
@@ -154,9 +154,9 @@ class TestCreateDf:
         expected_base_columns = [
             "project_id",
             "task_id",
-            "task_status",
             "task_phase",
             "task_phase_stage",
+            "task_status",
             "input_data_id",
             "input_data_name",
             "updated_datetime",
