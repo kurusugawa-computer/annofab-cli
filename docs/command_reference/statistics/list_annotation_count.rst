@@ -52,9 +52,9 @@ Examples
         },
         "project_id": "project1",
         "task_id": "task1",
-        "task_status": "complete",
         "task_phase": "acceptance",
         "task_phase_stage": 1,
+        "task_status": "complete",
         "input_data_count": 10,
     }
     ]  
@@ -139,9 +139,9 @@ JSON出力
         },
         "project_id": "project1",
         "task_id": "task1",
-        "task_status": "complete",
         "task_phase": "acceptance",
         "task_phase_stage": 1,
+        "task_status": "complete",
         "input_data_count": 10
     }
     ]  

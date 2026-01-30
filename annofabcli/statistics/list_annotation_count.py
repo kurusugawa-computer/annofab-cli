@@ -573,9 +573,9 @@ class AttributeCountCsv:
             basic_columns = [
                 ("project_id", "", ""),
                 ("task_id", "", ""),
-                ("task_status", "", ""),
                 ("task_phase", "", ""),
                 ("task_phase_stage", "", ""),
+                ("task_status", "", ""),
                 ("input_data_count", "", ""),
                 ("annotation_count", "", ""),
             ]
@@ -622,9 +622,9 @@ class AttributeCountCsv:
             basic_columns = [
                 ("project_id", "", ""),
                 ("task_id", "", ""),
-                ("task_status", "", ""),
                 ("task_phase", "", ""),
                 ("task_phase_stage", "", ""),
+                ("task_status", "", ""),
                 ("input_data_id", "", ""),
                 ("input_data_name", "", ""),
                 ("frame_no", "", ""),
@@ -708,9 +708,9 @@ class LabelCountCsv:
             basic_columns = [
                 "project_id",
                 "task_id",
-                "task_status",
                 "task_phase",
                 "task_phase_stage",
+                "task_status",
                 "input_data_count",
                 "annotation_count",
             ]
@@ -757,9 +757,9 @@ class LabelCountCsv:
             basic_columns = [
                 "project_id",
                 "task_id",
-                "task_status",
                 "task_phase",
                 "task_phase_stage",
+                "task_status",
                 "input_data_id",
                 "input_data_name",
                 "frame_no",

@@ -30,9 +30,9 @@ logger = logging.getLogger(__name__)
 class AnnotationSinglePointInfo(DataClassJsonMixin):
     project_id: str
     task_id: str
-    task_status: str
     task_phase: str
     task_phase_stage: int
+    task_status: str
 
     input_data_id: str
     input_data_name: str
@@ -108,9 +108,9 @@ def create_df(
     base_columns = [
         "project_id",
         "task_id",
-        "task_status",
         "task_phase",
         "task_phase_stage",
+        "task_status",
         "input_data_id",
         "input_data_name",
         "updated_datetime",

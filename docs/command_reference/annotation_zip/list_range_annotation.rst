@@ -36,9 +36,9 @@ Examples
       {
         "project_id": "proj1",
         "task_id": "task_00",
-        "task_status": "complete",
         "task_phase": "annotation",
         "task_phase_stage": 1,
+        "task_status": "complete",
         "input_data_id": "input1",
         "input_data_name": "video1.mp4",
         "updated_datetime": "2023-10-01T12:00:00.000+09:00",
@@ -59,9 +59,9 @@ Examples
 -------------------------------
 
 .. csv-table::
-   :header: project_id,task_id,task_status,task_phase,task_phase_stage,input_data_id,input_data_name,updated_datetime,label,annotation_id,begin_second,end_second,duration_second,attributes.speaker,attributes.language
+   :header: project_id,task_id,task_phase,task_phase_stage,task_status,input_data_id,input_data_name,updated_datetime,label,annotation_id,begin_second,end_second,duration_second,attributes.speaker,attributes.language
 
-    proj1,task_00,complete,annotation,1,input1,video1.mp4,2023-10-01T12:00:00.000+09:00,音声,ann1,10.5,15.8,5.3,male,ja
+    proj1,task_00,annotation,1,complete,input1,video1.mp4,2023-10-01T12:00:00.000+09:00,音声,ann1,10.5,15.8,5.3,male,ja
 
 
 出力項目
@@ -71,9 +71,9 @@ CSV形式およびJSON形式で以下の項目が出力されます：
 
 * ``project_id``: プロジェクトID
 * ``task_id``: タスクID
-* ``task_status``: タスクステータス
 * ``task_phase``: タスクフェーズ
 * ``task_phase_stage``: タスクフェーズの段階
+* ``task_status``: タスクステータス
 * ``input_data_id``: 入力データID
 * ``input_data_name``: 入力データ名
 * ``updated_datetime``: アノテーションJSONの更新日時
