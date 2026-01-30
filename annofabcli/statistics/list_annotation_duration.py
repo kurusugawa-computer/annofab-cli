@@ -109,9 +109,9 @@ class AnnotationDuration(DataClassJsonMixin):
 
     project_id: str
     task_id: str
-    task_status: TaskStatus
     task_phase: TaskPhase
     task_phase_stage: int
+    task_status: TaskStatus
 
     input_data_id: str
     input_data_name: str

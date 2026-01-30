@@ -38,9 +38,9 @@ def _create_dict_tasks_by_input_data_id(task_list: list[dict[str, Any]]) -> dict
         for input_data_index, input_data_id in enumerate(task["input_data_id_list"]):
             new_task = {
                 "task_id": task["task_id"],
-                "task_status": task["status"],
                 "task_phase": task["phase"],
                 "task_phase_stage": task["phase_stage"],
+                "task_status": task["status"],
                 "frame_no": input_data_index + 1,
             }
             result[input_data_id].append(new_task)
@@ -70,7 +70,7 @@ def create_df_input_data_with_merged_task(input_data_list: list[dict[str, Any]])
     """
 
     def get_columns(columns: pandas.Index) -> list[str]:
-        task_columns = ["task_id", "task_status", "task_phase", "task_phase_stage", "frame_no"]
+        task_columns = ["task_id", "task_phase", "task_phase_stage", "task_status", "frame_no"]
         new_columns = columns.drop(task_columns)
         return list(new_columns) + task_columns
 
@@ -93,7 +93,7 @@ def create_df_input_data_with_merged_task(input_data_list: list[dict[str, Any]])
     # ネストしたオブジェクトを`system_metadata.input_duration`のような列名でアクセスできるようにするため
     df_input_data = pandas.json_normalize(new_input_data_list)
 
-    for column in ["task_id", "task_status", "task_phase", "task_phase_stage", "frame_no"]:
+    for column in ["task_id", "task_phase", "task_phase_stage", "task_status", "frame_no"]:
         if column not in df_input_data.columns:
             df_input_data[column] = pandas.NA
 

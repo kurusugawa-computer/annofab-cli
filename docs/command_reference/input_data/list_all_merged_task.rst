@@ -124,9 +124,9 @@ JSON出力
             "parent_task_list": [
                 {
                     "task_id": "test_16",
-                    "task_status": "break",
                     "task_phase": "acceptance",
                     "task_phase_stage": 1,
+                    "task_status": "break",
                     "frame_no": 1
                 }
             ]
