@@ -66,17 +66,25 @@ keyはtask_id
 """
 
 
-def convert_annotation_body_to_inspection_data(annotation_body: dict[str, Any], annotation_type: str) -> dict[str, Any]:
+def convert_annotation_body_to_inspection_data(
+    annotation_body: dict[str, Any],
+    annotation_type: str,
+    input_data_type: str | None = None,
+) -> dict[str, Any]:
     """
     アノテーションのbody部分を、検査コメントの座標情報（`InspectionData`形式）に変換する。
 
     Args:
         annotation_body: Annotationの座標情報。AnnotationDetailContentOutputのdict形式
         annotation_type: アノテーションタイプ。`SUPPORTED_ANNOTATION_TYPES_FOR_INSPECTION_DATA`のいずれかを指定すること。
+        input_data_type: プロジェクトの入力データタイプ（image, movie, custom）。Noneの場合は判定に使用しない。
 
     Returns:
         検査コメントの座標情報（`InspectionData`形式）
     """
+    # input_data_typeを考慮した判定（将来の拡張用に引数として保持）
+    _ = input_data_type
+
     if annotation_type == "user_bounding_box":
         # 3次元バウンディングボックスの場合、data.dataの文字列をパースして返す
         return {"data": annotation_body["data"]["data"], "_type": "Custom"}
@@ -114,6 +122,10 @@ class PutCommentMain(CommandLineWithConfirm):
         self.comment_type = comment_type
         self.comment_type_name = get_comment_type_name(comment_type)
 
+        # プロジェクト情報を取得
+        project, _ = self.service.api.get_project(self.project_id)
+        self.input_data_type = project["input_data_type"]
+
         # アノテーション仕様を取得
         annotation_specs, _ = self.service.api.get_annotation_specs(self.project_id, query_params={"v": "3"})
         self.dict_label_id_annotation_type = {label["label_id"]: label["annotation_type"] for label in annotation_specs["labels"]}
@@ -144,7 +156,7 @@ class PutCommentMain(CommandLineWithConfirm):
                 annotation_type = self.dict_label_id_annotation_type.get(label_id)
                 if annotation_type in SUPPORTED_ANNOTATION_TYPES_FOR_INSPECTION_DATA:
                     # サポート対象のannotation_typeの場合、dataを変換して保存
-                    dict_annotation_id_data[annotation_id] = convert_annotation_body_to_inspection_data(detail["body"], annotation_type)
+                    dict_annotation_id_data[annotation_id] = convert_annotation_body_to_inspection_data(detail["body"], annotation_type, input_data_type=self.input_data_type)
         else:
             # annotation_idからlabel_idを取得するためだけにAPIを呼ぶ
             editor_annotation, _ = self.service.api.get_editor_annotation(self.project_id, task_id, input_data_id, query_params={"v": "2"})
@@ -171,7 +183,6 @@ class PutCommentMain(CommandLineWithConfirm):
                         f"サポートしているのは: {supported_types_str} です。"
                     )
                     return None
-                
 
             assert data is not None
             return {
