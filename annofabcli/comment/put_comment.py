@@ -85,6 +85,10 @@ def convert_annotation_body_to_inspection_data(annotation_body: dict[str, Any], 
         # 点の形式に変換（pointキーから取り出す）
         point = annotation_body["data"]["point"]
         return {"x": point["x"], "y": point["y"], "_type": "Point"}
+    elif annotation_type == "range":
+        # 区間の開始位置をTime形式に変換
+        begin = annotation_body["data"]["begin"]
+        return {"begin": begin, "end": begin, "_type": "Time"}
     else:
         raise ValueError(f"Unsupported annotation_type: {annotation_type}")
 
