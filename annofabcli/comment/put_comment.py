@@ -69,6 +69,43 @@ class PutCommentMain(CommandLineWithConfirm):
 
         CommandLineWithConfirm.__init__(self, all_yes)
 
+    @staticmethod
+    def _convert_annotation_data_to_point(annotation_data: dict[str, Any], annotation_type: str) -> dict[str, Any]:
+        """
+        アノテーションのdataを点の形式に変換する。
+
+        Args:
+            annotation_data: アノテーションのdataフィールド
+            annotation_type: アノテーションタイプ
+
+        Returns:
+            点の形式のdata（{"x": ..., "y": ..., "_type": "Point"}）
+        """
+        if annotation_type == "user_bounding_box":
+            # 3次元バウンディングボックスの場合はそのまま返す
+            return annotation_data
+        elif annotation_type == "bounding_box":
+            # 中心点を計算
+            left_top = annotation_data["left_top"]
+            right_bottom = annotation_data["right_bottom"]
+            center_x = (left_top["x"] + right_bottom["x"]) / 2
+            center_y = (left_top["y"] + right_bottom["y"]) / 2
+            return {"x": center_x, "y": center_y, "_type": "Point"}
+        elif annotation_type in ["polygon", "polyline"]:
+            # 先頭の点を取得
+            points = annotation_data["points"]
+            if len(points) > 0:
+                first_point = points[0]
+                return {"x": first_point["x"], "y": first_point["y"], "_type": "Point"}
+            else:
+                raise ValueError(f"points is empty for annotation_type='{annotation_type}'")
+        elif annotation_type == "point":
+            # 点の形式に変換（pointキーから取り出す）
+            point = annotation_data["point"]
+            return {"x": point["x"], "y": point["y"], "_type": "Point"}
+        else:
+            raise ValueError(f"Unsupported annotation_type: {annotation_type}")
+
     def _create_request_body(self, task: dict[str, Any], input_data_id: str, comments: list[AddedComment]) -> list[dict[str, Any]]:
         """batch_update_comments に渡すリクエストボディを作成する。"""
         task_id = task["task_id"]
@@ -91,9 +128,13 @@ class PutCommentMain(CommandLineWithConfirm):
 
                 # annotation_typeを取得
                 annotation_type = self.dict_label_id_annotation_type.get(label_id)
-                if annotation_type == "user_bounding_box":
-                    # user_bounding_boxの場合のみdataを保存
-                    dict_annotation_id_data[annotation_id] = detail["data"]
+                if annotation_type in ["user_bounding_box", "bounding_box", "polygon", "polyline", "point"]:
+                    # サポート対象のannotation_typeの場合、dataを変換して保存
+                    try:
+                        converted_data = self._convert_annotation_data_to_point(detail["data"], annotation_type)
+                        dict_annotation_id_data[annotation_id] = converted_data
+                    except (KeyError, ValueError) as e:
+                        logger.warning(f"task_id='{task_id}', input_data_id='{input_data_id}', annotation_id='{annotation_id}' :: annotation_typeが'{annotation_type}'のdataの変換に失敗しました: {e}")
         else:
             # annotation_idからlabel_idを取得するためだけにAPIを呼ぶ
             editor_annotation, _ = self.service.api.get_editor_annotation(self.project_id, task_id, input_data_id, query_params={"v": "2"})
@@ -111,12 +152,13 @@ class PutCommentMain(CommandLineWithConfirm):
                     data = dict_annotation_id_data[annotation_id]
                     logger.debug(f"task_id='{task_id}', input_data_id='{input_data_id}', annotation_id='{annotation_id}' :: dataを補完しました。")
                 elif annotation_id in dict_annotation_id_label_id:
-                    # annotation_idは存在するがuser_bounding_box以外
+                    # annotation_idは存在するがサポート対象外
                     label_id = dict_annotation_id_label_id[annotation_id]
                     annotation_type = self.dict_label_id_annotation_type.get(label_id, "unknown")
                     logger.warning(
                         f"task_id='{task_id}', input_data_id='{input_data_id}', annotation_id='{annotation_id}' :: "
-                        f"annotation_typeが'{annotation_type}'のため、dataの補完をスキップします。user_bounding_boxのみサポートしています。"
+                        f"annotation_typeが'{annotation_type}'のため、dataの補完をスキップします。"
+                        f"サポートしているのは: user_bounding_box, bounding_box, polygon, polyline, point です。"
                     )
                     return None
                 # annotation_idが存在しない場合は無視（警告なし）
