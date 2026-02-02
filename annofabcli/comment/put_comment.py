@@ -8,7 +8,8 @@ from typing import Any
 
 import annofabapi
 import requests
-from annofabapi.models import CommentType, InputDataType, TaskPhase, TaskStatus
+from annofabapi.models import CommentType, TaskPhase, TaskStatus
+from annofabapi.pydantic_models.input_data_type import InputDataType
 from dataclasses_json import DataClassJsonMixin
 
 from annofabcli.comment.utils import get_comment_type_name
@@ -66,10 +67,10 @@ keyはtask_id
 """
 
 
-def convert_annotation_body_to_inspection_data(
+def convert_annotation_body_to_inspection_data(  # noqa: PLR0911
     annotation_body: dict[str, Any],
     annotation_type: str,
-    input_data_type: InputDataType | None = None,
+    input_data_type: InputDataType,
 ) -> dict[str, Any]:
     """
     アノテーションのbody部分を、検査コメントの座標情報（`InspectionData`形式）に変換する。
@@ -77,40 +78,58 @@ def convert_annotation_body_to_inspection_data(
     Args:
         annotation_body: Annotationの座標情報。AnnotationDetailContentOutputのdict形式
         annotation_type: アノテーションタイプ。`SUPPORTED_ANNOTATION_TYPES_FOR_INSPECTION_DATA`のいずれかを指定すること。
-        input_data_type: プロジェクトの入力データタイプ。Noneの場合は判定に使用しない。
+        input_data_type: プロジェクトの入力データタイプ。
 
     Returns:
         検査コメントの座標情報（`InspectionData`形式）
     """
-    # input_data_typeを考慮した判定（将来の拡張用に引数として保持）
-    _ = input_data_type
+    match input_data_type:
+        case InputDataType.MOVIE:
+            match annotation_type:
+                case "range":
+                    # 区間の開始位置をTime形式に変換
+                    return {"start": annotation_body["data"]["begin"], "end": annotation_body["data"]["end"], "_type": "Time"}
+                case _:
+                    # "Classification"など、Time形式以外のアノテーションタイプ
+                    return {"start": 0, "end": 100, "_type": "Time"}
 
-    if annotation_type == "user_bounding_box":
-        # 3次元バウンディングボックスの場合、data.dataの文字列をパースして返す
-        return {"data": annotation_body["data"]["data"], "_type": "Custom"}
-    elif annotation_type == "bounding_box":
-        # 中心点を計算
-        left_top = annotation_body["data"]["left_top"]
-        right_bottom = annotation_body["data"]["right_bottom"]
-        center_x = (left_top["x"] + right_bottom["x"]) / 2
-        center_y = (left_top["y"] + right_bottom["y"]) / 2
-        return {"x": center_x, "y": center_y, "_type": "Point"}
-    elif annotation_type in ["polygon", "polyline"]:
-        # 先頭の点を取得
-        points = annotation_body["data"]["points"]
-        assert len(points) > 0
-        first_point = points[0]
-        return {"x": first_point["x"], "y": first_point["y"], "_type": "Point"}
-    elif annotation_type == "point":
-        # 点の形式に変換（pointキーから取り出す）
-        point = annotation_body["data"]["point"]
-        return {"x": point["x"], "y": point["y"], "_type": "Point"}
-    elif annotation_type == "range":
-        # 区間の開始位置をTime形式に変換
-        return {"start": annotation_body["data"]["begin"], "end": annotation_body["data"]["end"], "_type": "Time"}
-    else:
-        supported_types = ", ".join(sorted(SUPPORTED_ANNOTATION_TYPES_FOR_INSPECTION_DATA))
-        raise ValueError(f"Unsupported annotation_type: {annotation_type}. Supported types: {supported_types}")
+        case InputDataType.CUSTOM:
+            match annotation_type:
+                case "user_bounding_box":
+                    # 3次元バウンディングボックスの場合、data.dataの文字列をパースして返す
+                    return {"data": annotation_body["data"]["data"], "_type": "Custom"}
+                case _:
+                    # セグメントなど
+                    return {
+                        "data": '{"kind": "CUBOID", "shape": {"dimensions": {"width": 1.0, "height": 1.0, "depth": 1.0}, "location": {"x": 0.0, "y": 0.0, "z": 0.0}, "rotation": {"x": 0.0, "y": 0.0, "z": 0.0}, "direction": {"front": {"x": 1.0, "y": 0.0, "z": 0.0}, "up": {"x": 0.0, "y": 0.0, "z": 1.0}}}, "version": "2"}',  # noqa: E501
+                        "_type": "Custom",
+                    }
+
+        case InputDataType.IMAGE:
+            match annotation_type:
+                case "bounding_box":
+                    # 中心点を計算
+                    left_top = annotation_body["data"]["left_top"]
+                    right_bottom = annotation_body["data"]["right_bottom"]
+                    center_x = (left_top["x"] + right_bottom["x"]) / 2
+                    center_y = (left_top["y"] + right_bottom["y"]) / 2
+                    return {"x": center_x, "y": center_y, "_type": "Point"}
+                case "polygon" | "polyline":
+                    # 先頭の点を取得
+                    points = annotation_body["data"]["points"]
+                    assert len(points) > 0
+                    first_point = points[0]
+                    return {"x": first_point["x"], "y": first_point["y"], "_type": "Point"}
+                case "point":
+                    # 点の形式に変換（pointキーから取り出す）
+                    point = annotation_body["data"]["point"]
+                    return {"x": point["x"], "y": point["y"], "_type": "Point"}
+                case "range":
+                    # 区間の開始位置をTime形式に変換
+                    return {"start": annotation_body["data"]["begin"], "end": annotation_body["data"]["end"], "_type": "Time"}
+                case _:
+                    # 塗りつぶしや分類など
+                    return {"x": 0, "y": 0, "_type": "Point"}
 
 
 class PutCommentMain(CommandLineWithConfirm):
