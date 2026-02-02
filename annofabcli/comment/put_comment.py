@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import logging
 import multiprocessing
 import uuid
@@ -78,8 +79,14 @@ def convert_annotation_body_to_inspection_data(annotation_body: dict[str, Any], 
         検査コメントの座標情報（`InspectionData`形式）
     """
     if annotation_type == "user_bounding_box":
-        # 3次元バウンディングボックスの場合はそのまま返す
-        return annotation_body["data"]
+        # 3次元バウンディングボックスの場合、data.dataの文字列をパースして返す
+        data = annotation_body["data"]
+        if isinstance(data, dict) and "data" in data and isinstance(data["data"], str):
+            # data.dataが文字列の場合はJSONとしてパース
+            return json.loads(data["data"])
+        else:
+            # それ以外の場合はそのまま返す
+            return data
     elif annotation_type == "bounding_box":
         # 中心点を計算
         left_top = annotation_body["data"]["left_top"]
@@ -145,7 +152,7 @@ class PutCommentMain(CommandLineWithConfirm):
                 annotation_type = self.dict_label_id_annotation_type.get(label_id)
                 if annotation_type in SUPPORTED_ANNOTATION_TYPES_FOR_INSPECTION_DATA:
                     # サポート対象のannotation_typeの場合、dataを変換して保存
-                    dict_annotation_id_data[annotation_id] = convert_annotation_body_to_inspection_data(detail["data"], annotation_type)
+                    dict_annotation_id_data[annotation_id] = convert_annotation_body_to_inspection_data(detail["body"], annotation_type)
         else:
             # annotation_idからlabel_idを取得するためだけにAPIを呼ぶ
             editor_annotation, _ = self.service.api.get_editor_annotation(self.project_id, task_id, input_data_id, query_params={"v": "2"})
