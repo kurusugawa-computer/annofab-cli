@@ -37,6 +37,9 @@ class AddedComment(DataClassJsonMixin):
     phrases: list[str] | None
     """参照している定型指摘ID"""
 
+    comment_id: str | None = None
+    """コメントID。省略時はUUIDv4が自動生成される。"""
+
 
 AddedCommentsForTask = dict[str, list[AddedComment]]
 """
@@ -74,7 +77,7 @@ class PutCommentMain(CommandLineWithConfirm):
 
         def _convert(comment: AddedComment) -> dict[str, Any]:
             return {
-                "comment_id": str(uuid.uuid4()),
+                "comment_id": comment.comment_id if comment.comment_id is not None else str(uuid.uuid4()),
                 "phase": task["phase"],
                 "phase_stage": task["phase_stage"],
                 "account_id": self.service.api.account_id,
