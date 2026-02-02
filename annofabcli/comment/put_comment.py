@@ -65,7 +65,7 @@ class PutCommentMain(CommandLineWithConfirm):
 
         CommandLineWithConfirm.__init__(self, all_yes)
 
-    def _create_request_body(self, task: dict[str, Any], input_data_id: str, comments: list[AddedComment]) -> list[dict[str, Any]]:
+    def _create_request_body(self, task: dict[str, Any], input_data_id: str, comments: list[AddedComment], dict_label_id_annotation_type: dict[str, str] | None) -> list[dict[str, Any]]:
         """batch_update_comments に渡すリクエストボディを作成する。"""
         task_id = task["task_id"]
 
@@ -74,13 +74,8 @@ class PutCommentMain(CommandLineWithConfirm):
 
         dict_annotation_id_label_id: dict[str, str] = {}
         dict_annotation_id_data: dict[str, dict[str, Any]] = {}
-        dict_label_id_annotation_type: dict[str, str] = {}
 
         if need_annotation_data:
-            # アノテーション仕様を取得してlabel_id -> annotation_typeのマップを作成
-            annotation_specs, _ = self.service.api.get_annotation_specs(self.project_id, query_params={"v": "3"})
-            dict_label_id_annotation_type = {label["label_id"]: label["annotation_type"] for label in annotation_specs["labels"]}
-
             # アノテーション詳細を取得
             editor_annotation, _ = self.service.api.get_editor_annotation(self.project_id, task_id, input_data_id, query_params={"v": "2"})
             details = editor_annotation["details"]
@@ -91,10 +86,11 @@ class PutCommentMain(CommandLineWithConfirm):
                 dict_annotation_id_label_id[annotation_id] = label_id
 
                 # annotation_typeを取得
-                annotation_type = dict_label_id_annotation_type.get(label_id)
-                if annotation_type == "user_bounding_box":
-                    # user_bounding_boxの場合のみdataを保存
-                    dict_annotation_id_data[annotation_id] = detail["data"]
+                if dict_label_id_annotation_type is not None:
+                    annotation_type = dict_label_id_annotation_type.get(label_id)
+                    if annotation_type == "user_bounding_box":
+                        # user_bounding_boxの場合のみdataを保存
+                        dict_annotation_id_data[annotation_id] = detail["data"]
         else:
             # annotation_idからlabel_idを取得するためだけにAPIを呼ぶ
             editor_annotation, _ = self.service.api.get_editor_annotation(self.project_id, task_id, input_data_id, query_params={"v": "2"})
@@ -114,7 +110,7 @@ class PutCommentMain(CommandLineWithConfirm):
                 elif annotation_id in dict_annotation_id_label_id:
                     # annotation_idは存在するがuser_bounding_box以外
                     label_id = dict_annotation_id_label_id[annotation_id]
-                    annotation_type = dict_label_id_annotation_type.get(label_id, "unknown")
+                    annotation_type = dict_label_id_annotation_type.get(label_id, "unknown") if dict_label_id_annotation_type is not None else "unknown"
                     logger.warning(
                         f"task_id='{task_id}', input_data_id='{input_data_id}', annotation_id='{annotation_id}' :: "
                         f"annotation_typeが'{annotation_type}'のため、dataの補完をスキップします。user_bounding_boxのみサポートしています。"
@@ -218,6 +214,14 @@ class PutCommentMain(CommandLineWithConfirm):
         if not self.confirm_processing(f"task_id='{task_id}' のタスクに{self.comment_type_name}を付与しますか？"):
             return 0
 
+        # アノテーション仕様をタスク単位で一度だけ取得
+        dict_label_id_annotation_type: dict[str, str] | None = None
+        # annotation_idが指定されているがdataがNoneのコメントがあるか確認
+        need_annotation_specs = any(c.annotation_id is not None and c.data is None for comments in comments_for_task.values() for c in comments)
+        if need_annotation_specs:
+            annotation_specs, _ = self.service.api.get_annotation_specs(self.project_id, query_params={"v": "3"})
+            dict_label_id_annotation_type = {label["label_id"]: label["annotation_type"] for label in annotation_specs["labels"]}
+
         # コメントを付与するには作業中状態にする必要がある
         changed_task = self.change_to_working_status(self.project_id, task)
         added_comments_count = 0
@@ -228,7 +232,7 @@ class PutCommentMain(CommandLineWithConfirm):
             try:
                 # コメントを付与する
                 if len(comments) > 0:
-                    request_body = self._create_request_body(task=changed_task, input_data_id=input_data_id, comments=comments)
+                    request_body = self._create_request_body(task=changed_task, input_data_id=input_data_id, comments=comments, dict_label_id_annotation_type=dict_label_id_annotation_type)
                     self.service.api.batch_update_comments(self.project_id, task_id, input_data_id, request_body=request_body)
                     added_comments_count += 1
                     logger.debug(f"{logging_prefix} :: task_id='{task_id}', input_data_id='{input_data_id}' :: {len(comments)}件のコメントを付与しました。")
