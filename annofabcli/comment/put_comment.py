@@ -54,6 +54,41 @@ keyはtask_id
 """
 
 
+def convert_annotation_body_to_inspection_data(annotation_body: dict[str, Any], annotation_type: str) -> dict[str, Any]:
+    """
+    アノテーションのbody部分を、検査コメントの座標情報（`InspectionData`形式）に変換する。
+
+    Args:
+        annotation_body: Annotationの座標情報。AnnotationDetailContentOutputのdict形式
+        annotation_type: アノテーションタイプ
+
+    Returns:
+        検査コメントの座標情報（`InspectionData`形式）
+    """
+    if annotation_type == "user_bounding_box":
+        # 3次元バウンディングボックスの場合はそのまま返す
+        return annotation_body["data"]
+    elif annotation_type == "bounding_box":
+        # 中心点を計算
+        left_top = annotation_body["data"]["left_top"]
+        right_bottom = annotation_body["data"]["right_bottom"]
+        center_x = (left_top["x"] + right_bottom["x"]) / 2
+        center_y = (left_top["y"] + right_bottom["y"]) / 2
+        return {"x": center_x, "y": center_y, "_type": "Point"}
+    elif annotation_type in ["polygon", "polyline"]:
+        # 先頭の点を取得
+        points = annotation_body["data"]["points"]
+        assert len(points) > 0
+        first_point = points[0]
+        return {"x": first_point["x"], "y": first_point["y"], "_type": "Point"}
+    elif annotation_type == "point":
+        # 点の形式に変換（pointキーから取り出す）
+        point = annotation_body["data"]["point"]
+        return {"x": point["x"], "y": point["y"], "_type": "Point"}
+    else:
+        raise ValueError(f"Unsupported annotation_type: {annotation_type}")
+
+
 class PutCommentMain(CommandLineWithConfirm):
     def __init__(self, service: annofabapi.Resource, project_id: str, comment_type: CommentType, all_yes: bool = False) -> None:  # noqa: FBT001, FBT002
         self.service = service
@@ -68,43 +103,6 @@ class PutCommentMain(CommandLineWithConfirm):
         self.dict_label_id_annotation_type = {label["label_id"]: label["annotation_type"] for label in annotation_specs["labels"]}
 
         CommandLineWithConfirm.__init__(self, all_yes)
-
-    @staticmethod
-    def _convert_annotation_data_to_point(annotation_data: dict[str, Any], annotation_type: str) -> dict[str, Any]:
-        """
-        アノテーションのdataを点の形式に変換する。
-
-        Args:
-            annotation_data: アノテーションのdataフィールド
-            annotation_type: アノテーションタイプ
-
-        Returns:
-            点の形式のdata（{"x": ..., "y": ..., "_type": "Point"}）
-        """
-        if annotation_type == "user_bounding_box":
-            # 3次元バウンディングボックスの場合はそのまま返す
-            return annotation_data
-        elif annotation_type == "bounding_box":
-            # 中心点を計算
-            left_top = annotation_data["left_top"]
-            right_bottom = annotation_data["right_bottom"]
-            center_x = (left_top["x"] + right_bottom["x"]) / 2
-            center_y = (left_top["y"] + right_bottom["y"]) / 2
-            return {"x": center_x, "y": center_y, "_type": "Point"}
-        elif annotation_type in ["polygon", "polyline"]:
-            # 先頭の点を取得
-            points = annotation_data["points"]
-            if len(points) > 0:
-                first_point = points[0]
-                return {"x": first_point["x"], "y": first_point["y"], "_type": "Point"}
-            else:
-                raise ValueError(f"points is empty for annotation_type='{annotation_type}'")
-        elif annotation_type == "point":
-            # 点の形式に変換（pointキーから取り出す）
-            point = annotation_data["point"]
-            return {"x": point["x"], "y": point["y"], "_type": "Point"}
-        else:
-            raise ValueError(f"Unsupported annotation_type: {annotation_type}")
 
     def _create_request_body(self, task: dict[str, Any], input_data_id: str, comments: list[AddedComment]) -> list[dict[str, Any]]:
         """batch_update_comments に渡すリクエストボディを作成する。"""
@@ -130,11 +128,7 @@ class PutCommentMain(CommandLineWithConfirm):
                 annotation_type = self.dict_label_id_annotation_type.get(label_id)
                 if annotation_type in ["user_bounding_box", "bounding_box", "polygon", "polyline", "point"]:
                     # サポート対象のannotation_typeの場合、dataを変換して保存
-                    try:
-                        converted_data = self._convert_annotation_data_to_point(detail["data"], annotation_type)
-                        dict_annotation_id_data[annotation_id] = converted_data
-                    except (KeyError, ValueError) as e:
-                        logger.warning(f"task_id='{task_id}', input_data_id='{input_data_id}', annotation_id='{annotation_id}' :: annotation_typeが'{annotation_type}'のdataの変換に失敗しました: {e}")
+                    dict_annotation_id_data[annotation_id] = convert_annotation_body_to_inspection_data(detail["data"], annotation_type)
         else:
             # annotation_idからlabel_idを取得するためだけにAPIを呼ぶ
             editor_annotation, _ = self.service.api.get_editor_annotation(self.project_id, task_id, input_data_id, query_params={"v": "2"})
