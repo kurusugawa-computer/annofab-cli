@@ -18,14 +18,16 @@ from annofabcli.common.type_util import assert_noreturn
 
 logger = logging.getLogger(__name__)
 
-SUPPORTED_ANNOTATION_TYPES_FOR_INSPECTION_DATA = frozenset([
-    "user_bounding_box",
-    "bounding_box",
-    "polygon",
-    "polyline",
-    "point",
-    "range",
-])
+SUPPORTED_ANNOTATION_TYPES_FOR_INSPECTION_DATA = frozenset(
+    [
+        "user_bounding_box",
+        "bounding_box",
+        "polygon",
+        "polyline",
+        "point",
+        "range",
+    ]
+)
 """検査コメントの座標情報（InspectionData形式）への変換をサポートしているアノテーションタイプ"""
 
 
