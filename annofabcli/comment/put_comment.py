@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 import logging
 import multiprocessing
 import uuid
@@ -80,13 +79,7 @@ def convert_annotation_body_to_inspection_data(annotation_body: dict[str, Any], 
     """
     if annotation_type == "user_bounding_box":
         # 3次元バウンディングボックスの場合、data.dataの文字列をパースして返す
-        data = annotation_body["data"]
-        if isinstance(data, dict) and "data" in data and isinstance(data["data"], str):
-            # data.dataが文字列の場合はJSONとしてパース
-            return json.loads(data["data"])
-        else:
-            # それ以外の場合はそのまま返す
-            return data
+        return {"data": annotation_body["data"]["data"], "_type": "Custom"}
     elif annotation_type == "bounding_box":
         # 中心点を計算
         left_top = annotation_body["data"]["left_top"]
@@ -106,8 +99,7 @@ def convert_annotation_body_to_inspection_data(annotation_body: dict[str, Any], 
         return {"x": point["x"], "y": point["y"], "_type": "Point"}
     elif annotation_type == "range":
         # 区間の開始位置をTime形式に変換
-        begin = annotation_body["data"]["begin"]
-        return {"start": begin, "end": begin, "_type": "Time"}
+        return {"start": annotation_body["data"]["begin"], "end": annotation_body["data"]["end"], "_type": "Time"}
     else:
         supported_types = ", ".join(sorted(SUPPORTED_ANNOTATION_TYPES_FOR_INSPECTION_DATA))
         raise ValueError(f"Unsupported annotation_type: {annotation_type}. Supported types: {supported_types}")
