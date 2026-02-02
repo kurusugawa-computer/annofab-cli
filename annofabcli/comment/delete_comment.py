@@ -95,8 +95,8 @@ class DeleteCommentMain(CommandLineWithConfirm):
         task: dict[str, Any],
     ) -> bool:
         task_id = task["task_id"]
-        if task["status"] not in [TaskStatus.NOT_STARTED.value, TaskStatus.WORKING.value, TaskStatus.BREAK.value]:
-            logger.warning(f"task_id='{task_id}' : タスクの状態が未着手,作業中,休憩中 以外の状態なので、コメントを削除できません。（task_status='{task['status']}'）")
+        if task["status"] not in [TaskStatus.NOT_STARTED.value, TaskStatus.BREAK.value]:
+            logger.warning(f"task_id='{task_id}' : タスクの状態が未着手,休憩中 以外の状態なので、コメントを削除できません。（task_status='{task['status']}'）")
             return False
         return True
 
