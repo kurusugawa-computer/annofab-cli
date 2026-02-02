@@ -172,7 +172,7 @@ class PutCommentMain(CommandLineWithConfirm):
                 dict_annotation_id_label_id[annotation_id] = label_id
 
                 # annotation_typeを取得
-                annotation_type = self.dict_label_id_annotation_type.get(label_id)
+                annotation_type = self.dict_label_id_annotation_type[label_id]
                 dict_annotation_id_data[annotation_id] = convert_annotation_body_to_inspection_data(detail["body"], annotation_type, input_data_type=self.input_data_type)
         else:
             # annotation_idからlabel_idを取得するためだけにAPIを呼ぶ
