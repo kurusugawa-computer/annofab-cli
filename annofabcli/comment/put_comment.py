@@ -171,13 +171,9 @@ class PutCommentMain(CommandLineWithConfirm):
                         f"サポートしているのは: {supported_types_str} です。"
                     )
                     return None
-                # annotation_idが存在しない場合は無視（警告なし）
+                
 
-            # dataもannotation_idも指定されていない場合は、位置情報のないコメントになるためスキップする
-            if data is None and annotation_id is None:
-                logger.warning(f"task_id='{task_id}', input_data_id='{input_data_id}' :: コメントの位置情報（data, annotation_id）が指定されていないため、コメントをスキップします。")
-                return None
-
+            assert data is not None
             return {
                 "comment_id": comment.comment_id if comment.comment_id is not None else str(uuid.uuid4()),
                 "phase": task["phase"],
