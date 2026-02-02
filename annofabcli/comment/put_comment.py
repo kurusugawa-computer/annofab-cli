@@ -126,7 +126,7 @@ class PutCommentMain(CommandLineWithConfirm):
 
                 # annotation_typeを取得
                 annotation_type = self.dict_label_id_annotation_type.get(label_id)
-                if annotation_type in ["user_bounding_box", "bounding_box", "polygon", "polyline", "point"]:
+                if annotation_type in ["user_bounding_box", "bounding_box", "polygon", "polyline", "point", "range"]:
                     # サポート対象のannotation_typeの場合、dataを変換して保存
                     dict_annotation_id_data[annotation_id] = convert_annotation_body_to_inspection_data(detail["data"], annotation_type)
         else:
@@ -152,7 +152,7 @@ class PutCommentMain(CommandLineWithConfirm):
                     logger.warning(
                         f"task_id='{task_id}', input_data_id='{input_data_id}', annotation_id='{annotation_id}' :: "
                         f"annotation_typeが'{annotation_type}'のため、dataの補完をスキップします。"
-                        f"サポートしているのは: user_bounding_box, bounding_box, polygon, polyline, point です。"
+                        f"サポートしているのは: user_bounding_box, bounding_box, polygon, polyline, point, range です。"
                     )
                     return None
                 # annotation_idが存在しない場合は無視（警告なし）
