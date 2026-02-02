@@ -249,8 +249,8 @@ class PutCommentMain(CommandLineWithConfirm):
                 logger.warning(f"task_id='{task_id}' :: フェーズが検査/受入でないため検査コメントを付与できません。 :: task_phase='{task['phase']}'")
                 return False
 
-        if task["status"] not in [TaskStatus.NOT_STARTED.value, TaskStatus.WORKING.value, TaskStatus.BREAK.value]:
-            logger.warning(f"task_id='{task_id}' :: タスクの状態が未着手,作業中,休憩中 以外の状態なので、コメントを付与できません。 :: task_status='{task['status']}'")
+        if task["status"] not in [TaskStatus.NOT_STARTED.value, TaskStatus.BREAK.value]:
+            logger.warning(f"task_id='{task_id}' :: タスクの状態が未着手,休憩中 以外の状態なので、コメントを付与できません。 :: task_status='{task['status']}'")
             return False
         return True
 
