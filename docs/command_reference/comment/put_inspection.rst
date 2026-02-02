@@ -56,6 +56,7 @@ Examples
   * ``data``：検査コメントの位置や区間。必須。詳細は後述を参照してください。
   * ``annotation_id``：検査コメントに紐づくアノテーションのannotation_id
   * ``phrases``：参照する定型指摘のIDの配列
+  * ``comment_id``：コメントID。省略した場合は自動的にUUIDv4が生成されます。
 
 
 .. code-block::

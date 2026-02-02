@@ -260,6 +260,9 @@ def convert_cli_comments(dict_comments: dict[str, Any], *, comment_type: Comment
         phrases: list[str] | None = None
         """参照している定型指摘ID"""
 
+        comment_id: str | None = None
+        """コメントID。省略時はUUIDv4が自動生成される。"""
+
     @dataclass
     class AddedOnholdComment(DataClassJsonMixin):
         """
@@ -272,13 +275,16 @@ def convert_cli_comments(dict_comments: dict[str, Any], *, comment_type: Comment
         annotation_id: str | None = None
         """コメントに紐付けるアノテーションID"""
 
+        comment_id: str | None = None
+        """コメントID。省略時はUUIDv4が自動生成される。"""
+
     def convert_inspection_comment(comment: dict[str, Any]) -> AddedComment:
         tmp = AddedInspectionComment.from_dict(comment)
-        return AddedComment(comment=tmp.comment, data=tmp.data, annotation_id=tmp.annotation_id, phrases=tmp.phrases)
+        return AddedComment(comment=tmp.comment, data=tmp.data, annotation_id=tmp.annotation_id, phrases=tmp.phrases, comment_id=tmp.comment_id)
 
     def convert_onhold_comment(comment: dict[str, Any]) -> AddedComment:
         tmp = AddedOnholdComment.from_dict(comment)
-        return AddedComment(comment=tmp.comment, annotation_id=tmp.annotation_id, data=None, phrases=None)
+        return AddedComment(comment=tmp.comment, annotation_id=tmp.annotation_id, data=None, phrases=None, comment_id=tmp.comment_id)
 
     if comment_type == CommentType.INSPECTION:
         func_convert = convert_inspection_comment
