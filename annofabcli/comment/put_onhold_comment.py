@@ -69,7 +69,11 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--json",
         type=str,
-        help=(f"付与する保留コメントの情報をJSON形式で指定してください。``file://`` を先頭に付けると、JSON形式のファイルを指定できます。\n\n(ex)  ``{json.dumps(SAMPLE_JSON, ensure_ascii=False)}``"),
+        help=(
+            f"付与する保留コメントの情報をJSON形式で指定してください。``file://`` を先頭に付けると、JSON形式のファイルを指定できます。\n\n"
+            f"各コメントには ``comment_id`` を指定することができます。省略した場合は自動的にUUIDv4が生成されます。\n\n"
+            f"(ex)  ``{json.dumps(SAMPLE_JSON, ensure_ascii=False)}``"
+        ),
     )
 
     parser.add_argument(

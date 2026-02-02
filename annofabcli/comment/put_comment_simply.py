@@ -31,6 +31,9 @@ class AddedSimpleComment:
     phrases: list[str] | None = None
     """参照している定型指摘ID"""
 
+    comment_id: str | None = None
+    """コメントID。省略時はUUIDv4が自動生成される。"""
+
 
 class PutCommentSimplyMain(CommandLineWithConfirm):
     def __init__(self, service: annofabapi.Resource, project_id: str, comment_type: CommentType, all_yes: bool = False) -> None:  # noqa: FBT001, FBT002
@@ -49,7 +52,7 @@ class PutCommentSimplyMain(CommandLineWithConfirm):
         def _convert(comment: AddedSimpleComment) -> dict[str, Any]:
             return {
                 "comment": comment.comment,
-                "comment_id": str(uuid.uuid4()),
+                "comment_id": comment.comment_id if comment.comment_id is not None else str(uuid.uuid4()),
                 "phase": task["phase"],
                 "phase_stage": task["phase_stage"],
                 "comment_type": self.comment_type.value,
