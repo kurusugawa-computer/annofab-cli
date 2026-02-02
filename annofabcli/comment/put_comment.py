@@ -9,6 +9,7 @@ from typing import Any
 import annofabapi
 import requests
 from annofabapi.models import CommentType, TaskPhase, TaskStatus
+from annofabapi.pydantic_models.input_data_type import InputDataType
 from dataclasses_json import DataClassJsonMixin
 
 from annofabcli.comment.utils import get_comment_type_name
@@ -17,6 +18,18 @@ from annofabcli.common.facade import AnnofabApiFacade
 from annofabcli.common.type_util import assert_noreturn
 
 logger = logging.getLogger(__name__)
+
+SUPPORTED_ANNOTATION_TYPES_FOR_INSPECTION_DATA = frozenset(
+    [
+        "user_bounding_box",
+        "bounding_box",
+        "polygon",
+        "polyline",
+        "point",
+        "range",
+    ]
+)
+"""検査コメントの座標情報（InspectionData形式）への変換をサポートしているアノテーションタイプ"""
 
 
 @dataclass
@@ -28,13 +41,13 @@ class AddedComment(DataClassJsonMixin):
     comment: str
     """コメントの中身"""
 
-    data: dict[str, Any] | None
+    data: dict[str, Any] | None = None
     """コメントを付与する位置や区間"""
 
-    annotation_id: str | None
+    annotation_id: str | None = None
     """コメントに紐付けるアノテーションID"""
 
-    phrases: list[str] | None
+    phrases: list[str] | None = None
     """参照している定型指摘ID"""
 
     comment_id: str | None = None
@@ -54,6 +67,71 @@ keyはtask_id
 """
 
 
+def convert_annotation_body_to_inspection_data(  # noqa: PLR0911
+    annotation_body: dict[str, Any],
+    annotation_type: str,
+    input_data_type: InputDataType,
+) -> dict[str, Any]:
+    """
+    アノテーションのbody部分を、検査コメントの座標情報（`InspectionData`形式）に変換する。
+
+    Args:
+        annotation_body: Annotationの座標情報。AnnotationDetailContentOutputのdict形式
+        annotation_type: アノテーションタイプ。`SUPPORTED_ANNOTATION_TYPES_FOR_INSPECTION_DATA`のいずれかを指定すること。
+        input_data_type: プロジェクトの入力データタイプ。
+
+    Returns:
+        検査コメントの座標情報（`InspectionData`形式）
+    """
+    match input_data_type:
+        case InputDataType.MOVIE:
+            match annotation_type:
+                case "range":
+                    # 区間の開始位置をTime形式に変換
+                    return {"start": annotation_body["data"]["begin"], "end": annotation_body["data"]["end"], "_type": "Time"}
+                case _:
+                    # "Classification"など、Time形式以外のアノテーションタイプ
+                    return {"start": 0, "end": 100, "_type": "Time"}
+
+        case InputDataType.CUSTOM:
+            match annotation_type:
+                case "user_bounding_box":
+                    # 3次元バウンディングボックスの場合、data.dataの文字列をパースして返す
+                    return {"data": annotation_body["data"]["data"], "_type": "Custom"}
+                case _:
+                    # セグメントなど
+                    return {
+                        "data": '{"kind": "CUBOID", "shape": {"dimensions": {"width": 1.0, "height": 1.0, "depth": 1.0}, "location": {"x": 0.0, "y": 0.0, "z": 0.0}, "rotation": {"x": 0.0, "y": 0.0, "z": 0.0}, "direction": {"front": {"x": 1.0, "y": 0.0, "z": 0.0}, "up": {"x": 0.0, "y": 0.0, "z": 1.0}}}, "version": "2"}',  # noqa: E501
+                        "_type": "Custom",
+                    }
+
+        case InputDataType.IMAGE:
+            match annotation_type:
+                case "bounding_box":
+                    # 中心点を計算
+                    left_top = annotation_body["data"]["left_top"]
+                    right_bottom = annotation_body["data"]["right_bottom"]
+                    center_x = (left_top["x"] + right_bottom["x"]) / 2
+                    center_y = (left_top["y"] + right_bottom["y"]) / 2
+                    return {"x": center_x, "y": center_y, "_type": "Point"}
+                case "polygon" | "polyline":
+                    # 先頭の点を取得
+                    points = annotation_body["data"]["points"]
+                    assert len(points) > 0
+                    first_point = points[0]
+                    return {"x": first_point["x"], "y": first_point["y"], "_type": "Point"}
+                case "point":
+                    # 点の形式に変換（pointキーから取り出す）
+                    point = annotation_body["data"]["point"]
+                    return {"x": point["x"], "y": point["y"], "_type": "Point"}
+                case "range":
+                    # 区間の開始位置をTime形式に変換
+                    return {"start": annotation_body["data"]["begin"], "end": annotation_body["data"]["end"], "_type": "Time"}
+                case _:
+                    # 塗りつぶしや分類など
+                    return {"x": 0, "y": 0, "_type": "Point"}
+
+
 class PutCommentMain(CommandLineWithConfirm):
     def __init__(self, service: annofabapi.Resource, project_id: str, comment_type: CommentType, all_yes: bool = False) -> None:  # noqa: FBT001, FBT002
         self.service = service
@@ -63,19 +141,57 @@ class PutCommentMain(CommandLineWithConfirm):
         self.comment_type = comment_type
         self.comment_type_name = get_comment_type_name(comment_type)
 
+        # プロジェクト情報を取得
+        project, _ = self.service.api.get_project(self.project_id)
+        self.input_data_type = InputDataType(project["input_data_type"])
+
+        # アノテーション仕様を取得
+        annotation_specs, _ = self.service.api.get_annotation_specs(self.project_id, query_params={"v": "3"})
+        self.dict_label_id_annotation_type = {label["label_id"]: label["annotation_type"] for label in annotation_specs["labels"]}
+
         CommandLineWithConfirm.__init__(self, all_yes)
 
     def _create_request_body(self, task: dict[str, Any], input_data_id: str, comments: list[AddedComment]) -> list[dict[str, Any]]:
         """batch_update_comments に渡すリクエストボディを作成する。"""
+        task_id = task["task_id"]
 
-        def _create_dict_annotation_id() -> dict[str, str]:
-            content, _ = self.service.api.get_editor_annotation(self.project_id, task["task_id"], input_data_id, query_params={"v": "2"})
-            details = content["details"]
-            return {e["annotation_id"]: e["label_id"] for e in details}
+        # annotation_idが指定されているがdataがNoneのコメントがあるか確認
+        need_annotation_data = any(c.annotation_id is not None and c.data is None for c in comments)
 
-        dict_annotation_id_label_id = _create_dict_annotation_id()
+        dict_annotation_id_label_id: dict[str, str] = {}
+        dict_annotation_id_data: dict[str, dict[str, Any]] = {}
 
-        def _convert(comment: AddedComment) -> dict[str, Any]:
+        if need_annotation_data:
+            # アノテーション詳細を取得
+            editor_annotation, _ = self.service.api.get_editor_annotation(self.project_id, task_id, input_data_id, query_params={"v": "2"})
+            details = editor_annotation["details"]
+
+            for detail in details:
+                annotation_id = detail["annotation_id"]
+                label_id = detail["label_id"]
+                dict_annotation_id_label_id[annotation_id] = label_id
+
+                # annotation_typeを取得
+                if label_id in self.dict_label_id_annotation_type:
+                    # アノテーション仕様に存在しないラベルを使っているアノテーション（アノテーションを作成してから仕様を変更した場合）もあるので、判定する
+                    annotation_type = self.dict_label_id_annotation_type[label_id]
+                    dict_annotation_id_data[annotation_id] = convert_annotation_body_to_inspection_data(detail["body"], annotation_type, input_data_type=self.input_data_type)
+        else:
+            # annotation_idからlabel_idを取得するためだけにAPIを呼ぶ
+            editor_annotation, _ = self.service.api.get_editor_annotation(self.project_id, task_id, input_data_id, query_params={"v": "2"})
+            details = editor_annotation["details"]
+            dict_annotation_id_label_id = {e["annotation_id"]: e["label_id"] for e in details}
+
+        def _convert(comment: AddedComment) -> dict[str, Any] | None:
+            data = comment.data
+            annotation_id = comment.annotation_id
+
+            # dataがNoneでannotation_idが指定されている場合、dataを補完
+            if data is None:
+                assert annotation_id is not None
+                data = dict_annotation_id_data[annotation_id]
+
+            assert data is not None
             return {
                 "comment_id": comment.comment_id if comment.comment_id is not None else str(uuid.uuid4()),
                 "phase": task["phase"],
@@ -84,9 +200,9 @@ class PutCommentMain(CommandLineWithConfirm):
                 "comment_type": self.comment_type.value,
                 "comment": comment.comment,
                 "comment_node": {
-                    "data": comment.data,
-                    "annotation_id": comment.annotation_id,
-                    "label_id": dict_annotation_id_label_id.get(comment.annotation_id) if comment.annotation_id is not None else None,
+                    "data": data,
+                    "annotation_id": annotation_id,
+                    "label_id": dict_annotation_id_label_id.get(annotation_id) if annotation_id is not None else None,
                     "status": "open",
                     "_type": "Root",
                 },
@@ -94,7 +210,8 @@ class PutCommentMain(CommandLineWithConfirm):
                 "_type": "Put",
             }
 
-        return [_convert(e) for e in comments]
+        converted_comments = [_convert(e) for e in comments]
+        return [c for c in converted_comments if c is not None]
 
     def change_to_working_status(self, project_id: str, task: dict[str, Any]) -> dict[str, Any]:
         """
@@ -251,7 +368,7 @@ def convert_cli_comments(dict_comments: dict[str, Any], *, comment_type: Comment
         comment: str
         """コメントの中身"""
 
-        data: dict[str, Any]
+        data: dict[str, Any] | None = None
         """コメントを付与する位置や区間"""
 
         annotation_id: str | None = None
