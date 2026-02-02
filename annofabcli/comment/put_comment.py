@@ -160,7 +160,6 @@ class PutCommentMain(CommandLineWithConfirm):
                 if annotation_id in dict_annotation_id_data:
                     # user_bounding_boxのdataを使用
                     data = dict_annotation_id_data[annotation_id]
-                    logger.debug(f"task_id='{task_id}', input_data_id='{input_data_id}', annotation_id='{annotation_id}' :: dataを補完しました。")
                 elif annotation_id in dict_annotation_id_label_id:
                     # annotation_idは存在するがサポート対象外
                     label_id = dict_annotation_id_label_id[annotation_id]
@@ -359,6 +358,9 @@ def convert_cli_comments(dict_comments: dict[str, Any], *, comment_type: Comment
         phrases: list[str] | None = None
         """参照している定型指摘ID"""
 
+        comment_id: str | None = None
+        """コメントID。省略時はUUIDv4が自動生成される。"""
+
     @dataclass
     class AddedOnholdComment(DataClassJsonMixin):
         """
@@ -373,7 +375,7 @@ def convert_cli_comments(dict_comments: dict[str, Any], *, comment_type: Comment
 
     def convert_inspection_comment(comment: dict[str, Any]) -> AddedComment:
         tmp = AddedInspectionComment.from_dict(comment)
-        return AddedComment(comment=tmp.comment, data=tmp.data, annotation_id=tmp.annotation_id, phrases=tmp.phrases)
+        return AddedComment(comment=tmp.comment, data=tmp.data, annotation_id=tmp.annotation_id, phrases=tmp.phrases, comment_id=tmp.comment_id)
 
     def convert_onhold_comment(comment: dict[str, Any]) -> AddedComment:
         tmp = AddedOnholdComment.from_dict(comment)
