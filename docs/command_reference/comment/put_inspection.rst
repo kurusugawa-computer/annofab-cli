@@ -56,6 +56,7 @@ Examples
   * ``data``：検査コメントの位置や区間。 ``annotation_id`` が指定されていない場合は必須。 ``annotation_id`` が指定されている場合はオプショナル（省略時はアノテーション情報から自動補完されます。サポートしているアノテーションタイプ: ``user_bounding_box``, ``bounding_box``, ``polygon``, ``polyline``, ``point``, ``range`` 。 ``bounding_box`` は中心点に、 ``polygon`` と ``polyline`` は先頭の点に、 ``point`` はその点に、 ``range`` は区間の開始位置に検査コメントが付与されます。）詳細は後述を参照してください。
   * ``annotation_id``：検査コメントに紐づくアノテーションのannotation_id
   * ``phrases``：参照する定型指摘のIDの配列
+  * ``comment_id``：コメントID。省略した場合は自動的にUUIDv4が生成されます。
 
 
 .. code-block::
