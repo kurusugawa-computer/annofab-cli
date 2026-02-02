@@ -49,6 +49,7 @@ Examples
 
   * ``comment``：コメントの内容。必須。
   * ``annotation_id``：コメントに紐づくアノテーションのannotation_id
+  * ``comment_id``：コメントID。省略した場合は自動的にUUIDv4が生成されます。
 
 
 .. code-block::
