@@ -173,9 +173,7 @@ class PutCommentMain(CommandLineWithConfirm):
 
                 # annotation_typeを取得
                 annotation_type = self.dict_label_id_annotation_type.get(label_id)
-                if annotation_type in SUPPORTED_ANNOTATION_TYPES_FOR_INSPECTION_DATA:
-                    # サポート対象のannotation_typeの場合、dataを変換して保存
-                    dict_annotation_id_data[annotation_id] = convert_annotation_body_to_inspection_data(detail["body"], annotation_type, input_data_type=self.input_data_type)
+                dict_annotation_id_data[annotation_id] = convert_annotation_body_to_inspection_data(detail["body"], annotation_type, input_data_type=self.input_data_type)
         else:
             # annotation_idからlabel_idを取得するためだけにAPIを呼ぶ
             editor_annotation, _ = self.service.api.get_editor_annotation(self.project_id, task_id, input_data_id, query_params={"v": "2"})
@@ -187,21 +185,9 @@ class PutCommentMain(CommandLineWithConfirm):
             annotation_id = comment.annotation_id
 
             # dataがNoneでannotation_idが指定されている場合、dataを補完
-            if data is None and annotation_id is not None:
-                if annotation_id in dict_annotation_id_data:
-                    # user_bounding_boxのdataを使用
-                    data = dict_annotation_id_data[annotation_id]
-                elif annotation_id in dict_annotation_id_label_id:
-                    # annotation_idは存在するがサポート対象外
-                    label_id = dict_annotation_id_label_id[annotation_id]
-                    annotation_type = self.dict_label_id_annotation_type.get(label_id, "unknown")
-                    supported_types_str = ", ".join(sorted(SUPPORTED_ANNOTATION_TYPES_FOR_INSPECTION_DATA))
-                    logger.warning(
-                        f"task_id='{task_id}', input_data_id='{input_data_id}', annotation_id='{annotation_id}' :: "
-                        f"annotation_typeが'{annotation_type}'のため、dataの補完をスキップします。"
-                        f"サポートしているのは: {supported_types_str} です。"
-                    )
-                    return None
+            if data is None:
+                assert annotation_id is not None
+                data = dict_annotation_id_data[annotation_id]
 
             assert data is not None
             return {
