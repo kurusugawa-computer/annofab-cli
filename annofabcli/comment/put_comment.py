@@ -8,7 +8,7 @@ from typing import Any
 
 import annofabapi
 import requests
-from annofabapi.models import CommentType, TaskPhase, TaskStatus
+from annofabapi.models import CommentType, InputDataType, TaskPhase, TaskStatus
 from dataclasses_json import DataClassJsonMixin
 
 from annofabcli.comment.utils import get_comment_type_name
@@ -69,7 +69,7 @@ keyはtask_id
 def convert_annotation_body_to_inspection_data(
     annotation_body: dict[str, Any],
     annotation_type: str,
-    input_data_type: str | None = None,
+    input_data_type: InputDataType | None = None,
 ) -> dict[str, Any]:
     """
     アノテーションのbody部分を、検査コメントの座標情報（`InspectionData`形式）に変換する。
@@ -77,7 +77,7 @@ def convert_annotation_body_to_inspection_data(
     Args:
         annotation_body: Annotationの座標情報。AnnotationDetailContentOutputのdict形式
         annotation_type: アノテーションタイプ。`SUPPORTED_ANNOTATION_TYPES_FOR_INSPECTION_DATA`のいずれかを指定すること。
-        input_data_type: プロジェクトの入力データタイプ（image, movie, custom）。Noneの場合は判定に使用しない。
+        input_data_type: プロジェクトの入力データタイプ。Noneの場合は判定に使用しない。
 
     Returns:
         検査コメントの座標情報（`InspectionData`形式）
@@ -124,7 +124,7 @@ class PutCommentMain(CommandLineWithConfirm):
 
         # プロジェクト情報を取得
         project, _ = self.service.api.get_project(self.project_id)
-        self.input_data_type = project["input_data_type"]
+        self.input_data_type = InputDataType(project["input_data_type"])
 
         # アノテーション仕様を取得
         annotation_specs, _ = self.service.api.get_annotation_specs(self.project_id, query_params={"v": "3"})
