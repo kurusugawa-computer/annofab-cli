@@ -172,8 +172,10 @@ class PutCommentMain(CommandLineWithConfirm):
                 dict_annotation_id_label_id[annotation_id] = label_id
 
                 # annotation_typeを取得
-                annotation_type = self.dict_label_id_annotation_type[label_id]
-                dict_annotation_id_data[annotation_id] = convert_annotation_body_to_inspection_data(detail["body"], annotation_type, input_data_type=self.input_data_type)
+                if label_id in self.dict_label_id_annotation_type:
+                    # アノテーション仕様に存在しないラベルを使っているアノテーション（アノテーションを作成してから仕様を変更した場合）もあるので、判定する
+                    annotation_type = self.dict_label_id_annotation_type[label_id]
+                    dict_annotation_id_data[annotation_id] = convert_annotation_body_to_inspection_data(detail["body"], annotation_type, input_data_type=self.input_data_type)
         else:
             # annotation_idからlabel_idを取得するためだけにAPIを呼ぶ
             editor_annotation, _ = self.service.api.get_editor_annotation(self.project_id, task_id, input_data_id, query_params={"v": "2"})
