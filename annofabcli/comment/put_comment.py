@@ -28,13 +28,13 @@ class AddedComment(DataClassJsonMixin):
     comment: str
     """コメントの中身"""
 
-    data: dict[str, Any] | None
+    data: dict[str, Any] | None = None
     """コメントを付与する位置や区間"""
 
-    annotation_id: str | None
+    annotation_id: str | None = None
     """コメントに紐付けるアノテーションID"""
 
-    phrases: list[str] | None
+    phrases: list[str] | None = None
     """参照している定型指摘ID"""
 
     comment_id: str | None = None
@@ -67,15 +67,61 @@ class PutCommentMain(CommandLineWithConfirm):
 
     def _create_request_body(self, task: dict[str, Any], input_data_id: str, comments: list[AddedComment]) -> list[dict[str, Any]]:
         """batch_update_comments に渡すリクエストボディを作成する。"""
+        task_id = task["task_id"]
 
-        def _create_dict_annotation_id() -> dict[str, str]:
-            content, _ = self.service.api.get_editor_annotation(self.project_id, task["task_id"], input_data_id, query_params={"v": "2"})
-            details = content["details"]
-            return {e["annotation_id"]: e["label_id"] for e in details}
+        # annotation_idが指定されているがdataがNoneのコメントがあるか確認
+        need_annotation_data = any(c.annotation_id is not None and c.data is None for c in comments)
 
-        dict_annotation_id_label_id = _create_dict_annotation_id()
+        dict_annotation_id_label_id: dict[str, str] = {}
+        dict_annotation_id_data: dict[str, dict[str, Any]] = {}
+        dict_label_id_annotation_type: dict[str, str] = {}
 
-        def _convert(comment: AddedComment) -> dict[str, Any]:
+        if need_annotation_data:
+            # アノテーション仕様を取得してlabel_id -> annotation_typeのマップを作成
+            annotation_specs, _ = self.service.api.get_annotation_specs(self.project_id, query_params={"v": "3"})
+            dict_label_id_annotation_type = {label["label_id"]: label["annotation_type"] for label in annotation_specs["labels"]}
+
+            # アノテーション詳細を取得
+            editor_annotation, _ = self.service.api.get_editor_annotation(self.project_id, task_id, input_data_id, query_params={"v": "2"})
+            details = editor_annotation["details"]
+
+            for detail in details:
+                annotation_id = detail["annotation_id"]
+                label_id = detail["label_id"]
+                dict_annotation_id_label_id[annotation_id] = label_id
+
+                # annotation_typeを取得
+                annotation_type = dict_label_id_annotation_type.get(label_id)
+                if annotation_type == "user_bounding_box":
+                    # user_bounding_boxの場合のみdataを保存
+                    dict_annotation_id_data[annotation_id] = detail["data"]
+        else:
+            # annotation_idからlabel_idを取得するためだけにAPIを呼ぶ
+            editor_annotation, _ = self.service.api.get_editor_annotation(self.project_id, task_id, input_data_id, query_params={"v": "2"})
+            details = editor_annotation["details"]
+            dict_annotation_id_label_id = {e["annotation_id"]: e["label_id"] for e in details}
+
+        def _convert(comment: AddedComment) -> dict[str, Any] | None:
+            data = comment.data
+            annotation_id = comment.annotation_id
+
+            # dataがNoneでannotation_idが指定されている場合、dataを補完
+            if data is None and annotation_id is not None:
+                if annotation_id in dict_annotation_id_data:
+                    # user_bounding_boxのdataを使用
+                    data = dict_annotation_id_data[annotation_id]
+                    logger.debug(f"task_id='{task_id}', input_data_id='{input_data_id}', annotation_id='{annotation_id}' :: dataを補完しました。")
+                elif annotation_id in dict_annotation_id_label_id:
+                    # annotation_idは存在するがuser_bounding_box以外
+                    label_id = dict_annotation_id_label_id[annotation_id]
+                    annotation_type = dict_label_id_annotation_type.get(label_id, "unknown")
+                    logger.warning(
+                        f"task_id='{task_id}', input_data_id='{input_data_id}', annotation_id='{annotation_id}' :: "
+                        f"annotation_typeが'{annotation_type}'のため、dataの補完をスキップします。user_bounding_boxのみサポートしています。"
+                    )
+                    return None
+                # annotation_idが存在しない場合は無視（警告なし）
+
             return {
                 "comment_id": comment.comment_id if comment.comment_id is not None else str(uuid.uuid4()),
                 "phase": task["phase"],
@@ -84,9 +130,9 @@ class PutCommentMain(CommandLineWithConfirm):
                 "comment_type": self.comment_type.value,
                 "comment": comment.comment,
                 "comment_node": {
-                    "data": comment.data,
-                    "annotation_id": comment.annotation_id,
-                    "label_id": dict_annotation_id_label_id.get(comment.annotation_id) if comment.annotation_id is not None else None,
+                    "data": data,
+                    "annotation_id": annotation_id,
+                    "label_id": dict_annotation_id_label_id.get(annotation_id) if annotation_id is not None else None,
                     "status": "open",
                     "_type": "Root",
                 },
@@ -94,7 +140,8 @@ class PutCommentMain(CommandLineWithConfirm):
                 "_type": "Put",
             }
 
-        return [_convert(e) for e in comments]
+        converted_comments = [_convert(e) for e in comments]
+        return [c for c in converted_comments if c is not None]
 
     def change_to_working_status(self, project_id: str, task: dict[str, Any]) -> dict[str, Any]:
         """
@@ -251,7 +298,7 @@ def convert_cli_comments(dict_comments: dict[str, Any], *, comment_type: Comment
         comment: str
         """コメントの中身"""
 
-        data: dict[str, Any]
+        data: dict[str, Any] | None = None
         """コメントを付与する位置や区間"""
 
         annotation_id: str | None = None
