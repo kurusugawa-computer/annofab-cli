@@ -18,6 +18,16 @@ from annofabcli.common.type_util import assert_noreturn
 
 logger = logging.getLogger(__name__)
 
+SUPPORTED_ANNOTATION_TYPES_FOR_INSPECTION_DATA = frozenset([
+    "user_bounding_box",
+    "bounding_box",
+    "polygon",
+    "polyline",
+    "point",
+    "range",
+])
+"""検査コメントの座標情報（InspectionData形式）への変換をサポートしているアノテーションタイプ"""
+
 
 @dataclass
 class AddedComment(DataClassJsonMixin):
@@ -60,7 +70,7 @@ def convert_annotation_body_to_inspection_data(annotation_body: dict[str, Any], 
 
     Args:
         annotation_body: Annotationの座標情報。AnnotationDetailContentOutputのdict形式
-        annotation_type: アノテーションタイプ
+        annotation_type: アノテーションタイプ。`SUPPORTED_ANNOTATION_TYPES_FOR_INSPECTION_DATA`のいずれかを指定すること。
 
     Returns:
         検査コメントの座標情報（`InspectionData`形式）
@@ -88,9 +98,10 @@ def convert_annotation_body_to_inspection_data(annotation_body: dict[str, Any], 
     elif annotation_type == "range":
         # 区間の開始位置をTime形式に変換
         begin = annotation_body["data"]["begin"]
-        return {"begin": begin, "end": begin, "_type": "Time"}
+        return {"start": begin, "end": begin, "_type": "Time"}
     else:
-        raise ValueError(f"Unsupported annotation_type: {annotation_type}")
+        supported_types = ", ".join(sorted(SUPPORTED_ANNOTATION_TYPES_FOR_INSPECTION_DATA))
+        raise ValueError(f"Unsupported annotation_type: {annotation_type}. Supported types: {supported_types}")
 
 
 class PutCommentMain(CommandLineWithConfirm):
@@ -130,7 +141,7 @@ class PutCommentMain(CommandLineWithConfirm):
 
                 # annotation_typeを取得
                 annotation_type = self.dict_label_id_annotation_type.get(label_id)
-                if annotation_type in ["user_bounding_box", "bounding_box", "polygon", "polyline", "point", "range"]:
+                if annotation_type in SUPPORTED_ANNOTATION_TYPES_FOR_INSPECTION_DATA:
                     # サポート対象のannotation_typeの場合、dataを変換して保存
                     dict_annotation_id_data[annotation_id] = convert_annotation_body_to_inspection_data(detail["data"], annotation_type)
         else:
@@ -153,10 +164,11 @@ class PutCommentMain(CommandLineWithConfirm):
                     # annotation_idは存在するがサポート対象外
                     label_id = dict_annotation_id_label_id[annotation_id]
                     annotation_type = self.dict_label_id_annotation_type.get(label_id, "unknown")
+                    supported_types_str = ", ".join(sorted(SUPPORTED_ANNOTATION_TYPES_FOR_INSPECTION_DATA))
                     logger.warning(
                         f"task_id='{task_id}', input_data_id='{input_data_id}', annotation_id='{annotation_id}' :: "
                         f"annotation_typeが'{annotation_type}'のため、dataの補完をスキップします。"
-                        f"サポートしているのは: user_bounding_box, bounding_box, polygon, polyline, point, range です。"
+                        f"サポートしているのは: {supported_types_str} です。"
                     )
                     return None
                 # annotation_idが存在しない場合は無視（警告なし）
