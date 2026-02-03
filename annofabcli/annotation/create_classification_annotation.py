@@ -34,6 +34,7 @@ class CreateClassificationAnnotationMain(CommandLineWithConfirm):
         all_yes: bool,
         is_change_operator_to_me: bool,
         include_complete_task: bool,
+        include_on_hold_task: bool,
     ) -> None:
         self.service = service
         self.facade = AnnofabApiFacade(service)
@@ -42,6 +43,7 @@ class CreateClassificationAnnotationMain(CommandLineWithConfirm):
         self.project_id = project_id
         self.is_change_operator_to_me = is_change_operator_to_me
         self.include_complete_task = include_complete_task
+        self.include_on_hold_task = include_on_hold_task
 
         # アノテーション仕様を取得
         annotation_specs_v3, _ = self.service.api.get_annotation_specs(self.project_id, query_params={"v": "3"})
@@ -74,6 +76,13 @@ class CreateClassificationAnnotationMain(CommandLineWithConfirm):
                 logger.info(
                     f"タスク'{task_id}'は完了状態のため、全体アノテーションの作成をスキップします。"
                     f"完了状態のタスクに全体アノテーションを作成するには、 ``--include_complete_task`` を指定してください。"
+                )
+                return None, False, None
+
+        if not self.include_on_hold_task:  # noqa: SIM102
+            if task["status"] == TaskStatus.ON_HOLD.value:
+                logger.info(
+                    f"タスク'{task_id}'は保留状態のため、全体アノテーションの作成をスキップします。保留状態のタスクに全体アノテーションを作成するには、 ``--include_on_hold_task`` を指定してください。"
                 )
                 return None, False, None
 
@@ -343,6 +352,7 @@ class CreateClassificationAnnotation(CommandLine):
             all_yes=self.all_yes,
             is_change_operator_to_me=args.change_operator_to_me,
             include_complete_task=args.include_complete_task,
+            include_on_hold_task=args.include_on_hold_task,
         )
 
         main_obj.main(task_ids, labels, parallelism=args.parallelism)
@@ -381,6 +391,12 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--include_complete_task",
         action="store_true",
         help="完了状態のタスクにも全体アノテーションを作成します。ただし、オーナーロールを持つユーザーでしか実行できません。",
+    )
+
+    parser.add_argument(
+        "--include_on_hold_task",
+        action="store_true",
+        help="保留状態のタスクにも全体アノテーションを作成します。",
     )
 
     parser.add_argument(
