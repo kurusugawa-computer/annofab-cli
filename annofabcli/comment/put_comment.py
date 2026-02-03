@@ -333,7 +333,9 @@ class PutCommentMain(CommandLineWithConfirm):
         tasks_count = len(comments_for_task_list)
         input_data_count = sum(len(e) for e in comments_for_task_list.values())
         total_comment_count = sum(len(comments) for comments_for_task in comments_for_task_list.values() for comments in comments_for_task.values())
-        logger.info(f"{self.comment_type_name}を付与するタスク数: {tasks_count}, {self.comment_type_name}を付与する入力データ数: {input_data_count}, {self.comment_type_name}の総数: {total_comment_count}")
+        logger.info(
+            f"{self.comment_type_name}を付与するタスク数: {tasks_count}, {self.comment_type_name}を付与する入力データ数: {input_data_count}, {self.comment_type_name}の総数: {total_comment_count}"
+        )
 
         if parallelism is not None:
             with multiprocessing.Pool(parallelism) as pool:
@@ -362,7 +364,9 @@ class PutCommentMain(CommandLineWithConfirm):
                     logger.warning(f"task_id='{task_id}' :: コメントの付与に失敗しました。", exc_info=True)
                     continue
 
-        logger.info(f"{succeeded_tasks_count} / {tasks_count} 件のタスク, {added_input_data_count} / {input_data_count} 件の入力データ, {added_comment_count} / {total_comment_count} 件の{self.comment_type_name}を付与しました。")
+        logger.info(
+            f"{succeeded_tasks_count} / {tasks_count} 件のタスク, {added_input_data_count} / {input_data_count} 件の入力データ, {added_comment_count} / {total_comment_count} 件の{self.comment_type_name}を付与しました。"
+        )
 
 
 def convert_cli_comments(dict_comments: dict[str, Any], *, comment_type: CommentType) -> AddedComments:
