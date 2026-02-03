@@ -46,7 +46,7 @@ class DeleteAnnotationMain(CommandLineWithConfirm):
     """アノテーション削除処理用のクラス
 
     Args:
-        is_force: 完了状態のタスクを削除するかどうか
+        include_complete_task: 完了状態のタスクを削除するかどうか
     """
 
     def __init__(
@@ -54,12 +54,12 @@ class DeleteAnnotationMain(CommandLineWithConfirm):
         service: annofabapi.Resource,
         project_id: str,
         *,
-        is_force: bool,
+        include_complete_task: bool,
         all_yes: bool,
     ) -> None:
         self.service = service
         self.facade = AnnofabApiFacade(service)
-        self.is_force = is_force
+        self.include_complete_task = include_complete_task
         CommandLineWithConfirm.__init__(self, all_yes)
         self.project_id = project_id
         self.dump_annotation_obj = DumpAnnotationMain(service, project_id)
@@ -133,7 +133,7 @@ class DeleteAnnotationMain(CommandLineWithConfirm):
             logger.info(f"task_id='{task_id}' :: タスクが作業中状態のため、スキップします。")
             return
 
-        if not self.is_force:  # noqa: SIM102
+        if not self.include_complete_task:  # noqa: SIM102
             if task.status == TaskStatus.COMPLETE:
                 logger.info(f"task_id='{task_id}' :: タスクが完了状態のため、スキップします。完了状態のタスクのアノテーションを削除するには、`--include_complete_task`オプションを指定してください。")
                 return
@@ -182,7 +182,7 @@ class DeleteAnnotationMain(CommandLineWithConfirm):
             if task.status == TaskStatus.WORKING:
                 continue
 
-            if not self.is_force and task.status == TaskStatus.COMPLETE:
+            if not self.include_complete_task and task.status == TaskStatus.COMPLETE:
                 continue
 
             # アノテーション一覧を取得して、削除対象があるかチェック
@@ -316,7 +316,7 @@ class DeleteAnnotationMain(CommandLineWithConfirm):
                 failed_to_delete_annotation_count += annotation_count
                 continue
 
-            if not self.is_force:  # noqa: SIM102
+            if not self.include_complete_task:  # noqa: SIM102
                 if task["status"] == TaskStatus.COMPLETE.value:
                     logger.info(
                         f"task_id='{task_id}' :: タスクが完了状態のため、アノテーション {annotation_count} 件の削除をスキップします。"
@@ -383,7 +383,7 @@ class DeleteAnnotation(CommandLine):
         else:
             super().validate_project(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.ACCEPTER])
 
-        main_obj = DeleteAnnotationMain(self.service, project_id, all_yes=args.yes, is_force=args.include_complete_task)
+        main_obj = DeleteAnnotationMain(self.service, project_id, all_yes=args.yes, include_complete_task=args.include_complete_task)
 
         if args.json is not None:
             dict_annotation_list = get_json_from_args(args.json)
