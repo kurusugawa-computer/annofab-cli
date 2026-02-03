@@ -784,7 +784,7 @@ def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse
     subcommand_help = "アノテーションをインポートします。"
     description = (
         "アノテーションをインポートします。アノテーションのフォーマットは、Simpleアノテーションと同じフォルダ構成のzipファイルまたはディレクトリです。"
-        "ただし、作業中状態および保留中状態のタスクはインポートできません。"
+        "ただし、作業中状態のタスクはインポートできません。"
         "``--include_complete_task`` を指定すれば、完了状態のタスクにもインポートできます。"
         "``--include_on_hold_task`` を指定すれば、保留中状態のタスクにもインポートできます。"
     )
