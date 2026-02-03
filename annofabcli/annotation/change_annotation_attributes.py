@@ -46,7 +46,7 @@ class ChangeAnnotationAttributesMain(CommandLineWithConfirm):
         service: annofabapi.Resource,
         *,
         project_id: str,
-        include_completed: bool,
+        include_complete_task: bool,
         all_yes: bool,
     ) -> None:
         self.service = service
@@ -54,7 +54,7 @@ class ChangeAnnotationAttributesMain(CommandLineWithConfirm):
         CommandLineWithConfirm.__init__(self, all_yes)
 
         self.project_id = project_id
-        self.include_completed = include_completed
+        self.include_complete_task = include_complete_task
 
         self.dump_annotation_obj = DumpAnnotationMain(service, project_id)
 
@@ -141,9 +141,9 @@ class ChangeAnnotationAttributesMain(CommandLineWithConfirm):
             logger.warning(f"task_id='{task_id}': タスクが作業中状態のため、スキップします。")
             return False, 0
 
-        if not self.include_completed:  # noqa: SIM102
+        if not self.include_complete_task:  # noqa: SIM102
             if task.status == TaskStatus.COMPLETE:
-                logger.warning(f"task_id='{task_id}': タスクが完了状態のため、スキップします。完了状態のタスクのアノテーション属性値を変更するには、 ``--include_completed`` を指定してください。")
+                logger.warning(f"task_id='{task_id}': タスクが完了状態のため、スキップします。完了状態のタスクのアノテーション属性値を変更するには、 ``--include_complete_task`` を指定してください。")
                 return False, 0
 
         annotation_list = self.get_annotation_list_for_task(task_id, annotation_query)
@@ -314,15 +314,15 @@ class ChangeAttributesOfAnnotation(CommandLine):
             backup_dir = Path(args.backup)
 
         super().validate_project(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.ACCEPTER])
-        if args.include_completed:  # noqa: SIM102
+        if args.include_complete_task:  # noqa: SIM102
             if not self.facade.contains_any_project_member_role(project_id, [ProjectMemberRole.OWNER]):
                 print(  # noqa: T201
-                    f"{self.COMMON_MESSAGE} argument --include_completed : '--include_completed' 引数を利用するにはプロジェクトのオーナーロールを持つユーザーで実行する必要があります。",
+                    f"{self.COMMON_MESSAGE} argument --include_complete_task : '--include_complete_task' 引数を利用するにはプロジェクトのオーナーロールを持つユーザーで実行する必要があります。",
                     file=sys.stderr,
                 )
                 sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
-        main_obj = ChangeAnnotationAttributesMain(self.service, project_id=project_id, include_completed=args.include_completed, all_yes=args.yes)
+        main_obj = ChangeAnnotationAttributesMain(self.service, project_id=project_id, include_complete_task=args.include_complete_task, all_yes=args.yes)
         main_obj.change_annotation_attributes_for_task_list(
             task_id_list,
             annotation_query=annotation_query,
@@ -362,7 +362,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     )
 
     parser.add_argument(
-        "--include_completed",
+        "--include_complete_task",
         action="store_true",
         help="完了状態のタスクのアノテーション属性も変更します。ただし、オーナーロールを持つユーザーでしか実行できません。",
     )

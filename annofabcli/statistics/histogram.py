@@ -34,7 +34,7 @@ def get_bin_edges(min_value: float, max_value: float, bin_width: float) -> numpy
     # stop引数に、`bin_width*2`を指定している理由：
     # 引数が小数のときは`len(bin_edges)``期待通りにならないときがあるので、ビンの数を少し増やしている
     # https://qiita.com/yuji38kwmt/items/ff00f3cb9083567d083f
-    bin_edges = numpy.arange(start=min_value, stop=max_value + bin_width * 2, step=bin_width)
+    bin_edges = numpy.arange(start=min_value, stop=max_value + bin_width * 2, step=bin_width)  # type: ignore[call-overload]
     return bin_edges
 
 

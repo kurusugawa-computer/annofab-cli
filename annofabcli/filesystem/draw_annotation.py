@@ -182,7 +182,7 @@ class DrawingAnnotationForOneImage:
                 image.save(output_file)
 
         elif image_size is not None:
-            image = Image.new("RGBA", image_size, color="black")
+            image = Image.new("RGBA", image_size, color="black")  # type: ignore[assignment]
             draw = ImageDraw.Draw(image)
             self._draw_annotations(draw, parser)
             output_file.parent.mkdir(parents=True, exist_ok=True)

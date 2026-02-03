@@ -63,14 +63,14 @@ Examples
 ----------------------------------------------
 
 保留中状態のタスクは、デフォルトでは担当者を変更できません。
-``--include_on_hold`` を指定すると、保留中状態のタスクも担当者を変更できます。
+``--include_on_hold_task`` を指定すると、保留中状態のタスクも担当者を変更できます。
 
 
 
 .. code-block::
 
     $ annofabcli task change_operator --project_id prj1 --task_id t1 t2 \
-     --user_id user1 --include_on_hold
+     --user_id user1 --include_on_hold_task
 
 
 並列処理

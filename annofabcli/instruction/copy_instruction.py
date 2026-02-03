@@ -31,7 +31,7 @@ class CopyInstruction(CommandLine):
     @staticmethod
     def get_instruction_image_id_from_url(url: str) -> str:
         # URL Queryを除いたURLを取得する
-        url_without_query = url.split("?")[0]
+        url_without_query = url.split("?", maxsplit=1)[0]
         return url_without_query.split("/")[-1]
 
     @staticmethod

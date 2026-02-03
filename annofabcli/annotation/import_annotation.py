@@ -410,9 +410,11 @@ class ImportAnnotationMain(CommandLineWithConfirm):
         *,
         project_id: str,
         all_yes: bool,
-        is_force: bool,
+        change_operator_to_me: bool,
         is_merge: bool,
         is_overwrite: bool,
+        include_complete_task: bool,
+        include_on_hold_task: bool,
         converter: AnnotationConverter,
     ) -> None:
         self.service = service
@@ -420,9 +422,11 @@ class ImportAnnotationMain(CommandLineWithConfirm):
         CommandLineWithConfirm.__init__(self, all_yes)
 
         self.project_id = project_id
-        self.is_force = is_force
+        self.change_operator_to_me = change_operator_to_me
         self.is_merge = is_merge
         self.is_overwrite = is_overwrite
+        self.include_complete_task = include_complete_task
+        self.include_on_hold_task = include_on_hold_task
         self.converter = converter
 
     def put_annotation_for_input_data(self, parser: SimpleAnnotationParser) -> int:
@@ -487,7 +491,7 @@ class ImportAnnotationMain(CommandLineWithConfirm):
 
         return success_input_data_count, success_annotation_count
 
-    def execute_task(self, task_parser: SimpleAnnotationParserByTask, task_index: int | None = None) -> bool:
+    def execute_task(self, task_parser: SimpleAnnotationParserByTask, task_index: int | None = None) -> bool:  # noqa: PLR0911
         """
         1個のタスクに対してアノテーションを登録する。
 
@@ -499,26 +503,39 @@ class ImportAnnotationMain(CommandLineWithConfirm):
 
         """
         task_id = task_parser.task_id
-        if not self.confirm_processing(f"task_id='{task_id}' のアノテーションをインポートしますか？"):
-            return False
-
-        logger_prefix = f"{task_index + 1!s} 件目: " if task_index is not None else ""
-        logger.info(f"{logger_prefix}task_id='{task_id}' に対して処理します。")
+        logger_prefix = f"{task_index + 1!s} 件目 :: task_id='{task_id}' :: " if task_index is not None else ""
 
         task = self.service.wrapper.get_task_or_none(self.project_id, task_id)
         if task is None:
-            logger.warning(f"task_id='{task_id}'であるタスクは存在しません。")
+            logger.warning(f"{logger_prefix}タスクは存在しません。")
             return False
 
-        if task["status"] in [TaskStatus.WORKING.value, TaskStatus.COMPLETE.value]:
-            logger.info(f"タスク'{task_id}'は作業中または受入完了状態のため、インポートをスキップします。 status={task['status']}")
+        logger.debug(f"{logger_prefix}phase='{task['phase']}', status='{task['status']}'")
+        if task["status"] == TaskStatus.WORKING.value:
+            logger.info(f"{logger_prefix}タスクは作業中のため、処理をスキップします。 :: status={task['status']}")
             return False
+
+        if not self.include_complete_task and task["status"] == TaskStatus.COMPLETE.value:
+            logger.info(f"{logger_prefix}タスクは完了状態のため、処理をスキップします。完了状態のタスクを処理する場合は、 '--include_complete_task'を指定してください。 :: status={task['status']}")
+            return False
+
+        if not self.include_on_hold_task and task["status"] == TaskStatus.ON_HOLD.value:
+            logger.info(
+                f"{logger_prefix}タスクは保留中状態のため、処理をスキップします。保留中状態のタスクにアノテーションをインポートする場合は、 "
+                f"'--include_on_hold_task'を指定してください。 :: status={task['status']}"
+            )
+            return False
+
+        if not self.confirm_processing(f"task_id='{task_id}'のタスク（phase={task['phase']}, status={task['status']}）にアノテーションをインポートしますか？"):
+            return False
+
+        logger.info(f"{logger_prefix}タスクにアノテーションをインポートします。")
 
         old_account_id: str | None = None
         changed_operator = False
-        if self.is_force:
+        if self.change_operator_to_me:
             if not can_put_annotation(task, self.service.api.account_id):
-                logger.debug(f"タスク'{task_id}' の担当者を自分自身に変更します。")
+                logger.debug(f"{logger_prefix}担当者を自分自身に変更します。")
                 old_account_id = task["account_id"]
                 task = self.service.wrapper.change_task_operator(
                     self.project_id,
@@ -532,7 +549,7 @@ class ImportAnnotationMain(CommandLineWithConfirm):
             if not can_put_annotation(task, self.service.api.account_id):
                 logger.debug(
                     f"タスク'{task_id}'は、過去に誰かに割り当てられたタスクで、現在の担当者が自分自身でないため、アノテーションのインポートをスキップします。"
-                    f"担当者を自分自身に変更してアノテーションを登録する場合は `--force` を指定してください。"
+                    f"担当者を自分自身に変更してアノテーションを登録する場合は `--change_operator_to_me` を指定してください。"
                 )
                 return False
 
@@ -678,7 +695,9 @@ class ImportAnnotation(CommandLine):
             all_yes=self.all_yes,
             is_merge=args.merge,
             is_overwrite=args.overwrite,
-            is_force=args.force,
+            change_operator_to_me=args.change_operator_to_me,
+            include_complete_task=args.include_complete_task,
+            include_on_hold_task=args.include_on_hold_task,
             converter=converter,
         )
 
@@ -700,7 +719,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--annotation",
         type=Path,
         required=True,
-        help="Simpleアノテーションと同じフォルダ構成のzipファイル or ディレクトリのパスを指定してください。タスクの状態が作業中/完了の場合はインポートしません。",
+        help="Simpleアノテーションと同じフォルダ構成のzipファイル or ディレクトリのパスを指定してください。",
     )
 
     argument_parser.add_task_id(required=False)
@@ -722,9 +741,23 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     )
 
     parser.add_argument(
-        "--force",
+        "--change_operator_to_me",
         action="store_true",
-        help="過去に割り当てられていて現在の担当者が自分自身でない場合、タスクの担当者を自分自身に変更してからアノテーションをインポートします。",
+        help="タスクの担当者を自分自身に変更しないとアノテーションをインポートできない場合（担当者が自分自身でない AND 担当者が割れ当てられたことがあるタスク）は、タスクの担当者を自分自身に変更します。アノテーションをインポートが完了したら、担当者を元に戻します。"  # noqa: E501
+        "未指定の場合は、そのようなタスクのアノテーションインポートはスキップされます。",
+    )
+
+    parser.add_argument(
+        "--include_complete_task",
+        action="store_true",
+        help="完了状態のタスクに対してもアノテーションをインポートします。未指定の場合は、完了状態のタスクはスキップされます。",
+    )
+
+    parser.add_argument(
+        "--include_on_hold_task",
+        action="store_true",
+        help="保留中状態のタスクに対してもアノテーションをインポートします。ただし、アノテーションインポート後は保留中状態でなくなる可能性があります。"
+        "未指定の場合は、保留中状態のタスクはスキップされます。",
     )
 
     parser.add_argument(
@@ -749,7 +782,12 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
 def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "import"
     subcommand_help = "アノテーションをインポートします。"
-    description = "アノテーションをインポートします。アノテーションのフォーマットは、Simpleアノテーションと同じフォルダ構成のzipファイルまたはディレクトリです。ただし、作業中/完了状態のタスクはインポートできません。"  # noqa: E501
+    description = (
+        "アノテーションをインポートします。アノテーションのフォーマットは、Simpleアノテーションと同じフォルダ構成のzipファイルまたはディレクトリです。"
+        "ただし、作業中状態のタスクはインポートできません。"
+        "``--include_complete_task`` を指定すれば、完了状態のタスクにもインポートできます。"
+        "``--include_on_hold_task`` を指定すれば、保留中状態のタスクにもインポートできます。"
+    )
     epilog = "オーナロールを持つユーザで実行してください。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
