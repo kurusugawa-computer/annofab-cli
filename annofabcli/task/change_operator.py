@@ -88,7 +88,7 @@ class ChangeOperatorMain:
 
         if task.status == TaskStatus.ON_HOLD and not self.include_on_hold:
             logger.warning(
-                f"{logging_prefix} :: task_id='{task_id}' :: タスクが保留中状態なので、担当者を変更できません。保留中状態のタスクの担当者も変更する場合は、'--include_on_hold'を指定してください。"
+                f"{logging_prefix} :: task_id='{task_id}' :: タスクが保留中状態なので、担当者を変更できません。保留中状態のタスクの担当者も変更する場合は、'--include_on_hold_task'を指定してください。"
             )
             return False
 
@@ -222,7 +222,7 @@ class ChangeOperator(CommandLine):
         project_id = args.project_id
         super().validate_project(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.ACCEPTER])
 
-        main_obj = ChangeOperatorMain(self.service, all_yes=self.all_yes, include_on_hold=args.include_on_hold)
+        main_obj = ChangeOperatorMain(self.service, all_yes=self.all_yes, include_on_hold=args.include_on_hold_task)
         main_obj.change_operator(
             project_id,
             task_id_list=task_id_list,
@@ -253,7 +253,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     argument_parser.add_task_query()
 
     parser.add_argument(
-        "--include_on_hold",
+        "--include_on_hold_task",
         action="store_true",
         help="指定した場合、保留中のタスクの担当者も変更します。指定しない場合、保留中のタスクはスキップされます。",
     )
