@@ -413,6 +413,7 @@ class ImportAnnotationMain(CommandLineWithConfirm):
         is_force: bool,
         is_merge: bool,
         is_overwrite: bool,
+        include_complete_task: bool,
         converter: AnnotationConverter,
     ) -> None:
         self.service = service
@@ -423,6 +424,7 @@ class ImportAnnotationMain(CommandLineWithConfirm):
         self.is_force = is_force
         self.is_merge = is_merge
         self.is_overwrite = is_overwrite
+        self.include_complete_task = include_complete_task
         self.converter = converter
 
     def put_annotation_for_input_data(self, parser: SimpleAnnotationParser) -> int:
@@ -510,7 +512,11 @@ class ImportAnnotationMain(CommandLineWithConfirm):
             logger.warning(f"task_id='{task_id}'であるタスクは存在しません。")
             return False
 
-        if task["status"] in [TaskStatus.WORKING.value, TaskStatus.COMPLETE.value]:
+        if self.include_complete_task:
+            if task["status"] == TaskStatus.WORKING.value:
+                logger.info(f"タスク'{task_id}'は作業中状態のため、インポートをスキップします。 status={task['status']}")
+                return False
+        elif task["status"] in [TaskStatus.WORKING.value, TaskStatus.COMPLETE.value]:
             logger.info(f"タスク'{task_id}'は作業中または受入完了状態のため、インポートをスキップします。 status={task['status']}")
             return False
 
@@ -679,6 +685,7 @@ class ImportAnnotation(CommandLine):
             is_merge=args.merge,
             is_overwrite=args.overwrite,
             is_force=args.force,
+            include_complete_task=args.include_complete_task,
             converter=converter,
         )
 
@@ -700,7 +707,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--annotation",
         type=Path,
         required=True,
-        help="Simpleアノテーションと同じフォルダ構成のzipファイル or ディレクトリのパスを指定してください。タスクの状態が作業中/完了の場合はインポートしません。",
+        help="Simpleアノテーションと同じフォルダ構成のzipファイル or ディレクトリのパスを指定してください。",
     )
 
     argument_parser.add_task_id(required=False)
@@ -728,6 +735,12 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     )
 
     parser.add_argument(
+        "--include_complete_task",
+        action="store_true",
+        help="受入完了状態のタスクに対してもアノテーションをインポートします。指定しない場合、受入完了状態のタスクはスキップされます。",
+    )
+
+    parser.add_argument(
         "--strict",
         action="store_true",
         help="アノテーションJSONに、存在しないラベル名や属性名など適切でない記載が場合、そのアノテーションJSONの登録をスキップします。"
@@ -749,7 +762,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
 def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "import"
     subcommand_help = "アノテーションをインポートします。"
-    description = "アノテーションをインポートします。アノテーションのフォーマットは、Simpleアノテーションと同じフォルダ構成のzipファイルまたはディレクトリです。ただし、作業中/完了状態のタスクはインポートできません。"  # noqa: E501
+    description = "アノテーションをインポートします。アノテーションのフォーマットは、Simpleアノテーションと同じフォルダ構成のzipファイルまたはディレクトリです。ただし、作業中状態のタスクはインポートできません。``--include_complete_task`` を指定すれば、受入完了状態のタスクにもインポートできます。"  # noqa: E501
     epilog = "オーナロールを持つユーザで実行してください。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
