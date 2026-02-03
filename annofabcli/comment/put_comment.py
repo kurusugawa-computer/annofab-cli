@@ -259,7 +259,7 @@ class PutCommentMain(CommandLineWithConfirm):
         task_id: str,
         comments_for_task: AddedCommentsForTask,
         task_index: int | None = None,
-    ) -> int:
+    ) -> tuple[int, int]:
         """
         タスクにコメントを付与します。
 
@@ -269,28 +269,29 @@ class PutCommentMain(CommandLineWithConfirm):
             task_index: タスクの連番
 
         Returns:
-            コメントを付与した入力データの個数
+            (コメントを付与した入力データの個数, 付与したコメントの個数)のタプル
         """
         logging_prefix = f"{task_index + 1} 件目" if task_index is not None else ""
 
         task = self.service.wrapper.get_task_or_none(self.project_id, task_id)
         if task is None:
             logger.warning(f"{logging_prefix} :: task_id='{task_id}' のタスクは存在しないので、スキップします。")
-            return 0
+            return (0, 0)
 
         logger.debug(f"{logging_prefix} : task_id='{task['task_id']}', status='{task['status']}', phase='{task['phase']}'")
 
         if not self._can_add_comment(
             task=task,
         ):
-            return 0
+            return (0, 0)
 
         if not self.confirm_processing(f"task_id='{task_id}' のタスクに{self.comment_type_name}を付与しますか？"):
-            return 0
+            return (0, 0)
 
         # コメントを付与するには作業中状態にする必要がある
         changed_task = self.change_to_working_status(self.project_id, task)
-        added_comments_count = 0
+        added_input_data_count = 0
+        added_comment_count = 0
         for input_data_id, comments in comments_for_task.items():
             if input_data_id not in task["input_data_id_list"]:
                 logger.warning(f"{logging_prefix} :: task_id='{task_id}'のタスクに input_data_id='{input_data_id}'の入力データは存在しません。")
@@ -300,7 +301,8 @@ class PutCommentMain(CommandLineWithConfirm):
                 if len(comments) > 0:
                     request_body = self._create_request_body(task=changed_task, input_data_id=input_data_id, comments=comments)
                     self.service.api.batch_update_comments(self.project_id, task_id, input_data_id, request_body=request_body)
-                    added_comments_count += 1
+                    added_input_data_count += 1
+                    added_comment_count += len(comments)
                     logger.debug(f"{logging_prefix} :: task_id='{task_id}', input_data_id='{input_data_id}' :: {len(comments)}件のコメントを付与しました。")
             except Exception:  # pylint: disable=broad-except
                 logger.warning(
@@ -314,12 +316,12 @@ class PutCommentMain(CommandLineWithConfirm):
             self.service.wrapper.change_task_operator(self.project_id, task_id, task["account_id"])
             logger.debug(f"{logging_prefix} :: task_id='{task_id}' :: 担当者を元のユーザ( account_id='{task['account_id']}'）に戻しました。")
 
-        return added_comments_count
+        return (added_input_data_count, added_comment_count)
 
     def add_comments_for_task_wrapper(
         self,
         tpl: tuple[int, tuple[str, AddedCommentsForTask]],
-    ) -> int:
+    ) -> tuple[int, int]:
         task_index, (task_id, comments_for_task) = tpl
         return self.add_comments_for_task(task_id=task_id, comments_for_task=comments_for_task, task_index=task_index)
 
@@ -328,30 +330,45 @@ class PutCommentMain(CommandLineWithConfirm):
         comments_for_task_list: AddedComments,
         parallelism: int | None = None,
     ) -> None:
-        comments_count = sum(len(e) for e in comments_for_task_list.values())
-        logger.info(f"{self.comment_type_name}を付与するタスク数: {len(comments_for_task_list)}, {self.comment_type_name}を付与する入力データ数: {comments_count}")
+        tasks_count = len(comments_for_task_list)
+        input_data_count = sum(len(e) for e in comments_for_task_list.values())
+        total_comment_count = sum(len(comments) for comments_for_task in comments_for_task_list.values() for comments in comments_for_task.values())
+        logger.info(
+            f"{self.comment_type_name}を付与するタスク数: {tasks_count}, {self.comment_type_name}を付与する入力データ数: {input_data_count}, {self.comment_type_name}の総数: {total_comment_count}"
+        )
 
         if parallelism is not None:
             with multiprocessing.Pool(parallelism) as pool:
-                result_bool_list = pool.map(self.add_comments_for_task_wrapper, enumerate(comments_for_task_list.items()))
-                added_comments_count = sum(e for e in result_bool_list)
+                result_list = pool.map(self.add_comments_for_task_wrapper, enumerate(comments_for_task_list.items()))
+                added_input_data_count = sum(e[0] for e in result_list)
+                added_comment_count = sum(e[1] for e in result_list)
+                succeeded_tasks_count = sum(1 for e in result_list if e[0] > 0)
 
         else:
             # 逐次処理
-            added_comments_count = 0
+            added_input_data_count = 0
+            added_comment_count = 0
+            succeeded_tasks_count = 0
             for task_index, (task_id, comments_for_task) in enumerate(comments_for_task_list.items()):
                 try:
-                    result = self.add_comments_for_task(
+                    result_input_data, result_comment = self.add_comments_for_task(
                         task_id=task_id,
                         comments_for_task=comments_for_task,
                         task_index=task_index,
                     )
-                    added_comments_count += result
+                    added_input_data_count += result_input_data
+                    added_comment_count += result_comment
+                    if result_input_data > 0:
+                        succeeded_tasks_count += 1
                 except Exception:  # pylint: disable=broad-except
                     logger.warning(f"task_id='{task_id}' :: コメントの付与に失敗しました。", exc_info=True)
                     continue
 
-        logger.info(f"{added_comments_count} / {comments_count} 件の入力データに{self.comment_type_name}を付与しました。")
+        logger.info(
+            f"{succeeded_tasks_count} / {tasks_count} 件のタスク, "
+            f"{added_input_data_count} / {input_data_count} 件の入力データ, "
+            f"{added_comment_count} / {total_comment_count} 件の{self.comment_type_name}を付与しました。"
+        )
 
 
 def convert_cli_comments(dict_comments: dict[str, Any], *, comment_type: CommentType) -> AddedComments:
