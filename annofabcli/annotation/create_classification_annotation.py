@@ -72,7 +72,8 @@ class CreateClassificationAnnotationMain(CommandLineWithConfirm):
         if not self.include_complete_task:  # noqa: SIM102
             if task["status"] == TaskStatus.COMPLETE.value:
                 logger.info(
-                    f"タスク'{task_id}'は完了状態のため、全体アノテーションの作成をスキップします。完了状態のタスクに全体アノテーションを作成するには、 ``--include_complete_task`` を指定してください。"
+                    f"タスク'{task_id}'は完了状態のため、全体アノテーションの作成をスキップします。"
+                    f"完了状態のタスクに全体アノテーションを作成するには、 ``--include_complete_task`` を指定してください。"
                 )
                 return None, False, None
 
