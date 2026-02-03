@@ -410,7 +410,7 @@ class ImportAnnotationMain(CommandLineWithConfirm):
         *,
         project_id: str,
         all_yes: bool,
-        is_force: bool,
+        change_operator_to_me: bool,
         is_merge: bool,
         is_overwrite: bool,
         include_complete_task: bool,
@@ -421,7 +421,7 @@ class ImportAnnotationMain(CommandLineWithConfirm):
         CommandLineWithConfirm.__init__(self, all_yes)
 
         self.project_id = project_id
-        self.is_force = is_force
+        self.change_operator_to_me = change_operator_to_me
         self.is_merge = is_merge
         self.is_overwrite = is_overwrite
         self.include_complete_task = include_complete_task
@@ -530,7 +530,7 @@ class ImportAnnotationMain(CommandLineWithConfirm):
 
         old_account_id: str | None = None
         changed_operator = False
-        if self.is_force:
+        if self.change_operator_to_me:
             if not can_put_annotation(task, self.service.api.account_id):
                 logger.debug(f"{logger_prefix}担当者を自分自身に変更します。")
                 old_account_id = task["account_id"]
@@ -546,7 +546,7 @@ class ImportAnnotationMain(CommandLineWithConfirm):
             if not can_put_annotation(task, self.service.api.account_id):
                 logger.debug(
                     f"タスク'{task_id}'は、過去に誰かに割り当てられたタスクで、現在の担当者が自分自身でないため、アノテーションのインポートをスキップします。"
-                    f"担当者を自分自身に変更してアノテーションを登録する場合は `--force` を指定してください。"
+                    f"担当者を自分自身に変更してアノテーションを登録する場合は `--change_operator_to_me` を指定してください。"
                 )
                 return False
 
@@ -692,7 +692,7 @@ class ImportAnnotation(CommandLine):
             all_yes=self.all_yes,
             is_merge=args.merge,
             is_overwrite=args.overwrite,
-            is_force=args.force,
+            change_operator_to_me=args.change_operator_to_me,
             include_complete_task=args.include_complete_task,
             converter=converter,
         )
@@ -737,7 +737,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     )
 
     parser.add_argument(
-        "--force",
+        "--change_operator_to_me",
         action="store_true",
         help="過去に割り当てられていて現在の担当者が自分自身でない場合、タスクの担当者を自分自身に変更してからアノテーションをインポートします。",
     )

@@ -143,12 +143,12 @@ Examples
 
 
 デフォルトでは「担当者が自分自身でない AND 担当者が割れ当てられたことがある」タスクは、アノテーションのインポートをスキップします。
-``--force`` を指定すると、担当者を一時的に自分自身に変更して、アノテーションをインポートすることができます。
+``--change_operator_to_me`` を指定すると、担当者を一時的に自分自身に変更して、アノテーションをインポートすることができます。
 
 .. code-block::
 
     $ annofabcli annotation import --project_id prj1 --annotation annotation.zip \
-    --force
+    --change_operator_to_me
 
 Usage Details
 =================================
