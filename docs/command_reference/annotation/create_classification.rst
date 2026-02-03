@@ -57,13 +57,13 @@ Examples
 ----------------------------------------------------
 
 デフォルトでは、完了状態のタスクには全体アノテーションを作成しません。
-``--include_completed`` を指定すると、完了状態のタスクにも全体アノテーションを作成できます。
+``--include_complete_task`` を指定すると、完了状態のタスクにも全体アノテーションを作成できます。
 ただし、このオプションはプロジェクトのオーナーロールを持つユーザーでのみ実行できます。
 
 .. code-block::
 
     $ annofabcli annotation create_classification --project_id prj1 \
-    --task_id task1 --label_name weather --include_completed
+    --task_id task1 --label_name weather --include_complete_task
 
 
 並列処理

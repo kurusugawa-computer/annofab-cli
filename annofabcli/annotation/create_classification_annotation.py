@@ -33,7 +33,7 @@ class CreateClassificationAnnotationMain(CommandLineWithConfirm):
         project_id: str,
         all_yes: bool,
         is_change_operator_to_me: bool,
-        include_completed: bool,
+        include_complete_task: bool,
     ) -> None:
         self.service = service
         self.facade = AnnofabApiFacade(service)
@@ -41,7 +41,7 @@ class CreateClassificationAnnotationMain(CommandLineWithConfirm):
 
         self.project_id = project_id
         self.is_change_operator_to_me = is_change_operator_to_me
-        self.include_completed = include_completed
+        self.include_complete_task = include_complete_task
 
         # アノテーション仕様を取得
         annotation_specs_v3, _ = self.service.api.get_annotation_specs(self.project_id, query_params={"v": "3"})
@@ -69,10 +69,10 @@ class CreateClassificationAnnotationMain(CommandLineWithConfirm):
             logger.info(f"タスク'{task_id}'は作業中状態のため、全体アノテーションの作成をスキップします。")
             return None, False, None
 
-        if not self.include_completed:  # noqa: SIM102
+        if not self.include_complete_task:  # noqa: SIM102
             if task["status"] == TaskStatus.COMPLETE.value:
                 logger.info(
-                    f"タスク'{task_id}'は完了状態のため、全体アノテーションの作成をスキップします。完了状態のタスクに全体アノテーションを作成するには、 ``--include_completed`` を指定してください。"
+                    f"タスク'{task_id}'は完了状態のため、全体アノテーションの作成をスキップします。完了状態のタスクに全体アノテーションを作成するには、 ``--include_complete_task`` を指定してください。"
                 )
                 return None, False, None
 
@@ -324,11 +324,11 @@ class CreateClassificationAnnotation(CommandLine):
 
         super().validate_project(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.ACCEPTER])
 
-        if args.include_completed:  # noqa: SIM102
+        if args.include_complete_task:  # noqa: SIM102
             if not self.facade.contains_any_project_member_role(project_id, [ProjectMemberRole.OWNER]):
                 print(  # noqa: T201
-                    "annofabcli annotation create_classification: error: argument --include_completed : "
-                    "'--include_completed' 引数を利用するにはプロジェクトのオーナーロールを持つユーザーで実行する必要があります。",
+                    "annofabcli annotation create_classification: error: argument --include_complete_task : "
+                    "'--include_complete_task' 引数を利用するにはプロジェクトのオーナーロールを持つユーザーで実行する必要があります。",
                     file=sys.stderr,
                 )
                 sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
@@ -341,7 +341,7 @@ class CreateClassificationAnnotation(CommandLine):
             project_id=project_id,
             all_yes=self.all_yes,
             is_change_operator_to_me=args.change_operator_to_me,
-            include_completed=args.include_completed,
+            include_complete_task=args.include_complete_task,
         )
 
         main_obj.main(task_ids, labels, parallelism=args.parallelism)
@@ -377,7 +377,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     )
 
     parser.add_argument(
-        "--include_completed",
+        "--include_complete_task",
         action="store_true",
         help="完了状態のタスクにも全体アノテーションを作成します。ただし、オーナーロールを持つユーザーでしか実行できません。",
     )

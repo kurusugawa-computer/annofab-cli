@@ -745,7 +745,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--include_complete_task",
         action="store_true",
-        help="受入完了状態のタスクに対してもアノテーションをインポートします。指定しない場合、受入完了状態のタスクはスキップされます。",
+        help="完了状態のタスクに対してもアノテーションをインポートします。指定しない場合、完了状態のタスクはスキップされます。",
     )
 
     parser.add_argument(
@@ -770,7 +770,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
 def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "import"
     subcommand_help = "アノテーションをインポートします。"
-    description = "アノテーションをインポートします。アノテーションのフォーマットは、Simpleアノテーションと同じフォルダ構成のzipファイルまたはディレクトリです。ただし、作業中状態のタスクはインポートできません。``--include_complete_task`` を指定すれば、受入完了状態のタスクにもインポートできます。"  # noqa: E501
+    description = "アノテーションをインポートします。アノテーションのフォーマットは、Simpleアノテーションと同じフォルダ構成のzipファイルまたはディレクトリです。ただし、作業中状態のタスクはインポートできません。"  # noqa: E501
     epilog = "オーナロールを持つユーザで実行してください。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
