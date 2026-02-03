@@ -365,7 +365,9 @@ class PutCommentMain(CommandLineWithConfirm):
                     continue
 
         logger.info(
-            f"{succeeded_tasks_count} / {tasks_count} 件のタスク, {added_input_data_count} / {input_data_count} 件の入力データ, {added_comment_count} / {total_comment_count} 件の{self.comment_type_name}を付与しました。"
+            f"{succeeded_tasks_count} / {tasks_count} 件のタスク, "
+            f"{added_input_data_count} / {input_data_count} 件の入力データ, "
+            f"{added_comment_count} / {total_comment_count} 件の{self.comment_type_name}を付与しました。"
         )
 
 
