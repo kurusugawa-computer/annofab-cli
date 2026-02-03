@@ -529,7 +529,7 @@ class ImportAnnotationMain(CommandLineWithConfirm):
         if not self.confirm_processing(f"task_id='{task_id}'のタスク（phase={task['phase']}, status={task['status']}）にアノテーションをインポートしますか？"):
             return False
 
-        logger.info(f"{logger_prefix}task_id='{task_id}' に対して処理します。")
+        logger.info(f"{logger_prefix}タスクにアノテーションをインポートします。")
 
         old_account_id: str | None = None
         changed_operator = False
