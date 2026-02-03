@@ -179,9 +179,11 @@ class CompleteTasksMain(CommandLineWithConfirm):
             # 教師付フェーズになった日時より、後に付与された返信コメントを取得する
             answered_comment = first_true(
                 comment_list,
-                pred=lambda e: e["comment_node"]["_type"] == "Reply"
-                and e["comment_node"]["root_comment_id"] == parent_comment_id
-                and dateutil.parser.parse(e["created_datetime"]) >= dateutil.parser.parse(task_started_datetime),
+                pred=lambda e: (
+                    e["comment_node"]["_type"] == "Reply"
+                    and e["comment_node"]["root_comment_id"] == parent_comment_id
+                    and dateutil.parser.parse(e["created_datetime"]) >= dateutil.parser.parse(task_started_datetime)
+                ),
             )
             return answered_comment is not None
 
