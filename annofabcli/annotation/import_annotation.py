@@ -501,30 +501,38 @@ class ImportAnnotationMain(CommandLineWithConfirm):
 
         """
         task_id = task_parser.task_id
-        if not self.confirm_processing(f"task_id='{task_id}' のアノテーションをインポートしますか？"):
-            return False
-
-        logger_prefix = f"{task_index + 1!s} 件目: " if task_index is not None else ""
-        logger.info(f"{logger_prefix}task_id='{task_id}' に対して処理します。")
+        logger_prefix = f"{task_index + 1!s} 件目 :: task_id='{task_id}' :: " if task_index is not None else ""
 
         task = self.service.wrapper.get_task_or_none(self.project_id, task_id)
         if task is None:
-            logger.warning(f"task_id='{task_id}'であるタスクは存在しません。")
+            logger.warning(f"{logger_prefix}タスクは存在しません。")
             return False
 
+        logger.debug(f"{logger_prefix}phase='{task['phase']}', status='{task['status']}'")
         if self.include_complete_task:
             if task["status"] == TaskStatus.WORKING.value:
-                logger.info(f"タスク'{task_id}'は作業中状態のため、インポートをスキップします。 status={task['status']}")
+                logger.info(f"{logger_prefix}タスクは作業中状態のため、処理をスキップします。 :: status={task['status']}")
                 return False
-        elif task["status"] in [TaskStatus.WORKING.value, TaskStatus.COMPLETE.value]:
-            logger.info(f"タスク'{task_id}'は作業中または受入完了状態のため、インポートをスキップします。 status={task['status']}")
+        else:
+            if task["status"] == TaskStatus.WORKING.value:
+                logger.info(f"{logger_prefix}タスクは作業中のため、処理をスキップします。 :: status={task['status']}")
+            elif task["status"] == TaskStatus.COMPLETE.value:
+                logger.info(
+                    f"{logger_prefix}タスクは完了状態のため、処理をスキップします。完了状態のタスクにアノテーションをインポートする場合は、 "
+                    f"'--include_complete_task'を指定してください。 :: status={task['status']}"
+                )
             return False
+
+        if not self.confirm_processing(f"task_id='{task_id}'のタスク（phase={task['phase']}, status={task['status']}）にアノテーションをインポートしますか？"):
+            return False
+
+        logger.info(f"{logger_prefix}task_id='{task_id}' に対して処理します。")
 
         old_account_id: str | None = None
         changed_operator = False
         if self.is_force:
             if not can_put_annotation(task, self.service.api.account_id):
-                logger.debug(f"タスク'{task_id}' の担当者を自分自身に変更します。")
+                logger.debug(f"{logger_prefix}担当者を自分自身に変更します。")
                 old_account_id = task["account_id"]
                 task = self.service.wrapper.change_task_operator(
                     self.project_id,
