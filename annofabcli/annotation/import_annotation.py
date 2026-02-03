@@ -491,7 +491,7 @@ class ImportAnnotationMain(CommandLineWithConfirm):
 
         return success_input_data_count, success_annotation_count
 
-    def execute_task(self, task_parser: SimpleAnnotationParserByTask, task_index: int | None = None) -> bool:  # noqa: PLR0911, PLR0912
+    def execute_task(self, task_parser: SimpleAnnotationParserByTask, task_index: int | None = None) -> bool:  # noqa: PLR0911
         """
         1個のタスクに対してアノテーションを登録する。
 
@@ -511,18 +511,12 @@ class ImportAnnotationMain(CommandLineWithConfirm):
             return False
 
         logger.debug(f"{logger_prefix}phase='{task['phase']}', status='{task['status']}'")
-        if self.include_complete_task:
-            if task["status"] == TaskStatus.WORKING.value:
-                logger.info(f"{logger_prefix}タスクは作業中状態のため、処理をスキップします。 :: status={task['status']}")
-                return False
-        else:
-            if task["status"] == TaskStatus.WORKING.value:
-                logger.info(f"{logger_prefix}タスクは作業中のため、処理をスキップします。 :: status={task['status']}")
-            elif task["status"] == TaskStatus.COMPLETE.value:
-                logger.info(
-                    f"{logger_prefix}タスクは完了状態のため、処理をスキップします。完了状態のタスクにアノテーションをインポートする場合は、 "
-                    f"'--include_complete_task'を指定してください。 :: status={task['status']}"
-                )
+        if task["status"] == TaskStatus.WORKING.value:
+            logger.info(f"{logger_prefix}タスクは作業中のため、処理をスキップします。 :: status={task['status']}")
+            return False
+
+        if not self.include_complete_task and task["status"] == TaskStatus.COMPLETE.value:
+            logger.info(f"{logger_prefix}タスクは完了状態のため、処理をスキップします。完了状態のタスクを処理する場合は、 '--include_complete_task'を指定してください。 :: status={task['status']}")
             return False
 
         if not self.include_on_hold_task and task["status"] == TaskStatus.ON_HOLD.value:
@@ -749,7 +743,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--change_operator_to_me",
         action="store_true",
-        help="過去に割り当てられていて現在の担当者が自分自身でない場合、タスクの担当者を自分自身に変更してからアノテーションをインポートします。",
+        help="タスクの担当者を自分自身に変更しないとアノテーションをインポートできない場合は、タスクの担当者を自分自身に変更します。アノテーションをインポートが完了したら、担当者を元に戻します。",
     )
 
     parser.add_argument(
@@ -761,7 +755,8 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--include_on_hold_task",
         action="store_true",
-        help="保留中状態のタスクに対してもアノテーションをインポートします。指定しない場合、保留中状態のタスクはスキップされます。",
+        help="保留中状態のタスクに対してもアノテーションをインポートします。ただし、アノテーションインポート後は保留中状態でなくなる可能性があります。"
+        "指定しない場合、保留中状態のタスクはスキップされます。",
     )
 
     parser.add_argument(
