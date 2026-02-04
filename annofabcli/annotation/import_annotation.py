@@ -539,12 +539,7 @@ class ImportAnnotationMain(CommandLineWithConfirm):
         success_annotation_count = 0
         for parser in parsers_list:
             try:
-                old_annotation = annotations_dict.get(parser.input_data_id)
-                if old_annotation is None:
-                    # バルク取得で取得できなかった場合は、個別に取得
-                    logger.debug(f"task_id='{parser.task_id}', input_data_id='{parser.input_data_id}' :: バルク取得で取得できなかったため、個別に取得します。")
-                    old_annotation, _ = self.service.api.get_editor_annotation(self.project_id, parser.task_id, parser.input_data_id, query_params={"v": "2"})
-
+                old_annotation = annotations_dict[parser.input_data_id]
                 tmp_success_annotation_count = self.put_annotation_for_input_data(parser, old_annotation=old_annotation)
                 if tmp_success_annotation_count > 0:
                     success_input_data_count += 1
