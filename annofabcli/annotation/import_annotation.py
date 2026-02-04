@@ -492,45 +492,28 @@ class ImportAnnotationMain(CommandLineWithConfirm):
         for i in range(0, len(input_data_ids), BATCH_SIZE):
             batch_input_data_ids = input_data_ids[i : i + BATCH_SIZE]
 
-            try:
-                bulk_response, _ = self.service.api.get_editor_annotations_in_bulk(
-                    self.project_id,
-                    task_id,
-                    query_params={"input_data_id": batch_input_data_ids},
-                )
+            bulk_response, _ = self.service.api.get_editor_annotations_in_bulk(
+                self.project_id,
+                task_id,
+                query_params={"input_data_id": ",".join(batch_input_data_ids)},
+            )
 
-                # 成功したアノテーション情報をdictに格納
-                for annotation in bulk_response.get("success", []):
-                    annotations_dict[annotation["input_data_id"]] = annotation
+            # 成功したアノテーション情報をdictに格納
+            for annotation in bulk_response["success"]:
+                annotations_dict[annotation["input_data_id"]] = annotation
 
-                # 失敗した入力データIDは個別に再取得
-                for failure_info in bulk_response.get("failure", []):
-                    failed_input_data_id = failure_info["input_data_id"]
-                    logger.warning(f"task_id='{task_id}', input_data_id='{failed_input_data_id}' :: バルク取得APIで失敗したため、個別に再取得します。")
-                    try:
-                        annotation, _ = self.service.api.get_editor_annotation(self.project_id, task_id, failed_input_data_id, query_params={"v": "2"})
-                        annotations_dict[failed_input_data_id] = annotation
-                    except Exception:
-                        logger.warning(
-                            f"task_id='{task_id}', input_data_id='{failed_input_data_id}' :: 個別取得APIでもアノテーション情報の取得に失敗しました。",
-                            exc_info=True,
-                        )
-
-            except Exception:
-                # バルク取得API全体が失敗した場合は、該当バッチの全入力データを個別に取得
-                logger.warning(
-                    f"task_id='{task_id}' :: バルク取得APIが失敗したため、{len(batch_input_data_ids)}件の入力データを個別に取得します。",
-                    exc_info=True,
-                )
-                for input_data_id in batch_input_data_ids:
-                    try:
-                        annotation, _ = self.service.api.get_editor_annotation(self.project_id, task_id, input_data_id, query_params={"v": "2"})
-                        annotations_dict[input_data_id] = annotation
-                    except Exception:
-                        logger.warning(
-                            f"task_id='{task_id}', input_data_id='{input_data_id}' :: アノテーション情報の取得に失敗しました。",
-                            exc_info=True,
-                        )
+            # 失敗した入力データIDは個別に再取得
+            for failure_info in bulk_response["failure"]:
+                failed_input_data_id = failure_info["input_data_id"]
+                logger.warning(f"task_id='{task_id}', input_data_id='{failed_input_data_id}' :: バルク取得APIで失敗したため、個別に再取得します。")
+                try:
+                    annotation, _ = self.service.api.get_editor_annotation(self.project_id, task_id, failed_input_data_id, query_params={"v": "2"})
+                    annotations_dict[failed_input_data_id] = annotation
+                except Exception:
+                    logger.warning(
+                        f"task_id='{task_id}', input_data_id='{failed_input_data_id}' :: 個別取得APIでもアノテーション情報の取得に失敗しました。",
+                        exc_info=True,
+                    )
 
         return annotations_dict
 
