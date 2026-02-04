@@ -429,13 +429,13 @@ class ImportAnnotationMain(CommandLineWithConfirm):
         self.include_on_hold_task = include_on_hold_task
         self.converter = converter
 
-    def put_annotation_for_input_data(self, parser: SimpleAnnotationParser, old_annotation: dict[str, Any] | None = None) -> int:
+    def put_annotation_for_input_data(self, parser: SimpleAnnotationParser, old_annotation: dict[str, Any]) -> int:
         """
         1個の入力データに対してアノテーションを登録します。
 
         Args:
             parser: アノテーションJSONをパースするためのクラス
-            old_annotation: 既存のアノテーション情報。Noneの場合は、このメソッド内で取得します。
+            old_annotation: 既存のアノテーション情報
 
         Returns:
             登録したアノテーションの個数
@@ -447,9 +447,6 @@ class ImportAnnotationMain(CommandLineWithConfirm):
         if len(simple_annotation.details) == 0:
             logger.debug(f"task_id='{task_id}', input_data_id='{input_data_id}' :: インポート元にアノテーションデータがないため、アノテーションの登録をスキップします。")
             return 0
-
-        if old_annotation is None:
-            old_annotation, _ = self.service.api.get_editor_annotation(self.project_id, task_id, input_data_id, query_params={"v": "2"})
 
         if len(old_annotation["details"]) > 0:  # noqa: SIM102
             if not self.is_overwrite and not self.is_merge:
@@ -543,6 +540,11 @@ class ImportAnnotationMain(CommandLineWithConfirm):
         for parser in parsers_list:
             try:
                 old_annotation = annotations_dict.get(parser.input_data_id)
+                if old_annotation is None:
+                    # バルク取得で取得できなかった場合は、個別に取得
+                    logger.debug(f"task_id='{parser.task_id}', input_data_id='{parser.input_data_id}' :: バルク取得で取得できなかったため、個別に取得します。")
+                    old_annotation, _ = self.service.api.get_editor_annotation(self.project_id, parser.task_id, parser.input_data_id, query_params={"v": "2"})
+
                 tmp_success_annotation_count = self.put_annotation_for_input_data(parser, old_annotation=old_annotation)
                 if tmp_success_annotation_count > 0:
                     success_input_data_count += 1
