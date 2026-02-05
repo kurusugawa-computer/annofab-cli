@@ -429,9 +429,13 @@ class ImportAnnotationMain(CommandLineWithConfirm):
         self.include_on_hold_task = include_on_hold_task
         self.converter = converter
 
-    def put_annotation_for_input_data(self, parser: SimpleAnnotationParser) -> int:
+    def put_annotation_for_input_data(self, parser: SimpleAnnotationParser, old_annotation: dict[str, Any]) -> int:
         """
         1個の入力データに対してアノテーションを登録します。
+
+        Args:
+            parser: アノテーションJSONをパースするためのクラス
+            old_annotation: 既存のアノテーション情報
 
         Returns:
             登録したアノテーションの個数
@@ -444,7 +448,6 @@ class ImportAnnotationMain(CommandLineWithConfirm):
             logger.debug(f"task_id='{task_id}', input_data_id='{input_data_id}' :: インポート元にアノテーションデータがないため、アノテーションの登録をスキップします。")
             return 0
 
-        old_annotation, _ = self.service.api.get_editor_annotation(self.project_id, task_id, input_data_id, query_params={"v": "2"})
         if len(old_annotation["details"]) > 0:  # noqa: SIM102
             if not self.is_overwrite and not self.is_merge:
                 logger.debug(
@@ -467,6 +470,50 @@ class ImportAnnotationMain(CommandLineWithConfirm):
         logger.debug(f"task_id='{task_id}', input_data_id='{input_data_id}' :: {success_annotation_count}/{len(simple_annotation.details)} 件のアノテーションを登録しました。")
         return success_annotation_count
 
+    def _get_annotations_in_bulk(self, task_id: str, input_data_ids: list[str]) -> dict[str, dict[str, Any]]:
+        """
+        複数の入力データのアノテーション情報を一括取得します。
+        APIの制限により、10件ずつのバッチで取得します。
+
+        Args:
+            task_id: タスクID
+            input_data_ids: 入力データIDのリスト
+
+        Returns:
+            入力データIDをキーとしたアノテーション情報のdict
+        """
+        BATCH_SIZE = 10  # noqa: N806
+        annotations_dict: dict[str, dict[str, Any]] = {}
+
+        # 10件ずつのバッチに分割して処理
+        for i in range(0, len(input_data_ids), BATCH_SIZE):
+            batch_input_data_ids = input_data_ids[i : i + BATCH_SIZE]
+
+            bulk_response, _ = self.service.api.get_editor_annotations_in_bulk(
+                self.project_id,
+                task_id,
+                query_params={"input_data_id": ",".join(batch_input_data_ids)},
+            )
+
+            # 成功したアノテーション情報をdictに格納
+            for annotation in bulk_response["success"]:
+                annotations_dict[annotation["input_data_id"]] = annotation
+
+            # 失敗した入力データIDは個別に再取得
+            for failure_info in bulk_response["failure"]:
+                failed_input_data_id = failure_info["input_data_id"]
+                logger.warning(f"task_id='{task_id}', input_data_id='{failed_input_data_id}' :: バルク取得APIで失敗したため、個別に再取得します。")
+                try:
+                    annotation, _ = self.service.api.get_editor_annotation(self.project_id, task_id, failed_input_data_id, query_params={"v": "2"})
+                    annotations_dict[failed_input_data_id] = annotation
+                except Exception:
+                    logger.warning(
+                        f"task_id='{task_id}', input_data_id='{failed_input_data_id}' :: 個別取得APIでもアノテーション情報の取得に失敗しました。",
+                        exc_info=True,
+                    )
+
+        return annotations_dict
+
     def put_annotation_for_task(self, task_parser: SimpleAnnotationParserByTask) -> tuple[int, int]:
         """
         1個のタスクに対して、アノテーションを登録します。
@@ -475,15 +522,29 @@ class ImportAnnotationMain(CommandLineWithConfirm):
             tuple[0]: アノテーションを登録した入力データの個数
             tuple[1]: 登録したアノテーションの個数
         """
+        task_id = task_parser.task_id
+
+        # タスク内の全入力データのparserとinput_data_idを事前に収集
+        parsers_list: list[SimpleAnnotationParser] = []
+        input_data_ids: list[str] = []
+        for parser in task_parser.lazy_parse():
+            parsers_list.append(parser)
+            input_data_ids.append(parser.input_data_id)
+
+        # 既存のアノテーション情報を一括取得
+        annotations_dict = self._get_annotations_in_bulk(task_id, input_data_ids)
+
+        # 各入力データに対してアノテーションを登録
         success_input_data_count = 0
         success_annotation_count = 0
-        for parser in task_parser.lazy_parse():
+        for parser in parsers_list:
             try:
-                tmp_success_annotation_count = self.put_annotation_for_input_data(parser)
+                old_annotation = annotations_dict[parser.input_data_id]
+                tmp_success_annotation_count = self.put_annotation_for_input_data(parser, old_annotation=old_annotation)
                 if tmp_success_annotation_count > 0:
                     success_input_data_count += 1
                 success_annotation_count += tmp_success_annotation_count
-            except Exception:  # pylint: disable=broad-except
+            except Exception:
                 logger.warning(
                     f"task_id='{parser.task_id}', input_data_id='{parser.input_data_id}' のアノテーションのインポートに失敗しました。",
                     exc_info=True,
