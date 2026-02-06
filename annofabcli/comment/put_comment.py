@@ -1,12 +1,16 @@
 from __future__ import annotations
 
+import json
 import logging
 import multiprocessing
 import uuid
+from collections import defaultdict
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any
 
 import annofabapi
+import pandas
 import requests
 from annofabapi.models import CommentType, TaskPhase, TaskStatus
 from annofabapi.pydantic_models.input_data_type import InputDataType
@@ -432,3 +436,109 @@ def convert_cli_comments(dict_comments: dict[str, Any], *, comment_type: Comment
         sub_result = {input_data_id: [func_convert(e) for e in comments] for input_data_id, comments in comments_for_task.items() if len(comments) > 0}
         result.update({task_id: sub_result})
     return result
+
+
+def read_inspection_comment_csv(csv_file: Path) -> dict[str, Any]:
+    """
+    検査コメント用のCSVファイルを読み込み、convert_cli_comments()に渡せる形式に変換する。
+
+    Args:
+        csv_file: CSVファイルのパス
+
+    Returns:
+        dict[task_id, dict[input_data_id, list[comment_dict]]]形式の辞書
+
+    Raises:
+        ValueError: 必須カラムが不足している場合、またはJSON列のパースに失敗した場合
+    """
+    # すべての列をstr型として読み込む
+    df = pandas.read_csv(str(csv_file), dtype=str)
+
+    # 必須カラムチェック
+    required_columns = ["task_id", "input_data_id", "comment"]
+    missing_columns = set(required_columns) - set(df.columns)
+    if len(missing_columns) > 0:
+        raise ValueError(f"必須カラムが不足しています: {missing_columns}")
+
+    # NaNをNoneに変換
+    df = df.where(pandas.notna(df), None)
+
+    # データ構築
+    result: dict[str, dict[str, list[dict[str, Any]]]] = defaultdict(lambda: defaultdict(list))
+    for idx, row_dict in enumerate(df.to_dict(orient="records"), start=2):  # CSVの行番号は2から（ヘッダーが1行目）
+        task_id = row_dict["task_id"]
+        input_data_id = row_dict["input_data_id"]
+
+        # コメントdict作成
+        comment_dict: dict[str, Any] = {"comment": row_dict["comment"]}
+        comment_dict["annotation_id"] = row_dict.get("annotation_id")
+        comment_dict["comment_id"] = row_dict.get("comment_id")
+
+        # data列（JSON文字列）のパース
+        if row_dict.get("data"):
+            try:
+                comment_dict["data"] = json.loads(row_dict["data"])
+            except json.JSONDecodeError as e:
+                raise ValueError(f"CSVの{idx}行目: data列のJSON解析に失敗しました。 :: data='{row_dict['data']}'") from e
+
+        # phrases列（JSON配列文字列）
+        if row_dict.get("phrases"):
+            try:
+                comment_dict["phrases"] = json.loads(row_dict["phrases"])
+            except json.JSONDecodeError as e:
+                raise ValueError(f"CSVの{idx}行目: phrases列のJSON解析に失敗しました。 :: phrases='{row_dict['phrases']}'") from e
+
+
+        # 階層構造に追加
+        result[task_id][input_data_id].append(comment_dict)
+
+    return result
+
+
+def read_onhold_comment_csv(csv_file: Path) -> dict[str, Any]:
+    """
+    保留コメント用のCSVファイルを読み込み、convert_cli_comments()に渡せる形式に変換する。
+
+    Args:
+        csv_file: CSVファイルのパス
+
+    Returns:
+        dict[task_id, dict[input_data_id, list[comment_dict]]]形式の辞書
+
+    Raises:
+        ValueError: 必須カラムが不足している場合
+    """
+    # すべての列をstr型として読み込む
+    df = pandas.read_csv(str(csv_file), dtype=str)
+
+    # 必須カラムチェック
+    required_columns = ["task_id", "input_data_id", "comment"]
+    missing_columns = set(required_columns) - set(df.columns)
+    if len(missing_columns) > 0:
+        raise ValueError(f"必須カラムが不足しています: {missing_columns}")
+
+    # NaNをNoneに変換
+    df = df.where(pandas.notna(df), None)
+
+    # データ構築
+    result: dict[str, dict[str, list[dict[str, Any]]]] = defaultdict(lambda: defaultdict(list))
+    for row_dict in df.to_dict(orient="records"):
+        task_id = row_dict["task_id"]
+        input_data_id = row_dict["input_data_id"]
+
+        # コメントdict作成
+        comment_dict: dict[str, Any] = {"comment": row_dict["comment"]}
+
+        # annotation_id列
+        if row_dict.get("annotation_id"):
+            comment_dict["annotation_id"] = row_dict["annotation_id"]
+
+        # comment_id列
+        if row_dict.get("comment_id"):
+            comment_dict["comment_id"] = row_dict["comment_id"]
+
+        # 階層構造に追加
+        result[task_id][input_data_id].append(comment_dict)
+
+    # defaultdictを通常のdictに変換して返す
+    return {task_id: dict(comments_for_task) for task_id, comments_for_task in result.items()}

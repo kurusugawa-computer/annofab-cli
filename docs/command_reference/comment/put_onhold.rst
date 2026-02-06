@@ -7,9 +7,6 @@ Description
 保留コメントを付与します。
 
 
-.. note::
-
-    2024年9月現在、保留コメントは画像エディタ画面でしか利用できません。動画エディタ画面、3次元エディタ画面では保留コメントを利用できません。
     
     
 
@@ -55,6 +52,33 @@ Examples
 .. code-block::
 
     $ annofabcli comment put_onhold --project_id prj1 --json file://comment.json
+
+
+CSV形式で指定する場合
+--------------------------
+
+``--csv`` にCSVファイルを指定すると、保留コメントを付与できます。
+
+.. code-block:: text
+    :caption: comment.csv
+
+    task_id,input_data_id,comment,annotation_id,comment_id
+    task001,input001,画像が間違っている,,
+    task001,input002,確認が必要,anno789,
+
+
+* CSVには以下の列が必要です。
+
+  * ``task_id`` （必須）：タスクID
+  * ``input_data_id`` （必須）：入力データID
+  * ``comment`` （必須）：コメント本文
+  * ``annotation_id`` （任意）：紐付けるアノテーションID
+  * ``comment_id`` （任意）：コメントID（省略時はUUIDv4自動生成）
+
+
+.. code-block::
+
+    $ annofabcli comment put_onhold --project_id prj1 --csv comment.csv
 
 
 
