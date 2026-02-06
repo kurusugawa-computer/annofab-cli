@@ -460,43 +460,46 @@ def read_inspection_comment_csv(csv_file: Path) -> dict[str, Any]:
     if len(missing_columns) > 0:
         raise ValueError(f"必須カラムが不足しています: {missing_columns}")
 
+    # NaNをNoneに変換
+    df = df.where(pandas.notna(df), None)
+
     # データ構築
     result: dict[str, dict[str, list[dict[str, Any]]]] = defaultdict(lambda: defaultdict(list))
-    for idx, row in enumerate(df.itertuples(index=False), start=2):  # CSVの行番号は2から（ヘッダーが1行目）
-        task_id = row.task_id
-        input_data_id = row.input_data_id
+    for idx, row_dict in enumerate(df.to_dict(orient="records"), start=2):  # CSVの行番号は2から（ヘッダーが1行目）
+        task_id = row_dict["task_id"]
+        input_data_id = row_dict["input_data_id"]
 
         # コメントdict作成
-        comment_dict: dict[str, Any] = {"comment": row.comment}
+        comment_dict: dict[str, Any] = {"comment": row_dict["comment"]}
 
         # data列（JSON文字列）のパース
-        if hasattr(row, "data") and pandas.notna(row.data) and row.data.strip() != "":
+        if row_dict.get("data"):
             try:
-                comment_dict["data"] = json.loads(row.data)
+                comment_dict["data"] = json.loads(row_dict["data"])
             except json.JSONDecodeError as e:
-                logger.warning(f"CSVの{idx}行目: data列のJSON解析に失敗しました。 :: data='{row.data}' :: {e}", exc_info=True)
-                raise ValueError(f"CSVの{idx}行目: data列のJSON解析に失敗しました。 :: data='{row.data}'") from e
+                logger.warning(f"CSVの{idx}行目: data列のJSON解析に失敗しました。 :: data='{row_dict['data']}' :: {e}", exc_info=True)
+                raise ValueError(f"CSVの{idx}行目: data列のJSON解析に失敗しました。 :: data='{row_dict['data']}'") from e
 
         # annotation_id列
-        if hasattr(row, "annotation_id") and pandas.notna(row.annotation_id) and row.annotation_id.strip() != "":
-            comment_dict["annotation_id"] = row.annotation_id
+        if row_dict.get("annotation_id"):
+            comment_dict["annotation_id"] = row_dict["annotation_id"]
 
         # phrases列（JSON配列文字列）
-        if hasattr(row, "phrases") and pandas.notna(row.phrases) and row.phrases.strip() != "":
+        if row_dict.get("phrases"):
             try:
-                parsed_phrases = json.loads(row.phrases)
+                parsed_phrases = json.loads(row_dict["phrases"])
                 if isinstance(parsed_phrases, list):
                     comment_dict["phrases"] = parsed_phrases
                 else:
-                    logger.warning(f"CSVの{idx}行目: phrases列は配列である必要があります。 :: phrases='{row.phrases}'")
-                    raise TypeError(f"CSVの{idx}行目: phrases列は配列である必要があります。 :: phrases='{row.phrases}'")
+                    logger.warning(f"CSVの{idx}行目: phrases列は配列である必要があります。 :: phrases='{row_dict['phrases']}'")
+                    raise TypeError(f"CSVの{idx}行目: phrases列は配列である必要があります。 :: phrases='{row_dict['phrases']}'")
             except json.JSONDecodeError as e:
-                logger.warning(f"CSVの{idx}行目: phrases列のJSON解析に失敗しました。 :: phrases='{row.phrases}' :: {e}", exc_info=True)
-                raise ValueError(f"CSVの{idx}行目: phrases列のJSON解析に失敗しました。 :: phrases='{row.phrases}'") from e
+                logger.warning(f"CSVの{idx}行目: phrases列のJSON解析に失敗しました。 :: phrases='{row_dict['phrases']}' :: {e}", exc_info=True)
+                raise ValueError(f"CSVの{idx}行目: phrases列のJSON解析に失敗しました。 :: phrases='{row_dict['phrases']}'") from e
 
         # comment_id列
-        if hasattr(row, "comment_id") and pandas.notna(row.comment_id) and row.comment_id.strip() != "":
-            comment_dict["comment_id"] = row.comment_id
+        if row_dict.get("comment_id"):
+            comment_dict["comment_id"] = row_dict["comment_id"]
 
         # 階層構造に追加
         result[task_id][input_data_id].append(comment_dict)
@@ -527,22 +530,25 @@ def read_onhold_comment_csv(csv_file: Path) -> dict[str, Any]:
     if len(missing_columns) > 0:
         raise ValueError(f"必須カラムが不足しています: {missing_columns}")
 
+    # NaNをNoneに変換
+    df = df.where(pandas.notna(df), None)
+
     # データ構築
     result: dict[str, dict[str, list[dict[str, Any]]]] = defaultdict(lambda: defaultdict(list))
-    for _idx, row in enumerate(df.itertuples(index=False), start=2):  # CSVの行番号は2から（ヘッダーが1行目）
-        task_id = row.task_id
-        input_data_id = row.input_data_id
+    for row_dict in df.to_dict(orient="records"):
+        task_id = row_dict["task_id"]
+        input_data_id = row_dict["input_data_id"]
 
         # コメントdict作成
-        comment_dict: dict[str, Any] = {"comment": row.comment}
+        comment_dict: dict[str, Any] = {"comment": row_dict["comment"]}
 
         # annotation_id列
-        if hasattr(row, "annotation_id") and pandas.notna(row.annotation_id) and row.annotation_id.strip() != "":
-            comment_dict["annotation_id"] = row.annotation_id
+        if row_dict.get("annotation_id"):
+            comment_dict["annotation_id"] = row_dict["annotation_id"]
 
         # comment_id列
-        if hasattr(row, "comment_id") and pandas.notna(row.comment_id) and row.comment_id.strip() != "":
-            comment_dict["comment_id"] = row.comment_id
+        if row_dict.get("comment_id"):
+            comment_dict["comment_id"] = row_dict["comment_id"]
 
         # 階層構造に追加
         result[task_id][input_data_id].append(comment_dict)
