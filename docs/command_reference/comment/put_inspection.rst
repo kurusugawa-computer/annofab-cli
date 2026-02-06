@@ -64,6 +64,36 @@ Examples
     $ annofabcli comment put_inspection --project_id prj1 --json file://comment.json
 
 
+CSV形式で指定する場合
+--------------------------
+
+``--csv`` にCSVファイルを指定すると、検査コメントを付与できます。
+
+.. code-block:: text
+    :caption: comment.csv
+
+    task_id,input_data_id,comment,data,annotation_id,phrases,comment_id
+    task001,input001,type属性が間違っています。,"{""x"":10,""y"":20,""_type"":""Point""}",,,
+    task001,input002,枠がズレています。,"{""x"":20,""y"":20,""_type"":""Point""}",anno123,"[""A1""]",
+    task002,input003,ラベルが不適切です。,,anno456,"[""ID1"",""ID2""]",
+
+
+* CSVには以下の列が必要です。
+
+  * ``task_id`` （必須）：タスクID
+  * ``input_data_id`` （必須）：入力データID
+  * ``comment`` （必須）：コメント本文
+  * ``data`` （任意）：コメント位置情報（JSON形式の文字列）
+  * ``annotation_id`` （任意）：紐付けるアノテーションID
+  * ``phrases`` （任意）：定型指摘IDのリスト（JSON配列形式の文字列。例: ``'["ID1","ID2"]'`` ）
+  * ``comment_id`` （任意）：コメントID（省略時はUUIDv4自動生成）
+
+
+.. code-block::
+
+    $ annofabcli comment put_inspection --project_id prj1 --csv comment.csv
+
+
 ``data`` プロパティに渡す値の例
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 

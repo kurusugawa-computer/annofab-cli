@@ -1,12 +1,15 @@
 from __future__ import annotations
 
+import json
 import logging
 import multiprocessing
 import uuid
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any
 
 import annofabapi
+import pandas
 import requests
 from annofabapi.models import CommentType, TaskPhase, TaskStatus
 from annofabapi.pydantic_models.input_data_type import InputDataType
@@ -431,4 +434,75 @@ def convert_cli_comments(dict_comments: dict[str, Any], *, comment_type: Comment
     for task_id, comments_for_task in dict_comments.items():
         sub_result = {input_data_id: [func_convert(e) for e in comments] for input_data_id, comments in comments_for_task.items() if len(comments) > 0}
         result.update({task_id: sub_result})
+    return result
+
+
+def read_comment_csv(csv_file: Path, comment_type: CommentType) -> dict[str, Any]:
+    """
+    CSVファイルからコメント情報を読み込み、convert_cli_comments()に渡せる形式に変換する。
+
+    Args:
+        csv_file: CSVファイルのパス
+        comment_type: コメントの種類（検査コメントまたは保留コメント）
+
+    Returns:
+        dict[task_id, dict[input_data_id, list[comment_dict]]]形式の辞書
+
+    Raises:
+        ValueError: 必須カラムが不足している場合、またはJSON列のパースに失敗した場合
+    """
+    # すべての列をstr型として読み込む
+    df = pandas.read_csv(str(csv_file), dtype=str)
+
+    # 必須カラムチェック
+    required_columns = ["task_id", "input_data_id", "comment"]
+    missing_columns = set(required_columns) - set(df.columns)
+    if len(missing_columns) > 0:
+        raise ValueError(f"必須カラムが不足しています: {missing_columns}")
+
+    # データ構築
+    result: dict[str, dict[str, list[dict[str, Any]]]] = {}
+    for idx, row in enumerate(df.itertuples(index=False), start=2):  # CSVの行番号は2から（ヘッダーが1行目）
+        task_id = row.task_id
+        input_data_id = row.input_data_id
+
+        # コメントdict作成
+        comment_dict: dict[str, Any] = {"comment": row.comment}
+
+        # data列（JSON文字列）のパース
+        if hasattr(row, "data") and pandas.notna(row.data) and row.data.strip() != "":
+            try:
+                comment_dict["data"] = json.loads(row.data)
+            except json.JSONDecodeError as e:
+                logger.warning(f"CSVの{idx}行目: data列のJSON解析に失敗しました。 :: data='{row.data}' :: {e}", exc_info=True)
+                raise ValueError(f"CSVの{idx}行目: data列のJSON解析に失敗しました。 :: data='{row.data}'") from e
+
+        # annotation_id列
+        if hasattr(row, "annotation_id") and pandas.notna(row.annotation_id) and row.annotation_id.strip() != "":
+            comment_dict["annotation_id"] = row.annotation_id
+
+        # phrases列（検査コメントのみ、JSON配列文字列）
+        if comment_type == CommentType.INSPECTION and hasattr(row, "phrases") and pandas.notna(row.phrases) and row.phrases.strip() != "":
+            try:
+                parsed_phrases = json.loads(row.phrases)
+                if isinstance(parsed_phrases, list):
+                    comment_dict["phrases"] = parsed_phrases
+                else:
+                    logger.warning(f"CSVの{idx}行目: phrases列は配列である必要があります。 :: phrases='{row.phrases}'")
+                    raise TypeError(f"CSVの{idx}行目: phrases列は配列である必要があります。 :: phrases='{row.phrases}'")
+            except json.JSONDecodeError as e:
+                logger.warning(f"CSVの{idx}行目: phrases列のJSON解析に失敗しました。 :: phrases='{row.phrases}' :: {e}", exc_info=True)
+                raise ValueError(f"CSVの{idx}行目: phrases列のJSON解析に失敗しました。 :: phrases='{row.phrases}'") from e
+
+        # comment_id列
+        if hasattr(row, "comment_id") and pandas.notna(row.comment_id) and row.comment_id.strip() != "":
+            comment_dict["comment_id"] = row.comment_id
+
+        # 階層構造に追加
+        if task_id not in result:
+            result[task_id] = {}
+        if input_data_id not in result[task_id]:
+            result[task_id][input_data_id] = []
+        result[task_id][input_data_id].append(comment_dict)
+
     return result
