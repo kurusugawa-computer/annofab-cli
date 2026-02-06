@@ -4,6 +4,7 @@ import json
 import logging
 import multiprocessing
 import uuid
+from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -437,13 +438,12 @@ def convert_cli_comments(dict_comments: dict[str, Any], *, comment_type: Comment
     return result
 
 
-def read_comment_csv(csv_file: Path, comment_type: CommentType) -> dict[str, Any]:
+def read_inspection_comment_csv(csv_file: Path) -> dict[str, Any]:
     """
-    CSVファイルからコメント情報を読み込み、convert_cli_comments()に渡せる形式に変換する。
+    検査コメント用のCSVファイルを読み込み、convert_cli_comments()に渡せる形式に変換する。
 
     Args:
         csv_file: CSVファイルのパス
-        comment_type: コメントの種類（検査コメントまたは保留コメント）
 
     Returns:
         dict[task_id, dict[input_data_id, list[comment_dict]]]形式の辞書
@@ -461,7 +461,7 @@ def read_comment_csv(csv_file: Path, comment_type: CommentType) -> dict[str, Any
         raise ValueError(f"必須カラムが不足しています: {missing_columns}")
 
     # データ構築
-    result: dict[str, dict[str, list[dict[str, Any]]]] = {}
+    result: dict[str, dict[str, list[dict[str, Any]]]] = defaultdict(lambda: defaultdict(list))
     for idx, row in enumerate(df.itertuples(index=False), start=2):  # CSVの行番号は2から（ヘッダーが1行目）
         task_id = row.task_id
         input_data_id = row.input_data_id
@@ -481,8 +481,8 @@ def read_comment_csv(csv_file: Path, comment_type: CommentType) -> dict[str, Any
         if hasattr(row, "annotation_id") and pandas.notna(row.annotation_id) and row.annotation_id.strip() != "":
             comment_dict["annotation_id"] = row.annotation_id
 
-        # phrases列（検査コメントのみ、JSON配列文字列）
-        if comment_type == CommentType.INSPECTION and hasattr(row, "phrases") and pandas.notna(row.phrases) and row.phrases.strip() != "":
+        # phrases列（JSON配列文字列）
+        if hasattr(row, "phrases") and pandas.notna(row.phrases) and row.phrases.strip() != "":
             try:
                 parsed_phrases = json.loads(row.phrases)
                 if isinstance(parsed_phrases, list):
@@ -499,10 +499,53 @@ def read_comment_csv(csv_file: Path, comment_type: CommentType) -> dict[str, Any
             comment_dict["comment_id"] = row.comment_id
 
         # 階層構造に追加
-        if task_id not in result:
-            result[task_id] = {}
-        if input_data_id not in result[task_id]:
-            result[task_id][input_data_id] = []
         result[task_id][input_data_id].append(comment_dict)
 
-    return result
+    # defaultdictを通常のdictに変換して返す
+    return {task_id: dict(comments_for_task) for task_id, comments_for_task in result.items()}
+
+
+def read_onhold_comment_csv(csv_file: Path) -> dict[str, Any]:
+    """
+    保留コメント用のCSVファイルを読み込み、convert_cli_comments()に渡せる形式に変換する。
+
+    Args:
+        csv_file: CSVファイルのパス
+
+    Returns:
+        dict[task_id, dict[input_data_id, list[comment_dict]]]形式の辞書
+
+    Raises:
+        ValueError: 必須カラムが不足している場合
+    """
+    # すべての列をstr型として読み込む
+    df = pandas.read_csv(str(csv_file), dtype=str)
+
+    # 必須カラムチェック
+    required_columns = ["task_id", "input_data_id", "comment"]
+    missing_columns = set(required_columns) - set(df.columns)
+    if len(missing_columns) > 0:
+        raise ValueError(f"必須カラムが不足しています: {missing_columns}")
+
+    # データ構築
+    result: dict[str, dict[str, list[dict[str, Any]]]] = defaultdict(lambda: defaultdict(list))
+    for _idx, row in enumerate(df.itertuples(index=False), start=2):  # CSVの行番号は2から（ヘッダーが1行目）
+        task_id = row.task_id
+        input_data_id = row.input_data_id
+
+        # コメントdict作成
+        comment_dict: dict[str, Any] = {"comment": row.comment}
+
+        # annotation_id列
+        if hasattr(row, "annotation_id") and pandas.notna(row.annotation_id) and row.annotation_id.strip() != "":
+            comment_dict["annotation_id"] = row.annotation_id
+
+        # comment_id列
+        if hasattr(row, "comment_id") and pandas.notna(row.comment_id) and row.comment_id.strip() != "":
+            comment_dict["comment_id"] = row.comment_id
+
+        # 階層構造に追加
+        result[task_id][input_data_id].append(comment_dict)
+
+    # defaultdictを通常のdictに変換して返す
+    return {task_id: dict(comments_for_task) for task_id, comments_for_task in result.items()}

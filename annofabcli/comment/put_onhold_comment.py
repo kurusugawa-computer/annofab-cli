@@ -9,7 +9,7 @@ from pathlib import Path
 from annofabapi.models import CommentType
 
 import annofabcli.common.cli
-from annofabcli.comment.put_comment import PutCommentMain, convert_cli_comments, read_comment_csv
+from annofabcli.comment.put_comment import PutCommentMain, convert_cli_comments, read_onhold_comment_csv
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
     PARALLELISM_CHOICES,
@@ -53,7 +53,7 @@ class PutInspectionComment(CommandLine):
                 sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
         elif args.csv is not None:
             try:
-                dict_comments = read_comment_csv(args.csv, comment_type=CommentType.ONHOLD)
+                dict_comments = read_onhold_comment_csv(args.csv)
             except ValueError as e:
                 print(f"{self.COMMON_MESSAGE} argument --csv: CSVの読み込みに失敗しました。 :: {e}", file=sys.stderr)  # noqa: T201
                 sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
