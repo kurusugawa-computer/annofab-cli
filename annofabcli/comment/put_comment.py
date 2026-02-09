@@ -159,7 +159,8 @@ class PutCommentMain(CommandLineWithConfirm):
         task_id = task["task_id"]
 
         # annotation_idが指定されているがdataがNoneのコメントがあるか確認
-        need_annotation_data = any(c.annotation_id is not None and c.data is None for c in comments)
+        # 保留コメントの場合は座標情報は不要なので、検査コメントのときのみdataを取得するようにする
+        need_annotation_data = self.comment_type == CommentType.INSPECTION and any(c.annotation_id is not None and c.data is None for c in comments)
 
         dict_annotation_id_label_id: dict[str, str] = {}
         dict_annotation_id_data: dict[str, dict[str, Any]] = {}
@@ -190,11 +191,11 @@ class PutCommentMain(CommandLineWithConfirm):
             annotation_id = comment.annotation_id
 
             # dataがNoneでannotation_idが指定されている場合、dataを補完
-            if data is None:
+            if data is None and self.comment_type == CommentType.INSPECTION:
                 assert annotation_id is not None
                 data = dict_annotation_id_data[annotation_id]
+                assert data is not None
 
-            assert data is not None
             return {
                 "comment_id": comment.comment_id if comment.comment_id is not None else str(uuid.uuid4()),
                 "phase": task["phase"],
@@ -551,5 +552,4 @@ def read_onhold_comment_csv(csv_file: Path) -> AddedComments:
             )
         )
 
-    # defaultdictを通常のdictに変換して返す
-    return {task_id: dict(comments_for_task) for task_id, comments_for_task in result.items()}
+    return result
