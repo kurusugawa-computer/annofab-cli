@@ -2,11 +2,12 @@ import argparse
 import json
 import logging
 import sys
+from pathlib import Path
 
 from annofabapi.models import CommentType
 
 import annofabcli.common.cli
-from annofabcli.comment.put_comment import PutCommentMain, convert_cli_comments
+from annofabcli.comment.put_comment import PutCommentMain, convert_cli_onhold_comments, read_onhold_comment_csv
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
     PARALLELISM_CHOICES,
@@ -30,6 +31,10 @@ class PutInspectionComment(CommandLine):
             )
             return False
 
+        if args.csv is not None and not args.csv.exists():
+            print(f"{self.COMMON_MESSAGE} argument --csv: ファイルパスが存在しません。 :: {args.csv}", file=sys.stderr)  # noqa: T201
+            return False
+
         return True
 
     def main(self) -> None:
@@ -39,14 +44,22 @@ class PutInspectionComment(CommandLine):
 
         super().validate_project(args.project_id)
 
-        dict_comments = annofabcli.common.cli.get_json_from_args(args.json)
-        if not isinstance(dict_comments, dict):
-            print(f"{self.COMMON_MESSAGE} argument --json: JSON形式が不正です。オブジェクトを指定してください。", file=sys.stderr)  # noqa: T201
+        if args.json is not None:
+            dict_comments = annofabcli.common.cli.get_json_from_args(args.json)
+            if not isinstance(dict_comments, dict):
+                print(f"{self.COMMON_MESSAGE} argument --json: JSON形式が不正です。オブジェクトを指定してください。", file=sys.stderr)  # noqa: T201
+                sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
+            comments_for_task_list = convert_cli_onhold_comments(dict_comments)
+        elif args.csv is not None:
+            try:
+                comments_for_task_list = read_onhold_comment_csv(args.csv)
+            except ValueError as e:
+                print(f"{self.COMMON_MESSAGE} argument --csv: CSVの読み込みに失敗しました。 :: {e}", file=sys.stderr)  # noqa: T201
+                sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
+        else:
+            print(f"{self.COMMON_MESSAGE} --json または --csv のいずれかを指定してください。", file=sys.stderr)  # noqa: T201
             sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
-        comments_for_task_list = convert_cli_comments(
-            dict_comments,
-            comment_type=CommentType.ONHOLD,
-        )
+
         main_obj = PutCommentMain(self.service, project_id=args.project_id, comment_type=CommentType.ONHOLD, all_yes=self.all_yes)
         main_obj.add_comments_for_task_list(
             comments_for_task_list=comments_for_task_list,
@@ -65,14 +78,31 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
 
     argument_parser.add_project_id()
 
+    # --jsonと--csvは相互排他的
+    input_group = parser.add_mutually_exclusive_group(required=True)
+
     SAMPLE_JSON = {"task1": {"input_data1": [{"comment": "type属性が間違っています。"}]}}  # noqa: N806
-    parser.add_argument(
+    input_group.add_argument(
         "--json",
         type=str,
         help=(
             f"付与する保留コメントの情報をJSON形式で指定してください。``file://`` を先頭に付けると、JSON形式のファイルを指定できます。\n\n"
             f"各コメントには ``comment_id`` を指定することができます。省略した場合は自動的にUUIDv4が生成されます。\n\n"
             f"(ex)  ``{json.dumps(SAMPLE_JSON, ensure_ascii=False)}``"
+        ),
+    )
+
+    input_group.add_argument(
+        "--csv",
+        type=Path,
+        help=(
+            "付与する保留コメントの内容をCSV形式で指定してください。\n"
+            "CSVには以下の列が必要です：\n\n"
+            " * ``task_id`` （必須）: タスクID\n"
+            " * ``input_data_id`` （必須）: 入力データID\n"
+            " * ``comment`` （必須）: コメント本文\n"
+            " * ``annotation_id`` （任意）: 紐付けるアノテーションID\n"
+            " * ``comment_id`` （任意）: コメントID（省略時はUUIDv4自動生成）\n"
         ),
     )
 
