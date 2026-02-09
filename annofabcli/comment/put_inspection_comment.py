@@ -9,7 +9,7 @@ from pathlib import Path
 from annofabapi.models import CommentType, ProjectMemberRole
 
 import annofabcli.common.cli
-from annofabcli.comment.put_comment import PutCommentMain, convert_cli_comments, read_inspection_comment_csv
+from annofabcli.comment.put_comment import PutCommentMain, convert_cli_inspection_comments, read_inspection_comment_csv
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
     PARALLELISM_CHOICES,
@@ -51,6 +51,7 @@ class PutInspectionComment(CommandLine):
             if not isinstance(dict_comments, dict):
                 print(f"{self.COMMON_MESSAGE} argument --json: JSON形式が不正です。オブジェクトを指定してください。", file=sys.stderr)  # noqa: T201
                 sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
+            comments_for_task_list = convert_cli_inspection_comments(dict_comments)
         elif args.csv is not None:
             try:
                 comments_for_task_list = read_inspection_comment_csv(args.csv)

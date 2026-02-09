@@ -7,7 +7,7 @@ from pathlib import Path
 from annofabapi.models import CommentType
 
 import annofabcli.common.cli
-from annofabcli.comment.put_comment import PutCommentMain, convert_cli_comments, read_onhold_comment_csv
+from annofabcli.comment.put_comment import PutCommentMain, convert_cli_onhold_comments, read_onhold_comment_csv
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
     PARALLELISM_CHOICES,
@@ -49,9 +49,10 @@ class PutInspectionComment(CommandLine):
             if not isinstance(dict_comments, dict):
                 print(f"{self.COMMON_MESSAGE} argument --json: JSON形式が不正です。オブジェクトを指定してください。", file=sys.stderr)  # noqa: T201
                 sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
+            comments_for_task_list = convert_cli_onhold_comments(dict_comments)
         elif args.csv is not None:
             try:
-                dict_comments = read_onhold_comment_csv(args.csv)
+                comments_for_task_list = read_onhold_comment_csv(args.csv)
             except ValueError as e:
                 print(f"{self.COMMON_MESSAGE} argument --csv: CSVの読み込みに失敗しました。 :: {e}", file=sys.stderr)  # noqa: T201
                 sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
@@ -59,10 +60,6 @@ class PutInspectionComment(CommandLine):
             print(f"{self.COMMON_MESSAGE} --json または --csv のいずれかを指定してください。", file=sys.stderr)  # noqa: T201
             sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
-        comments_for_task_list = convert_cli_comments(
-            dict_comments,
-            comment_type=CommentType.ONHOLD,
-        )
         main_obj = PutCommentMain(self.service, project_id=args.project_id, comment_type=CommentType.ONHOLD, all_yes=self.all_yes)
         main_obj.add_comments_for_task_list(
             comments_for_task_list=comments_for_task_list,

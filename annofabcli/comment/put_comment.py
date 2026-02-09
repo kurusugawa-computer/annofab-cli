@@ -19,7 +19,6 @@ from dataclasses_json import DataClassJsonMixin
 from annofabcli.comment.utils import get_comment_type_name
 from annofabcli.common.cli import CommandLineWithConfirm
 from annofabcli.common.facade import AnnofabApiFacade
-from annofabcli.common.type_util import assert_noreturn
 
 logger = logging.getLogger(__name__)
 
@@ -375,9 +374,15 @@ class PutCommentMain(CommandLineWithConfirm):
         )
 
 
-def convert_cli_comments(dict_comments: dict[str, Any], *, comment_type: CommentType) -> AddedComments:
+def convert_cli_inspection_comments(dict_comments: dict[str, Any]) -> AddedComments:
     """
-    CLIから受け取ったコメント情報を、データクラスに変換する。
+    CLIから受け取った検査コメント情報を、データクラスに変換する。
+
+    Args:
+        dict_comments: dict[task_id, dict[input_data_id, list[comment_dict]]]形式の辞書
+
+    Returns:
+        検査コメントのデータクラス形式
     """
 
     @dataclass
@@ -401,6 +406,28 @@ def convert_cli_comments(dict_comments: dict[str, Any], *, comment_type: Comment
         comment_id: str | None = None
         """コメントID。省略時はUUIDv4が自動生成される。"""
 
+    def convert_inspection_comment(comment: dict[str, Any]) -> AddedComment:
+        tmp = AddedInspectionComment.from_dict(comment)
+        return AddedComment(comment=tmp.comment, data=tmp.data, annotation_id=tmp.annotation_id, phrases=tmp.phrases, comment_id=tmp.comment_id)
+
+    result = {}
+    for task_id, comments_for_task in dict_comments.items():
+        sub_result = {input_data_id: [convert_inspection_comment(e) for e in comments] for input_data_id, comments in comments_for_task.items() if len(comments) > 0}
+        result.update({task_id: sub_result})
+    return result
+
+
+def convert_cli_onhold_comments(dict_comments: dict[str, Any]) -> AddedComments:
+    """
+    CLIから受け取った保留コメント情報を、データクラスに変換する。
+
+    Args:
+        dict_comments: dict[task_id, dict[input_data_id, list[comment_dict]]]形式の辞書
+
+    Returns:
+        保留コメントのデータクラス形式
+    """
+
     @dataclass
     class AddedOnholdComment(DataClassJsonMixin):
         """
@@ -416,37 +443,26 @@ def convert_cli_comments(dict_comments: dict[str, Any], *, comment_type: Comment
         comment_id: str | None = None
         """コメントID。省略時はUUIDv4が自動生成される。"""
 
-    def convert_inspection_comment(comment: dict[str, Any]) -> AddedComment:
-        tmp = AddedInspectionComment.from_dict(comment)
-        return AddedComment(comment=tmp.comment, data=tmp.data, annotation_id=tmp.annotation_id, phrases=tmp.phrases, comment_id=tmp.comment_id)
-
     def convert_onhold_comment(comment: dict[str, Any]) -> AddedComment:
         tmp = AddedOnholdComment.from_dict(comment)
         return AddedComment(comment=tmp.comment, annotation_id=tmp.annotation_id, data=None, phrases=None, comment_id=tmp.comment_id)
 
-    if comment_type == CommentType.INSPECTION:
-        func_convert = convert_inspection_comment
-    elif comment_type == CommentType.ONHOLD:
-        func_convert = convert_onhold_comment
-    else:
-        assert_noreturn(comment_type)
-
     result = {}
     for task_id, comments_for_task in dict_comments.items():
-        sub_result = {input_data_id: [func_convert(e) for e in comments] for input_data_id, comments in comments_for_task.items() if len(comments) > 0}
+        sub_result = {input_data_id: [convert_onhold_comment(e) for e in comments] for input_data_id, comments in comments_for_task.items() if len(comments) > 0}
         result.update({task_id: sub_result})
     return result
 
 
 def read_inspection_comment_csv(csv_file: Path) -> AddedComments:
     """
-    検査コメント用のCSVファイルを読み込み、convert_cli_comments()に渡せる形式に変換する。
+    検査コメント用のCSVファイルを読み込みます。
 
     Args:
         csv_file: CSVファイルのパス
 
     Returns:
-        dict[task_id, dict[input_data_id, list[comment_dict]]]形式の辞書
+        AddedComments形式のdict
 
     Raises:
         ValueError: 必須カラムが不足している場合、またはJSON列のパースに失敗した場合
@@ -460,17 +476,11 @@ def read_inspection_comment_csv(csv_file: Path) -> AddedComments:
     if len(missing_columns) > 0:
         raise ValueError(f"必須カラムが不足しています: {missing_columns}")
 
-
     # データ構築
-    result: dict[str, dict[str, list[dict[str, Any]]]] = defaultdict(lambda: defaultdict(list))
+    result: AddedComments = defaultdict(lambda: defaultdict(list))
     for idx, row_dict in enumerate(df.to_dict(orient="records"), start=2):  # CSVの行番号は2から（ヘッダーが1行目）
         task_id = row_dict["task_id"]
         input_data_id = row_dict["input_data_id"]
-
-        # コメントdict作成
-        comment_dict: dict[str, Any] = {"comment": row_dict["comment"]}
-        comment_dict["annotation_id"] = row_dict.get("annotation_id")
-        comment_dict["comment_id"] = row_dict.get("comment_id")
 
         # data列（JSON文字列）のパース
         comment_data = None
@@ -488,34 +498,35 @@ def read_inspection_comment_csv(csv_file: Path) -> AddedComments:
             except json.JSONDecodeError as e:
                 raise ValueError(f"CSVの{idx}行目: phrases列のJSON解析に失敗しました。 :: phrases='{row_dict['phrases']}'") from e
 
-
         # 階層構造に追加
-        result[task_id][input_data_id].append(AddedComment(
-            comment=row_dict["comment"],
-            data=comment_data,
-            annotation_id=row_dict.get("annotation_id"),
-            phrases=comment_phrases,
-            comment_id=row_dict.get("comment_id"),
-        ))
+        result[task_id][input_data_id].append(
+            AddedComment(
+                comment=row_dict["comment"],
+                data=comment_data,
+                annotation_id=row_dict.get("annotation_id"),
+                phrases=comment_phrases,
+                comment_id=row_dict.get("comment_id"),
+            )
+        )
 
     return result
 
 
-def read_onhold_comment_csv(csv_file: Path) -> dict[str, Any]:
+def read_onhold_comment_csv(csv_file: Path) -> AddedComments:
     """
-    保留コメント用のCSVファイルを読み込み、convert_cli_comments()に渡せる形式に変換する。
+    保留コメント用のCSVファイルを読み込みます。
 
     Args:
         csv_file: CSVファイルのパス
 
     Returns:
-        dict[task_id, dict[input_data_id, list[comment_dict]]]形式の辞書
+        AddedComments形式のdict
 
     Raises:
         ValueError: 必須カラムが不足している場合
     """
     # すべての列をstr型として読み込む
-    df = pandas.read_csv(str(csv_file), dtype=str)
+    df = pandas.read_csv(str(csv_file), dtype="string")
 
     # 必須カラムチェック
     required_columns = ["task_id", "input_data_id", "comment"]
@@ -523,28 +534,22 @@ def read_onhold_comment_csv(csv_file: Path) -> dict[str, Any]:
     if len(missing_columns) > 0:
         raise ValueError(f"必須カラムが不足しています: {missing_columns}")
 
-    # NaNをNoneに変換
-    df = df.where(pandas.notna(df), None)
-
     # データ構築
-    result: dict[str, dict[str, list[dict[str, Any]]]] = defaultdict(lambda: defaultdict(list))
+    result: AddedComments = defaultdict(lambda: defaultdict(list))
     for row_dict in df.to_dict(orient="records"):
         task_id = row_dict["task_id"]
         input_data_id = row_dict["input_data_id"]
 
-        # コメントdict作成
-        comment_dict: dict[str, Any] = {"comment": row_dict["comment"]}
-
-        # annotation_id列
-        if row_dict.get("annotation_id"):
-            comment_dict["annotation_id"] = row_dict["annotation_id"]
-
-        # comment_id列
-        if row_dict.get("comment_id"):
-            comment_dict["comment_id"] = row_dict["comment_id"]
-
         # 階層構造に追加
-        result[task_id][input_data_id].append(comment_dict)
+        result[task_id][input_data_id].append(
+            AddedComments(
+                comment=row_dict["comment"],
+                annotation_id=row_dict.get("annotation_id"),
+                comment_id=row_dict.get("comment_id"),
+                data=None,
+                phrases=None,
+            )
+        )
 
     # defaultdictを通常のdictに変換して返す
     return {task_id: dict(comments_for_task) for task_id, comments_for_task in result.items()}
