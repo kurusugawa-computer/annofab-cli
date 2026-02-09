@@ -542,7 +542,7 @@ def read_onhold_comment_csv(csv_file: Path) -> AddedComments:
 
         # 階層構造に追加
         result[task_id][input_data_id].append(
-            AddedComments(
+            AddedComment(
                 comment=row_dict["comment"],
                 annotation_id=row_dict.get("annotation_id"),
                 comment_id=row_dict.get("comment_id"),
