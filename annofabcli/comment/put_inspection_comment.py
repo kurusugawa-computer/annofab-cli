@@ -53,7 +53,7 @@ class PutInspectionComment(CommandLine):
                 sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
         elif args.csv is not None:
             try:
-                dict_comments = read_inspection_comment_csv(args.csv)
+                comments_for_task_list = read_inspection_comment_csv(args.csv)
             except ValueError as e:
                 print(f"{self.COMMON_MESSAGE} argument --csv: CSVの読み込みに失敗しました。 :: {e}", file=sys.stderr)  # noqa: T201
                 sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
@@ -61,7 +61,6 @@ class PutInspectionComment(CommandLine):
             print(f"{self.COMMON_MESSAGE} --json または --csv のいずれかを指定してください。", file=sys.stderr)  # noqa: T201
             sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
-        comments_for_task_list = convert_cli_comments(dict_comments, comment_type=CommentType.INSPECTION)
         main_obj = PutCommentMain(self.service, project_id=args.project_id, comment_type=CommentType.INSPECTION, all_yes=self.all_yes)
         main_obj.add_comments_for_task_list(
             comments_for_task_list=comments_for_task_list,

@@ -438,7 +438,7 @@ def convert_cli_comments(dict_comments: dict[str, Any], *, comment_type: Comment
     return result
 
 
-def read_inspection_comment_csv(csv_file: Path) -> dict[str, Any]:
+def read_inspection_comment_csv(csv_file: Path) -> AddedComments:
     """
     検査コメント用のCSVファイルを読み込み、convert_cli_comments()に渡せる形式に変換する。
 
@@ -452,7 +452,7 @@ def read_inspection_comment_csv(csv_file: Path) -> dict[str, Any]:
         ValueError: 必須カラムが不足している場合、またはJSON列のパースに失敗した場合
     """
     # すべての列をstr型として読み込む
-    df = pandas.read_csv(str(csv_file), dtype=str)
+    df = pandas.read_csv(str(csv_file), dtype="string")
 
     # 必須カラムチェック
     required_columns = ["task_id", "input_data_id", "comment"]
@@ -460,8 +460,6 @@ def read_inspection_comment_csv(csv_file: Path) -> dict[str, Any]:
     if len(missing_columns) > 0:
         raise ValueError(f"必須カラムが不足しています: {missing_columns}")
 
-    # NaNをNoneに変換
-    df = df.where(pandas.notna(df), None)
 
     # データ構築
     result: dict[str, dict[str, list[dict[str, Any]]]] = defaultdict(lambda: defaultdict(list))
@@ -475,22 +473,30 @@ def read_inspection_comment_csv(csv_file: Path) -> dict[str, Any]:
         comment_dict["comment_id"] = row_dict.get("comment_id")
 
         # data列（JSON文字列）のパース
-        if row_dict.get("data"):
+        comment_data = None
+        if row_dict.get("data") is not None:
             try:
-                comment_dict["data"] = json.loads(row_dict["data"])
+                comment_data = json.loads(row_dict["data"])
             except json.JSONDecodeError as e:
                 raise ValueError(f"CSVの{idx}行目: data列のJSON解析に失敗しました。 :: data='{row_dict['data']}'") from e
 
         # phrases列（JSON配列文字列）
-        if row_dict.get("phrases"):
+        comment_phrases = None
+        if row_dict.get("phrases") is not None:
             try:
-                comment_dict["phrases"] = json.loads(row_dict["phrases"])
+                comment_phrases = json.loads(row_dict["phrases"])
             except json.JSONDecodeError as e:
                 raise ValueError(f"CSVの{idx}行目: phrases列のJSON解析に失敗しました。 :: phrases='{row_dict['phrases']}'") from e
 
 
         # 階層構造に追加
-        result[task_id][input_data_id].append(comment_dict)
+        result[task_id][input_data_id].append(AddedComment(
+            comment=row_dict["comment"],
+            data=comment_data,
+            annotation_id=row_dict.get("annotation_id"),
+            phrases=comment_phrases,
+            comment_id=row_dict.get("comment_id"),
+        ))
 
     return result
 
