@@ -47,7 +47,7 @@ class ChangeProjectMembers(CommandLine):
 
         """
 
-        def get_value(key: str) -> Any:
+        def get_value(key: str) -> Any:  # noqa: ANN401
             if member_info is None:
                 return old_member[key]
 

@@ -95,7 +95,7 @@ class ChangePropertiesOfAnnotationMain(CommandLineWithConfirm):
                 annotations_for_api.append(annotations)
             return annotations_for_api
 
-        def _to_request_body_elm(annotation: dict[str, Any]) -> Any:
+        def _to_request_body_elm(annotation: dict[str, Any]) -> Any:  # noqa: ANN401
             return self.service.api.put_annotation(
                 annotation["project_id"],
                 annotation["task_id"],

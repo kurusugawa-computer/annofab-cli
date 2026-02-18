@@ -69,7 +69,7 @@ class LineGraph:
         width: int = 1200,
         height: int = 1000,
         tooltip_columns: list[str] | None = None,
-        **figure_kwargs: Any,
+        **figure_kwargs: Any,  # noqa: ANN401
     ) -> None:
         fig = figure(  # type: ignore[call-arg]
             title=title,
@@ -141,7 +141,7 @@ class LineGraph:
         legend_label: str,
         color: Any | None = None,  # noqa: ANN401
         is_secondary_y_axis: bool = False,
-        **kwargs: Any,
+        **kwargs: Any,  # noqa: ANN401
     ) -> tuple[GlyphRenderer, GlyphRenderer]:
         """
         折れ線を追加する
@@ -190,7 +190,7 @@ class LineGraph:
         legend_label: str,
         color: Any | None = None,  # noqa: ANN401
         is_secondary_y_axis: bool = False,
-        **kwargs: Any,
+        **kwargs: Any,  # noqa: ANN401
     ) -> GlyphRenderer:
         """
         移動平均用の折れ線を追加する

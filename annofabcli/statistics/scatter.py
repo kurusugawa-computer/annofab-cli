@@ -64,7 +64,7 @@ class ScatterGraph:
         width: int = 1200,
         height: int = 1000,
         tooltip_columns: list[str] | None = None,
-        **figure_kwargs: Any,
+        **figure_kwargs: Any,  # noqa: ANN401
     ) -> None:
         fig = figure(  # type: ignore[call-arg]
             title=title,
