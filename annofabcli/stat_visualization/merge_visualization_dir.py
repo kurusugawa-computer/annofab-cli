@@ -55,14 +55,14 @@ class WritingVisualizationFile:
         self.minimal_output = minimal_output
 
     @_catch_exception
-    def write_user_performance(self, user_performance: UserPerformance):  # noqa: ANN201
+    def write_user_performance(self, user_performance: UserPerformance) -> None:
         """ユーザごとの生産性と品質に関するファイルを出力する。"""
         self.output_project_dir.write_user_performance(user_performance)
         # ユーザーごとの散布図を出力
         self.output_project_dir.write_user_performance_scatter_plot(user_performance)
 
     @_catch_exception
-    def write_whole_performance(self, whole_performance: WholePerformance):  # noqa: ANN201
+    def write_whole_performance(self, whole_performance: WholePerformance) -> None:
         """全体の生産性と品質に関するファイルを出力する。"""
         self.output_project_dir.write_whole_performance(whole_performance)
 

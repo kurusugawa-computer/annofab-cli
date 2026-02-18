@@ -69,7 +69,7 @@ class LineGraph:
         width: int = 1200,
         height: int = 1000,
         tooltip_columns: list[str] | None = None,
-        **figure_kwargs,  # noqa: ANN003
+        **figure_kwargs: Any,
     ) -> None:
         fig = figure(  # type: ignore[call-arg]
             title=title,
@@ -96,13 +96,13 @@ class LineGraph:
         self.marker_glyphs: dict[str, GlyphRenderer] = {}
         """key:凡例, value: 描画しているマーカー"""
 
-    def add_secondary_y_axis(  # noqa: ANN201
+    def add_secondary_y_axis(
         self,
         axis_label: str,
         *,
         secondary_y_axis_range: DataRange1d | None = None,
         primary_y_axis_range: DataRange1d | None = None,
-    ):
+    ) -> None:
         """
         第2のY軸を追加する。
 
@@ -141,7 +141,7 @@ class LineGraph:
         legend_label: str,
         color: Any | None = None,  # noqa: ANN401
         is_secondary_y_axis: bool = False,
-        **kwargs,  # noqa: ANN003
+        **kwargs: Any,
     ) -> tuple[GlyphRenderer, GlyphRenderer]:
         """
         折れ線を追加する
@@ -190,7 +190,7 @@ class LineGraph:
         legend_label: str,
         color: Any | None = None,  # noqa: ANN401
         is_secondary_y_axis: bool = False,
-        **kwargs,  # noqa: ANN003
+        **kwargs: Any,
     ) -> GlyphRenderer:
         """
         移動平均用の折れ線を追加する
