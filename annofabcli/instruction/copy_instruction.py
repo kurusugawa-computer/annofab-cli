@@ -18,7 +18,7 @@ class CopyInstruction(CommandLine):
     作業ガイドをコピーする。
     """
 
-    def validate_projects(self, src_project_id: str, dest_project_id: str):  # noqa: ANN201
+    def validate_projects(self, src_project_id: str, dest_project_id: str) -> None:
         """
         適切なRoleが付与されているかを確認する。
 

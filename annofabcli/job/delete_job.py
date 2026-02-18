@@ -21,7 +21,7 @@ class DeleteJobMain:
         self.service = service
         self.facade = AnnofabApiFacade(service)
 
-    def delete_job_list(self, project_id: str, job_type: ProjectJobType, job_id_list: list[str]):  # noqa: ANN201
+    def delete_job_list(self, project_id: str, job_type: ProjectJobType, job_id_list: list[str]) -> None:
         job_list = self.service.wrapper.get_all_project_job(project_id, query_params={"type": job_type.value})
         exists_job_id_set = {e["job_id"] for e in job_list}
 

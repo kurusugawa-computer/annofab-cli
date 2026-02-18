@@ -18,11 +18,11 @@ from annofabcli.common.facade import AnnofabApiFacade
 logger = logging.getLogger(__name__)
 
 
-def _millisecond_to_hour(millisecond: int):  # noqa: ANN202
+def _millisecond_to_hour(millisecond: int) -> float:
     return millisecond / 1000 / 3600
 
 
-def _get_time_range(str_data: str):  # noqa: ANN202
+def _get_time_range(str_data: str) -> tuple[int, int]:
     tmp_list = str_data.split(",")
     return (int(tmp_list[0]), int(tmp_list[1]))
 
@@ -195,7 +195,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: argparse._SubParsersAction):  # noqa: ANN201
+def add_parser(subparsers: argparse._SubParsersAction) -> None:
     subcommand_name = "list_out_of_range_annotation_for_movie"
     subcommand_help = "動画範囲外のアノテーションを探すためのCSVを出力します。"
     description = "動画範囲外のアノテーションを探すためのCSVを出力します。最後尾のアノテーションの開始時間、終了時間を出力します。"

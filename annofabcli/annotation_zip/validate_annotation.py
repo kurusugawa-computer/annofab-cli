@@ -192,9 +192,6 @@ class ValidateAnnotation(CommandLine):
     アノテーションZIPをユーザー定義のバリデーション関数で検証する。
     """
 
-    def __init__(self, service, facade, args) -> None:  # noqa: ANN001
-        super().__init__(service, facade, args)
-
     @staticmethod
     def validate(args: argparse.Namespace) -> bool:
         COMMON_MESSAGE = "annofabcli annotation_zip validate: error:"  # noqa: N806
