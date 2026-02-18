@@ -1,5 +1,6 @@
 import argparse
 import logging
+from typing import Any
 
 import annofabapi
 import requests
@@ -32,7 +33,7 @@ class InviteProjectMemberMain:
         """
         dest_project_members = self.service.wrapper.get_all_project_members(project_id)
 
-        def get_project_member(user_id: str) -> ProjectMember | None:
+        def get_project_member(user_id: str) -> dict[str, Any] | None:
             return first_true(dest_project_members, pred=lambda e: e["user_id"] == user_id)
 
         project_title = self.facade.get_project_title(project_id)
