@@ -67,13 +67,13 @@ class CompleteTasksMain(CommandLineWithConfirm):
 
         self.service.api.batch_update_comments(task.project_id, task.task_id, input_data_id, request_body=request_body)
 
-    def update_status_of_inspections(  # noqa: ANN201
+    def update_status_of_inspections(
         self,
         task: Task,
         input_data_id: str,
         comment_list: list[dict[str, Any]],
         comment_status: CommentStatus,
-    ):
+    ) -> None:
         if comment_list is None or len(comment_list) == 0:
             logger.warning(f"変更対象の検査コメントはなかった。task_id='{task.task_id}', input_data_id='{input_data_id}'")
             return
@@ -363,7 +363,7 @@ class CompleteTasksMain(CommandLineWithConfirm):
             logger.warning(f"task_id='{task_id}'のタスクのフェーズを完了状態にするのに失敗しました。", exc_info=True)
             return False
 
-    def complete_task_list(  # noqa: ANN201
+    def complete_task_list(
         self,
         project_id: str,
         task_id_list: list[str],
@@ -373,7 +373,7 @@ class CompleteTasksMain(CommandLineWithConfirm):
         inspection_status: CommentStatus | None = None,
         task_query: TaskQuery | None = None,
         parallelism: int | None = None,
-    ):
+    ) -> None:
         """
         検査コメントのstatusを変更（対応完了 or 対応不要）にした上で、タスクを受け入れ完了状態にする
         Args:

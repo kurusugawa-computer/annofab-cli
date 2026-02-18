@@ -168,14 +168,14 @@ class ChangingStatusToOnHoldMain(CommandLineWithConfirm):
             logger.warning(f"タスク'{task_id}'のステータスの変更に失敗しました。", exc_info=True)
             return False
 
-    def change_status_to_on_hold(  # noqa: ANN201
+    def change_status_to_on_hold(
         self,
         task_id_list: list[str],
         *,
         comment: str | None = None,
         task_query: TaskQuery | None = None,
         parallelism: int | None = None,
-    ):
+    ) -> None:
         """
         タスクのステータスを保留中に変更する。
 

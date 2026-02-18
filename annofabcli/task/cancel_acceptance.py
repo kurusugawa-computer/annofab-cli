@@ -137,7 +137,7 @@ class CancelAcceptanceMain(CommandLineWithConfirm):
             logger.warning(f"タスク'{task_id}'の受け入れ取り消しに失敗しました。", exc_info=True)
             return False
 
-    def cancel_acceptance_for_task_list(  # noqa: ANN201
+    def cancel_acceptance_for_task_list(
         self,
         task_id_list: list[str],
         acceptor: User | None = None,
@@ -145,7 +145,7 @@ class CancelAcceptanceMain(CommandLineWithConfirm):
         task_query: TaskQuery | None = None,
         parallelism: int | None = None,
         dryrun: bool = False,  # noqa: FBT001, FBT002
-    ):
+    ) -> None:
         """
         タスクを受入取り消しする
 
