@@ -32,7 +32,7 @@ service = annofabapi.build()
 
 
 class TestCommandLine:
-    def _validate_annotation_specs_for_scenario_test(self):
+    def _validate_annotation_specs_for_scenario_test(self) -> bool:
         """シナリオテストを実行できるアノテーション仕様かどうかを判定する
 
         Rreturns:
