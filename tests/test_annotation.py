@@ -136,7 +136,7 @@ class TestCommandLine:
         with input_data_json.open("w", encoding="utf8") as f:
             json.dump(simple_annotation, f, ensure_ascii=False)
 
-    def _execute_change_properties_and_attributes(self, task_id: str, input_data_id: str):
+    def _execute_change_properties_and_attributes(self, task_id: str, input_data_id: str) -> None:
         """
         アノテーションのプロパティの変更、属性の変更のテスト
         """
@@ -181,7 +181,7 @@ class TestCommandLine:
         detail = editor_annotation["details"][0]
         assert detail["is_protected"] is True
 
-    def _execute_dump_delete_restore(self, task_id: str, input_data_id: str):
+    def _execute_dump_delete_restore(self, task_id: str, input_data_id: str) -> None:
         """
         アノテーションのダンプ、削除、リストアのテスト
         """
@@ -231,7 +231,7 @@ class TestCommandLine:
             editor_annotation, _ = service.api.get_editor_annotation(project_id, task_id, input_data_id)
             assert len(editor_annotation["details"]) == 1
 
-    def _execute_import(self, task_id: str, input_data_id: str):
+    def _execute_import(self, task_id: str, input_data_id: str) -> None:
         """
         アノテーションのインポートのテスト
         """
@@ -248,7 +248,7 @@ class TestCommandLine:
         assert detail["label"] == "car"
         assert detail["attributes"]["truncation"]
 
-    def _execute_copy(self, src_task_id: str, input_data_id: str):
+    def _execute_copy(self, src_task_id: str, input_data_id: str) -> None:
         """
         アノテーションのコピー
         """
