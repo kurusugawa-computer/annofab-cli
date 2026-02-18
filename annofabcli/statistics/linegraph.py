@@ -224,7 +224,7 @@ class LineGraph:
         """
         self.configure_legend()
 
-    def configure_legend(self):  # noqa: ANN201
+    def configure_legend(self) -> None:
         """
         凡例を設定します。
 

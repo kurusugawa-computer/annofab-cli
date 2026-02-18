@@ -231,7 +231,7 @@ class ScatterGraph:
         if self._hover_tool is not None and self._scatter_glyphs is not None:
             self._hover_tool.renderers = list(self._scatter_glyphs.values())
 
-    def configure_legend(self):  # noqa: ANN201
+    def configure_legend(self) -> None:
         """
         凡例を設定します。
 
