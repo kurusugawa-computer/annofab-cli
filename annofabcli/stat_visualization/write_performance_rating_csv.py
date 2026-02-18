@@ -189,7 +189,7 @@ class CollectingPerformanceInfo:
 
         return ThresholdInfo(threshold_worktime=worktime, threshold_task_count=task_count)
 
-    def filter_df_with_threshold(self, df: pandas.DataFrame, phase: TaskPhase, dirname: str):  # noqa: ANN201
+    def filter_df_with_threshold(self, df: pandas.DataFrame, phase: TaskPhase, dirname: str) -> pandas.DataFrame:
         """
         引数`df`をインタンスとして持っている閾値情報でフィルタリングする。
         """

@@ -137,14 +137,14 @@ def fill_annotation_list(
     return draw
 
 
-def write_annotation_image(  # noqa: ANN201
+def write_annotation_image(
     parser: SimpleAnnotationParser,
     image_size: InputDataSize,
     label_color_dict: dict[str, RGB],
     output_image_file: Path,
     background_color: Any | None = None,  # noqa: ANN401
     label_name_list: list[str] | None = None,
-):
+) -> None:
     """
     JSONファイルに記載されているアノテーション情報を、画像化する。
     JSONファイルは、Annofabからダウンロードしたアノテーションzipに含まれるファイルを想定している。
@@ -298,7 +298,7 @@ def write_annotation_images_from_path(
     """
 
     def _get_image_size(input_data_id: str) -> InputDataSize | None:
-        def _get_image_size_from_system_metadata(arg_input_data: dict[str, Any]):  # noqa: ANN202
+        def _get_image_size_from_system_metadata(arg_input_data: dict[str, Any]) -> InputDataSize | None:
             # 入力データの`input_data.system_metadata.original_resolution`を参照して、画像サイズを決める。
             original_resolution = arg_input_data["system_metadata"]["original_resolution"]
             if original_resolution is not None and (original_resolution.get("width") is not None and original_resolution.get("height") is not None):

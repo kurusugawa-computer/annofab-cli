@@ -315,7 +315,7 @@ class AnnofabApiFacade:
             組織メンバ。見つからない場合はNone
         """
 
-        def update_organization_members():  # noqa: ANN202
+        def update_organization_members() -> None:
             organization_name = self.get_organization_name_from_project_id(project_id)
             members = self.service.wrapper.get_all_organization_members(organization_name)
             self._organization_members = (project_id, members)

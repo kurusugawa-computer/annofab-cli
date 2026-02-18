@@ -53,7 +53,7 @@ def _plot_and_moving_average(
     legend_name: str,
     color: str,
     is_secondary_y_axis: bool = False,  # noqa: FBT001, FBT002
-    **kwargs,  # noqa: ANN003
+    **kwargs: Any,  # noqa: ANN401
 ) -> None:
     """
     折れ線と1週間移動平均をプロットします。

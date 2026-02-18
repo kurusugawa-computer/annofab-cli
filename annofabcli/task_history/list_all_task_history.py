@@ -87,14 +87,14 @@ class ListTaskHistoryWithJsonMain:
 
 
 class ListTaskHistoryWithJson(CommandLine):
-    def print_task_history_list(  # noqa: ANN201
+    def print_task_history_list(
         self,
         project_id: str,
         task_history_json: Path | None,
         task_id_list: list[str] | None,
         arg_format: OutputFormat,
         temp_dir: Path | None,
-    ):
+    ) -> None:
         """
         タスク一覧を出力する
 

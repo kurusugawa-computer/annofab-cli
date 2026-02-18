@@ -43,13 +43,13 @@ class DownloadingFile:
     def get_max_wait_minutes(wait_options: WaitOptions) -> float:
         return wait_options.max_tries * wait_options.interval / 60
 
-    def _wait_for_completion(  # noqa: ANN202
+    def _wait_for_completion(
         self,
         project_id: str,
         job_type: ProjectJobType,
         wait_options: WaitOptions | None = None,
         job_id: str | None = None,
-    ):
+    ) -> None:
         if wait_options is None:
             wait_options = DEFAULT_WAIT_OPTIONS
 
@@ -86,7 +86,7 @@ class DownloadingFile:
     ) -> None:
         """アノテーションZIPをダウンロードします。"""
 
-        def download_annotation_zip():  # noqa: ANN202
+        def download_annotation_zip() -> None:
             if should_download_full_annotation:
                 self.service.wrapper.download_full_annotation_archive(project_id, dest_path)
             else:

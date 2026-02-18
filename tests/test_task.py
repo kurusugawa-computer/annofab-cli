@@ -245,7 +245,7 @@ class TestCommandLine:
         task, _ = service.api.get_task(project_id, task_id)
         assert task["status"] == "not_started"
 
-    def _execute_update_metadata(self, task_id: str, metadata: dict[str, str]):
+    def _execute_update_metadata(self, task_id: str, metadata: dict[str, str]) -> None:
         """メタデータの更新"""
         main(
             [
@@ -283,7 +283,7 @@ class TestCommandLine:
         task, _ = service.api.get_task(project_id, task_id)
         assert task["metadata"] == expected_metadata
 
-    def _execute_copy(self, src_task_id: str, expected_metadata: dict[str, str]):
+    def _execute_copy(self, src_task_id: str, expected_metadata: dict[str, str]) -> None:
         """タスクのコピー"""
         dest_task_id = f"{src_task_id}-copy"
         main(
@@ -304,7 +304,7 @@ class TestCommandLine:
         assert task["metadata"] == expected_metadata
         service.api.delete_task(project_id, dest_task_id)
 
-    def _execute_change_operator(self, task_id: str):
+    def _execute_change_operator(self, task_id: str) -> None:
         """担当者の変更"""
         main(
             [
@@ -323,7 +323,7 @@ class TestCommandLine:
         task, _ = service.api.get_task(project_id, task_id)
         assert task["account_id"] == service.api.account_id
 
-    def _execute_change_status_to_on_hold(self, task_id: str):
+    def _execute_change_status_to_on_hold(self, task_id: str) -> None:
         """保留中状態に変更する"""
         main(
             [
@@ -339,7 +339,7 @@ class TestCommandLine:
         task, _ = service.api.get_task(project_id, task_id)
         assert task["status"] == "on_hold"
 
-    def _execute_change_status_to_break(self, task_id: str):
+    def _execute_change_status_to_break(self, task_id: str) -> None:
         """休憩中状態に変更する"""
         main(
             [

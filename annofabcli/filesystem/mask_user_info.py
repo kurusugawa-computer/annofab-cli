@@ -133,12 +133,12 @@ def _get_tuple_column(df: pandas.DataFrame, column: str) -> str | tuple:
         return column
 
 
-def replace_by_columns(  # noqa: ANN201
+def replace_by_columns(
     df: pandas.DataFrame,
     replacement_dict: dict[str, str],
     main_column: str | tuple,
     sub_columns: list[Any] | None = None,
-):
+) -> None:
     """引数dfの中のユーザ情報を、指定した列名を元に置換します。
 
     Args:
@@ -238,7 +238,7 @@ def create_replacement_dict_by_biography(
     return {key: f"category-{value}" for key, value in tmp_replace_dict_by_biography.items()}
 
 
-def replace_user_info_by_user_id(df: pandas.DataFrame, replacement_dict_by_user_id: dict[str, str]):  # noqa: ANN201
+def replace_user_info_by_user_id(df: pandas.DataFrame, replacement_dict_by_user_id: dict[str, str]) -> None:
     """
     user_id, username, account_id 列を, マスクする。
 
@@ -259,7 +259,7 @@ def replace_user_info_by_user_id(df: pandas.DataFrame, replacement_dict_by_user_
     replace_by_columns(df, replacement_dict_by_user_id, main_column=user_id_column, sub_columns=sub_columns)
 
 
-def replace_biography(df: pandas.DataFrame, replacement_dict_by_user_id: dict[str, str], replacement_dict_by_biography: dict[str, str]):  # noqa: ANN201
+def replace_biography(df: pandas.DataFrame, replacement_dict_by_user_id: dict[str, str], replacement_dict_by_biography: dict[str, str]) -> None:
     """
     biography 列を, マスクする。
 

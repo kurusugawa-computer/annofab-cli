@@ -240,12 +240,12 @@ class RestoreAnnotationMain(CommandLineWithConfirm):
             logger.warning(f"task_id='{task_parser.task_id}' のアノテーションのリストアに失敗しました。", exc_info=True)
             return False
 
-    def main(  # noqa: ANN201
+    def main(
         self,
         annotation_dir: Path,
         target_task_ids: set[str] | None = None,
         parallelism: int | None = None,
-    ):
+    ) -> None:
         """`annotation_dir`にあるファイルからアノテーションをリストアします。
 
         Args:

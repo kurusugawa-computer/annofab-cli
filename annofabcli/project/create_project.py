@@ -32,7 +32,7 @@ class CustomProjectType(Enum):
 
 
 class CreateProject(CommandLine):
-    def create_project(  # noqa: ANN201
+    def create_project(
         self,
         organization: str,
         title: str,
@@ -43,7 +43,7 @@ class CreateProject(CommandLine):
         editor_plugin_id: str | None,
         custom_project_type: CustomProjectType | None,
         configuration: dict[str, Any] | None,
-    ):
+    ) -> None:
         new_project_id = project_id if project_id is not None else str(uuid.uuid4())
         if configuration is None:
             configuration = {}

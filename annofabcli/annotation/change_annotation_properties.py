@@ -53,12 +53,12 @@ class ChangePropertiesOfAnnotationMain(CommandLineWithConfirm):
         self.project_id = project_id
         self.dump_annotation_obj = DumpAnnotationMain(service, project_id)
 
-    def change_annotation_properties(  # noqa: ANN201
+    def change_annotation_properties(
         self,
         task_id: str,
         annotation_list: list[SingleAnnotation],
         properties: AnnotationDetailForCli,
-    ):
+    ) -> None:
         """
         アノテーションのプロパティを変更する。
 
@@ -95,7 +95,7 @@ class ChangePropertiesOfAnnotationMain(CommandLineWithConfirm):
                 annotations_for_api.append(annotations)
             return annotations_for_api
 
-        def _to_request_body_elm(annotation: dict[str, Any]):  # noqa: ANN202
+        def _to_request_body_elm(annotation: dict[str, Any]) -> Any:  # noqa: ANN401
             return self.service.api.put_annotation(
                 annotation["project_id"],
                 annotation["task_id"],
@@ -233,14 +233,14 @@ class ChangePropertiesOfAnnotationMain(CommandLineWithConfirm):
             logger.warning(f"task_id='{task_id}' :: アノテーションのプロパティの変更に失敗しました。", exc_info=True)
             return False
 
-    def change_annotation_properties_task_list(  # noqa: ANN201
+    def change_annotation_properties_task_list(
         self,
         task_id_list: list[str],
         properties: AnnotationDetailForCli,
         annotation_query: AnnotationQueryForAPI | None = None,
         backup_dir: Path | None = None,
         parallelism: int | None = None,
-    ):
+    ) -> None:
         project_title = self.facade.get_project_title(self.project_id)
         logger.info(f"プロジェクト'{project_title}'に対して、タスク{len(task_id_list)} 件のアノテーションのプロパティを変更します")
 

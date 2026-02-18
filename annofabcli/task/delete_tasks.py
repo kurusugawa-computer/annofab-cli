@@ -197,11 +197,11 @@ class DeleteTaskMain(CommandLineWithConfirm):
         annotation_list = self.service.wrapper.get_all_annotation_list(self.project_id, query_params=query_params)
         return annotation_list
 
-    def delete_task_list(  # noqa: ANN201
+    def delete_task_list(
         self,
         task_id_list: list[str],
         task_query: TaskQuery | None = None,
-    ):
+    ) -> None:
         """
         複数のタスクを削除する。
         """
