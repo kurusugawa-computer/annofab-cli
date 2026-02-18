@@ -86,7 +86,7 @@ class DownloadingFile:
     ) -> None:
         """アノテーションZIPをダウンロードします。"""
 
-        def download_annotation_zip():  # noqa: ANN202
+        def download_annotation_zip() -> None:
             if should_download_full_annotation:
                 self.service.wrapper.download_full_annotation_archive(project_id, dest_path)
             else:
