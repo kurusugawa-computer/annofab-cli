@@ -18,7 +18,7 @@ class InviteProjectMemberMain:
         self.service = service
         self.facade = AnnofabApiFacade(service)
 
-    def invite_project_members(self, project_id: str, user_id_list: list[str], member_role: ProjectMemberRole):  # noqa: ANN201
+    def invite_project_members(self, project_id: str, user_id_list: list[str], member_role: ProjectMemberRole) -> None:
         """
         プロジェクトに、複数ユーザをプロジェクトメンバに追加する
 
@@ -32,7 +32,7 @@ class InviteProjectMemberMain:
         """
         dest_project_members = self.service.wrapper.get_all_project_members(project_id)
 
-        def get_project_member(user_id: str):  # noqa: ANN202
+        def get_project_member(user_id: str) -> ProjectMember | None:
             return first_true(dest_project_members, pred=lambda e: e["user_id"] == user_id)
 
         project_title = self.facade.get_project_title(project_id)
@@ -59,12 +59,12 @@ class InviteProjectMemberMain:
                     exc_info=True,
                 )
 
-    def assign_role_with_organization(self, organization_name: str, user_id_list: list[str], member_role: ProjectMemberRole):  # noqa: ANN201
+    def assign_role_with_organization(self, organization_name: str, user_id_list: list[str], member_role: ProjectMemberRole) -> None:
         projects = self.service.wrapper.get_all_projects_of_organization(organization_name, query_params={"account_id": self.service.api.account_id})
         project_id_list = [e["project_id"] for e in projects]
         self.assign_role_with_project_id(project_id_list, user_id_list=user_id_list, member_role=member_role)
 
-    def assign_role_with_project_id(self, project_id_list: list[str], user_id_list: list[str], member_role: ProjectMemberRole):  # noqa: ANN201
+    def assign_role_with_project_id(self, project_id_list: list[str], user_id_list: list[str], member_role: ProjectMemberRole) -> None:
         for project_id in project_id_list:
             try:
                 if not self.facade.my_role_is_owner(project_id):

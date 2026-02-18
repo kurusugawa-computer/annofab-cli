@@ -33,7 +33,7 @@ class ListUser(CommandLine):
         "sampling_acceptance_rate",
     ]
 
-    def get_all_project_members(self, project_id: str, include_inactive: bool = False):  # noqa: ANN201, FBT001, FBT002
+    def get_all_project_members(self, project_id: str, include_inactive: bool = False) -> list[ProjectMember]:  # noqa: FBT001, FBT002
         query_params = {}
         if include_inactive:
             query_params.update({"include_inactive_member": ""})
