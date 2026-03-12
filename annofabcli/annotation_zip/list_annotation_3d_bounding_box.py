@@ -279,10 +279,9 @@ class ListAnnotation3DBoundingBox(CommandLine):
         downloading_obj = DownloadingFile(self.service)
 
         def download_and_print_annotation_bbox(project_id: str, temp_dir: Path, *, is_latest: bool) -> None:
-            annotation_path = temp_dir / f"{project_id}__annotation.zip"
-            downloading_obj.download_annotation_zip(
+            annotation_path = downloading_obj.download_annotation_zip_to_dir(
                 project_id,
-                dest_path=annotation_path,
+                temp_dir,
                 is_latest=is_latest,
             )
             print_annotation_3d_bounding_box(
