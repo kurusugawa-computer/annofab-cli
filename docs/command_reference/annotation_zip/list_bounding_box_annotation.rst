@@ -34,6 +34,7 @@ Examples
         "updated_datetime": "2023-10-01T12:00:00.000+09:00",
         "label": "cat",
         "annotation_id": "ann1",
+        "annotation_editor_url": "https://annofab.com/projects/proj1/tasks/task_00/editor?#i1/ann1",
         "left_top": {"x": 0, "y": 0},
         "right_bottom": {"x": 100, "y": 200},
         "center": {"x": 50.0, "y": 100.0},
@@ -73,6 +74,7 @@ Examples
 * ``updated_datetime`` : アノテーションJSONの更新日時（ISO 8601形式）
 * ``label`` : ラベル名
 * ``annotation_id`` : アノテーションID
+* ``annotation_editor_url`` : アノテーションエディタのURL。対象のアノテーションを直接開くことができます。
 
 バウンディングボックス情報
 ----------------------------------------
