@@ -113,7 +113,7 @@ class ListSupplementaryData(CommandLine):
         downloading_obj = DownloadingFile(self.service)
         with tempfile.TemporaryDirectory() as str_temp_dir:
             input_data_json = downloading_obj.download_input_data_json_to_dir(project_id, Path(str_temp_dir))
-            with input_data_json.open() as f:
+            with input_data_json.open(encoding="utf-8") as f:
                 input_data_list = json.load(f)
 
         return [e["input_data_id"] for e in input_data_list]
