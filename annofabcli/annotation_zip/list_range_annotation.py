@@ -83,6 +83,7 @@ def get_range_annotation_info_list(simple_annotation: dict[str, Any], *, target_
                         simple_annotation["project_id"],
                         simple_annotation["task_id"],
                         annotation_id=detail["annotation_id"],
+                        seek_seconds=begin_second,
                     ),
                     begin_second=begin_second,
                     end_second=end_second,
