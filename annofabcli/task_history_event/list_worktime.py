@@ -89,9 +89,7 @@ class ListWorktimeFromTaskHistoryEventMain:
         if task_history_event_json is None:
             downloading_obj = DownloadingFile(self.service)
             cache_dir = annofabcli.common.utils.get_cache_dir()
-            json_path = cache_dir / f"{project_id}-task_history_event.json"
-
-            downloading_obj.download_task_history_event_json(project_id, str(json_path))
+            json_path = downloading_obj.download_task_history_event_json_to_dir(project_id, cache_dir)
         else:
             json_path = task_history_event_json
 

@@ -125,7 +125,7 @@ class WriteCsvGraph:
             custom_production_volume = self._prepare_custom_production_volume()
 
             if self.annotation_count is None:
-                if self.visualize_source_files.annotation_zip_path.exists():
+                if self.visualize_source_files.annotation_zip_path is not None and self.visualize_source_files.annotation_zip_path.exists():
                     annotation_count = AnnotationCount.from_annotation_zip(
                         self.visualize_source_files.annotation_zip_path,
                         project_id=self.project_id,
@@ -174,6 +174,7 @@ class WriteCsvGraph:
     def _add_annotation_duration(self, custom_production_volume: CustomProductionVolume | None) -> CustomProductionVolume:
         """区間アノテーションの長さを生産量に追加する"""
         logger.debug(f"project_id='{self.project_id}' :: 区間アノテーションの長さ（'annotation_duration_minute'）を計算します。")
+        assert self.visualize_source_files.annotation_zip_path is not None
         annotation_duration_obj = AnnotationDuration.from_annotation_zip(
             self.visualize_source_files.annotation_zip_path,
             project_id=self.project_id,
@@ -469,6 +470,8 @@ class VisualizingStatisticsMain:
                 should_get_task_histories_one_of_each=self.is_get_task_histories_one_of_each,
                 should_download_annotation_zip=(annotation_count is None),
             )
+        else:
+            visualization_source_files.load_from_dir()
 
         write_obj = WriteCsvGraph(
             self.service,

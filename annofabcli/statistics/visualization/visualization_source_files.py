@@ -9,7 +9,7 @@ from typing import Any
 import annofabapi.utils
 
 from annofabcli.common.dataclasses import WaitOptions
-from annofabcli.common.download import DownloadingFile
+from annofabcli.common.download import DownloadingFile, get_filename
 from annofabcli.common.exceptions import DownloadingFileNotFoundError
 
 logger = logging.getLogger(__name__)
@@ -33,13 +33,13 @@ class VisualizationSourceFiles:
         self.project_id = project_id
         self.target_dir = target_dir
 
-        # ダウンロードした一括情報
-        self.task_json_path = self.target_dir / f"{self.project_id}__task.json"
-        self.comment_json_path = target_dir / f"{self.project_id}__comment.json"
-        self.task_history_json_path = target_dir / f"{self.project_id}__task-history.json"
-        self.task_history_event_json_path = target_dir / f"{self.project_id}__task-history-event.json"
-        self.annotation_zip_path = target_dir / f"{self.project_id}__annotation.zip"
-        self.input_data_json_path = target_dir / f"{self.project_id}__input_data.json"
+        # ダウンロードした一括情報（write_files()またはload_from_dir()で設定される）
+        self.task_json_path: Path | None = None
+        self.comment_json_path: Path | None = None
+        self.task_history_json_path: Path | None = None
+        self.task_history_event_json_path: Path | None = None
+        self.annotation_zip_path: Path | None = None
+        self.input_data_json_path: Path | None = None
 
         self.logging_prefix = f"project_id='{project_id}'"
 
@@ -55,6 +55,7 @@ class VisualizationSourceFiles:
         Returns:
             全タスクのlist
         """
+        assert self.task_json_path is not None
         with self.task_json_path.open(encoding="utf-8") as f:
             all_tasks = json.load(f)
 
@@ -68,7 +69,8 @@ class VisualizationSourceFiles:
         Returns:
             全タスクの履歴情報。keyはtask_id, valueはタスク履歴のlist
         """
-        with open(str(self.task_history_json_path), encoding="utf-8") as f:  # noqa: PTH123
+        assert self.task_history_json_path is not None
+        with self.task_history_json_path.open(encoding="utf-8") as f:
             task_histories_dict = json.load(f)
 
         logger.debug(f"{self.logging_prefix}: '{self.task_history_json_path}'を読み込みました。{len(task_histories_dict)}件のタスクの履歴が含まれています。")
@@ -81,6 +83,7 @@ class VisualizationSourceFiles:
         Returns:
             全タスクの履歴イベント情報
         """
+        assert self.task_history_event_json_path is not None
         with self.task_history_event_json_path.open(encoding="utf-8") as f:
             task_history_event_list = json.load(f)
 
@@ -94,7 +97,8 @@ class VisualizationSourceFiles:
         Returns:
             全コメントの一覧。検査コメントだけでなく保留コメントや、返信のコメントも含まれています。
         """
-        with open(str(self.comment_json_path), encoding="utf-8") as f:  # noqa: PTH123
+        assert self.comment_json_path is not None
+        with self.comment_json_path.open(encoding="utf-8") as f:
             comment_list = json.load(f)
 
         logger.debug(f"{self.logging_prefix}: '{self.comment_json_path}'を読み込みました。{len(comment_list)}件のコメントが含まれています。")
@@ -107,6 +111,7 @@ class VisualizationSourceFiles:
         Returns:
             全入力データの一覧
         """
+        assert self.input_data_json_path is not None
         with self.input_data_json_path.open(encoding="utf-8") as f:
             input_data_list = json.load(f)
 
@@ -162,30 +167,32 @@ class VisualizationSourceFiles:
 
         wait_options = WaitOptions(interval=60, max_tries=360)
 
-        downloading_obj.download_task_json(self.project_id, dest_path=self.task_json_path, is_latest=is_latest, wait_options=wait_options)
+        self.task_json_path = downloading_obj.download_task_json_to_dir(self.project_id, self.target_dir, is_latest=is_latest, wait_options=wait_options)
 
-        downloading_obj.download_input_data_json(self.project_id, dest_path=self.input_data_json_path, is_latest=is_latest, wait_options=wait_options)
+        self.input_data_json_path = downloading_obj.download_input_data_json_to_dir(self.project_id, self.target_dir, is_latest=is_latest, wait_options=wait_options)
 
         if should_download_annotation_zip:
-            downloading_obj.download_annotation_zip(
+            self.annotation_zip_path = downloading_obj.download_annotation_zip_to_dir(
                 self.project_id,
-                dest_path=self.annotation_zip_path,
+                self.target_dir,
                 is_latest=is_latest,
                 wait_options=wait_options,
             )
 
         try:
-            downloading_obj.download_comment_json(self.project_id, dest_path=self.comment_json_path)
+            self.comment_json_path = downloading_obj.download_comment_json_to_dir(self.project_id, self.target_dir)
         except DownloadingFileNotFoundError:
             # プロジェクトを作成した日だと、コメント全件ファイルが作成されていないので、DownloadingFileNotFoundErrorが発生する
             # その場合でも、処理は継続できるので、空listのJSONファイルを作成して、処理が継続できるようにする。
+            self.comment_json_path = self.target_dir / get_filename(self.project_id, "comment", "json")
             self.comment_json_path.write_text("[]", encoding="utf-8")
 
         try:
-            downloading_obj.download_task_history_event_json(self.project_id, dest_path=self.task_history_event_json_path)
+            self.task_history_event_json_path = downloading_obj.download_task_history_event_json_to_dir(self.project_id, self.target_dir)
         except DownloadingFileNotFoundError:
             # プロジェクトを作成した日だと、タスク履歴全件ファイルが作成されていないので、DownloadingFileNotFoundErrorが発生する
             # その場合でも、処理は継続できるので、空listのJSONファイルを作成して、処理が継続できるようにする。
+            self.task_history_event_json_path = self.target_dir / get_filename(self.project_id, "task_history_event", "json")
             self.task_history_event_json_path.write_text("[]", encoding="utf-8")
 
         if should_get_task_histories_one_of_each:
@@ -196,12 +203,43 @@ class VisualizationSourceFiles:
 
         else:
             try:
-                downloading_obj.download_task_history_json(self.project_id, dest_path=str(self.task_history_json_path))
+                self.task_history_json_path = downloading_obj.download_task_history_json_to_dir(self.project_id, self.target_dir)
             except DownloadingFileNotFoundError:
                 # プロジェクトを作成した日だと、タスク履歴全件ファイルが作成されていないので、DownloadingFileNotFoundErrorが発生する
                 # その場合でも、処理は継続できるので、タスク履歴APIを１個ずつ実行して、タスク履歴ファイルを作成する
                 tasks = self.read_tasks_json()
                 self._write_task_histories_json_with_executing_webapi([task["task_id"] for task in tasks])
+
+    def _find_latest_file(self, file_type: str, extension: str) -> Path | None:
+        """target_dir内で命名規則``{timestamp}--{project_id}--{file_type}.{extension}``に一致する最新のファイルを探します。
+
+        タイムスタンプ付きのファイル名をアルファベット順でソートした際の最後のファイル（最新のもの）を返します。
+
+        Args:
+            file_type: ファイルの種類（例: "task", "annotation"）
+            extension: 拡張子（例: "json", "zip"）
+
+        Returns:
+            最新のファイルのパス。ファイルが見つからない場合はNone。
+        """
+        pattern = f"*--{self.project_id}--{file_type}.{extension}"
+        files = sorted(self.target_dir.glob(pattern))
+        return files[-1] if files else None
+
+    def load_from_dir(self) -> None:
+        """
+        target_dir内の最新のダウンロード済みファイルからパスを設定します。
+
+        ``--not_download``オプション使用時に呼び出します。
+        ファイルが見つからない場合、対応するパス属性は``None``のままになります。
+        そのため、ファイルが存在することを前提とする``read_*``メソッドを呼び出す前に、各パス属性がNoneでないことを確認してください。
+        """
+        self.task_json_path = self._find_latest_file("task", "json")
+        self.input_data_json_path = self._find_latest_file("input_data", "json")
+        self.annotation_zip_path = self._find_latest_file("annotation", "zip")
+        self.comment_json_path = self._find_latest_file("comment", "json")
+        self.task_history_json_path = self._find_latest_file("task_history", "json")
+        self.task_history_event_json_path = self._find_latest_file("task_history_event", "json")
 
     def _write_task_histories_json_with_executing_webapi(self, task_ids: Collection[str]) -> None:
         """
@@ -220,6 +258,11 @@ class VisualizationSourceFiles:
             sub_task_histories, _ = self.annofab_service.api.get_task_histories(self.project_id, task_id)
             result[task_id] = sub_task_histories
             task_index += 1  # noqa: SIM113
+
+        if self.task_history_json_path is None:
+            # write_files()でtask_history_json_pathが設定されていない場合（タスク履歴全件ファイルが存在しなかった場合など）に、
+            # このメソッドが呼ばれることがある。その際のパスを設定する。
+            self.task_history_json_path = self.target_dir / get_filename(self.project_id, "task_history", "json")
 
         with self.task_history_json_path.open(mode="w", encoding="utf-8") as f:
             json.dump(result, f)

@@ -146,14 +146,15 @@ class ListInputDataMergedTask(CommandLine):
 
         return True
 
-    def download_json_files(self, project_id: str, output_dir: Path, *, is_latest: bool) -> None:
+    def download_json_files(self, project_id: str, output_dir: Path, *, is_latest: bool) -> tuple[Path, Path]:
         downloading_obj = DownloadingFile(self.service)
-        downloading_obj.download_input_data_json(
+        input_data_json_path = downloading_obj.download_input_data_json_to_dir(
             project_id,
-            dest_path=str(output_dir / "input_data.json"),
+            output_dir,
             is_latest=is_latest,
         )
-        downloading_obj.download_task_json(project_id, dest_path=str(output_dir / "task.json"), is_latest=is_latest)
+        task_json_path = downloading_obj.download_task_json_to_dir(project_id, output_dir, is_latest=is_latest)
+        return input_data_json_path, task_json_path
 
     def main(self) -> None:
         args = self.args
@@ -164,9 +165,7 @@ class ListInputDataMergedTask(CommandLine):
         if project_id is not None:
             super().validate_project(project_id, None)
             cache_dir = annofabcli.common.utils.get_cache_dir()
-            self.download_json_files(project_id, cache_dir, is_latest=args.latest)
-            task_json_path = cache_dir / "task.json"
-            input_data_json_path = cache_dir / "input_data.json"
+            input_data_json_path, task_json_path = self.download_json_files(project_id, cache_dir, is_latest=args.latest)
         else:
             task_json_path = args.task_json
             input_data_json_path = args.input_data_json

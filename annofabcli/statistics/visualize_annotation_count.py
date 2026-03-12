@@ -434,10 +434,9 @@ class VisualizeAnnotationCount(CommandLine):
             downloading_obj = DownloadingFile(self.service)
 
             if args.temp_dir is not None:
-                annotation_path = args.temp_dir / f"{project_id}__annotation.zip"
-                downloading_obj.download_annotation_zip(
+                annotation_path = downloading_obj.download_annotation_zip_to_dir(
                     project_id,
-                    dest_path=annotation_path,
+                    args.temp_dir,
                     is_latest=args.latest,
                 )
                 func(annotation_path=annotation_path)
@@ -446,10 +445,9 @@ class VisualizeAnnotationCount(CommandLine):
                 # `NamedTemporaryFile`を使わない理由: Windowsで`PermissionError`が発生するため
                 # https://qiita.com/yuji38kwmt/items/c6f50e1fc03dafdcdda0 参考
                 with tempfile.TemporaryDirectory() as str_temp_dir:
-                    annotation_path = Path(str_temp_dir) / f"{project_id}__annotation.zip"
-                    downloading_obj.download_annotation_zip(
+                    annotation_path = downloading_obj.download_annotation_zip_to_dir(
                         project_id,
-                        dest_path=str(annotation_path),
+                        Path(str_temp_dir),
                         is_latest=args.latest,
                     )
                     func(annotation_path=annotation_path)
