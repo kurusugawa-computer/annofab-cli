@@ -11,6 +11,7 @@ from typing import Any
 
 import pandas
 from annofabapi.models import InputDataType, ProjectMemberRole
+from annofabapi.util.page import create_image_editor_url
 from dataclasses_json import DataClassJsonMixin
 
 import annofabcli.common.cli
@@ -44,6 +45,7 @@ class AnnotationBoundingBoxInfo(DataClassJsonMixin):
 
     label: str
     annotation_id: str
+    annotation_editor_url: str
     left_top: dict[str, int]
     right_bottom: dict[str, int]
     center: dict[str, float]
@@ -84,6 +86,12 @@ def get_annotation_bounding_box_info_list(simple_annotation: dict[str, Any], *, 
                     input_data_name=simple_annotation["input_data_name"],
                     label=label,
                     annotation_id=detail["annotation_id"],
+                    annotation_editor_url=create_image_editor_url(
+                        simple_annotation["project_id"],
+                        simple_annotation["task_id"],
+                        input_data_id=simple_annotation["input_data_id"],
+                        annotation_id=detail["annotation_id"],
+                    ),
                     left_top=left_top,
                     right_bottom=right_bottom,
                     center={"x": center_x, "y": center_y},
@@ -136,6 +144,7 @@ def create_df(
         "updated_datetime",
         "label",
         "annotation_id",
+        "annotation_editor_url",
         "left_top.x",
         "left_top.y",
         "right_bottom.x",

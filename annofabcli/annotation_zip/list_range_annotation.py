@@ -11,6 +11,7 @@ from typing import Any
 
 import pandas
 from annofabapi.models import InputDataType, ProjectMemberRole
+from annofabapi.util.page import create_video_editor_url
 from dataclasses_json import DataClassJsonMixin
 
 import annofabcli.common.cli
@@ -44,6 +45,7 @@ class RangeAnnotationInfo(DataClassJsonMixin):
 
     label: str
     annotation_id: str
+    annotation_editor_url: str
     begin_second: float
     end_second: float
     duration_second: float
@@ -77,6 +79,12 @@ def get_range_annotation_info_list(simple_annotation: dict[str, Any], *, target_
                     input_data_name=simple_annotation["input_data_name"],
                     label=label,
                     annotation_id=detail["annotation_id"],
+                    annotation_editor_url=create_video_editor_url(
+                        simple_annotation["project_id"],
+                        simple_annotation["task_id"],
+                        annotation_id=detail["annotation_id"],
+                        seek_seconds=begin_second,
+                    ),
                     begin_second=begin_second,
                     end_second=end_second,
                     duration_second=duration_second,
@@ -126,6 +134,7 @@ def create_df(
         "updated_datetime",
         "label",
         "annotation_id",
+        "annotation_editor_url",
         "begin_second",
         "end_second",
         "duration_second",
