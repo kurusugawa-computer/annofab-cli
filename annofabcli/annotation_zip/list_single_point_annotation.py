@@ -9,6 +9,7 @@ from typing import Any
 
 import pandas
 from annofabapi.models import InputDataType, ProjectMemberRole
+from annofabapi.util.page import create_image_editor_url
 from dataclasses_json import DataClassJsonMixin
 
 import annofabcli.common.cli
@@ -42,6 +43,7 @@ class AnnotationSinglePointInfo(DataClassJsonMixin):
 
     label: str
     annotation_id: str
+    annotation_editor_url: str
     point: dict[str, int]
     attributes: dict[str, str | int | bool]
 
@@ -69,6 +71,12 @@ def get_annotation_single_point_info_list(simple_annotation: dict[str, Any], *, 
                     input_data_name=simple_annotation["input_data_name"],
                     label=label,
                     annotation_id=detail["annotation_id"],
+                    annotation_editor_url=create_image_editor_url(
+                        simple_annotation["project_id"],
+                        simple_annotation["task_id"],
+                        input_data_id=simple_annotation["input_data_id"],
+                        annotation_id=detail["annotation_id"],
+                    ),
                     point=point,
                     updated_datetime=simple_annotation["updated_datetime"],
                     attributes=detail["attributes"],
@@ -116,6 +124,7 @@ def create_df(
         "updated_datetime",
         "label",
         "annotation_id",
+        "annotation_editor_url",
         "point.x",
         "point.y",
     ]
