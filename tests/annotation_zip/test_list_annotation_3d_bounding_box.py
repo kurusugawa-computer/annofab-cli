@@ -299,7 +299,7 @@ class TestCreateDf:
 
         # DataFrameは空だが、base_columnsの列は存在する
         assert len(df) == 0
-        assert len(df.columns) == 24  # base_columnsの数（horizontal_distance追加により24列）
+        assert len(df.columns) == 25  # base_columnsの数（annotation_editor_url, horizontal_distance追加により25列）
 
         # 基本列が存在することを確認
         assert "project_id" in df.columns
