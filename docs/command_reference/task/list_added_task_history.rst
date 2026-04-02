@@ -58,6 +58,35 @@ task_id絞り込む
      --task_id task1 task2
 
 
+指定日以降の作業時間や担当者を出力する
+--------------------------------------------------------------------------------------------
+``--start_datetime`` を指定すると、その日付以降（``started_datetime`` を基準）に作業したタスク履歴に絞り込んで、フェーズごとの作業時間や効始担当者を計算します。
+
+.. code-block::
+
+    $ annofabcli task list_added_task_history --project_id prj1 \
+     --start_datetime 2026-10-01
+
+以下のカラムが追加されます。
+
+* ``since_2026-10-01.annotation_worktime_hour`` : 2026-10-01以降の教師付フェーズの作業時間
+* ``since_2026-10-01.inspection_worktime_hour`` : 2026-10-01以降の検査フェーズの作業時間
+* ``since_2026-10-01.acceptance_worktime_hour`` : 2026-10-01以降の受入フェーズの作業時間
+* ``since_2026-10-01.first_annotation_user_id`` : 2026-10-01以降に最初に教師付フェーズを担当したユーザのuser_id
+* ``since_2026-10-01.first_annotation_username`` : 2026-10-01以降に最初に教師付フェーズを担当したユーザの名前
+* ``since_2026-10-01.first_annotation_started_datetime`` : 2026-10-01以降に最初に教師付フェーズを着手した日時
+* ``since_2026-10-01.first_annotation_worktime_hour`` : 2026-10-01以降の最初の教師付フェーズの作業時間
+
+検査・受入フェーズについても同様のカラムが追加されます。
+
+``--start_datetime`` は複数指定できます。
+
+.. code-block::
+
+    $ annofabcli task list_added_task_history --project_id prj1 \
+     --start_datetime 2026-10-01 2026-12-01
+
+
 
 出力結果
 =================================
@@ -194,6 +223,22 @@ JSON出力
 * ``acceptance_is_skipped`` : 抜取受入により受入フェーズがスキップされたかどうか
 
 
+``--start_datetime`` を指定した場合の追加カラム
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+``--start_datetime YYYY-MM-DD`` を指定した場合、以下のカラムが追加されます。
+
+* ``since_{YYYY-MM-DD}.annotation_worktime_hour`` : 指定日以降の教師付フェーズの作業時間
+* ``since_{YYYY-MM-DD}.inspection_worktime_hour`` : 指定日以降の検査フェーズの作業時間
+* ``since_{YYYY-MM-DD}.acceptance_worktime_hour`` : 指定日以降の受入フェーズの作業時間
+* ``since_{YYYY-MM-DD}.first_annotation_user_id`` : 指定日以降に最初に教師付フェーズを担当したユーザのuser_id
+* ``since_{YYYY-MM-DD}.first_annotation_username`` : 指定日以降に最初に教師付フェーズを担当したユーザの名前
+* ``since_{YYYY-MM-DD}.first_annotation_started_datetime`` : 指定日以降に最初に教師付フェーズを着手した日時
+* ``since_{YYYY-MM-DD}.first_annotation_worktime_hour`` : 指定日以降の最初の教師付フェーズの作業時間
+
+検査・受入フェーズについても同様のカラムが追加されます。
+
+``--start_datetime`` を複数指定した場合は、それぞれの日付に対応するカラムが追加されます。
 
 
 
