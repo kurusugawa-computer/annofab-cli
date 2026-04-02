@@ -13,6 +13,7 @@ classifiers = [
     "Environment :: Console",
     "Topic :: Utilities",
     "Operating System :: OS Independent",
+    "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
@@ -39,6 +40,11 @@ dependencies = [
     # Python 3.14サポートのためpydantic 2.12以上が必要
     "pydantic>=2.12; python_version>='3.14'",
 ]
+
+[project.urls]
+Homepage = "https://github.com/kurusugawa-computer/annofab-cli"
+Repository = "https://github.com/kurusugawa-computer/annofab-cli"
+"Bug Tracker" = "https://github.com/kurusugawa-computer/annofab-cli/issues"
 
 [dependency-groups]
 dev = [
