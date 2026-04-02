@@ -333,7 +333,7 @@ class AnnotationCountCsvByAttribute:
         """
         all_attr_key_set = {attr_key for c in annotation_count_list for attr_key in c.annotation_attribute_counts}
         if prior_attribute_columns is not None:
-            remaining_columns = sorted(all_attr_key_set - set(prior_attribute_columns))  # type: ignore[arg-type]
+            remaining_columns = sorted(all_attr_key_set - set(prior_attribute_columns))
             value_columns = prior_attribute_columns + remaining_columns
 
         else:
