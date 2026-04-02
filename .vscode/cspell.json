@@ -74,6 +74,7 @@
         "pathlib",
         "pformat",
         "pickel",
+        "pydantic",
         "pyinstaller",
         "pylint",
         "pyquery",
