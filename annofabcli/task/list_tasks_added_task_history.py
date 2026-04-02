@@ -460,7 +460,7 @@ class ListTasksAddedTaskHistoryMain:
 class TasksAddedTaskHistoryOutput:
     """出力用のクラス"""
 
-    def __init__(self, task_list: list[dict[str, Any]], start_date_list: list[str] | None = None) -> None:
+    def __init__(self, task_list: list[dict[str, Any]], *, start_date_list: list[str] | None = None) -> None:
         self.task_list = task_list
         self.start_date_list = start_date_list
 
@@ -514,8 +514,11 @@ class TasksAddedTaskHistoryOutput:
 
     def _get_since_columns(self) -> list[str]:
         """start_date_listに基づく since_* カラム名の一覧を返す。"""
+        if self.start_date_list is None:
+            return []
+
         columns = []
-        for start_date in self.start_date_list or []:
+        for start_date in self.start_date_list:
             for phase in [TaskPhase.ANNOTATION, TaskPhase.INSPECTION, TaskPhase.ACCEPTANCE]:
                 columns.append(f"since_{start_date}.{phase.value}_worktime_hour")
                 columns.extend(f"since_{start_date}.first_{phase.value}_{info}" for info in ["user_id", "username", "started_datetime", "worktime_hour"])
@@ -555,7 +558,7 @@ class ListTasksAddedTaskHistory(CommandLine):
         task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id) if args.task_id is not None else None
         task_query = annofabcli.common.cli.get_json_from_args(args.task_query) if args.task_query is not None else None
 
-        start_date_list = args.start_datetime if args.start_datetime is not None else None
+        start_date_list = args.start_date if args.start_date is not None else None
 
         main_obj = ListTasksAddedTaskHistoryMain(self.service, project_id=args.project_id)
         task_list = main_obj.main(task_query=task_query, task_id_list=task_id_list, start_date_list=start_date_list)
@@ -597,7 +600,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     )
 
     parser.add_argument(
-        "--start_datetime",
+        "--start_date",
         type=str,
         nargs="+",
         help="指定した日付以降（started_datetimeを基準）の教師付・検査・受入作業時間を計算し、"
