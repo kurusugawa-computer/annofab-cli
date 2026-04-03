@@ -131,20 +131,18 @@ class ListVideoDuration(CommandLine):
             downloading_obj = DownloadingFile(self.service)
             assert project_id is not None
             if args.input_data_json is None:
-                input_data_json = temp_dir / f"{project_id}__input_data.json"
-                downloading_obj.download_input_data_json(
+                input_data_json = downloading_obj.download_input_data_json_to_dir(
                     project_id,
-                    dest_path=input_data_json,
+                    temp_dir,
                     is_latest=args.latest,
                 )
             else:
                 input_data_json = args.input_data_json
 
             if args.task_json is None:
-                task_json = temp_dir / f"{project_id}__task.json"
-                downloading_obj.download_task_json(
+                task_json = downloading_obj.download_task_json_to_dir(
                     project_id,
-                    dest_path=task_json,
+                    temp_dir,
                     is_latest=args.latest,
                 )
             else:
