@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import tempfile
 from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
@@ -15,7 +16,6 @@ from dataclasses_json import DataClassJsonMixin
 from dateutil.parser import parse
 
 import annofabcli.common.cli
-import annofabcli.common.utils
 from annofabcli.common.cli import (
     ArgumentParser,
     CommandLine,
@@ -85,20 +85,21 @@ class ListWorktimeFromTaskHistoryEventMain:
 
         return task_history_event_list
 
-    def get_task_history_event_list(self, project_id: str, task_history_event_json: Path | None = None) -> list[dict[str, Any]]:
-        if task_history_event_json is None:
-            downloading_obj = DownloadingFile(self.service)
-            cache_dir = annofabcli.common.utils.get_cache_dir()
-            json_path = cache_dir / f"{project_id}-task_history_event.json"
+    def get_task_history_event_list(self, project_id: str, task_history_event_json: Path | None = None, temp_dir: Path | None = None) -> list[dict[str, Any]]:
+        if task_history_event_json is not None:
+            with task_history_event_json.open(encoding="utf-8") as f:
+                return json.load(f)
 
-            downloading_obj.download_task_history_event_json(project_id, str(json_path))
-        else:
-            json_path = task_history_event_json
+        downloading_obj = DownloadingFile(self.service)
+        if temp_dir is not None:
+            json_path = downloading_obj.download_task_history_event_json_to_dir(project_id, temp_dir)
+            with json_path.open(encoding="utf-8") as f:
+                return json.load(f)
 
-        with json_path.open(encoding="utf-8") as f:
-            all_task_history_event_list = json.load(f)
-
-        return all_task_history_event_list
+        with tempfile.TemporaryDirectory() as str_temp_dir:
+            json_path = downloading_obj.download_task_history_event_json_to_dir(project_id, Path(str_temp_dir))
+            with json_path.open(encoding="utf-8") as f:
+                return json.load(f)
 
     @staticmethod
     def _create_task_history_event_dict(
@@ -233,8 +234,9 @@ class ListWorktimeFromTaskHistoryEventMain:
         task_history_event_json: Path | None = None,
         task_id_list: list[str] | None = None,
         user_id_list: list[str] | None = None,
+        temp_dir: Path | None = None,
     ) -> list[WorktimeFromTaskHistoryEvent]:
-        all_task_history_event_list = self.get_task_history_event_list(project_id, task_history_event_json=task_history_event_json)
+        all_task_history_event_list = self.get_task_history_event_list(project_id, task_history_event_json=task_history_event_json, temp_dir=temp_dir)
 
         task_id_set = set(task_id_list) if task_id_list is not None else None
         account_id_set = self.get_account_ids_from_user_ids(project_id, set(user_id_list)) if user_id_list is not None else None
@@ -256,6 +258,7 @@ class ListWorktimeFromTaskHistoryEvent(CommandLine):
         task_id_list: list[str] | None,
         user_id_list: list[str] | None,
         arg_format: OutputFormat,
+        temp_dir: Path | None = None,
     ) -> None:
         super().validate_project(project_id, project_member_roles=None)
 
@@ -265,6 +268,7 @@ class ListWorktimeFromTaskHistoryEvent(CommandLine):
             task_history_event_json=task_history_event_json,
             task_id_list=task_id_list,
             user_id_list=user_id_list,
+            temp_dir=temp_dir,
         )
 
         logger.debug(f"作業時間一覧の件数: {len(worktime_list)}")
@@ -313,6 +317,7 @@ class ListWorktimeFromTaskHistoryEvent(CommandLine):
             task_id_list=task_id_list,
             user_id_list=user_id_list,
             arg_format=OutputFormat(args.format),
+            temp_dir=args.temp_dir,
         )
 
     @staticmethod
@@ -363,6 +368,12 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         default=OutputFormat.CSV,
     )
     argument_parser.add_output()
+
+    parser.add_argument(
+        "--temp_dir",
+        type=Path,
+        help="指定したディレクトリに、タスク履歴イベントJSONなどの一時ファイルをダウンロードします。",
+    )
 
     parser.set_defaults(subcommand_func=main)
 
