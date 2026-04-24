@@ -174,7 +174,7 @@ def read_choices_csv(csv_path: Path) -> list[ChoiceAttributeInput]:
     required_columns = {"choice_name_en"}
     missing_columns = required_columns - set(df.columns)
     if missing_columns:
-        raise ValueError(f"`--choices_csv` には次の列が必要です。 :: {required_columns}")
+        raise ValueError(f"`--choices_csv` に不足している必須列があります。 :: {sorted(missing_columns)}")
 
     result = []
     for row in df.to_dict(orient="records"):
