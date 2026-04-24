@@ -198,7 +198,7 @@ class TestAddLabelMain:
         added_color = service.api.last_put["labels"][-1]["color"]
         assert added_color == {"red": 255, "green": 85, "blue": 0}
 
-    def test_add_label__copy_shape_from_sample_label(self, annotation_specs: dict) -> None:
+    def test_add_label__does_not_inherit_existing_label_fields(self, annotation_specs: dict) -> None:
         shaped_specs = copy.deepcopy(annotation_specs)
         shaped_specs["labels"][0]["field_values"] = {"existing": {"_type": "Dummy"}}
         shaped_specs["labels"][0]["bounding_box_metadata"] = {"value": True}
@@ -219,11 +219,11 @@ class TestAddLabelMain:
 
         assert service.api.last_put is not None
         added_label = service.api.last_put["labels"][-1]
-        assert added_label["field_values"] == {}
-        assert added_label["bounding_box_metadata"] is None
-        assert added_label["segmentation_metadata"] is None
-        assert added_label["annotation_editor_feature"] == {"append": False, "erase": False}
-        assert added_label["allow_out_of_image_bounds"] is True
+        assert "field_values" not in added_label
+        assert "bounding_box_metadata" not in added_label
+        assert "segmentation_metadata" not in added_label
+        assert "annotation_editor_feature" not in added_label
+        assert "allow_out_of_image_bounds" not in added_label
 
     def test_add_label__duplicated_label_id(self, annotation_specs: dict) -> None:
         service = DummyService(annotation_specs)

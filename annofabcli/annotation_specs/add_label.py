@@ -144,7 +144,6 @@ def create_auto_color(labels: Collection[dict[str, Any]]) -> dict[str, int]:
 
 def create_new_label(
     *,
-    sample_label: dict[str, Any] | None,
     label_id: str,
     label_name_en: str,
     label_name_ja: str | None,
@@ -155,7 +154,6 @@ def create_new_label(
     新規ラベルのAnnofab API向けオブジェクトを生成する。
 
     Args:
-        sample_label: 既存ラベルの代表サンプル。存在しない場合はNone
         label_id: 新規ラベルID
         label_name_en: 新規ラベル英語名
         label_name_ja: 新規ラベル日本語名
@@ -165,36 +163,15 @@ def create_new_label(
     Returns:
         Annofab API向けのラベルオブジェクト
     """
-    if sample_label is None:
-        return {
-            "label_id": label_id,
-            "label_name": create_name(label_name_en, label_name_ja),
-            "keybind": [],
-            "annotation_type": annotation_type,
-            "additional_data_definitions": [],
-            "color": color,
-            "metadata": {},
-        }
-
-    new_label = copy.deepcopy(sample_label)
-    new_label["label_id"] = label_id
-    new_label["label_name"] = create_name(label_name_en, label_name_ja)
-    new_label["keybind"] = []
-    new_label["annotation_type"] = annotation_type
-    new_label["additional_data_definitions"] = []
-    new_label["color"] = color
-    new_label["metadata"] = {}
-
-    if "field_values" in new_label:
-        new_label["field_values"] = {}
-    if "bounding_box_metadata" in new_label:
-        new_label["bounding_box_metadata"] = None
-    if "segmentation_metadata" in new_label:
-        new_label["segmentation_metadata"] = None
-    if "annotation_editor_feature" in new_label and isinstance(new_label["annotation_editor_feature"], dict):
-        new_label["annotation_editor_feature"] = dict.fromkeys(new_label["annotation_editor_feature"], False)
-
-    return new_label
+    return {
+        "label_id": label_id,
+        "label_name": create_name(label_name_en, label_name_ja),
+        "keybind": [],
+        "annotation_type": annotation_type,
+        "additional_data_definitions": [],
+        "color": color,
+        "metadata": {},
+    }
 
 
 class AddLabelMain(CommandLineWithConfirm):
@@ -248,7 +225,6 @@ class AddLabelMain(CommandLineWithConfirm):
 
         color = parse_color(color_code) if color_code is not None else create_auto_color(labels)
         new_label = create_new_label(
-            sample_label=labels[0] if len(labels) > 0 else None,
             label_id=generated_label_id,
             label_name_en=label_name_en,
             label_name_ja=label_name_ja,
