@@ -226,7 +226,7 @@ def build_choices(choice_inputs: Sequence[ChoiceAttributeInput]) -> tuple[list[d
     """
     validate_choice_inputs(choice_inputs)
 
-    choices = []
+    choices: list[dict[str, Any]] = []
     default_choice_id = ""
     for choice_input in choice_inputs:
         choice_id = choice_input.choice_id if choice_input.choice_id is not None else str(uuid.uuid4())
