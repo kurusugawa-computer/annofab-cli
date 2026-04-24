@@ -15,6 +15,7 @@ Available Commands
    :maxdepth: 1
    :titlesonly:
 
+   add_choice_attribute
    add_attribute_restriction
    export
    get_with_attribute_id_replaced_label_name
