@@ -130,10 +130,7 @@ def create_new_label(
         "label_id": label_id,
         "label_name": create_name(label_name_en, label_name_ja),
         "annotation_type": annotation_type,
-        "keybind": [],
-        "additional_data_definitions": [],
         "color": color,
-        "metadata": {},
     }
 
 

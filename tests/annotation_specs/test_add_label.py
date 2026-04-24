@@ -147,10 +147,7 @@ class TestAddLabelMain:
         added_label = service.api.last_put["labels"][-1]
         assert added_label["label_id"] == "pedestrian_label_id"
         assert added_label["annotation_type"] == "bounding_box"
-        assert added_label["keybind"] == []
-        assert added_label["additional_data_definitions"] == []
         assert added_label["color"] == {"red": 0, "green": 204, "blue": 255}
-        assert added_label["metadata"] == {}
         assert service.api.last_put["comment"].startswith("以下のラベルを追加しました。")
         assert service.api.last_put["last_updated_datetime"] == "2026-04-24T00:00:00+09:00"
 
