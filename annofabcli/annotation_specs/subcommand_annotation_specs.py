@@ -1,7 +1,7 @@
 import argparse
 
-import annofabcli.annotation_specs.add_choice_attribute
 import annofabcli.annotation_specs.add_attribute_restriction
+import annofabcli.annotation_specs.add_choice_attribute
 import annofabcli.annotation_specs.export_annotation_specs
 import annofabcli.annotation_specs.get_annotation_specs_with_attribute_id_replaced
 import annofabcli.annotation_specs.get_annotation_specs_with_choice_id_replaced

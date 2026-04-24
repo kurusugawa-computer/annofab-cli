@@ -8,13 +8,13 @@ from pathlib import Path
 
 import pytest
 
+from annofabcli.annotation_specs import add_choice_attribute
 from annofabcli.annotation_specs.add_choice_attribute import (
     AddChoiceAttributeMain,
     build_choices,
     read_choices_csv,
     read_choices_json,
 )
-from annofabcli.annotation_specs import add_choice_attribute
 
 data_dir = Path("./tests/data/annotation_specs")
 
@@ -173,9 +173,7 @@ class TestAddChoiceAttributeMain:
             attribute_name_en="weather",
             attribute_name_ja="天気",
             attribute_id="weather_attr",
-            choice_inputs=read_choices_json(
-                '[{"choice_id":"sunny","choice_name_en":"sunny","choice_name_ja":"晴れ","is_default":true},{"choice_name_en":"cloudy"}]'
-            ),
+            choice_inputs=read_choices_json('[{"choice_id":"sunny","choice_name_en":"sunny","choice_name_ja":"晴れ","is_default":true},{"choice_name_en":"cloudy"}]'),
             label_ids=[],
             label_name_ens=["car"],
             comment=None,

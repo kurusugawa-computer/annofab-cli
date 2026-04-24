@@ -65,8 +65,7 @@ def create_name(message_en: str, message_ja: str | None = None) -> dict[str, Any
     if message_ja is not None:
         messages.append({"lang": "ja-JP", "message": message_ja})
     messages.append({"lang": "en-US", "message": message_en})
-    default_lang = "ja-JP" if message_ja is not None else "en-US"
-    return {"messages": messages, "default_lang": default_lang}
+    return {"messages": messages, "default_lang": "ja-JP"}
 
 
 def _to_optional_str(value: Any) -> str | None:  # noqa: ANN401
@@ -185,25 +184,29 @@ def read_choices_csv(csv_path: Path) -> list[ChoiceAttributeInput]:
         ValueError: CSV読み込みや必須列検証に失敗した場合
     """
     try:
-        df = pandas.read_csv(csv_path, dtype="string", keep_default_na=False)
+        df = pandas.read_csv(
+            csv_path,
+            dtype={
+                "choice_id": "string",
+                "choice_name_en": "string",
+                "choice_name_ja": "string",
+                "is_default": "Boolean",
+            },
+        )
     except Exception as e:
         raise ValueError(f"`--choices_csv` の読み込みに失敗しました。 :: {e}") from e
 
     required_columns = {"choice_name_en"}
     missing_columns = required_columns - set(df.columns)
     if missing_columns:
-        missing_columns_text = ", ".join(sorted(missing_columns))
-        raise ValueError(f"`--choices_csv` には次の列が必要です。 :: {missing_columns_text}")
+        raise ValueError(f"`--choices_csv` には次の列が必要です。 :: {required_columns}")
 
     result = []
-    for row_index, row in enumerate(df.to_dict(orient="records"), start=2):
-        choice_name_en = _to_optional_str(row.get("choice_name_en"))
-        if choice_name_en is None:
-            raise ValueError(f"{row_index}行目の `choice_name_en` が指定されていません。")
-
-        choice_name_ja = _to_optional_str(row.get("choice_name_ja"))
-        choice_id = _to_optional_str(row.get("choice_id"))
-        is_default = parse_bool_from_csv(str(row.get("is_default", "")), row_number=row_index)
+    for row in df.to_dict(orient="records"):
+        choice_name_en = row["choice_name_en"]
+        choice_name_ja = row.get("choice_name_ja")
+        choice_id = row.get("choice_id")
+        is_default = row.get("is_default", False)
         result.append(
             ChoiceAttributeInput(
                 choice_name_en=choice_name_en,
@@ -344,9 +347,7 @@ class AddChoiceAttributeMain(CommandLineWithConfirm):
             if len(matched_labels) == 0:
                 raise ValueError(f"ラベル名(英語)='{label_name_en}' のラベルは存在しません。")
             if len(matched_labels) >= 2:
-                raise ValueError(
-                    f"ラベル名(英語)='{label_name_en}' のラベルが複数存在します。 `--label_id` を指定してください。"
-                )
+                raise ValueError(f"ラベル名(英語)='{label_name_en}' のラベルが複数存在します。 `--label_id` を指定してください。")
 
             label = matched_labels[0]
             label_id = label["label_id"]
@@ -465,10 +466,7 @@ class AddChoiceAttributeMain(CommandLineWithConfirm):
         )
 
         label_names = [AnnofabApiFacade.get_label_name_en(label) for label in target_labels]
-        confirm_message = (
-            f"属性名(英語)='{attribute_name_en}', 属性種類='{attribute_type}', "
-            f"選択肢数={len(new_attribute['choices'])}, 対象ラベル={label_names} を追加します。よろしいですか？"
-        )
+        confirm_message = f"属性名(英語)='{attribute_name_en}', 属性種類='{attribute_type}', 選択肢数={len(new_attribute['choices'])}, 対象ラベル={label_names} を追加します。よろしいですか？"
         if not self.confirm_processing(confirm_message):
             return False
 
@@ -484,9 +482,7 @@ class AddChoiceAttributeMain(CommandLineWithConfirm):
         request_body["comment"] = comment
         request_body["last_updated_datetime"] = old_annotation_specs["updated_datetime"]
         self.service.api.put_annotation_specs(self.project_id, query_params={"v": "3"}, request_body=request_body)
-        logger.info(
-            f"属性名(英語)='{attribute_name_en}', 属性ID='{new_attribute['additional_data_definition_id']}' の選択肢系属性を追加しました。"
-        )
+        logger.info(f"属性名(英語)='{attribute_name_en}', 属性ID='{new_attribute['additional_data_definition_id']}' の選択肢系属性を追加しました。")
         return True
 
 
@@ -557,14 +553,12 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     choice_group.add_argument(
         "--choices_json",
         type=str,
-        help="追加する選択肢情報のJSON配列を指定します。 ``file://`` を先頭に付けるとJSON形式のファイルを指定できます。\n"
-        f"(例) ``{json.dumps(sample_json, ensure_ascii=False)}``",
+        help=f"追加する選択肢情報のJSON配列を指定します。 ``file://`` を先頭に付けるとJSON形式のファイルを指定できます。\n(例) ``{json.dumps(sample_json, ensure_ascii=False)}``",
     )
     choice_group.add_argument(
         "--choices_csv",
         type=Path,
-        help="追加する選択肢情報のCSVファイルを指定します。 CSVには ``choice_name_en`` 列が必要です。 "
-        "任意で ``choice_id`` , ``choice_name_ja`` , ``is_default`` 列を指定できます。",
+        help="追加する選択肢情報のCSVファイルを指定します。 CSVには ``choice_name_en`` 列が必要です。 任意で ``choice_id`` , ``choice_name_ja`` , ``is_default`` 列を指定できます。",
     )
 
     parser.add_argument(
