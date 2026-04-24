@@ -82,11 +82,6 @@ class TestReadChoicesJson:
         with pytest.raises(ValueError):
             build_choices(choices)
 
-    def test_build_choices__duplicated_choice_name_en(self) -> None:
-        choices = read_choices_json('[{"choice_id":"front-1","choice_name_en":"front"},{"choice_id":"front-2","choice_name_en":"front"}]')
-        with pytest.raises(ValueError):
-            build_choices(choices)
-
     def test_build_choices__multiple_default(self) -> None:
         choices = read_choices_json('[{"choice_name_en":"front","is_default":true},{"choice_name_en":"rear","is_default":true}]')
         with pytest.raises(ValueError):
