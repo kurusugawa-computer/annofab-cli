@@ -125,7 +125,7 @@ class ChangeAnnotationLabelMain(CommandLineWithConfirm):
         if is_allowed_label_change(src_annotation_type, dest_label_info.annotation_type):
             return
 
-        raise ValueError(f"変更前ラベルと変更後ラベルの種類が異なります。変更前='{src_annotation_type}', 変更後='{dest_label_info.annotation_type}'")
+        raise ValueError(f"変更前ラベル種類から変更後ラベル種類へは変更できません。変更前='{src_annotation_type}', 変更後='{dest_label_info.annotation_type}'")
 
     def change_annotation_label(self, annotation_list: list[dict[str, Any]], dest_label_info: DestLabelInfo) -> None:
         """アノテーションのラベルを変更する。
@@ -142,10 +142,14 @@ class ChangeAnnotationLabelMain(CommandLineWithConfirm):
             src_label = self.annotation_specs_accessor.get_label(label_id=detail["label_id"])
             src_annotation_type = src_label["annotation_type"]
             if not is_allowed_label_change(src_annotation_type, dest_label_info.annotation_type):
-                raise ValueError(f"変更前ラベルと変更後ラベルの種類が異なります。変更前='{src_annotation_type}', 変更後='{dest_label_info.annotation_type}', annotation_id='{detail['annotation_id']}'")
+                raise ValueError(
+                    f"変更前ラベル種類から変更後ラベル種類へは変更できません。変更前='{src_annotation_type}', 変更後='{dest_label_info.annotation_type}', annotation_id='{detail['annotation_id']}'"
+                )
 
             filtered_additional_data_list = [
-                additional_data for additional_data in detail["additional_data_list"] if additional_data["definition_id"] in dest_label_info.additional_data_definition_ids
+                additional_data
+                for additional_data in detail["additional_data_list"]
+                if additional_data.get("additional_data_definition_id", additional_data.get("definition_id")) in dest_label_info.additional_data_definition_ids
             ]
             return {
                 "data": {
@@ -353,7 +357,6 @@ class ChangeLabelOfAnnotation(CommandLine):
             option_name = "--label_id" if args.label_id is not None else "--label_name"
             print(f"{self.COMMON_MESSAGE} argument '{option_name}' の値が不正です。 :: {e}", file=sys.stderr)  # noqa: T201
             sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
-
 
         super().validate_project(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.ACCEPTER])
         if args.include_complete_task:  # noqa: SIM102
