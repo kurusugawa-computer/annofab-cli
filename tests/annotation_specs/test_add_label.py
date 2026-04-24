@@ -9,7 +9,7 @@ from pathlib import Path
 import pytest
 
 from annofabcli.annotation_specs import add_label
-from annofabcli.annotation_specs.add_label import AddLabelMain, create_auto_color, parse_color
+from annofabcli.annotation_specs.add_label import AUTO_COLOR_PALETTE, AddLabelMain, create_auto_color, parse_color
 
 data_dir = Path("./tests/data/annotation_specs")
 
@@ -107,8 +107,7 @@ class TestColor:
 
     def test_create_auto_color(self, annotation_specs: dict) -> None:
         actual = create_auto_color(annotation_specs["labels"])
-        existing_colors = {(label["color"]["red"], label["color"]["green"], label["color"]["blue"]) for label in annotation_specs["labels"]}
-        assert (actual["red"], actual["green"], actual["blue"]) not in existing_colors
+        assert actual == {"red": 255, "green": 85, "blue": 0}
 
     def test_create_auto_color__uses_extended_vivid_palette(self) -> None:
         labels = [
@@ -127,6 +126,14 @@ class TestColor:
         actual = create_auto_color(labels)
 
         assert actual == {"red": 0, "green": 170, "blue": 255}
+
+    def test_create_auto_color__returns_least_used_palette_color_when_all_palette_colors_are_used(self) -> None:
+        labels = [{"color": {"red": red, "green": green, "blue": blue}} for red, green, blue in AUTO_COLOR_PALETTE]
+        labels.append({"color": {"red": 255, "green": 0, "blue": 0}})
+
+        actual = create_auto_color(labels)
+
+        assert actual == {"red": 255, "green": 85, "blue": 0}
 
 
 class TestAddLabelMain:
@@ -189,8 +196,7 @@ class TestAddLabelMain:
 
         assert service.api.last_put is not None
         added_color = service.api.last_put["labels"][-1]["color"]
-        existing_colors = {(label["color"]["red"], label["color"]["green"], label["color"]["blue"]) for label in annotation_specs["labels"]}
-        assert (added_color["red"], added_color["green"], added_color["blue"]) not in existing_colors
+        assert added_color == {"red": 255, "green": 85, "blue": 0}
 
     def test_add_label__copy_shape_from_sample_label(self, annotation_specs: dict) -> None:
         shaped_specs = copy.deepcopy(annotation_specs)

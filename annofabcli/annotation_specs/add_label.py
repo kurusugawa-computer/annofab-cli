@@ -5,6 +5,7 @@ import copy
 import logging
 import re
 import uuid
+from collections import Counter
 from collections.abc import Collection
 from typing import Any
 
@@ -119,7 +120,7 @@ def validate_new_label(labels: Collection[dict[str, Any]], *, label_id: str, lab
 
 def create_auto_color(labels: Collection[dict[str, Any]]) -> dict[str, int]:
     """
-    既存ラベルと重複しにくい色を決定的に生成する。
+    AUTO_COLOR_PALETTE の中から使用回数が最も少ない色を返す。
 
     Args:
         labels: 既存ラベル一覧
@@ -127,20 +128,18 @@ def create_auto_color(labels: Collection[dict[str, Any]]) -> dict[str, int]:
     Returns:
         Annofab API向けのRGB辞書
     """
-    existing_colors = {(label["color"]["red"], label["color"]["green"], label["color"]["blue"]) for label in labels if isinstance(label.get("color"), dict)}
+    color_counts: Counter[tuple[int, int, int]] = Counter()
+    for label in labels:
+        color = label.get("color")
+        if not isinstance(color, dict):
+            continue
 
-    for red, green, blue in AUTO_COLOR_PALETTE:
-        if (red, green, blue) not in existing_colors:
-            return {"red": red, "green": green, "blue": blue}
+        color_tuple = (color["red"], color["green"], color["blue"])
+        if color_tuple in AUTO_COLOR_PALETTE:
+            color_counts[color_tuple] += 1
 
-    start_index = len(existing_colors)
-    for offset in range(1, 4097):
-        n = start_index + offset
-        candidate = ((53 * n) % 256, (97 * n) % 256, (193 * n) % 256)
-        if candidate not in existing_colors:
-            return {"red": candidate[0], "green": candidate[1], "blue": candidate[2]}
-
-    raise RuntimeError("自動生成する色を決定できませんでした。")
+    red, green, blue = min(AUTO_COLOR_PALETTE, key=lambda color: color_counts[color])
+    return {"red": red, "green": green, "blue": blue}
 
 
 def create_new_label(
