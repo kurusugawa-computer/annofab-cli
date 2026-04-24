@@ -102,7 +102,8 @@ def read_choices_json(target: str) -> list[ChoiceAttributeInput]:
         選択肢入力の一覧
 
     Raises:
-        ValueError: JSON構造が不正な場合
+        TypeError: JSON全体が配列でない、または配列要素がオブジェクトでない場合
+        ValueError: 各選択肢オブジェクトの必須項目が不足している場合
     """
     raw_data = get_json_from_args(target)
     if not isinstance(raw_data, list):
@@ -116,30 +117,6 @@ def read_choices_json(target: str) -> list[ChoiceAttributeInput]:
     return result
 
 
-def parse_bool_from_csv(value: str, *, row_number: int) -> bool:
-    """
-    CSVの ``is_default`` 列をbool値に変換する。
-
-    Args:
-        value: CSVセルの文字列
-        row_number: エラーメッセージ用のCSV行番号
-
-    Returns:
-        変換後のbool値
-
-    Raises:
-        ValueError: ``true`` / ``false`` / 空文字 以外が指定された場合
-    """
-    normalized = value.strip().lower()
-    if normalized == "":
-        return False
-    if normalized == "true":
-        return True
-    if normalized == "false":
-        return False
-    raise ValueError(f"{row_number}行目の `is_default` には true または false を指定してください。")
-
-
 def read_choices_csv(csv_path: Path) -> list[ChoiceAttributeInput]:
     """
     ``--choices_csv`` で指定されたCSVから選択肢一覧を読み込む。
@@ -151,7 +128,7 @@ def read_choices_csv(csv_path: Path) -> list[ChoiceAttributeInput]:
         選択肢入力の一覧
 
     Raises:
-        ValueError: CSV読み込みや必須列検証に失敗した場合
+        ValueError: CSV読み込みに失敗した場合、または必須列が不足している場合
     """
     try:
         df = pandas.read_csv(
@@ -357,6 +334,9 @@ def create_attribute(
 
     Returns:
         Annofab API向けの属性オブジェクト
+
+    Raises:
+        ValueError: 選択肢入力の整合性が不正な場合
     """
     choices, default_choice_id = build_choices(choice_inputs)
     return {
