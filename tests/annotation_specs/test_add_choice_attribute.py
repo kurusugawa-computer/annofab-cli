@@ -166,7 +166,7 @@ class TestReadChoicesCsv:
 class TestAddChoiceAttributeMain:
     def test_add_choice_attribute(self, annotation_specs: dict) -> None:
         service = DummyService(annotation_specs)
-        main = AddChoiceAttributeMain(service, project_id="prj1", all_yes=True)
+        main = AddChoiceAttributeMain(service, project_id="prj1", all_yes=True)  # type: ignore
 
         result = main.add_choice_attribute(
             attribute_type="choice",
@@ -197,7 +197,7 @@ class TestAddChoiceAttributeMain:
 
     def test_add_choice_attribute__default_empty(self, annotation_specs: dict) -> None:
         service = DummyService(annotation_specs)
-        main = AddChoiceAttributeMain(service, project_id="prj1", all_yes=True)
+        main = AddChoiceAttributeMain(service, project_id="prj1", all_yes=True)  # type: ignore
 
         main.add_choice_attribute(
             attribute_type="select",
@@ -217,7 +217,7 @@ class TestAddChoiceAttributeMain:
 
     def test_add_choice_attribute__attribute_id_is_uuidv4_when_not_specified(self, annotation_specs: dict) -> None:
         service = DummyService(annotation_specs)
-        main = AddChoiceAttributeMain(service, project_id="prj1", all_yes=True)
+        main = AddChoiceAttributeMain(service, project_id="prj1", all_yes=True)  # type: ignore
 
         main.add_choice_attribute(
             attribute_type="select",
@@ -236,7 +236,7 @@ class TestAddChoiceAttributeMain:
 
     def test_add_choice_attribute__duplicated_attribute_id(self, annotation_specs: dict) -> None:
         service = DummyService(annotation_specs)
-        main = AddChoiceAttributeMain(service, project_id="prj1", all_yes=True)
+        main = AddChoiceAttributeMain(service, project_id="prj1", all_yes=True)  # type: ignore
 
         with pytest.raises(ValueError):
             main.add_choice_attribute(
@@ -251,7 +251,7 @@ class TestAddChoiceAttributeMain:
 
     def test_add_choice_attribute__duplicated_attribute_name(self, annotation_specs: dict) -> None:
         service = DummyService(annotation_specs)
-        main = AddChoiceAttributeMain(service, project_id="prj1", all_yes=True)
+        main = AddChoiceAttributeMain(service, project_id="prj1", all_yes=True)  # type: ignore
 
         with pytest.raises(ValueError):
             main.add_choice_attribute(
@@ -270,7 +270,7 @@ class TestAddChoiceAttributeMain:
         duplicated_label["label_id"] = "duplicated-id"
         duplicated_specs["labels"].append(duplicated_label)
         service = DummyService(duplicated_specs)
-        main = AddChoiceAttributeMain(service, project_id="prj1", all_yes=True)
+        main = AddChoiceAttributeMain(service, project_id="prj1", all_yes=True)  # type: ignore
 
         with pytest.raises(ValueError):
             main.add_choice_attribute(
@@ -285,7 +285,7 @@ class TestAddChoiceAttributeMain:
 
     def test_add_choice_attribute__label_not_found(self, annotation_specs: dict) -> None:
         service = DummyService(annotation_specs)
-        main = AddChoiceAttributeMain(service, project_id="prj1", all_yes=True)
+        main = AddChoiceAttributeMain(service, project_id="prj1", all_yes=True)  # type: ignore
 
         with pytest.raises(ValueError):
             main.add_choice_attribute(

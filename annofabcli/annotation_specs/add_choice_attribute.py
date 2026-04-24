@@ -263,6 +263,112 @@ def create_comment_from_attribute(attribute_name_en: str, label_names: Sequence[
     return f"以下の選択肢系属性を追加しました。\n属性名(英語): {attribute_name_en}\n対象ラベル: {labels_text}"
 
 
+def get_target_labels(
+    labels: Sequence[dict[str, Any]],
+    *,
+    label_ids: Sequence[str],
+    label_name_ens: Sequence[str],
+) -> list[dict[str, Any]]:
+    """
+    CLI引数で指定されたラベルID・ラベル名から追加対象ラベル一覧を取得する。
+
+    Args:
+        labels: アノテーション仕様に含まれるラベル一覧
+        label_ids: 指定されたラベルID一覧
+        label_name_ens: 指定されたラベル英語名一覧
+
+    Returns:
+        重複を除いた追加対象ラベル一覧
+
+    Raises:
+        ValueError: ラベルが見つからない、またはラベル名が曖昧な場合
+    """
+    result = []
+    result_label_ids: set[str] = set()
+
+    dict_label = {label["label_id"]: label for label in labels}
+    for label_id in label_ids:
+        label = dict_label.get(label_id)
+        if label is None:
+            raise ValueError(f"ラベルID='{label_id}' のラベルは存在しません。")
+        if label_id not in result_label_ids:
+            result.append(label)
+            result_label_ids.add(label_id)
+
+    for label_name_en in label_name_ens:
+        matched_labels = [label for label in labels if AnnofabApiFacade.get_label_name_en(label) == label_name_en]
+        if len(matched_labels) == 0:
+            raise ValueError(f"ラベル名(英語)='{label_name_en}' のラベルは存在しません。")
+        if len(matched_labels) >= 2:
+            raise ValueError(f"ラベル名(英語)='{label_name_en}' のラベルが複数存在します。 `--label_id` を指定してください。")
+
+        label = matched_labels[0]
+        label_id = label["label_id"]
+        if label_id not in result_label_ids:
+            result.append(label)
+            result_label_ids.add(label_id)
+
+    if len(result) == 0:
+        raise ValueError("追加先のラベルを1件以上指定してください。")
+    return result
+
+
+def validate_new_attribute(
+    additionals: Sequence[dict[str, Any]],
+    *,
+    attribute_id: str,
+    attribute_name_en: str,
+) -> None:
+    """
+    追加予定の属性ID・属性英語名が既存属性と衝突しないか検証する。
+
+    Args:
+        additionals: 既存の属性一覧
+        attribute_id: 追加予定の属性ID
+        attribute_name_en: 追加予定の属性英語名
+
+    Raises:
+        ValueError: 既存属性と重複する場合
+    """
+    if any(additional["additional_data_definition_id"] == attribute_id for additional in additionals):
+        raise ValueError(f"属性ID='{attribute_id}' の属性は既に存在します。")
+
+    if any(AnnofabApiFacade.get_additional_data_definition_name_en(additional) == attribute_name_en for additional in additionals):
+        raise ValueError(f"属性名(英語)='{attribute_name_en}' の属性は既に存在します。")
+
+
+def create_attribute(
+    *,
+    attribute_type: str,
+    attribute_name_en: str,
+    attribute_name_ja: str | None,
+    attribute_id: str | None,
+    choice_inputs: Sequence[ChoiceAttributeInput],
+) -> dict[str, Any]:
+    """
+    選択肢系属性1件分のAnnofab API向けオブジェクトを生成する。
+
+    Args:
+        attribute_type: 属性型。 ``choice`` または ``select``
+        attribute_name_en: 属性英語名
+        attribute_name_ja: 属性日本語名
+        attribute_id: 属性ID。未指定ならUUIDv4を自動生成
+        choice_inputs: 選択肢入力一覧
+
+    Returns:
+        Annofab API向けの属性オブジェクト
+    """
+    choices, default_choice_id = build_choices(choice_inputs)
+    return {
+        "additional_data_definition_id": attribute_id if attribute_id is not None else str(uuid.uuid4()),
+        "name": create_name(attribute_name_en, attribute_name_ja),
+        # "keybind": [],
+        "type": attribute_type,
+        "default": default_choice_id,
+        "choices": choices,
+    }
+
+
 class AddChoiceAttributeMain(CommandLineWithConfirm):
     """
     選択肢系属性をアノテーション仕様へ追加する本体処理。
@@ -278,114 +384,6 @@ class AddChoiceAttributeMain(CommandLineWithConfirm):
         self.service = service
         self.project_id = project_id
         CommandLineWithConfirm.__init__(self, all_yes)
-
-    @staticmethod
-    def get_target_labels(
-        labels: Sequence[dict[str, Any]],
-        *,
-        label_ids: Sequence[str],
-        label_name_ens: Sequence[str],
-    ) -> list[dict[str, Any]]:
-        """
-        CLI引数で指定されたラベルID・ラベル名から追加対象ラベル一覧を取得する。
-
-        Args:
-            labels: アノテーション仕様に含まれるラベル一覧
-            label_ids: 指定されたラベルID一覧
-            label_name_ens: 指定されたラベル英語名一覧
-
-        Returns:
-            重複を除いた追加対象ラベル一覧
-
-        Raises:
-            ValueError: ラベルが見つからない、またはラベル名が曖昧な場合
-        """
-        result = []
-        result_label_ids: set[str] = set()
-
-        dict_label = {label["label_id"]: label for label in labels}
-        for label_id in label_ids:
-            label = dict_label.get(label_id)
-            if label is None:
-                raise ValueError(f"ラベルID='{label_id}' のラベルは存在しません。")
-            if label_id not in result_label_ids:
-                result.append(label)
-                result_label_ids.add(label_id)
-
-        for label_name_en in label_name_ens:
-            matched_labels = [label for label in labels if AnnofabApiFacade.get_label_name_en(label) == label_name_en]
-            if len(matched_labels) == 0:
-                raise ValueError(f"ラベル名(英語)='{label_name_en}' のラベルは存在しません。")
-            if len(matched_labels) >= 2:
-                raise ValueError(f"ラベル名(英語)='{label_name_en}' のラベルが複数存在します。 `--label_id` を指定してください。")
-
-            label = matched_labels[0]
-            label_id = label["label_id"]
-            if label_id not in result_label_ids:
-                result.append(label)
-                result_label_ids.add(label_id)
-
-        if len(result) == 0:
-            raise ValueError("追加先のラベルを1件以上指定してください。")
-        return result
-
-    @staticmethod
-    def validate_new_attribute(
-        additionals: Sequence[dict[str, Any]],
-        *,
-        attribute_id: str,
-        attribute_name_en: str,
-    ) -> None:
-        """
-        追加予定の属性ID・属性英語名が既存属性と衝突しないか検証する。
-
-        Args:
-            additionals: 既存の属性一覧
-            attribute_id: 追加予定の属性ID
-            attribute_name_en: 追加予定の属性英語名
-
-        Raises:
-            ValueError: 既存属性と重複する場合
-        """
-        if any(additional["additional_data_definition_id"] == attribute_id for additional in additionals):
-            raise ValueError(f"属性ID='{attribute_id}' の属性は既に存在します。")
-
-        if any(AnnofabApiFacade.get_additional_data_definition_name_en(additional) == attribute_name_en for additional in additionals):
-            raise ValueError(f"属性名(英語)='{attribute_name_en}' の属性は既に存在します。")
-
-    @staticmethod
-    def create_attribute(
-        *,
-        attribute_type: str,
-        attribute_name_en: str,
-        attribute_name_ja: str | None,
-        attribute_id: str | None,
-        choice_inputs: Sequence[ChoiceAttributeInput],
-    ) -> dict[str, Any]:
-        """
-        選択肢系属性1件分のAnnofab API向けオブジェクトを生成する。
-
-        Args:
-            attribute_type: 属性型。 ``choice`` または ``select``
-            attribute_name_en: 属性英語名
-            attribute_name_ja: 属性日本語名
-            attribute_id: 属性ID。未指定ならUUIDv4を自動生成
-            choice_inputs: 選択肢入力一覧
-
-        Returns:
-            Annofab API向けの属性オブジェクト
-        """
-        choices, default_choice_id = build_choices(choice_inputs)
-        return {
-            "additional_data_definition_id": attribute_id if attribute_id is not None else str(uuid.uuid4()),
-            "read_only": False,
-            "name": create_name(attribute_name_en, attribute_name_ja),
-            "keybind": [],
-            "type": attribute_type,
-            "default": default_choice_id,
-            "choices": choices,
-            "metadata": {},
-        }
 
     def add_choice_attribute(
         self,
@@ -420,8 +418,8 @@ class AddChoiceAttributeMain(CommandLineWithConfirm):
         """
         old_annotation_specs, _ = self.service.api.get_annotation_specs(self.project_id, query_params={"v": "3"})
         additionals = old_annotation_specs["additionals"]
-        target_labels = self.get_target_labels(old_annotation_specs["labels"], label_ids=label_ids, label_name_ens=label_name_ens)
-        new_attribute = self.create_attribute(
+        target_labels = get_target_labels(old_annotation_specs["labels"], label_ids=label_ids, label_name_ens=label_name_ens)
+        new_attribute = create_attribute(
             attribute_type=attribute_type,
             attribute_name_en=attribute_name_en,
             attribute_name_ja=attribute_name_ja,
@@ -429,7 +427,7 @@ class AddChoiceAttributeMain(CommandLineWithConfirm):
             choice_inputs=choice_inputs,
         )
 
-        self.validate_new_attribute(
+        validate_new_attribute(
             additionals,
             attribute_id=new_attribute["additional_data_definition_id"],
             attribute_name_en=attribute_name_en,
