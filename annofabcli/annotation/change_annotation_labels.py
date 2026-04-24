@@ -97,7 +97,7 @@ class ChangeAnnotationLabelsMain(CommandLineWithConfirm):
                     "updated_datetime": annotation["updated_datetime"],
                     "annotation_id": detail["annotation_id"],
                     "label_id": dest_label_id,
-                    "additional_data_list": [],
+                    "additional_data_list": annotation["additional_data_list"],
                 },
                 "_type": "PutV2",
             }
@@ -187,7 +187,7 @@ class ChangeAnnotationLabelsMain(CommandLineWithConfirm):
             return task_id_list
 
         task_list = self.service.wrapper.get_all_tasks(self.project_id)
-        if len(task_list) == 10000:
+        if len(task_list) == 10_000:
             logger.warning("タスク一覧は10,000件で打ち切られている可能性があります。")
         return [e["task_id"] for e in task_list]
 
