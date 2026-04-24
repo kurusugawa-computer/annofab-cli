@@ -60,7 +60,7 @@ def get_label_id_from_name_or_id(annotation_specs: dict[str, Any], *, label_name
     return tmp[0]["label_id"]
 
 
-class ChangeAnnotationLabelsMain(CommandLineWithConfirm):
+class ChangeAnnotationLabelMain(CommandLineWithConfirm):
     def __init__(
         self,
         service: annofabapi.Resource,
@@ -77,7 +77,7 @@ class ChangeAnnotationLabelsMain(CommandLineWithConfirm):
         self.include_complete_task = include_complete_task
         self.dump_annotation_obj = DumpAnnotationMain(service, project_id)
 
-    def change_annotation_labels(self, annotation_list: list[dict[str, Any]], dest_label_id: str) -> None:
+    def change_annotation_label(self, annotation_list: list[dict[str, Any]], dest_label_id: str) -> None:
         """アノテーションのラベルを変更する。
 
         ラベル変更後のラベルに紐づかない属性が残らないように、属性は空で更新する。
@@ -112,7 +112,7 @@ class ChangeAnnotationLabelsMain(CommandLineWithConfirm):
         annotation_list = self.service.wrapper.get_all_annotation_list(self.project_id, query_params={"query": dict_query})
         return annotation_list
 
-    def change_labels_for_task(
+    def change_label_for_task(
         self,
         task_id: str,
         annotation_query: AnnotationQueryForAPI,
@@ -156,11 +156,11 @@ class ChangeAnnotationLabelsMain(CommandLineWithConfirm):
         if backup_dir is not None:
             self.dump_annotation_obj.dump_annotation_for_task(task_id, output_dir=backup_dir)
 
-        self.change_annotation_labels(target_annotation_list, dest_label_id)
+        self.change_annotation_label(target_annotation_list, dest_label_id)
         logger.info(f"{logger_prefix}task_id='{task_id}': {len(target_annotation_list)} 個のアノテーションのラベルを変更しました。")
         return True, len(target_annotation_list)
 
-    def change_labels_for_task_wrapper(
+    def change_label_for_task_wrapper(
         self,
         tpl: tuple[int, str],
         annotation_query: AnnotationQueryForAPI,
@@ -170,7 +170,7 @@ class ChangeAnnotationLabelsMain(CommandLineWithConfirm):
     ) -> tuple[bool, int]:
         task_index, task_id = tpl
         try:
-            return self.change_labels_for_task(
+            return self.change_label_for_task(
                 task_id,
                 annotation_query=annotation_query,
                 dest_label_id=dest_label_id,
@@ -191,7 +191,7 @@ class ChangeAnnotationLabelsMain(CommandLineWithConfirm):
             logger.warning("タスク一覧は10,000件で打ち切られている可能性があります。")
         return [e["task_id"] for e in task_list]
 
-    def change_annotation_labels_for_task_list(
+    def change_annotation_label_for_task_list(
         self,
         task_id_list: list[str] | None,
         annotation_query: AnnotationQueryForAPI,
@@ -212,7 +212,7 @@ class ChangeAnnotationLabelsMain(CommandLineWithConfirm):
         changed_annotation_count = 0
         if parallelism is not None:
             func = functools.partial(
-                self.change_labels_for_task_wrapper,
+                self.change_label_for_task_wrapper,
                 annotation_query=annotation_query,
                 dest_label_id=dest_label_id,
                 backup_dir=backup_dir,
@@ -225,7 +225,7 @@ class ChangeAnnotationLabelsMain(CommandLineWithConfirm):
         else:
             for task_index, task_id in enumerate(actual_task_id_list):
                 try:
-                    result, sub_changed_annotation_count = self.change_labels_for_task(
+                    result, sub_changed_annotation_count = self.change_label_for_task(
                         task_id,
                         annotation_query=annotation_query,
                         dest_label_id=dest_label_id,
@@ -242,10 +242,10 @@ class ChangeAnnotationLabelsMain(CommandLineWithConfirm):
         logger.info(f"{success_count} / {len(actual_task_id_list)} 件のタスクに対して {changed_annotation_count} 件のアノテーションラベルを変更しました。")
 
 
-class ChangeLabelsOfAnnotation(CommandLine):
+class ChangeLabelOfAnnotation(CommandLine):
     """アノテーションラベルを変更"""
 
-    COMMON_MESSAGE = "annofabcli annotation change_labels: error:"
+    COMMON_MESSAGE = "annofabcli annotation change_label: error:"
 
     def validate(self, args: argparse.Namespace) -> bool:
         if args.parallelism is not None and not args.yes:
@@ -308,8 +308,8 @@ class ChangeLabelsOfAnnotation(CommandLine):
                 )
                 sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
-        main_obj = ChangeAnnotationLabelsMain(self.service, project_id=project_id, include_complete_task=args.include_complete_task, all_yes=args.yes)
-        main_obj.change_annotation_labels_for_task_list(
+        main_obj = ChangeAnnotationLabelMain(self.service, project_id=project_id, include_complete_task=args.include_complete_task, all_yes=args.yes)
+        main_obj.change_annotation_label_for_task_list(
             task_id_list,
             annotation_query=annotation_query,
             dest_label_id=dest_label_id,
@@ -321,7 +321,7 @@ class ChangeLabelsOfAnnotation(CommandLine):
 def main(args: argparse.Namespace) -> None:
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
-    ChangeLabelsOfAnnotation(service, facade, args).main()
+    ChangeLabelOfAnnotation(service, facade, args).main()
 
 
 def parse_args(parser: argparse.ArgumentParser) -> None:
@@ -374,7 +374,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
 
 
 def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
-    subcommand_name = "change_labels"
+    subcommand_name = "change_label"
     subcommand_help = "アノテーションのラベルを変更します。"
     description = (
         "アノテーションのラベルを一括で変更します。"

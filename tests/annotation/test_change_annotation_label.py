@@ -5,8 +5,8 @@ import copy
 
 import pytest
 
-from annofabcli.annotation import change_annotation_labels
-from annofabcli.annotation.change_annotation_labels import ChangeAnnotationLabelsMain, get_label_id_from_name_or_id
+from annofabcli.annotation import change_annotation_label
+from annofabcli.annotation.change_annotation_label import ChangeAnnotationLabelMain, get_label_id_from_name_or_id
 
 ANNOTATION_SPECS = {
     "labels": [
@@ -31,7 +31,7 @@ ANNOTATION_SPECS = {
 def create_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers(dest="subcommand_name", required=True)
-    change_annotation_labels.add_parser(subparsers)
+    change_annotation_label.add_parser(subparsers)
     return parser
 
 
@@ -62,7 +62,7 @@ class TestParseArgs:
         parser = create_parser()
         args = parser.parse_args(
             [
-                "change_labels",
+                "change_label",
                 "--project_id",
                 "prj1",
                 "--annotation_query",
@@ -81,7 +81,7 @@ class TestParseArgs:
         parser = create_parser()
         args = parser.parse_args(
             [
-                "change_labels",
+                "change_label",
                 "--project_id",
                 "prj1",
                 "--task_id",
@@ -102,7 +102,7 @@ class TestParseArgs:
         with pytest.raises(SystemExit):
             parser.parse_args(
                 [
-                    "change_labels",
+                    "change_label",
                     "--project_id",
                     "prj1",
                     "--annotation_query",
@@ -115,7 +115,7 @@ class TestParseArgs:
         with pytest.raises(SystemExit):
             parser.parse_args(
                 [
-                    "change_labels",
+                    "change_label",
                     "--project_id",
                     "prj1",
                     "--annotation_query",
@@ -149,10 +149,10 @@ class TestGetLabelIdFromNameOrId:
             get_label_id_from_name_or_id(annotation_specs, label_name="car")
 
 
-class TestChangeAnnotationLabelsMain:
-    def test_change_annotation_labels(self) -> None:
+class TestChangeAnnotationLabelMain:
+    def test_change_annotation_label(self) -> None:
         service = DummyService()
-        main = ChangeAnnotationLabelsMain(service, project_id="prj1", include_complete_task=False, all_yes=True)  # type: ignore[arg-type]
+        main = ChangeAnnotationLabelMain(service, project_id="prj1", include_complete_task=False, all_yes=True)  # type: ignore[arg-type]
 
         annotation_list = [
             {
@@ -160,13 +160,14 @@ class TestChangeAnnotationLabelsMain:
                 "task_id": "task1",
                 "input_data_id": "input1",
                 "updated_datetime": "2026-04-24T00:00:00+09:00",
+                "additional_data_list": [],
                 "detail": {
                     "annotation_id": "anno1",
                     "label_id": "label_car",
                 },
             }
         ]
-        main.change_annotation_labels(annotation_list, "label_bus")
+        main.change_annotation_label(annotation_list, "label_bus")
 
         assert service.api.request_body == [
             {
@@ -185,7 +186,7 @@ class TestChangeAnnotationLabelsMain:
 
     def test_get_target_task_id_list__when_task_id_is_none(self) -> None:
         service = DummyService()
-        main = ChangeAnnotationLabelsMain(service, project_id="prj1", include_complete_task=False, all_yes=True)  # type: ignore[arg-type]
+        main = ChangeAnnotationLabelMain(service, project_id="prj1", include_complete_task=False, all_yes=True)  # type: ignore[arg-type]
 
         actual = main.get_target_task_id_list(None)
         assert actual == ["task1", "task2"]
