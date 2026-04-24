@@ -131,6 +131,7 @@ def create_new_label(
         "label_name": create_name(label_name_en, label_name_ja),
         "annotation_type": annotation_type,
         "color": color,
+        "keybind": [],
     }
 
 
