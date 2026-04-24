@@ -14,8 +14,8 @@ from annofabapi.models import DefaultAnnotationType
 from annofabapi.plugin import ThreeDimensionAnnotationType
 
 import annofabcli.common.cli
-from annofabcli.annotation_specs.add_choice_attribute import create_name, get_label_name_en
 from annofabcli.annotation_specs.color import RgbColor, hex_to_rgb
+from annofabcli.annotation_specs.utils import create_name, get_label_name_en
 from annofabcli.common.cli import ArgumentParser, CommandLine, CommandLineWithConfirm, build_annofabapi_resource_and_login
 from annofabcli.common.facade import AnnofabApiFacade
 
