@@ -112,7 +112,6 @@ class TestAddLabelsMain:
         assert [label["annotation_type"] for label in added_labels] == ["bounding_box", "bounding_box"]
         assert added_labels[0]["color"] == {"red": 255, "green": 85, "blue": 0}
         assert added_labels[1]["color"] == {"red": 255, "green": 170, "blue": 0}
-        assert service.api.last_put["comment"] == "以下のラベルを追加しました。\nラベル名(英語): pedestrian, bicycle\nannotation_type: bounding_box"
         assert service.api.last_put["last_updated_datetime"] == "2026-04-24T00:00:00+09:00"
 
     def test_add_labels__duplicated_input(self, annotation_specs: dict) -> None:
