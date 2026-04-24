@@ -12,7 +12,7 @@ from typing import Any
 
 import annofabapi
 import pandas
-from annofabapi.util.annotation_specs import AnnotationSpecsAccessor
+from annofabapi.util.annotation_specs import AnnotationSpecsAccessor, get_english_message
 
 import annofabcli.common.cli
 from annofabcli.common.cli import (
@@ -27,6 +27,32 @@ from annofabcli.common.facade import AnnofabApiFacade
 from annofabcli.common.utils import duplicated_set
 
 logger = logging.getLogger(__name__)
+
+
+def get_label_name_en(label: dict[str, Any]) -> str:
+    """
+    ラベル情報から英語名を取得する。
+
+    Args:
+        label: ラベル情報
+
+    Returns:
+        ラベルの英語名
+    """
+    return get_english_message(label["label_name"])
+
+
+def get_attribute_name_en(attribute: dict[str, Any]) -> str:
+    """
+    属性情報から英語名を取得する。
+
+    Args:
+        attribute: 属性情報
+
+    Returns:
+        属性の英語名
+    """
+    return get_english_message(attribute["name"])
 
 
 @dataclass
@@ -306,9 +332,7 @@ def validate_new_attribute(
     if any(additional["additional_data_definition_id"] == attribute_id for additional in additionals):
         raise ValueError(f"属性ID='{attribute_id}' の属性は既に存在します。")
 
-    duplicated_name_attribute_ids = [
-        additional["additional_data_definition_id"] for additional in additionals if AnnofabApiFacade.get_additional_data_definition_name_en(additional) == attribute_name_en
-    ]
+    duplicated_name_attribute_ids = [additional["additional_data_definition_id"] for additional in additionals if get_attribute_name_en(additional) == attribute_name_en]
     if duplicated_name_attribute_ids:
         duplicated_text = ", ".join(duplicated_name_attribute_ids)
         logger.warning(f"属性名(英語)='{attribute_name_en}' の属性は既に存在しますが、処理を継続します。既存の属性ID: {duplicated_text}")
@@ -415,7 +439,7 @@ class AddChoiceAttributeMain(CommandLineWithConfirm):
             attribute_name_en=attribute_name_en,
         )
 
-        label_names = [AnnofabApiFacade.get_label_name_en(label) for label in target_labels]
+        label_names = [get_label_name_en(label) for label in target_labels]
         confirm_message = f"属性名(英語)='{attribute_name_en}', 属性種類='{attribute_type}', 選択肢数={len(new_attribute['choices'])}, 対象ラベル={label_names} を追加します。よろしいですか？"
         if duplicated_name_attribute_ids:
             duplicated_text = ", ".join(duplicated_name_attribute_ids)
