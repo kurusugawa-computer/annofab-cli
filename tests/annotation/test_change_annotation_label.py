@@ -6,7 +6,7 @@ import copy
 import pytest
 
 from annofabcli.annotation import change_annotation_label
-from annofabcli.annotation.change_annotation_label import ChangeAnnotationLabelMain, get_label_id_from_name_or_id
+from annofabcli.annotation.change_annotation_label import ChangeAnnotationLabelMain, get_label_id_from_name_or_id, is_allowed_label_change
 
 ANNOTATION_SPECS = {
     "labels": [
@@ -16,6 +16,8 @@ ANNOTATION_SPECS = {
                 "messages": [{"lang": "ja-JP", "message": "自動車"}, {"lang": "en-US", "message": "car"}],
                 "default_lang": "ja-JP",
             },
+            "annotation_type": "polygon",
+            "additional_data_definitions": ["attr_common", "attr_src_only"],
         },
         {
             "label_id": "label_bus",
@@ -23,8 +25,42 @@ ANNOTATION_SPECS = {
                 "messages": [{"lang": "ja-JP", "message": "バス"}, {"lang": "en-US", "message": "bus"}],
                 "default_lang": "ja-JP",
             },
+            "annotation_type": "polygon",
+            "additional_data_definitions": ["attr_common", "attr_dest_only"],
         },
-    ]
+        {
+            "label_id": "label_road",
+            "label_name": {
+                "messages": [{"lang": "ja-JP", "message": "道路"}, {"lang": "en-US", "message": "road"}],
+                "default_lang": "ja-JP",
+            },
+            "annotation_type": "polyline",
+            "additional_data_definitions": ["attr_common"],
+        },
+        {
+            "label_id": "label_box",
+            "label_name": {
+                "messages": [{"lang": "ja-JP", "message": "矩形"}, {"lang": "en-US", "message": "box"}],
+                "default_lang": "ja-JP",
+            },
+            "annotation_type": "bounding_box",
+            "additional_data_definitions": ["attr_common"],
+        },
+    ],
+    "additionals": [
+        {
+            "additional_data_definition_id": "attr_common",
+            "name": {"messages": [{"lang": "en-US", "message": "common"}], "default_lang": "en-US"},
+        },
+        {
+            "additional_data_definition_id": "attr_src_only",
+            "name": {"messages": [{"lang": "en-US", "message": "src_only"}], "default_lang": "en-US"},
+        },
+        {
+            "additional_data_definition_id": "attr_dest_only",
+            "name": {"messages": [{"lang": "en-US", "message": "dest_only"}], "default_lang": "en-US"},
+        },
+    ],
 }
 
 
@@ -152,7 +188,7 @@ class TestGetLabelIdFromNameOrId:
 class TestChangeAnnotationLabelMain:
     def test_change_annotation_label(self) -> None:
         service = DummyService()
-        main = ChangeAnnotationLabelMain(service, project_id="prj1", include_complete_task=False, all_yes=True)  # type: ignore[arg-type]
+        main = ChangeAnnotationLabelMain(service, project_id="prj1", include_complete_task=False, all_yes=True, annotation_specs=ANNOTATION_SPECS)  # type: ignore[arg-type]
 
         annotation_list = [
             {
@@ -160,10 +196,13 @@ class TestChangeAnnotationLabelMain:
                 "task_id": "task1",
                 "input_data_id": "input1",
                 "updated_datetime": "2026-04-24T00:00:00+09:00",
-                "additional_data_list": [],
                 "detail": {
                     "annotation_id": "anno1",
                     "label_id": "label_car",
+                    "additional_data_list": [
+                        {"additional_data_definition_id": "attr_common", "value": "keep"},
+                        {"additional_data_definition_id": "attr_src_only", "value": "remove"},
+                    ],
                 },
             }
         ]
@@ -178,7 +217,7 @@ class TestChangeAnnotationLabelMain:
                     "updated_datetime": "2026-04-24T00:00:00+09:00",
                     "annotation_id": "anno1",
                     "label_id": "label_bus",
-                    "additional_data_list": [],
+                    "additional_data_list": [{"additional_data_definition_id": "attr_common", "value": "keep"}],
                 },
                 "_type": "PutV2",
             }
@@ -186,7 +225,79 @@ class TestChangeAnnotationLabelMain:
 
     def test_get_target_task_id_list__when_task_id_is_none(self) -> None:
         service = DummyService()
-        main = ChangeAnnotationLabelMain(service, project_id="prj1", include_complete_task=False, all_yes=True)  # type: ignore[arg-type]
+        main = ChangeAnnotationLabelMain(service, project_id="prj1", include_complete_task=False, all_yes=True, annotation_specs=ANNOTATION_SPECS)  # type: ignore[arg-type]
 
         actual = main.get_target_task_id_list(None)
         assert actual == ["task1", "task2"]
+
+    def test_change_annotation_label__allows_polygon_to_polyline(self) -> None:
+        service = DummyService()
+        main = ChangeAnnotationLabelMain(service, project_id="prj1", include_complete_task=False, all_yes=True, annotation_specs=ANNOTATION_SPECS)  # type: ignore[arg-type]
+
+        annotation_list = [
+            {
+                "project_id": "prj1",
+                "task_id": "task1",
+                "input_data_id": "input1",
+                "updated_datetime": "2026-04-24T00:00:00+09:00",
+                "detail": {
+                    "annotation_id": "anno1",
+                    "label_id": "label_car",
+                    "additional_data_list": [{"additional_data_definition_id": "attr_common", "value": "keep"}],
+                },
+            }
+        ]
+
+        main.change_annotation_label(annotation_list, "label_road")
+
+        assert service.api.request_body is not None
+        assert service.api.request_body[0]["data"]["label_id"] == "label_road"
+
+    def test_change_annotation_label__raises_when_annotation_type_is_not_compatible(self) -> None:
+        service = DummyService()
+        main = ChangeAnnotationLabelMain(service, project_id="prj1", include_complete_task=False, all_yes=True, annotation_specs=ANNOTATION_SPECS)  # type: ignore[arg-type]
+
+        annotation_list = [
+            {
+                "project_id": "prj1",
+                "task_id": "task1",
+                "input_data_id": "input1",
+                "updated_datetime": "2026-04-24T00:00:00+09:00",
+                "detail": {
+                    "annotation_id": "anno1",
+                    "label_id": "label_car",
+                    "additional_data_list": [],
+                },
+            }
+        ]
+
+        with pytest.raises(ValueError):
+            main.change_annotation_label(annotation_list, "label_box")
+
+
+class TestIsAllowedLabelChange:
+    @pytest.mark.parametrize(
+        ("src_annotation_type", "dest_annotation_type"),
+        [
+            ("polygon", "polygon"),
+            ("polygon", "polyline"),
+            ("polyline", "polygon"),
+            ("segmentation", "segmentation_v2"),
+            ("segmentation_v2", "segmentation"),
+            ("user_instance_segment", "user_semantic_segment"),
+            ("user_semantic_segment", "user_instance_segment"),
+        ],
+    )
+    def test_true(self, src_annotation_type: str, dest_annotation_type: str) -> None:
+        assert is_allowed_label_change(src_annotation_type, dest_annotation_type)
+
+    @pytest.mark.parametrize(
+        ("src_annotation_type", "dest_annotation_type"),
+        [
+            ("polygon", "bounding_box"),
+            ("segmentation", "polygon"),
+            ("user_instance_segment", "segmentation"),
+        ],
+    )
+    def test_false(self, src_annotation_type: str, dest_annotation_type: str) -> None:
+        assert not is_allowed_label_change(src_annotation_type, dest_annotation_type)

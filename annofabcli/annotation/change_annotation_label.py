@@ -11,8 +11,8 @@ from typing import Any
 
 import annofabapi
 from annofabapi.dataclass.task import Task
-from annofabapi.models import ProjectMemberRole, TaskStatus
-from annofabapi.util.annotation_specs import get_english_message
+from annofabapi.models import DefaultAnnotationType, ProjectMemberRole, TaskStatus
+from annofabapi.util.annotation_specs import AnnotationSpecsAccessor, get_english_message
 
 import annofabcli.common.cli
 from annofabcli.annotation.annotation_query import AnnotationQueryForAPI, AnnotationQueryForCLI
@@ -29,6 +29,14 @@ from annofabcli.common.cli import (
 from annofabcli.common.facade import AnnofabApiFacade
 
 logger = logging.getLogger(__name__)
+
+
+ALLOWED_ANNOTATION_TYPE_PAIRS = {
+    frozenset((DefaultAnnotationType.POLYGON.value, DefaultAnnotationType.POLYLINE.value)),
+    frozenset((DefaultAnnotationType.SEGMENTATION.value, DefaultAnnotationType.SEGMENTATION_V2.value)),
+    frozenset(("user_instance_segment", "user_semantic_segment")),
+}
+"""変更を許可するラベル種類の組み合わせ。"""
 
 
 def get_label_id_from_name_or_id(annotation_specs: dict[str, Any], *, label_name: str | None = None, label_id: str | None = None) -> str:
@@ -68,6 +76,7 @@ class ChangeAnnotationLabelMain(CommandLineWithConfirm):
         project_id: str,
         include_complete_task: bool,
         all_yes: bool,
+        annotation_specs: dict[str, Any],
     ) -> None:
         self.service = service
         self.facade = AnnofabApiFacade(service)
@@ -75,20 +84,33 @@ class ChangeAnnotationLabelMain(CommandLineWithConfirm):
 
         self.project_id = project_id
         self.include_complete_task = include_complete_task
+        self.annotation_specs_accessor = AnnotationSpecsAccessor(annotation_specs)
         self.dump_annotation_obj = DumpAnnotationMain(service, project_id)
 
     def change_annotation_label(self, annotation_list: list[dict[str, Any]], dest_label_id: str) -> None:
         """アノテーションのラベルを変更する。
 
-        ラベル変更後のラベルに紐づかない属性が残らないように、属性は空で更新する。
+        ラベル変更後のラベルに紐づかない属性は除去して更新する。
 
         Args:
             annotation_list: 変更対象のアノテーション一覧
             dest_label_id: 変更後ラベルのlabel_id
         """
 
+        dest_label = self.annotation_specs_accessor.get_label(label_id=dest_label_id)
+        dest_annotation_type = dest_label["annotation_type"]
+        dest_additional_data_definition_ids = set(dest_label["additional_data_definitions"])
+
         def _to_request_body_elm(annotation: dict[str, Any]) -> dict[str, Any]:
             detail = annotation["detail"]
+            src_label = self.annotation_specs_accessor.get_label(label_id=detail["label_id"])
+            src_annotation_type = src_label["annotation_type"]
+            if not is_allowed_label_change(src_annotation_type, dest_annotation_type):
+                raise ValueError(f"変更前ラベルと変更後ラベルの種類が異なります。変更前='{src_annotation_type}', 変更後='{dest_annotation_type}', annotation_id='{detail['annotation_id']}'")
+
+            filtered_additional_data_list = [
+                additional_data for additional_data in detail["additional_data_list"] if additional_data["additional_data_definition_id"] in dest_additional_data_definition_ids
+            ]
             return {
                 "data": {
                     "project_id": annotation["project_id"],
@@ -97,7 +119,7 @@ class ChangeAnnotationLabelMain(CommandLineWithConfirm):
                     "updated_datetime": annotation["updated_datetime"],
                     "annotation_id": detail["annotation_id"],
                     "label_id": dest_label_id,
-                    "additional_data_list": detail["additional_data_list"],
+                    "additional_data_list": filtered_additional_data_list,
                 },
                 "_type": "PutV2",
             }
@@ -109,7 +131,7 @@ class ChangeAnnotationLabelMain(CommandLineWithConfirm):
         """タスク内のアノテーション一覧を取得する。"""
         dict_query = annotation_query.to_dict()
         dict_query.update({"task_id": task_id, "exact_match_task_id": True})
-        annotation_list = self.service.wrapper.get_all_annotation_list(self.project_id, query_params={"query": dict_query, "v":"2"})
+        annotation_list = self.service.wrapper.get_all_annotation_list(self.project_id, query_params={"query": dict_query, "v": "2"})
         return annotation_list
 
     def change_label_for_task(
@@ -242,6 +264,14 @@ class ChangeAnnotationLabelMain(CommandLineWithConfirm):
         logger.info(f"{success_count} / {len(actual_task_id_list)} 件のタスクに対して {changed_annotation_count} 件のアノテーションラベルを変更しました。")
 
 
+def is_allowed_label_change(src_annotation_type: str, dest_annotation_type: str) -> bool:
+    """変更前後のラベル種類の組み合わせが許可されているかどうかを返す。"""
+    if src_annotation_type == dest_annotation_type:
+        return True
+
+    return frozenset((src_annotation_type, dest_annotation_type)) in ALLOWED_ANNOTATION_TYPE_PAIRS
+
+
 class ChangeLabelOfAnnotation(CommandLine):
     """アノテーションラベルを変更"""
 
@@ -308,7 +338,13 @@ class ChangeLabelOfAnnotation(CommandLine):
                 )
                 sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
-        main_obj = ChangeAnnotationLabelMain(self.service, project_id=project_id, include_complete_task=args.include_complete_task, all_yes=args.yes)
+        main_obj = ChangeAnnotationLabelMain(
+            self.service,
+            project_id=project_id,
+            include_complete_task=args.include_complete_task,
+            all_yes=args.yes,
+            annotation_specs=annotation_specs,
+        )
         main_obj.change_annotation_label_for_task_list(
             task_id_list,
             annotation_query=annotation_query,

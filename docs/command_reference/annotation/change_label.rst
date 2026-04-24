@@ -7,6 +7,8 @@ Description
 
 アノテーションのラベルを一括で変更します。
 ただし、作業中状態のタスクに含まれるアノテーションは変更できません。
+変更後ラベルに存在しない属性は削除されます。
+また、変更前後のラベル種類が異なる場合はエラーになります。ただし、 ``polygon`` と ``polyline`` 、 ``segmentation`` と ``segmentation_v2`` 、 ``user_instance_segment`` と ``user_semantic_segment`` の相互変更だけは許可されます。
 
 
 Examples
