@@ -145,7 +145,7 @@ class ChangeAnnotationLabelMain(CommandLineWithConfirm):
                 raise ValueError(f"変更前ラベルと変更後ラベルの種類が異なります。変更前='{src_annotation_type}', 変更後='{dest_label_info.annotation_type}', annotation_id='{detail['annotation_id']}'")
 
             filtered_additional_data_list = [
-                additional_data for additional_data in detail["additional_data_list"] if additional_data["additional_data_definition_id"] in dest_label_info.additional_data_definition_ids
+                additional_data for additional_data in detail["additional_data_list"] if additional_data["definition_id"] in dest_label_info.additional_data_definition_ids
             ]
             return {
                 "data": {
