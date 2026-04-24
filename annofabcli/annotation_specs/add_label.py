@@ -177,10 +177,8 @@ def collect_label_colors(labels: Collection[dict[str, Any]]) -> list[RgbColor]:
     """
     colors: list[RgbColor] = []
     for label in labels:
-        color = label.get("color")
-        if not isinstance(color, dict):
-            continue
-        colors.append({"red": color["red"], "green": color["green"], "blue": color["blue"]})
+        color = label["color"]
+        colors.append(color)
     return colors
 
 
