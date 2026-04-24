@@ -97,7 +97,7 @@ class ChangeAnnotationLabelMain(CommandLineWithConfirm):
                     "updated_datetime": annotation["updated_datetime"],
                     "annotation_id": detail["annotation_id"],
                     "label_id": dest_label_id,
-                    "additional_data_list": annotation["additional_data_list"],
+                    "additional_data_list": detail["additional_data_list"],
                 },
                 "_type": "PutV2",
             }
@@ -109,7 +109,7 @@ class ChangeAnnotationLabelMain(CommandLineWithConfirm):
         """タスク内のアノテーション一覧を取得する。"""
         dict_query = annotation_query.to_dict()
         dict_query.update({"task_id": task_id, "exact_match_task_id": True})
-        annotation_list = self.service.wrapper.get_all_annotation_list(self.project_id, query_params={"query": dict_query})
+        annotation_list = self.service.wrapper.get_all_annotation_list(self.project_id, query_params={"query": dict_query, "v":"2"})
         return annotation_list
 
     def change_label_for_task(
