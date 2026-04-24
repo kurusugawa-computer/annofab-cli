@@ -103,16 +103,16 @@ def create_auto_color(labels: Collection[dict[str, Any]]) -> dict[str, int]:
         Annofab API向けのRGB辞書
     """
     color_palette: list[tuple[int, int, int]] = [
-        (255, 0, 0),
-        (0, 255, 0),
-        (0, 0, 255),
-        (255, 255, 0),
-        (255, 0, 255),
-        (0, 255, 255),
-        (255, 255, 255),
-        (255, 128, 0),
-        (128, 0, 255),
-        (0, 255, 128),
+        (255, 0, 0),  # 赤 (red)
+        (0, 255, 0),  # 緑 (green)
+        (0, 0, 255),  # 青 (blue)
+        (255, 255, 0),  # 黄 (yellow)
+        (255, 0, 255),  # マゼンタ (magenta)
+        (0, 255, 255),  # シアン (cyan)
+        (255, 255, 255),  # 白 (white)
+        (255, 128, 0),  # オレンジ (orange)
+        (128, 0, 255),  # 紫 (purple)
+        (0, 255, 128),  # ミントグリーン (mint green)
     ]
     existing_colors = {(label["color"]["red"], label["color"]["green"], label["color"]["blue"]) for label in labels if isinstance(label.get("color"), dict)}
 
