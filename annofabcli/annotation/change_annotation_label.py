@@ -6,6 +6,7 @@ import json
 import logging
 import multiprocessing
 import sys
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
@@ -37,6 +38,20 @@ ALLOWED_ANNOTATION_TYPE_PAIRS = {
     frozenset(("user_instance_segment", "user_semantic_segment")),
 }
 """変更を許可するラベル種類の組み合わせ。"""
+
+
+@dataclass(frozen=True)
+class DestLabelInfo:
+    """変更先ラベルに関する情報。"""
+
+    label_id: str
+    """変更後ラベルのlabel_id。"""
+
+    annotation_type: str
+    """変更後ラベルの種類。"""
+
+    additional_data_definition_ids: set[str]
+    """変更後ラベルで利用可能な属性ID一覧。"""
 
 
 def get_label_id_from_name_or_id(annotation_specs: dict[str, Any], *, label_name: str | None = None, label_id: str | None = None) -> str:
@@ -87,29 +102,34 @@ class ChangeAnnotationLabelMain(CommandLineWithConfirm):
         self.annotation_specs_accessor = AnnotationSpecsAccessor(annotation_specs)
         self.dump_annotation_obj = DumpAnnotationMain(service, project_id)
 
-    def change_annotation_label(self, annotation_list: list[dict[str, Any]], dest_label_id: str) -> None:
+    def get_dest_label_info(self, dest_label_id: str) -> DestLabelInfo:
+        """変更先ラベル情報を返す。"""
+        dest_label = self.annotation_specs_accessor.get_label(label_id=dest_label_id)
+        return DestLabelInfo(
+            label_id=dest_label_id,
+            annotation_type=dest_label["annotation_type"],
+            additional_data_definition_ids=set(dest_label["additional_data_definitions"]),
+        )
+
+    def change_annotation_label(self, annotation_list: list[dict[str, Any]], dest_label_info: DestLabelInfo) -> None:
         """アノテーションのラベルを変更する。
 
         ラベル変更後のラベルに紐づかない属性は除去して更新する。
 
         Args:
             annotation_list: 変更対象のアノテーション一覧
-            dest_label_id: 変更後ラベルのlabel_id
+            dest_label_info: 変更先ラベル情報
         """
-
-        dest_label = self.annotation_specs_accessor.get_label(label_id=dest_label_id)
-        dest_annotation_type = dest_label["annotation_type"]
-        dest_additional_data_definition_ids = set(dest_label["additional_data_definitions"])
 
         def _to_request_body_elm(annotation: dict[str, Any]) -> dict[str, Any]:
             detail = annotation["detail"]
             src_label = self.annotation_specs_accessor.get_label(label_id=detail["label_id"])
             src_annotation_type = src_label["annotation_type"]
-            if not is_allowed_label_change(src_annotation_type, dest_annotation_type):
-                raise ValueError(f"変更前ラベルと変更後ラベルの種類が異なります。変更前='{src_annotation_type}', 変更後='{dest_annotation_type}', annotation_id='{detail['annotation_id']}'")
+            if not is_allowed_label_change(src_annotation_type, dest_label_info.annotation_type):
+                raise ValueError(f"変更前ラベルと変更後ラベルの種類が異なります。変更前='{src_annotation_type}', 変更後='{dest_label_info.annotation_type}', annotation_id='{detail['annotation_id']}'")
 
             filtered_additional_data_list = [
-                additional_data for additional_data in detail["additional_data_list"] if additional_data["additional_data_definition_id"] in dest_additional_data_definition_ids
+                additional_data for additional_data in detail["additional_data_list"] if additional_data["additional_data_definition_id"] in dest_label_info.additional_data_definition_ids
             ]
             return {
                 "data": {
@@ -118,7 +138,7 @@ class ChangeAnnotationLabelMain(CommandLineWithConfirm):
                     "input_data_id": annotation["input_data_id"],
                     "updated_datetime": annotation["updated_datetime"],
                     "annotation_id": detail["annotation_id"],
-                    "label_id": dest_label_id,
+                    "label_id": dest_label_info.label_id,
                     "additional_data_list": filtered_additional_data_list,
                 },
                 "_type": "PutV2",
@@ -138,7 +158,7 @@ class ChangeAnnotationLabelMain(CommandLineWithConfirm):
         self,
         task_id: str,
         annotation_query: AnnotationQueryForAPI,
-        dest_label_id: str,
+        dest_label_info: DestLabelInfo,
         *,
         backup_dir: Path | None = None,
         task_index: int | None = None,
@@ -161,7 +181,7 @@ class ChangeAnnotationLabelMain(CommandLineWithConfirm):
                 return False, 0
 
         annotation_list = self.get_annotation_list_for_task(task_id, annotation_query)
-        target_annotation_list = [e for e in annotation_list if e["detail"]["label_id"] != dest_label_id]
+        target_annotation_list = [e for e in annotation_list if e["detail"]["label_id"] != dest_label_info.label_id]
 
         logger.info(
             f"{logger_prefix}task_id='{task_id}'の検索ヒット件数は{len(annotation_list)}個、"
@@ -178,7 +198,7 @@ class ChangeAnnotationLabelMain(CommandLineWithConfirm):
         if backup_dir is not None:
             self.dump_annotation_obj.dump_annotation_for_task(task_id, output_dir=backup_dir)
 
-        self.change_annotation_label(target_annotation_list, dest_label_id)
+        self.change_annotation_label(target_annotation_list, dest_label_info)
         logger.info(f"{logger_prefix}task_id='{task_id}': {len(target_annotation_list)} 個のアノテーションのラベルを変更しました。")
         return True, len(target_annotation_list)
 
@@ -186,7 +206,7 @@ class ChangeAnnotationLabelMain(CommandLineWithConfirm):
         self,
         tpl: tuple[int, str],
         annotation_query: AnnotationQueryForAPI,
-        dest_label_id: str,
+        dest_label_info: DestLabelInfo,
         *,
         backup_dir: Path | None = None,
     ) -> tuple[bool, int]:
@@ -195,7 +215,7 @@ class ChangeAnnotationLabelMain(CommandLineWithConfirm):
             return self.change_label_for_task(
                 task_id,
                 annotation_query=annotation_query,
-                dest_label_id=dest_label_id,
+                dest_label_info=dest_label_info,
                 backup_dir=backup_dir,
                 task_index=task_index,
             )
@@ -217,7 +237,7 @@ class ChangeAnnotationLabelMain(CommandLineWithConfirm):
         self,
         task_id_list: list[str] | None,
         annotation_query: AnnotationQueryForAPI,
-        dest_label_id: str,
+        dest_label_info: DestLabelInfo,
         *,
         backup_dir: Path | None = None,
         parallelism: int | None = None,
@@ -236,7 +256,7 @@ class ChangeAnnotationLabelMain(CommandLineWithConfirm):
             func = functools.partial(
                 self.change_label_for_task_wrapper,
                 annotation_query=annotation_query,
-                dest_label_id=dest_label_id,
+                dest_label_info=dest_label_info,
                 backup_dir=backup_dir,
             )
             with multiprocessing.Pool(parallelism) as pool:
@@ -250,7 +270,7 @@ class ChangeAnnotationLabelMain(CommandLineWithConfirm):
                     result, sub_changed_annotation_count = self.change_label_for_task(
                         task_id,
                         annotation_query=annotation_query,
-                        dest_label_id=dest_label_id,
+                        dest_label_info=dest_label_info,
                         backup_dir=backup_dir,
                         task_index=task_index,
                     )
@@ -345,10 +365,11 @@ class ChangeLabelOfAnnotation(CommandLine):
             all_yes=args.yes,
             annotation_specs=annotation_specs,
         )
+        dest_label_info = main_obj.get_dest_label_info(dest_label_id)
         main_obj.change_annotation_label_for_task_list(
             task_id_list,
             annotation_query=annotation_query,
-            dest_label_id=dest_label_id,
+            dest_label_info=dest_label_info,
             backup_dir=backup_dir,
             parallelism=args.parallelism,
         )

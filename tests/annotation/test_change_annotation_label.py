@@ -6,7 +6,7 @@ import copy
 import pytest
 
 from annofabcli.annotation import change_annotation_label
-from annofabcli.annotation.change_annotation_label import ChangeAnnotationLabelMain, get_label_id_from_name_or_id, is_allowed_label_change
+from annofabcli.annotation.change_annotation_label import ChangeAnnotationLabelMain, DestLabelInfo, get_label_id_from_name_or_id, is_allowed_label_change
 
 ANNOTATION_SPECS = {
     "labels": [
@@ -186,9 +186,22 @@ class TestGetLabelIdFromNameOrId:
 
 
 class TestChangeAnnotationLabelMain:
+    def test_get_dest_label_info(self) -> None:
+        service = DummyService()
+        main = ChangeAnnotationLabelMain(service, project_id="prj1", include_complete_task=False, all_yes=True, annotation_specs=ANNOTATION_SPECS)  # type: ignore[arg-type]
+
+        actual = main.get_dest_label_info("label_bus")
+
+        assert actual == DestLabelInfo(
+            label_id="label_bus",
+            annotation_type="polygon",
+            additional_data_definition_ids={"attr_common", "attr_dest_only"},
+        )
+
     def test_change_annotation_label(self) -> None:
         service = DummyService()
         main = ChangeAnnotationLabelMain(service, project_id="prj1", include_complete_task=False, all_yes=True, annotation_specs=ANNOTATION_SPECS)  # type: ignore[arg-type]
+        dest_label_info = main.get_dest_label_info("label_bus")
 
         annotation_list = [
             {
@@ -206,7 +219,7 @@ class TestChangeAnnotationLabelMain:
                 },
             }
         ]
-        main.change_annotation_label(annotation_list, "label_bus")
+        main.change_annotation_label(annotation_list, dest_label_info)
 
         assert service.api.request_body == [
             {
@@ -233,6 +246,7 @@ class TestChangeAnnotationLabelMain:
     def test_change_annotation_label__allows_polygon_to_polyline(self) -> None:
         service = DummyService()
         main = ChangeAnnotationLabelMain(service, project_id="prj1", include_complete_task=False, all_yes=True, annotation_specs=ANNOTATION_SPECS)  # type: ignore[arg-type]
+        dest_label_info = main.get_dest_label_info("label_road")
 
         annotation_list = [
             {
@@ -248,7 +262,7 @@ class TestChangeAnnotationLabelMain:
             }
         ]
 
-        main.change_annotation_label(annotation_list, "label_road")
+        main.change_annotation_label(annotation_list, dest_label_info)
 
         assert service.api.request_body is not None
         assert service.api.request_body[0]["data"]["label_id"] == "label_road"
@@ -256,6 +270,7 @@ class TestChangeAnnotationLabelMain:
     def test_change_annotation_label__raises_when_annotation_type_is_not_compatible(self) -> None:
         service = DummyService()
         main = ChangeAnnotationLabelMain(service, project_id="prj1", include_complete_task=False, all_yes=True, annotation_specs=ANNOTATION_SPECS)  # type: ignore[arg-type]
+        dest_label_info = main.get_dest_label_info("label_box")
 
         annotation_list = [
             {
@@ -272,7 +287,7 @@ class TestChangeAnnotationLabelMain:
         ]
 
         with pytest.raises(ValueError):
-            main.change_annotation_label(annotation_list, "label_box")
+            main.change_annotation_label(annotation_list, dest_label_info)
 
 
 class TestIsAllowedLabelChange:
