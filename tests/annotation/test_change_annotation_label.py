@@ -4,9 +4,11 @@ import argparse
 import copy
 
 import pytest
+from annofabapi.dataclass.annotation import AdditionalDataV1
 from annofabapi.plugin import ThreeDimensionAnnotationType
 
 from annofabcli.annotation import change_annotation_label
+from annofabcli.annotation.annotation_query import AnnotationQueryForAPI
 from annofabcli.annotation.change_annotation_label import ChangeAnnotationLabelMain, DestLabelInfo, get_label_id_from_name_or_id, is_allowed_label_change
 
 ANNOTATION_SPECS = {
@@ -289,6 +291,31 @@ class TestChangeAnnotationLabelMain:
 
         with pytest.raises(ValueError):
             main.change_annotation_label(annotation_list, dest_label_info)
+
+    def test_validate_label_change_with_annotation_query(self) -> None:
+        service = DummyService()
+        main = ChangeAnnotationLabelMain(service, project_id="prj1", include_complete_task=False, all_yes=True, annotation_specs=ANNOTATION_SPECS)  # type: ignore[arg-type]
+        annotation_query = AnnotationQueryForAPI(label_id="label_car")
+        dest_label_info = main.get_dest_label_info("label_road")
+
+        main.validate_label_change_with_annotation_query(annotation_query, dest_label_info)
+
+    def test_validate_label_change_with_annotation_query__raises_when_annotation_type_is_not_compatible(self) -> None:
+        service = DummyService()
+        main = ChangeAnnotationLabelMain(service, project_id="prj1", include_complete_task=False, all_yes=True, annotation_specs=ANNOTATION_SPECS)  # type: ignore[arg-type]
+        annotation_query = AnnotationQueryForAPI(label_id="label_car")
+        dest_label_info = main.get_dest_label_info("label_box")
+
+        with pytest.raises(ValueError):
+            main.validate_label_change_with_annotation_query(annotation_query, dest_label_info)
+
+    def test_validate_label_change_with_annotation_query__skip_when_label_is_not_specified(self) -> None:
+        service = DummyService()
+        main = ChangeAnnotationLabelMain(service, project_id="prj1", include_complete_task=False, all_yes=True, annotation_specs=ANNOTATION_SPECS)  # type: ignore[arg-type]
+        annotation_query = AnnotationQueryForAPI(attributes=[AdditionalDataV1.from_dict({"additional_data_definition_id": "attr_common"}, infer_missing=True)])
+        dest_label_info = main.get_dest_label_info("label_box")
+
+        main.validate_label_change_with_annotation_query(annotation_query, dest_label_info)
 
 
 class TestIsAllowedLabelChange:

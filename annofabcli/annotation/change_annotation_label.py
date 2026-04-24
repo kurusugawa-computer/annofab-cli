@@ -115,6 +115,18 @@ class ChangeAnnotationLabelMain(CommandLineWithConfirm):
             additional_data_definition_ids=set(dest_label["additional_data_definitions"]),
         )
 
+    def validate_label_change_with_annotation_query(self, annotation_query: AnnotationQueryForAPI, dest_label_info: DestLabelInfo) -> None:
+        """`annotation_query` のラベル条件と変更先ラベルの組み合わせを検証する。"""
+        if annotation_query.label_id is None:
+            return
+
+        src_label = self.annotation_specs_accessor.get_label(label_id=annotation_query.label_id)
+        src_annotation_type = src_label["annotation_type"]
+        if is_allowed_label_change(src_annotation_type, dest_label_info.annotation_type):
+            return
+
+        raise ValueError(f"変更前ラベルと変更後ラベルの種類が異なります。変更前='{src_annotation_type}', 変更後='{dest_label_info.annotation_type}'")
+
     def change_annotation_label(self, annotation_list: list[dict[str, Any]], dest_label_info: DestLabelInfo) -> None:
         """アノテーションのラベルを変更する。
 
@@ -370,6 +382,12 @@ class ChangeLabelOfAnnotation(CommandLine):
             annotation_specs=annotation_specs,
         )
         dest_label_info = main_obj.get_dest_label_info(dest_label_id)
+        try:
+            main_obj.validate_label_change_with_annotation_query(annotation_query, dest_label_info)
+        except ValueError as e:
+            print(f"{self.COMMON_MESSAGE} argument '--annotation_query' の値が不正です。 :: {e}", file=sys.stderr)  # noqa: T201
+            sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
+
         main_obj.change_annotation_label_for_task_list(
             task_id_list,
             annotation_query=annotation_query,
