@@ -5,7 +5,7 @@ import copy
 import logging
 import uuid
 from collections import Counter
-from collections.abc import Collection
+from collections.abc import Collection, Sequence
 from dataclasses import dataclass
 from typing import Any
 
@@ -110,6 +110,21 @@ def create_comment_from_label(label_name_en: str, annotation_type: str) -> str:
     return f"以下のラベルを追加しました。\nラベル名(英語): {label_name_en}\nannotation_type: {annotation_type}"
 
 
+def create_comment_from_labels(label_name_ens: Sequence[str], annotation_type: str) -> str:
+    """
+    複数ラベル追加時のデフォルトコメントを生成する。
+
+    Args:
+        label_name_ens: 追加するラベルの英語名一覧
+        annotation_type: ラベルのアノテーション種類
+
+    Returns:
+        アノテーション仕様変更コメント
+    """
+    label_text = ", ".join(label_name_ens)
+    return f"以下のラベルを追加しました。\nラベル名(英語): {label_text}\nannotation_type: {annotation_type}"
+
+
 def validate_new_label(labels: Collection[dict[str, Any]], *, label_id: str, label_name_en: str) -> None:
     """
     追加予定のラベルID・ラベル英語名が既存ラベルと衝突しないか検証する。
@@ -162,10 +177,8 @@ def collect_label_colors(labels: Collection[dict[str, Any]]) -> list[RgbColor]:
     """
     colors: list[RgbColor] = []
     for label in labels:
-        color = label.get("color")
-        if not isinstance(color, dict):
-            continue
-        colors.append({"red": color["red"], "green": color["green"], "blue": color["blue"]})
+        color = label["color"]
+        colors.append(color)
     return colors
 
 

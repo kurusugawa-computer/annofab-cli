@@ -38,6 +38,8 @@ Examples
 Usage Details
 =================================
 
+.. _annotation_specs_add_label_annotation_type_values:
+
 ``--annotation_type`` の値
 ----------------------------------------------
 
