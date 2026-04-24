@@ -5,7 +5,6 @@ import copy
 
 import pytest
 from annofabapi.dataclass.annotation import AdditionalDataV1
-from annofabapi.plugin import ThreeDimensionAnnotationType
 
 from annofabcli.annotation import change_annotation_label
 from annofabcli.annotation.annotation_query import AnnotationQueryForAPI
@@ -246,7 +245,7 @@ class TestChangeAnnotationLabelMain:
         actual = main.get_target_task_id_list(None)
         assert actual == ["task1", "task2"]
 
-    def test_change_annotation_label__allows_polygon_to_polyline(self) -> None:
+    def test_change_annotation_label__raises_when_annotation_type_is_different(self) -> None:
         service = DummyService()
         main = ChangeAnnotationLabelMain(service, project_id="prj1", include_complete_task=False, all_yes=True, annotation_specs=ANNOTATION_SPECS)  # type: ignore[arg-type]
         dest_label_info = main.get_dest_label_info("label_road")
@@ -265,10 +264,8 @@ class TestChangeAnnotationLabelMain:
             }
         ]
 
-        main.change_annotation_label(annotation_list, dest_label_info)
-
-        assert service.api.request_body is not None
-        assert service.api.request_body[0]["data"]["label_id"] == "label_road"
+        with pytest.raises(ValueError):
+            main.change_annotation_label(annotation_list, dest_label_info)
 
     def test_change_annotation_label__raises_when_annotation_type_is_not_compatible(self) -> None:
         service = DummyService()
@@ -296,7 +293,7 @@ class TestChangeAnnotationLabelMain:
         service = DummyService()
         main = ChangeAnnotationLabelMain(service, project_id="prj1", include_complete_task=False, all_yes=True, annotation_specs=ANNOTATION_SPECS)  # type: ignore[arg-type]
         annotation_query = AnnotationQueryForAPI(label_id="label_car")
-        dest_label_info = main.get_dest_label_info("label_road")
+        dest_label_info = main.get_dest_label_info("label_bus")
 
         main.validate_label_change_with_annotation_query(annotation_query, dest_label_info)
 
@@ -323,12 +320,6 @@ class TestIsAllowedLabelChange:
         ("src_annotation_type", "dest_annotation_type"),
         [
             ("polygon", "polygon"),
-            ("polygon", "polyline"),
-            ("polyline", "polygon"),
-            ("segmentation", "segmentation_v2"),
-            ("segmentation_v2", "segmentation"),
-            (ThreeDimensionAnnotationType.INSTANCE_SEGMENT.value, ThreeDimensionAnnotationType.SEMANTIC_SEGMENT.value),
-            (ThreeDimensionAnnotationType.SEMANTIC_SEGMENT.value, ThreeDimensionAnnotationType.INSTANCE_SEGMENT.value),
         ],
     )
     def test_true(self, src_annotation_type: str, dest_annotation_type: str) -> None:
@@ -338,19 +329,13 @@ class TestIsAllowedLabelChange:
         ("src_annotation_type", "dest_annotation_type"),
         [
             ("polygon", "bounding_box"),
+            ("polygon", "polyline"),
+            ("polyline", "polygon"),
             ("segmentation", "polygon"),
-            (ThreeDimensionAnnotationType.INSTANCE_SEGMENT.value, "segmentation"),
+            ("segmentation", "segmentation_v2"),
+            ("segmentation_v2", "segmentation"),
+            ("user_instance_segment", "user_semantic_segment"),
         ],
     )
     def test_false(self, src_annotation_type: str, dest_annotation_type: str) -> None:
         assert not is_allowed_label_change(src_annotation_type, dest_annotation_type)
-
-    def test_directional_conversion(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        monkeypatch.setattr(
-            change_annotation_label,
-            "ALLOWED_ANNOTATION_TYPE_CONVERSIONS",
-            {("polygon", "polyline")},
-        )
-
-        assert is_allowed_label_change("polygon", "polyline")
-        assert not is_allowed_label_change("polyline", "polygon")

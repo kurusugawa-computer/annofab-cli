@@ -12,8 +12,7 @@ from typing import Any
 
 import annofabapi
 from annofabapi.dataclass.task import Task
-from annofabapi.models import DefaultAnnotationType, ProjectMemberRole, TaskStatus
-from annofabapi.plugin import ThreeDimensionAnnotationType
+from annofabapi.models import ProjectMemberRole, TaskStatus
 from annofabapi.util.annotation_specs import AnnotationSpecsAccessor, get_english_message
 
 import annofabcli.common.cli
@@ -31,17 +30,6 @@ from annofabcli.common.cli import (
 from annofabcli.common.facade import AnnofabApiFacade
 
 logger = logging.getLogger(__name__)
-
-
-ALLOWED_ANNOTATION_TYPE_CONVERSIONS = {
-    (DefaultAnnotationType.POLYGON.value, DefaultAnnotationType.POLYLINE.value),
-    (DefaultAnnotationType.POLYLINE.value, DefaultAnnotationType.POLYGON.value),
-    (DefaultAnnotationType.SEGMENTATION.value, DefaultAnnotationType.SEGMENTATION_V2.value),
-    (DefaultAnnotationType.SEGMENTATION_V2.value, DefaultAnnotationType.SEGMENTATION.value),
-    (ThreeDimensionAnnotationType.INSTANCE_SEGMENT.value, ThreeDimensionAnnotationType.SEMANTIC_SEGMENT.value),
-    (ThreeDimensionAnnotationType.SEMANTIC_SEGMENT.value, ThreeDimensionAnnotationType.INSTANCE_SEGMENT.value),
-}
-"""変更を許可するラベル種類の変換一覧。 `(変更前, 変更後)` の順で表す。"""
 
 
 @dataclass(frozen=True)
@@ -304,10 +292,7 @@ class ChangeAnnotationLabelMain(CommandLineWithConfirm):
 
 def is_allowed_label_change(src_annotation_type: str, dest_annotation_type: str) -> bool:
     """変更前後のラベル種類の組み合わせが許可されているかどうかを返す。"""
-    if src_annotation_type == dest_annotation_type:
-        return True
-
-    return (src_annotation_type, dest_annotation_type) in ALLOWED_ANNOTATION_TYPE_CONVERSIONS
+    return src_annotation_type == dest_annotation_type
 
 
 class ChangeLabelOfAnnotation(CommandLine):
