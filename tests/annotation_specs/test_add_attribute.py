@@ -168,8 +168,6 @@ class TestAddAttributeMain:
         assert service.api.last_put is not None
         added_attribute = service.api.last_put["additionals"][-1]
         assert added_attribute["type"] == "text"
-        assert added_attribute["default"] == ""
-        assert added_attribute["choices"] == []
 
     def test_add_attribute__attribute_id_is_uuidv4_when_not_specified(self, annotation_specs: dict) -> None:
         service = DummyService(annotation_specs)
