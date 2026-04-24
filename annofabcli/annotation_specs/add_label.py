@@ -3,7 +3,6 @@ from __future__ import annotations
 import argparse
 import copy
 import logging
-import re
 import uuid
 from collections import Counter
 from collections.abc import Collection
@@ -15,6 +14,7 @@ from annofabapi.plugin import ThreeDimensionAnnotationType
 
 import annofabcli.common.cli
 from annofabcli.annotation_specs.add_choice_attribute import create_name, get_label_name_en
+from annofabcli.annotation_specs.color import RgbColor, hex_to_rgb, rgb_to_hex
 from annofabcli.common.cli import ArgumentParser, CommandLine, CommandLineWithConfirm, build_annofabapi_resource_and_login
 from annofabcli.common.facade import AnnofabApiFacade
 
@@ -46,43 +46,6 @@ AUTO_COLOR_PALETTE: list[tuple[int, int, int]] = [
     (128, 128, 128),  # グレー (gray)
 ]
 """自動色選択で優先する高彩度のカラーパレット。"""
-
-
-def parse_color(color_code: str) -> dict[str, int]:
-    """
-    16進数カラーコードをAnnofab API向けのRGB辞書へ変換する。
-
-    Args:
-        color_code: ``#RRGGBB`` 形式のカラーコード
-
-    Returns:
-        ``{"red": r, "green": g, "blue": b}``
-
-    Raises:
-        ValueError: 形式が ``#RRGGBB`` でない場合
-    """
-    hex_color_pattern = re.compile(r"^#[0-9A-Fa-f]{6}$")
-    if hex_color_pattern.fullmatch(color_code) is None:
-        raise ValueError("`--color` には `#RRGGBB` 形式の16進数カラーコードを指定してください。")
-
-    return {
-        "red": int(color_code[1:3], 16),
-        "green": int(color_code[3:5], 16),
-        "blue": int(color_code[5:7], 16),
-    }
-
-
-def format_color(color: dict[str, Any]) -> str:
-    """
-    RGB辞書を16進数カラーコードへ変換する。
-
-    Args:
-        color: Annofab APIのRGB辞書
-
-    Returns:
-        ``#RRGGBB`` 形式のカラーコード
-    """
-    return f"#{color['red']:02X}{color['green']:02X}{color['blue']:02X}"
 
 
 def create_comment_from_label(label_name_en: str, annotation_type: str) -> str:
@@ -118,7 +81,7 @@ def validate_new_label(labels: Collection[dict[str, Any]], *, label_id: str, lab
         raise ValueError(f"label_name_en='{label_name_en}' のラベルは既に存在します。")
 
 
-def create_auto_color(labels: Collection[dict[str, Any]]) -> dict[str, int]:
+def create_auto_color(labels: Collection[dict[str, Any]]) -> RgbColor:
     """
     AUTO_COLOR_PALETTE の中から使用回数が最も少ない色を返す。
 
@@ -148,7 +111,7 @@ def create_new_label(
     label_name_en: str,
     label_name_ja: str | None,
     annotation_type: str,
-    color: dict[str, int],
+    color: RgbColor,
 ) -> dict[str, Any]:
     """
     新規ラベルのAnnofab API向けオブジェクトを生成する。
@@ -167,7 +130,10 @@ def create_new_label(
         "label_id": label_id,
         "label_name": create_name(label_name_en, label_name_ja),
         "annotation_type": annotation_type,
+        "keybind": [],
+        "additional_data_definitions": [],
         "color": color,
+        "metadata": {},
     }
 
 
@@ -220,7 +186,7 @@ class AddLabelMain(CommandLineWithConfirm):
         generated_label_id = label_id if label_id is not None else str(uuid.uuid4())
         validate_new_label(labels, label_id=generated_label_id, label_name_en=label_name_en)
 
-        color = parse_color(color_code) if color_code is not None else create_auto_color(labels)
+        color = hex_to_rgb(color_code) if color_code is not None else create_auto_color(labels)
         new_label = create_new_label(
             label_id=generated_label_id,
             label_name_en=label_name_en,
@@ -229,9 +195,7 @@ class AddLabelMain(CommandLineWithConfirm):
             color=color,
         )
 
-        confirm_message = (
-            f"ラベル名(英語)='{label_name_en}', label_id='{generated_label_id}', annotation_type='{annotation_type}', color='{format_color(color)}' のラベルを追加します。よろしいですか？"
-        )
+        confirm_message = f"ラベル名(英語)='{label_name_en}', label_id='{generated_label_id}', annotation_type='{annotation_type}', color='{rgb_to_hex(color)}' のラベルを追加します。よろしいですか？"
         if not self.confirm_processing(confirm_message):
             return False
 
@@ -243,7 +207,7 @@ class AddLabelMain(CommandLineWithConfirm):
         request_body["comment"] = comment
         request_body["last_updated_datetime"] = old_annotation_specs["updated_datetime"]
         self.service.api.put_annotation_specs(self.project_id, query_params={"v": "3"}, request_body=request_body)
-        logger.info(f"ラベルを追加しました。 :: label_name_en='{label_name_en}', label_id='{generated_label_id}', annotation_type='{annotation_type}', color='{format_color(color)}'")
+        logger.info(f"ラベルを追加しました。 :: label_name_en='{label_name_en}', label_id='{generated_label_id}', annotation_type='{annotation_type}', color='{rgb_to_hex(color)}'")
         return True
 
 

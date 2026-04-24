@@ -9,7 +9,8 @@ from pathlib import Path
 import pytest
 
 from annofabcli.annotation_specs import add_label
-from annofabcli.annotation_specs.add_label import AUTO_COLOR_PALETTE, AddLabelMain, create_auto_color, parse_color
+from annofabcli.annotation_specs.add_label import AUTO_COLOR_PALETTE, AddLabelMain, create_auto_color
+from annofabcli.annotation_specs.color import hex_to_rgb
 
 data_dir = Path("./tests/data/annotation_specs")
 
@@ -97,13 +98,13 @@ class TestParseArgs:
 
 
 class TestColor:
-    def test_parse_color(self) -> None:
-        actual = parse_color("#00CCFF")
+    def test_hex_to_rgb(self) -> None:
+        actual = hex_to_rgb("#00CCFF")
         assert actual == {"red": 0, "green": 204, "blue": 255}
 
-    def test_parse_color__invalid(self) -> None:
+    def test_hex_to_rgb__invalid(self) -> None:
         with pytest.raises(ValueError):
-            parse_color("00CCFF")
+            hex_to_rgb("00CCFF")
 
     def test_create_auto_color(self, annotation_specs: dict) -> None:
         actual = create_auto_color(annotation_specs["labels"])
