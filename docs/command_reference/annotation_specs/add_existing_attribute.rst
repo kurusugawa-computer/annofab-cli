@@ -5,8 +5,7 @@ annotation_specs add_existing_attribute
 Description
 =================================
 アノテーション仕様に既に存在する属性を、既存ラベルへ追加します。
-属性定義自体は新規作成せず、指定したラベルの ``additional_data_definitions`` に既存属性を追加します。
-
+属性定義自体は新たに作成しません。
 
 Examples
 =================================

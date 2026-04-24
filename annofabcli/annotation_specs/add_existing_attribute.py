@@ -209,14 +209,12 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     label_group.add_argument(
         "--label_name_en",
         type=str,
-        nargs=1,
-        help="属性を追加する対象ラベルの英語名。 ``file://`` を先頭に付けると一覧ファイルを指定できますが、指定できるラベルは1件だけです。",
+        help="属性を追加する対象ラベルの英語名。 ",
     )
     label_group.add_argument(
         "--label_id",
         type=str,
-        nargs=1,
-        help="属性を追加する対象ラベルのlabel_id。 ``file://`` を先頭に付けると一覧ファイルを指定できますが、指定できるラベルは1件だけです。",
+        help="属性を追加する対象ラベルのlabel_id。 ",
     )
 
     attribute_group = parser.add_mutually_exclusive_group(required=True)
@@ -262,7 +260,7 @@ def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse
     """
     subcommand_name = "add_existing_attribute"
     subcommand_help = "アノテーション仕様の既存属性を既存ラベルへ追加します。"
-    description = "アノテーション仕様に既に存在する属性を、指定したラベルへ追加します。属性定義そのものは新規作成しません。"
+    description = "アノテーション仕様に既に存在する属性を、指定したラベルへ追加します。属性定義そのものは新たに作成しません。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description=description)
     parse_args(parser)
