@@ -64,7 +64,7 @@ class TestParseArgs:
                 "attr2",
             ]
         )
-        assert args.label_name_en == ["car"]
+        assert args.label_name_en == "car"
         assert args.label_id is None
         assert args.attribute_id == ["attr1", "attr2"]
         assert args.attribute_name_en is None
@@ -115,8 +115,8 @@ class TestAddExistingAttributeMain:
         main = AddExistingAttributeMain(service, project_id="prj1", all_yes=True)  # type: ignore
 
         result = main.add_existing_attribute(
-            label_ids=["40f7796b-3722-4eed-9c0c-04a27f9165d2"],
-            label_name_ens=[],
+            label_id="40f7796b-3722-4eed-9c0c-04a27f9165d2",
+            label_name_en=None,
             attribute_ids=["54fa5e97-6f88-49a4-aeb0-a91a15d11528", "f12a0b59-dfce-4241-bb87-4b2c0259fc6f"],
             attribute_name_ens=[],
             comment=None,
@@ -138,8 +138,8 @@ class TestAddExistingAttributeMain:
         main = AddExistingAttributeMain(service, project_id="prj1", all_yes=True)  # type: ignore
 
         main.add_existing_attribute(
-            label_ids=[],
-            label_name_ens=["bus"],
+            label_id=None,
+            label_name_en="bus",
             attribute_ids=[],
             attribute_name_ens=["comment"],
             comment="custom",
@@ -156,8 +156,8 @@ class TestAddExistingAttributeMain:
 
         with pytest.raises(ValueError):
             main.add_existing_attribute(
-                label_ids=["not-found"],
-                label_name_ens=[],
+                label_id="not-found",
+                label_name_en=None,
                 attribute_ids=["54fa5e97-6f88-49a4-aeb0-a91a15d11528"],
                 attribute_name_ens=[],
             )
@@ -168,8 +168,8 @@ class TestAddExistingAttributeMain:
 
         with pytest.raises(ValueError):
             main.add_existing_attribute(
-                label_ids=["car_label_id"],
-                label_name_ens=[],
+                label_id="car_label_id",
+                label_name_en=None,
                 attribute_ids=["not-found"],
                 attribute_name_ens=[],
             )
@@ -180,8 +180,8 @@ class TestAddExistingAttributeMain:
 
         with pytest.raises(ValueError):
             main.add_existing_attribute(
-                label_ids=["car_label_id"],
-                label_name_ens=[],
+                label_id="car_label_id",
+                label_name_en=None,
                 attribute_ids=[],
                 attribute_name_ens=["not-found"],
             )
@@ -196,20 +196,20 @@ class TestAddExistingAttributeMain:
 
         with pytest.raises(ValueError):
             main.add_existing_attribute(
-                label_ids=["car_label_id"],
-                label_name_ens=[],
+                label_id="car_label_id",
+                label_name_en=None,
                 attribute_ids=[],
                 attribute_name_ens=["comment"],
             )
 
-    def test_add_existing_attribute__multiple_labels(self, annotation_specs: dict) -> None:
+    def test_add_existing_attribute__label_id_and_label_name_en_are_specified(self, annotation_specs: dict) -> None:
         service = DummyService(annotation_specs)
         main = AddExistingAttributeMain(service, project_id="prj1", all_yes=True)  # type: ignore
 
         with pytest.raises(ValueError):
             main.add_existing_attribute(
-                label_ids=["car_label_id", "40f7796b-3722-4eed-9c0c-04a27f9165d2"],
-                label_name_ens=[],
+                label_id="car_label_id",
+                label_name_en="car",
                 attribute_ids=["54fa5e97-6f88-49a4-aeb0-a91a15d11528"],
                 attribute_name_ens=[],
             )
@@ -220,8 +220,8 @@ class TestAddExistingAttributeMain:
 
         with pytest.raises(ValueError):
             main.add_existing_attribute(
-                label_ids=["car_label_id"],
-                label_name_ens=[],
+                label_id="car_label_id",
+                label_name_en=None,
                 attribute_ids=["71620647-98cf-48ad-b43b-4af425a24f32"],
                 attribute_name_ens=[],
             )
@@ -232,8 +232,8 @@ class TestAddExistingAttributeMain:
 
         with pytest.raises(ValueError):
             main.add_existing_attribute(
-                label_ids=["car_label_id"],
-                label_name_ens=[],
+                label_id="car_label_id",
+                label_name_en=None,
                 attribute_ids=["54fa5e97-6f88-49a4-aeb0-a91a15d11528", "54fa5e97-6f88-49a4-aeb0-a91a15d11528"],
                 attribute_name_ens=[],
             )
@@ -244,8 +244,8 @@ class TestAddExistingAttributeMain:
 
         with pytest.raises(ValueError):
             main.add_existing_attribute(
-                label_ids=["car_label_id"],
-                label_name_ens=[],
+                label_id="car_label_id",
+                label_name_en=None,
                 attribute_ids=[],
                 attribute_name_ens=["comment", "comment"],
             )

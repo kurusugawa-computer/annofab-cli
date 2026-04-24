@@ -10,7 +10,7 @@ import annofabapi
 from annofabapi.util.annotation_specs import AnnotationSpecsAccessor
 
 import annofabcli.common.cli
-from annofabcli.annotation_specs.add_choice_attribute import get_attribute_name_en, get_label_name_en, get_target_labels
+from annofabcli.annotation_specs.add_choice_attribute import get_attribute_name_en, get_label_name_en
 from annofabcli.common.cli import ArgumentParser, CommandLine, CommandLineWithConfirm, build_annofabapi_resource_and_login, get_list_from_args
 from annofabcli.common.facade import AnnofabApiFacade
 from annofabcli.common.utils import duplicated_set
@@ -88,6 +88,36 @@ def get_target_attributes(
     return result
 
 
+def get_target_label(
+    annotation_specs_accessor: AnnotationSpecsAccessor,
+    *,
+    label_id: str | None,
+    label_name_en: str | None,
+) -> dict[str, Any]:
+    """
+    CLI引数で指定されたラベルIDまたはラベル名から追加対象ラベルを取得する。
+
+    Args:
+        annotation_specs_accessor: アノテーション仕様アクセサ
+        label_id: 指定されたラベルID
+        label_name_en: 指定されたラベル英語名
+
+    Returns:
+        追加対象ラベル
+
+    Raises:
+        ValueError: ラベル指定が不正、ラベルが見つからない、またはラベル名が曖昧な場合
+    """
+    if (label_id is None) == (label_name_en is None):
+        raise ValueError("追加先のラベルは `label_id` または `label_name_en` のどちらか一方だけ指定してください。")
+
+    if label_id is not None:
+        return annotation_specs_accessor.get_label(label_id=label_id)
+
+    assert label_name_en is not None
+    return annotation_specs_accessor.get_label(label_name=label_name_en)
+
+
 class AddExistingAttributeMain(CommandLineWithConfirm):
     """
     既存属性を既存ラベルへ追加する本体処理。
@@ -107,8 +137,8 @@ class AddExistingAttributeMain(CommandLineWithConfirm):
     def add_existing_attribute(
         self,
         *,
-        label_ids: Sequence[str],
-        label_name_ens: Sequence[str],
+        label_id: str | None,
+        label_name_en: str | None,
         attribute_ids: Sequence[str],
         attribute_name_ens: Sequence[str],
         comment: str | None = None,
@@ -117,8 +147,8 @@ class AddExistingAttributeMain(CommandLineWithConfirm):
         既存属性を既存ラベルへ追加して、アノテーション仕様を更新する。
 
         Args:
-            label_ids: 追加先ラベルID一覧
-            label_name_ens: 追加先ラベル英語名一覧
+            label_id: 追加先ラベルID
+            label_name_en: 追加先ラベル英語名
             attribute_ids: 追加する属性ID一覧
             attribute_name_ens: 追加する属性英語名一覧
             comment: 変更コメント
@@ -132,10 +162,7 @@ class AddExistingAttributeMain(CommandLineWithConfirm):
         old_annotation_specs, _ = self.service.api.get_annotation_specs(self.project_id, query_params={"v": "3"})
         annotation_specs_accessor = AnnotationSpecsAccessor(old_annotation_specs)
 
-        target_labels = get_target_labels(annotation_specs_accessor, label_ids=label_ids, label_name_ens=label_name_ens)
-        if len(target_labels) != 1:
-            raise ValueError("追加先のラベルは1件だけ指定してください。")
-        target_label = target_labels[0]
+        target_label = get_target_label(annotation_specs_accessor, label_id=label_id, label_name_en=label_name_en)
 
         target_attributes = get_target_attributes(
             annotation_specs_accessor,
@@ -180,15 +207,13 @@ class AddExistingAttribute(CommandLine):
         """
         args = self.args
 
-        label_ids = get_list_from_args(args.label_id)
-        label_name_ens = get_list_from_args(args.label_name_en)
         attribute_ids = get_list_from_args(args.attribute_id)
         attribute_name_ens = get_list_from_args(args.attribute_name_en)
 
         obj = AddExistingAttributeMain(self.service, project_id=args.project_id, all_yes=args.yes)
         obj.add_existing_attribute(
-            label_ids=label_ids,
-            label_name_ens=label_name_ens,
+            label_id=args.label_id,
+            label_name_en=args.label_name_en,
             attribute_ids=attribute_ids,
             attribute_name_ens=attribute_name_ens,
             comment=args.comment,
@@ -209,12 +234,12 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     label_group.add_argument(
         "--label_name_en",
         type=str,
-        help="属性を追加する対象ラベルの英語名。 ",
+        help="属性を追加する対象ラベルの英語名。1個のみ指定できます。",
     )
     label_group.add_argument(
         "--label_id",
         type=str,
-        help="属性を追加する対象ラベルのlabel_id。 ",
+        help="属性を追加する対象ラベルのlabel_id。1個のみ指定できます。",
     )
 
     attribute_group = parser.add_mutually_exclusive_group(required=True)
