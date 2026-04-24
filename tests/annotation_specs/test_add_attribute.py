@@ -51,6 +51,17 @@ class DummyService:
 
 
 class TestParseArgs:
+    def test_parse_args__help_of_attribute_type_is_bullet_list(self, capsys: pytest.CaptureFixture[str]) -> None:
+        parser = create_parser()
+        with pytest.raises(SystemExit):
+            parser.parse_args(["add_attribute", "--help"])
+        captured = capsys.readouterr()
+        help_text = captured.out
+
+        assert "追加する属性の種類。" in help_text
+        assert "* ``flag`` : チェックボックス" in help_text
+        assert "* ``link`` : アノテーションリンク" in help_text
+
     def test_parse_args__flag(self) -> None:
         parser = create_parser()
         args = parser.parse_args(

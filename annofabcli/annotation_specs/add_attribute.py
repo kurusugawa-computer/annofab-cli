@@ -212,9 +212,13 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         required=True,
         choices=ATTRIBUTE_TYPES,
         help=(
-            "追加する属性の種類。 "
-            "``flag`` はチェックボックス、``integer`` は整数、``text`` は自由記述（1行）、"
-            "``comment`` は自由記述（複数行）、``tracking`` はトラッキングID、``link`` はアノテーションリンクです。"
+            "追加する属性の種類。\n"
+            "* ``flag`` : チェックボックス\n"
+            "* ``integer`` : 整数\n"
+            "* ``text`` : 自由記述（1行）\n"
+            "* ``comment`` : 自由記述（複数行）\n"
+            "* ``tracking`` : トラッキングID\n"
+            "* ``link`` : アノテーションリンク"
         ),
     )
     parser.add_argument("--attribute_name_en", type=str, required=True, help="追加する属性の英語名。")
@@ -263,7 +267,7 @@ def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse
     """
     subcommand_name = "add_attribute"
     subcommand_help = "アノテーション仕様に非選択肢系の属性を追加します。"
-    description = "アノテーション仕様に非選択肢系の属性を追加し、指定ラベルへ紐付けます。 ``choice`` と ``select`` は ``add_choice_attribute`` を使用してください。"
+    description = "アノテーション仕様に非選択肢系の属性を追加します。選択肢系属性の追加は ``add_choice_attribute`` コマンドを使用してください。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description=description)
     parse_args(parser)
