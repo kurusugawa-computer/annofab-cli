@@ -54,12 +54,11 @@ dev = [
     "numpy>=2.1; python_version>='3.12'",
 ]
 test = [
-    "pytest>=7",
+    "pytest>=9",
     "pytest-xdist",
-    "pytest-cov",
 ]
 linter = [
-    "ruff>=0.14; python_version>='3.12'",
+    "ruff>=0.15; python_version>='3.12'",
     "mypy>=1; python_version>='3.12'",
     "types-requests; python_version>='3.12'",
     "types-python-dateutil; python_version>='3.12'",
