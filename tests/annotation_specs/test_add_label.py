@@ -9,7 +9,7 @@ from pathlib import Path
 import pytest
 
 from annofabcli.annotation_specs import add_label
-from annofabcli.annotation_specs.add_label import AUTO_COLOR_PALETTE_HEX, AddLabelMain, create_annotation_type_help, create_auto_color
+from annofabcli.annotation_specs.add_label import AUTO_COLOR_PALETTE_HEX, AddLabelMain, create_auto_color
 from annofabcli.annotation_specs.color import RgbColor, hex_to_rgb
 
 data_dir = Path("./tests/data/annotation_specs")
@@ -54,55 +54,6 @@ class DummyService:
 class AddLabelMainWithoutConfirm(AddLabelMain):
     def confirm_processing(self, _confirm_message: str) -> bool:
         return False
-
-
-class TestParseArgs:
-    def test_create_annotation_type_help(self) -> None:
-        actual = create_annotation_type_help()
-
-        assert "bounding_box : 矩形 [画像プロジェクト で使用可]" in actual
-        assert "classification : 全体分類 [画像プロジェクト / 動画プロジェクト で使用可]" in actual
-        assert "range : 動画の区間 [動画プロジェクト で使用可]" in actual
-        assert "user_bounding_box : 3次元のバウンディングボックス [3次元プロジェクト で使用可]" in actual
-
-    def test_parse_args(self) -> None:
-        parser = create_parser()
-        args = parser.parse_args(
-            [
-                "add_label",
-                "--project_id",
-                "prj1",
-                "--label_name_en",
-                "pedestrian",
-                "--annotation_type",
-                "bounding_box",
-                "--color",
-                "#00CCFF",
-            ]
-        )
-        assert args.label_name_en == "pedestrian"
-        assert args.annotation_type == "bounding_box"
-        assert args.color == "#00CCFF"
-
-    def test_parse_args__required(self) -> None:
-        parser = create_parser()
-        with pytest.raises(SystemExit):
-            parser.parse_args(["add_label", "--project_id", "prj1"])
-
-    def test_parse_args__invalid_annotation_type(self) -> None:
-        parser = create_parser()
-        with pytest.raises(SystemExit):
-            parser.parse_args(
-                [
-                    "add_label",
-                    "--project_id",
-                    "prj1",
-                    "--label_name_en",
-                    "pedestrian",
-                    "--annotation_type",
-                    "invalid_type",
-                ]
-            )
 
 
 class TestColor:

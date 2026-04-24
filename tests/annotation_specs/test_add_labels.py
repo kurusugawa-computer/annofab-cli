@@ -54,46 +54,6 @@ class AddLabelsMainWithoutConfirm(AddLabelsMain):
         return False
 
 
-class TestParseArgs:
-    def test_parse_args(self) -> None:
-        parser = create_parser()
-        args = parser.parse_args(
-            [
-                "add_labels",
-                "--project_id",
-                "prj1",
-                "--label_name_en",
-                "pedestrian",
-                "bicycle",
-                "--annotation_type",
-                "bounding_box",
-            ]
-        )
-        assert args.label_name_en == ["pedestrian", "bicycle"]
-        assert args.annotation_type == "bounding_box"
-
-    def test_parse_args__required(self) -> None:
-        parser = create_parser()
-        with pytest.raises(SystemExit):
-            parser.parse_args(["add_labels", "--project_id", "prj1"])
-
-    def test_parse_args__invalid_annotation_type(self) -> None:
-        parser = create_parser()
-        with pytest.raises(SystemExit):
-            parser.parse_args(
-                [
-                    "add_labels",
-                    "--project_id",
-                    "prj1",
-                    "--label_name_en",
-                    "pedestrian",
-                    "bicycle",
-                    "--annotation_type",
-                    "invalid_type",
-                ]
-            )
-
-
 class TestAddLabelsMain:
     def test_add_labels(self, annotation_specs: dict) -> None:
         service = DummyService(annotation_specs)

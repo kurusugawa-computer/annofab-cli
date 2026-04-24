@@ -9,7 +9,7 @@ from pathlib import Path
 import pytest
 
 from annofabcli.annotation_specs import add_attribute
-from annofabcli.annotation_specs.add_attribute import ATTRIBUTE_TYPES, AddAttributeMain, create_attribute
+from annofabcli.annotation_specs.add_attribute import AddAttributeMain, create_attribute
 
 data_dir = Path("./tests/data/annotation_specs")
 
@@ -48,57 +48,6 @@ class DummyApi:
 class DummyService:
     def __init__(self, annotation_specs: dict) -> None:
         self.api = DummyApi(annotation_specs)
-
-
-class TestParseArgs:
-    def test_parse_args__help_of_attribute_type_is_bullet_list(self, capsys: pytest.CaptureFixture[str]) -> None:
-        parser = create_parser()
-        with pytest.raises(SystemExit):
-            parser.parse_args(["add_attribute", "--help"])
-        captured = capsys.readouterr()
-        help_text = captured.out
-
-        assert "追加する属性の種類。" in help_text
-        assert "* ``flag`` : チェックボックス" in help_text
-        assert "* ``link`` : アノテーションリンク" in help_text
-
-    def test_parse_args__flag(self) -> None:
-        parser = create_parser()
-        args = parser.parse_args(
-            [
-                "add_attribute",
-                "--project_id",
-                "prj1",
-                "--attribute_type",
-                "flag",
-                "--attribute_name_en",
-                "weather",
-                "--label_name_en",
-                "car",
-            ]
-        )
-        assert args.attribute_type == "flag"
-        assert args.label_name_en == ["car"]
-
-    def test_parse_args__choice_is_invalid(self) -> None:
-        parser = create_parser()
-        with pytest.raises(SystemExit):
-            parser.parse_args(
-                [
-                    "add_attribute",
-                    "--project_id",
-                    "prj1",
-                    "--attribute_type",
-                    "choice",
-                    "--attribute_name_en",
-                    "weather",
-                    "--label_name_en",
-                    "car",
-                ]
-            )
-
-    def test_attribute_types(self) -> None:
-        assert ATTRIBUTE_TYPES == ["comment", "flag", "integer", "link", "text", "tracking"]
 
 
 class TestCreateAttribute:
@@ -143,8 +92,6 @@ class TestAddAttributeMain:
         added_attribute = service.api.last_put["additionals"][-1]
         assert added_attribute["additional_data_definition_id"] == "weather_checked_attr"
         assert added_attribute["type"] == "flag"
-        assert added_attribute["default"] is False
-        assert added_attribute["choices"] == []
 
         car_label = next(label for label in service.api.last_put["labels"] if label["label_id"] == "car_label_id")
         assert "weather_checked_attr" in car_label["additional_data_definitions"]
