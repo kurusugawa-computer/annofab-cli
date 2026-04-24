@@ -354,16 +354,6 @@ class ChangeLabelOfAnnotation(CommandLine):
             print(f"{self.COMMON_MESSAGE} argument '{option_name}' の値が不正です。 :: {e}", file=sys.stderr)  # noqa: T201
             sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
-        if args.backup is None:
-            print(  # noqa: T201
-                "間違えてアノテーションを変更してしまっときに復元できるようにするため、'--backup'でバックアップ用のディレクトリを指定することを推奨します。",
-                file=sys.stderr,
-            )
-            if not self.confirm_processing("復元用のバックアップディレクトリが指定されていません。処理を続行しますか？"):
-                sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
-            backup_dir = None
-        else:
-            backup_dir = Path(args.backup)
 
         super().validate_project(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.ACCEPTER])
         if args.include_complete_task:  # noqa: SIM102
@@ -387,6 +377,17 @@ class ChangeLabelOfAnnotation(CommandLine):
         except ValueError as e:
             print(f"{self.COMMON_MESSAGE} argument '--annotation_query' の値が不正です。 :: {e}", file=sys.stderr)  # noqa: T201
             sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
+
+        if args.backup is None:
+            print(  # noqa: T201
+                "間違えてアノテーションを変更してしまっときに復元できるようにするため、'--backup'でバックアップ用のディレクトリを指定することを推奨します。",
+                file=sys.stderr,
+            )
+            if not self.confirm_processing("復元用のバックアップディレクトリが指定されていません。処理を続行しますか？"):
+                sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
+            backup_dir = None
+        else:
+            backup_dir = Path(args.backup)
 
         main_obj.change_annotation_label_for_task_list(
             task_id_list,
