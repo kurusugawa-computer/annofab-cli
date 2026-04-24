@@ -9,8 +9,7 @@ from pathlib import Path
 import pytest
 
 from annofabcli.annotation_specs import add_attribute
-from annofabcli.annotation_specs.add_attribute import AddAttributeMain, create_attribute, get_choice_inputs_from_args
-from annofabcli.annotation_specs.add_choice_attribute import read_choices_json
+from annofabcli.annotation_specs.add_attribute import ATTRIBUTE_TYPES, AddAttributeMain, create_attribute
 
 data_dir = Path("./tests/data/annotation_specs")
 
@@ -68,52 +67,27 @@ class TestParseArgs:
             ]
         )
         assert args.attribute_type == "flag"
-        assert args.choices_json is None
-
-    def test_parse_args__choice(self) -> None:
-        parser = create_parser()
-        args = parser.parse_args(
-            [
-                "add_attribute",
-                "--project_id",
-                "prj1",
-                "--attribute_type",
-                "choice",
-                "--attribute_name_en",
-                "weather",
-                "--choices_json",
-                '[{"choice_name_en":"sunny"},{"choice_name_en":"cloudy"}]',
-                "--label_name_en",
-                "car",
-            ]
-        )
-        assert args.attribute_type == "choice"
         assert args.label_name_en == ["car"]
 
-
-class TestGetChoiceInputsFromArgs:
-    def test_get_choice_inputs_from_args__choice(self) -> None:
-        actual = get_choice_inputs_from_args(
-            attribute_type="choice",
-            choices_json='[{"choice_name_en":"sunny"},{"choice_name_en":"cloudy"}]',
-            choices_csv=None,
-        )
-        assert len(actual) == 2
-
-    def test_get_choice_inputs_from_args__choice_without_choices(self) -> None:
-        with pytest.raises(ValueError):
-            get_choice_inputs_from_args(attribute_type="choice", choices_json=None, choices_csv=None)
-
-    def test_get_choice_inputs_from_args__flag_with_choices(self, tmp_path: Path) -> None:
-        csv_path = tmp_path / "choices.csv"
-        csv_path.write_text("choice_name_en\nsunny\n", encoding="utf-8")
-
-        with pytest.raises(ValueError):
-            get_choice_inputs_from_args(
-                attribute_type="flag",
-                choices_json=None,
-                choices_csv=csv_path,
+    def test_parse_args__choice_is_invalid(self) -> None:
+        parser = create_parser()
+        with pytest.raises(SystemExit):
+            parser.parse_args(
+                [
+                    "add_attribute",
+                    "--project_id",
+                    "prj1",
+                    "--attribute_type",
+                    "choice",
+                    "--attribute_name_en",
+                    "weather",
+                    "--label_name_en",
+                    "car",
+                ]
             )
+
+    def test_attribute_types(self) -> None:
+        assert ATTRIBUTE_TYPES == ["comment", "flag", "integer", "link", "text", "tracking"]
 
 
 class TestCreateAttribute:
@@ -123,25 +97,23 @@ class TestCreateAttribute:
             attribute_name_en="unclear2",
             attribute_name_ja="不明",
             attribute_id="unclear2_attr",
-            choice_inputs=[],
         )
 
         assert actual["type"] == "flag"
         assert actual["default"] is False
         assert actual["choices"] == []
 
-    def test_create_attribute__choice(self) -> None:
+    def test_create_attribute__text(self) -> None:
         actual = create_attribute(
-            attribute_type="choice",
-            attribute_name_en="weather",
-            attribute_name_ja="天気",
-            attribute_id="weather_attr",
-            choice_inputs=read_choices_json('[{"choice_id":"sunny","choice_name_en":"sunny","is_default":true},{"choice_name_en":"cloudy"}]'),
+            attribute_type="text",
+            attribute_name_en="note",
+            attribute_name_ja="メモ",
+            attribute_id="note_attr",
         )
 
-        assert actual["type"] == "choice"
-        assert actual["default"] == "sunny"
-        assert len(actual["choices"]) == 2
+        assert actual["type"] == "text"
+        assert actual["default"] == ""
+        assert actual["choices"] == []
 
 
 class TestAddAttributeMain:
@@ -154,7 +126,6 @@ class TestAddAttributeMain:
             attribute_name_en="weather_checked",
             attribute_name_ja="天気確認済み",
             attribute_id="weather_checked_attr",
-            choice_inputs=[],
             label_ids=[],
             label_name_ens=["car"],
             comment=None,
@@ -172,16 +143,15 @@ class TestAddAttributeMain:
         assert "weather_checked_attr" in car_label["additional_data_definitions"]
         assert "以下の属性を追加しました。" in service.api.last_put["comment"]
 
-    def test_add_attribute__choice(self, annotation_specs: dict) -> None:
+    def test_add_attribute__text(self, annotation_specs: dict) -> None:
         service = DummyService(annotation_specs)
         main = AddAttributeMain(service, project_id="prj1", all_yes=True)  # type: ignore
 
         result = main.add_attribute(
-            attribute_type="choice",
-            attribute_name_en="weather",
-            attribute_name_ja="天気",
-            attribute_id="weather_attr",
-            choice_inputs=read_choices_json('[{"choice_id":"sunny","choice_name_en":"sunny","choice_name_ja":"晴れ","is_default":true},{"choice_name_en":"cloudy"}]'),
+            attribute_type="text",
+            attribute_name_en="note",
+            attribute_name_ja="メモ",
+            attribute_id="note_attr",
             label_ids=[],
             label_name_ens=["car"],
             comment=None,
@@ -190,9 +160,9 @@ class TestAddAttributeMain:
         assert result is True
         assert service.api.last_put is not None
         added_attribute = service.api.last_put["additionals"][-1]
-        assert added_attribute["type"] == "choice"
-        assert added_attribute["default"] == "sunny"
-        assert len(added_attribute["choices"]) == 2
+        assert added_attribute["type"] == "text"
+        assert added_attribute["default"] == ""
+        assert added_attribute["choices"] == []
 
     def test_add_attribute__attribute_id_is_uuidv4_when_not_specified(self, annotation_specs: dict) -> None:
         service = DummyService(annotation_specs)
@@ -203,7 +173,6 @@ class TestAddAttributeMain:
             attribute_name_en="note2",
             attribute_name_ja=None,
             attribute_id=None,
-            choice_inputs=[],
             label_ids=["car_label_id"],
             label_name_ens=[],
             comment="custom",
@@ -223,7 +192,6 @@ class TestAddAttributeMain:
                 attribute_name_en="weather",
                 attribute_name_ja=None,
                 attribute_id="71620647-98cf-48ad-b43b-4af425a24f32",
-                choice_inputs=[],
                 label_ids=["car_label_id"],
                 label_name_ens=[],
             )
