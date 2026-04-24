@@ -2,10 +2,8 @@ from __future__ import annotations
 
 import argparse
 import copy
-import csv
 import json
 import logging
-import sys
 import uuid
 from collections.abc import Sequence
 from dataclasses import dataclass
@@ -17,7 +15,6 @@ import pandas
 
 import annofabcli.common.cli
 from annofabcli.common.cli import (
-    COMMAND_LINE_ERROR_STATUS_CODE,
     ArgumentParser,
     CommandLine,
     CommandLineWithConfirm,
@@ -68,24 +65,6 @@ def create_name(message_en: str, message_ja: str | None = None) -> dict[str, Any
     return {"messages": messages, "default_lang": "ja-JP"}
 
 
-def _to_optional_str(value: Any) -> str | None:  # noqa: ANN401
-    """
-    任意の値を空文字を除いた文字列に変換する。
-
-    Args:
-        value: 入力値
-
-    Returns:
-        空文字またはNoneならNone、それ以外は文字列
-    """
-    if value is None:
-        return None
-    if isinstance(value, str):
-        stripped = value.strip()
-        return stripped if stripped != "" else None
-    return str(value)
-
-
 def parse_choice_input_from_dict(data: dict[str, Any], *, index: int) -> ChoiceAttributeInput:
     """
     JSONオブジェクト1件を選択肢入力に変換する。
@@ -100,24 +79,15 @@ def parse_choice_input_from_dict(data: dict[str, Any], *, index: int) -> ChoiceA
     Raises:
         ValueError: 必須項目や型が不正な場合
     """
-    choice_name_en = _to_optional_str(data.get("choice_name_en"))
+    choice_name_en = data.get("choice_name_en")
     if choice_name_en is None:
         raise ValueError(f"{index}件目の選択肢に `choice_name_en` が指定されていません。")
 
-    choice_id = _to_optional_str(data.get("choice_id"))
-    choice_name_ja = _to_optional_str(data.get("choice_name_ja"))
-
-    raw_is_default = data.get("is_default", False)
-    if isinstance(raw_is_default, bool):
-        is_default = raw_is_default
-    else:
-        raise ValueError(f"{index}件目の選択肢の `is_default` には true または false を指定してください。")
-
     return ChoiceAttributeInput(
         choice_name_en=choice_name_en,
-        choice_name_ja=choice_name_ja,
-        choice_id=choice_id,
-        is_default=is_default,
+        choice_name_ja=data.get("choice_name_ja"),
+        choice_id=data.get("choice_id"),
+        is_default=data.get("is_default", False),
     )
 
 
@@ -136,12 +106,12 @@ def read_choices_json(target: str) -> list[ChoiceAttributeInput]:
     """
     raw_data = get_json_from_args(target)
     if not isinstance(raw_data, list):
-        raise ValueError("`--choices_json` には選択肢情報の配列を指定してください。")
+        raise TypeError("`--choices_json` には選択肢情報の配列を指定してください。")
 
     result = []
     for index, choice_data in enumerate(raw_data, start=1):
         if not isinstance(choice_data, dict):
-            raise ValueError(f"{index}件目の選択肢がオブジェクト形式ではありません。")
+            raise TypeError(f"{index}件目の選択肢がオブジェクト形式ではありません。")
         result.append(parse_choice_input_from_dict(choice_data, index=index))
     return result
 
@@ -495,33 +465,29 @@ class AddChoiceAttribute(CommandLine):
         """
         args = self.args
 
-        try:
-            if args.choices_json is not None:
-                choice_inputs = read_choices_json(args.choices_json)
-            elif args.choices_csv is not None:
-                if not args.choices_csv.exists():
-                    raise ValueError(f"`--choices_csv` に指定されたファイルが存在しません。 :: {args.choices_csv}")
-                choice_inputs = read_choices_csv(args.choices_csv)
-            else:
-                raise ValueError("`--choices_json` または `--choices_csv` のいずれかを指定してください。")
+        if args.choices_json is not None:
+            choice_inputs = read_choices_json(args.choices_json)
+        elif args.choices_csv is not None:
+            if not args.choices_csv.exists():
+                raise ValueError(f"`--choices_csv` に指定されたファイルが存在しません。 :: {args.choices_csv}")
+            choice_inputs = read_choices_csv(args.choices_csv)
+        else:
+            raise ValueError("`--choices_json` または `--choices_csv` のいずれかを指定してください。")
 
-            label_ids = get_list_from_args(args.label_id)
-            label_name_ens = get_list_from_args(args.label_name_en)
+        label_ids = get_list_from_args(args.label_id)
+        label_name_ens = get_list_from_args(args.label_name_en)
 
-            obj = AddChoiceAttributeMain(self.service, project_id=args.project_id, all_yes=args.yes)
-            obj.add_choice_attribute(
-                attribute_type=args.attribute_type,
-                attribute_name_en=args.attribute_name_en,
-                attribute_name_ja=args.attribute_name_ja,
-                attribute_id=args.attribute_id,
-                choice_inputs=choice_inputs,
-                label_ids=label_ids,
-                label_name_ens=label_name_ens,
-                comment=args.comment,
-            )
-        except (ValueError, json.JSONDecodeError, csv.Error) as e:
-            print(f"{self.COMMON_MESSAGE} {e}", file=sys.stderr)  # noqa: T201
-            sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
+        obj = AddChoiceAttributeMain(self.service, project_id=args.project_id, all_yes=args.yes)
+        obj.add_choice_attribute(
+            attribute_type=args.attribute_type,
+            attribute_name_en=args.attribute_name_en,
+            attribute_name_ja=args.attribute_name_ja,
+            attribute_id=args.attribute_id,
+            choice_inputs=choice_inputs,
+            label_ids=label_ids,
+            label_name_ens=label_name_ens,
+            comment=args.comment,
+        )
 
 
 def parse_args(parser: argparse.ArgumentParser) -> None:
