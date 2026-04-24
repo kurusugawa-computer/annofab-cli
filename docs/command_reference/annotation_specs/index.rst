@@ -15,20 +15,21 @@ Available Commands
    :maxdepth: 1
    :titlesonly:
 
-   add_existing_attribute
-   add_choice_attribute
-   add_label
    add_attribute_restriction
+   add_choice_attribute
+   add_existing_attribute
+   add_label
+   add_labels
    export
    get_with_attribute_id_replaced_label_name
    get_with_choice_id_replaced_label_name
    get_with_label_id_replaced_label_name
    list_attribute
-   list_attribute_restriction
    list_choice
    list_history
    list_label
    list_label_attribute
+   list_attribute_restriction
    list_label_color
    put_label_color
 
