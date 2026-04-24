@@ -55,6 +55,7 @@ dev = [
 ]
 test = [
     "pytest>=9",
+    "pytest-xdist",
 ]
 linter = [
     "ruff>=0.15; python_version>='3.12'",
