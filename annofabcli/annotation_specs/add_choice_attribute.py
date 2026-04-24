@@ -12,6 +12,7 @@ from typing import Any
 
 import annofabapi
 import pandas
+from annofabapi.util.annotation_specs import AnnotationSpecsAccessor
 
 import annofabcli.common.cli
 from annofabcli.common.cli import (
@@ -241,7 +242,7 @@ def create_comment_from_attribute(attribute_name_en: str, label_names: Sequence[
 
 
 def get_target_labels(
-    labels: Sequence[dict[str, Any]],
+    annotation_specs_accessor: AnnotationSpecsAccessor,
     *,
     label_ids: Sequence[str],
     label_name_ens: Sequence[str],
@@ -250,7 +251,7 @@ def get_target_labels(
     CLI引数で指定されたラベルID・ラベル名から追加対象ラベル一覧を取得する。
 
     Args:
-        labels: アノテーション仕様に含まれるラベル一覧
+        annotation_specs_accessor: アノテーション仕様アクセサ
         label_ids: 指定されたラベルID一覧
         label_name_ens: 指定されたラベル英語名一覧
 
@@ -263,23 +264,14 @@ def get_target_labels(
     result = []
     result_label_ids: set[str] = set()
 
-    dict_label = {label["label_id"]: label for label in labels}
     for label_id in label_ids:
-        label = dict_label.get(label_id)
-        if label is None:
-            raise ValueError(f"ラベルID='{label_id}' のラベルは存在しません。")
+        label = annotation_specs_accessor.get_label(label_id=label_id)
         if label_id not in result_label_ids:
             result.append(label)
             result_label_ids.add(label_id)
 
     for label_name_en in label_name_ens:
-        matched_labels = [label for label in labels if AnnofabApiFacade.get_label_name_en(label) == label_name_en]
-        if len(matched_labels) == 0:
-            raise ValueError(f"ラベル名(英語)='{label_name_en}' のラベルは存在しません。")
-        if len(matched_labels) >= 2:
-            raise ValueError(f"ラベル名(英語)='{label_name_en}' のラベルが複数存在します。 `--label_id` を指定してください。")
-
-        label = matched_labels[0]
+        label = annotation_specs_accessor.get_label(label_name=label_name_en)
         label_id = label["label_id"]
         if label_id not in result_label_ids:
             result.append(label)
@@ -397,8 +389,9 @@ class AddChoiceAttributeMain(CommandLineWithConfirm):
             ValueError: 入力値や既存アノテーション仕様との整合性が不正な場合
         """
         old_annotation_specs, _ = self.service.api.get_annotation_specs(self.project_id, query_params={"v": "3"})
+        annotation_specs_accessor = AnnotationSpecsAccessor(old_annotation_specs)
         additionals = old_annotation_specs["additionals"]
-        target_labels = get_target_labels(old_annotation_specs["labels"], label_ids=label_ids, label_name_ens=label_name_ens)
+        target_labels = get_target_labels(annotation_specs_accessor, label_ids=label_ids, label_name_ens=label_name_ens)
         new_attribute = create_attribute(
             attribute_type=attribute_type,
             attribute_name_en=attribute_name_en,
