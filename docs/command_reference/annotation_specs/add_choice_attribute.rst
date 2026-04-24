@@ -33,13 +33,18 @@ JSON形式で指定する場合
 
 .. code-block::
 
-    $ annofabcli annotation_specs add_choice_attribute --project_id prj1 --attribute_type choice --attribute_name_en direction --attribute_name_ja 向き --choices_json file://choices.json --label_name_en car --label_name_en bus
+    $ annofabcli annotation_specs add_choice_attribute \
+     --project_id prj1 \
+     --attribute_type choice \
+     --attribute_name_en direction \
+     --choices_json file://choices.json \
+     --label_name_en car bus \
 
 
 CSV形式で指定する場合
 ----------------------------------------------
 
-.. code-block:: csv
+.. code-block::
     :caption: choices.csv
 
     choice_id,choice_name_en,choice_name_ja,is_default
@@ -49,7 +54,12 @@ CSV形式で指定する場合
 
 .. code-block::
 
-    $ annofabcli annotation_specs add_choice_attribute --project_id prj1 --attribute_type select --attribute_name_en direction --choices_csv choices.csv --label_id 11111111-1111-1111-1111-111111111111
+    $ annofabcli annotation_specs add_choice_attribute \
+     --project_id prj1 \
+     --attribute_type select \
+     --attribute_name_en direction \
+     --choices_csv choices.csv \
+     --label_id l1 l2
 
 
 Usage Details
