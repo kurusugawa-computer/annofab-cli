@@ -131,7 +131,10 @@ def create_new_label(
         "label_name": create_name(label_name_en, label_name_ja),
         "annotation_type": annotation_type,
         "color": color,
+        # 以下はキーが存在しないとAPIエラーになるため、空の値を入れておく
         "keybind": [],
+        "field_values": {},
+        "additional_data_definitions":[]
     }
 
 
