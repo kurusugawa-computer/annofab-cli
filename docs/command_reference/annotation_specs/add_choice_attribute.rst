@@ -5,6 +5,7 @@ annotation_specs add_choice_attribute
 Description
 =================================
 アノテーション仕様に ``choice`` （ラジオボタン）または ``select`` （ドロップダウン）の選択肢系属性を追加し、指定したラベルへ紐付けます。
+指定する選択肢の ``choice_id`` と ``choice_name_en`` は、それぞれユニークである必要があります。
 
 
 Examples

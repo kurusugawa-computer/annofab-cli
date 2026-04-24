@@ -167,6 +167,11 @@ def validate_choice_inputs(choice_inputs: Sequence[ChoiceAttributeInput]) -> Non
         duplicated_text = ", ".join(sorted(duplicated_choice_ids))
         raise ValueError(f"入力された選択肢に重複した `choice_id` があります。 :: {duplicated_text}")
 
+    duplicated_choice_names = duplicated_set([choice.choice_name_en for choice in choice_inputs])
+    if duplicated_choice_names:
+        duplicated_text = ", ".join(sorted(duplicated_choice_names))
+        raise ValueError(f"入力された選択肢に重複した `choice_name_en` があります。 :: {duplicated_text}")
+
     default_count = len([choice for choice in choice_inputs if choice.is_default])
     if default_count > 1:
         raise ValueError("`is_default=true` を指定できる選択肢は0件または1件です。")
@@ -444,7 +449,12 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     choice_group.add_argument(
         "--choices_csv",
         type=Path,
-        help="追加する選択肢情報のCSVファイルを指定します。 CSVには ``choice_name_en`` 列が必要です。 任意で ``choice_id`` , ``choice_name_ja`` , ``is_default`` 列を指定できます。",
+        help=(
+            "追加する選択肢情報のCSVファイルを指定します。 "
+            "CSVには ``choice_name_en`` 列が必要です。 "
+            "``choice_id`` と ``choice_name_en`` はユニークになるように指定してください。 "
+            "任意で ``choice_id`` , ``choice_name_ja`` , ``is_default`` 列を指定できます。"
+        ),
     )
 
     label_group = parser.add_mutually_exclusive_group(required=True)
