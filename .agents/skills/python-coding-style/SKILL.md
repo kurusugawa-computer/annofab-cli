@@ -10,5 +10,5 @@ description: Pythonコードを作成・修正するときに使用。
 * docstring は Google スタイルで記述する。
 * ログメッセージやコメントは日本語で記述する
 * 戻り値をtupleで返そうとする場合は、`NamedTuple`, `dataclass`, pydantic modelの使用を検討して、本当にtupleが適切かどうかを判断する。
-* クラス属性やインスタンス属性の説明は、属性の定義の直後に docstring として記述する。VSCodeのtooltipに表示させるため。
+* モジュールレベルの定数、クラス属性、インスタンス属性などには直後に docstring として記述する。VSCodeのtooltipに表示させるため。
 
