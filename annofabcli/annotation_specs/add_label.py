@@ -81,28 +81,43 @@ def validate_new_label(labels: Collection[dict[str, Any]], *, label_id: str, lab
         raise ValueError(f"label_name_en='{label_name_en}' のラベルは既に存在します。")
 
 
-def create_auto_color(labels: Collection[dict[str, Any]]) -> RgbColor:
+def create_auto_color(colors: Collection[RgbColor]) -> RgbColor:
     """
     AUTO_COLOR_PALETTE の中から使用回数が最も少ない色を返す。
 
     Args:
-        labels: 既存ラベル一覧
+        colors: 既存色一覧
 
     Returns:
         Annofab API向けのRGB辞書
     """
     color_counts: Counter[tuple[int, int, int]] = Counter()
-    for label in labels:
-        color = label.get("color")
-        if not isinstance(color, dict):
-            continue
-
+    for color in colors:
         color_tuple = (color["red"], color["green"], color["blue"])
         if color_tuple in AUTO_COLOR_PALETTE:
             color_counts[color_tuple] += 1
 
     red, green, blue = min(AUTO_COLOR_PALETTE, key=lambda color: color_counts[color])
     return {"red": red, "green": green, "blue": blue}
+
+
+def collect_label_colors(labels: Collection[dict[str, Any]]) -> list[RgbColor]:
+    """
+    既存ラベル一覧から色一覧を抽出する。
+
+    Args:
+        labels: 既存ラベル一覧
+
+    Returns:
+        既存色一覧
+    """
+    colors: list[RgbColor] = []
+    for label in labels:
+        color = label.get("color")
+        if not isinstance(color, dict):
+            continue
+        colors.append({"red": color["red"], "green": color["green"], "blue": color["blue"]})
+    return colors
 
 
 def create_new_label(
@@ -134,7 +149,7 @@ def create_new_label(
         # 以下はキーが存在しないとAPIエラーになるため、空の値を入れておく
         "keybind": [],
         "field_values": {},
-        "additional_data_definitions":[]
+        "additional_data_definitions": [],
     }
 
 
@@ -187,7 +202,7 @@ class AddLabelMain(CommandLineWithConfirm):
         generated_label_id = label_id if label_id is not None else str(uuid.uuid4())
         validate_new_label(labels, label_id=generated_label_id, label_name_en=label_name_en)
 
-        color = hex_to_rgb(color_code) if color_code is not None else create_auto_color(labels)
+        color = hex_to_rgb(color_code) if color_code is not None else create_auto_color(collect_label_colors(labels))
         new_label = create_new_label(
             label_id=generated_label_id,
             label_name_en=label_name_en,

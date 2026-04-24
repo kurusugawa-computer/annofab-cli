@@ -10,6 +10,7 @@ import pytest
 
 from annofabcli.annotation_specs import add_label
 from annofabcli.annotation_specs.add_label import AUTO_COLOR_PALETTE, AddLabelMain, create_auto_color
+from annofabcli.annotation_specs.color import RgbColor
 
 data_dir = Path("./tests/data/annotation_specs")
 
@@ -98,32 +99,33 @@ class TestParseArgs:
 
 class TestColor:
     def test_create_auto_color(self, annotation_specs: dict) -> None:
-        actual = create_auto_color(annotation_specs["labels"])
+        colors: list[RgbColor] = [label["color"] for label in annotation_specs["labels"]]
+        actual = create_auto_color(colors)
         assert actual == {"red": 255, "green": 85, "blue": 0}
 
     def test_create_auto_color__uses_extended_vivid_palette(self) -> None:
-        labels = [
-            {"color": {"red": 255, "green": 0, "blue": 0}},
-            {"color": {"red": 255, "green": 85, "blue": 0}},
-            {"color": {"red": 255, "green": 170, "blue": 0}},
-            {"color": {"red": 255, "green": 255, "blue": 0}},
-            {"color": {"red": 170, "green": 255, "blue": 0}},
-            {"color": {"red": 85, "green": 255, "blue": 0}},
-            {"color": {"red": 0, "green": 255, "blue": 0}},
-            {"color": {"red": 0, "green": 255, "blue": 85}},
-            {"color": {"red": 0, "green": 255, "blue": 170}},
-            {"color": {"red": 0, "green": 255, "blue": 255}},
+        colors: list[RgbColor] = [
+            {"red": 255, "green": 0, "blue": 0},
+            {"red": 255, "green": 85, "blue": 0},
+            {"red": 255, "green": 170, "blue": 0},
+            {"red": 255, "green": 255, "blue": 0},
+            {"red": 170, "green": 255, "blue": 0},
+            {"red": 85, "green": 255, "blue": 0},
+            {"red": 0, "green": 255, "blue": 0},
+            {"red": 0, "green": 255, "blue": 85},
+            {"red": 0, "green": 255, "blue": 170},
+            {"red": 0, "green": 255, "blue": 255},
         ]
 
-        actual = create_auto_color(labels)
+        actual = create_auto_color(colors)
 
         assert actual == {"red": 0, "green": 170, "blue": 255}
 
     def test_create_auto_color__returns_least_used_palette_color_when_all_palette_colors_are_used(self) -> None:
-        labels = [{"color": {"red": red, "green": green, "blue": blue}} for red, green, blue in AUTO_COLOR_PALETTE]
-        labels.append({"color": {"red": 255, "green": 0, "blue": 0}})
+        colors: list[RgbColor] = [{"red": red, "green": green, "blue": blue} for red, green, blue in AUTO_COLOR_PALETTE]
+        colors.append({"red": 255, "green": 0, "blue": 0})
 
-        actual = create_auto_color(labels)
+        actual = create_auto_color(colors)
 
         assert actual == {"red": 255, "green": 85, "blue": 0}
 
@@ -208,7 +210,8 @@ class TestAddLabelMain:
 
         assert service.api.last_put is not None
         added_label = service.api.last_put["labels"][-1]
-        assert "field_values" not in added_label
+        assert added_label["field_values"] == {}
+        assert added_label["additional_data_definitions"] == []
         assert "bounding_box_metadata" not in added_label
         assert "segmentation_metadata" not in added_label
         assert "annotation_editor_feature" not in added_label
