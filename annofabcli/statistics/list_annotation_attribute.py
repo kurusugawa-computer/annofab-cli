@@ -213,10 +213,9 @@ class ListAnnotationAttribute(CommandLine):
 
         def download_and_print_annotation_attribute_list(project_id: str, temp_dir: Path, *, is_latest: bool, annotation_path: Path | None) -> None:
             if annotation_path is None:
-                annotation_path = temp_dir / f"{project_id}__annotation.zip"
-                downloading_obj.download_annotation_zip(
+                annotation_path = downloading_obj.download_annotation_zip_to_dir(
                     project_id,
-                    dest_path=annotation_path,
+                    temp_dir,
                     is_latest=is_latest,
                 )
 

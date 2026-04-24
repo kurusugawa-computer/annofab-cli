@@ -5,6 +5,7 @@ import copy
 import json
 import logging
 import sys
+import tempfile
 from collections import defaultdict
 from pathlib import Path
 from typing import Any
@@ -146,14 +147,26 @@ class ListInputDataMergedTask(CommandLine):
 
         return True
 
-    def download_json_files(self, project_id: str, output_dir: Path, *, is_latest: bool) -> None:
+    def download_json_files(self, project_id: str, temp_dir: Path | None, *, is_latest: bool) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+        """入力データJSONとタスクJSONをダウンロードして読み込む。"""
         downloading_obj = DownloadingFile(self.service)
-        downloading_obj.download_input_data_json(
-            project_id,
-            dest_path=str(output_dir / "input_data.json"),
-            is_latest=is_latest,
-        )
-        downloading_obj.download_task_json(project_id, dest_path=str(output_dir / "task.json"), is_latest=is_latest)
+
+        def _download_and_load(dir_path: Path) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+            input_data_json_path = downloading_obj.download_input_data_json_to_dir(project_id, dir_path, is_latest=is_latest)
+            task_json_path = downloading_obj.download_task_json_to_dir(project_id, dir_path, is_latest=is_latest)
+            logger.debug(f"{task_json_path} を読み込み中")
+            with task_json_path.open(encoding="utf-8") as f:
+                task_list: list[dict[str, Any]] = json.load(f)
+            logger.debug(f"{input_data_json_path} を読み込み中")
+            with input_data_json_path.open(encoding="utf-8") as f:
+                input_data_list: list[dict[str, Any]] = json.load(f)
+            return input_data_list, task_list
+
+        if temp_dir is not None:
+            return _download_and_load(temp_dir)
+
+        with tempfile.TemporaryDirectory() as str_temp_dir:
+            return _download_and_load(Path(str_temp_dir))
 
     def main(self) -> None:
         args = self.args
@@ -163,21 +176,18 @@ class ListInputDataMergedTask(CommandLine):
         project_id = args.project_id
         if project_id is not None:
             super().validate_project(project_id, None)
-            cache_dir = annofabcli.common.utils.get_cache_dir()
-            self.download_json_files(project_id, cache_dir, is_latest=args.latest)
-            task_json_path = cache_dir / "task.json"
-            input_data_json_path = cache_dir / "input_data.json"
+            input_data_list, task_list = self.download_json_files(project_id, args.temp_dir, is_latest=args.latest)
         else:
             task_json_path = args.task_json
             input_data_json_path = args.input_data_json
 
-        logger.debug(f"{task_json_path} を読み込み中")
-        with open(task_json_path, encoding="utf-8") as f:  # noqa: PTH123
-            task_list = json.load(f)
+            logger.debug(f"{task_json_path} を読み込み中")
+            with open(task_json_path, encoding="utf-8") as f:  # noqa: PTH123
+                task_list = json.load(f)
 
-        logger.debug(f"{input_data_json_path} を読み込み中")
-        with open(input_data_json_path, encoding="utf-8") as f:  # noqa: PTH123
-            input_data_list = json.load(f)
+            logger.debug(f"{input_data_json_path} を読み込み中")
+            with open(input_data_json_path, encoding="utf-8") as f:  # noqa: PTH123
+                input_data_list = json.load(f)
 
         input_data_id_set = set(get_list_from_args(args.input_data_id)) if args.input_data_id is not None else None
         input_data_query = InputDataQuery.from_dict(annofabcli.common.cli.get_json_from_args(args.input_data_query)) if args.input_data_query is not None else None
@@ -258,6 +268,12 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--latest",
         action="store_true",
         help="入力データ一覧ファイル、タスク一覧ファイルの更新が完了するまで待って、最新のファイルをダウンロードします。 ``--project_id`` を指定したときのみ有効です。",
+    )
+
+    parser.add_argument(
+        "--temp_dir",
+        type=Path,
+        help="指定したディレクトリに、入力データJSONやタスクJSONなどの一時ファイルをダウンロードします。 ``--project_id`` を指定したときのみ有効です。",
     )
 
     argument_parser.add_format(
