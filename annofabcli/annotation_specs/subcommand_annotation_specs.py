@@ -1,5 +1,6 @@
 import argparse
 
+import annofabcli.annotation_specs.add_attribute
 import annofabcli.annotation_specs.add_attribute_restriction
 import annofabcli.annotation_specs.add_choice_attribute
 import annofabcli.annotation_specs.add_existing_attribute
@@ -24,6 +25,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     subparsers = parser.add_subparsers(dest="subcommand_name")
 
     # サブコマンドの定義
+    annofabcli.annotation_specs.add_attribute.add_parser(subparsers)
     annofabcli.annotation_specs.add_attribute_restriction.add_parser(subparsers)
     annofabcli.annotation_specs.add_choice_attribute.add_parser(subparsers)
     annofabcli.annotation_specs.add_existing_attribute.add_parser(subparsers)

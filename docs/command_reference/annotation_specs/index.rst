@@ -15,6 +15,7 @@ Available Commands
    :maxdepth: 1
    :titlesonly:
 
+   add_attribute
    add_attribute_restriction
    add_choice_attribute
    add_existing_attribute
