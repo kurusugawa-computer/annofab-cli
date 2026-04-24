@@ -5,7 +5,6 @@ annotation_specs add_label
 Description
 =================================
 アノテーション仕様にラベルを1件追加します。
-v1では属性の紐付けは行わず、空の属性一覧を持つラベルを作成します。
 
 
 Examples
@@ -22,7 +21,7 @@ Examples
      --annotation_type bounding_box
 
 
-色とlabel_idを明示する場合
+色やlabel_idを明示する場合
 ----------------------------------------------
 
 .. code-block::
