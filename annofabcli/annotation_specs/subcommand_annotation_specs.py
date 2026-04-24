@@ -1,6 +1,11 @@
 import argparse
 
+import annofabcli.annotation_specs.add_attribute
 import annofabcli.annotation_specs.add_attribute_restriction
+import annofabcli.annotation_specs.add_choice_attribute
+import annofabcli.annotation_specs.add_existing_attribute
+import annofabcli.annotation_specs.add_label
+import annofabcli.annotation_specs.add_labels
 import annofabcli.annotation_specs.export_annotation_specs
 import annofabcli.annotation_specs.get_annotation_specs_with_attribute_id_replaced
 import annofabcli.annotation_specs.get_annotation_specs_with_choice_id_replaced
@@ -20,17 +25,22 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     subparsers = parser.add_subparsers(dest="subcommand_name")
 
     # サブコマンドの定義
+    annofabcli.annotation_specs.add_attribute.add_parser(subparsers)
     annofabcli.annotation_specs.add_attribute_restriction.add_parser(subparsers)
+    annofabcli.annotation_specs.add_choice_attribute.add_parser(subparsers)
+    annofabcli.annotation_specs.add_existing_attribute.add_parser(subparsers)
+    annofabcli.annotation_specs.add_label.add_parser(subparsers)
+    annofabcli.annotation_specs.add_labels.add_parser(subparsers)
     annofabcli.annotation_specs.export_annotation_specs.add_parser(subparsers)
     annofabcli.annotation_specs.get_annotation_specs_with_attribute_id_replaced.add_parser(subparsers)
     annofabcli.annotation_specs.get_annotation_specs_with_choice_id_replaced.add_parser(subparsers)
     annofabcli.annotation_specs.get_annotation_specs_with_label_id_replaced.add_parser(subparsers)
     annofabcli.annotation_specs.list_annotation_specs_attribute.add_parser(subparsers)
-    annofabcli.annotation_specs.list_attribute_restriction.add_parser(subparsers)
     annofabcli.annotation_specs.list_annotation_specs_choice.add_parser(subparsers)
     annofabcli.annotation_specs.list_annotation_specs_history.add_parser(subparsers)
     annofabcli.annotation_specs.list_annotation_specs_label.add_parser(subparsers)
     annofabcli.annotation_specs.list_annotation_specs_label_attribute.add_parser(subparsers)
+    annofabcli.annotation_specs.list_attribute_restriction.add_parser(subparsers)
     annofabcli.annotation_specs.list_label_color.add_parser(subparsers)
     annofabcli.annotation_specs.put_label_color.add_parser(subparsers)
 

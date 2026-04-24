@@ -8,6 +8,7 @@ from typing import Any
 
 import pandas
 from annofabapi.models import InputDataType, ProjectMemberRole
+from annofabapi.util.page import create_image_editor_url
 from pydantic import BaseModel, ConfigDict
 from shapely.errors import ShapelyError
 from shapely.geometry import Polygon
@@ -48,6 +49,7 @@ class AnnotationPolygonInfo(BaseModel):
 
     label: str
     annotation_id: str
+    annotation_editor_url: str
     point_count: int
     area: float | None
     """ポリゴンの面積。2点のポリラインの場合はNone"""
@@ -129,6 +131,12 @@ def get_annotation_polygon_info_list(simple_annotation: dict[str, Any], *, targe
                     input_data_name=simple_annotation["input_data_name"],
                     label=label,
                     annotation_id=detail["annotation_id"],
+                    annotation_editor_url=create_image_editor_url(
+                        simple_annotation["project_id"],
+                        simple_annotation["task_id"],
+                        input_data_id=simple_annotation["input_data_id"],
+                        annotation_id=detail["annotation_id"],
+                    ),
                     point_count=point_count,
                     area=area,
                     centroid=centroid,
@@ -191,6 +199,7 @@ def create_df(
         "updated_datetime",
         "label",
         "annotation_id",
+        "annotation_editor_url",
         "point_count",
         "area",
         "centroid.x",
@@ -288,10 +297,9 @@ class ListAnnotationPolygon(CommandLine):
         downloading_obj = DownloadingFile(self.service)
 
         def download_and_print_annotation_polygon(project_id: str, temp_dir: Path, *, is_latest: bool) -> None:
-            local_annotation_path = temp_dir / f"{project_id}__annotation.zip"
-            downloading_obj.download_annotation_zip(
+            local_annotation_path = downloading_obj.download_annotation_zip_to_dir(
                 project_id,
-                dest_path=local_annotation_path,
+                temp_dir,
                 is_latest=is_latest,
             )
             print_annotation_polygon(

@@ -11,6 +11,7 @@ from typing import Any
 import pandas
 from annofab_3dpc.annotation import CuboidAnnotationDetailDataV2, convert_annotation_detail_data
 from annofabapi.models import InputDataType, ProjectMemberRole
+from annofabapi.util.page import create_3dpc_editor_url
 from dataclasses_json import DataClassJsonMixin
 
 import annofabcli.common.cli
@@ -41,6 +42,7 @@ class Annotation3DBoundingBoxInfo(DataClassJsonMixin):
 
     label: str
     annotation_id: str
+    annotation_editor_url: str
 
     dimensions: dict[str, float]
     """サイズ情報 (width, height, depth)"""
@@ -113,6 +115,12 @@ def get_annotation_3d_bounding_box_info_list(simple_annotation: dict[str, Any], 
                 input_data_name=simple_annotation["input_data_name"],
                 label=label,
                 annotation_id=detail["annotation_id"],
+                annotation_editor_url=create_3dpc_editor_url(
+                    simple_annotation["project_id"],
+                    simple_annotation["task_id"],
+                    input_data_id=simple_annotation["input_data_id"],
+                    annotation_id=detail["annotation_id"],
+                ),
                 dimensions=dimensions.to_dict(),  # type: ignore[arg-type]
                 location=location.to_dict(),  # type: ignore[arg-type]
                 rotation=annotation_data.shape.rotation.to_dict(),  # type: ignore[arg-type]
@@ -170,6 +178,7 @@ def create_df(
         "updated_datetime",
         "label",
         "annotation_id",
+        "annotation_editor_url",
         "dimensions.width",
         "dimensions.height",
         "dimensions.depth",
@@ -270,10 +279,9 @@ class ListAnnotation3DBoundingBox(CommandLine):
         downloading_obj = DownloadingFile(self.service)
 
         def download_and_print_annotation_bbox(project_id: str, temp_dir: Path, *, is_latest: bool) -> None:
-            annotation_path = temp_dir / f"{project_id}__annotation.zip"
-            downloading_obj.download_annotation_zip(
+            annotation_path = downloading_obj.download_annotation_zip_to_dir(
                 project_id,
-                dest_path=annotation_path,
+                temp_dir,
                 is_latest=is_latest,
             )
             print_annotation_3d_bounding_box(

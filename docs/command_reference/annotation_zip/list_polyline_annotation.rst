@@ -38,6 +38,7 @@ Examples
         "updated_datetime": "2023-10-01T12:00:00.000+09:00",
         "label": "road",
         "annotation_id": "ann1",
+        "annotation_editor_url": "https://annofab.com/projects/proj1/tasks/task_00/editor?#i1/ann1",
         "point_count": 5,
         "length": 100.5,
         "start_point": {"x": 10.0, "y": 20.0},
@@ -86,6 +87,7 @@ Examples
 * ``updated_datetime`` : アノテーションJSONの更新日時（ISO 8601形式）
 * ``label`` : ラベル名
 * ``annotation_id`` : アノテーションID
+* ``annotation_editor_url`` : アノテーションエディタのURL。対象のアノテーションを直接開くことができます。
 
 ポリライン情報
 --------------------

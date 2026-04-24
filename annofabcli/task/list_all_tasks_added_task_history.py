@@ -45,6 +45,7 @@ class ListAllTasksAddedTaskHistoryMain:
         self,
         task_list: list[dict[str, Any]],
         task_history_dict: TaskHistoryDict,
+        start_date_list: list[str] | None = None,
     ) -> list[dict[str, Any]]:
         obj = AddingAdditionalInfoToTask(self.service, project_id=self.project_id)
 
@@ -56,7 +57,7 @@ class ListAllTasksAddedTaskHistoryMain:
             if task_histories is None:
                 logger.warning(f"task_id='{task_id}' に紐づくタスク履歴情報は存在しないので、タスク履歴の付加的情報はタスクに追加しません。")
                 continue
-            obj.add_task_history_additional_info_to_task(task, task_histories)
+            obj.add_task_history_additional_info_to_task(task, task_histories, start_date_list=start_date_list)
 
         return task_list
 
@@ -125,6 +126,7 @@ class ListAllTasksAddedTaskHistoryMain:
         task_id_list: list[str] | None,
         task_query: TaskQuery | None,
         temp_dir: Path | None,
+        start_date_list: list[str] | None = None,
     ) -> list[dict[str, Any]]:
         """
         タスク履歴情報を加えたタスク一覧を取得する。
@@ -135,7 +137,7 @@ class ListAllTasksAddedTaskHistoryMain:
         filtered_task_list = self.filter_task_list(task_list, task_id_list=task_id_list, task_query=task_query)
 
         logger.debug("タスク履歴に関する付加的情報を取得しています。")
-        detail_task_list = self.get_detail_task_list(task_list=filtered_task_list, task_history_dict=task_history_dict)
+        detail_task_list = self.get_detail_task_list(task_list=filtered_task_list, task_history_dict=task_history_dict, start_date_list=start_date_list)
         return detail_task_list
 
 
@@ -169,16 +171,18 @@ class ListAllTasksAddedTaskHistory(CommandLine):
         self.validate_project(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER])
 
         temp_dir = Path(args.temp_dir) if args.temp_dir is not None else None
+        start_date_list = args.start_datetime if args.start_datetime is not None else None
         task_list = ListAllTasksAddedTaskHistoryMain(self.service, project_id).get_task_list_added_task_history(
             task_json_path=args.task_json,
             task_history_json_path=args.task_history_json,
             task_id_list=task_id_list,
             task_query=task_query,
             temp_dir=temp_dir,
+            start_date_list=start_date_list,
         )
 
         logger.info(f"タスク一覧の件数: {len(task_list)}")
-        TasksAddedTaskHistoryOutput(task_list).output(output_path=args.output, output_format=OutputFormat(args.format))
+        TasksAddedTaskHistoryOutput(task_list, start_date_list=start_date_list).output(output_path=args.output, output_format=OutputFormat(args.format))
 
 
 def main(args: argparse.Namespace) -> None:
@@ -211,6 +215,15 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--temp_dir",
         type=str,
         help="``--task_json`` と ``--task_history_json`` を指定しなかった場合、ダウンロードしたJSONファイルの保存先ディレクトリを指定できます。指定しない場合は、一時ディレクトリに保存されます。",
+    )
+
+    parser.add_argument(
+        "--start_datetime",
+        type=str,
+        nargs="+",
+        help="指定した日付以降（started_datetimeを基準）の教師付・検査・受入作業時間および担当者情報を計算し、"
+        " ``since_{日付}.{フェーズ}_worktime_hour``および ``since_{日付}.first_{フェーズ}_{user_id,username,started_datetime,worktime_hour}``"
+        " カラムを出力に追加します。YYYY-MM-DD 形式で指定してください。複数指定可能です。",
     )
 
     argument_parser.add_output()

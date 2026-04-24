@@ -44,6 +44,7 @@ Examples
         "updated_datetime": "2023-10-01T12:00:00.000+09:00",
         "label": "音声",
         "annotation_id": "ann1",
+        "annotation_editor_url": "https://annofab.com/projects/proj1/tasks/task_00/timeline?#ann1/10.5",
         "begin_second": 10.5,
         "end_second": 15.8,
         "duration_second": 5.3,
@@ -59,9 +60,9 @@ Examples
 -------------------------------
 
 .. csv-table::
-   :header: project_id,task_id,task_phase,task_phase_stage,task_status,input_data_id,input_data_name,updated_datetime,label,annotation_id,begin_second,end_second,duration_second,attributes.speaker,attributes.language
+   :header: project_id,task_id,task_phase,task_phase_stage,task_status,input_data_id,input_data_name,updated_datetime,label,annotation_id,annotation_editor_url,begin_second,end_second,duration_second,attributes.speaker,attributes.language
 
-    proj1,task_00,annotation,1,complete,input1,video1.mp4,2023-10-01T12:00:00.000+09:00,音声,ann1,10.5,15.8,5.3,male,ja
+    proj1,task_00,annotation,1,complete,input1,video1.mp4,2023-10-01T12:00:00.000+09:00,音声,ann1,https://annofab.com/projects/proj1/tasks/task_00/timeline?#ann1/10.5,10.5,15.8,5.3,male,ja
 
 
 出力項目
@@ -79,6 +80,7 @@ CSV形式およびJSON形式で以下の項目が出力されます：
 * ``updated_datetime``: アノテーションJSONの更新日時
 * ``label``: アノテーションのラベル
 * ``annotation_id``: アノテーションID
+* ``annotation_editor_url``: アノテーションエディタのURL。対象のアノテーションを直接開くことができます。
 * ``begin_second``: 区間の開始時刻（秒）
 * ``end_second``: 区間の終了時刻（秒）
 * ``duration_second``: 区間の長さ（秒）

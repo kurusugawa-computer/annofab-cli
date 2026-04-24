@@ -174,7 +174,7 @@ class UserPerformance:
                 phase_list.append(phase.value)  # noqa: PERF401
 
         # mypyはTaskPhaseStringが返ることを認識できないため'return-value'を無視する
-        return phase_list  # type: ignore[return-value]
+        return phase_list
 
     @classmethod
     def from_csv(

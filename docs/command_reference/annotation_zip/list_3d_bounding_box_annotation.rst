@@ -42,6 +42,7 @@ Examples
         "updated_datetime": "2023-10-01T12:00:00.000+09:00",
         "label": "car",
         "annotation_id": "ann1",
+        "annotation_editor_url": "https://d2rljy8mjgrfyd.cloudfront.net/3d-editor-latest/index.html?p=proj1&t=task_00/#i1/ann1",
         "dimensions": {
           "width": 2.39,
           "height": 1.56,
@@ -116,6 +117,7 @@ CSVまたはJSON形式で以下の項目が出力されます。
 * updated_datetime: アノテーションJSONの更新日時
 * label: ラベル名
 * annotation_id: アノテーションID
+* annotation_editor_url: アノテーションエディタのURL。対象のアノテーションを直接開くことができます。
 
 3Dバウンディングボックス情報
 ----------------------------------------------------------------------
