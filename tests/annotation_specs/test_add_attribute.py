@@ -111,8 +111,6 @@ class TestCreateAttribute:
         )
 
         assert actual["type"] == "flag"
-        assert actual["default"] is False
-        assert actual["choices"] == []
 
     def test_create_attribute__text(self) -> None:
         actual = create_attribute(
@@ -123,8 +121,6 @@ class TestCreateAttribute:
         )
 
         assert actual["type"] == "text"
-        assert actual["default"] == ""
-        assert actual["choices"] == []
 
 
 class TestAddAttributeMain:

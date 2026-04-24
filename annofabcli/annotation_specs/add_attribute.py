@@ -80,8 +80,6 @@ def create_attribute(
         "additional_data_definition_id": attribute_id if attribute_id is not None else str(uuid.uuid4()),
         "name": create_name(attribute_name_en, attribute_name_ja),
         "type": attribute_type,
-        "default": get_default_value(attribute_type),
-        "choices": [],
     }
 
 
