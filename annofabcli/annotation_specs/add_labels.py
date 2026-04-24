@@ -187,7 +187,7 @@ def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse
     """
     subcommand_name = "add_labels"
     subcommand_help = "アノテーション仕様にラベルを複数追加します。"
-    description = "アノテーション仕様にラベルを複数件追加します。追加するラベルの annotation_type は共通です。属性の紐付けは行いません。"
+    description = "アノテーション仕様にラベルを複数件追加します。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description=description)
     parse_args(parser)
