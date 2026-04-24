@@ -29,8 +29,13 @@ class AnnotationTypeDetail:
     """
 
     value: str
+    """``--annotation_type`` に指定する実値。"""
+
     description: str
+    """アノテーション種類の日本語説明。"""
+
     available_project_types: str
+    """このアノテーション種類を利用できるプロジェクト種別。"""
 
 
 ANNOTATION_TYPE_DETAILS = [
@@ -50,6 +55,7 @@ ANNOTATION_TYPE_DETAILS = [
 """``--annotation_type`` に指定できる値と、その意味・対応プロジェクト。"""
 
 ANNOTATION_TYPE_CHOICES = [detail.value for detail in ANNOTATION_TYPE_DETAILS]
+"""``--annotation_type`` に指定できる値一覧。"""
 
 
 def create_annotation_type_help() -> str:
