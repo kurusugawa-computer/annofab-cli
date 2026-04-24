@@ -203,7 +203,6 @@ def validate_choice_inputs(choice_inputs: Sequence[ChoiceAttributeInput]) -> Non
     Raises:
         ValueError: 件数、重複、既定値の数が不正な場合
     """
-    print(f"{choice_inputs=}")
     if len(choice_inputs) <= 1:
         raise ValueError("選択肢を2件以上指定してください。")
 
@@ -217,7 +216,7 @@ def validate_choice_inputs(choice_inputs: Sequence[ChoiceAttributeInput]) -> Non
         raise ValueError("`is_default=true` を指定できる選択肢は0件または1件です。")
 
 
-def build_choices(choice_inputs: Sequence[ChoiceAttributeInput]) -> tuple[list[dict[str, Any]], str]:
+def build_choices(choice_inputs: Sequence[ChoiceAttributeInput]) -> tuple[list[dict[str, Any]], str | None]:
     """
     選択肢入力からAnnofab API向けのchoices配列を生成する。
 
@@ -225,7 +224,7 @@ def build_choices(choice_inputs: Sequence[ChoiceAttributeInput]) -> tuple[list[d
         choice_inputs: コマンドラインから受け取った選択肢一覧
 
     Returns:
-        ``(choices, default_choice_id)`` のタプル
+        ``(choices, default_choice_id)`` のタプル。デフォルト未指定時は ``None`` を返す。
 
     Raises:
         ValueError: 選択肢入力の整合性が不正な場合
@@ -233,14 +232,13 @@ def build_choices(choice_inputs: Sequence[ChoiceAttributeInput]) -> tuple[list[d
     validate_choice_inputs(choice_inputs)
 
     choices: list[dict[str, Any]] = []
-    default_choice_id = ""
+    default_choice_id: str | None = None
     for choice_input in choice_inputs:
         choice_id = choice_input.choice_id if choice_input.choice_id is not None else str(uuid.uuid4())
         choices.append(
             {
                 "choice_id": choice_id,
                 "name": create_name(choice_input.choice_name_en, choice_input.choice_name_ja),
-                "keybind": [],
             }
         )
         if choice_input.is_default:
@@ -368,7 +366,6 @@ def create_attribute(
     return {
         "additional_data_definition_id": attribute_id if attribute_id is not None else str(uuid.uuid4()),
         "name": create_name(attribute_name_en, attribute_name_ja),
-        # "keybind": [],
         "type": attribute_type,
         "default": default_choice_id,
         "choices": choices,
