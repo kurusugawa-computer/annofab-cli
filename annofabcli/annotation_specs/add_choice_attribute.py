@@ -505,13 +505,14 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         help="追加する選択肢情報のCSVファイルを指定します。 CSVには ``choice_name_en`` 列が必要です。 任意で ``choice_id`` , ``choice_name_ja`` , ``is_default`` 列を指定できます。",
     )
 
-    parser.add_argument(
+    label_group = parser.add_mutually_exclusive_group(required=True)
+    label_group.add_argument(
         "--label_name_en",
         type=str,
         nargs="+",
         help="属性を追加する対象ラベルの英語名。複数指定できます。 ``file://`` を先頭に付けると一覧ファイルを指定できます。",
     )
-    parser.add_argument(
+    label_group.add_argument(
         "--label_id",
         type=str,
         nargs="+",

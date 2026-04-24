@@ -72,13 +72,11 @@ class TestParseArgs:
                 '[{"choice_name_en":"sunny"}]',
                 "--label_name_en",
                 "car",
-                "--label_id",
-                "label1",
             ]
         )
         assert args.attribute_type == "choice"
         assert args.label_name_en == ["car"]
-        assert args.label_id == ["label1"]
+        assert args.label_id is None
 
     def test_parse_args__required(self) -> None:
         parser = create_parser()
@@ -101,6 +99,44 @@ class TestParseArgs:
                     '[{"choice_name_en":"sunny"}]',
                     "--choices_csv",
                     "choices.csv",
+                ]
+            )
+
+    def test_parse_args__label_name_en_and_label_id_are_mutually_exclusive(self) -> None:
+        parser = create_parser()
+        with pytest.raises(SystemExit):
+            parser.parse_args(
+                [
+                    "add_choice_attribute",
+                    "--project_id",
+                    "prj1",
+                    "--attribute_type",
+                    "choice",
+                    "--attribute_name_en",
+                    "weather",
+                    "--choices_json",
+                    '[{"choice_name_en":"sunny"}]',
+                    "--label_name_en",
+                    "car",
+                    "--label_id",
+                    "label1",
+                ]
+            )
+
+    def test_parse_args__label_name_en_or_label_id_is_required(self) -> None:
+        parser = create_parser()
+        with pytest.raises(SystemExit):
+            parser.parse_args(
+                [
+                    "add_choice_attribute",
+                    "--project_id",
+                    "prj1",
+                    "--attribute_type",
+                    "choice",
+                    "--attribute_name_en",
+                    "weather",
+                    "--choices_json",
+                    '[{"choice_name_en":"sunny"}]',
                 ]
             )
 
@@ -140,15 +176,19 @@ class TestReadChoicesJson:
 class TestReadChoicesCsv:
     def test_read_choices_csv(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
         csv_path = tmp_path / "choices.csv"
-        monkeypatch.setattr(
-            add_choice_attribute.pandas,
-            "read_csv",
-            lambda *args, **kwargs: pandas.DataFrame(
+
+        def fake_read_csv(*_args: object, **_kwargs: object) -> pandas.DataFrame:
+            return pandas.DataFrame(
                 [
                     {"choice_id": "front", "choice_name_en": "front", "choice_name_ja": "前", "is_default": True},
                     {"choice_id": None, "choice_name_en": "rear", "choice_name_ja": None, "is_default": False},
                 ]
-            ),
+            )
+
+        monkeypatch.setattr(
+            add_choice_attribute.pandas,
+            "read_csv",
+            fake_read_csv,
         )
 
         actual = read_choices_csv(csv_path)
@@ -160,10 +200,14 @@ class TestReadChoicesCsv:
 
     def test_read_choices_csv__required_column(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
         csv_path = tmp_path / "choices.csv"
+
+        def fake_read_csv(*_args: object, **_kwargs: object) -> pandas.DataFrame:
+            return pandas.DataFrame([{"choice_id": "front", "is_default": True}])
+
         monkeypatch.setattr(
             add_choice_attribute.pandas,
             "read_csv",
-            lambda *args, **kwargs: pandas.DataFrame([{"choice_id": "front", "is_default": True}]),
+            fake_read_csv,
         )
 
         with pytest.raises(ValueError):
@@ -172,7 +216,7 @@ class TestReadChoicesCsv:
     def test_read_choices_csv__invalid_is_default(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
         csv_path = tmp_path / "choices.csv"
 
-        def raise_read_csv_error(*args, **kwargs) -> pandas.DataFrame:
+        def raise_read_csv_error(*_args: object, **_kwargs: object) -> pandas.DataFrame:
             raise ValueError("is_default の値が不正です。")
 
         monkeypatch.setattr(add_choice_attribute.pandas, "read_csv", raise_read_csv_error)
