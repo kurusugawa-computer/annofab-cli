@@ -9,8 +9,8 @@ from pathlib import Path
 import pytest
 
 from annofabcli.annotation_specs import add_label
-from annofabcli.annotation_specs.add_label import AUTO_COLOR_PALETTE, AddLabelMain, create_auto_color
-from annofabcli.annotation_specs.color import RgbColor
+from annofabcli.annotation_specs.add_label import AUTO_COLOR_PALETTE_HEX, AddLabelMain, create_annotation_type_help, create_auto_color
+from annofabcli.annotation_specs.color import RgbColor, hex_to_rgb
 
 data_dir = Path("./tests/data/annotation_specs")
 
@@ -57,6 +57,14 @@ class AddLabelMainWithoutConfirm(AddLabelMain):
 
 
 class TestParseArgs:
+    def test_create_annotation_type_help(self) -> None:
+        actual = create_annotation_type_help()
+
+        assert "bounding_box : 矩形 [画像プロジェクト で使用可]" in actual
+        assert "classification : 全体分類 [画像プロジェクト / 動画プロジェクト で使用可]" in actual
+        assert "range : 動画の区間 [動画プロジェクト で使用可]" in actual
+        assert "user_bounding_box : 3次元のバウンディングボックス [3次元プロジェクト で使用可]" in actual
+
     def test_parse_args(self) -> None:
         parser = create_parser()
         args = parser.parse_args(
@@ -98,6 +106,9 @@ class TestParseArgs:
 
 
 class TestColor:
+    def test_auto_color_palette_hex__is_hex_color_code(self) -> None:
+        assert all(color_code.startswith("#") and len(color_code) == 7 for color_code in AUTO_COLOR_PALETTE_HEX)
+
     def test_create_auto_color(self, annotation_specs: dict) -> None:
         colors: list[RgbColor] = [label["color"] for label in annotation_specs["labels"]]
         actual = create_auto_color(colors)
@@ -122,7 +133,7 @@ class TestColor:
         assert actual == {"red": 0, "green": 170, "blue": 255}
 
     def test_create_auto_color__returns_least_used_palette_color_when_all_palette_colors_are_used(self) -> None:
-        colors: list[RgbColor] = [{"red": red, "green": green, "blue": blue} for red, green, blue in AUTO_COLOR_PALETTE]
+        colors: list[RgbColor] = [hex_to_rgb(color_code) for color_code in AUTO_COLOR_PALETTE_HEX]
         colors.append({"red": 255, "green": 0, "blue": 0})
 
         actual = create_auto_color(colors)

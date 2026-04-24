@@ -6,6 +6,7 @@ import logging
 import uuid
 from collections import Counter
 from collections.abc import Collection
+from dataclasses import dataclass
 from typing import Any
 
 import annofabapi
@@ -14,36 +15,77 @@ from annofabapi.plugin import ThreeDimensionAnnotationType
 
 import annofabcli.common.cli
 from annofabcli.annotation_specs.add_choice_attribute import create_name, get_label_name_en
-from annofabcli.annotation_specs.color import RgbColor, hex_to_rgb, rgb_to_hex
+from annofabcli.annotation_specs.color import RgbColor, hex_to_rgb
 from annofabcli.common.cli import ArgumentParser, CommandLine, CommandLineWithConfirm, build_annofabapi_resource_and_login
 from annofabcli.common.facade import AnnofabApiFacade
 
 logger = logging.getLogger(__name__)
 
-ANNOTATION_TYPE_CHOICES = [e.value for e in DefaultAnnotationType] + [e.value for e in ThreeDimensionAnnotationType]
 
-AUTO_COLOR_PALETTE: list[tuple[int, int, int]] = [
-    (255, 0, 0),  # 赤 (red)
-    (255, 85, 0),  # オレンジ (orange)
-    (255, 170, 0),  # アンバー (amber)
-    (255, 255, 0),  # 黄 (yellow)
-    (170, 255, 0),  # 黄緑 (lime)
-    (85, 255, 0),  # シャルトリューズ (chartreuse)
-    (0, 255, 0),  # 緑 (green)
-    (0, 255, 85),  # スプリンググリーン (spring green)
-    (0, 255, 170),  # ターコイズ (turquoise)
-    (0, 255, 255),  # シアン (cyan)
-    (0, 170, 255),  # スカイブルー (sky blue)
-    (0, 85, 255),  # アジュール (azure)
-    (0, 0, 255),  # 青 (blue)
-    (85, 0, 255),  # インディゴ (indigo)
-    (170, 0, 255),  # バイオレット (violet)
-    (255, 0, 255),  # マゼンタ (magenta)
-    (255, 0, 170),  # ローズ (rose)
-    (255, 0, 85),  # ピンクレッド (pink red)
-    (255, 255, 255),  # 白 (white)
-    (192, 192, 192),  # ライトグレー (light gray)
-    (128, 128, 128),  # グレー (gray)
+@dataclass(frozen=True)
+class AnnotationTypeDetail:
+    """
+    ``--annotation_type`` に指定できる値の説明です。
+    """
+
+    value: str
+    description: str
+    available_project_types: str
+
+
+ANNOTATION_TYPE_DETAILS = [
+    AnnotationTypeDetail(DefaultAnnotationType.BOUNDING_BOX.value, "矩形", "画像プロジェクト"),
+    AnnotationTypeDetail(DefaultAnnotationType.SEGMENTATION.value, "塗りつぶし（インスタンスセグメンテーション用）", "画像プロジェクト"),
+    AnnotationTypeDetail(DefaultAnnotationType.SEGMENTATION_V2.value, "塗りつぶしv2（セマンティックセグメンテーション用）", "画像プロジェクト"),
+    AnnotationTypeDetail(DefaultAnnotationType.POLYGON.value, "ポリゴン（閉じた頂点集合）", "画像プロジェクト"),
+    AnnotationTypeDetail(DefaultAnnotationType.POLYLINE.value, "ポリライン（開いた頂点集合）", "画像プロジェクト"),
+    AnnotationTypeDetail(DefaultAnnotationType.POINT.value, "点", "画像プロジェクト"),
+    AnnotationTypeDetail(DefaultAnnotationType.CLASSIFICATION.value, "全体分類", "画像プロジェクト / 動画プロジェクト"),
+    AnnotationTypeDetail(DefaultAnnotationType.RANGE.value, "動画の区間", "動画プロジェクト"),
+    AnnotationTypeDetail(DefaultAnnotationType.CUSTOM.value, "カスタム", "カスタムプロジェクト"),
+    AnnotationTypeDetail(ThreeDimensionAnnotationType.BOUNDING_BOX.value, "3次元のバウンディングボックス", "3次元プロジェクト"),
+    AnnotationTypeDetail(ThreeDimensionAnnotationType.INSTANCE_SEGMENT.value, "3次元のインスタンスセグメント", "3次元プロジェクト"),
+    AnnotationTypeDetail(ThreeDimensionAnnotationType.SEMANTIC_SEGMENT.value, "3次元のセマンティックセグメント", "3次元プロジェクト"),
+]
+"""``--annotation_type`` に指定できる値と、その意味・対応プロジェクト。"""
+
+ANNOTATION_TYPE_CHOICES = [detail.value for detail in ANNOTATION_TYPE_DETAILS]
+
+
+def create_annotation_type_help() -> str:
+    """
+    ``--annotation_type`` オプションのヘルプ文字列を生成する。
+
+    Returns:
+        引数ヘルプ文字列
+    """
+    lines = ["追加するラベルのアノテーション種類。", "", "指定できる値:"]
+    lines.extend(f" * {detail.value} : {detail.description} [{detail.available_project_types} で使用可]" for detail in ANNOTATION_TYPE_DETAILS)
+    return "\n".join(lines)
+
+
+AUTO_COLOR_PALETTE_HEX: list[str] = [
+    "#FF0000",  # 赤 (red)
+    "#FF5500",  # オレンジ (orange)
+    "#FFAA00",  # アンバー (amber)
+    "#FFFF00",  # 黄 (yellow)
+    "#AAFF00",  # 黄緑 (lime)
+    "#55FF00",  # シャルトリューズ (chartreuse)
+    "#00FF00",  # 緑 (green)
+    "#00FF55",  # スプリンググリーン (spring green)
+    "#00FFAA",  # ターコイズ (turquoise)
+    "#00FFFF",  # シアン (cyan)
+    "#00AAFF",  # スカイブルー (sky blue)
+    "#0055FF",  # アジュール (azure)
+    "#0000FF",  # 青 (blue)
+    "#5500FF",  # インディゴ (indigo)
+    "#AA00FF",  # バイオレット (violet)
+    "#FF00FF",  # マゼンタ (magenta)
+    "#FF00AA",  # ローズ (rose)
+    "#FF0055",  # ピンクレッド (pink red)
+    "#FFFFFF",  # 白 (white)
+    "#C0C0C0",  # ライトグレー (light gray)
+    "#808080",  # グレー (gray)
 ]
 """自動色選択で優先する高彩度のカラーパレット。"""
 
@@ -83,7 +125,7 @@ def validate_new_label(labels: Collection[dict[str, Any]], *, label_id: str, lab
 
 def create_auto_color(colors: Collection[RgbColor]) -> RgbColor:
     """
-    AUTO_COLOR_PALETTE の中から使用回数が最も少ない色を返す。
+    AUTO_COLOR_PALETTE_HEX の中から使用回数が最も少ない色を返す。
 
     Args:
         colors: 既存色一覧
@@ -91,13 +133,14 @@ def create_auto_color(colors: Collection[RgbColor]) -> RgbColor:
     Returns:
         Annofab API向けのRGB辞書
     """
+    palette_color_tuples = [(color["red"], color["green"], color["blue"]) for color in map(hex_to_rgb, AUTO_COLOR_PALETTE_HEX)]
     color_counts: Counter[tuple[int, int, int]] = Counter()
     for color in colors:
         color_tuple = (color["red"], color["green"], color["blue"])
-        if color_tuple in AUTO_COLOR_PALETTE:
+        if color_tuple in palette_color_tuples:
             color_counts[color_tuple] += 1
 
-    red, green, blue = min(AUTO_COLOR_PALETTE, key=lambda color: color_counts[color])
+    red, green, blue = min(palette_color_tuples, key=lambda color: color_counts[color])
     return {"red": red, "green": green, "blue": blue}
 
 
@@ -211,7 +254,7 @@ class AddLabelMain(CommandLineWithConfirm):
             color=color,
         )
 
-        confirm_message = f"ラベル名(英語)='{label_name_en}', label_id='{generated_label_id}', annotation_type='{annotation_type}', color='{rgb_to_hex(color)}' のラベルを追加します。よろしいですか？"
+        confirm_message = f"ラベル名(英語)='{label_name_en}', label_id='{generated_label_id}', annotation_type='{annotation_type}' のラベルを追加します。よろしいですか？"
         if not self.confirm_processing(confirm_message):
             return False
 
@@ -223,7 +266,7 @@ class AddLabelMain(CommandLineWithConfirm):
         request_body["comment"] = comment
         request_body["last_updated_datetime"] = old_annotation_specs["updated_datetime"]
         self.service.api.put_annotation_specs(self.project_id, query_params={"v": "3"}, request_body=request_body)
-        logger.info(f"ラベルを追加しました。 :: label_name_en='{label_name_en}', label_id='{generated_label_id}', annotation_type='{annotation_type}', color='{rgb_to_hex(color)}'")
+        logger.info(f"ラベルを追加しました。 :: label_name_en='{label_name_en}', label_id='{generated_label_id}', annotation_type='{annotation_type}'")
         return True
 
 
@@ -258,7 +301,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     argument_parser.add_project_id()
 
     parser.add_argument("--label_name_en", type=str, required=True, help="追加するラベルの英語名。")
-    parser.add_argument("--annotation_type", type=str, required=True, choices=ANNOTATION_TYPE_CHOICES, help="追加するラベルのアノテーション種類。")
+    parser.add_argument("--annotation_type", type=str, required=True, choices=ANNOTATION_TYPE_CHOICES, help=create_annotation_type_help())
     parser.add_argument("--label_id", type=str, help="追加するラベルのlabel_id。未指定の場合はUUIDv4を自動生成します。")
     parser.add_argument("--label_name_ja", type=str, help="追加するラベルの日本語名。未指定の場合は英語名と同じ値を使用します。")
     parser.add_argument("--color", type=str, help="追加するラベルの色。 ``#RRGGBB`` 形式の16進数カラーコードを指定してください。未指定の場合は自動設定されます。")
