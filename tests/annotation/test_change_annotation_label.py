@@ -316,3 +316,13 @@ class TestIsAllowedLabelChange:
     )
     def test_false(self, src_annotation_type: str, dest_annotation_type: str) -> None:
         assert not is_allowed_label_change(src_annotation_type, dest_annotation_type)
+
+    def test_directional_conversion(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setattr(
+            change_annotation_label,
+            "ALLOWED_ANNOTATION_TYPE_CONVERSIONS",
+            {("polygon", "polyline")},
+        )
+
+        assert is_allowed_label_change("polygon", "polyline")
+        assert not is_allowed_label_change("polyline", "polygon")

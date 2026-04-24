@@ -32,12 +32,15 @@ from annofabcli.common.facade import AnnofabApiFacade
 logger = logging.getLogger(__name__)
 
 
-ALLOWED_ANNOTATION_TYPE_PAIRS = {
-    frozenset((DefaultAnnotationType.POLYGON.value, DefaultAnnotationType.POLYLINE.value)),
-    frozenset((DefaultAnnotationType.SEGMENTATION.value, DefaultAnnotationType.SEGMENTATION_V2.value)),
-    frozenset(("user_instance_segment", "user_semantic_segment")),
+ALLOWED_ANNOTATION_TYPE_CONVERSIONS = {
+    (DefaultAnnotationType.POLYGON.value, DefaultAnnotationType.POLYLINE.value),
+    (DefaultAnnotationType.POLYLINE.value, DefaultAnnotationType.POLYGON.value),
+    (DefaultAnnotationType.SEGMENTATION.value, DefaultAnnotationType.SEGMENTATION_V2.value),
+    (DefaultAnnotationType.SEGMENTATION_V2.value, DefaultAnnotationType.SEGMENTATION.value),
+    ("user_instance_segment", "user_semantic_segment"),
+    ("user_semantic_segment", "user_instance_segment"),
 }
-"""変更を許可するラベル種類の組み合わせ。"""
+"""変更を許可するラベル種類の変換一覧。 `(変更前, 変更後)` の順で表す。"""
 
 
 @dataclass(frozen=True)
@@ -289,7 +292,7 @@ def is_allowed_label_change(src_annotation_type: str, dest_annotation_type: str)
     if src_annotation_type == dest_annotation_type:
         return True
 
-    return frozenset((src_annotation_type, dest_annotation_type)) in ALLOWED_ANNOTATION_TYPE_PAIRS
+    return (src_annotation_type, dest_annotation_type) in ALLOWED_ANNOTATION_TYPE_CONVERSIONS
 
 
 class ChangeLabelOfAnnotation(CommandLine):
