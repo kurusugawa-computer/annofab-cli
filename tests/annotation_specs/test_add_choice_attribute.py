@@ -311,20 +311,23 @@ class TestAddChoiceAttributeMain:
                 label_name_ens=[],
             )
 
-    def test_add_choice_attribute__duplicated_attribute_name(self, annotation_specs: dict) -> None:
+    def test_add_choice_attribute__duplicated_attribute_name__warning(self, annotation_specs: dict, caplog: pytest.LogCaptureFixture) -> None:
         service = DummyService(annotation_specs)
         main = AddChoiceAttributeMain(service, project_id="prj1", all_yes=True)  # type: ignore
 
-        with pytest.raises(ValueError):
-            main.add_choice_attribute(
-                attribute_type="choice",
-                attribute_name_en="type",
-                attribute_name_ja=None,
-                attribute_id="weather_attr",
-                choice_inputs=read_choices_json('[{"choice_name_en":"sunny"}]'),
-                label_ids=["car_label_id"],
-                label_name_ens=[],
-            )
+        result = main.add_choice_attribute(
+            attribute_type="choice",
+            attribute_name_en="type",
+            attribute_name_ja=None,
+            attribute_id="weather_attr",
+            choice_inputs=read_choices_json('[{"choice_name_en":"sunny"}]'),
+            label_ids=["car_label_id"],
+            label_name_ens=[],
+        )
+
+        assert result is True
+        assert service.api.last_put is not None
+        assert "属性名(英語)='type' の属性は既に存在しますが、処理を継続します。" in caplog.text
 
     def test_add_choice_attribute__ambiguous_label_name(self, annotation_specs: dict) -> None:
         duplicated_specs = copy.deepcopy(annotation_specs)

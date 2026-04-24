@@ -288,7 +288,7 @@ def validate_new_attribute(
     *,
     attribute_id: str,
     attribute_name_en: str,
-) -> None:
+) -> list[str]:
     """
     追加予定の属性ID・属性英語名が既存属性と衝突しないか検証する。
 
@@ -297,14 +297,22 @@ def validate_new_attribute(
         attribute_id: 追加予定の属性ID
         attribute_name_en: 追加予定の属性英語名
 
+    Returns:
+        属性英語名が重複している既存属性IDの一覧
+
     Raises:
-        ValueError: 既存属性と重複する場合
+        ValueError: 属性IDが既存属性と重複する場合
     """
     if any(additional["additional_data_definition_id"] == attribute_id for additional in additionals):
         raise ValueError(f"属性ID='{attribute_id}' の属性は既に存在します。")
 
-    if any(AnnofabApiFacade.get_additional_data_definition_name_en(additional) == attribute_name_en for additional in additionals):
-        raise ValueError(f"属性名(英語)='{attribute_name_en}' の属性は既に存在します。")
+    duplicated_name_attribute_ids = [
+        additional["additional_data_definition_id"] for additional in additionals if AnnofabApiFacade.get_additional_data_definition_name_en(additional) == attribute_name_en
+    ]
+    if duplicated_name_attribute_ids:
+        duplicated_text = ", ".join(duplicated_name_attribute_ids)
+        logger.warning(f"属性名(英語)='{attribute_name_en}' の属性は既に存在しますが、処理を継続します。既存の属性ID: {duplicated_text}")
+    return duplicated_name_attribute_ids
 
 
 def create_attribute(
@@ -401,7 +409,7 @@ class AddChoiceAttributeMain(CommandLineWithConfirm):
             choice_inputs=choice_inputs,
         )
 
-        validate_new_attribute(
+        duplicated_name_attribute_ids = validate_new_attribute(
             additionals,
             attribute_id=new_attribute["additional_data_definition_id"],
             attribute_name_en=attribute_name_en,
@@ -409,6 +417,9 @@ class AddChoiceAttributeMain(CommandLineWithConfirm):
 
         label_names = [AnnofabApiFacade.get_label_name_en(label) for label in target_labels]
         confirm_message = f"属性名(英語)='{attribute_name_en}', 属性種類='{attribute_type}', 選択肢数={len(new_attribute['choices'])}, 対象ラベル={label_names} を追加します。よろしいですか？"
+        if duplicated_name_attribute_ids:
+            duplicated_text = ", ".join(duplicated_name_attribute_ids)
+            confirm_message = f"{confirm_message} なお、同じ属性名(英語)を持つ既存属性があります。既存の属性ID: {duplicated_text}"
         if not self.confirm_processing(confirm_message):
             return False
 
