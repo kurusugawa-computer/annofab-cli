@@ -54,15 +54,16 @@ def create_name(message_en: str, message_ja: str | None = None) -> dict[str, Any
 
     Args:
         message_en: 英語メッセージ
-        message_ja: 日本語メッセージ
+        message_ja: 日本語メッセージ。未指定の場合は英語メッセージと同じ内容になる。
 
     Returns:
         Annofab APIが要求する ``name`` オブジェクト
     """
     messages = []
-    if message_ja is not None:
-        messages.append({"lang": "ja-JP", "message": message_ja})
     messages.append({"lang": "en-US", "message": message_en})
+    if message_ja is None:
+        message_ja = message_en
+    messages.append({"lang": "ja-JP", "message": message_ja})
     return {"messages": messages, "default_lang": "ja-JP"}
 
 
