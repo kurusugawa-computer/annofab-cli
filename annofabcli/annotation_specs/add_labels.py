@@ -14,11 +14,10 @@ from annofabcli.annotation_specs.add_label import (
     collect_label_colors,
     create_annotation_type_help,
     create_auto_color,
-    create_comment_from_labels,
     create_new_label,
-    get_label_name_en,
     validate_new_label,
 )
+from annofabcli.annotation_specs.utils import get_label_name_en
 from annofabcli.common.cli import ArgumentParser, CommandLine, CommandLineWithConfirm, build_annofabapi_resource_and_login, get_list_from_args
 from annofabcli.common.facade import AnnofabApiFacade
 from annofabcli.common.utils import duplicated_set
@@ -43,6 +42,20 @@ def validate_new_label_names(label_name_ens: Sequence[str]) -> None:
     if duplicated_label_names:
         duplicated_text = ", ".join(sorted(duplicated_label_names))
         raise ValueError(f"入力されたラベル名(英語)に重複があります。 :: {duplicated_text}")
+
+
+def create_comment_from_labels(label_name_ens: Sequence[str]) -> str:
+    """
+    複数ラベル追加時のデフォルトコメントを生成する。
+
+    Args:
+        label_name_ens: 追加するラベルの英語名一覧
+
+    Returns:
+        アノテーション仕様変更コメント
+    """
+    label_text = ", ".join(label_name_ens)
+    return f"以下のラベルを追加しました。\nラベル名(英語): {label_text}"
 
 
 class AddLabelsMain(CommandLineWithConfirm):
@@ -114,7 +127,7 @@ class AddLabelsMain(CommandLineWithConfirm):
             request_body["labels"].append(new_label)
 
         if comment is None:
-            comment = create_comment_from_labels(label_name_ens, annotation_type)
+            comment = create_comment_from_labels(label_name_ens)
         request_body["comment"] = comment
         request_body["last_updated_datetime"] = old_annotation_specs["updated_datetime"]
         self.service.api.put_annotation_specs(self.project_id, query_params={"v": "3"}, request_body=request_body)

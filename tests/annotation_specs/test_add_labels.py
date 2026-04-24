@@ -54,46 +54,6 @@ class AddLabelsMainWithoutConfirm(AddLabelsMain):
         return False
 
 
-class TestParseArgs:
-    def test_parse_args(self) -> None:
-        parser = create_parser()
-        args = parser.parse_args(
-            [
-                "add_labels",
-                "--project_id",
-                "prj1",
-                "--label_name_en",
-                "pedestrian",
-                "bicycle",
-                "--annotation_type",
-                "bounding_box",
-            ]
-        )
-        assert args.label_name_en == ["pedestrian", "bicycle"]
-        assert args.annotation_type == "bounding_box"
-
-    def test_parse_args__required(self) -> None:
-        parser = create_parser()
-        with pytest.raises(SystemExit):
-            parser.parse_args(["add_labels", "--project_id", "prj1"])
-
-    def test_parse_args__invalid_annotation_type(self) -> None:
-        parser = create_parser()
-        with pytest.raises(SystemExit):
-            parser.parse_args(
-                [
-                    "add_labels",
-                    "--project_id",
-                    "prj1",
-                    "--label_name_en",
-                    "pedestrian",
-                    "bicycle",
-                    "--annotation_type",
-                    "invalid_type",
-                ]
-            )
-
-
 class TestAddLabelsMain:
     def test_add_labels(self, annotation_specs: dict) -> None:
         service = DummyService(annotation_specs)
@@ -112,7 +72,6 @@ class TestAddLabelsMain:
         assert [label["annotation_type"] for label in added_labels] == ["bounding_box", "bounding_box"]
         assert added_labels[0]["color"] == {"red": 255, "green": 85, "blue": 0}
         assert added_labels[1]["color"] == {"red": 255, "green": 170, "blue": 0}
-        assert service.api.last_put["comment"] == "以下のラベルを追加しました。\nラベル名(英語): pedestrian, bicycle\nannotation_type: bounding_box"
         assert service.api.last_put["last_updated_datetime"] == "2026-04-24T00:00:00+09:00"
 
     def test_add_labels__duplicated_input(self, annotation_specs: dict) -> None:

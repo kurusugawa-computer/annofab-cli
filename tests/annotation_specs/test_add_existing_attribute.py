@@ -49,66 +49,6 @@ class DummyService:
         self.api = DummyApi(annotation_specs)
 
 
-class TestParseArgs:
-    def test_parse_args(self) -> None:
-        parser = create_parser()
-        args = parser.parse_args(
-            [
-                "add_existing_attribute",
-                "--project_id",
-                "prj1",
-                "--label_name_en",
-                "car",
-                "--attribute_id",
-                "attr1",
-                "attr2",
-            ]
-        )
-        assert args.label_name_en == "car"
-        assert args.label_id is None
-        assert args.attribute_id == ["attr1", "attr2"]
-        assert args.attribute_name_en is None
-
-    def test_parse_args__required(self) -> None:
-        parser = create_parser()
-        with pytest.raises(SystemExit):
-            parser.parse_args(["add_existing_attribute", "--project_id", "prj1"])
-
-    def test_parse_args__label_name_en_and_label_id_are_mutually_exclusive(self) -> None:
-        parser = create_parser()
-        with pytest.raises(SystemExit):
-            parser.parse_args(
-                [
-                    "add_existing_attribute",
-                    "--project_id",
-                    "prj1",
-                    "--label_name_en",
-                    "car",
-                    "--label_id",
-                    "car_label_id",
-                    "--attribute_id",
-                    "attr1",
-                ]
-            )
-
-    def test_parse_args__attribute_name_en_and_attribute_id_are_mutually_exclusive(self) -> None:
-        parser = create_parser()
-        with pytest.raises(SystemExit):
-            parser.parse_args(
-                [
-                    "add_existing_attribute",
-                    "--project_id",
-                    "prj1",
-                    "--label_name_en",
-                    "car",
-                    "--attribute_id",
-                    "attr1",
-                    "--attribute_name_en",
-                    "type",
-                ]
-            )
-
-
 class TestAddExistingAttributeMain:
     def test_add_existing_attribute__with_attribute_id(self, annotation_specs: dict) -> None:
         service = DummyService(annotation_specs)

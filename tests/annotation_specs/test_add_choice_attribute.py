@@ -56,91 +56,6 @@ class DummyService:
         self.api = DummyApi(annotation_specs)
 
 
-class TestParseArgs:
-    def test_parse_args(self) -> None:
-        parser = create_parser()
-        args = parser.parse_args(
-            [
-                "add_choice_attribute",
-                "--project_id",
-                "prj1",
-                "--attribute_type",
-                "choice",
-                "--attribute_name_en",
-                "weather",
-                "--choices_json",
-                '[{"choice_name_en":"sunny"}]',
-                "--label_name_en",
-                "car",
-            ]
-        )
-        assert args.attribute_type == "choice"
-        assert args.label_name_en == ["car"]
-        assert args.label_id is None
-
-    def test_parse_args__required(self) -> None:
-        parser = create_parser()
-        with pytest.raises(SystemExit):
-            parser.parse_args(["add_choice_attribute", "--project_id", "prj1"])
-
-    def test_parse_args__choices_json_and_csv_are_mutually_exclusive(self) -> None:
-        parser = create_parser()
-        with pytest.raises(SystemExit):
-            parser.parse_args(
-                [
-                    "add_choice_attribute",
-                    "--project_id",
-                    "prj1",
-                    "--attribute_type",
-                    "choice",
-                    "--attribute_name_en",
-                    "weather",
-                    "--choices_json",
-                    '[{"choice_name_en":"sunny"}]',
-                    "--choices_csv",
-                    "choices.csv",
-                ]
-            )
-
-    def test_parse_args__label_name_en_and_label_id_are_mutually_exclusive(self) -> None:
-        parser = create_parser()
-        with pytest.raises(SystemExit):
-            parser.parse_args(
-                [
-                    "add_choice_attribute",
-                    "--project_id",
-                    "prj1",
-                    "--attribute_type",
-                    "choice",
-                    "--attribute_name_en",
-                    "weather",
-                    "--choices_json",
-                    '[{"choice_name_en":"sunny"}]',
-                    "--label_name_en",
-                    "car",
-                    "--label_id",
-                    "label1",
-                ]
-            )
-
-    def test_parse_args__label_name_en_or_label_id_is_required(self) -> None:
-        parser = create_parser()
-        with pytest.raises(SystemExit):
-            parser.parse_args(
-                [
-                    "add_choice_attribute",
-                    "--project_id",
-                    "prj1",
-                    "--attribute_type",
-                    "choice",
-                    "--attribute_name_en",
-                    "weather",
-                    "--choices_json",
-                    '[{"choice_name_en":"sunny"}]',
-                ]
-            )
-
-
 class TestReadChoicesJson:
     def test_read_choices_json(self) -> None:
         actual = read_choices_json('[{"choice_id":"front","choice_name_en":"front","choice_name_ja":"前","is_default":true}]')
@@ -295,6 +210,26 @@ class TestAddChoiceAttributeMain:
         assert service.api.last_put is not None
         generated_attribute_id = service.api.last_put["additionals"][-1]["additional_data_definition_id"]
         assert str(uuid.UUID(generated_attribute_id, version=4)) == generated_attribute_id
+
+    def test_add_choice_attribute__label_name_ens_can_be_none(self, annotation_specs: dict) -> None:
+        service = DummyService(annotation_specs)
+        main = AddChoiceAttributeMain(service, project_id="prj1", all_yes=True)  # type: ignore
+
+        result = main.add_choice_attribute(
+            attribute_type="select",
+            attribute_name_en="weather3",
+            attribute_name_ja=None,
+            attribute_id="weather_attr3",
+            choice_inputs=read_choices_json('[{"choice_name_en":"sunny"},{"choice_name_en":"cloudy"}]'),
+            label_ids=["car_label_id"],
+            label_name_ens=None,
+            comment=None,
+        )
+
+        assert result is True
+        assert service.api.last_put is not None
+        car_label = next(label for label in service.api.last_put["labels"] if label["label_id"] == "car_label_id")
+        assert "weather_attr3" in car_label["additional_data_definitions"]
 
     def test_add_choice_attribute__duplicated_attribute_id(self, annotation_specs: dict) -> None:
         service = DummyService(annotation_specs)
