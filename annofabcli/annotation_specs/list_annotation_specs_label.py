@@ -14,6 +14,7 @@ from annofabapi.util.annotation_specs import get_message_with_lang
 from dataclasses_json import DataClassJsonMixin
 
 import annofabcli.common.cli
+from annofabcli.annotation_specs.color import rgb_to_hex
 from annofabcli.common.annofab.annotation_specs import keybind_to_text
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
@@ -54,17 +55,6 @@ class FlattenLabel(DataClassJsonMixin):
     """キーバインド"""
 
 
-def decimal_to_hex_color(red: int, green: int, blue: int) -> str:
-    """
-    10進数のRGB値を16進数のColor Codeに変換します。
-    """
-    # 各値が0から255の範囲内にあるか確認
-    if not (0 <= red <= 255 and 0 <= green <= 255 and 0 <= blue <= 255):
-        raise ValueError(f"RGB values must be in the range 0-255 :: {red=}, {blue=}, {green=}")
-
-    return f"#{red:02X}{green:02X}{blue:02X}"
-
-
 def create_label_list(labels_v3: list[dict[str, Any]]) -> list[FlattenLabel]:
     """
     APIから取得したラベル情報（v3版）から、`FlattenLabel`のlistを生成します。
@@ -78,7 +68,7 @@ def create_label_list(labels_v3: list[dict[str, Any]]) -> list[FlattenLabel]:
         辞書のラベル情報をDataClassのラベル情報に変換します。
         """
         label_color = label["color"]
-        hex_color_code = decimal_to_hex_color(label_color["red"], label_color["green"], label_color["blue"])
+        hex_color_code = rgb_to_hex(label_color)
         additional_data_definitions = label["additional_data_definitions"]
         return FlattenLabel(
             label_id=label["label_id"],

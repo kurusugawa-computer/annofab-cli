@@ -213,6 +213,57 @@ def calculate_total_worktime_in_phase(task_histories: list[TaskHistory], phase: 
     return sum(isoduration_to_hour(history["accumulated_labor_time_milliseconds"]) for history in task_histories if history["phase"] == phase.value)
 
 
+def calculate_worktime_since_date(
+    task_histories: list[TaskHistory],
+    phase: TaskPhase,
+    start_date: str,
+) -> float:
+    """指定した日付以降（started_datetimeを基準）の作業時間を計算します。
+
+    Args:
+        task_histories: タスク履歴
+        phase: フェーズ
+        start_date: 集計開始日（YYYY-MM-DD形式）
+
+    Returns:
+        合計作業時間（時間）
+    """
+    return sum(
+        isoduration_to_hour(history["accumulated_labor_time_milliseconds"])
+        for history in task_histories
+        if history["phase"] == phase.value and history["started_datetime"] is not None and history["started_datetime"][:10] >= start_date
+    )
+
+
+def get_first_task_history_since_date(
+    task_histories: list[TaskHistory],
+    phase: TaskPhase,
+    start_date: str,
+) -> TaskHistory | None:
+    """
+    指定した日付以降（started_datetimeを基準）に、指定したフェーズで最初に作業したタスク履歴を取得します。
+    取得したタスク履歴には、account_idはnot Noneで、作業時間は0より大きいです。
+
+    Args:
+        task_histories: タスク履歴
+        phase: フェーズ
+        start_date: 集計開始日（YYYY-MM-DD形式）
+
+    Returns:
+        最初のタスク履歴
+    """
+    for history in task_histories:
+        if (
+            history["phase"] == phase.value
+            and history["account_id"] is not None
+            and isoduration_to_hour(history["accumulated_labor_time_milliseconds"]) > 0
+            and history["started_datetime"] is not None
+            and history["started_datetime"][:10] >= start_date
+        ):
+            return history
+    return None
+
+
 def get_first_task_history(task_histories: list[TaskHistory], phase: TaskPhase) -> TaskHistory | None:
     """
     指定したフェーズの最初に作業したタスク履歴を取得します。
@@ -324,7 +375,7 @@ class AddingAdditionalInfoToTask:
         # タスク情報から取得できる、付加的な情報を追加する
         self.visualize.add_properties_to_task(task)
 
-    def add_task_history_additional_info_to_task(self, task: dict[str, Any], task_histories: list[TaskHistory]) -> None:
+    def add_task_history_additional_info_to_task(self, task: dict[str, Any], task_histories: list[TaskHistory], start_date_list: list[str] | None = None) -> None:
         """タスク履歴から取得できる付加的情報を、タスクに追加する。
         以下の列を追加する。
         * annotation_worktime_hour
@@ -369,13 +420,20 @@ class AddingAdditionalInfoToTask:
         task["post_rejection_inspection_worktime_hour"] = get_post_rejection_inspection_worktime_hour(task_histories)
         task["post_rejection_acceptance_worktime_hour"] = get_post_rejection_acceptance_worktime_hour(task_histories)
 
+        if start_date_list is not None:
+            for start_date in start_date_list:
+                for phase in [TaskPhase.ANNOTATION, TaskPhase.INSPECTION, TaskPhase.ACCEPTANCE]:
+                    task[f"since_{start_date}.{phase.value}_worktime_hour"] = calculate_worktime_since_date(task_histories, phase, start_date)
+                    first_history = get_first_task_history_since_date(task_histories, phase, start_date)
+                    self._add_task_history_info(task, first_history, column_prefix=f"since_{start_date}.first_{phase.value}")
+
 
 class ListTasksAddedTaskHistoryMain:
     def __init__(self, service: annofabapi.Resource, project_id: str) -> None:
         self.service = service
         self.project_id = project_id
 
-    def main(self, *, task_query: dict[str, Any] | None, task_id_list: list[str] | None) -> list[dict[str, Any]]:
+    def main(self, *, task_query: dict[str, Any] | None, task_id_list: list[str] | None, start_date_list: list[str] | None = None) -> list[dict[str, Any]]:
         list_task_obj = ListTasksMain(self.service, self.project_id)
         task_list = list_task_obj.get_task_list(self.project_id, task_id_list=task_id_list, task_query=task_query)
 
@@ -392,7 +450,7 @@ class ListTasksAddedTaskHistoryMain:
             try:
                 task_histories, _ = self.service.api.get_task_histories(self.project_id, task_id)
                 # タスク履歴から取得した情報をtaskに設定する
-                obj.add_task_history_additional_info_to_task(task, task_histories)
+                obj.add_task_history_additional_info_to_task(task, task_histories, start_date_list=start_date_list)
             except Exception:
                 logger.warning(f"task_id='{task_id}' :: タスク履歴に関する情報を取得するのに失敗しました。", exc_info=True)
 
@@ -402,8 +460,9 @@ class ListTasksAddedTaskHistoryMain:
 class TasksAddedTaskHistoryOutput:
     """出力用のクラス"""
 
-    def __init__(self, task_list: list[dict[str, Any]]) -> None:
+    def __init__(self, task_list: list[dict[str, Any]], *, start_date_list: list[str] | None = None) -> None:
         self.task_list = task_list
+        self.start_date_list = start_date_list
 
     @staticmethod
     def _get_output_target_columns() -> list[str]:
@@ -453,22 +512,35 @@ class TasksAddedTaskHistoryOutput:
             ]
         )
 
+    def _get_since_columns(self) -> list[str]:
+        """start_date_listに基づく since_* カラム名の一覧を返す。"""
+        if self.start_date_list is None:
+            return []
+
+        columns = []
+        for start_date in self.start_date_list:
+            for phase in [TaskPhase.ANNOTATION, TaskPhase.INSPECTION, TaskPhase.ACCEPTANCE]:
+                columns.append(f"since_{start_date}.{phase.value}_worktime_hour")
+                columns.extend(f"since_{start_date}.first_{phase.value}_{info}" for info in ["user_id", "username", "started_datetime", "worktime_hour"])
+        return columns
+
     def output(self, output_path: Path, output_format: OutputFormat) -> None:
         task_list = self.task_list
         logger.debug(f"タスク {len(task_list)} 件の情報を出力します。")
         if output_format == OutputFormat.CSV:
+            since_columns = self._get_since_columns()
             if len(task_list) > 0:
                 # json_normalizeでメタデータを自動展開
                 df = pandas.json_normalize(task_list)
 
                 # metadata.*列を検出して出力対象列リストに追加
                 metadata_columns = sorted([col for col in df.columns if col.startswith("metadata.")])
-                output_columns = self._get_output_target_columns() + metadata_columns
+                output_columns = self._get_output_target_columns() + metadata_columns + since_columns
                 # 出力列を output_columns に含まれる列のみに限定（意図しない列の混入を防ぐ）
                 columns = [col for col in output_columns if col in df.columns]
                 print_csv(df[columns], output=output_path)
             else:
-                df = pandas.DataFrame(columns=self._get_output_target_columns())
+                df = pandas.DataFrame(columns=self._get_output_target_columns() + since_columns)
                 print_csv(df, output=output_path)
 
         elif output_format == OutputFormat.JSON:
@@ -486,10 +558,12 @@ class ListTasksAddedTaskHistory(CommandLine):
         task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id) if args.task_id is not None else None
         task_query = annofabcli.common.cli.get_json_from_args(args.task_query) if args.task_query is not None else None
 
-        main_obj = ListTasksAddedTaskHistoryMain(self.service, project_id=args.project_id)
-        task_list = main_obj.main(task_query=task_query, task_id_list=task_id_list)
+        start_date_list = args.start_date if args.start_date is not None else None
 
-        output_obj = TasksAddedTaskHistoryOutput(task_list)
+        main_obj = ListTasksAddedTaskHistoryMain(self.service, project_id=args.project_id)
+        task_list = main_obj.main(task_query=task_query, task_id_list=task_id_list, start_date_list=start_date_list)
+
+        output_obj = TasksAddedTaskHistoryOutput(task_list, start_date_list=start_date_list)
         output_obj.output(args.output, output_format=OutputFormat(args.format))
 
 
@@ -523,6 +597,15 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         type=str,
         nargs="+",
         help="対象のタスクのtask_idを指定します。 ``--task_query`` 引数とは同時に指定できません。 ``file://`` を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。",
+    )
+
+    parser.add_argument(
+        "--start_date",
+        type=str,
+        nargs="+",
+        help="指定した日付以降（started_datetimeを基準）の教師付・検査・受入作業時間を計算し、"
+        " ``since_{日付}.{フェーズ}_worktime_hour``および ``since_{日付}.first_{フェーズ}_{user_id,username,started_datetime,worktime_hour}``"
+        " カラムを出力に追加します。YYYY-MM-DD 形式で指定してください。複数指定可能です。",
     )
 
     argument_parser.add_output()
