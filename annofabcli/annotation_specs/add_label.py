@@ -19,19 +19,6 @@ from annofabcli.common.facade import AnnofabApiFacade
 
 logger = logging.getLogger(__name__)
 
-
-COLOR_PALETTE: list[tuple[int, int, int]] = [
-    (255, 0, 0),
-    (0, 255, 0),
-    (0, 0, 255),
-    (255, 255, 0),
-    (255, 0, 255),
-    (0, 255, 255),
-    (255, 255, 255),
-    (255, 128, 0),
-    (128, 0, 255),
-    (0, 255, 128),
-]
 ANNOTATION_TYPE_CHOICES = [e.value for e in DefaultAnnotationType] + [e.value for e in ThreeDimensionAnnotationType]
 
 
@@ -115,9 +102,21 @@ def create_auto_color(labels: Collection[dict[str, Any]]) -> dict[str, int]:
     Returns:
         Annofab API向けのRGB辞書
     """
+    color_palette: tuple[tuple[int, int, int], ...] = (
+        (255, 0, 0),
+        (0, 255, 0),
+        (0, 0, 255),
+        (255, 255, 0),
+        (255, 0, 255),
+        (0, 255, 255),
+        (255, 255, 255),
+        (255, 128, 0),
+        (128, 0, 255),
+        (0, 255, 128),
+    )
     existing_colors = {(label["color"]["red"], label["color"]["green"], label["color"]["blue"]) for label in labels if isinstance(label.get("color"), dict)}
 
-    for red, green, blue in COLOR_PALETTE:
+    for red, green, blue in color_palette:
         if (red, green, blue) not in existing_colors:
             return {"red": red, "green": green, "blue": blue}
 
