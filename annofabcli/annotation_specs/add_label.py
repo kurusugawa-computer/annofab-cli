@@ -20,7 +20,6 @@ from annofabcli.common.facade import AnnofabApiFacade
 logger = logging.getLogger(__name__)
 
 
-HEX_COLOR_PATTERN = re.compile(r"^#[0-9A-Fa-f]{6}$")
 COLOR_PALETTE: list[tuple[int, int, int]] = [
     (255, 0, 0),
     (0, 255, 0),
@@ -49,7 +48,8 @@ def parse_color(color_code: str) -> dict[str, int]:
     Raises:
         ValueError: 形式が ``#RRGGBB`` でない場合
     """
-    if HEX_COLOR_PATTERN.fullmatch(color_code) is None:
+    hex_color_pattern = re.compile(r"^#[0-9A-Fa-f]{6}$")
+    if hex_color_pattern.fullmatch(color_code) is None:
         raise ValueError("`--color` には `#RRGGBB` 形式の16進数カラーコードを指定してください。")
 
     return {
