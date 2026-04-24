@@ -203,8 +203,8 @@ def validate_choice_inputs(choice_inputs: Sequence[ChoiceAttributeInput]) -> Non
     Raises:
         ValueError: 件数、重複、既定値の数が不正な場合
     """
-    if len(choice_inputs) == 0:
-        raise ValueError("選択肢を1件以上指定してください。")
+    if len(choice_inputs) > 1:
+        raise ValueError("選択肢を2件以上指定してください。")
 
     duplicated_choice_ids = duplicated_set([choice.choice_id for choice in choice_inputs if choice.choice_id is not None])
     if duplicated_choice_ids:
