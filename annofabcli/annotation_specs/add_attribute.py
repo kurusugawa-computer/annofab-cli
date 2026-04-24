@@ -46,7 +46,7 @@ def get_default_value(attribute_type: str) -> str | bool | None:
     return ""
 
 
-def create_comment_from_attribute(attribute_name_en: str, attribute_type: str, label_names: Sequence[str]) -> str:
+def create_comment_from_attribute(attribute_name_en: str, label_names: Sequence[str]) -> str:
     """
     属性追加時のデフォルトコメントを生成する。
 
@@ -59,7 +59,7 @@ def create_comment_from_attribute(attribute_name_en: str, attribute_type: str, l
         アノテーション仕様変更コメント
     """
     labels_text = ", ".join(label_names)
-    return f"以下の属性を追加しました。\n属性名(英語): {attribute_name_en}\n属性種類: {attribute_type}\n対象ラベル: {labels_text}"
+    return f"以下の属性を追加しました。\n属性名(英語): {attribute_name_en}\n対象ラベル: {labels_text}"
 
 
 def create_attribute(
@@ -164,7 +164,7 @@ class AddAttributeMain(CommandLineWithConfirm):
                 label["additional_data_definitions"].append(new_attribute["additional_data_definition_id"])
 
         if comment is None:
-            comment = create_comment_from_attribute(attribute_name_en, attribute_type, label_names)
+            comment = create_comment_from_attribute(attribute_name_en, label_names)
         request_body["comment"] = comment
         request_body["last_updated_datetime"] = old_annotation_specs["updated_datetime"]
         self.service.api.put_annotation_specs(self.project_id, query_params={"v": "3"}, request_body=request_body)

@@ -264,7 +264,7 @@ def create_comment_from_attribute(attribute_name_en: str, label_names: Sequence[
         アノテーション仕様変更コメント
     """
     labels_text = ", ".join(label_names)
-    return f"以下の選択肢系属性を追加しました。\n属性名(英語): {attribute_name_en}\n対象ラベル: {labels_text}"
+    return f"以下の属性を追加しました。\n属性名(英語): {attribute_name_en}\n対象ラベル: {labels_text}"
 
 
 def get_target_labels(

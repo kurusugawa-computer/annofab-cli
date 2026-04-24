@@ -5,7 +5,7 @@ import copy
 import logging
 import uuid
 from collections import Counter
-from collections.abc import Collection, Sequence
+from collections.abc import Collection
 from dataclasses import dataclass
 from typing import Any
 
@@ -96,7 +96,7 @@ AUTO_COLOR_PALETTE_HEX: list[str] = [
 """自動色選択で優先する高彩度のカラーパレット。"""
 
 
-def create_comment_from_label(label_name_en: str, annotation_type: str) -> str:
+def create_comment_from_label(label_name_en: str) -> str:
     """
     ラベル追加時のデフォルトコメントを生成する。
 
@@ -107,22 +107,7 @@ def create_comment_from_label(label_name_en: str, annotation_type: str) -> str:
     Returns:
         アノテーション仕様変更コメント
     """
-    return f"以下のラベルを追加しました。\nラベル名(英語): {label_name_en}\nannotation_type: {annotation_type}"
-
-
-def create_comment_from_labels(label_name_ens: Sequence[str], annotation_type: str) -> str:
-    """
-    複数ラベル追加時のデフォルトコメントを生成する。
-
-    Args:
-        label_name_ens: 追加するラベルの英語名一覧
-        annotation_type: ラベルのアノテーション種類
-
-    Returns:
-        アノテーション仕様変更コメント
-    """
-    label_text = ", ".join(label_name_ens)
-    return f"以下のラベルを追加しました。\nラベル名(英語): {label_text}\nannotation_type: {annotation_type}"
+    return f"以下のラベルを追加しました。\nラベル名(英語): {label_name_en}"
 
 
 def validate_new_label(labels: Collection[dict[str, Any]], *, label_id: str, label_name_en: str) -> None:
@@ -281,7 +266,7 @@ class AddLabelMain(CommandLineWithConfirm):
         request_body["labels"].append(new_label)
 
         if comment is None:
-            comment = create_comment_from_label(label_name_en, annotation_type)
+            comment = create_comment_from_label(label_name_en)
         request_body["comment"] = comment
         request_body["last_updated_datetime"] = old_annotation_specs["updated_datetime"]
         self.service.api.put_annotation_specs(self.project_id, query_params={"v": "3"}, request_body=request_body)
