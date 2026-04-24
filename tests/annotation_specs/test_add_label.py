@@ -110,6 +110,24 @@ class TestColor:
         existing_colors = {(label["color"]["red"], label["color"]["green"], label["color"]["blue"]) for label in annotation_specs["labels"]}
         assert (actual["red"], actual["green"], actual["blue"]) not in existing_colors
 
+    def test_create_auto_color__uses_extended_vivid_palette(self) -> None:
+        labels = [
+            {"color": {"red": 255, "green": 0, "blue": 0}},
+            {"color": {"red": 255, "green": 85, "blue": 0}},
+            {"color": {"red": 255, "green": 170, "blue": 0}},
+            {"color": {"red": 255, "green": 255, "blue": 0}},
+            {"color": {"red": 170, "green": 255, "blue": 0}},
+            {"color": {"red": 85, "green": 255, "blue": 0}},
+            {"color": {"red": 0, "green": 255, "blue": 0}},
+            {"color": {"red": 0, "green": 255, "blue": 85}},
+            {"color": {"red": 0, "green": 255, "blue": 170}},
+            {"color": {"red": 0, "green": 255, "blue": 255}},
+        ]
+
+        actual = create_auto_color(labels)
+
+        assert actual == {"red": 0, "green": 170, "blue": 255}
+
 
 class TestAddLabelMain:
     def test_add_label(self, annotation_specs: dict) -> None:

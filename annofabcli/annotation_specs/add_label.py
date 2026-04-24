@@ -21,6 +21,28 @@ logger = logging.getLogger(__name__)
 
 ANNOTATION_TYPE_CHOICES = [e.value for e in DefaultAnnotationType] + [e.value for e in ThreeDimensionAnnotationType]
 
+AUTO_COLOR_PALETTE: list[tuple[int, int, int]] = [
+    (255, 0, 0),  # 赤 (red)
+    (255, 85, 0),  # オレンジ (orange)
+    (255, 170, 0),  # アンバー (amber)
+    (255, 255, 0),  # 黄 (yellow)
+    (170, 255, 0),  # 黄緑 (lime)
+    (85, 255, 0),  # シャルトリューズ (chartreuse)
+    (0, 255, 0),  # 緑 (green)
+    (0, 255, 85),  # スプリンググリーン (spring green)
+    (0, 255, 170),  # ターコイズ (turquoise)
+    (0, 255, 255),  # シアン (cyan)
+    (0, 170, 255),  # スカイブルー (sky blue)
+    (0, 85, 255),  # アジュール (azure)
+    (0, 0, 255),  # 青 (blue)
+    (85, 0, 255),  # インディゴ (indigo)
+    (170, 0, 255),  # バイオレット (violet)
+    (255, 0, 255),  # マゼンタ (magenta)
+    (255, 0, 170),  # ローズ (rose)
+    (255, 0, 85),  # ピンクレッド (pink red)
+]
+"""自動色選択で優先する高彩度のカラーパレット。"""
+
 
 def parse_color(color_code: str) -> dict[str, int]:
     """
@@ -102,21 +124,9 @@ def create_auto_color(labels: Collection[dict[str, Any]]) -> dict[str, int]:
     Returns:
         Annofab API向けのRGB辞書
     """
-    color_palette: list[tuple[int, int, int]] = [
-        (255, 0, 0),  # 赤 (red)
-        (0, 255, 0),  # 緑 (green)
-        (0, 0, 255),  # 青 (blue)
-        (255, 255, 0),  # 黄 (yellow)
-        (255, 0, 255),  # マゼンタ (magenta)
-        (0, 255, 255),  # シアン (cyan)
-        (255, 255, 255),  # 白 (white)
-        (255, 128, 0),  # オレンジ (orange)
-        (128, 0, 255),  # 紫 (purple)
-        (0, 255, 128),  # ミントグリーン (mint green)
-    ]
     existing_colors = {(label["color"]["red"], label["color"]["green"], label["color"]["blue"]) for label in labels if isinstance(label.get("color"), dict)}
 
-    for red, green, blue in color_palette:
+    for red, green, blue in AUTO_COLOR_PALETTE:
         if (red, green, blue) not in existing_colors:
             return {"red": red, "green": green, "blue": blue}
 
