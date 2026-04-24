@@ -166,11 +166,8 @@ def create_new_label(
     return {
         "label_id": label_id,
         "label_name": create_name(label_name_en, label_name_ja),
-        "keybind": [],
         "annotation_type": annotation_type,
-        "additional_data_definitions": [],
         "color": color,
-        "metadata": {},
     }
 
 
