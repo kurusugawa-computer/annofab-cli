@@ -13,6 +13,7 @@ from typing import Any
 import annofabapi
 from annofabapi.dataclass.task import Task
 from annofabapi.models import DefaultAnnotationType, ProjectMemberRole, TaskStatus
+from annofabapi.plugin import ThreeDimensionAnnotationType
 from annofabapi.util.annotation_specs import AnnotationSpecsAccessor, get_english_message
 
 import annofabcli.common.cli
@@ -37,8 +38,8 @@ ALLOWED_ANNOTATION_TYPE_CONVERSIONS = {
     (DefaultAnnotationType.POLYLINE.value, DefaultAnnotationType.POLYGON.value),
     (DefaultAnnotationType.SEGMENTATION.value, DefaultAnnotationType.SEGMENTATION_V2.value),
     (DefaultAnnotationType.SEGMENTATION_V2.value, DefaultAnnotationType.SEGMENTATION.value),
-    ("user_instance_segment", "user_semantic_segment"),
-    ("user_semantic_segment", "user_instance_segment"),
+    (ThreeDimensionAnnotationType.INSTANCE_SEGMENT.value, ThreeDimensionAnnotationType.SEMANTIC_SEGMENT.value),
+    (ThreeDimensionAnnotationType.SEMANTIC_SEGMENT.value, ThreeDimensionAnnotationType.INSTANCE_SEGMENT.value),
 }
 """変更を許可するラベル種類の変換一覧。 `(変更前, 変更後)` の順で表す。"""
 

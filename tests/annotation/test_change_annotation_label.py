@@ -4,6 +4,7 @@ import argparse
 import copy
 
 import pytest
+from annofabapi.plugin import ThreeDimensionAnnotationType
 
 from annofabcli.annotation import change_annotation_label
 from annofabcli.annotation.change_annotation_label import ChangeAnnotationLabelMain, DestLabelInfo, get_label_id_from_name_or_id, is_allowed_label_change
@@ -299,8 +300,8 @@ class TestIsAllowedLabelChange:
             ("polyline", "polygon"),
             ("segmentation", "segmentation_v2"),
             ("segmentation_v2", "segmentation"),
-            ("user_instance_segment", "user_semantic_segment"),
-            ("user_semantic_segment", "user_instance_segment"),
+            (ThreeDimensionAnnotationType.INSTANCE_SEGMENT.value, ThreeDimensionAnnotationType.SEMANTIC_SEGMENT.value),
+            (ThreeDimensionAnnotationType.SEMANTIC_SEGMENT.value, ThreeDimensionAnnotationType.INSTANCE_SEGMENT.value),
         ],
     )
     def test_true(self, src_annotation_type: str, dest_annotation_type: str) -> None:
@@ -311,7 +312,7 @@ class TestIsAllowedLabelChange:
         [
             ("polygon", "bounding_box"),
             ("segmentation", "polygon"),
-            ("user_instance_segment", "segmentation"),
+            (ThreeDimensionAnnotationType.INSTANCE_SEGMENT.value, "segmentation"),
         ],
     )
     def test_false(self, src_annotation_type: str, dest_annotation_type: str) -> None:
