@@ -216,8 +216,8 @@ class TestChangeAnnotationLabelMain:
                     "annotation_id": "anno1",
                     "label_id": "label_car",
                     "additional_data_list": [
-                        {"additional_data_definition_id": "attr_common", "value": "keep"},
-                        {"additional_data_definition_id": "attr_src_only", "value": "remove"},
+                        {"definition_id": "attr_common", "value": "keep"},
+                        {"definition_id": "attr_src_only", "value": "remove"},
                     ],
                 },
             }
@@ -233,7 +233,7 @@ class TestChangeAnnotationLabelMain:
                     "updated_datetime": "2026-04-24T00:00:00+09:00",
                     "annotation_id": "anno1",
                     "label_id": "label_bus",
-                    "additional_data_list": [{"additional_data_definition_id": "attr_common", "value": "keep"}],
+                    "additional_data_list": [{"definition_id": "attr_common", "value": "keep"}],
                 },
                 "_type": "PutV2",
             }
@@ -260,7 +260,7 @@ class TestChangeAnnotationLabelMain:
                 "detail": {
                     "annotation_id": "anno1",
                     "label_id": "label_car",
-                    "additional_data_list": [{"additional_data_definition_id": "attr_common", "value": "keep"}],
+                    "additional_data_list": [{"definition_id": "attr_common", "value": "keep"}],
                 },
             }
         ]

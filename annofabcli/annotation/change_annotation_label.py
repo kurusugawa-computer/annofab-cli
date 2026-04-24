@@ -147,9 +147,7 @@ class ChangeAnnotationLabelMain(CommandLineWithConfirm):
                 )
 
             filtered_additional_data_list = [
-                additional_data
-                for additional_data in detail["additional_data_list"]
-                if additional_data.get("additional_data_definition_id", additional_data.get("definition_id")) in dest_label_info.additional_data_definition_ids
+                additional_data for additional_data in detail["additional_data_list"] if additional_data["definition_id"] in dest_label_info.additional_data_definition_ids
             ]
             return {
                 "data": {
