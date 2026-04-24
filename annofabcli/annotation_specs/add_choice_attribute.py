@@ -254,7 +254,7 @@ def build_choices(choice_inputs: Sequence[ChoiceAttributeInput]) -> tuple[list[d
 
 def create_comment_from_attribute(attribute_name_en: str, label_names: Sequence[str]) -> str:
     """
-    属性追加時のデフォルトコメントを生成する。
+    選択肢系属性追加時のデフォルトコメントを生成する。
 
     Args:
         attribute_name_en: 属性の英語名
@@ -264,22 +264,22 @@ def create_comment_from_attribute(attribute_name_en: str, label_names: Sequence[
         アノテーション仕様変更コメント
     """
     labels_text = ", ".join(label_names)
-    return f"以下の属性を追加しました。\n属性名(英語): {attribute_name_en}\n対象ラベル: {labels_text}"
+    return f"以下の選択肢系属性を追加しました。\n属性名(英語): {attribute_name_en}\n対象ラベル: {labels_text}"
 
 
 def get_target_labels(
     annotation_specs_accessor: AnnotationSpecsAccessor,
     *,
-    label_ids: Sequence[str],
-    label_name_ens: Sequence[str],
+    label_ids: Sequence[str] | None,
+    label_name_ens: Sequence[str] | None,
 ) -> list[dict[str, Any]]:
     """
     CLI引数で指定されたラベルID・ラベル名から追加対象ラベル一覧を取得する。
 
     Args:
         annotation_specs_accessor: アノテーション仕様アクセサ
-        label_ids: 指定されたラベルID一覧
-        label_name_ens: 指定されたラベル英語名一覧
+        label_ids: 指定されたラベルID一覧。未指定時はNone
+        label_name_ens: 指定されたラベル英語名一覧。未指定時はNone
 
     Returns:
         重複を除いた追加対象ラベル一覧
@@ -287,16 +287,19 @@ def get_target_labels(
     Raises:
         ValueError: ラベルが見つからない、またはラベル名が曖昧な場合
     """
+    resolved_label_ids = [] if label_ids is None else list(label_ids)
+    resolved_label_name_ens = [] if label_name_ens is None else list(label_name_ens)
+
     result = []
     result_label_ids: set[str] = set()
 
-    for label_id in label_ids:
+    for label_id in resolved_label_ids:
         label = annotation_specs_accessor.get_label(label_id=label_id)
         if label_id not in result_label_ids:
             result.append(label)
             result_label_ids.add(label_id)
 
-    for label_name_en in label_name_ens:
+    for label_name_en in resolved_label_name_ens:
         label = annotation_specs_accessor.get_label(label_name=label_name_en)
         label_id = label["label_id"]
         if label_id not in result_label_ids:
@@ -396,8 +399,8 @@ class AddChoiceAttributeMain(CommandLineWithConfirm):
         attribute_name_ja: str | None,
         attribute_id: str | None,
         choice_inputs: Sequence[ChoiceAttributeInput],
-        label_ids: Sequence[str],
-        label_name_ens: Sequence[str],
+        label_ids: Sequence[str] | None,
+        label_name_ens: Sequence[str] | None,
         comment: str | None = None,
     ) -> bool:
         """
@@ -409,8 +412,8 @@ class AddChoiceAttributeMain(CommandLineWithConfirm):
             attribute_name_ja: 属性日本語名
             attribute_id: 属性ID。未指定ならUUIDv4を自動生成
             choice_inputs: 選択肢入力一覧
-            label_ids: 追加先ラベルID一覧
-            label_name_ens: 追加先ラベル英語名一覧
+            label_ids: 追加先ラベルID一覧。未指定時はNone
+            label_name_ens: 追加先ラベル英語名一覧。未指定時はNone
             comment: 変更コメント
 
         Returns:

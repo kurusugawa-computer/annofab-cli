@@ -112,8 +112,8 @@ class AddAttributeMain(CommandLineWithConfirm):
         attribute_name_en: str,
         attribute_name_ja: str | None,
         attribute_id: str | None,
-        label_ids: Sequence[str],
-        label_name_ens: Sequence[str],
+        label_ids: Sequence[str] | None,
+        label_name_ens: Sequence[str] | None,
         comment: str | None = None,
     ) -> bool:
         """
@@ -124,8 +124,8 @@ class AddAttributeMain(CommandLineWithConfirm):
             attribute_name_en: 属性英語名
             attribute_name_ja: 属性日本語名
             attribute_id: 属性ID。未指定ならUUIDv4を自動生成
-            label_ids: 追加先ラベルID一覧
-            label_name_ens: 追加先ラベル英語名一覧
+            label_ids: 追加先ラベルID一覧。未指定時はNone
+            label_name_ens: 追加先ラベル英語名一覧。未指定時はNone
             comment: 変更コメント
 
         Returns:

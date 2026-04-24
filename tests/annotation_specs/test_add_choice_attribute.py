@@ -296,6 +296,26 @@ class TestAddChoiceAttributeMain:
         generated_attribute_id = service.api.last_put["additionals"][-1]["additional_data_definition_id"]
         assert str(uuid.UUID(generated_attribute_id, version=4)) == generated_attribute_id
 
+    def test_add_choice_attribute__label_name_ens_can_be_none(self, annotation_specs: dict) -> None:
+        service = DummyService(annotation_specs)
+        main = AddChoiceAttributeMain(service, project_id="prj1", all_yes=True)  # type: ignore
+
+        result = main.add_choice_attribute(
+            attribute_type="select",
+            attribute_name_en="weather3",
+            attribute_name_ja=None,
+            attribute_id="weather_attr3",
+            choice_inputs=read_choices_json('[{"choice_name_en":"sunny"},{"choice_name_en":"cloudy"}]'),
+            label_ids=["car_label_id"],
+            label_name_ens=None,
+            comment=None,
+        )
+
+        assert result is True
+        assert service.api.last_put is not None
+        car_label = next(label for label in service.api.last_put["labels"] if label["label_id"] == "car_label_id")
+        assert "weather_attr3" in car_label["additional_data_definitions"]
+
     def test_add_choice_attribute__duplicated_attribute_id(self, annotation_specs: dict) -> None:
         service = DummyService(annotation_specs)
         main = AddChoiceAttributeMain(service, project_id="prj1", all_yes=True)  # type: ignore
