@@ -274,7 +274,7 @@ class TestAddChoiceAttributeMain:
 
         assert service.api.last_put is not None
         added_attribute = service.api.last_put["additionals"][-1]
-        assert added_attribute["default"] == ""
+        assert added_attribute["default"] is None
         assert service.api.last_put["comment"] == "custom"
 
     def test_add_choice_attribute__attribute_id_is_uuidv4_when_not_specified(self, annotation_specs: dict) -> None:
@@ -286,7 +286,7 @@ class TestAddChoiceAttributeMain:
             attribute_name_en="weather_uuid",
             attribute_name_ja=None,
             attribute_id=None,
-            choice_inputs=read_choices_json('[{"choice_name_en":"sunny"}]'),
+            choice_inputs=read_choices_json('[{"choice_name_en":"sunny"},{"choice_name_en":"cloudy"}]'),
             label_ids=["car_label_id"],
             label_name_ens=[],
             comment="custom",
@@ -320,7 +320,7 @@ class TestAddChoiceAttributeMain:
             attribute_name_en="type",
             attribute_name_ja=None,
             attribute_id="weather_attr",
-            choice_inputs=read_choices_json('[{"choice_name_en":"sunny"}]'),
+            choice_inputs=read_choices_json('[{"choice_name_en":"sunny"},{"choice_name_en":"cloudy"}]'),
             label_ids=["car_label_id"],
             label_name_ens=[],
         )

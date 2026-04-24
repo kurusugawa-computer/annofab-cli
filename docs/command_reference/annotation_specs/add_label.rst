@@ -1,0 +1,91 @@
+==========================================
+annotation_specs add_label
+==========================================
+
+Description
+=================================
+アノテーション仕様にラベルを1件追加します。
+
+
+Examples
+=================================
+
+基本的な使い方
+----------------------------------------------
+
+.. code-block::
+
+    $ annofabcli annotation_specs add_label \
+     --project_id prj1 \
+     --label_name_en pedestrian \
+     --annotation_type bounding_box
+
+
+色やlabel_idを明示する場合
+----------------------------------------------
+
+.. code-block::
+
+    $ annofabcli annotation_specs add_label \
+     --project_id prj1 \
+     --label_name_en road \
+     --label_name_ja 路面 \
+     --annotation_type segmentation_v2 \
+     --label_id road_label \
+     --color '#00CCFF'
+
+
+Usage Details
+=================================
+
+``--annotation_type`` の値
+----------------------------------------------
+
+.. list-table::
+    :header-rows: 1
+
+    * - 値
+      - 説明
+      - 使用できるプロジェクト
+    * - ``bounding_box``
+      - 矩形
+      - 画像プロジェクト
+    * - ``segmentation``
+      - 塗りつぶし（インスタンスセグメンテーション用）
+      - 画像プロジェクト
+    * - ``segmentation_v2``
+      - 塗りつぶしv2（セマンティックセグメンテーション用）
+      - 画像プロジェクト
+    * - ``polygon``
+      - ポリゴン（閉じた頂点集合）
+      - 画像プロジェクト
+    * - ``polyline``
+      - ポリライン（開いた頂点集合）
+      - 画像プロジェクト
+    * - ``point``
+      - 点
+      - 画像プロジェクト
+    * - ``classification``
+      - 全体分類
+      - 画像プロジェクト、動画プロジェクト
+    * - ``range``
+      - 動画の区間
+      - 動画プロジェクト
+    * - ``custom``
+      - カスタム
+      - カスタムプロジェクト
+    * - ``user_bounding_box``
+      - 3次元のバウンディングボックス
+      - 3次元プロジェクト
+    * - ``user_instance_segment``
+      - 3次元のインスタンスセグメント
+      - 3次元プロジェクト
+    * - ``user_semantic_segment``
+      - 3次元のセマンティックセグメント
+      - 3次元プロジェクト
+
+.. argparse::
+    :ref: annofabcli.annotation_specs.add_label.add_parser
+    :prog: annofabcli annotation_specs add_label
+    :nosubcommands:
+    :nodefaultconst:
