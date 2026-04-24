@@ -17,6 +17,7 @@ Available Commands
 
    change_attributes
    change_attributes_per_annotation
+   change_label
    change_properties
    copy
    create_classification
