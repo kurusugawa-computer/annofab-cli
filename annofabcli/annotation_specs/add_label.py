@@ -22,16 +22,16 @@ logger = logging.getLogger(__name__)
 
 HEX_COLOR_PATTERN = re.compile(r"^#[0-9A-Fa-f]{6}$")
 COLOR_PALETTE: list[tuple[int, int, int]] = [
-    (255, 99, 71),
-    (0, 191, 255),
-    (50, 205, 50),
-    (255, 165, 0),
-    (255, 20, 147),
-    (0, 206, 209),
-    (255, 215, 0),
-    (65, 105, 225),
-    (154, 205, 50),
-    (220, 20, 60),
+    (255, 0, 0),
+    (0, 255, 0),
+    (0, 0, 255),
+    (255, 255, 0),
+    (255, 0, 255),
+    (0, 255, 255),
+    (255, 255, 255),
+    (255, 128, 0),
+    (128, 0, 255),
+    (0, 255, 128),
 ]
 ANNOTATION_TYPE_CHOICES = [e.value for e in DefaultAnnotationType] + [e.value for e in ThreeDimensionAnnotationType]
 
