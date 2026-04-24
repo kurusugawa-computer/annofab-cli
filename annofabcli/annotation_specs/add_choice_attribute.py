@@ -38,9 +38,16 @@ class ChoiceAttributeInput:
     """
 
     choice_name_en: str
+    """選択肢の英語名"""
+
     choice_name_ja: str | None = None
+    """選択肢の日本語名"""
+
     choice_id: str | None = None
+    """選択肢ID。未指定の場合はUUIDv4を自動生成する"""
+
     is_default: bool = False
+    """属性のデフォルト値として使用する選択肢かどうか"""
 
 
 def create_name(message_en: str, message_ja: str | None = None) -> dict[str, Any]:
