@@ -409,12 +409,12 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     group.add_argument(
         "--label_name",
         type=str,
-        help="変更後のラベル名（英語）を指定します。",
+        help="変更後のラベル名（英語）を指定します。変更前のラベルと同じ種類である必要があります。",
     )
     group.add_argument(
         "--label_id",
         type=str,
-        help="変更後のラベルIDを指定します。",
+        help="変更後のラベルIDを指定します。変更前のラベルと同じ種類である必要があります。",
     )
 
     parser.add_argument(
