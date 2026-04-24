@@ -149,7 +149,7 @@ def read_choices_csv(csv_path: Path) -> list[ChoiceAttributeInput]:
     return result
 
 
-def validate_choice_inputs(choice_inputs: Sequence[ChoiceAttributeInput]) -> None:
+def validate_choice_inputs(choice_inputs: Sequence[ChoiceAttributeInput], *, min_count: int = 2) -> None:
     """
     選択肢入力一覧の整合性を検証する。
 
@@ -159,8 +159,8 @@ def validate_choice_inputs(choice_inputs: Sequence[ChoiceAttributeInput]) -> Non
     Raises:
         ValueError: 件数、重複、既定値の数が不正な場合
     """
-    if len(choice_inputs) <= 1:
-        raise ValueError("選択肢を2件以上指定してください。")
+    if len(choice_inputs) < min_count:
+        raise ValueError(f"選択肢を{min_count}件以上指定してください。")
 
     duplicated_choice_ids = duplicated_set([choice.choice_id for choice in choice_inputs if choice.choice_id is not None])
     if duplicated_choice_ids:
@@ -172,7 +172,7 @@ def validate_choice_inputs(choice_inputs: Sequence[ChoiceAttributeInput]) -> Non
         raise ValueError("`is_default=true` を指定できる選択肢は0件または1件です。")
 
 
-def build_choices(choice_inputs: Sequence[ChoiceAttributeInput]) -> tuple[list[dict[str, Any]], str | None]:
+def build_choices(choice_inputs: Sequence[ChoiceAttributeInput], *, min_count: int = 2) -> tuple[list[dict[str, Any]], str | None]:
     """
     選択肢入力からAnnofab API向けのchoices配列を生成する。
 
@@ -185,7 +185,7 @@ def build_choices(choice_inputs: Sequence[ChoiceAttributeInput]) -> tuple[list[d
     Raises:
         ValueError: 選択肢入力の整合性が不正な場合
     """
-    validate_choice_inputs(choice_inputs)
+    validate_choice_inputs(choice_inputs, min_count=min_count)
 
     choices: list[dict[str, Any]] = []
     default_choice_id: str | None = None
