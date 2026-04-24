@@ -35,7 +35,7 @@ Examples
 Usage Details
 =================================
 
-``--annotation_type`` の値は、:ref:`annotation_specs_add_label_annotation_type_values` を参照してください。
+``--annotation_type`` の値は、``annotation_specs add_label`` の :ref:`annotation_specs_add_label_annotation_type_values` を参照してください。
 
 .. argparse::
     :ref: annofabcli.annotation_specs.add_labels.add_parser
