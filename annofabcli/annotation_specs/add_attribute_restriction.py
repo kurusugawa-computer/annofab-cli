@@ -130,7 +130,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         help=f"追加する属性の制約情報のJSONを指定します。JSON形式は ... を参照してください。\n(例) ``{json.dumps(sample_json)}``\n``file://`` を先頭に付けるとjsonファイルを指定できます。",
     )
 
-    parser.add_argument("--comment", type=str, help="アノテーション仕様の変更時に指定できるコメント。未指定の場合、自動でコメントが生成されます。")
+    parser.add_argument("--comment", type=str, help="アノテーション仕様の変更内容を説明するコメント。未指定の場合、自動でコメントが生成されます。")
 
     parser.set_defaults(subcommand_func=main)
 
