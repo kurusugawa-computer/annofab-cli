@@ -15,7 +15,7 @@ from annofabapi.util.annotation_specs import AnnotationSpecsAccessor
 
 import annofabcli.common.cli
 from annofabcli.annotation_specs.add_choice_attribute import ChoiceAttributeInput, build_choices, read_choices_json
-from annofabcli.annotation_specs.utils import get_attribute_name_en
+from annofabcli.annotation_specs.utils import get_attribute_name_en, get_target_choice_attribute
 from annofabcli.common.cli import ArgumentParser, CommandLine, CommandLineWithConfirm, build_annofabapi_resource_and_login
 from annofabcli.common.facade import AnnofabApiFacade
 
@@ -78,41 +78,6 @@ def read_choices_csv(csv_path: Path) -> list[ChoiceAttributeInput]:
         )
         for row in df.to_dict(orient="records")
     ]
-
-
-def get_target_attribute(
-    annotation_specs_accessor: AnnotationSpecsAccessor,
-    *,
-    attribute_id: str | None,
-    attribute_name_en: str | None,
-) -> dict[str, Any]:
-    """
-    CLI引数で指定された属性IDまたは属性名から追加対象属性を取得する。
-
-    Args:
-        annotation_specs_accessor: アノテーション仕様アクセサ
-        attribute_id: 指定された属性ID
-        attribute_name_en: 指定された属性英語名
-
-    Returns:
-        追加対象の属性
-
-    Raises:
-        ValueError: 属性指定が不正、属性が見つからない、属性名が曖昧、または選択肢系属性でない場合
-    """
-    if (attribute_id is None) == (attribute_name_en is None):
-        raise ValueError("追加先の属性は `attribute_id` または `attribute_name_en` のどちらか一方だけ指定してください。")
-
-    if attribute_id is not None:
-        attribute = annotation_specs_accessor.get_attribute(attribute_id=attribute_id)
-    else:
-        assert attribute_name_en is not None
-        attribute = annotation_specs_accessor.get_attribute(attribute_name=attribute_name_en)
-
-    if attribute["type"] not in ["choice", "select"]:
-        raise ValueError(f"属性ID='{attribute['additional_data_definition_id']}' は選択肢系属性ではありません。")
-
-    return attribute
 
 
 def validate_added_choices(
@@ -211,7 +176,7 @@ class AddChoicesToAttributeMain(CommandLineWithConfirm):
 
         old_annotation_specs, _ = self.service.api.get_annotation_specs(self.project_id, query_params={"v": "3"})
         annotation_specs_accessor = AnnotationSpecsAccessor(old_annotation_specs)
-        target_attribute = get_target_attribute(
+        target_attribute = get_target_choice_attribute(
             annotation_specs_accessor,
             attribute_id=attribute_id,
             attribute_name_en=attribute_name_en,
