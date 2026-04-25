@@ -250,7 +250,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         ),
     )
 
-    parser.add_argument("--comment", type=str, help="アノテーション仕様の変更時に指定できるコメント。未指定の場合、自動でコメントが生成されます。")
+    parser.add_argument("--comment", type=str, help="アノテーション仕様の変更内容を説明するコメント。未指定の場合、自動でコメントが生成されます。")
 
     parser.set_defaults(subcommand_func=main)
 
