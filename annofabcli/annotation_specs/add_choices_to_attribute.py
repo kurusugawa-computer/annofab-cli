@@ -4,14 +4,17 @@ import argparse
 import copy
 import json
 import logging
+from collections.abc import Sequence
+from dataclasses import replace
 from pathlib import Path
 from typing import Any
 
 import annofabapi
+import pandas
 from annofabapi.util.annotation_specs import AnnotationSpecsAccessor
 
 import annofabcli.common.cli
-from annofabcli.annotation_specs.add_choice_attribute import build_choices, read_choices_csv, read_choices_json
+from annofabcli.annotation_specs.add_choice_attribute import ChoiceAttributeInput, build_choices, read_choices_json
 from annofabcli.annotation_specs.utils import get_attribute_name_en
 from annofabcli.common.cli import ArgumentParser, CommandLine, CommandLineWithConfirm, build_annofabapi_resource_and_login
 from annofabcli.common.facade import AnnofabApiFacade
@@ -32,6 +35,49 @@ def create_comment_from_attribute(attribute_name_en: str, choice_name_ens: list[
     """
     choices_text = ", ".join(choice_name_ens)
     return f"以下の選択肢を属性に追加しました。\n属性名(英語): {attribute_name_en}\n追加した選択肢: {choices_text}"
+
+
+def read_choices_csv(csv_path: Path) -> list[ChoiceAttributeInput]:
+    """
+    ``--choices_csv`` で指定されたCSVから選択肢一覧を読み込む。
+
+    ``add_choices_to_attribute`` ではデフォルト値を変更しないため、 ``is_default`` 列は読み込まない。
+
+    Args:
+        csv_path: CSVファイルパス
+
+    Returns:
+        選択肢入力の一覧
+
+    Raises:
+        ValueError: CSV読み込みに失敗した場合、または必須列が不足している場合
+    """
+    try:
+        df = pandas.read_csv(
+            csv_path,
+            dtype={
+                "choice_id": "string",
+                "choice_name_en": "string",
+                "choice_name_ja": "string",
+            },
+        )
+    except Exception as e:
+        raise ValueError(f"`--choices_csv` の読み込みに失敗しました。 :: {e}") from e
+
+    required_columns = {"choice_name_en"}
+    missing_columns = required_columns - set(df.columns)
+    if missing_columns:
+        raise ValueError(f"`--choices_csv` に不足している必須列があります。 :: {sorted(missing_columns)}")
+
+    return [
+        ChoiceAttributeInput(
+            choice_name_en=row["choice_name_en"],
+            choice_name_ja=row.get("choice_name_ja"),
+            choice_id=row.get("choice_id"),
+            is_default=False,
+        )
+        for row in df.to_dict(orient="records")
+    ]
 
 
 def get_target_attribute(
@@ -73,7 +119,6 @@ def validate_added_choices(
     target_attribute: dict[str, Any],
     *,
     added_choices: list[dict[str, Any]],
-    added_default_choice_id: str | None,
 ) -> None:
     """
     追加する選択肢が既存の選択肢と衝突しないか検証する。
@@ -81,10 +126,9 @@ def validate_added_choices(
     Args:
         target_attribute: 追加先の属性
         added_choices: 追加予定の選択肢一覧
-        added_default_choice_id: 追加予定のデフォルト選択肢ID
 
     Raises:
-        ValueError: 選択肢ID・選択肢名・デフォルト値が既存の属性情報と衝突する場合
+        ValueError: 選択肢ID・選択肢名が既存の属性情報と衝突する場合
     """
     existing_choices = target_attribute["choices"]
     existing_choice_ids = {choice["choice_id"] for choice in existing_choices}
@@ -99,9 +143,18 @@ def validate_added_choices(
         duplicated_text = ", ".join(sorted(duplicated_choice_name_ens))
         raise ValueError(f"追加先の属性に既に存在する `choice_name_en` が指定されています。 :: {duplicated_text}")
 
-    existing_default_choice_id = target_attribute.get("default")
-    if added_default_choice_id is not None and existing_default_choice_id not in ["", None]:
-        raise ValueError(f"追加先の属性には既にデフォルト選択肢が設定されています。 :: {existing_default_choice_id}")
+
+def ignore_default_choice_inputs(choice_inputs: Sequence[ChoiceAttributeInput]) -> list[ChoiceAttributeInput]:
+    """
+    選択肢追加コマンドではデフォルト値を変更しないため、is_defaultを無視する。
+
+    Args:
+        choice_inputs: コマンドラインから受け取った選択肢一覧
+
+    Returns:
+        ``is_default`` をFalseにした選択肢一覧
+    """
+    return [replace(choice_input, is_default=False) for choice_input in choice_inputs]
 
 
 class AddChoicesToAttributeMain(CommandLineWithConfirm):
@@ -154,7 +207,7 @@ class AddChoicesToAttributeMain(CommandLineWithConfirm):
         else:
             raise ValueError("`--choices_json` または `--choices_csv` のいずれかを指定してください。")
 
-        added_choices, added_default_choice_id = build_choices(choice_inputs, min_count=1)
+        added_choices, _ = build_choices(ignore_default_choice_inputs(choice_inputs), min_count=1)
 
         old_annotation_specs, _ = self.service.api.get_annotation_specs(self.project_id, query_params={"v": "3"})
         annotation_specs_accessor = AnnotationSpecsAccessor(old_annotation_specs)
@@ -166,15 +219,12 @@ class AddChoicesToAttributeMain(CommandLineWithConfirm):
         validate_added_choices(
             target_attribute,
             added_choices=added_choices,
-            added_default_choice_id=added_default_choice_id,
         )
 
         resolved_attribute_id = target_attribute["additional_data_definition_id"]
         resolved_attribute_name_en = get_attribute_name_en(target_attribute)
         added_choice_name_ens = [AnnofabApiFacade.get_choice_name_en(choice) for choice in added_choices]
         confirm_message = f"属性名(英語)='{resolved_attribute_name_en}', 属性ID='{resolved_attribute_id}' に {len(added_choices)} 件の選択肢 {added_choice_name_ens} を追加します。よろしいですか？"
-        if added_default_choice_id is not None:
-            confirm_message += f" 追加する選択肢のうち `choice_id`='{added_default_choice_id}' をデフォルト値に設定します。"
         if not self.confirm_processing(confirm_message):
             return False
 
@@ -183,8 +233,6 @@ class AddChoicesToAttributeMain(CommandLineWithConfirm):
             if attribute["additional_data_definition_id"] != resolved_attribute_id:
                 continue
             attribute["choices"].extend(added_choices)
-            if added_default_choice_id is not None:
-                attribute["default"] = added_default_choice_id
             break
 
         if comment is None:
@@ -246,7 +294,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
             "追加する選択肢情報のCSVファイルを指定します。 "
             "CSVには ``choice_name_en`` 列が必要です。 "
             "``choice_id`` と ``choice_name_en`` はユニークになるように指定してください。 "
-            "任意で ``choice_id`` , ``choice_name_ja`` , ``is_default`` 列を指定できます。"
+            "任意で ``choice_id`` , ``choice_name_ja`` 列を指定できます。 ``is_default`` 列が存在する場合は無視されます。"
         ),
     )
 

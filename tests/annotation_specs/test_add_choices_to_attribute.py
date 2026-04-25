@@ -69,7 +69,7 @@ class TestAddChoicesToAttributeMain:
         assert updated_attribute["default"] == ""
         assert service.api.last_put["comment"].startswith("以下の選択肢を属性に追加しました。")
 
-    def test_add_choices_to_attribute__attribute_name_and_default(self, annotation_specs: dict) -> None:
+    def test_add_choices_to_attribute__attribute_name_and_ignore_default(self, annotation_specs: dict) -> None:
         service = DummyService(annotation_specs)
         main = AddChoicesToAttributeMain(service, project_id="prj1", all_yes=True)  # type: ignore
 
@@ -84,8 +84,26 @@ class TestAddChoicesToAttributeMain:
         assert result is True
         assert service.api.last_put is not None
         updated_attribute = next(attribute for attribute in service.api.last_put["additionals"] if attribute["additional_data_definition_id"] == "71620647-98cf-48ad-b43b-4af425a24f32")
-        assert updated_attribute["default"] == "xlarge"
+        assert updated_attribute["default"] == ""
         assert service.api.last_put["comment"] == "custom"
+
+    def test_add_choices_to_attribute__ignore_default_in_csv(self, annotation_specs: dict, tmp_path: Path) -> None:
+        csv_path = tmp_path / "choices.csv"
+        csv_path.write_text("choice_id,choice_name_en,is_default\nxlarge,xlarge,true\n", encoding="utf-8")
+        service = DummyService(annotation_specs)
+        main = AddChoicesToAttributeMain(service, project_id="prj1", all_yes=True)  # type: ignore
+
+        result = main.add_choices_to_attribute(
+            attribute_id="71620647-98cf-48ad-b43b-4af425a24f32",
+            attribute_name_en=None,
+            choices_json=None,
+            choices_csv=csv_path,
+        )
+
+        assert result is True
+        assert service.api.last_put is not None
+        updated_attribute = next(attribute for attribute in service.api.last_put["additionals"] if attribute["additional_data_definition_id"] == "71620647-98cf-48ad-b43b-4af425a24f32")
+        assert updated_attribute["default"] == ""
 
     def test_add_choices_to_attribute__duplicated_existing_choice_id(self, annotation_specs: dict) -> None:
         service = DummyService(annotation_specs)
@@ -123,17 +141,21 @@ class TestAddChoicesToAttributeMain:
                 choices_csv=None,
             )
 
-    def test_add_choices_to_attribute__default_already_exists(self, annotation_specs: dict) -> None:
+    def test_add_choices_to_attribute__ignore_default_when_default_already_exists(self, annotation_specs: dict) -> None:
         duplicated_specs = copy.deepcopy(annotation_specs)
         target_attribute = next(attribute for attribute in duplicated_specs["additionals"] if attribute["additional_data_definition_id"] == "71620647-98cf-48ad-b43b-4af425a24f32")
         target_attribute["default"] = "08ec927c-18e6-4bba-837a-b16de7061580"
         service = DummyService(duplicated_specs)
         main = AddChoicesToAttributeMain(service, project_id="prj1", all_yes=True)  # type: ignore
 
-        with pytest.raises(ValueError):
-            main.add_choices_to_attribute(
-                attribute_id="71620647-98cf-48ad-b43b-4af425a24f32",
-                attribute_name_en=None,
-                choices_json='[{"choice_id":"xlarge","choice_name_en":"xlarge","is_default":true}]',
-                choices_csv=None,
-            )
+        result = main.add_choices_to_attribute(
+            attribute_id="71620647-98cf-48ad-b43b-4af425a24f32",
+            attribute_name_en=None,
+            choices_json='[{"choice_id":"xlarge","choice_name_en":"xlarge","is_default":true}]',
+            choices_csv=None,
+        )
+
+        assert result is True
+        assert service.api.last_put is not None
+        updated_attribute = next(attribute for attribute in service.api.last_put["additionals"] if attribute["additional_data_definition_id"] == "71620647-98cf-48ad-b43b-4af425a24f32")
+        assert updated_attribute["default"] == "08ec927c-18e6-4bba-837a-b16de7061580"
