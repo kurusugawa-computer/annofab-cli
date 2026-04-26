@@ -11,11 +11,11 @@ from typing import Any
 
 import annofabapi
 import pandas
-from annofabapi.util.annotation_specs import AnnotationSpecsAccessor
+from annofabapi.util.annotation_specs import AnnotationSpecsAccessor, get_english_message
 
 import annofabcli.common.cli
 from annofabcli.annotation_specs.add_choice_attribute import ChoiceAttributeInput, build_choices, read_choices_json
-from annofabcli.annotation_specs.utils import get_attribute_name_en, get_target_choice_attribute
+from annofabcli.annotation_specs.utils import get_attribute_name_en
 from annofabcli.common.cli import ArgumentParser, CommandLine, CommandLineWithConfirm, build_annofabapi_resource_and_login
 from annofabcli.common.facade import AnnofabApiFacade
 
@@ -102,8 +102,8 @@ def validate_added_choices(
         duplicated_text = ", ".join(sorted(duplicated_choice_ids))
         raise ValueError(f"追加先の属性に既に存在する `choice_id` が指定されています。 :: {duplicated_text}")
 
-    existing_choice_name_ens = {AnnofabApiFacade.get_choice_name_en(choice) for choice in existing_choices}
-    duplicated_choice_name_ens = existing_choice_name_ens & {AnnofabApiFacade.get_choice_name_en(choice) for choice in added_choices}
+    existing_choice_name_ens = {get_english_message(choice["name"]) for choice in existing_choices}
+    duplicated_choice_name_ens = existing_choice_name_ens & {get_english_message(choice["name"]) for choice in added_choices}
     if duplicated_choice_name_ens:
         duplicated_text = ", ".join(sorted(duplicated_choice_name_ens))
         raise ValueError(f"追加先の属性に既に存在する `choice_name_en` が指定されています。 :: {duplicated_text}")
@@ -176,11 +176,13 @@ class AddChoicesToAttributeMain(CommandLineWithConfirm):
 
         old_annotation_specs, _ = self.service.api.get_annotation_specs(self.project_id, query_params={"v": "3"})
         annotation_specs_accessor = AnnotationSpecsAccessor(old_annotation_specs)
-        target_attribute = get_target_choice_attribute(
-            annotation_specs_accessor,
+        target_attribute = annotation_specs_accessor.get_attribute(
             attribute_id=attribute_id,
-            attribute_name_en=attribute_name_en,
+            attribute_name=attribute_name_en,
         )
+        if target_attribute["type"] not in ["choice", "select"]:
+            raise ValueError(f"属性ID='{target_attribute['additional_data_definition_id']}' は選択肢系属性ではありません。")
+
         validate_added_choices(
             target_attribute,
             added_choices=added_choices,
@@ -188,7 +190,7 @@ class AddChoicesToAttributeMain(CommandLineWithConfirm):
 
         resolved_attribute_id = target_attribute["additional_data_definition_id"]
         resolved_attribute_name_en = get_attribute_name_en(target_attribute)
-        added_choice_name_ens = [AnnofabApiFacade.get_choice_name_en(choice) for choice in added_choices]
+        added_choice_name_ens = [get_english_message(choice["name"]) for choice in added_choices]
         confirm_message = f"属性名(英語)='{resolved_attribute_name_en}', 属性ID='{resolved_attribute_id}' に {len(added_choices)} 件の選択肢 {added_choice_name_ens} を追加します。よろしいですか？"
         if not self.confirm_processing(confirm_message):
             return False
