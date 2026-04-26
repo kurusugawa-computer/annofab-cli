@@ -10,30 +10,55 @@ Description
 Examples
 =================================
 
-ラベル名(英語)を複数指定する場合
+JSON形式で指定する場合
 ----------------------------------------------
+
+.. code-block:: json
+    :caption: labels.json
+
+    [
+        {
+            "label_name_en": "pedestrian"
+        },
+        {
+            "label_id": "bicycle",
+            "label_name_en": "bicycle",
+            "label_name_ja": "自転車"
+        }
+    ]
+
 
 .. code-block::
 
     $ annofabcli annotation_specs add_labels \
      --project_id prj1 \
-     --label_name_en pedestrian bicycle traffic_light \
+     --label_json file://labels.json \
      --annotation_type bounding_box
 
 
-ファイルからラベル名(英語)一覧を読み込む場合
+CSV形式で指定する場合
 ----------------------------------------------
+
+.. code-block::
+    :caption: labels.csv
+
+    label_id,label_name_en,label_name_ja
+    ,pedestrian,
+    bicycle,bicycle,自転車
+
 
 .. code-block::
 
     $ annofabcli annotation_specs add_labels \
      --project_id prj1 \
-     --label_name_en file://label_names.txt \
+     --label_csv labels.csv \
      --annotation_type segmentation_v2
 
 
 Usage Details
 =================================
+
+``label_name_en`` は必須です。 ``label_id`` と ``label_name_ja`` は任意です。
 
 ``--annotation_type`` の値は、``annotation_specs add_label`` の :ref:`annotation_specs_add_label_annotation_type_values` を参照してください。
 
