@@ -39,12 +39,12 @@ def get_target_choice_attribute(
     attribute_name_en: str | None,
 ) -> dict[str, Any]:
     """
-    CLI引数で指定された属性IDまたは属性名から選択肢系属性を取得する。
+    属性IDまたは属性名から選択肢系属性を取得する。
 
     Args:
         annotation_specs_accessor: アノテーション仕様アクセサ
-        attribute_id: 指定された属性ID
-        attribute_name_en: 指定された属性英語名
+        attribute_id: 対象属性ID
+        attribute_name_en: 対象属性英語名
 
     Returns:
         対象の選択肢系属性
@@ -53,7 +53,7 @@ def get_target_choice_attribute(
         ValueError: 属性指定が不正、属性が見つからない、属性名が曖昧、または選択肢系属性でない場合
     """
     if (attribute_id is None) == (attribute_name_en is None):
-        raise ValueError("追加先の属性は `attribute_id` または `attribute_name_en` のどちらか一方だけ指定してください。")
+        raise ValueError("対象属性は `attribute_id` または `attribute_name_en` のどちらか一方だけ指定してください。")
 
     if attribute_id is not None:
         attribute = annotation_specs_accessor.get_attribute(attribute_id=attribute_id)
