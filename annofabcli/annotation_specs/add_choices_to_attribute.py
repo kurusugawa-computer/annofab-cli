@@ -294,7 +294,7 @@ def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse
     """
     subcommand_name = "add_choices_to_attribute"
     subcommand_help = "既存の選択肢系属性に選択肢を追加します。"
-    description = "既存の ``choice`` （ラジオボタン）または ``select`` （ドロップダウン）の属性に、選択肢を追加します。"
+    description = "既存の選択肢系属性（ラジオボタン/ドロップダウン）に、選択肢を追加します。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description=description)
     parse_args(parser)
