@@ -35,8 +35,33 @@ Examples
      --color '#00CCFF'
 
 
+``field_values`` を指定して追加する場合
+----------------------------------------------
+
+.. code-block:: json
+    :caption: field_values.json
+
+    {
+        "display_name": {
+            "_type": "DisplayName",
+            "text": "歩行者"
+        }
+    }
+
+
+.. code-block::
+
+    $ annofabcli annotation_specs add_label \
+     --project_id prj1 \
+     --label_name_en pedestrian \
+     --annotation_type bounding_box \
+     --field_values_json file://field_values.json
+
+
 Usage Details
 =================================
+
+``field_values`` のフォーマットは、 :doc:`update_label_field_values` を参照してください。
 
 .. _annotation_specs_add_label_annotation_type_values:
 

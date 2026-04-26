@@ -103,6 +103,7 @@ class TestAddLabelMain:
             label_id="pedestrian_label_id",
             label_name_ja="歩行者",
             color_code="#00CCFF",
+            field_values=None,
             comment=None,
         )
 
@@ -125,6 +126,7 @@ class TestAddLabelMain:
             label_id=None,
             label_name_ja=None,
             color_code="#00CCFF",
+            field_values=None,
             comment="custom",
         )
 
@@ -144,12 +146,41 @@ class TestAddLabelMain:
             label_id="pedestrian_label_id",
             label_name_ja=None,
             color_code=None,
+            field_values=None,
             comment=None,
         )
 
         assert service.api.last_put is not None
         added_color = service.api.last_put["labels"][-1]["color"]
         assert added_color == {"red": 255, "green": 85, "blue": 0}
+
+    def test_add_label__field_values(self, annotation_specs: dict) -> None:
+        service = DummyService(annotation_specs)
+        main = AddLabelMain(service, project_id="prj1", all_yes=True)  # type: ignore[arg-type]
+
+        main.add_label(
+            label_name_en="pedestrian",
+            annotation_type="bounding_box",
+            label_id="pedestrian_label_id",
+            label_name_ja=None,
+            color_code="#00CCFF",
+            field_values={
+                "display_name": {
+                    "_type": "DisplayName",
+                    "text": "歩行者",
+                }
+            },
+            comment=None,
+        )
+
+        assert service.api.last_put is not None
+        added_label = service.api.last_put["labels"][-1]
+        assert added_label["field_values"] == {
+            "display_name": {
+                "_type": "DisplayName",
+                "text": "歩行者",
+            }
+        }
 
     def test_add_label__does_not_inherit_existing_label_fields(self, annotation_specs: dict) -> None:
         shaped_specs = copy.deepcopy(annotation_specs)
@@ -167,6 +198,7 @@ class TestAddLabelMain:
             label_id="pedestrian_label_id",
             label_name_ja=None,
             color_code="#00CCFF",
+            field_values=None,
             comment=None,
         )
 
@@ -190,6 +222,7 @@ class TestAddLabelMain:
                 label_id="car_label_id",
                 label_name_ja=None,
                 color_code="#00CCFF",
+                field_values=None,
             )
 
     def test_add_label__duplicated_label_name(self, annotation_specs: dict) -> None:
@@ -203,6 +236,7 @@ class TestAddLabelMain:
                 label_id="new_label_id",
                 label_name_ja=None,
                 color_code="#00CCFF",
+                field_values=None,
             )
 
     def test_add_label__invalid_color_code(self, annotation_specs: dict) -> None:
@@ -216,6 +250,7 @@ class TestAddLabelMain:
                 label_id="pedestrian_label_id",
                 label_name_ja=None,
                 color_code="00CCFF",
+                field_values=None,
             )
 
     def test_add_label__confirm_no(self, annotation_specs: dict) -> None:
@@ -228,7 +263,14 @@ class TestAddLabelMain:
             label_id="pedestrian_label_id",
             label_name_ja=None,
             color_code="#00CCFF",
+            field_values=None,
         )
 
         assert result is False
         assert service.api.last_put is None
+
+
+class TestValidateFieldValuesInput:
+    def test_field_values_json_is_not_object(self) -> None:
+        with pytest.raises(TypeError):
+            add_label.validate_field_values_input([{"_type": "Dummy"}])

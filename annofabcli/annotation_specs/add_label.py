@@ -7,7 +7,7 @@ import uuid
 from collections import Counter
 from collections.abc import Collection
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, cast
 
 import annofabapi
 from annofabapi.models import DefaultAnnotationType
@@ -16,7 +16,13 @@ from annofabapi.plugin import ThreeDimensionAnnotationType
 import annofabcli.common.cli
 from annofabcli.annotation_specs.color import RgbColor, hex_to_rgb
 from annofabcli.annotation_specs.utils import create_name, get_label_name_en
-from annofabcli.common.cli import ArgumentParser, CommandLine, CommandLineWithConfirm, build_annofabapi_resource_and_login
+from annofabcli.common.cli import (
+    ArgumentParser,
+    CommandLine,
+    CommandLineWithConfirm,
+    build_annofabapi_resource_and_login,
+    get_json_from_args,
+)
 from annofabcli.common.facade import AnnofabApiFacade
 
 logger = logging.getLogger(__name__)
@@ -129,6 +135,24 @@ def validate_new_label(labels: Collection[dict[str, Any]], *, label_id: str, lab
         raise ValueError(f"label_name_en='{label_name_en}' のラベルは既に存在します。")
 
 
+def validate_field_values_input(field_values: object) -> dict[str, Any]:
+    """
+    ``--field_values_json`` で指定された値を検証する。
+
+    Args:
+        field_values: JSONから読み込んだ値
+
+    Returns:
+        検証済みのfield_values
+
+    Raises:
+        TypeError: JSONオブジェクトでない場合
+    """
+    if not isinstance(field_values, dict):
+        raise TypeError("`--field_values_json` にはJSONオブジェクトを指定してください。")
+    return cast(dict[str, Any], field_values)
+
+
 def create_auto_color(colors: Collection[RgbColor]) -> RgbColor:
     """
     AUTO_COLOR_PALETTE_HEX の中から使用回数が最も少ない色を返す。
@@ -174,6 +198,7 @@ def create_new_label(
     label_name_ja: str | None,
     annotation_type: str,
     color: RgbColor,
+    field_values: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """
     新規ラベルのAnnofab API向けオブジェクトを生成する。
@@ -184,6 +209,7 @@ def create_new_label(
         label_name_ja: 新規ラベル日本語名
         annotation_type: アノテーション種類
         color: Annofab API向けのRGB辞書
+        field_values: 新規ラベルに設定するfield_values
 
     Returns:
         Annofab API向けのラベルオブジェクト
@@ -195,7 +221,7 @@ def create_new_label(
         "color": color,
         # 以下はキーが存在しないとAPIエラーになるため、空の値を入れておく
         "keybind": [],
-        "field_values": {},
+        "field_values": copy.deepcopy(field_values) if field_values is not None else {},
         "additional_data_definitions": [],
     }
 
@@ -224,6 +250,7 @@ class AddLabelMain(CommandLineWithConfirm):
         label_id: str | None,
         label_name_ja: str | None,
         color_code: str | None,
+        field_values: dict[str, Any] | None = None,
         comment: str | None = None,
     ) -> bool:
         """
@@ -235,6 +262,7 @@ class AddLabelMain(CommandLineWithConfirm):
             label_id: 追加するラベルID。未指定ならUUIDv4を自動生成
             label_name_ja: 追加するラベルの日本語名
             color_code: ``#RRGGBB`` 形式のカラーコード
+            field_values: 新規ラベルに設定するfield_values
             comment: 変更コメント
 
         Returns:
@@ -256,6 +284,7 @@ class AddLabelMain(CommandLineWithConfirm):
             label_name_ja=label_name_ja,
             annotation_type=annotation_type,
             color=color,
+            field_values=field_values,
         )
 
         confirm_message = f"ラベル名(英語)='{label_name_en}', label_id='{generated_label_id}', annotation_type='{annotation_type}' のラベルを追加します。よろしいですか？"
@@ -282,6 +311,7 @@ class AddLabel(CommandLine):
         コマンドライン引数を解釈し、ラベル追加処理を実行する。
         """
         args = self.args
+        field_values = None if args.field_values_json is None else validate_field_values_input(get_json_from_args(args.field_values_json))
 
         obj = AddLabelMain(self.service, project_id=args.project_id, all_yes=args.yes)
         obj.add_label(
@@ -290,6 +320,7 @@ class AddLabel(CommandLine):
             label_id=args.label_id,
             label_name_ja=args.label_name_ja,
             color_code=args.color,
+            field_values=field_values,
             comment=args.comment,
         )
 
@@ -309,6 +340,14 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--label_id", type=str, help="追加するラベルのlabel_id。未指定の場合はUUIDv4を自動生成します。")
     parser.add_argument("--label_name_ja", type=str, help="追加するラベルの日本語名。未指定の場合は英語名と同じ値を使用します。")
     parser.add_argument("--color", type=str, help="追加するラベルの色。 ``#RRGGBB`` 形式の16進数カラーコードを指定してください。未指定の場合は自動設定されます。")
+    parser.add_argument(
+        "--field_values_json",
+        type=str,
+        help=(
+            "追加するラベルに設定するfield_valuesのJSONオブジェクト。 ``file://`` を先頭に付けるとJSONファイルを指定できます。"
+            " field_valuesのフォーマットはWebAPIの ``AnnotationTypeFieldValue`` を参照してください。"
+        ),
+    )
     parser.add_argument("--comment", type=str, help="アノテーション仕様の変更内容を説明するコメント。未指定の場合、自動でコメントが生成されます。")
 
     parser.set_defaults(subcommand_func=main)
