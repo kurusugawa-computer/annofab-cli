@@ -1,6 +1,6 @@
 ---
 name: document-style
-description:  `docs`ディレクトリ配下にあるドキュメントを修正するときに使用します。
+description:  docsディレクトリ配下にあるドキュメントを修正するときに使用します。
 ---
 
 # 全般

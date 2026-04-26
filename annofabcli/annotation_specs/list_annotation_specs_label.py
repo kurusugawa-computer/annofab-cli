@@ -53,6 +53,8 @@ class FlattenLabel(DataClassJsonMixin):
     """
     keybind: str | None
     """キーバインド"""
+    field_values: dict[str, Any]
+    """ラベルに設定された field_values"""
 
 
 def create_label_list(labels_v3: list[dict[str, Any]]) -> list[FlattenLabel]:
@@ -79,9 +81,28 @@ def create_label_list(labels_v3: list[dict[str, Any]]) -> list[FlattenLabel]:
             color=hex_color_code,
             attribute_count=len(additional_data_definitions),
             keybind=keybind_to_text(label["keybind"]),
+            field_values=label.get("field_values", {}),
         )
 
     return [dict_label_to_dataclass(e) for e in labels_v3]
+
+
+def create_label_list_for_csv(label_list: list[FlattenLabel]) -> list[dict[str, Any]]:
+    """
+    CSV出力用のラベル一覧を生成する。
+
+    Args:
+        label_list: ラベル一覧
+
+    Returns:
+        CSV出力用のラベル一覧
+    """
+    result = []
+    for label in label_list:
+        record = label.to_dict()
+        record["field_values"] = json.dumps(label.field_values, ensure_ascii=False)
+        result.append(record)
+    return result
 
 
 class PrintAnnotationSpecsLabel(CommandLine):
@@ -94,10 +115,20 @@ class PrintAnnotationSpecsLabel(CommandLine):
     def print_annotation_specs_label(self, annotation_specs_v3: dict[str, Any], output_format: OutputFormat, output: str | None = None) -> None:
         label_list = create_label_list(annotation_specs_v3["labels"])
         if output_format == OutputFormat.CSV:
-            df = pandas.DataFrame(label_list)
+            columns = [
+                "label_id",
+                "label_name_en",
+                "label_name_ja",
+                "label_name_vi",
+                "annotation_type",
+                "color",
+                "attribute_count",
+                "keybind",
+                "field_values",
+            ]
+            df = pandas.DataFrame(create_label_list_for_csv(label_list), columns=columns)
 
-            columns = ["label_id", "label_name_en", "label_name_ja", "label_name_vi", "annotation_type", "color", "attribute_count", "keybind"]
-            print_csv(df[columns], output)
+            print_csv(df, output)
 
         elif output_format in [OutputFormat.JSON, OutputFormat.PRETTY_JSON]:
             annofabcli.common.utils.print_according_to_format([e.to_dict() for e in label_list], format=OutputFormat(output_format), output=output)

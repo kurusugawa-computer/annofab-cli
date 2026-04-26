@@ -5,10 +5,18 @@ import copy
 import json
 from pathlib import Path
 
+import pandas
 import pytest
 
 from annofabcli.annotation_specs import add_labels
-from annofabcli.annotation_specs.add_labels import AddLabelsMain
+from annofabcli.annotation_specs.add_labels import (
+    AddLabelsMain,
+    LabelInput,
+    create_label_color,
+    create_label_inputs_from_name_ens,
+    read_labels_csv,
+    read_labels_json,
+)
 
 data_dir = Path("./tests/data/annotation_specs")
 
@@ -60,7 +68,10 @@ class TestAddLabelsMain:
         main = AddLabelsMain(service, project_id="prj1", all_yes=True)  # type: ignore[arg-type]
 
         result = main.add_labels(
-            label_name_ens=["pedestrian", "bicycle"],
+            label_inputs=[
+                LabelInput(label_id="pedestrian", label_name_en="pedestrian", label_name_ja="歩行者", color="#123456"),
+                LabelInput(label_name_en="bicycle"),
+            ],
             annotation_type="bounding_box",
             comment=None,
         )
@@ -68,11 +79,23 @@ class TestAddLabelsMain:
         assert result is True
         assert service.api.last_put is not None
         added_labels = service.api.last_put["labels"][-2:]
+        assert [label["label_id"] for label in added_labels] == ["pedestrian", added_labels[1]["label_id"]]
         assert [label["label_name"]["messages"][0]["message"] for label in added_labels] == ["pedestrian", "bicycle"]
+        assert [label["label_name"]["messages"][1]["message"] for label in added_labels] == ["歩行者", "bicycle"]
         assert [label["annotation_type"] for label in added_labels] == ["bounding_box", "bounding_box"]
-        assert added_labels[0]["color"] == {"red": 255, "green": 85, "blue": 0}
-        assert added_labels[1]["color"] == {"red": 255, "green": 170, "blue": 0}
+        assert added_labels[0]["color"] == {"red": 18, "green": 52, "blue": 86}
+        assert added_labels[1]["color"] == {"red": 255, "green": 85, "blue": 0}
         assert service.api.last_put["last_updated_datetime"] == "2026-04-24T00:00:00+09:00"
+
+    def test_add_labels__invalid_color(self, annotation_specs: dict) -> None:
+        service = DummyService(annotation_specs)
+        main = AddLabelsMain(service, project_id="prj1", all_yes=True)  # type: ignore[arg-type]
+
+        with pytest.raises(ValueError):
+            main.add_labels(
+                label_inputs=[LabelInput(label_name_en="pedestrian", color="red")],
+                annotation_type="bounding_box",
+            )
 
     def test_add_labels__duplicated_input(self, annotation_specs: dict) -> None:
         service = DummyService(annotation_specs)
@@ -80,7 +103,20 @@ class TestAddLabelsMain:
 
         with pytest.raises(ValueError):
             main.add_labels(
-                label_name_ens=["pedestrian", "pedestrian"],
+                label_inputs=[LabelInput(label_name_en="pedestrian"), LabelInput(label_name_en="pedestrian")],
+                annotation_type="bounding_box",
+            )
+
+    def test_add_labels__duplicated_input_label_id(self, annotation_specs: dict) -> None:
+        service = DummyService(annotation_specs)
+        main = AddLabelsMain(service, project_id="prj1", all_yes=True)  # type: ignore[arg-type]
+
+        with pytest.raises(ValueError):
+            main.add_labels(
+                label_inputs=[
+                    LabelInput(label_id="pedestrian", label_name_en="pedestrian"),
+                    LabelInput(label_id="pedestrian", label_name_en="bicycle"),
+                ],
                 annotation_type="bounding_box",
             )
 
@@ -90,17 +126,17 @@ class TestAddLabelsMain:
 
         with pytest.raises(ValueError):
             main.add_labels(
-                label_name_ens=["pedestrian", "car"],
+                label_inputs=[LabelInput(label_name_en="pedestrian"), LabelInput(label_name_en="car")],
                 annotation_type="bounding_box",
             )
 
-    def test_add_labels__empty_label_names(self, annotation_specs: dict) -> None:
+    def test_add_labels__empty_label_inputs(self, annotation_specs: dict) -> None:
         service = DummyService(annotation_specs)
         main = AddLabelsMain(service, project_id="prj1", all_yes=True)  # type: ignore[arg-type]
 
         with pytest.raises(ValueError):
             main.add_labels(
-                label_name_ens=[],
+                label_inputs=[],
                 annotation_type="bounding_box",
             )
 
@@ -109,9 +145,60 @@ class TestAddLabelsMain:
         main = AddLabelsMainWithoutConfirm(service, project_id="prj1", all_yes=False)  # type: ignore[arg-type]
 
         result = main.add_labels(
-            label_name_ens=["pedestrian", "bicycle"],
+            label_inputs=[LabelInput(label_name_en="pedestrian"), LabelInput(label_name_en="bicycle")],
             annotation_type="bounding_box",
         )
 
         assert result is False
         assert service.api.last_put is None
+
+
+class TestReadLabels:
+    def test_create_label_inputs_from_name_ens(self) -> None:
+        actual = create_label_inputs_from_name_ens(["pedestrian", "bicycle"])
+
+        assert actual == [
+            LabelInput(label_name_en="pedestrian"),
+            LabelInput(label_name_en="bicycle"),
+        ]
+
+    def test_read_labels_json(self) -> None:
+        actual = read_labels_json('[{"label_id":"pedestrian","label_name_en":"pedestrian","label_name_ja":"歩行者","color":"#123456"},{"label_name_en":"bicycle"}]')
+
+        assert actual == [
+            LabelInput(label_id="pedestrian", label_name_en="pedestrian", label_name_ja="歩行者", color="#123456"),
+            LabelInput(label_name_en="bicycle"),
+        ]
+
+    def test_read_labels_json__label_name_en_required(self) -> None:
+        with pytest.raises(ValueError):
+            read_labels_json('[{"label_name_ja":"歩行者"}]')
+
+    def test_read_labels_csv(self, tmp_path: Path) -> None:
+        csv_path = tmp_path / "labels.csv"
+        df = pandas.DataFrame(
+            [
+                {"label_id": "pedestrian", "label_name_en": "pedestrian", "label_name_ja": "歩行者", "color": "#123456"},
+                {"label_name_en": "bicycle"},
+            ]
+        )
+        df.to_csv(csv_path, index=False)
+
+        actual = read_labels_csv(csv_path)
+
+        assert actual == [
+            LabelInput(label_id="pedestrian", label_name_en="pedestrian", label_name_ja="歩行者", color="#123456"),
+            LabelInput(label_name_en="bicycle"),
+        ]
+
+    def test_read_labels_csv__label_name_en_required(self, tmp_path: Path) -> None:
+        csv_path = tmp_path / "labels.csv"
+        pandas.DataFrame([{"label_id": "pedestrian", "label_name_ja": "歩行者"}]).to_csv(csv_path, index=False)
+
+        with pytest.raises(ValueError):
+            read_labels_csv(csv_path)
+
+    def test_create_label_color(self) -> None:
+        actual = create_label_color("#123456", [])
+
+        assert actual == {"red": 18, "green": 52, "blue": 86}
