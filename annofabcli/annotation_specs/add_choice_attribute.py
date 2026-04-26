@@ -121,7 +121,7 @@ def read_choices_csv(csv_path: Path) -> list[ChoiceAttributeInput]:
                 "choice_id": "string",
                 "choice_name_en": "string",
                 "choice_name_ja": "string",
-                "is_default": "Boolean",
+                "is_default": "boolean",
             },
         )
     except Exception as e:
