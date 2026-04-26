@@ -32,8 +32,6 @@ def get_attribute_name_en(attribute: dict[str, Any]) -> str:
     return get_english_message(attribute["name"])
 
 
-
-
 def create_name(message_en: str, message_ja: str | None = None) -> dict[str, Any]:
     """
     Annofabの多言語メッセージ形式を生成する。
