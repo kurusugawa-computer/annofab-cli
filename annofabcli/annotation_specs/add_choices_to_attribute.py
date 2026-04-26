@@ -39,7 +39,7 @@ def create_comment_from_attribute(attribute_name_en: str, choice_name_ens: list[
 
 def read_choices_csv(csv_path: Path) -> list[ChoiceAttributeInput]:
     """
-    ``--choices_csv`` で指定されたCSVから選択肢一覧を読み込む。
+    ``--choice_csv`` で指定されたCSVから選択肢一覧を読み込む。
 
     ``add_choices_to_attribute`` ではデフォルト値を変更しないため、 ``is_default`` 列は読み込まない。
 
@@ -62,12 +62,12 @@ def read_choices_csv(csv_path: Path) -> list[ChoiceAttributeInput]:
             },
         )
     except Exception as e:
-        raise ValueError(f"`--choices_csv` の読み込みに失敗しました。 :: {e}") from e
+        raise ValueError(f"`--choice_csv` の読み込みに失敗しました。 :: {e}") from e
 
     required_columns = {"choice_name_en"}
     missing_columns = required_columns - set(df.columns)
     if missing_columns:
-        raise ValueError(f"`--choices_csv` に不足している必須列があります。 :: {sorted(missing_columns)}")
+        raise ValueError(f"`--choice_csv` に不足している必須列があります。 :: {sorted(missing_columns)}")
 
     return [
         ChoiceAttributeInput(
@@ -143,8 +143,8 @@ class AddChoicesToAttributeMain(CommandLineWithConfirm):
         *,
         attribute_id: str | None,
         attribute_name_en: str | None,
-        choices_json: str | None,
-        choices_csv: Path | None,
+        choice_json: str | None,
+        choice_csv: Path | None,
         comment: str | None = None,
     ) -> bool:
         """
@@ -153,8 +153,8 @@ class AddChoicesToAttributeMain(CommandLineWithConfirm):
         Args:
             attribute_id: 追加先属性ID
             attribute_name_en: 追加先属性英語名
-            choices_json: 追加する選択肢JSON
-            choices_csv: 追加する選択肢CSV
+            choice_json: 追加する選択肢JSON
+            choice_csv: 追加する選択肢CSV
             comment: 変更コメント
 
         Returns:
@@ -163,14 +163,14 @@ class AddChoicesToAttributeMain(CommandLineWithConfirm):
         Raises:
             ValueError: 入力値や既存アノテーション仕様との整合性が不正な場合
         """
-        if choices_json is not None:
-            choice_inputs = read_choices_json(choices_json)
-        elif choices_csv is not None:
-            if not choices_csv.exists():
-                raise ValueError(f"`--choices_csv` に指定されたファイルが存在しません。 :: {choices_csv}")
-            choice_inputs = read_choices_csv(choices_csv)
+        if choice_json is not None:
+            choice_inputs = read_choices_json(choice_json)
+        elif choice_csv is not None:
+            if not choice_csv.exists():
+                raise ValueError(f"`--choice_csv` に指定されたファイルが存在しません。 :: {choice_csv}")
+            choice_inputs = read_choices_csv(choice_csv)
         else:
-            raise ValueError("`--choices_json` または `--choices_csv` のいずれかを指定してください。")
+            raise ValueError("`--choice_json` または `--choice_csv` のいずれかを指定してください。")
 
         added_choices, _ = build_choices(ignore_default_choice_inputs(choice_inputs), min_count=1)
 
@@ -224,8 +224,8 @@ class AddChoicesToAttribute(CommandLine):
         obj.add_choices_to_attribute(
             attribute_id=args.attribute_id,
             attribute_name_en=args.attribute_name_en,
-            choices_json=args.choices_json,
-            choices_csv=args.choices_csv,
+            choice_json=args.choice_json,
+            choice_csv=args.choice_csv,
             comment=args.comment,
         )
 
@@ -250,12 +250,12 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     ]
     choice_group = parser.add_mutually_exclusive_group(required=True)
     choice_group.add_argument(
-        "--choices_json",
+        "--choice_json",
         type=str,
         help=f"追加する選択肢情報のJSON配列を指定します。 ``file://`` を先頭に付けるとJSON形式のファイルを指定できます。\n(例) ``{json.dumps(sample_json, ensure_ascii=False)}``",
     )
     choice_group.add_argument(
-        "--choices_csv",
+        "--choice_csv",
         type=Path,
         help=(
             "追加する選択肢情報のCSVファイルを指定します。 "

@@ -37,7 +37,7 @@ JSON形式で指定する場合
     $ annofabcli annotation_specs add_choices_to_attribute \
      --project_id prj1 \
      --attribute_name_en type \
-     --choices_json file://choices.json
+     --choice_json file://choices.json
 
 
 CSV形式で指定する場合
@@ -56,7 +56,7 @@ CSV形式で指定する場合
     $ annofabcli annotation_specs add_choices_to_attribute \
      --project_id prj1 \
      --attribute_id 71620647-98cf-48ad-b43b-4af425a24f32 \
-     --choices_csv choices.csv
+     --choice_csv choices.csv
 
 
 Usage Details

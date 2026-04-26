@@ -37,7 +37,7 @@ JSON形式で指定する場合
      --project_id prj1 \
      --attribute_type choice \
      --attribute_name_en direction \
-     --choices_json file://choices.json \
+     --choice_json file://choices.json \
      --label_name_en car bus \
 
 
@@ -58,7 +58,7 @@ CSV形式で指定する場合
      --project_id prj1 \
      --attribute_type select \
      --attribute_name_en direction \
-     --choices_csv choices.csv \
+     --choice_csv choices.csv \
      --label_id l1 l2
 
 

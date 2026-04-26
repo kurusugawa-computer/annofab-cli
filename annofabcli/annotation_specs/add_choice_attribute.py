@@ -77,7 +77,7 @@ def parse_choice_input_from_dict(data: dict[str, Any], *, index: int) -> ChoiceA
 
 def read_choices_json(target: str) -> list[ChoiceAttributeInput]:
     """
-    ``--choices_json`` で指定されたJSONから選択肢一覧を読み込む。
+    ``--choice_json`` で指定されたJSONから選択肢一覧を読み込む。
 
     Args:
         target: JSON文字列または ``file://`` 付きファイル指定
@@ -91,7 +91,7 @@ def read_choices_json(target: str) -> list[ChoiceAttributeInput]:
     """
     raw_data = get_json_from_args(target)
     if not isinstance(raw_data, list):
-        raise TypeError("`--choices_json` には選択肢情報の配列を指定してください。")
+        raise TypeError("`--choice_json` には選択肢情報の配列を指定してください。")
 
     result = []
     for index, choice_data in enumerate(raw_data, start=1):
@@ -103,7 +103,7 @@ def read_choices_json(target: str) -> list[ChoiceAttributeInput]:
 
 def read_choices_csv(csv_path: Path) -> list[ChoiceAttributeInput]:
     """
-    ``--choices_csv`` で指定されたCSVから選択肢一覧を読み込む。
+    ``--choice_csv`` で指定されたCSVから選択肢一覧を読み込む。
 
     Args:
         csv_path: CSVファイルパス
@@ -125,12 +125,12 @@ def read_choices_csv(csv_path: Path) -> list[ChoiceAttributeInput]:
             },
         )
     except Exception as e:
-        raise ValueError(f"`--choices_csv` の読み込みに失敗しました。 :: {e}") from e
+        raise ValueError(f"`--choice_csv` の読み込みに失敗しました。 :: {e}") from e
 
     required_columns = {"choice_name_en"}
     missing_columns = required_columns - set(df.columns)
     if missing_columns:
-        raise ValueError(f"`--choices_csv` に不足している必須列があります。 :: {sorted(missing_columns)}")
+        raise ValueError(f"`--choice_csv` に不足している必須列があります。 :: {sorted(missing_columns)}")
 
     result = []
     for row in df.to_dict(orient="records"):
@@ -385,14 +385,14 @@ class AddChoiceAttribute(CommandLine):
         """
         args = self.args
 
-        if args.choices_json is not None:
-            choice_inputs = read_choices_json(args.choices_json)
-        elif args.choices_csv is not None:
-            if not args.choices_csv.exists():
-                raise ValueError(f"`--choices_csv` に指定されたファイルが存在しません。 :: {args.choices_csv}")
-            choice_inputs = read_choices_csv(args.choices_csv)
+        if args.choice_json is not None:
+            choice_inputs = read_choices_json(args.choice_json)
+        elif args.choice_csv is not None:
+            if not args.choice_csv.exists():
+                raise ValueError(f"`--choice_csv` に指定されたファイルが存在しません。 :: {args.choice_csv}")
+            choice_inputs = read_choices_csv(args.choice_csv)
         else:
-            raise ValueError("`--choices_json` または `--choices_csv` のいずれかを指定してください。")
+            raise ValueError("`--choice_json` または `--choice_csv` のいずれかを指定してください。")
 
         label_ids = get_list_from_args(args.label_id)
         label_name_ens = get_list_from_args(args.label_name_en)
@@ -437,12 +437,12 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     ]
     choice_group = parser.add_mutually_exclusive_group(required=True)
     choice_group.add_argument(
-        "--choices_json",
+        "--choice_json",
         type=str,
         help=f"追加する選択肢情報のJSON配列を指定します。 ``file://`` を先頭に付けるとJSON形式のファイルを指定できます。\n(例) ``{json.dumps(sample_json, ensure_ascii=False)}``",
     )
     choice_group.add_argument(
-        "--choices_csv",
+        "--choice_csv",
         type=Path,
         help="追加する選択肢情報のCSVファイルを指定します。 CSVには ``choice_name_en`` 列が必要です。 任意で ``choice_id`` , ``choice_name_ja`` , ``is_default`` 列を指定できます。",
     )

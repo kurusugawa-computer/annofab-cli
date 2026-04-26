@@ -57,8 +57,8 @@ class TestAddChoicesToAttributeMain:
         result = main.add_choices_to_attribute(
             attribute_id="71620647-98cf-48ad-b43b-4af425a24f32",
             attribute_name_en=None,
-            choices_json='[{"choice_id":"xlarge","choice_name_en":"xlarge","choice_name_ja":"特大"},{"choice_id":"tiny","choice_name_en":"tiny","choice_name_ja":"極小"}]',
-            choices_csv=None,
+            choice_json='[{"choice_id":"xlarge","choice_name_en":"xlarge","choice_name_ja":"特大"},{"choice_id":"tiny","choice_name_en":"tiny","choice_name_ja":"極小"}]',
+            choice_csv=None,
             comment=None,
         )
 
@@ -76,8 +76,8 @@ class TestAddChoicesToAttributeMain:
         result = main.add_choices_to_attribute(
             attribute_id=None,
             attribute_name_en="type",
-            choices_json='[{"choice_id":"xlarge","choice_name_en":"xlarge","is_default":true}]',
-            choices_csv=None,
+            choice_json='[{"choice_id":"xlarge","choice_name_en":"xlarge","is_default":true}]',
+            choice_csv=None,
             comment="custom",
         )
 
@@ -96,8 +96,8 @@ class TestAddChoicesToAttributeMain:
         result = main.add_choices_to_attribute(
             attribute_id="71620647-98cf-48ad-b43b-4af425a24f32",
             attribute_name_en=None,
-            choices_json=None,
-            choices_csv=csv_path,
+            choice_json=None,
+            choice_csv=csv_path,
         )
 
         assert result is True
@@ -113,8 +113,8 @@ class TestAddChoicesToAttributeMain:
             main.add_choices_to_attribute(
                 attribute_id="71620647-98cf-48ad-b43b-4af425a24f32",
                 attribute_name_en=None,
-                choices_json='[{"choice_id":"08ec927c-18e6-4bba-837a-b16de7061580","choice_name_en":"xlarge"}]',
-                choices_csv=None,
+                choice_json='[{"choice_id":"08ec927c-18e6-4bba-837a-b16de7061580","choice_name_en":"xlarge"}]',
+                choice_csv=None,
             )
 
     def test_add_choices_to_attribute__duplicated_existing_choice_name_en(self, annotation_specs: dict) -> None:
@@ -125,8 +125,8 @@ class TestAddChoicesToAttributeMain:
             main.add_choices_to_attribute(
                 attribute_id="71620647-98cf-48ad-b43b-4af425a24f32",
                 attribute_name_en=None,
-                choices_json='[{"choice_id":"xlarge","choice_name_en":"large"}]',
-                choices_csv=None,
+                choice_json='[{"choice_id":"xlarge","choice_name_en":"large"}]',
+                choice_csv=None,
             )
 
     def test_add_choices_to_attribute__attribute_not_choice(self, annotation_specs: dict) -> None:
@@ -137,8 +137,8 @@ class TestAddChoicesToAttributeMain:
             main.add_choices_to_attribute(
                 attribute_id="54fa5e97-6f88-49a4-aeb0-a91a15d11528",
                 attribute_name_en=None,
-                choices_json='[{"choice_id":"xlarge","choice_name_en":"xlarge"}]',
-                choices_csv=None,
+                choice_json='[{"choice_id":"xlarge","choice_name_en":"xlarge"}]',
+                choice_csv=None,
             )
 
     def test_add_choices_to_attribute__ignore_default_when_default_already_exists(self, annotation_specs: dict) -> None:
@@ -151,8 +151,8 @@ class TestAddChoicesToAttributeMain:
         result = main.add_choices_to_attribute(
             attribute_id="71620647-98cf-48ad-b43b-4af425a24f32",
             attribute_name_en=None,
-            choices_json='[{"choice_id":"xlarge","choice_name_en":"xlarge","is_default":true}]',
-            choices_csv=None,
+            choice_json='[{"choice_id":"xlarge","choice_name_en":"xlarge","is_default":true}]',
+            choice_csv=None,
         )
 
         assert result is True
