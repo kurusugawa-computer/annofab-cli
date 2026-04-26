@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import pandas
+import pytest
 
 from annofabcli.__main__ import main
 from annofabcli.annotation_specs.list_annotation_specs_label import create_label_list, create_label_list_for_csv
@@ -97,6 +98,7 @@ class TestCreateLabelListForCsv:
         assert result[0]["field_values"] == '{"display_name": {"_type": "DisplayName", "text": "車両"}}'
 
 
+@pytest.mark.access_webapi
 class TestCommandLine:
     def test_annotation_specs_jsonからcsv出力できる(self, tmp_path):
         output_path = tmp_path / "labels.csv"
