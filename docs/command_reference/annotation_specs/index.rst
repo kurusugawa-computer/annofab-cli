@@ -22,6 +22,7 @@ Available Commands
    add_existing_attribute_to_labels
    add_label
    add_labels
+   change_attribute_type
    export
    get_with_attribute_id_replaced_label_name
    get_with_choice_id_replaced_label_name
