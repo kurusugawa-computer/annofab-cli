@@ -1,6 +1,6 @@
-==========================================
+====================================================================================
 annotation_specs update_label_field_values
-==========================================
+====================================================================================
 
 Description
 =================================
@@ -33,10 +33,10 @@ Examples
 
 .. note::
 
-    ``field_values`` のフォーマットは、 `getAnnotationSpecs API<https://annofab.com/docs/api/#tag/af-annotation-specs/operation/getAnnotationSpecs>`_ の
+    ``field_values`` のフォーマットは、 `getAnnotationSpecs API <https://annofab.com/docs/api/#tag/af-annotation-specs/operation/getAnnotationSpecs>`_ の
     レスポンス（ ``AnnotationSpecsV3`` ）配下の ``field_values`` を参照してください。
 
-    なお、 ``annofabcli annotation_specs list_label`` コマンドで、ラベルの ``field_values`` を確認できます。
+    なお、 :doc:`list_label` コマンドの出力結果で、各ラベルの ``field_values`` を確認できます。
     
     
 
