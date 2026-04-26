@@ -109,6 +109,7 @@ class TestUpdateLabelFieldValuesMain:
             }
         }
         assert "field_values を更新しました" in service.api.last_put["comment"]
+        assert "field_value_keys: minimum_size_2d_with_default_insert_position" in service.api.last_put["comment"]
         assert service.api.last_put["last_updated_datetime"] == "2026-04-24T00:00:00+09:00"
 
     def test_update_label_field_values__replace(self, annotation_specs: dict) -> None:

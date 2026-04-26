@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import argparse
 import copy
-import json
 import logging
 from collections.abc import Sequence
 from typing import Any, cast
@@ -50,8 +49,8 @@ def create_comment_for_update_label_field_values(
 
     operation = "置換" if replace else "更新"
     assert field_values is not None
-    field_values_text = json.dumps(field_values, ensure_ascii=False, sort_keys=True)
-    return f"以下のラベルの field_values を{operation}しました。\n対象ラベル: {labels_text}\nfield_values: {field_values_text}"
+    field_value_keys = ", ".join(sorted(field_values.keys()))
+    return f"以下のラベルの field_values を{operation}しました。\n対象ラベル: {labels_text}\nfield_value_keys: {field_value_keys}"
 
 
 def validate_field_values_input(field_values: object) -> dict[str, Any]:
