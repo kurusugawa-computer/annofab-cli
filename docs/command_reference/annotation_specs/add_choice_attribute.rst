@@ -4,7 +4,7 @@ annotation_specs add_choice_attribute
 
 Description
 =================================
-アノテーション仕様に ``choice`` （ラジオボタン）または ``select`` （ドロップダウン）の選択肢系属性を追加し、指定したラベルへ紐付けます。
+アノテーション仕様にの選択肢系属性（ラジオボタン/ドロップダウン）を追加し、指定したラベルへ紐付けます。
 
 
 Examples
@@ -18,15 +18,13 @@ JSON形式で指定する場合
 
     [
         {
-            "choice_id": "front",
             "choice_name_en": "front",
-            "choice_name_ja": "前",
-            "is_default": true
         },
         {
+            "choice_id": "c2",
             "choice_name_en": "rear",
             "choice_name_ja": "後ろ",
-            "is_default": false
+            "is_default": true
         }
     ]
 
@@ -48,8 +46,8 @@ CSV形式で指定する場合
     :caption: choices.csv
 
     choice_id,choice_name_en,choice_name_ja,is_default
-    front,front,前,true
-    rear,rear,後ろ,false
+    ,front,,
+    c2,rear,後ろ,true
 
 
 .. code-block::
