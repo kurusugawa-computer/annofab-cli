@@ -40,12 +40,14 @@ JSON形式で指定する場合
 
     [
         {
-            "label_name_en": "pedestrian"
+            "label_name_en": "pedestrian",
+            "color": "#123456"
         },
         {
             "label_id": "bicycle",
             "label_name_en": "bicycle",
-            "label_name_ja": "自転車"
+            "label_name_ja": "自転車",
+            "color": "#00AAFF"
         }
     ]
 
@@ -64,9 +66,9 @@ CSV形式で指定する場合
 .. code-block::
     :caption: labels.csv
 
-    label_id,label_name_en,label_name_ja
-    ,pedestrian,
-    bicycle,bicycle,自転車
+    label_id,label_name_en,label_name_ja,color
+    ,pedestrian,,#123456
+    bicycle,bicycle,自転車,#00AAFF
 
 
 .. code-block::
@@ -81,7 +83,8 @@ Usage Details
 =================================
 
 ``--label_name_en`` , ``--label_json`` , ``--label_csv`` のいずれかを指定してください。
-``--label_json`` / ``--label_csv`` では ``label_name_en`` は必須です。 ``label_id`` と ``label_name_ja`` は任意です。
+``--label_json`` / ``--label_csv`` では ``label_name_en`` は必須です。 ``label_id`` , ``label_name_ja`` , ``color`` は任意です。
+``color`` には ``#RRGGBB`` 形式の16進数カラーコードを指定できます。
 
 ``--annotation_type`` の値は、``annotation_specs add_label`` の :ref:`annotation_specs_add_label_annotation_type_values` を参照してください。
 

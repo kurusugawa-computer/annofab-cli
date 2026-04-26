@@ -22,6 +22,7 @@ from annofabcli.annotation_specs.add_label import (
     create_new_label,
     validate_new_label,
 )
+from annofabcli.annotation_specs.color import RgbColor, hex_to_rgb
 from annofabcli.annotation_specs.utils import get_label_name_en
 from annofabcli.common.cli import (
     ArgumentParser,
@@ -51,6 +52,9 @@ class LabelInput:
 
     label_id: str | None = None
     """ラベルID。未指定の場合はUUIDv4を自動生成する。"""
+
+    color: str | None = None
+    """``#RRGGBB`` 形式のカラーコード。未指定の場合は自動設定する。"""
 
 
 def normalize_nullable_str(value: object) -> str | None:
@@ -92,6 +96,7 @@ def parse_label_input_from_dict(data: dict[str, Any], *, index: int) -> LabelInp
         label_name_en=label_name_en,
         label_name_ja=data.get("label_name_ja"),
         label_id=data.get("label_id"),
+        color=data.get("color"),
     )
 
 
@@ -141,6 +146,7 @@ def read_labels_csv(csv_path: Path) -> list[LabelInput]:
                 "label_id": "string",
                 "label_name_en": "string",
                 "label_name_ja": "string",
+                "color": "string",
             },
         )
     except Exception as e:
@@ -156,11 +162,13 @@ def read_labels_csv(csv_path: Path) -> list[LabelInput]:
         label_name_en = row["label_name_en"]
         label_name_ja = normalize_nullable_str(row.get("label_name_ja"))
         label_id = normalize_nullable_str(row.get("label_id"))
+        color = normalize_nullable_str(row.get("color"))
         result.append(
             LabelInput(
                 label_name_en=label_name_en,
                 label_name_ja=label_name_ja,
                 label_id=label_id,
+                color=color,
             )
         )
     return result
@@ -177,6 +185,29 @@ def create_label_inputs_from_name_ens(label_name_ens: Sequence[str]) -> list[Lab
         ラベル入力一覧
     """
     return [LabelInput(label_name_en=label_name_en) for label_name_en in label_name_ens]
+
+
+def create_label_color(color_code: str | None, colors: list[RgbColor]) -> RgbColor:
+    """
+    ラベル入力から使用する色を決定する。
+
+    Args:
+        color_code: 入力されたカラーコード
+        colors: 既存ラベルと今回追加分を含む使用済み色一覧
+
+    Returns:
+        Annofab API向けのRGB辞書
+
+    Raises:
+        ValueError: カラーコードの形式が不正な場合
+    """
+    if color_code is None:
+        return create_auto_color(colors)
+
+    try:
+        return hex_to_rgb(color_code)
+    except ValueError as e:
+        raise ValueError("`color` には `#RRGGBB` 形式の16進数カラーコードを指定してください。") from e
 
 
 def validate_label_inputs(label_inputs: Sequence[LabelInput]) -> None:
@@ -275,7 +306,7 @@ class AddLabelsMain(CommandLineWithConfirm):
             resolved_label_id = label_input.label_id if label_input.label_id is not None else str(uuid.uuid4())
             validate_new_label(request_body["labels"], label_id=resolved_label_id, label_name_en=label_input.label_name_en)
 
-            color = create_auto_color(colors)
+            color = create_label_color(label_input.color, colors)
             colors.append(color)
             new_label = create_new_label(
                 label_id=resolved_label_id,
@@ -333,7 +364,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     argument_parser.add_project_id()
 
     sample_json = [
-        {"label_id": "pedestrian", "label_name_en": "pedestrian", "label_name_ja": "歩行者"},
+        {"label_id": "pedestrian", "label_name_en": "pedestrian", "label_name_ja": "歩行者", "color": "#123456"},
         {"label_name_en": "bicycle"},
     ]
     label_group = parser.add_mutually_exclusive_group(required=True)
@@ -351,7 +382,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     label_group.add_argument(
         "--label_csv",
         type=Path,
-        help="追加するラベル情報のCSVファイルを指定します。 CSVには ``label_name_en`` 列が必要です。 任意で ``label_id`` , ``label_name_ja`` 列を指定できます。",
+        help="追加するラベル情報のCSVファイルを指定します。 CSVには ``label_name_en`` 列が必要です。 任意で ``label_id`` , ``label_name_ja`` , ``color`` 列を指定できます。",
     )
     parser.add_argument("--annotation_type", type=str, required=True, choices=ANNOTATION_TYPE_CHOICES, help=create_annotation_type_help())
     parser.add_argument("--comment", type=str, help="アノテーション仕様の変更内容を説明するコメント。未指定の場合、自動でコメントが生成されます。")
