@@ -4,9 +4,7 @@ annotation_specs add_choices_to_attribute
 
 Description
 =================================
-既存の ``choice`` （ラジオボタン）または ``select`` （ドロップダウン）の属性に、選択肢を追加します。
-指定する選択肢の ``choice_id`` と ``choice_name_en`` は、それぞれユニークである必要があります。
-このコマンドではデフォルト値を変更しません。 ``is_default`` が指定されていても無視されます。
+既存の選択肢系属性（ラジオボタン/ドロップダウン）に、選択肢を追加します。
 
 
 Examples
@@ -20,12 +18,10 @@ JSON形式で指定する場合
 
     [
         {
-            "choice_id": "xlarge",
             "choice_name_en": "xlarge",
-            "choice_name_ja": "特大"
         },
         {
-            "choice_id": "tiny",
+            "choice_id": "c2",
             "choice_name_en": "tiny",
             "choice_name_ja": "極小"
         }
@@ -47,8 +43,8 @@ CSV形式で指定する場合
     :caption: choices.csv
 
     choice_id,choice_name_en,choice_name_ja
-    xlarge,xlarge,特大
-    tiny,tiny,極小
+    ,xlarge
+    c2,tiny,極小
 
 
 .. code-block::
