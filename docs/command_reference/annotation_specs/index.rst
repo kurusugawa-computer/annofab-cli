@@ -22,6 +22,7 @@ Available Commands
    add_existing_attribute_to_labels
    add_label
    add_labels
+   change_attribute_type
    export
    get_with_attribute_id_replaced_label_name
    get_with_choice_id_replaced_label_name
@@ -34,6 +35,7 @@ Available Commands
    list_attribute_restriction
    list_label_color
    put_label_color
+   update_label_field_values
 
 
 Usage Details

@@ -7,6 +7,7 @@ import annofabcli.annotation_specs.add_choices_to_attribute
 import annofabcli.annotation_specs.add_existing_attribute_to_labels
 import annofabcli.annotation_specs.add_label
 import annofabcli.annotation_specs.add_labels
+import annofabcli.annotation_specs.change_attribute_type
 import annofabcli.annotation_specs.export_annotation_specs
 import annofabcli.annotation_specs.get_annotation_specs_with_attribute_id_replaced
 import annofabcli.annotation_specs.get_annotation_specs_with_choice_id_replaced
@@ -19,6 +20,7 @@ import annofabcli.annotation_specs.list_annotation_specs_label_attribute
 import annofabcli.annotation_specs.list_attribute_restriction
 import annofabcli.annotation_specs.list_label_color
 import annofabcli.annotation_specs.put_label_color
+import annofabcli.annotation_specs.update_label_field_values
 import annofabcli.common.cli
 
 
@@ -33,6 +35,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     annofabcli.annotation_specs.add_existing_attribute_to_labels.add_parser(subparsers)
     annofabcli.annotation_specs.add_label.add_parser(subparsers)
     annofabcli.annotation_specs.add_labels.add_parser(subparsers)
+    annofabcli.annotation_specs.change_attribute_type.add_parser(subparsers)
     annofabcli.annotation_specs.export_annotation_specs.add_parser(subparsers)
     annofabcli.annotation_specs.get_annotation_specs_with_attribute_id_replaced.add_parser(subparsers)
     annofabcli.annotation_specs.get_annotation_specs_with_choice_id_replaced.add_parser(subparsers)
@@ -45,6 +48,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     annofabcli.annotation_specs.list_attribute_restriction.add_parser(subparsers)
     annofabcli.annotation_specs.list_label_color.add_parser(subparsers)
     annofabcli.annotation_specs.put_label_color.add_parser(subparsers)
+    annofabcli.annotation_specs.update_label_field_values.add_parser(subparsers)
 
 
 def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
