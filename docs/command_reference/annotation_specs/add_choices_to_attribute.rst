@@ -43,7 +43,7 @@ CSV形式で指定する場合
     :caption: choices.csv
 
     choice_id,choice_name_en,choice_name_ja
-    ,xlarge
+    ,xlarge,
     c2,tiny,極小
 
 
