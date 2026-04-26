@@ -18,7 +18,7 @@ JSON形式で指定する場合
 
     [
         {
-            "choice_name_en": "xlarge",
+            "choice_name_en": "xlarge"
         },
         {
             "choice_id": "c2",

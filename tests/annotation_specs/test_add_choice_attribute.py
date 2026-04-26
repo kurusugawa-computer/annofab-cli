@@ -6,7 +6,6 @@ import json
 import uuid
 from pathlib import Path
 
-import pandas
 import pytest
 
 from annofabcli.annotation_specs import add_choice_attribute
@@ -89,52 +88,36 @@ class TestReadChoicesJson:
 
 
 class TestReadChoicesCsv:
-    def test_read_choices_csv(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    def test_read_choices_csv(self, tmp_path: Path) -> None:
         csv_path = tmp_path / "choices.csv"
-
-        def fake_read_csv(*_args: object, **_kwargs: object) -> pandas.DataFrame:
-            return pandas.DataFrame(
-                [
-                    {"choice_id": "front", "choice_name_en": "front", "choice_name_ja": "前", "is_default": True},
-                    {"choice_id": None, "choice_name_en": "rear", "choice_name_ja": None, "is_default": False},
-                ]
-            )
-
-        monkeypatch.setattr(
-            add_choice_attribute.pandas,
-            "read_csv",
-            fake_read_csv,
+        csv_path.write_text(
+            "choice_id,choice_name_en,choice_name_ja,is_default\nfront,front,前,true\n,rear,,false\n",
+            encoding="utf-8",
         )
 
         actual = read_choices_csv(csv_path)
         assert len(actual) == 2
         assert actual[0].choice_id == "front"
         assert actual[0].is_default is True
-        assert pandas.isna(actual[1].choice_id)
-        assert pandas.isna(actual[1].choice_name_ja)
+        assert actual[1].choice_id is None
+        assert actual[1].choice_name_ja is None
 
-    def test_read_choices_csv__required_column(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    def test_read_choices_csv__required_column(self, tmp_path: Path) -> None:
         csv_path = tmp_path / "choices.csv"
-
-        def fake_read_csv(*_args: object, **_kwargs: object) -> pandas.DataFrame:
-            return pandas.DataFrame([{"choice_id": "front", "is_default": True}])
-
-        monkeypatch.setattr(
-            add_choice_attribute.pandas,
-            "read_csv",
-            fake_read_csv,
+        csv_path.write_text(
+            "choice_id,is_default\nfront,true\n",
+            encoding="utf-8",
         )
 
         with pytest.raises(ValueError):
             read_choices_csv(csv_path)
 
-    def test_read_choices_csv__invalid_is_default(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    def test_read_choices_csv__invalid_is_default(self, tmp_path: Path) -> None:
         csv_path = tmp_path / "choices.csv"
-
-        def raise_read_csv_error(*_args: object, **_kwargs: object) -> pandas.DataFrame:
-            raise ValueError("is_default の値が不正です。")
-
-        monkeypatch.setattr(add_choice_attribute.pandas, "read_csv", raise_read_csv_error)
+        csv_path.write_text(
+            "choice_id,choice_name_en,choice_name_ja,is_default\nfront,front,前,invalid\n",
+            encoding="utf-8",
+        )
 
         with pytest.raises(ValueError):
             read_choices_csv(csv_path)

@@ -4,7 +4,7 @@ import annofabcli.annotation_specs.add_attribute
 import annofabcli.annotation_specs.add_attribute_restriction
 import annofabcli.annotation_specs.add_choice_attribute
 import annofabcli.annotation_specs.add_choices_to_attribute
-import annofabcli.annotation_specs.add_existing_attribute
+import annofabcli.annotation_specs.add_existing_attribute_to_labels
 import annofabcli.annotation_specs.add_label
 import annofabcli.annotation_specs.add_labels
 import annofabcli.annotation_specs.export_annotation_specs
@@ -30,7 +30,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     annofabcli.annotation_specs.add_attribute_restriction.add_parser(subparsers)
     annofabcli.annotation_specs.add_choice_attribute.add_parser(subparsers)
     annofabcli.annotation_specs.add_choices_to_attribute.add_parser(subparsers)
-    annofabcli.annotation_specs.add_existing_attribute.add_parser(subparsers)
+    annofabcli.annotation_specs.add_existing_attribute_to_labels.add_parser(subparsers)
     annofabcli.annotation_specs.add_label.add_parser(subparsers)
     annofabcli.annotation_specs.add_labels.add_parser(subparsers)
     annofabcli.annotation_specs.export_annotation_specs.add_parser(subparsers)
