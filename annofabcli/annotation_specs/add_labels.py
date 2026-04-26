@@ -23,7 +23,14 @@ from annofabcli.annotation_specs.add_label import (
     validate_new_label,
 )
 from annofabcli.annotation_specs.utils import get_label_name_en
-from annofabcli.common.cli import ArgumentParser, CommandLine, CommandLineWithConfirm, build_annofabapi_resource_and_login, get_json_from_args
+from annofabcli.common.cli import (
+    ArgumentParser,
+    CommandLine,
+    CommandLineWithConfirm,
+    build_annofabapi_resource_and_login,
+    get_json_from_args,
+    get_list_from_args,
+)
 from annofabcli.common.facade import AnnofabApiFacade
 from annofabcli.common.utils import duplicated_set
 
@@ -159,6 +166,19 @@ def read_labels_csv(csv_path: Path) -> list[LabelInput]:
     return result
 
 
+def create_label_inputs_from_name_ens(label_name_ens: Sequence[str]) -> list[LabelInput]:
+    """
+    ラベル英語名一覧からラベル入力一覧を生成する。
+
+    Args:
+        label_name_ens: ラベル英語名一覧
+
+    Returns:
+        ラベル入力一覧
+    """
+    return [LabelInput(label_name_en=label_name_en) for label_name_en in label_name_ens]
+
+
 def validate_label_inputs(label_inputs: Sequence[LabelInput]) -> None:
     """
     追加するラベル一覧の入力値を検証する。
@@ -283,14 +303,16 @@ class AddLabels(CommandLine):
         コマンドライン引数を解釈し、複数ラベル追加処理を実行する。
         """
         args = self.args
-        if args.label_json is not None:
+        if args.label_name_en is not None:
+            label_inputs = create_label_inputs_from_name_ens(get_list_from_args(args.label_name_en))
+        elif args.label_json is not None:
             label_inputs = read_labels_json(args.label_json)
         elif args.label_csv is not None:
             if not args.label_csv.exists():
                 raise ValueError(f"`--label_csv` に指定されたファイルが存在しません。 :: {args.label_csv}")
             label_inputs = read_labels_csv(args.label_csv)
         else:
-            raise ValueError("`--label_json` または `--label_csv` のいずれかを指定してください。")
+            raise ValueError("`--label_name_en` , `--label_json` , `--label_csv` のいずれかを指定してください。")
 
         obj = AddLabelsMain(self.service, project_id=args.project_id, all_yes=args.yes)
         obj.add_labels(
@@ -315,6 +337,12 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         {"label_name_en": "bicycle"},
     ]
     label_group = parser.add_mutually_exclusive_group(required=True)
+    label_group.add_argument(
+        "--label_name_en",
+        type=str,
+        nargs="+",
+        help="追加するラベルの英語名。複数指定できます。 ``file://`` を先頭に付けると一覧ファイルを指定できます。",
+    )
     label_group.add_argument(
         "--label_json",
         type=str,

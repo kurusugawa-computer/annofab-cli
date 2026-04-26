@@ -9,7 +9,13 @@ import pandas
 import pytest
 
 from annofabcli.annotation_specs import add_labels
-from annofabcli.annotation_specs.add_labels import AddLabelsMain, LabelInput, read_labels_csv, read_labels_json
+from annofabcli.annotation_specs.add_labels import (
+    AddLabelsMain,
+    LabelInput,
+    create_label_inputs_from_name_ens,
+    read_labels_csv,
+    read_labels_json,
+)
 
 data_dir = Path("./tests/data/annotation_specs")
 
@@ -137,6 +143,14 @@ class TestAddLabelsMain:
 
 
 class TestReadLabels:
+    def test_create_label_inputs_from_name_ens(self) -> None:
+        actual = create_label_inputs_from_name_ens(["pedestrian", "bicycle"])
+
+        assert actual == [
+            LabelInput(label_name_en="pedestrian"),
+            LabelInput(label_name_en="bicycle"),
+        ]
+
     def test_read_labels_json(self) -> None:
         actual = read_labels_json('[{"label_id":"pedestrian","label_name_en":"pedestrian","label_name_ja":"歩行者"},{"label_name_en":"bicycle"}]')
 
