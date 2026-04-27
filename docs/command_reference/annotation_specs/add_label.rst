@@ -58,12 +58,8 @@ Examples
      --field_values_json file://field_values.json
 
 
-Usage Details
-=================================
-
 ``field_values`` のフォーマットは、 :doc:`update_label_field_values` を参照してください。
 
-.. _annotation_specs_add_label_annotation_type_values:
 
 ``--annotation_type`` の値
 ----------------------------------------------
@@ -110,6 +106,10 @@ Usage Details
     * - ``user_semantic_segment``
       - 3次元のセマンティックセグメント
       - 3次元プロジェクト
+
+
+Usage Details
+=================================
 
 .. argparse::
     :ref: annofabcli.annotation_specs.add_label.add_parser
