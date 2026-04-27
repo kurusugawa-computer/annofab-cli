@@ -4,7 +4,6 @@ import argparse
 import copy
 import logging
 from collections.abc import Mapping
-from typing import Any
 
 import annofabapi
 from annofabapi.util.annotation_specs import AnnotationSpecsAccessor
@@ -26,36 +25,6 @@ SUPPORTED_ATTRIBUTE_TYPE_CONVERSIONS: Mapping[str, frozenset[str]] = {
 
 SUPPORTED_ATTRIBUTE_TYPES = sorted(set(SUPPORTED_ATTRIBUTE_TYPE_CONVERSIONS) | {target for targets in SUPPORTED_ATTRIBUTE_TYPE_CONVERSIONS.values() for target in targets})
 """変換先として指定できる属性種類一覧。"""
-
-
-def resolve_target_attribute(
-    annotation_specs_accessor: AnnotationSpecsAccessor,
-    *,
-    attribute_id: str | None,
-    attribute_name_en: str | None,
-) -> dict[str, Any]:
-    """
-    CLI引数で指定された属性IDまたは属性名から対象属性を取得する。
-
-    Args:
-        annotation_specs_accessor: アノテーション仕様アクセサ
-        attribute_id: 指定された属性ID
-        attribute_name_en: 指定された属性英語名
-
-    Returns:
-        対象属性
-
-    Raises:
-        ValueError: 属性指定が不正、属性が見つからない、または属性名が曖昧な場合
-    """
-    if (attribute_id is None) == (attribute_name_en is None):
-        raise ValueError("対象属性は `attribute_id` または `attribute_name_en` のどちらか一方だけ指定してください。")
-
-    if attribute_id is not None:
-        return annotation_specs_accessor.get_attribute(attribute_id=attribute_id)
-
-    assert attribute_name_en is not None
-    return annotation_specs_accessor.get_attribute(attribute_name=attribute_name_en)
 
 
 def validate_attribute_type_conversion(*, current_type: str, target_type: str) -> None:
@@ -133,10 +102,12 @@ class ChangeAttributeTypeMain(CommandLineWithConfirm):
         """
         old_annotation_specs, _ = self.service.api.get_annotation_specs(self.project_id, query_params={"v": "3"})
         annotation_specs_accessor = AnnotationSpecsAccessor(old_annotation_specs)
-        target_attribute = resolve_target_attribute(
-            annotation_specs_accessor,
+        if (attribute_id is None) == (attribute_name_en is None):
+            raise ValueError("対象属性は `attribute_id` または `attribute_name_en` のどちらか一方だけ指定してください。")
+
+        target_attribute = annotation_specs_accessor.get_attribute(
             attribute_id=attribute_id,
-            attribute_name_en=attribute_name_en,
+            attribute_name=attribute_name_en,
         )
         current_type = target_attribute["type"]
         validate_attribute_type_conversion(current_type=current_type, target_type=attribute_type)
