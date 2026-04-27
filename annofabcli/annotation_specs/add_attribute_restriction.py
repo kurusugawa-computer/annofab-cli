@@ -65,6 +65,9 @@ class AddAttributeRestrictionMain(CommandLineWithConfirm):
             if restriction in old_restrictions:
                 logger.warning(f"{index + 1}件目 :: 次の属性制約は既に存在するため、アノテーション仕様に追加しません。  :: `{restriction_text}`")
                 continue
+            if restriction in new_restrictions:
+                logger.warning(f"{index + 1}件目 :: 次の属性制約は入力内で重複しているため、アノテーション仕様に追加しません。 :: `{restriction_text}`")
+                continue
 
             if not self.confirm_processing(f"次の属性制約を追加しますか？ :: `{restriction_text}`"):
                 continue
@@ -81,7 +84,7 @@ class AddAttributeRestrictionMain(CommandLineWithConfirm):
             return False
 
         request_body = copy.deepcopy(old_annotation_specs)
-        request_body["restrictions"].extend(restrictions)
+        request_body["restrictions"].extend(new_restrictions)
         if comment is None:
             comment = create_comment_from_restriction_text(new_restriction_text_list)
         request_body["comment"] = comment
