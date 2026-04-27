@@ -29,10 +29,10 @@ def create_parser() -> argparse.ArgumentParser:
 
 
 class DummyApi:
-    def __init__(self, annotation_specs: dict, annotation_list_response_by_label_id: dict[str, dict] | None = None) -> None:
+    def __init__(self, annotation_specs: dict, annotation_list_response_by_choice_id: dict[str, dict] | None = None) -> None:
         self.annotation_specs = copy.deepcopy(annotation_specs)
         self.last_put: dict | None = None
-        self.annotation_list_response_by_label_id = annotation_list_response_by_label_id or {}
+        self.annotation_list_response_by_choice_id = annotation_list_response_by_choice_id or {}
 
     def get_annotation_specs(self, project_id: str, query_params: dict) -> tuple[dict, None]:
         assert project_id == "prj1"
@@ -43,8 +43,9 @@ class DummyApi:
         assert project_id == "prj1"
         assert query_params["v"] == "2"
         assert query_params["limit"] == 1
-        label_id = query_params["query"]["label_id"]
-        return copy.deepcopy(self.annotation_list_response_by_label_id.get(label_id, {"aggregations": []})), None
+        attribute = query_params["query"]["attributes"][0]
+        choice_id = attribute["choice"]
+        return copy.deepcopy(self.annotation_list_response_by_choice_id.get(choice_id, {"total_count": 0, "list": [], "aggregations": []})), None
 
     def put_annotation_specs(self, project_id: str, query_params: dict, request_body: dict) -> None:
         assert project_id == "prj1"
@@ -53,8 +54,8 @@ class DummyApi:
 
 
 class DummyService:
-    def __init__(self, annotation_specs: dict, annotation_list_response_by_label_id: dict[str, dict] | None = None) -> None:
-        self.api = DummyApi(annotation_specs, annotation_list_response_by_label_id=annotation_list_response_by_label_id)
+    def __init__(self, annotation_specs: dict, annotation_list_response_by_choice_id: dict[str, dict] | None = None) -> None:
+        self.api = DummyApi(annotation_specs, annotation_list_response_by_choice_id=annotation_list_response_by_choice_id)
 
 
 class ChangeAttributeTypeMainWithoutConfirm(ChangeAttributeTypeMain):
@@ -96,17 +97,8 @@ class TestChangeAttributeTypeMain:
     def test_change_attribute_type__confirm_message_contains_warning_when_attribute_is_used(self, annotation_specs: dict) -> None:
         service = DummyService(
             annotation_specs,
-            annotation_list_response_by_label_id={
-                "car_label_id": {
-                    "aggregations": [
-                        {
-                            "items": [
-                                {"key": "54fa5e97-6f88-49a4-aeb0-a91a15d11528", "count": 3, "aggregations": []},
-                                {"key": "71620647-98cf-48ad-b43b-4af425a24f32", "count": 2, "aggregations": []},
-                            ]
-                        }
-                    ]
-                }
+            annotation_list_response_by_choice_id={
+                "08ec927c-18e6-4bba-837a-b16de7061580": {"total_count": 1, "list": [{}], "aggregations": []},
             },
         )
         main = ChangeAttributeTypeMainWithCapturedConfirm(service, project_id="prj1", all_yes=False)
@@ -127,17 +119,7 @@ class TestChangeAttributeTypeMain:
     def test_change_attribute_type__confirm_message_contains_no_usage_message_when_attribute_is_not_used(self, annotation_specs: dict) -> None:
         service = DummyService(
             annotation_specs,
-            annotation_list_response_by_label_id={
-                "car_label_id": {
-                    "aggregations": [
-                        {
-                            "items": [
-                                {"key": "54fa5e97-6f88-49a4-aeb0-a91a15d11528", "count": 3, "aggregations": []},
-                            ]
-                        }
-                    ]
-                }
-            },
+            annotation_list_response_by_choice_id={},
         )
         main = ChangeAttributeTypeMainWithCapturedConfirm(service, project_id="prj1", all_yes=False)
 

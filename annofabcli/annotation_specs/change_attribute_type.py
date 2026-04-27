@@ -7,6 +7,7 @@ from collections.abc import Mapping
 from typing import Any
 
 import annofabapi
+from annofabapi.dataclass.annotation import AdditionalDataV1
 from annofabapi.util.annotation_specs import AnnotationSpecsAccessor
 
 import annofabcli.common.cli
@@ -84,8 +85,8 @@ class ChangeAttributeTypeMain(CommandLineWithConfirm):
         """
         指定した属性IDを実際に使っているアノテーションが存在するか判定する。
 
-        属性が紐づくラベルごとに `api.get_annotation_list` を1回だけ呼び出し、
-        レスポンスの集約結果から対象属性IDが含まれているかを確認する。
+        対象属性の値を `query.attributes` に指定して `api.get_annotation_list` を呼び出し、
+        検索結果が1件以上あるかどうかで判定する。
 
         Args:
             attribute_id: 利用有無を調べる対象属性ID
@@ -94,29 +95,23 @@ class ChangeAttributeTypeMain(CommandLineWithConfirm):
         Returns:
             属性値が設定されているアノテーションが1件以上存在する場合はTrue
         """
-
-        def has_target_attribute_in_aggregations(aggregations: list[dict[str, Any]]) -> bool:
-            for aggregation in aggregations:
-                for item in aggregation.get("items", []):
-                    if item.get("key") == attribute_id and item.get("count", 0) > 0:
-                        return True
-
-                    child_aggregations = item.get("aggregations", [])
-                    if has_target_attribute_in_aggregations(child_aggregations):
-                        return True
-
+        target_attribute = AnnotationSpecsAccessor(annotation_specs).get_attribute(attribute_id=attribute_id)
+        if target_attribute["type"] not in {"choice", "select"}:
             return False
 
-        target_label_ids = [label["label_id"] for label in annotation_specs["labels"] if attribute_id in label["additional_data_definitions"]]
-        if len(target_label_ids) == 0:
-            return False
-
-        for label_id in target_label_ids:
+        for choice in target_attribute["choices"]:
+            attribute_query = AdditionalDataV1.from_dict(
+                {
+                    "additional_data_definition_id": attribute_id,
+                    "choice": choice["choice_id"],
+                },
+                infer_missing=True,
+            )
             content, _ = self.service.api.get_annotation_list(
                 self.project_id,
-                query_params={"query": {"label_id": label_id}, "limit": 1, "v": "2"},
+                query_params={"query": {"attributes": [attribute_query.to_dict()]}, "limit": 1, "v": "2"},
             )
-            if has_target_attribute_in_aggregations(content.get("aggregations", [])):
+            if content["total_count"] > 0:
                 return True
 
         return False
