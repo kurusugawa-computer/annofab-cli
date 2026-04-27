@@ -7,7 +7,6 @@ from collections.abc import Mapping
 from typing import Any
 
 import annofabapi
-from annofabapi.dataclass.annotation import AdditionalDataV1
 from annofabapi.util.annotation_specs import AnnotationSpecsAccessor
 
 import annofabcli.common.cli
@@ -65,6 +64,36 @@ def create_comment_for_change_attribute_type(*, attribute_name_en: str, current_
     return f"以下の属性の種類を変更しました。\n属性名(英語): {attribute_name_en}\n変更前: {current_type}\n変更後: {target_type}"
 
 
+def create_confirm_message_for_change_attribute_type(
+    *,
+    attribute_name_en: str,
+    attribute_id: str,
+    current_type: str,
+    target_type: str,
+    has_annotation_with_label_having_attribute: bool,
+) -> str:
+    """
+    属性種類変更前の確認メッセージを生成する。
+
+    Args:
+        attribute_name_en: 対象属性の英語名
+        attribute_id: 対象属性ID
+        current_type: 変更前の属性種類
+        target_type: 変更後の属性種類
+        has_annotation_with_label_having_attribute: 対象属性を含むラベルがアノテーションで使われている場合はTrue
+
+    Returns:
+        確認メッセージ
+    """
+    confirm_message = f"属性名(英語)='{attribute_name_en}', 属性ID='{attribute_id}' の属性種類を '{current_type}' から '{target_type}' に変更します。"
+    if has_annotation_with_label_having_attribute:
+        confirm_message += "この属性を含むラベルがアノテーションで使われています。3次元エディタでは属性値が消えてしまう恐れがあります。画像エディタ/動画エディタでは2026年4月時点では引き継がれます。"
+    else:
+        confirm_message += "この属性を含むラベルがアノテーションで使われていることは確認できませんでした。"
+    confirm_message += "よろしいですか？"
+    return confirm_message
+
+
 class ChangeAttributeTypeMain(CommandLineWithConfirm):
     """
     既存属性の種類を変更する本体処理。
@@ -83,33 +112,23 @@ class ChangeAttributeTypeMain(CommandLineWithConfirm):
 
     def has_annotation_using_attribute(self, *, attribute_id: str, annotation_specs: dict[str, Any]) -> bool:
         """
-        指定した属性IDを実際に使っているアノテーションが存在するか判定する。
+        指定した属性IDを含むラベルが、アノテーションで使われているか判定する。
 
-        対象属性の値を `query.attributes` に指定して `api.get_annotation_list` を呼び出し、
-        検索結果が1件以上あるかどうかで判定する。
+        属性IDに紐づくラベルIDを `query.label_id` に指定して `api.get_annotation_list` を呼び出し、
+        そのラベルのアノテーションが1件以上あるかどうかで判定する。
 
         Args:
             attribute_id: 利用有無を調べる対象属性ID
             annotation_specs: 最新のアノテーション仕様
 
         Returns:
-            属性値が設定されているアノテーションが1件以上存在する場合はTrue
+            対象属性を含むラベルのアノテーションが1件以上存在する場合はTrue
         """
-        target_attribute = AnnotationSpecsAccessor(annotation_specs).get_attribute(attribute_id=attribute_id)
-        if target_attribute["type"] not in {"choice", "select"}:
-            return False
-
-        for choice in target_attribute["choices"]:
-            attribute_query = AdditionalDataV1.from_dict(
-                {
-                    "additional_data_definition_id": attribute_id,
-                    "choice": choice["choice_id"],
-                },
-                infer_missing=True,
-            )
+        target_label_ids = [label["label_id"] for label in annotation_specs["labels"] if attribute_id in label["additional_data_definitions"]]
+        for label_id in target_label_ids:
             content, _ = self.service.api.get_annotation_list(
                 self.project_id,
-                query_params={"query": {"attributes": [attribute_query.to_dict()]}, "limit": 1, "v": "2"},
+                query_params={"query": {"label_id": label_id}, "limit": 1, "v": "2"},
             )
             if content["total_count"] > 0:
                 return True
@@ -154,12 +173,13 @@ class ChangeAttributeTypeMain(CommandLineWithConfirm):
         resolved_attribute_id = target_attribute["additional_data_definition_id"]
         resolved_attribute_name_en = get_attribute_name_en(target_attribute)
         has_annotation_using_attribute = self.has_annotation_using_attribute(attribute_id=resolved_attribute_id, annotation_specs=old_annotation_specs)
-        confirm_message = f"属性名(英語)='{resolved_attribute_name_en}', 属性ID='{resolved_attribute_id}' の属性種類を '{current_type}' から '{attribute_type}' に変更します。"
-        if has_annotation_using_attribute:
-            confirm_message += "この属性値を設定している既存アノテーションが存在します。3次元エディタでは属性値が消えてしまう恐れがあります。画像エディタ/動画エディタでは2026年4月時点では引き継がれます。"
-        else:
-            confirm_message += "この属性値を設定している既存アノテーションは見つかりませんでした。"
-        confirm_message += "よろしいですか？"
+        confirm_message = create_confirm_message_for_change_attribute_type(
+            attribute_name_en=resolved_attribute_name_en,
+            attribute_id=resolved_attribute_id,
+            current_type=current_type,
+            target_type=attribute_type,
+            has_annotation_with_label_having_attribute=has_annotation_using_attribute,
+        )
         if not self.confirm_processing(confirm_message):
             return False
 
