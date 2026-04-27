@@ -39,7 +39,7 @@ from annofabcli.common.utils import duplicated_set
 logger = logging.getLogger(__name__)
 
 
-@dataclass
+@dataclass(frozen=True)
 class LabelInput:
     """
     コマンドラインから受け取ったラベル1件分の入力情報。
@@ -59,23 +59,6 @@ class LabelInput:
 
     field_values: dict[str, Any] | None = None
     """新規ラベルに設定するfield_values。未指定の場合はNone。"""
-
-
-def normalize_nullable_str(value: object) -> str | None:
-    """
-    文字列または欠損値を ``str | None`` に正規化する。
-
-    Args:
-        value: 正規化対象の値
-
-    Returns:
-        文字列またはNone
-    """
-    if pandas.isna(value):
-        return None
-    if isinstance(value, str):
-        return value
-    return str(value)
 
 
 def parse_label_input_from_dict(data: dict[str, Any], *, index: int) -> LabelInput:
@@ -195,9 +178,9 @@ def read_labels_csv(csv_path: Path) -> list[LabelInput]:
     result = []
     for index, row in enumerate(df.to_dict(orient="records"), start=1):
         label_name_en = row["label_name_en"]
-        label_name_ja = normalize_nullable_str(row.get("label_name_ja"))
-        label_id = normalize_nullable_str(row.get("label_id"))
-        color = normalize_nullable_str(row.get("color"))
+        label_name_ja = row.get("label_name_ja")
+        label_id = row.get("label_id")
+        color = row.get("color")
         field_values = parse_field_values_in_csv(row.get("field_values"), index=index)
         result.append(
             LabelInput(
