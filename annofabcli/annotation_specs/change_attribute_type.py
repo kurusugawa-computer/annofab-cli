@@ -222,7 +222,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         type=str,
         required=True,
         choices=SUPPORTED_ATTRIBUTE_TYPES,
-        help=("変更後の属性種類。現在対応している変換は以下のみです。\n* ``choice`` ↔ ``select``\n* ``text`` ↔ ``comment``"),
+        help=("変更後の属性種類。現在対応している変換は以下のみです。\n* ``choice`` （ラジオボタン）↔ ``select`` （ドロップダウン）"),
     )
     parser.add_argument("--comment", type=str, help="アノテーション仕様の変更内容を説明するコメント。未指定の場合、自動でコメントが生成されます。")
 
