@@ -76,3 +76,41 @@ $ annofabcli task reject --project_id prj1 --task_id file://tasks.txt --cancel_a
   --comment "carラベルのoccluded属性を見直してください"
 
 ```
+
+### 既存ラベルの `field_values` を更新する
+アノテーション仕様に登録済みのラベルに対して、`field_values` を更新できます。
+`field_values` には、サイズ制約、誤差許容、エディタ機能など、ラベルごとの設定をJSONオブジェクトで指定します。
+
+まず現在の設定を確認したい場合は、`annotation_specs list_label` で `field_values` 列を出力します。
+
+```bash
+$ annofabcli annotation_specs list_label --project_id prj1 --output label.csv
+```
+
+既定動作はマージです。指定したキーだけを更新し、それ以外のキーは保持します。
+
+```bash
+$ annofabcli annotation_specs update_label_field_values --project_id prj1 \
+  --label_name_en car bus \
+  --field_values_json '{"margin_of_error_tolerance":{"_type":"MarginOfErrorTolerance","max_pixel":3}}'
+```
+
+`--replace` を指定すると、`field_values` 全体を指定したJSONオブジェクトで置換します。
+
+```bash
+$ annofabcli annotation_specs update_label_field_values --project_id prj1 \
+  --label_name_en car \
+  --field_values_json '{"display_line_direction":{"_type":"DisplayLineDirection","value":true}}' \
+  --replace
+```
+
+`--clear` を指定すると、対象ラベルの `field_values` を空辞書に更新します。
+
+```bash
+$ annofabcli annotation_specs update_label_field_values --project_id prj1 \
+  --label_name_en car \
+  --clear
+```
+
+対象ラベルは `--label_name_en` の代わりに `--label_id` でも指定できます。
+また、`--field_values_json` には `file://` を付けてJSONファイルを渡すこともできます。
