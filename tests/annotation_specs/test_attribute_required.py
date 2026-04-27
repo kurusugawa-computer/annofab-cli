@@ -60,6 +60,16 @@ class TestIsRequiredRestriction:
 
 
 class TestGetTargetAttributes:
+    def test_empty_input(self, annotation_specs: dict) -> None:
+        annotation_specs_accessor = AnnotationSpecsAccessor(annotation_specs)
+
+        with pytest.raises(ValueError):
+            get_target_attributes(
+                annotation_specs_accessor,
+                attribute_ids=[],
+                attribute_name_ens=None,
+            )
+
     def test_attribute_name_en(self, annotation_specs: dict) -> None:
         annotation_specs_accessor = AnnotationSpecsAccessor(annotation_specs)
 

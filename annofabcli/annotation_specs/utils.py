@@ -113,13 +113,15 @@ def get_target_attributes(
         重複を除いた対象属性一覧
 
     Raises:
-        ValueError: 引数の指定方法が不正な場合、属性が見つからない場合、または属性名が曖昧な場合
+        ValueError: 引数の指定方法が不正な場合、対象属性が0件の場合、属性が見つからない場合、または属性名が曖昧な場合
     """
     if (attribute_ids is None) == (attribute_name_ens is None):
         raise ValueError("対象属性は `attribute_id` または `attribute_name_en` のどちらか一方だけ指定してください。")
 
     resolved_attribute_ids = [] if attribute_ids is None else list(attribute_ids)
     resolved_attribute_name_ens = [] if attribute_name_ens is None else list(attribute_name_ens)
+    if len(resolved_attribute_ids) == 0 and len(resolved_attribute_name_ens) == 0:
+        raise ValueError("対象属性を1件以上指定してください。")
 
     result = []
     result_attribute_ids: set[str] = set()
