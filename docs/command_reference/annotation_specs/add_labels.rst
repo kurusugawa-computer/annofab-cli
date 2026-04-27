@@ -21,16 +21,6 @@ Examples
      --annotation_type bounding_box
 
 
-ファイルからラベル名(英語)一覧を読み込む場合
-----------------------------------------------
-
-.. code-block::
-
-    $ annofabcli annotation_specs add_labels \
-     --project_id prj1 \
-     --label_name_en file://label_names.txt \
-     --annotation_type segmentation_v2
-
 
 JSON形式で指定する場合
 ----------------------------------------------
@@ -41,13 +31,7 @@ JSON形式で指定する場合
     [
         {
             "label_name_en": "pedestrian",
-            "color": "#123456",
-            "field_values": {
-                "display_name": {
-                    "_type": "DisplayName",
-                    "text": "歩行者"
-                }
-            }
+            "color": "#123456"
         },
         {
             "label_id": "bicycle",
@@ -73,7 +57,7 @@ CSV形式で指定する場合
     :caption: labels.csv
 
     label_id,label_name_en,label_name_ja,color,field_values
-    ,pedestrian,,#123456,"{""display_name"": {""_type"": ""DisplayName"", ""text"": ""歩行者""}}"
+    ,pedestrian,,#123456,
     bicycle,bicycle,自転車,#00AAFF
 
 
@@ -84,17 +68,15 @@ CSV形式で指定する場合
      --label_csv labels.csv \
      --annotation_type segmentation_v2
 
+.. note::
+    
+    ``--annotation_type`` の値は、:doc:`add_label` を参照してください。
+
 
 Usage Details
 =================================
 
-``--label_name_en`` , ``--label_json`` , ``--label_csv`` のいずれかを指定してください。
-``--label_json`` / ``--label_csv`` では ``label_name_en`` は必須です。 ``label_id`` , ``label_name_ja`` , ``color`` , ``field_values`` は任意です。
-``color`` には ``#RRGGBB`` 形式の16進数カラーコードを指定できます。
 
-``field_values`` のフォーマットは、 :doc:`update_label_field_values` を参照してください。
-
-``--annotation_type`` の値は、``annotation_specs add_label`` の :ref:`annotation_specs_add_label_annotation_type_values` を参照してください。
 
 .. argparse::
     :ref: annofabcli.annotation_specs.add_labels.add_parser
