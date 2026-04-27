@@ -12,7 +12,6 @@ from annofabcli.annotation_specs import add_labels
 from annofabcli.annotation_specs.add_labels import (
     AddLabelsMain,
     LabelInput,
-    apply_common_field_values,
     create_label_color,
     create_label_inputs_from_name_ens,
     parse_field_values_in_csv,
@@ -165,14 +164,11 @@ class TestAddLabelsMain:
 
 class TestReadLabels:
     def test_create_label_inputs_from_name_ens(self) -> None:
-        actual = create_label_inputs_from_name_ens(
-            ["pedestrian", "bicycle"],
-            field_values={"display_name": {"_type": "DisplayName", "text": "共通表示名"}},
-        )
+        actual = create_label_inputs_from_name_ens(["pedestrian", "bicycle"])
 
         assert actual == [
-            LabelInput(label_name_en="pedestrian", field_values={"display_name": {"_type": "DisplayName", "text": "共通表示名"}}),
-            LabelInput(label_name_en="bicycle", field_values={"display_name": {"_type": "DisplayName", "text": "共通表示名"}}),
+            LabelInput(label_name_en="pedestrian"),
+            LabelInput(label_name_en="bicycle"),
         ]
 
     def test_read_labels_json(self) -> None:
@@ -236,24 +232,6 @@ class TestReadLabels:
         actual = create_label_color("#123456", [])
 
         assert actual == {"red": 18, "green": 52, "blue": 86}
-
-    def test_apply_common_field_values(self) -> None:
-        actual = apply_common_field_values(
-            [LabelInput(label_name_en="pedestrian"), LabelInput(label_name_en="bicycle")],
-            field_values={"display_name": {"_type": "DisplayName", "text": "共通表示名"}},
-        )
-
-        assert actual == [
-            LabelInput(label_name_en="pedestrian", field_values={"display_name": {"_type": "DisplayName", "text": "共通表示名"}}),
-            LabelInput(label_name_en="bicycle", field_values={"display_name": {"_type": "DisplayName", "text": "共通表示名"}}),
-        ]
-
-    def test_apply_common_field_values__already_has_field_values(self) -> None:
-        with pytest.raises(ValueError):
-            apply_common_field_values(
-                [LabelInput(label_name_en="pedestrian", field_values={"display_name": {"_type": "DisplayName", "text": "個別表示名"}})],
-                field_values={"display_name": {"_type": "DisplayName", "text": "共通表示名"}},
-            )
 
     def test_parse_field_values_in_csv(self) -> None:
         actual = parse_field_values_in_csv('{"display_name":{"_type":"DisplayName","text":"歩行者"}}', index=1)

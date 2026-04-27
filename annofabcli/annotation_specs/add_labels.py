@@ -6,7 +6,7 @@ import json
 import logging
 import uuid
 from collections.abc import Sequence
-from dataclasses import dataclass, replace
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
@@ -194,45 +194,17 @@ def read_labels_csv(csv_path: Path) -> list[LabelInput]:
     return result
 
 
-def create_label_inputs_from_name_ens(
-    label_name_ens: Sequence[str],
-    *,
-    field_values: dict[str, Any] | None = None,
-) -> list[LabelInput]:
+def create_label_inputs_from_name_ens(label_name_ens: Sequence[str]) -> list[LabelInput]:
     """
     ラベル英語名一覧からラベル入力一覧を生成する。
 
     Args:
         label_name_ens: ラベル英語名一覧
-        field_values: 新規ラベルに共通で設定するfield_values
 
     Returns:
         ラベル入力一覧
     """
-    return [LabelInput(label_name_en=label_name_en, field_values=copy.deepcopy(field_values)) for label_name_en in label_name_ens]
-
-
-def apply_common_field_values(label_inputs: Sequence[LabelInput], *, field_values: dict[str, Any] | None) -> list[LabelInput]:
-    """
-    ラベル入力一覧に共通field_valuesを設定する。
-
-    Args:
-        label_inputs: ラベル入力一覧
-        field_values: 共通で設定するfield_values
-
-    Returns:
-        field_values適用後のラベル入力一覧
-
-    Raises:
-        ValueError: すでに個別field_valuesが指定されている場合
-    """
-    if field_values is None:
-        return list(label_inputs)
-
-    if any(label.field_values is not None for label in label_inputs):
-        raise ValueError("各ラベルの `field_values` と `--field_values_json` は同時に指定できません。")
-
-    return [replace(label, field_values=copy.deepcopy(field_values)) for label in label_inputs]
+    return [LabelInput(label_name_en=label_name_en) for label_name_en in label_name_ens]
 
 
 def create_label_color(color_code: str | None, colors: list[RgbColor]) -> RgbColor:
@@ -383,7 +355,6 @@ class AddLabels(CommandLine):
         コマンドライン引数を解釈し、複数ラベル追加処理を実行する。
         """
         args = self.args
-        common_field_values = None if args.field_values_json is None else validate_field_values_input(get_json_from_args(args.field_values_json))
         if args.label_name_en is not None:
             label_inputs = create_label_inputs_from_name_ens(get_list_from_args(args.label_name_en))
         elif args.label_json is not None:
@@ -394,7 +365,6 @@ class AddLabels(CommandLine):
             label_inputs = read_labels_csv(args.label_csv)
         else:
             raise ValueError("`--label_name_en` , `--label_json` , `--label_csv` のいずれかを指定してください。")
-        label_inputs = apply_common_field_values(label_inputs, field_values=common_field_values)
 
         obj = AddLabelsMain(self.service, project_id=args.project_id, all_yes=args.yes)
         obj.add_labels(
@@ -441,11 +411,6 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         help=("追加するラベル情報のCSVファイルを指定します。 CSVには ``label_name_en`` 列が必要です。 任意で ``label_id`` , ``label_name_ja`` , ``color`` , ``field_values`` 列を指定できます。"),
     )
     parser.add_argument("--annotation_type", type=str, required=True, choices=ANNOTATION_TYPE_CHOICES, help=create_annotation_type_help())
-    parser.add_argument(
-        "--field_values_json",
-        type=str,
-        help=("追加する全ラベルに共通で設定するfield_valuesのJSONオブジェクト。 ``file://`` を先頭に付けるとJSONファイルを指定できます。 各ラベル個別の ``field_values`` と同時には指定できません。"),
-    )
     parser.add_argument("--comment", type=str, help="アノテーション仕様の変更内容を説明するコメント。未指定の場合、自動でコメントが生成されます。")
 
     parser.set_defaults(subcommand_func=main)
