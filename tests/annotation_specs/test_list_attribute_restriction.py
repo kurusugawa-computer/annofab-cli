@@ -3,9 +3,13 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import pytest
+
 from annofabcli.__main__ import main
 
 DATA_DIR = Path("./tests/data/annotation_specs")
+
+pytestmark = pytest.mark.access_webapi
 
 
 class TestListAttributeRestriction:
