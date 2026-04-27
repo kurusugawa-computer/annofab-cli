@@ -156,7 +156,7 @@ class ChangeAttributeTypeMain(CommandLineWithConfirm):
         has_annotation_using_attribute = self.has_annotation_using_attribute(attribute_id=resolved_attribute_id, annotation_specs=old_annotation_specs)
         confirm_message = f"属性名(英語)='{resolved_attribute_name_en}', 属性ID='{resolved_attribute_id}' の属性種類を '{current_type}' から '{attribute_type}' に変更します。"
         if has_annotation_using_attribute:
-            confirm_message += "この属性値を設定している既存アノテーションが存在します。3次元エディタでは属性値が消えてしまう恐れがあります。画像エディタ/動画エディタでは現時点では引き継がれます。"
+            confirm_message += "この属性値を設定している既存アノテーションが存在します。3次元エディタでは属性値が消えてしまう恐れがあります。画像エディタ/動画エディタでは2026年4月時点では引き継がれます。"
         else:
             confirm_message += "この属性値を設定している既存アノテーションは見つかりませんでした。"
         confirm_message += "よろしいですか？"
