@@ -80,33 +80,46 @@ class ChangeAttributeTypeMain(CommandLineWithConfirm):
         self.project_id = project_id
         CommandLineWithConfirm.__init__(self, all_yes)
 
-    def get_annotation_count_using_attribute(self, *, attribute_id: str, annotation_specs: dict[str, Any]) -> int:
+    def has_annotation_using_attribute(self, *, attribute_id: str, annotation_specs: dict[str, Any]) -> bool:
         """
-        指定した属性IDを実際に使っているアノテーション件数を取得する。
+        指定した属性IDを実際に使っているアノテーションが存在するか判定する。
 
-        属性が紐づくラベルごとにアノテーションを取得し、各アノテーションの
-        ``additional_data_list`` に対象属性IDが含まれている件数を数える。
+        属性が紐づくラベルごとに `api.get_annotation_list` を1回だけ呼び出し、
+        レスポンスの集約結果から対象属性IDが含まれているかを確認する。
 
         Args:
-            attribute_id: 件数を調べる対象属性ID
+            attribute_id: 利用有無を調べる対象属性ID
             annotation_specs: 最新のアノテーション仕様
 
         Returns:
-            属性値が設定されているアノテーション件数
+            属性値が設定されているアノテーションが1件以上存在する場合はTrue
         """
+
+        def has_target_attribute_in_aggregations(aggregations: list[dict[str, Any]]) -> bool:
+            for aggregation in aggregations:
+                for item in aggregation.get("items", []):
+                    if item.get("key") == attribute_id and item.get("count", 0) > 0:
+                        return True
+
+                    child_aggregations = item.get("aggregations", [])
+                    if has_target_attribute_in_aggregations(child_aggregations):
+                        return True
+
+            return False
+
         target_label_ids = [label["label_id"] for label in annotation_specs["labels"] if attribute_id in label["additional_data_definitions"]]
         if len(target_label_ids) == 0:
-            return 0
+            return False
 
-        annotation_count = 0
         for label_id in target_label_ids:
-            annotation_list = self.service.wrapper.get_all_annotation_list(
+            content, _ = self.service.api.get_annotation_list(
                 self.project_id,
-                query_params={"query": {"label_id": label_id}, "v": "2"},
+                query_params={"query": {"label_id": label_id}, "limit": 1, "v": "2"},
             )
-            annotation_count += sum(any(additional_data["definition_id"] == attribute_id for additional_data in annotation["detail"].get("additional_data_list", [])) for annotation in annotation_list)
+            if has_target_attribute_in_aggregations(content.get("aggregations", [])):
+                return True
 
-        return annotation_count
+        return False
 
     def change_attribute_type(
         self,
@@ -145,13 +158,13 @@ class ChangeAttributeTypeMain(CommandLineWithConfirm):
 
         resolved_attribute_id = target_attribute["additional_data_definition_id"]
         resolved_attribute_name_en = get_attribute_name_en(target_attribute)
-        annotation_count = self.get_annotation_count_using_attribute(attribute_id=resolved_attribute_id, annotation_specs=old_annotation_specs)
-        confirm_message = (
-            f"属性名(英語)='{resolved_attribute_name_en}', 属性ID='{resolved_attribute_id}' の属性種類を '{current_type}' から '{attribute_type}' に変更します。"
-            f"この属性値を設定しているアノテーションは {annotation_count} 件あります。"
-            "3次元エディタでは属性値が消えてしまう恐れがあります。"
-            "画像エディタ/動画エディタでは現時点では引き継がれます。よろしいですか？"
-        )
+        has_annotation_using_attribute = self.has_annotation_using_attribute(attribute_id=resolved_attribute_id, annotation_specs=old_annotation_specs)
+        confirm_message = f"属性名(英語)='{resolved_attribute_name_en}', 属性ID='{resolved_attribute_id}' の属性種類を '{current_type}' から '{attribute_type}' に変更します。"
+        if has_annotation_using_attribute:
+            confirm_message += "この属性値を設定している既存アノテーションが存在します。3次元エディタでは属性値が消えてしまう恐れがあります。画像エディタ/動画エディタでは現時点では引き継がれます。"
+        else:
+            confirm_message += "この属性値を設定している既存アノテーションは見つかりませんでした。"
+        confirm_message += "よろしいですか？"
         if not self.confirm_processing(confirm_message):
             return False
 
