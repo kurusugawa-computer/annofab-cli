@@ -7,6 +7,7 @@ import sys
 from pathlib import Path
 
 import annofabcli.common.cli
+import annofabcli.common.utils
 from annofabcli.annotation_specs.attribute_restriction import AttributeRestrictionMessage, OutputFormat
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
@@ -53,8 +54,8 @@ class ListAttributeRestriction(CommandLine):
                 query_params["history_id"] = history_id
 
             annotation_specs, _ = self.service.api.get_annotation_specs(args.project_id, query_params=query_params)
-        elif args.annotation_json_path is not None:
-            with args.annotation_json_path.open() as f:
+        elif args.annotation_specs_json is not None:
+            with args.annotation_specs_json.open(encoding="utf-8") as f:
                 annotation_specs = json.load(f)
 
         else:
@@ -67,12 +68,25 @@ class ListAttributeRestriction(CommandLine):
         )
         target_attribute_names = get_list_from_args(args.attribute_name) if args.attribute_name is not None else None
         target_label_names = get_list_from_args(args.label_name) if args.label_name is not None else None
-        restriction_text_list = main_obj.get_restriction_text_list(
+        target_restrictions = main_obj.get_target_restrictions(
             annotation_specs["restrictions"],
             target_attribute_names=target_attribute_names,
             target_label_names=target_label_names,
         )
+        output_format = OutputFormat(args.format)
+        if output_format in {OutputFormat.JSON, OutputFormat.PRETTY_JSON}:
+            annofabcli.common.utils.print_json(
+                target_restrictions,
+                is_pretty=output_format == OutputFormat.PRETTY_JSON,
+                output=args.output,
+            )
+            return
 
+        restriction_text_list = main_obj.get_restriction_text_list(
+            target_restrictions,
+            target_attribute_names=None,
+            target_label_names=None,
+        )
         annofabcli.common.utils.output_string("\n".join(restriction_text_list), args.output)
 
 
@@ -119,7 +133,13 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         type=str,
         choices=[e.value for e in OutputFormat],
         default=OutputFormat.TEXT.value,
-        help=f"出力フォーマット\n\n* {OutputFormat.TEXT.value}: 英語名のみ出力する形式\n* {OutputFormat.DETAILED_TEXT.value}: 属性IDや属性種類などの詳細情報を出力する形式\n",
+        help=(
+            "出力フォーマット\n\n"
+            f"* {OutputFormat.TEXT.value}: 英語名のみ出力する形式\n"
+            f"* {OutputFormat.DETAILED_TEXT.value}: 属性IDや属性種類などの詳細情報を出力する形式\n"
+            f"* {OutputFormat.JSON.value}: 属性制約のJSONを1行で出力する形式\n"
+            f"* {OutputFormat.PRETTY_JSON.value}: 属性制約のJSONを整形して出力する形式\n"
+        ),
     )
 
     parser.set_defaults(subcommand_func=main)

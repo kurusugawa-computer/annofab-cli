@@ -39,6 +39,23 @@ Examples
     'link' (id='15235360-4f46-42ac-927d-0e046bf52ddd', type='link') HAS LABEL 'bike' (id='40f7796b-3722-4eed-9c0c-04a27f9165d2'), 'bus' (id='22b5189b-af7b-4d9c-83a5-b92f122170ec')
 
 
+``--format json`` または ``--format pretty_json`` を指定すると、属性制約のJSONを出力できます。
+このJSONはAPIのrestrictionオブジェクトそのものなので、将来的に削除コマンドなどへそのまま渡しやすい形式です。
+
+.. code-block::
+
+    $ annofabcli annotation_specs list_attribute_restriction --project_id prj1 --format pretty_json
+    [
+      {
+        "additional_data_definition_id": "54fa5e97-6f88-49a4-aeb0-a91a15d11528",
+        "condition": {
+          "enable": false,
+          "_type": "CanInput"
+        }
+      }
+    ]
+
+
 
 Usage Details
 =================================
@@ -48,4 +65,3 @@ Usage Details
    :prog: annofabcli annotation_specs list_attribute_restriction
    :nosubcommands:
    :nodefaultconst:
-

@@ -17,10 +17,14 @@ class OutputFormat(Enum):
     Attributes:
         TEXT: 属性IDや種類を隠したシンプルなテキスト
         DETAILED_TEXT: 属性IDや属性種類などの詳細情報を表示したテキスト
+        JSON: インデントされていないJSON形式
+        PRETTY_JSON: インデントされているJSON形式
     """
 
     TEXT = "text"
     DETAILED_TEXT = "detailed_text"
+    JSON = "json"
+    PRETTY_JSON = "pretty_json"
 
 
 class AttributeRestrictionMessage:
@@ -235,3 +239,27 @@ class AttributeRestrictionMessage:
             return [self.get_restriction_text(e["additional_data_definition_id"], e["condition"]) for e in restrictions if e["additional_data_definition_id"] in target_attribute_ids]
         else:
             return [self.get_restriction_text(e["additional_data_definition_id"], e["condition"]) for e in restrictions]
+
+    def get_target_restrictions(
+        self,
+        restrictions: list[dict[str, Any]],
+        *,
+        target_attribute_names: Collection[str] | None = None,
+        target_label_names: Collection[str] | None = None,
+    ) -> list[dict[str, Any]]:
+        """
+        指定条件に一致する属性制約を返す。
+
+        Args:
+            restrictions: 属性制約のリスト
+            target_attribute_names: 取得対象の属性名（英語）のlist
+            target_label_names: 取得対象のラベル名（英語）のlist
+
+        Returns:
+            絞り込み後の属性制約一覧
+        """
+        if target_attribute_names is None and target_label_names is None:
+            return restrictions
+
+        target_attribute_ids = self.get_target_attribute_ids(target_attribute_names=target_attribute_names, target_label_names=target_label_names)
+        return [restriction for restriction in restrictions if restriction["additional_data_definition_id"] in target_attribute_ids]
