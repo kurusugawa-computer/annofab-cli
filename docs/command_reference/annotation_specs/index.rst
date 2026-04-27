@@ -23,6 +23,7 @@ Available Commands
    add_label
    add_labels
    change_attribute_type
+   delete_attribute_restriction
    export
    get_with_attribute_id_replaced_label_name
    get_with_choice_id_replaced_label_name
