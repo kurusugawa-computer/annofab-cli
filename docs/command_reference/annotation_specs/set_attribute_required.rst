@@ -4,15 +4,11 @@ annotation_specs set_attribute_required
 
 Description
 =================================
-属性を必須にします。
-内部的には required の属性制約を追加します。
-
+属性の必須制約を設定します。
 
 Examples
 =================================
 
-属性名(英語)を指定して、複数属性を必須にする場合
-----------------------------------------------
 
 .. code-block::
 
@@ -20,15 +16,6 @@ Examples
      --project_id prj1 \
      --attribute_name_en color size note
 
-
-属性名(英語)を記載したファイルを指定して、複数属性を必須にする場合
---------------------------------------------------------------
-
-.. code-block::
-
-    $ annofabcli annotation_specs set_attribute_required \
-     --project_id prj1 \
-     --attribute_name_en file://attribute_names.txt
 
 
 Usage Details
