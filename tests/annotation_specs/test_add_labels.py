@@ -12,8 +12,10 @@ from annofabcli.annotation_specs import add_labels
 from annofabcli.annotation_specs.add_labels import (
     AddLabelsMain,
     LabelInput,
+    apply_common_field_values,
     create_label_color,
     create_label_inputs_from_name_ens,
+    parse_field_values_in_csv,
     read_labels_csv,
     read_labels_json,
 )
@@ -69,7 +71,13 @@ class TestAddLabelsMain:
 
         result = main.add_labels(
             label_inputs=[
-                LabelInput(label_id="pedestrian", label_name_en="pedestrian", label_name_ja="歩行者", color="#123456"),
+                LabelInput(
+                    label_id="pedestrian",
+                    label_name_en="pedestrian",
+                    label_name_ja="歩行者",
+                    color="#123456",
+                    field_values={"display_name": {"_type": "DisplayName", "text": "歩行者"}},
+                ),
                 LabelInput(label_name_en="bicycle"),
             ],
             annotation_type="bounding_box",
@@ -85,6 +93,8 @@ class TestAddLabelsMain:
         assert [label["annotation_type"] for label in added_labels] == ["bounding_box", "bounding_box"]
         assert added_labels[0]["color"] == {"red": 18, "green": 52, "blue": 86}
         assert added_labels[1]["color"] == {"red": 255, "green": 85, "blue": 0}
+        assert added_labels[0]["field_values"] == {"display_name": {"_type": "DisplayName", "text": "歩行者"}}
+        assert added_labels[1]["field_values"] == {}
         assert service.api.last_put["last_updated_datetime"] == "2026-04-24T00:00:00+09:00"
 
     def test_add_labels__invalid_color(self, annotation_specs: dict) -> None:
@@ -155,18 +165,30 @@ class TestAddLabelsMain:
 
 class TestReadLabels:
     def test_create_label_inputs_from_name_ens(self) -> None:
-        actual = create_label_inputs_from_name_ens(["pedestrian", "bicycle"])
+        actual = create_label_inputs_from_name_ens(
+            ["pedestrian", "bicycle"],
+            field_values={"display_name": {"_type": "DisplayName", "text": "共通表示名"}},
+        )
 
         assert actual == [
-            LabelInput(label_name_en="pedestrian"),
-            LabelInput(label_name_en="bicycle"),
+            LabelInput(label_name_en="pedestrian", field_values={"display_name": {"_type": "DisplayName", "text": "共通表示名"}}),
+            LabelInput(label_name_en="bicycle", field_values={"display_name": {"_type": "DisplayName", "text": "共通表示名"}}),
         ]
 
     def test_read_labels_json(self) -> None:
-        actual = read_labels_json('[{"label_id":"pedestrian","label_name_en":"pedestrian","label_name_ja":"歩行者","color":"#123456"},{"label_name_en":"bicycle"}]')
+        actual = read_labels_json(
+            '[{"label_id":"pedestrian","label_name_en":"pedestrian","label_name_ja":"歩行者","color":"#123456",'
+            '"field_values":{"display_name":{"_type":"DisplayName","text":"歩行者"}}},{"label_name_en":"bicycle"}]'
+        )
 
         assert actual == [
-            LabelInput(label_id="pedestrian", label_name_en="pedestrian", label_name_ja="歩行者", color="#123456"),
+            LabelInput(
+                label_id="pedestrian",
+                label_name_en="pedestrian",
+                label_name_ja="歩行者",
+                color="#123456",
+                field_values={"display_name": {"_type": "DisplayName", "text": "歩行者"}},
+            ),
             LabelInput(label_name_en="bicycle"),
         ]
 
@@ -178,7 +200,13 @@ class TestReadLabels:
         csv_path = tmp_path / "labels.csv"
         df = pandas.DataFrame(
             [
-                {"label_id": "pedestrian", "label_name_en": "pedestrian", "label_name_ja": "歩行者", "color": "#123456"},
+                {
+                    "label_id": "pedestrian",
+                    "label_name_en": "pedestrian",
+                    "label_name_ja": "歩行者",
+                    "color": "#123456",
+                    "field_values": '{"display_name": {"_type": "DisplayName", "text": "歩行者"}}',
+                },
                 {"label_name_en": "bicycle"},
             ]
         )
@@ -187,7 +215,13 @@ class TestReadLabels:
         actual = read_labels_csv(csv_path)
 
         assert actual == [
-            LabelInput(label_id="pedestrian", label_name_en="pedestrian", label_name_ja="歩行者", color="#123456"),
+            LabelInput(
+                label_id="pedestrian",
+                label_name_en="pedestrian",
+                label_name_ja="歩行者",
+                color="#123456",
+                field_values={"display_name": {"_type": "DisplayName", "text": "歩行者"}},
+            ),
             LabelInput(label_name_en="bicycle"),
         ]
 
@@ -202,3 +236,30 @@ class TestReadLabels:
         actual = create_label_color("#123456", [])
 
         assert actual == {"red": 18, "green": 52, "blue": 86}
+
+    def test_apply_common_field_values(self) -> None:
+        actual = apply_common_field_values(
+            [LabelInput(label_name_en="pedestrian"), LabelInput(label_name_en="bicycle")],
+            field_values={"display_name": {"_type": "DisplayName", "text": "共通表示名"}},
+        )
+
+        assert actual == [
+            LabelInput(label_name_en="pedestrian", field_values={"display_name": {"_type": "DisplayName", "text": "共通表示名"}}),
+            LabelInput(label_name_en="bicycle", field_values={"display_name": {"_type": "DisplayName", "text": "共通表示名"}}),
+        ]
+
+    def test_apply_common_field_values__already_has_field_values(self) -> None:
+        with pytest.raises(ValueError):
+            apply_common_field_values(
+                [LabelInput(label_name_en="pedestrian", field_values={"display_name": {"_type": "DisplayName", "text": "個別表示名"}})],
+                field_values={"display_name": {"_type": "DisplayName", "text": "共通表示名"}},
+            )
+
+    def test_parse_field_values_in_csv(self) -> None:
+        actual = parse_field_values_in_csv('{"display_name":{"_type":"DisplayName","text":"歩行者"}}', index=1)
+
+        assert actual == {"display_name": {"_type": "DisplayName", "text": "歩行者"}}
+
+    def test_parse_field_values_in_csv__invalid_json(self) -> None:
+        with pytest.raises(ValueError):
+            parse_field_values_in_csv('["not-object"]', index=1)
