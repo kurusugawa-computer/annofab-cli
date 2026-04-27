@@ -420,7 +420,6 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
             "label_name_en": "pedestrian",
             "label_name_ja": "歩行者",
             "color": "#123456",
-            "field_values": {"display_name": {"_type": "DisplayName", "text": "歩行者"}},
         },
         {"label_name_en": "bicycle"},
     ]
