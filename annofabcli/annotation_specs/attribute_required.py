@@ -166,7 +166,7 @@ class AttributeRequiredMain(CommandLineWithConfirm):
             logger.info("必須にする属性はないため、アノテーション仕様を変更しません。")
             return False
 
-        confirm_message = create_confirm_message_for_attribute_required("required 制約を追加します", target_attributes_to_add)
+        confirm_message = create_confirm_message_for_attribute_required("必須制約を追加します", target_attributes_to_add)
         if not self.confirm_processing(confirm_message):
             return False
 
@@ -177,7 +177,7 @@ class AttributeRequiredMain(CommandLineWithConfirm):
         request_body["comment"] = comment
         request_body["last_updated_datetime"] = old_annotation_specs["updated_datetime"]
         self.service.api.put_annotation_specs(self.project_id, query_params={"v": "3"}, request_body=request_body)
-        logger.info(f"{len(target_attributes_to_add)} 件の属性を必須にしました。")
+        logger.info(f"{len(target_attributes_to_add)} 件の属性に必須制約を設定しました。")
         return True
 
     def unset_attribute_required(
@@ -224,7 +224,7 @@ class AttributeRequiredMain(CommandLineWithConfirm):
             logger.info("必須制約を解除する属性はないため、アノテーション仕様を変更しません。")
             return False
 
-        confirm_message = create_confirm_message_for_attribute_required("required 制約を削除します", target_attributes_to_remove)
+        confirm_message = create_confirm_message_for_attribute_required("属性の必須制約を解除します", target_attributes_to_remove)
         if not self.confirm_processing(confirm_message):
             return False
 

@@ -59,7 +59,7 @@ def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse
     subcommand_name = "unset_attribute_required"
 
     subcommand_help = "属性の必須制約を解除します。"
-    description = subcommand_help + "内部的には required の属性制約を削除します。"
+    description = subcommand_help
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description=description)
     parse_args(parser)
     return parser
