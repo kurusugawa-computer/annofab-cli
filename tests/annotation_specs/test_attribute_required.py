@@ -5,6 +5,7 @@ import json
 from pathlib import Path
 
 import pytest
+from annofabapi.util.annotation_specs import AnnotationSpecsAccessor
 
 from annofabcli.annotation_specs.attribute_required import (
     REQUIRED_CONDITION,
@@ -12,6 +13,7 @@ from annofabcli.annotation_specs.attribute_required import (
     create_required_restriction,
     is_required_restriction,
 )
+from annofabcli.annotation_specs.utils import get_target_attributes
 
 data_dir = Path("./tests/data/annotation_specs")
 
@@ -55,6 +57,36 @@ class TestIsRequiredRestriction:
     def test_false_when_condition_is_different(self) -> None:
         restriction = {"additional_data_definition_id": "attr1", "condition": {"value": "foo", "_type": "NotEquals"}}
         assert is_required_restriction(restriction) is False
+
+
+class TestGetTargetAttributes:
+    def test_attribute_name_en(self, annotation_specs: dict) -> None:
+        annotation_specs_accessor = AnnotationSpecsAccessor(annotation_specs)
+
+        actual = get_target_attributes(
+            annotation_specs_accessor,
+            attribute_ids=None,
+            attribute_name_ens=["type", "link"],
+        )
+
+        assert [attribute["additional_data_definition_id"] for attribute in actual] == [
+            "71620647-98cf-48ad-b43b-4af425a24f32",
+            "15235360-4f46-42ac-927d-0e046bf52ddd",
+        ]
+
+    def test_duplicate_is_removed(self, annotation_specs: dict) -> None:
+        annotation_specs_accessor = AnnotationSpecsAccessor(annotation_specs)
+
+        actual = get_target_attributes(
+            annotation_specs_accessor,
+            attribute_ids=[
+                "71620647-98cf-48ad-b43b-4af425a24f32",
+                "71620647-98cf-48ad-b43b-4af425a24f32",
+            ],
+            attribute_name_ens=None,
+        )
+
+        assert len(actual) == 1
 
 
 class TestAttributeRequiredMain:

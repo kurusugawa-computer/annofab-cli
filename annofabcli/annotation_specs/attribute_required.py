@@ -9,7 +9,7 @@ from typing import Any
 import annofabapi
 from annofabapi.util.annotation_specs import AnnotationSpecsAccessor
 
-from annofabcli.annotation_specs.utils import get_attribute_name_en
+from annofabcli.annotation_specs.utils import get_attribute_name_en, get_target_attributes
 from annofabcli.common.cli import CommandLineWithConfirm
 
 logger = logging.getLogger(__name__)
@@ -122,64 +122,6 @@ class AttributeRequiredMain(CommandLineWithConfirm):
         self.project_id = project_id
         CommandLineWithConfirm.__init__(self, all_yes)
 
-    def _get_target_attributes(
-        self,
-        *,
-        annotation_specs: dict[str, Any],
-        attribute_ids: Collection[str] | None,
-        attribute_name_ens: Collection[str] | None,
-    ) -> list[TargetAttribute]:
-        """
-        入力値から対象属性一覧を解決する。
-
-        Args:
-            annotation_specs: 最新のアノテーション仕様
-            attribute_ids: 対象属性ID一覧
-            attribute_name_ens: 対象属性名(英語)一覧
-
-        Returns:
-            解決済みの対象属性一覧
-
-        Raises:
-            ValueError: 引数の指定方法が不正な場合
-        """
-        if (attribute_ids is None) == (attribute_name_ens is None):
-            raise ValueError("対象属性は `attribute_id` または `attribute_name_en` のどちらか一方だけ指定してください。")
-
-        annotation_specs_accessor = AnnotationSpecsAccessor(annotation_specs)
-        result: list[TargetAttribute] = []
-        found_attribute_ids: set[str] = set()
-
-        if attribute_ids is not None:
-            for attribute_id in attribute_ids:
-                attribute = annotation_specs_accessor.get_attribute(attribute_id=attribute_id)
-                resolved_attribute_id = attribute["additional_data_definition_id"]
-                if resolved_attribute_id in found_attribute_ids:
-                    continue
-                found_attribute_ids.add(resolved_attribute_id)
-                result.append(
-                    TargetAttribute(
-                        attribute_id=resolved_attribute_id,
-                        attribute_name_en=get_attribute_name_en(attribute),
-                    )
-                )
-
-        if attribute_name_ens is not None:
-            for attribute_name_en in attribute_name_ens:
-                attribute = annotation_specs_accessor.get_attribute(attribute_name=attribute_name_en)
-                resolved_attribute_id = attribute["additional_data_definition_id"]
-                if resolved_attribute_id in found_attribute_ids:
-                    continue
-                found_attribute_ids.add(resolved_attribute_id)
-                result.append(
-                    TargetAttribute(
-                        attribute_id=resolved_attribute_id,
-                        attribute_name_en=get_attribute_name_en(attribute),
-                    )
-                )
-
-        return result
-
     def set_attribute_required(
         self,
         *,
@@ -199,11 +141,18 @@ class AttributeRequiredMain(CommandLineWithConfirm):
             更新を実行した場合はTrue、更新が不要または確認で中断した場合はFalse
         """
         old_annotation_specs, _ = self.service.api.get_annotation_specs(self.project_id, query_params={"v": "3"})
-        target_attributes = self._get_target_attributes(
-            annotation_specs=old_annotation_specs,
-            attribute_ids=attribute_ids,
-            attribute_name_ens=attribute_name_ens,
-        )
+        annotation_specs_accessor = AnnotationSpecsAccessor(old_annotation_specs)
+        target_attributes = [
+            TargetAttribute(
+                attribute_id=attribute["additional_data_definition_id"],
+                attribute_name_en=get_attribute_name_en(attribute),
+            )
+            for attribute in get_target_attributes(
+                annotation_specs_accessor,
+                attribute_ids=attribute_ids,
+                attribute_name_ens=attribute_name_ens,
+            )
+        ]
 
         existing_required_attribute_ids = {restriction["additional_data_definition_id"] for restriction in old_annotation_specs["restrictions"] if is_required_restriction(restriction)}
         target_attributes_to_add = []
@@ -250,11 +199,18 @@ class AttributeRequiredMain(CommandLineWithConfirm):
             更新を実行した場合はTrue、更新が不要または確認で中断した場合はFalse
         """
         old_annotation_specs, _ = self.service.api.get_annotation_specs(self.project_id, query_params={"v": "3"})
-        target_attributes = self._get_target_attributes(
-            annotation_specs=old_annotation_specs,
-            attribute_ids=attribute_ids,
-            attribute_name_ens=attribute_name_ens,
-        )
+        annotation_specs_accessor = AnnotationSpecsAccessor(old_annotation_specs)
+        target_attributes = [
+            TargetAttribute(
+                attribute_id=attribute["additional_data_definition_id"],
+                attribute_name_en=get_attribute_name_en(attribute),
+            )
+            for attribute in get_target_attributes(
+                annotation_specs_accessor,
+                attribute_ids=attribute_ids,
+                attribute_name_ens=attribute_name_ens,
+            )
+        ]
 
         existing_required_attribute_ids = {restriction["additional_data_definition_id"] for restriction in old_annotation_specs["restrictions"] if is_required_restriction(restriction)}
         target_attributes_to_remove = []

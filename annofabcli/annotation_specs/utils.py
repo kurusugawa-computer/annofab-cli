@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Collection, Sequence
 from typing import Any
 
 from annofabapi.util.annotation_specs import AnnotationSpecsAccessor, get_english_message
@@ -92,4 +92,50 @@ def get_target_labels(
 
     if len(result) == 0:
         raise ValueError("追加先のラベルを1件以上指定してください。")
+    return result
+
+
+def get_target_attributes(
+    annotation_specs_accessor: AnnotationSpecsAccessor,
+    *,
+    attribute_ids: Collection[str] | None,
+    attribute_name_ens: Collection[str] | None,
+) -> list[dict[str, Any]]:
+    """
+    CLI引数で指定された属性ID・属性名から対象属性一覧を取得する。
+
+    Args:
+        annotation_specs_accessor: アノテーション仕様アクセサ
+        attribute_ids: 指定された属性ID一覧。未指定時はNone
+        attribute_name_ens: 指定された属性英語名一覧。未指定時はNone
+
+    Returns:
+        重複を除いた対象属性一覧
+
+    Raises:
+        ValueError: 引数の指定方法が不正な場合、属性が見つからない場合、または属性名が曖昧な場合
+    """
+    if (attribute_ids is None) == (attribute_name_ens is None):
+        raise ValueError("対象属性は `attribute_id` または `attribute_name_en` のどちらか一方だけ指定してください。")
+
+    resolved_attribute_ids = [] if attribute_ids is None else list(attribute_ids)
+    resolved_attribute_name_ens = [] if attribute_name_ens is None else list(attribute_name_ens)
+
+    result = []
+    result_attribute_ids: set[str] = set()
+
+    for attribute_id in resolved_attribute_ids:
+        attribute = annotation_specs_accessor.get_attribute(attribute_id=attribute_id)
+        resolved_attribute_id = attribute["additional_data_definition_id"]
+        if resolved_attribute_id not in result_attribute_ids:
+            result.append(attribute)
+            result_attribute_ids.add(resolved_attribute_id)
+
+    for attribute_name_en in resolved_attribute_name_ens:
+        attribute = annotation_specs_accessor.get_attribute(attribute_name=attribute_name_en)
+        resolved_attribute_id = attribute["additional_data_definition_id"]
+        if resolved_attribute_id not in result_attribute_ids:
+            result.append(attribute)
+            result_attribute_ids.add(resolved_attribute_id)
+
     return result
