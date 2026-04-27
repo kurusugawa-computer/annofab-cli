@@ -4,6 +4,7 @@ import argparse
 import copy
 import logging
 from collections.abc import Mapping
+from typing import Any
 
 import annofabapi
 from annofabapi.util.annotation_specs import AnnotationSpecsAccessor
@@ -17,10 +18,12 @@ logger = logging.getLogger(__name__)
 
 SUPPORTED_ATTRIBUTE_TYPE_CONVERSIONS: Mapping[str, frozenset[str]] = {
     "choice": frozenset({"select"}),
+    "comment": frozenset({"text"}),
     "select": frozenset({"choice"}),
+    "text": frozenset({"comment"}),
 }
 """対応している属性種類の変換ルール。将来の変換追加はこの定数を更新する。
-現時点では、画面では変更できないchoice↔selectの変換のみサポートしています。
+現時点では、画面では変更できないchoice↔selectの変換と、既存利用があるtext↔commentの変換をサポートしています。
 他にも変換可能な組み合わせはありますが、画面から変更した方が簡単なので、CLIではサポートしていません。
 ただし、将来的にサポートする変換を増やす可能性はあります。
 """
@@ -79,6 +82,34 @@ class ChangeAttributeTypeMain(CommandLineWithConfirm):
         self.project_id = project_id
         CommandLineWithConfirm.__init__(self, all_yes)
 
+    def get_annotation_count_using_attribute(self, *, attribute_id: str, annotation_specs: dict[str, Any]) -> int:
+        """
+        指定した属性IDを実際に使っているアノテーション件数を取得する。
+
+        属性が紐づくラベルごとにアノテーションを取得し、各アノテーションの
+        ``additional_data_list`` に対象属性IDが含まれている件数を数える。
+
+        Args:
+            attribute_id: 件数を調べる対象属性ID
+            annotation_specs: 最新のアノテーション仕様
+
+        Returns:
+            属性値が設定されているアノテーション件数
+        """
+        target_label_ids = [label["label_id"] for label in annotation_specs["labels"] if attribute_id in label["additional_data_definitions"]]
+        if len(target_label_ids) == 0:
+            return 0
+
+        annotation_count = 0
+        for label_id in target_label_ids:
+            annotation_list = self.service.wrapper.get_all_annotation_list(
+                self.project_id,
+                query_params={"query": {"label_id": label_id}, "v": "2"},
+            )
+            annotation_count += sum(any(additional_data["definition_id"] == attribute_id for additional_data in annotation["detail"].get("additional_data_list", [])) for annotation in annotation_list)
+
+        return annotation_count
+
     def change_attribute_type(
         self,
         *,
@@ -116,7 +147,13 @@ class ChangeAttributeTypeMain(CommandLineWithConfirm):
 
         resolved_attribute_id = target_attribute["additional_data_definition_id"]
         resolved_attribute_name_en = get_attribute_name_en(target_attribute)
-        confirm_message = f"属性名(英語)='{resolved_attribute_name_en}', 属性ID='{resolved_attribute_id}' の属性種類を '{current_type}' から '{attribute_type}' に変更します。よろしいですか？"
+        annotation_count = self.get_annotation_count_using_attribute(attribute_id=resolved_attribute_id, annotation_specs=old_annotation_specs)
+        confirm_message = (
+            f"属性名(英語)='{resolved_attribute_name_en}', 属性ID='{resolved_attribute_id}' の属性種類を '{current_type}' から '{attribute_type}' に変更します。"
+            f"この属性値を設定しているアノテーションは {annotation_count} 件あります。"
+            "3次元エディタでは属性値が消えてしまう恐れがあります。"
+            "画像エディタ/動画エディタでは現時点では引き継がれます。よろしいですか？"
+        )
         if not self.confirm_processing(confirm_message):
             return False
 
