@@ -18,12 +18,10 @@ logger = logging.getLogger(__name__)
 
 SUPPORTED_ATTRIBUTE_TYPE_CONVERSIONS: Mapping[str, frozenset[str]] = {
     "choice": frozenset({"select"}),
-    "comment": frozenset({"text"}),
     "select": frozenset({"choice"}),
-    "text": frozenset({"comment"}),
 }
 """対応している属性種類の変換ルール。将来の変換追加はこの定数を更新する。
-現時点では、画面では変更できないchoice↔selectの変換と、既存利用があるtext↔commentの変換をサポートしています。
+現時点では、画面では変更できないchoice↔selectの変換のみサポートしています。
 他にも変換可能な組み合わせはありますが、画面から変更した方が簡単なので、CLIではサポートしていません。
 ただし、将来的にサポートする変換を増やす可能性はあります。
 """

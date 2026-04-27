@@ -97,24 +97,6 @@ class TestChangeAttributeTypeMain:
         assert "属性の種類を変更しました" in service.api.last_put["comment"]
         assert service.api.last_put["last_updated_datetime"] == "2026-04-24T00:00:00+09:00"
 
-    def test_change_attribute_type__comment_to_text(self, annotation_specs: dict) -> None:
-        service = DummyService(annotation_specs)
-        main = ChangeAttributeTypeMain(service, project_id="prj1", all_yes=True)  # type: ignore[arg-type]
-
-        main.change_attribute_type(
-            attribute_id=None,
-            attribute_name_en="comment",
-            attribute_type="text",
-            comment="custom",
-        )
-
-        assert service.api.last_put is not None
-        changed_attribute = next(additional for additional in service.api.last_put["additionals"] if additional["additional_data_definition_id"] == "54fa5e97-6f88-49a4-aeb0-a91a15d11528")
-        assert changed_attribute["type"] == "text"
-        assert changed_attribute["default"] == annotation_specs["additionals"][0]["default"]
-        assert changed_attribute["choices"] == annotation_specs["additionals"][0]["choices"]
-        assert service.api.last_put["comment"] == "custom"
-
     def test_change_attribute_type__confirm_message_contains_annotation_count_and_warning(self, annotation_specs: dict) -> None:
         service = DummyService(
             annotation_specs,
