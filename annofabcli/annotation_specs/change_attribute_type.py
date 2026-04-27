@@ -18,10 +18,12 @@ logger = logging.getLogger(__name__)
 SUPPORTED_ATTRIBUTE_TYPE_CONVERSIONS: Mapping[str, frozenset[str]] = {
     "choice": frozenset({"select"}),
     "select": frozenset({"choice"}),
-    "text": frozenset({"comment"}),
-    "comment": frozenset({"text"}),
 }
-"""対応している属性種類の変換ルール。将来の変換追加はこの定数を更新する。"""
+"""対応している属性種類の変換ルール。将来の変換追加はこの定数を更新する。
+現時点では、画面では変更できないchoice↔selectの変換のみサポートしています。
+他にも変換可能な組み合わせはありますが、画面から変更した方が簡単なので、CLIではサポートしていません。
+ただし、将来的にサポートする変換を増やす可能性はあります。
+"""
 
 SUPPORTED_ATTRIBUTE_TYPES = sorted(set(SUPPORTED_ATTRIBUTE_TYPE_CONVERSIONS) | {target for targets in SUPPORTED_ATTRIBUTE_TYPE_CONVERSIONS.values() for target in targets})
 """変換先として指定できる属性種類一覧。"""
@@ -39,7 +41,7 @@ def validate_attribute_type_conversion(*, current_type: str, target_type: str) -
         ValueError: 同一種類への変更、または未対応の変換が指定された場合
     """
     if current_type == target_type:
-        raise ValueError("現在の属性種類と変更後の属性種類が同じです。")
+        raise ValueError(f"現在の属性種類と変更後の属性種類が同じです。 :: current_type='{current_type}', target_type='{target_type}'")
 
     allowed_target_types = SUPPORTED_ATTRIBUTE_TYPE_CONVERSIONS.get(current_type, frozenset())
     if target_type not in allowed_target_types:
@@ -170,12 +172,12 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     attribute_group.add_argument(
         "--attribute_name_en",
         type=str,
-        help="種類を変更する対象属性の英語名。1個のみ指定できます。",
+        help="種類を変更する対象属性の英語名。",
     )
     attribute_group.add_argument(
         "--attribute_id",
         type=str,
-        help="種類を変更する対象属性の属性ID。1個のみ指定できます。",
+        help="種類を変更する対象属性の属性ID。",
     )
 
     parser.add_argument(
