@@ -35,6 +35,8 @@ Available Commands
    list_attribute_restriction
    list_label_color
    put_label_color
+   set_attribute_required
+   unset_attribute_required
    update_label_field_values
 
 
