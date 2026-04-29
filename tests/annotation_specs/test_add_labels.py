@@ -9,6 +9,7 @@ import pandas
 import pytest
 
 from annofabcli.annotation_specs import add_labels
+from annofabcli.annotation_specs.add_label import DEFAULT_SEGMENTATION_FIELD_VALUES
 from annofabcli.annotation_specs.add_labels import (
     AddLabelsMain,
     LabelInput,
@@ -160,6 +161,21 @@ class TestAddLabelsMain:
 
         assert result is False
         assert service.api.last_put is None
+
+    def test_add_labels__segmentation_has_default_field_values(self, annotation_specs: dict) -> None:
+        service = DummyService(annotation_specs)
+        main = AddLabelsMain(service, project_id="prj1", all_yes=True)  # type: ignore[arg-type]
+
+        main.add_labels(
+            label_inputs=[LabelInput(label_name_en="road"), LabelInput(label_name_en="sidewalk")],
+            annotation_type="segmentation_v2",
+            comment=None,
+        )
+
+        assert service.api.last_put is not None
+        added_labels = service.api.last_put["labels"][-2:]
+        assert added_labels[0]["field_values"] == DEFAULT_SEGMENTATION_FIELD_VALUES
+        assert added_labels[1]["field_values"] == DEFAULT_SEGMENTATION_FIELD_VALUES
 
 
 class TestReadLabels:

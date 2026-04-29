@@ -9,7 +9,12 @@ from pathlib import Path
 import pytest
 
 from annofabcli.annotation_specs import add_label
-from annofabcli.annotation_specs.add_label import AUTO_COLOR_PALETTE_HEX, AddLabelMain, create_auto_color
+from annofabcli.annotation_specs.add_label import (
+    AUTO_COLOR_PALETTE_HEX,
+    DEFAULT_SEGMENTATION_FIELD_VALUES,
+    AddLabelMain,
+    create_auto_color,
+)
 from annofabcli.annotation_specs.color import RgbColor, hex_to_rgb
 
 data_dir = Path("./tests/data/annotation_specs")
@@ -179,6 +184,81 @@ class TestAddLabelMain:
             "display_name": {
                 "_type": "DisplayName",
                 "text": "歩行者",
+            }
+        }
+
+    def test_add_label__segmentation_has_default_field_values(self, annotation_specs: dict) -> None:
+        service = DummyService(annotation_specs)
+        main = AddLabelMain(service, project_id="prj1", all_yes=True)  # type: ignore[arg-type]
+
+        main.add_label(
+            label_name_en="road",
+            annotation_type="segmentation",
+            label_id="road_label_id",
+            label_name_ja=None,
+            color_code="#00CCFF",
+            field_values=None,
+            comment=None,
+        )
+
+        assert service.api.last_put is not None
+        added_label = service.api.last_put["labels"][-1]
+        assert added_label["field_values"] == DEFAULT_SEGMENTATION_FIELD_VALUES
+
+    def test_add_label__segmentation_v2_merges_default_field_values(self, annotation_specs: dict) -> None:
+        service = DummyService(annotation_specs)
+        main = AddLabelMain(service, project_id="prj1", all_yes=True)  # type: ignore[arg-type]
+
+        main.add_label(
+            label_name_en="road",
+            annotation_type="segmentation_v2",
+            label_id="road_label_id",
+            label_name_ja=None,
+            color_code="#00CCFF",
+            field_values={
+                "display_name": {
+                    "_type": "DisplayName",
+                    "text": "路面",
+                }
+            },
+            comment=None,
+        )
+
+        assert service.api.last_put is not None
+        added_label = service.api.last_put["labels"][-1]
+        assert added_label["field_values"] == {
+            **DEFAULT_SEGMENTATION_FIELD_VALUES,
+            "display_name": {
+                "_type": "DisplayName",
+                "text": "路面",
+            },
+        }
+
+    def test_add_label__segmentation_overwrites_annotation_editor_feature(self, annotation_specs: dict) -> None:
+        service = DummyService(annotation_specs)
+        main = AddLabelMain(service, project_id="prj1", all_yes=True)  # type: ignore[arg-type]
+
+        main.add_label(
+            label_name_en="road",
+            annotation_type="segmentation",
+            label_id="road_label_id",
+            label_name_ja=None,
+            color_code="#00CCFF",
+            field_values={
+                "annotation_editor_feature": {
+                    "_type": "AnnotationEditorFeature",
+                    "append": False,
+                }
+            },
+            comment=None,
+        )
+
+        assert service.api.last_put is not None
+        added_label = service.api.last_put["labels"][-1]
+        assert added_label["field_values"] == {
+            "annotation_editor_feature": {
+                "_type": "AnnotationEditorFeature",
+                "append": False,
             }
         }
 
