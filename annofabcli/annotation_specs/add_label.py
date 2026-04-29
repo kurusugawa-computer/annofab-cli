@@ -102,6 +102,27 @@ AUTO_COLOR_PALETTE_HEX: list[str] = [
 """自動色選択で優先する高彩度のカラーパレット。"""
 
 
+SEGMENTATION_ANNOTATION_TYPES = {
+    DefaultAnnotationType.SEGMENTATION.value,
+    DefaultAnnotationType.SEGMENTATION_V2.value,
+}
+"""柔軟な編集用の既定 field_values を適用するアノテーション種類。"""
+
+
+DEFAULT_SEGMENTATION_FIELD_VALUES: dict[str, Any] = {
+    "annotation_editor_feature": {
+        "_type": "AnnotationEditorFeature",
+        "append": True,
+        "erase": True,
+        "fill_near": True,
+        "freehand": True,
+        "polygon_fill": True,
+        "rectangle_fill": True,
+    }
+}
+"""セグメンテーション系ラベルに対して既定で付与する field_values。"""
+
+
 def create_comment_from_label(label_name_en: str) -> str:
     """
     ラベル追加時のデフォルトコメントを生成する。
@@ -114,6 +135,33 @@ def create_comment_from_label(label_name_en: str) -> str:
         アノテーション仕様変更コメント
     """
     return f"以下のラベルを追加しました。\nラベル名(英語): {label_name_en}"
+
+
+def create_label_field_values(*, annotation_type: str, field_values: dict[str, Any] | None) -> dict[str, Any]:
+    """
+    ラベル追加時に設定する field_values を生成する。
+
+    Args:
+        annotation_type: ラベルのアノテーション種類
+        field_values: 入力された field_values
+
+    Returns:
+        新規ラベルに設定する field_values
+    """
+    actual_field_values = copy.deepcopy(field_values) if field_values is not None else {}
+    if annotation_type not in SEGMENTATION_ANNOTATION_TYPES:
+        return actual_field_values
+
+    merged_field_values = copy.deepcopy(DEFAULT_SEGMENTATION_FIELD_VALUES)
+    for key, value in actual_field_values.items():
+        if key == "annotation_editor_feature" and isinstance(value, dict):
+            merged_annotation_editor_feature = copy.deepcopy(DEFAULT_SEGMENTATION_FIELD_VALUES["annotation_editor_feature"])
+            merged_annotation_editor_feature.update(value)
+            merged_field_values[key] = merged_annotation_editor_feature
+            continue
+
+        merged_field_values[key] = value
+    return merged_field_values
 
 
 def validate_new_label(labels: Collection[dict[str, Any]], *, label_id: str, label_name_en: str) -> None:
@@ -221,7 +269,7 @@ def create_new_label(
         "color": color,
         # 以下はキーが存在しないとAPIエラーになるため、空の値を入れておく
         "keybind": [],
-        "field_values": copy.deepcopy(field_values) if field_values is not None else {},
+        "field_values": create_label_field_values(annotation_type=annotation_type, field_values=field_values),
         "additional_data_definitions": [],
     }
 
