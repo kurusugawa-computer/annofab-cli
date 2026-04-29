@@ -153,14 +153,7 @@ def create_label_field_values(*, annotation_type: str, field_values: dict[str, A
         return actual_field_values
 
     merged_field_values = copy.deepcopy(DEFAULT_SEGMENTATION_FIELD_VALUES)
-    for key, value in actual_field_values.items():
-        if key == "annotation_editor_feature" and isinstance(value, dict):
-            merged_annotation_editor_feature = copy.deepcopy(DEFAULT_SEGMENTATION_FIELD_VALUES["annotation_editor_feature"])
-            merged_annotation_editor_feature.update(value)
-            merged_field_values[key] = merged_annotation_editor_feature
-            continue
-
-        merged_field_values[key] = value
+    merged_field_values.update(actual_field_values)
     return merged_field_values
 
 

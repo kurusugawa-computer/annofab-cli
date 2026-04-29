@@ -234,7 +234,7 @@ class TestAddLabelMain:
             },
         }
 
-    def test_add_label__segmentation_merges_partial_annotation_editor_feature(self, annotation_specs: dict) -> None:
+    def test_add_label__segmentation_overwrites_annotation_editor_feature(self, annotation_specs: dict) -> None:
         service = DummyService(annotation_specs)
         main = AddLabelMain(service, project_id="prj1", all_yes=True)  # type: ignore[arg-type]
 
@@ -259,11 +259,6 @@ class TestAddLabelMain:
             "annotation_editor_feature": {
                 "_type": "AnnotationEditorFeature",
                 "append": False,
-                "erase": True,
-                "fill_near": True,
-                "freehand": True,
-                "polygon_fill": True,
-                "rectangle_fill": True,
             }
         }
 
