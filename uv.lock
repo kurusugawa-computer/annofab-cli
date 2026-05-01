@@ -40,7 +40,7 @@ wheels = [
 
 [[package]]
 name = "annofabapi"
-version = "1.5.3"
+version = "1.6.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "backoff" },
@@ -51,9 +51,9 @@ dependencies = [
     { name = "python-dateutil" },
     { name = "requests" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/20/f6/9ef369bc1a9c964572a5474cd5779a81902759057755fbf6787a06461318/annofabapi-1.5.3.tar.gz", hash = "sha256:9d02fd5a7206e2a6d5d22ad253eab5c3db13980e43f116c4be121f8d9f6bf5c4", size = 513551, upload-time = "2026-03-12T03:54:39.003Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/a3/7c/1ffd090d8445a30991c1247508d0d95b813c8cee429f3551c4b5ca403a0c/annofabapi-1.6.0.tar.gz", hash = "sha256:6c9b2535c0572d7a4dfc2759711fcb417002e523aae9488073da846e6740821d", size = 529126, upload-time = "2026-04-29T01:49:02.094Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/a0/70/581c7a85ef29dc643a9e9f84d26a13314c4dd79c8f619dccef09d24a94d3/annofabapi-1.5.3-py3-none-any.whl", hash = "sha256:a1e0b08c35134dce9f95b9b57b90fefd180ad38e02ffbe7c173132336414bffe", size = 797293, upload-time = "2026-03-12T03:54:37.586Z" },
+    { url = "https://files.pythonhosted.org/packages/c3/c4/95a86606d81e29bd31c7df626f91f0e0dcfb6182dd88eddaab2df5c03c87/annofabapi-1.6.0-py3-none-any.whl", hash = "sha256:2812f7b6e6c1e8f3d3a1e8ab05c90bda6c77fed04007d5a7a41551aacc6cf19e", size = 803755, upload-time = "2026-04-29T01:49:00.075Z" },
 ]
 
 [[package]]
