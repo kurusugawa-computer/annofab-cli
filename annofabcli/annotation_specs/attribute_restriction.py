@@ -3,9 +3,8 @@ from collections.abc import Collection
 from enum import Enum
 from typing import Any
 
+from annofabapi.util.annotation_specs import get_attribute_name_en, get_choice_name_en, get_label_name_en
 from more_itertools import first_true
-
-from annofabcli.common.facade import AnnofabApiFacade
 
 logger = logging.getLogger(__name__)
 
@@ -59,7 +58,7 @@ class AttributeRestrictionMessage:
         for label_id in label_ids:
             label = self.label_dict.get(label_id)
             if label is not None:
-                label_name = AnnofabApiFacade.get_label_name_en(label)
+                label_name = get_label_name_en(label)
             else:
                 logger.warning(f"ラベルIDが'{label_id}'であるラベルは存在しません。")
                 if self.raise_if_not_found:
@@ -94,18 +93,14 @@ class AttributeRestrictionMessage:
             choice = first_true(choices, pred=lambda e: e["choice_id"] == value)
             if value == "" or choice is not None:
                 # `value == ""`を判定条件に加える理由：「排他選択属性が空である/空でない」という制約の場合、`value`は空文字列になるため。
-                choice_name = AnnofabApiFacade.get_choice_name_en(choice) if choice is not None else ""
+                choice_name = get_choice_name_en(choice) if choice is not None else ""
                 tmp = f"'{choice_name}'"
                 if self.output_format == OutputFormat.DETAILED_TEXT:
                     tmp = f"{tmp} (id='{value}')"
                 return tmp
 
             else:
-                message = (
-                    f"選択肢IDが'{value}'である選択肢は存在しません。 :: "
-                    f"属性名='{AnnofabApiFacade.get_additional_data_definition_name_en(attribute)}', "
-                    f"属性ID='{attribute['additional_data_definition_id']}'"
-                )
+                message = f"選択肢IDが'{value}'である選択肢は存在しません。 :: 属性名='{get_attribute_name_en(attribute)}', 属性ID='{attribute['additional_data_definition_id']}'"
                 logger.warning(message)
                 if self.raise_if_not_found:
                     raise ValueError(message)
@@ -134,7 +129,7 @@ class AttributeRestrictionMessage:
 
         attribute = self.attribute_dict.get(attribute_id)
         if attribute is not None:
-            subject = f"'{AnnofabApiFacade.get_additional_data_definition_name_en(attribute)}'"
+            subject = f"'{get_attribute_name_en(attribute)}'"
             if self.output_format == OutputFormat.DETAILED_TEXT:
                 subject = f"{subject} (id='{attribute_id}', type='{attribute['type']}')"
         else:
@@ -178,7 +173,7 @@ class AttributeRestrictionMessage:
         return tmp
 
     def get_attribute_from_name(self, attribute_name: str) -> dict[str, Any] | None:
-        tmp = [attribute for attribute in self.attribute_dict.values() if AnnofabApiFacade.get_additional_data_definition_name_en(attribute) == attribute_name]
+        tmp = [attribute for attribute in self.attribute_dict.values() if get_attribute_name_en(attribute) == attribute_name]
         if len(tmp) == 1:
             return tmp[0]
         elif len(tmp) == 0:
@@ -189,7 +184,7 @@ class AttributeRestrictionMessage:
             return None
 
     def get_label_from_name(self, label_name: str) -> dict[str, Any] | None:
-        tmp = [label for label in self.label_dict.values() if AnnofabApiFacade.get_label_name_en(label) == label_name]
+        tmp = [label for label in self.label_dict.values() if get_label_name_en(label) == label_name]
         if len(tmp) == 1:
             return tmp[0]
         elif len(tmp) == 0:

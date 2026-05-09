@@ -6,6 +6,8 @@ import argparse
 import logging
 from typing import Any
 
+from annofabapi.util.annotation_specs import get_label_name_en
+
 import annofabcli.common.cli
 from annofabcli.common.cli import (
     ArgumentParser,
@@ -36,7 +38,7 @@ class PrintLabelColor(CommandLine):
         annotation_specs, _ = self.service.api.get_annotation_specs(project_id, query_params={"v": "3"})
         labels = annotation_specs["labels"]
 
-        label_color_dict = {self.facade.get_label_name_en(label): self.get_rgb(label) for label in labels}
+        label_color_dict = {get_label_name_en(label): self.get_rgb(label) for label in labels}
 
         self.print_according_to_format(label_color_dict)
 
