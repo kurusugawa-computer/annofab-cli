@@ -5,7 +5,7 @@ import sys
 import tempfile
 from enum import Enum
 from pathlib import Path
-from typing import Any
+from typing import Any, assert_never
 
 import isodate
 import pandas
@@ -22,7 +22,6 @@ from annofabcli.common.cli import (
 )
 from annofabcli.common.download import DownloadingFile
 from annofabcli.common.facade import AnnofabApiFacade
-from annofabcli.common.type_util import assert_noreturn
 
 logger = logging.getLogger(__name__)
 
@@ -173,7 +172,7 @@ def get_step_for_current_phase(task: Task, number_of_inspections: int) -> int:
             return number_of_rejections_by_inspection + number_of_rejections_by_acceptance + 1
 
         case _ as unreachable:
-            assert_noreturn(unreachable)
+            assert_never(unreachable)
 
 
 def create_df_task(
@@ -268,7 +267,7 @@ def aggregate_df(df: pandas.DataFrame, metadata_keys: list[str] | None = None, u
         case AggregationUnit.VIDEO_DURATION_MINUTE:
             df["_aggregate_value"] = df["video_duration_minute"]
         case _ as unreachable:
-            assert_noreturn(unreachable)
+            assert_never(unreachable)
 
     index_columns = ["phase", *metadata_columns]
     # `dropna=False`を指定する理由: メタデータの値はNAである可能性があるため

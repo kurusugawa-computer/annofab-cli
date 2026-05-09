@@ -1,11 +1,9 @@
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any
+from typing import Any, assert_never
 
 from annofabapi.pydantic_models.task_phase import TaskPhase
 from annofabapi.pydantic_models.task_status import TaskStatus
-
-from annofabcli.common.type_util import assert_noreturn
 
 
 class WorktimeColumn(Enum):
@@ -71,4 +69,4 @@ class TaskCompletionCriteria(Enum):
             return task["work_time_span"] > 0
 
         else:
-            assert_noreturn(self)
+            assert_never(self)
