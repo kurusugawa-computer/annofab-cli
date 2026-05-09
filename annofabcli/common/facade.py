@@ -254,24 +254,6 @@ class AnnofabApiFacade:
         self.service = service
 
     @staticmethod
-    def get_account_id_last_annotation_phase(task_histories: list[dict[str, Any]]) -> str | None:
-        """
-        タスク履歴の最後のannotation phaseを担当したaccount_idを取得する. なければNoneを返す
-        Args:
-            task_histories:
-
-        Returns:
-
-
-        """
-        annotation_histories = [e for e in task_histories if e["phase"] == "annotation"]
-        if len(annotation_histories) > 0:
-            last_history = annotation_histories[-1]
-            return last_history["account_id"]
-        else:
-            return None
-
-    @staticmethod
     def get_label_name_en(label: dict[str, Any]) -> str:
         """label情報から英語名を取得する"""
         label_name_messages = label["label_name"]["messages"]
