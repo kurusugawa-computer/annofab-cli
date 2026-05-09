@@ -85,7 +85,7 @@ def get_metadata_from_json_args(metadata_value: str | None) -> Metadata:
     if metadata_value is None:
         return {}
 
-    return validate_metadata(get_json_from_args(metadata_value), target_name="引数'--metadata'")
+    return get_json_from_args(metadata_value)
 
 
 def get_task_creation_info_list_from_task_relation_dict(
