@@ -316,7 +316,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
 def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "put"
     subcommand_help = "[DEPRECATED] タスクを作成します。"
-    description = f"{subcommand_help}\n`task put` コマンドは非推奨です。代わりに `task create` コマンドを使用してください。 `task put` コマンドは2027年01月01日以降に廃止予定です。"
+    description = f"{subcommand_help}\n{DEPRECATED_MESSAGE}"
     epilog = "オーナロールを持つユーザで実行してください。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
