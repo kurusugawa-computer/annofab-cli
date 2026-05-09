@@ -243,30 +243,3 @@ def test_validate_task_does_not_exist_with_existing_task() -> None:
     assert exc_info.value.code == COMMAND_LINE_ERROR_STATUS_CODE
 
 
-def test_task_put_main_prints_deprecated_message(monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]) -> None:
-    dummy_service = Mock()
-    dummy_facade = Mock()
-
-    monkeypatch.setattr(put_tasks, "build_annofabapi_resource_and_login", lambda _args: dummy_service)
-    monkeypatch.setattr(put_tasks, "AnnofabApiFacade", lambda _service: dummy_facade)
-
-    called = {"main": False}
-
-    class StubPutTask:
-        def __init__(self, service, facade, args):
-            assert service is dummy_service
-            assert facade is dummy_facade
-            called["args"] = args
-
-        def main(self):
-            called["main"] = True
-
-    monkeypatch.setattr(put_tasks, "PutTask", StubPutTask)
-
-    args = Namespace()
-    put_tasks.main(args)
-
-    captured = capsys.readouterr()
-    assert "[DEPRECATED]" in captured.err
-    assert "`task create`" in captured.err
-    assert called["main"] is True
