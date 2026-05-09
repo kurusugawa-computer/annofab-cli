@@ -58,6 +58,21 @@ def test_get_task_creation_info_dict_from_task_relation_dict() -> None:
     }
 
 
+def test_get_task_creation_info_dict_from_task_relation_dict_with_common_user_id() -> None:
+    actual = create_tasks.get_task_creation_info_dict_from_task_relation_dict(
+        {"task_001": ["input_data_001", "input_data_002"]},
+        common_user_id="alice",
+    )
+
+    assert actual == {
+        "task_001": create_tasks.TaskCreationInfo(
+            input_data_id_list=["input_data_001", "input_data_002"],
+            metadata={},
+            user_id="alice",
+        )
+    }
+
+
 def test_get_metadata_from_json_args() -> None:
     actual = create_tasks.get_metadata_from_json_args('{"priority":1,"category":"foo","required":true}')
 
@@ -79,6 +94,7 @@ def test_get_task_creation_info_dict_from_json_args() -> None:
                 "task_id": "task_001",
                 "input_data_id_list": ["input_data_001", "input_data_002"],
                 "metadata": {"priority": 2},
+                "user_id": "alice",
                 "status": "not_started"
             },
             {
@@ -94,10 +110,34 @@ def test_get_task_creation_info_dict_from_json_args() -> None:
         "task_001": create_tasks.TaskCreationInfo(
             input_data_id_list=["input_data_001", "input_data_002"],
             metadata={"priority": 2, "category": "foo"},
+            user_id="alice",
         ),
         "task_002": create_tasks.TaskCreationInfo(
             input_data_id_list=["input_data_003"],
             metadata={"priority": 1, "category": "foo"},
+        ),
+    }
+
+
+def test_get_task_creation_info_dict_from_json_args_with_common_user_id() -> None:
+    actual = create_tasks.get_task_creation_info_dict_from_json_args(
+        """
+        [
+            {
+                "task_id": "task_001",
+                "input_data_id_list": ["input_data_001"],
+                "user_id": null
+            }
+        ]
+        """,
+        common_user_id="alice",
+    )
+
+    assert actual == {
+        "task_001": create_tasks.TaskCreationInfo(
+            input_data_id_list=["input_data_001"],
+            metadata={},
+            user_id="alice",
         ),
     }
 
@@ -119,6 +159,86 @@ def test_get_task_creation_info_dict_from_json_args_with_missing_input_data_id_l
 def test_get_task_creation_info_dict_from_json_args_with_invalid_metadata() -> None:
     with pytest.raises(SystemExit) as exc_info:
         create_tasks.get_task_creation_info_dict_from_json_args('[{"task_id": "task_001", "input_data_id_list": ["input_data_001"], "metadata": {"foo": null}}]')
+
+    assert exc_info.value.code == COMMAND_LINE_ERROR_STATUS_CODE
+
+
+def test_get_task_creation_info_dict_from_json_args_with_duplicate_task_id() -> None:
+    with pytest.raises(SystemExit) as exc_info:
+        create_tasks.get_task_creation_info_dict_from_json_args(
+            """
+            [
+                {"task_id": "task_001", "input_data_id_list": ["input_data_001"]},
+                {"task_id": "task_001", "input_data_id_list": ["input_data_002"]}
+            ]
+            """
+        )
+
+    assert exc_info.value.code == COMMAND_LINE_ERROR_STATUS_CODE
+
+
+def test_get_task_creation_info_dict_from_json_args_with_invalid_user_id() -> None:
+    with pytest.raises(SystemExit) as exc_info:
+        create_tasks.get_task_creation_info_dict_from_json_args('[{"task_id": "task_001", "input_data_id_list": ["input_data_001"], "user_id": 1}]')
+
+    assert exc_info.value.code == COMMAND_LINE_ERROR_STATUS_CODE
+
+
+def test_create_task_with_user_id() -> None:
+    service = Mock()
+    service.wrapper.get_task_or_none.return_value = None
+    main_obj = create_tasks.CreateTaskMain(service, project_id="project1", parallelism=None)
+    main_obj.facade = Mock()
+    main_obj.facade.get_account_id_from_user_id.return_value = "account1"
+
+    result = main_obj.create_task(
+        "task_001",
+        create_tasks.TaskCreationInfo(
+            input_data_id_list=["input_data_001"],
+            metadata={},
+            user_id="alice",
+        ),
+    )
+
+    assert result is True
+    service.api.put_task.assert_called_once_with("project1", "task_001", request_body={"input_data_id_list": ["input_data_001"]})
+    service.wrapper.change_task_operator.assert_called_once_with("project1", "task_001", operator_account_id="account1")
+
+
+def test_validate_user_id_with_not_project_member() -> None:
+    service = Mock()
+    main_obj = create_tasks.CreateTaskMain(service, project_id="project1", parallelism=None)
+    main_obj.facade = Mock()
+    main_obj.facade.get_account_id_from_user_id.return_value = None
+
+    with pytest.raises(SystemExit) as exc_info:
+        main_obj.validate_user_id(
+            {
+                "task_001": create_tasks.TaskCreationInfo(
+                    input_data_id_list=["input_data_001"],
+                    metadata={},
+                    user_id="alice",
+                ),
+            }
+        )
+
+    assert exc_info.value.code == COMMAND_LINE_ERROR_STATUS_CODE
+
+
+def test_validate_task_does_not_exist_with_existing_task() -> None:
+    service = Mock()
+    service.wrapper.get_task_or_none.return_value = {"task_id": "task_001"}
+    main_obj = create_tasks.CreateTaskMain(service, project_id="project1", parallelism=None)
+
+    with pytest.raises(SystemExit) as exc_info:
+        main_obj.validate_task_does_not_exist(
+            {
+                "task_001": create_tasks.TaskCreationInfo(
+                    input_data_id_list=["input_data_001"],
+                    metadata={},
+                ),
+            }
+        )
 
     assert exc_info.value.code == COMMAND_LINE_ERROR_STATUS_CODE
 

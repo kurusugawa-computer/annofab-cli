@@ -42,6 +42,7 @@ class TaskCreationInfo:
 
     input_data_id_list: list[str]
     metadata: Metadata
+    user_id: str | None = None
 
 
 TaskCreationInfoDict = dict[str, TaskCreationInfo]
@@ -52,6 +53,13 @@ def print_json_error_and_exit(message: str) -> NoReturn:
     """JSON形式のエラーメッセージを出力して、コマンドラインエラーとして終了します。"""
 
     print(f"annofabcli task create: error: JSON形式が不正です。{message}", file=sys.stderr)  # noqa: T201
+    sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
+
+
+def print_error_and_exit(message: str) -> NoReturn:
+    """エラーメッセージを出力して、コマンドラインエラーとして終了します。"""
+
+    print(f"annofabcli task create: error: {message}", file=sys.stderr)  # noqa: T201
     sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
 
@@ -118,7 +126,12 @@ def get_metadata_from_json_args(metadata_value: str | None) -> Metadata:
     return validate_metadata(get_json_from_args(metadata_value), target_name="引数'--metadata'")
 
 
-def get_task_creation_info_dict_from_task_relation_dict(task_relation_dict: TaskInputRelation, *, common_metadata: Metadata | None = None) -> TaskCreationInfoDict:
+def get_task_creation_info_dict_from_task_relation_dict(
+    task_relation_dict: TaskInputRelation,
+    *,
+    common_metadata: Metadata | None = None,
+    common_user_id: str | None = None,
+) -> TaskCreationInfoDict:
     """task_idとinput_data_idの関係を表すdictから、タスク作成情報のdictを取得します。"""
 
     common_metadata = common_metadata or {}
@@ -126,17 +139,24 @@ def get_task_creation_info_dict_from_task_relation_dict(task_relation_dict: Task
         task_id: TaskCreationInfo(
             input_data_id_list=input_data_id_list,
             metadata=common_metadata,
+            user_id=common_user_id,
         )
         for task_id, input_data_id_list in task_relation_dict.items()
     }
 
 
-def get_task_creation_info_dict_from_json_args(json_value: str, *, common_metadata: Metadata | None = None) -> TaskCreationInfoDict:
+def get_task_creation_info_dict_from_json_args(
+    json_value: str,
+    *,
+    common_metadata: Metadata | None = None,
+    common_user_id: str | None = None,
+) -> TaskCreationInfoDict:
     """JSON引数からタスク作成情報のdictを取得します。
 
     Args:
         json_value: `task list --format json` と同じ形式のJSON文字列、またはJSONファイルのパス
         common_metadata: 全タスク共通のメタデータ
+        common_user_id: 全タスク共通の担当者のuser_id
 
     Returns:
         keyがtask_id, valueがタスク作成情報であるdict
@@ -165,12 +185,15 @@ def get_task_creation_info_dict_from_json_args(json_value: str, *, common_metada
             **common_metadata,
             **task_metadata,
         }
+        json_user_id = task.get("user_id")
+        if json_user_id is not None and not isinstance(json_user_id, str):
+            print_json_error_and_exit(f"{index + 1}番目の要素の'user_id'には文字列を指定してください。")
+        task_user_id = json_user_id or common_user_id
 
         if task_id in result:
-            result[task_id].input_data_id_list.extend(input_data_id_list)
-            result[task_id].metadata.update(task_metadata)
+            print_json_error_and_exit(f"{index + 1}番目の要素の'task_id'が重複しています。 :: task_id='{task_id}'")
         else:
-            result[task_id] = TaskCreationInfo(input_data_id_list=input_data_id_list, metadata=metadata)
+            result[task_id] = TaskCreationInfo(input_data_id_list=input_data_id_list, metadata=metadata, user_id=task_user_id)
 
     return result
 
@@ -187,18 +210,51 @@ class CreateTaskMain:
         self.facade = AnnofabApiFacade(service)
         self.project_id = project_id
         self.parallelism = parallelism
+        self.account_id_cache: dict[str, str] = {}
+
+    def get_account_id_from_user_id(self, user_id: str) -> str:
+        """user_idからaccount_idを取得します。"""
+
+        account_id = self.account_id_cache.get(user_id)
+        if account_id is not None:
+            return account_id
+
+        account_id = self.facade.get_account_id_from_user_id(self.project_id, user_id)
+        if account_id is None:
+            print_error_and_exit(f"user_id='{user_id}'であるユーザーは、project_id='{self.project_id}'のプロジェクトメンバーではありません。")
+
+        self.account_id_cache[user_id] = account_id
+        return account_id
+
+    def validate_task_does_not_exist(self, task_creation_info_dict: TaskCreationInfoDict) -> None:
+        """作成対象のタスクが存在しないことを確認します。"""
+
+        existing_task_id_list = [task_id for task_id in task_creation_info_dict if self.service.wrapper.get_task_or_none(self.project_id, task_id) is not None]
+        if len(existing_task_id_list) > 0:
+            print_error_and_exit(f"以下のタスクはすでに存在します。 :: task_id={existing_task_id_list}")
+
+    def validate_user_id(self, task_creation_info_dict: TaskCreationInfoDict) -> None:
+        """指定されたuser_idがプロジェクトメンバーであることを確認します。"""
+
+        user_id_set = {info.user_id for info in task_creation_info_dict.values() if info.user_id is not None}
+        for user_id in sorted(user_id_set):
+            self.get_account_id_from_user_id(user_id)
 
     def create_task(self, task_id: str, task_creation_info: TaskCreationInfo) -> bool:
         task = self.service.wrapper.get_task_or_none(self.project_id, task_id)
         if task is not None:
-            logger.warning(f"タスク'{task_id}'はすでに存在するため、登録をスキップします。")
-            return False
+            raise ValueError(f"タスク'{task_id}'はすでに存在します。")
 
         # タスクを上書きしない理由：タスクを上書きすると、タスクに紐づくアノテーションまで消えてしまう恐れがあるため
         request_body: dict[str, list[str] | Metadata] = {"input_data_id_list": task_creation_info.input_data_id_list}
         if len(task_creation_info.metadata) > 0:
             request_body["metadata"] = task_creation_info.metadata
         self.service.api.put_task(self.project_id, task_id, request_body=request_body)
+
+        if task_creation_info.user_id is not None:
+            account_id = self.get_account_id_from_user_id(task_creation_info.user_id)
+            self.service.wrapper.change_task_operator(self.project_id, task_id, operator_account_id=account_id)
+
         logger.debug(f"タスク'{task_id}'を登録しました。")
         return True
 
@@ -212,6 +268,9 @@ class CreateTaskMain:
 
     def create_task_list(self, task_creation_info_dict: TaskCreationInfoDict) -> None:
         logger.debug("'put_task' WebAPIを用いてタスクを生成します。")
+        self.validate_task_does_not_exist(task_creation_info_dict)
+        self.validate_user_id(task_creation_info_dict)
+
         success_count = 0
         if self.parallelism is None:
             for task_id, task_creation_info in task_creation_info_dict.items():
@@ -245,10 +304,10 @@ class CreateTask(CommandLine):
 
         if args.csv is not None:
             task_relation_dict_from_csv = get_task_relation_dict(args.csv)
-            main_obj.create_task_list(get_task_creation_info_dict_from_task_relation_dict(task_relation_dict_from_csv, common_metadata=common_metadata))
+            main_obj.create_task_list(get_task_creation_info_dict_from_task_relation_dict(task_relation_dict_from_csv, common_metadata=common_metadata, common_user_id=args.user_id))
 
         elif args.json is not None:
-            task_creation_info_dict_from_json = get_task_creation_info_dict_from_json_args(args.json, common_metadata=common_metadata)
+            task_creation_info_dict_from_json = get_task_creation_info_dict_from_json_args(args.json, common_metadata=common_metadata, common_user_id=args.user_id)
             main_obj.create_task_list(task_creation_info_dict_from_json)
 
 
@@ -279,7 +338,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         help=(
             "タスクに割り当てる入力データをJSON形式で指定してください。"
             "`task list --format json` と同じ形式です。"
-            "`task_id` と `input_data_id_list` と `metadata` キーを参照し、それ以外のキーは無視します。\n"
+            "`task_id` と `input_data_id_list` と `metadata` と `user_id` キーを参照し、それ以外のキーは無視します。\n"
             f"(ex) ``{json_sample}`` \n"
             "``file://`` を先頭に付けるとjsonファイルを指定できます。"
         ),
@@ -292,6 +351,8 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         " ``file://`` を先頭に付けると、JSON形式のファイルを指定できます。"
         " ``--json`` に指定したタスクの ``metadata`` と同じキーがある場合は、タスクの ``metadata`` が優先されます。",
     )
+
+    parser.add_argument("--user_id", type=str, help="作成するタスクの担当者のuser_idを指定してください。``--json`` に指定したタスクの ``user_id`` が優先されます。")
 
     parser.add_argument(
         "--parallelism",
