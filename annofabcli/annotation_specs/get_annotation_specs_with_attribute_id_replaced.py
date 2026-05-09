@@ -7,6 +7,7 @@ from collections.abc import Collection
 from typing import Any
 
 import more_itertools
+from annofabapi.util.annotation_specs import get_attribute_name_en
 
 import annofabcli.common.cli
 from annofabcli.common.cli import (
@@ -93,7 +94,7 @@ class ReplacingAttributeId(CommandLineWithConfirm):
         replaced_count = 0
         for attribute in attribute_list:
             attribute_id = attribute["additional_data_definition_id"]
-            attribute_name_en = AnnofabApiFacade.get_additional_data_definition_name_en(attribute)
+            attribute_name_en = get_attribute_name_en(attribute)
 
             if target_attribute_names is not None:  # noqa: SIM102
                 if attribute_name_en not in target_attribute_names:

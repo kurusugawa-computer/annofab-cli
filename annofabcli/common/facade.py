@@ -17,6 +17,7 @@ from annofabapi.models import (
     TaskPhase,
     TaskStatus,
 )
+from annofabapi.util.annotation_specs import get_label_name_en
 from dataclasses_json import DataClassJsonMixin
 
 from annofabcli.common.exceptions import OrganizationAuthorizationError, ProjectAuthorizationError
@@ -233,7 +234,7 @@ def convert_annotation_specs_labels_v2_to_v1(labels_v2: list[dict[str, Any]], ad
             else:
                 raise ValueError(
                     f"additional_data_definition_id='{additional_data_definition_id}' に対応する属性情報が存在しません。"
-                    f"label_id='{label_v2['label_id']}', label_name_en='{AnnofabApiFacade.get_label_name_en(label_v2)}'"
+                    f"label_id='{label_v2['label_id']}', label_name_en='{get_label_name_en(label_v2)}'"
                 )
         label_v2["additional_data_definitions"] = new_additional_data_definitions
         return label_v2
@@ -251,24 +252,6 @@ class AnnofabApiFacade:
 
     def __init__(self, service: annofabapi.Resource) -> None:
         self.service = service
-
-    @staticmethod
-    def get_label_name_en(label: dict[str, Any]) -> str:
-        """label情報から英語名を取得する"""
-        label_name_messages = label["label_name"]["messages"]
-        return [e["message"] for e in label_name_messages if e["lang"] == "en-US"][0]  # noqa: RUF015
-
-    @staticmethod
-    def get_additional_data_definition_name_en(additional_data_definition: dict[str, Any]) -> str:
-        """additional_data_definitionから英語名を取得する"""
-        messages = additional_data_definition["name"]["messages"]
-        return [e["message"] for e in messages if e["lang"] == "en-US"][0]  # noqa: RUF015
-
-    @staticmethod
-    def get_choice_name_en(choice: dict[str, Any]) -> str:
-        """choiceから英語名を取得する"""
-        messages = choice["name"]["messages"]
-        return [e["message"] for e in messages if e["lang"] == "en-US"][0]  # noqa: RUF015
 
     def get_project_title(self, project_id: str) -> str:
         """

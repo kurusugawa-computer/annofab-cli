@@ -7,6 +7,7 @@ from collections.abc import Collection
 from typing import Any
 
 import more_itertools
+from annofabapi.util.annotation_specs import get_label_name_en
 
 import annofabcli.common.cli
 from annofabcli.common.cli import (
@@ -78,7 +79,7 @@ class ReplacingLabelId(CommandLineWithConfirm):
         replaced_count = 0
         for label in label_list:
             label_id = label["label_id"]
-            label_name_en = AnnofabApiFacade.get_label_name_en(label)
+            label_name_en = get_label_name_en(label)
 
             if target_label_names is not None:  # noqa: SIM102
                 if label_name_en not in target_label_names:
