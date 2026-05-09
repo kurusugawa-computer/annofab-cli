@@ -303,11 +303,11 @@ class MergeSegmentation(CommandLine):
 
         annotation_specs, _ = self.service.api.get_annotation_specs(project_id, query_params={"v": "3"})
         accessor = AnnotationSpecsAccessor(annotation_specs)
-        label_id_list = []
+        label_id_list: list[str] = []
         invalid_label_name_list = []
         for label_name in label_name_list:
             try:
-                label = accessor.get_label(label_name=label_name)
+                label: dict[str, Any] = dict(accessor.get_label(label_name=label_name))
                 if label["annotation_type"] not in {DefaultAnnotationType.SEGMENTATION.value, DefaultAnnotationType.SEGMENTATION_V2.value}:
                     invalid_label_name_list.append(label_name)
 

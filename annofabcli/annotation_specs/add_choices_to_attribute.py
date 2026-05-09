@@ -4,7 +4,7 @@ import argparse
 import copy
 import json
 import logging
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import replace
 from pathlib import Path
 from typing import Any
@@ -81,9 +81,9 @@ def read_choices_csv(csv_path: Path) -> list[ChoiceAttributeInput]:
 
 
 def validate_added_choices(
-    target_attribute: dict[str, Any],
+    target_attribute: Mapping[str, Any],
     *,
-    added_choices: list[dict[str, Any]],
+    added_choices: Sequence[Mapping[str, Any]],
 ) -> None:
     """
     追加する選択肢が既存の選択肢と衝突しないか検証する。
