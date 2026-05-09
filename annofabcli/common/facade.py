@@ -11,7 +11,6 @@ from annofabapi.dataclass.annotation import AdditionalDataV1
 from annofabapi.dataclass.input import InputData
 from annofabapi.dataclass.task import Task
 from annofabapi.models import (
-    OrganizationMember,
     OrganizationMemberRole,
     ProjectMember,
     ProjectMemberRole,
@@ -281,7 +280,6 @@ class AnnofabApiFacade:
         project, _ = self.service.api.get_project(project_id)
         return project["title"]
 
-
     def _get_project_member_with_predicate(self, project_id: str, predicate: Callable[[Any], bool]) -> ProjectMember | None:
         """
         project_memberを取得する
@@ -324,7 +322,6 @@ class AnnofabApiFacade:
             プロジェクトメンバ。見つからない場合はNone
         """
         return self._get_project_member_with_predicate(project_id, predicate=lambda e: e["user_id"] == user_id)
-
 
     def get_user_id_from_account_id(self, project_id: str, account_id: str) -> str | None:
         """
@@ -370,10 +367,6 @@ class AnnofabApiFacade:
         """
         organization, _ = self.service.api.get_organization_of_project(project_id)
         return organization["organization_name"]
-
-    def get_organization_members_from_project_id(self, project_id: str) -> list[OrganizationMember]:
-        organization_name = self.get_organization_name_from_project_id(project_id)
-        return self.service.wrapper.get_all_organization_members(organization_name)
 
     def my_role_is_owner(self, project_id: str) -> bool:
         my_member, _ = self.service.api.get_my_member_in_project(project_id)
