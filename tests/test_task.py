@@ -413,7 +413,7 @@ class TestCommandLine:
         task = service.wrapper.get_task_or_none(project_id, task_id)
         assert task is None
 
-    def test_create_task_from_csv(self, tmp_path: Path):
+    def test_create_task_from_csv(self, tmp_path: Path) -> None:
         """
         `task create --csv`コマンドでタスクを作成するテスト
         """
