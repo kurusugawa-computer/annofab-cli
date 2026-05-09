@@ -223,23 +223,6 @@ class CreateTaskMain(CommandLineWithConfirm):
             logger.exception(f"タスク'{task_creation_info.task_id}'の登録に失敗しました。")
             return False
 
-    def create_confirm_message(self, task_creation_info_list: list[TaskCreationInfo]) -> str:
-        """タスク作成前の確認メッセージを生成します。"""
-
-        metadata_task_count = sum(1 for info in task_creation_info_list if len(info.metadata) > 0)
-        user_task_count = sum(1 for info in task_creation_info_list if info.user_id is not None)
-        detail_list: list[str] = []
-        if metadata_task_count > 0:
-            detail_list.append(f"metadataを設定するタスク数={metadata_task_count}")
-        if user_task_count > 0:
-            detail_list.append(f"担当者を設定するタスク数={user_task_count}")
-
-        message = f"project_id='{self.project_id}' に {len(task_creation_info_list)} 件のタスクを作成します。"
-        if len(detail_list) > 0:
-            message += f" {', '.join(detail_list)}。"
-        message += "よろしいですか？"
-        return message
-
     def create_task_list(self, task_creation_info_list: list[TaskCreationInfo]) -> None:
         """タスク作成情報のlistをもとに複数のタスクを作成します。
 
@@ -247,7 +230,7 @@ class CreateTaskMain(CommandLineWithConfirm):
             task_creation_info_list: タスク作成時に指定する情報のlist
         """
 
-        if not self.confirm_processing(self.create_confirm_message(task_creation_info_list)):
+        if not self.confirm_processing(f"project_id='{self.project_id}' に {len(task_creation_info_list)} 件のタスクを作成します。よろしいですか？"):
             logger.info("タスクの作成をキャンセルしました。")
             return
 

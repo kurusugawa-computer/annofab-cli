@@ -247,29 +247,6 @@ def test_create_task_list_cancelled_by_confirm() -> None:
     service.api.put_task.assert_not_called()
 
 
-def test_create_confirm_message() -> None:
-    service = Mock()
-    main_obj = create_tasks.CreateTaskMain(service, project_id="project1", parallelism=None)
-
-    actual = main_obj.create_confirm_message(
-        [
-            create_tasks.TaskCreationInfo(
-                task_id="task_001",
-                input_data_id_list=["input_data_001"],
-                metadata={"priority": 1},
-                user_id="alice",
-            ),
-            create_tasks.TaskCreationInfo(
-                task_id="task_002",
-                input_data_id_list=["input_data_002"],
-                metadata={},
-            ),
-        ]
-    )
-
-    assert actual == "project_id='project1' に 2 件のタスクを作成します。 metadataを設定するタスク数=1, 担当者を設定するタスク数=1。よろしいですか？"
-
-
 def test_validate_with_parallelism_without_yes() -> None:
     args = argparse.Namespace(parallelism=2, yes=False)
 
