@@ -194,15 +194,6 @@ class CreateTaskMain:
         if len(duplicate_task_id_list) > 0:
             print_error_and_exit(f"以下のタスクIDが重複しています。 :: task_id={duplicate_task_id_list}")
 
-    def validate_task_does_not_exist(self, task_creation_info_list: list[TaskCreationInfo]) -> None:
-        """作成対象のタスクが存在しないことを確認します。"""
-
-        existing_task_id_list = [
-            task_creation_info.task_id for task_creation_info in task_creation_info_list if self.service.wrapper.get_task_or_none(self.project_id, task_creation_info.task_id) is not None
-        ]
-        if len(existing_task_id_list) > 0:
-            print_error_and_exit(f"以下のタスクはすでに存在します。 :: task_id={existing_task_id_list}")
-
     def validate_user_id(self, task_creation_info_list: list[TaskCreationInfo]) -> None:
         """指定されたuser_idがプロジェクトメンバーであることを確認します。"""
 
@@ -247,7 +238,6 @@ class CreateTaskMain:
 
     def create_task_list(self, task_creation_info_list: list[TaskCreationInfo]) -> None:
         self.validate_task_id_is_unique(task_creation_info_list)
-        self.validate_task_does_not_exist(task_creation_info_list)
         self.validate_user_id(task_creation_info_list)
 
         success_count = 0

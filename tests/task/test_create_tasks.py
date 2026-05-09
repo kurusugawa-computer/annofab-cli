@@ -201,6 +201,32 @@ def test_create_task_with_user_id() -> None:
     service.wrapper.change_task_operator.assert_called_once_with("project1", "task_001", operator_account_id="account1")
 
 
+def test_create_task_list_skips_existing_task() -> None:
+    service = Mock()
+    service.wrapper.get_task_or_none.side_effect = [
+        {"task_id": "task_001"},
+        None,
+    ]
+    main_obj = create_tasks.CreateTaskMain(service, project_id="project1", parallelism=None)
+
+    main_obj.create_task_list(
+        [
+            create_tasks.TaskCreationInfo(
+                task_id="task_001",
+                input_data_id_list=["input_data_001"],
+                metadata={},
+            ),
+            create_tasks.TaskCreationInfo(
+                task_id="task_002",
+                input_data_id_list=["input_data_002"],
+                metadata={},
+            ),
+        ]
+    )
+
+    service.api.put_task.assert_called_once_with("project1", "task_002", request_body={"input_data_id_list": ["input_data_002"]})
+
+
 def test_validate_user_id_with_not_project_member() -> None:
     service = Mock()
     main_obj = create_tasks.CreateTaskMain(service, project_id="project1", parallelism=None)
@@ -237,25 +263,6 @@ def test_validate_task_id_is_unique_with_duplicate_task_id() -> None:
                 create_tasks.TaskCreationInfo(
                     task_id="task_001",
                     input_data_id_list=["input_data_002"],
-                    metadata={},
-                ),
-            ]
-        )
-
-    assert exc_info.value.code == COMMAND_LINE_ERROR_STATUS_CODE
-
-
-def test_validate_task_does_not_exist_with_existing_task() -> None:
-    service = Mock()
-    service.wrapper.get_task_or_none.return_value = {"task_id": "task_001"}
-    main_obj = create_tasks.CreateTaskMain(service, project_id="project1", parallelism=None)
-
-    with pytest.raises(SystemExit) as exc_info:
-        main_obj.validate_task_does_not_exist(
-            [
-                create_tasks.TaskCreationInfo(
-                    task_id="task_001",
-                    input_data_id_list=["input_data_001"],
                     metadata={},
                 ),
             ]
