@@ -177,6 +177,15 @@ class CreateTaskMain(CommandLineWithConfirm):
         parallelism: int | None,
         all_yes: bool = False,
     ) -> None:
+        """タスク作成処理を初期化します。
+
+        Args:
+            service: Annofab APIにアクセスするためのResource
+            project_id: タスクを作成するプロジェクトのproject_id
+            parallelism: タスク作成時の並列度。Noneの場合は逐次処理します。
+            all_yes: 確認メッセージへの応答を省略する場合はTrue
+        """
+
         self.service = service
         self.facade = AnnofabApiFacade(service)
         self.project_id = project_id
@@ -245,6 +254,15 @@ class CreateTaskMain(CommandLineWithConfirm):
         return True
 
     def create_task_wrapper(self, task_creation_info: TaskCreationInfo) -> bool:
+        """例外を捕捉しながらタスクを作成します。
+
+        Args:
+            task_creation_info: タスク作成時に指定する情報
+
+        Returns:
+            タスクを作成できた場合はTrue、作成できなかった場合はFalse
+        """
+
         try:
             return self.create_task(task_creation_info)
         except Exception:  # pylint: disable=broad-except
@@ -269,6 +287,12 @@ class CreateTaskMain(CommandLineWithConfirm):
         return message
 
     def create_task_list(self, task_creation_info_list: list[TaskCreationInfo]) -> None:
+        """タスク作成情報のlistをもとに複数のタスクを作成します。
+
+        Args:
+            task_creation_info_list: タスク作成時に指定する情報のlist
+        """
+
         self.validate_task_id_is_unique(task_creation_info_list)
         self.validate_user_id(task_creation_info_list)
 
@@ -299,6 +323,15 @@ class CreateTask(CommandLine):
 
     @classmethod
     def validate(cls, args: argparse.Namespace) -> bool:
+        """コマンドライン引数の組み合わせを検証します。
+
+        Args:
+            args: コマンドライン引数
+
+        Returns:
+            引数が正しい場合はTrue、正しくない場合はFalse
+        """
+
         if args.parallelism is not None and not args.yes:
             print(  # noqa: T201
                 f"{cls.COMMON_MESSAGE} argument --parallelism: '--parallelism'を指定するときは、'--yes' を指定してください。",
@@ -309,6 +342,8 @@ class CreateTask(CommandLine):
         return True
 
     def main(self) -> None:
+        """タスク作成コマンドのメイン処理を実行します。"""
+
         args = self.args
         if not self.validate(args):
             sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
@@ -334,12 +369,24 @@ class CreateTask(CommandLine):
 
 
 def main(args: argparse.Namespace) -> None:
+    """Annofabにログインして、タスク作成コマンドを実行します。
+
+    Args:
+        args: コマンドライン引数
+    """
+
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
     CreateTask(service, facade, args).main()
 
 
 def parse_args(parser: argparse.ArgumentParser) -> None:
+    """タスク作成コマンドのコマンドライン引数を追加します。
+
+    Args:
+        parser: コマンドライン引数を追加するArgumentParser
+    """
+
     argument_parser = ArgumentParser(parser)
 
     argument_parser.add_project_id()
@@ -387,6 +434,15 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
 
 
 def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
+    """タスク作成コマンドのサブコマンドを追加します。
+
+    Args:
+        subparsers: サブコマンドを追加するSubParsersAction。Noneの場合は新しいArgumentParserを作成します。
+
+    Returns:
+        タスク作成コマンド用のArgumentParser
+    """
+
     subcommand_name = "create"
     subcommand_help = "タスクを作成します。"
     description = "タスクを作成します。"
