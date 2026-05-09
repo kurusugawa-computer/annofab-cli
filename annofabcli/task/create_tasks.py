@@ -7,7 +7,7 @@ import sys
 from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
-from typing import NoReturn, cast
+from typing import NoReturn
 
 import annofabapi
 import pandas
@@ -43,10 +43,6 @@ class TaskCreationInfo:
     user_id: str | None = None
 
 
-TaskCreationInfoList = list[TaskCreationInfo]
-"""タスク作成情報のlistを表現する型"""
-
-
 def print_json_error_and_exit(message: str) -> NoReturn:
     """JSON形式のエラーメッセージを出力して、コマンドラインエラーとして終了します。"""
 
@@ -76,30 +72,6 @@ def get_task_relation_dict(csv_file: Path) -> TaskInputRelation:
     return result
 
 
-def validate_metadata(metadata: object, *, target_name: str) -> Metadata:
-    """メタデータの形式を検証します。
-
-    Args:
-        metadata: 検証対象のメタデータ
-        target_name: エラーメッセージに表示する対象名
-
-    Returns:
-        検証済みのメタデータ
-    """
-
-    if not isinstance(metadata, dict):
-        raise TypeError(f"{target_name}にはオブジェクトを指定してください。")
-
-    result: Metadata = {}
-    metadata_dict = cast(dict[object, object], metadata)
-    for key, value in metadata_dict.items():
-        if not isinstance(key, str):
-            raise TypeError(f"{target_name}のキーには文字列を指定してください。")
-        result[key] = value
-
-    return result
-
-
 def get_metadata_from_json_args(metadata_value: str | None) -> Metadata:
     """JSON引数から、全タスク共通のメタデータを取得します。
 
@@ -121,7 +93,7 @@ def get_task_creation_info_list_from_task_relation_dict(
     *,
     common_metadata: Metadata | None = None,
     common_user_id: str | None = None,
-) -> TaskCreationInfoList:
+) -> list[TaskCreationInfo]:
     """task_idとinput_data_idの関係を表すdictから、タスク作成情報のlistを取得します。"""
 
     common_metadata = common_metadata or {}
@@ -141,7 +113,7 @@ def get_task_creation_info_list_from_json_args(
     *,
     common_metadata: Metadata | None = None,
     common_user_id: str | None = None,
-) -> TaskCreationInfoList:
+) -> list[TaskCreationInfo]:
     """JSON引数からタスク作成情報のlistを取得します。
 
     Args:
@@ -158,28 +130,21 @@ def get_task_creation_info_list_from_json_args(
         raise TypeError("配列を指定してください。")
 
     common_metadata = common_metadata or {}
-    result: TaskCreationInfoList = []
+    result: list[TaskCreationInfo] = []
     task_id_set: set[str] = set()
     for index, task in enumerate(task_list):
         if not isinstance(task, dict):
             raise TypeError(f"{index + 1}番目の要素にはオブジェクトを指定してください。")
 
-        task_id = task.get("task_id")
-        if not isinstance(task_id, str):
-            raise TypeError(f"{index + 1}番目の要素の'task_id'には文字列を指定してください。")
+        task_id = task["task_id"]
+        input_data_id_list = task["input_data_id_list"]
 
-        input_data_id_list = task.get("input_data_id_list")
-        if not isinstance(input_data_id_list, list) or not all(isinstance(e, str) for e in input_data_id_list):
-            raise TypeError(f"{index + 1}番目の要素の'input_data_id_list'には文字列の配列を指定してください。")
-
-        task_metadata = validate_metadata(task.get("metadata", {}), target_name=f"{index + 1}番目の要素の'metadata'")
+        task_metadata = task.get("metadata", {})
         metadata = {
             **common_metadata,
             **task_metadata,
         }
         json_user_id = task.get("user_id")
-        if json_user_id is not None and not isinstance(json_user_id, str):
-            raise TypeError(f"{index + 1}番目の要素の'user_id'には文字列を指定してください。")
         task_user_id = json_user_id or common_user_id
 
         if task_id in task_id_set:
@@ -219,7 +184,7 @@ class CreateTaskMain:
         self.account_id_cache[user_id] = account_id
         return account_id
 
-    def validate_task_id_is_unique(self, task_creation_info_list: TaskCreationInfoList) -> None:
+    def validate_task_id_is_unique(self, task_creation_info_list: list[TaskCreationInfo]) -> None:
         """タスク作成情報のtask_idが重複していないことを確認します。"""
 
         task_id_count: dict[str, int] = defaultdict(int)
@@ -230,7 +195,7 @@ class CreateTaskMain:
         if len(duplicate_task_id_list) > 0:
             print_error_and_exit(f"以下のタスクIDが重複しています。 :: task_id={duplicate_task_id_list}")
 
-    def validate_task_does_not_exist(self, task_creation_info_list: TaskCreationInfoList) -> None:
+    def validate_task_does_not_exist(self, task_creation_info_list: list[TaskCreationInfo]) -> None:
         """作成対象のタスクが存在しないことを確認します。"""
 
         existing_task_id_list = [
@@ -239,7 +204,7 @@ class CreateTaskMain:
         if len(existing_task_id_list) > 0:
             print_error_and_exit(f"以下のタスクはすでに存在します。 :: task_id={existing_task_id_list}")
 
-    def validate_user_id(self, task_creation_info_list: TaskCreationInfoList) -> None:
+    def validate_user_id(self, task_creation_info_list: list[TaskCreationInfo]) -> None:
         """指定されたuser_idがプロジェクトメンバーであることを確認します。"""
 
         user_id_set = {info.user_id for info in task_creation_info_list if info.user_id is not None}
@@ -271,7 +236,7 @@ class CreateTaskMain:
             logger.warning(f"タスク'{task_creation_info.task_id}'の登録に失敗しました。", exc_info=True)
             return False
 
-    def create_task_list(self, task_creation_info_list: TaskCreationInfoList) -> None:
+    def create_task_list(self, task_creation_info_list: list[TaskCreationInfo]) -> None:
         logger.debug("'put_task' WebAPIを用いてタスクを生成します。")
         self.validate_task_id_is_unique(task_creation_info_list)
         self.validate_task_does_not_exist(task_creation_info_list)
