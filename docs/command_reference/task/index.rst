@@ -21,6 +21,7 @@ Available Commands
    change_status_to_on_hold
    complete
    copy
+   create
    delete
    delete_metadata_key
    download

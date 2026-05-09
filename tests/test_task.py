@@ -3,6 +3,7 @@ from __future__ import annotations
 import configparser
 import datetime
 import json
+import tempfile
 from pathlib import Path
 from typing import Any
 
@@ -384,18 +385,56 @@ class TestCommandLine:
 
     def test_create_and_delete_task(self):
         """
-        `task put`コマンドでタスクを作成するテスト
+        `task create`コマンドでタスクを作成するテスト
         """
 
         task_id = f"test-{datetime.datetime.now().timestamp()!s}"
 
         # タスクの作成
         json_args = {task_id: [input_data_id]}
-        main([self.command_name, "put", "--project_id", project_id, "--json", json.dumps(json_args), "--yes"])
+        main([self.command_name, "create", "--project_id", project_id, "--json", json.dumps(json_args), "--yes"])
         task = service.wrapper.get_task_or_none(project_id, task_id)
         assert task is not None
 
         # タスクの削除
+        main([self.command_name, "delete", "--project_id", project_id, "--task_id", task_id, "--force", "--yes"])
+        task = service.wrapper.get_task_or_none(project_id, task_id)
+        assert task is None
+
+    def test_create_task_from_csv(self):
+        """
+        `task create --csv`コマンドでタスクを作成するテスト
+        """
+
+        task_id = f"test-{datetime.datetime.now().timestamp()!s}"
+
+        with tempfile.TemporaryDirectory() as str_temp_dir:
+            csv_file = Path(str_temp_dir) / "task.csv"
+            csv_file.write_text(f"task_id,input_data_id,comment\n{task_id},{input_data_id},memo\n", encoding="utf-8")
+            main([self.command_name, "create", "--project_id", project_id, "--csv", str(csv_file), "--yes"])
+
+        task = service.wrapper.get_task_or_none(project_id, task_id)
+        assert task is not None
+
+        main([self.command_name, "delete", "--project_id", project_id, "--task_id", task_id, "--force", "--yes"])
+        task = service.wrapper.get_task_or_none(project_id, task_id)
+        assert task is None
+
+    def test_put_task_from_csv(self):
+        """
+        `task put --csv`コマンドが従来のヘッダなしCSVを引き続き受け付けることを確認するテスト
+        """
+
+        task_id = f"test-{datetime.datetime.now().timestamp()!s}"
+
+        with tempfile.TemporaryDirectory() as str_temp_dir:
+            csv_file = Path(str_temp_dir) / "task.csv"
+            csv_file.write_text(f"{task_id},{input_data_id}\n", encoding="utf-8")
+            main([self.command_name, "put", "--project_id", project_id, "--csv", str(csv_file), "--api", "put_task", "--yes"])
+
+        task = service.wrapper.get_task_or_none(project_id, task_id)
+        assert task is not None
+
         main([self.command_name, "delete", "--project_id", project_id, "--task_id", task_id, "--force", "--yes"])
         task = service.wrapper.get_task_or_none(project_id, task_id)
         assert task is None
