@@ -11,6 +11,7 @@ import annofabapi
 import requests
 from annofabapi.dataclass.task import Task
 from annofabapi.models import ProjectMemberRole, TaskStatus
+from annofabapi.project_member_repository import ProjectMemberRepository
 
 import annofabcli.common.cli
 from annofabcli.common.cli import (
@@ -32,11 +33,12 @@ class ChangingStatusToOnHoldMain(CommandLineWithConfirm):
         self.service = service
         self.project_id = project_id
         self.facade = AnnofabApiFacade(service)
+        self.project_member_repository = ProjectMemberRepository(service)
 
     def confirm_change_status_to_on_hold(self, task: Task) -> bool:
         user_id = None
         if task.account_id is not None:
-            user_id = self.facade.get_user_id_from_account_id(self.project_id, task.account_id)
+            user_id = self.project_member_repository.get_user_id_from_account_id(self.project_id, task.account_id)
 
         confirm_message = f"task_id='{task.task_id}' のタスクのステータスを保留中に変更しますか？(status='{task.status.value}, phase='{task.phase.value}', user_id='{user_id}')"
         return self.confirm_processing(confirm_message)
@@ -103,7 +105,7 @@ class ChangingStatusToOnHoldMain(CommandLineWithConfirm):
 
         task_user_id = None
         if task.account_id is not None:
-            task_user_id = self.facade.get_user_id_from_account_id(self.project_id, task.account_id)
+            task_user_id = self.project_member_repository.get_user_id_from_account_id(self.project_id, task.account_id)
 
         logger.debug(f"{logging_prefix}: task_id='{task_id}'のステータスを保留中に変更します。 :: status='{task.status.value}, phase='{task.phase.value}', user_id='{task_user_id}'")
 

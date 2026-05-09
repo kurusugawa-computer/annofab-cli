@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from collections.abc import Callable, Collection
+from collections.abc import Collection
 from dataclasses import dataclass
 from typing import Any
 
@@ -12,11 +12,11 @@ from annofabapi.dataclass.input import InputData
 from annofabapi.dataclass.task import Task
 from annofabapi.models import (
     OrganizationMemberRole,
-    ProjectMember,
     ProjectMemberRole,
     TaskPhase,
     TaskStatus,
 )
+from annofabapi.project_member_repository import ProjectMemberRepository
 from annofabapi.util.annotation_specs import get_label_name_en
 from dataclasses_json import DataClassJsonMixin
 
@@ -247,11 +247,9 @@ class AnnofabApiFacade:
     AnnofabApiのFacadeクラス。annofabapiの複雑な処理を簡単に呼び出せるようにする。
     """
 
-    _project_members_dict: dict[str, list[ProjectMember]] = {}  # noqa: RUF012
-    """プロジェクトメンバ一覧の情報。key:project_id, value:プロジェクトメンバ一覧"""
-
     def __init__(self, service: annofabapi.Resource) -> None:
         self.service = service
+        self.project_member_repository = ProjectMemberRepository(service)
 
     def get_project_title(self, project_id: str) -> str:
         """
@@ -262,87 +260,6 @@ class AnnofabApiFacade:
         """
         project, _ = self.service.api.get_project(project_id)
         return project["title"]
-
-    def _get_project_member_with_predicate(self, project_id: str, predicate: Callable[[Any], bool]) -> ProjectMember | None:
-        """
-        project_memberを取得する
-
-        Args:
-            project_id:
-            predicate: 組織メンバの検索条件
-
-        Returns:
-            プロジェクトメンバ
-        """
-        project_member_list = self._project_members_dict.get(project_id)
-        if project_member_list is None:
-            project_member_list = self.service.wrapper.get_all_project_members(project_id, query_params={"include_inactive_member": True})
-            self._project_members_dict[project_id] = project_member_list
-        return more_itertools.first_true(project_member_list, pred=predicate)
-
-    def get_project_member_from_account_id(self, project_id: str, account_id: str) -> ProjectMember | None:
-        """
-        account_idからプロジェクトメンバを取得する。
-
-        Args:
-            project_id:
-            account_id:
-
-        Returns:
-            プロジェクトメンバ。見つからない場合はNone
-        """
-        return self._get_project_member_with_predicate(project_id, predicate=lambda e: e["account_id"] == account_id)
-
-    def get_project_member_from_user_id(self, project_id: str, user_id: str) -> ProjectMember | None:
-        """
-        user_idからプロジェクトメンバを取得する。
-
-        Args:
-            project_id:
-            account_id:
-
-        Returns:
-            プロジェクトメンバ。見つからない場合はNone
-        """
-        return self._get_project_member_with_predicate(project_id, predicate=lambda e: e["user_id"] == user_id)
-
-    def get_user_id_from_account_id(self, project_id: str, account_id: str) -> str | None:
-        """
-        account_idからuser_idを取得する.
-        インスタンス変数に組織メンバがあれば、WebAPIは実行しない。
-
-        Args:
-            project_id:
-            account_id:
-
-        Returns:
-            user_id. 見つからなければNone
-
-        """
-        member = self.get_project_member_from_account_id(project_id, account_id)
-        if member is None:
-            return None
-        else:
-            return member.get("user_id")
-
-    def get_account_id_from_user_id(self, project_id: str, user_id: str) -> str | None:
-        """
-        user_idからaccount_idを取得する。
-        インスタンス変数に組織メンバがあれば、WebAPIは実行しない。
-
-        Args:
-            project_id:
-            user_id:
-
-        Returns:
-            account_id. 見つからなければNone
-
-        """
-        member = self.get_project_member_from_user_id(project_id, user_id)
-        if member is None:
-            return None
-        else:
-            return member.get("account_id")
 
     def get_organization_name_from_project_id(self, project_id: str) -> str:
         """
@@ -402,7 +319,11 @@ class AnnofabApiFacade:
 
         """
         if task_query.user_id is not None:
-            task_query.account_id = self.get_account_id_from_user_id(project_id, task_query.user_id)
+            try:
+                task_query.account_id = self.project_member_repository.get_account_id_from_user_id(project_id, task_query.user_id)
+            except ValueError:
+                logger.warning(f"task_queryに含まれている user_id='{task_query.user_id}' のユーザーが見つかりませんでした。")
+                task_query.account_id = None
         return task_query
 
     def validate_project(
