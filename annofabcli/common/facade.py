@@ -368,10 +368,6 @@ class AnnofabApiFacade:
         organization, _ = self.service.api.get_organization_of_project(project_id)
         return organization["organization_name"]
 
-    def my_role_is_owner(self, project_id: str) -> bool:
-        my_member, _ = self.service.api.get_my_member_in_project(project_id)
-        return my_member["member_role"] == "owner"
-
     def contains_any_project_member_role(self, project_id: str, roles: Collection[ProjectMemberRole]) -> bool:
         """
         自分自身のプロジェクトメンバとしてのロールが、指定されたロールのいずれかに合致するかどうか
