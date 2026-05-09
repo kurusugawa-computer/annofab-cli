@@ -4,7 +4,6 @@ from unittest.mock import Mock
 
 import pytest
 
-from annofabcli.common.cli import COMMAND_LINE_ERROR_STATUS_CODE
 from annofabcli.task import create_tasks, put_tasks
 
 
@@ -40,10 +39,8 @@ def test_get_task_creation_info_list_from_csv_with_missing_column(tmp_path: Path
     csv_file = tmp_path / "task.csv"
     csv_file.write_text("task_id\nfoo\n", encoding="utf-8")
 
-    with pytest.raises(SystemExit) as exc_info:
+    with pytest.raises(ValueError):
         create_tasks.get_task_creation_info_list_from_csv(csv_file)
-
-    assert exc_info.value.code == COMMAND_LINE_ERROR_STATUS_CODE
 
 
 def test_get_task_relation_dict_from_headerless_csv(tmp_path: Path) -> None:
@@ -190,8 +187,8 @@ def test_create_task_with_user_id() -> None:
     service = Mock()
     service.wrapper.get_task_or_none.return_value = None
     main_obj = create_tasks.CreateTaskMain(service, project_id="project1", parallelism=None)
-    main_obj.facade = Mock()
-    main_obj.facade.get_account_id_from_user_id.return_value = "account1"
+    main_obj.project_member_repository = Mock()
+    main_obj.project_member_repository.get_account_id_from_user_id.return_value = "account1"
 
     result = main_obj.create_task(
         create_tasks.TaskCreationInfo(
@@ -283,26 +280,3 @@ def test_validate_with_parallelism_and_yes() -> None:
     args = argparse.Namespace(parallelism=2, yes=True)
 
     assert create_tasks.CreateTask.validate(args) is True
-
-
-def test_validate_task_id_is_unique_with_duplicate_task_id() -> None:
-    service = Mock()
-    main_obj = create_tasks.CreateTaskMain(service, project_id="project1", parallelism=None)
-
-    with pytest.raises(SystemExit) as exc_info:
-        main_obj.validate_task_id_is_unique(
-            [
-                create_tasks.TaskCreationInfo(
-                    task_id="task_001",
-                    input_data_id_list=["input_data_001"],
-                    metadata={},
-                ),
-                create_tasks.TaskCreationInfo(
-                    task_id="task_001",
-                    input_data_id_list=["input_data_002"],
-                    metadata={},
-                ),
-            ]
-        )
-
-    assert exc_info.value.code == COMMAND_LINE_ERROR_STATUS_CODE

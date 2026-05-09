@@ -7,7 +7,7 @@ import sys
 from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
-from typing import NoReturn
+from typing import Any
 
 import annofabapi
 import pandas
@@ -49,20 +49,6 @@ class TaskCreationInfo:
     """タスクの担当者にするユーザーのuser_id。指定しない場合は担当者を設定しない。"""
 
 
-def print_json_error_and_exit(message: str) -> NoReturn:
-    """JSON形式のエラーメッセージを出力して、コマンドラインエラーとして終了します。"""
-
-    print(f"annofabcli task create: error: JSON形式が不正です。{message}", file=sys.stderr)  # noqa: T201
-    sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
-
-
-def print_error_and_exit(message: str) -> NoReturn:
-    """エラーメッセージを出力して、コマンドラインエラーとして終了します。"""
-
-    print(f"annofabcli task create: error: {message}", file=sys.stderr)  # noqa: T201
-    sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
-
-
 def get_task_creation_info_list_from_csv(
     csv_file: Path,
     *,
@@ -74,8 +60,7 @@ def get_task_creation_info_list_from_csv(
     # `dtype=str`を指定した理由：指定しないと、IDが`001`のときに`1`に変換されてしまうため
     df = pandas.read_csv(str(csv_file), dtype=str)
     if "task_id" not in df.columns or "input_data_id" not in df.columns:
-        sys.stderr.write("annofabcli task create: error: CSV形式が不正です。ヘッダ行に 'task_id' と 'input_data_id' を指定してください。\n")
-        sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
+        raise ValueError("CSV形式が不正です。ヘッダ行に 'task_id' と 'input_data_id' を指定してください。")
 
     task_relation_dict: dict[str, list[str]] = defaultdict(list)
     for task_id, input_data_id in zip(df["task_id"], df["input_data_id"], strict=False):
@@ -195,17 +180,6 @@ class CreateTaskMain(CommandLineWithConfirm):
         self.account_id_cache: dict[str, str] = {}
         CommandLineWithConfirm.__init__(self, all_yes)
 
-    def validate_task_id_is_unique(self, task_creation_info_list: list[TaskCreationInfo]) -> None:
-        """タスク作成情報のtask_idが重複していないことを確認します。"""
-
-        task_id_count: dict[str, int] = defaultdict(int)
-        for task_creation_info in task_creation_info_list:
-            task_id_count[task_creation_info.task_id] += 1
-
-        duplicate_task_id_list = [task_id for task_id, count in task_id_count.items() if count > 1]
-        if len(duplicate_task_id_list) > 0:
-            print_error_and_exit(f"以下のタスクIDが重複しています。 :: task_id={duplicate_task_id_list}")
-
     def create_task(self, task_creation_info: TaskCreationInfo) -> bool:
         """タスクを作成し、必要に応じて担当者を設定します。
 
@@ -218,11 +192,10 @@ class CreateTaskMain(CommandLineWithConfirm):
 
         task = self.service.wrapper.get_task_or_none(self.project_id, task_creation_info.task_id)
         if task is not None:
-            logger.error(f"タスク'{task_creation_info.task_id}'はすでに存在します。")
+            logger.warning(f"タスク'{task_creation_info.task_id}'はすでに存在するので、タスクの作成をスキップします。")
             return False
 
-        # タスクを上書きしない理由：タスクを上書きすると、タスクに紐づくアノテーションまで消えてしまう恐れがあるため
-        request_body: dict[str, list[str] | Metadata] = {"input_data_id_list": task_creation_info.input_data_id_list}
+        request_body: dict[str, Any] = {"input_data_id_list": task_creation_info.input_data_id_list}
         if len(task_creation_info.metadata) > 0:
             request_body["metadata"] = task_creation_info.metadata
         self.service.api.put_task(self.project_id, task_creation_info.task_id, request_body=request_body)
@@ -246,8 +219,8 @@ class CreateTaskMain(CommandLineWithConfirm):
 
         try:
             return self.create_task(task_creation_info)
-        except Exception:  # pylint: disable=broad-except
-            logger.warning(f"タスク'{task_creation_info.task_id}'の登録に失敗しました。", exc_info=True)
+        except Exception:
+            logger.exception(f"タスク'{task_creation_info.task_id}'の登録に失敗しました。")
             return False
 
     def create_confirm_message(self, task_creation_info_list: list[TaskCreationInfo]) -> str:
@@ -274,8 +247,6 @@ class CreateTaskMain(CommandLineWithConfirm):
             task_creation_info_list: タスク作成時に指定する情報のlist
         """
 
-        self.validate_task_id_is_unique(task_creation_info_list)
-
         if not self.confirm_processing(self.create_confirm_message(task_creation_info_list)):
             logger.info("タスクの作成をキャンセルしました。")
             return
@@ -287,8 +258,8 @@ class CreateTaskMain(CommandLineWithConfirm):
                     result = self.create_task(task_creation_info)
                     if result:
                         success_count += 1
-                except Exception:  # pylint: disable=broad-except
-                    logger.warning(f"タスク'{task_creation_info.task_id}'の登録に失敗しました。", exc_info=True)
+                except Exception:
+                    logger.exception(f"タスク'{task_creation_info.task_id}'の登録に失敗しました。")
 
         else:
             with multiprocessing.Pool(self.parallelism) as p:
@@ -340,7 +311,11 @@ class CreateTask(CommandLine):
         )
 
         if args.csv is not None:
-            task_creation_info_list_from_csv = get_task_creation_info_list_from_csv(args.csv, common_metadata=common_metadata, common_user_id=args.user_id)
+            try:
+                task_creation_info_list_from_csv = get_task_creation_info_list_from_csv(args.csv, common_metadata=common_metadata, common_user_id=args.user_id)
+            except ValueError as e:
+                print(f"{self.COMMON_MESSAGE} argument --csv: {e}", file=sys.stderr)  # noqa: T201
+                sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
             main_obj.create_task_list(task_creation_info_list_from_csv)
 
         elif args.json is not None:
