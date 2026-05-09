@@ -24,5 +24,6 @@
         ".devcontainer/venv/": true
     },
     "editor.minimap.enabled": false,
+    "python-envs.defaultEnvManager": "ms-python.python:venv",
 
 }

@@ -12,6 +12,7 @@ from typing import NoReturn
 import annofabapi
 import pandas
 from annofabapi.models import ProjectMemberRole
+from annofabapi.project_member_repository import ProjectMemberRepository
 
 import annofabcli.common.cli
 from annofabcli.common.cli import (
@@ -190,22 +191,10 @@ class CreateTaskMain(CommandLineWithConfirm):
         self.facade = AnnofabApiFacade(service)
         self.project_id = project_id
         self.parallelism = parallelism
+        self.project_member_repository = ProjectMemberRepository(service)
         self.account_id_cache: dict[str, str] = {}
         CommandLineWithConfirm.__init__(self, all_yes)
 
-    def get_account_id_from_user_id(self, user_id: str) -> str:
-        """user_idからaccount_idを取得します。"""
-
-        account_id = self.account_id_cache.get(user_id)
-        if account_id is not None:
-            return account_id
-
-        account_id = self.facade.get_account_id_from_user_id(self.project_id, user_id)
-        if account_id is None:
-            print_error_and_exit(f"user_id='{user_id}'であるユーザーは、project_id='{self.project_id}'のプロジェクトメンバーではありません。")
-
-        self.account_id_cache[user_id] = account_id
-        return account_id
 
     def validate_task_id_is_unique(self, task_creation_info_list: list[TaskCreationInfo]) -> None:
         """タスク作成情報のtask_idが重複していないことを確認します。"""
@@ -247,7 +236,7 @@ class CreateTaskMain(CommandLineWithConfirm):
         self.service.api.put_task(self.project_id, task_creation_info.task_id, request_body=request_body)
 
         if task_creation_info.user_id is not None:
-            account_id = self.get_account_id_from_user_id(task_creation_info.user_id)
+            account_id = self.project_member_repository.get_account_id_from_user_id(self.project_id, task_creation_info.user_id)
             self.service.wrapper.change_task_operator(self.project_id, task_creation_info.task_id, operator_account_id=account_id)
 
         logger.debug(f"タスク'{task_creation_info.task_id}'を登録しました。")
