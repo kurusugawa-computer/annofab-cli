@@ -79,10 +79,8 @@ def test_get_metadata_from_json_args() -> None:
 
 
 def test_get_metadata_from_json_args_with_invalid_json() -> None:
-    with pytest.raises(SystemExit) as exc_info:
+    with pytest.raises(TypeError):
         create_tasks.get_metadata_from_json_args('{"foo": null}')
-
-    assert exc_info.value.code == COMMAND_LINE_ERROR_STATUS_CODE
 
 
 def test_get_task_creation_info_dict_from_json_args() -> None:
@@ -142,28 +140,22 @@ def test_get_task_creation_info_dict_from_json_args_with_common_user_id() -> Non
 
 
 def test_get_task_creation_info_dict_from_json_args_with_invalid_json() -> None:
-    with pytest.raises(SystemExit) as exc_info:
+    with pytest.raises(TypeError):
         create_tasks.get_task_creation_info_dict_from_json_args('{"task_001": ["input_data_001"]}')
-
-    assert exc_info.value.code == COMMAND_LINE_ERROR_STATUS_CODE
 
 
 def test_get_task_creation_info_dict_from_json_args_with_missing_input_data_id_list() -> None:
-    with pytest.raises(SystemExit) as exc_info:
+    with pytest.raises(TypeError):
         create_tasks.get_task_creation_info_dict_from_json_args('[{"task_id": "task_001"}]')
-
-    assert exc_info.value.code == COMMAND_LINE_ERROR_STATUS_CODE
 
 
 def test_get_task_creation_info_dict_from_json_args_with_invalid_metadata() -> None:
-    with pytest.raises(SystemExit) as exc_info:
+    with pytest.raises(TypeError):
         create_tasks.get_task_creation_info_dict_from_json_args('[{"task_id": "task_001", "input_data_id_list": ["input_data_001"], "metadata": {"foo": null}}]')
-
-    assert exc_info.value.code == COMMAND_LINE_ERROR_STATUS_CODE
 
 
 def test_get_task_creation_info_dict_from_json_args_with_duplicate_task_id() -> None:
-    with pytest.raises(SystemExit) as exc_info:
+    with pytest.raises(ValueError):
         create_tasks.get_task_creation_info_dict_from_json_args(
             """
             [
@@ -173,14 +165,10 @@ def test_get_task_creation_info_dict_from_json_args_with_duplicate_task_id() -> 
             """
         )
 
-    assert exc_info.value.code == COMMAND_LINE_ERROR_STATUS_CODE
-
 
 def test_get_task_creation_info_dict_from_json_args_with_invalid_user_id() -> None:
-    with pytest.raises(SystemExit) as exc_info:
+    with pytest.raises(TypeError):
         create_tasks.get_task_creation_info_dict_from_json_args('[{"task_id": "task_001", "input_data_id_list": ["input_data_001"], "user_id": 1}]')
-
-    assert exc_info.value.code == COMMAND_LINE_ERROR_STATUS_CODE
 
 
 def test_create_task_with_user_id() -> None:

@@ -96,15 +96,15 @@ def validate_metadata(metadata: object, *, target_name: str) -> Metadata:
     """
 
     if not isinstance(metadata, dict):
-        print_json_error_and_exit(f"{target_name}にはオブジェクトを指定してください。")
+        raise TypeError(f"{target_name}にはオブジェクトを指定してください。")
 
     result: Metadata = {}
     metadata_dict = cast(dict[object, object], metadata)
     for key, value in metadata_dict.items():
         if not isinstance(key, str):
-            print_json_error_and_exit(f"{target_name}のキーには文字列を指定してください。")
+            raise TypeError(f"{target_name}のキーには文字列を指定してください。")
         if not is_metadata_value(value):
-            print_json_error_and_exit(f"{target_name}の値には文字列、数値、真偽値のいずれかを指定してください。")
+            raise TypeError(f"{target_name}の値には文字列、数値、真偽値のいずれかを指定してください。")
         result[key] = value
 
     return result
@@ -164,21 +164,21 @@ def get_task_creation_info_dict_from_json_args(
 
     task_list = get_json_from_args(json_value)
     if not isinstance(task_list, list):
-        print_json_error_and_exit("配列を指定してください。")
+        raise TypeError("配列を指定してください。")
 
     common_metadata = common_metadata or {}
     result: TaskCreationInfoDict = {}
     for index, task in enumerate(task_list):
         if not isinstance(task, dict):
-            print_json_error_and_exit(f"{index + 1}番目の要素にはオブジェクトを指定してください。")
+            raise TypeError(f"{index + 1}番目の要素にはオブジェクトを指定してください。")
 
         task_id = task.get("task_id")
         if not isinstance(task_id, str):
-            print_json_error_and_exit(f"{index + 1}番目の要素の'task_id'には文字列を指定してください。")
+            raise TypeError(f"{index + 1}番目の要素の'task_id'には文字列を指定してください。")
 
         input_data_id_list = task.get("input_data_id_list")
         if not isinstance(input_data_id_list, list) or not all(isinstance(e, str) for e in input_data_id_list):
-            print_json_error_and_exit(f"{index + 1}番目の要素の'input_data_id_list'には文字列の配列を指定してください。")
+            raise TypeError(f"{index + 1}番目の要素の'input_data_id_list'には文字列の配列を指定してください。")
 
         task_metadata = validate_metadata(task.get("metadata", {}), target_name=f"{index + 1}番目の要素の'metadata'")
         metadata = {
@@ -187,11 +187,11 @@ def get_task_creation_info_dict_from_json_args(
         }
         json_user_id = task.get("user_id")
         if json_user_id is not None and not isinstance(json_user_id, str):
-            print_json_error_and_exit(f"{index + 1}番目の要素の'user_id'には文字列を指定してください。")
+            raise TypeError(f"{index + 1}番目の要素の'user_id'には文字列を指定してください。")
         task_user_id = json_user_id or common_user_id
 
         if task_id in result:
-            print_json_error_and_exit(f"{index + 1}番目の要素の'task_id'が重複しています。 :: task_id='{task_id}'")
+            raise ValueError(f"{index + 1}番目の要素の'task_id'が重複しています。 :: task_id='{task_id}'")
         else:
             result[task_id] = TaskCreationInfo(input_data_id_list=input_data_id_list, metadata=metadata, user_id=task_user_id)
 
@@ -295,7 +295,10 @@ class CreateTask(CommandLine):
         project_id = args.project_id
         super().validate_project(project_id, [ProjectMemberRole.OWNER])
 
-        common_metadata = get_metadata_from_json_args(args.metadata)
+        try:
+            common_metadata = get_metadata_from_json_args(args.metadata)
+        except (TypeError, ValueError) as e:
+            print_json_error_and_exit(str(e))
         main_obj = CreateTaskMain(
             self.service,
             project_id=args.project_id,
@@ -307,7 +310,10 @@ class CreateTask(CommandLine):
             main_obj.create_task_list(get_task_creation_info_dict_from_task_relation_dict(task_relation_dict_from_csv, common_metadata=common_metadata, common_user_id=args.user_id))
 
         elif args.json is not None:
-            task_creation_info_dict_from_json = get_task_creation_info_dict_from_json_args(args.json, common_metadata=common_metadata, common_user_id=args.user_id)
+            try:
+                task_creation_info_dict_from_json = get_task_creation_info_dict_from_json_args(args.json, common_metadata=common_metadata, common_user_id=args.user_id)
+            except (TypeError, ValueError) as e:
+                print_json_error_and_exit(str(e))
             main_obj.create_task_list(task_creation_info_dict_from_json)
 
 
