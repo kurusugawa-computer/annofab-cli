@@ -56,10 +56,10 @@ def get_target_attribute(
         raise ValueError("追加する既存属性は `attribute_id` または `attribute_name_en` のどちらか一方だけ指定してください。")
 
     if attribute_id is not None:
-        return annotation_specs_accessor.get_attribute(attribute_id=attribute_id)
+        return dict(annotation_specs_accessor.get_attribute(attribute_id=attribute_id))
 
     assert attribute_name_en is not None
-    return annotation_specs_accessor.get_attribute(attribute_name=attribute_name_en)
+    return dict(annotation_specs_accessor.get_attribute(attribute_name=attribute_name_en))
 
 
 class AddExistingAttributeToLabelsMain(CommandLineWithConfirm):
