@@ -1,4 +1,3 @@
-from argparse import Namespace
 from pathlib import Path
 from unittest.mock import Mock
 
@@ -241,5 +240,3 @@ def test_validate_task_does_not_exist_with_existing_task() -> None:
         )
 
     assert exc_info.value.code == COMMAND_LINE_ERROR_STATUS_CODE
-
-

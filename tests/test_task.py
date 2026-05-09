@@ -3,7 +3,6 @@ from __future__ import annotations
 import configparser
 import datetime
 import json
-import tempfile
 from pathlib import Path
 from typing import Any
 

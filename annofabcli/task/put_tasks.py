@@ -27,7 +27,7 @@ from annofabcli.common.facade import AnnofabApiFacade
 
 logger = logging.getLogger(__name__)
 
-DEPRECATED_MESSAGE = "[DEPRECATED] :: `task put` コマンドは非推奨です。代わりに `task create` コマンドを使用してください。 `task put` コマンドは2027年01月01日以降に廃止予定です。"
+DEPRECATED_MESSAGE = "[DEPRECATED] :: `task put` コマンドは非推奨です。代わりに `task create` コマンドを使用してください。 `task put` コマンドは2027/01/01以降に廃止予定です。"
 
 
 TASK_THRESHOLD_FOR_JSON = 230
@@ -245,14 +245,8 @@ class PutTask(CommandLine):
             main_obj.generate_task(api_with_creating_task, task_relation_dict_from_json)
 
 
-def print_deprecated_message() -> None:
-    """`task put` の非推奨メッセージを標準エラー出力に出力する。"""
-
-    print(DEPRECATED_MESSAGE, file=sys.stderr)  # noqa: T201
-
-
 def main(args: argparse.Namespace) -> None:
-    print_deprecated_message()
+    print(DEPRECATED_MESSAGE, file=sys.stderr)  # noqa: T201
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
     PutTask(service, facade, args).main()
