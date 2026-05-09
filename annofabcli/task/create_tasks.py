@@ -336,8 +336,8 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--json",
         type=str,
         help=(
-            "タスクに割り当てる入力データをJSON形式で指定してください。"
-            "`task list --format json` と同じ形式です。"
+            "タスクに割り当てる入力データをJSON形式で指定してください。 "
+            "`task list --format json` と同じ形式です。 "
             "`task_id` と `input_data_id_list` と `metadata` と `user_id` キーを参照し、それ以外のキーは無視します。\n"
             f"(ex) ``{json_sample}`` \n"
             "``file://`` を先頭に付けるとjsonファイルを指定できます。"
