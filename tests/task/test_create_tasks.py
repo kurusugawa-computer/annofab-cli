@@ -285,27 +285,6 @@ def test_validate_with_parallelism_and_yes() -> None:
     assert create_tasks.CreateTask.validate(args) is True
 
 
-def test_validate_user_id_with_not_project_member() -> None:
-    service = Mock()
-    main_obj = create_tasks.CreateTaskMain(service, project_id="project1", parallelism=None)
-    main_obj.facade = Mock()
-    main_obj.facade.get_account_id_from_user_id.return_value = None
-
-    with pytest.raises(SystemExit) as exc_info:
-        main_obj.validate_user_id(
-            [
-                create_tasks.TaskCreationInfo(
-                    task_id="task_001",
-                    input_data_id_list=["input_data_001"],
-                    metadata={},
-                    user_id="alice",
-                ),
-            ]
-        )
-
-    assert exc_info.value.code == COMMAND_LINE_ERROR_STATUS_CODE
-
-
 def test_validate_task_id_is_unique_with_duplicate_task_id() -> None:
     service = Mock()
     main_obj = create_tasks.CreateTaskMain(service, project_id="project1", parallelism=None)

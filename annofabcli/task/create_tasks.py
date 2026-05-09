@@ -195,7 +195,6 @@ class CreateTaskMain(CommandLineWithConfirm):
         self.account_id_cache: dict[str, str] = {}
         CommandLineWithConfirm.__init__(self, all_yes)
 
-
     def validate_task_id_is_unique(self, task_creation_info_list: list[TaskCreationInfo]) -> None:
         """タスク作成情報のtask_idが重複していないことを確認します。"""
 
@@ -206,13 +205,6 @@ class CreateTaskMain(CommandLineWithConfirm):
         duplicate_task_id_list = [task_id for task_id, count in task_id_count.items() if count > 1]
         if len(duplicate_task_id_list) > 0:
             print_error_and_exit(f"以下のタスクIDが重複しています。 :: task_id={duplicate_task_id_list}")
-
-    def validate_user_id(self, task_creation_info_list: list[TaskCreationInfo]) -> None:
-        """指定されたuser_idがプロジェクトメンバーであることを確認します。"""
-
-        user_id_set = {info.user_id for info in task_creation_info_list if info.user_id is not None}
-        for user_id in sorted(user_id_set):
-            self.get_account_id_from_user_id(user_id)
 
     def create_task(self, task_creation_info: TaskCreationInfo) -> bool:
         """タスクを作成し、必要に応じて担当者を設定します。
@@ -283,7 +275,6 @@ class CreateTaskMain(CommandLineWithConfirm):
         """
 
         self.validate_task_id_is_unique(task_creation_info_list)
-        self.validate_user_id(task_creation_info_list)
 
         if not self.confirm_processing(self.create_confirm_message(task_creation_info_list)):
             logger.info("タスクの作成をキャンセルしました。")
