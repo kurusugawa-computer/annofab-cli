@@ -26,9 +26,6 @@ from annofabcli.common.facade import AnnofabApiFacade
 
 logger = logging.getLogger(__name__)
 
-TaskInputRelation = dict[str, list[str]]
-"""task_idとinput_data_idの構造を表現する型"""
-
 Metadata = dict[str, object]
 """タスクのメタデータを表現する型"""
 
@@ -57,8 +54,13 @@ def print_error_and_exit(message: str) -> NoReturn:
     sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
 
-def get_task_relation_dict(csv_file: Path) -> TaskInputRelation:
-    """ヘッダ行ありCSVから、keyがtask_id, valueがinput_data_idのlistのdictを生成します。"""
+def get_task_creation_info_list_from_csv(
+    csv_file: Path,
+    *,
+    common_metadata: Metadata | None = None,
+    common_user_id: str | None = None,
+) -> list[TaskCreationInfo]:
+    """ヘッダ行ありCSVから、タスク作成情報のlistを取得します。"""
 
     # `dtype=str`を指定した理由：指定しないと、IDが`001`のときに`1`に変換されてしまうため
     df = pandas.read_csv(str(csv_file), dtype=str)
@@ -66,10 +68,20 @@ def get_task_relation_dict(csv_file: Path) -> TaskInputRelation:
         sys.stderr.write("annofabcli task create: error: CSV形式が不正です。ヘッダ行に 'task_id' と 'input_data_id' を指定してください。\n")
         sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
-    result: TaskInputRelation = defaultdict(list)
+    task_relation_dict: dict[str, list[str]] = defaultdict(list)
     for task_id, input_data_id in zip(df["task_id"], df["input_data_id"], strict=False):
-        result[task_id].append(input_data_id)
-    return result
+        task_relation_dict[task_id].append(input_data_id)
+
+    common_metadata = common_metadata or {}
+    return [
+        TaskCreationInfo(
+            task_id=task_id,
+            input_data_id_list=input_data_id_list,
+            metadata=common_metadata,
+            user_id=common_user_id,
+        )
+        for task_id, input_data_id_list in task_relation_dict.items()
+    ]
 
 
 def get_metadata_from_json_args(metadata_value: str | None) -> Metadata:
@@ -86,26 +98,6 @@ def get_metadata_from_json_args(metadata_value: str | None) -> Metadata:
         return {}
 
     return get_json_from_args(metadata_value)
-
-
-def get_task_creation_info_list_from_task_relation_dict(
-    task_relation_dict: TaskInputRelation,
-    *,
-    common_metadata: Metadata | None = None,
-    common_user_id: str | None = None,
-) -> list[TaskCreationInfo]:
-    """task_idとinput_data_idの関係を表すdictから、タスク作成情報のlistを取得します。"""
-
-    common_metadata = common_metadata or {}
-    return [
-        TaskCreationInfo(
-            task_id=task_id,
-            input_data_id_list=input_data_id_list,
-            metadata=common_metadata,
-            user_id=common_user_id,
-        )
-        for task_id, input_data_id_list in task_relation_dict.items()
-    ]
 
 
 def get_task_creation_info_list_from_json_args(
@@ -266,10 +258,7 @@ class CreateTask(CommandLine):
         project_id = args.project_id
         super().validate_project(project_id, [ProjectMemberRole.OWNER])
 
-        try:
-            common_metadata = get_metadata_from_json_args(args.metadata)
-        except (TypeError, ValueError) as e:
-            print_json_error_and_exit(str(e))
+        common_metadata = get_metadata_from_json_args(args.metadata)
         main_obj = CreateTaskMain(
             self.service,
             project_id=args.project_id,
@@ -277,14 +266,11 @@ class CreateTask(CommandLine):
         )
 
         if args.csv is not None:
-            task_relation_dict_from_csv = get_task_relation_dict(args.csv)
-            main_obj.create_task_list(get_task_creation_info_list_from_task_relation_dict(task_relation_dict_from_csv, common_metadata=common_metadata, common_user_id=args.user_id))
+            task_creation_info_list_from_csv = get_task_creation_info_list_from_csv(args.csv, common_metadata=common_metadata, common_user_id=args.user_id)
+            main_obj.create_task_list(task_creation_info_list_from_csv)
 
         elif args.json is not None:
-            try:
-                task_creation_info_list_from_json = get_task_creation_info_list_from_json_args(args.json, common_metadata=common_metadata, common_user_id=args.user_id)
-            except (TypeError, ValueError) as e:
-                print_json_error_and_exit(str(e))
+            task_creation_info_list_from_json = get_task_creation_info_list_from_json_args(args.json, common_metadata=common_metadata, common_user_id=args.user_id)
             main_obj.create_task_list(task_creation_info_list_from_json)
 
 

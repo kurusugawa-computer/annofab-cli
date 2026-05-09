@@ -7,27 +7,35 @@ from annofabcli.common.cli import COMMAND_LINE_ERROR_STATUS_CODE
 from annofabcli.task import create_tasks, put_tasks
 
 
-def test_get_task_relation_dict_from_header_csv(tmp_path: Path) -> None:
+def test_get_task_creation_info_list_from_csv(tmp_path: Path) -> None:
     csv_file = tmp_path / "task.csv"
     csv_file.write_text(
         "input_data_id,task_id,extra\ninput_data_001,task_001,a\ninput_data_002,task_001,b\ninput_data_003,task_002,c\n",
         encoding="utf-8",
     )
 
-    actual = create_tasks.get_task_relation_dict(csv_file)
+    actual = create_tasks.get_task_creation_info_list_from_csv(csv_file, common_metadata={"priority": 1})
 
-    assert actual == {
-        "task_001": ["input_data_001", "input_data_002"],
-        "task_002": ["input_data_003"],
-    }
+    assert actual == [
+        create_tasks.TaskCreationInfo(
+            task_id="task_001",
+            input_data_id_list=["input_data_001", "input_data_002"],
+            metadata={"priority": 1},
+        ),
+        create_tasks.TaskCreationInfo(
+            task_id="task_002",
+            input_data_id_list=["input_data_003"],
+            metadata={"priority": 1},
+        ),
+    ]
 
 
-def test_get_task_relation_dict_from_header_csv_with_missing_column(tmp_path: Path) -> None:
+def test_get_task_creation_info_list_from_csv_with_missing_column(tmp_path: Path) -> None:
     csv_file = tmp_path / "task.csv"
     csv_file.write_text("task_id\nfoo\n", encoding="utf-8")
 
     with pytest.raises(SystemExit) as exc_info:
-        create_tasks.get_task_relation_dict(csv_file)
+        create_tasks.get_task_creation_info_list_from_csv(csv_file)
 
     assert exc_info.value.code == COMMAND_LINE_ERROR_STATUS_CODE
 
@@ -43,26 +51,14 @@ def test_get_task_relation_dict_from_headerless_csv(tmp_path: Path) -> None:
     }
 
 
-def test_get_task_creation_info_list_from_task_relation_dict() -> None:
-    actual = create_tasks.get_task_creation_info_list_from_task_relation_dict(
-        {"task_001": ["input_data_001", "input_data_002"]},
-        common_metadata={"priority": 1},
+def test_get_task_creation_info_list_from_csv_with_common_user_id(tmp_path: Path) -> None:
+    csv_file = tmp_path / "task.csv"
+    csv_file.write_text(
+        "input_data_id,task_id\ninput_data_001,task_001\ninput_data_002,task_001\n",
+        encoding="utf-8",
     )
 
-    assert actual == [
-        create_tasks.TaskCreationInfo(
-            task_id="task_001",
-            input_data_id_list=["input_data_001", "input_data_002"],
-            metadata={"priority": 1},
-        )
-    ]
-
-
-def test_get_task_creation_info_list_from_task_relation_dict_with_common_user_id() -> None:
-    actual = create_tasks.get_task_creation_info_list_from_task_relation_dict(
-        {"task_001": ["input_data_001", "input_data_002"]},
-        common_user_id="alice",
-    )
+    actual = create_tasks.get_task_creation_info_list_from_csv(csv_file, common_user_id="alice")
 
     assert actual == [
         create_tasks.TaskCreationInfo(
