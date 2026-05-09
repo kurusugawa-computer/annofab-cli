@@ -93,6 +93,10 @@ warn_unreachable = true
 show_column_numbers = true
 warn_unused_configs = true
 
+[[tool.mypy.overrides]]
+# テストコードはmypyのチェックを緩和する
+module = "tests.*"
+disallow_incomplete_defs = false
 
 [tool.ruff]
 target-version = "py310"
