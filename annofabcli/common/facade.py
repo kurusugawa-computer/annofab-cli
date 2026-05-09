@@ -247,9 +247,6 @@ class AnnofabApiFacade:
     AnnofabApiのFacadeクラス。annofabapiの複雑な処理を簡単に呼び出せるようにする。
     """
 
-    #: 組織メンバ一覧のキャッシュ
-    _organization_members: tuple[str, list[OrganizationMember]] | None = None
-
     _project_members_dict: dict[str, list[ProjectMember]] = {}  # noqa: RUF012
     """プロジェクトメンバ一覧の情報。key:project_id, value:プロジェクトメンバ一覧"""
 
@@ -302,37 +299,6 @@ class AnnofabApiFacade:
         project, _ = self.service.api.get_project(project_id)
         return project["title"]
 
-    def _get_organization_member_with_predicate(self, project_id: str, predicate: Callable[[Any], bool]) -> OrganizationMember | None:
-        """
-        account_idから組織メンバを取得する。
-        インスタンス変数に組織メンバがあれば、WebAPIは実行しない。
-
-        Args:
-            project_id:
-            predicate: 組織メンバの検索条件
-
-        Returns:
-            組織メンバ。見つからない場合はNone
-        """
-
-        def update_organization_members() -> None:
-            organization_name = self.get_organization_name_from_project_id(project_id)
-            members = self.service.wrapper.get_all_organization_members(organization_name)
-            self._organization_members = (project_id, members)
-
-        if self._organization_members is not None:
-            if self._organization_members[0] == project_id:
-                member = more_itertools.first_true(self._organization_members[1], pred=predicate)
-                return member
-
-            else:
-                # 別の組織の可能性があるので、再度組織メンバを取得する
-                update_organization_members()
-                return self._get_organization_member_with_predicate(project_id, predicate)
-
-        else:
-            update_organization_members()
-            return self._get_organization_member_with_predicate(project_id, predicate)
 
     def _get_project_member_with_predicate(self, project_id: str, predicate: Callable[[Any], bool]) -> ProjectMember | None:
         """
@@ -377,19 +343,6 @@ class AnnofabApiFacade:
         """
         return self._get_project_member_with_predicate(project_id, predicate=lambda e: e["user_id"] == user_id)
 
-    def get_organization_member_from_user_id(self, project_id: str, user_id: str) -> OrganizationMember | None:
-        """
-        user_idから組織メンバを取得する。
-        インスタンス変数に組織メンバがあれば、WebAPIは実行しない。
-
-        Args:
-            project_id:
-            user_id:
-
-        Returns:
-            組織メンバ
-        """
-        return self._get_organization_member_with_predicate(project_id, lambda e: e["user_id"] == user_id)
 
     def get_user_id_from_account_id(self, project_id: str, account_id: str) -> str | None:
         """
