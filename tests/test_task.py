@@ -414,29 +414,28 @@ class TestCommandLine:
         task = service.wrapper.get_task_or_none(project_id, task_id)
         assert task is None
 
-    def test_create_task_from_csv(self):
+    def test_create_task_from_csv(self, tmp_path: Path):
         """
         `task create --csv`コマンドでタスクを作成するテスト
         """
 
         task_id = f"test-{datetime.datetime.now().timestamp()!s}"
 
-        with tempfile.TemporaryDirectory() as str_temp_dir:
-            csv_file = Path(str_temp_dir) / "task.csv"
-            csv_file.write_text(f"task_id,input_data_id,comment\n{task_id},{input_data_id},memo\n", encoding="utf-8")
-            main(
-                [
-                    self.command_name,
-                    "create",
-                    "--project_id",
-                    project_id,
-                    "--csv",
-                    str(csv_file),
-                    "--metadata",
-                    json.dumps({"foo": "bar"}),
-                    "--yes",
-                ]
-            )
+        csv_file = tmp_path / "task.csv"
+        csv_file.write_text(f"task_id,input_data_id\n{task_id},{input_data_id}\n", encoding="utf-8")
+        main(
+            [
+                self.command_name,
+                "create",
+                "--project_id",
+                project_id,
+                "--csv",
+                str(csv_file),
+                "--metadata",
+                json.dumps({"foo": "bar"}),
+                "--yes",
+            ]
+        )
 
         task = service.wrapper.get_task_or_none(project_id, task_id)
         assert task is not None
@@ -446,21 +445,4 @@ class TestCommandLine:
         task = service.wrapper.get_task_or_none(project_id, task_id)
         assert task is None
 
-    def test_put_task_from_csv(self):
-        """
-        `task put --csv`コマンドが従来のヘッダなしCSVを引き続き受け付けることを確認するテスト
-        """
-
-        task_id = f"test-{datetime.datetime.now().timestamp()!s}"
-
-        with tempfile.TemporaryDirectory() as str_temp_dir:
-            csv_file = Path(str_temp_dir) / "task.csv"
-            csv_file.write_text(f"{task_id},{input_data_id}\n", encoding="utf-8")
-            main([self.command_name, "put", "--project_id", project_id, "--csv", str(csv_file), "--api", "put_task", "--yes"])
-
-        task = service.wrapper.get_task_or_none(project_id, task_id)
-        assert task is not None
-
-        main([self.command_name, "delete", "--project_id", project_id, "--task_id", task_id, "--force", "--yes"])
-        task = service.wrapper.get_task_or_none(project_id, task_id)
-        assert task is None
+    # "task put"コマンドは非推奨なので、テストは作成しないことにする
