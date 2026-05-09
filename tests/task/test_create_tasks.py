@@ -80,9 +80,10 @@ def test_get_metadata_from_json_args() -> None:
     assert actual == {"priority": 1, "category": "foo", "required": True}
 
 
-def test_get_metadata_from_json_args_with_invalid_json() -> None:
-    with pytest.raises(TypeError):
-        create_tasks.get_metadata_from_json_args('{"foo": null}')
+def test_get_metadata_from_json_args_with_null_value() -> None:
+    actual = create_tasks.get_metadata_from_json_args('{"foo": null}')
+
+    assert actual == {"foo": None}
 
 
 def test_get_task_creation_info_list_from_json_args() -> None:
@@ -154,9 +155,16 @@ def test_get_task_creation_info_list_from_json_args_with_missing_input_data_id_l
         create_tasks.get_task_creation_info_list_from_json_args('[{"task_id": "task_001"}]')
 
 
-def test_get_task_creation_info_list_from_json_args_with_invalid_metadata() -> None:
-    with pytest.raises(TypeError):
-        create_tasks.get_task_creation_info_list_from_json_args('[{"task_id": "task_001", "input_data_id_list": ["input_data_001"], "metadata": {"foo": null}}]')
+def test_get_task_creation_info_list_from_json_args_with_null_metadata_value() -> None:
+    actual = create_tasks.get_task_creation_info_list_from_json_args('[{"task_id": "task_001", "input_data_id_list": ["input_data_001"], "metadata": {"foo": null}}]')
+
+    assert actual == [
+        create_tasks.TaskCreationInfo(
+            task_id="task_001",
+            input_data_id_list=["input_data_001"],
+            metadata={"foo": None},
+        )
+    ]
 
 
 def test_get_task_creation_info_list_from_json_args_with_duplicate_task_id() -> None:

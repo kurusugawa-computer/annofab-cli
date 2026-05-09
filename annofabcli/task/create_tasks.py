@@ -7,7 +7,7 @@ import sys
 from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
-from typing import NoReturn, TypeGuard, cast
+from typing import NoReturn, cast
 
 import annofabapi
 import pandas
@@ -29,10 +29,7 @@ logger = logging.getLogger(__name__)
 TaskInputRelation = dict[str, list[str]]
 """task_idとinput_data_idの構造を表現する型"""
 
-TaskMetadataValue = str | int | float | bool
-"""タスクのメタデータに指定できる値の型"""
-
-Metadata = dict[str, TaskMetadataValue]
+Metadata = dict[str, object]
 """タスクのメタデータを表現する型"""
 
 
@@ -79,12 +76,6 @@ def get_task_relation_dict(csv_file: Path) -> TaskInputRelation:
     return result
 
 
-def is_metadata_value(value: object) -> TypeGuard[TaskMetadataValue]:
-    """タスクメタデータの値として指定できる型かどうかを返します。"""
-
-    return isinstance(value, str | int | float | bool)
-
-
 def validate_metadata(metadata: object, *, target_name: str) -> Metadata:
     """メタデータの形式を検証します。
 
@@ -104,8 +95,6 @@ def validate_metadata(metadata: object, *, target_name: str) -> Metadata:
     for key, value in metadata_dict.items():
         if not isinstance(key, str):
             raise TypeError(f"{target_name}のキーには文字列を指定してください。")
-        if not is_metadata_value(value):
-            raise TypeError(f"{target_name}の値には文字列、数値、真偽値のいずれかを指定してください。")
         result[key] = value
 
     return result
