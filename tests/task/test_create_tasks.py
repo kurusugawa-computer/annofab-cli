@@ -44,13 +44,41 @@ def test_get_task_relation_dict_from_headerless_csv(tmp_path: Path) -> None:
     }
 
 
-def test_get_task_relation_dict_from_json_args() -> None:
-    actual = create_tasks.get_task_relation_dict_from_json_args(
+def test_get_task_creation_info_dict_from_task_relation_dict() -> None:
+    actual = create_tasks.get_task_creation_info_dict_from_task_relation_dict(
+        {"task_001": ["input_data_001", "input_data_002"]},
+        common_metadata={"priority": 1},
+    )
+
+    assert actual == {
+        "task_001": create_tasks.TaskCreationInfo(
+            input_data_id_list=["input_data_001", "input_data_002"],
+            metadata={"priority": 1},
+        )
+    }
+
+
+def test_get_metadata_from_json_args() -> None:
+    actual = create_tasks.get_metadata_from_json_args('{"priority":1,"category":"foo","required":true}')
+
+    assert actual == {"priority": 1, "category": "foo", "required": True}
+
+
+def test_get_metadata_from_json_args_with_invalid_json() -> None:
+    with pytest.raises(SystemExit) as exc_info:
+        create_tasks.get_metadata_from_json_args('{"foo": null}')
+
+    assert exc_info.value.code == COMMAND_LINE_ERROR_STATUS_CODE
+
+
+def test_get_task_creation_info_dict_from_json_args() -> None:
+    actual = create_tasks.get_task_creation_info_dict_from_json_args(
         """
         [
             {
                 "task_id": "task_001",
                 "input_data_id_list": ["input_data_001", "input_data_002"],
+                "metadata": {"priority": 2},
                 "status": "not_started"
             },
             {
@@ -58,25 +86,39 @@ def test_get_task_relation_dict_from_json_args() -> None:
                 "input_data_id_list": ["input_data_003"]
             }
         ]
-        """
+        """,
+        common_metadata={"priority": 1, "category": "foo"},
     )
 
     assert actual == {
-        "task_001": ["input_data_001", "input_data_002"],
-        "task_002": ["input_data_003"],
+        "task_001": create_tasks.TaskCreationInfo(
+            input_data_id_list=["input_data_001", "input_data_002"],
+            metadata={"priority": 2, "category": "foo"},
+        ),
+        "task_002": create_tasks.TaskCreationInfo(
+            input_data_id_list=["input_data_003"],
+            metadata={"priority": 1, "category": "foo"},
+        ),
     }
 
 
-def test_get_task_relation_dict_from_json_args_with_invalid_json() -> None:
+def test_get_task_creation_info_dict_from_json_args_with_invalid_json() -> None:
     with pytest.raises(SystemExit) as exc_info:
-        create_tasks.get_task_relation_dict_from_json_args('{"task_001": ["input_data_001"]}')
+        create_tasks.get_task_creation_info_dict_from_json_args('{"task_001": ["input_data_001"]}')
 
     assert exc_info.value.code == COMMAND_LINE_ERROR_STATUS_CODE
 
 
-def test_get_task_relation_dict_from_json_args_with_missing_input_data_id_list() -> None:
+def test_get_task_creation_info_dict_from_json_args_with_missing_input_data_id_list() -> None:
     with pytest.raises(SystemExit) as exc_info:
-        create_tasks.get_task_relation_dict_from_json_args('[{"task_id": "task_001"}]')
+        create_tasks.get_task_creation_info_dict_from_json_args('[{"task_id": "task_001"}]')
+
+    assert exc_info.value.code == COMMAND_LINE_ERROR_STATUS_CODE
+
+
+def test_get_task_creation_info_dict_from_json_args_with_invalid_metadata() -> None:
+    with pytest.raises(SystemExit) as exc_info:
+        create_tasks.get_task_creation_info_dict_from_json_args('[{"task_id": "task_001", "input_data_id_list": ["input_data_001"], "metadata": {"foo": null}}]')
 
     assert exc_info.value.code == COMMAND_LINE_ERROR_STATUS_CODE
 

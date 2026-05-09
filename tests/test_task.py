@@ -391,10 +391,23 @@ class TestCommandLine:
         task_id = f"test-{datetime.datetime.now().timestamp()!s}"
 
         # タスクの作成
-        json_args = [{"task_id": task_id, "input_data_id_list": [input_data_id]}]
-        main([self.command_name, "create", "--project_id", project_id, "--json", json.dumps(json_args), "--yes"])
+        json_args = [{"task_id": task_id, "input_data_id_list": [input_data_id], "metadata": {"foo": "bar"}}]
+        main(
+            [
+                self.command_name,
+                "create",
+                "--project_id",
+                project_id,
+                "--json",
+                json.dumps(json_args),
+                "--metadata",
+                json.dumps({"foo": "common", "priority": 1}),
+                "--yes",
+            ]
+        )
         task = service.wrapper.get_task_or_none(project_id, task_id)
         assert task is not None
+        assert task["metadata"] == {"foo": "bar", "priority": 1}
 
         # タスクの削除
         main([self.command_name, "delete", "--project_id", project_id, "--task_id", task_id, "--force", "--yes"])
@@ -411,10 +424,23 @@ class TestCommandLine:
         with tempfile.TemporaryDirectory() as str_temp_dir:
             csv_file = Path(str_temp_dir) / "task.csv"
             csv_file.write_text(f"task_id,input_data_id,comment\n{task_id},{input_data_id},memo\n", encoding="utf-8")
-            main([self.command_name, "create", "--project_id", project_id, "--csv", str(csv_file), "--yes"])
+            main(
+                [
+                    self.command_name,
+                    "create",
+                    "--project_id",
+                    project_id,
+                    "--csv",
+                    str(csv_file),
+                    "--metadata",
+                    json.dumps({"foo": "bar"}),
+                    "--yes",
+                ]
+            )
 
         task = service.wrapper.get_task_or_none(project_id, task_id)
         assert task is not None
+        assert task["metadata"] == {"foo": "bar"}
 
         main([self.command_name, "delete", "--project_id", project_id, "--task_id", task_id, "--force", "--yes"])
         task = service.wrapper.get_task_or_none(project_id, task_id)
