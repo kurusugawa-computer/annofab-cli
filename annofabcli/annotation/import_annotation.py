@@ -10,7 +10,7 @@ import zipfile
 from collections.abc import Iterator, Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, assert_never
 
 import annofabapi
 import ulid
@@ -42,7 +42,6 @@ from annofabcli.common.cli import (
     build_annofabapi_resource_and_login,
 )
 from annofabcli.common.facade import AnnofabApiFacade
-from annofabcli.common.type_util import assert_noreturn
 from annofabcli.common.visualize import AddProps
 
 logger = logging.getLogger(__name__)
@@ -233,7 +232,7 @@ class AnnotationConverter:
             return {"_type": "Select", "choice_id": choice["choice_id"]}
 
         else:
-            assert_noreturn(additional_data_type)
+            assert_never(additional_data_type)
 
     def convert_attributes(self, attributes: dict[str, Any], *, label_name: str | None = None, log_message_suffix: str = "") -> list[dict[str, Any]]:
         """

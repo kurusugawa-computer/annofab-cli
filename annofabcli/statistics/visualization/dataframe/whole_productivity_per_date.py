@@ -8,7 +8,7 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, assert_never
 
 import bokeh.layouts
 import pandas
@@ -20,7 +20,6 @@ from bokeh.plotting import ColumnDataSource
 from dateutil.parser import parse
 
 from annofabcli.common.bokeh import create_pretext_from_metadata
-from annofabcli.common.type_util import assert_noreturn
 from annofabcli.common.utils import datetime_to_date, print_csv
 from annofabcli.statistics.linegraph import (
     LineGraph,
@@ -173,7 +172,7 @@ class WholeProductivityPerCompletedDate:
         elif task_completion_criteria == TaskCompletionCriteria.ANNOTATION_STARTED:
             datetime_column = "first_annotation_started_datetime"
         else:
-            assert_noreturn(task_completion_criteria)
+            assert_never(task_completion_criteria)
 
         df_sub_task = task.df[["task_id", datetime_column, *production_volume_columns]].copy()
         date_column = datetime_column.replace("_datetime", "_date")
@@ -283,7 +282,7 @@ class WholeProductivityPerCompletedDate:
         elif self.task_completion_criteria == TaskCompletionCriteria.ANNOTATION_STARTED:
             str_task = "教師付フェーズが着手された"
         else:
-            assert_noreturn(self.task_completion_criteria)
+            assert_never(self.task_completion_criteria)
 
         elm_list = ["<h4>注意</h4>", f"<p>「X日のタスク数」は、X日に初めて{str_task}タスクの個数です。</p>"]
         if self.task_completion_criteria == TaskCompletionCriteria.ACCEPTANCE_REACHED:
@@ -890,7 +889,7 @@ class WholeProductivityPerFirstAnnotationStartedDate:
             # 教師付フェーズが着手されたタスク（first_annotation_started_datetimeがNoneでない）を抽出する
             df_sub_task = df_task[df_task["first_annotation_started_datetime"].notna()]
         else:
-            assert_noreturn(task_completion_criteria)
+            assert_never(task_completion_criteria)
 
         df_sub_task = df_sub_task[
             [
@@ -1021,7 +1020,7 @@ class WholeProductivityPerFirstAnnotationStartedDate:
             elif self.task_completion_criteria == TaskCompletionCriteria.ANNOTATION_STARTED:
                 str_task = "教師付フェーズが着手されたタスク"
             else:
-                assert_noreturn(self.task_completion_criteria)
+                assert_never(self.task_completion_criteria)
 
             elm_list = ["<h4>注意</h4>", f"<p>「X日のタスク数」は、X日に教師付フェーズを開始したタスクの内、{str_task}であるタスクの個数です。</p>"]
             if self.task_completion_criteria == TaskCompletionCriteria.ACCEPTANCE_REACHED:
