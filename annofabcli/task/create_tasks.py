@@ -19,6 +19,7 @@ from annofabcli.common.cli import (
     PARALLELISM_CHOICES,
     ArgumentParser,
     CommandLine,
+    CommandLineWithConfirm,
     build_annofabapi_resource_and_login,
     get_json_from_args,
 )
@@ -135,15 +136,27 @@ def get_task_creation_info_list_from_json_args(
         if not isinstance(task, dict):
             raise TypeError(f"{index + 1}番目の要素にはオブジェクトを指定してください。")
 
-        task_id = task["task_id"]
-        input_data_id_list = task["input_data_id_list"]
+        try:
+            task_id = task["task_id"]
+            input_data_id_list = task["input_data_id_list"]
+        except KeyError as e:
+            raise TypeError(f"{index + 1}番目の要素には 'task_id' と 'input_data_id_list' キーを指定してください。") from e
+
+        if not isinstance(task_id, str):
+            raise TypeError(f"{index + 1}番目の要素の'task_id'には文字列を指定してください。")
+        if not isinstance(input_data_id_list, list) or not all(isinstance(input_data_id, str) for input_data_id in input_data_id_list):
+            raise TypeError(f"{index + 1}番目の要素の'input_data_id_list'には文字列の配列を指定してください。")
 
         task_metadata = task.get("metadata", {})
+        if not isinstance(task_metadata, dict):
+            raise TypeError(f"{index + 1}番目の要素の'metadata'にはオブジェクトを指定してください。")
         metadata = {
             **common_metadata,
             **task_metadata,
         }
         json_user_id = task.get("user_id")
+        if json_user_id is not None and not isinstance(json_user_id, str):
+            raise TypeError(f"{index + 1}番目の要素の'user_id'には文字列を指定してください。")
         task_user_id = json_user_id or common_user_id
 
         if task_id in task_id_set:
@@ -155,19 +168,21 @@ def get_task_creation_info_list_from_json_args(
     return result
 
 
-class CreateTaskMain:
+class CreateTaskMain(CommandLineWithConfirm):
     def __init__(
         self,
         service: annofabapi.Resource,
         project_id: str,
         *,
         parallelism: int | None,
+        all_yes: bool = False,
     ) -> None:
         self.service = service
         self.facade = AnnofabApiFacade(service)
         self.project_id = project_id
         self.parallelism = parallelism
         self.account_id_cache: dict[str, str] = {}
+        CommandLineWithConfirm.__init__(self, all_yes)
 
     def get_account_id_from_user_id(self, user_id: str) -> str:
         """user_idからaccount_idを取得します。"""
@@ -236,9 +251,30 @@ class CreateTaskMain:
             logger.warning(f"タスク'{task_creation_info.task_id}'の登録に失敗しました。", exc_info=True)
             return False
 
+    def create_confirm_message(self, task_creation_info_list: list[TaskCreationInfo]) -> str:
+        """タスク作成前の確認メッセージを生成します。"""
+
+        metadata_task_count = sum(1 for info in task_creation_info_list if len(info.metadata) > 0)
+        user_task_count = sum(1 for info in task_creation_info_list if info.user_id is not None)
+        detail_list: list[str] = []
+        if metadata_task_count > 0:
+            detail_list.append(f"metadataを設定するタスク数={metadata_task_count}")
+        if user_task_count > 0:
+            detail_list.append(f"担当者を設定するタスク数={user_task_count}")
+
+        message = f"project_id='{self.project_id}' に {len(task_creation_info_list)} 件のタスクを作成します。"
+        if len(detail_list) > 0:
+            message += f" {', '.join(detail_list)}。"
+        message += "よろしいですか？"
+        return message
+
     def create_task_list(self, task_creation_info_list: list[TaskCreationInfo]) -> None:
         self.validate_task_id_is_unique(task_creation_info_list)
         self.validate_user_id(task_creation_info_list)
+
+        if not self.confirm_processing(self.create_confirm_message(task_creation_info_list)):
+            logger.info("タスクの作成をキャンセルしました。")
+            return
 
         success_count = 0
         if self.parallelism is None:
@@ -259,8 +295,24 @@ class CreateTaskMain:
 
 
 class CreateTask(CommandLine):
+    COMMON_MESSAGE = "annofabcli task create: error:"
+
+    @classmethod
+    def validate(cls, args: argparse.Namespace) -> bool:
+        if args.parallelism is not None and not args.yes:
+            print(  # noqa: T201
+                f"{cls.COMMON_MESSAGE} argument --parallelism: '--parallelism'を指定するときは、'--yes' を指定してください。",
+                file=sys.stderr,
+            )
+            return False
+
+        return True
+
     def main(self) -> None:
         args = self.args
+        if not self.validate(args):
+            sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
+
         project_id = args.project_id
         super().validate_project(project_id, [ProjectMemberRole.OWNER])
 
@@ -269,6 +321,7 @@ class CreateTask(CommandLine):
             self.service,
             project_id=args.project_id,
             parallelism=args.parallelism,
+            all_yes=args.yes,
         )
 
         if args.csv is not None:
@@ -327,7 +380,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--parallelism",
         type=int,
         choices=PARALLELISM_CHOICES,
-        help="並列度。指定しない場合は、逐次的に処理します。",
+        help="並列度。指定しない場合は、逐次的に処理します。指定する場合は必ず ``--yes`` を指定してください。",
     )
 
     parser.set_defaults(subcommand_func=main)

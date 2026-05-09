@@ -1,3 +1,4 @@
+import argparse
 from pathlib import Path
 from unittest.mock import Mock
 
@@ -5,6 +6,11 @@ import pytest
 
 from annofabcli.common.cli import COMMAND_LINE_ERROR_STATUS_CODE
 from annofabcli.task import create_tasks, put_tasks
+
+
+class CreateTaskMainWithoutConfirm(create_tasks.CreateTaskMain):
+    def confirm_processing(self, _confirm_message: str) -> bool:
+        return False
 
 
 def test_get_task_creation_info_list_from_csv(tmp_path: Path) -> None:
@@ -207,7 +213,7 @@ def test_create_task_list_skips_existing_task() -> None:
         {"task_id": "task_001"},
         None,
     ]
-    main_obj = create_tasks.CreateTaskMain(service, project_id="project1", parallelism=None)
+    main_obj = create_tasks.CreateTaskMain(service, project_id="project1", parallelism=None, all_yes=True)
 
     main_obj.create_task_list(
         [
@@ -225,6 +231,58 @@ def test_create_task_list_skips_existing_task() -> None:
     )
 
     service.api.put_task.assert_called_once_with("project1", "task_002", request_body={"input_data_id_list": ["input_data_002"]})
+
+
+def test_create_task_list_cancelled_by_confirm() -> None:
+    service = Mock()
+    main_obj = CreateTaskMainWithoutConfirm(service, project_id="project1", parallelism=None)
+
+    main_obj.create_task_list(
+        [
+            create_tasks.TaskCreationInfo(
+                task_id="task_001",
+                input_data_id_list=["input_data_001"],
+                metadata={},
+            ),
+        ]
+    )
+
+    service.api.put_task.assert_not_called()
+
+
+def test_create_confirm_message() -> None:
+    service = Mock()
+    main_obj = create_tasks.CreateTaskMain(service, project_id="project1", parallelism=None)
+
+    actual = main_obj.create_confirm_message(
+        [
+            create_tasks.TaskCreationInfo(
+                task_id="task_001",
+                input_data_id_list=["input_data_001"],
+                metadata={"priority": 1},
+                user_id="alice",
+            ),
+            create_tasks.TaskCreationInfo(
+                task_id="task_002",
+                input_data_id_list=["input_data_002"],
+                metadata={},
+            ),
+        ]
+    )
+
+    assert actual == "project_id='project1' に 2 件のタスクを作成します。 metadataを設定するタスク数=1, 担当者を設定するタスク数=1。よろしいですか？"
+
+
+def test_validate_with_parallelism_without_yes() -> None:
+    args = argparse.Namespace(parallelism=2, yes=False)
+
+    assert create_tasks.CreateTask.validate(args) is False
+
+
+def test_validate_with_parallelism_and_yes() -> None:
+    args = argparse.Namespace(parallelism=2, yes=True)
+
+    assert create_tasks.CreateTask.validate(args) is True
 
 
 def test_validate_user_id_with_not_project_member() -> None:
