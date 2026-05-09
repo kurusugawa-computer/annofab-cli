@@ -121,7 +121,7 @@ test = [
 
 [package.metadata]
 requires-dist = [
-    { name = "annofabapi", specifier = ">=1.5.3" },
+    { name = "annofabapi", specifier = ">=1.6.0" },
     { name = "annofabapi-3dpc-extensions" },
     { name = "bokeh", specifier = ">=3.8" },
     { name = "dictdiffer" },
