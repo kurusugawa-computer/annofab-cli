@@ -211,6 +211,15 @@ class CreateTaskMain:
             self.get_account_id_from_user_id(user_id)
 
     def create_task(self, task_creation_info: TaskCreationInfo) -> bool:
+        """タスクを作成し、必要に応じて担当者を設定します。
+
+        Args:
+            task_creation_info: タスク作成時に指定する情報
+
+        Returns:
+            タスクを作成した場合はTrue、すでにタスクが存在する場合はFalse
+        """
+
         task = self.service.wrapper.get_task_or_none(self.project_id, task_creation_info.task_id)
         if task is not None:
             logger.error(f"タスク'{task_creation_info.task_id}'はすでに存在します。")
