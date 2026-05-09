@@ -11,7 +11,6 @@ from annofabapi.dataclass.annotation import AdditionalDataV1
 from annofabapi.dataclass.input import InputData
 from annofabapi.dataclass.task import Task
 from annofabapi.models import (
-    OrganizationMember,
     OrganizationMemberRole,
     ProjectMember,
     ProjectMemberRole,
@@ -247,32 +246,11 @@ class AnnofabApiFacade:
     AnnofabApiのFacadeクラス。annofabapiの複雑な処理を簡単に呼び出せるようにする。
     """
 
-    #: 組織メンバ一覧のキャッシュ
-    _organization_members: tuple[str, list[OrganizationMember]] | None = None
-
     _project_members_dict: dict[str, list[ProjectMember]] = {}  # noqa: RUF012
     """プロジェクトメンバ一覧の情報。key:project_id, value:プロジェクトメンバ一覧"""
 
     def __init__(self, service: annofabapi.Resource) -> None:
         self.service = service
-
-    @staticmethod
-    def get_account_id_last_annotation_phase(task_histories: list[dict[str, Any]]) -> str | None:
-        """
-        タスク履歴の最後のannotation phaseを担当したaccount_idを取得する. なければNoneを返す
-        Args:
-            task_histories:
-
-        Returns:
-
-
-        """
-        annotation_histories = [e for e in task_histories if e["phase"] == "annotation"]
-        if len(annotation_histories) > 0:
-            last_history = annotation_histories[-1]
-            return last_history["account_id"]
-        else:
-            return None
 
     @staticmethod
     def get_label_name_en(label: dict[str, Any]) -> str:
@@ -301,38 +279,6 @@ class AnnofabApiFacade:
         """
         project, _ = self.service.api.get_project(project_id)
         return project["title"]
-
-    def _get_organization_member_with_predicate(self, project_id: str, predicate: Callable[[Any], bool]) -> OrganizationMember | None:
-        """
-        account_idから組織メンバを取得する。
-        インスタンス変数に組織メンバがあれば、WebAPIは実行しない。
-
-        Args:
-            project_id:
-            predicate: 組織メンバの検索条件
-
-        Returns:
-            組織メンバ。見つからない場合はNone
-        """
-
-        def update_organization_members() -> None:
-            organization_name = self.get_organization_name_from_project_id(project_id)
-            members = self.service.wrapper.get_all_organization_members(organization_name)
-            self._organization_members = (project_id, members)
-
-        if self._organization_members is not None:
-            if self._organization_members[0] == project_id:
-                member = more_itertools.first_true(self._organization_members[1], pred=predicate)
-                return member
-
-            else:
-                # 別の組織の可能性があるので、再度組織メンバを取得する
-                update_organization_members()
-                return self._get_organization_member_with_predicate(project_id, predicate)
-
-        else:
-            update_organization_members()
-            return self._get_organization_member_with_predicate(project_id, predicate)
 
     def _get_project_member_with_predicate(self, project_id: str, predicate: Callable[[Any], bool]) -> ProjectMember | None:
         """
@@ -376,20 +322,6 @@ class AnnofabApiFacade:
             プロジェクトメンバ。見つからない場合はNone
         """
         return self._get_project_member_with_predicate(project_id, predicate=lambda e: e["user_id"] == user_id)
-
-    def get_organization_member_from_user_id(self, project_id: str, user_id: str) -> OrganizationMember | None:
-        """
-        user_idから組織メンバを取得する。
-        インスタンス変数に組織メンバがあれば、WebAPIは実行しない。
-
-        Args:
-            project_id:
-            user_id:
-
-        Returns:
-            組織メンバ
-        """
-        return self._get_organization_member_with_predicate(project_id, lambda e: e["user_id"] == user_id)
 
     def get_user_id_from_account_id(self, project_id: str, account_id: str) -> str | None:
         """
@@ -435,14 +367,6 @@ class AnnofabApiFacade:
         """
         organization, _ = self.service.api.get_organization_of_project(project_id)
         return organization["organization_name"]
-
-    def get_organization_members_from_project_id(self, project_id: str) -> list[OrganizationMember]:
-        organization_name = self.get_organization_name_from_project_id(project_id)
-        return self.service.wrapper.get_all_organization_members(organization_name)
-
-    def my_role_is_owner(self, project_id: str) -> bool:
-        my_member, _ = self.service.api.get_my_member_in_project(project_id)
-        return my_member["member_role"] == "owner"
 
     def contains_any_project_member_role(self, project_id: str, roles: Collection[ProjectMemberRole]) -> bool:
         """

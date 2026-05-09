@@ -7,6 +7,7 @@ import annofabcli.task.change_status_to_break
 import annofabcli.task.change_status_to_on_hold
 import annofabcli.task.complete_tasks
 import annofabcli.task.copy_tasks
+import annofabcli.task.create_tasks
 import annofabcli.task.delete_metadata_key_of_task
 import annofabcli.task.delete_tasks
 import annofabcli.task.download_task_json
@@ -30,6 +31,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     annofabcli.task.change_status_to_on_hold.add_parser(subparsers)
     annofabcli.task.complete_tasks.add_parser(subparsers)
     annofabcli.task.copy_tasks.add_parser(subparsers)
+    annofabcli.task.create_tasks.add_parser(subparsers)
     annofabcli.task.delete_tasks.add_parser(subparsers)
     annofabcli.task.delete_metadata_key_of_task.add_parser(subparsers)
     annofabcli.task.download_task_json.add_parser(subparsers)

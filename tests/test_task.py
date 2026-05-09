@@ -384,18 +384,64 @@ class TestCommandLine:
 
     def test_create_and_delete_task(self):
         """
-        `task put`コマンドでタスクを作成するテスト
+        `task create`コマンドでタスクを作成するテスト
         """
 
         task_id = f"test-{datetime.datetime.now().timestamp()!s}"
 
         # タスクの作成
-        json_args = {task_id: [input_data_id]}
-        main([self.command_name, "put", "--project_id", project_id, "--json", json.dumps(json_args), "--yes"])
+        json_args = [{"task_id": task_id, "input_data_id_list": [input_data_id], "metadata": {"foo": "bar"}}]
+        main(
+            [
+                self.command_name,
+                "create",
+                "--project_id",
+                project_id,
+                "--json",
+                json.dumps(json_args),
+                "--metadata",
+                json.dumps({"foo": "common", "priority": 1}),
+                "--yes",
+            ]
+        )
         task = service.wrapper.get_task_or_none(project_id, task_id)
         assert task is not None
+        assert task["metadata"] == {"foo": "bar", "priority": 1}
 
         # タスクの削除
         main([self.command_name, "delete", "--project_id", project_id, "--task_id", task_id, "--force", "--yes"])
         task = service.wrapper.get_task_or_none(project_id, task_id)
         assert task is None
+
+    def test_create_task_from_csv(self, tmp_path: Path):
+        """
+        `task create --csv`コマンドでタスクを作成するテスト
+        """
+
+        task_id = f"test-{datetime.datetime.now().timestamp()!s}"
+
+        csv_file = tmp_path / "task.csv"
+        csv_file.write_text(f"task_id,input_data_id\n{task_id},{input_data_id}\n", encoding="utf-8")
+        main(
+            [
+                self.command_name,
+                "create",
+                "--project_id",
+                project_id,
+                "--csv",
+                str(csv_file),
+                "--metadata",
+                json.dumps({"foo": "bar"}),
+                "--yes",
+            ]
+        )
+
+        task = service.wrapper.get_task_or_none(project_id, task_id)
+        assert task is not None
+        assert task["metadata"] == {"foo": "bar"}
+
+        main([self.command_name, "delete", "--project_id", project_id, "--task_id", task_id, "--force", "--yes"])
+        task = service.wrapper.get_task_or_none(project_id, task_id)
+        assert task is None
+
+    # "task put"コマンドは非推奨なので、テストは作成しないことにする
