@@ -35,9 +35,16 @@ class TaskCreationInfo:
     """タスク作成時に指定する情報"""
 
     task_id: str
+    """作成するタスクのID"""
+
     input_data_id_list: list[str]
+    """タスクに紐づける入力データのIDのlist"""
+
     metadata: Metadata
+    """タスクに付与するメタデータ"""
+
     user_id: str | None = None
+    """タスクの担当者にするユーザーのuser_id。指定しない場合は担当者を設定しない。"""
 
 
 def print_json_error_and_exit(message: str) -> NoReturn:
@@ -206,7 +213,8 @@ class CreateTaskMain:
     def create_task(self, task_creation_info: TaskCreationInfo) -> bool:
         task = self.service.wrapper.get_task_or_none(self.project_id, task_creation_info.task_id)
         if task is not None:
-            raise ValueError(f"タスク'{task_creation_info.task_id}'はすでに存在します。")
+            logger.error(f"タスク'{task_creation_info.task_id}'はすでに存在します。")
+            return False
 
         # タスクを上書きしない理由：タスクを上書きすると、タスクに紐づくアノテーションまで消えてしまう恐れがあるため
         request_body: dict[str, list[str] | Metadata] = {"input_data_id_list": task_creation_info.input_data_id_list}
@@ -229,7 +237,6 @@ class CreateTaskMain:
             return False
 
     def create_task_list(self, task_creation_info_list: list[TaskCreationInfo]) -> None:
-        logger.debug("'put_task' WebAPIを用いてタスクを生成します。")
         self.validate_task_id_is_unique(task_creation_info_list)
         self.validate_task_does_not_exist(task_creation_info_list)
         self.validate_user_id(task_creation_info_list)
