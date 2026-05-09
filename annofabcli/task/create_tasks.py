@@ -1,18 +1,108 @@
 from __future__ import annotations
 
 import argparse
+import logging
+import multiprocessing
+import sys
+from collections import defaultdict
 from pathlib import Path
 
+import annofabapi
+import pandas
 from annofabapi.models import ProjectMemberRole
 
 import annofabcli.common.cli
-from annofabcli.common.cli import PARALLELISM_CHOICES, ArgumentParser, CommandLine, build_annofabapi_resource_and_login
-from annofabcli.common.facade import AnnofabApiFacade
-from annofabcli.task.task_creation import (
-    TaskCreatingMain,
-    get_task_relation_dict_from_header_csv,
-    get_task_relation_dict_from_json_args,
+from annofabcli.common.cli import (
+    COMMAND_LINE_ERROR_STATUS_CODE,
+    PARALLELISM_CHOICES,
+    ArgumentParser,
+    CommandLine,
+    build_annofabapi_resource_and_login,
+    get_json_from_args,
 )
+from annofabcli.common.facade import AnnofabApiFacade
+
+logger = logging.getLogger(__name__)
+
+TaskInputRelation = dict[str, list[str]]
+"""task_idとinput_data_idの構造を表現する型"""
+
+
+def get_task_relation_dict(csv_file: Path) -> TaskInputRelation:
+    """ヘッダ行ありCSVから、keyがtask_id, valueがinput_data_idのlistのdictを生成します。"""
+
+    # `dtype=str`を指定した理由：指定しないと、IDが`001`のときに`1`に変換されてしまうため
+    df = pandas.read_csv(str(csv_file), dtype=str)
+    if "task_id" not in df.columns or "input_data_id" not in df.columns:
+        sys.stderr.write("annofabcli task create: error: CSV形式が不正です。ヘッダ行に 'task_id' と 'input_data_id' を指定してください。\n")
+        sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
+
+    result: TaskInputRelation = defaultdict(list)
+    for task_id, input_data_id in zip(df["task_id"], df["input_data_id"], strict=False):
+        result[task_id].append(input_data_id)
+    return result
+
+
+def get_task_relation_dict_from_json_args(json_value: str) -> TaskInputRelation:
+    """JSON引数からtask_idとinput_data_idの関係を表すdictを取得します。"""
+
+    task_relation_dict = get_json_from_args(json_value)
+    if not isinstance(task_relation_dict, dict):
+        print("annofabcli task create: error: JSON形式が不正です。オブジェクトを指定してください。", file=sys.stderr)  # noqa: T201
+        sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
+    return task_relation_dict
+
+
+class CreateTaskMain:
+    def __init__(
+        self,
+        service: annofabapi.Resource,
+        project_id: str,
+        *,
+        parallelism: int | None,
+    ) -> None:
+        self.service = service
+        self.facade = AnnofabApiFacade(service)
+        self.project_id = project_id
+        self.parallelism = parallelism
+
+    def create_task(self, task_id: str, input_data_id_list: list[str]) -> bool:
+        task = self.service.wrapper.get_task_or_none(self.project_id, task_id)
+        if task is not None:
+            logger.warning(f"タスク'{task_id}'はすでに存在するため、登録をスキップします。")
+            return False
+
+        # タスクを上書きしない理由：タスクを上書きすると、タスクに紐づくアノテーションまで消えてしまう恐れがあるため
+        self.service.api.put_task(self.project_id, task_id, request_body={"input_data_id_list": input_data_id_list})
+        logger.debug(f"タスク'{task_id}'を登録しました。")
+        return True
+
+    def create_task_wrapper(self, tpl: tuple[str, list[str]]) -> bool:
+        task_id, input_data_id_list = tpl
+        try:
+            return self.create_task(task_id, input_data_id_list)
+        except Exception:  # pylint: disable=broad-except
+            logger.warning(f"タスク'{task_id}'の登録に失敗しました。", exc_info=True)
+            return False
+
+    def create_task_list(self, task_relation_dict: TaskInputRelation) -> None:
+        logger.debug("'put_task' WebAPIを用いてタスクを生成します。")
+        success_count = 0
+        if self.parallelism is None:
+            for task_id, input_data_id_list in task_relation_dict.items():
+                try:
+                    result = self.create_task(task_id, input_data_id_list)
+                    if result:
+                        success_count += 1
+                except Exception:  # pylint: disable=broad-except
+                    logger.warning(f"タスク'{task_id}'の登録に失敗しました。", exc_info=True)
+
+        else:
+            with multiprocessing.Pool(self.parallelism) as p:
+                results = p.map(self.create_task_wrapper, task_relation_dict.items())
+                success_count = len([e for e in results if e])
+
+        logger.info(f"{success_count} / {len(task_relation_dict)} 件のタスクを登録しました。")
 
 
 class CreateTask(CommandLine):
@@ -21,18 +111,19 @@ class CreateTask(CommandLine):
         project_id = args.project_id
         super().validate_project(project_id, [ProjectMemberRole.OWNER])
 
-        main_obj = TaskCreatingMain(
+        main_obj = CreateTaskMain(
             self.service,
             project_id=args.project_id,
             parallelism=args.parallelism,
         )
 
         if args.csv is not None:
-            task_relation_dict = get_task_relation_dict_from_header_csv(args.csv)
-        else:
-            task_relation_dict = get_task_relation_dict_from_json_args(args.json, command_name="annofabcli task create")
+            task_relation_dict_from_csv = get_task_relation_dict(args.csv)
+            main_obj.create_task_list(task_relation_dict_from_csv)
 
-        main_obj.create_task_list(task_relation_dict)
+        elif args.json is not None:
+            task_relation_dict_from_json = get_task_relation_dict_from_json_args(args.json)
+            main_obj.create_task_list(task_relation_dict_from_json)
 
 
 def main(args: argparse.Namespace) -> None:

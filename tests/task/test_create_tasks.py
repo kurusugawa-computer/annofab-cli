@@ -5,12 +5,7 @@ from unittest.mock import Mock
 import pytest
 
 from annofabcli.common.cli import COMMAND_LINE_ERROR_STATUS_CODE
-from annofabcli.task import put_tasks
-from annofabcli.task.task_creation import (
-    get_task_relation_dict_from_header_csv,
-    get_task_relation_dict_from_headerless_csv,
-    get_task_relation_dict_from_json_args,
-)
+from annofabcli.task import create_tasks, put_tasks
 
 
 def test_get_task_relation_dict_from_header_csv(tmp_path: Path) -> None:
@@ -20,7 +15,7 @@ def test_get_task_relation_dict_from_header_csv(tmp_path: Path) -> None:
         encoding="utf-8",
     )
 
-    actual = get_task_relation_dict_from_header_csv(csv_file)
+    actual = create_tasks.get_task_relation_dict(csv_file)
 
     assert actual == {
         "task_001": ["input_data_001", "input_data_002"],
@@ -33,7 +28,7 @@ def test_get_task_relation_dict_from_header_csv_with_missing_column(tmp_path: Pa
     csv_file.write_text("task_id\nfoo\n", encoding="utf-8")
 
     with pytest.raises(SystemExit) as exc_info:
-        get_task_relation_dict_from_header_csv(csv_file)
+        create_tasks.get_task_relation_dict(csv_file)
 
     assert exc_info.value.code == COMMAND_LINE_ERROR_STATUS_CODE
 
@@ -42,7 +37,7 @@ def test_get_task_relation_dict_from_headerless_csv(tmp_path: Path) -> None:
     csv_file = tmp_path / "task.csv"
     csv_file.write_text("task_001,input_data_001\ntask_001,input_data_002\n", encoding="utf-8")
 
-    actual = get_task_relation_dict_from_headerless_csv(csv_file)
+    actual = put_tasks.get_task_relation_dict(csv_file)
 
     assert actual == {
         "task_001": ["input_data_001", "input_data_002"],
@@ -51,7 +46,7 @@ def test_get_task_relation_dict_from_headerless_csv(tmp_path: Path) -> None:
 
 def test_get_task_relation_dict_from_json_args_with_invalid_json() -> None:
     with pytest.raises(SystemExit) as exc_info:
-        get_task_relation_dict_from_json_args('["task_001"]', command_name="annofabcli task create")
+        create_tasks.get_task_relation_dict_from_json_args('["task_001"]')
 
     assert exc_info.value.code == COMMAND_LINE_ERROR_STATUS_CODE
 
