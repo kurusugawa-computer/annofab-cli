@@ -40,13 +40,14 @@ Metadata = dict[str, TaskMetadataValue]
 class TaskCreationInfo:
     """タスク作成時に指定する情報"""
 
+    task_id: str
     input_data_id_list: list[str]
     metadata: Metadata
     user_id: str | None = None
 
 
-TaskCreationInfoDict = dict[str, TaskCreationInfo]
-"""task_idとタスク作成情報の関係を表現する型"""
+TaskCreationInfoList = list[TaskCreationInfo]
+"""タスク作成情報のlistを表現する型"""
 
 
 def print_json_error_and_exit(message: str) -> NoReturn:
@@ -126,32 +127,33 @@ def get_metadata_from_json_args(metadata_value: str | None) -> Metadata:
     return validate_metadata(get_json_from_args(metadata_value), target_name="引数'--metadata'")
 
 
-def get_task_creation_info_dict_from_task_relation_dict(
+def get_task_creation_info_list_from_task_relation_dict(
     task_relation_dict: TaskInputRelation,
     *,
     common_metadata: Metadata | None = None,
     common_user_id: str | None = None,
-) -> TaskCreationInfoDict:
-    """task_idとinput_data_idの関係を表すdictから、タスク作成情報のdictを取得します。"""
+) -> TaskCreationInfoList:
+    """task_idとinput_data_idの関係を表すdictから、タスク作成情報のlistを取得します。"""
 
     common_metadata = common_metadata or {}
-    return {
-        task_id: TaskCreationInfo(
+    return [
+        TaskCreationInfo(
+            task_id=task_id,
             input_data_id_list=input_data_id_list,
             metadata=common_metadata,
             user_id=common_user_id,
         )
         for task_id, input_data_id_list in task_relation_dict.items()
-    }
+    ]
 
 
-def get_task_creation_info_dict_from_json_args(
+def get_task_creation_info_list_from_json_args(
     json_value: str,
     *,
     common_metadata: Metadata | None = None,
     common_user_id: str | None = None,
-) -> TaskCreationInfoDict:
-    """JSON引数からタスク作成情報のdictを取得します。
+) -> TaskCreationInfoList:
+    """JSON引数からタスク作成情報のlistを取得します。
 
     Args:
         json_value: `task list --format json` と同じ形式のJSON文字列、またはJSONファイルのパス
@@ -159,7 +161,7 @@ def get_task_creation_info_dict_from_json_args(
         common_user_id: 全タスク共通の担当者のuser_id
 
     Returns:
-        keyがtask_id, valueがタスク作成情報であるdict
+        タスク作成情報のlist
     """
 
     task_list = get_json_from_args(json_value)
@@ -167,7 +169,8 @@ def get_task_creation_info_dict_from_json_args(
         raise TypeError("配列を指定してください。")
 
     common_metadata = common_metadata or {}
-    result: TaskCreationInfoDict = {}
+    result: TaskCreationInfoList = []
+    task_id_set: set[str] = set()
     for index, task in enumerate(task_list):
         if not isinstance(task, dict):
             raise TypeError(f"{index + 1}番目の要素にはオブジェクトを指定してください。")
@@ -190,10 +193,11 @@ def get_task_creation_info_dict_from_json_args(
             raise TypeError(f"{index + 1}番目の要素の'user_id'には文字列を指定してください。")
         task_user_id = json_user_id or common_user_id
 
-        if task_id in result:
+        if task_id in task_id_set:
             raise ValueError(f"{index + 1}番目の要素の'task_id'が重複しています。 :: task_id='{task_id}'")
-        else:
-            result[task_id] = TaskCreationInfo(input_data_id_list=input_data_id_list, metadata=metadata, user_id=task_user_id)
+
+        task_id_set.add(task_id)
+        result.append(TaskCreationInfo(task_id=task_id, input_data_id_list=input_data_id_list, metadata=metadata, user_id=task_user_id))
 
     return result
 
@@ -226,67 +230,80 @@ class CreateTaskMain:
         self.account_id_cache[user_id] = account_id
         return account_id
 
-    def validate_task_does_not_exist(self, task_creation_info_dict: TaskCreationInfoDict) -> None:
+    def validate_task_id_is_unique(self, task_creation_info_list: TaskCreationInfoList) -> None:
+        """タスク作成情報のtask_idが重複していないことを確認します。"""
+
+        task_id_count: dict[str, int] = defaultdict(int)
+        for task_creation_info in task_creation_info_list:
+            task_id_count[task_creation_info.task_id] += 1
+
+        duplicate_task_id_list = [task_id for task_id, count in task_id_count.items() if count > 1]
+        if len(duplicate_task_id_list) > 0:
+            print_error_and_exit(f"以下のタスクIDが重複しています。 :: task_id={duplicate_task_id_list}")
+
+    def validate_task_does_not_exist(self, task_creation_info_list: TaskCreationInfoList) -> None:
         """作成対象のタスクが存在しないことを確認します。"""
 
-        existing_task_id_list = [task_id for task_id in task_creation_info_dict if self.service.wrapper.get_task_or_none(self.project_id, task_id) is not None]
+        existing_task_id_list = [
+            task_creation_info.task_id for task_creation_info in task_creation_info_list if self.service.wrapper.get_task_or_none(self.project_id, task_creation_info.task_id) is not None
+        ]
         if len(existing_task_id_list) > 0:
             print_error_and_exit(f"以下のタスクはすでに存在します。 :: task_id={existing_task_id_list}")
 
-    def validate_user_id(self, task_creation_info_dict: TaskCreationInfoDict) -> None:
+    def validate_user_id(self, task_creation_info_list: TaskCreationInfoList) -> None:
         """指定されたuser_idがプロジェクトメンバーであることを確認します。"""
 
-        user_id_set = {info.user_id for info in task_creation_info_dict.values() if info.user_id is not None}
+        user_id_set = {info.user_id for info in task_creation_info_list if info.user_id is not None}
         for user_id in sorted(user_id_set):
             self.get_account_id_from_user_id(user_id)
 
-    def create_task(self, task_id: str, task_creation_info: TaskCreationInfo) -> bool:
-        task = self.service.wrapper.get_task_or_none(self.project_id, task_id)
+    def create_task(self, task_creation_info: TaskCreationInfo) -> bool:
+        task = self.service.wrapper.get_task_or_none(self.project_id, task_creation_info.task_id)
         if task is not None:
-            raise ValueError(f"タスク'{task_id}'はすでに存在します。")
+            raise ValueError(f"タスク'{task_creation_info.task_id}'はすでに存在します。")
 
         # タスクを上書きしない理由：タスクを上書きすると、タスクに紐づくアノテーションまで消えてしまう恐れがあるため
         request_body: dict[str, list[str] | Metadata] = {"input_data_id_list": task_creation_info.input_data_id_list}
         if len(task_creation_info.metadata) > 0:
             request_body["metadata"] = task_creation_info.metadata
-        self.service.api.put_task(self.project_id, task_id, request_body=request_body)
+        self.service.api.put_task(self.project_id, task_creation_info.task_id, request_body=request_body)
 
         if task_creation_info.user_id is not None:
             account_id = self.get_account_id_from_user_id(task_creation_info.user_id)
-            self.service.wrapper.change_task_operator(self.project_id, task_id, operator_account_id=account_id)
+            self.service.wrapper.change_task_operator(self.project_id, task_creation_info.task_id, operator_account_id=account_id)
 
-        logger.debug(f"タスク'{task_id}'を登録しました。")
+        logger.debug(f"タスク'{task_creation_info.task_id}'を登録しました。")
         return True
 
-    def create_task_wrapper(self, tpl: tuple[str, TaskCreationInfo]) -> bool:
-        task_id, task_creation_info = tpl
+    def create_task_wrapper(self, task_creation_info: TaskCreationInfo) -> bool:
         try:
-            return self.create_task(task_id, task_creation_info)
+            return self.create_task(task_creation_info)
         except Exception:  # pylint: disable=broad-except
-            logger.warning(f"タスク'{task_id}'の登録に失敗しました。", exc_info=True)
+            logger.warning(f"タスク'{task_creation_info.task_id}'の登録に失敗しました。", exc_info=True)
             return False
 
-    def create_task_list(self, task_creation_info_dict: TaskCreationInfoDict) -> None:
+    def create_task_list(self, task_creation_info_list: TaskCreationInfoList) -> None:
         logger.debug("'put_task' WebAPIを用いてタスクを生成します。")
-        self.validate_task_does_not_exist(task_creation_info_dict)
-        self.validate_user_id(task_creation_info_dict)
+        self.validate_task_id_is_unique(task_creation_info_list)
+        self.validate_task_does_not_exist(task_creation_info_list)
+        self.validate_user_id(task_creation_info_list)
 
         success_count = 0
         if self.parallelism is None:
-            for task_id, task_creation_info in task_creation_info_dict.items():
+            for task_creation_info in task_creation_info_list:
                 try:
-                    result = self.create_task(task_id, task_creation_info)
+                    result = self.create_task(task_creation_info)
                     if result:
                         success_count += 1
                 except Exception:  # pylint: disable=broad-except
-                    logger.warning(f"タスク'{task_id}'の登録に失敗しました。", exc_info=True)
+                    logger.warning(f"タスク'{task_creation_info.task_id}'の登録に失敗しました。", exc_info=True)
 
         else:
             with multiprocessing.Pool(self.parallelism) as p:
-                results = p.map(self.create_task_wrapper, task_creation_info_dict.items())
+                results = p.map(self.create_task_wrapper, task_creation_info_list)
                 success_count = len([e for e in results if e])
 
-        logger.info(f"{success_count} / {len(task_creation_info_dict)} 件のタスクを登録しました。")
+        logger.info(f"{success_count} / {len(task_creation_info_list)} 件のタスクを登録しました。")
 
 
 class CreateTask(CommandLine):
@@ -307,14 +324,14 @@ class CreateTask(CommandLine):
 
         if args.csv is not None:
             task_relation_dict_from_csv = get_task_relation_dict(args.csv)
-            main_obj.create_task_list(get_task_creation_info_dict_from_task_relation_dict(task_relation_dict_from_csv, common_metadata=common_metadata, common_user_id=args.user_id))
+            main_obj.create_task_list(get_task_creation_info_list_from_task_relation_dict(task_relation_dict_from_csv, common_metadata=common_metadata, common_user_id=args.user_id))
 
         elif args.json is not None:
             try:
-                task_creation_info_dict_from_json = get_task_creation_info_dict_from_json_args(args.json, common_metadata=common_metadata, common_user_id=args.user_id)
+                task_creation_info_list_from_json = get_task_creation_info_list_from_json_args(args.json, common_metadata=common_metadata, common_user_id=args.user_id)
             except (TypeError, ValueError) as e:
                 print_json_error_and_exit(str(e))
-            main_obj.create_task_list(task_creation_info_dict_from_json)
+            main_obj.create_task_list(task_creation_info_list_from_json)
 
 
 def main(args: argparse.Namespace) -> None:

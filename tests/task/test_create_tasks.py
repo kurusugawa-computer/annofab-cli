@@ -43,33 +43,35 @@ def test_get_task_relation_dict_from_headerless_csv(tmp_path: Path) -> None:
     }
 
 
-def test_get_task_creation_info_dict_from_task_relation_dict() -> None:
-    actual = create_tasks.get_task_creation_info_dict_from_task_relation_dict(
+def test_get_task_creation_info_list_from_task_relation_dict() -> None:
+    actual = create_tasks.get_task_creation_info_list_from_task_relation_dict(
         {"task_001": ["input_data_001", "input_data_002"]},
         common_metadata={"priority": 1},
     )
 
-    assert actual == {
-        "task_001": create_tasks.TaskCreationInfo(
+    assert actual == [
+        create_tasks.TaskCreationInfo(
+            task_id="task_001",
             input_data_id_list=["input_data_001", "input_data_002"],
             metadata={"priority": 1},
         )
-    }
+    ]
 
 
-def test_get_task_creation_info_dict_from_task_relation_dict_with_common_user_id() -> None:
-    actual = create_tasks.get_task_creation_info_dict_from_task_relation_dict(
+def test_get_task_creation_info_list_from_task_relation_dict_with_common_user_id() -> None:
+    actual = create_tasks.get_task_creation_info_list_from_task_relation_dict(
         {"task_001": ["input_data_001", "input_data_002"]},
         common_user_id="alice",
     )
 
-    assert actual == {
-        "task_001": create_tasks.TaskCreationInfo(
+    assert actual == [
+        create_tasks.TaskCreationInfo(
+            task_id="task_001",
             input_data_id_list=["input_data_001", "input_data_002"],
             metadata={},
             user_id="alice",
         )
-    }
+    ]
 
 
 def test_get_metadata_from_json_args() -> None:
@@ -83,8 +85,8 @@ def test_get_metadata_from_json_args_with_invalid_json() -> None:
         create_tasks.get_metadata_from_json_args('{"foo": null}')
 
 
-def test_get_task_creation_info_dict_from_json_args() -> None:
-    actual = create_tasks.get_task_creation_info_dict_from_json_args(
+def test_get_task_creation_info_list_from_json_args() -> None:
+    actual = create_tasks.get_task_creation_info_list_from_json_args(
         """
         [
             {
@@ -103,21 +105,23 @@ def test_get_task_creation_info_dict_from_json_args() -> None:
         common_metadata={"priority": 1, "category": "foo"},
     )
 
-    assert actual == {
-        "task_001": create_tasks.TaskCreationInfo(
+    assert actual == [
+        create_tasks.TaskCreationInfo(
+            task_id="task_001",
             input_data_id_list=["input_data_001", "input_data_002"],
             metadata={"priority": 2, "category": "foo"},
             user_id="alice",
         ),
-        "task_002": create_tasks.TaskCreationInfo(
+        create_tasks.TaskCreationInfo(
+            task_id="task_002",
             input_data_id_list=["input_data_003"],
             metadata={"priority": 1, "category": "foo"},
         ),
-    }
+    ]
 
 
-def test_get_task_creation_info_dict_from_json_args_with_common_user_id() -> None:
-    actual = create_tasks.get_task_creation_info_dict_from_json_args(
+def test_get_task_creation_info_list_from_json_args_with_common_user_id() -> None:
+    actual = create_tasks.get_task_creation_info_list_from_json_args(
         """
         [
             {
@@ -130,33 +134,34 @@ def test_get_task_creation_info_dict_from_json_args_with_common_user_id() -> Non
         common_user_id="alice",
     )
 
-    assert actual == {
-        "task_001": create_tasks.TaskCreationInfo(
+    assert actual == [
+        create_tasks.TaskCreationInfo(
+            task_id="task_001",
             input_data_id_list=["input_data_001"],
             metadata={},
             user_id="alice",
         ),
-    }
+    ]
 
 
-def test_get_task_creation_info_dict_from_json_args_with_invalid_json() -> None:
+def test_get_task_creation_info_list_from_json_args_with_invalid_json() -> None:
     with pytest.raises(TypeError):
-        create_tasks.get_task_creation_info_dict_from_json_args('{"task_001": ["input_data_001"]}')
+        create_tasks.get_task_creation_info_list_from_json_args('{"task_001": ["input_data_001"]}')
 
 
-def test_get_task_creation_info_dict_from_json_args_with_missing_input_data_id_list() -> None:
+def test_get_task_creation_info_list_from_json_args_with_missing_input_data_id_list() -> None:
     with pytest.raises(TypeError):
-        create_tasks.get_task_creation_info_dict_from_json_args('[{"task_id": "task_001"}]')
+        create_tasks.get_task_creation_info_list_from_json_args('[{"task_id": "task_001"}]')
 
 
-def test_get_task_creation_info_dict_from_json_args_with_invalid_metadata() -> None:
+def test_get_task_creation_info_list_from_json_args_with_invalid_metadata() -> None:
     with pytest.raises(TypeError):
-        create_tasks.get_task_creation_info_dict_from_json_args('[{"task_id": "task_001", "input_data_id_list": ["input_data_001"], "metadata": {"foo": null}}]')
+        create_tasks.get_task_creation_info_list_from_json_args('[{"task_id": "task_001", "input_data_id_list": ["input_data_001"], "metadata": {"foo": null}}]')
 
 
-def test_get_task_creation_info_dict_from_json_args_with_duplicate_task_id() -> None:
+def test_get_task_creation_info_list_from_json_args_with_duplicate_task_id() -> None:
     with pytest.raises(ValueError):
-        create_tasks.get_task_creation_info_dict_from_json_args(
+        create_tasks.get_task_creation_info_list_from_json_args(
             """
             [
                 {"task_id": "task_001", "input_data_id_list": ["input_data_001"]},
@@ -166,9 +171,9 @@ def test_get_task_creation_info_dict_from_json_args_with_duplicate_task_id() -> 
         )
 
 
-def test_get_task_creation_info_dict_from_json_args_with_invalid_user_id() -> None:
+def test_get_task_creation_info_list_from_json_args_with_invalid_user_id() -> None:
     with pytest.raises(TypeError):
-        create_tasks.get_task_creation_info_dict_from_json_args('[{"task_id": "task_001", "input_data_id_list": ["input_data_001"], "user_id": 1}]')
+        create_tasks.get_task_creation_info_list_from_json_args('[{"task_id": "task_001", "input_data_id_list": ["input_data_001"], "user_id": 1}]')
 
 
 def test_create_task_with_user_id() -> None:
@@ -179,8 +184,8 @@ def test_create_task_with_user_id() -> None:
     main_obj.facade.get_account_id_from_user_id.return_value = "account1"
 
     result = main_obj.create_task(
-        "task_001",
         create_tasks.TaskCreationInfo(
+            task_id="task_001",
             input_data_id_list=["input_data_001"],
             metadata={},
             user_id="alice",
@@ -200,13 +205,37 @@ def test_validate_user_id_with_not_project_member() -> None:
 
     with pytest.raises(SystemExit) as exc_info:
         main_obj.validate_user_id(
-            {
-                "task_001": create_tasks.TaskCreationInfo(
+            [
+                create_tasks.TaskCreationInfo(
+                    task_id="task_001",
                     input_data_id_list=["input_data_001"],
                     metadata={},
                     user_id="alice",
                 ),
-            }
+            ]
+        )
+
+    assert exc_info.value.code == COMMAND_LINE_ERROR_STATUS_CODE
+
+
+def test_validate_task_id_is_unique_with_duplicate_task_id() -> None:
+    service = Mock()
+    main_obj = create_tasks.CreateTaskMain(service, project_id="project1", parallelism=None)
+
+    with pytest.raises(SystemExit) as exc_info:
+        main_obj.validate_task_id_is_unique(
+            [
+                create_tasks.TaskCreationInfo(
+                    task_id="task_001",
+                    input_data_id_list=["input_data_001"],
+                    metadata={},
+                ),
+                create_tasks.TaskCreationInfo(
+                    task_id="task_001",
+                    input_data_id_list=["input_data_002"],
+                    metadata={},
+                ),
+            ]
         )
 
     assert exc_info.value.code == COMMAND_LINE_ERROR_STATUS_CODE
@@ -219,12 +248,13 @@ def test_validate_task_does_not_exist_with_existing_task() -> None:
 
     with pytest.raises(SystemExit) as exc_info:
         main_obj.validate_task_does_not_exist(
-            {
-                "task_001": create_tasks.TaskCreationInfo(
+            [
+                create_tasks.TaskCreationInfo(
+                    task_id="task_001",
                     input_data_id_list=["input_data_001"],
                     metadata={},
                 ),
-            }
+            ]
         )
 
     assert exc_info.value.code == COMMAND_LINE_ERROR_STATUS_CODE
