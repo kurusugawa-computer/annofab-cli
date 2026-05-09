@@ -47,6 +47,8 @@ CSVのフォーマットは以下の通りです。
 JSON文字列を指定する場合
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 タスクと入力データの関係を表したJSONを指定して、タスクを作成することができます。
+JSONのフォーマットは ``task list --format json`` の出力と同じです。
+ただし、 ``task create`` が参照するキーは ``task_id`` と ``input_data_id_list`` のみです。その他のキーは無視されます。
 
 以下は、JSONのサンプルです。
 
@@ -54,18 +56,24 @@ JSON文字列を指定する場合
     :caption: task.json
 
 
-    {
-        "task1": ["input1","input2"],
-        "task2": ["input3","input4"],
-    }
+    [
+        {
+            "task_id": "task1",
+            "input_data_id_list": ["input1", "input2"]
+        },
+        {
+            "task_id": "task2",
+            "input_data_id_list": ["input3", "input4"]
+        }
+    ]
 
-キーにtask_idを指定して、値にinput_data_idの配列を指定してください。
+各要素の ``task_id`` にtask_idを指定して、 ``input_data_id_list`` にinput_data_idの配列を指定してください。
 
 JSON形式の文字列、またはJSONファイルのパスは ``--json`` に渡します。
 
 .. code-block::
 
-    $ annofabcli task create --project_id prj1 --json '{"task1":["input1","input2"]}'
+    $ annofabcli task create --project_id prj1 --json '[{"task_id":"task1","input_data_id_list":["input1","input2"]}]'
 
 
 Usage Details

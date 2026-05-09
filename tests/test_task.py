@@ -391,7 +391,7 @@ class TestCommandLine:
         task_id = f"test-{datetime.datetime.now().timestamp()!s}"
 
         # タスクの作成
-        json_args = {task_id: [input_data_id]}
+        json_args = [{"task_id": task_id, "input_data_id_list": [input_data_id]}]
         main([self.command_name, "create", "--project_id", project_id, "--json", json.dumps(json_args), "--yes"])
         task = service.wrapper.get_task_or_none(project_id, task_id)
         assert task is not None

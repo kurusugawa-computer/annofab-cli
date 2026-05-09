@@ -44,13 +44,42 @@ def get_task_relation_dict(csv_file: Path) -> TaskInputRelation:
 
 
 def get_task_relation_dict_from_json_args(json_value: str) -> TaskInputRelation:
-    """JSON引数からtask_idとinput_data_idの関係を表すdictを取得します。"""
+    """JSON引数からtask_idとinput_data_idの関係を表すdictを取得します。
 
-    task_relation_dict = get_json_from_args(json_value)
-    if not isinstance(task_relation_dict, dict):
-        print("annofabcli task create: error: JSON形式が不正です。オブジェクトを指定してください。", file=sys.stderr)  # noqa: T201
+    Args:
+        json_value: `task list --format json` と同じ形式のJSON文字列、またはJSONファイルのパス
+
+    Returns:
+        keyがtask_id, valueがinput_data_idのlistであるdict
+    """
+
+    def print_error(message: str) -> None:
+        print(f"annofabcli task create: error: JSON形式が不正です。{message}", file=sys.stderr)  # noqa: T201
+
+    task_list = get_json_from_args(json_value)
+    if not isinstance(task_list, list):
+        print_error("配列を指定してください。")
         sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
-    return task_relation_dict
+
+    result: TaskInputRelation = defaultdict(list)
+    for index, task in enumerate(task_list):
+        if not isinstance(task, dict):
+            print_error(f"{index + 1}番目の要素にはオブジェクトを指定してください。")
+            sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
+
+        task_id = task.get("task_id")
+        if not isinstance(task_id, str):
+            print_error(f"{index + 1}番目の要素の'task_id'には文字列を指定してください。")
+            sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
+
+        input_data_id_list = task.get("input_data_id_list")
+        if not isinstance(input_data_id_list, list) or not all(isinstance(e, str) for e in input_data_id_list):
+            print_error(f"{index + 1}番目の要素の'input_data_id_list'には文字列の配列を指定してください。")
+            sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
+
+        result[task_id].extend(input_data_id_list)
+
+    return result
 
 
 class CreateTaskMain:
@@ -146,13 +175,14 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         ),
     )
 
-    json_sample = '{"task1":["input1","input2"]}'
+    json_sample = '[{"task_id":"task1","input_data_id_list":["input1","input2"]}]'
     file_group.add_argument(
         "--json",
         type=str,
         help=(
             "タスクに割り当てる入力データをJSON形式で指定してください。"
-            "keyがtask_id, valueがinput_data_idのlistです。\n"
+            "`task list --format json` と同じ形式です。"
+            "`task_id` と `input_data_id_list` キーを参照し、それ以外のキーは無視します。\n"
             f"(ex) ``{json_sample}`` \n"
             "``file://`` を先頭に付けるとjsonファイルを指定できます。"
         ),

@@ -44,9 +44,39 @@ def test_get_task_relation_dict_from_headerless_csv(tmp_path: Path) -> None:
     }
 
 
+def test_get_task_relation_dict_from_json_args() -> None:
+    actual = create_tasks.get_task_relation_dict_from_json_args(
+        """
+        [
+            {
+                "task_id": "task_001",
+                "input_data_id_list": ["input_data_001", "input_data_002"],
+                "status": "not_started"
+            },
+            {
+                "task_id": "task_002",
+                "input_data_id_list": ["input_data_003"]
+            }
+        ]
+        """
+    )
+
+    assert actual == {
+        "task_001": ["input_data_001", "input_data_002"],
+        "task_002": ["input_data_003"],
+    }
+
+
 def test_get_task_relation_dict_from_json_args_with_invalid_json() -> None:
     with pytest.raises(SystemExit) as exc_info:
-        create_tasks.get_task_relation_dict_from_json_args('["task_001"]')
+        create_tasks.get_task_relation_dict_from_json_args('{"task_001": ["input_data_001"]}')
+
+    assert exc_info.value.code == COMMAND_LINE_ERROR_STATUS_CODE
+
+
+def test_get_task_relation_dict_from_json_args_with_missing_input_data_id_list() -> None:
+    with pytest.raises(SystemExit) as exc_info:
+        create_tasks.get_task_relation_dict_from_json_args('[{"task_id": "task_001"}]')
 
     assert exc_info.value.code == COMMAND_LINE_ERROR_STATUS_CODE
 
