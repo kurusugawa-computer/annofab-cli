@@ -155,6 +155,9 @@ def get_task_creation_info_list_from_json_args(
 
 
 class CreateTaskMain(CommandLineWithConfirm):
+    PROGRESS_LOG_INTERVAL = 100
+    """進捗ログを出力する間隔"""
+
     def __init__(
         self,
         service: annofabapi.Resource,
@@ -223,6 +226,12 @@ class CreateTaskMain(CommandLineWithConfirm):
             logger.exception(f"タスク'{task_creation_info.task_id}'の登録に失敗しました。")
             return False
 
+    def log_progress(self, processed_count: int, total_count: int) -> None:
+        """一定件数ごとに進捗ログを出力します。"""
+
+        if processed_count % self.PROGRESS_LOG_INTERVAL == 0 or processed_count == total_count:
+            logger.info(f"{processed_count} / {total_count} 件のタスク作成が完了しました。")
+
     def create_task_list(self, task_creation_info_list: list[TaskCreationInfo]) -> None:
         """タスク作成情報のlistをもとに複数のタスクを作成します。
 
@@ -235,21 +244,26 @@ class CreateTaskMain(CommandLineWithConfirm):
             return
 
         success_count = 0
+        total_count = len(task_creation_info_list)
         if self.parallelism is None:
-            for task_creation_info in task_creation_info_list:
+            for index, task_creation_info in enumerate(task_creation_info_list, start=1):
                 try:
                     result = self.create_task(task_creation_info)
                     if result:
                         success_count += 1
                 except Exception:
                     logger.exception(f"タスク'{task_creation_info.task_id}'の登録に失敗しました。")
+                finally:
+                    self.log_progress(index, total_count)
 
         else:
             with multiprocessing.Pool(self.parallelism) as p:
-                results = p.map(self.create_task_wrapper, task_creation_info_list)
-                success_count = len([e for e in results if e])
+                for index, result in enumerate(p.imap(self.create_task_wrapper, task_creation_info_list), start=1):
+                    if result:
+                        success_count += 1
+                    self.log_progress(index, total_count)
 
-        logger.info(f"{success_count} / {len(task_creation_info_list)} 件のタスクを登録しました。")
+        logger.info(f"{success_count} / {total_count} 件のタスクを登録しました。")
 
 
 class CreateTask(CommandLine):

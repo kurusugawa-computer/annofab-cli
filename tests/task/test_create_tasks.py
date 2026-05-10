@@ -1,4 +1,5 @@
 import argparse
+import logging
 from pathlib import Path
 from unittest.mock import Mock
 
@@ -228,6 +229,29 @@ def test_create_task_list_skips_existing_task() -> None:
     )
 
     service.api.put_task.assert_called_once_with("project1", "task_002", request_body={"input_data_id_list": ["input_data_002"]})
+
+
+def test_create_task_list_logs_progress_every_100_tasks(caplog: pytest.LogCaptureFixture) -> None:
+    service = Mock()
+    service.wrapper.get_task_or_none.return_value = None
+    main_obj = create_tasks.CreateTaskMain(service, project_id="project1", parallelism=None, all_yes=True)
+
+    task_creation_info_list = [
+        create_tasks.TaskCreationInfo(
+            task_id=f"task_{index:03d}",
+            input_data_id_list=[f"input_data_{index:03d}"],
+            metadata={},
+        )
+        for index in range(205)
+    ]
+
+    with caplog.at_level(logging.INFO):
+        main_obj.create_task_list(task_creation_info_list)
+
+    assert "100 / 205 件のタスク作成が完了しました。" in caplog.text
+    assert "200 / 205 件のタスク作成が完了しました。" in caplog.text
+    assert "205 / 205 件のタスク作成が完了しました。" in caplog.text
+    assert "205 / 205 件のタスクを登録しました。" in caplog.text
 
 
 def test_create_task_list_cancelled_by_confirm() -> None:
