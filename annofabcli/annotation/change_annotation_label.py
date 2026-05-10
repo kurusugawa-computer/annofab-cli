@@ -96,7 +96,7 @@ class ChangeAnnotationLabelMain(CommandLineWithConfirm):
 
     def get_dest_label_info(self, dest_label_id: str) -> DestLabelInfo:
         """変更先ラベル情報を返す。"""
-        dest_label = self.annotation_specs_accessor.get_label(label_id=dest_label_id)
+        dest_label: dict[str, Any] = dict(self.annotation_specs_accessor.get_label(label_id=dest_label_id))
         return DestLabelInfo(
             label_id=dest_label_id,
             annotation_type=dest_label["annotation_type"],
@@ -108,7 +108,7 @@ class ChangeAnnotationLabelMain(CommandLineWithConfirm):
         if annotation_query.label_id is None:
             return
 
-        src_label = self.annotation_specs_accessor.get_label(label_id=annotation_query.label_id)
+        src_label: dict[str, Any] = dict(self.annotation_specs_accessor.get_label(label_id=annotation_query.label_id))
         src_annotation_type = src_label["annotation_type"]
         if is_allowed_label_change(src_annotation_type, dest_label_info.annotation_type):
             return
@@ -127,7 +127,7 @@ class ChangeAnnotationLabelMain(CommandLineWithConfirm):
 
         def _to_request_body_elm(annotation: dict[str, Any]) -> dict[str, Any]:
             detail = annotation["detail"]
-            src_label = self.annotation_specs_accessor.get_label(label_id=detail["label_id"])
+            src_label: dict[str, Any] = dict(self.annotation_specs_accessor.get_label(label_id=detail["label_id"]))
             src_annotation_type = src_label["annotation_type"]
             if not is_allowed_label_change(src_annotation_type, dest_label_info.annotation_type):
                 raise ValueError(

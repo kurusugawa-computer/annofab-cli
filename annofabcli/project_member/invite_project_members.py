@@ -68,7 +68,7 @@ class InviteProjectMemberMain:
     def assign_role_with_project_id(self, project_id_list: list[str], user_id_list: list[str], member_role: ProjectMemberRole) -> None:
         for project_id in project_id_list:
             try:
-                if not self.facade.my_role_is_owner(project_id):
+                if not self.facade.contains_any_project_member_role(project_id, [ProjectMemberRole.OWNER]):
                     logger.warning(f"オーナではないため、プロジェクトメンバを招待できません。project_id = {project_id}")
                     continue
 

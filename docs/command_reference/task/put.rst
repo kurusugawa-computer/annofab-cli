@@ -6,6 +6,14 @@ Description
 =================================
 タスクを作成します。
 
+.. warning::
+
+   このコマンドは非推奨です。代わりに :doc:`create` コマンドを使用してください。
+
+   ``task put`` コマンドは2027/01/01以降に廃止予定です。
+
+
+
 Examples
 =================================
 
@@ -91,6 +99,7 @@ JSON形式の文字列、またはJSONファイルのパスは ``--json`` に渡
 .. code-block::
 
     $ annofabcli task put --project_id prj1 --csv task.csv --wait
+
 
 
 

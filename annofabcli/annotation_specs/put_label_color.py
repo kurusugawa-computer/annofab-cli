@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from typing import Any
 
 import annofabapi
+from annofabapi.util.annotation_specs import get_label_name_en
 
 import annofabcli.common.cli
 from annofabcli.common.cli import (
@@ -50,7 +51,7 @@ class PuttingLabelColorMain(CommandLineWithConfirm):
         changed_labels: list[Label] = []
         labels = request_body["labels"]
         for label_name_en, color in label_color_dict.items():
-            target_labels = [e for e in labels if AnnofabApiFacade.get_label_name_en(e) == label_name_en]
+            target_labels = [e for e in labels if get_label_name_en(e) == label_name_en]
             if len(target_labels) == 0:
                 logger.warning(f"label_name_en='{label_name_en}'であるラベルは存在しません。")
                 continue
@@ -64,7 +65,7 @@ class PuttingLabelColorMain(CommandLineWithConfirm):
                     changed_labels.append(
                         Label(
                             label_id=target_label["label_id"],
-                            label_name_en=AnnofabApiFacade.get_label_name_en(target_label),
+                            label_name_en=get_label_name_en(target_label),
                         )
                     )
 

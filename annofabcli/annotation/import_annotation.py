@@ -7,10 +7,10 @@ import multiprocessing
 import sys
 import uuid
 import zipfile
-from collections.abc import Iterator
+from collections.abc import Iterator, Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, assert_never
 
 import annofabapi
 import ulid
@@ -28,7 +28,7 @@ from annofabapi.parser import (
 )
 from annofabapi.plugin import EditorPluginId, ThreeDimensionAnnotationType
 from annofabapi.pydantic_models.input_data_type import InputDataType
-from annofabapi.util.annotation_specs import AnnotationSpecsAccessor, get_choice
+from annofabapi.util.annotation_specs import AnnotationSpecsAccessor, get_english_message
 from annofabapi.utils import can_put_annotation
 from dataclasses_json import DataClassJsonMixin
 
@@ -42,7 +42,6 @@ from annofabcli.common.cli import (
     build_annofabapi_resource_and_login,
 )
 from annofabcli.common.facade import AnnofabApiFacade
-from annofabcli.common.type_util import assert_noreturn
 from annofabcli.common.visualize import AddProps
 
 logger = logging.getLogger(__name__)
@@ -77,7 +76,7 @@ class ImportedSimpleAnnotation(DataClassJsonMixin):
     """矩形、ポリゴン、全体アノテーションなど個々のアノテーションの配列。"""
 
 
-def is_image_segmentation_label(label_info: dict[str, Any]) -> bool:
+def is_image_segmentation_label(label_info: Mapping[str, Any]) -> bool:
     """
     ラベルの種類が、画像プロジェクトのセグメンテーションかどうか
     """
@@ -85,7 +84,7 @@ def is_image_segmentation_label(label_info: dict[str, Any]) -> bool:
     return annotation_type in {DefaultAnnotationType.SEGMENTATION.value, DefaultAnnotationType.SEGMENTATION_V2.value}
 
 
-def is_3dpc_segment_label(label_info: dict[str, Any]) -> bool:
+def is_3dpc_segment_label(label_info: Mapping[str, Any]) -> bool:
     """
     3次元のセグメントかどうか
     """
@@ -103,7 +102,7 @@ def is_3dpc_project(project: dict[str, Any]) -> bool:
     return project["input_data_type"] == InputDataType.CUSTOM.value and editor_plugin_id == EditorPluginId.THREE_DIMENSION.value
 
 
-def create_annotation_id(label_info: dict[str, Any], project: dict[str, Any]) -> str:
+def create_annotation_id(label_info: Mapping[str, Any], project: dict[str, Any]) -> str:
     """
     デフォルトのアノテーションIDを生成します。
     """
@@ -155,7 +154,7 @@ class AnnotationConverter:
         attribute_value: str | int | bool | None,  # noqa: FBT001
         additional_data_type: AdditionalDataDefinitionType,
         attribute_name: str,
-        choices: list[dict[str, Any]],
+        choices: Sequence[Mapping[str, Any]],
         *,
         log_message_suffix: str,
     ) -> dict[str, Any] | None:
@@ -210,30 +209,30 @@ class AnnotationConverter:
         elif additional_data_type == AdditionalDataDefinitionType.CHOICE:
             if attribute_value == "":
                 return None
-            try:
-                choice = get_choice(choices, choice_name=str(attribute_value))
-            except ValueError:
+            choice_candidates = [choice for choice in choices if get_english_message(choice["name"]) == str(attribute_value)]
+            if len(choice_candidates) != 1:
                 logger.warning(f"アノテーション仕様の属性'{attribute_name}'に選択肢名(英語)が'{attribute_value}'である選択肢情報は存在しないか、複数存在します。 :: {log_message_suffix}")
                 if self.is_strict:
-                    raise
+                    raise ValueError(f"アノテーション仕様の属性'{attribute_name}'に選択肢名(英語)が'{attribute_value}'である選択肢情報は存在しないか、複数存在します。") from None
                 return None
+            choice = choice_candidates[0]
 
             return {"_type": "Choice", "choice_id": choice["choice_id"]}
         elif additional_data_type == AdditionalDataDefinitionType.SELECT:
             if attribute_value == "":
                 return None
-            try:
-                choice = get_choice(choices, choice_name=str(attribute_value))
-            except ValueError:
+            choice_candidates = [choice for choice in choices if get_english_message(choice["name"]) == str(attribute_value)]
+            if len(choice_candidates) != 1:
                 logger.warning(f"アノテーション仕様の属性'{attribute_name}'に選択肢名(英語)が'{attribute_value}'である選択肢情報は存在しないか、複数存在します。 :: {log_message_suffix}")
                 if self.is_strict:
-                    raise
+                    raise ValueError(f"アノテーション仕様の属性'{attribute_name}'に選択肢名(英語)が'{attribute_value}'である選択肢情報は存在しないか、複数存在します。") from None
                 return None
+            choice = choice_candidates[0]
 
             return {"_type": "Select", "choice_id": choice["choice_id"]}
 
         else:
-            assert_noreturn(additional_data_type)
+            assert_never(additional_data_type)
 
     def convert_attributes(self, attributes: dict[str, Any], *, label_name: str | None = None, log_message_suffix: str = "") -> list[dict[str, Any]]:
         """
@@ -253,7 +252,7 @@ class AnnotationConverter:
 
         for attribute_name, attribute_value in attributes.items():
             try:
-                specs_additional_data = self.annotation_specs_accessor.get_attribute(attribute_name=attribute_name, label=label)
+                specs_additional_data: dict[str, Any] = dict(self.annotation_specs_accessor.get_attribute(attribute_name=attribute_name, label=label))
             except ValueError as e:
                 logger.warning(f"アノテーション仕様に属性名(英語)が'{attribute_name}'である属性情報が存在しないか、複数存在します。 :: {log_message_suffix} :: error={e}")
                 if self.is_strict:
@@ -300,7 +299,7 @@ class AnnotationConverter:
         """
 
         try:
-            label_info = self.annotation_specs_accessor.get_label(label_name=detail.label)
+            label_info: dict[str, Any] = dict(self.annotation_specs_accessor.get_label(label_name=detail.label))
         except ValueError as e:
             logger.warning(f"アノテーション仕様にラベル名(英語)が'{detail.label}'であるラベル情報が存在しないか、または複数存在します。 :: {log_message_suffix} :: error={e}")
             raise

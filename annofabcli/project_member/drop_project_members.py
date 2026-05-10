@@ -4,7 +4,7 @@ from typing import Any
 
 import annofabapi
 import requests
-from annofabapi.models import ProjectMemberStatus
+from annofabapi.models import ProjectMemberRole, ProjectMemberStatus
 from more_itertools import first_true
 
 import annofabcli.common.cli
@@ -62,7 +62,7 @@ class DropProjectMembersMain:
     def drop_role_with_project_id(self, project_id_list: list[str], user_id_list: list[str]) -> None:
         for project_id in project_id_list:
             try:
-                if not self.facade.my_role_is_owner(project_id):
+                if not self.facade.contains_any_project_member_role(project_id, [ProjectMemberRole.OWNER]):
                     logger.warning(f"オーナではないため、プロジェクトメンバを脱退させられません。 :: project_id='{project_id}'")
                     continue
 

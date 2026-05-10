@@ -6,6 +6,7 @@ from typing import Any
 import annofabapi
 import pandas
 from annofabapi.models import Task
+from annofabapi.project_member_repository import ProjectMemberRepository
 
 import annofabcli.common.cli
 from annofabcli.common.cli import ArgumentParser, CommandLine, build_annofabapi_resource_and_login
@@ -84,6 +85,7 @@ class ListTasksMain:
     def __init__(self, service: annofabapi.Resource, project_id: str) -> None:
         self.service = service
         self.facade = AnnofabApiFacade(service)
+        self.project_member_repository = ProjectMemberRepository(service)
         self.project_id = project_id
         self.visualize = AddProps(self.service, project_id)
 
@@ -127,18 +129,18 @@ class ListTasksMain:
 
         if "user_id" in task_query:
             user_id = task_query["user_id"]
-            account_id = self.facade.get_account_id_from_user_id(project_id, user_id)
-            if account_id is not None:
+            try:
+                account_id = self.project_member_repository.get_account_id_from_user_id(project_id, user_id)
                 task_query["account_id"] = account_id
-            else:
+            except ValueError:
                 logger.warning(f"タスク検索クエリに含まれている user_id: {user_id} のユーザが見つかりませんでした。")
 
         if "previous_user_id" in task_query:
             previous_user_id = task_query["previous_user_id"]
-            previous_account_id = self.facade.get_account_id_from_user_id(project_id, previous_user_id)
-            if previous_account_id is not None:
+            try:
+                previous_account_id = self.project_member_repository.get_account_id_from_user_id(project_id, previous_user_id)
                 task_query["previous_account_id"] = previous_account_id
-            else:
+            except ValueError:
                 logger.warning(f"タスク検索クエリに含まれている previous_user_id: {previous_user_id} のユーザが見つかりませんでした。")
 
         return task_query

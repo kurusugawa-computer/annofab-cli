@@ -4,6 +4,7 @@ import argparse
 import logging
 import sys
 from enum import Enum
+from typing import assert_never
 
 import annofabapi
 import pandas
@@ -22,7 +23,6 @@ from annofabcli.common.cli import (
 )
 from annofabcli.common.enums import OutputFormat
 from annofabcli.common.facade import AnnofabApiFacade
-from annofabcli.common.type_util import assert_noreturn
 from annofabcli.common.visualize import AddProps
 
 logger = logging.getLogger(__name__)
@@ -60,7 +60,7 @@ def aggregate_annotations(annotations: list[SingleAnnotation], group_by: GroupBy
         return df.groupby(["task_id"], as_index=False).count().drop(["input_data_id"], axis=1)
 
     else:
-        assert_noreturn(group_by)
+        assert_never(group_by)
 
 
 class ListAnnotationCount(CommandLine):

@@ -14,6 +14,7 @@ import annofabapi
 import dictdiffer
 import more_itertools
 from annofabapi.models import ProjectMemberRole
+from annofabapi.util.annotation_specs import get_label_name_en
 
 import annofabcli.common.cli
 from annofabcli.common.cli import CommandLine, build_annofabapi_resource_and_login
@@ -169,8 +170,8 @@ class DiffProjects(CommandLine):
 
         diff_message = ""
 
-        label_names1 = [AnnofabApiFacade.get_label_name_en(e) for e in labels1]
-        label_names2 = [AnnofabApiFacade.get_label_name_en(e) for e in labels2]
+        label_names1 = [get_label_name_en(e) for e in labels1]
+        label_names2 = [get_label_name_en(e) for e in labels2]
 
         # 重複チェック
         is_duplicated, duplicated_message = self.validate_duplicated(label_names1, label_names2)
@@ -191,7 +192,7 @@ class DiffProjects(CommandLine):
         for label_name in label_names:
 
             def get_label_func(label_name: str, label: dict[str, Any]) -> bool:
-                return AnnofabApiFacade.get_label_name_en(label) == label_name
+                return get_label_name_en(label) == label_name
 
             label1 = more_itertools.first_true(labels1, pred=functools.partial(get_label_func, label_name))
             label2 = more_itertools.first_true(labels2, pred=functools.partial(get_label_func, label_name))

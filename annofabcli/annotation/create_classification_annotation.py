@@ -119,7 +119,7 @@ class CreateClassificationAnnotationMain(CommandLineWithConfirm):
         new_details = []
         for label_name in labels:
             try:
-                label_info = annotation_specs_accessor.get_label(label_name=label_name)
+                label_info: dict[str, Any] = dict(annotation_specs_accessor.get_label(label_name=label_name))
             except ValueError:
                 logger.warning(f"アノテーション仕様にラベル名(英語)が'{label_name}'であるラベル情報が存在しないか、または複数存在します。 :: task_id='{task_id}', input_data_id='{input_data_id}'")
                 continue

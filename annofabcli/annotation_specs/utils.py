@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-from collections.abc import Collection, Sequence
+from collections.abc import Collection, Mapping, Sequence
 from typing import Any
 
 from annofabapi.util.annotation_specs import AnnotationSpecsAccessor, get_english_message
 
 
-def get_label_name_en(label: dict[str, Any]) -> str:
+def get_label_name_en(label: Mapping[str, Any]) -> str:
     """
     ラベル情報から英語名を取得する。
 
@@ -19,7 +19,7 @@ def get_label_name_en(label: dict[str, Any]) -> str:
     return get_english_message(label["label_name"])
 
 
-def get_attribute_name_en(attribute: dict[str, Any]) -> str:
+def get_attribute_name_en(attribute: Mapping[str, Any]) -> str:
     """
     属性情報から英語名を取得する。
 
@@ -56,7 +56,7 @@ def get_target_labels(
     *,
     label_ids: Sequence[str] | None,
     label_name_ens: Sequence[str] | None,
-) -> list[dict[str, Any]]:
+) -> list[Mapping[str, Any]]:
     """
     CLI引数で指定されたラベルID・ラベル名から追加対象ラベル一覧を取得する。
 
@@ -74,7 +74,7 @@ def get_target_labels(
     resolved_label_ids = [] if label_ids is None else list(label_ids)
     resolved_label_name_ens = [] if label_name_ens is None else list(label_name_ens)
 
-    result = []
+    result: list[Mapping[str, Any]] = []
     result_label_ids: set[str] = set()
 
     for label_id in resolved_label_ids:
@@ -100,7 +100,7 @@ def get_target_attributes(
     *,
     attribute_ids: Collection[str] | None,
     attribute_name_ens: Collection[str] | None,
-) -> list[dict[str, Any]]:
+) -> list[Mapping[str, Any]]:
     """
     CLI引数で指定された属性ID・属性名から対象属性一覧を取得する。
 
@@ -123,7 +123,7 @@ def get_target_attributes(
     if len(resolved_attribute_ids) == 0 and len(resolved_attribute_name_ens) == 0:
         raise ValueError("対象属性を1件以上指定してください。")
 
-    result = []
+    result: list[Mapping[str, Any]] = []
     result_attribute_ids: set[str] = set()
 
     for attribute_id in resolved_attribute_ids:

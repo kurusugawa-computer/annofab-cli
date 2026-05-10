@@ -8,7 +8,7 @@ import tempfile
 import zipfile
 from collections.abc import Collection, Iterator
 from pathlib import Path
-from typing import Any, Literal
+from typing import Any, Literal, assert_never
 
 import pandas
 import pydantic
@@ -33,7 +33,6 @@ from annofabcli.common.facade import (
     TaskQuery,
     match_annotation_with_task_query,
 )
-from annofabcli.common.type_util import assert_noreturn
 from annofabcli.common.utils import print_csv, print_json
 
 logger = logging.getLogger(__name__)
@@ -174,7 +173,7 @@ def print_annotation_attribute_list(
     elif output_format == OutputFormat.PRETTY_JSON:
         print_json(tmp_annotation_attribute_list, output=output_file, is_pretty=True)
     else:
-        raise assert_noreturn(output_format)
+        assert_never(output_format)
 
 
 class ListAnnotationAttribute(CommandLine):

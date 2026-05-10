@@ -13,7 +13,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 from functools import partial
 from pathlib import Path
-from typing import Any, Literal, Protocol
+from typing import Any, Literal, Protocol, assert_never
 
 import annofabapi
 import pandas
@@ -42,7 +42,6 @@ from annofabcli.common.facade import (
     TaskQuery,
     match_annotation_with_task_query,
 )
-from annofabcli.common.type_util import assert_noreturn
 from annofabcli.common.utils import print_csv, print_json
 from annofabcli.statistics.list_annotation_count import AnnotationSpecs
 
@@ -532,7 +531,7 @@ class ListAnnotationAttributeFilledCountMain:
                 )
 
         else:
-            raise assert_noreturn(group_by)
+            assert_never(group_by)
 
 
 class ListAnnotationAttributeFilledCount(CommandLine):
