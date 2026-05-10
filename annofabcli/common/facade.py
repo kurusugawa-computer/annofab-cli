@@ -319,11 +319,7 @@ class AnnofabApiFacade:
 
         """
         if task_query.user_id is not None:
-            try:
-                task_query.account_id = self.project_member_repository.get_account_id_from_user_id(project_id, task_query.user_id)
-            except ValueError:
-                logger.warning(f"task_queryに含まれている user_id='{task_query.user_id}' のユーザーが見つかりませんでした。")
-                task_query.account_id = None
+            task_query.account_id = self.project_member_repository.get_account_id_from_user_id(project_id, task_query.user_id)
         return task_query
 
     def validate_project(
