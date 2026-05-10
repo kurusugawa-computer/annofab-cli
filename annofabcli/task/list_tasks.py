@@ -128,19 +128,13 @@ class ListTasksMain:
 
         if "user_id" in task_query:
             user_id = task_query["user_id"]
-            try:
-                account_id = self.project_member_repository.get_account_id_from_user_id(project_id, user_id)
-                task_query["account_id"] = account_id
-            except ValueError:
-                logger.warning(f"タスク検索クエリに含まれている user_id: {user_id} のユーザが見つかりませんでした。")
+            account_id = self.project_member_repository.get_account_id_from_user_id(project_id, user_id)
+            task_query["account_id"] = account_id
 
         if "previous_user_id" in task_query:
             previous_user_id = task_query["previous_user_id"]
-            try:
-                previous_account_id = self.project_member_repository.get_account_id_from_user_id(project_id, previous_user_id)
-                task_query["previous_account_id"] = previous_account_id
-            except ValueError:
-                logger.warning(f"タスク検索クエリに含まれている previous_user_id: {previous_user_id} のユーザが見つかりませんでした。")
+            previous_account_id = self.project_member_repository.get_account_id_from_user_id(project_id, previous_user_id)
+            task_query["previous_account_id"] = previous_account_id
 
         return task_query
 
