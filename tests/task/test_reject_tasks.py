@@ -39,7 +39,7 @@ def test_reject_task_with_adding_comment_uses_assigned_account_id_without_re_res
         project_id="project1",
         task_id="task1",
         assign_last_annotator=False,
-        assigned_annotator_account_id="account1",
+        assigned_annotator=reject_tasks.AssignedAnnotator(account_id="account1", user_id="alice"),
     )
 
     assert result is True
@@ -73,7 +73,7 @@ def test_main_resolves_assigned_annotator_user_id_before_reject_task_list(monkey
     command.main()
 
     reject_task_list_mock.assert_called_once()
-    assert reject_task_list_mock.call_args.kwargs["assigned_annotator_account_id"] == "account1"
+    assert reject_task_list_mock.call_args.kwargs["assigned_annotator"] == reject_tasks.AssignedAnnotator(account_id="account1", user_id="alice")
     assert reject_task_list_mock.call_args.kwargs["assign_last_annotator"] is False
 
 
