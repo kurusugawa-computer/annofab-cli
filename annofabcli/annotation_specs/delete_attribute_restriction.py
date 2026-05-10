@@ -194,8 +194,8 @@ class DeleteAttributeRestriction(CommandLine):
         args = self.args
         obj = DeleteAttributeRestrictionMain(self.service, project_id=args.project_id, all_yes=args.yes)
 
-        if args.json is not None:
-            restrictions = get_json_from_args(args.json)
+        if args.restriction_json is not None:
+            restrictions = get_json_from_args(args.restriction_json)
             if not isinstance(restrictions, list):
                 print(f"{self.COMMON_MESSAGE}: JSON形式が不正です。オブジェクトの配列を指定してください。", file=sys.stderr)  # noqa: T201
                 sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
@@ -224,7 +224,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         }
     ]
     target_group.add_argument(
-        "--json",
+        "--restriction_json",
         type=str,
         help=(
             "削除する属性制約情報のJSONを指定します。"
