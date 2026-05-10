@@ -258,7 +258,7 @@ class CreateTaskMain(CommandLineWithConfirm):
 
         else:
             with multiprocessing.Pool(self.parallelism) as p:
-                for index, result in enumerate(p.imap(self.create_task_wrapper, task_creation_info_list), start=1):
+                for index, result in enumerate(p.imap_unordered(self.create_task_wrapper, task_creation_info_list), start=1):
                     if result:
                         success_count += 1
                     self.log_progress(index, total_count)

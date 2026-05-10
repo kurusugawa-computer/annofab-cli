@@ -254,6 +254,45 @@ def test_create_task_list_logs_progress_every_100_tasks(caplog: pytest.LogCaptur
     assert "205 / 205 件のタスクを登録しました。" in caplog.text
 
 
+def test_create_task_list_logs_progress_every_100_tasks_in_parallel(monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture) -> None:
+    class FakePool:
+        def __init__(self, _parallelism: int) -> None:
+            pass
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc_value, traceback) -> None:
+            return None
+
+        def imap_unordered(self, func, iterable):
+            for task_creation_info in reversed(list(iterable)):
+                yield func(task_creation_info)
+
+    monkeypatch.setattr(create_tasks.multiprocessing, "Pool", FakePool)
+
+    service = Mock()
+    service.wrapper.get_task_or_none.return_value = None
+    main_obj = create_tasks.CreateTaskMain(service, project_id="project1", parallelism=2, all_yes=True)
+
+    task_creation_info_list = [
+        create_tasks.TaskCreationInfo(
+            task_id=f"task_{index:03d}",
+            input_data_id_list=[f"input_data_{index:03d}"],
+            metadata={},
+        )
+        for index in range(205)
+    ]
+
+    with caplog.at_level(logging.INFO):
+        main_obj.create_task_list(task_creation_info_list)
+
+    assert "100 / 205 件のタスク作成が完了しました。" in caplog.text
+    assert "200 / 205 件のタスク作成が完了しました。" in caplog.text
+    assert "205 / 205 件のタスク作成が完了しました。" in caplog.text
+    assert "205 / 205 件のタスクを登録しました。" in caplog.text
+
+
 def test_create_task_list_cancelled_by_confirm() -> None:
     service = Mock()
     main_obj = CreateTaskMainWithoutConfirm(service, project_id="project1", parallelism=None)
