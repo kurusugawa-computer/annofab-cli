@@ -8,6 +8,7 @@ import annofabapi
 import requests
 from annofabapi.dataclass.task import Task
 from annofabapi.models import ProjectMemberRole, TaskStatus
+from annofabapi.project_member_repository import ProjectMemberRepository
 
 import annofabcli.common.cli
 from annofabcli.common.cli import (
@@ -27,6 +28,7 @@ class ChangeOperatorMain:
     def __init__(self, service: annofabapi.Resource, *, all_yes: bool, include_on_hold: bool = False) -> None:
         self.service = service
         self.facade = AnnofabApiFacade(service)
+        self.project_member_repository = ProjectMemberRepository(service)
         self.all_yes = all_yes
         self.include_on_hold = include_on_hold
 
@@ -75,7 +77,7 @@ class ChangeOperatorMain:
 
         now_user_id = None
         if task.account_id is not None:
-            now_user_id = self.facade.get_user_id_from_account_id(project_id, task.account_id)
+            now_user_id = self.project_member_repository.get_user_id_from_account_id(project_id, task.account_id)
 
         logger.debug(f"{logging_prefix} :: task_id='{task.task_id}', status='{task.status.value}', phase='{task.phase.value}', phase_stage='{task.phase_stage}', user_id='{now_user_id}'")
         if task.account_id == new_account_id:
@@ -151,12 +153,14 @@ class ChangeOperatorMain:
             task_query = self.facade.set_account_id_of_task_query(project_id, task_query)
 
         if new_user_id is not None:
-            new_account_id = self.facade.get_account_id_from_user_id(project_id, new_user_id)
+            try:
+                new_account_id = self.project_member_repository.get_account_id_from_user_id(project_id, new_user_id)
+            except ValueError:
+                new_account_id = None
             if new_account_id is None:
                 logger.error(f"user_id='{new_user_id}'であるユーザーは、project_id='{project_id}'のプロジェクトのメンバーではありません。終了します。")
                 return
-            else:
-                logger.info(f"{len(task_id_list)} 件のタスクの担当者を、user_id='{new_user_id}'のユーザーに変更します。")
+            logger.info(f"{len(task_id_list)} 件のタスクの担当者を、user_id='{new_user_id}'のユーザーに変更します。")
         else:
             new_account_id = None
             logger.info(f"{len(task_id_list)} 件のタスクの担当者を「未割り当て」に変更します。")

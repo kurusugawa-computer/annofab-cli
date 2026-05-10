@@ -13,6 +13,7 @@ import requests
 from annofabapi.dataclass.task import Task
 from annofabapi.models import InputDataType, ProjectMemberRole, TaskPhase, TaskStatus
 from annofabapi.plugin import EditorPluginId
+from annofabapi.project_member_repository import ProjectMemberRepository
 
 import annofabcli.common.cli
 from annofabcli.common.cli import (
@@ -33,6 +34,7 @@ class RejectTasksMain(CommandLineWithConfirm):
     def __init__(self, service: annofabapi.Resource, *, comment_data: dict[str, Any] | None, all_yes: bool = False) -> None:
         self.service = service
         self.facade = AnnofabApiFacade(service)
+        self.project_member_repository = ProjectMemberRepository(service)
         self.comment_data = comment_data
         CommandLineWithConfirm.__init__(self, all_yes)
 
@@ -210,7 +212,14 @@ class RejectTasksMain(CommandLineWithConfirm):
                 return True
 
             else:
-                assigned_annotator_account_id = self.facade.get_account_id_from_user_id(project_id, assigned_annotator_user_id) if assigned_annotator_user_id is not None else None
+                if assigned_annotator_user_id is not None:
+                    try:
+                        assigned_annotator_account_id = self.project_member_repository.get_account_id_from_user_id(project_id, assigned_annotator_user_id)
+                    except ValueError:
+                        logger.warning(f"{logging_prefix} :: user_id='{assigned_annotator_user_id}'であるユーザーは、project_id='{project_id}'のプロジェクトのメンバーではありません。")
+                        return False
+                else:
+                    assigned_annotator_account_id = None
 
                 self.service.wrapper.change_task_operator(project_id, task_id, operator_account_id=assigned_annotator_account_id)
 

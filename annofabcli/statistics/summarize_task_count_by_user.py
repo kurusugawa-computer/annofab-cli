@@ -7,6 +7,7 @@ from pathlib import Path
 
 import pandas
 from annofabapi.models import ProjectMemberRole, Task, TaskPhase, TaskStatus
+from annofabapi.project_member_repository import ProjectMemberRepository
 
 import annofabcli.common.cli
 from annofabcli.common.cli import (
@@ -89,11 +90,14 @@ def create_task_count_summary_df(task_list: list[Task]) -> pandas.DataFrame:
 
 class SummarizeTaskCountByUser(CommandLine):
     def create_user_df(self, project_id: str, account_id_list: list[str]) -> pandas.DataFrame:
+        project_member_repository = ProjectMemberRepository(self.service)
         user_list = []
         for account_id in account_id_list:
-            user = self.facade.get_project_member_from_account_id(project_id=project_id, account_id=account_id)
-            if user is not None:
+            try:
+                user = project_member_repository.get_project_member_from_account_id(project_id=project_id, account_id=account_id)
                 user_list.append(user)
+            except ValueError:
+                logger.warning(f"account_id='{account_id}'であるユーザーは、project_id='{project_id}'のプロジェクトのメンバーではありません。")
         return pandas.DataFrame(user_list, columns=["account_id", "user_id", "username", "biography"])
 
     def create_summary_df(self, project_id: str, task_list: list[Task]) -> pandas.DataFrame:
