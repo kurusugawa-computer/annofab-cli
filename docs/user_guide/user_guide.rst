@@ -72,7 +72,7 @@ Getting Help
 .. code-block::
 
     $ annofabcli task list --help
-    usage: annofabcli task list [-h] [--yes] [--endpoint_url ENDPOINT_URL] [--logdir LOGDIR] [--disable_log] [--logging_yaml LOGGING_YAML] -p PROJECT_ID [-tq TASK_QUERY | -t TASK_ID [TASK_ID ...]] [-u USER_ID [USER_ID ...]] [-f {csv,json,pretty_json,task_id_list}]
+    usage: annofabcli task list [-h] [--yes] [--endpoint_url ENDPOINT_URL] [--logdir LOGDIR] [--disable_log] [--logging_yaml LOGGING_YAML] -p PROJECT_ID [-tq TASK_QUERY | -t TASK_ID [TASK_ID ...]] [-f {csv,json,pretty_json,task_id_list}]
                                 [-o OUTPUT]
 
     タスク一覧を出力します。
@@ -156,5 +156,4 @@ Getting Help
   DEBUG    : 2022-01-24 12:28:27,399 : annofabapi.api                 : Sent a request :: {'request': {'http_method': 'get', 'url': 'https://annofab.com/api/v1/organizations/kurusugawa/projects', 'query_params': {'user_id': 'xxx', 'account_id': 'xxx', 'page': 2, 'limit': 200}, 'header_params': None, 'request_body': None}, 'response': {'status_code': 200, 'content_length': 182546}}
   INFO     : 2022-01-24 12:28:27,409 : annofabcli.project.list_project : プロジェクト一覧の件数: 384
   INFO     : 2022-01-24 12:28:27,441 : annofabcli.common.utils        : out/project.csv を出力しました。
-
 

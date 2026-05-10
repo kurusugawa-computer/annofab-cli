@@ -77,11 +77,11 @@ metadataの ``priority`` が ``5`` であるタスク一覧を出力します。
 
 タスクの担当者で絞り込む
 ----------------------------------------------
-タスクの担当者で絞り込む場合は、``--user_id`` を指定してください。
+タスクの担当者で絞り込む場合は、``--task_query`` に ``user_id`` キーを指定してください。
 
 .. code-block::
 
-    $ annofabcli task list --project_id prj1 --user_id user1 user2
+    $ annofabcli task list --project_id prj1 --task_query '{"user_id": "user1"}'
 
 
 task_idで絞り込む
@@ -193,4 +193,3 @@ Usage Details
 See also
 =================================
 * `annofabcli task list_all <../task/list_all.html>`_
-

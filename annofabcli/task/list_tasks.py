@@ -84,7 +84,6 @@ def print_task_list(
 class ListTasksMain:
     def __init__(self, service: annofabapi.Resource, project_id: str) -> None:
         self.service = service
-        self.facade = AnnofabApiFacade(service)
         self.project_member_repository = ProjectMemberRepository(service)
         self.project_id = project_id
         self.visualize = AddProps(self.service, project_id)
@@ -109,7 +108,7 @@ class ListTasksMain:
         タスク検索クエリを修正する。
         ``user_id`` から ``account_id`` に変換する。
         ``previous_user_id`` から ``previous_account_id`` に変換する。
-        ``page`` , ``limit``を削除」する
+        ``page`` , ``limit``を削除する
 
         Args:
             task_query: タスク検索クエリ（変更される）
@@ -129,29 +128,23 @@ class ListTasksMain:
 
         if "user_id" in task_query:
             user_id = task_query["user_id"]
-            try:
-                account_id = self.project_member_repository.get_account_id_from_user_id(project_id, user_id)
-                task_query["account_id"] = account_id
-            except ValueError:
-                logger.warning(f"タスク検索クエリに含まれている user_id: {user_id} のユーザが見つかりませんでした。")
+            account_id = self.project_member_repository.get_account_id_from_user_id(project_id, user_id)
+            task_query["account_id"] = account_id
 
         if "previous_user_id" in task_query:
             previous_user_id = task_query["previous_user_id"]
-            try:
-                previous_account_id = self.project_member_repository.get_account_id_from_user_id(project_id, previous_user_id)
-                task_query["previous_account_id"] = previous_account_id
-            except ValueError:
-                logger.warning(f"タスク検索クエリに含まれている previous_user_id: {previous_user_id} のユーザが見つかりませんでした。")
+            previous_account_id = self.project_member_repository.get_account_id_from_user_id(project_id, previous_user_id)
+            task_query["previous_account_id"] = previous_account_id
 
         return task_query
 
-    def get_task_list_with_api(self, project_id: str, task_query: dict[str, Any] | None = None, user_id_list: list[str] | None = None) -> list[Task]:
+    def get_task_list_with_api(self, project_id: str, task_query: dict[str, Any] | None = None) -> list[Task]:
         """
         タスク一覧を取得する。
 
         Args:
             project_id:
-            task_id_list:
+            task_query:
 
         Returns:
             対象の検査コメント一覧
@@ -161,21 +154,9 @@ class ListTasksMain:
         else:
             task_query = {}
 
-        if user_id_list is None:
-            tasks = self.service.wrapper.get_all_tasks(project_id, query_params=task_query)
-            if len(tasks) == 10000:
-                logger.warning("タスク一覧は10,000件で打ち切られている可能性があります。")
-
-        else:
-            tasks = []
-            for user_id in user_id_list:
-                task_query["user_id"] = user_id
-                task_query = self._modify_task_query(project_id, task_query)
-                logger.debug(f"task_query: {task_query}")
-                sub_tasks = self.service.wrapper.get_all_tasks(project_id, query_params=task_query)
-                if len(sub_tasks) == 10000:
-                    logger.warning(f"user_id={user_id}で絞り込んだタスク一覧は10,000件で打ち切られている可能性があります。")
-                tasks.extend(sub_tasks)
+        tasks = self.service.wrapper.get_all_tasks(project_id, query_params=task_query)
+        if len(tasks) == 10000:
+            logger.warning("タスク一覧は10,000件で打ち切られている可能性があります。")
 
         return [self.visualize.add_properties_to_task(e) for e in tasks]
 
@@ -185,7 +166,6 @@ class ListTasksMain:
         *,
         task_id_list: list[str] | None = None,
         task_query: dict[str, Any] | None = None,
-        user_id_list: list[str] | None = None,
     ) -> list[Task]:
         """
 
@@ -194,7 +174,6 @@ class ListTasksMain:
             project_id: 対象のproject_id
             task_id_list: 対象のタスクのtask_id
             task_query: タスク検索クエリ
-            user_id_list:
 
         Returns:
 
@@ -202,7 +181,7 @@ class ListTasksMain:
         if task_id_list is not None:
             task_list = self.get_task_list_from_task_id(project_id, task_id_list=task_id_list)
         else:
-            task_list = self.get_task_list_with_api(project_id, task_query=task_query, user_id_list=user_id_list)
+            task_list = self.get_task_list_with_api(project_id, task_query=task_query)
 
         return task_list
 
@@ -220,7 +199,6 @@ class ListTasks(CommandLine):
         args = self.args
 
         task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id) if args.task_id is not None else None
-        user_id_list = annofabcli.common.cli.get_list_from_args(args.user_id) if args.user_id is not None else None
         task_query = annofabcli.common.cli.get_json_from_args(args.task_query)
 
         project_id = args.project_id
@@ -231,7 +209,6 @@ class ListTasks(CommandLine):
             project_id=project_id,
             task_id_list=task_id_list,
             task_query=task_query,
-            user_id_list=user_id_list,
         )
 
         logger.info(f"{len(task_list)}件のタスク情報を出力します。")
@@ -272,14 +249,6 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         type=str,
         nargs="+",
         help="対象のタスクのtask_idを指定します。 ``--task_query`` 引数とは同時に指定できません。 ``file://`` を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。",
-    )
-
-    parser.add_argument(
-        "-u",
-        "--user_id",
-        type=str,
-        nargs="+",
-        help="絞り込み対象である担当者のuser_idを指定します。 ``file://`` を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。",
     )
 
     argument_parser.add_format(

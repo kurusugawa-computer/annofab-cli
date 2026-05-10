@@ -5,6 +5,7 @@ import logging
 import multiprocessing
 import sys
 import uuid
+from dataclasses import dataclass
 from functools import partial
 from typing import Any
 
@@ -30,11 +31,19 @@ from annofabcli.common.facade import AnnofabApiFacade, TaskQuery, match_task_wit
 logger = logging.getLogger(__name__)
 
 
+@dataclass(frozen=True)
+class AssignedAnnotator:
+    account_id: str
+    """差し戻し後に割り当てる担当者のaccount_id"""
+
+    user_id: str
+    """差し戻し後に割り当てる担当者のuser_id"""
+
+
 class RejectTasksMain(CommandLineWithConfirm):
     def __init__(self, service: annofabapi.Resource, *, comment_data: dict[str, Any] | None, all_yes: bool = False) -> None:
         self.service = service
         self.facade = AnnofabApiFacade(service)
-        self.project_member_repository = ProjectMemberRepository(service)
         self.comment_data = comment_data
         CommandLineWithConfirm.__init__(self, all_yes)
 
@@ -70,12 +79,12 @@ class RejectTasksMain(CommandLineWithConfirm):
 
         self.service.api.batch_update_comments(project_id, task["task_id"], first_input_data_id, request_body=req_inspection)
 
-    def confirm_reject_task(self, task_id: str, assign_last_annotator: bool, assigned_annotator_user_id: str | None) -> bool:  # noqa: FBT001
+    def confirm_reject_task(self, task_id: str, assign_last_annotator: bool, assigned_annotator: AssignedAnnotator | None) -> bool:  # noqa: FBT001
         confirm_message = f"task_id='{task_id}' のタスクを差し戻しますか？"
         if assign_last_annotator:
             confirm_message += "最後の教師付フェーズの担当者を割り当てます。"
-        elif assigned_annotator_user_id is not None:
-            confirm_message += f"user_id='{assigned_annotator_user_id}'のユーザーを担当者に割り当てます。"
+        elif assigned_annotator is not None:
+            confirm_message += f"user_id='{assigned_annotator.user_id}'のユーザーを担当者に割り当てます。"
         else:
             confirm_message += "担当者は割り当てません。"
 
@@ -114,7 +123,7 @@ class RejectTasksMain(CommandLineWithConfirm):
         task: dict[str, Any],
         *,
         assign_last_annotator: bool,
-        assigned_annotator_user_id: str | None,
+        assigned_annotator: AssignedAnnotator | None,
         cancel_acceptance: bool = False,
         task_query: TaskQuery | None = None,
     ) -> bool:
@@ -141,7 +150,7 @@ class RejectTasksMain(CommandLineWithConfirm):
             logger.debug(f"task_id='{task_id}' : `--task_query`の条件にマッチしないため、スキップします。 :: task_query='{task_query}'")
             return False
 
-        if not self.confirm_reject_task(task_id, assign_last_annotator=assign_last_annotator, assigned_annotator_user_id=assigned_annotator_user_id):  # noqa: SIM103
+        if not self.confirm_reject_task(task_id, assign_last_annotator=assign_last_annotator, assigned_annotator=assigned_annotator):  # noqa: SIM103
             return False
 
         return True
@@ -153,7 +162,7 @@ class RejectTasksMain(CommandLineWithConfirm):
         *,
         inspection_comment: str | None = None,
         assign_last_annotator: bool = True,
-        assigned_annotator_user_id: str | None = None,
+        assigned_annotator: AssignedAnnotator | None = None,
         cancel_acceptance: bool = False,
         task_query: TaskQuery | None = None,
         task_index: int | None = None,
@@ -166,7 +175,7 @@ class RejectTasksMain(CommandLineWithConfirm):
             task_id_list:
             inspection_comment: 検査コメントの中身
             assign_last_annotator: Trueなら差し戻したタスクに対して、最後のannotation phaseを担当者を割り当てる
-            assigned_annotator_user_id: 差し戻したタスクに割り当てるユーザのuser_id. assign_last_annotatorがTrueの場合、この引数は無視される。
+            assigned_annotator: 差し戻したタスクに割り当てるユーザ情報. assign_last_annotatorがTrueの場合、この引数は無視される。
 
         Returns:
             タスクを差し戻したかどうか
@@ -184,7 +193,7 @@ class RejectTasksMain(CommandLineWithConfirm):
         if not self._can_reject_task(
             task=task,
             assign_last_annotator=assign_last_annotator,
-            assigned_annotator_user_id=assigned_annotator_user_id,
+            assigned_annotator=assigned_annotator,
             cancel_acceptance=cancel_acceptance,
             task_query=task_query,
         ):
@@ -212,18 +221,11 @@ class RejectTasksMain(CommandLineWithConfirm):
                 return True
 
             else:
-                if assigned_annotator_user_id is not None:
-                    try:
-                        assigned_annotator_account_id = self.project_member_repository.get_account_id_from_user_id(project_id, assigned_annotator_user_id)
-                    except ValueError:
-                        logger.warning(f"{logging_prefix} :: user_id='{assigned_annotator_user_id}'であるユーザーは、project_id='{project_id}'のプロジェクトのメンバーではありません。")
-                        return False
-                else:
-                    assigned_annotator_account_id = None
+                operator_account_id = assigned_annotator.account_id if assigned_annotator is not None else None
+                self.service.wrapper.change_task_operator(project_id, task_id, operator_account_id=operator_account_id)
 
-                self.service.wrapper.change_task_operator(project_id, task_id, operator_account_id=assigned_annotator_account_id)
-
-                logger.debug(f"{logging_prefix} :: task_id='{task_id}' のタスクを差し戻しました。タスクの担当者: '{assigned_annotator_user_id}'")
+                assigned_annotator_user_id = assigned_annotator.user_id if assigned_annotator is not None else None
+                logger.debug(f"{logging_prefix} :: task_id='{task_id}' のタスクを差し戻しました。タスクの担当者user_id: '{assigned_annotator_user_id}'")
                 return True
 
         except requests.exceptions.HTTPError:
@@ -244,7 +246,7 @@ class RejectTasksMain(CommandLineWithConfirm):
         project_id: str,
         inspection_comment: str | None = None,
         assign_last_annotator: bool = True,  # noqa: FBT001, FBT002
-        assigned_annotator_user_id: str | None = None,
+        assigned_annotator: AssignedAnnotator | None = None,
         cancel_acceptance: bool = False,  # noqa: FBT001, FBT002
         task_query: TaskQuery | None = None,
     ) -> bool:
@@ -256,7 +258,7 @@ class RejectTasksMain(CommandLineWithConfirm):
                 task_index=task_index,
                 inspection_comment=inspection_comment,
                 assign_last_annotator=assign_last_annotator,
-                assigned_annotator_user_id=assigned_annotator_user_id,
+                assigned_annotator=assigned_annotator,
                 cancel_acceptance=cancel_acceptance,
                 task_query=task_query,
             )
@@ -270,7 +272,7 @@ class RejectTasksMain(CommandLineWithConfirm):
         task_id_list: list[str],
         inspection_comment: str | None = None,
         assign_last_annotator: bool = True,  # noqa: FBT001, FBT002
-        assigned_annotator_user_id: str | None = None,
+        assigned_annotator: AssignedAnnotator | None = None,
         cancel_acceptance: bool = False,  # noqa: FBT001, FBT002
         task_query: TaskQuery | None = None,
         parallelism: int | None = None,
@@ -286,7 +288,7 @@ class RejectTasksMain(CommandLineWithConfirm):
                 project_id=project_id,
                 inspection_comment=inspection_comment,
                 assign_last_annotator=assign_last_annotator,
-                assigned_annotator_user_id=assigned_annotator_user_id,
+                assigned_annotator=assigned_annotator,
                 cancel_acceptance=cancel_acceptance,
                 task_query=task_query,
             )
@@ -305,7 +307,7 @@ class RejectTasksMain(CommandLineWithConfirm):
                         task_index=task_index,
                         inspection_comment=inspection_comment,
                         assign_last_annotator=assign_last_annotator,
-                        assigned_annotator_user_id=assigned_annotator_user_id,
+                        assigned_annotator=assigned_annotator,
                         cancel_acceptance=cancel_acceptance,
                         task_query=task_query,
                     )
@@ -320,6 +322,18 @@ class RejectTasksMain(CommandLineWithConfirm):
 
 class RejectTasks(CommandLine):
     COMMON_MESSAGE = "annofabcli task reject: error:"
+
+    def get_assigned_annotator(self, project_id: str, assigned_annotator_user_id: str | None) -> AssignedAnnotator | None:
+        if assigned_annotator_user_id is None:
+            return None
+
+        project_member_repository = ProjectMemberRepository(self.service)
+        try:
+            account_id = project_member_repository.get_account_id_from_user_id(project_id, assigned_annotator_user_id)
+            return AssignedAnnotator(account_id=account_id, user_id=assigned_annotator_user_id)
+        except ValueError:
+            logger.warning(f"user_id='{assigned_annotator_user_id}'であるユーザーは、project_id='{project_id}'のプロジェクトのメンバーではありません。終了します。")
+            return None
 
     def validate(self, args: argparse.Namespace) -> bool:
         if args.parallelism is not None and not args.yes:
@@ -337,7 +351,10 @@ class RejectTasks(CommandLine):
             sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
         task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id)
-        assign_last_annotator = not args.not_assign and args.assigned_annotator_user_id is None
+        assigned_annotator = self.get_assigned_annotator(args.project_id, args.assigned_annotator_user_id)
+        if args.assigned_annotator_user_id is not None and assigned_annotator is None:
+            return
+        assign_last_annotator = not args.not_assign and assigned_annotator is None
 
         if not args.cancel_acceptance and args.comment is not None:
             # 受入取消を実施しない AND 検査コメントを付与する場合はチェッカーロールでも実行できる
@@ -378,7 +395,7 @@ class RejectTasks(CommandLine):
             task_id_list,
             inspection_comment=args.comment,
             assign_last_annotator=assign_last_annotator,
-            assigned_annotator_user_id=args.assigned_annotator_user_id,
+            assigned_annotator=assigned_annotator,
             cancel_acceptance=args.cancel_acceptance,
             task_query=task_query,
             parallelism=args.parallelism,
