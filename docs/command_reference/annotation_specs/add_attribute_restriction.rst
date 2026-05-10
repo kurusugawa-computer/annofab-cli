@@ -38,7 +38,7 @@ Examples
     
 .. code-block::
 
-    $ annofabcli annotation_specs add_attribute_restriction --project_id prj1 --json file://restriction.json
+    $ annofabcli annotation_specs add_attribute_restriction --project_id prj1 --restriction_json file://restriction.json
 
 
 Usage Details
