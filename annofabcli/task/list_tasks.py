@@ -84,7 +84,6 @@ def print_task_list(
 class ListTasksMain:
     def __init__(self, service: annofabapi.Resource, project_id: str) -> None:
         self.service = service
-        self.facade = AnnofabApiFacade(service)
         self.project_member_repository = ProjectMemberRepository(service)
         self.project_id = project_id
         self.visualize = AddProps(self.service, project_id)
