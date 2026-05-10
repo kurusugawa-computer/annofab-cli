@@ -108,7 +108,7 @@ class AddAttributeRestriction(CommandLine):
     def main(self) -> None:
         args = self.args
 
-        restrictions = get_json_from_args(args.json)
+        restrictions = get_json_from_args(args.restriction_json)
         if not isinstance(restrictions, list):
             print(f"{self.COMMON_MESSAGE}: error: JSON形式が不正です。オブジェクトの配列を指定してください。", file=sys.stderr)  # noqa: T201
             sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
@@ -127,7 +127,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         }
     ]
     parser.add_argument(
-        "--json",
+        "--restriction_json",
         type=str,
         required=True,
         help=f"追加する属性の制約情報のJSONを指定します。JSON形式は ... を参照してください。\n(例) ``{json.dumps(sample_json)}``\n``file://`` を先頭に付けるとjsonファイルを指定できます。",
