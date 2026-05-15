@@ -23,10 +23,15 @@ class ChangedChoice(BaseModel):
     model_config = ConfigDict(frozen=True)
 
     choice_id: str
+    """選択肢ID"""
     name_ja_changed: bool = False
+    """日本語名が変更されたか"""
     name_en_changed: bool = False
+    """英語名が変更されたか"""
     name_vi_changed: bool = False
+    """ベトナム語名が変更されたか"""
     keybind_changed: bool = False
+    """キーバインドが変更されたか"""
 
     def has_changes(self) -> bool:
         """変更有無を返す。"""
@@ -46,19 +51,33 @@ class ChangedAttribute(BaseModel):
     model_config = ConfigDict(frozen=True)
 
     attribute_id: str
+    """属性ID"""
     read_only_changed: bool = False
+    """read_only が変更されたか"""
     name_ja_changed: bool = False
+    """日本語名が変更されたか"""
     name_en_changed: bool = False
+    """英語名が変更されたか"""
     name_vi_changed: bool = False
+    """ベトナム語名が変更されたか"""
     keybind_changed: bool = False
+    """キーバインドが変更されたか"""
     type_changed: bool = False
+    """属性型が変更されたか"""
     default_changed: bool = False
+    """デフォルト値が変更されたか"""
     metadata_changed: bool = False
+    """metadata が変更されたか"""
     choices_changed: bool = False
+    """選択肢に変更があるか"""
     choices_order_changed: bool = False
+    """選択肢の順序が変更されたか"""
     added_choice_ids: list[str] = Field(default_factory=list)
+    """追加された選択肢ID一覧"""
     removed_choice_ids: list[str] = Field(default_factory=list)
+    """削除された選択肢ID一覧"""
     changed_choices: list[ChangedChoice] = Field(default_factory=list)
+    """変更された既存選択肢の差分一覧"""
 
     def has_changes(self) -> bool:
         """変更有無を返す。"""
@@ -87,9 +106,13 @@ class AttributesDiff(BaseModel):
     model_config = ConfigDict(frozen=True)
 
     attribute_order_changed: bool = False
+    """属性全体の順序が変更されたか"""
     added_attribute_ids: list[str] = Field(default_factory=list)
+    """追加された属性ID一覧"""
     removed_attribute_ids: list[str] = Field(default_factory=list)
+    """削除された属性ID一覧"""
     changed_attributes: list[ChangedAttribute] = Field(default_factory=list)
+    """変更された既存属性の差分一覧"""
 
     def has_changes(self) -> bool:
         """変更有無を返す。"""
@@ -109,18 +132,31 @@ class ChangedLabel(BaseModel):
     model_config = ConfigDict(frozen=True)
 
     label_id: str
+    """ラベルID"""
     color_changed: bool = False
+    """色が変更されたか"""
     keybind_changed: bool = False
+    """キーバインドが変更されたか"""
     label_name_ja_changed: bool = False
+    """日本語名が変更されたか"""
     label_name_en_changed: bool = False
+    """英語名が変更されたか"""
     label_name_vi_changed: bool = False
+    """ベトナム語名が変更されたか"""
     attributes_changed: bool = False
+    """紐づく属性に変更があるか"""
     attributes_order_changed: bool = False
+    """紐づく属性の順序が変更されたか"""
     added_attribute_ids: list[str] = Field(default_factory=list)
+    """追加された属性ID一覧"""
     removed_attribute_ids: list[str] = Field(default_factory=list)
+    """削除された属性ID一覧"""
     field_values_changed: bool = False
+    """field_values が変更されたか"""
     metadata_changed: bool = False
+    """metadata が変更されたか"""
     annotation_type_changed: bool = False
+    """annotation_type が変更されたか"""
 
     def has_changes(self) -> bool:
         """変更有無を返す。"""
@@ -148,9 +184,13 @@ class LabelsDiff(BaseModel):
     model_config = ConfigDict(frozen=True)
 
     label_order_changed: bool = False
+    """ラベル全体の順序が変更されたか"""
     added_label_ids: list[str] = Field(default_factory=list)
+    """追加されたラベルID一覧"""
     removed_label_ids: list[str] = Field(default_factory=list)
+    """削除されたラベルID一覧"""
     changed_labels: list[ChangedLabel] = Field(default_factory=list)
+    """変更された既存ラベルの差分一覧"""
 
     def has_changes(self) -> bool:
         """変更有無を返す。"""
@@ -170,7 +210,9 @@ class AnnotationSpecsDiff(BaseModel):
     model_config = ConfigDict(frozen=True)
 
     labels: LabelsDiff | None = None
+    """ラベル差分"""
     attributes: AttributesDiff | None = None
+    """属性差分"""
 
     def has_changes(self) -> bool:
         """変更有無を返す。"""
