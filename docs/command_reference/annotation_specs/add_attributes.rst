@@ -16,7 +16,7 @@ Examples
 
     $ annofabcli annotation_specs add_attributes \
      --project_id prj1 \
-     --attribute_json '[{"attribute_type":"flag","attribute_name_en":"unclear","label_name_en":["car","bus"]},{"attribute_type":"text","attribute_name_en":"comment2","label_name_en":["bike"]}]'
+     --attribute_json '[{"attribute_type":"flag","attribute_name_en":"unclear","label_name_ens":["car","bus"]},{"attribute_type":"text","attribute_name_en":"comment2","label_name_ens":["bike"]}]'
 
 
 Usage Details

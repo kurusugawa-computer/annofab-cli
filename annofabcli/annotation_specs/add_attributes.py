@@ -9,7 +9,7 @@ from typing import Any
 
 import annofabapi
 from annofabapi.util.annotation_specs import AnnotationSpecsAccessor
-from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, ValidationError, field_validator, model_validator
 
 import annofabcli.common.cli
 from annofabcli.annotation_specs.add_attribute import AttributeType, create_attribute
@@ -26,7 +26,7 @@ class AttributeInput(BaseModel):
     コマンドラインから受け取った属性1件分の入力情報。
     """
 
-    model_config = ConfigDict(frozen=True, populate_by_name=True, extra="forbid")
+    model_config = ConfigDict(frozen=True, extra="forbid")
 
     attribute_type: AttributeType
     """属性の種類。"""
@@ -34,10 +34,10 @@ class AttributeInput(BaseModel):
     attribute_name_en: str
     """属性の英語名。"""
 
-    label_name_ens: list[str] | None = Field(default=None, alias="label_name_en")
+    label_name_ens: list[str] | None = None
     """属性を紐付ける対象ラベルの英語名一覧。"""
 
-    label_ids: list[str] | None = Field(default=None, alias="label_id")
+    label_ids: list[str] | None = None
     """属性を紐付ける対象ラベルのlabel_id一覧。"""
 
     attribute_name_ja: str | None = None
@@ -81,12 +81,12 @@ class AttributeInput(BaseModel):
             検証済みのモデル自身
 
         Raises:
-            ValueError: `label_name_en` と `label_id` の指定条件が不正な場合
+            ValueError: `label_name_ens` と `label_ids` の指定条件が不正な場合
         """
         if self.label_name_ens is None and self.label_ids is None:
-            raise ValueError("`label_name_en` または `label_id` を指定してください。")
+            raise ValueError("`label_name_ens` または `label_ids` を指定してください。")
         if self.label_name_ens is not None and self.label_ids is not None:
-            raise ValueError("`label_name_en` と `label_id` を同時に指定できません。")
+            raise ValueError("`label_name_ens` と `label_ids` を同時に指定できません。")
         return self
 
 
@@ -362,12 +362,12 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
             "attribute_type": "flag",
             "attribute_name_en": "occluded",
             "attribute_name_ja": "隠れ",
-            "label_name_en": ["car", "bus"],
+            "label_name_ens": ["car", "bus"],
         },
         {
             "attribute_type": "text",
             "attribute_name_en": "comment2",
-            "label_id": ["40f7796b-3722-4eed-9c0c-04a27f9165d2"],
+            "label_ids": ["40f7796b-3722-4eed-9c0c-04a27f9165d2"],
         },
     ]
     parser.add_argument(
