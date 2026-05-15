@@ -1,11 +1,16 @@
 from __future__ import annotations
 
 import json
+from collections import Counter
 from collections.abc import Iterable, Sequence
 from enum import Enum
 from typing import Any, TypeAlias
 
+from annofabapi.util.attribute_restrictions import Restriction
 from pydantic import BaseModel, ConfigDict, Field
+
+JsonScalar: TypeAlias = str | int | float | bool | None
+JsonValue: TypeAlias = JsonScalar | Sequence["JsonValue"] | dict[str, "JsonValue"]
 
 
 class AnnotationSpecsDiffOutputFormat(Enum):
@@ -201,6 +206,50 @@ class LabelsDiff(BaseModel):
         )
 
 
+class AttributeRestrictionDiffItem(BaseModel):
+    """差分対象の属性制約。"""
+
+    model_config = ConfigDict(frozen=True)
+
+    condition: dict[str, Any]
+    """制約条件"""
+
+
+class ChangedAttributeRestriction(BaseModel):
+    """属性ごとの制約差分。"""
+
+    model_config = ConfigDict(frozen=True)
+
+    attribute_id: str
+    """属性ID"""
+    added_restrictions: list[AttributeRestrictionDiffItem] = Field(default_factory=list)
+    """追加された属性制約一覧"""
+    removed_restrictions: list[AttributeRestrictionDiffItem] = Field(default_factory=list)
+    """削除された属性制約一覧"""
+
+    def has_changes(self) -> bool:
+        """変更有無を返す。"""
+        return any(
+            [
+                len(self.added_restrictions) > 0,
+                len(self.removed_restrictions) > 0,
+            ]
+        )
+
+
+class AttributeRestrictionsDiff(BaseModel):
+    """属性制約一覧の差分。"""
+
+    model_config = ConfigDict(frozen=True)
+
+    changed_attribute_restrictions: list[ChangedAttributeRestriction] = Field(default_factory=list)
+    """変更された属性制約一覧"""
+
+    def has_changes(self) -> bool:
+        """変更有無を返す。"""
+        return len(self.changed_attribute_restrictions) > 0
+
+
 class AnnotationSpecsDiff(BaseModel):
     """アノテーション仕様の差分。"""
 
@@ -210,6 +259,8 @@ class AnnotationSpecsDiff(BaseModel):
     """ラベル差分"""
     attributes: AttributesDiff | None = None
     """属性差分"""
+    attribute_restrictions: AttributeRestrictionsDiff | None = None
+    """属性制約差分"""
 
     def has_changes(self) -> bool:
         """変更有無を返す。"""
@@ -217,12 +268,9 @@ class AnnotationSpecsDiff(BaseModel):
             [
                 self.labels is not None and self.labels.has_changes(),
                 self.attributes is not None and self.attributes.has_changes(),
+                self.attribute_restrictions is not None and self.attribute_restrictions.has_changes(),
             ]
         )
-
-
-JsonScalar: TypeAlias = str | int | float | bool | None
-JsonValue: TypeAlias = JsonScalar | Sequence["JsonValue"] | dict[str, "JsonValue"]
 
 
 def _get_message_by_lang(message_dict: dict[str, Any], lang: str) -> str | None:
@@ -312,6 +360,71 @@ def _get_attribute_name_en_list_by_ids(specs: dict[str, Any], attribute_ids: Seq
 
 def _get_choice_name_en_list_by_ids(attribute: dict[str, Any], choice_ids: Sequence[str]) -> list[str]:
     return [_get_choice_name_en_by_id(attribute, e) for e in choice_ids]
+
+
+def _normalize_json_value(value: JsonValue, *, key: str | None = None) -> JsonValue:
+    if isinstance(value, dict):
+        return {k: _normalize_json_value(v, key=k) for k, v in sorted(value.items())}
+    if isinstance(value, list):
+        normalized_list = [_normalize_json_value(e) for e in value]
+        if key == "labels":
+            return sorted(normalized_list, key=_to_json_text)
+        return normalized_list
+    return value
+
+
+def _create_attribute_restriction_diff_item(restriction: dict[str, Any]) -> AttributeRestrictionDiffItem:
+    return AttributeRestrictionDiffItem(condition=restriction["condition"])
+
+
+def _to_attribute_restriction_key(restriction: dict[str, Any]) -> str:
+    return _to_json_text(
+        {
+            "additional_data_definition_id": restriction["additional_data_definition_id"],
+            "condition": _normalize_json_value(restriction["condition"]),
+        }
+    )
+
+
+def _get_added_restrictions(left_restrictions: Sequence[dict[str, Any]], right_restrictions: Sequence[dict[str, Any]]) -> list[AttributeRestrictionDiffItem]:
+    left_counter = Counter(_to_attribute_restriction_key(e) for e in left_restrictions)
+    added_restrictions = []
+    for restriction in right_restrictions:
+        key = _to_attribute_restriction_key(restriction)
+        if left_counter[key] > 0:
+            left_counter[key] -= 1
+            continue
+        added_restrictions.append(_create_attribute_restriction_diff_item(restriction))
+    return added_restrictions
+
+
+def _get_removed_restrictions(left_restrictions: Sequence[dict[str, Any]], right_restrictions: Sequence[dict[str, Any]]) -> list[AttributeRestrictionDiffItem]:
+    right_counter = Counter(_to_attribute_restriction_key(e) for e in right_restrictions)
+    removed_restrictions = []
+    for restriction in left_restrictions:
+        key = _to_attribute_restriction_key(restriction)
+        if right_counter[key] > 0:
+            right_counter[key] -= 1
+            continue
+        removed_restrictions.append(_create_attribute_restriction_diff_item(restriction))
+    return removed_restrictions
+
+
+def _get_attribute_restriction_text(specs: dict[str, Any], *, attribute_id: str, condition: dict[str, Any]) -> str:
+    return Restriction.from_dict(
+        {
+            "additional_data_definition_id": attribute_id,
+            "condition": condition,
+        }
+    ).to_human_readable(specs)
+
+
+def _get_attribute_name_en_by_id_from_specs(specs_list: Sequence[dict[str, Any]], attribute_id: str) -> str:
+    for specs in specs_list:
+        name = _get_attribute_name_en_by_id(specs, attribute_id)
+        if name != attribute_id:
+            return name
+    return attribute_id
 
 
 def _get_changed_field_names_from_label(diff: ChangedLabel) -> list[str]:
@@ -509,6 +622,29 @@ def compare_labels(left_specs: dict[str, Any], right_specs: dict[str, Any]) -> L
     )
 
 
+def compare_attribute_restrictions(left_specs: dict[str, Any], right_specs: dict[str, Any]) -> AttributeRestrictionsDiff:
+    """属性制約一覧の差分を比較する。"""
+    left_restrictions = left_specs.get("restrictions", [])
+    right_restrictions = right_specs.get("restrictions", [])
+    left_attribute_ids = [e["additional_data_definition_id"] for e in left_restrictions]
+    right_attribute_ids = [e["additional_data_definition_id"] for e in right_restrictions]
+    attribute_ids = list(dict.fromkeys([*right_attribute_ids, *left_attribute_ids]))
+    changed_attribute_restrictions = []
+
+    for attribute_id in attribute_ids:
+        left_target_restrictions = [e for e in left_restrictions if e["additional_data_definition_id"] == attribute_id]
+        right_target_restrictions = [e for e in right_restrictions if e["additional_data_definition_id"] == attribute_id]
+        changed_attribute_restriction = ChangedAttributeRestriction(
+            attribute_id=attribute_id,
+            added_restrictions=_get_added_restrictions(left_target_restrictions, right_target_restrictions),
+            removed_restrictions=_get_removed_restrictions(left_target_restrictions, right_target_restrictions),
+        )
+        if changed_attribute_restriction.has_changes():
+            changed_attribute_restrictions.append(changed_attribute_restriction)
+
+    return AttributeRestrictionsDiff(changed_attribute_restrictions=changed_attribute_restrictions)
+
+
 def create_annotation_specs_diff(
     left_specs: dict[str, Any],
     right_specs: dict[str, Any],
@@ -516,11 +652,12 @@ def create_annotation_specs_diff(
     targets: Iterable[str] | None = None,
 ) -> AnnotationSpecsDiff:
     """アノテーション仕様の差分を生成する。"""
-    target_set = set(targets) if targets is not None else {"labels", "attributes"}
+    target_set = set(targets) if targets is not None else {"labels", "attributes", "attribute_restrictions"}
 
     return AnnotationSpecsDiff(
         labels=compare_labels(left_specs, right_specs) if "labels" in target_set else None,
         attributes=compare_attributes(left_specs, right_specs) if "attributes" in target_set else None,
+        attribute_restrictions=compare_attribute_restrictions(left_specs, right_specs) if "attribute_restrictions" in target_set else None,
     )
 
 
@@ -535,14 +672,21 @@ def format_annotation_specs_diff_as_text(
     if not diff.has_changes():
         return "差分はありません。"
 
-    lines: list[str] = []
+    sections: list[list[str]] = []
     if diff.labels is not None:
-        lines.extend(_format_labels_diff_as_text(diff.labels, left_specs=left_specs, right_specs=right_specs, detail=detail))
-    if diff.labels is not None and diff.attributes is not None:
-        lines.append("")
+        sections.append(_format_labels_diff_as_text(diff.labels, left_specs=left_specs, right_specs=right_specs, detail=detail))
     if diff.attributes is not None:
-        lines.extend(_format_attributes_diff_as_text(diff.attributes, left_specs=left_specs, right_specs=right_specs, detail=detail))
-    return "\n".join(lines)
+        sections.append(_format_attributes_diff_as_text(diff.attributes, left_specs=left_specs, right_specs=right_specs, detail=detail))
+    if diff.attribute_restrictions is not None:
+        sections.append(
+            _format_attribute_restrictions_diff_as_text(
+                diff.attribute_restrictions,
+                left_specs=left_specs,
+                right_specs=right_specs,
+                detail=detail,
+            )
+        )
+    return "\n\n".join("\n".join(section) for section in sections)
 
 
 def _format_labels_diff_as_text(
@@ -899,3 +1043,67 @@ def _append_attribute_detail_lines(
             left_value=left_choice.get("keybind", []),
             right_value=right_choice.get("keybind", []),
         )
+
+
+def _append_attribute_restriction_lines(
+    lines: list[str],
+    *,
+    indent: str,
+    label: str,
+    specs: dict[str, Any],
+    attribute_id: str,
+    restrictions: Sequence[AttributeRestrictionDiffItem],
+    detail: bool,
+) -> None:
+    if len(restrictions) == 0:
+        return
+
+    lines.append(f"{indent}{label}:")
+    for restriction in restrictions:
+        restriction_text = _get_attribute_restriction_text(specs, attribute_id=attribute_id, condition=restriction.condition)
+        if detail:
+            lines.extend(
+                [
+                    f"{indent}- restriction: {restriction_text}",
+                    f"{indent}  condition: {_to_json_text(restriction.condition)}",
+                ]
+            )
+        else:
+            lines.append(f"{indent}- {restriction_text}")
+
+
+def _format_attribute_restrictions_diff_as_text(
+    attribute_restrictions_diff: AttributeRestrictionsDiff,
+    *,
+    left_specs: dict[str, Any],
+    right_specs: dict[str, Any],
+    detail: bool,
+) -> list[str]:
+    lines = ["[attribute_restrictions]"]
+    if not attribute_restrictions_diff.has_changes():
+        lines.append("差分はありません。")
+        return lines
+
+    lines.append("changed_attributes:")
+    for changed_attribute_restriction in attribute_restrictions_diff.changed_attribute_restrictions:
+        attribute_id = changed_attribute_restriction.attribute_id
+        lines.append(f"  - attribute_name_en: {_get_attribute_name_en_by_id_from_specs([right_specs, left_specs], attribute_id)}")
+        _append_attribute_restriction_lines(
+            lines,
+            indent="    ",
+            label="added_restrictions",
+            specs=right_specs,
+            attribute_id=attribute_id,
+            restrictions=changed_attribute_restriction.added_restrictions,
+            detail=detail,
+        )
+        _append_attribute_restriction_lines(
+            lines,
+            indent="    ",
+            label="removed_restrictions",
+            specs=left_specs,
+            attribute_id=attribute_id,
+            restrictions=changed_attribute_restriction.removed_restrictions,
+            detail=detail,
+        )
+    return lines

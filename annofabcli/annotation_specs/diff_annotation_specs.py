@@ -96,7 +96,7 @@ class AnnotationSpecsDiffCommand(CommandLine):
     def main(self) -> None:
         left_specs = self.get_annotation_specs_from_source(prefix="left")
         right_specs = self.get_annotation_specs_from_source(prefix="right")
-        targets = set(self.args.target) if self.args.target is not None else {"labels", "attributes"}
+        targets = set(self.args.target) if self.args.target is not None else {"labels", "attributes", "attribute_restrictions"}
         diff = create_annotation_specs_diff(left_specs, right_specs, targets=targets)
         output_format = AnnotationSpecsDiffOutputFormat(self.args.format)
 
@@ -126,7 +126,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--target",
         nargs="+",
-        choices=["labels", "attributes"],
+        choices=["labels", "attributes", "attribute_restrictions"],
         help="出力対象の差分を指定します。指定しない場合はすべて出力します。",
     )
     parser.add_argument(

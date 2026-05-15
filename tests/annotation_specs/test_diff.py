@@ -64,6 +64,13 @@ def _create_label(label_id: str, *, ja: str, en: str, vi: str, color: dict[str, 
     }
 
 
+def _create_restriction(attribute_id: str, condition: dict) -> dict:
+    return {
+        "additional_data_definition_id": attribute_id,
+        "condition": condition,
+    }
+
+
 def _create_annotation_specs() -> dict:
     return {
         "format_version": 3,
@@ -196,6 +203,51 @@ class TestCreateAnnotationSpecsDiff:
         assert actual.labels is not None
         assert actual.attributes is None
 
+    def test_属性制約の差分を生成できる(self):
+        left_specs = _create_annotation_specs()
+        right_specs = copy.deepcopy(left_specs)
+        left_specs["restrictions"] = [
+            _create_restriction("attr_occluded", {"_type": "Equals", "value": "choice_yes"}),
+            _create_restriction("attr_truncated", {"_type": "CanInput", "enable": False}),
+            _create_restriction("attr_truncated", {"_type": "HasLabel", "labels": ["label_car", "label_bus"]}),
+        ]
+        right_specs["restrictions"] = [
+            _create_restriction("attr_occluded", {"_type": "Equals", "value": "choice_yes"}),
+            _create_restriction("attr_occluded", {"_type": "NotEquals", "value": "choice_no"}),
+            _create_restriction("attr_truncated", {"_type": "CanInput", "enable": True}),
+            _create_restriction("attr_truncated", {"_type": "HasLabel", "labels": ["label_bus", "label_car"]}),
+        ]
+
+        actual = create_annotation_specs_diff(left_specs, right_specs)
+        actual_dict = actual.model_dump(exclude_none=True)
+
+        assert actual_dict["attribute_restrictions"] == {
+            "changed_attribute_restrictions": [
+                {
+                    "attribute_id": "attr_occluded",
+                    "added_restrictions": [
+                        {
+                            "condition": {"_type": "NotEquals", "value": "choice_no"},
+                        }
+                    ],
+                    "removed_restrictions": [],
+                },
+                {
+                    "attribute_id": "attr_truncated",
+                    "added_restrictions": [
+                        {
+                            "condition": {"_type": "CanInput", "enable": True},
+                        }
+                    ],
+                    "removed_restrictions": [
+                        {
+                            "condition": {"_type": "CanInput", "enable": False},
+                        }
+                    ],
+                },
+            ]
+        }
+
 
 class TestFormatAnnotationSpecsDiffAsText:
     def test_textでidではなく英語名を出力できる(self):
@@ -297,6 +349,47 @@ class TestFormatAnnotationSpecsDiffAsText:
         assert "added_choices:\n    - unknown" in actual
         assert "choice_name_en: yes_changed" in actual
 
+    def test_attribute_restrictionをtextで出力できる(self):
+        left_specs = _create_annotation_specs()
+        right_specs = copy.deepcopy(left_specs)
+        right_specs["restrictions"] = [
+            _create_restriction("attr_occluded", {"_type": "Equals", "value": "choice_yes"}),
+        ]
+
+        diff = create_annotation_specs_diff(left_specs, right_specs)
+        actual = format_annotation_specs_diff_as_text(
+            diff,
+            left_specs=left_specs,
+            right_specs=right_specs,
+            detail=False,
+        )
+
+        assert "[attribute_restrictions]" in actual
+        assert "attribute_name_en: occluded" in actual
+        assert "added_restrictions:" in actual
+        assert "'occluded' is 'yes'" in actual
+        assert "attr_occluded" not in actual
+
+    def test_attribute_restrictionをdetail_textで出力できる(self):
+        left_specs = _create_annotation_specs()
+        right_specs = copy.deepcopy(left_specs)
+        right_specs["restrictions"] = [
+            _create_restriction("attr_truncated", {"_type": "CanInput", "enable": False}),
+        ]
+
+        diff = create_annotation_specs_diff(left_specs, right_specs)
+        actual = format_annotation_specs_diff_as_text(
+            diff,
+            left_specs=left_specs,
+            right_specs=right_specs,
+            detail=True,
+        )
+
+        assert "[attribute_restrictions]" in actual
+        assert "added_restrictions:" in actual
+        assert "'truncated' is read-only" in actual
+        assert 'condition: {"_type": "CanInput", "enable": false}' in actual
+
 
 @pytest.mark.access_webapi
 class TestCommandLine:
@@ -333,6 +426,42 @@ class TestCommandLine:
 
         assert set(actual.keys()) == {"labels"}
         assert actual["labels"]["changed_labels"][0]["label_id"] == "label_car"
+
+    def test_json形式でattribute_restrictionsのみ出力できる(self, tmp_path):
+        left_specs_path = tmp_path / "left.json"
+        right_specs_path = tmp_path / "right.json"
+        output_path = tmp_path / "out.json"
+
+        left_specs = _create_annotation_specs()
+        right_specs = copy.deepcopy(left_specs)
+        right_specs["restrictions"] = [
+            _create_restriction("attr_occluded", {"_type": "Equals", "value": "choice_yes"}),
+        ]
+
+        left_specs_path.write_text(json.dumps(left_specs, ensure_ascii=False), encoding="utf-8")
+        right_specs_path.write_text(json.dumps(right_specs, ensure_ascii=False), encoding="utf-8")
+
+        main(
+            [
+                "annotation_specs",
+                "diff",
+                "--left_annotation_specs_json",
+                str(left_specs_path),
+                "--right_annotation_specs_json",
+                str(right_specs_path),
+                "--target",
+                "attribute_restrictions",
+                "--format",
+                "json",
+                "--output",
+                str(output_path),
+            ]
+        )
+
+        actual = json.loads(output_path.read_text(encoding="utf-8"))
+
+        assert set(actual.keys()) == {"attribute_restrictions"}
+        assert actual["attribute_restrictions"]["changed_attribute_restrictions"][0]["attribute_id"] == "attr_occluded"
 
     def test_detail_text形式で出力できる(self, tmp_path):
         left_specs_path = tmp_path / "left.json"
