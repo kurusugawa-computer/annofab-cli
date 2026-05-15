@@ -3,9 +3,12 @@ from __future__ import annotations
 import copy
 import json
 from pathlib import Path
+from typing import Any, cast
 
 import pytest
+from pydantic import ValidationError
 
+from annofabcli.annotation_specs.add_attribute import AttributeType
 from annofabcli.annotation_specs.add_attributes import AddAttributesMain, AttributeInput, read_attributes_json
 
 data_dir = Path("./tests/data/annotation_specs")
@@ -53,16 +56,16 @@ class TestAddAttributesMain:
         result = main.add_attributes(
             attribute_inputs=[
                 AttributeInput(
-                    attribute_type="flag",
+                    attribute_type=AttributeType.FLAG,
                     attribute_name_en="weather_checked",
                     attribute_name_ja="天気確認済み",
                     attribute_id="weather_checked_attr",
-                    label_name_ens=["car", "bus"],
+                    label_name_en=["car", "bus"],
                 ),
                 AttributeInput(
-                    attribute_type="text",
+                    attribute_type=AttributeType.TEXT,
                     attribute_name_en="note2",
-                    label_ids=["40f7796b-3722-4eed-9c0c-04a27f9165d2"],
+                    label_id=["40f7796b-3722-4eed-9c0c-04a27f9165d2"],
                 ),
             ],
             comment=None,
@@ -96,8 +99,8 @@ class TestAddAttributesMain:
         with pytest.raises(ValueError):
             main.add_attributes(
                 attribute_inputs=[
-                    AttributeInput(attribute_type="flag", attribute_name_en="weather_checked", label_name_ens=["car"]),
-                    AttributeInput(attribute_type="text", attribute_name_en="weather_checked", label_name_ens=["bus"]),
+                    AttributeInput(attribute_type=AttributeType.FLAG, attribute_name_en="weather_checked", label_name_en=["car"]),
+                    AttributeInput(attribute_type=AttributeType.TEXT, attribute_name_en="weather_checked", label_name_en=["bus"]),
                 ]
             )
 
@@ -108,8 +111,8 @@ class TestAddAttributesMain:
         with pytest.raises(ValueError):
             main.add_attributes(
                 attribute_inputs=[
-                    AttributeInput(attribute_type="flag", attribute_name_en="weather_checked", attribute_id="dup_id", label_name_ens=["car"]),
-                    AttributeInput(attribute_type="text", attribute_name_en="note2", attribute_id="dup_id", label_name_ens=["bus"]),
+                    AttributeInput(attribute_type=AttributeType.FLAG, attribute_name_en="weather_checked", attribute_id="dup_id", label_name_en=["car"]),
+                    AttributeInput(attribute_type=AttributeType.TEXT, attribute_name_en="note2", attribute_id="dup_id", label_name_en=["bus"]),
                 ]
             )
 
@@ -120,7 +123,7 @@ class TestAddAttributesMain:
         with pytest.raises(ValueError):
             main.add_attributes(
                 attribute_inputs=[
-                    AttributeInput(attribute_type="comment", attribute_name_en="comment", label_name_ens=["car"]),
+                    AttributeInput(attribute_type=AttributeType.COMMENT, attribute_name_en="comment", label_name_en=["car"]),
                 ]
             )
 
@@ -130,8 +133,8 @@ class TestAddAttributesMain:
 
         result = main.add_attributes(
             attribute_inputs=[
-                AttributeInput(attribute_type="flag", attribute_name_en="weather_checked", label_name_ens=["car"]),
-                AttributeInput(attribute_type="text", attribute_name_en="note2", label_name_ens=["bus"]),
+                AttributeInput(attribute_type=AttributeType.FLAG, attribute_name_en="weather_checked", label_name_en=["car"]),
+                AttributeInput(attribute_type=AttributeType.TEXT, attribute_name_en="note2", label_name_en=["bus"]),
             ]
         )
 
@@ -148,18 +151,22 @@ class TestReadAttributesJson:
 
         assert actual == [
             AttributeInput(
-                attribute_type="flag",
+                attribute_type=AttributeType.FLAG,
                 attribute_name_en="weather_checked",
                 attribute_name_ja="天気確認済み",
                 attribute_id="weather_checked_attr",
-                label_name_ens=["car", "bus"],
+                label_name_en=["car", "bus"],
             ),
             AttributeInput(
-                attribute_type="text",
+                attribute_type=AttributeType.TEXT,
                 attribute_name_en="note2",
-                label_ids=["car_label_id"],
+                label_id=["car_label_id"],
             ),
         ]
+
+    def test_attribute_input__invalid_attribute_type(self) -> None:
+        with pytest.raises(ValidationError):
+            AttributeInput(attribute_type=cast(Any, "select"), attribute_name_en="type2", label_name_en=["car"])
 
     def test_read_attributes_json__attribute_name_en_required(self) -> None:
         with pytest.raises(ValueError):

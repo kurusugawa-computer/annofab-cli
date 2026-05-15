@@ -5,14 +5,14 @@ import copy
 import json
 import logging
 from collections.abc import Mapping, Sequence
-from dataclasses import dataclass
 from typing import Any
 
 import annofabapi
 from annofabapi.util.annotation_specs import AnnotationSpecsAccessor
+from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator, model_validator
 
 import annofabcli.common.cli
-from annofabcli.annotation_specs.add_attribute import ATTRIBUTE_TYPES, create_attribute
+from annofabcli.annotation_specs.add_attribute import AttributeType, create_attribute
 from annofabcli.annotation_specs.utils import get_attribute_name_en, get_label_name_en, get_target_labels
 from annofabcli.common.cli import ArgumentParser, CommandLine, CommandLineWithConfirm, build_annofabapi_resource_and_login, get_json_from_args
 from annofabcli.common.facade import AnnofabApiFacade
@@ -21,22 +21,23 @@ from annofabcli.common.utils import duplicated_set
 logger = logging.getLogger(__name__)
 
 
-@dataclass(frozen=True)
-class AttributeInput:
+class AttributeInput(BaseModel):
     """
     コマンドラインから受け取った属性1件分の入力情報。
     """
 
-    attribute_type: str
+    model_config = ConfigDict(frozen=True, populate_by_name=True, extra="forbid")
+
+    attribute_type: AttributeType
     """属性の種類。"""
 
     attribute_name_en: str
     """属性の英語名。"""
 
-    label_name_ens: Sequence[str] | None = None
+    label_name_ens: list[str] | None = Field(default=None, alias="label_name_en")
     """属性を紐付ける対象ラベルの英語名一覧。"""
 
-    label_ids: Sequence[str] | None = None
+    label_ids: list[str] | None = Field(default=None, alias="label_id")
     """属性を紐付ける対象ラベルのlabel_id一覧。"""
 
     attribute_name_ja: str | None = None
@@ -45,12 +46,56 @@ class AttributeInput:
     attribute_id: str | None = None
     """属性ID。未指定の場合はUUIDv4を自動生成する。"""
 
+    @field_validator("label_name_ens", "label_ids")
+    @classmethod
+    def validate_label_list(cls, value: list[str] | None) -> list[str] | None:
+        """
+        ラベル名一覧またはlabel_id一覧を検証する。
 
-@dataclass(frozen=True)
-class ResolvedAttributeInput:
+        Args:
+            value: 検証対象の一覧
+
+        Returns:
+            検証済みの一覧
+
+        Raises:
+            ValueError: 空配列または重複を含む場合
+        """
+        if value is None:
+            return None
+        if len(value) == 0:
+            raise ValueError("1件以上指定してください。")
+
+        duplicated_values = duplicated_set(value)
+        if duplicated_values:
+            duplicated_text = ", ".join(sorted(duplicated_values))
+            raise ValueError(f"重複があります。 :: {duplicated_text}")
+        return value
+
+    @model_validator(mode="after")
+    def validate_label_selector(self) -> AttributeInput:
+        """
+        ラベル選択条件の排他・必須条件を検証する。
+
+        Returns:
+            検証済みのモデル自身
+
+        Raises:
+            ValueError: `label_name_en` と `label_id` の指定条件が不正な場合
+        """
+        if self.label_name_ens is None and self.label_ids is None:
+            raise ValueError("`label_name_en` または `label_id` を指定してください。")
+        if self.label_name_ens is not None and self.label_ids is not None:
+            raise ValueError("`label_name_en` と `label_id` を同時に指定できません。")
+        return self
+
+
+class ResolvedAttributeInput(BaseModel):
     """
     既存アノテーション仕様に対して解決済みの属性入力情報。
     """
+
+    model_config = ConfigDict(frozen=True, arbitrary_types_allowed=True)
 
     attribute_input: AttributeInput
     """元の属性入力。"""
@@ -60,37 +105,6 @@ class ResolvedAttributeInput:
 
     new_attribute: dict[str, Any]
     """追加するAnnofab API向け属性オブジェクト。"""
-
-
-def _parse_string_list(data: object, *, key: str, index: int) -> list[str]:
-    """
-    JSONオブジェクト内の文字列配列を検証して返す。
-
-    Args:
-        data: 検証対象の値
-        key: JSONキー名
-        index: エラーメッセージ用の1始まりの位置
-
-    Returns:
-        検証済みの文字列一覧
-
-    Raises:
-        TypeError: 配列形式でない、または要素が文字列でない場合
-        ValueError: 空配列または重複を含む場合
-    """
-    if not isinstance(data, list):
-        raise TypeError(f"{index}件目の属性の `{key}` には文字列の配列を指定してください。")
-    if len(data) == 0:
-        raise ValueError(f"{index}件目の属性の `{key}` は1件以上指定してください。")
-    if not all(isinstance(e, str) for e in data):
-        raise TypeError(f"{index}件目の属性の `{key}` には文字列の配列を指定してください。")
-
-    values = list(data)
-    duplicated_values = duplicated_set(values)
-    if duplicated_values:
-        duplicated_text = ", ".join(sorted(duplicated_values))
-        raise ValueError(f"{index}件目の属性の `{key}` に重複があります。 :: {duplicated_text}")
-    return values
 
 
 def parse_attribute_input_from_dict(data: dict[str, Any], *, index: int) -> AttributeInput:
@@ -105,37 +119,12 @@ def parse_attribute_input_from_dict(data: dict[str, Any], *, index: int) -> Attr
         変換後の属性入力
 
     Raises:
-        ValueError: 必須項目が不足している場合
-        TypeError: 値の型が不正な場合
+        ValueError: 入力値が不正な場合
     """
-    attribute_type = data.get("attribute_type")
-    if attribute_type is None:
-        raise ValueError(f"{index}件目の属性に `attribute_type` が指定されていません。")
-    if attribute_type not in ATTRIBUTE_TYPES:
-        raise ValueError(f"{index}件目の属性の `attribute_type` が不正です。 :: {attribute_type}")
-
-    attribute_name_en = data.get("attribute_name_en")
-    if attribute_name_en is None:
-        raise ValueError(f"{index}件目の属性に `attribute_name_en` が指定されていません。")
-
-    raw_label_name_ens = data.get("label_name_en")
-    raw_label_ids = data.get("label_id")
-    if raw_label_name_ens is None and raw_label_ids is None:
-        raise ValueError(f"{index}件目の属性に `label_name_en` または `label_id` を指定してください。")
-    if raw_label_name_ens is not None and raw_label_ids is not None:
-        raise ValueError(f"{index}件目の属性では `label_name_en` と `label_id` を同時に指定できません。")
-
-    label_name_ens = None if raw_label_name_ens is None else _parse_string_list(raw_label_name_ens, key="label_name_en", index=index)
-    label_ids = None if raw_label_ids is None else _parse_string_list(raw_label_ids, key="label_id", index=index)
-
-    return AttributeInput(
-        attribute_type=attribute_type,
-        attribute_name_en=attribute_name_en,
-        attribute_name_ja=data.get("attribute_name_ja"),
-        attribute_id=data.get("attribute_id"),
-        label_name_ens=label_name_ens,
-        label_ids=label_ids,
-    )
+    try:
+        return AttributeInput.model_validate(data)
+    except ValidationError as e:
+        raise ValueError(f"{index}件目の属性の入力値が不正です。 :: {e}") from e
 
 
 def read_attributes_json(target: str) -> list[AttributeInput]:

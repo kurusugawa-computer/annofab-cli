@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import copy
+import enum
 import logging
 import uuid
 from collections.abc import Sequence
@@ -24,10 +25,24 @@ from annofabcli.common.facade import AnnofabApiFacade
 
 logger = logging.getLogger(__name__)
 
-ATTRIBUTE_TYPES = ["comment", "flag", "integer", "link", "text", "tracking"]
+
+class AttributeType(enum.StrEnum):
+    """
+    非選択肢系属性の種類。
+    """
+
+    COMMENT = "comment"
+    FLAG = "flag"
+    INTEGER = "integer"
+    LINK = "link"
+    TEXT = "text"
+    TRACKING = "tracking"
 
 
-def get_default_value(attribute_type: str) -> str | bool | None:
+ATTRIBUTE_TYPES = [e.value for e in AttributeType]
+
+
+def get_default_value(attribute_type: str | AttributeType) -> str | bool | None:
     """
     属性種類ごとのデフォルト値を返す。
 
@@ -37,7 +52,7 @@ def get_default_value(attribute_type: str) -> str | bool | None:
     Returns:
         属性のデフォルト値
     """
-    if attribute_type == "flag":
+    if attribute_type == AttributeType.FLAG:
         return False
     return ""
 
@@ -60,7 +75,7 @@ def create_comment_from_attribute(attribute_name_en: str, label_names: Sequence[
 
 def create_attribute(
     *,
-    attribute_type: str,
+    attribute_type: str | AttributeType,
     attribute_name_en: str,
     attribute_name_ja: str | None,
     attribute_id: str | None,
@@ -79,7 +94,7 @@ def create_attribute(
     return {
         "additional_data_definition_id": attribute_id if attribute_id is not None else str(uuid.uuid4()),
         "name": create_name(attribute_name_en, attribute_name_ja),
-        "type": attribute_type,
+        "type": attribute_type.value if isinstance(attribute_type, AttributeType) else attribute_type,
     }
 
 
@@ -204,7 +219,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--attribute_type",
         type=str,
         required=True,
-        choices=ATTRIBUTE_TYPES,
+        choices=[e.value for e in AttributeType],
         help=(
             "追加する属性の種類。\n"
             "* ``flag`` : チェックボックス\n"
