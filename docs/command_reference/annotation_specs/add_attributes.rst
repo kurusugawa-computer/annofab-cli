@@ -4,7 +4,7 @@ annotation_specs add_attributes
 
 Description
 =================================
-アノテーション仕様に複数の非選択肢系属性を追加します。
+アノテーション仕様に複数の属性を追加します。選択肢系属性（ラジオボタン/ドロップダウン）もJSONでまとめて指定できます。
 
 
 Examples
@@ -23,8 +23,19 @@ JSON形式で指定する場合
             "label_name_ens": ["car", "bus"]
         },
         {
-            "attribute_type": "text",
-            "attribute_name_en": "comment2",
+            "attribute_type": "select",
+            "attribute_name_en": "weather",
+            "choices": [
+                {
+                    "choice_name_en": "sunny",
+                    "choice_name_ja": "晴れ",
+                    "is_default": true
+                },
+                {
+                    "choice_name_en": "cloudy",
+                    "choice_name_ja": "曇り"
+                }
+            ],
             "label_name_ens": ["bike"]
         }
     ]
@@ -49,6 +60,9 @@ JSON形式で指定する場合
 * ``label_ids`` : ``label_name_ens`` とどちらか一方が必須。属性を追加する対象ラベルの ``label_id`` 一覧。
 * ``attribute_name_ja`` : 任意。属性名（日本語）。
 * ``attribute_id`` : 任意。属性ID。未指定の場合はUUIDv4が自動生成されます。
+* ``choices`` : ``attribute_type`` が ``choice`` または ``select`` のとき必須。選択肢情報の配列です。各要素の構造は :doc:`add_choice_attribute` の ``--choice_json`` と同じです。
+
+``attribute_type`` には、非選択肢系属性の値に加えて ``choice`` と ``select`` も指定できます。
 
 
 Usage Details
