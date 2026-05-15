@@ -79,15 +79,15 @@ class TestCommandLine__put:
             )
 
 
-class TestCommandLine__put_with_json:
+class TestCommandLine__create_from_zip:
     @pytest.mark.submitting_job
-    def test_put_input_data_with_zip(self):
+    def test_create_input_data_from_zip(self):
         # 注意：ジョブ登録される
         zip_file = str(data_dir / "lenna.zip")
         main(
             [
                 "input_data",
-                "put_with_zip",
+                "create_from_zip",
                 "--project_id",
                 project_id,
                 "--zip",
