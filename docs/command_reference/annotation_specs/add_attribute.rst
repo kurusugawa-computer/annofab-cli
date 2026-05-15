@@ -20,6 +20,21 @@ Examples
      --attribute_name_en unclear \
      --label_name_en car bus
 
+
+.. _annotation_specs_non_choice_attribute_types:
+
+--attribute_type に指定できる値
+=================================
+
+``--attribute_type`` には、以下の非選択肢系属性を指定できます。
+
+* ``flag`` : チェックボックス
+* ``integer`` : 整数
+* ``text`` : 自由記述（1行）
+* ``comment`` : 自由記述（複数行）
+* ``tracking`` : トラッキングID
+* ``link`` : アノテーションリンク
+
 Usage Details
 =================================
 
