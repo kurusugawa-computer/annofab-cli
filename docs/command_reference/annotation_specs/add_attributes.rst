@@ -36,6 +36,12 @@ JSON形式で指定する場合
      --attribute_json file://attributes.json
 
 
+--attribute_type に指定できる値
+=================================
+
+``add_attribute`` コマンドと同様です。 :ref:`annotation_specs_non_choice_attribute_types` を参照してください。
+
+
 Usage Details
 =================================
 
