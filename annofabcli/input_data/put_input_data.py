@@ -2,6 +2,7 @@ import argparse
 import logging
 import re
 import sys
+from collections.abc import Sequence
 from dataclasses import dataclass
 from functools import partial
 from multiprocessing import Pool
@@ -116,6 +117,32 @@ def is_duplicated_input_data(df: pandas.DataFrame) -> bool:
     return result
 
 
+def get_final_input_data_id(csv_input_data: CsvInputData) -> str:
+    """入力データに対して実際に使用するinput_data_idを返します。"""
+
+    if csv_input_data.input_data_id is not None:
+        return csv_input_data.input_data_id
+    return convert_input_data_name_to_input_data_id(csv_input_data.input_data_name)
+
+
+def validate_no_duplicated_final_input_data_id(input_data_list: Sequence[CsvInputData]) -> None:
+    """最終的なinput_data_idの重複がないことを検証します。
+
+    Args:
+        input_data_list: 検証対象の入力データ一覧
+
+    Raises:
+        ValueError: 最終的なinput_data_idが重複している場合
+    """
+
+    df = pandas.DataFrame([{"input_data_id": get_final_input_data_id(e)} for e in input_data_list])
+    df_duplicated_input_data_id = df[df["input_data_id"].duplicated()]
+    if len(df_duplicated_input_data_id) > 0:
+        duplicated_input_data_id_list = df_duplicated_input_data_id["input_data_id"].unique().tolist()
+        logger.warning(f"最終的な`input_data_id`が重複しています。\n{duplicated_input_data_id_list}")
+        raise ValueError("最終的な`input_data_id`が重複しています。")
+
+
 class SubPutInputData:
     """
     1個の入力データを登録するためのクラス。multiprocessing.Pool対応。
@@ -190,7 +217,7 @@ class SubPutInputData:
         input_data = InputDataForPut(
             input_data_name=csv_input_data.input_data_name,
             input_data_path=csv_input_data.input_data_path,
-            input_data_id=csv_input_data.input_data_id if csv_input_data.input_data_id is not None else convert_input_data_name_to_input_data_id(csv_input_data.input_data_name),
+            input_data_id=get_final_input_data_id(csv_input_data),
         )
         log_message_prefix = f"{input_data_index + 1}件目 :: "
         last_updated_datetime = None
@@ -349,6 +376,11 @@ class PutInputData(CommandLine):
                 sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
             input_data_list = self.get_input_data_list_from_df(df)
+            try:
+                validate_no_duplicated_final_input_data_id(input_data_list)
+            except ValueError as e:
+                print(f"{self.COMMON_MESSAGE} argument --csv: {e}", file=sys.stderr)  # noqa: T201
+                sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
             self.put_input_data_list(project_id, input_data_list=input_data_list, overwrite=args.overwrite, parallelism=args.parallelism)
 
         elif args.json is not None:
@@ -358,6 +390,11 @@ class PutInputData(CommandLine):
                 sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
             input_data_list = self.get_input_data_list_from_dict(input_data_dict_list, allow_duplicated_input_data=args.allow_duplicated_input_data)
+            try:
+                validate_no_duplicated_final_input_data_id(input_data_list)
+            except ValueError as e:
+                print(f"{self.COMMON_MESSAGE} argument --json: {e}", file=sys.stderr)  # noqa: T201
+                sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
             self.put_input_data_list(project_id, input_data_list=input_data_list, overwrite=args.overwrite, parallelism=args.parallelism)
 
         else:

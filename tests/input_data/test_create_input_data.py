@@ -35,3 +35,13 @@ def test_read_input_data_csv_with_missing_required_column(tmp_path: Path) -> Non
 
     with pytest.raises(ValueError):
         create_input_data.read_input_data_csv(csv_file)
+
+
+def test_validate_no_duplicated_final_input_data_id_with_generated_input_data_id() -> None:
+    input_data_list = [
+        create_input_data.CsvInputData(input_data_name="a/b", input_data_path="s3://example.com/data1"),
+        create_input_data.CsvInputData(input_data_name="a__b", input_data_path="s3://example.com/data2"),
+    ]
+
+    with pytest.raises(ValueError):
+        create_input_data.validate_no_duplicated_final_input_data_id(input_data_list)
