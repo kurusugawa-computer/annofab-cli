@@ -13,6 +13,7 @@ from annofabapi.util.attribute_restrictions import Restriction
 import annofabcli.common.cli
 import annofabcli.common.utils
 from annofabcli.annotation_specs.attribute_restriction import AttributeRestrictionMessage
+from annofabcli.annotation_specs.restriction_type import RESTRICTION_TYPE_TO_CONDITION_TYPE, matches_restriction_type
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
     ArgumentParser,
@@ -98,6 +99,7 @@ class ListAttributeRestriction(CommandLine):
             target_attribute_names=target_attribute_names,
             target_label_names=target_label_names,
         )
+        target_restrictions = [restriction for restriction in target_restrictions if matches_restriction_type(restriction, args.restriction_type)]
         output_format = OutputFormat(args.format)
         if output_format in {OutputFormat.JSON, OutputFormat.PRETTY_JSON}:
             annofabcli.common.utils.print_json(
@@ -146,6 +148,21 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
 
     parser.add_argument("--attribute_name", type=str, nargs="+", help="指定した属性名（英語）の属性の制約を出力します。")
     parser.add_argument("--label_name", type=str, nargs="+", help="指定したラベル名（英語）のラベルに紐づく属性の制約を出力します。")
+    parser.add_argument(
+        "--restriction_type",
+        type=str,
+        choices=list(RESTRICTION_TYPE_TO_CONDITION_TYPE.keys()),
+        help=(
+            "出力対象の属性制約種類。\n"
+            "* ``can_input`` : 入力可否制約\n"
+            "* ``has_label`` : ラベル条件制約\n"
+            "* ``equals`` : 等価制約\n"
+            "* ``not_equals`` : 非等価制約\n"
+            "* ``matches`` : 正規表現一致制約\n"
+            "* ``not_matches`` : 正規表現不一致制約\n"
+            "* ``imply`` : 属性間の相関制約"
+        ),
+    )
     argument_parser.add_output()
 
     parser.add_argument(

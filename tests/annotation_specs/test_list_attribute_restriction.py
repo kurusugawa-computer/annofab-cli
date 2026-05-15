@@ -105,3 +105,41 @@ class TestListAttributeRestriction:
             }
         ]
         assert "\n  {" in actual_text
+
+    def test_restriction_typeを指定したときは一致する種類だけ出力する(self, tmp_path: Path) -> None:
+        annotation_specs_path = DATA_DIR / "annotation_specs.json"
+        output_path = tmp_path / "restrictions_by_type.json"
+
+        main(
+            [
+                self.command_name,
+                "list_attribute_restriction",
+                "--annotation_specs_json",
+                str(annotation_specs_path),
+                "--attribute_name",
+                "comment",
+                "--restriction_type",
+                "imply",
+                "--format",
+                "json",
+                "--output",
+                str(output_path),
+            ]
+        )
+
+        with output_path.open(encoding="utf-8") as f:
+            actual = json.load(f)
+
+        assert actual == [
+            {
+                "additional_data_definition_id": "54fa5e97-6f88-49a4-aeb0-a91a15d11528",
+                "condition": {
+                    "premise": {
+                        "additional_data_definition_id": "f12a0b59-dfce-4241-bb87-4b2c0259fc6f",
+                        "condition": {"value": "true", "_type": "Equals"},
+                    },
+                    "condition": {"value": "[0-9]", "_type": "Matches"},
+                    "_type": "Imply",
+                },
+            }
+        ]

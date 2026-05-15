@@ -5,7 +5,7 @@ import copy
 import json
 import logging
 import sys
-from collections.abc import Collection, Mapping
+from collections.abc import Collection
 from typing import Any
 
 import annofabapi
@@ -13,6 +13,7 @@ from annofabapi.util.annotation_specs import AnnotationSpecsAccessor
 
 import annofabcli.common.cli
 from annofabcli.annotation_specs.attribute_restriction import AttributeRestrictionMessage
+from annofabcli.annotation_specs.restriction_type import RESTRICTION_TYPE_TO_CONDITION_TYPE, matches_restriction_type
 from annofabcli.annotation_specs.utils import get_target_attributes
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
@@ -26,34 +27,6 @@ from annofabcli.common.cli import (
 from annofabcli.common.facade import AnnofabApiFacade
 
 logger = logging.getLogger(__name__)
-
-
-RESTRICTION_TYPE_TO_CONDITION_TYPE = {
-    "can_input": "CanInput",
-    "has_label": "HasLabel",
-    "equals": "Equals",
-    "not_equals": "NotEquals",
-    "matches": "Matches",
-    "not_matches": "NotMatches",
-    "imply": "Imply",
-}
-"""CLIの ``--restriction_type`` と Annofab API の ``condition._type`` の対応。"""
-
-
-def matches_restriction_type(restriction: Mapping[str, Any], restriction_type: str | None) -> bool:
-    """
-    属性制約が指定した種類に一致するかどうかを返す。
-
-    Args:
-        restriction: 判定対象の属性制約
-        restriction_type: CLIで指定された属性制約種類。未指定の場合はNone
-
-    Returns:
-        条件に一致する場合はTrue
-    """
-    if restriction_type is None:
-        return True
-    return restriction["condition"]["_type"] == RESTRICTION_TYPE_TO_CONDITION_TYPE[restriction_type]
 
 
 def create_comment_for_delete_attribute_restriction(restriction_text_list: Collection[str]) -> str:

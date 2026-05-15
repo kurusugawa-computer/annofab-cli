@@ -9,8 +9,8 @@ from annofabcli.annotation_specs.delete_attribute_restriction import (
     DeleteAttributeRestrictionMain,
     create_comment_for_delete_attribute_restriction,
     create_confirm_message_for_delete_attribute_restriction,
-    matches_restriction_type,
 )
+from annofabcli.annotation_specs.restriction_type import matches_restriction_type
 
 DATA_DIR = Path("./tests/data/annotation_specs")
 
