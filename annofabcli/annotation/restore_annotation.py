@@ -39,14 +39,14 @@ class RestoreAnnotationMain(CommandLineWithConfirm):
         service: annofabapi.Resource,
         *,
         project_id: str,
-        is_force: bool,
+        change_operator_to_me: bool,
         all_yes: bool,
     ) -> None:
         self.service = service
         CommandLineWithConfirm.__init__(self, all_yes)
 
         self.project_id = project_id
-        self.is_force = is_force
+        self.change_operator_to_me = change_operator_to_me
 
     def _to_annotation_detail_for_request(self, parser: SimpleAnnotationParser, detail: AnnotationDetailV1) -> AnnotationDetailV1:
         """
@@ -195,7 +195,7 @@ class RestoreAnnotationMain(CommandLineWithConfirm):
 
         old_account_id: str | None = None
         changed_operator = False
-        if self.is_force:
+        if self.change_operator_to_me:
             if not can_put_annotation(task, self.service.api.account_id):
                 logger.debug(f"タスク'{task_id}' の担当者を自分自身に変更します。")
                 old_account_id = task["account_id"]
@@ -211,7 +211,7 @@ class RestoreAnnotationMain(CommandLineWithConfirm):
             if not can_put_annotation(task, self.service.api.account_id):
                 logger.debug(
                     f"タスク'{task_id}'は、過去に誰かに割り当てられたタスクで、現在の担当者が自分自身でないため、アノテーションのリストアをスキップします。"
-                    f"担当者を自分自身に変更してアノテーションを登録する場合は `--force` を指定してください。"
+                    f"担当者を自分自身に変更してアノテーションを登録する場合は `--change_operator_to_me` を指定してください。"
                 )
                 return False
 
@@ -324,7 +324,12 @@ class RestoreAnnotation(CommandLine):
 
         task_id_list = set(annofabcli.common.cli.get_list_from_args(args.task_id)) if args.task_id is not None else None
 
-        RestoreAnnotationMain(self.service, project_id=project_id, is_force=args.force, all_yes=args.yes).main(args.annotation, target_task_ids=task_id_list, parallelism=args.parallelism)
+        RestoreAnnotationMain(
+            self.service,
+            project_id=project_id,
+            change_operator_to_me=args.change_operator_to_me,
+            all_yes=args.yes,
+        ).main(args.annotation, target_task_ids=task_id_list, parallelism=args.parallelism)
 
 
 def main(args: argparse.Namespace) -> None:
@@ -348,7 +353,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     argument_parser.add_task_id(required=False)
 
     parser.add_argument(
-        "--force",
+        "--change_operator_to_me",
         action="store_true",
         help="過去に割り当てられていて現在の担当者が自分自身でない場合、タスクの担当者を自分自身に変更してからアノテーションをリストアします。",
     )

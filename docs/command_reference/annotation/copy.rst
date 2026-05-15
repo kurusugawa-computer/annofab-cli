@@ -60,11 +60,11 @@ Examples
 * タスクの担当者が自分自身でない
 * タスクに担当者が割り当てられたことがある
 
-``--force`` を指定すると、タスクの担当者が一時的に自分自身に変更され、アノテーションがコピーされます。
+``--change_operator_to_me`` を指定すると、タスクの担当者が一時的に自分自身に変更され、アノテーションがコピーされます。
 
 .. code-block::
 
-    $ annofabcli annotation copy -p prj1 --input src_task_id:dest_task_id --force
+    $ annofabcli annotation copy -p prj1 --input src_task_id:dest_task_id --change_operator_to_me
 
 
 Usage Details

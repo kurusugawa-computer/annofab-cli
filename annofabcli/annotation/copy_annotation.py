@@ -125,12 +125,21 @@ def get_copy_target_list(str_copy_target_list: list[str]) -> list[CopyTarget]:
 
 
 class CopyAnnotationMain(CommandLineWithConfirm):
-    def __init__(self, service: annofabapi.Resource, *, project_id: str, all_yes: bool, overwrite: bool, merge: bool, force: bool) -> None:
+    def __init__(
+        self,
+        service: annofabapi.Resource,
+        *,
+        project_id: str,
+        all_yes: bool,
+        overwrite: bool,
+        merge: bool,
+        change_operator_to_me: bool,
+    ) -> None:
         self.service = service
         self.project_id = project_id
         self.overwrite = overwrite
         self.merge = merge
-        self.force = force
+        self.change_operator_to_me = change_operator_to_me
 
         CommandLineWithConfirm.__init__(self, all_yes)
 
@@ -262,8 +271,8 @@ class CopyAnnotationMain(CommandLineWithConfirm):
         changed_operator = False
         original_operator = dest_task["account_id"]
         if not can_put_annotation(dest_task, self.service.api.account_id):
-            if self.force:
-                logger.debug(f"`--force` が指定されているため，コピー先タスク'{copy_target.dest_task_id}' の担当者を自分自身に変更します。")
+            if self.change_operator_to_me:
+                logger.debug(f"`--change_operator_to_me` が指定されているため，コピー先タスク'{copy_target.dest_task_id}' の担当者を自分自身に変更します。")
                 changed_operator = True
                 dest_task = self.service.wrapper.change_task_operator(
                     self.project_id,
@@ -275,7 +284,7 @@ class CopyAnnotationMain(CommandLineWithConfirm):
                 logger.debug(
                     f"コピー先タスク'{copy_target.dest_task_id}'は、過去に誰かに割り当てられたタスクで、"
                     f"現在の担当者が自分自身でないため、アノテーションのコピーをスキップします。"
-                    f"担当者を自分自身に変更してアノテーションをコピーする場合は `--force` を指定してください。"
+                    f"担当者を自分自身に変更してアノテーションをコピーする場合は `--change_operator_to_me` を指定してください。"
                 )
                 return False
 
@@ -361,7 +370,7 @@ class CopyAnnotation(CommandLine):
             all_yes=self.all_yes,
             overwrite=args.overwrite,
             merge=args.merge,
-            force=args.force,
+            change_operator_to_me=args.change_operator_to_me,
         )
         main_obj.copy_annotations(copy_target_list, parallelism=args.parallelism)
 
@@ -399,7 +408,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "指定しなければ、アノテーションのコピーをスキップします。",
     )
     parser.add_argument(
-        "--force",
+        "--change_operator_to_me",
         action="store_true",
         help="過去に割り当てられていて現在の担当者が自分自身でない場合、タスクの担当者を一時的に自分自身に変更してからアノテーションをコピーします。",
     )

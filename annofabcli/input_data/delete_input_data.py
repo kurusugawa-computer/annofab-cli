@@ -60,7 +60,15 @@ class DeleteInputData(CommandLine):
         message_for_confirm = f"入力データに紐づく補助情報 {len(supplementary_data_list)} 件を削除しますか？ (input_data_id='{input_data_id}', input_data_name='{input_data_name}') "
         return self.confirm_processing(message_for_confirm)
 
-    def delete_input_data(self, project_id: str, input_data_id: str, input_data_index: int, delete_supplementary: bool, force: bool) -> bool:  # noqa: FBT001
+    def delete_input_data(
+        self,
+        project_id: str,
+        input_data_id: str,
+        input_data_index: int,
+        *,
+        delete_supplementary: bool,
+        delete_input_data_used_by_task: bool,
+    ) -> bool:
         input_data = self.service.wrapper.get_input_data_or_none(project_id, input_data_id)
         if input_data is None:
             logger.info(f"input_data_id='{input_data_id}'である入力データは存在しません。")
@@ -72,10 +80,11 @@ class DeleteInputData(CommandLine):
         used_task_id_list = []
         if len(task_list) > 0:
             used_task_id_list = [e["task_id"] for e in task_list]
-            if not force:
+            if not delete_input_data_used_by_task:
                 logger.debug(
                     f"入力データ(input_data_id='{input_data_id}', "
-                    f"input_data_name='{input_data_name}')はタスクに使われているため、スキップします。削除する場合は`--force`を付けてください。\n"
+                    f"input_data_name='{input_data_name}')はタスクに使われているため、スキップします。"
+                    "削除する場合は`--delete_input_data_used_by_task`を付けてください。\n"
                     f"task_id_list='{used_task_id_list}'"
                 )
                 return False
@@ -99,7 +108,14 @@ class DeleteInputData(CommandLine):
                 )
         return True
 
-    def delete_input_data_list(self, project_id: str, input_data_id_list: list[str], delete_supplementary: bool, force: bool) -> None:  # noqa: FBT001
+    def delete_input_data_list(
+        self,
+        project_id: str,
+        input_data_id_list: list[str],
+        *,
+        delete_supplementary: bool,
+        delete_input_data_used_by_task: bool,
+    ) -> None:
         """
         タスクに使われていない入力データを削除する。
         """
@@ -116,7 +132,7 @@ class DeleteInputData(CommandLine):
                     input_data_id,
                     input_data_index=input_data_index,
                     delete_supplementary=delete_supplementary,
-                    force=force,
+                    delete_input_data_used_by_task=delete_input_data_used_by_task,
                 )
                 if result:
                     count_delete_input_data += 1
@@ -134,7 +150,7 @@ class DeleteInputData(CommandLine):
             args.project_id,
             input_data_id_list=input_data_id_list,
             delete_supplementary=args.delete_supplementary,
-            force=args.force,
+            delete_input_data_used_by_task=args.delete_input_data_used_by_task,
         )
 
 
@@ -157,7 +173,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         help="削除対象の入力データのinput_data_idを指定します。 ``file://`` を先頭に付けると、input_data_idの一覧が記載されたファイルを指定できます。",
     )
 
-    parser.add_argument("--force", action="store_true", help="タスクに使われている入力データも削除します。")
+    parser.add_argument("--delete_input_data_used_by_task", action="store_true", help="タスクに使われている入力データも削除します。")
 
     parser.add_argument("--delete_supplementary", action="store_true", help="入力データに紐づく補助情報も削除します。")
 

@@ -26,11 +26,11 @@ Examples
 
 
 デフォルトでは、作業中タスクが残っている状態で、プロジェクトのステータスを「停止中」に変更できません。
-作業中タスクが残っている状態で、プロジェクトのステータスを「停止中」に変更する場合は、``--force`` を指定してください。
+作業中タスクが残っている状態で、プロジェクトのステータスを「停止中」に変更する場合は、``--suspend_with_working_tasks`` を指定してください。
 
 .. code-block::
 
-    $ annofabcli project change_status --project_id prj1 prj2 --status suspended --force
+    $ annofabcli project change_status --project_id prj1 prj2 --status suspended --suspend_with_working_tasks
 
 Usage Details
 =================================

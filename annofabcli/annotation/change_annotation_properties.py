@@ -43,12 +43,12 @@ class ChangePropertiesOfAnnotationMain(CommandLineWithConfirm):
         service: annofabapi.Resource,
         project_id: str,
         *,
-        is_force: bool,
+        change_operator_to_me: bool,
         all_yes: bool,
     ) -> None:
         self.service = service
         self.facade = AnnofabApiFacade(service)
-        self.is_force = is_force
+        self.change_operator_to_me = change_operator_to_me
         CommandLineWithConfirm.__init__(self, all_yes)
         self.project_id = project_id
         self.dump_annotation_obj = DumpAnnotationMain(service, project_id)
@@ -165,7 +165,7 @@ class ChangePropertiesOfAnnotationMain(CommandLineWithConfirm):
         old_account_id: str | None = dict_task["account_id"]
         changed_operator = False
 
-        if self.is_force:
+        if self.change_operator_to_me:
             if not can_put_annotation(dict_task, self.service.api.account_id):
                 logger.debug(f"タスク'{task_id}' の担当者を自分自身に変更します。")
                 dict_task = self.service.wrapper.change_task_operator(
@@ -180,7 +180,7 @@ class ChangePropertiesOfAnnotationMain(CommandLineWithConfirm):
             if not can_put_annotation(dict_task, self.service.api.account_id):
                 logger.debug(
                     f"タスク'{task_id}'は、過去に誰かに割り当てられたタスクで、現在の担当者が自分自身でないため、アノテーションのプロパティの変更をスキップします。"
-                    f"担当者を自分自身に変更してアノテーションのプロパティを変更する場合は `--force` を指定してください。"
+                    f"担当者を自分自身に変更してアノテーションのプロパティを変更する場合は `--change_operator_to_me` を指定してください。"
                 )
                 return False
 
@@ -333,7 +333,12 @@ class ChangePropertiesOfAnnotation(CommandLine):
 
         super().validate_project(project_id, [ProjectMemberRole.OWNER])
 
-        main_obj = ChangePropertiesOfAnnotationMain(self.service, project_id=project_id, is_force=args.force, all_yes=args.yes)
+        main_obj = ChangePropertiesOfAnnotationMain(
+            self.service,
+            project_id=project_id,
+            change_operator_to_me=args.change_operator_to_me,
+            all_yes=args.yes,
+        )
         main_obj.change_annotation_properties_task_list(
             task_id_list,
             properties=properties_for_cli,
@@ -374,7 +379,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     )
 
     parser.add_argument(
-        "--force",
+        "--change_operator_to_me",
         action="store_true",
         help="過去に割り当てられていて現在の担当者が自分自身でない場合、タスクの担当者を自分自身に変更してからアノテーションプロパティを変更します。",
     )

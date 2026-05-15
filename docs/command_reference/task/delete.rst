@@ -32,11 +32,11 @@ Examples
 
 
 デフォルトでは、アノテーションが付与されているタスクは削除できません。
-アノテーションが付与されているタスクを削除する場合は ``--force`` を指定してください。
+アノテーションが付与されているタスクを削除する場合は ``--delete_annotated_task`` を指定してください。
 
 .. code-block::
 
-    $ annofabcli task delete --project_id prj1 --task_id file://task_id.txt --force
+    $ annofabcli task delete --project_id prj1 --task_id file://task_id.txt --delete_annotated_task
 
 
 ``--delete_input_data`` を指定すれば、タスクが参照している入力データとそれに紐づく補助情報も削除されます。ただし、他のタスクから参照されている入力データは、削除されません。
