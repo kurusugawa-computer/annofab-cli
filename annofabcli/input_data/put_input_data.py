@@ -30,6 +30,8 @@ from annofabcli.common.utils import get_file_scheme_path
 
 logger = logging.getLogger(__name__)
 
+DEPRECATED_MESSAGE = "[DEPRECATED] :: `input_data put` コマンドは非推奨です。代わりに `input_data create` コマンドを使用してください。 `input_data put` コマンドは2027/01/01以降に廃止予定です。"
+
 
 @dataclass
 class CsvInputData(DataClassJsonMixin):
@@ -363,6 +365,7 @@ class PutInputData(CommandLine):
 
 
 def main(args: argparse.Namespace) -> None:
+    print(DEPRECATED_MESSAGE, file=sys.stderr)  # noqa: T201
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
     PutInputData(service, facade, args).main()
@@ -425,9 +428,10 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
 
 def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "put"
-    subcommand_help = "入力データを登録します。"
+    subcommand_help = "[DEPRECATED] 入力データを登録します。"
+    description = f"{subcommand_help}\n{DEPRECATED_MESSAGE}"
     epilog = "オーナロールを持つユーザで実行してください。"
 
-    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, epilog=epilog)
+    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
     parse_args(parser)
     return parser

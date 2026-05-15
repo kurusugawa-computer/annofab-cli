@@ -8,7 +8,9 @@ Description
 
 .. warning::
 
-    ``input_data put`` は非推奨です。新規に利用する場合は ``input_data create`` を使用してください。
+   このコマンドは非推奨です。代わりに :doc:`create` コマンドを使用してください。
+
+   ``input_data put`` コマンドは2027/01/01以降に廃止予定です。
 
 
 Examples
@@ -122,4 +124,3 @@ Usage Details
    :prog: annofabcli input_data put
    :nosubcommands:
    :nodefaultconst:
-
