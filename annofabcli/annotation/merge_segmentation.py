@@ -58,11 +58,11 @@ class MergeSegmentationMain(CommandLineWithConfirm):
         label_ids: Collection[str],
         label_names: Collection[str],
         all_yes: bool,
-        is_force: bool,
+        change_operator_to_me: bool,
     ) -> None:
         self.annofab_service = annofab_service
         self.project_id = project_id
-        self.is_force = is_force
+        self.change_operator_to_me = change_operator_to_me
         self.label_ids = label_ids
         self.label_names = label_names
 
@@ -206,7 +206,7 @@ class MergeSegmentationMain(CommandLineWithConfirm):
         changed_operator = False
         original_operator_account_id = task["account_id"]
         if not can_put_annotation(task, self.annofab_service.api.account_id):
-            if self.is_force:
+            if self.change_operator_to_me:
                 logger.debug(f"{log_message_prefix}task_id='{task_id}' のタスクの担当者を自分自身に変更します。")
                 changed_operator = True
                 task = self.annofab_service.wrapper.change_task_operator(
@@ -219,7 +219,7 @@ class MergeSegmentationMain(CommandLineWithConfirm):
                 logger.debug(
                     f"{log_message_prefix}task_id='{task_id}' のタスクは、過去に誰かに割り当てられたタスクで、"
                     f"現在の担当者が自分自身でないため、アノテーションの更新をスキップします。"
-                    f"担当者を自分自身に変更してアノテーションを更新する場合は、コマンドライン引数 '--force' を指定してください。"
+                    f"担当者を自分自身に変更してアノテーションを更新する場合は、コマンドライン引数 '--change_operator_to_me' を指定してください。"
                 )
                 return 0
 
@@ -330,7 +330,7 @@ class MergeSegmentation(CommandLine):
             label_ids=label_id_list,
             label_names=label_name_list,
             all_yes=self.all_yes,
-            is_force=args.force,
+            change_operator_to_me=args.change_operator_to_me,
         )
 
         main_obj.main(task_id_list, parallelism=args.parallelism)
@@ -356,9 +356,9 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     )
 
     parser.add_argument(
-        "--force",
+        "--change_operator_to_me",
         action="store_true",
-        help="過去に担当者を割り当てられていて、かつ現在の担当者が自分自身でない場合、タスクの担当者を一時的に自分自身に変更してからアノテーションをコピーします。",
+        help="過去に担当者を割り当てられていて、かつ現在の担当者が自分自身でない場合、タスクの担当者を一時的に自分自身に変更してからアノテーションを更新します。",
     )
 
     parser.add_argument(

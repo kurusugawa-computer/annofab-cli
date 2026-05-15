@@ -409,7 +409,7 @@ class TestCommandLine:
         assert task["metadata"] == {"foo": "bar", "priority": 1}
 
         # タスクの削除
-        main([self.command_name, "delete", "--project_id", project_id, "--task_id", task_id, "--force", "--yes"])
+        main([self.command_name, "delete", "--project_id", project_id, "--task_id", task_id, "--delete_annotated_task", "--yes"])
         task = service.wrapper.get_task_or_none(project_id, task_id)
         assert task is None
 
@@ -440,7 +440,7 @@ class TestCommandLine:
         assert task is not None
         assert task["metadata"] == {"foo": "bar"}
 
-        main([self.command_name, "delete", "--project_id", project_id, "--task_id", task_id, "--force", "--yes"])
+        main([self.command_name, "delete", "--project_id", project_id, "--task_id", task_id, "--delete_annotated_task", "--yes"])
         task = service.wrapper.get_task_or_none(project_id, task_id)
         assert task is None
 

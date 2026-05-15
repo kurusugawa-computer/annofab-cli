@@ -64,10 +64,17 @@ def remove_overlap_of_binary_image_array(binary_image_array_by_annotation: dict[
 
 
 class RemoveSegmentationOverlapMain(CommandLineWithConfirm):
-    def __init__(self, annofab_service: annofabapi.Resource, *, project_id: str, all_yes: bool, is_force: bool) -> None:
+    def __init__(
+        self,
+        annofab_service: annofabapi.Resource,
+        *,
+        project_id: str,
+        all_yes: bool,
+        change_operator_to_me: bool,
+    ) -> None:
         self.annofab_service = annofab_service
         self.project_id = project_id
-        self.is_force = is_force
+        self.change_operator_to_me = change_operator_to_me
         super().__init__(all_yes)
 
     def remove_segmentation_overlap_and_save(self, details: list[dict[str, Any]], output_dir: Path) -> list[str]:
@@ -185,7 +192,7 @@ class RemoveSegmentationOverlapMain(CommandLineWithConfirm):
         changed_operator = False
         original_operator_account_id = task["account_id"]
         if not can_put_annotation(task, self.annofab_service.api.account_id):
-            if self.is_force:
+            if self.change_operator_to_me:
                 logger.debug(f"{log_message_prefix}task_id='{task_id}' のタスクの担当者を自分自身に変更します。")
                 changed_operator = True
                 task = self.annofab_service.wrapper.change_task_operator(
@@ -198,7 +205,7 @@ class RemoveSegmentationOverlapMain(CommandLineWithConfirm):
                 logger.debug(
                     f"{log_message_prefix}task_id='{task_id}' のタスクは、過去に誰かに割り当てられたタスクで、"
                     f"現在の担当者が自分自身でないため、アノテーションの更新をスキップします。"
-                    f"担当者を自分自身に変更してアノテーションを更新する場合は、コマンドライン引数 '--force' を指定してください。"
+                    f"担当者を自分自身に変更してアノテーションを更新する場合は、コマンドライン引数 '--change_operator_to_me' を指定してください。"
                 )
                 return 0
 
@@ -284,7 +291,7 @@ class RemoveSegmentationOverlap(CommandLine):
             self.service,
             project_id=project_id,
             all_yes=self.all_yes,
-            is_force=args.force,
+            change_operator_to_me=args.change_operator_to_me,
         )
 
         main_obj.main(task_id_list, parallelism=args.parallelism)
@@ -302,9 +309,9 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     argument_parser.add_task_id()
 
     parser.add_argument(
-        "--force",
+        "--change_operator_to_me",
         action="store_true",
-        help="過去に担当者を割り当てられていて、かつ現在の担当者が自分自身でない場合、タスクの担当者を一時的に自分自身に変更してからアノテーションをコピーします。",
+        help="過去に担当者を割り当てられていて、かつ現在の担当者が自分自身でない場合、タスクの担当者を一時的に自分自身に変更してからアノテーションを更新します。",
     )
 
     parser.add_argument(

@@ -31,13 +31,13 @@ Examples
     $ annofabcli input_data delete --project_id prj1 --input_data_id file://input_data_id.txt
 
 デフォルトでは、タスクに使われている入力データを削除しません。
-タスクに使われている入力データを削除するには、``--force`` を指定してください。
+タスクに使われている入力データを削除するには、``--delete_input_data_used_by_task`` を指定してください。
 
 
 .. code-block::
 
     $ annofabcli input_data delete --project_id prj1 --input_data_id file://input_data_id.txt \
-    --force
+    --delete_input_data_used_by_task
 
 .. warning::
 
@@ -62,4 +62,3 @@ Usage Details
    :prog: annofabcli input_data delete
    :nosubcommands:
    :nodefaultconst:
-

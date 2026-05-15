@@ -29,14 +29,14 @@ class DeleteTaskMain(CommandLineWithConfirm):
         *,
         all_yes: bool = False,
         dryrun: bool = False,
-        force: bool = False,
+        delete_annotated_task: bool = False,
         should_delete_input_data: bool = False,
     ) -> None:
         self.service = service
         self.facade = AnnofabApiFacade(service)
         self.project_id = project_id
         self.dryrun = dryrun
-        self.force = force
+        self.delete_annotated_task = delete_annotated_task
         self.should_delete_input_data = should_delete_input_data
 
         CommandLineWithConfirm.__init__(self, all_yes)
@@ -123,9 +123,9 @@ class DeleteTaskMain(CommandLineWithConfirm):
 
         annotation_list = self.get_annotation_list(task_id)
         logger.debug(f"{log_prefix} :: アノテーションが{len(annotation_list)}個付与されています。")
-        if not self.force:  # noqa: SIM102
+        if not self.delete_annotated_task:  # noqa: SIM102
             if len(annotation_list) > 0:
-                logger.info(f"{log_prefix} :: アノテーションが付与されているため（{len(annotation_list)}個）、タスクの削除をスキップします。削除するには`--force`を指定してください。")
+                logger.info(f"{log_prefix} :: アノテーションが付与されているため（{len(annotation_list)}個）、タスクの削除をスキップします。削除するには`--delete_annotated_task`を指定してください。")
                 return False
 
         if not match_task_with_query(Task.from_dict(task), task_query):
@@ -148,7 +148,7 @@ class DeleteTaskMain(CommandLineWithConfirm):
         Args:
             project_id:
             task_id:
-            force: アノテーションが付与されていても削除します。
+            delete_annotated_task: アノテーションが付与されていても削除します。
 
         Returns:
             True: タスクを削除した。False: タスクを削除しなかった。
@@ -247,7 +247,7 @@ class DeleteTask(CommandLine):
             project_id=args.project_id,
             all_yes=args.yes,
             dryrun=args.dryrun,
-            force=args.force,
+            delete_annotated_task=args.delete_annotated_task,
             should_delete_input_data=args.delete_input_data,
         )
         main_obj.delete_task_list(task_id_list=task_id_list, task_query=task_query)
@@ -264,7 +264,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
 
     argument_parser.add_project_id()
     argument_parser.add_task_id()
-    parser.add_argument("--force", action="store_true", help="アノテーションが付与されているタスクも強制的に削除します。")
+    parser.add_argument("--delete_annotated_task", action="store_true", help="アノテーションが付与されているタスクも削除します。")
     parser.add_argument(
         "--delete_input_data",
         action="store_true",

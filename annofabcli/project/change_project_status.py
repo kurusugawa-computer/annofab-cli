@@ -157,7 +157,11 @@ class ChangeProjectStatus(CommandLine):
         args = self.args
         project_id_list = annofabcli.common.cli.get_list_from_args(args.project_id)
         main_obj = ChanegProjectStatusMain(self.service)
-        main_obj.change_status_for_project_list(project_id_list=project_id_list, status=ProjectStatus(args.status), force_suspend=args.force)
+        main_obj.change_status_for_project_list(
+            project_id_list=project_id_list,
+            status=ProjectStatus(args.status),
+            force_suspend=args.suspend_with_working_tasks,
+        )
 
 
 def main(args: argparse.Namespace) -> None:
@@ -185,9 +189,9 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     )
 
     parser.add_argument(
-        "--force",
+        "--suspend_with_working_tasks",
         action="store_true",
-        help=f"`--status {ProjectStatus.SUSPENDED.value}`を指定している状態で、 ``--force`` を指定した場合、作業中タスクが残っていても停止状態に変更します。",
+        help=f"`--status {ProjectStatus.SUSPENDED.value}`を指定している状態で、 ``--suspend_with_working_tasks`` を指定した場合、作業中タスクが残っていても停止状態に変更します。",
     )
 
     parser.set_defaults(subcommand_func=main)

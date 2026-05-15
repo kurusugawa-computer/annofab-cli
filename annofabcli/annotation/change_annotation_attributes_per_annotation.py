@@ -63,13 +63,13 @@ class ChangeAnnotationAttributesPerAnnotationMain(CommandLineWithConfirm):
         service: annofabapi.Resource,
         *,
         project_id: str,
-        is_force: bool,
+        include_complete_task: bool,
         all_yes: bool,
         backup_dir: Path | None = None,
     ) -> None:
         self.service = service
         self.project_id = project_id
-        self.is_force = is_force
+        self.include_complete_task = include_complete_task
         self.backup_dir = backup_dir
         self.annotation_specs, _ = self.service.api.get_annotation_specs(project_id, query_params={"v": "3"})
         self.dump_annotation_obj = DumpAnnotationMain(service, project_id)
@@ -169,11 +169,11 @@ class ChangeAnnotationAttributesPerAnnotationMain(CommandLineWithConfirm):
             failed_to_change_annotation_count += annotation_count
             return False, 0, annotation_count
 
-        if not self.is_force:  # noqa: SIM102
+        if not self.include_complete_task:  # noqa: SIM102
             if task["status"] == TaskStatus.COMPLETE.value:
                 logger.info(
                     f"task_id='{task_id}' :: タスクが完了状態のため、アノテーション {annotation_count} 件のアノテーションの属性値の変更をスキップします。"
-                    f"完了状態のタスクのアノテーションを削除するには、`--force`オプションを指定してください。"
+                    f"完了状態のタスクのアノテーションも変更するには、`--include_complete_task` オプションを指定してください。"
                 )
                 failed_to_change_annotation_count += annotation_count
                 return False, 0, annotation_count
@@ -264,10 +264,24 @@ class ChangeAttributesPerAnnotation(CommandLine):
         else:
             backup_dir = Path(args.backup)
 
+        if args.include_complete_task:  # noqa: SIM102
+            if not self.facade.contains_any_project_member_role(project_id, [ProjectMemberRole.OWNER]):
+                print(  # noqa: T201
+                    f"{self.COMMON_MESSAGE} argument --include_complete_task : '--include_complete_task' 引数を利用するにはプロジェクトのオーナーロールを持つユーザーで実行する必要があります。",
+                    file=sys.stderr,
+                )
+                sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
+
         # プロジェクト権限チェック
         super().validate_project(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.ACCEPTER])
 
-        main_obj = ChangeAnnotationAttributesPerAnnotationMain(self.service, project_id=project_id, all_yes=args.yes, is_force=args.force, backup_dir=backup_dir)
+        main_obj = ChangeAnnotationAttributesPerAnnotationMain(
+            self.service,
+            project_id=project_id,
+            all_yes=args.yes,
+            include_complete_task=args.include_complete_task,
+            backup_dir=backup_dir,
+        )
         main_obj.change_annotation_attributes(target_annotation_list)
 
 
@@ -298,7 +312,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     )
 
     parser.add_argument(
-        "--force",
+        "--include_complete_task",
         action="store_true",
         help="指定した場合は、完了状態のタスクのアノテーションも属性値を変更します。ただし、完了状態のタスクのアノテーションを変更するには、オーナーロールを持つユーザーが実行する必要があります。",
     )

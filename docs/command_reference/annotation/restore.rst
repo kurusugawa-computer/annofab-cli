@@ -44,12 +44,12 @@ Examples
 * タスクの担当者が自分自身でない
 * タスクに担当者が割れ当てられたことがある
 
-``--force`` を指定すると、担当者を一時的に自分自身に変更して、アノテーションをリストアすることができます。
+``--change_operator_to_me`` を指定すると、担当者を一時的に自分自身に変更して、アノテーションをリストアすることができます。
 
 .. code-block::
 
     $ annofabcli annotation restore --project_id prj1 --annotation backup-dir/ \
-    --force
+    --change_operator_to_me
 
 Usage Details
 =================================
@@ -64,4 +64,3 @@ Usage Details
 See also
 =================================
 *  `annofabcli annotation dump <../annotation/dump.html>`_
-

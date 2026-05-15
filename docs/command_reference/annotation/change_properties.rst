@@ -39,13 +39,13 @@ Examples
 
 
 デフォルトでは「担当者が自分自身でない AND 担当者が割り当てられたことがある」タスクは、アノテーションプロパティの変更をスキップします。
-``--force`` を指定すると、担当者を一時的に自分自身に変更して、アノテーションのプロパティを変更できます。
+``--change_operator_to_me`` を指定すると、担当者を一時的に自分自身に変更して、アノテーションのプロパティを変更できます。
 
 
 .. code-block::
 
     $ annofabcli annotation change_properties --project_id prj1 --task_id task1 task2 \ 
-    --properties '{"is_protected":true}' --force \
+    --properties '{"is_protected":true}' --change_operator_to_me \
 
 
 
@@ -57,5 +57,4 @@ Usage Details
     :prog: annofabcli annotation change_properties
     :nosubcommands:
     :nodefaultconst:
-
 

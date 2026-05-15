@@ -26,11 +26,11 @@ class ChangeProjectOrganizationMain(CommandLineWithConfirm):
         self,
         service: annofabapi.Resource,
         *,
-        is_force: bool = False,
+        suspend_active_project: bool = False,
         all_yes: bool = False,
     ) -> None:
         self.service = service
-        self.is_force = is_force
+        self.suspend_active_project = suspend_active_project
         self.facade = AnnofabApiFacade(service)
         super().__init__(all_yes)
 
@@ -142,7 +142,7 @@ class ChangeProjectOrganizationMain(CommandLineWithConfirm):
 
         project_name = project["title"]
         if project["project_status"] == "active":
-            if self.is_force:
+            if self.suspend_active_project:
                 if not self.confirm_processing(
                     f"project_id='{project_id}'のプロジェクトの状態を停止中にしたあと、所属する組織を'{organization_name}'に変更しますか？ :: project_name='{project_name}'"
                 ):
@@ -158,7 +158,8 @@ class ChangeProjectOrganizationMain(CommandLineWithConfirm):
                 logger.info(f"project_id='{project_id}'のプロジェクトのステータスを「停止中」に変更しました。 :: project_name='{project_name}'")
             else:
                 logger.warning(
-                    f"project_id='{project_id}'のプロジェクトのステータスは「進行中」のため、組織を変更できません。 `--force`オプションを指定すれば、停止中状態に変更した後組織を変更できます。"
+                    "project_id='%s'のプロジェクトのステータスは「進行中」のため、組織を変更できません。 `--suspend_active_project`オプションを指定すれば、停止中状態に変更した後組織を変更できます。",
+                    project_id,
                 )
                 return None
         elif not self.confirm_processing(f"project_id='{project_id}'のプロジェクトの組織を'{organization_name}'に変更しますか？ :: project_name='{project_name}'"):
@@ -198,7 +199,7 @@ class ChangeProjectOrganization(CommandLine):
     def main(self) -> None:
         args = self.args
         project_id_list = annofabcli.common.cli.get_list_from_args(args.project_id)
-        main_obj = ChangeProjectOrganizationMain(self.service, all_yes=args.yes, is_force=args.force)
+        main_obj = ChangeProjectOrganizationMain(self.service, all_yes=args.yes, suspend_active_project=args.suspend_active_project)
 
         job_list = main_obj.change_organization_for_project_list(project_id_list=project_id_list, organization_name=args.organization)
         if len(job_list) == 0:
@@ -239,9 +240,9 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     )
 
     parser.add_argument(
-        "--force",
+        "--suspend_active_project",
         action="store_true",
-        help="強制的に組織を変更します（将来拡張用）。",
+        help="進行中状態のプロジェクトを停止中状態に変更した後で、組織を変更します。",
     )
 
     parser.set_defaults(subcommand_func=main)
