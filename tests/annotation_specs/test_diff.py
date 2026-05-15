@@ -3,6 +3,8 @@ from __future__ import annotations
 import copy
 import json
 
+import pytest
+
 from annofabcli.__main__ import main
 from annofabcli.annotation_specs.diff import create_annotation_specs_diff, format_annotation_specs_diff_as_text
 
@@ -297,6 +299,7 @@ class TestFormatAnnotationSpecsDiffAsText:
         assert "choice_name_en: yes_changed" in actual
 
 
+@pytest.mark.access_webapi
 class TestCommandLine:
     def test_json形式でlabelsのみ出力できる(self, tmp_path):
         left_specs_path = tmp_path / "left.json"
