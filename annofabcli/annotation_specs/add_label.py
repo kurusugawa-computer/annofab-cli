@@ -267,6 +267,88 @@ def create_new_label(
     }
 
 
+@dataclass(frozen=True)
+class ResolvedNewLabelInput:
+    """
+    既存アノテーション仕様に対して解決済みの新規ラベル入力。
+    """
+
+    label_id: str
+    """解決済みラベルID。"""
+
+    new_label: dict[str, Any]
+    """Annofab API向けの新規ラベルオブジェクト。"""
+
+
+def resolve_new_label_input(
+    annotation_specs: dict[str, Any],
+    *,
+    label_name_en: str,
+    annotation_type: str,
+    label_id: str | None,
+    label_name_ja: str | None,
+    color_code: str | None,
+    field_values: dict[str, Any] | None = None,
+) -> ResolvedNewLabelInput:
+    """
+    新規ラベル入力を既存アノテーション仕様に対して解決する。
+
+    Args:
+        annotation_specs: 既存のアノテーション仕様
+        label_name_en: 追加するラベルの英語名
+        annotation_type: 追加するラベルのアノテーション種類
+        label_id: 追加するラベルID。未指定ならUUIDv4を自動生成
+        label_name_ja: 追加するラベルの日本語名
+        color_code: ``#RRGGBB`` 形式のカラーコード
+        field_values: 新規ラベルに設定するfield_values
+
+    Returns:
+        解決済み新規ラベル入力
+    """
+    labels = annotation_specs["labels"]
+    generated_label_id = label_id if label_id is not None else str(uuid.uuid4())
+    validate_new_label(labels, label_id=generated_label_id, label_name_en=label_name_en)
+
+    color = hex_to_rgb(color_code) if color_code is not None else create_auto_color(collect_label_colors(labels))
+    new_label = create_new_label(
+        label_id=generated_label_id,
+        label_name_en=label_name_en,
+        label_name_ja=label_name_ja,
+        annotation_type=annotation_type,
+        color=color,
+        field_values=field_values,
+    )
+    return ResolvedNewLabelInput(label_id=generated_label_id, new_label=new_label)
+
+
+def build_request_body_for_add_label(
+    annotation_specs: dict[str, Any],
+    *,
+    resolved_new_label_input: ResolvedNewLabelInput,
+    label_name_en: str,
+    comment: str | None,
+) -> dict[str, Any]:
+    """
+    ラベル追加用の request body を生成する。
+
+    Args:
+        annotation_specs: 既存のアノテーション仕様
+        resolved_new_label_input: 解決済み新規ラベル入力
+        label_name_en: ラベル英語名
+        comment: 変更コメント
+
+    Returns:
+        Annofab API に渡す request body
+    """
+    request_body = copy.deepcopy(annotation_specs)
+    request_body["labels"].append(resolved_new_label_input.new_label)
+    if comment is None:
+        comment = create_comment_from_label(label_name_en)
+    request_body["comment"] = comment
+    request_body["last_updated_datetime"] = annotation_specs["updated_datetime"]
+    return request_body
+
+
 class AddLabelMain(CommandLineWithConfirm):
     """
     ラベルをアノテーション仕様へ追加する本体処理。
@@ -313,34 +395,28 @@ class AddLabelMain(CommandLineWithConfirm):
             ValueError: 入力値や既存アノテーション仕様との整合性が不正な場合
         """
         old_annotation_specs, _ = self.service.api.get_annotation_specs(self.project_id, query_params={"v": "3"})
-        labels = old_annotation_specs["labels"]
-
-        generated_label_id = label_id if label_id is not None else str(uuid.uuid4())
-        validate_new_label(labels, label_id=generated_label_id, label_name_en=label_name_en)
-
-        color = hex_to_rgb(color_code) if color_code is not None else create_auto_color(collect_label_colors(labels))
-        new_label = create_new_label(
-            label_id=generated_label_id,
+        resolved_new_label_input = resolve_new_label_input(
+            old_annotation_specs,
             label_name_en=label_name_en,
-            label_name_ja=label_name_ja,
             annotation_type=annotation_type,
-            color=color,
+            label_id=label_id,
+            label_name_ja=label_name_ja,
+            color_code=color_code,
             field_values=field_values,
         )
 
-        confirm_message = f"ラベル名(英語)='{label_name_en}', label_id='{generated_label_id}', annotation_type='{annotation_type}' のラベルを追加します。よろしいですか？"
+        confirm_message = f"ラベル名(英語)='{label_name_en}', label_id='{resolved_new_label_input.label_id}', annotation_type='{annotation_type}' のラベルを追加します。よろしいですか？"
         if not self.confirm_processing(confirm_message):
             return False
 
-        request_body = copy.deepcopy(old_annotation_specs)
-        request_body["labels"].append(new_label)
-
-        if comment is None:
-            comment = create_comment_from_label(label_name_en)
-        request_body["comment"] = comment
-        request_body["last_updated_datetime"] = old_annotation_specs["updated_datetime"]
+        request_body = build_request_body_for_add_label(
+            old_annotation_specs,
+            resolved_new_label_input=resolved_new_label_input,
+            label_name_en=label_name_en,
+            comment=comment,
+        )
         self.service.api.put_annotation_specs(self.project_id, query_params={"v": "3"}, request_body=request_body)
-        logger.info(f"ラベルを追加しました。 :: label_name_en='{label_name_en}', label_id='{generated_label_id}', annotation_type='{annotation_type}'")
+        logger.info(f"ラベルを追加しました。 :: label_name_en='{label_name_en}', label_id='{resolved_new_label_input.label_id}', annotation_type='{annotation_type}'")
         return True
 
 

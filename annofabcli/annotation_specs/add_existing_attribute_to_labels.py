@@ -3,7 +3,8 @@ from __future__ import annotations
 import argparse
 import copy
 import logging
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
+from dataclasses import dataclass
 from typing import Any
 
 import annofabapi
@@ -15,6 +16,19 @@ from annofabcli.common.cli import ArgumentParser, CommandLine, CommandLineWithCo
 from annofabcli.common.facade import AnnofabApiFacade
 
 logger = logging.getLogger(__name__)
+
+
+@dataclass(frozen=True)
+class ResolvedExistingAttributeToLabelsInput:
+    """
+    既存属性のラベル追加を既存アノテーション仕様に対して解決した結果。
+    """
+
+    target_attribute: dict[str, Any]
+    """追加する既存属性。"""
+
+    target_labels: list[Mapping[str, Any]]
+    """属性を追加する対象ラベル一覧。"""
 
 
 def create_comment_from_existing_attribute(attribute_name: str, label_names: Sequence[str]) -> str:
@@ -62,6 +76,77 @@ def get_target_attribute(
     return dict(annotation_specs_accessor.get_attribute(attribute_name=attribute_name_en))
 
 
+def resolve_existing_attribute_to_labels_input(
+    annotation_specs: dict[str, Any],
+    *,
+    attribute_id: str | None,
+    attribute_name_en: str | None,
+    label_ids: Sequence[str] | None,
+    label_name_ens: Sequence[str] | None,
+) -> ResolvedExistingAttributeToLabelsInput:
+    """
+    既存属性のラベル追加入力を既存アノテーション仕様に対して解決する。
+
+    Args:
+        annotation_specs: 既存のアノテーション仕様
+        attribute_id: 追加する属性ID
+        attribute_name_en: 追加する属性英語名
+        label_ids: 追加先ラベルID一覧。未指定時はNone
+        label_name_ens: 追加先ラベル英語名一覧。未指定時はNone
+
+    Returns:
+        解決済み入力
+    """
+    annotation_specs_accessor = AnnotationSpecsAccessor(annotation_specs)
+    target_attribute = get_target_attribute(
+        annotation_specs_accessor,
+        attribute_id=attribute_id,
+        attribute_name_en=attribute_name_en,
+    )
+    target_labels = get_target_labels(annotation_specs_accessor, label_ids=label_ids, label_name_ens=label_name_ens)
+
+    target_attribute_id = target_attribute["additional_data_definition_id"]
+    already_linked_label_names = [get_label_name_en(label) for label in target_labels if target_attribute_id in label["additional_data_definitions"]]
+    if already_linked_label_names:
+        duplicated_text = ", ".join(sorted(already_linked_label_names))
+        raise ValueError(f"指定した属性は既に対象ラベルに紐付いています。 :: {duplicated_text}")
+
+    return ResolvedExistingAttributeToLabelsInput(target_attribute=target_attribute, target_labels=target_labels)
+
+
+def build_request_body_for_add_existing_attribute_to_labels(
+    annotation_specs: dict[str, Any],
+    *,
+    resolved_input: ResolvedExistingAttributeToLabelsInput,
+    comment: str | None,
+) -> dict[str, Any]:
+    """
+    既存属性をラベルへ追加する request body を生成する。
+
+    Args:
+        annotation_specs: 既存のアノテーション仕様
+        resolved_input: 解決済み入力
+        comment: 変更コメント
+
+    Returns:
+        Annofab API に渡す request body
+    """
+    request_body = copy.deepcopy(annotation_specs)
+    target_attribute_id = resolved_input.target_attribute["additional_data_definition_id"]
+    target_label_id_set = {label["label_id"] for label in resolved_input.target_labels}
+    for label in request_body["labels"]:
+        if label["label_id"] in target_label_id_set:
+            label["additional_data_definitions"].append(target_attribute_id)
+
+    attribute_name = get_attribute_name_en(resolved_input.target_attribute)
+    label_names = [get_label_name_en(label) for label in resolved_input.target_labels]
+    if comment is None:
+        comment = create_comment_from_existing_attribute(attribute_name, label_names)
+    request_body["comment"] = comment
+    request_body["last_updated_datetime"] = annotation_specs["updated_datetime"]
+    return request_body
+
+
 class AddExistingAttributeToLabelsMain(CommandLineWithConfirm):
     """
     既存属性を複数の既存ラベルへ追加する本体処理。
@@ -104,39 +189,28 @@ class AddExistingAttributeToLabelsMain(CommandLineWithConfirm):
             ValueError: 入力値や既存アノテーション仕様との整合性が不正な場合
         """
         old_annotation_specs, _ = self.service.api.get_annotation_specs(self.project_id, query_params={"v": "3"})
-        annotation_specs_accessor = AnnotationSpecsAccessor(old_annotation_specs)
-
-        target_attribute = get_target_attribute(
-            annotation_specs_accessor,
+        resolved_input = resolve_existing_attribute_to_labels_input(
+            old_annotation_specs,
             attribute_id=attribute_id,
             attribute_name_en=attribute_name_en,
+            label_ids=label_ids,
+            label_name_ens=label_name_ens,
         )
-        target_labels = get_target_labels(annotation_specs_accessor, label_ids=label_ids, label_name_ens=label_name_ens)
 
-        target_attribute_id = target_attribute["additional_data_definition_id"]
-        already_linked_label_names = [get_label_name_en(label) for label in target_labels if target_attribute_id in label["additional_data_definitions"]]
-        if already_linked_label_names:
-            duplicated_text = ", ".join(sorted(already_linked_label_names))
-            raise ValueError(f"指定した属性は既に対象ラベルに紐付いています。 :: {duplicated_text}")
-
-        attribute_name = get_attribute_name_en(target_attribute)
-        label_names = [get_label_name_en(label) for label in target_labels]
+        target_attribute_id = resolved_input.target_attribute["additional_data_definition_id"]
+        attribute_name = get_attribute_name_en(resolved_input.target_attribute)
+        label_names = [get_label_name_en(label) for label in resolved_input.target_labels]
         confirm_message = f"既存属性名(英語)='{attribute_name}', 属性ID='{target_attribute_id}' を、対象ラベル={label_names} に追加します。よろしいですか？"
         if not self.confirm_processing(confirm_message):
             return False
 
-        request_body = copy.deepcopy(old_annotation_specs)
-        target_label_id_set = {label["label_id"] for label in target_labels}
-        for label in request_body["labels"]:
-            if label["label_id"] in target_label_id_set:
-                label["additional_data_definitions"].append(target_attribute_id)
-
-        if comment is None:
-            comment = create_comment_from_existing_attribute(attribute_name, label_names)
-        request_body["comment"] = comment
-        request_body["last_updated_datetime"] = old_annotation_specs["updated_datetime"]
+        request_body = build_request_body_for_add_existing_attribute_to_labels(
+            old_annotation_specs,
+            resolved_input=resolved_input,
+            comment=comment,
+        )
         self.service.api.put_annotation_specs(self.project_id, query_params={"v": "3"}, request_body=request_body)
-        logger.info(f"既存属性名(英語)='{attribute_name}', 属性ID='{target_attribute_id}' を {len(target_labels)} 件のラベルに追加しました。")
+        logger.info(f"既存属性名(英語)='{attribute_name}', 属性ID='{target_attribute_id}' を {len(resolved_input.target_labels)} 件のラベルに追加しました。")
         return True
 
 

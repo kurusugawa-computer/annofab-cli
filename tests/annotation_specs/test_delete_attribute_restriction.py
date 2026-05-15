@@ -6,34 +6,15 @@ from pathlib import Path
 from typing import Any
 
 from annofabcli.annotation_specs.delete_attribute_restriction import (
-    DeleteAttributeRestrictionMain,
+    build_request_body_for_delete_attribute_restriction,
     create_comment_for_delete_attribute_restriction,
     create_confirm_message_for_delete_attribute_restriction,
+    resolve_restrictions_to_delete_by_attribute,
+    resolve_restrictions_to_delete_by_json,
 )
 from annofabcli.annotation_specs.restriction_type import matches_restriction_type
 
 DATA_DIR = Path("./tests/data/annotation_specs")
-
-
-class DummyApi:
-    def __init__(self, annotation_specs: dict[str, Any]) -> None:
-        self.annotation_specs = copy.deepcopy(annotation_specs)
-        self.last_put: dict[str, Any] | None = None
-
-    def get_annotation_specs(self, project_id: str, query_params: dict[str, Any]) -> tuple[dict[str, Any], None]:
-        assert project_id == "prj1"
-        assert query_params == {"v": "3"}
-        return copy.deepcopy(self.annotation_specs), None
-
-    def put_annotation_specs(self, project_id: str, query_params: dict[str, Any], request_body: dict[str, Any]) -> None:
-        assert project_id == "prj1"
-        assert query_params == {"v": "3"}
-        self.last_put = request_body
-
-
-class DummyService:
-    def __init__(self, annotation_specs: dict[str, Any]) -> None:
-        self.api = DummyApi(annotation_specs)
 
 
 def load_annotation_specs() -> dict[str, Any]:
@@ -63,30 +44,24 @@ class TestDeleteAttributeRestrictionHelpers:
         assert matches_restriction_type(restriction, None) is True
 
 
-class TestDeleteAttributeRestrictionMain:
-    def test_delete_restrictions_by_json(self) -> None:
+class TestDeleteRestrictionsByJson:
+    def test_resolve_restrictions_to_delete_by_json(self) -> None:
         annotation_specs = load_annotation_specs()
-        service = DummyService(annotation_specs)
-        main = DeleteAttributeRestrictionMain(service, project_id="prj1", all_yes=True)  # type: ignore[arg-type]
-
         restrictions = [
             copy.deepcopy(annotation_specs["restrictions"][1]),
             copy.deepcopy(annotation_specs["restrictions"][4]),
         ]
 
-        result = main.delete_restrictions_by_json(restrictions)
+        actual = resolve_restrictions_to_delete_by_json(annotation_specs, restrictions)
 
-        assert result is True
-        assert service.api.last_put is not None
-        assert restrictions[0] not in service.api.last_put["restrictions"]
-        assert restrictions[1] not in service.api.last_put["restrictions"]
-        assert service.api.last_put["comment"] == "以下の属性制約を削除しました。\n'comment' DOES NOT EQUAL ''\n'comment' MATCHES '[abc]+'"
+        assert actual.restrictions_to_remove == restrictions
+        assert actual.restriction_text_list == [
+            "'comment' DOES NOT EQUAL ''",
+            "'comment' MATCHES '[abc]+'",
+        ]
 
-    def test_delete_restrictions_by_json__存在しない制約はスキップする(self) -> None:
+    def test_resolve_restrictions_to_delete_by_json__存在しない制約はスキップする(self) -> None:
         annotation_specs = load_annotation_specs()
-        service = DummyService(annotation_specs)
-        main = DeleteAttributeRestrictionMain(service, project_id="prj1", all_yes=True)  # type: ignore[arg-type]
-
         restrictions = [
             {
                 "additional_data_definition_id": "54fa5e97-6f88-49a4-aeb0-a91a15d11528",
@@ -94,39 +69,112 @@ class TestDeleteAttributeRestrictionMain:
             }
         ]
 
-        result = main.delete_restrictions_by_json(restrictions)
+        actual = resolve_restrictions_to_delete_by_json(annotation_specs, restrictions)
 
-        assert result is False
-        assert service.api.last_put is None
+        assert actual.restrictions_to_remove == []
 
-    def test_delete_restrictions_by_json__入力内の重複は1回だけ削除する(self) -> None:
+    def test_resolve_restrictions_to_delete_by_json__入力内の重複は1回だけ削除する(self) -> None:
         annotation_specs = load_annotation_specs()
-        service = DummyService(annotation_specs)
-        main = DeleteAttributeRestrictionMain(service, project_id="prj1", all_yes=True)  # type: ignore[arg-type]
-
         restriction = copy.deepcopy(annotation_specs["restrictions"][1])
 
-        result = main.delete_restrictions_by_json([restriction, copy.deepcopy(restriction)])
+        actual = resolve_restrictions_to_delete_by_json(annotation_specs, [restriction, copy.deepcopy(restriction)])
 
-        assert result is True
-        assert service.api.last_put is not None
-        assert service.api.last_put["restrictions"].count(restriction) == 0
+        assert actual.restrictions_to_remove == [restriction]
 
-    def test_delete_restrictions_by_attribute__attribute_name_en(self) -> None:
+    def test_build_request_body_for_delete_attribute_restriction(self) -> None:
         annotation_specs = load_annotation_specs()
-        service = DummyService(annotation_specs)
-        main = DeleteAttributeRestrictionMain(service, project_id="prj1", all_yes=True)  # type: ignore[arg-type]
+        restrictions = [
+            copy.deepcopy(annotation_specs["restrictions"][1]),
+            copy.deepcopy(annotation_specs["restrictions"][4]),
+        ]
+        resolved = resolve_restrictions_to_delete_by_json(annotation_specs, restrictions)
 
-        result = main.delete_restrictions_by_attribute(
+        actual = build_request_body_for_delete_attribute_restriction(
+            annotation_specs,
+            restrictions_to_remove=resolved.restrictions_to_remove,
+            restriction_text_list=resolved.restriction_text_list,
+            comment=None,
+        )
+
+        assert restrictions[0] not in actual["restrictions"]
+        assert restrictions[1] not in actual["restrictions"]
+        assert actual["comment"] == "以下の属性制約を削除しました。\n'comment' DOES NOT EQUAL ''\n'comment' MATCHES '[abc]+'"
+
+
+class TestDeleteRestrictionsByAttribute:
+    def test_resolve_restrictions_to_delete_by_attribute__attribute_name_en(self) -> None:
+        annotation_specs = load_annotation_specs()
+
+        actual = resolve_restrictions_to_delete_by_attribute(
+            annotation_specs,
             attribute_ids=None,
             attribute_name_ens=["comment"],
         )
 
-        assert result is True
-        assert service.api.last_put is not None
-        remaining_comment_restrictions = [restriction for restriction in service.api.last_put["restrictions"] if restriction["additional_data_definition_id"] == "54fa5e97-6f88-49a4-aeb0-a91a15d11528"]
+        assert [restriction["condition"]["_type"] for restriction in actual.restrictions_to_remove] == [
+            "CanInput",
+            "NotEquals",
+            "Equals",
+            "NotEquals",
+            "Matches",
+            "NotMatches",
+            "Imply",
+        ]
+
+    def test_resolve_restrictions_to_delete_by_attribute__restriction_typeを指定したときは一致する種類だけ削除する(self) -> None:
+        annotation_specs = load_annotation_specs()
+
+        actual = resolve_restrictions_to_delete_by_attribute(
+            annotation_specs,
+            attribute_ids=None,
+            attribute_name_ens=["comment"],
+            restriction_type="imply",
+        )
+
+        assert [restriction["condition"]["_type"] for restriction in actual.restrictions_to_remove] == ["Imply"]
+        assert actual.restriction_text_list == ["'comment' MATCHES '[0-9]' IF 'unclear' EQUALS 'true'"]
+
+    def test_resolve_restrictions_to_delete_by_attribute__対象の制約がないときは空(self) -> None:
+        annotation_specs = load_annotation_specs()
+
+        actual = resolve_restrictions_to_delete_by_attribute(
+            annotation_specs,
+            attribute_ids=None,
+            attribute_name_ens=["unclear"],
+        )
+
+        assert actual.restrictions_to_remove == []
+
+    def test_resolve_restrictions_to_delete_by_attribute__restriction_typeに一致する制約がないときは空(self) -> None:
+        annotation_specs = load_annotation_specs()
+
+        actual = resolve_restrictions_to_delete_by_attribute(
+            annotation_specs,
+            attribute_ids=None,
+            attribute_name_ens=["unclear"],
+            restriction_type="imply",
+        )
+
+        assert actual.restrictions_to_remove == []
+
+    def test_build_request_body_for_delete_attribute_restriction__attribute_name_en(self) -> None:
+        annotation_specs = load_annotation_specs()
+        resolved = resolve_restrictions_to_delete_by_attribute(
+            annotation_specs,
+            attribute_ids=None,
+            attribute_name_ens=["comment"],
+        )
+
+        actual = build_request_body_for_delete_attribute_restriction(
+            annotation_specs,
+            restrictions_to_remove=resolved.restrictions_to_remove,
+            restriction_text_list=resolved.restriction_text_list,
+            comment=None,
+        )
+
+        remaining_comment_restrictions = [restriction for restriction in actual["restrictions"] if restriction["additional_data_definition_id"] == "54fa5e97-6f88-49a4-aeb0-a91a15d11528"]
         assert remaining_comment_restrictions == []
-        assert service.api.last_put["comment"] == (
+        assert actual["comment"] == (
             "以下の属性制約を削除しました。\n"
             "'comment' CAN NOT INPUT\n"
             "'comment' DOES NOT EQUAL ''\n"
@@ -136,54 +184,3 @@ class TestDeleteAttributeRestrictionMain:
             "'comment' DOES NOT MATCH '[0-9]+'\n"
             "'comment' MATCHES '[0-9]' IF 'unclear' EQUALS 'true'"
         )
-
-    def test_delete_restrictions_by_attribute__restriction_typeを指定したときは一致する種類だけ削除する(self) -> None:
-        annotation_specs = load_annotation_specs()
-        service = DummyService(annotation_specs)
-        main = DeleteAttributeRestrictionMain(service, project_id="prj1", all_yes=True)  # type: ignore[arg-type]
-
-        result = main.delete_restrictions_by_attribute(
-            attribute_ids=None,
-            attribute_name_ens=["comment"],
-            restriction_type="imply",
-        )
-
-        assert result is True
-        assert service.api.last_put is not None
-        remaining_comment_restrictions = [restriction for restriction in service.api.last_put["restrictions"] if restriction["additional_data_definition_id"] == "54fa5e97-6f88-49a4-aeb0-a91a15d11528"]
-        assert [restriction["condition"]["_type"] for restriction in remaining_comment_restrictions] == [
-            "CanInput",
-            "NotEquals",
-            "Equals",
-            "NotEquals",
-            "Matches",
-            "NotMatches",
-        ]
-        assert service.api.last_put["comment"] == "以下の属性制約を削除しました。\n'comment' MATCHES '[0-9]' IF 'unclear' EQUALS 'true'"
-
-    def test_delete_restrictions_by_attribute__対象の制約がないときは更新しない(self) -> None:
-        annotation_specs = load_annotation_specs()
-        service = DummyService(annotation_specs)
-        main = DeleteAttributeRestrictionMain(service, project_id="prj1", all_yes=True)  # type: ignore[arg-type]
-
-        result = main.delete_restrictions_by_attribute(
-            attribute_ids=None,
-            attribute_name_ens=["unclear"],
-        )
-
-        assert result is False
-        assert service.api.last_put is None
-
-    def test_delete_restrictions_by_attribute__restriction_typeに一致する制約がないときは更新しない(self) -> None:
-        annotation_specs = load_annotation_specs()
-        service = DummyService(annotation_specs)
-        main = DeleteAttributeRestrictionMain(service, project_id="prj1", all_yes=True)  # type: ignore[arg-type]
-
-        result = main.delete_restrictions_by_attribute(
-            attribute_ids=None,
-            attribute_name_ens=["unclear"],
-            restriction_type="imply",
-        )
-
-        assert result is False
-        assert service.api.last_put is None

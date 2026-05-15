@@ -4,7 +4,8 @@ import argparse
 import copy
 import logging
 from collections.abc import Mapping
-from typing import Any
+from dataclasses import dataclass
+from typing import Any, cast
 
 import annofabapi
 from annofabapi.util.annotation_specs import AnnotationSpecsAccessor
@@ -28,6 +29,19 @@ SUPPORTED_ATTRIBUTE_TYPE_CONVERSIONS: Mapping[str, frozenset[str]] = {
 
 SUPPORTED_ATTRIBUTE_TYPES = sorted(set(SUPPORTED_ATTRIBUTE_TYPE_CONVERSIONS) | {target for targets in SUPPORTED_ATTRIBUTE_TYPE_CONVERSIONS.values() for target in targets})
 """変換先として指定できる属性種類一覧。"""
+
+
+@dataclass(frozen=True)
+class ResolvedAttributeTypeChange:
+    """
+    属性種類変更を既存アノテーション仕様に対して解決した結果。
+    """
+
+    target_attribute: dict[str, Any]
+    """変更対象属性。"""
+
+    current_type: str
+    """変更前の属性種類。"""
 
 
 def validate_attribute_type_conversion(*, current_type: str, target_type: str) -> None:
@@ -92,6 +106,79 @@ def create_confirm_message_for_change_attribute_type(
         confirm_message += "この属性を含むラベルがアノテーションで使われていることは確認できませんでした。"
     confirm_message += "よろしいですか？"
     return confirm_message
+
+
+def resolve_attribute_type_change(
+    annotation_specs: dict[str, Any],
+    *,
+    attribute_id: str | None,
+    attribute_name_en: str | None,
+    attribute_type: str,
+) -> ResolvedAttributeTypeChange:
+    """
+    属性種類変更対象を既存アノテーション仕様に対して解決する。
+
+    Args:
+        annotation_specs: 既存のアノテーション仕様
+        attribute_id: 対象属性ID
+        attribute_name_en: 対象属性英語名
+        attribute_type: 変更後の属性種類
+
+    Returns:
+        解決済み変更対象
+    """
+    annotation_specs_accessor = AnnotationSpecsAccessor(annotation_specs)
+    if (attribute_id is None) == (attribute_name_en is None):
+        raise ValueError("対象属性は `attribute_id` または `attribute_name_en` のどちらか一方だけ指定してください。")
+
+    target_attribute = dict(
+        annotation_specs_accessor.get_attribute(
+            attribute_id=attribute_id,
+            attribute_name=attribute_name_en,
+        )
+    )
+    current_type = cast(str, target_attribute["type"])
+    validate_attribute_type_conversion(current_type=current_type, target_type=attribute_type)
+    return ResolvedAttributeTypeChange(target_attribute=target_attribute, current_type=current_type)
+
+
+def build_request_body_for_change_attribute_type(
+    annotation_specs: dict[str, Any],
+    *,
+    resolved_change: ResolvedAttributeTypeChange,
+    attribute_type: str,
+    comment: str | None,
+) -> dict[str, Any]:
+    """
+    属性種類変更用の request body を生成する。
+
+    Args:
+        annotation_specs: 既存のアノテーション仕様
+        resolved_change: 解決済み変更対象
+        attribute_type: 変更後の属性種類
+        comment: 変更コメント
+
+    Returns:
+        Annofab API に渡す request body
+    """
+    request_body = copy.deepcopy(annotation_specs)
+    resolved_attribute_id = resolved_change.target_attribute["additional_data_definition_id"]
+    for attribute in request_body["additionals"]:
+        if attribute["additional_data_definition_id"] != resolved_attribute_id:
+            continue
+        attribute["type"] = attribute_type
+        break
+
+    resolved_attribute_name_en = get_attribute_name_en(resolved_change.target_attribute)
+    if comment is None:
+        comment = create_comment_for_change_attribute_type(
+            attribute_name_en=resolved_attribute_name_en,
+            current_type=resolved_change.current_type,
+            target_type=attribute_type,
+        )
+    request_body["comment"] = comment
+    request_body["last_updated_datetime"] = annotation_specs["updated_datetime"]
+    return request_body
 
 
 class ChangeAttributeTypeMain(CommandLineWithConfirm):
@@ -159,47 +246,33 @@ class ChangeAttributeTypeMain(CommandLineWithConfirm):
             ValueError: 入力値や既存アノテーション仕様との整合性が不正な場合
         """
         old_annotation_specs, _ = self.service.api.get_annotation_specs(self.project_id, query_params={"v": "3"})
-        annotation_specs_accessor = AnnotationSpecsAccessor(old_annotation_specs)
-        if (attribute_id is None) == (attribute_name_en is None):
-            raise ValueError("対象属性は `attribute_id` または `attribute_name_en` のどちらか一方だけ指定してください。")
-
-        target_attribute = annotation_specs_accessor.get_attribute(
+        resolved_change = resolve_attribute_type_change(
+            old_annotation_specs,
             attribute_id=attribute_id,
-            attribute_name=attribute_name_en,
+            attribute_name_en=attribute_name_en,
+            attribute_type=attribute_type,
         )
-        current_type = target_attribute["type"]
-        validate_attribute_type_conversion(current_type=current_type, target_type=attribute_type)
-
-        resolved_attribute_id = target_attribute["additional_data_definition_id"]
-        resolved_attribute_name_en = get_attribute_name_en(target_attribute)
+        resolved_attribute_id = resolved_change.target_attribute["additional_data_definition_id"]
+        resolved_attribute_name_en = get_attribute_name_en(resolved_change.target_attribute)
         has_annotation_using_attribute = self.has_annotation_using_attribute(attribute_id=resolved_attribute_id, annotation_specs=old_annotation_specs)
         confirm_message = create_confirm_message_for_change_attribute_type(
             attribute_name_en=resolved_attribute_name_en,
             attribute_id=resolved_attribute_id,
-            current_type=current_type,
+            current_type=resolved_change.current_type,
             target_type=attribute_type,
             has_annotation_with_label_having_attribute=has_annotation_using_attribute,
         )
         if not self.confirm_processing(confirm_message):
             return False
 
-        request_body = copy.deepcopy(old_annotation_specs)
-        for attribute in request_body["additionals"]:
-            if attribute["additional_data_definition_id"] != resolved_attribute_id:
-                continue
-            attribute["type"] = attribute_type
-            break
-
-        if comment is None:
-            comment = create_comment_for_change_attribute_type(
-                attribute_name_en=resolved_attribute_name_en,
-                current_type=current_type,
-                target_type=attribute_type,
-            )
-        request_body["comment"] = comment
-        request_body["last_updated_datetime"] = old_annotation_specs["updated_datetime"]
+        request_body = build_request_body_for_change_attribute_type(
+            old_annotation_specs,
+            resolved_change=resolved_change,
+            attribute_type=attribute_type,
+            comment=comment,
+        )
         self.service.api.put_annotation_specs(self.project_id, query_params={"v": "3"}, request_body=request_body)
-        logger.info(f"属性名(英語)='{resolved_attribute_name_en}', 属性ID='{resolved_attribute_id}' の属性種類を '{current_type}' から '{attribute_type}' に変更しました。")
+        logger.info(f"属性名(英語)='{resolved_attribute_name_en}', 属性ID='{resolved_attribute_id}' の属性種類を '{resolved_change.current_type}' から '{attribute_type}' に変更しました。")
         return True
 
 

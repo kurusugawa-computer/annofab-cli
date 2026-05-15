@@ -5,6 +5,7 @@ import copy
 import json
 import logging
 import sys
+from dataclasses import dataclass
 from typing import Any
 
 import annofabapi
@@ -23,11 +24,98 @@ from annofabcli.common.facade import AnnofabApiFacade
 logger = logging.getLogger(__name__)
 
 
+@dataclass(frozen=True)
+class ResolvedRestrictionsForAdd:
+    """
+    追加対象の属性制約を解決した結果。
+    """
+
+    new_restrictions: list[dict[str, Any]]
+    """追加する属性制約一覧。"""
+
+    new_restriction_text_list: list[str]
+    """追加する属性制約のテキスト一覧。"""
+
+
 def create_comment_from_restriction_text(restriction_text_list: list[str]) -> str:
     """
     属性制約のテキストから、アノテーション仕様変更時のコメントを生成する
     """
     return "以下の属性制約を追加しました。\n" + "\n".join(restriction_text_list)
+
+
+def resolve_restrictions_to_add(
+    annotation_specs: dict[str, Any],
+    restrictions: list[dict[str, Any]],
+) -> ResolvedRestrictionsForAdd:
+    """
+    追加対象の属性制約を既存アノテーション仕様に対して解決する。
+
+    Args:
+        annotation_specs: 既存のアノテーション仕様
+        restrictions: 追加候補の属性制約一覧
+
+    Returns:
+        解決済み追加対象
+    """
+    old_restrictions = annotation_specs["restrictions"]
+    msg_obj = AttributeRestrictionMessage(
+        labels=annotation_specs["labels"],
+        additionals=annotation_specs["additionals"],
+        raise_if_not_found=True,
+    )
+
+    new_restrictions = []
+    new_restriction_text_list = []
+    for index, restriction in enumerate(restrictions):
+        try:
+            restriction_text = msg_obj.get_restriction_text(restriction["additional_data_definition_id"], restriction["condition"])
+        except ValueError as e:
+            logger.warning(f"{index + 1}件目 :: 次の属性制約は存在しないIDが含まれていたため、アノテーション仕様に追加しません。 :: restriction=`{restriction}`, error_message=`{e!s}`")
+            continue
+
+        if restriction in old_restrictions:
+            logger.warning(f"{index + 1}件目 :: 次の属性制約は既に存在するため、アノテーション仕様に追加しません。  :: `{restriction_text}`")
+            continue
+        if restriction in new_restrictions:
+            logger.warning(f"{index + 1}件目 :: 次の属性制約は入力内で重複しているため、アノテーション仕様に追加しません。 :: `{restriction_text}`")
+            continue
+
+        new_restrictions.append(restriction)
+        new_restriction_text_list.append(restriction_text)
+
+    return ResolvedRestrictionsForAdd(
+        new_restrictions=new_restrictions,
+        new_restriction_text_list=new_restriction_text_list,
+    )
+
+
+def build_request_body_for_add_attribute_restriction(
+    annotation_specs: dict[str, Any],
+    *,
+    new_restrictions: list[dict[str, Any]],
+    new_restriction_text_list: list[str],
+    comment: str | None,
+) -> dict[str, Any]:
+    """
+    属性制約追加用の request body を生成する。
+
+    Args:
+        annotation_specs: 既存のアノテーション仕様
+        new_restrictions: 追加する属性制約一覧
+        new_restriction_text_list: 追加する属性制約のテキスト一覧
+        comment: 変更コメント
+
+    Returns:
+        Annofab API に渡す request body
+    """
+    request_body = copy.deepcopy(annotation_specs)
+    request_body["restrictions"].extend(new_restrictions)
+    if comment is None:
+        comment = create_comment_from_restriction_text(new_restriction_text_list)
+    request_body["comment"] = comment
+    request_body["last_updated_datetime"] = annotation_specs["updated_datetime"]
+    return request_body
 
 
 class AddAttributeRestrictionMain(CommandLineWithConfirm):
@@ -44,52 +132,37 @@ class AddAttributeRestrictionMain(CommandLineWithConfirm):
 
     def add_restrictions(self, restrictions: list[dict[str, Any]], comment: str | None = None) -> bool:
         old_annotation_specs, _ = self.service.api.get_annotation_specs(self.project_id, query_params={"v": "3"})
-        old_restrictions = old_annotation_specs["restrictions"]
+        resolved_restrictions = resolve_restrictions_to_add(old_annotation_specs, restrictions)
 
-        msg_obj = AttributeRestrictionMessage(
-            labels=old_annotation_specs["labels"],
-            additionals=old_annotation_specs["additionals"],
-            raise_if_not_found=True,
-        )
-
-        new_restrictions = []
-        new_restriction_text_list = []
-        for index, restriction in enumerate(restrictions):
-            try:
-                restriction_text = msg_obj.get_restriction_text(restriction["additional_data_definition_id"], restriction["condition"])
-            except ValueError as e:
-                logger.warning(f"{index + 1}件目 :: 次の属性制約は存在しないIDが含まれていたため、アノテーション仕様に追加しません。 :: restriction=`{restriction}`, error_message=`{e!s}`")
-                continue
-
-            if restriction in old_restrictions:
-                logger.warning(f"{index + 1}件目 :: 次の属性制約は既に存在するため、アノテーション仕様に追加しません。  :: `{restriction_text}`")
-                continue
-            if restriction in new_restrictions:
-                logger.warning(f"{index + 1}件目 :: 次の属性制約は入力内で重複しているため、アノテーション仕様に追加しません。 :: `{restriction_text}`")
-                continue
-
+        confirmed_restrictions = []
+        confirmed_restriction_text_list = []
+        for restriction, restriction_text in zip(
+            resolved_restrictions.new_restrictions,
+            resolved_restrictions.new_restriction_text_list,
+            strict=True,
+        ):
             if not self.confirm_processing(f"次の属性制約を追加しますか？ :: `{restriction_text}`"):
                 continue
 
-            logger.debug(f"{index + 1}件目 :: 次の属性制約を追加します。 :: `{restriction_text}`")
-            new_restrictions.append(restriction)
-            new_restriction_text_list.append(restriction_text)
+            logger.debug(f"次の属性制約を追加します。 :: `{restriction_text}`")
+            confirmed_restrictions.append(restriction)
+            confirmed_restriction_text_list.append(restriction_text)
 
-        if len(new_restrictions) == 0:
+        if len(confirmed_restrictions) == 0:
             logger.info("追加する属性制約はないため、アノテーション仕様を変更しません。")
             return False
 
-        if not self.confirm_processing(f"{len(new_restrictions)} 件の属性制約を追加して、アノテーション仕様を変更します。よろしいですか？ "):
+        if not self.confirm_processing(f"{len(confirmed_restrictions)} 件の属性制約を追加して、アノテーション仕様を変更します。よろしいですか？ "):
             return False
 
-        request_body = copy.deepcopy(old_annotation_specs)
-        request_body["restrictions"].extend(new_restrictions)
-        if comment is None:
-            comment = create_comment_from_restriction_text(new_restriction_text_list)
-        request_body["comment"] = comment
-        request_body["last_updated_datetime"] = old_annotation_specs["updated_datetime"]
+        request_body = build_request_body_for_add_attribute_restriction(
+            old_annotation_specs,
+            new_restrictions=confirmed_restrictions,
+            new_restriction_text_list=confirmed_restriction_text_list,
+            comment=comment,
+        )
         self.service.api.put_annotation_specs(self.project_id, query_params={"v": "3"}, request_body=request_body)
-        logger.info(f"{len(new_restrictions)} 件の属性制約をアノテーション仕様に追加しました。")
+        logger.info(f"{len(confirmed_restrictions)} 件の属性制約をアノテーション仕様に追加しました。")
         return True
 
 

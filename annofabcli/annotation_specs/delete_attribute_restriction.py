@@ -6,6 +6,7 @@ import json
 import logging
 import sys
 from collections.abc import Collection
+from dataclasses import dataclass
 from typing import Any
 
 import annofabapi
@@ -27,6 +28,19 @@ from annofabcli.common.cli import (
 from annofabcli.common.facade import AnnofabApiFacade
 
 logger = logging.getLogger(__name__)
+
+
+@dataclass(frozen=True)
+class ResolvedRestrictionsForDelete:
+    """
+    削除対象の属性制約を解決した結果。
+    """
+
+    restrictions_to_remove: list[dict[str, Any]]
+    """削除する属性制約一覧。"""
+
+    restriction_text_list: list[str]
+    """削除する属性制約のテキスト一覧。"""
 
 
 def create_comment_for_delete_attribute_restriction(restriction_text_list: Collection[str]) -> str:
@@ -57,6 +71,124 @@ def create_confirm_message_for_delete_attribute_restriction(restriction_text_lis
     return "\n".join(lines)
 
 
+def resolve_restrictions_to_delete_by_json(
+    annotation_specs: dict[str, Any],
+    restrictions: list[dict[str, Any]],
+) -> ResolvedRestrictionsForDelete:
+    """
+    JSON指定で削除する属性制約を解決する。
+
+    Args:
+        annotation_specs: 既存のアノテーション仕様
+        restrictions: 削除対象の属性制約一覧
+
+    Returns:
+        解決済み削除対象
+    """
+    old_restrictions = annotation_specs["restrictions"]
+    message_obj = AttributeRestrictionMessage(
+        labels=annotation_specs["labels"],
+        additionals=annotation_specs["additionals"],
+        raise_if_not_found=True,
+    )
+
+    restrictions_to_remove = []
+    restriction_text_list = []
+    for index, restriction in enumerate(restrictions):
+        try:
+            restriction_text = message_obj.get_restriction_text(restriction["additional_data_definition_id"], restriction["condition"])
+        except ValueError as e:
+            logger.warning(f"{index + 1}件目 :: 次の属性制約は存在しないIDが含まれていたため、削除しません。 :: restriction=`{restriction}`, error_message=`{e!s}`")
+            continue
+
+        if restriction not in old_restrictions:
+            logger.warning(f"{index + 1}件目 :: 次の属性制約は存在しないため、削除しません。 :: `{restriction_text}`")
+            continue
+        if restriction in restrictions_to_remove:
+            logger.warning(f"{index + 1}件目 :: 次の属性制約は入力内で重複しているため、削除しません。 :: `{restriction_text}`")
+            continue
+
+        restrictions_to_remove.append(restriction)
+        restriction_text_list.append(restriction_text)
+
+    return ResolvedRestrictionsForDelete(
+        restrictions_to_remove=restrictions_to_remove,
+        restriction_text_list=restriction_text_list,
+    )
+
+
+def build_request_body_for_delete_attribute_restriction(
+    annotation_specs: dict[str, Any],
+    *,
+    restrictions_to_remove: Collection[dict[str, Any]],
+    restriction_text_list: Collection[str],
+    comment: str | None,
+) -> dict[str, Any]:
+    """
+    属性制約削除用の request body を生成する。
+
+    Args:
+        annotation_specs: 既存のアノテーション仕様
+        restrictions_to_remove: 削除する属性制約一覧
+        restriction_text_list: 削除する属性制約のテキスト一覧
+        comment: 変更コメント
+
+    Returns:
+        Annofab API に渡す request body
+    """
+    request_body = copy.deepcopy(annotation_specs)
+    request_body["restrictions"] = [restriction for restriction in request_body["restrictions"] if restriction not in restrictions_to_remove]
+    if comment is None:
+        comment = create_comment_for_delete_attribute_restriction(restriction_text_list)
+    request_body["comment"] = comment
+    request_body["last_updated_datetime"] = annotation_specs["updated_datetime"]
+    return request_body
+
+
+def resolve_restrictions_to_delete_by_attribute(
+    annotation_specs: dict[str, Any],
+    *,
+    attribute_ids: Collection[str] | None,
+    attribute_name_ens: Collection[str] | None,
+    restriction_type: str | None = None,
+) -> ResolvedRestrictionsForDelete:
+    """
+    属性指定で削除する属性制約を解決する。
+
+    Args:
+        annotation_specs: 既存のアノテーション仕様
+        attribute_ids: 対象属性ID一覧
+        attribute_name_ens: 対象属性名(英語)一覧
+        restriction_type: 削除対象の属性制約種類
+
+    Returns:
+        解決済み削除対象
+    """
+    annotation_specs_accessor = AnnotationSpecsAccessor(annotation_specs)
+    target_attributes = get_target_attributes(
+        annotation_specs_accessor,
+        attribute_ids=attribute_ids,
+        attribute_name_ens=attribute_name_ens,
+    )
+    target_attribute_ids = {attribute["additional_data_definition_id"] for attribute in target_attributes}
+    message_obj = AttributeRestrictionMessage(
+        labels=annotation_specs["labels"],
+        additionals=annotation_specs["additionals"],
+        raise_if_not_found=True,
+    )
+
+    restrictions_to_remove = [
+        restriction
+        for restriction in annotation_specs["restrictions"]
+        if restriction["additional_data_definition_id"] in target_attribute_ids and matches_restriction_type(restriction, restriction_type)
+    ]
+    restriction_text_list = message_obj.get_restriction_text_list(restrictions_to_remove)
+    return ResolvedRestrictionsForDelete(
+        restrictions_to_remove=restrictions_to_remove,
+        restriction_text_list=restriction_text_list,
+    )
+
+
 class DeleteAttributeRestrictionMain(CommandLineWithConfirm):
     """
     属性制約を削除する本体処理。
@@ -85,48 +217,24 @@ class DeleteAttributeRestrictionMain(CommandLineWithConfirm):
             更新を実行した場合はTrue、更新が不要または確認で中断した場合はFalse
         """
         old_annotation_specs, _ = self.service.api.get_annotation_specs(self.project_id, query_params={"v": "3"})
-        old_restrictions = old_annotation_specs["restrictions"]
-        message_obj = AttributeRestrictionMessage(
-            labels=old_annotation_specs["labels"],
-            additionals=old_annotation_specs["additionals"],
-            raise_if_not_found=True,
-        )
+        resolved_restrictions = resolve_restrictions_to_delete_by_json(old_annotation_specs, restrictions)
 
-        restrictions_to_remove = []
-        restriction_text_list = []
-        for index, restriction in enumerate(restrictions):
-            try:
-                restriction_text = message_obj.get_restriction_text(restriction["additional_data_definition_id"], restriction["condition"])
-            except ValueError as e:
-                logger.warning(f"{index + 1}件目 :: 次の属性制約は存在しないIDが含まれていたため、削除しません。 :: restriction=`{restriction}`, error_message=`{e!s}`")
-                continue
-
-            if restriction not in old_restrictions:
-                logger.warning(f"{index + 1}件目 :: 次の属性制約は存在しないため、削除しません。 :: `{restriction_text}`")
-                continue
-            if restriction in restrictions_to_remove:
-                logger.warning(f"{index + 1}件目 :: 次の属性制約は入力内で重複しているため、削除しません。 :: `{restriction_text}`")
-                continue
-
-            restrictions_to_remove.append(restriction)
-            restriction_text_list.append(restriction_text)
-
-        if len(restrictions_to_remove) == 0:
+        if len(resolved_restrictions.restrictions_to_remove) == 0:
             logger.info("削除する属性制約はないため、アノテーション仕様を変更しません。")
             return False
 
-        confirm_message = create_confirm_message_for_delete_attribute_restriction(restriction_text_list)
+        confirm_message = create_confirm_message_for_delete_attribute_restriction(resolved_restrictions.restriction_text_list)
         if not self.confirm_processing(confirm_message):
             return False
 
-        request_body = copy.deepcopy(old_annotation_specs)
-        request_body["restrictions"] = [restriction for restriction in request_body["restrictions"] if restriction not in restrictions_to_remove]
-        if comment is None:
-            comment = create_comment_for_delete_attribute_restriction(restriction_text_list)
-        request_body["comment"] = comment
-        request_body["last_updated_datetime"] = old_annotation_specs["updated_datetime"]
+        request_body = build_request_body_for_delete_attribute_restriction(
+            old_annotation_specs,
+            restrictions_to_remove=resolved_restrictions.restrictions_to_remove,
+            restriction_text_list=resolved_restrictions.restriction_text_list,
+            comment=comment,
+        )
         self.service.api.put_annotation_specs(self.project_id, query_params={"v": "3"}, request_body=request_body)
-        logger.info(f"{len(restrictions_to_remove)} 件の属性制約を削除しました。")
+        logger.info(f"{len(resolved_restrictions.restrictions_to_remove)} 件の属性制約を削除しました。")
         return True
 
     def delete_restrictions_by_attribute(
@@ -150,45 +258,28 @@ class DeleteAttributeRestrictionMain(CommandLineWithConfirm):
             更新を実行した場合はTrue、更新が不要または確認で中断した場合はFalse
         """
         old_annotation_specs, _ = self.service.api.get_annotation_specs(self.project_id, query_params={"v": "3"})
-        annotation_specs_accessor = AnnotationSpecsAccessor(old_annotation_specs)
-        target_attributes = get_target_attributes(
-            annotation_specs_accessor,
+        resolved_restrictions = resolve_restrictions_to_delete_by_attribute(
+            old_annotation_specs,
             attribute_ids=attribute_ids,
             attribute_name_ens=attribute_name_ens,
+            restriction_type=restriction_type,
         )
-        target_attribute_ids = {attribute["additional_data_definition_id"] for attribute in target_attributes}
-        message_obj = AttributeRestrictionMessage(
-            labels=old_annotation_specs["labels"],
-            additionals=old_annotation_specs["additionals"],
-            raise_if_not_found=True,
-        )
-
-        restrictions_to_remove = [
-            restriction
-            for restriction in old_annotation_specs["restrictions"]
-            if restriction["additional_data_definition_id"] in target_attribute_ids and matches_restriction_type(restriction, restriction_type)
-        ]
-        if len(restrictions_to_remove) == 0:
+        if len(resolved_restrictions.restrictions_to_remove) == 0:
             logger.info("削除する属性制約はないため、アノテーション仕様を変更しません。")
             return False
 
-        restriction_text_list = message_obj.get_restriction_text_list(restrictions_to_remove)
-        confirm_message = create_confirm_message_for_delete_attribute_restriction(restriction_text_list)
+        confirm_message = create_confirm_message_for_delete_attribute_restriction(resolved_restrictions.restriction_text_list)
         if not self.confirm_processing(confirm_message):
             return False
 
-        request_body = copy.deepcopy(old_annotation_specs)
-        request_body["restrictions"] = [
-            restriction
-            for restriction in request_body["restrictions"]
-            if not (restriction["additional_data_definition_id"] in target_attribute_ids and matches_restriction_type(restriction, restriction_type))
-        ]
-        if comment is None:
-            comment = create_comment_for_delete_attribute_restriction(restriction_text_list)
-        request_body["comment"] = comment
-        request_body["last_updated_datetime"] = old_annotation_specs["updated_datetime"]
+        request_body = build_request_body_for_delete_attribute_restriction(
+            old_annotation_specs,
+            restrictions_to_remove=resolved_restrictions.restrictions_to_remove,
+            restriction_text_list=resolved_restrictions.restriction_text_list,
+            comment=comment,
+        )
         self.service.api.put_annotation_specs(self.project_id, query_params={"v": "3"}, request_body=request_body)
-        logger.info(f"{len(restrictions_to_remove)} 件の属性制約を削除しました。")
+        logger.info(f"{len(resolved_restrictions.restrictions_to_remove)} 件の属性制約を削除しました。")
         return True
 
 
