@@ -9,7 +9,7 @@ from typing import Any
 
 import annofabapi
 from annofabapi.util.annotation_specs import AnnotationSpecsAccessor
-from pydantic import BaseModel, ConfigDict, ValidationError, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, field_validator, model_validator
 
 import annofabcli.common.cli
 from annofabcli.annotation_specs.add_attribute import AttributeType, create_attribute
@@ -105,7 +105,6 @@ class ResolvedAttributeInput(BaseModel):
 
     new_attribute: dict[str, Any]
     """追加するAnnofab API向け属性オブジェクト。"""
-
 
 
 def read_attributes_json(target: str) -> list[AttributeInput]:
