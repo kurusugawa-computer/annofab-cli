@@ -4,11 +4,15 @@ import argparse
 import json
 import logging
 import sys
+from enum import Enum
 from pathlib import Path
+from typing import Any
+
+from annofabapi.util.attribute_restrictions import Restriction
 
 import annofabcli.common.cli
 import annofabcli.common.utils
-from annofabcli.annotation_specs.attribute_restriction import AttributeRestrictionMessage, OutputFormat
+from annofabcli.annotation_specs.attribute_restriction import AttributeRestrictionMessage
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
     ArgumentParser,
@@ -21,6 +25,14 @@ from annofabcli.common.facade import AnnofabApiFacade
 logger = logging.getLogger(__name__)
 
 
+class OutputFormat(Enum):
+    """`list_attribute_restriction` の出力フォーマット。"""
+
+    TEXT = "text"
+    JSON = "json"
+    PRETTY_JSON = "pretty_json"
+
+
 class ListAttributeRestriction(CommandLine):
     COMMON_MESSAGE = "annofabcli annotation_specs list_restriction: error:"
 
@@ -31,6 +43,20 @@ class ListAttributeRestriction(CommandLine):
             return None
         history = histories[-(before + 1)]
         return history["history_id"]
+
+    @staticmethod
+    def get_restriction_text_list(annotation_specs: dict[str, Any], restrictions: list[dict[str, Any]]) -> list[str]:
+        """
+        属性制約一覧を人向けの文字列へ変換する。
+
+        Args:
+            annotation_specs: アノテーション仕様
+            restrictions: 出力対象の属性制約一覧
+
+        Returns:
+            人が読みやすい属性制約文字列の一覧
+        """
+        return [Restriction.from_dict(restriction).to_human_readable(annotation_specs) for restriction in restrictions]
 
     def main(self) -> None:
         args = self.args
@@ -64,7 +90,6 @@ class ListAttributeRestriction(CommandLine):
         main_obj = AttributeRestrictionMessage(
             labels=annotation_specs["labels"],
             additionals=annotation_specs["additionals"],
-            output_format=OutputFormat(args.format),
         )
         target_attribute_names = get_list_from_args(args.attribute_name) if args.attribute_name is not None else None
         target_label_names = get_list_from_args(args.label_name) if args.label_name is not None else None
@@ -82,11 +107,7 @@ class ListAttributeRestriction(CommandLine):
             )
             return
 
-        restriction_text_list = main_obj.get_restriction_text_list(
-            target_restrictions,
-            target_attribute_names=None,
-            target_label_names=None,
-        )
+        restriction_text_list = self.get_restriction_text_list(annotation_specs, target_restrictions)
         annofabcli.common.utils.output_string("\n".join(restriction_text_list), args.output)
 
 
@@ -135,8 +156,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         default=OutputFormat.TEXT.value,
         help=(
             "出力フォーマット\n\n"
-            f"* {OutputFormat.TEXT.value}: 英語名のみ出力する形式\n"
-            f"* {OutputFormat.DETAILED_TEXT.value}: 属性IDや属性種類などの詳細情報を出力する形式\n"
+            f"* {OutputFormat.TEXT.value}: 人が読みやすい形式で出力する\n"
             f"* {OutputFormat.JSON.value}: 属性制約のJSONを1行で出力する形式\n"
             f"* {OutputFormat.PRETTY_JSON.value}: 属性制約のJSONを整形して出力する形式\n"
         ),

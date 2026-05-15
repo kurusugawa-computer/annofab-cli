@@ -15,6 +15,37 @@ pytestmark = pytest.mark.access_webapi
 class TestListAttributeRestriction:
     command_name = "annotation_specs"
 
+    def test_text形式で人が読みやすい属性制約を出力する(self, tmp_path: Path) -> None:
+        annotation_specs_path = DATA_DIR / "annotation_specs.json"
+        output_path = tmp_path / "restrictions.txt"
+
+        main(
+            [
+                self.command_name,
+                "list_attribute_restriction",
+                "--annotation_specs_json",
+                str(annotation_specs_path),
+                "--attribute_name",
+                "comment",
+                "--format",
+                "text",
+                "--output",
+                str(output_path),
+            ]
+        )
+
+        actual_text = output_path.read_text(encoding="utf-8")
+
+        assert actual_text == (
+            "'comment' is read-only\n"
+            "'comment' is not empty\n"
+            "'comment' is 'foo'\n"
+            "'comment' is not 'bar'\n"
+            "'comment' matches '[abc]+'\n"
+            "'comment' does not match '[0-9]+'\n"
+            "If 'unclear' is checked, 'comment' matches '[0-9]'."
+        )
+
     def test_json形式で属性制約のJSONをそのまま出力する(self, tmp_path: Path) -> None:
         annotation_specs_path = DATA_DIR / "annotation_specs.json"
         output_path = tmp_path / "restrictions.json"
