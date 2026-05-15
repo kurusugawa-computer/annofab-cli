@@ -5,20 +5,50 @@ import copy
 import json
 import logging
 from collections.abc import Mapping, Sequence
-from typing import Any
+from typing import Any, Literal, cast
 
 import annofabapi
 from annofabapi.util.annotation_specs import AnnotationSpecsAccessor
 from pydantic import BaseModel, ConfigDict, field_validator, model_validator
 
 import annofabcli.common.cli
-from annofabcli.annotation_specs.add_attribute import AttributeType, create_attribute
-from annofabcli.annotation_specs.utils import get_attribute_name_en, get_label_name_en, get_target_labels
+from annofabcli.annotation_specs.add_attribute import AttributeType as NonChoiceAttributeType
+from annofabcli.annotation_specs.add_attribute import create_attribute as create_non_choice_attribute
+from annofabcli.annotation_specs.add_choice_attribute import (
+    ChoiceAttributeInput,
+    build_choices,
+    parse_choice_input_from_dict,
+    validate_new_attribute,
+)
+from annofabcli.annotation_specs.add_choice_attribute import (
+    create_attribute as create_choice_attribute,
+)
+from annofabcli.annotation_specs.utils import get_label_name_en, get_target_labels
 from annofabcli.common.cli import ArgumentParser, CommandLine, CommandLineWithConfirm, build_annofabapi_resource_and_login, get_json_from_args
 from annofabcli.common.facade import AnnofabApiFacade
 from annofabcli.common.utils import duplicated_set
 
 logger = logging.getLogger(__name__)
+
+
+ChoiceAttributeType = Literal["choice", "select"]
+SupportedAttributeType = NonChoiceAttributeType | ChoiceAttributeType
+CHOICE_ATTRIBUTE_TYPES = ("choice", "select")
+
+
+def get_attribute_type_value(attribute_type: SupportedAttributeType) -> str:
+    """
+    属性種類を文字列へ正規化する。
+
+    Args:
+        attribute_type: 入力された属性種類
+
+    Returns:
+        Annofab API向けの属性種類文字列
+    """
+    if isinstance(attribute_type, NonChoiceAttributeType):
+        return attribute_type.value
+    return attribute_type
 
 
 class AttributeInput(BaseModel):
@@ -28,7 +58,7 @@ class AttributeInput(BaseModel):
 
     model_config = ConfigDict(frozen=True, extra="forbid")
 
-    attribute_type: AttributeType
+    attribute_type: SupportedAttributeType
     """属性の種類。"""
 
     attribute_name_en: str
@@ -45,6 +75,9 @@ class AttributeInput(BaseModel):
 
     attribute_id: str | None = None
     """属性ID。未指定の場合はUUIDv4を自動生成する。"""
+
+    choices: list[ChoiceAttributeInput] | None = None
+    """選択肢系属性のときに指定する選択肢一覧。"""
 
     @field_validator("label_name_ens", "label_ids")
     @classmethod
@@ -72,6 +105,37 @@ class AttributeInput(BaseModel):
             raise ValueError(f"重複があります。 :: {duplicated_text}")
         return value
 
+    @field_validator("choices", mode="before")
+    @classmethod
+    def validate_choices(cls, value: object) -> list[ChoiceAttributeInput] | None:
+        """
+        選択肢一覧を検証して ``ChoiceAttributeInput`` の一覧に変換する。
+
+        Args:
+            value: 検証対象の値
+
+        Returns:
+            検証済みの選択肢一覧
+
+        Raises:
+            TypeError: 配列または配列要素がオブジェクト形式でない場合
+            ValueError: 選択肢の必須項目が不足している場合
+        """
+        if value is None:
+            return None
+        if not isinstance(value, list):
+            raise TypeError("`choices` には選択肢情報の配列を指定してください。")
+
+        result = []
+        for index, choice_data in enumerate(value, start=1):
+            if isinstance(choice_data, ChoiceAttributeInput):
+                result.append(choice_data)
+                continue
+            if not isinstance(choice_data, dict):
+                raise TypeError(f"{index}件目の選択肢がオブジェクト形式ではありません。")
+            result.append(parse_choice_input_from_dict(choice_data, index=index))
+        return result
+
     @model_validator(mode="after")
     def validate_label_selector(self) -> AttributeInput:
         """
@@ -87,6 +151,12 @@ class AttributeInput(BaseModel):
             raise ValueError("`label_name_ens` または `label_ids` を指定してください。")
         if self.label_name_ens is not None and self.label_ids is not None:
             raise ValueError("`label_name_ens` と `label_ids` を同時に指定できません。")
+        if get_attribute_type_value(self.attribute_type) in CHOICE_ATTRIBUTE_TYPES:
+            if self.choices is None:
+                raise ValueError("属性種類が `choice` または `select` の場合は `choices` を指定してください。")
+            build_choices(self.choices)
+        elif self.choices is not None:
+            raise ValueError("`choices` は `choice` または `select` の場合のみ指定できます。")
         return self
 
 
@@ -105,6 +175,34 @@ class ResolvedAttributeInput(BaseModel):
 
     new_attribute: dict[str, Any]
     """追加するAnnofab API向け属性オブジェクト。"""
+
+
+def create_attribute_from_input(attribute_input: AttributeInput) -> dict[str, Any]:
+    """
+    属性入力からAnnofab API向け属性オブジェクトを生成する。
+
+    Args:
+        attribute_input: 属性入力
+
+    Returns:
+        Annofab API向けの属性オブジェクト
+    """
+    attribute_type = get_attribute_type_value(attribute_input.attribute_type)
+    if attribute_type in CHOICE_ATTRIBUTE_TYPES:
+        return create_choice_attribute(
+            attribute_type=cast(ChoiceAttributeType, attribute_type),
+            attribute_name_en=attribute_input.attribute_name_en,
+            attribute_name_ja=attribute_input.attribute_name_ja,
+            attribute_id=attribute_input.attribute_id,
+            choice_inputs=attribute_input.choices if attribute_input.choices is not None else [],
+        )
+
+    return create_non_choice_attribute(
+        attribute_type=cast(NonChoiceAttributeType, attribute_input.attribute_type),
+        attribute_name_en=attribute_input.attribute_name_en,
+        attribute_name_ja=attribute_input.attribute_name_ja,
+        attribute_id=attribute_input.attribute_id,
+    )
 
 
 def resolve_attribute_inputs(
@@ -132,13 +230,8 @@ def resolve_attribute_inputs(
             label_ids=attribute_input.label_ids,
             label_name_ens=attribute_input.label_name_ens,
         )
-        new_attribute = create_attribute(
-            attribute_type=attribute_input.attribute_type,
-            attribute_name_en=attribute_input.attribute_name_en,
-            attribute_name_ja=attribute_input.attribute_name_ja,
-            attribute_id=attribute_input.attribute_id,
-        )
-        validate_new_attribute_input(
+        new_attribute = create_attribute_from_input(attribute_input)
+        validate_new_attribute(
             additionals,
             attribute_id=new_attribute["additional_data_definition_id"],
             attribute_name_en=attribute_input.attribute_name_en,
@@ -212,32 +305,6 @@ def create_comment_from_attributes(attribute_inputs: Sequence[AttributeInput]) -
     return f"以下の属性を追加しました。\n属性名(英語): {attribute_text}"
 
 
-def validate_new_attribute_input(
-    additionals: Sequence[dict[str, Any]],
-    *,
-    attribute_id: str,
-    attribute_name_en: str,
-) -> None:
-    """
-    追加予定の属性ID・属性英語名が既存属性と衝突しないか検証する。
-
-    Args:
-        additionals: 既存の属性一覧
-        attribute_id: 追加予定の属性ID
-        attribute_name_en: 追加予定の属性英語名
-
-    Raises:
-        ValueError: 属性IDまたは属性英語名が既存属性と重複する場合
-    """
-    if any(additional["additional_data_definition_id"] == attribute_id for additional in additionals):
-        raise ValueError(f"属性ID='{attribute_id}' の属性は既に存在します。")
-
-    duplicated_name_attribute_ids = [additional["additional_data_definition_id"] for additional in additionals if get_attribute_name_en(additional) == attribute_name_en]
-    if duplicated_name_attribute_ids:
-        duplicated_text = ", ".join(duplicated_name_attribute_ids)
-        raise ValueError(f"属性名(英語)='{attribute_name_en}' の属性は既に存在します。 :: {duplicated_text}")
-
-
 def build_request_body_for_add_attributes(
     annotation_specs: dict[str, Any],
     *,
@@ -277,7 +344,7 @@ def build_request_body_for_add_attributes(
 
 class AddAttributesMain(CommandLineWithConfirm):
     """
-    複数の非選択肢系属性をアノテーション仕様へ追加する本体処理。
+    複数の属性をアノテーション仕様へ追加する本体処理。
     """
 
     def __init__(
@@ -298,7 +365,7 @@ class AddAttributesMain(CommandLineWithConfirm):
         comment: str | None = None,
     ) -> bool:
         """
-        複数の非選択肢系属性を追加し、指定ラベルへ紐付けてアノテーション仕様を更新する。
+        複数の属性を追加し、指定ラベルへ紐付けてアノテーション仕様を更新する。
 
         Args:
             attribute_inputs: 追加する属性一覧
@@ -365,8 +432,12 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
             "label_name_ens": ["car", "bus"],
         },
         {
-            "attribute_type": "text",
-            "attribute_name_en": "comment2",
+            "attribute_type": "select",
+            "attribute_name_en": "weather",
+            "choices": [
+                {"choice_name_en": "sunny", "choice_name_ja": "晴れ", "is_default": True},
+                {"choice_name_en": "cloudy", "choice_name_ja": "曇り"},
+            ],
             "label_ids": ["40f7796b-3722-4eed-9c0c-04a27f9165d2"],
         },
     ]
@@ -404,8 +475,8 @@ def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse
         生成したArgumentParser
     """
     subcommand_name = "add_attributes"
-    subcommand_help = "アノテーション仕様に複数の非選択肢系属性を追加します。"
-    description = "アノテーション仕様に複数の非選択肢系属性を追加します。選択肢系属性の追加は ``add_choice_attribute`` コマンドを使用してください。"
+    subcommand_help = "アノテーション仕様に複数の属性を追加します。"
+    description = "アノテーション仕様に複数の属性を追加します。選択肢系属性もJSONで指定できます。1件だけ追加したい場合は ``add_choice_attribute`` コマンドも利用できます。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description=description)
     parse_args(parser)
