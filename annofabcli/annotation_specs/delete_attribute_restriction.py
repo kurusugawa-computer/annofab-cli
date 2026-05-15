@@ -5,7 +5,7 @@ import copy
 import json
 import logging
 import sys
-from collections.abc import Collection
+from collections.abc import Collection, Mapping
 from typing import Any
 
 import annofabapi
@@ -26,6 +26,34 @@ from annofabcli.common.cli import (
 from annofabcli.common.facade import AnnofabApiFacade
 
 logger = logging.getLogger(__name__)
+
+
+RESTRICTION_TYPE_TO_CONDITION_TYPE = {
+    "can_input": "CanInput",
+    "has_label": "HasLabel",
+    "equals": "Equals",
+    "not_equals": "NotEquals",
+    "matches": "Matches",
+    "not_matches": "NotMatches",
+    "imply": "Imply",
+}
+"""CLIの ``--restriction_type`` と Annofab API の ``condition._type`` の対応。"""
+
+
+def matches_restriction_type(restriction: Mapping[str, Any], restriction_type: str | None) -> bool:
+    """
+    属性制約が指定した種類に一致するかどうかを返す。
+
+    Args:
+        restriction: 判定対象の属性制約
+        restriction_type: CLIで指定された属性制約種類。未指定の場合はNone
+
+    Returns:
+        条件に一致する場合はTrue
+    """
+    if restriction_type is None:
+        return True
+    return restriction["condition"]["_type"] == RESTRICTION_TYPE_TO_CONDITION_TYPE[restriction_type]
 
 
 def create_comment_for_delete_attribute_restriction(restriction_text_list: Collection[str]) -> str:
@@ -134,6 +162,7 @@ class DeleteAttributeRestrictionMain(CommandLineWithConfirm):
         *,
         attribute_ids: Collection[str] | None,
         attribute_name_ens: Collection[str] | None,
+        restriction_type: str | None = None,
         comment: str | None = None,
     ) -> bool:
         """
@@ -142,6 +171,7 @@ class DeleteAttributeRestrictionMain(CommandLineWithConfirm):
         Args:
             attribute_ids: 対象属性ID一覧
             attribute_name_ens: 対象属性名(英語)一覧
+            restriction_type: 削除対象の属性制約種類
             comment: 変更コメント
 
         Returns:
@@ -162,7 +192,11 @@ class DeleteAttributeRestrictionMain(CommandLineWithConfirm):
             raise_if_not_found=True,
         )
 
-        restrictions_to_remove = [restriction for restriction in old_annotation_specs["restrictions"] if restriction["additional_data_definition_id"] in target_attribute_ids]
+        restrictions_to_remove = [
+            restriction
+            for restriction in old_annotation_specs["restrictions"]
+            if restriction["additional_data_definition_id"] in target_attribute_ids and matches_restriction_type(restriction, restriction_type)
+        ]
         if len(restrictions_to_remove) == 0:
             logger.info("削除する属性制約はないため、アノテーション仕様を変更しません。")
             return False
@@ -173,7 +207,11 @@ class DeleteAttributeRestrictionMain(CommandLineWithConfirm):
             return False
 
         request_body = copy.deepcopy(old_annotation_specs)
-        request_body["restrictions"] = [restriction for restriction in request_body["restrictions"] if restriction["additional_data_definition_id"] not in target_attribute_ids]
+        request_body["restrictions"] = [
+            restriction
+            for restriction in request_body["restrictions"]
+            if not (restriction["additional_data_definition_id"] in target_attribute_ids and matches_restriction_type(restriction, restriction_type))
+        ]
         if comment is None:
             comment = create_comment_for_delete_attribute_restriction(restriction_text_list)
         request_body["comment"] = comment
@@ -195,6 +233,12 @@ class DeleteAttributeRestriction(CommandLine):
         obj = DeleteAttributeRestrictionMain(self.service, project_id=args.project_id, all_yes=args.yes)
 
         if args.restriction_json is not None:
+            if args.restriction_type is not None:
+                print(  # noqa: T201
+                    f"{self.COMMON_MESSAGE} --restriction_json を指定した場合、 --restriction_type は指定できません。",
+                    file=sys.stderr,
+                )
+                sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
             restrictions = get_json_from_args(args.restriction_json)
             if not isinstance(restrictions, list):
                 print(f"{self.COMMON_MESSAGE}: JSON形式が不正です。オブジェクトの配列を指定してください。", file=sys.stderr)  # noqa: T201
@@ -207,6 +251,7 @@ class DeleteAttributeRestriction(CommandLine):
         obj.delete_restrictions_by_attribute(
             attribute_ids=attribute_ids,
             attribute_name_ens=attribute_name_ens,
+            restriction_type=args.restriction_type,
             comment=args.comment,
         )
 
@@ -244,6 +289,21 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         type=str,
         nargs="+",
         help="指定した属性名(英語)に紐づく属性制約をすべて削除します。1個だけ指定して ``file://`` を先頭に付けると、属性名(英語)を1行ずつ記載したファイルを指定できます。",
+    )
+    parser.add_argument(
+        "--restriction_type",
+        type=str,
+        choices=list(RESTRICTION_TYPE_TO_CONDITION_TYPE.keys()),
+        help=(
+            "削除対象の属性制約種類。 ``--attribute_id`` または ``--attribute_name_en`` と併用したときだけ有効です。\n"
+            "* ``can_input`` : 入力可否制約\n"
+            "* ``has_label`` : ラベル条件制約\n"
+            "* ``equals`` : 等価制約\n"
+            "* ``not_equals`` : 非等価制約\n"
+            "* ``matches`` : 正規表現一致制約\n"
+            "* ``not_matches`` : 正規表現不一致制約\n"
+            "* ``imply`` : 属性間の相関制約"
+        ),
     )
 
     parser.add_argument("--comment", type=str, help="アノテーション仕様の変更内容を説明するコメント。未指定の場合、自動でコメントが生成されます。")
