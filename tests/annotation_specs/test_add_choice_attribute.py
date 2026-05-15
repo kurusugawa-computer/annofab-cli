@@ -1,19 +1,17 @@
 from __future__ import annotations
 
-import argparse
-import copy
 import json
 import uuid
 from pathlib import Path
 
 import pytest
 
-from annofabcli.annotation_specs import add_choice_attribute
 from annofabcli.annotation_specs.add_choice_attribute import (
-    AddChoiceAttributeMain,
     build_choices,
+    build_request_body_for_add_choice_attribute,
     read_choices_csv,
     read_choices_json,
+    resolve_choice_attribute_input,
 )
 
 data_dir = Path("./tests/data/annotation_specs")
@@ -25,34 +23,6 @@ def annotation_specs() -> dict:
         annotation_specs = json.load(f)
     annotation_specs["updated_datetime"] = "2026-04-24T00:00:00+09:00"
     return annotation_specs
-
-
-def create_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser()
-    subparsers = parser.add_subparsers(dest="subcommand_name", required=True)
-    add_choice_attribute.add_parser(subparsers)
-    return parser
-
-
-class DummyApi:
-    def __init__(self, annotation_specs: dict) -> None:
-        self.annotation_specs = copy.deepcopy(annotation_specs)
-        self.last_put: dict | None = None
-
-    def get_annotation_specs(self, project_id: str, query_params: dict) -> tuple[dict, None]:
-        assert project_id == "prj1"
-        assert query_params == {"v": "3"}
-        return copy.deepcopy(self.annotation_specs), None
-
-    def put_annotation_specs(self, project_id: str, query_params: dict, request_body: dict) -> None:
-        assert project_id == "prj1"
-        assert query_params == {"v": "3"}
-        self.last_put = request_body
-
-
-class DummyService:
-    def __init__(self, annotation_specs: dict) -> None:
-        self.api = DummyApi(annotation_specs)
 
 
 class TestReadChoicesJson:
@@ -123,12 +93,10 @@ class TestReadChoicesCsv:
             read_choices_csv(csv_path)
 
 
-class TestAddChoiceAttributeMain:
-    def test_add_choice_attribute(self, annotation_specs: dict) -> None:
-        service = DummyService(annotation_specs)
-        main = AddChoiceAttributeMain(service, project_id="prj1", all_yes=True)  # type: ignore
-
-        result = main.add_choice_attribute(
+class TestResolveChoiceAttributeInput:
+    def test_resolve_choice_attribute_input(self, annotation_specs: dict) -> None:
+        actual = resolve_choice_attribute_input(
+            annotation_specs,
             attribute_type="choice",
             attribute_name_en="weather",
             attribute_name_ja="天気",
@@ -136,13 +104,124 @@ class TestAddChoiceAttributeMain:
             choice_inputs=read_choices_json('[{"choice_id":"sunny","choice_name_en":"sunny","choice_name_ja":"晴れ","is_default":true},{"choice_name_en":"cloudy"}]'),
             label_ids=[],
             label_name_ens=["car"],
+        )
+
+        assert actual.new_attribute["additional_data_definition_id"] == "weather_attr"
+        assert actual.new_attribute["type"] == "choice"
+        assert actual.new_attribute["default"] == "sunny"
+        assert len(actual.new_attribute["choices"]) == 2
+        assert [label["label_id"] for label in actual.target_labels] == ["car_label_id"]
+
+    def test_resolve_choice_attribute_input__attribute_id_is_uuidv4_when_not_specified(self, annotation_specs: dict) -> None:
+        actual = resolve_choice_attribute_input(
+            annotation_specs,
+            attribute_type="select",
+            attribute_name_en="weather_uuid",
+            attribute_name_ja=None,
+            attribute_id=None,
+            choice_inputs=read_choices_json('[{"choice_name_en":"sunny"},{"choice_name_en":"cloudy"}]'),
+            label_ids=["car_label_id"],
+            label_name_ens=[],
+        )
+
+        generated_attribute_id = actual.new_attribute["additional_data_definition_id"]
+        assert str(uuid.UUID(generated_attribute_id, version=4)) == generated_attribute_id
+
+    def test_resolve_choice_attribute_input__label_name_ens_can_be_none(self, annotation_specs: dict) -> None:
+        actual = resolve_choice_attribute_input(
+            annotation_specs,
+            attribute_type="select",
+            attribute_name_en="weather3",
+            attribute_name_ja=None,
+            attribute_id="weather_attr3",
+            choice_inputs=read_choices_json('[{"choice_name_en":"sunny"},{"choice_name_en":"cloudy"}]'),
+            label_ids=["car_label_id"],
+            label_name_ens=None,
+        )
+
+        assert [label["label_id"] for label in actual.target_labels] == ["car_label_id"]
+
+    def test_resolve_choice_attribute_input__duplicated_attribute_id(self, annotation_specs: dict) -> None:
+        with pytest.raises(ValueError):
+            resolve_choice_attribute_input(
+                annotation_specs,
+                attribute_type="choice",
+                attribute_name_en="weather",
+                attribute_name_ja=None,
+                attribute_id="71620647-98cf-48ad-b43b-4af425a24f32",
+                choice_inputs=read_choices_json('[{"choice_name_en":"sunny"}]'),
+                label_ids=["car_label_id"],
+                label_name_ens=[],
+            )
+
+    def test_resolve_choice_attribute_input__duplicated_attribute_name__warning(self, annotation_specs: dict, caplog: pytest.LogCaptureFixture) -> None:
+        actual = resolve_choice_attribute_input(
+            annotation_specs,
+            attribute_type="choice",
+            attribute_name_en="type",
+            attribute_name_ja=None,
+            attribute_id="weather_attr",
+            choice_inputs=read_choices_json('[{"choice_name_en":"sunny"},{"choice_name_en":"cloudy"}]'),
+            label_ids=["car_label_id"],
+            label_name_ens=[],
+        )
+
+        assert actual.duplicated_name_attribute_ids == ["71620647-98cf-48ad-b43b-4af425a24f32"]
+        assert "属性名(英語)='type' の属性は既に存在しますが、処理を継続します。" in caplog.text
+
+    def test_resolve_choice_attribute_input__ambiguous_label_name(self, annotation_specs: dict) -> None:
+        duplicated_label = json.loads(json.dumps(annotation_specs["labels"][0]))
+        duplicated_label["label_id"] = "duplicated-id"
+        annotation_specs["labels"].append(duplicated_label)
+
+        with pytest.raises(ValueError):
+            resolve_choice_attribute_input(
+                annotation_specs,
+                attribute_type="choice",
+                attribute_name_en="weather",
+                attribute_name_ja=None,
+                attribute_id="weather_attr",
+                choice_inputs=read_choices_json('[{"choice_name_en":"sunny"}]'),
+                label_ids=[],
+                label_name_ens=["car"],
+            )
+
+    def test_resolve_choice_attribute_input__label_not_found(self, annotation_specs: dict) -> None:
+        with pytest.raises(ValueError):
+            resolve_choice_attribute_input(
+                annotation_specs,
+                attribute_type="choice",
+                attribute_name_en="weather",
+                attribute_name_ja=None,
+                attribute_id="weather_attr",
+                choice_inputs=read_choices_json('[{"choice_name_en":"sunny"}]'),
+                label_ids=["not-found"],
+                label_name_ens=[],
+            )
+
+
+class TestBuildRequestBodyForAddChoiceAttribute:
+    def test_build_request_body_for_add_choice_attribute(self, annotation_specs: dict) -> None:
+        resolved_input = resolve_choice_attribute_input(
+            annotation_specs,
+            attribute_type="choice",
+            attribute_name_en="weather",
+            attribute_name_ja="天気",
+            attribute_id="weather_attr",
+            choice_inputs=read_choices_json('[{"choice_id":"sunny","choice_name_en":"sunny","choice_name_ja":"晴れ","is_default":true},{"choice_name_en":"cloudy"}]'),
+            label_ids=[],
+            label_name_ens=["car"],
+        )
+
+        actual = build_request_body_for_add_choice_attribute(
+            annotation_specs,
+            resolved_choice_attribute_input=resolved_input,
+            attribute_name_en="weather",
             comment=None,
         )
 
-        assert result is True
-        assert service.api.last_put is not None
-        additionals = service.api.last_put["additionals"]
-        labels = service.api.last_put["labels"]
+        additionals = actual["additionals"]
+        labels = actual["labels"]
         added_attribute = additionals[-1]
         assert added_attribute["additional_data_definition_id"] == "weather_attr"
         assert added_attribute["type"] == "choice"
@@ -153,13 +232,11 @@ class TestAddChoiceAttributeMain:
         bike_label = next(label for label in labels if label["label_id"] == "40f7796b-3722-4eed-9c0c-04a27f9165d2")
         assert "weather_attr" in car_label["additional_data_definitions"]
         assert "weather_attr" not in bike_label["additional_data_definitions"]
-        assert service.api.last_put["comment"].startswith("以下の選択肢系属性を追加しました。")
+        assert actual["comment"].startswith("以下の選択肢系属性を追加しました。")
 
-    def test_add_choice_attribute__default_empty(self, annotation_specs: dict) -> None:
-        service = DummyService(annotation_specs)
-        main = AddChoiceAttributeMain(service, project_id="prj1", all_yes=True)  # type: ignore
-
-        main.add_choice_attribute(
+    def test_build_request_body_for_add_choice_attribute__default_empty(self, annotation_specs: dict) -> None:
+        resolved_input = resolve_choice_attribute_input(
+            annotation_specs,
             attribute_type="select",
             attribute_name_en="weather2",
             attribute_name_ja=None,
@@ -167,116 +244,15 @@ class TestAddChoiceAttributeMain:
             choice_inputs=read_choices_json('[{"choice_name_en":"sunny"},{"choice_name_en":"cloudy"}]'),
             label_ids=["car_label_id"],
             label_name_ens=[],
+        )
+
+        actual = build_request_body_for_add_choice_attribute(
+            annotation_specs,
+            resolved_choice_attribute_input=resolved_input,
+            attribute_name_en="weather2",
             comment="custom",
         )
 
-        assert service.api.last_put is not None
-        added_attribute = service.api.last_put["additionals"][-1]
+        added_attribute = actual["additionals"][-1]
         assert added_attribute["default"] is None
-        assert service.api.last_put["comment"] == "custom"
-
-    def test_add_choice_attribute__attribute_id_is_uuidv4_when_not_specified(self, annotation_specs: dict) -> None:
-        service = DummyService(annotation_specs)
-        main = AddChoiceAttributeMain(service, project_id="prj1", all_yes=True)  # type: ignore
-
-        main.add_choice_attribute(
-            attribute_type="select",
-            attribute_name_en="weather_uuid",
-            attribute_name_ja=None,
-            attribute_id=None,
-            choice_inputs=read_choices_json('[{"choice_name_en":"sunny"},{"choice_name_en":"cloudy"}]'),
-            label_ids=["car_label_id"],
-            label_name_ens=[],
-            comment="custom",
-        )
-
-        assert service.api.last_put is not None
-        generated_attribute_id = service.api.last_put["additionals"][-1]["additional_data_definition_id"]
-        assert str(uuid.UUID(generated_attribute_id, version=4)) == generated_attribute_id
-
-    def test_add_choice_attribute__label_name_ens_can_be_none(self, annotation_specs: dict) -> None:
-        service = DummyService(annotation_specs)
-        main = AddChoiceAttributeMain(service, project_id="prj1", all_yes=True)  # type: ignore
-
-        result = main.add_choice_attribute(
-            attribute_type="select",
-            attribute_name_en="weather3",
-            attribute_name_ja=None,
-            attribute_id="weather_attr3",
-            choice_inputs=read_choices_json('[{"choice_name_en":"sunny"},{"choice_name_en":"cloudy"}]'),
-            label_ids=["car_label_id"],
-            label_name_ens=None,
-            comment=None,
-        )
-
-        assert result is True
-        assert service.api.last_put is not None
-        car_label = next(label for label in service.api.last_put["labels"] if label["label_id"] == "car_label_id")
-        assert "weather_attr3" in car_label["additional_data_definitions"]
-
-    def test_add_choice_attribute__duplicated_attribute_id(self, annotation_specs: dict) -> None:
-        service = DummyService(annotation_specs)
-        main = AddChoiceAttributeMain(service, project_id="prj1", all_yes=True)  # type: ignore
-
-        with pytest.raises(ValueError):
-            main.add_choice_attribute(
-                attribute_type="choice",
-                attribute_name_en="weather",
-                attribute_name_ja=None,
-                attribute_id="71620647-98cf-48ad-b43b-4af425a24f32",
-                choice_inputs=read_choices_json('[{"choice_name_en":"sunny"}]'),
-                label_ids=["car_label_id"],
-                label_name_ens=[],
-            )
-
-    def test_add_choice_attribute__duplicated_attribute_name__warning(self, annotation_specs: dict, caplog: pytest.LogCaptureFixture) -> None:
-        service = DummyService(annotation_specs)
-        main = AddChoiceAttributeMain(service, project_id="prj1", all_yes=True)  # type: ignore
-
-        result = main.add_choice_attribute(
-            attribute_type="choice",
-            attribute_name_en="type",
-            attribute_name_ja=None,
-            attribute_id="weather_attr",
-            choice_inputs=read_choices_json('[{"choice_name_en":"sunny"},{"choice_name_en":"cloudy"}]'),
-            label_ids=["car_label_id"],
-            label_name_ens=[],
-        )
-
-        assert result is True
-        assert service.api.last_put is not None
-        assert "属性名(英語)='type' の属性は既に存在しますが、処理を継続します。" in caplog.text
-
-    def test_add_choice_attribute__ambiguous_label_name(self, annotation_specs: dict) -> None:
-        duplicated_specs = copy.deepcopy(annotation_specs)
-        duplicated_label = copy.deepcopy(duplicated_specs["labels"][0])
-        duplicated_label["label_id"] = "duplicated-id"
-        duplicated_specs["labels"].append(duplicated_label)
-        service = DummyService(duplicated_specs)
-        main = AddChoiceAttributeMain(service, project_id="prj1", all_yes=True)  # type: ignore
-
-        with pytest.raises(ValueError):
-            main.add_choice_attribute(
-                attribute_type="choice",
-                attribute_name_en="weather",
-                attribute_name_ja=None,
-                attribute_id="weather_attr",
-                choice_inputs=read_choices_json('[{"choice_name_en":"sunny"}]'),
-                label_ids=[],
-                label_name_ens=["car"],
-            )
-
-    def test_add_choice_attribute__label_not_found(self, annotation_specs: dict) -> None:
-        service = DummyService(annotation_specs)
-        main = AddChoiceAttributeMain(service, project_id="prj1", all_yes=True)  # type: ignore
-
-        with pytest.raises(ValueError):
-            main.add_choice_attribute(
-                attribute_type="choice",
-                attribute_name_en="weather",
-                attribute_name_ja=None,
-                attribute_id="weather_attr",
-                choice_inputs=read_choices_json('[{"choice_name_en":"sunny"}]'),
-                label_ids=["not-found"],
-                label_name_ens=[],
-            )
+        assert actual["comment"] == "custom"

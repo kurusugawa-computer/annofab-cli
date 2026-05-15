@@ -1,18 +1,15 @@
 from __future__ import annotations
 
-import argparse
-import copy
 import json
 from pathlib import Path
 
 import pandas
 import pytest
 
-from annofabcli.annotation_specs import add_labels
 from annofabcli.annotation_specs.add_label import DEFAULT_SEGMENTATION_FIELD_VALUES
 from annofabcli.annotation_specs.add_labels import (
-    AddLabelsMain,
     LabelInput,
+    build_request_body_for_add_labels,
     create_label_color,
     create_label_inputs_from_name_ens,
     parse_annotation_type_in_csv,
@@ -20,6 +17,7 @@ from annofabcli.annotation_specs.add_labels import (
     read_labels_csv,
     read_labels_json,
     resolve_annotation_types,
+    validate_label_inputs,
 )
 
 data_dir = Path("./tests/data/annotation_specs")
@@ -33,62 +31,27 @@ def annotation_specs() -> dict:
     return loaded_annotation_specs
 
 
-def create_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser()
-    subparsers = parser.add_subparsers(dest="subcommand_name", required=True)
-    add_labels.add_parser(subparsers)
-    return parser
-
-
-class DummyApi:
-    def __init__(self, annotation_specs: dict) -> None:
-        self.annotation_specs = copy.deepcopy(annotation_specs)
-        self.last_put: dict | None = None
-
-    def get_annotation_specs(self, project_id: str, query_params: dict) -> tuple[dict, None]:
-        assert project_id == "prj1"
-        assert query_params == {"v": "3"}
-        return copy.deepcopy(self.annotation_specs), None
-
-    def put_annotation_specs(self, project_id: str, query_params: dict, request_body: dict) -> None:
-        assert project_id == "prj1"
-        assert query_params == {"v": "3"}
-        self.last_put = request_body
-
-
-class DummyService:
-    def __init__(self, annotation_specs: dict) -> None:
-        self.api = DummyApi(annotation_specs)
-
-
-class AddLabelsMainWithoutConfirm(AddLabelsMain):
-    def confirm_processing(self, _confirm_message: str) -> bool:
-        return False
-
-
-class TestAddLabelsMain:
-    def test_add_labels(self, annotation_specs: dict) -> None:
-        service = DummyService(annotation_specs)
-        main = AddLabelsMain(service, project_id="prj1", all_yes=True)  # type: ignore[arg-type]
-
-        result = main.add_labels(
-            label_inputs=[
-                LabelInput(
-                    label_id="pedestrian",
-                    label_name_en="pedestrian",
-                    label_name_ja="歩行者",
-                    color="#123456",
-                    field_values={"display_name": {"_type": "DisplayName", "text": "歩行者"}},
-                ),
-                LabelInput(label_name_en="bicycle"),
-            ],
-            annotation_type="bounding_box",
+class TestBuildRequestBodyForAddLabels:
+    def test_build_request_body_for_add_labels(self, annotation_specs: dict) -> None:
+        actual = build_request_body_for_add_labels(
+            annotation_specs,
+            resolved_label_inputs=resolve_annotation_types(
+                [
+                    LabelInput(
+                        label_id="pedestrian",
+                        label_name_en="pedestrian",
+                        label_name_ja="歩行者",
+                        color="#123456",
+                        field_values={"display_name": {"_type": "DisplayName", "text": "歩行者"}},
+                    ),
+                    LabelInput(label_name_en="bicycle"),
+                ],
+                annotation_type="bounding_box",
+            ),
             comment=None,
         )
 
-        assert result is True
-        assert service.api.last_put is not None
-        added_labels = service.api.last_put["labels"][-2:]
+        added_labels = actual["labels"][-2:]
         assert [label["label_id"] for label in added_labels] == ["pedestrian", added_labels[1]["label_id"]]
         assert [label["label_name"]["messages"][0]["message"] for label in added_labels] == ["pedestrian", "bicycle"]
         assert [label["label_name"]["messages"][1]["message"] for label in added_labels] == ["歩行者", "bicycle"]
@@ -97,122 +60,104 @@ class TestAddLabelsMain:
         assert added_labels[1]["color"] == {"red": 255, "green": 85, "blue": 0}
         assert added_labels[0]["field_values"] == {"display_name": {"_type": "DisplayName", "text": "歩行者"}}
         assert added_labels[1]["field_values"] == {}
-        assert service.api.last_put["last_updated_datetime"] == "2026-04-24T00:00:00+09:00"
+        assert actual["comment"].startswith("以下のラベルを追加しました。")
+        assert actual["last_updated_datetime"] == "2026-04-24T00:00:00+09:00"
 
-    def test_add_labels__invalid_color(self, annotation_specs: dict) -> None:
-        service = DummyService(annotation_specs)
-        main = AddLabelsMain(service, project_id="prj1", all_yes=True)  # type: ignore[arg-type]
-
+    def test_build_request_body_for_add_labels__invalid_color(self, annotation_specs: dict) -> None:
         with pytest.raises(ValueError):
-            main.add_labels(
-                label_inputs=[LabelInput(label_name_en="pedestrian", color="red")],
-                annotation_type="bounding_box",
+            build_request_body_for_add_labels(
+                annotation_specs,
+                resolved_label_inputs=resolve_annotation_types(
+                    [LabelInput(label_name_en="pedestrian", color="red")],
+                    annotation_type="bounding_box",
+                ),
+                comment=None,
             )
 
-    def test_add_labels__duplicated_input(self, annotation_specs: dict) -> None:
-        service = DummyService(annotation_specs)
-        main = AddLabelsMain(service, project_id="prj1", all_yes=True)  # type: ignore[arg-type]
-
+    def test_build_request_body_for_add_labels__duplicated_existing_label_name(self, annotation_specs: dict) -> None:
         with pytest.raises(ValueError):
-            main.add_labels(
-                label_inputs=[LabelInput(label_name_en="pedestrian"), LabelInput(label_name_en="pedestrian")],
-                annotation_type="bounding_box",
+            build_request_body_for_add_labels(
+                annotation_specs,
+                resolved_label_inputs=resolve_annotation_types(
+                    [LabelInput(label_name_en="pedestrian"), LabelInput(label_name_en="car")],
+                    annotation_type="bounding_box",
+                ),
+                comment=None,
             )
 
-    def test_add_labels__duplicated_input_label_id(self, annotation_specs: dict) -> None:
-        service = DummyService(annotation_specs)
-        main = AddLabelsMain(service, project_id="prj1", all_yes=True)  # type: ignore[arg-type]
-
-        with pytest.raises(ValueError):
-            main.add_labels(
-                label_inputs=[
-                    LabelInput(label_id="pedestrian", label_name_en="pedestrian"),
-                    LabelInput(label_id="pedestrian", label_name_en="bicycle"),
-                ],
-                annotation_type="bounding_box",
-            )
-
-    def test_add_labels__duplicated_existing_label_name(self, annotation_specs: dict) -> None:
-        service = DummyService(annotation_specs)
-        main = AddLabelsMain(service, project_id="prj1", all_yes=True)  # type: ignore[arg-type]
-
-        with pytest.raises(ValueError):
-            main.add_labels(
-                label_inputs=[LabelInput(label_name_en="pedestrian"), LabelInput(label_name_en="car")],
-                annotation_type="bounding_box",
-            )
-
-    def test_add_labels__empty_label_inputs(self, annotation_specs: dict) -> None:
-        service = DummyService(annotation_specs)
-        main = AddLabelsMain(service, project_id="prj1", all_yes=True)  # type: ignore[arg-type]
-
-        with pytest.raises(ValueError):
-            main.add_labels(
-                label_inputs=[],
-                annotation_type="bounding_box",
-            )
-
-    def test_add_labels__confirm_no(self, annotation_specs: dict) -> None:
-        service = DummyService(annotation_specs)
-        main = AddLabelsMainWithoutConfirm(service, project_id="prj1", all_yes=False)  # type: ignore[arg-type]
-
-        result = main.add_labels(
-            label_inputs=[LabelInput(label_name_en="pedestrian"), LabelInput(label_name_en="bicycle")],
-            annotation_type="bounding_box",
-        )
-
-        assert result is False
-        assert service.api.last_put is None
-
-    def test_add_labels__segmentation_has_default_field_values(self, annotation_specs: dict) -> None:
-        service = DummyService(annotation_specs)
-        main = AddLabelsMain(service, project_id="prj1", all_yes=True)  # type: ignore[arg-type]
-
-        main.add_labels(
-            label_inputs=[LabelInput(label_name_en="road"), LabelInput(label_name_en="sidewalk")],
-            annotation_type="segmentation_v2",
+    def test_build_request_body_for_add_labels__segmentation_has_default_field_values(self, annotation_specs: dict) -> None:
+        actual = build_request_body_for_add_labels(
+            annotation_specs,
+            resolved_label_inputs=resolve_annotation_types(
+                [LabelInput(label_name_en="road"), LabelInput(label_name_en="sidewalk")],
+                annotation_type="segmentation_v2",
+            ),
             comment=None,
         )
 
-        assert service.api.last_put is not None
-        added_labels = service.api.last_put["labels"][-2:]
+        added_labels = actual["labels"][-2:]
         assert added_labels[0]["field_values"] == DEFAULT_SEGMENTATION_FIELD_VALUES
         assert added_labels[1]["field_values"] == DEFAULT_SEGMENTATION_FIELD_VALUES
 
-    def test_add_labels__uses_annotation_type_in_label_inputs(self, annotation_specs: dict) -> None:
-        service = DummyService(annotation_specs)
-        main = AddLabelsMain(service, project_id="prj1", all_yes=True)  # type: ignore[arg-type]
-
-        main.add_labels(
-            label_inputs=[
-                LabelInput(label_name_en="road", annotation_type="segmentation_v2"),
-                LabelInput(label_name_en="crosswalk", annotation_type="bounding_box"),
-            ],
+    def test_build_request_body_for_add_labels__uses_annotation_type_in_label_inputs(self, annotation_specs: dict) -> None:
+        actual = build_request_body_for_add_labels(
+            annotation_specs,
+            resolved_label_inputs=resolve_annotation_types(
+                [
+                    LabelInput(label_name_en="road", annotation_type="segmentation_v2"),
+                    LabelInput(label_name_en="crosswalk", annotation_type="bounding_box"),
+                ],
+                annotation_type=None,
+            ),
             comment=None,
         )
 
-        assert service.api.last_put is not None
-        added_labels = service.api.last_put["labels"][-2:]
+        added_labels = actual["labels"][-2:]
         assert [label["annotation_type"] for label in added_labels] == ["segmentation_v2", "bounding_box"]
         assert added_labels[0]["field_values"] == DEFAULT_SEGMENTATION_FIELD_VALUES
         assert added_labels[1]["field_values"] == {}
 
-    def test_add_labels__raises_when_annotation_type_is_missing(self, annotation_specs: dict) -> None:
-        service = DummyService(annotation_specs)
-        main = AddLabelsMain(service, project_id="prj1", all_yes=True)  # type: ignore[arg-type]
 
+class TestLabelInputs:
+    def test_validate_label_inputs__duplicated_input(self) -> None:
         with pytest.raises(ValueError):
-            main.add_labels(
-                label_inputs=[LabelInput(label_name_en="pedestrian")],
+            validate_label_inputs([LabelInput(label_name_en="pedestrian"), LabelInput(label_name_en="pedestrian")])
+
+    def test_validate_label_inputs__duplicated_input_label_id(self) -> None:
+        with pytest.raises(ValueError):
+            validate_label_inputs(
+                [
+                    LabelInput(label_id="pedestrian", label_name_en="pedestrian"),
+                    LabelInput(label_id="pedestrian", label_name_en="bicycle"),
+                ]
             )
 
-    def test_add_labels__raises_when_annotation_type_conflicts(self, annotation_specs: dict) -> None:
-        service = DummyService(annotation_specs)
-        main = AddLabelsMain(service, project_id="prj1", all_yes=True)  # type: ignore[arg-type]
-
+    def test_validate_label_inputs__empty_label_inputs(self) -> None:
         with pytest.raises(ValueError):
-            main.add_labels(
-                label_inputs=[LabelInput(label_name_en="pedestrian", annotation_type="polygon")],
+            validate_label_inputs([])
+
+    def test_resolve_annotation_types(self) -> None:
+        actual = resolve_annotation_types(
+            [
+                LabelInput(label_name_en="pedestrian", annotation_type="bounding_box"),
+                LabelInput(label_name_en="bicycle"),
+            ],
+            annotation_type="bounding_box",
+        )
+
+        assert actual == [
+            LabelInput(label_name_en="pedestrian", annotation_type="bounding_box"),
+            LabelInput(label_name_en="bicycle", annotation_type="bounding_box"),
+        ]
+
+    def test_resolve_annotation_types__raises_when_annotation_type_is_missing(self) -> None:
+        with pytest.raises(ValueError):
+            resolve_annotation_types([LabelInput(label_name_en="pedestrian")], annotation_type=None)
+
+    def test_resolve_annotation_types__raises_when_conflicted(self) -> None:
+        with pytest.raises(ValueError):
+            resolve_annotation_types(
+                [LabelInput(label_name_en="pedestrian", annotation_type="polygon")],
                 annotation_type="bounding_box",
             )
 
@@ -292,44 +237,25 @@ class TestReadLabels:
 
     def test_create_label_color(self) -> None:
         actual = create_label_color("#123456", [])
-
         assert actual == {"red": 18, "green": 52, "blue": 86}
-
-    def test_resolve_annotation_types(self) -> None:
-        actual = resolve_annotation_types(
-            [
-                LabelInput(label_name_en="pedestrian", annotation_type="bounding_box"),
-                LabelInput(label_name_en="bicycle"),
-            ],
-            annotation_type="bounding_box",
-        )
-
-        assert actual == [
-            LabelInput(label_name_en="pedestrian", annotation_type="bounding_box"),
-            LabelInput(label_name_en="bicycle", annotation_type="bounding_box"),
-        ]
-
-    def test_resolve_annotation_types__raises_when_conflicted(self) -> None:
-        with pytest.raises(ValueError):
-            resolve_annotation_types(
-                [LabelInput(label_name_en="pedestrian", annotation_type="polygon")],
-                annotation_type="bounding_box",
-            )
 
     def test_parse_field_values_in_csv(self) -> None:
         actual = parse_field_values_in_csv('{"display_name":{"_type":"DisplayName","text":"歩行者"}}', index=1)
-
         assert actual == {"display_name": {"_type": "DisplayName", "text": "歩行者"}}
 
-    def test_parse_field_values_in_csv__invalid_json(self) -> None:
+    def test_parse_field_values_in_csv__empty(self) -> None:
+        assert parse_field_values_in_csv("", index=1) is None
+
+    def test_parse_field_values_in_csv__invalid(self) -> None:
         with pytest.raises(ValueError):
-            parse_field_values_in_csv('["not-object"]', index=1)
+            parse_field_values_in_csv("[]", index=1)
 
     def test_parse_annotation_type_in_csv(self) -> None:
-        actual = parse_annotation_type_in_csv("bounding_box", index=1)
+        assert parse_annotation_type_in_csv("polygon", index=1) == "polygon"
 
-        assert actual == "bounding_box"
+    def test_parse_annotation_type_in_csv__empty(self) -> None:
+        assert parse_annotation_type_in_csv("", index=1) is None
 
-    def test_parse_annotation_type_in_csv__invalid_value(self) -> None:
+    def test_parse_annotation_type_in_csv__invalid(self) -> None:
         with pytest.raises(ValueError):
             parse_annotation_type_in_csv("invalid", index=1)
