@@ -2,6 +2,7 @@ import argparse
 
 import annofabcli.annotation_specs.add_attribute
 import annofabcli.annotation_specs.add_attribute_restriction
+import annofabcli.annotation_specs.add_attributes
 import annofabcli.annotation_specs.add_choice_attribute
 import annofabcli.annotation_specs.add_choices_to_attribute
 import annofabcli.annotation_specs.add_existing_attribute_to_labels
@@ -33,6 +34,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     # サブコマンドの定義
     annofabcli.annotation_specs.add_attribute.add_parser(subparsers)
     annofabcli.annotation_specs.add_attribute_restriction.add_parser(subparsers)
+    annofabcli.annotation_specs.add_attributes.add_parser(subparsers)
     annofabcli.annotation_specs.add_choice_attribute.add_parser(subparsers)
     annofabcli.annotation_specs.add_choices_to_attribute.add_parser(subparsers)
     annofabcli.annotation_specs.add_existing_attribute_to_labels.add_parser(subparsers)
