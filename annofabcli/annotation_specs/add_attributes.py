@@ -107,25 +107,6 @@ class ResolvedAttributeInput(BaseModel):
     """追加するAnnofab API向け属性オブジェクト。"""
 
 
-def parse_attribute_input_from_dict(data: dict[str, Any], *, index: int) -> AttributeInput:
-    """
-    JSONオブジェクト1件を属性入力に変換する。
-
-    Args:
-        data: 属性情報を表すdict
-        index: エラーメッセージ用の1始まりの位置
-
-    Returns:
-        変換後の属性入力
-
-    Raises:
-        ValueError: 入力値が不正な場合
-    """
-    try:
-        return AttributeInput.model_validate(data)
-    except ValidationError as e:
-        raise ValueError(f"{index}件目の属性の入力値が不正です。 :: {e}") from e
-
 
 def read_attributes_json(target: str) -> list[AttributeInput]:
     """
@@ -145,12 +126,7 @@ def read_attributes_json(target: str) -> list[AttributeInput]:
     if not isinstance(raw_data, list):
         raise TypeError("`--attribute_json` には属性情報の配列を指定してください。")
 
-    result = []
-    for index, attribute_data in enumerate(raw_data, start=1):
-        if not isinstance(attribute_data, dict):
-            raise TypeError(f"{index}件目の属性がオブジェクト形式ではありません。")
-        result.append(parse_attribute_input_from_dict(attribute_data, index=index))
-    return result
+    return [AttributeInput.model_validate(data) for data in raw_data]
 
 
 def validate_attribute_inputs(attribute_inputs: Sequence[AttributeInput]) -> None:
