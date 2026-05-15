@@ -107,6 +107,52 @@ class ResolvedAttributeInput(BaseModel):
     """追加するAnnofab API向け属性オブジェクト。"""
 
 
+def resolve_attribute_inputs(
+    annotation_specs: dict[str, Any],
+    *,
+    attribute_inputs: Sequence[AttributeInput],
+) -> list[ResolvedAttributeInput]:
+    """
+    入力された属性一覧を既存アノテーション仕様に対して解決する。
+
+    Args:
+        annotation_specs: 既存のアノテーション仕様
+        attribute_inputs: 入力された属性一覧
+
+    Returns:
+        解決済み属性一覧
+    """
+    annotation_specs_accessor = AnnotationSpecsAccessor(annotation_specs)
+    additionals = annotation_specs["additionals"]
+
+    resolved_inputs = []
+    for attribute_input in attribute_inputs:
+        target_labels = get_target_labels(
+            annotation_specs_accessor,
+            label_ids=attribute_input.label_ids,
+            label_name_ens=attribute_input.label_name_ens,
+        )
+        new_attribute = create_attribute(
+            attribute_type=attribute_input.attribute_type,
+            attribute_name_en=attribute_input.attribute_name_en,
+            attribute_name_ja=attribute_input.attribute_name_ja,
+            attribute_id=attribute_input.attribute_id,
+        )
+        validate_new_attribute_input(
+            additionals,
+            attribute_id=new_attribute["additional_data_definition_id"],
+            attribute_name_en=attribute_input.attribute_name_en,
+        )
+        resolved_inputs.append(
+            ResolvedAttributeInput(
+                attribute_input=attribute_input,
+                target_labels=target_labels,
+                new_attribute=new_attribute,
+            )
+        )
+    return resolved_inputs
+
+
 def read_attributes_json(target: str) -> list[AttributeInput]:
     """
     ``--attribute_json`` で指定されたJSONから属性一覧を読み込む。
@@ -192,6 +238,43 @@ def validate_new_attribute_input(
         raise ValueError(f"属性名(英語)='{attribute_name_en}' の属性は既に存在します。 :: {duplicated_text}")
 
 
+def build_request_body_for_add_attributes(
+    annotation_specs: dict[str, Any],
+    *,
+    resolved_inputs: Sequence[ResolvedAttributeInput],
+    comment: str | None,
+) -> dict[str, Any]:
+    """
+    複数属性追加用の request body を生成する。
+
+    Args:
+        annotation_specs: 既存のアノテーション仕様
+        resolved_inputs: 解決済み属性一覧
+        comment: 変更コメント
+
+    Returns:
+        Annofab API に渡す request body
+    """
+    request_body = copy.deepcopy(annotation_specs)
+    labels_by_id = {label["label_id"]: label for label in request_body["labels"]}
+
+    for resolved_input in resolved_inputs:
+        request_body["additionals"].append(resolved_input.new_attribute)
+        target_label_names = [get_label_name_en(label) for label in resolved_input.target_labels]
+        logger.debug(
+            f"属性名(英語)='{resolved_input.attribute_input.attribute_name_en}', 属性ID='{resolved_input.new_attribute['additional_data_definition_id']}', "
+            f"対象ラベル={target_label_names} を追加します。"
+        )
+        for target_label in resolved_input.target_labels:
+            labels_by_id[target_label["label_id"]]["additional_data_definitions"].append(resolved_input.new_attribute["additional_data_definition_id"])
+
+    if comment is None:
+        comment = create_comment_from_attributes([e.attribute_input for e in resolved_inputs])
+    request_body["comment"] = comment
+    request_body["last_updated_datetime"] = annotation_specs["updated_datetime"]
+    return request_body
+
+
 class AddAttributesMain(CommandLineWithConfirm):
     """
     複数の非選択肢系属性をアノテーション仕様へ追加する本体処理。
@@ -207,51 +290,6 @@ class AddAttributesMain(CommandLineWithConfirm):
         self.service = service
         self.project_id = project_id
         CommandLineWithConfirm.__init__(self, all_yes)
-
-    def _resolve_attribute_inputs(
-        self,
-        annotation_specs_accessor: AnnotationSpecsAccessor,
-        *,
-        additionals: Sequence[dict[str, Any]],
-        attribute_inputs: Sequence[AttributeInput],
-    ) -> list[ResolvedAttributeInput]:
-        """
-        入力された属性一覧を既存アノテーション仕様に対して解決する。
-
-        Args:
-            annotation_specs_accessor: アノテーション仕様アクセサ
-            additionals: 既存属性一覧
-            attribute_inputs: 入力された属性一覧
-
-        Returns:
-            解決済み属性一覧
-        """
-        resolved_inputs = []
-        for attribute_input in attribute_inputs:
-            target_labels = get_target_labels(
-                annotation_specs_accessor,
-                label_ids=attribute_input.label_ids,
-                label_name_ens=attribute_input.label_name_ens,
-            )
-            new_attribute = create_attribute(
-                attribute_type=attribute_input.attribute_type,
-                attribute_name_en=attribute_input.attribute_name_en,
-                attribute_name_ja=attribute_input.attribute_name_ja,
-                attribute_id=attribute_input.attribute_id,
-            )
-            validate_new_attribute_input(
-                additionals,
-                attribute_id=new_attribute["additional_data_definition_id"],
-                attribute_name_en=attribute_input.attribute_name_en,
-            )
-            resolved_inputs.append(
-                ResolvedAttributeInput(
-                    attribute_input=attribute_input,
-                    target_labels=target_labels,
-                    new_attribute=new_attribute,
-                )
-            )
-        return resolved_inputs
 
     def add_attributes(
         self,
@@ -272,10 +310,8 @@ class AddAttributesMain(CommandLineWithConfirm):
         validate_attribute_inputs(attribute_inputs)
 
         old_annotation_specs, _ = self.service.api.get_annotation_specs(self.project_id, query_params={"v": "3"})
-        annotation_specs_accessor = AnnotationSpecsAccessor(old_annotation_specs)
-        resolved_inputs = self._resolve_attribute_inputs(
-            annotation_specs_accessor,
-            additionals=old_annotation_specs["additionals"],
+        resolved_inputs = resolve_attribute_inputs(
+            old_annotation_specs,
             attribute_inputs=attribute_inputs,
         )
 
@@ -284,22 +320,11 @@ class AddAttributesMain(CommandLineWithConfirm):
         if not self.confirm_processing(confirm_message):
             return False
 
-        request_body = copy.deepcopy(old_annotation_specs)
-        labels_by_id = {label["label_id"]: label for label in request_body["labels"]}
-        for resolved_input in resolved_inputs:
-            request_body["additionals"].append(resolved_input.new_attribute)
-            target_label_names = [get_label_name_en(label) for label in resolved_input.target_labels]
-            logger.debug(
-                f"属性名(英語)='{resolved_input.attribute_input.attribute_name_en}', 属性ID='{resolved_input.new_attribute['additional_data_definition_id']}', "
-                f"対象ラベル={target_label_names} を追加します。"
-            )
-            for target_label in resolved_input.target_labels:
-                labels_by_id[target_label["label_id"]]["additional_data_definitions"].append(resolved_input.new_attribute["additional_data_definition_id"])
-
-        if comment is None:
-            comment = create_comment_from_attributes(attribute_inputs)
-        request_body["comment"] = comment
-        request_body["last_updated_datetime"] = old_annotation_specs["updated_datetime"]
+        request_body = build_request_body_for_add_attributes(
+            old_annotation_specs,
+            resolved_inputs=resolved_inputs,
+            comment=comment,
+        )
         self.service.api.put_annotation_specs(self.project_id, query_params={"v": "3"}, request_body=request_body)
         logger.info(f"{len(attribute_inputs)} 件の属性を追加しました。 :: attribute_name_ens={input_attribute_name_ens}")
         return True
