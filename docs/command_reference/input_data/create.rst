@@ -1,16 +1,10 @@
 =================================
-input_data put
+input_data create
 =================================
 
 Description
 =================================
 入力データを作成します。
-
-.. warning::
-
-   このコマンドは非推奨です。代わりに :doc:`create` コマンドを使用してください。
-
-   ``input_data put`` コマンドは2027/01/01以降に廃止予定です。
 
 
 Examples
@@ -25,15 +19,15 @@ CSVファイルを指定する場合
 CSVのフォーマットは以下の通りです。
 
 * カンマ区切り
-* ヘッダ行なし
+* ヘッダ行あり
 
 
 .. csv-table::
-   :header: 列番号,名前,必須,備考
+   :header: 列名,必須,備考
 
-    1列目,input_data_name,Yes,
-    2列目,input_data_path,Yes,先頭が ``file://`` の場合、ローカルのファイルを入力データに使用します。
-    3列目,input_data_id,No,省略した場合はinput_data_nameに近い値（IDに使えない文字を加工した値）になります。
+    input_data_name,Yes,
+    input_data_path,Yes,先頭が ``file://`` の場合、ローカルのファイルを入力データに使用します。
+    input_data_id,No,省略した場合はinput_data_nameに近い値（IDに使えない文字を加工した値）になります。
 
 各項目の詳細は `AnnofabのWebAPIドキュメント <https://annofab.com/docs/api/#operation/putInputData>`_ を参照してください。
 
@@ -42,12 +36,12 @@ CSVのフォーマットは以下の通りです。
 .. code-block::
     :caption: input_data.csv
 
-    data1,s3://example.com/data1,id1,
-    data2,s3://example.com/data2,id2,true
-    data3,s3://example.com/data3,id3,false
-    data4,https://example.com/data4,,
-    data5,file://sample.jpg,,
-    data6,file:///tmp/sample.jpg,,
+    input_data_name,input_data_path,input_data_id
+    data1,s3://example.com/data1,id1
+    data2,s3://example.com/data2,id2
+    data3,https://example.com/data3,
+    data4,file://sample.jpg,
+    data5,file:///tmp/sample.jpg,
 
 .. warning::
 
@@ -60,18 +54,15 @@ CSVのフォーマットは以下の通りです。
 
 .. code-block::
 
-    $ annofabcli input_data put --project_id prj1 --csv input_data.csv
+    $ annofabcli input_data create --project_id prj1 --csv input_data.csv
 
 
 input_data_idが一致する入力データが既に存在する場合、デフォルトではスキップします。入力データを上書きする場合は、 ``--overwrite`` を指定してください。
 
 
 .. code-block::
-    
-    $ annofabcli input_data put --project_id prj1 --csv input_data.csv --overwrite
 
-
-
+    $ annofabcli input_data create --project_id prj1 --csv input_data.csv --overwrite
 
 
 JSON文字列を指定する場合
@@ -102,25 +93,25 @@ JSONのキーは、``--csv`` に指定するCSVファイルの列に対応しま
 
 .. code-block::
 
-    $ annofabcli input_data put --project_id prj1 --json file://input_data.json
-
+    $ annofabcli input_data create --project_id prj1 --json file://input_data.json
 
 
 並列処理
 ----------------------------------------------
 
-``--csv`` を指定したときは、並列実行が可能です。
+``--csv`` または ``--json`` を指定したときは、並列実行が可能です。
 
 .. code-block::
 
-    $ annofabcli input_data put --project_id prj1 --csv input_data.csv
+    $ annofabcli input_data create --project_id prj1 --csv input_data.csv \
     --parallelism 4 --yes
+
 
 Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.input_data.put_input_data.add_parser
-   :prog: annofabcli input_data put
+   :ref: annofabcli.input_data.create_input_data.add_parser
+   :prog: annofabcli input_data create
    :nosubcommands:
    :nodefaultconst:

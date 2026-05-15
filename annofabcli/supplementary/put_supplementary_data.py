@@ -35,7 +35,7 @@ logger = logging.getLogger(__name__)
 def convert_supplementary_data_name_to_supplementary_data_id(supplementary_data_name: str) -> str:
     """
     補助情報データ名から、補助情報データIDを生成します。
-    * IDに使えない文字以外は`__`に変換する。
+    * IDに使えない文字は`__`に変換する。
     """
     return re.sub(r"[^a-zA-Z0-9_.-]", "__", supplementary_data_name)
 

@@ -16,6 +16,7 @@ Available Commands
    :titlesonly:
 
    copy
+   create
    delete
    delete_metadata_key
    download
