@@ -45,6 +45,20 @@ Examples
     ]
 
 
+属性名(英語)に紐づく特定種類の制約だけを出力する
+----------------------------------------------
+
+``--restriction_type`` を指定すると、対象属性に紐づく属性制約のうち、指定した種類の制約だけを出力できます。
+
+.. code-block::
+
+    $ annofabcli annotation_specs list_attribute_restriction \
+     --project_id prj1 \
+     --attribute_name comment \
+     --restriction_type imply
+    If 'unclear' is checked, 'comment' matches '[0-9]'.
+
+
 
 Usage Details
 =================================
