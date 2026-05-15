@@ -50,23 +50,6 @@ JSON形式で指定する場合
 * ``attribute_name_ja`` : 任意。属性名（日本語）。
 * ``attribute_id`` : 任意。属性ID。未指定の場合はUUIDv4が自動生成されます。
 
-制約
-----------------------------------------------
-
-* JSON全体は配列である必要があります。
-* 各属性オブジェクトでは、``label_name_ens`` と ``label_ids`` を同時に指定できません。どちらか一方だけ指定してください。
-* ``label_name_ens`` と ``label_ids`` の配列は、1件以上の要素を指定してください。
-* ``label_name_ens`` と ``label_ids`` の各配列内では、同じ値を重複して指定できません。
-* JSON配列内では、``attribute_name_en`` の重複を指定できません。
-* ``attribute_id`` を指定する場合、JSON配列内で重複した値を指定できません。
-* 上記以外のキーは指定できません。
-
-
---attribute_type に指定できる値
-=================================
-
-``add_attribute`` コマンドと同様です。 :ref:`annotation_specs_non_choice_attribute_types` を参照してください。
-
 
 Usage Details
 =================================
