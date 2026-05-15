@@ -252,6 +252,49 @@ class TestFormatAnnotationSpecsDiffAsText:
         assert 'label_name_ja: "車" -> "自動車"' in actual
         assert "[attributes]" in actual
         assert 'name_vi: "bị che" -> "co-moi"' in actual
+        assert "attribute_id:" not in actual
+        assert "choice_id:" not in actual
+
+    def test_detail_textで選択肢や属性も英語名を出力できる(self):
+        left_specs = _create_annotation_specs()
+        right_specs = copy.deepcopy(left_specs)
+        right_specs["labels"][0]["additional_data_definitions"] = ["attr_pose", "attr_occluded"]
+        right_specs["additionals"] = [
+            _create_attribute(
+                "attr_pose",
+                ja="姿勢",
+                en="pose",
+                vi="tu the",
+                default=False,
+                choices=[],
+            ),
+            _create_attribute(
+                "attr_occluded",
+                ja="遮蔽",
+                en="occluded",
+                vi="bị che",
+                default="choice_yes",
+                choices=[
+                    _create_choice("choice_unknown", ja="不明", en="unknown", vi="khong ro"),
+                    _create_choice("choice_yes", ja="はい", en="yes_changed", vi="co"),
+                    _create_choice("choice_no", ja="いいえ", en="no", vi="khong"),
+                ],
+            ),
+        ]
+
+        diff = create_annotation_specs_diff(left_specs, right_specs)
+        actual = format_annotation_specs_diff_as_text(
+            diff,
+            left_specs=left_specs,
+            right_specs=right_specs,
+            detail=True,
+        )
+
+        assert "attribute_name_en: occluded" in actual
+        assert "added_attributes:\n    - pose" in actual
+        assert "removed_attributes:\n    - truncated" in actual
+        assert "added_choices:\n    - unknown" in actual
+        assert "choice_name_en: yes_changed" in actual
 
 
 class TestCommandLine:

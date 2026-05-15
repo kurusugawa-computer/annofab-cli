@@ -225,7 +225,7 @@ class AnnotationSpecsDiff(BaseModel):
 
 
 JsonScalar: TypeAlias = str | int | float | bool | None
-JsonValue: TypeAlias = JsonScalar | list["JsonValue"] | dict[str, "JsonValue"]
+JsonValue: TypeAlias = JsonScalar | Sequence["JsonValue"] | dict[str, "JsonValue"]
 
 
 def _get_message_by_lang(message_dict: dict[str, Any], lang: str) -> str | None:
@@ -303,6 +303,18 @@ def _append_name_lines(lines: list[str], *, indent: str, label: str, values: Seq
         return
     lines.append(f"{indent}{label}:")
     lines.extend([f"{indent}- {value}" for value in values])
+
+
+def _get_label_name_en_list_by_ids(specs: dict[str, Any], label_ids: Sequence[str]) -> list[str]:
+    return [_get_label_name_en_by_id(specs, e) for e in label_ids]
+
+
+def _get_attribute_name_en_list_by_ids(specs: dict[str, Any], attribute_ids: Sequence[str]) -> list[str]:
+    return [_get_attribute_name_en_by_id(specs, e) for e in attribute_ids]
+
+
+def _get_choice_name_en_list_by_ids(attribute: dict[str, Any], choice_ids: Sequence[str]) -> list[str]:
+    return [_get_choice_name_en_by_id(attribute, e) for e in choice_ids]
 
 
 def _get_changed_field_names_from_label(diff: ChangedLabel) -> list[str]:
@@ -552,26 +564,36 @@ def _format_labels_diff_as_text(
     if labels_diff.label_order_changed:
         lines.append("label_order_changed: true")
         if detail:
-            left_ids = [e["label_id"] for e in left_specs.get("labels", [])]
-            right_ids = [e["label_id"] for e in right_specs.get("labels", [])]
-            lines.extend(
-                [
-                    f"left_label_ids: {', '.join(left_ids)}",
-                    f"right_label_ids: {', '.join(right_ids)}",
-                ]
+            _append_name_lines(
+                lines,
+                indent="",
+                label="left_labels",
+                values=_get_label_name_en_list_by_ids(
+                    left_specs,
+                    [e["label_id"] for e in left_specs.get("labels", [])],
+                ),
+            )
+            _append_name_lines(
+                lines,
+                indent="",
+                label="right_labels",
+                values=_get_label_name_en_list_by_ids(
+                    right_specs,
+                    [e["label_id"] for e in right_specs.get("labels", [])],
+                ),
             )
 
     _append_name_lines(
         lines,
         indent="",
         label="added_labels",
-        values=[_get_label_name_en_by_id(right_specs, e) for e in labels_diff.added_label_ids],
+        values=_get_label_name_en_list_by_ids(right_specs, labels_diff.added_label_ids),
     )
     _append_name_lines(
         lines,
         indent="",
         label="removed_labels",
-        values=[_get_label_name_en_by_id(left_specs, e) for e in labels_diff.removed_label_ids],
+        values=_get_label_name_en_list_by_ids(left_specs, labels_diff.removed_label_ids),
     )
 
     if len(labels_diff.changed_labels) == 0:
@@ -583,7 +605,14 @@ def _format_labels_diff_as_text(
     for changed_label in labels_diff.changed_labels:
         lines.append(f"  - label_name_en: {_get_label_name_en_by_id(right_specs, changed_label.label_id)}")
         if detail:
-            _append_label_detail_lines(lines, changed_label, left_label=left_label_dict[changed_label.label_id], right_label=right_label_dict[changed_label.label_id])
+            _append_label_detail_lines(
+                lines,
+                changed_label,
+                left_specs=left_specs,
+                right_specs=right_specs,
+                left_label=left_label_dict[changed_label.label_id],
+                right_label=right_label_dict[changed_label.label_id],
+            )
         else:
             changed_field_names = _get_changed_field_names_from_label(changed_label)
             if len(changed_field_names) > 0:
@@ -607,6 +636,8 @@ def _append_label_detail_lines(
     lines: list[str],
     changed_label: ChangedLabel,
     *,
+    left_specs: dict[str, Any],
+    right_specs: dict[str, Any],
     left_label: dict[str, Any],
     right_label: dict[str, Any],
 ) -> None:
@@ -642,13 +673,29 @@ def _append_label_detail_lines(
     _append_detail_line(
         lines,
         indent="    ",
-        name="attribute_ids",
+        name="attribute_names_en",
         changed=changed_label.attributes_order_changed,
-        left_value=left_label.get("additional_data_definitions", []),
-        right_value=right_label.get("additional_data_definitions", []),
+        left_value=_get_attribute_name_en_list_by_ids(
+            left_specs,
+            left_label.get("additional_data_definitions", []),
+        ),
+        right_value=_get_attribute_name_en_list_by_ids(
+            right_specs,
+            right_label.get("additional_data_definitions", []),
+        ),
     )
-    _append_id_lines(lines, indent="    ", label="added_attribute_ids", values=changed_label.added_attribute_ids)
-    _append_id_lines(lines, indent="    ", label="removed_attribute_ids", values=changed_label.removed_attribute_ids)
+    _append_name_lines(
+        lines,
+        indent="    ",
+        label="added_attributes",
+        values=_get_attribute_name_en_list_by_ids(right_specs, changed_label.added_attribute_ids),
+    )
+    _append_name_lines(
+        lines,
+        indent="    ",
+        label="removed_attributes",
+        values=_get_attribute_name_en_list_by_ids(left_specs, changed_label.removed_attribute_ids),
+    )
     _append_detail_line(
         lines,
         indent="    ",
@@ -690,13 +737,23 @@ def _format_attributes_diff_as_text(
     if attributes_diff.attribute_order_changed:
         lines.append("attribute_order_changed: true")
         if detail:
-            left_ids = [e["additional_data_definition_id"] for e in left_specs.get("additionals", [])]
-            right_ids = [e["additional_data_definition_id"] for e in right_specs.get("additionals", [])]
-            lines.extend(
-                [
-                    f"left_attribute_ids: {', '.join(left_ids)}",
-                    f"right_attribute_ids: {', '.join(right_ids)}",
-                ]
+            _append_name_lines(
+                lines,
+                indent="",
+                label="left_attributes",
+                values=_get_attribute_name_en_list_by_ids(
+                    left_specs,
+                    [e["additional_data_definition_id"] for e in left_specs.get("additionals", [])],
+                ),
+            )
+            _append_name_lines(
+                lines,
+                indent="",
+                label="right_attributes",
+                values=_get_attribute_name_en_list_by_ids(
+                    right_specs,
+                    [e["additional_data_definition_id"] for e in right_specs.get("additionals", [])],
+                ),
             )
 
     _append_name_lines(
@@ -792,10 +849,16 @@ def _append_attribute_detail_lines(
             right_attribute.get("metadata", {}),
         ),
         (
-            "choice_ids",
+            "choice_names_en",
             changed_attribute.choices_order_changed,
-            [e["choice_id"] for e in left_attribute.get("choices", [])],
-            [e["choice_id"] for e in right_attribute.get("choices", [])],
+            _get_choice_name_en_list_by_ids(
+                left_attribute,
+                [e["choice_id"] for e in left_attribute.get("choices", [])],
+            ),
+            _get_choice_name_en_list_by_ids(
+                right_attribute,
+                [e["choice_id"] for e in right_attribute.get("choices", [])],
+            ),
         ),
     ]:
         _append_detail_line(
@@ -819,8 +882,18 @@ def _append_attribute_detail_lines(
             left_value=_get_message_by_lang(left_attribute["name"], lang),
             right_value=_get_message_by_lang(right_attribute["name"], lang),
         )
-    _append_id_lines(lines, indent="    ", label="added_choice_ids", values=changed_attribute.added_choice_ids)
-    _append_id_lines(lines, indent="    ", label="removed_choice_ids", values=changed_attribute.removed_choice_ids)
+    _append_name_lines(
+        lines,
+        indent="    ",
+        label="added_choices",
+        values=_get_choice_name_en_list_by_ids(right_attribute, changed_attribute.added_choice_ids),
+    )
+    _append_name_lines(
+        lines,
+        indent="    ",
+        label="removed_choices",
+        values=_get_choice_name_en_list_by_ids(left_attribute, changed_attribute.removed_choice_ids),
+    )
     if len(changed_attribute.changed_choices) == 0:
         return
 
@@ -828,7 +901,7 @@ def _append_attribute_detail_lines(
     right_choice_dict = {e["choice_id"]: e for e in right_attribute.get("choices", [])}
     lines.append("    changed_choices:")
     for changed_choice in changed_attribute.changed_choices:
-        lines.append(f"      - choice_id: {changed_choice.choice_id}")
+        lines.append(f"      - choice_name_en: {_get_choice_name_en_by_id(right_attribute, changed_choice.choice_id)}")
         left_choice = left_choice_dict[changed_choice.choice_id]
         right_choice = right_choice_dict[changed_choice.choice_id]
         for name, lang, changed in [
