@@ -36,6 +36,19 @@ JSONで指定した属性制約を削除する
      --attribute_name_en comment
 
 
+属性名(英語)に紐づく相関制約だけを削除する
+----------------------------------------------
+
+``--restriction_type`` を指定すると、対象属性に紐づく制約のうち、指定した種類の制約だけを削除できます。
+
+.. code-block::
+
+    $ annofabcli annotation_specs delete_attribute_restriction \
+     --project_id prj1 \
+     --attribute_name_en comment \
+     --restriction_type imply
+
+
 Usage Details
 =================================
 
