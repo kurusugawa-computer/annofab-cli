@@ -9,7 +9,12 @@ from pathlib import Path
 import pytest
 
 from annofabcli.annotation_specs import add_attribute
-from annofabcli.annotation_specs.add_attribute import AddAttributeMain, create_attribute
+from annofabcli.annotation_specs.add_attribute import (
+    AddAttributeMain,
+    build_request_body_for_add_attribute,
+    create_attribute,
+    resolve_attribute_input,
+)
 
 data_dir = Path("./tests/data/annotation_specs")
 
@@ -70,6 +75,86 @@ class TestCreateAttribute:
         )
 
         assert actual["type"] == "text"
+
+
+class TestResolveAttributeInput:
+    def test_resolve_attribute_input(self, annotation_specs: dict) -> None:
+        actual = resolve_attribute_input(
+            annotation_specs,
+            attribute_type="flag",
+            attribute_name_en="weather_checked",
+            attribute_name_ja="天気確認済み",
+            attribute_id="weather_checked_attr",
+            label_ids=[],
+            label_name_ens=["car"],
+        )
+
+        assert actual.new_attribute["additional_data_definition_id"] == "weather_checked_attr"
+        assert actual.new_attribute["type"] == "flag"
+        assert [label["label_id"] for label in actual.target_labels] == ["car_label_id"]
+        assert actual.duplicated_name_attribute_ids == []
+
+    def test_resolve_attribute_input__duplicated_attribute_id(self, annotation_specs: dict) -> None:
+        with pytest.raises(ValueError):
+            resolve_attribute_input(
+                annotation_specs,
+                attribute_type="flag",
+                attribute_name_en="weather",
+                attribute_name_ja=None,
+                attribute_id="71620647-98cf-48ad-b43b-4af425a24f32",
+                label_ids=["car_label_id"],
+                label_name_ens=[],
+            )
+
+
+class TestBuildRequestBodyForAddAttribute:
+    def test_build_request_body_for_add_attribute(self, annotation_specs: dict) -> None:
+        resolved_attribute_input = resolve_attribute_input(
+            annotation_specs,
+            attribute_type="flag",
+            attribute_name_en="weather_checked",
+            attribute_name_ja="天気確認済み",
+            attribute_id="weather_checked_attr",
+            label_ids=[],
+            label_name_ens=["car"],
+        )
+
+        actual = build_request_body_for_add_attribute(
+            annotation_specs,
+            resolved_attribute_input=resolved_attribute_input,
+            attribute_name_en="weather_checked",
+            comment=None,
+        )
+
+        assert actual["additionals"][-1]["additional_data_definition_id"] == "weather_checked_attr"
+        assert actual["additionals"][-1]["type"] == "flag"
+        car_label = next(label for label in actual["labels"] if label["label_id"] == "car_label_id")
+        bike_label = next(label for label in actual["labels"] if label["label_id"] == "40f7796b-3722-4eed-9c0c-04a27f9165d2")
+        assert "weather_checked_attr" in car_label["additional_data_definitions"]
+        assert "weather_checked_attr" not in bike_label["additional_data_definitions"]
+        assert "以下の属性を追加しました。" in actual["comment"]
+        assert actual["last_updated_datetime"] == "2026-04-24T00:00:00+09:00"
+        assert all(additional["additional_data_definition_id"] != "weather_checked_attr" for additional in annotation_specs["additionals"])
+
+    def test_build_request_body_for_add_attribute__custom_comment(self, annotation_specs: dict) -> None:
+        resolved_attribute_input = resolve_attribute_input(
+            annotation_specs,
+            attribute_type="text",
+            attribute_name_en="note",
+            attribute_name_ja="メモ",
+            attribute_id="note_attr",
+            label_ids=["car_label_id"],
+            label_name_ens=[],
+        )
+
+        actual = build_request_body_for_add_attribute(
+            annotation_specs,
+            resolved_attribute_input=resolved_attribute_input,
+            attribute_name_en="note",
+            comment="custom",
+        )
+
+        assert actual["comment"] == "custom"
 
 
 class TestAddAttributeMain:
