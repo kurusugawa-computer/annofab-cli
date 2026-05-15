@@ -236,8 +236,8 @@ class TestFormatAnnotationSpecsDiffAsText:
         assert "attribute_id:" not in actual
         assert "choice_id:" not in actual
         assert "label_name_en: car" in actual
-        assert "added_attributes: pose" in actual
-        assert "removed_attributes: truncated" in actual
+        assert "added_attributes:\n    - pose" in actual
+        assert "removed_attributes:\n    - truncated" in actual
 
     def test_detail_textで変更前後の値を出力できる(self):
         left_specs = _create_annotation_specs()

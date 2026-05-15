@@ -270,7 +270,8 @@ def _append_detail_line(
 def _append_id_lines(lines: list[str], *, indent: str, label: str, values: Sequence[str]) -> None:
     if len(values) == 0:
         return
-    lines.append(f"{indent}{label}: {', '.join(values)}")
+    lines.append(f"{indent}{label}:")
+    lines.extend([f"{indent}- {value}" for value in values])
 
 
 def _get_label_name_en_by_id(specs: dict[str, Any], label_id: str) -> str:
@@ -300,7 +301,8 @@ def _get_choice_name_en_by_id(attribute: dict[str, Any], choice_id: str) -> str:
 def _append_name_lines(lines: list[str], *, indent: str, label: str, values: Sequence[str]) -> None:
     if len(values) == 0:
         return
-    lines.append(f"{indent}{label}: {', '.join(values)}")
+    lines.append(f"{indent}{label}:")
+    lines.extend([f"{indent}- {value}" for value in values])
 
 
 def _get_changed_field_names_from_label(diff: ChangedLabel) -> list[str]:
