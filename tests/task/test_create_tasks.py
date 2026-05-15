@@ -86,6 +86,34 @@ def test_get_metadata_from_json_args_with_null_value() -> None:
     assert actual == {"foo": None}
 
 
+def test_get_task_creation_info_list_from_input_data_id_as_task_id_args() -> None:
+    actual = create_tasks.get_task_creation_info_list_from_input_data_id_as_task_id_args(
+        ["input_data_001", "input_data_002"],
+        common_metadata={"priority": 1},
+        common_user_id="alice",
+    )
+
+    assert actual == [
+        create_tasks.TaskCreationInfo(
+            task_id="input_data_001",
+            input_data_id_list=["input_data_001"],
+            metadata={"priority": 1},
+            user_id="alice",
+        ),
+        create_tasks.TaskCreationInfo(
+            task_id="input_data_002",
+            input_data_id_list=["input_data_002"],
+            metadata={"priority": 1},
+            user_id="alice",
+        ),
+    ]
+
+
+def test_get_task_creation_info_list_from_input_data_id_as_task_id_args_with_duplicate_input_data_id() -> None:
+    with pytest.raises(ValueError):
+        create_tasks.get_task_creation_info_list_from_input_data_id_as_task_id_args(["input_data_001", "input_data_001"])
+
+
 def test_get_task_creation_info_list_from_json_args() -> None:
     actual = create_tasks.get_task_creation_info_list_from_json_args(
         """
