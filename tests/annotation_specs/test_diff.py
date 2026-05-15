@@ -197,6 +197,48 @@ class TestCreateAnnotationSpecsDiff:
 
 
 class TestFormatAnnotationSpecsDiffAsText:
+    def test_textでidではなく英語名を出力できる(self):
+        left_specs = _create_annotation_specs()
+        right_specs = copy.deepcopy(left_specs)
+        right_specs["labels"][0]["additional_data_definitions"] = ["attr_pose", "attr_occluded"]
+        right_specs["additionals"] = [
+            _create_attribute(
+                "attr_pose",
+                ja="姿勢",
+                en="pose",
+                vi="tu the",
+                default=False,
+                choices=[],
+            ),
+            _create_attribute(
+                "attr_occluded",
+                ja="隠れ",
+                en="occluded",
+                vi="bị che",
+                default="choice_yes",
+                choices=[
+                    _create_choice("choice_unknown", ja="不明", en="unknown", vi="khong ro"),
+                    _create_choice("choice_yes", ja="はい", en="yes", vi="co"),
+                    _create_choice("choice_no", ja="いいえ", en="no", vi="khong"),
+                ],
+            ),
+        ]
+
+        diff = create_annotation_specs_diff(left_specs, right_specs)
+        actual = format_annotation_specs_diff_as_text(
+            diff,
+            left_specs=left_specs,
+            right_specs=right_specs,
+            detail=False,
+        )
+
+        assert "label_id:" not in actual
+        assert "attribute_id:" not in actual
+        assert "choice_id:" not in actual
+        assert "label_name_en: car" in actual
+        assert "added_attributes: pose" in actual
+        assert "removed_attributes: truncated" in actual
+
     def test_detail_textで変更前後の値を出力できる(self):
         left_specs = _create_annotation_specs()
         right_specs = copy.deepcopy(left_specs)

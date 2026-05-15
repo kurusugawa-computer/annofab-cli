@@ -273,6 +273,36 @@ def _append_id_lines(lines: list[str], *, indent: str, label: str, values: Seque
     lines.append(f"{indent}{label}: {', '.join(values)}")
 
 
+def _get_label_name_en_by_id(specs: dict[str, Any], label_id: str) -> str:
+    label = next((e for e in specs.get("labels", []) if e["label_id"] == label_id), None)
+    if label is None:
+        return label_id
+    return _get_message_by_lang(label["label_name"], "en-US") or label_id
+
+
+def _get_attribute_name_en_by_id(specs: dict[str, Any], attribute_id: str) -> str:
+    attribute = next(
+        (e for e in specs.get("additionals", []) if e["additional_data_definition_id"] == attribute_id),
+        None,
+    )
+    if attribute is None:
+        return attribute_id
+    return _get_message_by_lang(attribute["name"], "en-US") or attribute_id
+
+
+def _get_choice_name_en_by_id(attribute: dict[str, Any], choice_id: str) -> str:
+    choice = next((e for e in attribute.get("choices", []) if e["choice_id"] == choice_id), None)
+    if choice is None:
+        return choice_id
+    return _get_message_by_lang(choice["name"], "en-US") or choice_id
+
+
+def _append_name_lines(lines: list[str], *, indent: str, label: str, values: Sequence[str]) -> None:
+    if len(values) == 0:
+        return
+    lines.append(f"{indent}{label}: {', '.join(values)}")
+
+
 def _get_changed_field_names_from_label(diff: ChangedLabel) -> list[str]:
     field_names = []
     if diff.color_changed:
@@ -529,8 +559,18 @@ def _format_labels_diff_as_text(
                 ]
             )
 
-    _append_id_lines(lines, indent="", label="added_label_ids", values=labels_diff.added_label_ids)
-    _append_id_lines(lines, indent="", label="removed_label_ids", values=labels_diff.removed_label_ids)
+    _append_name_lines(
+        lines,
+        indent="",
+        label="added_labels",
+        values=[_get_label_name_en_by_id(right_specs, e) for e in labels_diff.added_label_ids],
+    )
+    _append_name_lines(
+        lines,
+        indent="",
+        label="removed_labels",
+        values=[_get_label_name_en_by_id(left_specs, e) for e in labels_diff.removed_label_ids],
+    )
 
     if len(labels_diff.changed_labels) == 0:
         return lines
@@ -539,15 +579,25 @@ def _format_labels_diff_as_text(
     right_label_dict = {e["label_id"]: e for e in right_specs.get("labels", [])}
     lines.append("changed_labels:")
     for changed_label in labels_diff.changed_labels:
-        lines.append(f"  - label_id: {changed_label.label_id}")
+        lines.append(f"  - label_name_en: {_get_label_name_en_by_id(right_specs, changed_label.label_id)}")
         if detail:
             _append_label_detail_lines(lines, changed_label, left_label=left_label_dict[changed_label.label_id], right_label=right_label_dict[changed_label.label_id])
         else:
             changed_field_names = _get_changed_field_names_from_label(changed_label)
             if len(changed_field_names) > 0:
                 lines.append(f"    changed: {', '.join(changed_field_names)}")
-            _append_id_lines(lines, indent="    ", label="added_attribute_ids", values=changed_label.added_attribute_ids)
-            _append_id_lines(lines, indent="    ", label="removed_attribute_ids", values=changed_label.removed_attribute_ids)
+            _append_name_lines(
+                lines,
+                indent="    ",
+                label="added_attributes",
+                values=[_get_attribute_name_en_by_id(right_specs, e) for e in changed_label.added_attribute_ids],
+            )
+            _append_name_lines(
+                lines,
+                indent="    ",
+                label="removed_attributes",
+                values=[_get_attribute_name_en_by_id(left_specs, e) for e in changed_label.removed_attribute_ids],
+            )
     return lines
 
 
@@ -647,8 +697,18 @@ def _format_attributes_diff_as_text(
                 ]
             )
 
-    _append_id_lines(lines, indent="", label="added_attribute_ids", values=attributes_diff.added_attribute_ids)
-    _append_id_lines(lines, indent="", label="removed_attribute_ids", values=attributes_diff.removed_attribute_ids)
+    _append_name_lines(
+        lines,
+        indent="",
+        label="added_attributes",
+        values=[_get_attribute_name_en_by_id(right_specs, e) for e in attributes_diff.added_attribute_ids],
+    )
+    _append_name_lines(
+        lines,
+        indent="",
+        label="removed_attributes",
+        values=[_get_attribute_name_en_by_id(left_specs, e) for e in attributes_diff.removed_attribute_ids],
+    )
 
     if len(attributes_diff.changed_attributes) == 0:
         return lines
@@ -657,7 +717,7 @@ def _format_attributes_diff_as_text(
     right_attribute_dict = {e["additional_data_definition_id"]: e for e in right_specs.get("additionals", [])}
     lines.append("changed_attributes:")
     for changed_attribute in attributes_diff.changed_attributes:
-        lines.append(f"  - attribute_id: {changed_attribute.attribute_id}")
+        lines.append(f"  - attribute_name_en: {_get_attribute_name_en_by_id(right_specs, changed_attribute.attribute_id)}")
         if detail:
             _append_attribute_detail_lines(
                 lines,
@@ -669,12 +729,22 @@ def _format_attributes_diff_as_text(
             changed_field_names = _get_changed_field_names_from_attribute(changed_attribute)
             if len(changed_field_names) > 0:
                 lines.append(f"    changed: {', '.join(changed_field_names)}")
-            _append_id_lines(lines, indent="    ", label="added_choice_ids", values=changed_attribute.added_choice_ids)
-            _append_id_lines(lines, indent="    ", label="removed_choice_ids", values=changed_attribute.removed_choice_ids)
+            _append_name_lines(
+                lines,
+                indent="    ",
+                label="added_choices",
+                values=[_get_choice_name_en_by_id(right_attribute_dict[changed_attribute.attribute_id], e) for e in changed_attribute.added_choice_ids],
+            )
+            _append_name_lines(
+                lines,
+                indent="    ",
+                label="removed_choices",
+                values=[_get_choice_name_en_by_id(left_attribute_dict[changed_attribute.attribute_id], e) for e in changed_attribute.removed_choice_ids],
+            )
             if len(changed_attribute.changed_choices) > 0:
                 lines.append("    changed_choices:")
                 for changed_choice in changed_attribute.changed_choices:
-                    lines.append(f"      - choice_id: {changed_choice.choice_id}")
+                    lines.append(f"      - choice_name_en: {_get_choice_name_en_by_id(right_attribute_dict[changed_attribute.attribute_id], changed_choice.choice_id)}")
                     changed_choice_field_names = _get_changed_field_names_from_choice(changed_choice)
                     if len(changed_choice_field_names) > 0:
                         lines.append(f"        changed: {', '.join(changed_choice_field_names)}")
