@@ -6,9 +6,9 @@ from pathlib import Path
 from typing import Any, cast
 
 import pytest
+from annofabapi.pydantic_models.additional_data_definition_type import AdditionalDataDefinitionType
 from pydantic import ValidationError
 
-from annofabcli.annotation_specs.add_attribute import AttributeType as NonChoiceAttributeType
 from annofabcli.annotation_specs.add_attributes import (
     AttributeInput,
     build_request_body_for_add_attributes,
@@ -37,14 +37,14 @@ class TestReadAttributesJson:
 
         assert actual == [
             AttributeInput(
-                attribute_type=NonChoiceAttributeType.FLAG,
+                attribute_type=AdditionalDataDefinitionType.FLAG,
                 attribute_name_en="weather_checked",
                 attribute_name_ja="天気確認済み",
                 attribute_id="weather_checked_attr",
                 label_name_ens=["car", "bus"],
             ),
             AttributeInput(
-                attribute_type="select",
+                attribute_type=AdditionalDataDefinitionType.SELECT,
                 attribute_name_en="weather",
                 label_ids=["car_label_id"],
                 choices=[
@@ -100,14 +100,14 @@ class TestResolveAttributeInputs:
             annotation_specs,
             attribute_inputs=[
                 AttributeInput(
-                    attribute_type=NonChoiceAttributeType.FLAG,
+                    attribute_type=AdditionalDataDefinitionType.FLAG,
                     attribute_name_en="weather_checked",
                     attribute_name_ja="天気確認済み",
                     attribute_id="weather_checked_attr",
                     label_name_ens=["car", "bus"],
                 ),
                 AttributeInput(
-                    attribute_type="select",
+                    attribute_type=AdditionalDataDefinitionType.SELECT,
                     attribute_name_en="weather",
                     attribute_id="weather_attr",
                     choices=[
@@ -134,7 +134,7 @@ class TestResolveAttributeInputs:
                 annotation_specs,
                 attribute_inputs=[
                     AttributeInput(
-                        attribute_type=NonChoiceAttributeType.FLAG,
+                        attribute_type=AdditionalDataDefinitionType.FLAG,
                         attribute_name_en="weather_checked",
                         attribute_id="71620647-98cf-48ad-b43b-4af425a24f32",
                         label_name_ens=["car"],
@@ -153,7 +153,7 @@ class TestResolveAttributeInputs:
             annotation_specs,
             attribute_inputs=[
                 AttributeInput(
-                    attribute_type="choice",
+                    attribute_type=AdditionalDataDefinitionType.CHOICE,
                     attribute_name_en="type",
                     attribute_id="weather_attr",
                     choices=[
@@ -175,14 +175,14 @@ class TestBuildRequestBodyForAddAttributes:
             annotation_specs,
             attribute_inputs=[
                 AttributeInput(
-                    attribute_type=NonChoiceAttributeType.FLAG,
+                    attribute_type=AdditionalDataDefinitionType.FLAG,
                     attribute_name_en="weather_checked",
                     attribute_name_ja="天気確認済み",
                     attribute_id="weather_checked_attr",
                     label_name_ens=["car", "bus"],
                 ),
                 AttributeInput(
-                    attribute_type="select",
+                    attribute_type=AdditionalDataDefinitionType.SELECT,
                     attribute_name_en="weather",
                     attribute_id="weather_attr",
                     choices=[
@@ -223,7 +223,7 @@ class TestBuildRequestBodyForAddAttributes:
             annotation_specs,
             attribute_inputs=[
                 AttributeInput(
-                    attribute_type=NonChoiceAttributeType.FLAG,
+                    attribute_type=AdditionalDataDefinitionType.FLAG,
                     attribute_name_en="weather_checked",
                     attribute_id="weather_checked_attr",
                     label_name_ens=["car"],

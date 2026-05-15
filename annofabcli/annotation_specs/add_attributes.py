@@ -5,14 +5,14 @@ import copy
 import json
 import logging
 from collections.abc import Mapping, Sequence
-from typing import Any, Literal, cast
+from typing import Any
 
 import annofabapi
+from annofabapi.pydantic_models.additional_data_definition_type import AdditionalDataDefinitionType
 from annofabapi.util.annotation_specs import AnnotationSpecsAccessor
 from pydantic import BaseModel, ConfigDict, field_validator, model_validator
 
 import annofabcli.common.cli
-from annofabcli.annotation_specs.add_attribute import AttributeType as NonChoiceAttributeType
 from annofabcli.annotation_specs.add_attribute import create_attribute as create_non_choice_attribute
 from annofabcli.annotation_specs.add_choice_attribute import (
     ChoiceAttributeInput,
@@ -31,24 +31,10 @@ from annofabcli.common.utils import duplicated_set
 logger = logging.getLogger(__name__)
 
 
-ChoiceAttributeType = Literal["choice", "select"]
-SupportedAttributeType = NonChoiceAttributeType | ChoiceAttributeType
-CHOICE_ATTRIBUTE_TYPES = ("choice", "select")
-
-
-def get_attribute_type_value(attribute_type: SupportedAttributeType) -> str:
-    """
-    属性種類を文字列へ正規化する。
-
-    Args:
-        attribute_type: 入力された属性種類
-
-    Returns:
-        Annofab API向けの属性種類文字列
-    """
-    if isinstance(attribute_type, NonChoiceAttributeType):
-        return attribute_type.value
-    return attribute_type
+CHOICE_ATTRIBUTE_TYPES = {
+    AdditionalDataDefinitionType.CHOICE,
+    AdditionalDataDefinitionType.SELECT,
+}
 
 
 class AttributeInput(BaseModel):
@@ -58,7 +44,7 @@ class AttributeInput(BaseModel):
 
     model_config = ConfigDict(frozen=True, extra="forbid")
 
-    attribute_type: SupportedAttributeType
+    attribute_type: AdditionalDataDefinitionType
     """属性の種類。"""
 
     attribute_name_en: str
@@ -151,7 +137,7 @@ class AttributeInput(BaseModel):
             raise ValueError("`label_name_ens` または `label_ids` を指定してください。")
         if self.label_name_ens is not None and self.label_ids is not None:
             raise ValueError("`label_name_ens` と `label_ids` を同時に指定できません。")
-        if get_attribute_type_value(self.attribute_type) in CHOICE_ATTRIBUTE_TYPES:
+        if self.attribute_type in CHOICE_ATTRIBUTE_TYPES:
             if self.choices is None:
                 raise ValueError("属性種類が `choice` または `select` の場合は `choices` を指定してください。")
             build_choices(self.choices)
@@ -187,10 +173,9 @@ def create_attribute_from_input(attribute_input: AttributeInput) -> dict[str, An
     Returns:
         Annofab API向けの属性オブジェクト
     """
-    attribute_type = get_attribute_type_value(attribute_input.attribute_type)
-    if attribute_type in CHOICE_ATTRIBUTE_TYPES:
+    if attribute_input.attribute_type in CHOICE_ATTRIBUTE_TYPES:
         return create_choice_attribute(
-            attribute_type=cast(ChoiceAttributeType, attribute_type),
+            attribute_type=attribute_input.attribute_type.value,
             attribute_name_en=attribute_input.attribute_name_en,
             attribute_name_ja=attribute_input.attribute_name_ja,
             attribute_id=attribute_input.attribute_id,
@@ -198,7 +183,7 @@ def create_attribute_from_input(attribute_input: AttributeInput) -> dict[str, An
         )
 
     return create_non_choice_attribute(
-        attribute_type=cast(NonChoiceAttributeType, attribute_input.attribute_type),
+        attribute_type=attribute_input.attribute_type.value,
         attribute_name_en=attribute_input.attribute_name_en,
         attribute_name_ja=attribute_input.attribute_name_ja,
         attribute_id=attribute_input.attribute_id,
