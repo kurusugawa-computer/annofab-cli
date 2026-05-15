@@ -23,6 +23,7 @@ from annofabcli.common.cli import (
     CommandLineWithConfirm,
     build_annofabapi_resource_and_login,
     get_json_from_args,
+    get_list_from_args,
 )
 from annofabcli.common.facade import AnnofabApiFacade
 
@@ -92,6 +93,44 @@ def get_metadata_from_json_args(metadata_value: str | None) -> Metadata:
         return {}
 
     return get_json_from_args(metadata_value)
+
+
+def get_task_creation_info_list_from_input_data_id_as_task_id_args(
+    input_data_id_value: list[str],
+    *,
+    common_metadata: Metadata | None = None,
+    common_user_id: str | None = None,
+) -> list[TaskCreationInfo]:
+    """input_data_idのlistから、task_idがinput_data_idと同じタスク作成情報のlistを取得します。
+
+    Args:
+        input_data_id_value: コマンドライン引数で指定されたinput_data_idのlist
+        common_metadata: 全タスク共通のメタデータ
+        common_user_id: 全タスク共通の担当者のuser_id
+
+    Returns:
+        タスク作成情報のlist
+    """
+
+    input_data_id_list = get_list_from_args(input_data_id_value)
+    common_metadata = common_metadata or {}
+    result: list[TaskCreationInfo] = []
+    task_id_set: set[str] = set()
+    for index, input_data_id in enumerate(input_data_id_list, start=1):
+        if input_data_id in task_id_set:
+            raise ValueError(f"{index}番目のinput_data_idが重複しています。 :: input_data_id='{input_data_id}'")
+
+        task_id_set.add(input_data_id)
+        result.append(
+            TaskCreationInfo(
+                task_id=input_data_id,
+                input_data_id_list=[input_data_id],
+                metadata=common_metadata,
+                user_id=common_user_id,
+            )
+        )
+
+    return result
 
 
 def get_task_creation_info_list_from_json_args(
@@ -315,6 +354,16 @@ class CreateTask(CommandLine):
                 sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
             main_obj.create_task_list(task_creation_info_list_from_csv)
 
+        elif args.input_data_id_as_task_id is not None:
+            try:
+                task_creation_info_list_from_input_data_id = get_task_creation_info_list_from_input_data_id_as_task_id_args(
+                    args.input_data_id_as_task_id, common_metadata=common_metadata, common_user_id=args.user_id
+                )
+            except ValueError as e:
+                print(f"{self.COMMON_MESSAGE} argument --input_data_id_as_task_id: {e}", file=sys.stderr)  # noqa: T201
+                sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
+            main_obj.create_task_list(task_creation_info_list_from_input_data_id)
+
         elif args.json is not None:
             task_creation_info_list_from_json = get_task_creation_info_list_from_json_args(args.json, common_metadata=common_metadata, common_user_id=args.user_id)
             main_obj.create_task_list(task_creation_info_list_from_json)
@@ -350,6 +399,15 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         help=(
             "タスクに割り当てる入力データが記載されたCSVファイルのパスを指定してください。CSVのフォーマットは、以下の通りです。\n\n * ヘッダ行あり, カンマ区切り\n * 必須列: task_id, input_data_id\n"
         ),
+    )
+
+    file_group.add_argument(
+        "--input_data_id_as_task_id",
+        type=str,
+        nargs="+",
+        help="タスクを作成する対象のinput_data_idを指定してください。"
+        " 指定したinput_data_idと同じtask_idのタスクを作成し、各タスクには1件の入力データだけを紐づけます。"
+        " ``file://`` を先頭に付けると、input_data_idの一覧が記載されたファイルを指定できます。",
     )
 
     json_sample = '[{"task_id":"task1","input_data_id_list":["input1","input2"]}]'

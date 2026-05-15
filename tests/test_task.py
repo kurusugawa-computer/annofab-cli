@@ -444,4 +444,37 @@ class TestCommandLine:
         task = service.wrapper.get_task_or_none(project_id, task_id)
         assert task is None
 
+    def test_create_task_from_input_data_id_as_task_id(self):
+        """
+        `task create --input_data_id_as_task_id`コマンドでタスクを作成するテスト
+        """
+
+        new_input_data_id = f"test-{datetime.datetime.now().timestamp()!s}"
+        service.wrapper.put_input_data_from_file(project_id, new_input_data_id, file_path="tests/data/small-lenna.png")
+
+        main(
+            [
+                self.command_name,
+                "create",
+                "--project_id",
+                project_id,
+                "--input_data_id_as_task_id",
+                new_input_data_id,
+                "--metadata",
+                json.dumps({"foo": "bar"}),
+                "--yes",
+            ]
+        )
+
+        task = service.wrapper.get_task_or_none(project_id, new_input_data_id)
+        assert task is not None
+        assert task["task_id"] == new_input_data_id
+        assert task["input_data_id_list"] == [new_input_data_id]
+        assert task["metadata"] == {"foo": "bar"}
+
+        main([self.command_name, "delete", "--project_id", project_id, "--task_id", new_input_data_id, "--delete_annotated_task", "--yes"])
+        task = service.wrapper.get_task_or_none(project_id, new_input_data_id)
+        assert task is None
+        service.api.delete_input_data(project_id, new_input_data_id)
+
     # "task put"コマンドは非推奨なので、テストは作成しないことにする
