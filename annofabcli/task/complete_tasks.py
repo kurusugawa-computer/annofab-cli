@@ -35,9 +35,10 @@ Dict[task_id, Dict[input_data_id, List[Inspection]]] の検査コメント情報
 
 
 class CompleteTasksMain(CommandLineWithConfirm):
-    def __init__(self, service: annofabapi.Resource, all_yes: bool = False) -> None:  # noqa: FBT001, FBT002
+    def __init__(self, service: annofabapi.Resource, all_yes: bool = False, include_on_hold_task: bool = False) -> None:  # noqa: FBT001, FBT002
         self.service = service
         self.facade = AnnofabApiFacade(service)
+        self.include_on_hold_task = include_on_hold_task
         CommandLineWithConfirm.__init__(self, all_yes)
 
     def reply_inspection_comment(
@@ -286,14 +287,17 @@ class CompleteTasksMain(CommandLineWithConfirm):
         logger.info(f"task_id='{task.task_id}' :: 検査/受入フェーズを次のフェーズに進めました。")
         return True
 
-    @staticmethod
-    def _validate_task(task: Task, target_phase: TaskPhase, target_phase_stage: int, task_query: TaskQuery | None) -> bool:
+    def _validate_task(self, task: Task, target_phase: TaskPhase, target_phase_stage: int, task_query: TaskQuery | None) -> bool:
         if not (task.phase == target_phase and task.phase_stage == target_phase_stage):
             logger.warning(f"task_id='{task.task_id}'のタスクは操作対象のフェーズ、フェーズステージではないため、スキップします。")
             return False
 
         if task.status in {TaskStatus.COMPLETE, TaskStatus.WORKING}:
             logger.warning(f"task_id='{task.task_id}'のタスクは作業中または完了状態であるため、スキップします。")
+            return False
+
+        if task.status == TaskStatus.ON_HOLD and not self.include_on_hold_task:
+            logger.warning(f"task_id='{task.task_id}'のタスクは保留中状態であるため、スキップします。保留中状態のタスクも次のフェーズに進める場合は、'--include_on_hold_task'を指定してください。")
             return False
 
         if not match_task_with_query(task, task_query):
@@ -468,7 +472,7 @@ class CompleteTasks(CommandLine):
         dict_task_query = annofabcli.common.cli.get_json_from_args(args.task_query)
         task_query: TaskQuery | None = TaskQuery.from_dict(dict_task_query) if dict_task_query is not None else None
 
-        main_obj = CompleteTasksMain(self.service, all_yes=self.all_yes)
+        main_obj = CompleteTasksMain(self.service, all_yes=self.all_yes, include_on_hold_task=args.include_on_hold_task)
         main_obj.complete_task_list(
             project_id,
             task_id_list=task_id_list,
@@ -528,6 +532,12 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     argument_parser.add_task_query()
 
     parser.add_argument(
+        "--include_on_hold_task",
+        action="store_true",
+        help="指定した場合、保留中状態のタスクも次のフェーズに進めます。指定しない場合、保留中状態のタスクはスキップします。",
+    )
+
+    parser.add_argument(
         "--parallelism",
         type=int,
         choices=PARALLELISM_CHOICES,
@@ -553,6 +563,7 @@ def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse
         "検査/受入フェーズを完了する場合は、未処置の検査コメントを対応完了/対応不要状態に変更できます"
         "（未処置の検査コメントが残っている状態では、タスクを合格にできないため）。"
         "作業中また完了状態のタスクは、次のフェーズに進めません。"
+        "保留中状態のタスクは、デフォルトでは次のフェーズに進めません。"
     )
     epilog = "チェッカーまたはオーナロールを持つユーザで実行してください。"
 
