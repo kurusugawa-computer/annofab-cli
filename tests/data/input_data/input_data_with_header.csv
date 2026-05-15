@@ -1,0 +1,4 @@
+input_data_name,input_data_path,input_data_id
+data1,s3://example.com/data1,id1
+data2,s3://example.com/data2,id2
+data3,s3://example.com/data3,

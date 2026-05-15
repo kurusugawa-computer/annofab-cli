@@ -6,6 +6,10 @@ Description
 =================================
 入力データを作成します。
 
+.. warning::
+
+    ``input_data put`` は非推奨です。新規に利用する場合は ``input_data create`` を使用してください。
+
 
 Examples
 =================================
@@ -118,5 +122,4 @@ Usage Details
    :prog: annofabcli input_data put
    :nosubcommands:
    :nodefaultconst:
-
 
