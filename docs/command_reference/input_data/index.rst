@@ -17,6 +17,7 @@ Available Commands
 
    copy
    create
+   create_from_zip
    delete
    delete_metadata_key
    download
@@ -24,7 +25,6 @@ Available Commands
    list_all
    list_all_merged_task
    put
-   put_with_zip
    update
    update_metadata
 

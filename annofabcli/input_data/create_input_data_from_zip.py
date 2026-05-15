@@ -22,14 +22,14 @@ logger = logging.getLogger(__name__)
 DEFAULT_WAIT_OPTIONS = WaitOptions(interval=60, max_tries=360)
 
 
-class PutInputData(CommandLine):
+class CreateInputDataFromZip(CommandLine):
     """
     入力データをZIPで登録する。
     """
 
-    COMMON_MESSAGE = "annofabcli input_data put_with_zip: error:"
+    COMMON_MESSAGE = "annofabcli input_data create_from_zip: error:"
 
-    def put_input_data_from_zip_file(
+    def create_input_data_from_zip_file(
         self,
         project_id: str,
         zip_file: Path,
@@ -100,7 +100,7 @@ class PutInputData(CommandLine):
         super().validate_project(project_id, [ProjectMemberRole.OWNER])
         if args.zip is not None:
             wait_options = DEFAULT_WAIT_OPTIONS
-            self.put_input_data_from_zip_file(
+            self.create_input_data_from_zip_file(
                 project_id,
                 zip_file=args.zip,
                 input_data_name_prefix=args.input_data_name_prefix,
@@ -115,7 +115,7 @@ class PutInputData(CommandLine):
 def main(args: argparse.Namespace) -> None:
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
-    PutInputData(service, facade, args).main()
+    CreateInputDataFromZip(service, facade, args).main()
 
 
 def parse_args(parser: argparse.ArgumentParser) -> None:
@@ -137,7 +137,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
 
 
 def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
-    subcommand_name = "put_with_zip"
+    subcommand_name = "create_from_zip"
     subcommand_help = "zipファイルを入力データとして登録します。"
     description = "zipファイルを入力データとして登録します。"
     epilog = "オーナロールを持つユーザで実行してください。"
