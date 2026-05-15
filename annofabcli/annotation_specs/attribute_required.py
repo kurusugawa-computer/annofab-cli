@@ -106,6 +106,141 @@ def create_confirm_message_for_attribute_required(action: str, target_attributes
     return "\n".join(lines)
 
 
+def resolve_target_attributes_to_set_required(
+    annotation_specs: dict[str, Any],
+    *,
+    attribute_ids: Collection[str] | None,
+    attribute_name_ens: Collection[str] | None,
+) -> list[TargetAttribute]:
+    """
+    required 制約を追加する対象属性を解決する。
+
+    Args:
+        annotation_specs: 既存のアノテーション仕様
+        attribute_ids: 対象属性ID一覧
+        attribute_name_ens: 対象属性名(英語)一覧
+
+    Returns:
+        required 制約を追加する対象属性一覧
+    """
+    annotation_specs_accessor = AnnotationSpecsAccessor(annotation_specs)
+    target_attributes = [
+        TargetAttribute(
+            attribute_id=attribute["additional_data_definition_id"],
+            attribute_name_en=get_attribute_name_en(attribute),
+        )
+        for attribute in get_target_attributes(
+            annotation_specs_accessor,
+            attribute_ids=attribute_ids,
+            attribute_name_ens=attribute_name_ens,
+        )
+    ]
+
+    existing_required_attribute_ids = {restriction["additional_data_definition_id"] for restriction in annotation_specs["restrictions"] if is_required_restriction(restriction)}
+    target_attributes_to_add = []
+    for target_attribute in target_attributes:
+        if target_attribute.attribute_id in existing_required_attribute_ids:
+            logger.info(f"属性名(英語)='{target_attribute.attribute_name_en}', 属性ID='{target_attribute.attribute_id}' は既に必須です。")
+            continue
+        target_attributes_to_add.append(target_attribute)
+    return target_attributes_to_add
+
+
+def build_request_body_for_set_attribute_required(
+    annotation_specs: dict[str, Any],
+    *,
+    target_attributes_to_add: Collection[TargetAttribute],
+    comment: str | None,
+) -> dict[str, Any]:
+    """
+    required 制約追加用の request body を生成する。
+
+    Args:
+        annotation_specs: 既存のアノテーション仕様
+        target_attributes_to_add: required 制約を追加する対象属性一覧
+        comment: 変更コメント
+
+    Returns:
+        Annofab API に渡す request body
+    """
+    request_body = copy.deepcopy(annotation_specs)
+    request_body["restrictions"].extend(create_required_restriction(attribute.attribute_id) for attribute in target_attributes_to_add)
+    if comment is None:
+        comment = create_comment_for_set_attribute_required([attribute.attribute_name_en for attribute in target_attributes_to_add])
+    request_body["comment"] = comment
+    request_body["last_updated_datetime"] = annotation_specs["updated_datetime"]
+    return request_body
+
+
+def resolve_target_attributes_to_unset_required(
+    annotation_specs: dict[str, Any],
+    *,
+    attribute_ids: Collection[str] | None,
+    attribute_name_ens: Collection[str] | None,
+) -> list[TargetAttribute]:
+    """
+    required 制約を解除する対象属性を解決する。
+
+    Args:
+        annotation_specs: 既存のアノテーション仕様
+        attribute_ids: 対象属性ID一覧
+        attribute_name_ens: 対象属性名(英語)一覧
+
+    Returns:
+        required 制約を解除する対象属性一覧
+    """
+    annotation_specs_accessor = AnnotationSpecsAccessor(annotation_specs)
+    target_attributes = [
+        TargetAttribute(
+            attribute_id=attribute["additional_data_definition_id"],
+            attribute_name_en=get_attribute_name_en(attribute),
+        )
+        for attribute in get_target_attributes(
+            annotation_specs_accessor,
+            attribute_ids=attribute_ids,
+            attribute_name_ens=attribute_name_ens,
+        )
+    ]
+
+    existing_required_attribute_ids = {restriction["additional_data_definition_id"] for restriction in annotation_specs["restrictions"] if is_required_restriction(restriction)}
+    target_attributes_to_remove = []
+    for target_attribute in target_attributes:
+        if target_attribute.attribute_id not in existing_required_attribute_ids:
+            logger.info(f"属性名(英語)='{target_attribute.attribute_name_en}', 属性ID='{target_attribute.attribute_id}' は必須ではありません。")
+            continue
+        target_attributes_to_remove.append(target_attribute)
+    return target_attributes_to_remove
+
+
+def build_request_body_for_unset_attribute_required(
+    annotation_specs: dict[str, Any],
+    *,
+    target_attributes_to_remove: Collection[TargetAttribute],
+    comment: str | None,
+) -> dict[str, Any]:
+    """
+    required 制約解除用の request body を生成する。
+
+    Args:
+        annotation_specs: 既存のアノテーション仕様
+        target_attributes_to_remove: required 制約を解除する対象属性一覧
+        comment: 変更コメント
+
+    Returns:
+        Annofab API に渡す request body
+    """
+    request_body = copy.deepcopy(annotation_specs)
+    target_attribute_id_set = {attribute.attribute_id for attribute in target_attributes_to_remove}
+    request_body["restrictions"] = [
+        restriction for restriction in request_body["restrictions"] if not (restriction["additional_data_definition_id"] in target_attribute_id_set and is_required_restriction(restriction))
+    ]
+    if comment is None:
+        comment = create_comment_for_unset_attribute_required([attribute.attribute_name_en for attribute in target_attributes_to_remove])
+    request_body["comment"] = comment
+    request_body["last_updated_datetime"] = annotation_specs["updated_datetime"]
+    return request_body
+
+
 class AttributeRequiredMain(CommandLineWithConfirm):
     """
     属性の required 制約を追加・削除する本体処理。
@@ -141,26 +276,11 @@ class AttributeRequiredMain(CommandLineWithConfirm):
             更新を実行した場合はTrue、更新が不要または確認で中断した場合はFalse
         """
         old_annotation_specs, _ = self.service.api.get_annotation_specs(self.project_id, query_params={"v": "3"})
-        annotation_specs_accessor = AnnotationSpecsAccessor(old_annotation_specs)
-        target_attributes = [
-            TargetAttribute(
-                attribute_id=attribute["additional_data_definition_id"],
-                attribute_name_en=get_attribute_name_en(attribute),
-            )
-            for attribute in get_target_attributes(
-                annotation_specs_accessor,
-                attribute_ids=attribute_ids,
-                attribute_name_ens=attribute_name_ens,
-            )
-        ]
-
-        existing_required_attribute_ids = {restriction["additional_data_definition_id"] for restriction in old_annotation_specs["restrictions"] if is_required_restriction(restriction)}
-        target_attributes_to_add = []
-        for target_attribute in target_attributes:
-            if target_attribute.attribute_id in existing_required_attribute_ids:
-                logger.info(f"属性名(英語)='{target_attribute.attribute_name_en}', 属性ID='{target_attribute.attribute_id}' は既に必須です。")
-                continue
-            target_attributes_to_add.append(target_attribute)
+        target_attributes_to_add = resolve_target_attributes_to_set_required(
+            old_annotation_specs,
+            attribute_ids=attribute_ids,
+            attribute_name_ens=attribute_name_ens,
+        )
 
         if len(target_attributes_to_add) == 0:
             logger.info("必須にする属性はないため、アノテーション仕様を変更しません。")
@@ -170,12 +290,11 @@ class AttributeRequiredMain(CommandLineWithConfirm):
         if not self.confirm_processing(confirm_message):
             return False
 
-        request_body = copy.deepcopy(old_annotation_specs)
-        request_body["restrictions"].extend(create_required_restriction(attribute.attribute_id) for attribute in target_attributes_to_add)
-        if comment is None:
-            comment = create_comment_for_set_attribute_required([attribute.attribute_name_en for attribute in target_attributes_to_add])
-        request_body["comment"] = comment
-        request_body["last_updated_datetime"] = old_annotation_specs["updated_datetime"]
+        request_body = build_request_body_for_set_attribute_required(
+            old_annotation_specs,
+            target_attributes_to_add=target_attributes_to_add,
+            comment=comment,
+        )
         self.service.api.put_annotation_specs(self.project_id, query_params={"v": "3"}, request_body=request_body)
         logger.info(f"{len(target_attributes_to_add)} 件の属性に必須制約を設定しました。")
         return True
@@ -199,26 +318,11 @@ class AttributeRequiredMain(CommandLineWithConfirm):
             更新を実行した場合はTrue、更新が不要または確認で中断した場合はFalse
         """
         old_annotation_specs, _ = self.service.api.get_annotation_specs(self.project_id, query_params={"v": "3"})
-        annotation_specs_accessor = AnnotationSpecsAccessor(old_annotation_specs)
-        target_attributes = [
-            TargetAttribute(
-                attribute_id=attribute["additional_data_definition_id"],
-                attribute_name_en=get_attribute_name_en(attribute),
-            )
-            for attribute in get_target_attributes(
-                annotation_specs_accessor,
-                attribute_ids=attribute_ids,
-                attribute_name_ens=attribute_name_ens,
-            )
-        ]
-
-        existing_required_attribute_ids = {restriction["additional_data_definition_id"] for restriction in old_annotation_specs["restrictions"] if is_required_restriction(restriction)}
-        target_attributes_to_remove = []
-        for target_attribute in target_attributes:
-            if target_attribute.attribute_id not in existing_required_attribute_ids:
-                logger.info(f"属性名(英語)='{target_attribute.attribute_name_en}', 属性ID='{target_attribute.attribute_id}' は必須ではありません。")
-                continue
-            target_attributes_to_remove.append(target_attribute)
+        target_attributes_to_remove = resolve_target_attributes_to_unset_required(
+            old_annotation_specs,
+            attribute_ids=attribute_ids,
+            attribute_name_ens=attribute_name_ens,
+        )
 
         if len(target_attributes_to_remove) == 0:
             logger.info("必須制約を解除する属性はないため、アノテーション仕様を変更しません。")
@@ -228,15 +332,11 @@ class AttributeRequiredMain(CommandLineWithConfirm):
         if not self.confirm_processing(confirm_message):
             return False
 
-        target_attribute_id_set = {attribute.attribute_id for attribute in target_attributes_to_remove}
-        request_body = copy.deepcopy(old_annotation_specs)
-        request_body["restrictions"] = [
-            restriction for restriction in request_body["restrictions"] if not (restriction["additional_data_definition_id"] in target_attribute_id_set and is_required_restriction(restriction))
-        ]
-        if comment is None:
-            comment = create_comment_for_unset_attribute_required([attribute.attribute_name_en for attribute in target_attributes_to_remove])
-        request_body["comment"] = comment
-        request_body["last_updated_datetime"] = old_annotation_specs["updated_datetime"]
+        request_body = build_request_body_for_unset_attribute_required(
+            old_annotation_specs,
+            target_attributes_to_remove=target_attributes_to_remove,
+            comment=comment,
+        )
         self.service.api.put_annotation_specs(self.project_id, query_params={"v": "3"}, request_body=request_body)
         logger.info(f"{len(target_attributes_to_remove)} 件の属性の必須制約を解除しました。")
         return True

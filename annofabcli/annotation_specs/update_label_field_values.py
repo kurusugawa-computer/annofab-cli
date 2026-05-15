@@ -3,7 +3,8 @@ from __future__ import annotations
 import argparse
 import copy
 import logging
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
+from dataclasses import dataclass
 from typing import Any, cast
 
 import annofabapi
@@ -22,6 +23,16 @@ from annofabcli.common.cli import (
 from annofabcli.common.facade import AnnofabApiFacade
 
 logger = logging.getLogger(__name__)
+
+
+@dataclass(frozen=True)
+class ResolvedUpdateLabelFieldValuesInput:
+    """
+    ラベル field_values 更新を既存アノテーション仕様に対して解決した結果。
+    """
+
+    target_labels: list[Mapping[str, Any]]
+    """更新対象ラベル一覧。"""
 
 
 def create_comment_for_update_label_field_values(
@@ -69,6 +80,80 @@ def validate_field_values_input(field_values: object) -> dict[str, Any]:
     if not isinstance(field_values, dict):
         raise TypeError("`--field_values_json` にはJSONオブジェクトを指定してください。")
     return cast(dict[str, Any], field_values)
+
+
+def resolve_update_label_field_values_input(
+    annotation_specs: dict[str, Any],
+    *,
+    label_ids: Sequence[str] | None,
+    label_name_ens: Sequence[str] | None,
+) -> ResolvedUpdateLabelFieldValuesInput:
+    """
+    ラベル field_values 更新対象を既存アノテーション仕様に対して解決する。
+
+    Args:
+        annotation_specs: 既存のアノテーション仕様
+        label_ids: 更新対象ラベルID一覧。未指定時はNone
+        label_name_ens: 更新対象ラベル英語名一覧。未指定時はNone
+
+    Returns:
+        解決済み更新対象
+    """
+    annotation_specs_accessor = AnnotationSpecsAccessor(annotation_specs)
+    target_labels = get_target_labels(annotation_specs_accessor, label_ids=label_ids, label_name_ens=label_name_ens)
+    return ResolvedUpdateLabelFieldValuesInput(target_labels=target_labels)
+
+
+def build_request_body_for_update_label_field_values(
+    annotation_specs: dict[str, Any],
+    *,
+    resolved_input: ResolvedUpdateLabelFieldValuesInput,
+    field_values: dict[str, Any] | None,
+    replace: bool,
+    clear: bool,
+    comment: str | None,
+) -> dict[str, Any]:
+    """
+    ラベル field_values 更新用の request body を生成する。
+
+    Args:
+        annotation_specs: 既存のアノテーション仕様
+        resolved_input: 解決済み更新対象
+        field_values: 更新するfield_values。 ``clear=True`` の場合はNone
+        replace: field_values全体を置換するかどうか
+        clear: field_valuesを空辞書にするかどうか
+        comment: 変更コメント
+
+    Returns:
+        Annofab API に渡す request body
+    """
+    request_body = copy.deepcopy(annotation_specs)
+    target_label_id_set = {label["label_id"] for label in resolved_input.target_labels}
+    for label in request_body["labels"]:
+        if label["label_id"] not in target_label_id_set:
+            continue
+
+        if clear:
+            label["field_values"] = {}
+        elif replace:
+            label["field_values"] = copy.deepcopy(field_values)
+        else:
+            merged_field_values = copy.deepcopy(label.get("field_values", {}))
+            assert field_values is not None
+            merged_field_values.update(copy.deepcopy(field_values))
+            label["field_values"] = merged_field_values
+
+    label_names = [get_label_name_en(label) for label in resolved_input.target_labels]
+    if comment is None:
+        comment = create_comment_for_update_label_field_values(
+            label_names=label_names,
+            field_values=field_values,
+            replace=replace,
+            clear=clear,
+        )
+    request_body["comment"] = comment
+    request_body["last_updated_datetime"] = annotation_specs["updated_datetime"]
+    return request_body
 
 
 class UpdateLabelFieldValuesMain(CommandLineWithConfirm):
@@ -120,42 +205,28 @@ class UpdateLabelFieldValuesMain(CommandLineWithConfirm):
             raise ValueError("`field_values` を指定してください。")
 
         old_annotation_specs, _ = self.service.api.get_annotation_specs(self.project_id, query_params={"v": "3"})
-        annotation_specs_accessor = AnnotationSpecsAccessor(old_annotation_specs)
-        target_labels = get_target_labels(annotation_specs_accessor, label_ids=label_ids, label_name_ens=label_name_ens)
-        label_names = [get_label_name_en(label) for label in target_labels]
+        resolved_input = resolve_update_label_field_values_input(
+            old_annotation_specs,
+            label_ids=label_ids,
+            label_name_ens=label_name_ens,
+        )
+        label_names = [get_label_name_en(label) for label in resolved_input.target_labels]
 
         operation = "クリア" if clear else "置換" if replace else "更新"
-        confirm_message = f"{len(target_labels)} 件のラベルの field_values を{operation}します。対象ラベル={label_names}。よろしいですか？"
+        confirm_message = f"{len(resolved_input.target_labels)} 件のラベルの field_values を{operation}します。対象ラベル={label_names}。よろしいですか？"
         if not self.confirm_processing(confirm_message):
             return False
 
-        request_body = copy.deepcopy(old_annotation_specs)
-        target_label_id_set = {label["label_id"] for label in target_labels}
-        for label in request_body["labels"]:
-            if label["label_id"] not in target_label_id_set:
-                continue
-
-            if clear:
-                label["field_values"] = {}
-            elif replace:
-                label["field_values"] = copy.deepcopy(field_values)
-            else:
-                merged_field_values = copy.deepcopy(label.get("field_values", {}))
-                assert field_values is not None
-                merged_field_values.update(copy.deepcopy(field_values))
-                label["field_values"] = merged_field_values
-
-        if comment is None:
-            comment = create_comment_for_update_label_field_values(
-                label_names=label_names,
-                field_values=field_values,
-                replace=replace,
-                clear=clear,
-            )
-        request_body["comment"] = comment
-        request_body["last_updated_datetime"] = old_annotation_specs["updated_datetime"]
+        request_body = build_request_body_for_update_label_field_values(
+            old_annotation_specs,
+            resolved_input=resolved_input,
+            field_values=field_values,
+            replace=replace,
+            clear=clear,
+            comment=comment,
+        )
         self.service.api.put_annotation_specs(self.project_id, query_params={"v": "3"}, request_body=request_body)
-        logger.info(f"{len(target_labels)} 件のラベルの field_values を{operation}しました。")
+        logger.info(f"{len(resolved_input.target_labels)} 件のラベルの field_values を{operation}しました。")
         return True
 
 

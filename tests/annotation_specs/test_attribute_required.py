@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import copy
 import json
 from pathlib import Path
 
@@ -9,9 +8,12 @@ from annofabapi.util.annotation_specs import AnnotationSpecsAccessor
 
 from annofabcli.annotation_specs.attribute_required import (
     REQUIRED_CONDITION,
-    AttributeRequiredMain,
+    build_request_body_for_set_attribute_required,
+    build_request_body_for_unset_attribute_required,
     create_required_restriction,
     is_required_restriction,
+    resolve_target_attributes_to_set_required,
+    resolve_target_attributes_to_unset_required,
 )
 from annofabcli.annotation_specs.utils import get_target_attributes
 
@@ -24,27 +26,6 @@ def annotation_specs() -> dict:
         loaded_annotation_specs = json.load(f)
     loaded_annotation_specs["updated_datetime"] = "2026-04-24T00:00:00+09:00"
     return loaded_annotation_specs
-
-
-class DummyApi:
-    def __init__(self, annotation_specs: dict) -> None:
-        self.annotation_specs = copy.deepcopy(annotation_specs)
-        self.last_put: dict | None = None
-
-    def get_annotation_specs(self, project_id: str, query_params: dict) -> tuple[dict, None]:
-        assert project_id == "prj1"
-        assert query_params == {"v": "3"}
-        return copy.deepcopy(self.annotation_specs), None
-
-    def put_annotation_specs(self, project_id: str, query_params: dict, request_body: dict) -> None:
-        assert project_id == "prj1"
-        assert query_params == {"v": "3"}
-        self.last_put = request_body
-
-
-class DummyService:
-    def __init__(self, annotation_specs: dict) -> None:
-        self.api = DummyApi(annotation_specs)
 
 
 class TestIsRequiredRestriction:
@@ -99,71 +80,98 @@ class TestGetTargetAttributes:
         assert len(actual) == 1
 
 
-class TestAttributeRequiredMain:
-    def test_set_attribute_required__attribute_name_en(self, annotation_specs: dict) -> None:
-        service = DummyService(annotation_specs)
-        main = AttributeRequiredMain(service, project_id="prj1", all_yes=True)  # type: ignore[arg-type]
-
-        result = main.set_attribute_required(
+class TestSetAttributeRequired:
+    def test_resolve_target_attributes_to_set_required(self, annotation_specs: dict) -> None:
+        actual = resolve_target_attributes_to_set_required(
+            annotation_specs,
             attribute_ids=None,
             attribute_name_ens=["type", "link"],
+        )
+
+        assert [(attribute.attribute_id, attribute.attribute_name_en) for attribute in actual] == [
+            ("71620647-98cf-48ad-b43b-4af425a24f32", "type"),
+            ("15235360-4f46-42ac-927d-0e046bf52ddd", "link"),
+        ]
+
+    def test_resolve_target_attributes_to_set_required__already_required_is_skipped(self, annotation_specs: dict) -> None:
+        actual = resolve_target_attributes_to_set_required(
+            annotation_specs,
+            attribute_ids=["54fa5e97-6f88-49a4-aeb0-a91a15d11528", "15235360-4f46-42ac-927d-0e046bf52ddd"],
+            attribute_name_ens=None,
+        )
+
+        assert [(attribute.attribute_id, attribute.attribute_name_en) for attribute in actual] == [("15235360-4f46-42ac-927d-0e046bf52ddd", "link")]
+
+    def test_build_request_body_for_set_attribute_required(self, annotation_specs: dict) -> None:
+        target_attributes_to_add = resolve_target_attributes_to_set_required(
+            annotation_specs,
+            attribute_ids=None,
+            attribute_name_ens=["type", "link"],
+        )
+
+        actual = build_request_body_for_set_attribute_required(
+            annotation_specs,
+            target_attributes_to_add=target_attributes_to_add,
             comment=None,
         )
 
-        assert result is True
-        assert service.api.last_put is not None
-        added_restrictions = [restriction for restriction in service.api.last_put["restrictions"] if restriction["condition"] == REQUIRED_CONDITION]
+        added_restrictions = [restriction for restriction in actual["restrictions"] if restriction["condition"] == REQUIRED_CONDITION]
         added_attribute_ids = {restriction["additional_data_definition_id"] for restriction in added_restrictions}
         assert {"71620647-98cf-48ad-b43b-4af425a24f32", "15235360-4f46-42ac-927d-0e046bf52ddd"} <= added_attribute_ids
-        assert service.api.last_put["comment"] == "以下の属性を必須にしました。\ntype\nlink"
+        assert actual["comment"] == "以下の属性を必須にしました。\ntype\nlink"
 
-    def test_set_attribute_required__already_required_is_skipped(self, annotation_specs: dict) -> None:
-        service = DummyService(annotation_specs)
-        main = AttributeRequiredMain(service, project_id="prj1", all_yes=True)  # type: ignore[arg-type]
-
-        result = main.set_attribute_required(
-            attribute_ids=["54fa5e97-6f88-49a4-aeb0-a91a15d11528", "15235360-4f46-42ac-927d-0e046bf52ddd"],
+    def test_build_request_body_for_set_attribute_required__custom_comment(self, annotation_specs: dict) -> None:
+        target_attributes_to_add = resolve_target_attributes_to_set_required(
+            annotation_specs,
+            attribute_ids=["15235360-4f46-42ac-927d-0e046bf52ddd"],
             attribute_name_ens=None,
+        )
+
+        actual = build_request_body_for_set_attribute_required(
+            annotation_specs,
+            target_attributes_to_add=target_attributes_to_add,
             comment="custom",
         )
 
-        assert result is True
-        assert service.api.last_put is not None
-        added_restrictions = [restriction for restriction in service.api.last_put["restrictions"] if restriction["condition"] == REQUIRED_CONDITION]
-        added_attribute_ids = [restriction["additional_data_definition_id"] for restriction in added_restrictions]
-        assert added_attribute_ids.count("54fa5e97-6f88-49a4-aeb0-a91a15d11528") == 1
-        assert added_attribute_ids.count("15235360-4f46-42ac-927d-0e046bf52ddd") == 1
-        assert service.api.last_put["comment"] == "custom"
+        assert actual["comment"] == "custom"
 
-    def test_unset_attribute_required__attribute_id(self, annotation_specs: dict) -> None:
-        service = DummyService(annotation_specs)
-        main = AttributeRequiredMain(service, project_id="prj1", all_yes=True)  # type: ignore[arg-type]
 
-        result = main.unset_attribute_required(
+class TestUnsetAttributeRequired:
+    def test_resolve_target_attributes_to_unset_required(self, annotation_specs: dict) -> None:
+        actual = resolve_target_attributes_to_unset_required(
+            annotation_specs,
             attribute_ids=["54fa5e97-6f88-49a4-aeb0-a91a15d11528"],
             attribute_name_ens=None,
+        )
+
+        assert [(attribute.attribute_id, attribute.attribute_name_en) for attribute in actual] == [("54fa5e97-6f88-49a4-aeb0-a91a15d11528", "comment")]
+
+    def test_resolve_target_attributes_to_unset_required__attribute_not_required(self, annotation_specs: dict) -> None:
+        actual = resolve_target_attributes_to_unset_required(
+            annotation_specs,
+            attribute_ids=None,
+            attribute_name_ens=["link"],
+        )
+
+        assert actual == []
+
+    def test_build_request_body_for_unset_attribute_required(self, annotation_specs: dict) -> None:
+        target_attributes_to_remove = resolve_target_attributes_to_unset_required(
+            annotation_specs,
+            attribute_ids=["54fa5e97-6f88-49a4-aeb0-a91a15d11528"],
+            attribute_name_ens=None,
+        )
+
+        actual = build_request_body_for_unset_attribute_required(
+            annotation_specs,
+            target_attributes_to_remove=target_attributes_to_remove,
             comment=None,
         )
 
-        assert result is True
-        assert service.api.last_put is not None
         remaining_required_restrictions = [
             restriction
-            for restriction in service.api.last_put["restrictions"]
+            for restriction in actual["restrictions"]
             if restriction["additional_data_definition_id"] == "54fa5e97-6f88-49a4-aeb0-a91a15d11528" and restriction["condition"] == REQUIRED_CONDITION
         ]
         assert remaining_required_restrictions == []
-        assert service.api.last_put["comment"] == "以下の属性の必須制約を解除しました。\ncomment"
-
-    def test_unset_attribute_required__attribute_not_required(self, annotation_specs: dict) -> None:
-        service = DummyService(annotation_specs)
-        main = AttributeRequiredMain(service, project_id="prj1", all_yes=True)  # type: ignore[arg-type]
-
-        result = main.unset_attribute_required(
-            attribute_ids=None,
-            attribute_name_ens=["link"],
-            comment=None,
-        )
-
-        assert result is False
-        assert service.api.last_put is None
+        assert actual["comment"] == "以下の属性の必須制約を解除しました。\ncomment"

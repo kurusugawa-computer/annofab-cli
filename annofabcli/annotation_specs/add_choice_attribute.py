@@ -5,7 +5,7 @@ import copy
 import json
 import logging
 import uuid
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -47,6 +47,22 @@ class ChoiceAttributeInput:
 
     is_default: bool = False
     """属性のデフォルト値として使用する選択肢かどうか"""
+
+
+@dataclass(frozen=True)
+class ResolvedChoiceAttributeInput:
+    """
+    既存アノテーション仕様に対して解決済みの選択肢系属性入力。
+    """
+
+    target_labels: list[Mapping[str, Any]]
+    """属性を追加する対象ラベル一覧。"""
+
+    new_attribute: dict[str, Any]
+    """Annofab API向けの新規属性オブジェクト。"""
+
+    duplicated_name_attribute_ids: list[str]
+    """同名属性の既存属性ID一覧。"""
 
 
 def parse_choice_input_from_dict(data: dict[str, Any], *, index: int) -> ChoiceAttributeInput:
@@ -287,6 +303,88 @@ def create_attribute(
     }
 
 
+def resolve_choice_attribute_input(
+    annotation_specs: dict[str, Any],
+    *,
+    attribute_type: str,
+    attribute_name_en: str,
+    attribute_name_ja: str | None,
+    attribute_id: str | None,
+    choice_inputs: Sequence[ChoiceAttributeInput],
+    label_ids: Sequence[str] | None,
+    label_name_ens: Sequence[str] | None,
+) -> ResolvedChoiceAttributeInput:
+    """
+    選択肢系属性入力を既存アノテーション仕様に対して解決する。
+
+    Args:
+        annotation_specs: 既存のアノテーション仕様
+        attribute_type: 属性型。 ``choice`` または ``select``
+        attribute_name_en: 属性英語名
+        attribute_name_ja: 属性日本語名
+        attribute_id: 属性ID。未指定ならUUIDv4を自動生成
+        choice_inputs: 選択肢入力一覧
+        label_ids: 追加先ラベルID一覧。未指定時はNone
+        label_name_ens: 追加先ラベル英語名一覧。未指定時はNone
+
+    Returns:
+        解決済み選択肢系属性入力
+    """
+    annotation_specs_accessor = AnnotationSpecsAccessor(annotation_specs)
+    target_labels = get_target_labels(annotation_specs_accessor, label_ids=label_ids, label_name_ens=label_name_ens)
+    new_attribute = create_attribute(
+        attribute_type=attribute_type,
+        attribute_name_en=attribute_name_en,
+        attribute_name_ja=attribute_name_ja,
+        attribute_id=attribute_id,
+        choice_inputs=choice_inputs,
+    )
+    duplicated_name_attribute_ids = validate_new_attribute(
+        annotation_specs["additionals"],
+        attribute_id=new_attribute["additional_data_definition_id"],
+        attribute_name_en=attribute_name_en,
+    )
+    return ResolvedChoiceAttributeInput(
+        target_labels=target_labels,
+        new_attribute=new_attribute,
+        duplicated_name_attribute_ids=duplicated_name_attribute_ids,
+    )
+
+
+def build_request_body_for_add_choice_attribute(
+    annotation_specs: dict[str, Any],
+    *,
+    resolved_choice_attribute_input: ResolvedChoiceAttributeInput,
+    attribute_name_en: str,
+    comment: str | None,
+) -> dict[str, Any]:
+    """
+    選択肢系属性追加用の request body を生成する。
+
+    Args:
+        annotation_specs: 既存のアノテーション仕様
+        resolved_choice_attribute_input: 解決済み選択肢系属性入力
+        attribute_name_en: 属性英語名
+        comment: 変更コメント
+
+    Returns:
+        Annofab API に渡す request body
+    """
+    request_body = copy.deepcopy(annotation_specs)
+    request_body["additionals"].append(resolved_choice_attribute_input.new_attribute)
+    target_label_id_set = {label["label_id"] for label in resolved_choice_attribute_input.target_labels}
+    for label in request_body["labels"]:
+        if label["label_id"] in target_label_id_set:
+            label["additional_data_definitions"].append(resolved_choice_attribute_input.new_attribute["additional_data_definition_id"])
+
+    label_names = [get_label_name_en(label) for label in resolved_choice_attribute_input.target_labels]
+    if comment is None:
+        comment = create_comment_from_attribute(attribute_name_en, label_names)
+    request_body["comment"] = comment
+    request_body["last_updated_datetime"] = annotation_specs["updated_datetime"]
+    return request_body
+
+
 class AddChoiceAttributeMain(CommandLineWithConfirm):
     """
     選択肢系属性をアノテーション仕様へ追加する本体処理。
@@ -335,44 +433,36 @@ class AddChoiceAttributeMain(CommandLineWithConfirm):
             ValueError: 入力値や既存アノテーション仕様との整合性が不正な場合
         """
         old_annotation_specs, _ = self.service.api.get_annotation_specs(self.project_id, query_params={"v": "3"})
-        annotation_specs_accessor = AnnotationSpecsAccessor(old_annotation_specs)
-        additionals = old_annotation_specs["additionals"]
-        target_labels = get_target_labels(annotation_specs_accessor, label_ids=label_ids, label_name_ens=label_name_ens)
-        new_attribute = create_attribute(
+        resolved_choice_attribute_input = resolve_choice_attribute_input(
+            old_annotation_specs,
             attribute_type=attribute_type,
             attribute_name_en=attribute_name_en,
             attribute_name_ja=attribute_name_ja,
             attribute_id=attribute_id,
             choice_inputs=choice_inputs,
+            label_ids=label_ids,
+            label_name_ens=label_name_ens,
         )
 
-        duplicated_name_attribute_ids = validate_new_attribute(
-            additionals,
-            attribute_id=new_attribute["additional_data_definition_id"],
-            attribute_name_en=attribute_name_en,
+        label_names = [get_label_name_en(label) for label in resolved_choice_attribute_input.target_labels]
+        confirm_message = (
+            f"属性名(英語)='{attribute_name_en}', 属性種類='{attribute_type}', "
+            f"選択肢数={len(resolved_choice_attribute_input.new_attribute['choices'])}, 対象ラベル={label_names} を追加します。よろしいですか？"
         )
-
-        label_names = [get_label_name_en(label) for label in target_labels]
-        confirm_message = f"属性名(英語)='{attribute_name_en}', 属性種類='{attribute_type}', 選択肢数={len(new_attribute['choices'])}, 対象ラベル={label_names} を追加します。よろしいですか？"
-        if duplicated_name_attribute_ids:
-            duplicated_text = ", ".join(duplicated_name_attribute_ids)
+        if resolved_choice_attribute_input.duplicated_name_attribute_ids:
+            duplicated_text = ", ".join(resolved_choice_attribute_input.duplicated_name_attribute_ids)
             confirm_message = f"{confirm_message} なお、同じ属性名(英語)を持つ既存属性があります。既存の属性ID: {duplicated_text}"
         if not self.confirm_processing(confirm_message):
             return False
 
-        request_body = copy.deepcopy(old_annotation_specs)
-        request_body["additionals"].append(new_attribute)
-        target_label_id_set = {label["label_id"] for label in target_labels}
-        for label in request_body["labels"]:
-            if label["label_id"] in target_label_id_set:
-                label["additional_data_definitions"].append(new_attribute["additional_data_definition_id"])
-
-        if comment is None:
-            comment = create_comment_from_attribute(attribute_name_en, label_names)
-        request_body["comment"] = comment
-        request_body["last_updated_datetime"] = old_annotation_specs["updated_datetime"]
+        request_body = build_request_body_for_add_choice_attribute(
+            old_annotation_specs,
+            resolved_choice_attribute_input=resolved_choice_attribute_input,
+            attribute_name_en=attribute_name_en,
+            comment=comment,
+        )
         self.service.api.put_annotation_specs(self.project_id, query_params={"v": "3"}, request_body=request_body)
-        logger.info(f"属性名(英語)='{attribute_name_en}', 属性ID='{new_attribute['additional_data_definition_id']}' の選択肢系属性を追加しました。")
+        logger.info(f"属性名(英語)='{attribute_name_en}', 属性ID='{resolved_choice_attribute_input.new_attribute['additional_data_definition_id']}' の選択肢系属性を追加しました。")
         return True
 
 
