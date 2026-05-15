@@ -15,9 +15,11 @@ from annofabcli.annotation_specs.add_labels import (
     LabelInput,
     create_label_color,
     create_label_inputs_from_name_ens,
+    parse_annotation_type_in_csv,
     parse_field_values_in_csv,
     read_labels_csv,
     read_labels_json,
+    resolve_annotation_types,
 )
 
 data_dir = Path("./tests/data/annotation_specs")
@@ -177,6 +179,43 @@ class TestAddLabelsMain:
         assert added_labels[0]["field_values"] == DEFAULT_SEGMENTATION_FIELD_VALUES
         assert added_labels[1]["field_values"] == DEFAULT_SEGMENTATION_FIELD_VALUES
 
+    def test_add_labels__uses_annotation_type_in_label_inputs(self, annotation_specs: dict) -> None:
+        service = DummyService(annotation_specs)
+        main = AddLabelsMain(service, project_id="prj1", all_yes=True)  # type: ignore[arg-type]
+
+        main.add_labels(
+            label_inputs=[
+                LabelInput(label_name_en="road", annotation_type="segmentation_v2"),
+                LabelInput(label_name_en="crosswalk", annotation_type="bounding_box"),
+            ],
+            comment=None,
+        )
+
+        assert service.api.last_put is not None
+        added_labels = service.api.last_put["labels"][-2:]
+        assert [label["annotation_type"] for label in added_labels] == ["segmentation_v2", "bounding_box"]
+        assert added_labels[0]["field_values"] == DEFAULT_SEGMENTATION_FIELD_VALUES
+        assert added_labels[1]["field_values"] == {}
+
+    def test_add_labels__raises_when_annotation_type_is_missing(self, annotation_specs: dict) -> None:
+        service = DummyService(annotation_specs)
+        main = AddLabelsMain(service, project_id="prj1", all_yes=True)  # type: ignore[arg-type]
+
+        with pytest.raises(ValueError):
+            main.add_labels(
+                label_inputs=[LabelInput(label_name_en="pedestrian")],
+            )
+
+    def test_add_labels__raises_when_annotation_type_conflicts(self, annotation_specs: dict) -> None:
+        service = DummyService(annotation_specs)
+        main = AddLabelsMain(service, project_id="prj1", all_yes=True)  # type: ignore[arg-type]
+
+        with pytest.raises(ValueError):
+            main.add_labels(
+                label_inputs=[LabelInput(label_name_en="pedestrian", annotation_type="polygon")],
+                annotation_type="bounding_box",
+            )
+
 
 class TestReadLabels:
     def test_create_label_inputs_from_name_ens(self) -> None:
@@ -189,8 +228,8 @@ class TestReadLabels:
 
     def test_read_labels_json(self) -> None:
         actual = read_labels_json(
-            '[{"label_id":"pedestrian","label_name_en":"pedestrian","label_name_ja":"歩行者","color":"#123456",'
-            '"field_values":{"display_name":{"_type":"DisplayName","text":"歩行者"}}},{"label_name_en":"bicycle"}]'
+            '[{"label_id":"pedestrian","label_name_en":"pedestrian","label_name_ja":"歩行者","annotation_type":"bounding_box","color":"#123456",'
+            '"field_values":{"display_name":{"_type":"DisplayName","text":"歩行者"}}},{"label_name_en":"bicycle","annotation_type":"polygon"}]'
         )
 
         assert actual == [
@@ -198,15 +237,20 @@ class TestReadLabels:
                 label_id="pedestrian",
                 label_name_en="pedestrian",
                 label_name_ja="歩行者",
+                annotation_type="bounding_box",
                 color="#123456",
                 field_values={"display_name": {"_type": "DisplayName", "text": "歩行者"}},
             ),
-            LabelInput(label_name_en="bicycle"),
+            LabelInput(label_name_en="bicycle", annotation_type="polygon"),
         ]
 
     def test_read_labels_json__label_name_en_required(self) -> None:
         with pytest.raises(ValueError):
             read_labels_json('[{"label_name_ja":"歩行者"}]')
+
+    def test_read_labels_json__invalid_annotation_type(self) -> None:
+        with pytest.raises(ValueError):
+            read_labels_json('[{"label_name_en":"pedestrian","annotation_type":"invalid"}]')
 
     def test_read_labels_csv(self, tmp_path: Path) -> None:
         csv_path = tmp_path / "labels.csv"
@@ -216,10 +260,11 @@ class TestReadLabels:
                     "label_id": "pedestrian",
                     "label_name_en": "pedestrian",
                     "label_name_ja": "歩行者",
+                    "annotation_type": "bounding_box",
                     "color": "#123456",
                     "field_values": '{"display_name": {"_type": "DisplayName", "text": "歩行者"}}',
                 },
-                {"label_name_en": "bicycle"},
+                {"label_name_en": "bicycle", "annotation_type": "polygon"},
             ]
         )
         df.to_csv(csv_path, index=False)
@@ -231,10 +276,11 @@ class TestReadLabels:
                 label_id="pedestrian",
                 label_name_en="pedestrian",
                 label_name_ja="歩行者",
+                annotation_type="bounding_box",
                 color="#123456",
                 field_values={"display_name": {"_type": "DisplayName", "text": "歩行者"}},
             ),
-            LabelInput(label_name_en="bicycle"),
+            LabelInput(label_name_en="bicycle", annotation_type="polygon"),
         ]
 
     def test_read_labels_csv__label_name_en_required(self, tmp_path: Path) -> None:
@@ -249,6 +295,27 @@ class TestReadLabels:
 
         assert actual == {"red": 18, "green": 52, "blue": 86}
 
+    def test_resolve_annotation_types(self) -> None:
+        actual = resolve_annotation_types(
+            [
+                LabelInput(label_name_en="pedestrian", annotation_type="bounding_box"),
+                LabelInput(label_name_en="bicycle"),
+            ],
+            annotation_type="bounding_box",
+        )
+
+        assert actual == [
+            LabelInput(label_name_en="pedestrian", annotation_type="bounding_box"),
+            LabelInput(label_name_en="bicycle", annotation_type="bounding_box"),
+        ]
+
+    def test_resolve_annotation_types__raises_when_conflicted(self) -> None:
+        with pytest.raises(ValueError):
+            resolve_annotation_types(
+                [LabelInput(label_name_en="pedestrian", annotation_type="polygon")],
+                annotation_type="bounding_box",
+            )
+
     def test_parse_field_values_in_csv(self) -> None:
         actual = parse_field_values_in_csv('{"display_name":{"_type":"DisplayName","text":"歩行者"}}', index=1)
 
@@ -257,3 +324,12 @@ class TestReadLabels:
     def test_parse_field_values_in_csv__invalid_json(self) -> None:
         with pytest.raises(ValueError):
             parse_field_values_in_csv('["not-object"]', index=1)
+
+    def test_parse_annotation_type_in_csv(self) -> None:
+        actual = parse_annotation_type_in_csv("bounding_box", index=1)
+
+        assert actual == "bounding_box"
+
+    def test_parse_annotation_type_in_csv__invalid_value(self) -> None:
+        with pytest.raises(ValueError):
+            parse_annotation_type_in_csv("invalid", index=1)

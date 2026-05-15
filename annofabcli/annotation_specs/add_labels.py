@@ -6,9 +6,9 @@ import json
 import logging
 import uuid
 from collections.abc import Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import annofabapi
 import pandas
@@ -54,6 +54,9 @@ class LabelInput:
     label_id: str | None = None
     """ラベルID。未指定の場合はUUIDv4を自動生成する。"""
 
+    annotation_type: str | None = None
+    """ラベルのアノテーション種類。未指定の場合は ``--annotation_type`` の値を使用する。"""
+
     color: str | None = None
     """``#RRGGBB`` 形式のカラーコード。未指定の場合は自動設定する。"""
 
@@ -79,14 +82,37 @@ def parse_label_input_from_dict(data: dict[str, Any], *, index: int) -> LabelInp
     if label_name_en is None:
         raise ValueError(f"{index}件目のラベルに `label_name_en` が指定されていません。")
     field_values = data.get("field_values")
+    annotation_type = data.get("annotation_type")
+    if annotation_type is not None:
+        annotation_type = validate_annotation_type(annotation_type, index=index)
 
     return LabelInput(
         label_name_en=label_name_en,
         label_name_ja=data.get("label_name_ja"),
         label_id=data.get("label_id"),
+        annotation_type=annotation_type,
         color=data.get("color"),
         field_values=None if field_values is None else validate_field_values_input(field_values),
     )
+
+
+def validate_annotation_type(annotation_type: object, *, index: int) -> str:
+    """
+    ラベル入力の ``annotation_type`` を検証する。
+
+    Args:
+        annotation_type: 入力されたアノテーション種類
+        index: エラーメッセージ用の1始まりの位置
+
+    Returns:
+        検証済みのアノテーション種類
+
+    Raises:
+        ValueError: 指定値がサポート対象外の場合
+    """
+    if not isinstance(annotation_type, str) or annotation_type not in ANNOTATION_TYPE_CHOICES:
+        raise ValueError(f"{index}件目のラベルの `annotation_type` に不正な値が指定されています。")
+    return annotation_type
 
 
 def parse_field_values_in_csv(value: object, *, index: int) -> dict[str, Any] | None:
@@ -115,6 +141,31 @@ def parse_field_values_in_csv(value: object, *, index: int) -> dict[str, Any] | 
         return validate_field_values_input(json.loads(value))
     except (TypeError, json.JSONDecodeError) as e:
         raise ValueError(f"{index}件目のラベルの `field_values` はJSONオブジェクト形式で指定してください。") from e
+
+
+def parse_annotation_type_in_csv(value: object, *, index: int) -> str | None:
+    """
+    CSVの ``annotation_type`` 列を ``str | None`` に変換する。
+
+    Args:
+        value: CSVセルの値
+        index: エラーメッセージ用の1始まりの位置
+
+    Returns:
+        変換後のアノテーション種類
+
+    Raises:
+        ValueError: ``annotation_type`` が不正な場合
+    """
+    if pandas.isna(value):
+        return None
+
+    if not isinstance(value, str):
+        value = str(value)
+    if value == "":
+        return None
+
+    return validate_annotation_type(value, index=index)
 
 
 def read_labels_json(target: str) -> list[LabelInput]:
@@ -161,6 +212,7 @@ def read_labels_csv(csv_path: Path) -> list[LabelInput]:
             csv_path,
             dtype={
                 "label_id": "string",
+                "annotation_type": "string",
                 "label_name_en": "string",
                 "label_name_ja": "string",
                 "color": "string",
@@ -180,6 +232,7 @@ def read_labels_csv(csv_path: Path) -> list[LabelInput]:
         label_name_en = row["label_name_en"]
         label_name_ja = row.get("label_name_ja")
         label_id = row.get("label_id")
+        annotation_type = parse_annotation_type_in_csv(row.get("annotation_type"), index=index)
         color = row.get("color")
         field_values = parse_field_values_in_csv(row.get("field_values"), index=index)
         result.append(
@@ -187,6 +240,7 @@ def read_labels_csv(csv_path: Path) -> list[LabelInput]:
                 label_name_en=label_name_en,
                 label_name_ja=label_name_ja,
                 label_id=label_id,
+                annotation_type=annotation_type,
                 color=color,
                 field_values=field_values,
             )
@@ -254,6 +308,36 @@ def validate_label_inputs(label_inputs: Sequence[LabelInput]) -> None:
         raise ValueError(f"入力されたラベル名(英語)に重複があります。 :: {duplicated_text}")
 
 
+def resolve_annotation_types(label_inputs: Sequence[LabelInput], *, annotation_type: str | None) -> list[LabelInput]:
+    """
+    ラベルごとの ``annotation_type`` を解決する。
+
+    Args:
+        label_inputs: 追加するラベル一覧
+        annotation_type: ``--annotation_type`` に指定された既定値
+
+    Returns:
+        ``annotation_type`` を補完済みのラベル一覧
+
+    Raises:
+        ValueError: ラベル側と ``--annotation_type`` が不一致、または両方とも未指定の場合
+    """
+    resolved_label_inputs = []
+    for index, label_input in enumerate(label_inputs, start=1):
+        resolved_annotation_type = label_input.annotation_type
+        if resolved_annotation_type is None:
+            if annotation_type is None:
+                raise ValueError(f"{index}件目のラベルに `annotation_type` が指定されていません。 `--annotation_type` を指定するか、入力データに `annotation_type` を含めてください。")
+            resolved_annotation_type = annotation_type
+        elif annotation_type is not None and resolved_annotation_type != annotation_type:
+            raise ValueError(
+                f"{index}件目のラベルの `annotation_type` と `--annotation_type` の値が一致しません。 :: label.annotation_type='{resolved_annotation_type}', --annotation_type='{annotation_type}'"
+            )
+
+        resolved_label_inputs.append(replace(label_input, annotation_type=resolved_annotation_type))
+    return resolved_label_inputs
+
+
 def create_comment_from_labels(label_inputs: Sequence[LabelInput]) -> str:
     """
     複数ラベル追加時のデフォルトコメントを生成する。
@@ -288,7 +372,7 @@ class AddLabelsMain(CommandLineWithConfirm):
         self,
         *,
         label_inputs: Sequence[LabelInput],
-        annotation_type: str,
+        annotation_type: str | None = None,
         comment: str | None = None,
     ) -> bool:
         """
@@ -306,23 +390,25 @@ class AddLabelsMain(CommandLineWithConfirm):
             ValueError: 入力値や既存アノテーション仕様との整合性が不正な場合
         """
         validate_label_inputs(label_inputs)
+        resolved_label_inputs = resolve_annotation_types(label_inputs, annotation_type=annotation_type)
 
         old_annotation_specs, _ = self.service.api.get_annotation_specs(self.project_id, query_params={"v": "3"})
         request_body = copy.deepcopy(old_annotation_specs)
         existing_label_names = {get_label_name_en(label) for label in request_body["labels"]}
-        input_label_name_ens = [label.label_name_en for label in label_inputs]
+        input_label_name_ens = [label.label_name_en for label in resolved_label_inputs]
         duplicated_existing_label_names = sorted(set(input_label_name_ens) & existing_label_names)
         if duplicated_existing_label_names:
             duplicated_text = ", ".join(duplicated_existing_label_names)
             raise ValueError(f"以下のラベル名(英語)は既に存在します。 :: {duplicated_text}")
 
         colors = collect_label_colors(request_body["labels"])
+        annotation_types = sorted({cast(str, label.annotation_type) for label in resolved_label_inputs})
 
-        confirm_message = f"{len(label_inputs)} 件のラベルを追加します。 label_name_en={input_label_name_ens}, annotation_type='{annotation_type}'。よろしいですか？"
+        confirm_message = f"{len(label_inputs)} 件のラベルを追加します。 label_name_en={input_label_name_ens}, annotation_types={annotation_types}。よろしいですか？"
         if not self.confirm_processing(confirm_message):
             return False
 
-        for label_input in label_inputs:
+        for label_input in resolved_label_inputs:
             resolved_label_id = label_input.label_id if label_input.label_id is not None else str(uuid.uuid4())
             validate_new_label(request_body["labels"], label_id=resolved_label_id, label_name_en=label_input.label_name_en)
 
@@ -332,18 +418,18 @@ class AddLabelsMain(CommandLineWithConfirm):
                 label_id=resolved_label_id,
                 label_name_en=label_input.label_name_en,
                 label_name_ja=label_input.label_name_ja,
-                annotation_type=annotation_type,
+                annotation_type=cast(str, label_input.annotation_type),
                 color=color,
                 field_values=label_input.field_values,
             )
             request_body["labels"].append(new_label)
 
         if comment is None:
-            comment = create_comment_from_labels(label_inputs)
+            comment = create_comment_from_labels(resolved_label_inputs)
         request_body["comment"] = comment
         request_body["last_updated_datetime"] = old_annotation_specs["updated_datetime"]
         self.service.api.put_annotation_specs(self.project_id, query_params={"v": "3"}, request_body=request_body)
-        logger.info(f"{len(label_inputs)} 件のラベルを追加しました。 :: label_name_ens={input_label_name_ens}, annotation_type='{annotation_type}'")
+        logger.info(f"{len(label_inputs)} 件のラベルを追加しました。 :: label_name_ens={input_label_name_ens}, annotation_types={annotation_types}")
         return True
 
 
@@ -389,9 +475,10 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
             "label_id": "pedestrian",
             "label_name_en": "pedestrian",
             "label_name_ja": "歩行者",
+            "annotation_type": "bounding_box",
             "color": "#123456",
         },
-        {"label_name_en": "bicycle"},
+        {"label_name_en": "bicycle", "annotation_type": "bounding_box"},
     ]
     label_group = parser.add_mutually_exclusive_group(required=True)
     label_group.add_argument(
@@ -403,14 +490,26 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     label_group.add_argument(
         "--label_json",
         type=str,
-        help=f"追加するラベル情報のJSON配列を指定します。 ``file://`` を先頭に付けるとJSON形式のファイルを指定できます。\n(例) ``{json.dumps(sample_json, ensure_ascii=False)}``",
+        help=(
+            "追加するラベル情報のJSON配列を指定します。 ``file://`` を先頭に付けるとJSON形式のファイルを指定できます。"
+            " 各要素には ``label_name_en`` が必要です。 任意で ``label_id`` , ``label_name_ja`` , ``annotation_type`` ,"
+            f" ``color`` , ``field_values`` を指定できます。\n(例) ``{json.dumps(sample_json, ensure_ascii=False)}``"
+        ),
     )
     label_group.add_argument(
         "--label_csv",
         type=Path,
-        help=("追加するラベル情報のCSVファイルを指定します。 CSVには ``label_name_en`` 列が必要です。 任意で ``label_id`` , ``label_name_ja`` , ``color`` , ``field_values`` 列を指定できます。"),
+        help=(
+            "追加するラベル情報のCSVファイルを指定します。 CSVには ``label_name_en`` 列が必要です。"
+            " 任意で ``label_id`` , ``label_name_ja`` , ``annotation_type`` , ``color`` , ``field_values`` 列を指定できます。"
+        ),
     )
-    parser.add_argument("--annotation_type", type=str, required=True, choices=ANNOTATION_TYPE_CHOICES, help=create_annotation_type_help())
+    parser.add_argument(
+        "--annotation_type",
+        type=str,
+        choices=ANNOTATION_TYPE_CHOICES,
+        help=f"追加するラベルの既定のアノテーション種類。 ``--label_name_en`` を指定する場合は必須です。 JSON/CSV側にも ``annotation_type`` を指定できます。\n{create_annotation_type_help()}",
+    )
     parser.add_argument("--comment", type=str, help="アノテーション仕様の変更内容を説明するコメント。未指定の場合、自動でコメントが生成されます。")
 
     parser.set_defaults(subcommand_func=main)

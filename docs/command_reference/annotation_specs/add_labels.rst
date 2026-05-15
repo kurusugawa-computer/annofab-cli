@@ -31,12 +31,14 @@ JSON形式で指定する場合
     [
         {
             "label_name_en": "pedestrian",
+            "annotation_type": "bounding_box",
             "color": "#123456"
         },
         {
             "label_id": "bicycle",
             "label_name_en": "bicycle",
             "label_name_ja": "自転車",
+            "annotation_type": "bounding_box",
             "color": "#00AAFF"
         }
     ]
@@ -46,8 +48,7 @@ JSON形式で指定する場合
 
     $ annofabcli annotation_specs add_labels \
      --project_id prj1 \
-     --label_json file://labels.json \
-     --annotation_type bounding_box
+     --label_json file://labels.json
 
 
 CSV形式で指定する場合
@@ -56,21 +57,22 @@ CSV形式で指定する場合
 .. code-block::
     :caption: labels.csv
 
-    label_id,label_name_en,label_name_ja,color,field_values
-    ,pedestrian,,#123456,
-    bicycle,bicycle,自転車,#00AAFF
+    label_id,label_name_en,label_name_ja,annotation_type,color,field_values
+    ,pedestrian,,segmentation_v2,#123456,
+    bicycle,bicycle,自転車,segmentation_v2,#00AAFF,
 
 
 .. code-block::
 
     $ annofabcli annotation_specs add_labels \
      --project_id prj1 \
-     --label_csv labels.csv \
-     --annotation_type segmentation_v2
+     --label_csv labels.csv
 
 .. note::
     
-    ``--annotation_type`` の値は、:doc:`add_label` を参照してください。
+    ``--annotation_type`` の値は、:doc:`add_label` を参照してください。 ``--label_name_en`` を使う場合は ``--annotation_type`` が必須です。
+    ``--label_json`` / ``--label_csv`` を使う場合は、各ラベルに ``annotation_type`` を指定できます。 ``--annotation_type`` を併用した場合は、省略時の既定値として使われます。
+    ラベル側の ``annotation_type`` と ``--annotation_type`` が不一致の場合はエラーになります。
 
 
 Usage Details
