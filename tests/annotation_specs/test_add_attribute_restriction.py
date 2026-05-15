@@ -4,9 +4,11 @@ import copy
 import json
 from pathlib import Path
 from typing import Any
-from unittest.mock import Mock
 
-from annofabcli.annotation_specs.add_attribute_restriction import AddAttributeRestrictionMain
+from annofabcli.annotation_specs.add_attribute_restriction import (
+    build_request_body_for_add_attribute_restriction,
+    resolve_restrictions_to_add,
+)
 
 data_dir = Path("./tests/data/annotation_specs")
 
@@ -18,18 +20,9 @@ def load_annotation_specs() -> dict[str, Any]:
     return annotation_specs
 
 
-def create_service_mock(annotation_specs: dict[str, Any]) -> Mock:
-    service = Mock()
-    service.api = Mock()
-    service.api.get_annotation_specs.return_value = (copy.deepcopy(annotation_specs), None)
-    return service
-
-
-class TestAddAttributeRestrictionMain:
-    def test_add_restrictions__既存制約と新規制約が混在しても新規制約だけ追加する(self) -> None:
+class TestAddAttributeRestriction:
+    def test_resolve_restrictions_to_add__既存制約と新規制約が混在しても新規制約だけ追加する(self) -> None:
         annotation_specs = load_annotation_specs()
-        service = create_service_mock(annotation_specs)
-        main = AddAttributeRestrictionMain(service, project_id="prj1", all_yes=True)
 
         existing_restriction = copy.deepcopy(annotation_specs["restrictions"][0])
         new_restriction = {
@@ -37,36 +30,44 @@ class TestAddAttributeRestrictionMain:
             "condition": {"value": "bar", "_type": "Equals"},
         }
 
-        result = main.add_restrictions([existing_restriction, new_restriction])
+        actual = resolve_restrictions_to_add(annotation_specs, [existing_restriction, new_restriction])
 
-        assert result is True
-        request_body = service.api.put_annotation_specs.call_args.kwargs["request_body"]
-        assert request_body["restrictions"] == [*annotation_specs["restrictions"], new_restriction]
+        assert actual.new_restrictions == [new_restriction]
 
-    def test_add_restrictions__入力内の重複制約は1件だけ追加する(self) -> None:
+    def test_resolve_restrictions_to_add__入力内の重複制約は1件だけ追加する(self) -> None:
         annotation_specs = load_annotation_specs()
-        service = create_service_mock(annotation_specs)
-        main = AddAttributeRestrictionMain(service, project_id="prj1", all_yes=True)
 
         new_restriction = {
             "additional_data_definition_id": "54fa5e97-6f88-49a4-aeb0-a91a15d11528",
             "condition": {"value": "bar", "_type": "Equals"},
         }
 
-        result = main.add_restrictions([new_restriction, copy.deepcopy(new_restriction)])
+        actual = resolve_restrictions_to_add(annotation_specs, [new_restriction, copy.deepcopy(new_restriction)])
 
-        assert result is True
-        request_body = service.api.put_annotation_specs.call_args.kwargs["request_body"]
-        assert request_body["restrictions"] == [*annotation_specs["restrictions"], new_restriction]
+        assert actual.new_restrictions == [new_restriction]
 
-    def test_add_restrictions__既存制約だけなら更新しない(self) -> None:
+    def test_resolve_restrictions_to_add__既存制約だけなら空になる(self) -> None:
         annotation_specs = load_annotation_specs()
-        service = create_service_mock(annotation_specs)
-        main = AddAttributeRestrictionMain(service, project_id="prj1", all_yes=True)
 
         existing_restriction = copy.deepcopy(annotation_specs["restrictions"][0])
 
-        result = main.add_restrictions([existing_restriction])
+        actual = resolve_restrictions_to_add(annotation_specs, [existing_restriction])
 
-        assert result is False
-        service.api.put_annotation_specs.assert_not_called()
+        assert actual.new_restrictions == []
+
+    def test_build_request_body_for_add_attribute_restriction(self) -> None:
+        annotation_specs = load_annotation_specs()
+        new_restriction = {
+            "additional_data_definition_id": "54fa5e97-6f88-49a4-aeb0-a91a15d11528",
+            "condition": {"value": "bar", "_type": "Equals"},
+        }
+        resolved = resolve_restrictions_to_add(annotation_specs, [new_restriction])
+
+        actual = build_request_body_for_add_attribute_restriction(
+            annotation_specs,
+            new_restrictions=resolved.new_restrictions,
+            new_restriction_text_list=resolved.new_restriction_text_list,
+            comment=None,
+        )
+
+        assert actual["restrictions"] == [*annotation_specs["restrictions"], new_restriction]

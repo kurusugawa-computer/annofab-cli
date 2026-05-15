@@ -5,7 +5,7 @@ import copy
 import json
 import logging
 from collections.abc import Mapping, Sequence
-from dataclasses import replace
+from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Any
 
@@ -20,6 +20,19 @@ from annofabcli.common.cli import ArgumentParser, CommandLine, CommandLineWithCo
 from annofabcli.common.facade import AnnofabApiFacade
 
 logger = logging.getLogger(__name__)
+
+
+@dataclass(frozen=True)
+class ResolvedAddedChoicesInput:
+    """
+    既存属性への選択肢追加を解決した結果。
+    """
+
+    target_attribute: dict[str, Any]
+    """選択肢を追加する対象属性。"""
+
+    added_choices: list[dict[str, Any]]
+    """追加する選択肢一覧。"""
 
 
 def create_comment_from_attribute(attribute_name_en: str, choice_name_ens: list[str]) -> str:
@@ -122,6 +135,77 @@ def ignore_default_choice_inputs(choice_inputs: Sequence[ChoiceAttributeInput]) 
     return [replace(choice_input, is_default=False) for choice_input in choice_inputs]
 
 
+def resolve_added_choices_input(
+    annotation_specs: dict[str, Any],
+    *,
+    attribute_id: str | None,
+    attribute_name_en: str | None,
+    choice_inputs: Sequence[ChoiceAttributeInput],
+) -> ResolvedAddedChoicesInput:
+    """
+    既存属性への追加選択肢を既存アノテーション仕様に対して解決する。
+
+    Args:
+        annotation_specs: 既存のアノテーション仕様
+        attribute_id: 追加先属性ID
+        attribute_name_en: 追加先属性英語名
+        choice_inputs: 追加する選択肢一覧
+
+    Returns:
+        解決済み追加選択肢入力
+    """
+    added_choices, _ = build_choices(ignore_default_choice_inputs(choice_inputs), min_count=1)
+
+    annotation_specs_accessor = AnnotationSpecsAccessor(annotation_specs)
+    target_attribute = annotation_specs_accessor.get_attribute(
+        attribute_id=attribute_id,
+        attribute_name=attribute_name_en,
+    )
+    if target_attribute["type"] not in ["choice", "select"]:
+        raise ValueError(f"属性ID='{target_attribute['additional_data_definition_id']}' は選択肢系属性ではありません。")
+
+    validate_added_choices(
+        target_attribute,
+        added_choices=added_choices,
+    )
+    return ResolvedAddedChoicesInput(target_attribute=dict(target_attribute), added_choices=added_choices)
+
+
+def build_request_body_for_add_choices_to_attribute(
+    annotation_specs: dict[str, Any],
+    *,
+    resolved_added_choices_input: ResolvedAddedChoicesInput,
+    comment: str | None,
+) -> dict[str, Any]:
+    """
+    既存属性への選択肢追加用の request body を生成する。
+
+    Args:
+        annotation_specs: 既存のアノテーション仕様
+        resolved_added_choices_input: 解決済み追加選択肢入力
+        comment: 変更コメント
+
+    Returns:
+        Annofab API に渡す request body
+    """
+    request_body = copy.deepcopy(annotation_specs)
+    resolved_attribute_id = resolved_added_choices_input.target_attribute["additional_data_definition_id"]
+    resolved_attribute_name_en = get_attribute_name_en(resolved_added_choices_input.target_attribute)
+    added_choice_name_ens = [get_english_message(choice["name"]) for choice in resolved_added_choices_input.added_choices]
+
+    for attribute in request_body["additionals"]:
+        if attribute["additional_data_definition_id"] != resolved_attribute_id:
+            continue
+        attribute["choices"].extend(resolved_added_choices_input.added_choices)
+        break
+
+    if comment is None:
+        comment = create_comment_from_attribute(resolved_attribute_name_en, added_choice_name_ens)
+    request_body["comment"] = comment
+    request_body["last_updated_datetime"] = annotation_specs["updated_datetime"]
+    return request_body
+
+
 class AddChoicesToAttributeMain(CommandLineWithConfirm):
     """
     既存の選択肢系属性へ選択肢を追加する本体処理。
@@ -172,42 +256,31 @@ class AddChoicesToAttributeMain(CommandLineWithConfirm):
         else:
             raise ValueError("`--choice_json` または `--choice_csv` のいずれかを指定してください。")
 
-        added_choices, _ = build_choices(ignore_default_choice_inputs(choice_inputs), min_count=1)
-
         old_annotation_specs, _ = self.service.api.get_annotation_specs(self.project_id, query_params={"v": "3"})
-        annotation_specs_accessor = AnnotationSpecsAccessor(old_annotation_specs)
-        target_attribute = annotation_specs_accessor.get_attribute(
+        resolved_added_choices_input = resolve_added_choices_input(
+            old_annotation_specs,
             attribute_id=attribute_id,
-            attribute_name=attribute_name_en,
-        )
-        if target_attribute["type"] not in ["choice", "select"]:
-            raise ValueError(f"属性ID='{target_attribute['additional_data_definition_id']}' は選択肢系属性ではありません。")
-
-        validate_added_choices(
-            target_attribute,
-            added_choices=added_choices,
+            attribute_name_en=attribute_name_en,
+            choice_inputs=choice_inputs,
         )
 
-        resolved_attribute_id = target_attribute["additional_data_definition_id"]
-        resolved_attribute_name_en = get_attribute_name_en(target_attribute)
-        added_choice_name_ens = [get_english_message(choice["name"]) for choice in added_choices]
-        confirm_message = f"属性名(英語)='{resolved_attribute_name_en}', 属性ID='{resolved_attribute_id}' に {len(added_choices)} 件の選択肢 {added_choice_name_ens} を追加します。よろしいですか？"
+        resolved_attribute_id = resolved_added_choices_input.target_attribute["additional_data_definition_id"]
+        resolved_attribute_name_en = get_attribute_name_en(resolved_added_choices_input.target_attribute)
+        added_choice_name_ens = [get_english_message(choice["name"]) for choice in resolved_added_choices_input.added_choices]
+        confirm_message = (
+            f"属性名(英語)='{resolved_attribute_name_en}', 属性ID='{resolved_attribute_id}' に "
+            f"{len(resolved_added_choices_input.added_choices)} 件の選択肢 {added_choice_name_ens} を追加します。よろしいですか？"
+        )
         if not self.confirm_processing(confirm_message):
             return False
 
-        request_body = copy.deepcopy(old_annotation_specs)
-        for attribute in request_body["additionals"]:
-            if attribute["additional_data_definition_id"] != resolved_attribute_id:
-                continue
-            attribute["choices"].extend(added_choices)
-            break
-
-        if comment is None:
-            comment = create_comment_from_attribute(resolved_attribute_name_en, added_choice_name_ens)
-        request_body["comment"] = comment
-        request_body["last_updated_datetime"] = old_annotation_specs["updated_datetime"]
+        request_body = build_request_body_for_add_choices_to_attribute(
+            old_annotation_specs,
+            resolved_added_choices_input=resolved_added_choices_input,
+            comment=comment,
+        )
         self.service.api.put_annotation_specs(self.project_id, query_params={"v": "3"}, request_body=request_body)
-        logger.info(f"属性名(英語)='{resolved_attribute_name_en}', 属性ID='{resolved_attribute_id}' に {len(added_choices)} 件の選択肢を追加しました。")
+        logger.info(f"属性名(英語)='{resolved_attribute_name_en}', 属性ID='{resolved_attribute_id}' に {len(resolved_added_choices_input.added_choices)} 件の選択肢を追加しました。")
         return True
 
 
