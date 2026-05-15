@@ -12,7 +12,7 @@ import annofabapi
 from annofabapi.util.annotation_specs import AnnotationSpecsAccessor
 
 import annofabcli.common.cli
-from annofabcli.annotation_specs.attribute_restriction import AttributeRestrictionMessage, OutputFormat
+from annofabcli.annotation_specs.attribute_restriction import AttributeRestrictionMessage
 from annofabcli.annotation_specs.utils import get_target_attributes
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
@@ -116,7 +116,6 @@ class DeleteAttributeRestrictionMain(CommandLineWithConfirm):
         message_obj = AttributeRestrictionMessage(
             labels=old_annotation_specs["labels"],
             additionals=old_annotation_specs["additionals"],
-            output_format=OutputFormat.TEXT,
             raise_if_not_found=True,
         )
 
@@ -188,7 +187,6 @@ class DeleteAttributeRestrictionMain(CommandLineWithConfirm):
         message_obj = AttributeRestrictionMessage(
             labels=old_annotation_specs["labels"],
             additionals=old_annotation_specs["additionals"],
-            output_format=OutputFormat.TEXT,
             raise_if_not_found=True,
         )
 

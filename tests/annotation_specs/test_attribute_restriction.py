@@ -6,7 +6,7 @@ from typing import Any
 
 import pytest
 
-from annofabcli.annotation_specs.attribute_restriction import AttributeRestrictionMessage, OutputFormat
+from annofabcli.annotation_specs.attribute_restriction import AttributeRestrictionMessage
 
 data_dir = Path("./tests/data/annotation_specs")
 out_dir = Path("./tests/out/annotation_specs")
@@ -25,7 +25,6 @@ class Test__AttributeRestrictionMessage:
         cls.obj = AttributeRestrictionMessage(
             labels=annotation_specs["labels"],
             additionals=annotation_specs["additionals"],
-            output_format=OutputFormat.DETAILED_TEXT,
         )
         cls.annotation_specs = annotation_specs
 
@@ -36,7 +35,6 @@ class Test__AttributeRestrictionMessage:
             labels=self.annotation_specs["labels"],
             additionals=self.annotation_specs["additionals"],
             raise_if_not_found=True,
-            output_format=OutputFormat.DETAILED_TEXT,
         )
         with pytest.raises(ValueError):
             obj.get_restriction_text(attribute_id, condition)
@@ -51,7 +49,6 @@ class Test__AttributeRestrictionMessage:
             labels=self.annotation_specs["labels"],
             additionals=self.annotation_specs["additionals"],
             raise_if_not_found=True,
-            output_format=OutputFormat.DETAILED_TEXT,
         )
         with pytest.raises(ValueError):
             obj.get_restriction_text(attribute_id, condition)
@@ -63,7 +60,6 @@ class Test__AttributeRestrictionMessage:
             labels=self.annotation_specs["labels"],
             additionals=self.annotation_specs["additionals"],
             raise_if_not_found=True,
-            output_format=OutputFormat.DETAILED_TEXT,
         )
         with pytest.raises(ValueError):
             obj_with_raise.get_restriction_text(attribute_id, condition)
@@ -72,13 +68,13 @@ class Test__AttributeRestrictionMessage:
         attribute_id = "71620647-98cf-48ad-b43b-4af425a24f32"
         condition = {"value": "b690fa1a-7b3d-4181-95d8-f5c75927c3fc", "_type": "Equals"}
         actual = self.obj.get_restriction_text(attribute_id, condition)
-        assert actual == "'type' (id='71620647-98cf-48ad-b43b-4af425a24f32', type='select') EQUALS 'medium' (id='b690fa1a-7b3d-4181-95d8-f5c75927c3fc')"
+        assert actual == "'type' EQUALS 'medium'"
 
     def test_get_restriction_text__caninput(self):
         attribute_id = "54fa5e97-6f88-49a4-aeb0-a91a15d11528"
         condition = {"enable": False, "_type": "CanInput"}
         actual = self.obj.get_restriction_text(attribute_id, condition)
-        assert actual == "'comment' (id='54fa5e97-6f88-49a4-aeb0-a91a15d11528', type='comment') CAN NOT INPUT"
+        assert actual == "'comment' CAN NOT INPUT"
 
     def test_get_restriction_text__haslabel(self):
         attribute_id = "15235360-4f46-42ac-927d-0e046bf52ddd"
@@ -88,9 +84,7 @@ class Test__AttributeRestrictionMessage:
         }
 
         actual = self.obj.get_restriction_text(attribute_id, condition)
-        assert (
-            actual == "'link' (id='15235360-4f46-42ac-927d-0e046bf52ddd', type='link') HAS LABEL 'bike' (id='40f7796b-3722-4eed-9c0c-04a27f9165d2'), 'bus' (id='22b5189b-af7b-4d9c-83a5-b92f122170ec')"  # noqa: E501
-        )
+        assert actual == "'link' HAS LABEL 'bike', 'bus'"
 
     def test_get_restriction_text__imply(self):
         attribute_id = "54fa5e97-6f88-49a4-aeb0-a91a15d11528"
@@ -104,23 +98,21 @@ class Test__AttributeRestrictionMessage:
         }
 
         actual = self.obj.get_restriction_text(attribute_id, condition)
-        assert (
-            actual == "'comment' (id='54fa5e97-6f88-49a4-aeb0-a91a15d11528', type='comment') MATCHES '[0-9]' IF 'unclear' (id='f12a0b59-dfce-4241-bb87-4b2c0259fc6f', type='flag') EQUALS 'true'"  # noqa: E501
-        )
+        assert actual == "'comment' MATCHES '[0-9]' IF 'unclear' EQUALS 'true'"
 
     def test_get_restriction_text__equals_not_exist_attribute(self):
         attribute_id = "not-exist"
         condition = {"value": "foo", "_type": "Equals"}
 
         actual = self.obj.get_restriction_text(attribute_id, condition)
-        assert actual == "'' (id='not-exist') EQUALS 'foo'"
+        assert actual == "'' EQUALS 'foo'"
 
     def test_get_restriction_text__dropdown_not_exist_attribute(self):
         attribute_id = "71620647-98cf-48ad-b43b-4af425a24f32"
         condition = {"value": "", "_type": "Equals"}
 
         actual = self.obj.get_restriction_text(attribute_id, condition)
-        assert actual == "'type' (id='71620647-98cf-48ad-b43b-4af425a24f32', type='select') EQUALS '' (id='')"
+        assert actual == "'type' EQUALS ''"
 
     def test_get_restriction_text_list(self):
         actual1 = self.obj.get_restriction_text_list(self.annotation_specs["restrictions"], target_attribute_names=["link"])

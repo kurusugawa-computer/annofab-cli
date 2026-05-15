@@ -1,29 +1,11 @@
 import logging
 from collections.abc import Collection
-from enum import Enum
 from typing import Any
 
 from annofabapi.util.annotation_specs import get_attribute_name_en, get_choice_name_en, get_label_name_en
 from more_itertools import first_true
 
 logger = logging.getLogger(__name__)
-
-
-class OutputFormat(Enum):
-    """
-    表示するフォーマット ``--format`` で指定できる値
-
-    Attributes:
-        TEXT: 属性IDや種類を隠したシンプルなテキスト
-        DETAILED_TEXT: 属性IDや属性種類などの詳細情報を表示したテキスト
-        JSON: インデントされていないJSON形式
-        PRETTY_JSON: インデントされているJSON形式
-    """
-
-    TEXT = "text"
-    DETAILED_TEXT = "detailed_text"
-    JSON = "json"
-    PRETTY_JSON = "pretty_json"
 
 
 class AttributeRestrictionMessage:
@@ -34,9 +16,6 @@ class AttributeRestrictionMessage:
         labels: アノテーション仕様のラベル情報
         additionals: アノテーション仕様の属性情報
         raise_if_not_found: 属性やラベルが見つからなかった場合に例外を発生させるかどうか
-        format: 属性制約の表示フォーマット
-            - `text`: 属性IDを隠したシンプルなテキスト
-            - `detailed_text`: 属性IDなどの詳細情報を表示したテキスト
 
     """
 
@@ -46,11 +25,9 @@ class AttributeRestrictionMessage:
         additionals: list[dict[str, Any]],
         *,
         raise_if_not_found: bool = False,
-        output_format: OutputFormat = OutputFormat.DETAILED_TEXT,  # pylint: disable=redefined-builtin
     ) -> None:
         self.attribute_dict = {e["additional_data_definition_id"]: e for e in additionals}
         self.label_dict = {e["label_id"]: e for e in labels}
-        self.output_format = output_format
         self.raise_if_not_found = raise_if_not_found
 
     def get_labels_text(self, label_ids: Collection[str]) -> str:
@@ -65,10 +42,7 @@ class AttributeRestrictionMessage:
                     raise ValueError(f"ラベルIDが'{label_id}'であるラベルは存在しません。")
                 label_name = ""
 
-            label_message = f"'{label_name}'"
-            if self.output_format == OutputFormat.DETAILED_TEXT:
-                label_message = f"{label_message} (id='{label_id}')"
-            label_message_list.append(label_message)
+            label_message_list.append(f"'{label_name}'")
 
         return ", ".join(label_message_list)
 
@@ -84,7 +58,6 @@ class AttributeRestrictionMessage:
             valueが'foo'の場合：
             -  属性の種類が排他選択でない場合： `'foo'` （valueを返す）
             -  属性の種類が排他選択である場合： `'FOO'` （選択肢の名前を返す）
-            -  `OutputFormat.DETAILED_TEXT` AND 属性の種類が排他選択である場合： `'FOO' (id='foo')` （選択肢の名前とIDを返す）
 
         """
         if attribute is not None and attribute["type"] in ["choice", "select"]:
@@ -94,10 +67,7 @@ class AttributeRestrictionMessage:
             if value == "" or choice is not None:
                 # `value == ""`を判定条件に加える理由：「排他選択属性が空である/空でない」という制約の場合、`value`は空文字列になるため。
                 choice_name = get_choice_name_en(choice) if choice is not None else ""
-                tmp = f"'{choice_name}'"
-                if self.output_format == OutputFormat.DETAILED_TEXT:
-                    tmp = f"{tmp} (id='{value}')"
-                return tmp
+                return f"'{choice_name}'"
 
             else:
                 message = f"選択肢IDが'{value}'である選択肢は存在しません。 :: 属性名='{get_attribute_name_en(attribute)}', 属性ID='{attribute['additional_data_definition_id']}'"
@@ -108,7 +78,7 @@ class AttributeRestrictionMessage:
         else:
             return f"'{value}'"
 
-    def get_restriction_text(self, attribute_id: str, condition: dict[str, Any]) -> str:  # noqa: PLR0912
+    def get_restriction_text(self, attribute_id: str, condition: dict[str, Any]) -> str:
         """制約情報のテキストを返します。
 
         Args:
@@ -130,16 +100,12 @@ class AttributeRestrictionMessage:
         attribute = self.attribute_dict.get(attribute_id)
         if attribute is not None:
             subject = f"'{get_attribute_name_en(attribute)}'"
-            if self.output_format == OutputFormat.DETAILED_TEXT:
-                subject = f"{subject} (id='{attribute_id}', type='{attribute['type']}')"
         else:
             logger.warning(f"属性IDが'{attribute_id}'である属性は存在しません。")
             if self.raise_if_not_found:
                 raise ValueError(f"属性IDが'{attribute_id}'である属性は存在しません。")
 
             subject = "''"
-            if self.output_format == OutputFormat.DETAILED_TEXT:
-                subject = f"{subject} (id='{attribute_id}')"
 
         if str_type == "CanInput":
             verb = "CAN INPUT" if condition["enable"] else "CAN NOT INPUT"
