@@ -156,7 +156,6 @@ class TestCreateAnnotationSpecsDiff:
             }
         ]
         assert actual_dict["attributes"] == {
-            "attribute_order_changed": False,
             "added_attribute_ids": ["attr_pose"],
             "removed_attribute_ids": ["attr_truncated"],
             "changed_attributes": [

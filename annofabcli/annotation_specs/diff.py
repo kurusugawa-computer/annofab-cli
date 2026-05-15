@@ -105,8 +105,6 @@ class AttributesDiff(BaseModel):
 
     model_config = ConfigDict(frozen=True)
 
-    attribute_order_changed: bool = False
-    """属性全体の順序が変更されたか"""
     added_attribute_ids: list[str] = Field(default_factory=list)
     """追加された属性ID一覧"""
     removed_attribute_ids: list[str] = Field(default_factory=list)
@@ -118,7 +116,6 @@ class AttributesDiff(BaseModel):
         """変更有無を返す。"""
         return any(
             [
-                self.attribute_order_changed,
                 len(self.added_attribute_ids) > 0,
                 len(self.removed_attribute_ids) > 0,
                 len(self.changed_attributes) > 0,
@@ -453,7 +450,6 @@ def compare_attributes(left_specs: dict[str, Any], right_specs: dict[str, Any]) 
             changed_attributes.append(changed_attribute)
 
     return AttributesDiff(
-        attribute_order_changed=_is_order_changed(left_attribute_ids, right_attribute_ids),
         added_attribute_ids=_get_added_ids(left_attribute_ids, right_attribute_ids),
         removed_attribute_ids=_get_removed_ids(left_attribute_ids, right_attribute_ids),
         changed_attributes=changed_attributes,
@@ -733,28 +729,6 @@ def _format_attributes_diff_as_text(
     if not attributes_diff.has_changes():
         lines.append("差分はありません。")
         return lines
-
-    if attributes_diff.attribute_order_changed:
-        lines.append("attribute_order_changed: true")
-        if detail:
-            _append_name_lines(
-                lines,
-                indent="",
-                label="left_attributes",
-                values=_get_attribute_name_en_list_by_ids(
-                    left_specs,
-                    [e["additional_data_definition_id"] for e in left_specs.get("additionals", [])],
-                ),
-            )
-            _append_name_lines(
-                lines,
-                indent="",
-                label="right_attributes",
-                values=_get_attribute_name_en_list_by_ids(
-                    right_specs,
-                    [e["additional_data_definition_id"] for e in right_specs.get("additionals", [])],
-                ),
-            )
 
     _append_name_lines(
         lines,
