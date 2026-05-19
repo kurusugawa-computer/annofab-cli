@@ -22,24 +22,68 @@ from annofabcli.annotation_specs.diff_models import (
 
 
 def _get_added_ids(left_ids: Sequence[str], right_ids: Sequence[str]) -> list[str]:
+    """追加されたID一覧を取得する。
+
+    Args:
+        left_ids: 比較元のID一覧。
+        right_ids: 比較先のID一覧。
+
+    Returns:
+        比較先にのみ存在するID一覧。
+    """
     left_ids_set = set(left_ids)
     return [e for e in right_ids if e not in left_ids_set]
 
 
 def _get_removed_ids(left_ids: Sequence[str], right_ids: Sequence[str]) -> list[str]:
+    """削除されたID一覧を取得する。
+
+    Args:
+        left_ids: 比較元のID一覧。
+        right_ids: 比較先のID一覧。
+
+    Returns:
+        比較元にのみ存在するID一覧。
+    """
     right_ids_set = set(right_ids)
     return [e for e in left_ids if e not in right_ids_set]
 
 
 def _is_order_changed(left_ids: Sequence[str], right_ids: Sequence[str]) -> bool:
+    """同一要素の並び順が変更されたかどうかを返す。
+
+    Args:
+        left_ids: 比較元のID一覧。
+        right_ids: 比較先のID一覧。
+
+    Returns:
+        要素集合が同じで順序だけが異なる場合は ``True`` 。
+    """
     return set(left_ids) == set(right_ids) and list(left_ids) != list(right_ids)
 
 
 def _to_json_text(value: JsonValue) -> str:
+    """JSON値を安定した文字列に変換する。
+
+    Args:
+        value: 文字列化するJSON値。
+
+    Returns:
+        キー順を固定したJSON文字列。
+    """
     return json.dumps(value, ensure_ascii=False, sort_keys=True)
 
 
 def _normalize_json_value(value: JsonValue, *, key: str | None = None) -> JsonValue:
+    """JSON値を比較用に正規化する。
+
+    Args:
+        value: 正規化するJSON値。
+        key: 親要素のキー名。
+
+    Returns:
+        比較しやすい形に正規化したJSON値。
+    """
     if isinstance(value, dict):
         return {k: _normalize_json_value(v, key=k) for k, v in sorted(value.items())}
     if isinstance(value, list):
@@ -51,10 +95,26 @@ def _normalize_json_value(value: JsonValue, *, key: str | None = None) -> JsonVa
 
 
 def _create_attribute_restriction_diff_item(restriction: dict[str, Any]) -> AttributeRestrictionDiffItem:
+    """属性制約の差分項目を生成する。
+
+    Args:
+        restriction: 属性制約情報。
+
+    Returns:
+        属性制約差分項目。
+    """
     return AttributeRestrictionDiffItem(condition=restriction["condition"])
 
 
 def _to_attribute_restriction_key(restriction: dict[str, Any]) -> str:
+    """属性制約を比較用のキー文字列に変換する。
+
+    Args:
+        restriction: 属性制約情報。
+
+    Returns:
+        属性制約の識別に使う文字列。
+    """
     return _to_json_text(
         {
             "additional_data_definition_id": restriction["additional_data_definition_id"],
@@ -67,6 +127,15 @@ def _get_added_restrictions(
     left_restrictions: Sequence[dict[str, Any]],
     right_restrictions: Sequence[dict[str, Any]],
 ) -> list[AttributeRestrictionDiffItem]:
+    """追加された属性制約一覧を取得する。
+
+    Args:
+        left_restrictions: 比較元の属性制約一覧。
+        right_restrictions: 比較先の属性制約一覧。
+
+    Returns:
+        比較先にのみ存在する属性制約差分項目一覧。
+    """
     left_counter = Counter(_to_attribute_restriction_key(e) for e in left_restrictions)
     added_restrictions = []
     for restriction in right_restrictions:
@@ -82,6 +151,15 @@ def _get_removed_restrictions(
     left_restrictions: Sequence[dict[str, Any]],
     right_restrictions: Sequence[dict[str, Any]],
 ) -> list[AttributeRestrictionDiffItem]:
+    """削除された属性制約一覧を取得する。
+
+    Args:
+        left_restrictions: 比較元の属性制約一覧。
+        right_restrictions: 比較先の属性制約一覧。
+
+    Returns:
+        比較元にのみ存在する属性制約差分項目一覧。
+    """
     right_counter = Counter(_to_attribute_restriction_key(e) for e in right_restrictions)
     removed_restrictions = []
     for restriction in left_restrictions:
