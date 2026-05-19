@@ -175,7 +175,7 @@ class TestCreateAnnotationSpecsDiff:
                     "attribute_id": "attr_occluded",
                     "read_only_changed": False,
                     "name_ja_changed": True,
-                    "name_en_changed": False,
+                    "attribute_name_en_changed": False,
                     "name_vi_changed": False,
                     "keybind_changed": False,
                     "type_changed": False,
@@ -388,7 +388,7 @@ class TestFormatAnnotationSpecsDiffAsText:
         )
 
         expected_lines = [
-            '  name_en: "occluded" -> "occluded-updated"',
+            '  attribute_name_en: "occluded" -> "occluded-updated"',
             '  name_ja: "遮蔽" -> "遮蔽更新"',
             '  name_vi: "bị che" -> "bi-che-moi"',
             '  type: "select" -> "text"',

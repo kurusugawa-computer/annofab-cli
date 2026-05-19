@@ -58,7 +58,7 @@ class ChangedAttribute(BaseModel):
     """read_only が変更されたか"""
     name_ja_changed: bool = False
     """日本語名が変更されたか"""
-    name_en_changed: bool = False
+    attribute_name_en_changed: bool = False
     """英語名が変更されたか"""
     name_vi_changed: bool = False
     """ベトナム語名が変更されたか"""
@@ -96,7 +96,7 @@ class ChangedAttribute(BaseModel):
             [
                 self.read_only_changed,
                 self.name_ja_changed,
-                self.name_en_changed,
+                self.attribute_name_en_changed,
                 self.name_vi_changed,
                 self.keybind_changed,
                 self.type_changed,

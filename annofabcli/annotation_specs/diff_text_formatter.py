@@ -163,8 +163,8 @@ def _get_changed_field_names_from_choice(diff: ChangedChoice) -> list[str]:
 
 def _get_changed_field_names_from_attribute(diff: ChangedAttribute) -> list[str]:
     field_names = []
-    if diff.name_en_changed:
-        field_names.append("name_en")
+    if diff.attribute_name_en_changed:
+        field_names.append("attribute_name_en")
     if diff.name_ja_changed:
         field_names.append("name_ja")
     if diff.name_vi_changed:
@@ -479,7 +479,7 @@ def _format_attribute_detail_lines(
 ) -> list[str]:
     lines = []
     detail_targets: list[tuple[str, STR_LANG, bool]] = [
-        ("name_en", "en-US", changed_attribute.name_en_changed),
+        ("attribute_name_en", "en-US", changed_attribute.attribute_name_en_changed),
         ("name_ja", "ja-JP", changed_attribute.name_ja_changed),
         ("name_vi", "vi-VN", changed_attribute.name_vi_changed),
     ]
