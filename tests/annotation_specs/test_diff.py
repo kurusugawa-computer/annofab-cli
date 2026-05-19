@@ -6,7 +6,8 @@ import json
 import pytest
 
 from annofabcli.__main__ import main
-from annofabcli.annotation_specs.diff import create_annotation_specs_diff, format_annotation_specs_diff_as_text
+from annofabcli.annotation_specs.diff_compare import create_annotation_specs_diff
+from annofabcli.annotation_specs.diff_text_formatter import format_annotation_specs_diff_as_text
 
 
 def _create_choice(choice_id: str, *, ja: str, en: str, vi: str) -> dict:

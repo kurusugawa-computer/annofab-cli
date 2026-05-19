@@ -8,11 +8,9 @@ from pathlib import Path
 from typing import Any
 
 import annofabcli.common.cli
-from annofabcli.annotation_specs.diff import (
-    AnnotationSpecsDiffOutputFormat,
-    create_annotation_specs_diff,
-    format_annotation_specs_diff_as_text,
-)
+from annofabcli.annotation_specs.diff_compare import create_annotation_specs_diff
+from annofabcli.annotation_specs.diff_models import AnnotationSpecsDiffOutputFormat
+from annofabcli.annotation_specs.diff_text_formatter import format_annotation_specs_diff_as_text
 from annofabcli.common.cli import COMMAND_LINE_ERROR_STATUS_CODE, CommandLine, build_annofabapi_resource_and_login
 from annofabcli.common.facade import AnnofabApiFacade
 from annofabcli.common.utils import output_string, print_json
