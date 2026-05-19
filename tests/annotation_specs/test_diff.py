@@ -174,9 +174,9 @@ class TestCreateAnnotationSpecsDiff:
                 {
                     "attribute_id": "attr_occluded",
                     "read_only_changed": False,
-                    "name_ja_changed": True,
+                    "attribute_name_ja_changed": True,
                     "attribute_name_en_changed": False,
-                    "name_vi_changed": False,
+                    "attribute_name_vi_changed": False,
                     "keybind_changed": False,
                     "type_changed": False,
                     "default_changed": True,
@@ -187,9 +187,9 @@ class TestCreateAnnotationSpecsDiff:
                     "changed_choices": [
                         {
                             "choice_id": "choice_yes",
-                            "name_ja_changed": False,
+                            "choice_name_ja_changed": False,
                             "choice_name_en_changed": False,
-                            "name_vi_changed": True,
+                            "choice_name_vi_changed": True,
                             "keybind_changed": False,
                         }
                     ],
@@ -389,8 +389,8 @@ class TestFormatAnnotationSpecsDiffAsText:
 
         expected_lines = [
             '  attribute_name_en: "occluded" -> "occluded-updated"',
-            '  name_ja: "遮蔽" -> "遮蔽更新"',
-            '  name_vi: "bị che" -> "bi-che-moi"',
+            '  attribute_name_ja: "遮蔽" -> "遮蔽更新"',
+            '  attribute_name_vi: "bị che" -> "bi-che-moi"',
             '  type: "select" -> "text"',
             '  keybind: "" -> "Ctrl+Digit2"',
             '  default: "choice_yes" -> "choice_no"',
@@ -465,8 +465,8 @@ class TestFormatAnnotationSpecsDiffAsText:
         expected_lines = [
             "  ~ choice: yes-updated",
             '    choice_name_en: "yes" -> "yes-updated"',
-            '    name_ja: "はい" -> "はい更新"',
-            '    name_vi: "co" -> "co-moi"',
+            '    choice_name_ja: "はい" -> "はい更新"',
+            '    choice_name_vi: "co" -> "co-moi"',
             '    keybind: "" -> "Ctrl+Digit4"',
         ]
         positions = [actual.index(line) for line in expected_lines]

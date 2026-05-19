@@ -26,11 +26,11 @@ class ChangedChoice(BaseModel):
 
     choice_id: str
     """選択肢ID"""
-    name_ja_changed: bool = False
+    choice_name_ja_changed: bool = False
     """日本語名が変更されたか"""
     choice_name_en_changed: bool = False
     """英語名が変更されたか"""
-    name_vi_changed: bool = False
+    choice_name_vi_changed: bool = False
     """ベトナム語名が変更されたか"""
     keybind_changed: bool = False
     """キーバインドが変更されたか"""
@@ -39,9 +39,9 @@ class ChangedChoice(BaseModel):
         """変更有無を返す。"""
         return any(
             [
-                self.name_ja_changed,
+                self.choice_name_ja_changed,
                 self.choice_name_en_changed,
-                self.name_vi_changed,
+                self.choice_name_vi_changed,
                 self.keybind_changed,
             ]
         )
@@ -56,11 +56,11 @@ class ChangedAttribute(BaseModel):
     """属性ID"""
     read_only_changed: bool = False
     """read_only が変更されたか"""
-    name_ja_changed: bool = False
+    attribute_name_ja_changed: bool = False
     """日本語名が変更されたか"""
     attribute_name_en_changed: bool = False
     """英語名が変更されたか"""
-    name_vi_changed: bool = False
+    attribute_name_vi_changed: bool = False
     """ベトナム語名が変更されたか"""
     keybind_changed: bool = False
     """キーバインドが変更されたか"""
@@ -95,9 +95,9 @@ class ChangedAttribute(BaseModel):
         return any(
             [
                 self.read_only_changed,
-                self.name_ja_changed,
+                self.attribute_name_ja_changed,
                 self.attribute_name_en_changed,
-                self.name_vi_changed,
+                self.attribute_name_vi_changed,
                 self.keybind_changed,
                 self.type_changed,
                 self.default_changed,

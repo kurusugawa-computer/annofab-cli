@@ -152,10 +152,10 @@ def _get_changed_field_names_from_choice(diff: ChangedChoice) -> list[str]:
     field_names = []
     if diff.choice_name_en_changed:
         field_names.append("choice_name_en")
-    if diff.name_ja_changed:
-        field_names.append("name_ja")
-    if diff.name_vi_changed:
-        field_names.append("name_vi")
+    if diff.choice_name_ja_changed:
+        field_names.append("choice_name_ja")
+    if diff.choice_name_vi_changed:
+        field_names.append("choice_name_vi")
     if diff.keybind_changed:
         field_names.append("keybind")
     return field_names
@@ -165,10 +165,10 @@ def _get_changed_field_names_from_attribute(diff: ChangedAttribute) -> list[str]
     field_names = []
     if diff.attribute_name_en_changed:
         field_names.append("attribute_name_en")
-    if diff.name_ja_changed:
-        field_names.append("name_ja")
-    if diff.name_vi_changed:
-        field_names.append("name_vi")
+    if diff.attribute_name_ja_changed:
+        field_names.append("attribute_name_ja")
+    if diff.attribute_name_vi_changed:
+        field_names.append("attribute_name_vi")
     if diff.type_changed:
         field_names.append("type")
     if diff.keybind_changed:
@@ -480,8 +480,8 @@ def _format_attribute_detail_lines(
     lines = []
     detail_targets: list[tuple[str, STR_LANG, bool]] = [
         ("attribute_name_en", "en-US", changed_attribute.attribute_name_en_changed),
-        ("name_ja", "ja-JP", changed_attribute.name_ja_changed),
-        ("name_vi", "vi-VN", changed_attribute.name_vi_changed),
+        ("attribute_name_ja", "ja-JP", changed_attribute.attribute_name_ja_changed),
+        ("attribute_name_vi", "vi-VN", changed_attribute.attribute_name_vi_changed),
     ]
     for name, lang, changed in detail_targets:
         lines.extend(
@@ -594,8 +594,8 @@ def _format_attribute_detail_lines(
         right_choice = right_choice_dict[changed_choice.choice_id]
         detail_targets = [
             ("choice_name_en", "en-US", changed_choice.choice_name_en_changed),
-            ("name_ja", "ja-JP", changed_choice.name_ja_changed),
-            ("name_vi", "vi-VN", changed_choice.name_vi_changed),
+            ("choice_name_ja", "ja-JP", changed_choice.choice_name_ja_changed),
+            ("choice_name_vi", "vi-VN", changed_choice.choice_name_vi_changed),
         ]
         for name, lang, changed in detail_targets:
             lines.extend(
