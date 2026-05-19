@@ -70,8 +70,6 @@ class ChangedAttribute(BaseModel):
     """デフォルト値が変更されたか"""
     metadata_changed: bool = False
     """metadata が変更されたか"""
-    choices_changed: bool = False
-    """選択肢に変更があるか"""
     choices_order_changed: bool = False
     """選択肢の順序が変更されたか"""
     added_choice_ids: list[str] = Field(default_factory=list)
@@ -80,6 +78,18 @@ class ChangedAttribute(BaseModel):
     """削除された選択肢ID一覧"""
     changed_choices: list[ChangedChoice] = Field(default_factory=list)
     """変更された既存選択肢の差分一覧"""
+
+    @property
+    def choices_changed(self) -> bool:
+        """選択肢に変更があるか。"""
+        return any(
+            [
+                self.choices_order_changed,
+                len(self.added_choice_ids) > 0,
+                len(self.removed_choice_ids) > 0,
+                len(self.changed_choices) > 0,
+            ]
+        )
 
     def has_changes(self) -> bool:
         """変更有無を返す。"""
@@ -142,8 +152,6 @@ class ChangedLabel(BaseModel):
     """英語名が変更されたか"""
     label_name_vi_changed: bool = False
     """ベトナム語名が変更されたか"""
-    attributes_changed: bool = False
-    """紐づく属性に変更があるか"""
     attributes_order_changed: bool = False
     """紐づく属性の順序が変更されたか"""
     added_attribute_ids: list[str] = Field(default_factory=list)
@@ -156,6 +164,17 @@ class ChangedLabel(BaseModel):
     """metadata が変更されたか"""
     annotation_type_changed: bool = False
     """annotation_type が変更されたか"""
+
+    @property
+    def attributes_changed(self) -> bool:
+        """紐づく属性に変更があるか。"""
+        return any(
+            [
+                self.attributes_order_changed,
+                len(self.added_attribute_ids) > 0,
+                len(self.removed_attribute_ids) > 0,
+            ]
+        )
 
     def has_changes(self) -> bool:
         """変更有無を返す。"""
