@@ -6,6 +6,7 @@ from collections.abc import Iterable, Sequence
 from enum import Enum
 from typing import Any, TypeAlias
 
+from annofabapi.util.annotation_specs import STR_LANG, get_message_with_lang
 from annofabapi.util.attribute_restrictions import Restriction
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -273,13 +274,6 @@ class AnnotationSpecsDiff(BaseModel):
         )
 
 
-def _get_message_by_lang(message_dict: dict[str, Any], lang: str) -> str | None:
-    for message in message_dict["messages"]:
-        if message["lang"] == lang:
-            return message["message"]
-    return None
-
-
 def _get_added_ids(left_ids: Sequence[str], right_ids: Sequence[str]) -> list[str]:
     left_ids_set = set(left_ids)
     return [e for e in right_ids if e not in left_ids_set]
@@ -315,7 +309,7 @@ def _get_label_name_en_by_id(specs: dict[str, Any], label_id: str) -> str:
     label = next((e for e in specs["labels"] if e["label_id"] == label_id), None)
     if label is None:
         return label_id
-    return _get_message_by_lang(label["label_name"], "en-US") or label_id
+    return get_message_with_lang(label["label_name"], "en-US") or label_id
 
 
 def _get_attribute_name_en_by_id(specs: dict[str, Any], attribute_id: str) -> str:
@@ -325,14 +319,14 @@ def _get_attribute_name_en_by_id(specs: dict[str, Any], attribute_id: str) -> st
     )
     if attribute is None:
         return attribute_id
-    return _get_message_by_lang(attribute["name"], "en-US") or attribute_id
+    return get_message_with_lang(attribute["name"], "en-US") or attribute_id
 
 
 def _get_choice_name_en_by_id(attribute: dict[str, Any], choice_id: str) -> str:
     choice = next((e for e in attribute["choices"] if e["choice_id"] == choice_id), None)
     if choice is None:
         return choice_id
-    return _get_message_by_lang(choice["name"], "en-US") or choice_id
+    return get_message_with_lang(choice["name"], "en-US") or choice_id
 
 
 def _format_name_lines(*, indent: str, label: str, values: Sequence[str]) -> list[str]:
@@ -485,9 +479,9 @@ def compare_choice(left_choice: dict[str, Any], right_choice: dict[str, Any]) ->
     """選択肢差分を比較する。"""
     diff = ChangedChoice(
         choice_id=right_choice["choice_id"],
-        name_ja_changed=_get_message_by_lang(left_choice["name"], "ja-JP") != _get_message_by_lang(right_choice["name"], "ja-JP"),
-        name_en_changed=_get_message_by_lang(left_choice["name"], "en-US") != _get_message_by_lang(right_choice["name"], "en-US"),
-        name_vi_changed=_get_message_by_lang(left_choice["name"], "vi-VN") != _get_message_by_lang(right_choice["name"], "vi-VN"),
+        name_ja_changed=get_message_with_lang(left_choice["name"], "ja-JP") != get_message_with_lang(right_choice["name"], "ja-JP"),
+        name_en_changed=get_message_with_lang(left_choice["name"], "en-US") != get_message_with_lang(right_choice["name"], "en-US"),
+        name_vi_changed=get_message_with_lang(left_choice["name"], "vi-VN") != get_message_with_lang(right_choice["name"], "vi-VN"),
         keybind_changed=left_choice["keybind"] != right_choice["keybind"],
     )
     if not diff.has_changes():
@@ -518,9 +512,9 @@ def compare_attribute(left_attribute: dict[str, Any], right_attribute: dict[str,
     diff = ChangedAttribute(
         attribute_id=right_attribute["additional_data_definition_id"],
         read_only_changed=left_attribute["read_only"] != right_attribute["read_only"],
-        name_ja_changed=_get_message_by_lang(left_attribute["name"], "ja-JP") != _get_message_by_lang(right_attribute["name"], "ja-JP"),
-        name_en_changed=_get_message_by_lang(left_attribute["name"], "en-US") != _get_message_by_lang(right_attribute["name"], "en-US"),
-        name_vi_changed=_get_message_by_lang(left_attribute["name"], "vi-VN") != _get_message_by_lang(right_attribute["name"], "vi-VN"),
+        name_ja_changed=get_message_with_lang(left_attribute["name"], "ja-JP") != get_message_with_lang(right_attribute["name"], "ja-JP"),
+        name_en_changed=get_message_with_lang(left_attribute["name"], "en-US") != get_message_with_lang(right_attribute["name"], "en-US"),
+        name_vi_changed=get_message_with_lang(left_attribute["name"], "vi-VN") != get_message_with_lang(right_attribute["name"], "vi-VN"),
         keybind_changed=left_attribute["keybind"] != right_attribute["keybind"],
         type_changed=left_attribute["type"] != right_attribute["type"],
         default_changed=left_attribute["default"] != right_attribute["default"],
@@ -572,9 +566,9 @@ def compare_label(left_label: dict[str, Any], right_label: dict[str, Any]) -> Ch
         label_id=right_label["label_id"],
         color_changed=left_label["color"] != right_label["color"],
         keybind_changed=left_label["keybind"] != right_label["keybind"],
-        label_name_ja_changed=_get_message_by_lang(left_label["label_name"], "ja-JP") != _get_message_by_lang(right_label["label_name"], "ja-JP"),
-        label_name_en_changed=_get_message_by_lang(left_label["label_name"], "en-US") != _get_message_by_lang(right_label["label_name"], "en-US"),
-        label_name_vi_changed=_get_message_by_lang(left_label["label_name"], "vi-VN") != _get_message_by_lang(right_label["label_name"], "vi-VN"),
+        label_name_ja_changed=get_message_with_lang(left_label["label_name"], "ja-JP") != get_message_with_lang(right_label["label_name"], "ja-JP"),
+        label_name_en_changed=get_message_with_lang(left_label["label_name"], "en-US") != get_message_with_lang(right_label["label_name"], "en-US"),
+        label_name_vi_changed=get_message_with_lang(left_label["label_name"], "vi-VN") != get_message_with_lang(right_label["label_name"], "vi-VN"),
         attributes_changed=len(added_attribute_ids) > 0 or len(removed_attribute_ids) > 0 or attributes_order_changed,
         attributes_order_changed=attributes_order_changed,
         added_attribute_ids=added_attribute_ids,
@@ -785,18 +779,19 @@ def _format_label_detail_lines(
             right_value=right_label["keybind"],
         )
     )
-    for name, lang, changed in [
+    detail_targets: list[tuple[str, STR_LANG, bool]] = [
         ("label_name_ja", "ja-JP", changed_label.label_name_ja_changed),
         ("label_name_en", "en-US", changed_label.label_name_en_changed),
         ("label_name_vi", "vi-VN", changed_label.label_name_vi_changed),
-    ]:
+    ]
+    for name, lang, changed in detail_targets:
         lines.extend(
             _format_detail_line(
                 indent="    ",
                 name=name,
                 changed=changed,
-                left_value=_get_message_by_lang(left_label["label_name"], lang),
-                right_value=_get_message_by_lang(right_label["label_name"], lang),
+                left_value=get_message_with_lang(left_label["label_name"], lang),
+                right_value=get_message_with_lang(right_label["label_name"], lang),
             )
         )
     lines.extend(
@@ -989,18 +984,19 @@ def _format_attribute_detail_lines(
                 right_value=right_value,
             )
         )
-    for name, lang, changed in [
+    detail_targets: list[tuple[str, STR_LANG, bool]] = [
         ("name_ja", "ja-JP", changed_attribute.name_ja_changed),
         ("name_en", "en-US", changed_attribute.name_en_changed),
         ("name_vi", "vi-VN", changed_attribute.name_vi_changed),
-    ]:
+    ]
+    for name, lang, changed in detail_targets:
         lines.extend(
             _format_detail_line(
                 indent="    ",
                 name=name,
                 changed=changed,
-                left_value=_get_message_by_lang(left_attribute["name"], lang),
-                right_value=_get_message_by_lang(right_attribute["name"], lang),
+                left_value=get_message_with_lang(left_attribute["name"], lang),
+                right_value=get_message_with_lang(right_attribute["name"], lang),
             )
         )
     lines.extend(
@@ -1027,18 +1023,19 @@ def _format_attribute_detail_lines(
         lines.append(f"      - choice_name_en: {_get_choice_name_en_by_id(right_attribute, changed_choice.choice_id)}")
         left_choice = left_choice_dict[changed_choice.choice_id]
         right_choice = right_choice_dict[changed_choice.choice_id]
-        for name, lang, changed in [
+        detail_targets = [
             ("name_ja", "ja-JP", changed_choice.name_ja_changed),
             ("name_en", "en-US", changed_choice.name_en_changed),
             ("name_vi", "vi-VN", changed_choice.name_vi_changed),
-        ]:
+        ]
+        for name, lang, changed in detail_targets:
             lines.extend(
                 _format_detail_line(
                     indent="        ",
                     name=name,
                     changed=changed,
-                    left_value=_get_message_by_lang(left_choice["name"], lang),
-                    right_value=_get_message_by_lang(right_choice["name"], lang),
+                    left_value=get_message_with_lang(left_choice["name"], lang),
+                    right_value=get_message_with_lang(right_choice["name"], lang),
                 )
             )
         lines.extend(
