@@ -330,6 +330,42 @@ class TestFormatAnnotationSpecsDiffAsText:
         assert "attribute_id:" not in actual
         assert "choice_id:" not in actual
 
+    def test_detail_textのラベル差分はchanged_field_namesと同じ順序で出力する(self):
+        left_specs = _create_annotation_specs()
+        right_specs = copy.deepcopy(left_specs)
+        right_specs["labels"][0]["label_name"]["messages"][1]["message"] = "car-updated"
+        right_specs["labels"][0]["label_name"]["messages"][0]["message"] = "自動車"
+        right_specs["labels"][0]["label_name"]["messages"][2]["message"] = "xe-moi"
+        right_specs["labels"][0]["annotation_type"] = "polygon"
+        right_specs["labels"][0]["color"] = {"red": 0, "green": 255, "blue": 0}
+        right_specs["labels"][0]["keybind"] = [{"ctrl": True, "alt": False, "shift": False, "code": "Digit3"}]
+        right_specs["labels"][0]["additional_data_definitions"] = ["attr_truncated", "attr_occluded"]
+        right_specs["labels"][0]["field_values"] = {"score": 1}
+        right_specs["labels"][0]["metadata"] = {"updated": True}
+
+        diff = create_annotation_specs_diff(left_specs, right_specs)
+        actual = format_annotation_specs_diff_as_text(
+            diff,
+            left_specs=left_specs,
+            right_specs=right_specs,
+            detail=True,
+        )
+
+        expected_lines = [
+            '  label_name_en: "car" -> "car-updated"',
+            '  label_name_ja: "車" -> "自動車"',
+            '  label_name_vi: "xe" -> "xe-moi"',
+            '  annotation_type: "bounding_box" -> "polygon"',
+            '  color: "#FF0000" -> "#00FF00"',
+            '  keybind: "" -> "Ctrl+Digit3"',
+            '  attributes: ["occluded", "truncated"] -> ["truncated", "occluded"]',
+            '  attributes_order: ["occluded", "truncated"] -> ["truncated", "occluded"]',
+            '  field_values: {} -> {"score": 1}',
+            '  metadata: {} -> {"updated": true}',
+        ]
+        positions = [actual.index(line) for line in expected_lines]
+        assert positions == sorted(positions)
+
     def test_detail_textの属性差分はchanged_field_namesと同じ順序で出力する(self):
         left_specs = _create_annotation_specs()
         right_specs = copy.deepcopy(left_specs)

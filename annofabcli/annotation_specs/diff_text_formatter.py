@@ -150,10 +150,10 @@ def _get_changed_field_names_from_label(diff: ChangedLabel) -> list[str]:
 
 def _get_changed_field_names_from_choice(diff: ChangedChoice) -> list[str]:
     field_names = []
-    if diff.name_ja_changed:
-        field_names.append("name_ja")
     if diff.name_en_changed:
         field_names.append("name_en")
+    if diff.name_ja_changed:
+        field_names.append("name_ja")
     if diff.name_vi_changed:
         field_names.append("name_vi")
     if diff.keybind_changed:
@@ -294,6 +294,30 @@ def _format_label_detail_lines(
     right_label: dict[str, Any],
 ) -> list[str]:
     lines = []
+    detail_targets: list[tuple[str, STR_LANG, bool]] = [
+        ("label_name_en", "en-US", changed_label.label_name_en_changed),
+        ("label_name_ja", "ja-JP", changed_label.label_name_ja_changed),
+        ("label_name_vi", "vi-VN", changed_label.label_name_vi_changed),
+    ]
+    for name, lang, changed in detail_targets:
+        lines.extend(
+            _format_detail_line(
+                level=1,
+                name=name,
+                changed=changed,
+                left_value=get_message_with_lang(left_label["label_name"], lang),
+                right_value=get_message_with_lang(right_label["label_name"], lang),
+            )
+        )
+    lines.extend(
+        _format_detail_line(
+            level=1,
+            name="annotation_type",
+            changed=changed_label.annotation_type_changed,
+            left_value=left_label["annotation_type"],
+            right_value=right_label["annotation_type"],
+        )
+    )
     lines.extend(
         _format_detail_line(
             level=1,
@@ -311,26 +335,26 @@ def _format_label_detail_lines(
             right_value=right_label["keybind"],
         )
     )
-    detail_targets: list[tuple[str, STR_LANG, bool]] = [
-        ("label_name_ja", "ja-JP", changed_label.label_name_ja_changed),
-        ("label_name_en", "en-US", changed_label.label_name_en_changed),
-        ("label_name_vi", "vi-VN", changed_label.label_name_vi_changed),
-    ]
-    for name, lang, changed in detail_targets:
-        lines.extend(
-            _format_detail_line(
-                level=1,
-                name=name,
-                changed=changed,
-                left_value=get_message_with_lang(left_label["label_name"], lang),
-                right_value=get_message_with_lang(right_label["label_name"], lang),
-            )
-        )
     lines.extend(
         _format_detail_line(
             level=1,
             name="attributes",
             changed=changed_label.has_attribute_relation_changes(),
+            left_value=_get_attribute_name_en_list_by_ids(
+                left_specs,
+                left_label["additional_data_definitions"],
+            ),
+            right_value=_get_attribute_name_en_list_by_ids(
+                right_specs,
+                right_label["additional_data_definitions"],
+            ),
+        )
+    )
+    lines.extend(
+        _format_detail_line(
+            level=1,
+            name="attributes_order",
+            changed=changed_label.attributes_order_changed,
             left_value=_get_attribute_name_en_list_by_ids(
                 left_specs,
                 left_label["additional_data_definitions"],
@@ -373,15 +397,6 @@ def _format_label_detail_lines(
             changed=changed_label.metadata_changed,
             left_value=left_label["metadata"],
             right_value=right_label["metadata"],
-        )
-    )
-    lines.extend(
-        _format_detail_line(
-            level=1,
-            name="annotation_type",
-            changed=changed_label.annotation_type_changed,
-            left_value=left_label["annotation_type"],
-            right_value=right_label["annotation_type"],
         )
     )
     return lines
