@@ -150,8 +150,8 @@ def _get_changed_field_names_from_label(diff: ChangedLabel) -> list[str]:
 
 def _get_changed_field_names_from_choice(diff: ChangedChoice) -> list[str]:
     field_names = []
-    if diff.name_en_changed:
-        field_names.append("name_en")
+    if diff.choice_name_en_changed:
+        field_names.append("choice_name_en")
     if diff.name_ja_changed:
         field_names.append("name_ja")
     if diff.name_vi_changed:
@@ -593,7 +593,7 @@ def _format_attribute_detail_lines(
         left_choice = left_choice_dict[changed_choice.choice_id]
         right_choice = right_choice_dict[changed_choice.choice_id]
         detail_targets = [
-            ("name_en", "en-US", changed_choice.name_en_changed),
+            ("choice_name_en", "en-US", changed_choice.choice_name_en_changed),
             ("name_ja", "ja-JP", changed_choice.name_ja_changed),
             ("name_vi", "vi-VN", changed_choice.name_vi_changed),
         ]

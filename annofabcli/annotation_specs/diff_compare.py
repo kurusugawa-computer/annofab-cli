@@ -185,7 +185,7 @@ def compare_choice(left_choice: dict[str, Any], right_choice: dict[str, Any]) ->
     diff = ChangedChoice(
         choice_id=right_choice["choice_id"],
         name_ja_changed=get_message_with_lang(left_choice["name"], "ja-JP") != get_message_with_lang(right_choice["name"], "ja-JP"),
-        name_en_changed=get_message_with_lang(left_choice["name"], "en-US") != get_message_with_lang(right_choice["name"], "en-US"),
+        choice_name_en_changed=get_message_with_lang(left_choice["name"], "en-US") != get_message_with_lang(right_choice["name"], "en-US"),
         name_vi_changed=get_message_with_lang(left_choice["name"], "vi-VN") != get_message_with_lang(right_choice["name"], "vi-VN"),
         keybind_changed=left_choice["keybind"] != right_choice["keybind"],
     )

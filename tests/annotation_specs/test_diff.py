@@ -188,7 +188,7 @@ class TestCreateAnnotationSpecsDiff:
                         {
                             "choice_id": "choice_yes",
                             "name_ja_changed": False,
-                            "name_en_changed": False,
+                            "choice_name_en_changed": False,
                             "name_vi_changed": True,
                             "keybind_changed": False,
                         }
@@ -464,7 +464,7 @@ class TestFormatAnnotationSpecsDiffAsText:
 
         expected_lines = [
             "  ~ choice: yes-updated",
-            '    name_en: "yes" -> "yes-updated"',
+            '    choice_name_en: "yes" -> "yes-updated"',
             '    name_ja: "はい" -> "はい更新"',
             '    name_vi: "co" -> "co-moi"',
             '    keybind: "" -> "Ctrl+Digit4"',
