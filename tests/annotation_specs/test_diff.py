@@ -249,6 +249,20 @@ class TestCreateAnnotationSpecsDiff:
 
 
 class TestFormatAnnotationSpecsDiffAsText:
+    def test_差分がないときは空文字を返す(self):
+        left_specs = _create_annotation_specs()
+        right_specs = copy.deepcopy(left_specs)
+
+        diff = create_annotation_specs_diff(left_specs, right_specs)
+        actual = format_annotation_specs_diff_as_text(
+            diff,
+            left_specs=left_specs,
+            right_specs=right_specs,
+            detail=False,
+        )
+
+        assert actual == ""
+
     def test_textでidではなく英語名を出力できる(self):
         left_specs = _create_annotation_specs()
         right_specs = copy.deepcopy(left_specs)
@@ -372,6 +386,24 @@ class TestFormatAnnotationSpecsDiffAsText:
         assert "  + restriction: 'occluded' is 'yes'" in actual
         assert "'occluded' is 'yes'" in actual
         assert "attr_occluded" not in actual
+
+    def test_変更があるセクションだけを出力する(self):
+        left_specs = _create_annotation_specs()
+        right_specs = copy.deepcopy(left_specs)
+        right_specs["additionals"][0]["default"] = "choice_no"
+
+        diff = create_annotation_specs_diff(left_specs, right_specs)
+        actual = format_annotation_specs_diff_as_text(
+            diff,
+            left_specs=left_specs,
+            right_specs=right_specs,
+            detail=False,
+        )
+
+        assert "[attributes]" in actual
+        assert "[labels]" not in actual
+        assert "[attribute_restrictions]" not in actual
+        assert "差分はありません。" not in actual
 
     def test_attribute_restrictionをdetail_textで出力できる(self):
         left_specs = _create_annotation_specs()

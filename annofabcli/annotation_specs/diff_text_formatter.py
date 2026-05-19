@@ -177,14 +177,14 @@ def format_annotation_specs_diff_as_text(
 ) -> str:
     """アノテーション仕様の差分をテキスト形式に変換する。"""
     if not diff.has_changes():
-        return "差分はありません。"
+        return ""
 
     sections: list[list[str]] = []
-    if diff.labels is not None:
+    if diff.labels is not None and diff.labels.has_changes():
         sections.append(_format_labels_diff_as_text(diff.labels, left_specs=left_specs, right_specs=right_specs, detail=detail))
-    if diff.attributes is not None:
+    if diff.attributes is not None and diff.attributes.has_changes():
         sections.append(_format_attributes_diff_as_text(diff.attributes, left_specs=left_specs, right_specs=right_specs, detail=detail))
-    if diff.attribute_restrictions is not None:
+    if diff.attribute_restrictions is not None and diff.attribute_restrictions.has_changes():
         sections.append(
             _format_attribute_restrictions_diff_as_text(
                 diff.attribute_restrictions,
@@ -204,9 +204,6 @@ def _format_labels_diff_as_text(
     detail: bool,
 ) -> list[str]:
     lines = ["[labels]"]
-    if not labels_diff.has_changes():
-        lines.append("差分はありません。")
-        return lines
 
     if labels_diff.label_order_changed:
         lines.append("~ label_order")
@@ -381,9 +378,6 @@ def _format_attributes_diff_as_text(
     detail: bool,
 ) -> list[str]:
     lines = ["[attributes]"]
-    if not attributes_diff.has_changes():
-        lines.append("差分はありません。")
-        return lines
 
     lines.extend(
         _format_added_removed_lines(
@@ -601,9 +595,6 @@ def _format_attribute_restrictions_diff_as_text(
     detail: bool,
 ) -> list[str]:
     lines = ["[attribute_restrictions]"]
-    if not attribute_restrictions_diff.has_changes():
-        lines.append("差分はありません。")
-        return lines
 
     for changed_attribute_restriction in attribute_restrictions_diff.changed_attribute_restrictions:
         attribute_id = changed_attribute_restriction.attribute_id

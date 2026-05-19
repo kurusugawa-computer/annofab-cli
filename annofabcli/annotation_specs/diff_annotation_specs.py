@@ -94,6 +94,18 @@ class AnnotationSpecsDiffCommand(CommandLine):
         annotation_specs, _ = self.service.api.get_annotation_specs(project_id, query_params=query_params)
         return annotation_specs
 
+    def output_text(self, text: str) -> None:
+        """差分テキストを出力する。
+
+        標準出力の場合は、空文字なら何も出力しない。
+
+        Args:
+            text: 出力する差分テキスト。
+        """
+        if self.args.output is None and text == "":
+            return
+        output_string(text, self.args.output)
+
     def main(self) -> None:
         left_specs = self.get_annotation_specs_from_source(prefix="left")
         right_specs = self.get_annotation_specs_from_source(prefix="right")
@@ -102,11 +114,11 @@ class AnnotationSpecsDiffCommand(CommandLine):
         output_format = AnnotationSpecsDiffOutputFormat(self.args.format)
 
         if output_format == AnnotationSpecsDiffOutputFormat.TEXT:
-            output_string(format_annotation_specs_diff_as_text(diff, left_specs=left_specs, right_specs=right_specs, detail=False), self.args.output)
+            self.output_text(format_annotation_specs_diff_as_text(diff, left_specs=left_specs, right_specs=right_specs, detail=False))
             return
 
         if output_format == AnnotationSpecsDiffOutputFormat.DETAIL_TEXT:
-            output_string(format_annotation_specs_diff_as_text(diff, left_specs=left_specs, right_specs=right_specs, detail=True), self.args.output)
+            self.output_text(format_annotation_specs_diff_as_text(diff, left_specs=left_specs, right_specs=right_specs, detail=True))
             return
 
         if output_format == AnnotationSpecsDiffOutputFormat.JSON:
