@@ -125,16 +125,18 @@ def _get_attribute_name_en_by_id_from_specs(specs_list: Sequence[dict[str, Any]]
 
 def _get_changed_field_names_from_label(diff: ChangedLabel) -> list[str]:
     field_names = []
+    if diff.label_name_en_changed:
+        field_names.append("label_name_en")
+    if diff.label_name_ja_changed:
+        field_names.append("label_name_ja")
+    if diff.label_name_vi_changed:
+        field_names.append("label_name_vi")
+    if diff.annotation_type_changed:
+        field_names.append("annotation_type")
     if diff.color_changed:
         field_names.append("color")
     if diff.keybind_changed:
         field_names.append("keybind")
-    if diff.label_name_ja_changed:
-        field_names.append("label_name_ja")
-    if diff.label_name_en_changed:
-        field_names.append("label_name_en")
-    if diff.label_name_vi_changed:
-        field_names.append("label_name_vi")
     if diff.has_attribute_relation_changes():
         field_names.append("attributes")
     if diff.attributes_order_changed:
@@ -143,8 +145,6 @@ def _get_changed_field_names_from_label(diff: ChangedLabel) -> list[str]:
         field_names.append("field_values")
     if diff.metadata_changed:
         field_names.append("metadata")
-    if diff.annotation_type_changed:
-        field_names.append("annotation_type")
     return field_names
 
 
