@@ -322,7 +322,7 @@ class TestFormatAnnotationSpecsDiffAsText:
         actual = format_annotation_specs_diff_as_text(diff, left_specs=left_specs, right_specs=right_specs, detail=True)
 
         assert "[labels]" in actual
-        assert 'color: "#ff0000" -> "#00ff00"' in actual
+        assert 'color: "#FF0000" -> "#00FF00"' in actual
         assert 'keybind: "" -> "Ctrl+Digit1"' in actual
         assert 'label_name_ja: "車" -> "自動車"' in actual
         assert "[attributes]" in actual

@@ -7,6 +7,7 @@ from typing import Any
 from annofabapi.util.annotation_specs import STR_LANG, get_message_with_lang
 from annofabapi.util.attribute_restrictions import Restriction
 
+from annofabcli.annotation_specs.color import RgbColor, rgb_to_hex
 from annofabcli.annotation_specs.diff_models import (
     AnnotationSpecsDiff,
     AttributeRestrictionDiffItem,
@@ -32,8 +33,8 @@ def _indent(level: int) -> str:
     return INDENT * level
 
 
-def _to_color_code(color: dict[str, Any]) -> str:
-    return f"#{color['red']:02x}{color['green']:02x}{color['blue']:02x}"
+def _to_color_code(color: RgbColor) -> str:
+    return rgb_to_hex(color)
 
 
 def _format_detail_line(
