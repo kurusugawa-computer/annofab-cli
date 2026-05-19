@@ -154,7 +154,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         help=(
             "出力フォーマット\n\n"
             "* text: 差分項目のみを+（追加）、-（削除）、~（変更）で表示する\n"
-            "* detail_text: 差分項目と変更前後の値をold -> new形式で表示する\n"
+            "* detail_text: 差分項目ごとに変更前後の値や追加・削除・順序変更を表示する\n"
             "* json: 差分情報をJSONで出力する\n"
             "* pretty_json: 差分情報を整形JSONで出力する\n"
         ),

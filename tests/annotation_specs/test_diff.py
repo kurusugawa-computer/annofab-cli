@@ -326,7 +326,7 @@ class TestFormatAnnotationSpecsDiffAsText:
         assert 'keybind: "" -> "Ctrl+Digit1"' in actual
         assert 'label_name_ja: "車" -> "自動車"' in actual
         assert "[attributes]" in actual
-        assert 'name_vi: "bị che" -> "co-moi"' in actual
+        assert 'attribute_name_vi: "bị che" -> "co-moi"' in actual
         assert "attribute_id:" not in actual
         assert "choice_id:" not in actual
 
@@ -358,7 +358,6 @@ class TestFormatAnnotationSpecsDiffAsText:
             '  annotation_type: "bounding_box" -> "polygon"',
             '  color: "#FF0000" -> "#00FF00"',
             '  keybind: "" -> "Ctrl+Digit3"',
-            '  attributes: ["occluded", "truncated"] -> ["truncated", "occluded"]',
             '  attributes_order: ["occluded", "truncated"] -> ["truncated", "occluded"]',
             '  field_values: {} -> {"score": 1}',
             '  metadata: {} -> {"updated": true}',
@@ -395,7 +394,6 @@ class TestFormatAnnotationSpecsDiffAsText:
             '  keybind: "" -> "Ctrl+Digit2"',
             '  default: "choice_yes" -> "choice_no"',
             "  read_only: false -> true",
-            '  choices: ["yes", "no"] -> ["no", "yes"]',
             '  choices_order: ["yes", "no"] -> ["no", "yes"]',
             '  metadata: {} -> {"updated": true}',
         ]
@@ -438,10 +436,8 @@ class TestFormatAnnotationSpecsDiffAsText:
         )
 
         assert "~ attribute: occluded" in actual
-        assert 'attributes: ["occluded", "truncated"] -> ["pose", "occluded"]' in actual
         assert "  + attributes: pose" in actual
         assert "  - attributes: truncated" in actual
-        assert 'choices: ["yes", "no"] -> ["unknown", "yes_changed", "no"]' in actual
         assert "  + choices: unknown" in actual
         assert "  ~ choice: yes_changed" in actual
 
