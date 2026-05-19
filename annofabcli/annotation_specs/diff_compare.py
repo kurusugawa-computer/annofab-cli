@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from collections import Counter
 from collections.abc import Iterable, Sequence
-from typing import Any
+from typing import Any, Literal
 
 from annofabapi.util.annotation_specs import get_message_with_lang
 
@@ -377,7 +377,7 @@ def create_annotation_specs_diff(
     left_specs: dict[str, Any],
     right_specs: dict[str, Any],
     *,
-    targets: Iterable[str] | None = None,
+    targets: Iterable[Literal["labels", "attributes", "attribute_restrictions"]] | None = None,
 ) -> AnnotationSpecsDiff:
     """アノテーション仕様の差分を生成する。
 
