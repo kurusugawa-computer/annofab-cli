@@ -74,26 +74,6 @@ def _to_json_text(value: JsonValue) -> str:
     return json.dumps(value, ensure_ascii=False, sort_keys=True)
 
 
-def _normalize_json_value(value: JsonValue, *, key: str | None = None) -> JsonValue:
-    """JSON値を比較用に正規化する。
-
-    Args:
-        value: 正規化するJSON値。
-        key: 親要素のキー名。
-
-    Returns:
-        比較しやすい形に正規化したJSON値。
-    """
-    if isinstance(value, dict):
-        return {k: _normalize_json_value(v, key=k) for k, v in sorted(value.items())}
-    if isinstance(value, list):
-        normalized_list = [_normalize_json_value(e) for e in value]
-        if key == "labels":
-            return sorted(normalized_list, key=_to_json_text)
-        return normalized_list
-    return value
-
-
 def _create_attribute_restriction_diff_item(restriction: dict[str, Any]) -> AttributeRestrictionDiffItem:
     """属性制約の差分項目を生成する。
 
@@ -115,10 +95,31 @@ def _to_attribute_restriction_key(restriction: dict[str, Any]) -> str:
     Returns:
         属性制約の識別に使う文字列。
     """
+
+    def _normalize_condition_value(value: JsonValue, *, key: str | None = None) -> JsonValue:
+        """属性制約の条件値を比較用に正規化する。
+
+        Args:
+            value: 正規化する属性制約の条件値。
+            key: 親要素のキー名。
+
+        Returns:
+            比較しやすい形に正規化した条件値。
+        """
+        if isinstance(value, dict):
+            return {k: _normalize_condition_value(v, key=k) for k, v in sorted(value.items())}
+        if isinstance(value, list):
+            normalized_list = [_normalize_condition_value(e) for e in value]
+            if key == "labels":
+                # HasLabel.labels は集合として扱うため、ラベルIDの順序差は無視する。
+                return sorted(normalized_list, key=_to_json_text)
+            return normalized_list
+        return value
+
     return _to_json_text(
         {
             "additional_data_definition_id": restriction["additional_data_definition_id"],
-            "condition": _normalize_json_value(restriction["condition"]),
+            "condition": _normalize_condition_value(restriction["condition"]),
         }
     )
 
