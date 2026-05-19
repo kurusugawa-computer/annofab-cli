@@ -97,11 +97,14 @@ class AnnotationSpecsDiffCommand(CommandLine):
     def output_text(self, text: str) -> None:
         """差分テキストを出力する。
 
+        空文字の場合は差分がない旨をログに出力する。
         標準出力の場合は、空文字なら何も出力しない。
 
         Args:
             text: 出力する差分テキスト。
         """
+        if text == "":
+            logger.info("差分はありません。")
         if self.args.output is None and text == "":
             return
         output_string(text, self.args.output)

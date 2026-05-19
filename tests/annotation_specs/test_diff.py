@@ -1,13 +1,18 @@
 from __future__ import annotations
 
+import argparse
 import copy
 import json
+from typing import cast
 
+import annofabapi
 import pytest
 
 from annofabcli.__main__ import main
+from annofabcli.annotation_specs.diff_annotation_specs import AnnotationSpecsDiffCommand
 from annofabcli.annotation_specs.diff_compare import create_annotation_specs_diff
 from annofabcli.annotation_specs.diff_text_formatter import format_annotation_specs_diff_as_text
+from annofabcli.common.facade import AnnofabApiFacade
 
 
 def _create_choice(choice_id: str, *, ja: str, en: str, vi: str) -> dict:
@@ -529,3 +534,19 @@ class TestCommandLine:
 
         assert "[attributes]" in actual
         assert 'default: "choice_yes" -> "choice_no"' in actual
+
+
+class TestAnnotationSpecsDiffCommand:
+    def test_差分がないときは標準出力せずログを出力する(self, capsys, caplog):
+        command = AnnotationSpecsDiffCommand(
+            cast(annofabapi.Resource, None),
+            cast(AnnofabApiFacade, None),
+            argparse.Namespace(yes=False, output=None, format="text"),
+        )
+
+        with caplog.at_level("INFO", logger="annofabcli.annotation_specs.diff_annotation_specs"):
+            command.output_text("")
+
+        captured = capsys.readouterr()
+        assert captured.out == ""
+        assert "差分はありません。" in caplog.text
