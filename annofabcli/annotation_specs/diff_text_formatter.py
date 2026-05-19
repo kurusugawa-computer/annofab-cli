@@ -18,6 +18,7 @@ from annofabcli.annotation_specs.diff_models import (
     JsonValue,
     LabelsDiff,
 )
+from annofabcli.common.annofab.annotation_specs import keybind_to_text
 
 INDENT = "  "
 """テキスト出力で使うインデント文字列。"""
@@ -46,6 +47,22 @@ def _format_detail_line(
     if not changed:
         return []
     return [f"{_indent(level)}{name}: {_to_json_text(left_value)} -> {_to_json_text(right_value)}"]
+
+
+def _format_keybind_detail_line(
+    *,
+    level: int,
+    changed: bool,
+    left_value: list[dict[str, Any]],
+    right_value: list[dict[str, Any]],
+) -> list[str]:
+    return _format_detail_line(
+        level=level,
+        name="keybind",
+        changed=changed,
+        left_value=keybind_to_text(left_value),
+        right_value=keybind_to_text(right_value),
+    )
 
 
 def _get_label_name_en_by_id(specs: dict[str, Any], label_id: str) -> str:
@@ -286,9 +303,8 @@ def _format_label_detail_lines(
         )
     )
     lines.extend(
-        _format_detail_line(
+        _format_keybind_detail_line(
             level=1,
-            name="keybind",
             changed=changed_label.keybind_changed,
             left_value=left_label["keybind"],
             right_value=right_label["keybind"],
@@ -491,7 +507,14 @@ def _format_attribute_detail_lines(
         ),
     ]:
         lines.extend(
-            _format_detail_line(
+            _format_keybind_detail_line(
+                level=1,
+                changed=changed,
+                left_value=left_value,
+                right_value=right_value,
+            )
+            if name == "keybind"
+            else _format_detail_line(
                 level=1,
                 name=name,
                 changed=changed,
@@ -555,9 +578,8 @@ def _format_attribute_detail_lines(
                 )
             )
         lines.extend(
-            _format_detail_line(
+            _format_keybind_detail_line(
                 level=2,
-                name="keybind",
                 changed=changed_choice.keybind_changed,
                 left_value=left_choice["keybind"],
                 right_value=right_choice["keybind"],

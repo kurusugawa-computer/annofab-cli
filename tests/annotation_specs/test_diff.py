@@ -314,6 +314,7 @@ class TestFormatAnnotationSpecsDiffAsText:
         left_specs = _create_annotation_specs()
         right_specs = copy.deepcopy(left_specs)
         right_specs["labels"][0]["color"] = {"red": 0, "green": 255, "blue": 0}
+        right_specs["labels"][0]["keybind"] = [{"ctrl": True, "alt": False, "shift": False, "code": "Digit1"}]
         right_specs["labels"][0]["label_name"]["messages"][0]["message"] = "自動車"
         right_specs["additionals"][0]["name"]["messages"][2]["message"] = "co-moi"
 
@@ -322,6 +323,7 @@ class TestFormatAnnotationSpecsDiffAsText:
 
         assert "[labels]" in actual
         assert 'color: "#ff0000" -> "#00ff00"' in actual
+        assert 'keybind: "" -> "Ctrl+Digit1"' in actual
         assert 'label_name_ja: "車" -> "自動車"' in actual
         assert "[attributes]" in actual
         assert 'name_vi: "bị che" -> "co-moi"' in actual
