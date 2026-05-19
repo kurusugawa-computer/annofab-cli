@@ -476,7 +476,15 @@ def _get_changed_field_names_from_attribute(diff: ChangedAttribute) -> list[str]
 
 
 def compare_choice(left_choice: dict[str, Any], right_choice: dict[str, Any]) -> ChangedChoice | None:
-    """選択肢差分を比較する。"""
+    """選択肢差分を比較する。
+
+    Args:
+        left_choice: 比較元の選択肢情報。
+        right_choice: 比較先の選択肢情報。
+
+    Returns:
+        差分がある場合は選択肢差分、差分がない場合は ``None`` を返す。
+    """
     diff = ChangedChoice(
         choice_id=right_choice["choice_id"],
         name_ja_changed=get_message_with_lang(left_choice["name"], "ja-JP") != get_message_with_lang(right_choice["name"], "ja-JP"),
@@ -490,7 +498,15 @@ def compare_choice(left_choice: dict[str, Any], right_choice: dict[str, Any]) ->
 
 
 def compare_attribute(left_attribute: dict[str, Any], right_attribute: dict[str, Any]) -> ChangedAttribute | None:
-    """属性差分を比較する。"""
+    """属性差分を比較する。
+
+    Args:
+        left_attribute: 比較元の属性情報。
+        right_attribute: 比較先の属性情報。
+
+    Returns:
+        差分がある場合は属性差分、差分がない場合は ``None`` を返す。
+    """
     left_choice_list = left_attribute["choices"]
     right_choice_list = right_attribute["choices"]
     left_choice_ids = [e["choice_id"] for e in left_choice_list]
@@ -531,7 +547,15 @@ def compare_attribute(left_attribute: dict[str, Any], right_attribute: dict[str,
 
 
 def compare_attributes(left_specs: dict[str, Any], right_specs: dict[str, Any]) -> AttributesDiff:
-    """属性一覧の差分を比較する。"""
+    """属性一覧の差分を比較する。
+
+    Args:
+        left_specs: 比較元のアノテーション仕様。
+        right_specs: 比較先のアノテーション仕様。
+
+    Returns:
+        属性一覧の差分。
+    """
     left_attribute_list = left_specs["additionals"]
     right_attribute_list = right_specs["additionals"]
     left_attribute_ids = [e["additional_data_definition_id"] for e in left_attribute_list]
@@ -555,7 +579,15 @@ def compare_attributes(left_specs: dict[str, Any], right_specs: dict[str, Any]) 
 
 
 def compare_label(left_label: dict[str, Any], right_label: dict[str, Any]) -> ChangedLabel | None:
-    """ラベル差分を比較する。"""
+    """ラベル差分を比較する。
+
+    Args:
+        left_label: 比較元のラベル情報。
+        right_label: 比較先のラベル情報。
+
+    Returns:
+        差分がある場合はラベル差分、差分がない場合は ``None`` を返す。
+    """
     left_attribute_ids = left_label["additional_data_definitions"]
     right_attribute_ids = right_label["additional_data_definitions"]
     added_attribute_ids = _get_added_ids(left_attribute_ids, right_attribute_ids)
@@ -583,7 +615,15 @@ def compare_label(left_label: dict[str, Any], right_label: dict[str, Any]) -> Ch
 
 
 def compare_labels(left_specs: dict[str, Any], right_specs: dict[str, Any]) -> LabelsDiff:
-    """ラベル一覧の差分を比較する。"""
+    """ラベル一覧の差分を比較する。
+
+    Args:
+        left_specs: 比較元のアノテーション仕様。
+        right_specs: 比較先のアノテーション仕様。
+
+    Returns:
+        ラベル一覧の差分。
+    """
     left_label_list = left_specs["labels"]
     right_label_list = right_specs["labels"]
     left_label_ids = [e["label_id"] for e in left_label_list]
@@ -608,7 +648,15 @@ def compare_labels(left_specs: dict[str, Any], right_specs: dict[str, Any]) -> L
 
 
 def compare_attribute_restrictions(left_specs: dict[str, Any], right_specs: dict[str, Any]) -> AttributeRestrictionsDiff:
-    """属性制約一覧の差分を比較する。"""
+    """属性制約一覧の差分を比較する。
+
+    Args:
+        left_specs: 比較元のアノテーション仕様。
+        right_specs: 比較先のアノテーション仕様。
+
+    Returns:
+        属性制約一覧の差分。
+    """
     left_restrictions = left_specs["restrictions"]
     right_restrictions = right_specs["restrictions"]
     left_attribute_ids = [e["additional_data_definition_id"] for e in left_restrictions]
@@ -636,7 +684,16 @@ def create_annotation_specs_diff(
     *,
     targets: Iterable[str] | None = None,
 ) -> AnnotationSpecsDiff:
-    """アノテーション仕様の差分を生成する。"""
+    """アノテーション仕様の差分を生成する。
+
+    Args:
+        left_specs: 比較元のアノテーション仕様。
+        right_specs: 比較先のアノテーション仕様。
+        targets: 差分生成の対象。 ``None`` の場合は全対象を比較する。
+
+    Returns:
+        アノテーション仕様の差分。
+    """
     target_set = set(targets) if targets is not None else {"labels", "attributes", "attribute_restrictions"}
 
     return AnnotationSpecsDiff(
@@ -653,7 +710,17 @@ def format_annotation_specs_diff_as_text(
     right_specs: dict[str, Any],
     detail: bool = False,
 ) -> str:
-    """アノテーション仕様の差分をテキスト形式に変換する。"""
+    """アノテーション仕様の差分をテキスト形式に変換する。
+
+    Args:
+        diff: 変換対象の差分情報。
+        left_specs: 比較元のアノテーション仕様。
+        right_specs: 比較先のアノテーション仕様。
+        detail: ``True`` の場合は詳細な差分を出力する。
+
+    Returns:
+        差分を表すテキスト。
+    """
     if not diff.has_changes():
         return "差分はありません。"
 
