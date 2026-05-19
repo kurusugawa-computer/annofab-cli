@@ -79,8 +79,7 @@ class ChangedAttribute(BaseModel):
     changed_choices: list[ChangedChoice] = Field(default_factory=list)
     """変更された既存選択肢の差分一覧"""
 
-    @property
-    def choices_changed(self) -> bool:
+    def has_choice_changes(self) -> bool:
         """選択肢に変更があるか。"""
         return any(
             [
@@ -103,11 +102,7 @@ class ChangedAttribute(BaseModel):
                 self.type_changed,
                 self.default_changed,
                 self.metadata_changed,
-                self.choices_changed,
-                self.choices_order_changed,
-                len(self.added_choice_ids) > 0,
-                len(self.removed_choice_ids) > 0,
-                len(self.changed_choices) > 0,
+                self.has_choice_changes(),
             ]
         )
 
@@ -165,8 +160,7 @@ class ChangedLabel(BaseModel):
     annotation_type_changed: bool = False
     """annotation_type が変更されたか"""
 
-    @property
-    def attributes_changed(self) -> bool:
+    def has_attribute_relation_changes(self) -> bool:
         """紐づく属性に変更があるか。"""
         return any(
             [
@@ -185,10 +179,7 @@ class ChangedLabel(BaseModel):
                 self.label_name_ja_changed,
                 self.label_name_en_changed,
                 self.label_name_vi_changed,
-                self.attributes_changed,
-                self.attributes_order_changed,
-                len(self.added_attribute_ids) > 0,
-                len(self.removed_attribute_ids) > 0,
+                self.has_attribute_relation_changes(),
                 self.field_values_changed,
                 self.metadata_changed,
                 self.annotation_type_changed,

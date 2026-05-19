@@ -108,7 +108,7 @@ def _get_changed_field_names_from_label(diff: ChangedLabel) -> list[str]:
         field_names.append("label_name_en")
     if diff.label_name_vi_changed:
         field_names.append("label_name_vi")
-    if diff.attributes_changed:
+    if diff.has_attribute_relation_changes():
         field_names.append("attributes")
     if diff.attributes_order_changed:
         field_names.append("attributes_order")
@@ -152,7 +152,7 @@ def _get_changed_field_names_from_attribute(diff: ChangedAttribute) -> list[str]
         field_names.append("default")
     if diff.metadata_changed:
         field_names.append("metadata")
-    if diff.choices_changed:
+    if diff.has_choice_changes():
         field_names.append("choices")
     if diff.choices_order_changed:
         field_names.append("choices_order")
