@@ -445,6 +445,33 @@ class TestFormatAnnotationSpecsDiffAsText:
         assert "  + choices: unknown" in actual
         assert "  ~ choice: yes_changed" in actual
 
+    def test_detail_textの選択肢差分はchanged_field_namesと同じ順序で出力する(self):
+        left_specs = _create_annotation_specs()
+        right_specs = copy.deepcopy(left_specs)
+        right_choice = right_specs["additionals"][0]["choices"][0]
+        right_choice["name"]["messages"][1]["message"] = "yes-updated"
+        right_choice["name"]["messages"][0]["message"] = "はい更新"
+        right_choice["name"]["messages"][2]["message"] = "co-moi"
+        right_choice["keybind"] = [{"ctrl": True, "alt": False, "shift": False, "code": "Digit4"}]
+
+        diff = create_annotation_specs_diff(left_specs, right_specs)
+        actual = format_annotation_specs_diff_as_text(
+            diff,
+            left_specs=left_specs,
+            right_specs=right_specs,
+            detail=True,
+        )
+
+        expected_lines = [
+            "  ~ choice: yes-updated",
+            '    name_en: "yes" -> "yes-updated"',
+            '    name_ja: "はい" -> "はい更新"',
+            '    name_vi: "co" -> "co-moi"',
+            '    keybind: "" -> "Ctrl+Digit4"',
+        ]
+        positions = [actual.index(line) for line in expected_lines]
+        assert positions == sorted(positions)
+
     def test_attribute_restrictionをtextで出力できる(self):
         left_specs = _create_annotation_specs()
         right_specs = copy.deepcopy(left_specs)

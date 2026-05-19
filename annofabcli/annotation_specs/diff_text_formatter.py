@@ -593,8 +593,8 @@ def _format_attribute_detail_lines(
         left_choice = left_choice_dict[changed_choice.choice_id]
         right_choice = right_choice_dict[changed_choice.choice_id]
         detail_targets = [
-            ("name_ja", "ja-JP", changed_choice.name_ja_changed),
             ("name_en", "en-US", changed_choice.name_en_changed),
+            ("name_ja", "ja-JP", changed_choice.name_ja_changed),
             ("name_vi", "vi-VN", changed_choice.name_vi_changed),
         ]
         for name, lang, changed in detail_targets:
