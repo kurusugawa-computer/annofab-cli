@@ -1,4 +1,8 @@
-from annofabcli.common.cli import get_json_from_args, get_list_from_args
+import argparse
+
+import pytest
+
+from annofabcli.common.cli import get_json_from_args, get_list_from_args, non_negative_int
 
 
 def test_get_json_from_args():
@@ -19,3 +23,11 @@ def test_get_list_from_args():
 
     actual = get_list_from_args(None)
     assert len(actual) == 0
+
+
+def test_non_negative_int() -> None:
+    assert non_negative_int("0") == 0
+    assert non_negative_int("3") == 3
+
+    with pytest.raises(argparse.ArgumentTypeError):
+        non_negative_int("-1")

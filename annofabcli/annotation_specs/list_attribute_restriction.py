@@ -138,7 +138,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
 
     old_annotation_specs_group.add_argument(
         "--before",
-        type=int,
+        type=annofabcli.common.cli.non_negative_int,
         help=(
             "出力したい過去のアノテーション仕様が、最新よりいくつ前のアノテーション仕様であるかを指定してください。  "
             "たとえば ``1`` を指定した場合、最新より1個前のアノテーション仕様を出力します。 "

@@ -41,7 +41,7 @@ def _add_annotation_specs_source_arguments(parser: argparse.ArgumentParser, *, p
     )
     history_group.add_argument(
         f"--{prefix}_before",
-        type=int,
+        type=annofabcli.common.cli.non_negative_int,
         help="比較対象のアノテーション仕様が、最新よりいくつ前かを指定してください。たとえば ``1`` を指定した場合、最新より1個前のアノテーション仕様を参照します。",
     )
 
