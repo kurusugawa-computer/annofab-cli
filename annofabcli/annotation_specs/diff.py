@@ -274,9 +274,9 @@ class AnnotationSpecsDiff(BaseModel):
 
 
 def _get_message_by_lang(message_dict: dict[str, Any], lang: str) -> str | None:
-    for message in message_dict.get("messages", []):
-        if message.get("lang") == lang:
-            return message.get("message")
+    for message in message_dict["messages"]:
+        if message["lang"] == lang:
+            return message["message"]
     return None
 
 
@@ -312,7 +312,7 @@ def _format_detail_line(
 
 
 def _get_label_name_en_by_id(specs: dict[str, Any], label_id: str) -> str:
-    label = next((e for e in specs.get("labels", []) if e["label_id"] == label_id), None)
+    label = next((e for e in specs["labels"] if e["label_id"] == label_id), None)
     if label is None:
         return label_id
     return _get_message_by_lang(label["label_name"], "en-US") or label_id
@@ -320,7 +320,7 @@ def _get_label_name_en_by_id(specs: dict[str, Any], label_id: str) -> str:
 
 def _get_attribute_name_en_by_id(specs: dict[str, Any], attribute_id: str) -> str:
     attribute = next(
-        (e for e in specs.get("additionals", []) if e["additional_data_definition_id"] == attribute_id),
+        (e for e in specs["additionals"] if e["additional_data_definition_id"] == attribute_id),
         None,
     )
     if attribute is None:
@@ -329,7 +329,7 @@ def _get_attribute_name_en_by_id(specs: dict[str, Any], attribute_id: str) -> st
 
 
 def _get_choice_name_en_by_id(attribute: dict[str, Any], choice_id: str) -> str:
-    choice = next((e for e in attribute.get("choices", []) if e["choice_id"] == choice_id), None)
+    choice = next((e for e in attribute["choices"] if e["choice_id"] == choice_id), None)
     if choice is None:
         return choice_id
     return _get_message_by_lang(choice["name"], "en-US") or choice_id
@@ -488,7 +488,7 @@ def compare_choice(left_choice: dict[str, Any], right_choice: dict[str, Any]) ->
         name_ja_changed=_get_message_by_lang(left_choice["name"], "ja-JP") != _get_message_by_lang(right_choice["name"], "ja-JP"),
         name_en_changed=_get_message_by_lang(left_choice["name"], "en-US") != _get_message_by_lang(right_choice["name"], "en-US"),
         name_vi_changed=_get_message_by_lang(left_choice["name"], "vi-VN") != _get_message_by_lang(right_choice["name"], "vi-VN"),
-        keybind_changed=left_choice.get("keybind", []) != right_choice.get("keybind", []),
+        keybind_changed=left_choice["keybind"] != right_choice["keybind"],
     )
     if not diff.has_changes():
         return None
@@ -497,8 +497,8 @@ def compare_choice(left_choice: dict[str, Any], right_choice: dict[str, Any]) ->
 
 def compare_attribute(left_attribute: dict[str, Any], right_attribute: dict[str, Any]) -> ChangedAttribute | None:
     """属性差分を比較する。"""
-    left_choice_list = left_attribute.get("choices", [])
-    right_choice_list = right_attribute.get("choices", [])
+    left_choice_list = left_attribute["choices"]
+    right_choice_list = right_attribute["choices"]
     left_choice_ids = [e["choice_id"] for e in left_choice_list]
     right_choice_ids = [e["choice_id"] for e in right_choice_list]
     left_choice_dict = {e["choice_id"]: e for e in left_choice_list}
@@ -517,14 +517,14 @@ def compare_attribute(left_attribute: dict[str, Any], right_attribute: dict[str,
 
     diff = ChangedAttribute(
         attribute_id=right_attribute["additional_data_definition_id"],
-        read_only_changed=left_attribute.get("read_only") != right_attribute.get("read_only"),
+        read_only_changed=left_attribute["read_only"] != right_attribute["read_only"],
         name_ja_changed=_get_message_by_lang(left_attribute["name"], "ja-JP") != _get_message_by_lang(right_attribute["name"], "ja-JP"),
         name_en_changed=_get_message_by_lang(left_attribute["name"], "en-US") != _get_message_by_lang(right_attribute["name"], "en-US"),
         name_vi_changed=_get_message_by_lang(left_attribute["name"], "vi-VN") != _get_message_by_lang(right_attribute["name"], "vi-VN"),
-        keybind_changed=left_attribute.get("keybind", []) != right_attribute.get("keybind", []),
-        type_changed=left_attribute.get("type") != right_attribute.get("type"),
-        default_changed=left_attribute.get("default") != right_attribute.get("default"),
-        metadata_changed=left_attribute.get("metadata", {}) != right_attribute.get("metadata", {}),
+        keybind_changed=left_attribute["keybind"] != right_attribute["keybind"],
+        type_changed=left_attribute["type"] != right_attribute["type"],
+        default_changed=left_attribute["default"] != right_attribute["default"],
+        metadata_changed=left_attribute["metadata"] != right_attribute["metadata"],
         choices_changed=(len(added_choice_ids) > 0 or len(removed_choice_ids) > 0 or choices_order_changed or len(changed_choices) > 0),
         choices_order_changed=choices_order_changed,
         added_choice_ids=added_choice_ids,
@@ -538,8 +538,8 @@ def compare_attribute(left_attribute: dict[str, Any], right_attribute: dict[str,
 
 def compare_attributes(left_specs: dict[str, Any], right_specs: dict[str, Any]) -> AttributesDiff:
     """属性一覧の差分を比較する。"""
-    left_attribute_list = left_specs.get("additionals", [])
-    right_attribute_list = right_specs.get("additionals", [])
+    left_attribute_list = left_specs["additionals"]
+    right_attribute_list = right_specs["additionals"]
     left_attribute_ids = [e["additional_data_definition_id"] for e in left_attribute_list]
     right_attribute_ids = [e["additional_data_definition_id"] for e in right_attribute_list]
     left_attribute_dict = {e["additional_data_definition_id"]: e for e in left_attribute_list}
@@ -562,16 +562,16 @@ def compare_attributes(left_specs: dict[str, Any], right_specs: dict[str, Any]) 
 
 def compare_label(left_label: dict[str, Any], right_label: dict[str, Any]) -> ChangedLabel | None:
     """ラベル差分を比較する。"""
-    left_attribute_ids = left_label.get("additional_data_definitions", [])
-    right_attribute_ids = right_label.get("additional_data_definitions", [])
+    left_attribute_ids = left_label["additional_data_definitions"]
+    right_attribute_ids = right_label["additional_data_definitions"]
     added_attribute_ids = _get_added_ids(left_attribute_ids, right_attribute_ids)
     removed_attribute_ids = _get_removed_ids(left_attribute_ids, right_attribute_ids)
     attributes_order_changed = _is_order_changed(left_attribute_ids, right_attribute_ids)
 
     diff = ChangedLabel(
         label_id=right_label["label_id"],
-        color_changed=left_label.get("color") != right_label.get("color"),
-        keybind_changed=left_label.get("keybind", []) != right_label.get("keybind", []),
+        color_changed=left_label["color"] != right_label["color"],
+        keybind_changed=left_label["keybind"] != right_label["keybind"],
         label_name_ja_changed=_get_message_by_lang(left_label["label_name"], "ja-JP") != _get_message_by_lang(right_label["label_name"], "ja-JP"),
         label_name_en_changed=_get_message_by_lang(left_label["label_name"], "en-US") != _get_message_by_lang(right_label["label_name"], "en-US"),
         label_name_vi_changed=_get_message_by_lang(left_label["label_name"], "vi-VN") != _get_message_by_lang(right_label["label_name"], "vi-VN"),
@@ -579,9 +579,9 @@ def compare_label(left_label: dict[str, Any], right_label: dict[str, Any]) -> Ch
         attributes_order_changed=attributes_order_changed,
         added_attribute_ids=added_attribute_ids,
         removed_attribute_ids=removed_attribute_ids,
-        field_values_changed=left_label.get("field_values", {}) != right_label.get("field_values", {}),
-        metadata_changed=left_label.get("metadata", {}) != right_label.get("metadata", {}),
-        annotation_type_changed=left_label.get("annotation_type") != right_label.get("annotation_type"),
+        field_values_changed=left_label["field_values"] != right_label["field_values"],
+        metadata_changed=left_label["metadata"] != right_label["metadata"],
+        annotation_type_changed=left_label["annotation_type"] != right_label["annotation_type"],
     )
     if not diff.has_changes():
         return None
@@ -590,8 +590,8 @@ def compare_label(left_label: dict[str, Any], right_label: dict[str, Any]) -> Ch
 
 def compare_labels(left_specs: dict[str, Any], right_specs: dict[str, Any]) -> LabelsDiff:
     """ラベル一覧の差分を比較する。"""
-    left_label_list = left_specs.get("labels", [])
-    right_label_list = right_specs.get("labels", [])
+    left_label_list = left_specs["labels"]
+    right_label_list = right_specs["labels"]
     left_label_ids = [e["label_id"] for e in left_label_list]
     right_label_ids = [e["label_id"] for e in right_label_list]
     left_label_dict = {e["label_id"]: e for e in left_label_list}
@@ -615,8 +615,8 @@ def compare_labels(left_specs: dict[str, Any], right_specs: dict[str, Any]) -> L
 
 def compare_attribute_restrictions(left_specs: dict[str, Any], right_specs: dict[str, Any]) -> AttributeRestrictionsDiff:
     """属性制約一覧の差分を比較する。"""
-    left_restrictions = left_specs.get("restrictions", [])
-    right_restrictions = right_specs.get("restrictions", [])
+    left_restrictions = left_specs["restrictions"]
+    right_restrictions = right_specs["restrictions"]
     left_attribute_ids = [e["additional_data_definition_id"] for e in left_restrictions]
     right_attribute_ids = [e["additional_data_definition_id"] for e in right_restrictions]
     attribute_ids = list(dict.fromkeys([*right_attribute_ids, *left_attribute_ids]))
@@ -701,7 +701,7 @@ def _format_labels_diff_as_text(
                     label="left_labels",
                     values=_get_label_name_en_list_by_ids(
                         left_specs,
-                        [e["label_id"] for e in left_specs.get("labels", [])],
+                        [e["label_id"] for e in left_specs["labels"]],
                     ),
                 )
             )
@@ -711,7 +711,7 @@ def _format_labels_diff_as_text(
                     label="right_labels",
                     values=_get_label_name_en_list_by_ids(
                         right_specs,
-                        [e["label_id"] for e in right_specs.get("labels", [])],
+                        [e["label_id"] for e in right_specs["labels"]],
                     ),
                 )
             )
@@ -722,8 +722,8 @@ def _format_labels_diff_as_text(
     if len(labels_diff.changed_labels) == 0:
         return lines
 
-    left_label_dict = {e["label_id"]: e for e in left_specs.get("labels", [])}
-    right_label_dict = {e["label_id"]: e for e in right_specs.get("labels", [])}
+    left_label_dict = {e["label_id"]: e for e in left_specs["labels"]}
+    right_label_dict = {e["label_id"]: e for e in right_specs["labels"]}
     lines.append("changed_labels:")
     for changed_label in labels_diff.changed_labels:
         lines.append(f"  - label_name_en: {_get_label_name_en_by_id(right_specs, changed_label.label_id)}")
@@ -772,8 +772,8 @@ def _format_label_detail_lines(
             indent="    ",
             name="color",
             changed=changed_label.color_changed,
-            left_value=left_label.get("color"),
-            right_value=right_label.get("color"),
+            left_value=left_label["color"],
+            right_value=right_label["color"],
         )
     )
     lines.extend(
@@ -781,8 +781,8 @@ def _format_label_detail_lines(
             indent="    ",
             name="keybind",
             changed=changed_label.keybind_changed,
-            left_value=left_label.get("keybind", []),
-            right_value=right_label.get("keybind", []),
+            left_value=left_label["keybind"],
+            right_value=right_label["keybind"],
         )
     )
     for name, lang, changed in [
@@ -806,11 +806,11 @@ def _format_label_detail_lines(
             changed=changed_label.attributes_order_changed,
             left_value=_get_attribute_name_en_list_by_ids(
                 left_specs,
-                left_label.get("additional_data_definitions", []),
+                left_label["additional_data_definitions"],
             ),
             right_value=_get_attribute_name_en_list_by_ids(
                 right_specs,
-                right_label.get("additional_data_definitions", []),
+                right_label["additional_data_definitions"],
             ),
         )
     )
@@ -833,8 +833,8 @@ def _format_label_detail_lines(
             indent="    ",
             name="field_values",
             changed=changed_label.field_values_changed,
-            left_value=left_label.get("field_values", {}),
-            right_value=right_label.get("field_values", {}),
+            left_value=left_label["field_values"],
+            right_value=right_label["field_values"],
         )
     )
     lines.extend(
@@ -842,8 +842,8 @@ def _format_label_detail_lines(
             indent="    ",
             name="metadata",
             changed=changed_label.metadata_changed,
-            left_value=left_label.get("metadata", {}),
-            right_value=right_label.get("metadata", {}),
+            left_value=left_label["metadata"],
+            right_value=right_label["metadata"],
         )
     )
     lines.extend(
@@ -851,8 +851,8 @@ def _format_label_detail_lines(
             indent="    ",
             name="annotation_type",
             changed=changed_label.annotation_type_changed,
-            left_value=left_label.get("annotation_type"),
-            right_value=right_label.get("annotation_type"),
+            left_value=left_label["annotation_type"],
+            right_value=right_label["annotation_type"],
         )
     )
     return lines
@@ -888,8 +888,8 @@ def _format_attributes_diff_as_text(
     if len(attributes_diff.changed_attributes) == 0:
         return lines
 
-    left_attribute_dict = {e["additional_data_definition_id"]: e for e in left_specs.get("additionals", [])}
-    right_attribute_dict = {e["additional_data_definition_id"]: e for e in right_specs.get("additionals", [])}
+    left_attribute_dict = {e["additional_data_definition_id"]: e for e in left_specs["additionals"]}
+    right_attribute_dict = {e["additional_data_definition_id"]: e for e in right_specs["additionals"]}
     lines.append("changed_attributes:")
     for changed_attribute in attributes_diff.changed_attributes:
         lines.append(f"  - attribute_name_en: {_get_attribute_name_en_by_id(right_specs, changed_attribute.attribute_id)}")
@@ -940,43 +940,43 @@ def _format_attribute_detail_lines(
         (
             "read_only",
             changed_attribute.read_only_changed,
-            left_attribute.get("read_only"),
-            right_attribute.get("read_only"),
+            left_attribute["read_only"],
+            right_attribute["read_only"],
         ),
         (
             "keybind",
             changed_attribute.keybind_changed,
-            left_attribute.get("keybind", []),
-            right_attribute.get("keybind", []),
+            left_attribute["keybind"],
+            right_attribute["keybind"],
         ),
         (
             "type",
             changed_attribute.type_changed,
-            left_attribute.get("type"),
-            right_attribute.get("type"),
+            left_attribute["type"],
+            right_attribute["type"],
         ),
         (
             "default",
             changed_attribute.default_changed,
-            left_attribute.get("default"),
-            right_attribute.get("default"),
+            left_attribute["default"],
+            right_attribute["default"],
         ),
         (
             "metadata",
             changed_attribute.metadata_changed,
-            left_attribute.get("metadata", {}),
-            right_attribute.get("metadata", {}),
+            left_attribute["metadata"],
+            right_attribute["metadata"],
         ),
         (
             "choice_names_en",
             changed_attribute.choices_order_changed,
             _get_choice_name_en_list_by_ids(
                 left_attribute,
-                [e["choice_id"] for e in left_attribute.get("choices", [])],
+                [e["choice_id"] for e in left_attribute["choices"]],
             ),
             _get_choice_name_en_list_by_ids(
                 right_attribute,
-                [e["choice_id"] for e in right_attribute.get("choices", [])],
+                [e["choice_id"] for e in right_attribute["choices"]],
             ),
         ),
     ]:
@@ -1020,8 +1020,8 @@ def _format_attribute_detail_lines(
     if len(changed_attribute.changed_choices) == 0:
         return lines
 
-    left_choice_dict = {e["choice_id"]: e for e in left_attribute.get("choices", [])}
-    right_choice_dict = {e["choice_id"]: e for e in right_attribute.get("choices", [])}
+    left_choice_dict = {e["choice_id"]: e for e in left_attribute["choices"]}
+    right_choice_dict = {e["choice_id"]: e for e in right_attribute["choices"]}
     lines.append("    changed_choices:")
     for changed_choice in changed_attribute.changed_choices:
         lines.append(f"      - choice_name_en: {_get_choice_name_en_by_id(right_attribute, changed_choice.choice_id)}")
@@ -1046,8 +1046,8 @@ def _format_attribute_detail_lines(
                 indent="        ",
                 name="keybind",
                 changed=changed_choice.keybind_changed,
-                left_value=left_choice.get("keybind", []),
-                right_value=right_choice.get("keybind", []),
+                left_value=left_choice["keybind"],
+                right_value=right_choice["keybind"],
             )
         )
     return lines
