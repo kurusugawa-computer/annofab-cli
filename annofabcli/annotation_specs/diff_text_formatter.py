@@ -163,26 +163,26 @@ def _get_changed_field_names_from_choice(diff: ChangedChoice) -> list[str]:
 
 def _get_changed_field_names_from_attribute(diff: ChangedAttribute) -> list[str]:
     field_names = []
-    if diff.read_only_changed:
-        field_names.append("read_only")
-    if diff.name_ja_changed:
-        field_names.append("name_ja")
     if diff.name_en_changed:
         field_names.append("name_en")
+    if diff.name_ja_changed:
+        field_names.append("name_ja")
     if diff.name_vi_changed:
         field_names.append("name_vi")
-    if diff.keybind_changed:
-        field_names.append("keybind")
     if diff.type_changed:
         field_names.append("type")
+    if diff.keybind_changed:
+        field_names.append("keybind")
     if diff.default_changed:
         field_names.append("default")
-    if diff.metadata_changed:
-        field_names.append("metadata")
+    if diff.read_only_changed:
+        field_names.append("read_only")
     if diff.has_choice_changes():
         field_names.append("choices")
     if diff.choices_order_changed:
         field_names.append("choices_order")
+    if diff.metadata_changed:
+        field_names.append("metadata")
     return field_names
 
 
