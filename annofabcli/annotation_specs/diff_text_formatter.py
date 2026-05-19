@@ -463,69 +463,9 @@ def _format_attribute_detail_lines(
     right_attribute: dict[str, Any],
 ) -> list[str]:
     lines = []
-    for name, changed, left_value, right_value in [
-        (
-            "read_only",
-            changed_attribute.read_only_changed,
-            left_attribute["read_only"],
-            right_attribute["read_only"],
-        ),
-        (
-            "keybind",
-            changed_attribute.keybind_changed,
-            left_attribute["keybind"],
-            right_attribute["keybind"],
-        ),
-        (
-            "type",
-            changed_attribute.type_changed,
-            left_attribute["type"],
-            right_attribute["type"],
-        ),
-        (
-            "default",
-            changed_attribute.default_changed,
-            left_attribute["default"],
-            right_attribute["default"],
-        ),
-        (
-            "metadata",
-            changed_attribute.metadata_changed,
-            left_attribute["metadata"],
-            right_attribute["metadata"],
-        ),
-        (
-            "choices",
-            changed_attribute.has_choice_changes(),
-            _get_choice_name_en_list_by_ids(
-                left_attribute,
-                [e["choice_id"] for e in left_attribute["choices"]],
-            ),
-            _get_choice_name_en_list_by_ids(
-                right_attribute,
-                [e["choice_id"] for e in right_attribute["choices"]],
-            ),
-        ),
-    ]:
-        lines.extend(
-            _format_keybind_detail_line(
-                level=1,
-                changed=changed,
-                left_value=left_value,
-                right_value=right_value,
-            )
-            if name == "keybind"
-            else _format_detail_line(
-                level=1,
-                name=name,
-                changed=changed,
-                left_value=left_value,
-                right_value=right_value,
-            )
-        )
     detail_targets: list[tuple[str, STR_LANG, bool]] = [
-        ("name_ja", "ja-JP", changed_attribute.name_ja_changed),
         ("name_en", "en-US", changed_attribute.name_en_changed),
+        ("name_ja", "ja-JP", changed_attribute.name_ja_changed),
         ("name_vi", "vi-VN", changed_attribute.name_vi_changed),
     ]
     for name, lang, changed in detail_targets:
@@ -538,6 +478,80 @@ def _format_attribute_detail_lines(
                 right_value=get_message_with_lang(right_attribute["name"], lang),
             )
         )
+    lines.extend(
+        _format_detail_line(
+            level=1,
+            name="type",
+            changed=changed_attribute.type_changed,
+            left_value=left_attribute["type"],
+            right_value=right_attribute["type"],
+        )
+    )
+    lines.extend(
+        _format_keybind_detail_line(
+            level=1,
+            changed=changed_attribute.keybind_changed,
+            left_value=left_attribute["keybind"],
+            right_value=right_attribute["keybind"],
+        )
+    )
+    lines.extend(
+        _format_detail_line(
+            level=1,
+            name="default",
+            changed=changed_attribute.default_changed,
+            left_value=left_attribute["default"],
+            right_value=right_attribute["default"],
+        )
+    )
+    lines.extend(
+        _format_detail_line(
+            level=1,
+            name="read_only",
+            changed=changed_attribute.read_only_changed,
+            left_value=left_attribute["read_only"],
+            right_value=right_attribute["read_only"],
+        )
+    )
+    lines.extend(
+        _format_detail_line(
+            level=1,
+            name="choices",
+            changed=changed_attribute.has_choice_changes(),
+            left_value=_get_choice_name_en_list_by_ids(
+                left_attribute,
+                [e["choice_id"] for e in left_attribute["choices"]],
+            ),
+            right_value=_get_choice_name_en_list_by_ids(
+                right_attribute,
+                [e["choice_id"] for e in right_attribute["choices"]],
+            ),
+        )
+    )
+    lines.extend(
+        _format_detail_line(
+            level=1,
+            name="choices_order",
+            changed=changed_attribute.choices_order_changed,
+            left_value=_get_choice_name_en_list_by_ids(
+                left_attribute,
+                [e["choice_id"] for e in left_attribute["choices"]],
+            ),
+            right_value=_get_choice_name_en_list_by_ids(
+                right_attribute,
+                [e["choice_id"] for e in right_attribute["choices"]],
+            ),
+        )
+    )
+    lines.extend(
+        _format_detail_line(
+            level=1,
+            name="metadata",
+            changed=changed_attribute.metadata_changed,
+            left_value=left_attribute["metadata"],
+            right_value=right_attribute["metadata"],
+        )
+    )
     lines.extend(
         _format_added_removed_lines(
             level=1,

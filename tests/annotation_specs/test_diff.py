@@ -330,6 +330,42 @@ class TestFormatAnnotationSpecsDiffAsText:
         assert "attribute_id:" not in actual
         assert "choice_id:" not in actual
 
+    def test_detail_textの属性差分はchanged_field_namesと同じ順序で出力する(self):
+        left_specs = _create_annotation_specs()
+        right_specs = copy.deepcopy(left_specs)
+        right_specs["additionals"][0]["name"]["messages"][1]["message"] = "occluded-updated"
+        right_specs["additionals"][0]["name"]["messages"][0]["message"] = "遮蔽更新"
+        right_specs["additionals"][0]["name"]["messages"][2]["message"] = "bi-che-moi"
+        right_specs["additionals"][0]["type"] = "text"
+        right_specs["additionals"][0]["keybind"] = [{"ctrl": True, "alt": False, "shift": False, "code": "Digit2"}]
+        right_specs["additionals"][0]["default"] = "choice_no"
+        right_specs["additionals"][0]["read_only"] = True
+        right_specs["additionals"][0]["choices"] = list(reversed(right_specs["additionals"][0]["choices"]))
+        right_specs["additionals"][0]["metadata"] = {"updated": True}
+
+        diff = create_annotation_specs_diff(left_specs, right_specs)
+        actual = format_annotation_specs_diff_as_text(
+            diff,
+            left_specs=left_specs,
+            right_specs=right_specs,
+            detail=True,
+        )
+
+        expected_lines = [
+            '  name_en: "occluded" -> "occluded-updated"',
+            '  name_ja: "遮蔽" -> "遮蔽更新"',
+            '  name_vi: "bị che" -> "bi-che-moi"',
+            '  type: "select" -> "text"',
+            '  keybind: "" -> "Ctrl+Digit2"',
+            '  default: "choice_yes" -> "choice_no"',
+            "  read_only: false -> true",
+            '  choices: ["yes", "no"] -> ["no", "yes"]',
+            '  choices_order: ["yes", "no"] -> ["no", "yes"]',
+            '  metadata: {} -> {"updated": true}',
+        ]
+        positions = [actual.index(line) for line in expected_lines]
+        assert positions == sorted(positions)
+
     def test_detail_textで選択肢や属性も英語名を出力できる(self):
         left_specs = _create_annotation_specs()
         right_specs = copy.deepcopy(left_specs)
