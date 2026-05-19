@@ -5,7 +5,7 @@ import json
 import logging
 import sys
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal, cast
 
 import annofabcli.common.cli
 from annofabcli.annotation_specs.diff_compare import create_annotation_specs_diff
@@ -16,6 +16,9 @@ from annofabcli.common.facade import AnnofabApiFacade
 from annofabcli.common.utils import output_string, print_json
 
 logger = logging.getLogger(__name__)
+
+TargetName = Literal["labels", "attributes", "attribute_restrictions"]
+"""アノテーション仕様差分の出力対象。"""
 
 
 def _add_annotation_specs_source_arguments(parser: argparse.ArgumentParser, *, prefix: str) -> None:
@@ -94,7 +97,7 @@ class AnnotationSpecsDiffCommand(CommandLine):
     def main(self) -> None:
         left_specs = self.get_annotation_specs_from_source(prefix="left")
         right_specs = self.get_annotation_specs_from_source(prefix="right")
-        targets = set(self.args.target) if self.args.target is not None else {"labels", "attributes", "attribute_restrictions"}
+        targets: set[TargetName] = set(cast(list[TargetName], self.args.target)) if self.args.target is not None else {"labels", "attributes", "attribute_restrictions"}
         diff = create_annotation_specs_diff(left_specs, right_specs, targets=targets)
         output_format = AnnotationSpecsDiffOutputFormat(self.args.format)
 
@@ -133,7 +136,13 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         type=str,
         choices=[e.value for e in AnnotationSpecsDiffOutputFormat],
         default=AnnotationSpecsDiffOutputFormat.TEXT.value,
-        help=("出力フォーマット\n\n* text: 差分項目のみを表示する\n* detail_text: 差分項目と変更前後の値を表示する\n* json: 差分情報をJSONで出力する\n* pretty_json: 差分情報を整形JSONで出力する\n"),
+        help=(
+            "出力フォーマット\n\n"
+            "* text: 差分項目のみを+（追加）、-（削除）、~（変更）で表示する\n"
+            "* detail_text: 差分項目と変更前後の値をold -> new形式で表示する\n"
+            "* json: 差分情報をJSONで出力する\n"
+            "* pretty_json: 差分情報を整形JSONで出力する\n"
+        ),
     )
     parser.add_argument("--output", type=str, help="出力先のファイルパス")
 

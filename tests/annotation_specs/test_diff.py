@@ -287,13 +287,14 @@ class TestFormatAnnotationSpecsDiffAsText:
         assert "label_id:" not in actual
         assert "attribute_id:" not in actual
         assert "choice_id:" not in actual
-        assert "label_name_en: car" in actual
-        assert "added_attributes:\n    - pose" in actual
-        assert "removed_attributes:\n    - truncated" in actual
+        assert "~ label: car" in actual
+        assert "  + attributes: pose" in actual
+        assert "  - attributes: truncated" in actual
 
     def test_detail_textで変更前後の値を出力できる(self):
         left_specs = _create_annotation_specs()
         right_specs = copy.deepcopy(left_specs)
+        right_specs["labels"][0]["color"] = {"red": 0, "green": 255, "blue": 0}
         right_specs["labels"][0]["label_name"]["messages"][0]["message"] = "自動車"
         right_specs["additionals"][0]["name"]["messages"][2]["message"] = "co-moi"
 
@@ -301,6 +302,7 @@ class TestFormatAnnotationSpecsDiffAsText:
         actual = format_annotation_specs_diff_as_text(diff, left_specs=left_specs, right_specs=right_specs, detail=True)
 
         assert "[labels]" in actual
+        assert 'color: "#ff0000" -> "#00ff00"' in actual
         assert 'label_name_ja: "車" -> "自動車"' in actual
         assert "[attributes]" in actual
         assert 'name_vi: "bị che" -> "co-moi"' in actual
@@ -342,11 +344,13 @@ class TestFormatAnnotationSpecsDiffAsText:
             detail=True,
         )
 
-        assert "attribute_name_en: occluded" in actual
-        assert "added_attributes:\n    - pose" in actual
-        assert "removed_attributes:\n    - truncated" in actual
-        assert "added_choices:\n    - unknown" in actual
-        assert "choice_name_en: yes_changed" in actual
+        assert "~ attribute: occluded" in actual
+        assert 'attributes: ["occluded", "truncated"] -> ["pose", "occluded"]' in actual
+        assert "  + attributes: pose" in actual
+        assert "  - attributes: truncated" in actual
+        assert 'choices: ["yes", "no"] -> ["unknown", "yes_changed", "no"]' in actual
+        assert "  + choices: unknown" in actual
+        assert "  ~ choice: yes_changed" in actual
 
     def test_attribute_restrictionをtextで出力できる(self):
         left_specs = _create_annotation_specs()
@@ -364,8 +368,8 @@ class TestFormatAnnotationSpecsDiffAsText:
         )
 
         assert "[attribute_restrictions]" in actual
-        assert "attribute_name_en: occluded" in actual
-        assert "added_restrictions:" in actual
+        assert "~ attribute: occluded" in actual
+        assert "  + restriction: 'occluded' is 'yes'" in actual
         assert "'occluded' is 'yes'" in actual
         assert "attr_occluded" not in actual
 
@@ -385,7 +389,7 @@ class TestFormatAnnotationSpecsDiffAsText:
         )
 
         assert "[attribute_restrictions]" in actual
-        assert "added_restrictions:" in actual
+        assert "  + restriction: 'truncated' is read-only" in actual
         assert "'truncated' is read-only" in actual
         assert 'condition: {"_type": "CanInput", "enable": false}' in actual
 
