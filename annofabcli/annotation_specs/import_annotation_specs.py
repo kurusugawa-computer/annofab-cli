@@ -5,7 +5,7 @@ import copy
 import functools
 import json
 import logging
-from collections.abc import Callable
+from collections.abc import Callable, Iterable
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -31,9 +31,6 @@ class ProtectedImportChanges:
     changed_annotation_type_label_ids: list[str] = field(default_factory=list)
     """種類変更対象のうち、アノテーションで使われているラベルID一覧。"""
 
-    removed_attribute_ids: list[str] = field(default_factory=list)
-    """削除対象のうち、アノテーションで使われている属性ID一覧。"""
-
     changed_type_attribute_ids: list[str] = field(default_factory=list)
     """種類変更対象のうち、アノテーションで使われている属性ID一覧。"""
 
@@ -49,7 +46,6 @@ class ProtectedImportChanges:
             [
                 self.removed_label_ids,
                 self.changed_annotation_type_label_ids,
-                self.removed_attribute_ids,
                 self.changed_type_attribute_ids,
                 self.removed_label_attribute_relations,
                 self.removed_choices,
@@ -101,41 +97,125 @@ def build_request_body_for_import_annotation_specs(
     return request_body
 
 
+def collect_label_ids_by_attribute_id(annotation_specs: dict[str, Any]) -> dict[str, list[str]]:
+    """属性IDごとに、その属性を含むラベルID一覧を収集する。
+
+    Args:
+        annotation_specs: アノテーション仕様
+
+    Returns:
+        属性IDをキー、ラベルID一覧を値に持つ辞書。
+    """
+    label_ids_by_attribute_id: dict[str, list[str]] = {}
+    for label in annotation_specs["labels"]:
+        label_id = label["label_id"]
+        for attribute_id in label["additional_data_definitions"]:
+            label_ids_by_attribute_id.setdefault(attribute_id, []).append(label_id)
+    return label_ids_by_attribute_id
+
+
+def _append_unique_removed_label_attribute_relation(protected: ProtectedImportChanges, label_id: str, attribute_id: str) -> None:
+    """利用中のラベル属性ペアを重複なく追加する。"""
+    relation = (label_id, attribute_id)
+    if relation not in protected.removed_label_attribute_relations:
+        protected.removed_label_attribute_relations.append(relation)
+
+
+def _append_used_removed_label_attribute_relations(
+    protected: ProtectedImportChanges,
+    label_attribute_pairs: Iterable[tuple[str, str]],
+    *,
+    is_attribute_used: Callable[[str, str], bool],
+) -> None:
+    """利用中のラベル属性ペアを削除対象として追加する。"""
+    for label_id, attribute_id in label_attribute_pairs:
+        if is_attribute_used(label_id, attribute_id):
+            _append_unique_removed_label_attribute_relation(protected, label_id, attribute_id)
+
+
+def _iter_label_attribute_pairs(label_ids_by_attribute_id: dict[str, list[str]], attribute_id: str) -> Iterable[tuple[str, str]]:
+    """属性IDから、その属性を含むラベル属性ペアを生成する。"""
+    return ((label_id, attribute_id) for label_id in label_ids_by_attribute_id.get(attribute_id, []))
+
+
+def _is_attribute_used_in_any_label(
+    label_ids_by_attribute_id: dict[str, list[str]],
+    attribute_id: str,
+    *,
+    is_attribute_used: Callable[[str, str], bool],
+) -> bool:
+    """属性がいずれかのラベルで使われているかどうかを返す。"""
+    return any(is_attribute_used(label_id, attribute_id) for label_id in label_ids_by_attribute_id.get(attribute_id, []))
+
+
+def _is_choice_used_in_any_label(
+    label_ids_by_attribute_id: dict[str, list[str]],
+    attribute_id: str,
+    choice_id: str,
+    *,
+    is_choice_used: Callable[[str, str, str], bool],
+) -> bool:
+    """選択肢がいずれかのラベル属性で使われているかどうかを返す。"""
+    return any(is_choice_used(label_id, attribute_id, choice_id) for label_id in label_ids_by_attribute_id.get(attribute_id, []))
+
+
 def create_protected_import_changes(
     diff: AnnotationSpecsDiff,
+    current_annotation_specs: dict[str, Any],
     *,
     is_label_used: Callable[[str], bool],
-    is_attribute_used: Callable[[str], bool],
-    is_choice_used: Callable[[str, str], bool],
+    is_attribute_used: Callable[[str, str], bool],
+    is_choice_used: Callable[[str, str, str], bool],
 ) -> ProtectedImportChanges:
     """差分のうち、既存アノテーションで使われている変更を抽出する。
 
     Args:
         diff: 現在仕様とimport仕様の差分
+        current_annotation_specs: 現在のアノテーション仕様
         is_label_used: label_idを受け取り、利用中ならTrueを返す関数
-        is_attribute_used: attribute_idを受け取り、利用中ならTrueを返す関数
-        is_choice_used: attribute_idとchoice_idを受け取り、利用中ならTrueを返す関数
+        is_attribute_used: label_idとattribute_idを受け取り、利用中ならTrueを返す関数
+        is_choice_used: label_id、attribute_id、choice_idを受け取り、利用中ならTrueを返す関数
 
     Returns:
         importを中止すべき変更一覧
     """
     protected = ProtectedImportChanges()
+    label_ids_by_attribute_id = collect_label_ids_by_attribute_id(current_annotation_specs)
 
     if diff.labels is not None:
         protected.removed_label_ids.extend(label_id for label_id in diff.labels.removed_label_ids if is_label_used(label_id))
         for changed_label in diff.labels.changed_labels:
             if changed_label.annotation_type_changed and is_label_used(changed_label.label_id):
                 protected.changed_annotation_type_label_ids.append(changed_label.label_id)
-            protected.removed_label_attribute_relations.extend((changed_label.label_id, attribute_id) for attribute_id in changed_label.removed_attribute_ids if is_attribute_used(attribute_id))
+            _append_used_removed_label_attribute_relations(
+                protected,
+                ((changed_label.label_id, attribute_id) for attribute_id in changed_label.removed_attribute_ids),
+                is_attribute_used=is_attribute_used,
+            )
 
     if diff.attributes is not None:
-        protected.removed_attribute_ids.extend(attribute_id for attribute_id in diff.attributes.removed_attribute_ids if is_attribute_used(attribute_id))
-        for changed_attribute in diff.attributes.changed_attributes:
-            if changed_attribute.type_changed and is_attribute_used(changed_attribute.attribute_id):
-                protected.changed_type_attribute_ids.append(changed_attribute.attribute_id)
-            protected.removed_choices.extend(
-                (changed_attribute.attribute_id, choice_id) for choice_id in changed_attribute.removed_choice_ids if is_choice_used(changed_attribute.attribute_id, choice_id)
+        for attribute_id in diff.attributes.removed_attribute_ids:
+            _append_used_removed_label_attribute_relations(
+                protected,
+                _iter_label_attribute_pairs(label_ids_by_attribute_id, attribute_id),
+                is_attribute_used=is_attribute_used,
             )
+
+        for changed_attribute in diff.attributes.changed_attributes:
+            if changed_attribute.type_changed and _is_attribute_used_in_any_label(
+                label_ids_by_attribute_id,
+                changed_attribute.attribute_id,
+                is_attribute_used=is_attribute_used,
+            ):
+                protected.changed_type_attribute_ids.append(changed_attribute.attribute_id)
+            for choice_id in changed_attribute.removed_choice_ids:
+                if _is_choice_used_in_any_label(
+                    label_ids_by_attribute_id,
+                    changed_attribute.attribute_id,
+                    choice_id,
+                    is_choice_used=is_choice_used,
+                ):
+                    protected.removed_choices.append((changed_attribute.attribute_id, choice_id))
 
     return protected
 
@@ -147,7 +227,7 @@ def validate_import_annotation_specs(protected_changes: ProtectedImportChanges) 
         protected_changes: importを中止すべき変更一覧
 
     Raises:
-        ValueError: 既存アノテーションで使われているラベル/属性/選択肢の削除や種類変更がある場合
+        ValueError: 既存アノテーションで使われているラベル/属性/選択肢への削除や種類変更がある場合
     """
     if not protected_changes.has_changes():
         return
@@ -157,8 +237,6 @@ def validate_import_annotation_specs(protected_changes: ProtectedImportChanges) 
         messages.append(f"削除対象のラベルがアノテーションで使われています。 :: label_ids={protected_changes.removed_label_ids}")
     if protected_changes.changed_annotation_type_label_ids:
         messages.append(f"種類変更対象のラベルがアノテーションで使われています。 :: label_ids={protected_changes.changed_annotation_type_label_ids}")
-    if protected_changes.removed_attribute_ids:
-        messages.append(f"削除対象の属性がアノテーションで使われています。 :: attribute_ids={protected_changes.removed_attribute_ids}")
     if protected_changes.changed_type_attribute_ids:
         messages.append(f"種類変更対象の属性がアノテーションで使われています。 :: attribute_ids={protected_changes.changed_type_attribute_ids}")
     if protected_changes.removed_label_attribute_relations:
@@ -209,6 +287,7 @@ class ImportAnnotationSpecsMain(CommandLineWithConfirm):
 
         protected_changes = create_protected_import_changes(
             diff,
+            current_annotation_specs,
             is_label_used=is_label_used,
             is_attribute_used=is_attribute_used,
             is_choice_used=is_choice_used,

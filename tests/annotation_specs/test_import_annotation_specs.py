@@ -91,14 +91,14 @@ def _assert_import_allowed(
     imported_specs: dict[str, Any],
     *,
     used_label_ids: set[str] | None = None,
-    used_attribute_ids: set[str] | None = None,
-    used_choices: set[tuple[str, str]] | None = None,
+    used_label_attribute_pairs: set[tuple[str, str]] | None = None,
+    used_choices: set[tuple[str, str, str]] | None = None,
 ) -> None:
     protected_changes = _create_protected_changes(
         current_specs,
         imported_specs,
         used_label_ids=used_label_ids,
-        used_attribute_ids=used_attribute_ids,
+        used_label_attribute_pairs=used_label_attribute_pairs,
         used_choices=used_choices,
     )
     validate_import_annotation_specs(protected_changes)
@@ -109,14 +109,14 @@ def _assert_import_blocked(
     imported_specs: dict[str, Any],
     *,
     used_label_ids: set[str] | None = None,
-    used_attribute_ids: set[str] | None = None,
-    used_choices: set[tuple[str, str]] | None = None,
+    used_label_attribute_pairs: set[tuple[str, str]] | None = None,
+    used_choices: set[tuple[str, str, str]] | None = None,
 ) -> None:
     protected_changes = _create_protected_changes(
         current_specs,
         imported_specs,
         used_label_ids=used_label_ids,
-        used_attribute_ids=used_attribute_ids,
+        used_label_attribute_pairs=used_label_attribute_pairs,
         used_choices=used_choices,
     )
     with pytest.raises(ValueError):
@@ -128,18 +128,19 @@ def _create_protected_changes(
     imported_specs: dict[str, Any],
     *,
     used_label_ids: set[str] | None = None,
-    used_attribute_ids: set[str] | None = None,
-    used_choices: set[tuple[str, str]] | None = None,
+    used_label_attribute_pairs: set[tuple[str, str]] | None = None,
+    used_choices: set[tuple[str, str, str]] | None = None,
 ) -> ProtectedImportChanges:
     used_label_ids = used_label_ids if used_label_ids is not None else set()
-    used_attribute_ids = used_attribute_ids if used_attribute_ids is not None else set()
+    used_label_attribute_pairs = used_label_attribute_pairs if used_label_attribute_pairs is not None else set()
     used_choices = used_choices if used_choices is not None else set()
     diff = create_annotation_specs_diff(current_specs, imported_specs, targets={"labels", "attributes"})
     return create_protected_import_changes(
         diff,
+        current_specs,
         is_label_used=_to_used_checker(used_label_ids),
-        is_attribute_used=_to_used_checker(used_attribute_ids),
-        is_choice_used=lambda attribute_id, choice_id: (attribute_id, choice_id) in used_choices,
+        is_attribute_used=lambda label_id, attribute_id: (label_id, attribute_id) in used_label_attribute_pairs,
+        is_choice_used=lambda label_id, attribute_id, choice_id: (label_id, attribute_id, choice_id) in used_choices,
     )
 
 
@@ -212,7 +213,7 @@ class TestValidateImportAnnotationSpecs:
         imported_specs = copy.deepcopy(current_specs)
         imported_specs["additionals"] = [attribute for attribute in imported_specs["additionals"] if attribute["additional_data_definition_id"] != "attr_truncated"]
 
-        _assert_import_blocked(current_specs, imported_specs, used_attribute_ids={"attr_truncated"})
+        _assert_import_blocked(current_specs, imported_specs, used_label_attribute_pairs={("label_car", "attr_truncated")})
 
     def test_使われていない属性を削除する場合は許可する(self) -> None:
         current_specs = _create_annotation_specs()
@@ -226,7 +227,7 @@ class TestValidateImportAnnotationSpecs:
         imported_specs = copy.deepcopy(current_specs)
         imported_specs["additionals"][1]["type"] = "integer"
 
-        _assert_import_blocked(current_specs, imported_specs, used_attribute_ids={"attr_truncated"})
+        _assert_import_blocked(current_specs, imported_specs, used_label_attribute_pairs={("label_car", "attr_truncated")})
 
     def test_使われていない属性の種類を変更する場合は許可する(self) -> None:
         current_specs = _create_annotation_specs()
@@ -240,7 +241,7 @@ class TestValidateImportAnnotationSpecs:
         imported_specs = copy.deepcopy(current_specs)
         imported_specs["labels"][0]["additional_data_definitions"] = ["attr_occluded"]
 
-        _assert_import_blocked(current_specs, imported_specs, used_attribute_ids={"attr_truncated"})
+        _assert_import_blocked(current_specs, imported_specs, used_label_attribute_pairs={("label_car", "attr_truncated")})
 
     def test_使われていない属性をラベルから削除する場合は許可する(self) -> None:
         current_specs = _create_annotation_specs()
@@ -249,12 +250,19 @@ class TestValidateImportAnnotationSpecs:
 
         _assert_import_allowed(current_specs, imported_specs)
 
+    def test_別ラベルで使われている属性をラベルから削除する場合は許可する(self) -> None:
+        current_specs = _create_annotation_specs()
+        imported_specs = copy.deepcopy(current_specs)
+        imported_specs["labels"][0]["additional_data_definitions"] = ["attr_truncated"]
+
+        _assert_import_allowed(current_specs, imported_specs, used_label_attribute_pairs={("label_bus", "attr_occluded")})
+
     def test_使われている選択肢を削除する場合は中止する(self) -> None:
         current_specs = _create_annotation_specs()
         imported_specs = copy.deepcopy(current_specs)
         imported_specs["additionals"][0]["choices"] = [choice for choice in imported_specs["additionals"][0]["choices"] if choice["choice_id"] != "choice_yes"]
 
-        _assert_import_blocked(current_specs, imported_specs, used_choices={("attr_occluded", "choice_yes")})
+        _assert_import_blocked(current_specs, imported_specs, used_choices={("label_car", "attr_occluded", "choice_yes")})
 
     def test_使われていない選択肢を削除する場合は許可する(self) -> None:
         current_specs = _create_annotation_specs()
