@@ -16,7 +16,7 @@ Description
 * ラベルに属する属性の削除
 * 選択肢の削除
 
-既存アノテーションに影響することを理解した上でアノテーション仕様を変更する場合は、 ``--allow_affecting_existing_annotations`` を指定してください。
+既存アノテーションに影響することを理解した上でアノテーション仕様を変更する場合は、 ``--allow_affecting_annotations`` を指定してください。
 
 
 Examples
@@ -47,7 +47,7 @@ Examples
 
 .. code-block::
 
-    $ annofabcli annotation_specs import --project_id prj1 --annotation_specs_json_file annotation_specs.json --allow_affecting_existing_annotations
+    $ annofabcli annotation_specs import --project_id prj1 --annotation_specs_json_file annotation_specs.json --allow_affecting_annotations
 
 
 Usage Details

@@ -291,7 +291,7 @@ class TestValidateImportAnnotationSpecs:
         imported_specs["labels"] = [label for label in imported_specs["labels"] if label["label_id"] != "label_car"]
         protected_changes = _create_protected_changes(current_specs, imported_specs, used_label_ids={"label_car"})
 
-        assert validate_import_annotation_specs(protected_changes, allow_affecting_existing_annotations=True)
+        assert validate_import_annotation_specs(protected_changes, allow_affecting_annotations=True)
 
 
 class TestImportAnnotationSpecsMain:
@@ -316,7 +316,7 @@ class TestImportAnnotationSpecsMain:
         imported_specs["labels"] = [label for label in imported_specs["labels"] if label["label_id"] != "label_car"]
         service.api.get_annotation_specs.return_value = (current_specs, None)
         service.api.get_annotation_list.return_value = ({"total_count": 1}, None)
-        obj = ImportAnnotationSpecsMain(service, project_id="prj1", all_yes=True, allow_affecting_existing_annotations=True)
+        obj = ImportAnnotationSpecsMain(service, project_id="prj1", all_yes=True, allow_affecting_annotations=True)
 
         actual = obj.import_annotation_specs(imported_annotation_specs=imported_specs)
 

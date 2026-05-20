@@ -166,13 +166,13 @@ def create_message_for_protected_import_changes(protected_changes: ProtectedImpo
 def validate_import_annotation_specs(
     protected_changes: ProtectedImportChanges,
     *,
-    allow_affecting_existing_annotations: bool = False,
+    allow_affecting_annotations: bool = False,
 ) -> bool:
     """importしてよい変更かどうかを返す。
 
     Args:
         protected_changes: importを中止すべき変更一覧
-        allow_affecting_existing_annotations: Trueなら既存アノテーションに影響する変更でも許可する
+        allow_affecting_annotations: Trueなら既存アノテーションに影響する変更でも許可する
 
     Returns:
         importしてよい場合はTrue、既存アノテーションに影響するため中止する場合はFalse
@@ -181,7 +181,7 @@ def validate_import_annotation_specs(
         return True
 
     message = create_message_for_protected_import_changes(protected_changes)
-    if allow_affecting_existing_annotations:
+    if allow_affecting_annotations:
         logger.warning("既存アノテーションに影響する変更がありますが、オプションで許可されているため、アノテーション仕様をインポートします。\n%s", message)
         return True
 
@@ -198,11 +198,11 @@ class ImportAnnotationSpecsMain(CommandLineWithConfirm):
         *,
         project_id: str,
         all_yes: bool,
-        allow_affecting_existing_annotations: bool = False,
+        allow_affecting_annotations: bool = False,
     ) -> None:
         self.service = service
         self.project_id = project_id
-        self.allow_affecting_existing_annotations = allow_affecting_existing_annotations
+        self.allow_affecting_annotations = allow_affecting_annotations
         CommandLineWithConfirm.__init__(self, all_yes)
 
     def has_annotation(self, query: dict[str, Any]) -> bool:
@@ -242,7 +242,7 @@ class ImportAnnotationSpecsMain(CommandLineWithConfirm):
         )
         return validate_import_annotation_specs(
             protected_changes,
-            allow_affecting_existing_annotations=self.allow_affecting_existing_annotations,
+            allow_affecting_annotations=self.allow_affecting_annotations,
         )
 
     def import_annotation_specs(self, *, imported_annotation_specs: dict[str, Any], comment: str | None = None) -> bool:
@@ -279,7 +279,7 @@ class ImportAnnotationSpecs(CommandLine):
             self.service,
             project_id=args.project_id,
             all_yes=args.yes,
-            allow_affecting_existing_annotations=args.allow_affecting_existing_annotations,
+            allow_affecting_annotations=args.allow_affecting_annotations,
         )
         obj.import_annotation_specs(imported_annotation_specs=imported_annotation_specs, comment=args.comment)
 
@@ -295,7 +295,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     )
     parser.add_argument("--comment", type=str, help="アノテーション仕様の変更内容を説明するコメント。未指定の場合、自動でコメントが生成されます。")
     parser.add_argument(
-        "--allow_affecting_existing_annotations",
+        "--allow_affecting_annotations",
         action="store_true",
         help="指定すると、既存アノテーションに影響する変更でもアノテーション仕様をインポートします。",
     )
