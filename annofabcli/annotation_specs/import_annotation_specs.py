@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Any
 
 import annofabapi
-from annofabapi.util.annotation_specs import get_english_message
+from annofabapi.util.annotation_specs import AnnotationSpecsAccessor, get_english_message
 
 import annofabcli.common.cli
 from annofabcli.annotation_specs.diff_compare import create_annotation_specs_diff
@@ -58,36 +58,6 @@ class ProtectedImportChanges:
                 self.removed_choices,
             ]
         )
-
-
-@dataclass(frozen=True)
-class AnnotationSpecsNameResolver:
-    """アノテーション仕様IDに対応する英語名を取得する。"""
-
-    labels: list[dict[str, Any]]
-    """ラベル一覧。"""
-
-    additionals: list[dict[str, Any]]
-    """属性一覧。"""
-
-    def get_label_name(self, label_id: str) -> str:
-        """ラベルIDに対応する英語名を返す。"""
-        label = next((label for label in self.labels if label["label_id"] == label_id), None)
-        return (get_label_name_en(label) or label_id) if label is not None else label_id
-
-    def get_attribute_name(self, attribute_id: str) -> str:
-        """属性IDに対応する英語名を返す。"""
-        attribute = next((attribute for attribute in self.additionals if attribute["additional_data_definition_id"] == attribute_id), None)
-        return (get_attribute_name_en(attribute) or attribute_id) if attribute is not None else attribute_id
-
-    def get_choice_name(self, attribute_id: str, choice_id: str) -> str:
-        """選択肢IDに対応する英語名を返す。"""
-        attribute = next((attribute for attribute in self.additionals if attribute["additional_data_definition_id"] == attribute_id), None)
-        if attribute is None:
-            return choice_id
-
-        choice = next((choice for choice in attribute["choices"] if choice["choice_id"] == choice_id), None)
-        return (get_english_message(choice["name"]) or choice_id) if choice is not None else choice_id
 
 
 def create_comment_for_import_annotation_specs(diff_text: str | None = None) -> str:
@@ -163,24 +133,37 @@ def create_protected_import_changes(
         importを中止すべき変更一覧
     """
     protected = ProtectedImportChanges()
-    name_resolver = AnnotationSpecsNameResolver(labels=current_annotation_specs["labels"], additionals=current_annotation_specs["additionals"])
+    annotation_specs_accessor = AnnotationSpecsAccessor(current_annotation_specs)
+
+    def get_label_name(label_id: str) -> str:
+        return get_label_name_en(annotation_specs_accessor.get_label(label_id=label_id)) or label_id
+
+    def get_attribute_name(attribute_id: str) -> str:
+        return get_attribute_name_en(annotation_specs_accessor.get_attribute(attribute_id=attribute_id)) or attribute_id
+
+    def get_choice_name(attribute_id: str, choice_id: str) -> str:
+        attribute = annotation_specs_accessor.get_attribute(attribute_id=attribute_id)
+        choices = attribute["choices"]
+        assert choices is not None
+        choice = next(choice for choice in choices if choice["choice_id"] == choice_id)
+        return get_english_message(choice["name"]) or choice_id
 
     if diff.labels is not None:
-        protected.removed_label_names.update(name_resolver.get_label_name(label_id) for label_id in diff.labels.removed_label_ids if is_label_used(label_id))
+        protected.removed_label_names.update(get_label_name(label_id) for label_id in diff.labels.removed_label_ids if is_label_used(label_id))
         for changed_label in diff.labels.changed_labels:
             if changed_label.annotation_type_changed and is_label_used(changed_label.label_id):
-                protected.changed_annotation_type_label_names.add(name_resolver.get_label_name(changed_label.label_id))
+                protected.changed_annotation_type_label_names.add(get_label_name(changed_label.label_id))
             for attribute_id in changed_label.removed_attribute_ids:
                 if is_label_attribute_used(changed_label.label_id, attribute_id):
-                    protected.removed_label_attribute_relations.add((name_resolver.get_label_name(changed_label.label_id), name_resolver.get_attribute_name(attribute_id)))
+                    protected.removed_label_attribute_relations.add((get_label_name(changed_label.label_id), get_attribute_name(attribute_id)))
 
     if diff.attributes is not None:
         for changed_attribute in diff.attributes.changed_attributes:
             if changed_attribute.type_changed and is_attribute_used(changed_attribute.attribute_id):
-                protected.changed_type_attribute_names.add(name_resolver.get_attribute_name(changed_attribute.attribute_id))
+                protected.changed_type_attribute_names.add(get_attribute_name(changed_attribute.attribute_id))
             for choice_id in changed_attribute.removed_choice_ids:
                 if is_choice_used(changed_attribute.attribute_id, choice_id):
-                    protected.removed_choices.add((name_resolver.get_attribute_name(changed_attribute.attribute_id), name_resolver.get_choice_name(changed_attribute.attribute_id, choice_id)))
+                    protected.removed_choices.add((get_attribute_name(changed_attribute.attribute_id), get_choice_name(changed_attribute.attribute_id, choice_id)))
 
     return protected
 
