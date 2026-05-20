@@ -13,6 +13,7 @@ from annofabcli.annotation_specs.import_annotation_specs import (
     ProtectedImportChanges,
     build_request_body_for_import_annotation_specs,
     create_comment_for_import_annotation_specs,
+    create_message_for_protected_import_changes,
     create_protected_import_changes,
     validate_import_annotation_specs,
 )
@@ -145,6 +146,7 @@ def _create_protected_changes(
     diff = create_annotation_specs_diff(current_specs, imported_specs, targets={"labels", "attributes"})
     return create_protected_import_changes(
         diff,
+        current_specs,
         is_label_used=_to_used_checker(used_label_ids),
         is_attribute_used=_to_used_checker(used_attribute_ids),
         is_label_attribute_used=lambda label_id, attribute_id: (label_id, attribute_id) in used_label_attribute_pairs,
@@ -214,6 +216,52 @@ class TestCreateCommentForImportAnnotationSpecs:
 
         assert "annotation_specs import" in actual
         assert "インポートによるアノテーション仕様の差分:" not in actual
+
+
+class TestCreateMessageForProtectedImportChanges:
+    def test_英語名でメッセージを生成する(self) -> None:
+        protected_changes = ProtectedImportChanges(
+            removed_label_names={"car"},
+            changed_annotation_type_label_names={"bus"},
+            changed_type_attribute_names={"truncated"},
+            removed_label_attribute_relations={("car", "occluded")},
+            removed_choices={("occluded", "yes")},
+        )
+
+        actual = create_message_for_protected_import_changes(protected_changes)
+
+        assert "label_names=['car']" in actual
+        assert "label_names=['bus']" in actual
+        assert "attribute_names=['truncated']" in actual
+        assert "label_attribute_names=[('car', 'occluded')]" in actual
+        assert "attribute_choice_names=[('occluded', 'yes')]" in actual
+        assert "label_ids" not in actual
+        assert "attribute_ids" not in actual
+
+
+class TestCreateProtectedImportChanges:
+    def test_アノテーションで使われている変更を英語名で保持する(self) -> None:
+        current_specs = _create_annotation_specs()
+        current_specs["labels"][0]["label_id"] = "11111111-1111-1111-1111-111111111111"
+        current_specs["labels"][0]["label_name"] = _create_message("車", "car")
+        current_specs["labels"][0]["additional_data_definitions"] = ["22222222-2222-2222-2222-222222222222"]
+        current_specs["additionals"][0]["additional_data_definition_id"] = "22222222-2222-2222-2222-222222222222"
+        current_specs["additionals"][0]["name"] = _create_message("遮蔽", "occluded")
+        current_specs["additionals"][0]["choices"][0]["choice_id"] = "33333333-3333-3333-3333-333333333333"
+        current_specs["additionals"][0]["choices"][0]["name"] = _create_message("はい", "yes")
+        imported_specs = copy.deepcopy(current_specs)
+        imported_specs["labels"] = [label for label in imported_specs["labels"] if label["label_id"] != "11111111-1111-1111-1111-111111111111"]
+        imported_specs["additionals"][0]["choices"] = [choice for choice in imported_specs["additionals"][0]["choices"] if choice["choice_id"] != "33333333-3333-3333-3333-333333333333"]
+
+        actual = _create_protected_changes(
+            current_specs,
+            imported_specs,
+            used_label_ids={"11111111-1111-1111-1111-111111111111"},
+            used_choices={("22222222-2222-2222-2222-222222222222", "33333333-3333-3333-3333-333333333333")},
+        )
+
+        assert actual.removed_label_names == {"car"}
+        assert actual.removed_choices == {("occluded", "yes")}
 
 
 class TestValidateImportAnnotationSpecs:
