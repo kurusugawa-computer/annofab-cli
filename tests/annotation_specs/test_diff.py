@@ -132,6 +132,7 @@ def _create_annotation_specs() -> dict:
             _create_inspection_phrase("phrase_blur", ja="ぼやけています", en="blurred", vi="mo"),
             _create_inspection_phrase("phrase_occluded", ja="隠れています", en="occluded", vi="bi che"),
         ],
+        "metadata": {},
     }
 
 
@@ -227,6 +228,7 @@ class TestCreateAnnotationSpecsDiff:
         assert actual.labels is not None
         assert actual.attributes is None
         assert actual.inspection_phrases is None
+        assert actual.metadata is None
 
     def test_属性制約の差分を生成できる(self):
         left_specs = _create_annotation_specs()
@@ -322,6 +324,29 @@ class TestCreateAnnotationSpecsDiff:
         actual = create_annotation_specs_diff(left_specs, right_specs, targets={"inspection_phrases"})
 
         assert actual.has_changes() is False
+
+    def test_metadataの差分をキー単位で生成できる(self):
+        left_specs = _create_annotation_specs()
+        right_specs = copy.deepcopy(left_specs)
+        left_specs["metadata"] = {
+            "removed_key": "削除",
+            "changed_key": {"version": 1},
+            "unchanged_key": True,
+        }
+        right_specs["metadata"] = {
+            "changed_key": {"version": 2},
+            "unchanged_key": True,
+            "added_key": ["追加"],
+        }
+
+        actual = create_annotation_specs_diff(left_specs, right_specs, targets={"metadata"})
+        actual_dict = actual.model_dump(exclude_none=True)
+
+        assert actual_dict["metadata"] == {
+            "added_metadata_keys": ["added_key"],
+            "removed_metadata_keys": ["removed_key"],
+            "changed_metadata_keys": ["changed_key"],
+        }
 
 
 class TestFormatAnnotationSpecsDiffAsText:
@@ -661,6 +686,48 @@ class TestFormatAnnotationSpecsDiffAsText:
             }
         ]
 
+    def test_metadataをtextで出力できる(self):
+        left_specs = _create_annotation_specs()
+        right_specs = copy.deepcopy(left_specs)
+        left_specs["metadata"] = {"removed_key": "削除", "changed_key": 1}
+        right_specs["metadata"] = {"changed_key": 2, "added_key": "追加"}
+
+        diff = create_annotation_specs_diff(left_specs, right_specs)
+        actual = format_annotation_specs_diff_as_text(
+            diff,
+            left_specs=left_specs,
+            right_specs=right_specs,
+            detail=False,
+        )
+        actual_yaml = yaml.safe_load(actual.split("[metadata]\n", 1)[1])
+
+        assert actual_yaml == {
+            "added": ["added_key"],
+            "removed": ["removed_key"],
+            "changed": ["changed_key"],
+        }
+
+    def test_metadataをdetail_textで出力できる(self):
+        left_specs = _create_annotation_specs()
+        right_specs = copy.deepcopy(left_specs)
+        left_specs["metadata"] = {"removed_key": "削除", "changed_key": {"version": 1}}
+        right_specs["metadata"] = {"changed_key": {"version": 2}, "added_key": ["追加"]}
+
+        diff = create_annotation_specs_diff(left_specs, right_specs)
+        actual = format_annotation_specs_diff_as_text(
+            diff,
+            left_specs=left_specs,
+            right_specs=right_specs,
+            detail=True,
+        )
+        actual_yaml = yaml.safe_load(actual.split("[metadata]\n", 1)[1])
+
+        assert actual_yaml == {
+            "added": [{"key": "added_key", "right": '["追加"]'}],
+            "removed": [{"key": "removed_key", "left": "削除"}],
+            "changed": [{"key": "changed_key", "left": '{"version": 1}', "right": '{"version": 2}'}],
+        }
+
 
 @pytest.mark.access_webapi
 class TestCommandLine:
@@ -806,6 +873,45 @@ class TestCommandLine:
             "added_inspection_phrase_ids": ["phrase_too_dark"],
             "removed_inspection_phrase_ids": ["phrase_blur"],
             "changed_inspection_phrases": [],
+        }
+
+    def test_json形式でmetadataのみ出力できる(self, tmp_path):
+        left_specs_path = tmp_path / "left.json"
+        right_specs_path = tmp_path / "right.json"
+        output_path = tmp_path / "out.json"
+
+        left_specs = _create_annotation_specs()
+        right_specs = copy.deepcopy(left_specs)
+        left_specs["metadata"] = {"removed_key": "削除", "changed_key": 1}
+        right_specs["metadata"] = {"changed_key": 2, "added_key": "追加"}
+
+        left_specs_path.write_text(json.dumps(left_specs, ensure_ascii=False), encoding="utf-8")
+        right_specs_path.write_text(json.dumps(right_specs, ensure_ascii=False), encoding="utf-8")
+
+        main(
+            [
+                "annotation_specs",
+                "diff",
+                "--left_annotation_specs_json",
+                str(left_specs_path),
+                "--right_annotation_specs_json",
+                str(right_specs_path),
+                "--target",
+                "metadata",
+                "--format",
+                "json",
+                "--output",
+                str(output_path),
+            ]
+        )
+
+        actual = json.loads(output_path.read_text(encoding="utf-8"))
+
+        assert set(actual.keys()) == {"metadata"}
+        assert actual["metadata"] == {
+            "added_metadata_keys": ["added_key"],
+            "removed_metadata_keys": ["removed_key"],
+            "changed_metadata_keys": ["changed_key"],
         }
 
 

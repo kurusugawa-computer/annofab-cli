@@ -21,6 +21,7 @@ from annofabcli.annotation_specs.diff_models import (
     InspectionPhrasesDiff,
     JsonValue,
     LabelsDiff,
+    MetadataDiff,
 )
 from annofabcli.common.annofab.annotation_specs import keybind_to_text
 
@@ -624,6 +625,65 @@ def _create_inspection_phrases_section(
     return section
 
 
+def _create_metadata_key_detail_item(
+    key: str,
+    *,
+    value_key: str,
+    metadata: dict[str, Any],
+) -> dict[str, JsonValue]:
+    return {
+        "key": key,
+        value_key: _to_display_text(metadata[key]),
+    }
+
+
+def _create_metadata_changed_detail_item(
+    key: str,
+    *,
+    left_metadata: dict[str, Any],
+    right_metadata: dict[str, Any],
+) -> dict[str, JsonValue]:
+    return {
+        "key": key,
+        "left": _to_display_text(left_metadata[key]),
+        "right": _to_display_text(right_metadata[key]),
+    }
+
+
+def _create_metadata_section(
+    metadata_diff: MetadataDiff,
+    *,
+    left_specs: dict[str, Any],
+    right_specs: dict[str, Any],
+    detail: bool,
+) -> dict[str, JsonValue]:
+    section: dict[str, JsonValue] = {}
+    left_metadata = left_specs.get("metadata", {})
+    right_metadata = right_specs.get("metadata", {})
+    if detail:
+        _append_if_not_empty(
+            section,
+            "added",
+            [_create_metadata_key_detail_item(key, value_key="right", metadata=right_metadata) for key in metadata_diff.added_metadata_keys],
+        )
+        _append_if_not_empty(
+            section,
+            "removed",
+            [_create_metadata_key_detail_item(key, value_key="left", metadata=left_metadata) for key in metadata_diff.removed_metadata_keys],
+        )
+        _append_if_not_empty(
+            section,
+            "changed",
+            [_create_metadata_changed_detail_item(key, left_metadata=left_metadata, right_metadata=right_metadata) for key in metadata_diff.changed_metadata_keys],
+        )
+        return section
+
+    _append_if_not_empty(section, "added", metadata_diff.added_metadata_keys)
+    _append_if_not_empty(section, "removed", metadata_diff.removed_metadata_keys)
+    _append_if_not_empty(section, "changed", metadata_diff.changed_metadata_keys)
+    return section
+
+
 def format_annotation_specs_diff_as_text(
     diff: AnnotationSpecsDiff,
     *,
@@ -658,4 +718,12 @@ def format_annotation_specs_diff_as_text(
             detail=detail,
         )
         sections.append(f"[inspection_phrases]\n{_dump_yaml(inspection_phrases_section)}")
+    if diff.metadata is not None and diff.metadata.has_changes():
+        metadata_section = _create_metadata_section(
+            diff.metadata,
+            left_specs=left_specs,
+            right_specs=right_specs,
+            detail=detail,
+        )
+        sections.append(f"[metadata]\n{_dump_yaml(metadata_section)}")
     return "\n\n".join(sections)

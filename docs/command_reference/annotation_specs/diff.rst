@@ -93,6 +93,14 @@ JSONファイル同士を比較する
       fields:
       - inspection_phrase_name_ja
 
+    [metadata]
+    added:
+    - added_key
+    removed:
+    - removed_key
+    changed:
+    - changed_key
+
 ``detail_text`` 形式の出力例
 ---------------------------------
 
@@ -124,6 +132,12 @@ JSONファイル同士を比較する
       inspection_phrase_name_ja:
         left: 隠れています
         right: 遮蔽されています
+
+    [metadata]
+    changed:
+    - key: changed_key
+      left: '{"version": 1}'
+      right: '{"version": 2}'
 
 JSON形式の出力
 ---------------------------------
@@ -173,6 +187,11 @@ JSON出力のトップレベルは以下の形式です。
             "inspection_phrase_name_vi_changed": false
           }
         ]
+      },
+      "metadata": {
+        "added_metadata_keys": ["added_key"],
+        "removed_metadata_keys": ["removed_key"],
+        "changed_metadata_keys": ["changed_key"]
       }
     }
 

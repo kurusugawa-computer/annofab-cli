@@ -305,6 +305,29 @@ class InspectionPhrasesDiff(BaseModel):
         )
 
 
+class MetadataDiff(BaseModel):
+    """アノテーション仕様直下の metadata の差分。"""
+
+    model_config = ConfigDict(frozen=True)
+
+    added_metadata_keys: list[str] = Field(default_factory=list)
+    """追加された metadata キー一覧"""
+    removed_metadata_keys: list[str] = Field(default_factory=list)
+    """削除された metadata キー一覧"""
+    changed_metadata_keys: list[str] = Field(default_factory=list)
+    """値が変更された既存 metadata キー一覧"""
+
+    def has_changes(self) -> bool:
+        """変更有無を返す。"""
+        return any(
+            [
+                len(self.added_metadata_keys) > 0,
+                len(self.removed_metadata_keys) > 0,
+                len(self.changed_metadata_keys) > 0,
+            ]
+        )
+
+
 class AnnotationSpecsDiff(BaseModel):
     """アノテーション仕様の差分。"""
 
@@ -318,6 +341,8 @@ class AnnotationSpecsDiff(BaseModel):
     """属性制約差分"""
     inspection_phrases: InspectionPhrasesDiff | None = None
     """定型指摘差分"""
+    metadata: MetadataDiff | None = None
+    """アノテーション仕様直下の metadata 差分"""
 
     def has_changes(self) -> bool:
         """変更有無を返す。"""
@@ -327,5 +352,6 @@ class AnnotationSpecsDiff(BaseModel):
                 self.attributes is not None and self.attributes.has_changes(),
                 self.attribute_restrictions is not None and self.attribute_restrictions.has_changes(),
                 self.inspection_phrases is not None and self.inspection_phrases.has_changes(),
+                self.metadata is not None and self.metadata.has_changes(),
             ]
         )
