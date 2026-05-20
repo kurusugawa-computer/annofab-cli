@@ -104,7 +104,7 @@ JSONファイル同士を比較する
 ``detail_text`` 形式の出力例
 ---------------------------------
 
-``detail_text`` 形式では、変更された値を ``left`` / ``right`` で表示します。配列やオブジェクトは文字列として表示します。
+``detail_text`` 形式では、変更された値を ``changes`` 配下の ``left`` / ``right`` で表示します。配列やオブジェクトは文字列として表示します。
 ``attribute_restrictions`` は ``text`` 形式と同じく、制約条件を文字列で表示します。
 ``metadata`` の追加・削除はキー名のみ表示します。
 
@@ -112,10 +112,11 @@ JSONファイル同士を比較する
 
     [attributes]
     changed:
-    - name: type
-      choices:
-        left: '["large2", "medium", "small", "special"]'
-        right: '["large", "special", "s", "e"]'
+    - attribute_name_en: type
+      changes:
+        choices:
+          left: '["large2", "medium", "small", "special"]'
+          right: '["large", "special", "s", "e"]'
       added_choices:
       - s
       - e
@@ -123,23 +124,25 @@ JSONファイル同士を比較する
       - medium
       - small
       changed_choices:
-      - name: large
-        choice_name_en:
-          left: large2
-          right: large
+      - choice_name_en: large
+        changes:
+          choice_name_en:
+            left: large2
+            right: large
 
     [attribute_restrictions]
     changed:
-    - name: lane_no
+    - attribute_name_en: lane_no
       added_restrictions:
       - '''lane_no'' is not empty'
 
     [inspection_phrases]
     changed:
     - inspection_phrase_id: phrase_occluded
-      inspection_phrase_name_ja:
-        left: 隠れています
-        right: 遮蔽されています
+      changes:
+        inspection_phrase_name_ja:
+          left: 隠れています
+          right: 遮蔽されています
 
     [metadata]
     added:

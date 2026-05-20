@@ -421,11 +421,11 @@ class TestFormatAnnotationSpecsDiffAsText:
         attributes_yaml = yaml.safe_load(actual.split("[attributes]\n", 1)[1])
 
         assert "[labels]" in actual
-        assert labels_yaml["changed"][0]["color"] == {"left": "#FF0000", "right": "#00FF00"}
-        assert labels_yaml["changed"][0]["keybind"] == {"left": "", "right": "Ctrl+Digit1"}
-        assert labels_yaml["changed"][0]["label_name_ja"] == {"left": "車", "right": "自動車"}
+        assert labels_yaml["changed"][0]["changes"]["color"] == {"left": "#FF0000", "right": "#00FF00"}
+        assert labels_yaml["changed"][0]["changes"]["keybind"] == {"left": "", "right": "Ctrl+Digit1"}
+        assert labels_yaml["changed"][0]["changes"]["label_name_ja"] == {"left": "車", "right": "自動車"}
         assert "[attributes]" in actual
-        assert attributes_yaml["changed"][0]["attribute_name_vi"] == {"left": "bị che", "right": "co-moi"}
+        assert attributes_yaml["changed"][0]["changes"]["attribute_name_vi"] == {"left": "bị che", "right": "co-moi"}
         assert "attribute_id:" not in actual
         assert "choice_id:" not in actual
 
@@ -451,7 +451,7 @@ class TestFormatAnnotationSpecsDiffAsText:
         )
         labels_yaml = yaml.safe_load(actual.split("[labels]\n", 1)[1])
 
-        expected_lines = [
+        expected_keys = [
             "label_name_en:",
             "label_name_ja:",
             "label_name_vi:",
@@ -463,9 +463,9 @@ class TestFormatAnnotationSpecsDiffAsText:
             "field_values:",
             "metadata:",
         ]
-        positions = [actual.index(line) for line in expected_lines]
-        assert positions == sorted(positions)
-        assert labels_yaml["changed"][0]["label_name_en"] == {"left": "car", "right": "car-updated"}
+        assert [f"{key}:" for key in labels_yaml["changed"][0]["changes"].keys()] == expected_keys
+        assert labels_yaml["changed"][0]["label_name_en"] == "car-updated"
+        assert labels_yaml["changed"][0]["changes"]["label_name_en"] == {"left": "car", "right": "car-updated"}
 
     def test_detail_textの属性差分はchanged_field_namesと同じ順序で出力する(self):
         left_specs = _create_annotation_specs()
@@ -489,7 +489,7 @@ class TestFormatAnnotationSpecsDiffAsText:
         )
         attributes_yaml = yaml.safe_load(actual.split("[attributes]\n", 1)[1])
 
-        expected_lines = [
+        expected_keys = [
             "attribute_name_en:",
             "attribute_name_ja:",
             "attribute_name_vi:",
@@ -501,9 +501,9 @@ class TestFormatAnnotationSpecsDiffAsText:
             "choices_order:",
             "metadata:",
         ]
-        positions = [actual.index(line) for line in expected_lines]
-        assert positions == sorted(positions)
-        assert attributes_yaml["changed"][0]["attribute_name_en"] == {"left": "occluded", "right": "occluded-updated"}
+        assert [f"{key}:" for key in attributes_yaml["changed"][0]["changes"].keys()] == expected_keys
+        assert attributes_yaml["changed"][0]["attribute_name_en"] == "occluded-updated"
+        assert attributes_yaml["changed"][0]["changes"]["attribute_name_en"] == {"left": "occluded", "right": "occluded-updated"}
 
     def test_detail_textで選択肢や属性も英語名を出力できる(self):
         left_specs = _create_annotation_specs()
@@ -542,13 +542,13 @@ class TestFormatAnnotationSpecsDiffAsText:
         labels_yaml = yaml.safe_load(actual.split("[labels]\n", 1)[1].split("\n\n[attributes]", 1)[0])
         attributes_yaml = yaml.safe_load(actual.split("[attributes]\n", 1)[1])
 
-        assert attributes_yaml["changed"][0]["name"] == "occluded"
-        assert labels_yaml["changed"][0]["attributes"] == {"left": '["occluded", "truncated"]', "right": '["pose", "occluded"]'}
+        assert attributes_yaml["changed"][0]["attribute_name_en"] == "occluded"
+        assert labels_yaml["changed"][0]["changes"]["attributes"] == {"left": '["occluded", "truncated"]', "right": '["pose", "occluded"]'}
         assert labels_yaml["changed"][0]["added_attributes"] == ["pose"]
         assert labels_yaml["changed"][0]["removed_attributes"] == ["truncated"]
-        assert attributes_yaml["changed"][0]["choices"] == {"left": '["yes", "no"]', "right": '["unknown", "yes_changed", "no"]'}
+        assert attributes_yaml["changed"][0]["changes"]["choices"] == {"left": '["yes", "no"]', "right": '["unknown", "yes_changed", "no"]'}
         assert attributes_yaml["changed"][0]["added_choices"] == ["unknown"]
-        assert attributes_yaml["changed"][0]["changed_choices"][0]["name"] == "yes_changed"
+        assert attributes_yaml["changed"][0]["changed_choices"][0]["choice_name_en"] == "yes_changed"
 
     def test_detail_textの選択肢差分はchanged_field_namesと同じ順序で出力する(self):
         left_specs = _create_annotation_specs()
@@ -568,17 +568,16 @@ class TestFormatAnnotationSpecsDiffAsText:
         )
         attributes_yaml = yaml.safe_load(actual.split("[attributes]\n", 1)[1])
 
-        expected_lines = [
-            "name: occluded",
-            "name: yes-updated",
+        expected_keys = [
             "choice_name_en:",
             "choice_name_ja:",
             "choice_name_vi:",
             "keybind:",
         ]
-        positions = [actual.index(line) for line in expected_lines]
-        assert positions == sorted(positions)
-        assert attributes_yaml["changed"][0]["changed_choices"][0]["choice_name_en"] == {"left": "yes", "right": "yes-updated"}
+        assert attributes_yaml["changed"][0]["attribute_name_en"] == "occluded"
+        assert attributes_yaml["changed"][0]["changed_choices"][0]["choice_name_en"] == "yes-updated"
+        assert [f"{key}:" for key in attributes_yaml["changed"][0]["changed_choices"][0]["changes"].keys()] == expected_keys
+        assert attributes_yaml["changed"][0]["changed_choices"][0]["changes"]["choice_name_en"] == {"left": "yes", "right": "yes-updated"}
 
     def test_attribute_restrictionをtextで出力できる(self):
         left_specs = _create_annotation_specs()
@@ -636,6 +635,7 @@ class TestFormatAnnotationSpecsDiffAsText:
         actual_yaml = yaml.safe_load(actual.split("[attribute_restrictions]\n", 1)[1])
 
         assert "[attribute_restrictions]" in actual
+        assert actual_yaml["changed"][0]["attribute_name_en"] == "truncated"
         assert actual_yaml["changed"][0]["added_restrictions"] == ["'truncated' is read-only"]
 
     def test_定型指摘をtextで出力できる(self):
@@ -680,9 +680,11 @@ class TestFormatAnnotationSpecsDiffAsText:
         assert actual_yaml["changed"] == [
             {
                 "inspection_phrase_id": "phrase_blur",
-                "inspection_phrase_name_en": {"left": "blurred", "right": "blurred2"},
-                "inspection_phrase_name_ja": {"left": "ぼやけています", "right": "ぼやけています2"},
-                "inspection_phrase_name_vi": {"left": "mo", "right": "mo2"},
+                "changes": {
+                    "inspection_phrase_name_en": {"left": "blurred", "right": "blurred2"},
+                    "inspection_phrase_name_ja": {"left": "ぼやけています", "right": "ぼやけています2"},
+                    "inspection_phrase_name_vi": {"left": "mo", "right": "mo2"},
+                },
             }
         ]
 
@@ -832,7 +834,7 @@ class TestCommandLine:
         actual_yaml = yaml.safe_load(actual.split("[attributes]\n", 1)[1])
 
         assert "[attributes]" in actual
-        assert actual_yaml["changed"][0]["default"] == {"left": "choice_yes", "right": "choice_no"}
+        assert actual_yaml["changed"][0]["changes"]["default"] == {"left": "choice_yes", "right": "choice_no"}
 
     def test_json形式でinspection_phrasesのみ出力できる(self, tmp_path):
         left_specs_path = tmp_path / "left.json"

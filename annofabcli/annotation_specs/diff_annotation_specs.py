@@ -156,7 +156,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         help=(
             "出力フォーマット\n\n"
             "* text: 差分項目のみをセクション見出し付きの階層形式で表示する\n"
-            "* detail_text: 差分項目と比較元・比較先の値をleft/right形式を含む階層形式で表示する\n"
+            "* detail_text: 差分項目と比較元・比較先の値をchanges配下のleft/right形式で表示する\n"
             "* json: 差分情報をJSONで出力する\n"
             "* pretty_json: 差分情報を整形JSONで出力する\n"
         ),
