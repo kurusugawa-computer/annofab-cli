@@ -10,9 +10,6 @@ from annofabcli.annotation_specs.diff_compare import create_annotation_specs_dif
 from annofabcli.annotation_specs.import_annotation_specs import (
     ProtectedImportChanges,
     build_request_body_for_import_annotation_specs,
-    create_attribute_annotation_query,
-    create_choice_annotation_query,
-    create_label_annotation_query,
     create_protected_import_changes,
     validate_import_annotation_specs,
 )
@@ -265,34 +262,3 @@ class TestValidateImportAnnotationSpecs:
         imported_specs["additionals"][0]["choices"] = [choice for choice in imported_specs["additionals"][0]["choices"] if choice["choice_id"] != "choice_yes"]
 
         _assert_import_allowed(current_specs, imported_specs)
-
-
-class TestCreateAnnotationQuery:
-    def test_ラベル検索queryを生成できる(self) -> None:
-        assert create_label_annotation_query("label_car") == {"label_id": "label_car"}
-
-    def test_属性検索queryを生成できる(self) -> None:
-        assert create_attribute_annotation_query("attr_occluded") == {
-            "attributes": [
-                {
-                    "additional_data_definition_id": "attr_occluded",
-                    "flag": None,
-                    "integer": None,
-                    "comment": None,
-                    "choice": None,
-                }
-            ]
-        }
-
-    def test_選択肢検索queryを生成できる(self) -> None:
-        assert create_choice_annotation_query("attr_occluded", "choice_yes") == {
-            "attributes": [
-                {
-                    "additional_data_definition_id": "attr_occluded",
-                    "flag": None,
-                    "integer": None,
-                    "comment": None,
-                    "choice": "choice_yes",
-                }
-            ]
-        }

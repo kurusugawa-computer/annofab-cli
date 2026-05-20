@@ -11,10 +11,8 @@ from pathlib import Path
 from typing import Any
 
 import annofabapi
-from annofabapi.dataclass.annotation import AdditionalDataV1
 
 import annofabcli.common.cli
-from annofabcli.annotation.annotation_query import AnnotationQueryForAPI
 from annofabcli.annotation_specs.diff_compare import create_annotation_specs_diff
 from annofabcli.annotation_specs.diff_models import AnnotationSpecsDiff
 from annofabcli.common.cli import ArgumentParser, CommandLine, CommandLineWithConfirm, build_annofabapi_resource_and_login
@@ -78,25 +76,6 @@ def read_annotation_specs_json(annotation_specs_json: Path) -> dict[str, Any]:
     if not isinstance(loaded, dict):
         raise TypeError("`--annotation_specs_json` にはJSONオブジェクト形式のアノテーション仕様を指定してください。")
     return loaded
-
-
-def create_label_annotation_query(label_id: str) -> dict[str, Any]:
-    """ラベルを利用しているアノテーションを検索するqueryを生成する。"""
-    return {"label_id": label_id}
-
-
-def create_attribute_annotation_query(attribute_id: str) -> dict[str, Any]:
-    """属性を利用しているアノテーションを検索するqueryを生成する。"""
-    additional_data = AdditionalDataV1.from_dict({"additional_data_definition_id": attribute_id}, infer_missing=True)
-    query = AnnotationQueryForAPI(attributes=[additional_data]).to_dict()
-    return {key: value for key, value in query.items() if value is not None}
-
-
-def create_choice_annotation_query(attribute_id: str, choice_id: str) -> dict[str, Any]:
-    """選択肢を利用しているアノテーションを検索するqueryを生成する。"""
-    additional_data = AdditionalDataV1.from_dict({"additional_data_definition_id": attribute_id, "choice": choice_id}, infer_missing=True)
-    query = AnnotationQueryForAPI(attributes=[additional_data]).to_dict()
-    return {key: value for key, value in query.items() if value is not None}
 
 
 def build_request_body_for_import_annotation_specs(
@@ -218,15 +197,15 @@ class ImportAnnotationSpecsMain(CommandLineWithConfirm):
 
         @functools.cache
         def is_label_used(label_id: str) -> bool:
-            return self.has_annotation(create_label_annotation_query(label_id))
+            return self.has_annotation({"label_id": label_id})
 
         @functools.cache
-        def is_attribute_used(attribute_id: str) -> bool:
-            return self.has_annotation(create_attribute_annotation_query(attribute_id))
+        def is_attribute_used(label_id: str, attribute_id: str) -> bool:
+            return self.has_annotation({"label_id": label_id, "attributes": [{"additional_data_definition_id": attribute_id}]})
 
         @functools.cache
-        def is_choice_used(attribute_id: str, choice_id: str) -> bool:
-            return self.has_annotation(create_choice_annotation_query(attribute_id, choice_id))
+        def is_choice_used(label_id: str, attribute_id: str, choice_id: str) -> bool:
+            return self.has_annotation({"label_id": label_id, "attributes": [{"additional_data_definition_id": attribute_id, "choice": choice_id}]})
 
         protected_changes = create_protected_import_changes(
             diff,
