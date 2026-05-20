@@ -322,11 +322,11 @@ class TestFormatAnnotationSpecsDiffAsText:
         actual = format_annotation_specs_diff_as_text(diff, left_specs=left_specs, right_specs=right_specs, detail=True)
 
         assert "[labels]" in actual
-        assert 'color: "#FF0000" -> "#00FF00"' in actual
-        assert 'keybind: "" -> "Ctrl+Digit1"' in actual
-        assert 'label_name_ja: "車" -> "自動車"' in actual
+        assert 'color:\n    left: "#FF0000"\n    right: "#00FF00"' in actual
+        assert 'keybind:\n    left: ""\n    right: "Ctrl+Digit1"' in actual
+        assert 'label_name_ja:\n    left: "車"\n    right: "自動車"' in actual
         assert "[attributes]" in actual
-        assert 'name_vi: "bị che" -> "co-moi"' in actual
+        assert 'attribute_name_vi:\n    left: "bị che"\n    right: "co-moi"' in actual
         assert "attribute_id:" not in actual
         assert "choice_id:" not in actual
 
@@ -352,19 +352,21 @@ class TestFormatAnnotationSpecsDiffAsText:
         )
 
         expected_lines = [
-            '  label_name_en: "car" -> "car-updated"',
-            '  label_name_ja: "車" -> "自動車"',
-            '  label_name_vi: "xe" -> "xe-moi"',
-            '  annotation_type: "bounding_box" -> "polygon"',
-            '  color: "#FF0000" -> "#00FF00"',
-            '  keybind: "" -> "Ctrl+Digit3"',
-            '  attributes: ["occluded", "truncated"] -> ["truncated", "occluded"]',
-            '  attributes_order: ["occluded", "truncated"] -> ["truncated", "occluded"]',
-            '  field_values: {} -> {"score": 1}',
-            '  metadata: {} -> {"updated": true}',
+            "  label_name_en:",
+            "  label_name_ja:",
+            "  label_name_vi:",
+            "  annotation_type:",
+            "  color:",
+            "  keybind:",
+            "  attributes:",
+            "  attributes_order:",
+            "  field_values:",
+            "  metadata:",
         ]
         positions = [actual.index(line) for line in expected_lines]
         assert positions == sorted(positions)
+        assert '    left: "car"' in actual
+        assert '    right: "car-updated"' in actual
 
     def test_detail_textの属性差分はchanged_field_namesと同じ順序で出力する(self):
         left_specs = _create_annotation_specs()
@@ -388,19 +390,21 @@ class TestFormatAnnotationSpecsDiffAsText:
         )
 
         expected_lines = [
-            '  attribute_name_en: "occluded" -> "occluded-updated"',
-            '  attribute_name_ja: "遮蔽" -> "遮蔽更新"',
-            '  attribute_name_vi: "bị che" -> "bi-che-moi"',
-            '  type: "select" -> "text"',
-            '  keybind: "" -> "Ctrl+Digit2"',
-            '  default: "choice_yes" -> "choice_no"',
-            "  read_only: false -> true",
-            '  choices: ["yes", "no"] -> ["no", "yes"]',
-            '  choices_order: ["yes", "no"] -> ["no", "yes"]',
-            '  metadata: {} -> {"updated": true}',
+            "  attribute_name_en:",
+            "  attribute_name_ja:",
+            "  attribute_name_vi:",
+            "  type:",
+            "  keybind:",
+            "  default:",
+            "  read_only:",
+            "  choices:",
+            "  choices_order:",
+            "  metadata:",
         ]
         positions = [actual.index(line) for line in expected_lines]
         assert positions == sorted(positions)
+        assert '    left: "occluded"' in actual
+        assert '    right: "occluded-updated"' in actual
 
     def test_detail_textで選択肢や属性も英語名を出力できる(self):
         left_specs = _create_annotation_specs()
@@ -438,10 +442,10 @@ class TestFormatAnnotationSpecsDiffAsText:
         )
 
         assert "changed attribute: occluded" in actual
-        assert 'attributes: ["occluded", "truncated"] -> ["pose", "occluded"]' in actual
+        assert 'attributes:\n    left: ["occluded", "truncated"]\n    right: ["pose", "occluded"]' in actual
         assert "  added attributes:\n    - pose" in actual
         assert "  removed attributes:\n    - truncated" in actual
-        assert 'choices: ["yes", "no"] -> ["unknown", "yes_changed", "no"]' in actual
+        assert 'choices:\n    left: ["yes", "no"]\n    right: ["unknown", "yes_changed", "no"]' in actual
         assert "  added choices:\n    - unknown" in actual
         assert "  changed choice: yes_changed" in actual
 
@@ -464,13 +468,15 @@ class TestFormatAnnotationSpecsDiffAsText:
 
         expected_lines = [
             "  changed choice: yes-updated",
-            '    choice_name_en: "yes" -> "yes-updated"',
-            '    choice_name_ja: "はい" -> "はい更新"',
-            '    choice_name_vi: "co" -> "co-moi"',
-            '    keybind: "" -> "Ctrl+Digit4"',
+            "    choice_name_en:",
+            "    choice_name_ja:",
+            "    choice_name_vi:",
+            "    keybind:",
         ]
         positions = [actual.index(line) for line in expected_lines]
         assert positions == sorted(positions)
+        assert '      left: "yes"' in actual
+        assert '      right: "yes-updated"' in actual
 
     def test_attribute_restrictionをtextで出力できる(self):
         left_specs = _create_annotation_specs()
@@ -634,7 +640,7 @@ class TestCommandLine:
         actual = output_path.read_text(encoding="utf-8")
 
         assert "[attributes]" in actual
-        assert 'default: "choice_yes" -> "choice_no"' in actual
+        assert 'default:\n    left: "choice_yes"\n    right: "choice_no"' in actual
 
 
 class TestAnnotationSpecsDiffCommand:

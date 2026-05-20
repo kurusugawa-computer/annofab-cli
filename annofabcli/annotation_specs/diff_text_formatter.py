@@ -47,7 +47,11 @@ def _format_detail_line(
 ) -> list[str]:
     if not changed:
         return []
-    return [f"{_indent(level)}{name}: {_to_json_text(left_value)} -> {_to_json_text(right_value)}"]
+    return [
+        f"{_indent(level)}{name}:",
+        f"{_indent(level + 1)}left: {_to_json_text(left_value)}",
+        f"{_indent(level + 1)}right: {_to_json_text(right_value)}",
+    ]
 
 
 def _format_keybind_detail_line(

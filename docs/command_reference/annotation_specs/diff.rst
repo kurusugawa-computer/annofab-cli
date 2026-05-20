@@ -85,7 +85,7 @@ JSON出力のトップレベルは以下の形式です。
 
 
 * ``text`` : 差分項目のみを ``added`` 、 ``removed`` 、 ``changed`` で表示します。
-* ``detail_text`` : 差分項目と変更前後の値を表示します。変更前後の値は ``old -> new`` 形式で表示します。
+* ``detail_text`` : 差分項目と比較元・比較先の値を表示します。値は ``left`` / ``right`` 形式で表示します。
 * ``json`` : 差分情報をJSONで出力します。
 * ``pretty_json`` : 差分情報を整形JSONで出力します。
 * ``--target`` : 出力対象の差分を指定します。指定しない場合は ``labels`` 、 ``attributes`` 、 ``attribute_restrictions`` を出力します。
