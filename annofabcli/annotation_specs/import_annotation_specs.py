@@ -24,9 +24,6 @@ from annofabcli.common.utils import output_string
 
 logger = logging.getLogger(__name__)
 
-IMPORT_DIFF_TEXT_HEADER = "インポートによるアノテーション仕様の差分:"
-"""アノテーション仕様import時に表示・コメントに記録する差分見出し。"""
-
 
 @dataclass(frozen=True)
 class ProtectedImportChanges:
@@ -66,7 +63,7 @@ def create_comment_for_import_annotation_specs(diff_text: str | None = None) -> 
     if diff_text is None or diff_text == "":
         return comment
 
-    return f"{comment}\n\n{IMPORT_DIFF_TEXT_HEADER}\n{diff_text}"
+    return f"{comment}\n\nインポートによるアノテーション仕様の差分:\n{diff_text}"
 
 
 def read_annotation_specs_json(annotation_specs_json_file: Path) -> dict[str, Any]:
@@ -252,7 +249,7 @@ def output_annotation_specs_diff_for_import(diff_text: str) -> None:
         logger.info("差分はありません。")
         return
 
-    output_string(f"{IMPORT_DIFF_TEXT_HEADER}\n{diff_text}")
+    output_string(f"インポートによるアノテーション仕様の差分:\n{diff_text}")
 
 
 class ImportAnnotationSpecsMain(CommandLineWithConfirm):
