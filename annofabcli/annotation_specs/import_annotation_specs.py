@@ -25,19 +25,19 @@ logger = logging.getLogger(__name__)
 class ProtectedImportChanges:
     """既存アノテーションで使われているため、importを中止する変更一覧。"""
 
-    removed_label_ids: list[str] = field(default_factory=list)
+    removed_label_ids: set[str] = field(default_factory=set)
     """削除対象のうち、アノテーションで使われているラベルID一覧。"""
 
-    changed_annotation_type_label_ids: list[str] = field(default_factory=list)
+    changed_annotation_type_label_ids: set[str] = field(default_factory=set)
     """種類変更対象のうち、アノテーションで使われているラベルID一覧。"""
 
-    changed_type_attribute_ids: list[str] = field(default_factory=list)
+    changed_type_attribute_ids: set[str] = field(default_factory=set)
     """種類変更対象のうち、アノテーションで使われている属性ID一覧。"""
 
-    removed_label_attribute_relations: list[tuple[str, str]] = field(default_factory=list)
+    removed_label_attribute_relations: set[tuple[str, str]] = field(default_factory=set)
     """ラベルから削除される属性のうち、アノテーションで使われている一覧。要素は(label_id, attribute_id)。"""
 
-    removed_choices: list[tuple[str, str]] = field(default_factory=list)
+    removed_choices: set[tuple[str, str]] = field(default_factory=set)
     """削除対象のうち、アノテーションで使われている選択肢一覧。要素は(attribute_id, choice_id)。"""
 
     def has_changes(self) -> bool:
@@ -120,23 +120,21 @@ def create_protected_import_changes(
     protected = ProtectedImportChanges()
 
     if diff.labels is not None:
-        protected.removed_label_ids.extend(label_id for label_id in diff.labels.removed_label_ids if is_label_used(label_id))
+        protected.removed_label_ids.update(label_id for label_id in diff.labels.removed_label_ids if is_label_used(label_id))
         for changed_label in diff.labels.changed_labels:
             if changed_label.annotation_type_changed and is_label_used(changed_label.label_id):
-                protected.changed_annotation_type_label_ids.append(changed_label.label_id)
+                protected.changed_annotation_type_label_ids.add(changed_label.label_id)
             for attribute_id in changed_label.removed_attribute_ids:
                 if is_label_attribute_used(changed_label.label_id, attribute_id):
-                    protected.removed_label_attribute_relations.append((changed_label.label_id, attribute_id))
+                    protected.removed_label_attribute_relations.add((changed_label.label_id, attribute_id))
 
     if diff.attributes is not None:
         for changed_attribute in diff.attributes.changed_attributes:
-            if changed_attribute.type_changed and changed_attribute.attribute_id not in protected.changed_type_attribute_ids and is_attribute_used(changed_attribute.attribute_id):
-                protected.changed_type_attribute_ids.append(changed_attribute.attribute_id)
+            if changed_attribute.type_changed and is_attribute_used(changed_attribute.attribute_id):
+                protected.changed_type_attribute_ids.add(changed_attribute.attribute_id)
             for choice_id in changed_attribute.removed_choice_ids:
                 if is_choice_used(changed_attribute.attribute_id, choice_id):
-                    choice = (changed_attribute.attribute_id, choice_id)
-                    if choice not in protected.removed_choices:
-                        protected.removed_choices.append(choice)
+                    protected.removed_choices.add((changed_attribute.attribute_id, choice_id))
 
     return protected
 
