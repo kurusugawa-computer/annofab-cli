@@ -191,7 +191,7 @@ def _put_keybind_detail_line(
 
 def _create_label_text_item(changed_label: ChangedLabel, *, left_specs: dict[str, Any], right_specs: dict[str, Any]) -> dict[str, JsonValue]:
     item: dict[str, JsonValue] = {
-        "name": _get_label_name_en_by_id(right_specs, changed_label.label_id),
+        "label_name_en": _get_label_name_en_by_id(right_specs, changed_label.label_id),
         "fields": _get_changed_field_names_from_label(changed_label),
     }
     _append_if_not_empty(item, "added_attributes", _get_attribute_name_en_list_by_ids(right_specs, changed_label.added_attribute_ids))
@@ -318,7 +318,7 @@ def _create_labels_section(
 
 def _create_choice_text_item(changed_choice: ChangedChoice, *, right_attribute: dict[str, Any]) -> dict[str, JsonValue]:
     return {
-        "name": _get_choice_name_en_by_id(right_attribute, changed_choice.choice_id),
+        "choice_name_en": _get_choice_name_en_by_id(right_attribute, changed_choice.choice_id),
         "fields": _get_changed_field_names_from_choice(changed_choice),
     }
 
@@ -361,7 +361,7 @@ def _create_attribute_text_item(
     right_attribute: dict[str, Any],
 ) -> dict[str, JsonValue]:
     item: dict[str, JsonValue] = {
-        "name": _get_attribute_name_en_by_id({"additionals": [right_attribute]}, changed_attribute.attribute_id),
+        "attribute_name_en": _get_attribute_name_en_by_id({"additionals": [right_attribute]}, changed_attribute.attribute_id),
         "fields": _get_changed_field_names_from_attribute(changed_attribute),
     }
     _append_if_not_empty(item, "added_choices", _get_choice_name_en_list_by_ids(right_attribute, changed_attribute.added_choice_ids))
@@ -522,9 +522,8 @@ def _create_attribute_restrictions_section(
     changed_items = []
     for changed_attribute_restriction in attribute_restrictions_diff.changed_attribute_restrictions:
         attribute_id = changed_attribute_restriction.attribute_id
-        item: dict[str, JsonValue] = {
-            "name": _get_attribute_name_en_by_id_from_specs([right_specs, left_specs], attribute_id),
-        }
+        item_name = _get_attribute_name_en_by_id_from_specs([right_specs, left_specs], attribute_id)
+        item: dict[str, JsonValue] = {"name": item_name} if detail else {"attribute_name_en": item_name}
         _append_if_not_empty(
             item,
             "added_restrictions",

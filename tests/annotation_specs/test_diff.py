@@ -308,7 +308,7 @@ class TestFormatAnnotationSpecsDiffAsText:
         assert "label_id:" not in actual
         assert "attribute_id:" not in actual
         assert "choice_id:" not in actual
-        assert actual_yaml["changed"][0]["name"] == "car"
+        assert actual_yaml["changed"][0]["label_name_en"] == "car"
         assert actual_yaml["changed"][0]["added_attributes"] == ["pose"]
         assert actual_yaml["changed"][0]["removed_attributes"] == ["truncated"]
 
@@ -502,7 +502,7 @@ class TestFormatAnnotationSpecsDiffAsText:
         actual_yaml = yaml.safe_load(actual.split("[attribute_restrictions]\n", 1)[1])
 
         assert "[attribute_restrictions]" in actual
-        assert actual_yaml["changed"][0]["name"] == "occluded"
+        assert actual_yaml["changed"][0]["attribute_name_en"] == "occluded"
         assert actual_yaml["changed"][0]["added_restrictions"] == [{"text": "'occluded' is 'yes'"}]
         assert "attr_occluded" not in actual
 
