@@ -3,11 +3,11 @@ from __future__ import annotations
 import copy
 from collections.abc import Callable
 from typing import Any
-
-import pytest
+from unittest.mock import MagicMock
 
 from annofabcli.annotation_specs.diff_compare import create_annotation_specs_diff
 from annofabcli.annotation_specs.import_annotation_specs import (
+    ImportAnnotationSpecsMain,
     ProtectedImportChanges,
     build_request_body_for_import_annotation_specs,
     create_protected_import_changes,
@@ -103,7 +103,7 @@ def _assert_import_allowed(
         used_label_attribute_pairs=used_label_attribute_pairs,
         used_choices=used_choices,
     )
-    validate_import_annotation_specs(protected_changes)
+    assert validate_import_annotation_specs(protected_changes)
 
 
 def _assert_import_blocked(
@@ -123,8 +123,7 @@ def _assert_import_blocked(
         used_label_attribute_pairs=used_label_attribute_pairs,
         used_choices=used_choices,
     )
-    with pytest.raises(ValueError):
-        validate_import_annotation_specs(protected_changes)
+    assert not validate_import_annotation_specs(protected_changes)
 
 
 def _create_protected_changes(
@@ -285,3 +284,41 @@ class TestValidateImportAnnotationSpecs:
         imported_specs["additionals"][0]["choices"] = [choice for choice in imported_specs["additionals"][0]["choices"] if choice["choice_id"] != "choice_yes"]
 
         _assert_import_allowed(current_specs, imported_specs)
+
+    def test_許可する場合は既存アノテーションに影響する変更でも許可する(self) -> None:
+        current_specs = _create_annotation_specs()
+        imported_specs = copy.deepcopy(current_specs)
+        imported_specs["labels"] = [label for label in imported_specs["labels"] if label["label_id"] != "label_car"]
+        protected_changes = _create_protected_changes(current_specs, imported_specs, used_label_ids={"label_car"})
+
+        assert validate_import_annotation_specs(protected_changes, allow_affecting_existing_annotations=True)
+
+
+class TestImportAnnotationSpecsMain:
+    def test_既存アノテーションに影響する変更があればインポートしない(self) -> None:
+        service = MagicMock()
+        current_specs = _create_annotation_specs()
+        imported_specs = copy.deepcopy(current_specs)
+        imported_specs["labels"] = [label for label in imported_specs["labels"] if label["label_id"] != "label_car"]
+        service.api.get_annotation_specs.return_value = (current_specs, None)
+        service.api.get_annotation_list.return_value = ({"total_count": 1}, None)
+        obj = ImportAnnotationSpecsMain(service, project_id="prj1", all_yes=True)
+
+        actual = obj.import_annotation_specs(imported_annotation_specs=imported_specs)
+
+        assert not actual
+        service.api.put_annotation_specs.assert_not_called()
+
+    def test_許可する場合は既存アノテーションに影響する変更でもインポートする(self) -> None:
+        service = MagicMock()
+        current_specs = _create_annotation_specs()
+        imported_specs = copy.deepcopy(current_specs)
+        imported_specs["labels"] = [label for label in imported_specs["labels"] if label["label_id"] != "label_car"]
+        service.api.get_annotation_specs.return_value = (current_specs, None)
+        service.api.get_annotation_list.return_value = ({"total_count": 1}, None)
+        obj = ImportAnnotationSpecsMain(service, project_id="prj1", all_yes=True, allow_affecting_existing_annotations=True)
+
+        actual = obj.import_annotation_specs(imported_annotation_specs=imported_specs)
+
+        assert actual
+        service.api.put_annotation_specs.assert_called_once()

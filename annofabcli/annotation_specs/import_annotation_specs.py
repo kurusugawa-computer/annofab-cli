@@ -139,18 +139,15 @@ def create_protected_import_changes(
     return protected
 
 
-def validate_import_annotation_specs(protected_changes: ProtectedImportChanges) -> None:
-    """importを中止すべき変更があれば例外を送出する。
+def create_message_for_protected_import_changes(protected_changes: ProtectedImportChanges) -> str:
+    """既存アノテーションに影響する変更内容を表すメッセージを生成する。
 
     Args:
         protected_changes: importを中止すべき変更一覧
 
-    Raises:
-        ValueError: 既存アノテーションで使われているラベル/属性/選択肢への削除や種類変更がある場合
+    Returns:
+        既存アノテーションに影響する変更内容を表すメッセージ
     """
-    if not protected_changes.has_changes():
-        return
-
     messages = []
     if protected_changes.removed_label_ids:
         messages.append(f"削除対象のラベルがアノテーションで使われています。 :: label_ids={protected_changes.removed_label_ids}")
@@ -163,7 +160,33 @@ def validate_import_annotation_specs(protected_changes: ProtectedImportChanges) 
     if protected_changes.removed_choices:
         messages.append(f"削除対象の選択肢がアノテーションで使われています。 :: attribute_choice_pairs={protected_changes.removed_choices}")
 
-    raise ValueError("既存アノテーションに影響するため、アノテーション仕様のインポートを中止しました。\n" + "\n".join(messages))
+    return "\n".join(messages)
+
+
+def validate_import_annotation_specs(
+    protected_changes: ProtectedImportChanges,
+    *,
+    allow_affecting_existing_annotations: bool = False,
+) -> bool:
+    """importしてよい変更かどうかを返す。
+
+    Args:
+        protected_changes: importを中止すべき変更一覧
+        allow_affecting_existing_annotations: Trueなら既存アノテーションに影響する変更でも許可する
+
+    Returns:
+        importしてよい場合はTrue、既存アノテーションに影響するため中止する場合はFalse
+    """
+    if not protected_changes.has_changes():
+        return True
+
+    message = create_message_for_protected_import_changes(protected_changes)
+    if allow_affecting_existing_annotations:
+        logger.warning("既存アノテーションに影響する変更がありますが、オプションで許可されているため、アノテーション仕様をインポートします。\n%s", message)
+        return True
+
+    logger.warning("既存アノテーションに影響するため、アノテーション仕様のインポートを中止しました。\n%s", message)
+    return False
 
 
 class ImportAnnotationSpecsMain(CommandLineWithConfirm):
@@ -175,9 +198,11 @@ class ImportAnnotationSpecsMain(CommandLineWithConfirm):
         *,
         project_id: str,
         all_yes: bool,
+        allow_affecting_existing_annotations: bool = False,
     ) -> None:
         self.service = service
         self.project_id = project_id
+        self.allow_affecting_existing_annotations = allow_affecting_existing_annotations
         CommandLineWithConfirm.__init__(self, all_yes)
 
     def has_annotation(self, query: dict[str, Any]) -> bool:
@@ -188,7 +213,7 @@ class ImportAnnotationSpecsMain(CommandLineWithConfirm):
         )
         return content["total_count"] > 0
 
-    def validate_import(self, *, current_annotation_specs: dict[str, Any], imported_annotation_specs: dict[str, Any]) -> None:
+    def validate_import(self, *, current_annotation_specs: dict[str, Any], imported_annotation_specs: dict[str, Any]) -> bool:
         """importしてよい差分かどうかを検証する。"""
         diff = create_annotation_specs_diff(current_annotation_specs, imported_annotation_specs, targets={"labels", "attributes"})
 
@@ -215,7 +240,10 @@ class ImportAnnotationSpecsMain(CommandLineWithConfirm):
             is_label_attribute_used=is_label_attribute_used,
             is_choice_used=is_choice_used,
         )
-        validate_import_annotation_specs(protected_changes)
+        return validate_import_annotation_specs(
+            protected_changes,
+            allow_affecting_existing_annotations=self.allow_affecting_existing_annotations,
+        )
 
     def import_annotation_specs(self, *, imported_annotation_specs: dict[str, Any], comment: str | None = None) -> bool:
         """アノテーション仕様をimportする。
@@ -228,7 +256,8 @@ class ImportAnnotationSpecsMain(CommandLineWithConfirm):
             更新を実行した場合はTrue、確認で中断した場合はFalse
         """
         current_annotation_specs, _ = self.service.api.get_annotation_specs(self.project_id, query_params={"v": "3"})
-        self.validate_import(current_annotation_specs=current_annotation_specs, imported_annotation_specs=imported_annotation_specs)
+        if not self.validate_import(current_annotation_specs=current_annotation_specs, imported_annotation_specs=imported_annotation_specs):
+            return False
 
         confirm_message = f"プロジェクト'{self.project_id}'のアノテーション仕様をインポートします。よろしいですか？"
         if not self.confirm_processing(confirm_message):
@@ -246,7 +275,12 @@ class ImportAnnotationSpecs(CommandLine):
     def main(self) -> None:
         args = self.args
         imported_annotation_specs = read_annotation_specs_json(args.annotation_specs_json_file)
-        obj = ImportAnnotationSpecsMain(self.service, project_id=args.project_id, all_yes=args.yes)
+        obj = ImportAnnotationSpecsMain(
+            self.service,
+            project_id=args.project_id,
+            all_yes=args.yes,
+            allow_affecting_existing_annotations=args.allow_affecting_existing_annotations,
+        )
         obj.import_annotation_specs(imported_annotation_specs=imported_annotation_specs, comment=args.comment)
 
 
@@ -260,6 +294,11 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         help="インポートするアノテーション仕様JSONファイルを指定します。 ``annotation_specs export`` コマンドで出力したJSONファイルを指定してください。",
     )
     parser.add_argument("--comment", type=str, help="アノテーション仕様の変更内容を説明するコメント。未指定の場合、自動でコメントが生成されます。")
+    parser.add_argument(
+        "--allow_affecting_existing_annotations",
+        action="store_true",
+        help="指定すると、既存アノテーションに影響する変更でもアノテーション仕様をインポートします。",
+    )
     parser.set_defaults(subcommand_func=main)
 
 
@@ -272,7 +311,7 @@ def main(args: argparse.Namespace) -> None:
 def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "import"
     subcommand_help = "アノテーション仕様の情報をインポートします。"
-    description = "アノテーション仕様の情報をJSON形式でインポートします。既存アノテーションで使われているラベルや属性、選択肢に影響する削除や種類変更は中止します。"
+    description = "アノテーション仕様の情報をJSON形式でインポートします。既存アノテーションで使われているラベルや属性、選択肢に影響する削除や種類変更は、通常は中止します。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description=description)
     parse_args(parser)
