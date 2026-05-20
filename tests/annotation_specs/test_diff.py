@@ -429,6 +429,32 @@ class TestFormatAnnotationSpecsDiffAsText:
         assert "attribute_id:" not in actual
         assert "choice_id:" not in actual
 
+    def test_detail_textのラベル順序変更は真偽値だけを出力する(self):
+        left_specs = _create_annotation_specs()
+        left_specs["labels"].append(
+            _create_label(
+                "label_bus",
+                ja="バス",
+                en="bus",
+                vi="xe buyt",
+                color={"red": 0, "green": 0, "blue": 255},
+                additional_data_definitions=[],
+            )
+        )
+        right_specs = copy.deepcopy(left_specs)
+        right_specs["labels"] = list(reversed(right_specs["labels"]))
+
+        diff = create_annotation_specs_diff(left_specs, right_specs, targets={"labels"})
+        actual = format_annotation_specs_diff_as_text(
+            diff,
+            left_specs=left_specs,
+            right_specs=right_specs,
+            detail=True,
+        )
+        labels_yaml = yaml.safe_load(actual.split("[labels]\n", 1)[1])
+
+        assert labels_yaml == {"label_order_changed": True}
+
     def test_detail_textのラベル差分はchanged_field_namesと同じ順序で出力する(self):
         left_specs = _create_annotation_specs()
         right_specs = copy.deepcopy(left_specs)

@@ -305,12 +305,7 @@ def _create_labels_section(
 ) -> dict[str, JsonValue]:
     section: dict[str, JsonValue] = {}
 
-    if labels_diff.label_order_changed and detail:
-        section["label_order"] = {
-            "left": _get_label_name_en_list_by_ids(left_specs, [e["label_id"] for e in left_specs["labels"]]),
-            "right": _get_label_name_en_list_by_ids(right_specs, [e["label_id"] for e in right_specs["labels"]]),
-        }
-    elif labels_diff.label_order_changed:
+    if labels_diff.label_order_changed:
         section["label_order_changed"] = True
 
     _append_if_not_empty(section, "added", _get_label_name_en_list_by_ids(right_specs, labels_diff.added_label_ids))
