@@ -95,7 +95,12 @@ def _format_status_line(*, level: int, action: str, label: str, value: str) -> s
 
 
 def _format_added_removed_lines(*, level: int, action: str, label: str, values: Sequence[str]) -> list[str]:
-    return [_format_status_line(level=level, action=action, label=label, value=value) for value in values]
+    if len(values) == 0:
+        return []
+
+    lines = [f"{_indent(level)}{action} {label}:"]
+    lines.extend(f"{_indent(level + 1)}- {value}" for value in values)
+    return lines
 
 
 def _get_label_name_en_list_by_ids(specs: dict[str, Any], label_ids: Sequence[str]) -> list[str]:

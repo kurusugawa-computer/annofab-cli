@@ -307,8 +307,8 @@ class TestFormatAnnotationSpecsDiffAsText:
         assert "attribute_id:" not in actual
         assert "choice_id:" not in actual
         assert "changed label: car" in actual
-        assert "  added attributes: pose" in actual
-        assert "  removed attributes: truncated" in actual
+        assert "  added attributes:\n    - pose" in actual
+        assert "  removed attributes:\n    - truncated" in actual
 
     def test_detail_textで変更前後の値を出力できる(self):
         left_specs = _create_annotation_specs()
@@ -439,10 +439,10 @@ class TestFormatAnnotationSpecsDiffAsText:
 
         assert "changed attribute: occluded" in actual
         assert 'attributes: ["occluded", "truncated"] -> ["pose", "occluded"]' in actual
-        assert "  added attributes: pose" in actual
-        assert "  removed attributes: truncated" in actual
+        assert "  added attributes:\n    - pose" in actual
+        assert "  removed attributes:\n    - truncated" in actual
         assert 'choices: ["yes", "no"] -> ["unknown", "yes_changed", "no"]' in actual
-        assert "  added choices: unknown" in actual
+        assert "  added choices:\n    - unknown" in actual
         assert "  changed choice: yes_changed" in actual
 
     def test_detail_textの選択肢差分はchanged_field_namesと同じ順序で出力する(self):
