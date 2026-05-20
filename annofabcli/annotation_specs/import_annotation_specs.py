@@ -5,7 +5,7 @@ import copy
 import functools
 import json
 import logging
-from collections.abc import Callable, Iterable
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -114,25 +114,6 @@ def collect_label_ids_by_attribute_id(annotation_specs: dict[str, Any]) -> dict[
     return label_ids_by_attribute_id
 
 
-def _append_unique_removed_label_attribute_relation(protected: ProtectedImportChanges, label_id: str, attribute_id: str) -> None:
-    """利用中のラベル属性ペアを重複なく追加する。"""
-    relation = (label_id, attribute_id)
-    if relation not in protected.removed_label_attribute_relations:
-        protected.removed_label_attribute_relations.append(relation)
-
-
-def _append_used_removed_label_attribute_relations(
-    protected: ProtectedImportChanges,
-    label_attribute_pairs: Iterable[tuple[str, str]],
-    *,
-    is_attribute_used: Callable[[str, str], bool],
-) -> None:
-    """利用中のラベル属性ペアを削除対象として追加する。"""
-    for label_id, attribute_id in label_attribute_pairs:
-        if is_attribute_used(label_id, attribute_id):
-            _append_unique_removed_label_attribute_relation(protected, label_id, attribute_id)
-
-
 def _append_unique_changed_type_attribute_id(protected: ProtectedImportChanges, attribute_id: str) -> None:
     """種類変更対象の属性IDを重複なく追加する。"""
     if attribute_id not in protected.changed_type_attribute_ids:
@@ -186,11 +167,9 @@ def create_protected_import_changes(
         for changed_label in diff.labels.changed_labels:
             if changed_label.annotation_type_changed and is_label_used(changed_label.label_id):
                 protected.changed_annotation_type_label_ids.append(changed_label.label_id)
-            _append_used_removed_label_attribute_relations(
-                protected,
-                ((changed_label.label_id, attribute_id) for attribute_id in changed_label.removed_attribute_ids),
-                is_attribute_used=is_attribute_used,
-            )
+            for attribute_id in changed_label.removed_attribute_ids:
+                if is_attribute_used(changed_label.label_id, attribute_id):
+                    protected.removed_label_attribute_relations.append((changed_label.label_id, attribute_id))
 
     if diff.attributes is not None:
         for changed_attribute in diff.attributes.changed_attributes:
