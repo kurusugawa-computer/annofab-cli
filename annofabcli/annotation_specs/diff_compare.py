@@ -395,10 +395,8 @@ def compare_inspection_phrases(left_specs: dict[str, Any], right_specs: dict[str
     right_inspection_phrase_dict = {e["id"]: e for e in right_specs["inspection_phrases"]}
 
     changed_inspection_phrases = []
-    for inspection_phrase_id in right_inspection_phrase_ids:
-        if inspection_phrase_id not in left_inspection_phrase_dict:
-            continue
-
+    common_inspection_phrase_ids = sorted(set(left_inspection_phrase_ids) & set(right_inspection_phrase_ids))
+    for inspection_phrase_id in common_inspection_phrase_ids:
         left_inspection_phrase = left_inspection_phrase_dict[inspection_phrase_id]
         right_inspection_phrase = right_inspection_phrase_dict[inspection_phrase_id]
         changed_inspection_phrase = ChangedInspectionPhrase(
@@ -411,8 +409,8 @@ def compare_inspection_phrases(left_specs: dict[str, Any], right_specs: dict[str
             changed_inspection_phrases.append(changed_inspection_phrase)
 
     return InspectionPhrasesDiff(
-        added_inspection_phrase_ids=_get_added_ids(left_inspection_phrase_ids, right_inspection_phrase_ids),
-        removed_inspection_phrase_ids=_get_removed_ids(left_inspection_phrase_ids, right_inspection_phrase_ids),
+        added_inspection_phrase_ids=sorted(_get_added_ids(left_inspection_phrase_ids, right_inspection_phrase_ids)),
+        removed_inspection_phrase_ids=sorted(_get_removed_ids(left_inspection_phrase_ids, right_inspection_phrase_ids)),
         changed_inspection_phrases=changed_inspection_phrases,
     )
 

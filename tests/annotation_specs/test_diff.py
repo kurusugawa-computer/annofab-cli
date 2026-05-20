@@ -327,6 +327,38 @@ class TestCreateAnnotationSpecsDiff:
 
         assert actual.has_changes() is False
 
+    def test_定型指摘の差分出力順はID順に安定する(self):
+        left_specs = _create_annotation_specs()
+        right_specs = copy.deepcopy(left_specs)
+        left_specs["inspection_phrases"] = [
+            _create_inspection_phrase("phrase_removed_z", ja="削除Z", en="removed z", vi="xoa z"),
+            _create_inspection_phrase("phrase_changed_b", ja="変更B", en="changed b", vi="doi b"),
+            _create_inspection_phrase("phrase_removed_a", ja="削除A", en="removed a", vi="xoa a"),
+            _create_inspection_phrase("phrase_changed_a", ja="変更A", en="changed a", vi="doi a"),
+        ]
+        right_specs["inspection_phrases"] = [
+            _create_inspection_phrase("phrase_added_z", ja="追加Z", en="added z", vi="them z"),
+            _create_inspection_phrase("phrase_changed_b", ja="変更B2", en="changed b", vi="doi b"),
+            _create_inspection_phrase("phrase_added_a", ja="追加A", en="added a", vi="them a"),
+            _create_inspection_phrase("phrase_changed_a", ja="変更A2", en="changed a", vi="doi a"),
+        ]
+
+        actual = create_annotation_specs_diff(left_specs, right_specs, targets={"inspection_phrases"})
+        actual_dict = actual.model_dump(exclude_none=True)
+
+        assert actual_dict["inspection_phrases"]["added_inspection_phrase_ids"] == [
+            "phrase_added_a",
+            "phrase_added_z",
+        ]
+        assert actual_dict["inspection_phrases"]["removed_inspection_phrase_ids"] == [
+            "phrase_removed_a",
+            "phrase_removed_z",
+        ]
+        assert [e["inspection_phrase_id"] for e in actual_dict["inspection_phrases"]["changed_inspection_phrases"]] == [
+            "phrase_changed_a",
+            "phrase_changed_b",
+        ]
+
     def test_metadataの差分をキー単位で生成できる(self):
         left_specs = _create_annotation_specs()
         right_specs = copy.deepcopy(left_specs)
