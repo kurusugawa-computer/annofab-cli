@@ -1,5 +1,5 @@
 from __future__ import annotations
-from annofabcli.common.cli import ArgumentParser, CommandLine, build_annofabapi_resource_and_login
+
 import argparse
 import json
 import logging
