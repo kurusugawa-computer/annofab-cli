@@ -170,7 +170,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
 
     old_instruction_group.add_argument(
         "--before",
-        type=int,
+        type=annofabcli.common.cli.non_negative_int,
         help=(
             "ダウンロードしたい作業ガイドが、最新版よりいくつ前の作業ガイドであるかを指定してください。  "
             "たとえば`1`を指定した場合、最新より1個前の作業ガイドをダウンロードします。 "
