@@ -16,9 +16,13 @@ from annofabcli.annotation_specs.diff_models import (
     AttributesDiff,
     ChangedAttribute,
     ChangedChoice,
+    ChangedInspectionPhrase,
     ChangedLabel,
+    InspectionPhrasesDiff,
     JsonValue,
     LabelsDiff,
+    MetadataDiff,
+    OptionDiff,
 )
 from annofabcli.common.annofab.annotation_specs import keybind_to_text
 
@@ -153,6 +157,17 @@ def _get_changed_field_names_from_attribute(diff: ChangedAttribute) -> list[str]
     return field_names
 
 
+def _get_changed_field_names_from_inspection_phrase(diff: ChangedInspectionPhrase) -> list[str]:
+    field_names = []
+    if diff.inspection_phrase_name_en_changed:
+        field_names.append("inspection_phrase_name_en")
+    if diff.inspection_phrase_name_ja_changed:
+        field_names.append("inspection_phrase_name_ja")
+    if diff.inspection_phrase_name_vi_changed:
+        field_names.append("inspection_phrase_name_vi")
+    return field_names
+
+
 def _append_if_not_empty(target: dict[str, JsonValue], key: str, value: JsonValue) -> None:
     if isinstance(value, list) and len(value) == 0:
         return
@@ -189,6 +204,10 @@ def _put_keybind_detail_line(
     )
 
 
+def _append_detail_changes(item: dict[str, JsonValue], changes: dict[str, JsonValue]) -> None:
+    _append_if_not_empty(item, "changes", changes)
+
+
 def _create_label_text_item(changed_label: ChangedLabel, *, left_specs: dict[str, Any], right_specs: dict[str, Any]) -> dict[str, JsonValue]:
     item: dict[str, JsonValue] = {
         "label_name_en": _get_label_name_en_by_id(right_specs, changed_label.label_id),
@@ -207,7 +226,8 @@ def _create_label_detail_item(
     left_label: dict[str, Any],
     right_label: dict[str, Any],
 ) -> dict[str, JsonValue]:
-    item: dict[str, JsonValue] = {"name": _get_label_name_en_by_id(right_specs, changed_label.label_id)}
+    item: dict[str, JsonValue] = {"label_name_en": _get_label_name_en_by_id(right_specs, changed_label.label_id)}
+    changes: dict[str, JsonValue] = {}
 
     detail_targets: list[tuple[str, STR_LANG, bool]] = [
         ("label_name_en", "en-US", changed_label.label_name_en_changed),
@@ -216,7 +236,7 @@ def _create_label_detail_item(
     ]
     for name, lang, changed in detail_targets:
         _put_detail_line(
-            item,
+            changes,
             name=name,
             changed=changed,
             left_value=get_message_with_lang(left_label["label_name"], lang),
@@ -224,55 +244,56 @@ def _create_label_detail_item(
         )
 
     _put_detail_line(
-        item,
+        changes,
         name="annotation_type",
         changed=changed_label.annotation_type_changed,
         left_value=left_label["annotation_type"],
         right_value=right_label["annotation_type"],
     )
     _put_detail_line(
-        item,
+        changes,
         name="color",
         changed=changed_label.color_changed,
         left_value=_to_color_code(left_label["color"]),
         right_value=_to_color_code(right_label["color"]),
     )
     _put_keybind_detail_line(
-        item,
+        changes,
         changed=changed_label.keybind_changed,
         left_value=left_label["keybind"],
         right_value=right_label["keybind"],
     )
     _put_detail_line(
-        item,
+        changes,
         name="attributes",
         changed=changed_label.has_attribute_relation_changes(),
         left_value=_get_attribute_name_en_list_by_ids(left_specs, left_label["additional_data_definitions"]),
         right_value=_get_attribute_name_en_list_by_ids(right_specs, right_label["additional_data_definitions"]),
     )
     _put_detail_line(
-        item,
+        changes,
         name="attributes_order",
         changed=changed_label.attributes_order_changed,
         left_value=_get_attribute_name_en_list_by_ids(left_specs, left_label["additional_data_definitions"]),
         right_value=_get_attribute_name_en_list_by_ids(right_specs, right_label["additional_data_definitions"]),
     )
-    _append_if_not_empty(item, "added_attributes", _get_attribute_name_en_list_by_ids(right_specs, changed_label.added_attribute_ids))
-    _append_if_not_empty(item, "removed_attributes", _get_attribute_name_en_list_by_ids(left_specs, changed_label.removed_attribute_ids))
     _put_detail_line(
-        item,
+        changes,
         name="field_values",
         changed=changed_label.field_values_changed,
         left_value=left_label["field_values"],
         right_value=right_label["field_values"],
     )
     _put_detail_line(
-        item,
+        changes,
         name="metadata",
         changed=changed_label.metadata_changed,
         left_value=left_label["metadata"],
         right_value=right_label["metadata"],
     )
+    _append_detail_changes(item, changes)
+    _append_if_not_empty(item, "added_attributes", _get_attribute_name_en_list_by_ids(right_specs, changed_label.added_attribute_ids))
+    _append_if_not_empty(item, "removed_attributes", _get_attribute_name_en_list_by_ids(left_specs, changed_label.removed_attribute_ids))
     return item
 
 
@@ -285,12 +306,7 @@ def _create_labels_section(
 ) -> dict[str, JsonValue]:
     section: dict[str, JsonValue] = {}
 
-    if labels_diff.label_order_changed and detail:
-        section["label_order"] = {
-            "left": _get_label_name_en_list_by_ids(left_specs, [e["label_id"] for e in left_specs["labels"]]),
-            "right": _get_label_name_en_list_by_ids(right_specs, [e["label_id"] for e in right_specs["labels"]]),
-        }
-    elif labels_diff.label_order_changed:
+    if labels_diff.label_order_changed:
         section["label_order_changed"] = True
 
     _append_if_not_empty(section, "added", _get_label_name_en_list_by_ids(right_specs, labels_diff.added_label_ids))
@@ -330,8 +346,9 @@ def _create_choice_detail_item(
     right_choice: dict[str, Any],
 ) -> dict[str, JsonValue]:
     item: dict[str, JsonValue] = {
-        "name": get_message_with_lang(right_choice["name"], "en-US") or changed_choice.choice_id,
+        "choice_name_en": get_message_with_lang(right_choice["name"], "en-US") or changed_choice.choice_id,
     }
+    changes: dict[str, JsonValue] = {}
     detail_targets: list[tuple[str, STR_LANG, bool]] = [
         ("choice_name_en", "en-US", changed_choice.choice_name_en_changed),
         ("choice_name_ja", "ja-JP", changed_choice.choice_name_ja_changed),
@@ -339,18 +356,19 @@ def _create_choice_detail_item(
     ]
     for name, lang, changed in detail_targets:
         _put_detail_line(
-            item,
+            changes,
             name=name,
             changed=changed,
             left_value=get_message_with_lang(left_choice["name"], lang),
             right_value=get_message_with_lang(right_choice["name"], lang),
         )
     _put_keybind_detail_line(
-        item,
+        changes,
         changed=changed_choice.keybind_changed,
         left_value=left_choice["keybind"],
         right_value=right_choice["keybind"],
     )
+    _append_detail_changes(item, changes)
     return item
 
 
@@ -378,8 +396,9 @@ def _create_attribute_detail_item(
     right_attribute: dict[str, Any],
 ) -> dict[str, JsonValue]:
     item: dict[str, JsonValue] = {
-        "name": get_message_with_lang(right_attribute["name"], "en-US") or changed_attribute.attribute_id,
+        "attribute_name_en": get_message_with_lang(right_attribute["name"], "en-US") or changed_attribute.attribute_id,
     }
+    changes: dict[str, JsonValue] = {}
 
     detail_targets: list[tuple[str, STR_LANG, bool]] = [
         ("attribute_name_en", "en-US", changed_attribute.attribute_name_en_changed),
@@ -388,7 +407,7 @@ def _create_attribute_detail_item(
     ]
     for name, lang, changed in detail_targets:
         _put_detail_line(
-            item,
+            changes,
             name=name,
             changed=changed,
             left_value=get_message_with_lang(left_attribute["name"], lang),
@@ -396,53 +415,54 @@ def _create_attribute_detail_item(
         )
 
     _put_detail_line(
-        item,
+        changes,
         name="type",
         changed=changed_attribute.type_changed,
         left_value=left_attribute["type"],
         right_value=right_attribute["type"],
     )
     _put_keybind_detail_line(
-        item,
+        changes,
         changed=changed_attribute.keybind_changed,
         left_value=left_attribute["keybind"],
         right_value=right_attribute["keybind"],
     )
     _put_detail_line(
-        item,
+        changes,
         name="default",
         changed=changed_attribute.default_changed,
         left_value=left_attribute["default"],
         right_value=right_attribute["default"],
     )
     _put_detail_line(
-        item,
+        changes,
         name="read_only",
         changed=changed_attribute.read_only_changed,
         left_value=left_attribute["read_only"],
         right_value=right_attribute["read_only"],
     )
     _put_detail_line(
-        item,
+        changes,
         name="choices",
         changed=changed_attribute.has_choice_changes(),
         left_value=_get_choice_name_en_list_by_ids(left_attribute, [e["choice_id"] for e in left_attribute["choices"]]),
         right_value=_get_choice_name_en_list_by_ids(right_attribute, [e["choice_id"] for e in right_attribute["choices"]]),
     )
     _put_detail_line(
-        item,
+        changes,
         name="choices_order",
         changed=changed_attribute.choices_order_changed,
         left_value=_get_choice_name_en_list_by_ids(left_attribute, [e["choice_id"] for e in left_attribute["choices"]]),
         right_value=_get_choice_name_en_list_by_ids(right_attribute, [e["choice_id"] for e in right_attribute["choices"]]),
     )
     _put_detail_line(
-        item,
+        changes,
         name="metadata",
         changed=changed_attribute.metadata_changed,
         left_value=left_attribute["metadata"],
         right_value=right_attribute["metadata"],
     )
+    _append_detail_changes(item, changes)
     _append_if_not_empty(item, "added_choices", _get_choice_name_en_list_by_ids(right_attribute, changed_attribute.added_choice_ids))
     _append_if_not_empty(item, "removed_choices", _get_choice_name_en_list_by_ids(left_attribute, changed_attribute.removed_choice_ids))
 
@@ -500,20 +520,8 @@ def _create_restriction_text_item(
     specs: dict[str, Any],
     attribute_id: str,
     restrictions: Sequence[AttributeRestrictionDiffItem],
-    detail: bool,
-) -> list[JsonValue]:
-    items: list[JsonValue] = []
-    for restriction in restrictions:
-        if detail:
-            items.append(
-                {
-                    "text": _get_attribute_restriction_text(specs, attribute_id=attribute_id, condition=restriction.condition),
-                    "condition": restriction.condition,
-                }
-            )
-        else:
-            items.append(_get_attribute_restriction_text(specs, attribute_id=attribute_id, condition=restriction.condition))
-    return items
+) -> list[str]:
+    return [_get_attribute_restriction_text(specs, attribute_id=attribute_id, condition=restriction.condition) for restriction in restrictions]
 
 
 def _create_attribute_restrictions_section(
@@ -521,14 +529,14 @@ def _create_attribute_restrictions_section(
     *,
     left_specs: dict[str, Any],
     right_specs: dict[str, Any],
-    detail: bool,
+    detail: bool,  # noqa: ARG001
 ) -> dict[str, JsonValue]:
     section: dict[str, JsonValue] = {}
     changed_items = []
     for changed_attribute_restriction in attribute_restrictions_diff.changed_attribute_restrictions:
         attribute_id = changed_attribute_restriction.attribute_id
         item_name = _get_attribute_name_en_by_id_from_specs([right_specs, left_specs], attribute_id)
-        item: dict[str, JsonValue] = {"name": item_name} if detail else {"attribute_name_en": item_name}
+        item: dict[str, JsonValue] = {"attribute_name_en": item_name}
         _append_if_not_empty(
             item,
             "added_restrictions",
@@ -536,7 +544,6 @@ def _create_attribute_restrictions_section(
                 specs=right_specs,
                 attribute_id=attribute_id,
                 restrictions=changed_attribute_restriction.added_restrictions,
-                detail=detail,
             ),
         )
         _append_if_not_empty(
@@ -546,11 +553,143 @@ def _create_attribute_restrictions_section(
                 specs=left_specs,
                 attribute_id=attribute_id,
                 restrictions=changed_attribute_restriction.removed_restrictions,
-                detail=detail,
             ),
         )
         changed_items.append(item)
     _append_if_not_empty(section, "changed", changed_items)
+    return section
+
+
+def _create_inspection_phrase_text_item(changed_inspection_phrase: ChangedInspectionPhrase) -> dict[str, JsonValue]:
+    return {
+        "inspection_phrase_id": changed_inspection_phrase.inspection_phrase_id,
+        "fields": _get_changed_field_names_from_inspection_phrase(changed_inspection_phrase),
+    }
+
+
+def _create_inspection_phrase_detail_item(
+    changed_inspection_phrase: ChangedInspectionPhrase,
+    *,
+    left_inspection_phrase: dict[str, Any],
+    right_inspection_phrase: dict[str, Any],
+) -> dict[str, JsonValue]:
+    item: dict[str, JsonValue] = {"inspection_phrase_id": changed_inspection_phrase.inspection_phrase_id}
+    changes: dict[str, JsonValue] = {}
+    detail_targets: list[tuple[str, STR_LANG, bool]] = [
+        ("inspection_phrase_name_en", "en-US", changed_inspection_phrase.inspection_phrase_name_en_changed),
+        ("inspection_phrase_name_ja", "ja-JP", changed_inspection_phrase.inspection_phrase_name_ja_changed),
+        ("inspection_phrase_name_vi", "vi-VN", changed_inspection_phrase.inspection_phrase_name_vi_changed),
+    ]
+    for name, lang, changed in detail_targets:
+        _put_detail_line(
+            changes,
+            name=name,
+            changed=changed,
+            left_value=get_message_with_lang(left_inspection_phrase["text"], lang),
+            right_value=get_message_with_lang(right_inspection_phrase["text"], lang),
+        )
+    _append_detail_changes(item, changes)
+    return item
+
+
+def _create_inspection_phrases_section(
+    inspection_phrases_diff: InspectionPhrasesDiff,
+    *,
+    left_specs: dict[str, Any],
+    right_specs: dict[str, Any],
+    detail: bool,
+) -> dict[str, JsonValue]:
+    section: dict[str, JsonValue] = {}
+    _append_if_not_empty(section, "added", inspection_phrases_diff.added_inspection_phrase_ids)
+    _append_if_not_empty(section, "removed", inspection_phrases_diff.removed_inspection_phrase_ids)
+    if len(inspection_phrases_diff.changed_inspection_phrases) > 0:
+        if detail:
+            left_inspection_phrase_dict = {e["id"]: e for e in left_specs["inspection_phrases"]}
+            right_inspection_phrase_dict = {e["id"]: e for e in right_specs["inspection_phrases"]}
+            section["changed"] = [
+                _create_inspection_phrase_detail_item(
+                    changed_inspection_phrase,
+                    left_inspection_phrase=left_inspection_phrase_dict[changed_inspection_phrase.inspection_phrase_id],
+                    right_inspection_phrase=right_inspection_phrase_dict[changed_inspection_phrase.inspection_phrase_id],
+                )
+                for changed_inspection_phrase in inspection_phrases_diff.changed_inspection_phrases
+            ]
+        else:
+            section["changed"] = [_create_inspection_phrase_text_item(changed_inspection_phrase) for changed_inspection_phrase in inspection_phrases_diff.changed_inspection_phrases]
+    return section
+
+
+def _create_metadata_changed_detail_item(
+    key: str,
+    *,
+    left_metadata: dict[str, Any],
+    right_metadata: dict[str, Any],
+) -> dict[str, JsonValue]:
+    return {
+        "key": key,
+        "left": _to_display_text(left_metadata[key]),
+        "right": _to_display_text(right_metadata[key]),
+    }
+
+
+def _create_metadata_section(
+    metadata_diff: MetadataDiff,
+    *,
+    left_specs: dict[str, Any],
+    right_specs: dict[str, Any],
+    detail: bool,
+) -> dict[str, JsonValue]:
+    section: dict[str, JsonValue] = {}
+    left_metadata = left_specs["metadata"]
+    right_metadata = right_specs["metadata"]
+    _append_if_not_empty(section, "added", metadata_diff.added_metadata_keys)
+    _append_if_not_empty(section, "removed", metadata_diff.removed_metadata_keys)
+    if detail:
+        _append_if_not_empty(
+            section,
+            "changed",
+            [_create_metadata_changed_detail_item(key, left_metadata=left_metadata, right_metadata=right_metadata) for key in metadata_diff.changed_metadata_keys],
+        )
+        return section
+
+    _append_if_not_empty(section, "changed", metadata_diff.changed_metadata_keys)
+    return section
+
+
+def _create_option_changed_detail_item(
+    key: str,
+    *,
+    left_option: dict[str, Any],
+    right_option: dict[str, Any],
+) -> dict[str, JsonValue]:
+    return {
+        "key": key,
+        "left": _to_display_text(left_option[key]),
+        "right": _to_display_text(right_option[key]),
+    }
+
+
+def _create_option_section(
+    option_diff: OptionDiff,
+    *,
+    left_specs: dict[str, Any],
+    right_specs: dict[str, Any],
+    detail: bool,
+) -> dict[str, JsonValue]:
+    section: dict[str, JsonValue] = {}
+    left_option = left_specs.get("option", {})
+    right_option = right_specs.get("option", {})
+    _append_if_not_empty(section, "added", option_diff.added_option_keys)
+    _append_if_not_empty(section, "removed", option_diff.removed_option_keys)
+    if detail:
+        _append_if_not_empty(
+            section,
+            "changed",
+            [_create_option_changed_detail_item(key, left_option=left_option, right_option=right_option) for key in option_diff.changed_option_keys],
+        )
+        return section
+
+    _append_if_not_empty(section, "changed", option_diff.changed_option_keys)
     return section
 
 
@@ -580,4 +719,28 @@ def format_annotation_specs_diff_as_text(
             detail=detail,
         )
         sections.append(f"[attribute_restrictions]\n{_dump_yaml(attribute_restrictions_section)}")
+    if diff.inspection_phrases is not None and diff.inspection_phrases.has_changes():
+        inspection_phrases_section = _create_inspection_phrases_section(
+            diff.inspection_phrases,
+            left_specs=left_specs,
+            right_specs=right_specs,
+            detail=detail,
+        )
+        sections.append(f"[inspection_phrases]\n{_dump_yaml(inspection_phrases_section)}")
+    if diff.metadata is not None and diff.metadata.has_changes():
+        metadata_section = _create_metadata_section(
+            diff.metadata,
+            left_specs=left_specs,
+            right_specs=right_specs,
+            detail=detail,
+        )
+        sections.append(f"[metadata]\n{_dump_yaml(metadata_section)}")
+    if diff.option is not None and diff.option.has_changes():
+        option_section = _create_option_section(
+            diff.option,
+            left_specs=left_specs,
+            right_specs=right_specs,
+            detail=detail,
+        )
+        sections.append(f"[option]\n{_dump_yaml(option_section)}")
     return "\n\n".join(sections)

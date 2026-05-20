@@ -48,6 +48,7 @@ def _create_attribute(attribute_id: str, *, ja: str, en: str, vi: str, default: 
         "default": default,
         "choices": choices,
         "metadata": {},
+        "option": {},
     }
 
 
@@ -75,6 +76,21 @@ def _create_restriction(attribute_id: str, condition: dict) -> dict:
     return {
         "additional_data_definition_id": attribute_id,
         "condition": condition,
+    }
+
+
+def _create_inspection_phrase(phrase_id: str, *, ja: str, en: str, vi: str, description: str = "") -> dict:
+    return {
+        "id": phrase_id,
+        "text": {
+            "messages": [
+                {"lang": "ja-JP", "message": ja},
+                {"lang": "en-US", "message": en},
+                {"lang": "vi-VN", "message": vi},
+            ],
+            "default_lang": "ja-JP",
+        },
+        "description": description,
     }
 
 
@@ -113,6 +129,11 @@ def _create_annotation_specs() -> dict:
             ),
         ],
         "restrictions": [],
+        "inspection_phrases": [
+            _create_inspection_phrase("phrase_blur", ja="ぼやけています", en="blurred", vi="mo"),
+            _create_inspection_phrase("phrase_occluded", ja="隠れています", en="occluded", vi="bi che"),
+        ],
+        "metadata": {},
     }
 
 
@@ -207,6 +228,9 @@ class TestCreateAnnotationSpecsDiff:
 
         assert actual.labels is not None
         assert actual.attributes is None
+        assert actual.inspection_phrases is None
+        assert actual.metadata is None
+        assert actual.option is None
 
     def test_属性制約の差分を生成できる(self):
         left_specs = _create_annotation_specs()
@@ -251,6 +275,134 @@ class TestCreateAnnotationSpecsDiff:
                     ],
                 },
             ]
+        }
+
+    def test_定型指摘の追加削除をID単位で差分にできる(self):
+        left_specs = _create_annotation_specs()
+        right_specs = copy.deepcopy(left_specs)
+        right_specs["inspection_phrases"] = [
+            _create_inspection_phrase("phrase_occluded", ja="隠れています", en="occluded", vi="bi che"),
+            _create_inspection_phrase("phrase_too_dark", ja="暗すぎます", en="too dark", vi="qua toi"),
+        ]
+
+        actual = create_annotation_specs_diff(left_specs, right_specs)
+        actual_dict = actual.model_dump(exclude_none=True)
+
+        assert actual_dict["inspection_phrases"] == {
+            "added_inspection_phrase_ids": ["phrase_too_dark"],
+            "removed_inspection_phrase_ids": ["phrase_blur"],
+            "changed_inspection_phrases": [],
+        }
+
+    def test_定型指摘の名前変更だけを差分にできる(self):
+        left_specs = _create_annotation_specs()
+        right_specs = copy.deepcopy(left_specs)
+        right_specs["inspection_phrases"][0]["text"]["messages"][0]["message"] = "ぼやけています2"
+        right_specs["inspection_phrases"][0]["text"]["messages"][1]["message"] = "blurred2"
+        right_specs["inspection_phrases"][0]["text"]["messages"][2]["message"] = "mo2"
+        right_specs["inspection_phrases"][1]["description"] = "説明は差分対象外"
+
+        actual = create_annotation_specs_diff(left_specs, right_specs, targets={"inspection_phrases"})
+        actual_dict = actual.model_dump(exclude_none=True)
+
+        assert actual_dict["inspection_phrases"] == {
+            "added_inspection_phrase_ids": [],
+            "removed_inspection_phrase_ids": [],
+            "changed_inspection_phrases": [
+                {
+                    "inspection_phrase_id": "phrase_blur",
+                    "inspection_phrase_name_ja_changed": True,
+                    "inspection_phrase_name_en_changed": True,
+                    "inspection_phrase_name_vi_changed": True,
+                }
+            ],
+        }
+
+    def test_定型指摘の順序変更は差分にしない(self):
+        left_specs = _create_annotation_specs()
+        right_specs = copy.deepcopy(left_specs)
+        right_specs["inspection_phrases"] = list(reversed(right_specs["inspection_phrases"]))
+
+        actual = create_annotation_specs_diff(left_specs, right_specs, targets={"inspection_phrases"})
+
+        assert actual.has_changes() is False
+
+    def test_定型指摘の差分出力順はID順に安定する(self):
+        left_specs = _create_annotation_specs()
+        right_specs = copy.deepcopy(left_specs)
+        left_specs["inspection_phrases"] = [
+            _create_inspection_phrase("phrase_removed_z", ja="削除Z", en="removed z", vi="xoa z"),
+            _create_inspection_phrase("phrase_changed_b", ja="変更B", en="changed b", vi="doi b"),
+            _create_inspection_phrase("phrase_removed_a", ja="削除A", en="removed a", vi="xoa a"),
+            _create_inspection_phrase("phrase_changed_a", ja="変更A", en="changed a", vi="doi a"),
+        ]
+        right_specs["inspection_phrases"] = [
+            _create_inspection_phrase("phrase_added_z", ja="追加Z", en="added z", vi="them z"),
+            _create_inspection_phrase("phrase_changed_b", ja="変更B2", en="changed b", vi="doi b"),
+            _create_inspection_phrase("phrase_added_a", ja="追加A", en="added a", vi="them a"),
+            _create_inspection_phrase("phrase_changed_a", ja="変更A2", en="changed a", vi="doi a"),
+        ]
+
+        actual = create_annotation_specs_diff(left_specs, right_specs, targets={"inspection_phrases"})
+        actual_dict = actual.model_dump(exclude_none=True)
+
+        assert actual_dict["inspection_phrases"]["added_inspection_phrase_ids"] == [
+            "phrase_added_a",
+            "phrase_added_z",
+        ]
+        assert actual_dict["inspection_phrases"]["removed_inspection_phrase_ids"] == [
+            "phrase_removed_a",
+            "phrase_removed_z",
+        ]
+        assert [e["inspection_phrase_id"] for e in actual_dict["inspection_phrases"]["changed_inspection_phrases"]] == [
+            "phrase_changed_a",
+            "phrase_changed_b",
+        ]
+
+    def test_metadataの差分をキー単位で生成できる(self):
+        left_specs = _create_annotation_specs()
+        right_specs = copy.deepcopy(left_specs)
+        left_specs["metadata"] = {
+            "removed_key": "削除",
+            "changed_key": {"version": 1},
+            "unchanged_key": True,
+        }
+        right_specs["metadata"] = {
+            "changed_key": {"version": 2},
+            "unchanged_key": True,
+            "added_key": ["追加"],
+        }
+
+        actual = create_annotation_specs_diff(left_specs, right_specs, targets={"metadata"})
+        actual_dict = actual.model_dump(exclude_none=True)
+
+        assert actual_dict["metadata"] == {
+            "added_metadata_keys": ["added_key"],
+            "removed_metadata_keys": ["removed_key"],
+            "changed_metadata_keys": ["changed_key"],
+        }
+
+    def test_optionの差分をキー単位で生成できる(self):
+        left_specs = _create_annotation_specs()
+        right_specs = copy.deepcopy(left_specs)
+        left_specs["option"] = {
+            "removed_key": "削除",
+            "changed_key": {"version": 1},
+            "unchanged_key": True,
+        }
+        right_specs["option"] = {
+            "changed_key": {"version": 2},
+            "unchanged_key": True,
+            "added_key": ["追加"],
+        }
+
+        actual = create_annotation_specs_diff(left_specs, right_specs, targets={"option"})
+        actual_dict = actual.model_dump(exclude_none=True)
+
+        assert actual_dict["option"] == {
+            "added_option_keys": ["added_key"],
+            "removed_option_keys": ["removed_key"],
+            "changed_option_keys": ["changed_key"],
         }
 
 
@@ -326,13 +478,39 @@ class TestFormatAnnotationSpecsDiffAsText:
         attributes_yaml = yaml.safe_load(actual.split("[attributes]\n", 1)[1])
 
         assert "[labels]" in actual
-        assert labels_yaml["changed"][0]["color"] == {"left": "#FF0000", "right": "#00FF00"}
-        assert labels_yaml["changed"][0]["keybind"] == {"left": "", "right": "Ctrl+Digit1"}
-        assert labels_yaml["changed"][0]["label_name_ja"] == {"left": "車", "right": "自動車"}
+        assert labels_yaml["changed"][0]["changes"]["color"] == {"left": "#FF0000", "right": "#00FF00"}
+        assert labels_yaml["changed"][0]["changes"]["keybind"] == {"left": "", "right": "Ctrl+Digit1"}
+        assert labels_yaml["changed"][0]["changes"]["label_name_ja"] == {"left": "車", "right": "自動車"}
         assert "[attributes]" in actual
-        assert attributes_yaml["changed"][0]["attribute_name_vi"] == {"left": "bị che", "right": "co-moi"}
+        assert attributes_yaml["changed"][0]["changes"]["attribute_name_vi"] == {"left": "bị che", "right": "co-moi"}
         assert "attribute_id:" not in actual
         assert "choice_id:" not in actual
+
+    def test_detail_textのラベル順序変更は真偽値だけを出力する(self):
+        left_specs = _create_annotation_specs()
+        left_specs["labels"].append(
+            _create_label(
+                "label_bus",
+                ja="バス",
+                en="bus",
+                vi="xe buyt",
+                color={"red": 0, "green": 0, "blue": 255},
+                additional_data_definitions=[],
+            )
+        )
+        right_specs = copy.deepcopy(left_specs)
+        right_specs["labels"] = list(reversed(right_specs["labels"]))
+
+        diff = create_annotation_specs_diff(left_specs, right_specs, targets={"labels"})
+        actual = format_annotation_specs_diff_as_text(
+            diff,
+            left_specs=left_specs,
+            right_specs=right_specs,
+            detail=True,
+        )
+        labels_yaml = yaml.safe_load(actual.split("[labels]\n", 1)[1])
+
+        assert labels_yaml == {"label_order_changed": True}
 
     def test_detail_textのラベル差分はchanged_field_namesと同じ順序で出力する(self):
         left_specs = _create_annotation_specs()
@@ -356,7 +534,7 @@ class TestFormatAnnotationSpecsDiffAsText:
         )
         labels_yaml = yaml.safe_load(actual.split("[labels]\n", 1)[1])
 
-        expected_lines = [
+        expected_keys = [
             "label_name_en:",
             "label_name_ja:",
             "label_name_vi:",
@@ -368,9 +546,9 @@ class TestFormatAnnotationSpecsDiffAsText:
             "field_values:",
             "metadata:",
         ]
-        positions = [actual.index(line) for line in expected_lines]
-        assert positions == sorted(positions)
-        assert labels_yaml["changed"][0]["label_name_en"] == {"left": "car", "right": "car-updated"}
+        assert [f"{key}:" for key in labels_yaml["changed"][0]["changes"].keys()] == expected_keys
+        assert labels_yaml["changed"][0]["label_name_en"] == "car-updated"
+        assert labels_yaml["changed"][0]["changes"]["label_name_en"] == {"left": "car", "right": "car-updated"}
 
     def test_detail_textの属性差分はchanged_field_namesと同じ順序で出力する(self):
         left_specs = _create_annotation_specs()
@@ -394,7 +572,7 @@ class TestFormatAnnotationSpecsDiffAsText:
         )
         attributes_yaml = yaml.safe_load(actual.split("[attributes]\n", 1)[1])
 
-        expected_lines = [
+        expected_keys = [
             "attribute_name_en:",
             "attribute_name_ja:",
             "attribute_name_vi:",
@@ -406,9 +584,9 @@ class TestFormatAnnotationSpecsDiffAsText:
             "choices_order:",
             "metadata:",
         ]
-        positions = [actual.index(line) for line in expected_lines]
-        assert positions == sorted(positions)
-        assert attributes_yaml["changed"][0]["attribute_name_en"] == {"left": "occluded", "right": "occluded-updated"}
+        assert [f"{key}:" for key in attributes_yaml["changed"][0]["changes"].keys()] == expected_keys
+        assert attributes_yaml["changed"][0]["attribute_name_en"] == "occluded-updated"
+        assert attributes_yaml["changed"][0]["changes"]["attribute_name_en"] == {"left": "occluded", "right": "occluded-updated"}
 
     def test_detail_textで選択肢や属性も英語名を出力できる(self):
         left_specs = _create_annotation_specs()
@@ -447,13 +625,13 @@ class TestFormatAnnotationSpecsDiffAsText:
         labels_yaml = yaml.safe_load(actual.split("[labels]\n", 1)[1].split("\n\n[attributes]", 1)[0])
         attributes_yaml = yaml.safe_load(actual.split("[attributes]\n", 1)[1])
 
-        assert attributes_yaml["changed"][0]["name"] == "occluded"
-        assert labels_yaml["changed"][0]["attributes"] == {"left": '["occluded", "truncated"]', "right": '["pose", "occluded"]'}
+        assert attributes_yaml["changed"][0]["attribute_name_en"] == "occluded"
+        assert labels_yaml["changed"][0]["changes"]["attributes"] == {"left": '["occluded", "truncated"]', "right": '["pose", "occluded"]'}
         assert labels_yaml["changed"][0]["added_attributes"] == ["pose"]
         assert labels_yaml["changed"][0]["removed_attributes"] == ["truncated"]
-        assert attributes_yaml["changed"][0]["choices"] == {"left": '["yes", "no"]', "right": '["unknown", "yes_changed", "no"]'}
+        assert attributes_yaml["changed"][0]["changes"]["choices"] == {"left": '["yes", "no"]', "right": '["unknown", "yes_changed", "no"]'}
         assert attributes_yaml["changed"][0]["added_choices"] == ["unknown"]
-        assert attributes_yaml["changed"][0]["changed_choices"][0]["name"] == "yes_changed"
+        assert attributes_yaml["changed"][0]["changed_choices"][0]["choice_name_en"] == "yes_changed"
 
     def test_detail_textの選択肢差分はchanged_field_namesと同じ順序で出力する(self):
         left_specs = _create_annotation_specs()
@@ -473,17 +651,16 @@ class TestFormatAnnotationSpecsDiffAsText:
         )
         attributes_yaml = yaml.safe_load(actual.split("[attributes]\n", 1)[1])
 
-        expected_lines = [
-            "name: occluded",
-            "name: yes-updated",
+        expected_keys = [
             "choice_name_en:",
             "choice_name_ja:",
             "choice_name_vi:",
             "keybind:",
         ]
-        positions = [actual.index(line) for line in expected_lines]
-        assert positions == sorted(positions)
-        assert attributes_yaml["changed"][0]["changed_choices"][0]["choice_name_en"] == {"left": "yes", "right": "yes-updated"}
+        assert attributes_yaml["changed"][0]["attribute_name_en"] == "occluded"
+        assert attributes_yaml["changed"][0]["changed_choices"][0]["choice_name_en"] == "yes-updated"
+        assert [f"{key}:" for key in attributes_yaml["changed"][0]["changed_choices"][0]["changes"].keys()] == expected_keys
+        assert attributes_yaml["changed"][0]["changed_choices"][0]["changes"]["choice_name_en"] == {"left": "yes", "right": "yes-updated"}
 
     def test_attribute_restrictionをtextで出力できる(self):
         left_specs = _create_annotation_specs()
@@ -541,7 +718,142 @@ class TestFormatAnnotationSpecsDiffAsText:
         actual_yaml = yaml.safe_load(actual.split("[attribute_restrictions]\n", 1)[1])
 
         assert "[attribute_restrictions]" in actual
-        assert actual_yaml["changed"][0]["added_restrictions"] == [{"text": "'truncated' is read-only", "condition": {"_type": "CanInput", "enable": False}}]
+        assert actual_yaml["changed"][0]["attribute_name_en"] == "truncated"
+        assert actual_yaml["changed"][0]["added_restrictions"] == ["'truncated' is read-only"]
+
+    def test_定型指摘をtextで出力できる(self):
+        left_specs = _create_annotation_specs()
+        right_specs = copy.deepcopy(left_specs)
+        right_specs["inspection_phrases"] = [
+            _create_inspection_phrase("phrase_occluded", ja="隠れています", en="occluded", vi="bi che"),
+            _create_inspection_phrase("phrase_too_dark", ja="暗すぎます", en="too dark", vi="qua toi"),
+        ]
+
+        diff = create_annotation_specs_diff(left_specs, right_specs)
+        actual = format_annotation_specs_diff_as_text(
+            diff,
+            left_specs=left_specs,
+            right_specs=right_specs,
+            detail=False,
+        )
+        actual_yaml = yaml.safe_load(actual.split("[inspection_phrases]\n", 1)[1])
+
+        assert "[inspection_phrases]" in actual
+        assert actual_yaml == {
+            "added": ["phrase_too_dark"],
+            "removed": ["phrase_blur"],
+        }
+
+    def test_定型指摘の名前変更をdetail_textで出力できる(self):
+        left_specs = _create_annotation_specs()
+        right_specs = copy.deepcopy(left_specs)
+        right_specs["inspection_phrases"][0]["text"]["messages"][0]["message"] = "ぼやけています2"
+        right_specs["inspection_phrases"][0]["text"]["messages"][1]["message"] = "blurred2"
+        right_specs["inspection_phrases"][0]["text"]["messages"][2]["message"] = "mo2"
+
+        diff = create_annotation_specs_diff(left_specs, right_specs)
+        actual = format_annotation_specs_diff_as_text(
+            diff,
+            left_specs=left_specs,
+            right_specs=right_specs,
+            detail=True,
+        )
+        actual_yaml = yaml.safe_load(actual.split("[inspection_phrases]\n", 1)[1])
+
+        assert actual_yaml["changed"] == [
+            {
+                "inspection_phrase_id": "phrase_blur",
+                "changes": {
+                    "inspection_phrase_name_en": {"left": "blurred", "right": "blurred2"},
+                    "inspection_phrase_name_ja": {"left": "ぼやけています", "right": "ぼやけています2"},
+                    "inspection_phrase_name_vi": {"left": "mo", "right": "mo2"},
+                },
+            }
+        ]
+
+    def test_metadataをtextで出力できる(self):
+        left_specs = _create_annotation_specs()
+        right_specs = copy.deepcopy(left_specs)
+        left_specs["metadata"] = {"removed_key": "削除", "changed_key": 1}
+        right_specs["metadata"] = {"changed_key": 2, "added_key": "追加"}
+
+        diff = create_annotation_specs_diff(left_specs, right_specs)
+        actual = format_annotation_specs_diff_as_text(
+            diff,
+            left_specs=left_specs,
+            right_specs=right_specs,
+            detail=False,
+        )
+        actual_yaml = yaml.safe_load(actual.split("[metadata]\n", 1)[1])
+
+        assert actual_yaml == {
+            "added": ["added_key"],
+            "removed": ["removed_key"],
+            "changed": ["changed_key"],
+        }
+
+    def test_metadataをdetail_textで出力できる(self):
+        left_specs = _create_annotation_specs()
+        right_specs = copy.deepcopy(left_specs)
+        left_specs["metadata"] = {"removed_key": "削除", "changed_key": {"version": 1}}
+        right_specs["metadata"] = {"changed_key": {"version": 2}, "added_key": ["追加"]}
+
+        diff = create_annotation_specs_diff(left_specs, right_specs)
+        actual = format_annotation_specs_diff_as_text(
+            diff,
+            left_specs=left_specs,
+            right_specs=right_specs,
+            detail=True,
+        )
+        actual_yaml = yaml.safe_load(actual.split("[metadata]\n", 1)[1])
+
+        assert actual_yaml == {
+            "added": ["added_key"],
+            "removed": ["removed_key"],
+            "changed": [{"key": "changed_key", "left": '{"version": 1}', "right": '{"version": 2}'}],
+        }
+
+    def test_optionをtextで出力できる(self):
+        left_specs = _create_annotation_specs()
+        right_specs = copy.deepcopy(left_specs)
+        left_specs["option"] = {"removed_key": "削除", "changed_key": 1}
+        right_specs["option"] = {"changed_key": 2, "added_key": "追加"}
+
+        diff = create_annotation_specs_diff(left_specs, right_specs)
+        actual = format_annotation_specs_diff_as_text(
+            diff,
+            left_specs=left_specs,
+            right_specs=right_specs,
+            detail=False,
+        )
+        actual_yaml = yaml.safe_load(actual.split("[option]\n", 1)[1])
+
+        assert actual_yaml == {
+            "added": ["added_key"],
+            "removed": ["removed_key"],
+            "changed": ["changed_key"],
+        }
+
+    def test_optionをdetail_textで出力できる(self):
+        left_specs = _create_annotation_specs()
+        right_specs = copy.deepcopy(left_specs)
+        left_specs["option"] = {"removed_key": "削除", "changed_key": {"version": 1}}
+        right_specs["option"] = {"changed_key": {"version": 2}, "added_key": ["追加"]}
+
+        diff = create_annotation_specs_diff(left_specs, right_specs)
+        actual = format_annotation_specs_diff_as_text(
+            diff,
+            left_specs=left_specs,
+            right_specs=right_specs,
+            detail=True,
+        )
+        actual_yaml = yaml.safe_load(actual.split("[option]\n", 1)[1])
+
+        assert actual_yaml == {
+            "added": ["added_key"],
+            "removed": ["removed_key"],
+            "changed": [{"key": "changed_key", "left": '{"version": 1}', "right": '{"version": 2}'}],
+        }
 
 
 @pytest.mark.access_webapi
@@ -647,7 +959,126 @@ class TestCommandLine:
         actual_yaml = yaml.safe_load(actual.split("[attributes]\n", 1)[1])
 
         assert "[attributes]" in actual
-        assert actual_yaml["changed"][0]["default"] == {"left": "choice_yes", "right": "choice_no"}
+        assert actual_yaml["changed"][0]["changes"]["default"] == {"left": "choice_yes", "right": "choice_no"}
+
+    def test_json形式でinspection_phrasesのみ出力できる(self, tmp_path):
+        left_specs_path = tmp_path / "left.json"
+        right_specs_path = tmp_path / "right.json"
+        output_path = tmp_path / "out.json"
+
+        left_specs = _create_annotation_specs()
+        right_specs = copy.deepcopy(left_specs)
+        right_specs["inspection_phrases"] = [
+            _create_inspection_phrase("phrase_occluded", ja="隠れています", en="occluded", vi="bi che"),
+            _create_inspection_phrase("phrase_too_dark", ja="暗すぎます", en="too dark", vi="qua toi"),
+        ]
+
+        left_specs_path.write_text(json.dumps(left_specs, ensure_ascii=False), encoding="utf-8")
+        right_specs_path.write_text(json.dumps(right_specs, ensure_ascii=False), encoding="utf-8")
+
+        main(
+            [
+                "annotation_specs",
+                "diff",
+                "--left_annotation_specs_json",
+                str(left_specs_path),
+                "--right_annotation_specs_json",
+                str(right_specs_path),
+                "--target",
+                "inspection_phrases",
+                "--format",
+                "json",
+                "--output",
+                str(output_path),
+            ]
+        )
+
+        actual = json.loads(output_path.read_text(encoding="utf-8"))
+
+        assert set(actual.keys()) == {"inspection_phrases"}
+        assert actual["inspection_phrases"] == {
+            "added_inspection_phrase_ids": ["phrase_too_dark"],
+            "removed_inspection_phrase_ids": ["phrase_blur"],
+            "changed_inspection_phrases": [],
+        }
+
+    def test_json形式でmetadataのみ出力できる(self, tmp_path):
+        left_specs_path = tmp_path / "left.json"
+        right_specs_path = tmp_path / "right.json"
+        output_path = tmp_path / "out.json"
+
+        left_specs = _create_annotation_specs()
+        right_specs = copy.deepcopy(left_specs)
+        left_specs["metadata"] = {"removed_key": "削除", "changed_key": 1}
+        right_specs["metadata"] = {"changed_key": 2, "added_key": "追加"}
+
+        left_specs_path.write_text(json.dumps(left_specs, ensure_ascii=False), encoding="utf-8")
+        right_specs_path.write_text(json.dumps(right_specs, ensure_ascii=False), encoding="utf-8")
+
+        main(
+            [
+                "annotation_specs",
+                "diff",
+                "--left_annotation_specs_json",
+                str(left_specs_path),
+                "--right_annotation_specs_json",
+                str(right_specs_path),
+                "--target",
+                "metadata",
+                "--format",
+                "json",
+                "--output",
+                str(output_path),
+            ]
+        )
+
+        actual = json.loads(output_path.read_text(encoding="utf-8"))
+
+        assert set(actual.keys()) == {"metadata"}
+        assert actual["metadata"] == {
+            "added_metadata_keys": ["added_key"],
+            "removed_metadata_keys": ["removed_key"],
+            "changed_metadata_keys": ["changed_key"],
+        }
+
+    def test_json形式でoptionのみ出力できる(self, tmp_path):
+        left_specs_path = tmp_path / "left.json"
+        right_specs_path = tmp_path / "right.json"
+        output_path = tmp_path / "out.json"
+
+        left_specs = _create_annotation_specs()
+        right_specs = copy.deepcopy(left_specs)
+        left_specs["option"] = {"removed_key": "削除", "changed_key": 1}
+        right_specs["option"] = {"changed_key": 2, "added_key": "追加"}
+
+        left_specs_path.write_text(json.dumps(left_specs, ensure_ascii=False), encoding="utf-8")
+        right_specs_path.write_text(json.dumps(right_specs, ensure_ascii=False), encoding="utf-8")
+
+        main(
+            [
+                "annotation_specs",
+                "diff",
+                "--left_annotation_specs_json",
+                str(left_specs_path),
+                "--right_annotation_specs_json",
+                str(right_specs_path),
+                "--target",
+                "option",
+                "--format",
+                "json",
+                "--output",
+                str(output_path),
+            ]
+        )
+
+        actual = json.loads(output_path.read_text(encoding="utf-8"))
+
+        assert set(actual.keys()) == {"option"}
+        assert actual["option"] == {
+            "added_option_keys": ["added_key"],
+            "removed_option_keys": ["removed_key"],
+            "changed_option_keys": ["changed_key"],
+        }
 
 
 class TestAnnotationSpecsDiffCommand:

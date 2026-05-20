@@ -17,7 +17,7 @@ from annofabcli.common.utils import output_string, print_json
 
 logger = logging.getLogger(__name__)
 
-TargetName = Literal["labels", "attributes", "attribute_restrictions"]
+TargetName = Literal["labels", "attributes", "attribute_restrictions", "inspection_phrases", "metadata", "option"]
 """アノテーション仕様差分の出力対象。"""
 
 
@@ -112,7 +112,9 @@ class AnnotationSpecsDiffCommand(CommandLine):
     def main(self) -> None:
         left_specs = self.get_annotation_specs_from_source(prefix="left")
         right_specs = self.get_annotation_specs_from_source(prefix="right")
-        targets: set[TargetName] = set(cast(list[TargetName], self.args.target)) if self.args.target is not None else {"labels", "attributes", "attribute_restrictions"}
+        targets: set[TargetName] = (
+            set(cast(list[TargetName], self.args.target)) if self.args.target is not None else {"labels", "attributes", "attribute_restrictions", "inspection_phrases", "metadata", "option"}
+        )
         diff = create_annotation_specs_diff(left_specs, right_specs, targets=targets)
         output_format = AnnotationSpecsDiffOutputFormat(self.args.format)
 
@@ -142,7 +144,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--target",
         nargs="+",
-        choices=["labels", "attributes", "attribute_restrictions"],
+        choices=["labels", "attributes", "attribute_restrictions", "inspection_phrases", "metadata", "option"],
         help="出力対象の差分を指定します。指定しない場合はすべて出力します。",
     )
     parser.add_argument(
@@ -154,7 +156,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         help=(
             "出力フォーマット\n\n"
             "* text: 差分項目のみをセクション見出し付きの階層形式で表示する\n"
-            "* detail_text: 差分項目と比較元・比較先の値をleft/right形式を含む階層形式で表示する\n"
+            "* detail_text: 差分項目と比較元・比較先の値をchanges配下のleft/right形式で表示する\n"
             "* json: 差分情報をJSONで出力する\n"
             "* pretty_json: 差分情報を整形JSONで出力する\n"
         ),
