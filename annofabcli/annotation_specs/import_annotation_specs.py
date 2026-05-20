@@ -97,23 +97,6 @@ def build_request_body_for_import_annotation_specs(
     return request_body
 
 
-def collect_label_ids_by_attribute_id(annotation_specs: dict[str, Any]) -> dict[str, list[str]]:
-    """属性IDごとに、その属性を含むラベルID一覧を収集する。
-
-    Args:
-        annotation_specs: アノテーション仕様
-
-    Returns:
-        属性IDをキー、ラベルID一覧を値に持つ辞書。
-    """
-    label_ids_by_attribute_id: dict[str, list[str]] = {}
-    for label in annotation_specs["labels"]:
-        label_id = label["label_id"]
-        for attribute_id in label["additional_data_definitions"]:
-            label_ids_by_attribute_id.setdefault(attribute_id, []).append(label_id)
-    return label_ids_by_attribute_id
-
-
 def _append_unique_removed_choice(protected: ProtectedImportChanges, attribute_id: str, choice_id: str) -> None:
     """削除対象の選択肢を重複なく追加する。"""
     choice = (attribute_id, choice_id)
@@ -123,26 +106,25 @@ def _append_unique_removed_choice(protected: ProtectedImportChanges, attribute_i
 
 def create_protected_import_changes(
     diff: AnnotationSpecsDiff,
-    current_annotation_specs: dict[str, Any],
     *,
     is_label_used: Callable[[str], bool],
-    is_attribute_used: Callable[[str, str], bool],
+    is_attribute_used: Callable[[str], bool],
+    is_label_attribute_used: Callable[[str, str], bool],
     is_choice_used: Callable[[str, str], bool],
 ) -> ProtectedImportChanges:
     """差分のうち、既存アノテーションで使われている変更を抽出する。
 
     Args:
         diff: 現在仕様とimport仕様の差分
-        current_annotation_specs: 現在のアノテーション仕様
         is_label_used: label_idを受け取り、利用中ならTrueを返す関数
-        is_attribute_used: label_idとattribute_idを受け取り、利用中ならTrueを返す関数
+        is_attribute_used: attribute_idを受け取り、利用中ならTrueを返す関数
+        is_label_attribute_used: label_idとattribute_idを受け取り、利用中ならTrueを返す関数
         is_choice_used: attribute_idとchoice_idを受け取り、利用中ならTrueを返す関数
 
     Returns:
         importを中止すべき変更一覧
     """
     protected = ProtectedImportChanges()
-    label_ids_by_attribute_id = collect_label_ids_by_attribute_id(current_annotation_specs)
 
     if diff.labels is not None:
         protected.removed_label_ids.extend(label_id for label_id in diff.labels.removed_label_ids if is_label_used(label_id))
@@ -150,16 +132,12 @@ def create_protected_import_changes(
             if changed_label.annotation_type_changed and is_label_used(changed_label.label_id):
                 protected.changed_annotation_type_label_ids.append(changed_label.label_id)
             for attribute_id in changed_label.removed_attribute_ids:
-                if is_attribute_used(changed_label.label_id, attribute_id):
+                if is_label_attribute_used(changed_label.label_id, attribute_id):
                     protected.removed_label_attribute_relations.append((changed_label.label_id, attribute_id))
 
     if diff.attributes is not None:
         for changed_attribute in diff.attributes.changed_attributes:
-            if (
-                changed_attribute.type_changed
-                and changed_attribute.attribute_id not in protected.changed_type_attribute_ids
-                and any(is_attribute_used(label_id, changed_attribute.attribute_id) for label_id in label_ids_by_attribute_id.get(changed_attribute.attribute_id, []))
-            ):
+            if changed_attribute.type_changed and changed_attribute.attribute_id not in protected.changed_type_attribute_ids and is_attribute_used(changed_attribute.attribute_id):
                 protected.changed_type_attribute_ids.append(changed_attribute.attribute_id)
             for choice_id in changed_attribute.removed_choice_ids:
                 if is_choice_used(changed_attribute.attribute_id, choice_id):
@@ -226,7 +204,11 @@ class ImportAnnotationSpecsMain(CommandLineWithConfirm):
             return self.has_annotation({"label_id": label_id})
 
         @functools.cache
-        def is_attribute_used(label_id: str, attribute_id: str) -> bool:
+        def is_attribute_used(attribute_id: str) -> bool:
+            return self.has_annotation({"attributes": [{"additional_data_definition_id": attribute_id}]})
+
+        @functools.cache
+        def is_label_attribute_used(label_id: str, attribute_id: str) -> bool:
             return self.has_annotation({"label_id": label_id, "attributes": [{"additional_data_definition_id": attribute_id}]})
 
         @functools.cache
@@ -235,9 +217,9 @@ class ImportAnnotationSpecsMain(CommandLineWithConfirm):
 
         protected_changes = create_protected_import_changes(
             diff,
-            current_annotation_specs,
             is_label_used=is_label_used,
             is_attribute_used=is_attribute_used,
+            is_label_attribute_used=is_label_attribute_used,
             is_choice_used=is_choice_used,
         )
         validate_import_annotation_specs(protected_changes)
