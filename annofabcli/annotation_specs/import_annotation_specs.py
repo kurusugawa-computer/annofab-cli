@@ -114,29 +114,11 @@ def collect_label_ids_by_attribute_id(annotation_specs: dict[str, Any]) -> dict[
     return label_ids_by_attribute_id
 
 
-def _append_unique_changed_type_attribute_id(protected: ProtectedImportChanges, attribute_id: str) -> None:
-    """種類変更対象の属性IDを重複なく追加する。"""
-    if attribute_id not in protected.changed_type_attribute_ids:
-        protected.changed_type_attribute_ids.append(attribute_id)
-
-
 def _append_unique_removed_choice(protected: ProtectedImportChanges, attribute_id: str, choice_id: str) -> None:
     """削除対象の選択肢を重複なく追加する。"""
     choice = (attribute_id, choice_id)
     if choice not in protected.removed_choices:
         protected.removed_choices.append(choice)
-
-
-def _append_changed_type_attribute_if_used(
-    protected: ProtectedImportChanges,
-    label_ids_by_attribute_id: dict[str, list[str]],
-    attribute_id: str,
-    *,
-    is_attribute_used: Callable[[str, str], bool],
-) -> None:
-    """属性がいずれかのラベルで使われていれば、種類変更対象として追加する。"""
-    if any(is_attribute_used(label_id, attribute_id) for label_id in label_ids_by_attribute_id.get(attribute_id, [])):
-        _append_unique_changed_type_attribute_id(protected, attribute_id)
 
 
 def create_protected_import_changes(
@@ -173,13 +155,12 @@ def create_protected_import_changes(
 
     if diff.attributes is not None:
         for changed_attribute in diff.attributes.changed_attributes:
-            if changed_attribute.type_changed:
-                _append_changed_type_attribute_if_used(
-                    protected,
-                    label_ids_by_attribute_id,
-                    changed_attribute.attribute_id,
-                    is_attribute_used=is_attribute_used,
-                )
+            if (
+                changed_attribute.type_changed
+                and changed_attribute.attribute_id not in protected.changed_type_attribute_ids
+                and any(is_attribute_used(label_id, changed_attribute.attribute_id) for label_id in label_ids_by_attribute_id.get(changed_attribute.attribute_id, []))
+            ):
+                protected.changed_type_attribute_ids.append(changed_attribute.attribute_id)
             for choice_id in changed_attribute.removed_choice_ids:
                 if is_choice_used(changed_attribute.attribute_id, choice_id):
                     _append_unique_removed_choice(protected, changed_attribute.attribute_id, choice_id)
