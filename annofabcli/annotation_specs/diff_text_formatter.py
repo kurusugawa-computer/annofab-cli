@@ -161,14 +161,6 @@ def _get_changed_field_names_from_choice(diff: ChangedChoice) -> list[str]:
     return field_names
 
 
-def _has_label_attribute_membership_changes(diff: ChangedLabel) -> bool:
-    return len(diff.added_attribute_ids) > 0 or len(diff.removed_attribute_ids) > 0
-
-
-def _has_attribute_choice_membership_changes(diff: ChangedAttribute) -> bool:
-    return len(diff.added_choice_ids) > 0 or len(diff.removed_choice_ids) > 0 or len(diff.changed_choices) > 0
-
-
 def _get_changed_field_names_from_attribute(diff: ChangedAttribute) -> list[str]:
     field_names = []
     if diff.attribute_name_en_changed:
@@ -346,6 +338,21 @@ def _format_label_detail_lines(
     lines.extend(
         _format_detail_line(
             level=1,
+            name="attributes",
+            changed=changed_label.has_attribute_relation_changes(),
+            left_value=_get_attribute_name_en_list_by_ids(
+                left_specs,
+                left_label["additional_data_definitions"],
+            ),
+            right_value=_get_attribute_name_en_list_by_ids(
+                right_specs,
+                right_label["additional_data_definitions"],
+            ),
+        )
+    )
+    lines.extend(
+        _format_detail_line(
+            level=1,
             name="attributes_order",
             changed=changed_label.attributes_order_changed,
             left_value=_get_attribute_name_en_list_by_ids(
@@ -358,22 +365,6 @@ def _format_label_detail_lines(
             ),
         )
     )
-    if changed_label.has_attribute_relation_changes() and not (changed_label.attributes_order_changed or _has_label_attribute_membership_changes(changed_label)):
-        lines.extend(
-            _format_detail_line(
-                level=1,
-                name="attributes",
-                changed=True,
-                left_value=_get_attribute_name_en_list_by_ids(
-                    left_specs,
-                    left_label["additional_data_definitions"],
-                ),
-                right_value=_get_attribute_name_en_list_by_ids(
-                    right_specs,
-                    right_label["additional_data_definitions"],
-                ),
-            )
-        )
     lines.extend(
         _format_added_removed_lines(
             level=1,
@@ -540,6 +531,21 @@ def _format_attribute_detail_lines(
     lines.extend(
         _format_detail_line(
             level=1,
+            name="choices",
+            changed=changed_attribute.has_choice_changes(),
+            left_value=_get_choice_name_en_list_by_ids(
+                left_attribute,
+                [e["choice_id"] for e in left_attribute["choices"]],
+            ),
+            right_value=_get_choice_name_en_list_by_ids(
+                right_attribute,
+                [e["choice_id"] for e in right_attribute["choices"]],
+            ),
+        )
+    )
+    lines.extend(
+        _format_detail_line(
+            level=1,
             name="choices_order",
             changed=changed_attribute.choices_order_changed,
             left_value=_get_choice_name_en_list_by_ids(
@@ -552,22 +558,6 @@ def _format_attribute_detail_lines(
             ),
         )
     )
-    if changed_attribute.has_choice_changes() and not (changed_attribute.choices_order_changed or _has_attribute_choice_membership_changes(changed_attribute)):
-        lines.extend(
-            _format_detail_line(
-                level=1,
-                name="choices",
-                changed=True,
-                left_value=_get_choice_name_en_list_by_ids(
-                    left_attribute,
-                    [e["choice_id"] for e in left_attribute["choices"]],
-                ),
-                right_value=_get_choice_name_en_list_by_ids(
-                    right_attribute,
-                    [e["choice_id"] for e in right_attribute["choices"]],
-                ),
-            )
-        )
     lines.extend(
         _format_detail_line(
             level=1,
