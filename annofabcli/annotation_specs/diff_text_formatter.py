@@ -514,20 +514,8 @@ def _create_restriction_text_item(
     specs: dict[str, Any],
     attribute_id: str,
     restrictions: Sequence[AttributeRestrictionDiffItem],
-    detail: bool,
-) -> list[JsonValue]:
-    items: list[JsonValue] = []
-    for restriction in restrictions:
-        if detail:
-            items.append(
-                {
-                    "text": _get_attribute_restriction_text(specs, attribute_id=attribute_id, condition=restriction.condition),
-                    "condition": restriction.condition,
-                }
-            )
-        else:
-            items.append(_get_attribute_restriction_text(specs, attribute_id=attribute_id, condition=restriction.condition))
-    return items
+) -> list[str]:
+    return [_get_attribute_restriction_text(specs, attribute_id=attribute_id, condition=restriction.condition) for restriction in restrictions]
 
 
 def _create_attribute_restrictions_section(
@@ -550,7 +538,6 @@ def _create_attribute_restrictions_section(
                 specs=right_specs,
                 attribute_id=attribute_id,
                 restrictions=changed_attribute_restriction.added_restrictions,
-                detail=detail,
             ),
         )
         _append_if_not_empty(
@@ -560,7 +547,6 @@ def _create_attribute_restrictions_section(
                 specs=left_specs,
                 attribute_id=attribute_id,
                 restrictions=changed_attribute_restriction.removed_restrictions,
-                detail=detail,
             ),
         )
         changed_items.append(item)

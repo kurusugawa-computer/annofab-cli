@@ -105,6 +105,7 @@ JSONファイル同士を比較する
 ---------------------------------
 
 ``detail_text`` 形式では、変更前後の値を ``left`` / ``right`` で表示します。配列やオブジェクトは文字列として表示します。
+``attribute_restrictions`` は ``text`` 形式と同じく、制約条件を文字列で表示します。
 
 .. code-block::
 
@@ -125,6 +126,12 @@ JSONファイル同士を比較する
         choice_name_en:
           left: large2
           right: large
+
+    [attribute_restrictions]
+    changed:
+    - name: lane_no
+      added_restrictions:
+      - '''lane_no'' is not empty'
 
     [inspection_phrases]
     changed:

@@ -636,7 +636,7 @@ class TestFormatAnnotationSpecsDiffAsText:
         actual_yaml = yaml.safe_load(actual.split("[attribute_restrictions]\n", 1)[1])
 
         assert "[attribute_restrictions]" in actual
-        assert actual_yaml["changed"][0]["added_restrictions"] == [{"text": "'truncated' is read-only", "condition": {"_type": "CanInput", "enable": False}}]
+        assert actual_yaml["changed"][0]["added_restrictions"] == ["'truncated' is read-only"]
 
     def test_定型指摘をtextで出力できる(self):
         left_specs = _create_annotation_specs()
