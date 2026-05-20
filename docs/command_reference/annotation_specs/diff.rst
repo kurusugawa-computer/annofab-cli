@@ -33,7 +33,7 @@ JSONファイル同士を比較する
 
 
 最新と過去のアノテーション仕様を比較する
----------------------------------
+------------------------------------------------
 
 .. code-block::
 
@@ -61,11 +61,37 @@ JSONファイル同士を比較する
 
 .. code-block::
 
+    [labels]
+    label_order_changed: true
+    added:
+    - pedestrian
+    removed:
+    - bicycle
+    changed:
+    - label_name_en: car
+      fields:
+      - label_name_ja
+      - annotation_type
+      - color
+      - keybind
+      - attributes
+      - field_values
+      - metadata
+      added_attributes:
+      - lane_no
+      removed_attributes:
+      - truncated
+
     [attributes]
+    added:
+    - lane_no
+    removed:
+    - truncated
     changed:
     - attribute_name_en: type
       fields:
       - choices
+      - choices_order
       added_choices:
       - s
       - e
@@ -111,11 +137,45 @@ JSONファイル同士を比較する
 
 .. code-block::
 
+    [labels]
+    label_order_changed: true
+    changed:
+    - label_name_en: car
+      changes:
+        label_name_ja:
+          left: 車
+          right: 自動車
+        annotation_type:
+          left: bounding_box
+          right: polygon
+        color:
+          left: '#FF0000'
+          right: '#00FF00'
+        keybind:
+          left: ''
+          right: Ctrl+Digit1
+        attributes:
+          left: '["type", "truncated"]'
+          right: '["type", "lane_no"]'
+        field_values:
+          left: '{}'
+          right: '{"score": 1}'
+        metadata:
+          left: '{}'
+          right: '{"updated": true}'
+      added_attributes:
+      - lane_no
+      removed_attributes:
+      - truncated
+
     [attributes]
     changed:
     - attribute_name_en: type
       changes:
         choices:
+          left: '["large2", "medium", "small", "special"]'
+          right: '["large", "special", "s", "e"]'
+        choices_order:
           left: '["large2", "medium", "small", "special"]'
           right: '["large", "special", "s", "e"]'
       added_choices:
@@ -176,7 +236,6 @@ JSON出力のトップレベルは以下の形式です。
             "label_name_ja_changed": true,
             "label_name_en_changed": false,
             "label_name_vi_changed": false,
-            "attributes_changed": true,
             "attributes_order_changed": false,
             "added_attribute_ids": [],
             "removed_attribute_ids": [],
@@ -187,10 +246,40 @@ JSON出力のトップレベルは以下の形式です。
         ]
       },
       "attributes": {
-        "attribute_order_changed": true,
         "added_attribute_ids": [],
         "removed_attribute_ids": [],
-        "changed_attributes": []
+        "changed_attributes": [
+          {
+            "attribute_id": "attr_type",
+            "type_changed": false,
+            "keybind_changed": false,
+            "default_changed": false,
+            "read_only_changed": false,
+            "attribute_name_ja_changed": false,
+            "attribute_name_en_changed": false,
+            "attribute_name_vi_changed": false,
+            "metadata_changed": false,
+            "choices_order_changed": true,
+            "added_choice_ids": ["choice_s"],
+            "removed_choice_ids": ["choice_small"],
+            "changed_choices": []
+          }
+        ]
+      },
+      "attribute_restrictions": {
+        "changed_attribute_restrictions": [
+          {
+            "attribute_id": "attr_lane_no",
+            "added_restrictions": [
+              {
+                "condition": {
+                  "_type": "NotEmpty"
+                }
+              }
+            ],
+            "removed_restrictions": []
+          }
+        ]
       },
       "inspection_phrases": {
         "added_inspection_phrase_ids": ["phrase_too_dark"],
