@@ -26,7 +26,7 @@ Examples
 
 .. code-block::
 
-    $ annofabcli annotation_specs import --project_id prj1 --annotation_specs_json annotation_specs.json
+    $ annofabcli annotation_specs import --project_id prj1 --annotation_specs_json_file annotation_specs.json
 
 
 ``annotation_specs export`` と組み合わせる場合
@@ -36,7 +36,7 @@ Examples
 .. code-block::
 
     $ annofabcli annotation_specs export --project_id src_prj --out annotation_specs.json --format pretty_json
-    $ annofabcli annotation_specs import --project_id dest_prj --annotation_specs_json annotation_specs.json
+    $ annofabcli annotation_specs import --project_id dest_prj --annotation_specs_json_file annotation_specs.json
 
 
 Usage Details

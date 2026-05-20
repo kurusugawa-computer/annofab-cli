@@ -62,19 +62,19 @@ def create_comment_for_import_annotation_specs() -> str:
     return "annofabcli annotation_specs import コマンドでアノテーション仕様をインポートしました。"
 
 
-def read_annotation_specs_json(annotation_specs_json: Path) -> dict[str, Any]:
+def read_annotation_specs_json(annotation_specs_json_file: Path) -> dict[str, Any]:
     """アノテーション仕様JSONを読み込む。
 
     Args:
-        annotation_specs_json: アノテーション仕様JSONのパス
+        annotation_specs_json_file: アノテーション仕様JSONファイルのパス
 
     Returns:
         読み込んだアノテーション仕様
     """
-    with annotation_specs_json.open(encoding="utf-8") as f:
+    with annotation_specs_json_file.open(encoding="utf-8") as f:
         loaded = json.load(f)
     if not isinstance(loaded, dict):
-        raise TypeError("`--annotation_specs_json` にはJSONオブジェクト形式のアノテーション仕様を指定してください。")
+        raise TypeError("`--annotation_specs_json_file` にはJSONオブジェクト形式のアノテーション仕様を指定してください。")
     return loaded
 
 
@@ -243,7 +243,7 @@ class ImportAnnotationSpecs(CommandLine):
 
     def main(self) -> None:
         args = self.args
-        imported_annotation_specs = read_annotation_specs_json(args.annotation_specs_json)
+        imported_annotation_specs = read_annotation_specs_json(args.annotation_specs_json_file)
         obj = ImportAnnotationSpecsMain(self.service, project_id=args.project_id, all_yes=args.yes)
         obj.import_annotation_specs(imported_annotation_specs=imported_annotation_specs, comment=args.comment)
 
@@ -252,10 +252,10 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     argument_parser = ArgumentParser(parser)
     argument_parser.add_project_id()
     parser.add_argument(
-        "--annotation_specs_json",
+        "--annotation_specs_json_file",
         type=Path,
         required=True,
-        help="インポートするアノテーション仕様JSONを指定します。 ``annotation_specs export`` コマンドで出力したJSONを指定してください。",
+        help="インポートするアノテーション仕様JSONファイルを指定します。 ``annotation_specs export`` コマンドで出力したJSONファイルを指定してください。",
     )
     parser.add_argument("--comment", type=str, help="アノテーション仕様の変更内容を説明するコメント。未指定の場合、自動でコメントが生成されます。")
     parser.set_defaults(subcommand_func=main)
