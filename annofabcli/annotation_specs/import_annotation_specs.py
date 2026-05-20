@@ -308,8 +308,8 @@ class ImportAnnotationSpecsMain(CommandLineWithConfirm):
             return self.has_annotation({"label_id": label_id, "attributes": [{"additional_data_definition_id": attribute_id}]})
 
         @functools.cache
-        def is_choice_used(label_id: str, attribute_id: str, choice_id: str) -> bool:
-            return self.has_annotation({"label_id": label_id, "attributes": [{"additional_data_definition_id": attribute_id, "choice": choice_id}]})
+        def is_choice_used(attribute_id: str, choice_id: str) -> bool:
+            return self.has_annotation({"attributes": [{"additional_data_definition_id": attribute_id, "choice": choice_id}]})
 
         protected_changes = create_protected_import_changes(
             diff,
