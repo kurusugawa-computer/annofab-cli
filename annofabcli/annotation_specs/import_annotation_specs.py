@@ -97,13 +97,6 @@ def build_request_body_for_import_annotation_specs(
     return request_body
 
 
-def _append_unique_removed_choice(protected: ProtectedImportChanges, attribute_id: str, choice_id: str) -> None:
-    """削除対象の選択肢を重複なく追加する。"""
-    choice = (attribute_id, choice_id)
-    if choice not in protected.removed_choices:
-        protected.removed_choices.append(choice)
-
-
 def create_protected_import_changes(
     diff: AnnotationSpecsDiff,
     *,
@@ -141,7 +134,9 @@ def create_protected_import_changes(
                 protected.changed_type_attribute_ids.append(changed_attribute.attribute_id)
             for choice_id in changed_attribute.removed_choice_ids:
                 if is_choice_used(changed_attribute.attribute_id, choice_id):
-                    _append_unique_removed_choice(protected, changed_attribute.attribute_id, choice_id)
+                    choice = (changed_attribute.attribute_id, choice_id)
+                    if choice not in protected.removed_choices:
+                        protected.removed_choices.append(choice)
 
     return protected
 
