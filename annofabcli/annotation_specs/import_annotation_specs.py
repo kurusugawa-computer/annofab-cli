@@ -153,17 +153,6 @@ def _append_unique_removed_choice(protected: ProtectedImportChanges, attribute_i
         protected.removed_choices.append(choice)
 
 
-def _get_choice_ids(attribute: dict[str, Any]) -> list[str]:
-    """属性定義から選択肢ID一覧を取得する。"""
-    return [choice["choice_id"] for choice in attribute["choices"]]
-
-
-def _get_removed_choice_ids(current_attribute: dict[str, Any], imported_attribute: dict[str, Any]) -> list[str]:
-    """importで削除される選択肢ID一覧を取得する。"""
-    imported_choice_ids = set(_get_choice_ids(imported_attribute))
-    return [choice_id for choice_id in _get_choice_ids(current_attribute) if choice_id not in imported_choice_ids]
-
-
 def _append_protected_attribute_changes_in_label(
     protected: ProtectedImportChanges,
     *,
@@ -172,15 +161,10 @@ def _append_protected_attribute_changes_in_label(
     current_attribute: dict[str, Any],
     imported_attribute: dict[str, Any],
     is_attribute_used: Callable[[str, str], bool],
-    is_choice_used: Callable[[str, str], bool],
 ) -> None:
     """ラベルに含まれている属性の変更のうち、importを中止すべき変更を追加する。"""
     if current_attribute["type"] != imported_attribute["type"] and is_attribute_used(label_id, attribute_id):
         _append_unique_changed_type_attribute_id(protected, attribute_id)
-
-    for choice_id in _get_removed_choice_ids(current_attribute, imported_attribute):
-        if is_choice_used(attribute_id, choice_id):
-            _append_unique_removed_choice(protected, attribute_id, choice_id)
 
 
 def create_protected_import_changes(
@@ -240,8 +224,13 @@ def create_protected_import_changes(
                     current_attribute=current_attribute,
                     imported_attribute=imported_attribute,
                     is_attribute_used=is_attribute_used,
-                    is_choice_used=is_choice_used,
                 )
+
+    if diff.attributes is not None:
+        for changed_attribute in diff.attributes.changed_attributes:
+            for choice_id in changed_attribute.removed_choice_ids:
+                if is_choice_used(changed_attribute.attribute_id, choice_id):
+                    _append_unique_removed_choice(protected, changed_attribute.attribute_id, choice_id)
 
     return protected
 
