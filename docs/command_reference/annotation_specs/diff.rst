@@ -47,44 +47,7 @@ JSONファイル同士を比較する
 出力結果
 =================================
 
-JSON出力のトップレベルは以下の形式です。
-
-.. code-block::
-    :caption: out.json
-
-    {
-      "labels": {
-        "label_order_changed": true,
-        "added_label_ids": [],
-        "removed_label_ids": [],
-        "changed_labels": [
-          {
-            "label_id": "label_car",
-            "color_changed": true,
-            "keybind_changed": false,
-            "label_name_ja_changed": true,
-            "label_name_en_changed": false,
-            "label_name_vi_changed": false,
-            "attributes_changed": true,
-            "attributes_order_changed": false,
-            "added_attribute_ids": [],
-            "removed_attribute_ids": [],
-            "field_values_changed": false,
-            "metadata_changed": false,
-            "annotation_type_changed": false
-          }
-        ]
-      },
-      "attributes": {
-        "attribute_order_changed": true,
-        "added_attribute_ids": [],
-        "removed_attribute_ids": [],
-        "changed_attributes": []
-      }
-    }
-
-
-* ``text`` : 差分項目のみをYAML形式で表示します。セクション見出しは ``[labels]`` のような形式です。
+* ``text`` : 差分項目のみをYAML形式で表示します。セクション見出しは ``[labels]`` のような形式です。デフォルトの出力形式です。
 * ``detail_text`` : 差分項目と比較元・比較先の値を、 ``left`` / ``right`` を含むYAML形式で表示します。セクション見出しは ``[labels]`` のような形式です。
 * ``json`` : 差分情報をJSONで出力します。
 * ``pretty_json`` : 差分情報を整形JSONで出力します。
@@ -143,6 +106,45 @@ JSON出力のトップレベルは以下の形式です。
         choice_name_en:
           left: large2
           right: large
+
+JSON形式の出力
+---------------------------------
+
+JSON出力のトップレベルは以下の形式です。
+
+.. code-block::
+    :caption: out.json
+
+    {
+      "labels": {
+        "label_order_changed": true,
+        "added_label_ids": [],
+        "removed_label_ids": [],
+        "changed_labels": [
+          {
+            "label_id": "label_car",
+            "color_changed": true,
+            "keybind_changed": false,
+            "label_name_ja_changed": true,
+            "label_name_en_changed": false,
+            "label_name_vi_changed": false,
+            "attributes_changed": true,
+            "attributes_order_changed": false,
+            "added_attribute_ids": [],
+            "removed_attribute_ids": [],
+            "field_values_changed": false,
+            "metadata_changed": false,
+            "annotation_type_changed": false
+          }
+        ]
+      },
+      "attributes": {
+        "attribute_order_changed": true,
+        "added_attribute_ids": [],
+        "removed_attribute_ids": [],
+        "changed_attributes": []
+      }
+    }
 
 
 Usage Details
