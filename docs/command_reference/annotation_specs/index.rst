@@ -33,6 +33,7 @@ Available Commands
    list_attribute
    list_choice
    list_history
+   list_inspection_phrase
    list_label
    list_label_attribute
    list_attribute_restriction
