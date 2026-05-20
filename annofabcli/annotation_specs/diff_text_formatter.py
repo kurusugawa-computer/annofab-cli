@@ -90,8 +90,12 @@ def _get_choice_name_en_by_id(attribute: dict[str, Any], choice_id: str) -> str:
     return get_message_with_lang(choice["name"], "en-US") or choice_id
 
 
-def _format_added_removed_lines(*, level: int, prefix: str, label: str, values: Sequence[str]) -> list[str]:
-    return [f"{_indent(level)}{prefix} {label}: {value}" for value in values]
+def _format_status_line(*, level: int, action: str, label: str, value: str) -> str:
+    return f"{_indent(level)}{action} {label}: {value}"
+
+
+def _format_added_removed_lines(*, level: int, action: str, label: str, values: Sequence[str]) -> list[str]:
+    return [_format_status_line(level=level, action=action, label=label, value=value) for value in values]
 
 
 def _get_label_name_en_list_by_ids(specs: dict[str, Any], label_ids: Sequence[str]) -> list[str]:
@@ -224,7 +228,7 @@ def _format_labels_diff_as_text(
     lines = ["[labels]"]
 
     if labels_diff.label_order_changed:
-        lines.append("~ label_order")
+        lines.append("changed label_order")
         if detail:
             lines.extend(
                 _format_detail_line(
@@ -242,8 +246,8 @@ def _format_labels_diff_as_text(
                 )
             )
 
-    lines.extend(_format_added_removed_lines(level=0, prefix="+", label="label", values=_get_label_name_en_list_by_ids(right_specs, labels_diff.added_label_ids)))
-    lines.extend(_format_added_removed_lines(level=0, prefix="-", label="label", values=_get_label_name_en_list_by_ids(left_specs, labels_diff.removed_label_ids)))
+    lines.extend(_format_added_removed_lines(level=0, action="added", label="label", values=_get_label_name_en_list_by_ids(right_specs, labels_diff.added_label_ids)))
+    lines.extend(_format_added_removed_lines(level=0, action="removed", label="label", values=_get_label_name_en_list_by_ids(left_specs, labels_diff.removed_label_ids)))
 
     if len(labels_diff.changed_labels) == 0:
         return lines
@@ -251,7 +255,7 @@ def _format_labels_diff_as_text(
     left_label_dict = {e["label_id"]: e for e in left_specs["labels"]}
     right_label_dict = {e["label_id"]: e for e in right_specs["labels"]}
     for changed_label in labels_diff.changed_labels:
-        lines.append(f"~ label: {_get_label_name_en_by_id(right_specs, changed_label.label_id)}")
+        lines.append(_format_status_line(level=0, action="changed", label="label", value=_get_label_name_en_by_id(right_specs, changed_label.label_id)))
         if detail:
             lines.extend(
                 _format_label_detail_lines(
@@ -269,7 +273,7 @@ def _format_labels_diff_as_text(
             lines.extend(
                 _format_added_removed_lines(
                     level=1,
-                    prefix="+",
+                    action="added",
                     label="attributes",
                     values=[_get_attribute_name_en_by_id(right_specs, e) for e in changed_label.added_attribute_ids],
                 )
@@ -277,7 +281,7 @@ def _format_labels_diff_as_text(
             lines.extend(
                 _format_added_removed_lines(
                     level=1,
-                    prefix="-",
+                    action="removed",
                     label="attributes",
                     values=[_get_attribute_name_en_by_id(left_specs, e) for e in changed_label.removed_attribute_ids],
                 )
@@ -368,7 +372,7 @@ def _format_label_detail_lines(
     lines.extend(
         _format_added_removed_lines(
             level=1,
-            prefix="+",
+            action="added",
             label="attributes",
             values=_get_attribute_name_en_list_by_ids(right_specs, changed_label.added_attribute_ids),
         )
@@ -376,7 +380,7 @@ def _format_label_detail_lines(
     lines.extend(
         _format_added_removed_lines(
             level=1,
-            prefix="-",
+            action="removed",
             label="attributes",
             values=_get_attribute_name_en_list_by_ids(left_specs, changed_label.removed_attribute_ids),
         )
@@ -414,7 +418,7 @@ def _format_attributes_diff_as_text(
     lines.extend(
         _format_added_removed_lines(
             level=0,
-            prefix="+",
+            action="added",
             label="attribute",
             values=[_get_attribute_name_en_by_id(right_specs, e) for e in attributes_diff.added_attribute_ids],
         )
@@ -422,7 +426,7 @@ def _format_attributes_diff_as_text(
     lines.extend(
         _format_added_removed_lines(
             level=0,
-            prefix="-",
+            action="removed",
             label="attribute",
             values=[_get_attribute_name_en_by_id(left_specs, e) for e in attributes_diff.removed_attribute_ids],
         )
@@ -434,7 +438,14 @@ def _format_attributes_diff_as_text(
     left_attribute_dict = {e["additional_data_definition_id"]: e for e in left_specs["additionals"]}
     right_attribute_dict = {e["additional_data_definition_id"]: e for e in right_specs["additionals"]}
     for changed_attribute in attributes_diff.changed_attributes:
-        lines.append(f"~ attribute: {_get_attribute_name_en_by_id(right_specs, changed_attribute.attribute_id)}")
+        lines.append(
+            _format_status_line(
+                level=0,
+                action="changed",
+                label="attribute",
+                value=_get_attribute_name_en_by_id(right_specs, changed_attribute.attribute_id),
+            )
+        )
         if detail:
             lines.extend(
                 _format_attribute_detail_lines(
@@ -450,7 +461,7 @@ def _format_attributes_diff_as_text(
             lines.extend(
                 _format_added_removed_lines(
                     level=1,
-                    prefix="+",
+                    action="added",
                     label="choices",
                     values=[_get_choice_name_en_by_id(right_attribute_dict[changed_attribute.attribute_id], e) for e in changed_attribute.added_choice_ids],
                 )
@@ -458,13 +469,20 @@ def _format_attributes_diff_as_text(
             lines.extend(
                 _format_added_removed_lines(
                     level=1,
-                    prefix="-",
+                    action="removed",
                     label="choices",
                     values=[_get_choice_name_en_by_id(left_attribute_dict[changed_attribute.attribute_id], e) for e in changed_attribute.removed_choice_ids],
                 )
             )
             for changed_choice in changed_attribute.changed_choices:
-                lines.append(f"  ~ choice: {_get_choice_name_en_by_id(right_attribute_dict[changed_attribute.attribute_id], changed_choice.choice_id)}")
+                lines.append(
+                    _format_status_line(
+                        level=1,
+                        action="changed",
+                        label="choice",
+                        value=_get_choice_name_en_by_id(right_attribute_dict[changed_attribute.attribute_id], changed_choice.choice_id),
+                    )
+                )
                 changed_choice_field_names = _get_changed_field_names_from_choice(changed_choice)
                 if len(changed_choice_field_names) > 0:
                     lines.append(f"    changed: {', '.join(changed_choice_field_names)}")
@@ -570,7 +588,7 @@ def _format_attribute_detail_lines(
     lines.extend(
         _format_added_removed_lines(
             level=1,
-            prefix="+",
+            action="added",
             label="choices",
             values=_get_choice_name_en_list_by_ids(right_attribute, changed_attribute.added_choice_ids),
         )
@@ -578,7 +596,7 @@ def _format_attribute_detail_lines(
     lines.extend(
         _format_added_removed_lines(
             level=1,
-            prefix="-",
+            action="removed",
             label="choices",
             values=_get_choice_name_en_list_by_ids(left_attribute, changed_attribute.removed_choice_ids),
         )
@@ -589,7 +607,14 @@ def _format_attribute_detail_lines(
     left_choice_dict = {e["choice_id"]: e for e in left_attribute["choices"]}
     right_choice_dict = {e["choice_id"]: e for e in right_attribute["choices"]}
     for changed_choice in changed_attribute.changed_choices:
-        lines.append(f"  ~ choice: {_get_choice_name_en_by_id(right_attribute, changed_choice.choice_id)}")
+        lines.append(
+            _format_status_line(
+                level=1,
+                action="changed",
+                label="choice",
+                value=_get_choice_name_en_by_id(right_attribute, changed_choice.choice_id),
+            )
+        )
         left_choice = left_choice_dict[changed_choice.choice_id]
         right_choice = right_choice_dict[changed_choice.choice_id]
         detail_targets = [
@@ -621,7 +646,7 @@ def _format_attribute_detail_lines(
 def _format_attribute_restriction_lines(
     *,
     level: int,
-    prefix: str,
+    action: str,
     specs: dict[str, Any],
     attribute_id: str,
     restrictions: Sequence[AttributeRestrictionDiffItem],
@@ -633,7 +658,7 @@ def _format_attribute_restriction_lines(
     lines = []
     for restriction in restrictions:
         restriction_text = _get_attribute_restriction_text(specs, attribute_id=attribute_id, condition=restriction.condition)
-        lines.append(f"{_indent(level)}{prefix} restriction: {restriction_text}")
+        lines.append(_format_status_line(level=level, action=action, label="restriction", value=restriction_text))
         if detail:
             lines.append(f"{_indent(level + 1)}condition: {_to_json_text(restriction.condition)}")
     return lines
@@ -650,11 +675,18 @@ def _format_attribute_restrictions_diff_as_text(
 
     for changed_attribute_restriction in attribute_restrictions_diff.changed_attribute_restrictions:
         attribute_id = changed_attribute_restriction.attribute_id
-        lines.append(f"~ attribute: {_get_attribute_name_en_by_id_from_specs([right_specs, left_specs], attribute_id)}")
+        lines.append(
+            _format_status_line(
+                level=0,
+                action="changed",
+                label="attribute",
+                value=_get_attribute_name_en_by_id_from_specs([right_specs, left_specs], attribute_id),
+            )
+        )
         lines.extend(
             _format_attribute_restriction_lines(
                 level=1,
-                prefix="+",
+                action="added",
                 specs=right_specs,
                 attribute_id=attribute_id,
                 restrictions=changed_attribute_restriction.added_restrictions,
@@ -664,7 +696,7 @@ def _format_attribute_restrictions_diff_as_text(
         lines.extend(
             _format_attribute_restriction_lines(
                 level=1,
-                prefix="-",
+                action="removed",
                 specs=left_specs,
                 attribute_id=attribute_id,
                 restrictions=changed_attribute_restriction.removed_restrictions,

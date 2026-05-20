@@ -306,9 +306,9 @@ class TestFormatAnnotationSpecsDiffAsText:
         assert "label_id:" not in actual
         assert "attribute_id:" not in actual
         assert "choice_id:" not in actual
-        assert "~ label: car" in actual
-        assert "  + attributes: pose" in actual
-        assert "  - attributes: truncated" in actual
+        assert "changed label: car" in actual
+        assert "  added attributes: pose" in actual
+        assert "  removed attributes: truncated" in actual
 
     def test_detail_textで変更前後の値を出力できる(self):
         left_specs = _create_annotation_specs()
@@ -437,13 +437,13 @@ class TestFormatAnnotationSpecsDiffAsText:
             detail=True,
         )
 
-        assert "~ attribute: occluded" in actual
+        assert "changed attribute: occluded" in actual
         assert 'attributes: ["occluded", "truncated"] -> ["pose", "occluded"]' in actual
-        assert "  + attributes: pose" in actual
-        assert "  - attributes: truncated" in actual
+        assert "  added attributes: pose" in actual
+        assert "  removed attributes: truncated" in actual
         assert 'choices: ["yes", "no"] -> ["unknown", "yes_changed", "no"]' in actual
-        assert "  + choices: unknown" in actual
-        assert "  ~ choice: yes_changed" in actual
+        assert "  added choices: unknown" in actual
+        assert "  changed choice: yes_changed" in actual
 
     def test_detail_textの選択肢差分はchanged_field_namesと同じ順序で出力する(self):
         left_specs = _create_annotation_specs()
@@ -463,7 +463,7 @@ class TestFormatAnnotationSpecsDiffAsText:
         )
 
         expected_lines = [
-            "  ~ choice: yes-updated",
+            "  changed choice: yes-updated",
             '    choice_name_en: "yes" -> "yes-updated"',
             '    choice_name_ja: "はい" -> "はい更新"',
             '    choice_name_vi: "co" -> "co-moi"',
@@ -488,8 +488,8 @@ class TestFormatAnnotationSpecsDiffAsText:
         )
 
         assert "[attribute_restrictions]" in actual
-        assert "~ attribute: occluded" in actual
-        assert "  + restriction: 'occluded' is 'yes'" in actual
+        assert "changed attribute: occluded" in actual
+        assert "  added restriction: 'occluded' is 'yes'" in actual
         assert "'occluded' is 'yes'" in actual
         assert "attr_occluded" not in actual
 
@@ -527,7 +527,7 @@ class TestFormatAnnotationSpecsDiffAsText:
         )
 
         assert "[attribute_restrictions]" in actual
-        assert "  + restriction: 'truncated' is read-only" in actual
+        assert "  added restriction: 'truncated' is read-only" in actual
         assert "'truncated' is read-only" in actual
         assert 'condition: {"_type": "CanInput", "enable": false}' in actual
 
