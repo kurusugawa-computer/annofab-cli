@@ -15,8 +15,10 @@ import annofabapi
 import annofabcli.common.cli
 from annofabcli.annotation_specs.diff_compare import create_annotation_specs_diff
 from annofabcli.annotation_specs.diff_models import AnnotationSpecsDiff
+from annofabcli.annotation_specs.diff_text_formatter import format_annotation_specs_diff_as_text
 from annofabcli.common.cli import ArgumentParser, CommandLine, CommandLineWithConfirm, build_annofabapi_resource_and_login
 from annofabcli.common.facade import AnnofabApiFacade
+from annofabcli.common.utils import output_string
 
 logger = logging.getLogger(__name__)
 
@@ -189,6 +191,22 @@ def validate_import_annotation_specs(
     return False
 
 
+def output_annotation_specs_diff_for_import(current_annotation_specs: dict[str, Any], imported_annotation_specs: dict[str, Any]) -> None:
+    """importで適用されるアノテーション仕様の差分を出力する。
+
+    Args:
+        current_annotation_specs: 現在のアノテーション仕様
+        imported_annotation_specs: インポートするアノテーション仕様
+    """
+    diff = create_annotation_specs_diff(current_annotation_specs, imported_annotation_specs)
+    diff_text = format_annotation_specs_diff_as_text(diff, left_specs=current_annotation_specs, right_specs=imported_annotation_specs, detail=False)
+    if diff_text == "":
+        logger.info("差分はありません。")
+        return
+
+    output_string(diff_text)
+
+
 class ImportAnnotationSpecsMain(CommandLineWithConfirm):
     """アノテーション仕様をimportする本体処理。"""
 
@@ -258,6 +276,8 @@ class ImportAnnotationSpecsMain(CommandLineWithConfirm):
         current_annotation_specs, _ = self.service.api.get_annotation_specs(self.project_id, query_params={"v": "3"})
         if not self.validate_import(current_annotation_specs=current_annotation_specs, imported_annotation_specs=imported_annotation_specs):
             return False
+
+        output_annotation_specs_diff_for_import(current_annotation_specs, imported_annotation_specs)
 
         confirm_message = f"プロジェクト'{self.project_id}'のアノテーション仕様をインポートします。よろしいですか？"
         if not self.confirm_processing(confirm_message):

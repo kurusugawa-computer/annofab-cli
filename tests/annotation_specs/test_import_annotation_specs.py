@@ -5,6 +5,8 @@ from collections.abc import Callable
 from typing import Any
 from unittest.mock import MagicMock
 
+import pytest
+
 from annofabcli.annotation_specs.diff_compare import create_annotation_specs_diff
 from annofabcli.annotation_specs.import_annotation_specs import (
     ImportAnnotationSpecsMain,
@@ -295,6 +297,34 @@ class TestValidateImportAnnotationSpecs:
 
 
 class TestImportAnnotationSpecsMain:
+    def test_インポート前に差分を出力する(self, capsys: pytest.CaptureFixture[str]) -> None:
+        service = MagicMock()
+        current_specs = _create_annotation_specs()
+        imported_specs = copy.deepcopy(current_specs)
+        imported_specs["labels"][0]["color"] = {"red": 0, "green": 255, "blue": 0}
+        service.api.get_annotation_specs.return_value = (current_specs, None)
+        obj = ImportAnnotationSpecsMain(service, project_id="prj1", all_yes=True)
+
+        actual = obj.import_annotation_specs(imported_annotation_specs=imported_specs)
+
+        assert actual
+        captured = capsys.readouterr()
+        assert "[labels]" in captured.out
+        assert "label_car" in captured.out
+        service.api.put_annotation_specs.assert_called_once()
+
+    def test_差分テキストが空でもインポートする(self) -> None:
+        service = MagicMock()
+        current_specs = _create_annotation_specs()
+        imported_specs = copy.deepcopy(current_specs)
+        service.api.get_annotation_specs.return_value = (current_specs, None)
+        obj = ImportAnnotationSpecsMain(service, project_id="prj1", all_yes=True)
+
+        actual = obj.import_annotation_specs(imported_annotation_specs=imported_specs)
+
+        assert actual
+        service.api.put_annotation_specs.assert_called_once()
+
     def test_既存アノテーションに影響する変更があればインポートしない(self) -> None:
         service = MagicMock()
         current_specs = _create_annotation_specs()
