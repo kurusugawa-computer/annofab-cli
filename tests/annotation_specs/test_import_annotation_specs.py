@@ -309,6 +309,7 @@ class TestImportAnnotationSpecsMain:
 
         assert actual
         captured = capsys.readouterr()
+        assert "インポートによるアノテーション仕様の差分:" in captured.out
         assert "[labels]" in captured.out
         assert "label_car" in captured.out
         service.api.put_annotation_specs.assert_called_once()

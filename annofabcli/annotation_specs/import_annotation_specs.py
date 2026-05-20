@@ -204,7 +204,7 @@ def output_annotation_specs_diff_for_import(current_annotation_specs: dict[str, 
         logger.info("差分はありません。")
         return
 
-    output_string(diff_text)
+    output_string(f"インポートによるアノテーション仕様の差分:\n{diff_text}")
 
 
 class ImportAnnotationSpecsMain(CommandLineWithConfirm):
