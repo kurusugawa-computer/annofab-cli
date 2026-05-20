@@ -12,6 +12,7 @@ from annofabcli.annotation_specs.import_annotation_specs import (
     ImportAnnotationSpecsMain,
     ProtectedImportChanges,
     build_request_body_for_import_annotation_specs,
+    create_comment_for_import_annotation_specs,
     create_protected_import_changes,
     validate_import_annotation_specs,
 )
@@ -178,6 +179,42 @@ class TestBuildRequestBodyForImportAnnotationSpecs:
 
         assert "annotation_specs import" in actual["comment"]
 
+    def test_comment未指定かつ差分テキストがあればデフォルトコメントに差分を設定する(self) -> None:
+        current_specs = _create_annotation_specs()
+        imported_specs = copy.deepcopy(current_specs)
+
+        actual = build_request_body_for_import_annotation_specs(
+            current_specs,
+            imported_specs,
+            comment=None,
+            diff_text="[labels]\nchanged:\n- label_car",
+        )
+
+        assert "annotation_specs import" in actual["comment"]
+        assert "インポートによるアノテーション仕様の差分:" in actual["comment"]
+        assert "[labels]" in actual["comment"]
+
+    def test_comment指定時は差分テキストを設定しない(self) -> None:
+        current_specs = _create_annotation_specs()
+        imported_specs = copy.deepcopy(current_specs)
+
+        actual = build_request_body_for_import_annotation_specs(
+            current_specs,
+            imported_specs,
+            comment="ユーザー指定コメント",
+            diff_text="[labels]\nchanged:\n- label_car",
+        )
+
+        assert actual["comment"] == "ユーザー指定コメント"
+
+
+class TestCreateCommentForImportAnnotationSpecs:
+    def test_差分テキストが空ならデフォルトコメントだけを生成する(self) -> None:
+        actual = create_comment_for_import_annotation_specs("")
+
+        assert "annotation_specs import" in actual
+        assert "インポートによるアノテーション仕様の差分:" not in actual
+
 
 class TestValidateImportAnnotationSpecs:
     def test_中止対象差分がなければ許可する(self) -> None:
@@ -313,6 +350,9 @@ class TestImportAnnotationSpecsMain:
         assert "[labels]" in captured.out
         assert "label_car" in captured.out
         service.api.put_annotation_specs.assert_called_once()
+        request_body = service.api.put_annotation_specs.call_args.kwargs["request_body"]
+        assert "インポートによるアノテーション仕様の差分:" in request_body["comment"]
+        assert "[labels]" in request_body["comment"]
 
     def test_差分テキストが空でもインポートする(self) -> None:
         service = MagicMock()
@@ -325,6 +365,8 @@ class TestImportAnnotationSpecsMain:
 
         assert actual
         service.api.put_annotation_specs.assert_called_once()
+        request_body = service.api.put_annotation_specs.call_args.kwargs["request_body"]
+        assert "インポートによるアノテーション仕様の差分:" not in request_body["comment"]
 
     def test_既存アノテーションに影響する変更があればインポートしない(self) -> None:
         service = MagicMock()

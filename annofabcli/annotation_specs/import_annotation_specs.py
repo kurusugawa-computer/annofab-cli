@@ -22,6 +22,9 @@ from annofabcli.common.utils import output_string
 
 logger = logging.getLogger(__name__)
 
+IMPORT_DIFF_TEXT_HEADER = "インポートによるアノテーション仕様の差分:"
+"""アノテーション仕様import時に表示・コメントに記録する差分見出し。"""
+
 
 @dataclass(frozen=True)
 class ProtectedImportChanges:
@@ -55,9 +58,13 @@ class ProtectedImportChanges:
         )
 
 
-def create_comment_for_import_annotation_specs() -> str:
+def create_comment_for_import_annotation_specs(diff_text: str | None = None) -> str:
     """import時のデフォルトコメントを生成する。"""
-    return "annofabcli annotation_specs import コマンドでアノテーション仕様をインポートしました。"
+    comment = "annofabcli annotation_specs import コマンドでアノテーション仕様をインポートしました。"
+    if diff_text is None or diff_text == "":
+        return comment
+
+    return f"{comment}\n\n{IMPORT_DIFF_TEXT_HEADER}\n{diff_text}"
 
 
 def read_annotation_specs_json(annotation_specs_json_file: Path) -> dict[str, Any]:
@@ -81,6 +88,7 @@ def build_request_body_for_import_annotation_specs(
     imported_annotation_specs: dict[str, Any],
     *,
     comment: str | None,
+    diff_text: str | None = None,
 ) -> dict[str, Any]:
     """アノテーション仕様import用の request body を生成する。
 
@@ -88,13 +96,14 @@ def build_request_body_for_import_annotation_specs(
         current_annotation_specs: 現在のアノテーション仕様
         imported_annotation_specs: インポートするアノテーション仕様
         comment: 変更コメント
+        diff_text: importで適用されるアノテーション仕様の差分テキスト
 
     Returns:
         Annofab API に渡す request body
     """
     request_body = copy.deepcopy(imported_annotation_specs)
     request_body.pop("project_id", None)
-    request_body["comment"] = comment if comment is not None else create_comment_for_import_annotation_specs()
+    request_body["comment"] = comment if comment is not None else create_comment_for_import_annotation_specs(diff_text)
     request_body["last_updated_datetime"] = current_annotation_specs["updated_datetime"]
     return request_body
 
@@ -191,20 +200,31 @@ def validate_import_annotation_specs(
     return False
 
 
-def output_annotation_specs_diff_for_import(current_annotation_specs: dict[str, Any], imported_annotation_specs: dict[str, Any]) -> None:
-    """importで適用されるアノテーション仕様の差分を出力する。
+def create_annotation_specs_diff_text_for_import(current_annotation_specs: dict[str, Any], imported_annotation_specs: dict[str, Any]) -> str:
+    """importで適用されるアノテーション仕様の差分テキストを生成する。
 
     Args:
         current_annotation_specs: 現在のアノテーション仕様
         imported_annotation_specs: インポートするアノテーション仕様
+
+    Returns:
+        アノテーション仕様の差分テキスト。差分がない場合は空文字。
     """
     diff = create_annotation_specs_diff(current_annotation_specs, imported_annotation_specs)
-    diff_text = format_annotation_specs_diff_as_text(diff, left_specs=current_annotation_specs, right_specs=imported_annotation_specs, detail=False)
+    return format_annotation_specs_diff_as_text(diff, left_specs=current_annotation_specs, right_specs=imported_annotation_specs, detail=False)
+
+
+def output_annotation_specs_diff_for_import(diff_text: str) -> None:
+    """importで適用されるアノテーション仕様の差分を出力する。
+
+    Args:
+        diff_text: importで適用されるアノテーション仕様の差分テキスト
+    """
     if diff_text == "":
         logger.info("差分はありません。")
         return
 
-    output_string(f"インポートによるアノテーション仕様の差分:\n{diff_text}")
+    output_string(f"{IMPORT_DIFF_TEXT_HEADER}\n{diff_text}")
 
 
 class ImportAnnotationSpecsMain(CommandLineWithConfirm):
@@ -277,13 +297,14 @@ class ImportAnnotationSpecsMain(CommandLineWithConfirm):
         if not self.validate_import(current_annotation_specs=current_annotation_specs, imported_annotation_specs=imported_annotation_specs):
             return False
 
-        output_annotation_specs_diff_for_import(current_annotation_specs, imported_annotation_specs)
+        diff_text = create_annotation_specs_diff_text_for_import(current_annotation_specs, imported_annotation_specs)
+        output_annotation_specs_diff_for_import(diff_text)
 
         confirm_message = f"プロジェクト'{self.project_id}'のアノテーション仕様をインポートします。よろしいですか？"
         if not self.confirm_processing(confirm_message):
             return False
 
-        request_body = build_request_body_for_import_annotation_specs(current_annotation_specs, imported_annotation_specs, comment=comment)
+        request_body = build_request_body_for_import_annotation_specs(current_annotation_specs, imported_annotation_specs, comment=comment, diff_text=diff_text)
         self.service.api.put_annotation_specs(self.project_id, query_params={"v": "3"}, request_body=request_body)
         logger.info(f"プロジェクト'{self.project_id}'のアノテーション仕様をインポートしました。")
         return True
