@@ -90,6 +90,60 @@ JSON出力のトップレベルは以下の形式です。
 * ``pretty_json`` : 差分情報を整形JSONで出力します。
 * ``--target`` : 出力対象の差分を指定します。指定しない場合は ``labels`` 、 ``attributes`` 、 ``attribute_restrictions`` を出力します。
 
+``text`` 形式の出力例
+---------------------------------
+
+``text`` 形式では、差分の概要をYAML形式で表示します。
+
+.. code-block::
+
+    [attributes]
+    changed:
+    - attribute_name_en: type
+      fields:
+      - choices
+      added_choices:
+      - s
+      - e
+      removed_choices:
+      - medium
+      - small
+      changed_choices:
+      - choice_name_en: large
+        fields:
+        - choice_name_en
+
+    [attribute_restrictions]
+    changed:
+    - attribute_name_en: lane_no
+      added_restrictions:
+      - '''lane_no'' is not empty'
+
+``detail_text`` 形式の出力例
+---------------------------------
+
+``detail_text`` 形式では、変更前後の値を ``left`` / ``right`` で表示します。配列やオブジェクトは文字列として表示します。
+
+.. code-block::
+
+    [attributes]
+    changed:
+    - name: type
+      choices:
+        left: '["large2", "medium", "small", "special"]'
+        right: '["large", "special", "s", "e"]'
+      added_choices:
+      - s
+      - e
+      removed_choices:
+      - medium
+      - small
+      changed_choices:
+      - name: large
+        choice_name_en:
+          left: large2
+          right: large
+
 
 Usage Details
 =================================
