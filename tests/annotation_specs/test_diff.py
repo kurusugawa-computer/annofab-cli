@@ -503,7 +503,7 @@ class TestFormatAnnotationSpecsDiffAsText:
 
         assert "[attribute_restrictions]" in actual
         assert actual_yaml["changed"][0]["attribute_name_en"] == "occluded"
-        assert actual_yaml["changed"][0]["added_restrictions"] == [{"text": "'occluded' is 'yes'"}]
+        assert actual_yaml["changed"][0]["added_restrictions"] == ["'occluded' is 'yes'"]
         assert "attr_occluded" not in actual
 
     def test_変更があるセクションだけを出力する(self):
