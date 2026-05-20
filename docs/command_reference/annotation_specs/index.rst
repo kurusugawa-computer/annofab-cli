@@ -30,6 +30,7 @@ Available Commands
    get_with_attribute_id_replaced_label_name
    get_with_choice_id_replaced_label_name
    get_with_label_id_replaced_label_name
+   import
    list_attribute
    list_choice
    list_history
