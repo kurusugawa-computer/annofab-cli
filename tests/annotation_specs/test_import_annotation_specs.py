@@ -208,17 +208,26 @@ class TestValidateImportAnnotationSpecs:
 
         _assert_import_allowed(current_specs, imported_specs)
 
-    def test_使われている属性を削除する場合は中止する(self) -> None:
+    def test_属性定義の削除だけでは中止しない(self) -> None:
         current_specs = _create_annotation_specs()
         imported_specs = copy.deepcopy(current_specs)
         imported_specs["additionals"] = [attribute for attribute in imported_specs["additionals"] if attribute["additional_data_definition_id"] != "attr_truncated"]
+
+        _assert_import_allowed(current_specs, imported_specs, used_label_attribute_pairs={("label_car", "attr_truncated")})
+
+    def test_属性定義とラベルに含まれる属性を削除する場合は中止する(self) -> None:
+        current_specs = _create_annotation_specs()
+        imported_specs = copy.deepcopy(current_specs)
+        imported_specs["additionals"] = [attribute for attribute in imported_specs["additionals"] if attribute["additional_data_definition_id"] != "attr_truncated"]
+        imported_specs["labels"][0]["additional_data_definitions"] = ["attr_occluded"]
 
         _assert_import_blocked(current_specs, imported_specs, used_label_attribute_pairs={("label_car", "attr_truncated")})
 
-    def test_使われていない属性を削除する場合は許可する(self) -> None:
+    def test_使われていない属性定義とラベルに含まれる属性を削除する場合は許可する(self) -> None:
         current_specs = _create_annotation_specs()
         imported_specs = copy.deepcopy(current_specs)
         imported_specs["additionals"] = [attribute for attribute in imported_specs["additionals"] if attribute["additional_data_definition_id"] != "attr_truncated"]
+        imported_specs["labels"][0]["additional_data_definitions"] = ["attr_occluded"]
 
         _assert_import_allowed(current_specs, imported_specs)
 

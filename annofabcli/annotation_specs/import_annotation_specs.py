@@ -133,11 +133,6 @@ def _append_used_removed_label_attribute_relations(
             _append_unique_removed_label_attribute_relation(protected, label_id, attribute_id)
 
 
-def _iter_label_attribute_pairs(label_ids_by_attribute_id: dict[str, list[str]], attribute_id: str) -> Iterable[tuple[str, str]]:
-    """属性IDから、その属性を含むラベル属性ペアを生成する。"""
-    return ((label_id, attribute_id) for label_id in label_ids_by_attribute_id.get(attribute_id, []))
-
-
 def _is_attribute_used_in_any_label(
     label_ids_by_attribute_id: dict[str, list[str]],
     attribute_id: str,
@@ -194,13 +189,6 @@ def create_protected_import_changes(
             )
 
     if diff.attributes is not None:
-        for attribute_id in diff.attributes.removed_attribute_ids:
-            _append_used_removed_label_attribute_relations(
-                protected,
-                _iter_label_attribute_pairs(label_ids_by_attribute_id, attribute_id),
-                is_attribute_used=is_attribute_used,
-            )
-
         for changed_attribute in diff.attributes.changed_attributes:
             if changed_attribute.type_changed and _is_attribute_used_in_any_label(
                 label_ids_by_attribute_id,
