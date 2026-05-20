@@ -138,6 +138,7 @@ def _create_protected_changes(
     return create_protected_import_changes(
         diff,
         current_specs,
+        imported_specs,
         is_label_used=_to_used_checker(used_label_ids),
         is_attribute_used=lambda label_id, attribute_id: (label_id, attribute_id) in used_label_attribute_pairs,
         is_choice_used=lambda label_id, attribute_id, choice_id: (label_id, attribute_id, choice_id) in used_choices,
