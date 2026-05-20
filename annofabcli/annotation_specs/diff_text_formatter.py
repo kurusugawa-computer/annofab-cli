@@ -658,8 +658,8 @@ def _create_metadata_section(
     detail: bool,
 ) -> dict[str, JsonValue]:
     section: dict[str, JsonValue] = {}
-    left_metadata = left_specs.get("metadata", {})
-    right_metadata = right_specs.get("metadata", {})
+    left_metadata = left_specs["metadata"]
+    right_metadata = right_specs["metadata"]
     if detail:
         _append_if_not_empty(
             section,

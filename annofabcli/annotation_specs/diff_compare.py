@@ -426,8 +426,8 @@ def compare_metadata(left_specs: dict[str, Any], right_specs: dict[str, Any]) ->
     Returns:
         アノテーション仕様直下の metadata の差分。
     """
-    left_metadata = left_specs.get("metadata", {})
-    right_metadata = right_specs.get("metadata", {})
+    left_metadata = left_specs["metadata"]
+    right_metadata = right_specs["metadata"]
     left_metadata_keys = list(left_metadata.keys())
     right_metadata_keys = list(right_metadata.keys())
     left_metadata_key_set = set(left_metadata_keys)
