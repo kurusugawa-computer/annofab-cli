@@ -48,6 +48,7 @@ def _create_attribute(attribute_id: str, *, ja: str, en: str, vi: str, default: 
         "default": default,
         "choices": choices,
         "metadata": {},
+        "option": {},
     }
 
 
@@ -229,6 +230,7 @@ class TestCreateAnnotationSpecsDiff:
         assert actual.attributes is None
         assert actual.inspection_phrases is None
         assert actual.metadata is None
+        assert actual.option is None
 
     def test_属性制約の差分を生成できる(self):
         left_specs = _create_annotation_specs()
@@ -346,6 +348,29 @@ class TestCreateAnnotationSpecsDiff:
             "added_metadata_keys": ["added_key"],
             "removed_metadata_keys": ["removed_key"],
             "changed_metadata_keys": ["changed_key"],
+        }
+
+    def test_optionの差分をキー単位で生成できる(self):
+        left_specs = _create_annotation_specs()
+        right_specs = copy.deepcopy(left_specs)
+        left_specs["option"] = {
+            "removed_key": "削除",
+            "changed_key": {"version": 1},
+            "unchanged_key": True,
+        }
+        right_specs["option"] = {
+            "changed_key": {"version": 2},
+            "unchanged_key": True,
+            "added_key": ["追加"],
+        }
+
+        actual = create_annotation_specs_diff(left_specs, right_specs, targets={"option"})
+        actual_dict = actual.model_dump(exclude_none=True)
+
+        assert actual_dict["option"] == {
+            "added_option_keys": ["added_key"],
+            "removed_option_keys": ["removed_key"],
+            "changed_option_keys": ["changed_key"],
         }
 
 
@@ -756,6 +781,48 @@ class TestFormatAnnotationSpecsDiffAsText:
             "changed": [{"key": "changed_key", "left": '{"version": 1}', "right": '{"version": 2}'}],
         }
 
+    def test_optionをtextで出力できる(self):
+        left_specs = _create_annotation_specs()
+        right_specs = copy.deepcopy(left_specs)
+        left_specs["option"] = {"removed_key": "削除", "changed_key": 1}
+        right_specs["option"] = {"changed_key": 2, "added_key": "追加"}
+
+        diff = create_annotation_specs_diff(left_specs, right_specs)
+        actual = format_annotation_specs_diff_as_text(
+            diff,
+            left_specs=left_specs,
+            right_specs=right_specs,
+            detail=False,
+        )
+        actual_yaml = yaml.safe_load(actual.split("[option]\n", 1)[1])
+
+        assert actual_yaml == {
+            "added": ["added_key"],
+            "removed": ["removed_key"],
+            "changed": ["changed_key"],
+        }
+
+    def test_optionをdetail_textで出力できる(self):
+        left_specs = _create_annotation_specs()
+        right_specs = copy.deepcopy(left_specs)
+        left_specs["option"] = {"removed_key": "削除", "changed_key": {"version": 1}}
+        right_specs["option"] = {"changed_key": {"version": 2}, "added_key": ["追加"]}
+
+        diff = create_annotation_specs_diff(left_specs, right_specs)
+        actual = format_annotation_specs_diff_as_text(
+            diff,
+            left_specs=left_specs,
+            right_specs=right_specs,
+            detail=True,
+        )
+        actual_yaml = yaml.safe_load(actual.split("[option]\n", 1)[1])
+
+        assert actual_yaml == {
+            "added": ["added_key"],
+            "removed": ["removed_key"],
+            "changed": [{"key": "changed_key", "left": '{"version": 1}', "right": '{"version": 2}'}],
+        }
+
 
 @pytest.mark.access_webapi
 class TestCommandLine:
@@ -940,6 +1007,45 @@ class TestCommandLine:
             "added_metadata_keys": ["added_key"],
             "removed_metadata_keys": ["removed_key"],
             "changed_metadata_keys": ["changed_key"],
+        }
+
+    def test_json形式でoptionのみ出力できる(self, tmp_path):
+        left_specs_path = tmp_path / "left.json"
+        right_specs_path = tmp_path / "right.json"
+        output_path = tmp_path / "out.json"
+
+        left_specs = _create_annotation_specs()
+        right_specs = copy.deepcopy(left_specs)
+        left_specs["option"] = {"removed_key": "削除", "changed_key": 1}
+        right_specs["option"] = {"changed_key": 2, "added_key": "追加"}
+
+        left_specs_path.write_text(json.dumps(left_specs, ensure_ascii=False), encoding="utf-8")
+        right_specs_path.write_text(json.dumps(right_specs, ensure_ascii=False), encoding="utf-8")
+
+        main(
+            [
+                "annotation_specs",
+                "diff",
+                "--left_annotation_specs_json",
+                str(left_specs_path),
+                "--right_annotation_specs_json",
+                str(right_specs_path),
+                "--target",
+                "option",
+                "--format",
+                "json",
+                "--output",
+                str(output_path),
+            ]
+        )
+
+        actual = json.loads(output_path.read_text(encoding="utf-8"))
+
+        assert set(actual.keys()) == {"option"}
+        assert actual["option"] == {
+            "added_option_keys": ["added_key"],
+            "removed_option_keys": ["removed_key"],
+            "changed_option_keys": ["changed_key"],
         }
 
 

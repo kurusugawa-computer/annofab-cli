@@ -22,6 +22,7 @@ from annofabcli.annotation_specs.diff_models import (
     JsonValue,
     LabelsDiff,
     MetadataDiff,
+    OptionDiff,
 )
 from annofabcli.common.annofab.annotation_specs import keybind_to_text
 
@@ -655,6 +656,43 @@ def _create_metadata_section(
     return section
 
 
+def _create_option_changed_detail_item(
+    key: str,
+    *,
+    left_option: dict[str, Any],
+    right_option: dict[str, Any],
+) -> dict[str, JsonValue]:
+    return {
+        "key": key,
+        "left": _to_display_text(left_option[key]),
+        "right": _to_display_text(right_option[key]),
+    }
+
+
+def _create_option_section(
+    option_diff: OptionDiff,
+    *,
+    left_specs: dict[str, Any],
+    right_specs: dict[str, Any],
+    detail: bool,
+) -> dict[str, JsonValue]:
+    section: dict[str, JsonValue] = {}
+    left_option = left_specs.get("option", {})
+    right_option = right_specs.get("option", {})
+    _append_if_not_empty(section, "added", option_diff.added_option_keys)
+    _append_if_not_empty(section, "removed", option_diff.removed_option_keys)
+    if detail:
+        _append_if_not_empty(
+            section,
+            "changed",
+            [_create_option_changed_detail_item(key, left_option=left_option, right_option=right_option) for key in option_diff.changed_option_keys],
+        )
+        return section
+
+    _append_if_not_empty(section, "changed", option_diff.changed_option_keys)
+    return section
+
+
 def format_annotation_specs_diff_as_text(
     diff: AnnotationSpecsDiff,
     *,
@@ -697,4 +735,12 @@ def format_annotation_specs_diff_as_text(
             detail=detail,
         )
         sections.append(f"[metadata]\n{_dump_yaml(metadata_section)}")
+    if diff.option is not None and diff.option.has_changes():
+        option_section = _create_option_section(
+            diff.option,
+            left_specs=left_specs,
+            right_specs=right_specs,
+            detail=detail,
+        )
+        sections.append(f"[option]\n{_dump_yaml(option_section)}")
     return "\n\n".join(sections)

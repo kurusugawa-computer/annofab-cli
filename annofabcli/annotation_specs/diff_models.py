@@ -328,6 +328,29 @@ class MetadataDiff(BaseModel):
         )
 
 
+class OptionDiff(BaseModel):
+    """アノテーション仕様直下の option の差分。"""
+
+    model_config = ConfigDict(frozen=True)
+
+    added_option_keys: list[str] = Field(default_factory=list)
+    """追加された option キー一覧"""
+    removed_option_keys: list[str] = Field(default_factory=list)
+    """削除された option キー一覧"""
+    changed_option_keys: list[str] = Field(default_factory=list)
+    """値が変更された既存 option キー一覧"""
+
+    def has_changes(self) -> bool:
+        """変更有無を返す。"""
+        return any(
+            [
+                len(self.added_option_keys) > 0,
+                len(self.removed_option_keys) > 0,
+                len(self.changed_option_keys) > 0,
+            ]
+        )
+
+
 class AnnotationSpecsDiff(BaseModel):
     """アノテーション仕様の差分。"""
 
@@ -343,6 +366,8 @@ class AnnotationSpecsDiff(BaseModel):
     """定型指摘差分"""
     metadata: MetadataDiff | None = None
     """アノテーション仕様直下の metadata 差分"""
+    option: OptionDiff | None = None
+    """アノテーション仕様直下の option 差分"""
 
     def has_changes(self) -> bool:
         """変更有無を返す。"""
@@ -353,5 +378,6 @@ class AnnotationSpecsDiff(BaseModel):
                 self.attribute_restrictions is not None and self.attribute_restrictions.has_changes(),
                 self.inspection_phrases is not None and self.inspection_phrases.has_changes(),
                 self.metadata is not None and self.metadata.has_changes(),
+                self.option is not None and self.option.has_changes(),
             ]
         )

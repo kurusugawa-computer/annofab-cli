@@ -1,5 +1,5 @@
 from __future__ import annotations
-
+from annofabcli.common.cli import ArgumentParser, CommandLine, build_annofabapi_resource_and_login
 import argparse
 import json
 import logging
@@ -17,7 +17,7 @@ from annofabcli.common.utils import output_string, print_json
 
 logger = logging.getLogger(__name__)
 
-TargetName = Literal["labels", "attributes", "attribute_restrictions", "inspection_phrases", "metadata"]
+TargetName = Literal["labels", "attributes", "attribute_restrictions", "inspection_phrases", "metadata", "option"]
 """アノテーション仕様差分の出力対象。"""
 
 
@@ -113,7 +113,7 @@ class AnnotationSpecsDiffCommand(CommandLine):
         left_specs = self.get_annotation_specs_from_source(prefix="left")
         right_specs = self.get_annotation_specs_from_source(prefix="right")
         targets: set[TargetName] = (
-            set(cast(list[TargetName], self.args.target)) if self.args.target is not None else {"labels", "attributes", "attribute_restrictions", "inspection_phrases", "metadata"}
+            set(cast(list[TargetName], self.args.target)) if self.args.target is not None else {"labels", "attributes", "attribute_restrictions", "inspection_phrases", "metadata", "option"}
         )
         diff = create_annotation_specs_diff(left_specs, right_specs, targets=targets)
         output_format = AnnotationSpecsDiffOutputFormat(self.args.format)
@@ -144,7 +144,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--target",
         nargs="+",
-        choices=["labels", "attributes", "attribute_restrictions", "inspection_phrases", "metadata"],
+        choices=["labels", "attributes", "attribute_restrictions", "inspection_phrases", "metadata", "option"],
         help="出力対象の差分を指定します。指定しない場合はすべて出力します。",
     )
     parser.add_argument(

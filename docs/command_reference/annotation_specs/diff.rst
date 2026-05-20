@@ -127,6 +127,14 @@ JSONファイル同士を比較する
     changed:
     - changed_key
 
+    [option]
+    added:
+    - added_key
+    removed:
+    - removed_key
+    changed:
+    - changed_key
+
 ``detail_text`` 形式の出力例
 ---------------------------------
 
@@ -134,6 +142,7 @@ JSONファイル同士を比較する
 ラベルの順序変更は ``text`` 形式と同じく、 ``label_order_changed: true`` と表示します。
 ``attribute_restrictions`` は ``text`` 形式と同じく、制約条件を文字列で表示します。
 ``metadata`` の追加・削除はキー名のみ表示します。
+``option`` の追加・削除はキー名のみ表示します。
 
 .. code-block::
 
@@ -206,6 +215,16 @@ JSONファイル同士を比較する
           right: 遮蔽されています
 
     [metadata]
+    added:
+    - added_key
+    removed:
+    - removed_key
+    changed:
+    - key: changed_key
+      left: '{"version": 1}'
+      right: '{"version": 2}'
+
+    [option]
     added:
     - added_key
     removed:
@@ -297,6 +316,11 @@ JSON出力のトップレベルは以下の形式です。
         "added_metadata_keys": ["added_key"],
         "removed_metadata_keys": ["removed_key"],
         "changed_metadata_keys": ["changed_key"]
+      },
+      "option": {
+        "added_option_keys": ["added_key"],
+        "removed_option_keys": ["removed_key"],
+        "changed_option_keys": ["changed_key"]
       }
     }
 

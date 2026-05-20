@@ -21,6 +21,7 @@ from annofabcli.annotation_specs.diff_models import (
     JsonValue,
     LabelsDiff,
     MetadataDiff,
+    OptionDiff,
 )
 
 
@@ -441,11 +442,36 @@ def compare_metadata(left_specs: dict[str, Any], right_specs: dict[str, Any]) ->
     )
 
 
+def compare_option(left_specs: dict[str, Any], right_specs: dict[str, Any]) -> OptionDiff:
+    """アノテーション仕様直下の option の差分を比較する。
+
+    Args:
+        left_specs: 比較元のアノテーション仕様。
+        right_specs: 比較先のアノテーション仕様。
+
+    Returns:
+        アノテーション仕様直下の option の差分。
+    """
+    left_option = left_specs.get("option", {})
+    right_option = right_specs.get("option", {})
+    left_option_keys = list(left_option.keys())
+    right_option_keys = list(right_option.keys())
+    left_option_key_set = set(left_option_keys)
+
+    changed_option_keys = [key for key in right_option_keys if key in left_option_key_set and left_option[key] != right_option[key]]
+
+    return OptionDiff(
+        added_option_keys=_get_added_ids(left_option_keys, right_option_keys),
+        removed_option_keys=_get_removed_ids(left_option_keys, right_option_keys),
+        changed_option_keys=changed_option_keys,
+    )
+
+
 def create_annotation_specs_diff(
     left_specs: dict[str, Any],
     right_specs: dict[str, Any],
     *,
-    targets: Iterable[Literal["labels", "attributes", "attribute_restrictions", "inspection_phrases", "metadata"]] | None = None,
+    targets: Iterable[Literal["labels", "attributes", "attribute_restrictions", "inspection_phrases", "metadata", "option"]] | None = None,
 ) -> AnnotationSpecsDiff:
     """アノテーション仕様の差分を生成する。
 
@@ -457,7 +483,7 @@ def create_annotation_specs_diff(
     Returns:
         アノテーション仕様全体の差分。
     """
-    target_set = set(targets) if targets is not None else {"labels", "attributes", "attribute_restrictions", "inspection_phrases", "metadata"}
+    target_set = set(targets) if targets is not None else {"labels", "attributes", "attribute_restrictions", "inspection_phrases", "metadata", "option"}
 
     return AnnotationSpecsDiff(
         labels=compare_labels(left_specs, right_specs) if "labels" in target_set else None,
@@ -465,4 +491,5 @@ def create_annotation_specs_diff(
         attribute_restrictions=compare_attribute_restrictions(left_specs, right_specs) if "attribute_restrictions" in target_set else None,
         inspection_phrases=compare_inspection_phrases(left_specs, right_specs) if "inspection_phrases" in target_set else None,
         metadata=compare_metadata(left_specs, right_specs) if "metadata" in target_set else None,
+        option=compare_option(left_specs, right_specs) if "option" in target_set else None,
     )
