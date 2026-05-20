@@ -97,28 +97,21 @@ def build_request_body_for_import_annotation_specs(
     return request_body
 
 
-def create_attribute_dict(annotation_specs: dict[str, Any]) -> dict[str, dict[str, Any]]:
-    """属性IDから属性定義を引く辞書を生成する。
+def collect_label_ids_by_attribute_id(annotation_specs: dict[str, Any]) -> dict[str, list[str]]:
+    """属性IDごとに、その属性を含むラベルID一覧を収集する。
 
     Args:
         annotation_specs: アノテーション仕様
 
     Returns:
-        属性IDをキー、属性定義を値に持つ辞書。
+        属性IDをキー、ラベルID一覧を値に持つ辞書。
     """
-    return {attribute["additional_data_definition_id"]: attribute for attribute in annotation_specs["additionals"]}
-
-
-def create_label_dict(annotation_specs: dict[str, Any]) -> dict[str, dict[str, Any]]:
-    """ラベルIDからラベル定義を引く辞書を生成する。
-
-    Args:
-        annotation_specs: アノテーション仕様
-
-    Returns:
-        ラベルIDをキー、ラベル定義を値に持つ辞書。
-    """
-    return {label["label_id"]: label for label in annotation_specs["labels"]}
+    label_ids_by_attribute_id: dict[str, list[str]] = {}
+    for label in annotation_specs["labels"]:
+        label_id = label["label_id"]
+        for attribute_id in label["additional_data_definitions"]:
+            label_ids_by_attribute_id.setdefault(attribute_id, []).append(label_id)
+    return label_ids_by_attribute_id
 
 
 def _append_unique_removed_label_attribute_relation(protected: ProtectedImportChanges, label_id: str, attribute_id: str) -> None:
@@ -153,24 +146,21 @@ def _append_unique_removed_choice(protected: ProtectedImportChanges, attribute_i
         protected.removed_choices.append(choice)
 
 
-def _append_protected_attribute_changes_in_label(
+def _append_changed_type_attribute_if_used(
     protected: ProtectedImportChanges,
-    *,
-    label_id: str,
+    label_ids_by_attribute_id: dict[str, list[str]],
     attribute_id: str,
-    current_attribute: dict[str, Any],
-    imported_attribute: dict[str, Any],
+    *,
     is_attribute_used: Callable[[str, str], bool],
 ) -> None:
-    """ラベルに含まれている属性の変更のうち、importを中止すべき変更を追加する。"""
-    if current_attribute["type"] != imported_attribute["type"] and is_attribute_used(label_id, attribute_id):
+    """属性がいずれかのラベルで使われていれば、種類変更対象として追加する。"""
+    if any(is_attribute_used(label_id, attribute_id) for label_id in label_ids_by_attribute_id.get(attribute_id, [])):
         _append_unique_changed_type_attribute_id(protected, attribute_id)
 
 
 def create_protected_import_changes(
     diff: AnnotationSpecsDiff,
     current_annotation_specs: dict[str, Any],
-    imported_annotation_specs: dict[str, Any],
     *,
     is_label_used: Callable[[str], bool],
     is_attribute_used: Callable[[str, str], bool],
@@ -181,7 +171,6 @@ def create_protected_import_changes(
     Args:
         diff: 現在仕様とimport仕様の差分
         current_annotation_specs: 現在のアノテーション仕様
-        imported_annotation_specs: インポートするアノテーション仕様
         is_label_used: label_idを受け取り、利用中ならTrueを返す関数
         is_attribute_used: label_idとattribute_idを受け取り、利用中ならTrueを返す関数
         is_choice_used: attribute_idとchoice_idを受け取り、利用中ならTrueを返す関数
@@ -190,9 +179,7 @@ def create_protected_import_changes(
         importを中止すべき変更一覧
     """
     protected = ProtectedImportChanges()
-    current_attribute_dict = create_attribute_dict(current_annotation_specs)
-    imported_attribute_dict = create_attribute_dict(imported_annotation_specs)
-    imported_label_dict = create_label_dict(imported_annotation_specs)
+    label_ids_by_attribute_id = collect_label_ids_by_attribute_id(current_annotation_specs)
 
     if diff.labels is not None:
         protected.removed_label_ids.extend(label_id for label_id in diff.labels.removed_label_ids if is_label_used(label_id))
@@ -205,29 +192,15 @@ def create_protected_import_changes(
                 is_attribute_used=is_attribute_used,
             )
 
-        for current_label in current_annotation_specs["labels"]:
-            label_id = current_label["label_id"]
-            imported_label = imported_label_dict.get(label_id)
-            if imported_label is None:
-                continue
-
-            imported_attribute_ids = set(imported_label["additional_data_definitions"])
-            for attribute_id in current_label["additional_data_definitions"]:
-                current_attribute = current_attribute_dict.get(attribute_id)
-                imported_attribute = imported_attribute_dict.get(attribute_id)
-                if current_attribute is None or imported_attribute is None or attribute_id not in imported_attribute_ids:
-                    continue
-                _append_protected_attribute_changes_in_label(
-                    protected,
-                    label_id=label_id,
-                    attribute_id=attribute_id,
-                    current_attribute=current_attribute,
-                    imported_attribute=imported_attribute,
-                    is_attribute_used=is_attribute_used,
-                )
-
     if diff.attributes is not None:
         for changed_attribute in diff.attributes.changed_attributes:
+            if changed_attribute.type_changed:
+                _append_changed_type_attribute_if_used(
+                    protected,
+                    label_ids_by_attribute_id,
+                    changed_attribute.attribute_id,
+                    is_attribute_used=is_attribute_used,
+                )
             for choice_id in changed_attribute.removed_choice_ids:
                 if is_choice_used(changed_attribute.attribute_id, choice_id):
                     _append_unique_removed_choice(protected, changed_attribute.attribute_id, choice_id)
@@ -303,7 +276,6 @@ class ImportAnnotationSpecsMain(CommandLineWithConfirm):
         protected_changes = create_protected_import_changes(
             diff,
             current_annotation_specs,
-            imported_annotation_specs,
             is_label_used=is_label_used,
             is_attribute_used=is_attribute_used,
             is_choice_used=is_choice_used,
