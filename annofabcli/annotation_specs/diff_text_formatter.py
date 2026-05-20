@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from collections.abc import Sequence
 from typing import Any
 
@@ -28,6 +29,12 @@ def _to_color_code(color: RgbColor) -> str:
 
 def _dump_yaml(value: JsonValue) -> str:
     return yaml.safe_dump(value, allow_unicode=True, sort_keys=False, default_flow_style=False).strip()
+
+
+def _to_display_text(value: JsonValue) -> str:
+    if isinstance(value, str):
+        return value
+    return json.dumps(value, ensure_ascii=False, sort_keys=True)
 
 
 def _get_label_name_en_by_id(specs: dict[str, Any], label_id: str) -> str:
@@ -163,7 +170,7 @@ def _put_detail_line(
     right_value: JsonValue,
 ) -> None:
     if changed:
-        target[name] = {"left": left_value, "right": right_value}
+        target[name] = {"left": _to_display_text(left_value), "right": _to_display_text(right_value)}
 
 
 def _put_keybind_detail_line(

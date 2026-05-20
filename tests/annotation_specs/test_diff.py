@@ -448,10 +448,10 @@ class TestFormatAnnotationSpecsDiffAsText:
         attributes_yaml = yaml.safe_load(actual.split("[attributes]\n", 1)[1])
 
         assert attributes_yaml["changed"][0]["name"] == "occluded"
-        assert labels_yaml["changed"][0]["attributes"] == {"left": ["occluded", "truncated"], "right": ["pose", "occluded"]}
+        assert labels_yaml["changed"][0]["attributes"] == {"left": '["occluded", "truncated"]', "right": '["pose", "occluded"]'}
         assert labels_yaml["changed"][0]["added_attributes"] == ["pose"]
         assert labels_yaml["changed"][0]["removed_attributes"] == ["truncated"]
-        assert attributes_yaml["changed"][0]["choices"] == {"left": ["yes", "no"], "right": ["unknown", "yes_changed", "no"]}
+        assert attributes_yaml["changed"][0]["choices"] == {"left": '["yes", "no"]', "right": '["unknown", "yes_changed", "no"]'}
         assert attributes_yaml["changed"][0]["added_choices"] == ["unknown"]
         assert attributes_yaml["changed"][0]["changed_choices"][0]["name"] == "yes_changed"
 
