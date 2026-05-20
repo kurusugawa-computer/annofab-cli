@@ -257,6 +257,54 @@ class AttributeRestrictionsDiff(BaseModel):
         return len(self.changed_attribute_restrictions) > 0
 
 
+class ChangedInspectionPhrase(BaseModel):
+    """変更された定型指摘の差分。"""
+
+    model_config = ConfigDict(frozen=True)
+
+    inspection_phrase_id: str
+    """定型指摘ID"""
+    inspection_phrase_name_ja_changed: bool = False
+    """日本語名が変更されたか"""
+    inspection_phrase_name_en_changed: bool = False
+    """英語名が変更されたか"""
+    inspection_phrase_name_vi_changed: bool = False
+    """ベトナム語名が変更されたか"""
+
+    def has_changes(self) -> bool:
+        """変更有無を返す。"""
+        return any(
+            [
+                self.inspection_phrase_name_ja_changed,
+                self.inspection_phrase_name_en_changed,
+                self.inspection_phrase_name_vi_changed,
+            ]
+        )
+
+
+class InspectionPhrasesDiff(BaseModel):
+    """定型指摘一覧の差分。"""
+
+    model_config = ConfigDict(frozen=True)
+
+    added_inspection_phrase_ids: list[str] = Field(default_factory=list)
+    """追加された定型指摘ID一覧"""
+    removed_inspection_phrase_ids: list[str] = Field(default_factory=list)
+    """削除された定型指摘ID一覧"""
+    changed_inspection_phrases: list[ChangedInspectionPhrase] = Field(default_factory=list)
+    """変更された既存定型指摘の差分一覧"""
+
+    def has_changes(self) -> bool:
+        """変更有無を返す。"""
+        return any(
+            [
+                len(self.added_inspection_phrase_ids) > 0,
+                len(self.removed_inspection_phrase_ids) > 0,
+                len(self.changed_inspection_phrases) > 0,
+            ]
+        )
+
+
 class AnnotationSpecsDiff(BaseModel):
     """アノテーション仕様の差分。"""
 
@@ -268,6 +316,8 @@ class AnnotationSpecsDiff(BaseModel):
     """属性差分"""
     attribute_restrictions: AttributeRestrictionsDiff | None = None
     """属性制約差分"""
+    inspection_phrases: InspectionPhrasesDiff | None = None
+    """定型指摘差分"""
 
     def has_changes(self) -> bool:
         """変更有無を返す。"""
@@ -276,5 +326,6 @@ class AnnotationSpecsDiff(BaseModel):
                 self.labels is not None and self.labels.has_changes(),
                 self.attributes is not None and self.attributes.has_changes(),
                 self.attribute_restrictions is not None and self.attribute_restrictions.has_changes(),
+                self.inspection_phrases is not None and self.inspection_phrases.has_changes(),
             ]
         )

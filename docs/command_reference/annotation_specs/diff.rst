@@ -83,6 +83,16 @@ JSONファイル同士を比較する
       added_restrictions:
       - '''lane_no'' is not empty'
 
+    [inspection_phrases]
+    added:
+    - phrase_too_dark
+    removed:
+    - phrase_blur
+    changed:
+    - inspection_phrase_id: phrase_occluded
+      fields:
+      - inspection_phrase_name_ja
+
 ``detail_text`` 形式の出力例
 ---------------------------------
 
@@ -107,6 +117,13 @@ JSONファイル同士を比較する
         choice_name_en:
           left: large2
           right: large
+
+    [inspection_phrases]
+    changed:
+    - inspection_phrase_id: phrase_occluded
+      inspection_phrase_name_ja:
+        left: 隠れています
+        right: 遮蔽されています
 
 JSON形式の出力
 ---------------------------------
@@ -144,6 +161,18 @@ JSON出力のトップレベルは以下の形式です。
         "added_attribute_ids": [],
         "removed_attribute_ids": [],
         "changed_attributes": []
+      },
+      "inspection_phrases": {
+        "added_inspection_phrase_ids": ["phrase_too_dark"],
+        "removed_inspection_phrase_ids": ["phrase_blur"],
+        "changed_inspection_phrases": [
+          {
+            "inspection_phrase_id": "phrase_occluded",
+            "inspection_phrase_name_ja_changed": true,
+            "inspection_phrase_name_en_changed": false,
+            "inspection_phrase_name_vi_changed": false
+          }
+        ]
       }
     }
 

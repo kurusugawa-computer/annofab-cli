@@ -16,7 +16,9 @@ from annofabcli.annotation_specs.diff_models import (
     AttributesDiff,
     ChangedAttribute,
     ChangedChoice,
+    ChangedInspectionPhrase,
     ChangedLabel,
+    InspectionPhrasesDiff,
     JsonValue,
     LabelsDiff,
 )
@@ -150,6 +152,17 @@ def _get_changed_field_names_from_attribute(diff: ChangedAttribute) -> list[str]
         field_names.append("choices_order")
     if diff.metadata_changed:
         field_names.append("metadata")
+    return field_names
+
+
+def _get_changed_field_names_from_inspection_phrase(diff: ChangedInspectionPhrase) -> list[str]:
+    field_names = []
+    if diff.inspection_phrase_name_en_changed:
+        field_names.append("inspection_phrase_name_en")
+    if diff.inspection_phrase_name_ja_changed:
+        field_names.append("inspection_phrase_name_ja")
+    if diff.inspection_phrase_name_vi_changed:
+        field_names.append("inspection_phrase_name_vi")
     return field_names
 
 
@@ -554,6 +567,63 @@ def _create_attribute_restrictions_section(
     return section
 
 
+def _create_inspection_phrase_text_item(changed_inspection_phrase: ChangedInspectionPhrase) -> dict[str, JsonValue]:
+    return {
+        "inspection_phrase_id": changed_inspection_phrase.inspection_phrase_id,
+        "fields": _get_changed_field_names_from_inspection_phrase(changed_inspection_phrase),
+    }
+
+
+def _create_inspection_phrase_detail_item(
+    changed_inspection_phrase: ChangedInspectionPhrase,
+    *,
+    left_inspection_phrase: dict[str, Any],
+    right_inspection_phrase: dict[str, Any],
+) -> dict[str, JsonValue]:
+    item: dict[str, JsonValue] = {"inspection_phrase_id": changed_inspection_phrase.inspection_phrase_id}
+    detail_targets: list[tuple[str, STR_LANG, bool]] = [
+        ("inspection_phrase_name_en", "en-US", changed_inspection_phrase.inspection_phrase_name_en_changed),
+        ("inspection_phrase_name_ja", "ja-JP", changed_inspection_phrase.inspection_phrase_name_ja_changed),
+        ("inspection_phrase_name_vi", "vi-VN", changed_inspection_phrase.inspection_phrase_name_vi_changed),
+    ]
+    for name, lang, changed in detail_targets:
+        _put_detail_line(
+            item,
+            name=name,
+            changed=changed,
+            left_value=get_message_with_lang(left_inspection_phrase["text"], lang),
+            right_value=get_message_with_lang(right_inspection_phrase["text"], lang),
+        )
+    return item
+
+
+def _create_inspection_phrases_section(
+    inspection_phrases_diff: InspectionPhrasesDiff,
+    *,
+    left_specs: dict[str, Any],
+    right_specs: dict[str, Any],
+    detail: bool,
+) -> dict[str, JsonValue]:
+    section: dict[str, JsonValue] = {}
+    _append_if_not_empty(section, "added", inspection_phrases_diff.added_inspection_phrase_ids)
+    _append_if_not_empty(section, "removed", inspection_phrases_diff.removed_inspection_phrase_ids)
+    if len(inspection_phrases_diff.changed_inspection_phrases) > 0:
+        if detail:
+            left_inspection_phrase_dict = {e["id"]: e for e in left_specs["inspection_phrases"]}
+            right_inspection_phrase_dict = {e["id"]: e for e in right_specs["inspection_phrases"]}
+            section["changed"] = [
+                _create_inspection_phrase_detail_item(
+                    changed_inspection_phrase,
+                    left_inspection_phrase=left_inspection_phrase_dict[changed_inspection_phrase.inspection_phrase_id],
+                    right_inspection_phrase=right_inspection_phrase_dict[changed_inspection_phrase.inspection_phrase_id],
+                )
+                for changed_inspection_phrase in inspection_phrases_diff.changed_inspection_phrases
+            ]
+        else:
+            section["changed"] = [_create_inspection_phrase_text_item(changed_inspection_phrase) for changed_inspection_phrase in inspection_phrases_diff.changed_inspection_phrases]
+    return section
+
+
 def format_annotation_specs_diff_as_text(
     diff: AnnotationSpecsDiff,
     *,
@@ -580,4 +650,12 @@ def format_annotation_specs_diff_as_text(
             detail=detail,
         )
         sections.append(f"[attribute_restrictions]\n{_dump_yaml(attribute_restrictions_section)}")
+    if diff.inspection_phrases is not None and diff.inspection_phrases.has_changes():
+        inspection_phrases_section = _create_inspection_phrases_section(
+            diff.inspection_phrases,
+            left_specs=left_specs,
+            right_specs=right_specs,
+            detail=detail,
+        )
+        sections.append(f"[inspection_phrases]\n{_dump_yaml(inspection_phrases_section)}")
     return "\n\n".join(sections)

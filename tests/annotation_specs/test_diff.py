@@ -78,6 +78,21 @@ def _create_restriction(attribute_id: str, condition: dict) -> dict:
     }
 
 
+def _create_inspection_phrase(phrase_id: str, *, ja: str, en: str, vi: str, description: str = "") -> dict:
+    return {
+        "id": phrase_id,
+        "text": {
+            "messages": [
+                {"lang": "ja-JP", "message": ja},
+                {"lang": "en-US", "message": en},
+                {"lang": "vi-VN", "message": vi},
+            ],
+            "default_lang": "ja-JP",
+        },
+        "description": description,
+    }
+
+
 def _create_annotation_specs() -> dict:
     return {
         "format_version": 3,
@@ -113,6 +128,10 @@ def _create_annotation_specs() -> dict:
             ),
         ],
         "restrictions": [],
+        "inspection_phrases": [
+            _create_inspection_phrase("phrase_blur", ja="ぼやけています", en="blurred", vi="mo"),
+            _create_inspection_phrase("phrase_occluded", ja="隠れています", en="occluded", vi="bi che"),
+        ],
     }
 
 
@@ -207,6 +226,7 @@ class TestCreateAnnotationSpecsDiff:
 
         assert actual.labels is not None
         assert actual.attributes is None
+        assert actual.inspection_phrases is None
 
     def test_属性制約の差分を生成できる(self):
         left_specs = _create_annotation_specs()
@@ -252,6 +272,56 @@ class TestCreateAnnotationSpecsDiff:
                 },
             ]
         }
+
+    def test_定型指摘の追加削除をID単位で差分にできる(self):
+        left_specs = _create_annotation_specs()
+        right_specs = copy.deepcopy(left_specs)
+        right_specs["inspection_phrases"] = [
+            _create_inspection_phrase("phrase_occluded", ja="隠れています", en="occluded", vi="bi che"),
+            _create_inspection_phrase("phrase_too_dark", ja="暗すぎます", en="too dark", vi="qua toi"),
+        ]
+
+        actual = create_annotation_specs_diff(left_specs, right_specs)
+        actual_dict = actual.model_dump(exclude_none=True)
+
+        assert actual_dict["inspection_phrases"] == {
+            "added_inspection_phrase_ids": ["phrase_too_dark"],
+            "removed_inspection_phrase_ids": ["phrase_blur"],
+            "changed_inspection_phrases": [],
+        }
+
+    def test_定型指摘の名前変更だけを差分にできる(self):
+        left_specs = _create_annotation_specs()
+        right_specs = copy.deepcopy(left_specs)
+        right_specs["inspection_phrases"][0]["text"]["messages"][0]["message"] = "ぼやけています2"
+        right_specs["inspection_phrases"][0]["text"]["messages"][1]["message"] = "blurred2"
+        right_specs["inspection_phrases"][0]["text"]["messages"][2]["message"] = "mo2"
+        right_specs["inspection_phrases"][1]["description"] = "説明は差分対象外"
+
+        actual = create_annotation_specs_diff(left_specs, right_specs, targets={"inspection_phrases"})
+        actual_dict = actual.model_dump(exclude_none=True)
+
+        assert actual_dict["inspection_phrases"] == {
+            "added_inspection_phrase_ids": [],
+            "removed_inspection_phrase_ids": [],
+            "changed_inspection_phrases": [
+                {
+                    "inspection_phrase_id": "phrase_blur",
+                    "inspection_phrase_name_ja_changed": True,
+                    "inspection_phrase_name_en_changed": True,
+                    "inspection_phrase_name_vi_changed": True,
+                }
+            ],
+        }
+
+    def test_定型指摘の順序変更は差分にしない(self):
+        left_specs = _create_annotation_specs()
+        right_specs = copy.deepcopy(left_specs)
+        right_specs["inspection_phrases"] = list(reversed(right_specs["inspection_phrases"]))
+
+        actual = create_annotation_specs_diff(left_specs, right_specs, targets={"inspection_phrases"})
+
+        assert actual.has_changes() is False
 
 
 class TestFormatAnnotationSpecsDiffAsText:
@@ -543,6 +613,54 @@ class TestFormatAnnotationSpecsDiffAsText:
         assert "[attribute_restrictions]" in actual
         assert actual_yaml["changed"][0]["added_restrictions"] == [{"text": "'truncated' is read-only", "condition": {"_type": "CanInput", "enable": False}}]
 
+    def test_定型指摘をtextで出力できる(self):
+        left_specs = _create_annotation_specs()
+        right_specs = copy.deepcopy(left_specs)
+        right_specs["inspection_phrases"] = [
+            _create_inspection_phrase("phrase_occluded", ja="隠れています", en="occluded", vi="bi che"),
+            _create_inspection_phrase("phrase_too_dark", ja="暗すぎます", en="too dark", vi="qua toi"),
+        ]
+
+        diff = create_annotation_specs_diff(left_specs, right_specs)
+        actual = format_annotation_specs_diff_as_text(
+            diff,
+            left_specs=left_specs,
+            right_specs=right_specs,
+            detail=False,
+        )
+        actual_yaml = yaml.safe_load(actual.split("[inspection_phrases]\n", 1)[1])
+
+        assert "[inspection_phrases]" in actual
+        assert actual_yaml == {
+            "added": ["phrase_too_dark"],
+            "removed": ["phrase_blur"],
+        }
+
+    def test_定型指摘の名前変更をdetail_textで出力できる(self):
+        left_specs = _create_annotation_specs()
+        right_specs = copy.deepcopy(left_specs)
+        right_specs["inspection_phrases"][0]["text"]["messages"][0]["message"] = "ぼやけています2"
+        right_specs["inspection_phrases"][0]["text"]["messages"][1]["message"] = "blurred2"
+        right_specs["inspection_phrases"][0]["text"]["messages"][2]["message"] = "mo2"
+
+        diff = create_annotation_specs_diff(left_specs, right_specs)
+        actual = format_annotation_specs_diff_as_text(
+            diff,
+            left_specs=left_specs,
+            right_specs=right_specs,
+            detail=True,
+        )
+        actual_yaml = yaml.safe_load(actual.split("[inspection_phrases]\n", 1)[1])
+
+        assert actual_yaml["changed"] == [
+            {
+                "inspection_phrase_id": "phrase_blur",
+                "inspection_phrase_name_en": {"left": "blurred", "right": "blurred2"},
+                "inspection_phrase_name_ja": {"left": "ぼやけています", "right": "ぼやけています2"},
+                "inspection_phrase_name_vi": {"left": "mo", "right": "mo2"},
+            }
+        ]
+
 
 @pytest.mark.access_webapi
 class TestCommandLine:
@@ -648,6 +766,47 @@ class TestCommandLine:
 
         assert "[attributes]" in actual
         assert actual_yaml["changed"][0]["default"] == {"left": "choice_yes", "right": "choice_no"}
+
+    def test_json形式でinspection_phrasesのみ出力できる(self, tmp_path):
+        left_specs_path = tmp_path / "left.json"
+        right_specs_path = tmp_path / "right.json"
+        output_path = tmp_path / "out.json"
+
+        left_specs = _create_annotation_specs()
+        right_specs = copy.deepcopy(left_specs)
+        right_specs["inspection_phrases"] = [
+            _create_inspection_phrase("phrase_occluded", ja="隠れています", en="occluded", vi="bi che"),
+            _create_inspection_phrase("phrase_too_dark", ja="暗すぎます", en="too dark", vi="qua toi"),
+        ]
+
+        left_specs_path.write_text(json.dumps(left_specs, ensure_ascii=False), encoding="utf-8")
+        right_specs_path.write_text(json.dumps(right_specs, ensure_ascii=False), encoding="utf-8")
+
+        main(
+            [
+                "annotation_specs",
+                "diff",
+                "--left_annotation_specs_json",
+                str(left_specs_path),
+                "--right_annotation_specs_json",
+                str(right_specs_path),
+                "--target",
+                "inspection_phrases",
+                "--format",
+                "json",
+                "--output",
+                str(output_path),
+            ]
+        )
+
+        actual = json.loads(output_path.read_text(encoding="utf-8"))
+
+        assert set(actual.keys()) == {"inspection_phrases"}
+        assert actual["inspection_phrases"] == {
+            "added_inspection_phrase_ids": ["phrase_too_dark"],
+            "removed_inspection_phrase_ids": ["phrase_blur"],
+            "changed_inspection_phrases": [],
+        }
 
 
 class TestAnnotationSpecsDiffCommand:

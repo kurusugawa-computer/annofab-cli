@@ -15,7 +15,9 @@ from annofabcli.annotation_specs.diff_models import (
     ChangedAttribute,
     ChangedAttributeRestriction,
     ChangedChoice,
+    ChangedInspectionPhrase,
     ChangedLabel,
+    InspectionPhrasesDiff,
     JsonValue,
     LabelsDiff,
 )
@@ -373,11 +375,51 @@ def compare_attribute_restrictions(left_specs: dict[str, Any], right_specs: dict
     return AttributeRestrictionsDiff(changed_attribute_restrictions=changed_attribute_restrictions)
 
 
+def compare_inspection_phrases(left_specs: dict[str, Any], right_specs: dict[str, Any]) -> InspectionPhrasesDiff:
+    """定型指摘一覧の差分を比較する。
+
+    定型指摘の順序は意味を持たないため、IDの追加/削除と同一IDの名前変更だけを差分として扱う。
+
+    Args:
+        left_specs: 比較元のアノテーション仕様。
+        right_specs: 比較先のアノテーション仕様。
+
+    Returns:
+        定型指摘一覧の差分。
+    """
+    left_inspection_phrase_ids = [e["id"] for e in left_specs["inspection_phrases"]]
+    right_inspection_phrase_ids = [e["id"] for e in right_specs["inspection_phrases"]]
+    left_inspection_phrase_dict = {e["id"]: e for e in left_specs["inspection_phrases"]}
+    right_inspection_phrase_dict = {e["id"]: e for e in right_specs["inspection_phrases"]}
+
+    changed_inspection_phrases = []
+    for inspection_phrase_id in right_inspection_phrase_ids:
+        if inspection_phrase_id not in left_inspection_phrase_dict:
+            continue
+
+        left_inspection_phrase = left_inspection_phrase_dict[inspection_phrase_id]
+        right_inspection_phrase = right_inspection_phrase_dict[inspection_phrase_id]
+        changed_inspection_phrase = ChangedInspectionPhrase(
+            inspection_phrase_id=inspection_phrase_id,
+            inspection_phrase_name_ja_changed=get_message_with_lang(left_inspection_phrase["text"], "ja-JP") != get_message_with_lang(right_inspection_phrase["text"], "ja-JP"),
+            inspection_phrase_name_en_changed=get_message_with_lang(left_inspection_phrase["text"], "en-US") != get_message_with_lang(right_inspection_phrase["text"], "en-US"),
+            inspection_phrase_name_vi_changed=get_message_with_lang(left_inspection_phrase["text"], "vi-VN") != get_message_with_lang(right_inspection_phrase["text"], "vi-VN"),
+        )
+        if changed_inspection_phrase.has_changes():
+            changed_inspection_phrases.append(changed_inspection_phrase)
+
+    return InspectionPhrasesDiff(
+        added_inspection_phrase_ids=_get_added_ids(left_inspection_phrase_ids, right_inspection_phrase_ids),
+        removed_inspection_phrase_ids=_get_removed_ids(left_inspection_phrase_ids, right_inspection_phrase_ids),
+        changed_inspection_phrases=changed_inspection_phrases,
+    )
+
+
 def create_annotation_specs_diff(
     left_specs: dict[str, Any],
     right_specs: dict[str, Any],
     *,
-    targets: Iterable[Literal["labels", "attributes", "attribute_restrictions"]] | None = None,
+    targets: Iterable[Literal["labels", "attributes", "attribute_restrictions", "inspection_phrases"]] | None = None,
 ) -> AnnotationSpecsDiff:
     """アノテーション仕様の差分を生成する。
 
@@ -389,10 +431,11 @@ def create_annotation_specs_diff(
     Returns:
         アノテーション仕様全体の差分。
     """
-    target_set = set(targets) if targets is not None else {"labels", "attributes", "attribute_restrictions"}
+    target_set = set(targets) if targets is not None else {"labels", "attributes", "attribute_restrictions", "inspection_phrases"}
 
     return AnnotationSpecsDiff(
         labels=compare_labels(left_specs, right_specs) if "labels" in target_set else None,
         attributes=compare_attributes(left_specs, right_specs) if "attributes" in target_set else None,
         attribute_restrictions=compare_attribute_restrictions(left_specs, right_specs) if "attribute_restrictions" in target_set else None,
+        inspection_phrases=compare_inspection_phrases(left_specs, right_specs) if "inspection_phrases" in target_set else None,
     )
