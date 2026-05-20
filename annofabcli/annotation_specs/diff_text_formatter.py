@@ -611,18 +611,6 @@ def _create_inspection_phrases_section(
     return section
 
 
-def _create_metadata_key_detail_item(
-    key: str,
-    *,
-    value_key: str,
-    metadata: dict[str, Any],
-) -> dict[str, JsonValue]:
-    return {
-        "key": key,
-        value_key: _to_display_text(metadata[key]),
-    }
-
-
 def _create_metadata_changed_detail_item(
     key: str,
     *,
@@ -646,17 +634,9 @@ def _create_metadata_section(
     section: dict[str, JsonValue] = {}
     left_metadata = left_specs["metadata"]
     right_metadata = right_specs["metadata"]
+    _append_if_not_empty(section, "added", metadata_diff.added_metadata_keys)
+    _append_if_not_empty(section, "removed", metadata_diff.removed_metadata_keys)
     if detail:
-        _append_if_not_empty(
-            section,
-            "added",
-            [_create_metadata_key_detail_item(key, value_key="right", metadata=right_metadata) for key in metadata_diff.added_metadata_keys],
-        )
-        _append_if_not_empty(
-            section,
-            "removed",
-            [_create_metadata_key_detail_item(key, value_key="left", metadata=left_metadata) for key in metadata_diff.removed_metadata_keys],
-        )
         _append_if_not_empty(
             section,
             "changed",
@@ -664,8 +644,6 @@ def _create_metadata_section(
         )
         return section
 
-    _append_if_not_empty(section, "added", metadata_diff.added_metadata_keys)
-    _append_if_not_empty(section, "removed", metadata_diff.removed_metadata_keys)
     _append_if_not_empty(section, "changed", metadata_diff.changed_metadata_keys)
     return section
 

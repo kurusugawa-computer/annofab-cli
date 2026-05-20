@@ -104,8 +104,9 @@ JSONファイル同士を比較する
 ``detail_text`` 形式の出力例
 ---------------------------------
 
-``detail_text`` 形式では、変更前後の値を ``left`` / ``right`` で表示します。配列やオブジェクトは文字列として表示します。
+``detail_text`` 形式では、変更された値を ``left`` / ``right`` で表示します。配列やオブジェクトは文字列として表示します。
 ``attribute_restrictions`` は ``text`` 形式と同じく、制約条件を文字列で表示します。
+``metadata`` の追加・削除はキー名のみ表示します。
 
 .. code-block::
 
@@ -141,6 +142,10 @@ JSONファイル同士を比較する
         right: 遮蔽されています
 
     [metadata]
+    added:
+    - added_key
+    removed:
+    - removed_key
     changed:
     - key: changed_key
       left: '{"version": 1}'

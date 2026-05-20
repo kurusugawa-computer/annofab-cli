@@ -723,8 +723,8 @@ class TestFormatAnnotationSpecsDiffAsText:
         actual_yaml = yaml.safe_load(actual.split("[metadata]\n", 1)[1])
 
         assert actual_yaml == {
-            "added": [{"key": "added_key", "right": '["追加"]'}],
-            "removed": [{"key": "removed_key", "left": "削除"}],
+            "added": ["added_key"],
+            "removed": ["removed_key"],
             "changed": [{"key": "changed_key", "left": '{"version": 1}', "right": '{"version": 2}'}],
         }
 
