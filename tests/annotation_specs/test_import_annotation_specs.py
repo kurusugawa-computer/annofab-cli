@@ -92,7 +92,7 @@ def _assert_import_allowed(
     *,
     used_label_ids: set[str] | None = None,
     used_label_attribute_pairs: set[tuple[str, str]] | None = None,
-    used_choices: set[tuple[str, str, str]] | None = None,
+    used_choices: set[tuple[str, str]] | None = None,
 ) -> None:
     protected_changes = _create_protected_changes(
         current_specs,
@@ -110,7 +110,7 @@ def _assert_import_blocked(
     *,
     used_label_ids: set[str] | None = None,
     used_label_attribute_pairs: set[tuple[str, str]] | None = None,
-    used_choices: set[tuple[str, str, str]] | None = None,
+    used_choices: set[tuple[str, str]] | None = None,
 ) -> None:
     protected_changes = _create_protected_changes(
         current_specs,
@@ -129,7 +129,7 @@ def _create_protected_changes(
     *,
     used_label_ids: set[str] | None = None,
     used_label_attribute_pairs: set[tuple[str, str]] | None = None,
-    used_choices: set[tuple[str, str, str]] | None = None,
+    used_choices: set[tuple[str, str]] | None = None,
 ) -> ProtectedImportChanges:
     used_label_ids = used_label_ids if used_label_ids is not None else set()
     used_label_attribute_pairs = used_label_attribute_pairs if used_label_attribute_pairs is not None else set()
@@ -141,7 +141,7 @@ def _create_protected_changes(
         imported_specs,
         is_label_used=_to_used_checker(used_label_ids),
         is_attribute_used=lambda label_id, attribute_id: (label_id, attribute_id) in used_label_attribute_pairs,
-        is_choice_used=lambda label_id, attribute_id, choice_id: (label_id, attribute_id, choice_id) in used_choices,
+        is_choice_used=lambda attribute_id, choice_id: (attribute_id, choice_id) in used_choices,
     )
 
 
@@ -272,7 +272,7 @@ class TestValidateImportAnnotationSpecs:
         imported_specs = copy.deepcopy(current_specs)
         imported_specs["additionals"][0]["choices"] = [choice for choice in imported_specs["additionals"][0]["choices"] if choice["choice_id"] != "choice_yes"]
 
-        _assert_import_blocked(current_specs, imported_specs, used_choices={("label_car", "attr_occluded", "choice_yes")})
+        _assert_import_blocked(current_specs, imported_specs, used_choices={("attr_occluded", "choice_yes")})
 
     def test_使われていない選択肢を削除する場合は許可する(self) -> None:
         current_specs = _create_annotation_specs()

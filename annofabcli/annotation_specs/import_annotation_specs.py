@@ -172,14 +172,14 @@ def _append_protected_attribute_changes_in_label(
     current_attribute: dict[str, Any],
     imported_attribute: dict[str, Any],
     is_attribute_used: Callable[[str, str], bool],
-    is_choice_used: Callable[[str, str, str], bool],
+    is_choice_used: Callable[[str, str], bool],
 ) -> None:
     """ラベルに含まれている属性の変更のうち、importを中止すべき変更を追加する。"""
     if current_attribute["type"] != imported_attribute["type"] and is_attribute_used(label_id, attribute_id):
         _append_unique_changed_type_attribute_id(protected, attribute_id)
 
     for choice_id in _get_removed_choice_ids(current_attribute, imported_attribute):
-        if is_choice_used(label_id, attribute_id, choice_id):
+        if is_choice_used(attribute_id, choice_id):
             _append_unique_removed_choice(protected, attribute_id, choice_id)
 
 
@@ -190,7 +190,7 @@ def create_protected_import_changes(
     *,
     is_label_used: Callable[[str], bool],
     is_attribute_used: Callable[[str, str], bool],
-    is_choice_used: Callable[[str, str, str], bool],
+    is_choice_used: Callable[[str, str], bool],
 ) -> ProtectedImportChanges:
     """差分のうち、既存アノテーションで使われている変更を抽出する。
 
@@ -200,7 +200,7 @@ def create_protected_import_changes(
         imported_annotation_specs: インポートするアノテーション仕様
         is_label_used: label_idを受け取り、利用中ならTrueを返す関数
         is_attribute_used: label_idとattribute_idを受け取り、利用中ならTrueを返す関数
-        is_choice_used: label_id、attribute_id、choice_idを受け取り、利用中ならTrueを返す関数
+        is_choice_used: attribute_idとchoice_idを受け取り、利用中ならTrueを返す関数
 
     Returns:
         importを中止すべき変更一覧
