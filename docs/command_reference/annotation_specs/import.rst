@@ -37,7 +37,7 @@ Examples
 
 .. code-block::
 
-    $ annofabcli annotation_specs export --project_id src_prj --out annotation_specs.json --format pretty_json
+    $ annofabcli annotation_specs export --project_id src_prj --output annotation_specs.json --format pretty_json
     $ annofabcli annotation_specs import --project_id dest_prj --annotation_specs_json_file annotation_specs.json
 
 
