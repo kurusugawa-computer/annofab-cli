@@ -11,13 +11,12 @@ from pathlib import Path
 from typing import Any
 
 import annofabapi
-from annofabapi.util.annotation_specs import AnnotationSpecsAccessor, get_english_message
+from annofabapi.util.annotation_specs import AnnotationSpecsAccessor, get_attribute_name_en, get_choice_name_en, get_label_name_en
 
 import annofabcli.common.cli
 from annofabcli.annotation_specs.diff_compare import create_annotation_specs_diff
 from annofabcli.annotation_specs.diff_models import AnnotationSpecsDiff
 from annofabcli.annotation_specs.diff_text_formatter import format_annotation_specs_diff_as_text
-from annofabcli.annotation_specs.utils import get_attribute_name_en, get_label_name_en
 from annofabcli.common.cli import ArgumentParser, CommandLine, CommandLineWithConfirm, build_annofabapi_resource_and_login
 from annofabcli.common.facade import AnnofabApiFacade
 from annofabcli.common.utils import output_string
@@ -129,17 +128,17 @@ def create_protected_import_changes(
     annotation_specs_accessor = AnnotationSpecsAccessor(current_annotation_specs)
 
     def get_label_name(label_id: str) -> str:
-        return get_label_name_en(annotation_specs_accessor.get_label(label_id=label_id)) or label_id
+        return get_label_name_en(annotation_specs_accessor.get_label(label_id=label_id))
 
     def get_attribute_name(attribute_id: str) -> str:
-        return get_attribute_name_en(annotation_specs_accessor.get_attribute(attribute_id=attribute_id)) or attribute_id
+        return get_attribute_name_en(annotation_specs_accessor.get_attribute(attribute_id=attribute_id))
 
     def get_choice_name(attribute_id: str, choice_id: str) -> str:
         attribute = annotation_specs_accessor.get_attribute(attribute_id=attribute_id)
         choices = attribute["choices"]
         assert choices is not None
         choice = next(choice for choice in choices if choice["choice_id"] == choice_id)
-        return get_english_message(choice["name"]) or choice_id
+        return get_choice_name_en(choice)
 
     @functools.cache
     def is_attribute_used(attribute_id: str) -> bool:
