@@ -210,6 +210,7 @@ class TestCreateMessageForProtectedImportChanges:
             removed_label_names={"car"},
             changed_annotation_type_label_names={"bus"},
             changed_type_attribute_names={"truncated"},
+            removed_attribute_names={"occluded"},
             removed_label_attribute_relations={("car", "occluded")},
             removed_choices={("occluded", "yes")},
         )
@@ -219,6 +220,7 @@ class TestCreateMessageForProtectedImportChanges:
         assert "label_names_en=['car']" in actual
         assert "label_names_en=['bus']" in actual
         assert "attribute_names_en=['truncated']" in actual
+        assert "removed_attribute_names=['occluded']" in actual
         assert "label_attribute_names_en=[('car', 'occluded')]" in actual
         assert "attribute_choice_names_en=[('occluded', 'yes')]" in actual
         assert "label_ids" not in actual
@@ -286,12 +288,19 @@ class TestValidateImportAnnotationSpecs:
 
         _assert_import_allowed(current_specs, imported_specs)
 
-    def test_属性定義の削除だけでは中止しない(self) -> None:
+    def test_使われている属性定義を削除する場合は中止する(self) -> None:
         current_specs = _create_annotation_specs()
         imported_specs = copy.deepcopy(current_specs)
         imported_specs["additionals"] = [attribute for attribute in imported_specs["additionals"] if attribute["additional_data_definition_id"] != "attr_truncated"]
 
-        _assert_import_allowed(current_specs, imported_specs, used_label_ids={"label_car"})
+        _assert_import_blocked(current_specs, imported_specs, used_label_ids={"label_car"})
+
+    def test_使われていない属性定義を削除する場合は許可する(self) -> None:
+        current_specs = _create_annotation_specs()
+        imported_specs = copy.deepcopy(current_specs)
+        imported_specs["additionals"] = [attribute for attribute in imported_specs["additionals"] if attribute["additional_data_definition_id"] != "attr_truncated"]
+
+        _assert_import_allowed(current_specs, imported_specs)
 
     def test_属性定義とラベルに含まれる属性を削除する場合は中止する(self) -> None:
         current_specs = _create_annotation_specs()
