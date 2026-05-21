@@ -21,7 +21,7 @@ class InputDataOrder(Enum):
     RANDOM = "random"
 
 
-class PuttingTaskByCountMain:
+class CreatingTasksByInputDataCountMain:
     def __init__(
         self,
         service: annofabapi.Resource,
@@ -56,7 +56,7 @@ class PuttingTaskByCountMain:
         }
         content, _ = self.service.api.initiate_tasks_generation(self.project_id, request_body=request_body)
         job = content["job"]
-        logger.info(f"Annofab上でタスク作成処理が開始されました。 :: task_id_prefix='{task_id_prefix}', input_data_count='input_data_count'")
+        logger.info(f"Annofab上でタスク作成処理が開始されました。 :: task_id_prefix='{task_id_prefix}', input_data_count='{input_data_count}'")
         if should_wait:
             self.wait_for_completion(job["job_id"])
         else:
@@ -90,13 +90,13 @@ class PuttingTaskByCountMain:
             logger.warning(f"job_id='{job_id}' :: {max_wait_minute}分間待ちましたが、タスク登録のジョブが終了しませんでした。")
 
 
-class PutTaskByCount(CommandLine):
+class CreateTasksByInputDataCount(CommandLine):
     def main(self) -> None:
         args = self.args
         project_id = args.project_id
         super().validate_project(project_id, [ProjectMemberRole.OWNER])
 
-        main_obj = PuttingTaskByCountMain(
+        main_obj = CreatingTasksByInputDataCountMain(
             self.service,
             project_id=args.project_id,
         )
@@ -113,7 +113,7 @@ class PutTaskByCount(CommandLine):
 def main(args: argparse.Namespace) -> None:
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
-    PutTaskByCount(service, facade, args).main()
+    CreateTasksByInputDataCount(service, facade, args).main()
 
 
 def parse_args(parser: argparse.ArgumentParser) -> None:
@@ -141,7 +141,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
 
 
 def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
-    subcommand_name = "put_by_count"
+    subcommand_name = "create_by_input_data_count"
     subcommand_help = "タスクに割り当てる入力データの個数を指定して、タスクを作成します。"
     epilog = "オーナロールを持つユーザで実行してください。"
 

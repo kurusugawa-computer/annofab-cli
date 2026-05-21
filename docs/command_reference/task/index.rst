@@ -22,6 +22,7 @@ Available Commands
    complete
    copy
    create
+   create_by_input_data_count
    delete
    delete_metadata_key
    download
@@ -30,7 +31,6 @@ Available Commands
    list_all
    list_all_added_task_history
    put
-   put_by_count
    reject
    update_metadata
 

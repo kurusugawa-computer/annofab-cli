@@ -114,12 +114,12 @@ class TestCommandLine:
         )
 
     @pytest.mark.submitting_job
-    def test_put_task_by_count(self):
+    def test_create_task_by_input_data_count(self):
         task_id_prefix = f"test-{int(datetime.datetime.now().timestamp())!s}"
         main(
             [
                 self.command_name,
-                "put_by_count",
+                "create_by_input_data_count",
                 "--project_id",
                 project_id,
                 "--task_id_prefix",
