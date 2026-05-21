@@ -1,5 +1,5 @@
 =================================
-task put_by_count
+task create_by_input_data_count
 =================================
 
 Description
@@ -19,7 +19,7 @@ Examples
 
 .. code-block::
 
-    $ annofabcli task put --project_id prj1 \
+    $ annofabcli task create_by_input_data_count --project_id prj1 \
     --task_id_prefix sample --input_data_count 10
 
 
@@ -31,7 +31,7 @@ Examples
 
 .. code-block::
 
-    $ annofabcli task put --project_id prj1 \
+    $ annofabcli task create_by_input_data_count --project_id prj1 \
     --task_id_prefix sample --input_data_count 10 --wait
 
 
@@ -39,7 +39,7 @@ Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.task.put_tasks_by_count.add_parser
-   :prog: annofabcli task put_by_count
+   :ref: annofabcli.task.create_tasks_by_input_data_count.add_parser
+   :prog: annofabcli task create_by_input_data_count
    :nosubcommands:
    :nodefaultconst:
