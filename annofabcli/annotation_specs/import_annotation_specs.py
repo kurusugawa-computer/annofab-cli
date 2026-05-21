@@ -24,7 +24,7 @@ from annofabcli.common.utils import output_string
 logger = logging.getLogger(__name__)
 
 
-@dataclass(frozen=True)
+@dataclass
 class ProtectedImportChanges:
     """既存アノテーションで使われているため、importを中止する変更一覧。"""
 
