@@ -54,3 +54,4 @@ Usage Details
    :prog: annofabcli annotation_specs export
    :nosubcommands:
    :nodefaultconst:
+
