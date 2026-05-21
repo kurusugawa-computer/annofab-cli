@@ -27,7 +27,7 @@ CSVのフォーマットは以下の通りです。
 
     input_data_id,Yes,更新対象の入力データID
     input_data_name,No,変更後の入力データ名。更新しない場合は空欄
-    input_data_path,No,変更後の入力データパス。更新しない場合は空欄
+    input_data_path,No,変更後の入力データパス。更新しない場合は空欄。先頭が ``file://`` の場合、ローカルのファイルを入力データに使用します。
 
 
 以下はCSVファイルのサンプルです。
@@ -39,6 +39,7 @@ CSVのフォーマットは以下の通りです。
     id1,new_name1,
     id2,,s3://bucket/new_image.jpg
     id3,new_name3,https://example.com/new_image.jpg
+    id4,,file://new_image.jpg
 
 
 .. warning::
@@ -46,6 +47,8 @@ CSVのフォーマットは以下の通りです。
     プライベートストレージが利用可能な組織配下のプロジェクトでしか、 ``input_data_path`` に ``https`` または ``s3`` スキームを利用できません。
     プライベートストレージを利用するには、Annofabサポート窓口への問い合わせが必要です。
     詳細は https://annofab.readme.io/docs/external-storage を参照してください。
+
+``input_data_path`` の先頭が ``file://`` の場合、指定したローカルファイルをアップロードし、入力データのパスをアップロード後のパスに更新します。
 
 
 
@@ -78,6 +81,10 @@ JSON文字列を指定する場合
             "input_data_id": "id3",
             "input_data_name": "new_name3",
             "input_data_path": "https://example.com/new_image.jpg"
+        },
+        {
+            "input_data_id": "id4",
+            "input_data_path": "file://new_image.jpg"
         }
     ]
 
