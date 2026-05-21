@@ -165,16 +165,6 @@ def create_protected_import_changes(
     return protected
 
 
-def _format_names_for_message(names: set[str]) -> list[str]:
-    """メッセージ表示用に英語名一覧を整列する。"""
-    return sorted(names)
-
-
-def _format_name_pairs_for_message(name_pairs: set[tuple[str, str]]) -> list[tuple[str, str]]:
-    """メッセージ表示用に英語名ペア一覧を整列する。"""
-    return sorted(name_pairs)
-
-
 def create_message_for_protected_import_changes(protected_changes: ProtectedImportChanges) -> str:
     """既存アノテーションに影響する変更内容を表すメッセージを生成する。
 
@@ -184,17 +174,24 @@ def create_message_for_protected_import_changes(protected_changes: ProtectedImpo
     Returns:
         既存アノテーションに影響する変更内容を表すメッセージ
     """
+
+    def format_names(names: set[str]) -> list[str]:
+        return sorted(names)
+
+    def format_name_pairs(name_pairs: set[tuple[str, str]]) -> list[tuple[str, str]]:
+        return sorted(name_pairs)
+
     messages = []
     if protected_changes.removed_label_names:
-        messages.append(f"削除対象のラベルがアノテーションで使われています。 :: label_names_en={_format_names_for_message(protected_changes.removed_label_names)}")
+        messages.append(f"削除対象のラベルがアノテーションで使われています。 :: label_names_en={format_names(protected_changes.removed_label_names)}")
     if protected_changes.changed_annotation_type_label_names:
-        messages.append(f"種類変更対象のラベルがアノテーションで使われています。 :: label_names_en={_format_names_for_message(protected_changes.changed_annotation_type_label_names)}")
+        messages.append(f"種類変更対象のラベルがアノテーションで使われています。 :: label_names_en={format_names(protected_changes.changed_annotation_type_label_names)}")
     if protected_changes.changed_type_attribute_names:
-        messages.append(f"種類変更対象の属性がアノテーションで使われています。 :: attribute_names_en={_format_names_for_message(protected_changes.changed_type_attribute_names)}")
+        messages.append(f"種類変更対象の属性がアノテーションで使われています。 :: attribute_names_en={format_names(protected_changes.changed_type_attribute_names)}")
     if protected_changes.removed_label_attribute_relations:
-        messages.append(f"ラベルから削除される属性がアノテーションで使われています。 :: label_attribute_names_en={_format_name_pairs_for_message(protected_changes.removed_label_attribute_relations)}")
+        messages.append(f"ラベルから削除される属性がアノテーションで使われています。 :: label_attribute_names_en={format_name_pairs(protected_changes.removed_label_attribute_relations)}")
     if protected_changes.removed_choices:
-        messages.append(f"削除対象の選択肢がアノテーションで使われています。 :: attribute_choice_names_en={_format_name_pairs_for_message(protected_changes.removed_choices)}")
+        messages.append(f"削除対象の選択肢がアノテーションで使われています。 :: attribute_choice_names_en={format_name_pairs(protected_changes.removed_choices)}")
 
     return "\n".join(messages)
 
