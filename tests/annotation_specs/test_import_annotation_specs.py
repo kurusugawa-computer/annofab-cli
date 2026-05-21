@@ -216,11 +216,11 @@ class TestCreateMessageForProtectedImportChanges:
 
         actual = create_message_for_protected_import_changes(protected_changes)
 
-        assert "label_names=['car']" in actual
-        assert "label_names=['bus']" in actual
-        assert "attribute_names=['truncated']" in actual
-        assert "label_attribute_names=[('car', 'occluded')]" in actual
-        assert "attribute_choice_names=[('occluded', 'yes')]" in actual
+        assert "label_names_en=['car']" in actual
+        assert "label_names_en=['bus']" in actual
+        assert "attribute_names_en=['truncated']" in actual
+        assert "label_attribute_names_en=[('car', 'occluded')]" in actual
+        assert "attribute_choice_names_en=[('occluded', 'yes')]" in actual
         assert "label_ids" not in actual
         assert "attribute_ids" not in actual
 
