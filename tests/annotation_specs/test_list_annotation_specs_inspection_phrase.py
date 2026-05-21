@@ -59,7 +59,7 @@ class TestCreateInspectionPhraseList:
 
 @pytest.mark.access_webapi
 class TestCommandLine:
-    def test_annotation_specs_jsonからcsv出力できる(self, tmp_path) -> None:
+    def test_annotation_specs_json_fileからcsv出力できる(self, tmp_path) -> None:
         annotation_specs_path = tmp_path / "annotation_specs.json"
         output_path = tmp_path / "inspection_phrases.csv"
         annotation_specs_path.write_text(
@@ -83,7 +83,7 @@ class TestCommandLine:
             [
                 "annotation_specs",
                 "list_inspection_phrase",
-                "--annotation_specs_json",
+                "--annotation_specs_json_file",
                 str(annotation_specs_path),
                 "--output",
                 str(output_path),
@@ -110,7 +110,7 @@ class TestCommandLine:
             [
                 "annotation_specs",
                 "list_inspection_phrase",
-                "--annotation_specs_json",
+                "--annotation_specs_json_file",
                 str(annotation_specs_path),
                 "--output",
                 str(output_path),

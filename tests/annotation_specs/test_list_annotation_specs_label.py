@@ -100,14 +100,14 @@ class TestCreateLabelListForCsv:
 
 @pytest.mark.access_webapi
 class TestCommandLine:
-    def test_annotation_specs_jsonからcsv出力できる(self, tmp_path):
+    def test_annotation_specs_json_fileからcsv出力できる(self, tmp_path):
         output_path = tmp_path / "labels.csv"
 
         main(
             [
                 "annotation_specs",
                 "list_label",
-                "--annotation_specs_json",
+                "--annotation_specs_json_file",
                 "tests/data/annotation/import_annotation/annotation_specs.json",
                 "--output",
                 str(output_path),

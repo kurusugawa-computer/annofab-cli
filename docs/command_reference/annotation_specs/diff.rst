@@ -26,8 +26,8 @@ JSONファイル同士を比較する
 .. code-block::
 
     $ annofabcli annotation_specs diff \
-      --left_annotation_specs_json old.json \
-      --right_annotation_specs_json new.json \
+      --left_annotation_specs_json_file old.json \
+      --right_annotation_specs_json_file new.json \
       --format pretty_json \
       --output out.json
 
