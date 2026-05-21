@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import copy
 import enum
 import logging
 import multiprocessing
@@ -25,6 +26,7 @@ from annofabcli.common.cli import (
     get_json_from_args,
 )
 from annofabcli.common.facade import AnnofabApiFacade
+from annofabcli.common.utils import get_file_scheme_path
 
 logger = logging.getLogger(__name__)
 
@@ -81,11 +83,18 @@ class UpdateInputDataMain(CommandLineWithConfirm):
             logger.warning(f"{log_prefix}入力データは存在しません。")
             return UpdateResult.SKIPPED
 
+        file_path = get_file_scheme_path(new_input_data_path) if new_input_data_path is not None else None
+        if file_path is not None and not Path(file_path).exists():
+            logger.warning(f"{log_prefix}input_data_path='{new_input_data_path}'にファイルは存在しません。入力データの更新をスキップします。")
+            return UpdateResult.SKIPPED
+
         # 更新する内容の確認メッセージを作成
         changes = []
         if new_input_data_name is not None:
             changes.append(f"input_data_name='{old_input_data['input_data_name']}'を'{new_input_data_name}'に変更")
-        if new_input_data_path is not None:
+        if file_path is not None:
+            changes.append(f"input_data_pathをローカルファイル'{file_path}'のアップロード結果に変更")
+        elif new_input_data_path is not None:
             changes.append(f"input_data_path='{old_input_data['input_data_path']}'を'{new_input_data_path}'に変更")
 
         if len(changes) == 0:
@@ -96,15 +105,18 @@ class UpdateInputDataMain(CommandLineWithConfirm):
         if not self.confirm_processing(f"{log_prefix}{change_message}しますか？"):
             return UpdateResult.SKIPPED
 
-        request_body = old_input_data
+        request_body = copy.deepcopy(old_input_data)
         request_body["last_updated_datetime"] = old_input_data["updated_datetime"]
 
         if new_input_data_name is not None:
             request_body["input_data_name"] = new_input_data_name
-        if new_input_data_path is not None:
-            request_body["input_data_path"] = new_input_data_path
+        if file_path is not None:
+            self.service.wrapper.put_input_data_from_file(project_id, input_data_id=input_data_id, file_path=file_path, request_body=request_body)
+        else:
+            if new_input_data_path is not None:
+                request_body["input_data_path"] = new_input_data_path
+            self.service.api.put_input_data(project_id, input_data_id, request_body=request_body)
 
-        self.service.api.put_input_data(project_id, input_data_id, request_body=request_body)
         logger.debug(f"{log_prefix} :: 入力データを更新しました。 :: {changes}")
         return UpdateResult.SUCCESS
 
@@ -269,12 +281,12 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
             " * ヘッダ行あり, カンマ区切り\n"
             " * input_data_id (required)\n"
             " * input_data_name (optional)\n"
-            " * input_data_path (optional)\n"
+            " * input_data_path (optional): ``file://`` を先頭に付けると、ローカルファイルを入力データに使用します。\n"
             "更新しないプロパティは、セルの値を空欄にしてください。\n"
         ),
     )
 
-    JSON_SAMPLE = '[{"input_data_id":"id1","input_data_name":"new_name1"},{"input_data_id":"id2","input_data_path":"new_path2"}]'  # noqa: N806
+    JSON_SAMPLE = '[{"input_data_id":"id1","input_data_name":"new_name1"},{"input_data_id":"id2","input_data_path":"file://new_image.jpg"}]'  # noqa: N806
     file_group.add_argument(
         "--json",
         type=str,
