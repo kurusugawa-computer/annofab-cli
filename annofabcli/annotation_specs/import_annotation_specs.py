@@ -372,9 +372,7 @@ def main(args: argparse.Namespace) -> None:
 def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "import"
     subcommand_help = "アノテーション仕様の情報をインポートします。"
-    description = (
-        "アノテーション仕様の情報をJSON形式でインポートします。"
-    )
+    description = "アノテーション仕様の情報をJSON形式でインポートします。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description=description)
     parse_args(parser)
