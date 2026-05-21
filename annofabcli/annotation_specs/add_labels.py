@@ -12,6 +12,7 @@ from typing import Any, cast
 
 import annofabapi
 import pandas
+from annofabapi.util.annotation_specs import get_label_name_en
 
 import annofabcli.common.cli
 from annofabcli.annotation_specs.add_label import (
@@ -24,7 +25,6 @@ from annofabcli.annotation_specs.add_label import (
     validate_new_label,
 )
 from annofabcli.annotation_specs.color import RgbColor, hex_to_rgb
-from annofabcli.annotation_specs.utils import get_label_name_en
 from annofabcli.common.cli import (
     ArgumentParser,
     CommandLine,

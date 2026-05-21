@@ -9,7 +9,7 @@ from typing import Any
 
 import annofabapi
 from annofabapi.pydantic_models.additional_data_definition_type import AdditionalDataDefinitionType
-from annofabapi.util.annotation_specs import AnnotationSpecsAccessor
+from annofabapi.util.annotation_specs import AnnotationSpecsAccessor, get_label_name_en
 from pydantic import BaseModel, ConfigDict, field_validator, model_validator
 
 import annofabcli.common.cli
@@ -23,7 +23,7 @@ from annofabcli.annotation_specs.add_choice_attribute import (
 from annofabcli.annotation_specs.add_choice_attribute import (
     create_attribute as create_choice_attribute,
 )
-from annofabcli.annotation_specs.utils import get_label_name_en, get_target_labels
+from annofabcli.annotation_specs.utils import get_target_labels
 from annofabcli.common.cli import ArgumentParser, CommandLine, CommandLineWithConfirm, build_annofabapi_resource_and_login, get_json_from_args
 from annofabcli.common.facade import AnnofabApiFacade
 from annofabcli.common.utils import duplicated_set
