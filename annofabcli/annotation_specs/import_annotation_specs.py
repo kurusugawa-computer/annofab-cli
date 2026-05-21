@@ -374,7 +374,6 @@ def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse
     subcommand_help = "アノテーション仕様の情報をインポートします。"
     description = (
         "アノテーション仕様の情報をJSON形式でインポートします。"
-        "既存アノテーションで使われているラベルや選択肢、既存アノテーションで使われているラベルに含まれる属性に影響する削除や種類変更は、通常は中止します。"
     )
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description=description)
