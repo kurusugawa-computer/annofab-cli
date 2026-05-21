@@ -11,11 +11,10 @@ from typing import Any
 
 import annofabapi
 import pandas
-from annofabapi.util.annotation_specs import AnnotationSpecsAccessor, get_english_message
+from annofabapi.util.annotation_specs import AnnotationSpecsAccessor, get_attribute_name_en, get_english_message
 
 import annofabcli.common.cli
 from annofabcli.annotation_specs.add_choice_attribute import ChoiceAttributeInput, build_choices, read_choices_json
-from annofabcli.annotation_specs.utils import get_attribute_name_en
 from annofabcli.common.cli import ArgumentParser, CommandLine, CommandLineWithConfirm, build_annofabapi_resource_and_login
 from annofabcli.common.facade import AnnofabApiFacade
 

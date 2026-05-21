@@ -10,11 +10,11 @@ from dataclasses import dataclass
 from typing import Any
 
 import annofabapi
-from annofabapi.util.annotation_specs import AnnotationSpecsAccessor
+from annofabapi.util.annotation_specs import AnnotationSpecsAccessor, get_label_name_en
 
 import annofabcli.common.cli
 from annofabcli.annotation_specs.add_choice_attribute import validate_new_attribute
-from annofabcli.annotation_specs.utils import create_name, get_label_name_en, get_target_labels
+from annofabcli.annotation_specs.utils import create_name, get_target_labels
 from annofabcli.common.cli import (
     ArgumentParser,
     CommandLine,

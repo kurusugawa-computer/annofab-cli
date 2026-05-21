@@ -81,12 +81,12 @@ class ListAttributeRestriction(CommandLine):
                 query_params["history_id"] = history_id
 
             annotation_specs, _ = self.service.api.get_annotation_specs(args.project_id, query_params=query_params)
-        elif args.annotation_specs_json is not None:
-            with args.annotation_specs_json.open(encoding="utf-8") as f:
+        elif args.annotation_specs_json_file is not None:
+            with args.annotation_specs_json_file.open(encoding="utf-8") as f:
                 annotation_specs = json.load(f)
 
         else:
-            raise RuntimeError("'--project_id'か'--annotation_specs_json'のどちらかを指定する必要があります。")
+            raise RuntimeError("'--project_id'か'--annotation_specs_json_file'のどちらかを指定する必要があります。")
 
         main_obj = AttributeRestrictionMessage(
             labels=annotation_specs["labels"],
@@ -119,7 +119,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     required_group = parser.add_mutually_exclusive_group(required=True)
     required_group.add_argument("-p", "--project_id", help="対象のプロジェクトのproject_idを指定します。APIで取得したアノテーション仕様情報を元に出力します。")
     required_group.add_argument(
-        "--annotation_specs_json",
+        "--annotation_specs_json_file",
         type=Path,
         help="指定したアノテーション仕様のJSONファイルを指定します。JSONファイルに記載された情報を元に出力します。ただしアノテーション仕様の ``format_version`` は ``3`` である必要があります。",
     )

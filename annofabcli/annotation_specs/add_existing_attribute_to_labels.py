@@ -8,10 +8,10 @@ from dataclasses import dataclass
 from typing import Any
 
 import annofabapi
-from annofabapi.util.annotation_specs import AnnotationSpecsAccessor
+from annofabapi.util.annotation_specs import AnnotationSpecsAccessor, get_attribute_name_en, get_label_name_en
 
 import annofabcli.common.cli
-from annofabcli.annotation_specs.utils import get_attribute_name_en, get_label_name_en, get_target_labels
+from annofabcli.annotation_specs.utils import get_target_labels
 from annofabcli.common.cli import ArgumentParser, CommandLine, CommandLineWithConfirm, build_annofabapi_resource_and_login, get_list_from_args
 from annofabcli.common.facade import AnnofabApiFacade
 

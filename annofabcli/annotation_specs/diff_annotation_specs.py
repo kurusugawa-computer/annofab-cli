@@ -29,7 +29,7 @@ def _add_annotation_specs_source_arguments(parser: argparse.ArgumentParser, *, p
         help="比較対象のプロジェクトのproject_idを指定します。APIで取得したアノテーション仕様情報を元に比較します。",
     )
     required_group.add_argument(
-        f"--{prefix}_annotation_specs_json",
+        f"--{prefix}_annotation_specs_json_file",
         type=Path,
         help="比較対象のアノテーション仕様JSONを指定します。JSONファイルに記載された情報を元に比較します。",
     )
@@ -62,19 +62,19 @@ class AnnotationSpecsDiffCommand(CommandLine):
 
     def get_annotation_specs_from_source(self, *, prefix: str) -> dict[str, Any]:
         project_id = getattr(self.args, f"{prefix}_project_id")
-        annotation_specs_json = getattr(self.args, f"{prefix}_annotation_specs_json")
+        annotation_specs_json_file = getattr(self.args, f"{prefix}_annotation_specs_json_file")
         history_id = getattr(self.args, f"{prefix}_history_id")
         before = getattr(self.args, f"{prefix}_before")
 
-        if annotation_specs_json is not None:
+        if annotation_specs_json_file is not None:
             if history_id is not None or before is not None:
                 print(  # noqa: T201
-                    f"{self.COMMON_MESSAGE} argument --{prefix}_history_id/--{prefix}_before: '--{prefix}_annotation_specs_json' を指定したときは指定できません。",
+                    f"{self.COMMON_MESSAGE} argument --{prefix}_history_id/--{prefix}_before: '--{prefix}_annotation_specs_json_file' を指定したときは指定できません。",
                     file=sys.stderr,
                 )
                 sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
-            with annotation_specs_json.open(encoding="utf-8") as f:
+            with annotation_specs_json_file.open(encoding="utf-8") as f:
                 return json.load(f)
 
         assert project_id is not None

@@ -12,10 +12,11 @@ from typing import Any, cast
 import annofabapi
 from annofabapi.models import DefaultAnnotationType
 from annofabapi.plugin import ThreeDimensionAnnotationType
+from annofabapi.util.annotation_specs import get_label_name_en
 
 import annofabcli.common.cli
 from annofabcli.annotation_specs.color import RgbColor, hex_to_rgb
-from annofabcli.annotation_specs.utils import create_name, get_label_name_en
+from annofabcli.annotation_specs.utils import create_name
 from annofabcli.common.cli import (
     ArgumentParser,
     CommandLine,

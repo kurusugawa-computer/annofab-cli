@@ -7,9 +7,9 @@ from dataclasses import dataclass
 from typing import Any
 
 import annofabapi
-from annofabapi.util.annotation_specs import AnnotationSpecsAccessor
+from annofabapi.util.annotation_specs import AnnotationSpecsAccessor, get_attribute_name_en
 
-from annofabcli.annotation_specs.utils import get_attribute_name_en, get_target_attributes
+from annofabcli.annotation_specs.utils import get_target_attributes
 from annofabcli.common.cli import CommandLineWithConfirm
 
 logger = logging.getLogger(__name__)

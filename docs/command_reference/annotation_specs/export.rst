@@ -17,7 +17,7 @@ Examples
 
 .. code-block::
 
-    $ annofabcli annotation_specs export --project_id prj1 --out out.json --format pretty_json
+    $ annofabcli annotation_specs export --project_id prj1 --output out.json --format pretty_json
 
 
 

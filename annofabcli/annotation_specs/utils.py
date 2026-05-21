@@ -3,33 +3,7 @@ from __future__ import annotations
 from collections.abc import Collection, Mapping, Sequence
 from typing import Any
 
-from annofabapi.util.annotation_specs import AnnotationSpecsAccessor, get_english_message
-
-
-def get_label_name_en(label: Mapping[str, Any]) -> str:
-    """
-    ラベル情報から英語名を取得する。
-
-    Args:
-        label: ラベル情報
-
-    Returns:
-        ラベルの英語名
-    """
-    return get_english_message(label["label_name"])
-
-
-def get_attribute_name_en(attribute: Mapping[str, Any]) -> str:
-    """
-    属性情報から英語名を取得する。
-
-    Args:
-        attribute: 属性情報
-
-    Returns:
-        属性の英語名
-    """
-    return get_english_message(attribute["name"])
+from annofabapi.util.annotation_specs import AnnotationSpecsAccessor
 
 
 def create_name(message_en: str, message_ja: str | None = None) -> dict[str, Any]:

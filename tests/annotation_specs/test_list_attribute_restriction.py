@@ -23,7 +23,7 @@ class TestListAttributeRestriction:
             [
                 self.command_name,
                 "list_attribute_restriction",
-                "--annotation_specs_json",
+                "--annotation_specs_json_file",
                 str(annotation_specs_path),
                 "--attribute_name",
                 "comment",
@@ -54,7 +54,7 @@ class TestListAttributeRestriction:
             [
                 self.command_name,
                 "list_attribute_restriction",
-                "--annotation_specs_json",
+                "--annotation_specs_json_file",
                 str(annotation_specs_path),
                 "--format",
                 "json",
@@ -78,7 +78,7 @@ class TestListAttributeRestriction:
             [
                 self.command_name,
                 "list_attribute_restriction",
-                "--annotation_specs_json",
+                "--annotation_specs_json_file",
                 str(annotation_specs_path),
                 "--attribute_name",
                 "link",
@@ -114,7 +114,7 @@ class TestListAttributeRestriction:
             [
                 self.command_name,
                 "list_attribute_restriction",
-                "--annotation_specs_json",
+                "--annotation_specs_json_file",
                 str(annotation_specs_path),
                 "--attribute_name",
                 "comment",
