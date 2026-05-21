@@ -11,14 +11,15 @@ from pathlib import Path
 from typing import Any
 
 import annofabapi
-from annofabapi.dataclass.annotation import AdditionalDataV1
+from annofabapi.util.annotation_specs import AnnotationSpecsAccessor, get_attribute_name_en, get_choice_name_en, get_label_name_en
 
 import annofabcli.common.cli
-from annofabcli.annotation.annotation_query import AnnotationQueryForAPI
 from annofabcli.annotation_specs.diff_compare import create_annotation_specs_diff
 from annofabcli.annotation_specs.diff_models import AnnotationSpecsDiff
+from annofabcli.annotation_specs.diff_text_formatter import format_annotation_specs_diff_as_text
 from annofabcli.common.cli import ArgumentParser, CommandLine, CommandLineWithConfirm, build_annofabapi_resource_and_login
 from annofabcli.common.facade import AnnofabApiFacade
+from annofabcli.common.utils import output_string
 
 logger = logging.getLogger(__name__)
 
@@ -27,76 +28,61 @@ logger = logging.getLogger(__name__)
 class ProtectedImportChanges:
     """既存アノテーションで使われているため、importを中止する変更一覧。"""
 
-    removed_label_ids: list[str] = field(default_factory=list)
-    """削除対象のうち、アノテーションで使われているラベルID一覧。"""
+    removed_label_names: set[str] = field(default_factory=set)
+    """削除対象のうち、アノテーションで使われているラベル英語名一覧。"""
 
-    changed_annotation_type_label_ids: list[str] = field(default_factory=list)
-    """種類変更対象のうち、アノテーションで使われているラベルID一覧。"""
+    changed_annotation_type_label_names: set[str] = field(default_factory=set)
+    """種類変更対象のうち、アノテーションで使われているラベル英語名一覧。"""
 
-    removed_attribute_ids: list[str] = field(default_factory=list)
-    """削除対象のうち、アノテーションで使われている属性ID一覧。"""
+    changed_type_attribute_names: set[str] = field(default_factory=set)
+    """種類変更対象のうち、アノテーションで使われている属性英語名一覧。"""
 
-    changed_type_attribute_ids: list[str] = field(default_factory=list)
-    """種類変更対象のうち、アノテーションで使われている属性ID一覧。"""
+    removed_attribute_names: set[str] = field(default_factory=set)
+    """削除対象のうち、アノテーションで使われている属性英語名一覧。"""
 
-    removed_label_attribute_relations: list[tuple[str, str]] = field(default_factory=list)
-    """ラベルから削除される属性のうち、アノテーションで使われている一覧。要素は(label_id, attribute_id)。"""
+    removed_label_attribute_relations: set[tuple[str, str]] = field(default_factory=set)
+    """ラベルから削除される属性のうち、アノテーションで使われている一覧。要素は(label_name_en, attribute_name_en)。"""
 
-    removed_choices: list[tuple[str, str]] = field(default_factory=list)
-    """削除対象のうち、アノテーションで使われている選択肢一覧。要素は(attribute_id, choice_id)。"""
+    removed_choices: set[tuple[str, str]] = field(default_factory=set)
+    """削除対象のうち、アノテーションで使われている選択肢一覧。要素は(attribute_name_en, choice_name_en)。"""
 
     def has_changes(self) -> bool:
         """importを中止すべき変更があるかどうかを返す。"""
         return any(
             [
-                self.removed_label_ids,
-                self.changed_annotation_type_label_ids,
-                self.removed_attribute_ids,
-                self.changed_type_attribute_ids,
+                self.removed_label_names,
+                self.changed_annotation_type_label_names,
+                self.changed_type_attribute_names,
+                self.removed_attribute_names,
                 self.removed_label_attribute_relations,
                 self.removed_choices,
             ]
         )
 
 
-def create_comment_for_import_annotation_specs() -> str:
+def create_comment_for_import_annotation_specs(diff_text: str | None = None) -> str:
     """import時のデフォルトコメントを生成する。"""
-    return "annofabcli annotation_specs import コマンドでアノテーション仕様をインポートしました。"
+    comment = "annofabcli annotation_specs import コマンドでアノテーション仕様をインポートしました。"
+    if diff_text is None or diff_text == "":
+        return comment
+
+    return f"{comment}\n\nインポートによるアノテーション仕様の差分:\n{diff_text}"
 
 
-def read_annotation_specs_json(annotation_specs_json: Path) -> dict[str, Any]:
+def read_annotation_specs_json(annotation_specs_json_file: Path) -> dict[str, Any]:
     """アノテーション仕様JSONを読み込む。
 
     Args:
-        annotation_specs_json: アノテーション仕様JSONのパス
+        annotation_specs_json_file: アノテーション仕様JSONファイルのパス
 
     Returns:
         読み込んだアノテーション仕様
     """
-    with annotation_specs_json.open(encoding="utf-8") as f:
+    with annotation_specs_json_file.open(encoding="utf-8") as f:
         loaded = json.load(f)
     if not isinstance(loaded, dict):
-        raise TypeError("`--annotation_specs_json` にはJSONオブジェクト形式のアノテーション仕様を指定してください。")
+        raise TypeError("`--annotation_specs_json_file` にはJSONオブジェクト形式のアノテーション仕様を指定してください。")
     return loaded
-
-
-def create_label_annotation_query(label_id: str) -> dict[str, Any]:
-    """ラベルを利用しているアノテーションを検索するqueryを生成する。"""
-    return {"label_id": label_id}
-
-
-def create_attribute_annotation_query(attribute_id: str) -> dict[str, Any]:
-    """属性を利用しているアノテーションを検索するqueryを生成する。"""
-    additional_data = AdditionalDataV1.from_dict({"additional_data_definition_id": attribute_id}, infer_missing=True)
-    query = AnnotationQueryForAPI(attributes=[additional_data]).to_dict()
-    return {key: value for key, value in query.items() if value is not None}
-
-
-def create_choice_annotation_query(attribute_id: str, choice_id: str) -> dict[str, Any]:
-    """選択肢を利用しているアノテーションを検索するqueryを生成する。"""
-    additional_data = AdditionalDataV1.from_dict({"additional_data_definition_id": attribute_id, "choice": choice_id}, infer_missing=True)
-    query = AnnotationQueryForAPI(attributes=[additional_data]).to_dict()
-    return {key: value for key, value in query.items() if value is not None}
 
 
 def build_request_body_for_import_annotation_specs(
@@ -104,6 +90,7 @@ def build_request_body_for_import_annotation_specs(
     imported_annotation_specs: dict[str, Any],
     *,
     comment: str | None,
+    diff_text: str | None = None,
 ) -> dict[str, Any]:
     """アノテーション仕様import用の request body を生成する。
 
@@ -111,83 +98,162 @@ def build_request_body_for_import_annotation_specs(
         current_annotation_specs: 現在のアノテーション仕様
         imported_annotation_specs: インポートするアノテーション仕様
         comment: 変更コメント
+        diff_text: importで適用されるアノテーション仕様の差分テキスト
 
     Returns:
         Annofab API に渡す request body
     """
     request_body = copy.deepcopy(imported_annotation_specs)
     request_body.pop("project_id", None)
-    request_body["comment"] = comment if comment is not None else create_comment_for_import_annotation_specs()
+    request_body["comment"] = comment if comment is not None else create_comment_for_import_annotation_specs(diff_text)
     request_body["last_updated_datetime"] = current_annotation_specs["updated_datetime"]
     return request_body
 
 
 def create_protected_import_changes(
     diff: AnnotationSpecsDiff,
+    current_annotation_specs: dict[str, Any],
     *,
     is_label_used: Callable[[str], bool],
-    is_attribute_used: Callable[[str], bool],
     is_choice_used: Callable[[str, str], bool],
 ) -> ProtectedImportChanges:
     """差分のうち、既存アノテーションで使われている変更を抽出する。
 
     Args:
         diff: 現在仕様とimport仕様の差分
+        current_annotation_specs: 現在のアノテーション仕様
         is_label_used: label_idを受け取り、利用中ならTrueを返す関数
-        is_attribute_used: attribute_idを受け取り、利用中ならTrueを返す関数
         is_choice_used: attribute_idとchoice_idを受け取り、利用中ならTrueを返す関数
 
     Returns:
         importを中止すべき変更一覧
     """
     protected = ProtectedImportChanges()
+    annotation_specs_accessor = AnnotationSpecsAccessor(current_annotation_specs)
+
+    def get_label_name(label_id: str) -> str:
+        return get_label_name_en(annotation_specs_accessor.get_label(label_id=label_id))
+
+    def get_attribute_name(attribute_id: str) -> str:
+        return get_attribute_name_en(annotation_specs_accessor.get_attribute(attribute_id=attribute_id))
+
+    def get_choice_name(attribute_id: str, choice_id: str) -> str:
+        attribute = annotation_specs_accessor.get_attribute(attribute_id=attribute_id)
+        choices = attribute["choices"]
+        assert choices is not None
+        choice = next(choice for choice in choices if choice["choice_id"] == choice_id)
+        return get_choice_name_en(choice)
+
+    @functools.cache
+    def is_attribute_used(attribute_id: str) -> bool:
+        """属性を含むラベルがアノテーションで使われているかどうかを返す。"""
+        return any(is_label_used(label["label_id"]) for label in current_annotation_specs["labels"] if attribute_id in label["additional_data_definitions"])
 
     if diff.labels is not None:
-        protected.removed_label_ids.extend(label_id for label_id in diff.labels.removed_label_ids if is_label_used(label_id))
+        protected.removed_label_names.update(get_label_name(label_id) for label_id in diff.labels.removed_label_ids if is_label_used(label_id))
         for changed_label in diff.labels.changed_labels:
             if changed_label.annotation_type_changed and is_label_used(changed_label.label_id):
-                protected.changed_annotation_type_label_ids.append(changed_label.label_id)
-            protected.removed_label_attribute_relations.extend((changed_label.label_id, attribute_id) for attribute_id in changed_label.removed_attribute_ids if is_attribute_used(attribute_id))
+                protected.changed_annotation_type_label_names.add(get_label_name(changed_label.label_id))
+            for attribute_id in changed_label.removed_attribute_ids:
+                if is_label_used(changed_label.label_id):
+                    protected.removed_label_attribute_relations.add((get_label_name(changed_label.label_id), get_attribute_name(attribute_id)))
 
     if diff.attributes is not None:
-        protected.removed_attribute_ids.extend(attribute_id for attribute_id in diff.attributes.removed_attribute_ids if is_attribute_used(attribute_id))
+        protected.removed_attribute_names.update(get_attribute_name(attribute_id) for attribute_id in diff.attributes.removed_attribute_ids if is_attribute_used(attribute_id))
         for changed_attribute in diff.attributes.changed_attributes:
             if changed_attribute.type_changed and is_attribute_used(changed_attribute.attribute_id):
-                protected.changed_type_attribute_ids.append(changed_attribute.attribute_id)
-            protected.removed_choices.extend(
-                (changed_attribute.attribute_id, choice_id) for choice_id in changed_attribute.removed_choice_ids if is_choice_used(changed_attribute.attribute_id, choice_id)
-            )
+                protected.changed_type_attribute_names.add(get_attribute_name(changed_attribute.attribute_id))
+            for choice_id in changed_attribute.removed_choice_ids:
+                if is_choice_used(changed_attribute.attribute_id, choice_id):
+                    protected.removed_choices.add((get_attribute_name(changed_attribute.attribute_id), get_choice_name(changed_attribute.attribute_id, choice_id)))
 
     return protected
 
 
-def validate_import_annotation_specs(protected_changes: ProtectedImportChanges) -> None:
-    """importを中止すべき変更があれば例外を送出する。
+def create_message_for_protected_import_changes(protected_changes: ProtectedImportChanges) -> str:
+    """既存アノテーションに影響する変更内容を表すメッセージを生成する。
 
     Args:
         protected_changes: importを中止すべき変更一覧
 
-    Raises:
-        ValueError: 既存アノテーションで使われているラベル/属性/選択肢の削除や種類変更がある場合
+    Returns:
+        既存アノテーションに影響する変更内容を表すメッセージ
     """
-    if not protected_changes.has_changes():
-        return
+
+    def format_names(names: set[str]) -> list[str]:
+        return sorted(names)
+
+    def format_name_pairs(name_pairs: set[tuple[str, str]]) -> list[tuple[str, str]]:
+        return sorted(name_pairs)
 
     messages = []
-    if protected_changes.removed_label_ids:
-        messages.append(f"削除対象のラベルがアノテーションで使われています。 :: label_ids={protected_changes.removed_label_ids}")
-    if protected_changes.changed_annotation_type_label_ids:
-        messages.append(f"種類変更対象のラベルがアノテーションで使われています。 :: label_ids={protected_changes.changed_annotation_type_label_ids}")
-    if protected_changes.removed_attribute_ids:
-        messages.append(f"削除対象の属性がアノテーションで使われています。 :: attribute_ids={protected_changes.removed_attribute_ids}")
-    if protected_changes.changed_type_attribute_ids:
-        messages.append(f"種類変更対象の属性がアノテーションで使われています。 :: attribute_ids={protected_changes.changed_type_attribute_ids}")
+    if protected_changes.removed_label_names:
+        messages.append(f"削除対象のラベルがアノテーションで使われています。 :: label_names_en={format_names(protected_changes.removed_label_names)}")
+    if protected_changes.changed_annotation_type_label_names:
+        messages.append(f"種類変更対象のラベルがアノテーションで使われています。 :: label_names_en={format_names(protected_changes.changed_annotation_type_label_names)}")
+    if protected_changes.changed_type_attribute_names:
+        messages.append(f"種類変更対象の属性がアノテーションで使われています。 :: attribute_names_en={format_names(protected_changes.changed_type_attribute_names)}")
+    if protected_changes.removed_attribute_names:
+        messages.append(f"削除対象の属性がアノテーションで使われています。 :: removed_attribute_names={format_names(protected_changes.removed_attribute_names)}")
     if protected_changes.removed_label_attribute_relations:
-        messages.append(f"ラベルから削除される属性がアノテーションで使われています。 :: label_attribute_pairs={protected_changes.removed_label_attribute_relations}")
+        messages.append(f"ラベルから削除される属性がアノテーションで使われています。 :: label_attribute_names_en={format_name_pairs(protected_changes.removed_label_attribute_relations)}")
     if protected_changes.removed_choices:
-        messages.append(f"削除対象の選択肢がアノテーションで使われています。 :: attribute_choice_pairs={protected_changes.removed_choices}")
+        messages.append(f"削除対象の選択肢がアノテーションで使われています。 :: attribute_choice_names_en={format_name_pairs(protected_changes.removed_choices)}")
 
-    raise ValueError("既存アノテーションに影響するため、アノテーション仕様のインポートを中止しました。\n" + "\n".join(messages))
+    return "\n".join(messages)
+
+
+def validate_import_annotation_specs(
+    protected_changes: ProtectedImportChanges,
+    *,
+    allow_affecting_annotations: bool = False,
+) -> bool:
+    """importしてよい変更かどうかを返す。
+
+    Args:
+        protected_changes: importを中止すべき変更一覧
+        allow_affecting_annotations: Trueなら既存アノテーションに影響する変更でも許可する
+
+    Returns:
+        importしてよい場合はTrue、既存アノテーションに影響するため中止する場合はFalse
+    """
+    if not protected_changes.has_changes():
+        return True
+
+    message = create_message_for_protected_import_changes(protected_changes)
+    if allow_affecting_annotations:
+        logger.warning("既存アノテーションに影響する変更がありますが、オプションで許可されているため、アノテーション仕様をインポートします。\n%s", message)
+        return True
+
+    logger.warning("既存アノテーションに影響するため、アノテーション仕様のインポートを中止しました。\n%s", message)
+    return False
+
+
+def create_annotation_specs_diff_text_for_import(current_annotation_specs: dict[str, Any], imported_annotation_specs: dict[str, Any]) -> str:
+    """importで適用されるアノテーション仕様の差分テキストを生成する。
+
+    Args:
+        current_annotation_specs: 現在のアノテーション仕様
+        imported_annotation_specs: インポートするアノテーション仕様
+
+    Returns:
+        アノテーション仕様の差分テキスト。差分がない場合は空文字。
+    """
+    diff = create_annotation_specs_diff(current_annotation_specs, imported_annotation_specs)
+    return format_annotation_specs_diff_as_text(diff, left_specs=current_annotation_specs, right_specs=imported_annotation_specs, detail=False)
+
+
+def output_annotation_specs_diff_for_import(diff_text: str) -> None:
+    """importで適用されるアノテーション仕様の差分を出力する。
+
+    Args:
+        diff_text: importで適用されるアノテーション仕様の差分テキスト
+    """
+    if diff_text == "":
+        logger.info("差分はありません。")
+        return
+
+    output_string(f"インポートによるアノテーション仕様の差分:\n{diff_text}")
 
 
 class ImportAnnotationSpecsMain(CommandLineWithConfirm):
@@ -199,9 +265,11 @@ class ImportAnnotationSpecsMain(CommandLineWithConfirm):
         *,
         project_id: str,
         all_yes: bool,
+        allow_affecting_annotations: bool = False,
     ) -> None:
         self.service = service
         self.project_id = project_id
+        self.allow_affecting_annotations = allow_affecting_annotations
         CommandLineWithConfirm.__init__(self, all_yes)
 
     def has_annotation(self, query: dict[str, Any]) -> bool:
@@ -212,29 +280,28 @@ class ImportAnnotationSpecsMain(CommandLineWithConfirm):
         )
         return content["total_count"] > 0
 
-    def validate_import(self, *, current_annotation_specs: dict[str, Any], imported_annotation_specs: dict[str, Any]) -> None:
+    def validate_import(self, *, current_annotation_specs: dict[str, Any], imported_annotation_specs: dict[str, Any]) -> bool:
         """importしてよい差分かどうかを検証する。"""
         diff = create_annotation_specs_diff(current_annotation_specs, imported_annotation_specs, targets={"labels", "attributes"})
 
         @functools.cache
         def is_label_used(label_id: str) -> bool:
-            return self.has_annotation(create_label_annotation_query(label_id))
-
-        @functools.cache
-        def is_attribute_used(attribute_id: str) -> bool:
-            return self.has_annotation(create_attribute_annotation_query(attribute_id))
+            return self.has_annotation({"label_id": label_id})
 
         @functools.cache
         def is_choice_used(attribute_id: str, choice_id: str) -> bool:
-            return self.has_annotation(create_choice_annotation_query(attribute_id, choice_id))
+            return self.has_annotation({"attributes": [{"additional_data_definition_id": attribute_id, "choice": choice_id}]})
 
         protected_changes = create_protected_import_changes(
             diff,
+            current_annotation_specs,
             is_label_used=is_label_used,
-            is_attribute_used=is_attribute_used,
             is_choice_used=is_choice_used,
         )
-        validate_import_annotation_specs(protected_changes)
+        return validate_import_annotation_specs(
+            protected_changes,
+            allow_affecting_annotations=self.allow_affecting_annotations,
+        )
 
     def import_annotation_specs(self, *, imported_annotation_specs: dict[str, Any], comment: str | None = None) -> bool:
         """アノテーション仕様をimportする。
@@ -247,13 +314,17 @@ class ImportAnnotationSpecsMain(CommandLineWithConfirm):
             更新を実行した場合はTrue、確認で中断した場合はFalse
         """
         current_annotation_specs, _ = self.service.api.get_annotation_specs(self.project_id, query_params={"v": "3"})
-        self.validate_import(current_annotation_specs=current_annotation_specs, imported_annotation_specs=imported_annotation_specs)
+        if not self.validate_import(current_annotation_specs=current_annotation_specs, imported_annotation_specs=imported_annotation_specs):
+            return False
+
+        diff_text = create_annotation_specs_diff_text_for_import(current_annotation_specs, imported_annotation_specs)
+        output_annotation_specs_diff_for_import(diff_text)
 
         confirm_message = f"プロジェクト'{self.project_id}'のアノテーション仕様をインポートします。よろしいですか？"
         if not self.confirm_processing(confirm_message):
             return False
 
-        request_body = build_request_body_for_import_annotation_specs(current_annotation_specs, imported_annotation_specs, comment=comment)
+        request_body = build_request_body_for_import_annotation_specs(current_annotation_specs, imported_annotation_specs, comment=comment, diff_text=diff_text)
         self.service.api.put_annotation_specs(self.project_id, query_params={"v": "3"}, request_body=request_body)
         logger.info(f"プロジェクト'{self.project_id}'のアノテーション仕様をインポートしました。")
         return True
@@ -264,8 +335,13 @@ class ImportAnnotationSpecs(CommandLine):
 
     def main(self) -> None:
         args = self.args
-        imported_annotation_specs = read_annotation_specs_json(args.annotation_specs_json)
-        obj = ImportAnnotationSpecsMain(self.service, project_id=args.project_id, all_yes=args.yes)
+        imported_annotation_specs = read_annotation_specs_json(args.annotation_specs_json_file)
+        obj = ImportAnnotationSpecsMain(
+            self.service,
+            project_id=args.project_id,
+            all_yes=args.yes,
+            allow_affecting_annotations=args.allow_affecting_annotations,
+        )
         obj.import_annotation_specs(imported_annotation_specs=imported_annotation_specs, comment=args.comment)
 
 
@@ -273,12 +349,17 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     argument_parser = ArgumentParser(parser)
     argument_parser.add_project_id()
     parser.add_argument(
-        "--annotation_specs_json",
+        "--annotation_specs_json_file",
         type=Path,
         required=True,
-        help="インポートするアノテーション仕様JSONを指定します。 ``annotation_specs export`` コマンドで出力したJSONを指定してください。",
+        help="インポートするアノテーション仕様JSONファイルを指定します。 ``annotation_specs export`` コマンドで出力したJSONファイルを指定してください。",
     )
     parser.add_argument("--comment", type=str, help="アノテーション仕様の変更内容を説明するコメント。未指定の場合、自動でコメントが生成されます。")
+    parser.add_argument(
+        "--allow_affecting_annotations",
+        action="store_true",
+        help="指定すると、既存アノテーションに影響する変更でもアノテーション仕様をインポートします。",
+    )
     parser.set_defaults(subcommand_func=main)
 
 
@@ -291,7 +372,7 @@ def main(args: argparse.Namespace) -> None:
 def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "import"
     subcommand_help = "アノテーション仕様の情報をインポートします。"
-    description = "アノテーション仕様の情報をJSON形式でインポートします。既存アノテーションで使われているラベルや属性、選択肢に影響する削除や種類変更は中止します。"
+    description = "アノテーション仕様の情報をJSON形式でインポートします。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description=description)
     parse_args(parser)

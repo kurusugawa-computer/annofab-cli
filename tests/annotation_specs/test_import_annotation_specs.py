@@ -3,16 +3,17 @@ from __future__ import annotations
 import copy
 from collections.abc import Callable
 from typing import Any
+from unittest.mock import MagicMock
 
 import pytest
 
 from annofabcli.annotation_specs.diff_compare import create_annotation_specs_diff
 from annofabcli.annotation_specs.import_annotation_specs import (
+    ImportAnnotationSpecsMain,
     ProtectedImportChanges,
     build_request_body_for_import_annotation_specs,
-    create_attribute_annotation_query,
-    create_choice_annotation_query,
-    create_label_annotation_query,
+    create_comment_for_import_annotation_specs,
+    create_message_for_protected_import_changes,
     create_protected_import_changes,
     validate_import_annotation_specs,
 )
@@ -94,17 +95,15 @@ def _assert_import_allowed(
     imported_specs: dict[str, Any],
     *,
     used_label_ids: set[str] | None = None,
-    used_attribute_ids: set[str] | None = None,
     used_choices: set[tuple[str, str]] | None = None,
 ) -> None:
     protected_changes = _create_protected_changes(
         current_specs,
         imported_specs,
         used_label_ids=used_label_ids,
-        used_attribute_ids=used_attribute_ids,
         used_choices=used_choices,
     )
-    validate_import_annotation_specs(protected_changes)
+    assert validate_import_annotation_specs(protected_changes)
 
 
 def _assert_import_blocked(
@@ -112,18 +111,15 @@ def _assert_import_blocked(
     imported_specs: dict[str, Any],
     *,
     used_label_ids: set[str] | None = None,
-    used_attribute_ids: set[str] | None = None,
     used_choices: set[tuple[str, str]] | None = None,
 ) -> None:
     protected_changes = _create_protected_changes(
         current_specs,
         imported_specs,
         used_label_ids=used_label_ids,
-        used_attribute_ids=used_attribute_ids,
         used_choices=used_choices,
     )
-    with pytest.raises(ValueError):
-        validate_import_annotation_specs(protected_changes)
+    assert not validate_import_annotation_specs(protected_changes)
 
 
 def _create_protected_changes(
@@ -131,17 +127,15 @@ def _create_protected_changes(
     imported_specs: dict[str, Any],
     *,
     used_label_ids: set[str] | None = None,
-    used_attribute_ids: set[str] | None = None,
     used_choices: set[tuple[str, str]] | None = None,
 ) -> ProtectedImportChanges:
     used_label_ids = used_label_ids if used_label_ids is not None else set()
-    used_attribute_ids = used_attribute_ids if used_attribute_ids is not None else set()
     used_choices = used_choices if used_choices is not None else set()
     diff = create_annotation_specs_diff(current_specs, imported_specs, targets={"labels", "attributes"})
     return create_protected_import_changes(
         diff,
+        current_specs,
         is_label_used=_to_used_checker(used_label_ids),
-        is_attribute_used=_to_used_checker(used_attribute_ids),
         is_choice_used=lambda attribute_id, choice_id: (attribute_id, choice_id) in used_choices,
     )
 
@@ -172,6 +166,90 @@ class TestBuildRequestBodyForImportAnnotationSpecs:
         actual = build_request_body_for_import_annotation_specs(current_specs, imported_specs, comment=None)
 
         assert "annotation_specs import" in actual["comment"]
+
+    def test_comment未指定かつ差分テキストがあればデフォルトコメントに差分を設定する(self) -> None:
+        current_specs = _create_annotation_specs()
+        imported_specs = copy.deepcopy(current_specs)
+
+        actual = build_request_body_for_import_annotation_specs(
+            current_specs,
+            imported_specs,
+            comment=None,
+            diff_text="[labels]\nchanged:\n- label_car",
+        )
+
+        assert "annotation_specs import" in actual["comment"]
+        assert "インポートによるアノテーション仕様の差分:" in actual["comment"]
+        assert "[labels]" in actual["comment"]
+
+    def test_comment指定時は差分テキストを設定しない(self) -> None:
+        current_specs = _create_annotation_specs()
+        imported_specs = copy.deepcopy(current_specs)
+
+        actual = build_request_body_for_import_annotation_specs(
+            current_specs,
+            imported_specs,
+            comment="ユーザー指定コメント",
+            diff_text="[labels]\nchanged:\n- label_car",
+        )
+
+        assert actual["comment"] == "ユーザー指定コメント"
+
+
+class TestCreateCommentForImportAnnotationSpecs:
+    def test_差分テキストが空ならデフォルトコメントだけを生成する(self) -> None:
+        actual = create_comment_for_import_annotation_specs("")
+
+        assert "annotation_specs import" in actual
+        assert "インポートによるアノテーション仕様の差分:" not in actual
+
+
+class TestCreateMessageForProtectedImportChanges:
+    def test_英語名でメッセージを生成する(self) -> None:
+        protected_changes = ProtectedImportChanges(
+            removed_label_names={"car"},
+            changed_annotation_type_label_names={"bus"},
+            changed_type_attribute_names={"truncated"},
+            removed_attribute_names={"occluded"},
+            removed_label_attribute_relations={("car", "occluded")},
+            removed_choices={("occluded", "yes")},
+        )
+
+        actual = create_message_for_protected_import_changes(protected_changes)
+
+        assert "label_names_en=['car']" in actual
+        assert "label_names_en=['bus']" in actual
+        assert "attribute_names_en=['truncated']" in actual
+        assert "removed_attribute_names=['occluded']" in actual
+        assert "label_attribute_names_en=[('car', 'occluded')]" in actual
+        assert "attribute_choice_names_en=[('occluded', 'yes')]" in actual
+        assert "label_ids" not in actual
+        assert "attribute_ids" not in actual
+
+
+class TestCreateProtectedImportChanges:
+    def test_アノテーションで使われている変更を英語名で保持する(self) -> None:
+        current_specs = _create_annotation_specs()
+        current_specs["labels"][0]["label_id"] = "11111111-1111-1111-1111-111111111111"
+        current_specs["labels"][0]["label_name"] = _create_message("車", "car")
+        current_specs["labels"][0]["additional_data_definitions"] = ["22222222-2222-2222-2222-222222222222"]
+        current_specs["additionals"][0]["additional_data_definition_id"] = "22222222-2222-2222-2222-222222222222"
+        current_specs["additionals"][0]["name"] = _create_message("遮蔽", "occluded")
+        current_specs["additionals"][0]["choices"][0]["choice_id"] = "33333333-3333-3333-3333-333333333333"
+        current_specs["additionals"][0]["choices"][0]["name"] = _create_message("はい", "yes")
+        imported_specs = copy.deepcopy(current_specs)
+        imported_specs["labels"] = [label for label in imported_specs["labels"] if label["label_id"] != "11111111-1111-1111-1111-111111111111"]
+        imported_specs["additionals"][0]["choices"] = [choice for choice in imported_specs["additionals"][0]["choices"] if choice["choice_id"] != "33333333-3333-3333-3333-333333333333"]
+
+        actual = _create_protected_changes(
+            current_specs,
+            imported_specs,
+            used_label_ids={"11111111-1111-1111-1111-111111111111"},
+            used_choices={("22222222-2222-2222-2222-222222222222", "33333333-3333-3333-3333-333333333333")},
+        )
+
+        assert actual.removed_label_names == {"car"}
+        assert actual.removed_choices == {("occluded", "yes")}
 
 
 class TestValidateImportAnnotationSpecs:
@@ -210,17 +288,33 @@ class TestValidateImportAnnotationSpecs:
 
         _assert_import_allowed(current_specs, imported_specs)
 
-    def test_使われている属性を削除する場合は中止する(self) -> None:
+    def test_使われている属性定義を削除する場合は中止する(self) -> None:
         current_specs = _create_annotation_specs()
         imported_specs = copy.deepcopy(current_specs)
         imported_specs["additionals"] = [attribute for attribute in imported_specs["additionals"] if attribute["additional_data_definition_id"] != "attr_truncated"]
 
-        _assert_import_blocked(current_specs, imported_specs, used_attribute_ids={"attr_truncated"})
+        _assert_import_blocked(current_specs, imported_specs, used_label_ids={"label_car"})
 
-    def test_使われていない属性を削除する場合は許可する(self) -> None:
+    def test_使われていない属性定義を削除する場合は許可する(self) -> None:
         current_specs = _create_annotation_specs()
         imported_specs = copy.deepcopy(current_specs)
         imported_specs["additionals"] = [attribute for attribute in imported_specs["additionals"] if attribute["additional_data_definition_id"] != "attr_truncated"]
+
+        _assert_import_allowed(current_specs, imported_specs)
+
+    def test_属性定義とラベルに含まれる属性を削除する場合は中止する(self) -> None:
+        current_specs = _create_annotation_specs()
+        imported_specs = copy.deepcopy(current_specs)
+        imported_specs["additionals"] = [attribute for attribute in imported_specs["additionals"] if attribute["additional_data_definition_id"] != "attr_truncated"]
+        imported_specs["labels"][0]["additional_data_definitions"] = ["attr_occluded"]
+
+        _assert_import_blocked(current_specs, imported_specs, used_label_ids={"label_car"})
+
+    def test_使われていない属性定義とラベルに含まれる属性を削除する場合は許可する(self) -> None:
+        current_specs = _create_annotation_specs()
+        imported_specs = copy.deepcopy(current_specs)
+        imported_specs["additionals"] = [attribute for attribute in imported_specs["additionals"] if attribute["additional_data_definition_id"] != "attr_truncated"]
+        imported_specs["labels"][0]["additional_data_definitions"] = ["attr_occluded"]
 
         _assert_import_allowed(current_specs, imported_specs)
 
@@ -229,7 +323,7 @@ class TestValidateImportAnnotationSpecs:
         imported_specs = copy.deepcopy(current_specs)
         imported_specs["additionals"][1]["type"] = "integer"
 
-        _assert_import_blocked(current_specs, imported_specs, used_attribute_ids={"attr_truncated"})
+        _assert_import_blocked(current_specs, imported_specs, used_label_ids={"label_car"})
 
     def test_使われていない属性の種類を変更する場合は許可する(self) -> None:
         current_specs = _create_annotation_specs()
@@ -243,7 +337,7 @@ class TestValidateImportAnnotationSpecs:
         imported_specs = copy.deepcopy(current_specs)
         imported_specs["labels"][0]["additional_data_definitions"] = ["attr_occluded"]
 
-        _assert_import_blocked(current_specs, imported_specs, used_attribute_ids={"attr_truncated"})
+        _assert_import_blocked(current_specs, imported_specs, used_label_ids={"label_car"})
 
     def test_使われていない属性をラベルから削除する場合は許可する(self) -> None:
         current_specs = _create_annotation_specs()
@@ -251,6 +345,13 @@ class TestValidateImportAnnotationSpecs:
         imported_specs["labels"][0]["additional_data_definitions"] = ["attr_occluded"]
 
         _assert_import_allowed(current_specs, imported_specs)
+
+    def test_別ラベルで使われている属性をラベルから削除する場合は許可する(self) -> None:
+        current_specs = _create_annotation_specs()
+        imported_specs = copy.deepcopy(current_specs)
+        imported_specs["labels"][0]["additional_data_definitions"] = ["attr_truncated"]
+
+        _assert_import_allowed(current_specs, imported_specs, used_label_ids={"label_bus"})
 
     def test_使われている選択肢を削除する場合は中止する(self) -> None:
         current_specs = _create_annotation_specs()
@@ -266,33 +367,94 @@ class TestValidateImportAnnotationSpecs:
 
         _assert_import_allowed(current_specs, imported_specs)
 
+    def test_許可する場合は既存アノテーションに影響する変更でも許可する(self) -> None:
+        current_specs = _create_annotation_specs()
+        imported_specs = copy.deepcopy(current_specs)
+        imported_specs["labels"] = [label for label in imported_specs["labels"] if label["label_id"] != "label_car"]
+        protected_changes = _create_protected_changes(current_specs, imported_specs, used_label_ids={"label_car"})
 
-class TestCreateAnnotationQuery:
-    def test_ラベル検索queryを生成できる(self) -> None:
-        assert create_label_annotation_query("label_car") == {"label_id": "label_car"}
+        assert validate_import_annotation_specs(protected_changes, allow_affecting_annotations=True)
 
-    def test_属性検索queryを生成できる(self) -> None:
-        assert create_attribute_annotation_query("attr_occluded") == {
-            "attributes": [
-                {
-                    "additional_data_definition_id": "attr_occluded",
-                    "flag": None,
-                    "integer": None,
-                    "comment": None,
-                    "choice": None,
-                }
-            ]
-        }
 
-    def test_選択肢検索queryを生成できる(self) -> None:
-        assert create_choice_annotation_query("attr_occluded", "choice_yes") == {
-            "attributes": [
-                {
-                    "additional_data_definition_id": "attr_occluded",
-                    "flag": None,
-                    "integer": None,
-                    "comment": None,
-                    "choice": "choice_yes",
-                }
-            ]
-        }
+class TestImportAnnotationSpecsMain:
+    def test_インポート前に差分を出力する(self, capsys: pytest.CaptureFixture[str]) -> None:
+        service = MagicMock()
+        current_specs = _create_annotation_specs()
+        imported_specs = copy.deepcopy(current_specs)
+        imported_specs["labels"][0]["color"] = {"red": 0, "green": 255, "blue": 0}
+        service.api.get_annotation_specs.return_value = (current_specs, None)
+        obj = ImportAnnotationSpecsMain(service, project_id="prj1", all_yes=True)
+
+        actual = obj.import_annotation_specs(imported_annotation_specs=imported_specs)
+
+        assert actual
+        captured = capsys.readouterr()
+        assert "インポートによるアノテーション仕様の差分:" in captured.out
+        assert "[labels]" in captured.out
+        assert "label_car" in captured.out
+        service.api.put_annotation_specs.assert_called_once()
+        request_body = service.api.put_annotation_specs.call_args.kwargs["request_body"]
+        assert "インポートによるアノテーション仕様の差分:" in request_body["comment"]
+        assert "[labels]" in request_body["comment"]
+
+    def test_差分テキストが空でもインポートする(self) -> None:
+        service = MagicMock()
+        current_specs = _create_annotation_specs()
+        imported_specs = copy.deepcopy(current_specs)
+        service.api.get_annotation_specs.return_value = (current_specs, None)
+        obj = ImportAnnotationSpecsMain(service, project_id="prj1", all_yes=True)
+
+        actual = obj.import_annotation_specs(imported_annotation_specs=imported_specs)
+
+        assert actual
+        service.api.put_annotation_specs.assert_called_once()
+        request_body = service.api.put_annotation_specs.call_args.kwargs["request_body"]
+        assert "インポートによるアノテーション仕様の差分:" not in request_body["comment"]
+
+    def test_既存アノテーションに影響する変更があればインポートしない(self) -> None:
+        service = MagicMock()
+        current_specs = _create_annotation_specs()
+        imported_specs = copy.deepcopy(current_specs)
+        imported_specs["labels"] = [label for label in imported_specs["labels"] if label["label_id"] != "label_car"]
+        service.api.get_annotation_specs.return_value = (current_specs, None)
+        service.api.get_annotation_list.return_value = ({"total_count": 1}, None)
+        obj = ImportAnnotationSpecsMain(service, project_id="prj1", all_yes=True)
+
+        actual = obj.import_annotation_specs(imported_annotation_specs=imported_specs)
+
+        assert not actual
+        service.api.put_annotation_specs.assert_not_called()
+
+    def test_属性の種類変更時は属性を含むラベルの利用状況で判定する(self) -> None:
+        service = MagicMock()
+        current_specs = _create_annotation_specs()
+        imported_specs = copy.deepcopy(current_specs)
+        imported_specs["additionals"][1]["type"] = "integer"
+        service.api.get_annotation_specs.return_value = (current_specs, None)
+        service.api.get_annotation_list.side_effect = lambda _project_id, query_params: (
+            {"total_count": 1 if query_params["query"] == {"label_id": "label_car"} else 0},
+            None,
+        )
+        obj = ImportAnnotationSpecsMain(service, project_id="prj1", all_yes=True)
+
+        actual = obj.import_annotation_specs(imported_annotation_specs=imported_specs)
+
+        assert not actual
+        queried = [call.kwargs["query_params"]["query"] for call in service.api.get_annotation_list.call_args_list]
+        assert {"label_id": "label_car"} in queried
+        assert not any("attributes" in query for query in queried)
+        service.api.put_annotation_specs.assert_not_called()
+
+    def test_許可する場合は既存アノテーションに影響する変更でもインポートする(self) -> None:
+        service = MagicMock()
+        current_specs = _create_annotation_specs()
+        imported_specs = copy.deepcopy(current_specs)
+        imported_specs["labels"] = [label for label in imported_specs["labels"] if label["label_id"] != "label_car"]
+        service.api.get_annotation_specs.return_value = (current_specs, None)
+        service.api.get_annotation_list.return_value = ({"total_count": 1}, None)
+        obj = ImportAnnotationSpecsMain(service, project_id="prj1", all_yes=True, allow_affecting_annotations=True)
+
+        actual = obj.import_annotation_specs(imported_annotation_specs=imported_specs)
+
+        assert actual
+        service.api.put_annotation_specs.assert_called_once()
