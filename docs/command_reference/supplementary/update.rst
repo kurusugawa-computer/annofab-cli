@@ -45,7 +45,7 @@ CSVのフォーマットは以下の通りです。
 
 .. warning::
 
-    プライベートストレージが利用可能な組織配下のプロジェクトでしか、 ``input_data_path`` に ``https`` または ``s3`` スキームを利用できません。
+    プライベートストレージが利用可能な組織配下のプロジェクトでしか、 ``supplementary_data_path`` に ``https`` または ``s3`` スキームを利用できません。
     プライベートストレージを利用するには、Annofabサポート窓口への問い合わせが必要です。
     詳細は https://annofab.readme.io/docs/external-storage を参照してください。
 
