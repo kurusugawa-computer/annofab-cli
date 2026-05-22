@@ -82,75 +82,6 @@ def get_annotation_data_list_per_task_id_input_data_id(anno_list: list[TargetAnn
     return grouped
 
 
-def get_data_type(data: dict[str, Any], *, annotation_id: str) -> str:
-    """アノテーションdataの種類を取得する。
-
-    Args:
-        data: アノテーションdata
-        annotation_id: アノテーションID
-
-    Raises:
-        TypeError: `data._type` が存在しない、または文字列でない
-
-    Returns:
-        アノテーションdataの種類
-    """
-    data_type = data.get("_type")
-    if not isinstance(data_type, str):
-        raise TypeError(f"annotation_id='{annotation_id}' :: `data._type` が存在しない、または文字列でありません。")
-    return data_type
-
-
-def validate_target_data(data: dict[str, Any], *, annotation_id: str) -> str:
-    """変更後のアノテーションdataがこのコマンドで扱えることを検証する。
-
-    Args:
-        data: 変更後のアノテーションdata
-        annotation_id: アノテーションID
-
-    Raises:
-        ValueError: 外部ファイルが必要なアノテーションdataである
-
-    Returns:
-        アノテーションdataの種類
-    """
-    data_type = get_data_type(data, annotation_id=annotation_id)
-    if data_type in UNSUPPORTED_DATA_TYPES:
-        raise ValueError(f"annotation_id='{annotation_id}' :: data._type='{data_type}' は外部ファイルが必要なアノテーションのため、このコマンドではサポートしていません。")
-    return data_type
-
-
-def get_inner_data_from_detail(detail: dict[str, Any]) -> dict[str, Any]:
-    """アノテーションdetailから内部保持されているdataを取得する。
-
-    Args:
-        detail: `get_editor_annotation` のdetails要素
-
-    Raises:
-        ValueError: 外部ファイルを持つアノテーションである
-
-    Returns:
-        アノテーションdata
-    """
-    body = detail.get("body")
-    if isinstance(body, dict):
-        if body.get("_type") == "Inner":
-            data = body.get("data")
-            if isinstance(data, dict):
-                return data
-            raise TypeError(f"annotation_id='{detail['annotation_id']}' :: `body.data` が存在しない、またはオブジェクトでありません。")
-
-        if body.get("_type") == "Outer":
-            raise ValueError(f"annotation_id='{detail['annotation_id']}' :: 外部ファイルが必要なアノテーションのため、このコマンドではサポートしていません。")
-
-    # テストや古い形式のデータを扱うためのフォールバック
-    data = detail.get("data")
-    if isinstance(data, dict):
-        return data
-
-    raise TypeError(f"annotation_id='{detail['annotation_id']}' :: アノテーションdataが存在しない、またはオブジェクトでありません。")
-
-
 def create_request_body_for_change_data(editor_annotation: dict[str, Any], anno_list: list[TargetAnnotationData]) -> ChangeAnnotationDataRequest:
     """`put_annotation` に渡すリクエストボディを作成する。
 
@@ -348,20 +279,13 @@ class ChangeDataPerAnnotation(CommandLine):
             target_annotation_list = [TargetAnnotationData.model_validate(anno) for anno in annotation_items]
 
         elif args.csv is not None:
-            df_input = pandas.read_csv(args.csv)
+            df_input = pandas.read_csv(args.csv, dtype={"task_id": "string", "input_data_id": "string", "annotation_id": "string", "data": "string"})
             target_annotation_list = [
                 TargetAnnotationData(task_id=e["task_id"], input_data_id=e["input_data_id"], annotation_id=e["annotation_id"], data=json.loads(e["data"])) for e in df_input.to_dict(orient="records")
             ]
         else:
             print(f"{self.COMMON_MESSAGE} argument '--json' または '--csv' のいずれかを指定してください。", file=sys.stderr)  # noqa: T201
             sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
-
-        for anno in target_annotation_list:
-            try:
-                validate_target_data(anno.data, annotation_id=anno.annotation_id)
-            except (TypeError, ValueError) as e:
-                print(f"{self.COMMON_MESSAGE} {e}", file=sys.stderr)  # noqa: T201
-                sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
         project_id = args.project_id
 
