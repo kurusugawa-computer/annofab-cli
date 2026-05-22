@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import copy
 import json
 import logging
 import sys
@@ -52,6 +53,17 @@ class ChangeAnnotationDataCount:
 
     failed: int
     """変更に失敗またはスキップしたアノテーション数。"""
+
+
+@dataclass(frozen=True)
+class ChangeAnnotationDataRequest:
+    """アノテーションdata変更用のリクエスト情報。"""
+
+    request_body: dict[str, Any]
+    """`put_annotation` APIに渡すリクエストボディ。"""
+
+    count: ChangeAnnotationDataCount
+    """アノテーションdata変更件数。"""
 
 
 def get_annotation_data_list_per_task_id_input_data_id(anno_list: list[TargetAnnotationData]) -> dict[str, dict[str, list[TargetAnnotationData]]]:
@@ -110,23 +122,58 @@ def validate_target_data(data: dict[str, Any], *, annotation_id: str) -> str:
 
 def is_outer_annotation_detail(detail: dict[str, Any]) -> bool:
     """外部ファイルを持つアノテーションかどうかを返す。"""
+    body = detail.get("body")
+    if isinstance(body, dict) and body.get("_type") == "Outer":
+        return True
+
     data_holding_type = detail.get("data_holding_type")
     return data_holding_type == AnnotationDataHoldingType.OUTER.value
 
 
-def create_request_body_for_change_data(editor_annotation: dict[str, Any], anno_list: list[TargetAnnotationData]) -> tuple[list[dict[str, Any]], int]:
-    """`batch_update_annotations` に渡すリクエストボディを作成する。
+def get_inner_data_from_detail(detail: dict[str, Any]) -> dict[str, Any]:
+    """アノテーションdetailから内部保持されているdataを取得する。
+
+    Args:
+        detail: `get_editor_annotation` のdetails要素
+
+    Raises:
+        ValueError: 外部ファイルを持つアノテーションである
+
+    Returns:
+        アノテーションdata
+    """
+    body = detail.get("body")
+    if isinstance(body, dict):
+        if body.get("_type") == "Inner":
+            data = body.get("data")
+            if isinstance(data, dict):
+                return data
+            raise TypeError(f"annotation_id='{detail['annotation_id']}' :: `body.data` が存在しない、またはオブジェクトでありません。")
+
+        if body.get("_type") == "Outer":
+            raise ValueError(f"annotation_id='{detail['annotation_id']}' :: 外部ファイルが必要なアノテーションのため、このコマンドではサポートしていません。")
+
+    # テストや古い形式のデータを扱うためのフォールバック
+    data = detail.get("data")
+    if isinstance(data, dict):
+        return data
+
+    raise TypeError(f"annotation_id='{detail['annotation_id']}' :: アノテーションdataが存在しない、またはオブジェクトでありません。")
+
+
+def create_request_body_for_change_data(editor_annotation: dict[str, Any], anno_list: list[TargetAnnotationData]) -> ChangeAnnotationDataRequest:
+    """`put_annotation` に渡すリクエストボディを作成する。
 
     Args:
         editor_annotation: `get_editor_annotation` のレスポンス
         anno_list: アノテーションdata変更内容のリスト
 
     Returns:
-        リクエストボディと、変更できなかったアノテーション数
+        リクエスト情報
     """
     details_map = {detail["annotation_id"]: detail for detail in editor_annotation["details"]}
 
-    request_body: list[dict[str, Any]] = []
+    data_by_annotation_id: dict[str, dict[str, Any]] = {}
     failed_count = 0
     for anno in anno_list:
         if anno.annotation_id not in details_map:
@@ -147,7 +194,7 @@ def create_request_body_for_change_data(editor_annotation: dict[str, Any], anno_
             continue
 
         try:
-            src_data_type = validate_target_data(detail["data"], annotation_id=anno.annotation_id)
+            src_data_type = validate_target_data(get_inner_data_from_detail(detail), annotation_id=anno.annotation_id)
             dest_data_type = validate_target_data(anno.data, annotation_id=anno.annotation_id)
         except (TypeError, ValueError) as e:
             logger.warning(f"task_id='{anno.task_id}', input_data_id='{anno.input_data_id}', annotation_id='{anno.annotation_id}' :: {e}")
@@ -162,23 +209,33 @@ def create_request_body_for_change_data(editor_annotation: dict[str, Any], anno_
             failed_count += 1
             continue
 
-        request_body.append(
-            {
-                "data": {
-                    "project_id": editor_annotation["project_id"],
-                    "task_id": editor_annotation["task_id"],
-                    "input_data_id": editor_annotation["input_data_id"],
-                    "updated_datetime": editor_annotation["updated_datetime"],
-                    "annotation_id": anno.annotation_id,
-                    "label_id": detail["label_id"],
-                    "additional_data_list": detail.get("additional_data_list", []),
-                    "data": anno.data,
-                },
-                "_type": "PutV2",
-            }
-        )
+        data_by_annotation_id[anno.annotation_id] = anno.data
 
-    return request_body, failed_count
+    request_details: list[dict[str, Any]] = []
+    for detail in editor_annotation["details"]:
+        new_detail = copy.deepcopy(detail)
+        new_detail["_type"] = "Update"
+        if detail["annotation_id"] in data_by_annotation_id:
+            new_detail["body"] = {"_type": "Inner", "data": data_by_annotation_id[detail["annotation_id"]]}
+        else:
+            # 既存アノテーションは変更しない。`body=None` を指定すると、putAnnotationでbodyが維持される。
+            new_detail["body"] = None
+
+        request_details.append(new_detail)
+
+    request_body = {
+        "project_id": editor_annotation["project_id"],
+        "task_id": editor_annotation["task_id"],
+        "input_data_id": editor_annotation["input_data_id"],
+        "details": request_details,
+        "updated_datetime": editor_annotation["updated_datetime"],
+        "format_version": "2.0.0",
+    }
+
+    return ChangeAnnotationDataRequest(
+        request_body=request_body,
+        count=ChangeAnnotationDataCount(success=len(data_by_annotation_id), failed=failed_count),
+    )
 
 
 class ChangeAnnotationDataPerAnnotationMain(CommandLineWithConfirm):
@@ -208,16 +265,17 @@ class ChangeAnnotationDataPerAnnotationMain(CommandLineWithConfirm):
             (self.backup_dir / task_id).mkdir(exist_ok=True, parents=True)
             self.dump_annotation_obj.dump_editor_annotation(editor_annotation, json_path=self.backup_dir / task_id / f"{input_data_id}.json")
 
-        request_body, failed_count = create_request_body_for_change_data(editor_annotation, anno_list)
+        request = create_request_body_for_change_data(editor_annotation, anno_list)
 
-        if request_body:
-            self.service.api.batch_update_annotations(self.project_id, request_body=request_body)
+        if request.count.success > 0:
+            self.service.api.put_annotation(self.project_id, task_id, input_data_id, request_body=request.request_body, query_params={"v": "2"})
         else:
             logger.debug(f"task_id='{task_id}', input_data_id='{input_data_id}' :: 変更対象のアノテーションがありませんでした。")
 
-        success_count = len(request_body)
-        logger.debug(f"task_id='{task_id}', input_data_id='{input_data_id}' :: {success_count}/{len(anno_list)}件のdataを変更しました。{failed_count}件のアノテーションは変更できませんでした。")
-        return ChangeAnnotationDataCount(success=success_count, failed=failed_count)
+        logger.debug(
+            f"task_id='{task_id}', input_data_id='{input_data_id}' :: {request.count.success}/{len(anno_list)}件のdataを変更しました。{request.count.failed}件のアノテーションは変更できませんでした。"
+        )
+        return request.count
 
     def change_annotation_data_for_task(self, task_id: str, annotation_list_per_input_data_id: dict[str, list[TargetAnnotationData]]) -> tuple[bool, ChangeAnnotationDataCount]:
         """1個のタスクに含まれるアノテーションdataを変更する。"""

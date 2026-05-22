@@ -51,34 +51,53 @@ class TestCreateRequestBodyForChangeData:
             "updated_datetime": "2026-05-22T00:00:00+09:00",
             "details": [
                 {
+                    "_type": "Update",
                     "annotation_id": "anno1",
                     "label_id": "label1",
                     "additional_data_list": [{"definition_id": "attr1", "value": "foo"}],
-                    "data": {"_type": "Range", "begin": 0, "end": 1000},
-                    "data_holding_type": "inline",
-                }
+                    "body": {"_type": "Inner", "data": {"_type": "Range", "begin": 0, "end": 1000}},
+                    "editor_props": {"is_protected": False},
+                },
+                {
+                    "_type": "Update",
+                    "annotation_id": "anno2",
+                    "label_id": "label1",
+                    "additional_data_list": [],
+                    "body": {"_type": "Inner", "data": {"_type": "Range", "begin": 2000, "end": 3000}},
+                    "editor_props": {},
+                },
             ],
         }
         annotation_list = [TargetAnnotationData(task_id="task1", input_data_id="input1", annotation_id="anno1", data={"_type": "Range", "begin": 1000, "end": 5000})]
 
-        actual_request_body, actual_failed_count = create_request_body_for_change_data(editor_annotation, annotation_list)
+        actual = create_request_body_for_change_data(editor_annotation, annotation_list)
 
-        assert actual_failed_count == 0
-        assert actual_request_body == [
-            {
-                "data": {
-                    "project_id": "prj1",
-                    "task_id": "task1",
-                    "input_data_id": "input1",
-                    "updated_datetime": "2026-05-22T00:00:00+09:00",
+        assert actual.count == ChangeAnnotationDataCount(success=1, failed=0)
+        assert actual.request_body == {
+            "project_id": "prj1",
+            "task_id": "task1",
+            "input_data_id": "input1",
+            "updated_datetime": "2026-05-22T00:00:00+09:00",
+            "format_version": "2.0.0",
+            "details": [
+                {
+                    "_type": "Update",
                     "annotation_id": "anno1",
                     "label_id": "label1",
                     "additional_data_list": [{"definition_id": "attr1", "value": "foo"}],
-                    "data": {"_type": "Range", "begin": 1000, "end": 5000},
+                    "body": {"_type": "Inner", "data": {"_type": "Range", "begin": 1000, "end": 5000}},
+                    "editor_props": {"is_protected": False},
                 },
-                "_type": "PutV2",
-            }
-        ]
+                {
+                    "_type": "Update",
+                    "annotation_id": "anno2",
+                    "label_id": "label1",
+                    "additional_data_list": [],
+                    "body": None,
+                    "editor_props": {},
+                },
+            ],
+        }
 
     def test_skip_when_annotation_does_not_exist(self) -> None:
         editor_annotation = {
@@ -90,13 +109,48 @@ class TestCreateRequestBodyForChangeData:
         }
         annotation_list = [TargetAnnotationData(task_id="task1", input_data_id="input1", annotation_id="anno1", data={"_type": "Range", "begin": 1000, "end": 5000})]
 
-        actual_request_body, actual_failed_count = create_request_body_for_change_data(editor_annotation, annotation_list)
+        actual = create_request_body_for_change_data(editor_annotation, annotation_list)
 
-        assert actual_request_body == []
-        assert actual_failed_count == 1
+        assert actual.request_body["details"] == []
+        assert actual.count == ChangeAnnotationDataCount(success=0, failed=1)
 
 
 class TestChangeAnnotationDataPerAnnotationMain:
+    def test_change_annotation_data_by_frame_uses_put_annotation(self) -> None:
+        service = Mock()
+        service.api.get_editor_annotation.return_value = (
+            {
+                "project_id": "prj1",
+                "task_id": "task1",
+                "input_data_id": "input1",
+                "updated_datetime": "2026-05-22T00:00:00+09:00",
+                "details": [
+                    {
+                        "annotation_id": "anno1",
+                        "label_id": "label1",
+                        "additional_data_list": [],
+                        "body": {"_type": "Inner", "data": {"_type": "Range", "begin": 0, "end": 1000}},
+                        "editor_props": {},
+                    }
+                ],
+            },
+            None,
+        )
+        main_obj = ChangeAnnotationDataPerAnnotationMain(service, project_id="prj1", include_complete_task=False, include_on_hold_task=False, all_yes=True)
+
+        actual = main_obj.change_annotation_data_by_frame(
+            "task1",
+            "input1",
+            [TargetAnnotationData(task_id="task1", input_data_id="input1", annotation_id="anno1", data={"_type": "Range", "begin": 1000, "end": 5000})],
+        )
+
+        assert actual == ChangeAnnotationDataCount(success=1, failed=0)
+        service.api.batch_update_annotations.assert_not_called()
+        service.api.put_annotation.assert_called_once()
+        _, args, kwargs = service.api.put_annotation.mock_calls[0]
+        assert args[:3] == ("prj1", "task1", "input1")
+        assert kwargs["query_params"] == {"v": "2"}
+
     def test_change_annotation_data_for_task_skips_on_hold_task_by_default(self) -> None:
         service = Mock()
         service.wrapper.get_task_or_none.return_value = {"task_id": "task1", "status": "on_hold"}
@@ -142,8 +196,8 @@ class TestChangeAnnotationDataPerAnnotationMain:
                     "annotation_id": "anno1",
                     "label_id": "label1",
                     "additional_data_list": [],
-                    "data": {"_type": "Range", "begin": 0, "end": 1000},
-                    "data_holding_type": "inline",
+                    "body": {"_type": "Inner", "data": {"_type": "Range", "begin": 0, "end": 1000}},
+                    "editor_props": {},
                 }
             ],
         }
@@ -151,10 +205,10 @@ class TestChangeAnnotationDataPerAnnotationMain:
             TargetAnnotationData(task_id="task1", input_data_id="input1", annotation_id="anno1", data={"_type": "BoundingBox", "left_top": {"x": 10, "y": 20}, "right_bottom": {"x": 100, "y": 200}})
         ]
 
-        actual_request_body, actual_failed_count = create_request_body_for_change_data(editor_annotation, annotation_list)
+        actual = create_request_body_for_change_data(editor_annotation, annotation_list)
 
-        assert actual_request_body == []
-        assert actual_failed_count == 1
+        assert actual.count == ChangeAnnotationDataCount(success=0, failed=1)
+        assert actual.request_body["details"][0]["body"] is None
 
     def test_skip_when_outer_annotation(self) -> None:
         editor_annotation = {
@@ -167,14 +221,14 @@ class TestChangeAnnotationDataPerAnnotationMain:
                     "annotation_id": "anno1",
                     "label_id": "label1",
                     "additional_data_list": [],
-                    "data": {"_type": "SegmentationV2", "data_uri": "outer1"},
-                    "data_holding_type": "outer",
+                    "body": {"_type": "Outer", "path": "s3/path"},
+                    "editor_props": {},
                 }
             ],
         }
         annotation_list = [TargetAnnotationData(task_id="task1", input_data_id="input1", annotation_id="anno1", data={"_type": "SegmentationV2", "data_uri": "outer2"})]
 
-        actual_request_body, actual_failed_count = create_request_body_for_change_data(editor_annotation, annotation_list)
+        actual = create_request_body_for_change_data(editor_annotation, annotation_list)
 
-        assert actual_request_body == []
-        assert actual_failed_count == 1
+        assert actual.count == ChangeAnnotationDataCount(success=0, failed=1)
+        assert actual.request_body["details"][0]["body"] is None
