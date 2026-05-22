@@ -26,8 +26,8 @@ CSVのフォーマットは以下の通りです。
    :header: 列名,必須,備考
 
     input_data_id,Yes,
-    supplementary_data_path,Yes,先頭が ``file://`` の場合、ローカルのファイルを補助情報に使用します。
     supplementary_data_name,Yes,
+    supplementary_data_path,Yes,先頭が ``file://`` の場合、ローカルのファイルを補助情報に使用します。
     supplementary_data_id,No,省略した場合はsupplementary_data_nameに近い値（IDに使えない文字を加工した値）になります。
     supplementary_data_type,No,補助情報の種類。 ``image`` 、 ``text`` または ``custom`` のいずれかを指定ください。省略した場合は、ファイル名から推測します。
     supplementary_data_number,No,補助情報の表示順。省略した場合は、既存の補助情報の最大値+1になります。
@@ -38,12 +38,12 @@ CSVのフォーマットは以下の通りです。
     :caption: supplementary_data.csv
 
     input_data_id,supplementary_data_name,supplementary_data_path,supplementary_data_id,supplementary_data_type,supplementary_data_number
-    input1,data1-1,s3://example.com/data1,id1,
+    input1,data1-1,s3://example.com/data1,id1,,
     input1,data1-2,s3://example.com/data2,id2,image,1
     input1,data1-3,s3://example.com/data3,id3,text,2
-    input2,data2-1,https://example.com/data4,,
-    input2,data2-2,file://sample.jpg,,
-    input2,data2-3,file:///tmp/sample.jpg,,
+    input2,data2-1,https://example.com/data4,,,
+    input2,data2-2,file://sample.jpg,,,
+    input2,data2-3,file:///tmp/sample.jpg,,,
 
 
 .. warning::
