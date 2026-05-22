@@ -121,13 +121,11 @@ def validate_target_data(data: dict[str, Any], *, annotation_id: str) -> str:
 
 
 def is_outer_annotation_detail(detail: dict[str, Any]) -> bool:
-    """外部ファイルを持つアノテーションかどうかを返す。"""
-    body = detail.get("body")
-    if isinstance(body, dict) and body.get("_type") == "Outer":
-        return True
-
-    data_holding_type = detail.get("data_holding_type")
-    return data_holding_type == AnnotationDataHoldingType.OUTER.value
+    """外部ファイルを持つアノテーションかどうかを返す。
+    Args:
+        detail: `get_editor_annotation` のdetails要素(AnnotationDetailV2Get scheme)
+    """
+    return detail["body"]["_type"] == "Outer"
 
 
 def get_inner_data_from_detail(detail: dict[str, Any]) -> dict[str, Any]:
