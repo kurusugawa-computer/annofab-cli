@@ -12,7 +12,7 @@ from typing import Any
 
 import annofabapi
 import pandas
-from annofabapi.models import AnnotationDataHoldingType, ProjectMemberRole
+from annofabapi.models import ProjectMemberRole
 from annofabapi.pydantic_models.task_status import TaskStatus
 from pydantic import BaseModel
 
@@ -120,14 +120,6 @@ def validate_target_data(data: dict[str, Any], *, annotation_id: str) -> str:
     return data_type
 
 
-def is_outer_annotation_detail(detail: dict[str, Any]) -> bool:
-    """外部ファイルを持つアノテーションかどうかを返す。
-    Args:
-        detail: `get_editor_annotation` のdetails要素(AnnotationDetailV2Get scheme)
-    """
-    return detail["body"]["_type"] == "Outer"
-
-
 def get_inner_data_from_detail(detail: dict[str, Any]) -> dict[str, Any]:
     """アノテーションdetailから内部保持されているdataを取得する。
 
@@ -183,7 +175,7 @@ def create_request_body_for_change_data(editor_annotation: dict[str, Any], anno_
             continue
 
         detail = details_map[anno.annotation_id]
-        if is_outer_annotation_detail(detail):
+        if detail["body"]["_type"] == "Outer":
             logger.warning(
                 f"task_id='{anno.task_id}', input_data_id='{anno.input_data_id}', annotation_id='{anno.annotation_id}' :: "
                 "外部ファイルが必要なアノテーションのため、このアノテーションのdataの変更をスキップします。"
@@ -191,14 +183,8 @@ def create_request_body_for_change_data(editor_annotation: dict[str, Any], anno_
             failed_count += 1
             continue
 
-        try:
-            src_data_type = validate_target_data(get_inner_data_from_detail(detail), annotation_id=anno.annotation_id)
-            dest_data_type = validate_target_data(anno.data, annotation_id=anno.annotation_id)
-        except (TypeError, ValueError) as e:
-            logger.warning(f"task_id='{anno.task_id}', input_data_id='{anno.input_data_id}', annotation_id='{anno.annotation_id}' :: {e}")
-            failed_count += 1
-            continue
-
+        src_data_type = detail["body"]["data"]["_type"]
+        dest_data_type = anno.data["_type"]
         if src_data_type != dest_data_type:
             logger.warning(
                 f"task_id='{anno.task_id}', input_data_id='{anno.input_data_id}', annotation_id='{anno.annotation_id}' :: "
