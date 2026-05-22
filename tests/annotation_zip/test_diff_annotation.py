@@ -9,11 +9,11 @@ from annofabcli.__main__ import main
 from annofabcli.annotation_zip.diff_annotation import create_annotation_zip_diff, create_detail_df, create_summary_df
 
 
-def _create_simple_annotation(details: list[dict]) -> dict:
+def _create_simple_annotation(details: list[dict], *, task_id: str = "task1") -> dict:
     return {
         "project_id": "project1",
         "annotation_format_version": "1.2.0",
-        "task_id": "task1",
+        "task_id": task_id,
         "task_phase": "annotation",
         "task_phase_stage": 1,
         "task_status": "working",
@@ -25,7 +25,7 @@ def _create_simple_annotation(details: list[dict]) -> dict:
 
 
 def _write_annotation(annotation_dir: Path, simple_annotation: dict) -> Path:
-    json_file = annotation_dir / "task1" / "input1.json"
+    json_file = annotation_dir / simple_annotation["task_id"] / "input1.json"
     json_file.parent.mkdir(parents=True)
     json_file.write_text(json.dumps(simple_annotation, ensure_ascii=False), encoding="utf-8")
     return annotation_dir
@@ -139,6 +139,17 @@ class TestCreateAnnotationZipDiff:
 
         assert {detail.annotation_type for detail in diff.details} == {"bounding_box", "single_point"}
 
+    def test__create_annotation_zip_diff__target_task_ids(self, tmp_path: Path):
+        left_dir = _write_annotation(tmp_path / "left", _create_simple_annotation([_bbox_detail("task1-annotation", 0, 0, 10, 10)], task_id="task1"))
+        _write_annotation(left_dir, _create_simple_annotation([_bbox_detail("task2-annotation", 0, 0, 10, 10)], task_id="task2"))
+        right_dir = _write_annotation(tmp_path / "right", _create_simple_annotation([_bbox_detail("task1-annotation", 0, 0, 20, 10)], task_id="task1"))
+        _write_annotation(right_dir, _create_simple_annotation([_bbox_detail("task2-annotation", 0, 0, 20, 10)], task_id="task2"))
+
+        diff = create_annotation_zip_diff(left_dir, right_dir, annotation_type="bounding_box", target_task_ids=["task2"])
+
+        assert [summary.task_id for summary in diff.summary] == ["task2"]
+        assert [detail.task_id for detail in diff.details] == ["task2"]
+
 
 class TestCommandLine:
     def test__annotation_zip_diff(self, tmp_path: Path):
@@ -156,6 +167,8 @@ class TestCommandLine:
                 str(right_dir),
                 "--annotation_type",
                 "bounding_box",
+                "--task_id",
+                "task1",
                 "--format",
                 "detail_csv",
                 "--output",

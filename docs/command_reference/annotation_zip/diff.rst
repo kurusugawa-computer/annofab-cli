@@ -68,6 +68,20 @@ JSON形式では ``--annotation_type`` を省略できます。
         --output detail.csv
 
 
+差分対象のタスクを指定する
+--------------------
+
+.. code-block:: bash
+
+    $ annofabcli annotation_zip diff \
+        --left_annotation pre_annotation.zip \
+        --right_annotation reviewed_annotation.zip \
+        --annotation_type bounding_box \
+        --task_id task1 task2 \
+        --format detail_csv \
+        --output detail.csv
+
+
 出力項目について
 =================================
 

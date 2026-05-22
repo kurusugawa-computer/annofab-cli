@@ -20,7 +20,7 @@ from shapely.geometry import Polygon
 
 import annofabcli.common.cli
 from annofabcli.common.annofab.annotation_zip import lazy_parse_simple_annotation_by_input_data
-from annofabcli.common.cli import COMMAND_LINE_ERROR_STATUS_CODE
+from annofabcli.common.cli import COMMAND_LINE_ERROR_STATUS_CODE, ArgumentParser, get_list_from_args
 from annofabcli.common.utils import print_csv, print_json
 
 logger = logging.getLogger(__name__)
@@ -374,13 +374,21 @@ def _get_annotation_type(data: Mapping[str, Any], annotation_type: AnnotationTyp
     return None
 
 
-def _load_annotation_items(annotation_path: Path, *, annotation_type: AnnotationType | None) -> dict[AnnotationKey, AnnotationItem]:
+def _load_annotation_items(
+    annotation_path: Path,
+    *,
+    annotation_type: AnnotationType | None,
+    target_task_ids: Collection[str] | None = None,
+) -> dict[AnnotationKey, AnnotationItem]:
     logger.info(f"アノテーションZIPまたはディレクトリ'{annotation_path}'を読み込みます。")
     result: dict[AnnotationKey, AnnotationItem] = {}
+    target_task_ids_set = set(target_task_ids) if target_task_ids is not None else None
 
     for index, parser in enumerate(lazy_parse_simple_annotation_by_input_data(annotation_path)):
         if (index + 1) % 10000 == 0:
             logger.info(f"{index + 1} 件目のJSONを読み込み中")
+        if target_task_ids_set is not None and parser.task_id not in target_task_ids_set:
+            continue
 
         simple_annotation = parser.load_json()
         for detail in simple_annotation["details"]:
@@ -483,11 +491,12 @@ def create_annotation_zip_diff(
     right_annotation_path: Path,
     *,
     annotation_type: AnnotationType | None = None,
+    target_task_ids: Collection[str] | None = None,
     include_unchanged: bool = False,
 ) -> AnnotationZipDiff:
     """2つのアノテーションZIPまたはディレクトリの差分を作成する。"""
-    left_items = _load_annotation_items(left_annotation_path, annotation_type=annotation_type)
-    right_items = _load_annotation_items(right_annotation_path, annotation_type=annotation_type)
+    left_items = _load_annotation_items(left_annotation_path, annotation_type=annotation_type, target_task_ids=target_task_ids)
+    right_items = _load_annotation_items(right_annotation_path, annotation_type=annotation_type, target_task_ids=target_task_ids)
     all_keys = sorted(set(left_items.keys()) | set(right_items.keys()), key=lambda key: (key.project_id, key.task_id, key.input_data_id, key.annotation_id))
 
     all_details = [_create_diff_detail(key, left_items.get(key), right_items.get(key)) for key in all_keys]
@@ -578,6 +587,7 @@ class AnnotationZipDiffCommand:
             self.args.left_annotation,
             self.args.right_annotation,
             annotation_type=annotation_type,
+            target_task_ids=get_list_from_args(self.args.task_id) if self.args.task_id is not None else None,
             include_unchanged=self.args.include_unchanged,
         )
 
@@ -604,6 +614,8 @@ class AnnotationZipDiffCommand:
 def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--left_annotation", type=Path, required=True, help="比較元のアノテーションZIP、またはzipを展開したディレクトリを指定します。")
     parser.add_argument("--right_annotation", type=Path, required=True, help="比較先のアノテーションZIP、またはzipを展開したディレクトリを指定します。")
+    argument_parser = ArgumentParser(parser)
+    argument_parser.add_task_id(required=False, help_message="差分対象のタスクのtask_idを指定します。 ``file://`` を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。")
     parser.add_argument(
         "--annotation_type",
         choices=ANNOTATION_TYPE_LIST,
