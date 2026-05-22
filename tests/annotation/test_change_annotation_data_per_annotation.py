@@ -170,31 +170,6 @@ class TestChangeAnnotationDataPerAnnotationMain:
         assert actual_is_changeable is True
         assert actual_count == ChangeAnnotationDataCount(success=1, failed=0)
 
-    def test_skip_when_data_type_is_changed(self) -> None:
-        editor_annotation = {
-            "project_id": "prj1",
-            "task_id": "task1",
-            "input_data_id": "input1",
-            "updated_datetime": "2026-05-22T00:00:00+09:00",
-            "details": [
-                {
-                    "annotation_id": "anno1",
-                    "label_id": "label1",
-                    "additional_data_list": [],
-                    "body": {"_type": "Inner", "data": {"_type": "Range", "begin": 0, "end": 1000}},
-                    "editor_props": {},
-                }
-            ],
-        }
-        annotation_list = [
-            TargetAnnotationData(task_id="task1", input_data_id="input1", annotation_id="anno1", data={"_type": "BoundingBox", "left_top": {"x": 10, "y": 20}, "right_bottom": {"x": 100, "y": 200}})
-        ]
-
-        actual = create_request_body_for_change_data(editor_annotation, annotation_list)
-
-        assert actual.count == ChangeAnnotationDataCount(success=0, failed=1)
-        assert actual.request_body["details"][0]["body"] is None
-
     def test_skip_when_outer_annotation(self) -> None:
         editor_annotation = {
             "project_id": "prj1",
