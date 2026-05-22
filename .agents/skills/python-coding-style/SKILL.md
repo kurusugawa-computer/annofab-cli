@@ -1,6 +1,6 @@
 ---
 name: python-coding-style
-description: Pythonコードを作成・修正するときに使用。
+description: Pythonコードを作成・修正するときに使用。テストコードには適用されない。
 ---
 
 # 全般
