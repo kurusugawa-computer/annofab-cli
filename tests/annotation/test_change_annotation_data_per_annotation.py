@@ -1,8 +1,12 @@
 from __future__ import annotations
 
+from unittest.mock import Mock
+
 import pytest
 
 from annofabcli.annotation.change_annotation_data_per_annotation import (
+    ChangeAnnotationDataCount,
+    ChangeAnnotationDataPerAnnotationMain,
     TargetAnnotationData,
     create_request_body_for_change_data,
     get_annotation_data_list_per_task_id_input_data_id,
@@ -90,6 +94,42 @@ class TestCreateRequestBodyForChangeData:
 
         assert actual_request_body == []
         assert actual_failed_count == 1
+
+
+class TestChangeAnnotationDataPerAnnotationMain:
+    def test_change_annotation_data_for_task_skips_on_hold_task_by_default(self) -> None:
+        service = Mock()
+        service.wrapper.get_task_or_none.return_value = {"task_id": "task1", "status": "on_hold"}
+        main_obj = ChangeAnnotationDataPerAnnotationMain(service, project_id="prj1", include_complete_task=False, include_on_hold_task=False, all_yes=True)
+
+        actual_is_changeable, actual_count = main_obj.change_annotation_data_for_task(
+            "task1",
+            {"input1": [TargetAnnotationData(task_id="task1", input_data_id="input1", annotation_id="anno1", data={"_type": "Range", "begin": 1000, "end": 5000})]},
+        )
+
+        assert actual_is_changeable is False
+        assert actual_count == ChangeAnnotationDataCount(success=0, failed=1)
+
+    def test_change_annotation_data_for_task_allows_on_hold_task_when_option_is_enabled(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        service = Mock()
+        service.wrapper.get_task_or_none.return_value = {"task_id": "task1", "status": "on_hold"}
+        main_obj = ChangeAnnotationDataPerAnnotationMain(service, project_id="prj1", include_complete_task=False, include_on_hold_task=True, all_yes=True)
+
+        def change_annotation_data_by_frame(task_id: str, input_data_id: str, anno_list: list[TargetAnnotationData]) -> ChangeAnnotationDataCount:
+            assert task_id == "task1"
+            assert input_data_id == "input1"
+            assert len(anno_list) == 1
+            return ChangeAnnotationDataCount(success=1, failed=0)
+
+        monkeypatch.setattr(main_obj, "change_annotation_data_by_frame", change_annotation_data_by_frame)
+
+        actual_is_changeable, actual_count = main_obj.change_annotation_data_for_task(
+            "task1",
+            {"input1": [TargetAnnotationData(task_id="task1", input_data_id="input1", annotation_id="anno1", data={"_type": "Range", "begin": 1000, "end": 5000})]},
+        )
+
+        assert actual_is_changeable is True
+        assert actual_count == ChangeAnnotationDataCount(success=1, failed=0)
 
     def test_skip_when_data_type_is_changed(self) -> None:
         editor_annotation = {

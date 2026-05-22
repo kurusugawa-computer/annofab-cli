@@ -188,12 +188,14 @@ class ChangeAnnotationDataPerAnnotationMain(CommandLineWithConfirm):
         *,
         project_id: str,
         include_complete_task: bool,
+        include_on_hold_task: bool,
         all_yes: bool,
         backup_dir: Path | None = None,
     ) -> None:
         self.service = service
         self.project_id = project_id
         self.include_complete_task = include_complete_task
+        self.include_on_hold_task = include_on_hold_task
         self.backup_dir = backup_dir
         self.dump_annotation_obj = DumpAnnotationMain(service, project_id)
         super().__init__(all_yes)
@@ -228,6 +230,13 @@ class ChangeAnnotationDataPerAnnotationMain(CommandLineWithConfirm):
 
         if task["status"] == TaskStatus.WORKING.value:
             logger.info(f"task_id='{task_id}' :: タスクが作業中状態のため、{annotation_count} 件のアノテーションのdata変更をスキップします。")
+            return False, ChangeAnnotationDataCount(success=0, failed=annotation_count)
+
+        if not self.include_on_hold_task and task["status"] == TaskStatus.ON_HOLD.value:
+            logger.info(
+                f"task_id='{task_id}' :: タスクが保留中状態のため、{annotation_count} 件のアノテーションのdata変更をスキップします。"
+                "保留中状態のタスクのアノテーションも変更するには、`--include_on_hold_task` オプションを指定してください。"
+            )
             return False, ChangeAnnotationDataCount(success=0, failed=annotation_count)
 
         if not self.include_complete_task:  # noqa: SIM102
@@ -340,6 +349,7 @@ class ChangeDataPerAnnotation(CommandLine):
             project_id=project_id,
             all_yes=args.yes,
             include_complete_task=args.include_complete_task,
+            include_on_hold_task=args.include_on_hold_task,
             backup_dir=backup_dir,
         )
         main_obj.change_annotation_data(target_annotation_list)
@@ -382,6 +392,11 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--include_complete_task",
         action="store_true",
         help="指定した場合は、完了状態のタスクのアノテーションもdataを変更します。ただし、完了状態のタスクのアノテーションを変更するには、オーナーロールを持つユーザーが実行する必要があります。",
+    )
+    parser.add_argument(
+        "--include_on_hold_task",
+        action="store_true",
+        help="指定した場合は、保留中状態のタスクのアノテーションもdataを変更します。指定しない場合、保留中状態のタスクはスキップされます。",
     )
 
     parser.add_argument(
