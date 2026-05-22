@@ -10,7 +10,6 @@ from annofabcli.annotation.change_annotation_data_per_annotation import (
     TargetAnnotationData,
     create_request_body_for_change_data,
     get_annotation_data_list_per_task_id_input_data_id,
-    validate_target_data,
 )
 
 
@@ -26,20 +25,6 @@ def test_get_annotation_data_list_per_task_id_input_data_id() -> None:
     assert actual["task1"]["input1"] == [annotation_list[0]]
     assert actual["task1"]["input2"] == [annotation_list[1]]
     assert actual["task2"]["input3"] == [annotation_list[2]]
-
-
-class TestValidateTargetData:
-    def test_return_data_type(self) -> None:
-        actual = validate_target_data({"_type": "BoundingBox", "left_top": {"x": 10, "y": 20}, "right_bottom": {"x": 100, "y": 200}}, annotation_id="anno1")
-        assert actual == "BoundingBox"
-
-    def test_raise_when_data_type_is_missing(self) -> None:
-        with pytest.raises(TypeError):
-            validate_target_data({"begin": 1000, "end": 5000}, annotation_id="anno1")
-
-    def test_raise_when_data_type_is_unsupported(self) -> None:
-        with pytest.raises(ValueError):
-            validate_target_data({"_type": "SegmentationV2", "data_uri": "outer1"}, annotation_id="anno1")
 
 
 class TestCreateRequestBodyForChangeData:

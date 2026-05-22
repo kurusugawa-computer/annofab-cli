@@ -114,16 +114,6 @@ def create_request_body_for_change_data(editor_annotation: dict[str, Any], anno_
             failed_count += 1
             continue
 
-        src_data_type = detail["body"]["data"]["_type"]
-        dest_data_type = anno.data["_type"]
-        if src_data_type != dest_data_type:
-            logger.warning(
-                f"task_id='{anno.task_id}', input_data_id='{anno.input_data_id}', annotation_id='{anno.annotation_id}' :: "
-                f"既存アノテーションのdata._type='{src_data_type}' と変更後のdata._type='{dest_data_type}' が異なるため、このアノテーションのdataの変更をスキップします。"
-            )
-            failed_count += 1
-            continue
-
         data_by_annotation_id[anno.annotation_id] = anno.data
 
     request_details: list[dict[str, Any]] = []
