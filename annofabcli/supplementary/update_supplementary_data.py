@@ -1,0 +1,430 @@
+from __future__ import annotations
+
+import argparse
+import copy
+import enum
+import logging
+import multiprocessing
+import sys
+from dataclasses import dataclass
+from enum import Enum
+from functools import partial
+from pathlib import Path
+from typing import Any
+
+import annofabapi
+import pandas
+from dataclasses_json import DataClassJsonMixin
+from more_itertools import first_true
+
+import annofabcli.common.cli
+from annofabcli.common.cli import (
+    COMMAND_LINE_ERROR_STATUS_CODE,
+    PARALLELISM_CHOICES,
+    ArgumentParser,
+    CommandLine,
+    CommandLineWithConfirm,
+    build_annofabapi_resource_and_login,
+    get_json_from_args,
+)
+from annofabcli.common.facade import AnnofabApiFacade
+from annofabcli.common.utils import get_file_scheme_path
+
+logger = logging.getLogger(__name__)
+
+
+class UpdateResult(Enum):
+    """更新結果の種類"""
+
+    SUCCESS = enum.auto()
+    """更新に成功した"""
+    SKIPPED = enum.auto()
+    """更新を実行しなかった"""
+    FAILED = enum.auto()
+    """更新を試みたが例外で失敗"""
+
+
+@dataclass
+class UpdatedSupplementaryData(DataClassJsonMixin):
+    """
+    更新される補助情報
+    """
+
+    input_data_id: str
+    """更新対象の補助情報が紐づく入力データID"""
+    supplementary_data_id: str
+    """更新対象の補助情報ID"""
+    supplementary_data_name: str | None = None
+    """変更後の補助情報名（指定した場合のみ更新）"""
+    supplementary_data_path: str | None = None
+    """変更後の補助情報パス（指定した場合のみ更新）"""
+    supplementary_data_type: str | None = None
+    """変更後の補助情報種別（指定した場合のみ更新）"""
+    supplementary_data_number: int | None = None
+    """変更後の補助情報表示順（指定した場合のみ更新）"""
+
+
+def create_updated_supplementary_data_list_from_dict(supplementary_data_dict_list: list[dict[str, Any]]) -> list[UpdatedSupplementaryData]:
+    return [UpdatedSupplementaryData.from_dict(e) for e in supplementary_data_dict_list]
+
+
+def create_updated_supplementary_data_list_from_csv(csv_file: Path) -> list[UpdatedSupplementaryData]:
+    """補助情報の更新内容が記載されているCSVを読み込み、UpdatedSupplementaryDataのlistを返します。
+
+    CSVには以下の列が存在します。
+    * input_data_id (必須)
+    * supplementary_data_id (必須)
+    * supplementary_data_name (任意)
+    * supplementary_data_path (任意)
+    * supplementary_data_type (任意)
+    * supplementary_data_number (任意)
+
+    Args:
+        csv_file: CSVファイルのパス
+
+    Returns:
+        更新対象の補助情報のlist
+
+    Raises:
+        ValueError: 必須列が不足している場合
+    """
+    df = pandas.read_csv(
+        csv_file,
+        dtype={
+            "input_data_id": "string",
+            "supplementary_data_id": "string",
+            "supplementary_data_name": "string",
+            "supplementary_data_path": "string",
+            "supplementary_data_type": "string",
+            "supplementary_data_number": "Int64",
+        },
+    )
+
+    required_columns = {"input_data_id", "supplementary_data_id"}
+    if not required_columns.issubset(df.columns):
+        raise ValueError("CSV形式が不正です。ヘッダ行に 'input_data_id' と 'supplementary_data_id' を指定してください。")
+
+    for column in ["supplementary_data_name", "supplementary_data_path", "supplementary_data_type", "supplementary_data_number"]:
+        if column not in df.columns:
+            df[column] = None
+
+    return create_updated_supplementary_data_list_from_dict(df.to_dict("records"))
+
+
+class UpdateSupplementaryDataMain(CommandLineWithConfirm):
+    def __init__(self, service: annofabapi.Resource, *, all_yes: bool = False) -> None:
+        self.service = service
+        CommandLineWithConfirm.__init__(self, all_yes)
+
+    @staticmethod
+    def _create_change_messages(
+        old_supplementary_data: dict[str, Any],
+        *,
+        new_supplementary_data_name: str | None,
+        new_supplementary_data_path: str | None,
+        new_supplementary_data_type: str | None,
+        new_supplementary_data_number: int | None,
+        file_path: str | None,
+    ) -> list[str]:
+        changes = []
+        if new_supplementary_data_name is not None:
+            changes.append(f"supplementary_data_name='{old_supplementary_data['supplementary_data_name']}'を'{new_supplementary_data_name}'に変更")
+        if file_path is not None:
+            changes.append(f"supplementary_data_pathをローカルファイル'{file_path}'のアップロード結果に変更")
+        elif new_supplementary_data_path is not None:
+            changes.append(f"supplementary_data_path='{old_supplementary_data['supplementary_data_path']}'を'{new_supplementary_data_path}'に変更")
+        if new_supplementary_data_type is not None:
+            changes.append(f"supplementary_data_type='{old_supplementary_data['supplementary_data_type']}'を'{new_supplementary_data_type}'に変更")
+        if new_supplementary_data_number is not None:
+            changes.append(f"supplementary_data_number='{old_supplementary_data['supplementary_data_number']}'を'{new_supplementary_data_number}'に変更")
+        return changes
+
+    @staticmethod
+    def _create_request_body(
+        old_supplementary_data: dict[str, Any],
+        *,
+        new_supplementary_data_name: str | None,
+        new_supplementary_data_path: str | None,
+        new_supplementary_data_type: str | None,
+        new_supplementary_data_number: int | None,
+        file_path: str | None,
+    ) -> dict[str, Any]:
+        request_body = copy.deepcopy(old_supplementary_data)
+        request_body["last_updated_datetime"] = old_supplementary_data["updated_datetime"]
+
+        if new_supplementary_data_name is not None:
+            request_body["supplementary_data_name"] = new_supplementary_data_name
+        if new_supplementary_data_path is not None and file_path is None:
+            request_body["supplementary_data_path"] = new_supplementary_data_path
+        if new_supplementary_data_type is not None:
+            request_body["supplementary_data_type"] = new_supplementary_data_type
+        if new_supplementary_data_number is not None:
+            request_body["supplementary_data_number"] = new_supplementary_data_number
+
+        return request_body
+
+    def update_supplementary_data(
+        self,
+        project_id: str,
+        input_data_id: str,
+        supplementary_data_id: str,
+        *,
+        new_supplementary_data_name: str | None = None,
+        new_supplementary_data_path: str | None = None,
+        new_supplementary_data_type: str | None = None,
+        new_supplementary_data_number: int | None = None,
+        supplementary_data_index: int | None = None,
+    ) -> UpdateResult:
+        """1個の補助情報を更新します。"""
+
+        log_prefix = f"input_data_id='{input_data_id}', supplementary_data_id='{supplementary_data_id}' :: "
+        if supplementary_data_index is not None:
+            log_prefix = f"{supplementary_data_index + 1}件目 :: {log_prefix}"
+
+        supplementary_data_list = self.service.wrapper.get_supplementary_data_list_or_none(project_id, input_data_id)
+        if supplementary_data_list is None:
+            logger.warning(f"{log_prefix}入力データは存在しません。")
+            return UpdateResult.SKIPPED
+
+        old_supplementary_data = first_true(supplementary_data_list, pred=lambda e: e["supplementary_data_id"] == supplementary_data_id)
+        if old_supplementary_data is None:
+            logger.warning(f"{log_prefix}補助情報は存在しません。")
+            return UpdateResult.SKIPPED
+
+        file_path = get_file_scheme_path(new_supplementary_data_path) if new_supplementary_data_path is not None else None
+        if file_path is not None and not Path(file_path).exists():
+            logger.warning(f"{log_prefix}supplementary_data_path='{new_supplementary_data_path}'にファイルは存在しません。補助情報の更新をスキップします。")
+            return UpdateResult.SKIPPED
+
+        changes = self._create_change_messages(
+            old_supplementary_data,
+            new_supplementary_data_name=new_supplementary_data_name,
+            new_supplementary_data_path=new_supplementary_data_path,
+            new_supplementary_data_type=new_supplementary_data_type,
+            new_supplementary_data_number=new_supplementary_data_number,
+            file_path=file_path,
+        )
+
+        if len(changes) == 0:
+            logger.warning(f"{log_prefix}更新する内容が指定されていません。")
+            return UpdateResult.SKIPPED
+
+        change_message = "、".join(changes)
+        if not self.confirm_processing(f"{log_prefix}{change_message}しますか？"):
+            return UpdateResult.SKIPPED
+
+        request_body = self._create_request_body(
+            old_supplementary_data,
+            new_supplementary_data_name=new_supplementary_data_name,
+            new_supplementary_data_path=new_supplementary_data_path,
+            new_supplementary_data_type=new_supplementary_data_type,
+            new_supplementary_data_number=new_supplementary_data_number,
+            file_path=file_path,
+        )
+
+        if file_path is not None:
+            self.service.wrapper.put_supplementary_data_from_file(
+                project_id,
+                input_data_id=input_data_id,
+                supplementary_data_id=supplementary_data_id,
+                file_path=file_path,
+                request_body=request_body,
+            )
+        else:
+            self.service.api.put_supplementary_data(project_id, input_data_id, supplementary_data_id, request_body=request_body)
+
+        logger.debug(f"{log_prefix} :: 補助情報を更新しました。 :: {changes}")
+        return UpdateResult.SUCCESS
+
+    def update_supplementary_data_list_sequentially(
+        self,
+        project_id: str,
+        updated_supplementary_data_list: list[UpdatedSupplementaryData],
+    ) -> None:
+        """複数の補助情報を逐次的に更新します。"""
+        success_count = 0
+        skipped_count = 0
+        failed_count = 0
+
+        logger.info(f"{len(updated_supplementary_data_list)} 件の補助情報を更新します。")
+
+        for supplementary_data_index, updated_supplementary_data in enumerate(updated_supplementary_data_list):
+            current_num = supplementary_data_index + 1
+
+            if current_num % 1000 == 0:
+                logger.info(f"{current_num} / {len(updated_supplementary_data_list)} 件目の補助情報を処理中...")
+
+            try:
+                result = self.update_supplementary_data(
+                    project_id,
+                    updated_supplementary_data.input_data_id,
+                    updated_supplementary_data.supplementary_data_id,
+                    new_supplementary_data_name=updated_supplementary_data.supplementary_data_name,
+                    new_supplementary_data_path=updated_supplementary_data.supplementary_data_path,
+                    new_supplementary_data_type=updated_supplementary_data.supplementary_data_type,
+                    new_supplementary_data_number=updated_supplementary_data.supplementary_data_number,
+                    supplementary_data_index=supplementary_data_index,
+                )
+                if result == UpdateResult.SUCCESS:
+                    success_count += 1
+                elif result == UpdateResult.SKIPPED:
+                    skipped_count += 1
+            except Exception:
+                logger.warning(
+                    f"{current_num}件目 :: input_data_id='{updated_supplementary_data.input_data_id}', "
+                    f"supplementary_data_id='{updated_supplementary_data.supplementary_data_id}'の補助情報を更新するのに失敗しました。",
+                    exc_info=True,
+                )
+                failed_count += 1
+                continue
+
+        logger.info(f"{success_count} / {len(updated_supplementary_data_list)} 件の補助情報を更新しました。（成功: {success_count}件, スキップ: {skipped_count}件, 失敗: {failed_count}件）")
+
+    def _update_supplementary_data_wrapper(self, args: tuple[int, UpdatedSupplementaryData], project_id: str) -> UpdateResult:
+        index, updated_supplementary_data = args
+        try:
+            return self.update_supplementary_data(
+                project_id,
+                input_data_id=updated_supplementary_data.input_data_id,
+                supplementary_data_id=updated_supplementary_data.supplementary_data_id,
+                new_supplementary_data_name=updated_supplementary_data.supplementary_data_name,
+                new_supplementary_data_path=updated_supplementary_data.supplementary_data_path,
+                new_supplementary_data_type=updated_supplementary_data.supplementary_data_type,
+                new_supplementary_data_number=updated_supplementary_data.supplementary_data_number,
+                supplementary_data_index=index,
+            )
+        except Exception:
+            logger.warning(
+                f"{index + 1}件目 :: input_data_id='{updated_supplementary_data.input_data_id}', "
+                f"supplementary_data_id='{updated_supplementary_data.supplementary_data_id}'の補助情報を更新するのに失敗しました。",
+                exc_info=True,
+            )
+            return UpdateResult.FAILED
+
+    def update_supplementary_data_list_in_parallel(
+        self,
+        project_id: str,
+        updated_supplementary_data_list: list[UpdatedSupplementaryData],
+        parallelism: int,
+    ) -> None:
+        """複数の補助情報を並列的に更新します。"""
+
+        logger.info(f"{len(updated_supplementary_data_list)} 件の補助情報を更新します。{parallelism}個のプロセスを使用して並列実行します。")
+
+        partial_func = partial(self._update_supplementary_data_wrapper, project_id=project_id)
+        with multiprocessing.Pool(parallelism) as pool:
+            result_list = pool.map(partial_func, enumerate(updated_supplementary_data_list))
+            success_count = len([e for e in result_list if e == UpdateResult.SUCCESS])
+            skipped_count = len([e for e in result_list if e == UpdateResult.SKIPPED])
+            failed_count = len([e for e in result_list if e == UpdateResult.FAILED])
+
+        logger.info(f"{success_count} / {len(updated_supplementary_data_list)} 件の補助情報を更新しました。（成功: {success_count}件, スキップ: {skipped_count}件, 失敗: {failed_count}件）")
+
+
+CLI_COMMON_MESSAGE = "annofabcli supplementary update: error:"
+
+
+class UpdateSupplementaryData(CommandLine):
+    @staticmethod
+    def validate(args: argparse.Namespace) -> bool:
+        if args.parallelism is not None and not args.yes:
+            print(  # noqa: T201
+                f"{CLI_COMMON_MESSAGE} argument --parallelism: '--parallelism'を指定するときは、必ず ``--yes`` を指定してください。",
+                file=sys.stderr,
+            )
+            return False
+
+        return True
+
+    def main(self) -> None:
+        args = self.args
+        if not self.validate(args):
+            sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
+
+        main_obj = UpdateSupplementaryDataMain(self.service, all_yes=self.all_yes)
+
+        if args.csv is not None:
+            try:
+                updated_supplementary_data_list = create_updated_supplementary_data_list_from_csv(args.csv)
+            except ValueError as e:
+                print(f"{CLI_COMMON_MESSAGE} argument --csv: {e}", file=sys.stderr)  # noqa: T201
+                sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
+
+        elif args.json is not None:
+            supplementary_data_dict_list = get_json_from_args(args.json)
+            if not isinstance(supplementary_data_dict_list, list):
+                print(f"{CLI_COMMON_MESSAGE} JSON形式が不正です。オブジェクトの配列を指定してください。", file=sys.stderr)  # noqa: T201
+                sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
+            updated_supplementary_data_list = create_updated_supplementary_data_list_from_dict(supplementary_data_dict_list)
+        else:
+            raise RuntimeError("argparse により相互排他が保証されているため、ここには到達しません")
+
+        project_id: str = args.project_id
+        if args.parallelism is not None:
+            main_obj.update_supplementary_data_list_in_parallel(project_id, updated_supplementary_data_list=updated_supplementary_data_list, parallelism=args.parallelism)
+        else:
+            main_obj.update_supplementary_data_list_sequentially(project_id, updated_supplementary_data_list=updated_supplementary_data_list)
+
+
+def main(args: argparse.Namespace) -> None:
+    service = build_annofabapi_resource_and_login(args)
+    facade = AnnofabApiFacade(service)
+    UpdateSupplementaryData(service, facade, args).main()
+
+
+def parse_args(parser: argparse.ArgumentParser) -> None:
+    argument_parser = ArgumentParser(parser)
+    argument_parser.add_project_id()
+
+    file_group = parser.add_mutually_exclusive_group(required=True)
+    file_group.add_argument(
+        "--csv",
+        type=Path,
+        help=(
+            "更新対象の補助情報と更新後の値が記載されたCSVファイルのパスを指定します。\n"
+            "CSVのフォーマットは以下の通りです。"
+            "\n"
+            " * ヘッダ行あり, カンマ区切り\n"
+            " * input_data_id (required)\n"
+            " * supplementary_data_id (required)\n"
+            " * supplementary_data_name (optional)\n"
+            " * supplementary_data_path (optional): ``file://`` を先頭に付けると、ローカルファイルを補助情報に使用します。\n"
+            " * supplementary_data_type (optional)\n"
+            " * supplementary_data_number (optional)\n"
+            "更新しないプロパティは、セルの値を空欄にしてください。\n"
+        ),
+    )
+
+    json_sample = (
+        '[{"input_data_id":"input1","supplementary_data_id":"id1","supplementary_data_name":"new_name1"},'
+        '{"input_data_id":"input2","supplementary_data_id":"id2","supplementary_data_path":"file://new_image.jpg"}]'
+    )
+    file_group.add_argument(
+        "--json",
+        type=str,
+        help=(
+            "更新対象の補助情報と更新後の値をJSON形式で指定します。\n"
+            "JSONの各キーは ``--csv`` に渡すCSVの各列に対応しています。\n"
+            "``file://`` を先頭に付けるとjsonファイルを指定できます。\n"
+            f"(ex) ``{json_sample}`` \n"
+            "更新しないプロパティは、キーを記載しないか値をnullにしてください。\n"
+        ),
+    )
+
+    parser.add_argument(
+        "--parallelism",
+        type=int,
+        choices=PARALLELISM_CHOICES,
+        help="使用するプロセス数（並列度）。指定しない場合は、逐次的に処理します。指定する場合は ``--yes`` も一緒に指定する必要があります。",
+    )
+
+    parser.set_defaults(subcommand_func=main)
+
+
+def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
+    subcommand_name = "update"
+    subcommand_help = "補助情報の名前、パス、種類、表示順を更新します。"
+    epilog = "オーナロールを持つユーザで実行してください。"
+    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, epilog=epilog)
+    parse_args(parser)
+    return parser

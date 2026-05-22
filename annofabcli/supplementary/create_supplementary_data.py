@@ -31,10 +31,6 @@ from annofabcli.common.utils import get_file_scheme_path
 
 logger = logging.getLogger(__name__)
 
-DEPRECATED_MESSAGE = (
-    "[DEPRECATED] :: `supplementary put` コマンドは非推奨です。代わりに `supplementary create` コマンドを使用してください。 `supplementary put` コマンドは2027/01/01以降に廃止予定です。"
-)
-
 
 def convert_supplementary_data_name_to_supplementary_data_id(supplementary_data_name: str) -> str:
     """
@@ -59,9 +55,9 @@ class CliSupplementaryData(DataClassJsonMixin):
 
 
 @dataclass
-class SupplementaryDataForPut:
+class SupplementaryDataForCreate:
     """
-    putする補助情報
+    作成する補助情報
     """
 
     input_data_id: str
@@ -73,9 +69,55 @@ class SupplementaryDataForPut:
     last_updated_datetime: str | None
 
 
-class SubPutSupplementaryData:
+def read_supplementary_data_csv(csv_file: Path) -> pandas.DataFrame:
+    """補助情報の情報が記載されているCSVを読み込み、pandas.DataFrameを返します。
+
+    DataFrameには以下の列が存在します。
+    * input_data_id
+    * supplementary_data_name
+    * supplementary_data_path
+    * supplementary_data_id
+    * supplementary_data_type
+    * supplementary_data_number
+
+    Args:
+        csv_file: CSVファイルのパス
+
+    Returns:
+        CSVの情報が格納されたpandas.DataFrame
+
+    Raises:
+        ValueError: 必須列が不足している場合
     """
-    1個の補助情報を登録するためのクラス。multiprocessing.Pool対応。
+    df = pandas.read_csv(
+        str(csv_file),
+        dtype={
+            "input_data_id": "string",
+            "supplementary_data_id": "string",
+            "supplementary_data_name": "string",
+            "supplementary_data_path": "string",
+            "supplementary_data_type": "string",
+            "supplementary_data_number": "Int64",
+        },
+    )
+
+    required_columns = {"input_data_id", "supplementary_data_name", "supplementary_data_path"}
+    if not required_columns.issubset(df.columns):
+        raise ValueError("CSV形式が不正です。ヘッダ行に 'input_data_id' と 'supplementary_data_name' と 'supplementary_data_path' を指定してください。")
+
+    if "supplementary_data_id" not in df.columns:
+        df["supplementary_data_id"] = None
+    if "supplementary_data_type" not in df.columns:
+        df["supplementary_data_type"] = None
+    if "supplementary_data_number" not in df.columns:
+        df["supplementary_data_number"] = None
+
+    return df
+
+
+class SubCreateSupplementaryData:
+    """
+    1個の補助情報を作成するためのクラス。multiprocessing.Pool対応。
 
     Args:
         service:
@@ -87,7 +129,7 @@ class SubPutSupplementaryData:
         self.all_yes = all_yes
         self.supplementary_data_cache: dict[tuple[str, str], list[SupplementaryData]] = {}
 
-    def put_supplementary_data(self, project_id: str, supplementary_data: SupplementaryDataForPut) -> None:
+    def create_supplementary_data(self, project_id: str, supplementary_data: SupplementaryDataForCreate) -> None:
         file_path = get_file_scheme_path(supplementary_data.supplementary_data_path)
         if file_path is not None:
             request_body = {
@@ -100,7 +142,7 @@ class SubPutSupplementaryData:
                 request_body.update({"supplementary_data_type": supplementary_data.supplementary_data_type})
 
             logger.debug(
-                f"'{file_path}'を補助情報として登録します。 :: "
+                f"'{file_path}'を補助情報として作成します。 :: "
                 f"input_data_id='{supplementary_data.input_data_id}', "
                 f"supplementary_data_id='{supplementary_data.supplementary_data_id}', "
                 f"supplementary_data_name='{supplementary_data.supplementary_data_name}'"
@@ -139,12 +181,10 @@ class SubPutSupplementaryData:
         "ALL"が入力されたら、`all_yes`属性をTrueにする
 
         Args:
-            task_id: 処理するtask_id
             confirm_message: 確認メッセージ
 
         Returns:
-            True: Yes, False: No
-
+            YesならTrue、NoならFalse
         """
         if self.all_yes:
             return True
@@ -156,15 +196,15 @@ class SubPutSupplementaryData:
 
         return yes
 
-    def confirm_put_supplementary_data(self, csv_supplementary_data: CliSupplementaryData, supplementary_data_id: str, *, already_exists: bool = False) -> bool:
+    def confirm_create_supplementary_data(self, csv_supplementary_data: CliSupplementaryData, supplementary_data_id: str, *, already_exists: bool = False) -> bool:
         if already_exists:
-            message_for_confirm = f"supplementary_data_name='{csv_supplementary_data.supplementary_data_name}', supplementary_data_id='{supplementary_data_id}'の補助情報を更新しますか？"
+            message_for_confirm = f"supplementary_data_name='{csv_supplementary_data.supplementary_data_name}', supplementary_data_id='{supplementary_data_id}'の補助情報を上書きして作成しますか？"
         else:
-            message_for_confirm = f"supplementary_data_name='{csv_supplementary_data.supplementary_data_name}', supplementary_data_id='{supplementary_data_id}'の補助情報を登録しますか？"
+            message_for_confirm = f"supplementary_data_name='{csv_supplementary_data.supplementary_data_name}', supplementary_data_id='{supplementary_data_id}'の補助情報を作成しますか？"
 
         return self.confirm_processing(message_for_confirm)
 
-    def put_supplementary_data_main(self, project_id: str, csv_data: CliSupplementaryData, *, overwrite: bool = False) -> bool:
+    def create_supplementary_data_main(self, project_id: str, csv_data: CliSupplementaryData, *, overwrite: bool = False) -> bool:
         last_updated_datetime = None
         input_data_id = csv_data.input_data_id
         supplementary_data_id = (
@@ -174,7 +214,7 @@ class SubPutSupplementaryData:
         supplementary_data_list = self.service.wrapper.get_supplementary_data_list_or_none(project_id, input_data_id)
         if supplementary_data_list is None:
             # 入力データが存在しない場合は、`supplementary_data_list`はNoneになる
-            logger.warning(f"input_data_id='{input_data_id}'である入力データは存在しないため、補助情報の登録をスキップします。")
+            logger.warning(f"input_data_id='{input_data_id}'である入力データは存在しないため、補助情報の作成をスキップします。")
             return False
 
         old_supplementary_data = first_true(supplementary_data_list, pred=lambda e: e["supplementary_data_id"] == supplementary_data_id)
@@ -197,22 +237,20 @@ class SubPutSupplementaryData:
                 last_updated_datetime = old_supplementary_data["updated_datetime"]
             else:
                 logger.debug(
-                    f"supplementary_data_id='{supplementary_data_id}'である補助情報がすでに存在するので、補助情報の登録をスキップします。 :: "
+                    f"supplementary_data_id='{supplementary_data_id}'である補助情報がすでに存在するので、補助情報の作成をスキップします。 :: "
                     f"input_data_id='{input_data_id}', supplementary_data_name='{csv_data.supplementary_data_name}'"
                 )
                 return False
 
         file_path = get_file_scheme_path(csv_data.supplementary_data_path)
-        if file_path is not None:  # noqa: SIM102
-            if not Path(file_path).exists():
-                logger.warning(f"'{csv_data.supplementary_data_path}' は存在しません。補助情報の登録をスキップします。")
-                return False
-
-        if not self.confirm_put_supplementary_data(csv_data, supplementary_data_id, already_exists=last_updated_datetime is not None):
+        if file_path is not None and not Path(file_path).exists():
+            logger.warning(f"'{csv_data.supplementary_data_path}' は存在しません。補助情報の作成をスキップします。")
             return False
 
-        # 補助情報を登録
-        supplementary_data_for_put = SupplementaryDataForPut(
+        if not self.confirm_create_supplementary_data(csv_data, supplementary_data_id, already_exists=last_updated_datetime is not None):
+            return False
+
+        supplementary_data_for_create = SupplementaryDataForCreate(
             input_data_id=csv_data.input_data_id,
             supplementary_data_id=supplementary_data_id,
             supplementary_data_name=csv_data.supplementary_data_name,
@@ -222,32 +260,34 @@ class SubPutSupplementaryData:
             last_updated_datetime=last_updated_datetime,
         )
         try:
-            self.put_supplementary_data(project_id, supplementary_data_for_put)
+            self.create_supplementary_data(project_id, supplementary_data_for_create)
             logger.debug(
-                f"補助情報を登録しました。 :: "
-                f"input_data_id='{supplementary_data_for_put.input_data_id}', "
-                f"supplementary_data_id='{supplementary_data_for_put.supplementary_data_id}', "
-                f"supplementary_data_name='{supplementary_data_for_put.supplementary_data_name}'"
+                f"補助情報を作成しました。 :: "
+                f"input_data_id='{supplementary_data_for_create.input_data_id}', "
+                f"supplementary_data_id='{supplementary_data_for_create.supplementary_data_id}', "
+                f"supplementary_data_name='{supplementary_data_for_create.supplementary_data_name}'"
             )
             return True  # noqa: TRY300
 
         except requests.exceptions.HTTPError:
             logger.warning(
-                f"補助情報の登録に失敗しました。 ::"
-                f"input_data_id='{supplementary_data_for_put.input_data_id}',"
-                f"supplementary_data_id='{supplementary_data_for_put.supplementary_data_id}', "
-                f"supplementary_data_name='{supplementary_data_for_put.supplementary_data_name}'",
+                f"補助情報の作成に失敗しました。 ::"
+                f"input_data_id='{supplementary_data_for_create.input_data_id}',"
+                f"supplementary_data_id='{supplementary_data_for_create.supplementary_data_id}', "
+                f"supplementary_data_name='{supplementary_data_for_create.supplementary_data_name}'",
                 exc_info=True,
             )
             return False
 
 
-class PutSupplementaryData(CommandLine):
+class CreateSupplementaryData(CommandLine):
     """
-    補助情報をCSVで登録する。
+    補助情報を作成する。
     """
 
-    def put_supplementary_data_list(
+    COMMON_MESSAGE = "annofabcli supplementary create: error:"
+
+    def create_supplementary_data_list(
         self,
         project_id: str,
         supplementary_data_list: list[CliSupplementaryData],
@@ -255,36 +295,27 @@ class PutSupplementaryData(CommandLine):
         overwrite: bool = False,
         parallelism: int | None = None,
     ) -> None:
-        """
-        補助情報を一括で登録する。
-
-        Args:
-            project_id: 補助情報の登録先プロジェクトのプロジェクトID
-            supplementary_data_list: 補助情報List
-            overwrite: Trueならば、supplementary_data_id（省略時はsupplementary_data_number）がすでに存在していたら上書きします。Falseならばスキップします。
-            parallelism: 並列度
-
-        """
+        """補助情報を一括で作成する。"""
 
         project_title = self.facade.get_project_title(project_id)
-        logger.info(f"{project_title} に、{len(supplementary_data_list)} 件の補助情報を登録します。")
+        logger.info(f"{project_title} に、{len(supplementary_data_list)} 件の補助情報を作成します。")
 
-        count_put_supplementary_data = 0
+        count_create_supplementary_data = 0
 
-        obj = SubPutSupplementaryData(service=self.service, all_yes=self.all_yes)
+        obj = SubCreateSupplementaryData(service=self.service, all_yes=self.all_yes)
         if parallelism is not None:
-            partial_func = partial(obj.put_supplementary_data_main, project_id, overwrite=overwrite)
+            partial_func = partial(obj.create_supplementary_data_main, project_id, overwrite=overwrite)
             with Pool(parallelism) as pool:
                 result_bool_list = pool.map(partial_func, supplementary_data_list)
-                count_put_supplementary_data = len([e for e in result_bool_list if e])
+                count_create_supplementary_data = len([e for e in result_bool_list if e])
 
         else:
             for csv_supplementary_data in supplementary_data_list:
-                result = obj.put_supplementary_data_main(project_id, csv_data=csv_supplementary_data, overwrite=overwrite)
+                result = obj.create_supplementary_data_main(project_id, csv_data=csv_supplementary_data, overwrite=overwrite)
                 if result:
-                    count_put_supplementary_data += 1
+                    count_create_supplementary_data += 1
 
-        logger.info(f"{project_title} に、{count_put_supplementary_data} / {len(supplementary_data_list)} 件の補助情報を登録しました。")
+        logger.info(f"{project_title} に、{count_create_supplementary_data} / {len(supplementary_data_list)} 件の補助情報を作成しました。")
 
     @staticmethod
     def get_supplementary_data_list_from_dict(supplementary_data_dict_list: list[dict[str, Any]]) -> list[CliSupplementaryData]:
@@ -292,27 +323,14 @@ class PutSupplementaryData(CommandLine):
 
     @staticmethod
     def get_supplementary_data_list_from_csv(csv_path: Path) -> list[CliSupplementaryData]:
-        df = pandas.read_csv(
-            str(csv_path),
-            dtype={
-                "input_data_id": "string",
-                "supplementary_data_id": "string",
-                "supplementary_data_name": "string",
-                "supplementary_data_path": "string",
-                "supplementary_data_type": "string",
-                "supplementary_data_number": "Int64",
-            },
-        )
+        df = read_supplementary_data_csv(csv_path)
         supplementary_data_list = [CliSupplementaryData.from_dict(e) for e in df.to_dict("records")]
         return supplementary_data_list
 
-    COMMON_MESSAGE = "annofabcli supplementary_data put: error:"
-
     def validate(self, args: argparse.Namespace) -> bool:
-        if args.csv is not None:  # noqa: SIM102
-            if not Path(args.csv).exists():
-                print(f"{self.COMMON_MESSAGE} argument --csv: ファイルパスが存在しません。 '{args.csv}'", file=sys.stderr)  # noqa: T201
-                return False
+        if args.csv is not None and not Path(args.csv).exists():
+            print(f"{self.COMMON_MESSAGE} argument --csv: ファイルパスが存在しません。 '{args.csv}'", file=sys.stderr)  # noqa: T201
+            return False
 
         if args.parallelism is not None and not args.yes:
             print(  # noqa: T201
@@ -332,7 +350,11 @@ class PutSupplementaryData(CommandLine):
         super().validate_project(project_id, [ProjectMemberRole.OWNER])
 
         if args.csv is not None:
-            supplementary_data_list = self.get_supplementary_data_list_from_csv(Path(args.csv))
+            try:
+                supplementary_data_list = self.get_supplementary_data_list_from_csv(Path(args.csv))
+            except ValueError as e:
+                print(f"{self.COMMON_MESSAGE} argument --csv: {e}", file=sys.stderr)  # noqa: T201
+                sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
         elif args.json is not None:
             supplementary_data_list = self.get_supplementary_data_list_from_dict(get_json_from_args(args.json))
         else:
@@ -342,7 +364,7 @@ class PutSupplementaryData(CommandLine):
             )
             return
 
-        self.put_supplementary_data_list(
+        self.create_supplementary_data_list(
             project_id,
             supplementary_data_list=supplementary_data_list,
             overwrite=args.overwrite,
@@ -351,10 +373,9 @@ class PutSupplementaryData(CommandLine):
 
 
 def main(args: argparse.Namespace) -> None:
-    print(DEPRECATED_MESSAGE, file=sys.stderr)  # noqa: T201
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
-    PutSupplementaryData(service, facade, args).main()
+    CreateSupplementaryData(service, facade, args).main()
 
 
 def parse_args(parser: argparse.ArgumentParser) -> None:
@@ -365,23 +386,19 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     file_group = parser.add_mutually_exclusive_group(required=True)
     file_group.add_argument(
         "--csv",
-        type=str,
+        type=Path,
         help=(
             "補助情報が記載されたCSVファイルのパスを指定してください。CSVのフォーマットは、以下の通りです。\n"
             "\n"
             " * ヘッダ行あり, カンマ区切り\n"
-            " * input_data_id (required)\n"
-            " * supplementary_data_name (required)\n"
-            " * supplementary_data_path (required)\n"
-            " * supplementary_data_id\n"
-            " * supplementary_data_type\n"
-            " * supplementary_data_number\n"
+            " * 必須列: input_data_id, supplementary_data_name, supplementary_data_path\n"
+            " * 任意列: supplementary_data_id, supplementary_data_type, supplementary_data_number\n"
             "\n"
-            "各項目の詳細は https://annofab-cli.readthedocs.io/ja/latest/command_reference/supplementary/put.html を参照してください。"
+            "各項目の詳細は https://annofab-cli.readthedocs.io/ja/latest/command_reference/supplementary/create.html を参照してください。"
         ),
     )
 
-    JSON_SAMPLE = [  # noqa: N806
+    json_sample = [
         {
             "input_data_id": "input1",
             "supplementary_data_name": "foo",
@@ -392,9 +409,9 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--json",
         type=str,
         help=(
-            "登録対象の補助情報データをJSON形式で指定してください。\n"
+            "作成対象の補助情報データをJSON形式で指定してください。\n"
             "\n"
-            f"(ex) ``{json.dumps(JSON_SAMPLE)}`` \n"
+            f"(ex) ``{json.dumps(json_sample)}`` \n"
             "\n"
             "JSONの各キーは ``--csv`` に渡すCSVの各列に対応しています。"
             " ``file://`` を先頭に付けるとjsonファイルを指定できます。"
@@ -418,9 +435,9 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
 
 
 def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
-    subcommand_name = "put"
-    subcommand_help = "補助情報を登録します。"
-    description = "補助情報を登録します。"
+    subcommand_name = "create"
+    subcommand_help = "補助情報を作成します。"
+    description = "補助情報を作成します。"
     epilog = "オーナーロールを持つユーザで実行してください。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)

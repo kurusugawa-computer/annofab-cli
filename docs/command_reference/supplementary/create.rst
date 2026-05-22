@@ -1,16 +1,10 @@
 =================================
-supplementary put
+supplementary create
 =================================
 
 Description
 =================================
 補助情報を作成します。
-
-.. warning::
-
-   このコマンドは非推奨です。代わりに :doc:`create` コマンドを使用してください。
-
-   ``supplementary put`` コマンドは2027/01/01以降に廃止予定です。
 
 
 
@@ -18,9 +12,9 @@ Examples
 =================================
 
 
-CSVから補助情報を登録する
+CSVから補助情報を作成する
 --------------------------------------
-補助情報が記載されたCSVファイルを元に、補助情報を登録します。
+補助情報が記載されたCSVファイルを元に、補助情報を作成します。
 
 
 CSVのフォーマットは以下の通りです。
@@ -64,19 +58,19 @@ CSVのフォーマットは以下の通りです。
 
 .. code-block::
 
-    $ annofabcli supplementary put --project_id prj1 --csv supplementary_data.csv
+    $ annofabcli supplementary create --project_id prj1 --csv supplementary_data.csv
 
 
 supplementary_data_idが一致する補助情報が既に存在する場合は、デフォルトではスキップします。補助情報を上書きする場合は、 ``--overwrite`` を指定してください。
 
 .. code-block::
-    
-    $ annofabcli supplementary put --project_id prj1 --csv supplementary_data.csv --overwrite
+
+    $ annofabcli supplementary create --project_id prj1 --csv supplementary_data.csv --overwrite
 
 
-JSONから補助情報を登録する
+JSONから補助情報を作成する
 --------------------------------------
-補助情報が記載されたJSONファイルを元に、補助情報を登録します。
+補助情報が記載されたJSONファイルを元に、補助情報を作成します。
 
 
 以下は、JSONのサンプルです。
@@ -88,7 +82,7 @@ JSONから補助情報を登録する
     :caption: supplementary_data.json
 
     [
-        
+
         {
             "input_data_id": "input1",
             "supplementary_data_number": 1,
@@ -114,9 +108,9 @@ JSONのキーは、``--csv`` に指定するCSVファイルの列に対応しま
 
 .. code-block::
 
-    $ annofabcli supplementary put --project_id prj1 --json file://supplementary_data.json
+    $ annofabcli supplementary create --project_id prj1 --json file://supplementary_data.json
 
-    
+
 
 並列処理
 ----------------------------------------------
@@ -125,15 +119,15 @@ JSONのキーは、``--csv`` に指定するCSVファイルの列に対応しま
 
 .. code-block::
 
-    $ annofabcli supplementary put --project_id prj1 --csv supplementary_data.csv
+    $ annofabcli supplementary create --project_id prj1 --csv supplementary_data.csv
     --parallelism 4 --yes
 
 Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.supplementary.put_supplementary_data.add_parser
-   :prog: annofabcli supplementary put
+   :ref: annofabcli.supplementary.create_supplementary_data.add_parser
+   :prog: annofabcli supplementary create
    :nosubcommands:
    :nodefaultconst:
 
