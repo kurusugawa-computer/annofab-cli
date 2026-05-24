@@ -18,6 +18,7 @@ Available Commands
    change_attributes
    change_attributes_per_annotation
    change_data_per_annotation
+   change_editor_props
    change_label
    change_properties
    copy
