@@ -17,7 +17,6 @@ Available Commands
    :titlesonly:
 
    draw_annotation
-   filter_annotation
    mask_user_info
    merge_annotation
 

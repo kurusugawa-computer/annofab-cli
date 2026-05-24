@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import argparse
 import logging
 import os
@@ -60,7 +62,7 @@ def create_outer_filepath_dict(namelist: list[str]) -> dict[str, list[str]]:
         namelist: zipファイル内のファイル一覧
 
     Returns:
-
+        外部アノテーションが格納されているディレクトリとファイルパス一覧のdict。
     """
     d = defaultdict(list)
     for name in namelist:
@@ -72,7 +74,21 @@ def create_outer_filepath_dict(namelist: list[str]) -> dict[str, list[str]]:
     return d
 
 
-class FilterAnnotation:
+class FilterAnnotationZip:
+    COMMON_MESSAGE = "annofabcli annotation_zip filter:"
+
+    @staticmethod
+    def get_annotation_json_path(annotation_dir: Path, parser_json_file_path: str) -> tuple[Path, Path]:
+        json_file_path = Path(parser_json_file_path)
+        try:
+            relative_json_file_path = json_file_path.relative_to(annotation_dir)
+            source_json_file_path = json_file_path
+        except ValueError:
+            relative_json_file_path = json_file_path
+            source_json_file_path = annotation_dir / relative_json_file_path
+
+        return source_json_file_path, relative_json_file_path
+
     @staticmethod
     def filter_annotation_zip(annotation_zip: Path, filter_query: FilterQuery, output_dir: Path) -> None:
         with zipfile.ZipFile(str(annotation_zip)) as zip_file:
@@ -104,13 +120,15 @@ class FilterAnnotation:
                 continue
 
             # JSONファイルをコピー
-            dest_task_id_dir = output_dir / parser.task_id
-            dest_task_id_dir.mkdir(exist_ok=True, parents=True)
-            shutil.copy(str(annotation_dir / parser.json_file_path), str(dest_task_id_dir))
+            source_json_file_path, relative_json_file_path = FilterAnnotationZip.get_annotation_json_path(annotation_dir, parser.json_file_path)
+            output_json_file_path = output_dir / relative_json_file_path
+            output_json_file_path.parent.mkdir(exist_ok=True, parents=True)
+            shutil.copy(source_json_file_path, output_json_file_path)
             # 塗りつぶしアノテーションファイルをコピー
-            outer_annotation_dir = annotation_dir / os.path.splitext(parser.json_file_path)[0]  # noqa: PTH122
+            outer_annotation_path = Path(os.path.splitext(str(relative_json_file_path))[0])  # noqa: PTH122
+            outer_annotation_dir = annotation_dir / outer_annotation_path
             if outer_annotation_dir.exists():
-                shutil.copytree(str(outer_annotation_dir), str(output_dir))
+                shutil.copytree(outer_annotation_dir, output_dir / outer_annotation_path, dirs_exist_ok=True)
 
             count += 1
             if count % 10000 == 0:
@@ -140,9 +158,6 @@ class FilterAnnotation:
         )
 
     def main(self, args: argparse.Namespace) -> None:
-        logger.info(f"args: {args}")
-        COMMON_MESSAGE = "annofabcli filesystem filter_annotation:"  # noqa: N806
-
         annotation_path: Path = args.annotation
         output_dir: Path = args.output_dir
         output_dir.mkdir(exist_ok=True, parents=True)
@@ -153,12 +168,12 @@ class FilterAnnotation:
         elif annotation_path.is_dir():
             self.filter_annotation_dir(annotation_path, filter_query=filter_query, output_dir=output_dir)
         else:
-            print(f"{COMMON_MESSAGE} argument --annotation: ZIPファイルまたはディレクトリを指定してください。", file=sys.stderr)  # noqa: T201
+            print(f"{self.COMMON_MESSAGE} argument --annotation: ZIPファイルまたはディレクトリを指定してください。", file=sys.stderr)  # noqa: T201
             sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
 
 def main(args: argparse.Namespace) -> None:
-    FilterAnnotation().main(args)
+    FilterAnnotationZip().main(args)
 
 
 def parse_args(parser: argparse.ArgumentParser) -> None:
@@ -220,7 +235,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
 
 
 def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
-    subcommand_name = "filter_annotation"
+    subcommand_name = "filter"
 
     subcommand_help = "アノテーションzipから特定のファイルを絞り込んで、zip展開します。"
 

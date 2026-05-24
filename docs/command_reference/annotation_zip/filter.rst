@@ -1,5 +1,5 @@
 =================================
-filesystem filter_annotation
+annotation_zip filter
 =================================
 
 Description
@@ -22,7 +22,7 @@ Examples
 
 .. code-block::
 
-    $ annofabcli filesystem filter_annotation  --annotation annotation.zip \
+    $ annofabcli annotation_zip filter --annotation annotation.zip \
     --task_query '{"status":"complete"}' \
     --output_dir out/
 
@@ -31,9 +31,9 @@ Examples
 
 .. code-block::
 
-    $ annofabcli filesystem filter_annotation  --annotation annotation.zip \
+    $ annofabcli annotation_zip filter --annotation annotation.zip \
     --task_query '{"status":"complete"}' \
-    --exclude_task_id task1 task2
+    --exclude_task_id task1 task2 \
     --output_dir out/
 
 task_id以外にも ``--input_data_id`` , ``--input_data_name`` で絞り込むことができます。
@@ -42,8 +42,7 @@ Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.filesystem.filter_annotation.add_parser
-   :prog: annofabcli filesystem filter_annotation
+   :ref: annofabcli.annotation_zip.filter.add_parser
+   :prog: annofabcli annotation_zip filter
    :nosubcommands:
    :nodefaultconst:
-
