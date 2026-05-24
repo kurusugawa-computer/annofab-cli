@@ -5,7 +5,6 @@ import annofabcli.annotation.change_annotation_attributes_per_annotation
 import annofabcli.annotation.change_annotation_data_per_annotation
 import annofabcli.annotation.change_annotation_editor_props
 import annofabcli.annotation.change_annotation_label
-import annofabcli.annotation.change_annotation_properties
 import annofabcli.annotation.copy_annotation
 import annofabcli.annotation.create_classification_annotation
 import annofabcli.annotation.delete_annotation
@@ -29,7 +28,6 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     annofabcli.annotation.change_annotation_data_per_annotation.add_parser(subparsers)
     annofabcli.annotation.change_annotation_editor_props.add_parser(subparsers)
     annofabcli.annotation.change_annotation_label.add_parser(subparsers)
-    annofabcli.annotation.change_annotation_properties.add_parser(subparsers)
     annofabcli.annotation.copy_annotation.add_parser(subparsers)
     annofabcli.annotation.create_classification_annotation.add_parser(subparsers)
     annofabcli.annotation.delete_annotation.add_parser(subparsers)
