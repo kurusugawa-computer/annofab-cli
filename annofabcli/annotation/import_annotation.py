@@ -33,9 +33,9 @@ from annofabapi.pydantic_models.input_data_type import InputDataType
 from annofabapi.util.annotation_specs import AnnotationSpecsAccessor, get_english_message
 from annofabapi.utils import can_put_annotation
 from dataclasses_json import DataClassJsonMixin
-from pydantic import BaseModel, ConfigDict, StrictBool
 
 import annofabcli.common.cli
+from annofabcli.annotation.editor_props import validate_editor_props_for_cli
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
     PARALLELISM_CHOICES,
@@ -48,23 +48,6 @@ from annofabcli.common.facade import AnnofabApiFacade
 from annofabcli.common.visualize import AddProps
 
 logger = logging.getLogger(__name__)
-
-
-class EditorPropsForCli(BaseModel):
-    """
-    `annotation import --editor_props` で指定できるエディタ用プロパティ。
-    """
-
-    can_delete: StrictBool | None = None
-    """アノテーションがエディタ上で削除できるかどうか。"""
-
-    can_edit_data: StrictBool | None = None
-    """アノテーションの本体データをエディタ上で編集できるかどうか。"""
-
-    can_edit_additional: StrictBool | None = None
-    """アノテーションの付加情報をエディタ上で編集できるかどうか。"""
-
-    model_config = ConfigDict(extra="forbid")
 
 
 @dataclass
@@ -151,25 +134,6 @@ def get_3dpc_segment_data_uri(annotation_data: dict[str, Any]) -> str:
     # parser.open_data_uriメソッドに渡す値は、先頭のinput_data_idは不要なので、これを取り除く
     path = Path(data_uri)
     return str(path.relative_to(path.parts[0]))
-
-
-def validate_editor_props_for_cli(editor_props: dict[str, Any] | None) -> dict[str, Any]:
-    """
-    `--editor_props` の値を検証する。
-
-    Args:
-        editor_props: CLIで指定された `editor_props`。
-
-    Returns:
-        APIに渡す `editor_props`。
-
-    Raises:
-        pydantic.ValidationError: CLIで指定可能な `editor_props` のスキーマに違反している場合。
-    """
-    if editor_props is None:
-        return {}
-
-    return EditorPropsForCli.model_validate(editor_props).model_dump(exclude_none=True)
 
 
 class AnnotationConverter:

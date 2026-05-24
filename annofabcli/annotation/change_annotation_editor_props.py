@@ -20,7 +20,7 @@ from annofabapi.utils import can_put_annotation
 
 import annofabcli.common.cli
 from annofabcli.annotation.dump_annotation import DumpAnnotationMain
-from annofabcli.annotation.import_annotation import validate_editor_props_for_cli
+from annofabcli.annotation.editor_props import validate_editor_props_for_cli
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
     PARALLELISM_CHOICES,

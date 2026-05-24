@@ -8,12 +8,8 @@ from annofabapi.parser import (
 )
 from pydantic import ValidationError
 
-from annofabcli.annotation.import_annotation import (
-    AnnotationConverter,
-    ImportedSimpleAnnotation,
-    ImportedSimpleAnnotationDetail,
-    validate_editor_props_for_cli,
-)
+from annofabcli.annotation.editor_props import validate_editor_props_for_cli
+from annofabcli.annotation.import_annotation import AnnotationConverter, ImportedSimpleAnnotation, ImportedSimpleAnnotationDetail
 
 service = annofabapi.build()
 
