@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import copy
+import json
 import logging
 import multiprocessing
 import sys
@@ -13,6 +14,7 @@ from pathlib import Path
 from typing import Any, assert_never
 
 import annofabapi
+import pydantic
 import ulid
 from annofabapi.models import (
     AdditionalDataDefinitionType,
@@ -31,6 +33,7 @@ from annofabapi.pydantic_models.input_data_type import InputDataType
 from annofabapi.util.annotation_specs import AnnotationSpecsAccessor, get_english_message
 from annofabapi.utils import can_put_annotation
 from dataclasses_json import DataClassJsonMixin
+from pydantic import BaseModel, ConfigDict, StrictBool
 
 import annofabcli.common.cli
 from annofabcli.common.cli import (
@@ -45,6 +48,23 @@ from annofabcli.common.facade import AnnofabApiFacade
 from annofabcli.common.visualize import AddProps
 
 logger = logging.getLogger(__name__)
+
+
+class EditorPropsForCli(BaseModel):
+    """
+    `annotation import --editor_props` で指定できるエディタ用プロパティ。
+    """
+
+    can_delete: StrictBool | None = None
+    """アノテーションがエディタ上で削除できるかどうか。"""
+
+    can_edit_data: StrictBool | None = None
+    """アノテーションの本体データをエディタ上で編集できるかどうか。"""
+
+    can_edit_additional: StrictBool | None = None
+    """アノテーションの付加情報をエディタ上で編集できるかどうか。"""
+
+    model_config = ConfigDict(extra="forbid")
 
 
 @dataclass
@@ -64,6 +84,9 @@ class ImportedSimpleAnnotationDetail(DataClassJsonMixin):
 
     annotation_id: str | None = None
     """アノテーションID"""
+
+    editor_props: dict[str, Any] | None = None
+    """アノテーションエディタ用のプロパティ。"""
 
 
 @dataclass
@@ -130,6 +153,25 @@ def get_3dpc_segment_data_uri(annotation_data: dict[str, Any]) -> str:
     return str(path.relative_to(path.parts[0]))
 
 
+def validate_editor_props_for_cli(editor_props: dict[str, Any] | None) -> dict[str, Any]:
+    """
+    `--editor_props` の値を検証する。
+
+    Args:
+        editor_props: CLIで指定された `editor_props`。
+
+    Returns:
+        APIに渡す `editor_props`。
+
+    Raises:
+        pydantic.ValidationError: CLIで指定可能な `editor_props` のスキーマに違反している場合。
+    """
+    if editor_props is None:
+        return {}
+
+    return EditorPropsForCli.model_validate(editor_props).model_dump(exclude_none=True)
+
+
 class AnnotationConverter:
     """
     Simpleアノテーションを、`put_annotation` API(v2)のリクエストボディに変換するクラスです。
@@ -139,15 +181,25 @@ class AnnotationConverter:
         annotation_specs: アノテーション仕様情報(v3)
         is_strict: Trueの場合、存在しない属性名や属性値の型不一致があった場合に例外を発生させる
         service: Annofab APIにアクセスするためのサービスオブジェクト。外部アノテーションをアップロードするのに利用する。
+        default_editor_props: インポートするアノテーションに付与するデフォルトの `editor_props`。
     """
 
-    def __init__(self, project: dict[str, Any], annotation_specs: dict[str, Any], *, service: annofabapi.Resource, is_strict: bool = False) -> None:
+    def __init__(
+        self,
+        project: dict[str, Any],
+        annotation_specs: dict[str, Any],
+        *,
+        service: annofabapi.Resource,
+        is_strict: bool = False,
+        default_editor_props: dict[str, Any] | None = None,
+    ) -> None:
         self.project = project
         self.project_id = project["project_id"]
         self.annotation_specs = annotation_specs
         self.annotation_specs_accessor = AnnotationSpecsAccessor(annotation_specs)
         self.is_strict = is_strict
         self.service = service
+        self.default_editor_props = validate_editor_props_for_cli(default_editor_props)
 
     def _convert_attribute_value(  # noqa: PLR0911, PLR0912
         self,
@@ -309,12 +361,14 @@ class AnnotationConverter:
         else:
             additional_data_list = []
 
+        editor_props = {**self.default_editor_props, **(detail.editor_props or {})}
+
         result = {
             "_type": "Create",
             "label_id": label_info["label_id"],
             "annotation_id": detail.annotation_id if detail.annotation_id is not None else create_annotation_id(label_info, self.project),
             "additional_data_list": additional_data_list,
-            "editor_props": {},
+            "editor_props": editor_props,
         }
 
         if is_3dpc_segment_label(label_info):
@@ -689,35 +743,36 @@ class ImportAnnotation(CommandLine):
     アノテーションをインポートする
     """
 
+    COMMON_MESSAGE = "annofabcli annotation import: error:"
+
     def __init__(self, service: annofabapi.Resource, facade: AnnofabApiFacade, args: argparse.Namespace) -> None:
         super().__init__(service, facade, args)
         self.visualize = AddProps(self.service, args.project_id)
 
     @staticmethod
     def validate(args: argparse.Namespace) -> bool:
-        COMMON_MESSAGE = "annofabcli annotation import: error:"  # noqa: N806
         annotation_path = Path(args.annotation)
         if not annotation_path.exists():
             print(  # noqa: T201
-                f"{COMMON_MESSAGE} argument --annotation: ZIPファイルまたはディレクトリが存在しません。'{annotation_path!s}'",
+                f"{ImportAnnotation.COMMON_MESSAGE} argument --annotation: ZIPファイルまたはディレクトリが存在しません。'{annotation_path!s}'",
                 file=sys.stderr,
             )
             return False
 
         elif not (zipfile.is_zipfile(str(annotation_path)) or annotation_path.is_dir()):
-            print(f"{COMMON_MESSAGE} argument --annotation: ZIPファイルまたはディレクトリを指定してください。", file=sys.stderr)  # noqa: T201
+            print(f"{ImportAnnotation.COMMON_MESSAGE} argument --annotation: ZIPファイルまたはディレクトリを指定してください。", file=sys.stderr)  # noqa: T201
             return False
 
         if args.parallelism is not None and annotation_path.is_file() and zipfile.is_zipfile(annotation_path):
             print(  # noqa: T201
-                f"{COMMON_MESSAGE} argument --parallelism: '--annotation'にZIPファイルを指定した場合は、'--parallelism'を指定できません。",
+                f"{ImportAnnotation.COMMON_MESSAGE} argument --parallelism: '--annotation'にZIPファイルを指定した場合は、'--parallelism'を指定できません。",
                 file=sys.stderr,
             )
             return False
 
         if args.parallelism is not None and not args.yes:
             print(  # noqa: T201
-                f"{COMMON_MESSAGE} argument --parallelism: '--parallelism'を指定するときは、'--yes' を指定してください。",
+                f"{ImportAnnotation.COMMON_MESSAGE} argument --parallelism: '--parallelism'を指定するときは、'--yes' を指定してください。",
                 file=sys.stderr,
             )
             return False
@@ -747,7 +802,13 @@ class ImportAnnotation(CommandLine):
 
         annotation_specs_v3, _ = self.service.api.get_annotation_specs(project_id, query_params={"v": "3"})
         project, _ = self.service.api.get_project(project_id)
-        converter = AnnotationConverter(project=project, annotation_specs=annotation_specs_v3, is_strict=args.strict, service=self.service)
+        try:
+            editor_props = validate_editor_props_for_cli(annofabcli.common.cli.get_json_from_args(args.editor_props))
+        except (json.JSONDecodeError, pydantic.ValidationError) as e:
+            print(f"{self.COMMON_MESSAGE} argument '--editor_props' の値が不正です。{e}", file=sys.stderr)  # noqa: T201
+            sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
+
+        converter = AnnotationConverter(project=project, annotation_specs=annotation_specs_v3, is_strict=args.strict, service=self.service, default_editor_props=editor_props)
 
         main_obj = ImportAnnotationMain(
             self.service,
@@ -825,6 +886,17 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         action="store_true",
         help="アノテーションJSONに、存在しないラベル名や属性名など適切でない記載が場合、そのアノテーションJSONの登録をスキップします。"
         "デフォルトでは、適切でない箇所のみスキップして、できるだけアノテーションを登録するようにします。",
+    )
+
+    EXAMPLE_EDITOR_PROPS = '{"can_delete": false, "can_edit_data": false, "can_edit_additional": false}'  # noqa: N806
+    parser.add_argument(
+        "--editor_props",
+        type=str,
+        required=False,
+        help=f"インポートする全アノテーションに付与するエディタ用プロパティをJSON形式で指定します。"
+        f"指定できるキーは ``can_delete``, ``can_edit_data``, ``can_edit_additional`` です。"
+        f"``file://`` を先頭に付けると、JSON形式のファイルを指定できます。"
+        f"各アノテーションJSONの ``editor_props`` が指定されている場合は、その値が優先されます。(ex): ``{EXAMPLE_EDITOR_PROPS}``",
     )
 
     parser.add_argument(

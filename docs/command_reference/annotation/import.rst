@@ -104,6 +104,43 @@ Examples
     }
 
 
+``editor_props`` が指定されている場合、``putAnnotation`` APIの ``editor_props`` としてインポートされます。
+``editor_props`` はアノテーションエディタ用のプロパティです。たとえば ``can_delete`` に ``false`` を指定すると、対応しているエディタ上ではアノテーションを削除できなくなります。
+ただし、APIによる編集や削除は禁止されません。
+
+``editor_props`` に指定できるキーは、 `putAnnotation API <https://annofab.com/docs/api/#operation/putAnnotation>`_ の ``AnnotationPropsForEditor`` を参照してください。
+
+.. code-block::
+    :caption: {input_data_id}.json
+
+    {
+        "details": [
+            {
+                "label": "car",
+                "annotation_id": "12345678-abcd-1234-abcd-1234abcd5678",
+                "data": {
+                    "left_top": {
+                        "x": 878,
+                        "y": 566
+                    },
+                    "right_bottom": {
+                        "x": 1065,
+                        "y": 701
+                    },
+                    "_type": "BoundingBox"
+                },
+                "attributes": {},
+                "editor_props": {
+                    "can_delete": false,
+                    "can_edit_data": false,
+                    "can_edit_additional": false
+                }
+            },
+            ...
+        ]
+    }
+
+
 基本的な使い方
 ----------------------------------------------------
 
@@ -150,6 +187,17 @@ Examples
     $ annofabcli annotation import --project_id prj1 --annotation annotation.zip \
     --change_operator_to_me
 
+
+インポートする全アノテーションに同じ ``editor_props`` を付与する場合は、``--editor_props`` を指定してください。
+``--editor_props`` で指定できるキーは、現在対応しているエディタがある ``can_delete``, ``can_edit_data``, ``can_edit_additional`` です。
+各アノテーションJSONの ``editor_props`` が指定されている場合は、``--editor_props`` の値にマージされます。
+同じキーが指定された場合は、各アノテーションJSONの ``editor_props`` の値が優先されます。
+
+.. code-block::
+
+    $ annofabcli annotation import --project_id prj1 --annotation annotation.zip \
+    --editor_props '{"can_delete": false, "can_edit_data": false}'
+
 Usage Details
 =================================
 
@@ -158,6 +206,3 @@ Usage Details
     :prog: annofabcli annotation import
     :nosubcommands:
     :nodefaultconst:
-
-
-
