@@ -21,6 +21,7 @@ Available Commands
    list_polyline_annotation
    list_range_annotation
    list_single_point_annotation
+   render
 
 
 Usage Details
@@ -30,4 +31,3 @@ Usage Details
    :ref: annofabcli.annotation_zip.subcommand_annotation_zip.add_parser
    :prog: annofabcli annotation_zip
    :nosubcommands:
-

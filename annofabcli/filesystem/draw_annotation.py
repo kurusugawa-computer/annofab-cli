@@ -26,6 +26,11 @@ from annofabcli.common.facade import TaskQuery, match_annotation_with_task_query
 
 logger = logging.getLogger(__name__)
 
+DEPRECATED_MESSAGE = (
+    "[DEPRECATED] :: `filesystem draw_annotation` コマンドは非推奨です。代わりに `annotation_zip render` コマンドを使用してください。"
+    " `filesystem draw_annotation` コマンドは2027/01/01以降に削除予定です。"
+)
+
 
 Color = str | tuple[int, int, int]
 IsParserFunc = Callable[[SimpleAnnotationParser], bool]
@@ -350,6 +355,7 @@ class DrawAnnotation(CommandLineWithoutWebapi):
 
 
 def main(args: argparse.Namespace) -> None:
+    print(DEPRECATED_MESSAGE, file=sys.stderr)  # noqa: T201
     DrawAnnotation(args).main()
 
 
@@ -442,9 +448,9 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
 def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "draw_annotation"
 
-    subcommand_help = "画像にアノテーションを描画します。"
+    subcommand_help = "[DEPRECATED] 画像にアノテーションを描画します。"
 
-    description = "画像にアノテーションを描画します。"
+    description = f"{subcommand_help}\n{DEPRECATED_MESSAGE}"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
     parse_args(parser)

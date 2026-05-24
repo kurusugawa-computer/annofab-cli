@@ -1,16 +1,10 @@
 =================================
-filesystem draw_annotation
+annotation_zip render
 =================================
 
 Description
 =================================
-アノテーションzip、またはそれを展開したディレクトリに存在するアノテーションを描画します。
-
-.. warning::
-
-   このコマンドは非推奨です。代わりに :doc:`../annotation_zip/render` コマンドを使用してください。
-
-   ``filesystem draw_annotation`` コマンドは2027/01/01以降に削除予定です。
+アノテーションzip、またはそれを展開したディレクトリに存在するアノテーションを画像として出力します。
 
 
 Examples
@@ -35,13 +29,13 @@ Examples
 CSVのフォーマットは以下の通りです。
 
 * カンマ区切り
-* ヘッダ行なし
+* ヘッダ行あり
 
 .. csv-table::
-   :header: 列番号,名前,必須,備考
+   :header: 列名,必須,備考
 
-    1列目,input_data_id,Yes,
-    2列目,image_path,Yes,``--image_dir`` に指定したディレクトリからのパス
+    input_data_id,Yes,
+    image_path,Yes,``--image_dir`` に指定したディレクトリからのパス
 
 
 以下はCSVファイルのサンプルです。
@@ -49,6 +43,7 @@ CSVのフォーマットは以下の通りです。
 .. code-block::
     :caption: input_data_id.csv
 
+    input_data_id,image_path
     input_data_id1,image1.png
     input_data_id2,image2.png
     input_data_id3,image3.png
@@ -62,10 +57,10 @@ CSVのフォーマットは以下の通りです。
     ├── image2.png
     ...
 
-        
+
 .. code-block::
 
-    $ annofabcli filesystem draw_annotation  --annotation annotation.zip \
+    $ annofabcli annotation_zip render --annotation annotation.zip \
     --image_dir image/ \
     --input_data_id_csv input_data_id.csv \
     --output_dir out/
@@ -85,18 +80,17 @@ CSVのフォーマットは以下の通りです。
     ...
 
 
-
-.. image:: draw_annotation/output_image.png
+.. image:: ../filesystem/draw_annotation/output_image.png
 
 
 アノテーションのみを描画する
 ----------------------------------------------------
-アノテーションのみを描画する場合は、``--default_image_size`` を指定してください。
+アノテーションのみを描画する場合は、``--image_size`` を指定してください。
 
 .. code-block::
 
-    $ annofabcli filesystem draw_annotation  --annotation annotation.zip \
-    --default_image_size 1280x720 \
+    $ annofabcli annotation_zip render --annotation annotation.zip \
+    --image_size 1280x720 \
     --output_dir out/
 
 
@@ -109,7 +103,7 @@ CSVのフォーマットは以下の通りです。
 
 .. code-block::
 
-    $ annofabcli filesystem draw_annotation  --annotation annotation.zip \
+    $ annofabcli annotation_zip render --annotation annotation.zip \
     --image_dir image/ \
     --input_data_id_csv input_data_id.csv \
     --output_dir out/ \
@@ -117,7 +111,7 @@ CSVのフォーマットは以下の通りです。
 
 
 .. warning::
-    
+
     このオプションはアノテーションzipの課題を解決するための、暫定的なオプションです。
     アノテーションzipでポリゴンかポリラインかを判断できるようになれば、このオプションは削除する予定です。
 
@@ -130,7 +124,7 @@ CSVのフォーマットは以下の通りです。
 
 .. code-block::
 
-    $ annofabcli filesystem draw_annotation  --annotation annotation.zip \
+    $ annofabcli annotation_zip render --annotation annotation.zip \
     --image_dir image/ \
     --input_data_id_csv input_data_id.csv \
     --output_dir out/ \
@@ -145,7 +139,7 @@ CSVのフォーマットは以下の通りです。
 
 .. code-block::
 
-    $ annofabcli filesystem draw_annotation  --annotation annotation.zip \
+    $ annofabcli annotation_zip render --annotation annotation.zip \
     --image_dir image/ \
     --input_data_id_csv input_data_id.csv \
     --output_dir out/ \
@@ -159,8 +153,8 @@ CSVのフォーマットは以下の通りです。
 * 16進数： ``"#add8e6"``
 * 10進数（文字列）： ``"rgb(0, 0, 255)"``
 * 10進数（リスト）： ``[0, 0, 255]``
-  
-    
+
+
 アノテーション仕様画面で設定されている色を指定する場合は、 `annofabcli annotation_specs list_label_color <../annotation_specs/list_label_color.html>`_ コマンドの出力結果を使用してください。
 
 .. code-block::
@@ -181,8 +175,8 @@ CSVのフォーマットは以下の通りです。
         ],
         // ...
     }
-        
-    $ annofabcli filesystem draw_annotation  --annotation annotation.zip \
+
+    $ annofabcli annotation_zip render --annotation annotation.zip \
     --image_dir image/ \
     --input_data_id_csv input_data_id.csv \
     --output_dir out/ \
@@ -200,7 +194,7 @@ CSVのフォーマットは以下の通りです。
 
 .. code-block::
 
-    $ annofabcli filesystem draw_annotation  --annotation annotation.zip \
+    $ annofabcli annotation_zip render --annotation annotation.zip \
     --image_dir image/ \
     --input_data_id_csv input_data_id.csv \
     --output_dir out/ \
@@ -214,7 +208,7 @@ CSVのフォーマットは以下の通りです。
 
 .. code-block::
 
-    $ annofabcli filesystem draw_annotation  --annotation annotation.zip \
+    $ annofabcli annotation_zip render --annotation annotation.zip \
     --image_dir image/ \
     --input_data_id_csv input_data_id.csv \
     --output_dir out/ \
@@ -225,8 +219,9 @@ CSVのフォーマットは以下の通りです。
 
 .. code-block::
 
-    $ annofabcli filesystem filter_annotation  --annotation annotation.zip \
+    $ annofabcli annotation_zip render --annotation annotation.zip \
     --task_query '{"status":"complete"}' \
+    --image_size 1280x720 \
     --output_dir out/
 
 ``--task_query`` の詳細は、`Command line options <../../user_guide/command_line_options.html#task-query-tq>`_ を参照してください。
@@ -235,7 +230,7 @@ Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.filesystem.draw_annotation.add_parser
-   :prog: annofabcli filesystem draw_annotation
+   :ref: annofabcli.annotation_zip.render.add_parser
+   :prog: annofabcli annotation_zip render
    :nosubcommands:
    :nodefaultconst:
