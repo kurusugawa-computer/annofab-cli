@@ -198,12 +198,7 @@ Examples
 
 
 インポートする全アノテーションに同じ ``editor_props`` を付与する場合は、 ``--editor_props`` を指定してください。
-``--editor_props`` で指定できるキーは、現在対応しているエディタがある以下のキーです。
-
-*  ``can_delete`` ：アノテーションを削除できるかどうか
-*  ``can_edit_data`` ：アノテーションのデータを編集できるかどうか
-*  ``can_edit_additional`` ：アノテーションの属性値を編集できるかどうか
-
+``--editor_props`` で指定できるキーは、 :ref:`annotation_change_editor_props_editor_props_keys` を参照してください。
 
 .. code-block::
 
