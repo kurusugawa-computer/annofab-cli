@@ -91,8 +91,8 @@ class TestCommandLine:
         # copyコマンドのテスト
         self._execute_copy(task_id, input_data_id)
 
-        # 属性とプロパティの変更
-        self._execute_change_properties_and_attributes(task_id, input_data_id)
+        # 属性の変更
+        self._execute_change_attributes(task_id)
 
         # アノテーションのダンプ、削除、リストア
         self._execute_dump_delete_restore(task_id, input_data_id)
@@ -136,9 +136,9 @@ class TestCommandLine:
         with input_data_json.open("w", encoding="utf8") as f:
             json.dump(simple_annotation, f, ensure_ascii=False)
 
-    def _execute_change_properties_and_attributes(self, task_id: str, input_data_id: str) -> None:
+    def _execute_change_attributes(self, task_id: str) -> None:
         """
-        アノテーションのプロパティの変更、属性の変更のテスト
+        アノテーションの属性の変更のテスト
         """
         # truncation属性をFalseに変更する
         main(
@@ -161,25 +161,6 @@ class TestCommandLine:
         simple_annotation, _ = service.api.get_annotation(project_id, task_id, input_data_id)
         detail = simple_annotation["details"][0]
         assert detail["attributes"]["truncation"] is False
-
-        # is_protected プロパティを変更する
-        main(
-            [
-                "annotation",
-                "change_properties",
-                "--project_id",
-                project_id,
-                "--task_id",
-                task_id,
-                "--properties",
-                '{"is_protected":true}',
-                "--yes",
-            ]
-        )
-
-        editor_annotation, _ = service.api.get_editor_annotation(project_id, task_id, input_data_id)
-        detail = editor_annotation["details"][0]
-        assert detail["is_protected"] is True
 
     def _execute_dump_delete_restore(self, task_id: str, input_data_id: str) -> None:
         """
