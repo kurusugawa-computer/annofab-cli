@@ -119,7 +119,7 @@ class TestCreateRequestBodyForChangeEditorProps:
             ],
         }
 
-    def test_create_request_body__when_editor_props_does_not_exist(self) -> None:
+    def test_create_request_body__when_editor_props_is_empty(self) -> None:
         editor_annotation = {
             "project_id": "prj1",
             "task_id": "task1",
@@ -131,6 +131,7 @@ class TestCreateRequestBodyForChangeEditorProps:
                     "label_id": "label_car",
                     "additional_data_list": [],
                     "body": {"_type": "Inner", "data": {"_type": "BoundingBox"}},
+                    "editor_props": {},
                 },
             ],
         }
