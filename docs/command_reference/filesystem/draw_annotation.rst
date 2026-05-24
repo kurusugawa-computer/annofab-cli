@@ -6,6 +6,12 @@ Description
 =================================
 アノテーションzip、またはそれを展開したディレクトリに存在するアノテーションを描画します。
 
+.. warning::
+
+   このコマンドは非推奨です。代わりに :doc:`../annotation_zip/render` コマンドを使用してください。
+
+   ``filesystem draw_annotation`` コマンドは2027/01/01以降に削除予定です。
+
 
 Examples
 =================================
@@ -127,7 +133,7 @@ CSVのフォーマットは以下の通りです。
     $ annofabcli filesystem draw_annotation  --annotation annotation.zip \
     --image_dir image/ \
     --input_data_id_csv input_data_id.csv \
-    --output_dir out/
+    --output_dir out/ \
     --label_name car bike
 
 
@@ -142,7 +148,7 @@ CSVのフォーマットは以下の通りです。
     $ annofabcli filesystem draw_annotation  --annotation annotation.zip \
     --image_dir image/ \
     --input_data_id_csv input_data_id.csv \
-    --output_dir out/
+    --output_dir out/ \
     --label_color '{"dog":"red", "cat":"blue"}'
 
 
@@ -179,7 +185,7 @@ CSVのフォーマットは以下の通りです。
     $ annofabcli filesystem draw_annotation  --annotation annotation.zip \
     --image_dir image/ \
     --input_data_id_csv input_data_id.csv \
-    --output_dir out/
+    --output_dir out/ \
     --label_color file://label_color.json
 
 
@@ -197,7 +203,7 @@ CSVのフォーマットは以下の通りです。
     $ annofabcli filesystem draw_annotation  --annotation annotation.zip \
     --image_dir image/ \
     --input_data_id_csv input_data_id.csv \
-    --output_dir out/
+    --output_dir out/ \
     --drawing_options '{"line_width": 3}'
 
 
@@ -211,7 +217,7 @@ CSVのフォーマットは以下の通りです。
     $ annofabcli filesystem draw_annotation  --annotation annotation.zip \
     --image_dir image/ \
     --input_data_id_csv input_data_id.csv \
-    --output_dir out/
+    --output_dir out/ \
     --task_id task1 task2
 
 
@@ -233,5 +239,3 @@ Usage Details
    :prog: annofabcli filesystem draw_annotation
    :nosubcommands:
    :nodefaultconst:
-
-

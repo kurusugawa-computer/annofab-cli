@@ -51,19 +51,19 @@ class RenderAnnotation(CommandLineWithoutWebapi):
     def main(self) -> None:
         args = self.args
 
-        default_image_size: tuple[int, int] | None = None
-        if args.default_image_size is not None:
-            default_image_size = annofabcli.common.cli.get_input_data_size(args.default_image_size)
-            if default_image_size is None:
+        image_size: tuple[int, int] | None = None
+        if args.image_size is not None:
+            image_size = annofabcli.common.cli.get_input_data_size(args.image_size)
+            if image_size is None:
                 print(  # noqa: T201
-                    f"{self.COMMON_MESSAGE} argument '--default_image_size': フォーマットが不正です。",
+                    f"{self.COMMON_MESSAGE} argument '--image_size': フォーマットが不正です。",
                     file=sys.stderr,
                 )
                 sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
-        if args.default_image_size is None and args.input_data_id_csv is None:
+        if args.image_size is None and args.input_data_id_csv is None:
             print(  # noqa: T201
-                f"{self.COMMON_MESSAGE} '--default_image_size'または'--input_data_id_csv'のいずれかは必須です。",
+                f"{self.COMMON_MESSAGE} '--image_size'または'--input_data_id_csv'のいずれかは必須です。",
                 file=sys.stderr,
             )
             sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
@@ -102,7 +102,7 @@ class RenderAnnotation(CommandLineWithoutWebapi):
             target_label_names=get_list_from_args(args.label_name) if args.label_name is not None else None,
             polyline_labels=get_list_from_args(args.polyline_label) if args.polyline_label is not None else None,
             drawing_options=DrawingOptions.from_dict(get_json_from_args(args.drawing_options)) if args.drawing_options is not None else None,
-            default_image_size=default_image_size,
+            default_image_size=image_size,
         )
 
 
@@ -126,12 +126,12 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--input_data_id_csv",
         type=Path,
         help="``input_data_id`` と ``--image_dir`` 配下の画像ファイルを紐付けたCSVを指定してください。\n"
-        "``--default_image_size`` を指定しないときは必須です。\n"
+        "``--image_size`` を指定しないときは必須です。\n"
         "CSVのフォーマットは、「ヘッダ行あり、input_data_id列: input_data_id, image_path列: 画像ファイルのパス」です。\n"
         "詳細は https://annofab-cli.readthedocs.io/ja/latest/command_reference/annotation_zip/render.html を参照してください。",
     )
 
-    parser.add_argument("--default_image_size", type=str, help="デフォルトの画像サイズ。 ``--input_data_id_csv`` を指定しないときは必須です。\n(例) 1280x720")
+    parser.add_argument("--image_size", type=str, help="アノテーションのみを描画するときの画像サイズ。 ``--input_data_id_csv`` を指定しないときは必須です。\n(例) 1280x720")
 
     label_color_sample = {"dog": [255, 128, 64], "cat": "blue"}
     parser.add_argument(

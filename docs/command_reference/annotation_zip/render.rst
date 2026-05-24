@@ -85,12 +85,12 @@ CSVのフォーマットは以下の通りです。
 
 アノテーションのみを描画する
 ----------------------------------------------------
-アノテーションのみを描画する場合は、``--default_image_size`` を指定してください。
+アノテーションのみを描画する場合は、``--image_size`` を指定してください。
 
 .. code-block::
 
     $ annofabcli annotation_zip render --annotation annotation.zip \
-    --default_image_size 1280x720 \
+    --image_size 1280x720 \
     --output_dir out/
 
 
@@ -127,7 +127,7 @@ CSVのフォーマットは以下の通りです。
     $ annofabcli annotation_zip render --annotation annotation.zip \
     --image_dir image/ \
     --input_data_id_csv input_data_id.csv \
-    --output_dir out/
+    --output_dir out/ \
     --label_name car bike
 
 
@@ -142,7 +142,7 @@ CSVのフォーマットは以下の通りです。
     $ annofabcli annotation_zip render --annotation annotation.zip \
     --image_dir image/ \
     --input_data_id_csv input_data_id.csv \
-    --output_dir out/
+    --output_dir out/ \
     --label_color '{"dog":"red", "cat":"blue"}'
 
 
@@ -179,7 +179,7 @@ CSVのフォーマットは以下の通りです。
     $ annofabcli annotation_zip render --annotation annotation.zip \
     --image_dir image/ \
     --input_data_id_csv input_data_id.csv \
-    --output_dir out/
+    --output_dir out/ \
     --label_color file://label_color.json
 
 
@@ -197,7 +197,7 @@ CSVのフォーマットは以下の通りです。
     $ annofabcli annotation_zip render --annotation annotation.zip \
     --image_dir image/ \
     --input_data_id_csv input_data_id.csv \
-    --output_dir out/
+    --output_dir out/ \
     --drawing_options '{"line_width": 3}'
 
 
@@ -211,7 +211,7 @@ CSVのフォーマットは以下の通りです。
     $ annofabcli annotation_zip render --annotation annotation.zip \
     --image_dir image/ \
     --input_data_id_csv input_data_id.csv \
-    --output_dir out/
+    --output_dir out/ \
     --task_id task1 task2
 
 
@@ -221,7 +221,7 @@ CSVのフォーマットは以下の通りです。
 
     $ annofabcli annotation_zip render --annotation annotation.zip \
     --task_query '{"status":"complete"}' \
-    --default_image_size 1280x720 \
+    --image_size 1280x720 \
     --output_dir out/
 
 ``--task_query`` の詳細は、`Command line options <../../user_guide/command_line_options.html#task-query-tq>`_ を参照してください。
