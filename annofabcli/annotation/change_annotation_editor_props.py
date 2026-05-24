@@ -108,7 +108,7 @@ def create_request_body_for_change_editor_props(
 
         annotation_id = detail["annotation_id"]
         if annotation_id in target_annotation_ids:
-            new_detail["editor_props"] = {**detail.get("editor_props", {}), **editor_props}
+            new_detail["editor_props"] = {**detail["editor_props"], **editor_props}
             changed_annotation_ids.add(annotation_id)
 
         request_details.append(new_detail)
