@@ -6,11 +6,13 @@ import pytest
 from annofabapi.parser import (
     SimpleAnnotationDirParser,
 )
+from pydantic import ValidationError
 
 from annofabcli.annotation.import_annotation import (
     AnnotationConverter,
     ImportedSimpleAnnotation,
     ImportedSimpleAnnotationDetail,
+    validate_editor_props_for_cli,
 )
 
 service = annofabapi.build()
@@ -144,6 +146,53 @@ class Test__AnnotationConverter:
         assert actual["additional_data_list"] == expected["additional_data_list"]
         assert actual["editor_props"] == expected["editor_props"]
         assert actual["body"] == expected["body"]
+
+    def test__convert_annotation_detail__default_editor_propsを設定する(self):
+        converter = AnnotationConverter(
+            project,
+            annotation_specs,
+            is_strict=False,
+            service=service,
+            default_editor_props={"can_delete": False, "can_edit_data": False, "can_edit_additional": False},
+        )
+        detail = ImportedSimpleAnnotationDetail(
+            label="car",
+            data={"left_top": {"x": 10, "y": 7}, "right_bottom": {"x": 36, "y": 36}, "_type": "BoundingBox"},
+            attributes={},
+            annotation_id="annotation_id",
+        )
+        actual = converter.convert_annotation_detail(SimpleAnnotationDirParser(Path("foo.json")), detail)
+        assert actual["editor_props"] == {
+            "can_delete": False,
+            "can_edit_data": False,
+            "can_edit_additional": False,
+        }
+
+    def test__convert_annotation_detail__detailのeditor_propsはdefault_editor_propsにマージされる(self):
+        converter = AnnotationConverter(
+            project,
+            annotation_specs,
+            is_strict=False,
+            service=service,
+            default_editor_props={"can_delete": False, "can_edit_data": False},
+        )
+        detail = ImportedSimpleAnnotationDetail(
+            label="car",
+            data={"left_top": {"x": 10, "y": 7}, "right_bottom": {"x": 36, "y": 36}, "_type": "BoundingBox"},
+            attributes={},
+            annotation_id="annotation_id",
+            editor_props={"can_delete": True, "tags": ["imported"]},
+        )
+        actual = converter.convert_annotation_detail(SimpleAnnotationDirParser(Path("foo.json")), detail)
+        assert actual["editor_props"] == {"can_delete": True, "can_edit_data": False, "tags": ["imported"]}
+
+    def test__validate_editor_props__schema違反なら例外(self):
+        with pytest.raises(ValidationError):
+            validate_editor_props_for_cli({"can_delete": "false"})
+
+    def test__validate_editor_props__CLIで対応していないキーなら例外(self):
+        with pytest.raises(ValidationError):
+            validate_editor_props_for_cli({"description": "未対応"})
 
     def test__convert_attributes__期待通りの値が格納されている(self):
         converter = AnnotationConverter(project, annotation_specs, is_strict=False, service=service)
