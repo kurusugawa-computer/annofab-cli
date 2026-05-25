@@ -15,6 +15,7 @@ Available Commands
    :maxdepth: 1
    :titlesonly:
 
+   diff
    list_3d_bounding_box_annotation
    list_bounding_box_annotation
    list_polygon_annotation
