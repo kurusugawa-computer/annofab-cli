@@ -225,7 +225,7 @@ CSVのフォーマットは以下の通りです。
 
 .. code-block::
 
-    $ annofabcli filesystem filter_annotation  --annotation annotation.zip \
+    $ annofabcli annotation_zip filter --annotation annotation.zip \
     --task_query '{"status":"complete"}' \
     --output_dir out/
 

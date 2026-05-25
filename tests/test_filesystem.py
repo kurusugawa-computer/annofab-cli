@@ -26,23 +26,6 @@ class TestCommandLine:
             ]
         )
 
-    def test_filter_annotation(self):
-        zip_path = data_dir / "simple-annotation.zip"
-        output_dir = out_dir / "filter-annotation-output"
-
-        main(
-            [
-                "filesystem",
-                "filter_annotation",
-                "--annotation",
-                str(zip_path),
-                "--output_dir",
-                str(output_dir),
-                "--task_query",
-                '{"status":"complete"}',
-            ]
-        )
-
     def test_mask_user_info(self):
         csv_path = data_dir / "user1.csv"
         out_path = out_dir / "out-user1.csv"
