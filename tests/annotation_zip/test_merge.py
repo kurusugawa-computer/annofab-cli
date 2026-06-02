@@ -19,6 +19,7 @@ class TestCommandLine:
             [
                 "annotation_zip",
                 "merge",
+                "--annotation",
                 str(annotation_dir1),
                 str(annotation_dir2),
                 "--output_dir",
@@ -45,6 +46,7 @@ class TestCommandLine:
             [
                 "annotation_zip",
                 "merge",
+                "--annotation",
                 str(annotation_zip1),
                 str(annotation_dir2),
                 "--output_dir",
@@ -56,6 +58,7 @@ class TestCommandLine:
             [
                 "annotation_zip",
                 "merge",
+                "--annotation",
                 str(annotation_dir2),
                 str(annotation_zip1),
                 "--output_dir",
