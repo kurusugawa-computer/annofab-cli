@@ -33,13 +33,10 @@ Examples
 
 同じJSONファイルが両方のアノテーションZIPに存在する場合は、アノテーションJSONの ``details`` 配下にある各アノテーション情報を ``annotation_id`` 単位でマージします。
 同じ ``annotation_id`` が存在する場合は、2個目に指定したアノテーションZIPの情報を優先します。
-片方のアノテーションZIPにしか存在しないJSONファイルや ``annotation_id`` は、そのまま出力されます。
-
-``Segmentation`` または ``SegmentationV2`` のアノテーションに紐づく外部ファイルも、出力先にコピーされます。
 
 
 アノテーションJSONは以下の通りマージされます。
-``annotation-A.zip`` と ``annotation-B.zip`` の両方に同じannotation_idが存在する場合は、``annotation-B.zip`` の情報を優先します。
+``annotation-A.zip`` と ``annotation-B.zip`` の両方に同じannotation_idが存在する場合は、 ``annotation-B.zip`` の情報を優先します。
 
 
 .. code-block::
