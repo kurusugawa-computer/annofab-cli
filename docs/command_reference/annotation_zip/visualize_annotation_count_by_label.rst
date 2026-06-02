@@ -20,6 +20,11 @@ Examples
 
     $ annofabcli annotation_zip visualize_annotation_count_by_label --project_id prj1 --output labels_count.html
 
+下図は ``labels_count.html`` の中身です。ラベル名ごとにヒストグラムが描画されています。
+
+.. image:: visualize_annotation_count_by_label/img/labels_count.png
+    :alt: labels_count.htmlの中身
+
 デフォルトではタスク単位でアノテーション数を集計します。入力データ単位に集計する場合は、 ``--group_by input_data_id`` を指定してください。
 
 ``--annotation`` にアノテーションzipまたはzipを展開したディレクトリを指定できます。

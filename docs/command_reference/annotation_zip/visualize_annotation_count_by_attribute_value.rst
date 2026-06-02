@@ -26,6 +26,11 @@ Examples
 
     $ annofabcli annotation_zip visualize_annotation_count_by_attribute_value --project_id prj1 --output attributes_count.html
 
+下図は ``attributes_count.html`` の中身です。ラベル名、属性名、属性値のペアごとにヒストグラムが描画されています。
+
+.. image:: visualize_annotation_count_by_attribute_value/img/attributes_count.png
+    :alt: attributes_count.htmlの中身
+
 デフォルトではタスク単位でアノテーション数を集計します。入力データ単位に集計する場合は、 ``--group_by input_data_id`` を指定してください。
 
 ``--annotation`` にアノテーションzipまたはzipを展開したディレクトリを指定できます。
