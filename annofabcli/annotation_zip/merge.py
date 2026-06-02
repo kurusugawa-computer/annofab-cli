@@ -197,7 +197,7 @@ class MergeAnnotationMain:
 class MergeAnnotation(CommandLineWithoutWebapi):
     @staticmethod
     def validate(args: argparse.Namespace) -> bool:
-        COMMON_MESSAGE = "annofabcli filesystem merge_annotation: error:"  # noqa: N806
+        COMMON_MESSAGE = "annofabcli annotation_zip merge: error:"  # noqa: N806
         if args.annotation is not None:
             annotation_paths: list[Path] = args.annotation
             for path in annotation_paths:
@@ -231,7 +231,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         type=Path,
         nargs=2,
         required=True,
-        help="Annofabからダウンロードしたアノテーションzip、またはzipを展開したディレクトリを2つ指定してください。",
+        help="Annofabからダウンロードしたアノテーションzip、またはzipを展開したディレクトリを2つ指定してください。同じannotation_idが存在する場合は、2個目のアノテーションを優先します。",
     )
 
     parser.add_argument("-o", "--output_dir", type=Path, required=True, help="出力先ディレクトリ")
@@ -245,11 +245,15 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
 
 
 def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
-    subcommand_name = "merge_annotation"
+    subcommand_name = "merge"
 
     subcommand_help = "2つのアノテーションzip（またはzipを展開したディレクトリ）をマージします。"
 
-    description = "2つのアノテーションzip（またはzipを展開したディレクトリ）をマージします。具体的にはアノテーションjsonの'details'キー配下の情報をマージします。"
+    description = (
+        "2つのアノテーションzip（またはzipを展開したディレクトリ）をマージします。"
+        "具体的にはアノテーションjsonの'details'キー配下の情報をマージします。"
+        "同じannotation_idが存在する場合は、2個目のアノテーションを優先します。"
+    )
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
     parse_args(parser)

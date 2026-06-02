@@ -18,7 +18,6 @@ Available Commands
 
    draw_annotation
    mask_user_info
-   merge_annotation
 
 Usage Details
 =================================

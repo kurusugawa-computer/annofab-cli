@@ -24,6 +24,7 @@ Available Commands
    list_polyline_annotation
    list_range_annotation
    list_single_point_annotation
+   merge
    render
 
 
