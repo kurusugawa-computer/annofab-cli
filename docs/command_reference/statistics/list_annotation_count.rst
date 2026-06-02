@@ -7,6 +7,11 @@ Description
 
 ラベルごとまたは属性値ごとにアノテーション数を出力します。
 
+.. warning::
+
+    このコマンドは非推奨です。
+    ラベルごとの集計は :doc:`../annotation_zip/count_annotation_by_label` を、属性値ごとの集計は :doc:`../annotation_zip/count_annotation_by_attribute_value` を使用してください。
+
 アノテーション数は、ダウンロードしたアノテーションZIPから算出します。
  
  

@@ -51,10 +51,11 @@ Examples
 
 
 デフォルトではタスクごとにアノテーション数を集計します。入力データごとに集計する場合は、 ``--group_by input_data_id`` を指定してください。
+ラベルごとの集計は :doc:`../annotation_zip/count_annotation_by_label` を、属性値ごとの集計は :doc:`../annotation_zip/count_annotation_by_attribute_value` を使用してください。
 
 .. code-block::
 
-    $ annofabcli statistics list_annotation_count --project_id prj1 --output_dir out_dir/ \
+    $ annofabcli annotation_zip count_annotation_by_label --project_id prj1 --output out.csv \
     --group_by input_data_id
 
 

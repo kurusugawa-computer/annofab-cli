@@ -15,6 +15,8 @@ Available Commands
    :maxdepth: 1
    :titlesonly:
 
+   count_annotation_by_attribute_value
+   count_annotation_by_label
    filter
    list_3d_bounding_box_annotation
    list_bounding_box_annotation

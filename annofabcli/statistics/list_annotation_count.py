@@ -1576,6 +1576,11 @@ def main(args: argparse.Namespace) -> None:
     Args:
         args: コマンドライン引数
     """
+    logger.warning(
+        "annofabcli statistics list_annotation_count は非推奨です。"
+        "ラベルごとの集計は annofabcli annotation_zip count_annotation_by_label、"
+        "属性値ごとの集計は annofabcli annotation_zip count_annotation_by_attribute_value を使用してください。"
+    )
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
     ListAnnotationCount(service, facade, args).main()
