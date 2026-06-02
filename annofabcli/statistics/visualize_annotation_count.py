@@ -45,6 +45,13 @@ logger = logging.getLogger(__name__)
 
 BIN_COUNT = 20
 
+DEPRECATED_MESSAGE = (
+    "[DEPRECATED] :: `statistics visualize_annotation_count` コマンドは非推奨です。"
+    "ラベルごとの可視化は `annotation_zip visualize_annotation_count_by_label` コマンドを使用してください。"
+    "属性値ごとの可視化は `annotation_zip visualize_annotation_count_by_attribute_value` コマンドを使用してください。 "
+    "`statistics visualize_annotation_count` コマンドは2027/01/01以降に廃止予定です。"
+)
+
 
 def _get_y_axis_label(group_by: GroupBy) -> str:
     if group_by == GroupBy.TASK_ID:
@@ -526,6 +533,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
 
 
 def main(args: argparse.Namespace) -> None:
+    logger.warning(DEPRECATED_MESSAGE)
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
     VisualizeAnnotationCount(service, facade, args).main()
