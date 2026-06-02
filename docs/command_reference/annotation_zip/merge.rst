@@ -25,8 +25,18 @@ Examples
         --output_dir out/
 
 
+マージ仕様
+--------------------------
+
+このコマンドは、アノテーションZIP内のアノテーションJSONを、タスクと入力データごとのJSONファイル単位でマージします。
+たとえば ``task1/input1.json`` は、同じパスの ``task1/input1.json`` とマージされます。
+
+同じJSONファイルが両方のアノテーションZIPに存在する場合は、アノテーションJSONの ``details`` 配下にある各アノテーション情報を ``annotation_id`` 単位でマージします。
+同じ ``annotation_id`` が存在する場合は、2個目に指定したアノテーションZIPの情報を優先します。
+
+
 アノテーションJSONは以下の通りマージされます。
-``annotation-A.zip`` と ``annotation-B.zip`` の両方に同じannotation_idが存在する場合は、``annotation-B.zip`` の情報を優先します。
+``annotation-A.zip`` と ``annotation-B.zip`` の両方に同じannotation_idが存在する場合は、 ``annotation-B.zip`` の情報を優先します。
 
 
 .. code-block::

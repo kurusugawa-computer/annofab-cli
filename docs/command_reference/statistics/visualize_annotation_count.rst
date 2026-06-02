@@ -7,6 +7,12 @@ Description
 
 各ラベル、各属性値のアノテーション数をヒストグラムで可視化したファイルを出力します。
 
+.. warning::
+
+   このコマンドは非推奨です。ラベルごとの可視化は :doc:`../annotation_zip/visualize_annotation_count_by_label` コマンドを、属性値ごとの可視化は :doc:`../annotation_zip/visualize_annotation_count_by_attribute_value` コマンドを使用してください。
+
+   ``statistics visualize_annotation_count`` コマンドは2027/01/01以降に廃止予定です。
+
 
 
 Examples

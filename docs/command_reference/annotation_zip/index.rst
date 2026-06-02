@@ -26,6 +26,8 @@ Available Commands
    list_single_point_annotation
    merge
    render
+   visualize_annotation_count_by_attribute_value
+   visualize_annotation_count_by_label
 
 
 Usage Details
