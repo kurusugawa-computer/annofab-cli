@@ -198,14 +198,15 @@ class MergeAnnotation(CommandLineWithoutWebapi):
     @staticmethod
     def validate(args: argparse.Namespace) -> bool:
         COMMON_MESSAGE = "annofabcli annotation_zip merge: error:"  # noqa: N806
-        for argument_name in ["annotation1", "annotation2"]:
-            path: Path = getattr(args, argument_name)
-            if not path.exists():
-                print(  # noqa: T201
-                    f"{COMMON_MESSAGE} argument {argument_name}: ファイルパス '{path}' が存在しません。",
-                    file=sys.stderr,
-                )
-                return False
+        if args.annotation is not None:
+            annotation_paths: list[Path] = args.annotation
+            for path in annotation_paths:
+                if not path.exists():
+                    print(  # noqa: T201
+                        f"{COMMON_MESSAGE} argument --annotation: ファイルパス '{path}' が存在しません。",
+                        file=sys.stderr,
+                    )
+                    return False
         return True
 
     def main(self) -> None:
@@ -215,7 +216,7 @@ class MergeAnnotation(CommandLineWithoutWebapi):
 
         main_obj = MergeAnnotationMain()
         target_task_ids = get_list_from_args(args.task_id) if args.task_id is not None else None
-        main_obj.main(args.annotation1, args.annotation2, output_dir=args.output_dir, target_task_ids=target_task_ids)
+        main_obj.main(args.annotation[0], args.annotation[1], output_dir=args.output_dir, target_task_ids=target_task_ids)
 
 
 def main(args: argparse.Namespace) -> None:
@@ -225,9 +226,13 @@ def main(args: argparse.Namespace) -> None:
 def parse_args(parser: argparse.ArgumentParser) -> None:
     argument_parser = ArgumentParser(parser)
 
-    annotation_help = "Annofabからダウンロードしたアノテーションzip、またはzipを展開したディレクトリ"
-    parser.add_argument("annotation1", type=Path, help=f"1個目の{annotation_help}")
-    parser.add_argument("annotation2", type=Path, help=f"2個目の{annotation_help}。同じannotation_idが存在する場合、このアノテーションを優先します。")
+    parser.add_argument(
+        "--annotation",
+        type=Path,
+        nargs=2,
+        required=True,
+        help="Annofabからダウンロードしたアノテーションzip、またはzipを展開したディレクトリを2つ指定してください。同じannotation_idが存在する場合は、2個目のアノテーションを優先します。",
+    )
 
     parser.add_argument("-o", "--output_dir", type=Path, required=True, help="出力先ディレクトリ")
 
