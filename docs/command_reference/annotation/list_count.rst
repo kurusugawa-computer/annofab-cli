@@ -77,7 +77,7 @@ Examples
 .. warning::
 
     WebAPIの都合上、集計対象のアノテーションは10,000個までしか検索できません。
-    10,000件以上のアノテーションを集計する場合は、 `annofabcli statistics list_annotation_count <../statistics/list_annotation_count.html>`_ コマンドの使用を検討してください。
+    10,000件以上のアノテーションを集計する場合は、 :doc:`../annotation_zip/count_annotation_by_label` または :doc:`../annotation_zip/count_annotation_by_attribute_value` コマンドの使用を検討してください。
 
 Usage Details
 =================================
@@ -91,5 +91,5 @@ Usage Details
 
 See also
 =================================
-* `annofabcli statistics list_annotation_count <../statistics/list_annotation_count.html>`_
-
+* :doc:`../annotation_zip/count_annotation_by_label`
+* :doc:`../annotation_zip/count_annotation_by_attribute_value`

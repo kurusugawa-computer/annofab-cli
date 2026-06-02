@@ -50,6 +50,13 @@ from annofabcli.common.visualize import AddProps, MessageLocale
 
 logger = logging.getLogger(__name__)
 
+DEPRECATED_MESSAGE = (
+    "[DEPRECATED] :: `statistics list_annotation_count` コマンドは非推奨です。"
+    "ラベルごとの集計は `annotation_zip count_annotation_by_label` コマンドを使用してください。"
+    "属性値ごとの集計は `annotation_zip count_annotation_by_attribute_value` コマンドを使用してください。 "
+    "`statistics list_annotation_count` コマンドは2027/01/01以降に廃止予定です。"
+)
+
 AttributeValueKey = tuple[str, str, str]
 """
 属性のキー.
@@ -1576,6 +1583,7 @@ def main(args: argparse.Namespace) -> None:
     Args:
         args: コマンドライン引数
     """
+    logger.warning(DEPRECATED_MESSAGE)
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
     ListAnnotationCount(service, facade, args).main()
