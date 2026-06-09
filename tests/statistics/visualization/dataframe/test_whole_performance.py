@@ -1,5 +1,7 @@
 from pathlib import Path
 
+import pytest
+
 from annofabcli.statistics.visualization.dataframe.task_worktime_by_phase_user import TaskWorktimeByPhaseUser
 from annofabcli.statistics.visualization.dataframe.whole_performance import (
     WholePerformance,
@@ -27,6 +29,10 @@ class TestWholePerformance:
         assert actual.series[("real_monitored_worktime_hour", "sum")] == 8
         assert actual.series[("task_count", "annotation")] == 2
         assert actual.series[("working_user_count", "annotation")] == 2
+        assert actual.series[("monitored_worktime_hour/task_count", "annotation")] == pytest.approx(
+            actual.series[("monitored_worktime_hour", "annotation")] / actual.series[("task_count", "annotation")]
+        )
+        assert actual.series[("actual_worktime_hour/task_count", "annotation")] == pytest.approx(actual.series[("actual_worktime_hour", "annotation")] / actual.series[("task_count", "annotation")])
 
     def test__empty__to_csv(self):
         empty = WholePerformance.empty(TaskCompletionCriteria.ACCEPTANCE_COMPLETED)
@@ -38,6 +44,8 @@ class TestWholePerformance:
         actual = WholePerformance.from_csv(data_dir / "全体の生産性と品質.csv", TaskCompletionCriteria.ACCEPTANCE_COMPLETED)
 
         assert actual.series["task_count"]["annotation"] == 110.0
+        assert actual.series[("monitored_worktime_hour/task_count", "annotation")] == pytest.approx(1.2320597525252525)
+        assert actual.series[("actual_worktime_hour/task_count", "annotation")] == pytest.approx(1.3464426250811686)
         actual.to_csv(output_dir / "test__from_csv__to_csv.csv")
 
     def test___create_all_user_performance(self):

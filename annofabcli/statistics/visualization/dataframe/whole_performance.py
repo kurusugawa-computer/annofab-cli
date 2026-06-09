@@ -49,6 +49,14 @@ class WholePerformance:
         return True
 
     @staticmethod
+    def _add_worktime_hour_per_task_count(series: pandas.Series, phase_list: Sequence[TaskPhaseString]) -> None:
+        """タスクあたり作業時間の列を追加します。"""
+        with numpy.errstate(divide="ignore", invalid="ignore"):
+            for phase in phase_list:
+                series[("monitored_worktime_hour/task_count", phase)] = series[("monitored_worktime_hour", phase)] / series[("task_count", phase)]
+                series[("actual_worktime_hour/task_count", phase)] = series[("actual_worktime_hour", phase)] / series[("task_count", phase)]
+
+    @staticmethod
     def _create_all_user_performance(
         worktime_per_date: WorktimePerDate,
         task_worktime_by_phase_user: TaskWorktimeByPhaseUser,
@@ -134,7 +142,9 @@ class WholePerformance:
             df_all[("working_user_count", phase.value)] = (df_worktime2[f"monitored_{phase.value}_worktime_hour"] > 0).sum()
 
         df_all = df_all.drop([("account_id", ""), ("user_id", ""), ("username", ""), ("biography", "")], axis=1, errors="ignore")
-        return cls(df_all.iloc[0], task_completion_criteria, custom_production_volume_list=task_worktime_by_phase_user.custom_production_volume_list)
+        series = df_all.iloc[0]
+        cls._add_worktime_hour_per_task_count(series, UserPerformance.get_phase_list(series.index))
+        return cls(series, task_completion_criteria, custom_production_volume_list=task_worktime_by_phase_user.custom_production_volume_list)
 
     @classmethod
     def empty(cls, task_completion_criteria: TaskCompletionCriteria, *, custom_production_volume_list: list[ProductionVolumeColumn] | None = None) -> WholePerformance:
@@ -175,6 +185,8 @@ class WholePerformance:
             ("real_monitored_worktime_hour/real_actual_worktime_hour", "sum"),
             *[(f"monitored_worktime_hour/{col}", phase) for col in production_volume_columns],
             *[(f"actual_worktime_hour/{col}", phase) for col in production_volume_columns],
+            ("monitored_worktime_hour/task_count", phase),
+            ("actual_worktime_hour/task_count", phase),
             *[(f"pointed_out_inspection_comment_count/{col}", phase) for col in production_volume_columns],
             ("rejected_count/task_count", phase),
         ]
@@ -193,7 +205,9 @@ class WholePerformance:
         data: dict[tuple[str, str], float] = dict.fromkeys(worktime_columns + count_columns, 0)
         data.update(dict.fromkeys(ratio_columns + stdev_columns + date_columns, numpy.nan))
 
-        return cls(pandas.Series(data), task_completion_criteria, custom_production_volume_list=custom_production_volume_list)
+        series = pandas.Series(data)
+        cls._add_worktime_hour_per_task_count(series, UserPerformance.get_phase_list(series.index))
+        return cls(series, task_completion_criteria, custom_production_volume_list=custom_production_volume_list)
 
     @classmethod
     def from_csv(
@@ -224,7 +238,9 @@ class WholePerformance:
 
             data[key2] = value2
 
-        return cls(pandas.Series(data), task_completion_criteria, custom_production_volume_list=custom_production_volume_list)
+        series = pandas.Series(data)
+        cls._add_worktime_hour_per_task_count(series, UserPerformance.get_phase_list(series.index))
+        return cls(series, task_completion_criteria, custom_production_volume_list=custom_production_volume_list)
 
     def to_csv(self, output_file: Path) -> None:
         """
@@ -250,11 +266,18 @@ class WholePerformance:
         格納しているpandas.Seriesのindexを取得する。
         """
         # 列の順番を整える
+        productivity_columns = UserPerformance.get_productivity_columns(phase_list, production_volume_columns)
+        if phase_list:
+            input_data_count_productivity_index = max(productivity_columns.index(("actual_worktime_hour/input_data_count", phase)) for phase in phase_list) + 1
+            productivity_columns[input_data_count_productivity_index:input_data_count_productivity_index] = [
+                *[("monitored_worktime_hour/task_count", phase) for phase in phase_list],
+                *[("actual_worktime_hour/task_count", phase) for phase in phase_list],
+            ]
         return [
             ("first_working_date", ""),
             ("last_working_date", ""),
             ("working_days", ""),
-            *UserPerformance.get_productivity_columns(phase_list, production_volume_columns),
+            *productivity_columns,
             ("working_user_count", TaskPhase.ANNOTATION.value),
             ("working_user_count", TaskPhase.INSPECTION.value),
             ("working_user_count", TaskPhase.ACCEPTANCE.value),
