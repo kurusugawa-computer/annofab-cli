@@ -63,11 +63,6 @@ class TestWholePerformance:
         actual = WholePerformance.from_csv(data_dir / "全体の生産性と品質.csv", TaskCompletionCriteria.ACCEPTANCE_COMPLETED)
 
         assert actual.series["task_count"]["annotation"] == 110.0
-        assert actual.series[("monitored_worktime_hour/task_count", "annotation")] == pytest.approx(1.2320597525252525)
-        assert actual.series[("actual_worktime_hour/task_count", "annotation")] == pytest.approx(1.3464426250811686)
-        assert pandas.isna(actual.series[("monitored_worktime_hour/task_count__lastweek", "annotation")])
-        assert pandas.isna(actual.series[("actual_worktime_hour/input_data_count__lastweek", "acceptance")])
-        actual.to_csv(output_dir / "test__from_csv__to_csv.csv")
 
     def test___create_all_user_performance(self):
         task_worktime_by_phase_user = TaskWorktimeByPhaseUser.from_csv(data_dir / "task-worktime-by-user-phase.csv")

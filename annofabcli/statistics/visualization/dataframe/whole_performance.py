@@ -298,12 +298,7 @@ class WholePerformance:
 
             data[key2] = value2
 
-        series = pandas.Series(data)
-        production_volume_columns = ["input_data_count", "annotation_count", *([e.value for e in custom_production_volume_list] if custom_production_volume_list is not None else [])]
-        phase_list = UserPerformance.get_phase_list(series.index)
-        cls._add_worktime_hour_per_task_count(series, phase_list)
-        cls._add_empty_lastweek_worktime_hour_per_production_volume(series, phase_list, production_volume_columns)
-        return cls(series, task_completion_criteria, custom_production_volume_list=custom_production_volume_list)
+        return cls(pandas.Series(data), task_completion_criteria, custom_production_volume_list=custom_production_volume_list)
 
     def to_csv(self, output_file: Path) -> None:
         """
