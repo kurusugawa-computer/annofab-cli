@@ -14,6 +14,8 @@ from annofabcli.annotation_zip.list_range_annotation import add_parser as add_pa
 from annofabcli.annotation_zip.list_single_point_annotation import add_parser as add_parser_list_single_point_annotation
 from annofabcli.annotation_zip.merge import add_parser as add_parser_merge
 from annofabcli.annotation_zip.render import add_parser as add_parser_render
+from annofabcli.annotation_zip.visualize_annotation_count_by_attribute_value import add_parser as add_parser_visualize_annotation_count_by_attribute_value
+from annofabcli.annotation_zip.visualize_annotation_count_by_label import add_parser as add_parser_visualize_annotation_count_by_label
 
 
 def parse_args(parser: argparse.ArgumentParser) -> None:
@@ -36,6 +38,8 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     add_parser_list_single_point_annotation(subparsers)
     add_parser_merge(subparsers)
     add_parser_render(subparsers)
+    add_parser_visualize_annotation_count_by_attribute_value(subparsers)
+    add_parser_visualize_annotation_count_by_label(subparsers)
     # 作成中のためコメントアウト
     # add_parser_validate_annotation(subparsers)
 
