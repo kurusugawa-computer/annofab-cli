@@ -291,6 +291,7 @@ class WriteCsvGraph:
         whole_performance = WholePerformance.from_df_wrapper(
             task_worktime_by_phase_user=task_worktime_obj,
             worktime_per_date=self._get_worktime_per_date(),
+            task=self._get_task(),
             task_completion_criteria=self.task_completion_criteria,
         )
         self.project_dir.write_whole_performance(whole_performance)
