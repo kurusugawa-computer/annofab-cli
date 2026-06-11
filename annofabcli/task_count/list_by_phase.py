@@ -195,7 +195,8 @@ def create_df_task(
 
     Args:
         task_list: タスク情報のlist
-        task_history_dict: タスクIDをキーとしたタスク履歴のdict
+        task_history_dict: タスクIDをキーとしたタスク履歴のdict。タスク全件ファイルとタスク履歴全件ファイルの更新時期が異なるため、
+            task_listに含まれるタスクIDが存在しない場合があります。
         not_worked_threshold_second: 作業していないとみなす作業時間の閾値（秒）
         metadata_keys: 集計対象のメタデータキーのリスト
         input_data_dict: 入力データIDをキーとした入力データ情報のdict。動画時間を計算する場合に必要。
@@ -206,8 +207,13 @@ def create_df_task(
     metadata_keys = metadata_keys or []
     input_data_dict = input_data_dict or {}
 
+    missing_task_history_task_id_list = []
     for task in task_list:
-        task_history = task_history_dict[task["task_id"]]
+        task_id = task["task_id"]
+        task_history = task_history_dict.get(task_id, [])
+        if len(task_history) == 0 and task_id not in task_history_dict:
+            missing_task_history_task_id_list.append(task_id)
+
         task["task_status_for_summary"] = TaskStatusForSummary.from_task(task, task_history, not_worked_threshold_second).value
 
         # 入力データ数を計算
@@ -229,6 +235,9 @@ def create_df_task(
         metadata = task["metadata"]
         for key in metadata_keys:
             task[f"metadata.{key}"] = metadata.get(key)
+
+    if len(missing_task_history_task_id_list) > 0:
+        logger.info(f"{len(missing_task_history_task_id_list)} 件のタスクはタスク履歴が存在しないため、タスク履歴なしとして集計します。")
 
     columns = ["task_id", "phase", "input_data_count", "video_duration_hour", "video_duration_minute"] + [f"metadata.{key}" for key in metadata_keys] + ["task_status_for_summary"]
     df = pandas.DataFrame(task_list, columns=columns)
