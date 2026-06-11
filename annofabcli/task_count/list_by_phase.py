@@ -196,7 +196,7 @@ def create_df_task(
     Args:
         task_list: タスク情報のlist
         task_history_dict: タスクIDをキーとしたタスク履歴のdict。タスク全件ファイルとタスク履歴全件ファイルの更新時期が異なるため、
-            task_listに含まれるタスクIDが存在しない場合があります。
+            task_listに含まれるタスクIDがtask_history_dictに存在しない場合があります。
         not_worked_threshold_second: 作業していないとみなす作業時間の閾値（秒）
         metadata_keys: 集計対象のメタデータキーのリスト
         input_data_dict: 入力データIDをキーとした入力データ情報のdict。動画時間を計算する場合に必要。
