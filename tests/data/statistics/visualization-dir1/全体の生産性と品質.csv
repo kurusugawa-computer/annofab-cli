@@ -1,5 +1,7 @@
 ﻿first_working_date,,2023-10-25
 last_working_date,,2024-01-15
+lastweek_start_date,,nan
+lastweek_end_date,,nan
 working_days,,27
 real_monitored_worktime_hour,sum,165.95922194444444
 real_monitored_worktime_hour,annotation,135.52657277777777
@@ -29,6 +31,12 @@ monitored_worktime_hour/task_count,annotation,1.2320597525252525
 monitored_worktime_hour/task_count,acceptance,0.276660446969697
 actual_worktime_hour/task_count,annotation,1.3464426250811686
 actual_worktime_hour/task_count,acceptance,0.3023452537188315
+task_count__lastweek,annotation,nan
+task_count__lastweek,acceptance,nan
+input_data_count__lastweek,annotation,nan
+input_data_count__lastweek,acceptance,nan
+annotation_count__lastweek,annotation,nan
+annotation_count__lastweek,acceptance,nan
 monitored_worktime_hour/task_count__lastweek,annotation,nan
 monitored_worktime_hour/task_count__lastweek,acceptance,nan
 monitored_worktime_hour/input_data_count__lastweek,annotation,nan
