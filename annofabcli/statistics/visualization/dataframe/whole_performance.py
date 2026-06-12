@@ -315,7 +315,22 @@ class WholePerformance:
 
             data[key2] = value2
 
-        return cls(pandas.Series(data), task_completion_criteria, custom_production_volume_list=custom_production_volume_list)
+        result_series = pandas.Series(data)
+        phase_list = UserPerformance.get_phase_list(result_series.index)
+        production_volume_columns = ["input_data_count", "annotation_count"]
+        if custom_production_volume_list is not None:
+            production_volume_columns.extend([e.value for e in custom_production_volume_list])
+
+        missing_lastweek_keys = [
+            ("lastweek_start_date", ""),
+            ("lastweek_end_date", ""),
+            *[(f"{col}__lastweek", phase) for col in ["task_count", *production_volume_columns] for phase in phase_list],
+        ]
+        for key in missing_lastweek_keys:
+            if key not in result_series:
+                result_series[key] = numpy.nan
+
+        return cls(result_series, task_completion_criteria, custom_production_volume_list=custom_production_volume_list)
 
     def to_csv(self, output_file: Path) -> None:
         """
