@@ -44,6 +44,13 @@ class TestWholePerformance:
         )
         assert actual.series[("actual_worktime_hour/task_count", "annotation")] == pytest.approx(actual.series[("actual_worktime_hour", "annotation")] / actual.series[("task_count", "annotation")])
         assert actual.series[("monitored_worktime_hour/task_count__lastweek", "annotation")] == pytest.approx(2)
+        assert actual.series[("lastweek_start_date", "")] == "2019-11-20"
+        assert actual.series[("lastweek_end_date", "")] == "2019-11-26"
+        assert actual.series[("task_count__lastweek", "annotation")] == pytest.approx(1)
+        assert actual.series[("input_data_count__lastweek", "annotation")] == pytest.approx(2)
+        assert actual.series[("annotation_count__lastweek", "annotation")] == pytest.approx(100)
+        assert actual.series[("custom_production_volume1__lastweek", "annotation")] == pytest.approx(10)
+        assert actual.series[("custom_production_volume2__lastweek", "annotation")] == pytest.approx(20)
         assert actual.series[("monitored_worktime_hour/input_data_count__lastweek", "annotation")] == pytest.approx(1)
         assert actual.series[("monitored_worktime_hour/annotation_count__lastweek", "annotation")] == pytest.approx(0.02)
         assert actual.series[("monitored_worktime_hour/custom_production_volume1__lastweek", "annotation")] == pytest.approx(0.2)
@@ -57,12 +64,16 @@ class TestWholePerformance:
         empty.to_csv(output_dir / "test__empty__to_csv.csv")
         assert empty.series[("real_monitored_worktime_hour", "sum")] == 0
         assert empty.series[("task_count", "annotation")] == 0
+        assert pandas.isna(empty.series[("lastweek_start_date", "")])
+        assert pandas.isna(empty.series[("lastweek_end_date", "")])
+        assert pandas.isna(empty.series[("task_count__lastweek", "annotation")])
         assert pandas.isna(empty.series[("monitored_worktime_hour/task_count__lastweek", "annotation")])
 
     def test__from_csv__to_csv(self):
         actual = WholePerformance.from_csv(data_dir / "全体の生産性と品質.csv", TaskCompletionCriteria.ACCEPTANCE_COMPLETED)
 
         assert actual.series["task_count"]["annotation"] == 110.0
+        assert pandas.isna(actual.series[("lastweek_start_date", "")])
 
     def test___create_all_user_performance(self):
         task_worktime_by_phase_user = TaskWorktimeByPhaseUser.from_csv(data_dir / "task-worktime-by-user-phase.csv")
