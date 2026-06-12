@@ -7,7 +7,8 @@ glob_scan_max_depth = 5
  
 [permissions.workspace_no_env.filesystem.":workspace_roots"]
 "." = "write"
- 
+"/tmp" = "write"
+
 # repo直下
 ".env" = "deny"
 ".env.*" = "deny"
