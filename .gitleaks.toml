@@ -1,0 +1,15 @@
+title = "annofab-cli gitleaks config"
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Ignore local/generated files when scanning a worktree directory."
+paths = [
+  '''^\.mypy_cache/''',
+  '''^\.pytest_cache/''',
+  '''^\.ruff_cache/''',
+  '''^\.venv/''',
+  '''^docs/_build/''',
+  '''^tests/out/''',
+]

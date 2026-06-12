@@ -59,6 +59,7 @@ test = [
 linter = [
     "ruff>=0.15; python_version>='3.12'",
     "mypy>=1; python_version>='3.12'",
+    "pre-commit>=4; python_version>='3.12'",
     "types-requests; python_version>='3.12'",
     "types-python-dateutil; python_version>='3.12'",
     "types-PyYAML; python_version>='3.12'",

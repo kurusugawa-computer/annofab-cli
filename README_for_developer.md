@@ -45,3 +45,15 @@ GitHubのReleasesからリリースしてください。
 # 開発フロー
 * mainブランチを元にしてブランチを作成して、プルリクを作成してください。mainブランチへの直接pushすることはGitHub上で禁止しています。
 
+# Secret scan
+gitleaksでシークレットがコミットされていないかを検査します。
+
+```
+$ make gitleaks
+```
+
+コミット時にgitleaksを実行する場合は、pre-commit hookをインストールしてください。
+
+```
+$ uv run pre-commit install
+```

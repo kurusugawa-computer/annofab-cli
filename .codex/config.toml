@@ -1,24 +1,32 @@
-# 承認ポリシー。
-# "never" は、Codex がコマンド実行や権限昇格のたびに確認せず進む設定です。
-approval_policy = "never"
-
-# sandbox の種類。
-# "workspace-write" は、workspace 内と許可された追加パスへの書き込みを許可します。
 sandbox_mode = "workspace-write"
+default_permissions = "workspace_no_env"
+ 
+[permissions.workspace_no_env.filesystem]
+":minimal" = "read"
+glob_scan_max_depth = 5
+ 
+[permissions.workspace_no_env.filesystem.":workspace_roots"]
+"." = "write"
+"/tmp" = "write"
 
-[shell_environment_policy.set]
-# uv のキャッシュ先を /tmp 配下に固定し、ユーザー名依存のパスを避けます。
-UV_CACHE_DIR = "/tmp/uv-cache"
+# repo直下
+".env" = "deny"
+".env.*" = "deny"
+ 
+# サブディレクトリ配下
+"**/.env" = "deny"
+"**/.env.*" = "deny"
+"**/*.env" = "deny"
+ 
+[permissions.workspace_no_env.network]
+enabled = true
+ 
+[permissions.workspace_no_env.network.domains]
+"kurusugawa.jp" = "allow"
+"api.openai.com" = "allow"
+"registry.npmjs.org" = "allow"
+"pypi.org" = "allow"
+"files.pythonhosted.org" = "allow"
+"*.github.com" = "allow"
+"objects.githubusercontent.com" = "allow"
 
-[sandbox_workspace_write]
-# workspace-write sandbox 内で外向きネットワーク通信を許可します。
-network_access = true
-
-# workspace に加えて書き込みを許可する追加ディレクトリ一覧です。
-# 今回は uv キャッシュと一時ファイル用途を想定して /tmp を許可しています。
-writable_roots = [
-  "/tmp",
-]
-
-[features]
-hooks = true
