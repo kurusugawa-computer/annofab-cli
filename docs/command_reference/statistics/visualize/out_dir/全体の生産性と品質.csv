@@ -1,5 +1,7 @@
 ﻿first_working_date,,2026-05-22
 last_working_date,,2026-06-08
+lastweek_start_date,,2026-06-02
+lastweek_end_date,,2026-06-08
 working_days,,15
 real_monitored_worktime_hour,sum,990.1517122222223
 real_monitored_worktime_hour,annotation,899.4402963888889
@@ -29,6 +31,12 @@ monitored_worktime_hour/annotation_count,annotation,0.02283441520902363
 monitored_worktime_hour/annotation_count,inspection,0.012266303309158913
 actual_worktime_hour/annotation_count,annotation,0.0
 actual_worktime_hour/annotation_count,inspection,0.0
+task_count__lastweek,annotation,180
+task_count__lastweek,inspection,21
+input_data_count__lastweek,annotation,674
+input_data_count__lastweek,inspection,77
+annotation_count__lastweek,annotation,11393
+annotation_count__lastweek,inspection,1362
 monitored_worktime_hour/task_count,annotation,1.9984073033076428
 monitored_worktime_hour/task_count,inspection,0.9638940277777778
 actual_worktime_hour/task_count,annotation,0.0
