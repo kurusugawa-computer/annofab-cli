@@ -30,7 +30,7 @@ class WholePerformance:
         series: 全体の生産性と品質が格納されたpandas.Series
     """
 
-    STRING_KEYS = {("first_working_date", ""), ("last_working_date", "")}  # noqa: RUF012
+    STRING_KEYS = {("first_working_date", ""), ("last_working_date", ""), ("lastweek_start_date", ""), ("lastweek_end_date", "")}  # noqa: RUF012
     """文字列が格納されているキー"""
 
     def __init__(
@@ -66,6 +66,15 @@ class WholePerformance:
                 series[(f"monitored_worktime_hour/{production_volume_column}__lastweek", phase)] = numpy.nan
                 series[(f"actual_worktime_hour/{production_volume_column}__lastweek", phase)] = numpy.nan
 
+    @staticmethod
+    def _add_empty_lastweek_production_volume(series: pandas.Series, phase_list: Sequence[TaskPhaseString], production_volume_columns: Sequence[str]) -> None:
+        """直近7日間の期間と生産量の列をNaNで追加します。"""
+        series[("lastweek_start_date", "")] = numpy.nan
+        series[("lastweek_end_date", "")] = numpy.nan
+        for phase in phase_list:
+            for production_volume_column in ["task_count", *production_volume_columns]:
+                series[(f"{production_volume_column}__lastweek", phase)] = numpy.nan
+
     @classmethod
     def _add_lastweek_worktime_hour_per_production_volume(
         cls,
@@ -76,6 +85,7 @@ class WholePerformance:
     ) -> None:
         """直近7日間に教師付着手したタスクから、単位あたり作業時間の列を追加します。"""
         production_volume_columns = task_worktime_by_phase_user.production_volume_columns
+        cls._add_empty_lastweek_production_volume(series, phase_list, production_volume_columns)
         cls._add_empty_lastweek_worktime_hour_per_production_volume(series, phase_list, production_volume_columns)
 
         df_task = task.df[["project_id", "task_id", "first_annotation_started_datetime"]].copy()
@@ -89,6 +99,9 @@ class WholePerformance:
         df_lastweek_task = df_task[pandas.to_datetime(df_task["first_annotation_started_date"]).between(min_date, max_date)]
         if len(df_lastweek_task) == 0:
             return
+
+        series[("lastweek_start_date", "")] = str(min_date.date())
+        series[("lastweek_end_date", "")] = str(max_date.date())
 
         df_worktime = task_worktime_by_phase_user.df
         df_lastweek_worktime = df_worktime.merge(df_lastweek_task[["project_id", "task_id"]].drop_duplicates(), on=["project_id", "task_id"])
@@ -105,6 +118,7 @@ class WholePerformance:
                     continue
 
                 for production_volume_column in production_volume_columns_with_task_count:
+                    series[(f"{production_volume_column}__lastweek", phase)] = df_agg.loc[phase, production_volume_column]
                     monitored_value = df_agg.loc[phase, "worktime_hour"] / df_agg.loc[phase, production_volume_column]
                     series[(f"monitored_worktime_hour/{production_volume_column}__lastweek", phase)] = monitored_value
                     series[(f"actual_worktime_hour/{production_volume_column}__lastweek", phase)] = monitored_value / actual_worktime_ratio
@@ -258,6 +272,8 @@ class WholePerformance:
         date_columns = [
             ("first_working_date", ""),
             ("last_working_date", ""),
+            ("lastweek_start_date", ""),
+            ("lastweek_end_date", ""),
             ("working_days", ""),
         ]
 
@@ -266,6 +282,7 @@ class WholePerformance:
 
         series = pandas.Series(data)
         cls._add_worktime_hour_per_task_count(series, UserPerformance.get_phase_list(series.index))
+        cls._add_empty_lastweek_production_volume(series, UserPerformance.get_phase_list(series.index), production_volume_columns)
         cls._add_empty_lastweek_worktime_hour_per_production_volume(series, UserPerformance.get_phase_list(series.index), production_volume_columns)
         return cls(series, task_completion_criteria, custom_production_volume_list=custom_production_volume_list)
 
@@ -331,6 +348,8 @@ class WholePerformance:
         return [
             ("first_working_date", ""),
             ("last_working_date", ""),
+            ("lastweek_start_date", ""),
+            ("lastweek_end_date", ""),
             ("working_days", ""),
             *productivity_columns,
             ("working_user_count", TaskPhase.ANNOTATION.value),
@@ -342,6 +361,7 @@ class WholePerformance:
     def _get_additional_productivity_columns(phase_list: Sequence[TaskPhaseString], production_volume_columns: Sequence[str]) -> list[tuple[str, str]]:
         """WholePerformanceで追加する生産性列を取得します。"""
         return [
+            *[(f"{production_volume_column}__lastweek", phase) for production_volume_column in ["task_count", *production_volume_columns] for phase in phase_list],
             *[("monitored_worktime_hour/task_count", phase) for phase in phase_list],
             *[("actual_worktime_hour/task_count", phase) for phase in phase_list],
             *[(f"monitored_worktime_hour/{production_volume_column}__lastweek", phase) for production_volume_column in ["task_count", *production_volume_columns] for phase in phase_list],
