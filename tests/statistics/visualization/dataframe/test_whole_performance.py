@@ -66,7 +66,9 @@ class TestWholePerformance:
         assert empty.series[("task_count", "annotation")] == 0
         assert pandas.isna(empty.series[("lastweek_start_date", "")])
         assert pandas.isna(empty.series[("lastweek_end_date", "")])
-        assert pandas.isna(empty.series[("task_count__lastweek", "annotation")])
+        assert empty.series[("task_count__lastweek", "annotation")] == 0
+        assert empty.series[("input_data_count__lastweek", "annotation")] == 0
+        assert empty.series[("annotation_count__lastweek", "annotation")] == 0
         assert pandas.isna(empty.series[("monitored_worktime_hour/task_count__lastweek", "annotation")])
 
     def test__from_csv__to_csv(self):
