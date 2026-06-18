@@ -68,12 +68,12 @@ class WholePerformance:
 
     @staticmethod
     def _add_empty_lastweek_production_volume(series: pandas.Series, phase_list: Sequence[TaskPhaseString], production_volume_columns: Sequence[str]) -> None:
-        """直近7日間の期間と生産量の列をNaNで追加します。"""
+        """直近7日間の期間と生産量の列を追加します。"""
         series[("lastweek_start_date", "")] = numpy.nan
         series[("lastweek_end_date", "")] = numpy.nan
         for phase in phase_list:
             for production_volume_column in ["task_count", *production_volume_columns]:
-                series[(f"{production_volume_column}__lastweek", phase)] = numpy.nan
+                series[(f"{production_volume_column}__lastweek", phase)] = 0
 
     @classmethod
     def _add_lastweek_worktime_hour_per_production_volume(

@@ -1,0 +1,11 @@
+prefix_rule(
+    pattern = ["make"],
+    decision = "allow",
+    justification = "Project make targets are allowed without approval.",
+    match = [
+        "make format",
+        "make lint",
+        "make test",
+        "make docs"
+    ],
+)
