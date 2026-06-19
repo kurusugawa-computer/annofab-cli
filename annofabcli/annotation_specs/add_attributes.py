@@ -62,6 +62,9 @@ class AttributeInput(BaseModel):
     attribute_id: str | None = None
     """属性ID。未指定の場合はUUIDv4を自動生成する。"""
 
+    read_only: bool = False
+    """読み込み専用属性にするかどうか。"""
+
     choices: list[ChoiceAttributeInput] | None = None
     """選択肢系属性のときに指定する選択肢一覧。"""
 
@@ -180,6 +183,7 @@ def create_attribute_from_input(attribute_input: AttributeInput) -> dict[str, An
             attribute_name_ja=attribute_input.attribute_name_ja,
             attribute_id=attribute_input.attribute_id,
             choice_inputs=attribute_input.choices if attribute_input.choices is not None else [],
+            read_only=attribute_input.read_only,
         )
 
     return create_non_choice_attribute(
@@ -187,6 +191,7 @@ def create_attribute_from_input(attribute_input: AttributeInput) -> dict[str, An
         attribute_name_en=attribute_input.attribute_name_en,
         attribute_name_ja=attribute_input.attribute_name_ja,
         attribute_id=attribute_input.attribute_id,
+        read_only=attribute_input.read_only,
     )
 
 
@@ -414,6 +419,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
             "attribute_type": "flag",
             "attribute_name_en": "occluded",
             "attribute_name_ja": "隠れ",
+            "read_only": False,
             "label_name_ens": ["car", "bus"],
         },
         {

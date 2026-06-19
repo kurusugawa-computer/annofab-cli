@@ -20,6 +20,17 @@ Examples
      --attribute_name_en unclear \
      --label_name_en car bus
 
+読み込み専用の属性を追加する場合は、 ``--read_only`` を指定します。
+
+.. code-block::
+
+    $ annofabcli annotation_specs add_attribute \
+     --project_id prj1 \
+     --attribute_type text \
+     --attribute_name_en external_id \
+     --read_only \
+     --label_name_en car
+
 
 .. _annotation_specs_non_choice_attribute_types:
 

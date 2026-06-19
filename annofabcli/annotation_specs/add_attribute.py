@@ -96,6 +96,7 @@ def create_attribute(
     attribute_name_en: str,
     attribute_name_ja: str | None,
     attribute_id: str | None,
+    read_only: bool = False,
 ) -> dict[str, Any]:
     """
     属性1件分のAnnofab API向けオブジェクトを生成する。
@@ -105,6 +106,7 @@ def create_attribute(
         attribute_name_en: 属性英語名
         attribute_name_ja: 属性日本語名
         attribute_id: 属性ID。未指定ならUUIDv4を自動生成
+        read_only: 読み込み専用属性にするかどうか
     Returns:
         Annofab API向けの属性オブジェクト
     """
@@ -112,6 +114,7 @@ def create_attribute(
         "additional_data_definition_id": attribute_id if attribute_id is not None else str(uuid.uuid4()),
         "name": create_name(attribute_name_en, attribute_name_ja),
         "type": attribute_type.value if isinstance(attribute_type, AttributeType) else attribute_type,
+        "read_only": read_only,
     }
 
 
@@ -124,6 +127,7 @@ def resolve_attribute_input(
     attribute_id: str | None,
     label_ids: Sequence[str] | None,
     label_name_ens: Sequence[str] | None,
+    read_only: bool = False,
 ) -> ResolvedAttributeInput:
     """
     入力された属性を既存アノテーション仕様に対して解決する。
@@ -134,6 +138,7 @@ def resolve_attribute_input(
         attribute_name_en: 属性英語名
         attribute_name_ja: 属性日本語名
         attribute_id: 属性ID。未指定ならUUIDv4を自動生成
+        read_only: 読み込み専用属性にするかどうか
         label_ids: 追加先ラベルID一覧。未指定時はNone
         label_name_ens: 追加先ラベル英語名一覧。未指定時はNone
 
@@ -147,6 +152,7 @@ def resolve_attribute_input(
         attribute_name_en=attribute_name_en,
         attribute_name_ja=attribute_name_ja,
         attribute_id=attribute_id,
+        read_only=read_only,
     )
     duplicated_name_attribute_ids = validate_new_attribute(
         annotation_specs["additionals"],
@@ -219,6 +225,7 @@ class AddAttributeMain(CommandLineWithConfirm):
         attribute_id: str | None,
         label_ids: Sequence[str] | None,
         label_name_ens: Sequence[str] | None,
+        read_only: bool = False,
         comment: str | None = None,
     ) -> bool:
         """
@@ -229,6 +236,7 @@ class AddAttributeMain(CommandLineWithConfirm):
             attribute_name_en: 属性英語名
             attribute_name_ja: 属性日本語名
             attribute_id: 属性ID。未指定ならUUIDv4を自動生成
+            read_only: 読み込み専用属性にするかどうか
             label_ids: 追加先ラベルID一覧。未指定時はNone
             label_name_ens: 追加先ラベル英語名一覧。未指定時はNone
             comment: 変更コメント
@@ -243,6 +251,7 @@ class AddAttributeMain(CommandLineWithConfirm):
             attribute_name_en=attribute_name_en,
             attribute_name_ja=attribute_name_ja,
             attribute_id=attribute_id,
+            read_only=read_only,
             label_ids=label_ids,
             label_name_ens=label_name_ens,
         )
@@ -283,6 +292,7 @@ class AddAttribute(CommandLine):
             attribute_name_en=args.attribute_name_en,
             attribute_name_ja=args.attribute_name_ja,
             attribute_id=args.attribute_id,
+            read_only=args.read_only,
             label_ids=label_ids,
             label_name_ens=label_name_ens,
             comment=args.comment,
@@ -317,6 +327,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--attribute_name_en", type=str, required=True, help="追加する属性の英語名。")
     parser.add_argument("--attribute_id", type=str, help="追加する属性の属性ID。未指定の場合はUUIDv4を自動生成します。")
     parser.add_argument("--attribute_name_ja", type=str, help="追加する属性の日本語名。")
+    parser.add_argument("--read_only", action="store_true", help="追加する属性を読み込み専用にします。")
 
     label_group = parser.add_mutually_exclusive_group(required=True)
     label_group.add_argument(

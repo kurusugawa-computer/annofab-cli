@@ -31,7 +31,7 @@ def annotation_specs() -> dict[str, Any]:
 class TestReadAttributesJson:
     def test_read_attributes_json(self) -> None:
         actual = read_attributes_json(
-            '[{"attribute_type":"flag","attribute_name_en":"weather_checked","attribute_name_ja":"天気確認済み","attribute_id":"weather_checked_attr","label_name_ens":["car","bus"]},'
+            '[{"attribute_type":"flag","attribute_name_en":"weather_checked","attribute_name_ja":"天気確認済み","attribute_id":"weather_checked_attr","read_only":true,"label_name_ens":["car","bus"]},'
             '{"attribute_type":"select","attribute_name_en":"weather","choices":[{"choice_id":"sunny","choice_name_en":"sunny","choice_name_ja":"晴れ","is_default":true},{"choice_name_en":"cloudy"}],"label_ids":["car_label_id"]}]'
         )
 
@@ -41,6 +41,7 @@ class TestReadAttributesJson:
                 attribute_name_en="weather_checked",
                 attribute_name_ja="天気確認済み",
                 attribute_id="weather_checked_attr",
+                read_only=True,
                 label_name_ens=["car", "bus"],
             ),
             AttributeInput(
@@ -104,6 +105,7 @@ class TestResolveAttributeInputs:
                     attribute_name_en="weather_checked",
                     attribute_name_ja="天気確認済み",
                     attribute_id="weather_checked_attr",
+                    read_only=True,
                     label_name_ens=["car", "bus"],
                 ),
                 AttributeInput(
@@ -122,6 +124,7 @@ class TestResolveAttributeInputs:
         assert len(actual) == 2
         assert actual[0].new_attribute["additional_data_definition_id"] == "weather_checked_attr"
         assert actual[0].new_attribute["type"] == "flag"
+        assert actual[0].new_attribute["read_only"] is True
         assert [label["label_id"] for label in actual[0].target_labels] == ["car_label_id", "22b5189b-af7b-4d9c-83a5-b92f122170ec"]
         assert actual[1].attribute_input.attribute_name_en == "weather"
         assert actual[1].new_attribute["type"] == "select"
@@ -185,6 +188,7 @@ class TestBuildRequestBodyForAddAttributes:
                     attribute_type=AdditionalDataDefinitionType.SELECT,
                     attribute_name_en="weather",
                     attribute_id="weather_attr",
+                    read_only=True,
                     choices=[
                         ChoiceAttributeInput(choice_name_en="sunny", is_default=True),
                         ChoiceAttributeInput(choice_name_en="cloudy"),
@@ -203,6 +207,7 @@ class TestBuildRequestBodyForAddAttributes:
         assert actual["additionals"][-2]["additional_data_definition_id"] == "weather_checked_attr"
         assert actual["additionals"][-1]["additional_data_definition_id"] == "weather_attr"
         assert actual["additionals"][-1]["type"] == "select"
+        assert actual["additionals"][-1]["read_only"] is True
         assert len(actual["additionals"][-1]["choices"]) == 2
 
         car_label = next(label for label in actual["labels"] if label["label_id"] == "car_label_id")

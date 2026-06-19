@@ -276,6 +276,7 @@ def create_attribute(
     attribute_name_ja: str | None,
     attribute_id: str | None,
     choice_inputs: Sequence[ChoiceAttributeInput],
+    read_only: bool = False,
 ) -> dict[str, Any]:
     """
     選択肢系属性1件分のAnnofab API向けオブジェクトを生成する。
@@ -286,6 +287,7 @@ def create_attribute(
         attribute_name_ja: 属性日本語名
         attribute_id: 属性ID。未指定ならUUIDv4を自動生成
         choice_inputs: 選択肢入力一覧
+        read_only: 読み込み専用属性にするかどうか
 
     Returns:
         Annofab API向けの属性オブジェクト
@@ -300,6 +302,7 @@ def create_attribute(
         "type": attribute_type,
         "default": default_choice_id,
         "choices": choices,
+        "read_only": read_only,
     }
 
 
@@ -313,6 +316,7 @@ def resolve_choice_attribute_input(
     choice_inputs: Sequence[ChoiceAttributeInput],
     label_ids: Sequence[str] | None,
     label_name_ens: Sequence[str] | None,
+    read_only: bool = False,
 ) -> ResolvedChoiceAttributeInput:
     """
     選択肢系属性入力を既存アノテーション仕様に対して解決する。
@@ -326,6 +330,7 @@ def resolve_choice_attribute_input(
         choice_inputs: 選択肢入力一覧
         label_ids: 追加先ラベルID一覧。未指定時はNone
         label_name_ens: 追加先ラベル英語名一覧。未指定時はNone
+        read_only: 読み込み専用属性にするかどうか
 
     Returns:
         解決済み選択肢系属性入力
@@ -338,6 +343,7 @@ def resolve_choice_attribute_input(
         attribute_name_ja=attribute_name_ja,
         attribute_id=attribute_id,
         choice_inputs=choice_inputs,
+        read_only=read_only,
     )
     duplicated_name_attribute_ids = validate_new_attribute(
         annotation_specs["additionals"],
@@ -411,6 +417,7 @@ class AddChoiceAttributeMain(CommandLineWithConfirm):
         choice_inputs: Sequence[ChoiceAttributeInput],
         label_ids: Sequence[str] | None,
         label_name_ens: Sequence[str] | None,
+        read_only: bool = False,
         comment: str | None = None,
     ) -> bool:
         """
@@ -424,6 +431,7 @@ class AddChoiceAttributeMain(CommandLineWithConfirm):
             choice_inputs: 選択肢入力一覧
             label_ids: 追加先ラベルID一覧。未指定時はNone
             label_name_ens: 追加先ラベル英語名一覧。未指定時はNone
+            read_only: 読み込み専用属性にするかどうか
             comment: 変更コメント
 
         Returns:
@@ -442,6 +450,7 @@ class AddChoiceAttributeMain(CommandLineWithConfirm):
             choice_inputs=choice_inputs,
             label_ids=label_ids,
             label_name_ens=label_name_ens,
+            read_only=read_only,
         )
 
         label_names = [get_label_name_en(label) for label in resolved_choice_attribute_input.target_labels]
@@ -496,6 +505,7 @@ class AddChoiceAttribute(CommandLine):
             choice_inputs=choice_inputs,
             label_ids=label_ids,
             label_name_ens=label_name_ens,
+            read_only=args.read_only,
             comment=args.comment,
         )
 
@@ -520,6 +530,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--attribute_name_en", type=str, required=True, help="追加する属性の英語名。")
     parser.add_argument("--attribute_id", type=str, help="追加する属性の属性ID。未指定の場合はUUIDv4を自動生成します。")
     parser.add_argument("--attribute_name_ja", type=str, help="追加する属性の日本語名。")
+    parser.add_argument("--read_only", action="store_true", help="追加する属性を読み込み専用にします。")
 
     sample_json = [
         {"choice_id": "front", "choice_name_en": "front", "choice_name_ja": "前", "is_default": True},

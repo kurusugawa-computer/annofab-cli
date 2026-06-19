@@ -59,6 +59,18 @@ CSV形式で指定する場合
      --choice_csv choices.csv \
      --label_id l1 l2
 
+読み込み専用の属性を追加する場合は、 ``--read_only`` を指定します。
+
+.. code-block::
+
+    $ annofabcli annotation_specs add_choice_attribute \
+     --project_id prj1 \
+     --attribute_type select \
+     --attribute_name_en verified_direction \
+     --choice_csv choices.csv \
+     --read_only \
+     --label_id l1 l2
+
 
 Usage Details
 =================================

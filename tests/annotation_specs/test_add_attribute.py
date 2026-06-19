@@ -31,10 +31,12 @@ class TestResolveAttributeInput:
             attribute_id="weather_checked_attr",
             label_ids=[],
             label_name_ens=["car"],
+            read_only=True,
         )
 
         assert actual.new_attribute["additional_data_definition_id"] == "weather_checked_attr"
         assert actual.new_attribute["type"] == "flag"
+        assert actual.new_attribute["read_only"] is True
         assert [label["label_id"] for label in actual.target_labels] == ["car_label_id"]
         assert actual.duplicated_name_attribute_ids == []
 
@@ -61,6 +63,7 @@ class TestBuildRequestBodyForAddAttribute:
             attribute_id="weather_checked_attr",
             label_ids=[],
             label_name_ens=["car"],
+            read_only=True,
         )
 
         actual = build_request_body_for_add_attribute(
@@ -72,6 +75,7 @@ class TestBuildRequestBodyForAddAttribute:
 
         assert actual["additionals"][-1]["additional_data_definition_id"] == "weather_checked_attr"
         assert actual["additionals"][-1]["type"] == "flag"
+        assert actual["additionals"][-1]["read_only"] is True
         car_label = next(label for label in actual["labels"] if label["label_id"] == "car_label_id")
         bike_label = next(label for label in actual["labels"] if label["label_id"] == "40f7796b-3722-4eed-9c0c-04a27f9165d2")
         assert "weather_checked_attr" in car_label["additional_data_definitions"]
