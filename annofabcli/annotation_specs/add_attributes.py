@@ -14,6 +14,7 @@ from pydantic import BaseModel, ConfigDict, field_validator, model_validator
 
 import annofabcli.common.cli
 from annofabcli.annotation_specs.add_attribute import create_attribute as create_non_choice_attribute
+from annofabcli.annotation_specs.add_attribute import parse_default_value
 from annofabcli.annotation_specs.add_choice_attribute import (
     ChoiceAttributeInput,
     build_choices,
@@ -61,6 +62,12 @@ class AttributeInput(BaseModel):
 
     attribute_id: str | None = None
     """属性ID。未指定の場合はUUIDv4を自動生成する。"""
+
+    read_only: bool = False
+    """読み込み専用属性にするかどうか。"""
+
+    default_value: str | int | bool | None = None
+    """属性の初期値。選択肢系属性では指定できない。"""
 
     choices: list[ChoiceAttributeInput] | None = None
     """選択肢系属性のときに指定する選択肢一覧。"""
@@ -138,11 +145,15 @@ class AttributeInput(BaseModel):
         if self.label_name_ens is not None and self.label_ids is not None:
             raise ValueError("`label_name_ens` と `label_ids` を同時に指定できません。")
         if self.attribute_type in CHOICE_ATTRIBUTE_TYPES:
+            if self.default_value is not None:
+                raise ValueError("属性種類が `choice` または `select` の場合は `default_value` を指定できません。")
             if self.choices is None:
                 raise ValueError("属性種類が `choice` または `select` の場合は `choices` を指定してください。")
             build_choices(self.choices)
         elif self.choices is not None:
             raise ValueError("`choices` は `choice` または `select` の場合のみ指定できます。")
+        else:
+            parse_default_value(self.attribute_type.value, self.default_value)
         return self
 
 
@@ -180,6 +191,7 @@ def create_attribute_from_input(attribute_input: AttributeInput) -> dict[str, An
             attribute_name_ja=attribute_input.attribute_name_ja,
             attribute_id=attribute_input.attribute_id,
             choice_inputs=attribute_input.choices if attribute_input.choices is not None else [],
+            read_only=attribute_input.read_only,
         )
 
     return create_non_choice_attribute(
@@ -187,6 +199,8 @@ def create_attribute_from_input(attribute_input: AttributeInput) -> dict[str, An
         attribute_name_en=attribute_input.attribute_name_en,
         attribute_name_ja=attribute_input.attribute_name_ja,
         attribute_id=attribute_input.attribute_id,
+        read_only=attribute_input.read_only,
+        default_value=attribute_input.default_value,
     )
 
 
@@ -414,6 +428,8 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
             "attribute_type": "flag",
             "attribute_name_en": "occluded",
             "attribute_name_ja": "隠れ",
+            "read_only": False,
+            "default_value": False,
             "label_name_ens": ["car", "bus"],
         },
         {

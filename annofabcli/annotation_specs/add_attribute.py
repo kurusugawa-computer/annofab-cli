@@ -59,6 +59,44 @@ class AttributeType(enum.StrEnum):
 ATTRIBUTE_TYPES = [e.value for e in AttributeType]
 
 
+def parse_default_value(attribute_type: str | AttributeType, default_value: str | int | bool | None) -> str | int | bool | None:  # noqa: FBT001
+    """
+    コマンドラインまたはJSONで指定された初期値を属性種類に応じた型に変換する。
+
+    Args:
+        attribute_type: 属性の種類
+        default_value: 指定された初期値
+
+    Returns:
+        Annofab API向けの初期値
+
+    Raises:
+        ValueError: 初期値が属性種類に対して不正な場合
+    """
+    if default_value is None:
+        return None
+
+    if attribute_type == AttributeType.FLAG:
+        if isinstance(default_value, bool):
+            return default_value
+        if isinstance(default_value, str):
+            lowered_value = default_value.lower()
+            if lowered_value == "true":
+                return True
+            if lowered_value == "false":
+                return False
+        raise ValueError("`default_value` には `true` または `false` を指定してください。")
+
+    if attribute_type == AttributeType.INTEGER:
+        if isinstance(default_value, bool):
+            raise TypeError("`default_value` には整数を指定してください。")
+        return int(default_value)
+
+    if not isinstance(default_value, str):
+        raise TypeError("`default_value` には文字列を指定してください。")
+    return default_value
+
+
 def get_default_value(attribute_type: str | AttributeType) -> str | bool | None:
     """
     属性種類ごとのデフォルト値を返す。
@@ -96,6 +134,8 @@ def create_attribute(
     attribute_name_en: str,
     attribute_name_ja: str | None,
     attribute_id: str | None,
+    read_only: bool = False,
+    default_value: str | int | bool | None = None,
 ) -> dict[str, Any]:
     """
     属性1件分のAnnofab API向けオブジェクトを生成する。
@@ -105,14 +145,21 @@ def create_attribute(
         attribute_name_en: 属性英語名
         attribute_name_ja: 属性日本語名
         attribute_id: 属性ID。未指定ならUUIDv4を自動生成
+        read_only: 読み込み専用属性にするかどうか
+        default_value: 属性の初期値。未指定時はNone
     Returns:
         Annofab API向けの属性オブジェクト
     """
-    return {
+    attribute = {
         "additional_data_definition_id": attribute_id if attribute_id is not None else str(uuid.uuid4()),
         "name": create_name(attribute_name_en, attribute_name_ja),
         "type": attribute_type.value if isinstance(attribute_type, AttributeType) else attribute_type,
+        "read_only": read_only,
     }
+    parsed_default_value = parse_default_value(attribute_type, default_value)
+    if parsed_default_value is not None:
+        attribute["default"] = parsed_default_value
+    return attribute
 
 
 def resolve_attribute_input(
@@ -124,6 +171,8 @@ def resolve_attribute_input(
     attribute_id: str | None,
     label_ids: Sequence[str] | None,
     label_name_ens: Sequence[str] | None,
+    read_only: bool = False,
+    default_value: str | int | bool | None = None,
 ) -> ResolvedAttributeInput:
     """
     入力された属性を既存アノテーション仕様に対して解決する。
@@ -134,6 +183,7 @@ def resolve_attribute_input(
         attribute_name_en: 属性英語名
         attribute_name_ja: 属性日本語名
         attribute_id: 属性ID。未指定ならUUIDv4を自動生成
+        read_only: 読み込み専用属性にするかどうか
         label_ids: 追加先ラベルID一覧。未指定時はNone
         label_name_ens: 追加先ラベル英語名一覧。未指定時はNone
 
@@ -147,6 +197,8 @@ def resolve_attribute_input(
         attribute_name_en=attribute_name_en,
         attribute_name_ja=attribute_name_ja,
         attribute_id=attribute_id,
+        read_only=read_only,
+        default_value=default_value,
     )
     duplicated_name_attribute_ids = validate_new_attribute(
         annotation_specs["additionals"],
@@ -219,6 +271,8 @@ class AddAttributeMain(CommandLineWithConfirm):
         attribute_id: str | None,
         label_ids: Sequence[str] | None,
         label_name_ens: Sequence[str] | None,
+        read_only: bool = False,
+        default_value: str | int | bool | None = None,
         comment: str | None = None,
     ) -> bool:
         """
@@ -229,6 +283,7 @@ class AddAttributeMain(CommandLineWithConfirm):
             attribute_name_en: 属性英語名
             attribute_name_ja: 属性日本語名
             attribute_id: 属性ID。未指定ならUUIDv4を自動生成
+            read_only: 読み込み専用属性にするかどうか
             label_ids: 追加先ラベルID一覧。未指定時はNone
             label_name_ens: 追加先ラベル英語名一覧。未指定時はNone
             comment: 変更コメント
@@ -243,6 +298,8 @@ class AddAttributeMain(CommandLineWithConfirm):
             attribute_name_en=attribute_name_en,
             attribute_name_ja=attribute_name_ja,
             attribute_id=attribute_id,
+            read_only=read_only,
+            default_value=default_value,
             label_ids=label_ids,
             label_name_ens=label_name_ens,
         )
@@ -283,6 +340,8 @@ class AddAttribute(CommandLine):
             attribute_name_en=args.attribute_name_en,
             attribute_name_ja=args.attribute_name_ja,
             attribute_id=args.attribute_id,
+            read_only=args.read_only,
+            default_value=args.default_value,
             label_ids=label_ids,
             label_name_ens=label_name_ens,
             comment=args.comment,
@@ -317,6 +376,12 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--attribute_name_en", type=str, required=True, help="追加する属性の英語名。")
     parser.add_argument("--attribute_id", type=str, help="追加する属性の属性ID。未指定の場合はUUIDv4を自動生成します。")
     parser.add_argument("--attribute_name_ja", type=str, help="追加する属性の日本語名。")
+    parser.add_argument("--read_only", action="store_true", help="追加する属性を読み込み専用にします。")
+    parser.add_argument(
+        "--default_value",
+        type=str,
+        help="追加する属性の初期値。 ``flag`` の場合は ``true`` または ``false`` 、 ``integer`` の場合は整数を指定します。",
+    )
 
     label_group = parser.add_mutually_exclusive_group(required=True)
     label_group.add_argument(

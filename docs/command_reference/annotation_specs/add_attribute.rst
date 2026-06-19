@@ -20,6 +20,30 @@ Examples
      --attribute_name_en unclear \
      --label_name_en car bus
 
+読み込み専用の属性を追加する場合は、 ``--read_only`` を指定します。
+
+.. code-block::
+
+    $ annofabcli annotation_specs add_attribute \
+     --project_id prj1 \
+     --attribute_type text \
+     --attribute_name_en external_id \
+     --read_only \
+     --label_name_en car
+
+初期値を指定する場合は、 ``--default_value`` を指定します。
+
+.. code-block::
+
+    $ annofabcli annotation_specs add_attribute \
+     --project_id prj1 \
+     --attribute_type text \
+     --attribute_name_en memo \
+     --default_value "確認済み" \
+     --label_name_en car
+
+``--attribute_type`` が ``flag`` の場合、 ``--default_value`` には ``true`` または ``false`` を指定します。 ``integer`` の場合は整数を指定します。
+
 
 .. _annotation_specs_non_choice_attribute_types:
 

@@ -104,11 +104,13 @@ class TestResolveChoiceAttributeInput:
             choice_inputs=read_choices_json('[{"choice_id":"sunny","choice_name_en":"sunny","choice_name_ja":"晴れ","is_default":true},{"choice_name_en":"cloudy"}]'),
             label_ids=[],
             label_name_ens=["car"],
+            read_only=True,
         )
 
         assert actual.new_attribute["additional_data_definition_id"] == "weather_attr"
         assert actual.new_attribute["type"] == "choice"
         assert actual.new_attribute["default"] == "sunny"
+        assert actual.new_attribute["read_only"] is True
         assert len(actual.new_attribute["choices"]) == 2
         assert [label["label_id"] for label in actual.target_labels] == ["car_label_id"]
 
@@ -211,6 +213,7 @@ class TestBuildRequestBodyForAddChoiceAttribute:
             choice_inputs=read_choices_json('[{"choice_id":"sunny","choice_name_en":"sunny","choice_name_ja":"晴れ","is_default":true},{"choice_name_en":"cloudy"}]'),
             label_ids=[],
             label_name_ens=["car"],
+            read_only=True,
         )
 
         actual = build_request_body_for_add_choice_attribute(
@@ -226,6 +229,7 @@ class TestBuildRequestBodyForAddChoiceAttribute:
         assert added_attribute["additional_data_definition_id"] == "weather_attr"
         assert added_attribute["type"] == "choice"
         assert added_attribute["default"] == "sunny"
+        assert added_attribute["read_only"] is True
         assert len(added_attribute["choices"]) == 2
 
         car_label = next(label for label in labels if label["label_id"] == "car_label_id")
