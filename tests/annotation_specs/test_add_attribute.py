@@ -7,10 +7,31 @@ import pytest
 
 from annofabcli.annotation_specs.add_attribute import (
     build_request_body_for_add_attribute,
+    parse_default_value,
     resolve_attribute_input,
 )
 
 data_dir = Path("./tests/data/annotation_specs")
+
+
+class TestParseDefaultValue:
+    def test_parse_default_value__flag(self) -> None:
+        assert parse_default_value("flag", "true") is True
+        assert parse_default_value("flag", "false") is False
+
+    def test_parse_default_value__integer(self) -> None:
+        assert parse_default_value("integer", "123") == 123
+
+    def test_parse_default_value__text(self) -> None:
+        assert parse_default_value("text", "memo") == "memo"
+
+    def test_parse_default_value__invalid_flag(self) -> None:
+        with pytest.raises(ValueError):
+            parse_default_value("flag", "yes")
+
+    def test_parse_default_value__invalid_integer(self) -> None:
+        with pytest.raises(ValueError):
+            parse_default_value("integer", "abc")
 
 
 @pytest.fixture
@@ -32,11 +53,13 @@ class TestResolveAttributeInput:
             label_ids=[],
             label_name_ens=["car"],
             read_only=True,
+            default_value="true",
         )
 
         assert actual.new_attribute["additional_data_definition_id"] == "weather_checked_attr"
         assert actual.new_attribute["type"] == "flag"
         assert actual.new_attribute["read_only"] is True
+        assert actual.new_attribute["default"] is True
         assert [label["label_id"] for label in actual.target_labels] == ["car_label_id"]
         assert actual.duplicated_name_attribute_ids == []
 
@@ -64,6 +87,7 @@ class TestBuildRequestBodyForAddAttribute:
             label_ids=[],
             label_name_ens=["car"],
             read_only=True,
+            default_value="true",
         )
 
         actual = build_request_body_for_add_attribute(
@@ -76,6 +100,7 @@ class TestBuildRequestBodyForAddAttribute:
         assert actual["additionals"][-1]["additional_data_definition_id"] == "weather_checked_attr"
         assert actual["additionals"][-1]["type"] == "flag"
         assert actual["additionals"][-1]["read_only"] is True
+        assert actual["additionals"][-1]["default"] is True
         car_label = next(label for label in actual["labels"] if label["label_id"] == "car_label_id")
         bike_label = next(label for label in actual["labels"] if label["label_id"] == "40f7796b-3722-4eed-9c0c-04a27f9165d2")
         assert "weather_checked_attr" in car_label["additional_data_definitions"]

@@ -31,7 +31,7 @@ def annotation_specs() -> dict[str, Any]:
 class TestReadAttributesJson:
     def test_read_attributes_json(self) -> None:
         actual = read_attributes_json(
-            '[{"attribute_type":"flag","attribute_name_en":"weather_checked","attribute_name_ja":"天気確認済み","attribute_id":"weather_checked_attr","read_only":true,"label_name_ens":["car","bus"]},'
+            '[{"attribute_type":"flag","attribute_name_en":"weather_checked","attribute_name_ja":"天気確認済み","attribute_id":"weather_checked_attr","read_only":true,"default_value":true,"label_name_ens":["car","bus"]},'
             '{"attribute_type":"select","attribute_name_en":"weather","choices":[{"choice_id":"sunny","choice_name_en":"sunny","choice_name_ja":"晴れ","is_default":true},{"choice_name_en":"cloudy"}],"label_ids":["car_label_id"]}]'
         )
 
@@ -42,6 +42,7 @@ class TestReadAttributesJson:
                 attribute_name_ja="天気確認済み",
                 attribute_id="weather_checked_attr",
                 read_only=True,
+                default_value=True,
                 label_name_ens=["car", "bus"],
             ),
             AttributeInput(
@@ -94,6 +95,12 @@ class TestReadAttributesJson:
         with pytest.raises(ValueError):
             read_attributes_json('[{"attribute_type":"flag","attribute_name_en":"weather_checked","choices":[{"choice_name_en":"sunny"},{"choice_name_en":"cloudy"}],"label_name_ens":["car"]}]')
 
+    def test_read_attributes_json__choice_attribute_rejects_default_value(self) -> None:
+        with pytest.raises(ValueError):
+            read_attributes_json(
+                '[{"attribute_type":"select","attribute_name_en":"weather","default_value":"sunny","choices":[{"choice_name_en":"sunny"},{"choice_name_en":"cloudy"}],"label_name_ens":["car"]}]'
+            )
+
 
 class TestResolveAttributeInputs:
     def test_resolve_attribute_inputs(self, annotation_specs: dict[str, Any]) -> None:
@@ -106,6 +113,7 @@ class TestResolveAttributeInputs:
                     attribute_name_ja="天気確認済み",
                     attribute_id="weather_checked_attr",
                     read_only=True,
+                    default_value=True,
                     label_name_ens=["car", "bus"],
                 ),
                 AttributeInput(
@@ -125,6 +133,7 @@ class TestResolveAttributeInputs:
         assert actual[0].new_attribute["additional_data_definition_id"] == "weather_checked_attr"
         assert actual[0].new_attribute["type"] == "flag"
         assert actual[0].new_attribute["read_only"] is True
+        assert actual[0].new_attribute["default"] is True
         assert [label["label_id"] for label in actual[0].target_labels] == ["car_label_id", "22b5189b-af7b-4d9c-83a5-b92f122170ec"]
         assert actual[1].attribute_input.attribute_name_en == "weather"
         assert actual[1].new_attribute["type"] == "select"
@@ -182,6 +191,7 @@ class TestBuildRequestBodyForAddAttributes:
                     attribute_name_en="weather_checked",
                     attribute_name_ja="天気確認済み",
                     attribute_id="weather_checked_attr",
+                    default_value=True,
                     label_name_ens=["car", "bus"],
                 ),
                 AttributeInput(
@@ -205,6 +215,7 @@ class TestBuildRequestBodyForAddAttributes:
         )
 
         assert actual["additionals"][-2]["additional_data_definition_id"] == "weather_checked_attr"
+        assert actual["additionals"][-2]["default"] is True
         assert actual["additionals"][-1]["additional_data_definition_id"] == "weather_attr"
         assert actual["additionals"][-1]["type"] == "select"
         assert actual["additionals"][-1]["read_only"] is True

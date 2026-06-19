@@ -13,6 +13,8 @@ Examples
 JSON形式で指定する場合
 ----------------------------------------------
 
+選択肢属性の初期値にしたい選択肢には ``is_default`` に ``true`` を指定します。
+
 .. code-block:: json
     :caption: choices.json
 
