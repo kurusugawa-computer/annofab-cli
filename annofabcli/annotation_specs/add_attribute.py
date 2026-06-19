@@ -59,7 +59,7 @@ class AttributeType(enum.StrEnum):
 ATTRIBUTE_TYPES = [e.value for e in AttributeType]
 
 
-def parse_default_value(attribute_type: str | AttributeType, default_value: str | int | bool | None) -> str | int | bool | None:
+def parse_default_value(attribute_type: str | AttributeType, default_value: str | int | bool | None) -> str | int | bool | None:  # noqa: FBT001
     """
     コマンドラインまたはJSONで指定された初期値を属性種類に応じた型に変換する。
 
@@ -89,14 +89,11 @@ def parse_default_value(attribute_type: str | AttributeType, default_value: str 
 
     if attribute_type == AttributeType.INTEGER:
         if isinstance(default_value, bool):
-            raise ValueError("`default_value` には整数を指定してください。")
-        try:
-            return int(default_value)
-        except ValueError as e:
-            raise ValueError("`default_value` には整数を指定してください。") from e
+            raise TypeError("`default_value` には整数を指定してください。")
+        return int(default_value)
 
     if not isinstance(default_value, str):
-        raise ValueError("`default_value` には文字列を指定してください。")
+        raise TypeError("`default_value` には文字列を指定してください。")
     return default_value
 
 
