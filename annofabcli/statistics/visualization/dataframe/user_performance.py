@@ -834,35 +834,65 @@ class UserPerformance:
         return worktime_type_list
 
     @staticmethod
-    def _create_worktime_type_select_layout(worktime_type_to_element_list: dict[WorktimeType, list[UIElement]]) -> list[UIElement]:
-        """作業時間種別を切り替えるためのレイアウトを生成します。"""
-        default_worktime_type = next(iter(worktime_type_to_element_list))
-        layout_by_worktime_type: dict[str, UIElement] = {}
-        for worktime_type, element_list in worktime_type_to_element_list.items():
+    def _create_select_layout(
+        *,
+        title: str,
+        options: list[str | tuple[Any, str]],
+        value_to_element_list: dict[str, list[UIElement]],
+    ) -> list[UIElement]:
+        """選択肢ごとに表示する要素を切り替えるレイアウトを生成します。"""
+        default_value = next(iter(value_to_element_list))
+        layout_by_value: dict[str, UIElement] = {}
+        for value, element_list in value_to_element_list.items():
             layout = bokeh.layouts.column(element_list)
-            layout.visible = worktime_type == default_worktime_type
-            layout_by_worktime_type[worktime_type.value] = layout
+            layout.visible = value == default_value
+            layout_by_value[value] = layout
 
-        options: list[str | tuple[Any, str]] = [(worktime_type.value, worktime_type.worktime_type_name) for worktime_type in worktime_type_to_element_list]
         select = Select(
-            title="作業時間種別:",
-            value=default_worktime_type.value,
+            title=title,
+            value=default_value,
             options=options,
             width=300,
         )
         select.js_on_change(
             "value",
             CustomJS(
-                args={"layoutByWorktimeType": layout_by_worktime_type},
+                args={"layoutByValue": layout_by_value},
                 code="""
-                const selectedWorktimeType = this.value;
-                for (const worktimeType in layoutByWorktimeType) {
-                    layoutByWorktimeType[worktimeType].visible = worktimeType === selectedWorktimeType;
+                const selectedValue = this.value;
+                for (const value in layoutByValue) {
+                    layoutByValue[value].visible = value === selectedValue;
                 }
                 """,
             ),
         )
-        return [select, *layout_by_worktime_type.values()]
+        return [select, *layout_by_value.values()]
+
+    @staticmethod
+    def _create_worktime_type_select_layout(worktime_type_to_element_list: dict[WorktimeType, list[UIElement]]) -> list[UIElement]:
+        """作業時間種別を切り替えるためのレイアウトを生成します。"""
+        return UserPerformance._create_select_layout(
+            title="作業時間種別:",
+            options=[(worktime_type.value, worktime_type.worktime_type_name) for worktime_type in worktime_type_to_element_list],
+            value_to_element_list={worktime_type.value: element_list for worktime_type, element_list in worktime_type_to_element_list.items()},
+        )
+
+    def _get_production_volume_list_for_plot(self) -> list[ProductionVolumeColumn]:
+        """散布図に表示できる生産量種別のリストを返します。"""
+        return [
+            ProductionVolumeColumn("annotation_count", "アノテーション"),
+            ProductionVolumeColumn("input_data_count", "入力データ"),
+            *self.custom_production_volume_list,
+        ]
+
+    @staticmethod
+    def _create_production_volume_select_layout(production_volume_to_element_list: dict[ProductionVolumeColumn, list[UIElement]]) -> list[UIElement]:
+        """生産量種別を切り替えるためのレイアウトを生成します。"""
+        return UserPerformance._create_select_layout(
+            title="生産量種別:",
+            options=[(production_volume.value, production_volume.name) for production_volume in production_volume_to_element_list],
+            value_to_element_list={production_volume.value: element_list for production_volume, element_list in production_volume_to_element_list.items()},
+        )
 
     def _create_productivity_element_list(
         self,
@@ -989,6 +1019,33 @@ class UserPerformance:
         logger.debug(f"{output_file} を出力します。")
         worktime_type_to_element_list = {worktime_type: self._create_productivity_element_list(worktime_type, production_volume_column) for worktime_type in self._get_worktime_type_list_for_plot()}
         element_list = self._create_worktime_type_select_layout(worktime_type_to_element_list)
+        if metadata is not None:
+            element_list.insert(0, create_pretext_from_metadata(metadata))
+
+        write_bokeh_graph(bokeh.layouts.column(element_list), output_file)
+
+    def plot_productivity_with_selectors(
+        self,
+        output_file: Path,
+        *,
+        metadata: dict[str, Any] | None = None,
+    ) -> None:
+        """作業時間種別と生産量種別を切り替えられる生産性の散布図を出力します。
+
+        Args:
+            output_file: 出力先HTMLファイル
+            metadata: HTMLファイルの上部に表示するメタデータです。
+        """
+        if not self._validate_df_for_output(output_file):
+            return
+
+        logger.debug(f"{output_file} を出力します。")
+        production_volume_to_element_list = {}
+        for production_volume in self._get_production_volume_list_for_plot():
+            worktime_type_to_element_list = {worktime_type: self._create_productivity_element_list(worktime_type, production_volume.value) for worktime_type in self._get_worktime_type_list_for_plot()}
+            production_volume_to_element_list[production_volume] = self._create_worktime_type_select_layout(worktime_type_to_element_list)
+
+        element_list = self._create_production_volume_select_layout(production_volume_to_element_list)
         if metadata is not None:
             element_list.insert(0, create_pretext_from_metadata(metadata))
 
@@ -1263,6 +1320,30 @@ class UserPerformance:
             worktime_type: self._create_quality_and_productivity_element_list(worktime_type, production_volume_column) for worktime_type in self._get_worktime_type_list_for_plot()
         }
         element_list = self._create_worktime_type_select_layout(worktime_type_to_element_list)
+        if metadata is not None:
+            element_list.insert(0, create_pretext_from_metadata(metadata))
+
+        write_bokeh_graph(bokeh.layouts.column(element_list), output_file)
+
+    def plot_quality_and_productivity_with_selectors(
+        self,
+        output_file: Path,
+        *,
+        metadata: dict[str, Any] | None = None,
+    ) -> None:
+        """作業時間種別と生産量種別を切り替えられる生産性と品質の散布図を出力します。"""
+        if not self._validate_df_for_output(output_file):
+            return
+
+        logger.debug(f"{output_file} を出力します。")
+        production_volume_to_element_list = {}
+        for production_volume in self._get_production_volume_list_for_plot():
+            worktime_type_to_element_list = {
+                worktime_type: self._create_quality_and_productivity_element_list(worktime_type, production_volume.value) for worktime_type in self._get_worktime_type_list_for_plot()
+            }
+            production_volume_to_element_list[production_volume] = self._create_worktime_type_select_layout(worktime_type_to_element_list)
+
+        element_list = self._create_production_volume_select_layout(production_volume_to_element_list)
         if metadata is not None:
             element_list.insert(0, create_pretext_from_metadata(metadata))
 
