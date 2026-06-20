@@ -99,6 +99,17 @@ class TestUserPerformance:
             production_volume_column="input_data_count",
         )
 
+    def test_plot_productivity_with_worktime_type_selector(self, tmp_path: Path) -> None:
+        output_file = tmp_path / "散布図-アノテーションあたり作業時間と累計作業時間の関係.html"
+        self.obj.plot_productivity_with_worktime_type_selector(
+            output_file,
+            production_volume_column="annotation_count",
+        )
+
+        html = output_file.read_text(encoding="utf-8")
+        assert "monitored" in html
+        assert "actual" in html
+
     def test_plot_quality_and_productivity__アノテーションあたり実績時間(self) -> None:
         self.obj.plot_quality_and_productivity(
             output_dir / "散布図-アノテーションあたり作業時間と品質の関係-実績時間-教師付者用.html",
@@ -112,3 +123,14 @@ class TestUserPerformance:
             worktime_type=WorktimeType.ACTUAL,
             production_volume_column="input_data_count",
         )
+
+    def test_plot_quality_and_productivity_with_worktime_type_selector(self, tmp_path: Path) -> None:
+        output_file = tmp_path / "散布図-アノテーションあたり作業時間と品質の関係-教師付者用.html"
+        self.obj.plot_quality_and_productivity_with_worktime_type_selector(
+            output_file,
+            production_volume_column="annotation_count",
+        )
+
+        html = output_file.read_text(encoding="utf-8")
+        assert "monitored" in html
+        assert "actual" in html

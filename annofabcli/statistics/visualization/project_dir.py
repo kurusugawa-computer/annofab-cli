@@ -16,7 +16,6 @@ from annofabcli.statistics.visualization.dataframe.task import Task
 from annofabcli.statistics.visualization.dataframe.task_worktime_by_phase_user import TaskWorktimeByPhaseUser
 from annofabcli.statistics.visualization.dataframe.user_performance import (
     UserPerformance,
-    WorktimeType,
 )
 from annofabcli.statistics.visualization.dataframe.whole_performance import WholePerformance
 from annofabcli.statistics.visualization.dataframe.whole_productivity_per_date import (
@@ -293,90 +292,37 @@ class ProjectDir(DataClassJsonMixin):
         """
         output_dir = self.project_dir / "scatter"
         obj.plot_quality(output_dir / "散布図-教師付者の品質と作業量の関係.html", metadata=self.metadata)
-        obj.plot_productivity(
-            output_dir / "散布図-アノテーションあたり作業時間と累計作業時間の関係-計測時間.html",
-            worktime_type=WorktimeType.MONITORED,
+        obj.plot_productivity_with_worktime_type_selector(
+            output_dir / "散布図-アノテーションあたり作業時間と累計作業時間の関係.html",
             production_volume_column="annotation_count",
             metadata=self.metadata,
         )
-        obj.plot_productivity(
-            output_dir / "散布図-入力データあたり作業時間と累計作業時間の関係-計測時間.html",
-            worktime_type=WorktimeType.MONITORED,
+        obj.plot_productivity_with_worktime_type_selector(
+            output_dir / "散布図-入力データあたり作業時間と累計作業時間の関係.html",
             production_volume_column="input_data_count",
             metadata=self.metadata,
         )
-        obj.plot_quality_and_productivity(
-            output_dir / "散布図-アノテーションあたり作業時間と品質の関係-計測時間-教師付者用.html",
-            worktime_type=WorktimeType.MONITORED,
+        obj.plot_quality_and_productivity_with_worktime_type_selector(
+            output_dir / "散布図-アノテーションあたり作業時間と品質の関係-教師付者用.html",
             production_volume_column="annotation_count",
             metadata=self.metadata,
         )
-        obj.plot_quality_and_productivity(
-            output_dir / "散布図-入力データあたり作業時間と品質の関係-計測時間-教師付者用.html",
-            worktime_type=WorktimeType.MONITORED,
+        obj.plot_quality_and_productivity_with_worktime_type_selector(
+            output_dir / "散布図-入力データあたり作業時間と品質の関係-教師付者用.html",
             production_volume_column="input_data_count",
             metadata=self.metadata,
         )
 
         for custom_production_volume in obj.custom_production_volume_list:
-            obj.plot_productivity(
-                output_dir / f"散布図-{custom_production_volume.name}あたり作業時間と累計作業時間の関係-計測時間.html",
-                worktime_type=WorktimeType.MONITORED,
+            obj.plot_productivity_with_worktime_type_selector(
+                output_dir / f"散布図-{custom_production_volume.name}あたり作業時間と累計作業時間の関係.html",
                 production_volume_column=custom_production_volume.value,
                 metadata=self.metadata,
             )
-            obj.plot_quality_and_productivity(
-                output_dir / f"散布図-{custom_production_volume.name}あたり作業時間と品質の関係-計測時間-教師付者用.html",
-                worktime_type=WorktimeType.MONITORED,
+            obj.plot_quality_and_productivity_with_worktime_type_selector(
+                output_dir / f"散布図-{custom_production_volume.name}あたり作業時間と品質の関係-教師付者用.html",
                 production_volume_column=custom_production_volume.value,
                 metadata=self.metadata,
-            )
-
-        if obj.actual_worktime_exists():
-            obj.plot_productivity(
-                output_dir / "散布図-アノテーションあたり作業時間と累計作業時間の関係-実績時間.html",
-                worktime_type=WorktimeType.ACTUAL,
-                production_volume_column="annotation_count",
-                metadata=self.metadata,
-            )
-            obj.plot_productivity(
-                output_dir / "散布図-入力データあたり作業時間と累計作業時間の関係-実績時間.html",
-                worktime_type=WorktimeType.ACTUAL,
-                production_volume_column="input_data_count",
-                metadata=self.metadata,
-            )
-
-            obj.plot_quality_and_productivity(
-                output_dir / "散布図-アノテーションあたり作業時間と品質の関係-実績時間-教師付者用.html",
-                worktime_type=WorktimeType.ACTUAL,
-                production_volume_column="annotation_count",
-                metadata=self.metadata,
-            )
-            obj.plot_quality_and_productivity(
-                output_dir / "散布図-入力データあたり作業時間と品質の関係-実績時間-教師付者用.html",
-                worktime_type=WorktimeType.ACTUAL,
-                production_volume_column="input_data_count",
-                metadata=self.metadata,
-            )
-            for custom_production_volume in obj.custom_production_volume_list:
-                obj.plot_productivity(
-                    output_dir / f"散布図-{custom_production_volume.name}あたり作業時間と累計作業時間の関係-実績時間.html",
-                    worktime_type=WorktimeType.ACTUAL,
-                    production_volume_column=custom_production_volume.value,
-                    metadata=self.metadata,
-                )
-                obj.plot_quality_and_productivity(
-                    output_dir / f"散布図-{custom_production_volume.name}あたり作業時間と品質の関係-実績時間-教師付者用.html",
-                    worktime_type=WorktimeType.ACTUAL,
-                    production_volume_column=custom_production_volume.value,
-                    metadata=self.metadata,
-                )
-
-        else:
-            logger.warning(
-                f"実績作業時間の合計値が0なので、実績作業時間関係の次のグラフを'{output_dir}'に出力しません。:: "
-                "'散布図-{unit}あたり作業時間と累計作業時間の関係-実績時間.html',"
-                "'散布図-{unit}あたり作業時間と品質の関係-実績時間-教師付者用'"
             )
 
     def read_worktime_per_date_user(self) -> WorktimePerDate:
