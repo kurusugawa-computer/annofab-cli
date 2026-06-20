@@ -291,10 +291,8 @@ CSVには以下の列が存在している必要があります。
     │   ├── 累積折れ線-横軸_日-縦軸_作業時間.html
     │   └── 累積折れ線-横軸_日-全体.html
     ├── scatter
-    │   ├── 散布図-アノテーションあたり作業時間と品質の関係-計測時間-教師付者用.html
-    │   ├── 散布図-アノテーションあたり作業時間と累計作業時間の関係-計測時間.html
-    │   ├── 散布図-アノテーションあたり作業時間と品質の関係-実績時間-教師付者用.html
-    │   ├── 散布図-アノテーションあたり作業時間と累計作業時間の関係-実績時間.html
+    │   ├── 散布図-生産量あたり作業時間と品質の関係-教師付者用.html
+    │   ├── 散布図-生産量あたり作業時間と累計作業時間の関係.html
     │   └── 散布図-教師付者の品質と作業量の関係.html
     ├── タスクlist.csv
     ├── メンバごとの生産性と品質.csv
@@ -327,8 +325,8 @@ CSVには以下の列が存在している必要があります。
    visualize_output_rst/折れ線-横軸_教師付開始日-縦軸_アノテーション単位の指標-phase用.html
    visualize_output_rst/累積折れ線-横軸_日-縦軸_作業時間_html.rst
 
-   visualize_output_rst/散布図-アノテーションあたり作業時間と品質の関係-教師付者用_html.rst
-   visualize_output_rst/散布図-アノテーションあたり作業時間と累計作業時間の関係_html.rst
+   visualize_output_rst/散布図-生産量あたり作業時間と品質の関係-教師付者用_html.rst
+   visualize_output_rst/散布図-生産量あたり作業時間と累計作業時間の関係_html.rst
    visualize_output_rst/散布図-教師付者の品質と作業量の関係_html.rst
 
 
@@ -390,4 +388,3 @@ Usage Details
    :prog: annofabcli statistics visualize
    :nosubcommands:
    :nodefaultconst:
-
