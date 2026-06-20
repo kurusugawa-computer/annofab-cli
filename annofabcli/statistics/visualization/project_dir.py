@@ -141,31 +141,12 @@ class ProjectDir(DataClassJsonMixin):
 
         phase_name = self.get_phase_name_for_filename(phase)
 
-        obj.plot_production_volume_metrics(
-            production_volume_column="annotation_count",
-            production_volume_name="アノテーション数",
+        obj.plot_production_volume_metrics_with_selector(
             output_file=output_dir / f"{phase_name}者用/累積折れ線-横軸_アノテーション数-{phase_name}者用.html",
             target_user_id_list=user_id_list,
             metadata=self.metadata,
+            include_input_data_count=not minimal_output,
         )
-        for custom_production_volume in obj.custom_production_volume_list:
-            obj.plot_production_volume_metrics(
-                production_volume_column=custom_production_volume.value,
-                production_volume_name=custom_production_volume.name,
-                output_file=output_dir / f"{phase_name}者用/累積折れ線-横軸_{custom_production_volume.name}-{phase_name}者用.html",
-                target_user_id_list=user_id_list,
-                metadata=self.metadata,
-            )
-
-        if not minimal_output:
-            # アノテーション単位より大きい単位の折れ線グラフは不要かもしれないので、オプションにした
-            obj.plot_production_volume_metrics(
-                production_volume_column="input_data_count",
-                production_volume_name="入力データ数",
-                output_file=output_dir / f"{phase_name}者用/累積折れ線-横軸_入力データ数-{phase_name}者用.html",
-                target_user_id_list=user_id_list,
-                metadata=self.metadata,
-            )
 
     def write_performance_per_started_date_csv(self, obj: AbstractPhaseProductivityPerDate, phase: TaskPhase) -> None:
         """
