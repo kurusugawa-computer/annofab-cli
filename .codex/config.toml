@@ -29,3 +29,6 @@ enabled = true
 "*.github.com" = "allow"
 "objects.githubusercontent.com" = "allow"
 
+[shell_environment_policy]
+inherit = "core"
+set = { UV_CACHE_DIR = "/tmp/uv-cache" }
