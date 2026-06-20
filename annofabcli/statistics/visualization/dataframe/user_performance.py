@@ -828,10 +828,9 @@ class UserPerformance:
 
     def _get_worktime_type_list_for_plot(self) -> list[WorktimeType]:
         """散布図に表示できる作業時間種別のリストを返します。"""
-        worktime_type_list = [WorktimeType.MONITORED]
         if self.actual_worktime_exists():
-            worktime_type_list.append(WorktimeType.ACTUAL)
-        return worktime_type_list
+            return [WorktimeType.ACTUAL, WorktimeType.MONITORED]
+        return [WorktimeType.MONITORED]
 
     @staticmethod
     def _create_select_layout(

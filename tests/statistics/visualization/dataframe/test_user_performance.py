@@ -85,6 +85,12 @@ class TestUserPerformance:
     def test_plot_quality(self):
         self.obj.plot_quality(output_dir / "散布図-教師付者の品質と作業量の関係.html")
 
+    def test__get_worktime_type_list_for_plot__実績時間をデフォルトにする(self) -> None:
+        assert self.obj._get_worktime_type_list_for_plot()[0] == WorktimeType.ACTUAL
+
+    def test__get_production_volume_list_for_plot__アノテーションをデフォルトにする(self) -> None:
+        assert self.obj._get_production_volume_list_for_plot()[0].value == "annotation_count"
+
     def test_plot_productivity__アノテーションあたり実績時間(self) -> None:
         self.obj.plot_productivity(
             output_dir / "散布図-アノテーションあたり作業時間と累計作業時間の関係-実績時間.html",
