@@ -255,7 +255,8 @@ class WholeProductivityPerCompletedDate:
 
         # 累計情報を追加
         add_cumsum_column(df, column="task_count")
-        add_cumsum_column(df, column="input_data_count")
+        for column in production_volume_columns:
+            add_cumsum_column(df, column=column)
         add_cumsum_column(df, column="actual_worktime_hour")
         add_cumsum_column(df, column="monitored_worktime_hour")
 
@@ -552,107 +553,48 @@ class WholeProductivityPerCompletedDate:
 
         def create_task_line_graph() -> LineGraph:
             line_graph = create_line_graph(
-                title="日ごとの累積タスク数と累積作業時間",
+                title="日ごとの累積タスク数",
                 y_axis_label="タスク数",
                 tooltip_columns=[
                     "date",
                     "task_count",
-                    "actual_worktime_hour",
-                    "monitored_worktime_hour",
                     "working_user_count",
                     "cumsum_task_count",
-                    "cumsum_actual_worktime_hour",
-                    "cumsum_monitored_worktime_hour",
                 ],
-            )
-            line_graph.add_secondary_y_axis(
-                "作業時間[時間]",
-                secondary_y_axis_range=DataRange1d(end=max(df["cumsum_actual_worktime_hour"].max(), df["cumsum_monitored_worktime_hour"].max()) * SECONDARY_Y_RANGE_RATIO),
-                primary_y_axis_range=DataRange1d(end=df["cumsum_task_count"].max() * SECONDARY_Y_RANGE_RATIO),
             )
 
             # 値をプロット
             x_column = "dt_date"
-            plot_index = 0
             line_graph.add_line(
                 x_column=x_column,
                 y_column="cumsum_task_count",
                 source=source,
-                color=get_color_from_small_palette(plot_index),
+                color=get_color_from_small_palette(0),
                 legend_label="タスク数",
-            )
-
-            plot_index += 1
-            line_graph.add_line(
-                x_column=x_column,
-                y_column="cumsum_actual_worktime_hour",
-                source=source,
-                color=get_color_from_small_palette(plot_index),
-                legend_label="実績作業時間",
-                is_secondary_y_axis=True,
-            )
-
-            plot_index += 1
-            line_graph.add_line(
-                x_column=x_column,
-                y_column="cumsum_monitored_worktime_hour",
-                source=source,
-                color=get_color_from_small_palette(plot_index),
-                legend_label="計測作業時間",
-                is_secondary_y_axis=True,
             )
 
             return line_graph
 
-        def create_input_data_line_graph() -> LineGraph:
+        def create_production_volume_line_graph(production_volume: ProductionVolumeColumn) -> LineGraph:
+            production_volume_name = f"{production_volume.name}数" if production_volume.value in ["input_data_count", "annotation_count"] else production_volume.name
             line_graph = create_line_graph(
-                title="日ごとの累積入力データ数と累積作業時間",
-                y_axis_label="入力データ数",
+                title=f"日ごとの累積{production_volume_name}",
+                y_axis_label=production_volume_name,
                 tooltip_columns=[
                     "date",
-                    "input_data_count",
-                    "actual_worktime_hour",
-                    "monitored_worktime_hour",
+                    production_volume.value,
                     "working_user_count",
-                    "cumsum_input_data_count",
-                    "cumsum_actual_worktime_hour",
-                    "cumsum_monitored_worktime_hour",
+                    f"cumsum_{production_volume.value}",
                 ],
-            )
-            line_graph.add_secondary_y_axis(
-                "作業時間[時間]",
-                secondary_y_axis_range=DataRange1d(end=max(df["cumsum_actual_worktime_hour"].max(), df["cumsum_monitored_worktime_hour"].max()) * SECONDARY_Y_RANGE_RATIO),
-                primary_y_axis_range=DataRange1d(end=df["cumsum_input_data_count"].max() * SECONDARY_Y_RANGE_RATIO),
             )
 
             x_column = "dt_date"
-            plot_index = 0
             line_graph.add_line(
                 x_column=x_column,
-                y_column="cumsum_input_data_count",
+                y_column=f"cumsum_{production_volume.value}",
                 source=source,
-                color=get_color_from_small_palette(plot_index),
-                legend_label="タスク数",
-            )
-
-            plot_index += 1
-            line_graph.add_line(
-                x_column=x_column,
-                y_column="cumsum_actual_worktime_hour",
-                source=source,
-                color=get_color_from_small_palette(plot_index),
-                legend_label="実績作業時間",
-                is_secondary_y_axis=True,
-            )
-
-            plot_index += 1
-            line_graph.add_line(
-                x_column=x_column,
-                y_column="cumsum_monitored_worktime_hour",
-                source=source,
-                color=get_color_from_small_palette(plot_index),
-                legend_label="計測作業時間",
-                is_secondary_y_axis=True,
+                color=get_color_from_small_palette(0),
+                legend_label=production_volume_name,
             )
             return line_graph
 
@@ -735,11 +677,21 @@ class WholeProductivityPerCompletedDate:
         df["cumsum_monitored_inspection_worktime_hour"] = df["monitored_inspection_worktime_hour"].cumsum()
         df["cumsum_monitored_acceptance_worktime_hour"] = df["monitored_acceptance_worktime_hour"].cumsum()
 
+        production_volume_list = [
+            ProductionVolumeColumn("input_data_count", "入力データ"),
+            ProductionVolumeColumn("annotation_count", "アノテーション"),
+            *self.custom_production_volume_list,
+        ]
+
         logger.debug(f"{output_file} を出力します。")
 
         source = ColumnDataSource(data=df)
 
-        line_graph_list = [create_task_line_graph(), create_input_data_line_graph(), create_worktime_line_graph()]
+        line_graph_list = [
+            create_task_line_graph(),
+            *[create_production_volume_line_graph(production_volume) for production_volume in production_volume_list],
+            create_worktime_line_graph(),
+        ]
 
         for line_graph in line_graph_list:
             line_graph.process_after_adding_glyphs()
@@ -799,7 +751,7 @@ class WholeProductivityPerCompletedDate:
         columns = [
             "date",
             "cumsum_task_count",
-            "cumsum_input_data_count",
+            *[f"cumsum_{column}" for column in production_volume_columns],
             "cumsum_actual_worktime_hour",
             "cumsum_monitored_worktime_hour",
             "task_count",
