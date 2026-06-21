@@ -49,22 +49,34 @@ class TestAnnotatorProductivityPerDate:
 
     def test_create_line_graph_list_for_production_volume_selector(self):
         production_volume = ProductionVolumeColumn("annotation_count", "アノテーション")
-        worktime_tooltip_columns = [
+        total_worktime_tooltip_columns = [
             "annotation_worktime_hour",
+            "annotation_count",
+        ]
+        production_volume_worktime_tooltip_columns = [
+            *total_worktime_tooltip_columns,
             "annotation_worktime_minute/annotation_count",
         ]
         inspection_comment_tooltip_columns = [
-            *worktime_tooltip_columns,
+            *total_worktime_tooltip_columns,
             "inspection_comment_count",
             "inspection_comment_count/annotation_count",
         ]
 
         line_graph_list = AnnotatorProductivityPerDate._create_line_graph_list_for_production_volume_selector(
             default_production_volume=production_volume,
-            worktime_tooltip_columns=worktime_tooltip_columns,
+            total_worktime_tooltip_columns=total_worktime_tooltip_columns,
+            production_volume_worktime_tooltip_columns=production_volume_worktime_tooltip_columns,
             inspection_comment_tooltip_columns=inspection_comment_tooltip_columns,
             x_axis_label="教師付開始日",
         )
+
+        assert line_graph_list[0].tooltip_columns is not None
+        assert "annotation_worktime_minute/annotation_count" not in line_graph_list[0].tooltip_columns
+
+        for line_graph in line_graph_list[1:3]:
+            assert line_graph.tooltip_columns is not None
+            assert "annotation_worktime_minute/annotation_count" in line_graph.tooltip_columns
 
         for line_graph in line_graph_list[:3]:
             assert line_graph.tooltip_columns is not None
@@ -73,6 +85,7 @@ class TestAnnotatorProductivityPerDate:
 
         for line_graph in line_graph_list[3:]:
             assert line_graph.tooltip_columns is not None
+            assert "annotation_worktime_minute/annotation_count" not in line_graph.tooltip_columns
             assert "inspection_comment_count" in line_graph.tooltip_columns
             assert "inspection_comment_count/annotation_count" in line_graph.tooltip_columns
 
