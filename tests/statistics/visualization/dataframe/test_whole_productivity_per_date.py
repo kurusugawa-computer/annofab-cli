@@ -235,3 +235,48 @@ class TestWholeProductivityPerFirstAnnotationStartedDate:
         )
         obj = WholeProductivityPerFirstAnnotationStartedDate.from_task(task, TaskCompletionCriteria.ACCEPTANCE_COMPLETED)
         obj.plot(self.output_dir / "test__from_task__and__plot.html")
+
+    def test__plot__日ごとの折れ線と対応したグラフ構成にする(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+        captured: dict[str, Any] = {}
+
+        def fake_write_bokeh_graph(bokeh_obj: Any, _output_file: Path) -> None:  # noqa: ANN401
+            captured["bokeh_obj"] = bokeh_obj
+
+        monkeypatch.setattr(whole_productivity_per_date, "write_bokeh_graph", fake_write_bokeh_graph)
+
+        task = Task.from_csv(
+            data_dir / "task.csv",
+            custom_production_volume_list=[
+                ProductionVolumeColumn("custom_production_volume1", "custom_生産量1"),
+                ProductionVolumeColumn("custom_production_volume2", "custom_生産量2"),
+            ],
+        )
+        obj = WholeProductivityPerFirstAnnotationStartedDate.from_task(task, TaskCompletionCriteria.ACCEPTANCE_COMPLETED)
+        obj.plot(tmp_path / "test__from_task__and__plot.html")
+
+        layout = captured["bokeh_obj"]
+        assert layout.children[1].title.text == "教師付開始日ごとの計測作業時間"
+
+        production_volume_graph = layout.children[2].children[0]
+        production_volume_select = layout.children[2].children[1]
+        assert production_volume_graph.title.text == "教師付開始日ごとのタスク数"
+        assert production_volume_select.title == "生産量種別:"
+        assert production_volume_select.options == [
+            ("task_count", "タスク数"),
+            ("input_data_count", "入力データ数"),
+            ("annotation_count", "アノテーション数"),
+            ("custom_production_volume1", "custom_生産量1"),
+            ("custom_production_volume2", "custom_生産量2"),
+        ]
+        data_source = production_volume_graph.renderers[0].data_source
+        assert "custom_production_volume1__lastweek" in data_source.data
+        assert "custom_production_volume2__lastweek" in data_source.data
+
+        productivity_graph = layout.children[3].children[0]
+        productivity_select = layout.children[3].children[1]
+        assert productivity_graph.title.text == "教師付開始日ごとのタスク数あたり計測作業時間"
+        assert productivity_select.title == "生産量種別:"
+        assert productivity_select.options == production_volume_select.options
+        callback = productivity_select.js_property_callbacks["change:value"][0]
+        assert "yAxis.axis_label = `${selected.name}あたり作業時間[分/${selected.name}]`;" in callback.code
+        assert "legendItems[i * 2].label.value = legendName;" in callback.code
