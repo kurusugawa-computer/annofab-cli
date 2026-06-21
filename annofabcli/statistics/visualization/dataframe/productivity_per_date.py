@@ -169,10 +169,12 @@ class AbstractPhaseProductivityPerDate(abc.ABC):
 
         phase_name = self._get_phase_name_for_graph()
         x_axis_label = f"{phase_name}開始日"
-        tooltip_columns = self._get_worktime_tooltip_columns(production_volume_list)
+        total_worktime_tooltip_columns = self._get_total_worktime_tooltip_columns(production_volume_list)
+        production_volume_worktime_tooltip_columns = self._get_production_volume_worktime_tooltip_columns(production_volume_list)
         line_graph_list = self._create_worktime_line_graph_list_for_production_volume_selector(
             default_production_volume=default_production_volume,
-            tooltip_columns=tooltip_columns,
+            total_worktime_tooltip_columns=total_worktime_tooltip_columns,
+            production_volume_worktime_tooltip_columns=production_volume_worktime_tooltip_columns,
             x_axis_label=x_axis_label,
         )
 
@@ -319,8 +321,8 @@ class AbstractPhaseProductivityPerDate(abc.ABC):
         )
         return select
 
-    def _get_worktime_tooltip_columns(self, production_volume_list: list[ProductionVolumeColumn]) -> list[str]:
-        """生産量種別セレクタ付き作業時間グラフのツールチップ列を取得します。"""
+    def _get_total_worktime_tooltip_columns(self, production_volume_list: list[ProductionVolumeColumn]) -> list[str]:
+        """合計作業時間グラフのツールチップ列を取得します。"""
         return [
             "user_id",
             "username",
@@ -329,6 +331,12 @@ class AbstractPhaseProductivityPerDate(abc.ABC):
             f"{self.phase.value}_worktime_hour",
             "task_count",
             *[production_volume.value for production_volume in production_volume_list],
+        ]
+
+    def _get_production_volume_worktime_tooltip_columns(self, production_volume_list: list[ProductionVolumeColumn]) -> list[str]:
+        """生産量あたり作業時間グラフのツールチップ列を取得します。"""
+        return [
+            *self._get_total_worktime_tooltip_columns(production_volume_list),
             *[f"{self.phase.value}_worktime_minute/{production_volume.value}" for production_volume in production_volume_list],
         ]
 
@@ -336,7 +344,8 @@ class AbstractPhaseProductivityPerDate(abc.ABC):
         self,
         *,
         default_production_volume: ProductionVolumeColumn,
-        tooltip_columns: list[str],
+        total_worktime_tooltip_columns: list[str],
+        production_volume_worktime_tooltip_columns: list[str],
         x_axis_label: str,
     ) -> list[LineGraph]:
         """生産量種別を切り替えられる作業時間折れ線グラフを生成します。"""
@@ -345,21 +354,21 @@ class AbstractPhaseProductivityPerDate(abc.ABC):
             LineGraph(
                 title=f"{phase_name}開始日ごとの{phase_name}作業時間",
                 y_axis_label=f"{phase_name}作業時間[時間]",
-                tooltip_columns=tooltip_columns,
+                tooltip_columns=total_worktime_tooltip_columns,
                 x_axis_label=x_axis_label,
                 x_axis_type="datetime",
             ),
             LineGraph(
                 title=f"{phase_name}開始日ごとの{default_production_volume.name}あたり{phase_name}作業時間",
                 y_axis_label=f"{default_production_volume.name}あたり{phase_name}時間[分/{default_production_volume.name}]",
-                tooltip_columns=tooltip_columns,
+                tooltip_columns=production_volume_worktime_tooltip_columns,
                 x_axis_label=x_axis_label,
                 x_axis_type="datetime",
             ),
             LineGraph(
                 title=f"{phase_name}開始日ごとの{default_production_volume.name}あたり{phase_name}作業時間(1週間移動平均)",
                 y_axis_label=f"{default_production_volume.name}あたり{phase_name}時間[分/{default_production_volume.name}]",
-                tooltip_columns=tooltip_columns,
+                tooltip_columns=production_volume_worktime_tooltip_columns,
                 x_axis_label=x_axis_label,
                 x_axis_type="datetime",
             ),
