@@ -62,6 +62,25 @@ class TestInspectorProductivityPerDate:
         obj.to_csv(output_dir / "検査開始日ごとの検査者の生産性.csv")
         obj.plot_production_volume_metrics("annotation_count", "アノテーション", output_dir / "折れ線-横軸_検査開始日-縦軸_アノテーションあたりの指標-検査者用.html")
 
+    def test_plot_production_volume_metrics_with_selector(self, tmp_path: Path):
+        task_worktime_by_phase_user = TaskWorktimeByPhaseUser.from_csv(
+            data_dir / "task-worktime-by-user-phase.csv",
+            custom_production_volume_list=[
+                ProductionVolumeColumn("custom_production_volume1", "custom_生産量1"),
+                ProductionVolumeColumn("custom_production_volume2", "custom_生産量2"),
+            ],
+        )
+
+        obj = InspectorProductivityPerDate.from_df_wrapper(task_worktime_by_phase_user)
+        output_file = tmp_path / "折れ線-横軸_検査開始日-縦軸_生産量単位の指標-検査者用.html"
+        obj.plot_production_volume_metrics_with_selector(output_file)
+
+        html = output_file.read_text(encoding="utf-8")
+        assert '"name":"Select"' in html
+        assert "yColumnByValue" in html
+        assert "inspection_worktime_minute/input_data_count" in html
+        assert "inspection_worktime_minute/custom_production_volume1" in html
+
 
 class TestAcceptorProductivityPerDate:
     def test_scenario(self):
@@ -76,3 +95,22 @@ class TestAcceptorProductivityPerDate:
         obj = AcceptorProductivityPerDate.from_df_wrapper(task_worktime_by_phase_user)
         obj.to_csv(output_dir / "受入開始日ごとの受入者の生産性.csv")
         obj.plot_production_volume_metrics("annotation_count", "アノテーション", output_dir / "折れ線-横軸_受入開始日-縦軸_アノテーションあたりの指標-受入者用.html")
+
+    def test_plot_production_volume_metrics_with_selector(self, tmp_path: Path):
+        task_worktime_by_phase_user = TaskWorktimeByPhaseUser.from_csv(
+            data_dir / "task-worktime-by-user-phase.csv",
+            custom_production_volume_list=[
+                ProductionVolumeColumn("custom_production_volume1", "custom_生産量1"),
+                ProductionVolumeColumn("custom_production_volume2", "custom_生産量2"),
+            ],
+        )
+
+        obj = AcceptorProductivityPerDate.from_df_wrapper(task_worktime_by_phase_user)
+        output_file = tmp_path / "折れ線-横軸_受入開始日-縦軸_生産量単位の指標-受入者用.html"
+        obj.plot_production_volume_metrics_with_selector(output_file)
+
+        html = output_file.read_text(encoding="utf-8")
+        assert '"name":"Select"' in html
+        assert "yColumnByValue" in html
+        assert "acceptance_worktime_minute/input_data_count" in html
+        assert "acceptance_worktime_minute/custom_production_volume1" in html

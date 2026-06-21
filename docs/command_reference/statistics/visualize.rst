@@ -322,7 +322,7 @@ CSVには以下の列が存在している必要があります。
    visualize_output_rst/累積折れ線-横軸_日-全体_html.rst
    visualize_output_rst/折れ線-横軸_教師付開始日-全体_html.rst
    visualize_output_rst/累積折れ線-横軸_生産量-phase者用_html.rst
-   visualize_output_rst/折れ線-横軸_教師付開始日-縦軸_生産量単位の指標-phase用.html
+   visualize_output_rst/折れ線-横軸_phase開始日-縦軸_生産量単位の指標-phase者用_html.rst
    visualize_output_rst/累積折れ線-横軸_日-縦軸_作業時間_html.rst
 
    visualize_output_rst/散布図-生産量あたり作業時間と品質の関係-教師付者用_html.rst
