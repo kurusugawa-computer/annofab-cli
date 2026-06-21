@@ -153,7 +153,66 @@ class AbstractPhaseProductivityPerDate(abc.ABC):
         metadata: dict[str, Any] | None = None,
     ) -> None:
         """生産量種別を切り替えられる折れ線グラフを出力します。"""
-        raise NotImplementedError()
+        if not self._validate_df_for_output(output_file):
+            return
+
+        df = self.df.copy()
+
+        if target_user_id_list is not None:
+            user_id_list = target_user_id_list
+        else:
+            user_id_list = df.sort_values(by="user_id", ascending=False)["user_id"].dropna().unique().tolist()
+
+        user_id_list = get_plotted_user_id_list(user_id_list)
+        production_volume_list = self._get_production_volume_list_for_plot()
+        default_production_volume = production_volume_list[0]
+
+        phase_name = self._get_phase_name_for_graph()
+        x_axis_label = f"{phase_name}開始日"
+        tooltip_columns = self._get_worktime_tooltip_columns(production_volume_list)
+        line_graph_list = self._create_worktime_line_graph_list_for_production_volume_selector(
+            default_production_volume=default_production_volume,
+            tooltip_columns=tooltip_columns,
+            x_axis_label=x_axis_label,
+        )
+
+        logger.debug(f"{output_file} を出力します。")
+
+        line_count = 0
+        plotted_users: list[tuple[str, str]] = []
+        for user_index, user_id in enumerate(user_id_list):
+            df_subset = df[df["user_id"] == user_id]
+            if df_subset.empty:
+                logger.debug(f"dataframe is empty. user_id = {user_id}")
+                continue
+
+            df_subset = self._get_df_sequential_date(df_subset)
+            df_subset = self._add_worktime_metric_columns(df_subset, production_volume_list)
+            source = ColumnDataSource(data=df_subset)
+            color = get_color_from_palette(user_index)
+            username = df_subset.iloc[0]["username"]
+
+            line_count += 1
+            self._add_lines_to_worktime_selector_graphs(
+                line_graph_list=line_graph_list,
+                source=source,
+                default_production_volume=default_production_volume,
+                username=username,
+                color=color,
+            )
+            plotted_users.append((user_id, username))
+
+        if line_count == 0:
+            logger.warning(f"プロットするデータがなかっため、'{output_file}'は出力しません。")
+            return
+
+        layout = self._create_layout_for_production_volume_selector_graphs(
+            line_graph_list=line_graph_list,
+            plotted_users=plotted_users,
+            production_volume_list=production_volume_list,
+            metadata=metadata,
+        )
+        write_bokeh_graph(layout, output_file)
 
     def _get_production_volume_list_for_plot(self) -> list[ProductionVolumeColumn]:
         """折れ線グラフで切り替えられる生産量種別を取得します。"""
@@ -162,6 +221,236 @@ class AbstractPhaseProductivityPerDate(abc.ABC):
             *self.custom_production_volume_list,
             ProductionVolumeColumn("input_data_count", "入力データ"),
         ]
+
+    @staticmethod
+    def _get_glyph_list(line_graph: LineGraph) -> list[GlyphRenderer]:
+        """折れ線グラフのY軸列を切り替える対象のGlyphを取得します。"""
+        glyph_list: list[GlyphRenderer] = []
+        glyph_list.extend(line_graph.line_glyphs.values())
+        glyph_list.extend(line_graph.marker_glyphs.values())
+        return glyph_list
+
+    def _get_phase_name_for_graph(self) -> str:
+        """グラフに表示するフェーズ名を取得します。"""
+        if self.phase == TaskPhase.ANNOTATION:
+            return "教師付"
+        if self.phase == TaskPhase.INSPECTION:
+            return "検査"
+        if self.phase == TaskPhase.ACCEPTANCE:
+            return "受入"
+        raise ValueError(f"未対応のフェーズです。 phase={self.phase}")
+
+    def _create_select_for_switching_worktime_production_volume(
+        self,
+        *,
+        production_volume_list: list[ProductionVolumeColumn],
+        dependent_line_graph_list: list[LineGraph],
+    ) -> Select:
+        """生産量種別を切り替えるためのSelectを生成します。"""
+        default_production_volume = production_volume_list[0]
+        options: list[str | tuple[Any, str]] = [(production_volume.value, production_volume.name) for production_volume in production_volume_list]
+        select = Select(
+            title="生産量種別:",
+            value=default_production_volume.value,
+            options=options,
+            width=300,
+        )
+
+        phase_name = self._get_phase_name_for_graph()
+        y_column_by_value = {
+            production_volume.value: [
+                f"{self.phase.value}_worktime_minute/{production_volume.value}",
+                f"{self.phase.value}_worktime_minute/{production_volume.value}{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}",
+            ]
+            for production_volume in production_volume_list
+        }
+        title_by_value = {
+            production_volume.value: [
+                f"{phase_name}開始日ごとの{production_volume.name}あたり{phase_name}作業時間",
+                f"{phase_name}開始日ごとの{production_volume.name}あたり{phase_name}作業時間(1週間移動平均)",
+            ]
+            for production_volume in production_volume_list
+        }
+        y_axis_label_by_value = {
+            production_volume.value: [
+                f"{production_volume.name}あたり{phase_name}時間[分/{production_volume.name}]",
+                f"{production_volume.name}あたり{phase_name}時間[分/{production_volume.name}]",
+            ]
+            for production_volume in production_volume_list
+        }
+
+        select.js_on_change(
+            "value",
+            CustomJS(
+                args={
+                    "glyphListByGraphIndex": {str(index): self._get_glyph_list(line_graph) for index, line_graph in enumerate(dependent_line_graph_list)},
+                    "figureList": [line_graph.figure for line_graph in dependent_line_graph_list],
+                    "titleByValue": title_by_value,
+                    "yAxisLabelByValue": y_axis_label_by_value,
+                    "yAxisList": [line_graph.figure.yaxis[0] for line_graph in dependent_line_graph_list],
+                    "yColumnByValue": y_column_by_value,
+                },
+                code="""
+                const selectedValue = this.value;
+
+                for (const graphIndex in glyphListByGraphIndex) {
+                    const yColumn = yColumnByValue[selectedValue][Number(graphIndex)];
+                    for (const glyphRenderer of glyphListByGraphIndex[graphIndex]) {
+                        for (const glyph of [glyphRenderer.glyph, glyphRenderer.nonselection_glyph, glyphRenderer.muted_glyph]) {
+                            if (glyph == null) {
+                                continue;
+                            }
+                            glyph.y = {field: yColumn};
+                            glyph.change.emit();
+                        }
+                        glyphRenderer.change.emit();
+                    }
+                }
+
+                figureList.forEach((figure, index) => {
+                    figure.title.text = titleByValue[selectedValue][index];
+                    yAxisList[index].axis_label = yAxisLabelByValue[selectedValue][index];
+                    yAxisList[index].change.emit();
+                    figure.y_range.change.emit();
+                    figure.change.emit();
+                });
+                """,
+            ),
+        )
+        return select
+
+    def _get_worktime_tooltip_columns(self, production_volume_list: list[ProductionVolumeColumn]) -> list[str]:
+        """生産量種別セレクタ付き作業時間グラフのツールチップ列を取得します。"""
+        return [
+            "user_id",
+            "username",
+            "biography",
+            f"first_{self.phase.value}_started_date",
+            f"{self.phase.value}_worktime_hour",
+            "task_count",
+            *[production_volume.value for production_volume in production_volume_list],
+            *[f"{self.phase.value}_worktime_minute/{production_volume.value}" for production_volume in production_volume_list],
+        ]
+
+    def _create_worktime_line_graph_list_for_production_volume_selector(
+        self,
+        *,
+        default_production_volume: ProductionVolumeColumn,
+        tooltip_columns: list[str],
+        x_axis_label: str,
+    ) -> list[LineGraph]:
+        """生産量種別を切り替えられる作業時間折れ線グラフを生成します。"""
+        phase_name = self._get_phase_name_for_graph()
+        return [
+            LineGraph(
+                title=f"{phase_name}開始日ごとの{phase_name}作業時間",
+                y_axis_label=f"{phase_name}作業時間[時間]",
+                tooltip_columns=tooltip_columns,
+                x_axis_label=x_axis_label,
+                x_axis_type="datetime",
+            ),
+            LineGraph(
+                title=f"{phase_name}開始日ごとの{default_production_volume.name}あたり{phase_name}作業時間",
+                y_axis_label=f"{default_production_volume.name}あたり{phase_name}時間[分/{default_production_volume.name}]",
+                tooltip_columns=tooltip_columns,
+                x_axis_label=x_axis_label,
+                x_axis_type="datetime",
+            ),
+            LineGraph(
+                title=f"{phase_name}開始日ごとの{default_production_volume.name}あたり{phase_name}作業時間(1週間移動平均)",
+                y_axis_label=f"{default_production_volume.name}あたり{phase_name}時間[分/{default_production_volume.name}]",
+                tooltip_columns=tooltip_columns,
+                x_axis_label=x_axis_label,
+                x_axis_type="datetime",
+            ),
+        ]
+
+    def _add_worktime_metric_columns(self, df: pandas.DataFrame, production_volume_list: list[ProductionVolumeColumn]) -> pandas.DataFrame:
+        """生産量種別ごとの作業時間列を追加します。"""
+        df = df.copy()
+        worktime_hour_column = f"{self.phase.value}_worktime_hour"
+        worktime_minute_column_prefix = f"{self.phase.value}_worktime_minute"
+        for production_volume in production_volume_list:
+            production_volume_column = production_volume.value
+            df[f"{worktime_minute_column_prefix}/{production_volume_column}"] = df[worktime_hour_column] * 60 / df[production_volume_column]
+            df[f"{worktime_minute_column_prefix}/{production_volume_column}{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}"] = (
+                get_weekly_sum(df[worktime_hour_column]) * 60 / get_weekly_sum(df[production_volume_column])
+            )
+        return df
+
+    def _add_lines_to_worktime_selector_graphs(
+        self,
+        *,
+        line_graph_list: list[LineGraph],
+        source: ColumnDataSource,
+        default_production_volume: ProductionVolumeColumn,
+        username: str,
+        color: str,
+    ) -> None:
+        """生産量種別セレクタ付き作業時間グラフに1ユーザー分の折れ線を追加します。"""
+        x_column = f"dt_first_{self.phase.value}_started_date"
+        columns_list = [
+            (x_column, f"{self.phase.value}_worktime_hour"),
+            (x_column, f"{self.phase.value}_worktime_minute/{default_production_volume.value}"),
+            (x_column, f"{self.phase.value}_worktime_minute/{default_production_volume.value}{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}"),
+        ]
+
+        for line_graph, (line_x_column, y_column) in zip(line_graph_list, columns_list, strict=False):
+            if y_column.endswith(WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX):
+                line_graph.add_moving_average_line(
+                    source=source,
+                    x_column=line_x_column,
+                    y_column=y_column,
+                    legend_label=username,
+                    color=color,
+                )
+            else:
+                line_graph.add_line(
+                    source=source,
+                    x_column=line_x_column,
+                    y_column=y_column,
+                    legend_label=username,
+                    color=color,
+                )
+
+    def _create_layout_for_production_volume_selector_graphs(
+        self,
+        *,
+        line_graph_list: list[LineGraph],
+        plotted_users: list[tuple[str, str]],
+        production_volume_list: list[ProductionVolumeColumn],
+        metadata: dict[str, Any] | None,
+    ) -> bokeh.layouts.LayoutDOM:
+        """生産量種別セレクタ付きグラフのレイアウトを生成します。"""
+        graph_group_list: list[UIElement] = [
+            self._create_select_for_switching_worktime_production_volume(
+                production_volume_list=production_volume_list,
+                dependent_line_graph_list=line_graph_list[1:],
+            )
+        ]
+        for line_graph in line_graph_list:
+            line_graph.process_after_adding_glyphs()
+
+            widget_list: list[Widget] = []
+            hide_all_button = line_graph.create_button_hiding_showing_all_lines(is_hiding=True)
+            show_all_button = line_graph.create_button_hiding_showing_all_lines(is_hiding=False)
+            widget_list.extend([hide_all_button, show_all_button])
+
+            if len(line_graph.marker_glyphs) > 0:
+                checkbox_group = line_graph.create_checkbox_displaying_markers()
+                widget_list.append(checkbox_group)
+
+            multi_choice_widget = line_graph.create_multi_choice_widget_for_searching_user(plotted_users)
+            widget_list.append(multi_choice_widget)
+
+            widgets = bokeh.layouts.column(widget_list)
+            graph_group = bokeh.layouts.row([line_graph.figure, widgets])
+            graph_group_list.append(graph_group)
+
+        if metadata is not None:
+            graph_group_list.insert(0, create_pretext_from_metadata(metadata))
+
+        return bokeh.layouts.layout(graph_group_list)
 
     def _get_df_sequential_date(self, df: pandas.DataFrame) -> pandas.DataFrame:
         """
