@@ -688,9 +688,9 @@ class WholeProductivityPerCompletedDate:
         source = ColumnDataSource(data=df)
 
         line_graph_list = [
+            create_worktime_line_graph(),
             create_task_line_graph(),
             *[create_production_volume_line_graph(production_volume) for production_volume in production_volume_list],
-            create_worktime_line_graph(),
         ]
 
         for line_graph in line_graph_list:

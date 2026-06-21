@@ -1,5 +1,9 @@
 from pathlib import Path
+from typing import Any
 
+import pytest
+
+from annofabcli.statistics.visualization.dataframe import whole_productivity_per_date
 from annofabcli.statistics.visualization.dataframe.task import Task
 from annofabcli.statistics.visualization.dataframe.whole_productivity_per_date import (
     WholeProductivityPerCompletedDate,
@@ -89,6 +93,20 @@ class TestWholeProductivityPerCompletedDate:
         assert "cumsum_annotation_count" in html
         assert "cumsum_custom_production_volume1" in html
         assert "cumsum_custom_production_volume2" in html
+
+    def test__plot_cumulatively__累積作業時間グラフを先頭に表示する(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+        captured: dict[str, Any] = {}
+
+        def fake_write_bokeh_graph(bokeh_obj: Any, _output_file: Path) -> None:  # noqa: ANN401
+            captured["bokeh_obj"] = bokeh_obj
+
+        monkeypatch.setattr(whole_productivity_per_date, "write_bokeh_graph", fake_write_bokeh_graph)
+
+        self.main_obj.plot_cumulatively(tmp_path / "test__plot_cumulatively.html")
+
+        layout = captured["bokeh_obj"]
+        graph_titles = [child.title.text for child in layout.children[1:]]
+        assert graph_titles[0] == "日ごとの累積作業時間"
 
 
 class TestWholeProductivityPerFirstAnnotationStartedDate:
