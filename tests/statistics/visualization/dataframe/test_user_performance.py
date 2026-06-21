@@ -1,5 +1,7 @@
 from pathlib import Path
 
+import pandas
+
 from annofabcli.statistics.visualization.dataframe.task_worktime_by_phase_user import TaskWorktimeByPhaseUser
 from annofabcli.statistics.visualization.dataframe.user_performance import (
     UserPerformance,
@@ -104,6 +106,28 @@ class TestUserPerformance:
             worktime_type=WorktimeType.MONITORED,
             production_volume_column="input_data_count",
         )
+
+    def test_plot_productivity__find_userにはプロットされたユーザーだけを表示する(self, tmp_path: Path) -> None:
+        df = self.obj.df.copy()
+        not_plotted_user_df = df.iloc[[0]].copy()
+        not_plotted_user_df[("user_id", "")] = "not_plotted"
+        not_plotted_user_df[("username", "")] = "not_plotted"
+        for phase in self.obj.phase_list:
+            not_plotted_user_df[("actual_worktime_hour", phase)] = pandas.NA
+            not_plotted_user_df[("actual_worktime_hour/annotation_count", phase)] = pandas.NA
+
+        obj = UserPerformance(
+            pandas.concat([df, not_plotted_user_df], ignore_index=True),
+            self.obj.task_completion_criteria,
+            custom_production_volume_list=self.obj.custom_production_volume_list,
+        )
+
+        output_file = tmp_path / "散布図-アノテーションあたり作業時間と累計作業時間の関係-実績時間.html"
+        obj.plot_productivity(output_file, worktime_type=WorktimeType.ACTUAL, production_volume_column="annotation_count")
+
+        html = output_file.read_text(encoding="utf-8")
+        assert "AC:AC" in html
+        assert "not_plotted:not_plotted" not in html
 
     def test_plot_productivity_with_worktime_type_selector(self, tmp_path: Path) -> None:
         output_file = tmp_path / "散布図-アノテーションあたり作業時間と累計作業時間の関係.html"

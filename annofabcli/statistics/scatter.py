@@ -88,6 +88,8 @@ class ScatterGraph:
 
         self.text_glyphs: dict[str, GlyphRenderer] = {}
         """key:user_id, value: 散布図に表示している名前のGlyph"""
+        self._plotted_users: dict[str, str] = {}
+        """key:user_id, value: 散布図に表示しているユーザー名"""
         self._scatter_glyphs: dict[str, GlyphRenderer] = {}
         """key:biography, value: 散布図に表示している円形のGlyph"""
 
@@ -148,6 +150,7 @@ class ScatterGraph:
         # 1点ごとに`text`で名前を表示している理由：
         # `add_multi_choice_widget_for_searching_user`関数で追加したMultiChoice Widgetで、名前の表示スタイルを変更するため
         for x, y, username, user_id in zip(source.data[x_column_name], source.data[y_column_name], source.data[username_column_name], source.data[user_id_column_name], strict=False):
+            self._plotted_users[user_id] = username
             self.text_glyphs[user_id] = self.figure.text(
                 x=x,
                 y=y,
@@ -202,6 +205,7 @@ class ScatterGraph:
         # 1点ごとに`text`で名前を表示している理由：
         # `add_multi_choice_widget_for_searching_user`関数で追加したMultiChoice Widgetで、名前の表示スタイルを変更するため
         for x, y, username, user_id in zip(source.data[x_column_name], source.data[y_column_name], source.data[username_column_name], source.data[user_id_column_name], strict=False):
+            self._plotted_users[user_id] = username
             self.text_glyphs[user_id] = self.figure.text(
                 x=x,
                 y=y,
@@ -230,6 +234,10 @@ class ScatterGraph:
         # ユーザーが混乱しないようにするため、名前にカーソルを当てたときはツールチップが表示されないようにする。
         if self._hover_tool is not None and self._scatter_glyphs is not None:
             self._hover_tool.renderers = list(self._scatter_glyphs.values())
+
+    def get_plotted_users(self) -> list[tuple[str, str]]:
+        """散布図に表示しているユーザーのリストを返します。"""
+        return list(self._plotted_users.items())
 
     def configure_legend(self) -> None:
         """
