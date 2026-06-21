@@ -13,8 +13,9 @@ from typing import Any, assert_never
 import bokeh.layouts
 import pandas
 from annofabapi.models import TaskPhase, TaskStatus
-from bokeh.models import DataRange1d
+from bokeh.models import CustomJS, DataRange1d
 from bokeh.models.ui import UIElement
+from bokeh.models.widgets.inputs import Select
 from bokeh.models.widgets.markups import Div
 from bokeh.plotting import ColumnDataSource
 from dateutil.parser import parse
@@ -551,52 +552,68 @@ class WholeProductivityPerCompletedDate:
                 tooltip_columns=tooltip_columns,
             )
 
-        def create_task_line_graph() -> LineGraph:
+        def create_production_volume_line_graph(production_volume_list: list[ProductionVolumeColumn]) -> tuple[LineGraph, Select]:
+            def get_production_volume_name(production_volume: ProductionVolumeColumn) -> str:
+                return f"{production_volume.name}数" if production_volume.value in ["task_count", "input_data_count", "annotation_count"] else production_volume.name
+
+            default_production_volume = production_volume_list[0]
+            default_production_volume_name = get_production_volume_name(default_production_volume)
+            tooltip_columns = ["date", "working_user_count"]
+            for production_volume in production_volume_list:
+                tooltip_columns.extend([production_volume.value, f"cumsum_{production_volume.value}"])
+
             line_graph = create_line_graph(
-                title="日ごとの累積タスク数",
-                y_axis_label="タスク数",
-                tooltip_columns=[
-                    "date",
-                    "task_count",
-                    "working_user_count",
-                    "cumsum_task_count",
-                ],
-            )
-
-            # 値をプロット
-            x_column = "dt_date"
-            line_graph.add_line(
-                x_column=x_column,
-                y_column="cumsum_task_count",
-                source=source,
-                color=get_color_from_small_palette(0),
-                legend_label="タスク数",
-            )
-
-            return line_graph
-
-        def create_production_volume_line_graph(production_volume: ProductionVolumeColumn) -> LineGraph:
-            production_volume_name = f"{production_volume.name}数" if production_volume.value in ["input_data_count", "annotation_count"] else production_volume.name
-            line_graph = create_line_graph(
-                title=f"日ごとの累積{production_volume_name}",
-                y_axis_label=production_volume_name,
-                tooltip_columns=[
-                    "date",
-                    production_volume.value,
-                    "working_user_count",
-                    f"cumsum_{production_volume.value}",
-                ],
+                title=f"日ごとの累積{default_production_volume_name}",
+                y_axis_label=default_production_volume_name,
+                tooltip_columns=tooltip_columns,
             )
 
             x_column = "dt_date"
-            line_graph.add_line(
+            line_renderer, marker_renderer = line_graph.add_line(
                 x_column=x_column,
-                y_column=f"cumsum_{production_volume.value}",
+                y_column=f"cumsum_{default_production_volume.value}",
                 source=source,
                 color=get_color_from_small_palette(0),
-                legend_label=production_volume_name,
+                legend_label=default_production_volume_name,
             )
-            return line_graph
+
+            production_volume_by_value = {
+                production_volume.value: {
+                    "cumsumColumn": f"cumsum_{production_volume.value}",
+                    "name": get_production_volume_name(production_volume),
+                    "title": f"日ごとの累積{get_production_volume_name(production_volume)}",
+                }
+                for production_volume in production_volume_list
+            }
+            select_options: list[str | tuple[Any, str]] = [(production_volume.value, get_production_volume_name(production_volume)) for production_volume in production_volume_list]
+            select = Select(
+                title="生産量種別:",
+                value=default_production_volume.value,
+                options=select_options,
+                width=300,
+            )
+            select.js_on_change(
+                "value",
+                CustomJS(
+                    args={
+                        "figure": line_graph.figure,
+                        "lineRenderer": line_renderer,
+                        "markerRenderer": marker_renderer,
+                        "productionVolumeByValue": production_volume_by_value,
+                    },
+                    code="""
+                    const selected = productionVolumeByValue[this.value];
+                    for (const renderer of [lineRenderer, markerRenderer]) {
+                        renderer.glyph.y = {field: selected.cumsumColumn};
+                        renderer.glyph.change.emit();
+                    }
+                    figure.title.text = selected.title;
+                    figure.yaxis[0].axis_label = selected.name;
+                    figure.legend[0].items[0].label = {value: selected.name};
+                    """,
+                ),
+            )
+            return line_graph, select
 
         def create_worktime_line_graph() -> LineGraph:
             line_graph = create_line_graph(
@@ -678,6 +695,7 @@ class WholeProductivityPerCompletedDate:
         df["cumsum_monitored_acceptance_worktime_hour"] = df["monitored_acceptance_worktime_hour"].cumsum()
 
         production_volume_list = [
+            ProductionVolumeColumn("task_count", "タスク"),
             ProductionVolumeColumn("input_data_count", "入力データ"),
             ProductionVolumeColumn("annotation_count", "アノテーション"),
             *self.custom_production_volume_list,
@@ -686,11 +704,11 @@ class WholeProductivityPerCompletedDate:
         logger.debug(f"{output_file} を出力します。")
 
         source = ColumnDataSource(data=df)
+        production_volume_line_graph, production_volume_select = create_production_volume_line_graph(production_volume_list)
 
         line_graph_list = [
             create_worktime_line_graph(),
-            create_task_line_graph(),
-            *[create_production_volume_line_graph(production_volume) for production_volume in production_volume_list],
+            production_volume_line_graph,
         ]
 
         for line_graph in line_graph_list:
@@ -698,7 +716,11 @@ class WholeProductivityPerCompletedDate:
 
         div_element = self._create_div_element()
 
-        element_list: list[UIElement] = [div_element] + [e.figure for e in line_graph_list]
+        element_list: list[UIElement] = [
+            div_element,
+            line_graph_list[0].figure,
+            bokeh.layouts.row([line_graph_list[1].figure, production_volume_select]),
+        ]
         if metadata is not None:
             element_list.insert(0, create_pretext_from_metadata(metadata))
 

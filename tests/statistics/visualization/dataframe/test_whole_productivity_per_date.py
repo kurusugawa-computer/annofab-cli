@@ -105,8 +105,34 @@ class TestWholeProductivityPerCompletedDate:
         self.main_obj.plot_cumulatively(tmp_path / "test__plot_cumulatively.html")
 
         layout = captured["bokeh_obj"]
-        graph_titles = [child.title.text for child in layout.children[1:]]
-        assert graph_titles[0] == "日ごとの累積作業時間"
+        assert layout.children[1].title.text == "日ごとの累積作業時間"
+        production_volume_graph = layout.children[2].children[0]
+        production_volume_select = layout.children[2].children[1]
+        assert production_volume_graph.title.text == "日ごとの累積タスク数"
+        assert production_volume_select.title == "生産量種別:"
+        assert production_volume_select.options == [
+            ("task_count", "タスク数"),
+            ("input_data_count", "入力データ数"),
+            ("annotation_count", "アノテーション数"),
+            ("custom_production_volume1", "custom_生産量1"),
+            ("custom_production_volume2", "custom_生産量2"),
+        ]
+        hover_tool = next(tool for tool in production_volume_graph.toolbar.tools if hasattr(tool, "tooltips"))
+        assert hover_tool.tooltips == [
+            ("(x,y)", "($x, $y)"),
+            ("date", "@{date}"),
+            ("working_user_count", "@{working_user_count}"),
+            ("task_count", "@{task_count}"),
+            ("cumsum_task_count", "@{cumsum_task_count}"),
+            ("input_data_count", "@{input_data_count}"),
+            ("cumsum_input_data_count", "@{cumsum_input_data_count}"),
+            ("annotation_count", "@{annotation_count}"),
+            ("cumsum_annotation_count", "@{cumsum_annotation_count}"),
+            ("custom_production_volume1", "@{custom_production_volume1}"),
+            ("cumsum_custom_production_volume1", "@{cumsum_custom_production_volume1}"),
+            ("custom_production_volume2", "@{custom_production_volume2}"),
+            ("cumsum_custom_production_volume2", "@{cumsum_custom_production_volume2}"),
+        ]
 
 
 class TestWholeProductivityPerFirstAnnotationStartedDate:
