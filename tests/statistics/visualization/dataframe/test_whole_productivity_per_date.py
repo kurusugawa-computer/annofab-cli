@@ -80,7 +80,12 @@ class TestWholeProductivityPerCompletedDate:
         self.main_obj.plot(self.output_dir / "test__plot.html")
 
     def test__plot_cumulatively(self):
-        self.main_obj.plot_cumulatively(self.output_dir / "test__plot_cumulatively.html")
+        output_file = self.output_dir / "test__plot_cumulatively.html"
+        self.main_obj.plot_cumulatively(output_file)
+
+        html = output_file.read_text(encoding="utf-8")
+        assert "日ごとの累積タスク数" in html
+        assert "日ごとの累積タスク数と累積作業時間" not in html
 
 
 class TestWholeProductivityPerFirstAnnotationStartedDate:

@@ -552,54 +552,24 @@ class WholeProductivityPerCompletedDate:
 
         def create_task_line_graph() -> LineGraph:
             line_graph = create_line_graph(
-                title="日ごとの累積タスク数と累積作業時間",
+                title="日ごとの累積タスク数",
                 y_axis_label="タスク数",
                 tooltip_columns=[
                     "date",
                     "task_count",
-                    "actual_worktime_hour",
-                    "monitored_worktime_hour",
                     "working_user_count",
                     "cumsum_task_count",
-                    "cumsum_actual_worktime_hour",
-                    "cumsum_monitored_worktime_hour",
                 ],
-            )
-            line_graph.add_secondary_y_axis(
-                "作業時間[時間]",
-                secondary_y_axis_range=DataRange1d(end=max(df["cumsum_actual_worktime_hour"].max(), df["cumsum_monitored_worktime_hour"].max()) * SECONDARY_Y_RANGE_RATIO),
-                primary_y_axis_range=DataRange1d(end=df["cumsum_task_count"].max() * SECONDARY_Y_RANGE_RATIO),
             )
 
             # 値をプロット
             x_column = "dt_date"
-            plot_index = 0
             line_graph.add_line(
                 x_column=x_column,
                 y_column="cumsum_task_count",
                 source=source,
-                color=get_color_from_small_palette(plot_index),
+                color=get_color_from_small_palette(0),
                 legend_label="タスク数",
-            )
-
-            plot_index += 1
-            line_graph.add_line(
-                x_column=x_column,
-                y_column="cumsum_actual_worktime_hour",
-                source=source,
-                color=get_color_from_small_palette(plot_index),
-                legend_label="実績作業時間",
-                is_secondary_y_axis=True,
-            )
-
-            plot_index += 1
-            line_graph.add_line(
-                x_column=x_column,
-                y_column="cumsum_monitored_worktime_hour",
-                source=source,
-                color=get_color_from_small_palette(plot_index),
-                legend_label="計測作業時間",
-                is_secondary_y_axis=True,
             )
 
             return line_graph
