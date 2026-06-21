@@ -47,6 +47,35 @@ class TestAnnotatorProductivityPerDate:
         assert "annotation_worktime_minute/custom_production_volume1" in html
         assert "inspection_comment_count/custom_production_volume2" in html
 
+    def test_create_line_graph_list_for_production_volume_selector(self):
+        production_volume = ProductionVolumeColumn("annotation_count", "アノテーション")
+        worktime_tooltip_columns = [
+            "annotation_worktime_hour",
+            "annotation_worktime_minute/annotation_count",
+        ]
+        inspection_comment_tooltip_columns = [
+            *worktime_tooltip_columns,
+            "inspection_comment_count",
+            "inspection_comment_count/annotation_count",
+        ]
+
+        line_graph_list = AnnotatorProductivityPerDate._create_line_graph_list_for_production_volume_selector(
+            default_production_volume=production_volume,
+            worktime_tooltip_columns=worktime_tooltip_columns,
+            inspection_comment_tooltip_columns=inspection_comment_tooltip_columns,
+            x_axis_label="教師付開始日",
+        )
+
+        for line_graph in line_graph_list[:3]:
+            assert line_graph.tooltip_columns is not None
+            assert "inspection_comment_count" not in line_graph.tooltip_columns
+            assert "inspection_comment_count/annotation_count" not in line_graph.tooltip_columns
+
+        for line_graph in line_graph_list[3:]:
+            assert line_graph.tooltip_columns is not None
+            assert "inspection_comment_count" in line_graph.tooltip_columns
+            assert "inspection_comment_count/annotation_count" in line_graph.tooltip_columns
+
 
 class TestInspectorProductivityPerDate:
     def test_scenario(self):

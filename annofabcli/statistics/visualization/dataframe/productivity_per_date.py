@@ -632,7 +632,8 @@ class AnnotatorProductivityPerDate(AbstractPhaseProductivityPerDate):
     def _create_line_graph_list_for_production_volume_selector(
         *,
         default_production_volume: ProductionVolumeColumn,
-        tooltip_columns: list[str],
+        worktime_tooltip_columns: list[str],
+        inspection_comment_tooltip_columns: list[str],
         x_axis_label: str,
     ) -> list[LineGraph]:
         """生産量種別を切り替えられる教師付者用折れ線グラフを生成します。"""
@@ -640,35 +641,35 @@ class AnnotatorProductivityPerDate(AbstractPhaseProductivityPerDate):
             LineGraph(
                 title="教師付開始日ごとの教師付作業時間",
                 y_axis_label="教師付作業時間[時間]",
-                tooltip_columns=tooltip_columns,
+                tooltip_columns=worktime_tooltip_columns,
                 x_axis_label=x_axis_label,
                 x_axis_type="datetime",
             ),
             LineGraph(
                 title=f"教師付開始日ごとの{default_production_volume.name}あたり教師付作業時間",
                 y_axis_label=f"{default_production_volume.name}あたり教師付時間[分/{default_production_volume.name}]",
-                tooltip_columns=tooltip_columns,
+                tooltip_columns=worktime_tooltip_columns,
                 x_axis_label=x_axis_label,
                 x_axis_type="datetime",
             ),
             LineGraph(
                 title=f"教師付開始日ごとの{default_production_volume.name}あたり教師付作業時間(1週間移動平均)",
                 y_axis_label=f"{default_production_volume.name}あたり教師付時間[分/{default_production_volume.name}]",
-                tooltip_columns=tooltip_columns,
+                tooltip_columns=worktime_tooltip_columns,
                 x_axis_label=x_axis_label,
                 x_axis_type="datetime",
             ),
             LineGraph(
                 title=f"教師付開始日ごとの{default_production_volume.name}あたり検査コメント数",
                 y_axis_label=f"{default_production_volume.name}あたり検査コメント数",
-                tooltip_columns=tooltip_columns,
+                tooltip_columns=inspection_comment_tooltip_columns,
                 x_axis_label=x_axis_label,
                 x_axis_type="datetime",
             ),
             LineGraph(
                 title=f"教師付開始日ごとの{default_production_volume.name}あたり検査コメント数(1週間移動平均)",
                 y_axis_label=f"{default_production_volume.name}あたり検査コメント数",
-                tooltip_columns=tooltip_columns,
+                tooltip_columns=inspection_comment_tooltip_columns,
                 x_axis_label=x_axis_label,
                 x_axis_type="datetime",
             ),
@@ -789,7 +790,7 @@ class AnnotatorProductivityPerDate(AbstractPhaseProductivityPerDate):
 
         x_axis_label = "教師付開始日"
         production_volume_columns = [production_volume.value for production_volume in production_volume_list]
-        tooltip_columns = [
+        worktime_tooltip_columns = [
             "user_id",
             "username",
             "biography",
@@ -798,12 +799,16 @@ class AnnotatorProductivityPerDate(AbstractPhaseProductivityPerDate):
             "task_count",
             *production_volume_columns,
             *[f"annotation_worktime_minute/{production_volume.value}" for production_volume in production_volume_list],
+        ]
+        inspection_comment_tooltip_columns = [
+            *worktime_tooltip_columns,
             "inspection_comment_count",
             *[f"inspection_comment_count/{production_volume.value}" for production_volume in production_volume_list],
         ]
         line_graph_list = self._create_line_graph_list_for_production_volume_selector(
             default_production_volume=default_production_volume,
-            tooltip_columns=tooltip_columns,
+            worktime_tooltip_columns=worktime_tooltip_columns,
+            inspection_comment_tooltip_columns=inspection_comment_tooltip_columns,
             x_axis_label=x_axis_label,
         )
 
