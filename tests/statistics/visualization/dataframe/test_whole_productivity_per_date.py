@@ -83,6 +83,52 @@ class TestWholeProductivityPerCompletedDate:
     def test__plot(self):
         self.main_obj.plot(self.output_dir / "test__plot.html")
 
+    def test__plot__累積折れ線と対応したグラフ構成にする(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+        captured: dict[str, Any] = {}
+
+        def fake_write_bokeh_graph(bokeh_obj: Any, _output_file: Path) -> None:  # noqa: ANN401
+            captured["bokeh_obj"] = bokeh_obj
+
+        monkeypatch.setattr(whole_productivity_per_date, "write_bokeh_graph", fake_write_bokeh_graph)
+
+        self.main_obj.plot(tmp_path / "test__plot.html")
+
+        layout = captured["bokeh_obj"]
+        assert layout.children[1].title.text == "日ごとの作業時間"
+
+        production_volume_graph = layout.children[2].children[0]
+        production_volume_select = layout.children[2].children[1]
+        assert production_volume_graph.title.text == "日ごとのタスク数"
+        assert production_volume_select.title == "生産量種別:"
+        assert production_volume_select.options == [
+            ("task_count", "タスク数"),
+            ("input_data_count", "入力データ数"),
+            ("annotation_count", "アノテーション数"),
+            ("custom_production_volume1", "custom_生産量1"),
+            ("custom_production_volume2", "custom_生産量2"),
+        ]
+        hover_tool = next(tool for tool in production_volume_graph.toolbar.tools if hasattr(tool, "tooltips"))
+        assert hover_tool.tooltips == [
+            ("(x,y)", "($x, $y)"),
+            ("date", "@{date}"),
+            ("actual_worktime_hour", "@{actual_worktime_hour}"),
+            ("monitored_worktime_hour", "@{monitored_worktime_hour}"),
+            ("task_count", "@{task_count}"),
+            ("input_data_count", "@{input_data_count}"),
+            ("annotation_count", "@{annotation_count}"),
+            ("custom_production_volume1", "@{custom_production_volume1}"),
+            ("custom_production_volume2", "@{custom_production_volume2}"),
+        ]
+
+        productivity_graph = layout.children[3].children[0]
+        productivity_select = layout.children[3].children[1]
+        assert productivity_graph.title.text == "日ごとのタスク数あたり作業時間"
+        assert productivity_select.title == "生産量種別:"
+        assert productivity_select.options == production_volume_select.options
+        callback = productivity_select.js_property_callbacks["change:value"][0]
+        assert "yAxis.axis_label = `${selected.name}あたり作業時間[分/${selected.name}]`;" in callback.code
+        assert "legendItems[i * 2].label.value = legendName;" in callback.code
+
     def test__plot_cumulatively(self):
         output_file = self.output_dir / "test__plot_cumulatively.html"
         self.main_obj.plot_cumulatively(output_file)

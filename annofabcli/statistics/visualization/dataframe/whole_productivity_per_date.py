@@ -293,7 +293,7 @@ class WholeProductivityPerCompletedDate:
             elm_list.append("<p>タスクが検査フェーズに到達したら作業が完了したとみなしているため、検査作業時間と受入作業時間は0にしています。</p>")
         return Div(text=" ".join(elm_list))
 
-    def plot(
+    def plot(  # noqa: PLR0915
         self,
         output_file: Path,
         *,
@@ -342,96 +342,181 @@ class WholeProductivityPerCompletedDate:
                 tooltip_columns=tooltip_columns,
             )
 
-        def create_task_line_graph() -> LineGraph:
+        def get_production_volume_name(production_volume: ProductionVolumeColumn) -> str:
+            return f"{production_volume.name}数" if production_volume.value in ["task_count", "input_data_count", "annotation_count"] else production_volume.name
+
+        def create_production_volume_line_graph(production_volume_list: list[ProductionVolumeColumn]) -> tuple[LineGraph, Select]:
+            default_production_volume = production_volume_list[0]
+            default_production_volume_name = get_production_volume_name(default_production_volume)
+            tooltip_columns = [
+                "date",
+                "actual_worktime_hour",
+                "monitored_worktime_hour",
+                *[production_volume.value for production_volume in production_volume_list],
+            ]
             line_graph = create_line_graph(
-                title="日ごとのタスク数と作業時間",
-                y_axis_label="タスク数",
-                tooltip_columns=["date", "task_count", "actual_worktime_hour", "monitored_worktime_hour", "working_user_count"],
-            )
-            line_graph.add_secondary_y_axis(
-                "作業時間[時間]",
-                secondary_y_axis_range=DataRange1d(end=max(df["actual_worktime_hour"].max(), df["monitored_worktime_hour"].max()) * SECONDARY_Y_RANGE_RATIO),
-                primary_y_axis_range=DataRange1d(end=df["task_count"].max() * SECONDARY_Y_RANGE_RATIO),
+                title=f"日ごとの{default_production_volume_name}",
+                y_axis_label=default_production_volume_name,
+                tooltip_columns=tooltip_columns,
             )
 
-            plot_index = 0
-            _plot_and_moving_average(
-                line_graph,
+            line_renderer, marker_renderer = line_graph.add_line(
+                x_column="dt_date",
+                y_column=default_production_volume.value,
+                source=source,
+                color=get_color_from_small_palette(0),
+                legend_label=default_production_volume_name,
+            )
+            moving_average_renderer = line_graph.add_moving_average_line(
                 source=source,
                 x_column="dt_date",
-                y_column="task_count",
-                legend_name="タスク数",
-                color=get_color_from_small_palette(plot_index),
+                y_column=f"{default_production_volume.value}{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}",
+                color=get_color_from_small_palette(0),
+                legend_label=f"{default_production_volume_name}の1週間移動平均",
             )
 
-            plot_index += 1
-            _plot_and_moving_average(
-                line_graph,
-                source=source,
-                x_column="dt_date",
-                y_column="actual_worktime_hour",
-                legend_name="実績作業時間",
-                color=get_color_from_small_palette(plot_index),
-                is_secondary_y_axis=True,
+            production_volume_by_value = {
+                production_volume.value: {
+                    "movingAverageColumn": f"{production_volume.value}{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}",
+                    "name": get_production_volume_name(production_volume),
+                    "title": f"日ごとの{get_production_volume_name(production_volume)}",
+                    "valueColumn": production_volume.value,
+                }
+                for production_volume in production_volume_list
+            }
+            select_options: list[str | tuple[Any, str]] = [(production_volume.value, get_production_volume_name(production_volume)) for production_volume in production_volume_list]
+            select = Select(
+                title="生産量種別:",
+                value=default_production_volume.value,
+                options=select_options,
+                width=300,
             )
-
-            plot_index += 1
-            _plot_and_moving_average(
-                line_graph,
-                source=source,
-                x_column="dt_date",
-                y_column="monitored_worktime_hour",
-                legend_name="計測作業時間",
-                color=get_color_from_small_palette(plot_index),
-                is_secondary_y_axis=True,
+            select.js_on_change(
+                "value",
+                CustomJS(
+                    args={
+                        "figureTitle": line_graph.figure.title,
+                        "legendItems": line_graph.figure.legend[0].items,
+                        "lineRenderer": line_renderer,
+                        "markerRenderer": marker_renderer,
+                        "movingAverageRenderer": moving_average_renderer,
+                        "productionVolumeByValue": production_volume_by_value,
+                        "yAxis": line_graph.figure.yaxis[0],
+                    },
+                    code="""
+                    const selected = productionVolumeByValue[this.value];
+                    for (const renderer of [lineRenderer, markerRenderer]) {
+                        renderer.glyph.y.field = selected.valueColumn;
+                        renderer.glyph.change.emit();
+                    }
+                    movingAverageRenderer.glyph.y.field = selected.movingAverageColumn;
+                    movingAverageRenderer.glyph.change.emit();
+                    figureTitle.text = selected.title;
+                    figureTitle.change.emit();
+                    yAxis.axis_label = selected.name;
+                    yAxis.change.emit();
+                    legendItems[0].label.value = selected.name;
+                    legendItems[0].change.emit();
+                    legendItems[1].label.value = `${selected.name}の1週間移動平均`;
+                    legendItems[1].change.emit();
+                    """,
+                ),
             )
-            return line_graph
+            return line_graph, select
 
-        def create_input_data_line_graph() -> LineGraph:
+        def create_productivity_line_graph(production_volume_list: list[ProductionVolumeColumn], phase_prefix: list[tuple[str, str]]) -> tuple[LineGraph, Select]:
+            default_production_volume = production_volume_list[0]
+            default_production_volume_name = get_production_volume_name(default_production_volume)
+            tooltip_columns = [
+                "date",
+                "actual_worktime_hour",
+                "monitored_worktime_hour",
+                *[production_volume.value for production_volume in production_volume_list],
+                *[f"{prefix}_minute/{production_volume.value}" for production_volume in production_volume_list for prefix, _ in phase_prefix],
+            ]
             line_graph = create_line_graph(
-                title="日ごとの入力データ数と作業時間",
-                y_axis_label="入力データ数",
-                tooltip_columns=["date", "input_data_count", "actual_worktime_hour", "monitored_worktime_hour", "working_user_count"],
-            )
-            line_graph.add_secondary_y_axis(
-                "作業時間[時間]",
-                secondary_y_axis_range=DataRange1d(end=max(df["actual_worktime_hour"].max(), df["monitored_worktime_hour"].max()) * SECONDARY_Y_RANGE_RATIO),
-                primary_y_axis_range=DataRange1d(end=df["input_data_count"].max() * SECONDARY_Y_RANGE_RATIO),
+                title=f"日ごとの{default_production_volume_name}あたり作業時間",
+                y_axis_label=f"{default_production_volume_name}あたり作業時間[分/{default_production_volume_name}]",
+                tooltip_columns=tooltip_columns,
             )
 
-            plot_index = 0
-            _plot_and_moving_average(
-                line_graph,
-                source=source,
-                x_column="dt_date",
-                y_column="input_data_count",
-                legend_name="入力データ数",
-                color=get_color_from_small_palette(plot_index),
-            )
+            line_renderers = []
+            marker_renderers = []
+            moving_average_renderers = []
+            for plot_index, (prefix, phase_name) in enumerate(phase_prefix):
+                color = get_color_from_small_palette(plot_index)
+                line_renderer, marker_renderer = line_graph.add_line(
+                    source=source,
+                    x_column="dt_date",
+                    y_column=f"{prefix}_minute/{default_production_volume.value}",
+                    color=color,
+                    legend_label=f"{default_production_volume_name}あたり{phase_name}",
+                )
+                moving_average_renderer = line_graph.add_moving_average_line(
+                    source=source,
+                    x_column="dt_date",
+                    y_column=f"{prefix}_minute/{default_production_volume.value}{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}",
+                    color=color,
+                    legend_label=f"{default_production_volume_name}あたり{phase_name}の1週間移動平均",
+                )
+                line_renderers.append(line_renderer)
+                marker_renderers.append(marker_renderer)
+                moving_average_renderers.append(moving_average_renderer)
 
-            plot_index += 1
-            _plot_and_moving_average(
-                line_graph,
-                source=source,
-                x_column="dt_date",
-                y_column="actual_worktime_hour",
-                legend_name="実績作業時間",
-                color=get_color_from_small_palette(plot_index),
-                is_secondary_y_axis=True,
+            production_volume_by_value = {
+                production_volume.value: {
+                    "columns": [f"{prefix}_minute/{production_volume.value}" for prefix, _ in phase_prefix],
+                    "movingAverageColumns": [f"{prefix}_minute/{production_volume.value}{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}" for prefix, _ in phase_prefix],
+                    "name": get_production_volume_name(production_volume),
+                    "title": f"日ごとの{get_production_volume_name(production_volume)}あたり作業時間",
+                }
+                for production_volume in production_volume_list
+            }
+            phase_names = [phase_name for _, phase_name in phase_prefix]
+            select_options: list[str | tuple[Any, str]] = [(production_volume.value, get_production_volume_name(production_volume)) for production_volume in production_volume_list]
+            select = Select(
+                title="生産量種別:",
+                value=default_production_volume.value,
+                options=select_options,
+                width=300,
             )
+            select.js_on_change(
+                "value",
+                CustomJS(
+                    args={
+                        "figureTitle": line_graph.figure.title,
+                        "legendItems": line_graph.figure.legend[0].items,
+                        "lineRenderers": line_renderers,
+                        "markerRenderers": marker_renderers,
+                        "movingAverageRenderers": moving_average_renderers,
+                        "phaseNames": phase_names,
+                        "productionVolumeByValue": production_volume_by_value,
+                        "yAxis": line_graph.figure.yaxis[0],
+                    },
+                    code="""
+                    const selected = productionVolumeByValue[this.value];
+                    for (let i = 0; i < lineRenderers.length; i++) {
+                        for (const renderer of [lineRenderers[i], markerRenderers[i]]) {
+                            renderer.glyph.y.field = selected.columns[i];
+                            renderer.glyph.change.emit();
+                        }
+                        movingAverageRenderers[i].glyph.y.field = selected.movingAverageColumns[i];
+                        movingAverageRenderers[i].glyph.change.emit();
 
-            plot_index += 1
-            _plot_and_moving_average(
-                line_graph,
-                source=source,
-                x_column="dt_date",
-                y_column="monitored_worktime_hour",
-                legend_name="計測作業時間",
-                color=get_color_from_small_palette(plot_index),
-                is_secondary_y_axis=True,
+                        const legendName = `${selected.name}あたり${phaseNames[i]}`;
+                        legendItems[i * 2].label.value = legendName;
+                        legendItems[i * 2].change.emit();
+                        legendItems[i * 2 + 1].label.value = `${legendName}の1週間移動平均`;
+                        legendItems[i * 2 + 1].change.emit();
+                    }
+                    figureTitle.text = selected.title;
+                    figureTitle.change.emit();
+                    yAxis.axis_label = `${selected.name}あたり作業時間[分/${selected.name}]`;
+                    yAxis.change.emit();
+                    """,
+                ),
             )
-
-            return line_graph
+            return line_graph, select
 
         if not self._validate_df_for_output(output_file):
             return
@@ -440,6 +525,7 @@ class WholeProductivityPerCompletedDate:
         df["dt_date"] = df["date"].map(lambda e: parse(e).date())
 
         production_volume_list = [
+            ProductionVolumeColumn("task_count", "タスク"),
             ProductionVolumeColumn("input_data_count", "入力データ"),
             ProductionVolumeColumn("annotation_count", "アノテーション"),
             *self.custom_production_volume_list,
@@ -460,77 +546,49 @@ class WholeProductivityPerCompletedDate:
             # 条件分岐の理由：実績作業時間がないときは、非計測作業時間がマイナス値になり、分かりづらいグラフになるため。必要なときのみ非計測作業時間をプロットする
             phase_prefix.append(("unmonitored_worktime", "非計測作業時間"))
 
-        fig_info_list = [
-            {
-                "line_graph": create_line_graph(
-                    title="日ごとの作業時間",
-                    y_axis_label="作業時間[時間]",
-                    tooltip_columns=[
-                        "date",
-                        "actual_worktime_hour",
-                        "monitored_worktime_hour",
-                        "monitored_annotation_worktime_hour",
-                        "monitored_inspection_worktime_hour",
-                        "monitored_acceptance_worktime_hour",
-                        "working_user_count",
-                    ],
-                ),
-                "y_info_list": [{"column": f"{e[0]}_hour", "legend": f"{e[1]}"} for e in phase_prefix],
-            },
-        ]
-
-        for info in production_volume_list:
-            fig_info_list.append(  # noqa: PERF401
-                {
-                    "line_graph": create_line_graph(
-                        title=f"日ごとの{info.name}あたり作業時間",
-                        y_axis_label=f"{info.name}あたり作業時間[分/{info.name}]",
-                        tooltip_columns=[
-                            "date",
-                            info.value,
-                            "actual_worktime_hour",
-                            "monitored_worktime_hour",
-                            "monitored_annotation_worktime_hour",
-                            "monitored_inspection_worktime_hour",
-                            "monitored_acceptance_worktime_hour",
-                            f"actual_worktime_minute/{info.value}",
-                            f"monitored_worktime_minute/{info.value}",
-                            f"monitored_annotation_worktime_minute/{info.value}",
-                            f"monitored_inspection_worktime_minute/{info.value}",
-                            f"monitored_acceptance_worktime_minute/{info.value}",
-                        ],
-                    ),
-                    "y_info_list": [{"column": f"{e[0]}_minute/{info.value}", "legend": f"{info.name}あたり{e[1]}"} for e in phase_prefix],
-                }
-            )
-
         source = ColumnDataSource(data=df)
 
-        for fig_info in fig_info_list:
-            y_info_list: list[dict[str, str]] = fig_info["y_info_list"]  # type: ignore[assignment]
-            for index, y_info in enumerate(y_info_list):
-                color = get_color_from_small_palette(index)
-                line_graph: LineGraph = fig_info["line_graph"]  # type: ignore[assignment]
-                _plot_and_moving_average(
-                    line_graph=line_graph,
-                    x_column="dt_date",
-                    y_column=y_info["column"],
-                    legend_name=y_info["legend"],
-                    source=source,
-                    color=color,
-                )
+        worktime_line_graph = create_line_graph(
+            title="日ごとの作業時間",
+            y_axis_label="作業時間[時間]",
+            tooltip_columns=[
+                "date",
+                "actual_worktime_hour",
+                "monitored_worktime_hour",
+                "monitored_annotation_worktime_hour",
+                "monitored_inspection_worktime_hour",
+                "monitored_acceptance_worktime_hour",
+                "working_user_count",
+            ],
+        )
+        for index, (prefix, phase_name) in enumerate(phase_prefix):
+            _plot_and_moving_average(
+                line_graph=worktime_line_graph,
+                x_column="dt_date",
+                y_column=f"{prefix}_hour",
+                legend_name=phase_name,
+                source=source,
+                color=get_color_from_small_palette(index),
+            )
+        production_volume_line_graph, production_volume_select = create_production_volume_line_graph(production_volume_list)
+        productivity_line_graph, productivity_select = create_productivity_line_graph(production_volume_list, phase_prefix)
 
         line_graph_list = [
-            create_task_line_graph(),
-            create_input_data_line_graph(),
+            worktime_line_graph,
+            production_volume_line_graph,
+            productivity_line_graph,
         ]
-        line_graph_list.extend([info["line_graph"] for info in fig_info_list])  # type: ignore[misc]
 
         for line_graph in line_graph_list:
             line_graph.process_after_adding_glyphs()
 
         div_element = self._create_div_element()
-        element_list: list[UIElement] = [div_element] + [e.figure for e in line_graph_list]
+        element_list: list[UIElement] = [
+            div_element,
+            line_graph_list[0].figure,
+            bokeh.layouts.row([line_graph_list[1].figure, production_volume_select]),
+            bokeh.layouts.row([line_graph_list[2].figure, productivity_select]),
+        ]
         if metadata is not None:
             element_list.insert(0, create_pretext_from_metadata(metadata))
 
