@@ -320,8 +320,7 @@ class WholeProductivityPerCompletedDate:
             df[f"monitored_worktime_hour/task_count{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}"] = get_weekly_sum(df["monitored_worktime_hour"]) / get_weekly_sum(df["task_count"])
 
             for column in [
-                "task_count",
-                "input_data_count",
+                *[e.value for e in production_volume_list],
                 "actual_worktime_hour",
                 "monitored_worktime_hour",
                 "monitored_annotation_worktime_hour",

@@ -107,6 +107,9 @@ class TestWholeProductivityPerCompletedDate:
             ("custom_production_volume1", "custom_生産量1"),
             ("custom_production_volume2", "custom_生産量2"),
         ]
+        data_source = production_volume_graph.renderers[0].data_source
+        assert "custom_production_volume1__lastweek" in data_source.data
+        assert "custom_production_volume2__lastweek" in data_source.data
         hover_tool = next(tool for tool in production_volume_graph.toolbar.tools if hasattr(tool, "tooltips"))
         assert hover_tool.tooltips == [
             ("(x,y)", "($x, $y)"),
