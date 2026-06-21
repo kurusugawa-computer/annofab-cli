@@ -142,7 +142,7 @@ class ProjectDir(DataClassJsonMixin):
         phase_name = self.get_phase_name_for_filename(phase)
 
         obj.plot_production_volume_metrics_with_selector(
-            output_file=output_dir / f"{phase_name}者用/累積折れ線-横軸_アノテーション数-{phase_name}者用.html",
+            output_file=output_dir / f"{phase_name}者用/累積折れ線-横軸_生産量-{phase_name}者用.html",
             target_user_id_list=user_id_list,
             metadata=self.metadata,
             include_input_data_count=not minimal_output,
@@ -161,6 +161,14 @@ class ProjectDir(DataClassJsonMixin):
         """
         output_dir = self.project_dir / "line-graph"
         phase_name = self.get_phase_name_for_filename(phase)
+        if phase == TaskPhase.ANNOTATION:
+            obj.plot_production_volume_metrics_with_selector(
+                output_file=output_dir / Path(f"{phase_name}者用/折れ線-横軸_{phase_name}開始日-縦軸_生産量単位の指標-{phase_name}者用.html"),
+                target_user_id_list=user_id_list,
+                metadata=self.metadata,
+            )
+            return
+
         obj.plot_production_volume_metrics(
             production_volume_column="annotation_count",
             production_volume_name="アノテーション",

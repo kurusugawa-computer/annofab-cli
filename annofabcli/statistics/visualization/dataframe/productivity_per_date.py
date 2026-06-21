@@ -12,7 +12,10 @@ from typing import Any
 import bokeh.layouts
 import pandas
 from annofabapi.models import TaskPhase
+from bokeh.models import CustomJS
+from bokeh.models.renderers.glyph_renderer import GlyphRenderer
 from bokeh.models.ui import UIElement
+from bokeh.models.widgets.inputs import Select
 from bokeh.models.widgets.widget import Widget
 from bokeh.plotting import ColumnDataSource
 from dateutil.parser import parse
@@ -142,6 +145,24 @@ class AbstractPhaseProductivityPerDate(abc.ABC):
     ) -> None:
         raise NotImplementedError()
 
+    def plot_production_volume_metrics_with_selector(
+        self,
+        output_file: Path,
+        *,
+        target_user_id_list: list[str] | None = None,
+        metadata: dict[str, Any] | None = None,
+    ) -> None:
+        """生産量種別を切り替えられる折れ線グラフを出力します。"""
+        raise NotImplementedError()
+
+    def _get_production_volume_list_for_plot(self) -> list[ProductionVolumeColumn]:
+        """折れ線グラフで切り替えられる生産量種別を取得します。"""
+        return [
+            ProductionVolumeColumn("annotation_count", "アノテーション"),
+            *self.custom_production_volume_list,
+            ProductionVolumeColumn("input_data_count", "入力データ"),
+        ]
+
     def _get_df_sequential_date(self, df: pandas.DataFrame) -> pandas.DataFrame:
         """
         グラフにプロットするために、連続した日付のDataFrameを生成する。
@@ -225,6 +246,315 @@ class AnnotatorProductivityPerDate(AbstractPhaseProductivityPerDate):
     def from_df_wrapper(cls, task_worktime_by_phase_user: TaskWorktimeByPhaseUser) -> AnnotatorProductivityPerDate:
         df = create_df_productivity_per_date(task_worktime_by_phase_user, TaskPhase.ANNOTATION)
         return cls(df, custom_production_volume_list=task_worktime_by_phase_user.custom_production_volume_list)
+
+    @staticmethod
+    def _get_glyph_list(line_graph: LineGraph) -> list[GlyphRenderer]:
+        """折れ線グラフのY軸列を切り替える対象のGlyphを取得します。"""
+        glyph_list: list[GlyphRenderer] = []
+        glyph_list.extend(line_graph.line_glyphs.values())
+        glyph_list.extend(line_graph.marker_glyphs.values())
+        return glyph_list
+
+    @staticmethod
+    def _create_select_for_switching_production_volume(
+        *,
+        production_volume_list: list[ProductionVolumeColumn],
+        dependent_line_graph_list: list[LineGraph],
+    ) -> Select:
+        """生産量種別を切り替えるためのSelectを生成します。"""
+        default_production_volume = production_volume_list[0]
+        options: list[str | tuple[Any, str]] = [(production_volume.value, production_volume.name) for production_volume in production_volume_list]
+        select = Select(
+            title="生産量種別:",
+            value=default_production_volume.value,
+            options=options,
+            width=300,
+        )
+
+        y_column_by_value = {
+            production_volume.value: [
+                f"annotation_worktime_minute/{production_volume.value}",
+                f"annotation_worktime_minute/{production_volume.value}{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}",
+                f"inspection_comment_count/{production_volume.value}",
+                f"inspection_comment_count/{production_volume.value}{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}",
+            ]
+            for production_volume in production_volume_list
+        }
+        title_by_value = {
+            production_volume.value: [
+                f"教師付開始日ごとの{production_volume.name}あたり教師付作業時間",
+                f"教師付開始日ごとの{production_volume.name}あたり教師付作業時間(1週間移動平均)",
+                f"教師付開始日ごとの{production_volume.name}あたり検査コメント数",
+                f"教師付開始日ごとの{production_volume.name}あたり検査コメント数(1週間移動平均)",
+            ]
+            for production_volume in production_volume_list
+        }
+        y_axis_label_by_value = {
+            production_volume.value: [
+                f"{production_volume.name}あたり教師付時間[分/{production_volume.name}]",
+                f"{production_volume.name}あたり教師付時間[分/{production_volume.name}]",
+                f"{production_volume.name}あたり検査コメント数",
+                f"{production_volume.name}あたり検査コメント数",
+            ]
+            for production_volume in production_volume_list
+        }
+
+        select.js_on_change(
+            "value",
+            CustomJS(
+                args={
+                    "glyphListByGraphIndex": {str(index): AnnotatorProductivityPerDate._get_glyph_list(line_graph) for index, line_graph in enumerate(dependent_line_graph_list)},
+                    "figureList": [line_graph.figure for line_graph in dependent_line_graph_list],
+                    "titleByValue": title_by_value,
+                    "yAxisLabelByValue": y_axis_label_by_value,
+                    "yAxisList": [line_graph.figure.yaxis[0] for line_graph in dependent_line_graph_list],
+                    "yColumnByValue": y_column_by_value,
+                },
+                code="""
+                const selectedValue = this.value;
+
+                for (const graphIndex in glyphListByGraphIndex) {
+                    const yColumn = yColumnByValue[selectedValue][Number(graphIndex)];
+                    for (const glyphRenderer of glyphListByGraphIndex[graphIndex]) {
+                        for (const glyph of [glyphRenderer.glyph, glyphRenderer.nonselection_glyph, glyphRenderer.muted_glyph]) {
+                            if (glyph == null) {
+                                continue;
+                            }
+                            glyph.y = {field: yColumn};
+                            glyph.change.emit();
+                        }
+                        glyphRenderer.change.emit();
+                    }
+                }
+
+                figureList.forEach((figure, index) => {
+                    figure.title.text = titleByValue[selectedValue][index];
+                    yAxisList[index].axis_label = yAxisLabelByValue[selectedValue][index];
+                    yAxisList[index].change.emit();
+                    figure.y_range.change.emit();
+                    figure.change.emit();
+                });
+                """,
+            ),
+        )
+        return select
+
+    @staticmethod
+    def _create_line_graph_list_for_production_volume_selector(
+        *,
+        default_production_volume: ProductionVolumeColumn,
+        tooltip_columns: list[str],
+        x_axis_label: str,
+    ) -> list[LineGraph]:
+        """生産量種別を切り替えられる教師付者用折れ線グラフを生成します。"""
+        return [
+            LineGraph(
+                title="教師付開始日ごとの教師付作業時間",
+                y_axis_label="教師付作業時間[時間]",
+                tooltip_columns=tooltip_columns,
+                x_axis_label=x_axis_label,
+                x_axis_type="datetime",
+            ),
+            LineGraph(
+                title=f"教師付開始日ごとの{default_production_volume.name}あたり教師付作業時間",
+                y_axis_label=f"{default_production_volume.name}あたり教師付時間[分/{default_production_volume.name}]",
+                tooltip_columns=tooltip_columns,
+                x_axis_label=x_axis_label,
+                x_axis_type="datetime",
+            ),
+            LineGraph(
+                title=f"教師付開始日ごとの{default_production_volume.name}あたり教師付作業時間(1週間移動平均)",
+                y_axis_label=f"{default_production_volume.name}あたり教師付時間[分/{default_production_volume.name}]",
+                tooltip_columns=tooltip_columns,
+                x_axis_label=x_axis_label,
+                x_axis_type="datetime",
+            ),
+            LineGraph(
+                title=f"教師付開始日ごとの{default_production_volume.name}あたり検査コメント数",
+                y_axis_label=f"{default_production_volume.name}あたり検査コメント数",
+                tooltip_columns=tooltip_columns,
+                x_axis_label=x_axis_label,
+                x_axis_type="datetime",
+            ),
+            LineGraph(
+                title=f"教師付開始日ごとの{default_production_volume.name}あたり検査コメント数(1週間移動平均)",
+                y_axis_label=f"{default_production_volume.name}あたり検査コメント数",
+                tooltip_columns=tooltip_columns,
+                x_axis_label=x_axis_label,
+                x_axis_type="datetime",
+            ),
+        ]
+
+    @staticmethod
+    def _add_production_volume_metric_columns(df: pandas.DataFrame, production_volume_list: list[ProductionVolumeColumn]) -> pandas.DataFrame:
+        """生産量種別ごとの教師付時間と検査コメント数の列を追加します。"""
+        df = df.copy()
+        for production_volume in production_volume_list:
+            production_volume_column = production_volume.value
+            df[f"annotation_worktime_minute/{production_volume_column}"] = df["annotation_worktime_hour"] * 60 / df[production_volume_column]
+            df[f"annotation_worktime_minute/{production_volume_column}{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}"] = (
+                get_weekly_sum(df["annotation_worktime_hour"]) * 60 / get_weekly_sum(df[production_volume_column])
+            )
+            df[f"inspection_comment_count/{production_volume_column}{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}"] = get_weekly_sum(df["inspection_comment_count"]) / get_weekly_sum(
+                df[production_volume_column]
+            )
+        return df
+
+    @staticmethod
+    def _add_lines_to_production_volume_selector_graphs(
+        *,
+        line_graph_list: list[LineGraph],
+        source: ColumnDataSource,
+        default_production_volume: ProductionVolumeColumn,
+        username: str,
+        color: str,
+    ) -> None:
+        """生産量種別セレクタ付きグラフに1ユーザー分の折れ線を追加します。"""
+        x_column = "dt_first_annotation_started_date"
+        columns_list = [
+            (x_column, "annotation_worktime_hour"),
+            (x_column, f"annotation_worktime_minute/{default_production_volume.value}"),
+            (x_column, f"annotation_worktime_minute/{default_production_volume.value}{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}"),
+            (x_column, f"inspection_comment_count/{default_production_volume.value}"),
+            (x_column, f"inspection_comment_count/{default_production_volume.value}{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}"),
+        ]
+
+        for line_graph, (line_x_column, y_column) in zip(line_graph_list, columns_list, strict=False):
+            if y_column.endswith(WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX):
+                line_graph.add_moving_average_line(
+                    source=source,
+                    x_column=line_x_column,
+                    y_column=y_column,
+                    legend_label=username,
+                    color=color,
+                )
+            else:
+                line_graph.add_line(
+                    source=source,
+                    x_column=line_x_column,
+                    y_column=y_column,
+                    legend_label=username,
+                    color=color,
+                )
+
+    def _create_layout_for_production_volume_selector_graphs(
+        self,
+        *,
+        line_graph_list: list[LineGraph],
+        plotted_users: list[tuple[str, str]],
+        production_volume_list: list[ProductionVolumeColumn],
+        metadata: dict[str, Any] | None,
+    ) -> bokeh.layouts.LayoutDOM:
+        """生産量種別セレクタ付きグラフのレイアウトを生成します。"""
+        graph_group_list: list[UIElement] = [
+            self._create_select_for_switching_production_volume(
+                production_volume_list=production_volume_list,
+                dependent_line_graph_list=line_graph_list[1:],
+            )
+        ]
+        for line_graph in line_graph_list:
+            line_graph.process_after_adding_glyphs()
+
+            widget_list: list[Widget] = []
+            hide_all_button = line_graph.create_button_hiding_showing_all_lines(is_hiding=True)
+            show_all_button = line_graph.create_button_hiding_showing_all_lines(is_hiding=False)
+            widget_list.extend([hide_all_button, show_all_button])
+
+            if len(line_graph.marker_glyphs) > 0:
+                checkbox_group = line_graph.create_checkbox_displaying_markers()
+                widget_list.append(checkbox_group)
+
+            multi_choice_widget = line_graph.create_multi_choice_widget_for_searching_user(plotted_users)
+            widget_list.append(multi_choice_widget)
+
+            widgets = bokeh.layouts.column(widget_list)
+            graph_group = bokeh.layouts.row([line_graph.figure, widgets])
+            graph_group_list.append(graph_group)
+
+        if metadata is not None:
+            graph_group_list.insert(0, create_pretext_from_metadata(metadata))
+
+        return bokeh.layouts.layout(graph_group_list)
+
+    def plot_production_volume_metrics_with_selector(
+        self,
+        output_file: Path,
+        *,
+        target_user_id_list: list[str] | None = None,
+        metadata: dict[str, Any] | None = None,
+    ) -> None:
+        """生産量種別を切り替えられる教師付者用の生産性折れ線グラフを出力します。"""
+        if not self._validate_df_for_output(output_file):
+            return
+
+        df = self.df.copy()
+
+        if target_user_id_list is not None:
+            user_id_list = target_user_id_list
+        else:
+            user_id_list = df.sort_values(by="user_id")["user_id"].dropna().unique().tolist()
+
+        user_id_list = get_plotted_user_id_list(user_id_list)
+        production_volume_list = self._get_production_volume_list_for_plot()
+        default_production_volume = production_volume_list[0]
+
+        x_axis_label = "教師付開始日"
+        production_volume_columns = [production_volume.value for production_volume in production_volume_list]
+        tooltip_columns = [
+            "user_id",
+            "username",
+            "biography",
+            "first_annotation_started_date",
+            "annotation_worktime_hour",
+            "task_count",
+            *production_volume_columns,
+            *[f"annotation_worktime_minute/{production_volume.value}" for production_volume in production_volume_list],
+            "inspection_comment_count",
+            *[f"inspection_comment_count/{production_volume.value}" for production_volume in production_volume_list],
+        ]
+        line_graph_list = self._create_line_graph_list_for_production_volume_selector(
+            default_production_volume=default_production_volume,
+            tooltip_columns=tooltip_columns,
+            x_axis_label=x_axis_label,
+        )
+
+        logger.debug(f"{output_file} を出力します。")
+
+        line_count = 0
+        plotted_users: list[tuple[str, str]] = []
+        for user_index, user_id in enumerate(user_id_list):
+            df_subset = df[df["user_id"] == user_id]
+            if df_subset.empty:
+                logger.debug(f"dataframe is empty. user_id = {user_id}")
+                continue
+
+            df_subset = self._get_df_sequential_date(df_subset)
+            df_subset = self._add_production_volume_metric_columns(df_subset, production_volume_list)
+            source = ColumnDataSource(data=df_subset)
+            color = get_color_from_palette(user_index)
+            username = df_subset.iloc[0]["username"]
+
+            line_count += 1
+            self._add_lines_to_production_volume_selector_graphs(
+                line_graph_list=line_graph_list,
+                source=source,
+                default_production_volume=default_production_volume,
+                username=username,
+                color=color,
+            )
+            plotted_users.append((user_id, username))
+
+        if line_count == 0:
+            logger.warning(f"プロットするデータがなかっため、'{output_file}'は出力しません。")
+            return
+
+        layout = self._create_layout_for_production_volume_selector_graphs(
+            line_graph_list=line_graph_list,
+            plotted_users=plotted_users,
+            production_volume_list=production_volume_list,
+            metadata=metadata,
+        )
+        write_bokeh_graph(layout, output_file)
 
     def plot_production_volume_metrics(
         self,

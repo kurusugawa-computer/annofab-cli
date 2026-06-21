@@ -31,11 +31,12 @@ class TestAnnotatorCumulativeProductivity:
         )
 
         obj = AnnotatorCumulativeProductivity.from_df_wrapper(task_worktime_by_phase_user)
-        output_file = tmp_path / "累積折れ線-横軸_アノテーション数-教師付者用.html"
+        output_file = tmp_path / "累積折れ線-横軸_生産量-教師付者用.html"
         obj.plot_production_volume_metrics_with_selector(output_file)
 
         html = output_file.read_text(encoding="utf-8")
         assert '"name":"Select"' in html
+        assert "xAxisList" in html
         assert "cumulative_annotation_count" in html
         assert "cumulative_input_data_count" in html
         assert "cumulative_custom_production_volume1" in html

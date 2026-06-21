@@ -197,6 +197,7 @@ class AbstractPhaseCumulativeProductivity(abc.ABC):
                     "glyphList": AbstractPhaseCumulativeProductivity._get_glyph_list(line_graph_list),
                     "figureList": [line_graph.figure for line_graph in line_graph_list],
                     "titleByValue": title_by_value,
+                    "xAxisList": [line_graph.figure.xaxis[0] for line_graph in line_graph_list],
                     "xAxisLabelByValue": x_axis_label_by_value,
                     "xColumnByValue": x_column_by_value,
                 },
@@ -217,7 +218,8 @@ class AbstractPhaseCumulativeProductivity(abc.ABC):
 
                 figureList.forEach((figure, index) => {
                     figure.title.text = titleByValue[selectedValue][index];
-                    figure.xaxis[0].axis_label = xAxisLabelByValue[selectedValue];
+                    xAxisList[index].axis_label = xAxisLabelByValue[selectedValue];
+                    xAxisList[index].change.emit();
                     figure.x_range.change.emit();
                     figure.change.emit();
                 });
