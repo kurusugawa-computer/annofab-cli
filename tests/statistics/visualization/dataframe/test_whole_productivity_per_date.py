@@ -86,6 +86,14 @@ class TestWholeProductivityPerCompletedDate:
         html = output_file.read_text(encoding="utf-8")
         assert "日ごとの累積タスク数" in html
         assert "日ごとの累積タスク数と累積作業時間" not in html
+        assert "日ごとの累積入力データ数" in html
+        assert "日ごとの累積入力データ数と累積作業時間" not in html
+        assert "日ごとの累積アノテーション数" in html
+        assert "日ごとの累積custom_生産量1" in html
+        assert "日ごとの累積custom_生産量2" in html
+        assert "cumsum_annotation_count" in html
+        assert "cumsum_custom_production_volume1" in html
+        assert "cumsum_custom_production_volume2" in html
 
 
 class TestWholeProductivityPerFirstAnnotationStartedDate:
