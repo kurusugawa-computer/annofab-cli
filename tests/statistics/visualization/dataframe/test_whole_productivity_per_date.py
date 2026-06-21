@@ -126,16 +126,17 @@ class TestWholeProductivityPerCompletedDate:
         assert hover_tool.tooltips == [
             ("(x,y)", "($x, $y)"),
             ("date", "@{date}"),
-            ("working_user_count", "@{working_user_count}"),
+            ("actual_worktime_hour", "@{actual_worktime_hour}"),
+            ("monitored_worktime_hour", "@{monitored_worktime_hour}"),
             ("task_count", "@{task_count}"),
-            ("cumsum_task_count", "@{cumsum_task_count}"),
             ("input_data_count", "@{input_data_count}"),
-            ("cumsum_input_data_count", "@{cumsum_input_data_count}"),
             ("annotation_count", "@{annotation_count}"),
-            ("cumsum_annotation_count", "@{cumsum_annotation_count}"),
             ("custom_production_volume1", "@{custom_production_volume1}"),
-            ("cumsum_custom_production_volume1", "@{cumsum_custom_production_volume1}"),
             ("custom_production_volume2", "@{custom_production_volume2}"),
+            ("cumsum_task_count", "@{cumsum_task_count}"),
+            ("cumsum_input_data_count", "@{cumsum_input_data_count}"),
+            ("cumsum_annotation_count", "@{cumsum_annotation_count}"),
+            ("cumsum_custom_production_volume1", "@{cumsum_custom_production_volume1}"),
             ("cumsum_custom_production_volume2", "@{cumsum_custom_production_volume2}"),
         ]
 

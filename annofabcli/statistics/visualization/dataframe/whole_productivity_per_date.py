@@ -558,9 +558,13 @@ class WholeProductivityPerCompletedDate:
 
             default_production_volume = production_volume_list[0]
             default_production_volume_name = get_production_volume_name(default_production_volume)
-            tooltip_columns = ["date", "working_user_count"]
-            for production_volume in production_volume_list:
-                tooltip_columns.extend([production_volume.value, f"cumsum_{production_volume.value}"])
+            tooltip_columns = [
+                "date",
+                "actual_worktime_hour",
+                "monitored_worktime_hour",
+                *[production_volume.value for production_volume in production_volume_list],
+                *[f"cumsum_{production_volume.value}" for production_volume in production_volume_list],
+            ]
 
             line_graph = create_line_graph(
                 title=f"日ごとの累積{default_production_volume_name}",
