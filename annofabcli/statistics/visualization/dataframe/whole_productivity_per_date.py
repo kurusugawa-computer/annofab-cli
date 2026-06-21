@@ -596,20 +596,25 @@ class WholeProductivityPerCompletedDate:
                 "value",
                 CustomJS(
                     args={
-                        "figure": line_graph.figure,
+                        "figureTitle": line_graph.figure.title,
+                        "legendItem": line_graph.figure.legend[0].items[0],
                         "lineRenderer": line_renderer,
                         "markerRenderer": marker_renderer,
                         "productionVolumeByValue": production_volume_by_value,
+                        "yAxis": line_graph.figure.yaxis[0],
                     },
                     code="""
                     const selected = productionVolumeByValue[this.value];
                     for (const renderer of [lineRenderer, markerRenderer]) {
-                        renderer.glyph.y = {field: selected.cumsumColumn};
+                        renderer.glyph.y.field = selected.cumsumColumn;
                         renderer.glyph.change.emit();
                     }
-                    figure.title.text = selected.title;
-                    figure.yaxis[0].axis_label = selected.name;
-                    figure.legend[0].items[0].label = {value: selected.name};
+                    figureTitle.text = selected.title;
+                    figureTitle.change.emit();
+                    yAxis.axis_label = selected.name;
+                    yAxis.change.emit();
+                    legendItem.label.value = selected.name;
+                    legendItem.change.emit();
                     """,
                 ),
             )

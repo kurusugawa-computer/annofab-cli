@@ -117,6 +117,11 @@ class TestWholeProductivityPerCompletedDate:
             ("custom_production_volume1", "custom_生産量1"),
             ("custom_production_volume2", "custom_生産量2"),
         ]
+        callback = production_volume_select.js_property_callbacks["change:value"][0]
+        assert "yAxis.axis_label = selected.name;" in callback.code
+        assert "yAxis.change.emit();" in callback.code
+        assert "legendItem.label.value = selected.name;" in callback.code
+        assert "legendItem.change.emit();" in callback.code
         hover_tool = next(tool for tool in production_volume_graph.toolbar.tools if hasattr(tool, "tooltips"))
         assert hover_tool.tooltips == [
             ("(x,y)", "($x, $y)"),
