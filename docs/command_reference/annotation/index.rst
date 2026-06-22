@@ -23,6 +23,7 @@ Available Commands
    copy
    create_classification
    delete
+   delete_invalid_attribute_value
    download
    dump
    import
