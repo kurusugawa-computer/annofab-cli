@@ -393,6 +393,7 @@ class WholeProductivityPerCompletedDate:
                 "value",
                 CustomJS(
                     args={
+                        "figure": line_graph.figure,
                         "figureTitle": line_graph.figure.title,
                         "legendItems": line_graph.figure.legend[0].items,
                         "lineRenderer": line_renderer,
@@ -400,19 +401,24 @@ class WholeProductivityPerCompletedDate:
                         "movingAverageRenderer": moving_average_renderer,
                         "productionVolumeByValue": production_volume_by_value,
                         "yAxis": line_graph.figure.yaxis[0],
+                        "yRange": line_graph.figure.y_range,
                     },
                     code="""
                     const selected = productionVolumeByValue[this.value];
                     for (const renderer of [lineRenderer, markerRenderer]) {
                         renderer.glyph.y.field = selected.valueColumn;
                         renderer.glyph.change.emit();
+                        renderer.change.emit();
                     }
                     movingAverageRenderer.glyph.y.field = selected.movingAverageColumn;
                     movingAverageRenderer.glyph.change.emit();
+                    movingAverageRenderer.change.emit();
                     figureTitle.text = selected.title;
                     figureTitle.change.emit();
                     yAxis.axis_label = selected.name;
                     yAxis.change.emit();
+                    yRange.change.emit();
+                    figure.change.emit();
                     legendItems[0].label.value = selected.name;
                     legendItems[0].change.emit();
                     legendItems[1].label.value = `${selected.name}の1週間移動平均`;
@@ -482,6 +488,7 @@ class WholeProductivityPerCompletedDate:
                 "value",
                 CustomJS(
                     args={
+                        "figure": line_graph.figure,
                         "figureTitle": line_graph.figure.title,
                         "legendItems": line_graph.figure.legend[0].items,
                         "lineRenderers": line_renderers,
@@ -490,6 +497,7 @@ class WholeProductivityPerCompletedDate:
                         "phaseNames": phase_names,
                         "productionVolumeByValue": production_volume_by_value,
                         "yAxis": line_graph.figure.yaxis[0],
+                        "yRange": line_graph.figure.y_range,
                     },
                     code="""
                     const selected = productionVolumeByValue[this.value];
@@ -497,9 +505,11 @@ class WholeProductivityPerCompletedDate:
                         for (const renderer of [lineRenderers[i], markerRenderers[i]]) {
                             renderer.glyph.y.field = selected.columns[i];
                             renderer.glyph.change.emit();
+                            renderer.change.emit();
                         }
                         movingAverageRenderers[i].glyph.y.field = selected.movingAverageColumns[i];
                         movingAverageRenderers[i].glyph.change.emit();
+                        movingAverageRenderers[i].change.emit();
 
                         const legendName = `${selected.name}あたり${phaseNames[i]}`;
                         legendItems[i * 2].label.value = legendName;
@@ -511,6 +521,8 @@ class WholeProductivityPerCompletedDate:
                     figureTitle.change.emit();
                     yAxis.axis_label = `${selected.name}あたり作業時間[分/${selected.name}]`;
                     yAxis.change.emit();
+                    yRange.change.emit();
+                    figure.change.emit();
                     """,
                 ),
             )
@@ -656,23 +668,28 @@ class WholeProductivityPerCompletedDate:
                 "value",
                 CustomJS(
                     args={
+                        "figure": line_graph.figure,
                         "figureTitle": line_graph.figure.title,
                         "legendItem": line_graph.figure.legend[0].items[0],
                         "lineRenderer": line_renderer,
                         "markerRenderer": marker_renderer,
                         "productionVolumeByValue": production_volume_by_value,
                         "yAxis": line_graph.figure.yaxis[0],
+                        "yRange": line_graph.figure.y_range,
                     },
                     code="""
                     const selected = productionVolumeByValue[this.value];
                     for (const renderer of [lineRenderer, markerRenderer]) {
                         renderer.glyph.y.field = selected.cumsumColumn;
                         renderer.glyph.change.emit();
+                        renderer.change.emit();
                     }
                     figureTitle.text = selected.title;
                     figureTitle.change.emit();
                     yAxis.axis_label = selected.name;
                     yAxis.change.emit();
+                    yRange.change.emit();
+                    figure.change.emit();
                     legendItem.label.value = selected.name;
                     legendItem.change.emit();
                     """,
@@ -1130,6 +1147,7 @@ class WholeProductivityPerFirstAnnotationStartedDate:
                 "value",
                 CustomJS(
                     args={
+                        "figure": line_graph.figure,
                         "figureTitle": line_graph.figure.title,
                         "legendItems": line_graph.figure.legend[0].items,
                         "lineRenderer": line_renderer,
@@ -1137,19 +1155,24 @@ class WholeProductivityPerFirstAnnotationStartedDate:
                         "movingAverageRenderer": moving_average_renderer,
                         "productionVolumeByValue": production_volume_by_value,
                         "yAxis": line_graph.figure.yaxis[0],
+                        "yRange": line_graph.figure.y_range,
                     },
                     code="""
                     const selected = productionVolumeByValue[this.value];
                     for (const renderer of [lineRenderer, markerRenderer]) {
                         renderer.glyph.y.field = selected.valueColumn;
                         renderer.glyph.change.emit();
+                        renderer.change.emit();
                     }
                     movingAverageRenderer.glyph.y.field = selected.movingAverageColumn;
                     movingAverageRenderer.glyph.change.emit();
+                    movingAverageRenderer.change.emit();
                     figureTitle.text = selected.title;
                     figureTitle.change.emit();
                     yAxis.axis_label = selected.name;
                     yAxis.change.emit();
+                    yRange.change.emit();
+                    figure.change.emit();
                     legendItems[0].label.value = selected.name;
                     legendItems[0].change.emit();
                     legendItems[1].label.value = `${selected.name}の1週間移動平均`;
@@ -1217,6 +1240,7 @@ class WholeProductivityPerFirstAnnotationStartedDate:
                 "value",
                 CustomJS(
                     args={
+                        "figure": line_graph.figure,
                         "figureTitle": line_graph.figure.title,
                         "legendItems": line_graph.figure.legend[0].items,
                         "lineRenderers": line_renderers,
@@ -1225,6 +1249,7 @@ class WholeProductivityPerFirstAnnotationStartedDate:
                         "phaseNames": phase_names,
                         "productionVolumeByValue": production_volume_by_value,
                         "yAxis": line_graph.figure.yaxis[0],
+                        "yRange": line_graph.figure.y_range,
                     },
                     code="""
                     const selected = productionVolumeByValue[this.value];
@@ -1232,9 +1257,11 @@ class WholeProductivityPerFirstAnnotationStartedDate:
                         for (const renderer of [lineRenderers[i], markerRenderers[i]]) {
                             renderer.glyph.y.field = selected.columns[i];
                             renderer.glyph.change.emit();
+                            renderer.change.emit();
                         }
                         movingAverageRenderers[i].glyph.y.field = selected.movingAverageColumns[i];
                         movingAverageRenderers[i].glyph.change.emit();
+                        movingAverageRenderers[i].change.emit();
 
                         const legendName = `${selected.name}あたり${phaseNames[i]}`;
                         legendItems[i * 2].label.value = legendName;
@@ -1246,6 +1273,8 @@ class WholeProductivityPerFirstAnnotationStartedDate:
                     figureTitle.change.emit();
                     yAxis.axis_label = `${selected.name}あたり作業時間[分/${selected.name}]`;
                     yAxis.change.emit();
+                    yRange.change.emit();
+                    figure.change.emit();
                     """,
                 ),
             )

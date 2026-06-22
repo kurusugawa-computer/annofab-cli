@@ -110,6 +110,11 @@ class TestWholeProductivityPerCompletedDate:
         data_source = production_volume_graph.renderers[0].data_source
         assert "custom_production_volume1__lastweek" in data_source.data
         assert "custom_production_volume2__lastweek" in data_source.data
+        callback = production_volume_select.js_property_callbacks["change:value"][0]
+        assert "renderer.change.emit();" in callback.code
+        assert "movingAverageRenderer.change.emit();" in callback.code
+        assert "yRange.change.emit();" in callback.code
+        assert "figure.change.emit();" in callback.code
         hover_tool = next(tool for tool in production_volume_graph.toolbar.tools if hasattr(tool, "tooltips"))
         assert hover_tool.tooltips == [
             ("(x,y)", "($x, $y)"),
@@ -131,6 +136,10 @@ class TestWholeProductivityPerCompletedDate:
         callback = productivity_select.js_property_callbacks["change:value"][0]
         assert "yAxis.axis_label = `${selected.name}あたり作業時間[分/${selected.name}]`;" in callback.code
         assert "legendItems[i * 2].label.value = legendName;" in callback.code
+        assert "renderer.change.emit();" in callback.code
+        assert "movingAverageRenderers[i].change.emit();" in callback.code
+        assert "yRange.change.emit();" in callback.code
+        assert "figure.change.emit();" in callback.code
 
     def test__plot_cumulatively(self):
         output_file = self.output_dir / "test__plot_cumulatively.html"
@@ -171,6 +180,9 @@ class TestWholeProductivityPerCompletedDate:
         assert "yAxis.change.emit();" in callback.code
         assert "legendItem.label.value = selected.name;" in callback.code
         assert "legendItem.change.emit();" in callback.code
+        assert "renderer.change.emit();" in callback.code
+        assert "yRange.change.emit();" in callback.code
+        assert "figure.change.emit();" in callback.code
         hover_tool = next(tool for tool in production_volume_graph.toolbar.tools if hasattr(tool, "tooltips"))
         assert hover_tool.tooltips == [
             ("(x,y)", "($x, $y)"),
@@ -271,6 +283,11 @@ class TestWholeProductivityPerFirstAnnotationStartedDate:
         data_source = production_volume_graph.renderers[0].data_source
         assert "custom_production_volume1__lastweek" in data_source.data
         assert "custom_production_volume2__lastweek" in data_source.data
+        callback = production_volume_select.js_property_callbacks["change:value"][0]
+        assert "renderer.change.emit();" in callback.code
+        assert "movingAverageRenderer.change.emit();" in callback.code
+        assert "yRange.change.emit();" in callback.code
+        assert "figure.change.emit();" in callback.code
 
         productivity_graph = layout.children[3].children[0]
         productivity_select = layout.children[3].children[1]
@@ -280,3 +297,7 @@ class TestWholeProductivityPerFirstAnnotationStartedDate:
         callback = productivity_select.js_property_callbacks["change:value"][0]
         assert "yAxis.axis_label = `${selected.name}あたり作業時間[分/${selected.name}]`;" in callback.code
         assert "legendItems[i * 2].label.value = legendName;" in callback.code
+        assert "renderer.change.emit();" in callback.code
+        assert "movingAverageRenderers[i].change.emit();" in callback.code
+        assert "yRange.change.emit();" in callback.code
+        assert "figure.change.emit();" in callback.code
