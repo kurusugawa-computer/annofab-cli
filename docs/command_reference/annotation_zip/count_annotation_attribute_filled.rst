@@ -14,6 +14,7 @@ Examples
 
 デフォルトではタスク単位で属性の個数を集計します。
 出力結果の ``filled`` キーは、値が入力されている属性の個数、 ``empty`` キーは値が入力されていない属性の個数を表します。
+属性値が ``null`` または空文字列の場合は ``empty`` 、それ以外の場合は ``filled`` として集計されます。
 
 
 .. code-block::
@@ -63,7 +64,7 @@ Examples
 
 
 .. code-block:: json
-    :caption: out_by_task.json
+    :caption: out_by_input_data.json
 
     [
         {
@@ -74,7 +75,6 @@ Examples
             "task_phase_stage": 1,
             "input_data_id": "input1",
             "input_data_name": "input1",
-            "frame_no": 1,
             "updated_datetime": "2023-10-01T12:00:00.000+09:00",
             "annotation_attribute_counts": {
                 "car": {
@@ -93,18 +93,22 @@ Examples
                         "filled": 20
                     }
                 }
-            }
+            },
+            "frame_no": 1
         }
     ]
 
 
-デフォルトでは、On/Off属性（チェックボックス）は集計対象外です。On/Off属性は基本的に常に「入力されている」と判定されるためです。
+``--project_id`` を指定した場合、デフォルトではOn/Off属性（チェックボックス）は集計対象外です。On/Off属性は基本的に常に「入力されている」と判定されるためです。
 ``--include_flag_attribute`` を指定すると、On/Off属性も集計対象にします。
+``--annotation`` のみを指定した場合はアノテーション仕様を参照できないため、On/Off属性も集計対象になります。
 
 
 出力結果
 =================================
     
+CSVの属性の列は3行のヘッダーで表します。1行目がラベル名、2行目が属性名、3行目が ``filled`` または ``empty`` です。
+
 
 タスクごとに集計した結果をCSVで出力
 ----------------------------------------------------
