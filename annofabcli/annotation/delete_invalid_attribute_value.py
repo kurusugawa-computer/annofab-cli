@@ -310,7 +310,7 @@ class DeleteInvalidAttributeValueOfAnnotation(CommandLine):
 
         if args.backup is None:
             print(  # noqa: T201
-                "間違えてアノテーション属性値を削除してしまっときに復元できるようにするため、'--backup'でバックアップ用のディレクトリを指定することを推奨します。",
+                "間違えてアノテーション属性値を削除してしまったときに復元できるようにするため、'--backup'でバックアップ用のディレクトリを指定することを推奨します。",
                 file=sys.stderr,
             )
             if not self.confirm_processing("復元用のバックアップディレクトリが指定されていません。処理を続行しますか？"):
