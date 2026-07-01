@@ -352,29 +352,23 @@ class Task:
             worktime_column: str,
             title: str,
             production_volume_list: list[ProductionVolumeColumn],
-        ) -> LayoutDOM:
+        ) -> figure:
             df_for_histogram = df_for_histogram[df_for_histogram[worktime_column].notna()].copy()
             worktime_ser = df_for_histogram[worktime_column]
             hist, bin_edges = numpy.histogram(worktime_ser, bins=BIN_COUNT)
 
             additional_frequency_columns: dict[str, numpy.ndarray] = {}
-            production_volume_by_value: dict[str, dict[str, str]] = {}
             for index, production_volume in enumerate(production_volume_list):
                 frequency_column = create_frequency_column_name(index)
-                production_volume_name = get_production_volume_name(production_volume)
                 if production_volume.value == "task_count":
                     additional_frequency_columns[frequency_column] = hist
                 else:
                     weights = df_for_histogram[production_volume.value].fillna(0)
                     additional_frequency_columns[frequency_column] = numpy.histogram(worktime_ser, bins=bin_edges, weights=weights)[0]
-                production_volume_by_value[production_volume.value] = {
-                    "column": frequency_column,
-                    "name": production_volume_name,
-                }
 
             default_production_volume = production_volume_list[0]
-            default_frequency_column = production_volume_by_value[default_production_volume.value]["column"]
-            default_production_volume_name = production_volume_by_value[default_production_volume.value]["name"]
+            default_frequency_column = create_frequency_column_name(0)
+            default_production_volume_name = get_production_volume_name(default_production_volume)
             sub_title = get_sub_title_from_series(worktime_ser, decimals=decimals)
 
             fig = create_histogram_figure(
@@ -390,12 +384,20 @@ class Task:
                 title=title,
                 sub_title=sub_title,
             )
-            quad_renderer = fig.renderers[-1]
-            hover = next(tool for tool in fig.toolbar.tools if isinstance(tool, HoverTool))
+            return fig
+
+        def create_select_for_switching_production_volume(figures: list[figure], production_volume_list: list[ProductionVolumeColumn]) -> Select:
+            production_volume_by_value = {
+                production_volume.value: {
+                    "column": create_frequency_column_name(index),
+                    "name": get_production_volume_name(production_volume),
+                }
+                for index, production_volume in enumerate(production_volume_list)
+            }
             select_options: list[str | tuple[Any, str]] = [(production_volume.value, get_production_volume_name(production_volume)) for production_volume in production_volume_list]
             select = Select(
                 title="生産量種別:",
-                value=default_production_volume.value,
+                value=production_volume_list[0].value,
                 options=select_options,
                 width=300,
             )
@@ -403,32 +405,37 @@ class Task:
                 "value",
                 CustomJS(
                     args={
-                        "figure": fig,
-                        "hover": hover,
+                        "figures": figures,
+                        "hovers": [next(tool for tool in fig.toolbar.tools if isinstance(tool, HoverTool)) for fig in figures],
                         "productionVolumeByValue": production_volume_by_value,
-                        "quadRenderer": quad_renderer,
-                        "yAxis": fig.yaxis[0],
-                        "yRange": fig.y_range,
+                        "quadRenderers": [fig.renderers[-1] for fig in figures],
+                        "yAxes": [fig.yaxis[0] for fig in figures],
+                        "yRanges": [fig.y_range for fig in figures],
                     },
                     code="""
                     const selected = productionVolumeByValue[this.value];
-                    quadRenderer.glyph.top.field = selected.column;
-                    quadRenderer.glyph.change.emit();
-                    quadRenderer.change.emit();
-                    hover.tooltips = [
-                        ["interval", "@interval"],
-                        ["width", "@width"],
-                        [selected.name, `@{${selected.column}}`],
-                    ];
-                    hover.change.emit();
-                    yAxis.axis_label = selected.name;
-                    yAxis.change.emit();
-                    yRange.change.emit();
-                    figure.change.emit();
+                    for (let i = 0; i < quadRenderers.length; i++) {
+                        const renderer = quadRenderers[i];
+                        renderer.glyph.top.field = selected.column;
+                        renderer.glyph.change.emit();
+                        renderer.change.emit();
+
+                        hovers[i].tooltips = [
+                            ["interval", "@interval"],
+                            ["width", "@width"],
+                            [selected.name, `@{${selected.column}}`],
+                        ];
+                        hovers[i].change.emit();
+
+                        yAxes[i].axis_label = selected.name;
+                        yAxes[i].change.emit();
+                        yRanges[i].change.emit();
+                        figures[i].change.emit();
+                    }
                     """,
                 ),
             )
-            return bokeh.layouts.column(select, fig)
+            return select
 
         if not self._validate_df_for_output(output_file):
             return
@@ -457,7 +464,7 @@ class Task:
             {"title": "総作業時間", "column": "worktime_hour"},
         ]
 
-        figure_list = []
+        figure_list: list[figure] = []
 
         decimals = 2
         for histogram in histogram_list:
@@ -486,7 +493,8 @@ class Task:
             )
         )
 
-        nested_figure_list = convert_1d_figure_list_to_2d(figure_list, ncols=3)
+        nested_figure_list: list[list[LayoutDOM | None]] = [[create_select_for_switching_production_volume(figure_list, production_volume_list)]]
+        nested_figure_list.extend(convert_1d_figure_list_to_2d(figure_list, ncols=3))
         if metadata is not None:
             nested_figure_list.insert(0, [create_pretext_from_metadata(metadata)])
 

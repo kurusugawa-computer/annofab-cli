@@ -81,6 +81,7 @@ class TestTask:
         obj.plot_histogram_of_worktime(output_file)
 
         actual = output_file.read_text(encoding="utf-8")
+        assert actual.count('"name":"Select"') == 1
         assert r"\u751f\u7523\u91cf\u7a2e\u5225:" in actual
         assert "input_data_count" in actual
         assert "annotation_count" in actual
