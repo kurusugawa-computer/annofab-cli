@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import datetime
 import logging
+from dataclasses import dataclass
+from itertools import pairwise
 from pathlib import Path
 from typing import Any
 
@@ -28,6 +30,17 @@ logger = logging.getLogger(__name__)
 
 BIN_COUNT = 20
 """ヒストグラムのビンの個数"""
+
+
+@dataclass(frozen=True)
+class WorktimeHistogram:
+    """作業時間ヒストグラムと、単位ごとのサブタイトル。"""
+
+    bokeh_figure: figure
+    """ヒストグラムのBokeh figure。"""
+
+    sub_title_by_value: dict[str, str]
+    """作業時間の単位ごとのサブタイトル。"""
 
 
 class Task:
@@ -333,7 +346,7 @@ class Task:
         df_merged = pandas.concat(df_list)
         return Task(df_merged, custom_production_volume_list=custom_production_volume_list)
 
-    def plot_histogram_of_worktime(self, output_file: Path, *, metadata: dict[str, Any] | None = None) -> None:
+    def plot_histogram_of_worktime(self, output_file: Path, *, metadata: dict[str, Any] | None = None) -> None:  # noqa: PLR0915
         """作業時間に関する情報をヒストグラムでプロットする。
 
         Args:
@@ -346,57 +359,93 @@ class Task:
         def create_frequency_column_name(index: int) -> str:
             return f"frequency_{index}"
 
+        def create_left_column_name(index: int) -> str:
+            return f"left_{index}"
+
+        def create_right_column_name(index: int) -> str:
+            return f"right_{index}"
+
+        def create_interval_column_name(index: int) -> str:
+            return f"interval_{index}"
+
+        def create_width_column_name(index: int) -> str:
+            return f"width_{index}"
+
+        def get_x_axis_label(production_volume: ProductionVolumeColumn) -> str:
+            return f"{production_volume.name}あたり作業時間[時間/{production_volume.name}]"
+
         def create_histogram(
             df_for_histogram: pandas.DataFrame,
             *,
             worktime_column: str,
             title: str,
             production_volume_list: list[ProductionVolumeColumn],
-        ) -> figure:
+        ) -> WorktimeHistogram:
             df_for_histogram = df_for_histogram[df_for_histogram[worktime_column].notna()].copy()
+            default_production_volume = production_volume_list[0]
+            default_production_volume_name = get_production_volume_name(default_production_volume)
             worktime_ser = df_for_histogram[worktime_column]
-            hist, bin_edges = numpy.histogram(worktime_ser, bins=BIN_COUNT)
+            default_hist, default_bin_edges = numpy.histogram(worktime_ser, bins=BIN_COUNT)
 
-            additional_frequency_columns: dict[str, numpy.ndarray] = {}
+            additional_columns: dict[str, numpy.ndarray | list[str]] = {}
+            sub_title_by_value: dict[str, str] = {}
             for index, production_volume in enumerate(production_volume_list):
                 frequency_column = create_frequency_column_name(index)
-                if production_volume.value == "task_count":
-                    additional_frequency_columns[frequency_column] = hist
-                else:
-                    weights = df_for_histogram[production_volume.value].fillna(0)
-                    additional_frequency_columns[frequency_column] = numpy.histogram(worktime_ser, bins=bin_edges, weights=weights)[0]
+                left_column = create_left_column_name(index)
+                right_column = create_right_column_name(index)
+                interval_column = create_interval_column_name(index)
+                width_column = create_width_column_name(index)
 
-            default_production_volume = production_volume_list[0]
+                if production_volume.value == "task_count":
+                    ser = worktime_ser
+                    weights = None
+                else:
+                    positive_volume = df_for_histogram[production_volume.value].fillna(0) > 0
+                    ser = df_for_histogram.loc[positive_volume, worktime_column] / df_for_histogram.loc[positive_volume, production_volume.value]
+                    weights = df_for_histogram.loc[positive_volume, production_volume.value]
+
+                hist, bin_edges = numpy.histogram(ser, bins=BIN_COUNT, weights=weights)
+                sub_title_by_value[production_volume.value] = get_sub_title_from_series(ser, decimals=decimals)
+                additional_columns[frequency_column] = hist
+                additional_columns[left_column] = bin_edges[:-1]
+                additional_columns[right_column] = bin_edges[1:]
+                additional_columns[interval_column] = [f"{left:.1f} to {right:.1f}" for left, right in pairwise(bin_edges)]
+                additional_columns[width_column] = [f"{(right - left):.1f}" for left, right in pairwise(bin_edges)]
+
             default_frequency_column = create_frequency_column_name(0)
-            default_production_volume_name = get_production_volume_name(default_production_volume)
-            sub_title = get_sub_title_from_series(worktime_ser, decimals=decimals)
 
             fig = create_histogram_figure(
-                hist,
-                bin_edges,
-                x_axis_label="作業時間[時間]",
+                default_hist,
+                default_bin_edges,
+                x_axis_label=get_x_axis_label(default_production_volume),
                 y_axis_label=default_production_volume_name,
                 frequency_column=HistogramFrequencyColumn(
-                    additional_columns=additional_frequency_columns,
+                    additional_columns=additional_columns,
                     display_column=default_frequency_column,
                     display_label=default_production_volume_name,
                 ),
                 title=title,
-                sub_title=sub_title,
+                sub_title=sub_title_by_value[default_production_volume.value],
             )
-            return fig
+            return WorktimeHistogram(bokeh_figure=fig, sub_title_by_value=sub_title_by_value)
 
-        def create_select_for_switching_production_volume(figures: list[figure], production_volume_list: list[ProductionVolumeColumn]) -> Select:
+        def create_select_for_switching_production_volume(worktime_histogram_list: list[WorktimeHistogram], production_volume_list: list[ProductionVolumeColumn]) -> Select:
+            figures = [histogram.bokeh_figure for histogram in worktime_histogram_list]
             production_volume_by_value = {
                 production_volume.value: {
                     "column": create_frequency_column_name(index),
+                    "intervalColumn": create_interval_column_name(index),
+                    "leftColumn": create_left_column_name(index),
                     "name": get_production_volume_name(production_volume),
+                    "rightColumn": create_right_column_name(index),
+                    "widthColumn": create_width_column_name(index),
+                    "xAxisLabel": get_x_axis_label(production_volume),
                 }
                 for index, production_volume in enumerate(production_volume_list)
             }
-            select_options: list[str | tuple[Any, str]] = [(production_volume.value, get_production_volume_name(production_volume)) for production_volume in production_volume_list]
+            select_options: list[str | tuple[Any, str]] = [(production_volume.value, production_volume.name) for production_volume in production_volume_list]
             select = Select(
-                title="生産量種別:",
+                title="作業時間の単位:",
                 value=production_volume_list[0].value,
                 options=select_options,
                 width=300,
@@ -409,6 +458,10 @@ class Task:
                         "hovers": [next(tool for tool in fig.toolbar.tools if isinstance(tool, HoverTool)) for fig in figures],
                         "productionVolumeByValue": production_volume_by_value,
                         "quadRenderers": [fig.renderers[-1] for fig in figures],
+                        "subTitleElements": [fig.above[0] for fig in figures],
+                        "subTitlesByFigure": [histogram.sub_title_by_value for histogram in worktime_histogram_list],
+                        "xAxes": [fig.xaxis[0] for fig in figures],
+                        "xRanges": [fig.x_range for fig in figures],
                         "yAxes": [fig.yaxis[0] for fig in figures],
                         "yRanges": [fig.y_range for fig in figures],
                     },
@@ -417,18 +470,25 @@ class Task:
                     for (let i = 0; i < quadRenderers.length; i++) {
                         const renderer = quadRenderers[i];
                         renderer.glyph.top.field = selected.column;
+                        renderer.glyph.left.field = selected.leftColumn;
+                        renderer.glyph.right.field = selected.rightColumn;
                         renderer.glyph.change.emit();
                         renderer.change.emit();
 
                         hovers[i].tooltips = [
-                            ["interval", "@interval"],
-                            ["width", "@width"],
+                            ["interval", `@{${selected.intervalColumn}}`],
+                            ["width", `@{${selected.widthColumn}}`],
                             [selected.name, `@{${selected.column}}`],
                         ];
                         hovers[i].change.emit();
 
                         yAxes[i].axis_label = selected.name;
                         yAxes[i].change.emit();
+                        subTitleElements[i].text = subTitlesByFigure[i][this.value];
+                        subTitleElements[i].change.emit();
+                        xAxes[i].axis_label = selected.xAxisLabel;
+                        xAxes[i].change.emit();
+                        xRanges[i].change.emit();
                         yRanges[i].change.emit();
                         figures[i].change.emit();
                     }
@@ -464,17 +524,17 @@ class Task:
             {"title": "総作業時間", "column": "worktime_hour"},
         ]
 
-        figure_list: list[figure] = []
+        worktime_histogram_list: list[WorktimeHistogram] = []
 
         decimals = 2
         for histogram in histogram_list:
             column = histogram["column"]
             title = histogram["title"]
-            figure_list.append(create_histogram(df, worktime_column=column, title=title, production_volume_list=production_volume_list))
+            worktime_histogram_list.append(create_histogram(df, worktime_column=column, title=title, production_volume_list=production_volume_list))
 
         # 自動検査したタスクを除外して、検査時間をグラフ化する
         df_ignore_inspection_skipped = df.query("inspection_worktime_hour.notnull() and not inspection_is_skipped")
-        figure_list.append(
+        worktime_histogram_list.append(
             create_histogram(
                 df_ignore_inspection_skipped,
                 worktime_column="inspection_worktime_hour",
@@ -484,7 +544,7 @@ class Task:
         )
 
         df_ignore_acceptance_skipped = df.query("acceptance_worktime_hour.notnull() and not acceptance_is_skipped")
-        figure_list.append(
+        worktime_histogram_list.append(
             create_histogram(
                 df_ignore_acceptance_skipped,
                 worktime_column="acceptance_worktime_hour",
@@ -493,7 +553,8 @@ class Task:
             )
         )
 
-        nested_figure_list: list[list[LayoutDOM | None]] = [[create_select_for_switching_production_volume(figure_list, production_volume_list)]]
+        figure_list = [histogram.bokeh_figure for histogram in worktime_histogram_list]
+        nested_figure_list: list[list[LayoutDOM | None]] = [[create_select_for_switching_production_volume(worktime_histogram_list, production_volume_list)]]
         nested_figure_list.extend(convert_1d_figure_list_to_2d(figure_list, ncols=3))
         if metadata is not None:
             nested_figure_list.insert(0, [create_pretext_from_metadata(metadata)])

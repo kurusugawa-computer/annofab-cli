@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 class HistogramFrequencyColumn:
     """ヒストグラムの棒の高さとして表示する列情報。"""
 
-    additional_columns: dict[str, numpy.ndarray]
+    additional_columns: dict[str, numpy.ndarray | list[str]]
     """切り替え用などで使う、度数以外の棒の高さ"""
 
     display_column: str

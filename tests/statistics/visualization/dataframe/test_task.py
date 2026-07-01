@@ -82,9 +82,10 @@ class TestTask:
 
         actual = output_file.read_text(encoding="utf-8")
         assert actual.count('"name":"Select"') == 1
-        assert r"\u751f\u7523\u91cf\u7a2e\u5225:" in actual
+        assert r"\u4f5c\u696d\u6642\u9593\u306e\u5358\u4f4d:" in actual
         assert "input_data_count" in actual
         assert "annotation_count" in actual
+        assert "selected.xAxisLabel" in actual
 
     def test__plot_histogram_of_others(self):
         obj = Task.from_csv(data_dir / "task.csv")
