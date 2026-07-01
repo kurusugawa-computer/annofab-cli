@@ -29,6 +29,7 @@ Command Reference
    task_count/index
    task_history/index
    task_history_event/index
+   webhook/index
 
 Usage Details
 =================================
