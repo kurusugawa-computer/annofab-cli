@@ -86,6 +86,8 @@ class TestTask:
         assert "input_data_count" in actual
         assert "annotation_count" in actual
         assert "selected.xAxisLabel" in actual
+        assert r"\u30bf\u30b9\u30af\u3042\u305f\u308a\u4f5c\u696d\u6642\u9593[\u6642\u9593/\u30bf\u30b9\u30af]" in actual
+        assert r"\u5165\u529b\u30c7\u30fc\u30bf\u3042\u305f\u308a\u4f5c\u696d\u6642\u9593[\u5206/\u5165\u529b\u30c7\u30fc\u30bf]" in actual
 
     def test__plot_histogram_of_others(self):
         obj = Task.from_csv(data_dir / "task.csv")

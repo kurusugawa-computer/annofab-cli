@@ -372,7 +372,9 @@ class Task:
             return f"width_{index}"
 
         def get_x_axis_label(production_volume: ProductionVolumeColumn) -> str:
-            return f"{production_volume.name}あたり作業時間[時間/{production_volume.name}]"
+            if production_volume.value == "task_count":
+                return "タスクあたり作業時間[時間/タスク]"
+            return f"{production_volume.name}あたり作業時間[分/{production_volume.name}]"
 
         def create_histogram(
             df_for_histogram: pandas.DataFrame,
@@ -401,7 +403,7 @@ class Task:
                     weights = None
                 else:
                     positive_volume = df_for_histogram[production_volume.value].fillna(0) > 0
-                    ser = df_for_histogram.loc[positive_volume, worktime_column] / df_for_histogram.loc[positive_volume, production_volume.value]
+                    ser = df_for_histogram.loc[positive_volume, worktime_column] * 60 / df_for_histogram.loc[positive_volume, production_volume.value]
                     weights = df_for_histogram.loc[positive_volume, production_volume.value]
 
                 hist, bin_edges = numpy.histogram(ser, bins=BIN_COUNT, weights=weights)
