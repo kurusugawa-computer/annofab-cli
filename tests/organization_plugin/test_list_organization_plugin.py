@@ -1,6 +1,6 @@
 import pandas
 
-from annofabcli.organization.list_organization_plugin import create_organization_plugin_dataframe
+from annofabcli.organization_plugin.list_organization_plugin import create_organization_plugin_dataframe
 
 
 def test__create_organization_plugin_dataframe__JSON文字列に変換する():

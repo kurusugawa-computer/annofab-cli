@@ -95,7 +95,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
 
 
 def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
-    subcommand_name = "list_plugin"
+    subcommand_name = "list"
     subcommand_help = "組織プラグイン一覧を出力します。"
     description = "組織プラグイン一覧を出力します。"
 

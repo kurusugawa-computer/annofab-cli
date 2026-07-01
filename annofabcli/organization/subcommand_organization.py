@@ -2,7 +2,6 @@ import argparse
 
 import annofabcli.common.cli
 import annofabcli.organization.list_organization
-import annofabcli.organization.list_organization_plugin
 
 
 def parse_args(parser: argparse.ArgumentParser) -> None:
@@ -10,7 +9,6 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
 
     # サブコマンドの定義
     annofabcli.organization.list_organization.add_parser(subparsers)
-    annofabcli.organization.list_organization_plugin.add_parser(subparsers)
 
 
 def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:

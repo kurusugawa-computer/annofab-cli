@@ -1,5 +1,5 @@
 ==========================
-organization list_plugin
+organization_plugin list
 ==========================
 
 Description
@@ -17,7 +17,7 @@ Examples
 
 .. code-block::
 
-    $ annofabcli organization list_plugin --organization org1 --format csv --output out.csv
+    $ annofabcli organization_plugin list --organization org1 --format csv --output out.csv
 
 CSV形式の場合、 ``project_extra_data_kinds`` と ``detail`` はJSON文字列として出力します。
 
@@ -30,14 +30,14 @@ CSV出力
 
 .. code-block::
 
-    $ annofabcli organization list_plugin --organization org1 --format csv --output out.csv
+    $ annofabcli organization_plugin list --organization org1 --format csv --output out.csv
 
 JSON出力
 ----------------------------------------------
 
 .. code-block::
 
-    $ annofabcli organization list_plugin --organization org1 --format pretty_json --output out.json
+    $ annofabcli organization_plugin list --organization org1 --format pretty_json --output out.json
 
 
 .. code-block::
@@ -69,7 +69,7 @@ Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.organization.list_organization_plugin.add_parser
-   :prog: annofabcli organization list_plugin
+   :ref: annofabcli.organization_plugin.list_organization_plugin.add_parser
+   :prog: annofabcli organization_plugin list
    :nosubcommands:
    :nodefaultconst:

@@ -1,10 +1,10 @@
 ==================================================
-organization
+organization_plugin
 ==================================================
 
 Description
 =================================
-組織関係のコマンドです。
+組織プラグイン関係のコマンドです。
 
 
 Available Commands
@@ -17,11 +17,10 @@ Available Commands
 
    list
 
-
 Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.organization.subcommand_organization.add_parser
-   :prog: annofabcli organization
+   :ref: annofabcli.organization_plugin.subcommand_organization_plugin.add_parser
+   :prog: annofabcli organization_plugin
    :nosubcommands:
