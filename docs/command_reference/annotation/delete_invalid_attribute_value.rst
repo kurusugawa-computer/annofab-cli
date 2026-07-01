@@ -22,9 +22,6 @@ Examples
 
 ``--task_id`` に属性値削除対象のタスクのtask_idを指定してください。
 
-このコマンドは、現在のアノテーション仕様でラベルごとに定義されている属性IDと、アノテーションに付与されている属性値の属性IDを比較します。
-アノテーションのラベルに含まれていない属性値だけを削除します。
-
 .. code-block::
 
     $ annofabcli annotation delete_invalid_attribute_value --project_id prj1 --task_id file://task.txt \
