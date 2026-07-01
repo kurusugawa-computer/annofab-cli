@@ -24,6 +24,7 @@ Available Commands
    create_classification
    delete
    delete_invalid_attribute_value
+   delete_invalid_label_annotation
    download
    dump
    import
