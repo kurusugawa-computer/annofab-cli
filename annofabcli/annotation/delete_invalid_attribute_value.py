@@ -35,8 +35,8 @@ class DeleteAttributeValueCount:
     success: int
     """属性値の削除に成功したアノテーション数。"""
 
-    failed: int
-    """属性値の削除に失敗またはスキップしたアノテーション数。"""
+    skipped: int
+    """属性値の削除をスキップしたアノテーション数。"""
 
 
 @dataclass(frozen=True)
@@ -131,7 +131,7 @@ def create_request_body_for_delete_attribute_value(
 
     return DeleteAttributeValueRequest(
         request_body=request_body,
-        count=DeleteAttributeValueCount(success=len(changed_annotation_ids), failed=skipped_annotation_count),
+        count=DeleteAttributeValueCount(success=len(changed_annotation_ids), skipped=skipped_annotation_count),
     )
 
 
@@ -171,13 +171,13 @@ class DeleteInvalidAttributeValueMain(CommandLineWithConfirm):
         request = create_request_body_for_delete_attribute_value(editor_annotation, allowed_attribute_ids_by_label_id=allowed_attribute_ids_by_label_id)
         if request.count.success > 0:
             self.service.api.put_annotation(self.project_id, task_id, input_data_id, request_body=request.request_body, query_params={"v": "2"})
-        elif request.count.failed == 0:
+        elif request.count.skipped == 0:
             logger.debug(f"task_id='{task_id}', input_data_id='{input_data_id}' :: ラベルに含まれていない属性値はありませんでした。")
 
         logger.debug(
             f"task_id='{task_id}', input_data_id='{input_data_id}' :: "
             f"{request.count.success} 件のアノテーションから、ラベルに含まれていない属性値を削除しました。"
-            f"{request.count.failed} 件のアノテーションは属性値を削除できませんでした。"
+            f"{request.count.skipped} 件のアノテーションは属性値の削除をスキップしました。"
         )
         return request.count
 
@@ -236,24 +236,30 @@ class DeleteInvalidAttributeValueMain(CommandLineWithConfirm):
         if backup_dir is not None:
             self.dump_annotation_obj.dump_annotation_for_task(task_id, output_dir=backup_dir)
 
-        failed_annotation_count = 0
+        skipped_annotation_count = 0
+        failed_input_data_count = 0
         for input_data_id in input_data_id_list:
             try:
                 count = self.delete_attribute_value_for_input_data(task_id, input_data_id, allowed_attribute_ids_by_label_id)
                 deleted_annotation_count += count.success
-                failed_annotation_count += count.failed
+                skipped_annotation_count += count.skipped
             except Exception:
                 logger.warning(f"{logger_prefix}task_id='{task_id}', input_data_id='{input_data_id}' :: アノテーション属性値の削除に失敗しました。", exc_info=True)
-                failed_annotation_count += 1
+                failed_input_data_count += 1
 
         if deleted_annotation_count > 0:
             result = True
             logger.info(
                 f"{logger_prefix}task_id='{task_id}': {deleted_annotation_count} 個のアノテーションから、ラベルに含まれていない属性値を削除しました。"
-                f"{failed_annotation_count} 個のアノテーションは属性値を削除できませんでした。"
+                f"{skipped_annotation_count} 個のアノテーションは属性値の削除をスキップしました。"
+                f"{failed_input_data_count} 個の入力データは処理に失敗しました。"
             )
-        elif failed_annotation_count > 0:
-            logger.info(f"{logger_prefix}task_id='{task_id}': 属性値を削除したアノテーションはありません。{failed_annotation_count} 個のアノテーションは属性値を削除できませんでした。")
+        elif skipped_annotation_count > 0 or failed_input_data_count > 0:
+            logger.info(
+                f"{logger_prefix}task_id='{task_id}': 属性値を削除したアノテーションはありません。"
+                f"{skipped_annotation_count} 個のアノテーションは属性値の削除をスキップしました。"
+                f"{failed_input_data_count} 個の入力データは処理に失敗しました。"
+            )
         else:
             logger.info(f"{logger_prefix}task_id='{task_id}'には、ラベルに含まれていない属性値が設定されているアノテーションが存在しません。")
 

@@ -113,7 +113,7 @@ class TestCreateRequestBodyForDeleteAttributeValue:
         actual = create_request_body_for_delete_attribute_value(editor_annotation, allowed_attribute_ids_by_label_id={"label1": {"attr2"}, "label2": {"attr3"}})
 
         assert actual.count.success == 3
-        assert actual.count.failed == 0
+        assert actual.count.skipped == 0
         assert actual.request_body == {
             "project_id": "prj1",
             "task_id": "task1",
@@ -162,7 +162,7 @@ class TestCreateRequestBodyForDeleteAttributeValue:
         actual = create_request_body_for_delete_attribute_value(editor_annotation, allowed_attribute_ids_by_label_id={"label1": {"attr1"}})
 
         assert actual.count.success == 0
-        assert actual.count.failed == 0
+        assert actual.count.skipped == 0
 
     def test_create_request_body_for_delete_attribute_value__unknown_label_id(self) -> None:
         editor_annotation = create_editor_annotation(
@@ -190,7 +190,7 @@ class TestCreateRequestBodyForDeleteAttributeValue:
         actual = create_request_body_for_delete_attribute_value(editor_annotation, allowed_attribute_ids_by_label_id={"label1": {"attr2"}})
 
         assert actual.count.success == 1
-        assert actual.count.failed == 1
+        assert actual.count.skipped == 1
         assert actual.request_body["details"] == [
             {
                 "annotation_id": "anno1",
@@ -232,7 +232,7 @@ class TestDeleteInvalidAttributeValueMain:
         actual = obj.delete_attribute_value_for_input_data("task1", "input1", {"label1": {"attr2"}})
 
         assert actual.success == 1
-        assert actual.failed == 0
+        assert actual.skipped == 0
         assert service.api.request_body == {
             "project_id": "prj1",
             "task_id": "task1",
@@ -269,5 +269,5 @@ class TestDeleteInvalidAttributeValueMain:
         actual = obj.delete_attribute_value_for_input_data("task1", "input1", {"label1": {"attr1"}})
 
         assert actual.success == 0
-        assert actual.failed == 0
+        assert actual.skipped == 0
         assert service.api.request_body is None
