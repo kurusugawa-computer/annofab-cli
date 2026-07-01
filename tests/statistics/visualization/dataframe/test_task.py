@@ -77,7 +77,13 @@ class TestTask:
 
     def test__plot_histogram_of_worktime(self):
         obj = Task.from_csv(data_dir / "task.csv")
-        obj.plot_histogram_of_worktime(output_dir / "ヒストグラム-作業時間.html")
+        output_file = output_dir / "ヒストグラム-作業時間.html"
+        obj.plot_histogram_of_worktime(output_file)
+
+        actual = output_file.read_text()
+        assert r"\u751f\u7523\u91cf\u7a2e\u5225:" in actual
+        assert "input_data_count" in actual
+        assert "annotation_count" in actual
 
     def test__plot_histogram_of_others(self):
         obj = Task.from_csv(data_dir / "task.csv")

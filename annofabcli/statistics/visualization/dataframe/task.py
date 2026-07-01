@@ -10,11 +10,13 @@ import bokeh
 import bokeh.layouts
 import numpy
 import pandas
+from bokeh.models import CustomJS, HoverTool, LayoutDOM
+from bokeh.models.widgets.inputs import Select
 from bokeh.plotting import figure
 
 from annofabcli.common.bokeh import convert_1d_figure_list_to_2d, create_pretext_from_metadata
 from annofabcli.common.utils import print_csv
-from annofabcli.statistics.histogram import create_histogram_figure, get_sub_title_from_series
+from annofabcli.statistics.histogram import HistogramFrequencyColumn, create_histogram_figure, get_sub_title_from_series
 from annofabcli.statistics.visualization.dataframe.annotation_count import AnnotationCount
 from annofabcli.statistics.visualization.dataframe.custom_production_volume import CustomProductionVolume
 from annofabcli.statistics.visualization.dataframe.input_data_count import InputDataCount
@@ -337,11 +339,108 @@ class Task:
         Args:
             output_file (Path): [description]
         """
+
+        def get_production_volume_name(production_volume: ProductionVolumeColumn) -> str:
+            return f"{production_volume.name}数" if production_volume.value in ["task_count", "input_data_count", "annotation_count"] else production_volume.name
+
+        def create_frequency_column_name(index: int) -> str:
+            return f"frequency_{index}"
+
+        def create_histogram(
+            df_for_histogram: pandas.DataFrame,
+            *,
+            worktime_column: str,
+            title: str,
+            production_volume_list: list[ProductionVolumeColumn],
+        ) -> LayoutDOM:
+            df_for_histogram = df_for_histogram[df_for_histogram[worktime_column].notna()].copy()
+            worktime_ser = df_for_histogram[worktime_column]
+            hist, bin_edges = numpy.histogram(worktime_ser, bins=BIN_COUNT)
+
+            additional_frequency_columns: dict[str, numpy.ndarray] = {}
+            production_volume_by_value: dict[str, dict[str, str]] = {}
+            for index, production_volume in enumerate(production_volume_list):
+                frequency_column = create_frequency_column_name(index)
+                production_volume_name = get_production_volume_name(production_volume)
+                if production_volume.value == "task_count":
+                    additional_frequency_columns[frequency_column] = hist
+                else:
+                    weights = df_for_histogram[production_volume.value].fillna(0)
+                    additional_frequency_columns[frequency_column] = numpy.histogram(worktime_ser, bins=bin_edges, weights=weights)[0]
+                production_volume_by_value[production_volume.value] = {
+                    "column": frequency_column,
+                    "name": production_volume_name,
+                }
+
+            default_production_volume = production_volume_list[0]
+            default_frequency_column = production_volume_by_value[default_production_volume.value]["column"]
+            default_production_volume_name = production_volume_by_value[default_production_volume.value]["name"]
+            sub_title = get_sub_title_from_series(worktime_ser, decimals=decimals)
+
+            fig = create_histogram_figure(
+                hist,
+                bin_edges,
+                x_axis_label="作業時間[時間]",
+                y_axis_label=default_production_volume_name,
+                frequency_column=HistogramFrequencyColumn(
+                    additional_columns=additional_frequency_columns,
+                    display_column=default_frequency_column,
+                    display_label=default_production_volume_name,
+                ),
+                title=title,
+                sub_title=sub_title,
+            )
+            quad_renderer = fig.renderers[-1]
+            hover = next(tool for tool in fig.toolbar.tools if isinstance(tool, HoverTool))
+            select_options: list[str | tuple[Any, str]] = [(production_volume.value, get_production_volume_name(production_volume)) for production_volume in production_volume_list]
+            select = Select(
+                title="生産量種別:",
+                value=default_production_volume.value,
+                options=select_options,
+                width=300,
+            )
+            select.js_on_change(
+                "value",
+                CustomJS(
+                    args={
+                        "figure": fig,
+                        "hover": hover,
+                        "productionVolumeByValue": production_volume_by_value,
+                        "quadRenderer": quad_renderer,
+                        "yAxis": fig.yaxis[0],
+                        "yRange": fig.y_range,
+                    },
+                    code="""
+                    const selected = productionVolumeByValue[this.value];
+                    quadRenderer.glyph.top.field = selected.column;
+                    quadRenderer.glyph.change.emit();
+                    quadRenderer.change.emit();
+                    hover.tooltips = [
+                        ["interval", "@interval"],
+                        ["width", "@width"],
+                        [selected.name, `@{${selected.column}}`],
+                    ];
+                    hover.change.emit();
+                    yAxis.axis_label = selected.name;
+                    yAxis.change.emit();
+                    yRange.change.emit();
+                    figure.change.emit();
+                    """,
+                ),
+            )
+            return bokeh.layouts.column(select, fig)
+
         if not self._validate_df_for_output(output_file):
             return
 
         logger.debug(f"{output_file} を出力します。")
         df = self.df
+        production_volume_list = [
+            ProductionVolumeColumn("task_count", "タスク"),
+            ProductionVolumeColumn("input_data_count", "入力データ"),
+            ProductionVolumeColumn("annotation_count", "アノテーション"),
+            *self.custom_production_volume_list,
+        ]
         histogram_list = [
             {
                 "title": "教師付作業時間",
@@ -364,40 +463,26 @@ class Task:
         for histogram in histogram_list:
             column = histogram["column"]
             title = histogram["title"]
-            sub_title = get_sub_title_from_series(df[column], decimals=decimals)
-
-            hist, bin_edges = numpy.histogram(df[column], bins=BIN_COUNT)
-            fig = create_histogram_figure(hist, bin_edges, x_axis_label="作業時間[時間]", y_axis_label="タスク数", title=title, sub_title=sub_title)
-            figure_list.append(fig)
+            figure_list.append(create_histogram(df, worktime_column=column, title=title, production_volume_list=production_volume_list))
 
         # 自動検査したタスクを除外して、検査時間をグラフ化する
         df_ignore_inspection_skipped = df.query("inspection_worktime_hour.notnull() and not inspection_is_skipped")
-        sub_title = get_sub_title_from_series(df_ignore_inspection_skipped["inspection_worktime_hour"], decimals=decimals)
-
-        hist, bin_edges = numpy.histogram(df_ignore_inspection_skipped["inspection_worktime_hour"], bins=BIN_COUNT)
         figure_list.append(
-            create_histogram_figure(
-                hist,
-                bin_edges,
-                x_axis_label="作業時間[時間]",
-                y_axis_label="タスク数",
+            create_histogram(
+                df_ignore_inspection_skipped,
+                worktime_column="inspection_worktime_hour",
                 title="検査作業時間(自動検査されたタスクを除外)",
-                sub_title=sub_title,
+                production_volume_list=production_volume_list,
             )
         )
 
         df_ignore_acceptance_skipped = df.query("acceptance_worktime_hour.notnull() and not acceptance_is_skipped")
-        sub_title = get_sub_title_from_series(df_ignore_acceptance_skipped["acceptance_worktime_hour"], decimals=decimals)
-        hist, bin_edges = numpy.histogram(df_ignore_acceptance_skipped["acceptance_worktime_hour"], bins=BIN_COUNT)
-
         figure_list.append(
-            create_histogram_figure(
-                hist,
-                bin_edges,
-                x_axis_label="作業時間[時間]",
-                y_axis_label="タスク数",
+            create_histogram(
+                df_ignore_acceptance_skipped,
+                worktime_column="acceptance_worktime_hour",
                 title="受入作業時間(自動受入されたタスクを除外)",
-                sub_title=sub_title,
+                production_volume_list=production_volume_list,
             )
         )
 
