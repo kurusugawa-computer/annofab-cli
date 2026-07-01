@@ -19,7 +19,7 @@ Examples
 
     $ annofabcli webhook list --project_id prj1 --format csv --output out.csv
 
-CSV形式の場合、``headers`` はJSON文字列として出力します。``body`` は文字列としてそのまま出力します。
+CSV形式の場合、 ``headers`` はJSON文字列として出力します。 ``body`` は文字列としてそのまま出力します。
 
 
 出力結果
