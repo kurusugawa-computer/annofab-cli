@@ -29,6 +29,7 @@ import annofabcli.task.subcommand_task
 import annofabcli.task_count.subcommand_task_count
 import annofabcli.task_history.subcommand_task_history
 import annofabcli.task_history_event.subcommand_task_history_event
+import annofabcli.webhook.subcommand_webhook
 
 logger = logging.getLogger(__name__)
 
@@ -125,6 +126,7 @@ def create_parser() -> argparse.ArgumentParser:
     annofabcli.task_count.subcommand_task_count.add_parser(subparsers)
     annofabcli.task_history.subcommand_task_history.add_parser(subparsers)
     annofabcli.task_history_event.subcommand_task_history_event.add_parser(subparsers)
+    annofabcli.webhook.subcommand_webhook.add_parser(subparsers)
 
     annofabcli.filesystem.subcommand_filesystem.add_parser(subparsers)
     annofabcli.experimental.subcommand_experimental.add_parser(subparsers)
