@@ -177,7 +177,7 @@ def print_annotation_attribute_list(
 
 
 class ListAnnotationAttribute(CommandLine):
-    COMMON_MESSAGE = "annofabcli statistics list_annotation_attribute: error:"
+    COMMON_MESSAGE = "annofabcli annotation_zip list_annotation_attribute: error:"
 
     def validate(self, args: argparse.Namespace) -> bool:
         if args.project_id is None and args.annotation is None:

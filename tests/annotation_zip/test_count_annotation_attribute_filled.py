@@ -4,14 +4,14 @@ from pathlib import Path
 from annofabapi.pydantic_models.task_phase import TaskPhase
 from annofabapi.pydantic_models.task_status import TaskStatus
 
-from annofabcli.statistics.list_annotation_attribute_filled_count import (
+from annofabcli.annotation_zip.count_annotation_attribute_filled import (
     AnnotationCountByInputData,
     AnnotationCountByTask,
     ListAnnotationCounterByInputData,
     convert_annotation_count_list_by_input_data_to_by_task,
 )
 
-output_dir = Path("./tests/out/statistics/list_annotation_attribute_filled_count")
+output_dir = Path("./tests/out/annotation_zip/count_annotation_attribute_filled")
 data_dir = Path("./tests/data/statistics/")
 output_dir.mkdir(exist_ok=True, parents=True)
 

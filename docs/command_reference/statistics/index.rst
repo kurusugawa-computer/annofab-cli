@@ -16,8 +16,6 @@ Available Commands
    :titlesonly:
 
 
-   list_annotation_attribute
-   list_annotation_attribute_filled_count
    list_annotation_count
    list_annotation_duration
    list_annotation_area

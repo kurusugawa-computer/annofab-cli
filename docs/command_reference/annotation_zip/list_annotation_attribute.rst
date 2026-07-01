@@ -1,5 +1,5 @@
 ==================================================
-statistics list_annotation_attribute
+annotation_zip list_annotation_attribute
 ==================================================
 
 
@@ -19,7 +19,7 @@ JSON出力
 
 .. code-block::
 
-    $ annofabcli statistics list_annotation_attribute --project_id prj1 \
+    $ annofabcli annotation_zip list_annotation_attribute --project_id prj1 \
      --output out.json --format pretty_json
 
 
@@ -52,7 +52,7 @@ CSV出力
 
 .. code-block::
 
-    $ annofabcli statistics list_annotation_attribute --project_id prj1 \
+    $ annofabcli annotation_zip list_annotation_attribute --project_id prj1 \
      --output out.csv --format csv
 
 .. csv-table:: out.csv 
@@ -67,7 +67,7 @@ Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.statistics.list_annotation_attribute.add_parser
-   :prog: annofabcli statistics list_annotation_attribute
+   :ref: annofabcli.annotation_zip.list_annotation_attribute.add_parser
+   :prog: annofabcli annotation_zip list_annotation_attribute
    :nosubcommands:
    :nodefaultconst:

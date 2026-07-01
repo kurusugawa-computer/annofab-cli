@@ -15,10 +15,12 @@ Available Commands
    :maxdepth: 1
    :titlesonly:
 
+   count_annotation_attribute_filled
    count_annotation_by_attribute_value
    count_annotation_by_label
    filter
    list_3d_bounding_box_annotation
+   list_annotation_attribute
    list_bounding_box_annotation
    list_polygon_annotation
    list_polyline_annotation
