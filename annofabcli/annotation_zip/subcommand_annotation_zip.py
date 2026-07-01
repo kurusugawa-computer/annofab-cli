@@ -3,10 +3,12 @@
 import argparse
 
 import annofabcli
+from annofabcli.annotation_zip.count_annotation_attribute_filled import add_parser as add_parser_count_annotation_attribute_filled
 from annofabcli.annotation_zip.count_annotation_by_attribute_value import add_parser as add_parser_count_annotation_by_attribute_value
 from annofabcli.annotation_zip.count_annotation_by_label import add_parser as add_parser_count_annotation_by_label
 from annofabcli.annotation_zip.filter import add_parser as add_parser_filter
 from annofabcli.annotation_zip.list_annotation_3d_bounding_box import add_parser as add_parser_list_annotation_3d_bounding_box
+from annofabcli.annotation_zip.list_annotation_attribute import add_parser as add_parser_list_annotation_attribute
 from annofabcli.annotation_zip.list_annotation_bounding_box_2d import add_parser as add_parser_list_annotation_bounding_box_2d
 from annofabcli.annotation_zip.list_polygon_annotation import add_parser as add_parser_list_polygon_annotation
 from annofabcli.annotation_zip.list_polyline_annotation import add_parser as add_parser_list_polyline_annotation
@@ -27,10 +29,12 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     subparsers = parser.add_subparsers(dest="subcommand_name")
 
     # サブコマンドの定義
+    add_parser_count_annotation_attribute_filled(subparsers)
     add_parser_count_annotation_by_attribute_value(subparsers)
     add_parser_count_annotation_by_label(subparsers)
     add_parser_filter(subparsers)
     add_parser_list_annotation_3d_bounding_box(subparsers)
+    add_parser_list_annotation_attribute(subparsers)
     add_parser_list_annotation_bounding_box_2d(subparsers)
     add_parser_list_polygon_annotation(subparsers)
     add_parser_list_polyline_annotation(subparsers)

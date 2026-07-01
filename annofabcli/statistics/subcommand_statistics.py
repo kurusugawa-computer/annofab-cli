@@ -2,8 +2,6 @@ import argparse
 
 import annofabcli.common.cli
 import annofabcli.statistics.list_annotation_area
-import annofabcli.statistics.list_annotation_attribute
-import annofabcli.statistics.list_annotation_attribute_filled_count
 import annofabcli.statistics.list_annotation_count
 import annofabcli.statistics.list_annotation_duration
 import annofabcli.statistics.list_video_duration
@@ -21,8 +19,6 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     subparsers = parser.add_subparsers(dest="subcommand_name")
 
     # サブコマンドの定義
-    annofabcli.statistics.list_annotation_attribute.add_parser(subparsers)
-    annofabcli.statistics.list_annotation_attribute_filled_count.add_parser(subparsers)
     annofabcli.statistics.list_annotation_count.add_parser(subparsers)
     annofabcli.statistics.list_annotation_duration.add_parser(subparsers)
     annofabcli.statistics.list_annotation_area.add_parser(subparsers)

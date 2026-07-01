@@ -454,7 +454,7 @@ def get_attribute_columns(attribute_names: list[tuple[str, str]]) -> list[tuple[
     return attribute_columns
 
 
-class ListAnnotationAttributeFilledCountMain:
+class CountAnnotationAttributeFilledMain:
     def __init__(self, service: annofabapi.Resource) -> None:
         self.service = service
 
@@ -534,8 +534,8 @@ class ListAnnotationAttributeFilledCountMain:
             assert_never(group_by)
 
 
-class ListAnnotationAttributeFilledCount(CommandLine):
-    COMMON_MESSAGE = "annofabcli annotation list_annotation_attribute_filled_count: error:"
+class CountAnnotationAttributeFilled(CommandLine):
+    COMMON_MESSAGE = "annofabcli annotation_zip count_annotation_attribute_filled: error:"
 
     def validate(self, args: argparse.Namespace) -> bool:
         if args.project_id is None and args.annotation is None:
@@ -565,7 +565,7 @@ class ListAnnotationAttributeFilledCount(CommandLine):
         group_by = GroupBy(args.group_by)
         output_file: Path = args.output
         output_format = OutputFormat(args.format)
-        main_obj = ListAnnotationAttributeFilledCountMain(self.service)
+        main_obj = CountAnnotationAttributeFilledMain(self.service)
 
         downloading_obj = DownloadingFile(self.service)
 
@@ -631,7 +631,7 @@ class ListAnnotationAttributeFilledCount(CommandLine):
 def main(args: argparse.Namespace) -> None:
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
-    ListAnnotationAttributeFilledCount(service, facade, args).main()
+    CountAnnotationAttributeFilled(service, facade, args).main()
 
 
 def parse_args(parser: argparse.ArgumentParser) -> None:
@@ -698,7 +698,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
 
 
 def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
-    subcommand_name = "list_annotation_attribute_filled_count"
+    subcommand_name = "count_annotation_attribute_filled"
     subcommand_help = "値が入力されている属性の個数を、タスクごとまたは入力データごとに集計します。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help)
