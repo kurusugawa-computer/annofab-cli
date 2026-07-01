@@ -1,8 +1,9 @@
 import argparse
+import builtins
 
 import pytest
 
-from annofabcli.common.cli import get_json_from_args, get_list_from_args, non_negative_int
+from annofabcli.common.cli import get_json_from_args, get_list_from_args, non_negative_int, prompt_yesnoall
 
 
 def test_get_json_from_args():
@@ -31,3 +32,22 @@ def test_non_negative_int() -> None:
 
     with pytest.raises(argparse.ArgumentTypeError):
         non_negative_int("-1")
+
+
+def test_prompt_yesnoall_uses_lowercase_choices(monkeypatch: pytest.MonkeyPatch) -> None:
+    prompt_list = []
+
+    def input_mock(prompt: str) -> str:
+        prompt_list.append(prompt)
+        return "all"
+
+    monkeypatch.setattr(builtins, "input", input_mock)
+
+    assert prompt_yesnoall("処理しますか？") == (True, True)
+    assert prompt_list == ["処理しますか？ [y/n/all] : "]
+
+
+def test_prompt_yesnoall_accepts_uppercase_all(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(builtins, "input", lambda _prompt: "ALL")
+
+    assert prompt_yesnoall("処理しますか？") == (True, True)

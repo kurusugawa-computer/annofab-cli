@@ -381,14 +381,14 @@ def prompt_yesnoall(msg: str) -> tuple[bool, bool]:
 
     """
     while True:
-        choice = input(f"{msg} [y/N/ALL] : ")
+        choice = input(f"{msg} [y/n/all] : ").lower()
         if choice == "y":  # noqa: SIM116
             return True, False
 
-        elif choice == "N":
+        elif choice == "n":
             return False, False
 
-        elif choice == "ALL":
+        elif choice == "all":
             return True, True
 
 
