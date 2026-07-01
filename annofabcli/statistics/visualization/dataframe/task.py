@@ -440,6 +440,7 @@ class Task:
                     "leftColumn": create_left_column_name(index),
                     "name": get_production_volume_name(production_volume),
                     "rightColumn": create_right_column_name(index),
+                    "subTitles": [histogram.sub_title_by_value[production_volume.value] for histogram in worktime_histogram_list],
                     "widthColumn": create_width_column_name(index),
                     "xAxisLabel": get_x_axis_label(production_volume),
                 }
@@ -461,7 +462,6 @@ class Task:
                         "productionVolumeByValue": production_volume_by_value,
                         "quadRenderers": [fig.renderers[-1] for fig in figures],
                         "subTitleElements": [fig.above[0] for fig in figures],
-                        "subTitlesByFigure": [histogram.sub_title_by_value for histogram in worktime_histogram_list],
                         "xAxes": [fig.xaxis[0] for fig in figures],
                         "xRanges": [fig.x_range for fig in figures],
                         "yAxes": [fig.yaxis[0] for fig in figures],
@@ -486,7 +486,7 @@ class Task:
 
                         yAxes[i].axis_label = selected.name;
                         yAxes[i].change.emit();
-                        subTitleElements[i].text = subTitlesByFigure[i][this.value];
+                        subTitleElements[i].text = selected.subTitles[i];
                         subTitleElements[i].change.emit();
                         xAxes[i].axis_label = selected.xAxisLabel;
                         xAxes[i].change.emit();
