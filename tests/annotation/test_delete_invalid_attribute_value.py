@@ -164,6 +164,52 @@ class TestCreateRequestBodyForDeleteAttributeValue:
         assert actual.count.success == 0
         assert actual.count.failed == 0
 
+    def test_create_request_body_for_delete_attribute_value__unknown_label_id(self) -> None:
+        editor_annotation = create_editor_annotation(
+            [
+                {
+                    "annotation_id": "anno1",
+                    "label_id": "unknown_label",
+                    "body": {"_type": "Inner", "data": {"_type": "BoundingBox"}},
+                    "additional_data_list": [
+                        {"definition_id": "attr1", "value": {"_type": "Text", "value": "skip"}},
+                    ],
+                },
+                {
+                    "annotation_id": "anno2",
+                    "label_id": "label1",
+                    "body": {"_type": "Inner", "data": {"_type": "BoundingBox"}},
+                    "additional_data_list": [
+                        {"definition_id": "attr1", "value": {"_type": "Text", "value": "delete"}},
+                        {"definition_id": "attr2", "value": {"_type": "Flag", "value": True}},
+                    ],
+                },
+            ]
+        )
+
+        actual = create_request_body_for_delete_attribute_value(editor_annotation, allowed_attribute_ids_by_label_id={"label1": {"attr2"}})
+
+        assert actual.count.success == 1
+        assert actual.count.failed == 1
+        assert actual.request_body["details"] == [
+            {
+                "annotation_id": "anno1",
+                "label_id": "unknown_label",
+                "body": None,
+                "additional_data_list": [
+                    {"definition_id": "attr1", "value": {"_type": "Text", "value": "skip"}},
+                ],
+                "_type": "Update",
+            },
+            {
+                "annotation_id": "anno2",
+                "label_id": "label1",
+                "body": None,
+                "additional_data_list": [{"definition_id": "attr2", "value": {"_type": "Flag", "value": True}}],
+                "_type": "Update",
+            },
+        ]
+
 
 class TestDeleteAnnotationAttributeValueMain:
     def test_delete_attribute_value_for_input_data_uses_put_annotation(self) -> None:

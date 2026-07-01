@@ -96,6 +96,7 @@ def create_request_body_for_delete_attribute_value(
     """
     request_details: list[dict[str, Any]] = []
     changed_annotation_ids: set[str] = set()
+    skipped_annotation_count = 0
 
     for detail in editor_annotation["details"]:
         new_detail = copy.deepcopy(detail)
@@ -104,7 +105,14 @@ def create_request_body_for_delete_attribute_value(
         new_detail["body"] = None
 
         old_additional_data_list = detail["additional_data_list"]
-        allowed_attribute_ids = allowed_attribute_ids_by_label_id[detail["label_id"]]
+        label_id = detail["label_id"]
+        allowed_attribute_ids = allowed_attribute_ids_by_label_id.get(label_id)
+        if allowed_attribute_ids is None:
+            logger.warning(f"annotation_id='{detail['annotation_id']}', label_id='{label_id}' :: アノテーションのラベルが現行のアノテーション仕様に存在しないため、属性値の削除をスキップします。")
+            skipped_annotation_count += 1
+            request_details.append(new_detail)
+            continue
+
         new_additional_data_list = filter_invalid_additional_data_list(old_additional_data_list, allowed_attribute_ids)
         if len(old_additional_data_list) != len(new_additional_data_list):
             new_detail["additional_data_list"] = new_additional_data_list
@@ -123,7 +131,7 @@ def create_request_body_for_delete_attribute_value(
 
     return DeleteAttributeValueRequest(
         request_body=request_body,
-        count=DeleteAttributeValueCount(success=len(changed_annotation_ids), failed=0),
+        count=DeleteAttributeValueCount(success=len(changed_annotation_ids), failed=skipped_annotation_count),
     )
 
 
@@ -163,7 +171,7 @@ class DeleteAnnotationAttributeValueMain(CommandLineWithConfirm):
         request = create_request_body_for_delete_attribute_value(editor_annotation, allowed_attribute_ids_by_label_id=allowed_attribute_ids_by_label_id)
         if request.count.success > 0:
             self.service.api.put_annotation(self.project_id, task_id, input_data_id, request_body=request.request_body, query_params={"v": "2"})
-        else:
+        elif request.count.failed == 0:
             logger.debug(f"task_id='{task_id}', input_data_id='{input_data_id}' :: ラベルに含まれていない属性値はありませんでした。")
 
         logger.debug(
@@ -238,14 +246,16 @@ class DeleteAnnotationAttributeValueMain(CommandLineWithConfirm):
                 logger.warning(f"{logger_prefix}task_id='{task_id}', input_data_id='{input_data_id}' :: アノテーション属性値の削除に失敗しました。", exc_info=True)
                 failed_annotation_count += 1
 
-        if deleted_annotation_count == 0:
-            logger.info(f"{logger_prefix}task_id='{task_id}'には、ラベルに含まれていない属性値が設定されているアノテーションが存在しません。")
-        else:
+        if deleted_annotation_count > 0:
             result = True
             logger.info(
                 f"{logger_prefix}task_id='{task_id}': {deleted_annotation_count} 個のアノテーションから、ラベルに含まれていない属性値を削除しました。"
                 f"{failed_annotation_count} 個のアノテーションは属性値を削除できませんでした。"
             )
+        elif failed_annotation_count > 0:
+            logger.info(f"{logger_prefix}task_id='{task_id}': 属性値を削除したアノテーションはありません。{failed_annotation_count} 個のアノテーションは属性値を削除できませんでした。")
+        else:
+            logger.info(f"{logger_prefix}task_id='{task_id}'には、ラベルに含まれていない属性値が設定されているアノテーションが存在しません。")
 
         return result, deleted_annotation_count
 
