@@ -16,6 +16,7 @@ Available Commands
    :titlesonly:
 
    list
+   list_plugin
 
 
 Usage Details
