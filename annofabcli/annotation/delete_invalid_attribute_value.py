@@ -135,7 +135,7 @@ def create_request_body_for_delete_attribute_value(
     )
 
 
-class DeleteAnnotationAttributeValueMain(CommandLineWithConfirm):
+class DeleteInvalidAttributeValueMain(CommandLineWithConfirm):
     """
     アノテーションに設定されている属性値を削除する本体処理。
     """
@@ -333,7 +333,7 @@ class DeleteInvalidAttributeValueOfAnnotation(CommandLine):
             )
             sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
-        main_obj = DeleteAnnotationAttributeValueMain(self.service, project_id=project_id, include_complete_task=args.include_complete_task, all_yes=args.yes)
+        main_obj = DeleteInvalidAttributeValueMain(self.service, project_id=project_id, include_complete_task=args.include_complete_task, all_yes=args.yes)
         main_obj.delete_attribute_value_for_task_list(
             task_id_list,
             allowed_attribute_ids_by_label_id=allowed_attribute_ids_by_label_id,

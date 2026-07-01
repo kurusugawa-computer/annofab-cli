@@ -6,7 +6,7 @@ from typing import cast
 import annofabapi
 
 from annofabcli.annotation.delete_invalid_attribute_value import (
-    DeleteAnnotationAttributeValueMain,
+    DeleteInvalidAttributeValueMain,
     create_request_body_for_delete_attribute_value,
     filter_invalid_additional_data_list,
     get_allowed_attribute_ids_by_label_id,
@@ -211,7 +211,7 @@ class TestCreateRequestBodyForDeleteAttributeValue:
         ]
 
 
-class TestDeleteAnnotationAttributeValueMain:
+class TestDeleteInvalidAttributeValueMain:
     def test_delete_attribute_value_for_input_data_uses_put_annotation(self) -> None:
         editor_annotation = create_editor_annotation(
             [
@@ -227,7 +227,7 @@ class TestDeleteAnnotationAttributeValueMain:
             ]
         )
         service = DummyService(editor_annotation)
-        obj = DeleteAnnotationAttributeValueMain(cast(annofabapi.Resource, service), project_id="prj1", include_complete_task=False, all_yes=True)
+        obj = DeleteInvalidAttributeValueMain(cast(annofabapi.Resource, service), project_id="prj1", include_complete_task=False, all_yes=True)
 
         actual = obj.delete_attribute_value_for_input_data("task1", "input1", {"label1": {"attr2"}})
 
@@ -264,7 +264,7 @@ class TestDeleteAnnotationAttributeValueMain:
             ]
         )
         service = DummyService(editor_annotation)
-        obj = DeleteAnnotationAttributeValueMain(cast(annofabapi.Resource, service), project_id="prj1", include_complete_task=False, all_yes=True)
+        obj = DeleteInvalidAttributeValueMain(cast(annofabapi.Resource, service), project_id="prj1", include_complete_task=False, all_yes=True)
 
         actual = obj.delete_attribute_value_for_input_data("task1", "input1", {"label1": {"attr1"}})
 
