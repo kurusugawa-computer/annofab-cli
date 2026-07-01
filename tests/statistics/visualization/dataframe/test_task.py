@@ -77,7 +77,18 @@ class TestTask:
 
     def test__plot_histogram_of_worktime(self):
         obj = Task.from_csv(data_dir / "task.csv")
-        obj.plot_histogram_of_worktime(output_dir / "ヒストグラム-作業時間.html")
+        output_file = output_dir / "ヒストグラム-作業時間.html"
+        obj.plot_histogram_of_worktime(output_file)
+
+        actual = output_file.read_text(encoding="utf-8")
+        assert actual.count('"name":"Select"') == 1
+        assert r"\u4f5c\u696d\u6642\u9593\u306e\u5358\u4f4d:" in actual
+        assert "input_data_count" in actual
+        assert "annotation_count" in actual
+        assert "selected.xAxisLabel" in actual
+        assert "selected.subTitles" in actual
+        assert r"\u30bf\u30b9\u30af\u3042\u305f\u308a\u4f5c\u696d\u6642\u9593[\u6642\u9593/\u30bf\u30b9\u30af]" in actual
+        assert r"\u5165\u529b\u30c7\u30fc\u30bf\u3042\u305f\u308a\u4f5c\u696d\u6642\u9593[\u5206/\u5165\u529b\u30c7\u30fc\u30bf]" in actual
 
     def test__plot_histogram_of_others(self):
         obj = Task.from_csv(data_dir / "task.csv")

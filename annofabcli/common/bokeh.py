@@ -2,11 +2,11 @@ from __future__ import annotations
 
 import json
 import math
+from collections.abc import Sequence
 from typing import Any
 
 from bokeh.models import LayoutDOM
 from bokeh.models.widgets.markups import PreText
-from bokeh.plotting import figure
 
 
 def create_pretext_from_metadata(metadata: dict[str, Any]) -> PreText:
@@ -15,7 +15,7 @@ def create_pretext_from_metadata(metadata: dict[str, Any]) -> PreText:
     return PreText(text=text)
 
 
-def convert_1d_figure_list_to_2d(figure_list: list[figure], *, ncols: int = 4) -> list[list[LayoutDOM | None]]:
+def convert_1d_figure_list_to_2d(figure_list: Sequence[LayoutDOM], *, ncols: int = 4) -> list[list[LayoutDOM | None]]:
     """
     1次元のfigure_listを、grid layout用に2次元のfigureリストに変換する。
     """

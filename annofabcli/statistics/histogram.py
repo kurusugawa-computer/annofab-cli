@@ -1,4 +1,5 @@
 import logging
+from dataclasses import dataclass
 
 import numpy
 import pandas
@@ -7,6 +8,20 @@ from bokeh.models.annotations.labels import Title
 from bokeh.plotting import ColumnDataSource, figure
 
 logger = logging.getLogger(__name__)
+
+
+@dataclass(frozen=True)
+class HistogramFrequencyColumn:
+    """ヒストグラムの棒の高さとして表示する列情報。"""
+
+    additional_columns: dict[str, numpy.ndarray | list[str]]
+    """切り替え用などで使う、度数以外の棒の高さ"""
+
+    display_column: str
+    """棒の高さとして表示する列名"""
+
+    display_label: str
+    """ツールチップに表示する棒の高さの名前"""
 
 
 def get_sub_title_from_series(ser: pandas.Series, decimals: int = 3) -> str:
@@ -44,6 +59,7 @@ def create_histogram_figure(
     *,
     x_axis_label: str,
     y_axis_label: str,
+    frequency_column: HistogramFrequencyColumn | None = None,
     title: str | None = None,
     sub_title: str | None = None,
     width: int = 400,
@@ -57,12 +73,19 @@ def create_histogram_figure(
         bin_edges: `numpy.histogram`の戻り値 tuple[1]
         x_axis_label: X軸の名前
         y_axis_label: Y軸の名前
+        frequency_column: ヒストグラムの棒の高さとして表示する列情報
         title: グラフのタイトル
         sub_title: グラフのサブタイトル
         width: グラフの幅
         height: グラフの高さ
     """
     df_histogram = pandas.DataFrame({"frequency": hist, "left": bin_edges[:-1], "right": bin_edges[1:]})
+    display_column = "frequency"
+    display_label = "frequency"
+    if frequency_column is not None:
+        df_histogram = df_histogram.assign(**frequency_column.additional_columns)
+        display_column = frequency_column.display_column
+        display_label = frequency_column.display_label
     df_histogram["interval"] = [f"{left:.1f} to {right:.1f}" for left, right in zip(df_histogram["left"], df_histogram["right"], strict=False)]
     df_histogram["width"] = [f"{(right - left):.1f}" for left, right in zip(df_histogram["left"], df_histogram["right"], strict=False)]
 
@@ -79,9 +102,9 @@ def create_histogram_figure(
     if title is not None:
         fig.add_layout(Title(text=title), "above")
 
-    hover = HoverTool(tooltips=[("interval", "@interval"), ("width", "@width"), ("frequency", "@frequency")])
+    hover = HoverTool(tooltips=[("interval", "@interval"), ("width", "@width"), (display_label, f"@{{{display_column}}}")])
 
-    fig.quad(source=source, top="frequency", bottom=0, left="left", right="right", line_color="white")
+    fig.quad(source=source, top=display_column, bottom=0, left="left", right="right", line_color="white")
 
     fig.add_tools(hover)
     return fig
