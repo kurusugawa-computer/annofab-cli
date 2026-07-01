@@ -20,6 +20,7 @@ Command Reference
    my_account/index
    organization/index
    organization_member/index
+   organization_plugin/index
    project/index
    project_member/index
    statistics/index
