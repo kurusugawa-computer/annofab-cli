@@ -9,7 +9,6 @@ from pathlib import Path
 from typing import Any
 
 import annofabapi
-import requests
 from annofabapi.dataclass.task import Task
 from annofabapi.models import ProjectMemberRole, TaskStatus
 
@@ -235,9 +234,6 @@ class DeleteAnnotationAttributeValueMain(CommandLineWithConfirm):
                 count = self.delete_attribute_value_for_input_data(task_id, input_data_id, allowed_attribute_ids_by_label_id)
                 deleted_annotation_count += count.success
                 failed_annotation_count += count.failed
-            except requests.HTTPError:
-                logger.warning(f"{logger_prefix}task_id='{task_id}', input_data_id='{input_data_id}' :: アノテーション属性値の削除に失敗しました。", exc_info=True)
-                failed_annotation_count += 1
             except Exception:
                 logger.warning(f"{logger_prefix}task_id='{task_id}', input_data_id='{input_data_id}' :: アノテーション属性値の削除に失敗しました。", exc_info=True)
                 failed_annotation_count += 1
