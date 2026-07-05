@@ -17,6 +17,7 @@ from annofabapi.pydantic_models.task_status import TaskStatus
 from pydantic import BaseModel
 
 import annofabcli.common.cli
+from annofabcli.annotation.annotation_query import AttributeValue, convert_attributes_from_cli_to_additional_data_list_v2
 from annofabcli.annotation.dump_annotation import DumpAnnotationMain
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
@@ -42,6 +43,7 @@ class TargetAnnotationData(BaseModel):
     input_data_id: str
     annotation_id: str
     data: dict[str, Any]
+    attributes: dict[str, AttributeValue] | None = None
 
 
 @dataclass(frozen=True)
@@ -82,12 +84,39 @@ def get_annotation_data_list_per_task_id_input_data_id(anno_list: list[TargetAnn
     return grouped
 
 
-def create_request_body_for_change_data(editor_annotation: dict[str, Any], anno_list: list[TargetAnnotationData]) -> ChangeAnnotationDataRequest:
+def merge_additional_data_list(
+    current_additional_data_list: list[dict[str, Any]],
+    new_additional_data_list: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """既存の属性値に、新しい属性値を上書きする。
+
+    Args:
+        current_additional_data_list: 既存の属性値
+        new_additional_data_list: 新しい属性値
+
+    Returns:
+        上書き後の属性値
+    """
+    new_additional_data_by_definition_id = {e["definition_id"]: e for e in new_additional_data_list}
+    result = [new_additional_data_by_definition_id.get(e["definition_id"], e) for e in current_additional_data_list]
+
+    current_definition_ids = {e["definition_id"] for e in current_additional_data_list}
+    result.extend(e for e in new_additional_data_list if e["definition_id"] not in current_definition_ids)
+    return result
+
+
+def create_request_body_for_change_data(
+    editor_annotation: dict[str, Any],
+    anno_list: list[TargetAnnotationData],
+    *,
+    annotation_specs: dict[str, Any] | None = None,
+) -> ChangeAnnotationDataRequest:
     """`put_annotation` に渡すリクエストボディを作成する。
 
     Args:
         editor_annotation: `get_editor_annotation` のレスポンス
         anno_list: アノテーションdata変更内容のリスト
+        annotation_specs: アノテーション仕様。属性値を変更する場合に指定します。
 
     Returns:
         リクエスト情報
@@ -95,6 +124,7 @@ def create_request_body_for_change_data(editor_annotation: dict[str, Any], anno_
     details_map = {detail["annotation_id"]: detail for detail in editor_annotation["details"]}
 
     data_by_annotation_id: dict[str, dict[str, Any]] = {}
+    additional_data_list_by_annotation_id: dict[str, list[dict[str, Any]]] = {}
     failed_count = 0
     for anno in anno_list:
         if anno.annotation_id not in details_map:
@@ -116,6 +146,15 @@ def create_request_body_for_change_data(editor_annotation: dict[str, Any], anno_
 
         data_by_annotation_id[anno.annotation_id] = anno.data
 
+        if anno.attributes is not None:
+            if annotation_specs is None:
+                raise ValueError("属性値を変更する場合はアノテーション仕様が必要です。")
+            additional_data_list_by_annotation_id[anno.annotation_id] = convert_attributes_from_cli_to_additional_data_list_v2(
+                anno.attributes,
+                annotation_specs=annotation_specs,
+                label_id=detail["label_id"],
+            )
+
     request_details: list[dict[str, Any]] = []
     for detail in editor_annotation["details"]:
         new_detail = copy.deepcopy(detail)
@@ -125,6 +164,12 @@ def create_request_body_for_change_data(editor_annotation: dict[str, Any], anno_
         else:
             # 既存アノテーションは変更しない。`body=None` を指定すると、putAnnotationでbodyが維持される。
             new_detail["body"] = None
+
+        if detail["annotation_id"] in additional_data_list_by_annotation_id:
+            new_detail["additional_data_list"] = merge_additional_data_list(
+                detail["additional_data_list"],
+                additional_data_list_by_annotation_id[detail["annotation_id"]],
+            )
 
         request_details.append(new_detail)
 
@@ -159,8 +204,15 @@ class ChangeAnnotationDataPerAnnotationMain(CommandLineWithConfirm):
         self.include_complete_task = include_complete_task
         self.include_on_hold_task = include_on_hold_task
         self.backup_dir = backup_dir
+        self.annotation_specs: dict[str, Any] | None = None
         self.dump_annotation_obj = DumpAnnotationMain(service, project_id)
         super().__init__(all_yes)
+
+    def get_annotation_specs(self) -> dict[str, Any]:
+        """アノテーション仕様を取得する。"""
+        if self.annotation_specs is None:
+            self.annotation_specs, _ = self.service.api.get_annotation_specs(self.project_id, query_params={"v": "3"})
+        return self.annotation_specs
 
     def change_annotation_data_by_frame(self, task_id: str, input_data_id: str, anno_list: list[TargetAnnotationData]) -> ChangeAnnotationDataCount:
         """フレームごとにアノテーションdataを変更する。"""
@@ -170,7 +222,8 @@ class ChangeAnnotationDataPerAnnotationMain(CommandLineWithConfirm):
             (self.backup_dir / task_id).mkdir(exist_ok=True, parents=True)
             self.dump_annotation_obj.dump_editor_annotation(editor_annotation, json_path=self.backup_dir / task_id / f"{input_data_id}.json")
 
-        request = create_request_body_for_change_data(editor_annotation, anno_list)
+        annotation_specs = self.get_annotation_specs() if any(anno.attributes is not None for anno in anno_list) else None
+        request = create_request_body_for_change_data(editor_annotation, anno_list, annotation_specs=annotation_specs)
 
         if request.count.success > 0:
             self.service.api.put_annotation(self.project_id, task_id, input_data_id, request_body=request.request_body, query_params={"v": "2"})
@@ -269,9 +322,16 @@ class ChangeDataPerAnnotation(CommandLine):
             target_annotation_list = [TargetAnnotationData.model_validate(anno) for anno in annotation_items]
 
         elif args.csv is not None:
-            df_input = pandas.read_csv(args.csv, dtype={"task_id": "string", "input_data_id": "string", "annotation_id": "string", "data": "string"})
+            df_input = pandas.read_csv(args.csv, dtype={"task_id": "string", "input_data_id": "string", "annotation_id": "string", "data": "string", "attributes": "string"})
             target_annotation_list = [
-                TargetAnnotationData(task_id=e["task_id"], input_data_id=e["input_data_id"], annotation_id=e["annotation_id"], data=json.loads(e["data"])) for e in df_input.to_dict(orient="records")
+                TargetAnnotationData(
+                    task_id=e["task_id"],
+                    input_data_id=e["input_data_id"],
+                    annotation_id=e["annotation_id"],
+                    data=json.loads(e["data"]),
+                    attributes=json.loads(e["attributes"]) if e.get("attributes") is not None else None,
+                )
+                for e in df_input.to_dict(orient="records")
             ]
         else:
             print(f"{self.COMMON_MESSAGE} argument '--json' または '--csv' のいずれかを指定してください。", file=sys.stderr)  # noqa: T201
@@ -327,6 +387,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
             "input_data_id": "i1",
             "annotation_id": "a1",
             "data": {"_type": "Range", "begin": 1000, "end": 5000},
+            "attributes": {"occluded": True},
         }
     ]
     input_group = parser.add_mutually_exclusive_group(required=True)
@@ -340,7 +401,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--csv",
         type=str,
         help="各アノテーションごとに変更内容を記載したCSVファイルを指定します。 \n"
-        "* `task_id`, `input_data_id`, `annotation_id`, `data` の4つのカラムが必要です。\n"
+        "* `task_id`, `input_data_id`, `annotation_id`, `data` の4つのカラムが必要です。`attributes` カラムは任意です。\n"
         f"`data` カラムには、変更後のアノテーションdataを '{json.dumps({'_type': 'Range', 'begin': 1000, 'end': 5000})}' のようにJSON形式で指定します。\n",
     )
 
