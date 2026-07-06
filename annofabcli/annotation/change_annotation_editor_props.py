@@ -145,6 +145,7 @@ class ChangeAnnotationEditorPropsMain(CommandLineWithConfirm):
         editor_props: dict[str, Any],
         change_operator_to_me: bool,
         include_complete_task: bool,
+        include_break_task: bool,
         include_on_hold_task: bool,
         all_yes: bool,
         backup_dir: Path | None = None,
@@ -155,6 +156,7 @@ class ChangeAnnotationEditorPropsMain(CommandLineWithConfirm):
         self.editor_props = editor_props
         self.change_operator_to_me = change_operator_to_me
         self.include_complete_task = include_complete_task
+        self.include_break_task = include_break_task
         self.include_on_hold_task = include_on_hold_task
         self.backup_dir = backup_dir
         self.dump_annotation_obj = DumpAnnotationMain(service, project_id)
@@ -206,6 +208,13 @@ class ChangeAnnotationEditorPropsMain(CommandLineWithConfirm):
             logger.info(
                 f"{logger_prefix}task_id='{task_id}' :: タスクが完了状態のため、editor_propsの変更をスキップします。"
                 "完了状態のタスクのアノテーションも変更するには、`--include_complete_task` オプションを指定してください。"
+            )
+            return False, ChangeEditorPropsCount(success=0, failed=0)
+
+        if not self.include_break_task and task["status"] == TaskStatus.BREAK.value:
+            logger.info(
+                f"{logger_prefix}task_id='{task_id}' :: タスクが休憩中状態のため、editor_propsの変更をスキップします。"
+                "休憩中状態のタスクのアノテーションも変更するには、`--include_break_task` オプションを指定してください。"
             )
             return False, ChangeEditorPropsCount(success=0, failed=0)
 
@@ -375,6 +384,7 @@ class ChangeAnnotationEditorProps(CommandLine):
             editor_props=editor_props,
             change_operator_to_me=args.change_operator_to_me,
             include_complete_task=args.include_complete_task,
+            include_break_task=args.include_break_task,
             include_on_hold_task=args.include_on_hold_task,
             all_yes=args.yes,
             backup_dir=backup_dir,
@@ -422,6 +432,12 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--include_complete_task",
         action="store_true",
         help="完了状態のタスクに含まれるアノテーションのeditor_propsも変更します。ただし、オーナーロールを持つユーザーでしか実行できません。",
+    )
+
+    parser.add_argument(
+        "--include_break_task",
+        action="store_true",
+        help="休憩中状態のタスクに含まれるアノテーションのeditor_propsも変更します。",
     )
 
     parser.add_argument(

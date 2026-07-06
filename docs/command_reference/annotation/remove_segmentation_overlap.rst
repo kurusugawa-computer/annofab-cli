@@ -17,6 +17,10 @@ Examples
     $ annofabcli annotation remove_segmentation_overlap --project_id prj1 --task_id task1
 
 
+デフォルトでは、休憩中状態のタスクはアノテーションの更新をスキップします。
+休憩中状態のタスクも更新する場合は、 ``--include_break_task`` を指定してください。
+
+
 .. figure:: remove_segmentation_overlap/before.png
     
     コマンドの実行前の状態。塗りつぶしアノテーションは重なっている。

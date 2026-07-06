@@ -40,6 +40,7 @@ class RestoreAnnotationMain(CommandLineWithConfirm):
         *,
         project_id: str,
         change_operator_to_me: bool,
+        include_break_task: bool,
         all_yes: bool,
     ) -> None:
         self.service = service
@@ -47,6 +48,7 @@ class RestoreAnnotationMain(CommandLineWithConfirm):
 
         self.project_id = project_id
         self.change_operator_to_me = change_operator_to_me
+        self.include_break_task = include_break_task
 
     def _to_annotation_detail_for_request(self, parser: SimpleAnnotationParser, detail: AnnotationDetailV1) -> AnnotationDetailV1:
         """
@@ -193,6 +195,12 @@ class RestoreAnnotationMain(CommandLineWithConfirm):
             logger.info(f"タスク'{task_id}'は作業中または受入完了状態のため、アノテーションのリストアをスキップします。 status={task['status']}")
             return False
 
+        if not self.include_break_task and task["status"] == TaskStatus.BREAK.value:
+            logger.info(
+                f"タスク'{task_id}'は休憩中状態のため、アノテーションのリストアをスキップします。休憩中状態のタスクにアノテーションをリストアする場合は、`--include_break_task` を指定してください。"
+            )
+            return False
+
         old_account_id: str | None = None
         changed_operator = False
         if self.change_operator_to_me:
@@ -328,6 +336,7 @@ class RestoreAnnotation(CommandLine):
             self.service,
             project_id=project_id,
             change_operator_to_me=args.change_operator_to_me,
+            include_break_task=args.include_break_task,
             all_yes=args.yes,
         ).main(args.annotation, target_task_ids=task_id_list, parallelism=args.parallelism)
 
@@ -359,6 +368,12 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     )
 
     parser.add_argument(
+        "--include_break_task",
+        action="store_true",
+        help="休憩中状態のタスクに対してもアノテーションをリストアします。",
+    )
+
+    parser.add_argument(
         "--parallelism",
         type=int,
         choices=PARALLELISM_CHOICES,
@@ -371,7 +386,9 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
 def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "restore"
     subcommand_help = "'annotation dump'コマンドの出力結果から、アノテーション情報をリストアします。"
-    description = "'annotation dump'コマンドの出力結果から、アノテーション情報をリストアします。ただし、作業中/完了状態のタスクはリストアできません。"
+    description = (
+        "'annotation dump'コマンドの出力結果から、アノテーション情報をリストアします。ただし、作業中/完了状態のタスクはリストアできません。休憩中状態のタスクはデフォルトではリストアしません。"
+    )
     epilog = "チェッカーまたはオーナロールを持つユーザで実行してください。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
