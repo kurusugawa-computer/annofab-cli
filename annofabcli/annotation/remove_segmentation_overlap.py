@@ -71,10 +71,12 @@ class RemoveSegmentationOverlapMain(CommandLineWithConfirm):
         project_id: str,
         all_yes: bool,
         change_operator_to_me: bool,
+        include_break_task: bool,
     ) -> None:
         self.annofab_service = annofab_service
         self.project_id = project_id
         self.change_operator_to_me = change_operator_to_me
+        self.include_break_task = include_break_task
         super().__init__(all_yes)
 
     def remove_segmentation_overlap_and_save(self, details: list[dict[str, Any]], output_dir: Path) -> list[str]:
@@ -185,6 +187,13 @@ class RemoveSegmentationOverlapMain(CommandLineWithConfirm):
             logger.debug(f"{log_message_prefix}task_id='{task_id}'のタスクの状態は「作業中」または「完了」であるため、アノテーションの更新をスキップします。  :: status='{task['status']}'")
             return 0
 
+        if not self.include_break_task and task["status"] == TaskStatus.BREAK.value:
+            logger.info(
+                f"{log_message_prefix}task_id='{task_id}'のタスクは休憩中状態のため、アノテーションの更新をスキップします。"
+                "休憩中状態のタスクのアノテーションを更新する場合は、`--include_break_task` を指定してください。"
+            )
+            return 0
+
         if not self.confirm_processing(f"task_id='{task_id}'の塗りつぶしアノテーションの重なりを除去しますか？"):
             return 0
 
@@ -292,6 +301,7 @@ class RemoveSegmentationOverlap(CommandLine):
             project_id=project_id,
             all_yes=self.all_yes,
             change_operator_to_me=args.change_operator_to_me,
+            include_break_task=args.include_break_task,
         )
 
         main_obj.main(task_id_list, parallelism=args.parallelism)
@@ -312,6 +322,12 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--change_operator_to_me",
         action="store_true",
         help="過去に担当者を割り当てられていて、かつ現在の担当者が自分自身でない場合、タスクの担当者を一時的に自分自身に変更してからアノテーションを更新します。",
+    )
+
+    parser.add_argument(
+        "--include_break_task",
+        action="store_true",
+        help="休憩中状態のタスクに対してもアノテーションを更新します。",
     )
 
     parser.add_argument(

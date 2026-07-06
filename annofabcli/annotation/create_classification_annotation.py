@@ -34,6 +34,7 @@ class CreateClassificationAnnotationMain(CommandLineWithConfirm):
         all_yes: bool,
         is_change_operator_to_me: bool,
         include_complete_task: bool,
+        include_break_task: bool,
         include_on_hold_task: bool,
     ) -> None:
         self.service = service
@@ -43,6 +44,7 @@ class CreateClassificationAnnotationMain(CommandLineWithConfirm):
         self.project_id = project_id
         self.is_change_operator_to_me = is_change_operator_to_me
         self.include_complete_task = include_complete_task
+        self.include_break_task = include_break_task
         self.include_on_hold_task = include_on_hold_task
 
         # アノテーション仕様を取得
@@ -71,20 +73,29 @@ class CreateClassificationAnnotationMain(CommandLineWithConfirm):
             logger.info(f"タスク'{task_id}'は作業中状態のため、全体アノテーションの作成をスキップします。")
             return None, False, None
 
-        if not self.include_complete_task:  # noqa: SIM102
-            if task["status"] == TaskStatus.COMPLETE.value:
-                logger.info(
-                    f"タスク'{task_id}'は完了状態のため、全体アノテーションの作成をスキップします。"
-                    f"完了状態のタスクに全体アノテーションを作成するには、 ``--include_complete_task`` を指定してください。"
-                )
-                return None, False, None
-
-        if not self.include_on_hold_task:  # noqa: SIM102
-            if task["status"] == TaskStatus.ON_HOLD.value:
-                logger.info(
-                    f"タスク'{task_id}'は保留状態のため、全体アノテーションの作成をスキップします。保留状態のタスクに全体アノテーションを作成するには、 ``--include_on_hold_task`` を指定してください。"
-                )
-                return None, False, None
+        skipped_status_messages = {
+            TaskStatus.COMPLETE.value: (
+                not self.include_complete_task,
+                "完了状態",
+                "``--include_complete_task``",
+            ),
+            TaskStatus.BREAK.value: (
+                not self.include_break_task,
+                "休憩中状態",
+                "``--include_break_task``",
+            ),
+            TaskStatus.ON_HOLD.value: (
+                not self.include_on_hold_task,
+                "保留状態",
+                "``--include_on_hold_task``",
+            ),
+        }
+        should_skip, status_name, option_name = skipped_status_messages.get(task["status"], (False, "", ""))
+        if should_skip:
+            logger.info(
+                f"タスク'{task_id}'は{status_name}のため、全体アノテーションの作成をスキップします。{status_name}のタスクに全体アノテーションを作成するには、 {option_name} を指定してください。"
+            )
+            return None, False, None
 
         old_account_id: str | None = None
         changed_operator = False
@@ -352,6 +363,7 @@ class CreateClassificationAnnotation(CommandLine):
             all_yes=self.all_yes,
             is_change_operator_to_me=args.change_operator_to_me,
             include_complete_task=args.include_complete_task,
+            include_break_task=args.include_break_task,
             include_on_hold_task=args.include_on_hold_task,
         )
 
@@ -394,6 +406,12 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     )
 
     parser.add_argument(
+        "--include_break_task",
+        action="store_true",
+        help="休憩中状態のタスクにも全体アノテーションを作成します。",
+    )
+
+    parser.add_argument(
         "--include_on_hold_task",
         action="store_true",
         help="保留状態のタスクにも全体アノテーションを作成します。",
@@ -417,6 +435,7 @@ def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse
         "既に全体アノテーションが存在する場合はスキップします。"
         "作業中状態のタスクには作成できません。"
         "完了状態のタスクには、デフォルトでは作成できません。"
+        "休憩中状態のタスクには、デフォルトでは作成できません。"
     )
     epilog = "オーナロールまたはチェッカーロールを持つユーザで実行してください。"
 

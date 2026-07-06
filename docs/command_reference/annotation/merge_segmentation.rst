@@ -20,6 +20,9 @@ Examples
 
 1つにまとめる際、最前面にある塗りつぶしアノテーションが更新され、それ以外の塗りつぶしアノテーションは削除されます。
 
+デフォルトでは、休憩中状態のタスクはアノテーションの更新をスキップします。
+休憩中状態のタスクも更新する場合は、 ``--include_break_task`` を指定してください。
+
 
 .. figure:: merge_segmentation/before.png
     
@@ -43,4 +46,3 @@ Usage Details
     :prog: annofabcli annotation merge_segmentation
     :nosubcommands:
     :nodefaultconst:
-
