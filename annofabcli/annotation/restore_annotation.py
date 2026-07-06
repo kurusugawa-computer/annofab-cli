@@ -181,10 +181,6 @@ class RestoreAnnotationMain(CommandLineWithConfirm):
         """
         logger_prefix = f"{task_index + 1!s} 件目: " if task_index is not None else ""
         task_id = task_parser.task_id
-        if not self.confirm_processing(f"task_id='{task_id}' のアノテーションをリストアしますか？"):
-            return False
-
-        logger.info(f"{logger_prefix}task_id='{task_id}' に対して処理します。")
 
         task = self.service.wrapper.get_task_or_none(self.project_id, task_id)
         if task is None:
@@ -200,6 +196,11 @@ class RestoreAnnotationMain(CommandLineWithConfirm):
                 f"タスク'{task_id}'は休憩中状態のため、アノテーションのリストアをスキップします。休憩中状態のタスクにアノテーションをリストアする場合は、`--include_break_task` を指定してください。"
             )
             return False
+
+        if not self.confirm_processing(f"task_id='{task_id}' のアノテーションをリストアしますか？"):
+            return False
+
+        logger.info(f"{logger_prefix}task_id='{task_id}' に対して処理します。")
 
         old_account_id: str | None = None
         changed_operator = False
