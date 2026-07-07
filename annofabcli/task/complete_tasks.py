@@ -251,6 +251,7 @@ class CompleteTasksMain(CommandLineWithConfirm):
         task: Task,
         inspection_status: CommentStatus | None = None,
     ) -> bool:
+        phase_name = self._get_phase_name_for_display(task.phase)
         unprocessed_inspection_list_dict: dict[str, list[Inspection]] = {}
         for input_data_id in task.input_data_id_list:
             unprocessed_inspection_list = self.get_unprocessed_inspection_list(task, input_data_id)
@@ -264,7 +265,7 @@ class CompleteTasksMain(CommandLineWithConfirm):
                 logger.warning(f"task_id='{task.task_id}' :: 未処置の検査コメントに対する対応方法（'--inspection_status'）が指定されていないので、スキップします。")
                 return False
 
-        if not self.confirm_processing(f"タスク'{task.task_id}'の検査/受入フェーズを次のフェーズに進めますか？"):
+        if not self.confirm_processing(f"タスク'{task.task_id}'の{phase_name}を次のフェーズに進めますか？"):
             return False
 
         task = self.change_to_working_status(task)
@@ -284,8 +285,16 @@ class CompleteTasksMain(CommandLineWithConfirm):
                 )
 
         self.service.wrapper.complete_task(task.project_id, task.task_id, last_updated_datetime=task.updated_datetime)
-        logger.info(f"task_id='{task.task_id}' :: 検査/受入フェーズを次のフェーズに進めました。")
+        logger.info(f"task_id='{task.task_id}' :: {phase_name}を次のフェーズに進めました。")
         return True
+
+    @staticmethod
+    def _get_phase_name_for_display(phase: TaskPhase) -> str:
+        if phase == TaskPhase.INSPECTION:
+            return "検査フェーズ"
+        if phase == TaskPhase.ACCEPTANCE:
+            return "受入フェーズ"
+        return f"{phase.value}フェーズ"
 
     def _validate_task(self, task: Task, target_phase: TaskPhase, target_phase_stage: int, task_query: TaskQuery | None) -> bool:
         if not (task.phase == target_phase and task.phase_stage == target_phase_stage):

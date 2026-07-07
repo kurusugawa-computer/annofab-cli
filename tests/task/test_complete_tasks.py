@@ -4,6 +4,7 @@ import argparse
 from unittest.mock import Mock
 
 import pytest
+from annofabapi.dataclass.task import Task
 from annofabapi.models import TaskPhase
 
 from annofabcli.task import complete_tasks
@@ -63,6 +64,32 @@ def test_complete_task_allows_on_hold_task_when_option_is_enabled(monkeypatch: p
 
     assert result is True
     complete_task_mock.assert_called_once()
+
+
+@pytest.mark.parametrize(
+    ("phase", "expected_message"),
+    [
+        ("inspection", "タスク'task1'の検査フェーズを次のフェーズに進めますか？"),
+        ("acceptance", "タスク'task1'の受入フェーズを次のフェーズに進めますか？"),
+    ],
+)
+def test_complete_task_for_inspection_acceptance_phase_shows_current_phase_in_confirm_message(
+    monkeypatch: pytest.MonkeyPatch,
+    phase: str,
+    expected_message: str,
+) -> None:
+    service = Mock()
+    main_obj = complete_tasks.CompleteTasksMain(service, all_yes=False)
+    task = Task.from_dict(create_task_dict(phase=phase))
+    confirm_processing_mock = Mock(return_value=True)
+    monkeypatch.setattr(main_obj, "confirm_processing", confirm_processing_mock)
+    monkeypatch.setattr(main_obj, "get_unprocessed_inspection_list", Mock(return_value=[]))
+    monkeypatch.setattr(main_obj, "change_to_working_status", Mock(return_value=task))
+
+    result = main_obj.complete_task_for_inspection_acceptance_phase(task)
+
+    assert result is True
+    confirm_processing_mock.assert_called_once_with(expected_message)
 
 
 def test_main_passes_include_on_hold_task_to_main_object(monkeypatch: pytest.MonkeyPatch) -> None:
