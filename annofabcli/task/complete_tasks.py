@@ -251,6 +251,7 @@ class CompleteTasksMain(CommandLineWithConfirm):
         task: Task,
         inspection_status: CommentStatus | None = None,
     ) -> bool:
+        phase_name = self._get_phase_name_for_display(task.phase)
         unprocessed_inspection_list_dict: dict[str, list[Inspection]] = {}
         for input_data_id in task.input_data_id_list:
             unprocessed_inspection_list = self.get_unprocessed_inspection_list(task, input_data_id)
@@ -264,7 +265,7 @@ class CompleteTasksMain(CommandLineWithConfirm):
                 logger.warning(f"task_id='{task.task_id}' :: 未処置の検査コメントに対する対応方法（'--inspection_status'）が指定されていないので、スキップします。")
                 return False
 
-        if not self.confirm_processing(f"タスク'{task.task_id}'の検査/受入フェーズを次のフェーズに進めますか？"):
+        if not self.confirm_processing(f"タスク'{task.task_id}'の{phase_name}を次のフェーズに進めますか？"):
             return False
 
         task = self.change_to_working_status(task)
@@ -284,8 +285,16 @@ class CompleteTasksMain(CommandLineWithConfirm):
                 )
 
         self.service.wrapper.complete_task(task.project_id, task.task_id, last_updated_datetime=task.updated_datetime)
-        logger.info(f"task_id='{task.task_id}' :: 検査/受入フェーズを次のフェーズに進めました。")
+        logger.info(f"task_id='{task.task_id}' :: {phase_name}を次のフェーズに進めました。")
         return True
+
+    @staticmethod
+    def _get_phase_name_for_display(phase: TaskPhase) -> str:
+        if phase == TaskPhase.INSPECTION:
+            return "検査フェーズ"
+        if phase == TaskPhase.ACCEPTANCE:
+            return "受入フェーズ"
+        return f"{phase.value}フェーズ"
 
     def _validate_task(self, task: Task, target_phase: TaskPhase, target_phase_stage: int, task_query: TaskQuery | None) -> bool:
         if not (task.phase == target_phase and task.phase_stage == target_phase_stage):
@@ -444,10 +453,18 @@ class CompleteTasks(CommandLine):
         COMMON_MESSAGE = "annofabcli task complete: error:"  # noqa: N806
         if args.phase == TaskPhase.ANNOTATION.value:
             if args.inspection_status is not None:
-                logger.warning(f"'--phase'に'{TaskPhase.ANNOTATION.value}'を指定しているとき、'--inspection_status'の値は無視されます。")
+                print(  # noqa: T201
+                    f"{COMMON_MESSAGE} argument --inspection_status: '--phase'に'{TaskPhase.ANNOTATION.value}'を指定しているとき、'--inspection_status'は指定できません。",
+                    file=sys.stderr,
+                )
+                return False
         elif args.phase in [TaskPhase.INSPECTION.value, TaskPhase.ACCEPTANCE.value]:  # noqa: SIM102
             if args.reply_comment is not None:
-                logger.warning(f"'--phase'に'{TaskPhase.INSPECTION.value}'または'{TaskPhase.ACCEPTANCE.value}'を指定しているとき、'--reply_comment'の値は無視されます。")
+                print(  # noqa: T201
+                    f"{COMMON_MESSAGE} argument --reply_comment: '--phase'に'{TaskPhase.INSPECTION.value}'または'{TaskPhase.ACCEPTANCE.value}'を指定しているとき、'--reply_comment'は指定できません。",
+                    file=sys.stderr,
+                )
+                return False
 
         if args.parallelism is not None and not args.yes:
             print(  # noqa: T201
@@ -503,7 +520,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--phase_stage",
         type=int,
         default=1,
-        help=("操作対象のタスクのフェーズのステージ番号を指定してください。デフォルトは'1'です。"),
+        help=("操作対象のタスクのフェーズのステージ番号を指定してください。"),
     )
 
     parser.add_argument(
@@ -521,7 +538,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         type=str,
         choices=[CommentStatus.RESOLVED.value, CommentStatus.CLOSED.value],
         help=(
-            "操作対象のフェーズ未処置の検査コメントをどの状態に変更するかを指定します。"
+            "操作対象フェーズの未処置の検査コメントを、どの状態に変更するかを指定します。"
             f"'--phase'に'{TaskPhase.INSPECTION.value}'または'{TaskPhase.ACCEPTANCE.value}' を指定したときのみ有効なオプションです。"
             "指定しない場合、未処置の検査コメントが含まれるタスクはスキップします。"
             f"{CommentStatus.RESOLVED.value}: 対応完了,"
@@ -555,12 +572,12 @@ def main(args: argparse.Namespace) -> None:
 
 def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "complete"
-    subcommand_help = "タスクを次のフェーズに進めます。（教師付の提出、検査/受入の合格）"
+    subcommand_help = "タスクを次のフェーズに進めます。（教師付の提出、検査または受入の合格）"
     description = (
-        "タスクを次のフェーズに進めます。（教師付の提出、検査/受入の合格） "
+        "タスクを次のフェーズに進めます。（教師付の提出、検査または受入の合格） "
         "教師付フェーズを完了にする場合は、未回答の検査コメントに対して返信することができます"
         "（未回答の検査コメントに対して返信しないと、タスクを提出できないため）。"
-        "検査/受入フェーズを完了する場合は、未処置の検査コメントを対応完了/対応不要状態に変更できます"
+        "検査または受入フェーズを完了する場合は、未処置の検査コメントを対応完了/対応不要状態に変更できます"
         "（未処置の検査コメントが残っている状態では、タスクを合格にできないため）。"
         "作業中また完了状態のタスクは、次のフェーズに進めません。"
         "保留中状態のタスクは、デフォルトでは次のフェーズに進めません。"

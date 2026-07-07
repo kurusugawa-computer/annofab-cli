@@ -4,9 +4,27 @@ import argparse
 from unittest.mock import Mock
 
 import pytest
+from annofabapi.dataclass.task import Task
 from annofabapi.models import TaskPhase
 
 from annofabcli.task import complete_tasks
+
+
+def create_args_dict(**kwargs: object) -> dict[str, object]:
+    args: dict[str, object] = {
+        "project_id": "project1",
+        "task_id": ["task1"],
+        "phase": "annotation",
+        "phase_stage": 1,
+        "inspection_status": None,
+        "reply_comment": None,
+        "task_query": None,
+        "parallelism": None,
+        "include_on_hold_task": False,
+        "yes": True,
+    }
+    args.update(kwargs)
+    return args
 
 
 def create_task_dict(*, status: str = "not_started", phase: str = "annotation") -> dict[str, object]:
@@ -65,21 +83,60 @@ def test_complete_task_allows_on_hold_task_when_option_is_enabled(monkeypatch: p
     complete_task_mock.assert_called_once()
 
 
+@pytest.mark.parametrize(
+    ("phase", "expected_message"),
+    [
+        ("inspection", "タスク'task1'の検査フェーズを次のフェーズに進めますか？"),
+        ("acceptance", "タスク'task1'の受入フェーズを次のフェーズに進めますか？"),
+    ],
+)
+def test_complete_task_for_inspection_acceptance_phase_shows_current_phase_in_confirm_message(
+    monkeypatch: pytest.MonkeyPatch,
+    phase: str,
+    expected_message: str,
+) -> None:
+    service = Mock()
+    main_obj = complete_tasks.CompleteTasksMain(service, all_yes=False)
+    task = Task.from_dict(create_task_dict(phase=phase))
+    confirm_processing_mock = Mock(return_value=True)
+    monkeypatch.setattr(main_obj, "confirm_processing", confirm_processing_mock)
+    monkeypatch.setattr(main_obj, "get_unprocessed_inspection_list", Mock(return_value=[]))
+    monkeypatch.setattr(main_obj, "change_to_working_status", Mock(return_value=task))
+
+    result = main_obj.complete_task_for_inspection_acceptance_phase(task)
+
+    assert result is True
+    confirm_processing_mock.assert_called_once_with(expected_message)
+
+
+@pytest.mark.parametrize(
+    ("args", "expected_error"),
+    [
+        (
+            argparse.Namespace(**create_args_dict(phase="annotation", inspection_status="closed")),
+            "argument --inspection_status",
+        ),
+        (
+            argparse.Namespace(**create_args_dict(phase="inspection", reply_comment="対応しました")),
+            "argument --reply_comment",
+        ),
+        (
+            argparse.Namespace(**create_args_dict(phase="acceptance", reply_comment="対応しました")),
+            "argument --reply_comment",
+        ),
+    ],
+)
+def test_validate_rejects_phase_specific_unavailable_options(args: argparse.Namespace, expected_error: str, capsys: pytest.CaptureFixture[str]) -> None:
+    result = complete_tasks.CompleteTasks.validate(args)
+
+    assert result is False
+    assert expected_error in capsys.readouterr().err
+
+
 def test_main_passes_include_on_hold_task_to_main_object(monkeypatch: pytest.MonkeyPatch) -> None:
     service = Mock()
     facade = Mock()
-    args = argparse.Namespace(
-        project_id="project1",
-        task_id=["task1"],
-        phase="annotation",
-        phase_stage=1,
-        inspection_status=None,
-        reply_comment=None,
-        task_query=None,
-        parallelism=None,
-        include_on_hold_task=True,
-        yes=True,
-    )
+    args = argparse.Namespace(**create_args_dict(include_on_hold_task=True))
 
     complete_task_list_mock = Mock()
     complete_tasks_main_init_mock = Mock()
