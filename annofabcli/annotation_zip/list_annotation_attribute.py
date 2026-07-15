@@ -18,6 +18,7 @@ from annofabapi.parser import (
     lazy_parse_simple_annotation_dir,
     lazy_parse_simple_annotation_zip,
 )
+from annofabapi.util.page import create_3dpc_editor_url, create_image_editor_url, create_video_editor_url
 
 import annofabcli.common.cli
 from annofabcli.common.cli import (
@@ -36,6 +37,12 @@ from annofabcli.common.facade import (
 from annofabcli.common.utils import print_csv, print_json
 
 logger = logging.getLogger(__name__)
+
+AnnotationEditorType = Literal["image", "video", "3dpc"]
+"""アノテーションエディタの種類。"""
+
+ANNOTATION_EDITOR_TYPE_CHOICES: tuple[AnnotationEditorType, ...] = ("image", "video", "3dpc")
+"""``--annotation_editor_type`` に指定できる値。"""
 
 
 def lazy_parse_simple_annotation_by_input_data(annotation_path: Path) -> Iterator[SimpleAnnotationParser]:
@@ -66,17 +73,94 @@ class AnnotationAttribute(pydantic.BaseModel):
     updated_datetime: str | None
     """アノテーションJSONに格納されているアノテーションの更新日時"""
     annotation_id: str
+    annotation_editor_url: str
     label: str
     attributes: dict[str, str | int | bool]
 
 
-def get_annotation_attribute_list_from_annotation_json(simple_annotation: dict[str, Any], *, target_labels: Collection[str] | None = None) -> list[AnnotationAttribute]:
+def get_seek_seconds_for_video_editor(detail: dict[str, Any]) -> float | None:
+    """
+    動画エディタで再生位置を指定する秒数を取得します。
+
+    Args:
+        detail: アノテーションJSONのdetails配下の要素
+    """
+    if detail["data"]["_type"] != "Range":
+        return None
+
+    return detail["data"]["begin"] / 1000
+
+
+def create_annotation_editor_url(simple_annotation: dict[str, Any], detail: dict[str, Any], annotation_editor_type: AnnotationEditorType | None = None) -> str:
+    """
+    アノテーションエディタ画面のURLを生成します。
+
+    Args:
+        simple_annotation: アノテーションJSONファイルの内容
+        detail: アノテーションJSONのdetails配下の要素
+        annotation_editor_type: アノテーションエディタの種類
+    """
+    if annotation_editor_type == "image":
+        return create_image_editor_url(
+            simple_annotation["project_id"],
+            simple_annotation["task_id"],
+            input_data_id=simple_annotation["input_data_id"],
+            annotation_id=detail["annotation_id"],
+        )
+    elif annotation_editor_type == "video":
+        return create_video_editor_url(
+            simple_annotation["project_id"],
+            simple_annotation["task_id"],
+            annotation_id=detail["annotation_id"],
+            seek_seconds=get_seek_seconds_for_video_editor(detail),
+        )
+    elif annotation_editor_type == "3dpc":
+        return create_3dpc_editor_url(
+            simple_annotation["project_id"],
+            simple_annotation["task_id"],
+            input_data_id=simple_annotation["input_data_id"],
+            annotation_id=detail["annotation_id"],
+        )
+    elif annotation_editor_type is not None:
+        assert_never(annotation_editor_type)
+
+    annotation_type = detail["data"]["_type"]
+    if annotation_type == "Range":
+        return create_video_editor_url(
+            simple_annotation["project_id"],
+            simple_annotation["task_id"],
+            annotation_id=detail["annotation_id"],
+            seek_seconds=get_seek_seconds_for_video_editor(detail),
+        )
+    elif annotation_type == "Unknown":
+        return create_3dpc_editor_url(
+            simple_annotation["project_id"],
+            simple_annotation["task_id"],
+            input_data_id=simple_annotation["input_data_id"],
+            annotation_id=detail["annotation_id"],
+        )
+
+    return create_image_editor_url(
+        simple_annotation["project_id"],
+        simple_annotation["task_id"],
+        input_data_id=simple_annotation["input_data_id"],
+        annotation_id=detail["annotation_id"],
+    )
+
+
+def get_annotation_attribute_list_from_annotation_json(
+    simple_annotation: dict[str, Any],
+    *,
+    target_labels: Collection[str] | None = None,
+    annotation_editor_type: AnnotationEditorType | None = None,
+) -> list[AnnotationAttribute]:
     """
     1個のアノテーションJSONに対して、アノテーションの属性情報を取得します。
 
     Args:
         simple_annotation: アノテーションJSONファイルの内容
         target_labels: 絞り込むラベルのcollection
+        annotation_editor_type: アノテーションエディタの種類
     """
     details = simple_annotation["details"]
 
@@ -97,6 +181,7 @@ def get_annotation_attribute_list_from_annotation_json(simple_annotation: dict[s
                 input_data_name=simple_annotation["input_data_name"],
                 label=detail["label"],
                 annotation_id=detail["annotation_id"],
+                annotation_editor_url=create_annotation_editor_url(simple_annotation, detail, annotation_editor_type),
                 attributes=detail["attributes"],
                 updated_datetime=simple_annotation["updated_datetime"],
             )
@@ -110,6 +195,7 @@ def get_annotation_attribute_list_from_annotation_zipdir_path(
     target_task_ids: Collection[str] | None = None,
     task_query: TaskQuery | None = None,
     target_labels: Collection[str] | None = None,
+    annotation_editor_type: AnnotationEditorType | None = None,
 ) -> list[AnnotationAttribute]:
     """
     アノテーションzipまたはそれを展開したディレクトリから、アノテーションの属性のlistを取得します。
@@ -134,15 +220,17 @@ def get_annotation_attribute_list_from_annotation_zipdir_path(
             if not match_annotation_with_task_query(simple_annotation_dict, task_query):
                 continue
 
-        sub_result = get_annotation_attribute_list_from_annotation_json(simple_annotation_dict, target_labels=target_labels)
+        sub_result = get_annotation_attribute_list_from_annotation_json(
+            simple_annotation_dict,
+            target_labels=target_labels,
+            annotation_editor_type=annotation_editor_type,
+        )
         result.extend(sub_result)
 
     return result
 
 
 def print_annotation_attribute_list_as_csv(annotation_attribute_list: list, output_file: Path | None) -> None:
-    df = pandas.json_normalize(annotation_attribute_list)
-
     base_columns = [
         "project_id",
         "task_id",
@@ -153,8 +241,15 @@ def print_annotation_attribute_list_as_csv(annotation_attribute_list: list, outp
         "input_data_name",
         "updated_datetime",
         "annotation_id",
+        "annotation_editor_url",
         "label",
     ]
+    if len(annotation_attribute_list) == 0:
+        print_csv(pandas.DataFrame(columns=base_columns), output_file)
+        return
+
+    df = pandas.json_normalize(annotation_attribute_list)
+
     attribute_columns = [col for col in df.columns if col.startswith("attributes.")]
     columns = base_columns + attribute_columns
     print_csv(df[columns], output_file)
@@ -186,6 +281,12 @@ class ListAnnotationAttribute(CommandLine):
                 file=sys.stderr,
             )
             return False
+        if args.annotation_editor_type is not None and args.annotation is None:
+            print(  # noqa: T201
+                f"{self.COMMON_MESSAGE} argument --annotation_editor_type: '--annotation'を指定したときのみ指定できます。",
+                file=sys.stderr,
+            )
+            return False
 
         return True
 
@@ -204,6 +305,7 @@ class ListAnnotationAttribute(CommandLine):
         task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id) if args.task_id is not None else None
         label_name_list = annofabcli.common.cli.get_list_from_args(args.label_name) if args.label_name is not None else None
         task_query = TaskQuery.from_dict(annofabcli.common.cli.get_json_from_args(args.task_query)) if args.task_query is not None else None
+        annotation_editor_type: AnnotationEditorType | None = args.annotation_editor_type
 
         output_file: Path = args.output
         output_format = OutputFormat(args.format)
@@ -219,7 +321,11 @@ class ListAnnotationAttribute(CommandLine):
                 )
 
             annotation_attribute_list = get_annotation_attribute_list_from_annotation_zipdir_path(
-                annotation_zipdir_path=annotation_path, target_task_ids=task_id_list, task_query=task_query, target_labels=label_name_list
+                annotation_zipdir_path=annotation_path,
+                target_task_ids=task_id_list,
+                task_query=task_query,
+                target_labels=label_name_list,
+                annotation_editor_type=annotation_editor_type,
             )
             print_annotation_attribute_list(annotation_attribute_list, output_file, output_format)  # type: ignore[arg-type]
 
@@ -234,7 +340,11 @@ class ListAnnotationAttribute(CommandLine):
         else:
             assert annotation_path is not None
             annotation_attribute_list = get_annotation_attribute_list_from_annotation_zipdir_path(
-                annotation_zipdir_path=annotation_path, target_task_ids=task_id_list, task_query=task_query, target_labels=label_name_list
+                annotation_zipdir_path=annotation_path,
+                target_task_ids=task_id_list,
+                task_query=task_query,
+                target_labels=label_name_list,
+                annotation_editor_type=annotation_editor_type,
             )
             print_annotation_attribute_list(annotation_attribute_list, output_file, output_format)  # type: ignore[arg-type]
 
@@ -250,6 +360,14 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     )
 
     annotation_group.add_argument("-p", "--project_id", type=str, help="対象プロジェクトの project_id")
+
+    parser.add_argument(
+        "--annotation_editor_type",
+        type=str,
+        choices=ANNOTATION_EDITOR_TYPE_CHOICES,
+        help="``--annotation`` で指定したアノテーションZIPに対応するアノテーションエディタの種類を指定します。"
+        "未指定の場合は、Range型は ``video`` 、Unknown型は ``3dpc`` 、それ以外は ``image`` としてURLを生成します。",
+    )
 
     argument_parser.add_format(
         choices=[OutputFormat.CSV, OutputFormat.JSON, OutputFormat.PRETTY_JSON],

@@ -44,8 +44,6 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     add_parser_render(subparsers)
     add_parser_visualize_annotation_count_by_attribute_value(subparsers)
     add_parser_visualize_annotation_count_by_label(subparsers)
-    # 作成中のためコメントアウト
-    # add_parser_validate_annotation(subparsers)
 
 
 def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
