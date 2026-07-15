@@ -10,11 +10,16 @@ from pathlib import Path
 from typing import Any
 
 import pandas
-from annofabapi.models import InputDataType, ProjectMemberRole
+from annofabapi.models import ProjectMemberRole
 from dataclasses_json import DataClassJsonMixin
 
 import annofabcli.common.cli
-from annofabcli.annotation_zip.list_annotation_attribute import ANNOTATION_EDITOR_TYPE_CHOICES, AnnotationEditorType, create_annotation_editor_url
+from annofabcli.common.annofab.annotation_editor_url import (
+    ANNOTATION_EDITOR_TYPE_CHOICES,
+    AnnotationEditorType,
+    create_annotation_editor_url,
+    get_annotation_editor_type_from_input_data_type,
+)
 from annofabcli.common.annofab.annotation_zip import lazy_parse_simple_annotation_by_input_data
 from annofabcli.common.cli import COMMAND_LINE_ERROR_STATUS_CODE, ArgumentParser, CommandLine, build_annofabapi_resource_and_login, get_list_from_args
 from annofabcli.common.download import DownloadingFile
@@ -47,23 +52,6 @@ class ClassificationAnnotationInfo(DataClassJsonMixin):
     annotation_id: str
     annotation_editor_url: str
     attributes: dict[str, str | int | bool]
-
-
-def get_annotation_editor_type_from_input_data_type(input_data_type: str) -> AnnotationEditorType:
-    """
-    入力データ種別に対応するアノテーションエディタの種類を返します。
-
-    Args:
-        input_data_type: プロジェクトの入力データ種別
-    """
-    if input_data_type == InputDataType.IMAGE.value:
-        return "image"
-    elif input_data_type == InputDataType.MOVIE.value:
-        return "video"
-    elif input_data_type == InputDataType.CUSTOM.value:
-        return "3dpc"
-
-    raise ValueError(f"入力データ種別 '{input_data_type}' はサポートされていません。")
 
 
 def get_classification_annotation_info_list(

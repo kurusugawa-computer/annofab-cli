@@ -10,7 +10,6 @@ import pandas
 
 from annofabcli.annotation_zip.list_classification_annotation import (
     create_df,
-    get_annotation_editor_type_from_input_data_type,
     get_classification_annotation_info_list,
 )
 
@@ -91,12 +90,6 @@ class TestGetClassificationAnnotationInfoList:
 
         assert len(result) == 1
         assert result[0].annotation_editor_url == "https://annofab.com/projects/test_project/tasks/test_task/timeline?#classification1"
-
-
-def test_get_annotation_editor_type_from_input_data_type():
-    assert get_annotation_editor_type_from_input_data_type("image") == "image"
-    assert get_annotation_editor_type_from_input_data_type("movie") == "video"
-    assert get_annotation_editor_type_from_input_data_type("custom") == "3dpc"
 
 
 class TestCreateDf:
