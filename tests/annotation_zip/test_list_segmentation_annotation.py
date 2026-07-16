@@ -154,7 +154,14 @@ class TestGetAnnotationSegmentationInfoList:
             ],
         }
 
-        result = get_annotation_segmentation_info_list(simple_annotation, open_outer_file=lambda _: image_file)
+        opened_files = []
+
+        def open_outer_file(_: str):
+            file = image_file.open("rb")
+            opened_files.append(file)
+            return file
+
+        result = get_annotation_segmentation_info_list(simple_annotation, open_outer_file=open_outer_file)
 
         assert len(result) == 1
         assert result[0].area == 12
@@ -164,6 +171,7 @@ class TestGetAnnotationSegmentationInfoList:
         }
         assert result[0].bounding_box_width == 4
         assert result[0].bounding_box_height == 3
+        assert opened_files[0].closed
 
     def test_get_annotation_segmentation_info_list_ignores_non_segmentation(self):
         """塗りつぶし以外のアノテーションは無視されることをテスト"""

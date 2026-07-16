@@ -77,14 +77,17 @@ def calculate_segmentation_properties(outer_file: Path | BinaryIO) -> tuple[int,
     if area == 0:
         return area, None, None, None
 
-    yx_array = numpy.argwhere(binary_image_array)
-    min_y, min_x = yx_array.min(axis=0)
-    max_y, max_x = yx_array.max(axis=0)
+    rows = numpy.any(binary_image_array, axis=1)
+    cols = numpy.any(binary_image_array, axis=0)
+    min_y = int(numpy.argmax(rows))
+    max_y = int(len(rows) - 1 - numpy.argmax(rows[::-1]))
+    min_x = int(numpy.argmax(cols))
+    max_x = int(len(cols) - 1 - numpy.argmax(cols[::-1]))
     bounding_box = {
-        "left_top": {"x": int(min_x), "y": int(min_y)},
-        "right_bottom": {"x": int(max_x), "y": int(max_y)},
+        "left_top": {"x": min_x, "y": min_y},
+        "right_bottom": {"x": max_x, "y": max_y},
     }
-    return area, bounding_box, int(max_x - min_x + 1), int(max_y - min_y + 1)
+    return area, bounding_box, max_x - min_x + 1, max_y - min_y + 1
 
 
 def get_segmentation_properties(
@@ -98,7 +101,12 @@ def get_segmentation_properties(
 
     try:
         outer_file = open_outer_file(data_uri)
-        return calculate_segmentation_properties(outer_file)
+        try:
+            return calculate_segmentation_properties(outer_file)
+        finally:
+            close = getattr(outer_file, "close", None)
+            if callable(close):
+                close()
     except (AnnotationOuterFileNotFoundError, OSError, ValueError) as e:
         logger.warning(f"塗りつぶし画像を読み込めないため、面積と外接矩形をNoneにします。 annotation_id='{annotation_id}', data_uri='{data_uri}' :: {e}")
         return None, None, None, None
