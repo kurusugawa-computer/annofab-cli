@@ -2,13 +2,16 @@ import argparse
 import logging
 import sys
 import tempfile
-from collections.abc import Collection
+from collections.abc import Callable, Collection
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, BinaryIO
 
+import numpy
 import pandas
+from annofabapi.exceptions import AnnotationOuterFileNotFoundError
 from annofabapi.models import InputDataType, ProjectMemberRole
+from annofabapi.segmentation import read_binary_image
 from annofabapi.util.page import create_image_editor_url
 from dataclasses_json import DataClassJsonMixin
 
@@ -53,10 +56,62 @@ class AnnotationSegmentationInfo(DataClassJsonMixin):
     data_uri: str
     """塗りつぶし画像の外部ファイルを参照するURI。"""
 
+    area: int | None
+    """塗りつぶし領域の面積。外部ファイルを読み込めない場合はNone。"""
+
+    bounding_box: dict[str, dict[str, int]] | None
+    """塗りつぶし領域の外接矩形。外部ファイルを読み込めない場合や面積が0の場合はNone。"""
+
+    bounding_box_width: int | None
+    """外接矩形の幅。外部ファイルを読み込めない場合や面積が0の場合はNone。"""
+
+    bounding_box_height: int | None
+    """外接矩形の高さ。外部ファイルを読み込めない場合や面積が0の場合はNone。"""
+
     attributes: dict[str, Any]
 
 
-def get_annotation_segmentation_info_list(simple_annotation: dict[str, Any], *, target_label_names: Collection[str] | None = None) -> list[AnnotationSegmentationInfo]:
+def calculate_segmentation_properties(outer_file: Path | BinaryIO) -> tuple[int, dict[str, dict[str, int]] | None, int | None, int | None]:
+    binary_image_array = read_binary_image(outer_file)
+    area = int(numpy.count_nonzero(binary_image_array))
+    if area == 0:
+        return area, None, None, None
+
+    yx_array = numpy.argwhere(binary_image_array)
+    min_y, min_x = yx_array.min(axis=0)
+    max_y, max_x = yx_array.max(axis=0)
+    bounding_box = {
+        "left_top": {"x": int(min_x), "y": int(min_y)},
+        "right_bottom": {"x": int(max_x), "y": int(max_y)},
+    }
+    return area, bounding_box, int(max_x - min_x + 1), int(max_y - min_y + 1)
+
+
+def get_segmentation_properties(
+    data_uri: str,
+    *,
+    open_outer_file: Callable[[str], Path | BinaryIO] | None = None,
+    annotation_id: str | None = None,
+) -> tuple[int | None, dict[str, dict[str, int]] | None, int | None, int | None]:
+    if open_outer_file is None:
+        return None, None, None, None
+
+    try:
+        outer_file = open_outer_file(data_uri)
+        return calculate_segmentation_properties(outer_file)
+    except (AnnotationOuterFileNotFoundError, OSError, ValueError) as e:
+        logger.warning(
+            f"塗りつぶし画像を読み込めないため、面積と外接矩形をNoneにします。 annotation_id='{annotation_id}', data_uri='{data_uri}' :: {e}"
+        )
+        return None, None, None, None
+
+
+def get_annotation_segmentation_info_list(
+    simple_annotation: dict[str, Any],
+    *,
+    target_label_names: Collection[str] | None = None,
+    open_outer_file: Callable[[str], Path | BinaryIO] | None = None,
+) -> list[AnnotationSegmentationInfo]:
     result = []
     target_label_names_set = set(target_label_names) if target_label_names is not None else None
     for detail in simple_annotation["details"]:
@@ -69,6 +124,12 @@ def get_annotation_segmentation_info_list(simple_annotation: dict[str, Any], *, 
         if target_label_names_set is not None and label not in target_label_names_set:
             continue
 
+        data_uri = data["data_uri"]
+        area, bounding_box, bounding_box_width, bounding_box_height = get_segmentation_properties(
+            data_uri,
+            open_outer_file=open_outer_file,
+            annotation_id=detail["annotation_id"],
+        )
         result.append(
             AnnotationSegmentationInfo(
                 project_id=simple_annotation["project_id"],
@@ -87,7 +148,11 @@ def get_annotation_segmentation_info_list(simple_annotation: dict[str, Any], *, 
                     annotation_id=detail["annotation_id"],
                 ),
                 annotation_type=data["_type"],
-                data_uri=data["data_uri"],
+                data_uri=data_uri,
+                area=area,
+                bounding_box=bounding_box,
+                bounding_box_width=bounding_box_width,
+                bounding_box_height=bounding_box_height,
                 updated_datetime=simple_annotation["updated_datetime"],
                 attributes=detail["attributes"],
             )
@@ -115,7 +180,11 @@ def get_annotation_segmentation_info_list_from_annotation_path(
         dict_simple_annotation = parser.load_json()
         if task_query is not None and not match_annotation_with_task_query(dict_simple_annotation, task_query):
             continue
-        sub_annotation_segmentation_list = get_annotation_segmentation_info_list(dict_simple_annotation, target_label_names=target_label_names)
+        sub_annotation_segmentation_list = get_annotation_segmentation_info_list(
+            dict_simple_annotation,
+            target_label_names=target_label_names,
+            open_outer_file=parser.open_outer_file,
+        )
         annotation_segmentation_list.extend(sub_annotation_segmentation_list)
     return annotation_segmentation_list
 
@@ -137,6 +206,13 @@ def create_df(
         "annotation_editor_url",
         "annotation_type",
         "data_uri",
+        "area",
+        "bounding_box.left_top.x",
+        "bounding_box.left_top.y",
+        "bounding_box.right_bottom.x",
+        "bounding_box.right_bottom.y",
+        "bounding_box_width",
+        "bounding_box_height",
     ]
 
     if not annotation_segmentation_list:
@@ -148,6 +224,10 @@ def create_df(
 
     attribute_columns = sorted(col for col in df.columns if col.startswith("attributes."))
     columns = base_columns + attribute_columns
+
+    for column in columns:
+        if column not in df.columns:
+            df[column] = pandas.NA
 
     return df[columns]
 

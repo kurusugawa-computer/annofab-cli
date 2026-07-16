@@ -39,6 +39,13 @@ Examples
         "annotation_editor_url": "https://annofab.com/projects/proj1/tasks/task_00/editor?#i1/ann1",
         "annotation_type": "Segmentation",
         "data_uri": "ann1",
+        "area": 1200,
+        "bounding_box": {
+          "left_top": {"x": 10, "y": 20},
+          "right_bottom": {"x": 59, "y": 43}
+        },
+        "bounding_box_width": 50,
+        "bounding_box_height": 24,
         "attributes": {
           "visible": true
         }
@@ -78,6 +85,10 @@ Examples
 
 * ``annotation_type`` : アノテーションの種類。 ``Segmentation`` または ``SegmentationV2``
 * ``data_uri`` : 塗りつぶし画像の外部ファイルを参照するURI
+* ``area`` : 塗りつぶし領域の面積。単位はピクセル数です。外部ファイルを読み込めない場合は ``null`` です。
+* ``bounding_box`` : 塗りつぶし領域の外接矩形。 ``left_top`` と ``right_bottom`` を持ちます。外部ファイルを読み込めない場合や面積が0の場合は ``null`` です。
+* ``bounding_box_width`` : 外接矩形の幅。外部ファイルを読み込めない場合や面積が0の場合は ``null`` です。
+* ``bounding_box_height`` : 外接矩形の高さ。外部ファイルを読み込めない場合や面積が0の場合は ``null`` です。
 
 属性情報
 --------------------
