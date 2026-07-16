@@ -100,9 +100,7 @@ def get_segmentation_properties(
         outer_file = open_outer_file(data_uri)
         return calculate_segmentation_properties(outer_file)
     except (AnnotationOuterFileNotFoundError, OSError, ValueError) as e:
-        logger.warning(
-            f"塗りつぶし画像を読み込めないため、面積と外接矩形をNoneにします。 annotation_id='{annotation_id}', data_uri='{data_uri}' :: {e}"
-        )
+        logger.warning(f"塗りつぶし画像を読み込めないため、面積と外接矩形をNoneにします。 annotation_id='{annotation_id}', data_uri='{data_uri}' :: {e}")
         return None, None, None, None
 
 
