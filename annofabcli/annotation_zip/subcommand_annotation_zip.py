@@ -14,6 +14,7 @@ from annofabcli.annotation_zip.list_classification_annotation import add_parser 
 from annofabcli.annotation_zip.list_polygon_annotation import add_parser as add_parser_list_polygon_annotation
 from annofabcli.annotation_zip.list_polyline_annotation import add_parser as add_parser_list_polyline_annotation
 from annofabcli.annotation_zip.list_range_annotation import add_parser as add_parser_list_range_annotation
+from annofabcli.annotation_zip.list_segmentation_annotation import add_parser as add_parser_list_segmentation_annotation
 from annofabcli.annotation_zip.list_single_point_annotation import add_parser as add_parser_list_single_point_annotation
 from annofabcli.annotation_zip.merge import add_parser as add_parser_merge
 from annofabcli.annotation_zip.render import add_parser as add_parser_render
@@ -41,6 +42,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     add_parser_list_polygon_annotation(subparsers)
     add_parser_list_polyline_annotation(subparsers)
     add_parser_list_range_annotation(subparsers)
+    add_parser_list_segmentation_annotation(subparsers)
     add_parser_list_single_point_annotation(subparsers)
     add_parser_merge(subparsers)
     add_parser_render(subparsers)

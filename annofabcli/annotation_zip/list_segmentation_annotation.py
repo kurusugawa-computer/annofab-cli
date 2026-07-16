@@ -2,16 +2,18 @@ import argparse
 import logging
 import sys
 import tempfile
-from collections.abc import Collection
+from collections.abc import Callable, Collection
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, BinaryIO
 
+import numpy
 import pandas
+from annofabapi.exceptions import AnnotationOuterFileNotFoundError
 from annofabapi.models import InputDataType, ProjectMemberRole
+from annofabapi.segmentation import read_binary_image
 from annofabapi.util.page import create_image_editor_url
-from pydantic import BaseModel, ConfigDict
-from shapely.errors import ShapelyError
-from shapely.geometry import Polygon
+from dataclasses_json import DataClassJsonMixin
 
 import annofabcli.common.cli
 from annofabcli.common.annofab.annotation_zip import lazy_parse_simple_annotation_by_input_data
@@ -27,14 +29,12 @@ from annofabcli.common.utils import print_csv, print_json
 
 logger = logging.getLogger(__name__)
 
+SEGMENTATION_DATA_TYPES = {"Segmentation", "SegmentationV2"}
+"""塗りつぶしアノテーションのdata._typeの集合。"""
 
-class AnnotationPolygonInfo(BaseModel):
-    """
-    ポリゴンアノテーションの情報
-    """
 
-    model_config = ConfigDict(frozen=True)
-
+@dataclass(frozen=True)
+class AnnotationSegmentationInfo(DataClassJsonMixin):
     project_id: str
     task_id: str
     task_phase: str
@@ -45,135 +45,136 @@ class AnnotationPolygonInfo(BaseModel):
     input_data_name: str
 
     updated_datetime: str | None
-    """アノテーションJSONに格納されているアノテーションの更新日時"""
+    """アノテーションJSONに格納されているアノテーションの更新日時。"""
 
     label: str
     annotation_id: str
     annotation_editor_url: str
-    point_count: int
-    area: float | None
-    """ポリゴンの面積。2点のポリラインの場合はNone"""
-    centroid: dict[str, float] | None
-    """ポリゴンの重心座標。2点のポリラインの場合はNone"""
-    bounding_box: dict[str, dict[str, float]] | None
-    """ポリゴンの外接矩形。2点のポリラインの場合はNone"""
-    bounding_box_width: float | None
-    """外接矩形の幅。2点のポリラインの場合はNone"""
-    bounding_box_height: float | None
-    """外接矩形の高さ。2点のポリラインの場合はNone"""
+    annotation_type: str
+    """アノテーションの種類。Segmentation または SegmentationV2。"""
+
+    data_uri: str
+    """塗りつぶし画像の外部ファイルを参照するURI。"""
+
+    area: int | None
+    """塗りつぶし領域の面積。外部ファイルを読み込めない場合はNone。"""
+
+    bounding_box: dict[str, dict[str, int]] | None
+    """塗りつぶし領域の外接矩形。外部ファイルを読み込めない場合や面積が0の場合はNone。"""
+
+    bounding_box_width: int | None
+    """外接矩形の幅。外部ファイルを読み込めない場合や面積が0の場合はNone。"""
+
+    bounding_box_height: int | None
+    """外接矩形の高さ。外部ファイルを読み込めない場合や面積が0の場合はNone。"""
+
     attributes: dict[str, Any]
-    points: list[dict[str, int]]
-    """ポリゴンの頂点リスト。各頂点は整数座標 {"x": int, "y": int} の形式。
-    """
 
 
-def calculate_polygon_properties(
-    points: list[dict[str, int]],
-) -> tuple[
-    float | None,
-    dict[str, float] | None,
-    dict[str, dict[str, float]] | None,
-    float | None,
-    float | None,
-]:
-    """
-    ポリゴンの面積、重心、外接矩形のサイズを計算する。
+def calculate_segmentation_properties(outer_file: Path | BinaryIO) -> tuple[int, dict[str, dict[str, int]] | None, int | None, int | None]:
+    binary_image_array = read_binary_image(outer_file)
+    area = int(numpy.count_nonzero(binary_image_array))
+    if area == 0:
+        return area, None, None, None
 
-    Args:
-        points: ポリゴンの頂点リスト。各頂点は整数座標 {"x": int, "y": int} の形式。
+    rows = numpy.any(binary_image_array, axis=1)
+    cols = numpy.any(binary_image_array, axis=0)
+    min_y = int(numpy.argmax(rows))
+    max_y = int(len(rows) - 1 - numpy.argmax(rows[::-1]))
+    min_x = int(numpy.argmax(cols))
+    max_x = int(len(cols) - 1 - numpy.argmax(cols[::-1]))
+    bounding_box = {
+        "left_top": {"x": min_x, "y": min_y},
+        "right_bottom": {"x": max_x, "y": max_y},
+    }
+    return area, bounding_box, max_x - min_x + 1, max_y - min_y + 1
 
-    Returns:
-        (面積, 重心, 外接矩形, 外接矩形の幅, 外接矩形の高さ) のタプル。
-        2点以下の場合はポリラインなので、(None, None, None, None, None) を返す。
-        無効なポリゴン（自己交差など）の場合も (None, None, None, None, None) を返す。
-    """
-    if len(points) < 3:
-        # 2点以下の場合はポリラインなので、NA扱い
-        return None, None, None, None, None
+
+def get_segmentation_properties(
+    data_uri: str,
+    *,
+    open_outer_file: Callable[[str], Path | BinaryIO] | None = None,
+    annotation_id: str | None = None,
+) -> tuple[int | None, dict[str, dict[str, int]] | None, int | None, int | None]:
+    if open_outer_file is None:
+        return None, None, None, None
 
     try:
-        # shapelyのPolygonオブジェクトを作成
-        coords = [(p["x"], p["y"]) for p in points]
-        polygon = Polygon(coords)
-
-        # 面積を計算
-        area = polygon.area
-
-        # 重心を計算
-        centroid = polygon.centroid
-        centroid_dict = {"x": centroid.x, "y": centroid.y}
-
-        # 外接矩形を取得
-        minx, miny, maxx, maxy = polygon.bounds
-        bounding_box = {
-            "left_top": {"x": minx, "y": miny},
-            "right_bottom": {"x": maxx, "y": maxy},
-        }
-        bbox_width = maxx - minx
-        bbox_height = maxy - miny
-    except (ValueError, ShapelyError):
-        # 無効なポリゴン（例：自己交差など）の場合はNA扱い
-        return None, None, None, None, None
-    else:
-        return area, centroid_dict, bounding_box, bbox_width, bbox_height
+        outer_file = open_outer_file(data_uri)
+        try:
+            return calculate_segmentation_properties(outer_file)
+        finally:
+            close = getattr(outer_file, "close", None)
+            if callable(close):
+                close()
+    except (AnnotationOuterFileNotFoundError, OSError, ValueError) as e:
+        logger.warning(f"塗りつぶし画像を読み込めないため、面積と外接矩形をNoneにします。 annotation_id='{annotation_id}', data_uri='{data_uri}' :: {e}")
+        return None, None, None, None
 
 
-def get_annotation_polygon_info_list(simple_annotation: dict[str, Any], *, target_label_names: Collection[str] | None = None) -> list[AnnotationPolygonInfo]:
+def get_annotation_segmentation_info_list(
+    simple_annotation: dict[str, Any],
+    *,
+    target_label_names: Collection[str] | None = None,
+    open_outer_file: Callable[[str], Path | BinaryIO] | None = None,
+) -> list[AnnotationSegmentationInfo]:
     result = []
     target_label_names_set = set(target_label_names) if target_label_names is not None else None
     for detail in simple_annotation["details"]:
-        if detail["data"]["_type"] == "Points":
-            label = detail["label"]
-            # ラベル名によるフィルタリング
-            if target_label_names_set is not None and label not in target_label_names_set:
-                continue
+        data = detail["data"]
+        if data["_type"] not in SEGMENTATION_DATA_TYPES:
+            continue
 
-            points = detail["data"]["points"]
-            point_count = len(points)
+        label = detail["label"]
+        # ラベル名によるフィルタリング
+        if target_label_names_set is not None and label not in target_label_names_set:
+            continue
 
-            # ポリゴンのプロパティを計算
-            area, centroid, bounding_box, bbox_width, bbox_height = calculate_polygon_properties(points)
-
-            result.append(
-                AnnotationPolygonInfo(
-                    project_id=simple_annotation["project_id"],
-                    task_id=simple_annotation["task_id"],
-                    task_phase=simple_annotation["task_phase"],
-                    task_phase_stage=simple_annotation["task_phase_stage"],
-                    task_status=simple_annotation["task_status"],
+        data_uri = data["data_uri"]
+        area, bounding_box, bounding_box_width, bounding_box_height = get_segmentation_properties(
+            data_uri,
+            open_outer_file=open_outer_file,
+            annotation_id=detail["annotation_id"],
+        )
+        result.append(
+            AnnotationSegmentationInfo(
+                project_id=simple_annotation["project_id"],
+                task_id=simple_annotation["task_id"],
+                task_phase=simple_annotation["task_phase"],
+                task_phase_stage=simple_annotation["task_phase_stage"],
+                task_status=simple_annotation["task_status"],
+                input_data_id=simple_annotation["input_data_id"],
+                input_data_name=simple_annotation["input_data_name"],
+                label=label,
+                annotation_id=detail["annotation_id"],
+                annotation_editor_url=create_image_editor_url(
+                    simple_annotation["project_id"],
+                    simple_annotation["task_id"],
                     input_data_id=simple_annotation["input_data_id"],
-                    input_data_name=simple_annotation["input_data_name"],
-                    label=label,
                     annotation_id=detail["annotation_id"],
-                    annotation_editor_url=create_image_editor_url(
-                        simple_annotation["project_id"],
-                        simple_annotation["task_id"],
-                        input_data_id=simple_annotation["input_data_id"],
-                        annotation_id=detail["annotation_id"],
-                    ),
-                    point_count=point_count,
-                    area=area,
-                    centroid=centroid,
-                    bounding_box=bounding_box,
-                    bounding_box_width=bbox_width,
-                    bounding_box_height=bbox_height,
-                    attributes=detail["attributes"],
-                    points=points,
-                    updated_datetime=simple_annotation["updated_datetime"],
-                )
+                ),
+                annotation_type=data["_type"],
+                data_uri=data_uri,
+                area=area,
+                bounding_box=bounding_box,
+                bounding_box_width=bounding_box_width,
+                bounding_box_height=bounding_box_height,
+                updated_datetime=simple_annotation["updated_datetime"],
+                attributes=detail["attributes"],
             )
+        )
 
     return result
 
 
-def get_annotation_polygon_info_list_from_annotation_path(
+def get_annotation_segmentation_info_list_from_annotation_path(
     annotation_path: Path,
     *,
     target_task_ids: Collection[str] | None = None,
     task_query: TaskQuery | None = None,
     target_label_names: Collection[str] | None = None,
-) -> list[AnnotationPolygonInfo]:
-    annotation_polygon_list = []
+) -> list[AnnotationSegmentationInfo]:
+    annotation_segmentation_list = []
     target_task_ids = set(target_task_ids) if target_task_ids is not None else None
     iter_parser = lazy_parse_simple_annotation_by_input_data(annotation_path)
     logger.info(f"アノテーションZIPまたはディレクトリ'{annotation_path}'を読み込みます。")
@@ -185,24 +186,18 @@ def get_annotation_polygon_info_list_from_annotation_path(
         dict_simple_annotation = parser.load_json()
         if task_query is not None and not match_annotation_with_task_query(dict_simple_annotation, task_query):
             continue
-        sub_annotation_polygon_list = get_annotation_polygon_info_list(dict_simple_annotation, target_label_names=target_label_names)
-        annotation_polygon_list.extend(sub_annotation_polygon_list)
-    return annotation_polygon_list
+        sub_annotation_segmentation_list = get_annotation_segmentation_info_list(
+            dict_simple_annotation,
+            target_label_names=target_label_names,
+            open_outer_file=parser.open_outer_file,
+        )
+        annotation_segmentation_list.extend(sub_annotation_segmentation_list)
+    return annotation_segmentation_list
 
 
 def create_df(
-    annotation_polygon_list: list[AnnotationPolygonInfo],
+    annotation_segmentation_list: list[AnnotationSegmentationInfo],
 ) -> pandas.DataFrame:
-    """
-    CSV出力用のDataFrameを作成する。
-
-    Notes:
-        points列は含めない。CSVに含めると列の長さが非常に大きくなるため。
-        attributes列は、キーごとに別々の列（attributes.<key>の形式）として出力する。
-        pandas.json_normalizeを使用してネストした辞書を自動的に展開する。
-
-    """
-    # 基本列の定義
     base_columns = [
         "project_id",
         "task_id",
@@ -215,10 +210,9 @@ def create_df(
         "label",
         "annotation_id",
         "annotation_editor_url",
-        "point_count",
+        "annotation_type",
+        "data_uri",
         "area",
-        "centroid.x",
-        "centroid.y",
         "bounding_box.left_top.x",
         "bounding_box.left_top.y",
         "bounding_box.right_bottom.x",
@@ -227,18 +221,15 @@ def create_df(
         "bounding_box_height",
     ]
 
-    if len(annotation_polygon_list) == 0:
+    if not annotation_segmentation_list:
         # 件数が0件のときも列ヘッダを出力する
         return pandas.DataFrame(columns=base_columns)
 
-    # pandas.json_normalizeを使用してネストした辞書を展開
-    # centroid（辞書）とattributes（辞書）が自動的に展開される
-    df = pandas.json_normalize([e.model_dump() for e in annotation_polygon_list])
+    tmp_annotation_segmentation_list = [e.to_dict(encode_json=True) for e in annotation_segmentation_list]
+    df = pandas.json_normalize(tmp_annotation_segmentation_list)
 
-    # attributes列を抽出してソート
-    attributes_columns = sorted([col for col in df.columns if col.startswith("attributes.")])
-    # 列の順序を設定
-    columns = base_columns + attributes_columns
+    attribute_columns = sorted(col for col in df.columns if col.startswith("attributes."))
+    columns = base_columns + attribute_columns
 
     for column in columns:
         if column not in df.columns:
@@ -247,7 +238,7 @@ def create_df(
     return df[columns]
 
 
-def print_annotation_polygon(
+def print_annotation_segmentation(
     annotation_path: Path,
     output_file: Path,
     output_format: OutputFormat,
@@ -256,24 +247,23 @@ def print_annotation_polygon(
     task_query: TaskQuery | None = None,
     target_label_names: Collection[str] | None = None,
 ) -> None:
-    annotation_polygon_list = get_annotation_polygon_info_list_from_annotation_path(
+    annotation_segmentation_list = get_annotation_segmentation_info_list_from_annotation_path(
         annotation_path,
         target_task_ids=target_task_ids,
         task_query=task_query,
         target_label_names=target_label_names,
     )
 
-    logger.info(f"{len(annotation_polygon_list)} 件のポリゴンアノテーションの情報を出力します。 :: output='{output_file}'")
+    logger.info(f"{len(annotation_segmentation_list)} 件の塗りつぶしアノテーションの情報を出力します。 :: output='{output_file}'")
 
     if output_format == OutputFormat.CSV:
-        df = create_df(annotation_polygon_list)
+        df = create_df(annotation_segmentation_list)
         print_csv(df, output_file)
 
     elif output_format in [OutputFormat.PRETTY_JSON, OutputFormat.JSON]:
         json_is_pretty = output_format == OutputFormat.PRETTY_JSON
-        # Pydantic BaseModelを使用したJSON処理
         print_json(
-            [e.model_dump() for e in annotation_polygon_list],
+            [e.to_dict(encode_json=True) for e in annotation_segmentation_list],
             is_pretty=json_is_pretty,
             output=output_file,
         )
@@ -282,8 +272,8 @@ def print_annotation_polygon(
         raise ValueError(f"出力形式 '{output_format}' はサポートされていません。")
 
 
-class ListAnnotationPolygon(CommandLine):
-    COMMON_MESSAGE = "annofabcli annotation_zip list_polygon_annotation: error:"
+class ListAnnotationSegmentation(CommandLine):
+    COMMON_MESSAGE = "annofabcli annotation_zip list_segmentation_annotation: error:"
 
     def validate(self, args: argparse.Namespace) -> bool:
         if args.project_id is None and args.annotation is None:
@@ -319,13 +309,13 @@ class ListAnnotationPolygon(CommandLine):
 
         downloading_obj = DownloadingFile(self.service)
 
-        def download_and_print_annotation_polygon(project_id: str, temp_dir: Path, *, is_latest: bool) -> None:
+        def download_and_print_annotation_segmentation(project_id: str, temp_dir: Path, *, is_latest: bool) -> None:
             local_annotation_path = downloading_obj.download_annotation_zip_to_dir(
                 project_id,
                 temp_dir,
                 is_latest=is_latest,
             )
-            print_annotation_polygon(
+            print_annotation_segmentation(
                 local_annotation_path,
                 output_file,
                 output_format,
@@ -336,17 +326,17 @@ class ListAnnotationPolygon(CommandLine):
 
         if project_id is not None:
             if args.temp_dir is not None:
-                download_and_print_annotation_polygon(project_id=project_id, temp_dir=args.temp_dir, is_latest=args.latest)
+                download_and_print_annotation_segmentation(project_id=project_id, temp_dir=args.temp_dir, is_latest=args.latest)
             else:
                 with tempfile.TemporaryDirectory() as str_temp_dir:
-                    download_and_print_annotation_polygon(
+                    download_and_print_annotation_segmentation(
                         project_id=project_id,
                         temp_dir=Path(str_temp_dir),
                         is_latest=args.latest,
                     )
         else:
             assert annotation_path is not None
-            print_annotation_polygon(
+            print_annotation_segmentation(
                 annotation_path,
                 output_file,
                 output_format,
@@ -388,7 +378,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--label_name",
         type=str,
         nargs="+",
-        help="指定したラベル名のポリゴンアノテーションのみを対象にします。複数指定できます。",
+        help="指定したラベル名の塗りつぶしアノテーションのみを対象にします。複数指定できます。",
     )
 
     parser.add_argument(
@@ -409,12 +399,12 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
 def main(args: argparse.Namespace) -> None:
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
-    ListAnnotationPolygon(service, facade, args).main()
+    ListAnnotationSegmentation(service, facade, args).main()
 
 
 def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
-    subcommand_name = "list_polygon_annotation"
-    subcommand_help = "アノテーションZIPからポリゴンアノテーションの座標情報と属性情報を出力します。"
+    subcommand_name = "list_segmentation_annotation"
+    subcommand_help = "アノテーションZIPから塗りつぶしアノテーションの情報を出力します。"
     epilog = "アノテーションZIPをダウンロードする場合は、オーナロールまたはアノテーションユーザロールを持つユーザで実行してください。"
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description=subcommand_help, epilog=epilog)
     parse_args(parser)

@@ -1,15 +1,13 @@
 ====================================================================================
-annotation_zip list_polygon_annotation
+annotation_zip list_segmentation_annotation
 ====================================================================================
 
 
 Description
 =================================
-アノテーションZIPからポリゴンアノテーションの座標情報と属性情報を出力します。
+アノテーションZIPから塗りつぶしアノテーションの情報を出力します。
 
-Annofabではポリラインとポリゴンの区別がないため、ポリラインも含まれる可能性があります。
-
-
+対象のアノテーション種類は ``Segmentation`` と ``SegmentationV2`` です。
 
 Examples
 =================================
@@ -19,7 +17,7 @@ Examples
 
 .. code-block:: bash
 
-    $ annofabcli annotation_zip list_polygon_annotation --project_id prj1 --output out.json --format pretty_json
+    $ annofabcli annotation_zip list_segmentation_annotation --project_id prj1 --output out.json --format pretty_json
 
 
 
@@ -36,26 +34,23 @@ Examples
         "input_data_id": "i1",
         "input_data_name": "i1.jpg",
         "updated_datetime": "2023-10-01T12:00:00.000+09:00",
-        "label": "cat",
+        "label": "road",
         "annotation_id": "ann1",
         "annotation_editor_url": "https://annofab.com/projects/proj1/tasks/task_00/editor?#i1/ann1",
-        "point_count": 3,
-        "area": 50.0,
-        "centroid": {"x": 3.3, "y": 3.3},
-        "bounding_box_width": 10,
-        "bounding_box_height": 10,
-        "attributes": {
-          "occluded": true,
-          "type": "sedan"
+        "annotation_type": "Segmentation",
+        "data_uri": "ann1",
+        "area": 1200,
+        "bounding_box": {
+          "left_top": {"x": 10, "y": 20},
+          "right_bottom": {"x": 59, "y": 43}
         },
-        "points": [{"x": 0, "y": 0}, {"x": 10, "y": 0}, {"x": 0, "y": 10}]
+        "bounding_box_width": 50,
+        "bounding_box_height": 24,
+        "attributes": {
+          "visible": true
+        }
       }
     ]
-
-
-
-
-
 
 
 特定のラベルのみ出力
@@ -63,9 +58,7 @@ Examples
 
 .. code-block:: bash
 
-    $ annofabcli annotation_zip list_polygon_annotation --project_id prj1 --label_name cat dog --output out.csv
-
-
+    $ annofabcli annotation_zip list_segmentation_annotation --project_id prj1 --label_name road sky --output out.csv
 
 
 
@@ -87,16 +80,15 @@ Examples
 * ``annotation_id`` : アノテーションID
 * ``annotation_editor_url`` : アノテーションエディタのURL。対象のアノテーションを直接開くことができます。
 
-ポリゴン情報
+塗りつぶしアノテーション情報
 --------------------
 
-* ``point_count`` : ポリゴンの頂点数
-* ``area`` : ポリゴンの面積
-* ``centroid`` : ポリゴンの重心（x, y）
-* ``bounding_box`` : ポリゴンの外接矩形。 ``left_top`` と ``right_bottom`` を持ちます。
-* ``bounding_box_width`` : 外接矩形の幅
-* ``bounding_box_height`` : 外接矩形の高さ
-* ``points`` : ポリゴンの頂点リスト
+* ``annotation_type`` : アノテーションの種類。 ``Segmentation`` または ``SegmentationV2``
+* ``data_uri`` : 塗りつぶし画像の外部ファイルを参照するURI
+* ``area`` : 塗りつぶし領域の面積。単位はピクセル数です。外部ファイルを読み込めない場合は ``null`` です。
+* ``bounding_box`` : 塗りつぶし領域の外接矩形。 ``left_top`` と ``right_bottom`` を持ちます。外部ファイルを読み込めない場合や面積が0の場合は ``null`` です。
+* ``bounding_box_width`` : 外接矩形の幅。外部ファイルを読み込めない場合や面積が0の場合は ``null`` です。
+* ``bounding_box_height`` : 外接矩形の高さ。外部ファイルを読み込めない場合や面積が0の場合は ``null`` です。
 
 属性情報
 --------------------
@@ -108,7 +100,7 @@ Usage Details
 =================================
 
 .. argparse::
-    :ref: annofabcli.annotation_zip.list_polygon_annotation.add_parser
-    :prog: annofabcli annotation_zip list_polygon_annotation
+    :ref: annofabcli.annotation_zip.list_segmentation_annotation.add_parser
+    :prog: annofabcli annotation_zip list_segmentation_annotation
     :nosubcommands:
     :nodefaultconst:
