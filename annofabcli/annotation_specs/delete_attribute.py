@@ -411,7 +411,10 @@ class DeleteAttributeMain(CommandLineWithConfirm):
             logger.warning("既存アノテーションに影響する変更がありますが、オプションで許可されているため、属性を削除します。\n%s", message)
             return True
 
-        logger.warning("既存アノテーションに影響するため、属性の削除を中止しました。\n%s", message)
+        logger.warning(
+            "既存アノテーションに影響するため、属性の削除を中止しました。既存アノテーションに影響が出ることを理解した上で削除する場合は、 `--allow_affecting_annotations` を指定してください。\n%s",
+            message,
+        )
         return False
 
     def delete_attribute(

@@ -2,12 +2,15 @@ from __future__ import annotations
 
 import copy
 import json
+import logging
 from pathlib import Path
 from typing import Any
 
 import pytest
 
 from annofabcli.annotation_specs.delete_attribute import (
+    AffectingAnnotation,
+    DeleteAttributeMain,
     build_request_body_for_delete_attribute,
     create_comment_for_delete_attribute,
     create_confirm_message_for_delete_attribute,
@@ -234,3 +237,27 @@ class TestBuildRequestBodyForDeleteAttribute:
         actual = build_request_body_for_delete_attribute(annotation_specs, resolved_deletion=resolved, comment="custom")
 
         assert actual["comment"] == "custom"
+
+
+class TestDeleteAttributeMain:
+    def test_validate_deletion__既存アノテーションに影響するときは許可オプションを案内する(self, caplog: pytest.LogCaptureFixture) -> None:
+        obj = DeleteAttributeMain(
+            service=None,  # type: ignore[arg-type]
+            project_id="project_id",
+            all_yes=True,
+            allow_affecting_annotations=False,
+        )
+
+        with caplog.at_level(logging.WARNING):
+            actual = obj.validate_deletion(
+                [
+                    AffectingAnnotation(
+                        label_name_en="car2",
+                        attribute_name_en="foo3",
+                        annotation_count=3,
+                    )
+                ]
+            )
+
+        assert actual is False
+        assert "--allow_affecting_annotations" in caplog.text
