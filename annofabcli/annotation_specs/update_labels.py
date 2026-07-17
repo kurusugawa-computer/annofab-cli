@@ -350,14 +350,13 @@ def update_label_name_ja(label: dict[str, Any], label_name_ja: str) -> None:
         label: 更新対象ラベル
         label_name_ja: 更新後のラベル日本語名
     """
-    label_name_en = get_label_name_en(label)
-    label["label_name"] = {
-        "messages": [
-            {"lang": "en-US", "message": label_name_en},
-            {"lang": "ja-JP", "message": label_name_ja},
-        ],
-        "default_lang": "ja-JP",
-    }
+    messages = label["label_name"]["messages"]
+    for message in messages:
+        if message["lang"] == "ja-JP":
+            message["message"] = label_name_ja
+            return
+
+    messages.append({"lang": "ja-JP", "message": label_name_ja})
 
 
 def update_label_field_values(label: dict[str, Any], label_update_input: LabelUpdateInput) -> None:

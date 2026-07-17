@@ -64,8 +64,8 @@ class TestBuildRequestBodyForUpdateLabels:
 
         car_label = next(label for label in actual["labels"] if label["label_id"] == "car_label_id")
         assert car_label["label_name"]["messages"] == [
-            {"lang": "en-US", "message": "car"},
             {"lang": "ja-JP", "message": "車"},
+            {"lang": "en-US", "message": "car"},
         ]
         assert car_label["annotation_type"] == "bounding_box"
         assert car_label["color"] == {"red": 18, "green": 52, "blue": 86}
@@ -110,6 +110,36 @@ class TestBuildRequestBodyForUpdateLabels:
         car_label = next(label for label in actual["labels"] if label["label_id"] == "car_label_id")
         assert car_label["field_values"] == {"display_line_direction": {"_type": "DisplayLineDirection", "value": True}}
         assert actual["comment"] == "custom"
+
+    def test_build_request_body_for_update_labels__preserves_label_name_metadata(self, annotation_specs: dict) -> None:
+        annotation_specs["labels"][0]["label_name"] = {
+            "messages": [
+                {"lang": "en-US", "message": "car"},
+                {"lang": "ja-JP", "message": "car"},
+                {"lang": "fr-FR", "message": "voiture"},
+            ],
+            "default_lang": "en-US",
+        }
+        resolved_inputs = resolve_label_update_inputs(
+            annotation_specs,
+            label_update_inputs=[LabelUpdateInput(label_name_en="car", label_name_ja="車")],
+        )
+
+        actual = build_request_body_for_update_labels(
+            annotation_specs,
+            resolved_label_update_inputs=resolved_inputs,
+            comment=None,
+        )
+
+        car_label = next(label for label in actual["labels"] if label["label_id"] == "car_label_id")
+        assert car_label["label_name"] == {
+            "messages": [
+                {"lang": "en-US", "message": "car"},
+                {"lang": "ja-JP", "message": "車"},
+                {"lang": "fr-FR", "message": "voiture"},
+            ],
+            "default_lang": "en-US",
+        }
 
     def test_build_request_body_for_update_labels__invalid_color(self, annotation_specs: dict) -> None:
         resolved_inputs = resolve_label_update_inputs(
