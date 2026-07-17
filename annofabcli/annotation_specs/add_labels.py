@@ -135,9 +135,6 @@ def parse_field_values_in_csv(value: object, *, index: int) -> dict[str, Any] | 
     Raises:
         ValueError: JSON文字列として不正な場合
     """
-    if pandas.isna(value):
-        return None
-
     if not isinstance(value, str):
         value = str(value)
     if value == "":
@@ -153,9 +150,6 @@ def parse_keybind_in_csv(value: object, *, index: int) -> dict[str, Any] | None:
     """
     CSVの ``keybind`` 列を ``dict[str, Any] | None`` に変換する。
     """
-    if pandas.isna(value):
-        return None
-
     if not isinstance(value, str):
         value = str(value)
     if value == "":
@@ -181,9 +175,6 @@ def parse_annotation_type_in_csv(value: object, *, index: int) -> str | None:
     Raises:
         ValueError: ``annotation_type`` が不正な場合
     """
-    if pandas.isna(value):
-        return None
-
     if not isinstance(value, str):
         value = str(value)
     if value == "":
@@ -550,6 +541,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
             "追加するラベル情報のJSON配列を指定します。 ``file://`` を先頭に付けるとJSON形式のファイルを指定できます。"
             " 各要素には ``label_name_en`` が必要です。 任意で ``label_id`` , ``label_name_ja`` , ``annotation_type`` ,"
             " ``color`` , ``keybind`` , ``field_values`` を指定できます。 ``keybind`` と ``field_values`` にはJSONオブジェクトを指定してください。"
+            " APIの ``keybind`` は配列形式ですが、このコマンドでは画面と同じく1つだけ指定できます。"
             f"\n(例) ``{json.dumps(sample_json, ensure_ascii=False)}``"
         ),
     )
@@ -560,6 +552,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
             "追加するラベル情報のCSVファイルを指定します。 CSVには ``label_name_en`` 列が必要です。"
             " 任意で ``label_id`` , ``label_name_ja`` , ``annotation_type`` , ``color`` , ``keybind`` , ``field_values`` 列を指定できます。"
             " ``keybind`` 列と ``field_values`` 列にはJSONオブジェクト文字列を指定してください。"
+            " APIの ``keybind`` は配列形式ですが、このコマンドでは画面と同じく1つだけ指定できます。"
         ),
     )
     parser.add_argument(

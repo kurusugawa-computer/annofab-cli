@@ -177,9 +177,6 @@ def parse_keybind_in_csv(value: object) -> dict[str, Any] | None:
     """
     CSVの ``keybind`` 列を ``dict[str, Any] | None`` に変換する。
     """
-    if pandas.isna(value):
-        return None
-
     if not isinstance(value, str):
         value = str(value)
     if value == "":
