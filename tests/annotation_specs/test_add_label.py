@@ -116,17 +116,17 @@ class TestResolveNewLabelInput:
             label_name_ja=None,
             color_code="#00CCFF",
             field_values={
-                "display_name": {
-                    "_type": "DisplayName",
-                    "text": "歩行者",
+                "margin_of_error_tolerance": {
+                    "max_pixel": 5,
+                    "_type": "MarginOfErrorTolerance",
                 }
             },
         )
 
         assert actual.new_label["field_values"] == {
-            "display_name": {
-                "_type": "DisplayName",
-                "text": "歩行者",
+            "margin_of_error_tolerance": {
+                "max_pixel": 5,
+                "_type": "MarginOfErrorTolerance",
             }
         }
 
@@ -166,18 +166,18 @@ class TestResolveNewLabelInput:
             label_name_ja=None,
             color_code="#00CCFF",
             field_values={
-                "display_name": {
-                    "_type": "DisplayName",
-                    "text": "路面",
+                "margin_of_error_tolerance": {
+                    "max_pixel": 5,
+                    "_type": "MarginOfErrorTolerance",
                 }
             },
         )
 
         assert actual.new_label["field_values"] == {
             **DEFAULT_SEGMENTATION_FIELD_VALUES,
-            "display_name": {
-                "_type": "DisplayName",
-                "text": "路面",
+            "margin_of_error_tolerance": {
+                "max_pixel": 5,
+                "_type": "MarginOfErrorTolerance",
             },
         }
 

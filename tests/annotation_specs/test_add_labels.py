@@ -44,7 +44,7 @@ class TestBuildRequestBodyForAddLabels:
                         label_name_ja="歩行者",
                         color="#123456",
                         keybind={"alt": False, "code": "Digit1", "ctrl": True, "shift": False},
-                        field_values={"display_name": {"_type": "DisplayName", "text": "歩行者"}},
+                        field_values={"margin_of_error_tolerance": {"max_pixel": 5, "_type": "MarginOfErrorTolerance"}},
                     ),
                     LabelInput(label_name_en="bicycle"),
                 ],
@@ -62,7 +62,7 @@ class TestBuildRequestBodyForAddLabels:
         assert added_labels[1]["color"] == {"red": 255, "green": 85, "blue": 0}
         assert added_labels[0]["keybind"] == [{"alt": False, "code": "Digit1", "ctrl": True, "shift": False}]
         assert added_labels[1]["keybind"] == []
-        assert added_labels[0]["field_values"] == {"display_name": {"_type": "DisplayName", "text": "歩行者"}}
+        assert added_labels[0]["field_values"] == {"margin_of_error_tolerance": {"max_pixel": 5, "_type": "MarginOfErrorTolerance"}}
         assert added_labels[1]["field_values"] == {}
         assert actual["comment"].startswith("以下のラベルを追加しました。")
         assert actual["last_updated_datetime"] == "2026-04-24T00:00:00+09:00"
@@ -179,7 +179,7 @@ class TestReadLabels:
         actual = read_labels_json(
             '[{"label_id":"pedestrian","label_name_en":"pedestrian","label_name_ja":"歩行者","annotation_type":"bounding_box","color":"#123456",'
             '"keybind":{"alt":false,"code":"Digit1","ctrl":true,"shift":false},'
-            '"field_values":{"display_name":{"_type":"DisplayName","text":"歩行者"}}},{"label_name_en":"bicycle","annotation_type":"polygon"}]'
+            '"field_values":{"margin_of_error_tolerance":{"max_pixel":5,"_type":"MarginOfErrorTolerance"}}},{"label_name_en":"bicycle","annotation_type":"polygon"}]'
         )
 
         assert actual == [
@@ -190,7 +190,7 @@ class TestReadLabels:
                 annotation_type="bounding_box",
                 color="#123456",
                 keybind={"alt": False, "code": "Digit1", "ctrl": True, "shift": False},
-                field_values={"display_name": {"_type": "DisplayName", "text": "歩行者"}},
+                field_values={"margin_of_error_tolerance": {"max_pixel": 5, "_type": "MarginOfErrorTolerance"}},
             ),
             LabelInput(label_name_en="bicycle", annotation_type="polygon"),
         ]
@@ -214,7 +214,7 @@ class TestReadLabels:
                     "annotation_type": "bounding_box",
                     "color": "#123456",
                     "keybind": '{"alt": false, "code": "Digit1", "ctrl": true, "shift": false}',
-                    "field_values": '{"display_name": {"_type": "DisplayName", "text": "歩行者"}}',
+                    "field_values": '{"margin_of_error_tolerance": {"max_pixel": 5, "_type": "MarginOfErrorTolerance"}}',
                 },
                 {"label_name_en": "bicycle", "annotation_type": "polygon"},
             ]
@@ -231,7 +231,7 @@ class TestReadLabels:
                 annotation_type="bounding_box",
                 color="#123456",
                 keybind={"alt": False, "code": "Digit1", "ctrl": True, "shift": False},
-                field_values={"display_name": {"_type": "DisplayName", "text": "歩行者"}},
+                field_values={"margin_of_error_tolerance": {"max_pixel": 5, "_type": "MarginOfErrorTolerance"}},
             ),
             LabelInput(label_name_en="bicycle", annotation_type="polygon"),
         ]
@@ -248,8 +248,8 @@ class TestReadLabels:
         assert actual == {"red": 18, "green": 52, "blue": 86}
 
     def test_parse_field_values_in_csv(self) -> None:
-        actual = parse_field_values_in_csv('{"display_name":{"_type":"DisplayName","text":"歩行者"}}', index=1)
-        assert actual == {"display_name": {"_type": "DisplayName", "text": "歩行者"}}
+        actual = parse_field_values_in_csv('{"margin_of_error_tolerance":{"max_pixel":5,"_type":"MarginOfErrorTolerance"}}', index=1)
+        assert actual == {"margin_of_error_tolerance": {"max_pixel": 5, "_type": "MarginOfErrorTolerance"}}
 
     def test_parse_field_values_in_csv__empty(self) -> None:
         assert parse_field_values_in_csv("", index=1) is None

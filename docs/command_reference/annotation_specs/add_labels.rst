@@ -21,6 +21,7 @@ Examples
      --annotation_type bounding_box
 
 
+``--annotation_type`` の値は、:doc:`add_label` を参照してください。 
 
 JSON形式で指定する場合
 ----------------------------------------------
@@ -40,9 +41,9 @@ JSON形式で指定する場合
                 "shift": false
             },
             "field_values": {
-                "display_name": {
-                    "_type": "DisplayName",
-                    "text": "歩行者"
+                "margin_of_error_tolerance": {
+                    "max_pixel": 5,
+                    "_type": "MarginOfErrorTolerance"
                 }
             }
         },
@@ -63,6 +64,40 @@ JSON形式で指定する場合
      --label_json file://labels.json
 
 
+``field_values`` のフォーマットは、:doc:`update_label_field_values` を参照してください。
+
+``--label_json`` には、ラベル情報のJSON配列を指定してください。配列の各要素が1件のラベルに対応します。
+
+.. list-table::
+    :header-rows: 1
+
+    * - キー
+      - 必須
+      - 説明
+    * - ``label_name_en``
+      - 必須
+      - ラベルの英語名。
+    * - ``annotation_type``
+      - 条件付き必須
+      - ラベルのアノテーション種類。省略した場合は ``--annotation_type`` の値が使われます。JSON側と ``--annotation_type`` の両方に指定した場合、値が一致している必要があります。指定できる値は :doc:`add_label` を参照してください。
+    * - ``label_id``
+      - 任意
+      - ラベルID。省略した場合はUUIDv4を自動生成します。
+    * - ``label_name_ja``
+      - 任意
+      - ラベルの日本語名。省略した場合は ``label_name_en`` と同じ値を使用します。
+    * - ``color``
+      - 任意
+      - ラベルの色。 ``#RRGGBB`` 形式の16進数カラーコードを指定してください。省略した場合は自動設定されます。
+    * - ``keybind``
+      - 任意
+      - ラベルに設定するキーボードショートカットのJSONオブジェクト。
+    * - ``field_values``
+      - 任意
+      - ラベルに設定するサイズ制約や許容誤差範囲などのJSONオブジェクト。フォーマットは :doc:`update_label_field_values` を参照してください。
+
+
+
 CSV形式で指定する場合
 ----------------------------------------------
 
@@ -70,9 +105,12 @@ CSV形式で指定する場合
     :caption: labels.csv
 
     label_id,label_name_en,label_name_ja,annotation_type,color,keybind,field_values
-    ,pedestrian,,segmentation_v2,#123456,"{""alt"": false, ""code"": ""Digit1"", ""ctrl"": true, ""shift"": false}","{""display_name"": {""_type"": ""DisplayName"", ""text"": ""歩行者""}}"
+    ,pedestrian,,segmentation_v2,#123456,"{""alt"": false, ""code"": ""Digit1"", ""ctrl"": true, ""shift"": false}","{""margin_of_error_tolerance"": {""max_pixel"": 5, ""_type"": ""MarginOfErrorTolerance""}}"
     bicycle,bicycle,自転車,segmentation_v2,#00AAFF,,
 
+
+CSV形式では、 ``keybind`` 列と ``field_values`` 列だけはJSONオブジェクト文字列として指定してください。
+そのため、CSVセル全体を ``"`` で囲み、JSON内の ``"`` は ``""`` のようにエスケープする必要があります。
 
 .. code-block::
 
@@ -80,14 +118,8 @@ CSV形式で指定する場合
      --project_id prj1 \
      --label_csv labels.csv
 
-.. note::
     
-    ``--annotation_type`` の値は、:doc:`add_label` を参照してください。 ``--label_name_en`` を使う場合は ``--annotation_type`` が必須です。
-    ``--label_json`` / ``--label_csv`` を使う場合は、各ラベルに ``annotation_type`` を指定できます。 ``--annotation_type`` を併用した場合は、省略時の既定値として使われます。
-    ラベル側の ``annotation_type`` と ``--annotation_type`` が不一致の場合はエラーになります。
-    ``--label_json`` / ``--label_csv`` では ``keybind`` と ``field_values`` も指定できます。 ``--label_json`` では ``keybind`` と ``field_values`` にJSONオブジェクトを指定してください。
-    ``--label_csv`` では ``keybind`` 列と ``field_values`` 列にJSONオブジェクト文字列を指定してください。APIの ``keybind`` は配列形式ですが、このコマンドでは画面と同じく1つだけ指定できます。
-    ``field_values`` のフォーマットは、:doc:`update_label_field_values` を参照してください。
+    
 
 
 Usage Details
