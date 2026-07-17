@@ -61,7 +61,10 @@ class FlattenAttribute(DataClassJsonMixin):
     """制約の個数"""
     reference_label_count: int
     """参照されているラベルの個数"""
-    keybind: str | None
+    keybind: list[dict[str, Any]]
+    """API形式のキーバインド"""
+    keybind_text: str
+    """人が読める形式のキーバインド"""
 
 
 def create_relationship_between_attribute_and_label(labels_v3: list[dict[str, Any]]) -> dict[str, set[str]]:
@@ -104,6 +107,7 @@ def create_flatten_attribute_list_from_additionals(additionals_v3: list[dict[str
         """
         attribute_id = additional["additional_data_definition_id"]
         additional_name = additional["name"]
+        keybind = additional.get("keybind", [])
         return FlattenAttribute(
             attribute_id=attribute_id,
             attribute_name_en=get_message_with_lang(additional_name, lang=Lang.EN_US),
@@ -115,7 +119,8 @@ def create_flatten_attribute_list_from_additionals(additionals_v3: list[dict[str
             choice_count=len(additional["choices"]),
             restriction_count=dict_restriction_count[attribute_id],
             reference_label_count=len(dict_label_ids[attribute_id]),
-            keybind=keybind_to_text(additional["keybind"]),
+            keybind=keybind,
+            keybind_text=keybind_to_text(keybind),
         )
 
     return [dict_additional_to_dataclass(e) for e in additionals_v3]
@@ -140,9 +145,16 @@ class PrintAnnotationSpecsAttribute(CommandLine):
                 "restriction_count",
                 "reference_label_count",
                 "keybind",
+                "keybind_text",
             ]
 
-            df = pandas.DataFrame(attribute_list, columns=columns)
+            records = []
+            for attribute in attribute_list:
+                record = attribute.to_dict()
+                record["type"] = attribute.attribute_type
+                record["keybind"] = json.dumps(attribute.keybind, ensure_ascii=False)
+                records.append(record)
+            df = pandas.DataFrame(records, columns=columns)
             print_csv(df, output)
 
         elif output_format in [OutputFormat.JSON, OutputFormat.PRETTY_JSON]:
