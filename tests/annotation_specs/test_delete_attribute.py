@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 import json
 from pathlib import Path
 from typing import Any
@@ -22,6 +23,23 @@ def load_annotation_specs() -> dict[str, Any]:
         annotation_specs = json.load(f)
     annotation_specs["updated_datetime"] = "2026-04-24T00:00:00+09:00"
     return annotation_specs
+
+
+def add_same_name_attributes_to_different_labels(annotation_specs: dict[str, Any]) -> None:
+    car_foo_attribute = copy.deepcopy(annotation_specs["additionals"][0])
+    car_foo_attribute["additional_data_definition_id"] = "car_foo_attribute_id"
+    car_foo_attribute["name"]["messages"] = [
+        {"lang": "ja-JP", "message": "foo"},
+        {"lang": "en-US", "message": "foo"},
+    ]
+    bus_foo_attribute = copy.deepcopy(car_foo_attribute)
+    bus_foo_attribute["additional_data_definition_id"] = "bus_foo_attribute_id"
+    annotation_specs["additionals"].extend([car_foo_attribute, bus_foo_attribute])
+
+    car_label = next(label for label in annotation_specs["labels"] if label["label_id"] == "car_label_id")
+    bus_label = next(label for label in annotation_specs["labels"] if label["label_id"] == "22b5189b-af7b-4d9c-83a5-b92f122170ec")
+    car_label["additional_data_definitions"].append("car_foo_attribute_id")
+    bus_label["additional_data_definitions"].append("bus_foo_attribute_id")
 
 
 class TestDeleteAttributeHelpers:
@@ -67,6 +85,40 @@ class TestDeleteAttributeHelpers:
 
 
 class TestResolveAttributeDeletion:
+    def test_resolve_attribute_deletion__属性名が重複していてもラベルで絞り込める(self) -> None:
+        annotation_specs = load_annotation_specs()
+        add_same_name_attributes_to_different_labels(annotation_specs)
+
+        actual = resolve_attribute_deletion(
+            annotation_specs,
+            attribute_ids=None,
+            attribute_name_ens=["foo"],
+            label_ids=None,
+            label_name_ens=["bus"],
+        )
+
+        assert [(pair.label["label_id"], pair.attribute["additional_data_definition_id"]) for pair in actual.label_attribute_pairs] == [
+            ("22b5189b-af7b-4d9c-83a5-b92f122170ec", "bus_foo_attribute_id")
+        ]
+
+    def test_resolve_attribute_deletion__all_labelsは同じ属性名の属性をすべて対象にする(self) -> None:
+        annotation_specs = load_annotation_specs()
+        add_same_name_attributes_to_different_labels(annotation_specs)
+
+        actual = resolve_attribute_deletion(
+            annotation_specs,
+            attribute_ids=None,
+            attribute_name_ens=["foo"],
+            label_ids=None,
+            label_name_ens=None,
+            all_labels=True,
+        )
+
+        assert [(pair.label["label_id"], pair.attribute["additional_data_definition_id"]) for pair in actual.label_attribute_pairs] == [
+            ("car_label_id", "car_foo_attribute_id"),
+            ("22b5189b-af7b-4d9c-83a5-b92f122170ec", "bus_foo_attribute_id"),
+        ]
+
     def test_resolve_attribute_deletion__指定ラベルから属性を削除する(self) -> None:
         annotation_specs = load_annotation_specs()
         bus_label = next(label for label in annotation_specs["labels"] if label["label_id"] == "22b5189b-af7b-4d9c-83a5-b92f122170ec")

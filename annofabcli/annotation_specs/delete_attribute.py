@@ -5,7 +5,7 @@ import copy
 import logging
 from collections.abc import Collection, Mapping, Sequence
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, cast
 
 import annofabapi
 from annofabapi.util.annotation_specs import AnnotationSpecsAccessor, get_attribute_name_en, get_label_name_en
@@ -178,6 +178,54 @@ def get_labels_having_attribute(annotation_specs: Mapping[str, Any], *, attribut
     return [label for label in annotation_specs["labels"] if attribute_id in label["additional_data_definitions"]]
 
 
+def get_target_attributes_by_name(annotation_specs: Mapping[str, Any], *, attribute_name_ens: Collection[str]) -> list[Mapping[str, Any]]:
+    """
+    指定された属性英語名を持つ属性一覧を返す。
+
+    Args:
+        annotation_specs: 既存のアノテーション仕様
+        attribute_name_ens: 対象属性英語名一覧
+
+    Returns:
+        対象属性一覧
+
+    Raises:
+        ValueError: 対象属性が存在しない場合
+    """
+    result: list[Mapping[str, Any]] = []
+    result_attribute_ids: set[str] = set()
+    for attribute_name_en in attribute_name_ens:
+        matched_attributes = [attribute for attribute in annotation_specs["additionals"] if get_attribute_name_en(attribute) == attribute_name_en]
+        if len(matched_attributes) == 0:
+            raise ValueError(f"属性情報が見つかりませんでした。 :: attribute_name_en='{attribute_name_en}'")
+        for attribute in matched_attributes:
+            attribute_id = attribute["additional_data_definition_id"]
+            if attribute_id not in result_attribute_ids:
+                result.append(attribute)
+                result_attribute_ids.add(attribute_id)
+    return result
+
+
+def collect_unique_attributes(label_attribute_pairs: Collection[LabelAttributePair]) -> list[Mapping[str, Any]]:
+    """
+    ラベル属性ペアから重複を除いた属性一覧を返す。
+
+    Args:
+        label_attribute_pairs: ラベル属性ペア一覧
+
+    Returns:
+        重複を除いた属性一覧
+    """
+    result: list[Mapping[str, Any]] = []
+    result_attribute_ids: set[str] = set()
+    for pair in label_attribute_pairs:
+        attribute_id = pair.attribute["additional_data_definition_id"]
+        if attribute_id not in result_attribute_ids:
+            result.append(pair.attribute)
+            result_attribute_ids.add(attribute_id)
+    return result
+
+
 def resolve_attribute_deletion(
     annotation_specs: dict[str, Any],
     *,
@@ -202,9 +250,14 @@ def resolve_attribute_deletion(
         解決済み属性削除対象
     """
     annotation_specs_accessor = AnnotationSpecsAccessor(annotation_specs)
-    target_attributes = get_target_attributes(annotation_specs_accessor, attribute_ids=attribute_ids, attribute_name_ens=attribute_name_ens)
 
     if all_labels:
+        if attribute_ids is not None:
+            target_attributes = get_target_attributes(annotation_specs_accessor, attribute_ids=attribute_ids, attribute_name_ens=None)
+        elif attribute_name_ens is not None:
+            target_attributes = get_target_attributes_by_name(annotation_specs, attribute_name_ens=attribute_name_ens)
+        else:
+            raise ValueError("対象属性は `attribute_id` または `attribute_name_en` のどちらか一方だけ指定してください。")
         label_attribute_pairs = [
             LabelAttributePair(label=label, attribute=attribute)
             for attribute in target_attributes
@@ -212,17 +265,31 @@ def resolve_attribute_deletion(
         ]
     else:
         target_labels = get_target_labels(annotation_specs_accessor, label_ids=label_ids, label_name_ens=label_name_ens)
-        label_attribute_pairs = []
-        for attribute in target_attributes:
-            attribute_id = attribute["additional_data_definition_id"]
-            for label in target_labels:
-                if attribute_id not in label["additional_data_definitions"]:
-                    raise ValueError(f"ラベルに対象属性が紐づいていません。 :: label_name_en='{get_label_name_en(label)}', attribute_name_en='{get_attribute_name_en(attribute)}'")
-                label_attribute_pairs.append(LabelAttributePair(label=label, attribute=attribute))
+        if attribute_ids is not None:
+            target_attributes = get_target_attributes(annotation_specs_accessor, attribute_ids=attribute_ids, attribute_name_ens=None)
+            label_attribute_pairs = []
+            for attribute in target_attributes:
+                attribute_id = attribute["additional_data_definition_id"]
+                for label in target_labels:
+                    if attribute_id not in label["additional_data_definitions"]:
+                        raise ValueError(f"ラベルに対象属性が紐づいていません。 :: label_name_en='{get_label_name_en(label)}', attribute_name_en='{get_attribute_name_en(attribute)}'")
+                    label_attribute_pairs.append(LabelAttributePair(label=label, attribute=attribute))
+        elif attribute_name_ens is not None:
+            label_attribute_pairs = [
+                LabelAttributePair(
+                    label=label,
+                    attribute=annotation_specs_accessor.get_attribute(attribute_name=attribute_name_en, label=cast(Any, label)),
+                )
+                for attribute_name_en in attribute_name_ens
+                for label in target_labels
+            ]
+        else:
+            raise ValueError("対象属性は `attribute_id` または `attribute_name_en` のどちらか一方だけ指定してください。")
 
     if len(label_attribute_pairs) == 0:
         raise ValueError("削除対象のラベルと属性の組み合わせがありません。")
 
+    target_attributes = collect_unique_attributes(label_attribute_pairs)
     removed_pair_keys = {(pair.label["label_id"], pair.attribute["additional_data_definition_id"]) for pair in label_attribute_pairs}
     remaining_attribute_ids = {
         attribute_id for label in annotation_specs["labels"] for attribute_id in label["additional_data_definitions"] if (label["label_id"], attribute_id) not in removed_pair_keys
