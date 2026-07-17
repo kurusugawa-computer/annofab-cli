@@ -503,6 +503,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
             "label_name_ja": "歩行者",
             "annotation_type": "bounding_box",
             "color": "#123456",
+            "field_values": {"display_name": {"_type": "DisplayName", "text": "歩行者"}},
         },
         {"label_name_en": "bicycle", "annotation_type": "bounding_box"},
     ]
@@ -519,7 +520,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         help=(
             "追加するラベル情報のJSON配列を指定します。 ``file://`` を先頭に付けるとJSON形式のファイルを指定できます。"
             " 各要素には ``label_name_en`` が必要です。 任意で ``label_id`` , ``label_name_ja`` , ``annotation_type`` ,"
-            f" ``color`` , ``field_values`` を指定できます。\n(例) ``{json.dumps(sample_json, ensure_ascii=False)}``"
+            f" ``color`` , ``field_values`` を指定できます。 ``field_values`` にはJSONオブジェクトを指定してください。\n(例) ``{json.dumps(sample_json, ensure_ascii=False)}``"
         ),
     )
     label_group.add_argument(
@@ -528,6 +529,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         help=(
             "追加するラベル情報のCSVファイルを指定します。 CSVには ``label_name_en`` 列が必要です。"
             " 任意で ``label_id`` , ``label_name_ja`` , ``annotation_type`` , ``color`` , ``field_values`` 列を指定できます。"
+            " ``field_values`` 列にはJSONオブジェクト文字列を指定してください。"
         ),
     )
     parser.add_argument(
