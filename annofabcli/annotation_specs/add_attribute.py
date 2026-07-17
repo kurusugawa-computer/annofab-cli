@@ -443,7 +443,7 @@ def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse
     """
     subcommand_name = "add_attribute"
     subcommand_help = "アノテーション仕様に非選択肢系の属性を追加します。"
-    description = "アノテーション仕様に非選択肢系の属性を追加します。選択肢系属性の追加は ``add_attributes`` コマンドを使用してください。"
+    description = "アノテーション仕様に非選択肢系の属性を追加します。選択肢系属性の追加は ``add_attributes`` または ``add_choice_attribute`` コマンドを使用してください。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description=description)
     parse_args(parser)
