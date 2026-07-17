@@ -26,7 +26,13 @@ JSON形式で指定する場合
             "choice_id": "c2",
             "choice_name_en": "rear",
             "choice_name_ja": "後ろ",
-            "is_default": true
+            "is_default": true,
+            "keybind": {
+                "alt": false,
+                "code": "Digit1",
+                "ctrl": true,
+                "shift": false
+            }
         }
     ]
 
@@ -47,9 +53,9 @@ CSV形式で指定する場合
 .. code-block::
     :caption: choices.csv
 
-    choice_id,choice_name_en,choice_name_ja,is_default
-    ,front,,
-    c2,rear,後ろ,true
+    choice_id,choice_name_en,choice_name_ja,is_default,keybind
+    ,front,,,
+    c2,rear,後ろ,true,"{""alt"": false, ""code"": ""Digit1"", ""ctrl"": true, ""shift"": false}"
 
 
 .. code-block::
@@ -62,6 +68,10 @@ CSV形式で指定する場合
      --label_id l1 l2
 
 読み込み専用の属性を追加する場合は、 ``--read_only`` を指定します。
+
+属性本体の ``keybind`` を指定する場合は、 ``--keybind_json`` にJSONオブジェクトを指定してください。
+
+選択肢の ``keybind`` を指定する場合は、 ``--choice_json`` ではJSONオブジェクト、 ``--choice_csv`` ではJSONオブジェクト文字列を指定してください。APIの ``keybind`` は配列形式ですが、このコマンドでは画面と同じく1つだけ指定できます。
 
 .. code-block::
 

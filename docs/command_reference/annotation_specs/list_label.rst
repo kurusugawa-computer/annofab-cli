@@ -62,7 +62,13 @@ JSON出力
             "annotation_type": "bounding_box",
             "color": "#8100D8",
             "attribute_count": 5,
-            "keybind": "Ctrl+Digit1"
+            "keybind": {
+                "alt": false,
+                "code": "Digit1",
+                "ctrl": true,
+                "shift": false
+            },
+            "keybind_text": "Ctrl+Digit1"
         }
     ]
 
@@ -75,7 +81,8 @@ JSON出力
 * ``annotation_type`` : アノテーションの種類。Web APIの `AnnotationType <https://annofab.com/docs/api/#tag/x-data-types/AnnotationType>`_ に対応しています。
 * ``color`` : ラベルの色（HEX形式）。
 * ``attribute_count`` : ラベルに紐づく属性の個数  
-* ``keybind`` : キーボードショートカット
+* ``keybind`` : キーボードショートカットのJSONオブジェクト
+* ``keybind_text`` : キーボードショートカットの表示文字列
 
 
 
@@ -88,5 +95,4 @@ Usage Details
    :prog: annofabcli annotation_specs list_label
    :nosubcommands:
    :nodefaultconst:
-
 

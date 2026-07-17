@@ -331,7 +331,11 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     choice_group.add_argument(
         "--choice_json",
         type=str,
-        help=f"追加する選択肢情報のJSON配列を指定します。 ``file://`` を先頭に付けるとJSON形式のファイルを指定できます。\n(例) ``{json.dumps(sample_json, ensure_ascii=False)}``",
+        help=(
+            "追加する選択肢情報のJSON配列を指定します。 ``file://`` を先頭に付けるとJSON形式のファイルを指定できます。"
+            " 任意で ``keybind`` を指定できます。 ``keybind`` にはJSONオブジェクトを指定してください。"
+            f"\n(例) ``{json.dumps(sample_json, ensure_ascii=False)}``"
+        ),
     )
     choice_group.add_argument(
         "--choice_csv",
@@ -340,7 +344,8 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
             "追加する選択肢情報のCSVファイルを指定します。 "
             "CSVには ``choice_name_en`` 列が必要です。 "
             "``choice_id`` と ``choice_name_en`` はユニークになるように指定してください。 "
-            "任意で ``choice_id`` , ``choice_name_ja`` , ``keybind`` 列を指定できます。 ``is_default`` 列が存在する場合は無視されます。"
+            "任意で ``choice_id`` , ``choice_name_ja`` , ``keybind`` 列を指定できます。"
+            " ``keybind`` 列にはJSONオブジェクト文字列を指定してください。 ``is_default`` 列が存在する場合は無視されます。"
         ),
     )
 

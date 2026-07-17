@@ -463,7 +463,11 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--attribute_json",
         type=str,
         required=True,
-        help=f"追加する属性情報のJSON配列を指定します。 ``file://`` を先頭に付けるとJSON形式のファイルを指定できます。\n(例) ``{json.dumps(sample_json, ensure_ascii=False)}``",
+        help=(
+            "追加する属性情報のJSON配列を指定します。 ``file://`` を先頭に付けるとJSON形式のファイルを指定できます。"
+            " 属性と選択肢には任意で ``keybind`` を指定できます。 ``keybind`` にはJSONオブジェクトを指定してください。"
+            f"\n(例) ``{json.dumps(sample_json, ensure_ascii=False)}``"
+        ),
     )
     parser.add_argument("--comment", type=str, help="アノテーション仕様の変更内容を説明するコメント。未指定の場合、自動でコメントが生成されます。")
 

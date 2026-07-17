@@ -519,7 +519,7 @@ class AddChoiceAttribute(CommandLine):
         コマンドライン引数を解釈し、選択肢系属性追加処理を実行する。
         """
         args = self.args
-        keybind = None if args.keybind is None else validate_keybind_input(get_json_from_args(args.keybind))
+        keybind = None if args.keybind_json is None else validate_keybind_input(get_json_from_args(args.keybind_json))
 
         if args.choice_json is not None:
             choice_inputs = read_choices_json(args.choice_json)
@@ -570,7 +570,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--attribute_name_ja", type=str, help="追加する属性の日本語名。")
     parser.add_argument("--read_only", action="store_true", help="追加する属性を読み込み専用にします。")
     parser.add_argument(
-        "--keybind",
+        "--keybind_json",
         type=str,
         help=('追加する属性に設定するkeybindのJSONオブジェクト。 ``file://`` を先頭に付けるとJSONファイルを指定できます。 例: ``{"alt": false, "code": "Digit1", "ctrl": true, "shift": false}``'),
     )
@@ -589,12 +589,20 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     choice_group.add_argument(
         "--choice_json",
         type=str,
-        help=f"追加する選択肢情報のJSON配列を指定します。 ``file://`` を先頭に付けるとJSON形式のファイルを指定できます。\n(例) ``{json.dumps(sample_json, ensure_ascii=False)}``",
+        help=(
+            "追加する選択肢情報のJSON配列を指定します。 ``file://`` を先頭に付けるとJSON形式のファイルを指定できます。"
+            " 任意で ``keybind`` を指定できます。 ``keybind`` にはJSONオブジェクトを指定してください。"
+            f"\n(例) ``{json.dumps(sample_json, ensure_ascii=False)}``"
+        ),
     )
     choice_group.add_argument(
         "--choice_csv",
         type=Path,
-        help="追加する選択肢情報のCSVファイルを指定します。 CSVには ``choice_name_en`` 列が必要です。 任意で ``choice_id`` , ``choice_name_ja`` , ``is_default`` , ``keybind`` 列を指定できます。",
+        help=(
+            "追加する選択肢情報のCSVファイルを指定します。 CSVには ``choice_name_en`` 列が必要です。"
+            " 任意で ``choice_id`` , ``choice_name_ja`` , ``is_default`` , ``keybind`` 列を指定できます。"
+            " ``keybind`` 列にはJSONオブジェクト文字列を指定してください。"
+        ),
     )
 
     label_group = parser.add_mutually_exclusive_group(required=True)

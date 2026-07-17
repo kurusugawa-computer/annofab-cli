@@ -438,7 +438,7 @@ class AddLabel(CommandLine):
         コマンドライン引数を解釈し、ラベル追加処理を実行する。
         """
         args = self.args
-        keybind = None if args.keybind is None else validate_keybind_input(get_json_from_args(args.keybind))
+        keybind = None if args.keybind_json is None else validate_keybind_input(get_json_from_args(args.keybind_json))
         field_values = None if args.field_values_json is None else validate_field_values_input(get_json_from_args(args.field_values_json))
 
         obj = AddLabelMain(self.service, project_id=args.project_id, all_yes=args.yes)
@@ -470,7 +470,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--label_name_ja", type=str, help="追加するラベルの日本語名。未指定の場合は英語名と同じ値を使用します。")
     parser.add_argument("--color", type=str, help="追加するラベルの色。 ``#RRGGBB`` 形式の16進数カラーコードを指定してください。未指定の場合は自動設定されます。")
     parser.add_argument(
-        "--keybind",
+        "--keybind_json",
         type=str,
         help=('追加するラベルに設定するkeybindのJSONオブジェクト。 ``file://`` を先頭に付けるとJSONファイルを指定できます。 例: ``{"alt": false, "code": "Digit1", "ctrl": true, "shift": false}``'),
     )

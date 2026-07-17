@@ -341,7 +341,7 @@ class AddAttribute(CommandLine):
         コマンドライン引数を解釈し、属性追加処理を実行する。
         """
         args = self.args
-        keybind = None if args.keybind is None else validate_keybind_input(get_json_from_args(args.keybind))
+        keybind = None if args.keybind_json is None else validate_keybind_input(get_json_from_args(args.keybind_json))
 
         label_ids = get_list_from_args(args.label_id)
         label_name_ens = get_list_from_args(args.label_name_en)
@@ -396,7 +396,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         help="追加する属性の初期値。 ``flag`` の場合は ``true`` または ``false`` 、 ``integer`` の場合は整数を指定します。",
     )
     parser.add_argument(
-        "--keybind",
+        "--keybind_json",
         type=str,
         help=('追加する属性に設定するkeybindのJSONオブジェクト。 ``file://`` を先頭に付けるとJSONファイルを指定できます。 例: ``{"alt": false, "code": "Digit1", "ctrl": true, "shift": false}``'),
     )

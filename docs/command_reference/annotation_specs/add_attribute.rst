@@ -45,6 +45,21 @@ Examples
 ``--attribute_type`` が ``flag`` の場合、 ``--default_value`` には ``true`` または ``false`` を指定します。 ``integer`` の場合は整数を指定します。
 
 
+``keybind`` を指定する場合
+----------------------------------------------
+
+.. code-block::
+
+    $ annofabcli annotation_specs add_attribute \
+     --project_id prj1 \
+     --attribute_type flag \
+     --attribute_name_en unclear \
+     --keybind_json '{"alt": false, "code": "Digit1", "ctrl": true, "shift": false}' \
+     --label_name_en car
+
+``--keybind_json`` にはJSONオブジェクトを指定してください。APIの ``keybind`` は配列形式ですが、このコマンドでは画面と同じく1つだけ指定できます。
+
+
 .. _annotation_specs_non_choice_attribute_types:
 
 --attribute_type に指定できる値
