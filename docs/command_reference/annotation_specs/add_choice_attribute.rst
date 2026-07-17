@@ -71,7 +71,7 @@ CSV形式で指定する場合
 
 属性本体の ``keybind`` を指定する場合は、 ``--keybind_json`` にJSONオブジェクトを指定してください。
 
-選択肢の ``keybind`` を指定する場合は、 ``--choice_json`` ではJSONオブジェクト、 ``--choice_csv`` ではJSONオブジェクト文字列を指定してください。APIの ``keybind`` は配列形式ですが、このコマンドでは画面と同じく1つだけ指定できます。
+選択肢の ``keybind`` を指定する場合は、 ``--choice_json`` ではJSONオブジェクト、 ``--choice_csv`` ではJSONオブジェクト文字列を指定してください。
 
 .. code-block::
 

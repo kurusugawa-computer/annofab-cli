@@ -60,7 +60,7 @@ CSV形式で指定する場合
      --attribute_id 71620647-98cf-48ad-b43b-4af425a24f32 \
      --choice_csv choices.csv
 
-選択肢の ``keybind`` を指定する場合は、 ``--choice_json`` ではJSONオブジェクト、 ``--choice_csv`` ではJSONオブジェクト文字列を指定してください。APIの ``keybind`` は配列形式ですが、このコマンドでは画面と同じく1つだけ指定できます。
+選択肢の ``keybind`` を指定する場合は、 ``--choice_json`` ではJSONオブジェクト、 ``--choice_csv`` ではJSONオブジェクト文字列を指定してください。
 
 
 Usage Details

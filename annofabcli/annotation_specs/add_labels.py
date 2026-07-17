@@ -547,7 +547,6 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
             "追加するラベル情報のJSON配列を指定します。 ``file://`` を先頭に付けるとJSON形式のファイルを指定できます。"
             " 各要素には ``label_name_en`` が必要です。 任意で ``label_id`` , ``label_name_ja`` , ``annotation_type`` ,"
             " ``color`` , ``keybind`` , ``field_values`` を指定できます。 ``keybind`` と ``field_values`` にはJSONオブジェクトを指定してください。"
-            " APIの ``keybind`` は配列形式ですが、このコマンドでは画面と同じく1つだけ指定できます。"
             f"\n(例) ``{json.dumps(sample_json, ensure_ascii=False)}``"
         ),
     )
@@ -558,7 +557,6 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
             "追加するラベル情報のCSVファイルを指定します。 CSVには ``label_name_en`` 列が必要です。"
             " 任意で ``label_id`` , ``label_name_ja`` , ``annotation_type`` , ``color`` , ``keybind`` , ``field_values`` 列を指定できます。"
             " ``keybind`` 列と ``field_values`` 列にはJSONオブジェクト文字列を指定してください。"
-            " APIの ``keybind`` は配列形式ですが、このコマンドでは画面と同じく1つだけ指定できます。"
         ),
     )
     parser.add_argument(
