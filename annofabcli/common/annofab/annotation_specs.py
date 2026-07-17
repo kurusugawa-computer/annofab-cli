@@ -1,4 +1,4 @@
-from typing import Any, cast
+from typing import Any
 
 
 def validate_keybind_input(keybind: object) -> list[dict[str, Any]]:
@@ -32,7 +32,7 @@ def validate_keybind_input(keybind: object) -> list[dict[str, Any]]:
             if not isinstance(normalized_keybind[key], bool):
                 raise TypeError(f"`keybind` の{index}件目の `{key}` には真偽値を指定してください。")
 
-        result.append(cast(dict[str, Any], normalized_keybind))
+        result.append(normalized_keybind)
 
     return result
 
