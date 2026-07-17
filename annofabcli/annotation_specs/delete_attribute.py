@@ -5,7 +5,7 @@ import copy
 import logging
 from collections.abc import Collection, Mapping, Sequence
 from dataclasses import dataclass
-from typing import Any, cast
+from typing import Any
 
 import annofabapi
 from annofabapi.util.annotation_specs import AnnotationSpecsAccessor, get_attribute_name_en, get_label_name_en
@@ -206,6 +206,37 @@ def get_target_attributes_by_name(annotation_specs: Mapping[str, Any], *, attrib
     return result
 
 
+def get_target_attribute_by_name_and_label(
+    annotation_specs: Mapping[str, Any],
+    *,
+    attribute_name_en: str,
+    label: Mapping[str, Any],
+) -> Mapping[str, Any]:
+    """
+    指定ラベルに紐づく、指定属性英語名の属性を返す。
+
+    Args:
+        annotation_specs: 既存のアノテーション仕様
+        attribute_name_en: 対象属性英語名
+        label: 対象ラベル
+
+    Returns:
+        対象属性
+
+    Raises:
+        ValueError: 対象属性が存在しない場合、または複数存在する場合
+    """
+    label_attribute_ids = set(label["additional_data_definitions"])
+    matched_attributes = [
+        attribute for attribute in annotation_specs["additionals"] if attribute["additional_data_definition_id"] in label_attribute_ids and get_attribute_name_en(attribute) == attribute_name_en
+    ]
+    if len(matched_attributes) == 0:
+        raise ValueError(f"属性情報が見つかりませんでした。 :: attribute_name_en='{attribute_name_en}', label_name_en='{get_label_name_en(label)}'")
+    if len(matched_attributes) > 1:
+        raise ValueError(f"属性情報が複数（{len(matched_attributes)}件）見つかりました。 :: attribute_name_en='{attribute_name_en}', label_name_en='{get_label_name_en(label)}'")
+    return matched_attributes[0]
+
+
 def collect_unique_attributes(label_attribute_pairs: Collection[LabelAttributePair]) -> list[Mapping[str, Any]]:
     """
     ラベル属性ペアから重複を除いた属性一覧を返す。
@@ -278,7 +309,7 @@ def resolve_attribute_deletion(
             label_attribute_pairs = [
                 LabelAttributePair(
                     label=label,
-                    attribute=annotation_specs_accessor.get_attribute(attribute_name=attribute_name_en, label=cast(Any, label)),
+                    attribute=get_target_attribute_by_name_and_label(annotation_specs, attribute_name_en=attribute_name_en, label=label),
                 )
                 for attribute_name_en in attribute_name_ens
                 for label in target_labels

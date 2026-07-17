@@ -42,6 +42,21 @@ def add_same_name_attributes_to_different_labels(annotation_specs: dict[str, Any
     bus_label["additional_data_definitions"].append("bus_foo_attribute_id")
 
 
+def add_same_name_attributes_to_same_label(annotation_specs: dict[str, Any]) -> None:
+    foo_attribute_1 = copy.deepcopy(annotation_specs["additionals"][0])
+    foo_attribute_1["additional_data_definition_id"] = "car_foo_attribute_id_1"
+    foo_attribute_1["name"]["messages"] = [
+        {"lang": "ja-JP", "message": "foo"},
+        {"lang": "en-US", "message": "foo"},
+    ]
+    foo_attribute_2 = copy.deepcopy(foo_attribute_1)
+    foo_attribute_2["additional_data_definition_id"] = "car_foo_attribute_id_2"
+    annotation_specs["additionals"].extend([foo_attribute_1, foo_attribute_2])
+
+    car_label = next(label for label in annotation_specs["labels"] if label["label_id"] == "car_label_id")
+    car_label["additional_data_definitions"].extend(["car_foo_attribute_id_1", "car_foo_attribute_id_2"])
+
+
 class TestDeleteAttributeHelpers:
     def test_restriction_references_attribute__ネストされた属性参照を検出する(self) -> None:
         annotation_specs = load_annotation_specs()
@@ -85,6 +100,19 @@ class TestDeleteAttributeHelpers:
 
 
 class TestResolveAttributeDeletion:
+    def test_resolve_attribute_deletion__同じラベル内で属性名が重複しているときはエラー(self) -> None:
+        annotation_specs = load_annotation_specs()
+        add_same_name_attributes_to_same_label(annotation_specs)
+
+        with pytest.raises(ValueError):
+            resolve_attribute_deletion(
+                annotation_specs,
+                attribute_ids=None,
+                attribute_name_ens=["foo"],
+                label_ids=None,
+                label_name_ens=["car"],
+            )
+
     def test_resolve_attribute_deletion__属性名が重複していてもラベルで絞り込める(self) -> None:
         annotation_specs = load_annotation_specs()
         add_same_name_attributes_to_different_labels(annotation_specs)
