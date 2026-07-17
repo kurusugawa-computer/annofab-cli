@@ -15,7 +15,7 @@ from dataclasses_json import DataClassJsonMixin
 
 import annofabcli.common.cli
 from annofabcli.annotation_specs.color import rgb_to_hex
-from annofabcli.common.annofab.annotation_specs import keybind_to_text
+from annofabcli.common.annofab.annotation_specs import api_keybind_to_keybind, keybind_to_api_keybind, keybind_to_text
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
     ArgumentParser,
@@ -51,8 +51,10 @@ class FlattenLabel(DataClassJsonMixin):
     Notes:
         APIでは`additional_data_definitions`のような名前だが、分かりにくかったので"attribute"という名前に変えた。
     """
-    keybind: str | None
-    """キーバインド"""
+    keybind: dict[str, Any] | None
+    """CLIで指定できる形式のキーバインド"""
+    keybind_text: str
+    """人が読める形式のキーバインド"""
     field_values: dict[str, Any]
     """ラベルに設定された field_values"""
 
@@ -72,6 +74,7 @@ def create_label_list(labels_v3: list[dict[str, Any]]) -> list[FlattenLabel]:
         label_color = label["color"]
         hex_color_code = rgb_to_hex(label_color)
         additional_data_definitions = label["additional_data_definitions"]
+        keybind = api_keybind_to_keybind(label.get("keybind", []))
         return FlattenLabel(
             label_id=label["label_id"],
             label_name_en=get_message_with_lang(label["label_name"], lang=Lang.EN_US),
@@ -80,7 +83,8 @@ def create_label_list(labels_v3: list[dict[str, Any]]) -> list[FlattenLabel]:
             annotation_type=label["annotation_type"],
             color=hex_color_code,
             attribute_count=len(additional_data_definitions),
-            keybind=keybind_to_text(label["keybind"]),
+            keybind=keybind,
+            keybind_text=keybind_to_text(keybind_to_api_keybind(keybind)),
             field_values=label.get("field_values", {}),
         )
 
@@ -100,6 +104,7 @@ def create_label_list_for_csv(label_list: list[FlattenLabel]) -> list[dict[str, 
     result = []
     for label in label_list:
         record = label.to_dict()
+        record["keybind"] = "" if label.keybind is None else json.dumps(label.keybind, ensure_ascii=False)
         record["field_values"] = json.dumps(label.field_values, ensure_ascii=False)
         result.append(record)
     return result
@@ -124,6 +129,7 @@ class PrintAnnotationSpecsLabel(CommandLine):
                 "color",
                 "attribute_count",
                 "keybind",
+                "keybind_text",
                 "field_values",
             ]
             df = pandas.DataFrame(create_label_list_for_csv(label_list), columns=columns)

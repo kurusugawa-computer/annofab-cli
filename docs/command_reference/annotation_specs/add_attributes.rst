@@ -22,6 +22,12 @@ JSON形式で指定する場合
             "attribute_name_en": "unclear",
             "read_only": true,
             "default_value": false,
+            "keybind": {
+                "alt": false,
+                "code": "Digit1",
+                "ctrl": true,
+                "shift": false
+            },
             "label_name_ens": ["car", "bus"]
         },
         {
@@ -31,7 +37,13 @@ JSON形式で指定する場合
                 {
                     "choice_name_en": "sunny",
                     "choice_name_ja": "晴れ",
-                    "is_default": true
+                    "is_default": true,
+                    "keybind": {
+                        "alt": false,
+                        "code": "Digit2",
+                        "ctrl": true,
+                        "shift": false
+                    }
                 },
                 {
                     "choice_name_en": "cloudy",
@@ -64,6 +76,7 @@ JSON形式で指定する場合
 * ``attribute_id`` : 任意。属性ID。未指定の場合はUUIDv4が自動生成されます。
 * ``read_only`` : 任意。 ``true`` を指定すると読み込み専用の属性として追加します。未指定の場合は ``false`` です。
 * ``default_value`` : 任意。非選択肢系属性の初期値。 ``attribute_type`` が ``flag`` の場合は真偽値、 ``integer`` の場合は整数、その他の場合は文字列を指定します。 ``choice`` または ``select`` では指定できません。
+* ``keybind`` : 任意。属性に設定するキーボードショートカット。JSONオブジェクトを指定してください。APIの ``keybind`` は配列形式ですが、このコマンドでは画面と同じく1つだけ指定できます。
 * ``choices`` : ``attribute_type`` が ``choice`` または ``select`` のとき必須。選択肢情報の配列です。各要素の構造は :doc:`add_choice_attribute` の ``--choice_json`` と同じです。
 
 ``attribute_type`` には、非選択肢系属性の値に加えて ``choice`` と ``select`` も指定できます。

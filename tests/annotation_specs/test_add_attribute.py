@@ -54,12 +54,14 @@ class TestResolveAttributeInput:
             label_name_ens=["car"],
             read_only=True,
             default_value="true",
+            keybind={"alt": False, "code": "Digit1", "ctrl": True, "shift": False},
         )
 
         assert actual.new_attribute["additional_data_definition_id"] == "weather_checked_attr"
         assert actual.new_attribute["type"] == "flag"
         assert actual.new_attribute["read_only"] is True
         assert actual.new_attribute["default"] is True
+        assert actual.new_attribute["keybind"] == [{"alt": False, "code": "Digit1", "ctrl": True, "shift": False}]
         assert [label["label_id"] for label in actual.target_labels] == ["car_label_id"]
         assert actual.duplicated_name_attribute_ids == []
 

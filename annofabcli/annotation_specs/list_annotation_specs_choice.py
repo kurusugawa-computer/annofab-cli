@@ -14,7 +14,7 @@ from annofabapi.util.annotation_specs import get_english_message, get_message_wi
 from dataclasses_json import DataClassJsonMixin
 
 import annofabcli.common.cli
-from annofabcli.common.annofab.annotation_specs import keybind_to_text
+from annofabcli.common.annofab.annotation_specs import api_keybind_to_keybind, keybind_to_api_keybind, keybind_to_text
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
     ArgumentParser,
@@ -54,8 +54,10 @@ class FlattenChoice(DataClassJsonMixin):
     choice_name_vi: str | None
     is_default: bool
     """初期値として設定されているかどうか"""
-    keybind: str | None
-    """キーバインド"""
+    keybind: dict[str, Any] | None
+    """CLIで指定できる形式のキーバインド"""
+    keybind_text: str
+    """人が読める形式のキーバインド"""
 
 
 def create_flatten_choice_list_from_additionals(additionals_v3: list[dict[str, Any]]) -> list[FlattenChoice]:
@@ -79,6 +81,7 @@ def create_flatten_choice_list_from_additionals(additionals_v3: list[dict[str, A
         choice_id = choice["choice_id"]
         choice_name = choice["name"]
         is_default = additional["default"] == choice_id
+        keybind = api_keybind_to_keybind(choice.get("keybind", []))
         return FlattenChoice(
             attribute_id=attribute_id,
             attribute_name_en=get_english_message(additional_name),
@@ -88,7 +91,8 @@ def create_flatten_choice_list_from_additionals(additionals_v3: list[dict[str, A
             choice_name_ja=get_message_with_lang(choice_name, lang=Lang.JA_JP),
             choice_name_vi=get_message_with_lang(choice_name, lang=Lang.VI_VN),
             is_default=is_default,
-            keybind=keybind_to_text(choice["keybind"]),
+            keybind=keybind,
+            keybind_text=keybind_to_text(keybind_to_api_keybind(keybind)),
         )
 
     tmp_list = []
@@ -119,8 +123,14 @@ class PrintAnnotationSpecsAttribute(CommandLine):
                 "choice_name_vi",
                 "is_default",
                 "keybind",
+                "keybind_text",
             ]
-            df = pandas.DataFrame(choice_list, columns=columns)
+            records = []
+            for choice in choice_list:
+                record = choice.to_dict()
+                record["keybind"] = "" if choice.keybind is None else json.dumps(choice.keybind, ensure_ascii=False)
+                records.append(record)
+            df = pandas.DataFrame(records, columns=columns)
             print_csv(df, output)
 
         elif output_format in [OutputFormat.JSON, OutputFormat.PRETTY_JSON]:

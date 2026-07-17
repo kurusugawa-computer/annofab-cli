@@ -16,6 +16,7 @@ from annofabapi.util.annotation_specs import AnnotationSpecsAccessor, get_attrib
 
 import annofabcli.common.cli
 from annofabcli.annotation_specs.utils import create_name, get_target_labels
+from annofabcli.common.annofab.annotation_specs import keybind_to_api_keybind, validate_keybind_input
 from annofabcli.common.cli import (
     ArgumentParser,
     CommandLine,
@@ -47,6 +48,9 @@ class ChoiceAttributeInput:
 
     is_default: bool = False
     """属性のデフォルト値として使用する選択肢かどうか"""
+
+    keybind: dict[str, Any] | None = None
+    """選択肢に設定するkeybind"""
 
 
 @dataclass(frozen=True)
@@ -88,6 +92,7 @@ def parse_choice_input_from_dict(data: dict[str, Any], *, index: int) -> ChoiceA
         choice_name_ja=data.get("choice_name_ja"),
         choice_id=data.get("choice_id"),
         is_default=data.get("is_default", False),
+        keybind=None if data.get("keybind") is None else validate_keybind_input(data["keybind"]),
     )
 
 
@@ -138,6 +143,7 @@ def read_choices_csv(csv_path: Path) -> list[ChoiceAttributeInput]:
                 "choice_name_en": "string",
                 "choice_name_ja": "string",
                 "is_default": "boolean",
+                "keybind": "string",
             },
         )
     except Exception as e:
@@ -154,15 +160,34 @@ def read_choices_csv(csv_path: Path) -> list[ChoiceAttributeInput]:
         choice_name_ja = row.get("choice_name_ja")
         choice_id = row.get("choice_id")
         is_default = row.get("is_default", False)
+        keybind = parse_keybind_in_csv(row.get("keybind"))
         result.append(
             ChoiceAttributeInput(
                 choice_name_en=choice_name_en,
                 choice_name_ja=choice_name_ja,
                 choice_id=choice_id,
                 is_default=is_default,
+                keybind=keybind,
             )
         )
     return result
+
+
+def parse_keybind_in_csv(value: object) -> dict[str, Any] | None:
+    """
+    CSVの ``keybind`` 列を ``dict[str, Any] | None`` に変換する。
+    """
+    if value is None:
+        return None
+    if not isinstance(value, str):
+        value = str(value)
+    if value == "":
+        return None
+
+    try:
+        return validate_keybind_input(json.loads(value))
+    except (TypeError, ValueError, json.JSONDecodeError) as e:
+        raise ValueError("`keybind` はJSONオブジェクト形式で指定してください。") from e
 
 
 def validate_choice_inputs(choice_inputs: Sequence[ChoiceAttributeInput], *, min_count: int = 2) -> None:
@@ -211,6 +236,7 @@ def build_choices(choice_inputs: Sequence[ChoiceAttributeInput], *, min_count: i
             {
                 "choice_id": choice_id,
                 "name": create_name(choice_input.choice_name_en, choice_input.choice_name_ja),
+                "keybind": keybind_to_api_keybind(copy.deepcopy(choice_input.keybind)),
             }
         )
         if choice_input.is_default:
@@ -277,6 +303,7 @@ def create_attribute(
     attribute_id: str | None,
     choice_inputs: Sequence[ChoiceAttributeInput],
     read_only: bool = False,
+    keybind: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """
     選択肢系属性1件分のAnnofab API向けオブジェクトを生成する。
@@ -288,6 +315,7 @@ def create_attribute(
         attribute_id: 属性ID。未指定ならUUIDv4を自動生成
         choice_inputs: 選択肢入力一覧
         read_only: 読み込み専用属性にするかどうか
+        keybind: 属性に設定するkeybind
 
     Returns:
         Annofab API向けの属性オブジェクト
@@ -303,6 +331,7 @@ def create_attribute(
         "default": default_choice_id,
         "choices": choices,
         "read_only": read_only,
+        "keybind": keybind_to_api_keybind(copy.deepcopy(keybind)),
     }
 
 
@@ -317,6 +346,7 @@ def resolve_choice_attribute_input(
     label_ids: Sequence[str] | None,
     label_name_ens: Sequence[str] | None,
     read_only: bool = False,
+    keybind: dict[str, Any] | None = None,
 ) -> ResolvedChoiceAttributeInput:
     """
     選択肢系属性入力を既存アノテーション仕様に対して解決する。
@@ -331,6 +361,7 @@ def resolve_choice_attribute_input(
         label_ids: 追加先ラベルID一覧。未指定時はNone
         label_name_ens: 追加先ラベル英語名一覧。未指定時はNone
         read_only: 読み込み専用属性にするかどうか
+        keybind: 属性に設定するkeybind
 
     Returns:
         解決済み選択肢系属性入力
@@ -344,6 +375,7 @@ def resolve_choice_attribute_input(
         attribute_id=attribute_id,
         choice_inputs=choice_inputs,
         read_only=read_only,
+        keybind=keybind,
     )
     duplicated_name_attribute_ids = validate_new_attribute(
         annotation_specs["additionals"],
@@ -418,6 +450,7 @@ class AddChoiceAttributeMain(CommandLineWithConfirm):
         label_ids: Sequence[str] | None,
         label_name_ens: Sequence[str] | None,
         read_only: bool = False,
+        keybind: dict[str, Any] | None = None,
         comment: str | None = None,
     ) -> bool:
         """
@@ -432,6 +465,7 @@ class AddChoiceAttributeMain(CommandLineWithConfirm):
             label_ids: 追加先ラベルID一覧。未指定時はNone
             label_name_ens: 追加先ラベル英語名一覧。未指定時はNone
             read_only: 読み込み専用属性にするかどうか
+            keybind: 属性に設定するkeybind
             comment: 変更コメント
 
         Returns:
@@ -451,6 +485,7 @@ class AddChoiceAttributeMain(CommandLineWithConfirm):
             label_ids=label_ids,
             label_name_ens=label_name_ens,
             read_only=read_only,
+            keybind=keybind,
         )
 
         label_names = [get_label_name_en(label) for label in resolved_choice_attribute_input.target_labels]
@@ -483,6 +518,7 @@ class AddChoiceAttribute(CommandLine):
         コマンドライン引数を解釈し、選択肢系属性追加処理を実行する。
         """
         args = self.args
+        keybind = None if args.keybind_json is None else validate_keybind_input(get_json_from_args(args.keybind_json))
 
         if args.choice_json is not None:
             choice_inputs = read_choices_json(args.choice_json)
@@ -506,6 +542,7 @@ class AddChoiceAttribute(CommandLine):
             label_ids=label_ids,
             label_name_ens=label_name_ens,
             read_only=args.read_only,
+            keybind=keybind,
             comment=args.comment,
         )
 
@@ -531,21 +568,40 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--attribute_id", type=str, help="追加する属性の属性ID。未指定の場合はUUIDv4を自動生成します。")
     parser.add_argument("--attribute_name_ja", type=str, help="追加する属性の日本語名。")
     parser.add_argument("--read_only", action="store_true", help="追加する属性を読み込み専用にします。")
+    parser.add_argument(
+        "--keybind_json",
+        type=str,
+        help=('追加する属性に設定するkeybindのJSONオブジェクト。 ``file://`` を先頭に付けるとJSONファイルを指定できます。 例: ``{"alt": false, "code": "Digit1", "ctrl": true, "shift": false}``'),
+    )
 
     sample_json = [
-        {"choice_id": "front", "choice_name_en": "front", "choice_name_ja": "前", "is_default": True},
+        {
+            "choice_id": "front",
+            "choice_name_en": "front",
+            "choice_name_ja": "前",
+            "is_default": True,
+            "keybind": {"alt": False, "code": "Digit1", "ctrl": True, "shift": False},
+        },
         {"choice_name_en": "rear"},
     ]
     choice_group = parser.add_mutually_exclusive_group(required=True)
     choice_group.add_argument(
         "--choice_json",
         type=str,
-        help=f"追加する選択肢情報のJSON配列を指定します。 ``file://`` を先頭に付けるとJSON形式のファイルを指定できます。\n(例) ``{json.dumps(sample_json, ensure_ascii=False)}``",
+        help=(
+            "追加する選択肢情報のJSON配列を指定します。 ``file://`` を先頭に付けるとJSON形式のファイルを指定できます。"
+            " 任意で ``keybind`` を指定できます。 ``keybind`` にはJSONオブジェクトを指定してください。"
+            f"\n(例) ``{json.dumps(sample_json, ensure_ascii=False)}``"
+        ),
     )
     choice_group.add_argument(
         "--choice_csv",
         type=Path,
-        help="追加する選択肢情報のCSVファイルを指定します。 CSVには ``choice_name_en`` 列が必要です。 任意で ``choice_id`` , ``choice_name_ja`` , ``is_default`` 列を指定できます。",
+        help=(
+            "追加する選択肢情報のCSVファイルを指定します。 CSVには ``choice_name_en`` 列が必要です。"
+            " 任意で ``choice_id`` , ``choice_name_ja`` , ``is_default`` , ``keybind`` 列を指定できます。"
+            " ``keybind`` 列にはJSONオブジェクト文字列を指定してください。"
+        ),
     )
 
     label_group = parser.add_mutually_exclusive_group(required=True)

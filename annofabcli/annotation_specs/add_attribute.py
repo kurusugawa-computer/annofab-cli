@@ -15,11 +15,13 @@ from annofabapi.util.annotation_specs import AnnotationSpecsAccessor, get_label_
 import annofabcli.common.cli
 from annofabcli.annotation_specs.add_choice_attribute import validate_new_attribute
 from annofabcli.annotation_specs.utils import create_name, get_target_labels
+from annofabcli.common.annofab.annotation_specs import keybind_to_api_keybind, validate_keybind_input
 from annofabcli.common.cli import (
     ArgumentParser,
     CommandLine,
     CommandLineWithConfirm,
     build_annofabapi_resource_and_login,
+    get_json_from_args,
     get_list_from_args,
 )
 from annofabcli.common.facade import AnnofabApiFacade
@@ -136,6 +138,7 @@ def create_attribute(
     attribute_id: str | None,
     read_only: bool = False,
     default_value: str | int | bool | None = None,
+    keybind: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """
     属性1件分のAnnofab API向けオブジェクトを生成する。
@@ -147,6 +150,7 @@ def create_attribute(
         attribute_id: 属性ID。未指定ならUUIDv4を自動生成
         read_only: 読み込み専用属性にするかどうか
         default_value: 属性の初期値。未指定時はNone
+        keybind: 属性に設定するkeybind
     Returns:
         Annofab API向けの属性オブジェクト
     """
@@ -155,6 +159,8 @@ def create_attribute(
         "name": create_name(attribute_name_en, attribute_name_ja),
         "type": attribute_type.value if isinstance(attribute_type, AttributeType) else attribute_type,
         "read_only": read_only,
+        "keybind": keybind_to_api_keybind(copy.deepcopy(keybind)),
+        "choices": [],
     }
     parsed_default_value = parse_default_value(attribute_type, default_value)
     if parsed_default_value is not None:
@@ -173,6 +179,7 @@ def resolve_attribute_input(
     label_name_ens: Sequence[str] | None,
     read_only: bool = False,
     default_value: str | int | bool | None = None,
+    keybind: dict[str, Any] | None = None,
 ) -> ResolvedAttributeInput:
     """
     入力された属性を既存アノテーション仕様に対して解決する。
@@ -186,6 +193,7 @@ def resolve_attribute_input(
         read_only: 読み込み専用属性にするかどうか
         label_ids: 追加先ラベルID一覧。未指定時はNone
         label_name_ens: 追加先ラベル英語名一覧。未指定時はNone
+        keybind: 属性に設定するkeybind
 
     Returns:
         解決済み属性入力
@@ -199,6 +207,7 @@ def resolve_attribute_input(
         attribute_id=attribute_id,
         read_only=read_only,
         default_value=default_value,
+        keybind=keybind,
     )
     duplicated_name_attribute_ids = validate_new_attribute(
         annotation_specs["additionals"],
@@ -273,6 +282,7 @@ class AddAttributeMain(CommandLineWithConfirm):
         label_name_ens: Sequence[str] | None,
         read_only: bool = False,
         default_value: str | int | bool | None = None,
+        keybind: dict[str, Any] | None = None,
         comment: str | None = None,
     ) -> bool:
         """
@@ -302,6 +312,7 @@ class AddAttributeMain(CommandLineWithConfirm):
             default_value=default_value,
             label_ids=label_ids,
             label_name_ens=label_name_ens,
+            keybind=keybind,
         )
         label_names = [get_label_name_en(label) for label in resolved_attribute_input.target_labels]
         confirm_message = f"属性名(英語)='{attribute_name_en}', 属性種類='{attribute_type}', 対象ラベル={label_names} を追加します。よろしいですか？"
@@ -330,6 +341,7 @@ class AddAttribute(CommandLine):
         コマンドライン引数を解釈し、属性追加処理を実行する。
         """
         args = self.args
+        keybind = None if args.keybind_json is None else validate_keybind_input(get_json_from_args(args.keybind_json))
 
         label_ids = get_list_from_args(args.label_id)
         label_name_ens = get_list_from_args(args.label_name_en)
@@ -342,6 +354,7 @@ class AddAttribute(CommandLine):
             attribute_id=args.attribute_id,
             read_only=args.read_only,
             default_value=args.default_value,
+            keybind=keybind,
             label_ids=label_ids,
             label_name_ens=label_name_ens,
             comment=args.comment,
@@ -381,6 +394,11 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--default_value",
         type=str,
         help="追加する属性の初期値。 ``flag`` の場合は ``true`` または ``false`` 、 ``integer`` の場合は整数を指定します。",
+    )
+    parser.add_argument(
+        "--keybind_json",
+        type=str,
+        help=('追加する属性に設定するkeybindのJSONオブジェクト。 ``file://`` を先頭に付けるとJSONファイルを指定できます。 例: ``{"alt": false, "code": "Digit1", "ctrl": true, "shift": false}``'),
     )
 
     label_group = parser.add_mutually_exclusive_group(required=True)

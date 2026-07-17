@@ -14,6 +14,7 @@ from annofabcli.annotation_specs.add_labels import (
     create_label_inputs_from_name_ens,
     parse_annotation_type_in_csv,
     parse_field_values_in_csv,
+    parse_keybind_in_csv,
     read_labels_csv,
     read_labels_json,
     resolve_annotation_types,
@@ -42,6 +43,7 @@ class TestBuildRequestBodyForAddLabels:
                         label_name_en="pedestrian",
                         label_name_ja="歩行者",
                         color="#123456",
+                        keybind={"alt": False, "code": "Digit1", "ctrl": True, "shift": False},
                         field_values={"display_name": {"_type": "DisplayName", "text": "歩行者"}},
                     ),
                     LabelInput(label_name_en="bicycle"),
@@ -58,6 +60,8 @@ class TestBuildRequestBodyForAddLabels:
         assert [label["annotation_type"] for label in added_labels] == ["bounding_box", "bounding_box"]
         assert added_labels[0]["color"] == {"red": 18, "green": 52, "blue": 86}
         assert added_labels[1]["color"] == {"red": 255, "green": 85, "blue": 0}
+        assert added_labels[0]["keybind"] == [{"alt": False, "code": "Digit1", "ctrl": True, "shift": False}]
+        assert added_labels[1]["keybind"] == []
         assert added_labels[0]["field_values"] == {"display_name": {"_type": "DisplayName", "text": "歩行者"}}
         assert added_labels[1]["field_values"] == {}
         assert actual["comment"].startswith("以下のラベルを追加しました。")
@@ -174,6 +178,7 @@ class TestReadLabels:
     def test_read_labels_json(self) -> None:
         actual = read_labels_json(
             '[{"label_id":"pedestrian","label_name_en":"pedestrian","label_name_ja":"歩行者","annotation_type":"bounding_box","color":"#123456",'
+            '"keybind":{"alt":false,"code":"Digit1","ctrl":true,"shift":false},'
             '"field_values":{"display_name":{"_type":"DisplayName","text":"歩行者"}}},{"label_name_en":"bicycle","annotation_type":"polygon"}]'
         )
 
@@ -184,6 +189,7 @@ class TestReadLabels:
                 label_name_ja="歩行者",
                 annotation_type="bounding_box",
                 color="#123456",
+                keybind={"alt": False, "code": "Digit1", "ctrl": True, "shift": False},
                 field_values={"display_name": {"_type": "DisplayName", "text": "歩行者"}},
             ),
             LabelInput(label_name_en="bicycle", annotation_type="polygon"),
@@ -207,6 +213,7 @@ class TestReadLabels:
                     "label_name_ja": "歩行者",
                     "annotation_type": "bounding_box",
                     "color": "#123456",
+                    "keybind": '{"alt": false, "code": "Digit1", "ctrl": true, "shift": false}',
                     "field_values": '{"display_name": {"_type": "DisplayName", "text": "歩行者"}}',
                 },
                 {"label_name_en": "bicycle", "annotation_type": "polygon"},
@@ -223,6 +230,7 @@ class TestReadLabels:
                 label_name_ja="歩行者",
                 annotation_type="bounding_box",
                 color="#123456",
+                keybind={"alt": False, "code": "Digit1", "ctrl": True, "shift": False},
                 field_values={"display_name": {"_type": "DisplayName", "text": "歩行者"}},
             ),
             LabelInput(label_name_en="bicycle", annotation_type="polygon"),
@@ -249,6 +257,17 @@ class TestReadLabels:
     def test_parse_field_values_in_csv__invalid(self) -> None:
         with pytest.raises(ValueError):
             parse_field_values_in_csv("[]", index=1)
+
+    def test_parse_keybind_in_csv(self) -> None:
+        actual = parse_keybind_in_csv('{"alt":false,"code":"Digit1","ctrl":true,"shift":false}', index=1)
+        assert actual == {"alt": False, "code": "Digit1", "ctrl": True, "shift": False}
+
+    def test_parse_keybind_in_csv__empty(self) -> None:
+        assert parse_keybind_in_csv("", index=1) is None
+
+    def test_parse_keybind_in_csv__invalid(self) -> None:
+        with pytest.raises(ValueError):
+            parse_keybind_in_csv('"invalid"', index=1)
 
     def test_parse_annotation_type_in_csv(self) -> None:
         assert parse_annotation_type_in_csv("polygon", index=1) == "polygon"

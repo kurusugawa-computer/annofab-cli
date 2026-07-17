@@ -61,6 +61,20 @@ Examples
 ``field_values`` のフォーマットは、 :doc:`update_label_field_values` を参照してください。
 
 
+``keybind`` を指定して追加する場合
+----------------------------------------------
+
+.. code-block::
+
+    $ annofabcli annotation_specs add_label \
+     --project_id prj1 \
+     --label_name_en pedestrian \
+     --annotation_type bounding_box \
+     --keybind_json '{"alt": false, "code": "Digit1", "ctrl": true, "shift": false}'
+
+``--keybind_json`` にはJSONオブジェクトを指定してください。APIの ``keybind`` は配列形式ですが、このコマンドでは画面と同じく1つだけ指定できます。
+
+
 ``--annotation_type`` の値
 ----------------------------------------------
 

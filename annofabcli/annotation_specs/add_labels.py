@@ -25,6 +25,7 @@ from annofabcli.annotation_specs.add_label import (
     validate_new_label,
 )
 from annofabcli.annotation_specs.color import RgbColor, hex_to_rgb
+from annofabcli.common.annofab.annotation_specs import validate_keybind_input
 from annofabcli.common.cli import (
     ArgumentParser,
     CommandLine,
@@ -60,6 +61,9 @@ class LabelInput:
     color: str | None = None
     """``#RRGGBB`` 形式のカラーコード。未指定の場合は自動設定する。"""
 
+    keybind: dict[str, Any] | None = None
+    """新規ラベルに設定するkeybind。未指定の場合はNone。"""
+
     field_values: dict[str, Any] | None = None
     """新規ラベルに設定するfield_values。未指定の場合はNone。"""
 
@@ -82,6 +86,7 @@ def parse_label_input_from_dict(data: dict[str, Any], *, index: int) -> LabelInp
     if label_name_en is None:
         raise ValueError(f"{index}件目のラベルに `label_name_en` が指定されていません。")
     field_values = data.get("field_values")
+    keybind = data.get("keybind")
     annotation_type = data.get("annotation_type")
     if annotation_type is not None:
         annotation_type = validate_annotation_type(annotation_type, index=index)
@@ -92,6 +97,7 @@ def parse_label_input_from_dict(data: dict[str, Any], *, index: int) -> LabelInp
         label_id=data.get("label_id"),
         annotation_type=annotation_type,
         color=data.get("color"),
+        keybind=None if keybind is None else validate_keybind_input(keybind),
         field_values=None if field_values is None else validate_field_values_input(field_values),
     )
 
@@ -129,9 +135,8 @@ def parse_field_values_in_csv(value: object, *, index: int) -> dict[str, Any] | 
     Raises:
         ValueError: JSON文字列として不正な場合
     """
-    if pandas.isna(value):
+    if value is None:
         return None
-
     if not isinstance(value, str):
         value = str(value)
     if value == "":
@@ -141,6 +146,23 @@ def parse_field_values_in_csv(value: object, *, index: int) -> dict[str, Any] | 
         return validate_field_values_input(json.loads(value))
     except (TypeError, json.JSONDecodeError) as e:
         raise ValueError(f"{index}件目のラベルの `field_values` はJSONオブジェクト形式で指定してください。") from e
+
+
+def parse_keybind_in_csv(value: object, *, index: int) -> dict[str, Any] | None:
+    """
+    CSVの ``keybind`` 列を ``dict[str, Any] | None`` に変換する。
+    """
+    if value is None:
+        return None
+    if not isinstance(value, str):
+        value = str(value)
+    if value == "":
+        return None
+
+    try:
+        return validate_keybind_input(json.loads(value))
+    except (TypeError, ValueError, json.JSONDecodeError) as e:
+        raise ValueError(f"{index}件目のラベルの `keybind` はJSONオブジェクト形式で指定してください。") from e
 
 
 def parse_annotation_type_in_csv(value: object, *, index: int) -> str | None:
@@ -157,9 +179,8 @@ def parse_annotation_type_in_csv(value: object, *, index: int) -> str | None:
     Raises:
         ValueError: ``annotation_type`` が不正な場合
     """
-    if pandas.isna(value):
+    if value is None:
         return None
-
     if not isinstance(value, str):
         value = str(value)
     if value == "":
@@ -216,6 +237,7 @@ def read_labels_csv(csv_path: Path) -> list[LabelInput]:
                 "label_name_en": "string",
                 "label_name_ja": "string",
                 "color": "string",
+                "keybind": "string",
                 "field_values": "string",
             },
         )
@@ -234,6 +256,7 @@ def read_labels_csv(csv_path: Path) -> list[LabelInput]:
         label_id = row.get("label_id")
         annotation_type = parse_annotation_type_in_csv(row.get("annotation_type"), index=index)
         color = row.get("color")
+        keybind = parse_keybind_in_csv(row.get("keybind"), index=index)
         field_values = parse_field_values_in_csv(row.get("field_values"), index=index)
         result.append(
             LabelInput(
@@ -242,6 +265,7 @@ def read_labels_csv(csv_path: Path) -> list[LabelInput]:
                 label_id=label_id,
                 annotation_type=annotation_type,
                 color=color,
+                keybind=keybind,
                 field_values=field_values,
             )
         )
@@ -390,6 +414,7 @@ def build_request_body_for_add_labels(
             label_name_ja=label_input.label_name_ja,
             annotation_type=cast(str, label_input.annotation_type),
             color=color,
+            keybind=label_input.keybind,
             field_values=label_input.field_values,
         )
         request_body["labels"].append(new_label)
@@ -503,6 +528,8 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
             "label_name_ja": "歩行者",
             "annotation_type": "bounding_box",
             "color": "#123456",
+            "keybind": {"alt": False, "code": "Digit1", "ctrl": True, "shift": False},
+            "field_values": {"display_name": {"_type": "DisplayName", "text": "歩行者"}},
         },
         {"label_name_en": "bicycle", "annotation_type": "bounding_box"},
     ]
@@ -519,7 +546,9 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         help=(
             "追加するラベル情報のJSON配列を指定します。 ``file://`` を先頭に付けるとJSON形式のファイルを指定できます。"
             " 各要素には ``label_name_en`` が必要です。 任意で ``label_id`` , ``label_name_ja`` , ``annotation_type`` ,"
-            f" ``color`` , ``field_values`` を指定できます。\n(例) ``{json.dumps(sample_json, ensure_ascii=False)}``"
+            " ``color`` , ``keybind`` , ``field_values`` を指定できます。 ``keybind`` と ``field_values`` にはJSONオブジェクトを指定してください。"
+            " APIの ``keybind`` は配列形式ですが、このコマンドでは画面と同じく1つだけ指定できます。"
+            f"\n(例) ``{json.dumps(sample_json, ensure_ascii=False)}``"
         ),
     )
     label_group.add_argument(
@@ -527,7 +556,9 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         type=Path,
         help=(
             "追加するラベル情報のCSVファイルを指定します。 CSVには ``label_name_en`` 列が必要です。"
-            " 任意で ``label_id`` , ``label_name_ja`` , ``annotation_type`` , ``color`` , ``field_values`` 列を指定できます。"
+            " 任意で ``label_id`` , ``label_name_ja`` , ``annotation_type`` , ``color`` , ``keybind`` , ``field_values`` 列を指定できます。"
+            " ``keybind`` 列と ``field_values`` 列にはJSONオブジェクト文字列を指定してください。"
+            " APIの ``keybind`` は配列形式ですが、このコマンドでは画面と同じく1つだけ指定できます。"
         ),
     )
     parser.add_argument(

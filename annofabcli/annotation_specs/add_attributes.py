@@ -25,6 +25,7 @@ from annofabcli.annotation_specs.add_choice_attribute import (
     create_attribute as create_choice_attribute,
 )
 from annofabcli.annotation_specs.utils import get_target_labels
+from annofabcli.common.annofab.annotation_specs import validate_keybind_input
 from annofabcli.common.cli import ArgumentParser, CommandLine, CommandLineWithConfirm, build_annofabapi_resource_and_login, get_json_from_args
 from annofabcli.common.facade import AnnofabApiFacade
 from annofabcli.common.utils import duplicated_set
@@ -69,8 +70,21 @@ class AttributeInput(BaseModel):
     default_value: str | int | bool | None = None
     """属性の初期値。選択肢系属性では指定できない。"""
 
+    keybind: dict[str, Any] | None = None
+    """属性に設定するkeybind。"""
+
     choices: list[ChoiceAttributeInput] | None = None
     """選択肢系属性のときに指定する選択肢一覧。"""
+
+    @field_validator("keybind", mode="before")
+    @classmethod
+    def validate_keybind(cls, value: object) -> dict[str, Any] | None:
+        """
+        keybindを検証してAPI向け形式に変換する。
+        """
+        if value is None:
+            return None
+        return validate_keybind_input(value)
 
     @field_validator("label_name_ens", "label_ids")
     @classmethod
@@ -192,6 +206,7 @@ def create_attribute_from_input(attribute_input: AttributeInput) -> dict[str, An
             attribute_id=attribute_input.attribute_id,
             choice_inputs=attribute_input.choices if attribute_input.choices is not None else [],
             read_only=attribute_input.read_only,
+            keybind=attribute_input.keybind,
         )
 
     return create_non_choice_attribute(
@@ -201,6 +216,7 @@ def create_attribute_from_input(attribute_input: AttributeInput) -> dict[str, An
         attribute_id=attribute_input.attribute_id,
         read_only=attribute_input.read_only,
         default_value=attribute_input.default_value,
+        keybind=attribute_input.keybind,
     )
 
 
@@ -430,13 +446,14 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
             "attribute_name_ja": "隠れ",
             "read_only": False,
             "default_value": False,
+            "keybind": {"alt": False, "code": "Digit1", "ctrl": True, "shift": False},
             "label_name_ens": ["car", "bus"],
         },
         {
             "attribute_type": "select",
             "attribute_name_en": "weather",
             "choices": [
-                {"choice_name_en": "sunny", "choice_name_ja": "晴れ", "is_default": True},
+                {"choice_name_en": "sunny", "choice_name_ja": "晴れ", "is_default": True, "keybind": {"alt": False, "code": "Digit2", "ctrl": True, "shift": False}},
                 {"choice_name_en": "cloudy", "choice_name_ja": "曇り"},
             ],
             "label_ids": ["40f7796b-3722-4eed-9c0c-04a27f9165d2"],
@@ -446,7 +463,11 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--attribute_json",
         type=str,
         required=True,
-        help=f"追加する属性情報のJSON配列を指定します。 ``file://`` を先頭に付けるとJSON形式のファイルを指定できます。\n(例) ``{json.dumps(sample_json, ensure_ascii=False)}``",
+        help=(
+            "追加する属性情報のJSON配列を指定します。 ``file://`` を先頭に付けるとJSON形式のファイルを指定できます。"
+            " 属性と選択肢には任意で ``keybind`` を指定できます。 ``keybind`` にはJSONオブジェクトを指定してください。"
+            f"\n(例) ``{json.dumps(sample_json, ensure_ascii=False)}``"
+        ),
     )
     parser.add_argument("--comment", type=str, help="アノテーション仕様の変更内容を説明するコメント。未指定の場合、自動でコメントが生成されます。")
 

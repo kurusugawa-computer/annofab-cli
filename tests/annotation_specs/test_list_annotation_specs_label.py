@@ -22,7 +22,7 @@ class TestCreateLabelList:
                 "annotation_type": "bounding_box",
                 "color": {"red": 255, "green": 0, "blue": 0},
                 "additional_data_definitions": ["attribute_1"],
-                "keybind": [],
+                "keybind": [{"alt": False, "code": "Digit1", "ctrl": True, "shift": False}],
                 "field_values": {
                     "margin_of_error_tolerance": {
                         "_type": "MarginOfErrorTolerance",
@@ -35,6 +35,8 @@ class TestCreateLabelList:
         result = create_label_list(labels_v3)
 
         assert len(result) == 1
+        assert result[0].keybind == {"alt": False, "code": "Digit1", "ctrl": True, "shift": False}
+        assert result[0].keybind_text == "Ctrl+Digit1"
         assert result[0].field_values == {
             "margin_of_error_tolerance": {
                 "_type": "MarginOfErrorTolerance",
@@ -95,6 +97,8 @@ class TestCreateLabelListForCsv:
         result = create_label_list_for_csv(label_list)
 
         assert len(result) == 1
+        assert result[0]["keybind"] == ""
+        assert result[0]["keybind_text"] == ""
         assert result[0]["field_values"] == '{"display_name": {"_type": "DisplayName", "text": "車両"}}'
 
 
@@ -117,4 +121,5 @@ class TestCommandLine:
         df = pandas.read_csv(output_path)
 
         assert "field_values" in df.columns
+        assert "keybind_text" in df.columns
         assert df.loc[0, "field_values"].startswith('{"minimum_size_2d_with_default_insert_position":')

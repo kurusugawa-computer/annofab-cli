@@ -48,7 +48,13 @@ JSON出力
         "choice_count": 0,
         "restriction_count": 0,
         "reference_label_count": 2,
-        "keybind": "Ctrl+Digit1"
+        "keybind": {
+            "alt": false,
+            "code": "Digit1",
+            "ctrl": true,
+            "shift": false
+        },
+        "keybind_text": "Ctrl+Digit1"
     },
     {
         "attribute_id": "a0f7c8ed-38dc-41e6-a18c-29a36d3e28f2",
@@ -61,7 +67,8 @@ JSON出力
         "choice_count": 6,
         "restriction_count": 1,
         "reference_label_count": 2,
-        "keybind": ""
+        "keybind": null,
+        "keybind_text": ""
     }
     ]
 
@@ -86,7 +93,8 @@ JSON出力
 * ``choice_count`` : 選択肢の個数。ドロップダウン属性またはラジオボタン属性以外では0個です。
 * ``restriction_count`` : 制約の個数。
 * ``reference_label_count`` : 参照されているラベルの個数
-* ``keybind`` : キーボードショートカット
+* ``keybind`` : キーボードショートカットのJSONオブジェクト
+* ``keybind_text`` : キーボードショートカットの表示文字列
 
 
 
@@ -99,5 +107,4 @@ Usage Details
    :prog: annofabcli annotation_specs list_attribute
    :nosubcommands:
    :nodefaultconst:
-
 
