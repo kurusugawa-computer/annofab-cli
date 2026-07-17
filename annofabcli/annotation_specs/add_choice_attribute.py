@@ -177,6 +177,8 @@ def parse_keybind_in_csv(value: object) -> dict[str, Any] | None:
     """
     CSVの ``keybind`` 列を ``dict[str, Any] | None`` に変換する。
     """
+    if value is None:
+        return None
     if not isinstance(value, str):
         value = str(value)
     if value == "":

@@ -135,6 +135,8 @@ def parse_field_values_in_csv(value: object, *, index: int) -> dict[str, Any] | 
     Raises:
         ValueError: JSON文字列として不正な場合
     """
+    if value is None:
+        return None
     if not isinstance(value, str):
         value = str(value)
     if value == "":
@@ -150,6 +152,8 @@ def parse_keybind_in_csv(value: object, *, index: int) -> dict[str, Any] | None:
     """
     CSVの ``keybind`` 列を ``dict[str, Any] | None`` に変換する。
     """
+    if value is None:
+        return None
     if not isinstance(value, str):
         value = str(value)
     if value == "":
@@ -175,6 +179,8 @@ def parse_annotation_type_in_csv(value: object, *, index: int) -> str | None:
     Raises:
         ValueError: ``annotation_type`` が不正な場合
     """
+    if value is None:
+        return None
     if not isinstance(value, str):
         value = str(value)
     if value == "":
