@@ -11,6 +11,7 @@ import annofabapi
 from annofabapi.util.annotation_specs import AnnotationSpecsAccessor, get_attribute_name_en, get_label_name_en
 
 import annofabcli.common.cli
+from annofabcli.annotation_specs.attribute_restriction import AttributeRestrictionMessage
 from annofabcli.annotation_specs.utils import get_target_attributes, get_target_labels
 from annofabcli.common.cli import ArgumentParser, CommandLine, CommandLineWithConfirm, build_annofabapi_resource_and_login, get_list_from_args
 from annofabcli.common.facade import AnnofabApiFacade
@@ -43,6 +44,12 @@ class ResolvedAttributeDeletion:
     orphan_attributes: list[Mapping[str, Any]]
     """削除後にどのラベルからも参照されなくなる属性一覧。"""
 
+    restrictions_to_remove: list[dict[str, Any]]
+    """削除対象属性を参照するため削除する属性制約一覧。"""
+
+    restriction_text_list: list[str]
+    """削除する属性制約のテキスト一覧。"""
+
 
 @dataclass(frozen=True)
 class AffectingAnnotation:
@@ -73,6 +80,30 @@ def get_label_attribute_pair_text(pair: LabelAttributePair) -> str:
     return f"label_name_en='{get_label_name_en(pair.label)}', attribute_name_en='{get_attribute_name_en(pair.attribute)}'"
 
 
+def restriction_references_attribute(restriction: Mapping[str, Any], attribute_ids: Collection[str]) -> bool:
+    """
+    属性制約が指定属性を参照しているかどうかを返す。
+
+    Args:
+        restriction: 属性制約
+        attribute_ids: 属性ID一覧
+
+    Returns:
+        属性制約が指定属性を参照していればTrue
+    """
+
+    def references_attribute(value: object) -> bool:
+        if isinstance(value, Mapping):
+            if value.get("additional_data_definition_id") in attribute_ids:
+                return True
+            return any(references_attribute(child_value) for child_value in value.values())
+        if isinstance(value, list):
+            return any(references_attribute(child_value) for child_value in value)
+        return False
+
+    return references_attribute(restriction)
+
+
 def create_comment_for_delete_attribute(resolved_deletion: ResolvedAttributeDeletion) -> str:
     """
     属性削除時のデフォルトコメントを生成する。
@@ -85,6 +116,9 @@ def create_comment_for_delete_attribute(resolved_deletion: ResolvedAttributeDele
     """
     lines = ["以下のラベルから属性を削除しました。"]
     lines.extend(f" * {get_label_attribute_pair_text(pair)}" for pair in resolved_deletion.label_attribute_pairs)
+    if resolved_deletion.restriction_text_list:
+        lines.extend(("", "以下の属性制約も削除しました。"))
+        lines.extend(f" * {restriction_text}" for restriction_text in resolved_deletion.restriction_text_list)
     return "\n".join(lines)
 
 
@@ -105,6 +139,9 @@ def create_confirm_message_for_delete_attribute(
     """
     lines = [f"以下のラベルから属性({len(resolved_deletion.label_attribute_pairs)}件)を削除します。"]
     lines.extend(f" * {get_label_attribute_pair_text(pair)}" for pair in resolved_deletion.label_attribute_pairs)
+    if resolved_deletion.restriction_text_list:
+        lines.extend(("", "以下の属性制約も削除します。"))
+        lines.extend(f" * {restriction_text}" for restriction_text in resolved_deletion.restriction_text_list)
     if affecting_annotations:
         lines.extend(("", "既存アノテーションへの影響:"))
         lines.extend(f" * label_name_en='{affected.label_name_en}', attribute_name_en='{affected.attribute_name_en}': {affected.annotation_count} 件" for affected in affecting_annotations)
@@ -289,10 +326,20 @@ def resolve_attribute_deletion(
         attribute_id for label in annotation_specs["labels"] for attribute_id in label["additional_data_definitions"] if (label["label_id"], attribute_id) not in removed_pair_keys
     }
     orphan_attributes = [attribute for attribute in target_attributes if attribute["additional_data_definition_id"] not in remaining_attribute_ids]
+    orphan_attribute_ids = {attribute["additional_data_definition_id"] for attribute in orphan_attributes}
+    restrictions_to_remove = [restriction for restriction in annotation_specs["restrictions"] if restriction_references_attribute(restriction, orphan_attribute_ids)]
+    message_obj = AttributeRestrictionMessage(
+        labels=annotation_specs["labels"],
+        additionals=annotation_specs["additionals"],
+        raise_if_not_found=True,
+    )
+    restriction_text_list = [message_obj.get_restriction_text(restriction["additional_data_definition_id"], restriction["condition"]) for restriction in restrictions_to_remove]
 
     return ResolvedAttributeDeletion(
         label_attribute_pairs=label_attribute_pairs,
         orphan_attributes=orphan_attributes,
+        restrictions_to_remove=restrictions_to_remove,
+        restriction_text_list=restriction_text_list,
     )
 
 
@@ -324,6 +371,7 @@ def build_request_body_for_delete_attribute(
 
     orphan_attribute_ids = {attribute["additional_data_definition_id"] for attribute in resolved_deletion.orphan_attributes}
     request_body["additionals"] = [attribute for attribute in request_body["additionals"] if attribute["additional_data_definition_id"] not in orphan_attribute_ids]
+    request_body["restrictions"] = [restriction for restriction in request_body["restrictions"] if restriction not in resolved_deletion.restrictions_to_remove]
     if comment is None:
         comment = create_comment_for_delete_attribute(resolved_deletion)
     request_body["comment"] = comment
