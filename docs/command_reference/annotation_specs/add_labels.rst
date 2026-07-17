@@ -109,6 +109,9 @@ CSV形式で指定する場合
     bicycle,bicycle,自転車,segmentation_v2,#00AAFF,,
 
 
+CSV形式では、 ``keybind`` 列と ``field_values`` 列だけはJSONオブジェクト文字列として指定してください。
+そのため、CSVセル全体を ``"`` で囲み、JSON内の ``"`` は ``""`` のようにエスケープする必要があります。
+
 .. code-block::
 
     $ annofabcli annotation_specs add_labels \
