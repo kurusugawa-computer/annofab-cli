@@ -23,12 +23,6 @@ keyがラベル英語名, valueがRGB値の配列です。
      --json '{"car":[255,0,0], "bike":[0,255,255]}'
 
 
-.. note::
-
-    ``--json`` に渡す値のフォーマットは、 `annofabcli annotation restore <../annotation/restore.html>`_  コマンドの出力結果と同じです。
-
-
-
 出力結果
 =================================
 
@@ -68,4 +62,3 @@ Usage Details
    :prog: annofabcli annotation_specs put_label_color
    :nosubcommands:
    :nodefaultconst:
-
