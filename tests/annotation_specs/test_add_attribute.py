@@ -54,7 +54,7 @@ class TestResolveAttributeInput:
             label_name_ens=["car"],
             read_only=True,
             default_value="true",
-            keybind=[{"alt": False, "code": "Digit1", "ctrl": True, "shift": False}],
+            keybind={"alt": False, "code": "Digit1", "ctrl": True, "shift": False},
         )
 
         assert actual.new_attribute["additional_data_definition_id"] == "weather_checked_attr"

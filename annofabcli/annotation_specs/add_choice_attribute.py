@@ -16,7 +16,7 @@ from annofabapi.util.annotation_specs import AnnotationSpecsAccessor, get_attrib
 
 import annofabcli.common.cli
 from annofabcli.annotation_specs.utils import create_name, get_target_labels
-from annofabcli.common.annofab.annotation_specs import validate_keybind_input
+from annofabcli.common.annofab.annotation_specs import keybind_to_api_keybind, validate_keybind_input
 from annofabcli.common.cli import (
     ArgumentParser,
     CommandLine,
@@ -49,7 +49,7 @@ class ChoiceAttributeInput:
     is_default: bool = False
     """属性のデフォルト値として使用する選択肢かどうか"""
 
-    keybind: list[dict[str, Any]] | None = None
+    keybind: dict[str, Any] | None = None
     """選択肢に設定するkeybind"""
 
 
@@ -173,9 +173,9 @@ def read_choices_csv(csv_path: Path) -> list[ChoiceAttributeInput]:
     return result
 
 
-def parse_keybind_in_csv(value: object) -> list[dict[str, Any]] | None:
+def parse_keybind_in_csv(value: object) -> dict[str, Any] | None:
     """
-    CSVの ``keybind`` 列を ``list[dict[str, Any]] | None`` に変換する。
+    CSVの ``keybind`` 列を ``dict[str, Any] | None`` に変換する。
     """
     if pandas.isna(value):
         return None
@@ -188,7 +188,7 @@ def parse_keybind_in_csv(value: object) -> list[dict[str, Any]] | None:
     try:
         return validate_keybind_input(json.loads(value))
     except (TypeError, ValueError, json.JSONDecodeError) as e:
-        raise ValueError("`keybind` はJSONオブジェクト形式、またはJSONオブジェクトの配列で指定してください。") from e
+        raise ValueError("`keybind` はJSONオブジェクト形式で指定してください。") from e
 
 
 def validate_choice_inputs(choice_inputs: Sequence[ChoiceAttributeInput], *, min_count: int = 2) -> None:
@@ -237,7 +237,7 @@ def build_choices(choice_inputs: Sequence[ChoiceAttributeInput], *, min_count: i
             {
                 "choice_id": choice_id,
                 "name": create_name(choice_input.choice_name_en, choice_input.choice_name_ja),
-                "keybind": copy.deepcopy(choice_input.keybind) if choice_input.keybind is not None else [],
+                "keybind": keybind_to_api_keybind(copy.deepcopy(choice_input.keybind)),
             }
         )
         if choice_input.is_default:
@@ -304,7 +304,7 @@ def create_attribute(
     attribute_id: str | None,
     choice_inputs: Sequence[ChoiceAttributeInput],
     read_only: bool = False,
-    keybind: list[dict[str, Any]] | None = None,
+    keybind: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """
     選択肢系属性1件分のAnnofab API向けオブジェクトを生成する。
@@ -332,7 +332,7 @@ def create_attribute(
         "default": default_choice_id,
         "choices": choices,
         "read_only": read_only,
-        "keybind": copy.deepcopy(keybind) if keybind is not None else [],
+        "keybind": keybind_to_api_keybind(copy.deepcopy(keybind)),
     }
 
 
@@ -347,7 +347,7 @@ def resolve_choice_attribute_input(
     label_ids: Sequence[str] | None,
     label_name_ens: Sequence[str] | None,
     read_only: bool = False,
-    keybind: list[dict[str, Any]] | None = None,
+    keybind: dict[str, Any] | None = None,
 ) -> ResolvedChoiceAttributeInput:
     """
     選択肢系属性入力を既存アノテーション仕様に対して解決する。
@@ -451,7 +451,7 @@ class AddChoiceAttributeMain(CommandLineWithConfirm):
         label_ids: Sequence[str] | None,
         label_name_ens: Sequence[str] | None,
         read_only: bool = False,
-        keybind: list[dict[str, Any]] | None = None,
+        keybind: dict[str, Any] | None = None,
         comment: str | None = None,
     ) -> bool:
         """
@@ -572,10 +572,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--keybind",
         type=str,
-        help=(
-            "追加する属性に設定するkeybindのJSONオブジェクト、またはJSONオブジェクトの配列。 ``file://`` を先頭に付けるとJSONファイルを指定できます。"
-            ' 例: ``{"alt": false, "code": "Digit1", "ctrl": true, "shift": false}``'
-        ),
+        help=('追加する属性に設定するkeybindのJSONオブジェクト。 ``file://`` を先頭に付けるとJSONファイルを指定できます。 例: ``{"alt": false, "code": "Digit1", "ctrl": true, "shift": false}``'),
     )
 
     sample_json = [

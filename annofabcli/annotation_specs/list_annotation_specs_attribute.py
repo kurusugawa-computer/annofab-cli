@@ -15,7 +15,7 @@ from annofabapi.util.annotation_specs import get_message_with_lang
 from dataclasses_json import DataClassJsonMixin
 
 import annofabcli.common.cli
-from annofabcli.common.annofab.annotation_specs import keybind_to_text
+from annofabcli.common.annofab.annotation_specs import api_keybind_to_keybind, keybind_to_api_keybind, keybind_to_text
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
     ArgumentParser,
@@ -61,8 +61,8 @@ class FlattenAttribute(DataClassJsonMixin):
     """制約の個数"""
     reference_label_count: int
     """参照されているラベルの個数"""
-    keybind: list[dict[str, Any]]
-    """API形式のキーバインド"""
+    keybind: dict[str, Any] | None
+    """CLIで指定できる形式のキーバインド"""
     keybind_text: str
     """人が読める形式のキーバインド"""
 
@@ -107,7 +107,7 @@ def create_flatten_attribute_list_from_additionals(additionals_v3: list[dict[str
         """
         attribute_id = additional["additional_data_definition_id"]
         additional_name = additional["name"]
-        keybind = additional.get("keybind", [])
+        keybind = api_keybind_to_keybind(additional.get("keybind", []))
         return FlattenAttribute(
             attribute_id=attribute_id,
             attribute_name_en=get_message_with_lang(additional_name, lang=Lang.EN_US),
@@ -120,7 +120,7 @@ def create_flatten_attribute_list_from_additionals(additionals_v3: list[dict[str
             restriction_count=dict_restriction_count[attribute_id],
             reference_label_count=len(dict_label_ids[attribute_id]),
             keybind=keybind,
-            keybind_text=keybind_to_text(keybind),
+            keybind_text=keybind_to_text(keybind_to_api_keybind(keybind)),
         )
 
     return [dict_additional_to_dataclass(e) for e in additionals_v3]
@@ -152,7 +152,7 @@ class PrintAnnotationSpecsAttribute(CommandLine):
             for attribute in attribute_list:
                 record = attribute.to_dict()
                 record["type"] = attribute.attribute_type
-                record["keybind"] = json.dumps(attribute.keybind, ensure_ascii=False)
+                record["keybind"] = "" if attribute.keybind is None else json.dumps(attribute.keybind, ensure_ascii=False)
                 records.append(record)
             df = pandas.DataFrame(records, columns=columns)
             print_csv(df, output)

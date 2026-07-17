@@ -61,7 +61,7 @@ class LabelInput:
     color: str | None = None
     """``#RRGGBB`` 形式のカラーコード。未指定の場合は自動設定する。"""
 
-    keybind: list[dict[str, Any]] | None = None
+    keybind: dict[str, Any] | None = None
     """新規ラベルに設定するkeybind。未指定の場合はNone。"""
 
     field_values: dict[str, Any] | None = None
@@ -149,9 +149,9 @@ def parse_field_values_in_csv(value: object, *, index: int) -> dict[str, Any] | 
         raise ValueError(f"{index}件目のラベルの `field_values` はJSONオブジェクト形式で指定してください。") from e
 
 
-def parse_keybind_in_csv(value: object, *, index: int) -> list[dict[str, Any]] | None:
+def parse_keybind_in_csv(value: object, *, index: int) -> dict[str, Any] | None:
     """
-    CSVの ``keybind`` 列を ``list[dict[str, Any]] | None`` に変換する。
+    CSVの ``keybind`` 列を ``dict[str, Any] | None`` に変換する。
     """
     if pandas.isna(value):
         return None
@@ -164,7 +164,7 @@ def parse_keybind_in_csv(value: object, *, index: int) -> list[dict[str, Any]] |
     try:
         return validate_keybind_input(json.loads(value))
     except (TypeError, ValueError, json.JSONDecodeError) as e:
-        raise ValueError(f"{index}件目のラベルの `keybind` はJSONオブジェクト形式、またはJSONオブジェクトの配列で指定してください。") from e
+        raise ValueError(f"{index}件目のラベルの `keybind` はJSONオブジェクト形式で指定してください。") from e
 
 
 def parse_annotation_type_in_csv(value: object, *, index: int) -> str | None:

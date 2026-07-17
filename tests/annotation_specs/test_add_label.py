@@ -138,7 +138,7 @@ class TestResolveNewLabelInput:
             label_id="pedestrian_label_id",
             label_name_ja=None,
             color_code="#00CCFF",
-            keybind=[{"alt": False, "code": "Digit1", "ctrl": True, "shift": False}],
+            keybind={"alt": False, "code": "Digit1", "ctrl": True, "shift": False},
             field_values=None,
         )
 
@@ -299,7 +299,7 @@ class TestValidateKeybindInput:
     def test_keybind_object_is_normalized_to_list(self) -> None:
         actual = add_label.validate_keybind_input({"code": "Digit1", "ctrl": True})
 
-        assert actual == [{"alt": False, "code": "Digit1", "ctrl": True, "shift": False}]
+        assert actual == {"alt": False, "code": "Digit1", "ctrl": True, "shift": False}
 
     def test_keybind_code_is_required(self) -> None:
         with pytest.raises(ValueError):

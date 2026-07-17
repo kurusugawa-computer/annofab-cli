@@ -35,7 +35,7 @@ class TestCreateLabelList:
         result = create_label_list(labels_v3)
 
         assert len(result) == 1
-        assert result[0].keybind == [{"alt": False, "code": "Digit1", "ctrl": True, "shift": False}]
+        assert result[0].keybind == {"alt": False, "code": "Digit1", "ctrl": True, "shift": False}
         assert result[0].keybind_text == "Ctrl+Digit1"
         assert result[0].field_values == {
             "margin_of_error_tolerance": {
@@ -97,7 +97,7 @@ class TestCreateLabelListForCsv:
         result = create_label_list_for_csv(label_list)
 
         assert len(result) == 1
-        assert result[0]["keybind"] == "[]"
+        assert result[0]["keybind"] == ""
         assert result[0]["keybind_text"] == ""
         assert result[0]["field_values"] == '{"display_name": {"_type": "DisplayName", "text": "車両"}}'
 

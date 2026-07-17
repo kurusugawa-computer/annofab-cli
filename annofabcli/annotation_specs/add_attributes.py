@@ -70,7 +70,7 @@ class AttributeInput(BaseModel):
     default_value: str | int | bool | None = None
     """属性の初期値。選択肢系属性では指定できない。"""
 
-    keybind: list[dict[str, Any]] | None = None
+    keybind: dict[str, Any] | None = None
     """属性に設定するkeybind。"""
 
     choices: list[ChoiceAttributeInput] | None = None
@@ -78,7 +78,7 @@ class AttributeInput(BaseModel):
 
     @field_validator("keybind", mode="before")
     @classmethod
-    def validate_keybind(cls, value: object) -> list[dict[str, Any]] | None:
+    def validate_keybind(cls, value: object) -> dict[str, Any] | None:
         """
         keybindを検証してAPI向け形式に変換する。
         """

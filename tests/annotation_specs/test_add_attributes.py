@@ -43,7 +43,7 @@ class TestReadAttributesJson:
                 attribute_id="weather_checked_attr",
                 read_only=True,
                 default_value=True,
-                keybind=[{"alt": False, "code": "Digit1", "ctrl": True, "shift": False}],
+                keybind={"alt": False, "code": "Digit1", "ctrl": True, "shift": False},
                 label_name_ens=["car", "bus"],
             ),
             AttributeInput(
@@ -56,7 +56,7 @@ class TestReadAttributesJson:
                         choice_name_en="sunny",
                         choice_name_ja="晴れ",
                         is_default=True,
-                        keybind=[{"alt": False, "code": "Digit2", "ctrl": True, "shift": False}],
+                        keybind={"alt": False, "code": "Digit2", "ctrl": True, "shift": False},
                     ),
                     ChoiceAttributeInput(
                         choice_name_en="cloudy",
@@ -116,7 +116,7 @@ class TestResolveAttributeInputs:
                     attribute_id="weather_checked_attr",
                     read_only=True,
                     default_value=True,
-                    keybind=[{"alt": False, "code": "Digit1", "ctrl": True, "shift": False}],
+                    keybind={"alt": False, "code": "Digit1", "ctrl": True, "shift": False},
                     label_name_ens=["car", "bus"],
                 ),
                 AttributeInput(

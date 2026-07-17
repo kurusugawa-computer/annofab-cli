@@ -32,7 +32,7 @@ class TestReadChoicesJson:
         assert actual[0].choice_name_en == "front"
         assert actual[0].choice_name_ja == "前"
         assert actual[0].is_default is True
-        assert actual[0].keybind == [{"alt": False, "code": "Digit1", "ctrl": True, "shift": False}]
+        assert actual[0].keybind == {"alt": False, "code": "Digit1", "ctrl": True, "shift": False}
 
     def test_read_choices_json__without_choice_id(self) -> None:
         actual = read_choices_json('[{"choice_name_en":"front"}]')
@@ -106,7 +106,7 @@ class TestResolveChoiceAttributeInput:
             label_ids=[],
             label_name_ens=["car"],
             read_only=True,
-            keybind=[{"alt": False, "code": "Digit2", "ctrl": True, "shift": False}],
+            keybind={"alt": False, "code": "Digit2", "ctrl": True, "shift": False},
         )
 
         assert actual.new_attribute["additional_data_definition_id"] == "weather_attr"

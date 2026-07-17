@@ -17,7 +17,7 @@ from annofabapi.util.annotation_specs import get_label_name_en
 import annofabcli.common.cli
 from annofabcli.annotation_specs.color import RgbColor, hex_to_rgb
 from annofabcli.annotation_specs.utils import create_name
-from annofabcli.common.annofab.annotation_specs import validate_keybind_input
+from annofabcli.common.annofab.annotation_specs import keybind_to_api_keybind, validate_keybind_input
 from annofabcli.common.cli import (
     ArgumentParser,
     CommandLine,
@@ -241,7 +241,7 @@ def create_new_label(
     label_name_ja: str | None,
     annotation_type: str,
     color: RgbColor,
-    keybind: list[dict[str, Any]] | None = None,
+    keybind: dict[str, Any] | None = None,
     field_values: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """
@@ -265,7 +265,7 @@ def create_new_label(
         "annotation_type": annotation_type,
         "color": color,
         # 以下はキーが存在しないとAPIエラーになるため、空の値を入れておく
-        "keybind": copy.deepcopy(keybind) if keybind is not None else [],
+        "keybind": keybind_to_api_keybind(copy.deepcopy(keybind)),
         "field_values": create_label_field_values(annotation_type=annotation_type, field_values=field_values),
         "additional_data_definitions": [],
     }
@@ -292,7 +292,7 @@ def resolve_new_label_input(
     label_id: str | None,
     label_name_ja: str | None,
     color_code: str | None,
-    keybind: list[dict[str, Any]] | None = None,
+    keybind: dict[str, Any] | None = None,
     field_values: dict[str, Any] | None = None,
 ) -> ResolvedNewLabelInput:
     """
@@ -380,7 +380,7 @@ class AddLabelMain(CommandLineWithConfirm):
         label_id: str | None,
         label_name_ja: str | None,
         color_code: str | None,
-        keybind: list[dict[str, Any]] | None = None,
+        keybind: dict[str, Any] | None = None,
         field_values: dict[str, Any] | None = None,
         comment: str | None = None,
     ) -> bool:
@@ -472,10 +472,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--keybind",
         type=str,
-        help=(
-            "追加するラベルに設定するkeybindのJSONオブジェクト、またはJSONオブジェクトの配列。 ``file://`` を先頭に付けるとJSONファイルを指定できます。"
-            ' 例: ``{"alt": false, "code": "Digit1", "ctrl": true, "shift": false}``'
-        ),
+        help=('追加するラベルに設定するkeybindのJSONオブジェクト。 ``file://`` を先頭に付けるとJSONファイルを指定できます。 例: ``{"alt": false, "code": "Digit1", "ctrl": true, "shift": false}``'),
     )
     parser.add_argument(
         "--field_values_json",

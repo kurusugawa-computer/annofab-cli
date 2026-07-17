@@ -15,7 +15,7 @@ from annofabapi.util.annotation_specs import AnnotationSpecsAccessor, get_label_
 import annofabcli.common.cli
 from annofabcli.annotation_specs.add_choice_attribute import validate_new_attribute
 from annofabcli.annotation_specs.utils import create_name, get_target_labels
-from annofabcli.common.annofab.annotation_specs import validate_keybind_input
+from annofabcli.common.annofab.annotation_specs import keybind_to_api_keybind, validate_keybind_input
 from annofabcli.common.cli import (
     ArgumentParser,
     CommandLine,
@@ -138,7 +138,7 @@ def create_attribute(
     attribute_id: str | None,
     read_only: bool = False,
     default_value: str | int | bool | None = None,
-    keybind: list[dict[str, Any]] | None = None,
+    keybind: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """
     属性1件分のAnnofab API向けオブジェクトを生成する。
@@ -159,7 +159,7 @@ def create_attribute(
         "name": create_name(attribute_name_en, attribute_name_ja),
         "type": attribute_type.value if isinstance(attribute_type, AttributeType) else attribute_type,
         "read_only": read_only,
-        "keybind": copy.deepcopy(keybind) if keybind is not None else [],
+        "keybind": keybind_to_api_keybind(copy.deepcopy(keybind)),
         "choices": [],
     }
     parsed_default_value = parse_default_value(attribute_type, default_value)
@@ -179,7 +179,7 @@ def resolve_attribute_input(
     label_name_ens: Sequence[str] | None,
     read_only: bool = False,
     default_value: str | int | bool | None = None,
-    keybind: list[dict[str, Any]] | None = None,
+    keybind: dict[str, Any] | None = None,
 ) -> ResolvedAttributeInput:
     """
     入力された属性を既存アノテーション仕様に対して解決する。
@@ -282,7 +282,7 @@ class AddAttributeMain(CommandLineWithConfirm):
         label_name_ens: Sequence[str] | None,
         read_only: bool = False,
         default_value: str | int | bool | None = None,
-        keybind: list[dict[str, Any]] | None = None,
+        keybind: dict[str, Any] | None = None,
         comment: str | None = None,
     ) -> bool:
         """
@@ -398,10 +398,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--keybind",
         type=str,
-        help=(
-            "追加する属性に設定するkeybindのJSONオブジェクト、またはJSONオブジェクトの配列。 ``file://`` を先頭に付けるとJSONファイルを指定できます。"
-            ' 例: ``{"alt": false, "code": "Digit1", "ctrl": true, "shift": false}``'
-        ),
+        help=('追加する属性に設定するkeybindのJSONオブジェクト。 ``file://`` を先頭に付けるとJSONファイルを指定できます。 例: ``{"alt": false, "code": "Digit1", "ctrl": true, "shift": false}``'),
     )
 
     label_group = parser.add_mutually_exclusive_group(required=True)

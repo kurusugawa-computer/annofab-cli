@@ -43,7 +43,7 @@ class TestBuildRequestBodyForAddLabels:
                         label_name_en="pedestrian",
                         label_name_ja="歩行者",
                         color="#123456",
-                        keybind=[{"alt": False, "code": "Digit1", "ctrl": True, "shift": False}],
+                        keybind={"alt": False, "code": "Digit1", "ctrl": True, "shift": False},
                         field_values={"display_name": {"_type": "DisplayName", "text": "歩行者"}},
                     ),
                     LabelInput(label_name_en="bicycle"),
@@ -189,7 +189,7 @@ class TestReadLabels:
                 label_name_ja="歩行者",
                 annotation_type="bounding_box",
                 color="#123456",
-                keybind=[{"alt": False, "code": "Digit1", "ctrl": True, "shift": False}],
+                keybind={"alt": False, "code": "Digit1", "ctrl": True, "shift": False},
                 field_values={"display_name": {"_type": "DisplayName", "text": "歩行者"}},
             ),
             LabelInput(label_name_en="bicycle", annotation_type="polygon"),
@@ -230,7 +230,7 @@ class TestReadLabels:
                 label_name_ja="歩行者",
                 annotation_type="bounding_box",
                 color="#123456",
-                keybind=[{"alt": False, "code": "Digit1", "ctrl": True, "shift": False}],
+                keybind={"alt": False, "code": "Digit1", "ctrl": True, "shift": False},
                 field_values={"display_name": {"_type": "DisplayName", "text": "歩行者"}},
             ),
             LabelInput(label_name_en="bicycle", annotation_type="polygon"),
@@ -260,7 +260,7 @@ class TestReadLabels:
 
     def test_parse_keybind_in_csv(self) -> None:
         actual = parse_keybind_in_csv('{"alt":false,"code":"Digit1","ctrl":true,"shift":false}', index=1)
-        assert actual == [{"alt": False, "code": "Digit1", "ctrl": True, "shift": False}]
+        assert actual == {"alt": False, "code": "Digit1", "ctrl": True, "shift": False}
 
     def test_parse_keybind_in_csv__empty(self) -> None:
         assert parse_keybind_in_csv("", index=1) is None
