@@ -85,9 +85,9 @@ class TestCreateLabelListForCsv:
                     "additional_data_definitions": [],
                     "keybind": [],
                     "field_values": {
-                        "display_name": {
-                            "_type": "DisplayName",
-                            "text": "車両",
+                        "margin_of_error_tolerance": {
+                            "max_pixel": 5,
+                            "_type": "MarginOfErrorTolerance",
                         }
                     },
                 }
@@ -99,7 +99,7 @@ class TestCreateLabelListForCsv:
         assert len(result) == 1
         assert result[0]["keybind"] == ""
         assert result[0]["keybind_text"] == ""
-        assert result[0]["field_values"] == '{"display_name": {"_type": "DisplayName", "text": "車両"}}'
+        assert result[0]["field_values"] == '{"margin_of_error_tolerance": {"max_pixel": 5, "_type": "MarginOfErrorTolerance"}}'
 
 
 @pytest.mark.access_webapi

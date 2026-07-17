@@ -21,6 +21,7 @@ Examples
      --annotation_type bounding_box
 
 
+``--annotation_type`` の値は、:doc:`add_label` を参照してください。 
 
 JSON形式で指定する場合
 ----------------------------------------------
@@ -63,6 +64,9 @@ JSON形式で指定する場合
      --label_json file://labels.json
 
 
+``field_values`` のフォーマットは、:doc:`update_label_field_values` を参照してください。
+
+
 CSV形式で指定する場合
 ----------------------------------------------
 
@@ -80,14 +84,8 @@ CSV形式で指定する場合
      --project_id prj1 \
      --label_csv labels.csv
 
-.. note::
     
-    ``--annotation_type`` の値は、:doc:`add_label` を参照してください。 ``--label_name_en`` を使う場合は ``--annotation_type`` が必須です。
-    ``--label_json`` / ``--label_csv`` を使う場合は、各ラベルに ``annotation_type`` を指定できます。 ``--annotation_type`` を併用した場合は、省略時の既定値として使われます。
-    ラベル側の ``annotation_type`` と ``--annotation_type`` が不一致の場合はエラーになります。
-    ``--label_json`` / ``--label_csv`` では ``keybind`` と ``field_values`` も指定できます。 ``--label_json`` では ``keybind`` と ``field_values`` にJSONオブジェクトを指定してください。
-    ``--label_csv`` では ``keybind`` 列と ``field_values`` 列にJSONオブジェクト文字列を指定してください。APIの ``keybind`` は配列形式ですが、このコマンドでは画面と同じく1つだけ指定できます。
-    ``field_values`` のフォーマットは、:doc:`update_label_field_values` を参照してください。
+    
 
 
 Usage Details
