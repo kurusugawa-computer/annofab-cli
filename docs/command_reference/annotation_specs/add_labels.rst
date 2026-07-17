@@ -40,9 +40,9 @@ JSON形式で指定する場合
                 "shift": false
             },
             "field_values": {
-                "display_name": {
-                    "_type": "DisplayName",
-                    "text": "歩行者"
+                "margin_of_error_tolerance": {
+                    "max_pixel": 5,
+                    "_type": "MarginOfErrorTolerance"
                 }
             }
         },
@@ -70,7 +70,7 @@ CSV形式で指定する場合
     :caption: labels.csv
 
     label_id,label_name_en,label_name_ja,annotation_type,color,keybind,field_values
-    ,pedestrian,,segmentation_v2,#123456,"{""alt"": false, ""code"": ""Digit1"", ""ctrl"": true, ""shift"": false}","{""display_name"": {""_type"": ""DisplayName"", ""text"": ""歩行者""}}"
+    ,pedestrian,,segmentation_v2,#123456,"{""alt"": false, ""code"": ""Digit1"", ""ctrl"": true, ""shift"": false}","{""margin_of_error_tolerance"": {""max_pixel"": 5, ""_type"": ""MarginOfErrorTolerance""}}"
     bicycle,bicycle,自転車,segmentation_v2,#00AAFF,,
 
 

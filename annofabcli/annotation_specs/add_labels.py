@@ -529,7 +529,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
             "annotation_type": "bounding_box",
             "color": "#123456",
             "keybind": {"alt": False, "code": "Digit1", "ctrl": True, "shift": False},
-            "field_values": {"display_name": {"_type": "DisplayName", "text": "歩行者"}},
+            "field_values": {"margin_of_error_tolerance": {"max_pixel": 5, "_type": "MarginOfErrorTolerance"}},
         },
         {"label_name_en": "bicycle", "annotation_type": "bounding_box"},
     ]
