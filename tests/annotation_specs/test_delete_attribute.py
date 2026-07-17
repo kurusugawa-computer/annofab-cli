@@ -46,7 +46,6 @@ class TestDeleteAttributeHelpers:
 
         assert "以下のラベルから属性を削除しました。" in actual
         assert "label_name_en='car', attribute_name_en='unclear'" in actual
-        assert "属性定義も削除しました。" in actual
         assert "'comment' MATCHES '[0-9]' IF 'unclear' EQUALS 'true'" in actual
 
     def test_create_confirm_message_for_delete_attribute(self) -> None:
@@ -63,6 +62,7 @@ class TestDeleteAttributeHelpers:
 
         assert "以下のラベルから属性(1件)を削除します。" in actual
         assert "label_name_en='car', attribute_name_en='unclear'" in actual
+        assert "属性定義" not in actual
         assert actual.endswith("よろしいですか？")
 
 

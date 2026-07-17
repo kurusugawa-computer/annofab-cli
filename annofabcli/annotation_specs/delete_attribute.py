@@ -116,9 +116,6 @@ def create_comment_for_delete_attribute(resolved_deletion: ResolvedAttributeDele
     """
     lines = ["以下のラベルから属性を削除しました。"]
     lines.extend(f" * {get_label_attribute_pair_text(pair)}" for pair in resolved_deletion.label_attribute_pairs)
-    if resolved_deletion.orphan_attributes:
-        lines.extend(("", "以下の属性はどのラベルからも参照されなくなったため、属性定義も削除しました。"))
-        lines.extend(f" * attribute_name_en='{get_attribute_name_en(attribute)}', attribute_id='{attribute['additional_data_definition_id']}'" for attribute in resolved_deletion.orphan_attributes)
     if resolved_deletion.restriction_text_list:
         lines.extend(("", "以下の属性制約も削除しました。"))
         lines.extend(f" * {restriction_text}" for restriction_text in resolved_deletion.restriction_text_list)
@@ -142,9 +139,6 @@ def create_confirm_message_for_delete_attribute(
     """
     lines = [f"以下のラベルから属性({len(resolved_deletion.label_attribute_pairs)}件)を削除します。"]
     lines.extend(f" * {get_label_attribute_pair_text(pair)}" for pair in resolved_deletion.label_attribute_pairs)
-    if resolved_deletion.orphan_attributes:
-        lines.extend(("", "この操作により、以下の属性はどのラベルからも参照されなくなるため、属性定義も削除します。"))
-        lines.extend(f" * attribute_name_en='{get_attribute_name_en(attribute)}', attribute_id='{attribute['additional_data_definition_id']}'" for attribute in resolved_deletion.orphan_attributes)
     if resolved_deletion.restriction_text_list:
         lines.extend(("", "以下の属性制約も削除します。"))
         lines.extend(f" * {restriction_text}" for restriction_text in resolved_deletion.restriction_text_list)
@@ -525,7 +519,7 @@ def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse
     """
     subcommand_name = "delete_attribute"
     subcommand_help = "アノテーション仕様のラベルから属性を削除します。"
-    description = "アノテーション仕様のラベルから属性を削除します。削除後にどのラベルからも参照されなくなった属性は、属性定義からも削除します。"
+    description = "アノテーション仕様のラベルから属性を削除します。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description=description)
     parse_args(parser)
