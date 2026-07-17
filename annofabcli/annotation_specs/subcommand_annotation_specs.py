@@ -25,6 +25,7 @@ import annofabcli.annotation_specs.put_label_color
 import annofabcli.annotation_specs.set_attribute_required
 import annofabcli.annotation_specs.unset_attribute_required
 import annofabcli.annotation_specs.update_label_field_values
+import annofabcli.annotation_specs.update_labels
 import annofabcli.common.cli
 
 
@@ -57,6 +58,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     annofabcli.annotation_specs.set_attribute_required.add_parser(subparsers)
     annofabcli.annotation_specs.unset_attribute_required.add_parser(subparsers)
     annofabcli.annotation_specs.update_label_field_values.add_parser(subparsers)
+    annofabcli.annotation_specs.update_labels.add_parser(subparsers)
 
 
 def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
