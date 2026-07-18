@@ -24,6 +24,7 @@ Available Commands
    add_label
    add_labels
    change_attribute_type
+   delete_attribute
    delete_attribute_restriction
    diff
    export
