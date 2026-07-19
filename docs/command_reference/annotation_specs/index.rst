@@ -26,6 +26,7 @@ Available Commands
    change_attribute_type
    delete_attribute
    delete_attribute_restriction
+   delete_labels
    diff
    export
    import
