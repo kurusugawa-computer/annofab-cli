@@ -1,5 +1,5 @@
 ==========================================
-annotation_specs delete_attribute
+annotation_specs delete_attributes
 ==========================================
 
 Description
@@ -22,7 +22,7 @@ Examples
 
 .. code-block::
 
-    $ annofabcli annotation_specs delete_attribute \
+    $ annofabcli annotation_specs delete_attributes \
      --project_id prj1 \
      --attribute_name_en occluded \
      --label_name_en car bus
@@ -35,7 +35,7 @@ Examples
 
 .. code-block::
 
-    $ annofabcli annotation_specs delete_attribute \
+    $ annofabcli annotation_specs delete_attributes \
      --project_id prj1 \
      --attribute_name_en occluded \
      --all_labels
@@ -46,7 +46,7 @@ Examples
 
 .. code-block::
 
-    $ annofabcli annotation_specs delete_attribute \
+    $ annofabcli annotation_specs delete_attributes \
      --project_id prj1 \
      --attribute_name_en occluded \
      --label_name_en car bus \
@@ -57,7 +57,7 @@ Usage Details
 =================================
 
 .. argparse::
-    :ref: annofabcli.annotation_specs.delete_attribute.add_parser
-    :prog: annofabcli annotation_specs delete_attribute
+    :ref: annofabcli.annotation_specs.delete_attributes.add_parser
+    :prog: annofabcli annotation_specs delete_attributes
     :nosubcommands:
     :nodefaultconst:
