@@ -104,7 +104,7 @@ def restriction_references_attribute(restriction: Mapping[str, Any], attribute_i
     return references_attribute(restriction)
 
 
-def create_comment_for_delete_attribute(resolved_deletion: ResolvedAttributeDeletion) -> str:
+def create_comment_for_delete_attributes(resolved_deletion: ResolvedAttributeDeletion) -> str:
     """
     属性削除時のデフォルトコメントを生成する。
 
@@ -122,7 +122,7 @@ def create_comment_for_delete_attribute(resolved_deletion: ResolvedAttributeDele
     return "\n".join(lines)
 
 
-def create_confirm_message_for_delete_attribute(
+def create_confirm_message_for_delete_attributes(
     resolved_deletion: ResolvedAttributeDeletion,
     *,
     affecting_annotations: Sequence[AffectingAnnotation],
@@ -343,7 +343,7 @@ def resolve_attribute_deletion(
     )
 
 
-def build_request_body_for_delete_attribute(
+def build_request_body_for_delete_attributes(
     annotation_specs: dict[str, Any],
     *,
     resolved_deletion: ResolvedAttributeDeletion,
@@ -373,13 +373,13 @@ def build_request_body_for_delete_attribute(
     request_body["additionals"] = [attribute for attribute in request_body["additionals"] if attribute["additional_data_definition_id"] not in orphan_attribute_ids]
     request_body["restrictions"] = [restriction for restriction in request_body["restrictions"] if restriction not in resolved_deletion.restrictions_to_remove]
     if comment is None:
-        comment = create_comment_for_delete_attribute(resolved_deletion)
+        comment = create_comment_for_delete_attributes(resolved_deletion)
     request_body["comment"] = comment
     request_body["last_updated_datetime"] = annotation_specs["updated_datetime"]
     return request_body
 
 
-class DeleteAttributeMain(CommandLineWithConfirm):
+class DeleteAttributesMain(CommandLineWithConfirm):
     """
     ラベルから属性を削除する本体処理。
     """
@@ -465,7 +465,7 @@ class DeleteAttributeMain(CommandLineWithConfirm):
         )
         return False
 
-    def delete_attribute(
+    def delete_attributes(
         self,
         *,
         attribute_ids: Collection[str] | None,
@@ -502,22 +502,22 @@ class DeleteAttributeMain(CommandLineWithConfirm):
         if not self.validate_deletion(affecting_annotations):
             return False
 
-        confirm_message = create_confirm_message_for_delete_attribute(resolved_deletion, affecting_annotations=affecting_annotations)
+        confirm_message = create_confirm_message_for_delete_attributes(resolved_deletion, affecting_annotations=affecting_annotations)
         if not self.confirm_processing(confirm_message):
             return False
 
-        request_body = build_request_body_for_delete_attribute(old_annotation_specs, resolved_deletion=resolved_deletion, comment=comment)
+        request_body = build_request_body_for_delete_attributes(old_annotation_specs, resolved_deletion=resolved_deletion, comment=comment)
         self.service.api.put_annotation_specs(self.project_id, query_params={"v": "3"}, request_body=request_body)
         logger.info(f"{len(resolved_deletion.label_attribute_pairs)} 件のラベル属性関係を削除しました。")
         return True
 
 
-class DeleteAttribute(CommandLine):
+class DeleteAttributes(CommandLine):
     """
     ラベルから属性を削除するコマンド。
     """
 
-    COMMON_MESSAGE = "annofabcli annotation_specs delete_attribute: error:"
+    COMMON_MESSAGE = "annofabcli annotation_specs delete_attributes: error:"
 
     def main(self) -> None:
         args = self.args
@@ -527,13 +527,13 @@ class DeleteAttribute(CommandLine):
         label_ids = get_list_from_args(args.label_id) if args.label_id is not None else None
         label_name_ens = get_list_from_args(args.label_name_en) if args.label_name_en is not None else None
 
-        obj = DeleteAttributeMain(
+        obj = DeleteAttributesMain(
             self.service,
             project_id=args.project_id,
             all_yes=args.yes,
             allow_affecting_annotations=args.allow_affecting_annotations,
         )
-        obj.delete_attribute(
+        obj.delete_attributes(
             attribute_ids=attribute_ids,
             attribute_name_ens=attribute_name_ens,
             label_ids=label_ids,
@@ -545,7 +545,7 @@ class DeleteAttribute(CommandLine):
 
 def parse_args(parser: argparse.ArgumentParser) -> None:
     """
-    ``delete_attribute`` サブコマンドの引数を定義する。
+    ``delete_attributes`` サブコマンドの引数を定義する。
 
     Args:
         parser: 引数を追加するArgumentParser
@@ -598,19 +598,19 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
 
 def main(args: argparse.Namespace) -> None:
     """
-    ``delete_attribute`` コマンドのエントリポイント。
+    ``delete_attributes`` コマンドのエントリポイント。
 
     Args:
         args: コマンドライン引数
     """
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
-    DeleteAttribute(service, facade, args).main()
+    DeleteAttributes(service, facade, args).main()
 
 
 def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     """
-    ``annotation_specs delete_attribute`` 用のparserを生成する。
+    ``annotation_specs delete_attributes`` 用のparserを生成する。
 
     Args:
         subparsers: 親parserのsubparsers
@@ -618,7 +618,7 @@ def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse
     Returns:
         生成したArgumentParser
     """
-    subcommand_name = "delete_attribute"
+    subcommand_name = "delete_attributes"
     subcommand_help = "アノテーション仕様のラベルから属性を削除します。"
     description = "アノテーション仕様のラベルから属性を削除します。"
 

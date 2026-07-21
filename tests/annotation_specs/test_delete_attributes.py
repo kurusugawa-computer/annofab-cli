@@ -8,12 +8,12 @@ from typing import Any
 
 import pytest
 
-from annofabcli.annotation_specs.delete_attribute import (
+from annofabcli.annotation_specs.delete_attributes import (
     AffectingAnnotation,
-    DeleteAttributeMain,
-    build_request_body_for_delete_attribute,
-    create_comment_for_delete_attribute,
-    create_confirm_message_for_delete_attribute,
+    DeleteAttributesMain,
+    build_request_body_for_delete_attributes,
+    create_comment_for_delete_attributes,
+    create_confirm_message_for_delete_attributes,
     resolve_attribute_deletion,
     restriction_references_attribute,
 )
@@ -60,7 +60,7 @@ def add_same_name_attributes_to_same_label(annotation_specs: dict[str, Any]) -> 
     car_label["additional_data_definitions"].extend(["car_foo_attribute_id_1", "car_foo_attribute_id_2"])
 
 
-class TestDeleteAttributeHelpers:
+class TestDeleteAttributesHelpers:
     def test_restriction_references_attribute__ネストされた属性参照を検出する(self) -> None:
         annotation_specs = load_annotation_specs()
         restriction = annotation_specs["restrictions"][-1]
@@ -68,7 +68,7 @@ class TestDeleteAttributeHelpers:
         assert restriction_references_attribute(restriction, {"f12a0b59-dfce-4241-bb87-4b2c0259fc6f"}) is True
         assert restriction_references_attribute(restriction, {"not-found"}) is False
 
-    def test_create_comment_for_delete_attribute(self) -> None:
+    def test_create_comment_for_delete_attributes(self) -> None:
         annotation_specs = load_annotation_specs()
         resolved = resolve_attribute_deletion(
             annotation_specs,
@@ -78,13 +78,13 @@ class TestDeleteAttributeHelpers:
             label_name_ens=["car"],
         )
 
-        actual = create_comment_for_delete_attribute(resolved)
+        actual = create_comment_for_delete_attributes(resolved)
 
         assert "以下のラベルから属性を削除しました。" in actual
         assert "label_name_en='car', attribute_name_en='unclear'" in actual
         assert "'comment' MATCHES '[0-9]' IF 'unclear' EQUALS 'true'" in actual
 
-    def test_create_confirm_message_for_delete_attribute(self) -> None:
+    def test_create_confirm_message_for_delete_attributes(self) -> None:
         annotation_specs = load_annotation_specs()
         resolved = resolve_attribute_deletion(
             annotation_specs,
@@ -94,7 +94,7 @@ class TestDeleteAttributeHelpers:
             label_name_ens=["car"],
         )
 
-        actual = create_confirm_message_for_delete_attribute(resolved, affecting_annotations=[])
+        actual = create_confirm_message_for_delete_attributes(resolved, affecting_annotations=[])
 
         assert "以下のラベルから属性(1件)を削除します。" in actual
         assert "label_name_en='car', attribute_name_en='unclear'" in actual
@@ -215,8 +215,8 @@ class TestResolveAttributeDeletion:
         assert actual.restriction_text_list == ["'comment' MATCHES '[0-9]' IF 'unclear' EQUALS 'true'"]
 
 
-class TestBuildRequestBodyForDeleteAttribute:
-    def test_build_request_body_for_delete_attribute__孤立属性と関連制約も削除する(self) -> None:
+class TestBuildRequestBodyForDeleteAttributes:
+    def test_build_request_body_for_delete_attributes__孤立属性と関連制約も削除する(self) -> None:
         annotation_specs = load_annotation_specs()
         resolved = resolve_attribute_deletion(
             annotation_specs,
@@ -226,7 +226,7 @@ class TestBuildRequestBodyForDeleteAttribute:
             label_name_ens=["car"],
         )
 
-        actual = build_request_body_for_delete_attribute(annotation_specs, resolved_deletion=resolved, comment=None)
+        actual = build_request_body_for_delete_attributes(annotation_specs, resolved_deletion=resolved, comment=None)
 
         car_label = next(label for label in actual["labels"] if label["label_id"] == "car_label_id")
         assert "f12a0b59-dfce-4241-bb87-4b2c0259fc6f" not in car_label["additional_data_definitions"]
@@ -235,7 +235,7 @@ class TestBuildRequestBodyForDeleteAttribute:
         assert actual["last_updated_datetime"] == "2026-04-24T00:00:00+09:00"
         assert "以下のラベルから属性を削除しました。" in actual["comment"]
 
-    def test_build_request_body_for_delete_attribute__custom_comment(self) -> None:
+    def test_build_request_body_for_delete_attributes__custom_comment(self) -> None:
         annotation_specs = load_annotation_specs()
         resolved = resolve_attribute_deletion(
             annotation_specs,
@@ -245,14 +245,14 @@ class TestBuildRequestBodyForDeleteAttribute:
             label_name_ens=["car"],
         )
 
-        actual = build_request_body_for_delete_attribute(annotation_specs, resolved_deletion=resolved, comment="custom")
+        actual = build_request_body_for_delete_attributes(annotation_specs, resolved_deletion=resolved, comment="custom")
 
         assert actual["comment"] == "custom"
 
 
-class TestDeleteAttributeMain:
+class TestDeleteAttributesMain:
     def test_validate_deletion__既存アノテーションに影響するときは許可オプションを案内する(self, caplog: pytest.LogCaptureFixture) -> None:
-        obj = DeleteAttributeMain(
+        obj = DeleteAttributesMain(
             service=None,  # type: ignore[arg-type]
             project_id="project_id",
             all_yes=True,
