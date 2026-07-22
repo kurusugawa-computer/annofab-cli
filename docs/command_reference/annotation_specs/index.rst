@@ -46,6 +46,7 @@ Available Commands
    set_attribute_required
    unset_attribute_required
    update_label_field_values
+   update_attributes
    update_labels
 
 
