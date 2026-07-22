@@ -112,9 +112,7 @@ def create_confirm_message_for_reorder_labels(resolved_reorder: ResolvedLabelReo
         確認メッセージ
     """
     lines = [f"以下のラベル({len(resolved_reorder.first_labels)}件)を指定順で先頭に移動します。"]
-    lines.extend(
-        f" * label_name_en='{get_label_name_en(label)}', label_id='{label['label_id']}'" for label in resolved_reorder.first_labels
-    )
+    lines.extend(f" * label_name_en='{get_label_name_en(label)}', label_id='{label['label_id']}'" for label in resolved_reorder.first_labels)
     lines.extend(("", "指定しなかったラベルは現在の順番を維持します。", "", "よろしいですか？"))
     return "\n".join(lines)
 
