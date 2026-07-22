@@ -78,7 +78,7 @@ JSON形式で指定する場合
 * ``attribute_id`` : 任意。属性ID。未指定の場合はUUIDv4が自動生成されます。
 * ``read_only`` : 任意。 ``true`` を指定すると読み込み専用の属性として追加します。未指定の場合は ``false`` です。
 * ``default_value`` : 任意。非選択肢系属性の初期値。 ``attribute_type`` が ``flag`` の場合は真偽値、 ``integer`` の場合は整数、その他の場合は文字列を指定します。 ``choice`` または ``select`` では指定できません。
-* ``keybind`` : 任意。属性に設定するキーボードショートカット。JSONオブジェクトを指定してください。
+* ``keybind`` : 任意。属性に設定するキーボードショートカット。JSONオブジェクトを指定してください。 ``code`` に指定できる値は、 `KeyboardEvent.code <https://developer.mozilla.org/ja/docs/Web/API/KeyboardEvent/code>`_ を参照してください。
 * ``choices`` : ``attribute_type`` が ``choice`` または ``select`` のとき必須。選択肢情報の配列です。各要素では、以下のキーを指定できます。
 
   * ``choice_name_en`` : 必須。選択肢名（英語）。

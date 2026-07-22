@@ -81,7 +81,7 @@ CSV形式の例
 * ``choice_name_ja`` : 任意。選択肢名（日本語）。
 * ``choice_id`` : 任意。選択肢ID。未指定の場合はUUIDv4が自動生成されます。
 * ``is_default`` : 任意。 ``true`` を指定すると属性の初期値として使用します。未指定の場合は ``false`` です。
-* ``keybind`` : 任意。選択肢に設定するキーボードショートカット。
+* ``keybind`` : 任意。選択肢に設定するキーボードショートカット。 ``code`` に指定できる値は、 `KeyboardEvent.code <https://developer.mozilla.org/ja/docs/Web/API/KeyboardEvent/code>`_ を参照してください。
 
 選択肢は2件以上指定してください。
 ``choice_id`` は入力内で重複しない値を指定してください。

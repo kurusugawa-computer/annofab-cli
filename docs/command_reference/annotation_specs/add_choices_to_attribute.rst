@@ -60,7 +60,6 @@ CSV形式の例
      --attribute_id 71620647-98cf-48ad-b43b-4af425a24f32 \
      --choice_csv choices.csv
 
-選択肢の ``keybind`` を指定する場合は、 ``--choice_json`` ではJSONオブジェクト、 ``--choice_csv`` ではJSONオブジェクト文字列を指定してください。
 
 
 選択肢情報の構造
@@ -73,7 +72,7 @@ CSV形式の例
 * ``choice_name_en`` : 必須。選択肢名（英語）。
 * ``choice_name_ja`` : 任意。選択肢名（日本語）。
 * ``choice_id`` : 任意。選択肢ID。未指定の場合はUUIDv4が自動生成されます。
-* ``keybind`` : 任意。選択肢に設定するキーボードショートカット。
+* ``keybind`` : 任意。選択肢に設定するキーボードショートカット。 ``code`` に指定できる値は、 `KeyboardEvent.code <https://developer.mozilla.org/ja/docs/Web/API/KeyboardEvent/code>`_ を参照してください。
 
 ``choice_id`` と ``choice_name_en`` は、追加先の属性に既に存在する選択肢と重複しない値を指定してください。
 

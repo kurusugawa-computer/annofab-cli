@@ -91,7 +91,7 @@ JSON形式で指定する場合
       - ラベルの色。 ``#RRGGBB`` 形式の16進数カラーコードを指定してください。省略した場合は自動設定されます。
     * - ``keybind``
       - 任意
-      - ラベルに設定するキーボードショートカットのJSONオブジェクト。
+      - ラベルに設定するキーボードショートカットのJSONオブジェクト。  ``code`` に指定できる値は、 `KeyboardEvent.code <https://developer.mozilla.org/ja/docs/Web/API/KeyboardEvent/code>`_ を参照してください。
     * - ``field_values``
       - 任意
       - ラベルに設定するサイズ制約や許容誤差範囲などのJSONオブジェクト。フォーマットは :doc:`update_label_field_values` を参照してください。
