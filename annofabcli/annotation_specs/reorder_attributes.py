@@ -352,8 +352,7 @@ def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse
     """
     subcommand_name = "reorder_attributes"
     subcommand_help = "アノテーション仕様のラベル内の属性を並び替えます。"
-    description = "アノテーション仕様の指定ラベルに含まれる属性を指定順で先頭に移動します。指定しなかった属性は現在の順番を維持します。"
 
-    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description=description)
+    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description=subcommand_help)
     parse_args(parser)
     return parser
