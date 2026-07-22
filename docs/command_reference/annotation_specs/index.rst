@@ -40,6 +40,9 @@ Available Commands
    list_attribute_restriction
    list_label_color
    put_label_color
+   reorder_attributes
+   reorder_choices
+   reorder_labels
    set_attribute_required
    unset_attribute_required
    update_label_field_values

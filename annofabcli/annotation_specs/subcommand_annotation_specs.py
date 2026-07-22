@@ -25,6 +25,9 @@ import annofabcli.annotation_specs.list_annotation_specs_label_attribute
 import annofabcli.annotation_specs.list_attribute_restriction
 import annofabcli.annotation_specs.list_label_color
 import annofabcli.annotation_specs.put_label_color
+import annofabcli.annotation_specs.reorder_attributes
+import annofabcli.annotation_specs.reorder_choices
+import annofabcli.annotation_specs.reorder_labels
 import annofabcli.annotation_specs.set_attribute_required
 import annofabcli.annotation_specs.unset_attribute_required
 import annofabcli.annotation_specs.update_label_field_values
@@ -61,6 +64,9 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     annofabcli.annotation_specs.list_attribute_restriction.add_parser(subparsers)
     annofabcli.annotation_specs.list_label_color.add_parser(subparsers)
     annofabcli.annotation_specs.put_label_color.add_parser(subparsers)
+    annofabcli.annotation_specs.reorder_attributes.add_parser(subparsers)
+    annofabcli.annotation_specs.reorder_choices.add_parser(subparsers)
+    annofabcli.annotation_specs.reorder_labels.add_parser(subparsers)
     annofabcli.annotation_specs.set_attribute_required.add_parser(subparsers)
     annofabcli.annotation_specs.unset_attribute_required.add_parser(subparsers)
     annofabcli.annotation_specs.update_label_field_values.add_parser(subparsers)
