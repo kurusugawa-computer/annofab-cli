@@ -42,12 +42,20 @@ JSON出力
         "attribute_name_en": "truncation",
         "attribute_name_ja": "truncation",
         "attribute_name_vi": "truncation",
-        "type": "flag",
+        "attribute_type": "flag",
         "default": false,
         "read_only": false,
         "choice_count": 0,
         "restriction_count": 0,
         "reference_label_count": 2,
+        "label_ids": [
+            "3bcd28ef-a4f1-42f0-b3d4-3bb74f52d8de",
+            "70d7fd3a-ff17-438c-8e57-187088ed79b1"
+        ],
+        "label_name_ens": [
+            "car",
+            "truck"
+        ],
         "keybind": {
             "alt": false,
             "code": "Digit1",
@@ -61,12 +69,20 @@ JSON出力
         "attribute_name_en": "direction",
         "attribute_name_ja": "車の向き",
         "attribute_name_vi": "direction",
-        "type": "select",
+        "attribute_type": "select",
         "default": "f98a9545-5864-4e5b-a945-d327001a0179",
         "read_only": false,
         "choice_count": 6,
         "restriction_count": 1,
         "reference_label_count": 2,
+        "label_ids": [
+            "3bcd28ef-a4f1-42f0-b3d4-3bb74f52d8de",
+            "70d7fd3a-ff17-438c-8e57-187088ed79b1"
+        ],
+        "label_name_ens": [
+            "car",
+            "truck"
+        ],
         "keybind": null,
         "keybind_text": ""
     }
@@ -93,6 +109,8 @@ JSON出力
 * ``choice_count`` : 選択肢の個数。ドロップダウン属性またはラジオボタン属性以外では0個です。
 * ``restriction_count`` : 制約の個数。
 * ``reference_label_count`` : 参照されているラベルの個数
+* ``label_ids`` : 参照しているラベルのID一覧。
+* ``label_name_ens`` : 参照しているラベルの英語名一覧。
 * ``keybind`` : キーボードショートカットのJSONオブジェクト
 * ``keybind_text`` : キーボードショートカットの表示文字列
 
@@ -107,4 +125,3 @@ Usage Details
    :prog: annofabcli annotation_specs list_attribute
    :nosubcommands:
    :nodefaultconst:
-
