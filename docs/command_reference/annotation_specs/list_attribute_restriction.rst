@@ -28,6 +28,14 @@ Examples
     'link' has labels 'bike', 'bus'
 
 
+``--format text_with_ids`` を指定すると、属性ID・ラベルID・選択肢IDなどのIDを含めて自然言語で出力します。
+
+.. code-block::
+
+    $ annofabcli annotation_specs list_attribute_restriction --project_id prj1 --format text_with_ids
+    'comment' (attribute_id='54fa5e97-6f88-49a4-aeb0-a91a15d11528') is read-only
+
+
 ``--format json`` または ``--format pretty_json`` を指定すると、属性制約のJSONを出力できます。
 このJSONはAPIのrestrictionオブジェクトそのものなので、将来的に削除コマンドなどへそのまま渡しやすい形式です。
 
@@ -49,14 +57,22 @@ Examples
 --------------------------------------------------------------------------------------------
 
 ``--restriction_type`` を指定すると、対象属性に紐づく属性制約のうち、指定した種類の制約だけを出力できます。
+属性は ``--attribute_id`` または ``--attribute_name_en`` で指定できます。
 
 .. code-block::
 
     $ annofabcli annotation_specs list_attribute_restriction \
      --project_id prj1 \
-     --attribute_name comment \
+     --attribute_name_en comment \
      --restriction_type imply
     If 'unclear' is checked, 'comment' matches '[0-9]'.
+
+.. code-block::
+
+    $ annofabcli annotation_specs list_attribute_restriction \
+     --project_id prj1 \
+     --attribute_id 54fa5e97-6f88-49a4-aeb0-a91a15d11528 \
+     --restriction_type imply
 
 
 

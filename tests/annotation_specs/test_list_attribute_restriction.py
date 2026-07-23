@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 
 import pytest
+from annofabapi.util.attribute_restrictions import Restriction
 
 from annofabcli.__main__ import main
 
@@ -25,7 +26,7 @@ class TestListAttributeRestriction:
                 "list_attribute_restriction",
                 "--annotation_specs_json_file",
                 str(annotation_specs_path),
-                "--attribute_name",
+                "--attribute_name_en",
                 "comment",
                 "--format",
                 "text",
@@ -45,6 +46,36 @@ class TestListAttributeRestriction:
             "'comment' does not match '[0-9]+'\n"
             "If 'unclear' is checked, 'comment' matches '[0-9]'."
         )
+
+    def test_text_with_ids形式ではinclude_idsを有効にして属性制約を出力する(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+        annotation_specs_path = DATA_DIR / "annotation_specs.json"
+        output_path = tmp_path / "restrictions.txt"
+
+        def to_human_readable(_self: Restriction, _annotation_specs: dict, *, include_ids: bool = False) -> str:
+            return f"include_ids={include_ids}"
+
+        monkeypatch.setattr(Restriction, "to_human_readable", to_human_readable)
+
+        main(
+            [
+                self.command_name,
+                "list_attribute_restriction",
+                "--annotation_specs_json_file",
+                str(annotation_specs_path),
+                "--attribute_name_en",
+                "comment",
+                "--restriction_type",
+                "imply",
+                "--format",
+                "text_with_ids",
+                "--output",
+                str(output_path),
+            ]
+        )
+
+        actual_text = output_path.read_text(encoding="utf-8")
+
+        assert actual_text == "include_ids=True"
 
     def test_json形式で属性制約のJSONをそのまま出力する(self, tmp_path: Path) -> None:
         annotation_specs_path = DATA_DIR / "annotation_specs.json"
@@ -80,7 +111,7 @@ class TestListAttributeRestriction:
                 "list_attribute_restriction",
                 "--annotation_specs_json_file",
                 str(annotation_specs_path),
-                "--attribute_name",
+                "--attribute_name_en",
                 "link",
                 "--format",
                 "pretty_json",
@@ -106,6 +137,40 @@ class TestListAttributeRestriction:
         ]
         assert "\n  {" in actual_text
 
+    def test_pretty_json形式で属性IDに紐づく属性制約を出力する(self, tmp_path: Path) -> None:
+        annotation_specs_path = DATA_DIR / "annotation_specs.json"
+        output_path = tmp_path / "restrictions_pretty.json"
+
+        main(
+            [
+                self.command_name,
+                "list_attribute_restriction",
+                "--annotation_specs_json_file",
+                str(annotation_specs_path),
+                "--attribute_id",
+                "15235360-4f46-42ac-927d-0e046bf52ddd",
+                "--format",
+                "pretty_json",
+                "--output",
+                str(output_path),
+            ]
+        )
+
+        actual = json.loads(output_path.read_text(encoding="utf-8"))
+
+        assert actual == [
+            {
+                "additional_data_definition_id": "15235360-4f46-42ac-927d-0e046bf52ddd",
+                "condition": {
+                    "labels": [
+                        "40f7796b-3722-4eed-9c0c-04a27f9165d2",
+                        "22b5189b-af7b-4d9c-83a5-b92f122170ec",
+                    ],
+                    "_type": "HasLabel",
+                },
+            }
+        ]
+
     def test_restriction_typeを指定したときは一致する種類だけ出力する(self, tmp_path: Path) -> None:
         annotation_specs_path = DATA_DIR / "annotation_specs.json"
         output_path = tmp_path / "restrictions_by_type.json"
@@ -116,7 +181,7 @@ class TestListAttributeRestriction:
                 "list_attribute_restriction",
                 "--annotation_specs_json_file",
                 str(annotation_specs_path),
-                "--attribute_name",
+                "--attribute_name_en",
                 "comment",
                 "--restriction_type",
                 "imply",

@@ -120,3 +120,22 @@ class Test__AttributeRestrictionMessage:
 
         actual2 = self.obj.get_restriction_text_list(self.annotation_specs["restrictions"], target_label_names=["car"])
         assert len(actual2) == 9
+
+    def test_get_target_restrictions__attribute_id(self):
+        actual = self.obj.get_target_restrictions(
+            self.annotation_specs["restrictions"],
+            target_attribute_ids=["15235360-4f46-42ac-927d-0e046bf52ddd"],
+        )
+
+        assert actual == [
+            {
+                "additional_data_definition_id": "15235360-4f46-42ac-927d-0e046bf52ddd",
+                "condition": {
+                    "labels": [
+                        "40f7796b-3722-4eed-9c0c-04a27f9165d2",
+                        "22b5189b-af7b-4d9c-83a5-b92f122170ec",
+                    ],
+                    "_type": "HasLabel",
+                },
+            }
+        ]

@@ -4,9 +4,10 @@ import argparse
 import json
 import logging
 import sys
+from collections.abc import Callable
 from enum import Enum
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 from annofabapi.util.attribute_restrictions import Restriction
 
@@ -30,6 +31,7 @@ class OutputFormat(Enum):
     """`list_attribute_restriction` の出力フォーマット。"""
 
     TEXT = "text"
+    TEXT_WITH_IDS = "text_with_ids"
     JSON = "json"
     PRETTY_JSON = "pretty_json"
 
@@ -46,17 +48,24 @@ class ListAttributeRestriction(CommandLine):
         return history["history_id"]
 
     @staticmethod
-    def get_restriction_text_list(annotation_specs: dict[str, Any], restrictions: list[dict[str, Any]]) -> list[str]:
+    def get_restriction_text_list(annotation_specs: dict[str, Any], restrictions: list[dict[str, Any]], *, include_ids: bool = False) -> list[str]:
         """
         属性制約一覧を人向けの文字列へ変換する。
 
         Args:
             annotation_specs: アノテーション仕様
             restrictions: 出力対象の属性制約一覧
+            include_ids: 属性ID・ラベルID・選択肢IDなどのIDを含めるか
 
         Returns:
             人が読みやすい属性制約文字列の一覧
         """
+        if include_ids:
+            text_list = []
+            for restriction in restrictions:
+                to_human_readable = cast(Callable[..., str], Restriction.from_dict(restriction).to_human_readable)
+                text_list.append(to_human_readable(annotation_specs, include_ids=True))
+            return text_list
         return [Restriction.from_dict(restriction).to_human_readable(annotation_specs) for restriction in restrictions]
 
     def main(self) -> None:
@@ -92,10 +101,12 @@ class ListAttributeRestriction(CommandLine):
             labels=annotation_specs["labels"],
             additionals=annotation_specs["additionals"],
         )
-        target_attribute_names = get_list_from_args(args.attribute_name) if args.attribute_name is not None else None
+        target_attribute_ids = get_list_from_args(args.attribute_id) if args.attribute_id is not None else None
+        target_attribute_names = get_list_from_args(args.attribute_name_en) if args.attribute_name_en is not None else None
         target_label_names = get_list_from_args(args.label_name) if args.label_name is not None else None
         target_restrictions = main_obj.get_target_restrictions(
             annotation_specs["restrictions"],
+            target_attribute_ids=target_attribute_ids,
             target_attribute_names=target_attribute_names,
             target_label_names=target_label_names,
         )
@@ -109,7 +120,7 @@ class ListAttributeRestriction(CommandLine):
             )
             return
 
-        restriction_text_list = self.get_restriction_text_list(annotation_specs, target_restrictions)
+        restriction_text_list = self.get_restriction_text_list(annotation_specs, target_restrictions, include_ids=output_format == OutputFormat.TEXT_WITH_IDS)
         annofabcli.common.utils.output_string("\n".join(restriction_text_list), args.output)
 
 
@@ -146,7 +157,18 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         ),
     )
 
-    parser.add_argument("--attribute_name", type=str, nargs="+", help="指定した属性名（英語）の属性の制約を出力します。")
+    parser.add_argument(
+        "--attribute_id",
+        type=str,
+        nargs="+",
+        help="指定した属性IDに紐づく属性制約を出力します。1個だけ指定して ``file://`` を先頭に付けると、属性IDを1行ずつ記載したファイルを指定できます。",
+    )
+    parser.add_argument(
+        "--attribute_name_en",
+        type=str,
+        nargs="+",
+        help="指定した属性名（英語）に紐づく属性制約を出力します。1個だけ指定して ``file://`` を先頭に付けると、属性名（英語）を1行ずつ記載したファイルを指定できます。",
+    )
     parser.add_argument("--label_name", type=str, nargs="+", help="指定したラベル名（英語）のラベルに紐づく属性の制約を出力します。")
     parser.add_argument(
         "--restriction_type",
@@ -174,6 +196,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         help=(
             "出力フォーマット\n\n"
             f"* {OutputFormat.TEXT.value}: 人が読みやすい形式で出力する\n"
+            f"* {OutputFormat.TEXT_WITH_IDS.value}: 人が読みやすい形式で、属性ID・ラベルID・選択肢IDなどのIDも出力する\n"
             f"* {OutputFormat.JSON.value}: 属性制約のJSONを1行で出力する形式\n"
             f"* {OutputFormat.PRETTY_JSON.value}: 属性制約のJSONを整形して出力する形式\n"
         ),
