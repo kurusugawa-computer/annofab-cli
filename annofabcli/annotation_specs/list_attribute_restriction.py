@@ -92,10 +92,12 @@ class ListAttributeRestriction(CommandLine):
             labels=annotation_specs["labels"],
             additionals=annotation_specs["additionals"],
         )
-        target_attribute_names = get_list_from_args(args.attribute_name) if args.attribute_name is not None else None
+        target_attribute_ids = get_list_from_args(args.attribute_id) if args.attribute_id is not None else None
+        target_attribute_names = get_list_from_args(args.attribute_name_en) if args.attribute_name_en is not None else None
         target_label_names = get_list_from_args(args.label_name) if args.label_name is not None else None
         target_restrictions = main_obj.get_target_restrictions(
             annotation_specs["restrictions"],
+            target_attribute_ids=target_attribute_ids,
             target_attribute_names=target_attribute_names,
             target_label_names=target_label_names,
         )
@@ -146,7 +148,18 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         ),
     )
 
-    parser.add_argument("--attribute_name", type=str, nargs="+", help="指定した属性名（英語）の属性の制約を出力します。")
+    parser.add_argument(
+        "--attribute_id",
+        type=str,
+        nargs="+",
+        help="指定した属性IDに紐づく属性制約を出力します。1個だけ指定して ``file://`` を先頭に付けると、属性IDを1行ずつ記載したファイルを指定できます。",
+    )
+    parser.add_argument(
+        "--attribute_name_en",
+        type=str,
+        nargs="+",
+        help="指定した属性名（英語）に紐づく属性制約を出力します。1個だけ指定して ``file://`` を先頭に付けると、属性名（英語）を1行ずつ記載したファイルを指定できます。",
+    )
     parser.add_argument("--label_name", type=str, nargs="+", help="指定したラベル名（英語）のラベルに紐づく属性の制約を出力します。")
     parser.add_argument(
         "--restriction_type",
