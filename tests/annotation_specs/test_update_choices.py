@@ -227,3 +227,11 @@ class TestReadChoices:
             ),
             ChoiceUpdateInput(choice_id=SMALL_CHOICE_ID, choice_name_ja="小"),
         ]
+
+    def test_read_choices_csv__invalid_keybind(self, tmp_path: Path) -> None:
+        csv_path = tmp_path / "choices.csv"
+        df = pandas.DataFrame([{"choice_name_en": "large", "keybind": "invalid"}])
+        df.to_csv(csv_path, index=False)
+
+        with pytest.raises(ValueError):
+            read_choices_csv(csv_path)

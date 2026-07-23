@@ -14,7 +14,6 @@ import pandas
 from annofabapi.util.annotation_specs import AnnotationSpecsAccessor, get_attribute_name_en, get_choice_name_en
 
 import annofabcli.common.cli
-from annofabcli.annotation_specs.add_labels import parse_keybind_in_csv
 from annofabcli.common.annofab.annotation_specs import keybind_to_api_keybind, validate_keybind_input
 from annofabcli.common.cli import ArgumentParser, CommandLine, CommandLineWithConfirm, build_annofabapi_resource_and_login, get_json_from_args
 from annofabcli.common.facade import AnnofabApiFacade
@@ -114,6 +113,23 @@ def read_choices_json(target: str) -> list[ChoiceUpdateInput]:
             raise TypeError(f"{index}件目の選択肢がオブジェクト形式ではありません。")
         result.append(parse_choice_update_input_from_dict(choice_data, index=index))
     return result
+
+
+def parse_keybind_in_csv(value: object, *, index: int) -> dict[str, Any] | None:
+    """
+    CSVの ``keybind`` 列を ``dict[str, Any] | None`` に変換する。
+    """
+    if value is None:
+        return None
+    if not isinstance(value, str):
+        value = str(value)
+    if value == "":
+        return None
+
+    try:
+        return validate_keybind_input(json.loads(value))
+    except (TypeError, ValueError, json.JSONDecodeError) as e:
+        raise ValueError(f"{index}件目の選択肢の `keybind` はJSONオブジェクト形式で指定してください。") from e
 
 
 def read_choices_csv(csv_path: Path) -> list[ChoiceUpdateInput]:
