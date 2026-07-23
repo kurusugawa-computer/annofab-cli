@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 
 import pytest
+from annofabapi.util.attribute_restrictions import Restriction
 
 from annofabcli.__main__ import main
 
@@ -45,6 +46,36 @@ class TestListAttributeRestriction:
             "'comment' does not match '[0-9]+'\n"
             "If 'unclear' is checked, 'comment' matches '[0-9]'."
         )
+
+    def test_text_with_ids形式ではinclude_idsを有効にして属性制約を出力する(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+        annotation_specs_path = DATA_DIR / "annotation_specs.json"
+        output_path = tmp_path / "restrictions.txt"
+
+        def to_human_readable(_self: Restriction, _annotation_specs: dict, *, include_ids: bool = False) -> str:
+            return f"include_ids={include_ids}"
+
+        monkeypatch.setattr(Restriction, "to_human_readable", to_human_readable)
+
+        main(
+            [
+                self.command_name,
+                "list_attribute_restriction",
+                "--annotation_specs_json_file",
+                str(annotation_specs_path),
+                "--attribute_name_en",
+                "comment",
+                "--restriction_type",
+                "imply",
+                "--format",
+                "text_with_ids",
+                "--output",
+                str(output_path),
+            ]
+        )
+
+        actual_text = output_path.read_text(encoding="utf-8")
+
+        assert actual_text == "include_ids=True"
 
     def test_json形式で属性制約のJSONをそのまま出力する(self, tmp_path: Path) -> None:
         annotation_specs_path = DATA_DIR / "annotation_specs.json"
