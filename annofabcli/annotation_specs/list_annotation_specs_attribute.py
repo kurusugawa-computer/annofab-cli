@@ -77,7 +77,7 @@ class FlattenAttribute(DataClassJsonMixin):
     """この属性を参照しているラベルの英語名一覧"""
     keybind: dict[str, Any] | None
     """CLIで指定できる形式のキーバインド"""
-    keybind_text: str
+    keybind_text: str | None
     """人が読める形式のキーバインド"""
 
 
@@ -123,7 +123,7 @@ def create_flatten_attribute_list_from_additionals(additionals_v3: list[dict[str
         attribute_id = additional["additional_data_definition_id"]
         additional_name = additional["name"]
         label_info_list = dict_label_info_list[attribute_id]
-        keybind = api_keybind_to_keybind(additional.get("keybind", []))
+        keybind = api_keybind_to_keybind(additional["keybind"])
         return FlattenAttribute(
             attribute_id=attribute_id,
             attribute_name_en=get_message_with_lang(additional_name, lang=Lang.EN_US),
@@ -138,7 +138,7 @@ def create_flatten_attribute_list_from_additionals(additionals_v3: list[dict[str
             label_ids=[e.label_id for e in label_info_list],
             label_name_ens=[e.label_name_en for e in label_info_list],
             keybind=keybind,
-            keybind_text=keybind_to_text(keybind_to_api_keybind(keybind)),
+            keybind_text=keybind_to_text(keybind_to_api_keybind(keybind)) if keybind is not None else None,
         )
 
     return [dict_additional_to_dataclass(e) for e in additionals_v3]

@@ -40,7 +40,7 @@ JSON出力
         "choice_name_vi": "rear",
         "is_default": false,
         "keybind": null,
-        "keybind_text": ""
+        "keybind_text": null
     },
     {
         "attribute_id": "a0f7c8ed-38dc-41e6-a18c-29a36d3e28f2",
@@ -52,7 +52,7 @@ JSON出力
         "choice_name_vi": "front",
         "is_default": false,
         "keybind": null,
-        "keybind_text": ""
+        "keybind_text": null
     },    
     ]
     
@@ -66,7 +66,7 @@ JSON出力
 * ``choice_name_vi`` : 選択肢名（ベトナム語）
 * ``is_default`` : 初期値として設定されているかどうか
 * ``keybind`` : キーボードショートカットのJSONオブジェクト
-* ``keybind_text`` : キーボードショートカットの表示文字列
+* ``keybind_text`` : キーボードショートカットの表示文字列。キーボードショートカットが未設定の場合は ``null`` です。
 
 
 Usage Details

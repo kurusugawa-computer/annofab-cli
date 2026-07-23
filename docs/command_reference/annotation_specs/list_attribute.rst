@@ -84,7 +84,7 @@ JSON出力
             "truck"
         ],
         "keybind": null,
-        "keybind_text": ""
+        "keybind_text": null
     }
     ]
 
@@ -112,7 +112,7 @@ JSON出力
 * ``label_ids`` : 参照しているラベルのID一覧。
 * ``label_name_ens`` : 参照しているラベルの英語名一覧。
 * ``keybind`` : キーボードショートカットのJSONオブジェクト
-* ``keybind_text`` : キーボードショートカットの表示文字列
+* ``keybind_text`` : キーボードショートカットの表示文字列。キーボードショートカットが未設定の場合は ``null`` です。
 
 
 

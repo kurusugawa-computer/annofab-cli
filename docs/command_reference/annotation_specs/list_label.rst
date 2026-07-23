@@ -82,7 +82,7 @@ JSON出力
 * ``color`` : ラベルの色（HEX形式）。
 * ``attribute_count`` : ラベルに紐づく属性の個数  
 * ``keybind`` : キーボードショートカットのJSONオブジェクト
-* ``keybind_text`` : キーボードショートカットの表示文字列
+* ``keybind_text`` : キーボードショートカットの表示文字列。キーボードショートカットが未設定の場合は ``null`` です。
 
 
 
@@ -95,4 +95,3 @@ Usage Details
    :prog: annofabcli annotation_specs list_label
    :nosubcommands:
    :nodefaultconst:
-
