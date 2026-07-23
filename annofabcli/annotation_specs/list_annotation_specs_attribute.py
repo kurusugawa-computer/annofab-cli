@@ -30,6 +30,16 @@ logger = logging.getLogger(__name__)
 
 
 @dataclass
+class ReferenceLabel:
+    """属性を参照しているラベル情報。"""
+
+    label_id: str
+    """ラベルID"""
+    label_name_en: str | None
+    """ラベルの英語名"""
+
+
+@dataclass
 class FlattenAttribute(DataClassJsonMixin):
     """
     ネストされていないフラットな属性情報を格納するクラスです。
@@ -61,25 +71,30 @@ class FlattenAttribute(DataClassJsonMixin):
     """制約の個数"""
     reference_label_count: int
     """参照されているラベルの個数"""
+    label_ids: list[str]
+    """この属性を参照しているラベルのID一覧"""
+    label_name_ens: list[str | None]
+    """この属性を参照しているラベルの英語名一覧"""
     keybind: dict[str, Any] | None
     """CLIで指定できる形式のキーバインド"""
     keybind_text: str
     """人が読める形式のキーバインド"""
 
 
-def create_relationship_between_attribute_and_label(labels_v3: list[dict[str, Any]]) -> dict[str, set[str]]:
+def create_relationship_between_attribute_and_label(labels_v3: list[dict[str, Any]]) -> dict[str, list[ReferenceLabel]]:
     """
-    属性IDとラベルIDの関係を表したdictを生成します。
+    属性IDとラベル情報の関係を表したdictを生成します。
 
     * key: 属性ID
-    * value: 属性を参照しているラベルのlabel_idのset
+    * value: 属性を参照しているラベル情報のlist
     """
-    result = defaultdict(set)
+    result = defaultdict(list)
     for label in labels_v3:
         label_id = label["label_id"]
+        label_name_en = get_message_with_lang(label["label_name"], lang=Lang.EN_US)
         attribute_id_list = label["additional_data_definitions"]
         for attribute_id in attribute_id_list:
-            result[attribute_id].add(label_id)
+            result[attribute_id].append(ReferenceLabel(label_id=label_id, label_name_en=label_name_en))
     return result
 
 
@@ -97,9 +112,9 @@ def create_flatten_attribute_list_from_additionals(additionals_v3: list[dict[str
     for restriction in restrictions:
         dict_restriction_count[restriction["additional_data_definition_id"]] += 1
 
-    # 属性IDとラベルIDの関係を表したdictを生成する
-    # keyが属性ID、valueが属性に紐づくラベルのIDのsetであるdict
-    dict_label_ids = create_relationship_between_attribute_and_label(labels_v3)
+    # 属性IDとラベル情報の関係を表したdictを生成する。
+    # keyが属性ID、valueが属性に紐づくラベル情報のlistであるdict。
+    dict_label_info_list = create_relationship_between_attribute_and_label(labels_v3)
 
     def dict_additional_to_dataclass(additional: dict[str, Any]) -> FlattenAttribute:
         """
@@ -107,6 +122,7 @@ def create_flatten_attribute_list_from_additionals(additionals_v3: list[dict[str
         """
         attribute_id = additional["additional_data_definition_id"]
         additional_name = additional["name"]
+        label_info_list = dict_label_info_list[attribute_id]
         keybind = api_keybind_to_keybind(additional.get("keybind", []))
         return FlattenAttribute(
             attribute_id=attribute_id,
@@ -118,7 +134,9 @@ def create_flatten_attribute_list_from_additionals(additionals_v3: list[dict[str
             read_only=additional["read_only"],
             choice_count=len(additional["choices"]),
             restriction_count=dict_restriction_count[attribute_id],
-            reference_label_count=len(dict_label_ids[attribute_id]),
+            reference_label_count=len(label_info_list),
+            label_ids=[e.label_id for e in label_info_list],
+            label_name_ens=[e.label_name_en for e in label_info_list],
             keybind=keybind,
             keybind_text=keybind_to_text(keybind_to_api_keybind(keybind)),
         )
@@ -144,6 +162,8 @@ class PrintAnnotationSpecsAttribute(CommandLine):
                 "choice_count",
                 "restriction_count",
                 "reference_label_count",
+                "label_ids",
+                "label_name_ens",
                 "keybind",
                 "keybind_text",
             ]
@@ -152,6 +172,8 @@ class PrintAnnotationSpecsAttribute(CommandLine):
             for attribute in attribute_list:
                 record = attribute.to_dict()
                 record["type"] = attribute.attribute_type
+                record["label_ids"] = json.dumps(attribute.label_ids, ensure_ascii=False)
+                record["label_name_ens"] = json.dumps(attribute.label_name_ens, ensure_ascii=False)
                 record["keybind"] = "" if attribute.keybind is None else json.dumps(attribute.keybind, ensure_ascii=False)
                 records.append(record)
             df = pandas.DataFrame(records, columns=columns)
