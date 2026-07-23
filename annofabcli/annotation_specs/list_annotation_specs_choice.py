@@ -56,7 +56,7 @@ class FlattenChoice(DataClassJsonMixin):
     """初期値として設定されているかどうか"""
     keybind: dict[str, Any] | None
     """CLIで指定できる形式のキーバインド"""
-    keybind_text: str
+    keybind_text: str | None
     """人が読める形式のキーバインド"""
 
 
@@ -92,7 +92,7 @@ def create_flatten_choice_list_from_additionals(additionals_v3: list[dict[str, A
             choice_name_vi=get_message_with_lang(choice_name, lang=Lang.VI_VN),
             is_default=is_default,
             keybind=keybind,
-            keybind_text=keybind_to_text(keybind_to_api_keybind(keybind)),
+            keybind_text=keybind_to_text(keybind_to_api_keybind(keybind)) if keybind is not None else None,
         )
 
     tmp_list = []

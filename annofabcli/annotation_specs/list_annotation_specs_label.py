@@ -53,7 +53,7 @@ class FlattenLabel(DataClassJsonMixin):
     """
     keybind: dict[str, Any] | None
     """CLIで指定できる形式のキーバインド"""
-    keybind_text: str
+    keybind_text: str | None
     """人が読める形式のキーバインド"""
     field_values: dict[str, Any]
     """ラベルに設定された field_values"""
@@ -84,7 +84,7 @@ def create_label_list(labels_v3: list[dict[str, Any]]) -> list[FlattenLabel]:
             color=hex_color_code,
             attribute_count=len(additional_data_definitions),
             keybind=keybind,
-            keybind_text=keybind_to_text(keybind_to_api_keybind(keybind)),
+            keybind_text=keybind_to_text(keybind_to_api_keybind(keybind)) if keybind is not None else None,
             field_values=label.get("field_values", {}),
         )
 
