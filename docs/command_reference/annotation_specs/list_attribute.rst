@@ -62,7 +62,8 @@ JSON出力
             "ctrl": true,
             "shift": false
         },
-        "keybind_text": "Ctrl+Digit1"
+        "keybind_text": "Ctrl+Digit1",
+        "choices": []
     },
     {
         "attribute_id": "a0f7c8ed-38dc-41e6-a18c-29a36d3e28f2",
@@ -84,7 +85,32 @@ JSON出力
             "truck"
         ],
         "keybind": null,
-        "keybind_text": null
+        "keybind_text": null,
+        "choices": [
+            {
+                "choice_id": "f98a9545-5864-4e5b-a945-d327001a0179",
+                "choice_name_en": "front",
+                "choice_name_ja": "正面",
+                "choice_name_vi": null,
+                "is_default": true,
+                "keybind": {
+                    "alt": false,
+                    "code": "Digit2",
+                    "ctrl": true,
+                    "shift": false
+                },
+                "keybind_text": "Ctrl+Digit2"
+            },
+            {
+                "choice_id": "fb3f0d9c-c994-4b7b-b820-95f7d17fb59b",
+                "choice_name_en": "side",
+                "choice_name_ja": "側面",
+                "choice_name_vi": null,
+                "is_default": false,
+                "keybind": null,
+                "keybind_text": null
+            }
+        ]
     }
     ]
 
@@ -113,6 +139,15 @@ JSON出力
 * ``label_name_ens`` : 参照しているラベルの英語名一覧。
 * ``keybind`` : キーボードショートカットのJSONオブジェクト
 * ``keybind_text`` : キーボードショートカットの表示文字列。キーボードショートカットが未設定の場合は ``null`` です。
+* ``choices`` : 選択肢情報の配列。属性の種類がラジオボタンまたはドロップダウン以外の場合は空配列です。JSON形式またはpretty_json形式で出力した場合のみ含まれます。各要素のキーは以下の通りです。
+
+  * ``choice_id`` : 選択肢ID。
+  * ``choice_name_en`` : 選択肢名（英語）。
+  * ``choice_name_ja`` : 選択肢名（日本語）。
+  * ``choice_name_vi`` : 選択肢名（ベトナム語）。
+  * ``is_default`` : 初期値として設定されているか否か。
+  * ``keybind`` : 選択肢に設定されたキーボードショートカットのJSONオブジェクト。
+  * ``keybind_text`` : 選択肢に設定されたキーボードショートカットの表示文字列。キーボードショートカットが未設定の場合は ``null`` です。
 
 
 
