@@ -199,9 +199,9 @@ class PrintAnnotationSpecsAttribute(CommandLine):
     COMMON_MESSAGE = "annofabcli annotation_specs list_attribute: error:"
 
     def print_annotation_specs_attribute(self, annotation_specs_v3: dict[str, Any], output_format: OutputFormat, output: str | None = None) -> None:
-        attribute_list = create_flatten_attribute_list_from_additionals(annotation_specs_v3["additionals"], annotation_specs_v3["labels"], annotation_specs_v3["restrictions"])
-        logger.info(f"{len(attribute_list)} 件の属性情報を出力します。")
         if output_format == OutputFormat.CSV:
+            attribute_list = create_flatten_attribute_list_from_additionals(annotation_specs_v3["additionals"], annotation_specs_v3["labels"], annotation_specs_v3["restrictions"])
+            logger.info(f"{len(attribute_list)} 件の属性情報を出力します。")
             columns = [
                 "attribute_id",
                 "attribute_name_en",
@@ -231,8 +231,10 @@ class PrintAnnotationSpecsAttribute(CommandLine):
             print_csv(df, output)
 
         elif output_format in [OutputFormat.JSON, OutputFormat.PRETTY_JSON]:
+            records = create_attribute_dict_list_for_json(annotation_specs_v3["additionals"], annotation_specs_v3["labels"], annotation_specs_v3["restrictions"])
+            logger.info(f"{len(records)} 件の属性情報を出力します。")
             print_according_to_format(
-                create_attribute_dict_list_for_json(annotation_specs_v3["additionals"], annotation_specs_v3["labels"], annotation_specs_v3["restrictions"]),
+                records,
                 format=output_format,
                 output=output,
             )
