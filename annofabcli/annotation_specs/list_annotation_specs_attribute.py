@@ -81,6 +81,22 @@ class FlattenAttribute(DataClassJsonMixin):
     """人が読める形式のキーバインド"""
 
 
+@dataclass
+class AttributeChoice(DataClassJsonMixin):
+    """JSON出力用の選択肢情報。"""
+
+    choice_id: str
+    choice_name_en: str | None
+    choice_name_ja: str | None
+    choice_name_vi: str | None
+    is_default: bool
+    """初期値として設定されているかどうか"""
+    keybind: dict[str, Any] | None
+    """CLIで指定できる形式のキーバインド"""
+    keybind_text: str | None
+    """人が読める形式のキーバインド"""
+
+
 def create_relationship_between_attribute_and_label(labels_v3: list[dict[str, Any]]) -> dict[str, list[ReferenceLabel]]:
     """
     属性IDとラベル情報の関係を表したdictを生成します。
@@ -144,6 +160,41 @@ def create_flatten_attribute_list_from_additionals(additionals_v3: list[dict[str
     return [dict_additional_to_dataclass(e) for e in additionals_v3]
 
 
+def create_attribute_dict_list_for_json(additionals_v3: list[dict[str, Any]], labels_v3: list[dict[str, Any]], restrictions: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """
+    APIから取得した属性情報（v3版）から、JSON出力用の属性情報一覧を生成します。
+
+    Args:
+        additionals_v3: APIから取得した属性情報（v3版）
+        labels_v3: APIから取得したラベル情報（v3版）
+        restrictions: APIから取得した制約情報
+    """
+
+    def dict_choice_to_dataclass(choice: dict[str, Any], additional: dict[str, Any]) -> AttributeChoice:
+        choice_name = choice["name"]
+        keybind = api_keybind_to_keybind(choice.get("keybind", []))
+        return AttributeChoice(
+            choice_id=choice["choice_id"],
+            choice_name_en=get_message_with_lang(choice_name, lang=Lang.EN_US),
+            choice_name_ja=get_message_with_lang(choice_name, lang=Lang.JA_JP),
+            choice_name_vi=get_message_with_lang(choice_name, lang=Lang.VI_VN),
+            is_default=additional["default"] == choice["choice_id"],
+            keybind=keybind,
+            keybind_text=keybind_to_text(keybind_to_api_keybind(keybind)) if keybind is not None else None,
+        )
+
+    attribute_list = create_flatten_attribute_list_from_additionals(additionals_v3, labels_v3, restrictions)
+    dict_additional = {additional["additional_data_definition_id"]: additional for additional in additionals_v3}
+
+    result = []
+    for attribute in attribute_list:
+        additional = dict_additional[attribute.attribute_id]
+        record = attribute.to_dict()
+        record["choices"] = [dict_choice_to_dataclass(choice, additional).to_dict() for choice in additional["choices"]]
+        result.append(record)
+    return result
+
+
 class PrintAnnotationSpecsAttribute(CommandLine):
     COMMON_MESSAGE = "annofabcli annotation_specs list_attribute: error:"
 
@@ -180,7 +231,11 @@ class PrintAnnotationSpecsAttribute(CommandLine):
             print_csv(df, output)
 
         elif output_format in [OutputFormat.JSON, OutputFormat.PRETTY_JSON]:
-            print_according_to_format([e.to_dict() for e in attribute_list], format=output_format, output=output)
+            print_according_to_format(
+                create_attribute_dict_list_for_json(annotation_specs_v3["additionals"], annotation_specs_v3["labels"], annotation_specs_v3["restrictions"]),
+                format=output_format,
+                output=output,
+            )
 
     def get_history_id_from_before_index(self, project_id: str, before: int) -> str | None:
         histories, _ = self.service.api.get_annotation_specs_histories(project_id)
