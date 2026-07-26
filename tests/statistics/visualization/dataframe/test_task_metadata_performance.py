@@ -5,7 +5,7 @@ import pytest
 
 from annofabcli.statistics.visualization.dataframe.task import Task
 from annofabcli.statistics.visualization.dataframe.task_metadata_performance import (
-    UNDEFINED_METADATA_VALUE,
+    EMPTY_METADATA_VALUE,
     TaskMetadataPerformance,
 )
 from annofabcli.statistics.visualization.dataframe.task_worktime_by_phase_user import TaskWorktimeByPhaseUser
@@ -53,7 +53,7 @@ class TestTaskMetadataPerformance:
         assert df.loc["B", ("actual_worktime_hour", "acceptance")] == pytest.approx(0.05)
         assert df.loc["B", ("real_monitored_worktime_hour/real_actual_worktime_hour", "sum")] == pytest.approx(2)
 
-    def test__from_df_wrapper__metadataが存在しない(self):
+    def test__from_df_wrapper__metadataが存在しない場合は空欄にする(self):
         task = Task.from_csv(data_dir / "task.csv", custom_production_volume_list=custom_production_volume_list)
         task.df["project_id"] = "prj1"
         task_worktime_by_phase_user = TaskWorktimeByPhaseUser.from_csv(data_dir / "task-worktime-by-user-phase.csv", custom_production_volume_list=custom_production_volume_list)
@@ -65,7 +65,7 @@ class TestTaskMetadataPerformance:
             real_monitored_worktime_hour_per_real_actual_worktime_hour=2,
         )
 
-        assert list(actual.df[("category", "")]) == [UNDEFINED_METADATA_VALUE]
+        assert list(actual.df[("category", "")]) == [EMPTY_METADATA_VALUE]
 
     def test__from_df_wrapper__metadata_keyが既存列名と重複している(self):
         task = Task.from_csv(data_dir / "task.csv", custom_production_volume_list=custom_production_volume_list)

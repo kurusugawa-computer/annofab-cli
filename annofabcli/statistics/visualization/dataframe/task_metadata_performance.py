@@ -1,9 +1,7 @@
 from __future__ import annotations
 
-import json
 import logging
 from pathlib import Path
-from typing import Any
 
 import numpy
 import pandas
@@ -16,7 +14,7 @@ from annofabcli.statistics.visualization.model import ProductionVolumeColumn
 
 logger = logging.getLogger(__name__)
 
-UNDEFINED_METADATA_VALUE = "__undefined__"
+EMPTY_METADATA_VALUE = ""
 """メタデータのキーが存在しない、または値がnullのタスクに設定する値。"""
 
 METADATA_VALUE_COLUMN = "__task_metadata_value"
@@ -74,26 +72,13 @@ class TaskMetadataPerformance:
         return [phase for phase in phases if ("monitored_worktime_hour", phase) in df.columns]
 
     @staticmethod
-    def _metadata_value_to_str(value: Any) -> str:  # noqa: ANN401
-        """メタデータの値をCSV出力用の文字列に変換する。"""
-        if value is None:
-            return UNDEFINED_METADATA_VALUE
-        if isinstance(value, float) and pandas.isna(value):
-            return UNDEFINED_METADATA_VALUE
-        if isinstance(value, str):
-            return value
-        if isinstance(value, bool | int | float):
-            return str(value)
-        return json.dumps(value, ensure_ascii=False, sort_keys=True)
-
-    @classmethod
-    def _get_metadata_value_by_task_id(cls, task: Task, metadata_key: str) -> pandas.DataFrame:
+    def _get_metadata_value_by_task_id(task: Task, metadata_key: str) -> pandas.DataFrame:
         """task_idごとのメタデータ値を取得する。"""
         df_task = task.df[["project_id", "task_id"]].copy()
         if "metadata" in task.df.columns:
-            df_task[METADATA_VALUE_COLUMN] = task.df["metadata"].map(lambda metadata: cls._metadata_value_to_str(metadata.get(metadata_key) if isinstance(metadata, dict) else None))
+            df_task[METADATA_VALUE_COLUMN] = task.df["metadata"].map(lambda metadata: metadata.get(metadata_key) if isinstance(metadata, dict) else None)
         else:
-            df_task[METADATA_VALUE_COLUMN] = UNDEFINED_METADATA_VALUE
+            df_task[METADATA_VALUE_COLUMN] = EMPTY_METADATA_VALUE
         return df_task[["project_id", "task_id", METADATA_VALUE_COLUMN]]
 
     @classmethod
@@ -107,7 +92,7 @@ class TaskMetadataPerformance:
         """DataFrameのラッパーからインスタンスを生成する。"""
         metadata_value_by_task_id = cls._get_metadata_value_by_task_id(task, metadata_key)
         df = task_worktime_by_phase_user.df.merge(metadata_value_by_task_id, on=["project_id", "task_id"], how="left")
-        df[METADATA_VALUE_COLUMN] = df[METADATA_VALUE_COLUMN].fillna(UNDEFINED_METADATA_VALUE)
+        df[METADATA_VALUE_COLUMN] = df[METADATA_VALUE_COLUMN].fillna(EMPTY_METADATA_VALUE)
 
         production_volume_columns = task_worktime_by_phase_user.production_volume_columns
         production_volume_columns_with_task_count = ["task_count", *production_volume_columns]
