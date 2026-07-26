@@ -31,6 +31,7 @@ Available Commands
    diff
    export
    import
+   list_annotation_import_info
    list_attribute
    list_choice
    list_history
