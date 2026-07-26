@@ -22,9 +22,29 @@ class AnnotationSpecsHistories(CommandLine):
         super().__init__(service, facade, args)
         self.visualize = AddProps(self.service, args.project_id)
 
+    def _add_properties_to_annotation_specs_history(self, annotation_specs_history: dict[str, Any]) -> dict[str, Any]:
+        """
+        アノテーション仕様の履歴に、一覧表示用のキーを追加する。
+
+        以下のキーを追加する。
+        * user_id
+        * username
+
+        Args:
+            annotation_specs_history: アノテーション仕様の履歴
+
+        Returns:
+            情報が追加されたアノテーション仕様の履歴
+        """
+        account_id = annotation_specs_history["account_id"]
+        member = self.visualize.get_project_member_from_account_id(account_id) if account_id is not None else None
+        annotation_specs_history["user_id"] = member["user_id"] if member is not None else None
+        annotation_specs_history["username"] = member["username"] if member is not None else None
+        return annotation_specs_history
+
     def get_annotation_specs_histories(self, project_id: str) -> list[dict[str, Any]]:
         annotation_specs_histories, _ = self.service.api.get_annotation_specs_histories(project_id)
-        return [self.visualize.add_properties_to_annotation_specs_history(e) for e in annotation_specs_histories]
+        return [self._add_properties_to_annotation_specs_history(e) for e in annotation_specs_histories]
 
     def list_annotation_specs_histories(self, project_id: str) -> None:
         super().validate_project(project_id)

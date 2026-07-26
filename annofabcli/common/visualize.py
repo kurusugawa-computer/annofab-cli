@@ -6,7 +6,6 @@ from typing import Any
 import annofabapi
 import more_itertools
 from annofabapi.models import (
-    AnnotationSpecsHistory,
     OrganizationMember,
     ProjectMember,
     Task,
@@ -90,11 +89,6 @@ class AddProps:
         else:
             return None
 
-    @staticmethod
-    def add_properties_of_project(target: dict[str, Any], project_title: str) -> dict[str, Any]:
-        target["project_title"] = project_title
-        return target
-
     def _add_user_info(self, target: dict[str, Any]) -> dict[str, Any]:
         user_id = None
         username = None
@@ -119,13 +113,6 @@ class AddProps:
 
         return more_itertools.first_true(project_member_list, pred=lambda e: e["account_id"] == account_id)
 
-    def _get_organization_name_from_project_id(self, project_id: str) -> str:
-        """
-        project_Idから組織名を取得する。
-        """
-        organization, _ = self.service.api.get_organization_of_project(project_id)
-        return organization["organization_name"]
-
     def get_phrase_name(self, phrase_id: str, locale: MessageLocale) -> str | None:
         phrase: dict[str, Any] | None = more_itertools.first_true(self.specs_inspection_phrases, pred=lambda e: e["id"] == phrase_id)
         if phrase is None:
@@ -139,58 +126,6 @@ class AddProps:
             return None
 
         return self.get_message(label["label_name"], locale)
-
-    def get_additional_data_name(self, additional_data_definition_id: str, locale: MessageLocale, label_id: str | None = None) -> str | None:
-        def _get_additional_data_name(arg_additional_data_definitions: list[dict[str, Any]]) -> str | None:
-            additional_data = more_itertools.first_true(
-                arg_additional_data_definitions,
-                pred=lambda e: e["additional_data_definition_id"] == additional_data_definition_id,
-            )
-            if additional_data is None:
-                return None
-            return self.get_message(additional_data["name"], locale)
-
-        if label_id is not None:
-            label = more_itertools.first_true(self.specs_labels, pred=lambda e: e["label_id"] == label_id)
-            if label is None:
-                return None
-            else:
-                return _get_additional_data_name(label["additional_data_definitions"])
-        else:
-            for label in self.specs_labels:
-                additional_data_name = _get_additional_data_name(label["additional_data_definitions"])
-                if additional_data_name is not None:
-                    return additional_data_name
-
-            return None
-
-    def add_properties_to_annotation_specs_history(self, annotation_specs_history: AnnotationSpecsHistory) -> AnnotationSpecsHistory:
-        """
-        アノテーション仕様の履歴に、以下のキーを追加する.
-        user_id
-        username
-
-        Args:
-            annotation_specs_history:
-
-        Returns:
-            annotation_specs_history
-        """
-        return self._add_user_info(annotation_specs_history)
-
-    def add_properties_to_instruction(self, instruction_history: AnnotationSpecsHistory) -> AnnotationSpecsHistory:
-        """
-        作業ガイド履歴に、以下のキーを追加する.
-        user_id
-        username
-
-        Args:
-            instruction_history:
-
-        Returns:
-            instruction_history
-        """
-        return self._add_user_info(instruction_history)
 
     def add_properties_to_comment(self, comment: dict[str, Any]) -> dict[str, Any]:
         """
@@ -292,17 +227,3 @@ class AddProps:
         self._add_user_info(task_history)
         task_history["worktime_hour"] = isoduration_to_hour(task_history["accumulated_labor_time_milliseconds"])
         return task_history
-
-    def add_properties_to_task_history_event(self, task_history_event: dict[str, Any]) -> dict[str, Any]:
-        """
-        タスク履歴イベント情報に、以下のキーを追加する.
-
-        * user_id
-        * username
-        * `request`キー配下のdictに、`user_id`と`username`を追加する.
-
-        """
-        self._add_user_info(task_history_event)
-        if task_history_event.get("request") is not None:
-            self._add_user_info(task_history_event["request"])
-        return task_history_event
