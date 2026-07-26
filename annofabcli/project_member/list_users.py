@@ -10,7 +10,6 @@ from annofabcli.common.cli import ArgumentParser, CommandLine, build_annofabapi_
 from annofabcli.common.enums import OutputFormat
 from annofabcli.common.facade import AnnofabApiFacade
 from annofabcli.common.utils import get_columns_with_priority
-from annofabcli.common.visualize import AddProps
 
 logger = logging.getLogger(__name__)
 
@@ -59,7 +58,7 @@ class ListUser(CommandLine):
             logger.info(f"{project_title} のプロジェクトメンバを {len(project_members)} 件取得した。project_id='{project_id}'")
 
             for member in project_members:
-                AddProps.add_properties_of_project(member, project_title)
+                member["project_title"] = project_title
 
             all_project_members.extend(project_members)
 

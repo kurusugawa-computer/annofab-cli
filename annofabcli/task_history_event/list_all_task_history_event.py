@@ -31,6 +31,32 @@ class ListTaskHistoryEventWithJsonMain:
         self.service = service
 
     @staticmethod
+    def _add_user_info(visualize: AddProps, target: dict[str, Any]) -> None:
+        account_id = target["account_id"]
+        member = visualize.get_project_member_from_account_id(account_id) if account_id is not None else None
+        target["user_id"] = member["user_id"] if member is not None else None
+        target["username"] = member["username"] if member is not None else None
+
+    @classmethod
+    def _add_properties_to_task_history_event(cls, visualize: AddProps, task_history_event: dict[str, Any]) -> None:
+        """
+        タスク履歴イベント情報に、一覧表示用のキーを追加する。
+
+        以下のキーを追加する。
+        * user_id
+        * username
+        * request.user_id
+        * request.username
+
+        Args:
+            visualize: プロジェクトメンバ情報を解決するオブジェクト
+            task_history_event: タスク履歴イベント情報
+        """
+        cls._add_user_info(visualize, task_history_event)
+        if task_history_event.get("request") is not None:
+            cls._add_user_info(visualize, task_history_event["request"])
+
+    @staticmethod
     def filter_task_history_event(task_history_event_list: list[TaskHistoryEvent], task_id_list: list[str] | None = None) -> list[TaskHistoryEvent]:
         if task_id_list is not None:
             result = []
@@ -61,7 +87,7 @@ class ListTaskHistoryEventWithJsonMain:
                         visualize = AddProps(self.service, project_id)
 
                         for event in filtered_task_history_event_list:
-                            visualize.add_properties_to_task_history_event(event)
+                            self._add_properties_to_task_history_event(visualize, event)
 
                         return filtered_task_history_event_list
         else:
@@ -75,7 +101,7 @@ class ListTaskHistoryEventWithJsonMain:
         visualize = AddProps(self.service, project_id)
 
         for event in filtered_task_history_event_list:
-            visualize.add_properties_to_task_history_event(event)
+            self._add_properties_to_task_history_event(visualize, event)
 
         return filtered_task_history_event_list
 
