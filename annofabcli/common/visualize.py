@@ -9,7 +9,6 @@ from annofabapi.models import (
     AnnotationSpecsHistory,
     OrganizationMember,
     ProjectMember,
-    SingleAnnotation,
     Task,
     TaskHistory,
     TaskPhase,
@@ -235,36 +234,6 @@ class AddProps:
             comment_node["label_name_ja"] = self.get_label_name(comment_node["label_id"], MessageLocale.JA)
 
         return comment
-
-    def add_properties_to_single_annotation(self, annotation: SingleAnnotation) -> SingleAnnotation:
-        """
-        アノテーション情報（details）検査コメントに、以下のキーを追加する.
-        detail.label_name_en
-        detail.user_id
-        detail.username
-
-        Args:
-            annotation: アノテーション
-
-        Returns:
-            情報が追加されたアノテーション
-        """
-        detail = annotation["detail"]
-        detail["label_name_en"] = self.get_label_name(detail["label_id"], MessageLocale.EN)
-
-        account_id = detail["account_id"]
-        user_id = None
-        username = None
-        if account_id is not None:
-            member = self.get_project_member_from_account_id(account_id)
-            if member is not None:
-                user_id = member["user_id"]
-                username = member["username"]
-
-        detail["user_id"] = user_id
-        detail["username"] = username
-
-        return annotation
 
     def add_properties_to_task(self, task: Task) -> Task:
         """
