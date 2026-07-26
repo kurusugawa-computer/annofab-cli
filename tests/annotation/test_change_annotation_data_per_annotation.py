@@ -10,6 +10,7 @@ from annofabcli.annotation.change_annotation_data_per_annotation import (
     TargetAnnotationData,
     create_request_body_for_change_data,
     get_annotation_data_list_per_task_id_input_data_id,
+    merge_additional_data_list,
 )
 
 
@@ -98,6 +99,72 @@ class TestCreateRequestBodyForChangeData:
 
         assert actual.request_body["details"] == []
         assert actual.count == ChangeAnnotationDataCount(success=0, failed=1)
+
+    def test_create_request_body_with_attributes(self) -> None:
+        editor_annotation = {
+            "project_id": "prj1",
+            "task_id": "task1",
+            "input_data_id": "input1",
+            "updated_datetime": "2026-05-22T00:00:00+09:00",
+            "details": [
+                {
+                    "_type": "Update",
+                    "annotation_id": "anno1",
+                    "label_id": "label1",
+                    "additional_data_list": [
+                        {"definition_id": "attr1", "value": {"_type": "Flag", "value": False}},
+                        {"definition_id": "attr2", "value": {"_type": "Comment", "value": "before"}},
+                    ],
+                    "body": {"_type": "Inner", "data": {"_type": "Range", "begin": 0, "end": 1000}},
+                    "editor_props": {},
+                },
+            ],
+        }
+        annotation_specs = {
+            "labels": [{"label_id": "label1", "label_name": {"messages": [{"lang": "en-US", "message": "car"}]}, "additional_data_definitions": ["attr1", "attr2"]}],
+            "additionals": [
+                {"additional_data_definition_id": "attr1", "name": {"messages": [{"lang": "en-US", "message": "occluded"}]}, "type": "flag"},
+                {"additional_data_definition_id": "attr2", "name": {"messages": [{"lang": "en-US", "message": "comment"}]}, "type": "comment"},
+            ],
+        }
+        annotation_list = [
+            TargetAnnotationData(
+                task_id="task1",
+                input_data_id="input1",
+                annotation_id="anno1",
+                data={"_type": "Range", "begin": 1000, "end": 5000},
+                attributes={"occluded": True},
+            )
+        ]
+
+        actual = create_request_body_for_change_data(editor_annotation, annotation_list, annotation_specs=annotation_specs)
+
+        assert actual.count == ChangeAnnotationDataCount(success=1, failed=0)
+        assert actual.request_body["details"][0]["body"] == {"_type": "Inner", "data": {"_type": "Range", "begin": 1000, "end": 5000}}
+        assert actual.request_body["details"][0]["additional_data_list"] == [
+            {"definition_id": "attr1", "value": {"_type": "Flag", "value": True}},
+            {"definition_id": "attr2", "value": {"_type": "Comment", "value": "before"}},
+        ]
+
+
+class TestMergeAdditionalDataList:
+    def test_merge_additional_data_list(self) -> None:
+        actual = merge_additional_data_list(
+            [
+                {"definition_id": "attr1", "value": {"_type": "Flag", "value": False}},
+                {"definition_id": "attr2", "value": {"_type": "Comment", "value": "before"}},
+            ],
+            [
+                {"definition_id": "attr1", "value": {"_type": "Flag", "value": True}},
+                {"definition_id": "attr3", "value": {"_type": "Integer", "value": 3}},
+            ],
+        )
+
+        assert actual == [
+            {"definition_id": "attr1", "value": {"_type": "Flag", "value": True}},
+            {"definition_id": "attr2", "value": {"_type": "Comment", "value": "before"}},
+            {"definition_id": "attr3", "value": {"_type": "Integer", "value": 3}},
+        ]
 
 
 class TestChangeAnnotationDataPerAnnotationMain:

@@ -5,9 +5,11 @@ annotation change_data_per_annotation
 Description
 =================================
 各アノテーションの座標情報・形状情報を変更します。
+座標情報・形状情報と一緒に属性値も変更できます。
 外部ファイルが必要な塗りつぶしアノテーションなどは、このコマンドではサポートしていません。
 
 作業中状態のタスクに含まれるアノテーションは変更できません。
+属性値だけを変更したい場合は、 `annofabcli annotation change_attributes_per_annotation <../annotation/change_attributes_per_annotation.html>`_ コマンドを使用してください。
 
 
 
@@ -19,6 +21,7 @@ Examples
 
 引数 ``--json`` に、変更対象のアノテーションの情報（ ``task_id`` , ``input_data_id`` , ``annotation_id`` ）と変更後の ``data`` をJSON形式で指定します。
 ``data`` の形式はアノテーションZIP配下のJSONファイルに記載されているアノテーションの形式と同様です。詳細は https://annofab.readme.io/docs/annotation-format を参照してください。
+``attributes`` を指定すると、座標情報・形状情報と一緒に属性値も変更できます。``attributes`` に指定していない既存の属性値は維持されます。
 
 .. code-block:: json
     :caption: annotations.json
@@ -32,6 +35,9 @@ Examples
                 "_type": "Range",
                 "begin": 1000,
                 "end": 5000
+            },
+            "attributes": {
+                "occluded": true
             }
         }
     ]
@@ -60,14 +66,15 @@ CSVのフォーマットは以下の通りです。
     input_data_id,Yes,
     annotation_id,Yes,
     data,Yes,変更後のアノテーションdata（JSON形式）
+    attributes,No,変更したい属性名と値のオブジェクト（JSON形式）
 
 以下はCSVファイルのサンプルです。
 
 .. code-block::
     :caption: annotations.csv
 
-    task_id,input_data_id,annotation_id,data
-    t1,i1,a1,"{""_type"":""Range"",""begin"":1000,""end"":5000}"
+    task_id,input_data_id,annotation_id,data,attributes
+    t1,i1,a1,"{""_type"":""Range"",""begin"":1000,""end"":5000}","{""occluded"":true}"
 
 
 .. code-block::
