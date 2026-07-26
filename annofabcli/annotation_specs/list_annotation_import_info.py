@@ -7,8 +7,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from annofabapi.models import Lang
-from annofabapi.util.annotation_specs import InternationalizationMessage, get_message_with_lang
+from annofabapi.util.annotation_specs import get_attribute_name_en, get_choice_name_en, get_label_name_en
 from pydantic import BaseModel, ConfigDict
 
 import annofabcli.common.cli
@@ -72,16 +71,10 @@ def create_annotation_import_info_list(annotation_specs_v3: dict[str, Any]) -> l
 
     dict_attribute = {attribute["additional_data_definition_id"]: attribute for attribute in annotation_specs_v3["additionals"]}
 
-    def get_required_english_name(name: InternationalizationMessage) -> str:
-        result = get_message_with_lang(name, lang=Lang.EN_US)
-        if result is None:
-            raise ValueError("アノテーション仕様に英語名が存在しません。")
-        return result
-
     def create_choice_list(attribute: dict[str, Any]) -> list[AnnotationImportChoice]:
         return [
             AnnotationImportChoice(
-                choice_name_en=get_required_english_name(choice["name"]),
+                choice_name_en=get_choice_name_en(choice),
             )
             for choice in attribute["choices"]
         ]
@@ -92,7 +85,7 @@ def create_annotation_import_info_list(annotation_specs_v3: dict[str, Any]) -> l
             attribute = dict_attribute[attribute_id]
             result.append(
                 AnnotationImportAttribute(
-                    attribute_name_en=get_required_english_name(attribute["name"]),
+                    attribute_name_en=get_attribute_name_en(attribute),
                     attribute_type=attribute["type"],
                     choices=create_choice_list(attribute),
                 )
@@ -101,7 +94,7 @@ def create_annotation_import_info_list(annotation_specs_v3: dict[str, Any]) -> l
 
     return [
         AnnotationImportLabel(
-            label_name_en=get_required_english_name(label["label_name"]),
+            label_name_en=get_label_name_en(label),
             annotation_type=label["annotation_type"],
             attributes=create_attribute_list(label),
         )
@@ -214,7 +207,7 @@ def main(args: argparse.Namespace) -> None:
 def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "list_annotation_import_info"
 
-    subcommand_help = "annotation import 用のラベル名、属性名、選択肢名、種類を出力します。"
+    subcommand_help = "アノテーションをimportする際に参照すべき情報（ラベル、属性、選択肢）のみを出力します。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help)
     parse_args(parser)
