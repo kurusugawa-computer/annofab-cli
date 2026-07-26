@@ -143,7 +143,7 @@ class PrintAnnotationImportInfo(CommandLine):
             annotation_specs, _ = self.service.api.get_annotation_specs(args.project_id, query_params={"history_id": history_id, "v": "3"})
 
         elif args.annotation_specs_json_file is not None:
-            with args.annotation_specs_json_file.open() as f:
+            with args.annotation_specs_json_file.open(encoding="utf-8") as f:
                 annotation_specs = json.load(f)
 
         else:
