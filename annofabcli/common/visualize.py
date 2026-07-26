@@ -194,49 +194,6 @@ class AddProps:
         """
         return self._add_user_info(instruction_history)
 
-    def add_properties_to_inspection(self, inspection: Inspection, detail: dict[str, Any] | None = None) -> Inspection:
-        """
-        検査コメントに、以下のキーを追加する.
-        commenter_user_id
-        commenter_username
-        phrase_names_en
-        phrase_names_ja
-        label_name_en
-        label_name_en
-
-        Args:
-            inspection:
-            detail: 検査コメント情報に追加する詳細な情報
-
-        Returns:
-
-        """
-
-        def add_commenter_info() -> None:
-            commenter_user_id = None
-            commenter_username = None
-
-            commenter_account_id = inspection["commenter_account_id"]
-            if commenter_account_id is not None:
-                member = self.get_project_member_from_account_id(commenter_account_id)
-                if member is not None:
-                    commenter_user_id = member["user_id"]
-                    commenter_username = member["username"]
-
-            inspection["commenter_user_id"] = commenter_user_id
-            inspection["commenter_username"] = commenter_username
-
-        add_commenter_info()
-        inspection["phrase_names_en"] = [self.get_phrase_name(e, MessageLocale.EN) for e in inspection["phrases"]]
-        inspection["phrase_names_ja"] = [self.get_phrase_name(e, MessageLocale.JA) for e in inspection["phrases"]]
-
-        inspection["label_name_en"] = self.get_label_name(inspection["label_id"], MessageLocale.EN)
-        inspection["label_name_ja"] = self.get_label_name(inspection["label_id"], MessageLocale.JA)
-
-        if detail is not None:
-            inspection.update(detail)
-
-        return inspection
 
     def add_properties_to_comment(self, comment: dict[str, Any]) -> dict[str, Any]:
         """
