@@ -47,7 +47,6 @@ class TaskMetadataPerformance:
         production_volume_columns_with_task_count = ["task_count", *self.production_volume_columns]
 
         worktime_columns = [
-            ("real_monitored_worktime_hour/real_actual_worktime_hour", "sum"),
             ("monitored_worktime_hour", "sum"),
             *[("monitored_worktime_hour", phase) for phase in phase_list],
             ("actual_worktime_hour", "sum"),
@@ -106,7 +105,6 @@ class TaskMetadataPerformance:
 
         with numpy.errstate(divide="ignore", invalid="ignore"):
             df_result[("monitored_worktime_hour", "sum")] = df_result["monitored_worktime_hour"].sum(axis=1)
-            df_result[("real_monitored_worktime_hour/real_actual_worktime_hour", "sum")] = real_monitored_worktime_hour_per_real_actual_worktime_hour
             df_result[("actual_worktime_hour", "sum")] = df_result[("monitored_worktime_hour", "sum")] / real_monitored_worktime_hour_per_real_actual_worktime_hour
 
             phase_list = cls._get_phase_list(df_result)

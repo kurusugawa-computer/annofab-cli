@@ -51,7 +51,7 @@ class TestTaskMetadataPerformance:
 
         assert df.loc["B", ("monitored_worktime_hour", "acceptance")] == pytest.approx(0.1)
         assert df.loc["B", ("actual_worktime_hour", "acceptance")] == pytest.approx(0.05)
-        assert df.loc["B", ("real_monitored_worktime_hour/real_actual_worktime_hour", "sum")] == pytest.approx(2)
+        assert ("real_monitored_worktime_hour/real_actual_worktime_hour", "sum") not in df.columns
 
     def test__from_df_wrapper__metadataが存在しない場合は空欄にする(self):
         task = Task.from_csv(data_dir / "task.csv", custom_production_volume_list=custom_production_volume_list)

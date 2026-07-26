@@ -16,9 +16,8 @@
 
 主な列は以下の通りです。
 
-* ``real_monitored_worktime_hour/real_actual_worktime_hour`` : プロジェクト全体の計測作業時間と実績作業時間の比率。すべてのメタデータ値で同じ値です。
 * ``monitored_worktime_hour`` : 計測作業時間
-* ``actual_worktime_hour`` : 実績作業時間。 ``monitored_worktime_hour`` と ``real_monitored_worktime_hour/real_actual_worktime_hour`` から算出します。
+* ``actual_worktime_hour`` : 実績作業時間。 ``monitored_worktime_hour`` とプロジェクト全体の計測作業時間/実績作業時間の比率から算出します。
 * ``task_count`` : タスク数
 * ``input_data_count`` : 入力データ数
 * ``annotation_count`` : アノテーション数

@@ -7,7 +7,6 @@ import annofabapi
 import more_itertools
 from annofabapi.models import (
     AnnotationSpecsHistory,
-    Inspection,
     OrganizationMember,
     ProjectMember,
     SingleAnnotation,
@@ -193,7 +192,6 @@ class AddProps:
             instruction_history
         """
         return self._add_user_info(instruction_history)
-
 
     def add_properties_to_comment(self, comment: dict[str, Any]) -> dict[str, Any]:
         """
