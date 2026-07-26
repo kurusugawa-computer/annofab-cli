@@ -57,6 +57,19 @@ CSV出力
 
 ``--group_by input_data_id`` を指定すると、入力データごとラベルごとのアノテーション数を出力します。
 
+入力データあたりのアノテーション数を出力する
+--------------------------------------------------
+
+.. include:: with_per_input_data.inc
+
+.. code-block::
+
+    $ annofabcli annotation_zip count_annotation_by_label --project_id prj1 \
+      --group_by task_id --with_per_input_data --output out_by_task_label.csv
+
+追加される列名は ``per_input_data.<label_name>`` 形式です。
+全アノテーション数に対する入力データあたりの値は ``per_input_data.annotation_count`` 列に出力されます。
+
 
 Command line options
 =================================
