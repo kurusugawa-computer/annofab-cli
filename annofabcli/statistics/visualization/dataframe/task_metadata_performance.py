@@ -10,7 +10,7 @@ from annofabapi.models import TaskPhase
 from annofabcli.common.utils import print_csv
 from annofabcli.statistics.visualization.dataframe.task import Task
 from annofabcli.statistics.visualization.dataframe.task_worktime_by_phase_user import TaskWorktimeByPhaseUser
-from annofabcli.statistics.visualization.model import ProductionVolumeColumn
+from annofabcli.statistics.visualization.model import ProductionVolumeColumn, TaskCompletionCriteria
 
 logger = logging.getLogger(__name__)
 
@@ -80,6 +80,17 @@ class TaskMetadataPerformance:
             df_task[METADATA_VALUE_COLUMN] = EMPTY_METADATA_VALUE
         return df_task[["project_id", "task_id", METADATA_VALUE_COLUMN]]
 
+    @staticmethod
+    def _apply_task_completion_criteria(df: pandas.DataFrame, value_columns: list[str], task_completion_criteria: TaskCompletionCriteria) -> pandas.DataFrame:
+        """タスク完了条件に応じて、集計対象外のフェーズの値を0にする。"""
+        if task_completion_criteria == TaskCompletionCriteria.ACCEPTANCE_REACHED:
+            df.loc[df["phase"] == TaskPhase.ACCEPTANCE.value, value_columns] = 0
+
+        elif task_completion_criteria == TaskCompletionCriteria.INSPECTION_REACHED:
+            df.loc[df["phase"].isin([TaskPhase.INSPECTION.value, TaskPhase.ACCEPTANCE.value]), value_columns] = 0
+
+        return df
+
     @classmethod
     def from_df_wrapper(
         cls,
@@ -87,6 +98,7 @@ class TaskMetadataPerformance:
         task_worktime_by_phase_user: TaskWorktimeByPhaseUser,
         metadata_key: str,
         real_monitored_worktime_hour_per_real_actual_worktime_hour: float,
+        task_completion_criteria: TaskCompletionCriteria,
     ) -> TaskMetadataPerformance:
         """DataFrameのラッパーからインスタンスを生成する。"""
         metadata_value_by_task_id = cls._get_metadata_value_by_task_id(task, metadata_key)
@@ -100,6 +112,7 @@ class TaskMetadataPerformance:
         if len(df) == 0:
             return cls.empty(metadata_key, custom_production_volume_list=task_worktime_by_phase_user.custom_production_volume_list)
 
+        df = cls._apply_task_completion_criteria(df, value_columns, task_completion_criteria)
         df_result = df.pivot_table(index=METADATA_VALUE_COLUMN, columns="phase", values=value_columns, aggfunc="sum", fill_value=0)
         df_result = df_result.rename(columns={"worktime_hour": "monitored_worktime_hour"})
 

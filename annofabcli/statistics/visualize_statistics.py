@@ -315,6 +315,7 @@ class WriteCsvGraph:
                 task_worktime_by_phase_user=self._get_task_worktime_obj(),
                 metadata_key=metadata_key,
                 real_monitored_worktime_hour_per_real_actual_worktime_hour=real_worktime_ratio,
+                task_completion_criteria=self.task_completion_criteria,
             )
             self.project_dir.write_task_metadata_performance(task_metadata_performance)
 
