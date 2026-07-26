@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import logging
+import sys
 import tempfile
 from collections.abc import Collection
 from pathlib import Path
@@ -11,7 +12,7 @@ import annofabapi
 from annofabapi.models import ProjectMemberRole
 
 import annofabcli.common.cli
-from annofabcli.common.cli import ArgumentParser, CommandLine
+from annofabcli.common.cli import COMMAND_LINE_ERROR_STATUS_CODE, ArgumentParser, CommandLine
 from annofabcli.common.download import DownloadingFile
 from annofabcli.common.enums import OutputFormat
 from annofabcli.common.facade import AnnofabApiFacade, TaskQuery
@@ -127,6 +128,7 @@ class CountAnnotationMain:
         task_json_path: Path | None = None,
         target_task_ids: Collection[str] | None = None,
         task_query: TaskQuery | None = None,
+        with_per_input_data: bool = False,
     ) -> None:
         """
         ラベルごとのアノテーション数を出力します。
@@ -143,7 +145,12 @@ class CountAnnotationMain:
             if group_by == GroupBy.INPUT_DATA_ID:
                 LabelCountCsv().print_csv_by_input_data(cast(list[AnnotationCounterByInputData], counter_list), output_file, prior_label_columns=label_columns)
             else:
-                LabelCountCsv().print_csv_by_task(cast(list[AnnotationCounterByTask], counter_list), output_file, prior_label_columns=label_columns)
+                LabelCountCsv().print_csv_by_task(
+                    cast(list[AnnotationCounterByTask], counter_list),
+                    output_file,
+                    prior_label_columns=label_columns,
+                    with_per_input_data=with_per_input_data,
+                )
             return
 
         print_json(
@@ -164,6 +171,7 @@ class CountAnnotationMain:
         task_query: TaskQuery | None = None,
         additional_attribute_names: Collection[AttributeNameKey] | None = None,
         specified_attribute_names: Collection[AttributeNameKey] | None = None,
+        with_per_input_data: bool = False,
     ) -> None:
         """
         属性値ごとのアノテーション数を出力します。
@@ -185,7 +193,12 @@ class CountAnnotationMain:
             if group_by == GroupBy.INPUT_DATA_ID:
                 AttributeCountCsv().print_csv_by_input_data(cast(list[AnnotationCounterByInputData], counter_list), output_file, prior_attribute_columns=attribute_columns)
             else:
-                AttributeCountCsv().print_csv_by_task(cast(list[AnnotationCounterByTask], counter_list), output_file, prior_attribute_columns=attribute_columns)
+                AttributeCountCsv().print_csv_by_task(
+                    cast(list[AnnotationCounterByTask], counter_list),
+                    output_file,
+                    prior_attribute_columns=attribute_columns,
+                    with_per_input_data=with_per_input_data,
+                )
             return
 
         print_json(
@@ -252,6 +265,7 @@ class CountAnnotation(CommandLine):
         group_by = GroupBy(args.group_by)
         output_file: Path = args.output
         arg_format = OutputFormat(args.format)
+        with_per_input_data: bool = args.with_per_input_data
         main_obj = CountAnnotationMain(annotation_specs)
 
         downloading_obj = DownloadingFile(self.service)
@@ -281,6 +295,7 @@ class CountAnnotation(CommandLine):
                     output_file=output_file,
                     target_task_ids=task_id_list,
                     task_query=task_query,
+                    with_per_input_data=with_per_input_data,
                 )
             else:
                 main_obj.print_attribute_value_count(
@@ -293,6 +308,7 @@ class CountAnnotation(CommandLine):
                     task_query=task_query,
                     additional_attribute_names=additional_attribute_names,
                     specified_attribute_names=specified_attribute_names,
+                    with_per_input_data=with_per_input_data,
                 )
 
         if args.temp_dir is not None:
@@ -369,6 +385,11 @@ def add_common_arguments(parser: argparse.ArgumentParser) -> None:
         type=Path,
         help="指定したディレクトリに、アノテーションZIPなどの一時ファイルをダウンロードします。",
     )
+    parser.add_argument(
+        "--with_per_input_data",
+        action="store_true",
+        help="タスク単位CSVに入力データあたりのアノテーション数を追加で出力します。動画プロジェクトではフレームあたりの平均として利用できます。",
+    )
 
 
 def add_attribute_value_arguments(parser: argparse.ArgumentParser) -> None:
@@ -394,13 +415,34 @@ def add_attribute_value_arguments(parser: argparse.ArgumentParser) -> None:
     )
 
 
+def validate_with_per_input_data(args: argparse.Namespace, subcommand_name: str) -> bool:
+    """``--with_per_input_data`` と他オプションの組み合わせを検証します。"""
+    if not args.with_per_input_data:
+        return True
+
+    common_message = f"annofabcli annotation_zip {subcommand_name}: error:"
+    if args.group_by != GroupBy.TASK_ID.value:
+        print(f"{common_message} `--with_per_input_data`は`--group_by task_id`を指定したときだけ使用できます。", file=sys.stderr)  # noqa: T201
+        return False
+
+    if args.format != OutputFormat.CSV.value:
+        print(f"{common_message} `--with_per_input_data`は`--format csv`を指定したときだけ使用できます。", file=sys.stderr)  # noqa: T201
+        return False
+
+    return True
+
+
 def main_label(args: argparse.Namespace) -> None:
+    if not validate_with_per_input_data(args, "count_annotation_by_label"):
+        sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
     service = annofabcli.common.cli.build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
     CountAnnotation(service, facade, args, count_target=CountTarget.LABEL).main()
 
 
 def main_attribute_value(args: argparse.Namespace) -> None:
+    if not validate_with_per_input_data(args, "count_annotation_by_attribute_value"):
+        sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
     service = annofabcli.common.cli.build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
     CountAnnotation(service, facade, args, count_target=CountTarget.ATTRIBUTE_VALUE).main()

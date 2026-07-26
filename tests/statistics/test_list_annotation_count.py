@@ -1,6 +1,8 @@
 import collections
 from pathlib import Path
 
+import pandas
+
 from annofabcli.statistics.list_annotation_count import (
     AttributeCountCsv,
     LabelCountCsv,
@@ -104,6 +106,24 @@ class TestLabelCountCsv:
             prior_label_columns=["dog", "human"],
         )
 
+    def test_print_labels_count_csv__with_per_input_data(self, tmp_path):
+        counter_list = ListAnnotationCounterByTask().get_annotation_counter_list(data_dir / "simple-annotations.zip")
+        output_file = tmp_path / "labels_count_by_task_with_per_input_data.csv"
+
+        LabelCountCsv().print_csv_by_task(
+            counter_list,
+            output_file=output_file,
+            prior_label_columns=["dog", "human"],
+            with_per_input_data=True,
+        )
+
+        df = pandas.read_csv(output_file)
+        row = df[df["task_id"] == "sample_1"].iloc[0]
+        assert row["per_input_data.annotation_count"] == 7.0
+        assert row["per_input_data.dog"] == 1.0
+        assert row["per_input_data.human"] == 1.0
+        assert row["per_input_data.climatic"] == 1.0
+
 
 class TestAttributeCountCsv:
     def test_print_csv_by_input_data(self):
@@ -121,3 +141,22 @@ class TestAttributeCountCsv:
             output_file=output_dir / "attributes_count_by_task.csv",
             prior_attribute_columns=[("Cat", "occluded", "true"), ("climatic", "temparature", "20")],
         )
+
+    def test_print_csv_by_task__with_per_input_data(self, tmp_path):
+        counter_list = ListAnnotationCounterByTask().get_annotation_counter_list(data_dir / "simple-annotations.zip")
+        output_file = tmp_path / "attributes_count_by_task_with_per_input_data.csv"
+
+        AttributeCountCsv().print_csv_by_task(
+            counter_list,
+            output_file=output_file,
+            prior_attribute_columns=[("Cat", "occluded", "true"), ("climatic", "temparature", "20")],
+            with_per_input_data=True,
+        )
+
+        df = pandas.read_csv(output_file, header=[0, 1, 2])
+        task_id_column = next(e for e in df.columns if e[0] == "task_id")
+        row = df[df[task_id_column] == "sample_1"].iloc[0]
+        per_input_data_annotation_count_column = next(e for e in df.columns if e[0] == "per_input_data.annotation_count")
+        assert row[per_input_data_annotation_count_column] == 7.0
+        assert row[("per_input_data.Cat", "occluded", "true")] == 1.0
+        assert row[("per_input_data.climatic", "temparature", "20")] == 1.0

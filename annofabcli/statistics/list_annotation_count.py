@@ -63,6 +63,9 @@ AttributeValueKey = tuple[str, str, str]
 tuple[label_name_en, attribute_name_en, attribute_value] で表す。
 """
 
+PER_INPUT_DATA_COLUMN_PREFIX = "per_input_data"
+"""入力データあたりのアノテーション数を表す列名の接頭辞。"""
+
 LabelKeys = Collection[str]
 
 AttributeNameKey = tuple[str, str]
@@ -561,11 +564,28 @@ class AttributeCountCsv:
         value_columns = list(dict.fromkeys(value_columns).keys())
         return value_columns
 
+    @staticmethod
+    def _per_input_data_column(column: AttributeValueKey) -> AttributeValueKey:
+        return (f"{PER_INPUT_DATA_COLUMN_PREFIX}.{column[0]}", column[1], column[2])
+
+    def _per_input_data_columns(self, value_columns: list[AttributeValueKey], *, with_annotation_count: bool) -> list[AttributeValueKey]:
+        columns = [self._per_input_data_column(e) for e in value_columns]
+        if with_annotation_count:
+            return [(f"{PER_INPUT_DATA_COLUMN_PREFIX}.annotation_count", "", ""), *columns]
+        return columns
+
+    @staticmethod
+    def _per_input_data_value(annotation_count: int, input_data_count: int) -> float:
+        if input_data_count == 0:
+            return 0.0
+        return annotation_count / input_data_count
+
     def print_csv_by_task(
         self,
         counter_list: list[AnnotationCounterByTask],
         output_file: Path,
         prior_attribute_columns: list[AttributeValueKey] | None = None,
+        with_per_input_data: bool = False,  # noqa: FBT001, FBT002
     ) -> None:
         """
         タスク単位の属性値ごとアノテーション数をCSVファイルに出力します。
@@ -587,10 +607,11 @@ class AttributeCountCsv:
                 ("annotation_count", "", ""),
             ]
             value_columns = self._value_columns(counter_list, prior_attribute_columns)
-            return basic_columns + value_columns
+            per_input_data_columns = self._per_input_data_columns(value_columns, with_annotation_count=True) if with_per_input_data else []
+            return basic_columns + value_columns + per_input_data_columns
 
         def to_cell(c: AnnotationCounterByTask) -> dict[AttributeValueKey, Any]:
-            cell = {
+            cell: dict[AttributeValueKey, Any] = {
                 ("project_id", "", ""): c.project_id,
                 ("task_id", "", ""): c.task_id,
                 ("task_status", "", ""): c.task_status.value,
@@ -600,6 +621,9 @@ class AttributeCountCsv:
                 ("annotation_count", "", ""): c.annotation_count,
             }
             cell.update(c.annotation_count_by_attribute)
+            if with_per_input_data:
+                cell[(f"{PER_INPUT_DATA_COLUMN_PREFIX}.annotation_count", "", "")] = self._per_input_data_value(c.annotation_count, c.input_data_count)
+                cell.update({self._per_input_data_column(k): self._per_input_data_value(v, c.input_data_count) for k, v in c.annotation_count_by_attribute.items()})
             return cell
 
         columns = get_columns()
@@ -696,11 +720,28 @@ class LabelCountCsv:
 
         return value_columns
 
+    @staticmethod
+    def _per_input_data_column(column: str) -> str:
+        return f"{PER_INPUT_DATA_COLUMN_PREFIX}.{column}"
+
+    def _per_input_data_columns(self, value_columns: list[str], *, with_annotation_count: bool) -> list[str]:
+        columns = [self._per_input_data_column(e) for e in value_columns]
+        if with_annotation_count:
+            return [self._per_input_data_column("annotation_count"), *columns]
+        return columns
+
+    @staticmethod
+    def _per_input_data_value(annotation_count: int, input_data_count: int) -> float:
+        if input_data_count == 0:
+            return 0.0
+        return annotation_count / input_data_count
+
     def print_csv_by_task(
         self,
         counter_list: list[AnnotationCounterByTask],
         output_file: Path,
         prior_label_columns: list[str] | None = None,
+        with_per_input_data: bool = False,  # noqa: FBT001, FBT002
     ) -> None:
         """
         タスク単位のラベルごとアノテーション数をCSVファイルに出力します。
@@ -722,10 +763,11 @@ class LabelCountCsv:
                 "annotation_count",
             ]
             value_columns = self._value_columns(counter_list, prior_label_columns)
-            return basic_columns + value_columns
+            per_input_data_columns = self._per_input_data_columns(value_columns, with_annotation_count=True) if with_per_input_data else []
+            return basic_columns + value_columns + per_input_data_columns
 
         def to_dict(c: AnnotationCounterByTask) -> dict[str, Any]:
-            d = {
+            d: dict[str, Any] = {
                 "project_id": c.project_id,
                 "task_id": c.task_id,
                 "task_status": c.task_status.value,
@@ -736,6 +778,9 @@ class LabelCountCsv:
             }
             # キーをラベル名、値をラベルごとのアノテーション数にしたdictに変換する
             d.update(c.annotation_count_by_label)
+            if with_per_input_data:
+                d[self._per_input_data_column("annotation_count")] = self._per_input_data_value(c.annotation_count, c.input_data_count)
+                d.update({self._per_input_data_column(k): self._per_input_data_value(v, c.input_data_count) for k, v in c.annotation_count_by_label.items()})
             return d
 
         df = pandas.DataFrame([to_dict(e) for e in counter_list], columns=get_columns())
