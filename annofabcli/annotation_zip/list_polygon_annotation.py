@@ -55,6 +55,8 @@ class AnnotationPolygonInfo(BaseModel):
     """ポリゴンの面積。2点のポリラインの場合はNone"""
     centroid: dict[str, float] | None
     """ポリゴンの重心座標。2点のポリラインの場合はNone"""
+    bounding_box: dict[str, dict[str, float]] | None
+    """ポリゴンの外接矩形。2点のポリラインの場合はNone"""
     bounding_box_width: float | None
     """外接矩形の幅。2点のポリラインの場合はNone"""
     bounding_box_height: float | None
@@ -65,7 +67,15 @@ class AnnotationPolygonInfo(BaseModel):
     """
 
 
-def calculate_polygon_properties(points: list[dict[str, int]]) -> tuple[float | None, dict[str, float] | None, float | None, float | None]:
+def calculate_polygon_properties(
+    points: list[dict[str, int]],
+) -> tuple[
+    float | None,
+    dict[str, float] | None,
+    dict[str, dict[str, float]] | None,
+    float | None,
+    float | None,
+]:
     """
     ポリゴンの面積、重心、外接矩形のサイズを計算する。
 
@@ -73,13 +83,13 @@ def calculate_polygon_properties(points: list[dict[str, int]]) -> tuple[float | 
         points: ポリゴンの頂点リスト。各頂点は整数座標 {"x": int, "y": int} の形式。
 
     Returns:
-        (面積, 重心, 外接矩形の幅, 外接矩形の高さ) のタプル。
-        2点以下の場合はポリラインなので、(None, None, None, None) を返す。
-        無効なポリゴン（自己交差など）の場合も (None, None, None, None) を返す。
+        (面積, 重心, 外接矩形, 外接矩形の幅, 外接矩形の高さ) のタプル。
+        2点以下の場合はポリラインなので、(None, None, None, None, None) を返す。
+        無効なポリゴン（自己交差など）の場合も (None, None, None, None, None) を返す。
     """
     if len(points) < 3:
         # 2点以下の場合はポリラインなので、NA扱い
-        return None, None, None, None
+        return None, None, None, None, None
 
     try:
         # shapelyのPolygonオブジェクトを作成
@@ -95,13 +105,17 @@ def calculate_polygon_properties(points: list[dict[str, int]]) -> tuple[float | 
 
         # 外接矩形を取得
         minx, miny, maxx, maxy = polygon.bounds
+        bounding_box = {
+            "left_top": {"x": minx, "y": miny},
+            "right_bottom": {"x": maxx, "y": maxy},
+        }
         bbox_width = maxx - minx
         bbox_height = maxy - miny
     except (ValueError, ShapelyError):
         # 無効なポリゴン（例：自己交差など）の場合はNA扱い
-        return None, None, None, None
+        return None, None, None, None, None
     else:
-        return area, centroid_dict, bbox_width, bbox_height
+        return area, centroid_dict, bounding_box, bbox_width, bbox_height
 
 
 def get_annotation_polygon_info_list(simple_annotation: dict[str, Any], *, target_label_names: Collection[str] | None = None) -> list[AnnotationPolygonInfo]:
@@ -118,7 +132,7 @@ def get_annotation_polygon_info_list(simple_annotation: dict[str, Any], *, targe
             point_count = len(points)
 
             # ポリゴンのプロパティを計算
-            area, centroid, bbox_width, bbox_height = calculate_polygon_properties(points)
+            area, centroid, bounding_box, bbox_width, bbox_height = calculate_polygon_properties(points)
 
             result.append(
                 AnnotationPolygonInfo(
@@ -140,6 +154,7 @@ def get_annotation_polygon_info_list(simple_annotation: dict[str, Any], *, targe
                     point_count=point_count,
                     area=area,
                     centroid=centroid,
+                    bounding_box=bounding_box,
                     bounding_box_width=bbox_width,
                     bounding_box_height=bbox_height,
                     attributes=detail["attributes"],
@@ -204,6 +219,10 @@ def create_df(
         "area",
         "centroid.x",
         "centroid.y",
+        "bounding_box.left_top.x",
+        "bounding_box.left_top.y",
+        "bounding_box.right_bottom.x",
+        "bounding_box.right_bottom.y",
         "bounding_box_width",
         "bounding_box_height",
     ]
@@ -220,6 +239,10 @@ def create_df(
     attributes_columns = sorted([col for col in df.columns if col.startswith("attributes.")])
     # 列の順序を設定
     columns = base_columns + attributes_columns
+
+    for column in columns:
+        if column not in df.columns:
+            df[column] = pandas.NA
 
     return df[columns]
 

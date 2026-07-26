@@ -8,6 +8,7 @@ from typing import Any
 import annofabapi
 import pandas
 from annofabapi.models import SingleAnnotation
+from annofabapi.util.annotation_specs import AnnotationSpecsAccessor, get_label_name_en
 
 import annofabcli.common.cli
 from annofabcli.annotation.annotation_query import AnnotationQueryForAPI, AnnotationQueryForCLI
@@ -48,6 +49,34 @@ class ListAnnotationMain:
         self.service = service
         self.facade = AnnofabApiFacade(service)
         self.visualize = AddProps(self.service, project_id)
+        annotation_specs, _ = self.service.api.get_annotation_specs(project_id, query_params={"v": "3"})
+        self.annotation_specs_accessor = AnnotationSpecsAccessor(annotation_specs)
+
+    def _add_properties_to_single_annotation(self, annotation: SingleAnnotation) -> SingleAnnotation:
+        """
+        アノテーション情報（details）に、一覧表示用のキーを追加する。
+
+        以下のキーを追加する。
+        * detail.label_name_en
+        * detail.user_id
+        * detail.username
+
+        Args:
+            annotation: アノテーション
+
+        Returns:
+            情報が追加されたアノテーション
+        """
+        detail = annotation["detail"]
+        label = self.annotation_specs_accessor.get_label(label_id=detail["label_id"])
+        detail["label_name_en"] = get_label_name_en(label)
+
+        account_id = detail["account_id"]
+        member = self.visualize.get_project_member_from_account_id(account_id) if account_id is not None else None
+        detail["user_id"] = member["user_id"] if member is not None else None
+        detail["username"] = member["username"] if member is not None else None
+
+        return annotation
 
     def get_annotation_list(
         self,
@@ -68,7 +97,7 @@ class ListAnnotationMain:
             dict_query.update({"input_data_id": input_data_id, "exact_match_input_data_id": True})
 
         annotation_list = self.service.wrapper.get_all_annotation_list(project_id, query_params={"query": dict_query, "v": "2"})
-        return [self.visualize.add_properties_to_single_annotation(annotation) for annotation in annotation_list]
+        return [self._add_properties_to_single_annotation(annotation) for annotation in annotation_list]
 
     def get_all_annotation_list(
         self,

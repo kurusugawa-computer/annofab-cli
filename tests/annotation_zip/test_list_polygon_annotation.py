@@ -20,13 +20,18 @@ class TestCalculatePolygonProperties:
         """三角形のポリゴンのプロパティ計算をテスト"""
         points = [{"x": 0, "y": 0}, {"x": 10, "y": 0}, {"x": 0, "y": 10}]
 
-        area, centroid, bbox_width, bbox_height = calculate_polygon_properties(points)
+        area, centroid, bounding_box, bbox_width, bbox_height = calculate_polygon_properties(points)
 
         assert area is not None
         assert area == pytest.approx(50.0)  # 三角形の面積 = (10 * 10) / 2 = 50
         assert centroid is not None
         assert centroid["x"] == pytest.approx(10 / 3)
         assert centroid["y"] == pytest.approx(10 / 3)
+        assert bounding_box is not None
+        assert bounding_box["left_top"]["x"] == pytest.approx(0.0)
+        assert bounding_box["left_top"]["y"] == pytest.approx(0.0)
+        assert bounding_box["right_bottom"]["x"] == pytest.approx(10.0)
+        assert bounding_box["right_bottom"]["y"] == pytest.approx(10.0)
         assert bbox_width == pytest.approx(10.0)
         assert bbox_height == pytest.approx(10.0)
 
@@ -34,13 +39,18 @@ class TestCalculatePolygonProperties:
         """矩形のポリゴンのプロパティ計算をテスト"""
         points = [{"x": 0, "y": 0}, {"x": 20, "y": 0}, {"x": 20, "y": 10}, {"x": 0, "y": 10}]
 
-        area, centroid, bbox_width, bbox_height = calculate_polygon_properties(points)
+        area, centroid, bounding_box, bbox_width, bbox_height = calculate_polygon_properties(points)
 
         assert area is not None
         assert area == pytest.approx(200.0)  # 矩形の面積 = 20 * 10 = 200
         assert centroid is not None
         assert centroid["x"] == pytest.approx(10.0)
         assert centroid["y"] == pytest.approx(5.0)
+        assert bounding_box is not None
+        assert bounding_box["left_top"]["x"] == pytest.approx(0.0)
+        assert bounding_box["left_top"]["y"] == pytest.approx(0.0)
+        assert bounding_box["right_bottom"]["x"] == pytest.approx(20.0)
+        assert bounding_box["right_bottom"]["y"] == pytest.approx(10.0)
         assert bbox_width == pytest.approx(20.0)
         assert bbox_height == pytest.approx(10.0)
 
@@ -48,10 +58,11 @@ class TestCalculatePolygonProperties:
         """2点のポリライン（ポリゴンではない）の場合はNoneを返すことをテスト"""
         points = [{"x": 0, "y": 0}, {"x": 10, "y": 10}]
 
-        area, centroid, bbox_width, bbox_height = calculate_polygon_properties(points)
+        area, centroid, bounding_box, bbox_width, bbox_height = calculate_polygon_properties(points)
 
         assert area is None
         assert centroid is None
+        assert bounding_box is None
         assert bbox_width is None
         assert bbox_height is None
 
@@ -59,10 +70,11 @@ class TestCalculatePolygonProperties:
         """1点の場合はNoneを返すことをテスト"""
         points = [{"x": 0, "y": 0}]
 
-        area, centroid, bbox_width, bbox_height = calculate_polygon_properties(points)
+        area, centroid, bounding_box, bbox_width, bbox_height = calculate_polygon_properties(points)
 
         assert area is None
         assert centroid is None
+        assert bounding_box is None
         assert bbox_width is None
         assert bbox_height is None
 
@@ -118,6 +130,11 @@ class TestGetAnnotationPolygonInfoList:
         assert first_annotation.centroid is not None
         assert first_annotation.centroid["x"] == pytest.approx(10 / 3)
         assert first_annotation.centroid["y"] == pytest.approx(10 / 3)
+        assert first_annotation.bounding_box is not None
+        assert first_annotation.bounding_box["left_top"]["x"] == pytest.approx(0.0)
+        assert first_annotation.bounding_box["left_top"]["y"] == pytest.approx(0.0)
+        assert first_annotation.bounding_box["right_bottom"]["x"] == pytest.approx(10.0)
+        assert first_annotation.bounding_box["right_bottom"]["y"] == pytest.approx(10.0)
         assert first_annotation.bounding_box_width == pytest.approx(10.0)
         assert first_annotation.bounding_box_height == pytest.approx(10.0)
         assert first_annotation.attributes == {"occluded": True, "type": "test"}
@@ -132,6 +149,11 @@ class TestGetAnnotationPolygonInfoList:
         assert second_annotation.centroid is not None
         assert second_annotation.centroid["x"] == pytest.approx(10.0)
         assert second_annotation.centroid["y"] == pytest.approx(10.0)
+        assert second_annotation.bounding_box is not None
+        assert second_annotation.bounding_box["left_top"]["x"] == pytest.approx(0.0)
+        assert second_annotation.bounding_box["left_top"]["y"] == pytest.approx(0.0)
+        assert second_annotation.bounding_box["right_bottom"]["x"] == pytest.approx(20.0)
+        assert second_annotation.bounding_box["right_bottom"]["y"] == pytest.approx(20.0)
         assert second_annotation.bounding_box_width == pytest.approx(20.0)
         assert second_annotation.bounding_box_height == pytest.approx(20.0)
         assert second_annotation.attributes == {}
@@ -167,6 +189,7 @@ class TestGetAnnotationPolygonInfoList:
         assert annotation.point_count == 2
         assert annotation.area is None
         assert annotation.centroid is None
+        assert annotation.bounding_box is None
         assert annotation.bounding_box_width is None
         assert annotation.bounding_box_height is None
         assert len(annotation.points) == 2

@@ -42,26 +42,75 @@ JSON出力
         "attribute_name_en": "truncation",
         "attribute_name_ja": "truncation",
         "attribute_name_vi": "truncation",
-        "type": "flag",
+        "attribute_type": "flag",
         "default": false,
         "read_only": false,
         "choice_count": 0,
         "restriction_count": 0,
         "reference_label_count": 2,
-        "keybind": "Ctrl+Digit1"
+        "label_ids": [
+            "3bcd28ef-a4f1-42f0-b3d4-3bb74f52d8de",
+            "70d7fd3a-ff17-438c-8e57-187088ed79b1"
+        ],
+        "label_name_ens": [
+            "car",
+            "truck"
+        ],
+        "keybind": {
+            "alt": false,
+            "code": "Digit1",
+            "ctrl": true,
+            "shift": false
+        },
+        "keybind_text": "Ctrl+Digit1",
+        "choices": []
     },
     {
         "attribute_id": "a0f7c8ed-38dc-41e6-a18c-29a36d3e28f2",
         "attribute_name_en": "direction",
         "attribute_name_ja": "車の向き",
         "attribute_name_vi": "direction",
-        "type": "select",
+        "attribute_type": "select",
         "default": "f98a9545-5864-4e5b-a945-d327001a0179",
         "read_only": false,
         "choice_count": 6,
         "restriction_count": 1,
         "reference_label_count": 2,
-        "keybind": ""
+        "label_ids": [
+            "3bcd28ef-a4f1-42f0-b3d4-3bb74f52d8de",
+            "70d7fd3a-ff17-438c-8e57-187088ed79b1"
+        ],
+        "label_name_ens": [
+            "car",
+            "truck"
+        ],
+        "keybind": null,
+        "keybind_text": null,
+        "choices": [
+            {
+                "choice_id": "f98a9545-5864-4e5b-a945-d327001a0179",
+                "choice_name_en": "front",
+                "choice_name_ja": "正面",
+                "choice_name_vi": null,
+                "is_default": true,
+                "keybind": {
+                    "alt": false,
+                    "code": "Digit2",
+                    "ctrl": true,
+                    "shift": false
+                },
+                "keybind_text": "Ctrl+Digit2"
+            },
+            {
+                "choice_id": "fb3f0d9c-c994-4b7b-b820-95f7d17fb59b",
+                "choice_name_en": "side",
+                "choice_name_ja": "側面",
+                "choice_name_vi": null,
+                "is_default": false,
+                "keybind": null,
+                "keybind_text": null
+            }
+        ]
     }
     ]
 
@@ -86,7 +135,19 @@ JSON出力
 * ``choice_count`` : 選択肢の個数。ドロップダウン属性またはラジオボタン属性以外では0個です。
 * ``restriction_count`` : 制約の個数。
 * ``reference_label_count`` : 参照されているラベルの個数
-* ``keybind`` : キーボードショートカット
+* ``label_ids`` : 参照しているラベルのID一覧。
+* ``label_name_ens`` : 参照しているラベルの英語名一覧。
+* ``keybind`` : キーボードショートカットのJSONオブジェクト
+* ``keybind_text`` : キーボードショートカットの表示文字列。キーボードショートカットが未設定の場合は ``null`` です。
+* ``choices`` : 選択肢情報の配列。属性の種類がラジオボタンまたはドロップダウン以外の場合は空配列です。JSON形式またはpretty_json形式で出力した場合のみ含まれます。各要素のキーは以下の通りです。
+
+  * ``choice_id`` : 選択肢ID。
+  * ``choice_name_en`` : 選択肢名（英語）。
+  * ``choice_name_ja`` : 選択肢名（日本語）。
+  * ``choice_name_vi`` : 選択肢名（ベトナム語）。
+  * ``is_default`` : 初期値として設定されているか否か。
+  * ``keybind`` : 選択肢に設定されたキーボードショートカットのJSONオブジェクト。
+  * ``keybind_text`` : 選択肢に設定されたキーボードショートカットの表示文字列。キーボードショートカットが未設定の場合は ``null`` です。
 
 
 
@@ -99,5 +160,3 @@ Usage Details
    :prog: annofabcli annotation_specs list_attribute
    :nosubcommands:
    :nodefaultconst:
-
-

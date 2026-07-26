@@ -31,8 +31,8 @@ def annotation_specs() -> dict[str, Any]:
 class TestReadAttributesJson:
     def test_read_attributes_json(self) -> None:
         actual = read_attributes_json(
-            '[{"attribute_type":"flag","attribute_name_en":"weather_checked","attribute_name_ja":"天気確認済み","attribute_id":"weather_checked_attr","read_only":true,"default_value":true,"label_name_ens":["car","bus"]},'
-            '{"attribute_type":"select","attribute_name_en":"weather","choices":[{"choice_id":"sunny","choice_name_en":"sunny","choice_name_ja":"晴れ","is_default":true},{"choice_name_en":"cloudy"}],"label_ids":["car_label_id"]}]'
+            '[{"attribute_type":"flag","attribute_name_en":"weather_checked","attribute_name_ja":"天気確認済み","attribute_id":"weather_checked_attr","read_only":true,"default_value":true,"keybind":{"alt":false,"code":"Digit1","ctrl":true,"shift":false},"label_name_ens":["car","bus"]},'
+            '{"attribute_type":"select","attribute_name_en":"weather","choices":[{"choice_id":"sunny","choice_name_en":"sunny","choice_name_ja":"晴れ","is_default":true,"keybind":{"alt":false,"code":"Digit2","ctrl":true,"shift":false}},{"choice_name_en":"cloudy"}],"label_ids":["car_label_id"]}]'
         )
 
         assert actual == [
@@ -43,6 +43,7 @@ class TestReadAttributesJson:
                 attribute_id="weather_checked_attr",
                 read_only=True,
                 default_value=True,
+                keybind={"alt": False, "code": "Digit1", "ctrl": True, "shift": False},
                 label_name_ens=["car", "bus"],
             ),
             AttributeInput(
@@ -55,6 +56,7 @@ class TestReadAttributesJson:
                         choice_name_en="sunny",
                         choice_name_ja="晴れ",
                         is_default=True,
+                        keybind={"alt": False, "code": "Digit2", "ctrl": True, "shift": False},
                     ),
                     ChoiceAttributeInput(
                         choice_name_en="cloudy",
@@ -114,6 +116,7 @@ class TestResolveAttributeInputs:
                     attribute_id="weather_checked_attr",
                     read_only=True,
                     default_value=True,
+                    keybind={"alt": False, "code": "Digit1", "ctrl": True, "shift": False},
                     label_name_ens=["car", "bus"],
                 ),
                 AttributeInput(
@@ -134,6 +137,7 @@ class TestResolveAttributeInputs:
         assert actual[0].new_attribute["type"] == "flag"
         assert actual[0].new_attribute["read_only"] is True
         assert actual[0].new_attribute["default"] is True
+        assert actual[0].new_attribute["keybind"] == [{"alt": False, "code": "Digit1", "ctrl": True, "shift": False}]
         assert [label["label_id"] for label in actual[0].target_labels] == ["car_label_id", "22b5189b-af7b-4d9c-83a5-b92f122170ec"]
         assert actual[1].attribute_input.attribute_name_en == "weather"
         assert actual[1].new_attribute["type"] == "select"

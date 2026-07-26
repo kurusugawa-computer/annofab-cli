@@ -14,7 +14,7 @@ import pandas
 from annofabapi.util.annotation_specs import AnnotationSpecsAccessor, get_attribute_name_en, get_english_message
 
 import annofabcli.common.cli
-from annofabcli.annotation_specs.add_choice_attribute import ChoiceAttributeInput, build_choices, read_choices_json
+from annofabcli.annotation_specs.add_choice_attribute import ChoiceAttributeInput, build_choices, parse_keybind_in_csv, read_choices_json
 from annofabcli.common.cli import ArgumentParser, CommandLine, CommandLineWithConfirm, build_annofabapi_resource_and_login
 from annofabcli.common.facade import AnnofabApiFacade
 
@@ -71,6 +71,7 @@ def read_choices_csv(csv_path: Path) -> list[ChoiceAttributeInput]:
                 "choice_id": "string",
                 "choice_name_en": "string",
                 "choice_name_ja": "string",
+                "keybind": "string",
             },
         )
     except Exception as e:
@@ -87,6 +88,7 @@ def read_choices_csv(csv_path: Path) -> list[ChoiceAttributeInput]:
             choice_name_ja=row.get("choice_name_ja"),
             choice_id=row.get("choice_id"),
             is_default=False,
+            keybind=parse_keybind_in_csv(row.get("keybind")),
         )
         for row in df.to_dict(orient="records")
     ]
@@ -317,14 +319,23 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     attribute_group.add_argument("--attribute_name_en", type=str, help="選択肢を追加する対象属性の英語名。")
 
     sample_json = [
-        {"choice_id": "xlarge", "choice_name_en": "xlarge", "choice_name_ja": "特大"},
+        {
+            "choice_id": "xlarge",
+            "choice_name_en": "xlarge",
+            "choice_name_ja": "特大",
+            "keybind": {"alt": False, "code": "Digit1", "ctrl": True, "shift": False},
+        },
         {"choice_id": "tiny", "choice_name_en": "tiny", "choice_name_ja": "極小"},
     ]
     choice_group = parser.add_mutually_exclusive_group(required=True)
     choice_group.add_argument(
         "--choice_json",
         type=str,
-        help=f"追加する選択肢情報のJSON配列を指定します。 ``file://`` を先頭に付けるとJSON形式のファイルを指定できます。\n(例) ``{json.dumps(sample_json, ensure_ascii=False)}``",
+        help=(
+            "追加する選択肢情報のJSON配列を指定します。 ``file://`` を先頭に付けるとJSON形式のファイルを指定できます。"
+            " 任意で ``keybind`` を指定できます。 ``keybind`` にはJSONオブジェクトを指定してください。"
+            f"\n(例) ``{json.dumps(sample_json, ensure_ascii=False)}``"
+        ),
     )
     choice_group.add_argument(
         "--choice_csv",
@@ -333,7 +344,8 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
             "追加する選択肢情報のCSVファイルを指定します。 "
             "CSVには ``choice_name_en`` 列が必要です。 "
             "``choice_id`` と ``choice_name_en`` はユニークになるように指定してください。 "
-            "任意で ``choice_id`` , ``choice_name_ja`` 列を指定できます。 ``is_default`` 列が存在する場合は無視されます。"
+            "任意で ``choice_id`` , ``choice_name_ja`` , ``keybind`` 列を指定できます。"
+            " ``keybind`` 列にはJSONオブジェクト文字列を指定してください。 ``is_default`` 列が存在する場合は無視されます。"
         ),
     )
 

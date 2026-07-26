@@ -22,9 +22,11 @@ Available Commands
    list_3d_bounding_box_annotation
    list_annotation_attribute
    list_bounding_box_annotation
+   list_classification_annotation
    list_polygon_annotation
    list_polyline_annotation
    list_range_annotation
+   list_segmentation_annotation
    list_single_point_annotation
    merge
    render

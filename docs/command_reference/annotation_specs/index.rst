@@ -25,9 +25,13 @@ Available Commands
    add_labels
    change_attribute_type
    delete_attribute_restriction
+   delete_attributes
+   delete_choices
+   delete_labels
    diff
    export
    import
+   list_annotation_import_info
    list_attribute
    list_choice
    list_history
@@ -37,9 +41,15 @@ Available Commands
    list_attribute_restriction
    list_label_color
    put_label_color
+   reorder_attributes
+   reorder_choices
+   reorder_labels
    set_attribute_required
    unset_attribute_required
+   update_attributes
+   update_choices
    update_label_field_values
+   update_labels
 
 
 Usage Details

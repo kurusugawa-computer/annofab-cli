@@ -9,10 +9,11 @@ from typing import Any
 from annofabapi.models import TaskPhase
 from dataclasses_json import DataClassJsonMixin
 
-from annofabcli.common.utils import print_json
+from annofabcli.common.utils import print_json, to_filename
 from annofabcli.statistics.visualization.dataframe.cumulative_productivity import AbstractPhaseCumulativeProductivity
 from annofabcli.statistics.visualization.dataframe.productivity_per_date import AbstractPhaseProductivityPerDate
 from annofabcli.statistics.visualization.dataframe.task import Task
+from annofabcli.statistics.visualization.dataframe.task_metadata_performance import TaskMetadataPerformance
 from annofabcli.statistics.visualization.dataframe.task_worktime_by_phase_user import TaskWorktimeByPhaseUser
 from annofabcli.statistics.visualization.dataframe.user_performance import (
     UserPerformance,
@@ -179,6 +180,11 @@ class ProjectDir(DataClassJsonMixin):
     def write_whole_performance(self, whole_performance: WholePerformance) -> None:
         """`全体の生産性と品質.csv`を出力します。"""
         whole_performance.to_csv(self.project_dir / self.FILENAME_WHOLE_PERFORMANCE)
+
+    def write_task_metadata_performance(self, task_metadata_performance: TaskMetadataPerformance) -> None:
+        """タスクのメタデータ値ごとの生産性と品質を出力します。"""
+        filename = f"{to_filename(task_metadata_performance.metadata_key)}ごとの生産性と品質.csv"
+        task_metadata_performance.to_csv(self.project_dir / filename)
 
     def read_whole_productivity_per_date(self) -> WholeProductivityPerCompletedDate:
         """

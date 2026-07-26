@@ -17,6 +17,7 @@ from annofabapi.util.annotation_specs import get_label_name_en
 import annofabcli.common.cli
 from annofabcli.annotation_specs.color import RgbColor, hex_to_rgb
 from annofabcli.annotation_specs.utils import create_name
+from annofabcli.common.annofab.annotation_specs import keybind_to_api_keybind, validate_keybind_input
 from annofabcli.common.cli import (
     ArgumentParser,
     CommandLine,
@@ -240,6 +241,7 @@ def create_new_label(
     label_name_ja: str | None,
     annotation_type: str,
     color: RgbColor,
+    keybind: dict[str, Any] | None = None,
     field_values: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """
@@ -251,6 +253,7 @@ def create_new_label(
         label_name_ja: 新規ラベル日本語名
         annotation_type: アノテーション種類
         color: Annofab API向けのRGB辞書
+        keybind: 新規ラベルに設定するkeybind
         field_values: 新規ラベルに設定するfield_values
 
     Returns:
@@ -262,7 +265,7 @@ def create_new_label(
         "annotation_type": annotation_type,
         "color": color,
         # 以下はキーが存在しないとAPIエラーになるため、空の値を入れておく
-        "keybind": [],
+        "keybind": keybind_to_api_keybind(copy.deepcopy(keybind)),
         "field_values": create_label_field_values(annotation_type=annotation_type, field_values=field_values),
         "additional_data_definitions": [],
     }
@@ -289,6 +292,7 @@ def resolve_new_label_input(
     label_id: str | None,
     label_name_ja: str | None,
     color_code: str | None,
+    keybind: dict[str, Any] | None = None,
     field_values: dict[str, Any] | None = None,
 ) -> ResolvedNewLabelInput:
     """
@@ -301,6 +305,7 @@ def resolve_new_label_input(
         label_id: 追加するラベルID。未指定ならUUIDv4を自動生成
         label_name_ja: 追加するラベルの日本語名
         color_code: ``#RRGGBB`` 形式のカラーコード
+        keybind: 新規ラベルに設定するkeybind
         field_values: 新規ラベルに設定するfield_values
 
     Returns:
@@ -317,6 +322,7 @@ def resolve_new_label_input(
         label_name_ja=label_name_ja,
         annotation_type=annotation_type,
         color=color,
+        keybind=keybind,
         field_values=field_values,
     )
     return ResolvedNewLabelInput(label_id=generated_label_id, new_label=new_label)
@@ -374,6 +380,7 @@ class AddLabelMain(CommandLineWithConfirm):
         label_id: str | None,
         label_name_ja: str | None,
         color_code: str | None,
+        keybind: dict[str, Any] | None = None,
         field_values: dict[str, Any] | None = None,
         comment: str | None = None,
     ) -> bool:
@@ -386,6 +393,7 @@ class AddLabelMain(CommandLineWithConfirm):
             label_id: 追加するラベルID。未指定ならUUIDv4を自動生成
             label_name_ja: 追加するラベルの日本語名
             color_code: ``#RRGGBB`` 形式のカラーコード
+            keybind: 新規ラベルに設定するkeybind
             field_values: 新規ラベルに設定するfield_values
             comment: 変更コメント
 
@@ -403,6 +411,7 @@ class AddLabelMain(CommandLineWithConfirm):
             label_id=label_id,
             label_name_ja=label_name_ja,
             color_code=color_code,
+            keybind=keybind,
             field_values=field_values,
         )
 
@@ -429,6 +438,7 @@ class AddLabel(CommandLine):
         コマンドライン引数を解釈し、ラベル追加処理を実行する。
         """
         args = self.args
+        keybind = None if args.keybind_json is None else validate_keybind_input(get_json_from_args(args.keybind_json))
         field_values = None if args.field_values_json is None else validate_field_values_input(get_json_from_args(args.field_values_json))
 
         obj = AddLabelMain(self.service, project_id=args.project_id, all_yes=args.yes)
@@ -438,6 +448,7 @@ class AddLabel(CommandLine):
             label_id=args.label_id,
             label_name_ja=args.label_name_ja,
             color_code=args.color,
+            keybind=keybind,
             field_values=field_values,
             comment=args.comment,
         )
@@ -458,6 +469,11 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--label_id", type=str, help="追加するラベルのlabel_id。未指定の場合はUUIDv4を自動生成します。")
     parser.add_argument("--label_name_ja", type=str, help="追加するラベルの日本語名。未指定の場合は英語名と同じ値を使用します。")
     parser.add_argument("--color", type=str, help="追加するラベルの色。 ``#RRGGBB`` 形式の16進数カラーコードを指定してください。未指定の場合は自動設定されます。")
+    parser.add_argument(
+        "--keybind_json",
+        type=str,
+        help=('追加するラベルに設定するkeybindのJSONオブジェクト。 ``file://`` を先頭に付けるとJSONファイルを指定できます。 例: ``{"alt": false, "code": "Digit1", "ctrl": true, "shift": false}``'),
+    )
     parser.add_argument(
         "--field_values_json",
         type=str,

@@ -10,7 +10,7 @@ from dataclasses import dataclass
 from typing import Any
 
 import annofabapi
-from annofabapi.models import ProjectMemberRole
+from annofabapi.models import ProjectMemberRole, TaskStatus
 from annofabapi.utils import can_put_annotation
 
 import annofabcli.common.cli
@@ -134,12 +134,14 @@ class CopyAnnotationMain(CommandLineWithConfirm):
         overwrite: bool,
         merge: bool,
         change_operator_to_me: bool,
+        include_break_task: bool,
     ) -> None:
         self.service = service
         self.project_id = project_id
         self.overwrite = overwrite
         self.merge = merge
         self.change_operator_to_me = change_operator_to_me
+        self.include_break_task = include_break_task
 
         CommandLineWithConfirm.__init__(self, all_yes)
 
@@ -264,6 +266,13 @@ class CopyAnnotationMain(CommandLineWithConfirm):
             logger.warning(f"コピー先のタスク '{copy_target.dest_task_id}' は存在しません。")
             return False
 
+        if not self.include_break_task and dest_task["status"] == TaskStatus.BREAK.value:
+            logger.info(
+                f"コピー先タスク'{copy_target.dest_task_id}'は休憩中状態のため、アノテーションのコピーをスキップします。"
+                "休憩中状態のタスクにアノテーションをコピーする場合は、`--include_break_task` を指定してください。"
+            )
+            return False
+
         if not self.confirm_processing(f"'{copy_target.src}'のアノテーションを、'{copy_target.dest}'にコピーしますか？"):
             return False
 
@@ -371,6 +380,7 @@ class CopyAnnotation(CommandLine):
             overwrite=args.overwrite,
             merge=args.merge,
             change_operator_to_me=args.change_operator_to_me,
+            include_break_task=args.include_break_task,
         )
         main_obj.copy_annotations(copy_target_list, parallelism=args.parallelism)
 
@@ -411,6 +421,12 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--change_operator_to_me",
         action="store_true",
         help="過去に割り当てられていて現在の担当者が自分自身でない場合、タスクの担当者を一時的に自分自身に変更してからアノテーションをコピーします。",
+    )
+
+    parser.add_argument(
+        "--include_break_task",
+        action="store_true",
+        help="休憩中状態のコピー先タスクに対してもアノテーションをコピーします。",
     )
 
     parser.add_argument(

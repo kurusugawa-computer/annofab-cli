@@ -42,9 +42,9 @@ Examples
     :caption: field_values.json
 
     {
-        "display_name": {
-            "_type": "DisplayName",
-            "text": "歩行者"
+        "margin_of_error_tolerance": {
+            "max_pixel": 5,
+            "_type": "MarginOfErrorTolerance"
         }
     }
 
@@ -59,6 +59,21 @@ Examples
 
 
 ``field_values`` のフォーマットは、 :doc:`update_label_field_values` を参照してください。
+
+
+``keybind`` を指定して追加する場合
+----------------------------------------------
+
+.. code-block::
+
+    $ annofabcli annotation_specs add_label \
+     --project_id prj1 \
+     --label_name_en pedestrian \
+     --annotation_type bounding_box \
+     --keybind_json '{"alt": false, "code": "Digit1", "ctrl": true, "shift": false}'
+
+``--keybind_json`` にはJSONオブジェクトを指定してください。
+``code`` に指定できる値は、 `KeyboardEvent.code <https://developer.mozilla.org/ja/docs/Web/API/KeyboardEvent/code>`_ を参照してください。
 
 
 ``--annotation_type`` の値

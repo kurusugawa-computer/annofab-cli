@@ -431,6 +431,7 @@ class ImportAnnotationMain(CommandLineWithConfirm):
         is_merge: bool,
         is_overwrite: bool,
         include_complete_task: bool,
+        include_break_task: bool,
         include_on_hold_task: bool,
         converter: AnnotationConverter,
     ) -> None:
@@ -443,6 +444,7 @@ class ImportAnnotationMain(CommandLineWithConfirm):
         self.is_merge = is_merge
         self.is_overwrite = is_overwrite
         self.include_complete_task = include_complete_task
+        self.include_break_task = include_break_task
         self.include_on_hold_task = include_on_hold_task
         self.converter = converter
 
@@ -595,6 +597,10 @@ class ImportAnnotationMain(CommandLineWithConfirm):
 
         if not self.include_complete_task and task["status"] == TaskStatus.COMPLETE.value:
             logger.info(f"{logger_prefix}タスクは完了状態のため、処理をスキップします。完了状態のタスクを処理する場合は、 '--include_complete_task'を指定してください。 :: status={task['status']}")
+            return False
+
+        if not self.include_break_task and task["status"] == TaskStatus.BREAK.value:
+            logger.info(f"{logger_prefix}タスクは休憩中状態のため、処理をスキップします。休憩中状態のタスクを処理する場合は、 '--include_break_task'を指定してください。 :: status={task['status']}")
             return False
 
         if not self.include_on_hold_task and task["status"] == TaskStatus.ON_HOLD.value:
@@ -782,6 +788,7 @@ class ImportAnnotation(CommandLine):
             is_overwrite=args.overwrite,
             change_operator_to_me=args.change_operator_to_me,
             include_complete_task=args.include_complete_task,
+            include_break_task=args.include_break_task,
             include_on_hold_task=args.include_on_hold_task,
             converter=converter,
         )
@@ -839,6 +846,12 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     )
 
     parser.add_argument(
+        "--include_break_task",
+        action="store_true",
+        help="休憩中状態のタスクに対してもアノテーションをインポートします。未指定の場合は、休憩中状態のタスクはスキップされます。",
+    )
+
+    parser.add_argument(
         "--include_on_hold_task",
         action="store_true",
         help="保留中状態のタスクに対してもアノテーションをインポートします。ただし、アノテーションインポート後は保留中状態でなくなる可能性があります。"
@@ -882,6 +895,7 @@ def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse
         "アノテーションをインポートします。アノテーションのフォーマットは、Simpleアノテーションと同じフォルダ構成のzipファイルまたはディレクトリです。"
         "ただし、作業中状態のタスクはインポートできません。"
         "``--include_complete_task`` を指定すれば、完了状態のタスクにもインポートできます。"
+        "``--include_break_task`` を指定すれば、休憩中状態のタスクにもインポートできます。"
         "``--include_on_hold_task`` を指定すれば、保留中状態のタスクにもインポートできます。"
     )
     epilog = "オーナロールを持つユーザで実行してください。"

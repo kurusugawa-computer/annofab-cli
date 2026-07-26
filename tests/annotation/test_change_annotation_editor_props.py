@@ -157,6 +157,33 @@ class TestCreateRequestBodyForChangeEditorProps:
 
 
 class TestChangeAnnotationEditorPropsMain:
+    def test_change_editor_props_for_task_skips_break_task_by_default(self) -> None:
+        service = Mock()
+        service.wrapper.get_task_or_none.return_value = {
+            "task_id": "task1",
+            "phase": "annotation",
+            "status": "break",
+            "account_id": "operator1",
+            "updated_datetime": "2026-05-22T00:00:00+09:00",
+        }
+        main_obj = ChangeAnnotationEditorPropsMain(
+            service,
+            project_id="prj1",
+            target_label_ids={"label_car"},
+            editor_props={"can_delete": False},
+            change_operator_to_me=True,
+            include_complete_task=False,
+            include_break_task=False,
+            include_on_hold_task=False,
+            all_yes=True,
+        )
+
+        actual = main_obj.change_editor_props_for_task("task1")
+
+        assert actual == (False, ChangeEditorPropsCount(success=0, failed=0))
+        service.wrapper.change_task_operator.assert_not_called()
+        service.api.put_annotation.assert_not_called()
+
     def test_change_editor_props_by_input_data_uses_put_annotation(self) -> None:
         service = Mock()
         service.api.get_editor_annotation.return_value = (
@@ -184,6 +211,7 @@ class TestChangeAnnotationEditorPropsMain:
             editor_props={"can_delete": False},
             change_operator_to_me=False,
             include_complete_task=False,
+            include_break_task=False,
             include_on_hold_task=False,
             all_yes=True,
         )

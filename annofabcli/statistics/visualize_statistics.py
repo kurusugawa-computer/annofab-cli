@@ -47,6 +47,7 @@ from annofabcli.statistics.visualization.dataframe.project_performance import (
 )
 from annofabcli.statistics.visualization.dataframe.task import Task
 from annofabcli.statistics.visualization.dataframe.task_history import TaskHistory
+from annofabcli.statistics.visualization.dataframe.task_metadata_performance import TaskMetadataPerformance
 from annofabcli.statistics.visualization.dataframe.task_worktime_by_phase_user import TaskWorktimeByPhaseUser
 from annofabcli.statistics.visualization.dataframe.user import User
 from annofabcli.statistics.visualization.dataframe.user_performance import UserPerformance
@@ -84,6 +85,7 @@ class WriteCsvGraph:
         production_volume_exclude_labels: list[str] | None = None,
         include_annotation_duration_seconds: bool = False,
         include_video_duration_minutes: bool = False,
+        task_metadata_keys: list[str] | None = None,
     ) -> None:
         self.service = service
         self.project_id = project_id
@@ -101,6 +103,7 @@ class WriteCsvGraph:
         self.production_volume_exclude_labels = production_volume_exclude_labels
         self.include_annotation_duration_seconds = include_annotation_duration_seconds
         self.include_video_duration_minutes = include_video_duration_minutes
+        self.task_metadata_keys = task_metadata_keys if task_metadata_keys is not None else []
 
         self.task: Task | None = None
         self.worktime_per_date: WorktimePerDate | None = None
@@ -295,9 +298,26 @@ class WriteCsvGraph:
             task_completion_criteria=self.task_completion_criteria,
         )
         self.project_dir.write_whole_performance(whole_performance)
+        self.write_task_metadata_performance(whole_performance)
 
         if not self.output_only_text:
             self.project_dir.write_user_performance_scatter_plot(user_performance)
+
+    def write_task_metadata_performance(self, whole_performance: WholePerformance) -> None:
+        """タスクのメタデータ値ごとの生産性と品質に関する情報を出力する。"""
+        if len(self.task_metadata_keys) == 0:
+            return
+
+        real_worktime_ratio = whole_performance.series[("real_monitored_worktime_hour/real_actual_worktime_hour", "sum")]
+        for metadata_key in self.task_metadata_keys:
+            task_metadata_performance = TaskMetadataPerformance.from_df_wrapper(
+                task=self._get_task(),
+                task_worktime_by_phase_user=self._get_task_worktime_obj(),
+                metadata_key=metadata_key,
+                real_monitored_worktime_hour_per_real_actual_worktime_hour=real_worktime_ratio,
+                task_completion_criteria=self.task_completion_criteria,
+            )
+            self.project_dir.write_task_metadata_performance(task_metadata_performance)
 
     def write_cumulative_linegraph_by_user(self, user_id_list: list[str] | None = None) -> None:
         """ユーザごとの累積折れ線グラフをプロットする。"""
@@ -372,6 +392,7 @@ class VisualizingStatisticsMain:
         not_download_visualization_source_files: bool = False,
         production_volume_include_labels: list[str] | None = None,
         production_volume_exclude_labels: list[str] | None = None,
+        task_metadata_keys: list[str] | None = None,
     ) -> None:
         self.service = service
         self.facade = AnnofabApiFacade(service)
@@ -390,6 +411,7 @@ class VisualizingStatisticsMain:
         self.not_download_visualization_source_files = not_download_visualization_source_files
         self.production_volume_include_labels = production_volume_include_labels
         self.production_volume_exclude_labels = production_volume_exclude_labels
+        self.task_metadata_keys = task_metadata_keys if task_metadata_keys is not None else []
 
     def get_project_info(self, project_id: str) -> ProjectInfo:
         project_info = self.service.api.get_project(project_id)[0]
@@ -488,6 +510,7 @@ class VisualizingStatisticsMain:
             production_volume_exclude_labels=self.production_volume_exclude_labels,
             include_annotation_duration_seconds=is_video_project,
             include_video_duration_minutes=is_video_project,
+            task_metadata_keys=self.task_metadata_keys,
         )
 
         write_obj._catch_exception(write_obj.write_user_performance)()  # noqa: SLF001
@@ -600,6 +623,7 @@ class VisualizeStatistics(CommandLine):
         parallelism: int | None,
         production_volume_include_labels: list[str] | None = None,
         production_volume_exclude_labels: list[str] | None = None,
+        task_metadata_keys: list[str] | None = None,
     ) -> None:
         main_obj = VisualizingStatisticsMain(
             service=self.service,
@@ -618,6 +642,7 @@ class VisualizeStatistics(CommandLine):
             not_download_visualization_source_files=not_download_visualization_source_files,
             production_volume_include_labels=production_volume_include_labels,
             production_volume_exclude_labels=production_volume_exclude_labels,
+            task_metadata_keys=task_metadata_keys,
         )
 
         if len(project_id_list) == 1:
@@ -719,6 +744,7 @@ class VisualizeStatistics(CommandLine):
                     not_download_visualization_source_files=False,
                     production_volume_include_labels=get_list_from_args(args.production_volume_include_label) if args.production_volume_include_label is not None else None,
                     production_volume_exclude_labels=get_list_from_args(args.production_volume_exclude_label) if args.production_volume_exclude_label is not None else None,
+                    task_metadata_keys=get_list_from_args(args.task_metadata_key) if args.task_metadata_key is not None else None,
                 )
         else:
             self.visualize_statistics(
@@ -740,6 +766,7 @@ class VisualizeStatistics(CommandLine):
                 not_download_visualization_source_files=args.not_download,
                 production_volume_include_labels=get_list_from_args(args.production_volume_include_label) if args.production_volume_include_label is not None else None,
                 production_volume_exclude_labels=get_list_from_args(args.production_volume_exclude_label) if args.production_volume_exclude_label is not None else None,
+                task_metadata_keys=get_list_from_args(args.task_metadata_key) if args.task_metadata_key is not None else None,
             )
 
 
@@ -846,6 +873,12 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
             "* task_id\n"
             "* input_data_count\n"
         ),
+    )
+
+    parser.add_argument(
+        "--task_metadata_key",
+        nargs="+",
+        help="タスクのmetadataのキーを指定します。指定したキーの値ごとに、生産性と品質のCSVを追加で出力します。複数指定可能です。",
     )
 
     custom_production_volume_sample = {

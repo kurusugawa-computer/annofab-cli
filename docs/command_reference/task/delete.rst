@@ -60,7 +60,7 @@ Examples
 .. code-block::
 
     $ annofabcli task delete --project_id prj1 --task_id file://task_id.txt \
-     --task_query '{"phase":"annotation", "status:"not_started"}'
+     --task_query '{"phase":"annotation", "status":"not_started"}'
 
 Usage Details
 =================================

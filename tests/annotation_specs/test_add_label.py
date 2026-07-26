@@ -116,19 +116,33 @@ class TestResolveNewLabelInput:
             label_name_ja=None,
             color_code="#00CCFF",
             field_values={
-                "display_name": {
-                    "_type": "DisplayName",
-                    "text": "歩行者",
+                "margin_of_error_tolerance": {
+                    "max_pixel": 5,
+                    "_type": "MarginOfErrorTolerance",
                 }
             },
         )
 
         assert actual.new_label["field_values"] == {
-            "display_name": {
-                "_type": "DisplayName",
-                "text": "歩行者",
+            "margin_of_error_tolerance": {
+                "max_pixel": 5,
+                "_type": "MarginOfErrorTolerance",
             }
         }
+
+    def test_resolve_new_label_input__keybind(self, annotation_specs: dict) -> None:
+        actual = resolve_new_label_input(
+            annotation_specs,
+            label_name_en="pedestrian",
+            annotation_type="bounding_box",
+            label_id="pedestrian_label_id",
+            label_name_ja=None,
+            color_code="#00CCFF",
+            keybind={"alt": False, "code": "Digit1", "ctrl": True, "shift": False},
+            field_values=None,
+        )
+
+        assert actual.new_label["keybind"] == [{"alt": False, "code": "Digit1", "ctrl": True, "shift": False}]
 
     def test_resolve_new_label_input__segmentation_has_default_field_values(self, annotation_specs: dict) -> None:
         actual = resolve_new_label_input(
@@ -152,18 +166,18 @@ class TestResolveNewLabelInput:
             label_name_ja=None,
             color_code="#00CCFF",
             field_values={
-                "display_name": {
-                    "_type": "DisplayName",
-                    "text": "路面",
+                "margin_of_error_tolerance": {
+                    "max_pixel": 5,
+                    "_type": "MarginOfErrorTolerance",
                 }
             },
         )
 
         assert actual.new_label["field_values"] == {
             **DEFAULT_SEGMENTATION_FIELD_VALUES,
-            "display_name": {
-                "_type": "DisplayName",
-                "text": "路面",
+            "margin_of_error_tolerance": {
+                "max_pixel": 5,
+                "_type": "MarginOfErrorTolerance",
             },
         }
 
@@ -279,3 +293,14 @@ class TestValidateFieldValuesInput:
     def test_field_values_json_is_not_object(self) -> None:
         with pytest.raises(TypeError):
             add_label.validate_field_values_input([{"_type": "Dummy"}])
+
+
+class TestValidateKeybindInput:
+    def test_keybind_object_is_normalized_to_list(self) -> None:
+        actual = add_label.validate_keybind_input({"code": "Digit1", "ctrl": True})
+
+        assert actual == {"alt": False, "code": "Digit1", "ctrl": True, "shift": False}
+
+    def test_keybind_code_is_required(self) -> None:
+        with pytest.raises(ValueError):
+            add_label.validate_keybind_input({"ctrl": True})

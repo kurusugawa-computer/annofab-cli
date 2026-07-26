@@ -51,6 +51,10 @@ Examples
     $ annofabcli annotation restore --project_id prj1 --annotation backup-dir/ \
     --change_operator_to_me
 
+
+デフォルトでは、休憩中状態のタスクはアノテーションのリストアをスキップします。
+休憩中状態のタスクにもリストアする場合は、 ``--include_break_task`` を指定してください。
+
 Usage Details
 =================================
 

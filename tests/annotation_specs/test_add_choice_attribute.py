@@ -27,11 +27,12 @@ def annotation_specs() -> dict:
 
 class TestReadChoicesJson:
     def test_read_choices_json(self) -> None:
-        actual = read_choices_json('[{"choice_id":"front","choice_name_en":"front","choice_name_ja":"前","is_default":true}]')
+        actual = read_choices_json('[{"choice_id":"front","choice_name_en":"front","choice_name_ja":"前","is_default":true,"keybind":{"alt":false,"code":"Digit1","ctrl":true,"shift":false}}]')
         assert actual[0].choice_id == "front"
         assert actual[0].choice_name_en == "front"
         assert actual[0].choice_name_ja == "前"
         assert actual[0].is_default is True
+        assert actual[0].keybind == {"alt": False, "code": "Digit1", "ctrl": True, "shift": False}
 
     def test_read_choices_json__without_choice_id(self) -> None:
         actual = read_choices_json('[{"choice_name_en":"front"}]')
@@ -105,12 +106,14 @@ class TestResolveChoiceAttributeInput:
             label_ids=[],
             label_name_ens=["car"],
             read_only=True,
+            keybind={"alt": False, "code": "Digit2", "ctrl": True, "shift": False},
         )
 
         assert actual.new_attribute["additional_data_definition_id"] == "weather_attr"
         assert actual.new_attribute["type"] == "choice"
         assert actual.new_attribute["default"] == "sunny"
         assert actual.new_attribute["read_only"] is True
+        assert actual.new_attribute["keybind"] == [{"alt": False, "code": "Digit2", "ctrl": True, "shift": False}]
         assert len(actual.new_attribute["choices"]) == 2
         assert [label["label_id"] for label in actual.target_labels] == ["car_label_id"]
 
@@ -231,6 +234,7 @@ class TestBuildRequestBodyForAddChoiceAttribute:
         assert added_attribute["default"] == "sunny"
         assert added_attribute["read_only"] is True
         assert len(added_attribute["choices"]) == 2
+        assert added_attribute["choices"][0]["keybind"] == []
 
         car_label = next(label for label in labels if label["label_id"] == "car_label_id")
         bike_label = next(label for label in labels if label["label_id"] == "40f7796b-3722-4eed-9c0c-04a27f9165d2")

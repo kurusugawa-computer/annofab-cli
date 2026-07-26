@@ -67,6 +67,10 @@ Examples
     $ annofabcli annotation copy -p prj1 --input src_task_id:dest_task_id --change_operator_to_me
 
 
+デフォルトでは、休憩中状態のコピー先タスクはアノテーションのコピーをスキップします。
+休憩中状態のコピー先タスクにもコピーする場合は、 ``--include_break_task`` を指定してください。
+
+
 Usage Details
 =================================
 

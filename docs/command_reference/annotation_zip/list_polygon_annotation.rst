@@ -93,6 +93,7 @@ Examples
 * ``point_count`` : ポリゴンの頂点数
 * ``area`` : ポリゴンの面積
 * ``centroid`` : ポリゴンの重心（x, y）
+* ``bounding_box`` : ポリゴンの外接矩形。 ``left_top`` と ``right_bottom`` を持ちます。
 * ``bounding_box_width`` : 外接矩形の幅
 * ``bounding_box_height`` : 外接矩形の高さ
 * ``points`` : ポリゴンの頂点リスト
@@ -111,5 +112,3 @@ Usage Details
     :prog: annofabcli annotation_zip list_polygon_annotation
     :nosubcommands:
     :nodefaultconst:
-
-

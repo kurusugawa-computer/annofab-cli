@@ -162,10 +162,14 @@ class AttributeRestrictionMessage:
 
     def get_target_attribute_ids(
         self,
+        target_attribute_ids: Collection[str] | None = None,
         target_attribute_names: Collection[str] | None = None,
         target_label_names: Collection[str] | None = None,
     ) -> set[str]:
         result: set[str] = set()
+
+        if target_attribute_ids is not None:
+            result = result | set(target_attribute_ids)
 
         if target_attribute_names is not None:
             tmp_attribute_list = [self.get_attribute_from_name(attribute_name) for attribute_name in target_attribute_names]
@@ -184,6 +188,7 @@ class AttributeRestrictionMessage:
         self,
         restrictions: list[dict[str, Any]],
         *,
+        target_attribute_ids: Collection[str] | None = None,
         target_attribute_names: Collection[str] | None = None,
         target_label_names: Collection[str] | None = None,
     ) -> list[str]:
@@ -192,12 +197,17 @@ class AttributeRestrictionMessage:
 
         Args:
             restrictions: 属性制約のリスト
-            target_attribute_names: 取得対象のラベル名（英語）のlist
-            target_label_names: 取得対象の属性名（英語）のlist
+            target_attribute_ids: 取得対象の属性IDのlist
+            target_attribute_names: 取得対象の属性名（英語）のlist
+            target_label_names: 取得対象のラベル名（英語）のlist
         """
-        if target_attribute_names is not None or target_label_names is not None:
-            target_attribute_ids = self.get_target_attribute_ids(target_attribute_names=target_attribute_names, target_label_names=target_label_names)
-            return [self.get_restriction_text(e["additional_data_definition_id"], e["condition"]) for e in restrictions if e["additional_data_definition_id"] in target_attribute_ids]
+        if target_attribute_ids is not None or target_attribute_names is not None or target_label_names is not None:
+            resolved_target_attribute_ids = self.get_target_attribute_ids(
+                target_attribute_ids=target_attribute_ids,
+                target_attribute_names=target_attribute_names,
+                target_label_names=target_label_names,
+            )
+            return [self.get_restriction_text(e["additional_data_definition_id"], e["condition"]) for e in restrictions if e["additional_data_definition_id"] in resolved_target_attribute_ids]
         else:
             return [self.get_restriction_text(e["additional_data_definition_id"], e["condition"]) for e in restrictions]
 
@@ -205,6 +215,7 @@ class AttributeRestrictionMessage:
         self,
         restrictions: list[dict[str, Any]],
         *,
+        target_attribute_ids: Collection[str] | None = None,
         target_attribute_names: Collection[str] | None = None,
         target_label_names: Collection[str] | None = None,
     ) -> list[dict[str, Any]]:
@@ -213,14 +224,19 @@ class AttributeRestrictionMessage:
 
         Args:
             restrictions: 属性制約のリスト
+            target_attribute_ids: 取得対象の属性IDのlist
             target_attribute_names: 取得対象の属性名（英語）のlist
             target_label_names: 取得対象のラベル名（英語）のlist
 
         Returns:
             絞り込み後の属性制約一覧
         """
-        if target_attribute_names is None and target_label_names is None:
+        if target_attribute_ids is None and target_attribute_names is None and target_label_names is None:
             return restrictions
 
-        target_attribute_ids = self.get_target_attribute_ids(target_attribute_names=target_attribute_names, target_label_names=target_label_names)
-        return [restriction for restriction in restrictions if restriction["additional_data_definition_id"] in target_attribute_ids]
+        resolved_target_attribute_ids = self.get_target_attribute_ids(
+            target_attribute_ids=target_attribute_ids,
+            target_attribute_names=target_attribute_names,
+            target_label_names=target_label_names,
+        )
+        return [restriction for restriction in restrictions if restriction["additional_data_definition_id"] in resolved_target_attribute_ids]

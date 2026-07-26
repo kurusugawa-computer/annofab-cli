@@ -20,6 +20,8 @@ Examples
      --attribute_name_en unclear \
      --label_name_en car bus
 
+読み込み専用属性にする
+----------------------------------------------
 読み込み専用の属性を追加する場合は、 ``--read_only`` を指定します。
 
 .. code-block::
@@ -31,6 +33,8 @@ Examples
      --read_only \
      --label_name_en car
 
+属性の初期値を設定する
+----------------------------------------------
 初期値を指定する場合は、 ``--default_value`` を指定します。
 
 .. code-block::
@@ -44,6 +48,21 @@ Examples
 
 ``--attribute_type`` が ``flag`` の場合、 ``--default_value`` には ``true`` または ``false`` を指定します。 ``integer`` の場合は整数を指定します。
 
+
+ショートカットキーを設定する
+----------------------------------------------
+
+.. code-block::
+
+    $ annofabcli annotation_specs add_attribute \
+     --project_id prj1 \
+     --attribute_type flag \
+     --attribute_name_en unclear \
+     --keybind_json '{"alt": false, "code": "Digit1", "ctrl": true, "shift": false}' \
+     --label_name_en car
+
+``--keybind_json`` にはJSONオブジェクトを指定してください。
+``code`` に指定できる値は、 `KeyboardEvent.code <https://developer.mozilla.org/ja/docs/Web/API/KeyboardEvent/code>`_ を参照してください。
 
 .. _annotation_specs_non_choice_attribute_types:
 

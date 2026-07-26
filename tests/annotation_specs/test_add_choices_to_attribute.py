@@ -29,11 +29,15 @@ class TestResolveAddedChoicesInput:
             annotation_specs,
             attribute_id="71620647-98cf-48ad-b43b-4af425a24f32",
             attribute_name_en=None,
-            choice_inputs=read_choices_json('[{"choice_id":"xlarge","choice_name_en":"xlarge","choice_name_ja":"特大"},{"choice_id":"tiny","choice_name_en":"tiny","choice_name_ja":"極小"}]'),
+            choice_inputs=read_choices_json(
+                '[{"choice_id":"xlarge","choice_name_en":"xlarge","choice_name_ja":"特大","keybind":{"alt":false,"code":"Digit1","ctrl":true,"shift":false}},'
+                '{"choice_id":"tiny","choice_name_en":"tiny","choice_name_ja":"極小"}]'
+            ),
         )
 
         assert actual.target_attribute["additional_data_definition_id"] == "71620647-98cf-48ad-b43b-4af425a24f32"
         assert [choice["choice_id"] for choice in actual.added_choices] == ["xlarge", "tiny"]
+        assert actual.added_choices[0]["keybind"] == [{"alt": False, "code": "Digit1", "ctrl": True, "shift": False}]
 
     def test_resolve_added_choices_input__attribute_name_and_ignore_default(self, annotation_specs: dict) -> None:
         actual = resolve_added_choices_input(
@@ -48,7 +52,10 @@ class TestResolveAddedChoicesInput:
 
     def test_resolve_added_choices_input__ignore_default_in_csv(self, annotation_specs: dict, tmp_path: Path) -> None:
         csv_path = tmp_path / "choices.csv"
-        csv_path.write_text("choice_id,choice_name_en,is_default\nxlarge,xlarge,true\n", encoding="utf-8")
+        csv_path.write_text(
+            'choice_id,choice_name_en,is_default,keybind\nxlarge,xlarge,true,"{""alt"": false, ""code"": ""Digit1"", ""ctrl"": true, ""shift"": false}"\n',
+            encoding="utf-8",
+        )
 
         actual = resolve_added_choices_input(
             annotation_specs,
@@ -58,6 +65,7 @@ class TestResolveAddedChoicesInput:
         )
 
         assert actual.added_choices[0]["choice_id"] == "xlarge"
+        assert actual.added_choices[0]["keybind"] == [{"alt": False, "code": "Digit1", "ctrl": True, "shift": False}]
 
     def test_resolve_added_choices_input__duplicated_existing_choice_id(self, annotation_specs: dict) -> None:
         with pytest.raises(ValueError):
