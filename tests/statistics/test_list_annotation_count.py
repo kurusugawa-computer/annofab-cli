@@ -154,7 +154,8 @@ class TestAttributeCountCsv:
         )
 
         df = pandas.read_csv(output_file, header=[0, 1, 2])
-        row = df[df[("task_id", "Unnamed: 1_level_1", "Unnamed: 1_level_2")] == "sample_1"].iloc[0]
+        task_id_column = next(e for e in df.columns if e[0] == "task_id")
+        row = df[df[task_id_column] == "sample_1"].iloc[0]
         per_input_data_annotation_count_column = next(e for e in df.columns if e[0] == "per_input_data.annotation_count")
         assert row[per_input_data_annotation_count_column] == 7.0
         assert row[("per_input_data.Cat", "occluded", "true")] == 1.0

@@ -1,8 +1,9 @@
+import argparse
 import collections
 
 from annofabapi.models import TaskPhase, TaskStatus
 
-from annofabcli.annotation_zip.count_annotation import CountAnnotationMain
+from annofabcli.annotation_zip.count_annotation import CountAnnotationMain, validate_with_per_input_data
 from annofabcli.statistics.list_annotation_count import AnnotationCounterByTask
 
 
@@ -45,3 +46,26 @@ def test_to_attribute_value_count_dict():
     assert actual["annotation_count_by_attribute_value"] == {"dog": {"occluded": {"true": 2}}}
     assert "annotation_count_by_label" not in actual
     assert "annotation_count_by_attribute" not in actual
+
+
+class TestValidateWithPerInputData:
+    def test_group_byがtask_idでない場合はFalseを返す(self, capsys):
+        args = argparse.Namespace(with_per_input_data=True, group_by="input_data_id", format="csv")
+
+        actual = validate_with_per_input_data(args, "count_annotation_by_label")
+
+        assert actual is False
+        assert "`--group_by task_id`" in capsys.readouterr().err
+
+    def test_formatがcsvでない場合はFalseを返す(self, capsys):
+        args = argparse.Namespace(with_per_input_data=True, group_by="task_id", format="json")
+
+        actual = validate_with_per_input_data(args, "count_annotation_by_attribute_value")
+
+        assert actual is False
+        assert "`--format csv`" in capsys.readouterr().err
+
+    def test_with_per_input_dataがFalseの場合はTrueを返す(self):
+        args = argparse.Namespace(with_per_input_data=False, group_by="input_data_id", format="json")
+
+        assert validate_with_per_input_data(args, "count_annotation_by_label") is True

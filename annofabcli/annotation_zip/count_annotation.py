@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import logging
+import sys
 import tempfile
 from collections.abc import Collection
 from pathlib import Path
@@ -11,7 +12,7 @@ import annofabapi
 from annofabapi.models import ProjectMemberRole
 
 import annofabcli.common.cli
-from annofabcli.common.cli import ArgumentParser, CommandLine
+from annofabcli.common.cli import COMMAND_LINE_ERROR_STATUS_CODE, ArgumentParser, CommandLine
 from annofabcli.common.download import DownloadingFile
 from annofabcli.common.enums import OutputFormat
 from annofabcli.common.facade import AnnofabApiFacade, TaskQuery
@@ -265,10 +266,6 @@ class CountAnnotation(CommandLine):
         output_file: Path = args.output
         arg_format = OutputFormat(args.format)
         with_per_input_data: bool = args.with_per_input_data
-        if with_per_input_data and group_by != GroupBy.TASK_ID:
-            raise ValueError("`--with_per_input_data`は`--group_by task_id`を指定したときだけ使用できます。")
-        if with_per_input_data and arg_format != OutputFormat.CSV:
-            raise ValueError("`--with_per_input_data`は`--format csv`を指定したときだけ使用できます。")
         main_obj = CountAnnotationMain(annotation_specs)
 
         downloading_obj = DownloadingFile(self.service)
@@ -418,13 +415,34 @@ def add_attribute_value_arguments(parser: argparse.ArgumentParser) -> None:
     )
 
 
+def validate_with_per_input_data(args: argparse.Namespace, subcommand_name: str) -> bool:
+    """``--with_per_input_data`` と他オプションの組み合わせを検証します。"""
+    if not args.with_per_input_data:
+        return True
+
+    common_message = f"annofabcli annotation_zip {subcommand_name}: error:"
+    if args.group_by != GroupBy.TASK_ID.value:
+        print(f"{common_message} `--with_per_input_data`は`--group_by task_id`を指定したときだけ使用できます。", file=sys.stderr)  # noqa: T201
+        return False
+
+    if args.format != OutputFormat.CSV.value:
+        print(f"{common_message} `--with_per_input_data`は`--format csv`を指定したときだけ使用できます。", file=sys.stderr)  # noqa: T201
+        return False
+
+    return True
+
+
 def main_label(args: argparse.Namespace) -> None:
+    if not validate_with_per_input_data(args, "count_annotation_by_label"):
+        sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
     service = annofabcli.common.cli.build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
     CountAnnotation(service, facade, args, count_target=CountTarget.LABEL).main()
 
 
 def main_attribute_value(args: argparse.Namespace) -> None:
+    if not validate_with_per_input_data(args, "count_annotation_by_attribute_value"):
+        sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
     service = annofabcli.common.cli.build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
     CountAnnotation(service, facade, args, count_target=CountTarget.ATTRIBUTE_VALUE).main()
