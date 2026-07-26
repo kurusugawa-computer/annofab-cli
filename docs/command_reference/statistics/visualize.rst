@@ -30,6 +30,22 @@ Examples
 
 
 
+タスクのメタデータ値ごとに生産性と品質を出力する
+----------------------------------------------------------
+
+``--task_metadata_key`` で、タスクの ``metadata`` のキーを指定できます。
+指定したキーの値ごとに、生産性と品質が記載されたCSVを追加で出力します。
+
+.. code-block::
+
+    $ annofabcli statistics visualize --project_id prj1 --output_dir out_dir \
+    --task_metadata_key category
+
+上記の例では、 ``categoryごとの生産性と品質.csv`` が追加で出力されます。
+複数のキーを指定した場合は、キーごとにCSVが出力されます。
+
+
+
 集計期間も指定できます。``--start_date`` は、指定した日付以降に教師付を開始したタスクを集計します。``--end_date`` は、指定した日付以前に更新されたタスクを集計します。
 
 
@@ -301,6 +317,8 @@ CSVには以下の列が存在している必要があります。
     ├── 全体の生産性と品質.csv
     └── 日毎の生産量と生産性.csv
 
+``--task_metadata_key category`` を指定した場合、 ``categoryごとの生産性と品質.csv`` も出力されます。
+
 
 ``histogram/ヒストグラム-作業時間.html`` では、作業時間の単位を ``タスク`` 、 ``入力データ`` 、 ``アノテーション`` 、ユーザー独自の生産量に切り替えられます。たとえば ``入力データ`` を選択すると、横軸は入力データあたり作業時間[分/入力データ]、縦軸は入力データ数になります。
 
@@ -317,6 +335,7 @@ CSVには以下の列が存在している必要があります。
    visualize_output_rst/日毎の生産量と生産性_csv.rst
    visualize_output_rst/教師付開始日毎の生産量と生産性_csv.rst
    visualize_output_rst/全体の生産性と品質_csv.rst
+   visualize_output_rst/タスクメタデータごとの生産性と品質_csv.rst
    visualize_output_rst/ユーザ_日付list-作業時間_csv.rst
    visualize_output_rst/task-worktime-list-by-user-phase_csv
 
