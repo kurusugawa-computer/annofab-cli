@@ -27,8 +27,8 @@ from annofabcli.common.facade import AnnofabApiFacade
 logger = logging.getLogger(__name__)
 
 
-class CreateInspectionComment(CommandLine):
-    COMMON_MESSAGE = "annofabcli comment create_inspection: error:"
+class UpdateInspectionComment(CommandLine):
+    COMMON_MESSAGE = "annofabcli comment update_inspection: error:"
 
     def validate(self, args: argparse.Namespace) -> bool:
         if args.parallelism is not None and not args.yes:
@@ -71,14 +71,14 @@ class CreateInspectionComment(CommandLine):
         main_obj.add_comments_for_task_list(
             comments_for_task_list=comments_for_task_list,
             parallelism=args.parallelism,
-            put_mode="create",
+            put_mode="update",
         )
 
 
 def main(args: argparse.Namespace) -> None:
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
-    CreateInspectionComment(service, facade, args).main()
+    UpdateInspectionComment(service, facade, args).main()
 
 
 def parse_args(parser: argparse.ArgumentParser) -> None:
@@ -92,6 +92,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         {
             "task_id": "task1",
             "input_data_id": "input_data1",
+            "comment_id": "comment1",
             "comment": "type属性が間違っています。",
             "data": {"x": 10, "y": 20, "_type": "Point"},
         }
@@ -100,8 +101,8 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--json",
         type=str,
         help=(
-            f"作成する検査コメントの内容をJSON形式で指定してください。``file://`` を先頭に付けると、JSON形式のファイルを指定できます。\n\n"
-            f"各コメントには ``comment_id`` を指定することができます。省略した場合は自動的にUUIDv4が生成されます。\n\n"
+            f"更新する検査コメントの内容をJSON形式で指定してください。``file://`` を先頭に付けると、JSON形式のファイルを指定できます。\n\n"
+            f"各コメントには ``comment_id`` を指定してください。\n\n"
             f"(ex)  ``{json.dumps(sample_json, ensure_ascii=False)}``"
         ),
     )
@@ -110,15 +111,15 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--csv",
         type=Path,
         help=(
-            "作成する検査コメントの内容をCSV形式で指定してください。\n"
+            "更新する検査コメントの内容をCSV形式で指定してください。\n"
             "CSVには以下の列が必要です：\n\n"
             " * ``task_id`` （必須）: タスクID\n"
             " * ``input_data_id`` （必須）: 入力データID\n"
+            " * ``comment_id`` （必須）: コメントID\n"
             " * ``comment`` （必須）: コメント本文\n"
             ' * ``data`` （任意）: コメント位置情報（JSON形式の文字列。例: ``\'{"x":10,"y":20,"_type":"Point"}\' `` ）\n'
             " * ``annotation_id`` （任意）: 紐付けるアノテーションID\n"
             ' * ``phrases`` （任意）: 定型指摘IDのリスト（JSON配列形式の文字列。例: ``\'["ID1","ID2"]\' `` ）\n'
-            " * ``comment_id`` （任意）: コメントID（省略時はUUIDv4自動生成）\n"
         ),
     )
 
@@ -133,9 +134,9 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
 
 
 def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
-    subcommand_name = "create_inspection"
-    subcommand_help = "検査コメントを作成します"
-    description = "検査コメントを作成します。comment_idがすでに存在する場合、デフォルトではスキップします。"
+    subcommand_name = "update_inspection"
+    subcommand_help = "検査コメントを更新します"
+    description = "検査コメントを更新します。comment_idが存在しない場合はスキップします。"
     epilog = "チェッカーロールまたはオーナロールを持つユーザで実行してください。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)

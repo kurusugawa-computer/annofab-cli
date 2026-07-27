@@ -71,7 +71,7 @@ class CreateOnholdComment(CommandLine):
         main_obj.add_comments_for_task_list(
             comments_for_task_list=comments_for_task_list,
             parallelism=args.parallelism,
-            overwrite=args.overwrite,
+            put_mode="create",
         )
 
 
@@ -117,12 +117,6 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
             " * ``annotation_id`` （任意）: 紐付けるアノテーションID\n"
             " * ``comment_id`` （任意）: コメントID（省略時はUUIDv4自動生成）\n"
         ),
-    )
-
-    parser.add_argument(
-        "--overwrite",
-        action="store_true",
-        help="指定した場合、comment_idがすでに存在していたら上書きします。指定しなければ、スキップします。",
     )
 
     parser.add_argument(

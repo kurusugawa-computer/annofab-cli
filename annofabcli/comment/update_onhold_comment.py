@@ -7,13 +7,13 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from annofabapi.models import CommentType, ProjectMemberRole
+from annofabapi.models import CommentType
 
 import annofabcli.common.cli
 from annofabcli.comment.put_comment import (
     PutCommentMain,
-    convert_cli_inspection_comment_list,
-    read_inspection_comment_csv,
+    convert_cli_onhold_comment_list,
+    read_onhold_comment_csv,
 )
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
@@ -27,8 +27,8 @@ from annofabcli.common.facade import AnnofabApiFacade
 logger = logging.getLogger(__name__)
 
 
-class CreateInspectionComment(CommandLine):
-    COMMON_MESSAGE = "annofabcli comment create_inspection: error:"
+class UpdateOnholdComment(CommandLine):
+    COMMON_MESSAGE = "annofabcli comment update_onhold: error:"
 
     def validate(self, args: argparse.Namespace) -> bool:
         if args.parallelism is not None and not args.yes:
@@ -49,17 +49,17 @@ class CreateInspectionComment(CommandLine):
         if not self.validate(args):
             sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
-        super().validate_project(args.project_id, [ProjectMemberRole.ACCEPTER, ProjectMemberRole.OWNER])
+        super().validate_project(args.project_id)
 
         if args.json is not None:
             comment_list: Any = annofabcli.common.cli.get_json_from_args(args.json)
             if not isinstance(comment_list, list):
                 print(f"{self.COMMON_MESSAGE} argument --json: JSON形式が不正です。配列を指定してください。", file=sys.stderr)  # noqa: T201
                 sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
-            comments_for_task_list = convert_cli_inspection_comment_list(comment_list)
+            comments_for_task_list = convert_cli_onhold_comment_list(comment_list)
         elif args.csv is not None:
             try:
-                comments_for_task_list = read_inspection_comment_csv(args.csv)
+                comments_for_task_list = read_onhold_comment_csv(args.csv)
             except ValueError as e:
                 print(f"{self.COMMON_MESSAGE} argument --csv: CSVの読み込みに失敗しました。 :: {e}", file=sys.stderr)  # noqa: T201
                 sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
@@ -67,18 +67,18 @@ class CreateInspectionComment(CommandLine):
             print(f"{self.COMMON_MESSAGE} --json または --csv のいずれかを指定してください。", file=sys.stderr)  # noqa: T201
             sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
-        main_obj = PutCommentMain(self.service, project_id=args.project_id, comment_type=CommentType.INSPECTION, all_yes=self.all_yes)
+        main_obj = PutCommentMain(self.service, project_id=args.project_id, comment_type=CommentType.ONHOLD, all_yes=self.all_yes)
         main_obj.add_comments_for_task_list(
             comments_for_task_list=comments_for_task_list,
             parallelism=args.parallelism,
-            put_mode="create",
+            put_mode="update",
         )
 
 
 def main(args: argparse.Namespace) -> None:
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
-    CreateInspectionComment(service, facade, args).main()
+    UpdateOnholdComment(service, facade, args).main()
 
 
 def parse_args(parser: argparse.ArgumentParser) -> None:
@@ -92,16 +92,16 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         {
             "task_id": "task1",
             "input_data_id": "input_data1",
-            "comment": "type属性が間違っています。",
-            "data": {"x": 10, "y": 20, "_type": "Point"},
+            "comment_id": "comment1",
+            "comment": "画像が間違っています。",
         }
     ]
     input_group.add_argument(
         "--json",
         type=str,
         help=(
-            f"作成する検査コメントの内容をJSON形式で指定してください。``file://`` を先頭に付けると、JSON形式のファイルを指定できます。\n\n"
-            f"各コメントには ``comment_id`` を指定することができます。省略した場合は自動的にUUIDv4が生成されます。\n\n"
+            f"更新する保留コメントの情報をJSON形式で指定してください。``file://`` を先頭に付けると、JSON形式のファイルを指定できます。\n\n"
+            f"各コメントには ``comment_id`` を指定してください。\n\n"
             f"(ex)  ``{json.dumps(sample_json, ensure_ascii=False)}``"
         ),
     )
@@ -110,15 +110,13 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--csv",
         type=Path,
         help=(
-            "作成する検査コメントの内容をCSV形式で指定してください。\n"
+            "更新する保留コメントの内容をCSV形式で指定してください。\n"
             "CSVには以下の列が必要です：\n\n"
             " * ``task_id`` （必須）: タスクID\n"
             " * ``input_data_id`` （必須）: 入力データID\n"
+            " * ``comment_id`` （必須）: コメントID\n"
             " * ``comment`` （必須）: コメント本文\n"
-            ' * ``data`` （任意）: コメント位置情報（JSON形式の文字列。例: ``\'{"x":10,"y":20,"_type":"Point"}\' `` ）\n'
             " * ``annotation_id`` （任意）: 紐付けるアノテーションID\n"
-            ' * ``phrases`` （任意）: 定型指摘IDのリスト（JSON配列形式の文字列。例: ``\'["ID1","ID2"]\' `` ）\n'
-            " * ``comment_id`` （任意）: コメントID（省略時はUUIDv4自動生成）\n"
         ),
     )
 
@@ -133,11 +131,10 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
 
 
 def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
-    subcommand_name = "create_inspection"
-    subcommand_help = "検査コメントを作成します"
-    description = "検査コメントを作成します。comment_idがすでに存在する場合、デフォルトではスキップします。"
-    epilog = "チェッカーロールまたはオーナロールを持つユーザで実行してください。"
+    subcommand_name = "update_onhold"
+    subcommand_help = "保留コメントを更新します"
+    description = "保留コメントを更新します。comment_idが存在しない場合はスキップします。"
 
-    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
+    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description=description)
     parse_args(parser)
     return parser

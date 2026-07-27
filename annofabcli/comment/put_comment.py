@@ -8,7 +8,7 @@ import uuid
 from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 import annofabapi
 import pandas
@@ -68,6 +68,11 @@ AddedComments = dict[str, AddedCommentsForTask]
 """
 追加対象のコメント
 keyはtask_id
+"""
+
+CommentPutMode = Literal["put", "create", "update"]
+"""
+コメント登録時の動作モード
 """
 
 
@@ -236,6 +241,39 @@ class PutCommentMain(CommandLineWithConfirm):
 
         return creatable_comments
 
+    def _filter_updatable_comments(self, task_id: str, input_data_id: str, comments: list[AddedComment]) -> list[AddedComment]:
+        """既存コメントと同じcomment_idを持つコメントだけを残す。"""
+
+        target_comment_ids = {comment.comment_id for comment in comments if comment.comment_id is not None}
+        if len(target_comment_ids) == 0:
+            logger.warning(f"task_id='{task_id}', input_data_id='{input_data_id}' :: comment_idが指定されていないため、コメントの更新をスキップします。")
+            return []
+
+        old_comment_list, _ = self.service.api.get_comments(self.project_id, task_id, input_data_id, query_params={"v": "2"})
+        old_comment_ids = {comment["comment_id"] for comment in old_comment_list}
+        updatable_comments = []
+        for comment in comments:
+            if comment.comment_id is None:
+                logger.warning(f"task_id='{task_id}', input_data_id='{input_data_id}' :: comment_idが指定されていないため、コメントの更新をスキップします。")
+                continue
+
+            if comment.comment_id not in old_comment_ids:
+                logger.warning(f"task_id='{task_id}', input_data_id='{input_data_id}' :: comment_id='{comment.comment_id}'のコメントは存在しないので、コメントの更新をスキップします。")
+                continue
+            updatable_comments.append(comment)
+
+        return updatable_comments
+
+    def _filter_comments_by_put_mode(self, task_id: str, input_data_id: str, comments: list[AddedComment], put_mode: CommentPutMode) -> list[AddedComment]:
+        if put_mode == "put":
+            return comments
+        if put_mode == "create":
+            return self._filter_creatable_comments(task_id=task_id, input_data_id=input_data_id, comments=comments)
+        if put_mode == "update":
+            return self._filter_updatable_comments(task_id=task_id, input_data_id=input_data_id, comments=comments)
+
+        raise ValueError(f"未対応のコメント登録モードです。 :: put_mode='{put_mode}'")
+
     def change_to_working_status(self, project_id: str, task: dict[str, Any]) -> dict[str, Any]:
         """
         作業中状態に遷移する。必要ならば担当者を自分自身に変更する。
@@ -283,7 +321,7 @@ class PutCommentMain(CommandLineWithConfirm):
         comments_for_task: AddedCommentsForTask,
         task_index: int | None = None,
         *,
-        overwrite: bool = True,
+        put_mode: CommentPutMode = "put",
     ) -> tuple[int, int]:
         """
         タスクにコメントを付与します。
@@ -292,7 +330,7 @@ class PutCommentMain(CommandLineWithConfirm):
             task_id: タスクID
             comments_for_task: 1つのタスクに付与するコメントの集合
             task_index: タスクの連番
-            overwrite: Trueなら既存comment_idのコメントを更新する。Falseならスキップする。
+            put_mode: コメント登録時の動作モード
 
         Returns:
             (コメントを付与した入力データの個数, 付与したコメントの個数)のタプル
@@ -325,7 +363,7 @@ class PutCommentMain(CommandLineWithConfirm):
             try:
                 # コメントを付与する
                 if len(comments) > 0:
-                    target_comments = comments if overwrite else self._filter_creatable_comments(task_id=task_id, input_data_id=input_data_id, comments=comments)
+                    target_comments = self._filter_comments_by_put_mode(task_id=task_id, input_data_id=input_data_id, comments=comments, put_mode=put_mode)
                     if len(target_comments) == 0:
                         continue
 
@@ -352,17 +390,17 @@ class PutCommentMain(CommandLineWithConfirm):
         self,
         tpl: tuple[int, tuple[str, AddedCommentsForTask]],
         *,
-        overwrite: bool = True,
+        put_mode: CommentPutMode = "put",
     ) -> tuple[int, int]:
         task_index, (task_id, comments_for_task) = tpl
-        return self.add_comments_for_task(task_id=task_id, comments_for_task=comments_for_task, task_index=task_index, overwrite=overwrite)
+        return self.add_comments_for_task(task_id=task_id, comments_for_task=comments_for_task, task_index=task_index, put_mode=put_mode)
 
     def add_comments_for_task_list(
         self,
         comments_for_task_list: AddedComments,
         parallelism: int | None = None,
         *,
-        overwrite: bool = True,
+        put_mode: CommentPutMode = "put",
     ) -> None:
         tasks_count = len(comments_for_task_list)
         input_data_count = sum(len(e) for e in comments_for_task_list.values())
@@ -372,7 +410,7 @@ class PutCommentMain(CommandLineWithConfirm):
         )
 
         if parallelism is not None:
-            func = functools.partial(self.add_comments_for_task_wrapper, overwrite=overwrite)
+            func = functools.partial(self.add_comments_for_task_wrapper, put_mode=put_mode)
             with multiprocessing.Pool(parallelism) as pool:
                 result_list = pool.map(func, enumerate(comments_for_task_list.items()))
                 added_input_data_count = sum(e[0] for e in result_list)
@@ -390,7 +428,7 @@ class PutCommentMain(CommandLineWithConfirm):
                         task_id=task_id,
                         comments_for_task=comments_for_task,
                         task_index=task_index,
-                        overwrite=overwrite,
+                        put_mode=put_mode,
                     )
                     added_input_data_count += result_input_data
                     added_comment_count += result_comment

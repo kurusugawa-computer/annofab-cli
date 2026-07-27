@@ -1,12 +1,12 @@
 ==========================================
-comment create_onhold
+comment update_onhold
 ==========================================
 
 Description
 =================================
-保留コメントを作成します。
+保留コメントを更新します。
 
-``comment_id`` が一致するコメントが既に存在する場合はスキップします。既存コメントを変更する場合は、 :doc:`update_onhold` コマンドを使用してください。
+``comment_id`` が一致するコメントが存在する場合だけ更新します。存在しない場合はスキップします。
 
 Examples
 =================================
@@ -14,7 +14,7 @@ Examples
 基本的な使い方
 --------------------------
 
-``--json`` に保留コメントの内容をJSON形式で指定すると、保留コメントを作成できます。
+``--json`` に保留コメントの内容をJSON形式で指定すると、保留コメントを更新できます。
 
 .. code-block:: json
     :caption: comment.json
@@ -23,14 +23,8 @@ Examples
         {
             "task_id": "task1",
             "input_data_id": "input_data1",
+            "comment_id": "comment1",
             "comment": "画像が間違っています。"
-        },
-        {
-            "task_id": "task1",
-            "input_data_id": "input_data2",
-            "comment": "確認が必要です。",
-            "annotation_id": "foo",
-            "comment_id": "comment1"
         }
     ]
 
@@ -39,26 +33,26 @@ Examples
 
   * ``task_id``：タスクID。必須。
   * ``input_data_id``：入力データID。必須。
+  * ``comment_id``：コメントID。必須。
   * ``comment``：コメントの内容。必須。
   * ``annotation_id``：コメントに紐づくアノテーションのannotation_id。
-  * ``comment_id``：コメントID。省略した場合は自動的にUUIDv4が生成されます。
 
 .. code-block::
 
-    $ annofabcli comment create_onhold --project_id prj1 --json file://comment.json
+    $ annofabcli comment update_onhold --project_id prj1 --json file://comment.json
 
 
 CSV形式で指定する場合
 --------------------------
 
-``--csv`` にCSVファイルを指定すると、保留コメントを作成できます。
+``--csv`` にCSVファイルを指定すると、保留コメントを更新できます。
 
 .. code-block:: text
     :caption: comment.csv
 
-    task_id,input_data_id,comment,annotation_id,comment_id
-    task001,input001,画像が間違っている,,
-    task001,input002,確認が必要,anno789,
+    task_id,input_data_id,comment_id,comment,annotation_id
+    task001,input001,comment001,画像が間違っている,
+    task001,input002,comment002,確認が必要,anno789
 
 CSVの列は、JSONの各キーに対応しています。
 
@@ -69,14 +63,14 @@ CSVの列は、JSONの各キーに対応しています。
 
 .. code-block::
 
-    $ annofabcli comment create_onhold --project_id prj1 --json file://comment.json \
+    $ annofabcli comment update_onhold --project_id prj1 --json file://comment.json \
     --parallelism 4 --yes
 
 Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.comment.create_onhold_comment.add_parser
-   :prog: annofabcli comment create_onhold
+   :ref: annofabcli.comment.update_onhold_comment.add_parser
+   :prog: annofabcli comment update_onhold
    :nosubcommands:
    :nodefaultconst:

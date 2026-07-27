@@ -10,6 +10,8 @@ import annofabcli.comment.put_inspection_comment
 import annofabcli.comment.put_inspection_comment_simply
 import annofabcli.comment.put_onhold_comment
 import annofabcli.comment.put_onhold_comment_simply
+import annofabcli.comment.update_inspection_comment
+import annofabcli.comment.update_onhold_comment
 import annofabcli.common.cli
 
 
@@ -27,6 +29,8 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     annofabcli.comment.put_inspection_comment_simply.add_parser(subparsers)
     annofabcli.comment.put_onhold_comment.add_parser(subparsers)
     annofabcli.comment.put_onhold_comment_simply.add_parser(subparsers)
+    annofabcli.comment.update_inspection_comment.add_parser(subparsers)
+    annofabcli.comment.update_onhold_comment.add_parser(subparsers)
 
 
 def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
