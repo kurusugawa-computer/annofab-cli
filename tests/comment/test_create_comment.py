@@ -1,6 +1,11 @@
 from pathlib import Path
+from unittest.mock import Mock
+
+from annofabapi.models import CommentType
 
 from annofabcli.comment.put_comment import (
+    AddedComment,
+    PutCommentMain,
     convert_cli_inspection_comment_list,
     convert_cli_onhold_comment_list,
     read_inspection_comment_csv,
@@ -48,6 +53,59 @@ def test_convert_cli_onhold_comment_list() -> None:
     assert comment.comment == "コメント1"
     assert comment.annotation_id == "annotation1"
     assert comment.comment_id == "comment1"
+
+
+def test_add_comments_for_task_cancels_acceptance_before_creating_inspection_comment() -> None:
+    service = Mock()
+    service.api.account_id = "account1"
+    service.api.get_project.return_value = ({"input_data_type": "image"}, None)
+    service.api.get_annotation_specs.return_value = ({"labels": []}, None)
+    service.api.get_comments.return_value = ([], None)
+    service.api.get_editor_annotation.return_value = ({"details": []}, None)
+    service.wrapper.get_task_or_none.return_value = {
+        "task_id": "task1",
+        "input_data_id_list": ["input1"],
+        "status": "complete",
+        "phase": "acceptance",
+        "phase_stage": 1,
+        "account_id": "account1",
+        "updated_datetime": "2024-01-01T00:00:00+00:00",
+    }
+    service.wrapper.cancel_completed_task.return_value = {
+        "task_id": "task1",
+        "input_data_id_list": ["input1"],
+        "status": "not_started",
+        "phase": "acceptance",
+        "phase_stage": 1,
+        "account_id": "account1",
+        "updated_datetime": "2024-01-01T00:01:00+00:00",
+    }
+    service.wrapper.change_task_status_to_working.return_value = {
+        "task_id": "task1",
+        "input_data_id_list": ["input1"],
+        "status": "working",
+        "phase": "acceptance",
+        "phase_stage": 1,
+        "account_id": "account1",
+        "updated_datetime": "2024-01-01T00:02:00+00:00",
+    }
+
+    main_obj = PutCommentMain(service, project_id="project1", comment_type=CommentType.INSPECTION, all_yes=True)
+    result = main_obj.add_comments_for_task(
+        task_id="task1",
+        comments_for_task={"input1": [AddedComment(comment="コメント1", data={"x": 10, "y": 20, "_type": "Point"})]},
+        put_mode="create",
+        cancel_acceptance=True,
+    )
+
+    assert result == (1, 1)
+    service.wrapper.cancel_completed_task.assert_called_once_with(
+        "project1",
+        "task1",
+        operator_account_id="account1",
+        last_updated_datetime="2024-01-01T00:00:00+00:00",
+    )
+    service.api.batch_update_comments.assert_called_once()
 
 
 def test_read_inspection_comment_csv(tmp_path: Path) -> None:

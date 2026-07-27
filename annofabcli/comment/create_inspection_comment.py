@@ -49,7 +49,8 @@ class CreateInspectionComment(CommandLine):
         if not self.validate(args):
             sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
-        super().validate_project(args.project_id, [ProjectMemberRole.ACCEPTER, ProjectMemberRole.OWNER])
+        required_project_member_roles = [ProjectMemberRole.OWNER] if args.cancel_acceptance else [ProjectMemberRole.ACCEPTER, ProjectMemberRole.OWNER]
+        super().validate_project(args.project_id, required_project_member_roles)
 
         if args.json is not None:
             comment_list: Any = annofabcli.common.cli.get_json_from_args(args.json)
@@ -72,6 +73,7 @@ class CreateInspectionComment(CommandLine):
             comments_for_task_list=comments_for_task_list,
             parallelism=args.parallelism,
             put_mode="create",
+            cancel_acceptance=args.cancel_acceptance,
         )
 
 
@@ -129,6 +131,12 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         help="使用するプロセス数（並列度）を指定してください。指定する場合は必ず ``--yes`` を指定してください。指定しない場合は、逐次的に処理します。",
     )
 
+    parser.add_argument(
+        "--cancel_acceptance",
+        action="store_true",
+        help="完了状態の受入フェーズを取り消してから検査コメントを作成します。差し戻し前に検査コメントを作成する場合などに使用します。",
+    )
+
     parser.set_defaults(subcommand_func=main)
 
 
@@ -136,7 +144,7 @@ def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse
     subcommand_name = "create_inspection"
     subcommand_help = "検査コメントを作成します"
     description = "検査コメントを作成します。comment_idがすでに存在する場合、デフォルトではスキップします。"
-    epilog = "チェッカーロールまたはオーナロールを持つユーザで実行してください。"
+    epilog = "チェッカーロールまたはオーナロールを持つユーザで実行してください。``--cancel_acceptance`` を指定した場合は、オーナロールを持つユーザで実行してください。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
     parse_args(parser)
