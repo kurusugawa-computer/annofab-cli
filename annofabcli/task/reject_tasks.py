@@ -125,6 +125,7 @@ class RejectTasksMain(CommandLineWithConfirm):
         assign_last_annotator: bool,
         assigned_annotator: AssignedAnnotator | None,
         cancel_acceptance: bool = False,
+        include_on_hold_task: bool = False,
         task_query: TaskQuery | None = None,
     ) -> bool:
         """
@@ -142,6 +143,10 @@ class RejectTasksMain(CommandLineWithConfirm):
             logger.warning(f"task_id='{task_id}' :: タスクのstatusが'作業中'なので、差し戻しできません。")
             return False
 
+        if task["status"] == TaskStatus.ON_HOLD.value and not include_on_hold_task:
+            logger.warning(f"task_id='{task_id}' :: タスクのstatusが'保留中'なので、差し戻しできません。保留中状態のタスクも差し戻す場合は、'--include_on_hold_task'を指定してください。")
+            return False
+
         if task["status"] == TaskStatus.COMPLETE.value and not cancel_acceptance:
             logger.warning(f"task_id='{task_id}' :: タスクのstatusが'完了'なので、差し戻しできません。受入完了を取消す場合は、コマンドライン引数に'--cancel_acceptance'を追加してください。")
             return False
@@ -150,10 +155,7 @@ class RejectTasksMain(CommandLineWithConfirm):
             logger.debug(f"task_id='{task_id}' : `--task_query`の条件にマッチしないため、スキップします。 :: task_query='{task_query}'")
             return False
 
-        if not self.confirm_reject_task(task_id, assign_last_annotator=assign_last_annotator, assigned_annotator=assigned_annotator):  # noqa: SIM103
-            return False
-
-        return True
+        return self.confirm_reject_task(task_id, assign_last_annotator=assign_last_annotator, assigned_annotator=assigned_annotator)
 
     def reject_task_with_adding_comment(
         self,
@@ -164,6 +166,7 @@ class RejectTasksMain(CommandLineWithConfirm):
         assign_last_annotator: bool = True,
         assigned_annotator: AssignedAnnotator | None = None,
         cancel_acceptance: bool = False,
+        include_on_hold_task: bool = False,
         task_query: TaskQuery | None = None,
         task_index: int | None = None,
     ) -> bool:
@@ -195,6 +198,7 @@ class RejectTasksMain(CommandLineWithConfirm):
             assign_last_annotator=assign_last_annotator,
             assigned_annotator=assigned_annotator,
             cancel_acceptance=cancel_acceptance,
+            include_on_hold_task=include_on_hold_task,
             task_query=task_query,
         ):
             return False
@@ -248,6 +252,7 @@ class RejectTasksMain(CommandLineWithConfirm):
         assign_last_annotator: bool = True,  # noqa: FBT001, FBT002
         assigned_annotator: AssignedAnnotator | None = None,
         cancel_acceptance: bool = False,  # noqa: FBT001, FBT002
+        include_on_hold_task: bool = False,  # noqa: FBT001, FBT002
         task_query: TaskQuery | None = None,
     ) -> bool:
         task_index, task_id = tpl
@@ -260,6 +265,7 @@ class RejectTasksMain(CommandLineWithConfirm):
                 assign_last_annotator=assign_last_annotator,
                 assigned_annotator=assigned_annotator,
                 cancel_acceptance=cancel_acceptance,
+                include_on_hold_task=include_on_hold_task,
                 task_query=task_query,
             )
         except Exception:  # pylint: disable=broad-except
@@ -274,6 +280,7 @@ class RejectTasksMain(CommandLineWithConfirm):
         assign_last_annotator: bool = True,  # noqa: FBT001, FBT002
         assigned_annotator: AssignedAnnotator | None = None,
         cancel_acceptance: bool = False,  # noqa: FBT001, FBT002
+        include_on_hold_task: bool = False,  # noqa: FBT001, FBT002
         task_query: TaskQuery | None = None,
         parallelism: int | None = None,
     ) -> None:
@@ -290,6 +297,7 @@ class RejectTasksMain(CommandLineWithConfirm):
                 assign_last_annotator=assign_last_annotator,
                 assigned_annotator=assigned_annotator,
                 cancel_acceptance=cancel_acceptance,
+                include_on_hold_task=include_on_hold_task,
                 task_query=task_query,
             )
             with multiprocessing.Pool(parallelism) as pool:
@@ -309,6 +317,7 @@ class RejectTasksMain(CommandLineWithConfirm):
                         assign_last_annotator=assign_last_annotator,
                         assigned_annotator=assigned_annotator,
                         cancel_acceptance=cancel_acceptance,
+                        include_on_hold_task=include_on_hold_task,
                         task_query=task_query,
                     )
                     if result:
@@ -397,6 +406,7 @@ class RejectTasks(CommandLine):
             assign_last_annotator=assign_last_annotator,
             assigned_annotator=assigned_annotator,
             cancel_acceptance=args.cancel_acceptance,
+            include_on_hold_task=args.include_on_hold_task,
             task_query=task_query,
             parallelism=args.parallelism,
         )
@@ -458,6 +468,12 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     )
 
     parser.add_argument("--cancel_acceptance", action="store_true", help="受入完了状態を取り消して、タスクを差し戻します。")
+
+    parser.add_argument(
+        "--include_on_hold_task",
+        action="store_true",
+        help="指定した場合、保留中状態のタスクも差し戻します。指定しない場合、保留中状態のタスクはスキップします。",
+    )
 
     argument_parser.add_task_query()
 

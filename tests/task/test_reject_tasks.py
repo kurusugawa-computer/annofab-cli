@@ -15,6 +15,7 @@ def create_args(**kwargs) -> argparse.Namespace:
         "not_assign": False,
         "assigned_annotator_user_id": None,
         "cancel_acceptance": False,
+        "include_on_hold_task": False,
         "comment": None,
         "task_query": None,
         "comment_data": None,
@@ -102,3 +103,56 @@ def test_main_stops_when_assigned_annotator_user_id_is_not_project_member(monkey
     command.main()
 
     reject_task_list_mock.assert_not_called()
+
+
+def create_task_dict(*, status: str = "not_started", phase: str = "acceptance") -> dict:
+    return {
+        "project_id": "project1",
+        "task_id": "task1",
+        "status": status,
+        "phase": phase,
+        "phase_stage": 1,
+        "updated_datetime": "2024-01-01T00:00:00+00:00",
+        "input_data_id_list": ["input1"],
+        "account_id": "account1",
+        "histories_by_phase": [],
+        "work_time_span": 0,
+        "number_of_rejections": 0,
+        "started_datetime": None,
+        "operation_updated_datetime": None,
+        "sampling": None,
+        "metadata": {},
+    }
+
+
+def test_reject_task_skips_on_hold_task_by_default() -> None:
+    service = Mock()
+    service.wrapper.get_task_or_none.return_value = create_task_dict(status="on_hold")
+    main_obj = reject_tasks.RejectTasksMain(service, comment_data=None, all_yes=True)
+
+    result = main_obj.reject_task_with_adding_comment(
+        project_id="project1",
+        task_id="task1",
+        assign_last_annotator=True,
+        assigned_annotator=None,
+    )
+
+    assert result is False
+    service.wrapper.reject_task.assert_not_called()
+
+
+def test_reject_task_allows_on_hold_task_when_option_is_enabled() -> None:
+    service = Mock()
+    service.wrapper.get_task_or_none.return_value = create_task_dict(status="on_hold")
+    main_obj = reject_tasks.RejectTasksMain(service, comment_data=None, all_yes=True)
+
+    result = main_obj.reject_task_with_adding_comment(
+        project_id="project1",
+        task_id="task1",
+        assign_last_annotator=True,
+        assigned_annotator=None,
+        include_on_hold_task=True,
+    )
+
+    assert result is True
+    service.wrapper.reject_task.assert_called_once()
