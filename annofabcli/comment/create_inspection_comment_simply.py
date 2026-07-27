@@ -61,7 +61,7 @@ class CreateInspectionCommentSimply(CommandLine):
                     }
                 else:
                     print(  # noqa: T201
-                        f"{self.COMMON_MESSAGE}: カスタムプロジェクト（ビルトインのエディタプラグインを使用していない）に検査コメントを作成する場合は、'--comment_data' または '--custom_project_type'を指定してください。",  # noqa: E501
+                        f"{self.COMMON_MESSAGE} カスタムプロジェクト（ビルトインのエディタプラグインを使用していない）に検査コメントを作成する場合は、'--comment_data' または '--custom_project_type'を指定してください。",  # noqa: E501
                         file=sys.stderr,
                     )
                     sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
