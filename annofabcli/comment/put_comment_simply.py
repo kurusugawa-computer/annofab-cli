@@ -88,13 +88,10 @@ class PutCommentSimplyMain(CommandLineWithConfirm):
     def cancel_acceptance_if_needed(self, task: dict[str, Any], *, cancel_acceptance: bool, logging_prefix: str = "") -> dict[str, Any]:
         """必要ならば受入完了状態を取り消す。"""
 
-        if not cancel_acceptance:
+        if not self._needs_cancel_acceptance(task, cancel_acceptance=cancel_acceptance):
             return task
 
         task_id = task["task_id"]
-        if task["phase"] != TaskPhase.ACCEPTANCE.value or task["status"] != TaskStatus.COMPLETE.value:
-            return task
-
         canceled_task = self.service.wrapper.cancel_completed_task(
             self.project_id,
             task_id,
@@ -103,6 +100,14 @@ class PutCommentSimplyMain(CommandLineWithConfirm):
         )
         logger.debug(f"{logging_prefix} :: task_id='{task_id}'のタスクに対して受入取消を実施（完了状態から未着手状態に変更）しました。")
         return canceled_task
+
+    def _needs_cancel_acceptance(self, task: dict[str, Any], *, cancel_acceptance: bool) -> bool:
+        """受入完了状態の取消が必要かどうかを返す。"""
+
+        if not cancel_acceptance:
+            return False
+
+        return task["phase"] == TaskPhase.ACCEPTANCE.value and task["status"] == TaskStatus.COMPLETE.value
 
     def _can_add_comment(
         self,
@@ -149,14 +154,20 @@ class PutCommentSimplyMain(CommandLineWithConfirm):
 
         logger.debug(f"{logging_prefix} : task_id = {task['task_id']}, status = {task['status']}, phase = {task['phase']}, ")
 
-        task = self.cancel_acceptance_if_needed(task, cancel_acceptance=cancel_acceptance, logging_prefix=logging_prefix)
-
-        if not self._can_add_comment(
+        needs_cancel_acceptance = self._needs_cancel_acceptance(task, cancel_acceptance=cancel_acceptance)
+        if not needs_cancel_acceptance and not self._can_add_comment(
             task=task,
         ):
             return False
 
         if not self.confirm_processing(f"task_id='{task_id}' のタスクに{self.comment_type_name}を付与しますか？"):
+            return False
+
+        task = self.cancel_acceptance_if_needed(task, cancel_acceptance=cancel_acceptance, logging_prefix=logging_prefix)
+
+        if not self._can_add_comment(
+            task=task,
+        ):
             return False
 
         # コメントを付与するには作業中状態にする必要があるので、タスクの状態を作業中にする
