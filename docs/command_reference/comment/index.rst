@@ -16,6 +16,7 @@ Available Commands
    :titlesonly:
 
    create_inspection
+   create_inspection_simply
    create_onhold
    delete
    download

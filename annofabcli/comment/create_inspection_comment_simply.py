@@ -20,14 +20,9 @@ from annofabcli.common.facade import AnnofabApiFacade
 
 logger = logging.getLogger(__name__)
 
-DEPRECATED_MESSAGE = (
-    "[DEPRECATED] :: `comment put_inspection_simply` コマンドは非推奨です。代わりに `comment create_inspection_simply` コマンドを使用してください。 "
-    "`comment put_inspection_simply` コマンドは2027/04/01以降に廃止予定です。"
-)
 
-
-class PutInspectionCommentSimply(CommandLine):
-    COMMON_MESSAGE = "annofabcli comment put_inspection_simply: error:"
+class CreateInspectionCommentSimply(CommandLine):
+    COMMON_MESSAGE = "annofabcli comment create_inspection_simply: error:"
 
     def validate(self, args: argparse.Namespace) -> bool:
         if args.parallelism is not None and not args.yes:
@@ -40,13 +35,12 @@ class PutInspectionCommentSimply(CommandLine):
         return True
 
     def main(self) -> None:
-        print(DEPRECATED_MESSAGE, file=sys.stderr)  # noqa: T201
-
         args = self.args
         if not self.validate(args):
             sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
-        super().validate_project(args.project_id, [ProjectMemberRole.ACCEPTER, ProjectMemberRole.OWNER])
+        required_project_member_roles = [ProjectMemberRole.OWNER] if args.cancel_acceptance else [ProjectMemberRole.ACCEPTER, ProjectMemberRole.OWNER]
+        super().validate_project(args.project_id, required_project_member_roles)
 
         comment_data = annofabcli.common.cli.get_json_from_args(args.comment_data)
         custom_project_type = CustomProjectType(args.custom_project_type) if args.custom_project_type is not None else None
@@ -67,7 +61,7 @@ class PutInspectionCommentSimply(CommandLine):
                     }
                 else:
                     print(  # noqa: T201
-                        f"{self.COMMON_MESSAGE}: カスタムプロジェクト（ビルトインのエディタプラグインを使用していない）に検査コメントを付与する場合は、'--comment_data' または '--custom_project_type'を指定してください。",  # noqa: E501
+                        f"{self.COMMON_MESSAGE} カスタムプロジェクト（ビルトインのエディタプラグインを使用していない）に検査コメントを作成する場合は、'--comment_data' または '--custom_project_type'を指定してください。",  # noqa: E501
                         file=sys.stderr,
                     )
                     sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
@@ -79,13 +73,14 @@ class PutInspectionCommentSimply(CommandLine):
             task_ids=task_id_list,
             comment_info=AddedSimpleComment(comment=args.comment, data=comment_data, phrases=phrase_id_list),
             parallelism=args.parallelism,
+            cancel_acceptance=args.cancel_acceptance,
         )
 
 
 def main(args: argparse.Namespace) -> None:
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
-    PutInspectionCommentSimply(service, facade, args).main()
+    CreateInspectionCommentSimply(service, facade, args).main()
 
 
 def parse_args(parser: argparse.ArgumentParser) -> None:
@@ -99,14 +94,14 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         type=str,
         nargs="+",
         required=True,
-        help=("検査コメントを付与するタスクのtask_idを指定してください。\n``file://`` を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。"),
+        help=("検査コメントを作成するタスクのtask_idを指定してください。\n``file://`` を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。"),
     )
 
     parser.add_argument(
         "--comment",
         type=str,
         required=True,
-        help="付与する検査コメントのメッセージを指定します。",
+        help="作成する検査コメントのメッセージを指定します。",
     )
 
     parser.add_argument("--phrase_id", type=str, nargs="+", help="定型指摘コメントのIDを指定してください。")
@@ -114,7 +109,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--comment_data",
         type=str,
-        help="検査コメントを付与する位置や区間をJSON形式で指定します。\n"
+        help="検査コメントを作成する位置や区間をJSON形式で指定します。\n"
         "``file://`` を先頭に付けると、JSON形式のファイルを指定できます。\n"
         "デフォルトの検査コメントの種類と位置は以下の通りです。\n"
         "\n"
@@ -137,15 +132,20 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         help="使用するプロセス数（並列度）を指定してください。指定する場合は必ず ``--yes`` を指定してください。指定しない場合は、逐次的に処理します。",
     )
 
+    parser.add_argument(
+        "--cancel_acceptance",
+        action="store_true",
+        help="完了状態の受入フェーズを取り消してから検査コメントを作成します。差し戻し前に検査コメントを作成する場合などに使用します。",
+    )
+
     parser.set_defaults(subcommand_func=main)
 
 
 def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
-    subcommand_name = "put_inspection_simply"
-    subcommand_help = "[DEPRECATED] ``comment put_inspection`` コマンドよりも、簡単に検査コメントを付与します。"
-    description = f"{DEPRECATED_MESSAGE}\n``comment put_inspection`` コマンドよりも、簡単に検査コメントを付与します。"
-    epilog = "チェッカーロールまたはオーナロールを持つユーザで実行してください。"
+    subcommand_name = "create_inspection_simply"
+    subcommand_help = "``comment create_inspection`` コマンドよりも、簡単に検査コメントを作成します。"
+    epilog = "チェッカーロールまたはオーナロールを持つユーザで実行してください。``--cancel_acceptance`` を指定した場合は、オーナロールを持つユーザで実行してください。"
 
-    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description=description, epilog=epilog)
+    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, epilog=epilog)
     parse_args(parser)
     return parser

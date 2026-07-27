@@ -85,6 +85,25 @@ class PutCommentSimplyMain(CommandLineWithConfirm):
         changed_task = self.service.wrapper.change_task_status_to_working(project_id, task_id)
         return changed_task
 
+    def cancel_acceptance_if_needed(self, task: dict[str, Any], *, cancel_acceptance: bool, logging_prefix: str = "") -> dict[str, Any]:
+        """必要ならば受入完了状態を取り消す。"""
+
+        if not cancel_acceptance:
+            return task
+
+        task_id = task["task_id"]
+        if task["phase"] != TaskPhase.ACCEPTANCE.value or task["status"] != TaskStatus.COMPLETE.value:
+            return task
+
+        canceled_task = self.service.wrapper.cancel_completed_task(
+            self.project_id,
+            task_id,
+            operator_account_id=task["account_id"],
+            last_updated_datetime=task["updated_datetime"],
+        )
+        logger.debug(f"{logging_prefix} :: task_id='{task_id}'のタスクに対して受入取消を実施（完了状態から未着手状態に変更）しました。")
+        return canceled_task
+
     def _can_add_comment(
         self,
         task: dict[str, Any],
@@ -106,6 +125,8 @@ class PutCommentSimplyMain(CommandLineWithConfirm):
         task_id: str,
         comment_info: AddedSimpleComment,
         task_index: int | None = None,
+        *,
+        cancel_acceptance: bool = False,
     ) -> bool:
         """
         タスクにコメントを付与します。
@@ -114,6 +135,7 @@ class PutCommentSimplyMain(CommandLineWithConfirm):
             task_id: タスクID
             comment_info: コメント情報
             task_index: タスクの連番
+            cancel_acceptance: Trueなら受入完了状態を取り消してからコメントを付与する。
 
         Returns:
             付与したコメントの数
@@ -126,6 +148,8 @@ class PutCommentSimplyMain(CommandLineWithConfirm):
             return False
 
         logger.debug(f"{logging_prefix} : task_id = {task['task_id']}, status = {task['status']}, phase = {task['phase']}, ")
+
+        task = self.cancel_acceptance_if_needed(task, cancel_acceptance=cancel_acceptance, logging_prefix=logging_prefix)
 
         if not self._can_add_comment(
             task=task,
@@ -156,10 +180,10 @@ class PutCommentSimplyMain(CommandLineWithConfirm):
                 self.service.wrapper.change_task_operator(self.project_id, task_id, task["account_id"])
                 logger.debug(f"task_id'{task_id}' :: 担当者を元のユーザ( account_id='{task['account_id']}'）に戻しました。")
 
-    def add_comments_for_task_wrapper(self, tpl: tuple[int, str], comment_info: AddedSimpleComment) -> bool:
+    def add_comments_for_task_wrapper(self, tpl: tuple[int, str], comment_info: AddedSimpleComment, *, cancel_acceptance: bool = False) -> bool:
         task_index, task_id = tpl
         try:
-            return self.put_comment_for_task(task_id=task_id, comment_info=comment_info, task_index=task_index)
+            return self.put_comment_for_task(task_id=task_id, comment_info=comment_info, task_index=task_index, cancel_acceptance=cancel_acceptance)
         except Exception:  # pylint: disable=broad-except
             logger.warning(f"task_id='{task_id}' :: コメントの付与に失敗しました。", exc_info=True)
             return False
@@ -169,11 +193,13 @@ class PutCommentSimplyMain(CommandLineWithConfirm):
         task_ids: Collection[str],
         comment_info: AddedSimpleComment,
         parallelism: int | None = None,
+        *,
+        cancel_acceptance: bool = False,
     ) -> None:
         logger.info(f"{len(task_ids)} 件のタスクに{self.comment_type_name}を付与します。")
 
         if parallelism is not None:
-            func = partial(self.add_comments_for_task_wrapper, comment_info=comment_info)
+            func = partial(self.add_comments_for_task_wrapper, comment_info=comment_info, cancel_acceptance=cancel_acceptance)
             with multiprocessing.Pool(parallelism) as pool:
                 result_bool_list = pool.map(func, enumerate(task_ids))
                 success_count = len([e for e in result_bool_list if e])
@@ -187,6 +213,7 @@ class PutCommentSimplyMain(CommandLineWithConfirm):
                         task_id=task_id,
                         comment_info=comment_info,
                         task_index=task_index,
+                        cancel_acceptance=cancel_acceptance,
                     )
                     if result:
                         success_count += 1
