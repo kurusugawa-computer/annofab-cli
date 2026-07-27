@@ -18,6 +18,7 @@ Available Commands
    create_inspection
    create_inspection_simply
    create_onhold
+   create_onhold_simply
    delete
    download
    list

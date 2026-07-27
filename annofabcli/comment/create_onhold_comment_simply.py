@@ -18,14 +18,9 @@ from annofabcli.common.facade import AnnofabApiFacade
 
 logger = logging.getLogger(__name__)
 
-DEPRECATED_MESSAGE = (
-    "[DEPRECATED] :: `comment put_onhold_simply` コマンドは非推奨です。代わりに `comment create_onhold_simply` コマンドを使用してください。 "
-    "`comment put_onhold_simply` コマンドは2027/04/01以降に廃止予定です。"
-)
 
-
-class PutOnholdCommentSimply(CommandLine):
-    COMMON_MESSAGE = "annofabcli comment put_onhold_simply: error:"
+class CreateOnholdCommentSimply(CommandLine):
+    COMMON_MESSAGE = "annofabcli comment create_onhold_simply: error:"
 
     def validate(self, args: argparse.Namespace) -> bool:
         if args.parallelism is not None and not args.yes:
@@ -38,8 +33,6 @@ class PutOnholdCommentSimply(CommandLine):
         return True
 
     def main(self) -> None:
-        print(DEPRECATED_MESSAGE, file=sys.stderr)  # noqa: T201
-
         args = self.args
         if not self.validate(args):
             sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
@@ -58,7 +51,7 @@ class PutOnholdCommentSimply(CommandLine):
 def main(args: argparse.Namespace) -> None:
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
-    PutOnholdCommentSimply(service, facade, args).main()
+    CreateOnholdCommentSimply(service, facade, args).main()
 
 
 def parse_args(parser: argparse.ArgumentParser) -> None:
@@ -72,14 +65,14 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         type=str,
         nargs="+",
         required=True,
-        help=("コメントを付与するタスクのtask_idを指定してください。\n``file://`` を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。"),
+        help=("保留コメントを作成するタスクのtask_idを指定してください。\n``file://`` を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。"),
     )
 
     parser.add_argument(
         "--comment",
         type=str,
         required=True,
-        help="コメントのメッセージを指定します。",
+        help="作成する保留コメントのメッセージを指定します。",
     )
 
     parser.add_argument(
@@ -93,8 +86,8 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
 
 
 def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
-    subcommand_name = "put_onhold_simply"
-    subcommand_help = "``comment put_onhold`` コマンドよりも、簡単に保留コメントを付与します。"
+    subcommand_name = "create_onhold_simply"
+    subcommand_help = "``comment create_onhold`` コマンドよりも、簡単に保留コメントを作成します。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help)
     parse_args(parser)

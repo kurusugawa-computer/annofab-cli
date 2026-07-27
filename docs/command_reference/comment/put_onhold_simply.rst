@@ -6,7 +6,12 @@ Description
 =================================
 ``comment put_onhold`` コマンドよりも、簡単に保留コメントを付与できます。
 
-    
+.. warning::
+
+    このコマンドは非推奨です。代わりに :doc:`create_onhold_simply` コマンドを使用してください。
+
+    ``comment put_onhold_simply`` コマンドは2027/04/01以降に廃止予定です。
+
 
 
 Examples
