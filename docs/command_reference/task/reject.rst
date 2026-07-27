@@ -6,6 +6,7 @@ Description
 =================================
 タスクを差し戻します。
 ただし作業中状態のタスクに対しては差し戻せません。
+休憩中状態や保留中状態のタスクは、デフォルトではスキップします。
 
 
 
@@ -98,6 +99,28 @@ Examples
     --not_assign
 
 
+休憩中状態のタスクも差し戻す
+--------------------------------------
+
+デフォルトでは休憩中状態のタスクはスキップします。休憩中状態のタスクも差し戻す場合は、 ``--include_break_task`` を指定してください。
+
+.. code-block::
+
+    $ annofabcli task reject --project_id prj1 --task_id file://tasks.txt \
+    --include_break_task
+
+
+保留中状態のタスクも差し戻す
+--------------------------------------
+
+デフォルトでは保留中状態のタスクはスキップします。保留中状態のタスクも差し戻す場合は、 ``--include_on_hold_task`` を指定してください。
+
+.. code-block::
+
+    $ annofabcli task reject --project_id prj1 --task_id file://tasks.txt \
+    --include_on_hold_task
+
+
 
 
 
@@ -152,5 +175,4 @@ Usage Details
    :prog: annofabcli task reject
    :nosubcommands:
    :nodefaultconst:
-
 
