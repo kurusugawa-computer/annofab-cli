@@ -11,6 +11,7 @@ from annofabcli.comment.put_comment import (
     read_inspection_comment_csv,
     read_onhold_comment_csv,
 )
+from annofabcli.comment.put_comment_simply import AddedSimpleComment, PutCommentSimplyMain
 
 
 def test_convert_cli_inspection_comment_list() -> None:
@@ -99,6 +100,54 @@ def test_add_comments_for_task_cancels_acceptance_before_creating_inspection_com
     )
 
     assert result == (1, 1)
+    service.wrapper.cancel_completed_task.assert_called_once_with(
+        "project1",
+        "task1",
+        operator_account_id="account1",
+        last_updated_datetime="2024-01-01T00:00:00+00:00",
+    )
+    service.api.batch_update_comments.assert_called_once()
+
+
+def test_put_comment_for_task_cancels_acceptance_before_creating_simple_inspection_comment() -> None:
+    service = Mock()
+    service.api.account_id = "account1"
+    service.wrapper.get_task_or_none.return_value = {
+        "task_id": "task1",
+        "input_data_id_list": ["input1"],
+        "status": "complete",
+        "phase": "acceptance",
+        "phase_stage": 1,
+        "account_id": "account1",
+        "updated_datetime": "2024-01-01T00:00:00+00:00",
+    }
+    service.wrapper.cancel_completed_task.return_value = {
+        "task_id": "task1",
+        "input_data_id_list": ["input1"],
+        "status": "not_started",
+        "phase": "acceptance",
+        "phase_stage": 1,
+        "account_id": "account1",
+        "updated_datetime": "2024-01-01T00:01:00+00:00",
+    }
+    service.wrapper.change_task_status_to_working.return_value = {
+        "task_id": "task1",
+        "input_data_id_list": ["input1"],
+        "status": "working",
+        "phase": "acceptance",
+        "phase_stage": 1,
+        "account_id": "account1",
+        "updated_datetime": "2024-01-01T00:02:00+00:00",
+    }
+
+    main_obj = PutCommentSimplyMain(service, project_id="project1", comment_type=CommentType.INSPECTION, all_yes=True)
+    result = main_obj.put_comment_for_task(
+        task_id="task1",
+        comment_info=AddedSimpleComment(comment="コメント1", data={"x": 10, "y": 20, "_type": "Point"}),
+        cancel_acceptance=True,
+    )
+
+    assert result is True
     service.wrapper.cancel_completed_task.assert_called_once_with(
         "project1",
         "task1",

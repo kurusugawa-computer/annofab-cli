@@ -6,6 +6,12 @@ Description
 =================================
 ``comment put_inspection`` コマンドよりも、簡単に検査コメントを付与できます。
 
+.. warning::
+
+    このコマンドは非推奨です。代わりに :doc:`create_inspection_simply` コマンドを使用してください。
+
+    ``comment put_inspection_simply`` コマンドは2027/04/01以降に廃止予定です。
+
 
 .. note::
 
