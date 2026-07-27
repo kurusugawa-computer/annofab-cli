@@ -19,6 +19,10 @@ from annofabcli.common.facade import AnnofabApiFacade
 
 logger = logging.getLogger(__name__)
 
+DEPRECATED_MESSAGE = (
+    "[DEPRECATED] :: `comment put_onhold` コマンドは非推奨です。代わりに `comment create_onhold` コマンドを使用してください。 `comment put_onhold` コマンドは2027/04/01以降に廃止予定です。"
+)
+
 
 class PutInspectionComment(CommandLine):
     COMMON_MESSAGE = "annofabcli comment put_onhold: error:"
@@ -38,6 +42,8 @@ class PutInspectionComment(CommandLine):
         return True
 
     def main(self) -> None:
+        print(DEPRECATED_MESSAGE, file=sys.stderr)  # noqa: T201
+
         args = self.args
         if not self.validate(args):
             sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
@@ -118,8 +124,9 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
 
 def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "put_onhold"
-    subcommand_help = "保留コメントを付与します"
+    subcommand_help = "[DEPRECATED] 保留コメントを付与します"
+    description = f"{DEPRECATED_MESSAGE}\n保留コメントを付与します。"
 
-    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help)
+    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description=description)
     parse_args(parser)
     return parser

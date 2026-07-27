@@ -15,6 +15,8 @@ Available Commands
    :maxdepth: 1
    :titlesonly:
 
+   create_inspection
+   create_onhold
    delete
    download
    list
