@@ -226,8 +226,8 @@ class PutCommentMain(CommandLineWithConfirm):
     def _filter_creatable_comments(self, task_id: str, input_data_id: str, comments: list[AddedComment]) -> list[AddedComment]:
         """既存コメントと同じcomment_idを持つコメントを除外する。"""
 
-        target_comment_ids = {comment.comment_id for comment in comments if comment.comment_id is not None}
-        if len(target_comment_ids) == 0:
+        has_comment_id = any(comment.comment_id is not None for comment in comments)
+        if not has_comment_id:
             return comments
 
         old_comment_list, _ = self.service.api.get_comments(self.project_id, task_id, input_data_id, query_params={"v": "2"})
@@ -244,8 +244,8 @@ class PutCommentMain(CommandLineWithConfirm):
     def _filter_updatable_comments(self, task_id: str, input_data_id: str, comments: list[AddedComment]) -> list[AddedComment]:
         """既存コメントと同じcomment_idを持つコメントだけを残す。"""
 
-        target_comment_ids = {comment.comment_id for comment in comments if comment.comment_id is not None}
-        if len(target_comment_ids) == 0:
+        has_comment_id = any(comment.comment_id is not None for comment in comments)
+        if not has_comment_id:
             logger.warning(f"task_id='{task_id}', input_data_id='{input_data_id}' :: comment_idが指定されていないため、コメントの更新をスキップします。")
             return []
 
