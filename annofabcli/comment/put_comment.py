@@ -312,7 +312,7 @@ class PutCommentMain(CommandLineWithConfirm):
         canceled_task = self.service.wrapper.cancel_completed_task(
             self.project_id,
             task_id,
-            operator_account_id=self.service.api.account_id,
+            operator_account_id=task["account_id"],
             last_updated_datetime=task["updated_datetime"],
         )
         logger.debug(f"{logging_prefix} :: task_id='{task_id}'のタスクに対して受入取消を実施（完了状態から未着手状態に変更）しました。")

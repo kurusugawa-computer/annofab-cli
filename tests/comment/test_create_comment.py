@@ -58,7 +58,7 @@ def test_convert_cli_onhold_comment_list() -> None:
 
 def test_add_comments_for_task_cancels_acceptance_before_creating_inspection_comment() -> None:
     service = Mock()
-    service.api.account_id = "account1"
+    service.api.account_id = "executor_account"
     service.api.get_project.return_value = ({"input_data_type": "image"}, None)
     service.api.get_annotation_specs.return_value = ({"labels": []}, None)
     service.api.get_comments.return_value = ([], None)
@@ -69,7 +69,7 @@ def test_add_comments_for_task_cancels_acceptance_before_creating_inspection_com
         "status": "complete",
         "phase": "acceptance",
         "phase_stage": 1,
-        "account_id": "account1",
+        "account_id": "acceptor_account",
         "updated_datetime": "2024-01-01T00:00:00+00:00",
     }
     service.wrapper.cancel_completed_task.return_value = {
@@ -78,7 +78,7 @@ def test_add_comments_for_task_cancels_acceptance_before_creating_inspection_com
         "status": "not_started",
         "phase": "acceptance",
         "phase_stage": 1,
-        "account_id": "account1",
+        "account_id": "acceptor_account",
         "updated_datetime": "2024-01-01T00:01:00+00:00",
     }
     service.wrapper.change_task_status_to_working.return_value = {
@@ -87,7 +87,7 @@ def test_add_comments_for_task_cancels_acceptance_before_creating_inspection_com
         "status": "working",
         "phase": "acceptance",
         "phase_stage": 1,
-        "account_id": "account1",
+        "account_id": "executor_account",
         "updated_datetime": "2024-01-01T00:02:00+00:00",
     }
 
@@ -103,22 +103,24 @@ def test_add_comments_for_task_cancels_acceptance_before_creating_inspection_com
     service.wrapper.cancel_completed_task.assert_called_once_with(
         "project1",
         "task1",
-        operator_account_id="account1",
+        operator_account_id="acceptor_account",
         last_updated_datetime="2024-01-01T00:00:00+00:00",
     )
     service.api.batch_update_comments.assert_called_once()
+    service.wrapper.change_task_operator.assert_any_call("project1", "task1", "executor_account")
+    service.wrapper.change_task_operator.assert_any_call("project1", "task1", "acceptor_account")
 
 
 def test_put_comment_for_task_cancels_acceptance_before_creating_simple_inspection_comment() -> None:
     service = Mock()
-    service.api.account_id = "account1"
+    service.api.account_id = "executor_account"
     service.wrapper.get_task_or_none.return_value = {
         "task_id": "task1",
         "input_data_id_list": ["input1"],
         "status": "complete",
         "phase": "acceptance",
         "phase_stage": 1,
-        "account_id": "account1",
+        "account_id": "acceptor_account",
         "updated_datetime": "2024-01-01T00:00:00+00:00",
     }
     service.wrapper.cancel_completed_task.return_value = {
@@ -127,7 +129,7 @@ def test_put_comment_for_task_cancels_acceptance_before_creating_simple_inspecti
         "status": "not_started",
         "phase": "acceptance",
         "phase_stage": 1,
-        "account_id": "account1",
+        "account_id": "acceptor_account",
         "updated_datetime": "2024-01-01T00:01:00+00:00",
     }
     service.wrapper.change_task_status_to_working.return_value = {
@@ -136,7 +138,7 @@ def test_put_comment_for_task_cancels_acceptance_before_creating_simple_inspecti
         "status": "working",
         "phase": "acceptance",
         "phase_stage": 1,
-        "account_id": "account1",
+        "account_id": "executor_account",
         "updated_datetime": "2024-01-01T00:02:00+00:00",
     }
 
@@ -151,10 +153,12 @@ def test_put_comment_for_task_cancels_acceptance_before_creating_simple_inspecti
     service.wrapper.cancel_completed_task.assert_called_once_with(
         "project1",
         "task1",
-        operator_account_id="account1",
+        operator_account_id="acceptor_account",
         last_updated_datetime="2024-01-01T00:00:00+00:00",
     )
     service.api.batch_update_comments.assert_called_once()
+    service.wrapper.change_task_operator.assert_any_call("project1", "task1", "executor_account")
+    service.wrapper.change_task_operator.assert_any_call("project1", "task1", "acceptor_account")
 
 
 def test_read_inspection_comment_csv(tmp_path: Path) -> None:
