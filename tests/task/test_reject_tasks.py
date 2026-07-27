@@ -15,6 +15,7 @@ def create_args(**kwargs) -> argparse.Namespace:
         "not_assign": False,
         "assigned_annotator_user_id": None,
         "cancel_acceptance": False,
+        "include_break_task": False,
         "include_on_hold_task": False,
         "comment": None,
         "task_query": None,
@@ -139,6 +140,39 @@ def test_reject_task_skips_on_hold_task_by_default() -> None:
 
     assert result is False
     service.wrapper.reject_task.assert_not_called()
+
+
+def test_reject_task_skips_break_task_by_default() -> None:
+    service = Mock()
+    service.wrapper.get_task_or_none.return_value = create_task_dict(status="break")
+    main_obj = reject_tasks.RejectTasksMain(service, comment_data=None, all_yes=True)
+
+    result = main_obj.reject_task_with_adding_comment(
+        project_id="project1",
+        task_id="task1",
+        assign_last_annotator=True,
+        assigned_annotator=None,
+    )
+
+    assert result is False
+    service.wrapper.reject_task.assert_not_called()
+
+
+def test_reject_task_allows_break_task_when_option_is_enabled() -> None:
+    service = Mock()
+    service.wrapper.get_task_or_none.return_value = create_task_dict(status="break")
+    main_obj = reject_tasks.RejectTasksMain(service, comment_data=None, all_yes=True)
+
+    result = main_obj.reject_task_with_adding_comment(
+        project_id="project1",
+        task_id="task1",
+        assign_last_annotator=True,
+        assigned_annotator=None,
+        include_break_task=True,
+    )
+
+    assert result is True
+    service.wrapper.reject_task.assert_called_once()
 
 
 def test_reject_task_allows_on_hold_task_when_option_is_enabled() -> None:

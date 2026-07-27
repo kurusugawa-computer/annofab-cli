@@ -125,6 +125,7 @@ class RejectTasksMain(CommandLineWithConfirm):
         assign_last_annotator: bool,
         assigned_annotator: AssignedAnnotator | None,
         cancel_acceptance: bool = False,
+        include_break_task: bool = False,
         include_on_hold_task: bool = False,
         task_query: TaskQuery | None = None,
     ) -> bool:
@@ -139,16 +140,20 @@ class RejectTasksMain(CommandLineWithConfirm):
             logger.warning(f"task_id='{task_id}' :: 教師付フェーズのため、差し戻しできません。")
             return False
 
+        unavailable_status_message = None
         if task["status"] == TaskStatus.WORKING.value:
-            logger.warning(f"task_id='{task_id}' :: タスクのstatusが'作業中'なので、差し戻しできません。")
-            return False
+            unavailable_status_message = f"task_id='{task_id}' :: タスクのstatusが'作業中'なので、差し戻しできません。"
+        elif task["status"] == TaskStatus.BREAK.value and not include_break_task:
+            unavailable_status_message = f"task_id='{task_id}' :: タスクのstatusが'休憩中'なので、差し戻しできません。休憩中状態のタスクも差し戻す場合は、'--include_break_task'を指定してください。"
+        elif task["status"] == TaskStatus.ON_HOLD.value and not include_on_hold_task:
+            unavailable_status_message = f"task_id='{task_id}' :: タスクのstatusが'保留中'なので、差し戻しできません。保留中状態のタスクも差し戻す場合は、'--include_on_hold_task'を指定してください。"
+        elif task["status"] == TaskStatus.COMPLETE.value and not cancel_acceptance:
+            unavailable_status_message = (
+                f"task_id='{task_id}' :: タスクのstatusが'完了'なので、差し戻しできません。受入完了を取消す場合は、コマンドライン引数に'--cancel_acceptance'を追加してください。"
+            )
 
-        if task["status"] == TaskStatus.ON_HOLD.value and not include_on_hold_task:
-            logger.warning(f"task_id='{task_id}' :: タスクのstatusが'保留中'なので、差し戻しできません。保留中状態のタスクも差し戻す場合は、'--include_on_hold_task'を指定してください。")
-            return False
-
-        if task["status"] == TaskStatus.COMPLETE.value and not cancel_acceptance:
-            logger.warning(f"task_id='{task_id}' :: タスクのstatusが'完了'なので、差し戻しできません。受入完了を取消す場合は、コマンドライン引数に'--cancel_acceptance'を追加してください。")
+        if unavailable_status_message is not None:
+            logger.warning(unavailable_status_message)
             return False
 
         if not match_task_with_query(Task.from_dict(task), task_query):
@@ -166,6 +171,7 @@ class RejectTasksMain(CommandLineWithConfirm):
         assign_last_annotator: bool = True,
         assigned_annotator: AssignedAnnotator | None = None,
         cancel_acceptance: bool = False,
+        include_break_task: bool = False,
         include_on_hold_task: bool = False,
         task_query: TaskQuery | None = None,
         task_index: int | None = None,
@@ -198,6 +204,7 @@ class RejectTasksMain(CommandLineWithConfirm):
             assign_last_annotator=assign_last_annotator,
             assigned_annotator=assigned_annotator,
             cancel_acceptance=cancel_acceptance,
+            include_break_task=include_break_task,
             include_on_hold_task=include_on_hold_task,
             task_query=task_query,
         ):
@@ -252,6 +259,7 @@ class RejectTasksMain(CommandLineWithConfirm):
         assign_last_annotator: bool = True,  # noqa: FBT001, FBT002
         assigned_annotator: AssignedAnnotator | None = None,
         cancel_acceptance: bool = False,  # noqa: FBT001, FBT002
+        include_break_task: bool = False,  # noqa: FBT001, FBT002
         include_on_hold_task: bool = False,  # noqa: FBT001, FBT002
         task_query: TaskQuery | None = None,
     ) -> bool:
@@ -265,6 +273,7 @@ class RejectTasksMain(CommandLineWithConfirm):
                 assign_last_annotator=assign_last_annotator,
                 assigned_annotator=assigned_annotator,
                 cancel_acceptance=cancel_acceptance,
+                include_break_task=include_break_task,
                 include_on_hold_task=include_on_hold_task,
                 task_query=task_query,
             )
@@ -280,6 +289,7 @@ class RejectTasksMain(CommandLineWithConfirm):
         assign_last_annotator: bool = True,  # noqa: FBT001, FBT002
         assigned_annotator: AssignedAnnotator | None = None,
         cancel_acceptance: bool = False,  # noqa: FBT001, FBT002
+        include_break_task: bool = False,  # noqa: FBT001, FBT002
         include_on_hold_task: bool = False,  # noqa: FBT001, FBT002
         task_query: TaskQuery | None = None,
         parallelism: int | None = None,
@@ -297,6 +307,7 @@ class RejectTasksMain(CommandLineWithConfirm):
                 assign_last_annotator=assign_last_annotator,
                 assigned_annotator=assigned_annotator,
                 cancel_acceptance=cancel_acceptance,
+                include_break_task=include_break_task,
                 include_on_hold_task=include_on_hold_task,
                 task_query=task_query,
             )
@@ -317,6 +328,7 @@ class RejectTasksMain(CommandLineWithConfirm):
                         assign_last_annotator=assign_last_annotator,
                         assigned_annotator=assigned_annotator,
                         cancel_acceptance=cancel_acceptance,
+                        include_break_task=include_break_task,
                         include_on_hold_task=include_on_hold_task,
                         task_query=task_query,
                     )
@@ -406,6 +418,7 @@ class RejectTasks(CommandLine):
             assign_last_annotator=assign_last_annotator,
             assigned_annotator=assigned_annotator,
             cancel_acceptance=args.cancel_acceptance,
+            include_break_task=args.include_break_task,
             include_on_hold_task=args.include_on_hold_task,
             task_query=task_query,
             parallelism=args.parallelism,
@@ -470,6 +483,12 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--cancel_acceptance", action="store_true", help="受入完了状態を取り消して、タスクを差し戻します。")
 
     parser.add_argument(
+        "--include_break_task",
+        action="store_true",
+        help="指定した場合、休憩中状態のタスクも差し戻します。指定しない場合、休憩中状態のタスクはスキップします。",
+    )
+
+    parser.add_argument(
         "--include_on_hold_task",
         action="store_true",
         help="指定した場合、保留中状態のタスクも差し戻します。指定しない場合、保留中状態のタスクはスキップします。",
@@ -490,7 +509,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
 def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "reject"
     subcommand_help = "タスクを差し戻します。"
-    description = "タスクを差し戻します。差し戻す際、検査コメントを付与することもできます。作業中状態のタスクに対しては差し戻せません。"
+    description = "タスクを差し戻します。差し戻す際、検査コメントを付与することもできます。作業中状態のタスクに対しては差し戻せません。休憩中状態のタスクは、デフォルトでは差し戻せません。"
     epilog = "オーナロールを持つユーザで実行してください。``--cancel_acceptance`` を指定していない AND ``--comment`` を指定している場合は、チェッカーロールを持つユーザーも実行できます。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
