@@ -1,5 +1,7 @@
 import argparse
 
+import annofabcli.comment.create_inspection_comment
+import annofabcli.comment.create_onhold_comment
 import annofabcli.comment.delete_comment
 import annofabcli.comment.download_comment_json
 import annofabcli.comment.list_all_comment
@@ -8,6 +10,8 @@ import annofabcli.comment.put_inspection_comment
 import annofabcli.comment.put_inspection_comment_simply
 import annofabcli.comment.put_onhold_comment
 import annofabcli.comment.put_onhold_comment_simply
+import annofabcli.comment.update_inspection_comment
+import annofabcli.comment.update_onhold_comment
 import annofabcli.common.cli
 
 
@@ -15,6 +19,8 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     subparsers = parser.add_subparsers(dest="subcommand_name")
 
     # サブコマンドの定義
+    annofabcli.comment.create_inspection_comment.add_parser(subparsers)
+    annofabcli.comment.create_onhold_comment.add_parser(subparsers)
     annofabcli.comment.delete_comment.add_parser(subparsers)
     annofabcli.comment.download_comment_json.add_parser(subparsers)
     annofabcli.comment.list_comment.add_parser(subparsers)
@@ -23,6 +29,8 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     annofabcli.comment.put_inspection_comment_simply.add_parser(subparsers)
     annofabcli.comment.put_onhold_comment.add_parser(subparsers)
     annofabcli.comment.put_onhold_comment_simply.add_parser(subparsers)
+    annofabcli.comment.update_inspection_comment.add_parser(subparsers)
+    annofabcli.comment.update_onhold_comment.add_parser(subparsers)
 
 
 def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:

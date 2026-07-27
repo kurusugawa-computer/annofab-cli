@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import functools
 import json
 import logging
 import multiprocessing
@@ -7,7 +8,7 @@ import uuid
 from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 import annofabapi
 import pandas
@@ -67,6 +68,11 @@ AddedComments = dict[str, AddedCommentsForTask]
 """
 追加対象のコメント
 keyはtask_id
+"""
+
+CommentPutMode = Literal["put", "create", "update"]
+"""
+コメント登録時の動作モード
 """
 
 
@@ -217,6 +223,57 @@ class PutCommentMain(CommandLineWithConfirm):
         converted_comments = [_convert(e) for e in comments]
         return [c for c in converted_comments if c is not None]
 
+    def _filter_creatable_comments(self, task_id: str, input_data_id: str, comments: list[AddedComment]) -> list[AddedComment]:
+        """既存コメントと同じcomment_idを持つコメントを除外する。"""
+
+        has_comment_id = any(comment.comment_id is not None for comment in comments)
+        if not has_comment_id:
+            return comments
+
+        old_comment_list, _ = self.service.api.get_comments(self.project_id, task_id, input_data_id, query_params={"v": "2"})
+        old_comment_ids = {comment["comment_id"] for comment in old_comment_list}
+        creatable_comments = []
+        for comment in comments:
+            if comment.comment_id is not None and comment.comment_id in old_comment_ids:
+                logger.warning(f"task_id='{task_id}', input_data_id='{input_data_id}' :: comment_id='{comment.comment_id}'のコメントは既に存在するので、コメントの作成をスキップします。")
+                continue
+            creatable_comments.append(comment)
+
+        return creatable_comments
+
+    def _filter_updatable_comments(self, task_id: str, input_data_id: str, comments: list[AddedComment]) -> list[AddedComment]:
+        """既存コメントと同じcomment_idを持つコメントだけを残す。"""
+
+        has_comment_id = any(comment.comment_id is not None for comment in comments)
+        if not has_comment_id:
+            logger.warning(f"task_id='{task_id}', input_data_id='{input_data_id}' :: comment_idが指定されていないため、コメントの更新をスキップします。")
+            return []
+
+        old_comment_list, _ = self.service.api.get_comments(self.project_id, task_id, input_data_id, query_params={"v": "2"})
+        old_comment_ids = {comment["comment_id"] for comment in old_comment_list}
+        updatable_comments = []
+        for comment in comments:
+            if comment.comment_id is None:
+                logger.warning(f"task_id='{task_id}', input_data_id='{input_data_id}' :: comment_idが指定されていないため、コメントの更新をスキップします。")
+                continue
+
+            if comment.comment_id not in old_comment_ids:
+                logger.warning(f"task_id='{task_id}', input_data_id='{input_data_id}' :: comment_id='{comment.comment_id}'のコメントは存在しないので、コメントの更新をスキップします。")
+                continue
+            updatable_comments.append(comment)
+
+        return updatable_comments
+
+    def _filter_comments_by_put_mode(self, task_id: str, input_data_id: str, comments: list[AddedComment], put_mode: CommentPutMode) -> list[AddedComment]:
+        if put_mode == "put":
+            return comments
+        if put_mode == "create":
+            return self._filter_creatable_comments(task_id=task_id, input_data_id=input_data_id, comments=comments)
+        if put_mode == "update":
+            return self._filter_updatable_comments(task_id=task_id, input_data_id=input_data_id, comments=comments)
+
+        raise ValueError(f"未対応のコメント登録モードです。 :: put_mode='{put_mode}'")
+
     def change_to_working_status(self, project_id: str, task: dict[str, Any]) -> dict[str, Any]:
         """
         作業中状態に遷移する。必要ならば担当者を自分自身に変更する。
@@ -263,6 +320,8 @@ class PutCommentMain(CommandLineWithConfirm):
         task_id: str,
         comments_for_task: AddedCommentsForTask,
         task_index: int | None = None,
+        *,
+        put_mode: CommentPutMode = "put",
     ) -> tuple[int, int]:
         """
         タスクにコメントを付与します。
@@ -271,6 +330,7 @@ class PutCommentMain(CommandLineWithConfirm):
             task_id: タスクID
             comments_for_task: 1つのタスクに付与するコメントの集合
             task_index: タスクの連番
+            put_mode: コメント登録時の動作モード
 
         Returns:
             (コメントを付与した入力データの個数, 付与したコメントの個数)のタプル
@@ -303,11 +363,15 @@ class PutCommentMain(CommandLineWithConfirm):
             try:
                 # コメントを付与する
                 if len(comments) > 0:
-                    request_body = self._create_request_body(task=changed_task, input_data_id=input_data_id, comments=comments)
+                    target_comments = self._filter_comments_by_put_mode(task_id=task_id, input_data_id=input_data_id, comments=comments, put_mode=put_mode)
+                    if len(target_comments) == 0:
+                        continue
+
+                    request_body = self._create_request_body(task=changed_task, input_data_id=input_data_id, comments=target_comments)
                     self.service.api.batch_update_comments(self.project_id, task_id, input_data_id, request_body=request_body)
                     added_input_data_count += 1
-                    added_comment_count += len(comments)
-                    logger.debug(f"{logging_prefix} :: task_id='{task_id}', input_data_id='{input_data_id}' :: {len(comments)}件のコメントを付与しました。")
+                    added_comment_count += len(target_comments)
+                    logger.debug(f"{logging_prefix} :: task_id='{task_id}', input_data_id='{input_data_id}' :: {len(target_comments)}件のコメントを付与しました。")
             except Exception:  # pylint: disable=broad-except
                 logger.warning(
                     f"{logging_prefix} :: task_id='{task_id}', input_data_id='{input_data_id}' :: コメントの付与に失敗しました。",
@@ -325,14 +389,18 @@ class PutCommentMain(CommandLineWithConfirm):
     def add_comments_for_task_wrapper(
         self,
         tpl: tuple[int, tuple[str, AddedCommentsForTask]],
+        *,
+        put_mode: CommentPutMode = "put",
     ) -> tuple[int, int]:
         task_index, (task_id, comments_for_task) = tpl
-        return self.add_comments_for_task(task_id=task_id, comments_for_task=comments_for_task, task_index=task_index)
+        return self.add_comments_for_task(task_id=task_id, comments_for_task=comments_for_task, task_index=task_index, put_mode=put_mode)
 
     def add_comments_for_task_list(
         self,
         comments_for_task_list: AddedComments,
         parallelism: int | None = None,
+        *,
+        put_mode: CommentPutMode = "put",
     ) -> None:
         tasks_count = len(comments_for_task_list)
         input_data_count = sum(len(e) for e in comments_for_task_list.values())
@@ -342,8 +410,9 @@ class PutCommentMain(CommandLineWithConfirm):
         )
 
         if parallelism is not None:
+            func = functools.partial(self.add_comments_for_task_wrapper, put_mode=put_mode)
             with multiprocessing.Pool(parallelism) as pool:
-                result_list = pool.map(self.add_comments_for_task_wrapper, enumerate(comments_for_task_list.items()))
+                result_list = pool.map(func, enumerate(comments_for_task_list.items()))
                 added_input_data_count = sum(e[0] for e in result_list)
                 added_comment_count = sum(e[1] for e in result_list)
                 succeeded_tasks_count = sum(1 for e in result_list if e[0] > 0)
@@ -359,6 +428,7 @@ class PutCommentMain(CommandLineWithConfirm):
                         task_id=task_id,
                         comments_for_task=comments_for_task,
                         task_index=task_index,
+                        put_mode=put_mode,
                     )
                     added_input_data_count += result_input_data
                     added_comment_count += result_comment
@@ -418,6 +488,51 @@ def convert_cli_inspection_comments(dict_comments: dict[str, Any]) -> AddedComme
     return result
 
 
+def convert_cli_inspection_comment_list(comment_list: list[dict[str, Any]]) -> AddedComments:
+    """
+    CLIから受け取った検査コメント情報のリストを、データクラスに変換する。
+
+    Args:
+        comment_list: dict形式の検査コメントのリスト
+
+    Returns:
+        検査コメントのデータクラス形式
+    """
+
+    @dataclass
+    class AddedInspectionComment(DataClassJsonMixin):
+        """
+        追加対象の検査コメント
+        """
+
+        task_id: str
+        """タスクID"""
+
+        input_data_id: str
+        """入力データID"""
+
+        comment: str
+        """コメントの中身"""
+
+        data: dict[str, Any] | None = None
+        """コメントを付与する位置や区間"""
+
+        annotation_id: str | None = None
+        """コメントに紐付けるアノテーションID"""
+
+        phrases: list[str] | None = None
+        """参照している定型指摘ID"""
+
+        comment_id: str | None = None
+        """コメントID。省略時はUUIDv4が自動生成される。"""
+
+    result: AddedComments = defaultdict(lambda: defaultdict(list))
+    for comment in comment_list:
+        tmp = AddedInspectionComment.from_dict(comment)
+        result[tmp.task_id][tmp.input_data_id].append(AddedComment(comment=tmp.comment, data=tmp.data, annotation_id=tmp.annotation_id, phrases=tmp.phrases, comment_id=tmp.comment_id))
+    return result
+
+
 def convert_cli_onhold_comments(dict_comments: dict[str, Any]) -> AddedComments:
     """
     CLIから受け取った保留コメント情報を、データクラスに変換する。
@@ -452,6 +567,45 @@ def convert_cli_onhold_comments(dict_comments: dict[str, Any]) -> AddedComments:
     for task_id, comments_for_task in dict_comments.items():
         sub_result = {input_data_id: [convert_onhold_comment(e) for e in comments] for input_data_id, comments in comments_for_task.items() if len(comments) > 0}
         result.update({task_id: sub_result})
+    return result
+
+
+def convert_cli_onhold_comment_list(comment_list: list[dict[str, Any]]) -> AddedComments:
+    """
+    CLIから受け取った保留コメント情報のリストを、データクラスに変換する。
+
+    Args:
+        comment_list: dict形式の保留コメントのリスト
+
+    Returns:
+        保留コメントのデータクラス形式
+    """
+
+    @dataclass
+    class AddedOnholdComment(DataClassJsonMixin):
+        """
+        追加対象の保留コメント
+        """
+
+        task_id: str
+        """タスクID"""
+
+        input_data_id: str
+        """入力データID"""
+
+        comment: str
+        """コメントの中身"""
+
+        annotation_id: str | None = None
+        """コメントに紐付けるアノテーションID"""
+
+        comment_id: str | None = None
+        """コメントID。省略時はUUIDv4が自動生成される。"""
+
+    result: AddedComments = defaultdict(lambda: defaultdict(list))
+    for comment in comment_list:
+        tmp = AddedOnholdComment.from_dict(comment)
+        result[tmp.task_id][tmp.input_data_id].append(AddedComment(comment=tmp.comment, annotation_id=tmp.annotation_id, data=None, phrases=None, comment_id=tmp.comment_id))
     return result
 
 
