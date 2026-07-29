@@ -137,6 +137,41 @@ class TestBuildRequestBodyForUpdateAttributes:
                 comment=None,
             )
 
+    def test_build_request_body_for_update_attributes__同じラベル内で属性名英語が重複していたらエラー(self, annotation_specs: dict) -> None:
+        resolved_inputs = resolve_attribute_update_inputs(
+            annotation_specs,
+            attribute_update_inputs=[AttributeUpdateInput(attribute_id=UNCLEAR_ATTRIBUTE_ID, attribute_name_en="comment")],
+        )
+
+        with pytest.raises(ValueError):
+            build_request_body_for_update_attributes(
+                annotation_specs,
+                resolved_attribute_update_inputs=resolved_inputs,
+                comment=None,
+            )
+
+    def test_build_request_body_for_update_attributes__異なるラベルなら属性名英語が重複していてもよい(self, annotation_specs: dict) -> None:
+        bike_label = next(label for label in annotation_specs["labels"] if label["label_id"] == "40f7796b-3722-4eed-9c0c-04a27f9165d2")
+        bike_label["additional_data_definitions"] = [UNCLEAR_ATTRIBUTE_ID]
+        car_label = next(label for label in annotation_specs["labels"] if label["label_id"] == "car_label_id")
+        car_label["additional_data_definitions"] = [COMMENT_ATTRIBUTE_ID]
+        resolved_inputs = resolve_attribute_update_inputs(
+            annotation_specs,
+            attribute_update_inputs=[AttributeUpdateInput(attribute_id=UNCLEAR_ATTRIBUTE_ID, attribute_name_en="comment")],
+        )
+
+        actual = build_request_body_for_update_attributes(
+            annotation_specs,
+            resolved_attribute_update_inputs=resolved_inputs,
+            comment=None,
+        )
+
+        unclear_attribute = next(additional for additional in actual["additionals"] if additional["additional_data_definition_id"] == UNCLEAR_ATTRIBUTE_ID)
+        assert unclear_attribute["name"]["messages"] == [
+            {"lang": "ja-JP", "message": "unclear"},
+            {"lang": "en-US", "message": "comment"},
+        ]
+
 
 class TestResolveAttributeUpdateInputs:
     def test_resolve_attribute_update_inputs__attribute_not_found(self, annotation_specs: dict) -> None:
