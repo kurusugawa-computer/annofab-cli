@@ -64,7 +64,12 @@ def parse_choices_from_dict(data: dict[str, Any], *, index: int) -> list[ChoiceA
     for choice_index, choice in enumerate(choices, start=1):
         if not isinstance(choice, dict):
             raise TypeError(f"{index}件目の属性の `choices` の {choice_index} 件目がオブジェクト形式ではありません。")
-        result.append(parse_choice_input_from_dict(choice, index=choice_index))
+        try:
+            result.append(parse_choice_input_from_dict(choice, index=choice_index))
+        except TypeError as e:
+            raise TypeError(f"{index}件目の属性の `choices` の {choice_index} 件目の指定が不正です。 :: {e}") from e
+        except ValueError as e:
+            raise ValueError(f"{index}件目の属性の `choices` の {choice_index} 件目の指定が不正です。 :: {e}") from e
     return result
 
 

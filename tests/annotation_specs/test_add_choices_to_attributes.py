@@ -173,6 +173,10 @@ class TestReadAttributesJson:
         with pytest.raises(TypeError):
             read_attributes_json(f'[{{"attribute_id":"{TYPE_ATTRIBUTE_ID}","choices":["invalid"]}}]')
 
+    def test_read_attributes_json__choice_name_en_required(self) -> None:
+        with pytest.raises(ValueError):
+            read_attributes_json(f'[{{"attribute_id":"{TYPE_ATTRIBUTE_ID}","choices":[{{"choice_id":"xlarge"}}]}}]')
+
     def test_read_attributes_json__attribute_id_required(self) -> None:
         with pytest.raises(ValueError):
             read_attributes_json('[{"choices":[{"choice_id":"xlarge","choice_name_en":"xlarge"}]}]')
