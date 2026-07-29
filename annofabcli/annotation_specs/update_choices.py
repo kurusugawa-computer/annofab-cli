@@ -11,7 +11,7 @@ from typing import Any
 
 import annofabapi
 import pandas
-from annofabapi.util.annotation_specs import AnnotationSpecsAccessor, get_attribute_name_en, get_choice_name_en
+from annofabapi.util.annotation_specs import AnnotationSpecsAccessor, get_attribute_name_en, get_choice_name_en, get_message_with_lang
 
 import annofabcli.common.cli
 from annofabcli.annotation_specs.add_labels import parse_keybind_in_csv
@@ -215,26 +215,28 @@ def update_choice_name_ja(choice: dict[str, Any], choice_name_ja: str) -> None:
     """
     選択肢日本語名を更新する。
     """
-    messages = choice["name"]["messages"]
-    for message in messages:
+    if get_message_with_lang(choice["name"], "ja-JP") is None:
+        choice["name"]["messages"].append({"lang": "ja-JP", "message": choice_name_ja})
+        return
+
+    for message in choice["name"]["messages"]:
         if message["lang"] == "ja-JP":
             message["message"] = choice_name_ja
             return
-
-    messages.append({"lang": "ja-JP", "message": choice_name_ja})
 
 
 def update_choice_name_en(choice: dict[str, Any], choice_name_en: str) -> None:
     """
     選択肢英語名を更新する。
     """
-    messages = choice["name"]["messages"]
-    for message in messages:
+    if get_message_with_lang(choice["name"], "en-US") is None:
+        choice["name"]["messages"].append({"lang": "en-US", "message": choice_name_en})
+        return
+
+    for message in choice["name"]["messages"]:
         if message["lang"] == "en-US":
             message["message"] = choice_name_en
             return
-
-    messages.append({"lang": "en-US", "message": choice_name_en})
 
 
 def validate_choice_name_ens_not_duplicated(target_attribute: Mapping[str, Any]) -> None:

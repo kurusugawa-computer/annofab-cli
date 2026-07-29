@@ -11,7 +11,7 @@ from typing import Any
 
 import annofabapi
 import pandas
-from annofabapi.util.annotation_specs import AnnotationSpecsAccessor, get_attribute_name_en
+from annofabapi.util.annotation_specs import AnnotationSpecsAccessor, get_attribute_name_en, get_message_with_lang
 
 import annofabcli.common.cli
 from annofabcli.annotation_specs.add_attribute import parse_default_value
@@ -216,26 +216,28 @@ def update_attribute_name_ja(attribute: dict[str, Any], attribute_name_ja: str) 
     """
     属性日本語名を更新する。
     """
-    messages = attribute["name"]["messages"]
-    for message in messages:
+    if get_message_with_lang(attribute["name"], "ja-JP") is None:
+        attribute["name"]["messages"].append({"lang": "ja-JP", "message": attribute_name_ja})
+        return
+
+    for message in attribute["name"]["messages"]:
         if message["lang"] == "ja-JP":
             message["message"] = attribute_name_ja
             return
-
-    messages.append({"lang": "ja-JP", "message": attribute_name_ja})
 
 
 def update_attribute_name_en(attribute: dict[str, Any], attribute_name_en: str) -> None:
     """
     属性英語名を更新する。
     """
-    messages = attribute["name"]["messages"]
-    for message in messages:
+    if get_message_with_lang(attribute["name"], "en-US") is None:
+        attribute["name"]["messages"].append({"lang": "en-US", "message": attribute_name_en})
+        return
+
+    for message in attribute["name"]["messages"]:
         if message["lang"] == "en-US":
             message["message"] = attribute_name_en
             return
-
-    messages.append({"lang": "en-US", "message": attribute_name_en})
 
 
 def validate_attribute_name_ens_not_duplicated_in_labels(annotation_specs: Mapping[str, Any]) -> None:

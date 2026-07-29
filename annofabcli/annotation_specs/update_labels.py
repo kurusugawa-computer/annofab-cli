@@ -11,7 +11,7 @@ from typing import Any, Literal, cast
 
 import annofabapi
 import pandas
-from annofabapi.util.annotation_specs import AnnotationSpecsAccessor, get_label_name_en
+from annofabapi.util.annotation_specs import AnnotationSpecsAccessor, get_label_name_en, get_message_with_lang
 
 import annofabcli.common.cli
 from annofabcli.annotation_specs.add_labels import parse_field_values_in_csv, parse_keybind_in_csv
@@ -342,13 +342,14 @@ def update_label_name_ja(label: dict[str, Any], label_name_ja: str) -> None:
         label: 更新対象ラベル
         label_name_ja: 更新後のラベル日本語名
     """
-    messages = label["label_name"]["messages"]
-    for message in messages:
+    if get_message_with_lang(label["label_name"], "ja-JP") is None:
+        label["label_name"]["messages"].append({"lang": "ja-JP", "message": label_name_ja})
+        return
+
+    for message in label["label_name"]["messages"]:
         if message["lang"] == "ja-JP":
             message["message"] = label_name_ja
             return
-
-    messages.append({"lang": "ja-JP", "message": label_name_ja})
 
 
 def update_label_name_en(label: dict[str, Any], label_name_en: str) -> None:
@@ -359,13 +360,14 @@ def update_label_name_en(label: dict[str, Any], label_name_en: str) -> None:
         label: 更新対象ラベル
         label_name_en: 更新後のラベル英語名
     """
-    messages = label["label_name"]["messages"]
-    for message in messages:
+    if get_message_with_lang(label["label_name"], "en-US") is None:
+        label["label_name"]["messages"].append({"lang": "en-US", "message": label_name_en})
+        return
+
+    for message in label["label_name"]["messages"]:
         if message["lang"] == "en-US":
             message["message"] = label_name_en
             return
-
-    messages.append({"lang": "en-US", "message": label_name_en})
 
 
 def validate_label_name_ens_not_duplicated(labels: Sequence[Mapping[str, Any]]) -> None:
