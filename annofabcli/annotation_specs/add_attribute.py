@@ -135,6 +135,7 @@ def create_attribute(
     attribute_type: str | AttributeType,
     attribute_name_en: str,
     attribute_name_ja: str | None,
+    attribute_name_vi: str | None = None,
     attribute_id: str | None,
     read_only: bool = False,
     default_value: str | int | bool | None = None,
@@ -147,6 +148,7 @@ def create_attribute(
         attribute_type: 属性型
         attribute_name_en: 属性英語名
         attribute_name_ja: 属性日本語名
+        attribute_name_vi: 属性ベトナム語名
         attribute_id: 属性ID。未指定ならUUIDv4を自動生成
         read_only: 読み込み専用属性にするかどうか
         default_value: 属性の初期値。未指定時はNone
@@ -156,7 +158,7 @@ def create_attribute(
     """
     attribute = {
         "additional_data_definition_id": attribute_id if attribute_id is not None else str(uuid.uuid4()),
-        "name": create_name(attribute_name_en, attribute_name_ja),
+        "name": create_name(attribute_name_en, attribute_name_ja, attribute_name_vi),
         "type": attribute_type.value if isinstance(attribute_type, AttributeType) else attribute_type,
         "read_only": read_only,
         "keybind": keybind_to_api_keybind(copy.deepcopy(keybind)),
@@ -168,12 +170,13 @@ def create_attribute(
     return attribute
 
 
-def resolve_attribute_input(
+def resolve_attribute_input(  # noqa: PLR0913
     annotation_specs: dict[str, Any],
     *,
     attribute_type: str,
     attribute_name_en: str,
     attribute_name_ja: str | None,
+    attribute_name_vi: str | None = None,
     attribute_id: str | None,
     label_ids: Sequence[str] | None,
     label_name_ens: Sequence[str] | None,
@@ -189,6 +192,7 @@ def resolve_attribute_input(
         attribute_type: 属性型
         attribute_name_en: 属性英語名
         attribute_name_ja: 属性日本語名
+        attribute_name_vi: 属性ベトナム語名
         attribute_id: 属性ID。未指定ならUUIDv4を自動生成
         read_only: 読み込み専用属性にするかどうか
         label_ids: 追加先ラベルID一覧。未指定時はNone
@@ -204,6 +208,7 @@ def resolve_attribute_input(
         attribute_type=attribute_type,
         attribute_name_en=attribute_name_en,
         attribute_name_ja=attribute_name_ja,
+        attribute_name_vi=attribute_name_vi,
         attribute_id=attribute_id,
         read_only=read_only,
         default_value=default_value,
@@ -271,12 +276,13 @@ class AddAttributeMain(CommandLineWithConfirm):
         self.project_id = project_id
         CommandLineWithConfirm.__init__(self, all_yes)
 
-    def add_attribute(
+    def add_attribute(  # noqa: PLR0913
         self,
         *,
         attribute_type: str,
         attribute_name_en: str,
         attribute_name_ja: str | None,
+        attribute_name_vi: str | None = None,
         attribute_id: str | None,
         label_ids: Sequence[str] | None,
         label_name_ens: Sequence[str] | None,
@@ -292,6 +298,7 @@ class AddAttributeMain(CommandLineWithConfirm):
             attribute_type: 属性型
             attribute_name_en: 属性英語名
             attribute_name_ja: 属性日本語名
+            attribute_name_vi: 属性ベトナム語名
             attribute_id: 属性ID。未指定ならUUIDv4を自動生成
             read_only: 読み込み専用属性にするかどうか
             label_ids: 追加先ラベルID一覧。未指定時はNone
@@ -307,6 +314,7 @@ class AddAttributeMain(CommandLineWithConfirm):
             attribute_type=attribute_type,
             attribute_name_en=attribute_name_en,
             attribute_name_ja=attribute_name_ja,
+            attribute_name_vi=attribute_name_vi,
             attribute_id=attribute_id,
             read_only=read_only,
             default_value=default_value,
@@ -351,6 +359,7 @@ class AddAttribute(CommandLine):
             attribute_type=args.attribute_type,
             attribute_name_en=args.attribute_name_en,
             attribute_name_ja=args.attribute_name_ja,
+            attribute_name_vi=args.attribute_name_vi,
             attribute_id=args.attribute_id,
             read_only=args.read_only,
             default_value=args.default_value,
@@ -389,6 +398,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--attribute_name_en", type=str, required=True, help="追加する属性の英語名。")
     parser.add_argument("--attribute_id", type=str, help="追加する属性の属性ID。未指定の場合はUUIDv4を自動生成します。")
     parser.add_argument("--attribute_name_ja", type=str, help="追加する属性の日本語名。")
+    parser.add_argument("--attribute_name_vi", type=str, help="追加する属性のベトナム語名。")
     parser.add_argument("--read_only", action="store_true", help="追加する属性を読み込み専用にします。")
     parser.add_argument(
         "--default_value",

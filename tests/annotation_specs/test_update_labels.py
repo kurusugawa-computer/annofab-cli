@@ -43,6 +43,7 @@ class TestBuildRequestBodyForUpdateLabels:
                     label_id=CAR_LABEL_ID,
                     label_name_en="vehicle",
                     label_name_ja="車",
+                    label_name_vi="xe hơi",
                     color="#123456",
                     keybind={"alt": False, "code": "Digit1", "ctrl": True, "shift": False},
                     field_values={
@@ -69,6 +70,7 @@ class TestBuildRequestBodyForUpdateLabels:
         assert car_label["label_name"]["messages"] == [
             {"lang": "ja-JP", "message": "車"},
             {"lang": "en-US", "message": "vehicle"},
+            {"lang": "vi-VN", "message": "xe hơi"},
         ]
         assert car_label["annotation_type"] == "bounding_box"
         assert car_label["color"] == {"red": 18, "green": 52, "blue": 86}
@@ -125,7 +127,7 @@ class TestBuildRequestBodyForUpdateLabels:
         }
         resolved_inputs = resolve_label_update_inputs(
             annotation_specs,
-            label_update_inputs=[LabelUpdateInput(label_id=CAR_LABEL_ID, label_name_en="vehicle", label_name_ja="車")],
+            label_update_inputs=[LabelUpdateInput(label_id=CAR_LABEL_ID, label_name_en="vehicle", label_name_ja="車", label_name_vi="xe hơi")],
         )
 
         actual = build_request_body_for_update_labels(
@@ -140,6 +142,7 @@ class TestBuildRequestBodyForUpdateLabels:
                 {"lang": "en-US", "message": "vehicle"},
                 {"lang": "ja-JP", "message": "車"},
                 {"lang": "fr-FR", "message": "voiture"},
+                {"lang": "vi-VN", "message": "xe hơi"},
             ],
             "default_lang": "en-US",
         }
@@ -195,7 +198,7 @@ class TestLabelUpdateInputs:
 class TestReadLabels:
     def test_read_labels_json(self) -> None:
         actual = read_labels_json(
-            f'[{{"label_id":"{CAR_LABEL_ID}","label_name_en":"vehicle","label_name_ja":"車","color":"#123456",'
+            f'[{{"label_id":"{CAR_LABEL_ID}","label_name_en":"vehicle","label_name_ja":"車","label_name_vi":"xe hơi","color":"#123456",'
             '"keybind":{"alt":false,"code":"Digit1","ctrl":true,"shift":false},'
             '"field_values":{"margin_of_error_tolerance":{"max_pixel":5,"_type":"MarginOfErrorTolerance"}}},'
             '{"label_id":"bike","field_values_operation":"replace"}]'
@@ -206,6 +209,7 @@ class TestReadLabels:
                 label_id=CAR_LABEL_ID,
                 label_name_en="vehicle",
                 label_name_ja="車",
+                label_name_vi="xe hơi",
                 color="#123456",
                 keybind={"alt": False, "code": "Digit1", "ctrl": True, "shift": False},
                 field_values={"margin_of_error_tolerance": {"max_pixel": 5, "_type": "MarginOfErrorTolerance"}},
@@ -233,6 +237,7 @@ class TestReadLabels:
                     "label_id": CAR_LABEL_ID,
                     "label_name_en": "vehicle",
                     "label_name_ja": "車",
+                    "label_name_vi": "xe hơi",
                     "color": "#123456",
                     "keybind": '{"alt": false, "code": "Digit1", "ctrl": true, "shift": false}',
                     "field_values": '{"margin_of_error_tolerance": {"max_pixel": 5, "_type": "MarginOfErrorTolerance"}}',
@@ -249,6 +254,7 @@ class TestReadLabels:
                 label_id=CAR_LABEL_ID,
                 label_name_en="vehicle",
                 label_name_ja="車",
+                label_name_vi="xe hơi",
                 color="#123456",
                 keybind={"alt": False, "code": "Digit1", "ctrl": True, "shift": False},
                 field_values={"margin_of_error_tolerance": {"max_pixel": 5, "_type": "MarginOfErrorTolerance"}},

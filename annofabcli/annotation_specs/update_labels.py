@@ -39,6 +39,7 @@ LABEL_JSON_KEYS = {
     "label_id",
     "label_name_en",
     "label_name_ja",
+    "label_name_vi",
     "color",
     "keybind",
     "field_values",
@@ -61,6 +62,9 @@ class LabelUpdateInput:
 
     label_name_ja: str | None = None
     """更新後のラベル日本語名。"""
+
+    label_name_vi: str | None = None
+    """更新後のラベルベトナム語名。"""
 
     color: str | None = None
     """更新後の ``#RRGGBB`` 形式のカラーコード。"""
@@ -126,6 +130,7 @@ def validate_label_update_input(label_update_input: LabelUpdateInput, *, index: 
         [
             label_update_input.label_name_en is not None,
             label_update_input.label_name_ja is not None,
+            label_update_input.label_name_vi is not None,
             label_update_input.color is not None,
             label_update_input.keybind is not None,
             has_field_values_update,
@@ -162,6 +167,7 @@ def parse_label_update_input_from_dict(data: dict[str, Any], *, index: int) -> L
         label_id=data.get("label_id"),
         label_name_en=data.get("label_name_en"),
         label_name_ja=data.get("label_name_ja"),
+        label_name_vi=data.get("label_name_vi"),
         color=data.get("color"),
         keybind=None if data.get("keybind") is None else validate_keybind_input(data["keybind"]),
         field_values=None if field_values is None else validate_field_values_input(field_values),
@@ -251,6 +257,7 @@ def read_labels_csv(csv_path: Path) -> list[LabelUpdateInput]:
                 "label_id": "string",
                 "label_name_en": "string",
                 "label_name_ja": "string",
+                "label_name_vi": "string",
                 "color": "string",
                 "keybind": "string",
                 "field_values": "string",
@@ -270,6 +277,7 @@ def read_labels_csv(csv_path: Path) -> list[LabelUpdateInput]:
             label_id=row.get("label_id"),
             label_name_en=row.get("label_name_en"),
             label_name_ja=row.get("label_name_ja"),
+            label_name_vi=row.get("label_name_vi"),
             color=row.get("color"),
             keybind=parse_keybind_in_csv(row.get("keybind"), index=index),
             field_values=parse_field_values_in_csv(row.get("field_values"), index=index),
@@ -349,6 +357,24 @@ def update_label_name_ja(label: dict[str, Any], label_name_ja: str) -> None:
     for message in label["label_name"]["messages"]:
         if message["lang"] == "ja-JP":
             message["message"] = label_name_ja
+            return
+
+
+def update_label_name_vi(label: dict[str, Any], label_name_vi: str) -> None:
+    """
+    ラベルベトナム語名を更新する。
+
+    Args:
+        label: 更新対象ラベル
+        label_name_vi: 更新後のラベルベトナム語名
+    """
+    if get_message_with_lang(label["label_name"], "vi-VN") is None:
+        label["label_name"]["messages"].append({"lang": "vi-VN", "message": label_name_vi})
+        return
+
+    for message in label["label_name"]["messages"]:
+        if message["lang"] == "vi-VN":
+            message["message"] = label_name_vi
             return
 
 
@@ -454,6 +480,8 @@ def build_request_body_for_update_labels(
             update_label_name_en(label, label_update_input.label_name_en)
         if label_update_input.label_name_ja is not None:
             update_label_name_ja(label, label_update_input.label_name_ja)
+        if label_update_input.label_name_vi is not None:
+            update_label_name_vi(label, label_update_input.label_name_vi)
         if label_update_input.color is not None:
             label["color"] = hex_to_rgb(label_update_input.color)
         if label_update_input.keybind is not None:
@@ -558,6 +586,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
             "label_id": "car_label_id",
             "label_name_en": "car",
             "label_name_ja": "車",
+            "label_name_vi": "xe hơi",
             "color": "#123456",
             "keybind": {"alt": False, "code": "Digit1", "ctrl": True, "shift": False},
             "field_values": {"margin_of_error_tolerance": {"max_pixel": 5, "_type": "MarginOfErrorTolerance"}},
@@ -571,7 +600,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         help=(
             "更新するラベル情報のJSON配列を指定します。 ``file://`` を先頭に付けるとJSON形式のファイルを指定できます。"
             " 各要素には更新対象を示す ``label_id`` が必要です。"
-            " 任意で更新後の ``label_name_en`` , ``label_name_ja`` , ``color`` , ``keybind`` , ``field_values`` , ``field_values_operation`` を指定できます。"
+            " 任意で更新後の ``label_name_en`` , ``label_name_ja`` , ``label_name_vi`` , ``color`` , ``keybind`` , ``field_values`` , ``field_values_operation`` を指定できます。"
             f"\n(例) ``{json.dumps(sample_json, ensure_ascii=False)}``"
         ),
     )
@@ -580,7 +609,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         type=Path,
         help=(
             "更新するラベル情報のCSVファイルを指定します。 CSVには更新対象を示す ``label_id`` 列が必要です。"
-            " 任意で更新後の ``label_name_en`` , ``label_name_ja`` , ``color`` , ``keybind`` , ``field_values`` , ``field_values_operation`` 列を指定できます。"
+            " 任意で更新後の ``label_name_en`` , ``label_name_ja`` , ``label_name_vi`` , ``color`` , ``keybind`` , ``field_values`` , ``field_values_operation`` 列を指定できます。"
             " ``keybind`` 列と ``field_values`` 列にはJSONオブジェクト文字列を指定してください。"
         ),
     )
@@ -613,7 +642,7 @@ def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse
     """
     subcommand_name = "update_labels"
     subcommand_help = "アノテーション仕様の既存ラベル情報を更新します。"
-    description = "アノテーション仕様の既存ラベルに設定された英語名、日本語名、色、キーバインド、field_values を更新します。"
+    description = "アノテーション仕様の既存ラベルに設定された英語名、日本語名、ベトナム語名、色、キーバインド、field_values を更新します。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description=description)
     parse_args(parser)

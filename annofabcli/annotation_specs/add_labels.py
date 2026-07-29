@@ -52,6 +52,9 @@ class LabelInput:
     label_name_ja: str | None = None
     """ラベルの日本語名。"""
 
+    label_name_vi: str | None = None
+    """ラベルのベトナム語名。"""
+
     label_id: str | None = None
     """ラベルID。未指定の場合はUUIDv4を自動生成する。"""
 
@@ -94,6 +97,7 @@ def parse_label_input_from_dict(data: dict[str, Any], *, index: int) -> LabelInp
     return LabelInput(
         label_name_en=label_name_en,
         label_name_ja=data.get("label_name_ja"),
+        label_name_vi=data.get("label_name_vi"),
         label_id=data.get("label_id"),
         annotation_type=annotation_type,
         color=data.get("color"),
@@ -236,6 +240,7 @@ def read_labels_csv(csv_path: Path) -> list[LabelInput]:
                 "annotation_type": "string",
                 "label_name_en": "string",
                 "label_name_ja": "string",
+                "label_name_vi": "string",
                 "color": "string",
                 "keybind": "string",
                 "field_values": "string",
@@ -253,6 +258,7 @@ def read_labels_csv(csv_path: Path) -> list[LabelInput]:
     for index, row in enumerate(df.to_dict(orient="records"), start=1):
         label_name_en = row["label_name_en"]
         label_name_ja = row.get("label_name_ja")
+        label_name_vi = row.get("label_name_vi")
         label_id = row.get("label_id")
         annotation_type = parse_annotation_type_in_csv(row.get("annotation_type"), index=index)
         color = row.get("color")
@@ -262,6 +268,7 @@ def read_labels_csv(csv_path: Path) -> list[LabelInput]:
             LabelInput(
                 label_name_en=label_name_en,
                 label_name_ja=label_name_ja,
+                label_name_vi=label_name_vi,
                 label_id=label_id,
                 annotation_type=annotation_type,
                 color=color,
@@ -412,6 +419,7 @@ def build_request_body_for_add_labels(
             label_id=resolved_label_id,
             label_name_en=label_input.label_name_en,
             label_name_ja=label_input.label_name_ja,
+            label_name_vi=label_input.label_name_vi,
             annotation_type=cast(str, label_input.annotation_type),
             color=color,
             keybind=label_input.keybind,
@@ -526,6 +534,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
             "label_id": "pedestrian",
             "label_name_en": "pedestrian",
             "label_name_ja": "歩行者",
+            "label_name_vi": "người đi bộ",
             "annotation_type": "bounding_box",
             "color": "#123456",
             "keybind": {"alt": False, "code": "Digit1", "ctrl": True, "shift": False},
@@ -545,7 +554,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         type=str,
         help=(
             "追加するラベル情報のJSON配列を指定します。 ``file://`` を先頭に付けるとJSON形式のファイルを指定できます。"
-            " 各要素には ``label_name_en`` が必要です。 任意で ``label_id`` , ``label_name_ja`` , ``annotation_type`` ,"
+            " 各要素には ``label_name_en`` が必要です。 任意で ``label_id`` , ``label_name_ja`` , ``label_name_vi`` , ``annotation_type`` ,"
             " ``color`` , ``keybind`` , ``field_values`` を指定できます。 ``keybind`` と ``field_values`` にはJSONオブジェクトを指定してください。"
             f"\n(例) ``{json.dumps(sample_json, ensure_ascii=False)}``"
         ),
@@ -555,7 +564,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         type=Path,
         help=(
             "追加するラベル情報のCSVファイルを指定します。 CSVには ``label_name_en`` 列が必要です。"
-            " 任意で ``label_id`` , ``label_name_ja`` , ``annotation_type`` , ``color`` , ``keybind`` , ``field_values`` 列を指定できます。"
+            " 任意で ``label_id`` , ``label_name_ja`` , ``label_name_vi`` , ``annotation_type`` , ``color`` , ``keybind`` , ``field_values`` 列を指定できます。"
             " ``keybind`` 列と ``field_values`` 列にはJSONオブジェクト文字列を指定してください。"
         ),
     )

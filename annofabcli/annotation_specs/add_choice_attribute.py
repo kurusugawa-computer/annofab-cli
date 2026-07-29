@@ -43,6 +43,9 @@ class ChoiceAttributeInput:
     choice_name_ja: str | None = None
     """選択肢の日本語名"""
 
+    choice_name_vi: str | None = None
+    """選択肢のベトナム語名"""
+
     choice_id: str | None = None
     """選択肢ID。未指定の場合はUUIDv4を自動生成する"""
 
@@ -90,6 +93,7 @@ def parse_choice_input_from_dict(data: dict[str, Any], *, index: int) -> ChoiceA
     return ChoiceAttributeInput(
         choice_name_en=choice_name_en,
         choice_name_ja=data.get("choice_name_ja"),
+        choice_name_vi=data.get("choice_name_vi"),
         choice_id=data.get("choice_id"),
         is_default=data.get("is_default", False),
         keybind=None if data.get("keybind") is None else validate_keybind_input(data["keybind"]),
@@ -142,6 +146,7 @@ def read_choices_csv(csv_path: Path) -> list[ChoiceAttributeInput]:
                 "choice_id": "string",
                 "choice_name_en": "string",
                 "choice_name_ja": "string",
+                "choice_name_vi": "string",
                 "is_default": "boolean",
                 "keybind": "string",
             },
@@ -158,6 +163,7 @@ def read_choices_csv(csv_path: Path) -> list[ChoiceAttributeInput]:
     for row in df.to_dict(orient="records"):
         choice_name_en = row["choice_name_en"]
         choice_name_ja = row.get("choice_name_ja")
+        choice_name_vi = row.get("choice_name_vi")
         choice_id = row.get("choice_id")
         is_default = row.get("is_default", False)
         keybind = parse_keybind_in_csv(row.get("keybind"))
@@ -165,6 +171,7 @@ def read_choices_csv(csv_path: Path) -> list[ChoiceAttributeInput]:
             ChoiceAttributeInput(
                 choice_name_en=choice_name_en,
                 choice_name_ja=choice_name_ja,
+                choice_name_vi=choice_name_vi,
                 choice_id=choice_id,
                 is_default=is_default,
                 keybind=keybind,
@@ -235,7 +242,7 @@ def build_choices(choice_inputs: Sequence[ChoiceAttributeInput], *, min_count: i
         choices.append(
             {
                 "choice_id": choice_id,
-                "name": create_name(choice_input.choice_name_en, choice_input.choice_name_ja),
+                "name": create_name(choice_input.choice_name_en, choice_input.choice_name_ja, choice_input.choice_name_vi),
                 "keybind": keybind_to_api_keybind(copy.deepcopy(choice_input.keybind)),
             }
         )
@@ -300,6 +307,7 @@ def create_attribute(
     attribute_type: str,
     attribute_name_en: str,
     attribute_name_ja: str | None,
+    attribute_name_vi: str | None = None,
     attribute_id: str | None,
     choice_inputs: Sequence[ChoiceAttributeInput],
     read_only: bool = False,
@@ -312,6 +320,7 @@ def create_attribute(
         attribute_type: 属性型。 ``choice`` または ``select``
         attribute_name_en: 属性英語名
         attribute_name_ja: 属性日本語名
+        attribute_name_vi: 属性ベトナム語名
         attribute_id: 属性ID。未指定ならUUIDv4を自動生成
         choice_inputs: 選択肢入力一覧
         read_only: 読み込み専用属性にするかどうか
@@ -326,7 +335,7 @@ def create_attribute(
     choices, default_choice_id = build_choices(choice_inputs)
     return {
         "additional_data_definition_id": attribute_id if attribute_id is not None else str(uuid.uuid4()),
-        "name": create_name(attribute_name_en, attribute_name_ja),
+        "name": create_name(attribute_name_en, attribute_name_ja, attribute_name_vi),
         "type": attribute_type,
         "default": default_choice_id,
         "choices": choices,
@@ -335,12 +344,13 @@ def create_attribute(
     }
 
 
-def resolve_choice_attribute_input(
+def resolve_choice_attribute_input(  # noqa: PLR0913
     annotation_specs: dict[str, Any],
     *,
     attribute_type: str,
     attribute_name_en: str,
     attribute_name_ja: str | None,
+    attribute_name_vi: str | None = None,
     attribute_id: str | None,
     choice_inputs: Sequence[ChoiceAttributeInput],
     label_ids: Sequence[str] | None,
@@ -356,6 +366,7 @@ def resolve_choice_attribute_input(
         attribute_type: 属性型。 ``choice`` または ``select``
         attribute_name_en: 属性英語名
         attribute_name_ja: 属性日本語名
+        attribute_name_vi: 属性ベトナム語名
         attribute_id: 属性ID。未指定ならUUIDv4を自動生成
         choice_inputs: 選択肢入力一覧
         label_ids: 追加先ラベルID一覧。未指定時はNone
@@ -372,6 +383,7 @@ def resolve_choice_attribute_input(
         attribute_type=attribute_type,
         attribute_name_en=attribute_name_en,
         attribute_name_ja=attribute_name_ja,
+        attribute_name_vi=attribute_name_vi,
         attribute_id=attribute_id,
         choice_inputs=choice_inputs,
         read_only=read_only,
@@ -439,12 +451,13 @@ class AddChoiceAttributeMain(CommandLineWithConfirm):
         self.project_id = project_id
         CommandLineWithConfirm.__init__(self, all_yes)
 
-    def add_choice_attribute(
+    def add_choice_attribute(  # noqa: PLR0913
         self,
         *,
         attribute_type: str,
         attribute_name_en: str,
         attribute_name_ja: str | None,
+        attribute_name_vi: str | None = None,
         attribute_id: str | None,
         choice_inputs: Sequence[ChoiceAttributeInput],
         label_ids: Sequence[str] | None,
@@ -460,6 +473,7 @@ class AddChoiceAttributeMain(CommandLineWithConfirm):
             attribute_type: 属性型。 ``choice`` または ``select``
             attribute_name_en: 属性英語名
             attribute_name_ja: 属性日本語名
+            attribute_name_vi: 属性ベトナム語名
             attribute_id: 属性ID。未指定ならUUIDv4を自動生成
             choice_inputs: 選択肢入力一覧
             label_ids: 追加先ラベルID一覧。未指定時はNone
@@ -480,6 +494,7 @@ class AddChoiceAttributeMain(CommandLineWithConfirm):
             attribute_type=attribute_type,
             attribute_name_en=attribute_name_en,
             attribute_name_ja=attribute_name_ja,
+            attribute_name_vi=attribute_name_vi,
             attribute_id=attribute_id,
             choice_inputs=choice_inputs,
             label_ids=label_ids,
@@ -537,6 +552,7 @@ class AddChoiceAttribute(CommandLine):
             attribute_type=args.attribute_type,
             attribute_name_en=args.attribute_name_en,
             attribute_name_ja=args.attribute_name_ja,
+            attribute_name_vi=args.attribute_name_vi,
             attribute_id=args.attribute_id,
             choice_inputs=choice_inputs,
             label_ids=label_ids,
@@ -567,6 +583,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--attribute_name_en", type=str, required=True, help="追加する属性の英語名。")
     parser.add_argument("--attribute_id", type=str, help="追加する属性の属性ID。未指定の場合はUUIDv4を自動生成します。")
     parser.add_argument("--attribute_name_ja", type=str, help="追加する属性の日本語名。")
+    parser.add_argument("--attribute_name_vi", type=str, help="追加する属性のベトナム語名。")
     parser.add_argument("--read_only", action="store_true", help="追加する属性を読み込み専用にします。")
     parser.add_argument(
         "--keybind_json",
@@ -579,6 +596,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
             "choice_id": "front",
             "choice_name_en": "front",
             "choice_name_ja": "前",
+            "choice_name_vi": "trước",
             "is_default": True,
             "keybind": {"alt": False, "code": "Digit1", "ctrl": True, "shift": False},
         },
@@ -590,7 +608,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         type=str,
         help=(
             "追加する選択肢情報のJSON配列を指定します。 ``file://`` を先頭に付けるとJSON形式のファイルを指定できます。"
-            " 任意で ``keybind`` を指定できます。 ``keybind`` にはJSONオブジェクトを指定してください。"
+            " 任意で ``choice_id`` , ``choice_name_ja`` , ``choice_name_vi`` , ``is_default`` , ``keybind`` を指定できます。 ``keybind`` にはJSONオブジェクトを指定してください。"
             f"\n(例) ``{json.dumps(sample_json, ensure_ascii=False)}``"
         ),
     )
@@ -599,7 +617,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         type=Path,
         help=(
             "追加する選択肢情報のCSVファイルを指定します。 CSVには ``choice_name_en`` 列が必要です。"
-            " 任意で ``choice_id`` , ``choice_name_ja`` , ``is_default`` , ``keybind`` 列を指定できます。"
+            " 任意で ``choice_id`` , ``choice_name_ja`` , ``choice_name_vi`` , ``is_default`` , ``keybind`` 列を指定できます。"
             " ``keybind`` 列にはJSONオブジェクト文字列を指定してください。"
         ),
     )

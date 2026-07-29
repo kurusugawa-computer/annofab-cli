@@ -61,6 +61,9 @@ class AttributeInput(BaseModel):
     attribute_name_ja: str | None = None
     """属性の日本語名。"""
 
+    attribute_name_vi: str | None = None
+    """属性のベトナム語名。"""
+
     attribute_id: str | None = None
     """属性ID。未指定の場合はUUIDv4を自動生成する。"""
 
@@ -203,6 +206,7 @@ def create_attribute_from_input(attribute_input: AttributeInput) -> dict[str, An
             attribute_type=attribute_input.attribute_type.value,
             attribute_name_en=attribute_input.attribute_name_en,
             attribute_name_ja=attribute_input.attribute_name_ja,
+            attribute_name_vi=attribute_input.attribute_name_vi,
             attribute_id=attribute_input.attribute_id,
             choice_inputs=attribute_input.choices if attribute_input.choices is not None else [],
             read_only=attribute_input.read_only,
@@ -213,6 +217,7 @@ def create_attribute_from_input(attribute_input: AttributeInput) -> dict[str, An
         attribute_type=attribute_input.attribute_type.value,
         attribute_name_en=attribute_input.attribute_name_en,
         attribute_name_ja=attribute_input.attribute_name_ja,
+        attribute_name_vi=attribute_input.attribute_name_vi,
         attribute_id=attribute_input.attribute_id,
         read_only=attribute_input.read_only,
         default_value=attribute_input.default_value,
@@ -444,6 +449,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
             "attribute_type": "flag",
             "attribute_name_en": "occluded",
             "attribute_name_ja": "隠れ",
+            "attribute_name_vi": "bị che",
             "read_only": False,
             "default_value": False,
             "keybind": {"alt": False, "code": "Digit1", "ctrl": True, "shift": False},
@@ -453,8 +459,8 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
             "attribute_type": "select",
             "attribute_name_en": "weather",
             "choices": [
-                {"choice_name_en": "sunny", "choice_name_ja": "晴れ", "is_default": True, "keybind": {"alt": False, "code": "Digit2", "ctrl": True, "shift": False}},
-                {"choice_name_en": "cloudy", "choice_name_ja": "曇り"},
+                {"choice_name_en": "sunny", "choice_name_ja": "晴れ", "choice_name_vi": "nắng", "is_default": True, "keybind": {"alt": False, "code": "Digit2", "ctrl": True, "shift": False}},
+                {"choice_name_en": "cloudy", "choice_name_ja": "曇り", "choice_name_vi": "nhiều mây"},
             ],
             "label_ids": ["40f7796b-3722-4eed-9c0c-04a27f9165d2"],
         },

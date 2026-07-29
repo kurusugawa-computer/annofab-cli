@@ -27,6 +27,7 @@ ATTRIBUTE_JSON_KEYS = {
     "attribute_id",
     "attribute_name_en",
     "attribute_name_ja",
+    "attribute_name_vi",
     "keybind",
     "read_only",
     "default_value",
@@ -48,6 +49,9 @@ class AttributeUpdateInput:
 
     attribute_name_ja: str | None = None
     """更新後の属性日本語名。"""
+
+    attribute_name_vi: str | None = None
+    """更新後の属性ベトナム語名。"""
 
     keybind: dict[str, Any] | None = None
     """更新後のkeybind。"""
@@ -86,6 +90,7 @@ def validate_attribute_update_input(attribute_update_input: AttributeUpdateInput
         [
             attribute_update_input.attribute_name_en is not None,
             attribute_update_input.attribute_name_ja is not None,
+            attribute_update_input.attribute_name_vi is not None,
             attribute_update_input.keybind is not None,
             attribute_update_input.read_only is not None,
             attribute_update_input.has_default_value,
@@ -109,6 +114,7 @@ def parse_attribute_update_input_from_dict(data: dict[str, Any], *, index: int) 
         attribute_id=data.get("attribute_id"),
         attribute_name_en=data.get("attribute_name_en"),
         attribute_name_ja=data.get("attribute_name_ja"),
+        attribute_name_vi=data.get("attribute_name_vi"),
         keybind=None if data.get("keybind") is None else validate_keybind_input(data["keybind"]),
         read_only=data.get("read_only"),
         default_value=data.get("default_value"),
@@ -145,6 +151,7 @@ def read_attributes_csv(csv_path: Path) -> list[AttributeUpdateInput]:
                 "attribute_id": "string",
                 "attribute_name_en": "string",
                 "attribute_name_ja": "string",
+                "attribute_name_vi": "string",
                 "keybind": "string",
                 "read_only": "boolean",
                 "default_value": "string",
@@ -164,6 +171,7 @@ def read_attributes_csv(csv_path: Path) -> list[AttributeUpdateInput]:
             attribute_id=row.get("attribute_id"),
             attribute_name_en=row.get("attribute_name_en"),
             attribute_name_ja=row.get("attribute_name_ja"),
+            attribute_name_vi=row.get("attribute_name_vi"),
             keybind=parse_keybind_in_csv(row.get("keybind"), index=index),
             read_only=row.get("read_only"),
             default_value=default_value,
@@ -223,6 +231,20 @@ def update_attribute_name_ja(attribute: dict[str, Any], attribute_name_ja: str) 
     for message in attribute["name"]["messages"]:
         if message["lang"] == "ja-JP":
             message["message"] = attribute_name_ja
+            return
+
+
+def update_attribute_name_vi(attribute: dict[str, Any], attribute_name_vi: str) -> None:
+    """
+    属性ベトナム語名を更新する。
+    """
+    if get_message_with_lang(attribute["name"], "vi-VN") is None:
+        attribute["name"]["messages"].append({"lang": "vi-VN", "message": attribute_name_vi})
+        return
+
+    for message in attribute["name"]["messages"]:
+        if message["lang"] == "vi-VN":
+            message["message"] = attribute_name_vi
             return
 
 
@@ -294,6 +316,8 @@ def build_request_body_for_update_attributes(
             update_attribute_name_en(attribute, attribute_update_input.attribute_name_en)
         if attribute_update_input.attribute_name_ja is not None:
             update_attribute_name_ja(attribute, attribute_update_input.attribute_name_ja)
+        if attribute_update_input.attribute_name_vi is not None:
+            update_attribute_name_vi(attribute, attribute_update_input.attribute_name_vi)
         if attribute_update_input.keybind is not None:
             attribute["keybind"] = keybind_to_api_keybind(copy.deepcopy(attribute_update_input.keybind))
         if attribute_update_input.read_only is not None:
@@ -389,6 +413,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
             "attribute_id": "54fa5e97-6f88-49a4-aeb0-a91a15d11528",
             "attribute_name_en": "comment",
             "attribute_name_ja": "コメント",
+            "attribute_name_vi": "bình luận",
             "keybind": {"alt": False, "code": "Digit1", "ctrl": True, "shift": False},
             "read_only": False,
             "default_value": "確認済み",
@@ -402,7 +427,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         help=(
             "更新する属性情報のJSON配列を指定します。 ``file://`` を先頭に付けるとJSON形式のファイルを指定できます。"
             " 各要素には更新対象を示す ``attribute_id`` が必要です。"
-            " 任意で更新後の ``attribute_name_en`` , ``attribute_name_ja`` , ``keybind`` , ``read_only`` , ``default_value`` を指定できます。"
+            " 任意で更新後の ``attribute_name_en`` , ``attribute_name_ja`` , ``attribute_name_vi`` , ``keybind`` , ``read_only`` , ``default_value`` を指定できます。"
             f"\n(例) ``{json.dumps(sample_json, ensure_ascii=False)}``"
         ),
     )
@@ -411,7 +436,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         type=Path,
         help=(
             "更新する属性情報のCSVファイルを指定します。 CSVには更新対象を示す ``attribute_id`` 列が必要です。"
-            " 任意で更新後の ``attribute_name_en`` , ``attribute_name_ja`` , ``keybind`` , ``read_only`` , ``default_value`` 列を指定できます。"
+            " 任意で更新後の ``attribute_name_en`` , ``attribute_name_ja`` , ``attribute_name_vi`` , ``keybind`` , ``read_only`` , ``default_value`` 列を指定できます。"
             " ``keybind`` 列にはJSONオブジェクト文字列を指定してください。"
         ),
     )
@@ -435,7 +460,7 @@ def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse
     """
     subcommand_name = "update_attributes"
     subcommand_help = "アノテーション仕様の既存属性情報を更新します。"
-    description = "アノテーション仕様の既存属性に設定された英語名、日本語名、キーバインド、read_only、default_value を更新します。"
+    description = "アノテーション仕様の既存属性に設定された英語名、日本語名、ベトナム語名、キーバインド、read_only、default_value を更新します。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description=description)
     parse_args(parser)

@@ -37,6 +37,7 @@ class TestBuildRequestBodyForUpdateAttributes:
                     attribute_id=COMMENT_ATTRIBUTE_ID,
                     attribute_name_en="remark",
                     attribute_name_ja="コメント",
+                    attribute_name_vi="bình luận",
                     keybind={"alt": False, "code": "Digit1", "ctrl": True, "shift": False},
                     read_only=True,
                     default_value="確認済み",
@@ -60,6 +61,7 @@ class TestBuildRequestBodyForUpdateAttributes:
         assert comment_attribute["name"]["messages"] == [
             {"lang": "ja-JP", "message": "コメント"},
             {"lang": "en-US", "message": "remark"},
+            {"lang": "vi-VN", "message": "bình luận"},
         ]
         assert comment_attribute["type"] == "comment"
         assert comment_attribute["read_only"] is True
@@ -101,7 +103,7 @@ class TestBuildRequestBodyForUpdateAttributes:
         }
         resolved_inputs = resolve_attribute_update_inputs(
             annotation_specs,
-            attribute_update_inputs=[AttributeUpdateInput(attribute_id=COMMENT_ATTRIBUTE_ID, attribute_name_en="remark", attribute_name_ja="コメント")],
+            attribute_update_inputs=[AttributeUpdateInput(attribute_id=COMMENT_ATTRIBUTE_ID, attribute_name_en="remark", attribute_name_ja="コメント", attribute_name_vi="bình luận")],
         )
 
         actual = build_request_body_for_update_attributes(
@@ -116,6 +118,7 @@ class TestBuildRequestBodyForUpdateAttributes:
                 {"lang": "en-US", "message": "remark"},
                 {"lang": "ja-JP", "message": "コメント"},
                 {"lang": "fr-FR", "message": "commentaire"},
+                {"lang": "vi-VN", "message": "bình luận"},
             ],
             "default_lang": "en-US",
         }
@@ -212,7 +215,7 @@ class TestAttributeUpdateInputs:
 class TestReadAttributes:
     def test_read_attributes_json(self) -> None:
         actual = read_attributes_json(
-            f'[{{"attribute_id":"{COMMENT_ATTRIBUTE_ID}","attribute_name_en":"remark","attribute_name_ja":"コメント",'
+            f'[{{"attribute_id":"{COMMENT_ATTRIBUTE_ID}","attribute_name_en":"remark","attribute_name_ja":"コメント","attribute_name_vi":"bình luận",'
             '"keybind":{"alt":false,"code":"Digit1","ctrl":true,"shift":false},'
             '"read_only":true,"default_value":"確認済み"},'
             f'{{"attribute_id":"{UNCLEAR_ATTRIBUTE_ID}","default_value":true}}]'
@@ -223,6 +226,7 @@ class TestReadAttributes:
                 attribute_id=COMMENT_ATTRIBUTE_ID,
                 attribute_name_en="remark",
                 attribute_name_ja="コメント",
+                attribute_name_vi="bình luận",
                 keybind={"alt": False, "code": "Digit1", "ctrl": True, "shift": False},
                 read_only=True,
                 default_value="確認済み",
@@ -251,6 +255,7 @@ class TestReadAttributes:
                     "attribute_id": COMMENT_ATTRIBUTE_ID,
                     "attribute_name_en": "remark",
                     "attribute_name_ja": "コメント",
+                    "attribute_name_vi": "bình luận",
                     "keybind": '{"alt": false, "code": "Digit1", "ctrl": true, "shift": false}',
                     "read_only": "true",
                     "default_value": "確認済み",
@@ -267,6 +272,7 @@ class TestReadAttributes:
                 attribute_id=COMMENT_ATTRIBUTE_ID,
                 attribute_name_en="remark",
                 attribute_name_ja="コメント",
+                attribute_name_vi="bình luận",
                 keybind={"alt": False, "code": "Digit1", "ctrl": True, "shift": False},
                 read_only=True,
                 default_value="確認済み",
