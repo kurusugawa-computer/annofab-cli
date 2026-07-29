@@ -51,6 +51,7 @@ JSON形式で指定する場合
             "label_id": "bicycle",
             "label_name_en": "bicycle",
             "label_name_ja": "自転車",
+            "label_name_vi": "xe đạp",
             "annotation_type": "bounding_box",
             "color": "#00AAFF"
         }
@@ -86,6 +87,9 @@ JSON形式で指定する場合
     * - ``label_name_ja``
       - 任意
       - ラベルの日本語名。省略した場合は ``label_name_en`` と同じ値を使用します。
+    * - ``label_name_vi``
+      - 任意
+      - ラベルのベトナム語名。
     * - ``color``
       - 任意
       - ラベルの色。 ``#RRGGBB`` 形式の16進数カラーコードを指定してください。省略した場合は自動設定されます。
@@ -104,9 +108,9 @@ CSV形式で指定する場合
 .. code-block::
     :caption: labels.csv
 
-    label_id,label_name_en,label_name_ja,annotation_type,color,keybind,field_values
-    ,pedestrian,,segmentation_v2,#123456,"{""alt"": false, ""code"": ""Digit1"", ""ctrl"": true, ""shift"": false}","{""margin_of_error_tolerance"": {""max_pixel"": 5, ""_type"": ""MarginOfErrorTolerance""}}"
-    bicycle,bicycle,自転車,segmentation_v2,#00AAFF,,
+    label_id,label_name_en,label_name_ja,label_name_vi,annotation_type,color,keybind,field_values
+    ,pedestrian,,,segmentation_v2,#123456,"{""alt"": false, ""code"": ""Digit1"", ""ctrl"": true, ""shift"": false}","{""margin_of_error_tolerance"": {""max_pixel"": 5, ""_type"": ""MarginOfErrorTolerance""}}"
+    bicycle,bicycle,自転車,xe đạp,segmentation_v2,#00AAFF,,
 
 
 CSV形式では、 ``keybind`` 列と ``field_values`` 列だけはJSONオブジェクト文字列として指定してください。

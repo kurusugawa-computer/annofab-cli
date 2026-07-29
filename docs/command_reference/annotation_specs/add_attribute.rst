@@ -18,6 +18,7 @@ Examples
      --project_id prj1 \
      --attribute_type flag \
      --attribute_name_en unclear \
+     --attribute_name_vi "không rõ" \
      --label_name_en car bus
 
 読み込み専用属性にする

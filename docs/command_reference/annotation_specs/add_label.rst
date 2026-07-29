@@ -30,6 +30,7 @@ Examples
      --project_id prj1 \
      --label_name_en road \
      --label_name_ja 路面 \
+     --label_name_vi "mặt đường" \
      --annotation_type segmentation_v2 \
      --label_id road_label \
      --color '#00CCFF'
