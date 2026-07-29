@@ -20,6 +20,7 @@ Available Commands
    add_attributes
    add_choice_attribute
    add_choices_to_attribute
+   add_choices_to_attributes
    add_existing_attribute_to_labels
    add_label
    add_labels
