@@ -69,6 +69,8 @@ class TestBuildRequestBodyForUpdateAttributes:
         unclear_attribute = next(additional for additional in actual["additionals"] if additional["additional_data_definition_id"] == UNCLEAR_ATTRIBUTE_ID)
         assert unclear_attribute["default"] is True
         assert actual["comment"].startswith("以下の属性情報を更新しました。")
+        assert f"attribute_id='{COMMENT_ATTRIBUTE_ID}', attribute_name_en='comment' -> 'remark'" in actual["comment"]
+        assert f"attribute_id='{UNCLEAR_ATTRIBUTE_ID}', attribute_name_en='unclear'" in actual["comment"]
         assert actual["last_updated_datetime"] == "2026-04-24T00:00:00+09:00"
 
         car_label = next(label for label in actual["labels"] if label["label_id"] == "car_label_id")

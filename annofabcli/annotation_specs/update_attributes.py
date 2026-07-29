@@ -259,8 +259,17 @@ def create_comment_for_update_attributes(resolved_attribute_update_inputs: Seque
     """
     属性更新時のデフォルトコメントを生成する。
     """
-    attribute_names = [get_attribute_name_en(attribute_input.target_attribute) for attribute_input in resolved_attribute_update_inputs]
-    return f"以下の属性情報を更新しました。\n対象属性: {', '.join(attribute_names)}"
+    attribute_texts = []
+    for attribute_input in resolved_attribute_update_inputs:
+        attribute_id = attribute_input.target_attribute["additional_data_definition_id"]
+        old_attribute_name_en = get_attribute_name_en(attribute_input.target_attribute)
+        new_attribute_name_en = attribute_input.attribute_update_input.attribute_name_en
+        if new_attribute_name_en is not None and new_attribute_name_en != old_attribute_name_en:
+            attribute_text = f"attribute_id='{attribute_id}', attribute_name_en='{old_attribute_name_en}' -> '{new_attribute_name_en}'"
+        else:
+            attribute_text = f"attribute_id='{attribute_id}', attribute_name_en='{old_attribute_name_en}'"
+        attribute_texts.append(attribute_text)
+    return f"以下の属性情報を更新しました。\n対象属性: {', '.join(attribute_texts)}"
 
 
 def build_request_body_for_update_attributes(
