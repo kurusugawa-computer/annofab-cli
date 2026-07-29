@@ -16,6 +16,16 @@ from annofabapi.util.annotation_specs import AnnotationSpecsAccessor, get_attrib
 import annofabcli.common.cli
 from annofabcli.annotation_specs.add_attribute import parse_default_value
 from annofabcli.annotation_specs.add_labels import parse_keybind_in_csv
+from annofabcli.annotation_specs.update_choices import (
+    ChoiceUpdateInput,
+    get_target_choice,
+    parse_choice_update_input_from_dict,
+    update_choice_name_en,
+    update_choice_name_ja,
+    update_choice_name_vi,
+    validate_choice_name_ens_not_duplicated,
+    validate_choice_update_inputs,
+)
 from annofabcli.common.annofab.annotation_specs import keybind_to_api_keybind, validate_keybind_input
 from annofabcli.common.cli import ArgumentParser, CommandLine, CommandLineWithConfirm, build_annofabapi_resource_and_login, get_json_from_args
 from annofabcli.common.facade import AnnofabApiFacade
@@ -23,7 +33,7 @@ from annofabcli.common.utils import duplicated_set
 
 logger = logging.getLogger(__name__)
 
-ATTRIBUTE_JSON_KEYS = {
+ATTRIBUTE_KEYS = {
     "attribute_id",
     "attribute_name_en",
     "attribute_name_ja",
@@ -32,7 +42,13 @@ ATTRIBUTE_JSON_KEYS = {
     "read_only",
     "default_value",
 }
+"""属性更新入力で指定できる基本キー。"""
+
+ATTRIBUTE_JSON_KEYS = ATTRIBUTE_KEYS | {"choice_updates"}
 """``--attribute_json`` の各要素に指定できるキー。"""
+
+ATTRIBUTE_CSV_COLUMNS = ATTRIBUTE_KEYS
+"""``--attribute_csv`` で指定できる列。"""
 
 
 @dataclass(frozen=True)
@@ -65,6 +81,9 @@ class AttributeUpdateInput:
     has_default_value: bool = False
     """``default_value`` が明示的に指定されたか。"""
 
+    choice_updates: list[ChoiceUpdateInput] | None = None
+    """更新する既存選択肢の情報。"""
+
 
 @dataclass(frozen=True)
 class ResolvedAttributeUpdateInput:
@@ -94,12 +113,34 @@ def validate_attribute_update_input(attribute_update_input: AttributeUpdateInput
             attribute_update_input.keybind is not None,
             attribute_update_input.read_only is not None,
             attribute_update_input.has_default_value,
+            attribute_update_input.choice_updates is not None,
         ]
     )
     if not has_update_field:
         raise ValueError(f"{index}件目の属性に更新するフィールドが指定されていません。")
     if attribute_update_input.read_only is not None and not isinstance(attribute_update_input.read_only, bool):
         raise ValueError(f"{index}件目の属性の `read_only` には真偽値を指定してください。")
+    if attribute_update_input.choice_updates is not None:
+        validate_choice_update_inputs(attribute_update_input.choice_updates)
+
+
+def parse_choice_update_inputs_from_dict(data: dict[str, Any], *, index: int) -> list[ChoiceUpdateInput] | None:
+    """
+    属性更新JSON内の ``choice_updates`` を選択肢更新入力に変換する。
+    """
+    if "choice_updates" not in data:
+        return None
+
+    choice_updates = data["choice_updates"]
+    if not isinstance(choice_updates, list):
+        raise TypeError(f"{index}件目の属性の `choice_updates` には選択肢更新情報の配列を指定してください。")
+
+    result = []
+    for choice_index, choice_update in enumerate(choice_updates, start=1):
+        if not isinstance(choice_update, dict):
+            raise TypeError(f"{index}件目の属性の `choice_updates` の {choice_index} 件目がオブジェクト形式ではありません。")
+        result.append(parse_choice_update_input_from_dict(choice_update, index=choice_index))
+    return result
 
 
 def parse_attribute_update_input_from_dict(data: dict[str, Any], *, index: int) -> AttributeUpdateInput:
@@ -119,6 +160,7 @@ def parse_attribute_update_input_from_dict(data: dict[str, Any], *, index: int) 
         read_only=data.get("read_only"),
         default_value=data.get("default_value"),
         has_default_value="default_value" in data,
+        choice_updates=parse_choice_update_inputs_from_dict(data, index=index),
     )
     validate_attribute_update_input(attribute_update_input, index=index)
     return attribute_update_input
@@ -160,7 +202,7 @@ def read_attributes_csv(csv_path: Path) -> list[AttributeUpdateInput]:
     except Exception as e:
         raise ValueError(f"`--attribute_csv` の読み込みに失敗しました。 :: {e}") from e
 
-    unexpected_columns = set(df.columns) - ATTRIBUTE_JSON_KEYS
+    unexpected_columns = set(df.columns) - ATTRIBUTE_CSV_COLUMNS
     if unexpected_columns:
         raise ValueError(f"`--attribute_csv` に指定できない列があります。 :: {sorted(unexpected_columns)}")
 
@@ -214,6 +256,11 @@ def resolve_attribute_update_inputs(
         target_attribute_id = target_attribute["additional_data_definition_id"]
         if target_attribute_id in resolved_attribute_ids:
             raise ValueError(f"同じ属性を複数回更新しようとしています。 :: attribute_id='{target_attribute_id}'")
+        if attribute_update_input.choice_updates is not None:
+            if target_attribute["type"] not in ["choice", "select"]:
+                raise ValueError(f"属性ID='{target_attribute_id}' は選択肢系属性ではありません。")
+            for choice_update_input in attribute_update_input.choice_updates:
+                get_target_choice(target_attribute, choice_update_input)
         resolved_attribute_ids.add(target_attribute_id)
         result.append(ResolvedAttributeUpdateInput(target_attribute=target_attribute, attribute_update_input=attribute_update_input))
 
@@ -260,6 +307,26 @@ def update_attribute_name_en(attribute: dict[str, Any], attribute_name_en: str) 
         if message["lang"] == "en-US":
             message["message"] = attribute_name_en
             return
+
+
+def update_choices(attribute: dict[str, Any], choice_updates: Sequence[ChoiceUpdateInput]) -> None:
+    """
+    属性配下の既存選択肢を更新する。
+    """
+    choice_update_dict = {choice_update.choice_id: choice_update for choice_update in choice_updates}
+    for choice in attribute["choices"]:
+        choice_update_input = choice_update_dict.get(choice["choice_id"])
+        if choice_update_input is None:
+            continue
+        if choice_update_input.choice_name_en is not None:
+            update_choice_name_en(choice, choice_update_input.choice_name_en)
+        if choice_update_input.choice_name_ja is not None:
+            update_choice_name_ja(choice, choice_update_input.choice_name_ja)
+        if choice_update_input.choice_name_vi is not None:
+            update_choice_name_vi(choice, choice_update_input.choice_name_vi)
+        if choice_update_input.has_keybind:
+            choice["keybind"] = keybind_to_api_keybind(copy.deepcopy(choice_update_input.keybind))
+    validate_choice_name_ens_not_duplicated(attribute)
 
 
 def validate_attribute_name_ens_not_duplicated_in_labels(annotation_specs: Mapping[str, Any]) -> None:
@@ -324,6 +391,8 @@ def build_request_body_for_update_attributes(
             attribute["read_only"] = attribute_update_input.read_only
         if attribute_update_input.has_default_value:
             attribute["default"] = parse_default_value(attribute["type"], attribute_update_input.default_value)
+        if attribute_update_input.choice_updates is not None:
+            update_choices(attribute, attribute_update_input.choice_updates)
 
     validate_attribute_name_ens_not_duplicated_in_labels(request_body)
 
@@ -418,6 +487,14 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
             "read_only": False,
             "default_value": "確認済み",
         },
+        {
+            "attribute_id": "71620647-98cf-48ad-b43b-4af425a24f32",
+            "attribute_name_ja": "種別",
+            "choice_updates": [
+                {"choice_id": "08ec927c-18e6-4bba-837a-b16de7061580", "choice_name_ja": "大", "keybind": {"alt": False, "code": "Digit2", "ctrl": True, "shift": False}},
+                {"choice_id": "74691a87-7962-4fa9-ba52-7cc466ecd982", "keybind": None},
+            ],
+        },
         {"attribute_id": "f12a0b59-dfce-4241-bb87-4b2c0259fc6f", "read_only": True, "default_value": True},
     ]
     attribute_group = parser.add_mutually_exclusive_group(required=True)
@@ -427,7 +504,8 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         help=(
             "更新する属性情報のJSON配列を指定します。 ``file://`` を先頭に付けるとJSON形式のファイルを指定できます。"
             " 各要素には更新対象を示す ``attribute_id`` が必要です。"
-            " 任意で更新後の ``attribute_name_en`` , ``attribute_name_ja`` , ``attribute_name_vi`` , ``keybind`` , ``read_only`` , ``default_value`` を指定できます。"
+            " 任意で更新後の ``attribute_name_en`` , ``attribute_name_ja`` , ``attribute_name_vi`` , ``keybind`` , ``read_only`` , ``default_value`` , ``choice_updates`` を指定できます。"
+            " ``choice_updates`` では既存選択肢の ``choice_name_en`` , ``choice_name_ja`` , ``choice_name_vi`` , ``keybind`` を更新できます。"
             f"\n(例) ``{json.dumps(sample_json, ensure_ascii=False)}``"
         ),
     )
@@ -460,7 +538,7 @@ def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse
     """
     subcommand_name = "update_attributes"
     subcommand_help = "アノテーション仕様の既存属性情報を更新します。"
-    description = "アノテーション仕様の既存属性に設定された英語名、日本語名、ベトナム語名、キーバインド、read_only、default_value を更新します。"
+    description = "アノテーション仕様の既存属性に設定された英語名、日本語名、ベトナム語名、キーバインド、read_only、default_value と、既存選択肢の名前、ショートカットキーを更新します。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description=description)
     parse_args(parser)
