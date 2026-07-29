@@ -313,6 +313,10 @@ class TestReadAttributes:
         with pytest.raises(ValueError):
             read_attributes_json(f'[{{"attribute_id":"{TYPE_ATTRIBUTE_ID}","choice_updates":[{{"choice_id":"{LARGE_CHOICE_ID}","delete":true}}]}}]')
 
+    def test_read_attributes_json__choice_updates_item_must_be_object(self) -> None:
+        with pytest.raises(TypeError):
+            read_attributes_json(f'[{{"attribute_id":"{TYPE_ATTRIBUTE_ID}","choice_updates":["invalid"]}}]')
+
     def test_read_attributes_csv(self, tmp_path: Path) -> None:
         csv_path = tmp_path / "attributes.csv"
         df = pandas.DataFrame(

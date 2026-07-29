@@ -135,7 +135,12 @@ def parse_choice_update_inputs_from_dict(data: dict[str, Any], *, index: int) ->
     if not isinstance(choice_updates, list):
         raise TypeError(f"{index}件目の属性の `choice_updates` には選択肢更新情報の配列を指定してください。")
 
-    return [parse_choice_update_input_from_dict(choice_update, index=choice_index) for choice_index, choice_update in enumerate(choice_updates, start=1)]
+    result = []
+    for choice_index, choice_update in enumerate(choice_updates, start=1):
+        if not isinstance(choice_update, dict):
+            raise TypeError(f"{index}件目の属性の `choice_updates` の {choice_index} 件目がオブジェクト形式ではありません。")
+        result.append(parse_choice_update_input_from_dict(choice_update, index=choice_index))
+    return result
 
 
 def parse_attribute_update_input_from_dict(data: dict[str, Any], *, index: int) -> AttributeUpdateInput:
