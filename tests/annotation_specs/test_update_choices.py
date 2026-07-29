@@ -39,7 +39,8 @@ class TestBuildRequestBodyForUpdateChoices:
             attribute_name_en="type",
             choice_update_inputs=[
                 ChoiceUpdateInput(
-                    choice_name_en="large",
+                    choice_id=LARGE_CHOICE_ID,
+                    choice_name_en="big",
                     choice_name_ja="大",
                     keybind={"alt": False, "code": "Digit1", "ctrl": True, "shift": False},
                     has_keybind=True,
@@ -54,7 +55,7 @@ class TestBuildRequestBodyForUpdateChoices:
         large_choice = next(choice for choice in type_attribute["choices"] if choice["choice_id"] == LARGE_CHOICE_ID)
         assert large_choice["name"]["messages"] == [
             {"lang": "ja-JP", "message": "大"},
-            {"lang": "en-US", "message": "large"},
+            {"lang": "en-US", "message": "big"},
         ]
         assert large_choice["keybind"] == [{"alt": False, "code": "Digit1", "ctrl": True, "shift": False}]
 
@@ -69,7 +70,7 @@ class TestBuildRequestBodyForUpdateChoices:
             annotation_specs,
             attribute_id=None,
             attribute_name_en="type",
-            choice_update_inputs=[ChoiceUpdateInput(choice_name_en="large", choice_name_ja="大")],
+            choice_update_inputs=[ChoiceUpdateInput(choice_id=LARGE_CHOICE_ID, choice_name_ja="大")],
         )
 
         actual = build_request_body_for_update_choices(annotation_specs, resolved_choice_update_inputs=resolved_inputs, comment="custom")
@@ -90,7 +91,7 @@ class TestBuildRequestBodyForUpdateChoices:
             annotation_specs,
             attribute_id=None,
             attribute_name_en="type",
-            choice_update_inputs=[ChoiceUpdateInput(choice_name_en="large", choice_name_ja="大")],
+            choice_update_inputs=[ChoiceUpdateInput(choice_id=LARGE_CHOICE_ID, choice_name_en="big", choice_name_ja="大")],
         )
 
         actual = build_request_body_for_update_choices(annotation_specs, resolved_choice_update_inputs=resolved_inputs, comment=None)
@@ -99,7 +100,7 @@ class TestBuildRequestBodyForUpdateChoices:
         large_choice = next(choice for choice in type_attribute["choices"] if choice["choice_id"] == LARGE_CHOICE_ID)
         assert large_choice["name"] == {
             "messages": [
-                {"lang": "en-US", "message": "large"},
+                {"lang": "en-US", "message": "big"},
                 {"lang": "ja-JP", "message": "大"},
                 {"lang": "fr-FR", "message": "grand"},
             ],
@@ -112,7 +113,7 @@ class TestBuildRequestBodyForUpdateChoices:
             annotation_specs,
             attribute_id=None,
             attribute_name_en="type",
-            choice_update_inputs=[ChoiceUpdateInput(choice_name_en="large", choice_name_ja="大")],
+            choice_update_inputs=[ChoiceUpdateInput(choice_id=LARGE_CHOICE_ID, choice_name_ja="大")],
         )
 
         build_request_body_for_update_choices(annotation_specs, resolved_choice_update_inputs=resolved_inputs, comment=None)
@@ -126,7 +127,7 @@ class TestResolveChoiceUpdateInputs:
             annotation_specs,
             attribute_id=TYPE_ATTRIBUTE_ID,
             attribute_name_en=None,
-            choice_update_inputs=[ChoiceUpdateInput(choice_name_en="large", choice_name_ja="大")],
+            choice_update_inputs=[ChoiceUpdateInput(choice_id=LARGE_CHOICE_ID, choice_name_ja="大")],
         )
 
         assert actual[0].target_attribute["additional_data_definition_id"] == TYPE_ATTRIBUTE_ID
@@ -138,7 +139,7 @@ class TestResolveChoiceUpdateInputs:
                 annotation_specs,
                 attribute_id="54fa5e97-6f88-49a4-aeb0-a91a15d11528",
                 attribute_name_en=None,
-                choice_update_inputs=[ChoiceUpdateInput(choice_name_en="large", choice_name_ja="大")],
+                choice_update_inputs=[ChoiceUpdateInput(choice_id=LARGE_CHOICE_ID, choice_name_ja="大")],
             )
 
     def test_resolve_choice_update_inputs__choice_not_found(self, annotation_specs: dict[str, Any]) -> None:
@@ -147,10 +148,10 @@ class TestResolveChoiceUpdateInputs:
                 annotation_specs,
                 attribute_id=None,
                 attribute_name_en="type",
-                choice_update_inputs=[ChoiceUpdateInput(choice_name_en="not-found", choice_name_ja="なし")],
+                choice_update_inputs=[ChoiceUpdateInput(choice_id="not-found", choice_name_ja="なし")],
             )
 
-    def test_resolve_choice_update_inputs__same_choice_by_different_keys(self, annotation_specs: dict[str, Any]) -> None:
+    def test_resolve_choice_update_inputs__same_choice(self, annotation_specs: dict[str, Any]) -> None:
         with pytest.raises(ValueError):
             resolve_choice_update_inputs(
                 annotation_specs,
@@ -158,7 +159,7 @@ class TestResolveChoiceUpdateInputs:
                 attribute_name_en="type",
                 choice_update_inputs=[
                     ChoiceUpdateInput(choice_id=LARGE_CHOICE_ID, choice_name_ja="大"),
-                    ChoiceUpdateInput(choice_name_en="large", keybind=None, has_keybind=True),
+                    ChoiceUpdateInput(choice_id=LARGE_CHOICE_ID, keybind=None, has_keybind=True),
                 ],
             )
 
@@ -181,12 +182,13 @@ class TestChoiceUpdateInputs:
 class TestReadChoices:
     def test_read_choices_json(self) -> None:
         actual = read_choices_json(
-            f'[{{"choice_name_en":"large","choice_name_ja":"大","keybind":{{"alt":false,"code":"Digit1","ctrl":true,"shift":false}}}},{{"choice_id":"{SMALL_CHOICE_ID}","keybind":null}}]'
+            f'[{{"choice_id":"{LARGE_CHOICE_ID}","choice_name_en":"big","choice_name_ja":"大","keybind":{{"alt":false,"code":"Digit1","ctrl":true,"shift":false}}}},{{"choice_id":"{SMALL_CHOICE_ID}","keybind":null}}]'
         )
 
         assert actual == [
             ChoiceUpdateInput(
-                choice_name_en="large",
+                choice_id=LARGE_CHOICE_ID,
+                choice_name_en="big",
                 choice_name_ja="大",
                 keybind={"alt": False, "code": "Digit1", "ctrl": True, "shift": False},
                 has_keybind=True,
@@ -207,6 +209,7 @@ class TestReadChoices:
         df = pandas.DataFrame(
             [
                 {
+                    "choice_id": LARGE_CHOICE_ID,
                     "choice_name_en": "large",
                     "choice_name_ja": "大",
                     "keybind": '{"alt": false, "code": "Digit1", "ctrl": true, "shift": false}',
@@ -220,6 +223,7 @@ class TestReadChoices:
 
         assert actual == [
             ChoiceUpdateInput(
+                choice_id=LARGE_CHOICE_ID,
                 choice_name_en="large",
                 choice_name_ja="大",
                 keybind={"alt": False, "code": "Digit1", "ctrl": True, "shift": False},
@@ -230,7 +234,7 @@ class TestReadChoices:
 
     def test_read_choices_csv__invalid_keybind(self, tmp_path: Path) -> None:
         csv_path = tmp_path / "choices.csv"
-        df = pandas.DataFrame([{"choice_name_en": "large", "keybind": "invalid"}])
+        df = pandas.DataFrame([{"choice_id": LARGE_CHOICE_ID, "keybind": "invalid"}])
         df.to_csv(csv_path, index=False)
 
         with pytest.raises(ValueError):

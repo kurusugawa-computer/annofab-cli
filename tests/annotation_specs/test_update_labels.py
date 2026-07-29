@@ -16,6 +16,8 @@ from annofabcli.annotation_specs.update_labels import (
 )
 
 data_dir = Path("./tests/data/annotation_specs")
+CAR_LABEL_ID = "car_label_id"
+BIKE_LABEL_ID = "40f7796b-3722-4eed-9c0c-04a27f9165d2"
 
 
 @pytest.fixture
@@ -38,7 +40,8 @@ class TestBuildRequestBodyForUpdateLabels:
             annotation_specs,
             label_update_inputs=[
                 LabelUpdateInput(
-                    label_name_en="car",
+                    label_id=CAR_LABEL_ID,
+                    label_name_en="vehicle",
                     label_name_ja="車",
                     color="#123456",
                     keybind={"alt": False, "code": "Digit1", "ctrl": True, "shift": False},
@@ -52,7 +55,7 @@ class TestBuildRequestBodyForUpdateLabels:
                         }
                     },
                 ),
-                LabelUpdateInput(label_id="40f7796b-3722-4eed-9c0c-04a27f9165d2", field_values_operation="replace"),
+                LabelUpdateInput(label_id=BIKE_LABEL_ID, field_values_operation="replace"),
             ],
         )
 
@@ -62,10 +65,10 @@ class TestBuildRequestBodyForUpdateLabels:
             comment=None,
         )
 
-        car_label = next(label for label in actual["labels"] if label["label_id"] == "car_label_id")
+        car_label = next(label for label in actual["labels"] if label["label_id"] == CAR_LABEL_ID)
         assert car_label["label_name"]["messages"] == [
             {"lang": "ja-JP", "message": "車"},
-            {"lang": "en-US", "message": "car"},
+            {"lang": "en-US", "message": "vehicle"},
         ]
         assert car_label["annotation_type"] == "bounding_box"
         assert car_label["color"] == {"red": 18, "green": 52, "blue": 86}
@@ -84,7 +87,7 @@ class TestBuildRequestBodyForUpdateLabels:
             },
         }
 
-        bike_label = next(label for label in actual["labels"] if label["label_id"] == "40f7796b-3722-4eed-9c0c-04a27f9165d2")
+        bike_label = next(label for label in actual["labels"] if label["label_id"] == BIKE_LABEL_ID)
         assert bike_label["field_values"] == {}
         assert actual["comment"].startswith("以下のラベル情報を更新しました。")
         assert actual["last_updated_datetime"] == "2026-04-24T00:00:00+09:00"
@@ -94,7 +97,7 @@ class TestBuildRequestBodyForUpdateLabels:
             annotation_specs,
             label_update_inputs=[
                 LabelUpdateInput(
-                    label_name_en="car",
+                    label_id=CAR_LABEL_ID,
                     field_values={"display_line_direction": {"_type": "DisplayLineDirection", "value": True}},
                     field_values_operation="replace",
                 )
@@ -107,7 +110,7 @@ class TestBuildRequestBodyForUpdateLabels:
             comment="custom",
         )
 
-        car_label = next(label for label in actual["labels"] if label["label_id"] == "car_label_id")
+        car_label = next(label for label in actual["labels"] if label["label_id"] == CAR_LABEL_ID)
         assert car_label["field_values"] == {"display_line_direction": {"_type": "DisplayLineDirection", "value": True}}
         assert actual["comment"] == "custom"
 
@@ -122,7 +125,7 @@ class TestBuildRequestBodyForUpdateLabels:
         }
         resolved_inputs = resolve_label_update_inputs(
             annotation_specs,
-            label_update_inputs=[LabelUpdateInput(label_name_en="car", label_name_ja="車")],
+            label_update_inputs=[LabelUpdateInput(label_id=CAR_LABEL_ID, label_name_en="vehicle", label_name_ja="車")],
         )
 
         actual = build_request_body_for_update_labels(
@@ -131,10 +134,10 @@ class TestBuildRequestBodyForUpdateLabels:
             comment=None,
         )
 
-        car_label = next(label for label in actual["labels"] if label["label_id"] == "car_label_id")
+        car_label = next(label for label in actual["labels"] if label["label_id"] == CAR_LABEL_ID)
         assert car_label["label_name"] == {
             "messages": [
-                {"lang": "en-US", "message": "car"},
+                {"lang": "en-US", "message": "vehicle"},
                 {"lang": "ja-JP", "message": "車"},
                 {"lang": "fr-FR", "message": "voiture"},
             ],
@@ -144,7 +147,7 @@ class TestBuildRequestBodyForUpdateLabels:
     def test_build_request_body_for_update_labels__invalid_color(self, annotation_specs: dict) -> None:
         resolved_inputs = resolve_label_update_inputs(
             annotation_specs,
-            label_update_inputs=[LabelUpdateInput(label_name_en="car", color="red")],
+            label_update_inputs=[LabelUpdateInput(label_id=CAR_LABEL_ID, color="red")],
         )
 
         with pytest.raises(ValueError):
@@ -160,16 +163,16 @@ class TestResolveLabelUpdateInputs:
         with pytest.raises(ValueError):
             resolve_label_update_inputs(
                 annotation_specs,
-                label_update_inputs=[LabelUpdateInput(label_name_en="not-found", label_name_ja="dummy")],
+                label_update_inputs=[LabelUpdateInput(label_id="not-found", label_name_ja="dummy")],
             )
 
-    def test_resolve_label_update_inputs__same_label_by_different_keys(self, annotation_specs: dict) -> None:
+    def test_resolve_label_update_inputs__same_label(self, annotation_specs: dict) -> None:
         with pytest.raises(ValueError):
             resolve_label_update_inputs(
                 annotation_specs,
                 label_update_inputs=[
-                    LabelUpdateInput(label_id="car_label_id", label_name_ja="車"),
-                    LabelUpdateInput(label_name_en="car", color="#123456"),
+                    LabelUpdateInput(label_id=CAR_LABEL_ID, label_name_ja="車"),
+                    LabelUpdateInput(label_id=CAR_LABEL_ID, color="#123456"),
                 ],
             )
 
@@ -192,7 +195,7 @@ class TestLabelUpdateInputs:
 class TestReadLabels:
     def test_read_labels_json(self) -> None:
         actual = read_labels_json(
-            '[{"label_name_en":"car","label_name_ja":"車","color":"#123456",'
+            f'[{{"label_id":"{CAR_LABEL_ID}","label_name_en":"vehicle","label_name_ja":"車","color":"#123456",'
             '"keybind":{"alt":false,"code":"Digit1","ctrl":true,"shift":false},'
             '"field_values":{"margin_of_error_tolerance":{"max_pixel":5,"_type":"MarginOfErrorTolerance"}}},'
             '{"label_id":"bike","field_values_operation":"replace"}]'
@@ -200,7 +203,8 @@ class TestReadLabels:
 
         assert actual == [
             LabelUpdateInput(
-                label_name_en="car",
+                label_id=CAR_LABEL_ID,
+                label_name_en="vehicle",
                 label_name_ja="車",
                 color="#123456",
                 keybind={"alt": False, "code": "Digit1", "ctrl": True, "shift": False},
@@ -219,14 +223,15 @@ class TestReadLabels:
 
     def test_read_labels_json__field_values_operation_merge_requires_field_values(self) -> None:
         with pytest.raises(ValueError):
-            read_labels_json('[{"label_name_en":"car","field_values_operation":"merge"}]')
+            read_labels_json(f'[{{"label_id":"{CAR_LABEL_ID}","field_values_operation":"merge"}}]')
 
     def test_read_labels_csv(self, tmp_path: Path) -> None:
         csv_path = tmp_path / "labels.csv"
         df = pandas.DataFrame(
             [
                 {
-                    "label_name_en": "car",
+                    "label_id": CAR_LABEL_ID,
+                    "label_name_en": "vehicle",
                     "label_name_ja": "車",
                     "color": "#123456",
                     "keybind": '{"alt": false, "code": "Digit1", "ctrl": true, "shift": false}',
@@ -241,7 +246,8 @@ class TestReadLabels:
 
         assert actual == [
             LabelUpdateInput(
-                label_name_en="car",
+                label_id=CAR_LABEL_ID,
+                label_name_en="vehicle",
                 label_name_ja="車",
                 color="#123456",
                 keybind={"alt": False, "code": "Digit1", "ctrl": True, "shift": False},

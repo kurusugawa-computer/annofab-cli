@@ -11,7 +11,7 @@ from typing import Any, Literal, cast
 
 import annofabapi
 import pandas
-from annofabapi.util.annotation_specs import AnnotationSpecsAccessor, get_label_name_en
+from annofabapi.util.annotation_specs import AnnotationSpecsAccessor, get_label_name_en, get_message_with_lang
 
 import annofabcli.common.cli
 from annofabcli.annotation_specs.add_labels import parse_field_values_in_csv, parse_keybind_in_csv
@@ -57,7 +57,7 @@ class LabelUpdateInput:
     """更新対象ラベルID。"""
 
     label_name_en: str | None = None
-    """更新対象ラベルの英語名。"""
+    """更新後のラベル英語名。"""
 
     label_name_ja: str | None = None
     """更新後のラベル日本語名。"""
@@ -118,12 +118,13 @@ def validate_label_update_input(label_update_input: LabelUpdateInput, *, index: 
     Raises:
         ValueError: 入力値の組み合わせが不正な場合
     """
-    if (label_update_input.label_id is None) == (label_update_input.label_name_en is None):
-        raise ValueError(f"{index}件目のラベルは `label_id` または `label_name_en` のどちらか一方だけ指定してください。")
+    if label_update_input.label_id is None:
+        raise ValueError(f"{index}件目のラベルに `label_id` が指定されていません。")
 
     has_field_values_update = label_update_input.field_values is not None or label_update_input.field_values_operation is not None
     has_update_field = any(
         [
+            label_update_input.label_name_en is not None,
             label_update_input.label_name_ja is not None,
             label_update_input.color is not None,
             label_update_input.keybind is not None,
@@ -297,11 +298,6 @@ def validate_label_update_inputs(label_update_inputs: Sequence[LabelUpdateInput]
         duplicated_text = ", ".join(sorted(duplicated_label_ids))
         raise ValueError(f"入力されたラベルに重複した `label_id` があります。 :: {duplicated_text}")
 
-    duplicated_label_names = duplicated_set([label.label_name_en for label in label_update_inputs if label.label_name_en is not None])
-    if duplicated_label_names:
-        duplicated_text = ", ".join(sorted(duplicated_label_names))
-        raise ValueError(f"入力されたラベル名(英語)に重複があります。 :: {duplicated_text}")
-
 
 def resolve_label_update_inputs(
     annotation_specs: dict[str, Any],
@@ -327,11 +323,7 @@ def resolve_label_update_inputs(
     result = []
     resolved_label_ids: set[str] = set()
     for label_update_input in label_update_inputs:
-        if label_update_input.label_id is not None:
-            target_label = annotation_specs_accessor.get_label(label_id=label_update_input.label_id)
-        else:
-            assert label_update_input.label_name_en is not None
-            target_label = annotation_specs_accessor.get_label(label_name=label_update_input.label_name_en)
+        target_label = annotation_specs_accessor.get_label(label_id=label_update_input.label_id)
 
         target_label_id = target_label["label_id"]
         if target_label_id in resolved_label_ids:
@@ -350,13 +342,49 @@ def update_label_name_ja(label: dict[str, Any], label_name_ja: str) -> None:
         label: 更新対象ラベル
         label_name_ja: 更新後のラベル日本語名
     """
-    messages = label["label_name"]["messages"]
-    for message in messages:
+    if get_message_with_lang(label["label_name"], "ja-JP") is None:
+        label["label_name"]["messages"].append({"lang": "ja-JP", "message": label_name_ja})
+        return
+
+    for message in label["label_name"]["messages"]:
         if message["lang"] == "ja-JP":
             message["message"] = label_name_ja
             return
 
-    messages.append({"lang": "ja-JP", "message": label_name_ja})
+
+def update_label_name_en(label: dict[str, Any], label_name_en: str) -> None:
+    """
+    ラベル英語名を更新する。
+
+    Args:
+        label: 更新対象ラベル
+        label_name_en: 更新後のラベル英語名
+    """
+    if get_message_with_lang(label["label_name"], "en-US") is None:
+        label["label_name"]["messages"].append({"lang": "en-US", "message": label_name_en})
+        return
+
+    for message in label["label_name"]["messages"]:
+        if message["lang"] == "en-US":
+            message["message"] = label_name_en
+            return
+
+
+def validate_label_name_ens_not_duplicated(labels: Sequence[Mapping[str, Any]]) -> None:
+    """
+    ラベル英語名が重複していないことを検証する。
+
+    Args:
+        labels: 検証対象ラベル一覧
+
+    Raises:
+        ValueError: ラベル英語名が重複している場合
+    """
+    label_name_ens = [get_label_name_en(label) for label in labels]
+    duplicated_label_name_ens = duplicated_set([name for name in label_name_ens if name is not None])
+    if duplicated_label_name_ens:
+        duplicated_text = ", ".join(sorted(duplicated_label_name_ens))
+        raise ValueError(f"ラベル名(英語)に重複があります。 :: {duplicated_text}")
 
 
 def update_label_field_values(label: dict[str, Any], label_update_input: LabelUpdateInput) -> None:
@@ -422,6 +450,8 @@ def build_request_body_for_update_labels(
         if label_update_input is None:
             continue
 
+        if label_update_input.label_name_en is not None:
+            update_label_name_en(label, label_update_input.label_name_en)
         if label_update_input.label_name_ja is not None:
             update_label_name_ja(label, label_update_input.label_name_ja)
         if label_update_input.color is not None:
@@ -429,6 +459,8 @@ def build_request_body_for_update_labels(
         if label_update_input.keybind is not None:
             label["keybind"] = keybind_to_api_keybind(copy.deepcopy(label_update_input.keybind))
         update_label_field_values(label, label_update_input)
+
+    validate_label_name_ens_not_duplicated(request_body["labels"])
 
     if comment is None:
         comment = create_comment_for_update_labels(resolved_label_update_inputs)
@@ -523,6 +555,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
 
     sample_json = [
         {
+            "label_id": "car_label_id",
             "label_name_en": "car",
             "label_name_ja": "車",
             "color": "#123456",
@@ -537,8 +570,8 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         type=str,
         help=(
             "更新するラベル情報のJSON配列を指定します。 ``file://`` を先頭に付けるとJSON形式のファイルを指定できます。"
-            " 各要素には ``label_id`` または ``label_name_en`` のどちらか一方が必要です。"
-            " 任意で ``label_name_ja`` , ``color`` , ``keybind`` , ``field_values`` , ``field_values_operation`` を指定できます。"
+            " 各要素には更新対象を示す ``label_id`` が必要です。"
+            " 任意で更新後の ``label_name_en`` , ``label_name_ja`` , ``color`` , ``keybind`` , ``field_values`` , ``field_values_operation`` を指定できます。"
             f"\n(例) ``{json.dumps(sample_json, ensure_ascii=False)}``"
         ),
     )
@@ -546,8 +579,8 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--label_csv",
         type=Path,
         help=(
-            "更新するラベル情報のCSVファイルを指定します。 CSVには ``label_id`` または ``label_name_en`` 列のどちらか一方が必要です。"
-            " 任意で ``label_name_ja`` , ``color`` , ``keybind`` , ``field_values`` , ``field_values_operation`` 列を指定できます。"
+            "更新するラベル情報のCSVファイルを指定します。 CSVには更新対象を示す ``label_id`` 列が必要です。"
+            " 任意で更新後の ``label_name_en`` , ``label_name_ja`` , ``color`` , ``keybind`` , ``field_values`` , ``field_values_operation`` 列を指定できます。"
             " ``keybind`` 列と ``field_values`` 列にはJSONオブジェクト文字列を指定してください。"
         ),
     )
@@ -580,7 +613,7 @@ def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse
     """
     subcommand_name = "update_labels"
     subcommand_help = "アノテーション仕様の既存ラベル情報を更新します。"
-    description = "アノテーション仕様の既存ラベルに設定された日本語名、色、キーバインド、field_values を更新します。"
+    description = "アノテーション仕様の既存ラベルに設定された英語名、日本語名、色、キーバインド、field_values を更新します。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description=description)
     parse_args(parser)

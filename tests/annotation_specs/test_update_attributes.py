@@ -16,6 +16,8 @@ from annofabcli.annotation_specs.update_attributes import (
 )
 
 data_dir = Path("./tests/data/annotation_specs")
+COMMENT_ATTRIBUTE_ID = "54fa5e97-6f88-49a4-aeb0-a91a15d11528"
+UNCLEAR_ATTRIBUTE_ID = "f12a0b59-dfce-4241-bb87-4b2c0259fc6f"
 
 
 @pytest.fixture
@@ -32,7 +34,8 @@ class TestBuildRequestBodyForUpdateAttributes:
             annotation_specs,
             attribute_update_inputs=[
                 AttributeUpdateInput(
-                    attribute_name_en="comment",
+                    attribute_id=COMMENT_ATTRIBUTE_ID,
+                    attribute_name_en="remark",
                     attribute_name_ja="コメント",
                     keybind={"alt": False, "code": "Digit1", "ctrl": True, "shift": False},
                     read_only=True,
@@ -40,7 +43,7 @@ class TestBuildRequestBodyForUpdateAttributes:
                     has_default_value=True,
                 ),
                 AttributeUpdateInput(
-                    attribute_id="f12a0b59-dfce-4241-bb87-4b2c0259fc6f",
+                    attribute_id=UNCLEAR_ATTRIBUTE_ID,
                     default_value="true",
                     has_default_value=True,
                 ),
@@ -53,19 +56,21 @@ class TestBuildRequestBodyForUpdateAttributes:
             comment=None,
         )
 
-        comment_attribute = next(additional for additional in actual["additionals"] if additional["additional_data_definition_id"] == "54fa5e97-6f88-49a4-aeb0-a91a15d11528")
+        comment_attribute = next(additional for additional in actual["additionals"] if additional["additional_data_definition_id"] == COMMENT_ATTRIBUTE_ID)
         assert comment_attribute["name"]["messages"] == [
             {"lang": "ja-JP", "message": "コメント"},
-            {"lang": "en-US", "message": "comment"},
+            {"lang": "en-US", "message": "remark"},
         ]
         assert comment_attribute["type"] == "comment"
         assert comment_attribute["read_only"] is True
         assert comment_attribute["keybind"] == [{"alt": False, "code": "Digit1", "ctrl": True, "shift": False}]
         assert comment_attribute["default"] == "確認済み"
 
-        unclear_attribute = next(additional for additional in actual["additionals"] if additional["additional_data_definition_id"] == "f12a0b59-dfce-4241-bb87-4b2c0259fc6f")
+        unclear_attribute = next(additional for additional in actual["additionals"] if additional["additional_data_definition_id"] == UNCLEAR_ATTRIBUTE_ID)
         assert unclear_attribute["default"] is True
         assert actual["comment"].startswith("以下の属性情報を更新しました。")
+        assert f"attribute_id='{COMMENT_ATTRIBUTE_ID}', attribute_name_en='comment' -> 'remark'" in actual["comment"]
+        assert f"attribute_id='{UNCLEAR_ATTRIBUTE_ID}', attribute_name_en='unclear'" in actual["comment"]
         assert actual["last_updated_datetime"] == "2026-04-24T00:00:00+09:00"
 
         car_label = next(label for label in actual["labels"] if label["label_id"] == "car_label_id")
@@ -74,7 +79,7 @@ class TestBuildRequestBodyForUpdateAttributes:
     def test_build_request_body_for_update_attributes__custom_comment(self, annotation_specs: dict) -> None:
         resolved_inputs = resolve_attribute_update_inputs(
             annotation_specs,
-            attribute_update_inputs=[AttributeUpdateInput(attribute_name_en="comment", attribute_name_ja="コメント")],
+            attribute_update_inputs=[AttributeUpdateInput(attribute_id=COMMENT_ATTRIBUTE_ID, attribute_name_ja="コメント")],
         )
 
         actual = build_request_body_for_update_attributes(
@@ -96,7 +101,7 @@ class TestBuildRequestBodyForUpdateAttributes:
         }
         resolved_inputs = resolve_attribute_update_inputs(
             annotation_specs,
-            attribute_update_inputs=[AttributeUpdateInput(attribute_name_en="comment", attribute_name_ja="コメント")],
+            attribute_update_inputs=[AttributeUpdateInput(attribute_id=COMMENT_ATTRIBUTE_ID, attribute_name_en="remark", attribute_name_ja="コメント")],
         )
 
         actual = build_request_body_for_update_attributes(
@@ -105,10 +110,10 @@ class TestBuildRequestBodyForUpdateAttributes:
             comment=None,
         )
 
-        comment_attribute = next(additional for additional in actual["additionals"] if additional["additional_data_definition_id"] == "54fa5e97-6f88-49a4-aeb0-a91a15d11528")
+        comment_attribute = next(additional for additional in actual["additionals"] if additional["additional_data_definition_id"] == COMMENT_ATTRIBUTE_ID)
         assert comment_attribute["name"] == {
             "messages": [
-                {"lang": "en-US", "message": "comment"},
+                {"lang": "en-US", "message": "remark"},
                 {"lang": "ja-JP", "message": "コメント"},
                 {"lang": "fr-FR", "message": "commentaire"},
             ],
@@ -120,7 +125,7 @@ class TestBuildRequestBodyForUpdateAttributes:
             annotation_specs,
             attribute_update_inputs=[
                 AttributeUpdateInput(
-                    attribute_id="f12a0b59-dfce-4241-bb87-4b2c0259fc6f",
+                    attribute_id=UNCLEAR_ATTRIBUTE_ID,
                     default_value="yes",
                     has_default_value=True,
                 )
@@ -134,22 +139,57 @@ class TestBuildRequestBodyForUpdateAttributes:
                 comment=None,
             )
 
+    def test_build_request_body_for_update_attributes__同じラベル内で属性名英語が重複していたらエラー(self, annotation_specs: dict) -> None:
+        resolved_inputs = resolve_attribute_update_inputs(
+            annotation_specs,
+            attribute_update_inputs=[AttributeUpdateInput(attribute_id=UNCLEAR_ATTRIBUTE_ID, attribute_name_en="comment")],
+        )
+
+        with pytest.raises(ValueError):
+            build_request_body_for_update_attributes(
+                annotation_specs,
+                resolved_attribute_update_inputs=resolved_inputs,
+                comment=None,
+            )
+
+    def test_build_request_body_for_update_attributes__異なるラベルなら属性名英語が重複していてもよい(self, annotation_specs: dict) -> None:
+        bike_label = next(label for label in annotation_specs["labels"] if label["label_id"] == "40f7796b-3722-4eed-9c0c-04a27f9165d2")
+        bike_label["additional_data_definitions"] = [UNCLEAR_ATTRIBUTE_ID]
+        car_label = next(label for label in annotation_specs["labels"] if label["label_id"] == "car_label_id")
+        car_label["additional_data_definitions"] = [COMMENT_ATTRIBUTE_ID]
+        resolved_inputs = resolve_attribute_update_inputs(
+            annotation_specs,
+            attribute_update_inputs=[AttributeUpdateInput(attribute_id=UNCLEAR_ATTRIBUTE_ID, attribute_name_en="comment")],
+        )
+
+        actual = build_request_body_for_update_attributes(
+            annotation_specs,
+            resolved_attribute_update_inputs=resolved_inputs,
+            comment=None,
+        )
+
+        unclear_attribute = next(additional for additional in actual["additionals"] if additional["additional_data_definition_id"] == UNCLEAR_ATTRIBUTE_ID)
+        assert unclear_attribute["name"]["messages"] == [
+            {"lang": "ja-JP", "message": "unclear"},
+            {"lang": "en-US", "message": "comment"},
+        ]
+
 
 class TestResolveAttributeUpdateInputs:
     def test_resolve_attribute_update_inputs__attribute_not_found(self, annotation_specs: dict) -> None:
         with pytest.raises(ValueError):
             resolve_attribute_update_inputs(
                 annotation_specs,
-                attribute_update_inputs=[AttributeUpdateInput(attribute_name_en="not-found", attribute_name_ja="dummy")],
+                attribute_update_inputs=[AttributeUpdateInput(attribute_id="not-found", attribute_name_ja="dummy")],
             )
 
-    def test_resolve_attribute_update_inputs__same_attribute_by_different_keys(self, annotation_specs: dict) -> None:
+    def test_resolve_attribute_update_inputs__same_attribute(self, annotation_specs: dict) -> None:
         with pytest.raises(ValueError):
             resolve_attribute_update_inputs(
                 annotation_specs,
                 attribute_update_inputs=[
-                    AttributeUpdateInput(attribute_id="54fa5e97-6f88-49a4-aeb0-a91a15d11528", attribute_name_ja="コメント"),
-                    AttributeUpdateInput(attribute_name_en="comment", read_only=True),
+                    AttributeUpdateInput(attribute_id=COMMENT_ATTRIBUTE_ID, attribute_name_ja="コメント"),
+                    AttributeUpdateInput(attribute_id=COMMENT_ATTRIBUTE_ID, read_only=True),
                 ],
             )
 
@@ -172,15 +212,16 @@ class TestAttributeUpdateInputs:
 class TestReadAttributes:
     def test_read_attributes_json(self) -> None:
         actual = read_attributes_json(
-            '[{"attribute_name_en":"comment","attribute_name_ja":"コメント",'
+            f'[{{"attribute_id":"{COMMENT_ATTRIBUTE_ID}","attribute_name_en":"remark","attribute_name_ja":"コメント",'
             '"keybind":{"alt":false,"code":"Digit1","ctrl":true,"shift":false},'
             '"read_only":true,"default_value":"確認済み"},'
-            '{"attribute_id":"f12a0b59-dfce-4241-bb87-4b2c0259fc6f","default_value":true}]'
+            f'{{"attribute_id":"{UNCLEAR_ATTRIBUTE_ID}","default_value":true}}]'
         )
 
         assert actual == [
             AttributeUpdateInput(
-                attribute_name_en="comment",
+                attribute_id=COMMENT_ATTRIBUTE_ID,
+                attribute_name_en="remark",
                 attribute_name_ja="コメント",
                 keybind={"alt": False, "code": "Digit1", "ctrl": True, "shift": False},
                 read_only=True,
@@ -188,7 +229,7 @@ class TestReadAttributes:
                 has_default_value=True,
             ),
             AttributeUpdateInput(
-                attribute_id="f12a0b59-dfce-4241-bb87-4b2c0259fc6f",
+                attribute_id=UNCLEAR_ATTRIBUTE_ID,
                 default_value=True,
                 has_default_value=True,
             ),
@@ -207,13 +248,14 @@ class TestReadAttributes:
         df = pandas.DataFrame(
             [
                 {
-                    "attribute_name_en": "comment",
+                    "attribute_id": COMMENT_ATTRIBUTE_ID,
+                    "attribute_name_en": "remark",
                     "attribute_name_ja": "コメント",
                     "keybind": '{"alt": false, "code": "Digit1", "ctrl": true, "shift": false}',
                     "read_only": "true",
                     "default_value": "確認済み",
                 },
-                {"attribute_id": "f12a0b59-dfce-4241-bb87-4b2c0259fc6f", "default_value": "true"},
+                {"attribute_id": UNCLEAR_ATTRIBUTE_ID, "default_value": "true"},
             ]
         )
         df.to_csv(csv_path, index=False)
@@ -222,7 +264,8 @@ class TestReadAttributes:
 
         assert actual == [
             AttributeUpdateInput(
-                attribute_name_en="comment",
+                attribute_id=COMMENT_ATTRIBUTE_ID,
+                attribute_name_en="remark",
                 attribute_name_ja="コメント",
                 keybind={"alt": False, "code": "Digit1", "ctrl": True, "shift": False},
                 read_only=True,
@@ -230,7 +273,7 @@ class TestReadAttributes:
                 has_default_value=True,
             ),
             AttributeUpdateInput(
-                attribute_id="f12a0b59-dfce-4241-bb87-4b2c0259fc6f",
+                attribute_id=UNCLEAR_ATTRIBUTE_ID,
                 default_value="true",
                 has_default_value=True,
             ),

@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 from collections.abc import Collection, Mapping, Sequence
-from typing import Any
+from typing import Any, cast
 
-from annofabapi.util.annotation_specs import AnnotationSpecsAccessor
+from annofabapi.util.annotation_specs import STR_LANG, AnnotationSpecsAccessor, InternationalizationMessage, get_message_with_lang
 
 
 def create_name(message_en: str, message_ja: str | None = None) -> dict[str, Any]:
@@ -23,6 +23,23 @@ def create_name(message_en: str, message_ja: str | None = None) -> dict[str, Any
         message_ja = message_en
     messages.append({"lang": "ja-JP", "message": message_ja})
     return {"messages": messages, "default_lang": "ja-JP"}
+
+
+def update_message(internationalization_message: dict[str, Any], *, lang: str, message: str) -> None:
+    """
+    Annofabの多言語メッセージを更新する。
+
+    Args:
+        internationalization_message: Annofabの多言語メッセージ形式のdict
+        lang: 更新対象の言語コード
+        message: 更新後のメッセージ
+    """
+    if get_message_with_lang(cast(InternationalizationMessage, internationalization_message), lang=cast(STR_LANG, lang)) is None:
+        internationalization_message["messages"].append({"lang": lang, "message": message})
+        return
+
+    matched_message = next(value for value in internationalization_message["messages"] if value["lang"] == lang)
+    matched_message["message"] = message
 
 
 def get_target_labels(

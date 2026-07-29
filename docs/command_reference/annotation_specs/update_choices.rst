@@ -4,9 +4,9 @@ annotation_specs update_choices
 
 Description
 =================================
-アノテーション仕様の既存選択肢に設定された日本語名、ショートカットキーを更新します。
+アノテーション仕様の既存選択肢に設定された英語名、日本語名、ショートカットキーを更新します。
 
-``choice_id`` 、選択肢名(英語)、選択肢の並び順、属性の ``default_value`` は更新できません。
+``choice_id`` 、選択肢の並び順、属性の ``default_value`` は更新できません。
 選択肢の並び順を変更したい場合は :doc:`reorder_choices` を、属性の ``default_value`` を変更したい場合は :doc:`update_attributes` を利用してください。
 
 
@@ -21,6 +21,7 @@ JSON形式で指定する場合
 
     [
         {
+            "choice_id": "08ec927c-18e6-4bba-837a-b16de7061580",
             "choice_name_en": "large",
             "choice_name_ja": "大",
             "keybind": {
@@ -54,11 +55,11 @@ JSON形式で指定する場合
       - 必須
       - 説明
     * - ``choice_id``
-      - 条件付き必須
-      - 更新対象選択肢の ``choice_id`` 。 ``choice_name_en`` とどちらか一方を指定してください。
+      - 必須
+      - 更新対象選択肢の ``choice_id`` 。
     * - ``choice_name_en``
-      - 条件付き必須
-      - 更新対象選択肢の英語名。 ``choice_id`` とどちらか一方を指定してください。この値自体は更新されません。
+      - 任意
+      - 更新後の選択肢英語名。
     * - ``choice_name_ja``
       - 任意
       - 更新後の選択肢日本語名。
@@ -74,7 +75,7 @@ CSV形式で指定する場合
     :caption: choices.csv
 
     choice_id,choice_name_en,choice_name_ja,keybind
-    ,large,大,"{""alt"": false, ""code"": ""Digit1"", ""ctrl"": true, ""shift"": false}"
+    08ec927c-18e6-4bba-837a-b16de7061580,large,大,"{""alt"": false, ""code"": ""Digit1"", ""ctrl"": true, ""shift"": false}"
     74691a87-7962-4fa9-ba52-7cc466ecd982,,小,
 
 

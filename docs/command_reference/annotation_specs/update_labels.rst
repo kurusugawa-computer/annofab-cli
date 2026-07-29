@@ -4,9 +4,9 @@ annotation_specs update_labels
 
 Description
 =================================
-アノテーション仕様の既存ラベルに設定された日本語名、色、キーバインド、 ``field_values`` を更新します。
+アノテーション仕様の既存ラベルに設定された英語名、日本語名、色、キーバインド、 ``field_values`` を更新します。
 
-``label_id`` 、ラベル名(英語)、アノテーション種類は既存アノテーションへの影響を避けるため更新できません。
+``label_id`` 、アノテーション種類は既存アノテーションへの影響を避けるため更新できません。
 
 
 Examples
@@ -20,6 +20,7 @@ JSON形式で指定する場合
 
     [
         {
+            "label_id": "car_label_id",
             "label_name_en": "car",
             "label_name_ja": "車",
             "color": "#123456",
@@ -61,11 +62,11 @@ JSON形式で指定する場合
       - 必須
       - 説明
     * - ``label_id``
-      - 条件付き必須
-      - 更新対象ラベルの ``label_id`` 。 ``label_name_en`` とどちらか一方を指定してください。
+      - 必須
+      - 更新対象ラベルの ``label_id`` 。
     * - ``label_name_en``
-      - 条件付き必須
-      - 更新対象ラベルの英語名。 ``label_id`` とどちらか一方を指定してください。この値自体は更新されません。
+      - 任意
+      - 更新後のラベル英語名。
     * - ``label_name_ja``
       - 任意
       - 更新後のラベル日本語名。
@@ -90,7 +91,7 @@ CSV形式で指定する場合
     :caption: labels.csv
 
     label_id,label_name_en,label_name_ja,color,keybind,field_values,field_values_operation
-    ,car,車,#123456,"{""alt"": false, ""code"": ""Digit1"", ""ctrl"": true, ""shift"": false}","{""margin_of_error_tolerance"": {""max_pixel"": 5, ""_type"": ""MarginOfErrorTolerance""}}",
+    car_label_id,car,車,#123456,"{""alt"": false, ""code"": ""Digit1"", ""ctrl"": true, ""shift"": false}","{""margin_of_error_tolerance"": {""max_pixel"": 5, ""_type"": ""MarginOfErrorTolerance""}}",
     bike,,,,,,replace
 
 
