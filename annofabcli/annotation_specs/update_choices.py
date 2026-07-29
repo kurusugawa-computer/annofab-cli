@@ -41,7 +41,7 @@ class ChoiceUpdateInput:
     """更新対象選択肢ID。"""
 
     choice_name_en: str | None = None
-    """更新対象選択肢の英語名。"""
+    """更新後の選択肢英語名。"""
 
     choice_name_ja: str | None = None
     """更新後の選択肢日本語名。"""
@@ -73,10 +73,10 @@ def validate_choice_update_input(choice_update_input: ChoiceUpdateInput, *, inde
     """
     選択肢更新入力を検証する。
     """
-    if (choice_update_input.choice_id is None) == (choice_update_input.choice_name_en is None):
-        raise ValueError(f"{index}件目の選択肢は `choice_id` または `choice_name_en` のどちらか一方だけ指定してください。")
+    if choice_update_input.choice_id is None:
+        raise ValueError(f"{index}件目の選択肢に `choice_id` が指定されていません。")
 
-    if choice_update_input.choice_name_ja is None and not choice_update_input.has_keybind:
+    if choice_update_input.choice_name_en is None and choice_update_input.choice_name_ja is None and not choice_update_input.has_keybind:
         raise ValueError(f"{index}件目の選択肢に更新するフィールドが指定されていません。")
 
 
@@ -164,29 +164,15 @@ def validate_choice_update_inputs(choice_update_inputs: Sequence[ChoiceUpdateInp
         duplicated_text = ", ".join(sorted(duplicated_choice_ids))
         raise ValueError(f"入力された選択肢に重複した `choice_id` があります。 :: {duplicated_text}")
 
-    duplicated_choice_names = duplicated_set([choice.choice_name_en for choice in choice_update_inputs if choice.choice_name_en is not None])
-    if duplicated_choice_names:
-        duplicated_text = ", ".join(sorted(duplicated_choice_names))
-        raise ValueError(f"入力された選択肢名(英語)に重複があります。 :: {duplicated_text}")
-
 
 def get_target_choice(target_attribute: Mapping[str, Any], choice_update_input: ChoiceUpdateInput) -> Mapping[str, Any]:
     """
     選択肢更新入力から更新対象選択肢を取得する。
     """
     choices = target_attribute["choices"]
-    if choice_update_input.choice_id is not None:
-        matched_choices = [choice for choice in choices if choice["choice_id"] == choice_update_input.choice_id]
-        if len(matched_choices) == 0:
-            raise ValueError(f"選択肢情報が見つかりませんでした。 :: choice_id='{choice_update_input.choice_id}'")
-        return matched_choices[0]
-
-    assert choice_update_input.choice_name_en is not None
-    matched_choices = [choice for choice in choices if get_choice_name_en(choice) == choice_update_input.choice_name_en]
+    matched_choices = [choice for choice in choices if choice["choice_id"] == choice_update_input.choice_id]
     if len(matched_choices) == 0:
-        raise ValueError(f"選択肢情報が見つかりませんでした。 :: choice_name_en='{choice_update_input.choice_name_en}'")
-    if len(matched_choices) > 1:
-        raise ValueError(f"選択肢情報が複数（{len(matched_choices)}件）見つかりました。 :: choice_name_en='{choice_update_input.choice_name_en}'")
+        raise ValueError(f"選択肢情報が見つかりませんでした。 :: choice_id='{choice_update_input.choice_id}'")
     return matched_choices[0]
 
 
@@ -238,6 +224,30 @@ def update_choice_name_ja(choice: dict[str, Any], choice_name_ja: str) -> None:
     messages.append({"lang": "ja-JP", "message": choice_name_ja})
 
 
+def update_choice_name_en(choice: dict[str, Any], choice_name_en: str) -> None:
+    """
+    選択肢英語名を更新する。
+    """
+    messages = choice["name"]["messages"]
+    for message in messages:
+        if message["lang"] == "en-US":
+            message["message"] = choice_name_en
+            return
+
+    messages.append({"lang": "en-US", "message": choice_name_en})
+
+
+def validate_choice_name_ens_not_duplicated(target_attribute: Mapping[str, Any]) -> None:
+    """
+    属性内の選択肢英語名が重複していないことを検証する。
+    """
+    choice_name_ens = [get_choice_name_en(choice) for choice in target_attribute["choices"]]
+    duplicated_choice_name_ens = duplicated_set([name for name in choice_name_ens if name is not None])
+    if duplicated_choice_name_ens:
+        duplicated_text = ", ".join(sorted(duplicated_choice_name_ens))
+        raise ValueError(f"選択肢名(英語)に重複があります。 :: {duplicated_text}")
+
+
 def create_comment_for_update_choices(resolved_choice_update_inputs: Sequence[ResolvedChoiceUpdateInput]) -> str:
     """
     選択肢更新時のデフォルトコメントを生成する。
@@ -267,10 +277,13 @@ def build_request_body_for_update_choices(
             choice_update_input = choice_input_dict.get(choice["choice_id"])
             if choice_update_input is None:
                 continue
+            if choice_update_input.choice_name_en is not None:
+                update_choice_name_en(choice, choice_update_input.choice_name_en)
             if choice_update_input.choice_name_ja is not None:
                 update_choice_name_ja(choice, choice_update_input.choice_name_ja)
             if choice_update_input.has_keybind:
                 choice["keybind"] = keybind_to_api_keybind(copy.deepcopy(choice_update_input.keybind))
+        validate_choice_name_ens_not_duplicated(attribute)
         break
 
     if comment is None:
@@ -370,6 +383,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
 
     sample_json = [
         {
+            "choice_id": "08ec927c-18e6-4bba-837a-b16de7061580",
             "choice_name_en": "large",
             "choice_name_ja": "大",
             "keybind": {"alt": False, "code": "Digit1", "ctrl": True, "shift": False},
@@ -382,8 +396,8 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         type=str,
         help=(
             "更新する選択肢情報のJSON配列を指定します。 ``file://`` を先頭に付けるとJSON形式のファイルを指定できます。"
-            " 各要素には ``choice_id`` または ``choice_name_en`` のどちらか一方が必要です。"
-            " 任意で ``choice_name_ja`` , ``keybind`` を指定できます。 ``keybind`` に ``null`` を指定するとショートカットキーを解除します。"
+            " 各要素には更新対象を示す ``choice_id`` が必要です。"
+            " 任意で更新後の ``choice_name_en`` , ``choice_name_ja`` , ``keybind`` を指定できます。 ``keybind`` に ``null`` を指定するとショートカットキーを解除します。"
             f"\n(例) ``{json.dumps(sample_json, ensure_ascii=False)}``"
         ),
     )
@@ -391,8 +405,8 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--choice_csv",
         type=Path,
         help=(
-            "更新する選択肢情報のCSVファイルを指定します。 CSVには ``choice_id`` または ``choice_name_en`` 列のどちらか一方が必要です。"
-            " 任意で ``choice_name_ja`` , ``keybind`` 列を指定できます。"
+            "更新する選択肢情報のCSVファイルを指定します。 CSVには更新対象を示す ``choice_id`` 列が必要です。"
+            " 任意で更新後の ``choice_name_en`` , ``choice_name_ja`` , ``keybind`` 列を指定できます。"
             " ``keybind`` 列にはJSONオブジェクト文字列を指定してください。空欄の場合はショートカットキーを変更しません。"
         ),
     )
@@ -416,7 +430,7 @@ def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse
     """
     subcommand_name = "update_choices"
     subcommand_help = "アノテーション仕様の既存選択肢情報を更新します。"
-    description = "アノテーション仕様の既存選択肢に設定された日本語名、ショートカットキーを更新します。"
+    description = "アノテーション仕様の既存選択肢に設定された英語名、日本語名、ショートカットキーを更新します。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description=description)
     parse_args(parser)

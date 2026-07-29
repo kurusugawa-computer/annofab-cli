@@ -4,9 +4,9 @@ annotation_specs update_attributes
 
 Description
 =================================
-アノテーション仕様の既存属性に設定された日本語名、キーバインド、 ``read_only`` 、 ``default_value`` を更新します。
+アノテーション仕様の既存属性に設定された英語名、日本語名、キーバインド、 ``read_only`` 、 ``default_value`` を更新します。
 
-``attribute_id`` 、属性名(英語)、属性種類、選択肢、所属先ラベルは既存アノテーションへの影響を避けるため更新できません。
+``attribute_id`` 、属性種類、選択肢、所属先ラベルは既存アノテーションへの影響を避けるため更新できません。
 
 
 Examples
@@ -20,6 +20,7 @@ JSON形式で指定する場合
 
     [
         {
+            "attribute_id": "54fa5e97-6f88-49a4-aeb0-a91a15d11528",
             "attribute_name_en": "comment",
             "attribute_name_ja": "コメント",
             "keybind": {
@@ -55,11 +56,11 @@ JSON形式で指定する場合
       - 必須
       - 説明
     * - ``attribute_id``
-      - 条件付き必須
-      - 更新対象属性の ``attribute_id`` 。 ``attribute_name_en`` とどちらか一方を指定してください。
+      - 必須
+      - 更新対象属性の ``attribute_id`` 。
     * - ``attribute_name_en``
-      - 条件付き必須
-      - 更新対象属性の英語名。 ``attribute_id`` とどちらか一方を指定してください。この値自体は更新されません。
+      - 任意
+      - 更新後の属性英語名。
     * - ``attribute_name_ja``
       - 任意
       - 更新後の属性日本語名。
@@ -81,7 +82,7 @@ CSV形式で指定する場合
     :caption: attributes.csv
 
     attribute_id,attribute_name_en,attribute_name_ja,keybind,read_only,default_value
-    ,comment,コメント,"{""alt"": false, ""code"": ""Digit1"", ""ctrl"": true, ""shift"": false}",false,確認済み
+    54fa5e97-6f88-49a4-aeb0-a91a15d11528,comment,コメント,"{""alt"": false, ""code"": ""Digit1"", ""ctrl"": true, ""shift"": false}",false,確認済み
     f12a0b59-dfce-4241-bb87-4b2c0259fc6f,,,,true,true
 
 

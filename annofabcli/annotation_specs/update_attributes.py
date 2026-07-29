@@ -44,7 +44,7 @@ class AttributeUpdateInput:
     """更新対象属性ID。"""
 
     attribute_name_en: str | None = None
-    """更新対象属性の英語名。"""
+    """更新後の属性英語名。"""
 
     attribute_name_ja: str | None = None
     """更新後の属性日本語名。"""
@@ -79,11 +79,12 @@ def validate_attribute_update_input(attribute_update_input: AttributeUpdateInput
     """
     属性更新入力を検証する。
     """
-    if (attribute_update_input.attribute_id is None) == (attribute_update_input.attribute_name_en is None):
-        raise ValueError(f"{index}件目の属性は `attribute_id` または `attribute_name_en` のどちらか一方だけ指定してください。")
+    if attribute_update_input.attribute_id is None:
+        raise ValueError(f"{index}件目の属性に `attribute_id` が指定されていません。")
 
     has_update_field = any(
         [
+            attribute_update_input.attribute_name_en is not None,
             attribute_update_input.attribute_name_ja is not None,
             attribute_update_input.keybind is not None,
             attribute_update_input.read_only is not None,
@@ -185,11 +186,6 @@ def validate_attribute_update_inputs(attribute_update_inputs: Sequence[Attribute
         duplicated_text = ", ".join(sorted(duplicated_attribute_ids))
         raise ValueError(f"入力された属性に重複した `attribute_id` があります。 :: {duplicated_text}")
 
-    duplicated_attribute_names = duplicated_set([attribute.attribute_name_en for attribute in attribute_update_inputs if attribute.attribute_name_en is not None])
-    if duplicated_attribute_names:
-        duplicated_text = ", ".join(sorted(duplicated_attribute_names))
-        raise ValueError(f"入力された属性名(英語)に重複があります。 :: {duplicated_text}")
-
 
 def resolve_attribute_update_inputs(
     annotation_specs: dict[str, Any],
@@ -205,11 +201,7 @@ def resolve_attribute_update_inputs(
     result = []
     resolved_attribute_ids: set[str] = set()
     for attribute_update_input in attribute_update_inputs:
-        if attribute_update_input.attribute_id is not None:
-            target_attribute = annotation_specs_accessor.get_attribute(attribute_id=attribute_update_input.attribute_id)
-        else:
-            assert attribute_update_input.attribute_name_en is not None
-            target_attribute = annotation_specs_accessor.get_attribute(attribute_name=attribute_update_input.attribute_name_en)
+        target_attribute = annotation_specs_accessor.get_attribute(attribute_id=attribute_update_input.attribute_id)
 
         target_attribute_id = target_attribute["additional_data_definition_id"]
         if target_attribute_id in resolved_attribute_ids:
@@ -231,6 +223,30 @@ def update_attribute_name_ja(attribute: dict[str, Any], attribute_name_ja: str) 
             return
 
     messages.append({"lang": "ja-JP", "message": attribute_name_ja})
+
+
+def update_attribute_name_en(attribute: dict[str, Any], attribute_name_en: str) -> None:
+    """
+    属性英語名を更新する。
+    """
+    messages = attribute["name"]["messages"]
+    for message in messages:
+        if message["lang"] == "en-US":
+            message["message"] = attribute_name_en
+            return
+
+    messages.append({"lang": "en-US", "message": attribute_name_en})
+
+
+def validate_attribute_name_ens_not_duplicated(additionals: Sequence[Mapping[str, Any]]) -> None:
+    """
+    属性英語名が重複していないことを検証する。
+    """
+    attribute_name_ens = [get_attribute_name_en(attribute) for attribute in additionals]
+    duplicated_attribute_name_ens = duplicated_set([name for name in attribute_name_ens if name is not None])
+    if duplicated_attribute_name_ens:
+        duplicated_text = ", ".join(sorted(duplicated_attribute_name_ens))
+        raise ValueError(f"属性名(英語)に重複があります。 :: {duplicated_text}")
 
 
 def create_comment_for_update_attributes(resolved_attribute_update_inputs: Sequence[ResolvedAttributeUpdateInput]) -> str:
@@ -257,6 +273,8 @@ def build_request_body_for_update_attributes(
         if attribute_update_input is None:
             continue
 
+        if attribute_update_input.attribute_name_en is not None:
+            update_attribute_name_en(attribute, attribute_update_input.attribute_name_en)
         if attribute_update_input.attribute_name_ja is not None:
             update_attribute_name_ja(attribute, attribute_update_input.attribute_name_ja)
         if attribute_update_input.keybind is not None:
@@ -265,6 +283,8 @@ def build_request_body_for_update_attributes(
             attribute["read_only"] = attribute_update_input.read_only
         if attribute_update_input.has_default_value:
             attribute["default"] = parse_default_value(attribute["type"], attribute_update_input.default_value)
+
+    validate_attribute_name_ens_not_duplicated(request_body["additionals"])
 
     if comment is None:
         comment = create_comment_for_update_attributes(resolved_attribute_update_inputs)
@@ -349,6 +369,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
 
     sample_json = [
         {
+            "attribute_id": "54fa5e97-6f88-49a4-aeb0-a91a15d11528",
             "attribute_name_en": "comment",
             "attribute_name_ja": "コメント",
             "keybind": {"alt": False, "code": "Digit1", "ctrl": True, "shift": False},
@@ -363,8 +384,8 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         type=str,
         help=(
             "更新する属性情報のJSON配列を指定します。 ``file://`` を先頭に付けるとJSON形式のファイルを指定できます。"
-            " 各要素には ``attribute_id`` または ``attribute_name_en`` のどちらか一方が必要です。"
-            " 任意で ``attribute_name_ja`` , ``keybind`` , ``read_only`` , ``default_value`` を指定できます。"
+            " 各要素には更新対象を示す ``attribute_id`` が必要です。"
+            " 任意で更新後の ``attribute_name_en`` , ``attribute_name_ja`` , ``keybind`` , ``read_only`` , ``default_value`` を指定できます。"
             f"\n(例) ``{json.dumps(sample_json, ensure_ascii=False)}``"
         ),
     )
@@ -372,8 +393,8 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--attribute_csv",
         type=Path,
         help=(
-            "更新する属性情報のCSVファイルを指定します。 CSVには ``attribute_id`` または ``attribute_name_en`` 列のどちらか一方が必要です。"
-            " 任意で ``attribute_name_ja`` , ``keybind`` , ``read_only`` , ``default_value`` 列を指定できます。"
+            "更新する属性情報のCSVファイルを指定します。 CSVには更新対象を示す ``attribute_id`` 列が必要です。"
+            " 任意で更新後の ``attribute_name_en`` , ``attribute_name_ja`` , ``keybind`` , ``read_only`` , ``default_value`` 列を指定できます。"
             " ``keybind`` 列にはJSONオブジェクト文字列を指定してください。"
         ),
     )
@@ -397,7 +418,7 @@ def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse
     """
     subcommand_name = "update_attributes"
     subcommand_help = "アノテーション仕様の既存属性情報を更新します。"
-    description = "アノテーション仕様の既存属性に設定された日本語名、キーバインド、read_only、default_value を更新します。"
+    description = "アノテーション仕様の既存属性に設定された英語名、日本語名、キーバインド、read_only、default_value を更新します。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description=description)
     parse_args(parser)
