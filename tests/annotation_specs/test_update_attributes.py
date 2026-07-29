@@ -14,10 +14,14 @@ from annofabcli.annotation_specs.update_attributes import (
     resolve_attribute_update_inputs,
     validate_attribute_update_inputs,
 )
+from annofabcli.annotation_specs.update_choices import ChoiceUpdateInput
 
 data_dir = Path("./tests/data/annotation_specs")
 COMMENT_ATTRIBUTE_ID = "54fa5e97-6f88-49a4-aeb0-a91a15d11528"
 UNCLEAR_ATTRIBUTE_ID = "f12a0b59-dfce-4241-bb87-4b2c0259fc6f"
+TYPE_ATTRIBUTE_ID = "71620647-98cf-48ad-b43b-4af425a24f32"
+LARGE_CHOICE_ID = "08ec927c-18e6-4bba-837a-b16de7061580"
+SMALL_CHOICE_ID = "74691a87-7962-4fa9-ba52-7cc466ecd982"
 
 
 @pytest.fixture
@@ -177,6 +181,49 @@ class TestBuildRequestBodyForUpdateAttributes:
             {"lang": "en-US", "message": "comment"},
         ]
 
+    def test_build_request_body_for_update_attributes__choice_updates(self, annotation_specs: dict) -> None:
+        resolved_inputs = resolve_attribute_update_inputs(
+            annotation_specs,
+            attribute_update_inputs=[
+                AttributeUpdateInput(
+                    attribute_id=TYPE_ATTRIBUTE_ID,
+                    attribute_name_ja="種別",
+                    choice_updates=[
+                        ChoiceUpdateInput(
+                            choice_id=LARGE_CHOICE_ID,
+                            choice_name_en="big",
+                            choice_name_ja="大",
+                            choice_name_vi="lớn",
+                            keybind={"alt": False, "code": "Digit1", "ctrl": True, "shift": False},
+                            has_keybind=True,
+                        ),
+                        ChoiceUpdateInput(choice_id=SMALL_CHOICE_ID, keybind=None, has_keybind=True),
+                    ],
+                )
+            ],
+        )
+
+        actual = build_request_body_for_update_attributes(
+            annotation_specs,
+            resolved_attribute_update_inputs=resolved_inputs,
+            comment=None,
+        )
+
+        type_attribute = next(additional for additional in actual["additionals"] if additional["additional_data_definition_id"] == TYPE_ATTRIBUTE_ID)
+        assert type_attribute["name"]["messages"] == [
+            {"lang": "ja-JP", "message": "種別"},
+            {"lang": "en-US", "message": "type"},
+        ]
+        large_choice = next(choice for choice in type_attribute["choices"] if choice["choice_id"] == LARGE_CHOICE_ID)
+        assert large_choice["name"]["messages"] == [
+            {"lang": "ja-JP", "message": "大"},
+            {"lang": "en-US", "message": "big"},
+            {"lang": "vi-VN", "message": "lớn"},
+        ]
+        assert large_choice["keybind"] == [{"alt": False, "code": "Digit1", "ctrl": True, "shift": False}]
+        small_choice = next(choice for choice in type_attribute["choices"] if choice["choice_id"] == SMALL_CHOICE_ID)
+        assert small_choice["keybind"] == []
+
 
 class TestResolveAttributeUpdateInputs:
     def test_resolve_attribute_update_inputs__attribute_not_found(self, annotation_specs: dict) -> None:
@@ -194,6 +241,20 @@ class TestResolveAttributeUpdateInputs:
                     AttributeUpdateInput(attribute_id=COMMENT_ATTRIBUTE_ID, attribute_name_ja="コメント"),
                     AttributeUpdateInput(attribute_id=COMMENT_ATTRIBUTE_ID, read_only=True),
                 ],
+            )
+
+    def test_resolve_attribute_update_inputs__choice_updates_for_non_choice_attribute(self, annotation_specs: dict) -> None:
+        with pytest.raises(ValueError):
+            resolve_attribute_update_inputs(
+                annotation_specs,
+                attribute_update_inputs=[AttributeUpdateInput(attribute_id=COMMENT_ATTRIBUTE_ID, choice_updates=[ChoiceUpdateInput(choice_id=LARGE_CHOICE_ID, choice_name_ja="大")])],
+            )
+
+    def test_resolve_attribute_update_inputs__choice_not_found(self, annotation_specs: dict) -> None:
+        with pytest.raises(ValueError):
+            resolve_attribute_update_inputs(
+                annotation_specs,
+                attribute_update_inputs=[AttributeUpdateInput(attribute_id=TYPE_ATTRIBUTE_ID, choice_updates=[ChoiceUpdateInput(choice_id="not-found", choice_name_ja="なし")])],
             )
 
 
@@ -217,7 +278,7 @@ class TestReadAttributes:
         actual = read_attributes_json(
             f'[{{"attribute_id":"{COMMENT_ATTRIBUTE_ID}","attribute_name_en":"remark","attribute_name_ja":"コメント","attribute_name_vi":"bình luận",'
             '"keybind":{"alt":false,"code":"Digit1","ctrl":true,"shift":false},'
-            '"read_only":true,"default_value":"確認済み"},'
+            f'"read_only":true,"default_value":"確認済み","choice_updates":[{{"choice_id":"{LARGE_CHOICE_ID}","choice_name_ja":"大"}}]}},'
             f'{{"attribute_id":"{UNCLEAR_ATTRIBUTE_ID}","default_value":true}}]'
         )
 
@@ -231,6 +292,7 @@ class TestReadAttributes:
                 read_only=True,
                 default_value="確認済み",
                 has_default_value=True,
+                choice_updates=[ChoiceUpdateInput(choice_id=LARGE_CHOICE_ID, choice_name_ja="大")],
             ),
             AttributeUpdateInput(
                 attribute_id=UNCLEAR_ATTRIBUTE_ID,
@@ -246,6 +308,10 @@ class TestReadAttributes:
     def test_read_attributes_json__target_required(self) -> None:
         with pytest.raises(ValueError):
             read_attributes_json('[{"attribute_name_ja":"コメント"}]')
+
+    def test_read_attributes_json__choice_updates_delete_is_not_allowed(self) -> None:
+        with pytest.raises(ValueError):
+            read_attributes_json(f'[{{"attribute_id":"{TYPE_ATTRIBUTE_ID}","choice_updates":[{{"choice_id":"{LARGE_CHOICE_ID}","delete":true}}]}}]')
 
     def test_read_attributes_csv(self, tmp_path: Path) -> None:
         csv_path = tmp_path / "attributes.csv"
