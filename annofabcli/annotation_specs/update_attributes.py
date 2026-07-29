@@ -238,15 +238,21 @@ def update_attribute_name_en(attribute: dict[str, Any], attribute_name_en: str) 
     messages.append({"lang": "en-US", "message": attribute_name_en})
 
 
-def validate_attribute_name_ens_not_duplicated(additionals: Sequence[Mapping[str, Any]]) -> None:
+def validate_attribute_name_ens_not_duplicated_in_labels(annotation_specs: Mapping[str, Any]) -> None:
     """
-    属性英語名が重複していないことを検証する。
+    ラベル内の属性英語名が重複していないことを検証する。
     """
-    attribute_name_ens = [get_attribute_name_en(attribute) for attribute in additionals]
-    duplicated_attribute_name_ens = duplicated_set([name for name in attribute_name_ens if name is not None])
-    if duplicated_attribute_name_ens:
-        duplicated_text = ", ".join(sorted(duplicated_attribute_name_ens))
-        raise ValueError(f"属性名(英語)に重複があります。 :: {duplicated_text}")
+    attributes_by_id = {attribute["additional_data_definition_id"]: attribute for attribute in annotation_specs["additionals"]}
+    for label in annotation_specs["labels"]:
+        attribute_name_ens = []
+        for attribute_id in label["additional_data_definitions"]:
+            attribute = attributes_by_id.get(attribute_id)
+            if attribute is not None:
+                attribute_name_ens.append(get_attribute_name_en(attribute))
+        duplicated_attribute_name_ens = duplicated_set([name for name in attribute_name_ens if name is not None])
+        if duplicated_attribute_name_ens:
+            duplicated_text = ", ".join(sorted(duplicated_attribute_name_ens))
+            raise ValueError(f"ラベル内の属性名(英語)に重複があります。 :: label_id='{label['label_id']}', attribute_name_en={duplicated_text}")
 
 
 def create_comment_for_update_attributes(resolved_attribute_update_inputs: Sequence[ResolvedAttributeUpdateInput]) -> str:
@@ -284,7 +290,7 @@ def build_request_body_for_update_attributes(
         if attribute_update_input.has_default_value:
             attribute["default"] = parse_default_value(attribute["type"], attribute_update_input.default_value)
 
-    validate_attribute_name_ens_not_duplicated(request_body["additionals"])
+    validate_attribute_name_ens_not_duplicated_in_labels(request_body)
 
     if comment is None:
         comment = create_comment_for_update_attributes(resolved_attribute_update_inputs)
