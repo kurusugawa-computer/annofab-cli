@@ -6,13 +6,14 @@ from typing import Any, cast
 from annofabapi.util.annotation_specs import STR_LANG, AnnotationSpecsAccessor, InternationalizationMessage, get_message_with_lang
 
 
-def create_name(message_en: str, message_ja: str | None = None) -> dict[str, Any]:
+def create_name(message_en: str, message_ja: str | None = None, message_vi: str | None = None) -> dict[str, Any]:
     """
     Annofabの多言語メッセージ形式を生成する。
 
     Args:
         message_en: 英語メッセージ
         message_ja: 日本語メッセージ。未指定の場合は英語メッセージと同じ内容になる。
+        message_vi: ベトナム語メッセージ。未指定の場合は設定しない。
 
     Returns:
         Annofab APIが要求する ``name`` オブジェクト
@@ -22,6 +23,8 @@ def create_name(message_en: str, message_ja: str | None = None) -> dict[str, Any
     if message_ja is None:
         message_ja = message_en
     messages.append({"lang": "ja-JP", "message": message_ja})
+    if message_vi is not None:
+        messages.append({"lang": "vi-VN", "message": message_vi})
     return {"messages": messages, "default_lang": "ja-JP"}
 
 

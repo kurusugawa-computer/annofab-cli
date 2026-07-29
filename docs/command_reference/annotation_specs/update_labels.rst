@@ -4,7 +4,7 @@ annotation_specs update_labels
 
 Description
 =================================
-アノテーション仕様の既存ラベルに設定された英語名、日本語名、色、キーバインド、 ``field_values`` を更新します。
+アノテーション仕様の既存ラベルに設定された英語名、日本語名、ベトナム語名、色、キーバインド、 ``field_values`` を更新します。
 
 ``label_id`` 、アノテーション種類は既存アノテーションへの影響を避けるため更新できません。
 
@@ -23,6 +23,7 @@ JSON形式で指定する場合
             "label_id": "car_label_id",
             "label_name_en": "car",
             "label_name_ja": "車",
+            "label_name_vi": "xe hơi",
             "color": "#123456",
             "keybind": {
                 "alt": false,
@@ -70,6 +71,9 @@ JSON形式で指定する場合
     * - ``label_name_ja``
       - 任意
       - 更新後のラベル日本語名。
+    * - ``label_name_vi``
+      - 任意
+      - 更新後のラベルベトナム語名。
     * - ``color``
       - 任意
       - 更新後のラベルの色。 ``#RRGGBB`` 形式の16進数カラーコードを指定してください。
@@ -90,9 +94,9 @@ CSV形式で指定する場合
 .. code-block::
     :caption: labels.csv
 
-    label_id,label_name_en,label_name_ja,color,keybind,field_values,field_values_operation
-    car_label_id,car,車,#123456,"{""alt"": false, ""code"": ""Digit1"", ""ctrl"": true, ""shift"": false}","{""margin_of_error_tolerance"": {""max_pixel"": 5, ""_type"": ""MarginOfErrorTolerance""}}",
-    bike,,,,,,replace
+    label_id,label_name_en,label_name_ja,label_name_vi,color,keybind,field_values,field_values_operation
+    car_label_id,car,車,xe hơi,#123456,"{""alt"": false, ""code"": ""Digit1"", ""ctrl"": true, ""shift"": false}","{""margin_of_error_tolerance"": {""max_pixel"": 5, ""_type"": ""MarginOfErrorTolerance""}}",
+    bike,,,,,,,replace
 
 
 CSV形式では、 ``keybind`` 列と ``field_values`` 列だけはJSONオブジェクト文字列として指定してください。

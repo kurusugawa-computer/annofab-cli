@@ -26,6 +26,7 @@ CHOICE_JSON_KEYS = {
     "choice_id",
     "choice_name_en",
     "choice_name_ja",
+    "choice_name_vi",
     "keybind",
 }
 """``--choice_json`` の各要素に指定できるキー。"""
@@ -45,6 +46,9 @@ class ChoiceUpdateInput:
 
     choice_name_ja: str | None = None
     """更新後の選択肢日本語名。"""
+
+    choice_name_vi: str | None = None
+    """更新後の選択肢ベトナム語名。"""
 
     keybind: dict[str, Any] | None = None
     """更新後のkeybind。"""
@@ -76,7 +80,7 @@ def validate_choice_update_input(choice_update_input: ChoiceUpdateInput, *, inde
     if choice_update_input.choice_id is None:
         raise ValueError(f"{index}件目の選択肢に `choice_id` が指定されていません。")
 
-    if choice_update_input.choice_name_en is None and choice_update_input.choice_name_ja is None and not choice_update_input.has_keybind:
+    if choice_update_input.choice_name_en is None and choice_update_input.choice_name_ja is None and choice_update_input.choice_name_vi is None and not choice_update_input.has_keybind:
         raise ValueError(f"{index}件目の選択肢に更新するフィールドが指定されていません。")
 
 
@@ -93,6 +97,7 @@ def parse_choice_update_input_from_dict(data: dict[str, Any], *, index: int) -> 
         choice_id=data.get("choice_id"),
         choice_name_en=data.get("choice_name_en"),
         choice_name_ja=data.get("choice_name_ja"),
+        choice_name_vi=data.get("choice_name_vi"),
         keybind=None if keybind is None else validate_keybind_input(keybind),
         has_keybind="keybind" in data,
     )
@@ -127,6 +132,7 @@ def read_choices_csv(csv_path: Path) -> list[ChoiceUpdateInput]:
                 "choice_id": "string",
                 "choice_name_en": "string",
                 "choice_name_ja": "string",
+                "choice_name_vi": "string",
                 "keybind": "string",
             },
         )
@@ -144,6 +150,7 @@ def read_choices_csv(csv_path: Path) -> list[ChoiceUpdateInput]:
             choice_id=row.get("choice_id"),
             choice_name_en=row.get("choice_name_en"),
             choice_name_ja=row.get("choice_name_ja"),
+            choice_name_vi=row.get("choice_name_vi"),
             keybind=keybind,
             has_keybind=keybind is not None,
         )
@@ -225,6 +232,20 @@ def update_choice_name_ja(choice: dict[str, Any], choice_name_ja: str) -> None:
             return
 
 
+def update_choice_name_vi(choice: dict[str, Any], choice_name_vi: str) -> None:
+    """
+    選択肢ベトナム語名を更新する。
+    """
+    if get_message_with_lang(choice["name"], "vi-VN") is None:
+        choice["name"]["messages"].append({"lang": "vi-VN", "message": choice_name_vi})
+        return
+
+    for message in choice["name"]["messages"]:
+        if message["lang"] == "vi-VN":
+            message["message"] = choice_name_vi
+            return
+
+
 def update_choice_name_en(choice: dict[str, Any], choice_name_en: str) -> None:
     """
     選択肢英語名を更新する。
@@ -283,6 +304,8 @@ def build_request_body_for_update_choices(
                 update_choice_name_en(choice, choice_update_input.choice_name_en)
             if choice_update_input.choice_name_ja is not None:
                 update_choice_name_ja(choice, choice_update_input.choice_name_ja)
+            if choice_update_input.choice_name_vi is not None:
+                update_choice_name_vi(choice, choice_update_input.choice_name_vi)
             if choice_update_input.has_keybind:
                 choice["keybind"] = keybind_to_api_keybind(copy.deepcopy(choice_update_input.keybind))
         validate_choice_name_ens_not_duplicated(attribute)
@@ -388,6 +411,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
             "choice_id": "08ec927c-18e6-4bba-837a-b16de7061580",
             "choice_name_en": "large",
             "choice_name_ja": "大",
+            "choice_name_vi": "lớn",
             "keybind": {"alt": False, "code": "Digit1", "ctrl": True, "shift": False},
         },
         {"choice_id": "74691a87-7962-4fa9-ba52-7cc466ecd982", "keybind": None},
@@ -399,7 +423,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         help=(
             "更新する選択肢情報のJSON配列を指定します。 ``file://`` を先頭に付けるとJSON形式のファイルを指定できます。"
             " 各要素には更新対象を示す ``choice_id`` が必要です。"
-            " 任意で更新後の ``choice_name_en`` , ``choice_name_ja`` , ``keybind`` を指定できます。 ``keybind`` に ``null`` を指定するとショートカットキーを解除します。"
+            " 任意で更新後の ``choice_name_en`` , ``choice_name_ja`` , ``choice_name_vi`` , ``keybind`` を指定できます。 ``keybind`` に ``null`` を指定するとショートカットキーを解除します。"
             f"\n(例) ``{json.dumps(sample_json, ensure_ascii=False)}``"
         ),
     )
@@ -408,7 +432,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         type=Path,
         help=(
             "更新する選択肢情報のCSVファイルを指定します。 CSVには更新対象を示す ``choice_id`` 列が必要です。"
-            " 任意で更新後の ``choice_name_en`` , ``choice_name_ja`` , ``keybind`` 列を指定できます。"
+            " 任意で更新後の ``choice_name_en`` , ``choice_name_ja`` , ``choice_name_vi`` , ``keybind`` 列を指定できます。"
             " ``keybind`` 列にはJSONオブジェクト文字列を指定してください。空欄の場合はショートカットキーを変更しません。"
         ),
     )
@@ -432,7 +456,7 @@ def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse
     """
     subcommand_name = "update_choices"
     subcommand_help = "アノテーション仕様の既存選択肢情報を更新します。"
-    description = "アノテーション仕様の既存選択肢に設定された英語名、日本語名、ショートカットキーを更新します。"
+    description = "アノテーション仕様の既存選択肢に設定された英語名、日本語名、ベトナム語名、ショートカットキーを更新します。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description=description)
     parse_args(parser)

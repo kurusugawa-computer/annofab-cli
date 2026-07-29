@@ -42,6 +42,7 @@ class TestBuildRequestBodyForUpdateChoices:
                     choice_id=LARGE_CHOICE_ID,
                     choice_name_en="big",
                     choice_name_ja="大",
+                    choice_name_vi="lớn",
                     keybind={"alt": False, "code": "Digit1", "ctrl": True, "shift": False},
                     has_keybind=True,
                 ),
@@ -56,6 +57,7 @@ class TestBuildRequestBodyForUpdateChoices:
         assert large_choice["name"]["messages"] == [
             {"lang": "ja-JP", "message": "大"},
             {"lang": "en-US", "message": "big"},
+            {"lang": "vi-VN", "message": "lớn"},
         ]
         assert large_choice["keybind"] == [{"alt": False, "code": "Digit1", "ctrl": True, "shift": False}]
 
@@ -91,7 +93,7 @@ class TestBuildRequestBodyForUpdateChoices:
             annotation_specs,
             attribute_id=None,
             attribute_name_en="type",
-            choice_update_inputs=[ChoiceUpdateInput(choice_id=LARGE_CHOICE_ID, choice_name_en="big", choice_name_ja="大")],
+            choice_update_inputs=[ChoiceUpdateInput(choice_id=LARGE_CHOICE_ID, choice_name_en="big", choice_name_ja="大", choice_name_vi="lớn")],
         )
 
         actual = build_request_body_for_update_choices(annotation_specs, resolved_choice_update_inputs=resolved_inputs, comment=None)
@@ -103,6 +105,7 @@ class TestBuildRequestBodyForUpdateChoices:
                 {"lang": "en-US", "message": "big"},
                 {"lang": "ja-JP", "message": "大"},
                 {"lang": "fr-FR", "message": "grand"},
+                {"lang": "vi-VN", "message": "lớn"},
             ],
             "default_lang": "en-US",
         }
@@ -182,7 +185,7 @@ class TestChoiceUpdateInputs:
 class TestReadChoices:
     def test_read_choices_json(self) -> None:
         actual = read_choices_json(
-            f'[{{"choice_id":"{LARGE_CHOICE_ID}","choice_name_en":"big","choice_name_ja":"大","keybind":{{"alt":false,"code":"Digit1","ctrl":true,"shift":false}}}},{{"choice_id":"{SMALL_CHOICE_ID}","keybind":null}}]'
+            f'[{{"choice_id":"{LARGE_CHOICE_ID}","choice_name_en":"big","choice_name_ja":"大","choice_name_vi":"lớn","keybind":{{"alt":false,"code":"Digit1","ctrl":true,"shift":false}}}},{{"choice_id":"{SMALL_CHOICE_ID}","keybind":null}}]'
         )
 
         assert actual == [
@@ -190,6 +193,7 @@ class TestReadChoices:
                 choice_id=LARGE_CHOICE_ID,
                 choice_name_en="big",
                 choice_name_ja="大",
+                choice_name_vi="lớn",
                 keybind={"alt": False, "code": "Digit1", "ctrl": True, "shift": False},
                 has_keybind=True,
             ),
@@ -212,6 +216,7 @@ class TestReadChoices:
                     "choice_id": LARGE_CHOICE_ID,
                     "choice_name_en": "large",
                     "choice_name_ja": "大",
+                    "choice_name_vi": "lớn",
                     "keybind": '{"alt": false, "code": "Digit1", "ctrl": true, "shift": false}',
                 },
                 {"choice_id": SMALL_CHOICE_ID, "choice_name_ja": "小"},
@@ -226,6 +231,7 @@ class TestReadChoices:
                 choice_id=LARGE_CHOICE_ID,
                 choice_name_en="large",
                 choice_name_ja="大",
+                choice_name_vi="lớn",
                 keybind={"alt": False, "code": "Digit1", "ctrl": True, "shift": False},
                 has_keybind=True,
             ),

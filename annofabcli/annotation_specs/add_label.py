@@ -239,6 +239,7 @@ def create_new_label(
     label_id: str,
     label_name_en: str,
     label_name_ja: str | None,
+    label_name_vi: str | None = None,
     annotation_type: str,
     color: RgbColor,
     keybind: dict[str, Any] | None = None,
@@ -251,6 +252,7 @@ def create_new_label(
         label_id: 新規ラベルID
         label_name_en: 新規ラベル英語名
         label_name_ja: 新規ラベル日本語名
+        label_name_vi: 新規ラベルベトナム語名
         annotation_type: アノテーション種類
         color: Annofab API向けのRGB辞書
         keybind: 新規ラベルに設定するkeybind
@@ -261,7 +263,7 @@ def create_new_label(
     """
     return {
         "label_id": label_id,
-        "label_name": create_name(label_name_en, label_name_ja),
+        "label_name": create_name(label_name_en, label_name_ja, label_name_vi),
         "annotation_type": annotation_type,
         "color": color,
         # 以下はキーが存在しないとAPIエラーになるため、空の値を入れておく
@@ -291,6 +293,7 @@ def resolve_new_label_input(
     annotation_type: str,
     label_id: str | None,
     label_name_ja: str | None,
+    label_name_vi: str | None = None,
     color_code: str | None,
     keybind: dict[str, Any] | None = None,
     field_values: dict[str, Any] | None = None,
@@ -304,6 +307,7 @@ def resolve_new_label_input(
         annotation_type: 追加するラベルのアノテーション種類
         label_id: 追加するラベルID。未指定ならUUIDv4を自動生成
         label_name_ja: 追加するラベルの日本語名
+        label_name_vi: 追加するラベルのベトナム語名
         color_code: ``#RRGGBB`` 形式のカラーコード
         keybind: 新規ラベルに設定するkeybind
         field_values: 新規ラベルに設定するfield_values
@@ -320,6 +324,7 @@ def resolve_new_label_input(
         label_id=generated_label_id,
         label_name_en=label_name_en,
         label_name_ja=label_name_ja,
+        label_name_vi=label_name_vi,
         annotation_type=annotation_type,
         color=color,
         keybind=keybind,
@@ -379,6 +384,7 @@ class AddLabelMain(CommandLineWithConfirm):
         annotation_type: str,
         label_id: str | None,
         label_name_ja: str | None,
+        label_name_vi: str | None = None,
         color_code: str | None,
         keybind: dict[str, Any] | None = None,
         field_values: dict[str, Any] | None = None,
@@ -392,6 +398,7 @@ class AddLabelMain(CommandLineWithConfirm):
             annotation_type: 追加するラベルのアノテーション種類
             label_id: 追加するラベルID。未指定ならUUIDv4を自動生成
             label_name_ja: 追加するラベルの日本語名
+            label_name_vi: 追加するラベルのベトナム語名
             color_code: ``#RRGGBB`` 形式のカラーコード
             keybind: 新規ラベルに設定するkeybind
             field_values: 新規ラベルに設定するfield_values
@@ -410,6 +417,7 @@ class AddLabelMain(CommandLineWithConfirm):
             annotation_type=annotation_type,
             label_id=label_id,
             label_name_ja=label_name_ja,
+            label_name_vi=label_name_vi,
             color_code=color_code,
             keybind=keybind,
             field_values=field_values,
@@ -447,6 +455,7 @@ class AddLabel(CommandLine):
             annotation_type=args.annotation_type,
             label_id=args.label_id,
             label_name_ja=args.label_name_ja,
+            label_name_vi=args.label_name_vi,
             color_code=args.color,
             keybind=keybind,
             field_values=field_values,
@@ -468,6 +477,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--annotation_type", type=str, required=True, choices=ANNOTATION_TYPE_CHOICES, help=create_annotation_type_help())
     parser.add_argument("--label_id", type=str, help="追加するラベルのlabel_id。未指定の場合はUUIDv4を自動生成します。")
     parser.add_argument("--label_name_ja", type=str, help="追加するラベルの日本語名。未指定の場合は英語名と同じ値を使用します。")
+    parser.add_argument("--label_name_vi", type=str, help="追加するラベルのベトナム語名。")
     parser.add_argument("--color", type=str, help="追加するラベルの色。 ``#RRGGBB`` 形式の16進数カラーコードを指定してください。未指定の場合は自動設定されます。")
     parser.add_argument(
         "--keybind_json",

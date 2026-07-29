@@ -71,6 +71,7 @@ def read_choices_csv(csv_path: Path) -> list[ChoiceAttributeInput]:
                 "choice_id": "string",
                 "choice_name_en": "string",
                 "choice_name_ja": "string",
+                "choice_name_vi": "string",
                 "keybind": "string",
             },
         )
@@ -86,6 +87,7 @@ def read_choices_csv(csv_path: Path) -> list[ChoiceAttributeInput]:
         ChoiceAttributeInput(
             choice_name_en=row["choice_name_en"],
             choice_name_ja=row.get("choice_name_ja"),
+            choice_name_vi=row.get("choice_name_vi"),
             choice_id=row.get("choice_id"),
             is_default=False,
             keybind=parse_keybind_in_csv(row.get("keybind")),
@@ -323,9 +325,10 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
             "choice_id": "xlarge",
             "choice_name_en": "xlarge",
             "choice_name_ja": "特大",
+            "choice_name_vi": "rất lớn",
             "keybind": {"alt": False, "code": "Digit1", "ctrl": True, "shift": False},
         },
-        {"choice_id": "tiny", "choice_name_en": "tiny", "choice_name_ja": "極小"},
+        {"choice_id": "tiny", "choice_name_en": "tiny", "choice_name_ja": "極小", "choice_name_vi": "rất nhỏ"},
     ]
     choice_group = parser.add_mutually_exclusive_group(required=True)
     choice_group.add_argument(
@@ -344,7 +347,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
             "追加する選択肢情報のCSVファイルを指定します。 "
             "CSVには ``choice_name_en`` 列が必要です。 "
             "``choice_id`` と ``choice_name_en`` はユニークになるように指定してください。 "
-            "任意で ``choice_id`` , ``choice_name_ja`` , ``keybind`` 列を指定できます。"
+            "任意で ``choice_id`` , ``choice_name_ja`` , ``choice_name_vi`` , ``keybind`` 列を指定できます。"
             " ``keybind`` 列にはJSONオブジェクト文字列を指定してください。 ``is_default`` 列が存在する場合は無視されます。"
         ),
     )

@@ -4,7 +4,7 @@ annotation_specs update_choices
 
 Description
 =================================
-アノテーション仕様の既存選択肢に設定された英語名、日本語名、ショートカットキーを更新します。
+アノテーション仕様の既存選択肢に設定された英語名、日本語名、ベトナム語名、ショートカットキーを更新します。
 
 ``choice_id`` 、選択肢の並び順、属性の ``default_value`` は更新できません。
 選択肢の並び順を変更したい場合は :doc:`reorder_choices` を、属性の ``default_value`` を変更したい場合は :doc:`update_attributes` を利用してください。
@@ -24,6 +24,7 @@ JSON形式で指定する場合
             "choice_id": "08ec927c-18e6-4bba-837a-b16de7061580",
             "choice_name_en": "large",
             "choice_name_ja": "大",
+            "choice_name_vi": "lớn",
             "keybind": {
                 "alt": false,
                 "code": "Digit1",
@@ -63,6 +64,9 @@ JSON形式で指定する場合
     * - ``choice_name_ja``
       - 任意
       - 更新後の選択肢日本語名。
+    * - ``choice_name_vi``
+      - 任意
+      - 更新後の選択肢ベトナム語名。
     * - ``keybind``
       - 任意
       - 更新後のキーボードショートカットのJSONオブジェクト。 ``null`` を指定するとショートカットキーを解除します。 ``code`` に指定できる値は、 `KeyboardEvent.code <https://developer.mozilla.org/ja/docs/Web/API/KeyboardEvent/code>`_ を参照してください。
@@ -74,9 +78,9 @@ CSV形式で指定する場合
 .. code-block::
     :caption: choices.csv
 
-    choice_id,choice_name_en,choice_name_ja,keybind
-    08ec927c-18e6-4bba-837a-b16de7061580,large,大,"{""alt"": false, ""code"": ""Digit1"", ""ctrl"": true, ""shift"": false}"
-    74691a87-7962-4fa9-ba52-7cc466ecd982,,小,
+    choice_id,choice_name_en,choice_name_ja,choice_name_vi,keybind
+    08ec927c-18e6-4bba-837a-b16de7061580,large,大,lớn,"{""alt"": false, ""code"": ""Digit1"", ""ctrl"": true, ""shift"": false}"
+    74691a87-7962-4fa9-ba52-7cc466ecd982,,小,nhỏ,
 
 
 CSV形式では、 ``keybind`` 列だけはJSONオブジェクト文字列として指定してください。

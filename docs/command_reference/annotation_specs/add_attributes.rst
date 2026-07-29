@@ -22,6 +22,7 @@ JSON形式で指定する場合
         {
             "attribute_type": "flag",
             "attribute_name_en": "unclear",
+            "attribute_name_vi": "không rõ",
             "read_only": true,
             "default_value": false,
             "keybind": {
@@ -39,6 +40,7 @@ JSON形式で指定する場合
                 {
                     "choice_name_en": "sunny",
                     "choice_name_ja": "晴れ",
+                    "choice_name_vi": "nắng",
                     "is_default": true,
                     "keybind": {
                         "alt": false,
@@ -49,7 +51,8 @@ JSON形式で指定する場合
                 },
                 {
                     "choice_name_en": "cloudy",
-                    "choice_name_ja": "曇り"
+                    "choice_name_ja": "曇り",
+                    "choice_name_vi": "nhiều mây"
                 }
             ],
             "label_name_ens": ["bike"]
@@ -75,6 +78,7 @@ JSON形式で指定する場合
 * ``label_name_ens`` : ``label_ids`` とどちらか一方が必須。属性を追加する対象ラベルの英語名一覧。
 * ``label_ids`` : ``label_name_ens`` とどちらか一方が必須。属性を追加する対象ラベルの ``label_id`` 一覧。
 * ``attribute_name_ja`` : 任意。属性名（日本語）。
+* ``attribute_name_vi`` : 任意。属性名（ベトナム語）。
 * ``attribute_id`` : 任意。属性ID。未指定の場合はUUIDv4が自動生成されます。
 * ``read_only`` : 任意。 ``true`` を指定すると読み込み専用の属性として追加します。未指定の場合は ``false`` です。
 * ``default_value`` : 任意。非選択肢系属性の初期値。 ``attribute_type`` が ``flag`` の場合は真偽値、 ``integer`` の場合は整数、その他の場合は文字列を指定します。 ``choice`` または ``select`` では指定できません。
@@ -83,6 +87,7 @@ JSON形式で指定する場合
 
   * ``choice_name_en`` : 必須。選択肢名（英語）。
   * ``choice_name_ja`` : 任意。選択肢名（日本語）。
+  * ``choice_name_vi`` : 任意。選択肢名（ベトナム語）。
   * ``choice_id`` : 任意。選択肢ID。未指定の場合はUUIDv4が自動生成されます。
   * ``is_default`` : 任意。 ``true`` を指定すると属性の初期値として使用します。未指定の場合は ``false`` です。
   * ``keybind`` : 任意。選択肢に設定するキーボードショートカット。JSONオブジェクトを指定してください。

@@ -28,6 +28,7 @@ JSON形式の例
             "choice_id": "c2",
             "choice_name_en": "rear",
             "choice_name_ja": "後ろ",
+            "choice_name_vi": "sau",
             "is_default": true,
             "keybind": {
                 "alt": false,
@@ -45,6 +46,7 @@ JSON形式の例
      --project_id prj1 \
      --attribute_type choice \
      --attribute_name_en direction \
+     --attribute_name_vi hướng \
      --choice_json file://choices.json \
      --label_name_en car bus \
 
@@ -55,9 +57,9 @@ CSV形式の例
 .. code-block::
     :caption: choices.csv
 
-    choice_id,choice_name_en,choice_name_ja,is_default,keybind
-    ,front,,,
-    c2,rear,後ろ,true,"{""alt"": false, ""code"": ""Digit1"", ""ctrl"": true, ""shift"": false}"
+    choice_id,choice_name_en,choice_name_ja,choice_name_vi,is_default,keybind
+    ,front,,,,
+    c2,rear,後ろ,sau,true,"{""alt"": false, ""code"": ""Digit1"", ""ctrl"": true, ""shift"": false}"
 
 
 .. code-block::
@@ -79,6 +81,7 @@ CSV形式の例
 
 * ``choice_name_en`` : 必須。選択肢名（英語）。
 * ``choice_name_ja`` : 任意。選択肢名（日本語）。
+* ``choice_name_vi`` : 任意。選択肢名（ベトナム語）。
 * ``choice_id`` : 任意。選択肢ID。未指定の場合はUUIDv4が自動生成されます。
 * ``is_default`` : 任意。 ``true`` を指定すると属性の初期値として使用します。未指定の場合は ``false`` です。
 * ``keybind`` : 任意。選択肢に設定するキーボードショートカット。 ``code`` に指定できる値は、 `KeyboardEvent.code <https://developer.mozilla.org/ja/docs/Web/API/KeyboardEvent/code>`_ を参照してください。

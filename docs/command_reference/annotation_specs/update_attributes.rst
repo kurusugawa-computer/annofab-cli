@@ -4,7 +4,7 @@ annotation_specs update_attributes
 
 Description
 =================================
-アノテーション仕様の既存属性に設定された英語名、日本語名、キーバインド、 ``read_only`` 、 ``default_value`` を更新します。
+アノテーション仕様の既存属性に設定された英語名、日本語名、ベトナム語名、キーバインド、 ``read_only`` 、 ``default_value`` を更新します。
 
 ``attribute_id`` 、属性種類、選択肢、所属先ラベルは既存アノテーションへの影響を避けるため更新できません。
 
@@ -23,6 +23,7 @@ JSON形式で指定する場合
             "attribute_id": "54fa5e97-6f88-49a4-aeb0-a91a15d11528",
             "attribute_name_en": "comment",
             "attribute_name_ja": "コメント",
+            "attribute_name_vi": "bình luận",
             "keybind": {
                 "alt": false,
                 "code": "Digit1",
@@ -64,6 +65,9 @@ JSON形式で指定する場合
     * - ``attribute_name_ja``
       - 任意
       - 更新後の属性日本語名。
+    * - ``attribute_name_vi``
+      - 任意
+      - 更新後の属性ベトナム語名。
     * - ``keybind``
       - 任意
       - 更新後のキーボードショートカットのJSONオブジェクト。 ``code`` に指定できる値は、 `KeyboardEvent.code <https://developer.mozilla.org/ja/docs/Web/API/KeyboardEvent/code>`_ を参照してください。
@@ -81,9 +85,9 @@ CSV形式で指定する場合
 .. code-block::
     :caption: attributes.csv
 
-    attribute_id,attribute_name_en,attribute_name_ja,keybind,read_only,default_value
-    54fa5e97-6f88-49a4-aeb0-a91a15d11528,comment,コメント,"{""alt"": false, ""code"": ""Digit1"", ""ctrl"": true, ""shift"": false}",false,確認済み
-    f12a0b59-dfce-4241-bb87-4b2c0259fc6f,,,,true,true
+    attribute_id,attribute_name_en,attribute_name_ja,attribute_name_vi,keybind,read_only,default_value
+    54fa5e97-6f88-49a4-aeb0-a91a15d11528,comment,コメント,bình luận,"{""alt"": false, ""code"": ""Digit1"", ""ctrl"": true, ""shift"": false}",false,確認済み
+    f12a0b59-dfce-4241-bb87-4b2c0259fc6f,,,,,true,true
 
 
 CSV形式では、 ``keybind`` 列だけはJSONオブジェクト文字列として指定してください。
