@@ -610,6 +610,13 @@ class ImportAnnotationMain(CommandLineWithConfirm):
             )
             return False
 
+        if not self.change_operator_to_me and not can_put_annotation(task, self.service.api.account_id):
+            logger.debug(
+                f"{logger_prefix}タスクは、過去に誰かに割り当てられたタスクで、現在の担当者が自分自身でないため、アノテーションのインポートをスキップします。"
+                f"担当者を自分自身に変更してアノテーションを登録する場合は `--change_operator_to_me` を指定してください。"
+            )
+            return False
+
         if not self.confirm_processing(f"task_id='{task_id}'のタスク（phase={task['phase']}, status={task['status']}）にアノテーションをインポートしますか？"):
             return False
 
@@ -617,25 +624,16 @@ class ImportAnnotationMain(CommandLineWithConfirm):
 
         old_account_id: str | None = None
         changed_operator = False
-        if self.change_operator_to_me:
-            if not can_put_annotation(task, self.service.api.account_id):
-                logger.debug(f"{logger_prefix}担当者を自分自身に変更します。")
-                old_account_id = task["account_id"]
-                task = self.service.wrapper.change_task_operator(
-                    self.project_id,
-                    task_id,
-                    operator_account_id=self.service.api.account_id,
-                    last_updated_datetime=task["updated_datetime"],
-                )
-                changed_operator = True
-
-        else:  # noqa: PLR5501
-            if not can_put_annotation(task, self.service.api.account_id):
-                logger.debug(
-                    f"タスク'{task_id}'は、過去に誰かに割り当てられたタスクで、現在の担当者が自分自身でないため、アノテーションのインポートをスキップします。"
-                    f"担当者を自分自身に変更してアノテーションを登録する場合は `--change_operator_to_me` を指定してください。"
-                )
-                return False
+        if self.change_operator_to_me and not can_put_annotation(task, self.service.api.account_id):
+            logger.debug(f"{logger_prefix}担当者を自分自身に変更します。")
+            old_account_id = task["account_id"]
+            task = self.service.wrapper.change_task_operator(
+                self.project_id,
+                task_id,
+                operator_account_id=self.service.api.account_id,
+                last_updated_datetime=task["updated_datetime"],
+            )
+            changed_operator = True
 
         success_input_data_count, success_annotation_count = self.put_annotation_for_task(task_parser)
         logger.info(
