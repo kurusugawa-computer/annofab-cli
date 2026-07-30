@@ -34,7 +34,7 @@ Examples
 
 .. note::
 
-    ``annotation_specs list_annotation_import_info`` コマンドの出力結果をCoding Agentに渡すと、インポート先プロジェクトで利用できるラベル名、属性名、選択肢名を踏まえて、アノテーションを効率よく変換するスクリプトを書きやすくなります。
+    `annotation_specs list_annotation_import_info <../annotation_specs/list_annotation_import_info.html>`_ コマンドの出力結果をCoding Agentに渡すと、インポート先プロジェクトで利用できるラベル名、属性名、選択肢名を踏まえて、アノテーションを効率よく変換するスクリプトを書きやすくなります。
 
 .. code-block::
     :caption: {input_data_id}.json
