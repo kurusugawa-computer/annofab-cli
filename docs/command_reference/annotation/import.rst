@@ -32,6 +32,10 @@ Examples
 
 ``{input_data_id}.json`` のサンプルは以下の通りです。詳細は https://annofab.readme.io/docs/annotation-format を参照してください。
 
+.. note::
+
+    ``annotation_specs list_annotation_import_info`` コマンドの出力結果をCoding Agentに渡すと、インポート先プロジェクトで利用できるラベル名、属性名、選択肢名を踏まえて、アノテーションを効率よく変換するスクリプトを書きやすくなります。
+
 .. code-block::
     :caption: {input_data_id}.json
 
