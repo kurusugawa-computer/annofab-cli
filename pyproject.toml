@@ -124,6 +124,7 @@ ignore = [
     
 
     # 以下のルールはannofabcliのコードに合っていないので無効化した
+    "CPY001", # missing-copyright-notice
     "RSE", # flake8-raise
     "D", # pydocstyle, Docstringを中途半端にしか書いていないので、除外する
     "C90", # mccabe
