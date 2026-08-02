@@ -32,6 +32,14 @@ Examples
 
 ``{input_data_id}.json`` のサンプルは以下の通りです。詳細は https://annofab.readme.io/docs/annotation-format を参照してください。
 
+.. note::
+
+    ``BoundingBox`` 、 ``Points`` 、 ``SinglePoint`` の2D座標値（ ``x`` , ``y`` ）に小数が指定された場合は、 ``round`` で整数に丸めてインポートします。
+
+.. note::
+
+    `annotation_specs list_annotation_import_info <../annotation_specs/list_annotation_import_info.html>`_ コマンドの出力結果をCoding Agentに渡すと、インポート先プロジェクトで利用できるラベル名、属性名、選択肢名を踏まえて、アノテーションを効率よく変換するスクリプトを書きやすくなります。
+
 .. code-block::
     :caption: {input_data_id}.json
 

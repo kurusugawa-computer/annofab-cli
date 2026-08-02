@@ -1,27 +1,143 @@
 import json
 from pathlib import Path
+from typing import Any, cast
 
 import annofabapi
 import pytest
+from annofabapi.models import TaskStatus
 from annofabapi.parser import (
     SimpleAnnotationDirParser,
+    SimpleAnnotationParserByTask,
 )
 from pydantic import ValidationError
 
+import annofabcli.annotation.import_annotation
 from annofabcli.annotation.editor_props import validate_editor_props_for_cli
-from annofabcli.annotation.import_annotation import AnnotationConverter, ImportedSimpleAnnotation, ImportedSimpleAnnotationDetail
+from annofabcli.annotation.import_annotation import AnnotationConverter, ImportAnnotationMain, ImportedSimpleAnnotation, ImportedSimpleAnnotationDetail
 
 service = annofabapi.build()
 
 annotation_specs = json.loads(Path("tests/data/annotation/import_annotation/annotation_specs.json").read_text(encoding="utf-8"))
 
-project = {
+project: dict[str, Any] = {
     "project_id": "9804e9a1-9485-48cf-91a6-e71e810771a4",
     "input_data_type": "image",
     "configuration": {
         "plugin_id": None,
     },
 }
+
+
+class _FakeApi:
+    account_id = "account_id"
+
+
+class _FakeWrapper:
+    def __init__(self, task: dict[str, Any]) -> None:
+        self.task = task
+
+    def get_task_or_none(self, _project_id: str, _task_id: str) -> dict[str, Any]:
+        return self.task
+
+
+class _FakeService:
+    def __init__(self, task: dict[str, Any]) -> None:
+        self.api = _FakeApi()
+        self.wrapper = _FakeWrapper(task)
+
+
+class _FakeTaskParser:
+    task_id = "task_id"
+
+
+class _TestImportAnnotationMain(ImportAnnotationMain):
+    def __init__(
+        self,
+        service: annofabapi.Resource,
+        *,
+        project_id: str,
+        all_yes: bool,
+        change_operator_to_me: bool,
+        is_merge: bool,
+        is_overwrite: bool,
+        include_complete_task: bool,
+        include_break_task: bool,
+        include_on_hold_task: bool,
+        converter: AnnotationConverter,
+    ) -> None:
+        super().__init__(
+            service,
+            project_id=project_id,
+            all_yes=all_yes,
+            change_operator_to_me=change_operator_to_me,
+            is_merge=is_merge,
+            is_overwrite=is_overwrite,
+            include_complete_task=include_complete_task,
+            include_break_task=include_break_task,
+            include_on_hold_task=include_on_hold_task,
+            converter=converter,
+        )
+        self.confirm_processing_called = False
+        self.put_annotation_for_task_called = False
+
+    def confirm_processing(self, confirm_message: str) -> bool:
+        self.confirm_processing_called = True
+        return super().confirm_processing(confirm_message)
+
+    def put_annotation_for_task(self, _task_parser: SimpleAnnotationParserByTask) -> tuple[int, int]:
+        self.put_annotation_for_task_called = True
+        return 1, 1
+
+
+def _create_import_annotation_main(*, task: dict[str, Any], change_operator_to_me: bool = False) -> _TestImportAnnotationMain:
+    return _TestImportAnnotationMain(
+        cast(annofabapi.Resource, _FakeService(task)),
+        project_id=project["project_id"],
+        all_yes=True,
+        change_operator_to_me=change_operator_to_me,
+        is_merge=False,
+        is_overwrite=True,
+        include_complete_task=False,
+        include_break_task=False,
+        include_on_hold_task=False,
+        converter=cast(AnnotationConverter, None),
+    )
+
+
+class Test__ImportAnnotationMain:
+    def test__execute_task__担当者を変更しないと登録できない場合は問い合わせ前にスキップする(self, monkeypatch):
+        monkeypatch.setattr(annofabcli.annotation.import_annotation, "can_put_annotation", lambda *_args, **_kwargs: False)
+        task = {
+            "task_id": "task_id",
+            "phase": "annotation",
+            "status": TaskStatus.NOT_STARTED.value,
+            "account_id": "other_account_id",
+            "updated_datetime": "2026-07-30T00:00:00.000+09:00",
+        }
+        obj = _create_import_annotation_main(task=task, change_operator_to_me=False)
+
+        actual = obj.execute_task(cast(SimpleAnnotationParserByTask, _FakeTaskParser()))
+
+        assert not actual
+        assert not obj.confirm_processing_called
+        assert not obj.put_annotation_for_task_called
+
+    def test__execute_task__担当者を変更しなくても登録できる場合は問い合わせ後にインポートする(self, monkeypatch):
+        monkeypatch.setattr(annofabcli.annotation.import_annotation, "can_put_annotation", lambda *_args, **_kwargs: True)
+        task = {
+            "task_id": "task_id",
+            "phase": "annotation",
+            "status": TaskStatus.NOT_STARTED.value,
+            "account_id": "account_id",
+            "updated_datetime": "2026-07-30T00:00:00.000+09:00",
+        }
+        obj = _create_import_annotation_main(task=task, change_operator_to_me=False)
+
+        actual = obj.execute_task(cast(SimpleAnnotationParserByTask, _FakeTaskParser()))
+
+        assert actual
+        assert obj.confirm_processing_called
+        assert obj.put_annotation_for_task_called
 
 
 class Test__AnnotationConverter:
@@ -142,6 +258,34 @@ class Test__AnnotationConverter:
         assert actual["additional_data_list"] == expected["additional_data_list"]
         assert actual["editor_props"] == expected["editor_props"]
         assert actual["body"] == expected["body"]
+
+    def test__convert_annotation_detail__2d座標値がfloatならroundでintに変換する(self):
+        converter = AnnotationConverter(project, annotation_specs, is_strict=False, service=service)
+
+        bbox_detail = ImportedSimpleAnnotationDetail(
+            label="car",
+            data={"left_top": {"x": 10.4, "y": 7.5}, "right_bottom": {"x": 36.6, "y": 36.0}, "_type": "BoundingBox"},
+            attributes={},
+        )
+        actual_bbox = converter.convert_annotation_detail(SimpleAnnotationDirParser(Path("foo.json")), bbox_detail)
+        assert actual_bbox["body"]["data"] == {"left_top": {"x": 10, "y": 8}, "right_bottom": {"x": 37, "y": 36}, "_type": "BoundingBox"}
+        assert bbox_detail.data["left_top"]["x"] == 10.4
+
+        points_detail = ImportedSimpleAnnotationDetail(
+            label="white_line",
+            data={"points": [{"x": 1.2, "y": 2.8}, {"x": 3.0, "y": 4.4}], "_type": "Points"},
+            attributes={},
+        )
+        actual_points = converter.convert_annotation_detail(SimpleAnnotationDirParser(Path("foo.json")), points_detail)
+        assert actual_points["body"]["data"] == {"points": [{"x": 1, "y": 3}, {"x": 3, "y": 4}], "_type": "Points"}
+
+        single_point_detail = ImportedSimpleAnnotationDetail(
+            label="car",
+            data={"point": {"x": 5.5, "y": 6.1}, "_type": "SinglePoint"},
+            attributes={},
+        )
+        actual_single_point = converter.convert_annotation_detail(SimpleAnnotationDirParser(Path("foo.json")), single_point_detail)
+        assert actual_single_point["body"]["data"] == {"point": {"x": 6, "y": 6}, "_type": "SinglePoint"}
 
     def test__convert_annotation_detail__default_editor_propsを設定する(self):
         converter = AnnotationConverter(
