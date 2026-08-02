@@ -122,7 +122,7 @@ class Test__ImportAnnotationMain:
         assert not obj.confirm_processing_called
         assert not obj.put_annotation_for_task_called
 
-    def test__execute_task__担当者を変更する場合は問い合わせ後にインポートする(self, monkeypatch):
+    def test__execute_task__担当者を変更しなくても登録できる場合は問い合わせ後にインポートする(self, monkeypatch):
         monkeypatch.setattr(annofabcli.annotation.import_annotation, "can_put_annotation", lambda *_args, **_kwargs: True)
         task = {
             "task_id": "task_id",
