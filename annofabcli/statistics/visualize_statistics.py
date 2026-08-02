@@ -603,7 +603,7 @@ class VisualizeStatistics(CommandLine):
 
         return True
 
-    def visualize_statistics(  # noqa: PLR0913  # pylint: disable=too-many-positional-arguments
+    def visualize_statistics(  # noqa: PLR0913,PLR0917
         self,
         temp_dir: Path,
         filtering_query: FilteringQuery,
