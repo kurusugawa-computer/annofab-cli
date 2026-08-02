@@ -136,6 +136,52 @@ def get_3dpc_segment_data_uri(annotation_data: dict[str, Any]) -> str:
     return str(path.relative_to(path.parts[0]))
 
 
+def _round_coordinate_value(value: object) -> object:
+    if isinstance(value, float):
+        return round(value)
+    return value
+
+
+def _round_point_coordinates(point: dict[str, Any]) -> None:
+    for coordinate_key in ["x", "y"]:
+        if coordinate_key in point:
+            point[coordinate_key] = _round_coordinate_value(point[coordinate_key])
+
+
+def round_2d_annotation_coordinates(annotation_data: dict[str, Any]) -> dict[str, Any]:
+    """
+    2D画像アノテーションの座標値を整数に丸めます。
+
+    Args:
+        annotation_data: Simple Annotationのdata。
+
+    Returns:
+        座標値を丸めたSimple Annotationのdata。引数のdictは変更しません。
+    """
+    result = copy.deepcopy(annotation_data)
+    annotation_type = result.get("_type")
+
+    if annotation_type == "BoundingBox":
+        for point_key in ["left_top", "right_bottom"]:
+            point = result.get(point_key)
+            if isinstance(point, dict):
+                _round_point_coordinates(point)
+
+    elif annotation_type == "Points":
+        points = result.get("points")
+        if isinstance(points, list):
+            for point in points:
+                if isinstance(point, dict):
+                    _round_point_coordinates(point)
+
+    elif annotation_type == "SinglePoint":
+        point = result.get("point")
+        if isinstance(point, dict):
+            _round_point_coordinates(point)
+
+    return result
+
+
 class AnnotationConverter:
     """
     Simpleアノテーションを、`put_annotation` API(v2)のリクエストボディに変換するクラスです。
@@ -347,7 +393,7 @@ class AnnotationConverter:
                 result["body"] = {"_type": "Outer", "path": s3_path}
 
         else:
-            result["body"] = {"_type": "Inner", "data": detail.data}
+            result["body"] = {"_type": "Inner", "data": round_2d_annotation_coordinates(detail.data)}
         return result
 
     def convert_annotation_details(

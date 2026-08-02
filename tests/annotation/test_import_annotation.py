@@ -259,6 +259,34 @@ class Test__AnnotationConverter:
         assert actual["editor_props"] == expected["editor_props"]
         assert actual["body"] == expected["body"]
 
+    def test__convert_annotation_detail__2d座標値がfloatならroundでintに変換する(self):
+        converter = AnnotationConverter(project, annotation_specs, is_strict=False, service=service)
+
+        bbox_detail = ImportedSimpleAnnotationDetail(
+            label="car",
+            data={"left_top": {"x": 10.4, "y": 7.5}, "right_bottom": {"x": 36.6, "y": 36.0}, "_type": "BoundingBox"},
+            attributes={},
+        )
+        actual_bbox = converter.convert_annotation_detail(SimpleAnnotationDirParser(Path("foo.json")), bbox_detail)
+        assert actual_bbox["body"]["data"] == {"left_top": {"x": 10, "y": 8}, "right_bottom": {"x": 37, "y": 36}, "_type": "BoundingBox"}
+        assert bbox_detail.data["left_top"]["x"] == 10.4
+
+        points_detail = ImportedSimpleAnnotationDetail(
+            label="white_line",
+            data={"points": [{"x": 1.2, "y": 2.8}, {"x": 3.0, "y": 4.4}], "_type": "Points"},
+            attributes={},
+        )
+        actual_points = converter.convert_annotation_detail(SimpleAnnotationDirParser(Path("foo.json")), points_detail)
+        assert actual_points["body"]["data"] == {"points": [{"x": 1, "y": 3}, {"x": 3, "y": 4}], "_type": "Points"}
+
+        single_point_detail = ImportedSimpleAnnotationDetail(
+            label="car",
+            data={"point": {"x": 5.5, "y": 6.1}, "_type": "SinglePoint"},
+            attributes={},
+        )
+        actual_single_point = converter.convert_annotation_detail(SimpleAnnotationDirParser(Path("foo.json")), single_point_detail)
+        assert actual_single_point["body"]["data"] == {"point": {"x": 6, "y": 6}, "_type": "SinglePoint"}
+
     def test__convert_annotation_detail__default_editor_propsを設定する(self):
         converter = AnnotationConverter(
             project,
