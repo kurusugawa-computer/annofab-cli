@@ -136,6 +136,47 @@ def get_3dpc_segment_data_uri(annotation_data: dict[str, Any]) -> str:
     return str(path.relative_to(path.parts[0]))
 
 
+def _round_coordinate_value(value: object) -> object:
+    if isinstance(value, float):
+        return round(value)
+    return value
+
+
+def _round_point_coordinates(point: dict[str, Any]) -> None:
+    for coordinate_key in ["x", "y"]:
+        point[coordinate_key] = _round_coordinate_value(point[coordinate_key])
+
+
+def round_2d_annotation_coordinates(annotation_data: dict[str, Any]) -> dict[str, Any]:
+    """
+    2D画像アノテーションの座標値を整数に丸めます。
+
+    Args:
+        annotation_data: Simple Annotationのdata。
+
+    Returns:
+        座標値を丸めたSimple Annotationのdata。引数のdictは変更しません。
+    """
+    annotation_type = annotation_data["_type"]
+    if annotation_type not in {"BoundingBox", "Points", "SinglePoint"}:
+        return annotation_data
+
+    result = copy.deepcopy(annotation_data)
+
+    if annotation_type == "BoundingBox":
+        for point_key in ["left_top", "right_bottom"]:
+            _round_point_coordinates(result[point_key])
+
+    elif annotation_type == "Points":
+        for point in result["points"]:
+            _round_point_coordinates(point)
+
+    elif annotation_type == "SinglePoint":
+        _round_point_coordinates(result["point"])
+
+    return result
+
+
 class AnnotationConverter:
     """
     Simpleアノテーションを、`put_annotation` API(v2)のリクエストボディに変換するクラスです。
@@ -347,7 +388,7 @@ class AnnotationConverter:
                 result["body"] = {"_type": "Outer", "path": s3_path}
 
         else:
-            result["body"] = {"_type": "Inner", "data": detail.data}
+            result["body"] = {"_type": "Inner", "data": round_2d_annotation_coordinates(detail.data)}
         return result
 
     def convert_annotation_details(
@@ -610,6 +651,13 @@ class ImportAnnotationMain(CommandLineWithConfirm):
             )
             return False
 
+        if not self.change_operator_to_me and not can_put_annotation(task, self.service.api.account_id):
+            logger.debug(
+                f"{logger_prefix}タスクは、過去に誰かに割り当てられたタスクで、現在の担当者が自分自身でないため、アノテーションのインポートをスキップします。"
+                f"担当者を自分自身に変更してアノテーションを登録する場合は `--change_operator_to_me` を指定してください。"
+            )
+            return False
+
         if not self.confirm_processing(f"task_id='{task_id}'のタスク（phase={task['phase']}, status={task['status']}）にアノテーションをインポートしますか？"):
             return False
 
@@ -617,25 +665,16 @@ class ImportAnnotationMain(CommandLineWithConfirm):
 
         old_account_id: str | None = None
         changed_operator = False
-        if self.change_operator_to_me:
-            if not can_put_annotation(task, self.service.api.account_id):
-                logger.debug(f"{logger_prefix}担当者を自分自身に変更します。")
-                old_account_id = task["account_id"]
-                task = self.service.wrapper.change_task_operator(
-                    self.project_id,
-                    task_id,
-                    operator_account_id=self.service.api.account_id,
-                    last_updated_datetime=task["updated_datetime"],
-                )
-                changed_operator = True
-
-        else:  # noqa: PLR5501
-            if not can_put_annotation(task, self.service.api.account_id):
-                logger.debug(
-                    f"タスク'{task_id}'は、過去に誰かに割り当てられたタスクで、現在の担当者が自分自身でないため、アノテーションのインポートをスキップします。"
-                    f"担当者を自分自身に変更してアノテーションを登録する場合は `--change_operator_to_me` を指定してください。"
-                )
-                return False
+        if self.change_operator_to_me and not can_put_annotation(task, self.service.api.account_id):
+            logger.debug(f"{logger_prefix}担当者を自分自身に変更します。")
+            old_account_id = task["account_id"]
+            task = self.service.wrapper.change_task_operator(
+                self.project_id,
+                task_id,
+                operator_account_id=self.service.api.account_id,
+                last_updated_datetime=task["updated_datetime"],
+            )
+            changed_operator = True
 
         success_input_data_count, success_annotation_count = self.put_annotation_for_task(task_parser)
         logger.info(
