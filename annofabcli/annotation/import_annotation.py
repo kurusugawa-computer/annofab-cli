@@ -158,8 +158,11 @@ def round_2d_annotation_coordinates(annotation_data: dict[str, Any]) -> dict[str
     Returns:
         座標値を丸めたSimple Annotationのdata。引数のdictは変更しません。
     """
+    annotation_type = annotation_data.get("_type")
+    if annotation_type not in {"BoundingBox", "Points", "SinglePoint"}:
+        return annotation_data
+
     result = copy.deepcopy(annotation_data)
-    annotation_type = result.get("_type")
 
     if annotation_type == "BoundingBox":
         for point_key in ["left_top", "right_bottom"]:
