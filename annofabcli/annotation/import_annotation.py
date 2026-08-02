@@ -144,8 +144,7 @@ def _round_coordinate_value(value: object) -> object:
 
 def _round_point_coordinates(point: dict[str, Any]) -> None:
     for coordinate_key in ["x", "y"]:
-        if coordinate_key in point:
-            point[coordinate_key] = _round_coordinate_value(point[coordinate_key])
+        point[coordinate_key] = _round_coordinate_value(point[coordinate_key])
 
 
 def round_2d_annotation_coordinates(annotation_data: dict[str, Any]) -> dict[str, Any]:
@@ -158,7 +157,7 @@ def round_2d_annotation_coordinates(annotation_data: dict[str, Any]) -> dict[str
     Returns:
         座標値を丸めたSimple Annotationのdata。引数のdictは変更しません。
     """
-    annotation_type = annotation_data.get("_type")
+    annotation_type = annotation_data["_type"]
     if annotation_type not in {"BoundingBox", "Points", "SinglePoint"}:
         return annotation_data
 
@@ -166,21 +165,14 @@ def round_2d_annotation_coordinates(annotation_data: dict[str, Any]) -> dict[str
 
     if annotation_type == "BoundingBox":
         for point_key in ["left_top", "right_bottom"]:
-            point = result.get(point_key)
-            if isinstance(point, dict):
-                _round_point_coordinates(point)
+            _round_point_coordinates(result[point_key])
 
     elif annotation_type == "Points":
-        points = result.get("points")
-        if isinstance(points, list):
-            for point in points:
-                if isinstance(point, dict):
-                    _round_point_coordinates(point)
+        for point in result["points"]:
+            _round_point_coordinates(point)
 
     elif annotation_type == "SinglePoint":
-        point = result.get("point")
-        if isinstance(point, dict):
-            _round_point_coordinates(point)
+        _round_point_coordinates(result["point"])
 
     return result
 
