@@ -5,9 +5,10 @@ import json
 import logging
 import sys
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
-from annofabapi.util.annotation_specs import get_attribute_name_en, get_choice_name_en, get_label_name_en
+from annofabapi.models import Lang
+from annofabapi.util.annotation_specs import InternationalizationMessage, get_attribute_name_en, get_choice_name_en, get_label_name_en, get_message_with_lang
 from pydantic import BaseModel, ConfigDict
 
 import annofabcli.common.cli
@@ -31,6 +32,8 @@ class AnnotationImportChoice(BaseModel):
 
     choice_name_en: str
     """選択肢名（英語）。"""
+    choice_name_ja: str
+    """選択肢名（日本語）。"""
 
 
 class AnnotationImportAttribute(BaseModel):
@@ -40,6 +43,8 @@ class AnnotationImportAttribute(BaseModel):
 
     attribute_name_en: str
     """属性名（英語）。"""
+    attribute_name_ja: str
+    """属性名（日本語）。"""
     attribute_type: str
     """属性の種類。"""
     choices: list[AnnotationImportChoice]
@@ -53,10 +58,18 @@ class AnnotationImportLabel(BaseModel):
 
     label_name_en: str
     """ラベル名（英語）。"""
+    label_name_ja: str
+    """ラベル名（日本語）。"""
     annotation_type: str
     """ラベルの種類。"""
     attributes: list[AnnotationImportAttribute]
     """ラベルに指定できる属性情報。"""
+
+
+def get_japanese_message(message: InternationalizationMessage) -> str:
+    result = get_message_with_lang(message, Lang.JA_JP)
+    assert result is not None
+    return result
 
 
 def create_annotation_import_info_list(annotation_specs_v3: dict[str, Any]) -> list[AnnotationImportLabel]:
@@ -75,6 +88,7 @@ def create_annotation_import_info_list(annotation_specs_v3: dict[str, Any]) -> l
         return [
             AnnotationImportChoice(
                 choice_name_en=get_choice_name_en(choice),
+                choice_name_ja=get_japanese_message(cast(InternationalizationMessage, choice["name"])),
             )
             for choice in attribute["choices"]
         ]
@@ -86,6 +100,7 @@ def create_annotation_import_info_list(annotation_specs_v3: dict[str, Any]) -> l
             result.append(
                 AnnotationImportAttribute(
                     attribute_name_en=get_attribute_name_en(attribute),
+                    attribute_name_ja=get_japanese_message(cast(InternationalizationMessage, attribute["name"])),
                     attribute_type=attribute["type"],
                     choices=create_choice_list(attribute),
                 )
@@ -95,6 +110,7 @@ def create_annotation_import_info_list(annotation_specs_v3: dict[str, Any]) -> l
     return [
         AnnotationImportLabel(
             label_name_en=get_label_name_en(label),
+            label_name_ja=get_japanese_message(cast(InternationalizationMessage, label["label_name"])),
             annotation_type=label["annotation_type"],
             attributes=create_attribute_list(label),
         )
