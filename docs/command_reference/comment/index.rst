@@ -24,6 +24,7 @@ Available Commands
    list
    list_all
    list_all_with_replies
+   list_with_replies
    put_inspection
    put_inspection_simply
    put_onhold

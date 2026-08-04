@@ -1,4 +1,4 @@
-from annofabcli.comment.list_all_comment_with_replies import create_comment_list_with_replies
+from annofabcli.comment.utils import create_comment_list_with_replies
 
 
 def create_comment(comment_id: str, *, node_type: str, comment: str, datetime_for_sorting: str, root_comment_id: str | None = None) -> dict:
@@ -14,6 +14,7 @@ def create_comment(comment_id: str, *, node_type: str, comment: str, datetime_fo
         "comment": comment,
         "comment_node": comment_node,
         "datetime_for_sorting": datetime_for_sorting,
+        "reply_count": 0,
     }
 
 
@@ -50,6 +51,7 @@ def test_create_comment_list_with_replies():
     assert [e["comment_id"] for e in actual] == ["root1", "root2"]
     assert actual[0]["comment"] == "枠がずれています"
     assert [e["comment_id"] for e in actual[0]["reply_comments"]] == ["reply1", "reply2"]
+    assert "reply_count" not in actual[0]["reply_comments"][0]
     assert actual[1]["reply_comments"] == []
 
 

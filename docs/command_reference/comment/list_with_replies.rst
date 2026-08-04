@@ -1,16 +1,10 @@
 ==========================================
-comment list_all_with_replies
+comment list_with_replies
 ==========================================
 
 Description
 =================================
-すべてのルートコメントに返信コメント一覧を付与して出力します。
-
-
-.. note::
-
-    コメント一覧は、コマンドを実行した日の02:00(JST)頃の状態です。
-    最新のコメント情報を取得したい場合は、 ``annofabcli comment list_with_replies`` コマンドを実行してください。
+ルートコメントに返信コメント一覧を付与して出力します。
 
 
 
@@ -21,36 +15,25 @@ Examples
 基本的な使い方
 --------------------------
 
-以下のコマンドを実行すると、すべてのルートコメントに ``reply_comments`` として返信コメント一覧を付与したJSONが出力されます。
+以下のコマンドを実行すると、指定したタスクの最新コメントを取得し、ルートコメントに ``reply_comments`` として返信コメント一覧を付与したJSONが出力されます。
 
 .. code-block::
 
-    $ annofabcli comment list_all_with_replies --project_id prj1 --format pretty_json
+    $ annofabcli comment list_with_replies --project_id prj1 --task_id task1 --format pretty_json
 
 
 ``--comment_type`` を指定すると、コメントの種類で絞り込めます。
 
 .. code-block::
 
-    $ annofabcli comment list_all_with_replies --project_id prj1 \
+    $ annofabcli comment list_with_replies --project_id prj1 --task_id task1 \
      --comment_type inspection --format pretty_json
-
-
-``annofabcli comment download`` コマンドの出力結果であるコメント全件ファイルも指定することができます。
-
-
-.. code-block::
-
-    $ annofabcli comment download --project_id prj1 --output comment.json
-
-    $ annofabcli comment list_all_with_replies --project_id prj1 \
-     --comment_json comment.json --format pretty_json
 
 
 出力結果
 =================================
 
-``annofabcli comment list_all`` コマンドで出力されるルートコメントの構造に、返信コメント一覧の ``reply_comments`` が追加されます。
+``annofabcli comment list`` コマンドで出力されるルートコメントの構造に、返信コメント一覧の ``reply_comments`` が追加されます。
 ``reply_comments`` 配下の返信コメントには ``reply_count`` は含まれません。
 
 
@@ -90,7 +73,7 @@ Usage Details
 =================================
 
 .. argparse::
-    :ref: annofabcli.comment.list_all_comment_with_replies.add_parser
-    :prog: annofabcli comment list_all_with_replies
+    :ref: annofabcli.comment.list_comment_with_replies.add_parser
+    :prog: annofabcli comment list_with_replies
     :nosubcommands:
     :nodefaultconst:
