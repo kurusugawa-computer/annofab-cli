@@ -3,16 +3,6 @@ from collections import defaultdict
 from collections.abc import Collection
 from typing import Any
 
-import logging
-from collections import defaultdict
-from collections.abc import Collection
-from typing import Any
-
-import logging
-from collections import defaultdict
-from collections.abc import Collection
-from typing import Any
-
 from annofabapi.models import CommentType
 
 logger = logging.getLogger(__name__)
@@ -56,16 +46,11 @@ def create_comment_list_with_replies(comment_list: Collection[dict[str, Any]]) -
             root_key = (comment["task_id"], comment["input_data_id"], comment_node["root_comment_id"])
             reply_comments_by_root_key[root_key].append(comment)
         else:
-            logger.warning(
-                f"未知のコメントノード種別のため、スキップします。comment_node._type='{node_type}', comment_id='{comment['comment_id']}'"
-            )
+            logger.warning(f"未知のコメントノード種別のため、スキップします。comment_node._type='{node_type}', comment_id='{comment['comment_id']}'")
 
     for root_key in reply_comments_by_root_key:
         if root_key not in root_comment_key_set:
-            logger.warning(
-                "返信先のルートコメントが存在しないため、返信コメントをスキップします。"
-                f"task_id='{root_key[0]}', input_data_id='{root_key[1]}', root_comment_id='{root_key[2]}'"
-            )
+            logger.warning(f"返信先のルートコメントが存在しないため、返信コメントをスキップします。task_id='{root_key[0]}', input_data_id='{root_key[1]}', root_comment_id='{root_key[2]}'")
 
     sorted_root_comments = sorted(root_comments, key=_get_comment_datetime_for_sorting)
     comment_list_with_replies: list[dict[str, Any]] = []
@@ -77,6 +62,7 @@ def create_comment_list_with_replies(comment_list: Collection[dict[str, Any]]) -
         comment_list_with_replies.append(root_comment_with_replies)
 
     return comment_list_with_replies
+
 
 logger = logging.getLogger(__name__)
 
