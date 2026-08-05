@@ -97,7 +97,7 @@ def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse
     subcommand_help = "すべてのルートコメントに返信コメント一覧を付与して出力します。"
     description = (
         "すべてのルートコメントに返信コメント一覧を付与して出力します。\n"
-        "コメント一覧は、コマンドを実行した日の02:00(JST)頃の状態です。最新のコメント情報を取得したい場合は、 ``annofabcli comment list`` コマンドを実行してください。"
+        "コメント一覧は、コマンドを実行した日の02:00(JST)頃の状態です。最新のコメント情報を取得したい場合は、 ``annofabcli comment list_with_replies`` コマンドを実行してください。"
     )
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description=description)
