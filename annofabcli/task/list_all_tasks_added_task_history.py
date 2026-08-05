@@ -207,7 +207,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
 
     task_source_group.add_argument(
         "--task_json",
-        type=str,
+        type=Path,
         help="タスク情報が記載されたJSONファイルのパスを指定すると、JSONに記載された情報を元に出力します。指定しない場合はJSONファイルをダウンロードします。\n"
         "JSONファイルは ``$ annofabcli task download`` コマンドで取得できます。",
     )
