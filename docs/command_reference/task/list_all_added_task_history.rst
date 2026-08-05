@@ -9,7 +9,8 @@ Description
 
 .. note::
 
-    出力されるタスクは、コマンドを実行した日の02:00(JST)頃の状態です。
+    出力されるタスクとタスク履歴に関する列は、それぞれの全件ファイルの時点の状態です。
+    タスク履歴全件ファイルは更新できないため、最新のタスク履歴情報は出力できません。
     
 
 
@@ -35,6 +36,22 @@ Examples
     --task_json task.json --task_history_json task_history.json
 
 タスク全件ファイルは `annofabcli task download <../task/download.html>`_ コマンド、タスク履歴全件ファイルは、`annofabcli task_history download <../task_history/download.html>`_ コマンドでダウンロードできます。
+
+
+タスク全件ファイルのみ最新化する
+----------------------------------------------
+
+``--latest_task`` を指定すると、タスク全件ファイルを最新化してからダウンロードします。
+このオプションは、最新のタスクのステータスやメタデータで絞り込む場合に利用できます。
+
+ただし、タスク履歴全件ファイルは更新されません。作業時間、担当者、到達日時などのタスク履歴に関する列は最新ではなく、``completed_datetime`` のようにタスクとタスク履歴の両方を用いる列も最新性を保証しません。
+
+.. code-block::
+
+    $ annofabcli task list_all_added_task_history --project_id prj1 --output task.csv \
+     --latest_task
+
+``--task_history_json`` を指定して、利用するタスク履歴全件ファイルを固定することもできます。``--latest_task`` と ``--task_json`` は同時に指定できません。
 
 
 タスクの絞り込み
