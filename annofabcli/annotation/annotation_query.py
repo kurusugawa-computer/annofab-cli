@@ -130,7 +130,11 @@ def _get_additional_data_v2(additional_data: dict[str, Any], attribute_value: At
     elif additional_data_type == AdditionalDataDefinitionType.TRACKING.value:
         result_value = {"value": attribute_value, "_type": "Tracking"}
     elif additional_data_type == AdditionalDataDefinitionType.LINK.value:
-        result_value = {"annotation_id": attribute_value, "_type": "Link"}
+        if attribute_value == "":
+            # annotation_idに空文字列を指定すると、エディタ画面でエラーが発生するため、Noneに変換する。
+            result_value = None
+        else:
+            result_value = {"annotation_id": attribute_value, "_type": "Link"}
 
     else:
         raise RuntimeError(f"{additional_data_type=}がサポート対象外です。")
