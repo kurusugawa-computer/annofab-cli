@@ -4,14 +4,13 @@ from typing import Any, cast
 
 import annofabapi
 import pytest
-from annofabapi.models import TaskStatus
+from annofabapi.models import ProjectMemberRole, TaskStatus
 from annofabapi.parser import (
     SimpleAnnotationDirParser,
     SimpleAnnotationParserByTask,
 )
 from pydantic import ValidationError
 
-import annofabcli.annotation.import_annotation
 from annofabcli.annotation.editor_props import validate_editor_props_for_cli
 from annofabcli.annotation.import_annotation import AnnotationConverter, ImportAnnotationMain, ImportedSimpleAnnotation, ImportedSimpleAnnotationDetail
 
@@ -31,18 +30,30 @@ project: dict[str, Any] = {
 class _FakeApi:
     account_id = "account_id"
 
+    def __init__(self, project_member_role: ProjectMemberRole) -> None:
+        self.project_member_role = project_member_role
+
+    def get_my_member_in_project(self, _project_id: str) -> tuple[dict[str, str], None]:
+        return {"member_role": self.project_member_role.value}, None
+
 
 class _FakeWrapper:
     def __init__(self, task: dict[str, Any]) -> None:
         self.task = task
+        self.changed_operator_account_ids: list[str | None] = []
 
     def get_task_or_none(self, _project_id: str, _task_id: str) -> dict[str, Any]:
         return self.task
 
+    def change_task_operator(self, _project_id: str, _task_id: str, operator_account_id: str | None, *, last_updated_datetime: str) -> dict[str, Any]:
+        self.changed_operator_account_ids.append(operator_account_id)
+        self.task = {**self.task, "account_id": operator_account_id, "updated_datetime": last_updated_datetime}
+        return self.task
+
 
 class _FakeService:
-    def __init__(self, task: dict[str, Any]) -> None:
-        self.api = _FakeApi()
+    def __init__(self, task: dict[str, Any], project_member_role: ProjectMemberRole) -> None:
+        self.api = _FakeApi(project_member_role)
         self.wrapper = _FakeWrapper(task)
 
 
@@ -77,6 +88,7 @@ class _TestImportAnnotationMain(ImportAnnotationMain):
             include_on_hold_task=include_on_hold_task,
             converter=converter,
         )
+        self.fake_wrapper = cast(_FakeWrapper, service.wrapper)
         self.confirm_processing_called = False
         self.put_annotation_for_task_called = False
 
@@ -89,9 +101,9 @@ class _TestImportAnnotationMain(ImportAnnotationMain):
         return 1, 1
 
 
-def _create_import_annotation_main(*, task: dict[str, Any], change_operator_to_me: bool = False) -> _TestImportAnnotationMain:
+def _create_import_annotation_main(*, task: dict[str, Any], project_member_role: ProjectMemberRole, change_operator_to_me: bool = False) -> _TestImportAnnotationMain:
     return _TestImportAnnotationMain(
-        cast(annofabapi.Resource, _FakeService(task)),
+        cast(annofabapi.Resource, _FakeService(task, project_member_role)),
         project_id=project["project_id"],
         all_yes=True,
         change_operator_to_me=change_operator_to_me,
@@ -105,8 +117,7 @@ def _create_import_annotation_main(*, task: dict[str, Any], change_operator_to_m
 
 
 class Test__ImportAnnotationMain:
-    def test__execute_task__担当者を変更しないと登録できない場合は問い合わせ前にスキップする(self, monkeypatch):
-        monkeypatch.setattr(annofabcli.annotation.import_annotation, "can_put_annotation", lambda *_args, **_kwargs: False)
+    def test__execute_task__チェッカーが担当者を変更しない場合は問い合わせ前にスキップする(self):
         task = {
             "task_id": "task_id",
             "phase": "annotation",
@@ -114,7 +125,7 @@ class Test__ImportAnnotationMain:
             "account_id": "other_account_id",
             "updated_datetime": "2026-07-30T00:00:00.000+09:00",
         }
-        obj = _create_import_annotation_main(task=task, change_operator_to_me=False)
+        obj = _create_import_annotation_main(task=task, project_member_role=ProjectMemberRole.ACCEPTER, change_operator_to_me=False)
 
         actual = obj.execute_task(cast(SimpleAnnotationParserByTask, _FakeTaskParser()))
 
@@ -122,8 +133,7 @@ class Test__ImportAnnotationMain:
         assert not obj.confirm_processing_called
         assert not obj.put_annotation_for_task_called
 
-    def test__execute_task__担当者を変更しなくても登録できる場合は問い合わせ後にインポートする(self, monkeypatch):
-        monkeypatch.setattr(annofabcli.annotation.import_annotation, "can_put_annotation", lambda *_args, **_kwargs: True)
+    def test__execute_task__オーナーは担当者を変更せずにインポートする(self):
         task = {
             "task_id": "task_id",
             "phase": "annotation",
@@ -131,13 +141,31 @@ class Test__ImportAnnotationMain:
             "account_id": "account_id",
             "updated_datetime": "2026-07-30T00:00:00.000+09:00",
         }
-        obj = _create_import_annotation_main(task=task, change_operator_to_me=False)
+        obj = _create_import_annotation_main(task=task, project_member_role=ProjectMemberRole.OWNER, change_operator_to_me=True)
 
         actual = obj.execute_task(cast(SimpleAnnotationParserByTask, _FakeTaskParser()))
 
         assert actual
         assert obj.confirm_processing_called
         assert obj.put_annotation_for_task_called
+        assert obj.fake_wrapper.changed_operator_account_ids == []
+
+    def test__execute_task__チェッカーは担当者を一時的に変更してインポートする(self):
+        task = {
+            "task_id": "task_id",
+            "phase": "annotation",
+            "status": TaskStatus.NOT_STARTED.value,
+            "account_id": "other_account_id",
+            "updated_datetime": "2026-07-30T00:00:00.000+09:00",
+        }
+        obj = _create_import_annotation_main(task=task, project_member_role=ProjectMemberRole.ACCEPTER, change_operator_to_me=True)
+
+        actual = obj.execute_task(cast(SimpleAnnotationParserByTask, _FakeTaskParser()))
+
+        assert actual
+        assert obj.confirm_processing_called
+        assert obj.put_annotation_for_task_called
+        assert obj.fake_wrapper.changed_operator_account_ids == ["account_id", "other_account_id"]
 
 
 class Test__AnnotationConverter:
