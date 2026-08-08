@@ -879,7 +879,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--change_operator_to_me",
         action="store_true",
-        help="チェッカーロールで、自身が担当者ではないタスクにアノテーションをインポートする場合に指定してください。タスクの担当者を一時的に自分自身に変更し、アノテーションのインポート完了後に元へ戻します。",
+        help="チェッカーロールで、自身が担当者ではないタスクにアノテーションをインポートする場合に指定してください。タスクの担当者を一時的に自分自身に変更し、アノテーションのインポート完了後に元へ戻します。オーナーロールで指定しても効果はありません。",
     )
 
     parser.add_argument(
