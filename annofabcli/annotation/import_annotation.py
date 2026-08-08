@@ -654,7 +654,7 @@ class ImportAnnotationMain(CommandLineWithConfirm):
 
         should_change_operator = self.project_member_role == ProjectMemberRole.ACCEPTER and task["account_id"] != self.service.api.account_id
         if should_change_operator and not self.change_operator_to_me:
-            logger.debug(f"{logger_prefix}チェッカーロールでアノテーションをインポートするには、`--change_operator_to_me` を指定してください。")
+            logger.info(f"{logger_prefix}チェッカーロールでアノテーションをインポートするには、`--change_operator_to_me` を指定してください。")
             return False
 
         if not self.confirm_processing(f"task_id='{task_id}'のタスク（phase={task['phase']}, status={task['status']}）にアノテーションをインポートしますか？"):
