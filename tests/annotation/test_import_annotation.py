@@ -150,6 +150,23 @@ class Test__ImportAnnotationMain:
         assert obj.put_annotation_for_task_called
         assert obj.fake_wrapper.changed_operator_account_ids == []
 
+    def test__execute_task__担当者であるチェッカーは担当者を変更せずにインポートする(self):
+        task = {
+            "task_id": "task_id",
+            "phase": "annotation",
+            "status": TaskStatus.NOT_STARTED.value,
+            "account_id": "account_id",
+            "updated_datetime": "2026-07-30T00:00:00.000+09:00",
+        }
+        obj = _create_import_annotation_main(task=task, project_member_role=ProjectMemberRole.ACCEPTER, change_operator_to_me=False)
+
+        actual = obj.execute_task(cast(SimpleAnnotationParserByTask, _FakeTaskParser()))
+
+        assert actual
+        assert obj.confirm_processing_called
+        assert obj.put_annotation_for_task_called
+        assert obj.fake_wrapper.changed_operator_account_ids == []
+
     def test__execute_task__チェッカーは担当者を一時的に変更してインポートする(self):
         task = {
             "task_id": "task_id",

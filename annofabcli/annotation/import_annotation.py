@@ -652,7 +652,8 @@ class ImportAnnotationMain(CommandLineWithConfirm):
             )
             return False
 
-        if self.project_member_role == ProjectMemberRole.ACCEPTER and not self.change_operator_to_me:
+        should_change_operator = self.project_member_role == ProjectMemberRole.ACCEPTER and task["account_id"] != self.service.api.account_id
+        if should_change_operator and not self.change_operator_to_me:
             logger.debug(f"{logger_prefix}チェッカーロールでアノテーションをインポートするには、`--change_operator_to_me` を指定してください。")
             return False
 
@@ -663,7 +664,7 @@ class ImportAnnotationMain(CommandLineWithConfirm):
 
         old_account_id: str | None = None
         changed_operator = False
-        if self.project_member_role == ProjectMemberRole.ACCEPTER:
+        if should_change_operator:
             logger.debug(f"{logger_prefix}担当者を自分自身に変更します。")
             old_account_id = task["account_id"]
             task = self.service.wrapper.change_task_operator(
@@ -872,7 +873,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--change_operator_to_me",
         action="store_true",
-        help="チェッカーロールでアノテーションをインポートする場合に指定してください。タスクの担当者を一時的に自分自身に変更し、アノテーションのインポート完了後に元へ戻します。",
+        help="チェッカーロールで、自身が担当者ではないタスクにアノテーションをインポートする場合に指定してください。タスクの担当者を一時的に自分自身に変更し、アノテーションのインポート完了後に元へ戻します。",
     )
 
     parser.add_argument(
