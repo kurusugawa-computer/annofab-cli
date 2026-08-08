@@ -31,7 +31,6 @@ from annofabapi.parser import (
 from annofabapi.plugin import EditorPluginId, ThreeDimensionAnnotationType
 from annofabapi.pydantic_models.input_data_type import InputDataType
 from annofabapi.util.annotation_specs import AnnotationSpecsAccessor, get_english_message
-from annofabapi.utils import can_put_annotation
 from dataclasses_json import DataClassJsonMixin
 
 import annofabcli.common.cli
@@ -481,6 +480,8 @@ class ImportAnnotationMain(CommandLineWithConfirm):
         CommandLineWithConfirm.__init__(self, all_yes)
 
         self.project_id = project_id
+        my_member, _ = self.service.api.get_my_member_in_project(project_id)
+        self.project_member_role = ProjectMemberRole(my_member["member_role"])
         self.change_operator_to_me = change_operator_to_me
         self.is_merge = is_merge
         self.is_overwrite = is_overwrite
@@ -651,11 +652,9 @@ class ImportAnnotationMain(CommandLineWithConfirm):
             )
             return False
 
-        if not self.change_operator_to_me and not can_put_annotation(task, self.service.api.account_id):
-            logger.debug(
-                f"{logger_prefix}タスクは、過去に誰かに割り当てられたタスクで、現在の担当者が自分自身でないため、アノテーションのインポートをスキップします。"
-                f"担当者を自分自身に変更してアノテーションを登録する場合は `--change_operator_to_me` を指定してください。"
-            )
+        should_change_operator = self.project_member_role == ProjectMemberRole.ACCEPTER and task["account_id"] != self.service.api.account_id
+        if should_change_operator and not self.change_operator_to_me:
+            logger.info(f"{logger_prefix}チェッカーロールでアノテーションをインポートするには、`--change_operator_to_me` を指定してください。")
             return False
 
         if not self.confirm_processing(f"task_id='{task_id}'のタスク（phase={task['phase']}, status={task['status']}）にアノテーションをインポートしますか？"):
@@ -665,7 +664,7 @@ class ImportAnnotationMain(CommandLineWithConfirm):
 
         old_account_id: str | None = None
         changed_operator = False
-        if self.change_operator_to_me and not can_put_annotation(task, self.service.api.account_id):
+        if should_change_operator:
             logger.debug(f"{logger_prefix}担当者を自分自身に変更します。")
             old_account_id = task["account_id"]
             task = self.service.wrapper.change_task_operator(
@@ -796,7 +795,13 @@ class ImportAnnotation(CommandLine):
         project_id = args.project_id
         annotation_path: Path = args.annotation
 
-        super().validate_project(project_id, [ProjectMemberRole.OWNER])
+        super().validate_project(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.ACCEPTER])
+        if args.include_complete_task and not self.facade.contains_any_project_member_role(project_id, [ProjectMemberRole.OWNER]):
+            print(  # noqa: T201
+                f"{self.COMMON_MESSAGE} argument --include_complete_task : '--include_complete_task' 引数を利用するにはプロジェクトのオーナーロールを持つユーザーで実行する必要があります。",
+                file=sys.stderr,
+            )
+            sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
         target_task_ids = set(annofabcli.common.cli.get_list_from_args(args.task_id)) if args.task_id is not None else None
 
@@ -874,14 +879,13 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--change_operator_to_me",
         action="store_true",
-        help="タスクの担当者を自分自身に変更しないとアノテーションをインポートできない場合（担当者が自分自身でない AND 担当者が割れ当てられたことがあるタスク）は、タスクの担当者を自分自身に変更します。アノテーションをインポートが完了したら、担当者を元に戻します。"  # noqa: E501
-        "未指定の場合は、そのようなタスクのアノテーションインポートはスキップされます。",
+        help="チェッカーロールで、自身が担当者ではないタスクにアノテーションをインポートする場合に指定してください。タスクの担当者を一時的に自分自身に変更し、アノテーションのインポート完了後に元へ戻します。オーナーロールで指定しても効果はありません。",
     )
 
     parser.add_argument(
         "--include_complete_task",
         action="store_true",
-        help="完了状態のタスクに対してもアノテーションをインポートします。未指定の場合は、完了状態のタスクはスキップされます。",
+        help="オーナーロールで完了状態のタスクに対してもアノテーションをインポートします。未指定の場合は、完了状態のタスクはスキップされます。",
     )
 
     parser.add_argument(
@@ -937,7 +941,7 @@ def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse
         "``--include_break_task`` を指定すれば、休憩中状態のタスクにもインポートできます。"
         "``--include_on_hold_task`` を指定すれば、保留中状態のタスクにもインポートできます。"
     )
-    epilog = "オーナロールを持つユーザで実行してください。"
+    epilog = "オーナーロールまたはチェッカーロールを持つユーザーで実行してください。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
     parse_args(parser)
