@@ -184,12 +184,13 @@ class RestoreAnnotationMain(CommandLineWithConfirm):
             1個以上の入力データのアノテーションを変更したか
 
         """
-        logger_prefix = f"{task_index + 1!s} 件目: " if task_index is not None else ""
         task_id = task_parser.task_id
+        logger_prefix = f"{task_index + 1!s} 件目 :: " if task_index is not None else ""
+        logger_prefix += f"task_id='{task_id}' :: "
 
         task = self.service.wrapper.get_task_or_none(self.project_id, task_id)
         if task is None:
-            logger.warning(f"task_id = '{task_id}' は存在しません。")
+            logger.warning(f"{logger_prefix}タスクは存在しません。")
             return False
 
         logger.debug(f"{logger_prefix}phase='{task['phase']}', status='{task['status']}'")
