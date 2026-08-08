@@ -796,6 +796,12 @@ class ImportAnnotation(CommandLine):
         annotation_path: Path = args.annotation
 
         super().validate_project(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.ACCEPTER])
+        if args.include_complete_task and not self.facade.contains_any_project_member_role(project_id, [ProjectMemberRole.OWNER]):
+            print(  # noqa: T201
+                f"{self.COMMON_MESSAGE} argument --include_complete_task : '--include_complete_task' 引数を利用するにはプロジェクトのオーナーロールを持つユーザーで実行する必要があります。",
+                file=sys.stderr,
+            )
+            sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
         target_task_ids = set(annofabcli.common.cli.get_list_from_args(args.task_id)) if args.task_id is not None else None
 
@@ -879,7 +885,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--include_complete_task",
         action="store_true",
-        help="完了状態のタスクに対してもアノテーションをインポートします。未指定の場合は、完了状態のタスクはスキップされます。",
+        help="オーナーロールで完了状態のタスクに対してもアノテーションをインポートします。未指定の場合は、完了状態のタスクはスキップされます。",
     )
 
     parser.add_argument(
@@ -935,7 +941,7 @@ def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse
         "``--include_break_task`` を指定すれば、休憩中状態のタスクにもインポートできます。"
         "``--include_on_hold_task`` を指定すれば、保留中状態のタスクにもインポートできます。"
     )
-    epilog = "オーナロールを持つユーザで実行してください。"
+    epilog = "オーナーロールまたはチェッカーロールを持つユーザーで実行してください。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
     parse_args(parser)
