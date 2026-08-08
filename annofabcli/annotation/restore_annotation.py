@@ -402,7 +402,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--include_on_hold_task",
         action="store_true",
-        help="保留中状態のタスクに対してもアノテーションをリストアします。ただし、アノテーションのリストア後は保留中状態でなくなる可能性があります。未指定の場合は、保留中状態のタスクはスキップされます。",
+        help="保留中状態のタスクに対してもアノテーションをリストアします。チェッカーロールでリストアした場合、リストア後は休憩中状態になります。未指定の場合は、保留中状態のタスクはスキップされます。",
     )
 
     parser.add_argument(

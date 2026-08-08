@@ -897,7 +897,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--include_on_hold_task",
         action="store_true",
-        help="保留中状態のタスクに対してもアノテーションをインポートします。ただし、アノテーションインポート後は保留中状態でなくなる可能性があります。"
+        help="保留中状態のタスクに対してもアノテーションをインポートします。チェッカーロールでインポートした場合、インポート後は休憩中状態になります。"
         "未指定の場合は、保留中状態のタスクはスキップされます。",
     )
 
