@@ -17,7 +17,6 @@ from annofabapi.parser import (
     SimpleAnnotationParserByTask,
     lazy_parse_simple_annotation_dir_by_task,
 )
-from annofabapi.utils import can_put_annotation
 
 import annofabcli.common.cli
 from annofabcli.common.cli import (
@@ -40,15 +39,21 @@ class RestoreAnnotationMain(CommandLineWithConfirm):
         *,
         project_id: str,
         change_operator_to_me: bool,
+        include_complete_task: bool,
         include_break_task: bool,
+        include_on_hold_task: bool,
         all_yes: bool,
     ) -> None:
         self.service = service
         CommandLineWithConfirm.__init__(self, all_yes)
 
         self.project_id = project_id
+        my_member, _ = self.service.api.get_my_member_in_project(project_id)
+        self.project_member_role = ProjectMemberRole(my_member["member_role"])
         self.change_operator_to_me = change_operator_to_me
+        self.include_complete_task = include_complete_task
         self.include_break_task = include_break_task
+        self.include_on_hold_task = include_on_hold_task
 
     def _to_annotation_detail_for_request(self, parser: SimpleAnnotationParser, detail: AnnotationDetailV1) -> AnnotationDetailV1:
         """
@@ -166,7 +171,7 @@ class RestoreAnnotationMain(CommandLineWithConfirm):
 
         return success_count
 
-    def execute_task(self, task_parser: SimpleAnnotationParserByTask, task_index: int | None = None) -> bool:
+    def execute_task(self, task_parser: SimpleAnnotationParserByTask, task_index: int | None = None) -> bool:  # noqa: PLR0911
         """
         1個のタスクに対してアノテーションを登録する。
 
@@ -187,42 +192,48 @@ class RestoreAnnotationMain(CommandLineWithConfirm):
             logger.warning(f"task_id = '{task_id}' は存在しません。")
             return False
 
-        if task["status"] in [TaskStatus.WORKING.value, TaskStatus.COMPLETE.value]:
-            logger.info(f"タスク'{task_id}'は作業中または受入完了状態のため、アノテーションのリストアをスキップします。 status={task['status']}")
+        logger.debug(f"{logger_prefix}phase='{task['phase']}', status='{task['status']}'")
+        if task["status"] == TaskStatus.WORKING.value:
+            logger.info(f"{logger_prefix}タスクは作業中のため、処理をスキップします。 :: status={task['status']}")
+            return False
+
+        if not self.include_complete_task and task["status"] == TaskStatus.COMPLETE.value:
+            logger.info(f"{logger_prefix}タスクは完了状態のため、処理をスキップします。完了状態のタスクを処理する場合は、 '--include_complete_task'を指定してください。 :: status={task['status']}")
             return False
 
         if not self.include_break_task and task["status"] == TaskStatus.BREAK.value:
+            logger.info(f"{logger_prefix}タスクは休憩中状態のため、処理をスキップします。休憩中状態のタスクを処理する場合は、 '--include_break_task'を指定してください。 :: status={task['status']}")
+            return False
+
+        if not self.include_on_hold_task and task["status"] == TaskStatus.ON_HOLD.value:
             logger.info(
-                f"タスク'{task_id}'は休憩中状態のため、アノテーションのリストアをスキップします。休憩中状態のタスクにアノテーションをリストアする場合は、`--include_break_task` を指定してください。"
+                f"{logger_prefix}タスクは保留中状態のため、処理をスキップします。保留中状態のタスクにアノテーションをリストアする場合は、 "
+                f"'--include_on_hold_task'を指定してください。 :: status={task['status']}"
             )
             return False
 
-        if not self.confirm_processing(f"task_id='{task_id}' のアノテーションをリストアしますか？"):
+        should_change_operator = self.project_member_role == ProjectMemberRole.ACCEPTER and task["account_id"] != self.service.api.account_id
+        if should_change_operator and not self.change_operator_to_me:
+            logger.info(f"{logger_prefix}チェッカーロールでアノテーションをリストアするには、`--change_operator_to_me` を指定してください。")
             return False
 
-        logger.info(f"{logger_prefix}task_id='{task_id}' に対して処理します。")
+        if not self.confirm_processing(f"task_id='{task_id}'のタスク（phase={task['phase']}, status={task['status']}）のアノテーションをリストアしますか？"):
+            return False
+
+        logger.info(f"{logger_prefix}タスクにアノテーションをリストアします。")
 
         old_account_id: str | None = None
         changed_operator = False
-        if self.change_operator_to_me:
-            if not can_put_annotation(task, self.service.api.account_id):
-                logger.debug(f"タスク'{task_id}' の担当者を自分自身に変更します。")
-                old_account_id = task["account_id"]
-                task = self.service.wrapper.change_task_operator(
-                    self.project_id,
-                    task_id,
-                    operator_account_id=self.service.api.account_id,
-                    last_updated_datetime=task["updated_datetime"],
-                )
-                changed_operator = True
-
-        else:  # noqa: PLR5501
-            if not can_put_annotation(task, self.service.api.account_id):
-                logger.debug(
-                    f"タスク'{task_id}'は、過去に誰かに割り当てられたタスクで、現在の担当者が自分自身でないため、アノテーションのリストアをスキップします。"
-                    f"担当者を自分自身に変更してアノテーションを登録する場合は `--change_operator_to_me` を指定してください。"
-                )
-                return False
+        if should_change_operator:
+            logger.debug(f"{logger_prefix}担当者を自分自身に変更します。")
+            old_account_id = task["account_id"]
+            task = self.service.wrapper.change_task_operator(
+                self.project_id,
+                task_id,
+                operator_account_id=self.service.api.account_id,
+                last_updated_datetime=task["updated_datetime"],
+            )
+            changed_operator = True
 
         result_count = self.put_annotation_for_task(task_parser)
         logger.info(f"{logger_prefix}タスク'{task_parser.task_id}'の入力データ {result_count} 個に対してアノテーションをリストアしました。")
@@ -329,7 +340,13 @@ class RestoreAnnotation(CommandLine):
 
         project_id = args.project_id
 
-        super().validate_project(project_id, [ProjectMemberRole.OWNER])
+        super().validate_project(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.ACCEPTER])
+        if args.include_complete_task and not self.facade.contains_any_project_member_role(project_id, [ProjectMemberRole.OWNER]):
+            print(  # noqa: T201
+                f"{self.COMMON_MESSAGE} argument --include_complete_task : '--include_complete_task' 引数を利用するにはプロジェクトのオーナーロールを持つユーザーで実行する必要があります。",
+                file=sys.stderr,
+            )
+            sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
         task_id_list = set(annofabcli.common.cli.get_list_from_args(args.task_id)) if args.task_id is not None else None
 
@@ -337,7 +354,9 @@ class RestoreAnnotation(CommandLine):
             self.service,
             project_id=project_id,
             change_operator_to_me=args.change_operator_to_me,
+            include_complete_task=args.include_complete_task,
             include_break_task=args.include_break_task,
+            include_on_hold_task=args.include_on_hold_task,
             all_yes=args.yes,
         ).main(args.annotation, target_task_ids=task_id_list, parallelism=args.parallelism)
 
@@ -365,13 +384,25 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--change_operator_to_me",
         action="store_true",
-        help="過去に割り当てられていて現在の担当者が自分自身でない場合、タスクの担当者を自分自身に変更してからアノテーションをリストアします。",
+        help="チェッカーロールで、自身が担当者ではないタスクにアノテーションをリストアする場合に指定してください。タスクの担当者を一時的に自分自身に変更し、アノテーションのリストア完了後に元へ戻します。オーナーロールで指定しても効果はありません。",
+    )
+
+    parser.add_argument(
+        "--include_complete_task",
+        action="store_true",
+        help="オーナーロールで完了状態のタスクに対してもアノテーションをリストアします。未指定の場合は、完了状態のタスクはスキップされます。",
     )
 
     parser.add_argument(
         "--include_break_task",
         action="store_true",
         help="休憩中状態のタスクに対してもアノテーションをリストアします。",
+    )
+
+    parser.add_argument(
+        "--include_on_hold_task",
+        action="store_true",
+        help="保留中状態のタスクに対してもアノテーションをリストアします。ただし、アノテーションのリストア後は保留中状態でなくなる可能性があります。未指定の場合は、保留中状態のタスクはスキップされます。",
     )
 
     parser.add_argument(

@@ -443,7 +443,7 @@ def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse
     subcommand_name = "copy"
     subcommand_help = "アノテーションをコピーします．"
     description = "タスク単位または入力データ単位で、アノテーションをコピーします。"
-    epilog = "オーナー、チェッカーまたはアノテータロールを持つユーザで実行してください。"
+    epilog = "オーナーロールまたはチェッカーロールを持つユーザーで実行してください。"
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
     parse_args(parser)
     return parser

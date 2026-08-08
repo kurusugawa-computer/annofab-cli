@@ -394,7 +394,7 @@ def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse
         "複数の塗りつぶしアノテーションを1つにまとめます。"
         "ラベルの種類を「塗りつぶし（インスタンスセグメンテーション）」から「塗りつぶしv2（セマンティックセグメンテーション）」に変更する場合などに有用です。"
     )
-    epilog = "オーナー、チェッカーまたはアノテータロールを持つユーザで実行してください。"
+    epilog = "オーナーロールまたはチェッカーロールを持つユーザーで実行してください。"
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
     parse_args(parser)
     return parser
