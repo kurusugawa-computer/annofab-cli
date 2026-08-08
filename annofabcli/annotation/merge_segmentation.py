@@ -305,7 +305,7 @@ class MergeSegmentation(CommandLine):
             sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
         project_id = args.project_id
-        super().validate_project(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.ACCEPTER, ProjectMemberRole.WORKER])
+        super().validate_project(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.ACCEPTER])
 
         task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id)
         label_name_list = annofabcli.common.cli.get_list_from_args(args.label_name)

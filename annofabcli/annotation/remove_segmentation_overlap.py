@@ -294,7 +294,7 @@ class RemoveSegmentationOverlap(CommandLine):
 
         task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id)
 
-        super().validate_project(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.ACCEPTER, ProjectMemberRole.WORKER])
+        super().validate_project(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.ACCEPTER])
 
         main_obj = RemoveSegmentationOverlapMain(
             self.service,
