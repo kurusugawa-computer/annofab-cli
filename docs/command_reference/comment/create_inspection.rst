@@ -81,15 +81,37 @@ CSV形式で指定する場合
 
 CSVの列は、JSONの各キーに対応しています。
 
-受入完了状態を取り消してから検査コメントを作成する
+自身が担当者ではないタスクに検査コメントを作成する
 ------------------------------------------------------
 
-完了状態の受入フェーズに検査コメントを作成する場合は、 ``--cancel_acceptance`` を指定してください。
-このオプションを指定すると、受入完了状態を取り消してから検査コメントを作成します。差し戻し前に検査コメントを作成する場合などに使用します。
+自身が担当者ではないタスクに検査コメントを作成する場合は、 ``--change_operator_to_me`` を指定してください。
+このオプションを指定すると、タスクの担当者を一時的に自分自身へ変更して作業中状態にした後、検査コメントを作成します。処理後は元の担当者へ戻します。そのため、タスクの最終状態は未着手になります。
 
 .. code-block::
 
-    $ annofabcli comment create_inspection --project_id prj1 --json file://comment.json --cancel_acceptance
+    $ annofabcli comment create_inspection --project_id prj1 --json file://comment.json --change_operator_to_me
+
+休憩中または保留中のタスクに検査コメントを作成する
+--------------------------------------------------------
+
+休憩中状態のタスクに検査コメントを作成する場合は、 ``--include_break_task`` を指定してください。
+
+保留中状態のタスクに検査コメントを作成する場合は、 ``--include_on_hold_task`` を指定してください。コメント作成のためにタスクを作業中状態へ変更するため、処理後は保留中状態に戻りません。担当者を変更しない場合は休憩中状態になり、 ``--change_operator_to_me`` により担当者を元へ戻す場合は未着手状態になります。
+
+.. code-block::
+
+    $ annofabcli comment create_inspection --project_id prj1 --json file://comment.json \
+    --include_break_task --include_on_hold_task
+
+完了状態のタスクに検査コメントを作成する
+--------------------------------------------
+
+完了状態のタスクに検査コメントを作成する場合は、 ``--include_complete_task`` を指定してください。このオプションはオーナーロールを持つユーザだけが指定できます。
+受入フェーズが完了状態のタスクは、受入完了状態を取り消してから検査コメントを作成します。差し戻し前に検査コメントを作成する場合などに使用します。
+
+.. code-block::
+
+    $ annofabcli comment create_inspection --project_id prj1 --json file://comment.json --include_complete_task
 
 並列処理
 ----------------------------------------------

@@ -326,6 +326,9 @@ class PutCommentMain(CommandLineWithConfirm):
     def _can_add_comment(
         self,
         task: dict[str, Any],
+        *,
+        include_break_task: bool,
+        include_on_hold_task: bool,
     ) -> bool:
         task_id = task["task_id"]
 
@@ -334,10 +337,25 @@ class PutCommentMain(CommandLineWithConfirm):
                 logger.warning(f"task_id='{task_id}' :: フェーズが検査/受入でないため検査コメントを付与できません。 :: task_phase='{task['phase']}'")
                 return False
 
-        if task["status"] not in [TaskStatus.NOT_STARTED.value, TaskStatus.BREAK.value]:
-            logger.warning(f"task_id='{task_id}' :: タスクの状態が未着手,休憩中 以外の状態なので、コメントを付与できません。 :: task_status='{task['status']}'")
+        if task["status"] == TaskStatus.BREAK.value and not include_break_task:
+            logger.info(f"task_id='{task_id}' :: タスクは休憩中状態のため、処理をスキップします。休憩中状態のタスクを処理する場合は、`--include_break_task` を指定してください。")
+            return False
+
+        if task["status"] == TaskStatus.ON_HOLD.value and not include_on_hold_task:
+            logger.info(f"task_id='{task_id}' :: タスクは保留中状態のため、処理をスキップします。保留中状態のタスクを処理する場合は、`--include_on_hold_task` を指定してください。")
+            return False
+
+        if task["status"] not in [TaskStatus.NOT_STARTED.value, TaskStatus.BREAK.value, TaskStatus.ON_HOLD.value]:
+            logger.warning(f"task_id='{task_id}' :: タスクの状態が未着手、休憩中、保留中以外の状態なので、コメントを付与できません。 :: task_status='{task['status']}'")
             return False
         return True
+
+    def _can_change_operator_to_me(self, task: dict[str, Any], *, change_operator_to_me: bool, logging_prefix: str) -> bool:
+        if task["account_id"] == self.service.api.account_id or change_operator_to_me:
+            return True
+
+        logger.info(f"{logging_prefix} :: task_id='{task['task_id']}' :: 自身が担当者ではないタスクに検査コメントを作成するには、`--change_operator_to_me` を指定してください。")
+        return False
 
     def add_comments_for_task(
         self,
@@ -347,6 +365,9 @@ class PutCommentMain(CommandLineWithConfirm):
         *,
         put_mode: CommentPutMode = "put",
         cancel_acceptance: bool = False,
+        change_operator_to_me: bool = True,
+        include_break_task: bool = True,
+        include_on_hold_task: bool = False,
     ) -> tuple[int, int]:
         """
         タスクにコメントを付与します。
@@ -357,6 +378,9 @@ class PutCommentMain(CommandLineWithConfirm):
             task_index: タスクの連番
             put_mode: コメント登録時の動作モード
             cancel_acceptance: Trueなら受入完了状態を取り消してからコメントを付与する。
+            change_operator_to_me: 自身が担当者ではないタスクの担当者を一時的に自分自身へ変更するかどうか。
+            include_break_task: 休憩中状態のタスクを処理対象に含めるかどうか。
+            include_on_hold_task: 保留中状態のタスクを処理対象に含めるかどうか。
 
         Returns:
             (コメントを付与した入力データの個数, 付与したコメントの個数)のタプル
@@ -371,9 +395,7 @@ class PutCommentMain(CommandLineWithConfirm):
         logger.debug(f"{logging_prefix} : task_id='{task['task_id']}', status='{task['status']}', phase='{task['phase']}'")
 
         needs_cancel_acceptance = self._needs_cancel_acceptance(task, cancel_acceptance=cancel_acceptance)
-        if not needs_cancel_acceptance and not self._can_add_comment(
-            task=task,
-        ):
+        if not needs_cancel_acceptance and not self._can_add_comment(task=task, include_break_task=include_break_task, include_on_hold_task=include_on_hold_task):
             return (0, 0)
 
         if not self.confirm_processing(f"task_id='{task_id}' のタスクに{self.comment_type_name}を付与しますか？"):
@@ -381,8 +403,10 @@ class PutCommentMain(CommandLineWithConfirm):
 
         task = self.cancel_acceptance_if_needed(task, cancel_acceptance=cancel_acceptance, logging_prefix=logging_prefix)
 
-        if not self._can_add_comment(
-            task=task,
+        if not self._can_add_comment(task=task, include_break_task=include_break_task, include_on_hold_task=include_on_hold_task) or not self._can_change_operator_to_me(
+            task,
+            change_operator_to_me=change_operator_to_me,
+            logging_prefix=logging_prefix,
         ):
             return (0, 0)
 
@@ -426,9 +450,21 @@ class PutCommentMain(CommandLineWithConfirm):
         *,
         put_mode: CommentPutMode = "put",
         cancel_acceptance: bool = False,
+        change_operator_to_me: bool = True,
+        include_break_task: bool = True,
+        include_on_hold_task: bool = False,
     ) -> tuple[int, int]:
         task_index, (task_id, comments_for_task) = tpl
-        return self.add_comments_for_task(task_id=task_id, comments_for_task=comments_for_task, task_index=task_index, put_mode=put_mode, cancel_acceptance=cancel_acceptance)
+        return self.add_comments_for_task(
+            task_id=task_id,
+            comments_for_task=comments_for_task,
+            task_index=task_index,
+            put_mode=put_mode,
+            cancel_acceptance=cancel_acceptance,
+            change_operator_to_me=change_operator_to_me,
+            include_break_task=include_break_task,
+            include_on_hold_task=include_on_hold_task,
+        )
 
     def add_comments_for_task_list(
         self,
@@ -437,6 +473,9 @@ class PutCommentMain(CommandLineWithConfirm):
         *,
         put_mode: CommentPutMode = "put",
         cancel_acceptance: bool = False,
+        change_operator_to_me: bool = True,
+        include_break_task: bool = True,
+        include_on_hold_task: bool = False,
     ) -> None:
         tasks_count = len(comments_for_task_list)
         input_data_count = sum(len(e) for e in comments_for_task_list.values())
@@ -446,7 +485,14 @@ class PutCommentMain(CommandLineWithConfirm):
         )
 
         if parallelism is not None:
-            func = functools.partial(self.add_comments_for_task_wrapper, put_mode=put_mode, cancel_acceptance=cancel_acceptance)
+            func = functools.partial(
+                self.add_comments_for_task_wrapper,
+                put_mode=put_mode,
+                cancel_acceptance=cancel_acceptance,
+                change_operator_to_me=change_operator_to_me,
+                include_break_task=include_break_task,
+                include_on_hold_task=include_on_hold_task,
+            )
             with multiprocessing.Pool(parallelism) as pool:
                 result_list = pool.map(func, enumerate(comments_for_task_list.items()))
                 added_input_data_count = sum(e[0] for e in result_list)
@@ -466,6 +512,9 @@ class PutCommentMain(CommandLineWithConfirm):
                         task_index=task_index,
                         put_mode=put_mode,
                         cancel_acceptance=cancel_acceptance,
+                        change_operator_to_me=change_operator_to_me,
+                        include_break_task=include_break_task,
+                        include_on_hold_task=include_on_hold_task,
                     )
                     added_input_data_count += result_input_data
                     added_comment_count += result_comment

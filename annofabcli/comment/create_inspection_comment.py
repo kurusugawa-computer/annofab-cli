@@ -49,7 +49,7 @@ class CreateInspectionComment(CommandLine):
         if not self.validate(args):
             sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
-        required_project_member_roles = [ProjectMemberRole.OWNER] if args.cancel_acceptance else [ProjectMemberRole.ACCEPTER, ProjectMemberRole.OWNER]
+        required_project_member_roles = [ProjectMemberRole.OWNER] if args.include_complete_task else [ProjectMemberRole.ACCEPTER, ProjectMemberRole.OWNER]
         super().validate_project(args.project_id, required_project_member_roles)
 
         if args.json is not None:
@@ -73,7 +73,10 @@ class CreateInspectionComment(CommandLine):
             comments_for_task_list=comments_for_task_list,
             parallelism=args.parallelism,
             put_mode="create",
-            cancel_acceptance=args.cancel_acceptance,
+            cancel_acceptance=args.include_complete_task,
+            change_operator_to_me=args.change_operator_to_me,
+            include_break_task=args.include_break_task,
+            include_on_hold_task=args.include_on_hold_task,
         )
 
 
@@ -132,9 +135,27 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     )
 
     parser.add_argument(
-        "--cancel_acceptance",
+        "--include_break_task",
         action="store_true",
-        help="完了状態の受入フェーズを取り消してから検査コメントを作成します。差し戻し前に検査コメントを作成する場合などに使用します。",
+        help="休憩中状態のタスクに対しても検査コメントを作成します。未指定の場合は、休憩中状態のタスクはスキップされます。",
+    )
+
+    parser.add_argument(
+        "--include_on_hold_task",
+        action="store_true",
+        help="保留中状態のタスクに対しても検査コメントを作成します。ただし、検査コメントの作成後は保留中状態でなくなります。未指定の場合は、保留中状態のタスクはスキップされます。",
+    )
+
+    parser.add_argument(
+        "--change_operator_to_me",
+        action="store_true",
+        help="自身が担当者ではないタスクに検査コメントを作成する場合に指定してください。タスクの担当者を一時的に自分自身に変更し、検査コメントの作成完了後に元へ戻します。",
+    )
+
+    parser.add_argument(
+        "--include_complete_task",
+        action="store_true",
+        help="オーナーロールで完了状態のタスクに対しても検査コメントを作成します。受入フェーズが完了状態のタスクは、受入を取り消してから検査コメントを作成します。",
     )
 
     parser.set_defaults(subcommand_func=main)
@@ -144,7 +165,7 @@ def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse
     subcommand_name = "create_inspection"
     subcommand_help = "検査コメントを作成します"
     description = "検査コメントを作成します。comment_idがすでに存在する場合、デフォルトではスキップします。"
-    epilog = "チェッカーロールまたはオーナロールを持つユーザで実行してください。``--cancel_acceptance`` を指定した場合は、オーナロールを持つユーザで実行してください。"
+    epilog = "チェッカーロールまたはオーナロールを持つユーザで実行してください。``--include_complete_task`` を指定した場合は、オーナロールを持つユーザで実行してください。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
     parse_args(parser)
