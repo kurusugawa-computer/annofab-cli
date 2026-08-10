@@ -11,7 +11,6 @@ from typing import Any
 
 import annofabapi
 from annofabapi.models import ProjectMemberRole, TaskStatus
-from annofabapi.utils import can_put_annotation
 
 import annofabcli.common.cli
 from annofabcli.common.cli import (
@@ -134,14 +133,20 @@ class CopyAnnotationMain(CommandLineWithConfirm):
         overwrite: bool,
         merge: bool,
         change_operator_to_me: bool,
+        include_complete_task: bool,
         include_break_task: bool,
+        include_on_hold_task: bool,
     ) -> None:
         self.service = service
         self.project_id = project_id
+        my_member, _ = self.service.api.get_my_member_in_project(project_id)
+        self.project_member_role = ProjectMemberRole(my_member["member_role"])
         self.overwrite = overwrite
         self.merge = merge
         self.change_operator_to_me = change_operator_to_me
+        self.include_complete_task = include_complete_task
         self.include_break_task = include_break_task
+        self.include_on_hold_task = include_on_hold_task
 
         CommandLineWithConfirm.__init__(self, all_yes)
 
@@ -260,10 +265,22 @@ class CopyAnnotationMain(CommandLineWithConfirm):
         logger.debug(f"'{copy_target.src}'のアノテーションを'{copy_target.dest}'にコピーしました。")
         return True
 
-    def copy_annotation(self, copy_target: CopyTarget) -> bool:
+    def copy_annotation(self, copy_target: CopyTarget) -> bool:  # noqa: PLR0911
         dest_task = self.service.wrapper.get_task_or_none(self.project_id, copy_target.dest_task_id)
         if dest_task is None:
             logger.warning(f"コピー先のタスク '{copy_target.dest_task_id}' は存在しません。")
+            return False
+
+        logger.debug(f"コピー先タスク'{copy_target.dest_task_id}' :: phase='{dest_task['phase']}', status='{dest_task['status']}'")
+        if dest_task["status"] == TaskStatus.WORKING.value:
+            logger.info(f"コピー先タスク'{copy_target.dest_task_id}'は作業中のため、アノテーションのコピーをスキップします。 :: status={dest_task['status']}")
+            return False
+
+        if not self.include_complete_task and dest_task["status"] == TaskStatus.COMPLETE.value:
+            logger.info(
+                f"コピー先タスク'{copy_target.dest_task_id}'は完了状態のため、アノテーションのコピーをスキップします。"
+                f"完了状態のタスクにアノテーションをコピーする場合は、`--include_complete_task` を指定してください。 :: status={dest_task['status']}"
+            )
             return False
 
         if not self.include_break_task and dest_task["status"] == TaskStatus.BREAK.value:
@@ -273,29 +290,32 @@ class CopyAnnotationMain(CommandLineWithConfirm):
             )
             return False
 
+        if not self.include_on_hold_task and dest_task["status"] == TaskStatus.ON_HOLD.value:
+            logger.info(
+                f"コピー先タスク'{copy_target.dest_task_id}'は保留中状態のため、アノテーションのコピーをスキップします。"
+                f"保留中状態のタスクにアノテーションをコピーする場合は、`--include_on_hold_task` を指定してください。 :: status={dest_task['status']}"
+            )
+            return False
+
+        should_change_operator = self.project_member_role == ProjectMemberRole.ACCEPTER and dest_task["account_id"] != self.service.api.account_id
+        if should_change_operator and not self.change_operator_to_me:
+            logger.info(f"コピー先タスク'{copy_target.dest_task_id}'をチェッカーロールで更新するには、`--change_operator_to_me` を指定してください。")
+            return False
+
         if not self.confirm_processing(f"'{copy_target.src}'のアノテーションを、'{copy_target.dest}'にコピーしますか？"):
             return False
 
-        # 担当者割り当て変更チェック
         changed_operator = False
         original_operator = dest_task["account_id"]
-        if not can_put_annotation(dest_task, self.service.api.account_id):
-            if self.change_operator_to_me:
-                logger.debug(f"`--change_operator_to_me` が指定されているため，コピー先タスク'{copy_target.dest_task_id}' の担当者を自分自身に変更します。")
-                changed_operator = True
-                dest_task = self.service.wrapper.change_task_operator(
-                    self.project_id,
-                    copy_target.dest_task_id,
-                    self.service.api.account_id,
-                    last_updated_datetime=dest_task["updated_datetime"],
-                )
-            else:
-                logger.debug(
-                    f"コピー先タスク'{copy_target.dest_task_id}'は、過去に誰かに割り当てられたタスクで、"
-                    f"現在の担当者が自分自身でないため、アノテーションのコピーをスキップします。"
-                    f"担当者を自分自身に変更してアノテーションをコピーする場合は `--change_operator_to_me` を指定してください。"
-                )
-                return False
+        if should_change_operator:
+            logger.debug(f"コピー先タスク'{copy_target.dest_task_id}' の担当者を自分自身に変更します。")
+            changed_operator = True
+            dest_task = self.service.wrapper.change_task_operator(
+                self.project_id,
+                copy_target.dest_task_id,
+                self.service.api.account_id,
+                last_updated_datetime=dest_task["updated_datetime"],
+            )
 
         result = False
         if isinstance(copy_target, CopyTargetByTask):
@@ -365,6 +385,12 @@ class CopyAnnotation(CommandLine):
 
         project_id = args.project_id
         super().validate_project(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.ACCEPTER])
+        if args.include_complete_task and not self.facade.contains_any_project_member_role(project_id, [ProjectMemberRole.OWNER]):
+            print(  # noqa: T201
+                f"{self.COMMON_MESSAGE} argument --include_complete_task : '--include_complete_task' 引数を利用するにはプロジェクトのオーナーロールを持つユーザーで実行する必要があります。",
+                file=sys.stderr,
+            )
+            sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
         str_copy_target_list = get_list_from_args(args.input)
 
@@ -380,7 +406,9 @@ class CopyAnnotation(CommandLine):
             overwrite=args.overwrite,
             merge=args.merge,
             change_operator_to_me=args.change_operator_to_me,
+            include_complete_task=args.include_complete_task,
             include_break_task=args.include_break_task,
+            include_on_hold_task=args.include_on_hold_task,
         )
         main_obj.copy_annotations(copy_target_list, parallelism=args.parallelism)
 
@@ -420,13 +448,25 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--change_operator_to_me",
         action="store_true",
-        help="過去に割り当てられていて現在の担当者が自分自身でない場合、タスクの担当者を一時的に自分自身に変更してからアノテーションをコピーします。",
+        help="チェッカーロールで、自身が担当者ではないコピー先タスクにアノテーションをコピーする場合に指定してください。タスクの担当者を一時的に自分自身に変更し、コピー完了後に元へ戻します。オーナーロールで指定しても効果はありません。",
+    )
+
+    parser.add_argument(
+        "--include_complete_task",
+        action="store_true",
+        help="オーナーロールで完了状態のコピー先タスクに対してもアノテーションをコピーします。未指定の場合は、完了状態のタスクはスキップされます。",
     )
 
     parser.add_argument(
         "--include_break_task",
         action="store_true",
-        help="休憩中状態のコピー先タスクに対してもアノテーションをコピーします。",
+        help="休憩中状態のコピー先タスクに対してもアノテーションをコピーします。未指定の場合は、休憩中状態のタスクはスキップされます。",
+    )
+
+    parser.add_argument(
+        "--include_on_hold_task",
+        action="store_true",
+        help="保留中状態のコピー先タスクに対してもアノテーションをコピーします。チェッカーロールでコピーした場合、コピー後は未着手状態になります。未指定の場合は、保留中状態のタスクはスキップされます。",
     )
 
     parser.add_argument(

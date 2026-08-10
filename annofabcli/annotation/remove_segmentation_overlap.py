@@ -15,7 +15,6 @@ import numpy
 from annofabapi.models import ProjectMemberRole
 from annofabapi.pydantic_models.task_status import TaskStatus
 from annofabapi.segmentation import read_binary_image, write_binary_image
-from annofabapi.utils import can_put_annotation
 
 import annofabcli.common.cli
 from annofabcli.common.cli import (
@@ -71,12 +70,18 @@ class RemoveSegmentationOverlapMain(CommandLineWithConfirm):
         project_id: str,
         all_yes: bool,
         change_operator_to_me: bool,
+        include_complete_task: bool,
         include_break_task: bool,
+        include_on_hold_task: bool,
     ) -> None:
         self.annofab_service = annofab_service
         self.project_id = project_id
+        my_member, _ = self.annofab_service.api.get_my_member_in_project(project_id)
+        self.project_member_role = ProjectMemberRole(my_member["member_role"])
         self.change_operator_to_me = change_operator_to_me
+        self.include_complete_task = include_complete_task
         self.include_break_task = include_break_task
+        self.include_on_hold_task = include_on_hold_task
         super().__init__(all_yes)
 
     def remove_segmentation_overlap_and_save(self, details: list[dict[str, Any]], output_dir: Path) -> list[str]:
@@ -169,7 +174,7 @@ class RemoveSegmentationOverlapMain(CommandLineWithConfirm):
         logger.debug(f"{log_message_prefix}{len(updated_annotation_id_list)} 件の塗りつぶしアノテーションを更新しました。 :: task_id='{task_id}', input_data_id='{input_data_id}'")
         return True
 
-    def update_segmentation_annotation_for_task(self, task_id: str, *, task_index: int | None = None) -> int:
+    def update_segmentation_annotation_for_task(self, task_id: str, *, task_index: int | None = None) -> int:  # noqa: PLR0911
         """
         1個のタスクに対して、塗りつぶしアノテーションの重なりを除去します。
 
@@ -183,8 +188,15 @@ class RemoveSegmentationOverlapMain(CommandLineWithConfirm):
             logger.warning(f"{log_message_prefix}task_id='{task_id}'であるタスクは存在しません。")
             return 0
 
-        if task["status"] in {TaskStatus.WORKING.value, TaskStatus.COMPLETE.value}:
-            logger.debug(f"{log_message_prefix}task_id='{task_id}'のタスクの状態は「作業中」または「完了」であるため、アノテーションの更新をスキップします。  :: status='{task['status']}'")
+        if task["status"] == TaskStatus.WORKING.value:
+            logger.info(f"{log_message_prefix}task_id='{task_id}'のタスクは作業中状態のため、アノテーションの更新をスキップします。 :: status='{task['status']}'")
+            return 0
+
+        if not self.include_complete_task and task["status"] == TaskStatus.COMPLETE.value:
+            logger.info(
+                f"{log_message_prefix}task_id='{task_id}'のタスクは完了状態のため、アノテーションの更新をスキップします。"
+                f"完了状態のタスクのアノテーションを更新する場合は、`--include_complete_task` を指定してください。 :: status='{task['status']}'"
+            )
             return 0
 
         if not self.include_break_task and task["status"] == TaskStatus.BREAK.value:
@@ -194,29 +206,32 @@ class RemoveSegmentationOverlapMain(CommandLineWithConfirm):
             )
             return 0
 
+        if not self.include_on_hold_task and task["status"] == TaskStatus.ON_HOLD.value:
+            logger.info(
+                f"{log_message_prefix}task_id='{task_id}'のタスクは保留中状態のため、アノテーションの更新をスキップします。"
+                f"保留中状態のタスクのアノテーションを更新する場合は、`--include_on_hold_task` を指定してください。 :: status='{task['status']}'"
+            )
+            return 0
+
+        should_change_operator = self.project_member_role == ProjectMemberRole.ACCEPTER and task["account_id"] != self.annofab_service.api.account_id
+        if should_change_operator and not self.change_operator_to_me:
+            logger.info(f"{log_message_prefix}task_id='{task_id}'をチェッカーロールで更新するには、`--change_operator_to_me` を指定してください。")
+            return 0
+
         if not self.confirm_processing(f"task_id='{task_id}'の塗りつぶしアノテーションの重なりを除去しますか？"):
             return 0
 
-        # 担当者割り当て変更チェック
         changed_operator = False
         original_operator_account_id = task["account_id"]
-        if not can_put_annotation(task, self.annofab_service.api.account_id):
-            if self.change_operator_to_me:
-                logger.debug(f"{log_message_prefix}task_id='{task_id}' のタスクの担当者を自分自身に変更します。")
-                changed_operator = True
-                task = self.annofab_service.wrapper.change_task_operator(
-                    self.project_id,
-                    task_id,
-                    self.annofab_service.api.account_id,
-                    last_updated_datetime=task["updated_datetime"],
-                )
-            else:
-                logger.debug(
-                    f"{log_message_prefix}task_id='{task_id}' のタスクは、過去に誰かに割り当てられたタスクで、"
-                    f"現在の担当者が自分自身でないため、アノテーションの更新をスキップします。"
-                    f"担当者を自分自身に変更してアノテーションを更新する場合は、コマンドライン引数 '--change_operator_to_me' を指定してください。"
-                )
-                return 0
+        if should_change_operator:
+            logger.debug(f"{log_message_prefix}task_id='{task_id}' のタスクの担当者を自分自身に変更します。")
+            changed_operator = True
+            task = self.annofab_service.wrapper.change_task_operator(
+                self.project_id,
+                task_id,
+                self.annofab_service.api.account_id,
+                last_updated_datetime=task["updated_datetime"],
+            )
 
         success_input_data_count = 0
         for input_data_id in task["input_data_id_list"]:
@@ -295,13 +310,21 @@ class RemoveSegmentationOverlap(CommandLine):
         task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id)
 
         super().validate_project(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.ACCEPTER])
+        if args.include_complete_task and not self.facade.contains_any_project_member_role(project_id, [ProjectMemberRole.OWNER]):
+            print(  # noqa: T201
+                f"{self.COMMON_MESSAGE} argument --include_complete_task : '--include_complete_task' 引数を利用するにはプロジェクトのオーナーロールを持つユーザーで実行する必要があります。",
+                file=sys.stderr,
+            )
+            sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
         main_obj = RemoveSegmentationOverlapMain(
             self.service,
             project_id=project_id,
             all_yes=self.all_yes,
             change_operator_to_me=args.change_operator_to_me,
+            include_complete_task=args.include_complete_task,
             include_break_task=args.include_break_task,
+            include_on_hold_task=args.include_on_hold_task,
         )
 
         main_obj.main(task_id_list, parallelism=args.parallelism)
@@ -321,13 +344,25 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--change_operator_to_me",
         action="store_true",
-        help="過去に担当者を割り当てられていて、かつ現在の担当者が自分自身でない場合、タスクの担当者を一時的に自分自身に変更してからアノテーションを更新します。",
+        help="チェッカーロールで、自身が担当者ではないタスクのアノテーションを更新する場合に指定してください。タスクの担当者を一時的に自分自身に変更し、更新完了後に元へ戻します。オーナーロールで指定しても効果はありません。",
+    )
+
+    parser.add_argument(
+        "--include_complete_task",
+        action="store_true",
+        help="オーナーロールで完了状態のタスクに対してもアノテーションを更新します。未指定の場合は、完了状態のタスクはスキップされます。",
     )
 
     parser.add_argument(
         "--include_break_task",
         action="store_true",
-        help="休憩中状態のタスクに対してもアノテーションを更新します。",
+        help="休憩中状態のタスクに対してもアノテーションを更新します。未指定の場合は、休憩中状態のタスクはスキップされます。",
+    )
+
+    parser.add_argument(
+        "--include_on_hold_task",
+        action="store_true",
+        help="保留中状態のタスクに対してもアノテーションを更新します。チェッカーロールで更新した場合、更新後は未着手状態になります。未指定の場合は、保留中状態のタスクはスキップされます。",
     )
 
     parser.add_argument(

@@ -9,7 +9,6 @@ from typing import Any
 import annofabapi
 from annofabapi.models import DefaultAnnotationType, ProjectMemberRole, TaskStatus
 from annofabapi.util.annotation_specs import AnnotationSpecsAccessor
-from annofabapi.utils import can_put_annotation
 
 import annofabcli.common.cli
 from annofabcli.common.cli import (
@@ -100,24 +99,21 @@ class CreateClassificationAnnotationMain(CommandLineWithConfirm):
         old_account_id: str | None = None
         changed_operator = False
 
-        if self.is_change_operator_to_me:
-            if not can_put_annotation(task, self.service.api.account_id, project_member_role=self.my_project_member_role):
-                logger.debug(f"タスク'{task_id}' の担当者を自分自身に変更します。")
-                old_account_id = task["account_id"]
-                task = self.service.wrapper.change_task_operator(
-                    self.project_id,
-                    task_id,
-                    operator_account_id=self.service.api.account_id,
-                    last_updated_datetime=task["updated_datetime"],
-                )
-                changed_operator = True
-        else:  # noqa: PLR5501
-            if not can_put_annotation(task, self.service.api.account_id, project_member_role=self.my_project_member_role):
-                logger.debug(
-                    f"タスク'{task_id}'は、過去に誰かに割り当てられたタスクで、現在の担当者が自分自身でないため、全体アノテーションの作成をスキップします。"
-                    f"担当者を自分自身に変更して全体アノテーションを作成する場合は `--change_task_operator_to_me` を指定してください。"
-                )
-                return None, False, None
+        should_change_operator = self.my_project_member_role == ProjectMemberRole.ACCEPTER and task["account_id"] != self.service.api.account_id
+        if should_change_operator and not self.is_change_operator_to_me:
+            logger.info(f"タスク'{task_id}'をチェッカーロールで更新するには、`--change_operator_to_me` を指定してください。")
+            return None, False, None
+
+        if should_change_operator:
+            logger.debug(f"タスク'{task_id}' の担当者を自分自身に変更します。")
+            old_account_id = task["account_id"]
+            task = self.service.wrapper.change_task_operator(
+                self.project_id,
+                task_id,
+                operator_account_id=self.service.api.account_id,
+                last_updated_datetime=task["updated_datetime"],
+            )
+            changed_operator = True
 
         return task, changed_operator, old_account_id
 
@@ -396,25 +392,25 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--change_operator_to_me",
         action="store_true",
-        help="タスクの担当者を自分自身にしないとアノテーションを作成できない場合（過去に担当者が割り当てられていて現在の担当者が自分自身でない場合）、タスクの担当者を自分自身に変更してから全体アノテーションを作成します。アノテーションの作成が完了したら、タスクの担当者を元に戻します。",
+        help="チェッカーロールで、自身が担当者ではないタスクに全体アノテーションを作成する場合に指定してください。タスクの担当者を一時的に自分自身に変更し、作成完了後に元へ戻します。オーナーロールで指定しても効果はありません。",
     )
 
     parser.add_argument(
         "--include_complete_task",
         action="store_true",
-        help="完了状態のタスクにも全体アノテーションを作成します。ただし、オーナーロールを持つユーザーでしか実行できません。",
+        help="オーナーロールで完了状態のタスクにも全体アノテーションを作成します。未指定の場合は、完了状態のタスクはスキップされます。",
     )
 
     parser.add_argument(
         "--include_break_task",
         action="store_true",
-        help="休憩中状態のタスクにも全体アノテーションを作成します。",
+        help="休憩中状態のタスクにも全体アノテーションを作成します。未指定の場合は、休憩中状態のタスクはスキップされます。",
     )
 
     parser.add_argument(
         "--include_on_hold_task",
         action="store_true",
-        help="保留状態のタスクにも全体アノテーションを作成します。",
+        help="保留中状態のタスクにも全体アノテーションを作成します。チェッカーロールで作成した場合、作成後は未着手状態になります。未指定の場合は、保留中状態のタスクはスキップされます。",
     )
 
     parser.add_argument(
@@ -437,7 +433,7 @@ def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse
         "完了状態のタスクには、デフォルトでは作成できません。"
         "休憩中状態のタスクには、デフォルトでは作成できません。"
     )
-    epilog = "オーナロールまたはチェッカーロールを持つユーザで実行してください。"
+    epilog = "オーナーロールまたはチェッカーロールを持つユーザーで実行してください。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
     parse_args(parser)
