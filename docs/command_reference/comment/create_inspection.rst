@@ -103,15 +103,15 @@ CSVの列は、JSONの各キーに対応しています。
     $ annofabcli comment create_inspection --project_id prj1 --json file://comment.json \
     --include_break_task --include_on_hold_task
 
-受入完了状態を取り消してから検査コメントを作成する
-------------------------------------------------------
+完了状態のタスクに検査コメントを作成する
+--------------------------------------------
 
-完了状態の受入フェーズに検査コメントを作成する場合は、 ``--cancel_acceptance`` を指定してください。
-このオプションを指定すると、受入完了状態を取り消してから検査コメントを作成します。差し戻し前に検査コメントを作成する場合などに使用します。
+完了状態のタスクに検査コメントを作成する場合は、 ``--include_complete_task`` を指定してください。このオプションはオーナーロールを持つユーザだけが指定できます。
+受入フェーズが完了状態のタスクは、受入完了状態を取り消してから検査コメントを作成します。差し戻し前に検査コメントを作成する場合などに使用します。
 
 .. code-block::
 
-    $ annofabcli comment create_inspection --project_id prj1 --json file://comment.json --cancel_acceptance
+    $ annofabcli comment create_inspection --project_id prj1 --json file://comment.json --include_complete_task
 
 並列処理
 ----------------------------------------------
