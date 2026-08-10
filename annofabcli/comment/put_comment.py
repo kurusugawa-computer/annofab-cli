@@ -339,6 +339,13 @@ class PutCommentMain(CommandLineWithConfirm):
             return False
         return True
 
+    def _can_change_operator_to_me(self, task: dict[str, Any], *, change_operator_to_me: bool, logging_prefix: str) -> bool:
+        if task["account_id"] == self.service.api.account_id or change_operator_to_me:
+            return True
+
+        logger.info(f"{logging_prefix} :: task_id='{task['task_id']}' :: 自身が担当者ではないタスクに検査コメントを作成するには、`--change_operator_to_me` を指定してください。")
+        return False
+
     def add_comments_for_task(
         self,
         task_id: str,
@@ -347,6 +354,7 @@ class PutCommentMain(CommandLineWithConfirm):
         *,
         put_mode: CommentPutMode = "put",
         cancel_acceptance: bool = False,
+        change_operator_to_me: bool = True,
     ) -> tuple[int, int]:
         """
         タスクにコメントを付与します。
@@ -357,6 +365,7 @@ class PutCommentMain(CommandLineWithConfirm):
             task_index: タスクの連番
             put_mode: コメント登録時の動作モード
             cancel_acceptance: Trueなら受入完了状態を取り消してからコメントを付与する。
+            change_operator_to_me: 自身が担当者ではないタスクの担当者を一時的に自分自身へ変更するかどうか。
 
         Returns:
             (コメントを付与した入力データの個数, 付与したコメントの個数)のタプル
@@ -381,8 +390,10 @@ class PutCommentMain(CommandLineWithConfirm):
 
         task = self.cancel_acceptance_if_needed(task, cancel_acceptance=cancel_acceptance, logging_prefix=logging_prefix)
 
-        if not self._can_add_comment(
-            task=task,
+        if not self._can_add_comment(task=task) or not self._can_change_operator_to_me(
+            task,
+            change_operator_to_me=change_operator_to_me,
+            logging_prefix=logging_prefix,
         ):
             return (0, 0)
 
@@ -426,9 +437,17 @@ class PutCommentMain(CommandLineWithConfirm):
         *,
         put_mode: CommentPutMode = "put",
         cancel_acceptance: bool = False,
+        change_operator_to_me: bool = True,
     ) -> tuple[int, int]:
         task_index, (task_id, comments_for_task) = tpl
-        return self.add_comments_for_task(task_id=task_id, comments_for_task=comments_for_task, task_index=task_index, put_mode=put_mode, cancel_acceptance=cancel_acceptance)
+        return self.add_comments_for_task(
+            task_id=task_id,
+            comments_for_task=comments_for_task,
+            task_index=task_index,
+            put_mode=put_mode,
+            cancel_acceptance=cancel_acceptance,
+            change_operator_to_me=change_operator_to_me,
+        )
 
     def add_comments_for_task_list(
         self,
@@ -437,6 +456,7 @@ class PutCommentMain(CommandLineWithConfirm):
         *,
         put_mode: CommentPutMode = "put",
         cancel_acceptance: bool = False,
+        change_operator_to_me: bool = True,
     ) -> None:
         tasks_count = len(comments_for_task_list)
         input_data_count = sum(len(e) for e in comments_for_task_list.values())
@@ -446,7 +466,12 @@ class PutCommentMain(CommandLineWithConfirm):
         )
 
         if parallelism is not None:
-            func = functools.partial(self.add_comments_for_task_wrapper, put_mode=put_mode, cancel_acceptance=cancel_acceptance)
+            func = functools.partial(
+                self.add_comments_for_task_wrapper,
+                put_mode=put_mode,
+                cancel_acceptance=cancel_acceptance,
+                change_operator_to_me=change_operator_to_me,
+            )
             with multiprocessing.Pool(parallelism) as pool:
                 result_list = pool.map(func, enumerate(comments_for_task_list.items()))
                 added_input_data_count = sum(e[0] for e in result_list)
@@ -466,6 +491,7 @@ class PutCommentMain(CommandLineWithConfirm):
                         task_index=task_index,
                         put_mode=put_mode,
                         cancel_acceptance=cancel_acceptance,
+                        change_operator_to_me=change_operator_to_me,
                     )
                     added_input_data_count += result_input_data
                     added_comment_count += result_comment

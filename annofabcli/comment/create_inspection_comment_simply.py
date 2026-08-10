@@ -74,6 +74,7 @@ class CreateInspectionCommentSimply(CommandLine):
             comment_info=AddedSimpleComment(comment=args.comment, data=comment_data, phrases=phrase_id_list),
             parallelism=args.parallelism,
             cancel_acceptance=args.cancel_acceptance,
+            change_operator_to_me=args.change_operator_to_me,
         )
 
 
@@ -130,6 +131,12 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         type=int,
         choices=PARALLELISM_CHOICES,
         help="使用するプロセス数（並列度）を指定してください。指定する場合は必ず ``--yes`` を指定してください。指定しない場合は、逐次的に処理します。",
+    )
+
+    parser.add_argument(
+        "--change_operator_to_me",
+        action="store_true",
+        help="自身が担当者ではないタスクに検査コメントを作成する場合に指定してください。タスクの担当者を一時的に自分自身に変更し、検査コメントの作成完了後に元へ戻します。",
     )
 
     parser.add_argument(

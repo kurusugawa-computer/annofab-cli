@@ -125,6 +125,13 @@ class PutCommentSimplyMain(CommandLineWithConfirm):
             return False
         return True
 
+    def _can_change_operator_to_me(self, task: dict[str, Any], *, change_operator_to_me: bool, logging_prefix: str) -> bool:
+        if task["account_id"] == self.service.api.account_id or change_operator_to_me:
+            return True
+
+        logger.info(f"{logging_prefix} :: task_id='{task['task_id']}' :: 自身が担当者ではないタスクに検査コメントを作成するには、`--change_operator_to_me` を指定してください。")
+        return False
+
     def put_comment_for_task(
         self,
         task_id: str,
@@ -132,6 +139,7 @@ class PutCommentSimplyMain(CommandLineWithConfirm):
         task_index: int | None = None,
         *,
         cancel_acceptance: bool = False,
+        change_operator_to_me: bool = True,
     ) -> bool:
         """
         タスクにコメントを付与します。
@@ -141,6 +149,7 @@ class PutCommentSimplyMain(CommandLineWithConfirm):
             comment_info: コメント情報
             task_index: タスクの連番
             cancel_acceptance: Trueなら受入完了状態を取り消してからコメントを付与する。
+            change_operator_to_me: 自身が担当者ではないタスクの担当者を一時的に自分自身へ変更するかどうか。
 
         Returns:
             付与したコメントの数
@@ -165,8 +174,10 @@ class PutCommentSimplyMain(CommandLineWithConfirm):
 
         task = self.cancel_acceptance_if_needed(task, cancel_acceptance=cancel_acceptance, logging_prefix=logging_prefix)
 
-        if not self._can_add_comment(
-            task=task,
+        if not self._can_add_comment(task=task) or not self._can_change_operator_to_me(
+            task,
+            change_operator_to_me=change_operator_to_me,
+            logging_prefix=logging_prefix,
         ):
             return False
 
@@ -191,10 +202,23 @@ class PutCommentSimplyMain(CommandLineWithConfirm):
                 self.service.wrapper.change_task_operator(self.project_id, task_id, task["account_id"])
                 logger.debug(f"task_id'{task_id}' :: 担当者を元のユーザ( account_id='{task['account_id']}'）に戻しました。")
 
-    def add_comments_for_task_wrapper(self, tpl: tuple[int, str], comment_info: AddedSimpleComment, *, cancel_acceptance: bool = False) -> bool:
+    def add_comments_for_task_wrapper(
+        self,
+        tpl: tuple[int, str],
+        comment_info: AddedSimpleComment,
+        *,
+        cancel_acceptance: bool = False,
+        change_operator_to_me: bool = True,
+    ) -> bool:
         task_index, task_id = tpl
         try:
-            return self.put_comment_for_task(task_id=task_id, comment_info=comment_info, task_index=task_index, cancel_acceptance=cancel_acceptance)
+            return self.put_comment_for_task(
+                task_id=task_id,
+                comment_info=comment_info,
+                task_index=task_index,
+                cancel_acceptance=cancel_acceptance,
+                change_operator_to_me=change_operator_to_me,
+            )
         except Exception:  # pylint: disable=broad-except
             logger.warning(f"task_id='{task_id}' :: コメントの付与に失敗しました。", exc_info=True)
             return False
@@ -206,11 +230,17 @@ class PutCommentSimplyMain(CommandLineWithConfirm):
         parallelism: int | None = None,
         *,
         cancel_acceptance: bool = False,
+        change_operator_to_me: bool = True,
     ) -> None:
         logger.info(f"{len(task_ids)} 件のタスクに{self.comment_type_name}を付与します。")
 
         if parallelism is not None:
-            func = partial(self.add_comments_for_task_wrapper, comment_info=comment_info, cancel_acceptance=cancel_acceptance)
+            func = partial(
+                self.add_comments_for_task_wrapper,
+                comment_info=comment_info,
+                cancel_acceptance=cancel_acceptance,
+                change_operator_to_me=change_operator_to_me,
+            )
             with multiprocessing.Pool(parallelism) as pool:
                 result_bool_list = pool.map(func, enumerate(task_ids))
                 success_count = len([e for e in result_bool_list if e])
@@ -225,6 +255,7 @@ class PutCommentSimplyMain(CommandLineWithConfirm):
                         comment_info=comment_info,
                         task_index=task_index,
                         cancel_acceptance=cancel_acceptance,
+                        change_operator_to_me=change_operator_to_me,
                     )
                     if result:
                         success_count += 1
