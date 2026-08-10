@@ -101,7 +101,7 @@ class CreateClassificationAnnotationMain(CommandLineWithConfirm):
 
         should_change_operator = self.my_project_member_role == ProjectMemberRole.ACCEPTER and task["account_id"] != self.service.api.account_id
         if should_change_operator and not self.is_change_operator_to_me:
-            logger.info(f"タスク'{task_id}'をチェッカーロールで更新するには、`--change_operator_to_me` を指定してください。")
+            logger.info(f"タスク'{task_id}'にチェッカーロールで全体アノテーションを作成するには、`--change_operator_to_me` を指定してください。")
             return None, False, None
 
         if should_change_operator:
