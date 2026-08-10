@@ -112,6 +112,9 @@ class PutCommentSimplyMain(CommandLineWithConfirm):
     def _can_add_comment(
         self,
         task: dict[str, Any],
+        *,
+        include_break_task: bool,
+        include_on_hold_task: bool,
     ) -> bool:
         task_id = task["task_id"]
 
@@ -120,8 +123,16 @@ class PutCommentSimplyMain(CommandLineWithConfirm):
                 logger.warning(f"task_id='{task_id}' :: フェーズが検査/受入でないため検査コメントを付与できません。 :: task_phase='{task['phase']}'")
                 return False
 
-        if task["status"] not in [TaskStatus.NOT_STARTED.value, TaskStatus.BREAK.value]:
-            logger.warning(f"task_id='{task_id}' :: タスクの状態が未着手,休憩中 以外の状態なので、コメントを付与できません。 :: task_status='{task['status']}'")
+        if task["status"] == TaskStatus.BREAK.value and not include_break_task:
+            logger.info(f"task_id='{task_id}' :: タスクは休憩中状態のため、処理をスキップします。休憩中状態のタスクを処理する場合は、`--include_break_task` を指定してください。")
+            return False
+
+        if task["status"] == TaskStatus.ON_HOLD.value and not include_on_hold_task:
+            logger.info(f"task_id='{task_id}' :: タスクは保留中状態のため、処理をスキップします。保留中状態のタスクを処理する場合は、`--include_on_hold_task` を指定してください。")
+            return False
+
+        if task["status"] not in [TaskStatus.NOT_STARTED.value, TaskStatus.BREAK.value, TaskStatus.ON_HOLD.value]:
+            logger.warning(f"task_id='{task_id}' :: タスクの状態が未着手、休憩中、保留中以外の状態なので、コメントを付与できません。 :: task_status='{task['status']}'")
             return False
         return True
 
@@ -140,6 +151,8 @@ class PutCommentSimplyMain(CommandLineWithConfirm):
         *,
         cancel_acceptance: bool = False,
         change_operator_to_me: bool = True,
+        include_break_task: bool = True,
+        include_on_hold_task: bool = False,
     ) -> bool:
         """
         タスクにコメントを付与します。
@@ -150,6 +163,8 @@ class PutCommentSimplyMain(CommandLineWithConfirm):
             task_index: タスクの連番
             cancel_acceptance: Trueなら受入完了状態を取り消してからコメントを付与する。
             change_operator_to_me: 自身が担当者ではないタスクの担当者を一時的に自分自身へ変更するかどうか。
+            include_break_task: 休憩中状態のタスクを処理対象に含めるかどうか。
+            include_on_hold_task: 保留中状態のタスクを処理対象に含めるかどうか。
 
         Returns:
             付与したコメントの数
@@ -164,9 +179,7 @@ class PutCommentSimplyMain(CommandLineWithConfirm):
         logger.debug(f"{logging_prefix} : task_id = {task['task_id']}, status = {task['status']}, phase = {task['phase']}, ")
 
         needs_cancel_acceptance = self._needs_cancel_acceptance(task, cancel_acceptance=cancel_acceptance)
-        if not needs_cancel_acceptance and not self._can_add_comment(
-            task=task,
-        ):
+        if not needs_cancel_acceptance and not self._can_add_comment(task=task, include_break_task=include_break_task, include_on_hold_task=include_on_hold_task):
             return False
 
         if not self.confirm_processing(f"task_id='{task_id}' のタスクに{self.comment_type_name}を付与しますか？"):
@@ -174,7 +187,7 @@ class PutCommentSimplyMain(CommandLineWithConfirm):
 
         task = self.cancel_acceptance_if_needed(task, cancel_acceptance=cancel_acceptance, logging_prefix=logging_prefix)
 
-        if not self._can_add_comment(task=task) or not self._can_change_operator_to_me(
+        if not self._can_add_comment(task=task, include_break_task=include_break_task, include_on_hold_task=include_on_hold_task) or not self._can_change_operator_to_me(
             task,
             change_operator_to_me=change_operator_to_me,
             logging_prefix=logging_prefix,
@@ -209,6 +222,8 @@ class PutCommentSimplyMain(CommandLineWithConfirm):
         *,
         cancel_acceptance: bool = False,
         change_operator_to_me: bool = True,
+        include_break_task: bool = True,
+        include_on_hold_task: bool = False,
     ) -> bool:
         task_index, task_id = tpl
         try:
@@ -218,6 +233,8 @@ class PutCommentSimplyMain(CommandLineWithConfirm):
                 task_index=task_index,
                 cancel_acceptance=cancel_acceptance,
                 change_operator_to_me=change_operator_to_me,
+                include_break_task=include_break_task,
+                include_on_hold_task=include_on_hold_task,
             )
         except Exception:  # pylint: disable=broad-except
             logger.warning(f"task_id='{task_id}' :: コメントの付与に失敗しました。", exc_info=True)
@@ -231,6 +248,8 @@ class PutCommentSimplyMain(CommandLineWithConfirm):
         *,
         cancel_acceptance: bool = False,
         change_operator_to_me: bool = True,
+        include_break_task: bool = True,
+        include_on_hold_task: bool = False,
     ) -> None:
         logger.info(f"{len(task_ids)} 件のタスクに{self.comment_type_name}を付与します。")
 
@@ -240,6 +259,8 @@ class PutCommentSimplyMain(CommandLineWithConfirm):
                 comment_info=comment_info,
                 cancel_acceptance=cancel_acceptance,
                 change_operator_to_me=change_operator_to_me,
+                include_break_task=include_break_task,
+                include_on_hold_task=include_on_hold_task,
             )
             with multiprocessing.Pool(parallelism) as pool:
                 result_bool_list = pool.map(func, enumerate(task_ids))
@@ -256,6 +277,8 @@ class PutCommentSimplyMain(CommandLineWithConfirm):
                         task_index=task_index,
                         cancel_acceptance=cancel_acceptance,
                         change_operator_to_me=change_operator_to_me,
+                        include_break_task=include_break_task,
+                        include_on_hold_task=include_on_hold_task,
                     )
                     if result:
                         success_count += 1

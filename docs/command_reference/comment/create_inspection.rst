@@ -91,6 +91,18 @@ CSVの列は、JSONの各キーに対応しています。
 
     $ annofabcli comment create_inspection --project_id prj1 --json file://comment.json --change_operator_to_me
 
+休憩中または保留中のタスクに検査コメントを作成する
+--------------------------------------------------------
+
+休憩中状態のタスクに検査コメントを作成する場合は、 ``--include_break_task`` を指定してください。
+
+保留中状態のタスクに検査コメントを作成する場合は、 ``--include_on_hold_task`` を指定してください。コメント作成のためにタスクを作業中状態へ変更するため、処理後は保留中状態に戻りません。担当者を変更しない場合は休憩中状態になり、 ``--change_operator_to_me`` により担当者を元へ戻す場合は未着手状態になります。
+
+.. code-block::
+
+    $ annofabcli comment create_inspection --project_id prj1 --json file://comment.json \
+    --include_break_task --include_on_hold_task
+
 受入完了状態を取り消してから検査コメントを作成する
 ------------------------------------------------------
 

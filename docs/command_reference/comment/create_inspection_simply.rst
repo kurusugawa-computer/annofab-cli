@@ -46,6 +46,11 @@ Examples
     $ annofabcli comment create_inspection_simply --project_id prj1 --task_id task1 \
      --comment "枠がズレています。" --change_operator_to_me
 
+休憩中または保留中のタスクに検査コメントを作成する
+--------------------------------------------------------
+
+:doc:`create_inspection` の「休憩中または保留中のタスクに検査コメントを作成する」を参照してください。
+
 
 受入完了状態を取り消してから検査コメントを作成する
 ------------------------------------------------------

@@ -1,6 +1,7 @@
 from pathlib import Path
 from unittest.mock import Mock, patch
 
+import pytest
 from annofabapi.models import CommentType
 
 from annofabcli.comment.put_comment import (
@@ -199,6 +200,39 @@ def test_put_comment_for_task_skips_when_not_assigned_to_me_and_change_operator_
 
     assert result is False
     service.wrapper.change_task_operator.assert_not_called()
+    service.wrapper.change_task_status_to_working.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    "task_status",
+    [
+        "break",
+        "on_hold",
+    ],
+)
+def test_add_comments_for_task_skips_break_or_on_hold_task_by_default(task_status: str) -> None:
+    service = Mock()
+    service.api.account_id = "executor_account"
+    service.api.get_project.return_value = ({"input_data_type": "image"}, None)
+    service.api.get_annotation_specs.return_value = ({"labels": []}, None)
+    service.wrapper.get_task_or_none.return_value = {
+        "task_id": "task1",
+        "input_data_id_list": ["input1"],
+        "status": task_status,
+        "phase": "inspection",
+        "account_id": "executor_account",
+    }
+
+    main_obj = PutCommentMain(service, project_id="project1", comment_type=CommentType.INSPECTION, all_yes=True)
+    result = main_obj.add_comments_for_task(
+        task_id="task1",
+        comments_for_task={"input1": [AddedComment(comment="コメント1", data={"x": 10, "y": 20, "_type": "Point"})]},
+        put_mode="create",
+        include_break_task=False,
+        include_on_hold_task=False,
+    )
+
+    assert result == (0, 0)
     service.wrapper.change_task_status_to_working.assert_not_called()
 
 

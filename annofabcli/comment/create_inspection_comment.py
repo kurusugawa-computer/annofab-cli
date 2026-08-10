@@ -75,6 +75,8 @@ class CreateInspectionComment(CommandLine):
             put_mode="create",
             cancel_acceptance=args.cancel_acceptance,
             change_operator_to_me=args.change_operator_to_me,
+            include_break_task=args.include_break_task,
+            include_on_hold_task=args.include_on_hold_task,
         )
 
 
@@ -130,6 +132,18 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         type=int,
         choices=PARALLELISM_CHOICES,
         help="使用するプロセス数（並列度）を指定してください。指定する場合は必ず ``--yes`` を指定してください。指定しない場合は、逐次的に処理します。",
+    )
+
+    parser.add_argument(
+        "--include_break_task",
+        action="store_true",
+        help="休憩中状態のタスクに対しても検査コメントを作成します。未指定の場合は、休憩中状態のタスクはスキップされます。",
+    )
+
+    parser.add_argument(
+        "--include_on_hold_task",
+        action="store_true",
+        help="保留中状態のタスクに対しても検査コメントを作成します。ただし、検査コメントの作成後は保留中状態でなくなります。未指定の場合は、保留中状態のタスクはスキップされます。",
     )
 
     parser.add_argument(
