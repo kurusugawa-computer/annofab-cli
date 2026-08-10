@@ -16,7 +16,6 @@ import annofabapi
 import pydantic
 from annofabapi.models import ProjectMemberRole, TaskStatus
 from annofabapi.util.annotation_specs import AnnotationSpecsAccessor
-from annofabapi.utils import can_put_annotation
 
 import annofabcli.common.cli
 from annofabcli.annotation.dump_annotation import DumpAnnotationMain
@@ -152,6 +151,8 @@ class ChangeAnnotationEditorPropsMain(CommandLineWithConfirm):
     ) -> None:
         self.service = service
         self.project_id = project_id
+        my_member, _ = self.service.api.get_my_member_in_project(project_id)
+        self.project_member_role = ProjectMemberRole(my_member["member_role"])
         self.target_label_ids = target_label_ids
         self.editor_props = editor_props
         self.change_operator_to_me = change_operator_to_me
@@ -227,25 +228,20 @@ class ChangeAnnotationEditorPropsMain(CommandLineWithConfirm):
 
         old_account_id: str | None = task["account_id"]
         changed_operator = False
-        if self.change_operator_to_me:
-            if not can_put_annotation(task, self.service.api.account_id):
-                logger.debug(f"{logger_prefix}task_id='{task_id}' :: 担当者を自分自身に変更します。")
-                task = self.service.wrapper.change_task_operator(
-                    self.project_id,
-                    task_id,
-                    operator_account_id=self.service.api.account_id,
-                    last_updated_datetime=task["updated_datetime"],
-                )
-                changed_operator = True
+        should_change_operator = self.project_member_role == ProjectMemberRole.ACCEPTER and task["account_id"] != self.service.api.account_id
+        if should_change_operator and not self.change_operator_to_me:
+            logger.info(f"{logger_prefix}task_id='{task_id}' :: チェッカーロールでeditor_propsを変更するには、`--change_operator_to_me` を指定してください。")
+            return False, ChangeEditorPropsCount(success=0, failed=0)
 
-        else:  # noqa: PLR5501
-            if not can_put_annotation(task, self.service.api.account_id):
-                logger.debug(
-                    f"{logger_prefix}task_id='{task_id}'は、過去に誰かに割り当てられたタスクで、現在の担当者が自分自身でないため、"
-                    "アノテーションのeditor_propsの変更をスキップします。"
-                    "担当者を自分自身に変更してeditor_propsを変更する場合は `--change_operator_to_me` を指定してください。"
-                )
-                return False, ChangeEditorPropsCount(success=0, failed=0)
+        if should_change_operator:
+            logger.debug(f"{logger_prefix}task_id='{task_id}' :: 担当者を自分自身に変更します。")
+            task = self.service.wrapper.change_task_operator(
+                self.project_id,
+                task_id,
+                operator_account_id=self.service.api.account_id,
+                last_updated_datetime=task["updated_datetime"],
+            )
+            changed_operator = True
 
         try:
             annotation_list = self.get_annotation_list_for_task(task_id)
@@ -342,6 +338,14 @@ class ChangeAnnotationEditorProps(CommandLine):
             sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
         project_id = args.project_id
+        super().validate_project(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.ACCEPTER])
+        if args.include_complete_task and not self.facade.contains_any_project_member_role(project_id, [ProjectMemberRole.OWNER]):
+            print(  # noqa: T201
+                f"{self.COMMON_MESSAGE} argument --include_complete_task : '--include_complete_task' 引数を利用するにはプロジェクトのオーナーロールを持つユーザーで実行する必要があります。",
+                file=sys.stderr,
+            )
+            sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
+
         task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id)
         label_names = set(annofabcli.common.cli.get_list_from_args(args.label_name))
         if len(label_names) == 0:
@@ -374,8 +378,6 @@ class ChangeAnnotationEditorProps(CommandLine):
             backup_dir = None
         else:
             backup_dir = Path(args.backup)
-
-        super().validate_project(project_id, [ProjectMemberRole.OWNER])
 
         main_obj = ChangeAnnotationEditorPropsMain(
             self.service,
@@ -425,25 +427,25 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--change_operator_to_me",
         action="store_true",
-        help="過去に割り当てられていて現在の担当者が自分自身でない場合、タスクの担当者を自分自身に変更してからアノテーションのeditor_propsを変更します。",
+        help="チェッカーロールで、自身が担当者ではないタスクのeditor_propsを変更する場合に指定してください。タスクの担当者を一時的に自分自身に変更し、editor_propsの変更完了後に元へ戻します。オーナーロールで指定しても効果はありません。",
     )
 
     parser.add_argument(
         "--include_complete_task",
         action="store_true",
-        help="完了状態のタスクに含まれるアノテーションのeditor_propsも変更します。ただし、オーナーロールを持つユーザーでしか実行できません。",
+        help="オーナーロールで完了状態のタスクに含まれるアノテーションのeditor_propsも変更します。未指定の場合は、完了状態のタスクはスキップされます。",
     )
 
     parser.add_argument(
         "--include_break_task",
         action="store_true",
-        help="休憩中状態のタスクに含まれるアノテーションのeditor_propsも変更します。",
+        help="休憩中状態のタスクに含まれるアノテーションのeditor_propsも変更します。未指定の場合は、休憩中状態のタスクはスキップされます。",
     )
 
     parser.add_argument(
         "--include_on_hold_task",
         action="store_true",
-        help="保留中状態のタスクに含まれるアノテーションのeditor_propsも変更します。",
+        help="保留中状態のタスクに含まれるアノテーションのeditor_propsも変更します。チェッカーロールで変更した場合、変更後は未着手状態になります。未指定の場合は、保留中状態のタスクはスキップされます。",
     )
 
     parser.add_argument(
@@ -470,7 +472,7 @@ def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse
         "指定したラベル名のアノテーションに対して、editor_props（削除禁止などのプロパティ）を一括で変更します。ただし、作業中状態のタスクに含まれるアノテーションは変更できません。"
         "間違えてアノテーションのeditor_propsを変更したときに復元できるようにするため、 ``--backup`` でバックアップ用のディレクトリを指定することを推奨します。"
     )
-    epilog = "オーナロールを持つユーザで実行してください。"
+    epilog = "オーナーロールまたはチェッカーロールを持つユーザーで実行してください。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
     parse_args(parser)
