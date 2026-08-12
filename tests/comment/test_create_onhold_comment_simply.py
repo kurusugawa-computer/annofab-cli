@@ -22,6 +22,7 @@ def test_create_onhold_simply_parser() -> None:
             "task2",
             "--comment",
             "コメント1",
+            "--change_status_to_on_hold",
             "--yes",
         ]
     )
@@ -30,6 +31,7 @@ def test_create_onhold_simply_parser() -> None:
     assert args.project_id == "project1"
     assert args.task_id == ["task1", "task2"]
     assert args.comment == "コメント1"
+    assert args.change_status_to_on_hold is True
 
 
 def test_create_onhold_simply_puts_onhold_comment(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -44,6 +46,7 @@ def test_create_onhold_simply_puts_onhold_comment(monkeypatch: pytest.MonkeyPatc
         task_id=["task1", "task2"],
         comment="コメント1",
         parallelism=4,
+        change_status_to_on_hold=False,
         yes=True,
     )
 
@@ -58,3 +61,4 @@ def test_create_onhold_simply_puts_onhold_comment(monkeypatch: pytest.MonkeyPatc
     assert kwargs["comment_info"].data is None
     assert kwargs["comment_info"].phrases is None
     assert kwargs["parallelism"] == 4
+    assert kwargs["change_status_to_on_hold"] is False

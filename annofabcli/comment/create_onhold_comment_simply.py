@@ -45,6 +45,7 @@ class CreateOnholdCommentSimply(CommandLine):
             task_ids=task_id_list,
             comment_info=AddedSimpleComment(comment=args.comment, data=None, phrases=None),
             parallelism=args.parallelism,
+            change_status_to_on_hold=args.change_status_to_on_hold,
         )
 
 
@@ -73,6 +74,12 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         type=str,
         required=True,
         help="作成する保留コメントのメッセージを指定します。",
+    )
+
+    parser.add_argument(
+        "--change_status_to_on_hold",
+        action="store_true",
+        help="保留コメントの作成後に、タスクの状態を保留中に変更します。",
     )
 
     parser.add_argument(

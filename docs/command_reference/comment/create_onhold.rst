@@ -47,6 +47,16 @@ Examples
 
     $ annofabcli comment create_onhold --project_id prj1 --json file://comment.json
 
+保留コメントの作成後にタスクを保留中に変更する
+----------------------------------------------------
+
+保留コメントの作成に成功したタスクを保留中に変更する場合は、 ``--change_status_to_on_hold`` を指定してください。未指定の場合は、保留コメントだけを作成します。
+
+.. code-block::
+
+    $ annofabcli comment create_onhold --project_id prj1 --json file://comment.json \
+    --change_status_to_on_hold
+
 
 CSV形式で指定する場合
 --------------------------

@@ -72,6 +72,7 @@ class CreateOnholdComment(CommandLine):
             comments_for_task_list=comments_for_task_list,
             parallelism=args.parallelism,
             put_mode="create",
+            change_status_to_on_hold=args.change_status_to_on_hold,
         )
 
 
@@ -117,6 +118,12 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
             " * ``annotation_id`` （任意）: 紐付けるアノテーションID\n"
             " * ``comment_id`` （任意）: コメントID（省略時はUUIDv4自動生成）\n"
         ),
+    )
+
+    parser.add_argument(
+        "--change_status_to_on_hold",
+        action="store_true",
+        help="保留コメントの作成後に、タスクの状態を保留中に変更します。",
     )
 
     parser.add_argument(
