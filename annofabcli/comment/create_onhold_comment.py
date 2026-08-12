@@ -7,7 +7,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from annofabapi.models import CommentType
+from annofabapi.models import CommentType, ProjectMemberRole
 
 import annofabcli.common.cli
 from annofabcli.comment.put_comment import (
@@ -49,7 +49,10 @@ class CreateOnholdComment(CommandLine):
         if not self.validate(args):
             sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
-        super().validate_project(args.project_id)
+        required_project_member_roles = (
+            [ProjectMemberRole.ACCEPTER, ProjectMemberRole.OWNER] if args.change_operator_to_me else [ProjectMemberRole.ACCEPTER, ProjectMemberRole.OWNER, ProjectMemberRole.WORKER]
+        )
+        super().validate_project(args.project_id, required_project_member_roles)
 
         if args.json is not None:
             comment_list: Any = annofabcli.common.cli.get_json_from_args(args.json)
@@ -72,6 +75,9 @@ class CreateOnholdComment(CommandLine):
             comments_for_task_list=comments_for_task_list,
             parallelism=args.parallelism,
             put_mode="create",
+            change_operator_to_me=args.change_operator_to_me,
+            include_break_task=args.include_break_task,
+            include_on_hold_task=args.include_on_hold_task,
         )
 
 
@@ -120,6 +126,24 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     )
 
     parser.add_argument(
+        "--change_operator_to_me",
+        action="store_true",
+        help="オーナーまたはチェッカーロールで、自身が担当者ではないタスクに保留コメントを作成する場合に指定してください。タスクの担当者を一時的に自分自身に変更し、保留コメントの作成完了後に元へ戻します。",
+    )
+
+    parser.add_argument(
+        "--include_break_task",
+        action="store_true",
+        help="休憩中状態のタスクに対しても保留コメントを作成します。未指定の場合は、休憩中状態のタスクはスキップされます。",
+    )
+
+    parser.add_argument(
+        "--include_on_hold_task",
+        action="store_true",
+        help="保留中状態のタスクに対しても保留コメントを作成します。ただし、保留コメントの作成後は休憩中状態になります。未指定の場合は、保留中状態のタスクはスキップされます。",
+    )
+
+    parser.add_argument(
         "--parallelism",
         type=int,
         choices=PARALLELISM_CHOICES,
@@ -132,8 +156,12 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
 def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "create_onhold"
     subcommand_help = "保留コメントを作成します"
-    description = "保留コメントを作成します。comment_idがすでに存在する場合、デフォルトではスキップします。"
+    description = "保留コメントを作成します。comment_idがすでに存在する場合、デフォルトではスキップします。自身が担当者ではないタスクには、``--change_operator_to_me`` を指定した場合だけ作成できます。"
+    epilog = (
+        "ワーカーロールで実行する場合は、自身が担当するタスクだけに保留コメントを作成できます。"
+        "``--change_operator_to_me`` を指定する場合は、オーナーロールまたはチェッカーロールを持つユーザで実行してください。"
+    )
 
-    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description=description)
+    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description=description, epilog=epilog)
     parse_args(parser)
     return parser

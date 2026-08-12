@@ -140,8 +140,21 @@ class PutCommentSimplyMain(CommandLineWithConfirm):
         if task["account_id"] == self.service.api.account_id or change_operator_to_me:
             return True
 
-        logger.info(f"{logging_prefix} :: task_id='{task['task_id']}' :: 自身が担当者ではないタスクに検査コメントを作成するには、`--change_operator_to_me` を指定してください。")
+        logger.info(f"{logging_prefix} :: task_id='{task['task_id']}' :: 自身が担当者ではないタスクに{self.comment_type_name}を作成するには、`--change_operator_to_me` を指定してください。")
         return False
+
+    def _can_process_task(
+        self,
+        task: dict[str, Any],
+        *,
+        change_operator_to_me: bool,
+        include_break_task: bool,
+        include_on_hold_task: bool,
+        logging_prefix: str,
+    ) -> bool:
+        return self._can_add_comment(task=task, include_break_task=include_break_task, include_on_hold_task=include_on_hold_task) and self._can_change_operator_to_me(
+            task, change_operator_to_me=change_operator_to_me, logging_prefix=logging_prefix
+        )
 
     def put_comment_for_task(
         self,
@@ -187,9 +200,11 @@ class PutCommentSimplyMain(CommandLineWithConfirm):
 
         task = self.cancel_acceptance_if_needed(task, cancel_acceptance=cancel_acceptance, logging_prefix=logging_prefix)
 
-        if not self._can_add_comment(task=task, include_break_task=include_break_task, include_on_hold_task=include_on_hold_task) or not self._can_change_operator_to_me(
+        if not self._can_process_task(
             task,
             change_operator_to_me=change_operator_to_me,
+            include_break_task=include_break_task,
+            include_on_hold_task=include_on_hold_task,
             logging_prefix=logging_prefix,
         ):
             return False
