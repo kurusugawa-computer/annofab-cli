@@ -2,7 +2,7 @@ import argparse
 import logging
 import sys
 
-from annofabapi.models import CommentType
+from annofabapi.models import CommentType, ProjectMemberRole
 
 import annofabcli.common.cli
 from annofabcli.comment.put_comment_simply import AddedSimpleComment, PutCommentSimplyMain
@@ -37,7 +37,10 @@ class CreateOnholdCommentSimply(CommandLine):
         if not self.validate(args):
             sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
-        super().validate_project(args.project_id)
+        required_project_member_roles = (
+            [ProjectMemberRole.ACCEPTER, ProjectMemberRole.OWNER] if args.change_operator_to_me else [ProjectMemberRole.ACCEPTER, ProjectMemberRole.OWNER, ProjectMemberRole.WORKER]
+        )
+        super().validate_project(args.project_id, required_project_member_roles)
 
         task_id_list = get_list_from_args(args.task_id)
         main_obj = PutCommentSimplyMain(self.service, project_id=args.project_id, comment_type=CommentType.ONHOLD, all_yes=self.all_yes)
@@ -45,7 +48,7 @@ class CreateOnholdCommentSimply(CommandLine):
             task_ids=task_id_list,
             comment_info=AddedSimpleComment(comment=args.comment, data=None, phrases=None),
             parallelism=args.parallelism,
-            change_status_to_on_hold=args.change_status_to_on_hold,
+            change_operator_to_me=args.change_operator_to_me,
         )
 
 
@@ -77,9 +80,9 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     )
 
     parser.add_argument(
-        "--change_status_to_on_hold",
+        "--change_operator_to_me",
         action="store_true",
-        help="保留コメントの作成後に、タスクの状態を保留中に変更します。",
+        help="オーナーまたはチェッカーロールで、自身が担当者ではないタスクに保留コメントを作成する場合に指定してください。タスクの担当者を一時的に自分自身に変更し、保留コメントの作成完了後に元へ戻します。",
     )
 
     parser.add_argument(
@@ -95,7 +98,11 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
 def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "create_onhold_simply"
     subcommand_help = "``comment create_onhold`` コマンドよりも、簡単に保留コメントを作成します。"
+    epilog = (
+        "ワーカーロールで実行する場合は、自身が担当するタスクだけに保留コメントを作成できます。"
+        "``--change_operator_to_me`` を指定する場合は、オーナーロールまたはチェッカーロールを持つユーザで実行してください。"
+    )
 
-    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help)
+    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, epilog=epilog)
     parse_args(parser)
     return parser

@@ -236,25 +236,17 @@ def test_add_comments_for_task_skips_break_or_on_hold_task_by_default(task_statu
     service.wrapper.change_task_status_to_working.assert_not_called()
 
 
-def test_add_comments_for_task_changes_status_to_on_hold_after_creating_onhold_comment() -> None:
+def test_add_comments_for_task_skips_onhold_comment_when_not_assigned_to_me_and_change_operator_to_me_is_not_specified() -> None:
     service = Mock()
     service.api.account_id = "account1"
     service.api.get_project.return_value = ({"input_data_type": "image"}, None)
     service.api.get_annotation_specs.return_value = ({"labels": []}, None)
-    service.api.get_comments.return_value = ([], None)
-    service.api.get_editor_annotation.return_value = ({"details": []}, None)
     service.wrapper.get_task_or_none.return_value = {
         "task_id": "task1",
         "input_data_id_list": ["input1"],
         "status": "not_started",
         "phase": "annotation",
-        "account_id": "account1",
-    }
-    service.wrapper.change_task_status_to_working.return_value = {
-        "task_id": "task1",
-        "phase": "annotation",
-        "phase_stage": 1,
-        "account_id": "account1",
+        "account_id": "other_account",
     }
 
     main_obj = PutCommentMain(service, project_id="project1", comment_type=CommentType.ONHOLD, all_yes=True)
@@ -262,41 +254,11 @@ def test_add_comments_for_task_changes_status_to_on_hold_after_creating_onhold_c
         task_id="task1",
         comments_for_task={"input1": [AddedComment(comment="コメント1")]},
         put_mode="create",
-        change_status_to_on_hold=True,
+        change_operator_to_me=False,
     )
 
-    assert result == (1, 1)
-    service.wrapper.change_task_status_to_on_hold.assert_called_once_with("project1", "task1")
-    service.wrapper.change_task_status_to_break.assert_not_called()
-
-
-def test_put_comment_for_task_changes_status_to_on_hold_after_creating_onhold_comment() -> None:
-    service = Mock()
-    service.api.account_id = "account1"
-    service.wrapper.get_task_or_none.return_value = {
-        "task_id": "task1",
-        "input_data_id_list": ["input1"],
-        "status": "not_started",
-        "phase": "annotation",
-        "account_id": "account1",
-    }
-    service.wrapper.change_task_status_to_working.return_value = {
-        "task_id": "task1",
-        "phase": "annotation",
-        "phase_stage": 1,
-        "account_id": "account1",
-    }
-
-    main_obj = PutCommentSimplyMain(service, project_id="project1", comment_type=CommentType.ONHOLD, all_yes=True)
-    result = main_obj.put_comment_for_task(
-        task_id="task1",
-        comment_info=AddedSimpleComment(comment="コメント1", data=None, phrases=None),
-        change_status_to_on_hold=True,
-    )
-
-    assert result is True
-    service.wrapper.change_task_status_to_on_hold.assert_called_once_with("project1", "task1")
-    service.wrapper.change_task_status_to_break.assert_not_called()
+    assert result == (0, 0)
+    service.wrapper.change_task_operator.assert_not_called()
 
 
 def test_put_comment_for_task_cancels_acceptance_before_creating_simple_inspection_comment() -> None:

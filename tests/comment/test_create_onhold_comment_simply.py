@@ -2,7 +2,7 @@ import argparse
 from unittest.mock import Mock
 
 import pytest
-from annofabapi.models import CommentType
+from annofabapi.models import CommentType, ProjectMemberRole
 
 from annofabcli.__main__ import create_parser
 from annofabcli.comment.create_onhold_comment_simply import CreateOnholdCommentSimply
@@ -22,7 +22,7 @@ def test_create_onhold_simply_parser() -> None:
             "task2",
             "--comment",
             "コメント1",
-            "--change_status_to_on_hold",
+            "--change_operator_to_me",
             "--yes",
         ]
     )
@@ -31,7 +31,7 @@ def test_create_onhold_simply_parser() -> None:
     assert args.project_id == "project1"
     assert args.task_id == ["task1", "task2"]
     assert args.comment == "コメント1"
-    assert args.change_status_to_on_hold is True
+    assert args.change_operator_to_me is True
 
 
 def test_create_onhold_simply_puts_onhold_comment(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -46,13 +46,17 @@ def test_create_onhold_simply_puts_onhold_comment(monkeypatch: pytest.MonkeyPatc
         task_id=["task1", "task2"],
         comment="コメント1",
         parallelism=4,
-        change_status_to_on_hold=False,
+        change_operator_to_me=False,
         yes=True,
     )
 
     CreateOnholdCommentSimply(service, facade, args).main()
 
-    facade.validate_project.assert_called_once_with(project_id="project1", project_member_roles=None, organization_member_roles=None)
+    facade.validate_project.assert_called_once_with(
+        project_id="project1",
+        project_member_roles=[ProjectMemberRole.ACCEPTER, ProjectMemberRole.OWNER, ProjectMemberRole.WORKER],
+        organization_member_roles=None,
+    )
     put_comment_main_class.assert_called_once_with(service, project_id="project1", comment_type=CommentType.ONHOLD, all_yes=True)
     put_comment_main.put_comment_for_task_list.assert_called_once()
     _, kwargs = put_comment_main.put_comment_for_task_list.call_args
@@ -61,4 +65,4 @@ def test_create_onhold_simply_puts_onhold_comment(monkeypatch: pytest.MonkeyPatc
     assert kwargs["comment_info"].data is None
     assert kwargs["comment_info"].phrases is None
     assert kwargs["parallelism"] == 4
-    assert kwargs["change_status_to_on_hold"] is False
+    assert kwargs["change_operator_to_me"] is False
