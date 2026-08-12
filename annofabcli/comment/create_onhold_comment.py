@@ -76,6 +76,8 @@ class CreateOnholdComment(CommandLine):
             parallelism=args.parallelism,
             put_mode="create",
             change_operator_to_me=args.change_operator_to_me,
+            include_break_task=args.include_break_task,
+            include_on_hold_task=args.include_on_hold_task,
         )
 
 
@@ -127,6 +129,18 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--change_operator_to_me",
         action="store_true",
         help="オーナーまたはチェッカーロールで、自身が担当者ではないタスクに保留コメントを作成する場合に指定してください。タスクの担当者を一時的に自分自身に変更し、保留コメントの作成完了後に元へ戻します。",
+    )
+
+    parser.add_argument(
+        "--include_break_task",
+        action="store_true",
+        help="休憩中状態のタスクに対しても保留コメントを作成します。未指定の場合は、休憩中状態のタスクはスキップされます。",
+    )
+
+    parser.add_argument(
+        "--include_on_hold_task",
+        action="store_true",
+        help="保留中状態のタスクに対しても保留コメントを作成します。ただし、保留コメントの作成後は休憩中状態になります。未指定の場合は、保留中状態のタスクはスキップされます。",
     )
 
     parser.add_argument(

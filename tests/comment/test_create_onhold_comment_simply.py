@@ -23,6 +23,8 @@ def test_create_onhold_simply_parser() -> None:
             "--comment",
             "コメント1",
             "--change_operator_to_me",
+            "--include_break_task",
+            "--include_on_hold_task",
             "--yes",
         ]
     )
@@ -32,6 +34,8 @@ def test_create_onhold_simply_parser() -> None:
     assert args.task_id == ["task1", "task2"]
     assert args.comment == "コメント1"
     assert args.change_operator_to_me is True
+    assert args.include_break_task is True
+    assert args.include_on_hold_task is True
 
 
 def test_create_onhold_simply_puts_onhold_comment(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -47,6 +51,8 @@ def test_create_onhold_simply_puts_onhold_comment(monkeypatch: pytest.MonkeyPatc
         comment="コメント1",
         parallelism=4,
         change_operator_to_me=False,
+        include_break_task=False,
+        include_on_hold_task=False,
         yes=True,
     )
 
@@ -66,3 +72,5 @@ def test_create_onhold_simply_puts_onhold_comment(monkeypatch: pytest.MonkeyPatc
     assert kwargs["comment_info"].phrases is None
     assert kwargs["parallelism"] == 4
     assert kwargs["change_operator_to_me"] is False
+    assert kwargs["include_break_task"] is False
+    assert kwargs["include_on_hold_task"] is False
