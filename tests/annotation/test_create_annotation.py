@@ -1,8 +1,11 @@
 import json
 from pathlib import Path
 from typing import Any
+from unittest.mock import Mock
 
-from annofabcli.annotation.create_annotation import CreateAnnotationItem, create_request_body
+from annofabapi.models import ProjectMemberRole, TaskStatus
+
+from annofabcli.annotation.create_annotation import CreateAnnotationCount, CreateAnnotationItem, CreateAnnotationMain, create_request_body
 from annofabcli.annotation.create_annotation_converter import CreateAnnotationConverter
 
 annotation_specs = json.loads(Path("tests/data/annotation/import_annotation/annotation_specs.json").read_text(encoding="utf-8"))
@@ -64,3 +67,58 @@ def test_create_request_body__既存アノテーションを変更せず新規�
     assert actual.request_body["details"][1]["_type"] == "Create"
     assert actual.request_body["details"][1]["annotation_id"] == "new"
     assert actual.request_body["details"][1]["editor_props"] == {"can_delete": True}
+
+
+def test_create_for_task__別担当のチェッカーは担当者変更オプションなしではスキップする():
+    service = Mock()
+    service.api.account_id = "my_account_id"
+    service.api.get_my_member_in_project.return_value = ({"member_role": ProjectMemberRole.ACCEPTER.value}, None)
+    service.wrapper.get_task_or_none.return_value = {
+        "task_id": "task_id",
+        "status": TaskStatus.NOT_STARTED.value,
+        "account_id": "other_account_id",
+        "updated_datetime": "2026-08-16T00:00:00+09:00",
+    }
+    obj = CreateAnnotationMain(
+        service,
+        project_id="project_id",
+        include_complete_task=False,
+        include_break_task=False,
+        include_on_hold_task=False,
+        change_operator_to_me=False,
+        all_yes=True,
+        converter=Mock(),
+        backup_dir=None,
+    )
+
+    actual = obj.create_for_task("task_id", {"input_data_id": [Mock()]})
+
+    assert actual == CreateAnnotationCount(success=0, failed=1)
+    service.wrapper.change_task_operator.assert_not_called()
+
+
+def test_create_for_task__休憩中タスクは既定でスキップする():
+    service = Mock()
+    service.api.account_id = "my_account_id"
+    service.api.get_my_member_in_project.return_value = ({"member_role": ProjectMemberRole.OWNER.value}, None)
+    service.wrapper.get_task_or_none.return_value = {
+        "task_id": "task_id",
+        "status": TaskStatus.BREAK.value,
+        "account_id": "my_account_id",
+        "updated_datetime": "2026-08-16T00:00:00+09:00",
+    }
+    obj = CreateAnnotationMain(
+        service,
+        project_id="project_id",
+        include_complete_task=False,
+        include_break_task=False,
+        include_on_hold_task=False,
+        change_operator_to_me=False,
+        all_yes=True,
+        converter=Mock(),
+        backup_dir=None,
+    )
+
+    actual = obj.create_for_task("task_id", {"input_data_id": [Mock()]})
+
+    assert actual == CreateAnnotationCount(success=0, failed=1)

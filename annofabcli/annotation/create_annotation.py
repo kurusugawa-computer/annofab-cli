@@ -159,7 +159,9 @@ class CreateAnnotationMain(CommandLineWithConfirm):
         *,
         project_id: str,
         include_complete_task: bool,
+        include_break_task: bool,
         include_on_hold_task: bool,
+        change_operator_to_me: bool,
         all_yes: bool,
         converter: CreateAnnotationConverter,
         backup_dir: Path | None,
@@ -168,10 +170,14 @@ class CreateAnnotationMain(CommandLineWithConfirm):
         self.service = service
         self.project_id = project_id
         self.include_complete_task = include_complete_task
+        self.include_break_task = include_break_task
         self.include_on_hold_task = include_on_hold_task
+        self.change_operator_to_me = change_operator_to_me
         self.converter = converter
         self.backup_dir = backup_dir
         self.dump_annotation_obj = DumpAnnotationMain(service, project_id)
+        my_member, _ = self.service.api.get_my_member_in_project(project_id)
+        self.project_member_role = ProjectMemberRole(my_member["member_role"])
 
     def create_for_input_data(self, task_id: str, input_data_id: str, items: list[CreateAnnotationItem]) -> CreateAnnotationCount:
         """1個の入力データにアノテーションを作成する。"""
@@ -188,7 +194,7 @@ class CreateAnnotationMain(CommandLineWithConfirm):
         self.service.api.put_annotation(self.project_id, task_id, input_data_id, request_body=request.request_body, query_params={"v": "2"})
         return request.count
 
-    def create_for_task(self, task_id: str, items_by_input_data_id: dict[str, list[CreateAnnotationItem]]) -> CreateAnnotationCount:
+    def create_for_task(self, task_id: str, items_by_input_data_id: dict[str, list[CreateAnnotationItem]]) -> CreateAnnotationCount:  # noqa: PLR0911
         """1個のタスクに含まれるアノテーションを作成する。"""
         total_count = sum(len(items) for items in items_by_input_data_id.values())
         task = self.service.wrapper.get_task_or_none(self.project_id, task_id)
@@ -198,23 +204,51 @@ class CreateAnnotationMain(CommandLineWithConfirm):
         if task["status"] == TaskStatus.COMPLETE.value and not self.include_complete_task:
             logger.info(f"task_id='{task_id}' :: タスクが完了状態のため、アノテーション{total_count}件の作成をスキップします。")
             return CreateAnnotationCount(success=0, failed=total_count)
+        if task["status"] == TaskStatus.BREAK.value and not self.include_break_task:
+            logger.info(f"task_id='{task_id}' :: タスクが休憩中状態のため、アノテーション{total_count}件の作成をスキップします。")
+            return CreateAnnotationCount(success=0, failed=total_count)
         if task["status"] == TaskStatus.ON_HOLD.value and not self.include_on_hold_task:
             logger.info(f"task_id='{task_id}' :: タスクが保留中状態のため、アノテーション{total_count}件の作成をスキップします。")
+            return CreateAnnotationCount(success=0, failed=total_count)
+        should_change_operator = self.project_member_role == ProjectMemberRole.ACCEPTER and task["account_id"] != self.service.api.account_id
+        if should_change_operator and not self.change_operator_to_me:
+            logger.info(f"task_id='{task_id}' :: チェッカーロールでアノテーションを作成するには、`--change_operator_to_me` を指定してください。")
             return CreateAnnotationCount(success=0, failed=total_count)
         if not self.confirm_processing(f"task_id='{task_id}'に含まれるアノテーション{total_count}件を作成しますか？"):
             return CreateAnnotationCount(success=0, failed=total_count)
 
-        success_count = 0
-        failed_count = 0
-        for input_data_id, input_items in items_by_input_data_id.items():
-            try:
-                count = self.create_for_input_data(task_id, input_data_id, input_items)
-                success_count += count.success
-                failed_count += count.failed
-            except Exception:
-                logger.warning(f"task_id='{task_id}', input_data_id='{input_data_id}' :: アノテーションの作成に失敗しました。", exc_info=True)
-                failed_count += len(input_items)
-        return CreateAnnotationCount(success=success_count, failed=failed_count)
+        old_account_id: str | None = None
+        if should_change_operator:
+            old_account_id = task["account_id"]
+            logger.debug(f"task_id='{task_id}' :: 担当者を自分自身に変更します。")
+            task = self.service.wrapper.change_task_operator(
+                self.project_id,
+                task_id,
+                operator_account_id=self.service.api.account_id,
+                last_updated_datetime=task["updated_datetime"],
+            )
+
+        try:
+            success_count = 0
+            failed_count = 0
+            for input_data_id, input_items in items_by_input_data_id.items():
+                try:
+                    count = self.create_for_input_data(task_id, input_data_id, input_items)
+                    success_count += count.success
+                    failed_count += count.failed
+                except Exception:
+                    logger.warning(f"task_id='{task_id}', input_data_id='{input_data_id}' :: アノテーションの作成に失敗しました。", exc_info=True)
+                    failed_count += len(input_items)
+            return CreateAnnotationCount(success=success_count, failed=failed_count)
+        finally:
+            if should_change_operator:
+                logger.debug(f"task_id='{task_id}' :: 担当者を元に戻します。")
+                self.service.wrapper.change_task_operator(
+                    self.project_id,
+                    task_id,
+                    operator_account_id=old_account_id,
+                    last_updated_datetime=task["updated_datetime"],
+                )
 
     def create(self, items: list[CreateAnnotationItem]) -> None:
         """アノテーションを作成する。"""
@@ -278,7 +312,9 @@ class CreateAnnotation(CommandLine):
             self.service,
             project_id=args.project_id,
             include_complete_task=args.include_complete_task,
+            include_break_task=args.include_break_task,
             include_on_hold_task=args.include_on_hold_task,
+            change_operator_to_me=args.change_operator_to_me,
             all_yes=args.yes,
             converter=converter,
             backup_dir=Path(args.backup) if args.backup is not None else None,
@@ -299,7 +335,13 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     input_group.add_argument("--csv", type=str, help="各アノテーションの作成内容を記載したCSVファイルを指定します。`task_id`, `input_data_id`, `label`, `data` カラムが必要です。")
     parser.add_argument("--editor_props", type=str, help="作成する全アノテーションに付与するエディタ用プロパティをJSON形式で指定します。``file://`` を先頭に付けるとJSON形式のファイルを指定できます。")
     parser.add_argument("--include_complete_task", action="store_true", help="完了状態のタスクにもアノテーションを作成します。オーナーロールが必要です。")
+    parser.add_argument("--include_break_task", action="store_true", help="休憩中状態のタスクにもアノテーションを作成します。")
     parser.add_argument("--include_on_hold_task", action="store_true", help="保留中状態のタスクにもアノテーションを作成します。")
+    parser.add_argument(
+        "--change_operator_to_me",
+        action="store_true",
+        help="チェッカーロールで自身が担当者ではないタスクにアノテーションを作成する場合に指定します。担当者を一時的に自分自身に変更し、作成後に元へ戻します。",
+    )
     parser.add_argument("--backup", type=Path, help="アノテーションのバックアップを保存するディレクトリのパス。アノテーションの復元は ``annotation restore`` コマンドで実現できます。")
     parser.set_defaults(subcommand_func=main)
 
