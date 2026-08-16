@@ -61,7 +61,7 @@ class ImportedSimpleAnnotationDetail(DataClassJsonMixin):
     data: dict[str, Any]
     """"""
 
-    attributes: dict[str, str | bool | int | None] | None = None
+    attributes: dict[str, str | bool | int] | None = None
     """属性情報。キーは属性の名前、値は属性の値。 """
 
     annotation_id: str | None = None
@@ -332,7 +332,7 @@ class AnnotationConverter:
 
     def convert_annotation_detail(
         self,
-        parser: SimpleAnnotationParser | None,
+        parser: SimpleAnnotationParser,
         detail: ImportedSimpleAnnotationDetail,
         *,
         log_message_suffix: str = "",
@@ -377,15 +377,11 @@ class AnnotationConverter:
 
         if is_3dpc_segment_label(label_info):
             # TODO: 3dpc editorに依存したコード。annofab側でSimple Annotationのフォーマットが改善されたら、このコードを削除する
-            if parser is None:
-                raise ValueError("外部ファイルが必要なアノテーションはこのコマンドではサポートしていません。")
             with parser.open_outer_file(get_3dpc_segment_data_uri(detail.data)) as f:
                 s3_path = self.service.wrapper.upload_data_to_s3(self.project_id, f, content_type="application/json")
                 result["body"] = {"_type": "Outer", "path": s3_path}
 
         elif is_image_segmentation_label(label_info):
-            if parser is None:
-                raise ValueError("外部ファイルが必要なアノテーションはこのコマンドではサポートしていません。")
             with parser.open_outer_file(detail.data["data_uri"]) as f:
                 s3_path = self.service.wrapper.upload_data_to_s3(self.project_id, f, content_type="image/png")
                 result["body"] = {"_type": "Outer", "path": s3_path}

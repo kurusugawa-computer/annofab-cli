@@ -1,11 +1,9 @@
 import json
 from pathlib import Path
-from typing import Any, cast
-
-import annofabapi
+from typing import Any
 
 from annofabcli.annotation.create_annotation import CreateAnnotationItem, create_request_body
-from annofabcli.annotation.import_annotation import AnnotationConverter
+from annofabcli.annotation.create_annotation_converter import CreateAnnotationConverter
 
 annotation_specs = json.loads(Path("tests/data/annotation/import_annotation/annotation_specs.json").read_text(encoding="utf-8"))
 
@@ -32,7 +30,7 @@ def test_create_request_body__既存アノテーションを変更せず新規�
             }
         ],
     }
-    converter = AnnotationConverter(project, annotation_specs, service=cast(annofabapi.Resource, None), default_editor_props={"can_delete": False})
+    converter = CreateAnnotationConverter(project, annotation_specs, default_editor_props={"can_delete": False})
     items = [
         CreateAnnotationItem(
             task_id="task_id",

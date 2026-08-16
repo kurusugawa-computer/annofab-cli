@@ -12,16 +12,15 @@ from typing import Any
 
 import annofabapi
 import pandas
-import pydantic
 from annofabapi.models import ProjectMemberRole
 from annofabapi.pydantic_models.task_status import TaskStatus
 from pydantic import BaseModel
 
 import annofabcli.common.cli
 from annofabcli.annotation.annotation_query import AttributeValue
+from annofabcli.annotation.create_annotation_converter import AnnotationDetailToCreate, CreateAnnotationConverter
 from annofabcli.annotation.dump_annotation import DumpAnnotationMain
 from annofabcli.annotation.editor_props import validate_editor_props_for_cli
-from annofabcli.annotation.import_annotation import AnnotationConverter, ImportedSimpleAnnotationDetail
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
     ArgumentParser,
@@ -94,7 +93,7 @@ def create_request_body(
     editor_annotation: dict[str, Any],
     items: list[CreateAnnotationItem],
     *,
-    converter: AnnotationConverter,
+    converter: CreateAnnotationConverter,
 ) -> CreateAnnotationRequest:
     """既存アノテーションを変更せず、新規アノテーションを追加するリクエストを作成する。"""
     request_details: list[dict[str, Any]] = []
@@ -109,17 +108,14 @@ def create_request_body(
     failed_count = 0
     for item in items:
         try:
-            editor_props = validate_editor_props_for_cli(item.editor_props)
-            request_detail = converter.convert_annotation_detail(
-                None,
-                ImportedSimpleAnnotationDetail(
+            request_detail = converter.convert(
+                AnnotationDetailToCreate(
                     label=item.label,
                     data=item.data,
                     attributes=item.attributes,
                     annotation_id=item.annotation_id,
-                    editor_props=editor_props,
-                ),
-                log_message_suffix=f"task_id='{item.task_id}', input_data_id='{item.input_data_id}', annotation_id='{item.annotation_id}'",
+                    editor_props=item.editor_props or {},
+                )
             )
         except Exception as e:
             logger.warning(
@@ -165,7 +161,7 @@ class CreateAnnotationMain(CommandLineWithConfirm):
         include_complete_task: bool,
         include_on_hold_task: bool,
         all_yes: bool,
-        converter: AnnotationConverter,
+        converter: CreateAnnotationConverter,
         backup_dir: Path | None,
     ) -> None:
         super().__init__(all_yes)
@@ -270,14 +266,14 @@ class CreateAnnotation(CommandLine):
 
         try:
             default_editor_props = validate_editor_props_for_cli(get_json_from_args(args.editor_props))
-        except (json.JSONDecodeError, pydantic.ValidationError) as e:
+        except (json.JSONDecodeError, ValueError) as e:
             print(f"{self.COMMON_MESSAGE} argument --editor_props の値が不正です。{e}", file=sys.stderr)  # noqa: T201
             sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
         super().validate_project(args.project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.ACCEPTER])
         annotation_specs, _ = self.service.api.get_annotation_specs(args.project_id, query_params={"v": "3"})
         project, _ = self.service.api.get_project(args.project_id)
-        converter = AnnotationConverter(project, annotation_specs, service=self.service, is_strict=True, default_editor_props=default_editor_props)
+        converter = CreateAnnotationConverter(project, annotation_specs, default_editor_props=default_editor_props)
         CreateAnnotationMain(
             self.service,
             project_id=args.project_id,
