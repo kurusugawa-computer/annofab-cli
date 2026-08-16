@@ -8,7 +8,7 @@ Description
 
 ``annotation import`` のJSONに指定するラベル名、属性名、選択肢名を確認するためのコマンドです。
 日本語名は、プロンプトや変換処理を書く際の参考情報として出力します。
-色情報、ID、キーバインドなど、 ``annotation import`` で直接参照しない情報は出力しません。
+色情報、ID、キーバインドなど、 ``annotation import`` で直接参照せず、インポートデータを作成する際の判断にも不要な情報は出力しません。
 
 
 Examples
@@ -63,12 +63,14 @@ JSON出力
                     "attribute_name_en": "occluded",
                     "attribute_name_ja": "遮蔽",
                     "attribute_type": "flag",
+                    "read_only": false,
                     "choices": []
                 },
                 {
                     "attribute_name_en": "direction",
                     "attribute_name_ja": "向き",
                     "attribute_type": "select",
+                    "read_only": false,
                     "choices": [
                         {
                             "choice_name_en": "front",
@@ -93,6 +95,7 @@ JSON出力
   * ``attribute_name_en`` : 属性名（英語）。 ``annotation import`` の ``attributes`` のキーに指定する値です。
   * ``attribute_name_ja`` : 属性名（日本語）。プロンプトや変換処理を書く際の参考情報です。
   * ``attribute_type`` : 属性の種類。WebAPIの ``AdditionalDataDefinitionType`` に対応しています。
+  * ``read_only`` : 読み込み専用の属性か否か。
   * ``choices`` : 選択肢情報の配列です。属性の種類がラジオボタンまたはドロップダウン以外の場合は空配列です。
 
     * ``choice_name_en`` : 選択肢名（英語）。属性の種類がラジオボタンまたはドロップダウンの場合に、 ``annotation import`` の ``attributes`` の値として指定する値です。
