@@ -3,9 +3,10 @@ from pathlib import Path
 from typing import Any
 from unittest.mock import Mock
 
+import pytest
 from annofabapi.models import ProjectMemberRole, TaskStatus
 
-from annofabcli.annotation.create_annotation import CreateAnnotationCount, CreateAnnotationItem, CreateAnnotationMain, create_request_body
+from annofabcli.annotation.create_annotation import CreateAnnotationCount, CreateAnnotationItem, CreateAnnotationMain, create_request_body, get_annotation_items_from_csv
 from annofabcli.annotation.create_annotation_converter import CreateAnnotationConverter
 
 annotation_specs = json.loads(Path("tests/data/annotation/import_annotation/annotation_specs.json").read_text(encoding="utf-8"))
@@ -122,3 +123,19 @@ def test_create_for_task__休憩中タスクは既定でスキップする():
     actual = obj.create_for_task("task_id", {"input_data_id": [Mock()]})
 
     assert actual == CreateAnnotationCount(success=0, failed=1)
+
+
+def test_get_annotation_items_from_csv__必須カラムが不足している場合は例外を送出する(tmp_path):
+    csv_path = tmp_path / "annotations.csv"
+    csv_path.write_text("task_id,input_data_id,label\nt1,i1,car\n", encoding="utf-8")
+
+    with pytest.raises(ValueError):
+        get_annotation_items_from_csv(str(csv_path))
+
+
+def test_get_annotation_items_from_csv__JSON形式が不正な場合は例外を送出する(tmp_path):
+    csv_path = tmp_path / "annotations.csv"
+    csv_path.write_text("task_id,input_data_id,label,data\nt1,i1,car,invalid-json\n", encoding="utf-8")
+
+    with pytest.raises(ValueError):
+        get_annotation_items_from_csv(str(csv_path))

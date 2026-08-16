@@ -33,6 +33,9 @@ from annofabcli.common.facade import AnnofabApiFacade
 
 logger = logging.getLogger(__name__)
 
+REQUIRED_CSV_COLUMNS = {"task_id", "input_data_id", "label", "data"}
+"""`--csv` に必要なカラム名。"""
+
 
 class CreateAnnotationItem(BaseModel):
     """新規作成するアノテーション。"""
@@ -86,6 +89,32 @@ def group_annotation_items(items: list[CreateAnnotationItem]) -> dict[str, dict[
     result: dict[str, dict[str, list[CreateAnnotationItem]]] = defaultdict(lambda: defaultdict(list))
     for item in items:
         result[item.task_id][item.input_data_id].append(item)
+    return result
+
+
+def get_annotation_items_from_csv(csv_path: str) -> list[CreateAnnotationItem]:
+    """CSVファイルから作成対象のアノテーションを読み込む。"""
+    dataframe = pandas.read_csv(csv_path, dtype="string")
+    missing_columns = REQUIRED_CSV_COLUMNS - set(dataframe.columns)
+    if missing_columns:
+        raise ValueError(f"必須カラムが不足しています。: {', '.join(sorted(missing_columns))}")
+
+    result: list[CreateAnnotationItem] = []
+    for row_number, item in enumerate(dataframe.to_dict(orient="records"), start=2):
+        try:
+            result.append(
+                CreateAnnotationItem(
+                    task_id=item["task_id"],
+                    input_data_id=item["input_data_id"],
+                    label=item["label"],
+                    data=json.loads(item["data"]),
+                    annotation_id=item.get("annotation_id"),
+                    attributes=json.loads(item["attributes"]) if item.get("attributes") is not None else None,
+                    editor_props=json.loads(item["editor_props"]) if item.get("editor_props") is not None else None,
+                )
+            )
+        except (TypeError, ValueError) as e:
+            raise ValueError(f"{row_number}行目の値が不正です。: {e}") from e
     return result
 
 
@@ -255,7 +284,8 @@ class CreateAnnotationMain(CommandLineWithConfirm):
         grouped_items = group_annotation_items(items)
         success_count = 0
         failed_count = 0
-        for task_id, items_by_input_data_id in grouped_items.items():
+        for task_index, (task_id, items_by_input_data_id) in enumerate(grouped_items.items()):
+            logger.info(f"{task_index + 1} / {len(grouped_items)} 件目 :: task_id='{task_id}' :: アノテーションを作成します。")
             count = self.create_for_task(task_id, items_by_input_data_id)
             success_count += count.success
             failed_count += count.failed
@@ -276,19 +306,11 @@ class CreateAnnotation(CommandLine):
                 sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
             items = [CreateAnnotationItem.model_validate(item) for item in input_items]
         else:
-            dataframe = pandas.read_csv(args.csv, dtype="string")
-            items = [
-                CreateAnnotationItem(
-                    task_id=item["task_id"],
-                    input_data_id=item["input_data_id"],
-                    label=item["label"],
-                    data=json.loads(item["data"]),
-                    annotation_id=item.get("annotation_id"),
-                    attributes=json.loads(item["attributes"]) if item.get("attributes") is not None else None,
-                    editor_props=json.loads(item["editor_props"]) if item.get("editor_props") is not None else None,
-                )
-                for item in dataframe.to_dict(orient="records")
-            ]
+            try:
+                items = get_annotation_items_from_csv(args.csv)
+            except (OSError, pandas.errors.ParserError, ValueError) as e:
+                print(f"{self.COMMON_MESSAGE} argument --csv: {e}", file=sys.stderr)  # noqa: T201
+                sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
         if args.backup is None:
             print("間違えてアノテーションを作成したときに復元できるようにするため、'--backup'でバックアップ用のディレクトリを指定することを推奨します。", file=sys.stderr)  # noqa: T201
