@@ -21,6 +21,7 @@ Available Commands
    change_editor_props
    change_label
    copy
+   create
    create_classification
    delete
    delete_invalid_attribute_value
