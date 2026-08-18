@@ -248,7 +248,7 @@ class CreateAnnotationMain(CommandLineWithConfirm):
                 "保留中状態のタスクにもアノテーションを作成するには、`--include_on_hold_task` を指定してください。"
             )
             return CreateAnnotationCount(success=0, failed=total_count)
-        should_change_operator = self.project_member_role == ProjectMemberRole.ACCEPTER and task["account_id"] != self.service.api.account_id
+        should_change_operator = self.project_member_role == ProjectMemberRole.ACCEPTER and task["account_id"] is not None and task["account_id"] != self.service.api.account_id
         if should_change_operator and not self.change_operator_to_me:
             logger.info(f"task_id='{task_id}' :: チェッカーロールでアノテーションを作成するには、`--change_operator_to_me` を指定してください。")
             return CreateAnnotationCount(success=0, failed=total_count)

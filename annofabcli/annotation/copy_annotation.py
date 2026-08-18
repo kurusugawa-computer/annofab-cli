@@ -297,7 +297,7 @@ class CopyAnnotationMain(CommandLineWithConfirm):
             )
             return False
 
-        should_change_operator = self.project_member_role == ProjectMemberRole.ACCEPTER and dest_task["account_id"] != self.service.api.account_id
+        should_change_operator = self.project_member_role == ProjectMemberRole.ACCEPTER and dest_task["account_id"] is not None and dest_task["account_id"] != self.service.api.account_id
         if should_change_operator and not self.change_operator_to_me:
             logger.info(f"コピー先タスク'{copy_target.dest_task_id}'にチェッカーロールでアノテーションをコピーするには、`--change_operator_to_me` を指定してください。")
             return False

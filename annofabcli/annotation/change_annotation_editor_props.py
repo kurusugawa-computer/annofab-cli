@@ -228,7 +228,7 @@ class ChangeAnnotationEditorPropsMain(CommandLineWithConfirm):
 
         old_account_id: str | None = task["account_id"]
         changed_operator = False
-        should_change_operator = self.project_member_role == ProjectMemberRole.ACCEPTER and task["account_id"] != self.service.api.account_id
+        should_change_operator = self.project_member_role == ProjectMemberRole.ACCEPTER and task["account_id"] is not None and task["account_id"] != self.service.api.account_id
         if should_change_operator and not self.change_operator_to_me:
             logger.info(f"{logger_prefix}task_id='{task_id}' :: チェッカーロールでeditor_propsを変更するには、`--change_operator_to_me` を指定してください。")
             return False, ChangeEditorPropsCount(success=0, failed=0)

@@ -368,7 +368,7 @@ class PutCommentMain(CommandLineWithConfirm):
         return True
 
     def _can_change_operator_to_me(self, task: dict[str, Any], *, change_operator_to_me: bool, logging_prefix: str) -> bool:
-        if task["account_id"] == self.service.api.account_id or change_operator_to_me:
+        if task["account_id"] is None or task["account_id"] == self.service.api.account_id or change_operator_to_me:
             return True
 
         logger.info(f"{logging_prefix} :: task_id='{task['task_id']}' :: 自身が担当者ではないタスクに{self.comment_type_name}を作成するには、`--change_operator_to_me` を指定してください。")
