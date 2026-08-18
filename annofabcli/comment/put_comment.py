@@ -332,9 +332,16 @@ class PutCommentMain(CommandLineWithConfirm):
     ) -> bool:
         task_id = task["task_id"]
 
-        if self.comment_type == CommentType.INSPECTION:  # noqa: SIM102
+        if self.comment_type == CommentType.INSPECTION:
             if task["phase"] == TaskPhase.ANNOTATION.value:
                 logger.warning(f"task_id='{task_id}' :: フェーズが検査/受入でないため検査コメントを付与できません。 :: task_phase='{task['phase']}'")
+                return False
+
+            if task["phase"] == TaskPhase.ACCEPTANCE.value and task["status"] == TaskStatus.COMPLETE.value:
+                logger.warning(
+                    f"task_id='{task_id}' :: 受入フェーズのタスクが完了状態のため、検査コメントを付与できません。"
+                    "検査コメントを付与するには、オーナーロールで実行して `--include_complete_task` を指定してください。"
+                )
                 return False
 
         if task["status"] == TaskStatus.BREAK.value and not include_break_task:

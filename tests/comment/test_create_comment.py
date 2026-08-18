@@ -1,3 +1,4 @@
+import logging
 from pathlib import Path
 from unittest.mock import Mock, patch
 
@@ -152,6 +153,31 @@ def test_add_comments_for_task_does_not_cancel_acceptance_when_confirm_declined(
     assert result == (0, 0)
     service.wrapper.cancel_completed_task.assert_not_called()
     service.api.batch_update_comments.assert_not_called()
+
+
+def test_add_comments_for_task_logs_include_complete_task_option_for_completed_acceptance_task(caplog: pytest.LogCaptureFixture) -> None:
+    service = Mock()
+    service.api.account_id = "executor_account"
+    service.api.get_project.return_value = ({"input_data_type": "image"}, None)
+    service.api.get_annotation_specs.return_value = ({"labels": []}, None)
+    service.wrapper.get_task_or_none.return_value = {
+        "task_id": "task1",
+        "input_data_id_list": ["input1"],
+        "status": "complete",
+        "phase": "acceptance",
+        "account_id": "executor_account",
+    }
+    main_obj = PutCommentMain(service, project_id="project1", comment_type=CommentType.INSPECTION, all_yes=True)
+
+    with caplog.at_level(logging.WARNING):
+        result = main_obj.add_comments_for_task(
+            task_id="task1",
+            comments_for_task={"input1": [AddedComment(comment="コメント1", data={"x": 10, "y": 20, "_type": "Point"})]},
+            put_mode="create",
+        )
+
+    assert result == (0, 0)
+    assert "--include_complete_task" in caplog.text
 
 
 def test_add_comments_for_task_skips_when_not_assigned_to_me_and_change_operator_to_me_is_not_specified() -> None:
