@@ -28,6 +28,9 @@ from annofabcli.common.facade import AnnofabApiFacade
 
 logger = logging.getLogger(__name__)
 
+PROGRESS_LOG_INTERVAL = 100
+"""進捗ログを出力するアノテーション数の間隔"""
+
 
 Attributes = dict[str, str | int | bool | None]
 """属性情報"""
@@ -207,14 +210,20 @@ class ChangeAnnotationAttributesPerAnnotationMain(CommandLineWithConfirm):
 
         total_task_count = len(annotation_list_per_task_id_input_data_id)
         total_annotation_count = len(anno_list)
+        processed_annotation_count = 0
 
         for task_id, input_data_dict in annotation_list_per_task_id_input_data_id.items():
             is_changeable_task, succeed_to_change_annotation_count, failed_to_change_annotation_count = self.change_annotation_attributes_for_task(task_id, input_data_dict)
             total_succeed_to_change_annotation_count += succeed_to_change_annotation_count
             total_failed_to_change_annotation_count += failed_to_change_annotation_count
+            previous_processed_annotation_count = processed_annotation_count
+            processed_annotation_count += sum(len(annotation_list) for annotation_list in input_data_dict.values())
 
             if is_changeable_task:
                 changed_task_count += 1
+
+            if previous_processed_annotation_count // PROGRESS_LOG_INTERVAL < processed_annotation_count // PROGRESS_LOG_INTERVAL or processed_annotation_count == total_annotation_count:
+                logger.info(f"{processed_annotation_count} / {total_annotation_count} 件のアノテーションの属性値の変更処理が完了しました。")
 
         logger.info(
             f"{total_succeed_to_change_annotation_count}/{total_annotation_count} 件のアノテーションの属性値を変更しました。 :: "

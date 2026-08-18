@@ -142,13 +142,23 @@ def convert_annotation_body_to_inspection_data(  # noqa: PLR0911
 
 
 class PutCommentMain(CommandLineWithConfirm):
-    def __init__(self, service: annofabapi.Resource, project_id: str, comment_type: CommentType, all_yes: bool = False) -> None:  # noqa: FBT001, FBT002
+    def __init__(
+        self,
+        service: annofabapi.Resource,
+        project_id: str,
+        comment_type: CommentType,
+        all_yes: bool = False,  # noqa: FBT001, FBT002
+        *,
+        can_include_complete_task: bool = False,
+    ) -> None:
         self.service = service
         self.facade = AnnofabApiFacade(service)
         self.project_id = project_id
 
         self.comment_type = comment_type
         self.comment_type_name = get_comment_type_name(comment_type)
+        self.can_include_complete_task = can_include_complete_task
+        """完了状態のタスクを処理するオプションを利用できるかどうか"""
 
         # プロジェクト情報を取得
         project, _ = self.service.api.get_project(self.project_id)
@@ -332,9 +342,16 @@ class PutCommentMain(CommandLineWithConfirm):
     ) -> bool:
         task_id = task["task_id"]
 
-        if self.comment_type == CommentType.INSPECTION:  # noqa: SIM102
+        if self.comment_type == CommentType.INSPECTION:
             if task["phase"] == TaskPhase.ANNOTATION.value:
                 logger.warning(f"task_id='{task_id}' :: フェーズが検査/受入でないため検査コメントを付与できません。 :: task_phase='{task['phase']}'")
+                return False
+
+            if self.can_include_complete_task and task["phase"] == TaskPhase.ACCEPTANCE.value and task["status"] == TaskStatus.COMPLETE.value:
+                logger.warning(
+                    f"task_id='{task_id}' :: 受入フェーズのタスクが完了状態のため、検査コメントを付与できません。"
+                    "検査コメントを付与するには、オーナーロールで実行して `--include_complete_task` を指定してください。"
+                )
                 return False
 
         if task["status"] == TaskStatus.BREAK.value and not include_break_task:
@@ -351,7 +368,7 @@ class PutCommentMain(CommandLineWithConfirm):
         return True
 
     def _can_change_operator_to_me(self, task: dict[str, Any], *, change_operator_to_me: bool, logging_prefix: str) -> bool:
-        if task["account_id"] == self.service.api.account_id or change_operator_to_me:
+        if task["account_id"] is None or task["account_id"] == self.service.api.account_id or change_operator_to_me:
             return True
 
         logger.info(f"{logging_prefix} :: task_id='{task['task_id']}' :: 自身が担当者ではないタスクに{self.comment_type_name}を作成するには、`--change_operator_to_me` を指定してください。")

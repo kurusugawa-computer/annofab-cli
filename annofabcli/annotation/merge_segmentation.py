@@ -227,7 +227,7 @@ class MergeSegmentationMain(CommandLineWithConfirm):
             )
             return 0
 
-        should_change_operator = self.project_member_role == ProjectMemberRole.ACCEPTER and task["account_id"] != self.annofab_service.api.account_id
+        should_change_operator = self.project_member_role == ProjectMemberRole.ACCEPTER and task["account_id"] is not None and task["account_id"] != self.annofab_service.api.account_id
         if should_change_operator and not self.change_operator_to_me:
             logger.info(f"{log_message_prefix}task_id='{task_id}'をチェッカーロールで更新するには、`--change_operator_to_me` を指定してください。")
             return 0
