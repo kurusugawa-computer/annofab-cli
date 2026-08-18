@@ -34,9 +34,17 @@ Dict[task_id, Dict[input_data_id, List[Inspection]]] の検査コメント情報
 
 
 class CompleteTasksMain(CommandLineWithConfirm):
-    def __init__(self, service: annofabapi.Resource, all_yes: bool = False, include_on_hold_task: bool = False) -> None:  # noqa: FBT001, FBT002
+    def __init__(
+        self,
+        service: annofabapi.Resource,
+        *,
+        all_yes: bool = False,
+        include_break_task: bool = False,
+        include_on_hold_task: bool = False,
+    ) -> None:
         self.service = service
         self.facade = AnnofabApiFacade(service)
+        self.include_break_task = include_break_task
         self.include_on_hold_task = include_on_hold_task
         CommandLineWithConfirm.__init__(self, all_yes)
 
@@ -290,6 +298,10 @@ class CompleteTasksMain(CommandLineWithConfirm):
             logger.warning(f"task_id='{task.task_id}'のタスクは作業中または完了状態であるため、スキップします。")
             return False
 
+        if task.status == TaskStatus.BREAK and not self.include_break_task:
+            logger.warning(f"task_id='{task.task_id}'のタスクは休憩中状態であるため、スキップします。休憩中状態のタスクも次のフェーズに進める場合は、'--include_break_task'を指定してください。")
+            return False
+
         if task.status == TaskStatus.ON_HOLD and not self.include_on_hold_task:
             logger.warning(f"task_id='{task.task_id}'のタスクは保留中状態であるため、スキップします。保留中状態のタスクも次のフェーズに進める場合は、'--include_on_hold_task'を指定してください。")
             return False
@@ -474,7 +486,12 @@ class CompleteTasks(CommandLine):
         dict_task_query = annofabcli.common.cli.get_json_from_args(args.task_query)
         task_query: TaskQuery | None = TaskQuery.from_dict(dict_task_query) if dict_task_query is not None else None
 
-        main_obj = CompleteTasksMain(self.service, all_yes=self.all_yes, include_on_hold_task=args.include_on_hold_task)
+        main_obj = CompleteTasksMain(
+            self.service,
+            all_yes=self.all_yes,
+            include_break_task=args.include_break_task,
+            include_on_hold_task=args.include_on_hold_task,
+        )
         main_obj.complete_task_list(
             project_id,
             task_id_list=task_id_list,
@@ -532,6 +549,12 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     )
 
     argument_parser.add_task_query()
+
+    parser.add_argument(
+        "--include_break_task",
+        action="store_true",
+        help="指定した場合、休憩中状態のタスクも次のフェーズに進めます。指定しない場合、休憩中状態のタスクはスキップします。",
+    )
 
     parser.add_argument(
         "--include_on_hold_task",
