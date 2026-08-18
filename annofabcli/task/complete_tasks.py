@@ -9,6 +9,7 @@ from functools import partial
 from typing import Any
 
 import annofabapi.utils
+import dateutil
 import requests
 from annofabapi.dataclass.task import Task
 from annofabapi.models import CommentStatus, Inspection, ProjectMemberRole, TaskPhase, TaskStatus
@@ -163,14 +164,14 @@ class CompleteTasksMain(CommandLineWithConfirm):
 
         def exists_answered_comment(parent_inspection: Inspection) -> bool:
             """
-            スレッドの最新コメントが、現在の教師付フェーズ・ステージで作成された返信かどうか。
+            スレッドの最新コメントが、現在の教師付フェーズ・ステージで作成されたかどうか。
             """
             reply_comment_list = [e for e in comment_list if e["comment_node"]["_type"] == "Reply" and e["comment_node"]["root_comment_id"] == parent_inspection["comment_id"]]
             latest_comment = max(
                 [parent_inspection, *reply_comment_list],
-                key=lambda e: e["datetime_for_sorting"],
+                key=lambda e: dateutil.parser.parse(e["created_datetime"]),
             )
-            return latest_comment["comment_node"]["_type"] == "Reply" and latest_comment["phase"] == task.phase.value and latest_comment["phase_stage"] == task.phase_stage
+            return latest_comment["phase"] == task.phase.value and latest_comment["phase_stage"] == task.phase_stage
 
         comment_list, _ = self.service.api.get_comments(task.project_id, task.task_id, input_data_id, query_params={"v": "2"})
         # 未処置の検査コメント
