@@ -83,7 +83,7 @@ def test_complete_task_allows_on_hold_task_when_option_is_enabled(monkeypatch: p
     complete_task_mock.assert_called_once()
 
 
-def test_get_unanswered_comment_list_treats_reply_before_current_annotation_phase_as_answered() -> None:
+def test_get_unanswered_comment_list_treats_latest_reply_in_current_annotation_phase_as_answered() -> None:
     service = Mock()
     service.api.get_comments.return_value = (
         [
@@ -91,7 +91,9 @@ def test_get_unanswered_comment_list_treats_reply_before_current_annotation_phas
                 "comment_id": "reply1",
                 "comment_type": "inspection",
                 "comment_node": {"root_comment_id": "root1", "_type": "Reply"},
-                "created_datetime": "2026-08-07T06:15:37.512+09:00",
+                "datetime_for_sorting": "2026-08-07T06:15:33.228+09:00",
+                "phase": "annotation",
+                "phase_stage": 1,
             },
             {
                 "comment_id": "root1",
@@ -99,22 +101,79 @@ def test_get_unanswered_comment_list_treats_reply_before_current_annotation_phas
                 "comment_node": {"status": "open", "_type": "Root"},
                 "phase": "acceptance",
                 "phase_stage": 1,
+                "datetime_for_sorting": "2026-08-07T04:05:56.461+09:00",
             },
         ],
         None,
     )
     main_obj = complete_tasks.CompleteTasksMain(service, all_yes=True)
-    task = Task.from_dict(
-        create_task_dict(
-            status="not_started",
-            phase="annotation",
-        )
-        | {"started_datetime": "2026-08-18T12:00:00+09:00"}
-    )
+    task = Task.from_dict(create_task_dict())
 
     actual = main_obj.get_unanswered_comment_list(task, "input_data1")
 
     assert actual == []
+
+
+def test_get_unanswered_comment_list_treats_latest_reply_in_other_phase_as_unanswered() -> None:
+    service = Mock()
+    service.api.get_comments.return_value = (
+        [
+            {
+                "comment_id": "reply1",
+                "comment_type": "inspection",
+                "comment_node": {"root_comment_id": "root1", "_type": "Reply"},
+                "datetime_for_sorting": "2026-08-07T06:15:37.512+09:00",
+                "phase": "acceptance",
+                "phase_stage": 1,
+            },
+            {
+                "comment_id": "root1",
+                "comment_type": "inspection",
+                "comment_node": {"status": "open", "_type": "Root"},
+                "phase": "acceptance",
+                "phase_stage": 1,
+                "datetime_for_sorting": "2026-08-07T04:05:56.461+09:00",
+            },
+        ],
+        None,
+    )
+    main_obj = complete_tasks.CompleteTasksMain(service, all_yes=True)
+    task = Task.from_dict(create_task_dict())
+
+    actual = main_obj.get_unanswered_comment_list(task, "input_data1")
+
+    assert [e["comment_id"] for e in actual] == ["root1"]
+
+
+def test_get_unanswered_comment_list_treats_reply_before_latest_root_comment_as_unanswered() -> None:
+    service = Mock()
+    service.api.get_comments.return_value = (
+        [
+            {
+                "comment_id": "reply1",
+                "comment_type": "inspection",
+                "comment_node": {"root_comment_id": "root1", "_type": "Reply"},
+                "datetime_for_sorting": "2026-08-07T06:15:37.512+09:00",
+                "phase": "annotation",
+                "phase_stage": 1,
+            },
+            {
+                "comment_id": "root1",
+                "comment_type": "inspection",
+                "comment_node": {"status": "open", "_type": "Root"},
+                "phase": "acceptance",
+                "phase_stage": 1,
+                "datetime_for_sorting": "2026-08-18T12:00:00+09:00",
+            },
+        ],
+        None,
+    )
+    main_obj = complete_tasks.CompleteTasksMain(service, all_yes=True)
+    task = Task.from_dict(create_task_dict())
+
+    actual = main_obj.get_unanswered_comment_list(task, "input_data1")
+
+    assert [e["comment_id"] for e in actual] == ["root1"]
 
 
 @pytest.mark.parametrize(
