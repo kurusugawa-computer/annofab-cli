@@ -1,4 +1,5 @@
 import json
+import logging
 from pathlib import Path
 from typing import Any
 from unittest.mock import Mock
@@ -98,13 +99,21 @@ def test_create_for_task__別担当のチェッカーは担当者変更オプシ
     service.wrapper.change_task_operator.assert_not_called()
 
 
-def test_create_for_task__休憩中タスクは既定でスキップする():
+@pytest.mark.parametrize(
+    ("task_status", "option_name"),
+    [
+        (TaskStatus.COMPLETE, "--include_complete_task"),
+        (TaskStatus.BREAK, "--include_break_task"),
+        (TaskStatus.ON_HOLD, "--include_on_hold_task"),
+    ],
+)
+def test_create_for_task__対象外状態のタスクを処理するオプションをログに出力する(task_status: TaskStatus, option_name: str, caplog: pytest.LogCaptureFixture) -> None:
     service = Mock()
     service.api.account_id = "my_account_id"
     service.api.get_my_member_in_project.return_value = ({"member_role": ProjectMemberRole.OWNER.value}, None)
     service.wrapper.get_task_or_none.return_value = {
         "task_id": "task_id",
-        "status": TaskStatus.BREAK.value,
+        "status": task_status.value,
         "account_id": "my_account_id",
         "updated_datetime": "2026-08-16T00:00:00+09:00",
     }
@@ -120,9 +129,11 @@ def test_create_for_task__休憩中タスクは既定でスキップする():
         backup_dir=None,
     )
 
-    actual = obj.create_for_task("task_id", {"input_data_id": [Mock()]})
+    with caplog.at_level(logging.INFO):
+        actual = obj.create_for_task("task_id", {"input_data_id": [Mock()]})
 
     assert actual == CreateAnnotationCount(success=0, failed=1)
+    assert option_name in caplog.text
 
 
 def test_get_annotation_items_from_csv__必須カラムが不足している場合は例外を送出する(tmp_path):

@@ -68,7 +68,13 @@ class CreateInspectionCommentSimply(CommandLine):
 
         task_id_list = get_list_from_args(args.task_id)
         phrase_id_list = get_list_from_args(args.phrase_id)
-        main_obj = PutCommentSimplyMain(self.service, project_id=args.project_id, comment_type=CommentType.INSPECTION, all_yes=self.all_yes)
+        main_obj = PutCommentSimplyMain(
+            self.service,
+            project_id=args.project_id,
+            comment_type=CommentType.INSPECTION,
+            all_yes=self.all_yes,
+            can_include_complete_task=True,
+        )
         main_obj.put_comment_for_task_list(
             task_ids=task_id_list,
             comment_info=AddedSimpleComment(comment=args.comment, data=comment_data, phrases=phrase_id_list),

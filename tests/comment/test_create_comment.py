@@ -167,7 +167,7 @@ def test_add_comments_for_task_logs_include_complete_task_option_for_completed_a
         "phase": "acceptance",
         "account_id": "executor_account",
     }
-    main_obj = PutCommentMain(service, project_id="project1", comment_type=CommentType.INSPECTION, all_yes=True)
+    main_obj = PutCommentMain(service, project_id="project1", comment_type=CommentType.INSPECTION, all_yes=True, can_include_complete_task=True)
 
     with caplog.at_level(logging.WARNING):
         result = main_obj.add_comments_for_task(
@@ -227,6 +227,28 @@ def test_put_comment_for_task_skips_when_not_assigned_to_me_and_change_operator_
     assert result is False
     service.wrapper.change_task_operator.assert_not_called()
     service.wrapper.change_task_status_to_working.assert_not_called()
+
+
+def test_put_comment_for_task_logs_include_complete_task_option_for_completed_acceptance_task(caplog: pytest.LogCaptureFixture) -> None:
+    service = Mock()
+    service.api.account_id = "executor_account"
+    service.wrapper.get_task_or_none.return_value = {
+        "task_id": "task1",
+        "input_data_id_list": ["input1"],
+        "status": "complete",
+        "phase": "acceptance",
+        "account_id": "executor_account",
+    }
+    main_obj = PutCommentSimplyMain(service, project_id="project1", comment_type=CommentType.INSPECTION, all_yes=True, can_include_complete_task=True)
+
+    with caplog.at_level(logging.WARNING):
+        result = main_obj.put_comment_for_task(
+            task_id="task1",
+            comment_info=AddedSimpleComment(comment="コメント1", data={"x": 10, "y": 20, "_type": "Point"}),
+        )
+
+    assert result is False
+    assert "--include_complete_task" in caplog.text
 
 
 @pytest.mark.parametrize(

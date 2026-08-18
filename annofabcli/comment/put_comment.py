@@ -142,13 +142,23 @@ def convert_annotation_body_to_inspection_data(  # noqa: PLR0911
 
 
 class PutCommentMain(CommandLineWithConfirm):
-    def __init__(self, service: annofabapi.Resource, project_id: str, comment_type: CommentType, all_yes: bool = False) -> None:  # noqa: FBT001, FBT002
+    def __init__(
+        self,
+        service: annofabapi.Resource,
+        project_id: str,
+        comment_type: CommentType,
+        all_yes: bool = False,  # noqa: FBT001, FBT002
+        *,
+        can_include_complete_task: bool = False,
+    ) -> None:
         self.service = service
         self.facade = AnnofabApiFacade(service)
         self.project_id = project_id
 
         self.comment_type = comment_type
         self.comment_type_name = get_comment_type_name(comment_type)
+        self.can_include_complete_task = can_include_complete_task
+        """完了状態のタスクを処理するオプションを利用できるかどうか"""
 
         # プロジェクト情報を取得
         project, _ = self.service.api.get_project(self.project_id)
@@ -337,7 +347,7 @@ class PutCommentMain(CommandLineWithConfirm):
                 logger.warning(f"task_id='{task_id}' :: フェーズが検査/受入でないため検査コメントを付与できません。 :: task_phase='{task['phase']}'")
                 return False
 
-            if task["phase"] == TaskPhase.ACCEPTANCE.value and task["status"] == TaskStatus.COMPLETE.value:
+            if self.can_include_complete_task and task["phase"] == TaskPhase.ACCEPTANCE.value and task["status"] == TaskStatus.COMPLETE.value:
                 logger.warning(
                     f"task_id='{task_id}' :: 受入フェーズのタスクが完了状態のため、検査コメントを付与できません。"
                     "検査コメントを付与するには、オーナーロールで実行して `--include_complete_task` を指定してください。"

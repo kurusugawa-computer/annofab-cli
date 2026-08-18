@@ -231,13 +231,22 @@ class CreateAnnotationMain(CommandLineWithConfirm):
             logger.info(f"task_id='{task_id}' :: タスクが存在しない、または作業中状態のため、アノテーション{total_count}件の作成をスキップします。")
             return CreateAnnotationCount(success=0, failed=total_count)
         if task["status"] == TaskStatus.COMPLETE.value and not self.include_complete_task:
-            logger.info(f"task_id='{task_id}' :: タスクが完了状態のため、アノテーション{total_count}件の作成をスキップします。")
+            logger.info(
+                f"task_id='{task_id}' :: タスクが完了状態のため、アノテーション{total_count}件の作成をスキップします。"
+                "完了状態のタスクにもアノテーションを作成するには、`--include_complete_task` を指定してください。"
+            )
             return CreateAnnotationCount(success=0, failed=total_count)
         if task["status"] == TaskStatus.BREAK.value and not self.include_break_task:
-            logger.info(f"task_id='{task_id}' :: タスクが休憩中状態のため、アノテーション{total_count}件の作成をスキップします。")
+            logger.info(
+                f"task_id='{task_id}' :: タスクが休憩中状態のため、アノテーション{total_count}件の作成をスキップします。"
+                "休憩中状態のタスクにもアノテーションを作成するには、`--include_break_task` を指定してください。"
+            )
             return CreateAnnotationCount(success=0, failed=total_count)
         if task["status"] == TaskStatus.ON_HOLD.value and not self.include_on_hold_task:
-            logger.info(f"task_id='{task_id}' :: タスクが保留中状態のため、アノテーション{total_count}件の作成をスキップします。")
+            logger.info(
+                f"task_id='{task_id}' :: タスクが保留中状態のため、アノテーション{total_count}件の作成をスキップします。"
+                "保留中状態のタスクにもアノテーションを作成するには、`--include_on_hold_task` を指定してください。"
+            )
             return CreateAnnotationCount(success=0, failed=total_count)
         should_change_operator = self.project_member_role == ProjectMemberRole.ACCEPTER and task["account_id"] != self.service.api.account_id
         if should_change_operator and not self.change_operator_to_me:

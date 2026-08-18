@@ -68,7 +68,13 @@ class CreateInspectionComment(CommandLine):
             print(f"{self.COMMON_MESSAGE} --json または --csv のいずれかを指定してください。", file=sys.stderr)  # noqa: T201
             sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
-        main_obj = PutCommentMain(self.service, project_id=args.project_id, comment_type=CommentType.INSPECTION, all_yes=self.all_yes)
+        main_obj = PutCommentMain(
+            self.service,
+            project_id=args.project_id,
+            comment_type=CommentType.INSPECTION,
+            all_yes=self.all_yes,
+            can_include_complete_task=True,
+        )
         main_obj.add_comments_for_task_list(
             comments_for_task_list=comments_for_task_list,
             parallelism=args.parallelism,

@@ -36,13 +36,23 @@ class AddedSimpleComment:
 
 
 class PutCommentSimplyMain(CommandLineWithConfirm):
-    def __init__(self, service: annofabapi.Resource, project_id: str, comment_type: CommentType, all_yes: bool = False) -> None:  # noqa: FBT001, FBT002
+    def __init__(
+        self,
+        service: annofabapi.Resource,
+        project_id: str,
+        comment_type: CommentType,
+        all_yes: bool = False,  # noqa: FBT001, FBT002
+        *,
+        can_include_complete_task: bool = False,
+    ) -> None:
         self.service = service
         self.facade = AnnofabApiFacade(service)
         self.project_id = project_id
 
         self.comment_type = comment_type
         self.comment_type_name = get_comment_type_name(comment_type)
+        self.can_include_complete_task = can_include_complete_task
+        """完了状態のタスクを処理するオプションを利用できるかどうか"""
 
         CommandLineWithConfirm.__init__(self, all_yes)
 
@@ -118,9 +128,16 @@ class PutCommentSimplyMain(CommandLineWithConfirm):
     ) -> bool:
         task_id = task["task_id"]
 
-        if self.comment_type == CommentType.INSPECTION:  # noqa: SIM102
+        if self.comment_type == CommentType.INSPECTION:
             if task["phase"] == TaskPhase.ANNOTATION.value:
                 logger.warning(f"task_id='{task_id}' :: フェーズが検査/受入でないため検査コメントを付与できません。 :: task_phase='{task['phase']}'")
+                return False
+
+            if self.can_include_complete_task and task["phase"] == TaskPhase.ACCEPTANCE.value and task["status"] == TaskStatus.COMPLETE.value:
+                logger.warning(
+                    f"task_id='{task_id}' :: 受入フェーズのタスクが完了状態のため、検査コメントを付与できません。"
+                    "検査コメントを付与するには、オーナーロールで実行して `--include_complete_task` を指定してください。"
+                )
                 return False
 
         if task["status"] == TaskStatus.BREAK.value and not include_break_task:
