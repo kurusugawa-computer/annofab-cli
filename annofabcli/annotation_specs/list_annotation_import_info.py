@@ -47,6 +47,8 @@ class AnnotationImportAttribute(BaseModel):
     """属性名（日本語）。"""
     attribute_type: str
     """属性の種類。"""
+    read_only: bool
+    """読み込み専用の属性か否か。"""
     choices: list[AnnotationImportChoice]
     """属性で指定できる選択肢情報。"""
 
@@ -102,6 +104,7 @@ def create_annotation_import_info_list(annotation_specs_v3: dict[str, Any]) -> l
                     attribute_name_en=get_attribute_name_en(attribute),
                     attribute_name_ja=get_japanese_message(cast(InternationalizationMessage, attribute["name"])),
                     attribute_type=attribute["type"],
+                    read_only=attribute["read_only"],
                     choices=create_choice_list(attribute),
                 )
             )
