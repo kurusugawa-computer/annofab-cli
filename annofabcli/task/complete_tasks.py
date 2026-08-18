@@ -9,11 +9,9 @@ from functools import partial
 from typing import Any
 
 import annofabapi.utils
-import dateutil
 import requests
 from annofabapi.dataclass.task import Task
 from annofabapi.models import CommentStatus, Inspection, ProjectMemberRole, TaskPhase, TaskStatus
-from more_itertools import first_true
 
 import annofabcli.common.cli
 from annofabcli.common.cli import (
@@ -166,27 +164,8 @@ class CompleteTasksMain(CommandLineWithConfirm):
         def exists_answered_comment(parent_comment_id: str) -> bool:
             """
             回答済の返信コメントがあるかどうか
-
-            Args:
-                parent_inspection_id:
-
-            Returns:
-
             """
-            if task.started_datetime is None:
-                # タスク未着手状態なので、回答済のコメントはない
-                return False
-            task_started_datetime = task.started_datetime
-            # 教師付フェーズになった日時より、後に付与された返信コメントを取得する
-            answered_comment = first_true(
-                comment_list,
-                pred=lambda e: (
-                    e["comment_node"]["_type"] == "Reply"
-                    and e["comment_node"]["root_comment_id"] == parent_comment_id
-                    and dateutil.parser.parse(e["created_datetime"]) >= dateutil.parser.parse(task_started_datetime)
-                ),
-            )
-            return answered_comment is not None
+            return any(e["comment_node"]["_type"] == "Reply" and e["comment_node"]["root_comment_id"] == parent_comment_id for e in comment_list)
 
         comment_list, _ = self.service.api.get_comments(task.project_id, task.task_id, input_data_id, query_params={"v": "2"})
         # 未処置の検査コメント
