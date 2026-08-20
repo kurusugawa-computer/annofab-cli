@@ -137,6 +137,7 @@ class AddingDetailsToInputData:
     def add_supplementary_data_count_to_input_data_list(self, input_data_list: list[InputData]) -> list[InputData]:
         """
         `input_data_list`に補助情報の個数（`supplementary_data_count`）を付与します。
+        バルク系API `get_supplementary_data_in_bulk` を使用して、複数の入力データIDの補助情報を一度に取得します。
 
         Args:
             input_data_list: 入力データList(In/Out)
@@ -148,12 +149,41 @@ class AddingDetailsToInputData:
             return input_data_list
 
         logger.info(f"入力データ {len(input_data_list)} 件に紐づく補助情報の個数を取得します。")
-        for index, input_data in enumerate(input_data_list):
-            supplementary_data_list, _ = self.service.api.get_supplementary_data_list(self.project_id, input_data["input_data_id"])
-            input_data["supplementary_data_count"] = len(supplementary_data_list)
-            if (index + 1) % 100 == 0:
-                logger.debug(f"{index + 1} 件の入力データに紐づく補助情報の個数を取得しました。")
 
+        # get_supplementary_data_in_bulk APIは最大100個のinput_data_idを受け付ける
+        MAX_INPUT_DATA_IDS_PER_REQUEST = 100  # noqa: N806
+        initial_index = 0
+        api_call_count = 0
+
+        while initial_index < len(input_data_list):
+            # 最大100件ずつ処理
+            end_index = min(initial_index + MAX_INPUT_DATA_IDS_PER_REQUEST, len(input_data_list))
+            sub_input_data_list = input_data_list[initial_index:end_index]
+            sub_input_data_id_list = [e["input_data_id"] for e in sub_input_data_list]
+
+            logger.debug(f"入力データの{initial_index}件目から{end_index - 1}件目に紐づく補助情報を取得します。")
+
+            # バルク系APIを使用して複数の入力データIDの補助情報を一度に取得
+            # input_data_idはカンマ区切りで指定
+            supplementary_data_list, _ = self.service.api.get_supplementary_data_in_bulk(self.project_id, query_params={"input_data_id": sub_input_data_id_list})
+            api_call_count += 1
+
+            # 各入力データに補助情報の個数を設定
+            # 補助情報をinput_data_idごとにグループ化
+            supplementary_count_dict: dict[str, int] = {}
+            for supplementary_data in supplementary_data_list:
+                input_data_id = supplementary_data["input_data_id"]
+                supplementary_count_dict[input_data_id] = supplementary_count_dict.get(input_data_id, 0) + 1
+
+            for input_data in sub_input_data_list:
+                input_data["supplementary_data_count"] = supplementary_count_dict.get(input_data["input_data_id"], 0)
+
+            if (end_index) % 1000 == 0 or end_index == len(input_data_list):
+                logger.info(f"{end_index} / {len(input_data_list)} 件の入力データに紐づく補助情報の個数を取得しました。")
+
+            initial_index = end_index
+
+        logger.info(f"補助情報の取得が完了しました。API呼び出し回数: {api_call_count} 回")
         return input_data_list
 
 
