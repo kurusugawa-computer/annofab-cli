@@ -16,6 +16,7 @@ from typing import Any, assert_never
 import annofabapi
 import pydantic
 import ulid
+from annofabapi.dataclass.task import Task
 from annofabapi.models import (
     AdditionalDataDefinitionType,
     DefaultAnnotationType,
@@ -43,7 +44,7 @@ from annofabcli.common.cli import (
     CommandLineWithConfirm,
     build_annofabapi_resource_and_login,
 )
-from annofabcli.common.facade import AnnofabApiFacade
+from annofabcli.common.facade import AnnofabApiFacade, TaskQuery, match_task_with_query
 from annofabcli.common.visualize import AddProps
 
 logger = logging.getLogger(__name__)
@@ -489,6 +490,8 @@ class ImportAnnotationMain(CommandLineWithConfirm):
         self.include_break_task = include_break_task
         self.include_on_hold_task = include_on_hold_task
         self.converter = converter
+        self.task_query: TaskQuery | None = None
+        """インポート対象のタスクを絞り込むクエリ条件。"""
 
     def put_annotation_for_input_data(self, parser: SimpleAnnotationParser, old_annotation: dict[str, Any]) -> int:
         """
@@ -630,6 +633,10 @@ class ImportAnnotationMain(CommandLineWithConfirm):
         task = self.service.wrapper.get_task_or_none(self.project_id, task_id)
         if task is None:
             logger.warning(f"{logger_prefix}タスクは存在しません。")
+            return False
+
+        if self.task_query is not None and not match_task_with_query(Task.from_dict(task), self.task_query):
+            logger.debug(f"{logger_prefix}`--task_query`の条件に一致しないため、処理をスキップします。 :: task_query={self.task_query}")
             return False
 
         logger.debug(f"{logger_prefix}phase='{task['phase']}', status='{task['status']}'")
@@ -804,6 +811,9 @@ class ImportAnnotation(CommandLine):
             sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
         target_task_ids = set(annofabcli.common.cli.get_list_from_args(args.task_id)) if args.task_id is not None else None
+        task_query = TaskQuery.from_dict(annofabcli.common.cli.get_json_from_args(args.task_query)) if args.task_query is not None else None
+        if task_query is not None:
+            task_query = self.facade.set_account_id_of_task_query(project_id, task_query)
 
         # Simpleアノテーションの読み込み
         if annotation_path.is_dir():
@@ -836,6 +846,7 @@ class ImportAnnotation(CommandLine):
             include_on_hold_task=args.include_on_hold_task,
             converter=converter,
         )
+        main_obj.task_query = task_query
 
         main_obj.main(iter_task_parser, target_task_ids=target_task_ids, parallelism=args.parallelism)
 
@@ -859,6 +870,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     )
 
     argument_parser.add_task_id(required=False)
+    argument_parser.add_task_query(help_message="インポート対象のタスクを絞り込むクエリ条件をJSON形式で指定します。 ``--task_id`` と併用した場合は、両方の条件に一致するタスクを対象にします。")
 
     overwrite_merge_group = parser.add_mutually_exclusive_group()
 

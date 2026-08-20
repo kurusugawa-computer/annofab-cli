@@ -13,6 +13,7 @@ from pydantic import ValidationError
 
 from annofabcli.annotation.editor_props import validate_editor_props_for_cli
 from annofabcli.annotation.import_annotation import AnnotationConverter, ImportAnnotationMain, ImportedSimpleAnnotation, ImportedSimpleAnnotationDetail
+from annofabcli.common.facade import TaskQuery
 
 service = annofabapi.build()
 
@@ -39,7 +40,19 @@ class _FakeApi:
 
 class _FakeWrapper:
     def __init__(self, task: dict[str, Any]) -> None:
-        self.task = task
+        self.task = {
+            "project_id": project["project_id"],
+            "phase_stage": 0,
+            "input_data_id_list": [],
+            "histories_by_phase": [],
+            "work_time_span": 0,
+            "number_of_rejections": 0,
+            "started_datetime": None,
+            "operation_updated_datetime": None,
+            "sampling": None,
+            "metadata": {},
+            **task,
+        }
         self.changed_operator_account_ids: list[str | None] = []
 
     def get_task_or_none(self, _project_id: str, _task_id: str) -> dict[str, Any]:
@@ -101,8 +114,10 @@ class _TestImportAnnotationMain(ImportAnnotationMain):
         return 1, 1
 
 
-def _create_import_annotation_main(*, task: dict[str, Any], project_member_role: ProjectMemberRole, change_operator_to_me: bool = False) -> _TestImportAnnotationMain:
-    return _TestImportAnnotationMain(
+def _create_import_annotation_main(
+    *, task: dict[str, Any], project_member_role: ProjectMemberRole, change_operator_to_me: bool = False, task_query: TaskQuery | None = None
+) -> _TestImportAnnotationMain:
+    main_obj = _TestImportAnnotationMain(
         cast(annofabapi.Resource, _FakeService(task, project_member_role)),
         project_id=project["project_id"],
         all_yes=True,
@@ -114,9 +129,51 @@ def _create_import_annotation_main(*, task: dict[str, Any], project_member_role:
         include_on_hold_task=False,
         converter=cast(AnnotationConverter, None),
     )
+    main_obj.task_query = task_query
+    return main_obj
 
 
 class Test__ImportAnnotationMain:
+    def test__execute_task__task_queryの条件に一致しないタスクは問い合わせ前にスキップする(self):
+        task = {
+            "task_id": "task_id",
+            "phase": "annotation",
+            "status": TaskStatus.NOT_STARTED.value,
+            "account_id": "account_id",
+            "updated_datetime": "2026-07-30T00:00:00.000+09:00",
+        }
+        obj = _create_import_annotation_main(
+            task=task,
+            project_member_role=ProjectMemberRole.OWNER,
+            task_query=TaskQuery(status=TaskStatus.ON_HOLD),
+        )
+
+        actual = obj.execute_task(cast(SimpleAnnotationParserByTask, _FakeTaskParser()))
+
+        assert not actual
+        assert not obj.confirm_processing_called
+        assert not obj.put_annotation_for_task_called
+
+    def test__execute_task__task_queryの担当者条件に一致するタスクをインポートする(self):
+        task = {
+            "task_id": "task_id",
+            "phase": "annotation",
+            "status": TaskStatus.NOT_STARTED.value,
+            "account_id": "account_id",
+            "updated_datetime": "2026-07-30T00:00:00.000+09:00",
+        }
+        obj = _create_import_annotation_main(
+            task=task,
+            project_member_role=ProjectMemberRole.OWNER,
+            task_query=TaskQuery(account_id="account_id"),
+        )
+
+        actual = obj.execute_task(cast(SimpleAnnotationParserByTask, _FakeTaskParser()))
+
+        assert actual
+        assert obj.confirm_processing_called
+        assert obj.put_annotation_for_task_called
+
     def test__execute_task__チェッカーが担当者を変更しない場合は問い合わせ前にスキップする(self):
         task = {
             "task_id": "task_id",

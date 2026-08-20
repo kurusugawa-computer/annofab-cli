@@ -170,6 +170,20 @@ Examples
     $ annofabcli annotation import --project_id prj1 --annotation annotation.zip \
     --task_id file://task_id.txt
 
+タスクの状態や担当者でインポート対象を絞り込む場合は、``--task_query`` にクエリ条件をJSON形式で指定してください。タスクの現在の状態と担当者を用いて絞り込みます。``--task_id`` と併用した場合は、両方の条件に一致するタスクを対象にします。
+
+.. code-block::
+
+    # 保留中状態のタスクだけにインポートする
+    $ annofabcli annotation import --project_id prj1 --annotation annotation.zip \
+    --task_query '{"status": "on_hold"}' --include_on_hold_task
+
+    # user_idがa@example.comの担当者であるタスクだけにインポートする
+    $ annofabcli annotation import --project_id prj1 --annotation annotation.zip \
+    --task_query '{"user_id": "a@example.com"}'
+
+``--task_query`` の条件に一致しても、完了・休憩中・保留中状態のタスクにインポートするには、それぞれ ``--include_complete_task`` 、 ``--include_break_task`` 、 ``--include_on_hold_task`` の指定が必要です。
+
 
 デフォルトでは、すでにアノテーションが存在する場合はスキップします。
 既存のアノテーションを残してインポートする場合は、 ``--merge`` を指定してください。
