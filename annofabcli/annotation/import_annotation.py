@@ -418,6 +418,7 @@ class AnnotationConverter:
             old_dict_detail[old_detail["annotation_id"]] = old_detail
 
         new_request_details: list[dict[str, Any]] = []
+        input_annotation_id_to_detail_index: dict[str, int] = {}
         for detail_index, detail in enumerate(details):
             try:
                 # detail_indexを出力する理由: annotation_idはNoneだとどれが問題なのか分からないため
@@ -438,9 +439,15 @@ class AnnotationConverter:
                 )
                 continue
 
-            if detail.annotation_id in old_dict_detail:
+            annotation_id = request_detail["annotation_id"]
+            if annotation_id in input_annotation_id_to_detail_index:
+                first_detail_index = input_annotation_id_to_detail_index[annotation_id]
+                raise ValueError(f"インポート元のアノテーションに同じannotation_idが複数あります。 :: annotation_id='{annotation_id}', detail_index={first_detail_index}, {detail_index}")
+            input_annotation_id_to_detail_index[annotation_id] = detail_index
+
+            if annotation_id in old_dict_detail:
                 # アノテーションを上書き
-                old_detail = old_dict_detail[detail.annotation_id]
+                old_detail = old_dict_detail[annotation_id]
                 request_detail["_type"] = "Update"
                 old_details[old_detail[INDEX_KEY]] = request_detail
             else:

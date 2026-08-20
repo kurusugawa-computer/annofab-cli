@@ -260,6 +260,53 @@ class Test__ImportAnnotationMain:
 
 
 class Test__AnnotationConverter:
+    def test__convert_annotation_details__annotation_idを省略した分類アノテーションは既存アノテーションを更新する(self):
+        converter = AnnotationConverter(project, annotation_specs, is_strict=False, service=service)
+        classification_label_id = "fcb847a5-5607-4467-a72b-fc11fb5cfbab"
+        details = [
+            ImportedSimpleAnnotationDetail(
+                label="whole",
+                data={"_type": "Classification"},
+            )
+        ]
+        old_details = [
+            {
+                "annotation_id": classification_label_id,
+                "label_id": classification_label_id,
+            }
+        ]
+
+        actual = converter.convert_annotation_details(
+            SimpleAnnotationDirParser(Path("foo.json")),
+            details,
+            old_details,
+        )
+
+        assert actual["details"] == [
+            {
+                "_type": "Update",
+                "label_id": classification_label_id,
+                "annotation_id": classification_label_id,
+                "additional_data_list": [],
+                "editor_props": {},
+                "body": {"_type": "Inner", "data": {"_type": "Classification"}},
+            }
+        ]
+
+    def test__convert_annotation_details__実効annotation_idが重複する場合は例外(self):
+        converter = AnnotationConverter(project, annotation_specs, is_strict=False, service=service)
+        details = [
+            ImportedSimpleAnnotationDetail(label="whole", data={"_type": "Classification"}),
+            ImportedSimpleAnnotationDetail(label="whole", data={"_type": "Classification"}),
+        ]
+
+        with pytest.raises(ValueError):
+            converter.convert_annotation_details(
+                SimpleAnnotationDirParser(Path("foo.json")),
+                details,
+                old_details=[],
+            )
+
     def test_xxx(self):
         converter = AnnotationConverter(project, annotation_specs, is_strict=False, service=service)
         parser = SimpleAnnotationDirParser(Path("tests/data/annotation/import_annotation/image_annotation.json"))
