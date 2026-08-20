@@ -13,6 +13,7 @@ from pydantic import ValidationError
 
 from annofabcli.annotation.editor_props import validate_editor_props_for_cli
 from annofabcli.annotation.import_annotation import AnnotationConverter, ImportAnnotationMain, ImportedSimpleAnnotation, ImportedSimpleAnnotationDetail
+from annofabcli.common.facade import TaskQuery
 
 service = annofabapi.build()
 
@@ -39,7 +40,19 @@ class _FakeApi:
 
 class _FakeWrapper:
     def __init__(self, task: dict[str, Any]) -> None:
-        self.task = task
+        self.task = {
+            "project_id": project["project_id"],
+            "phase_stage": 0,
+            "input_data_id_list": [],
+            "histories_by_phase": [],
+            "work_time_span": 0,
+            "number_of_rejections": 0,
+            "started_datetime": None,
+            "operation_updated_datetime": None,
+            "sampling": None,
+            "metadata": {},
+            **task,
+        }
         self.changed_operator_account_ids: list[str | None] = []
 
     def get_task_or_none(self, _project_id: str, _task_id: str) -> dict[str, Any]:
@@ -101,8 +114,10 @@ class _TestImportAnnotationMain(ImportAnnotationMain):
         return 1, 1
 
 
-def _create_import_annotation_main(*, task: dict[str, Any], project_member_role: ProjectMemberRole, change_operator_to_me: bool = False) -> _TestImportAnnotationMain:
-    return _TestImportAnnotationMain(
+def _create_import_annotation_main(
+    *, task: dict[str, Any], project_member_role: ProjectMemberRole, change_operator_to_me: bool = False, task_query: TaskQuery | None = None
+) -> _TestImportAnnotationMain:
+    main_obj = _TestImportAnnotationMain(
         cast(annofabapi.Resource, _FakeService(task, project_member_role)),
         project_id=project["project_id"],
         all_yes=True,
@@ -114,9 +129,51 @@ def _create_import_annotation_main(*, task: dict[str, Any], project_member_role:
         include_on_hold_task=False,
         converter=cast(AnnotationConverter, None),
     )
+    main_obj.task_query = task_query
+    return main_obj
 
 
 class Test__ImportAnnotationMain:
+    def test__execute_task__task_queryの条件に一致しないタスクは問い合わせ前にスキップする(self):
+        task = {
+            "task_id": "task_id",
+            "phase": "annotation",
+            "status": TaskStatus.NOT_STARTED.value,
+            "account_id": "account_id",
+            "updated_datetime": "2026-07-30T00:00:00.000+09:00",
+        }
+        obj = _create_import_annotation_main(
+            task=task,
+            project_member_role=ProjectMemberRole.OWNER,
+            task_query=TaskQuery(status=TaskStatus.ON_HOLD),
+        )
+
+        actual = obj.execute_task(cast(SimpleAnnotationParserByTask, _FakeTaskParser()))
+
+        assert not actual
+        assert not obj.confirm_processing_called
+        assert not obj.put_annotation_for_task_called
+
+    def test__execute_task__task_queryの担当者条件に一致するタスクをインポートする(self):
+        task = {
+            "task_id": "task_id",
+            "phase": "annotation",
+            "status": TaskStatus.NOT_STARTED.value,
+            "account_id": "account_id",
+            "updated_datetime": "2026-07-30T00:00:00.000+09:00",
+        }
+        obj = _create_import_annotation_main(
+            task=task,
+            project_member_role=ProjectMemberRole.OWNER,
+            task_query=TaskQuery(account_id="account_id"),
+        )
+
+        actual = obj.execute_task(cast(SimpleAnnotationParserByTask, _FakeTaskParser()))
+
+        assert actual
+        assert obj.confirm_processing_called
+        assert obj.put_annotation_for_task_called
+
     def test__execute_task__チェッカーが担当者を変更しない場合は問い合わせ前にスキップする(self):
         task = {
             "task_id": "task_id",
@@ -203,6 +260,144 @@ class Test__ImportAnnotationMain:
 
 
 class Test__AnnotationConverter:
+    def test__convert_annotation_details__既存属性を維持して指定した属性だけ更新する(self):
+        converter = AnnotationConverter(project, annotation_specs, is_strict=False, service=service)
+        car_label_id = "9d6cca8d-3f5a-4808-a6c9-0ae18a478176"
+        traffic_lane_definition_id = "ec27de5d-122c-40e7-89bc-5500e37bae6a"
+        occluded_definition_id = "2517f635-2269-4142-8ef4-16312b4cc9f7"
+        details = [
+            ImportedSimpleAnnotationDetail(
+                label="car",
+                annotation_id="annotation_id",
+                data={"_type": "BoundingBox", "left_top": {"x": 10, "y": 20}, "right_bottom": {"x": 30, "y": 40}},
+                attributes={"traffic_lane": 3},
+            )
+        ]
+        old_details = [
+            {
+                "annotation_id": "annotation_id",
+                "label_id": car_label_id,
+                "additional_data_list": [
+                    {"definition_id": traffic_lane_definition_id, "value": {"_type": "Integer", "value": 1}},
+                    {"definition_id": occluded_definition_id, "value": {"_type": "Flag", "value": True}},
+                ],
+            }
+        ]
+
+        actual = converter.convert_annotation_details(SimpleAnnotationDirParser(Path("foo.json")), details, old_details)
+
+        assert actual["details"][0]["additional_data_list"] == [
+            {"definition_id": traffic_lane_definition_id, "value": {"_type": "Integer", "value": 3}},
+            {"definition_id": occluded_definition_id, "value": {"_type": "Flag", "value": True}},
+        ]
+
+    def test__convert_annotation_details__nullの属性を削除する(self):
+        converter = AnnotationConverter(project, annotation_specs, is_strict=False, service=service)
+        car_label_id = "9d6cca8d-3f5a-4808-a6c9-0ae18a478176"
+        traffic_lane_definition_id = "ec27de5d-122c-40e7-89bc-5500e37bae6a"
+        occluded_definition_id = "2517f635-2269-4142-8ef4-16312b4cc9f7"
+        details = [
+            ImportedSimpleAnnotationDetail(
+                label="car",
+                annotation_id="annotation_id",
+                data={"_type": "BoundingBox", "left_top": {"x": 10, "y": 20}, "right_bottom": {"x": 30, "y": 40}},
+                attributes={"occluded": None},
+            )
+        ]
+        old_details = [
+            {
+                "annotation_id": "annotation_id",
+                "label_id": car_label_id,
+                "additional_data_list": [
+                    {"definition_id": traffic_lane_definition_id, "value": {"_type": "Integer", "value": 1}},
+                    {"definition_id": occluded_definition_id, "value": {"_type": "Flag", "value": True}},
+                ],
+            }
+        ]
+
+        actual = converter.convert_annotation_details(SimpleAnnotationDirParser(Path("foo.json")), details, old_details)
+
+        assert actual["details"][0]["additional_data_list"] == [
+            {"definition_id": traffic_lane_definition_id, "value": {"_type": "Integer", "value": 1}},
+        ]
+
+    def test__convert_annotation_details__ラベル変更時は新ラベルに紐づかない既存属性を削除する(self):
+        converter = AnnotationConverter(project, annotation_specs, is_strict=False, service=service)
+        car_label_id = "9d6cca8d-3f5a-4808-a6c9-0ae18a478176"
+        number_plate_label_id = "39d05700-7c12-4732-bc35-02d65367cc3e"
+        traffic_lane_definition_id = "ec27de5d-122c-40e7-89bc-5500e37bae6a"
+        number_plate_definition_id = "15ba8b9d-4882-40c2-bb31-ed3f68197c2e"
+        details = [
+            ImportedSimpleAnnotationDetail(
+                label="number_plate",
+                annotation_id="annotation_id",
+                data={"_type": "BoundingBox", "left_top": {"x": 10, "y": 20}, "right_bottom": {"x": 30, "y": 40}},
+                attributes={},
+            )
+        ]
+        old_details = [
+            {
+                "annotation_id": "annotation_id",
+                "label_id": car_label_id,
+                "additional_data_list": [
+                    {"definition_id": traffic_lane_definition_id, "value": {"_type": "Integer", "value": 1}},
+                    {"definition_id": number_plate_definition_id, "value": None},
+                ],
+            }
+        ]
+
+        actual = converter.convert_annotation_details(SimpleAnnotationDirParser(Path("foo.json")), details, old_details)
+
+        assert actual["details"][0]["label_id"] == number_plate_label_id
+        assert actual["details"][0]["additional_data_list"] == [{"definition_id": number_plate_definition_id, "value": None}]
+
+    def test__convert_annotation_details__annotation_idを省略した分類アノテーションは既存アノテーションを更新する(self):
+        converter = AnnotationConverter(project, annotation_specs, is_strict=False, service=service)
+        classification_label_id = "fcb847a5-5607-4467-a72b-fc11fb5cfbab"
+        details = [
+            ImportedSimpleAnnotationDetail(
+                label="whole",
+                data={"_type": "Classification"},
+            )
+        ]
+        old_details = [
+            {
+                "annotation_id": classification_label_id,
+                "label_id": classification_label_id,
+            }
+        ]
+
+        actual = converter.convert_annotation_details(
+            SimpleAnnotationDirParser(Path("foo.json")),
+            details,
+            old_details,
+        )
+
+        assert actual["details"] == [
+            {
+                "_type": "Update",
+                "label_id": classification_label_id,
+                "annotation_id": classification_label_id,
+                "additional_data_list": [],
+                "editor_props": {},
+                "body": {"_type": "Inner", "data": {"_type": "Classification"}},
+            }
+        ]
+
+    def test__convert_annotation_details__実効annotation_idが重複する場合は例外(self):
+        converter = AnnotationConverter(project, annotation_specs, is_strict=False, service=service)
+        details = [
+            ImportedSimpleAnnotationDetail(label="whole", data={"_type": "Classification"}),
+            ImportedSimpleAnnotationDetail(label="whole", data={"_type": "Classification"}),
+        ]
+
+        with pytest.raises(ValueError):
+            converter.convert_annotation_details(
+                SimpleAnnotationDirParser(Path("foo.json")),
+                details,
+                old_details=[],
+            )
+
     def test_xxx(self):
         converter = AnnotationConverter(project, annotation_specs, is_strict=False, service=service)
         parser = SimpleAnnotationDirParser(Path("tests/data/annotation/import_annotation/image_annotation.json"))
@@ -454,9 +649,7 @@ class Test__AnnotationConverter:
                 "traffic_lane": "not_int",
             }
         )
-        # 型不一致なので空リスト
         assert actual == [
-            # valueがNoneになるが、definition_idは付与される
             {"definition_id": "ec27de5d-122c-40e7-89bc-5500e37bae6a", "value": None},
         ]
 
@@ -477,7 +670,6 @@ class Test__AnnotationConverter:
                 "occluded": "not_bool",
             }
         )
-        # 型不一致なので空リスト
         assert actual == [
             {"definition_id": "2517f635-2269-4142-8ef4-16312b4cc9f7", "value": None},
         ]

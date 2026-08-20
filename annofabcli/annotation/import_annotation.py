@@ -16,6 +16,7 @@ from typing import Any, assert_never
 import annofabapi
 import pydantic
 import ulid
+from annofabapi.dataclass.task import Task
 from annofabapi.models import (
     AdditionalDataDefinitionType,
     DefaultAnnotationType,
@@ -43,7 +44,7 @@ from annofabcli.common.cli import (
     CommandLineWithConfirm,
     build_annofabapi_resource_and_login,
 )
-from annofabcli.common.facade import AnnofabApiFacade
+from annofabcli.common.facade import AnnofabApiFacade, TaskQuery, match_task_with_query
 from annofabcli.common.visualize import AddProps
 
 logger = logging.getLogger(__name__)
@@ -61,8 +62,8 @@ class ImportedSimpleAnnotationDetail(DataClassJsonMixin):
     data: dict[str, Any]
     """"""
 
-    attributes: dict[str, str | bool | int] | None = None
-    """属性情報。キーは属性の名前、値は属性の値。 """
+    attributes: dict[str, str | bool | int | None] | None = None
+    """属性情報。キーは属性の名前、値は属性の値。``None`` は既存属性を削除する。"""
 
     annotation_id: str | None = None
     """アノテーションID"""
@@ -390,6 +391,51 @@ class AnnotationConverter:
             result["body"] = {"_type": "Inner", "data": round_2d_annotation_coordinates(detail.data)}
         return result
 
+    def merge_additional_data_list(
+        self,
+        old_detail: Mapping[str, Any],
+        request_detail: dict[str, Any],
+        attributes: Mapping[str, str | bool | int | None] | None,
+    ) -> list[dict[str, Any]]:
+        """既存の属性値へインポートする属性値を部分更新する。
+
+        属性値が ``None`` の場合は、その属性を削除する。ラベルを変更する場合は、
+        変更後のラベルで利用できない既存属性を削除する。
+
+        Args:
+            old_detail: 更新前のアノテーション情報。
+            request_detail: 更新後のアノテーション情報。
+            attributes: インポートJSONに指定された属性情報。
+
+        Returns:
+            部分更新後の属性値リスト。
+        """
+        old_additional_data_list = old_detail.get("additional_data_list", [])
+        if old_detail["label_id"] != request_detail["label_id"]:
+            label = self.annotation_specs_accessor.get_label(label_id=request_detail["label_id"])
+            available_definition_ids = set(label["additional_data_definitions"])
+            old_additional_data_list = [additional_data for additional_data in old_additional_data_list if additional_data["definition_id"] in available_definition_ids]
+
+        additional_data_by_definition_id = {additional_data["definition_id"]: copy.deepcopy(additional_data) for additional_data in old_additional_data_list}
+        label = self.annotation_specs_accessor.get_label(label_id=request_detail["label_id"])
+        deleted_definition_ids: set[str] = set()
+        for attribute_name, attribute_value in (attributes or {}).items():
+            if attribute_value is not None:
+                continue
+            try:
+                attribute = self.annotation_specs_accessor.get_attribute(attribute_name=attribute_name, label=label)
+            except ValueError:
+                continue
+            deleted_definition_ids.add(attribute["additional_data_definition_id"])
+        for additional_data in request_detail["additional_data_list"]:
+            definition_id = additional_data["definition_id"]
+            if definition_id in deleted_definition_ids:
+                additional_data_by_definition_id.pop(definition_id, None)
+            elif additional_data["value"] is not None:
+                additional_data_by_definition_id[definition_id] = additional_data
+
+        return list(additional_data_by_definition_id.values())
+
     def convert_annotation_details(
         self,
         parser: SimpleAnnotationParser,
@@ -417,6 +463,7 @@ class AnnotationConverter:
             old_dict_detail[old_detail["annotation_id"]] = old_detail
 
         new_request_details: list[dict[str, Any]] = []
+        input_annotation_id_to_detail_index: dict[str, int] = {}
         for detail_index, detail in enumerate(details):
             try:
                 # detail_indexを出力する理由: annotation_idはNoneだとどれが問題なのか分からないため
@@ -437,9 +484,15 @@ class AnnotationConverter:
                 )
                 continue
 
-            if detail.annotation_id in old_dict_detail:
-                # アノテーションを上書き
-                old_detail = old_dict_detail[detail.annotation_id]
+            annotation_id = request_detail["annotation_id"]
+            if annotation_id in input_annotation_id_to_detail_index:
+                first_detail_index = input_annotation_id_to_detail_index[annotation_id]
+                raise ValueError(f"インポート元のアノテーションに同じannotation_idが複数あります。 :: annotation_id='{annotation_id}', detail_indexes={first_detail_index}, {detail_index}")
+            input_annotation_id_to_detail_index[annotation_id] = detail_index
+
+            if annotation_id in old_dict_detail:
+                old_detail = old_dict_detail[annotation_id]
+                request_detail["additional_data_list"] = self.merge_additional_data_list(old_detail, request_detail, detail.attributes)
                 request_detail["_type"] = "Update"
                 old_details[old_detail[INDEX_KEY]] = request_detail
             else:
@@ -489,6 +542,8 @@ class ImportAnnotationMain(CommandLineWithConfirm):
         self.include_break_task = include_break_task
         self.include_on_hold_task = include_on_hold_task
         self.converter = converter
+        self.task_query: TaskQuery | None = None
+        """インポート対象のタスクを絞り込むクエリ条件。"""
 
     def put_annotation_for_input_data(self, parser: SimpleAnnotationParser, old_annotation: dict[str, Any]) -> int:
         """
@@ -630,6 +685,10 @@ class ImportAnnotationMain(CommandLineWithConfirm):
         task = self.service.wrapper.get_task_or_none(self.project_id, task_id)
         if task is None:
             logger.warning(f"{logger_prefix}タスクは存在しません。")
+            return False
+
+        if self.task_query is not None and not match_task_with_query(Task.from_dict(task), self.task_query):
+            logger.debug(f"{logger_prefix}`--task_query`の条件に一致しないため、処理をスキップします。 :: task_query={self.task_query}")
             return False
 
         logger.debug(f"{logger_prefix}phase='{task['phase']}', status='{task['status']}'")
@@ -804,6 +863,9 @@ class ImportAnnotation(CommandLine):
             sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
         target_task_ids = set(annofabcli.common.cli.get_list_from_args(args.task_id)) if args.task_id is not None else None
+        task_query = TaskQuery.from_dict(annofabcli.common.cli.get_json_from_args(args.task_query)) if args.task_query is not None else None
+        if task_query is not None:
+            task_query = self.facade.set_account_id_of_task_query(project_id, task_query)
 
         # Simpleアノテーションの読み込み
         if annotation_path.is_dir():
@@ -836,6 +898,7 @@ class ImportAnnotation(CommandLine):
             include_on_hold_task=args.include_on_hold_task,
             converter=converter,
         )
+        main_obj.task_query = task_query
 
         main_obj.main(iter_task_parser, target_task_ids=target_task_ids, parallelism=args.parallelism)
 
@@ -859,6 +922,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     )
 
     argument_parser.add_task_id(required=False)
+    argument_parser.add_task_query(help_message="インポート対象のタスクを絞り込むクエリ条件をJSON形式で指定します。 ``--task_id`` と併用した場合は、両方の条件に一致するタスクを対象にします。")
 
     overwrite_merge_group = parser.add_mutually_exclusive_group()
 
@@ -872,7 +936,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--merge",
         action="store_true",
         help="アノテーションが存在する場合、 ``--merge`` を指定していればアノテーションをannotation_id単位でマージしながらインポートします。"
-        "annotation_idが一致すればアノテーションを上書き、一致しなければアノテーションを追加します。"
+        "annotation_idが一致すればアノテーションのデータを更新し、属性は指定したキーだけ更新します。一致しなければアノテーションを追加します。"
         "指定しなければ、アノテーションのインポートをスキップします。",
     )
 

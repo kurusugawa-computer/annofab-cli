@@ -112,6 +112,16 @@ Examples
     }
 
 
+``attributes``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+``--merge`` を指定し、既存アノテーションと ``annotation_id`` が一致した場合、 ``attributes`` は部分更新されます。JSONに指定した属性だけを更新し、指定していない既存属性は維持します。
+
+属性値に ``null`` を指定した場合、その属性は削除されます。 ``attributes`` を省略するか空のオブジェクトを指定した場合、既存属性は変更しません。
+
+アノテーションのラベルを変更した場合は、変更後のラベルに紐づかない既存属性は削除されます。
+
+
 ``editor_props``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -170,10 +180,24 @@ Examples
     $ annofabcli annotation import --project_id prj1 --annotation annotation.zip \
     --task_id file://task_id.txt
 
+タスクの状態や担当者でインポート対象を絞り込む場合は、``--task_query`` にクエリ条件をJSON形式で指定してください。タスクの現在の状態と担当者を用いて絞り込みます。``--task_id`` と併用した場合は、両方の条件に一致するタスクを対象にします。
+
+.. code-block::
+
+    # 保留中状態のタスクだけにインポートする
+    $ annofabcli annotation import --project_id prj1 --annotation annotation.zip \
+    --task_query '{"status": "on_hold"}' --include_on_hold_task
+
+    # user_idがa@example.comの担当者であるタスクだけにインポートする
+    $ annofabcli annotation import --project_id prj1 --annotation annotation.zip \
+    --task_query '{"user_id": "a@example.com"}'
+
+``--task_query`` の条件に一致しても、完了・休憩中・保留中状態のタスクにインポートするには、それぞれ ``--include_complete_task`` 、 ``--include_break_task`` 、 ``--include_on_hold_task`` の指定が必要です。
+
 
 デフォルトでは、すでにアノテーションが存在する場合はスキップします。
 既存のアノテーションを残してインポートする場合は、 ``--merge`` を指定してください。
-インポート対象のアノテーションのannotation_idが、既存のアノテーションのannotation_idに一致すればアノテーションを上書きします。一致しなければアノテーションを追加します。
+インポート対象のアノテーションのannotation_idが、既存のアノテーションのannotation_idに一致すれば、アノテーションのデータを更新し、属性は指定したキーだけ更新します。一致しなければアノテーションを追加します。
 
 
 .. code-block::
