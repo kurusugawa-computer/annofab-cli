@@ -487,7 +487,7 @@ class AnnotationConverter:
             annotation_id = request_detail["annotation_id"]
             if annotation_id in input_annotation_id_to_detail_index:
                 first_detail_index = input_annotation_id_to_detail_index[annotation_id]
-                raise ValueError(f"インポート元のアノテーションに同じannotation_idが複数あります。 :: annotation_id='{annotation_id}', detail_index={first_detail_index}, {detail_index}")
+                raise ValueError(f"インポート元のアノテーションに同じannotation_idが複数あります。 :: annotation_id='{annotation_id}', detail_indexes={first_detail_index}, {detail_index}")
             input_annotation_id_to_detail_index[annotation_id] = detail_index
 
             if annotation_id in old_dict_detail:
