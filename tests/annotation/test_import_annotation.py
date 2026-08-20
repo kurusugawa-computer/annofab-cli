@@ -260,6 +260,97 @@ class Test__ImportAnnotationMain:
 
 
 class Test__AnnotationConverter:
+    def test__convert_annotation_details__既存属性を維持して指定した属性だけ更新する(self):
+        converter = AnnotationConverter(project, annotation_specs, is_strict=False, service=service)
+        car_label_id = "9d6cca8d-3f5a-4808-a6c9-0ae18a478176"
+        traffic_lane_definition_id = "ec27de5d-122c-40e7-89bc-5500e37bae6a"
+        occluded_definition_id = "2517f635-2269-4142-8ef4-16312b4cc9f7"
+        details = [
+            ImportedSimpleAnnotationDetail(
+                label="car",
+                annotation_id="annotation_id",
+                data={"_type": "BoundingBox", "left_top": {"x": 10, "y": 20}, "right_bottom": {"x": 30, "y": 40}},
+                attributes={"traffic_lane": 3},
+            )
+        ]
+        old_details = [
+            {
+                "annotation_id": "annotation_id",
+                "label_id": car_label_id,
+                "additional_data_list": [
+                    {"definition_id": traffic_lane_definition_id, "value": {"_type": "Integer", "value": 1}},
+                    {"definition_id": occluded_definition_id, "value": {"_type": "Flag", "value": True}},
+                ],
+            }
+        ]
+
+        actual = converter.convert_annotation_details(SimpleAnnotationDirParser(Path("foo.json")), details, old_details)
+
+        assert actual["details"][0]["additional_data_list"] == [
+            {"definition_id": traffic_lane_definition_id, "value": {"_type": "Integer", "value": 3}},
+            {"definition_id": occluded_definition_id, "value": {"_type": "Flag", "value": True}},
+        ]
+
+    def test__convert_annotation_details__nullの属性を削除する(self):
+        converter = AnnotationConverter(project, annotation_specs, is_strict=False, service=service)
+        car_label_id = "9d6cca8d-3f5a-4808-a6c9-0ae18a478176"
+        traffic_lane_definition_id = "ec27de5d-122c-40e7-89bc-5500e37bae6a"
+        occluded_definition_id = "2517f635-2269-4142-8ef4-16312b4cc9f7"
+        details = [
+            ImportedSimpleAnnotationDetail(
+                label="car",
+                annotation_id="annotation_id",
+                data={"_type": "BoundingBox", "left_top": {"x": 10, "y": 20}, "right_bottom": {"x": 30, "y": 40}},
+                attributes={"occluded": None},
+            )
+        ]
+        old_details = [
+            {
+                "annotation_id": "annotation_id",
+                "label_id": car_label_id,
+                "additional_data_list": [
+                    {"definition_id": traffic_lane_definition_id, "value": {"_type": "Integer", "value": 1}},
+                    {"definition_id": occluded_definition_id, "value": {"_type": "Flag", "value": True}},
+                ],
+            }
+        ]
+
+        actual = converter.convert_annotation_details(SimpleAnnotationDirParser(Path("foo.json")), details, old_details)
+
+        assert actual["details"][0]["additional_data_list"] == [
+            {"definition_id": traffic_lane_definition_id, "value": {"_type": "Integer", "value": 1}},
+        ]
+
+    def test__convert_annotation_details__ラベル変更時は新ラベルに紐づかない既存属性を削除する(self):
+        converter = AnnotationConverter(project, annotation_specs, is_strict=False, service=service)
+        car_label_id = "9d6cca8d-3f5a-4808-a6c9-0ae18a478176"
+        number_plate_label_id = "39d05700-7c12-4732-bc35-02d65367cc3e"
+        traffic_lane_definition_id = "ec27de5d-122c-40e7-89bc-5500e37bae6a"
+        number_plate_definition_id = "15ba8b9d-4882-40c2-bb31-ed3f68197c2e"
+        details = [
+            ImportedSimpleAnnotationDetail(
+                label="number_plate",
+                annotation_id="annotation_id",
+                data={"_type": "BoundingBox", "left_top": {"x": 10, "y": 20}, "right_bottom": {"x": 30, "y": 40}},
+                attributes={},
+            )
+        ]
+        old_details = [
+            {
+                "annotation_id": "annotation_id",
+                "label_id": car_label_id,
+                "additional_data_list": [
+                    {"definition_id": traffic_lane_definition_id, "value": {"_type": "Integer", "value": 1}},
+                    {"definition_id": number_plate_definition_id, "value": None},
+                ],
+            }
+        ]
+
+        actual = converter.convert_annotation_details(SimpleAnnotationDirParser(Path("foo.json")), details, old_details)
+
+        assert actual["details"][0]["label_id"] == number_plate_label_id
+        assert actual["details"][0]["additional_data_list"] == [{"definition_id": number_plate_definition_id, "value": None}]
+
     def test__convert_annotation_details__annotation_idを省略した分類アノテーションは既存アノテーションを更新する(self):
         converter = AnnotationConverter(project, annotation_specs, is_strict=False, service=service)
         classification_label_id = "fcb847a5-5607-4467-a72b-fc11fb5cfbab"
@@ -558,9 +649,7 @@ class Test__AnnotationConverter:
                 "traffic_lane": "not_int",
             }
         )
-        # 型不一致なので空リスト
         assert actual == [
-            # valueがNoneになるが、definition_idは付与される
             {"definition_id": "ec27de5d-122c-40e7-89bc-5500e37bae6a", "value": None},
         ]
 
@@ -581,7 +670,6 @@ class Test__AnnotationConverter:
                 "occluded": "not_bool",
             }
         )
-        # 型不一致なので空リスト
         assert actual == [
             {"definition_id": "2517f635-2269-4142-8ef4-16312b4cc9f7", "value": None},
         ]
