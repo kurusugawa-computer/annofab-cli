@@ -290,7 +290,8 @@ class ChangeAnnotationDataPerAnnotationMain(CommandLineWithConfirm):
         total_task_count = len(annotation_list_per_task_id_input_data_id)
         total_annotation_count = len(anno_list)
 
-        for task_id, input_data_dict in annotation_list_per_task_id_input_data_id.items():
+        for task_index, (task_id, input_data_dict) in enumerate(annotation_list_per_task_id_input_data_id.items(), start=1):
+            logger.info(f"{task_index} / {total_task_count} 件目 :: task_id='{task_id}' のアノテーションのdataを変更します。")
             is_changeable_task, count = self.change_annotation_data_for_task(task_id, input_data_dict)
             total_success_count += count.success
             total_failed_count += count.failed

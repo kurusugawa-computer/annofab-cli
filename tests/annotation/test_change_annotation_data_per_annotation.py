@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from unittest.mock import Mock
 
 import pytest
@@ -168,6 +169,19 @@ class TestMergeAdditionalDataList:
 
 
 class TestChangeAnnotationDataPerAnnotationMain:
+    def test_change_annotation_data_logs_each_task_progress(self, caplog: pytest.LogCaptureFixture, monkeypatch: pytest.MonkeyPatch) -> None:
+        service = Mock()
+        main_obj = ChangeAnnotationDataPerAnnotationMain(service, project_id="prj1", include_complete_task=False, include_on_hold_task=False, all_yes=True)
+        monkeypatch.setattr(main_obj, "change_annotation_data_for_task", Mock(return_value=(True, ChangeAnnotationDataCount(success=1, failed=0))))
+        annotation_list = [TargetAnnotationData(task_id=f"task_{index:03d}", input_data_id="input1", annotation_id="annotation1", data={}) for index in range(3)]
+
+        with caplog.at_level(logging.INFO):
+            main_obj.change_annotation_data(annotation_list)
+
+        assert "1 / 3 件目 :: task_id='task_000' のアノテーションのdataを変更します。" in caplog.text
+        assert "2 / 3 件目 :: task_id='task_001' のアノテーションのdataを変更します。" in caplog.text
+        assert "3 / 3 件目 :: task_id='task_002' のアノテーションのdataを変更します。" in caplog.text
+
     def test_change_annotation_data_by_frame_uses_put_annotation(self) -> None:
         service = Mock()
         service.api.get_editor_annotation.return_value = (
