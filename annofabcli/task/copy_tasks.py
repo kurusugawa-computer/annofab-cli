@@ -6,7 +6,6 @@ import logging
 import multiprocessing
 import sys
 from dataclasses import dataclass
-from itertools import batched
 
 import annofabapi
 from annofabapi.models import ProjectMemberRole, Task
@@ -23,6 +22,7 @@ from annofabcli.common.cli import (
     build_annofabapi_resource_and_login,
 )
 from annofabcli.common.facade import AnnofabApiFacade
+from annofabcli.utils.iterables import batched
 
 logger = logging.getLogger(__name__)
 

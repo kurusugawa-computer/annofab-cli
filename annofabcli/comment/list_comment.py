@@ -3,7 +3,6 @@ from __future__ import annotations
 import argparse
 import logging
 from collections import Counter
-from itertools import batched
 from typing import Any
 
 import pandas
@@ -18,6 +17,7 @@ from annofabcli.common.enums import OutputFormat
 from annofabcli.common.facade import AnnofabApiFacade
 from annofabcli.common.utils import print_according_to_format, print_csv
 from annofabcli.common.visualize import AddProps
+from annofabcli.utils.iterables import batched
 
 logger = logging.getLogger(__name__)
 

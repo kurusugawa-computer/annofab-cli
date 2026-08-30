@@ -7,7 +7,6 @@ import multiprocessing
 import sys
 from collections import defaultdict
 from dataclasses import dataclass
-from itertools import batched
 from pathlib import Path
 from typing import Any
 
@@ -30,6 +29,7 @@ from annofabcli.common.cli import (
     get_list_from_args,
 )
 from annofabcli.common.facade import AnnofabApiFacade
+from annofabcli.utils.iterables import batched
 
 logger = logging.getLogger(__name__)
 

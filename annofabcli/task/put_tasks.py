@@ -8,7 +8,6 @@ import sys
 import tempfile
 from collections import defaultdict
 from enum import Enum
-from itertools import batched
 from pathlib import Path
 
 import annofabapi
@@ -28,6 +27,7 @@ from annofabcli.common.cli import (
 )
 from annofabcli.common.dataclasses import WaitOptions
 from annofabcli.common.facade import AnnofabApiFacade
+from annofabcli.utils.iterables import batched
 
 logger = logging.getLogger(__name__)
 

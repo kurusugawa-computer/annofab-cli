@@ -5,7 +5,6 @@ import functools
 import json
 import logging
 import multiprocessing
-from itertools import batched
 from pathlib import Path
 from typing import Any
 
@@ -17,6 +16,7 @@ from annofabcli.common.annofab.input_data import BULK_REQUEST_SIZE
 from annofabcli.common.annofab.task import get_task_dict_in_bulk
 from annofabcli.common.cli import PARALLELISM_CHOICES, ArgumentParser, CommandLine, build_annofabapi_resource_and_login
 from annofabcli.common.facade import AnnofabApiFacade
+from annofabcli.utils.iterables import batched
 
 logger = logging.getLogger(__name__)
 
