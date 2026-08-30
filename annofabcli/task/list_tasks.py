@@ -9,11 +9,14 @@ from annofabapi.models import Task
 from annofabapi.project_member_repository import ProjectMemberRepository
 
 import annofabcli.common.cli
+from annofabcli.common.annofab.input_data import BULK_REQUEST_SIZE
+from annofabcli.common.annofab.task import get_task_dict_in_bulk
 from annofabcli.common.cli import ArgumentParser, CommandLine, build_annofabapi_resource_and_login
 from annofabcli.common.enums import OutputFormat
 from annofabcli.common.facade import AnnofabApiFacade
 from annofabcli.common.utils import get_columns_with_priority, print_csv, print_id_list, print_json
 from annofabcli.common.visualize import AddProps
+from annofabcli.utils.iterables import batched
 
 logger = logging.getLogger(__name__)
 
@@ -91,15 +94,14 @@ class ListTasksMain:
     def get_task_list_from_task_id(self, project_id: str, task_id_list: list[str]) -> list[Task]:
         task_list = []
         logger.debug(f"{len(task_id_list)}件のタスクを取得します。")
-        for index, task_id in enumerate(task_id_list):
-            if (index + 1) % 100 == 0:
-                logger.debug(f"{index + 1} 件のタスクを取得します。")
-
-            task = self.service.wrapper.get_task_or_none(project_id, task_id)
-            if task is not None:
-                task_list.append(self.visualize.add_properties_to_task(task))
-            else:
-                logger.warning(f"タスク '{task_id}' は見つかりませんでした。")
+        for batch_task_id_list in batched(task_id_list, BULK_REQUEST_SIZE):
+            task_dict = get_task_dict_in_bulk(self.service, project_id, batch_task_id_list)
+            for task_id in batch_task_id_list:
+                task = task_dict.get(task_id)
+                if task is not None:
+                    task_list.append(self.visualize.add_properties_to_task(task))
+                else:
+                    logger.warning(f"タスク '{task_id}' は見つかりませんでした。")
 
         return task_list
 

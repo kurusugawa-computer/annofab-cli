@@ -6,8 +6,10 @@ import requests
 from annofabapi.models import ProjectMemberRole
 
 import annofabcli.common.cli
+from annofabcli.common.annofab.supplementary_data import get_supplementary_data_dict_in_bulk
 from annofabcli.common.cli import ArgumentParser, CommandLine, build_annofabapi_resource_and_login
 from annofabcli.common.facade import AnnofabApiFacade
+from annofabcli.utils.iterables import batched
 
 logger = logging.getLogger(__name__)
 
@@ -68,6 +70,7 @@ class DeleteInputData(CommandLine):
         *,
         delete_supplementary: bool,
         delete_input_data_used_by_task: bool,
+        supplementary_data_list: list[dict[str, Any]] | None = None,
     ) -> bool:
         input_data = self.service.wrapper.get_input_data_or_none(project_id, input_data_id)
         if input_data is None:
@@ -98,7 +101,7 @@ class DeleteInputData(CommandLine):
         logger.debug(f"{input_data_index + 1!s} 件目: 入力データ(input_data_id='{input_data_id}', input_data_name='{input_data_name}') を削除しました。")
 
         if delete_supplementary:
-            supplementary_data_list, _ = self.service.api.get_supplementary_data_list(project_id, input_data_id)
+            supplementary_data_list = supplementary_data_list if supplementary_data_list is not None else self.service.api.get_supplementary_data_list(project_id, input_data_id)[0]
             if len(supplementary_data_list) > 0 and self.confirm_delete_supplementary(input_data_id, input_data_name, supplementary_data_list=supplementary_data_list):
                 deleted_supplementary_data = self.delete_supplementary_data_list_for_input_data(project_id, input_data_id, supplementary_data_list=supplementary_data_list)
                 logger.debug(
@@ -125,21 +128,23 @@ class DeleteInputData(CommandLine):
         logger.info(f"プロジェクト'{project_title}'から 、{len(input_data_id_list)} 件の入力データを削除します。")
 
         count_delete_input_data = 0
-        for input_data_index, input_data_id in enumerate(input_data_id_list):
-            try:
-                result = self.delete_input_data(
-                    project_id,
-                    input_data_id,
-                    input_data_index=input_data_index,
-                    delete_supplementary=delete_supplementary,
-                    delete_input_data_used_by_task=delete_input_data_used_by_task,
-                )
-                if result:
-                    count_delete_input_data += 1
-
-            except requests.exceptions.HTTPError:
-                logger.warning(f"input_data_id='{input_data_id}'である入力データの削除に失敗しました。", exc_info=True)
-                continue
+        for initial_index, batch_input_data_id_list in enumerate(batched(input_data_id_list, 100)):
+            supplementary_data_dict = get_supplementary_data_dict_in_bulk(self.service, project_id, batch_input_data_id_list) if delete_supplementary else {}
+            for input_data_index, input_data_id in enumerate(batch_input_data_id_list, start=initial_index * 100):
+                try:
+                    result = self.delete_input_data(
+                        project_id,
+                        input_data_id,
+                        input_data_index=input_data_index,
+                        delete_supplementary=delete_supplementary,
+                        delete_input_data_used_by_task=delete_input_data_used_by_task,
+                        supplementary_data_list=supplementary_data_dict.get(input_data_id),
+                    )
+                    if result:
+                        count_delete_input_data += 1
+                except requests.exceptions.HTTPError:
+                    logger.warning(f"input_data_id='{input_data_id}'である入力データの削除に失敗しました。", exc_info=True)
+                    continue
 
         logger.info(f"プロジェクト'{project_title}'から 、{count_delete_input_data}/{len(input_data_id_list)} 件の入力データを削除しました。")
 

@@ -16,6 +16,7 @@ from annofabapi.models import ProjectMemberRole
 
 import annofabcli.common.cli
 from annofabcli.common.annofab.input_data import BULK_REQUEST_SIZE, get_input_data_dict_in_bulk
+from annofabcli.common.annofab.supplementary_data import get_supplementary_data_dict_in_bulk
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
     PARALLELISM_CHOICES,
@@ -113,6 +114,8 @@ class CopyInputDataMain(CommandLineWithConfirm):
         input_data_index: int | None = None,
         src_input_data_dict: dict[str, dict[str, Any]] | None = None,
         dest_input_data_dict: dict[str, dict[str, Any]] | None = None,
+        src_supplementary_data_dict: dict[str, list[dict[str, Any]]] | None = None,
+        dest_supplementary_data_dict: dict[str, list[dict[str, Any]]] | None = None,
     ) -> bool:
         def get_confirm_message(supplementary_data_count: int, *, exists_in_dest_project: bool) -> str:
             message = f"入力データ(input_data_id='{input_data_id}')と補助情報{supplementary_data_count}件をコピーしますか？"
@@ -138,7 +141,9 @@ class CopyInputDataMain(CommandLineWithConfirm):
             )
             return False
 
-        src_supplementary_data_list, _ = self.service.api.get_supplementary_data_list(self.src_project_id, input_data_id)
+        src_supplementary_data_list = (
+            src_supplementary_data_dict.get(input_data_id, []) if src_supplementary_data_dict is not None else self.service.api.get_supplementary_data_list(self.src_project_id, input_data_id)[0]
+        )
         if not self.confirm_processing(get_confirm_message(len(src_supplementary_data_list), exists_in_dest_project=dest_input_data is not None)):
             return False
 
@@ -154,7 +159,11 @@ class CopyInputDataMain(CommandLineWithConfirm):
         if len(src_supplementary_data_list) > 0:
             # 補助情報が存在する場合は、補助情報もコピーする
             if dest_input_data is not None:
-                dest_supplementary_data_list, _ = self.service.api.get_supplementary_data_list(self.dest_project_id, input_data_id)
+                dest_supplementary_data_list = (
+                    dest_supplementary_data_dict.get(input_data_id, [])
+                    if dest_supplementary_data_dict is not None
+                    else self.service.api.get_supplementary_data_list(self.dest_project_id, input_data_id)[0]
+                )
             else:
                 dest_supplementary_data_list = []
 
@@ -162,7 +171,15 @@ class CopyInputDataMain(CommandLineWithConfirm):
 
         return True
 
-    def copy_input_data_and_supplementary_data_wrapper(self, tpl: tuple[int, str], *, src_input_data_dict: dict[str, dict[str, Any]], dest_input_data_dict: dict[str, dict[str, Any]]) -> bool:
+    def copy_input_data_and_supplementary_data_wrapper(
+        self,
+        tpl: tuple[int, str],
+        *,
+        src_input_data_dict: dict[str, dict[str, Any]],
+        dest_input_data_dict: dict[str, dict[str, Any]],
+        src_supplementary_data_dict: dict[str, list[dict[str, Any]]],
+        dest_supplementary_data_dict: dict[str, list[dict[str, Any]]],
+    ) -> bool:
         input_data_index, input_data_id = tpl
         try:
             return self.copy_input_data_and_supplementary_data(
@@ -170,6 +187,8 @@ class CopyInputDataMain(CommandLineWithConfirm):
                 input_data_index=input_data_index,
                 src_input_data_dict=src_input_data_dict,
                 dest_input_data_dict=dest_input_data_dict,
+                src_supplementary_data_dict=src_supplementary_data_dict,
+                dest_supplementary_data_dict=dest_supplementary_data_dict,
             )
         except Exception:
             logger.warning(
@@ -205,7 +224,15 @@ class CopyInputDataMain(CommandLineWithConfirm):
                 for initial_index, batch_input_data_id_list in enumerate(batched(input_data_id_list, BULK_REQUEST_SIZE)):
                     src_input_data_dict = get_input_data_dict_in_bulk(self.service, self.src_project_id, batch_input_data_id_list)
                     dest_input_data_dict = get_input_data_dict_in_bulk(self.service, self.dest_project_id, batch_input_data_id_list)
-                    wrapper = partial(self.copy_input_data_and_supplementary_data_wrapper, src_input_data_dict=src_input_data_dict, dest_input_data_dict=dest_input_data_dict)
+                    src_supplementary_data_dict = get_supplementary_data_dict_in_bulk(self.service, self.src_project_id, batch_input_data_id_list)
+                    dest_supplementary_data_dict = get_supplementary_data_dict_in_bulk(self.service, self.dest_project_id, batch_input_data_id_list)
+                    wrapper = partial(
+                        self.copy_input_data_and_supplementary_data_wrapper,
+                        src_input_data_dict=src_input_data_dict,
+                        dest_input_data_dict=dest_input_data_dict,
+                        src_supplementary_data_dict=src_supplementary_data_dict,
+                        dest_supplementary_data_dict=dest_supplementary_data_dict,
+                    )
                     result_bool_list = pool.map(wrapper, enumerate(batch_input_data_id_list, start=initial_index * BULK_REQUEST_SIZE))
                     success_count += len([e for e in result_bool_list if e])
 
@@ -215,10 +242,17 @@ class CopyInputDataMain(CommandLineWithConfirm):
             for initial_index, batch_input_data_id_list in enumerate(batched(input_data_id_list, BULK_REQUEST_SIZE)):
                 src_input_data_dict = get_input_data_dict_in_bulk(self.service, self.src_project_id, batch_input_data_id_list)
                 dest_input_data_dict = get_input_data_dict_in_bulk(self.service, self.dest_project_id, batch_input_data_id_list)
+                src_supplementary_data_dict = get_supplementary_data_dict_in_bulk(self.service, self.src_project_id, batch_input_data_id_list)
+                dest_supplementary_data_dict = get_supplementary_data_dict_in_bulk(self.service, self.dest_project_id, batch_input_data_id_list)
                 for input_data_index, input_data_id in enumerate(batch_input_data_id_list, start=initial_index * BULK_REQUEST_SIZE):
                     try:
                         result = self.copy_input_data_and_supplementary_data(
-                            input_data_id, input_data_index=input_data_index, src_input_data_dict=src_input_data_dict, dest_input_data_dict=dest_input_data_dict
+                            input_data_id,
+                            input_data_index=input_data_index,
+                            src_input_data_dict=src_input_data_dict,
+                            dest_input_data_dict=dest_input_data_dict,
+                            src_supplementary_data_dict=src_supplementary_data_dict,
+                            dest_supplementary_data_dict=dest_supplementary_data_dict,
                         )
                         if result:
                             success_count += 1

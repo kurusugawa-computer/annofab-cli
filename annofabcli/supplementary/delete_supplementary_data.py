@@ -12,6 +12,7 @@ from annofabapi.models import ProjectMemberRole
 from more_itertools import first_true
 
 import annofabcli.common.cli
+from annofabcli.common.annofab.supplementary_data import get_supplementary_data_dict_in_bulk
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
     ArgumentParser,
@@ -111,11 +112,14 @@ class DeleteSupplementaryDataMain(CommandLineWithConfirm):
     def delete_supplementary_data_list(self, project_id: str, input_data_dict: InputDataSupplementaryDataDict) -> None:
         deleted_count = 0
         total_count = sum(len(e) for e in input_data_dict.values())
+        processed_count = 0
         for input_data_id, supplementary_data_id_list in input_data_dict.items():
             try:
                 deleted_count += self.delete_supplementary_data_list_for_input_data(project_id, input_data_id, supplementary_data_id_list)
             except Exception:  # pylint: disable=broad-except
                 logger.warning(f"入力データ(input_data_id='{input_data_id}')配下の補助情報の削除に失敗しました。", exc_info=True)
+            processed_count += len(supplementary_data_id_list)
+            logger.info(f"{processed_count}/{total_count}件目までの補助情報を処理しました。")
 
         logger.info(f"{deleted_count} / {total_count} 件の補助情報を削除しました。")
 
@@ -153,6 +157,7 @@ class DeleteSupplementaryDataMain(CommandLineWithConfirm):
 
     def delete_supplementary_data_list_by_input_data_id(self, project_id: str, input_data_id_list: list[str]) -> None:
         dict_deleted_count: dict[str, int] = {}
+        supplementary_data_dict = get_supplementary_data_dict_in_bulk(self.service, project_id, input_data_id_list)
         for input_data_id in input_data_id_list:
             input_data = self.service.wrapper.get_input_data_or_none(project_id, input_data_id)
             if input_data is None:
@@ -160,7 +165,7 @@ class DeleteSupplementaryDataMain(CommandLineWithConfirm):
                 continue
             input_data_name = input_data["input_data_name"]
 
-            supplementary_data_list, _ = self.service.api.get_supplementary_data_list(project_id, input_data_id)
+            supplementary_data_list = supplementary_data_dict[input_data_id]
             if len(supplementary_data_list) == 0:
                 logger.debug("入力データに紐づく補助情報は存在しないので、削除をスキップします。")
                 continue
