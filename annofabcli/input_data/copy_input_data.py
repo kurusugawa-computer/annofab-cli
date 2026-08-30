@@ -7,7 +7,7 @@ import multiprocessing
 import sys
 import tempfile
 from functools import partial
-from itertools import batched
+from annofabcli.utils.iterables import batched
 from pathlib import Path
 from typing import Any
 
