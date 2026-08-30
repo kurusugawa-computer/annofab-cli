@@ -204,7 +204,18 @@ class SubCreateSupplementaryData:
 
         return self.confirm_processing(message_for_confirm)
 
-    def create_supplementary_data_main(self, project_id: str, csv_data: CliSupplementaryData, *, overwrite: bool = False) -> bool:
+    def create_supplementary_data_main(
+        self,
+        project_id: str,
+        csv_data: CliSupplementaryData,
+        *,
+        overwrite: bool = False,
+        supplementary_data_index: int | None = None,
+        total_supplementary_data_count: int | None = None,
+    ) -> bool:
+        logging_prefix = ""
+        if supplementary_data_index is not None and total_supplementary_data_count is not None:
+            logging_prefix = f"{supplementary_data_index + 1}/{total_supplementary_data_count}件目 :: "
         last_updated_datetime = None
         input_data_id = csv_data.input_data_id
         supplementary_data_id = (
@@ -214,7 +225,7 @@ class SubCreateSupplementaryData:
         supplementary_data_list = self.service.wrapper.get_supplementary_data_list_or_none(project_id, input_data_id)
         if supplementary_data_list is None:
             # 入力データが存在しない場合は、`supplementary_data_list`はNoneになる
-            logger.warning(f"input_data_id='{input_data_id}'である入力データは存在しないため、補助情報の作成をスキップします。")
+            logger.warning(f"{logging_prefix}input_data_id='{input_data_id}'である入力データは存在しないため、補助情報の作成をスキップします。")
             return False
 
         old_supplementary_data = first_true(supplementary_data_list, pred=lambda e: e["supplementary_data_id"] == supplementary_data_id)
@@ -262,7 +273,7 @@ class SubCreateSupplementaryData:
         try:
             self.create_supplementary_data(project_id, supplementary_data_for_create)
             logger.debug(
-                f"補助情報を作成しました。 :: "
+                f"{logging_prefix}補助情報を作成しました。 :: "
                 f"input_data_id='{supplementary_data_for_create.input_data_id}', "
                 f"supplementary_data_id='{supplementary_data_for_create.supplementary_data_id}', "
                 f"supplementary_data_name='{supplementary_data_for_create.supplementary_data_name}'"
@@ -279,6 +290,12 @@ class SubCreateSupplementaryData:
             )
             return False
 
+    def create_supplementary_data_main_wrapper(self, args: tuple[int, CliSupplementaryData], project_id: str, *, overwrite: bool, total_supplementary_data_count: int) -> bool:
+        supplementary_data_index, csv_data = args
+        return self.create_supplementary_data_main(
+            project_id, csv_data, overwrite=overwrite, supplementary_data_index=supplementary_data_index, total_supplementary_data_count=total_supplementary_data_count
+        )
+
 
 class CreateSupplementaryData(CommandLine):
     """
@@ -286,6 +303,12 @@ class CreateSupplementaryData(CommandLine):
     """
 
     COMMON_MESSAGE = "annofabcli supplementary create: error:"
+
+    @staticmethod
+    def log_progress(processed_count: int, total_count: int) -> None:
+        """補助情報作成の進捗をログ出力する。"""
+        if processed_count % 100 == 0 or processed_count == total_count:
+            logger.info(f"{processed_count} / {total_count} 件の補助情報を処理しました。")
 
     def create_supplementary_data_list(
         self,
@@ -304,16 +327,30 @@ class CreateSupplementaryData(CommandLine):
 
         obj = SubCreateSupplementaryData(service=self.service, all_yes=self.all_yes)
         if parallelism is not None:
-            partial_func = partial(obj.create_supplementary_data_main, project_id, overwrite=overwrite)
+            partial_func = partial(
+                obj.create_supplementary_data_main_wrapper,
+                project_id=project_id,
+                overwrite=overwrite,
+                total_supplementary_data_count=len(supplementary_data_list),
+            )
             with Pool(parallelism) as pool:
-                result_bool_list = pool.map(partial_func, supplementary_data_list)
-                count_create_supplementary_data = len([e for e in result_bool_list if e])
+                for index, result in enumerate(pool.imap(partial_func, enumerate(supplementary_data_list)), start=1):
+                    if result:
+                        count_create_supplementary_data += 1
+                    self.log_progress(index, len(supplementary_data_list))
 
         else:
-            for csv_supplementary_data in supplementary_data_list:
-                result = obj.create_supplementary_data_main(project_id, csv_data=csv_supplementary_data, overwrite=overwrite)
+            for index, csv_supplementary_data in enumerate(supplementary_data_list, start=1):
+                result = obj.create_supplementary_data_main(
+                    project_id,
+                    csv_data=csv_supplementary_data,
+                    overwrite=overwrite,
+                    supplementary_data_index=index - 1,
+                    total_supplementary_data_count=len(supplementary_data_list),
+                )
                 if result:
                     count_create_supplementary_data += 1
+                self.log_progress(index, len(supplementary_data_list))
 
         logger.info(f"{project_title} に、{count_create_supplementary_data} / {len(supplementary_data_list)} 件の補助情報を作成しました。")
 

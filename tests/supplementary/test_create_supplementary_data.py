@@ -1,3 +1,5 @@
+import logging
+
 import pytest
 
 from annofabcli.supplementary.create_supplementary_data import CreateSupplementaryData, read_supplementary_data_csv
@@ -5,6 +7,14 @@ from annofabcli.supplementary.create_supplementary_data import CreateSupplementa
 
 def test__common_message():
     assert CreateSupplementaryData.COMMON_MESSAGE == "annofabcli supplementary create: error:"
+
+
+def test_log_progress(caplog: pytest.LogCaptureFixture) -> None:
+    with caplog.at_level(logging.INFO):
+        CreateSupplementaryData.log_progress(99, 100)
+        CreateSupplementaryData.log_progress(100, 100)
+
+    assert "100 / 100 件の補助情報を処理しました。" in caplog.messages
 
 
 def test__read_supplementary_data_csv__header_exists(tmp_path):
