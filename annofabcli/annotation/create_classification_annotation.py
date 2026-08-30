@@ -212,7 +212,10 @@ class CreateClassificationAnnotationMain(CommandLineWithConfirm):
             annotation_dict = get_editor_annotation_dict_in_bulk(self.service, self.project_id, task_id, input_data_id_list)
             for input_data_id in input_data_id_list:
                 # 既存のアノテーションを取得
-                old_annotation = annotation_dict[input_data_id]
+                old_annotation = annotation_dict.get(input_data_id)
+                if old_annotation is None:
+                    logger.warning(f"task_id='{task_id}', input_data_id='{input_data_id}' :: アノテーション情報を取得できなかったため、全体アノテーションの作成をスキップします。")
+                    continue
 
                 # 既存のアノテーションIDを収集（重複チェック用）
                 existing_annotation_ids = {detail["annotation_id"] for detail in old_annotation["details"]}
