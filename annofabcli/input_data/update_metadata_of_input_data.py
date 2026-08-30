@@ -8,7 +8,6 @@ import multiprocessing
 import sys
 from dataclasses import dataclass
 from functools import partial
-from itertools import batched
 from typing import Any
 
 import annofabapi
@@ -25,6 +24,7 @@ from annofabcli.common.cli import (
     build_annofabapi_resource_and_login,
 )
 from annofabcli.common.facade import AnnofabApiFacade
+from annofabcli.utils.iterables import batched
 
 logger = logging.getLogger(__name__)
 

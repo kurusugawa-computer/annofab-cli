@@ -9,7 +9,6 @@ import sys
 from dataclasses import dataclass
 from enum import Enum
 from functools import partial
-from itertools import batched
 from pathlib import Path
 from typing import Any
 
@@ -30,6 +29,7 @@ from annofabcli.common.cli import (
 )
 from annofabcli.common.facade import AnnofabApiFacade
 from annofabcli.common.utils import get_file_scheme_path
+from annofabcli.utils.iterables import batched
 
 logger = logging.getLogger(__name__)
 
