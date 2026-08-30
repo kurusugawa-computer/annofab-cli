@@ -7,7 +7,6 @@ import multiprocessing
 import sys
 import tempfile
 from functools import partial
-from annofabcli.utils.iterables import batched
 from pathlib import Path
 from typing import Any
 
@@ -25,6 +24,7 @@ from annofabcli.common.cli import (
     build_annofabapi_resource_and_login,
 )
 from annofabcli.common.facade import AnnofabApiFacade
+from annofabcli.utils.iterables import batched
 
 logger = logging.getLogger(__name__)
 
