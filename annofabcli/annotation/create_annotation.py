@@ -21,6 +21,7 @@ from annofabcli.annotation.annotation_query import AttributeValue
 from annofabcli.annotation.create_annotation_converter import AnnotationDetailToCreate, CreateAnnotationConverter
 from annofabcli.annotation.dump_annotation import DumpAnnotationMain
 from annofabcli.annotation.editor_props import validate_editor_props_for_cli
+from annofabcli.common.annofab.editor_annotation import get_editor_annotation_dict_in_bulk
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
     ArgumentParser,
@@ -208,9 +209,8 @@ class CreateAnnotationMain(CommandLineWithConfirm):
         my_member, _ = self.service.api.get_my_member_in_project(project_id)
         self.project_member_role = ProjectMemberRole(my_member["member_role"])
 
-    def create_for_input_data(self, task_id: str, input_data_id: str, items: list[CreateAnnotationItem]) -> CreateAnnotationCount:
+    def create_for_input_data(self, task_id: str, input_data_id: str, items: list[CreateAnnotationItem], editor_annotation: dict[str, Any]) -> CreateAnnotationCount:
         """1個の入力データにアノテーションを作成する。"""
-        editor_annotation, _ = self.service.api.get_editor_annotation(self.project_id, task_id, input_data_id, query_params={"v": "2"})
         request = create_request_body(editor_annotation, items, converter=self.converter)
         if request.count.success == 0:
             return request.count
@@ -269,9 +269,10 @@ class CreateAnnotationMain(CommandLineWithConfirm):
         try:
             success_count = 0
             failed_count = 0
+            annotation_dict = get_editor_annotation_dict_in_bulk(self.service, self.project_id, task_id, items_by_input_data_id)
             for input_data_id, input_items in items_by_input_data_id.items():
                 try:
-                    count = self.create_for_input_data(task_id, input_data_id, input_items)
+                    count = self.create_for_input_data(task_id, input_data_id, input_items, annotation_dict[input_data_id])
                     success_count += count.success
                     failed_count += count.failed
                 except Exception:

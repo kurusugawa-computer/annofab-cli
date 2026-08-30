@@ -19,6 +19,7 @@ from pydantic import BaseModel
 import annofabcli.common.cli
 from annofabcli.annotation.annotation_query import AttributeValue, convert_attributes_from_cli_to_additional_data_list_v2
 from annofabcli.annotation.dump_annotation import DumpAnnotationMain
+from annofabcli.common.annofab.editor_annotation import get_editor_annotation_dict_in_bulk
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
     ArgumentParser,
@@ -214,9 +215,11 @@ class ChangeAnnotationDataPerAnnotationMain(CommandLineWithConfirm):
             self.annotation_specs, _ = self.service.api.get_annotation_specs(self.project_id, query_params={"v": "3"})
         return self.annotation_specs
 
-    def change_annotation_data_by_frame(self, task_id: str, input_data_id: str, anno_list: list[TargetAnnotationData]) -> ChangeAnnotationDataCount:
+    def change_annotation_data_by_frame(self, task_id: str, input_data_id: str, anno_list: list[TargetAnnotationData], editor_annotation: dict[str, Any] | None = None) -> ChangeAnnotationDataCount:
         """フレームごとにアノテーションdataを変更する。"""
-        editor_annotation, _ = self.service.api.get_editor_annotation(self.project_id, task_id=task_id, input_data_id=input_data_id, query_params={"v": "2"})
+
+        if editor_annotation is None:
+            editor_annotation, _ = self.service.api.get_editor_annotation(self.project_id, task_id=task_id, input_data_id=input_data_id, query_params={"v": "2"})
 
         if self.backup_dir is not None:
             (self.backup_dir / task_id).mkdir(exist_ok=True, parents=True)
@@ -268,9 +271,10 @@ class ChangeAnnotationDataPerAnnotationMain(CommandLineWithConfirm):
 
         success_count = 0
         failed_count = 0
+        annotation_dict = get_editor_annotation_dict_in_bulk(self.service, self.project_id, task_id, annotation_list_per_input_data_id)
         for input_data_id, sub_anno_list in annotation_list_per_input_data_id.items():
             try:
-                count = self.change_annotation_data_by_frame(task_id, input_data_id, sub_anno_list)
+                count = self.change_annotation_data_by_frame(task_id, input_data_id, sub_anno_list, annotation_dict[input_data_id])
                 success_count += count.success
                 failed_count += count.failed
             except Exception:

@@ -11,6 +11,7 @@ from annofabapi.models import DefaultAnnotationType, ProjectMemberRole, TaskStat
 from annofabapi.util.annotation_specs import AnnotationSpecsAccessor
 
 import annofabcli.common.cli
+from annofabcli.common.annofab.editor_annotation import get_editor_annotation_dict_in_bulk
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
     PARALLELISM_CHOICES,
@@ -208,9 +209,10 @@ class CreateClassificationAnnotationMain(CommandLineWithConfirm):
 
         created_count = 0
         try:
+            annotation_dict = get_editor_annotation_dict_in_bulk(self.service, self.project_id, task_id, input_data_id_list)
             for input_data_id in input_data_id_list:
                 # 既存のアノテーションを取得
-                old_annotation, _ = self.service.api.get_editor_annotation(self.project_id, task_id, input_data_id, query_params={"v": "2"})
+                old_annotation = annotation_dict[input_data_id]
 
                 # 既存のアノテーションIDを収集（重複チェック用）
                 existing_annotation_ids = {detail["annotation_id"] for detail in old_annotation["details"]}

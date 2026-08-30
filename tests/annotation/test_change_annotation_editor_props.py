@@ -185,6 +185,7 @@ class TestChangeAnnotationEditorPropsMain:
     def _set_change_target(main_obj: ChangeAnnotationEditorPropsMain) -> None:
         main_obj.get_annotation_list_for_task = Mock(return_value=[{"input_data_id": "input1", "detail": {"annotation_id": "anno1", "label_id": "label_car"}}])  # type: ignore[method-assign]
         main_obj.change_editor_props_by_input_data = Mock(return_value=ChangeEditorPropsCount(success=1, failed=0))  # type: ignore[method-assign]
+        cast(Mock, main_obj.service.api.get_editor_annotations_in_bulk).return_value = ({"success": [{"input_data_id": "input1"}], "failure": []}, None)
         main_obj.confirm_processing = Mock(return_value=True)  # type: ignore[method-assign]
 
     def test_change_editor_props_for_task_skips_break_task_by_default(self) -> None:

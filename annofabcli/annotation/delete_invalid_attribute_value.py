@@ -14,6 +14,7 @@ from annofabapi.models import ProjectMemberRole, TaskStatus
 
 import annofabcli.common.cli
 from annofabcli.annotation.dump_annotation import DumpAnnotationMain
+from annofabcli.common.annofab.editor_annotation import get_editor_annotation_dict_in_bulk
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
     ArgumentParser,
@@ -155,7 +156,9 @@ class DeleteInvalidAttributeValueMain(CommandLineWithConfirm):
         self.dump_annotation_obj = DumpAnnotationMain(service, project_id)
         super().__init__(all_yes)
 
-    def delete_attribute_value_for_input_data(self, task_id: str, input_data_id: str, allowed_attribute_ids_by_label_id: dict[str, set[str]]) -> DeleteAttributeValueCount:
+    def delete_attribute_value_for_input_data(
+        self, task_id: str, input_data_id: str, allowed_attribute_ids_by_label_id: dict[str, set[str]], editor_annotation: dict[str, Any] | None = None
+    ) -> DeleteAttributeValueCount:
         """
         1個の入力データに含まれるアノテーション属性値を削除する。
 
@@ -167,7 +170,9 @@ class DeleteInvalidAttributeValueMain(CommandLineWithConfirm):
         Returns:
             属性値削除件数。
         """
-        editor_annotation, _ = self.service.api.get_editor_annotation(self.project_id, task_id=task_id, input_data_id=input_data_id, query_params={"v": "2"})
+        if editor_annotation is None:
+            editor_annotation, _ = self.service.api.get_editor_annotation(self.project_id, task_id=task_id, input_data_id=input_data_id, query_params={"v": "2"})
+
         request = create_request_body_for_delete_attribute_value(editor_annotation, allowed_attribute_ids_by_label_id=allowed_attribute_ids_by_label_id)
         if request.count.success > 0:
             self.service.api.put_annotation(self.project_id, task_id, input_data_id, request_body=request.request_body, query_params={"v": "2"})
@@ -238,9 +243,10 @@ class DeleteInvalidAttributeValueMain(CommandLineWithConfirm):
 
         skipped_annotation_count = 0
         failed_input_data_count = 0
+        annotation_dict = get_editor_annotation_dict_in_bulk(self.service, self.project_id, task_id, input_data_id_list)
         for input_data_id in input_data_id_list:
             try:
-                count = self.delete_attribute_value_for_input_data(task_id, input_data_id, allowed_attribute_ids_by_label_id)
+                count = self.delete_attribute_value_for_input_data(task_id, input_data_id, allowed_attribute_ids_by_label_id, annotation_dict[input_data_id])
                 deleted_annotation_count += count.success
                 skipped_annotation_count += count.skipped
             except Exception:
