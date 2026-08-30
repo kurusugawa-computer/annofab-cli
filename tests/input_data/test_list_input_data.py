@@ -5,7 +5,7 @@ from unittest.mock import Mock
 import pytest
 
 from annofabcli.input_data.list_all_input_data import ListInputDataWithJsonMain
-from annofabcli.input_data.list_input_data import ListInputDataMain
+from annofabcli.input_data.list_input_data import AddingDetailsToInputData, ListInputDataMain
 
 
 def test_get_input_data_from_input_data_id() -> None:
@@ -20,6 +20,37 @@ def test_get_input_data_from_input_data_id() -> None:
 
     assert result == [{"input_data_id": "input1"}]
     assert service.api.get_input_data_in_bulk.call_args_list == [
+        (("project1",), {"query_params": {"input_data_id": ",".join(f"input{i}" for i in range(1, 101))}}),
+        (("project1",), {"query_params": {"input_data_id": "input101"}}),
+    ]
+
+
+def test_add_supplementary_data_count_to_input_data_list() -> None:
+    service = Mock()
+    service.api.get_supplementary_data_in_bulk.side_effect = [
+        (
+            {
+                "success": [
+                    {"input_data_id": "input1", "supplementary_data_id": "supplementary1"},
+                    {"input_data_id": "input1", "supplementary_data_id": "supplementary2"},
+                    {"input_data_id": "input2", "supplementary_data_id": "supplementary3"},
+                ],
+                "failure": [{"input_data_id": "input3"}],
+            },
+            Mock(),
+        ),
+        ({"success": [], "failure": []}, Mock()),
+    ]
+    input_data_list = [{"input_data_id": f"input{i}"} for i in range(1, 102)]
+    main_obj = AddingDetailsToInputData(service, project_id="project1")
+
+    result = main_obj.add_supplementary_data_count_to_input_data_list(input_data_list)
+
+    assert result[0]["supplementary_data_count"] == 2
+    assert result[1]["supplementary_data_count"] == 1
+    assert result[2]["supplementary_data_count"] is None
+    assert result[3]["supplementary_data_count"] == 0
+    assert service.api.get_supplementary_data_in_bulk.call_args_list == [
         (("project1",), {"query_params": {"input_data_id": ",".join(f"input{i}" for i in range(1, 101))}}),
         (("project1",), {"query_params": {"input_data_id": "input101"}}),
     ]

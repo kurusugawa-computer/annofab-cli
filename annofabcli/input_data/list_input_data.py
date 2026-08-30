@@ -152,11 +152,43 @@ class AddingDetailsToInputData:
             return input_data_list
 
         logger.info(f"入力データ {len(input_data_list)} 件に紐づく補助情報の個数を取得します。")
-        for index, input_data in enumerate(input_data_list):
-            supplementary_data_list, _ = self.service.api.get_supplementary_data_list(self.project_id, input_data["input_data_id"])
-            input_data["supplementary_data_count"] = len(supplementary_data_list)
-            if (index + 1) % 100 == 0:
-                logger.debug(f"{index + 1} 件の入力データに紐づく補助情報の個数を取得しました。")
+        supplementary_data_count_by_input_data_id: dict[str, int] = {}
+        failed_input_data_id_set: set[str] = set()
+
+        for initial_index in range(0, len(input_data_list), BULK_REQUEST_SIZE):
+            batch_input_data_list = input_data_list[initial_index : initial_index + BULK_REQUEST_SIZE]
+            batch_input_data_id_list = [input_data["input_data_id"] for input_data in batch_input_data_list]
+            processed_input_data_count = initial_index + len(batch_input_data_list)
+            try:
+                response, _ = self.service.api.get_supplementary_data_in_bulk(
+                    self.project_id,
+                    query_params={"input_data_id": ",".join(batch_input_data_id_list)},
+                )
+            except Exception:
+                failed_input_data_id_set.update(batch_input_data_id_list)
+                logger.warning(
+                    f"入力データ {initial_index + 1}〜{processed_input_data_count} 件（{len(batch_input_data_list)}件）に紐づく補助情報のバルク取得に失敗しました。",
+                    exc_info=True,
+                )
+                logger.info(f"{processed_input_data_count} / {len(input_data_list)} 件の入力データに紐づく補助情報の個数を取得しました。")
+                continue
+
+            for supplementary_data in response["success"]:
+                input_data_id = supplementary_data["input_data_id"]
+                supplementary_data_count_by_input_data_id[input_data_id] = supplementary_data_count_by_input_data_id.get(input_data_id, 0) + 1
+
+            for failure_info in response["failure"]:
+                input_data_id = failure_info["input_data_id"]
+                failed_input_data_id_set.add(input_data_id)
+                logger.warning(f"input_data_id='{input_data_id}': 補助情報の取得に失敗しました。")
+
+            logger.info(f"{processed_input_data_count} / {len(input_data_list)} 件の入力データに紐づく補助情報の個数を取得しました。")
+
+        for input_data in input_data_list:
+            input_data_id = input_data["input_data_id"]
+            input_data["supplementary_data_count"] = None if input_data_id in failed_input_data_id_set else supplementary_data_count_by_input_data_id.get(input_data_id, 0)
+
+        logger.info(f"補助情報の個数の取得が完了しました。取得に失敗した入力データ数: {len(failed_input_data_id_set)} 件")
 
         return input_data_list
 
