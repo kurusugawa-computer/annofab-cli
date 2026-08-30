@@ -72,7 +72,7 @@ class ListSupplementaryDataMain:
                     f"入力データ {initial_index + 1}〜{processed_input_data_count} 件（{len(batch_input_data_id_list)}件）の補助情報バルク取得に失敗しました。",
                     exc_info=True,
                 )
-                logger.info(f"{processed_input_data_count} / {len(input_data_id_list)} 件の入力データに紐づく補助情報を取得しました。")
+                logger.info(f"{processed_input_data_count} / {len(input_data_id_list)} 件の入力データに紐づく補助情報の取得を試みました。")
                 continue
 
             supplementary_data_list = response["success"]

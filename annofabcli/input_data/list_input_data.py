@@ -18,6 +18,10 @@ from annofabcli.input_data.utils import remove_unnecessary_keys_from_input_data
 logger = logging.getLogger(__name__)
 
 
+BULK_REQUEST_SIZE = 100
+"""入力データバルク取得APIの1リクエストで指定する入力データIDの上限。"""
+
+
 def print_input_data_list(
     input_data_list: list[dict[str, Any]],
     output_format: OutputFormat,
@@ -163,18 +167,43 @@ class ListInputDataMain:
         self.project_id = project_id
 
     def get_input_data_from_input_data_id(self, input_data_id_list: list[str]) -> list[InputData]:
-        input_data_list = []
-        logger.debug(f"{len(input_data_id_list)}件の入力データを取得します。")
-        for index, input_data_id in enumerate(input_data_id_list):
-            if (index + 1) % 100 == 0:
-                logger.debug(f"{index + 1} 件目の入力データを取得します。")
+        """
+        指定した入力データIDの入力データをバルク取得する。
 
-            input_data = self.service.wrapper.get_input_data_or_none(self.project_id, input_data_id)
-            if input_data is not None:
-                input_data_list.append(input_data)
-            else:
-                logger.warning(f"入力データ '{input_data_id}' は見つかりませんでした。")
+        Args:
+            input_data_id_list: 入力データIDのリスト
 
+        Returns:
+            取得に成功した入力データのリスト
+        """
+        input_data_list: list[InputData] = []
+        failed_input_data_count = 0
+        logger.info(f"{len(input_data_id_list)} 件の入力データを取得します。")
+
+        for initial_index in range(0, len(input_data_id_list), BULK_REQUEST_SIZE):
+            batch_input_data_id_list = input_data_id_list[initial_index : initial_index + BULK_REQUEST_SIZE]
+            processed_input_data_count = initial_index + len(batch_input_data_id_list)
+            try:
+                response, _ = self.service.api.get_input_data_in_bulk(
+                    self.project_id,
+                    query_params={"input_data_id": ",".join(batch_input_data_id_list)},
+                )
+            except Exception:
+                failed_input_data_count += len(batch_input_data_id_list)
+                logger.warning(
+                    f"入力データ {initial_index + 1}〜{processed_input_data_count} 件（{len(batch_input_data_id_list)}件）のバルク取得に失敗しました。",
+                    exc_info=True,
+                )
+                logger.info(f"{processed_input_data_count} / {len(input_data_id_list)} 件の入力データの取得を試みました。")
+                continue
+
+            input_data_list.extend(response["success"])
+            for failure_info in response["failure"]:
+                logger.warning(f"input_data_id='{failure_info['input_data_id']}': 入力データの取得に失敗しました。")
+            failed_input_data_count += len(response["failure"])
+            logger.info(f"{processed_input_data_count} / {len(input_data_id_list)} 件の入力データを取得しました。")
+
+        logger.info(f"入力データの取得が完了しました。取得件数: {len(input_data_list)} 件, 失敗した入力データ数: {failed_input_data_count} 件")
         return input_data_list
 
     def get_input_data_list(
