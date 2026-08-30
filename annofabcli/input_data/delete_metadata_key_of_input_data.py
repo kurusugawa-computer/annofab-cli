@@ -8,11 +8,13 @@ import multiprocessing
 import sys
 from collections.abc import Collection
 from functools import partial
+from typing import Any
 
 import annofabapi
 from annofabapi.models import ProjectMemberRole
 
 import annofabcli.common.cli
+from annofabcli.common.annofab.input_data import get_input_data_dict_in_bulk
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
     PARALLELISM_CHOICES,
@@ -38,7 +40,9 @@ class DeleteMetadataKeyOfInputDataMain(CommandLineWithConfirm):
         self.project_id = project_id
         super().__init__(all_yes=all_yes)
 
-    def delete_metadata_keys_for_one_input_data(self, input_data_id: str, metadata_keys: Collection[str], *, input_data_index: int | None = None) -> bool:
+    def delete_metadata_keys_for_one_input_data(
+        self, input_data_id: str, metadata_keys: Collection[str], *, input_data_index: int | None = None, existing_input_data_dict: dict[str, dict[str, Any]] | None = None
+    ) -> bool:
         """
         １個の入力データに対して、メタデータのキーを削除します。
 
@@ -50,7 +54,7 @@ class DeleteMetadataKeyOfInputDataMain(CommandLineWithConfirm):
             メタデータのキーを削除した場合はTrueを返します。
         """
         logging_prefix = f"{input_data_index + 1} 件目" if input_data_index is not None else ""
-        input_data = self.service.wrapper.get_input_data_or_none(self.project_id, input_data_id)
+        input_data = existing_input_data_dict.get(input_data_id) if existing_input_data_dict is not None else self.service.wrapper.get_input_data_or_none(self.project_id, input_data_id)
         if input_data is None:
             logger.warning(f"{logging_prefix} input_data_id='{input_data_id}'である入力データは存在しません。")
             return False
@@ -86,13 +90,14 @@ class DeleteMetadataKeyOfInputDataMain(CommandLineWithConfirm):
         logger.debug(f"{logging_prefix} input_data_id='{input_data_id}' :: 入力データのメタデータからキー'{deleted_keys}'を削除しました。 :: metadata='{str_new_metadata}'")
         return True
 
-    def delete_metadata_keys_for_one_input_data_wrapper(self, tpl: tuple[int, str], metadata_keys: Collection[str]) -> bool:
+    def delete_metadata_keys_for_one_input_data_wrapper(self, tpl: tuple[int, str], metadata_keys: Collection[str], existing_input_data_dict: dict[str, dict[str, Any]]) -> bool:
         input_data_index, input_data_id = tpl
         try:
             return self.delete_metadata_keys_for_one_input_data(
                 input_data_id=input_data_id,
                 metadata_keys=metadata_keys,
                 input_data_index=input_data_index,
+                existing_input_data_dict=existing_input_data_dict,
             )
         except Exception:
             logger.warning(f"input_data_id='{input_data_id}' :: 入力データのメタデータのキーを削除するのに失敗しました。", exc_info=True)
@@ -102,11 +107,13 @@ class DeleteMetadataKeyOfInputDataMain(CommandLineWithConfirm):
         logger.info(f"{len(input_data_id_list)} 件の入力データのメタデータから、キー'{metadata_keys}'を削除します。")
 
         success_count = 0
+        existing_input_data_dict = get_input_data_dict_in_bulk(self.service, self.project_id, input_data_id_list)
         if parallelism is not None:
             assert self.all_yes
             partial_func = partial(
                 self.delete_metadata_keys_for_one_input_data_wrapper,
                 metadata_keys=metadata_keys,
+                existing_input_data_dict=existing_input_data_dict,
             )
             with multiprocessing.Pool(parallelism) as pool:
                 result_bool_list = pool.map(partial_func, enumerate(input_data_id_list))
@@ -120,6 +127,7 @@ class DeleteMetadataKeyOfInputDataMain(CommandLineWithConfirm):
                         input_data_id,
                         metadata_keys=metadata_keys,
                         input_data_index=input_data_index,
+                        existing_input_data_dict=existing_input_data_dict,
                     )
                     if result:
                         success_count += 1
