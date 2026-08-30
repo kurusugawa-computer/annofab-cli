@@ -17,6 +17,7 @@ from annofabapi.models import ProjectMemberRole
 from dataclasses_json import DataClassJsonMixin
 
 import annofabcli.common.cli
+from annofabcli.common.annofab.input_data import BULK_REQUEST_SIZE, get_input_data_dict_in_bulk
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
     PARALLELISM_CHOICES,
@@ -28,6 +29,7 @@ from annofabcli.common.cli import (
 )
 from annofabcli.common.facade import AnnofabApiFacade
 from annofabcli.common.utils import get_file_scheme_path
+from annofabcli.utils.iterables import batched
 
 logger = logging.getLogger(__name__)
 
@@ -209,11 +211,13 @@ class SubPutInputData:
 
         return self.confirm_processing(message_for_confirm)
 
-    def put_input_data_main_wrapper(self, tpl: tuple[int, CsvInputData], *, project_id: str, overwrite: bool) -> bool:
+    def put_input_data_main_wrapper(self, tpl: tuple[int, CsvInputData], *, project_id: str, overwrite: bool, existing_input_data_dict: dict[str, dict[str, Any]]) -> bool:
         input_data_index, csv_input_data = tpl
-        return self.put_input_data_main(project_id, csv_input_data, input_data_index=input_data_index, overwrite=overwrite)
+        return self.put_input_data_main(project_id, csv_input_data, input_data_index=input_data_index, overwrite=overwrite, existing_input_data_dict=existing_input_data_dict)
 
-    def put_input_data_main(self, project_id: str, csv_input_data: CsvInputData, *, input_data_index: int, overwrite: bool = False) -> bool:
+    def put_input_data_main(
+        self, project_id: str, csv_input_data: CsvInputData, *, input_data_index: int, overwrite: bool = False, existing_input_data_dict: dict[str, dict[str, Any]] | None = None
+    ) -> bool:
         input_data = InputDataForPut(
             input_data_name=csv_input_data.input_data_name,
             input_data_path=csv_input_data.input_data_path,
@@ -221,7 +225,9 @@ class SubPutInputData:
         )
         log_message_prefix = f"{input_data_index + 1}件目 :: "
         last_updated_datetime = None
-        dict_input_data = self.service.wrapper.get_input_data_or_none(project_id, input_data.input_data_id)
+        dict_input_data = (
+            existing_input_data_dict.get(input_data.input_data_id) if existing_input_data_dict is not None else self.service.wrapper.get_input_data_or_none(project_id, input_data.input_data_id)
+        )
 
         if dict_input_data is not None:
             if overwrite:
@@ -295,16 +301,22 @@ class PutInputData(CommandLine):
 
         obj = SubPutInputData(service=self.service, facade=self.facade, all_yes=self.all_yes)
         if parallelism is not None:
-            partial_func = partial(obj.put_input_data_main_wrapper, project_id=project_id, overwrite=overwrite)
             with Pool(parallelism) as pool:
-                result_bool_list = pool.map(partial_func, enumerate(input_data_list))
-                count_put_input_data = len([e for e in result_bool_list if e])
+                for initial_index, batch_input_data_list in enumerate(batched(input_data_list, BULK_REQUEST_SIZE)):
+                    existing_input_data_dict = get_input_data_dict_in_bulk(self.service, project_id, [get_final_input_data_id(e) for e in batch_input_data_list])
+                    partial_func = partial(obj.put_input_data_main_wrapper, project_id=project_id, overwrite=overwrite, existing_input_data_dict=existing_input_data_dict)
+                    result_bool_list = pool.map(partial_func, enumerate(batch_input_data_list, start=initial_index * BULK_REQUEST_SIZE))
+                    count_put_input_data += len([e for e in result_bool_list if e])
 
         else:
-            for input_data_index, csv_input_data in enumerate(input_data_list):
-                result = obj.put_input_data_main(project_id, csv_input_data=csv_input_data, input_data_index=input_data_index, overwrite=overwrite)
-                if result:
-                    count_put_input_data += 1
+            for initial_index, batch_input_data_list in enumerate(batched(input_data_list, BULK_REQUEST_SIZE)):
+                existing_input_data_dict = get_input_data_dict_in_bulk(self.service, project_id, [get_final_input_data_id(e) for e in batch_input_data_list])
+                for input_data_index, csv_input_data in enumerate(batch_input_data_list, start=initial_index * BULK_REQUEST_SIZE):
+                    result = obj.put_input_data_main(
+                        project_id, csv_input_data=csv_input_data, input_data_index=input_data_index, overwrite=overwrite, existing_input_data_dict=existing_input_data_dict
+                    )
+                    if result:
+                        count_put_input_data += 1
 
         logger.info(f"プロジェクト'{project_title}'に、{count_put_input_data} / {len(input_data_list)} 件の入力データを登録しました。")
 

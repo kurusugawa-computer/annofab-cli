@@ -6,6 +6,7 @@ import logging
 import multiprocessing
 import sys
 import tempfile
+from functools import partial
 from pathlib import Path
 from typing import Any
 
@@ -14,6 +15,7 @@ import more_itertools
 from annofabapi.models import ProjectMemberRole
 
 import annofabcli.common.cli
+from annofabcli.common.annofab.input_data import BULK_REQUEST_SIZE, get_input_data_dict_in_bulk
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
     PARALLELISM_CHOICES,
@@ -22,6 +24,7 @@ from annofabcli.common.cli import (
     build_annofabapi_resource_and_login,
 )
 from annofabcli.common.facade import AnnofabApiFacade
+from annofabcli.utils.iterables import batched
 
 logger = logging.getLogger(__name__)
 
@@ -108,6 +111,8 @@ class CopyInputDataMain(CommandLineWithConfirm):
         input_data_id: str,
         *,
         input_data_index: int | None = None,
+        src_input_data_dict: dict[str, dict[str, Any]] | None = None,
+        dest_input_data_dict: dict[str, dict[str, Any]] | None = None,
     ) -> bool:
         def get_confirm_message(supplementary_data_count: int, *, exists_in_dest_project: bool) -> str:
             message = f"入力データ(input_data_id='{input_data_id}')と補助情報{supplementary_data_count}件をコピーしますか？"
@@ -118,13 +123,13 @@ class CopyInputDataMain(CommandLineWithConfirm):
 
         logging_prefix = f"{input_data_index + 1} 件目 :: " if input_data_index is not None else ""
 
-        src_input_data = self.service.wrapper.get_input_data_or_none(self.src_project_id, input_data_id)
+        src_input_data = src_input_data_dict.get(input_data_id) if src_input_data_dict is not None else self.service.wrapper.get_input_data_or_none(self.src_project_id, input_data_id)
         if src_input_data is None:
             logger.warning(f"{logging_prefix}入力データは存在しないのでコピーをスキップします。 :: input_data_id='{input_data_id}'")
             return False
 
         input_data_name = src_input_data["input_data_name"]
-        dest_input_data = self.service.wrapper.get_input_data_or_none(self.dest_project_id, input_data_id)
+        dest_input_data = dest_input_data_dict.get(input_data_id) if dest_input_data_dict is not None else self.service.wrapper.get_input_data_or_none(self.dest_project_id, input_data_id)
         if dest_input_data is not None and not self.should_overwrite:
             logger.debug(
                 f"{logging_prefix}入力データはコピー先プロジェクトにすでに存在するので、コピーをスキップします。 :: "
@@ -157,12 +162,14 @@ class CopyInputDataMain(CommandLineWithConfirm):
 
         return True
 
-    def copy_input_data_and_supplementary_data_wrapper(self, tpl: tuple[int, str]) -> bool:
+    def copy_input_data_and_supplementary_data_wrapper(self, tpl: tuple[int, str], *, src_input_data_dict: dict[str, dict[str, Any]], dest_input_data_dict: dict[str, dict[str, Any]]) -> bool:
         input_data_index, input_data_id = tpl
         try:
             return self.copy_input_data_and_supplementary_data(
                 input_data_id,
                 input_data_index=input_data_index,
+                src_input_data_dict=src_input_data_dict,
+                dest_input_data_dict=dest_input_data_dict,
             )
         except Exception:
             logger.warning(
@@ -192,25 +199,34 @@ class CopyInputDataMain(CommandLineWithConfirm):
             f"プロジェクト'{self.dest_project_title}'にコピーします。 :: "
             f"src_project_id='{self.src_project_id}', dest_project_id='{self.dest_project_id}'"
         )
-
         if parallelism is not None:
             with multiprocessing.Pool(parallelism) as pool:
-                result_bool_list = pool.map(self.copy_input_data_and_supplementary_data_wrapper, enumerate(input_data_id_list))
-                success_count = len([e for e in result_bool_list if e])
+                success_count = 0
+                for initial_index, batch_input_data_id_list in enumerate(batched(input_data_id_list, BULK_REQUEST_SIZE)):
+                    src_input_data_dict = get_input_data_dict_in_bulk(self.service, self.src_project_id, batch_input_data_id_list)
+                    dest_input_data_dict = get_input_data_dict_in_bulk(self.service, self.dest_project_id, batch_input_data_id_list)
+                    wrapper = partial(self.copy_input_data_and_supplementary_data_wrapper, src_input_data_dict=src_input_data_dict, dest_input_data_dict=dest_input_data_dict)
+                    result_bool_list = pool.map(wrapper, enumerate(batch_input_data_id_list, start=initial_index * BULK_REQUEST_SIZE))
+                    success_count += len([e for e in result_bool_list if e])
 
         else:
             # 逐次処理
             success_count = 0
-            for input_data_index, input_data_id in enumerate(input_data_id_list):
-                try:
-                    result = self.copy_input_data_and_supplementary_data(input_data_id, input_data_index=input_data_index)
-                    if result:
-                        success_count += 1
-                except Exception:
-                    logger.warning(
-                        f"入力データのコピーに失敗しました。 :: input_data_id='{input_data_id}', src_project_id='{self.src_project_id}', dest_project_id='{self.dest_project_id}'",
-                        exc_info=True,
-                    )
+            for initial_index, batch_input_data_id_list in enumerate(batched(input_data_id_list, BULK_REQUEST_SIZE)):
+                src_input_data_dict = get_input_data_dict_in_bulk(self.service, self.src_project_id, batch_input_data_id_list)
+                dest_input_data_dict = get_input_data_dict_in_bulk(self.service, self.dest_project_id, batch_input_data_id_list)
+                for input_data_index, input_data_id in enumerate(batch_input_data_id_list, start=initial_index * BULK_REQUEST_SIZE):
+                    try:
+                        result = self.copy_input_data_and_supplementary_data(
+                            input_data_id, input_data_index=input_data_index, src_input_data_dict=src_input_data_dict, dest_input_data_dict=dest_input_data_dict
+                        )
+                        if result:
+                            success_count += 1
+                    except Exception:
+                        logger.warning(
+                            f"入力データのコピーに失敗しました。 :: input_data_id='{input_data_id}', src_project_id='{self.src_project_id}', dest_project_id='{self.dest_project_id}'",
+                            exc_info=True,
+                        )
 
         logger.info(
             f"{success_count} / {len(input_data_id_list)} 件の入力データと関連する補助情報をコピーしました。 :: src_project_id='{self.src_project_id}', dest_project_id='{self.dest_project_id}'"
