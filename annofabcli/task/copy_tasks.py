@@ -8,9 +8,11 @@ import sys
 from dataclasses import dataclass
 
 import annofabapi
-from annofabapi.models import ProjectMemberRole
+from annofabapi.models import ProjectMemberRole, Task
 
 import annofabcli.common.cli
+from annofabcli.common.annofab.input_data import BULK_REQUEST_SIZE
+from annofabcli.common.annofab.task import get_task_dict_in_bulk
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
     PARALLELISM_CHOICES,
@@ -20,6 +22,7 @@ from annofabcli.common.cli import (
     build_annofabapi_resource_and_login,
 )
 from annofabcli.common.facade import AnnofabApiFacade
+from annofabcli.utils.iterables import batched
 
 logger = logging.getLogger(__name__)
 
@@ -72,14 +75,22 @@ class CopyTasksMain(CommandLineWithConfirm):
         self.is_copy_annotations = is_copy_annotations
         self.is_copy_metadata = is_copy_metadata
 
-    def copy_task(self, project_id: str, src_task_id: str, dest_task_id: str, task_index: int | None = None) -> bool:
+    def copy_task(
+        self,
+        project_id: str,
+        src_task_id: str,
+        dest_task_id: str,
+        task_index: int | None = None,
+        *,
+        task_dict: dict[str, Task] | None = None,
+    ) -> bool:
         logging_prefix = f"{task_index + 1} 件目" if task_index is not None else ""
-        src_task = self.service.wrapper.get_task_or_none(project_id, src_task_id)
+        src_task = task_dict.get(src_task_id) if task_dict is not None else self.service.wrapper.get_task_or_none(project_id, src_task_id)
         if src_task is None:
             logger.warning(f"{logging_prefix}: コピー元タスク'{src_task_id}'は存在しないので、スキップします。")
             return False
 
-        old_dest_task = self.service.wrapper.get_task_or_none(project_id, dest_task_id)
+        old_dest_task = task_dict.get(dest_task_id) if task_dict is not None else self.service.wrapper.get_task_or_none(project_id, dest_task_id)
         if old_dest_task is not None:
             logger.warning(f"{logging_prefix}: コピー先タスク'{dest_task_id}'はすでに存在するので、スキップします。")
             return False
@@ -100,6 +111,8 @@ class CopyTasksMain(CommandLineWithConfirm):
         self,
         tpl: tuple[int, CopyTarget],
         project_id: str,
+        *,
+        task_dict: dict[str, Task],
     ) -> bool:
         task_index, copy_target = tpl
         try:
@@ -108,6 +121,7 @@ class CopyTasksMain(CommandLineWithConfirm):
                 src_task_id=copy_target.src_task_id,
                 dest_task_id=copy_target.dest_task_id,
                 task_index=task_index,
+                task_dict=task_dict,
             )
         except Exception:  # pylint: disable=broad-except
             logger.warning(f"タスク'{copy_target.src_task_id}'を'{copy_target.dest_task_id}'にコピーする際に失敗しました。", exc_info=True)
@@ -122,29 +136,32 @@ class CopyTasksMain(CommandLineWithConfirm):
         success_count = 0
 
         if parallelism is not None:
-            partial_func = functools.partial(
-                self.copy_task_wrapper,
-                project_id=project_id,
-            )
-
             with multiprocessing.Pool(parallelism) as pool:
-                result_bool_list = pool.map(partial_func, enumerate(copy_target_list))
-                success_count = len([e for e in result_bool_list if e])
+                for initial_index, copy_target_batch in enumerate(batched(copy_target_list, BULK_REQUEST_SIZE)):
+                    task_id_list = [task_id for target in copy_target_batch for task_id in (target.src_task_id, target.dest_task_id)]
+                    task_dict = get_task_dict_in_bulk(self.service, project_id, task_id_list)
+                    partial_func = functools.partial(self.copy_task_wrapper, project_id=project_id, task_dict=task_dict)
+                    result_bool_list = pool.map(partial_func, enumerate(copy_target_batch, start=initial_index * BULK_REQUEST_SIZE))
+                    success_count += len([e for e in result_bool_list if e])
 
         else:
-            for task_index, copy_target in enumerate(copy_target_list):
-                try:
-                    result = self.copy_task(
-                        project_id,
-                        src_task_id=copy_target.src_task_id,
-                        dest_task_id=copy_target.dest_task_id,
-                        task_index=task_index,
-                    )
-                    if result:
-                        success_count += 1
-                except Exception:  # pylint: disable=broad-except
-                    logger.warning(f"タスク'{copy_target.src_task_id}'を'{copy_target.dest_task_id}'にコピーする際に失敗しました。", exc_info=True)
-                    continue
+            for initial_index, copy_target_batch in enumerate(batched(copy_target_list, BULK_REQUEST_SIZE)):
+                task_id_list = [task_id for target in copy_target_batch for task_id in (target.src_task_id, target.dest_task_id)]
+                task_dict = get_task_dict_in_bulk(self.service, project_id, task_id_list)
+                for task_index, copy_target in enumerate(copy_target_batch, start=initial_index * BULK_REQUEST_SIZE):
+                    try:
+                        result = self.copy_task(
+                            project_id,
+                            src_task_id=copy_target.src_task_id,
+                            dest_task_id=copy_target.dest_task_id,
+                            task_index=task_index,
+                            task_dict=task_dict,
+                        )
+                        if result:
+                            success_count += 1
+                    except Exception:  # pylint: disable=broad-except
+                        logger.warning(f"タスク'{copy_target.src_task_id}'を'{copy_target.dest_task_id}'にコピーする際に失敗しました。", exc_info=True)
+                        continue
 
         logger.info(f"{success_count} / {len(copy_target_list)} 件 タスクをコピーしました。")
 

@@ -233,12 +233,9 @@ def test_create_task_with_user_id() -> None:
     service.wrapper.change_task_operator.assert_called_once_with("project1", "task_001", operator_account_id="account1")
 
 
-def test_create_task_list_skips_existing_task() -> None:
+def test_create_task_list_skips_existing_task(monkeypatch: pytest.MonkeyPatch) -> None:
     service = Mock()
-    service.wrapper.get_task_or_none.side_effect = [
-        {"task_id": "task_001"},
-        None,
-    ]
+    monkeypatch.setattr(create_tasks, "get_task_dict_in_bulk", lambda *_args: {"task_001": {"task_id": "task_001"}})
     main_obj = create_tasks.CreateTaskMain(service, project_id="project1", parallelism=None, all_yes=True)
 
     main_obj.create_task_list(
@@ -259,9 +256,15 @@ def test_create_task_list_skips_existing_task() -> None:
     service.api.put_task.assert_called_once_with("project1", "task_002", request_body={"input_data_id_list": ["input_data_002"]})
 
 
-def test_create_task_list_logs_progress_every_100_tasks(caplog: pytest.LogCaptureFixture) -> None:
+def test_create_task_list_logs_progress_every_100_tasks(caplog: pytest.LogCaptureFixture, monkeypatch: pytest.MonkeyPatch) -> None:
     service = Mock()
-    service.wrapper.get_task_or_none.return_value = None
+    bulk_call_task_id_list: list[list[str]] = []
+
+    def get_task_dict_in_bulk_stub(_service: Mock, _project_id: str, task_id_list: list[str]) -> dict[str, dict[str, str]]:
+        bulk_call_task_id_list.append(task_id_list)
+        return {}
+
+    monkeypatch.setattr(create_tasks, "get_task_dict_in_bulk", get_task_dict_in_bulk_stub)
     main_obj = create_tasks.CreateTaskMain(service, project_id="project1", parallelism=None, all_yes=True)
 
     task_creation_info_list = [
@@ -280,6 +283,11 @@ def test_create_task_list_logs_progress_every_100_tasks(caplog: pytest.LogCaptur
     assert "200 / 205 件のタスク作成が完了しました。" in caplog.text
     assert "205 / 205 件のタスク作成が完了しました。" in caplog.text
     assert "205 / 205 件のタスクを登録しました。" in caplog.text
+    assert bulk_call_task_id_list == [
+        [f"task_{index:03d}" for index in range(100)],
+        [f"task_{index:03d}" for index in range(100, 200)],
+        [f"task_{index:03d}" for index in range(200, 205)],
+    ]
 
 
 def test_create_task_list_cancelled_by_confirm() -> None:
