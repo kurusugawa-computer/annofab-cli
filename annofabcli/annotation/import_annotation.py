@@ -36,6 +36,7 @@ from dataclasses_json import DataClassJsonMixin
 
 import annofabcli.common.cli
 from annofabcli.annotation.editor_props import validate_editor_props_for_cli
+from annofabcli.common.annofab.editor_annotation import get_editor_annotation_dict_in_bulk
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
     PARALLELISM_CHOICES,
@@ -586,50 +587,6 @@ class ImportAnnotationMain(CommandLineWithConfirm):
         logger.debug(f"task_id='{task_id}', input_data_id='{input_data_id}' :: {success_annotation_count}/{len(simple_annotation.details)} 件のアノテーションを登録しました。")
         return success_annotation_count
 
-    def _get_annotations_in_bulk(self, task_id: str, input_data_ids: list[str]) -> dict[str, dict[str, Any]]:
-        """
-        複数の入力データのアノテーション情報を一括取得します。
-        APIの制限により、10件ずつのバッチで取得します。
-
-        Args:
-            task_id: タスクID
-            input_data_ids: 入力データIDのリスト
-
-        Returns:
-            入力データIDをキーとしたアノテーション情報のdict
-        """
-        BATCH_SIZE = 10  # noqa: N806
-        annotations_dict: dict[str, dict[str, Any]] = {}
-
-        # 10件ずつのバッチに分割して処理
-        for i in range(0, len(input_data_ids), BATCH_SIZE):
-            batch_input_data_ids = input_data_ids[i : i + BATCH_SIZE]
-
-            bulk_response, _ = self.service.api.get_editor_annotations_in_bulk(
-                self.project_id,
-                task_id,
-                query_params={"input_data_id": ",".join(batch_input_data_ids)},
-            )
-
-            # 成功したアノテーション情報をdictに格納
-            for annotation in bulk_response["success"]:
-                annotations_dict[annotation["input_data_id"]] = annotation
-
-            # 失敗した入力データIDは個別に再取得
-            for failure_info in bulk_response["failure"]:
-                failed_input_data_id = failure_info["input_data_id"]
-                logger.warning(f"task_id='{task_id}', input_data_id='{failed_input_data_id}' :: バルク取得APIで失敗したため、個別に再取得します。")
-                try:
-                    annotation, _ = self.service.api.get_editor_annotation(self.project_id, task_id, failed_input_data_id, query_params={"v": "2"})
-                    annotations_dict[failed_input_data_id] = annotation
-                except Exception:
-                    logger.warning(
-                        f"task_id='{task_id}', input_data_id='{failed_input_data_id}' :: 個別取得APIでもアノテーション情報の取得に失敗しました。",
-                        exc_info=True,
-                    )
-
-        return annotations_dict
-
     def put_annotation_for_task(self, task_parser: SimpleAnnotationParserByTask) -> tuple[int, int]:
         """
         1個のタスクに対して、アノテーションを登録します。
@@ -648,7 +605,7 @@ class ImportAnnotationMain(CommandLineWithConfirm):
             input_data_ids.append(parser.input_data_id)
 
         # 既存のアノテーション情報を一括取得
-        annotations_dict = self._get_annotations_in_bulk(task_id, input_data_ids)
+        annotations_dict = get_editor_annotation_dict_in_bulk(self.service, self.project_id, task_id, input_data_ids)
 
         # 各入力データに対してアノテーションを登録
         success_input_data_count = 0

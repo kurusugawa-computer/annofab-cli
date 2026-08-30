@@ -19,6 +19,7 @@ from annofabapi.segmentation import read_binary_image, write_binary_image
 from annofabapi.util.annotation_specs import AnnotationSpecsAccessor
 
 import annofabcli.common.cli
+from annofabcli.common.annofab.editor_annotation import get_editor_annotation_dict_in_bulk
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
     PARALLELISM_CHOICES,
@@ -122,7 +123,7 @@ class MergeSegmentationMain(CommandLineWithConfirm):
 
         return updated_annotation_id_list, deleted_annotation_id_list
 
-    def merge_segmentation_annotation(self, task_id: str, input_data_id: str, log_message_prefix: str = "") -> bool:
+    def merge_segmentation_annotation(self, task_id: str, input_data_id: str, editor_annotation: dict[str, Any], log_message_prefix: str = "") -> bool:
         """
         label_idに対応する複数の塗りつぶしアノテーションを1つにまとめます。
 
@@ -131,7 +132,7 @@ class MergeSegmentationMain(CommandLineWithConfirm):
             task_id: タスクID
             annotation_id_list: 更新する塗りつぶし画像のannotation_idのlist
         """
-        old_annotation, _ = self.annofab_service.api.get_editor_annotation(self.project_id, task_id, input_data_id, query_params={"v": "2"})
+        old_annotation = editor_annotation
         old_details = old_annotation["details"]
         with tempfile.TemporaryDirectory() as temp_dir:
             temp_dir_path = Path(temp_dir)
@@ -248,9 +249,10 @@ class MergeSegmentationMain(CommandLineWithConfirm):
             )
 
         success_input_data_count = 0
+        annotation_dict = get_editor_annotation_dict_in_bulk(self.annofab_service, self.project_id, task_id, task["input_data_id_list"])
         for input_data_id in task["input_data_id_list"]:
             try:
-                result = self.merge_segmentation_annotation(task_id, input_data_id, log_message_prefix=log_message_prefix)
+                result = self.merge_segmentation_annotation(task_id, input_data_id, annotation_dict[input_data_id], log_message_prefix=log_message_prefix)
                 if result:
                     success_input_data_count += 1
             except Exception:

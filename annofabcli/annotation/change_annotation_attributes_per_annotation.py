@@ -6,6 +6,7 @@ import logging
 import sys
 from collections import defaultdict
 from pathlib import Path
+from typing import Any
 
 import annofabapi
 import pandas
@@ -16,6 +17,7 @@ from pydantic import BaseModel
 import annofabcli.common.cli
 from annofabcli.annotation.annotation_query import convert_attributes_from_cli_to_additional_data_list_v2
 from annofabcli.annotation.dump_annotation import DumpAnnotationMain
+from annofabcli.common.annofab.editor_annotation import get_editor_annotation_dict_in_bulk
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
     ArgumentParser,
@@ -74,7 +76,7 @@ class ChangeAnnotationAttributesPerAnnotationMain(CommandLineWithConfirm):
         self.dump_annotation_obj = DumpAnnotationMain(service, project_id)
         super().__init__(all_yes)
 
-    def change_annotation_attributes_by_frame(self, task_id: str, input_data_id: str, anno_list: list[TargetAnnotation]) -> tuple[int, int]:
+    def change_annotation_attributes_by_frame(self, task_id: str, input_data_id: str, anno_list: list[TargetAnnotation], editor_annotation: dict[str, Any] | None = None) -> tuple[int, int]:
         """
         フレームごとにアノテーション属性値を変更する。
 
@@ -88,7 +90,10 @@ class ChangeAnnotationAttributesPerAnnotationMain(CommandLineWithConfirm):
             [2]: 属性値を変更できなかった（変更対象のアノテーションが存在しなかった）アノテーション数
 
         """
-        editor_annotation, _ = self.service.api.get_editor_annotation(self.project_id, task_id=task_id, input_data_id=input_data_id, query_params={"v": "2"})
+
+        if editor_annotation is None:
+            editor_annotation, _ = self.service.api.get_editor_annotation(self.project_id, task_id=task_id, input_data_id=input_data_id, query_params={"v": "2"})
+        assert editor_annotation is not None
 
         if self.backup_dir is not None:
             (self.backup_dir / task_id).mkdir(exist_ok=True, parents=True)
@@ -180,9 +185,12 @@ class ChangeAnnotationAttributesPerAnnotationMain(CommandLineWithConfirm):
         if not self.confirm_processing(f"task_id='{task_id}'に含まれるアノテーション{annotation_count}件の属性値を変更しますか？"):
             return False, 0, annotation_count
 
+        annotation_dict = get_editor_annotation_dict_in_bulk(self.service, self.project_id, task_id, annotation_list_per_input_data_id)
         for input_data_id, sub_anno_list in annotation_list_per_input_data_id.items():
             try:
-                tmp_succeed_to_change_annotation_count, tmp_failed_to_change_annotation_count = self.change_annotation_attributes_by_frame(task_id, input_data_id, sub_anno_list)
+                tmp_succeed_to_change_annotation_count, tmp_failed_to_change_annotation_count = self.change_annotation_attributes_by_frame(
+                    task_id, input_data_id, sub_anno_list, annotation_dict[input_data_id]
+                )
                 succeed_to_change_annotation_count += tmp_succeed_to_change_annotation_count
                 failed_to_change_annotation_count += tmp_failed_to_change_annotation_count
             except Exception:

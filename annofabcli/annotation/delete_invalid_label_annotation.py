@@ -13,6 +13,7 @@ from annofabapi.models import ProjectMemberRole, TaskStatus
 
 import annofabcli.common.cli
 from annofabcli.annotation.dump_annotation import DumpAnnotationMain
+from annofabcli.common.annofab.editor_annotation import get_editor_annotation_dict_in_bulk
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
     ArgumentParser,
@@ -97,7 +98,7 @@ class DeleteInvalidLabelAnnotationMain(CommandLineWithConfirm):
         self.dump_annotation_obj = DumpAnnotationMain(service, project_id)
         super().__init__(all_yes)
 
-    def delete_invalid_label_annotation_for_input_data(self, task_id: str, input_data_id: str, existing_label_ids: set[str]) -> int:
+    def delete_invalid_label_annotation_for_input_data(self, task_id: str, input_data_id: str, existing_label_ids: set[str], editor_annotation: dict[str, Any] | None = None) -> int:
         """
         1個の入力データに含まれる、アノテーション仕様に存在しないラベルを持つアノテーションを削除する。
 
@@ -109,7 +110,9 @@ class DeleteInvalidLabelAnnotationMain(CommandLineWithConfirm):
         Returns:
             削除したアノテーション数。
         """
-        editor_annotation, _ = self.service.api.get_editor_annotation(self.project_id, task_id=task_id, input_data_id=input_data_id, query_params={"v": "2"})
+        if editor_annotation is None:
+            editor_annotation, _ = self.service.api.get_editor_annotation(self.project_id, task_id=task_id, input_data_id=input_data_id, query_params={"v": "2"})
+
         request = create_request_body_for_delete_invalid_label_annotation(editor_annotation, existing_label_ids=existing_label_ids)
         if request.delete_count > 0:
             self.service.api.batch_update_annotations(self.project_id, request_body=request.request_body, query_params={"v": "2"})
@@ -175,9 +178,10 @@ class DeleteInvalidLabelAnnotationMain(CommandLineWithConfirm):
             self.dump_annotation_obj.dump_annotation_for_task(task_id, output_dir=backup_dir)
 
         failed_input_data_count = 0
+        annotation_dict = get_editor_annotation_dict_in_bulk(self.service, self.project_id, task_id, input_data_id_list)
         for input_data_id in input_data_id_list:
             try:
-                deleted_annotation_count += self.delete_invalid_label_annotation_for_input_data(task_id, input_data_id, existing_label_ids)
+                deleted_annotation_count += self.delete_invalid_label_annotation_for_input_data(task_id, input_data_id, existing_label_ids, annotation_dict[input_data_id])
             except Exception:
                 logger.warning(f"{logger_prefix}task_id='{task_id}', input_data_id='{input_data_id}' :: 不正なラベルを持つアノテーションの削除に失敗しました。", exc_info=True)
                 failed_input_data_count += 1

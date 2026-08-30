@@ -20,6 +20,7 @@ from annofabapi.util.annotation_specs import AnnotationSpecsAccessor
 import annofabcli.common.cli
 from annofabcli.annotation.dump_annotation import DumpAnnotationMain
 from annofabcli.annotation.editor_props import validate_editor_props_for_cli
+from annofabcli.common.annofab.editor_annotation import get_editor_annotation_dict_in_bulk
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
     PARALLELISM_CHOICES,
@@ -171,9 +172,11 @@ class ChangeAnnotationEditorPropsMain(CommandLineWithConfirm):
             result.extend(self.service.wrapper.get_all_annotation_list(self.project_id, query_params={"query": dict_query}))
         return result
 
-    def change_editor_props_by_input_data(self, task_id: str, input_data_id: str, annotation_ids: set[str]) -> ChangeEditorPropsCount:
+    def change_editor_props_by_input_data(self, task_id: str, input_data_id: str, annotation_ids: set[str], editor_annotation: dict[str, Any] | None = None) -> ChangeEditorPropsCount:
         """1個の入力データに含まれるアノテーションの `editor_props` を変更する。"""
-        editor_annotation, _ = self.service.api.get_editor_annotation(self.project_id, task_id=task_id, input_data_id=input_data_id, query_params={"v": "2"})
+
+        if editor_annotation is None:
+            editor_annotation, _ = self.service.api.get_editor_annotation(self.project_id, task_id=task_id, input_data_id=input_data_id, query_params={"v": "2"})
 
         if self.backup_dir is not None:
             (self.backup_dir / task_id).mkdir(exist_ok=True, parents=True)
@@ -257,9 +260,10 @@ class ChangeAnnotationEditorPropsMain(CommandLineWithConfirm):
 
             success_count = 0
             failed_count = 0
+            annotation_dict = get_editor_annotation_dict_in_bulk(self.service, self.project_id, task_id, annotation_ids_per_input_data_id)
             for input_data_id, annotation_ids in annotation_ids_per_input_data_id.items():
                 try:
-                    count = self.change_editor_props_by_input_data(task_id, input_data_id, annotation_ids)
+                    count = self.change_editor_props_by_input_data(task_id, input_data_id, annotation_ids, annotation_dict[input_data_id])
                     success_count += count.success
                     failed_count += count.failed
                 except Exception:
