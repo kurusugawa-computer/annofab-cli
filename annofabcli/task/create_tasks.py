@@ -1,20 +1,24 @@
 from __future__ import annotations
 
 import argparse
+import functools
 import logging
 import multiprocessing
 import sys
 from collections import defaultdict
 from dataclasses import dataclass
+from itertools import batched
 from pathlib import Path
 from typing import Any
 
 import annofabapi
 import pandas
-from annofabapi.models import ProjectMemberRole
+from annofabapi.models import ProjectMemberRole, Task
 from annofabapi.project_member_repository import ProjectMemberRepository
 
 import annofabcli.common.cli
+from annofabcli.common.annofab.input_data import BULK_REQUEST_SIZE
+from annofabcli.common.annofab.task import get_task_dict_in_bulk
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
     PARALLELISM_CHOICES,
@@ -222,7 +226,7 @@ class CreateTaskMain(CommandLineWithConfirm):
         self.account_id_cache: dict[str, str] = {}
         CommandLineWithConfirm.__init__(self, all_yes)
 
-    def create_task(self, task_creation_info: TaskCreationInfo) -> bool:
+    def create_task(self, task_creation_info: TaskCreationInfo, *, existing_task_dict: dict[str, Task] | None = None) -> bool:
         """タスクを作成し、必要に応じて担当者を設定します。
 
         Args:
@@ -232,7 +236,7 @@ class CreateTaskMain(CommandLineWithConfirm):
             タスクを作成した場合はTrue、すでにタスクが存在する場合はFalse
         """
 
-        task = self.service.wrapper.get_task_or_none(self.project_id, task_creation_info.task_id)
+        task = existing_task_dict.get(task_creation_info.task_id) if existing_task_dict is not None else self.service.wrapper.get_task_or_none(self.project_id, task_creation_info.task_id)
         if task is not None:
             logger.warning(f"タスク'{task_creation_info.task_id}'はすでに存在するので、タスクの作成をスキップします。")
             return False
@@ -249,7 +253,7 @@ class CreateTaskMain(CommandLineWithConfirm):
         logger.debug(f"タスク'{task_creation_info.task_id}'を登録しました。")
         return True
 
-    def create_task_wrapper(self, task_creation_info: TaskCreationInfo) -> bool:
+    def create_task_wrapper(self, task_creation_info: TaskCreationInfo, *, existing_task_dict: dict[str, Task]) -> bool:
         """例外を捕捉しながらタスクを作成します。
 
         Args:
@@ -260,7 +264,7 @@ class CreateTaskMain(CommandLineWithConfirm):
         """
 
         try:
-            return self.create_task(task_creation_info)
+            return self.create_task(task_creation_info, existing_task_dict=existing_task_dict)
         except Exception:
             logger.exception(f"タスク'{task_creation_info.task_id}'の登録に失敗しました。")
             return False
@@ -284,23 +288,27 @@ class CreateTaskMain(CommandLineWithConfirm):
 
         success_count = 0
         total_count = len(task_creation_info_list)
-        if self.parallelism is None:
-            for index, task_creation_info in enumerate(task_creation_info_list, start=1):
-                try:
-                    result = self.create_task(task_creation_info)
-                    if result:
-                        success_count += 1
-                except Exception:
-                    logger.exception(f"タスク'{task_creation_info.task_id}'の登録に失敗しました。")
-                finally:
-                    self.log_progress(index, total_count)
-
-        else:
+        if self.parallelism is not None:
             with multiprocessing.Pool(self.parallelism) as p:
-                for index, result in enumerate(p.imap(self.create_task_wrapper, task_creation_info_list), start=1):
-                    if result:
-                        success_count += 1
-                    self.log_progress(index, total_count)
+                for initial_index, task_creation_info_batch in enumerate(batched(task_creation_info_list, BULK_REQUEST_SIZE)):
+                    existing_task_dict = get_task_dict_in_bulk(self.service, self.project_id, [e.task_id for e in task_creation_info_batch])
+                    wrapper = functools.partial(self.create_task_wrapper, existing_task_dict=existing_task_dict)
+                    for index, result in enumerate(p.imap(wrapper, task_creation_info_batch), start=initial_index * BULK_REQUEST_SIZE + 1):
+                        if result:
+                            success_count += 1
+                        self.log_progress(index, total_count)
+        else:
+            for initial_index, task_creation_info_batch in enumerate(batched(task_creation_info_list, BULK_REQUEST_SIZE)):
+                existing_task_dict = get_task_dict_in_bulk(self.service, self.project_id, [e.task_id for e in task_creation_info_batch])
+                for index, task_creation_info in enumerate(task_creation_info_batch, start=initial_index * BULK_REQUEST_SIZE + 1):
+                    try:
+                        result = self.create_task(task_creation_info, existing_task_dict=existing_task_dict)
+                        if result:
+                            success_count += 1
+                    except Exception:
+                        logger.exception(f"タスク'{task_creation_info.task_id}'の登録に失敗しました。")
+                    finally:
+                        self.log_progress(index, total_count)
 
         logger.info(f"{success_count} / {total_count} 件のタスクを登録しました。")
 

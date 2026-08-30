@@ -5,13 +5,16 @@ import functools
 import json
 import logging
 import multiprocessing
+from itertools import batched
 from pathlib import Path
 from typing import Any
 
 import annofabapi
-from annofabapi.models import AnnotationDataHoldingType
+from annofabapi.models import AnnotationDataHoldingType, Task
 
 import annofabcli.common.cli
+from annofabcli.common.annofab.input_data import BULK_REQUEST_SIZE
+from annofabcli.common.annofab.task import get_task_dict_in_bulk
 from annofabcli.common.cli import PARALLELISM_CHOICES, ArgumentParser, CommandLine, build_annofabapi_resource_and_login
 from annofabcli.common.facade import AnnofabApiFacade
 
@@ -68,7 +71,17 @@ class DumpAnnotationMain:
         json_path = task_dir / f"{input_data_id}.json"
         self.dump_editor_annotation(editor_annotation=editor_annotation, json_path=json_path)
 
-    def dump_annotation_for_task(self, task_id: str, output_dir: Path, *, task_index: int | None = None, task_history_index: int | None = None, task_history_id: str | None = None) -> bool:
+    def dump_annotation_for_task(
+        self,
+        task_id: str,
+        output_dir: Path,
+        *,
+        task: Task | None = None,
+        is_task_fetched: bool = False,
+        task_index: int | None = None,
+        task_history_index: int | None = None,
+        task_history_id: str | None = None,
+    ) -> bool:
         """
         タスク配下のアノテーションをファイルに保存する。
 
@@ -80,7 +93,8 @@ class DumpAnnotationMain:
             アノテーション情報をファイルに保存したかどうか。
         """
         logger_prefix = f"{task_index + 1!s} 件目: " if task_index is not None else ""
-        task = self.service.wrapper.get_task_or_none(self.project_id, task_id)
+        if task is None and not is_task_fetched:
+            task = self.service.wrapper.get_task_or_none(self.project_id, task_id)
         if task is None:
             logger.warning(f"task_id = '{task_id}' のタスクは存在しません。スキップします。")
             return False
@@ -109,10 +123,26 @@ class DumpAnnotationMain:
 
         return not is_failure
 
-    def dump_annotation_for_task_wrapper(self, tpl: tuple[int, str], output_dir: Path, *, task_history_index: int | None = None, task_history_id: str | None = None) -> bool:
+    def dump_annotation_for_task_wrapper(
+        self,
+        tpl: tuple[int, str],
+        output_dir: Path,
+        *,
+        task_dict: dict[str, Task],
+        task_history_index: int | None = None,
+        task_history_id: str | None = None,
+    ) -> bool:
         task_index, task_id = tpl
         try:
-            return self.dump_annotation_for_task(task_id, output_dir=output_dir, task_index=task_index, task_history_index=task_history_index, task_history_id=task_history_id)
+            return self.dump_annotation_for_task(
+                task_id,
+                output_dir=output_dir,
+                task=task_dict.get(task_id),
+                is_task_fetched=True,
+                task_index=task_index,
+                task_history_index=task_history_index,
+                task_history_id=task_history_id,
+            )
         except Exception:  # pylint: disable=broad-except
             logger.warning(f"タスク'{task_id}'のアノテーション情報のダンプに失敗しました。", exc_info=True)
             return False
@@ -126,19 +156,37 @@ class DumpAnnotationMain:
         success_count = 0
 
         if parallelism is not None:
-            func = functools.partial(self.dump_annotation_for_task_wrapper, task_history_index=task_history_index, task_history_id=task_history_id, output_dir=output_dir)
             with multiprocessing.Pool(parallelism) as pool:
-                result_bool_list = pool.map(func, enumerate(task_id_list))
-                success_count = len([e for e in result_bool_list if e])
+                for initial_index, task_id_batch in enumerate(batched(task_id_list, BULK_REQUEST_SIZE)):
+                    task_dict = get_task_dict_in_bulk(self.service, self.project_id, task_id_batch)
+                    func = functools.partial(
+                        self.dump_annotation_for_task_wrapper,
+                        task_dict=task_dict,
+                        task_history_index=task_history_index,
+                        task_history_id=task_history_id,
+                        output_dir=output_dir,
+                    )
+                    result_bool_list = pool.map(func, enumerate(task_id_batch, start=initial_index * BULK_REQUEST_SIZE))
+                    success_count += len([e for e in result_bool_list if e])
 
         else:
-            for task_index, task_id in enumerate(task_id_list):
-                try:
-                    result = self.dump_annotation_for_task(task_id, output_dir=output_dir, task_history_index=task_history_index, task_history_id=task_history_id, task_index=task_index)
-                    if result:
-                        success_count += 1
-                except Exception:
-                    logger.warning(f"タスク'{task_id}'のアノテーション情報のダンプに失敗しました。", exc_info=True)
+            for initial_index, task_id_batch in enumerate(batched(task_id_list, BULK_REQUEST_SIZE)):
+                task_dict = get_task_dict_in_bulk(self.service, self.project_id, task_id_batch)
+                for task_index, task_id in enumerate(task_id_batch, start=initial_index * BULK_REQUEST_SIZE):
+                    try:
+                        result = self.dump_annotation_for_task(
+                            task_id,
+                            output_dir=output_dir,
+                            task=task_dict.get(task_id),
+                            is_task_fetched=True,
+                            task_history_index=task_history_index,
+                            task_history_id=task_history_id,
+                            task_index=task_index,
+                        )
+                        if result:
+                            success_count += 1
+                    except Exception:
+                        logger.warning(f"タスク'{task_id}'のアノテーション情報のダンプに失敗しました。", exc_info=True)
 
         logger.info(f"{success_count} / {len(task_id_list)} 件のタスクのアノテーション情報をダンプしました。")
 

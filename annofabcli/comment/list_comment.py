@@ -3,13 +3,16 @@ from __future__ import annotations
 import argparse
 import logging
 from collections import Counter
+from itertools import batched
 from typing import Any
 
 import pandas
 import requests
-from annofabapi.models import Comment, CommentType
+from annofabapi.models import Comment, CommentType, Task
 
 import annofabcli.common.cli
+from annofabcli.common.annofab.input_data import BULK_REQUEST_SIZE
+from annofabcli.common.annofab.task import get_task_dict_in_bulk
 from annofabcli.common.cli import ArgumentParser, CommandLine, build_annofabapi_resource_and_login
 from annofabcli.common.enums import OutputFormat
 from annofabcli.common.facade import AnnofabApiFacade
@@ -63,29 +66,31 @@ class ListingComments(CommandLine):
     def get_comment_list(self, project_id: str, task_id_list: list[str], *, comment_type: CommentType | None, exclude_reply: bool) -> list[dict[str, Any]]:
         all_comments: list[Comment] = []
 
-        for task_id in task_id_list:
-            try:
-                task = self.service.wrapper.get_task_or_none(project_id, task_id)
-                if task is None:
-                    logger.warning(f"タスク'{task_id}'は存在しないので、スキップします。")
-                    continue
+        for task_id_batch in batched(task_id_list, BULK_REQUEST_SIZE):
+            task_dict: dict[str, Task] = get_task_dict_in_bulk(self.service, project_id, task_id_batch)
+            for task_id in task_id_batch:
+                try:
+                    task = task_dict.get(task_id)
+                    if task is None:
+                        logger.warning(f"タスク'{task_id}'は存在しないので、スキップします。")
+                        continue
 
-                input_data_id_list = task["input_data_id_list"]
-                logger.debug(f"タスク '{task_id}' に紐づくコメントを取得します。input_dataの個数 = {len(input_data_id_list)}")
-                for input_data_id in input_data_id_list:
-                    comments = self.get_comments(project_id, task_id, input_data_id)
+                    input_data_id_list = task["input_data_id_list"]
+                    logger.debug(f"タスク '{task_id}' に紐づくコメントを取得します。input_dataの個数 = {len(input_data_id_list)}")
+                    for input_data_id in input_data_id_list:
+                        comments = self.get_comments(project_id, task_id, input_data_id)
 
-                    if comment_type is not None:
-                        comments = [e for e in comments if e["comment_type"] == comment_type.value]
+                        if comment_type is not None:
+                            comments = [e for e in comments if e["comment_type"] == comment_type.value]
 
-                    if exclude_reply:
-                        # 返信コメントを除外する
-                        comments = [e for e in comments if e["comment_node"]["_type"] != "Reply"]
+                        if exclude_reply:
+                            # 返信コメントを除外する
+                            comments = [e for e in comments if e["comment_node"]["_type"] != "Reply"]
 
-                    all_comments.extend(comments)
+                        all_comments.extend(comments)
 
-            except requests.HTTPError:
-                logger.warning(f"task_id='{task_id}'のタスクのコメントの取得に失敗しました。", exc_info=True)
+                except requests.HTTPError:
+                    logger.warning(f"task_id='{task_id}'のタスクのコメントの取得に失敗しました。", exc_info=True)
 
         visualize = AddProps(self.service, project_id)
         all_comments = [visualize.add_properties_to_comment(e) for e in all_comments]

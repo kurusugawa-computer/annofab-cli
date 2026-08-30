@@ -1,19 +1,23 @@
 from __future__ import annotations
 
 import argparse
+import functools
 import logging
 import multiprocessing
 import sys
 import tempfile
 from collections import defaultdict
 from enum import Enum
+from itertools import batched
 from pathlib import Path
 
 import annofabapi
 import pandas
-from annofabapi.models import JobStatus, ProjectJobType, ProjectMemberRole
+from annofabapi.models import JobStatus, ProjectJobType, ProjectMemberRole, Task
 
 import annofabcli.common.cli
+from annofabcli.common.annofab.input_data import BULK_REQUEST_SIZE
+from annofabcli.common.annofab.task import get_task_dict_in_bulk
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
     PARALLELISM_CHOICES,
@@ -98,8 +102,8 @@ class PuttingTaskMain:
         self.parallelism = parallelism
         self.should_wait = should_wait
 
-    def put_task(self, task_id: str, input_data_id_list: list[str]) -> bool:
-        task = self.service.wrapper.get_task_or_none(self.project_id, task_id)
+    def put_task(self, task_id: str, input_data_id_list: list[str], *, existing_task_dict: dict[str, Task] | None = None) -> bool:
+        task = existing_task_dict.get(task_id) if existing_task_dict is not None else self.service.wrapper.get_task_or_none(self.project_id, task_id)
         if task is not None:
             logger.warning(f"タスク'{task_id}'はすでに存在するため、登録をスキップします。")
             return False
@@ -109,10 +113,10 @@ class PuttingTaskMain:
         logger.debug(f"タスク'{task_id}'を登録しました。")
         return True
 
-    def put_task_wrapper(self, tpl: tuple[str, list[str]]) -> bool:
+    def put_task_wrapper(self, tpl: tuple[str, list[str]], *, existing_task_dict: dict[str, Task]) -> bool:
         task_id, input_data_id_list = tpl
         try:
-            return self.put_task(task_id, input_data_id_list)
+            return self.put_task(task_id, input_data_id_list, existing_task_dict=existing_task_dict)
         except Exception:  # pylint: disable=broad-except
             logger.warning(f"タスク'{task_id}'の登録に失敗しました。", exc_info=True)
             return False
@@ -120,19 +124,23 @@ class PuttingTaskMain:
     def put_task_list(self, task_relation_dict: TaskInputRelation) -> None:
         logger.debug("'put_task' WebAPIを用いてタスクを生成します。")
         success_count = 0
-        if self.parallelism is None:
-            for task_id, input_data_id_list in task_relation_dict.items():
-                try:
-                    result = self.put_task(task_id, input_data_id_list)
-                    if result:
-                        success_count += 1
-                except Exception:  # pylint: disable=broad-except
-                    logger.warning(f"タスク'{task_id}'の登録に失敗しました。", exc_info=True)
-
-        else:
+        if self.parallelism is not None:
             with multiprocessing.Pool(self.parallelism) as p:
-                results = p.map(self.put_task_wrapper, task_relation_dict.items())
-                success_count = len([e for e in results if e])
+                for task_relation_batch in batched(task_relation_dict.items(), BULK_REQUEST_SIZE):
+                    existing_task_dict = get_task_dict_in_bulk(self.service, self.project_id, [task_id for task_id, _ in task_relation_batch])
+                    wrapper = functools.partial(self.put_task_wrapper, existing_task_dict=existing_task_dict)
+                    results = p.map(wrapper, task_relation_batch)
+                    success_count += len([e for e in results if e])
+        else:
+            for task_relation_batch in batched(task_relation_dict.items(), BULK_REQUEST_SIZE):
+                existing_task_dict = get_task_dict_in_bulk(self.service, self.project_id, [task_id for task_id, _ in task_relation_batch])
+                for task_id, input_data_id_list in task_relation_batch:
+                    try:
+                        result = self.put_task(task_id, input_data_id_list, existing_task_dict=existing_task_dict)
+                        if result:
+                            success_count += 1
+                    except Exception:  # pylint: disable=broad-except
+                        logger.warning(f"タスク'{task_id}'の登録に失敗しました。", exc_info=True)
 
         logger.info(f"{success_count} / {len(task_relation_dict)} 件のタスクを登録しました。")
 

@@ -2,17 +2,21 @@ from __future__ import annotations
 
 import argparse
 import copy
+import functools
 import logging
 import multiprocessing
 import sys
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
+from itertools import batched
 from typing import Any
 
 import annofabapi
-from annofabapi.models import ProjectMemberRole, TaskStatus
+from annofabapi.models import ProjectMemberRole, Task, TaskStatus
 
 import annofabcli.common.cli
+from annofabcli.common.annofab.input_data import BULK_REQUEST_SIZE
+from annofabcli.common.annofab.task import get_task_dict_in_bulk
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
     PARALLELISM_CHOICES,
@@ -150,15 +154,15 @@ class CopyAnnotationMain(CommandLineWithConfirm):
 
         CommandLineWithConfirm.__init__(self, all_yes)
 
-    def copy_annotation_by_task(self, copy_target: CopyTargetByTask) -> bool:
+    def copy_annotation_by_task(self, copy_target: CopyTargetByTask, *, task_dict: dict[str, Task] | None = None) -> bool:
         """
         タスク単位でアノテーションをコピーする
 
         Returns:
             1フレーム以上のアノテーションをコピーしたどうか
         """
-        src_task = self.service.wrapper.get_task_or_none(project_id=self.project_id, task_id=copy_target.src_task_id)
-        dest_task = self.service.wrapper.get_task_or_none(project_id=self.project_id, task_id=copy_target.dest_task_id)
+        src_task = task_dict.get(copy_target.src_task_id) if task_dict is not None else self.service.wrapper.get_task_or_none(project_id=self.project_id, task_id=copy_target.src_task_id)
+        dest_task = task_dict.get(copy_target.dest_task_id) if task_dict is not None else self.service.wrapper.get_task_or_none(project_id=self.project_id, task_id=copy_target.dest_task_id)
 
         if src_task is None:
             logger.warning(f"コピー元のタスク '{copy_target.src_task_id}' は存在しません。")
@@ -265,8 +269,8 @@ class CopyAnnotationMain(CommandLineWithConfirm):
         logger.debug(f"'{copy_target.src}'のアノテーションを'{copy_target.dest}'にコピーしました。")
         return True
 
-    def copy_annotation(self, copy_target: CopyTarget) -> bool:  # noqa: PLR0911
-        dest_task = self.service.wrapper.get_task_or_none(self.project_id, copy_target.dest_task_id)
+    def copy_annotation(self, copy_target: CopyTarget, *, task_dict: dict[str, Task] | None = None) -> bool:  # noqa: PLR0911
+        dest_task = task_dict.get(copy_target.dest_task_id) if task_dict is not None else self.service.wrapper.get_task_or_none(self.project_id, copy_target.dest_task_id)
         if dest_task is None:
             logger.warning(f"コピー先のタスク '{copy_target.dest_task_id}' は存在しません。")
             return False
@@ -319,7 +323,7 @@ class CopyAnnotationMain(CommandLineWithConfirm):
 
         result = False
         if isinstance(copy_target, CopyTargetByTask):
-            result = self.copy_annotation_by_task(copy_target)
+            result = self.copy_annotation_by_task(copy_target, task_dict=task_dict)
 
         elif isinstance(copy_target, CopyTargetByInputData):
             result = self.copy_annotation_by_input_data(copy_target)
@@ -335,32 +339,36 @@ class CopyAnnotationMain(CommandLineWithConfirm):
 
         return result
 
-    def copy_annotation_wrapper(self, copy_target: CopyTarget) -> bool:
+    def copy_annotation_wrapper(self, copy_target: CopyTarget, *, task_dict: dict[str, Task]) -> bool:
         try:
-            return self.copy_annotation(copy_target)
+            return self.copy_annotation(copy_target, task_dict=task_dict)
         except Exception:  # pylint: disable=broad-except
             logger.warning(f"'{copy_target.src}'のアノテーションを'{copy_target.dest}'へコピーするのに失敗しました。", exc_info=True)
             return False
 
     def copy_annotations(self, copy_target_list: list[CopyTarget], *, parallelism: int | None = None) -> None:
+        success_count = 0
         if parallelism is not None:
             with multiprocessing.Pool(parallelism) as pool:
-                result_bool_list = pool.map(self.copy_annotation_wrapper, copy_target_list)
-                success_count = len([e for e in result_bool_list if e])
+                for copy_target_batch in batched(copy_target_list, BULK_REQUEST_SIZE):
+                    task_id_list = [task_id for target in copy_target_batch for task_id in (target.src_task_id, target.dest_task_id)]
+                    task_dict = get_task_dict_in_bulk(self.service, self.project_id, task_id_list)
+                    wrapper = functools.partial(self.copy_annotation_wrapper, task_dict=task_dict)
+                    result_bool_list = pool.map(wrapper, copy_target_batch)
+                    success_count += len([e for e in result_bool_list if e])
 
         else:
-            # 逐次処理
-            success_count = 0
-            for copy_target in copy_target_list:
-                try:
-                    result = self.copy_annotation(
-                        copy_target,
-                    )
-                    if result:
-                        success_count += 1
-                except Exception:  # pylint: disable=broad-except
-                    logger.warning(f"'{copy_target.src}'のアノテーションを'{copy_target.dest}'へコピーするのに失敗しました。", exc_info=True)
-                    continue
+            for copy_target_batch in batched(copy_target_list, BULK_REQUEST_SIZE):
+                task_id_list = [task_id for target in copy_target_batch for task_id in (target.src_task_id, target.dest_task_id)]
+                task_dict = get_task_dict_in_bulk(self.service, self.project_id, task_id_list)
+                for copy_target in copy_target_batch:
+                    try:
+                        result = self.copy_annotation(copy_target, task_dict=task_dict)
+                        if result:
+                            success_count += 1
+                    except Exception:  # pylint: disable=broad-except
+                        logger.warning(f"'{copy_target.src}'のアノテーションを'{copy_target.dest}'へコピーするのに失敗しました。", exc_info=True)
+                        continue
 
         logger.info(f"{success_count} / {len(copy_target_list)} 件のタスクまたは入力データに対して、アノテーションをコピーしました。")
 
