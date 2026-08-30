@@ -24,10 +24,10 @@ def test_get_all_supplementary_data_list() -> None:
     ]
     main_obj = ListSupplementaryDataMain(service, project_id="project1")
 
-    result = main_obj.get_all_supplementary_data_list([f"input{i}" for i in range(1, 12)])
+    result = main_obj.get_all_supplementary_data_list([f"input{i}" for i in range(1, 102)])
 
     assert result == [{"input_data_id": "input1", "supplementary_data_id": "supplementary1"}]
     assert service.api.get_supplementary_data_in_bulk.call_args_list == [
-        (("project1",), {"query_params": {"input_data_id": ",".join(f"input{i}" for i in range(1, 11))}}),
-        (("project1",), {"query_params": {"input_data_id": "input11"}}),
+        (("project1",), {"query_params": {"input_data_id": ",".join(f"input{i}" for i in range(1, 101))}}),
+        (("project1",), {"query_params": {"input_data_id": "input101"}}),
     ]
