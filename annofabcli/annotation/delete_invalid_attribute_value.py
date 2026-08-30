@@ -255,19 +255,21 @@ class DeleteInvalidAttributeValueMain(CommandLineWithConfirm):
 
         if deleted_annotation_count > 0:
             result = True
-            logger.info(
-                f"{logger_prefix}task_id='{task_id}': {deleted_annotation_count} 個のアノテーションから、ラベルに含まれていない属性値を削除しました。"
-                f"{skipped_annotation_count} 個のアノテーションは属性値の削除をスキップしました。"
-                f"{failed_input_data_count} 個の入力データは処理に失敗しました。"
-            )
+            log_message = f"{logger_prefix}task_id='{task_id}': {deleted_annotation_count} 個のアノテーションから、ラベルに含まれていない属性値を削除しました。"
         elif skipped_annotation_count > 0 or failed_input_data_count > 0:
-            logger.info(
-                f"{logger_prefix}task_id='{task_id}': 属性値を削除したアノテーションはありません。"
-                f"{skipped_annotation_count} 個のアノテーションは属性値の削除をスキップしました。"
-                f"{failed_input_data_count} 個の入力データは処理に失敗しました。"
-            )
+            log_message = f"{logger_prefix}task_id='{task_id}': 属性値を削除したアノテーションはありません。"
         else:
-            logger.info(f"{logger_prefix}task_id='{task_id}'には、ラベルに含まれていない属性値が設定されているアノテーションが存在しません。")
+            log_message = f"{logger_prefix}task_id='{task_id}'には、ラベルに含まれていない属性値が設定されているアノテーションが存在しません。"
+
+        log_message += "".join(
+            message
+            for count, message in [
+                (skipped_annotation_count, f"{skipped_annotation_count} 個のアノテーションは属性値の削除をスキップしました。"),
+                (failed_input_data_count, f"{failed_input_data_count} 個の入力データは処理に失敗しました。"),
+            ]
+            if count > 0
+        )
+        logger.info(log_message)
 
         return result, deleted_annotation_count
 
