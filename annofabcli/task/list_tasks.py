@@ -1,6 +1,5 @@
 import argparse
 import logging
-from itertools import batched
 from pathlib import Path
 from typing import Any
 
@@ -17,6 +16,7 @@ from annofabcli.common.enums import OutputFormat
 from annofabcli.common.facade import AnnofabApiFacade
 from annofabcli.common.utils import get_columns_with_priority, print_csv, print_id_list, print_json
 from annofabcli.common.visualize import AddProps
+from annofabcli.utils.iterables import batched
 
 logger = logging.getLogger(__name__)
 
