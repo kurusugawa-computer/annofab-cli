@@ -17,7 +17,7 @@ from annofabcli.common.cli import ArgumentParser, CommandLine, build_annofabapi_
 from annofabcli.common.download import DownloadingFile
 from annofabcli.common.enums import OutputFormat
 from annofabcli.common.facade import AnnofabApiFacade, InputDataQuery, match_input_data_with_query
-from annofabcli.input_data.list_input_data import AddingDetailsToInputData, print_input_data_list
+from annofabcli.input_data.list_input_data import AddingDetailsToInputData, ListInputDataMain, print_input_data_list
 from annofabcli.input_data.utils import remove_unnecessary_keys_from_input_data
 
 logger = logging.getLogger(__name__)
@@ -72,6 +72,27 @@ class ListInputDataWithJsonMain:
         is_latest: bool = False,
         temp_dir: Path | None = None,
     ) -> list[dict[str, Any]]:
+        def filter_and_add_details(input_data_list: list[dict[str, Any]], *, fetch_with_bulk_api: bool) -> list[dict[str, Any]]:
+            input_data_id_set = set(input_data_id_list) if input_data_id_list is not None else None
+            filtered_input_data_list = [e for e in input_data_list if self.filter_input_data_list(e, input_data_query=input_data_query, input_data_id_set=input_data_id_set)]
+
+            if fetch_with_bulk_api:
+                main_obj = ListInputDataMain(self.service, project_id)
+                result_input_data_list = main_obj.get_input_data_from_input_data_id([e["input_data_id"] for e in filtered_input_data_list])
+            else:
+                result_input_data_list = filtered_input_data_list
+
+            adding_obj = AddingDetailsToInputData(self.service, project_id)
+            if contain_parent_task_id_list:
+                adding_obj.add_parent_task_id_list_to_input_data_list(result_input_data_list)
+
+            if contain_supplementary_data_count:
+                adding_obj.add_supplementary_data_count_to_input_data_list(result_input_data_list)
+
+            for input_data in result_input_data_list:
+                remove_unnecessary_keys_from_input_data(input_data)
+            return result_input_data_list
+
         if input_data_json is None:
             downloading_obj = DownloadingFile(self.service)
             # `NamedTemporaryFile`を使わない理由: Windowsで`PermissionError`が発生するため
@@ -83,41 +104,13 @@ class ListInputDataWithJsonMain:
                     json_path = downloading_obj.download_input_data_json_to_dir(project_id, Path(str_temp_dir), is_latest=is_latest)
                     with json_path.open(encoding="utf-8") as f:
                         input_data_list = json.load(f)
-                        # 一時ディレクトリの場合はここでフィルタリング処理まで行う
-                        input_data_id_set = set(input_data_id_list) if input_data_id_list is not None else None
-                        filtered_input_data_list = [e for e in input_data_list if self.filter_input_data_list(e, input_data_query=input_data_query, input_data_id_set=input_data_id_set)]
-
-                        adding_obj = AddingDetailsToInputData(self.service, project_id)
-                        if contain_parent_task_id_list:
-                            adding_obj.add_parent_task_id_list_to_input_data_list(input_data_list)
-
-                        if contain_supplementary_data_count:
-                            adding_obj.add_supplementary_data_count_to_input_data_list(input_data_list)
-
-                        # 入力データの不要なキーを削除する
-                        for input_data in input_data_list:
-                            remove_unnecessary_keys_from_input_data(input_data)
-                        return filtered_input_data_list
+                    return filter_and_add_details(input_data_list, fetch_with_bulk_api=True)
         else:
             json_path = input_data_json
 
         with json_path.open(encoding="utf-8") as f:
             input_data_list = json.load(f)
-
-        input_data_id_set = set(input_data_id_list) if input_data_id_list is not None else None
-        filtered_input_data_list = [e for e in input_data_list if self.filter_input_data_list(e, input_data_query=input_data_query, input_data_id_set=input_data_id_set)]
-
-        adding_obj = AddingDetailsToInputData(self.service, project_id)
-        if contain_parent_task_id_list:
-            adding_obj.add_parent_task_id_list_to_input_data_list(input_data_list)
-
-        if contain_supplementary_data_count:
-            adding_obj.add_supplementary_data_count_to_input_data_list(input_data_list)
-
-        # 入力データの不要なキーを削除する
-        for input_data in input_data_list:
-            remove_unnecessary_keys_from_input_data(input_data)
-        return filtered_input_data_list
+        return filter_and_add_details(input_data_list, fetch_with_bulk_api=input_data_json is None)
 
 
 class ListAllInputData(CommandLine):
