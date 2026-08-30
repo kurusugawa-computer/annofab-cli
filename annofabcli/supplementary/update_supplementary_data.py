@@ -174,11 +174,14 @@ class UpdateSupplementaryDataMain(CommandLineWithConfirm):
         new_supplementary_data_type: str | None = None,
         new_supplementary_data_number: int | None = None,
         supplementary_data_index: int | None = None,
+        total_supplementary_data_count: int | None = None,
     ) -> UpdateResult:
         """1個の補助情報を更新します。"""
 
         log_prefix = f"input_data_id='{input_data_id}', supplementary_data_id='{supplementary_data_id}' :: "
-        if supplementary_data_index is not None:
+        if supplementary_data_index is not None and total_supplementary_data_count is not None:
+            log_prefix = f"{supplementary_data_index + 1}/{total_supplementary_data_count}件目 :: {log_prefix}"
+        elif supplementary_data_index is not None:
             log_prefix = f"{supplementary_data_index + 1}件目 :: {log_prefix}"
 
         supplementary_data_list = self.service.wrapper.get_supplementary_data_list_or_none(project_id, input_data_id)
@@ -264,6 +267,7 @@ class UpdateSupplementaryDataMain(CommandLineWithConfirm):
                     new_supplementary_data_type=updated_supplementary_data.supplementary_data_type,
                     new_supplementary_data_number=updated_supplementary_data.supplementary_data_number,
                     supplementary_data_index=supplementary_data_index,
+                    total_supplementary_data_count=len(updated_supplementary_data_list),
                 )
                 if result == UpdateResult.SUCCESS:
                     success_count += 1
@@ -280,7 +284,7 @@ class UpdateSupplementaryDataMain(CommandLineWithConfirm):
 
         logger.info(f"{success_count} / {len(updated_supplementary_data_list)} 件の補助情報を更新しました。（成功: {success_count}件, スキップ: {skipped_count}件, 失敗: {failed_count}件）")
 
-    def _update_supplementary_data_wrapper(self, args: tuple[int, UpdatedSupplementaryData], project_id: str) -> UpdateResult:
+    def _update_supplementary_data_wrapper(self, args: tuple[int, UpdatedSupplementaryData], project_id: str, total_supplementary_data_count: int) -> UpdateResult:
         index, updated_supplementary_data = args
         try:
             return self.update_supplementary_data(
@@ -292,10 +296,11 @@ class UpdateSupplementaryDataMain(CommandLineWithConfirm):
                 new_supplementary_data_type=updated_supplementary_data.supplementary_data_type,
                 new_supplementary_data_number=updated_supplementary_data.supplementary_data_number,
                 supplementary_data_index=index,
+                total_supplementary_data_count=total_supplementary_data_count,
             )
         except Exception:
             logger.warning(
-                f"{index + 1}件目 :: input_data_id='{updated_supplementary_data.input_data_id}', "
+                f"{index + 1}/{total_supplementary_data_count}件目 :: input_data_id='{updated_supplementary_data.input_data_id}', "
                 f"supplementary_data_id='{updated_supplementary_data.supplementary_data_id}'の補助情報を更新するのに失敗しました。",
                 exc_info=True,
             )
@@ -311,7 +316,7 @@ class UpdateSupplementaryDataMain(CommandLineWithConfirm):
 
         logger.info(f"{len(updated_supplementary_data_list)} 件の補助情報を更新します。{parallelism}個のプロセスを使用して並列実行します。")
 
-        partial_func = partial(self._update_supplementary_data_wrapper, project_id=project_id)
+        partial_func = partial(self._update_supplementary_data_wrapper, project_id=project_id, total_supplementary_data_count=len(updated_supplementary_data_list))
         with multiprocessing.Pool(parallelism) as pool:
             result_list = pool.map(partial_func, enumerate(updated_supplementary_data_list))
             success_count = len([e for e in result_list if e == UpdateResult.SUCCESS])
