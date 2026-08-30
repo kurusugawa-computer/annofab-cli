@@ -8,13 +8,14 @@ import multiprocessing
 import sys
 from collections.abc import Collection
 from functools import partial
+from itertools import batched
 from typing import Any
 
 import annofabapi
 from annofabapi.models import ProjectMemberRole
 
 import annofabcli.common.cli
-from annofabcli.common.annofab.input_data import get_input_data_dict_in_bulk
+from annofabcli.common.annofab.input_data import BULK_REQUEST_SIZE, get_input_data_dict_in_bulk
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
     PARALLELISM_CHOICES,
@@ -107,33 +108,36 @@ class DeleteMetadataKeyOfInputDataMain(CommandLineWithConfirm):
         logger.info(f"{len(input_data_id_list)} 件の入力データのメタデータから、キー'{metadata_keys}'を削除します。")
 
         success_count = 0
-        existing_input_data_dict = get_input_data_dict_in_bulk(self.service, self.project_id, input_data_id_list)
         if parallelism is not None:
             assert self.all_yes
-            partial_func = partial(
-                self.delete_metadata_keys_for_one_input_data_wrapper,
-                metadata_keys=metadata_keys,
-                existing_input_data_dict=existing_input_data_dict,
-            )
             with multiprocessing.Pool(parallelism) as pool:
-                result_bool_list = pool.map(partial_func, enumerate(input_data_id_list))
-                success_count = len([e for e in result_bool_list if e])
+                for initial_index, batch_input_data_id_list in enumerate(batched(input_data_id_list, BULK_REQUEST_SIZE)):
+                    existing_input_data_dict = get_input_data_dict_in_bulk(self.service, self.project_id, batch_input_data_id_list)
+                    partial_func = partial(
+                        self.delete_metadata_keys_for_one_input_data_wrapper,
+                        metadata_keys=metadata_keys,
+                        existing_input_data_dict=existing_input_data_dict,
+                    )
+                    result_bool_list = pool.map(partial_func, enumerate(batch_input_data_id_list, start=initial_index * BULK_REQUEST_SIZE))
+                    success_count += len([e for e in result_bool_list if e])
 
         else:
             # 逐次処理
-            for input_data_index, input_data_id in enumerate(input_data_id_list):
-                try:
-                    result = self.delete_metadata_keys_for_one_input_data(
-                        input_data_id,
-                        metadata_keys=metadata_keys,
-                        input_data_index=input_data_index,
-                        existing_input_data_dict=existing_input_data_dict,
-                    )
-                    if result:
-                        success_count += 1
-                except Exception:
-                    logger.warning(f"input_data_id='{input_data_id}' :: 入力データのメタデータのキーを削除するのに失敗しました。", exc_info=True)
-                    continue
+            for initial_index, batch_input_data_id_list in enumerate(batched(input_data_id_list, BULK_REQUEST_SIZE)):
+                existing_input_data_dict = get_input_data_dict_in_bulk(self.service, self.project_id, batch_input_data_id_list)
+                for input_data_index, input_data_id in enumerate(batch_input_data_id_list, start=initial_index * BULK_REQUEST_SIZE):
+                    try:
+                        result = self.delete_metadata_keys_for_one_input_data(
+                            input_data_id,
+                            metadata_keys=metadata_keys,
+                            input_data_index=input_data_index,
+                            existing_input_data_dict=existing_input_data_dict,
+                        )
+                        if result:
+                            success_count += 1
+                    except Exception:
+                        logger.warning(f"input_data_id='{input_data_id}' :: 入力データのメタデータのキーを削除するのに失敗しました。", exc_info=True)
+                        continue
 
         logger.info(f"{success_count} / {len(input_data_id_list)} 件の入力データのメタデータから、キー'{metadata_keys}'を削除しました。")
 

@@ -8,13 +8,14 @@ import multiprocessing
 import sys
 from dataclasses import dataclass
 from functools import partial
+from itertools import batched
 from typing import Any
 
 import annofabapi
 from annofabapi.models import ProjectMemberRole
 
 import annofabcli.common.cli
-from annofabcli.common.annofab.input_data import get_input_data_dict_in_bulk
+from annofabcli.common.annofab.input_data import BULK_REQUEST_SIZE, get_input_data_dict_in_bulk
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
     PARALLELISM_CHOICES,
@@ -110,32 +111,34 @@ class UpdateMetadataMain(CommandLineWithConfirm):
             logger.info(f"{len(metadata_info_list)} 件の入力データのメタデータを変更します（追記）。")
 
         success_count = 0
-        existing_input_data_dict = get_input_data_dict_in_bulk(self.service, project_id, metadata_by_input_data_id.keys())
-
         if parallelism is not None:
-            partial_func = partial(
-                self.set_metadata_to_input_data_wrapper,
-                project_id=project_id,
-                overwrite_metadata=overwrite_metadata,
-                existing_input_data_dict=existing_input_data_dict,
-            )
             with multiprocessing.Pool(parallelism) as pool:
-                result_bool_list = pool.map(partial_func, enumerate(metadata_info_list))
-                success_count = len([e for e in result_bool_list if e])
+                for initial_index, batch_metadata_info_list in enumerate(batched(metadata_info_list, BULK_REQUEST_SIZE)):
+                    existing_input_data_dict = get_input_data_dict_in_bulk(self.service, project_id, [e.input_data_id for e in batch_metadata_info_list])
+                    partial_func = partial(
+                        self.set_metadata_to_input_data_wrapper,
+                        project_id=project_id,
+                        overwrite_metadata=overwrite_metadata,
+                        existing_input_data_dict=existing_input_data_dict,
+                    )
+                    result_bool_list = pool.map(partial_func, enumerate(batch_metadata_info_list, start=initial_index * BULK_REQUEST_SIZE))
+                    success_count += len([e for e in result_bool_list if e])
 
         else:
             # 逐次処理
-            for input_data_index, info in enumerate(metadata_info_list):
-                result = self.set_metadata_to_input_data(
-                    project_id,
-                    info.input_data_id,
-                    metadata=info.metadata,
-                    overwrite_metadata=overwrite_metadata,
-                    input_data_index=input_data_index,
-                    existing_input_data_dict=existing_input_data_dict,
-                )
-                if result:
-                    success_count += 1
+            for initial_index, batch_metadata_info_list in enumerate(batched(metadata_info_list, BULK_REQUEST_SIZE)):
+                existing_input_data_dict = get_input_data_dict_in_bulk(self.service, project_id, [e.input_data_id for e in batch_metadata_info_list])
+                for input_data_index, info in enumerate(batch_metadata_info_list, start=initial_index * BULK_REQUEST_SIZE):
+                    result = self.set_metadata_to_input_data(
+                        project_id,
+                        info.input_data_id,
+                        metadata=info.metadata,
+                        overwrite_metadata=overwrite_metadata,
+                        input_data_index=input_data_index,
+                        existing_input_data_dict=existing_input_data_dict,
+                    )
+                    if result:
+                        success_count += 1
 
         logger.info(f"{success_count} / {len(metadata_info_list)} 件の入力データのmetadataを変更しました。")
 

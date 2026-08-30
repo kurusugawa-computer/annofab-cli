@@ -5,6 +5,7 @@ import sys
 from collections.abc import Sequence
 from dataclasses import dataclass
 from functools import partial
+from itertools import batched
 from multiprocessing import Pool
 from pathlib import Path
 from typing import Any
@@ -17,7 +18,7 @@ from annofabapi.models import ProjectMemberRole
 from dataclasses_json import DataClassJsonMixin
 
 import annofabcli.common.cli
-from annofabcli.common.annofab.input_data import get_input_data_dict_in_bulk
+from annofabcli.common.annofab.input_data import BULK_REQUEST_SIZE, get_input_data_dict_in_bulk
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
     PARALLELISM_CHOICES,
@@ -281,22 +282,24 @@ class CreateInputData(CommandLine):
 
         count_create_input_data = 0
 
-        existing_input_data_dict = get_input_data_dict_in_bulk(self.service, project_id, [get_final_input_data_id(e) for e in input_data_list])
-
         obj = SubCreateInputData(service=self.service, facade=self.facade, all_yes=self.all_yes)
         if parallelism is not None:
-            partial_func = partial(obj.create_input_data_main_wrapper, project_id=project_id, overwrite=overwrite, existing_input_data_dict=existing_input_data_dict)
             with Pool(parallelism) as pool:
-                result_bool_list = pool.map(partial_func, enumerate(input_data_list))
-                count_create_input_data = len([e for e in result_bool_list if e])
+                for initial_index, batch_input_data_list in enumerate(batched(input_data_list, BULK_REQUEST_SIZE)):
+                    existing_input_data_dict = get_input_data_dict_in_bulk(self.service, project_id, [get_final_input_data_id(e) for e in batch_input_data_list])
+                    partial_func = partial(obj.create_input_data_main_wrapper, project_id=project_id, overwrite=overwrite, existing_input_data_dict=existing_input_data_dict)
+                    result_bool_list = pool.map(partial_func, enumerate(batch_input_data_list, start=initial_index * BULK_REQUEST_SIZE))
+                    count_create_input_data += len([e for e in result_bool_list if e])
 
         else:
-            for input_data_index, csv_input_data in enumerate(input_data_list):
-                result = obj.create_input_data_main(
-                    project_id, csv_input_data=csv_input_data, input_data_index=input_data_index, overwrite=overwrite, existing_input_data_dict=existing_input_data_dict
-                )
-                if result:
-                    count_create_input_data += 1
+            for initial_index, batch_input_data_list in enumerate(batched(input_data_list, BULK_REQUEST_SIZE)):
+                existing_input_data_dict = get_input_data_dict_in_bulk(self.service, project_id, [get_final_input_data_id(e) for e in batch_input_data_list])
+                for input_data_index, csv_input_data in enumerate(batch_input_data_list, start=initial_index * BULK_REQUEST_SIZE):
+                    result = obj.create_input_data_main(
+                        project_id, csv_input_data=csv_input_data, input_data_index=input_data_index, overwrite=overwrite, existing_input_data_dict=existing_input_data_dict
+                    )
+                    if result:
+                        count_create_input_data += 1
 
         logger.info(f"プロジェクト'{project_title}'に、{count_create_input_data} / {len(input_data_list)} 件の入力データを作成しました。")
 

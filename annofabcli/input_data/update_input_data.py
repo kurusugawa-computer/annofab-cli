@@ -9,6 +9,7 @@ import sys
 from dataclasses import dataclass
 from enum import Enum
 from functools import partial
+from itertools import batched
 from pathlib import Path
 from typing import Any
 
@@ -17,7 +18,7 @@ import pandas
 from dataclasses_json import DataClassJsonMixin
 
 import annofabcli.common.cli
-from annofabcli.common.annofab.input_data import get_input_data_dict_in_bulk
+from annofabcli.common.annofab.input_data import BULK_REQUEST_SIZE, get_input_data_dict_in_bulk
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
     PARALLELISM_CHOICES,
@@ -134,32 +135,32 @@ class UpdateInputDataMain(CommandLineWithConfirm):
         failed_count = 0  # 更新に失敗した個数
 
         logger.info(f"{len(updated_input_data_list)} 件の入力データを更新します。")
-        existing_input_data_dict = get_input_data_dict_in_bulk(self.service, project_id, [e.input_data_id for e in updated_input_data_list])
+        for initial_index, batch_updated_input_data_list in enumerate(batched(updated_input_data_list, BULK_REQUEST_SIZE)):
+            existing_input_data_dict = get_input_data_dict_in_bulk(self.service, project_id, [e.input_data_id for e in batch_updated_input_data_list])
+            for input_data_index, updated_input_data in enumerate(batch_updated_input_data_list, start=initial_index * BULK_REQUEST_SIZE):
+                current_num = input_data_index + 1
 
-        for input_data_index, updated_input_data in enumerate(updated_input_data_list):
-            current_num = input_data_index + 1
+                # 進捗ログ出力
+                if current_num % 1000 == 0:
+                    logger.info(f"{current_num} / {len(updated_input_data_list)} 件目の入力データを処理中...")
 
-            # 進捗ログ出力
-            if current_num % 1000 == 0:
-                logger.info(f"{current_num} / {len(updated_input_data_list)} 件目の入力データを処理中...")
-
-            try:
-                result = self.update_input_data(
-                    project_id,
-                    updated_input_data.input_data_id,
-                    new_input_data_name=updated_input_data.input_data_name,
-                    new_input_data_path=updated_input_data.input_data_path,
-                    input_data_index=input_data_index,
-                    existing_input_data_dict=existing_input_data_dict,
-                )
-                if result == UpdateResult.SUCCESS:
-                    success_count += 1
-                elif result == UpdateResult.SKIPPED:
-                    skipped_count += 1
-            except Exception:
-                logger.warning(f"{current_num}件目 :: input_data_id='{updated_input_data.input_data_id}'の入力データを更新するのに失敗しました。", exc_info=True)
-                failed_count += 1
-                continue
+                try:
+                    result = self.update_input_data(
+                        project_id,
+                        updated_input_data.input_data_id,
+                        new_input_data_name=updated_input_data.input_data_name,
+                        new_input_data_path=updated_input_data.input_data_path,
+                        input_data_index=input_data_index,
+                        existing_input_data_dict=existing_input_data_dict,
+                    )
+                    if result == UpdateResult.SUCCESS:
+                        success_count += 1
+                    elif result == UpdateResult.SKIPPED:
+                        skipped_count += 1
+                except Exception:
+                    logger.warning(f"{current_num}件目 :: input_data_id='{updated_input_data.input_data_id}'の入力データを更新するのに失敗しました。", exc_info=True)
+                    failed_count += 1
+                    continue
 
         logger.info(f"{success_count} / {len(updated_input_data_list)} 件の入力データを更新しました。（成功: {success_count}件, スキップ: {skipped_count}件, 失敗: {failed_count}件）")
 
@@ -187,14 +188,17 @@ class UpdateInputDataMain(CommandLineWithConfirm):
         """複数の入力データを並列的に更新します。"""
 
         logger.info(f"{len(updated_input_data_list)} 件の入力データを更新します。{parallelism}個のプロセスを使用して並列実行します。")
-        existing_input_data_dict = get_input_data_dict_in_bulk(self.service, project_id, [e.input_data_id for e in updated_input_data_list])
-
-        partial_func = partial(self._update_input_data_wrapper, project_id=project_id, existing_input_data_dict=existing_input_data_dict)
         with multiprocessing.Pool(parallelism) as pool:
-            result_list = pool.map(partial_func, enumerate(updated_input_data_list))
-            success_count = len([e for e in result_list if e == UpdateResult.SUCCESS])
-            skipped_count = len([e for e in result_list if e == UpdateResult.SKIPPED])
-            failed_count = len([e for e in result_list if e == UpdateResult.FAILED])
+            success_count = 0
+            skipped_count = 0
+            failed_count = 0
+            for initial_index, batch_updated_input_data_list in enumerate(batched(updated_input_data_list, BULK_REQUEST_SIZE)):
+                existing_input_data_dict = get_input_data_dict_in_bulk(self.service, project_id, [e.input_data_id for e in batch_updated_input_data_list])
+                partial_func = partial(self._update_input_data_wrapper, project_id=project_id, existing_input_data_dict=existing_input_data_dict)
+                result_list = pool.map(partial_func, enumerate(batch_updated_input_data_list, start=initial_index * BULK_REQUEST_SIZE))
+                success_count += len([e for e in result_list if e == UpdateResult.SUCCESS])
+                skipped_count += len([e for e in result_list if e == UpdateResult.SKIPPED])
+                failed_count += len([e for e in result_list if e == UpdateResult.FAILED])
 
         logger.info(f"{success_count} / {len(updated_input_data_list)} 件の入力データを更新しました。（成功: {success_count}件, スキップ: {skipped_count}件, 失敗: {failed_count}件）")
 
