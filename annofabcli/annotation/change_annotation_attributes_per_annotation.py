@@ -136,11 +136,10 @@ class ChangeAnnotationAttributesPerAnnotationMain(CommandLineWithConfirm):
             logger.debug(f"task_id='{task_id}', input_data_id='{input_data_id}' :: 変更対象のアノテーションがありませんでした。")
 
         succeed_to_change_annotation_count = len(request_body)
-        logger.debug(
-            f"task_id='{task_id}', input_data_id='{input_data_id}' :: "
-            f"{succeed_to_change_annotation_count}/{len(anno_list)}件の属性値を変更しました。"
-            f"{non_target_annotation_count}件のアノテーションは存在しなかったため、属性値の変更をスキップしました。"
-        )
+        log_message = f"task_id='{task_id}', input_data_id='{input_data_id}' :: {succeed_to_change_annotation_count}/{len(anno_list)}件の属性値を変更しました。"
+        if non_target_annotation_count > 0:
+            log_message += f"{non_target_annotation_count}件のアノテーションは存在しなかったため、属性値の変更をスキップしました。"
+        logger.debug(log_message)
         return succeed_to_change_annotation_count, non_target_annotation_count
 
     def change_annotation_attributes_for_task(self, task_id: str, annotation_list_per_input_data_id: dict[str, list[TargetAnnotation]]) -> tuple[bool, int, int]:
