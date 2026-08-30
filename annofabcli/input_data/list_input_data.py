@@ -170,7 +170,7 @@ class AddingDetailsToInputData:
                     f"入力データ {initial_index + 1}〜{processed_input_data_count} 件（{len(batch_input_data_list)}件）に紐づく補助情報のバルク取得に失敗しました。",
                     exc_info=True,
                 )
-                logger.info(f"{processed_input_data_count} / {len(input_data_list)} 件の入力データに紐づく補助情報の個数を取得しました。")
+                logger.info(f"{processed_input_data_count} / {len(input_data_list)} 件の入力データに紐づく補助情報の個数の取得を試みました。")
                 continue
 
             for supplementary_data in response["success"]:
