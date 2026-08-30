@@ -1,10 +1,8 @@
 from __future__ import annotations
 
 import argparse
-import itertools
 import json
 import logging
-import multiprocessing
 import tempfile
 from pathlib import Path
 from typing import Any
@@ -13,12 +11,16 @@ import annofabapi
 from annofabapi.models import SupplementaryData
 
 import annofabcli.common.cli
-from annofabcli.common.cli import PARALLELISM_CHOICES, ArgumentParser, CommandLine, build_annofabapi_resource_and_login
+from annofabcli.common.cli import ArgumentParser, CommandLine, build_annofabapi_resource_and_login
 from annofabcli.common.download import DownloadingFile
 from annofabcli.common.enums import OutputFormat
 from annofabcli.common.facade import AnnofabApiFacade
 
 logger = logging.getLogger(__name__)
+
+
+BULK_REQUEST_SIZE = 100
+"""補助情報バルク取得APIの1リクエストで指定する入力データIDの上限。"""
 
 
 def remove_unnecessary_keys_from_supplementary_data(supplementary_data: dict[str, Any]) -> None:
@@ -42,61 +44,40 @@ class ListSupplementaryDataMain:
         self.service = service
         self.project_id = project_id
 
-    def get_supplementary_data_list(self, input_data_id: str, input_data_index: int) -> list[dict[str, Any]]:
+    def get_all_supplementary_data_list(self, input_data_id_list: list[str]) -> list[SupplementaryData]:
         """
-        入力データに紐づく補助情報一覧を取得する。
+        複数の入力データに紐づく補助情報一覧をバルク取得する。
 
         Args:
-            input_data_id: 入力データID
-            input_data_index: 0始まりのインデックス
-        """
-        if (input_data_index + 1) % 100 == 0:
-            logger.debug(f"{input_data_index + 1} 件目の入力データに紐づく補助情報を取得します。")
+            input_data_id_list: 入力データIDのリスト
 
-        supplementary_data_list = self.service.wrapper.get_supplementary_data_list_or_none(self.project_id, input_data_id)
-
-        if supplementary_data_list is not None:
-            # 補助情報から不要なキーを取り除く
-            for supplementary_data in supplementary_data_list:
-                remove_unnecessary_keys_from_supplementary_data(supplementary_data)
-            return supplementary_data_list
-        else:
-            logger.warning(f"input_data_id='{input_data_id}'である入力データは存在しません。")
-            return []
-
-    def get_supplementary_data_list_wrapper(self, tpl: tuple[int, str]) -> list[dict[str, Any]]:
-        input_data_index, input_data_id = tpl
-        try:
-            return self.get_supplementary_data_list(input_data_id=input_data_id, input_data_index=input_data_index)
-        except Exception:
-            logger.warning(f"input_data_id='{input_data_index}': 補助情報の取得に失敗しました。", exc_info=True)
-            return []
-
-    def get_all_supplementary_data_list(self, input_data_id_list: list[str], *, parallelism: int | None = None) -> list[SupplementaryData]:
-        """
-        補助情報一覧を取得する。
+        Returns:
+            取得に成功した補助情報のリスト
         """
         all_supplementary_data_list: list[SupplementaryData] = []
         logger.info(f"{len(input_data_id_list)} 件の入力データに紐づく補助情報を取得します。")
 
-        if parallelism is not None:
-            with multiprocessing.Pool(parallelism) as pool:
-                result = pool.map(self.get_supplementary_data_list_wrapper, enumerate(input_data_id_list))
-                return list(itertools.chain.from_iterable(result))
+        for initial_index in range(0, len(input_data_id_list), BULK_REQUEST_SIZE):
+            batch_input_data_id_list = input_data_id_list[initial_index : initial_index + BULK_REQUEST_SIZE]
+            try:
+                response, _ = self.service.api.get_supplementary_data_in_bulk(
+                    self.project_id,
+                    query_params={"input_data_id": ",".join(batch_input_data_id_list)},
+                )
+            except Exception:
+                logger.warning(f"input_data_id='{','.join(batch_input_data_id_list)}': 補助情報のバルク取得に失敗しました。", exc_info=True)
+                continue
 
-        else:
-            # 逐次処理
-            all_supplementary_data_list = []
-            for input_data_index, input_data_id in enumerate(input_data_id_list):
-                try:
-                    sub_supplementary_data_list = self.get_supplementary_data_list(
-                        input_data_id=input_data_id,
-                        input_data_index=input_data_index,
-                    )
-                    all_supplementary_data_list.extend(sub_supplementary_data_list)
-                except Exception:
-                    logger.warning(f"input_data_id='{input_data_index}': 補助情報の取得に失敗しました。", exc_info=True)
-                    continue
+            supplementary_data_list = response["success"]
+            for supplementary_data in supplementary_data_list:
+                remove_unnecessary_keys_from_supplementary_data(supplementary_data)
+            all_supplementary_data_list.extend(supplementary_data_list)
+
+            for failure_info in response["failure"]:
+                logger.warning(f"input_data_id='{failure_info['input_data_id']}': 補助情報の取得に失敗しました。")
+
+            if (initial_index + len(batch_input_data_id_list)) % 100 == 0:
+                logger.debug(f"{initial_index + len(batch_input_data_id_list)} 件の入力データに紐づく補助情報を取得しました。")
 
         return all_supplementary_data_list
 
@@ -127,7 +108,7 @@ class ListSupplementaryData(CommandLine):
             input_data_id_list = self.get_input_data_id_list_from_input_data_json(project_id)
 
         main_obj = ListSupplementaryDataMain(self.service, project_id=project_id)
-        all_supplementary_data_list = main_obj.get_all_supplementary_data_list(input_data_id_list, parallelism=args.parallelism)
+        all_supplementary_data_list = main_obj.get_all_supplementary_data_list(input_data_id_list)
         logger.info(f"補助情報一覧の件数: {len(all_supplementary_data_list)}")
         self.print_according_to_format(all_supplementary_data_list)
 
@@ -149,20 +130,13 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         nargs="+",
         help=(
             "指定したinput_data_idの入力データに紐づく補助情報を出力します。\n"
-            "未指定の場合は、入力データ全件ファイルをダウンロードして、すべての入力データに紐づく補助情報を出力します。ただし入力データの数だけAPIを実行するため、出力に時間がかかります。 \n"
+            "未指定の場合は、入力データ全件ファイルをダウンロードして、すべての入力データに紐づく補助情報を出力します。\n"
             "``file://`` を先頭に付けると、input_data_idの一覧が記載されたファイルを指定できます。"
         ),
     )
 
     argument_parser.add_format(choices=[OutputFormat.CSV, OutputFormat.JSON, OutputFormat.PRETTY_JSON], default=OutputFormat.CSV)
     argument_parser.add_output()
-
-    parser.add_argument(
-        "--parallelism",
-        type=int,
-        choices=PARALLELISM_CHOICES,
-        help="並列度。指定しない場合は、逐次的に処理します。",
-    )
 
     parser.set_defaults(subcommand_func=main)
 
