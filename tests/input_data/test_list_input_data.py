@@ -56,7 +56,7 @@ def test_add_supplementary_data_count_to_input_data_list() -> None:
     ]
 
 
-def test_list_all_fetches_input_data_in_bulk_when_downloading_input_data_json(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_list_all_uses_downloaded_input_data_json_without_fetching_input_data_in_bulk(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     input_data_json = tmp_path / "input_data.json"
     input_data_json.write_text(
         json.dumps(
@@ -84,10 +84,80 @@ def test_list_all_fetches_input_data_in_bulk_when_downloading_input_data_json(tm
     downloading_file.download_input_data_json_to_dir.return_value = input_data_json
     monkeypatch.setattr("annofabcli.input_data.list_all_input_data.DownloadingFile", Mock(return_value=downloading_file))
     service = Mock()
-    service.api.get_input_data_in_bulk.return_value = ({"success": [{"input_data_id": "input1", "url": "https://example.com"}], "failure": []}, Mock())
     main_obj = ListInputDataWithJsonMain(service)
 
     result = main_obj.get_input_data_list(project_id="project1", input_data_json=None)
 
-    assert result == [{"input_data_id": "input1"}]
-    service.api.get_input_data_in_bulk.assert_called_once_with("project1", query_params={"input_data_id": "input1"})
+    assert result == [
+        {
+            "input_data_id": "input1",
+            "project_id": "project1",
+            "organization_id": "organization1",
+            "input_data_set_id": "input_data_set1",
+            "input_data_name": "input1.jpg",
+            "input_data_path": "s3://bucket/input1.jpg",
+            "updated_datetime": "2026-01-01T00:00:00+09:00",
+            "sign_required": False,
+            "metadata": {},
+            "system_metadata": {},
+        }
+    ]
+    service.api.get_input_data_in_bulk.assert_not_called()
+
+
+@pytest.mark.parametrize("is_latest", [False, True])
+def test_list_all_adds_parent_task_id_list_from_downloaded_task_json(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, *, is_latest: bool) -> None:
+    def create_input_data(input_data_id: str) -> dict[str, object]:
+        return {
+            "input_data_id": input_data_id,
+            "project_id": "project1",
+            "organization_id": "organization1",
+            "input_data_set_id": "input_data_set1",
+            "input_data_name": f"{input_data_id}.jpg",
+            "input_data_path": f"s3://bucket/{input_data_id}.jpg",
+            "url": None,
+            "etag": None,
+            "original_input_data_path": None,
+            "updated_datetime": "2026-01-01T00:00:00+09:00",
+            "sign_required": False,
+            "metadata": {},
+            "system_metadata": {},
+        }
+
+    input_data_json = tmp_path / "input_data.json"
+    input_data_json.write_text(
+        json.dumps([create_input_data("input1"), create_input_data("input2")]),
+        encoding="utf-8",
+    )
+    task_json = tmp_path / "task.json"
+    task_json.write_text(
+        json.dumps(
+            [
+                {"task_id": "task1", "input_data_id_list": ["input1", "input3"]},
+                {"task_id": "task2", "input_data_id_list": ["input1"]},
+            ]
+        ),
+        encoding="utf-8",
+    )
+    downloading_file = Mock()
+    downloading_file.download_input_data_json_to_dir.return_value = input_data_json
+    downloading_file.download_task_json_to_dir.return_value = task_json
+    monkeypatch.setattr("annofabcli.input_data.list_all_input_data.DownloadingFile", Mock(return_value=downloading_file))
+    service = Mock()
+    main_obj = ListInputDataWithJsonMain(service)
+
+    result = main_obj.get_input_data_list(
+        project_id="project1",
+        input_data_json=None,
+        contain_parent_task_id_list=True,
+        is_latest=is_latest,
+        temp_dir=tmp_path,
+    )
+
+    assert [(input_data["input_data_id"], input_data["parent_task_id_list"]) for input_data in result] == [
+        ("input1", ["task1", "task2"]),
+        ("input2", []),
+    ]
+    downloading_file.download_input_data_json_to_dir.assert_called_once_with("project1", tmp_path, is_latest=is_latest)
+    downloading_file.download_task_json_to_dir.assert_called_once_with("project1", tmp_path, is_latest=is_latest)
+    service.wrapper.get_all_tasks.assert_not_called()

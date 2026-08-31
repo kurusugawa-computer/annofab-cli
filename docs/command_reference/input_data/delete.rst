@@ -25,6 +25,7 @@ Examples
     ...
 
 以下のコマンドは、``input_data_id.txt`` に記載されているinput_data_idに一致する入力データを削除します。
+入力データに紐づく補助情報も自動的に削除されます。
 
 .. code-block::
 
@@ -42,17 +43,6 @@ Examples
 .. warning::
 
     タスクに使わている入力データを削除すると、削除対象の入力データに付与されたアノテーションを、Annofabのアノテーションエディタ画面で確認することができません。
-
-
-入力データに紐づく補助情報の削除
-----------------------------------------------------
-
-``--delete_supplementary`` を指定すると、入力データに紐づく補助情報も削除します。
-
-.. code-block::
-
-    $ annofabcli input_data delete --project_id prj1 --input_data_id file://input_data_id.txt \
-     --delete_supplementary
 
 Usage Details
 =================================
