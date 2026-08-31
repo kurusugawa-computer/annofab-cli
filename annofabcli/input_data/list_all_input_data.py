@@ -5,6 +5,7 @@ import datetime
 import json
 import logging
 import tempfile
+from collections import defaultdict
 from pathlib import Path
 from typing import Any
 
@@ -60,6 +61,22 @@ class ListInputDataWithJsonMain:
             for key in unnecessary_keys:
                 input_data.pop(key, None)
 
+    @staticmethod
+    def add_parent_task_id_list_from_task_list(input_data_list: list[dict[str, Any]], task_list: list[dict[str, Any]]) -> None:
+        """タスク一覧を参照して、入力データに参照元タスクIDの一覧を追加する。
+
+        Args:
+            input_data_list: 入力データ一覧。この引数は変更される。
+            task_list: タスク一覧。
+        """
+        parent_task_id_list_by_input_data_id: defaultdict[str, list[str]] = defaultdict(list)
+        for task in task_list:
+            for input_data_id in task["input_data_id_list"]:
+                parent_task_id_list_by_input_data_id[input_data_id].append(task["task_id"])
+
+        for input_data in input_data_list:
+            input_data["parent_task_id_list"] = parent_task_id_list_by_input_data_id[input_data["input_data_id"]]
+
     def get_input_data_list(
         self,
         project_id: str,
@@ -72,13 +89,15 @@ class ListInputDataWithJsonMain:
         is_latest: bool = False,
         temp_dir: Path | None = None,
     ) -> list[dict[str, Any]]:
-        def filter_and_add_details(input_data_list: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        def filter_and_add_details(input_data_list: list[dict[str, Any]], task_list: list[dict[str, Any]] | None = None) -> list[dict[str, Any]]:
             input_data_id_set = set(input_data_id_list) if input_data_id_list is not None else None
             result_input_data_list = [e for e in input_data_list if self.filter_input_data_list(e, input_data_query=input_data_query, input_data_id_set=input_data_id_set)]
 
             adding_obj = AddingDetailsToInputData(self.service, project_id)
             if contain_parent_task_id_list:
-                adding_obj.add_parent_task_id_list_to_input_data_list(result_input_data_list)
+                if task_list is None:
+                    raise RuntimeError("タスク全件ファイルの読み込み結果がありません。")
+                self.add_parent_task_id_list_from_task_list(result_input_data_list, task_list)
 
             if contain_supplementary_data_count:
                 adding_obj.add_supplementary_data_count_to_input_data_list(result_input_data_list)
@@ -87,24 +106,36 @@ class ListInputDataWithJsonMain:
                 remove_unnecessary_keys_from_input_data(input_data)
             return result_input_data_list
 
-        if input_data_json is None:
+        def download_and_load_json_files(dir_path: Path) -> list[dict[str, Any]]:
             downloading_obj = DownloadingFile(self.service)
-            # `NamedTemporaryFile`を使わない理由: Windowsで`PermissionError`が発生するため
-            # https://qiita.com/yuji38kwmt/items/c6f50e1fc03dafdcdda0 参考
-            if temp_dir is not None:
-                json_path = downloading_obj.download_input_data_json_to_dir(project_id, temp_dir, is_latest=is_latest)
-            else:
-                with tempfile.TemporaryDirectory() as str_temp_dir:
-                    json_path = downloading_obj.download_input_data_json_to_dir(project_id, Path(str_temp_dir), is_latest=is_latest)
-                    with json_path.open(encoding="utf-8") as f:
-                        input_data_list = json.load(f)
-                    return filter_and_add_details(input_data_list)
-        else:
-            json_path = input_data_json
 
-        with json_path.open(encoding="utf-8") as f:
-            input_data_list = json.load(f)
-        return filter_and_add_details(input_data_list)
+            if input_data_json is None:
+                input_data_json_path = downloading_obj.download_input_data_json_to_dir(project_id, dir_path, is_latest=is_latest)
+            else:
+                input_data_json_path = input_data_json
+            with input_data_json_path.open(encoding="utf-8") as f:
+                input_data_list = json.load(f)
+
+            task_list = None
+            if contain_parent_task_id_list:
+                task_json_path = downloading_obj.download_task_json_to_dir(project_id, dir_path, is_latest=is_latest)
+                with task_json_path.open(encoding="utf-8") as f:
+                    task_list = json.load(f)
+
+            return filter_and_add_details(input_data_list, task_list)
+
+        if input_data_json is not None and not contain_parent_task_id_list:
+            with input_data_json.open(encoding="utf-8") as f:
+                input_data_list = json.load(f)
+            return filter_and_add_details(input_data_list)
+
+        if temp_dir is not None:
+            return download_and_load_json_files(temp_dir)
+
+        # `NamedTemporaryFile`を使わない理由: Windowsで`PermissionError`が発生するため
+        # https://qiita.com/yuji38kwmt/items/c6f50e1fc03dafdcdda0 参考
+        with tempfile.TemporaryDirectory() as str_temp_dir:
+            return download_and_load_json_files(Path(str_temp_dir))
 
 
 class ListAllInputData(CommandLine):
@@ -180,18 +211,23 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--latest",
         action="store_true",
         help="最新の入力データの情報を出力します。"
-        "このオプションを指定すると数分待ちます。Annofabからダウンロードする「入力データ全件ファイル」に、最新の情報を反映させるのに時間がかかるためです。\n"
+        " ``--with_parent_task_id_list`` も指定した場合は、最新のタスクの情報を出力します。"
+        "このオプションを指定すると数分待ちます。Annofabからダウンロードする入力データ全件ファイルとタスク全件ファイルに、最新の情報を反映させるのに時間がかかるためです。\n"
         "指定しない場合は、コマンドを実行した日の02:00(JST)頃の入力データの一覧が出力されます。",
     )
 
-    parser.add_argument("--with_parent_task_id_list", action="store_true", help="入力データを参照しているタスクのIDのlist( ``parent_task_id_list`` )も出力します。")
+    parser.add_argument(
+        "--with_parent_task_id_list",
+        action="store_true",
+        help="タスク全件ファイルをダウンロードし、入力データを参照しているタスクのIDのlist( ``parent_task_id_list`` )も出力します。",
+    )
 
     parser.add_argument("--with_supplementary_data_count", action="store_true", help="入力データに紐づく補助情報の個数( ``supplementary_data_count`` )も出力します。")
 
     parser.add_argument(
         "--temp_dir",
         type=str,
-        help="``--input_data_json`` を指定しなかった場合、ダウンロードしたJSONファイルの保存先ディレクトリを指定できます。指定しない場合は、一時ディレクトリに保存されます。",
+        help="ダウンロードした全件ファイルの保存先ディレクトリを指定できます。指定しない場合は、一時ディレクトリに保存されます。",
     )
 
     argument_parser.add_format(

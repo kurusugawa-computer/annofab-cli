@@ -1,7 +1,7 @@
 import argparse
 from types import SimpleNamespace
 from typing import cast
-from unittest.mock import Mock
+from unittest.mock import Mock, call
 
 import annofabapi
 
@@ -9,7 +9,7 @@ from annofabcli.common.facade import AnnofabApiFacade
 from annofabcli.input_data.delete_input_data import DeleteInputData
 
 
-def test_delete_input_data() -> None:
+def test_delete_input_data_calls_only_delete_input_data_api() -> None:
     api = Mock()
     wrapper = Mock()
     wrapper.get_input_data_or_none.return_value = {"input_data_id": "input1", "input_data_name": "input1.bin"}
@@ -20,5 +20,4 @@ def test_delete_input_data() -> None:
     result = main_obj.delete_input_data("project1", "input1", input_data_index=0, delete_input_data_used_by_task=False)
 
     assert result is True
-    api.delete_input_data.assert_called_once_with("project1", "input1")
-    assert api.method_calls == [api.delete_input_data.call_args]
+    assert api.method_calls == [call.delete_input_data("project1", "input1")]
