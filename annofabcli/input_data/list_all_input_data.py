@@ -93,13 +93,13 @@ class ListInputDataWithJsonMain:
             input_data_id_set = set(input_data_id_list) if input_data_id_list is not None else None
             result_input_data_list = [e for e in input_data_list if self.filter_input_data_list(e, input_data_query=input_data_query, input_data_id_set=input_data_id_set)]
 
-            adding_obj = AddingDetailsToInputData(self.service, project_id)
             if contain_parent_task_id_list:
                 if task_list is None:
                     raise RuntimeError("タスク全件ファイルの読み込み結果がありません。")
                 self.add_parent_task_id_list_from_task_list(result_input_data_list, task_list)
 
             if contain_supplementary_data_count:
+                adding_obj = AddingDetailsToInputData(self.service, project_id)
                 adding_obj.add_supplementary_data_count_to_input_data_list(result_input_data_list)
 
             for input_data in result_input_data_list:
@@ -212,7 +212,8 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         action="store_true",
         help="最新の入力データの情報を出力します。"
         " ``--with_parent_task_id_list`` も指定した場合は、最新のタスクの情報を出力します。"
-        "このオプションを指定すると数分待ちます。Annofabからダウンロードする入力データ全件ファイルとタスク全件ファイルに、最新の情報を反映させるのに時間がかかるためです。\n"
+        "このオプションを指定すると数分待ちます。Annofabからダウンロードする入力データ全件ファイル（ ``--with_parent_task_id_list`` も指定した場合はタスク全件ファイルも）に、"
+        "最新の情報を反映させるのに時間がかかるためです。\n"
         "指定しない場合は、コマンドを実行した日の02:00(JST)頃の入力データの一覧が出力されます。",
     )
 
