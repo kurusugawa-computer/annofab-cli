@@ -17,7 +17,7 @@ from annofabapi.models import CommentType, TaskPhase, TaskStatus
 from annofabapi.pydantic_models.input_data_type import InputDataType
 from dataclasses_json import DataClassJsonMixin
 
-from annofabcli.comment.utils import get_comment_type_name
+from annofabcli.comment.utils import get_comment_type_name, round_image_inspection_comment_data
 from annofabcli.common.cli import CommandLineWithConfirm
 from annofabcli.common.facade import AnnofabApiFacade
 
@@ -211,6 +211,9 @@ class PutCommentMain(CommandLineWithConfirm):
                 assert annotation_id is not None
                 data = dict_annotation_id_data[annotation_id]
                 assert data is not None
+
+            if self.input_data_type == InputDataType.IMAGE and data is not None:
+                data = round_image_inspection_comment_data(data)
 
             return {
                 "comment_id": comment.comment_id if comment.comment_id is not None else str(uuid.uuid4()),

@@ -9,7 +9,7 @@ from typing import Any
 import annofabapi
 from annofabapi.models import CommentType, TaskPhase, TaskStatus
 
-from annofabcli.comment.utils import get_comment_type_name
+from annofabcli.comment.utils import get_comment_type_name, round_image_inspection_comment_data
 from annofabcli.common.cli import CommandLineWithConfirm
 from annofabcli.common.facade import AnnofabApiFacade
 
@@ -60,6 +60,7 @@ class PutCommentSimplyMain(CommandLineWithConfirm):
         """batch_update_comments に渡すリクエストボディを作成する。"""
 
         def _convert(comment: AddedSimpleComment) -> dict[str, Any]:
+            data = round_image_inspection_comment_data(comment.data) if comment.data is not None else None
             return {
                 "comment": comment.comment,
                 "comment_id": comment.comment_id if comment.comment_id is not None else str(uuid.uuid4()),
@@ -67,7 +68,7 @@ class PutCommentSimplyMain(CommandLineWithConfirm):
                 "phase_stage": task["phase_stage"],
                 "comment_type": self.comment_type.value,
                 "account_id": self.service.api.account_id,
-                "comment_node": {"data": comment.data, "status": "open", "_type": "Root"},
+                "comment_node": {"data": data, "status": "open", "_type": "Root"},
                 "phrases": comment.phrases,
                 "_type": "Put",
             }
