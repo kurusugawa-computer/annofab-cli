@@ -33,6 +33,7 @@ Available Commands
    export
    import
    list_annotation_import_info
+   list_annotation_rule
    list_attribute
    list_choice
    list_history
