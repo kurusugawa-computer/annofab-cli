@@ -17,6 +17,7 @@ from annofabapi.plugin import EditorPluginId
 from annofabapi.project_member_repository import ProjectMemberRepository
 
 import annofabcli.common.cli
+from annofabcli.comment.utils import round_image_inspection_comment_data
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
     PARALLELISM_CHOICES,
@@ -27,7 +28,6 @@ from annofabcli.common.cli import (
 )
 from annofabcli.common.enums import CustomProjectType
 from annofabcli.common.facade import AnnofabApiFacade, TaskQuery, match_task_with_query
-from annofabcli.comment.utils import round_image_inspection_comment_data
 
 logger = logging.getLogger(__name__)
 
