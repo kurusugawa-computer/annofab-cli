@@ -91,7 +91,11 @@ def parse_target_annotation_list(json_value: str | None, csv_path: str | None) -
             raise ValueError("オブジェクトの配列を指定してください。")
         return [TargetAnnotationLabelInput.model_validate(item) for item in annotation_items]
 
-    dataframe = pandas.read_csv(csv_path, dtype={"task_id": "string", "input_data_id": "string", "annotation_id": "string", "label_id": "string", "label_name": "string"})
+    assert csv_path is not None
+    dataframe = pandas.read_csv(
+        csv_path,
+        dtype={"task_id": "string", "input_data_id": "string", "annotation_id": "string", "label_id": "string", "label_name": "string"},
+    )
     return [TargetAnnotationLabelInput.model_validate(item) for item in dataframe.to_dict(orient="records")]
 
 
