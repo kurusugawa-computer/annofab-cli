@@ -70,7 +70,7 @@ def get_annotation_list_per_task_id_input_data_id(anno_list: list[TargetAnnotati
 def resolve_target_annotation_list(anno_list: list[TargetAnnotationLabelInput], annotation_specs: dict[str, Any]) -> list[TargetAnnotationLabel]:
     """入力された変更先ラベルをIDに解決し、アノテーションの重複を検証する。"""
     annotation_keys: set[tuple[str, str, str]] = set()
-    result = []
+    result: list[TargetAnnotationLabel] = []
     for annotation in anno_list:
         if (annotation.label_id is None) == (annotation.label_name is None):
             raise ValueError("label_idまたはlabel_nameのいずれか一方を指定してください。")
