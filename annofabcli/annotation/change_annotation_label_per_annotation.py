@@ -141,7 +141,6 @@ class ChangeAnnotationLabelPerAnnotationMain(CommandLineWithConfirm):
         details_by_annotation_id = {detail["annotation_id"]: detail for detail in editor_annotation["details"]}
         request_body = []
         skipped_count = 0
-        failed_count = 0
         for annotation in anno_list:
             detail = details_by_annotation_id.get(annotation.annotation_id)
             if detail is None:
@@ -184,7 +183,7 @@ class ChangeAnnotationLabelPerAnnotationMain(CommandLineWithConfirm):
         if request_body:
             self.service.api.batch_update_annotations(self.project_id, request_body=request_body)
         logger.debug(f"task_id='{task_id}', input_data_id='{input_data_id}' :: {len(request_body)}/{len(anno_list)}件のアノテーションラベルを変更しました。")
-        return ChangeAnnotationLabelCount(success=len(request_body), skipped=skipped_count, failed=failed_count)
+        return ChangeAnnotationLabelCount(success=len(request_body), skipped=skipped_count, failed=0)
 
     def change_annotation_label_for_task(self, task_id: str, annotations_by_input_data_id: dict[str, list[TargetAnnotationLabel]]) -> tuple[bool, ChangeAnnotationLabelCount]:
         """1個のタスクに含まれるアノテーションラベルを変更する。"""
