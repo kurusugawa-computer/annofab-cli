@@ -1,10 +1,7 @@
-import logging
 from collections.abc import Collection
 from typing import Any
 
 import annofabapi
-
-logger = logging.getLogger(__name__)
 
 BULK_REQUEST_SIZE = 100
 """getInputDataInBulk APIに渡す入力データIDの最大件数。"""
@@ -34,8 +31,5 @@ def get_input_data_dict_in_bulk(service: annofabapi.Resource, project_id: str, i
         )
         for input_data in response["success"]:
             input_data_dict[input_data["input_data_id"]] = input_data
-
-        for failure_info in response["failure"]:
-            logger.debug(f"input_data_id='{failure_info['input_data_id']}': 入力データは存在しません。")
 
     return input_data_dict

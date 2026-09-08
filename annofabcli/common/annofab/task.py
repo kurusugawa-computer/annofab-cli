@@ -1,12 +1,9 @@
-import logging
 from collections.abc import Collection
 
 import annofabapi
 from annofabapi.models import Task
 
 from annofabcli.common.annofab.input_data import BULK_REQUEST_SIZE
-
-logger = logging.getLogger(__name__)
 
 
 def get_task_dict_in_bulk(service: annofabapi.Resource, project_id: str, task_id_list: Collection[str]) -> dict[str, Task]:
@@ -29,6 +26,4 @@ def get_task_dict_in_bulk(service: annofabapi.Resource, project_id: str, task_id
         response, _ = service.api.get_tasks_in_bulk(project_id, query_params={"task_id": ",".join(batch_task_id_list)})
         for task in response["success"]:
             task_dict[task["task_id"]] = task
-        for failure_info in response["failure"]:
-            logger.debug(f"task_id='{failure_info['task_id']}': タスクは存在しません。")
     return task_dict

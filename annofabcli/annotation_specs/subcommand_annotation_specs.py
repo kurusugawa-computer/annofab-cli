@@ -18,6 +18,7 @@ import annofabcli.annotation_specs.diff_annotation_specs
 import annofabcli.annotation_specs.export_annotation_specs
 import annofabcli.annotation_specs.import_annotation_specs
 import annofabcli.annotation_specs.list_annotation_import_info
+import annofabcli.annotation_specs.list_annotation_rule
 import annofabcli.annotation_specs.list_annotation_specs_attribute
 import annofabcli.annotation_specs.list_annotation_specs_choice
 import annofabcli.annotation_specs.list_annotation_specs_history
@@ -61,6 +62,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     annofabcli.annotation_specs.export_annotation_specs.add_parser(subparsers)
     annofabcli.annotation_specs.import_annotation_specs.add_parser(subparsers)
     annofabcli.annotation_specs.list_annotation_import_info.add_parser(subparsers)
+    annofabcli.annotation_specs.list_annotation_rule.add_parser(subparsers)
     annofabcli.annotation_specs.list_annotation_specs_attribute.add_parser(subparsers)
     annofabcli.annotation_specs.list_annotation_specs_choice.add_parser(subparsers)
     annofabcli.annotation_specs.list_annotation_specs_history.add_parser(subparsers)
