@@ -28,6 +28,8 @@ logger = logging.getLogger(__name__)
 
 Metadata = dict[str, str | bool | int]
 
+DEPRECATED_METADATA_BY_TASK_ID_MESSAGE = "[DEPRECATED] :: '--metadata_by_task_id' は非推奨です。代わりに `task update_metadata_per_task --json` を使用してください。"
+
 
 @dataclass(frozen=True)
 class TaskMetadataInfo:
@@ -215,6 +217,7 @@ class UpdateMetadataOfTask(CommandLine):
             assert task_id_list is not None, "'--metadata'を指定したときは'--task_id'は必須です。"
             metadata_by_task_id = {task_id: copy.deepcopy(metadata) for task_id in task_id_list}
         elif args.metadata_by_task_id is not None:
+            logger.warning(DEPRECATED_METADATA_BY_TASK_ID_MESSAGE)
             metadata_by_task_id = annofabcli.common.cli.get_json_from_args(args.metadata_by_task_id)
             if task_id_list is not None:
                 metadata_by_task_id = {task_id: metadata for task_id, metadata in metadata_by_task_id.items() if task_id in task_id_list}
@@ -250,7 +253,8 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--metadata_by_task_id",
         type=str,
         help=(
-            "キーがタスクID, 値がメタデータ( ``--metadata`` 参照)であるオブジェクトをJSON形式で指定してください。\n"
+            "[DEPRECATED] キーがタスクID, 値がメタデータ( ``--metadata`` 参照)であるオブジェクトをJSON形式で指定してください。\n"
+            "代わりに ``task update_metadata_per_task --json`` を使用してください。\n"
             f"(ex) '{json.dumps(sample_metadata_by_task_id)}'\n"
             " ``file://`` を先頭に付けると、JSON形式のファイルを指定できます。"
         ),

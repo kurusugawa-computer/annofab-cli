@@ -33,6 +33,7 @@ Available Commands
    put
    reject
    update_metadata
+   update_metadata_per_task
 
 Usage Details
 =================================
