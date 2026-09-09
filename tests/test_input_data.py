@@ -144,18 +144,31 @@ class TestCommandLine:
         main(
             [
                 "input_data",
-                "update_metadata",
+                "update_metadata_per_input_data",
                 "--project_id",
                 project_id,
-                "--input_data_id",
-                input_data_id,
-                "--metadata",
-                '{"attr1":"foo"}',
+                "--json",
+                json.dumps({input_data_id: {"attr1": "foo"}}),
                 "--yes",
             ]
         )
         input_data, _ = annofab_service.api.get_input_data(project_id, input_data_id)
         assert input_data["metadata"] == {"attr1": "foo"}
+
+        # 非推奨オプションによるメタデータの付与
+        main(
+            [
+                "input_data",
+                "update_metadata",
+                "--project_id",
+                project_id,
+                "--metadata_by_input_data_id",
+                json.dumps({input_data_id: {"attr2": "bar"}}),
+                "--yes",
+            ]
+        )
+        input_data, _ = annofab_service.api.get_input_data(project_id, input_data_id)
+        assert input_data["metadata"] == {"attr1": "foo", "attr2": "bar"}
 
         # メタデータのキーの削除
         main(
@@ -168,6 +181,7 @@ class TestCommandLine:
                 input_data_id,
                 "--metadata_key",
                 "attr1",
+                "attr2",
                 "--yes",
             ]
         )

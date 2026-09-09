@@ -245,18 +245,16 @@ class TestCommandLine:
         task, _ = service.api.get_task(project_id, task_id)
         assert task["status"] == "not_started"
 
-    def _execute_update_metadata(self, task_id: str, metadata: dict[str, str]) -> None:
-        """メタデータの更新"""
+    def _execute_update_metadata_per_task(self, task_id: str, metadata: dict[str, str]) -> None:
+        """タスクごとに指定したメタデータを更新"""
         main(
             [
                 self.command_name,
-                "update_metadata",
+                "update_metadata_per_task",
                 "--project_id",
                 project_id,
-                "--metadata",
-                json.dumps(metadata),
-                "--task_id",
-                task_id,
+                "--json",
+                json.dumps({task_id: metadata}),
                 "--yes",
             ]
         )
@@ -367,10 +365,23 @@ class TestCommandLine:
         task_id = target_task["task_id"]
 
         # メタデータの付与
-        self._execute_update_metadata(task_id, metadata={"foo": "bar"})
+        self._execute_update_metadata_per_task(task_id, metadata={"foo": "bar"})
+
+        # 非推奨オプションによるメタデータの付与
+        main(
+            [
+                self.command_name,
+                "update_metadata",
+                "--project_id",
+                project_id,
+                "--metadata_by_task_id",
+                json.dumps({task_id: {"legacy": "value"}}),
+                "--yes",
+            ]
+        )
 
         # タスクのコピー
-        self._execute_copy(task_id, expected_metadata={"foo": "bar"})
+        self._execute_copy(task_id, expected_metadata={"foo": "bar", "legacy": "value"})
 
         # 担当者の変更
         self._execute_change_operator(task_id)
@@ -380,7 +391,7 @@ class TestCommandLine:
         self._execute_change_status_to_break(task_id)
 
         # メタデータのキーを削除
-        self._execute_delete_metadata_key(task_id, metadata_keys=["foo"], expected_metadata={})
+        self._execute_delete_metadata_key(task_id, metadata_keys=["foo", "legacy"], expected_metadata={})
 
     def test_create_and_delete_task(self):
         """
