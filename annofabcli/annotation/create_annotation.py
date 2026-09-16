@@ -6,6 +6,7 @@ import json
 import logging
 import sys
 from collections import defaultdict
+from collections.abc import Collection
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -29,6 +30,7 @@ from annofabcli.common.cli import (
     CommandLineWithConfirm,
     build_annofabapi_resource_and_login,
     get_json_from_args,
+    get_list_from_args,
 )
 from annofabcli.common.facade import AnnofabApiFacade
 
@@ -91,6 +93,14 @@ def group_annotation_items(items: list[CreateAnnotationItem]) -> dict[str, dict[
     for item in items:
         result[item.task_id][item.input_data_id].append(item)
     return result
+
+
+def filter_annotation_items_by_task_ids(items: list[CreateAnnotationItem], target_task_ids: Collection[str]) -> tuple[list[CreateAnnotationItem], set[str]]:
+    """指定された task_id に一致するアノテーションだけを返す。"""
+    target_task_id_set = set(target_task_ids)
+    filtered_items = [item for item in items if item.task_id in target_task_id_set]
+    existing_task_ids = {item.task_id for item in filtered_items}
+    return filtered_items, target_task_id_set - existing_task_ids
 
 
 def get_annotation_items_from_csv(csv_path: str) -> list[CreateAnnotationItem]:
@@ -322,6 +332,11 @@ class CreateAnnotation(CommandLine):
                 print(f"{self.COMMON_MESSAGE} argument --csv: {e}", file=sys.stderr)  # noqa: T201
                 sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
+        if args.task_id is not None:
+            items, not_existing_task_ids = filter_annotation_items_by_task_ids(items, get_list_from_args(args.task_id))
+            if len(not_existing_task_ids) > 0:
+                logger.warning(f"'--task_id'で指定したタスクの内 {len(not_existing_task_ids)} 件は、作成対象データに含まれていません。 :: {sorted(not_existing_task_ids)}")
+
         if args.backup is None:
             print("間違えてアノテーションを作成したときに復元できるようにするため、'--backup'でバックアップ用のディレクトリを指定することを推奨します。", file=sys.stderr)  # noqa: T201
             if not self.confirm_processing("復元用のバックアップディレクトリが指定されていません。処理を続行しますか？"):
@@ -365,6 +380,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     input_group = parser.add_mutually_exclusive_group(required=True)
     input_group.add_argument("--json", type=str, help="各アノテーションの作成内容を記載したJSONリストを指定します。``file://`` を先頭に付けるとJSON形式のファイルを指定できます。")
     input_group.add_argument("--csv", type=str, help="各アノテーションの作成内容を記載したCSVファイルを指定します。`task_id`, `input_data_id`, `label`, `data` カラムが必要です。")
+    argument_parser.add_task_id(required=False, help_message="作成対象のアノテーションをtask_idで絞り込みます。 ``--json`` や ``--csv`` で指定したデータのうち、一致した task_id のみを処理します。")
     parser.add_argument("--editor_props", type=str, help="作成する全アノテーションに付与するエディタ用プロパティをJSON形式で指定します。``file://`` を先頭に付けるとJSON形式のファイルを指定できます。")
     parser.add_argument("--include_complete_task", action="store_true", help="完了状態のタスクにもアノテーションを作成します。オーナーロールが必要です。")
     parser.add_argument("--include_break_task", action="store_true", help="休憩中状態のタスクにもアノテーションを作成します。")

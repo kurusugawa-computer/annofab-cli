@@ -7,7 +7,14 @@ from unittest.mock import Mock
 import pytest
 from annofabapi.models import ProjectMemberRole, TaskStatus
 
-from annofabcli.annotation.create_annotation import CreateAnnotationCount, CreateAnnotationItem, CreateAnnotationMain, create_request_body, get_annotation_items_from_csv
+from annofabcli.annotation.create_annotation import (
+    CreateAnnotationCount,
+    CreateAnnotationItem,
+    CreateAnnotationMain,
+    create_request_body,
+    filter_annotation_items_by_task_ids,
+    get_annotation_items_from_csv,
+)
 from annofabcli.annotation.create_annotation_converter import CreateAnnotationConverter
 
 annotation_specs = json.loads(Path("tests/data/annotation/import_annotation/annotation_specs.json").read_text(encoding="utf-8"))
@@ -150,3 +157,17 @@ def test_get_annotation_items_from_csv__JSON形式が不正な場合は例外を
 
     with pytest.raises(ValueError):
         get_annotation_items_from_csv(str(csv_path))
+
+
+def test_filter_annotation_items_by_task_ids__指定したtask_idのアノテーションだけを返す() -> None:
+    items = [
+        CreateAnnotationItem(task_id="task1", input_data_id="input1", label="car", data={"_type": "BoundingBox"}),
+        CreateAnnotationItem(task_id="task2", input_data_id="input2", label="car", data={"_type": "BoundingBox"}),
+        CreateAnnotationItem(task_id="task1", input_data_id="input3", label="person", data={"_type": "BoundingBox"}),
+    ]
+
+    actual_items, actual_not_existing_task_ids = filter_annotation_items_by_task_ids(items, ["task1", "task3"])
+
+    assert [item.task_id for item in actual_items] == ["task1", "task1"]
+    assert [item.input_data_id for item in actual_items] == ["input1", "input3"]
+    assert actual_not_existing_task_ids == {"task3"}
