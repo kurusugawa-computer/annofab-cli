@@ -4,6 +4,7 @@ import copy
 from typing import cast
 
 import annofabapi
+import pytest
 
 from annofabcli.annotation.delete_invalid_attribute_value import (
     DeleteInvalidAttributeValueMain,
@@ -299,3 +300,11 @@ class TestDeleteInvalidAttributeValueMain:
         actual = obj.get_target_task_id_list(None)
 
         assert actual == ["task1", "task2"]
+
+    def test_get_target_task_id_list_raises_when_all_tasks_may_be_truncated(self) -> None:
+        service = DummyService(create_editor_annotation([]))
+        service.wrapper = DummyWrapper([{"task_id": f"task{i}"} for i in range(10_000)])
+        obj = DeleteInvalidAttributeValueMain(cast(annofabapi.Resource, service), project_id="prj1", include_complete_task=False, all_yes=True)
+
+        with pytest.raises(ValueError):
+            obj.get_target_task_id_list(None)

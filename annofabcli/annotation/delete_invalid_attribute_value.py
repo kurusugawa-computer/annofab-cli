@@ -275,7 +275,7 @@ class DeleteInvalidAttributeValueMain(CommandLineWithConfirm):
 
     def delete_attribute_value_for_task_list(
         self,
-        task_id_list: list[str] | None,
+        task_id_list: list[str],
         *,
         allowed_attribute_ids_by_label_id: dict[str, set[str]],
         backup_dir: Path | None = None,
@@ -288,16 +288,15 @@ class DeleteInvalidAttributeValueMain(CommandLineWithConfirm):
             allowed_attribute_ids_by_label_id: ラベルIDをキー、ラベルに含まれる属性ID集合を値にしたdict。
             backup_dir: バックアップディレクトリ。
         """
-        actual_task_id_list = self.get_target_task_id_list(task_id_list)
         project_title = self.facade.get_project_title(self.project_id)
-        logger.info(f"プロジェクト'{project_title}'に対して、タスク{len(actual_task_id_list)} 件のラベルに含まれていない属性値を削除します。")
+        logger.info(f"プロジェクト'{project_title}'に対して、タスク{len(task_id_list)} 件のラベルに含まれていない属性値を削除します。")
 
         if backup_dir is not None:
             backup_dir.mkdir(exist_ok=True, parents=True)
 
         success_task_count = 0
         deleted_annotation_count = 0
-        for task_index, task_id in enumerate(actual_task_id_list):
+        for task_index, task_id in enumerate(task_id_list):
             try:
                 result, sub_deleted_annotation_count = self.delete_attribute_value_for_task(
                     task_id,
@@ -311,7 +310,7 @@ class DeleteInvalidAttributeValueMain(CommandLineWithConfirm):
             except Exception:
                 logger.warning(f"タスク'{task_id}'のアノテーション属性値の削除に失敗しました。", exc_info=True)
 
-        logger.info(f"{success_task_count} / {len(actual_task_id_list)} 件のタスクに対して {deleted_annotation_count} 件のアノテーションから、ラベルに含まれていない属性値を削除しました。")
+        logger.info(f"{success_task_count} / {len(task_id_list)} 件のタスクに対して {deleted_annotation_count} 件のアノテーションから、ラベルに含まれていない属性値を削除しました。")
 
     def get_target_task_id_list(self, task_id_list: list[str] | None) -> list[str]:
         """
@@ -328,7 +327,9 @@ class DeleteInvalidAttributeValueMain(CommandLineWithConfirm):
 
         task_list = self.service.wrapper.get_all_tasks(self.project_id)
         if len(task_list) == 10_000:
-            logger.warning("タスク一覧は10,000件で打ち切られている可能性があります。")
+            raise ValueError(
+                "プロジェクト内の全タスクを対象にしようとしましたが、タスク一覧が10,000件で打ち切られている可能性があるため処理を中断しました。`--task_id` を指定して対象タスクを絞り込んでください。"
+            )
         return [e["task_id"] for e in task_list]
 
 
@@ -367,8 +368,13 @@ class DeleteInvalidAttributeValueOfAnnotation(CommandLine):
             sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
         main_obj = DeleteInvalidAttributeValueMain(self.service, project_id=project_id, include_complete_task=args.include_complete_task, all_yes=args.yes)
+        try:
+            actual_task_id_list = main_obj.get_target_task_id_list(task_id_list)
+        except ValueError as e:
+            print(f"{self.COMMON_MESSAGE} {e}", file=sys.stderr)  # noqa: T201
+            sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
         main_obj.delete_attribute_value_for_task_list(
-            task_id_list,
+            actual_task_id_list,
             allowed_attribute_ids_by_label_id=allowed_attribute_ids_by_label_id,
             backup_dir=backup_dir,
         )
