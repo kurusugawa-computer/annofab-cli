@@ -24,8 +24,9 @@ def create_editor_annotation(details: list[dict]) -> dict:
 
 
 class DummyApi:
-    def __init__(self, editor_annotation: dict) -> None:
+    def __init__(self, editor_annotation: dict, *, over_limit: bool = False) -> None:
         self.editor_annotation = editor_annotation
+        self.over_limit = over_limit
         self.request_body: list[dict] | None = None
 
     def get_editor_annotation(self, project_id: str, task_id: str, input_data_id: str, query_params: dict) -> tuple[dict, None]:
@@ -41,10 +42,20 @@ class DummyApi:
         self.request_body = copy.deepcopy(request_body)
         return {}, None
 
+    def get_tasks(self, project_id: str, query_params: dict) -> tuple[dict, None]:
+        assert project_id == "prj1"
+        assert query_params == {"page": 1, "limit": 1}
+        return {
+            "over_limit": self.over_limit,
+            "list": [],
+            "page_no": 1,
+            "total_page_no": 1,
+        }, None
+
 
 class DummyService:
-    def __init__(self, editor_annotation: dict) -> None:
-        self.api = DummyApi(editor_annotation)
+    def __init__(self, editor_annotation: dict, *, over_limit: bool = False) -> None:
+        self.api = DummyApi(editor_annotation, over_limit=over_limit)
         self.wrapper: DummyWrapper | None = None
 
 
@@ -188,9 +199,9 @@ class TestDeleteInvalidLabelAnnotationMain:
 
         assert actual == ["task1", "task2"]
 
-    def test_get_target_task_id_list_raises_when_all_tasks_may_be_truncated(self) -> None:
-        service = DummyService(create_editor_annotation([]))
-        service.wrapper = DummyWrapper([{"task_id": f"task{i}"} for i in range(10_000)])
+    def test_get_target_task_id_list_raises_when_task_count_is_over_limit(self) -> None:
+        service = DummyService(create_editor_annotation([]), over_limit=True)
+        service.wrapper = DummyWrapper([{"task_id": "task1"}])
         obj = DeleteInvalidLabelAnnotationMain(cast(annofabapi.Resource, service), project_id="prj1", include_complete_task=False, all_yes=True)
 
         with pytest.raises(ValueError):

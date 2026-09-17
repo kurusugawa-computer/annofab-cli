@@ -325,11 +325,10 @@ class DeleteInvalidAttributeValueMain(CommandLineWithConfirm):
         if task_id_list is not None:
             return task_id_list
 
+        content, _ = self.service.api.get_tasks(self.project_id, query_params={"page": 1, "limit": 1})
+        if content["over_limit"]:
+            raise ValueError("プロジェクト内のタスク数が10,000件を超えているため、全タスクを安全に取得できず処理を中断しました。`--task_id` を指定して対象タスクを絞り込んでください。")
         task_list = self.service.wrapper.get_all_tasks(self.project_id)
-        if len(task_list) >= 10_000:
-            raise ValueError(
-                "プロジェクト内の全タスクを対象にしようとしましたが、タスク一覧が10,000件で打ち切られている可能性があるため処理を中断しました。`--task_id` を指定して対象タスクを絞り込んでください。"
-            )
         return [e["task_id"] for e in task_list]
 
 
