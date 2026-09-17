@@ -252,7 +252,7 @@ class DeleteInvalidLabelAnnotationMain(CommandLineWithConfirm):
             return task_id_list
 
         task_list = self.service.wrapper.get_all_tasks(self.project_id)
-        if len(task_list) == 10_000:
+        if len(task_list) >= 10_000:
             raise ValueError(
                 "プロジェクト内の全タスクを対象にしようとしましたが、タスク一覧が10,000件で打ち切られている可能性があるため処理を中断しました。`--task_id` を指定して対象タスクを絞り込んでください。"
             )
