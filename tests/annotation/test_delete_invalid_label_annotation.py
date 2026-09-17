@@ -24,8 +24,9 @@ def create_editor_annotation(details: list[dict]) -> dict:
 
 
 class DummyApi:
-    def __init__(self, editor_annotation: dict, *, over_limit: bool = False) -> None:
+    def __init__(self, editor_annotation: dict, *, task_list: list[dict] | None = None, over_limit: bool = False) -> None:
         self.editor_annotation = editor_annotation
+        self.task_list = [] if task_list is None else task_list
         self.over_limit = over_limit
         self.request_body: list[dict] | None = None
 
@@ -44,28 +45,21 @@ class DummyApi:
 
     def get_tasks(self, project_id: str, query_params: dict) -> tuple[dict, None]:
         assert project_id == "prj1"
-        assert query_params == {"page": 1, "limit": 1}
+        page = query_params["page"]
+        limit = query_params["limit"]
+        begin = (page - 1) * limit
+        end = begin + limit
         return {
             "over_limit": self.over_limit,
-            "list": [],
-            "page_no": 1,
-            "total_page_no": 1,
+            "list": self.task_list[begin:end],
+            "page_no": page,
+            "total_page_no": max(1, (len(self.task_list) + limit - 1) // limit),
         }, None
 
 
 class DummyService:
-    def __init__(self, editor_annotation: dict, *, over_limit: bool = False) -> None:
-        self.api = DummyApi(editor_annotation, over_limit=over_limit)
-        self.wrapper: DummyWrapper | None = None
-
-
-class DummyWrapper:
-    def __init__(self, task_list: list[dict]) -> None:
-        self.task_list = task_list
-
-    def get_all_tasks(self, project_id: str) -> list[dict]:
-        assert project_id == "prj1"
-        return self.task_list
+    def __init__(self, editor_annotation: dict, *, task_list: list[dict] | None = None, over_limit: bool = False) -> None:
+        self.api = DummyApi(editor_annotation, task_list=task_list, over_limit=over_limit)
 
 
 class TestGetExistingLabelIds:
@@ -183,7 +177,6 @@ class TestDeleteInvalidLabelAnnotationMain:
 
     def test_get_target_task_id_list_returns_argument_when_specified(self) -> None:
         service = DummyService(create_editor_annotation([]))
-        service.wrapper = DummyWrapper([{"task_id": "task1"}])
         obj = DeleteInvalidLabelAnnotationMain(cast(annofabapi.Resource, service), project_id="prj1", include_complete_task=False, all_yes=True)
 
         actual = obj.get_target_task_id_list(["task2"])
@@ -191,17 +184,24 @@ class TestDeleteInvalidLabelAnnotationMain:
         assert actual == ["task2"]
 
     def test_get_target_task_id_list_returns_all_tasks_when_task_id_is_none(self) -> None:
-        service = DummyService(create_editor_annotation([]))
-        service.wrapper = DummyWrapper([{"task_id": "task1"}, {"task_id": "task2"}])
+        service = DummyService(create_editor_annotation([]), task_list=[{"task_id": "task1"}, {"task_id": "task2"}])
         obj = DeleteInvalidLabelAnnotationMain(cast(annofabapi.Resource, service), project_id="prj1", include_complete_task=False, all_yes=True)
 
         actual = obj.get_target_task_id_list(None)
 
         assert actual == ["task1", "task2"]
 
+    def test_get_target_task_id_list_returns_all_tasks_across_multiple_pages(self) -> None:
+        task_list = [{"task_id": f"task{i}"} for i in range(201)]
+        service = DummyService(create_editor_annotation([]), task_list=task_list)
+        obj = DeleteInvalidLabelAnnotationMain(cast(annofabapi.Resource, service), project_id="prj1", include_complete_task=False, all_yes=True)
+
+        actual = obj.get_target_task_id_list(None)
+
+        assert actual == [e["task_id"] for e in task_list]
+
     def test_get_target_task_id_list_raises_when_task_count_is_over_limit(self) -> None:
-        service = DummyService(create_editor_annotation([]), over_limit=True)
-        service.wrapper = DummyWrapper([{"task_id": "task1"}])
+        service = DummyService(create_editor_annotation([]), task_list=[{"task_id": "task1"}], over_limit=True)
         obj = DeleteInvalidLabelAnnotationMain(cast(annofabapi.Resource, service), project_id="prj1", include_complete_task=False, all_yes=True)
 
         with pytest.raises(ValueError):

@@ -251,11 +251,18 @@ class DeleteInvalidLabelAnnotationMain(CommandLineWithConfirm):
         if task_id_list is not None:
             return task_id_list
 
-        content, _ = self.service.api.get_tasks(self.project_id, query_params={"page": 1, "limit": 1})
+        limit = 200
+        content, _ = self.service.api.get_tasks(self.project_id, query_params={"page": 1, "limit": limit})
         if content["over_limit"]:
             raise ValueError("プロジェクト内のタスク数が10,000件を超えているため、全タスクを安全に取得できず処理を中断しました。`--task_id` を指定して対象タスクを絞り込んでください。")
-        task_list = self.service.wrapper.get_all_tasks(self.project_id)
-        return [e["task_id"] for e in task_list]
+
+        actual_task_id_list = [e["task_id"] for e in content["list"]]
+        while content["page_no"] < content["total_page_no"]:
+            next_page_no = content["page_no"] + 1
+            content, _ = self.service.api.get_tasks(self.project_id, query_params={"page": next_page_no, "limit": limit})
+            actual_task_id_list.extend(e["task_id"] for e in content["list"])
+
+        return actual_task_id_list
 
 
 class DeleteInvalidLabelAnnotationOfAnnotation(CommandLine):
