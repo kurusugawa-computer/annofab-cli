@@ -275,7 +275,7 @@ class DeleteInvalidAttributeValueMain(CommandLineWithConfirm):
 
     def delete_attribute_value_for_task_list(
         self,
-        task_id_list: list[str],
+        task_id_list: list[str] | None,
         *,
         allowed_attribute_ids_by_label_id: dict[str, set[str]],
         backup_dir: Path | None = None,
@@ -288,15 +288,16 @@ class DeleteInvalidAttributeValueMain(CommandLineWithConfirm):
             allowed_attribute_ids_by_label_id: ラベルIDをキー、ラベルに含まれる属性ID集合を値にしたdict。
             backup_dir: バックアップディレクトリ。
         """
+        actual_task_id_list = self.get_target_task_id_list(task_id_list)
         project_title = self.facade.get_project_title(self.project_id)
-        logger.info(f"プロジェクト'{project_title}'に対して、タスク{len(task_id_list)} 件のラベルに含まれていない属性値を削除します。")
+        logger.info(f"プロジェクト'{project_title}'に対して、タスク{len(actual_task_id_list)} 件のラベルに含まれていない属性値を削除します。")
 
         if backup_dir is not None:
             backup_dir.mkdir(exist_ok=True, parents=True)
 
         success_task_count = 0
         deleted_annotation_count = 0
-        for task_index, task_id in enumerate(task_id_list):
+        for task_index, task_id in enumerate(actual_task_id_list):
             try:
                 result, sub_deleted_annotation_count = self.delete_attribute_value_for_task(
                     task_id,
@@ -310,7 +311,25 @@ class DeleteInvalidAttributeValueMain(CommandLineWithConfirm):
             except Exception:
                 logger.warning(f"タスク'{task_id}'のアノテーション属性値の削除に失敗しました。", exc_info=True)
 
-        logger.info(f"{success_task_count} / {len(task_id_list)} 件のタスクに対して {deleted_annotation_count} 件のアノテーションから、ラベルに含まれていない属性値を削除しました。")
+        logger.info(f"{success_task_count} / {len(actual_task_id_list)} 件のタスクに対して {deleted_annotation_count} 件のアノテーションから、ラベルに含まれていない属性値を削除しました。")
+
+    def get_target_task_id_list(self, task_id_list: list[str] | None) -> list[str]:
+        """
+        処理対象のタスクID一覧を取得する。
+
+        Args:
+            task_id_list: 引数で指定されたタスクID一覧。
+
+        Returns:
+            処理対象のタスクID一覧。
+        """
+        if task_id_list is not None:
+            return task_id_list
+
+        task_list = self.service.wrapper.get_all_tasks(self.project_id)
+        if len(task_list) == 10_000:
+            logger.warning("タスク一覧は10,000件で打ち切られている可能性があります。")
+        return [e["task_id"] for e in task_list]
 
 
 class DeleteInvalidAttributeValueOfAnnotation(CommandLine):
@@ -323,7 +342,7 @@ class DeleteInvalidAttributeValueOfAnnotation(CommandLine):
     def main(self) -> None:
         args = self.args
         project_id = args.project_id
-        task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id)
+        task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id) if args.task_id is not None else None
 
         annotation_specs, _ = self.service.api.get_annotation_specs(project_id, query_params={"v": "3"})
         allowed_attribute_ids_by_label_id = get_allowed_attribute_ids_by_label_id(annotation_specs)
@@ -364,7 +383,7 @@ def main(args: argparse.Namespace) -> None:
 def parse_args(parser: argparse.ArgumentParser) -> None:
     argument_parser = ArgumentParser(parser)
     argument_parser.add_project_id()
-    argument_parser.add_task_id()
+    argument_parser.add_task_id(required=False)
 
     parser.add_argument(
         "--include_complete_task",

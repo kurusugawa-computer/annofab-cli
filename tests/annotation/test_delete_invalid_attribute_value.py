@@ -47,6 +47,16 @@ class DummyApi:
 class DummyService:
     def __init__(self, editor_annotation: dict) -> None:
         self.api = DummyApi(editor_annotation)
+        self.wrapper: DummyWrapper | None = None
+
+
+class DummyWrapper:
+    def __init__(self, task_list: list[dict]) -> None:
+        self.task_list = task_list
+
+    def get_all_tasks(self, project_id: str) -> list[dict]:
+        assert project_id == "prj1"
+        return self.task_list
 
 
 class TestFilterInvalidAdditionalDataList:
@@ -271,3 +281,21 @@ class TestDeleteInvalidAttributeValueMain:
         assert actual.success == 0
         assert actual.skipped == 0
         assert service.api.request_body is None
+
+    def test_get_target_task_id_list_returns_argument_when_specified(self) -> None:
+        service = DummyService(create_editor_annotation([]))
+        service.wrapper = DummyWrapper([{"task_id": "task1"}])
+        obj = DeleteInvalidAttributeValueMain(cast(annofabapi.Resource, service), project_id="prj1", include_complete_task=False, all_yes=True)
+
+        actual = obj.get_target_task_id_list(["task2"])
+
+        assert actual == ["task2"]
+
+    def test_get_target_task_id_list_returns_all_tasks_when_task_id_is_none(self) -> None:
+        service = DummyService(create_editor_annotation([]))
+        service.wrapper = DummyWrapper([{"task_id": "task1"}, {"task_id": "task2"}])
+        obj = DeleteInvalidAttributeValueMain(cast(annofabapi.Resource, service), project_id="prj1", include_complete_task=False, all_yes=True)
+
+        actual = obj.get_target_task_id_list(None)
+
+        assert actual == ["task1", "task2"]

@@ -21,11 +21,20 @@ Examples
 --------------------------
 
 ``--task_id`` に属性値削除対象のタスクのtask_idを指定してください。
+``--task_id`` を省略すると、プロジェクト内の全タスクを対象にします。
 
 .. code-block::
 
     $ annofabcli annotation delete_invalid_attribute_value --project_id prj1 --task_id file://task.txt \
     --backup backup_dir/
+
+
+プロジェクト内の全タスクを対象にする
+----------------------------------
+
+.. code-block::
+
+    $ annofabcli annotation delete_invalid_attribute_value --project_id prj1 --backup backup_dir/
 
 
 ``--backup`` にディレクトリを指定すると、変更対象のタスクのアノテーション情報を、バックアップとしてディレクトリに保存します。
