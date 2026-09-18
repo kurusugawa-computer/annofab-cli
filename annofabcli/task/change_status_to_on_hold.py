@@ -290,7 +290,7 @@ def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse
     subcommand_name = "change_status_to_on_hold"
     subcommand_help = "タスクのステータスを保留に変更します。"
     description = "タスクのステータスを保留に変更します。ただし、操作対象のタスクのステータスは休憩中か未着手である必要があります。"
-    epilog = "アノテータ、チェッカーまたはオーナロールを持つユーザで実行してください。"
+    epilog = "アノテータ、チェッカーまたはオーナロールを持つユーザで実行してください。ワーカーロールで実行する場合は、自身が担当するタスクだけを操作できます。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
     parse_args(parser)

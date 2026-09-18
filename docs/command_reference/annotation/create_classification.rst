@@ -45,12 +45,12 @@ Examples
 ----------------------------------------------------
 
 オーナーロールでは、タスクの担当者や状態を変更せずに全体アノテーションを作成できます。
-チェッカーロールで自身が担当者ではないタスクに作成するには、 ``--change_operator_to_me`` を指定してください。担当者を一時的に自分自身に変更して全体アノテーションを作成します。オーナーロールで指定しても効果はありません。
+チェッカーロールで自身が担当者ではないタスクに作成する場合は、担当者を一時的に自分自身に変更して全体アノテーションを作成します。
 
 .. code-block::
 
     $ annofabcli annotation create_classification --project_id prj1 \
-    --task_id task1 --label_name weather --change_operator_to_me
+    --task_id task1 --label_name weather
 
 
 完了状態のタスクへの作成

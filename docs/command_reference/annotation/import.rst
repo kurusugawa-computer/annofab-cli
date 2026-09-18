@@ -224,12 +224,11 @@ Examples
 
 
 オーナーロールでは、タスクの担当者や状態を変更せずにアノテーションをインポートできます。
-チェッカーロールで自身が担当者ではないタスクにインポートするには、 ``--change_operator_to_me`` を指定してください。担当者を一時的に自分自身に変更してアノテーションをインポートします。オーナーロールで指定しても効果はありません。
+チェッカーロールで自身が担当者ではないタスクにインポートする場合は、担当者を一時的に自分自身に変更してアノテーションをインポートします。
 
 .. code-block::
 
-    $ annofabcli annotation import --project_id prj1 --annotation annotation.zip \
-    --change_operator_to_me
+    $ annofabcli annotation import --project_id prj1 --annotation annotation.zip
 
 
 

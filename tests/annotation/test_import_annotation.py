@@ -81,7 +81,6 @@ class _TestImportAnnotationMain(ImportAnnotationMain):
         *,
         project_id: str,
         all_yes: bool,
-        change_operator_to_me: bool,
         is_merge: bool,
         is_overwrite: bool,
         include_complete_task: bool,
@@ -93,7 +92,6 @@ class _TestImportAnnotationMain(ImportAnnotationMain):
             service,
             project_id=project_id,
             all_yes=all_yes,
-            change_operator_to_me=change_operator_to_me,
             is_merge=is_merge,
             is_overwrite=is_overwrite,
             include_complete_task=include_complete_task,
@@ -114,14 +112,11 @@ class _TestImportAnnotationMain(ImportAnnotationMain):
         return 1, 1
 
 
-def _create_import_annotation_main(
-    *, task: dict[str, Any], project_member_role: ProjectMemberRole, change_operator_to_me: bool = False, task_query: TaskQuery | None = None
-) -> _TestImportAnnotationMain:
+def _create_import_annotation_main(*, task: dict[str, Any], project_member_role: ProjectMemberRole, task_query: TaskQuery | None = None) -> _TestImportAnnotationMain:
     main_obj = _TestImportAnnotationMain(
         cast(annofabapi.Resource, _FakeService(task, project_member_role)),
         project_id=project["project_id"],
         all_yes=True,
-        change_operator_to_me=change_operator_to_me,
         is_merge=False,
         is_overwrite=True,
         include_complete_task=False,
@@ -174,7 +169,7 @@ class Test__ImportAnnotationMain:
         assert obj.confirm_processing_called
         assert obj.put_annotation_for_task_called
 
-    def test__execute_task__チェッカーが担当者を変更しない場合は問い合わせ前にスキップする(self):
+    def test__execute_task__チェッカーは担当者を一時変更してインポートする(self):
         task = {
             "task_id": "task_id",
             "phase": "annotation",
@@ -182,13 +177,14 @@ class Test__ImportAnnotationMain:
             "account_id": "other_account_id",
             "updated_datetime": "2026-07-30T00:00:00.000+09:00",
         }
-        obj = _create_import_annotation_main(task=task, project_member_role=ProjectMemberRole.ACCEPTER, change_operator_to_me=False)
+        obj = _create_import_annotation_main(task=task, project_member_role=ProjectMemberRole.ACCEPTER)
 
         actual = obj.execute_task(cast(SimpleAnnotationParserByTask, _FakeTaskParser()))
 
-        assert not actual
-        assert not obj.confirm_processing_called
-        assert not obj.put_annotation_for_task_called
+        assert actual
+        assert obj.confirm_processing_called
+        assert obj.put_annotation_for_task_called
+        assert obj.fake_wrapper.changed_operator_account_ids == ["account_id", "other_account_id"]
 
     def test__execute_task__オーナーは担当者を変更せずにインポートする(self):
         task = {
@@ -198,7 +194,7 @@ class Test__ImportAnnotationMain:
             "account_id": "account_id",
             "updated_datetime": "2026-07-30T00:00:00.000+09:00",
         }
-        obj = _create_import_annotation_main(task=task, project_member_role=ProjectMemberRole.OWNER, change_operator_to_me=True)
+        obj = _create_import_annotation_main(task=task, project_member_role=ProjectMemberRole.OWNER)
 
         actual = obj.execute_task(cast(SimpleAnnotationParserByTask, _FakeTaskParser()))
 
@@ -215,7 +211,7 @@ class Test__ImportAnnotationMain:
             "account_id": "account_id",
             "updated_datetime": "2026-07-30T00:00:00.000+09:00",
         }
-        obj = _create_import_annotation_main(task=task, project_member_role=ProjectMemberRole.ACCEPTER, change_operator_to_me=False)
+        obj = _create_import_annotation_main(task=task, project_member_role=ProjectMemberRole.ACCEPTER)
 
         actual = obj.execute_task(cast(SimpleAnnotationParserByTask, _FakeTaskParser()))
 
@@ -232,7 +228,7 @@ class Test__ImportAnnotationMain:
             "account_id": None,
             "updated_datetime": "2026-07-30T00:00:00.000+09:00",
         }
-        obj = _create_import_annotation_main(task=task, project_member_role=ProjectMemberRole.ACCEPTER, change_operator_to_me=False)
+        obj = _create_import_annotation_main(task=task, project_member_role=ProjectMemberRole.ACCEPTER)
 
         actual = obj.execute_task(cast(SimpleAnnotationParserByTask, _FakeTaskParser()))
 
@@ -249,7 +245,7 @@ class Test__ImportAnnotationMain:
             "account_id": "other_account_id",
             "updated_datetime": "2026-07-30T00:00:00.000+09:00",
         }
-        obj = _create_import_annotation_main(task=task, project_member_role=ProjectMemberRole.ACCEPTER, change_operator_to_me=True)
+        obj = _create_import_annotation_main(task=task, project_member_role=ProjectMemberRole.ACCEPTER)
 
         actual = obj.execute_task(cast(SimpleAnnotationParserByTask, _FakeTaskParser()))
 

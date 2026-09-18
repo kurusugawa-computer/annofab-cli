@@ -58,7 +58,6 @@ class MergeSegmentationMain(CommandLineWithConfirm):
         label_ids: Collection[str],
         label_names: Collection[str],
         all_yes: bool,
-        change_operator_to_me: bool,
         include_complete_task: bool,
         include_break_task: bool,
         include_on_hold_task: bool,
@@ -67,7 +66,6 @@ class MergeSegmentationMain(CommandLineWithConfirm):
         self.project_id = project_id
         my_member, _ = self.annofab_service.api.get_my_member_in_project(project_id)
         self.project_member_role = ProjectMemberRole(my_member["member_role"])
-        self.change_operator_to_me = change_operator_to_me
         self.include_complete_task = include_complete_task
         self.include_break_task = include_break_task
         self.include_on_hold_task = include_on_hold_task
@@ -229,10 +227,6 @@ class MergeSegmentationMain(CommandLineWithConfirm):
             return 0
 
         should_change_operator = self.project_member_role == ProjectMemberRole.ACCEPTER and task["account_id"] is not None and task["account_id"] != self.annofab_service.api.account_id
-        if should_change_operator and not self.change_operator_to_me:
-            logger.info(f"{log_message_prefix}task_id='{task_id}'をチェッカーロールで更新するには、`--change_operator_to_me` を指定してください。")
-            return 0
-
         if not self.confirm_processing(f"task_id='{task_id}'の次のラベル名に対応する複数の塗りつぶしアノテーションを1つにまとめますか？ :: {self.label_names}"):
             return 0
 
@@ -362,7 +356,6 @@ class MergeSegmentation(CommandLine):
             label_ids=label_id_list,
             label_names=label_name_list,
             all_yes=self.all_yes,
-            change_operator_to_me=args.change_operator_to_me,
             include_complete_task=args.include_complete_task,
             include_break_task=args.include_break_task,
             include_on_hold_task=args.include_on_hold_task,
@@ -388,12 +381,6 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         nargs="+",
         required=True,
         help="変更対象のアノテーションのラベル名(英語)を指定します。",
-    )
-
-    parser.add_argument(
-        "--change_operator_to_me",
-        action="store_true",
-        help="チェッカーロールで、自身が担当者ではないタスクのアノテーションを更新する場合に指定してください。タスクの担当者を一時的に自分自身に変更し、更新完了後に元へ戻します。オーナーロールで指定しても効果はありません。",
     )
 
     parser.add_argument(
