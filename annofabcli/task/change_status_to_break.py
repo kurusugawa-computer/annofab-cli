@@ -24,16 +24,18 @@ logger = logging.getLogger(__name__)
 
 
 class ChangeStatusToBreakMain(CommandLineWithConfirm):
-    def __init__(self, service: annofabapi.Resource, all_yes: bool) -> None:  # noqa: FBT001
+    def __init__(self, service: annofabapi.Resource, all_yes: bool, *, can_operate_other_task: bool = True) -> None:  # noqa: FBT001
         super().__init__(all_yes)
         self.service = service
         self.facade = AnnofabApiFacade(service)
+        self.can_operate_other_task = can_operate_other_task
+        """自身が担当していないタスクを操作できるかどうか"""
 
     def confirm_change_status_to_break(self, task: Task) -> bool:
         confirm_message = f"task_id = {task.task_id} のタスクのステータスを休憩中に変更しますか？"
         return self.confirm_processing(confirm_message)
 
-    def change_status_to_break_for_task(
+    def change_status_to_break_for_task(  # noqa: PLR0911
         self,
         project_id: str,
         task_id: str,
@@ -50,6 +52,10 @@ class ChangeStatusToBreakMain(CommandLineWithConfirm):
 
         if not match_task_with_query(task, task_query):
             logger.debug(f"{logging_prefix} : task_id = {task_id} : `--task_query` の条件にマッチしないため、スキップします。task_query={task_query}")
+            return False
+
+        if not self.can_operate_other_task and task.account_id != self.service.api.account_id:
+            logger.info(f"{logging_prefix}: task_id = '{task_id}' のタスクは自身が担当者ではないため、ワーカーロールではステータスを変更できません。スキップします。")
             return False
 
         if task.status not in (TaskStatus.WORKING, TaskStatus.ON_HOLD):
@@ -174,8 +180,10 @@ class ChangeStatusToBreak(CommandLine):
 
         project_id = args.project_id
         super().validate_project(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.ACCEPTER, ProjectMemberRole.WORKER])
+        my_member, _ = self.service.api.get_my_member_in_project(project_id)
+        can_operate_other_task = ProjectMemberRole(my_member["member_role"]) != ProjectMemberRole.WORKER
 
-        main_obj = ChangeStatusToBreakMain(self.service, all_yes=self.all_yes)
+        main_obj = ChangeStatusToBreakMain(self.service, all_yes=self.all_yes, can_operate_other_task=can_operate_other_task)
         main_obj.change_status_to_break(
             project_id,
             task_id_list,
