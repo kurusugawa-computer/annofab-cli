@@ -10,7 +10,6 @@ from functools import partial
 from typing import Any
 
 import annofabapi
-import requests
 from annofabapi.dataclass.task import Task
 from annofabapi.models import InputDataType, ProjectMemberRole, TaskPhase, TaskStatus
 from annofabapi.plugin import EditorPluginId
@@ -239,7 +238,7 @@ class RejectTasksMain(CommandLineWithConfirm):
                 logger.debug(f"{logging_prefix} :: task_id='{task_id}' のタスクを差し戻しました。タスクの担当者user_id: '{assigned_annotator_user_id}'")
                 return True
 
-        except requests.exceptions.HTTPError:
+        except Exception:  # pylint: disable=broad-except
             logger.warning(f"{logging_prefix} : task_id='{task_id}'のタスクの差し戻しに失敗しました。", exc_info=True)
 
             task, _ = self.service.api.get_task(project_id, task_id)
