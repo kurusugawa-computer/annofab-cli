@@ -143,7 +143,6 @@ class ChangeAnnotationEditorPropsMain(CommandLineWithConfirm):
         project_id: str,
         target_label_ids: set[str],
         editor_props: dict[str, Any],
-        change_operator_to_me: bool,
         include_complete_task: bool,
         include_break_task: bool,
         include_on_hold_task: bool,
@@ -156,7 +155,6 @@ class ChangeAnnotationEditorPropsMain(CommandLineWithConfirm):
         self.project_member_role = ProjectMemberRole(my_member["member_role"])
         self.target_label_ids = target_label_ids
         self.editor_props = editor_props
-        self.change_operator_to_me = change_operator_to_me
         self.include_complete_task = include_complete_task
         self.include_break_task = include_break_task
         self.include_on_hold_task = include_on_hold_task
@@ -195,7 +193,7 @@ class ChangeAnnotationEditorPropsMain(CommandLineWithConfirm):
         )
         return request.count
 
-    def change_editor_props_for_task(self, task_id: str, task_index: int | None = None) -> tuple[bool, ChangeEditorPropsCount]:  # noqa: PLR0911, PLR0912
+    def change_editor_props_for_task(self, task_id: str, task_index: int | None = None) -> tuple[bool, ChangeEditorPropsCount]:  # noqa: PLR0911
         """1個のタスクに含まれるアノテーションの `editor_props` を変更する。"""
         logger_prefix = f"{task_index + 1!s} 件目 :: " if task_index is not None else ""
         task = self.service.wrapper.get_task_or_none(self.project_id, task_id)
@@ -232,10 +230,6 @@ class ChangeAnnotationEditorPropsMain(CommandLineWithConfirm):
         old_account_id: str | None = task["account_id"]
         changed_operator = False
         should_change_operator = self.project_member_role == ProjectMemberRole.ACCEPTER and task["account_id"] is not None and task["account_id"] != self.service.api.account_id
-        if should_change_operator and not self.change_operator_to_me:
-            logger.info(f"{logger_prefix}task_id='{task_id}' :: チェッカーロールでeditor_propsを変更するには、`--change_operator_to_me` を指定してください。")
-            return False, ChangeEditorPropsCount(success=0, failed=0)
-
         if should_change_operator:
             logger.debug(f"{logger_prefix}task_id='{task_id}' :: 担当者を自分自身に変更します。")
             task = self.service.wrapper.change_task_operator(
@@ -388,7 +382,6 @@ class ChangeAnnotationEditorProps(CommandLine):
             project_id=project_id,
             target_label_ids=target_label_ids,
             editor_props=editor_props,
-            change_operator_to_me=args.change_operator_to_me,
             include_complete_task=args.include_complete_task,
             include_break_task=args.include_break_task,
             include_on_hold_task=args.include_on_hold_task,
@@ -426,12 +419,6 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         help=f"変更後のエディタ用プロパティをJSON形式で指定します。"
         f"指定できるキーは ``can_delete``, ``can_edit_data``, ``can_edit_additional`` です。"
         f"``file://`` を先頭に付けると、JSON形式のファイルを指定できます。(ex): ``{EXAMPLE_EDITOR_PROPS}``",
-    )
-
-    parser.add_argument(
-        "--change_operator_to_me",
-        action="store_true",
-        help="チェッカーロールで、自身が担当者ではないタスクのeditor_propsを変更する場合に指定してください。タスクの担当者を一時的に自分自身に変更し、editor_propsの変更完了後に元へ戻します。オーナーロールで指定しても効果はありません。",
     )
 
     parser.add_argument(

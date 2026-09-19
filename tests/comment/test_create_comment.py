@@ -180,33 +180,7 @@ def test_add_comments_for_task_logs_include_complete_task_option_for_completed_a
     assert "--include_complete_task" in caplog.text
 
 
-def test_add_comments_for_task_skips_when_not_assigned_to_me_and_change_operator_to_me_is_not_specified() -> None:
-    service = Mock()
-    service.api.account_id = "executor_account"
-    service.api.get_project.return_value = ({"input_data_type": "image"}, None)
-    service.api.get_annotation_specs.return_value = ({"labels": []}, None)
-    service.wrapper.get_task_or_none.return_value = {
-        "task_id": "task1",
-        "input_data_id_list": ["input1"],
-        "status": "not_started",
-        "phase": "inspection",
-        "account_id": "other_account",
-    }
-
-    main_obj = PutCommentMain(service, project_id="project1", comment_type=CommentType.INSPECTION, all_yes=True)
-    result = main_obj.add_comments_for_task(
-        task_id="task1",
-        comments_for_task={"input1": [AddedComment(comment="コメント1", data={"x": 10, "y": 20, "_type": "Point"})]},
-        put_mode="create",
-        change_operator_to_me=False,
-    )
-
-    assert result == (0, 0)
-    service.wrapper.change_task_operator.assert_not_called()
-    service.wrapper.change_task_status_to_working.assert_not_called()
-
-
-def test_add_comments_for_task_processes_unassigned_task_without_change_operator_to_me() -> None:
+def test_add_comments_for_task_processes_unassigned_task() -> None:
     service = Mock()
     service.api.account_id = "executor_account"
     service.api.get_project.return_value = ({"input_data_type": "image"}, None)
@@ -237,7 +211,6 @@ def test_add_comments_for_task_processes_unassigned_task_without_change_operator
         task_id="task1",
         comments_for_task={"input1": [AddedComment(comment="コメント1", data={"x": 10, "y": 20, "_type": "Point"})]},
         put_mode="create",
-        change_operator_to_me=False,
     )
 
     assert result == (1, 1)
@@ -245,30 +218,7 @@ def test_add_comments_for_task_processes_unassigned_task_without_change_operator
     service.wrapper.change_task_operator.assert_any_call("project1", "task1", None)
 
 
-def test_put_comment_for_task_skips_when_not_assigned_to_me_and_change_operator_to_me_is_not_specified() -> None:
-    service = Mock()
-    service.api.account_id = "executor_account"
-    service.wrapper.get_task_or_none.return_value = {
-        "task_id": "task1",
-        "input_data_id_list": ["input1"],
-        "status": "not_started",
-        "phase": "inspection",
-        "account_id": "other_account",
-    }
-
-    main_obj = PutCommentSimplyMain(service, project_id="project1", comment_type=CommentType.INSPECTION, all_yes=True)
-    result = main_obj.put_comment_for_task(
-        task_id="task1",
-        comment_info=AddedSimpleComment(comment="コメント1", data={"x": 10, "y": 20, "_type": "Point"}),
-        change_operator_to_me=False,
-    )
-
-    assert result is False
-    service.wrapper.change_task_operator.assert_not_called()
-    service.wrapper.change_task_status_to_working.assert_not_called()
-
-
-def test_put_comment_for_task_processes_unassigned_task_without_change_operator_to_me() -> None:
+def test_put_comment_for_task_processes_unassigned_task() -> None:
     service = Mock()
     service.api.account_id = "executor_account"
     service.wrapper.get_task_or_none.return_value = {
@@ -294,7 +244,6 @@ def test_put_comment_for_task_processes_unassigned_task_without_change_operator_
     result = main_obj.put_comment_for_task(
         task_id="task1",
         comment_info=AddedSimpleComment(comment="コメント1", data={"x": 10, "y": 20, "_type": "Point"}),
-        change_operator_to_me=False,
     )
 
     assert result
@@ -357,7 +306,7 @@ def test_add_comments_for_task_skips_break_or_on_hold_task_by_default(task_statu
     service.wrapper.change_task_status_to_working.assert_not_called()
 
 
-def test_add_comments_for_task_skips_onhold_comment_when_not_assigned_to_me_and_change_operator_to_me_is_not_specified() -> None:
+def test_add_comments_for_task_worker_skips_onhold_comment_when_not_assigned_to_me() -> None:
     service = Mock()
     service.api.account_id = "account1"
     service.api.get_project.return_value = ({"input_data_type": "image"}, None)
@@ -370,12 +319,11 @@ def test_add_comments_for_task_skips_onhold_comment_when_not_assigned_to_me_and_
         "account_id": "other_account",
     }
 
-    main_obj = PutCommentMain(service, project_id="project1", comment_type=CommentType.ONHOLD, all_yes=True)
+    main_obj = PutCommentMain(service, project_id="project1", comment_type=CommentType.ONHOLD, all_yes=True, can_change_other_operator=False)
     result = main_obj.add_comments_for_task(
         task_id="task1",
         comments_for_task={"input1": [AddedComment(comment="コメント1")]},
         put_mode="create",
-        change_operator_to_me=False,
     )
 
     assert result == (0, 0)

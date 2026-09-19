@@ -28,12 +28,14 @@ logger = logging.getLogger(__name__)
 
 
 class ChangingStatusToOnHoldMain(CommandLineWithConfirm):
-    def __init__(self, service: annofabapi.Resource, project_id: str, *, all_yes: bool) -> None:
+    def __init__(self, service: annofabapi.Resource, project_id: str, *, all_yes: bool, can_operate_other_task: bool = True) -> None:
         super().__init__(all_yes)
         self.service = service
         self.project_id = project_id
         self.facade = AnnofabApiFacade(service)
         self.project_member_repository = ProjectMemberRepository(service)
+        self.can_operate_other_task = can_operate_other_task
+        """自身が担当していないタスクを操作できるかどうか"""
 
     def confirm_change_status_to_on_hold(self, task: Task) -> bool:
         user_id = None
@@ -81,6 +83,10 @@ class ChangingStatusToOnHoldMain(CommandLineWithConfirm):
         def preprocess() -> bool:
             if not match_task_with_query(task, task_query):
                 logger.debug(f"{logging_prefix} : task_id = {task_id} : `--task_query` の条件にマッチしないため、スキップします。 :: task_query={task_query}")
+                return False
+
+            if not self.can_operate_other_task and task.account_id != self.service.api.account_id:
+                logger.info(f"{logging_prefix}: task_id = '{task_id}' のタスクは自身が担当者ではないため、ワーカーロールではステータスを変更できません。スキップします。")
                 return False
 
             if task.status not in [TaskStatus.NOT_STARTED, TaskStatus.BREAK]:
@@ -250,8 +256,10 @@ class ChangingStatusToOnHold(CommandLine):
 
         project_id = args.project_id
         super().validate_project(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.ACCEPTER, ProjectMemberRole.WORKER])
+        my_member, _ = self.service.api.get_my_member_in_project(project_id)
+        can_operate_other_task = ProjectMemberRole(my_member["member_role"]) != ProjectMemberRole.WORKER
 
-        main_obj = ChangingStatusToOnHoldMain(self.service, project_id=project_id, all_yes=self.all_yes)
+        main_obj = ChangingStatusToOnHoldMain(self.service, project_id=project_id, all_yes=self.all_yes, can_operate_other_task=can_operate_other_task)
         main_obj.change_status_to_on_hold(
             task_id_list,
             comment=args.comment,
@@ -290,7 +298,7 @@ def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse
     subcommand_name = "change_status_to_on_hold"
     subcommand_help = "タスクのステータスを保留に変更します。"
     description = "タスクのステータスを保留に変更します。ただし、操作対象のタスクのステータスは休憩中か未着手である必要があります。"
-    epilog = "アノテータ、チェッカーまたはオーナロールを持つユーザで実行してください。"
+    epilog = "アノテータ、チェッカーまたはオーナロールを持つユーザで実行してください。ワーカーロールで実行する場合は、自身が担当するタスクだけを操作できます。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
     parse_args(parser)

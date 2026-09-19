@@ -80,7 +80,6 @@ class CreateInspectionComment(CommandLine):
             parallelism=args.parallelism,
             put_mode="create",
             cancel_acceptance=args.include_complete_task,
-            change_operator_to_me=args.change_operator_to_me,
             include_break_task=args.include_break_task,
             include_on_hold_task=args.include_on_hold_task,
         )
@@ -150,12 +149,6 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--include_on_hold_task",
         action="store_true",
         help="保留中状態のタスクに対しても検査コメントを作成します。ただし、検査コメントの作成後は保留中状態でなくなります。未指定の場合は、保留中状態のタスクはスキップされます。",
-    )
-
-    parser.add_argument(
-        "--change_operator_to_me",
-        action="store_true",
-        help="自身が担当者ではないタスクに検査コメントを作成する場合に指定してください。タスクの担当者を一時的に自分自身に変更し、検査コメントの作成完了後に元へ戻します。",
     )
 
     parser.add_argument(
