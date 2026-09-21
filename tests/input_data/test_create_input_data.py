@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Any
 from unittest.mock import Mock
 
 import pytest
@@ -54,6 +55,11 @@ def test_get_metadata_from_json_args() -> None:
     assert actual == {"priority": "high", "category": "image"}
 
 
+def test_get_metadata_from_json_args_with_invalid_value() -> None:
+    with pytest.raises(ValueError):
+        create_input_data.get_metadata_from_json_args('{"priority":1}')
+
+
 def test_get_input_data_list_from_df_with_common_metadata() -> None:
     csv_path = test_dir / "input_data_with_header.csv"
     df = create_input_data.read_input_data_csv(csv_path)
@@ -98,6 +104,16 @@ def test_get_input_data_list_from_dict_with_invalid_metadata() -> None:
     with pytest.raises(ValueError):
         create_input_data.CreateInputData.get_input_data_list_from_dict(
             [{"input_data_name": "data1", "input_data_path": "file://tests/data/lenna.png", "metadata": {"priority": 1}}],
+            allow_duplicated_input_data=False,
+        )
+
+
+def test_get_input_data_list_from_dict_with_non_dict_element() -> None:
+    input_data_list: list[Any] = [{"input_data_name": "data1", "input_data_path": "file://tests/data/lenna.png"}, "data2"]
+
+    with pytest.raises(TypeError):
+        create_input_data.CreateInputData.get_input_data_list_from_dict(
+            input_data_list,
             allow_duplicated_input_data=False,
         )
 

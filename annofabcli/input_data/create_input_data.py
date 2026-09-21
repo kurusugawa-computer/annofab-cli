@@ -358,6 +358,10 @@ class CreateInputData(CommandLine):
         allow_duplicated_input_data: bool,
         common_metadata: Metadata | None = None,
     ) -> list[CsvInputData]:
+        for index, input_data_dict in enumerate(input_data_dict_list, start=1):
+            if not isinstance(input_data_dict, dict):
+                raise TypeError(f"{index}番目の要素にはオブジェクトを指定してください。")
+
         df = pandas.DataFrame(input_data_dict_list)
         df_duplicated_input_data_name = df[df["input_data_name"].duplicated()]
         if len(df_duplicated_input_data_name) > 0:
@@ -373,9 +377,6 @@ class CreateInputData(CommandLine):
 
         result: list[CsvInputData] = []
         for index, input_data_dict in enumerate(input_data_dict_list, start=1):
-            if not isinstance(input_data_dict, dict):
-                raise TypeError(f"{index}番目の要素にはオブジェクトを指定してください。")
-
             metadata = input_data_dict.get("metadata")
             if metadata is None:
                 metadata = {}
