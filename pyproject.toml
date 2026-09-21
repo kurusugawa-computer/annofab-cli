@@ -118,7 +118,7 @@ ignore = [
     "PERF203", # try-except-in-loop: ループ内でtry-exceptを使うこともあるため無視する。
     "COM812", # missing-trailing-comma: 末尾のカンマを考慮しないため無視する
     "TRY003", # raise-vanilla-args: `ValueError`にf-stringで長いメッセージを渡すことが多いので無視する
-    "FIX", # TODOやFIXMEを使うため無視する
+    "FIX",
     "TD", # TODOコメントの書き方に気にしていないので無視する
     "SIM108", # if-else-block-instead-of-if-exp : if-elseブロックを使うこともあるため無視する
     
