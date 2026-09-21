@@ -42,7 +42,7 @@ def test_to_attribute_value_count_dict():
 
     actual = CountAnnotationMain.to_attribute_value_count_dict(counter)
 
-    assert actual["annotation_count"] == 3
+    assert "annotation_count" not in actual
     assert actual["annotation_count_by_attribute_value"] == {"dog": {"occluded": {"true": 2}}}
     assert "annotation_count_by_label" not in actual
     assert "annotation_count_by_attribute" not in actual

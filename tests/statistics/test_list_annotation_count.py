@@ -59,12 +59,9 @@ class TestListAnnotationCounterByInputData:
         )
 
         counter2 = ListAnnotationCounterByInputData(target_labels=["climatic"], target_attribute_names=[("bird", "occluded")]).get_annotation_counter(annotation)
+        assert counter2.annotation_count == 1
         assert counter2.annotation_count_by_label == collections.Counter({"climatic": 1})
-        assert counter2.annotation_count_by_attribute == collections.Counter(
-            {
-                ("bird", "occluded", "true"): 2,
-            }
-        )
+        assert counter2.annotation_count_by_attribute == collections.Counter()
 
         counter3 = ListAnnotationCounterByInputData(non_target_labels=["bird"]).get_annotation_counter(annotation)
         assert counter3.annotation_count_by_label == collections.Counter({"climatic": 1})
@@ -119,6 +116,7 @@ class TestLabelCountCsv:
 
         df = pandas.read_csv(output_file)
         row = df[df["task_id"] == "sample_1"].iloc[0]
+        assert row["annotation_count"] == 14
         assert row["per_input_data.annotation_count"] == 7.0
         assert row["per_input_data.dog"] == 1.0
         assert row["per_input_data.human"] == 1.0
@@ -151,12 +149,13 @@ class TestAttributeCountCsv:
             output_file=output_file,
             prior_attribute_columns=[("Cat", "occluded", "true"), ("climatic", "temparature", "20")],
             with_per_input_data=True,
+            with_annotation_count=False,
         )
 
         df = pandas.read_csv(output_file, header=[0, 1, 2])
         task_id_column = next(e for e in df.columns if e[0] == "task_id")
         row = df[df[task_id_column] == "sample_1"].iloc[0]
-        per_input_data_annotation_count_column = next(e for e in df.columns if e[0] == "per_input_data.annotation_count")
-        assert row[per_input_data_annotation_count_column] == 7.0
+        assert ("annotation_count", "", "") not in df.columns
+        assert ("per_input_data.annotation_count", "", "") not in df.columns
         assert row[("per_input_data.Cat", "occluded", "true")] == 1.0
         assert row[("per_input_data.climatic", "temparature", "20")] == 1.0

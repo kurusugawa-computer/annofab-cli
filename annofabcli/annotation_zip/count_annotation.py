@@ -76,6 +76,7 @@ class CountAnnotationMain:
         task_json_path: Path | None = None,
         target_task_ids: Collection[str] | None = None,
         task_query: TaskQuery | None = None,
+        target_label_names: Collection[str] | None = None,
         additional_attribute_names: Collection[AttributeNameKey] | None = None,
         specified_attribute_names: Collection[AttributeNameKey] | None = None,
     ) -> list[AnnotationCounterByTask] | list[AnnotationCounterByInputData]:
@@ -102,6 +103,7 @@ class CountAnnotationMain:
         if group_by == GroupBy.INPUT_DATA_ID:
             frame_no_map = ListAnnotationCountMain.get_frame_no_map(task_json_path) if task_json_path is not None else None
             return ListAnnotationCounterByInputData(
+                target_labels=target_label_names,
                 target_attribute_names_only=target_attribute_names_only,
                 frame_no_map=frame_no_map,
             ).get_annotation_counter_list(
@@ -111,6 +113,7 @@ class CountAnnotationMain:
             )
 
         return ListAnnotationCounterByTask(
+            target_labels=target_label_names,
             target_attribute_names_only=target_attribute_names_only,
         ).get_annotation_counter_list(
             annotation_path,
@@ -128,6 +131,7 @@ class CountAnnotationMain:
         task_json_path: Path | None = None,
         target_task_ids: Collection[str] | None = None,
         task_query: TaskQuery | None = None,
+        target_label_names: Collection[str] | None = None,
         with_per_input_data: bool = False,
     ) -> None:
         """
@@ -139,11 +143,16 @@ class CountAnnotationMain:
             task_json_path=task_json_path,
             target_task_ids=target_task_ids,
             task_query=task_query,
+            target_label_names=target_label_names,
         )
         if arg_format == OutputFormat.CSV:
-            label_columns = self.annotation_specs.label_keys()
+            label_columns = list(target_label_names) if target_label_names is not None else self.annotation_specs.label_keys()
             if group_by == GroupBy.INPUT_DATA_ID:
-                LabelCountCsv().print_csv_by_input_data(cast(list[AnnotationCounterByInputData], counter_list), output_file, prior_label_columns=label_columns)
+                LabelCountCsv().print_csv_by_input_data(
+                    cast(list[AnnotationCounterByInputData], counter_list),
+                    output_file,
+                    prior_label_columns=label_columns,
+                )
             else:
                 LabelCountCsv().print_csv_by_task(
                     cast(list[AnnotationCounterByTask], counter_list),
@@ -159,7 +168,7 @@ class CountAnnotationMain:
             output=output_file,
         )
 
-    def print_attribute_value_count(
+    def print_attribute_value_count(  # noqa: PLR0913
         self,
         annotation_path: Path,
         group_by: GroupBy,
@@ -169,6 +178,7 @@ class CountAnnotationMain:
         task_json_path: Path | None = None,
         target_task_ids: Collection[str] | None = None,
         task_query: TaskQuery | None = None,
+        target_label_names: Collection[str] | None = None,
         additional_attribute_names: Collection[AttributeNameKey] | None = None,
         specified_attribute_names: Collection[AttributeNameKey] | None = None,
         with_per_input_data: bool = False,
@@ -182,6 +192,7 @@ class CountAnnotationMain:
             task_json_path=task_json_path,
             target_task_ids=target_task_ids,
             task_query=task_query,
+            target_label_names=target_label_names,
             additional_attribute_names=additional_attribute_names,
             specified_attribute_names=specified_attribute_names,
         )
@@ -189,15 +200,22 @@ class CountAnnotationMain:
             attribute_columns = self.attribute_value_columns(
                 additional_attribute_names=additional_attribute_names,
                 specified_attribute_names=specified_attribute_names,
+                target_label_names=target_label_names,
             )
             if group_by == GroupBy.INPUT_DATA_ID:
-                AttributeCountCsv().print_csv_by_input_data(cast(list[AnnotationCounterByInputData], counter_list), output_file, prior_attribute_columns=attribute_columns)
+                AttributeCountCsv().print_csv_by_input_data(
+                    cast(list[AnnotationCounterByInputData], counter_list),
+                    output_file,
+                    prior_attribute_columns=attribute_columns,
+                    with_annotation_count=False,
+                )
             else:
                 AttributeCountCsv().print_csv_by_task(
                     cast(list[AnnotationCounterByTask], counter_list),
                     output_file,
                     prior_attribute_columns=attribute_columns,
                     with_per_input_data=with_per_input_data,
+                    with_annotation_count=False,
                 )
             return
 
@@ -212,17 +230,21 @@ class CountAnnotationMain:
         *,
         additional_attribute_names: Collection[AttributeNameKey] | None,
         specified_attribute_names: Collection[AttributeNameKey] | None,
+        target_label_names: Collection[str] | None = None,
     ) -> list[tuple[str, str, str]]:
         """CSVの属性値列を、アノテーション仕様の順序に合わせて返します。"""
         if specified_attribute_names is not None:
-            return self.annotation_specs.get_attribute_value_keys_for_target_attributes(specified_attribute_names)
-
-        if additional_attribute_names is not None:
+            attribute_value_keys = self.annotation_specs.get_attribute_value_keys_for_target_attributes(specified_attribute_names)
+        elif additional_attribute_names is not None:
             default_selective_attributes = self.annotation_specs.selective_attribute_name_keys()
             combined_attributes = list(set(default_selective_attributes) | set(additional_attribute_names))
-            return self.annotation_specs.get_attribute_value_keys_for_target_attributes(combined_attributes)
+            attribute_value_keys = self.annotation_specs.get_attribute_value_keys_for_target_attributes(combined_attributes)
+        else:
+            attribute_value_keys = self.annotation_specs.selective_attribute_value_keys()
 
-        return self.annotation_specs.selective_attribute_value_keys()
+        if target_label_names is None:
+            return attribute_value_keys
+        return [e for e in attribute_value_keys if e[0] in target_label_names]
 
     @staticmethod
     def to_label_count_dict(counter: AnnotationCounterByTask | AnnotationCounterByInputData) -> dict[str, Any]:
@@ -235,6 +257,7 @@ class CountAnnotationMain:
     def to_attribute_value_count_dict(counter: AnnotationCounterByTask | AnnotationCounterByInputData) -> dict[str, Any]:
         """属性値ごとのアノテーション数だけを含むdictに変換します。"""
         result = counter.to_dict(encode_json=True)
+        result.pop("annotation_count")
         result.pop("annotation_count_by_label")
         result["annotation_count_by_attribute_value"] = result.pop("annotation_count_by_attribute")
         return result
@@ -261,6 +284,7 @@ class CountAnnotation(CommandLine):
 
         annotation_specs = AnnotationSpecs(self.service, project_id)
         additional_attribute_names, specified_attribute_names = self.get_target_attribute_names(annotation_specs)
+        target_label_names = self.get_target_label_names(annotation_specs)
 
         group_by = GroupBy(args.group_by)
         output_file: Path = args.output
@@ -295,6 +319,7 @@ class CountAnnotation(CommandLine):
                     output_file=output_file,
                     target_task_ids=task_id_list,
                     task_query=task_query,
+                    target_label_names=target_label_names,
                     with_per_input_data=with_per_input_data,
                 )
             else:
@@ -308,6 +333,7 @@ class CountAnnotation(CommandLine):
                     task_query=task_query,
                     additional_attribute_names=additional_attribute_names,
                     specified_attribute_names=specified_attribute_names,
+                    target_label_names=target_label_names,
                     with_per_input_data=with_per_input_data,
                 )
 
@@ -341,6 +367,17 @@ class CountAnnotation(CommandLine):
             return None, specified_attribute_names
 
         return None, None
+
+    def get_target_label_names(self, annotation_specs: AnnotationSpecs) -> list[str] | None:
+        """集計で利用するラベル名を取得します。"""
+        if self.args.label_name is None:
+            return None
+
+        label_name_list = annofabcli.common.cli.get_list_from_args(self.args.label_name)
+        target_label_names, not_found_names = annotation_specs.get_label_keys_by_label_names(label_name_list)
+        if len(not_found_names) > 0:
+            logger.warning(f"指定されたラベル名のうち、アノテーション仕様に見つからなかったラベル名があります。 :: {not_found_names}")
+        return target_label_names
 
 
 def add_common_arguments(parser: argparse.ArgumentParser) -> None:
@@ -392,6 +429,17 @@ def add_common_arguments(parser: argparse.ArgumentParser) -> None:
     )
 
 
+def add_label_name_argument(parser: argparse.ArgumentParser, *, target_description: str) -> None:
+    """集計対象ラベル名を指定する引数を追加します。"""
+    parser.add_argument(
+        "--label_name",
+        type=str,
+        nargs="+",
+        help=f"集計対象とするラベルの英語名を指定します。指定したラベルに属する{target_description}のみが集計対象になります。"
+        " ``file://`` を先頭に付けると、ラベル名が記載されたファイルを指定できます。",
+    )
+
+
 def add_attribute_value_arguments(parser: argparse.ArgumentParser) -> None:
     """
     count_annotation_by_attribute_value コマンドの引数を追加します。
@@ -405,6 +453,7 @@ def add_attribute_value_arguments(parser: argparse.ArgumentParser) -> None:
         "ラベル名に関係なく、デフォルト属性と指定した属性名を持つ属性が集計対象になります。"
         " ``file://`` を先頭に付けると、属性名が記載されたファイルを指定できます。",
     )
+    add_label_name_argument(parser, target_description="属性値")
     attribute_group.add_argument(
         "--attribute_name",
         type=str,
