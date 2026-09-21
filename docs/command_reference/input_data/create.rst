@@ -57,6 +57,14 @@ CSVのフォーマットは以下の通りです。
     $ annofabcli input_data create --project_id prj1 --csv input_data.csv
 
 
+すべての入力データに共通のメタデータを設定する場合は、 ``--metadata`` にJSONを指定してください。
+
+.. code-block::
+
+    $ annofabcli input_data create --project_id prj1 --csv input_data.csv \
+     --metadata '{"category":"image"}'
+
+
 input_data_idが一致する入力データが既に存在する場合、デフォルトではスキップします。入力データを上書きする場合は、 ``--overwrite`` を指定してください。
 
 
@@ -84,16 +92,20 @@ JSON文字列を指定する場合
             "input_data_name":"data2",
             "input_data_path":"s3://example.com/data2",
             "input_data_id":"id2",
+            "metadata":{"category":"image"}
         }
     ]
 
-JSONのキーは、``--csv`` に指定するCSVファイルの列に対応します。
+JSONのキーは、``--csv`` に指定するCSVファイルの列に対応します。 ``metadata`` を指定すると、その入力データにだけメタデータを設定できます。
 
 ``--json`` にJSON形式の文字列、またはJSONファイルのパスを指定できます。
 
 .. code-block::
 
     $ annofabcli input_data create --project_id prj1 --json file://input_data.json
+
+
+``--metadata`` に指定した共通メタデータと、各入力データの ``metadata`` に同じキーがある場合は、各入力データの ``metadata`` が優先されます。
 
 
 並列処理

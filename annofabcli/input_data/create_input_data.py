@@ -29,9 +29,13 @@ from annofabcli.common.cli import (
 )
 from annofabcli.common.facade import AnnofabApiFacade
 from annofabcli.common.utils import get_file_scheme_path
+from annofabcli.input_data.update_metadata_of_input_data import validate_metadata
 from annofabcli.utils.iterables import batched
 
 logger = logging.getLogger(__name__)
+
+Metadata = dict[str, str]
+"""入力データのメタデータ。"""
 
 
 @dataclass
@@ -43,6 +47,7 @@ class CsvInputData(DataClassJsonMixin):
     input_data_name: str
     input_data_path: str
     input_data_id: str | None = None
+    metadata: Metadata | None = None
 
 
 @dataclass
@@ -54,6 +59,7 @@ class InputDataForCreate(DataClassJsonMixin):
     input_data_name: str
     input_data_path: str
     input_data_id: str
+    metadata: Metadata
 
 
 def convert_input_data_name_to_input_data_id(input_data_name: str) -> str:
@@ -91,6 +97,31 @@ def read_input_data_csv(csv_file: Path) -> pandas.DataFrame:
         df["input_data_id"] = None
 
     return df
+
+
+def get_metadata_from_json_args(metadata_value: str | None) -> Metadata:
+    """JSON引数から、全入力データ共通のメタデータを取得します。
+
+    Args:
+        metadata_value: メタデータを表すJSON文字列、またはJSONファイルのパス
+
+    Returns:
+        全入力データ共通のメタデータ
+
+    Raises:
+        TypeError: JSONがオブジェクトではない場合
+        ValueError: メタデータの値が文字列ではない場合
+    """
+
+    if metadata_value is None:
+        return {}
+
+    metadata = get_json_from_args(metadata_value)
+    if not isinstance(metadata, dict):
+        raise TypeError("オブジェクトを指定してください。")
+    if not validate_metadata(metadata):
+        raise ValueError("メタデータの値には文字列を指定してください。")
+    return metadata
 
 
 def is_duplicated_input_data(df: pandas.DataFrame) -> bool:
@@ -159,6 +190,8 @@ class SubCreateInputData:
 
     def create_input_data(self, project_id: str, input_data: InputDataForCreate, last_updated_datetime: str | None = None) -> None:
         request_body: dict[str, Any] = {"last_updated_datetime": last_updated_datetime}
+        if len(input_data.metadata) > 0:
+            request_body["metadata"] = input_data.metadata
 
         file_path = get_file_scheme_path(input_data.input_data_path)
         if file_path is not None:
@@ -216,6 +249,7 @@ class SubCreateInputData:
             input_data_name=csv_input_data.input_data_name,
             input_data_path=csv_input_data.input_data_path,
             input_data_id=get_final_input_data_id(csv_input_data),
+            metadata=csv_input_data.metadata or {},
         )
         log_message_prefix = f"{input_data_index + 1}件目 :: "
         last_updated_datetime = None
@@ -304,19 +338,25 @@ class CreateInputData(CommandLine):
         logger.info(f"プロジェクト'{project_title}'に、{count_create_input_data} / {len(input_data_list)} 件の入力データを作成しました。")
 
     @staticmethod
-    def get_input_data_list_from_df(df: pandas.DataFrame) -> list[CsvInputData]:
+    def get_input_data_list_from_df(df: pandas.DataFrame, *, common_metadata: Metadata | None = None) -> list[CsvInputData]:
         def create_input_data_from_row(e: Any) -> CsvInputData:  # noqa: ANN401
             input_data_id = e.input_data_id if not pandas.isna(e.input_data_id) else None
             return CsvInputData(
                 input_data_name=e.input_data_name,
                 input_data_path=e.input_data_path,
                 input_data_id=input_data_id,
+                metadata=common_metadata,
             )
 
         return [create_input_data_from_row(e) for e in df.itertuples()]
 
     @staticmethod
-    def get_input_data_list_from_dict(input_data_dict_list: list[dict[str, Any]], allow_duplicated_input_data: bool) -> list[CsvInputData]:  # noqa: FBT001
+    def get_input_data_list_from_dict(
+        input_data_dict_list: list[dict[str, Any]],
+        *,
+        allow_duplicated_input_data: bool,
+        common_metadata: Metadata | None = None,
+    ) -> list[CsvInputData]:
         df = pandas.DataFrame(input_data_dict_list)
         df_duplicated_input_data_name = df[df["input_data_name"].duplicated()]
         if len(df_duplicated_input_data_name) > 0:
@@ -330,7 +370,29 @@ class CreateInputData(CommandLine):
             if not allow_duplicated_input_data:
                 raise RuntimeError("`input_data_path`が重複しています。")
 
-        return [CsvInputData.from_dict(e) for e in input_data_dict_list]
+        result: list[CsvInputData] = []
+        for index, input_data_dict in enumerate(input_data_dict_list, start=1):
+            if not isinstance(input_data_dict, dict):
+                raise TypeError(f"{index}番目の要素にはオブジェクトを指定してください。")
+
+            metadata = input_data_dict.get("metadata")
+            if metadata is None:
+                metadata = {}
+            if not isinstance(metadata, dict):
+                raise TypeError(f"{index}番目の要素の'metadata'にはオブジェクトを指定してください。")
+
+            merged_metadata = None
+            if common_metadata is not None or len(metadata) > 0:
+                merged_metadata = {
+                    **(common_metadata or {}),
+                    **metadata,
+                }
+            if merged_metadata is not None and not validate_metadata(merged_metadata):
+                raise ValueError(f"{index}番目の要素の'metadata'の値には文字列を指定してください。")
+
+            result.append(CsvInputData.from_dict({**input_data_dict, "metadata": merged_metadata}))
+
+        return result
 
     def validate(self, args: argparse.Namespace) -> bool:
         if args.csv is not None and not Path(args.csv).exists():
@@ -353,6 +415,11 @@ class CreateInputData(CommandLine):
 
         project_id = args.project_id
         super().validate_project(project_id, [ProjectMemberRole.OWNER])
+        try:
+            common_metadata = get_metadata_from_json_args(args.metadata)
+        except (TypeError, ValueError) as e:
+            print(f"{self.COMMON_MESSAGE} argument --metadata: {e}", file=sys.stderr)  # noqa: T201
+            sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
         if args.csv is not None:
             try:
@@ -370,7 +437,7 @@ class CreateInputData(CommandLine):
                 )
                 sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
-            input_data_list = self.get_input_data_list_from_df(df)
+            input_data_list = self.get_input_data_list_from_df(df, common_metadata=common_metadata)
             try:
                 validate_no_duplicated_final_input_data_id(input_data_list)
             except ValueError as e:
@@ -384,7 +451,15 @@ class CreateInputData(CommandLine):
                 print(f"{self.COMMON_MESSAGE} argument --json: JSON形式が不正です。オブジェクトの配列を指定してください。", file=sys.stderr)  # noqa: T201
                 sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
-            input_data_list = self.get_input_data_list_from_dict(input_data_dict_list, allow_duplicated_input_data=args.allow_duplicated_input_data)
+            try:
+                input_data_list = self.get_input_data_list_from_dict(
+                    input_data_dict_list,
+                    allow_duplicated_input_data=args.allow_duplicated_input_data,
+                    common_metadata=common_metadata,
+                )
+            except (TypeError, ValueError, RuntimeError) as e:
+                print(f"{self.COMMON_MESSAGE} argument --json: {e}", file=sys.stderr)  # noqa: T201
+                sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
             try:
                 validate_no_duplicated_final_input_data_id(input_data_list)
             except ValueError as e:
@@ -427,9 +502,18 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         help=(
             "作成対象の入力データをJSON形式で指定してください。\n"
             "JSONの各キーは ``--csv`` に渡すCSVの各列に対応しています。\n"
+            "``metadata`` キーを指定した場合は、その入力データにだけメタデータを設定します。\n"
             "``file://`` を先頭に付けるとjsonファイルを指定できます。\n"
             f"(ex) ``{json_sample}``"
         ),
+    )
+
+    parser.add_argument(
+        "--metadata",
+        type=str,
+        help="入力データに設定する共通の ``metadata`` をJSON形式で指定してください。メタデータの値には文字列を指定してください。"
+        " ``file://`` を先頭に付けると、JSON形式のファイルを指定できます。"
+        " ``--json`` に指定した入力データの ``metadata`` と同じキーがある場合は、入力データごとの ``metadata`` が優先されます。",
     )
 
     parser.add_argument(
