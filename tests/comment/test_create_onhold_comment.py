@@ -23,12 +23,12 @@ def test_create_onhold_passes_task_status_options(monkeypatch: pytest.MonkeyPatc
         json="[]",
         csv=None,
         parallelism=4,
-        change_operator_to_me=False,
         include_break_task=True,
         include_on_hold_task=True,
         yes=True,
     )
 
+    service.api.get_my_member_in_project.return_value = ({"member_role": ProjectMemberRole.ACCEPTER.value}, None)
     CreateOnholdComment(service, facade, args).main()
 
     facade.validate_project.assert_called_once_with(
@@ -36,11 +36,10 @@ def test_create_onhold_passes_task_status_options(monkeypatch: pytest.MonkeyPatc
         project_member_roles=[ProjectMemberRole.ACCEPTER, ProjectMemberRole.OWNER, ProjectMemberRole.WORKER],
         organization_member_roles=None,
     )
-    put_comment_main_class.assert_called_once_with(service, project_id="project1", comment_type=CommentType.ONHOLD, all_yes=True)
+    put_comment_main_class.assert_called_once_with(service, project_id="project1", comment_type=CommentType.ONHOLD, all_yes=True, can_change_other_operator=True)
     put_comment_main.add_comments_for_task_list.assert_called_once()
     _, kwargs = put_comment_main.add_comments_for_task_list.call_args
     assert kwargs["parallelism"] == 4
     assert kwargs["put_mode"] == "create"
-    assert kwargs["change_operator_to_me"] is False
     assert kwargs["include_break_task"] is True
     assert kwargs["include_on_hold_task"] is True

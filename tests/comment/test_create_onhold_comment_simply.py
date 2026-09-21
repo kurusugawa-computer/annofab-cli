@@ -22,7 +22,6 @@ def test_create_onhold_simply_parser() -> None:
             "task2",
             "--comment",
             "コメント1",
-            "--change_operator_to_me",
             "--include_break_task",
             "--include_on_hold_task",
             "--yes",
@@ -33,7 +32,6 @@ def test_create_onhold_simply_parser() -> None:
     assert args.project_id == "project1"
     assert args.task_id == ["task1", "task2"]
     assert args.comment == "コメント1"
-    assert args.change_operator_to_me is True
     assert args.include_break_task is True
     assert args.include_on_hold_task is True
 
@@ -50,12 +48,12 @@ def test_create_onhold_simply_puts_onhold_comment(monkeypatch: pytest.MonkeyPatc
         task_id=["task1", "task2"],
         comment="コメント1",
         parallelism=4,
-        change_operator_to_me=False,
         include_break_task=False,
         include_on_hold_task=False,
         yes=True,
     )
 
+    service.api.get_my_member_in_project.return_value = ({"member_role": ProjectMemberRole.ACCEPTER.value}, None)
     CreateOnholdCommentSimply(service, facade, args).main()
 
     facade.validate_project.assert_called_once_with(
@@ -63,7 +61,7 @@ def test_create_onhold_simply_puts_onhold_comment(monkeypatch: pytest.MonkeyPatc
         project_member_roles=[ProjectMemberRole.ACCEPTER, ProjectMemberRole.OWNER, ProjectMemberRole.WORKER],
         organization_member_roles=None,
     )
-    put_comment_main_class.assert_called_once_with(service, project_id="project1", comment_type=CommentType.ONHOLD, all_yes=True)
+    put_comment_main_class.assert_called_once_with(service, project_id="project1", comment_type=CommentType.ONHOLD, all_yes=True, can_change_other_operator=True)
     put_comment_main.put_comment_for_task_list.assert_called_once()
     _, kwargs = put_comment_main.put_comment_for_task_list.call_args
     assert kwargs["task_ids"] == ["task1", "task2"]
@@ -71,6 +69,5 @@ def test_create_onhold_simply_puts_onhold_comment(monkeypatch: pytest.MonkeyPatc
     assert kwargs["comment_info"].data is None
     assert kwargs["comment_info"].phrases is None
     assert kwargs["parallelism"] == 4
-    assert kwargs["change_operator_to_me"] is False
     assert kwargs["include_break_task"] is False
     assert kwargs["include_on_hold_task"] is False

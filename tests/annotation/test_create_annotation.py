@@ -80,34 +80,6 @@ def test_create_request_body__既存アノテーションを変更せず新規�
     assert actual.request_body["details"][1]["editor_props"] == {"can_delete": True}
 
 
-def test_create_for_task__別担当のチェッカーは担当者変更オプションなしではスキップする():
-    service = Mock()
-    service.api.account_id = "my_account_id"
-    service.api.get_my_member_in_project.return_value = ({"member_role": ProjectMemberRole.ACCEPTER.value}, None)
-    service.wrapper.get_task_or_none.return_value = {
-        "task_id": "task_id",
-        "status": TaskStatus.NOT_STARTED.value,
-        "account_id": "other_account_id",
-        "updated_datetime": "2026-08-16T00:00:00+09:00",
-    }
-    obj = CreateAnnotationMain(
-        service,
-        project_id="project_id",
-        include_complete_task=False,
-        include_break_task=False,
-        include_on_hold_task=False,
-        change_operator_to_me=False,
-        all_yes=True,
-        converter=Mock(),
-        backup_dir=None,
-    )
-
-    actual = obj.create_for_task("task_id", {"input_data_id": [Mock()]})
-
-    assert actual == CreateAnnotationCount(success=0, failed=1)
-    service.wrapper.change_task_operator.assert_not_called()
-
-
 @pytest.mark.parametrize(
     ("task_status", "option_name"),
     [
@@ -132,7 +104,6 @@ def test_create_for_task__対象外状態のタスクを処理するオプショ
         include_complete_task=False,
         include_break_task=False,
         include_on_hold_task=False,
-        change_operator_to_me=False,
         all_yes=True,
         converter=Mock(),
         backup_dir=None,

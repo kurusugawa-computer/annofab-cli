@@ -164,7 +164,6 @@ class TestChangeAnnotationEditorPropsMain:
         service: Mock,
         *,
         project_member_role: ProjectMemberRole,
-        change_operator_to_me: bool = False,
         include_break_task: bool = False,
     ) -> ChangeAnnotationEditorPropsMain:
         service.api.account_id = "account_id"
@@ -174,7 +173,6 @@ class TestChangeAnnotationEditorPropsMain:
             project_id="prj1",
             target_label_ids={"label_car"},
             editor_props={"can_delete": False},
-            change_operator_to_me=change_operator_to_me,
             include_complete_task=False,
             include_break_task=include_break_task,
             include_on_hold_task=False,
@@ -197,7 +195,7 @@ class TestChangeAnnotationEditorPropsMain:
             "account_id": "operator1",
             "updated_datetime": "2026-05-22T00:00:00+09:00",
         }
-        main_obj = self._create_main_obj(service, project_member_role=ProjectMemberRole.OWNER, change_operator_to_me=True)
+        main_obj = self._create_main_obj(service, project_member_role=ProjectMemberRole.OWNER)
 
         actual = main_obj.change_editor_props_for_task("task1")
 
@@ -214,7 +212,7 @@ class TestChangeAnnotationEditorPropsMain:
             "account_id": "other_account_id",
             "updated_datetime": "2026-05-22T00:00:00+09:00",
         }
-        main_obj = self._create_main_obj(service, project_member_role=ProjectMemberRole.OWNER, change_operator_to_me=True)
+        main_obj = self._create_main_obj(service, project_member_role=ProjectMemberRole.OWNER)
         self._set_change_target(main_obj)
 
         actual = main_obj.change_editor_props_for_task("task1")
@@ -239,24 +237,6 @@ class TestChangeAnnotationEditorPropsMain:
         assert actual == (True, ChangeEditorPropsCount(success=1, failed=0))
         service.wrapper.change_task_operator.assert_not_called()
 
-    def test_change_editor_props_for_task_checker_not_assigned_to_task_requires_option(self) -> None:
-        service = Mock()
-        service.wrapper.get_task_or_none.return_value = {
-            "task_id": "task1",
-            "phase": "annotation",
-            "status": TaskStatus.NOT_STARTED.value,
-            "account_id": "other_account_id",
-            "updated_datetime": "2026-05-22T00:00:00+09:00",
-        }
-        main_obj = self._create_main_obj(service, project_member_role=ProjectMemberRole.ACCEPTER)
-        self._set_change_target(main_obj)
-
-        actual = main_obj.change_editor_props_for_task("task1")
-
-        assert actual == (False, ChangeEditorPropsCount(success=0, failed=0))
-        cast(Mock, main_obj.confirm_processing).assert_not_called()
-        cast(Mock, main_obj.change_editor_props_by_input_data).assert_not_called()
-
     def test_change_editor_props_for_task_checker_not_assigned_to_task_changes_operator(self) -> None:
         service = Mock()
         task = {
@@ -268,7 +248,7 @@ class TestChangeAnnotationEditorPropsMain:
         }
         service.wrapper.get_task_or_none.return_value = task
         service.wrapper.change_task_operator.return_value = task
-        main_obj = self._create_main_obj(service, project_member_role=ProjectMemberRole.ACCEPTER, change_operator_to_me=True)
+        main_obj = self._create_main_obj(service, project_member_role=ProjectMemberRole.ACCEPTER)
         self._set_change_target(main_obj)
 
         actual = main_obj.change_editor_props_for_task("task1")
