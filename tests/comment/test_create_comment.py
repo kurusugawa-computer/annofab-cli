@@ -63,6 +63,7 @@ def test_put_comment_rounds_image_coordinates() -> None:
 def test_put_simple_comment_rounds_image_coordinates() -> None:
     service = Mock()
     service.api.account_id = "account1"
+    service.api.get_project.return_value = ({"input_data_type": "image"}, None)
     main_obj = PutCommentSimplyMain(service, project_id="project1", comment_type=CommentType.INSPECTION)
 
     request_body = main_obj._create_request_body(
@@ -71,6 +72,20 @@ def test_put_simple_comment_rounds_image_coordinates() -> None:
     )
 
     assert request_body[0]["comment_node"]["data"] == {"x": 1, "y": 3, "_type": "Point"}
+
+
+def test_put_simple_comment_does_not_round_custom_project_data() -> None:
+    service = Mock()
+    service.api.account_id = "account1"
+    service.api.get_project.return_value = ({"input_data_type": "custom"}, None)
+    main_obj = PutCommentSimplyMain(service, project_id="project1", comment_type=CommentType.INSPECTION)
+
+    request_body = main_obj._create_request_body(
+        task={"phase": "inspection", "phase_stage": 1},
+        comment_info=AddedSimpleComment(comment="コメント1", data={"x": 1.4, "y": 2.6, "_type": "Point"}),
+    )
+
+    assert request_body[0]["comment_node"]["data"] == {"x": 1.4, "y": 2.6, "_type": "Point"}
 
 
 def test_convert_cli_onhold_comment_list() -> None:
@@ -256,6 +271,7 @@ def test_add_comments_for_task_processes_unassigned_task() -> None:
 def test_put_comment_for_task_processes_unassigned_task() -> None:
     service = Mock()
     service.api.account_id = "executor_account"
+    service.api.get_project.return_value = ({"input_data_type": "image"}, None)
     service.wrapper.get_task_or_none.return_value = {
         "task_id": "task1",
         "input_data_id_list": ["input1"],
@@ -289,6 +305,7 @@ def test_put_comment_for_task_processes_unassigned_task() -> None:
 def test_put_comment_for_task_logs_include_complete_task_option_for_completed_acceptance_task(caplog: pytest.LogCaptureFixture) -> None:
     service = Mock()
     service.api.account_id = "executor_account"
+    service.api.get_project.return_value = ({"input_data_type": "image"}, None)
     service.wrapper.get_task_or_none.return_value = {
         "task_id": "task1",
         "input_data_id_list": ["input1"],
@@ -368,6 +385,7 @@ def test_add_comments_for_task_worker_skips_onhold_comment_when_not_assigned_to_
 def test_put_comment_for_task_cancels_acceptance_before_creating_simple_inspection_comment() -> None:
     service = Mock()
     service.api.account_id = "executor_account"
+    service.api.get_project.return_value = ({"input_data_type": "image"}, None)
     service.wrapper.get_task_or_none.return_value = {
         "task_id": "task1",
         "input_data_id_list": ["input1"],
@@ -431,6 +449,7 @@ def test_put_comment_for_task_cancels_acceptance_before_creating_simple_inspecti
 def test_put_comment_for_task_does_not_cancel_acceptance_when_confirm_declined() -> None:
     service = Mock()
     service.api.account_id = "executor_account"
+    service.api.get_project.return_value = ({"input_data_type": "image"}, None)
     service.wrapper.get_task_or_none.return_value = {
         "task_id": "task1",
         "input_data_id_list": ["input1"],

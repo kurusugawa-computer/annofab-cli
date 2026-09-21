@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 def round_image_inspection_comment_data(data: dict[str, Any]) -> dict[str, Any]:
     """画像用検査コメントの座標値を整数に丸めます。"""
-    if data.get("_type") != "Point":
+    if data["_type"] != "Point":
         return data
 
     result = copy.deepcopy(data)
