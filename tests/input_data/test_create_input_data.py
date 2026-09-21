@@ -1,3 +1,4 @@
+from collections import UserDict
 from pathlib import Path
 from typing import Any
 from unittest.mock import Mock
@@ -121,6 +122,14 @@ def test_get_input_data_list_from_dict_with_invalid_metadata() -> None:
         )
 
 
+def test_get_input_data_list_from_dict_with_missing_required_key() -> None:
+    with pytest.raises(TypeError):
+        create_input_data.CreateInputData.get_input_data_list_from_dict(
+            [{"input_data_name": "data1"}],
+            allow_duplicated_input_data=False,
+        )
+
+
 def test_get_input_data_list_from_dict_with_non_dict_element() -> None:
     input_data_list: list[Any] = [{"input_data_name": "data1", "input_data_path": "file://tests/data/lenna.png"}, "data2"]
 
@@ -129,6 +138,22 @@ def test_get_input_data_list_from_dict_with_non_dict_element() -> None:
             input_data_list,
             allow_duplicated_input_data=False,
         )
+
+
+def test_get_input_data_list_from_dict_with_mapping_metadata() -> None:
+    actual = create_input_data.CreateInputData.get_input_data_list_from_dict(
+        [{"input_data_name": "data1", "input_data_path": "file://tests/data/lenna.png", "metadata": UserDict({"country": "japan"})}],
+        allow_duplicated_input_data=False,
+    )
+
+    assert actual == [
+        create_input_data.CsvInputData(
+            input_data_name="data1",
+            input_data_path="file://tests/data/lenna.png",
+            input_data_id=None,
+            metadata={"country": "japan"},
+        )
+    ]
 
 
 def test_create_input_data_with_metadata() -> None:

@@ -2,7 +2,7 @@ import argparse
 import logging
 import re
 import sys
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from functools import partial
 from multiprocessing import Pool
@@ -361,6 +361,8 @@ class CreateInputData(CommandLine):
         for index, input_data_dict in enumerate(input_data_dict_list, start=1):
             if not isinstance(input_data_dict, dict):
                 raise TypeError(f"{index}番目の要素にはオブジェクトを指定してください。")
+            if "input_data_name" not in input_data_dict or "input_data_path" not in input_data_dict:
+                raise TypeError(f"{index}番目の要素には 'input_data_name' と 'input_data_path' キーを指定してください。")
 
         df = pandas.DataFrame(input_data_dict_list)
         df_duplicated_input_data_name = df[df["input_data_name"].duplicated()]
@@ -380,8 +382,9 @@ class CreateInputData(CommandLine):
             metadata = input_data_dict.get("metadata")
             if metadata is None:
                 metadata = {}
-            if not isinstance(metadata, dict):
+            if not isinstance(metadata, Mapping):
                 raise TypeError(f"{index}番目の要素の'metadata'にはオブジェクトを指定してください。")
+            metadata = dict(metadata)
 
             merged_metadata = None
             if common_metadata is not None or len(metadata) > 0:
