@@ -3,7 +3,7 @@ from __future__ import annotations
 import argparse
 
 import annofabcli.common.cli
-from annofabcli.annotation_zip.count_annotation import add_common_arguments, main_label
+from annofabcli.annotation_zip.count_annotation import add_common_arguments, add_label_name_argument, main_label
 
 
 def parse_args(parser: argparse.ArgumentParser) -> None:
@@ -14,6 +14,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         parser: argparseのArgumentParserインスタンス
     """
     add_common_arguments(parser)
+    add_label_name_argument(parser, target_description="アノテーション")
     parser.set_defaults(subcommand_func=main_label)
 
 

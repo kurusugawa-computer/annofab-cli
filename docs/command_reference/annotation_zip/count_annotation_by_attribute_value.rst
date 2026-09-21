@@ -25,7 +25,6 @@ Examples
 
     [
     {
-        "annotation_count": 130,
         "annotation_count_by_attribute_value": {
             "car": {
                 "occlusion": {
@@ -64,6 +63,8 @@ Examples
 * ``--additional_attribute_name`` : デフォルトの選択肢系属性に加えて、指定した属性を集計対象にします。
 * ``--attribute_name`` : 指定した属性のみを集計対象にします（デフォルトの選択肢系属性は含まれません）。
 
+``--label_name`` を指定すると、指定したラベルに属する属性値だけを出力します。 ``--attribute_name`` または ``--additional_attribute_name`` と併用した場合は、ラベル名と属性名の両方に一致する属性値だけを出力します。
+
 デフォルトではタスク単位でアノテーション数を集計します。入力データ単位に集計する場合は、 ``--group_by input_data_id`` を指定してください。
 
 ``--annotation`` にアノテーションzipまたはzipを展開したディレクトリを指定できます。
@@ -93,7 +94,6 @@ CSV出力
       --group_by task_id --with_per_input_data --output out_by_task_attribute_value.csv
 
 追加される属性値列は、CSVの1段目の列名が ``per_input_data.<label_name>`` 形式になります。
-全アノテーション数に対する入力データあたりの値は ``per_input_data.annotation_count`` 列に出力されます。
 
 
 Command line options
