@@ -27,6 +27,7 @@ Available Commands
    put
    update
    update_metadata
+   update_metadata_per_input_data
 
 Usage Details
 =================================

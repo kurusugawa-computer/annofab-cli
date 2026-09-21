@@ -126,7 +126,9 @@ Examples
 タスクごとにメタデータを指定する
 --------------------------------------
 
-``--metadata_by_task_id`` を指定すれば、タスクごとにメタデータを指定できます。
+.. warning::
+
+    ``--metadata_by_task_id`` は非推奨です。代わりに :doc:`update_metadata_per_task` コマンドを使用してください。
 
 
 .. code-block:: json

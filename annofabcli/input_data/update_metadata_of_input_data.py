@@ -34,6 +34,8 @@ Metadata = dict[str, str]
 値はstr型しか指定できない。
 """
 
+DEPRECATED_METADATA_BY_INPUT_DATA_ID_MESSAGE = "[DEPRECATED] :: '--metadata_by_input_data_id' は非推奨です。代わりに `input_data update_metadata_per_input_data --json` を使用してください。"
+
 
 @dataclass(frozen=True)
 class InputDataMetadataInfo:
@@ -191,6 +193,7 @@ class UpdateMetadata(CommandLine):
             metadata_by_input_data_id = {input_data_id: copy.deepcopy(metadata) for input_data_id in input_data_id_list}
 
         elif args.metadata_by_input_data_id is not None:
+            logger.warning(DEPRECATED_METADATA_BY_INPUT_DATA_ID_MESSAGE)
             metadata_by_input_data_id = annofabcli.common.cli.get_json_from_args(args.metadata_by_input_data_id)
 
             input_data_ids_containing_invalid_metadata = []
@@ -244,7 +247,8 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--metadata_by_input_data_id",
         type=str,
         help=(
-            "キーが入力データID, 値がメタデータ( ``--metadata`` 参照)であるオブジェクトをJSON形式で指定してください。\n"
+            "[DEPRECATED] キーが入力データID, 値がメタデータ( ``--metadata`` 参照)であるオブジェクトをJSON形式で指定してください。\n"
+            "代わりに ``input_data update_metadata_per_input_data --json`` を使用してください。\n"
             f"(ex) '{json.dumps(sample_metadata_by_input_data_id)}'\n"
             " ``file://`` を先頭に付けると、JSON形式のファイルを指定できます。"
         ),

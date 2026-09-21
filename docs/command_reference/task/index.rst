@@ -34,6 +34,7 @@ Available Commands
    reject
    reject_with_inspection_comments
    update_metadata
+   update_metadata_per_task
 
 Usage Details
 =================================

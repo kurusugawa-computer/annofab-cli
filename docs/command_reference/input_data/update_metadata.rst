@@ -108,7 +108,9 @@ Examples
 入力データごとにメタデータを指定する
 --------------------------------------
 
-``--metadata_by_input_data_id`` を指定すれば、入力データごとにメタデータを指定できます。
+.. warning::
+
+    ``--metadata_by_input_data_id`` は非推奨です。代わりに :doc:`update_metadata_per_input_data` コマンドを使用してください。
 
 
 .. code-block:: json
