@@ -151,12 +151,13 @@ class TestAttributeCountCsv:
             output_file=output_file,
             prior_attribute_columns=[("Cat", "occluded", "true"), ("climatic", "temparature", "20")],
             with_per_input_data=True,
+            with_annotation_count=False,
         )
 
         df = pandas.read_csv(output_file, header=[0, 1, 2])
         task_id_column = next(e for e in df.columns if e[0] == "task_id")
         row = df[df[task_id_column] == "sample_1"].iloc[0]
-        per_input_data_annotation_count_column = next(e for e in df.columns if e[0] == "per_input_data.annotation_count")
-        assert row[per_input_data_annotation_count_column] == 7.0
+        assert ("annotation_count", "", "") not in df.columns
+        assert ("per_input_data.annotation_count", "", "") not in df.columns
         assert row[("per_input_data.Cat", "occluded", "true")] == 1.0
         assert row[("per_input_data.climatic", "temparature", "20")] == 1.0

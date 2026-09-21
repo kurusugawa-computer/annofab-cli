@@ -25,7 +25,6 @@ Examples
 
     [
     {
-        "annotation_count": 130,
         "annotation_count_by_attribute_value": {
             "car": {
                 "occlusion": {
@@ -93,7 +92,6 @@ CSV出力
       --group_by task_id --with_per_input_data --output out_by_task_attribute_value.csv
 
 追加される属性値列は、CSVの1段目の列名が ``per_input_data.<label_name>`` 形式になります。
-全アノテーション数に対する入力データあたりの値は ``per_input_data.annotation_count`` 列に出力されます。
 
 
 Command line options

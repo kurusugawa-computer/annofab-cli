@@ -586,6 +586,7 @@ class AttributeCountCsv:
         output_file: Path,
         prior_attribute_columns: list[AttributeValueKey] | None = None,
         with_per_input_data: bool = False,  # noqa: FBT001, FBT002
+        with_annotation_count: bool = True,  # noqa: FBT001, FBT002
     ) -> None:
         """
         タスク単位の属性値ごとアノテーション数をCSVファイルに出力します。
@@ -594,20 +595,23 @@ class AttributeCountCsv:
             counter_list: タスク単位のアノテーション集計情報のリスト
             output_file: 出力先CSVファイルのパス
             prior_attribute_columns: 優先的に配置する属性値のキーのリスト
+            with_per_input_data: 入力データあたりの属性値ごとのアノテーション数を出力するかどうか
+            with_annotation_count: アノテーション総数を出力するかどうか
         """
 
         def get_columns() -> list[AttributeValueKey]:
-            basic_columns = [
+            basic_columns: list[AttributeValueKey] = [
                 ("project_id", "", ""),
                 ("task_id", "", ""),
                 ("task_phase", "", ""),
                 ("task_phase_stage", "", ""),
                 ("task_status", "", ""),
                 ("input_data_count", "", ""),
-                ("annotation_count", "", ""),
             ]
+            if with_annotation_count:
+                basic_columns.append(("annotation_count", "", ""))
             value_columns = self._value_columns(counter_list, prior_attribute_columns)
-            per_input_data_columns = self._per_input_data_columns(value_columns, with_annotation_count=True) if with_per_input_data else []
+            per_input_data_columns = self._per_input_data_columns(value_columns, with_annotation_count=with_annotation_count) if with_per_input_data else []
             return basic_columns + value_columns + per_input_data_columns
 
         def to_cell(c: AnnotationCounterByTask) -> dict[AttributeValueKey, Any]:
@@ -618,11 +622,13 @@ class AttributeCountCsv:
                 ("task_phase", "", ""): c.task_phase.value,
                 ("task_phase_stage", "", ""): c.task_phase_stage,
                 ("input_data_count", "", ""): c.input_data_count,
-                ("annotation_count", "", ""): c.annotation_count,
             }
+            if with_annotation_count:
+                cell[("annotation_count", "", "")] = c.annotation_count
             cell.update(c.annotation_count_by_attribute)
             if with_per_input_data:
-                cell[(f"{PER_INPUT_DATA_COLUMN_PREFIX}.annotation_count", "", "")] = self._per_input_data_value(c.annotation_count, c.input_data_count)
+                if with_annotation_count:
+                    cell[(f"{PER_INPUT_DATA_COLUMN_PREFIX}.annotation_count", "", "")] = self._per_input_data_value(c.annotation_count, c.input_data_count)
                 cell.update({self._per_input_data_column(k): self._per_input_data_value(v, c.input_data_count) for k, v in c.annotation_count_by_attribute.items()})
             return cell
 
@@ -639,6 +645,7 @@ class AttributeCountCsv:
         counter_list: list[AnnotationCounterByInputData],
         output_file: Path,
         prior_attribute_columns: list[AttributeValueKey] | None = None,
+        with_annotation_count: bool = True,  # noqa: FBT001, FBT002
     ) -> None:
         """
         入力データ単位の属性値ごとアノテーション数をCSVファイルに出力します。
@@ -647,10 +654,11 @@ class AttributeCountCsv:
             counter_list: 入力データ単位のアノテーション集計情報のリスト
             output_file: 出力先CSVファイルのパス
             prior_attribute_columns: 優先的に配置する属性値のキーのリスト
+            with_annotation_count: アノテーション総数を出力するかどうか
         """
 
         def get_columns() -> list[AttributeValueKey]:
-            basic_columns = [
+            basic_columns: list[AttributeValueKey] = [
                 ("project_id", "", ""),
                 ("task_id", "", ""),
                 ("task_phase", "", ""),
@@ -660,8 +668,9 @@ class AttributeCountCsv:
                 ("input_data_name", "", ""),
                 ("frame_no", "", ""),
                 ("updated_datetime", "", ""),
-                ("annotation_count", "", ""),
             ]
+            if with_annotation_count:
+                basic_columns.append(("annotation_count", "", ""))
             value_columns = self._value_columns(counter_list, prior_attribute_columns)
             return basic_columns + value_columns
 
@@ -676,8 +685,9 @@ class AttributeCountCsv:
                 ("task_status", "", ""): c.task_status.value,
                 ("task_phase", "", ""): c.task_phase.value,
                 ("task_phase_stage", "", ""): c.task_phase_stage,
-                ("annotation_count", "", ""): c.annotation_count,
             }
+            if with_annotation_count:
+                cell[("annotation_count", "", "")] = c.annotation_count
             cell.update(c.annotation_count_by_attribute)
 
             return cell
