@@ -70,6 +70,16 @@ AddedComments = dict[str, AddedCommentsForTask]
 keyはtask_id
 """
 
+
+def _create_added_comments_for_task() -> AddedCommentsForTask:
+    """タスク配下のコメント一覧を作成する。
+
+    multiprocessing.Poolで子プロセスへ渡す際にpickleできるよう、
+    default_factoryにはlambdaではなくモジュール直下の名前付き関数を使用する。
+    """
+    return defaultdict(list)
+
+
 CommentPutMode = Literal["put", "create", "update"]
 """
 コメント登録時の動作モード
@@ -659,7 +669,7 @@ def convert_cli_inspection_comment_list(comment_list: list[dict[str, Any]]) -> A
         comment_id: str | None = None
         """コメントID。省略時はUUIDv4が自動生成される。"""
 
-    result: AddedComments = defaultdict(lambda: defaultdict(list))
+    result: AddedComments = defaultdict(_create_added_comments_for_task)
     for comment in comment_list:
         tmp = AddedInspectionComment.from_dict(comment)
         result[tmp.task_id][tmp.input_data_id].append(AddedComment(comment=tmp.comment, data=tmp.data, annotation_id=tmp.annotation_id, phrases=tmp.phrases, comment_id=tmp.comment_id))
@@ -735,7 +745,7 @@ def convert_cli_onhold_comment_list(comment_list: list[dict[str, Any]]) -> Added
         comment_id: str | None = None
         """コメントID。省略時はUUIDv4が自動生成される。"""
 
-    result: AddedComments = defaultdict(lambda: defaultdict(list))
+    result: AddedComments = defaultdict(_create_added_comments_for_task)
     for comment in comment_list:
         tmp = AddedOnholdComment.from_dict(comment)
         result[tmp.task_id][tmp.input_data_id].append(AddedComment(comment=tmp.comment, annotation_id=tmp.annotation_id, data=None, phrases=None, comment_id=tmp.comment_id))
@@ -765,7 +775,7 @@ def read_inspection_comment_csv(csv_file: Path) -> AddedComments:
         raise ValueError(f"必須カラムが不足しています: {missing_columns}")
 
     # データ構築
-    result: AddedComments = defaultdict(lambda: defaultdict(list))
+    result: AddedComments = defaultdict(_create_added_comments_for_task)
     for idx, row_dict in enumerate(df.to_dict(orient="records"), start=2):  # CSVの行番号は2から（ヘッダーが1行目）
         task_id = row_dict["task_id"]
         input_data_id = row_dict["input_data_id"]
@@ -823,7 +833,7 @@ def read_onhold_comment_csv(csv_file: Path) -> AddedComments:
         raise ValueError(f"必須カラムが不足しています: {missing_columns}")
 
     # データ構築
-    result: AddedComments = defaultdict(lambda: defaultdict(list))
+    result: AddedComments = defaultdict(_create_added_comments_for_task)
     for row_dict in df.to_dict(orient="records"):
         task_id = row_dict["task_id"]
         input_data_id = row_dict["input_data_id"]

@@ -1,4 +1,5 @@
 import logging
+import pickle
 from pathlib import Path
 from unittest.mock import Mock, patch
 
@@ -37,6 +38,7 @@ def test_convert_cli_inspection_comment_list() -> None:
     assert comment.annotation_id == "annotation1"
     assert comment.phrases == ["phrase1"]
     assert comment.comment_id == "comment1"
+    assert pickle.loads(pickle.dumps(comments)) == comments
 
 
 def test_convert_cli_onhold_comment_list() -> None:
@@ -56,6 +58,7 @@ def test_convert_cli_onhold_comment_list() -> None:
     assert comment.comment == "コメント1"
     assert comment.annotation_id == "annotation1"
     assert comment.comment_id == "comment1"
+    assert pickle.loads(pickle.dumps(comments)) == comments
 
 
 def test_add_comments_for_task_cancels_acceptance_before_creating_inspection_comment() -> None:
@@ -431,6 +434,7 @@ def test_read_inspection_comment_csv(tmp_path: Path) -> None:
     assert comment.annotation_id == "annotation1"
     assert comment.phrases == ["phrase1"]
     assert comment.comment_id == "comment1"
+    assert pickle.loads(pickle.dumps(comments)) == comments
 
 
 def test_read_onhold_comment_csv(tmp_path: Path) -> None:
@@ -443,3 +447,4 @@ def test_read_onhold_comment_csv(tmp_path: Path) -> None:
     assert comment.comment == "コメント1"
     assert comment.annotation_id == "annotation1"
     assert comment.comment_id == "comment1"
+    assert pickle.loads(pickle.dumps(comments)) == comments
