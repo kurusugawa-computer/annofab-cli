@@ -6,6 +6,7 @@ import json
 import logging
 import sys
 from collections import defaultdict
+from collections.abc import Collection
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -27,6 +28,7 @@ from annofabcli.common.cli import (
     CommandLineWithConfirm,
     build_annofabapi_resource_and_login,
     get_json_from_args,
+    get_list_from_args,
 )
 from annofabcli.common.facade import AnnofabApiFacade
 
@@ -45,6 +47,14 @@ class TargetAnnotationData(BaseModel):
     annotation_id: str
     data: dict[str, Any]
     attributes: dict[str, AttributeValue] | None = None
+
+
+def filter_annotation_items_by_task_ids(items: list[TargetAnnotationData], target_task_ids: Collection[str]) -> tuple[list[TargetAnnotationData], set[str]]:
+    """指定されたtask_idに一致するアノテーションだけを返す。"""
+    target_task_id_set = set(target_task_ids)
+    filtered_items = [item for item in items if item.task_id in target_task_id_set]
+    existing_task_ids = {item.task_id for item in filtered_items}
+    return filtered_items, target_task_id_set - existing_task_ids
 
 
 @dataclass(frozen=True)
@@ -342,6 +352,11 @@ class ChangeDataPerAnnotation(CommandLine):
             print(f"{self.COMMON_MESSAGE} argument '--json' または '--csv' のいずれかを指定してください。", file=sys.stderr)  # noqa: T201
             sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
+        if args.task_id is not None:
+            target_annotation_list, not_existing_task_ids = filter_annotation_items_by_task_ids(target_annotation_list, get_list_from_args(args.task_id))
+            if not_existing_task_ids:
+                logger.warning(f"'--task_id'で指定したタスクの内 {len(not_existing_task_ids)} 件は、変更対象データに含まれていません。 :: {sorted(not_existing_task_ids)}")
+
         project_id = args.project_id
 
         if args.backup is None:
@@ -409,6 +424,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "* `task_id`, `input_data_id`, `annotation_id`, `data` の4つのカラムが必要です。`attributes` カラムは任意です。\n"
         f"`data` カラムには、変更後のアノテーションdataを '{json.dumps({'_type': 'Range', 'begin': 1000, 'end': 5000})}' のようにJSON形式で指定します。\n",
     )
+    argument_parser.add_task_id(required=False, help_message="変更対象のアノテーションをtask_idで絞り込みます。 ``--json`` や ``--csv`` で指定したデータのうち、一致したtask_idのみを処理します。")
 
     parser.add_argument(
         "--include_complete_task",
