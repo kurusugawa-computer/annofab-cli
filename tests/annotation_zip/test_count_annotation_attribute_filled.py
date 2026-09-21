@@ -57,6 +57,26 @@ class TestListAnnotationCounterByInputData:
             }
         )
 
+    def test_get_annotation_count__target_labelsを指定した場合は指定ラベルのみ集計する(self):
+        annotation = {
+            "project_id": "project1",
+            "task_id": "task1",
+            "task_phase": "acceptance",
+            "task_phase_stage": 1,
+            "task_status": "complete",
+            "input_data_id": "input1",
+            "input_data_name": "input1",
+            "details": [
+                {"label": "bird", "attributes": {"weight": 4}},
+                {"label": "climatic", "attributes": {"weather": "sunny"}},
+            ],
+            "updated_datetime": "2023-10-01T00:00:00Z",
+        }
+
+        counter = ListAnnotationCounterByInputData(target_labels=["bird"]).get_annotation_count(annotation)
+
+        assert counter.annotation_attribute_counts == collections.Counter({("bird", "weight", "filled"): 1})
+
     def test_get_annotation_count_list(self):
         counter_list = ListAnnotationCounterByInputData().get_annotation_count_list(data_dir / "simple-annotations.zip")
         assert len(counter_list) == 4

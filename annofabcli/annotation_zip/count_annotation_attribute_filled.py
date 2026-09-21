@@ -483,6 +483,7 @@ class CountAnnotationAttributeFilledMain:
         *,
         project_id: str | None = None,
         include_flag_attribute: bool = False,
+        target_label_names: Collection[str] | None = None,
         task_json_path: Path | None = None,
         target_task_ids: Collection[str] | None = None,
         task_query: TaskQuery | None = None,
@@ -491,12 +492,22 @@ class CountAnnotationAttributeFilledMain:
         target_attribute_names: list[AttributeNameKey] | None = None
         if project_id is not None:
             annotation_specs = AnnotationSpecs(self.service, project_id)
+            if target_label_names is not None:
+                target_label_names, not_found_names = annotation_specs.get_label_keys_by_label_names(target_label_names)
+                if len(not_found_names) > 0:
+                    logger.warning(f"指定されたラベル名のうち、アノテーション仕様に見つからなかったラベル名があります。 :: {not_found_names}")
             if not include_flag_attribute:
                 target_attribute_names = annotation_specs.attribute_name_keys(excluded_attribute_types=[AdditionalDataDefinitionType.FLAG])
+                if target_label_names is not None:
+                    target_attribute_names = [e for e in target_attribute_names if e[0] in target_label_names]
 
         frame_no_map = get_frame_no_map(task_json_path) if task_json_path is not None else None
 
-        annotation_count_list_by_input_data = ListAnnotationCounterByInputData(frame_no_map=frame_no_map, target_attribute_names=target_attribute_names).get_annotation_count_list(
+        annotation_count_list_by_input_data = ListAnnotationCounterByInputData(
+            frame_no_map=frame_no_map,
+            target_labels=target_label_names,
+            target_attribute_names=target_attribute_names,
+        ).get_annotation_count_list(
             annotation_path,
             target_task_ids=target_task_ids,
             task_query=task_query,
@@ -561,6 +572,7 @@ class CountAnnotationAttributeFilled(CommandLine):
 
         task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id) if args.task_id is not None else None
         task_query = TaskQuery.from_dict(annofabcli.common.cli.get_json_from_args(args.task_query)) if args.task_query is not None else None
+        target_label_names = annofabcli.common.cli.get_list_from_args(args.label_name) if args.label_name is not None else None
 
         group_by = GroupBy(args.group_by)
         output_file: Path = args.output
@@ -592,6 +604,7 @@ class CountAnnotationAttributeFilled(CommandLine):
                 target_task_ids=task_id_list,
                 task_query=task_query,
                 include_flag_attribute=args.include_flag_attribute,
+                target_label_names=target_label_names,
             )
 
             if annotation_path is None:
@@ -624,6 +637,7 @@ class CountAnnotationAttributeFilled(CommandLine):
                 target_task_ids=task_id_list,
                 task_query=task_query,
                 include_flag_attribute=args.include_flag_attribute,
+                target_label_names=target_label_names,
             )
             func(annotation_path=annotation_path)
 
@@ -664,6 +678,13 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         help="指定した場合は、On/Off属性（チェックボックス）も集計対象にします。"
         "On/Off属性は基本的に常に「入力されている」と判定されるため、デフォルトでは集計対象外にしています。"
         "``--project_id`` が指定されているときのみ有効なオプションです。",
+    )
+
+    parser.add_argument(
+        "--label_name",
+        type=str,
+        nargs="+",
+        help="集計対象とするラベルの英語名を指定します。指定したラベルに属する属性のみが集計対象になります。 ``file://`` を先頭に付けると、ラベル名が記載されたファイルを指定できます。",
     )
 
     argument_parser.add_format(

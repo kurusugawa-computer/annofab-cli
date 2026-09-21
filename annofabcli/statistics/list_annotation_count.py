@@ -313,6 +313,14 @@ class ListAnnotationCounterByInputData:
                 attributes_list.append((label, attribute, convert_attribute_value_to_key(value)))
 
         annotation_count_by_attribute = collections.Counter(attributes_list)
+        if self.target_labels is not None:
+            annotation_count_by_attribute = collections.Counter(
+                {(label, attribute_name, attribute_value): count for (label, attribute_name, attribute_value), count in annotation_count_by_attribute.items() if label in self.target_labels}
+            )
+        if self.non_target_labels is not None:
+            annotation_count_by_attribute = collections.Counter(
+                {(label, attribute_name, attribute_value): count for (label, attribute_name, attribute_value), count in annotation_count_by_attribute.items() if label not in self.non_target_labels}
+            )
         if self.target_attribute_names is not None:
             annotation_count_by_attribute = collections.Counter(
                 {
@@ -901,6 +909,12 @@ class AnnotationSpecs:
         if len(duplicated_labels) > 0:
             logger.warning(f"アノテーション仕様のラベル英語名が重複しています。アノテーション個数が正しく算出できない可能性があります。:: {duplicated_labels}")
         return result
+
+    def get_label_keys_by_label_names(self, label_names: Collection[str]) -> tuple[list[str], list[str]]:
+        """指定されたラベル名のうち、アノテーション仕様に存在するラベル名と存在しないラベル名を返します。"""
+        label_names_set = set(label_names)
+        label_keys = self.label_keys()
+        return [e for e in label_keys if e in label_names_set], list(label_names_set - set(label_keys))
 
     def attribute_name_keys(
         self,
