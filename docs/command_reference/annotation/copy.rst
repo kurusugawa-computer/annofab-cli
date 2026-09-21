@@ -57,11 +57,11 @@ Examples
 
 
 オーナーロールでは、コピー先タスクの担当者や状態を変更せずにアノテーションをコピーできます。
-チェッカーロールで自身が担当者ではないコピー先タスクにコピーするには、 ``--change_operator_to_me`` を指定してください。担当者を一時的に自分自身に変更してアノテーションをコピーします。オーナーロールで指定しても効果はありません。
+チェッカーロールで自身が担当者ではないコピー先タスクにコピーする場合は、担当者を一時的に自分自身に変更してアノテーションをコピーします。
 
 .. code-block::
 
-    $ annofabcli annotation copy -p prj1 --input src_task_id:dest_task_id --change_operator_to_me
+    $ annofabcli annotation copy -p prj1 --input src_task_id:dest_task_id
 
 
 デフォルトでは、休憩中状態のコピー先タスクはアノテーションのコピーをスキップします。

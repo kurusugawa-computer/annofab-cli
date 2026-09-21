@@ -7,9 +7,9 @@ from functools import partial
 from typing import Any
 
 import annofabapi
-from annofabapi.models import CommentType, TaskPhase, TaskStatus
+from annofabapi.models import CommentType, InputDataType, TaskPhase, TaskStatus
 
-from annofabcli.comment.utils import get_comment_type_name
+from annofabcli.comment.utils import get_comment_type_name, round_image_inspection_comment_data
 from annofabcli.common.cli import CommandLineWithConfirm
 from annofabcli.common.facade import AnnofabApiFacade
 
@@ -44,6 +44,7 @@ class PutCommentSimplyMain(CommandLineWithConfirm):
         all_yes: bool = False,  # noqa: FBT001, FBT002
         *,
         can_include_complete_task: bool = False,
+        can_change_other_operator: bool = True,
     ) -> None:
         self.service = service
         self.facade = AnnofabApiFacade(service)
@@ -53,6 +54,12 @@ class PutCommentSimplyMain(CommandLineWithConfirm):
         self.comment_type_name = get_comment_type_name(comment_type)
         self.can_include_complete_task = can_include_complete_task
         """完了状態のタスクを処理するオプションを利用できるかどうか"""
+        self.can_change_other_operator = can_change_other_operator
+        """自身以外が担当するタスクの担当者を一時的に変更できるかどうか"""
+
+        project, _ = self.service.api.get_project(self.project_id)
+        self.input_data_type = InputDataType(project["input_data_type"])
+        """プロジェクトの入力データ種別"""
 
         CommandLineWithConfirm.__init__(self, all_yes)
 
@@ -60,6 +67,9 @@ class PutCommentSimplyMain(CommandLineWithConfirm):
         """batch_update_comments に渡すリクエストボディを作成する。"""
 
         def _convert(comment: AddedSimpleComment) -> dict[str, Any]:
+            data = comment.data
+            if self.input_data_type == InputDataType.IMAGE and data is not None:
+                data = round_image_inspection_comment_data(data)
             return {
                 "comment": comment.comment,
                 "comment_id": comment.comment_id if comment.comment_id is not None else str(uuid.uuid4()),
@@ -67,7 +77,7 @@ class PutCommentSimplyMain(CommandLineWithConfirm):
                 "phase_stage": task["phase_stage"],
                 "comment_type": self.comment_type.value,
                 "account_id": self.service.api.account_id,
-                "comment_node": {"data": comment.data, "status": "open", "_type": "Root"},
+                "comment_node": {"data": data, "status": "open", "_type": "Root"},
                 "phrases": comment.phrases,
                 "_type": "Put",
             }
@@ -153,24 +163,23 @@ class PutCommentSimplyMain(CommandLineWithConfirm):
             return False
         return True
 
-    def _can_change_operator_to_me(self, task: dict[str, Any], *, change_operator_to_me: bool, logging_prefix: str) -> bool:
-        if task["account_id"] is None or task["account_id"] == self.service.api.account_id or change_operator_to_me:
+    def _can_change_other_operator(self, task: dict[str, Any], *, logging_prefix: str) -> bool:
+        if task["account_id"] is None or task["account_id"] == self.service.api.account_id or self.can_change_other_operator:
             return True
 
-        logger.info(f"{logging_prefix} :: task_id='{task['task_id']}' :: 自身が担当者ではないタスクに{self.comment_type_name}を作成するには、`--change_operator_to_me` を指定してください。")
+        logger.info(f"{logging_prefix} :: task_id='{task['task_id']}' :: ワーカーロールでは自身が担当者ではないタスクに{self.comment_type_name}を作成できないため、スキップします。")
         return False
 
     def _can_process_task(
         self,
         task: dict[str, Any],
         *,
-        change_operator_to_me: bool,
         include_break_task: bool,
         include_on_hold_task: bool,
         logging_prefix: str,
     ) -> bool:
-        return self._can_add_comment(task=task, include_break_task=include_break_task, include_on_hold_task=include_on_hold_task) and self._can_change_operator_to_me(
-            task, change_operator_to_me=change_operator_to_me, logging_prefix=logging_prefix
+        return self._can_add_comment(task=task, include_break_task=include_break_task, include_on_hold_task=include_on_hold_task) and self._can_change_other_operator(
+            task, logging_prefix=logging_prefix
         )
 
     def put_comment_for_task(
@@ -180,7 +189,6 @@ class PutCommentSimplyMain(CommandLineWithConfirm):
         task_index: int | None = None,
         *,
         cancel_acceptance: bool = False,
-        change_operator_to_me: bool = True,
         include_break_task: bool = True,
         include_on_hold_task: bool = False,
     ) -> bool:
@@ -192,7 +200,6 @@ class PutCommentSimplyMain(CommandLineWithConfirm):
             comment_info: コメント情報
             task_index: タスクの連番
             cancel_acceptance: Trueなら受入完了状態を取り消してからコメントを付与する。
-            change_operator_to_me: 自身が担当者ではないタスクの担当者を一時的に自分自身へ変更するかどうか。
             include_break_task: 休憩中状態のタスクを処理対象に含めるかどうか。
             include_on_hold_task: 保留中状態のタスクを処理対象に含めるかどうか。
 
@@ -219,7 +226,6 @@ class PutCommentSimplyMain(CommandLineWithConfirm):
 
         if not self._can_process_task(
             task,
-            change_operator_to_me=change_operator_to_me,
             include_break_task=include_break_task,
             include_on_hold_task=include_on_hold_task,
             logging_prefix=logging_prefix,
@@ -253,7 +259,6 @@ class PutCommentSimplyMain(CommandLineWithConfirm):
         comment_info: AddedSimpleComment,
         *,
         cancel_acceptance: bool = False,
-        change_operator_to_me: bool = True,
         include_break_task: bool = True,
         include_on_hold_task: bool = False,
     ) -> bool:
@@ -264,7 +269,6 @@ class PutCommentSimplyMain(CommandLineWithConfirm):
                 comment_info=comment_info,
                 task_index=task_index,
                 cancel_acceptance=cancel_acceptance,
-                change_operator_to_me=change_operator_to_me,
                 include_break_task=include_break_task,
                 include_on_hold_task=include_on_hold_task,
             )
@@ -279,7 +283,6 @@ class PutCommentSimplyMain(CommandLineWithConfirm):
         parallelism: int | None = None,
         *,
         cancel_acceptance: bool = False,
-        change_operator_to_me: bool = True,
         include_break_task: bool = True,
         include_on_hold_task: bool = False,
     ) -> None:
@@ -290,7 +293,6 @@ class PutCommentSimplyMain(CommandLineWithConfirm):
                 self.add_comments_for_task_wrapper,
                 comment_info=comment_info,
                 cancel_acceptance=cancel_acceptance,
-                change_operator_to_me=change_operator_to_me,
                 include_break_task=include_break_task,
                 include_on_hold_task=include_on_hold_task,
             )
@@ -308,7 +310,6 @@ class PutCommentSimplyMain(CommandLineWithConfirm):
                         comment_info=comment_info,
                         task_index=task_index,
                         cancel_acceptance=cancel_acceptance,
-                        change_operator_to_me=change_operator_to_me,
                         include_break_task=include_break_task,
                         include_on_hold_task=include_on_hold_task,
                     )

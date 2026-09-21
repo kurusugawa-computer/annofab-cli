@@ -10,13 +10,13 @@ from functools import partial
 from typing import Any
 
 import annofabapi
-import requests
 from annofabapi.dataclass.task import Task
 from annofabapi.models import InputDataType, ProjectMemberRole, TaskPhase, TaskStatus
 from annofabapi.plugin import EditorPluginId
 from annofabapi.project_member_repository import ProjectMemberRepository
 
 import annofabcli.common.cli
+from annofabcli.comment.utils import round_image_inspection_comment_data
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
     PARALLELISM_CHOICES,
@@ -210,6 +210,8 @@ class RejectTasksMain(CommandLineWithConfirm):
         ):
             return False
 
+        original_operator_account_id = task["account_id"] if inspection_comment is not None else None
+
         if task["status"] == TaskStatus.COMPLETE.value and cancel_acceptance:
             task = self.service.wrapper.cancel_completed_task(project_id, task_id, operator_account_id=self.service.api.account_id, last_updated_datetime=task["updated_datetime"])
             logger.debug(f"{logging_prefix} :: task_id='{task_id}'のタスクに対して受入取消を実施（完了状態から未着手状態に変更）しました。")
@@ -239,15 +241,20 @@ class RejectTasksMain(CommandLineWithConfirm):
                 logger.debug(f"{logging_prefix} :: task_id='{task_id}' のタスクを差し戻しました。タスクの担当者user_id: '{assigned_annotator_user_id}'")
                 return True
 
-        except requests.exceptions.HTTPError:
+        except Exception:  # pylint: disable=broad-except
             logger.warning(f"{logging_prefix} : task_id='{task_id}'のタスクの差し戻しに失敗しました。", exc_info=True)
 
-            task, _ = self.service.api.get_task(project_id, task_id)
-            assert task is not None
+            failed_task, _ = self.service.api.get_task(project_id, task_id)
+            assert failed_task is not None
+            should_restore_operator = inspection_comment is not None and failed_task["account_id"] != original_operator_account_id
             # 作業中状態のまま放置すると、作業時間が超過してしまうため、休憩状態にする
-            if task["status"] == TaskStatus.WORKING.value:
-                self.service.wrapper.change_task_status_to_break(project_id, task_id, last_updated_datetime=task["updated_datetime"])
+            if failed_task["status"] == TaskStatus.WORKING.value:
+                self.service.wrapper.change_task_status_to_break(project_id, task_id, last_updated_datetime=failed_task["updated_datetime"])
                 logger.debug(f"{logging_prefix} :: task_id='{task_id}' のタスクを休憩状態に戻しました。")
+
+            if should_restore_operator:
+                self.service.wrapper.change_task_operator(project_id, task_id, operator_account_id=original_operator_account_id)
+                logger.debug(f"{logging_prefix} :: task_id='{task_id}' の担当者を元のユーザ(account_id='{original_operator_account_id}')に戻しました。")
 
             return False
 
@@ -409,6 +416,9 @@ class RejectTasks(CommandLine):
                         file=sys.stderr,
                     )
                     sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
+
+        if args.comment is not None and project["input_data_type"] == InputDataType.IMAGE.value and comment_data is not None:
+            comment_data = round_image_inspection_comment_data(comment_data)
 
         main_obj = RejectTasksMain(self.service, comment_data=comment_data, all_yes=self.all_yes)
         main_obj.reject_task_list(

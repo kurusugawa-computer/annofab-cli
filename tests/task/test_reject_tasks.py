@@ -1,5 +1,5 @@
 import argparse
-from unittest.mock import Mock
+from unittest.mock import Mock, call
 
 import pytest
 
@@ -49,6 +49,33 @@ def test_reject_task_with_adding_comment_uses_assigned_account_id_without_re_res
     service.wrapper.change_task_operator.assert_called_once_with("project1", "task1", operator_account_id="account1")
 
 
+def test_reject_task_restores_original_operator_when_adding_inspection_comment_fails(monkeypatch: pytest.MonkeyPatch) -> None:
+    service = Mock()
+    service.api.account_id = "executor-account"
+    task = create_task_dict()
+    task["account_id"] = "original-account"
+    working_task = {**task, "account_id": "executor-account", "status": "working", "updated_datetime": "2024-01-01T00:01:00+00:00"}
+    service.wrapper.get_task_or_none.return_value = task
+    service.wrapper.change_task_operator.return_value = {**task, "account_id": "executor-account"}
+    service.wrapper.change_task_status_to_working.return_value = working_task
+    service.api.get_task.return_value = (working_task, None)
+
+    main_obj = reject_tasks.RejectTasksMain(service, comment_data=None, all_yes=True)
+    monkeypatch.setattr(main_obj, "add_inspection_comment", Mock(side_effect=ValueError()))
+
+    result = main_obj.reject_task_with_adding_comment(
+        project_id="project1",
+        task_id="task1",
+        inspection_comment="確認してください",
+    )
+
+    assert result is False
+    assert service.wrapper.change_task_operator.call_args_list == [
+        call("project1", "task1", operator_account_id="executor-account", last_updated_datetime="2024-01-01T00:00:00+00:00"),
+        call("project1", "task1", operator_account_id="original-account"),
+    ]
+
+
 def test_main_resolves_assigned_annotator_user_id_before_reject_task_list(monkeypatch: pytest.MonkeyPatch) -> None:
     service = Mock()
     service.api.get_project.return_value = ({"input_data_type": "image"}, None)
@@ -77,6 +104,32 @@ def test_main_resolves_assigned_annotator_user_id_before_reject_task_list(monkey
     reject_task_list_mock.assert_called_once()
     assert reject_task_list_mock.call_args.kwargs["assigned_annotator"] == reject_tasks.AssignedAnnotator(account_id="account1", user_id="alice")
     assert reject_task_list_mock.call_args.kwargs["assign_last_annotator"] is False
+
+
+def test_main_rounds_image_comment_coordinates(monkeypatch: pytest.MonkeyPatch) -> None:
+    service = Mock()
+    service.api.get_project.return_value = ({"input_data_type": "image"}, None)
+    facade = Mock()
+    args = create_args(comment="コメント1", comment_data='{"x": 1.4, "y": 2.6, "_type": "Point"}')
+    reject_task_list_mock = Mock()
+    instances = []
+
+    class RejectTasksMainStub:
+        def __init__(self, _service, *, comment_data, all_yes):
+            self.comment_data = comment_data
+            self.all_yes = all_yes
+            instances.append(self)
+
+        def reject_task_list(self, *args, **kwargs):
+            reject_task_list_mock(*args, **kwargs)
+
+    monkeypatch.setattr(reject_tasks, "RejectTasksMain", RejectTasksMainStub)
+
+    command = reject_tasks.RejectTasks(service, facade, args)
+    command.main()
+
+    assert reject_task_list_mock.call_args.kwargs["inspection_comment"] == "コメント1"
+    assert instances[0].comment_data == {"x": 1, "y": 3, "_type": "Point"}
 
 
 def test_main_stops_when_assigned_annotator_user_id_is_not_project_member(monkeypatch: pytest.MonkeyPatch) -> None:

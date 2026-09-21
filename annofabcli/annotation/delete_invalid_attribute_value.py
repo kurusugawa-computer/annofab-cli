@@ -312,6 +312,32 @@ class DeleteInvalidAttributeValueMain(CommandLineWithConfirm):
 
         logger.info(f"{success_task_count} / {len(task_id_list)} 件のタスクに対して {deleted_annotation_count} 件のアノテーションから、ラベルに含まれていない属性値を削除しました。")
 
+    def get_target_task_id_list(self, task_id_list: list[str] | None) -> list[str]:
+        """
+        処理対象のタスクID一覧を取得する。
+
+        Args:
+            task_id_list: 引数で指定されたタスクID一覧。
+
+        Returns:
+            処理対象のタスクID一覧。
+        """
+        if task_id_list is not None:
+            return task_id_list
+
+        limit = 200
+        content, _ = self.service.api.get_tasks(self.project_id, query_params={"page": 1, "limit": limit})
+        if content["over_limit"]:
+            raise ValueError("プロジェクト内のタスク数が10,000件を超えているため、全タスクを安全に取得できず処理を中断しました。`--task_id` を指定して対象タスクを絞り込んでください。")
+
+        actual_task_id_list = [e["task_id"] for e in content["list"]]
+        while content["page_no"] < content["total_page_no"]:
+            next_page_no = content["page_no"] + 1
+            content, _ = self.service.api.get_tasks(self.project_id, query_params={"page": next_page_no, "limit": limit})
+            actual_task_id_list.extend(e["task_id"] for e in content["list"])
+
+        return actual_task_id_list
+
 
 class DeleteInvalidAttributeValueOfAnnotation(CommandLine):
     """
@@ -323,7 +349,7 @@ class DeleteInvalidAttributeValueOfAnnotation(CommandLine):
     def main(self) -> None:
         args = self.args
         project_id = args.project_id
-        task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id)
+        task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id) if args.task_id is not None else None
 
         annotation_specs, _ = self.service.api.get_annotation_specs(project_id, query_params={"v": "3"})
         allowed_attribute_ids_by_label_id = get_allowed_attribute_ids_by_label_id(annotation_specs)
@@ -348,8 +374,13 @@ class DeleteInvalidAttributeValueOfAnnotation(CommandLine):
             sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
         main_obj = DeleteInvalidAttributeValueMain(self.service, project_id=project_id, include_complete_task=args.include_complete_task, all_yes=args.yes)
+        try:
+            actual_task_id_list = main_obj.get_target_task_id_list(task_id_list)
+        except ValueError as e:
+            print(f"{self.COMMON_MESSAGE} {e}", file=sys.stderr)  # noqa: T201
+            sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
         main_obj.delete_attribute_value_for_task_list(
-            task_id_list,
+            actual_task_id_list,
             allowed_attribute_ids_by_label_id=allowed_attribute_ids_by_label_id,
             backup_dir=backup_dir,
         )
@@ -364,7 +395,7 @@ def main(args: argparse.Namespace) -> None:
 def parse_args(parser: argparse.ArgumentParser) -> None:
     argument_parser = ArgumentParser(parser)
     argument_parser.add_project_id()
-    argument_parser.add_task_id()
+    argument_parser.add_task_id(required=False)
 
     parser.add_argument(
         "--include_complete_task",

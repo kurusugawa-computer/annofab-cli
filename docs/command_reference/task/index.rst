@@ -32,6 +32,7 @@ Available Commands
    list_all_added_task_history
    put
    reject
+   reject_with_inspection_comments
    update_metadata
    update_metadata_per_task
 
