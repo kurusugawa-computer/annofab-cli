@@ -115,11 +115,13 @@ class TestLabelCountCsv:
             output_file=output_file,
             prior_label_columns=["dog", "human"],
             with_per_input_data=True,
+            with_annotation_count=False,
         )
 
         df = pandas.read_csv(output_file)
         row = df[df["task_id"] == "sample_1"].iloc[0]
-        assert row["per_input_data.annotation_count"] == 7.0
+        assert "annotation_count" not in df.columns
+        assert "per_input_data.annotation_count" not in df.columns
         assert row["per_input_data.dog"] == 1.0
         assert row["per_input_data.human"] == 1.0
         assert row["per_input_data.climatic"] == 1.0

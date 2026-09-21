@@ -1,2 +1,2 @@
-project_id,task_id,task_phase,task_phase_stage,task_status,input_data_count,annotation_count,car,bike
-prj1,task1,acceptance,1,complete,10,70,60,10
+project_id,task_id,task_phase,task_phase_stage,task_status,input_data_count,car,bike
+prj1,task1,acceptance,1,complete,10,60,10

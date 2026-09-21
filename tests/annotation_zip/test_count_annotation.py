@@ -22,7 +22,7 @@ def test_to_label_count_dict():
 
     actual = CountAnnotationMain.to_label_count_dict(counter)
 
-    assert actual["annotation_count"] == 3
+    assert "annotation_count" not in actual
     assert actual["annotation_count_by_label"] == {"dog": 2, "cat": 1}
     assert "annotation_count_by_attribute" not in actual
 

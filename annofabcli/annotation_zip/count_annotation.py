@@ -143,13 +143,19 @@ class CountAnnotationMain:
         if arg_format == OutputFormat.CSV:
             label_columns = self.annotation_specs.label_keys()
             if group_by == GroupBy.INPUT_DATA_ID:
-                LabelCountCsv().print_csv_by_input_data(cast(list[AnnotationCounterByInputData], counter_list), output_file, prior_label_columns=label_columns)
+                LabelCountCsv().print_csv_by_input_data(
+                    cast(list[AnnotationCounterByInputData], counter_list),
+                    output_file,
+                    prior_label_columns=label_columns,
+                    with_annotation_count=False,
+                )
             else:
                 LabelCountCsv().print_csv_by_task(
                     cast(list[AnnotationCounterByTask], counter_list),
                     output_file,
                     prior_label_columns=label_columns,
                     with_per_input_data=with_per_input_data,
+                    with_annotation_count=False,
                 )
             return
 
@@ -234,6 +240,7 @@ class CountAnnotationMain:
     def to_label_count_dict(counter: AnnotationCounterByTask | AnnotationCounterByInputData) -> dict[str, Any]:
         """ラベルごとのアノテーション数だけを含むdictに変換します。"""
         result = counter.to_dict(encode_json=True)
+        result.pop("annotation_count")
         result.pop("annotation_count_by_attribute")
         return result
 
