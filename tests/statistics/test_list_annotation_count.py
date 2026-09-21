@@ -59,6 +59,7 @@ class TestListAnnotationCounterByInputData:
         )
 
         counter2 = ListAnnotationCounterByInputData(target_labels=["climatic"], target_attribute_names=[("bird", "occluded")]).get_annotation_counter(annotation)
+        assert counter2.annotation_count == 1
         assert counter2.annotation_count_by_label == collections.Counter({"climatic": 1})
         assert counter2.annotation_count_by_attribute == collections.Counter()
 
@@ -111,13 +112,12 @@ class TestLabelCountCsv:
             output_file=output_file,
             prior_label_columns=["dog", "human"],
             with_per_input_data=True,
-            with_annotation_count=False,
         )
 
         df = pandas.read_csv(output_file)
         row = df[df["task_id"] == "sample_1"].iloc[0]
-        assert "annotation_count" not in df.columns
-        assert "per_input_data.annotation_count" not in df.columns
+        assert row["annotation_count"] == 14
+        assert row["per_input_data.annotation_count"] == 7.0
         assert row["per_input_data.dog"] == 1.0
         assert row["per_input_data.human"] == 1.0
         assert row["per_input_data.climatic"] == 1.0
