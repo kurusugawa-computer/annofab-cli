@@ -7,9 +7,9 @@ from functools import partial
 from typing import Any
 
 import annofabapi
-from annofabapi.models import CommentType, TaskPhase, TaskStatus
+from annofabapi.models import CommentType, InputDataType, TaskPhase, TaskStatus
 
-from annofabcli.comment.utils import get_comment_type_name
+from annofabcli.comment.utils import get_comment_type_name, round_image_inspection_comment_data
 from annofabcli.common.cli import CommandLineWithConfirm
 from annofabcli.common.facade import AnnofabApiFacade
 
@@ -57,12 +57,19 @@ class PutCommentSimplyMain(CommandLineWithConfirm):
         self.can_change_other_operator = can_change_other_operator
         """自身以外が担当するタスクの担当者を一時的に変更できるかどうか"""
 
+        project, _ = self.service.api.get_project(self.project_id)
+        self.input_data_type = InputDataType(project["input_data_type"])
+        """プロジェクトの入力データ種別"""
+
         CommandLineWithConfirm.__init__(self, all_yes)
 
     def _create_request_body(self, task: dict[str, Any], comment_info: AddedSimpleComment) -> list[dict[str, Any]]:
         """batch_update_comments に渡すリクエストボディを作成する。"""
 
         def _convert(comment: AddedSimpleComment) -> dict[str, Any]:
+            data = comment.data
+            if self.input_data_type == InputDataType.IMAGE and data is not None:
+                data = round_image_inspection_comment_data(data)
             return {
                 "comment": comment.comment,
                 "comment_id": comment.comment_id if comment.comment_id is not None else str(uuid.uuid4()),
@@ -70,7 +77,7 @@ class PutCommentSimplyMain(CommandLineWithConfirm):
                 "phase_stage": task["phase_stage"],
                 "comment_type": self.comment_type.value,
                 "account_id": self.service.api.account_id,
-                "comment_node": {"data": comment.data, "status": "open", "_type": "Root"},
+                "comment_node": {"data": data, "status": "open", "_type": "Root"},
                 "phrases": comment.phrases,
                 "_type": "Put",
             }
