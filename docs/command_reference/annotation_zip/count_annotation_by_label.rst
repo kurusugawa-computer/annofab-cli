@@ -58,6 +58,7 @@ CSV出力
 デフォルトの ``--group_by task_id`` では、1行が1タスクを表します。ラベルの英語名が列名になり、アノテーション仕様に定義されているラベルは、対象アノテーションがなくても列として出力されます。
 
 .. csv-table:: out_by_task.csv
+   :header-rows: 1
    :file: count_annotation_by_label/out_by_task.csv
 
 ``annotation_count`` は、出力されるラベル列の合計です。上記の例では、 ``60 + 10 = 70`` です。
