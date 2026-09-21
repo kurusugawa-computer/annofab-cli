@@ -521,7 +521,6 @@ class ImportAnnotationMain(CommandLineWithConfirm):
         *,
         project_id: str,
         all_yes: bool,
-        change_operator_to_me: bool,
         is_merge: bool,
         is_overwrite: bool,
         include_complete_task: bool,
@@ -536,7 +535,6 @@ class ImportAnnotationMain(CommandLineWithConfirm):
         self.project_id = project_id
         my_member, _ = self.service.api.get_my_member_in_project(project_id)
         self.project_member_role = ProjectMemberRole(my_member["member_role"])
-        self.change_operator_to_me = change_operator_to_me
         self.is_merge = is_merge
         self.is_overwrite = is_overwrite
         self.include_complete_task = include_complete_task
@@ -669,10 +667,6 @@ class ImportAnnotationMain(CommandLineWithConfirm):
             return False
 
         should_change_operator = self.project_member_role == ProjectMemberRole.ACCEPTER and task["account_id"] is not None and task["account_id"] != self.service.api.account_id
-        if should_change_operator and not self.change_operator_to_me:
-            logger.info(f"{logger_prefix}チェッカーロールでアノテーションをインポートするには、`--change_operator_to_me` を指定してください。")
-            return False
-
         if not self.confirm_processing(f"task_id='{task_id}'のタスク（phase={task['phase']}, status={task['status']}）にアノテーションをインポートしますか？"):
             return False
 
@@ -849,7 +843,6 @@ class ImportAnnotation(CommandLine):
             all_yes=self.all_yes,
             is_merge=args.merge,
             is_overwrite=args.overwrite,
-            change_operator_to_me=args.change_operator_to_me,
             include_complete_task=args.include_complete_task,
             include_break_task=args.include_break_task,
             include_on_hold_task=args.include_on_hold_task,
@@ -895,12 +888,6 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         help="アノテーションが存在する場合、 ``--merge`` を指定していればアノテーションをannotation_id単位でマージしながらインポートします。"
         "annotation_idが一致すればアノテーションのデータを更新し、属性は指定したキーだけ更新します。一致しなければアノテーションを追加します。"
         "指定しなければ、アノテーションのインポートをスキップします。",
-    )
-
-    parser.add_argument(
-        "--change_operator_to_me",
-        action="store_true",
-        help="チェッカーロールで、自身が担当者ではないタスクにアノテーションをインポートする場合に指定してください。タスクの担当者を一時的に自分自身に変更し、アノテーションのインポート完了後に元へ戻します。オーナーロールで指定しても効果はありません。",
     )
 
     parser.add_argument(

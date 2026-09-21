@@ -6,6 +6,7 @@ import json
 import logging
 import sys
 from collections import defaultdict
+from collections.abc import Collection
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -29,6 +30,7 @@ from annofabcli.common.cli import (
     CommandLineWithConfirm,
     build_annofabapi_resource_and_login,
     get_json_from_args,
+    get_list_from_args,
 )
 from annofabcli.common.facade import AnnofabApiFacade
 
@@ -91,6 +93,14 @@ def group_annotation_items(items: list[CreateAnnotationItem]) -> dict[str, dict[
     for item in items:
         result[item.task_id][item.input_data_id].append(item)
     return result
+
+
+def filter_annotation_items_by_task_ids(items: list[CreateAnnotationItem], target_task_ids: Collection[str]) -> tuple[list[CreateAnnotationItem], set[str]]:
+    """指定された task_id に一致するアノテーションだけを返す。"""
+    target_task_id_set = set(target_task_ids)
+    filtered_items = [item for item in items if item.task_id in target_task_id_set]
+    existing_task_ids = {item.task_id for item in filtered_items}
+    return filtered_items, target_task_id_set - existing_task_ids
 
 
 def get_annotation_items_from_csv(csv_path: str) -> list[CreateAnnotationItem]:
@@ -191,7 +201,6 @@ class CreateAnnotationMain(CommandLineWithConfirm):
         include_complete_task: bool,
         include_break_task: bool,
         include_on_hold_task: bool,
-        change_operator_to_me: bool,
         all_yes: bool,
         converter: CreateAnnotationConverter,
         backup_dir: Path | None,
@@ -202,7 +211,6 @@ class CreateAnnotationMain(CommandLineWithConfirm):
         self.include_complete_task = include_complete_task
         self.include_break_task = include_break_task
         self.include_on_hold_task = include_on_hold_task
-        self.change_operator_to_me = change_operator_to_me
         self.converter = converter
         self.backup_dir = backup_dir
         self.dump_annotation_obj = DumpAnnotationMain(service, project_id)
@@ -223,7 +231,7 @@ class CreateAnnotationMain(CommandLineWithConfirm):
         self.service.api.put_annotation(self.project_id, task_id, input_data_id, request_body=request.request_body, query_params={"v": "2"})
         return request.count
 
-    def create_for_task(self, task_id: str, items_by_input_data_id: dict[str, list[CreateAnnotationItem]]) -> CreateAnnotationCount:  # noqa: PLR0911
+    def create_for_task(self, task_id: str, items_by_input_data_id: dict[str, list[CreateAnnotationItem]]) -> CreateAnnotationCount:
         """1個のタスクに含まれるアノテーションを作成する。"""
         total_count = sum(len(items) for items in items_by_input_data_id.values())
         task = self.service.wrapper.get_task_or_none(self.project_id, task_id)
@@ -249,9 +257,6 @@ class CreateAnnotationMain(CommandLineWithConfirm):
             )
             return CreateAnnotationCount(success=0, failed=total_count)
         should_change_operator = self.project_member_role == ProjectMemberRole.ACCEPTER and task["account_id"] is not None and task["account_id"] != self.service.api.account_id
-        if should_change_operator and not self.change_operator_to_me:
-            logger.info(f"task_id='{task_id}' :: チェッカーロールでアノテーションを作成するには、`--change_operator_to_me` を指定してください。")
-            return CreateAnnotationCount(success=0, failed=total_count)
         if not self.confirm_processing(f"task_id='{task_id}'に含まれるアノテーション{total_count}件を作成しますか？"):
             return CreateAnnotationCount(success=0, failed=total_count)
 
@@ -322,6 +327,11 @@ class CreateAnnotation(CommandLine):
                 print(f"{self.COMMON_MESSAGE} argument --csv: {e}", file=sys.stderr)  # noqa: T201
                 sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
+        if args.task_id is not None:
+            items, not_existing_task_ids = filter_annotation_items_by_task_ids(items, get_list_from_args(args.task_id))
+            if len(not_existing_task_ids) > 0:
+                logger.warning(f"'--task_id'で指定したタスクの内 {len(not_existing_task_ids)} 件は、作成対象データに含まれていません。 :: {sorted(not_existing_task_ids)}")
+
         if args.backup is None:
             print("間違えてアノテーションを作成したときに復元できるようにするため、'--backup'でバックアップ用のディレクトリを指定することを推奨します。", file=sys.stderr)  # noqa: T201
             if not self.confirm_processing("復元用のバックアップディレクトリが指定されていません。処理を続行しますか？"):
@@ -346,7 +356,6 @@ class CreateAnnotation(CommandLine):
             include_complete_task=args.include_complete_task,
             include_break_task=args.include_break_task,
             include_on_hold_task=args.include_on_hold_task,
-            change_operator_to_me=args.change_operator_to_me,
             all_yes=args.yes,
             converter=converter,
             backup_dir=Path(args.backup) if args.backup is not None else None,
@@ -365,15 +374,11 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     input_group = parser.add_mutually_exclusive_group(required=True)
     input_group.add_argument("--json", type=str, help="各アノテーションの作成内容を記載したJSONリストを指定します。``file://`` を先頭に付けるとJSON形式のファイルを指定できます。")
     input_group.add_argument("--csv", type=str, help="各アノテーションの作成内容を記載したCSVファイルを指定します。`task_id`, `input_data_id`, `label`, `data` カラムが必要です。")
+    argument_parser.add_task_id(required=False, help_message="作成対象のアノテーションをtask_idで絞り込みます。 ``--json`` や ``--csv`` で指定したデータのうち、一致した task_id のみを処理します。")
     parser.add_argument("--editor_props", type=str, help="作成する全アノテーションに付与するエディタ用プロパティをJSON形式で指定します。``file://`` を先頭に付けるとJSON形式のファイルを指定できます。")
     parser.add_argument("--include_complete_task", action="store_true", help="完了状態のタスクにもアノテーションを作成します。オーナーロールが必要です。")
     parser.add_argument("--include_break_task", action="store_true", help="休憩中状態のタスクにもアノテーションを作成します。")
     parser.add_argument("--include_on_hold_task", action="store_true", help="保留中状態のタスクにもアノテーションを作成します。")
-    parser.add_argument(
-        "--change_operator_to_me",
-        action="store_true",
-        help="チェッカーロールで自身が担当者ではないタスクにアノテーションを作成する場合に指定します。担当者を一時的に自分自身に変更し、作成後に元へ戻します。",
-    )
     parser.add_argument("--backup", type=Path, help="アノテーションのバックアップを保存するディレクトリのパス。アノテーションの復元は ``annotation restore`` コマンドで実現できます。")
     parser.set_defaults(subcommand_func=main)
 

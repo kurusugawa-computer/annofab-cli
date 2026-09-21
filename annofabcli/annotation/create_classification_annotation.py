@@ -32,7 +32,6 @@ class CreateClassificationAnnotationMain(CommandLineWithConfirm):
         *,
         project_id: str,
         all_yes: bool,
-        is_change_operator_to_me: bool,
         include_complete_task: bool,
         include_break_task: bool,
         include_on_hold_task: bool,
@@ -42,7 +41,6 @@ class CreateClassificationAnnotationMain(CommandLineWithConfirm):
         CommandLineWithConfirm.__init__(self, all_yes)
 
         self.project_id = project_id
-        self.is_change_operator_to_me = is_change_operator_to_me
         self.include_complete_task = include_complete_task
         self.include_break_task = include_break_task
         self.include_on_hold_task = include_on_hold_task
@@ -101,10 +99,6 @@ class CreateClassificationAnnotationMain(CommandLineWithConfirm):
         changed_operator = False
 
         should_change_operator = self.my_project_member_role == ProjectMemberRole.ACCEPTER and task["account_id"] is not None and task["account_id"] != self.service.api.account_id
-        if should_change_operator and not self.is_change_operator_to_me:
-            logger.info(f"タスク'{task_id}'にチェッカーロールで全体アノテーションを作成するには、`--change_operator_to_me` を指定してください。")
-            return None, False, None
-
         if should_change_operator:
             logger.debug(f"タスク'{task_id}' の担当者を自分自身に変更します。")
             old_account_id = task["account_id"]
@@ -362,7 +356,6 @@ class CreateClassificationAnnotation(CommandLine):
             self.service,
             project_id=project_id,
             all_yes=self.all_yes,
-            is_change_operator_to_me=args.change_operator_to_me,
             include_complete_task=args.include_complete_task,
             include_break_task=args.include_break_task,
             include_on_hold_task=args.include_on_hold_task,
@@ -392,12 +385,6 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         required=True,
         nargs="+",
         help="作成する全体アノテーションのラベル名（英語）を指定します。",
-    )
-
-    parser.add_argument(
-        "--change_operator_to_me",
-        action="store_true",
-        help="チェッカーロールで、自身が担当者ではないタスクに全体アノテーションを作成する場合に指定してください。タスクの担当者を一時的に自分自身に変更し、作成完了後に元へ戻します。オーナーロールで指定しても効果はありません。",
     )
 
     parser.add_argument(

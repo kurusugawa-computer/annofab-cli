@@ -74,6 +74,21 @@ CSVのフォーマットは以下の通りです。
      --backup backup_dir/ \
 
 
+.. _filter-by-task-id:
+
+``--task_id`` で変更対象を絞り込む
+---------------------------------------
+
+``--task_id`` を指定すると、 ``--json`` または ``--csv`` に指定した変更対象のうち、一致するtask_idのアノテーションだけを変更します。
+
+.. code-block::
+
+    $ annofabcli annotation change_attributes_per_annotation --project_id p1 \
+     --json file://annotations.json \
+     --task_id t1 t2 \
+     --backup backup_dir/
+
+
 その他のオプション
 ---------------------------------------
 
@@ -99,4 +114,3 @@ Usage Details
     :prog: annofabcli annotation change_attributes_per_annotation
     :nosubcommands:
     :nodefaultconst:
-

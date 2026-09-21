@@ -1,3 +1,4 @@
+import copy
 import logging
 from collections import defaultdict
 from collections.abc import Collection
@@ -6,6 +7,18 @@ from typing import Any
 from annofabapi.models import CommentType
 
 logger = logging.getLogger(__name__)
+
+
+def round_image_inspection_comment_data(data: dict[str, Any]) -> dict[str, Any]:
+    """画像用検査コメントの座標値を整数に丸めます。"""
+    if data["_type"] != "Point":
+        return data
+
+    result = copy.deepcopy(data)
+    for coordinate_key in ["x", "y"]:
+        if isinstance(result[coordinate_key], float):
+            result[coordinate_key] = round(result[coordinate_key])
+    return result
 
 
 def get_comment_type_name(comment_type: CommentType) -> str:
