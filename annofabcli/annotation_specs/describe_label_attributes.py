@@ -67,6 +67,13 @@ def get_message(message: InternationalizationMessage, language: DescriptionLangu
     """指定言語のメッセージを取得する。
 
     指定言語の名前が存在しない場合は、英語名、日本語名の順に代替する。
+
+    Args:
+        message: 多言語メッセージ。
+        language: 出力言語。
+
+    Returns:
+        指定言語または代替言語のメッセージ。
     """
 
     target_lang = Lang.JA_JP if language == DescriptionLanguage.JA else Lang.EN_US
@@ -78,7 +85,16 @@ def get_message(message: InternationalizationMessage, language: DescriptionLangu
 
 
 def get_display_name(value: str, display_names: Mapping[str, Mapping[DescriptionLanguage, str]], language: DescriptionLanguage) -> str:
-    """値に対応する指定言語の表示名を取得する。"""
+    """値に対応する指定言語の表示名を取得する。
+
+    Args:
+        value: 表示名を取得する値。
+        display_names: 値と表示名の対応表。
+        language: 出力言語。
+
+    Returns:
+        指定言語の表示名。対応表にない値の場合は値そのもの。
+    """
 
     localized_names = display_names.get(value)
     if localized_names is None:
@@ -87,7 +103,14 @@ def get_display_name(value: str, display_names: Mapping[str, Mapping[Description
 
 
 def escape_markdown_text(value: str) -> str:
-    """Markdownの構造に影響する文字をエスケープする。"""
+    """Markdownの構造に影響する文字をエスケープする。
+
+    Args:
+        value: エスケープ前の文字列。
+
+    Returns:
+        Markdown用にエスケープした文字列。
+    """
 
     result = value.replace("\\", "\\\\").replace("\r", " ").replace("\n", " ")
     for character in ("`", "*", "{", "}", "[", "]", "<", ">", "#", "+", "-", "!", "|"):
@@ -96,7 +119,15 @@ def escape_markdown_text(value: str) -> str:
 
 
 def create_label_attributes_description(annotation_specs_v3: Mapping[str, Any], language: DescriptionLanguage) -> str:
-    """アノテーション仕様からラベルと属性の関係をMarkdown形式で生成する。"""
+    """アノテーション仕様からラベルと属性の関係をMarkdown形式で生成する。
+
+    Args:
+        annotation_specs_v3: v3形式のアノテーション仕様。
+        language: 出力言語。
+
+    Returns:
+        ラベルと属性の関係を表すMarkdown文字列。
+    """
 
     if language == DescriptionLanguage.JA:
         label_template = "# 「{name}」ラベル（{annotation_type}）"
@@ -147,7 +178,15 @@ class DescribeLabelAttributes(CommandLine):
     """コマンドラインエラーの共通メッセージ。"""
 
     def get_history_id_from_before_index(self, project_id: str, before: int) -> str | None:
-        """指定した相対位置のアノテーション仕様の履歴IDを取得する。"""
+        """指定した相対位置のアノテーション仕様の履歴IDを取得する。
+
+        Args:
+            project_id: 対象プロジェクトのproject_id。
+            before: 最新から遡る履歴数。
+
+        Returns:
+            対象のhistory_id。該当する履歴がない場合はNone。
+        """
 
         histories, _ = self.service.api.get_annotation_specs_histories(project_id)
         if before + 1 > len(histories):
@@ -158,7 +197,14 @@ class DescribeLabelAttributes(CommandLine):
         return history["history_id"]
 
     def main(self) -> None:
-        """ラベルと属性の関係を出力する。"""
+        """ラベルと属性の関係を出力する。
+
+        Args:
+            なし。
+
+        Returns:
+            なし。
+        """
 
         args = self.args
         if args.project_id is not None:
@@ -191,7 +237,14 @@ class DescribeLabelAttributes(CommandLine):
 
 
 def parse_args(parser: argparse.ArgumentParser) -> None:
-    """コマンドライン引数を定義する。"""
+    """コマンドライン引数を定義する。
+
+    Args:
+        parser: 引数を追加するパーサー。
+
+    Returns:
+        なし。
+    """
 
     argument_parser = ArgumentParser(parser)
 
@@ -235,7 +288,14 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
 
 
 def main(args: argparse.Namespace) -> None:
-    """コマンドを実行する。"""
+    """コマンドを実行する。
+
+    Args:
+        args: コマンドライン引数。
+
+    Returns:
+        なし。
+    """
 
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
@@ -243,7 +303,14 @@ def main(args: argparse.Namespace) -> None:
 
 
 def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
-    """``describe_label_attributes`` 用のparserを生成する。"""
+    """``describe_label_attributes`` 用のparserを生成する。
+
+    Args:
+        subparsers: 親パーサーのサブパーサー一覧。
+
+    Returns:
+        生成したパーサー。
+    """
 
     subcommand_name = "describe_label_attributes"
     subcommand_help = "ラベルと属性の関係を共有用のMarkdown形式で出力します。"
