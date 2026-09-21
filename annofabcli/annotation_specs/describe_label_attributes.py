@@ -90,7 +90,7 @@ def escape_markdown_text(value: str) -> str:
     """Markdownの構造に影響する文字をエスケープする。"""
 
     result = value.replace("\\", "\\\\").replace("\r", " ").replace("\n", " ")
-    for character in ("`", "*", "_", "{", "}", "[", "]", "<", ">", "#", "+", "-", "!", "|"):
+    for character in ("`", "*", "{", "}", "[", "]", "<", ">", "#", "+", "-", "!", "|"):
         result = result.replace(character, f"\\{character}")
     return result
 

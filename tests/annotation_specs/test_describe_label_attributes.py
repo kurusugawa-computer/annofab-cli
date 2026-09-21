@@ -98,7 +98,7 @@ def test_Markdownを崩す名前をエスケープする() -> None:
         "additionals": [
             {
                 "additional_data_definition_id": "attribute_name",
-                "name": {"messages": [{"lang": "ja-JP", "message": "*名称*"}]},
+                "name": {"messages": [{"lang": "ja-JP", "message": "*名称*_id"}]},
                 "type": "text",
                 "read_only": False,
                 "choices": [],
@@ -112,5 +112,5 @@ def test_Markdownを崩す名前をエスケープする() -> None:
         actual
         == """# 「\\# 車」ラベル（点）
 
-- 「\\*名称\\*」属性（テキスト）"""
+- 「\\*名称\\*_id」属性（テキスト）"""
     )
