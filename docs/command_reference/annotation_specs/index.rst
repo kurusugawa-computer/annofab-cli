@@ -29,6 +29,7 @@ Available Commands
    delete_attributes
    delete_choices
    delete_labels
+   describe_label_attributes
    diff
    export
    import
