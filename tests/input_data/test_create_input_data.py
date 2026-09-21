@@ -74,6 +74,19 @@ def test_get_input_data_list_from_df_with_common_metadata() -> None:
     )
 
 
+def test_get_input_data_list_from_df_with_independent_metadata_instances() -> None:
+    csv_path = test_dir / "input_data_with_header.csv"
+    df = create_input_data.read_input_data_csv(csv_path)
+
+    actual = create_input_data.CreateInputData.get_input_data_list_from_df(df, common_metadata={"category": "image"})
+    assert actual[0].metadata is not None
+    assert actual[1].metadata is not None
+
+    actual[0].metadata["category"] = "document"
+
+    assert actual[1].metadata == {"category": "image"}
+
+
 def test_get_input_data_list_from_dict_with_common_metadata() -> None:
     actual = create_input_data.CreateInputData.get_input_data_list_from_dict(
         [

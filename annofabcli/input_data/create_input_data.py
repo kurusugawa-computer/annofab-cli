@@ -346,7 +346,7 @@ class CreateInputData(CommandLine):
                 input_data_name=e.input_data_name,
                 input_data_path=e.input_data_path,
                 input_data_id=input_data_id,
-                metadata=common_metadata,
+                metadata=None if common_metadata is None else dict(common_metadata),
             )
 
         return [create_input_data_from_row(e) for e in df.itertuples()]
