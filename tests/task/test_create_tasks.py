@@ -3,6 +3,7 @@ import logging
 from pathlib import Path
 from unittest.mock import Mock
 
+import pandas
 import pytest
 
 from annofabcli.task import create_tasks, put_tasks
@@ -53,6 +54,24 @@ def test_get_task_relation_dict_from_headerless_csv(tmp_path: Path) -> None:
     assert actual == {
         "task_001": ["input_data_001", "input_data_002"],
     }
+
+
+def test_get_task_creation_info_list_from_csv_uses_pd_na_for_missing_value(tmp_path: Path) -> None:
+    csv_file = tmp_path / "task.csv"
+    csv_file.write_text("task_id,input_data_id\ntask_001,\n", encoding="utf-8")
+
+    actual = create_tasks.get_task_creation_info_list_from_csv(csv_file)
+
+    assert actual[0].input_data_id_list[0] is pandas.NA
+
+
+def test_get_task_relation_dict_uses_pd_na_for_missing_value(tmp_path: Path) -> None:
+    csv_file = tmp_path / "task.csv"
+    csv_file.write_text("task_001,\n", encoding="utf-8")
+
+    actual = put_tasks.get_task_relation_dict(csv_file)
+
+    assert actual["task_001"][0] is pandas.NA
 
 
 def test_get_task_creation_info_list_from_csv_with_common_user_id(tmp_path: Path) -> None:

@@ -1,5 +1,6 @@
 from pathlib import Path
 
+import pandas
 import pytest
 
 from annofabcli.input_data.put_input_data import (
@@ -22,6 +23,7 @@ def test_get_input_data_list_from_csv():
     assert actual_members[2] == CsvInputData(input_data_name="data3", input_data_path="s3://example.com/data3", input_data_id="id3")
 
     assert actual_members[3].input_data_id is None
+    assert df["input_data_id"].iloc[3] is pandas.NA
 
 
 def test__convert_input_data_name_to_input_data_id():

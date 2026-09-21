@@ -56,8 +56,8 @@ class ApiWithCreatingTask(Enum):
 def get_task_relation_dict(csv_file: Path) -> TaskInputRelation:
     """CSVから、keyがtask_id, valueがinput_data_idのlistのdictを生成します。"""
 
-    # `dtype=str`を指定した理由：指定しないと、IDが`001`のときに`1`に変換されてしまうため
-    df = pandas.read_csv(str(csv_file), header=None, usecols=(0, 1), names=("task_id", "input_data_id"), dtype=str)
+    # `dtype="string"`を指定した理由：指定しないと、IDが`001`のときに`1`に変換されてしまうため
+    df = pandas.read_csv(str(csv_file), header=None, usecols=(0, 1), names=("task_id", "input_data_id"), dtype="string")
     result: TaskInputRelation = defaultdict(list)
     for task_id, input_data_id in zip(df["task_id"], df["input_data_id"], strict=False):
         result[task_id].append(input_data_id)

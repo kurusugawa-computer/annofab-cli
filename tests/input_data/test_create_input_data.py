@@ -3,6 +3,7 @@ from pathlib import Path
 from typing import Any
 from unittest.mock import Mock
 
+import pandas
 import pytest
 
 from annofabcli.input_data import create_input_data
@@ -30,6 +31,17 @@ def test_get_input_data_list_from_csv() -> None:
         input_data_path="s3://example.com/data3",
         input_data_id=None,
     )
+    assert df["input_data_id"].iloc[2] is pandas.NA
+
+
+def test_read_input_data_csv_without_input_data_id_column_uses_pd_na(tmp_path: Path) -> None:
+    csv_file = tmp_path / "input_data.csv"
+    csv_file.write_text("input_data_name,input_data_path\nfoo,s3://example.com/foo\n", encoding="utf-8")
+
+    actual = create_input_data.read_input_data_csv(csv_file)
+
+    assert actual["input_data_id"].dtype == "string"
+    assert actual["input_data_id"].iloc[0] is pandas.NA
 
 
 def test_read_input_data_csv_with_missing_required_column(tmp_path: Path) -> None:
