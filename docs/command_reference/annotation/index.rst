@@ -20,6 +20,7 @@ Available Commands
    change_data_per_annotation
    change_editor_props
    change_label
+   change_label_per_annotation
    copy
    create
    create_classification

@@ -38,7 +38,6 @@ class RestoreAnnotationMain(CommandLineWithConfirm):
         service: annofabapi.Resource,
         *,
         project_id: str,
-        change_operator_to_me: bool,
         include_complete_task: bool,
         include_break_task: bool,
         include_on_hold_task: bool,
@@ -50,7 +49,6 @@ class RestoreAnnotationMain(CommandLineWithConfirm):
         self.project_id = project_id
         my_member, _ = self.service.api.get_my_member_in_project(project_id)
         self.project_member_role = ProjectMemberRole(my_member["member_role"])
-        self.change_operator_to_me = change_operator_to_me
         self.include_complete_task = include_complete_task
         self.include_break_task = include_break_task
         self.include_on_hold_task = include_on_hold_task
@@ -214,10 +212,6 @@ class RestoreAnnotationMain(CommandLineWithConfirm):
             return False
 
         should_change_operator = self.project_member_role == ProjectMemberRole.ACCEPTER and task["account_id"] is not None and task["account_id"] != self.service.api.account_id
-        if should_change_operator and not self.change_operator_to_me:
-            logger.info(f"{logger_prefix}チェッカーロールでアノテーションをリストアするには、`--change_operator_to_me` を指定してください。")
-            return False
-
         if not self.confirm_processing(f"task_id='{task_id}'のタスク（phase={task['phase']}, status={task['status']}）のアノテーションをリストアしますか？"):
             return False
 
@@ -354,7 +348,6 @@ class RestoreAnnotation(CommandLine):
         RestoreAnnotationMain(
             self.service,
             project_id=project_id,
-            change_operator_to_me=args.change_operator_to_me,
             include_complete_task=args.include_complete_task,
             include_break_task=args.include_break_task,
             include_on_hold_task=args.include_on_hold_task,
@@ -381,12 +374,6 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     )
 
     argument_parser.add_task_id(required=False)
-
-    parser.add_argument(
-        "--change_operator_to_me",
-        action="store_true",
-        help="チェッカーロールで、自身が担当者ではないタスクにアノテーションをリストアする場合に指定してください。タスクの担当者を一時的に自分自身に変更し、アノテーションのリストア完了後に元へ戻します。オーナーロールで指定しても効果はありません。",
-    )
 
     parser.add_argument(
         "--include_complete_task",
