@@ -29,11 +29,11 @@ Available Commands
    delete_attributes
    delete_choices
    delete_labels
+   describe_label_attributes
    diff
    export
    import
    list_annotation_import_info
-   list_annotation_rule
    list_attribute
    list_choice
    list_history
