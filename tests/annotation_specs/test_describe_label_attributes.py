@@ -1,6 +1,9 @@
 from __future__ import annotations
 
-from annofabcli.annotation_specs.describe_label_attributes import DescriptionLanguage, create_label_attributes_description
+import argparse
+from unittest.mock import Mock
+
+from annofabcli.annotation_specs.describe_label_attributes import DescribeLabelAttributes, DescriptionLanguage, create_label_attributes_description
 
 
 def test_ラベルと属性の関係を日本語で記述する() -> None:
@@ -152,3 +155,20 @@ def test_テキスト属性の入力行数を日本語で記述する() -> None:
 - 「ID」属性（1行テキスト）
 - 「備考」属性（複数行テキスト）"""
     )
+
+
+def test_beforeは履歴の返却順に関わらず更新日時の新しい順に選択する() -> None:
+    service = Mock()
+    service.api.get_annotation_specs_histories.return_value = (
+        [
+            {"history_id": "history_2", "updated_datetime": "2026-09-02T00:00:00Z", "comment": "2番目"},
+            {"history_id": "history_0", "updated_datetime": "2026-09-03T00:00:00Z", "comment": "最新"},
+            {"history_id": "history_1", "updated_datetime": "2026-09-01T00:00:00Z", "comment": "最古"},
+        ],
+        None,
+    )
+    command = DescribeLabelAttributes(service, Mock(), argparse.Namespace(yes=False))
+
+    actual = command.get_history_id_from_before_index("project_id", before=1)
+
+    assert actual == "history_2"

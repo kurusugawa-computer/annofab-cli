@@ -189,10 +189,11 @@ class DescribeLabelAttributes(CommandLine):
         """
 
         histories, _ = self.service.api.get_annotation_specs_histories(project_id)
-        if before + 1 > len(histories):
-            logger.warning(f"アノテーション仕様の履歴は{len(histories)}個のため、最新より{before}個前のアノテーション仕様は見つかりませんでした。")
+        sorted_histories = sorted(histories, key=lambda history: history["updated_datetime"], reverse=True)
+        if before + 1 > len(sorted_histories):
+            logger.warning(f"アノテーション仕様の履歴は{len(sorted_histories)}個のため、最新より{before}個前のアノテーション仕様は見つかりませんでした。")
             return None
-        history = histories[-(before + 1)]
+        history = sorted_histories[before]
         logger.info(f"{history['updated_datetime']}のアノテーション仕様を出力します。 :: history_id='{history['history_id']}', comment='{history['comment']}'")
         return history["history_id"]
 
