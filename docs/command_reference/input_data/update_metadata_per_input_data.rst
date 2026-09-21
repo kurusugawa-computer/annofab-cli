@@ -11,16 +11,17 @@ Description
 Examples
 =================================
 
-``--json`` には、キーを入力データID、値を設定するメタデータとしたJSONオブジェクトを指定します。
+``--json`` には、 ``input_data list --format json`` と同じ形式のJSON配列を指定します。
+各要素の ``input_data_id`` と ``metadata`` キーを参照し、それ以外のキーは無視します。
 メタデータの値には文字列を指定できます。
 
 .. code-block:: json
    :caption: all_metadata.json
 
-   {
-     "input_data1": {"country": "japan"},
-     "input_data2": {"country": "us"}
-   }
+   [
+     {"input_data_id": "input_data1", "metadata": {"country": "japan"}},
+     {"input_data_id": "input_data2", "metadata": {"country": "us"}}
+   ]
 
 .. code-block::
 

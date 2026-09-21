@@ -15,7 +15,50 @@ from annofabcli.common.cli import (
     build_annofabapi_resource_and_login,
 )
 from annofabcli.common.facade import AnnofabApiFacade
-from annofabcli.input_data.update_metadata_of_input_data import Metadata, UpdateMetadataMain, validate_metadata
+from annofabcli.input_data.update_metadata_of_input_data import InputDataMetadataInfo, UpdateMetadataMain, validate_metadata
+
+
+def get_input_data_metadata_info_list_from_json_args(json_value: str) -> list[InputDataMetadataInfo]:
+    """JSON引数から入力データごとのメタデータ更新情報を取得します。
+
+    Args:
+        json_value: ``input_data list --format json`` と同じ形式のJSON文字列、またはJSONファイルのパス
+
+    Returns:
+        入力データごとのメタデータ更新情報
+
+    Raises:
+        TypeError: JSONの形式が不正な場合
+        ValueError: input_data_idが重複している場合
+    """
+
+    input_data_list = annofabcli.common.cli.get_json_from_args(json_value)
+    if not isinstance(input_data_list, list):
+        raise TypeError("配列を指定してください。")
+
+    result: list[InputDataMetadataInfo] = []
+    input_data_id_set: set[str] = set()
+    for index, input_data in enumerate(input_data_list, start=1):
+        if not isinstance(input_data, dict):
+            raise TypeError(f"{index}番目の要素にはオブジェクトを指定してください。")
+
+        try:
+            input_data_id = input_data["input_data_id"]
+            metadata = input_data["metadata"]
+        except KeyError as e:
+            raise TypeError(f"{index}番目の要素には 'input_data_id' と 'metadata' キーを指定してください。") from e
+
+        if not isinstance(input_data_id, str):
+            raise TypeError(f"{index}番目の要素の'input_data_id'には文字列を指定してください。")
+        if not isinstance(metadata, dict):
+            raise TypeError(f"{index}番目の要素の'metadata'にはオブジェクトを指定してください。")
+        if input_data_id in input_data_id_set:
+            raise ValueError(f"{index}番目の要素の'input_data_id'が重複しています。 :: input_data_id='{input_data_id}'")
+
+        input_data_id_set.add(input_data_id)
+        result.append(InputDataMetadataInfo(input_data_id=input_data_id, metadata=metadata))
+
+    return result
 
 
 class UpdateMetadataPerInputData(CommandLine):
@@ -35,7 +78,8 @@ class UpdateMetadataPerInputData(CommandLine):
         if not self.validate(args):
             sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
-        metadata_by_input_data_id: dict[str, Metadata] = annofabcli.common.cli.get_json_from_args(args.json)
+        metadata_info_list = get_input_data_metadata_info_list_from_json_args(args.json)
+        metadata_by_input_data_id = {info.input_data_id: info.metadata for info in metadata_info_list}
         input_data_ids_containing_invalid_metadata = [input_data_id for input_data_id, metadata in metadata_by_input_data_id.items() if not validate_metadata(metadata)]
         if input_data_ids_containing_invalid_metadata:
             print(  # noqa: T201
@@ -67,13 +111,14 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     argument_parser = ArgumentParser(parser)
     argument_parser.add_project_id()
 
-    sample_json = {"input_data1": {"country": "japan"}}
+    sample_json = [{"input_data_id": "input_data1", "metadata": {"country": "japan"}}]
     parser.add_argument(
         "--json",
         type=str,
         required=True,
         help=(
-            "キーが入力データID、値が設定するメタデータであるオブジェクトをJSON形式で指定してください。"
+            "``input_data list --format json`` と同じ形式のJSON配列を指定してください。"
+            "各要素の ``input_data_id`` と ``metadata`` キーを参照し、それ以外のキーは無視します。"
             "メタデータの値は文字列です。\n"
             f"(ex) '{json.dumps(sample_json)}'\n"
             "``file://`` を先頭に付けると、JSON形式のファイルを指定できます。"

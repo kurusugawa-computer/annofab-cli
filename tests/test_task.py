@@ -254,7 +254,7 @@ class TestCommandLine:
                 "--project_id",
                 project_id,
                 "--json",
-                json.dumps({task_id: metadata}),
+                json.dumps([{"task_id": task_id, "metadata": metadata}]),
                 "--yes",
             ]
         )
