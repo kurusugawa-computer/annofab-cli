@@ -7,7 +7,7 @@ import sys
 from collections.abc import Mapping
 from enum import Enum
 from pathlib import Path
-from typing import Any, cast
+from typing import Any
 
 from annofabapi.models import AdditionalDataDefinitionType, DefaultAnnotationType, Lang
 from annofabapi.plugin import ThreeDimensionAnnotationType
@@ -146,7 +146,7 @@ def create_label_attributes_description(annotation_specs_v3: Mapping[str, Any], 
     lines: list[str] = []
 
     for label in annotation_specs_v3["labels"]:
-        label_name = escape_markdown_text(get_message(cast(InternationalizationMessage, label["label_name"]), language))
+        label_name = escape_markdown_text(get_message(label["label_name"], language))
         annotation_type = get_display_name(label["annotation_type"], ANNOTATION_TYPE_DISPLAY_NAMES, language)
         if len(lines) > 0:
             lines.append("")
@@ -159,13 +159,13 @@ def create_label_attributes_description(annotation_specs_v3: Mapping[str, Any], 
 
         for attribute_id in attribute_ids:
             attribute = attributes_by_id[attribute_id]
-            attribute_name = escape_markdown_text(get_message(cast(InternationalizationMessage, attribute["name"]), language))
+            attribute_name = escape_markdown_text(get_message(attribute["name"], language))
             attribute_type = get_display_name(attribute["type"], ATTRIBUTE_TYPE_DISPLAY_NAMES, language)
             read_only_text = read_only if attribute["read_only"] else ""
             lines.append(attribute_template.format(name=attribute_name, attribute_type=attribute_type, read_only=read_only_text))
 
             for choice in attribute["choices"]:
-                choice_name = escape_markdown_text(get_message(cast(InternationalizationMessage, choice["name"]), language))
+                choice_name = escape_markdown_text(get_message(choice["name"], language))
                 lines.append(f"  - {choice_name}")
 
     return "\n".join(lines) if len(lines) > 0 else no_labels
