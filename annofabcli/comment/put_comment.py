@@ -70,6 +70,16 @@ AddedComments = dict[str, AddedCommentsForTask]
 keyはtask_id
 """
 
+
+def _create_added_comments_for_task() -> AddedCommentsForTask:
+    """タスク配下のコメント一覧を作成する。
+
+    multiprocessing.Poolで子プロセスへ渡す際にpickleできるよう、
+    default_factoryにはlambdaではなくモジュール直下の名前付き関数を使用する。
+    """
+    return defaultdict(list)
+
+
 CommentPutMode = Literal["put", "create", "update"]
 """
 コメント登録時の動作モード
@@ -389,6 +399,37 @@ class PutCommentMain(CommandLineWithConfirm):
             task, logging_prefix=logging_prefix
         )
 
+    def add_comments_to_working_task(self, task: dict[str, Any], comments_for_task: AddedCommentsForTask, *, put_mode: CommentPutMode) -> int:
+        """作業中状態のタスクにコメントを付与する。
+
+        Args:
+            task: 作業中状態のタスク
+            comments_for_task: タスクに付与するコメント
+            put_mode: コメント登録時の動作モード
+
+        Returns:
+            付与したコメント数
+
+        Raises:
+            ValueError: 指定した入力データがタスクに存在しない場合
+        """
+        task_id = task["task_id"]
+        added_comment_count = 0
+        for input_data_id, comments in comments_for_task.items():
+            if input_data_id not in task["input_data_id_list"]:
+                raise ValueError(f"task_id='{task_id}'のタスクに input_data_id='{input_data_id}'の入力データは存在しません。")
+
+            target_comments = self._filter_comments_by_put_mode(task_id=task_id, input_data_id=input_data_id, comments=comments, put_mode=put_mode)
+            if len(target_comments) == 0:
+                continue
+
+            request_body = self._create_request_body(task=task, input_data_id=input_data_id, comments=target_comments)
+            self.service.api.batch_update_comments(self.project_id, task_id, input_data_id, request_body=request_body)
+            added_comment_count += len(target_comments)
+            logger.debug(f"task_id='{task_id}', input_data_id='{input_data_id}' :: {len(target_comments)}件のコメントを付与しました。")
+
+        return added_comment_count
+
     def add_comments_for_task(
         self,
         task_id: str,
@@ -446,21 +487,11 @@ class PutCommentMain(CommandLineWithConfirm):
         added_input_data_count = 0
         added_comment_count = 0
         for input_data_id, comments in comments_for_task.items():
-            if input_data_id not in task["input_data_id_list"]:
-                logger.warning(f"{logging_prefix} :: task_id='{task_id}'のタスクに input_data_id='{input_data_id}'の入力データは存在しません。")
-                continue
             try:
-                # コメントを付与する
-                if len(comments) > 0:
-                    target_comments = self._filter_comments_by_put_mode(task_id=task_id, input_data_id=input_data_id, comments=comments, put_mode=put_mode)
-                    if len(target_comments) == 0:
-                        continue
-
-                    request_body = self._create_request_body(task=changed_task, input_data_id=input_data_id, comments=target_comments)
-                    self.service.api.batch_update_comments(self.project_id, task_id, input_data_id, request_body=request_body)
+                added_count = self.add_comments_to_working_task(changed_task, {input_data_id: comments}, put_mode=put_mode)
+                added_comment_count += added_count
+                if added_count > 0:
                     added_input_data_count += 1
-                    added_comment_count += len(target_comments)
-                    logger.debug(f"{logging_prefix} :: task_id='{task_id}', input_data_id='{input_data_id}' :: {len(target_comments)}件のコメントを付与しました。")
             except Exception:  # pylint: disable=broad-except
                 logger.warning(
                     f"{logging_prefix} :: task_id='{task_id}', input_data_id='{input_data_id}' :: コメントの付与に失敗しました。",
@@ -638,7 +669,7 @@ def convert_cli_inspection_comment_list(comment_list: list[dict[str, Any]]) -> A
         comment_id: str | None = None
         """コメントID。省略時はUUIDv4が自動生成される。"""
 
-    result: AddedComments = defaultdict(lambda: defaultdict(list))
+    result: AddedComments = defaultdict(_create_added_comments_for_task)
     for comment in comment_list:
         tmp = AddedInspectionComment.from_dict(comment)
         result[tmp.task_id][tmp.input_data_id].append(AddedComment(comment=tmp.comment, data=tmp.data, annotation_id=tmp.annotation_id, phrases=tmp.phrases, comment_id=tmp.comment_id))
@@ -714,7 +745,7 @@ def convert_cli_onhold_comment_list(comment_list: list[dict[str, Any]]) -> Added
         comment_id: str | None = None
         """コメントID。省略時はUUIDv4が自動生成される。"""
 
-    result: AddedComments = defaultdict(lambda: defaultdict(list))
+    result: AddedComments = defaultdict(_create_added_comments_for_task)
     for comment in comment_list:
         tmp = AddedOnholdComment.from_dict(comment)
         result[tmp.task_id][tmp.input_data_id].append(AddedComment(comment=tmp.comment, annotation_id=tmp.annotation_id, data=None, phrases=None, comment_id=tmp.comment_id))
@@ -744,7 +775,7 @@ def read_inspection_comment_csv(csv_file: Path) -> AddedComments:
         raise ValueError(f"必須カラムが不足しています: {missing_columns}")
 
     # データ構築
-    result: AddedComments = defaultdict(lambda: defaultdict(list))
+    result: AddedComments = defaultdict(_create_added_comments_for_task)
     for idx, row_dict in enumerate(df.to_dict(orient="records"), start=2):  # CSVの行番号は2から（ヘッダーが1行目）
         task_id = row_dict["task_id"]
         input_data_id = row_dict["input_data_id"]
@@ -802,7 +833,7 @@ def read_onhold_comment_csv(csv_file: Path) -> AddedComments:
         raise ValueError(f"必須カラムが不足しています: {missing_columns}")
 
     # データ構築
-    result: AddedComments = defaultdict(lambda: defaultdict(list))
+    result: AddedComments = defaultdict(_create_added_comments_for_task)
     for row_dict in df.to_dict(orient="records"):
         task_id = row_dict["task_id"]
         input_data_id = row_dict["input_data_id"]
