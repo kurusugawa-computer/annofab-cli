@@ -47,7 +47,7 @@ def test_ラベルと属性の関係を日本語で記述する() -> None:
 - 「向き」属性（ドロップダウン）
   - 前
   - 横
-- 「遮蔽」属性（真偽値、読み込み専用）
+- 「遮蔽」属性（チェックボックス、読み込み専用）
 
 # 「道路」ラベル（セマンティックセグメンテーション）
 
@@ -112,5 +112,43 @@ def test_Markdownを崩す名前をエスケープする() -> None:
         actual
         == """# 「\\# 車」ラベル（点）
 
-- 「\\*名称\\*_id」属性（テキスト）"""
+- 「\\*名称\\*_id」属性（1行テキスト）"""
+    )
+
+
+def test_テキスト属性の入力行数を日本語で記述する() -> None:
+    annotation_specs = {
+        "labels": [
+            {
+                "label_name": {"messages": [{"lang": "ja-JP", "message": "車"}]},
+                "annotation_type": "bounding_box",
+                "additional_data_definitions": ["attribute_id", "attribute_note"],
+            }
+        ],
+        "additionals": [
+            {
+                "additional_data_definition_id": "attribute_id",
+                "name": {"messages": [{"lang": "ja-JP", "message": "ID"}]},
+                "type": "text",
+                "read_only": False,
+                "choices": [],
+            },
+            {
+                "additional_data_definition_id": "attribute_note",
+                "name": {"messages": [{"lang": "ja-JP", "message": "備考"}]},
+                "type": "comment",
+                "read_only": False,
+                "choices": [],
+            },
+        ],
+    }
+
+    actual = create_label_attributes_description(annotation_specs, DescriptionLanguage.JA)
+
+    assert (
+        actual
+        == """# 「車」ラベル（矩形）
+
+- 「ID」属性（1行テキスト）
+- 「備考」属性（複数行テキスト）"""
     )
