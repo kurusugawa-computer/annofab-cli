@@ -10,9 +10,23 @@ from annofabcli.annotation.change_annotation_data_per_annotation import (
     ChangeAnnotationDataPerAnnotationMain,
     TargetAnnotationData,
     create_request_body_for_change_data,
+    filter_annotation_items_by_task_ids,
     get_annotation_data_list_per_task_id_input_data_id,
     merge_additional_data_list,
 )
+
+
+def test_filter_annotation_items_by_task_ids() -> None:
+    items = [
+        TargetAnnotationData(task_id="task1", input_data_id="input1", annotation_id="annotation1", data={}),
+        TargetAnnotationData(task_id="task2", input_data_id="input1", annotation_id="annotation2", data={}),
+        TargetAnnotationData(task_id="task1", input_data_id="input2", annotation_id="annotation3", data={}),
+    ]
+
+    actual_items, actual_not_existing_task_ids = filter_annotation_items_by_task_ids(items, ["task1", "task3"])
+
+    assert actual_items == [items[0], items[2]]
+    assert actual_not_existing_task_ids == {"task3"}
 
 
 def test_get_annotation_data_list_per_task_id_input_data_id() -> None:

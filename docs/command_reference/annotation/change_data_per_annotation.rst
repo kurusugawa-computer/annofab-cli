@@ -84,6 +84,12 @@ CSVのフォーマットは以下の通りです。
      --backup backup_dir/
 
 
+``--task_id`` で変更対象を絞り込む
+---------------------------------------
+
+``--task_id`` を指定すると、 ``--json`` または ``--csv`` に指定した変更対象のうち、一致するtask_idのアノテーションだけを変更します。指定例は `annotation change_attributes_per_annotation <change_attributes_per_annotation.html#filter-by-task-id>`_ を参照してください。
+
+
 
 
 その他のオプション

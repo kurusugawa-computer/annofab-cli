@@ -8,7 +8,21 @@ import pytest
 from annofabcli.annotation.change_annotation_attributes_per_annotation import (
     ChangeAnnotationAttributesPerAnnotationMain,
     TargetAnnotation,
+    filter_annotation_items_by_task_ids,
 )
+
+
+def test_filter_annotation_items_by_task_ids() -> None:
+    items = [
+        TargetAnnotation(task_id="task1", input_data_id="input1", annotation_id="annotation1", attributes={}),
+        TargetAnnotation(task_id="task2", input_data_id="input1", annotation_id="annotation2", attributes={}),
+        TargetAnnotation(task_id="task1", input_data_id="input2", annotation_id="annotation3", attributes={}),
+    ]
+
+    actual_items, actual_not_existing_task_ids = filter_annotation_items_by_task_ids(items, ["task1", "task3"])
+
+    assert actual_items == [items[0], items[2]]
+    assert actual_not_existing_task_ids == {"task3"}
 
 
 def test_change_annotation_attributes_logs_each_task_progress(caplog: pytest.LogCaptureFixture, monkeypatch: pytest.MonkeyPatch) -> None:
