@@ -20,6 +20,7 @@ import annofabcli.task.put_tasks
 import annofabcli.task.reject_tasks
 import annofabcli.task.reject_tasks_with_inspection_comments
 import annofabcli.task.update_metadata_of_task
+import annofabcli.task.update_metadata_per_task
 
 
 def parse_args(parser: argparse.ArgumentParser) -> None:
@@ -45,6 +46,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     annofabcli.task.reject_tasks.add_parser(subparsers)
     annofabcli.task.reject_tasks_with_inspection_comments.add_parser(subparsers)
     annofabcli.task.update_metadata_of_task.add_parser(subparsers)
+    annofabcli.task.update_metadata_per_task.add_parser(subparsers)
 
 
 def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
