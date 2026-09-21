@@ -11,16 +11,17 @@ Description
 Examples
 =================================
 
-``--json`` には、キーをタスクID、値を設定するメタデータとしたJSONオブジェクトを指定します。
+``--json`` には、 ``task list --format json`` と同じ形式のJSON配列を指定します。
+各要素の ``task_id`` と ``metadata`` キーを参照し、それ以外のキーは無視します。
 メタデータの値には文字列、数値、真偽値を指定できます。
 
 .. code-block:: json
    :caption: all_metadata.json
 
-   {
-     "task1": {"priority": 1},
-     "task2": {"priority": 2}
-   }
+   [
+     {"task_id": "task1", "metadata": {"priority": 1}},
+     {"task_id": "task2", "metadata": {"priority": 2}}
+   ]
 
 .. code-block::
 

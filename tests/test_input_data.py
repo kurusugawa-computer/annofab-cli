@@ -148,7 +148,7 @@ class TestCommandLine:
                 "--project_id",
                 project_id,
                 "--json",
-                json.dumps({input_data_id: {"attr1": "foo"}}),
+                json.dumps([{"input_data_id": input_data_id, "metadata": {"attr1": "foo"}}]),
                 "--yes",
             ]
         )
