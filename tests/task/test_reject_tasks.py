@@ -1,5 +1,5 @@
 import argparse
-from unittest.mock import Mock
+from unittest.mock import Mock, call
 
 import pytest
 
@@ -47,6 +47,33 @@ def test_reject_task_with_adding_comment_uses_assigned_account_id_without_re_res
     assert result is True
     service.wrapper.reject_task.assert_called_once_with("project1", "task1", force=True, last_updated_datetime="2024-01-01T00:00:00+00:00")
     service.wrapper.change_task_operator.assert_called_once_with("project1", "task1", operator_account_id="account1")
+
+
+def test_reject_task_restores_original_operator_when_adding_inspection_comment_fails(monkeypatch: pytest.MonkeyPatch) -> None:
+    service = Mock()
+    service.api.account_id = "executor-account"
+    task = create_task_dict()
+    task["account_id"] = "original-account"
+    working_task = {**task, "account_id": "executor-account", "status": "working", "updated_datetime": "2024-01-01T00:01:00+00:00"}
+    service.wrapper.get_task_or_none.return_value = task
+    service.wrapper.change_task_operator.return_value = {**task, "account_id": "executor-account"}
+    service.wrapper.change_task_status_to_working.return_value = working_task
+    service.api.get_task.return_value = (working_task, None)
+
+    main_obj = reject_tasks.RejectTasksMain(service, comment_data=None, all_yes=True)
+    monkeypatch.setattr(main_obj, "add_inspection_comment", Mock(side_effect=ValueError()))
+
+    result = main_obj.reject_task_with_adding_comment(
+        project_id="project1",
+        task_id="task1",
+        inspection_comment="確認してください",
+    )
+
+    assert result is False
+    assert service.wrapper.change_task_operator.call_args_list == [
+        call("project1", "task1", operator_account_id="executor-account", last_updated_datetime="2024-01-01T00:00:00+00:00"),
+        call("project1", "task1", operator_account_id="original-account"),
+    ]
 
 
 def test_main_resolves_assigned_annotator_user_id_before_reject_task_list(monkeypatch: pytest.MonkeyPatch) -> None:
