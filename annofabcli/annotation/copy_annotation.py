@@ -136,7 +136,6 @@ class CopyAnnotationMain(CommandLineWithConfirm):
         all_yes: bool,
         overwrite: bool,
         merge: bool,
-        change_operator_to_me: bool,
         include_complete_task: bool,
         include_break_task: bool,
         include_on_hold_task: bool,
@@ -147,7 +146,6 @@ class CopyAnnotationMain(CommandLineWithConfirm):
         self.project_member_role = ProjectMemberRole(my_member["member_role"])
         self.overwrite = overwrite
         self.merge = merge
-        self.change_operator_to_me = change_operator_to_me
         self.include_complete_task = include_complete_task
         self.include_break_task = include_break_task
         self.include_on_hold_task = include_on_hold_task
@@ -302,10 +300,6 @@ class CopyAnnotationMain(CommandLineWithConfirm):
             return False
 
         should_change_operator = self.project_member_role == ProjectMemberRole.ACCEPTER and dest_task["account_id"] is not None and dest_task["account_id"] != self.service.api.account_id
-        if should_change_operator and not self.change_operator_to_me:
-            logger.info(f"コピー先タスク'{copy_target.dest_task_id}'にチェッカーロールでアノテーションをコピーするには、`--change_operator_to_me` を指定してください。")
-            return False
-
         if not self.confirm_processing(f"'{copy_target.src}'のアノテーションを、'{copy_target.dest}'にコピーしますか？"):
             return False
 
@@ -413,7 +407,6 @@ class CopyAnnotation(CommandLine):
             all_yes=self.all_yes,
             overwrite=args.overwrite,
             merge=args.merge,
-            change_operator_to_me=args.change_operator_to_me,
             include_complete_task=args.include_complete_task,
             include_break_task=args.include_break_task,
             include_on_hold_task=args.include_on_hold_task,
@@ -452,11 +445,6 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         help="コピー先にアノテーションが存在する場合、 ``--merge`` を指定していればアノテーションをannotation_id単位でマージしながらコピーします。"
         "annotation_idが一致すればアノテーションを上書き、一致しなければアノテーションを追加します。"
         "指定しなければ、アノテーションのコピーをスキップします。",
-    )
-    parser.add_argument(
-        "--change_operator_to_me",
-        action="store_true",
-        help="チェッカーロールで、自身が担当者ではないコピー先タスクにアノテーションをコピーする場合に指定してください。タスクの担当者を一時的に自分自身に変更し、コピー完了後に元へ戻します。オーナーロールで指定しても効果はありません。",
     )
 
     parser.add_argument(
