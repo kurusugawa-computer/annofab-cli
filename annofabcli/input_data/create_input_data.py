@@ -190,8 +190,9 @@ class SubCreateInputData:
 
     def create_input_data(self, project_id: str, input_data: InputDataForCreate, last_updated_datetime: str | None = None) -> None:
         request_body: dict[str, Any] = {"last_updated_datetime": last_updated_datetime}
-        if len(input_data.metadata) > 0:
-            request_body["metadata"] = input_data.metadata
+        metadata = input_data.metadata or {}
+        if len(metadata) > 0:
+            request_body["metadata"] = metadata
 
         file_path = get_file_scheme_path(input_data.input_data_path)
         if file_path is not None:
