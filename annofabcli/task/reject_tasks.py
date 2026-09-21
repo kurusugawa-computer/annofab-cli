@@ -16,6 +16,7 @@ from annofabapi.plugin import EditorPluginId
 from annofabapi.project_member_repository import ProjectMemberRepository
 
 import annofabcli.common.cli
+from annofabcli.comment.utils import round_image_inspection_comment_data
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
     PARALLELISM_CHOICES,
@@ -415,6 +416,9 @@ class RejectTasks(CommandLine):
                         file=sys.stderr,
                     )
                     sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
+
+        if args.comment is not None and project["input_data_type"] == InputDataType.IMAGE.value and comment_data is not None:
+            comment_data = round_image_inspection_comment_data(comment_data)
 
         main_obj = RejectTasksMain(self.service, comment_data=comment_data, all_yes=self.all_yes)
         main_obj.reject_task_list(

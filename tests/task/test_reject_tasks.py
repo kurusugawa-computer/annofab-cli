@@ -106,6 +106,32 @@ def test_main_resolves_assigned_annotator_user_id_before_reject_task_list(monkey
     assert reject_task_list_mock.call_args.kwargs["assign_last_annotator"] is False
 
 
+def test_main_rounds_image_comment_coordinates(monkeypatch: pytest.MonkeyPatch) -> None:
+    service = Mock()
+    service.api.get_project.return_value = ({"input_data_type": "image"}, None)
+    facade = Mock()
+    args = create_args(comment="コメント1", comment_data='{"x": 1.4, "y": 2.6, "_type": "Point"}')
+    reject_task_list_mock = Mock()
+    instances = []
+
+    class RejectTasksMainStub:
+        def __init__(self, _service, *, comment_data, all_yes):
+            self.comment_data = comment_data
+            self.all_yes = all_yes
+            instances.append(self)
+
+        def reject_task_list(self, *args, **kwargs):
+            reject_task_list_mock(*args, **kwargs)
+
+    monkeypatch.setattr(reject_tasks, "RejectTasksMain", RejectTasksMainStub)
+
+    command = reject_tasks.RejectTasks(service, facade, args)
+    command.main()
+
+    assert reject_task_list_mock.call_args.kwargs["inspection_comment"] == "コメント1"
+    assert instances[0].comment_data == {"x": 1, "y": 3, "_type": "Point"}
+
+
 def test_main_stops_when_assigned_annotator_user_id_is_not_project_member(monkeypatch: pytest.MonkeyPatch) -> None:
     service = Mock()
     facade = Mock()
