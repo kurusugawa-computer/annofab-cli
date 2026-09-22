@@ -58,6 +58,9 @@ def get_task_relation_dict(csv_file: Path) -> TaskInputRelation:
 
     # `dtype="string"`を指定した理由：指定しないと、IDが`001`のときに`1`に変換されてしまうため
     df = pandas.read_csv(str(csv_file), header=None, usecols=(0, 1), names=("task_id", "input_data_id"), dtype="string")
+    if df[["task_id", "input_data_id"]].isna().any().any():
+        raise ValueError("CSV形式が不正です。'task_id' または 'input_data_id' に欠損値を指定できません。")
+
     result: TaskInputRelation = defaultdict(list)
     for task_id, input_data_id in zip(df["task_id"], df["input_data_id"], strict=False):
         result[task_id].append(input_data_id)
