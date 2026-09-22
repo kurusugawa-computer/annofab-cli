@@ -62,10 +62,12 @@ def get_task_creation_info_list_from_csv(
 ) -> list[TaskCreationInfo]:
     """ヘッダ行ありCSVから、タスク作成情報のlistを取得します。"""
 
-    # `dtype=str`を指定した理由：指定しないと、IDが`001`のときに`1`に変換されてしまうため
-    df = pandas.read_csv(str(csv_file), dtype=str)
+    # `dtype="string"`を指定した理由：指定しないと、IDが`001`のときに`1`に変換されてしまうため
+    df = pandas.read_csv(str(csv_file), dtype="string")
     if "task_id" not in df.columns or "input_data_id" not in df.columns:
         raise ValueError("CSV形式が不正です。ヘッダ行に 'task_id' と 'input_data_id' を指定してください。")
+    if df["input_data_id"].isna().any():
+        raise ValueError("CSV形式が不正です。'input_data_id' に欠損値を指定できません。")
 
     task_relation_dict: dict[str, list[str]] = defaultdict(list)
     for task_id, input_data_id in zip(df["task_id"], df["input_data_id"], strict=False):

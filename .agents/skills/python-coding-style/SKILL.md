@@ -17,6 +17,7 @@ description: Pythonコードを作成・修正するときに使用。テスト�
 
 # pandas
 * `pandas.DataFrame.to_dict()`は`pd.NA`を`None`に変換します。またnumpyの数値型はpythonの数値型に変換します。したがって、`pandas.DataFrame.to_dict()`の結果に対して、`int()`や`pd.isna()`などの不要な処理は実施しないでください。
+* `pandas.read_csv()`で文字列として読み込む場合は、`dtype="str"`でなく`dtype="string"`をできるだけ採用してください。欠損値を`NaN`ではなく`pd.NA`として扱いたいからです。
 
 # annofabapi
 * Annofab Web APIのリクエストボディとレスポンスのスキーマの確認方法：`annofabapi.AnnofabApi`配下のメソッドのdocstringを参照する。docstringに書いてあるschemaは、`annofabapi.pydantic_models`配下を参照する。

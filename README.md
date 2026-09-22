@@ -20,7 +20,7 @@
 
 
 ## 廃止予定
-* TODO
+https://annofab-cli.readthedocs.io/ja/latest/deprecations.html を参照してください。
 
 # Requirements
 * Python 3.11+

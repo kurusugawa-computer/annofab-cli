@@ -87,14 +87,14 @@ def read_input_data_csv(csv_file: Path) -> pandas.DataFrame:
     Raises:
         ValueError: 必須列が不足している場合
     """
-    df = pandas.read_csv(str(csv_file), dtype=str)
+    df = pandas.read_csv(str(csv_file), dtype="string")
 
     required_columns = {"input_data_name", "input_data_path"}
     if not required_columns.issubset(df.columns):
         raise ValueError("CSV形式が不正です。ヘッダ行に 'input_data_name' と 'input_data_path' を指定してください。")
 
     if "input_data_id" not in df.columns:
-        df["input_data_id"] = None
+        df["input_data_id"] = pandas.Series(pandas.NA, index=df.index, dtype="string")
 
     return df
 

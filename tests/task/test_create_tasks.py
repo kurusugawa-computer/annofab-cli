@@ -55,6 +55,23 @@ def test_get_task_relation_dict_from_headerless_csv(tmp_path: Path) -> None:
     }
 
 
+def test_get_task_creation_info_list_from_csv_with_missing_input_data_id(tmp_path: Path) -> None:
+    csv_file = tmp_path / "task.csv"
+    csv_file.write_text("task_id,input_data_id\ntask_001,\n", encoding="utf-8")
+
+    with pytest.raises(ValueError):
+        create_tasks.get_task_creation_info_list_from_csv(csv_file)
+
+
+@pytest.mark.parametrize("csv_content", ["task_001,\n", ",input_data_001\n"])
+def test_get_task_relation_dict_with_missing_id(tmp_path: Path, csv_content: str) -> None:
+    csv_file = tmp_path / "task.csv"
+    csv_file.write_text(csv_content, encoding="utf-8")
+
+    with pytest.raises(ValueError):
+        put_tasks.get_task_relation_dict(csv_file)
+
+
 def test_get_task_creation_info_list_from_csv_with_common_user_id(tmp_path: Path) -> None:
     csv_file = tmp_path / "task.csv"
     csv_file.write_text(
