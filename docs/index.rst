@@ -10,5 +10,6 @@ Table of Contents
 
    user_guide/index
    command_reference/index
+   deprecations
    examples/index
    faq
