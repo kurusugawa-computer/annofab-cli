@@ -1,6 +1,5 @@
 # annofab-cli
 [Annofab](https://annofab.com/)のCLI(Command Line Interface)ツールです。
-「タスクの一括差し戻し」や、「タスク一覧出力」など、Annofabの画面で実施するには時間がかかる操作を、コマンドとして提供しています。
 
 [![PyPI version](https://badge.fury.io/py/annofabcli.svg)](https://badge.fury.io/py/annofabcli)
 [![Python Versions](https://img.shields.io/pypi/pyversions/annofabcli.svg)](https://pypi.org/project/annofabcli/)
@@ -23,6 +22,8 @@
 https://annofab-cli.readthedocs.io/ja/latest/deprecations.html を参照してください。
 
 ## はじめに
+
+以下のコマンドでインストールできます。
 
 ```
 $ pip install annofabcli
