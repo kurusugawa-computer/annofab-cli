@@ -334,6 +334,7 @@ class DrawAnnotation(CommandLineWithoutWebapi):
                 sep=",",
                 header=None,
                 names=("input_data_id", "image_path"),
+                dtype={"input_data_id": "string"},
             )
             input_data_id_relation_dict = dict(zip(df["input_data_id"], df["image_path"], strict=False))
 

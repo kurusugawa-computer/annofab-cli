@@ -7,10 +7,19 @@ data_dir = Path("./tests/data/filesystem")
 out_dir = Path("./tests/out/annotation_zip")
 
 
-def test_read_input_data_id_csv():
+def test_read_input_data_id_csv() -> None:
     actual = read_input_data_id_csv(data_dir / "input_data_id_with_header.csv")
 
     assert actual == {"c6e1c2ec-6c7c-41c6-9639-4244c2ed2839": "lenna.png"}
+
+
+def test_read_input_data_id_csv_preserves_leading_zeroes(tmp_path: Path) -> None:
+    csv_path = tmp_path / "input_data.csv"
+    csv_path.write_text("input_data_id,image_path\n001,image.png\n")
+
+    actual = read_input_data_id_csv(csv_path)
+
+    assert actual == {"001": "image.png"}
 
 
 class TestCommandLine:
