@@ -7,7 +7,7 @@ endif
 GITLEAKS_VERSION := v8.30.1
 GITLEAKS_DOCKER_CONFIG ?= /tmp/annofab-cli-docker-config
 
-.PHONY: docs lint test format publish_test publish gitleaks
+.PHONY: docs docs-check lint test format publish_test publish gitleaks
 
 format:
 	uv run ruff format ${SOURCE_FILES} ${TEST_FILES}
@@ -37,3 +37,6 @@ test:
 
 docs:
 	cd docs && uv run make html
+
+docs-check:
+	uv run sphinx-build -T -E -a -W --keep-going -n -b html docs /tmp/annofab-cli-docs
