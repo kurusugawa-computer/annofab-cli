@@ -52,6 +52,30 @@ Getting Help
       --version             show program's version number and exit
 
 
+シェル補完
+==========================================
+
+``completion`` コマンドで補完スクリプトを生成すると、コマンド名、サブコマンド、オプション、および選択肢を補完できます。補完時にはannofabcliを起動しないため、Web APIへアクセスせず、入力のたびに待たされることもありません。
+
+以下の例では、Bash用の補完スクリプトをユーザー単位でインストールします。新しいシェルを起動すると有効になります。
+この補完スクリプトにはBash 4以上が必要です。macOS標準のBashは3.2のため、Zsh用の補完スクリプトを利用してください。
+
+.. code-block::
+
+    $ mkdir -p ~/.local/share/bash-completion/completions
+    $ annofabcli completion bash > ~/.local/share/bash-completion/completions/annofabcli
+
+
+Zsh、Fish、PowerShell、およびTcsh用の補完スクリプトも生成できます。各シェルの補完スクリプト用ディレクトリに保存してください。
+
+.. code-block::
+
+    $ annofabcli completion zsh
+    $ annofabcli completion fish
+    $ annofabcli completion powershell
+    $ annofabcli completion tcsh
+
+
 .. code-block::
 
     $ annofabcli task --help
@@ -156,4 +180,3 @@ Getting Help
   DEBUG    : 2022-01-24 12:28:27,399 : annofabapi.api                 : Sent a request :: {'request': {'http_method': 'get', 'url': 'https://annofab.com/api/v1/organizations/kurusugawa/projects', 'query_params': {'user_id': 'xxx', 'account_id': 'xxx', 'page': 2, 'limit': 200}, 'header_params': None, 'request_body': None}, 'response': {'status_code': 200, 'content_length': 182546}}
   INFO     : 2022-01-24 12:28:27,409 : annofabcli.project.list_project : プロジェクト一覧の件数: 384
   INFO     : 2022-01-24 12:28:27,441 : annofabcli.common.utils        : out/project.csv を出力しました。
-

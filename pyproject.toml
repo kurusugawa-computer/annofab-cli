@@ -36,6 +36,7 @@ dependencies = [
     "ulid-py>=1.1.0",
     "annofabapi-3dpc-extensions",
     "pydantic>=2.12",
+    "shtab>=1.8",
 ]
 
 [project.urls]
