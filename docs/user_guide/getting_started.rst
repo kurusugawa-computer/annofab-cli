@@ -9,23 +9,17 @@ annofabcliは、Annofabのプロジェクト、入力データ、タスク、ア
 動作環境
 ==========================================
 
-Python 3.11以上が必要です。
+* Python 3.11以上
 
 
 インストール
 ==========================================
 
-pipでインストールします。
 
 .. code-block:: console
 
     $ pip install annofabcli
 
-複数のPython環境がある場合は、利用するPythonを明示してインストールしてください。
-
-.. code-block:: console
-
-    $ python -m pip install annofabcli
 
 インストールの確認
 ==========================================
@@ -35,8 +29,7 @@ pipでインストールします。
 .. code-block:: console
 
     $ annofabcli --version
-
-コマンドが見つからない場合は、Pythonのスクリプト用ディレクトリが ``PATH`` に含まれているか確認してください。
+    annofabcli 1.130.0
 
 
 認証情報の設定
@@ -51,12 +44,6 @@ Annofab APIへのアクセスには認証が必要です。
 .. code-block:: console
 
     $ export ANNOFAB_PAT='xxxxxxxxxxxxxxxxxxx'
-
-Windows PowerShellでは、次のように設定します。
-
-.. code-block:: powershell
-
-    PS> $env:ANNOFAB_PAT = 'xxxxxxxxxxxxxxxxxxx'
 
 
 初回の動作確認
@@ -78,9 +65,3 @@ Windows PowerShellでは、次のように設定します。
 利用できるコマンドは :doc:`../command_reference/index` に一覧があります。
 
 
-次に読むページ
-==========================================
-
-* コマンドの構造、ヘルプの表示、引数へのファイル指定: :doc:`user_guide`
-* 認証情報と開発用エンドポイントの設定: :doc:`configurations`
-* よく利用するオプション: :doc:`command_line_options`
