@@ -3,7 +3,7 @@ import builtins
 
 import pytest
 
-from annofabcli.common.cli import get_json_from_args, get_list_from_args, non_negative_int, prompt_yesnoall
+from annofabcli.common.cli import DEFAULT_ENDPOINT_URL, get_endpoint_url, get_json_from_args, get_list_from_args, non_negative_int, prompt_yesnoall
 
 
 def test_get_json_from_args():
@@ -24,6 +24,30 @@ def test_get_list_from_args():
 
     actual = get_list_from_args(None)
     assert len(actual) == 0
+
+
+def test_get_endpoint_url_prefers_command_line_option(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("ANNOFAB_ENDPOINT_URL", "https://environment.example.com")
+
+    args = argparse.Namespace(endpoint_url="https://command-line.example.com")
+
+    assert get_endpoint_url(args) == "https://command-line.example.com"
+
+
+def test_get_endpoint_url_uses_environment_variable(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("ANNOFAB_ENDPOINT_URL", "https://environment.example.com")
+
+    args = argparse.Namespace(endpoint_url=None)
+
+    assert get_endpoint_url(args) == "https://environment.example.com"
+
+
+def test_get_endpoint_url_uses_default_when_not_configured(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("ANNOFAB_ENDPOINT_URL", raising=False)
+
+    args = argparse.Namespace(endpoint_url=None)
+
+    assert get_endpoint_url(args) == DEFAULT_ENDPOINT_URL
 
 
 def test_non_negative_int() -> None:

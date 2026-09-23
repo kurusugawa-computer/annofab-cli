@@ -134,7 +134,7 @@ def add_parser(
 
         group.add_argument("--yes", action="store_true", help="処理中に現れる問い合わせに対して、常に ``yes`` と回答します。")
 
-        group.add_argument("--endpoint_url", type=str, help="Annofab WebAPIのエンドポイントを指定します。", default=DEFAULT_ENDPOINT_URL)
+        group.add_argument("--endpoint_url", type=str, help="Annofab WebAPIのエンドポイントを指定します。")
 
         group.add_argument("--annofab_user_id", type=str, help="Annofabにログインする際のユーザーID")
         group.add_argument("--annofab_password", type=str, help="Annofabにログインする際のパスワード")
