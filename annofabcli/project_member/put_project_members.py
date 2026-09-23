@@ -167,10 +167,11 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         help=(
             "プロジェクトメンバが記載されたCSVファイルのパスを指定してください。"
             "CSVのフォーマットは、ヘッダあり、カンマ区切りです。\n"
-            " * user_id (required)\n"
-            " * member_role (required)\n"
-            " * sampling_inspection_rate\n"
-            " * sampling_acceptance_rate\n"
+            "* user_id (required)\n"
+            "* member_role (required)\n"
+            "* sampling_inspection_rate\n"
+            "* sampling_acceptance_rate\n"
+            "\n"
             "member_roleには ``owner``, ``worker``, ``accepter``, ``training_data_user`` のいずれかを指定します。\n"
             "自分自身は登録できません。"
         ),

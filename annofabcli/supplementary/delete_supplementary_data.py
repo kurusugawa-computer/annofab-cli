@@ -245,11 +245,12 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         type=str,
         help=(
             "削除する補助情報が記載されたCSVファイルのパスを指定してください。\n"
-            "CSVのフォーマットは以下の通りです。"
+            "CSVのフォーマットは以下の通りです。\n"
             "詳細は https://annofab-cli.readthedocs.io/ja/latest/command_reference/supplementary/delete.html を参照してください。\n"
-            " * ヘッダ行あり, カンマ区切り\n"
-            " * input_data_id (required)\n"
-            " * supplementary_data_id (required)\n"
+            "\n"
+            "* ヘッダ行あり, カンマ区切り\n"
+            "* input_data_id (required)\n"
+            "* supplementary_data_id (required)\n"
         ),
     )
 
