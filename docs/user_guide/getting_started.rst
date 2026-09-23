@@ -50,18 +50,24 @@ Annofab APIへのアクセスには認証が必要です。
 ==========================================
 
 認証情報を設定後、まず自分のアカウント情報を取得します。
+以下のように自分自身のアカウント情報が出力されれば、認証情報は正しく設定されています。
 
 .. code-block:: console
 
     $ annofabcli my_account get
-
-次に、自分が所属する組織を確認できます。
-
-.. code-block:: console
-
-    $ annofabcli organization list
-
-各コマンドの詳細は :doc:`../command_reference/my_account/get` および :doc:`../command_reference/organization/list` を参照してください。
-利用できるコマンドは :doc:`../command_reference/index` に一覧があります。
+    {
+        "account_id": "***",
+        "user_id": "***",
+        "username": "***",
+        "email": "***",
+        "reset_requested_email": null,
+        "lang": "ja-JP",
+        "keylayout": "ja-JP",
+        "authority": "user",
+        "biography": "***",
+        "errors": [],
+        "updated_datetime": "2026-01-05T14:55:26.248+09:00",
+        "account_type": "annofab"
+    }    
 
 
