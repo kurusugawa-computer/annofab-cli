@@ -109,9 +109,9 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
             " * ``task_id`` （必須）: タスクID\n"
             " * ``input_data_id`` （必須）: 入力データID\n"
             " * ``comment`` （必須）: コメント本文\n"
-            ' * ``data`` （任意）: コメント位置情報（JSON形式の文字列。例: ``\'{"x":10,"y":20,"_type":"Point"}\' `` ）\n'
+            ' * ``data`` （任意）: コメント位置情報（JSON形式の文字列。例: \'{"x":10,"y":20,"_type":"Point"}\'）\n'
             " * ``annotation_id`` （任意）: 紐付けるアノテーションID\n"
-            ' * ``phrases`` （任意）: 定型指摘IDのリスト（JSON配列形式の文字列。例: ``\'["ID1","ID2"]\' `` ）\n'
+            ' * ``phrases`` （任意）: 定型指摘IDのリスト（JSON配列形式の文字列。例: \'["ID1","ID2"]\'）\n'
             " * ``comment_id`` （任意）: コメントID（省略時はUUIDv4自動生成）\n"
         ),
     )

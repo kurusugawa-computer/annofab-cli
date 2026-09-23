@@ -289,10 +289,11 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
             "更新対象の入力データと更新後の値が記載されたCSVファイルのパスを指定します。\n"
             "CSVのフォーマットは以下の通りです。"
             "\n"
-            " * ヘッダ行あり, カンマ区切り\n"
-            " * input_data_id (required)\n"
-            " * input_data_name (optional)\n"
-            " * input_data_path (optional): ``file://`` を先頭に付けると、ローカルファイルを入力データに使用します。\n"
+            "* ヘッダ行あり, カンマ区切り\n"
+            "* input_data_id (required)\n"
+            "* input_data_name (optional)\n"
+            "* input_data_path (optional): ``file://`` を先頭に付けると、ローカルファイルを入力データに使用します。\n"
+            "\n"
             "更新しないプロパティは、セルの値を空欄にしてください。\n"
         ),
     )

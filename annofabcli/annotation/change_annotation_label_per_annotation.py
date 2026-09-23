@@ -314,7 +314,10 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     input_group.add_argument(
         "--csv",
         type=str,
-        help="各アノテーションごとに変更内容を記載したCSVファイルを指定します。\n* `task_id`, `input_data_id`, `annotation_id` と、`label_id`または`label_name`のいずれかのカラムが必要です。",
+        help=(
+            "各アノテーションごとに変更内容を記載したCSVファイルを指定します。\n"
+            "* ``task_id``, ``input_data_id``, ``annotation_id`` と、 ``label_id`` または ``label_name`` のいずれかのカラムが必要です。"
+        ),
     )
     argument_parser.add_task_id(required=False, help_message="変更対象のアノテーションをtask_idで絞り込みます。 ``--json`` や ``--csv`` で指定したデータのうち、一致したtask_idのみを処理します。")
     parser.add_argument(

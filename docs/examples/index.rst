@@ -13,5 +13,3 @@ annofabcliを使った利用事例などを紹介します。
    edit_annotation
 
 
-
-

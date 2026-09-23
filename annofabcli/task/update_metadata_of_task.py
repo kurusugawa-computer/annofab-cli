@@ -256,7 +256,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
             "[DEPRECATED] キーがタスクID, 値がメタデータ( ``--metadata`` 参照)であるオブジェクトをJSON形式で指定してください。\n"
             "代わりに ``task update_metadata_per_task --json`` を使用してください。\n"
             f"(ex) '{json.dumps(sample_metadata_by_task_id)}'\n"
-            " ``file://`` を先頭に付けると、JSON形式のファイルを指定できます。"
+            "``file://`` を先頭に付けると、JSON形式のファイルを指定できます。"
         ),
     )
 

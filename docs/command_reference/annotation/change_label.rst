@@ -22,7 +22,7 @@ Examples
 --------------------------
 
 ``--annotation_query`` には、変更対象のアノテーションを検索する条件をJSON形式で指定してください。
-``--annotation_query`` のサンプルは、`Command line options <../../user_guide/command_line_options.html#annotation-query-aq>`_ を参照してください。
+``--annotation_query`` のサンプルは、 :doc:`コマンドラインオプション <../../user_guide/command_line_options>` を参照してください。
 
 変更後のラベルは、 ``--label_name`` または ``--label_id`` のいずれかで指定してください。
 ただし、変更前のラベルと同じ種類である必要があります。
@@ -38,7 +38,7 @@ Examples
 
 
 ``--backup`` にディレクトリを指定すると、変更対象のタスクのアノテーション情報を、バックアップとしてディレクトリに保存します。
-アノテーション情報の復元は、 `annofabcli annotation restore <../annotation/restore.html>`_ コマンドで実現できます。
+アノテーション情報の復元は、 :doc:`restore` コマンドで実現できます。
 
 
 .. note::
@@ -58,4 +58,3 @@ Usage Details
     :prog: annofabcli annotation change_label
     :nosubcommands:
     :nodefaultconst:
-

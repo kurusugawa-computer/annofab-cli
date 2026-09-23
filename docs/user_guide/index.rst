@@ -6,6 +6,7 @@ User Guide
    :maxdepth: 1
    :titlesonly:
 
+   getting_started
    user_guide
    configurations
    cli_usage_output

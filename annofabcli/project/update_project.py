@@ -256,10 +256,11 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
             "更新対象のプロジェクトと更新後の値が記載されたCSVファイルのパスを指定します。\n"
             "CSVのフォーマットは以下の通りです。"
             "\n"
-            " * ヘッダ行あり, カンマ区切り\n"
-            " * project_id (required)\n"
-            " * title (optional)\n"
-            " * overview (optional)\n"
+            "* ヘッダ行あり, カンマ区切り\n"
+            "* project_id (required)\n"
+            "* title (optional)\n"
+            "* overview (optional)\n"
+            "\n"
             "更新しないプロパティは、セルの値を空欄にしてください。\n"
         ),
     )
