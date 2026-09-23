@@ -29,7 +29,7 @@ annofabcliは、Annofabのプロジェクト、入力データ、タスク、ア
 .. code-block:: console
 
     $ annofabcli --version
-    annofabcli 1.130.0
+    annofabcli X.Y.Z
 
 
 認証情報の設定
