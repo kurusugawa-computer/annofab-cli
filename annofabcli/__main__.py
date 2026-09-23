@@ -12,6 +12,7 @@ import annofabcli.annotation_specs.subcommand_annotation_specs
 import annofabcli.annotation_zip.subcommand_annotation_zip
 import annofabcli.comment.subcommand_comment
 import annofabcli.common.cli
+import annofabcli.completion.subcommand_completion
 import annofabcli.experimental.subcommand_experimental
 import annofabcli.filesystem.subcommand_filesystem
 import annofabcli.input_data.subcommand_input_data
@@ -78,6 +79,7 @@ def main(arguments: list[str] | None = None) -> None:
     """
     warn_pandas_copy_on_write()
     parser = create_parser()
+    parser.set_defaults(root_parser=parser)
 
     if arguments is None:
         args = parser.parse_args()
@@ -86,11 +88,12 @@ def main(arguments: list[str] | None = None) -> None:
 
     if hasattr(args, "subcommand_func"):
         try:
-            annofabcli.common.cli.load_logging_config_from_args(args)
-            argv = sys.argv
-            if arguments is not None:
-                argv = ["annofabcli", *list(arguments)]
-            logger.info(f"argv={mask_sensitive_value_in_argv(argv)}")
+            if not getattr(args, "skip_logging", False):
+                annofabcli.common.cli.load_logging_config_from_args(args)
+                argv = sys.argv
+                if arguments is not None:
+                    argv = ["annofabcli", *list(arguments)]
+                logger.info(f"argv={mask_sensitive_value_in_argv(argv)}")
             args.subcommand_func(args)
         except Exception as e:
             logger.exception(e)  # noqa: TRY401
@@ -102,7 +105,7 @@ def main(arguments: list[str] | None = None) -> None:
 
 
 def create_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Command Line Interface for Annofab", formatter_class=annofabcli.common.cli.PrettyHelpFormatter)
+    parser = argparse.ArgumentParser(prog="annofabcli", description="Command Line Interface for Annofab", formatter_class=annofabcli.common.cli.PrettyHelpFormatter)
     parser.add_argument("--version", action="version", version=f"annofabcli {annofabcli.__version__}")
     parser.set_defaults(command_help=parser.print_help)
 
@@ -112,6 +115,7 @@ def create_parser() -> argparse.ArgumentParser:
     annofabcli.annotation_specs.subcommand_annotation_specs.add_parser(subparsers)
     annofabcli.annotation_zip.subcommand_annotation_zip.add_parser(subparsers)
     annofabcli.comment.subcommand_comment.add_parser(subparsers)
+    annofabcli.completion.subcommand_completion.add_parser(subparsers)
     annofabcli.input_data.subcommand_input_data.add_parser(subparsers)
     annofabcli.instruction.subcommand_instruction.add_parser(subparsers)
     annofabcli.job.subcommand_job.add_parser(subparsers)
