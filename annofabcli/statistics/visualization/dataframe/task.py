@@ -331,7 +331,16 @@ class Task:
 
     @classmethod
     def from_csv(cls, csv_file: Path, *, custom_production_volume_list: list[ProductionVolumeColumn] | None = None) -> Task:
-        df = pandas.read_csv(str(csv_file), dtype={"project_id": "string", "task_id": "string"})
+        df = pandas.read_csv(
+            str(csv_file),
+            dtype={
+                "project_id": "string",
+                "task_id": "string",
+                "first_annotation_user_id": "string",
+                "first_inspection_user_id": "string",
+                "first_acceptance_user_id": "string",
+            },
+        )
         return cls(df, custom_production_volume_list=custom_production_volume_list)
 
     @staticmethod
