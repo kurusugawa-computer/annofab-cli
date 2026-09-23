@@ -54,4 +54,20 @@ jobs:
       - name: Lint
         run: |
             make lint
+
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Install uv and set the python version
+        uses: astral-sh/setup-uv@v7
+        with:
+          python-version: "3.13"
+          version: "latest"
+      - name: Install the project
+        run: uv sync --only-group docs
+      - name: Build documentation without warnings
+        run: make docs-check
       
