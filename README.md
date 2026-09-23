@@ -33,12 +33,6 @@ $ pip install annofabcli
 
 https://pypi.org/project/annofabcli/
 
-## Windows用の実行ファイルを利用する場合
-[GitHubのリリースページ](https://github.com/kurusugawa-computer/annofab-cli/releases)から`annofabcli-vX.X.X-windows.zip`をダウンロードしてください。
-zipの中にある`annofabcli.exe`が実行ファイルになります。
-
-
-
 ## Annofabの認証情報の設定
 https://annofab-cli.readthedocs.io/ja/latest/user_guide/configurations.html 参照
 
