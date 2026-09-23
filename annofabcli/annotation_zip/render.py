@@ -29,7 +29,7 @@ def read_input_data_id_csv(csv_path: Path) -> dict[str, str]:
     Returns:
         input_data_idをキー、画像ファイルパスを値にしたdict。
     """
-    df = pandas.read_csv(csv_path, sep=",")
+    df = pandas.read_csv(csv_path, sep=",", dtype={"input_data_id": "string"})
     required_columns = {"input_data_id", "image_path"}
     if not required_columns.issubset(set(df.columns)):
         raise ValueError(f"CSVには {sorted(required_columns)} の列が必要です。")

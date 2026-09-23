@@ -47,7 +47,7 @@ class ActualWorktime:
 
     @classmethod
     def from_csv(cls, csv_file: Path) -> ActualWorktime:
-        df = pandas.read_csv(str(csv_file))
+        df = pandas.read_csv(str(csv_file), dtype={"project_id": "string", "account_id": "string"})
         return cls(df)
 
     @classmethod
