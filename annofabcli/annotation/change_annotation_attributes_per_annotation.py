@@ -259,7 +259,10 @@ class ChangeAttributesPerAnnotation(CommandLine):
             target_annotation_list = [TargetAnnotation.model_validate(anno) for anno in annotation_items]
 
         elif args.csv is not None:
-            df_input = pandas.read_csv(args.csv)
+            df_input = pandas.read_csv(
+                args.csv,
+                dtype={"task_id": "string", "input_data_id": "string", "annotation_id": "string", "attributes": "string"},
+            )
             target_annotation_list = [
                 TargetAnnotation(task_id=e["task_id"], input_data_id=e["input_data_id"], annotation_id=e["annotation_id"], attributes=json.loads(e["attributes"]))
                 for e in df_input.to_dict(orient="records")

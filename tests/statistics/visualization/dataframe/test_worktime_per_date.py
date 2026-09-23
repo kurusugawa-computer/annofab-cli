@@ -13,6 +13,16 @@ data_dir = Path("./tests/data/statistics")
 output_dir.mkdir(exist_ok=True, parents=True)
 
 
+def test_actual_worktime_from_csv_preserves_leading_zeroes(tmp_path: Path) -> None:
+    csv_path = tmp_path / "actual_worktime.csv"
+    csv_path.write_text("project_id,date,account_id,actual_worktime_hour\n001,2026-09-23,002,1.5\n")
+
+    actual = ActualWorktime.from_csv(csv_path)
+
+    assert actual.df.iloc[0]["project_id"] == "001"
+    assert actual.df.iloc[0]["account_id"] == "002"
+
+
 class TestWorktimePerDate:
     def test__from_csv__and__to_csv(self):
         actual = WorktimePerDate.from_csv(data_dir / "ユーザ_日付list-作業時間.csv")

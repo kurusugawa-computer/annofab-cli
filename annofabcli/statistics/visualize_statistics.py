@@ -572,7 +572,7 @@ def create_custom_production_volume(cli_value: str) -> CustomProductionVolume:
     custom_production_volume_list = [ProductionVolumeColumn(column["value"], column["name"]) for column in column_list]
 
     csv_path = dict_data["csv_path"]
-    df = pandas.read_csv(csv_path)
+    df = pandas.read_csv(csv_path, dtype={"project_id": "string", "task_id": "string"})
 
     return CustomProductionVolume(df=df, custom_production_volume_list=custom_production_volume_list)
 
@@ -693,14 +693,14 @@ class VisualizeStatistics(CommandLine):
             logger.warning("'--labor_csv'が指定されていないので、実績作業時間に関する情報は出力されません。")
             actual_worktime = ActualWorktime.empty()
         else:
-            df_actual_worktime = pandas.read_csv(args.labor_csv)
+            df_actual_worktime = pandas.read_csv(args.labor_csv, dtype={"project_id": "string", "account_id": "string"})
             if not ActualWorktime.required_columns_exist(df_actual_worktime):
                 logger.error("引数`--labor_csv`のCSVには以下の列が存在しないので、終了します。\n`project_id`, `date`, `account_id`, `actual_worktime_hour`")
                 sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
             actual_worktime = ActualWorktime(df_actual_worktime)
 
         if args.annotation_count_csv is not None:
-            df_annotation_count = pandas.read_csv(args.annotation_count_csv)
+            df_annotation_count = pandas.read_csv(args.annotation_count_csv, dtype={"project_id": "string", "task_id": "string"})
             if not AnnotationCount.required_columns_exist(df_annotation_count):
                 logger.error("引数`--annotation_count_csv`のCSVには以下の列が存在しないので、終了します。\n`project_id`, `task_id`, `annotation_count`")
                 sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
@@ -709,7 +709,7 @@ class VisualizeStatistics(CommandLine):
             annotation_count = None
 
         if args.input_data_count_csv is not None:
-            df_input_data_count = pandas.read_csv(args.input_data_count_csv)
+            df_input_data_count = pandas.read_csv(args.input_data_count_csv, dtype={"project_id": "string", "task_id": "string"})
             if not InputDataCount.required_columns_exist(df_input_data_count):
                 logger.error("引数`--input_data_count_csv`のCSVには以下の列が存在しないので、終了します。\n`project_id`, `task_id`, `input_data_count`")
                 sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
