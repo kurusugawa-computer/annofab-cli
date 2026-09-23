@@ -3,7 +3,7 @@ set -euo pipefail
 
 readonly repository_url="https://github.com/yuji38kwmt/codex-skills.git"
 readonly source_path="skills/pandas-conventions"
-readonly destination_path=".agents/skills/pandas-conventions"
+readonly destination_path="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)/.agents/skills/pandas-conventions"
 
 temporary_directory=$(mktemp -d)
 trap 'rm -rf "$temporary_directory"' EXIT
