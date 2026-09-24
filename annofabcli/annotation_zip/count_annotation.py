@@ -13,7 +13,7 @@ import annofabapi
 from annofabapi.models import ProjectMemberRole
 
 import annofabcli.common.cli
-from annofabcli.annotation_zip.task_metadata import get_task_metadata_by_task_id
+from annofabcli.annotation_zip.task_metadata import get_task_metadata_by_task_id, get_task_metadata_keys
 from annofabcli.common.cli import COMMAND_LINE_ERROR_STATUS_CODE, ArgumentParser, CommandLine
 from annofabcli.common.download import DownloadingFile
 from annofabcli.common.enums import OutputFormat
@@ -298,7 +298,7 @@ class CountAnnotation(CommandLine):
         args = self.args
 
         project_id: str = args.project_id
-        task_metadata_keys = annofabcli.common.cli.get_list_from_args(args.task_metadata_key) if args.task_metadata_key is not None else []
+        with_task_metadata: bool = args.with_task_metadata
         super().validate_project(project_id, project_member_roles=[ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER])
 
         annotation_path = args.annotation
@@ -319,18 +319,20 @@ class CountAnnotation(CommandLine):
 
         def download_and_process_annotation(temp_dir: Path, *, is_latest: bool, annotation_path: Path | None) -> None:
             task_json_path: Path | None = None
-            if group_by == GroupBy.INPUT_DATA_ID or task_metadata_keys:
+            if group_by == GroupBy.INPUT_DATA_ID or with_task_metadata:
                 task_json_path = downloading_obj.download_task_json_to_dir(
                     project_id,
                     temp_dir,
                     is_latest=is_latest,
                 )
 
-            if task_metadata_keys:
+            if with_task_metadata:
                 assert task_json_path is not None
-                task_metadata_by_task_id = get_task_metadata_by_task_id(task_json_path, task_metadata_keys)
+                task_metadata_by_task_id = get_task_metadata_by_task_id(task_json_path)
+                task_metadata_keys = get_task_metadata_keys(task_metadata_by_task_id)
             else:
                 task_metadata_by_task_id = None
+                task_metadata_keys = []
 
             if annotation_path is None:
                 annotation_path = downloading_obj.download_annotation_zip_to_dir(
@@ -455,12 +457,7 @@ def add_common_arguments(parser: argparse.ArgumentParser) -> None:
         type=Path,
         help="指定したディレクトリに、アノテーションZIPなどの一時ファイルをダウンロードします。",
     )
-    parser.add_argument(
-        "--task_metadata_key",
-        type=str,
-        nargs="+",
-        help="出力するタスクメタデータのキーを指定します。CSVでは ``task_metadata.<key>`` 列、JSONでは ``task_metadata`` キーに出力します。 ``file://`` を先頭に付けると、キーが記載されたファイルを指定できます。",  # noqa: E501
-    )
+    parser.add_argument("--with_task_metadata", action="store_true", help="タスクメタデータを出力します。CSVでは ``task_metadata.<key>`` 列、JSONでは ``task_metadata`` キーに出力します。")
 
     parser.add_argument(
         "--with_per_input_data",

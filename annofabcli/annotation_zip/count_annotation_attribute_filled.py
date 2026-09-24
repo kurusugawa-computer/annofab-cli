@@ -29,7 +29,7 @@ from annofabapi.pydantic_models.task_status import TaskStatus
 from dataclasses_json import DataClassJsonMixin, config
 
 import annofabcli.common.cli
-from annofabcli.annotation_zip.task_metadata import TASK_METADATA_COLUMN_PREFIX, get_task_metadata_by_task_id
+from annofabcli.annotation_zip.task_metadata import TASK_METADATA_COLUMN_PREFIX, get_task_metadata_by_task_id, get_task_metadata_keys
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
     ArgumentParser,
@@ -587,9 +587,9 @@ class CountAnnotationAttributeFilled(CommandLine):
     COMMON_MESSAGE = "annofabcli annotation_zip count_annotation_attribute_filled: error:"
 
     def validate(self, args: argparse.Namespace) -> bool:
-        if args.task_metadata_key is not None and args.project_id is None:
+        if args.with_task_metadata and args.project_id is None:
             print(  # noqa: T201
-                f"{self.COMMON_MESSAGE} argument --project_id: `--task_metadata_key`を指定するときは、`--project_id`が必須です。",
+                f"{self.COMMON_MESSAGE} argument --project_id: `--with_task_metadata`を指定するときは、`--project_id`が必須です。",
                 file=sys.stderr,
             )
             return False
@@ -610,7 +610,8 @@ class CountAnnotationAttributeFilled(CommandLine):
             sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
         project_id: str | None = args.project_id
-        task_metadata_keys = annofabcli.common.cli.get_list_from_args(args.task_metadata_key) if args.task_metadata_key is not None else []
+        with_task_metadata: bool = args.with_task_metadata
+        task_metadata_keys: list[str] = []
         task_metadata_by_task_id: dict[str, dict[str, Any]] | None = None
         if project_id is not None:
             super().validate_project(project_id, project_member_roles=[ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER])
@@ -630,7 +631,7 @@ class CountAnnotationAttributeFilled(CommandLine):
 
         def download_and_process_annotation(temp_dir: Path, *, is_latest: bool, annotation_path: Path | None) -> None:
             # タスク全件ファイルは、フレーム番号を参照するのに利用する
-            if project_id is not None and (group_by == GroupBy.INPUT_DATA_ID or task_metadata_keys):
+            if project_id is not None and (group_by == GroupBy.INPUT_DATA_ID or with_task_metadata):
                 # group_byで条件を絞り込んでいる理由：
                 # タスクIDで集計する際は、フレーム番号は出力しないので、タスク全件ファイルをダウンロードする必要はないため
                 task_json_path = downloading_obj.download_task_json_to_dir(
@@ -641,11 +642,13 @@ class CountAnnotationAttributeFilled(CommandLine):
             else:
                 task_json_path = None
 
-            if task_metadata_keys:
+            if with_task_metadata:
                 assert task_json_path is not None
-                task_metadata_by_task_id = get_task_metadata_by_task_id(task_json_path, task_metadata_keys)
+                task_metadata_by_task_id = get_task_metadata_by_task_id(task_json_path)
+                task_metadata_keys = get_task_metadata_keys(task_metadata_by_task_id)
             else:
                 task_metadata_by_task_id = None
+                task_metadata_keys = []
 
             func = partial(
                 main_obj.print_annotation_count,
@@ -721,12 +724,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         help="project_id。``--annotation`` が未指定のときは必須です。``--annotation`` が指定されているときに ``--project_id`` を指定すると、アノテーション仕様を参照して、集計対象の属性やCSV列順が決まります。",  # noqa: E501
     )
 
-    parser.add_argument(
-        "--task_metadata_key",
-        type=str,
-        nargs="+",
-        help="出力するタスクメタデータのキーを指定します。CSVでは ``task_metadata.<key>`` 列、JSONでは ``task_metadata`` キーに出力します。 ``file://`` を先頭に付けると、キーが記載されたファイルを指定できます。",  # noqa: E501
-    )
+    parser.add_argument("--with_task_metadata", action="store_true", help="タスクメタデータを出力します。CSVでは ``task_metadata.<key>`` 列、JSONでは ``task_metadata`` キーに出力します。")
 
     parser.add_argument(
         "--group_by",
