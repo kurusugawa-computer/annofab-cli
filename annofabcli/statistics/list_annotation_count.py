@@ -32,6 +32,7 @@ from annofabapi.pydantic_models.additional_data_definition_type import Additiona
 from dataclasses_json import DataClassJsonMixin, config
 
 import annofabcli.common.cli
+from annofabcli.annotation_zip.task_metadata import TASK_METADATA_COLUMN_PREFIX
 from annofabcli.common.cli import (
     ArgumentParser,
     CommandLine,
@@ -149,6 +150,8 @@ class AnnotationCounterByTask(AnnotationCounter, DataClassJsonMixin):
     task_phase: TaskPhase
     task_phase_stage: int
     input_data_count: int
+    task_metadata: dict[str, Any] = field(default_factory=dict)
+    """出力対象とするタスクメタデータ。"""
 
 
 @dataclass(frozen=True)
@@ -180,6 +183,8 @@ class AnnotationCounterByInputData(AnnotationCounter, DataClassJsonMixin):
     """アノテーションJSONに格納されているアノテーションの更新日時"""
     frame_no: int | None = None
     """アノテーションJSONには含まれていない情報なので、Optionalにする"""
+    task_metadata: dict[str, Any] = field(default_factory=dict)
+    """出力対象とするタスクメタデータ。"""
 
 
 def lazy_parse_simple_annotation_by_input_data(annotation_path: Path) -> Iterator[SimpleAnnotationParser]:
@@ -595,6 +600,7 @@ class AttributeCountCsv:
         prior_attribute_columns: list[AttributeValueKey] | None = None,
         with_per_input_data: bool = False,  # noqa: FBT001, FBT002
         with_annotation_count: bool = True,  # noqa: FBT001, FBT002
+        task_metadata_keys: Collection[str] | None = None,
     ) -> None:
         """
         タスク単位の属性値ごとアノテーション数をCSVファイルに出力します。
@@ -611,6 +617,7 @@ class AttributeCountCsv:
             basic_columns: list[AttributeValueKey] = [
                 ("project_id", "", ""),
                 ("task_id", "", ""),
+                *[(f"{TASK_METADATA_COLUMN_PREFIX}.{key}", "", "") for key in task_metadata_keys or []],
                 ("task_phase", "", ""),
                 ("task_phase_stage", "", ""),
                 ("task_status", "", ""),
@@ -631,6 +638,7 @@ class AttributeCountCsv:
                 ("task_phase_stage", "", ""): c.task_phase_stage,
                 ("input_data_count", "", ""): c.input_data_count,
             }
+            cell.update({(f"{TASK_METADATA_COLUMN_PREFIX}.{key}", "", ""): c.task_metadata.get(key) for key in task_metadata_keys or []})
             if with_annotation_count:
                 cell[("annotation_count", "", "")] = c.annotation_count
             cell.update(c.annotation_count_by_attribute)
@@ -654,6 +662,7 @@ class AttributeCountCsv:
         output_file: Path,
         prior_attribute_columns: list[AttributeValueKey] | None = None,
         with_annotation_count: bool = True,  # noqa: FBT001, FBT002
+        task_metadata_keys: Collection[str] | None = None,
     ) -> None:
         """
         入力データ単位の属性値ごとアノテーション数をCSVファイルに出力します。
@@ -669,6 +678,7 @@ class AttributeCountCsv:
             basic_columns: list[AttributeValueKey] = [
                 ("project_id", "", ""),
                 ("task_id", "", ""),
+                *[(f"{TASK_METADATA_COLUMN_PREFIX}.{key}", "", "") for key in task_metadata_keys or []],
                 ("task_phase", "", ""),
                 ("task_phase_stage", "", ""),
                 ("task_status", "", ""),
@@ -694,6 +704,7 @@ class AttributeCountCsv:
                 ("task_phase", "", ""): c.task_phase.value,
                 ("task_phase_stage", "", ""): c.task_phase_stage,
             }
+            cell.update({(f"{TASK_METADATA_COLUMN_PREFIX}.{key}", "", ""): c.task_metadata.get(key) for key in task_metadata_keys or []})
             if with_annotation_count:
                 cell[("annotation_count", "", "")] = c.annotation_count
             cell.update(c.annotation_count_by_attribute)
@@ -761,6 +772,7 @@ class LabelCountCsv:
         prior_label_columns: list[str] | None = None,
         with_per_input_data: bool = False,  # noqa: FBT001, FBT002
         with_annotation_count: bool = True,  # noqa: FBT001, FBT002
+        task_metadata_keys: Collection[str] | None = None,
     ) -> None:
         """
         タスク単位のラベルごとアノテーション数をCSVファイルに出力します。
@@ -777,6 +789,7 @@ class LabelCountCsv:
             basic_columns = [
                 "project_id",
                 "task_id",
+                *[f"{TASK_METADATA_COLUMN_PREFIX}.{key}" for key in task_metadata_keys or []],
                 "task_phase",
                 "task_phase_stage",
                 "task_status",
@@ -797,6 +810,7 @@ class LabelCountCsv:
                 "task_phase_stage": c.task_phase_stage,
                 "input_data_count": c.input_data_count,
             }
+            d.update({f"{TASK_METADATA_COLUMN_PREFIX}.{key}": c.task_metadata.get(key) for key in task_metadata_keys or []})
             if with_annotation_count:
                 d["annotation_count"] = c.annotation_count
             # キーをラベル名、値をラベルごとのアノテーション数にしたdictに変換する
@@ -820,6 +834,7 @@ class LabelCountCsv:
         output_file: Path,
         prior_label_columns: list[str] | None = None,
         with_annotation_count: bool = True,  # noqa: FBT001, FBT002
+        task_metadata_keys: Collection[str] | None = None,
     ) -> None:
         """
         入力データ単位のラベルごとアノテーション数をCSVファイルに出力します。
@@ -835,6 +850,7 @@ class LabelCountCsv:
             basic_columns = [
                 "project_id",
                 "task_id",
+                *[f"{TASK_METADATA_COLUMN_PREFIX}.{key}" for key in task_metadata_keys or []],
                 "task_phase",
                 "task_phase_stage",
                 "task_status",
@@ -860,6 +876,7 @@ class LabelCountCsv:
                 "task_phase": c.task_phase.value,
                 "task_phase_stage": c.task_phase_stage,
             }
+            d.update({f"{TASK_METADATA_COLUMN_PREFIX}.{key}": c.task_metadata.get(key) for key in task_metadata_keys or []})
             if with_annotation_count:
                 d["annotation_count"] = c.annotation_count
             d.update(c.annotation_count_by_label)

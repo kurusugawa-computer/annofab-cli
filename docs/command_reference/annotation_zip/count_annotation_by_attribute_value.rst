@@ -69,6 +69,8 @@ Examples
 
 ``--annotation`` にアノテーションzipまたはzipを展開したディレクトリを指定できます。
 
+.. include:: task_metadata.inc
+
 .. code-block::
 
     $ annofabcli annotation_zip count_annotation_by_attribute_value --project_id prj1 --annotation annotation.zip --output out.csv
