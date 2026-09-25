@@ -20,6 +20,11 @@ from annofabapi.parser import (
 )
 
 import annofabcli.common.cli
+from annofabcli.annotation_zip.task_metadata import (
+    add_task_metadata_to_dataframe,
+    add_task_metadata_to_dict_list,
+    get_task_metadata_by_task_id,
+)
 from annofabcli.common.annofab.annotation_editor_url import ANNOTATION_EDITOR_TYPE_CHOICES, AnnotationEditorType, create_annotation_editor_url
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
@@ -154,7 +159,12 @@ def get_annotation_attribute_list_from_annotation_zipdir_path(
     return result
 
 
-def print_annotation_attribute_list_as_csv(annotation_attribute_list: list, output_file: Path | None) -> None:
+def print_annotation_attribute_list_as_csv(
+    annotation_attribute_list: list[dict[str, Any]],
+    output_file: Path | None,
+    *,
+    task_metadata_by_task_id: dict[str, dict[str, Any]] | None = None,
+) -> None:
     base_columns = [
         "project_id",
         "task_id",
@@ -169,24 +179,38 @@ def print_annotation_attribute_list_as_csv(annotation_attribute_list: list, outp
         "label",
     ]
     if len(annotation_attribute_list) == 0:
-        print_csv(pandas.DataFrame(columns=base_columns), output_file)
+        df = pandas.DataFrame(columns=base_columns)
+        if task_metadata_by_task_id is not None:
+            df = add_task_metadata_to_dataframe(df, task_metadata_by_task_id)
+        print_csv(df, output_file)
         return
 
     df = pandas.json_normalize(annotation_attribute_list)
 
     attribute_columns = [col for col in df.columns if col.startswith("attributes.")]
     columns = base_columns + attribute_columns
-    print_csv(df[columns], output_file)
+    result_df = df[columns]
+    if task_metadata_by_task_id is not None:
+        result_df = add_task_metadata_to_dataframe(result_df, task_metadata_by_task_id)
+    print_csv(result_df, output_file)
 
 
 def print_annotation_attribute_list(
     annotation_attribute_list: list[AnnotationAttribute],
     output_file: Path,
     output_format: Literal[OutputFormat.CSV, OutputFormat.JSON, OutputFormat.PRETTY_JSON],
+    *,
+    task_metadata_by_task_id: dict[str, dict[str, Any]] | None = None,
 ) -> None:
     tmp_annotation_attribute_list = [e.model_dump() for e in annotation_attribute_list]
+    if task_metadata_by_task_id is not None:
+        tmp_annotation_attribute_list = add_task_metadata_to_dict_list(tmp_annotation_attribute_list, task_metadata_by_task_id)
     if output_format == OutputFormat.CSV:
-        print_annotation_attribute_list_as_csv(tmp_annotation_attribute_list, output_file)
+        print_annotation_attribute_list_as_csv(
+            tmp_annotation_attribute_list,
+            output_file,
+            task_metadata_by_task_id=task_metadata_by_task_id,
+        )
     elif output_format == OutputFormat.JSON:
         print_json(tmp_annotation_attribute_list, output=output_file, is_pretty=False)
     elif output_format == OutputFormat.PRETTY_JSON:
@@ -221,6 +245,9 @@ class ListAnnotationAttribute(CommandLine):
             sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
         project_id: str | None = args.project_id
+        if args.with_task_metadata and project_id is None:
+            print(f"{self.COMMON_MESSAGE} argument --project_id: `--with_task_metadata`を指定するときは、`--project_id`が必須です。", file=sys.stderr)  # noqa: T201
+            sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
         if project_id is not None:
             super().validate_project(project_id, project_member_roles=[ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER])
 
@@ -233,10 +260,16 @@ class ListAnnotationAttribute(CommandLine):
 
         output_file: Path = args.output
         output_format = OutputFormat(args.format)
+        task_metadata_by_task_id: dict[str, dict[str, Any]] | None = None
 
         downloading_obj = DownloadingFile(self.service)
 
         def download_and_print_annotation_attribute_list(project_id: str, temp_dir: Path, *, is_latest: bool, annotation_path: Path | None) -> None:
+            if args.with_task_metadata:
+                task_json_path = downloading_obj.download_task_json_to_dir(project_id, temp_dir, is_latest=is_latest)
+                task_metadata_by_task_id = get_task_metadata_by_task_id(task_json_path)
+            else:
+                task_metadata_by_task_id = None
             if annotation_path is None:
                 annotation_path = downloading_obj.download_annotation_zip_to_dir(
                     project_id,
@@ -251,7 +284,12 @@ class ListAnnotationAttribute(CommandLine):
                 target_labels=label_name_list,
                 annotation_editor_type=annotation_editor_type,
             )
-            print_annotation_attribute_list(annotation_attribute_list, output_file, output_format)  # type: ignore[arg-type]
+            print_annotation_attribute_list(
+                annotation_attribute_list,
+                output_file,
+                output_format,  # type: ignore[arg-type]
+                task_metadata_by_task_id=task_metadata_by_task_id,
+            )
 
         if project_id is not None:
             if args.temp_dir is not None:
@@ -270,7 +308,12 @@ class ListAnnotationAttribute(CommandLine):
                 target_labels=label_name_list,
                 annotation_editor_type=annotation_editor_type,
             )
-            print_annotation_attribute_list(annotation_attribute_list, output_file, output_format)  # type: ignore[arg-type]
+            print_annotation_attribute_list(
+                annotation_attribute_list,
+                output_file,
+                output_format,  # type: ignore[arg-type]
+                task_metadata_by_task_id=task_metadata_by_task_id,
+            )
 
 
 def parse_args(parser: argparse.ArgumentParser) -> None:
@@ -315,6 +358,12 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         nargs="+",
         required=False,
         help="出力対象のアノテーションのラベル名(英語)を指定します。指定しない場合はラベル名で絞り込みません。 ``file://`` を先頭に付けると、ラベル名の一覧が記載されたファイルを指定できます。",
+    )
+
+    parser.add_argument(
+        "--with_task_metadata",
+        action="store_true",
+        help="タスクメタデータを出力します。CSVでは ``task_metadata.<key>`` 列、JSONでは ``task_metadata`` キーに出力します。",
     )
 
     parser.add_argument(

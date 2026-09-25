@@ -14,6 +14,11 @@ from annofabapi.models import ProjectMemberRole
 from dataclasses_json import DataClassJsonMixin
 
 import annofabcli.common.cli
+from annofabcli.annotation_zip.task_metadata import (
+    add_task_metadata_to_dataframe,
+    add_task_metadata_to_dict_list,
+    get_task_metadata_by_task_id,
+)
 from annofabcli.common.annofab.annotation_editor_url import (
     ANNOTATION_EDITOR_TYPE_CHOICES,
     AnnotationEditorType,
@@ -165,6 +170,7 @@ def print_classification_annotation(
     task_query: TaskQuery | None = None,
     target_label_names: Collection[str] | None = None,
     annotation_editor_type: AnnotationEditorType | None = None,
+    task_metadata_by_task_id: dict[str, dict[str, Any]] | None = None,
 ) -> None:
     classification_annotation_list = get_classification_annotation_info_list_from_annotation_path(
         annotation_path,
@@ -178,12 +184,17 @@ def print_classification_annotation(
 
     if output_format == OutputFormat.CSV:
         df = create_df(classification_annotation_list)
+        if task_metadata_by_task_id is not None:
+            df = add_task_metadata_to_dataframe(df, task_metadata_by_task_id)
         print_csv(df, output_file)
 
     elif output_format in [OutputFormat.PRETTY_JSON, OutputFormat.JSON]:
         json_is_pretty = output_format == OutputFormat.PRETTY_JSON
+        json_data = [e.to_dict(encode_json=True) for e in classification_annotation_list]
+        if task_metadata_by_task_id is not None:
+            json_data = add_task_metadata_to_dict_list(json_data, task_metadata_by_task_id)
         print_json(
-            [e.to_dict(encode_json=True) for e in classification_annotation_list],
+            json_data,
             is_pretty=json_is_pretty,
             output=output_file,
         )
@@ -217,6 +228,9 @@ class ListClassificationAnnotation(CommandLine):
             sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
         project_id: str | None = args.project_id
+        if args.with_task_metadata and project_id is None:
+            print(f"{self.COMMON_MESSAGE} argument --project_id: `--with_task_metadata`を指定するときは、`--project_id`が必須です。", file=sys.stderr)  # noqa: T201
+            sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
         annotation_editor_type: AnnotationEditorType | None = args.annotation_editor_type
         if project_id is not None:
             super().validate_project(project_id, project_member_roles=[ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER])
@@ -231,10 +245,16 @@ class ListClassificationAnnotation(CommandLine):
 
         output_file: Path = args.output
         output_format = OutputFormat(args.format)
+        task_metadata_by_task_id: dict[str, dict[str, Any]] | None = None
 
         downloading_obj = DownloadingFile(self.service)
 
         def download_and_print_classification_annotation(project_id: str, temp_dir: Path, *, is_latest: bool) -> None:
+            if args.with_task_metadata:
+                task_json_path = downloading_obj.download_task_json_to_dir(project_id, temp_dir, is_latest=is_latest)
+                task_metadata_by_task_id = get_task_metadata_by_task_id(task_json_path)
+            else:
+                task_metadata_by_task_id = None
             local_annotation_path = downloading_obj.download_annotation_zip_to_dir(
                 project_id,
                 temp_dir,
@@ -247,6 +267,7 @@ class ListClassificationAnnotation(CommandLine):
                 target_task_ids=task_id_list,
                 task_query=task_query,
                 target_label_names=label_name_list,
+                task_metadata_by_task_id=task_metadata_by_task_id,
                 annotation_editor_type=annotation_editor_type,
             )
 
@@ -269,6 +290,7 @@ class ListClassificationAnnotation(CommandLine):
                 target_task_ids=task_id_list,
                 task_query=task_query,
                 target_label_names=label_name_list,
+                task_metadata_by_task_id=task_metadata_by_task_id,
                 annotation_editor_type=annotation_editor_type,
             )
 
@@ -313,6 +335,12 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         type=str,
         nargs="+",
         help="指定したラベル名の全体アノテーションのみを対象にします。複数指定できます。",
+    )
+
+    parser.add_argument(
+        "--with_task_metadata",
+        action="store_true",
+        help="タスクメタデータを出力します。CSVでは ``task_metadata.<key>`` 列、JSONでは ``task_metadata`` キーに出力します。",
     )
 
     parser.add_argument(

@@ -1,4 +1,5 @@
 import collections
+import dataclasses
 from pathlib import Path
 
 import pandas
@@ -122,6 +123,23 @@ class TestLabelCountCsv:
         assert row["per_input_data.human"] == 1.0
         assert row["per_input_data.climatic"] == 1.0
 
+    def test_print_csv_by_task__task_metadata_is_not_filled_with_zero(self, tmp_path):
+        counter_list = ListAnnotationCounterByTask().get_annotation_counter_list(data_dir / "simple-annotations.zip")
+        counter_list[0] = dataclasses.replace(counter_list[0], task_metadata={"customer": "customer_0"})
+        output_file = tmp_path / "labels_count_by_task.csv"
+
+        LabelCountCsv().print_csv_by_task(
+            counter_list,
+            output_file=output_file,
+            prior_label_columns=["missing_label"],
+            task_metadata_keys=["customer"],
+        )
+
+        df = pandas.read_csv(output_file)
+        assert df["task_metadata.customer"].tolist()[0] == "customer_0"
+        assert df["task_metadata.customer"].isna().tolist() == [False, True]
+        assert df["missing_label"].tolist() == [0, 0]
+
 
 class TestAttributeCountCsv:
     def test_print_csv_by_input_data(self):
@@ -159,3 +177,21 @@ class TestAttributeCountCsv:
         assert ("per_input_data.annotation_count", "", "") not in df.columns
         assert row[("per_input_data.Cat", "occluded", "true")] == 1.0
         assert row[("per_input_data.climatic", "temparature", "20")] == 1.0
+
+    def test_print_csv_by_task__task_metadata_is_not_filled_with_zero(self, tmp_path):
+        counter_list = ListAnnotationCounterByTask().get_annotation_counter_list(data_dir / "simple-annotations.zip")
+        counter_list[0] = dataclasses.replace(counter_list[0], task_metadata={"customer": "customer_0"})
+        output_file = tmp_path / "attributes_count_by_task.csv"
+
+        AttributeCountCsv().print_csv_by_task(
+            counter_list,
+            output_file=output_file,
+            prior_attribute_columns=[("missing_label", "missing_attribute", "missing_value")],
+            task_metadata_keys=["customer"],
+        )
+
+        df = pandas.read_csv(output_file, header=[0, 1, 2])
+        task_metadata_column = next(e for e in df.columns if e[0] == "task_metadata.customer")
+        assert df[task_metadata_column].tolist()[0] == "customer_0"
+        assert df[task_metadata_column].isna().tolist() == [False, True]
+        assert df[("missing_label", "missing_attribute", "missing_value")].tolist() == [0, 0]

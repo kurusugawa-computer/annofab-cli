@@ -88,6 +88,8 @@ CSV形式およびJSON形式で以下の項目が出力されます：
 * ``attributes.{属性名}``: 各属性の値（CSV形式）
 
 
+.. include:: task_metadata.inc
+
 Usage Details
 =================================
 

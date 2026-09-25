@@ -179,6 +179,36 @@ def test_print_annotation_attribute_list_as_csv_has_annotation_editor_url_column
     ]
 
 
+def test_print_annotation_attribute_list_as_csv_includes_task_metadata(tmp_path: Path):
+    output_file = tmp_path / "out.csv"
+    annotation_attribute_list = [
+        {
+            "project_id": "test_project",
+            "task_id": "test_task",
+            "task_status": "working",
+            "task_phase": "annotation",
+            "task_phase_stage": 1,
+            "input_data_id": "test_image",
+            "input_data_name": "test_image.jpg",
+            "updated_datetime": "2023-01-01T00:00:00+09:00",
+            "annotation_id": "annotation1",
+            "annotation_editor_url": "https://annofab.com/projects/test_project/tasks/test_task/editor?#test_image/annotation1",
+            "label": "person",
+            "attributes": {"occluded": False},
+        }
+    ]
+
+    print_annotation_attribute_list_as_csv(
+        annotation_attribute_list,
+        output_file,
+        task_metadata_by_task_id={"test_task": {"customer": "customer_0"}},
+    )
+
+    df = pandas.read_csv(output_file)
+    assert df.columns.tolist()[0:3] == ["project_id", "task_id", "task_metadata.customer"]
+    assert df.loc[0, "task_metadata.customer"] == "customer_0"
+
+
 def test_print_annotation_attribute_list_as_csv_with_empty_list_outputs_header(tmp_path: Path):
     output_file = tmp_path / "out.csv"
 
