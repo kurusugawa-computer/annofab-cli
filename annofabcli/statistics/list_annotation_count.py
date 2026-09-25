@@ -651,8 +651,11 @@ class AttributeCountCsv:
         columns = get_columns()
         df = pandas.DataFrame([to_cell(e) for e in counter_list], columns=pandas.MultiIndex.from_tuples(columns))
 
-        # `task_id`列など`basic_columns`も`fillna`対象だが、nanではないはずので問題ない
-        df.fillna(0, inplace=True)
+        # アノテーション数を表す列の欠損値だけを0に変換する。
+        # タスクメタデータの欠損値は、CSVでは空欄として出力する。
+        value_columns = self._value_columns(counter_list, prior_attribute_columns)
+        per_input_data_columns = self._per_input_data_columns(value_columns, with_annotation_count=with_annotation_count) if with_per_input_data else []
+        df = df.fillna(dict.fromkeys(value_columns + per_input_data_columns, 0))
 
         print_csv(df, output=output_file)
 
@@ -823,9 +826,11 @@ class LabelCountCsv:
 
         df = pandas.DataFrame([to_dict(e) for e in counter_list], columns=get_columns())
 
-        # NaNを0に変換する
-        # `basic_columns`は必ずnanではないので、すべての列に対してfillnaを実行しても問題ないはず
-        df.fillna(0, inplace=True)
+        # アノテーション数を表す列の欠損値だけを0に変換する。
+        # タスクメタデータの欠損値は、CSVでは空欄として出力する。
+        value_columns = self._value_columns(counter_list, prior_label_columns)
+        per_input_data_columns = self._per_input_data_columns(value_columns, with_annotation_count=with_annotation_count) if with_per_input_data else []
+        df = df.fillna(dict.fromkeys(value_columns + per_input_data_columns, 0))
         print_csv(df, output=output_file)
 
     def print_csv_by_input_data(
