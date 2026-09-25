@@ -13,6 +13,11 @@ from annofabapi.util.page import create_image_editor_url
 from pydantic import BaseModel, ConfigDict
 
 import annofabcli.common.cli
+from annofabcli.annotation_zip.task_metadata import (
+    add_task_metadata_to_dataframe,
+    add_task_metadata_to_dict_list,
+    get_task_metadata_by_task_id,
+)
 from annofabcli.common.annofab.annotation_zip import lazy_parse_simple_annotation_by_input_data
 from annofabcli.common.cli import COMMAND_LINE_ERROR_STATUS_CODE, ArgumentParser, CommandLine, build_annofabapi_resource_and_login, get_list_from_args
 from annofabcli.common.download import DownloadingFile
@@ -244,6 +249,7 @@ def print_annotation_polyline(
     target_task_ids: Collection[str] | None = None,
     task_query: TaskQuery | None = None,
     target_label_names: Collection[str] | None = None,
+    task_metadata_by_task_id: dict[str, dict[str, Any]] | None = None,
 ) -> None:
     annotation_polyline_list = get_annotation_polyline_info_list_from_annotation_path(
         annotation_path,
@@ -256,13 +262,18 @@ def print_annotation_polyline(
 
     if output_format == OutputFormat.CSV:
         df = create_df(annotation_polyline_list)
+        if task_metadata_by_task_id is not None:
+            df = add_task_metadata_to_dataframe(df, task_metadata_by_task_id)
         print_csv(df, output_file)
 
     elif output_format in [OutputFormat.PRETTY_JSON, OutputFormat.JSON]:
         json_is_pretty = output_format == OutputFormat.PRETTY_JSON
         # Pydantic BaseModelを使用したJSON処理
+        json_data = [e.model_dump() for e in annotation_polyline_list]
+        if task_metadata_by_task_id is not None:
+            json_data = add_task_metadata_to_dict_list(json_data, task_metadata_by_task_id)
         print_json(
-            [e.model_dump() for e in annotation_polyline_list],
+            json_data,
             is_pretty=json_is_pretty,
             output=output_file,
         )
@@ -290,6 +301,9 @@ class ListAnnotationPolyline(CommandLine):
             sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
         project_id: str | None = args.project_id
+        if args.with_task_metadata and project_id is None:
+            print(f"{self.COMMON_MESSAGE} argument --project_id: `--with_task_metadata`を指定するときは、`--project_id`が必須です。", file=sys.stderr)  # noqa: T201
+            sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
         if project_id is not None:
             super().validate_project(project_id, project_member_roles=[ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER])
             project, _ = self.service.api.get_project(project_id)
@@ -305,10 +319,16 @@ class ListAnnotationPolyline(CommandLine):
 
         output_file: Path = args.output
         output_format = OutputFormat(args.format)
+        task_metadata_by_task_id: dict[str, dict[str, Any]] | None = None
 
         downloading_obj = DownloadingFile(self.service)
 
         def download_and_print_annotation_polyline(project_id: str, temp_dir: Path, *, is_latest: bool) -> None:
+            if args.with_task_metadata:
+                task_json_path = downloading_obj.download_task_json_to_dir(project_id, temp_dir, is_latest=is_latest)
+                task_metadata_by_task_id = get_task_metadata_by_task_id(task_json_path)
+            else:
+                task_metadata_by_task_id = None
             local_annotation_path = downloading_obj.download_annotation_zip_to_dir(
                 project_id,
                 temp_dir,
@@ -321,6 +341,7 @@ class ListAnnotationPolyline(CommandLine):
                 target_task_ids=task_id_list,
                 task_query=task_query,
                 target_label_names=label_name_list,
+                task_metadata_by_task_id=task_metadata_by_task_id,
             )
 
         if project_id is not None:
@@ -342,6 +363,7 @@ class ListAnnotationPolyline(CommandLine):
                 target_task_ids=task_id_list,
                 task_query=task_query,
                 target_label_names=label_name_list,
+                task_metadata_by_task_id=task_metadata_by_task_id,
             )
 
 
@@ -378,6 +400,12 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         type=str,
         nargs="+",
         help="指定したラベル名のポリラインアノテーションのみを対象にします。複数指定できます。",
+    )
+
+    parser.add_argument(
+        "--with_task_metadata",
+        action="store_true",
+        help="タスクメタデータを出力します。CSVでは ``task_metadata.<key>`` 列、JSONでは ``task_metadata`` キーに出力します。",
     )
 
     parser.add_argument(

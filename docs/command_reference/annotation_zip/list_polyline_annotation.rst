@@ -118,6 +118,8 @@ See also
 
 
 
+.. include:: task_metadata.inc
+
 Usage Details
 =================================
 

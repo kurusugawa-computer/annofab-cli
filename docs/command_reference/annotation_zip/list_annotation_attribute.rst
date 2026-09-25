@@ -83,6 +83,8 @@ CSVでは、アノテーションエディタ画面のURLが ``annotation_editor
      --annotation_editor_type video --output out.csv --format csv
 
 
+.. include:: task_metadata.inc
+
 Usage Details
 =================================
 

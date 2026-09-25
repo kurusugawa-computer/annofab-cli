@@ -89,6 +89,8 @@ Examples
 * ``attributes`` : 属性情報。JSON形式ではオブジェクト、CSV形式では ``attributes.属性名`` の形式で列が追加されます。
 
 
+.. include:: task_metadata.inc
+
 Usage Details
 =================================
 
