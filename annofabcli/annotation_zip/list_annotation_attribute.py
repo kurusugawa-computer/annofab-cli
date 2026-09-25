@@ -192,7 +192,7 @@ def print_annotation_attribute_list_as_csv(
     result_df = df[columns]
     if task_metadata_by_task_id is not None:
         result_df = add_task_metadata_to_dataframe(result_df, task_metadata_by_task_id)
-    print_csv(df[columns], output_file)
+    print_csv(result_df, output_file)
 
 
 def print_annotation_attribute_list(

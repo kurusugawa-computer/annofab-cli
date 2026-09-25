@@ -141,11 +141,11 @@ class AnnotationCountByTask(DataClassJsonMixin, HasAnnotationAttributeCounts):
             encoder=encode_annotation_count_by_attribute,
         )
     )
-    task_metadata: dict[str, Any] = field(default_factory=dict)
-    """出力対象とするタスクメタデータ。"""
     """属性値ごとのアノテーションの個数
     key: tuple[ラベル名(英語),属性名(英語),属性値の種類], value: アノテーション数
     """
+    task_metadata: dict[str, Any] = field(default_factory=dict)
+    """出力対象とするタスクメタデータ。"""
 
 
 def lazy_parse_simple_annotation_by_input_data(annotation_path: Path) -> Iterator[SimpleAnnotationParser]:
