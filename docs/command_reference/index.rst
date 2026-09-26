@@ -12,6 +12,7 @@ Command Reference
    annotation_specs/index
    annotation_zip/index
    comment/index
+   completion
    experimental/index
    filesystem/index
    input_data/index

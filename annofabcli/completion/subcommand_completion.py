@@ -47,7 +47,7 @@ def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse
         追加したパーサー
     """
     command_name = "completion"
-    command_help = "シェル補完スクリプトを出力します。"
+    command_help = "指定したシェル用の補完スクリプトを標準出力に書き出します。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, command_name, command_help)
     parse_args(parser)
