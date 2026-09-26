@@ -23,11 +23,36 @@ CSV形式の場合、 ``note`` 、 ``id`` 、 ``permissions`` 、作成日時、
 出力結果
 =================================
 
-.. code-block::
-   :caption: personal_access_tokens.csv
+CSV出力
+---------------------------------
 
-    note,id,permissions,created_datetime,last_used_datetime,expired_datetime,account_id
-    GitHub Actions用,pat1,"[{""type"": ""all""}]",2026-01-01T00:00:00+09:00,2026-01-02T00:00:00+09:00,2026-12-31T00:00:00+09:00,account1
+.. csv-table:: personal_access_tokens.csv
+   :header-rows: 1
+   :file: list_personal_access_token/out.csv
+
+
+
+JSON出力
+---------------------------------
+
+.. code-block::
+   :caption: personal_access_tokens.json
+
+    [
+        {
+            "id": "pat1",
+            "account_id": "account1",
+            "note": "GitHub Actions用",
+            "expired_datetime": "2026-12-31T00:00:00+09:00",
+            "permissions": [
+                {
+                    "type": "all"
+                }
+            ],
+            "created_datetime": "2026-01-01T00:00:00+09:00",
+            "last_used_datetime": "2026-01-02T00:00:00+09:00"
+        }
+    ]
 
 
 Usage Details
