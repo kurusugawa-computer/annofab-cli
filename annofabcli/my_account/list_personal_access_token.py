@@ -26,7 +26,7 @@ def create_personal_access_token_dataframe(personal_access_token_list: list[Pers
     Returns:
         パーソナルアクセストークン一覧のDataFrame
     """
-    prior_columns = ["id", "account_id", "note", "expired_datetime", "permissions", "created_datetime", "last_used_datetime"]
+    prior_columns = ["note", "id", "permissions", "created_datetime", "last_used_datetime", "expired_datetime", "account_id"]
     df = pandas.DataFrame(personal_access_token_list)
     if df.empty:
         return pandas.DataFrame(columns=prior_columns)

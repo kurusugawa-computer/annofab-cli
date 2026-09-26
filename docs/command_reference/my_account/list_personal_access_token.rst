@@ -17,7 +17,7 @@ CSV形式で出力する場合は、以下のように実行します。
 
     $ annofabcli my_account list_personal_access_token --output personal_access_tokens.csv
 
-CSV形式の場合、 ``permissions`` はJSON文字列として出力します。
+CSV形式の場合、 ``note`` 、 ``id`` 、 ``permissions`` 、作成日時、最終利用日時、有効期限、 ``account_id`` の順に出力します。 ``permissions`` はJSON文字列として出力します。
 
 
 Usage Details
