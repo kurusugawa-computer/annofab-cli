@@ -17,6 +17,7 @@ Available Commands
 
    get
    list_personal_access_token
+   revoke_personal_access_token
 
 Usage Details
 =================================
