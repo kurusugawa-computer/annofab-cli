@@ -2,6 +2,7 @@ import argparse
 
 import annofabcli.common.cli
 import annofabcli.my_account.get_my_account
+import annofabcli.my_account.list_personal_access_token
 
 
 def parse_args(parser: argparse.ArgumentParser) -> None:
@@ -9,6 +10,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
 
     # サブコマンドの定義
     annofabcli.my_account.get_my_account.add_parser(subparsers)
+    annofabcli.my_account.list_personal_access_token.add_parser(subparsers)
 
 
 def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:

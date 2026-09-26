@@ -1,0 +1,2 @@
+id,note,expired_datetime,last_used_datetime,created_datetime,permissions,account_id
+pat1,GitHub Actions用,2026-12-31T00:00:00+09:00,2026-01-02T00:00:00+09:00,2026-01-01T00:00:00+09:00,"[{""type"": ""all""}]",account1
