@@ -16,6 +16,7 @@ Available Commands
    :titlesonly:
 
    get
+   list_personal_access_token
 
 Usage Details
 =================================
