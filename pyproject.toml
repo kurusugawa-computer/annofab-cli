@@ -104,7 +104,6 @@ line-length = 200
 [tool.ruff.lint]
 
 ignore = [
-    "A005", # stdlib-module-shadowing: 標準ライブラリと同じ名前のモジュールはあるが、基本的には混乱しないはずなので無視する。
     "G004", # `logging-f-string` : loggingでf-stringを使いたいので無視する
     "PD002", #すでにpandasで`inplace=True`はいろんなところで使っているため
     "RUF001", # 全角記号など`ambiguous unicode character`も使いたいため
@@ -113,7 +112,6 @@ ignore = [
     "PLR2004", # magic-value-comparison: listのサイズで判定するときがよくあるため
     "ISC001", # single-line-implicit-string-concatenation: formatterと競合するので無視する https://docs.astral.sh/ruff/formatter/#conflicting-lint-rules
     "ERA", # : 役立つこともあるが、コメントアウトしていないコードも警告されるので無視する
-    "PERF203", # try-except-in-loop: ループ内でtry-exceptを使うこともあるため無視する。
     "COM812", # missing-trailing-comma: 末尾のカンマを考慮しないため無視する
     "TRY003", # raise-vanilla-args: `ValueError`にf-stringで長いメッセージを渡すことが多いので無視する
     "FIX",
@@ -123,13 +121,11 @@ ignore = [
 
     # 以下のルールはannofabcliのコードに合っていないので無効化した
     "CPY001", # missing-copyright-notice
-    "RSE", # flake8-raise
     "D", # pydocstyle, Docstringを中途半端にしか書いていないので、除外する
     "C90", # mccabe
     "BLE", # flake8-blind-except
     "S", # flake8-bandit
     "EM",#flake8-errmsg
-    "EXE", # flake8-executable
     "ICN", # flake8-import-conventions
     "RET",#flake8-return
     "TCH", # flake8-type-checking
@@ -155,7 +151,6 @@ select = [
 [tool.ruff.lint.per-file-ignores]
 # テストコードはチェックを緩和する
 "tests/**.py" = [
-    "PGH",  # pygrep-hooks
     "DTZ",  # flake8-datetimez
     "ANN",  # flake8-annotations
     "E501",  # line-too-long
