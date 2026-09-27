@@ -124,7 +124,6 @@ ignore = [
     "D", # pydocstyle, Docstringを中途半端にしか書いていないので、除外する
     "C90", # mccabe
     "BLE", # flake8-blind-except
-    "S", # flake8-bandit
     "EM",#flake8-errmsg
     "ICN", # flake8-import-conventions
     "RET",#flake8-return
@@ -149,8 +148,14 @@ select = [
 
 
 [tool.ruff.lint.per-file-ignores]
+"annofabcli/**.py" = [
+    # assertは型の絞り込みや内部の不変条件の確認に使用しているため
+    "S101",
+]
+
 # テストコードはチェックを緩和する
 "tests/**.py" = [
+    "S",  # flake8-bandit
     "DTZ",  # flake8-datetimez
     "ANN",  # flake8-annotations
     "E501",  # line-too-long
