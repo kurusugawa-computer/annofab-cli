@@ -33,6 +33,7 @@ Available Commands
    put
    reject
    reject_with_inspection_comments
+   update_input_data
    update_metadata
    update_metadata_per_task
 

@@ -1,4 +1,5 @@
 import argparse
+import json
 import logging
 from pathlib import Path
 from unittest.mock import Mock
@@ -58,6 +59,17 @@ def test_get_task_relation_dict_from_headerless_csv(tmp_path: Path) -> None:
 def test_get_task_creation_info_list_from_csv_with_missing_input_data_id(tmp_path: Path) -> None:
     csv_file = tmp_path / "task.csv"
     csv_file.write_text("task_id,input_data_id\ntask_001,\n", encoding="utf-8")
+
+    with pytest.raises(ValueError):
+        create_tasks.get_task_creation_info_list_from_csv(csv_file)
+
+
+def test_get_task_creation_info_list_from_csv_with_too_many_input_data(tmp_path: Path) -> None:
+    csv_file = tmp_path / "task.csv"
+    csv_file.write_text(
+        "task_id,input_data_id\n" + "\n".join(f"task_001,input_data_{index:03d}" for index in range(201)) + "\n",
+        encoding="utf-8",
+    )
 
     with pytest.raises(ValueError):
         create_tasks.get_task_creation_info_list_from_csv(csv_file)
@@ -227,6 +239,21 @@ def test_get_task_creation_info_list_from_json_args_with_duplicate_task_id() -> 
 def test_get_task_creation_info_list_from_json_args_with_invalid_user_id() -> None:
     with pytest.raises(TypeError):
         create_tasks.get_task_creation_info_list_from_json_args('[{"task_id": "task_001", "input_data_id_list": ["input_data_001"], "user_id": 1}]')
+
+
+def test_get_task_creation_info_list_from_json_args_with_too_many_input_data() -> None:
+    input_data_id_list = [f"input_data_{index:03d}" for index in range(201)]
+
+    with pytest.raises(ValueError):
+        create_tasks.get_task_creation_info_list_from_json_args(json.dumps([{"task_id": "task_001", "input_data_id_list": input_data_id_list}]))
+
+
+def test_get_task_creation_info_list_from_json_args_with_max_input_data_count() -> None:
+    input_data_id_list = [f"input_data_{index:03d}" for index in range(200)]
+
+    actual = create_tasks.get_task_creation_info_list_from_json_args(json.dumps([{"task_id": "task_001", "input_data_id_list": input_data_id_list}]))
+
+    assert actual[0].input_data_id_list == input_data_id_list
 
 
 def test_create_task_with_user_id() -> None:

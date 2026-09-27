@@ -17,7 +17,7 @@ from annofabapi.project_member_repository import ProjectMemberRepository
 
 import annofabcli.common.cli
 from annofabcli.common.annofab.input_data import BULK_REQUEST_SIZE
-from annofabcli.common.annofab.task import get_task_dict_in_bulk
+from annofabcli.common.annofab.task import MAX_INPUT_DATA_COUNT, get_task_dict_in_bulk
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
     PARALLELISM_CHOICES,
@@ -72,6 +72,10 @@ def get_task_creation_info_list_from_csv(
     task_relation_dict: dict[str, list[str]] = defaultdict(list)
     for task_id, input_data_id in zip(df["task_id"], df["input_data_id"], strict=False):
         task_relation_dict[task_id].append(input_data_id)
+
+    for task_id, input_data_id_list in task_relation_dict.items():
+        if len(input_data_id_list) > MAX_INPUT_DATA_COUNT:
+            raise ValueError(f"task_id='{task_id}'に指定できるinput_data_idは最大{MAX_INPUT_DATA_COUNT}件です。")
 
     common_metadata = common_metadata or {}
     return [
@@ -177,6 +181,8 @@ def get_task_creation_info_list_from_json_args(
             raise TypeError(f"{index + 1}番目の要素の'task_id'には文字列を指定してください。")
         if not isinstance(input_data_id_list, list) or not all(isinstance(input_data_id, str) for input_data_id in input_data_id_list):
             raise TypeError(f"{index + 1}番目の要素の'input_data_id_list'には文字列の配列を指定してください。")
+        if len(input_data_id_list) > MAX_INPUT_DATA_COUNT:
+            raise ValueError(f"{index + 1}番目の要素の'input_data_id_list'に指定できるinput_data_idは最大{MAX_INPUT_DATA_COUNT}件です。")
 
         task_metadata = task.get("metadata", {})
         if not isinstance(task_metadata, dict):

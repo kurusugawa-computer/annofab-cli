@@ -5,6 +5,9 @@ from annofabapi.models import Task
 
 from annofabcli.common.annofab.input_data import BULK_REQUEST_SIZE
 
+MAX_INPUT_DATA_COUNT = 200
+"""1個のタスクに割り当てられる入力データの最大数。"""
+
 
 def get_task_dict_in_bulk(service: annofabapi.Resource, project_id: str, task_id_list: Collection[str]) -> dict[str, Task]:
     """タスクをバルク取得し、IDをキーとする辞書で返す。
