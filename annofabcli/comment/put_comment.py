@@ -13,11 +13,11 @@ from typing import Any, Literal
 import annofabapi
 import pandas
 import requests
-from annofabapi.models import CommentType, TaskPhase, TaskStatus
-from annofabapi.pydantic_models.input_data_type import InputDataType
+from annofabapi.models import CommentType, InputDataType, TaskPhase, TaskStatus
+from annofabapi.plugin import EditorPluginId
 from dataclasses_json import DataClassJsonMixin
 
-from annofabcli.comment.utils import get_comment_type_name, round_image_inspection_comment_data
+from annofabcli.comment.utils import create_default_inspection_comment_data, get_comment_type_name, round_image_inspection_comment_data
 from annofabcli.common.cli import CommandLineWithConfirm
 from annofabcli.common.facade import AnnofabApiFacade
 
@@ -176,6 +176,8 @@ class PutCommentMain(CommandLineWithConfirm):
         # プロジェクト情報を取得
         project, _ = self.service.api.get_project(self.project_id)
         self.input_data_type = InputDataType(project["input_data_type"])
+        self.is_3d_point_cloud = project.get("configuration", {}).get("plugin_id") == EditorPluginId.THREE_DIMENSION.value
+        """3次元点群プロジェクトかどうか"""
 
         # アノテーション仕様を取得
         annotation_specs, _ = self.service.api.get_annotation_specs(self.project_id, query_params={"v": "3"})
@@ -183,8 +185,28 @@ class PutCommentMain(CommandLineWithConfirm):
 
         CommandLineWithConfirm.__init__(self, all_yes)
 
-    def _create_request_body(self, task: dict[str, Any], input_data_id: str, comments: list[AddedComment]) -> list[dict[str, Any]]:
-        """batch_update_comments に渡すリクエストボディを作成する。"""
+    def _create_request_body(
+        self,
+        task: dict[str, Any],
+        input_data_id: str,
+        comments: list[AddedComment],
+        *,
+        put_mode: CommentPutMode,
+    ) -> list[dict[str, Any]]:
+        """batch_update_comments に渡すリクエストボディを作成する。
+
+        Args:
+            task: コメントを付与するタスク。
+            input_data_id: コメントを付与する入力データID。
+            comments: 追加対象のコメント一覧。
+            put_mode: コメント登録時の動作モード。
+
+        Returns:
+            batch_update_comments APIのリクエストボディ。
+
+        Raises:
+            ValueError: 作成モード以外の検査コメントで、dataとannotation_idの両方が指定されていない場合。
+        """
         task_id = task["task_id"]
 
         # annotation_idが指定されているがdataがNoneのコメントがあるか確認
@@ -194,7 +216,8 @@ class PutCommentMain(CommandLineWithConfirm):
         dict_annotation_id_label_id: dict[str, str] = {}
         dict_annotation_id_data: dict[str, dict[str, Any]] = {}
 
-        if need_annotation_data:
+        has_annotation_id = any(c.annotation_id is not None for c in comments)
+        if has_annotation_id:
             # アノテーション詳細を取得
             editor_annotation, _ = self.service.api.get_editor_annotation(self.project_id, task_id, input_data_id, query_params={"v": "2"})
             details = editor_annotation["details"]
@@ -205,25 +228,23 @@ class PutCommentMain(CommandLineWithConfirm):
                 dict_annotation_id_label_id[annotation_id] = label_id
 
                 # annotation_typeを取得
-                if label_id in self.dict_label_id_annotation_type:
+                if need_annotation_data and label_id in self.dict_label_id_annotation_type:
                     # アノテーション仕様に存在しないラベルを使っているアノテーション（アノテーションを作成してから仕様を変更した場合）もあるので、判定する
                     annotation_type = self.dict_label_id_annotation_type[label_id]
                     dict_annotation_id_data[annotation_id] = convert_annotation_body_to_inspection_data(detail["body"], annotation_type, input_data_type=self.input_data_type)
-        else:
-            # annotation_idからlabel_idを取得するためだけにAPIを呼ぶ
-            editor_annotation, _ = self.service.api.get_editor_annotation(self.project_id, task_id, input_data_id, query_params={"v": "2"})
-            details = editor_annotation["details"]
-            dict_annotation_id_label_id = {e["annotation_id"]: e["label_id"] for e in details}
 
         def _convert(comment: AddedComment) -> dict[str, Any] | None:
             data = comment.data
             annotation_id = comment.annotation_id
 
-            # dataがNoneでannotation_idが指定されている場合、dataを補完
+            # dataがNoneの場合、アノテーションまたはプロジェクトの入力データ種別からdataを補完
             if data is None and self.comment_type == CommentType.INSPECTION:
-                assert annotation_id is not None
-                data = dict_annotation_id_data[annotation_id]
-                assert data is not None
+                if annotation_id is not None:
+                    data = dict_annotation_id_data[annotation_id]
+                elif put_mode == "create":
+                    data = create_default_inspection_comment_data(self.input_data_type, is_3d_point_cloud=self.is_3d_point_cloud)
+                else:
+                    raise ValueError("検査コメントにはdataまたはannotation_idを指定してください。")
 
             if self.input_data_type == InputDataType.IMAGE and data is not None:
                 data = round_image_inspection_comment_data(data)
@@ -426,7 +447,7 @@ class PutCommentMain(CommandLineWithConfirm):
             if len(target_comments) == 0:
                 continue
 
-            request_body = self._create_request_body(task=task, input_data_id=input_data_id, comments=target_comments)
+            request_body = self._create_request_body(task=task, input_data_id=input_data_id, comments=target_comments, put_mode=put_mode)
             self.service.api.batch_update_comments(self.project_id, task_id, input_data_id, request_body=request_body)
             added_comment_count += len(target_comments)
             logger.debug(f"task_id='{task_id}', input_data_id='{input_data_id}' :: {len(target_comments)}件のコメントを付与しました。")

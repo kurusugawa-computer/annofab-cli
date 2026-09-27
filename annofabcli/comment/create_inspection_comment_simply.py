@@ -7,6 +7,7 @@ from annofabapi.plugin import EditorPluginId
 
 import annofabcli.common.cli
 from annofabcli.comment.put_comment_simply import AddedSimpleComment, PutCommentSimplyMain
+from annofabcli.comment.utils import create_default_inspection_comment_data
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
     PARALLELISM_CHOICES,
@@ -47,24 +48,16 @@ class CreateInspectionCommentSimply(CommandLine):
 
         project, _ = self.service.api.get_project(args.project_id)
         if comment_data is None:
-            if project["input_data_type"] == InputDataType.IMAGE.value:
-                comment_data = {"x": 0, "y": 0, "_type": "Point"}
-            elif project["input_data_type"] == InputDataType.MOVIE.value:
-                # 注意：少なくとも0.1秒以上の区間にしないと、Annofab上で検査コメントを確認できない
-                comment_data = {"start": 0, "end": 100, "_type": "Time"}
-            elif project["input_data_type"] == InputDataType.CUSTOM.value:
-                editor_plugin_id = project["configuration"]["plugin_id"]
-                if editor_plugin_id == EditorPluginId.THREE_DIMENSION.value or custom_project_type == CustomProjectType.THREE_DIMENSION_POINT_CLOUD:
-                    comment_data = {
-                        "data": '{"kind": "CUBOID", "shape": {"dimensions": {"width": 1.0, "height": 1.0, "depth": 1.0}, "location": {"x": 0.0, "y": 0.0, "z": 0.0}, "rotation": {"x": 0.0, "y": 0.0, "z": 0.0}, "direction": {"front": {"x": 1.0, "y": 0.0, "z": 0.0}, "up": {"x": 0.0, "y": 0.0, "z": 1.0}}}, "version": "2"}',  # noqa: E501
-                        "_type": "Custom",
-                    }
-                else:
-                    print(  # noqa: T201
-                        f"{self.COMMON_MESSAGE} カスタムプロジェクト（ビルトインのエディタプラグインを使用していない）に検査コメントを作成する場合は、'--comment_data' または '--custom_project_type'を指定してください。",  # noqa: E501
-                        file=sys.stderr,
-                    )
-                    sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
+            editor_plugin_id = project.get("configuration", {}).get("plugin_id")
+            is_3d_point_cloud = editor_plugin_id == EditorPluginId.THREE_DIMENSION.value or custom_project_type == CustomProjectType.THREE_DIMENSION_POINT_CLOUD
+            try:
+                comment_data = create_default_inspection_comment_data(InputDataType(project["input_data_type"]), is_3d_point_cloud=is_3d_point_cloud)
+            except ValueError:
+                print(  # noqa: T201
+                    f"{self.COMMON_MESSAGE} カスタムプロジェクト（ビルトインのエディタプラグインを使用していない）に検査コメントを作成する場合は、'--comment_data' または '--custom_project_type'を指定してください。",  # noqa: E501
+                    file=sys.stderr,
+                )
+                sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
         task_id_list = get_list_from_args(args.task_id)
         phrase_id_list = get_list_from_args(args.phrase_id)

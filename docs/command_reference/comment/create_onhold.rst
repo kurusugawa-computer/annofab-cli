@@ -48,6 +48,8 @@ Examples
   * ``annotation_id``：コメントに紐づくアノテーションのannotation_id。
   * ``comment_id``：コメントID。省略した場合は自動的にUUIDv4が生成されます。
 
+``annotation_id`` を省略すると、 ``input_data_id`` で指定した入力データに対する保留コメントを作成できます。
+
 .. code-block::
 
     $ annofabcli comment create_onhold --project_id prj1 --json file://comment.json

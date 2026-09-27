@@ -57,7 +57,7 @@ Examples
   * ``task_id``：タスクID。必須。
   * ``input_data_id``：入力データID。必須。
   * ``comment``：検査コメントの内容。必須。
-  * ``data``：検査コメントの位置や区間。 ``annotation_id`` が指定されていない場合は必須。 ``annotation_id`` が指定されている場合はオプショナル。省略した場合は、アノテーション情報から自動補完されます。
+  * ``data``：検査コメントの位置や区間。省略した場合は、 ``annotation_id`` が指定されていればアノテーション情報から、指定されていなければプロジェクトの入力データ種別に応じた既定位置から自動補完されます。
   * ``annotation_id``：検査コメントに紐づくアノテーションのannotation_id。
   * ``phrases``：参照する定型指摘のIDの配列。
   * ``comment_id``：コメントID。省略した場合は自動的にUUIDv4が生成されます。
@@ -65,6 +65,28 @@ Examples
 .. code-block::
 
     $ annofabcli comment create_inspection --project_id prj1 --json file://comment.json
+
+位置を指定せずに入力データへ検査コメントを作成する
+--------------------------------------------------------------
+
+``data`` と ``annotation_id`` の両方を省略すると、 ``input_data_id`` で指定した入力データの既定位置に検査コメントを作成します。
+
+* 画像プロジェクト：画像の左上
+* 動画プロジェクト：動画の先頭100ミリ秒
+* 組み込みの3次元点群プロジェクト：原点に位置する辺が1の立方体
+
+上記以外のカスタムプロジェクトでは既定位置を生成できないため、 ``data`` または ``annotation_id`` を指定してください。
+
+.. code-block:: json
+    :caption: comment.json
+
+    [
+        {
+            "task_id": "task1",
+            "input_data_id": "input_data1",
+            "comment": "この入力データ全体を確認してください。"
+        }
+    ]
 
 
 CSV形式で指定する場合
