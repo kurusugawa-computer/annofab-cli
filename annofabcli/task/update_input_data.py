@@ -17,7 +17,7 @@ from annofabapi.models import ProjectMemberRole, Task
 
 import annofabcli.common.cli
 from annofabcli.common.annofab.input_data import BULK_REQUEST_SIZE
-from annofabcli.common.annofab.task import get_task_dict_in_bulk
+from annofabcli.common.annofab.task import MAX_INPUT_DATA_COUNT, get_task_dict_in_bulk
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
     PARALLELISM_CHOICES,
@@ -31,9 +31,6 @@ from annofabcli.common.facade import AnnofabApiFacade
 from annofabcli.utils.iterables import batched
 
 logger = logging.getLogger(__name__)
-
-MAX_INPUT_DATA_COUNT = 200
-"""1個のタスクに割り当てられる入力データの最大数。"""
 
 
 @dataclass(frozen=True)
