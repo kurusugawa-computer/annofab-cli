@@ -153,7 +153,7 @@ docs = [
 linter = [
     { name = "mypy", marker = "python_full_version >= '3.12'", specifier = ">=1" },
     { name = "pre-commit", marker = "python_full_version >= '3.12'", specifier = ">=4" },
-    { name = "ruff", marker = "python_full_version >= '3.12'", specifier = ">=0.15" },
+    { name = "ruff", marker = "python_full_version >= '3.12'", specifier = ">=0.16" },
     { name = "types-python-dateutil", marker = "python_full_version >= '3.12'" },
     { name = "types-pyyaml", marker = "python_full_version >= '3.12'" },
     { name = "types-requests", marker = "python_full_version >= '3.12'" },

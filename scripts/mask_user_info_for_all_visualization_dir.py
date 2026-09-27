@@ -20,7 +20,8 @@ def execute_mask_user_info_command(project_dir: Path, output_project_dir: Path, 
     if remainder_options is not None:
         command.extend(remainder_options)
 
-    subprocess.run(command, check=True)
+    # 実行ファイルは固定し、シェルを介さずに引数リストを渡す
+    subprocess.run(command, check=True)  # noqa: S603
 
 
 def mask_user_info_for_all_project_dir(project_root_dir: Path, output_dir: Path, remainder_options: list[str] | None) -> None:

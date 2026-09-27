@@ -395,12 +395,12 @@ class AbstractPhaseCumulativeProductivity(abc.ABC):
         target_user_id_list: list[str] | None = None,
         metadata: dict[str, Any] | None = None,
     ) -> None:
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def _get_graph_spec_list(self) -> list[_CumulativeLineGraphSpec]:
         """累積折れ線グラフの定義リストを取得します。"""
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def plot_production_volume_metrics_with_selector(
         self,

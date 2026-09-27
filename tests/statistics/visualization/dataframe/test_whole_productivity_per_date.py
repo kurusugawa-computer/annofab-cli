@@ -86,7 +86,7 @@ class TestWholeProductivityPerCompletedDate:
     def test__plot__累積折れ線と対応したグラフ構成にする(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
         captured: dict[str, Any] = {}
 
-        def fake_write_bokeh_graph(bokeh_obj: Any, _output_file: Path) -> None:  # noqa: ANN401
+        def fake_write_bokeh_graph(bokeh_obj: Any, _output_file: Path) -> None:
             captured["bokeh_obj"] = bokeh_obj
 
         monkeypatch.setattr(whole_productivity_per_date, "write_bokeh_graph", fake_write_bokeh_graph)
@@ -155,7 +155,7 @@ class TestWholeProductivityPerCompletedDate:
     def test__plot_cumulatively__累積作業時間グラフを先頭に表示する(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
         captured: dict[str, Any] = {}
 
-        def fake_write_bokeh_graph(bokeh_obj: Any, _output_file: Path) -> None:  # noqa: ANN401
+        def fake_write_bokeh_graph(bokeh_obj: Any, _output_file: Path) -> None:
             captured["bokeh_obj"] = bokeh_obj
 
         monkeypatch.setattr(whole_productivity_per_date, "write_bokeh_graph", fake_write_bokeh_graph)
@@ -251,7 +251,7 @@ class TestWholeProductivityPerFirstAnnotationStartedDate:
     def test__plot__日ごとの折れ線と対応したグラフ構成にする(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
         captured: dict[str, Any] = {}
 
-        def fake_write_bokeh_graph(bokeh_obj: Any, _output_file: Path) -> None:  # noqa: ANN401
+        def fake_write_bokeh_graph(bokeh_obj: Any, _output_file: Path) -> None:
             captured["bokeh_obj"] = bokeh_obj
 
         monkeypatch.setattr(whole_productivity_per_date, "write_bokeh_graph", fake_write_bokeh_graph)

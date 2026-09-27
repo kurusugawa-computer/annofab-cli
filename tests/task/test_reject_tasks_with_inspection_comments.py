@@ -24,7 +24,7 @@ def create_task_dict(*, status: str = "not_started") -> dict:
     }
 
 
-def test_reject_task_creates_inspection_comments_before_reject(monkeypatch) -> None:  # noqa: ANN001
+def test_reject_task_creates_inspection_comments_before_reject(monkeypatch) -> None:
     service = Mock()
     service.api.account_id = "account1"
     task = create_task_dict()
@@ -49,7 +49,7 @@ def test_reject_task_creates_inspection_comments_before_reject(monkeypatch) -> N
     service.wrapper.reject_task.assert_called_once_with("project1", "task1", force=False, last_updated_datetime="2024-01-01T00:01:00+00:00")
 
 
-def test_reject_task_does_not_reject_when_comment_creation_fails(monkeypatch) -> None:  # noqa: ANN001
+def test_reject_task_does_not_reject_when_comment_creation_fails(monkeypatch) -> None:
     service = Mock()
     service.api.account_id = "account1"
     task = create_task_dict()

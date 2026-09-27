@@ -22,7 +22,8 @@ def execute_mask_user_info_command(csv_path: Path, output_csv: Path, remainder_o
     if remainder_options is not None:
         command.extend(remainder_options)
 
-    subprocess.run(command, check=True)
+    # 実行ファイルは固定し、シェルを介さずに引数リストを渡す
+    subprocess.run(command, check=True)  # noqa: S603
 
 
 def mask_user_info_for_dir(root_dir: Path, output_dir: Path, remainder_options: list[str] | None) -> None:

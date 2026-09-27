@@ -131,7 +131,7 @@ class AbstractPhaseProductivityPerDate(abc.ABC):
 
     @abc.abstractmethod
     def to_csv(self, output_file: Path) -> None:
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def plot_production_volume_metrics(
@@ -143,7 +143,7 @@ class AbstractPhaseProductivityPerDate(abc.ABC):
         target_user_id_list: list[str] | None = None,
         metadata: dict[str, Any] | None = None,
     ) -> None:
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def plot_production_volume_metrics_with_selector(
         self,
