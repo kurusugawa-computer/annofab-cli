@@ -98,7 +98,6 @@ dependencies = [
 dev = [
     { name = "ipython" },
     { name = "numpy", version = "2.5.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
-    { name = "pandas", marker = "python_full_version >= '3.12'" },
 ]
 docs = [
     { name = "pydata-sphinx-theme", marker = "python_full_version >= '3.12'" },
@@ -128,7 +127,7 @@ requires-dist = [
     { name = "isodate" },
     { name = "more-itertools" },
     { name = "numpy" },
-    { name = "pandas", specifier = ">=2" },
+    { name = "pandas", specifier = ">=2.2" },
     { name = "pillow" },
     { name = "pydantic", specifier = ">=2.12" },
     { name = "pyquery" },
@@ -144,7 +143,6 @@ requires-dist = [
 dev = [
     { name = "ipython" },
     { name = "numpy", marker = "python_full_version >= '3.12'", specifier = ">=2.1" },
-    { name = "pandas", marker = "python_full_version >= '3.12'", specifier = ">=3" },
 ]
 docs = [
     { name = "pydata-sphinx-theme", marker = "python_full_version >= '3.12'", specifier = ">=0.13" },

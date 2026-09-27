@@ -7,7 +7,6 @@ import numpy
 import pandas
 from annofabapi.models import TaskPhase
 
-from annofabcli.common.pandas import get_frequency_of_monthend
 from annofabcli.common.utils import print_csv
 from annofabcli.statistics.visualization.dataframe.user_performance import ProductionVolumeColumn
 from annofabcli.statistics.visualization.dataframe.whole_performance import WholePerformance
@@ -133,10 +132,9 @@ class ProjectWorktimePerMonth:
         df = project_dir.read_worktime_per_date_user().df.copy()
         df["dt_date"] = pandas.to_datetime(df["date"], format="ISO8601")
 
-        series = df.groupby(pandas.Grouper(key="dt_date", freq=get_frequency_of_monthend())).sum(numeric_only=True)[worktime_column.value]
+        series = df.groupby(pandas.Grouper(key="dt_date", freq="ME")).sum(numeric_only=True)[worktime_column.value]
         # indexを"2022-04"という形式にする
         new_index = [str(dt)[0:7] for dt in series.index]
-        # pandas 3.0対応: .valuesではなく.to_numpy()を使用
         result = pandas.Series(series.to_numpy(), index=new_index)
         result["dirname"] = project_dir.project_dir.name
         result["project_title"] = project_dir.get_project_title()
