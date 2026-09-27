@@ -79,7 +79,7 @@ class TestCommandLine:
         """
         assert self._validate_annotation_specs_for_scenario_test(), (
             "アノテーション仕様がシナリオテストを実行できる状態でありません。矩形の'car'ラベルを追加して、その下に'truncation'チェックボックスを追加してください。"
-        )  # noqa: E501
+        )
 
         task_id = target_task["task_id"]
         # インポート用のアノテーションを生成して、アノテーションをインポートする

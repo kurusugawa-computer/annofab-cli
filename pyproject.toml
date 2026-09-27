@@ -159,7 +159,6 @@ select = [
     "DTZ",  # flake8-datetimez
     "ANN",  # flake8-annotations
     "E501",  # line-too-long
-    "RUF100",  # unused-noqa
     "SIM", # flake8-simplify
     "N", # pep8-naming
     "PTH", # flake8-use-pathlib
