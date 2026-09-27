@@ -144,7 +144,6 @@ explicit-preview-rules = true
 select = [
     "ALL",
     # 以降のルールはpreview版のルールのみを指定する
-    "FURB132", # check-and-remove-from-set 
     "FURB142", # for-loop-set-mutations
     "FURB113", # repeated-append
     "B909", # loop-iterator-mutation 
