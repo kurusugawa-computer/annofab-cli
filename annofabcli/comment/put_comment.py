@@ -185,8 +185,28 @@ class PutCommentMain(CommandLineWithConfirm):
 
         CommandLineWithConfirm.__init__(self, all_yes)
 
-    def _create_request_body(self, task: dict[str, Any], input_data_id: str, comments: list[AddedComment]) -> list[dict[str, Any]]:
-        """batch_update_comments に渡すリクエストボディを作成する。"""
+    def _create_request_body(
+        self,
+        task: dict[str, Any],
+        input_data_id: str,
+        comments: list[AddedComment],
+        *,
+        put_mode: CommentPutMode,
+    ) -> list[dict[str, Any]]:
+        """batch_update_comments に渡すリクエストボディを作成する。
+
+        Args:
+            task: コメントを付与するタスク。
+            input_data_id: コメントを付与する入力データID。
+            comments: 追加対象のコメント一覧。
+            put_mode: コメント登録時の動作モード。
+
+        Returns:
+            batch_update_comments APIのリクエストボディ。
+
+        Raises:
+            ValueError: 作成モード以外の検査コメントで、dataとannotation_idの両方が指定されていない場合。
+        """
         task_id = task["task_id"]
 
         # annotation_idが指定されているがdataがNoneのコメントがあるか確認
@@ -221,8 +241,10 @@ class PutCommentMain(CommandLineWithConfirm):
             if data is None and self.comment_type == CommentType.INSPECTION:
                 if annotation_id is not None:
                     data = dict_annotation_id_data[annotation_id]
-                else:
+                elif put_mode == "create":
                     data = create_default_inspection_comment_data(self.input_data_type, is_3d_point_cloud=self.is_3d_point_cloud)
+                else:
+                    raise ValueError("検査コメントにはdataまたはannotation_idを指定してください。")
 
             if self.input_data_type == InputDataType.IMAGE and data is not None:
                 data = round_image_inspection_comment_data(data)
@@ -425,7 +447,7 @@ class PutCommentMain(CommandLineWithConfirm):
             if len(target_comments) == 0:
                 continue
 
-            request_body = self._create_request_body(task=task, input_data_id=input_data_id, comments=target_comments)
+            request_body = self._create_request_body(task=task, input_data_id=input_data_id, comments=target_comments, put_mode=put_mode)
             self.service.api.batch_update_comments(self.project_id, task_id, input_data_id, request_body=request_body)
             added_comment_count += len(target_comments)
             logger.debug(f"task_id='{task_id}', input_data_id='{input_data_id}' :: {len(target_comments)}件のコメントを付与しました。")

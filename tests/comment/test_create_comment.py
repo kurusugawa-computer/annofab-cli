@@ -9,6 +9,7 @@ from annofabapi.plugin import EditorPluginId
 
 from annofabcli.comment.put_comment import (
     AddedComment,
+    CommentPutMode,
     PutCommentMain,
     convert_cli_inspection_comment_list,
     convert_cli_onhold_comment_list,
@@ -55,6 +56,7 @@ def test_put_comment_rounds_image_coordinates() -> None:
         task={"task_id": "task1", "phase": "inspection", "phase_stage": 1},
         input_data_id="input1",
         comments=[AddedComment(comment="コメント1", data=data)],
+        put_mode="create",
     )
 
     assert request_body[0]["comment_node"]["data"] == {"x": 1, "y": 3, "_type": "Point"}
@@ -79,6 +81,7 @@ def test_put_inspection_comment_uses_default_data(input_data_type: str, expected
         task={"task_id": "task1", "phase": "inspection", "phase_stage": 1},
         input_data_id="input1",
         comments=[AddedComment(comment="コメント1")],
+        put_mode="create",
     )
 
     assert request_body[0]["comment_node"]["data"] == expected_data
@@ -95,6 +98,7 @@ def test_put_onhold_comment_does_not_use_default_data() -> None:
         task={"task_id": "task1", "phase": "annotation", "phase_stage": 1},
         input_data_id="input1",
         comments=[AddedComment(comment="コメント1")],
+        put_mode="create",
     )
 
     assert request_body[0]["comment_node"]["data"] is None
@@ -114,6 +118,7 @@ def test_put_inspection_comment_uses_default_data_for_3d_point_cloud() -> None:
         task={"task_id": "task1", "phase": "inspection", "phase_stage": 1},
         input_data_id="input1",
         comments=[AddedComment(comment="コメント1")],
+        put_mode="create",
     )
 
     assert request_body[0]["comment_node"]["data"]["_type"] == "Custom"
@@ -131,6 +136,24 @@ def test_put_inspection_comment_requires_data_for_unsupported_custom_project() -
             task={"task_id": "task1", "phase": "inspection", "phase_stage": 1},
             input_data_id="input1",
             comments=[AddedComment(comment="コメント1")],
+            put_mode="create",
+        )
+
+
+@pytest.mark.parametrize("put_mode", ["update", "put"])
+def test_put_inspection_comment_requires_data_except_create_mode(put_mode: CommentPutMode) -> None:
+    service = Mock()
+    service.api.account_id = "account1"
+    service.api.get_project.return_value = ({"input_data_type": "image"}, None)
+    service.api.get_annotation_specs.return_value = ({"labels": []}, None)
+    main_obj = PutCommentMain(service, project_id="project1", comment_type=CommentType.INSPECTION)
+
+    with pytest.raises(ValueError):
+        main_obj._create_request_body(
+            task={"task_id": "task1", "phase": "inspection", "phase_stage": 1},
+            input_data_id="input1",
+            comments=[AddedComment(comment="コメント1")],
+            put_mode=put_mode,
         )
 
 
