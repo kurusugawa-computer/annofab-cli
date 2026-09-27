@@ -4,9 +4,38 @@ from collections import defaultdict
 from collections.abc import Collection
 from typing import Any
 
-from annofabapi.models import CommentType
+from annofabapi.models import CommentType, InputDataType
 
 logger = logging.getLogger(__name__)
+
+
+def create_default_inspection_comment_data(input_data_type: InputDataType, *, is_3d_point_cloud: bool = False) -> dict[str, Any]:
+    """検査コメントの既定位置を生成します。
+
+    Args:
+        input_data_type: プロジェクトの入力データ種別。
+        is_3d_point_cloud: 3次元点群プロジェクトかどうか。
+
+    Returns:
+        検査コメントの位置や区間。
+
+    Raises:
+        ValueError: 既定位置を生成できない入力データ種別の場合。
+    """
+    if input_data_type == InputDataType.IMAGE:
+        return {"x": 0, "y": 0, "_type": "Point"}
+
+    if input_data_type == InputDataType.MOVIE:
+        # 0.1秒未満の区間はAnnofab上で検査コメントを確認できない。
+        return {"start": 0, "end": 100, "_type": "Time"}
+
+    if input_data_type == InputDataType.CUSTOM and is_3d_point_cloud:
+        return {
+            "data": '{"kind": "CUBOID", "shape": {"dimensions": {"width": 1.0, "height": 1.0, "depth": 1.0}, "location": {"x": 0.0, "y": 0.0, "z": 0.0}, "rotation": {"x": 0.0, "y": 0.0, "z": 0.0}, "direction": {"front": {"x": 1.0, "y": 0.0, "z": 0.0}, "up": {"x": 0.0, "y": 0.0, "z": 1.0}}}, "version": "2"}',  # noqa: E501
+            "_type": "Custom",
+        }
+
+    raise ValueError(f"入力データ種別が'{input_data_type.value}'のプロジェクトでは、検査コメントの既定位置を生成できません。")
 
 
 def round_image_inspection_comment_data(data: dict[str, Any]) -> dict[str, Any]:
