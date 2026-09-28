@@ -1,0 +1,3 @@
+project_id,task_id,task_phase,task_phase_stage,task_status,input_data_id,input_data_name,updated_datetime,label,annotation_id,annotation_editor_url,data_uri,point_count,attributes.surface_type
+prj1,task1,annotation,1,complete,pointcloud1,pointcloud1.pcd,2026-09-28T10:00:00+09:00,Road,01K67ABCDEF0123456789ABCDE,https://example.com/3d-editor/#pointcloud1/01K67ABCDEF0123456789ABCDE,./pointcloud1/01K67ABCDEF0123456789ABCDE,57746,asphalt
+prj1,task2,annotation,1,complete,pointcloud2,pointcloud2.pcd,2026-09-28T10:05:00+09:00,Road,01K67ABCDEG0123456789ABCDE,https://example.com/3d-editor/#pointcloud2/01K67ABCDEG0123456789ABCDE,./pointcloud2/01K67ABCDEG0123456789ABCDE,,concrete

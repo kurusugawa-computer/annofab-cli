@@ -20,6 +20,19 @@ Examples
     $ annofabcli annotation_zip list_3d_segment_annotation --project_id prj1 --output out.csv
 
 
+出力例（CSV形式）
+----------------------------------------------------------------------
+
+.. code-block::
+
+    $ annofabcli annotation_zip list_3d_segment_annotation --project_id prj1 \
+     --output out.csv --format csv
+
+.. csv-table:: out.csv
+    :header-rows: 1
+    :file: list_3d_segment_annotation/out.csv
+
+
 出力例（JSON形式）
 ----------------------------------------------------------------------
 
