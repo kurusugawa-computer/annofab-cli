@@ -26,6 +26,8 @@ Examples
       - 横
     - 「遮蔽」属性（チェックボックス、読み込み専用）
 
+過去のアノテーション仕様を出力する方法は、 :ref:`annotation-specs-history-selection` を参照してください。
+
 名前は既定で日本語で出力します。英語名を出力する場合は ``--lang en`` を指定してください。
 
 .. code-block::

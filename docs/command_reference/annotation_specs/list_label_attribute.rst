@@ -14,6 +14,7 @@ Examples
 
     $ annofabcli annotation_specs list_label_attribute --project_id prj1
 
+過去のアノテーション仕様を出力する方法は、 :ref:`annotation-specs-history-selection` を参照してください。
 
 出力結果
 =================================
