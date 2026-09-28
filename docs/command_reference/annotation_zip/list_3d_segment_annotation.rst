@@ -88,6 +88,8 @@ Examples
 * ``attributes``: 属性。CSVでは ``attributes.<属性名>`` 列として出力
 
 
+.. include:: task_metadata.inc
+
 Usage Details
 =================================
 
