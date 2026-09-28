@@ -93,7 +93,7 @@ def get_segment_point_count(
             if callable(close):
                 close()
     except (AnnotationOuterFileNotFoundError, OSError, TypeError, UnicodeError, ValueError) as e:
-        logger.warning(f"3次元セグメントの外部ファイルを読み込めないため、point_countをNoneにします。 annotation_id='{annotation_id}', data_uri='{data_uri}' :: {e}")
+        logger.warning(f"3次元セグメントの外部ファイルを読み込めないため、point_countをNoneにします。 annotation_id='{annotation_id}', data_uri='{data_uri}' :: {e}", exc_info=True)
         return None
 
 
