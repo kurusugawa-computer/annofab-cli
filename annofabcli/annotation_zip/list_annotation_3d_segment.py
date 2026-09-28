@@ -1,0 +1,361 @@
+import argparse
+import json
+import logging
+import sys
+import tempfile
+from collections.abc import Callable, Collection
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Any, BinaryIO
+
+import pandas
+from annofab_3dpc.annotation import SegmentAnnotationDetailData, convert_annotation_detail_data
+from annofabapi.exceptions import AnnotationOuterFileNotFoundError
+from annofabapi.models import InputDataType, ProjectMemberRole
+from annofabapi.util.page import create_3dpc_editor_url
+from dataclasses_json import DataClassJsonMixin
+
+import annofabcli.common.cli
+from annofabcli.annotation_zip.task_metadata import (
+    add_task_metadata_to_dataframe,
+    add_task_metadata_to_dict_list,
+    get_task_metadata_by_task_id,
+)
+from annofabcli.common.annofab.annotation_zip import lazy_parse_simple_annotation_by_input_data
+from annofabcli.common.cli import COMMAND_LINE_ERROR_STATUS_CODE, ArgumentParser, CommandLine, build_annofabapi_resource_and_login, get_list_from_args
+from annofabcli.common.download import DownloadingFile
+from annofabcli.common.enums import OutputFormat
+from annofabcli.common.facade import AnnofabApiFacade, TaskQuery, match_annotation_with_task_query
+from annofabcli.common.utils import print_csv, print_json
+
+logger = logging.getLogger(__name__)
+
+
+@dataclass(frozen=True)
+class Annotation3DSegmentInfo(DataClassJsonMixin):
+    project_id: str
+    task_id: str
+    task_phase: str
+    task_phase_stage: int
+    task_status: str
+
+    input_data_id: str
+    input_data_name: str
+
+    updated_datetime: str | None
+    """アノテーションJSONに格納されているアノテーションの更新日時。"""
+
+    label: str
+    annotation_id: str
+    annotation_editor_url: str
+
+    data_uri: str
+    """点インデックスが格納された外部ファイルを参照するURI。"""
+
+    point_count: int | None
+    """セグメントに含まれる点数。外部ファイルを読み込めない場合はNone。"""
+
+    attributes: dict[str, Any]
+
+
+def _get_outer_file_data_uri(data_uri: str, input_data_id: str) -> str:
+    """入力データ単位のパーサーで外部ファイルを開くためのURIに変換する。"""
+    path = Path(data_uri)
+    if len(path.parts) >= 2 and path.parts[0] == input_data_id:
+        return str(Path(*path.parts[1:]))
+    return data_uri
+
+
+def get_segment_point_count(
+    data_uri: str,
+    input_data_id: str,
+    *,
+    open_outer_file: Callable[[str], Path | BinaryIO] | None = None,
+    annotation_id: str | None = None,
+) -> int | None:
+    if open_outer_file is None:
+        return None
+
+    outer_file_data_uri = _get_outer_file_data_uri(data_uri, input_data_id)
+    try:
+        outer_file = open_outer_file(outer_file_data_uri)
+        file_obj = outer_file.open("rb") if isinstance(outer_file, Path) else outer_file
+        try:
+            segment_data = json.load(file_obj)
+            if not isinstance(segment_data, dict) or segment_data.get("kind") != "SEGMENT":
+                raise ValueError("kind='SEGMENT'ではありません。")
+            points = segment_data.get("points")
+            if not isinstance(points, list):
+                raise TypeError("pointsが配列ではありません。")
+            return len(points)
+        finally:
+            close = getattr(file_obj, "close", None)
+            if callable(close):
+                close()
+    except (AnnotationOuterFileNotFoundError, OSError, TypeError, UnicodeError, ValueError) as e:
+        logger.warning(f"3次元セグメントの外部ファイルを読み込めないため、point_countをNoneにします。 annotation_id='{annotation_id}', data_uri='{data_uri}' :: {e}")
+        return None
+
+
+def get_annotation_3d_segment_info_list(
+    simple_annotation: dict[str, Any],
+    *,
+    target_label_names: Collection[str] | None = None,
+    open_outer_file: Callable[[str], Path | BinaryIO] | None = None,
+) -> list[Annotation3DSegmentInfo]:
+    result = []
+    target_label_names_set = set(target_label_names) if target_label_names is not None else None
+    for detail in simple_annotation["details"]:
+        annotation_data = convert_annotation_detail_data(detail["data"])
+        if not isinstance(annotation_data, SegmentAnnotationDetailData):
+            continue
+
+        label = detail["label"]
+        if target_label_names_set is not None and label not in target_label_names_set:
+            continue
+
+        point_count = get_segment_point_count(
+            annotation_data.data_uri,
+            simple_annotation["input_data_id"],
+            open_outer_file=open_outer_file,
+            annotation_id=detail["annotation_id"],
+        )
+        result.append(
+            Annotation3DSegmentInfo(
+                project_id=simple_annotation["project_id"],
+                task_id=simple_annotation["task_id"],
+                task_phase=simple_annotation["task_phase"],
+                task_phase_stage=simple_annotation["task_phase_stage"],
+                task_status=simple_annotation["task_status"],
+                input_data_id=simple_annotation["input_data_id"],
+                input_data_name=simple_annotation["input_data_name"],
+                updated_datetime=simple_annotation["updated_datetime"],
+                label=label,
+                annotation_id=detail["annotation_id"],
+                annotation_editor_url=create_3dpc_editor_url(
+                    simple_annotation["project_id"],
+                    simple_annotation["task_id"],
+                    input_data_id=simple_annotation["input_data_id"],
+                    annotation_id=detail["annotation_id"],
+                ),
+                data_uri=annotation_data.data_uri,
+                point_count=point_count,
+                attributes=detail["attributes"],
+            )
+        )
+
+    return result
+
+
+def get_annotation_3d_segment_info_list_from_annotation_path(
+    annotation_path: Path,
+    *,
+    target_task_ids: Collection[str] | None = None,
+    task_query: TaskQuery | None = None,
+    target_label_names: Collection[str] | None = None,
+) -> list[Annotation3DSegmentInfo]:
+    annotation_segment_list = []
+    target_task_ids_set = set(target_task_ids) if target_task_ids is not None else None
+    iter_parser = lazy_parse_simple_annotation_by_input_data(annotation_path)
+    logger.info(f"アノテーションZIPまたはディレクトリ'{annotation_path}'を読み込みます。")
+    for index, parser in enumerate(iter_parser):
+        if (index + 1) % 10000 == 0:
+            logger.info(f"{index + 1} 件目のJSONを読み込み中")
+        if target_task_ids_set is not None and parser.task_id not in target_task_ids_set:
+            continue
+        dict_simple_annotation = parser.load_json()
+        if task_query is not None and not match_annotation_with_task_query(dict_simple_annotation, task_query):
+            continue
+        annotation_segment_list.extend(
+            get_annotation_3d_segment_info_list(
+                dict_simple_annotation,
+                target_label_names=target_label_names,
+                open_outer_file=parser.open_outer_file,
+            )
+        )
+    return annotation_segment_list
+
+
+def create_df(annotation_segment_list: list[Annotation3DSegmentInfo]) -> pandas.DataFrame:
+    base_columns = [
+        "project_id",
+        "task_id",
+        "task_phase",
+        "task_phase_stage",
+        "task_status",
+        "input_data_id",
+        "input_data_name",
+        "updated_datetime",
+        "label",
+        "annotation_id",
+        "annotation_editor_url",
+        "data_uri",
+        "point_count",
+    ]
+
+    if not annotation_segment_list:
+        return pandas.DataFrame(columns=base_columns)
+
+    dict_list = [e.to_dict(encode_json=True) for e in annotation_segment_list]
+    df = pandas.json_normalize(dict_list)
+    attribute_columns = sorted(col for col in df.columns if col.startswith("attributes."))
+    columns = base_columns + attribute_columns
+    for column in columns:
+        if column not in df.columns:
+            df[column] = pandas.NA
+    return df[columns]
+
+
+def print_annotation_3d_segment(
+    annotation_path: Path,
+    output_file: Path,
+    output_format: OutputFormat,
+    *,
+    target_task_ids: Collection[str] | None = None,
+    task_query: TaskQuery | None = None,
+    target_label_names: Collection[str] | None = None,
+    task_metadata_by_task_id: dict[str, dict[str, Any]] | None = None,
+) -> None:
+    annotation_segment_list = get_annotation_3d_segment_info_list_from_annotation_path(
+        annotation_path,
+        target_task_ids=target_task_ids,
+        task_query=task_query,
+        target_label_names=target_label_names,
+    )
+
+    logger.info(f"{len(annotation_segment_list)} 件の3次元セグメントアノテーションの情報を出力します。 :: output='{output_file}'")
+
+    if output_format == OutputFormat.CSV:
+        df = create_df(annotation_segment_list)
+        if task_metadata_by_task_id is not None:
+            df = add_task_metadata_to_dataframe(df, task_metadata_by_task_id)
+        print_csv(df, output_file)
+    elif output_format in [OutputFormat.PRETTY_JSON, OutputFormat.JSON]:
+        json_data = [e.to_dict(encode_json=True) for e in annotation_segment_list]
+        if task_metadata_by_task_id is not None:
+            json_data = add_task_metadata_to_dict_list(json_data, task_metadata_by_task_id)
+        print_json(json_data, is_pretty=output_format == OutputFormat.PRETTY_JSON, output=output_file)
+    else:
+        raise ValueError(f"出力形式 '{output_format}' はサポートされていません。")
+
+
+class ListAnnotation3DSegment(CommandLine):
+    COMMON_MESSAGE = "annofabcli annotation_zip list_3d_segment_annotation: error:"
+
+    def validate(self, args: argparse.Namespace) -> bool:
+        if args.project_id is None and args.annotation is None:
+            print(  # noqa: T201
+                f"{self.COMMON_MESSAGE} argument --project_id: '--annotation'が未指定のときは、'--project_id' を指定してください。",
+                file=sys.stderr,
+            )
+            return False
+        return True
+
+    def main(self) -> None:
+        args = self.args
+        if not self.validate(args):
+            sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
+
+        project_id: str | None = args.project_id
+        if args.with_task_metadata and project_id is None:
+            print(  # noqa: T201
+                f"{self.COMMON_MESSAGE} argument --project_id: `--with_task_metadata`を指定するときは、`--project_id`が必須です。", file=sys.stderr
+            )
+            sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
+        if project_id is not None:
+            super().validate_project(project_id, project_member_roles=[ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER])
+            project, _ = self.service.api.get_project(project_id)
+            if project["input_data_type"] != InputDataType.CUSTOM.value:
+                print(  # noqa: T201
+                    f"project_id='{project_id}'であるプロジェクトはカスタムプロジェクト（点群など）でないので、終了します", file=sys.stderr
+                )
+                sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
+
+        annotation_path = Path(args.annotation) if args.annotation is not None else None
+        task_id_list = get_list_from_args(args.task_id) if args.task_id is not None else None
+        task_query = TaskQuery.from_dict(annofabcli.common.cli.get_json_from_args(args.task_query)) if args.task_query is not None else None
+        label_name_list = get_list_from_args(args.label_name) if args.label_name is not None else None
+        output_file: Path = args.output
+        output_format = OutputFormat(args.format)
+
+        downloading_obj = DownloadingFile(self.service)
+
+        def download_and_print(project_id: str, temp_dir: Path, *, is_latest: bool) -> None:
+            if args.with_task_metadata:
+                task_json_path = downloading_obj.download_task_json_to_dir(project_id, temp_dir, is_latest=is_latest)
+                task_metadata_by_task_id = get_task_metadata_by_task_id(task_json_path)
+            else:
+                task_metadata_by_task_id = None
+            local_annotation_path = downloading_obj.download_annotation_zip_to_dir(project_id, temp_dir, is_latest=is_latest)
+            print_annotation_3d_segment(
+                local_annotation_path,
+                output_file,
+                output_format,
+                target_task_ids=task_id_list,
+                task_query=task_query,
+                target_label_names=label_name_list,
+                task_metadata_by_task_id=task_metadata_by_task_id,
+            )
+
+        if project_id is not None:
+            if args.temp_dir is not None:
+                download_and_print(project_id, args.temp_dir, is_latest=args.latest)
+            else:
+                with tempfile.TemporaryDirectory() as str_temp_dir:
+                    download_and_print(project_id, Path(str_temp_dir), is_latest=args.latest)
+        else:
+            assert annotation_path is not None
+            print_annotation_3d_segment(
+                annotation_path,
+                output_file,
+                output_format,
+                target_task_ids=task_id_list,
+                task_query=task_query,
+                target_label_names=label_name_list,
+            )
+
+
+def parse_args(parser: argparse.ArgumentParser) -> None:
+    argument_parser = ArgumentParser(parser)
+    group = parser.add_mutually_exclusive_group(required=True)
+    group.add_argument("--annotation", type=str, help="アノテーションzip、またはzipを展開したディレクトリを指定します。")
+    group.add_argument("-p", "--project_id", type=str, help="project_id。アノテーションZIPをダウンロードします。")
+
+    argument_parser.add_format(choices=[OutputFormat.CSV, OutputFormat.JSON, OutputFormat.PRETTY_JSON], default=OutputFormat.CSV)
+    argument_parser.add_output()
+    parser.add_argument(
+        "-tq",
+        "--task_query",
+        type=str,
+        help="集計対象タスクを絞り込むためのクエリ条件をJSON形式で指定します。使用できるキーは task_id, status, phase, phase_stage です。"
+        " ``file://`` を先頭に付けると、JSON形式のファイルを指定できます。",
+    )
+    argument_parser.add_task_id(required=False)
+    parser.add_argument("--label_name", type=str, nargs="+", help="指定したラベル名の3次元セグメントアノテーションのみを対象にします。複数指定できます。")
+    parser.add_argument(
+        "--with_task_metadata",
+        action="store_true",
+        help="タスクメタデータを出力します。CSVでは ``task_metadata.<key>`` 列、JSONでは ``task_metadata`` キーに出力します。",
+    )
+    parser.add_argument(
+        "--latest",
+        action="store_true",
+        help="``--annotation`` を指定しないとき、最新のアノテーションzipを参照します。このオプションを指定すると、アノテーションzipを更新するのに数分待ちます。",
+    )
+    parser.add_argument("--temp_dir", type=Path, help="指定したディレクトリに、アノテーションZIPなどの一時ファイルをダウンロードします。")
+    parser.set_defaults(subcommand_func=main)
+
+
+def main(args: argparse.Namespace) -> None:
+    service = build_annofabapi_resource_and_login(args)
+    facade = AnnofabApiFacade(service)
+    ListAnnotation3DSegment(service, facade, args).main()
+
+
+def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
+    subcommand_name = "list_3d_segment_annotation"
+    subcommand_help = "アノテーションZIPから3次元セグメントアノテーションの情報を出力します。"
+    epilog = "アノテーションZIPをダウンロードする場合は、オーナロールまたはアノテーションユーザロールを持つユーザで実行してください。"
+    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description=subcommand_help, epilog=epilog)
+    parse_args(parser)
+    return parser

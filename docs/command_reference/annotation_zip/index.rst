@@ -20,6 +20,7 @@ Available Commands
    count_annotation_by_label
    filter
    list_3d_bounding_box_annotation
+   list_3d_segment_annotation
    list_annotation_attribute
    list_bounding_box_annotation
    list_classification_annotation
