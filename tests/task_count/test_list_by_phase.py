@@ -96,3 +96,61 @@ class TestCommandLine:
                 out_file,
             ]
         )
+
+    def test_list_by_task_id_group(self):
+        out_file = str(out_dir / "list_by_task_id_group.csv")
+        main(
+            [
+                self.command_name,
+                "list_by_task_id_group",
+                "--project_id",
+                project_id,
+                "--task_id_delimiter",
+                "_",
+                "--output",
+                out_file,
+            ]
+        )
+
+    def test_list_by_metadata(self):
+        out_file = str(out_dir / "list_by_metadata.csv")
+        main(
+            [
+                self.command_name,
+                "list_by_metadata",
+                "--project_id",
+                project_id,
+                "--metadata_key",
+                "test_key",
+                "--output",
+                out_file,
+            ]
+        )
+
+    def test_list_by_user(self):
+        out_file = str(out_dir / "list_by_user.csv")
+        main(
+            [
+                self.command_name,
+                "list_by_user",
+                "--project_id",
+                project_id,
+                "--output",
+                out_file,
+            ]
+        )
+
+    def test_list_by_user_with_input_data_unit(self):
+        out_file = str(out_dir / "list_by_user_input_data_count.csv")
+        main(
+            [
+                self.command_name,
+                "list_by_user",
+                "--project_id",
+                project_id,
+                "--unit",
+                "input_data_count",
+                "--output",
+                out_file,
+            ]
+        )

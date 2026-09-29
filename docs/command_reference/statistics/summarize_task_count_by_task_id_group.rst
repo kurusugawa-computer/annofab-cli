@@ -7,6 +7,12 @@ Description
 
 task_idのグループごとにタスク数を集計します。
 
+.. warning::
+
+   このコマンドは非推奨です。代わりに :doc:`../task_count/list_by_task_id_group` コマンドを使用してください。
+
+   ``statistics summarize_task_count_by_task_id_group`` コマンドは2027/01/01以降に廃止予定です。
+
 
 
 

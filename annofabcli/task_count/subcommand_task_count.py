@@ -1,14 +1,20 @@
 import argparse
 
 import annofabcli.common.cli
+import annofabcli.task_count.list_by_metadata
 import annofabcli.task_count.list_by_phase
+import annofabcli.task_count.list_by_task_id_group
+import annofabcli.task_count.list_by_user
 
 
 def parse_args(parser: argparse.ArgumentParser) -> None:
     subparsers = parser.add_subparsers(dest="subcommand_name")
 
     # サブコマンドの定義
+    annofabcli.task_count.list_by_metadata.add_parser(subparsers)
     annofabcli.task_count.list_by_phase.add_parser(subparsers)
+    annofabcli.task_count.list_by_task_id_group.add_parser(subparsers)
+    annofabcli.task_count.list_by_user.add_parser(subparsers)
 
 
 def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:

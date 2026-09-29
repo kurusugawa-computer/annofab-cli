@@ -6,6 +6,12 @@ Description
 =================================
 ユーザごとに、担当しているタスク数をCSV形式で出力します。
 
+.. warning::
+
+   このコマンドは非推奨です。代わりに :doc:`../task_count/list_by_user` コマンドを使用してください。
+
+   ``statistics summarize_task_count_by_user`` コマンドは2027/01/01以降に廃止予定です。
+
 
 Examples
 =================================

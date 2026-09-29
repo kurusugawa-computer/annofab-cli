@@ -25,6 +25,12 @@ from annofabcli.statistics.summarize_task_count import get_step_for_current_phas
 
 logger = logging.getLogger(__name__)
 
+DEPRECATED_MESSAGE = (
+    "[DEPRECATED] :: `statistics summarize_task_count_by_task_id_group` コマンドは非推奨です。"
+    "代わりに `task_count list_by_task_id_group` コマンドを使用してください。 "
+    "`statistics summarize_task_count_by_task_id_group` コマンドは2027/01/01以降に廃止予定です。"
+)
+
 DEFAULT_WAIT_OPTIONS = WaitOptions(interval=60, max_tries=360)
 TASK_ID_GROUP_UNKNOWN = "unknown"
 """task_id_groupが不明な場合に表示する値"""
@@ -221,6 +227,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
 
 
 def main(args: argparse.Namespace) -> None:
+    logger.warning(DEPRECATED_MESSAGE)
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
     SummarizeTaskCountByTaskId(service, facade, args).main()
@@ -228,7 +235,7 @@ def main(args: argparse.Namespace) -> None:
 
 def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "summarize_task_count_by_task_id_group"
-    subcommand_help = "task_idのグループごとにタスク数を集計します。"
+    subcommand_help = f"task_idのグループごとにタスク数を集計します。\n{DEPRECATED_MESSAGE}"
     epilog = "アノテーションユーザまたはオーナロールを持つユーザで実行してください。"
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, epilog=epilog)
     parse_args(parser)
