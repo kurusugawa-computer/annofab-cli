@@ -33,6 +33,11 @@
   * 2027/01/01以降に廃止予定です。
   * 代わりに :doc:`command_reference/task_count/list_by_task_id_group` を使用してください。
 
+* :doc:`command_reference/statistics/summarize_task_count_by_user`
+
+  * 2027/01/01以降に廃止予定です。
+  * 代わりに :doc:`command_reference/task_count/list_by_user` を使用してください。
+
 廃止時期が未定の機能
 =================================
 

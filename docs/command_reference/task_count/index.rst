@@ -10,3 +10,4 @@ task_count
 
    list_by_phase
    list_by_task_id_group
+   list_by_user

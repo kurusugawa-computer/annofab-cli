@@ -10,6 +10,14 @@ def test_get_task_id_prefix() -> None:
     assert get_task_id_prefix("abc", delimiter="_") == "unknown"
 
 
+def test_get_task_id_prefix_with_component_count() -> None:
+    task_id = "20260902_second_f00075528-00075822_cam5"
+
+    assert get_task_id_prefix(task_id, delimiter="_") == "20260902_second_f00075528-00075822"
+    assert get_task_id_prefix(task_id, delimiter="_", component_count=2) == "20260902_second"
+    assert get_task_id_prefix(task_id, delimiter="_", component_count=5) == "unknown"
+
+
 def create_df_task() -> pandas.DataFrame:
     statuses = [
         ("annotation", "never_worked.unassigned"),
@@ -63,6 +71,19 @@ def test_summarize_df_task_by_task_id_group_with_task_count() -> None:
             "total": 12,
         }
     ]
+
+
+def test_summarize_df_task_by_task_id_group_with_component_count() -> None:
+    df_task = create_df_task().iloc[:1].assign(task_id="20260902_second_f00075528-00075822_cam5")
+
+    actual = summarize_df_task_by_task_id_group(
+        df_task,
+        task_id_delimiter="_",
+        task_id_groups=None,
+        task_id_group_component_count=2,
+    )
+
+    assert actual.iloc[0]["task_id_group"] == "20260902_second"
 
 
 def test_summarize_df_task_by_task_id_group_with_input_data_count() -> None:

@@ -34,6 +34,24 @@ Examples
    validation,2,6,0,1,4,0,1,3,0,13,30
 
 
+グループ名に使用する要素数を指定
+-----------------------------------------
+
+``--task_id_group_component_count`` を指定すると、タスクIDを ``--task_id_delimiter`` で分割し、
+先頭から指定した数の要素をグループ名として使用します。
+
+たとえば、以下のコマンドではタスクID ``20260902_second_f00075528-00075822_cam5`` を
+``20260902_second`` グループに集計します。
+
+.. code-block:: console
+
+    $ annofabcli task_count list_by_task_id_group --project_id prj1 --task_id_delimiter _ \
+        --task_id_group_component_count 2 --output out.csv
+
+``--task_id_group_component_count`` を指定しない場合は、従来どおり末尾の要素だけを除いた
+``20260902_second_f00075528-00075822`` がグループ名になります。
+
+
 タスクIDとグループを個別に指定
 -----------------------------------------
 

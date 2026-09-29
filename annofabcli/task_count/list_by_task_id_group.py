@@ -34,20 +34,41 @@ SUMMARY_COLUMNS = [
 """タスクIDグループごとの集計結果に含める列。"""
 
 
-def get_task_id_prefix(task_id: str, delimiter: str) -> str:
+def positive_int(value: str) -> int:
+    """文字列を1以上の整数に変換する。
+
+    Args:
+        value: コマンドライン引数で指定された値。
+
+    Returns:
+        変換後の整数。
+
+    Raises:
+        argparse.ArgumentTypeError: 1未満の値が指定された場合。
+    """
+    int_value = int(value)
+    if int_value < 1:
+        raise argparse.ArgumentTypeError("1以上の整数を指定してください。")
+    return int_value
+
+
+def get_task_id_prefix(task_id: str, delimiter: str, component_count: int | None = None) -> str:
     """タスクIDから、末尾の区切り文字より前にあるプレフィックスを取得する。
 
     Args:
         task_id: タスクID。
         delimiter: プレフィックスと連番を分ける区切り文字。
+        component_count: グループ名として使用する先頭要素の数。未指定の場合は末尾の1要素を除く。
 
     Returns:
         タスクIDのプレフィックス。区切り文字が存在しない場合は ``unknown``。
     """
     elements = task_id.split(delimiter)
-    if len(elements) <= 1:
+    if component_count is None:
+        component_count = len(elements) - 1
+    if component_count < 1 or len(elements) < component_count:
         return TASK_ID_GROUP_UNKNOWN
-    return delimiter.join(elements[:-1])
+    return delimiter.join(elements[:component_count])
 
 
 def _get_summary_status(task_status_for_summary: str) -> str:
@@ -90,6 +111,7 @@ def summarize_df_task_by_task_id_group(
     *,
     task_id_delimiter: str | None,
     task_id_groups: dict[str, list[str]] | None,
+    task_id_group_component_count: int | None = None,
     unit: AggregationUnit = AggregationUnit.TASK,
 ) -> pandas.DataFrame:
     """タスクIDグループごとに、フェーズと状態別のタスク数を集計する。
@@ -98,6 +120,7 @@ def summarize_df_task_by_task_id_group(
         df_task: ``task_id``、``phase``、``task_status_for_summary`` 列を持つDataFrame。
         task_id_delimiter: タスクIDからグループを取得するための区切り文字。
         task_id_groups: タスクIDグループをキー、タスクIDのリストを値とする辞書。
+        task_id_group_component_count: グループ名として使用する、タスクIDの先頭要素の数。
         unit: 集計の単位。
 
     Returns:
@@ -114,7 +137,7 @@ def summarize_df_task_by_task_id_group(
     else:
         if task_id_delimiter is None:
             raise ValueError("task_id_delimiterまたはtask_id_groupsのどちらかを指定してください。")
-        df = df_task.assign(task_id_group=df_task["task_id"].map(lambda task_id: get_task_id_prefix(task_id, task_id_delimiter)))
+        df = df_task.assign(task_id_group=df_task["task_id"].map(lambda task_id: get_task_id_prefix(task_id, task_id_delimiter, task_id_group_component_count)))
 
     summary_status = df["task_status_for_summary"].map(_get_summary_status)
     summary_phase = df["phase"].mask(summary_status == TaskStatusForSummary.COMPLETE.value, "acceptance")
@@ -154,6 +177,7 @@ class ListTaskCountByTaskIdGroup(CommandLine):
         *,
         task_id_delimiter: str | None,
         task_id_groups: dict[str, list[str]] | None,
+        task_id_group_component_count: int | None,
         temp_dir: Path,
         should_execute_get_tasks_api: bool = False,
         not_worked_threshold_second: float = 0,
@@ -165,6 +189,7 @@ class ListTaskCountByTaskIdGroup(CommandLine):
             project_id: プロジェクトID。
             task_id_delimiter: タスクIDからグループを取得するための区切り文字。
             task_id_groups: タスクIDグループをキー、タスクIDのリストを値とする辞書。
+            task_id_group_component_count: グループ名として使用する、タスクIDの先頭要素の数。
             temp_dir: 一時ファイルの保存先ディレクトリ。
             should_execute_get_tasks_api: getTasks APIを実行するかどうか。
             not_worked_threshold_second: 作業していないとみなす作業時間の閾値（秒）。
@@ -187,6 +212,7 @@ class ListTaskCountByTaskIdGroup(CommandLine):
             df_task,
             task_id_delimiter=task_id_delimiter,
             task_id_groups=task_id_groups,
+            task_id_group_component_count=task_id_group_component_count,
             unit=unit,
         )
         if len(df_task) == 0:
@@ -220,6 +246,7 @@ class ListTaskCountByTaskIdGroup(CommandLine):
                 project_id,
                 task_id_delimiter=args.task_id_delimiter,
                 task_id_groups=task_id_groups,
+                task_id_group_component_count=args.task_id_group_component_count,
                 temp_dir=args.temp_dir,
                 should_execute_get_tasks_api=args.execute_get_tasks_api,
                 not_worked_threshold_second=args.not_worked_threshold_second,
@@ -231,6 +258,7 @@ class ListTaskCountByTaskIdGroup(CommandLine):
                     project_id,
                     task_id_delimiter=args.task_id_delimiter,
                     task_id_groups=task_id_groups,
+                    task_id_group_component_count=args.task_id_group_component_count,
                     temp_dir=Path(str_temp_dir),
                     should_execute_get_tasks_api=args.execute_get_tasks_api,
                     not_worked_threshold_second=args.not_worked_threshold_second,
@@ -262,6 +290,11 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         help="タスクIDグループをキー、タスクIDのリストを値とするJSON文字列を指定します。``file://`` を先頭に付けるとJSONファイルを指定できます。",
     )
     parser.add_argument(
+        "--task_id_group_component_count",
+        type=positive_int,
+        help="タスクIDを ``--task_id_delimiter`` で分割し、先頭から何要素をグループ名として使用するか指定します。``--task_id_delimiter`` と一緒に指定してください。",
+    )
+    parser.add_argument(
         "--execute_get_tasks_api",
         action="store_true",
         help="タスク全件ファイルをダウンロードせずに、`getTasks` APIを実行してタスク一覧を取得します。`getTasks` APIを複数回実行するので、タスク全件ファイルをダウンロードするよりも時間がかかります。",
@@ -285,6 +318,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         help="集計の単位を指定します。task_count: タスク数、input_data_count: 入力データ数、video_duration_hour: 動画の長さ（時間）、video_duration_minute: 動画の長さ（分）。",
     )
     argument_parser.add_output()
+    parser.set_defaults(command_parser=parser)
     parser.set_defaults(subcommand_func=main)
 
 
@@ -297,6 +331,9 @@ def main(args: argparse.Namespace) -> None:
     Returns:
         None
     """
+    if args.task_id_group_component_count is not None and args.task_id_delimiter is None:
+        args.command_parser.error("--task_id_group_component_countは--task_id_delimiterと一緒に指定してください。")
+
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
     ListTaskCountByTaskIdGroup(service, facade, args).main()
