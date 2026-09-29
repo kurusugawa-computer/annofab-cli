@@ -16,6 +16,7 @@ Examples
 
     $ annofabcli annotation_specs list_attribute --project_id prj1 --output out.csv
 
+過去のアノテーション仕様を出力する方法は、 :ref:`annotation-specs-history-selection` を参照してください。
 
 出力結果
 =================================

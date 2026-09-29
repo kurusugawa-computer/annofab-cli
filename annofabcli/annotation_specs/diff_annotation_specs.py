@@ -11,6 +11,7 @@ import annofabcli.common.cli
 from annofabcli.annotation_specs.diff_compare import create_annotation_specs_diff
 from annofabcli.annotation_specs.diff_models import AnnotationSpecsDiffOutputFormat
 from annofabcli.annotation_specs.diff_text_formatter import format_annotation_specs_diff_as_text
+from annofabcli.annotation_specs.history import add_history_arguments, resolve_history_id_or_exit
 from annofabcli.common.cli import COMMAND_LINE_ERROR_STATUS_CODE, CommandLine, build_annofabapi_resource_and_login
 from annofabcli.common.facade import AnnofabApiFacade
 from annofabcli.common.utils import output_string, print_json
@@ -34,17 +35,7 @@ def _add_annotation_specs_source_arguments(parser: argparse.ArgumentParser, *, p
         help="比較対象のアノテーション仕様JSONを指定します。JSONファイルに記載された情報を元に比較します。",
     )
 
-    history_group = source_group.add_mutually_exclusive_group()
-    history_group.add_argument(
-        f"--{prefix}_history_id",
-        type=str,
-        help="比較対象のアノテーション仕様のhistory_idを指定してください。指定しない場合は、最新のアノテーション仕様を参照します。",
-    )
-    history_group.add_argument(
-        f"--{prefix}_before",
-        type=annofabcli.common.cli.non_negative_int,
-        help="比較対象のアノテーション仕様が、最新よりいくつ前かを指定してください。たとえば ``1`` を指定した場合、最新より1個前のアノテーション仕様を参照します。",
-    )
+    add_history_arguments(source_group, prefix=f"{prefix}_")
 
 
 class AnnotationSpecsDiffCommand(CommandLine):
@@ -52,24 +43,17 @@ class AnnotationSpecsDiffCommand(CommandLine):
 
     COMMON_MESSAGE = "annofabcli annotation_specs diff: error:"
 
-    def get_history_id_from_before_index(self, project_id: str, before: int) -> str | None:
-        histories, _ = self.service.api.get_annotation_specs_histories(project_id)
-        sorted_histories = sorted(histories, key=lambda x: x["updated_datetime"], reverse=True)
-        if before + 1 > len(sorted_histories):
-            logger.warning(f"アノテーション仕様の履歴は{len(sorted_histories)}個のため、最新より{before}個前のアノテーション仕様は見つかりませんでした。")
-            return None
-        return sorted_histories[before]["history_id"]
-
     def get_annotation_specs_from_source(self, *, prefix: str) -> dict[str, Any]:
         project_id = getattr(self.args, f"{prefix}_project_id")
         annotation_specs_json_file = getattr(self.args, f"{prefix}_annotation_specs_json_file")
         history_id = getattr(self.args, f"{prefix}_history_id")
         before = getattr(self.args, f"{prefix}_before")
+        updated_datetime = getattr(self.args, f"{prefix}_updated_datetime")
 
         if annotation_specs_json_file is not None:
-            if history_id is not None or before is not None:
+            if history_id is not None or before is not None or updated_datetime is not None:
                 print(  # noqa: T201
-                    f"{self.COMMON_MESSAGE} argument --{prefix}_history_id/--{prefix}_before: '--{prefix}_annotation_specs_json_file' を指定したときは指定できません。",
+                    f"{self.COMMON_MESSAGE} argument --{prefix}_history_id/--{prefix}_before/--{prefix}_updated_datetime: '--{prefix}_annotation_specs_json_file' を指定したときは指定できません。",
                     file=sys.stderr,
                 )
                 sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
@@ -78,15 +62,15 @@ class AnnotationSpecsDiffCommand(CommandLine):
                 return json.load(f)
 
         assert project_id is not None
-        resolved_history_id = history_id
-        if before is not None:
-            resolved_history_id = self.get_history_id_from_before_index(project_id, before)
-            if resolved_history_id is None:
-                print(  # noqa: T201
-                    f"{self.COMMON_MESSAGE} argument --{prefix}_before: 最新より{before}個前のアノテーション仕様は見つかりませんでした。",
-                    file=sys.stderr,
-                )
-                sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
+        resolved_history_id = resolve_history_id_or_exit(
+            self.service,
+            project_id,
+            history_id=history_id,
+            before=before,
+            updated_datetime=updated_datetime,
+            common_message=self.COMMON_MESSAGE,
+            option_prefix=f"{prefix}_",
+        )
 
         query_params = {"v": "3"}
         if resolved_history_id is not None:

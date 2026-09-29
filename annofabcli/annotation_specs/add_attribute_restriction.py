@@ -169,14 +169,6 @@ class AddAttributeRestrictionMain(CommandLineWithConfirm):
 class AddAttributeRestriction(CommandLine):
     COMMON_MESSAGE = "annofabcli annotation_specs add_restriction: error:"
 
-    def get_history_id_from_before_index(self, project_id: str, before: int) -> str | None:
-        histories, _ = self.service.api.get_annotation_specs_histories(project_id)
-        if before + 1 > len(histories):
-            logger.warning(f"アノテーション仕様の履歴は{len(histories)}個のため、最新より{before}個前のアノテーション仕様は見つかりませんでした。")
-            return None
-        history = histories[-(before + 1)]
-        return history["history_id"]
-
     def main(self) -> None:
         args = self.args
 

@@ -19,6 +19,7 @@ Examples
 
     $ annofabcli annotation_specs export --project_id prj1 --output out.json --format pretty_json
 
+過去のアノテーション仕様を出力する方法は、 :ref:`annotation-specs-history-selection` を参照してください。
 
 
 
@@ -54,4 +55,3 @@ Usage Details
    :prog: annofabcli annotation_specs export
    :nosubcommands:
    :nodefaultconst:
-
