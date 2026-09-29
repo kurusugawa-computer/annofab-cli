@@ -141,6 +141,21 @@ def test_summarize_df_task_by_task_id_group_with_task_id_groups() -> None:
     assert actual["total"].to_list() == [1, 1]
 
 
+def test_summarize_df_task_by_task_id_group_with_single_group() -> None:
+    df_task = create_df_task()
+    df_task["task_id"] = [chr(ord("a") + index) for index in range(len(df_task))]
+
+    actual = summarize_df_task_by_task_id_group(
+        df_task,
+        task_id_delimiter=None,
+        task_id_groups=None,
+        is_single_group=True,
+    )
+
+    assert actual["task_id_group"].to_list() == ["all"]
+    assert actual["total"].to_list() == [12]
+
+
 def test_summarize_df_task_by_task_id_group_with_empty_df() -> None:
     actual = summarize_df_task_by_task_id_group(
         pandas.DataFrame(),

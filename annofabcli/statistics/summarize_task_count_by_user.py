@@ -42,7 +42,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     Returns:
         None
     """
-    annofabcli.task_count.list_by_user.parse_args(parser)
+    annofabcli.task_count.list_by_user.parse_args(parser, include_metadata_key=False)
     parser.set_defaults(subcommand_func=main)
 
 

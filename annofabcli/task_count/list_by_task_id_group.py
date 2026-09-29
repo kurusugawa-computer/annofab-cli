@@ -19,6 +19,9 @@ logger = logging.getLogger(__name__)
 TASK_ID_GROUP_UNKNOWN = "unknown"
 """task_id_groupが不明な場合に表示する値。"""
 
+SINGLE_TASK_ID_GROUP_NAME = "all"
+"""すべてのタスクを1グループとして集計するときのtask_id_group。"""
+
 SUMMARY_COLUMNS = [
     "annotation.never_worked",
     "annotation.worked",
@@ -112,6 +115,7 @@ def summarize_df_task_by_task_id_group(
     task_id_delimiter: str | None,
     task_id_groups: dict[str, list[str]] | None,
     task_id_group_component_count: int | None = None,
+    is_single_group: bool = False,
     unit: AggregationUnit = AggregationUnit.TASK,
 ) -> pandas.DataFrame:
     """タスクIDグループごとに、フェーズと状態別のタスク数を集計する。
@@ -121,6 +125,7 @@ def summarize_df_task_by_task_id_group(
         task_id_delimiter: タスクIDからグループを取得するための区切り文字。
         task_id_groups: タスクIDグループをキー、タスクIDのリストを値とする辞書。
         task_id_group_component_count: グループ名として使用する、タスクIDの先頭要素の数。
+        is_single_group: すべてのタスクを1グループとして集計するかどうか。
         unit: 集計の単位。
 
     Returns:
@@ -130,7 +135,9 @@ def summarize_df_task_by_task_id_group(
     if len(df_task) == 0:
         return pandas.DataFrame(columns=result_columns)
 
-    if task_id_groups is not None:
+    if is_single_group:
+        df = df_task.assign(task_id_group=SINGLE_TASK_ID_GROUP_NAME)
+    elif task_id_groups is not None:
         df_task_id_group = _create_task_id_group_df(task_id_groups)
         df = df_task.merge(df_task_id_group, on="task_id", how="left")
         df["task_id_group"] = df["task_id_group"].fillna(TASK_ID_GROUP_UNKNOWN)
@@ -178,6 +185,7 @@ class ListTaskCountByTaskIdGroup(CommandLine):
         task_id_delimiter: str | None,
         task_id_groups: dict[str, list[str]] | None,
         task_id_group_component_count: int | None,
+        is_single_group: bool,
         temp_dir: Path,
         should_execute_get_tasks_api: bool = False,
         not_worked_threshold_second: float = 0,
@@ -190,6 +198,7 @@ class ListTaskCountByTaskIdGroup(CommandLine):
             task_id_delimiter: タスクIDからグループを取得するための区切り文字。
             task_id_groups: タスクIDグループをキー、タスクIDのリストを値とする辞書。
             task_id_group_component_count: グループ名として使用する、タスクIDの先頭要素の数。
+            is_single_group: すべてのタスクを1グループとして集計するかどうか。
             temp_dir: 一時ファイルの保存先ディレクトリ。
             should_execute_get_tasks_api: getTasks APIを実行するかどうか。
             not_worked_threshold_second: 作業していないとみなす作業時間の閾値（秒）。
@@ -213,6 +222,7 @@ class ListTaskCountByTaskIdGroup(CommandLine):
             task_id_delimiter=task_id_delimiter,
             task_id_groups=task_id_groups,
             task_id_group_component_count=task_id_group_component_count,
+            is_single_group=is_single_group,
             unit=unit,
         )
         if len(df_task) == 0:
@@ -247,6 +257,7 @@ class ListTaskCountByTaskIdGroup(CommandLine):
                 task_id_delimiter=args.task_id_delimiter,
                 task_id_groups=task_id_groups,
                 task_id_group_component_count=args.task_id_group_component_count,
+                is_single_group=args.single_group,
                 temp_dir=args.temp_dir,
                 should_execute_get_tasks_api=args.execute_get_tasks_api,
                 not_worked_threshold_second=args.not_worked_threshold_second,
@@ -259,6 +270,7 @@ class ListTaskCountByTaskIdGroup(CommandLine):
                     task_id_delimiter=args.task_id_delimiter,
                     task_id_groups=task_id_groups,
                     task_id_group_component_count=args.task_id_group_component_count,
+                    is_single_group=args.single_group,
                     temp_dir=Path(str_temp_dir),
                     should_execute_get_tasks_api=args.execute_get_tasks_api,
                     not_worked_threshold_second=args.not_worked_threshold_second,
@@ -288,6 +300,11 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--task_id_groups",
         type=str,
         help="タスクIDグループをキー、タスクIDのリストを値とするJSON文字列を指定します。``file://`` を先頭に付けるとJSONファイルを指定できます。",
+    )
+    task_id_group.add_argument(
+        "--single_group",
+        action="store_true",
+        help="すべてのタスクを ``all`` という1つのタスクIDグループとして集計します。",
     )
     parser.add_argument(
         "--task_id_group_component_count",

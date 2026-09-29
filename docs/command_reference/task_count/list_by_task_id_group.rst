@@ -52,6 +52,17 @@ Examples
 ``20260902_second_f00075528-00075822`` がグループ名になります。
 
 
+すべてのタスクを1グループとして集計
+-----------------------------------------
+
+タスクIDの命名規則にかかわらず、すべてのタスクをまとめて集計する場合は ``--single_group`` を指定します。
+出力される ``task_id_group`` は ``all`` です。
+
+.. code-block:: console
+
+    $ annofabcli task_count list_by_task_id_group --project_id prj1 --single_group --output out.csv
+
+
 タスクIDとグループを個別に指定
 -----------------------------------------
 

@@ -19,11 +19,14 @@ from annofabcli.common.dataclasses import WaitOptions
 from annofabcli.common.download import DownloadingFile
 from annofabcli.common.enums import OutputFormat
 from annofabcli.common.facade import AnnofabApiFacade
+from annofabcli.task_count.list_by_task_id_group import SUMMARY_COLUMNS
 
 logger = logging.getLogger(__name__)
 
 DEFAULT_WAIT_OPTIONS = WaitOptions(interval=60, max_tries=360)
 DEFAULT_TASK_ID_DELIMITER = "_"
+UNASSIGNED_ACCOUNT_ID = "__unassigned__"
+UNASSIGNED_USER_ID = "unassigned"
 
 
 class TaskStatusForSummary(Enum):
@@ -60,36 +63,103 @@ class TaskStatusForSummary(Enum):
             return TaskStatusForSummary(status)
 
 
-def add_info_to_task(task: Task) -> Task:
+def add_info_to_task(task: Task, metadata_keys: list[str] | None = None) -> Task:
+    """タスクに集計用の情報を追加する。
+
+    Args:
+        task: タスク情報。
+        metadata_keys: 集計対象のタスクメタデータキー。
+
+    Returns:
+        集計用の情報を追加したタスク情報。
+    """
     task["status_for_summary"] = TaskStatusForSummary.from_task(task).value
+    match task["status"]:
+        case TaskStatus.NOT_STARTED.value:
+            summary_status = "never_worked"
+        case TaskStatus.WORKING.value | TaskStatus.BREAK.value:
+            summary_status = "worked"
+        case TaskStatus.ON_HOLD.value:
+            summary_status = "on_hold"
+        case TaskStatus.COMPLETE.value:
+            summary_status = "complete"
+        case _:
+            raise RuntimeError(f"status={task['status']}が対象外です。")
+
+    summary_phase = TaskPhase.ACCEPTANCE.value if summary_status == "complete" else task["phase"]
+    task["summary_column"] = f"{summary_phase}.{summary_status}"
+    task["account_id"] = task.get("account_id") or UNASSIGNED_ACCOUNT_ID
+    metadata = task.get("metadata") or {}
+    for key in metadata_keys or []:
+        task[f"metadata.{key}"] = metadata.get(key)
     return task
 
 
-def create_task_count_summary_df(task_list: list[Task]) -> pandas.DataFrame:
-    """
-    タスク数の集計結果が格納されたDataFrameを取得する。
+def create_task_count_summary_df(task_list: list[Task], metadata_keys: list[str] | None = None) -> pandas.DataFrame:
+    """タスク数の集計結果が格納されたDataFrameを取得する。
 
     Args:
-        task_list:
+        task_list: タスク情報のリスト。
+        metadata_keys: 集計対象のタスクメタデータキー。
 
     Returns:
-
+        ユーザとタスクメタデータごとのタスク数を、フェーズと状態別に格納したDataFrame。
     """
 
-    def add_columns_if_not_exists(df: pandas.DataFrame, column: str) -> None:
-        if column not in df.columns:
-            df[column] = 0
+    metadata_columns = [f"metadata.{key}" for key in metadata_keys or []]
+    result_columns = ["account_id", *metadata_columns, *SUMMARY_COLUMNS, "total"]
+    if len(task_list) == 0:
+        return pandas.DataFrame(columns=result_columns)
 
-    df_task = pandas.DataFrame([add_info_to_task(t) for t in task_list])
-    df_summary = df_task.pivot_table(values="task_id", index=["account_id"], columns=["status_for_summary"], aggfunc="count", fill_value=0).reset_index()
+    df_task = pandas.DataFrame([add_info_to_task(task, metadata_keys) for task in task_list])
+    index_columns = ["account_id", *metadata_columns]
+    df_summary = df_task.pivot_table(
+        values="task_id",
+        index=index_columns,
+        columns="summary_column",
+        aggfunc="count",
+        fill_value=0,
+        dropna=False,
+    ).reset_index()
+    for column in SUMMARY_COLUMNS:
+        if column not in df_summary.columns:
+            df_summary[column] = 0
+
+    df_summary["total"] = df_summary[SUMMARY_COLUMNS].sum(axis="columns")
+    return df_summary.loc[df_summary["total"] > 0, result_columns]
+
+
+def create_legacy_task_count_summary_df(task_list: list[Task]) -> pandas.DataFrame:
+    """非推奨コマンドと互換性のあるタスク数の集計結果を生成する。
+
+    Args:
+        task_list: タスク情報のリスト。
+
+    Returns:
+        従来形式で集計したDataFrame。
+    """
+    records = []
+    for task in task_list:
+        record = dict(task)
+        record["status_for_summary"] = TaskStatusForSummary.from_task(task).value
+        records.append(record)
+
+    df_task = pandas.DataFrame(records)
+    df_summary = df_task.pivot_table(
+        values="task_id",
+        index=["account_id"],
+        columns=["status_for_summary"],
+        aggfunc="count",
+        fill_value=0,
+    ).reset_index()
     for status in TaskStatusForSummary:
-        add_columns_if_not_exists(df_summary, status.value)
-
+        if status.value not in df_summary.columns:
+            df_summary[status.value] = 0
     return df_summary
 
 
 class ListTaskCountByUser(CommandLine):
-    def create_user_df(self, project_id: str, account_id_list: list[str]) -> pandas.DataFrame:
+    def create_user_df(self, project_id: str, account_id_list: list[str], *, include_unknown_account: bool = True) -> pandas.DataFrame:
         project_member_repository = ProjectMemberRepository(self.service)
         user_list = []
         for account_id in account_id_list:
@@ -98,21 +168,61 @@ class ListTaskCountByUser(CommandLine):
                 user_list.append(user)
             except ValueError:
                 logger.warning(f"account_id='{account_id}'であるユーザーは、project_id='{project_id}'のプロジェクトのメンバーではありません。")
+                if include_unknown_account:
+                    user_list.append({"account_id": account_id, "user_id": account_id, "username": "", "biography": ""})
         return pandas.DataFrame(user_list, columns=["account_id", "user_id", "username", "biography"])
 
-    def create_summary_df(self, project_id: str, task_list: list[Task]) -> pandas.DataFrame:
-        df_task_count = create_task_count_summary_df(task_list)
-        df_user = self.create_user_df(project_id, df_task_count["account_id"])
+    def create_summary_df(self, project_id: str, task_list: list[Task], metadata_keys: list[str] | None = None) -> pandas.DataFrame:
+        df_task_count = create_task_count_summary_df(task_list, metadata_keys)
+        account_id_list = df_task_count.loc[df_task_count["account_id"] != UNASSIGNED_ACCOUNT_ID, "account_id"].to_list()
+        df_user = self.create_user_df(project_id, account_id_list)
+        if UNASSIGNED_ACCOUNT_ID in df_task_count["account_id"].array:
+            df_unassigned_user = pandas.DataFrame([{"account_id": UNASSIGNED_ACCOUNT_ID, "user_id": UNASSIGNED_USER_ID, "username": "", "biography": ""}])
+            df_user = pandas.concat([df_user, df_unassigned_user], ignore_index=True)
+
+        df = pandas.merge(df_user, df_task_count, how="left", on=["account_id"])
+        return df
+
+    def create_legacy_summary_df(self, project_id: str, task_list: list[Task]) -> pandas.DataFrame:
+        """非推奨コマンドと互換性のあるユーザ別集計結果を生成する。
+
+        Args:
+            project_id: プロジェクトID。
+            task_list: タスク情報のリスト。
+
+        Returns:
+            従来形式で集計したDataFrame。
+        """
+        df_task_count = create_legacy_task_count_summary_df(task_list)
+        df_user = self.create_user_df(project_id, df_task_count["account_id"], include_unknown_account=False)
         if len(df_user) == 0:
             return pandas.DataFrame()
 
         df = pandas.merge(df_user, df_task_count, how="left", on=["account_id"])
-        task_count_columns = [s.value for s in TaskStatusForSummary]
+        task_count_columns = [status.value for status in TaskStatusForSummary]
         df[task_count_columns] = df[task_count_columns].fillna(0)
         return df
 
-    def print_summarize_df(self, df: pandas.DataFrame) -> None:
-        columns = ["user_id", "username", "biography"] + [status.value for status in TaskStatusForSummary]
+    def print_summarize_df(self, df: pandas.DataFrame, metadata_keys: list[str] | None = None) -> None:
+        metadata_columns = [f"metadata.{key}" for key in metadata_keys or []]
+        columns = ["user_id", "username", "biography", *metadata_columns, *SUMMARY_COLUMNS, "total"]
+        target_df = df[columns].sort_values(["user_id", *metadata_columns])
+        annofabcli.common.utils.print_according_to_format(
+            target_df,
+            format=OutputFormat.CSV,
+            output=self.output,
+        )
+
+    def print_legacy_summarize_df(self, df: pandas.DataFrame) -> None:
+        """非推奨コマンドと互換性のある列をCSV形式で出力する。
+
+        Args:
+            df: 出力対象のDataFrame。
+
+        Returns:
+            None
+        """
+        columns = ["user_id", "username", "biography", *[status.value for status in TaskStatusForSummary]]
         target_df = df[columns].sort_values("user_id")
         annofabcli.common.utils.print_according_to_format(
             target_df,
@@ -140,11 +250,18 @@ class ListTaskCountByUser(CommandLine):
             with open(task_json_path, encoding="utf-8") as f:  # noqa: PTH123
                 task_list = json.load(f)
 
-            df = self.create_summary_df(project_id, task_list)
-            if len(df) > 0:
-                self.print_summarize_df(df)
-            else:
-                logger.error("出力対象データが0件のため、出力しません。")
+            if args.legacy_output:
+                df = self.create_legacy_summary_df(project_id, task_list)
+                if len(df) > 0:
+                    self.print_legacy_summarize_df(df)
+                else:
+                    logger.error("出力対象データが0件のため、出力しません。")
+                return
+
+            df = self.create_summary_df(project_id, task_list, args.metadata_key)
+            if len(df) == 0:
+                logger.info("タスクが0件ですが、ヘッダ行を出力します。")
+            self.print_summarize_df(df, args.metadata_key)
 
         if args.temp_dir is not None:
             download_and_process_task_data(temp_dir=args.temp_dir)
@@ -153,10 +270,21 @@ class ListTaskCountByUser(CommandLine):
                 download_and_process_task_data(temp_dir=Path(str_temp_dir))
 
 
-def parse_args(parser: argparse.ArgumentParser) -> None:
+def parse_args(parser: argparse.ArgumentParser, *, include_metadata_key: bool = True) -> None:
     argument_parser = ArgumentParser(parser)
 
     argument_parser.add_project_id()
+    if include_metadata_key:
+        parser.add_argument(
+            "--metadata_key",
+            type=str,
+            nargs="+",
+            help="集計対象のタスクメタデータキーを指定します。指定したキーの値でグループ化してタスク数を集計します。",
+        )
+        parser.set_defaults(legacy_output=False)
+    else:
+        parser.set_defaults(metadata_key=None, legacy_output=True)
+
     parser.add_argument(
         "--task_json",
         type=str,
