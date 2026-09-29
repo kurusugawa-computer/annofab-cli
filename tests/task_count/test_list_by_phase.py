@@ -112,6 +112,21 @@ class TestCommandLine:
             ]
         )
 
+    def test_list_by_metadata(self):
+        out_file = str(out_dir / "list_by_metadata.csv")
+        main(
+            [
+                self.command_name,
+                "list_by_metadata",
+                "--project_id",
+                project_id,
+                "--metadata_key",
+                "test_key",
+                "--output",
+                out_file,
+            ]
+        )
+
     def test_list_by_user(self):
         out_file = str(out_dir / "list_by_user.csv")
         main(

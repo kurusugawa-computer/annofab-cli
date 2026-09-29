@@ -28,10 +28,10 @@ Examples
 出力ファイル :file:`out.csv` の内容は次のとおりです。
 
 .. csv-table:: out.csv
-   :header: task_id_group,annotation.never_worked,annotation.worked,annotation.on_hold,inspection.never_worked,inspection.worked,inspection.on_hold,acceptance.never_worked,acceptance.worked,acceptance.on_hold,acceptance.complete,total
+   :header: task_id_group,annotation.never_worked,annotation.worked,annotation.on_hold,inspection.never_worked,inspection.worked,inspection.on_hold,acceptance.never_worked,acceptance.worked,acceptance.on_hold,acceptance.complete
 
-   train,10,20,1,5,12,0,3,8,1,40,100
-   validation,2,6,0,1,4,0,1,3,0,13,30
+   train,10,20,1,5,12,0,3,8,1,40
+   validation,2,6,0,1,4,0,1,3,0,13
 
 
 グループ名に使用する要素数を指定
@@ -81,7 +81,6 @@ Examples
 
 ``--unit input_data_count`` を指定すると、タスク数ではなく入力データ数を集計します。
 ``video_duration_hour`` または ``video_duration_minute`` を指定すると、動画プロジェクトの動画時間を集計します。
-``total`` 列も、``--unit`` に指定した単位で集計します。
 
 .. code-block:: console
 

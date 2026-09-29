@@ -8,6 +8,7 @@ task_count
    :maxdepth: 1
    :caption: Contents:
 
+   list_by_metadata
    list_by_phase
    list_by_task_id_group
    list_by_user

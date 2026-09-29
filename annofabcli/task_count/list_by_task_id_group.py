@@ -12,7 +12,8 @@ from annofabapi.models import ProjectMemberRole
 import annofabcli.common.cli
 from annofabcli.common.cli import COMMAND_LINE_ERROR_STATUS_CODE, ArgumentParser, CommandLine, build_annofabapi_resource_and_login, get_json_from_args
 from annofabcli.common.facade import AnnofabApiFacade
-from annofabcli.task_count.list_by_phase import AggregationUnit, GettingTaskCountSummary, TaskStatusForSummary
+from annofabcli.task_count.common import SUMMARY_COLUMNS, summarize_df_task
+from annofabcli.task_count.list_by_phase import AggregationUnit, GettingTaskCountSummary
 
 logger = logging.getLogger(__name__)
 
@@ -21,20 +22,6 @@ TASK_ID_GROUP_UNKNOWN = "unknown"
 
 SINGLE_TASK_ID_GROUP_NAME = "all"
 """すべてのタスクを1グループとして集計するときのtask_id_group。"""
-
-SUMMARY_COLUMNS = [
-    "annotation.never_worked",
-    "annotation.worked",
-    "annotation.on_hold",
-    "inspection.never_worked",
-    "inspection.worked",
-    "inspection.on_hold",
-    "acceptance.never_worked",
-    "acceptance.worked",
-    "acceptance.on_hold",
-    "acceptance.complete",
-]
-"""タスクIDグループごとの集計結果に含める列。"""
 
 
 def positive_int(value: str) -> int:
@@ -74,28 +61,6 @@ def get_task_id_prefix(task_id: str, delimiter: str, component_count: int | None
     return delimiter.join(elements[:component_count])
 
 
-def _get_summary_status(task_status_for_summary: str) -> str:
-    """詳細なタスク状態を集計用の状態に変換する。
-
-    Args:
-        task_status_for_summary: ``task_count list_by_phase`` で使用するタスク状態。
-
-    Returns:
-        ``never_worked``、``worked``、``on_hold``、``complete`` のいずれか。
-    """
-    if task_status_for_summary in {
-        TaskStatusForSummary.NEVER_WORKED_UNASSIGNED.value,
-        TaskStatusForSummary.NEVER_WORKED_ASSIGNED.value,
-    }:
-        return "never_worked"
-    if task_status_for_summary in {
-        TaskStatusForSummary.WORKED_NOT_REJECTED.value,
-        TaskStatusForSummary.WORKED_REJECTED.value,
-    }:
-        return "worked"
-    return task_status_for_summary
-
-
 def _create_task_id_group_df(task_id_groups: dict[str, list[str]]) -> pandas.DataFrame:
     """タスクIDとタスクIDグループとの対応を表すDataFrameを生成する。
 
@@ -131,9 +96,8 @@ def summarize_df_task_by_task_id_group(
     Returns:
         タスクIDグループごとのタスク数を横持ちで格納したDataFrame。
     """
-    result_columns = ["task_id_group", *SUMMARY_COLUMNS, "total"]
     if len(df_task) == 0:
-        return pandas.DataFrame(columns=result_columns)
+        return pandas.DataFrame(columns=["task_id_group", *SUMMARY_COLUMNS])
 
     if is_single_group:
         df = df_task.assign(task_id_group=SINGLE_TASK_ID_GROUP_NAME)
@@ -146,33 +110,7 @@ def summarize_df_task_by_task_id_group(
             raise ValueError("task_id_delimiterまたはtask_id_groupsのどちらかを指定してください。")
         df = df_task.assign(task_id_group=df_task["task_id"].map(lambda task_id: get_task_id_prefix(task_id, task_id_delimiter, task_id_group_component_count)))
 
-    summary_status = df["task_status_for_summary"].map(_get_summary_status)
-    summary_phase = df["phase"].mask(summary_status == TaskStatusForSummary.COMPLETE.value, "acceptance")
-    df = df.assign(summary_column=summary_phase + "." + summary_status)
-
-    match unit:
-        case AggregationUnit.TASK:
-            df = df.assign(_aggregate_value=1)
-        case AggregationUnit.INPUT_DATA:
-            df = df.assign(_aggregate_value=df["input_data_count"])
-        case AggregationUnit.VIDEO_DURATION_HOUR:
-            df = df.assign(_aggregate_value=df["video_duration_hour"])
-        case AggregationUnit.VIDEO_DURATION_MINUTE:
-            df = df.assign(_aggregate_value=df["video_duration_minute"])
-
-    df_summary = df.pivot_table(
-        values="_aggregate_value",
-        index="task_id_group",
-        columns="summary_column",
-        aggfunc="sum",
-        fill_value=0,
-    ).reset_index()
-    for column in SUMMARY_COLUMNS:
-        if column not in df_summary.columns:
-            df_summary[column] = 0
-
-    df_summary["total"] = df_summary[SUMMARY_COLUMNS].sum(axis="columns")
-    return df_summary[result_columns].sort_values("task_id_group").reset_index(drop=True)
+    return summarize_df_task(df, group_columns=["task_id_group"], unit=unit)
 
 
 class ListTaskCountByTaskIdGroup(CommandLine):

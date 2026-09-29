@@ -19,7 +19,7 @@ from annofabcli.common.dataclasses import WaitOptions
 from annofabcli.common.download import DownloadingFile
 from annofabcli.common.enums import OutputFormat
 from annofabcli.common.facade import AnnofabApiFacade
-from annofabcli.task_count.list_by_task_id_group import SUMMARY_COLUMNS
+from annofabcli.task_count.common import SUMMARY_COLUMNS
 
 logger = logging.getLogger(__name__)
 
@@ -107,7 +107,7 @@ def create_task_count_summary_df(task_list: list[Task], metadata_keys: list[str]
     """
 
     metadata_columns = [f"metadata.{key}" for key in metadata_keys or []]
-    result_columns = ["account_id", *metadata_columns, *SUMMARY_COLUMNS, "total"]
+    result_columns = ["account_id", *metadata_columns, *SUMMARY_COLUMNS]
     if len(task_list) == 0:
         return pandas.DataFrame(columns=result_columns)
 
@@ -125,8 +125,7 @@ def create_task_count_summary_df(task_list: list[Task], metadata_keys: list[str]
         if column not in df_summary.columns:
             df_summary[column] = 0
 
-    df_summary["total"] = df_summary[SUMMARY_COLUMNS].sum(axis="columns")
-    return df_summary.loc[df_summary["total"] > 0, result_columns]
+    return df_summary.loc[df_summary[SUMMARY_COLUMNS].sum(axis="columns") > 0, result_columns]
 
 
 def create_legacy_task_count_summary_df(task_list: list[Task]) -> pandas.DataFrame:
@@ -205,7 +204,7 @@ class ListTaskCountByUser(CommandLine):
 
     def print_summarize_df(self, df: pandas.DataFrame, metadata_keys: list[str] | None = None) -> None:
         metadata_columns = [f"metadata.{key}" for key in metadata_keys or []]
-        columns = ["user_id", "username", "biography", *metadata_columns, *SUMMARY_COLUMNS, "total"]
+        columns = ["user_id", "username", "biography", *metadata_columns, *SUMMARY_COLUMNS]
         target_df = df[columns].sort_values(["user_id", *metadata_columns])
         annofabcli.common.utils.print_according_to_format(
             target_df,

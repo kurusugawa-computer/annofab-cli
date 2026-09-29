@@ -1,7 +1,7 @@
 import pandas
 from annofabapi.models import Task
 
-from annofabcli.task_count.list_by_task_id_group import SUMMARY_COLUMNS
+from annofabcli.task_count.common import SUMMARY_COLUMNS
 from annofabcli.task_count.list_by_user import (
     UNASSIGNED_ACCOUNT_ID,
     ListTaskCountByUser,
@@ -40,7 +40,6 @@ def test_create_task_count_summary_df() -> None:
                 "acceptance.worked": 0,
                 "acceptance.on_hold": 0,
                 "acceptance.complete": 0,
-                "total": 2,
             },
             {
                 "account_id": "account2",
@@ -54,7 +53,6 @@ def test_create_task_count_summary_df() -> None:
                 "acceptance.worked": 0,
                 "acceptance.on_hold": 0,
                 "acceptance.complete": 1,
-                "total": 1,
             },
         ]
     )
@@ -85,7 +83,7 @@ def test_create_task_count_summary_df_includes_unassigned_task() -> None:
     actual = create_task_count_summary_df(task_list, metadata_keys=["dataset"])
 
     assert set(actual["account_id"]) == {"account1", UNASSIGNED_ACCOUNT_ID}
-    assert actual["total"].sum() == len(task_list)
+    assert actual[SUMMARY_COLUMNS].sum(axis="columns").sum() == len(task_list)
 
 
 def test_create_task_count_summary_df_with_multiple_metadata_keys() -> None:
@@ -105,7 +103,7 @@ def test_create_task_count_summary_df_with_multiple_metadata_keys() -> None:
 def test_create_task_count_summary_df_with_empty_task_list() -> None:
     actual = create_task_count_summary_df([])
 
-    assert actual.columns.to_list() == ["account_id", *SUMMARY_COLUMNS, "total"]
+    assert actual.columns.to_list() == ["account_id", *SUMMARY_COLUMNS]
     assert len(actual) == 0
 
 
@@ -125,10 +123,8 @@ def test_create_summary_df_includes_unassigned_user() -> None:
 
     actual = command.create_summary_df("project1", task_list)
 
-    assert actual[["user_id", "total"]].to_dict(orient="records") == [
-        {"user_id": "user1", "total": 1},
-        {"user_id": "unassigned", "total": 1},
-    ]
+    assert actual["user_id"].to_list() == ["user1", "unassigned"]
+    assert actual[SUMMARY_COLUMNS].sum(axis="columns").to_list() == [1, 1]
 
 
 def test_create_legacy_task_count_summary_df_excludes_unassigned_task() -> None:

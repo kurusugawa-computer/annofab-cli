@@ -21,19 +21,19 @@ Examples
 出力ファイル :file:`out.csv` の内容は次のとおりです。
 
 .. csv-table:: out.csv
-   :header: user_id,username,biography,annotation.never_worked,annotation.worked,annotation.on_hold,inspection.never_worked,inspection.worked,inspection.on_hold,acceptance.never_worked,acceptance.worked,acceptance.on_hold,acceptance.complete,total
+   :header: user_id,username,biography,annotation.never_worked,annotation.worked,annotation.on_hold,inspection.never_worked,inspection.worked,inspection.on_hold,acceptance.never_worked,acceptance.worked,acceptance.on_hold,acceptance.complete
 
-   unassigned,,,1,0,0,0,0,0,0,0,0,0,1
-   user1,user1,,2,10,1,3,20,0,0,0,0,100,136
-   user2,user2,,1,5,0,2,10,1,0,0,0,40,59
+   unassigned,,,1,0,0,0,0,0,0,0,0,0
+   user1,user1,,2,10,1,3,20,0,0,0,0,100
+   user2,user2,,1,5,0,2,10,1,0,0,0,40
 
 各列の内容は以下のとおりです。
 
 フェーズごとに、``never_worked``（未着手）、``worked``（作業済み）、``on_hold``（保留中）のタスク数を出力します。
-完了したタスクは ``acceptance.complete`` に出力します。各行の合計は ``total`` です。
+完了したタスクは ``acceptance.complete`` に出力します。
 
 担当者が割り当てられていないタスクは、``user_id`` が ``unassigned`` の行に集計します。
-したがって、全行の ``total`` を合計すると、登録されているタスクの合計になります。
+したがって、状態別の列をすべて合計すると、登録されているタスクの合計になります。
 
 
 タスクメタデータでグループ化
@@ -49,10 +49,10 @@ Examples
 出力ファイル :file:`out.csv` の内容は次のとおりです。
 
 .. csv-table:: out.csv
-   :header: user_id,username,biography,metadata.dataset_type,annotation.never_worked,annotation.worked,annotation.on_hold,inspection.never_worked,inspection.worked,inspection.on_hold,acceptance.never_worked,acceptance.worked,acceptance.on_hold,acceptance.complete,total
+   :header: user_id,username,biography,metadata.dataset_type,annotation.never_worked,annotation.worked,annotation.on_hold,inspection.never_worked,inspection.worked,inspection.on_hold,acceptance.never_worked,acceptance.worked,acceptance.on_hold,acceptance.complete
 
-   user1,user1,,train,1,8,0,0,10,0,0,0,0,100,119
-   user1,user1,,validation,0,2,0,0,5,0,0,0,0,20,27
+   user1,user1,,train,1,8,0,0,10,0,0,0,0,100
+   user1,user1,,validation,0,2,0,0,5,0,0,0,0,20
 
 
 Usage Details
