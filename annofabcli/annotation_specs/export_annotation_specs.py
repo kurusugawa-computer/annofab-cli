@@ -1,13 +1,11 @@
 from __future__ import annotations
 
 import argparse
-import logging
-import sys
 from typing import Any
 
 import annofabcli.common.cli
+from annofabcli.annotation_specs.history import add_history_arguments, resolve_history_id_or_exit
 from annofabcli.common.cli import (
-    COMMAND_LINE_ERROR_STATUS_CODE,
     ArgumentParser,
     CommandLine,
     build_annofabapi_resource_and_login,
@@ -16,22 +14,9 @@ from annofabcli.common.enums import OutputFormat
 from annofabcli.common.facade import AnnofabApiFacade
 from annofabcli.common.utils import print_according_to_format
 
-logger = logging.getLogger(__name__)
-
 
 class ExportAnnotationSpecs(CommandLine):
     COMMON_MESSAGE = "annofabcli annotation_specs export: error:"
-
-    def get_history_id_from_before_index(self, project_id: str, before: int) -> str | None:
-        histories, _ = self.service.api.get_annotation_specs_histories(project_id)
-        sorted_histories = sorted(histories, key=lambda x: x["updated_datetime"], reverse=True)
-
-        if before + 1 > len(sorted_histories):
-            logger.warning(f"アノテーション仕様の履歴は{len(sorted_histories)}個のため、最新より{before}個前のアノテーション仕様は見つかりませんでした。")
-            return None
-
-        history = sorted_histories[before]
-        return history["history_id"]
 
     def get_exported_annotation_specs(self, project_id: str, history_id: str | None) -> dict[str, Any]:
         query_params = {"v": "3"}
@@ -47,18 +32,14 @@ class ExportAnnotationSpecs(CommandLine):
     def main(self) -> None:
         args = self.args
 
-        history_id = None
-        if args.history_id is not None:
-            history_id = args.history_id
-
-        if args.before is not None:
-            history_id = self.get_history_id_from_before_index(args.project_id, args.before)
-            if history_id is None:
-                print(  # noqa: T201
-                    f"{self.COMMON_MESSAGE} argument --before: 最新より{args.before}個前のアノテーション仕様は見つかりませんでした。",
-                    file=sys.stderr,
-                )
-                sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
+        history_id = resolve_history_id_or_exit(
+            self.service,
+            args.project_id,
+            history_id=args.history_id,
+            before=args.before,
+            updated_datetime=args.updated_datetime,
+            common_message=self.COMMON_MESSAGE,
+        )
 
         annotation_specs = self.get_exported_annotation_specs(args.project_id, history_id=history_id)
 
@@ -70,27 +51,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
 
     argument_parser.add_project_id()
 
-    # 過去のアノテーション仕様を参照するためのオプション
-    old_annotation_specs_group = parser.add_mutually_exclusive_group()
-    old_annotation_specs_group.add_argument(
-        "--history_id",
-        type=str,
-        help=(
-            "出力したいアノテーション仕様のhistory_idを指定してください。 "
-            "history_idは ``annotation_specs list_history`` コマンドで確認できます。 "
-            "指定しない場合は、最新のアノテーション仕様が出力されます。 "
-        ),
-    )
-
-    old_annotation_specs_group.add_argument(
-        "--before",
-        type=annofabcli.common.cli.non_negative_int,
-        help=(
-            "出力したい過去のアノテーション仕様が、最新よりいくつ前のアノテーション仕様であるかを指定してください。  "
-            "たとえば ``1`` を指定した場合、最新より1個前のアノテーション仕様を出力します。 "
-            "指定しない場合は、最新のアノテーション仕様が出力されます。 "
-        ),
-    )
+    add_history_arguments(parser)
 
     argument_parser.add_output()
 

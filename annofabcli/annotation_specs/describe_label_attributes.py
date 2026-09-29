@@ -1,9 +1,7 @@
 from __future__ import annotations
 
 import argparse
-import json
 import logging
-import sys
 from collections.abc import Mapping
 from enum import Enum
 from pathlib import Path
@@ -14,12 +12,8 @@ from annofabapi.plugin import ThreeDimensionAnnotationType
 from annofabapi.util.annotation_specs import InternationalizationMessage, get_message_with_lang
 
 import annofabcli.common.cli
-from annofabcli.common.cli import (
-    COMMAND_LINE_ERROR_STATUS_CODE,
-    ArgumentParser,
-    CommandLine,
-    build_annofabapi_resource_and_login,
-)
+from annofabcli.annotation_specs.history import add_history_arguments, load_annotation_specs_or_exit
+from annofabcli.common.cli import ArgumentParser, CommandLine, build_annofabapi_resource_and_login
 from annofabcli.common.facade import AnnofabApiFacade
 from annofabcli.common.utils import output_string
 
@@ -177,26 +171,6 @@ class DescribeLabelAttributes(CommandLine):
     COMMON_MESSAGE = "annofabcli annotation_specs describe_label_attributes: error:"
     """コマンドラインエラーの共通メッセージ。"""
 
-    def get_history_id_from_before_index(self, project_id: str, before: int) -> str | None:
-        """指定した相対位置のアノテーション仕様の履歴IDを取得する。
-
-        Args:
-            project_id: 対象プロジェクトのproject_id。
-            before: 最新から遡る履歴数。
-
-        Returns:
-            対象のhistory_id。該当する履歴がない場合はNone。
-        """
-
-        histories, _ = self.service.api.get_annotation_specs_histories(project_id)
-        sorted_histories = sorted(histories, key=lambda history: history["updated_datetime"], reverse=True)
-        if before + 1 > len(sorted_histories):
-            logger.warning(f"アノテーション仕様の履歴は{len(sorted_histories)}個のため、最新より{before}個前のアノテーション仕様は見つかりませんでした。")
-            return None
-        history = sorted_histories[before]
-        logger.info(f"{history['updated_datetime']}のアノテーション仕様を出力します。 :: history_id='{history['history_id']}', comment='{history['comment']}'")
-        return history["history_id"]
-
     def main(self) -> None:
         """ラベルと属性の関係を出力する。
 
@@ -208,30 +182,15 @@ class DescribeLabelAttributes(CommandLine):
         """
 
         args = self.args
-        if args.project_id is not None:
-            if args.before is not None:
-                history_id = self.get_history_id_from_before_index(args.project_id, args.before)
-                if history_id is None:
-                    print(  # noqa: T201
-                        f"{self.COMMON_MESSAGE} argument --before: 最新より{args.before}個前のアノテーション仕様は見つかりませんでした。",
-                        file=sys.stderr,
-                    )
-                    sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
-            else:
-                history_id = args.history_id
-
-            annotation_specs, _ = self.service.api.get_annotation_specs(args.project_id, query_params={"history_id": history_id, "v": "3"})
-        elif args.annotation_specs_json_file is not None:
-            if args.history_id is not None or args.before is not None:
-                print(  # noqa: T201
-                    f"{self.COMMON_MESSAGE} argument --history_id/--before: '--annotation_specs_json_file' を指定したときは指定できません。",
-                    file=sys.stderr,
-                )
-                sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
-            with args.annotation_specs_json_file.open(encoding="utf-8") as f:
-                annotation_specs = json.load(f)
-        else:
-            raise RuntimeError("'--project_id'か'--annotation_specs_json_file'のどちらかを指定する必要があります。")
+        annotation_specs = load_annotation_specs_or_exit(
+            self.service,
+            project_id=args.project_id,
+            annotation_specs_json_file=args.annotation_specs_json_file,
+            history_id=args.history_id,
+            before=args.before,
+            updated_datetime=args.updated_datetime,
+            common_message=self.COMMON_MESSAGE,
+        )
 
         description = create_label_attributes_description(annotation_specs, DescriptionLanguage(args.lang))
         output_string(description, args.output)
@@ -257,25 +216,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         help="指定したアノテーション仕様のJSONファイルを指定します。JSONファイルに記載された情報を元に出力します。ただしアノテーション仕様の ``format_version`` は ``3`` である必要があります。",
     )
 
-    old_annotation_specs_group = parser.add_mutually_exclusive_group()
-    old_annotation_specs_group.add_argument(
-        "--history_id",
-        type=str,
-        help=(
-            "出力したいアノテーション仕様のhistory_idを指定してください。 "
-            "history_idは ``annotation_specs list_history`` コマンドで確認できます。 "
-            "指定しない場合は、最新のアノテーション仕様が出力されます。"
-        ),
-    )
-    old_annotation_specs_group.add_argument(
-        "--before",
-        type=annofabcli.common.cli.non_negative_int,
-        help=(
-            "出力したい過去のアノテーション仕様が、最新よりいくつ前のアノテーション仕様であるかを指定してください。 "
-            "たとえば ``1`` を指定した場合、最新より1個前のアノテーション仕様を出力します。 "
-            "指定しない場合は、最新のアノテーション仕様が出力されます。"
-        ),
-    )
+    add_history_arguments(parser)
 
     parser.add_argument(
         "--lang",

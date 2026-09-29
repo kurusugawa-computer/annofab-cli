@@ -27,6 +27,7 @@ Examples
     'type' is 'medium'
     'link' has labels 'bike', 'bus'
 
+過去のアノテーション仕様を出力する方法は、 :ref:`annotation-specs-history-selection` を参照してください。
 
 ``--format text_with_ids`` を指定すると、属性ID・ラベルID・選択肢IDなどのIDを含めて自然言語で出力します。
 

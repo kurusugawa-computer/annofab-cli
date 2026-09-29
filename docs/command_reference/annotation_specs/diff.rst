@@ -43,6 +43,8 @@ JSONファイル同士を比較する
       --right_before 3 \
       --format detail_text
 
+更新日時で比較対象を指定する方法は、 :ref:`annotation-specs-history-selection` を参照してください。
+
 
 出力結果
 =================================
