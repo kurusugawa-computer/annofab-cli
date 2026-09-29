@@ -96,3 +96,18 @@ class TestCommandLine:
                 out_file,
             ]
         )
+
+    def test_list_by_task_id_group(self):
+        out_file = str(out_dir / "list_by_task_id_group.csv")
+        main(
+            [
+                self.command_name,
+                "list_by_task_id_group",
+                "--project_id",
+                project_id,
+                "--task_id_delimiter",
+                "_",
+                "--output",
+                out_file,
+            ]
+        )
