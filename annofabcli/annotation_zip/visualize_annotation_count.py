@@ -11,6 +11,7 @@ import annofabapi
 from annofabapi.models import ProjectMemberRole
 
 import annofabcli.common.cli
+from annofabcli.annotation_zip.annotation_name import AnnotationNameTranslator, add_use_japanese_name_argument
 from annofabcli.annotation_zip.count_annotation import CountAnnotationMain, CountTarget
 from annofabcli.common.cli import ArgumentParser, CommandLine
 from annofabcli.common.download import DownloadingFile
@@ -33,15 +34,22 @@ class AttributeNameOptions:
 
 
 class VisualizeAnnotationCountMain:
-    def __init__(self, service: annofabapi.Resource, annotation_specs: AnnotationSpecs) -> None:
+    def __init__(
+        self,
+        service: annofabapi.Resource,
+        annotation_specs: AnnotationSpecs,
+        name_translator: AnnotationNameTranslator | None = None,
+    ) -> None:
         """
         Args:
             service: Annofab Web APIのリソース
             annotation_specs: アノテーション仕様
+            name_translator: 出力する名称の変換オブジェクト。
         """
         self.service = service
         self.annotation_specs = annotation_specs
-        self.count_annotation = CountAnnotationMain(annotation_specs)
+        self.name_translator = name_translator
+        self.count_annotation = CountAnnotationMain(annotation_specs, name_translator)
 
     def visualize_label_count(
         self,
@@ -66,12 +74,15 @@ class VisualizeAnnotationCountMain:
             task_query=task_query,
         )
         metadata = self.create_metadata(project_id=project_id, target_task_ids=target_task_ids, task_query=task_query)
+        prior_keys = self.annotation_specs.label_keys()
+        if self.name_translator is not None:
+            prior_keys = [self.name_translator.label_name(e) for e in prior_keys]
         plot_label_histogram(
             counter_list,
             group_by=group_by,
             output_file=output_file,
             bin_width=bin_width,
-            prior_keys=self.annotation_specs.label_keys(),
+            prior_keys=prior_keys,
             exclude_empty_value=exclude_empty_value,
             arrange_bin_edge=arrange_bin_edge,
             metadata=metadata,
@@ -156,7 +167,8 @@ class VisualizeAnnotationCount(CommandLine):
         annotation_specs = AnnotationSpecs(self.service, project_id)
         group_by = GroupBy(args.group_by)
         output_file = Path(args.output)
-        main_obj = VisualizeAnnotationCountMain(self.service, annotation_specs)
+        name_translator = AnnotationNameTranslator.from_project(self.service, project_id) if args.use_japanese_name else None
+        main_obj = VisualizeAnnotationCountMain(self.service, annotation_specs, name_translator)
 
         def process_annotation(annotation_path: Path) -> None:
             if self.count_target == CountTarget.LABEL:
@@ -280,6 +292,7 @@ def add_common_arguments(parser: argparse.ArgumentParser) -> None:
         type=Path,
         help="指定したディレクトリに、アノテーションZIPなどの一時ファイルをダウンロードします。",
     )
+    add_use_japanese_name_argument(parser)
 
 
 def main_label(args: argparse.Namespace) -> None:

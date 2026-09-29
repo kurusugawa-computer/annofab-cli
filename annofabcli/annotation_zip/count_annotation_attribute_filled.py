@@ -13,7 +13,7 @@ from dataclasses import dataclass, field, replace
 from enum import Enum
 from functools import partial
 from pathlib import Path
-from typing import Any, Literal, Protocol, assert_never
+from typing import Any, Literal, Protocol, assert_never, cast
 
 import annofabapi
 import pandas
@@ -29,6 +29,7 @@ from annofabapi.pydantic_models.task_status import TaskStatus
 from dataclasses_json import DataClassJsonMixin, config
 
 import annofabcli.common.cli
+from annofabcli.annotation_zip.annotation_name import AnnotationNameTranslator, add_use_japanese_name_argument
 from annofabcli.annotation_zip.task_metadata import TASK_METADATA_COLUMN_PREFIX, get_task_metadata_by_task_id, get_task_metadata_keys
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
@@ -476,8 +477,25 @@ class CountAnnotationAttributeFilledMain:
             result.pop("task_metadata")
         return result
 
-    def __init__(self, service: annofabapi.Resource) -> None:
+    def __init__(self, service: annofabapi.Resource, name_translator: AnnotationNameTranslator | None = None) -> None:
         self.service = service
+        self.name_translator = name_translator
+
+    def translate_count_names(self, count: AnnotationCountByInputData | AnnotationCountByTask) -> AnnotationCountByInputData | AnnotationCountByTask:
+        """集計結果の名称を日本語名へ変換します。
+
+        Args:
+            count: 名称を変換する集計結果。
+
+        Returns:
+            名称を変換した集計結果。
+        """
+        if self.name_translator is None:
+            return count
+        translated_counts: dict[AttributeValueKey, int] = defaultdict(int)
+        for key, value in count.annotation_attribute_counts.items():
+            translated_counts[cast(AttributeValueKey, self.name_translator.attribute_value_key(key))] += value
+        return replace(count, annotation_attribute_counts=translated_counts)
 
     def print_annotation_count_csv_by_input_data(
         self, annotation_count_list: list[AnnotationCountByInputData], output_file: Path, *, attribute_names: list[tuple[str, str]] | None, task_metadata_keys: Collection[str] | None = None
@@ -485,6 +503,8 @@ class CountAnnotationAttributeFilledMain:
         attribute_columns: list[tuple[str, str, str]] | None = None
         if attribute_names is not None:
             attribute_columns = get_attribute_columns(attribute_names)
+            if self.name_translator is not None:
+                attribute_columns = [self.name_translator.attribute_value_key(e) for e in attribute_columns]
 
         df = AnnotationCountCsvByAttribute().create_df_by_input_data(annotation_count_list, prior_attribute_columns=attribute_columns)
         for key in task_metadata_keys or []:
@@ -497,6 +517,8 @@ class CountAnnotationAttributeFilledMain:
         attribute_columns: list[tuple[str, str, str]] | None = None
         if attribute_names is not None:
             attribute_columns = get_attribute_columns(attribute_names)
+            if self.name_translator is not None:
+                attribute_columns = [self.name_translator.attribute_value_key(e) for e in attribute_columns]
 
         df = AnnotationCountCsvByAttribute().create_df_by_task(annotation_count_list, prior_attribute_columns=attribute_columns)
         for key in task_metadata_keys or []:
@@ -545,6 +567,7 @@ class CountAnnotationAttributeFilledMain:
         )
         if task_metadata_by_task_id is not None:
             annotation_count_list_by_input_data = [replace(count, task_metadata=task_metadata_by_task_id.get(count.task_id, {})) for count in annotation_count_list_by_input_data]
+        annotation_count_list_by_input_data = [cast(AnnotationCountByInputData, self.translate_count_names(count)) for count in annotation_count_list_by_input_data]
 
         if group_by == GroupBy.INPUT_DATA_ID:
             logger.info(f"{len(annotation_count_list_by_input_data)} 件の入力データに含まれるアノテーション数の情報を出力します。")
@@ -587,6 +610,12 @@ class CountAnnotationAttributeFilled(CommandLine):
     COMMON_MESSAGE = "annofabcli annotation_zip count_annotation_attribute_filled: error:"
 
     def validate(self, args: argparse.Namespace) -> bool:
+        if args.use_japanese_name and args.project_id is None:
+            print(  # noqa: T201
+                f"{self.COMMON_MESSAGE} argument --project_id: `--use_japanese_name`を指定するときは、`--project_id`が必須です。",
+                file=sys.stderr,
+            )
+            return False
         if args.with_task_metadata and args.project_id is None:
             print(  # noqa: T201
                 f"{self.COMMON_MESSAGE} argument --project_id: `--with_task_metadata`を指定するときは、`--project_id`が必須です。",
@@ -625,7 +654,8 @@ class CountAnnotationAttributeFilled(CommandLine):
         group_by = GroupBy(args.group_by)
         output_file: Path = args.output
         output_format = OutputFormat(args.format)
-        main_obj = CountAnnotationAttributeFilledMain(self.service)
+        name_translator = AnnotationNameTranslator.from_project(self.service, project_id) if args.use_japanese_name and project_id is not None else None
+        main_obj = CountAnnotationAttributeFilledMain(self.service, name_translator)
 
         downloading_obj = DownloadingFile(self.service)
 
@@ -776,6 +806,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         type=Path,
         help="指定したディレクトリに、アノテーションZIPなどの一時ファイルをダウンロードします。",
     )
+    add_use_japanese_name_argument(parser)
 
     parser.set_defaults(subcommand_func=main)
 
