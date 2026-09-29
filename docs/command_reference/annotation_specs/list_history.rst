@@ -20,6 +20,25 @@ Examples
     $ annofabcli annotation_specs list_history --project_id prj1 
 
 
+.. _annotation-specs-history-selection:
+
+過去のアノテーション仕様を指定する
+----------------------------------------------
+
+アノテーション仕様を参照するコマンドでは、 ``--history_id`` 、 ``--before`` 、 ``--updated_datetime`` のいずれかを指定できます。
+いずれも指定しない場合は、最新のアノテーション仕様を参照します。
+
+``--updated_datetime`` には、ISO 8601形式の日付または日時を指定します。
+タイムゾーンを省略した場合はJSTとして扱います。
+
+.. code-block:: bash
+
+    $ annofabcli annotation_specs export --project_id prj1 --updated_datetime 2025-03-07
+    $ annofabcli annotation_specs export --project_id prj1 --updated_datetime 2025-03-07T14:30:15+09:00
+
+日付を指定した場合はその日、分まで指定した場合はその1分間のように、指定した精度で履歴を検索します。
+該当する履歴が複数存在する場合は候補の ``updated_datetime`` と ``history_id`` が表示されるので、日時を詳細にするか ``--history_id`` を指定してください。
+
 
 
 出力結果

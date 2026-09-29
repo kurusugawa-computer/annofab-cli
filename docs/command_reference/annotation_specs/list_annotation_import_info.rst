@@ -21,8 +21,7 @@ Examples
 
     $ annofabcli annotation_specs list_annotation_import_info --project_id prj1 --format pretty_json
 
-デフォルトでは最新のアノテーション仕様を出力します。過去のアノテーション仕様を出力する場合は、 ``--before`` または ``--history_id`` を指定してください。
-history_idは、 `annofabcli annotation_specs list_history <../annotation_specs/list_history.html>`_ コマンドで取得できます。
+過去のアノテーション仕様を出力する方法は、 :ref:`annotation-specs-history-selection` を参照してください。
 
 以下のコマンドは、最新より1つ前のアノテーション仕様を出力します。
 
