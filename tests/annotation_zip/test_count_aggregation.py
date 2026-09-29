@@ -88,3 +88,25 @@ def test_aggregate_task_counts_辞書型のメタデータはJSON文字列とし
     )
 
     assert actual[0].group_values == {"task_metadata.condition": '{"hour":10,"weather":"sunny"}'}
+
+
+def test_aggregate_task_counts_メタデータの真偽値と数値を別グループに集計する():
+    metadata_values = [True, 1, 1.0, False, 0, 0.0]
+    task_counts = [create_task_count(f"task{index}", task_phase=TaskPhase.ANNOTATION, task_status=TaskStatus.COMPLETE) for index in range(len(metadata_values))]
+
+    actual = aggregate_task_counts(
+        task_counts,
+        ["task_metadata.value"],
+        value_counts_getter=lambda count: count.annotation_count_by_label,
+        task_metadata_by_task_id={f"task{index}": {"value": value} for index, value in enumerate(metadata_values)},
+    )
+
+    assert len(actual) == len(metadata_values)
+    assert [(type(summary.group_values["task_metadata.value"]), summary.group_values["task_metadata.value"]) for summary in actual] == [
+        (bool, True),
+        (int, 1),
+        (float, 1.0),
+        (bool, False),
+        (int, 0),
+        (float, 0.0),
+    ]
