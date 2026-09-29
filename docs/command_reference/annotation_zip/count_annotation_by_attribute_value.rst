@@ -67,6 +67,8 @@ Examples
 
 デフォルトではタスク単位でアノテーション数を集計します。入力データ単位に集計する場合は、 ``--group_by input_data_id`` を指定してください。
 
+.. include:: count_group_by.inc
+
 ``--annotation`` にアノテーションzipまたはzipを展開したディレクトリを指定できます。
 
 .. include:: task_metadata.inc
@@ -84,6 +86,53 @@ CSV出力
     $ annofabcli annotation_zip count_annotation_by_attribute_value --project_id prj1 --group_by task_id --output out_by_task_attribute_value.csv
 
 ``--group_by input_data_id`` を指定すると、入力データごと属性値ごとのアノテーション数を出力します。
+
+タスクのフェーズやステータスごとに集計する場合は、以下のように複数の集計キーを指定します。
+
+.. code-block:: bash
+
+    $ annofabcli annotation_zip count_annotation_by_attribute_value --project_id prj1 \
+      --group_by task_phase task_status --output out_by_status.csv
+
+集計キーごとにまとめて出力
+--------------------------------------------------
+
+``--group_by`` に ``task_phase`` などの集計キーを指定すると、指定したキーごとのサマリーを出力します。
+CSVの属性値列は3行のヘッダーで表します。1行目がラベル名、2行目が属性名、3行目が属性値です。
+
+.. code-block:: bash
+
+    $ annofabcli annotation_zip count_annotation_by_attribute_value --project_id prj1 \
+      --group_by task_phase --format csv --output out_summary.csv
+
+.. csv-table:: out_summary.csv
+    :header-rows: 3
+    :file: count_annotation_by_attribute_value/out_summary.csv
+
+JSONでは、集計キーと ``task_count`` 、 ``input_data_count`` 、 ``annotation_count_by_attribute_value`` を出力します。
+
+.. code-block:: bash
+
+    $ annofabcli annotation_zip count_annotation_by_attribute_value --project_id prj1 \
+      --group_by task_phase --format pretty_json --output out_summary.json
+
+.. code-block:: json
+    :caption: out_summary.json
+
+    [
+        {
+            "task_phase": "annotation",
+            "task_count": 2,
+            "input_data_count": 4,
+            "annotation_count_by_attribute_value": {
+                "car": {
+                    "occluded": {
+                        "true": 3
+                    }
+                }
+            }
+        }
+    ]
 
 入力データあたりのアノテーション数を出力する
 --------------------------------------------------

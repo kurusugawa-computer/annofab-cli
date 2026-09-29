@@ -20,8 +20,11 @@ import pandas
 from annofabapi.models import ProjectMemberRole
 from annofabapi.parser import (
     SimpleAnnotationParser,
+    SimpleAnnotationParserByTask,
     lazy_parse_simple_annotation_dir,
+    lazy_parse_simple_annotation_dir_by_task,
     lazy_parse_simple_annotation_zip,
+    lazy_parse_simple_annotation_zip_by_task,
 )
 from annofabapi.pydantic_models.additional_data_definition_type import AdditionalDataDefinitionType
 from annofabapi.pydantic_models.task_phase import TaskPhase
@@ -30,6 +33,15 @@ from dataclasses_json import DataClassJsonMixin, config
 
 import annofabcli.common.cli
 from annofabcli.annotation_zip.annotation_name import AnnotationNameTranslator, add_use_japanese_name_argument
+from annofabcli.annotation_zip.count_aggregation import (
+    INPUT_DATA_ID_GROUP,
+    TASK_ID_GROUP,
+    CountSummary,
+    aggregate_task_counts,
+    is_summary_group,
+    needs_task_metadata,
+    validate_group_by,
+)
 from annofabcli.annotation_zip.task_metadata import TASK_METADATA_COLUMN_PREFIX, get_task_metadata_by_task_id, get_task_metadata_keys
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
@@ -159,6 +171,27 @@ def lazy_parse_simple_annotation_by_input_data(annotation_path: Path) -> Iterato
         return lazy_parse_simple_annotation_zip(annotation_path)
     else:
         raise RuntimeError(f"'{annotation_path}'は、zipファイルまたはディレクトリではありません。")
+
+
+def lazy_parse_simple_annotation_by_task(annotation_path: Path) -> Iterator[SimpleAnnotationParserByTask]:
+    """アノテーションをタスク単位で遅延パースします。
+
+    Args:
+        annotation_path: アノテーションzipまたは展開したディレクトリ。
+
+    Returns:
+        タスク単位のパーサー。
+
+    Raises:
+        RuntimeError: パスが存在しないか、サポート対象外の場合。
+    """
+    if not annotation_path.exists():
+        raise RuntimeError(f"'{annotation_path}' は存在しません。")
+    if annotation_path.is_dir():
+        return lazy_parse_simple_annotation_dir_by_task(annotation_path)
+    if zipfile.is_zipfile(str(annotation_path)):
+        return lazy_parse_simple_annotation_zip_by_task(annotation_path)
+    raise RuntimeError(f"'{annotation_path}'は、zipファイルまたはディレクトリではありません。")
 
 
 def convert_annotation_count_list_by_input_data_to_by_task(annotation_count_list: list[AnnotationCountByInputData]) -> list[AnnotationCountByTask]:
@@ -318,6 +351,87 @@ class ListAnnotationCounterByInputData:
             annotation_duration_list.append(annotation_count)
 
         return annotation_duration_list
+
+
+class ListAnnotationCounterByTask:
+    """値が入力されている属性の個数をタスク単位で順次集計します。"""
+
+    def __init__(
+        self,
+        *,
+        target_labels: Collection[str] | None = None,
+        target_attribute_names: Collection[AttributeNameKey] | None = None,
+    ) -> None:
+        self.counter_by_input_data = ListAnnotationCounterByInputData(
+            target_labels=target_labels,
+            target_attribute_names=target_attribute_names,
+        )
+
+    def get_annotation_count(self, task_parser: SimpleAnnotationParserByTask) -> AnnotationCountByTask:
+        """1タスクに含まれる属性の個数を集計します。
+
+        Args:
+            task_parser: タスク単位のアノテーションパーサー。
+
+        Returns:
+            タスク単位の集計結果。
+
+        Raises:
+            RuntimeError: タスクにアノテーションJSONが含まれない場合。
+        """
+        first_count: AnnotationCountByInputData | None = None
+        input_data_count = 0
+        annotation_attribute_counts: dict[AttributeValueKey, int] = defaultdict(int)
+        for parser in task_parser.lazy_parse():
+            count = self.counter_by_input_data.get_annotation_count(parser.load_json())
+            if first_count is None:
+                first_count = count
+            input_data_count += 1
+            for key, value in count.annotation_attribute_counts.items():
+                annotation_attribute_counts[key] += value
+        if first_count is None:
+            raise RuntimeError(f"{task_parser.task_id} ディレクトリにはjsonファイルが1つも含まれていません。")
+        return AnnotationCountByTask(
+            project_id=first_count.project_id,
+            task_id=first_count.task_id,
+            task_status=first_count.task_status,
+            task_phase=first_count.task_phase,
+            task_phase_stage=first_count.task_phase_stage,
+            input_data_count=input_data_count,
+            annotation_attribute_counts=annotation_attribute_counts,
+        )
+
+    def iter_annotation_count(
+        self,
+        annotation_path: Path,
+        *,
+        target_task_ids: Collection[str] | None = None,
+        task_query: TaskQuery | None = None,
+    ) -> Iterator[AnnotationCountByTask]:
+        """タスク単位の集計結果を順次返します。
+
+        Args:
+            annotation_path: アノテーションzipまたは展開したディレクトリ。
+            target_task_ids: 集計対象のタスクID。
+            task_query: 集計対象タスクの絞り込み条件。
+
+        Yields:
+            タスク単位の集計結果。
+        """
+        target_task_id_set = set(target_task_ids) if target_task_ids is not None else None
+        for index, task_parser in enumerate(lazy_parse_simple_annotation_by_task(annotation_path)):
+            if (index + 1) % 1000 == 0:
+                logger.info(f"{index + 1} 件目のタスクを処理中")
+            if target_task_id_set is not None and task_parser.task_id not in target_task_id_set:
+                continue
+            json_file_path_list = task_parser.json_file_path_list
+            if not json_file_path_list:
+                continue
+            if task_query is not None:
+                simple_annotation = task_parser.get_parser(json_file_path_list[0]).load_json()
+                if not match_annotation_with_task_query(simple_annotation, task_query):
+                    continue
+            yield self.get_annotation_count(task_parser)
 
 
 class AnnotationCountCsvByAttribute:
@@ -530,11 +644,61 @@ class CountAnnotationAttributeFilledMain:
             df.insert(2 + list(task_metadata_keys or []).index(key), (f"{TASK_METADATA_COLUMN_PREFIX}.{key}", "", ""), [count.task_metadata.get(key) for count in annotation_count_list])
         print_csv(df, output_file)
 
+    def print_annotation_count_summary(
+        self,
+        summaries: Collection[CountSummary],
+        group_by: Collection[str],
+        output_file: Path,
+        output_format: OutputFormat,
+        *,
+        attribute_names: list[tuple[str, str]] | None,
+    ) -> None:
+        """属性入力数のサマリーを出力します。
+
+        Args:
+            summaries: サマリー集計結果。
+            group_by: 集計キー。
+            output_file: 出力先。
+            output_format: 出力形式。
+            attribute_names: 優先して出力する属性名。
+        """
+        attribute_columns = get_attribute_columns(attribute_names) if attribute_names is not None else []
+        if self.name_translator is not None:
+            attribute_columns = [self.name_translator.attribute_value_key(value) for value in attribute_columns]
+        remaining_columns = sorted({cast(AttributeValueKey, key) for summary in summaries for key in summary.value_counts} - set(attribute_columns))
+        attribute_columns = list(dict.fromkeys([*attribute_columns, *remaining_columns]))
+
+        if output_format == OutputFormat.CSV:
+            basic_columns = [(value, "", "") for value in [*group_by, "task_count", "input_data_count"]]
+            columns = [*basic_columns, *attribute_columns]
+            rows: list[dict[tuple[str, str, str], object]] = []
+            for summary in summaries:
+                row: dict[tuple[str, str, str], object] = {(key, "", ""): value for key, value in summary.group_values.items()}
+                row[("task_count", "", "")] = summary.task_count
+                row[("input_data_count", "", "")] = summary.input_data_count
+                row.update(cast(dict[tuple[str, str, str], object], dict(summary.value_counts)))
+                rows.append(row)
+            df = pandas.DataFrame(rows, columns=pandas.MultiIndex.from_tuples(columns))
+            df = df.fillna(dict.fromkeys(attribute_columns, 0))
+            print_csv(df, output_file)
+            return
+
+        json_rows = [
+            {
+                **summary.group_values,
+                "task_count": summary.task_count,
+                "input_data_count": summary.input_data_count,
+                "annotation_attribute_counts": encode_annotation_count_by_attribute(cast(dict[AttributeValueKey, int], summary.value_counts)),
+            }
+            for summary in summaries
+        ]
+        print_json(json_rows, is_pretty=output_format == OutputFormat.PRETTY_JSON, output=output_file)
+
     def print_annotation_count(  # noqa: PLR0912, PLR0913
         self,
         annotation_path: Path,
         output_file: Path,
-        group_by: GroupBy,
+        group_by: list[str],
         output_format: OutputFormat,
         *,
         task_metadata_keys: Collection[str] | None = None,
@@ -559,6 +723,34 @@ class CountAnnotationAttributeFilledMain:
                 if target_label_names is not None:
                     target_attribute_names = [e for e in target_attribute_names if e[0] in target_label_names]
 
+        if is_summary_group(group_by):
+            task_counts = (
+                cast(AnnotationCountByTask, self.translate_count_names(count))
+                for count in ListAnnotationCounterByTask(
+                    target_labels=target_label_names,
+                    target_attribute_names=target_attribute_names,
+                ).iter_annotation_count(
+                    annotation_path,
+                    target_task_ids=target_task_ids,
+                    task_query=task_query,
+                )
+            )
+            summaries = aggregate_task_counts(
+                task_counts,
+                group_by,
+                value_counts_getter=lambda count: count.annotation_attribute_counts,
+                task_metadata_by_task_id=task_metadata_by_task_id,
+            )
+            logger.info(f"{sum(summary.task_count for summary in summaries)} 件のタスクを {len(summaries)} グループに集計しました。")
+            self.print_annotation_count_summary(
+                summaries,
+                group_by,
+                output_file,
+                output_format,
+                attribute_names=target_attribute_names,
+            )
+            return
+
         frame_no_map = get_frame_no_map(task_json_path) if task_json_path is not None else None
 
         annotation_count_list_by_input_data = ListAnnotationCounterByInputData(
@@ -574,7 +766,8 @@ class CountAnnotationAttributeFilledMain:
             annotation_count_list_by_input_data = [replace(count, task_metadata=task_metadata_by_task_id.get(count.task_id, {})) for count in annotation_count_list_by_input_data]
         annotation_count_list_by_input_data = [cast(AnnotationCountByInputData, self.translate_count_names(count)) for count in annotation_count_list_by_input_data]
 
-        if group_by == GroupBy.INPUT_DATA_ID:
+        detail_group_by = GroupBy(group_by[0])
+        if detail_group_by == GroupBy.INPUT_DATA_ID:
             logger.info(f"{len(annotation_count_list_by_input_data)} 件の入力データに含まれるアノテーション数の情報を出力します。")
             if output_format == OutputFormat.CSV:
                 self.print_annotation_count_csv_by_input_data(
@@ -592,7 +785,7 @@ class CountAnnotationAttributeFilledMain:
                     is_pretty=json_is_pretty,
                     output=output_file,
                 )
-        elif group_by == GroupBy.TASK_ID:
+        elif detail_group_by == GroupBy.TASK_ID:
             annotation_count_list_by_task = convert_annotation_count_list_by_input_data_to_by_task(annotation_count_list_by_input_data)
             logger.info(f"{len(annotation_count_list_by_task)} 件のタスクに含まれるアノテーション数の情報を出力します。")
             if output_format == OutputFormat.CSV:
@@ -608,13 +801,29 @@ class CountAnnotationAttributeFilledMain:
                 )
 
         else:
-            assert_never(group_by)
+            assert_never(detail_group_by)
 
 
 class CountAnnotationAttributeFilled(CommandLine):
     COMMON_MESSAGE = "annofabcli annotation_zip count_annotation_attribute_filled: error:"
 
-    def validate(self, args: argparse.Namespace) -> bool:
+    def validate(self, args: argparse.Namespace) -> bool:  # noqa: PLR0911
+        group_by_error = validate_group_by(args.group_by)
+        if group_by_error is not None:
+            print(f"{self.COMMON_MESSAGE} {group_by_error}", file=sys.stderr)  # noqa: T201
+            return False
+        if args.with_task_metadata and is_summary_group(args.group_by):
+            print(  # noqa: T201
+                f"{self.COMMON_MESSAGE} `--with_task_metadata`は`--group_by task_id`または`--group_by input_data_id`を指定したときだけ使用できます。",
+                file=sys.stderr,
+            )
+            return False
+        if needs_task_metadata(args.group_by) and args.project_id is None:
+            print(  # noqa: T201
+                f"{self.COMMON_MESSAGE} argument --project_id: タスクメタデータで集計するときは、`--project_id`が必須です。",
+                file=sys.stderr,
+            )
+            return False
         if args.use_japanese_name and args.project_id is None:
             print(  # noqa: T201
                 f"{self.COMMON_MESSAGE} argument --project_id: `--use_japanese_name`を指定するときは、`--project_id`が必須です。",
@@ -656,7 +865,7 @@ class CountAnnotationAttributeFilled(CommandLine):
         task_query = TaskQuery.from_dict(annofabcli.common.cli.get_json_from_args(args.task_query)) if args.task_query is not None else None
         target_label_names = annofabcli.common.cli.get_list_from_args(args.label_name) if args.label_name is not None else None
 
-        group_by = GroupBy(args.group_by)
+        group_by: list[str] = args.group_by
         output_file: Path = args.output
         output_format = OutputFormat(args.format)
         name_translator = AnnotationNameTranslator.from_project(self.service, project_id) if args.use_japanese_name and project_id is not None else None
@@ -665,8 +874,8 @@ class CountAnnotationAttributeFilled(CommandLine):
         downloading_obj = DownloadingFile(self.service)
 
         def download_and_process_annotation(temp_dir: Path, *, is_latest: bool, annotation_path: Path | None) -> None:
-            # タスク全件ファイルは、フレーム番号を参照するのに利用する
-            if project_id is not None and (group_by == GroupBy.INPUT_DATA_ID or with_task_metadata):
+            # タスク全件ファイルは、フレーム番号またはタスクメタデータを参照するのに利用する
+            if project_id is not None and (group_by == [INPUT_DATA_ID_GROUP] or with_task_metadata or needs_task_metadata(group_by)):
                 # group_byで条件を絞り込んでいる理由：
                 # タスクIDで集計する際は、フレーム番号は出力しないので、タスク全件ファイルをダウンロードする必要はないため
                 task_json_path = downloading_obj.download_task_json_to_dir(
@@ -677,7 +886,7 @@ class CountAnnotationAttributeFilled(CommandLine):
             else:
                 task_json_path = None
 
-            if with_task_metadata:
+            if with_task_metadata or needs_task_metadata(group_by):
                 assert task_json_path is not None
                 task_metadata_by_task_id = get_task_metadata_by_task_id(task_json_path)
                 task_metadata_keys = get_task_metadata_keys(task_metadata_by_task_id)
@@ -764,9 +973,10 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--group_by",
         type=str,
-        choices=[GroupBy.TASK_ID.value, GroupBy.INPUT_DATA_ID.value],
-        default=GroupBy.TASK_ID.value,
-        help="アノテーションの個数をどの単位で集約するかを指定してます。",
+        nargs="+",
+        default=[TASK_ID_GROUP],
+        help="アノテーションの個数を集約する項目を指定します。指定できる値は task_id, input_data_id, project_id, task_phase, task_phase_stage, task_status, task_metadata.<key> です。"
+        "サマリー項目は複数指定できます。",
     )
 
     parser.add_argument(

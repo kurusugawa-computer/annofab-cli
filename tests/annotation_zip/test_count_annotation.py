@@ -1,12 +1,16 @@
 import argparse
 import collections
+import json
+from pathlib import Path
 from typing import Any
 
 import pandas
 from annofabapi.models import TaskPhase, TaskStatus
 
+from annofabcli.annotation_zip.count_aggregation import CountSummary
 from annofabcli.annotation_zip.count_annotation import CountAnnotationMain, validate_with_per_input_data
 from annofabcli.annotation_zip.task_metadata import add_task_metadata_to_dataframe, add_task_metadata_to_dict_list
+from annofabcli.common.enums import OutputFormat
 from annofabcli.statistics.list_annotation_count import AnnotationCounterByTask
 
 
@@ -53,7 +57,7 @@ def test_to_attribute_value_count_dict():
 
 class TestValidateWithPerInputData:
     def test_group_byがtask_idでない場合はFalseを返す(self, capsys):
-        args = argparse.Namespace(with_per_input_data=True, group_by="input_data_id", format="csv")
+        args = argparse.Namespace(with_per_input_data=True, group_by=["input_data_id"], format="csv")
 
         actual = validate_with_per_input_data(args, "count_annotation_by_label")
 
@@ -61,7 +65,7 @@ class TestValidateWithPerInputData:
         assert "`--group_by task_id`" in capsys.readouterr().err
 
     def test_formatがcsvでない場合はFalseを返す(self, capsys):
-        args = argparse.Namespace(with_per_input_data=True, group_by="task_id", format="json")
+        args = argparse.Namespace(with_per_input_data=True, group_by=["task_id"], format="json")
 
         actual = validate_with_per_input_data(args, "count_annotation_by_attribute_value")
 
@@ -69,7 +73,7 @@ class TestValidateWithPerInputData:
         assert "`--format csv`" in capsys.readouterr().err
 
     def test_with_per_input_dataがFalseの場合はTrueを返す(self):
-        args = argparse.Namespace(with_per_input_data=False, group_by="input_data_id", format="json")
+        args = argparse.Namespace(with_per_input_data=False, group_by=["input_data_id"], format="json")
 
         assert validate_with_per_input_data(args, "count_annotation_by_label") is True
 
@@ -89,3 +93,61 @@ def test_add_task_metadata_to_dataframe_and_dict_list():
     assert pandas.isna(actual_df.loc[1, "task_metadata.priority"])
     assert actual_dict_list[0]["task_metadata"] == {"customer": "A", "priority": 1}
     assert actual_dict_list[1]["task_metadata"] == {"customer": "B"}
+
+
+def test_print_label_summaries_csv(tmp_path: Path):
+    output_file = tmp_path / "summary.csv"
+    summaries = [
+        CountSummary(
+            group_values={"task_status": "complete"},
+            task_count=2,
+            input_data_count=4,
+            annotation_count=7,
+            value_counts=collections.Counter({"car": 5, "bike": 2}),
+        )
+    ]
+
+    CountAnnotationMain._print_label_summaries(summaries, ["task_status"], output_file, OutputFormat.CSV, ["car", "bike"])
+
+    actual = pandas.read_csv(output_file)
+    assert actual.to_dict(orient="records") == [
+        {
+            "task_status": "complete",
+            "task_count": 2,
+            "input_data_count": 4,
+            "annotation_count": 7,
+            "car": 5,
+            "bike": 2,
+        }
+    ]
+
+
+def test_print_attribute_value_summaries_json(tmp_path: Path):
+    output_file = tmp_path / "summary.json"
+    summaries = [
+        CountSummary(
+            group_values={"task_phase": "annotation"},
+            task_count=2,
+            input_data_count=4,
+            value_counts=collections.Counter({("car", "occluded", "true"): 3}),
+        )
+    ]
+
+    CountAnnotationMain._print_attribute_value_summaries(
+        summaries,
+        ["task_phase"],
+        output_file,
+        OutputFormat.JSON,
+        [("car", "occluded", "true")],
+    )
+
+    with output_file.open(encoding="utf-8") as file:
+        actual = json.load(file)
+    assert actual == [
+        {
+            "task_phase": "annotation",
+            "task_count": 2,
+            "input_data_count": 4,
+            "annotation_count_by_attribute_value": {"car": {"occluded": {"true": 3}}},
+        }
+    ]

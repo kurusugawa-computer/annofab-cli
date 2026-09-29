@@ -57,6 +57,8 @@ Examples
 
 ``--group_by input_data_id`` オプションを指定すると、入力データ単位で属性の個数を集計します。
 
+.. include:: count_group_by.inc
+
 .. code-block::
 
     $ annofabcli annotation_zip count_annotation_attribute_filled --project_id p1 \
@@ -140,6 +142,17 @@ CSVの属性の列は3行のヘッダーで表します。1行目がラベル名
 .. csv-table:: out_by_input_data.csv
     :header-rows: 3
     :file: count_annotation_attribute_filled/out_by_input_data.csv
+
+
+タスクのフェーズやメタデータごとに集計
+----------------------------------------------------
+
+.. code-block:: bash
+
+    $ annofabcli annotation_zip count_annotation_attribute_filled --project_id prj1 \
+      --group_by task_phase task_metadata.customer --format pretty_json --output out_summary.json
+
+サマリーのJSONには、集計キー、 ``task_count`` 、 ``input_data_count`` 、属性ごとの件数を出力します。
 
 
 
