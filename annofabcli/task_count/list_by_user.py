@@ -287,7 +287,7 @@ def parse_args(parser: argparse.ArgumentParser, *, include_metadata_key: bool = 
     parser.add_argument(
         "--task_json",
         type=str,
-        help="タスク情報が記載されたJSONファイルのパスを指定してます。JSONファイルは`$ annofabcli task download`コマンドで取得できます。"
+        help="タスク情報が記載されたJSONファイルのパスを指定します。JSONファイルは ``$ annofabcli task download`` コマンドで取得できます。"
         "指定しない場合は、Annofabからタスク全件ファイルをダウンロードします。",
     )
 
