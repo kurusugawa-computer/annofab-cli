@@ -67,6 +67,8 @@ Examples
 
 デフォルトではタスク単位でアノテーション数を集計します。入力データ単位に集計する場合は、 ``--group_by input_data_id`` を指定してください。
 
+.. include:: count_group_by.inc
+
 ``--annotation`` にアノテーションzipまたはzipを展開したディレクトリを指定できます。
 
 .. include:: task_metadata.inc
@@ -84,6 +86,13 @@ CSV出力
     $ annofabcli annotation_zip count_annotation_by_attribute_value --project_id prj1 --group_by task_id --output out_by_task_attribute_value.csv
 
 ``--group_by input_data_id`` を指定すると、入力データごと属性値ごとのアノテーション数を出力します。
+
+タスクのフェーズやステータスごとに集計する場合は、以下のように複数の集計キーを指定します。
+
+.. code-block:: bash
+
+    $ annofabcli annotation_zip count_annotation_by_attribute_value --project_id prj1 \
+      --group_by task_phase task_status --output out_by_status.csv
 
 入力データあたりのアノテーション数を出力する
 --------------------------------------------------

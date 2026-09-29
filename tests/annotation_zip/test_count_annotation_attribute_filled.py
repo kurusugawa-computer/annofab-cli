@@ -1,15 +1,20 @@
 import collections
+import json
 from pathlib import Path
+from typing import cast
 
+import annofabapi
 from annofabapi.pydantic_models.task_phase import TaskPhase
 from annofabapi.pydantic_models.task_status import TaskStatus
 
 from annofabcli.annotation_zip.count_annotation_attribute_filled import (
     AnnotationCountByInputData,
     AnnotationCountByTask,
+    CountAnnotationAttributeFilledMain,
     ListAnnotationCounterByInputData,
     convert_annotation_count_list_by_input_data_to_by_task,
 )
+from annofabcli.common.enums import OutputFormat
 
 output_dir = Path("./tests/out/annotation_zip/count_annotation_attribute_filled")
 data_dir = Path("./tests/data/statistics/")
@@ -129,3 +134,27 @@ def test_convert_annotation_count_list_by_input_data_to_by_task():
             ("bird", "notes", "empty"): 1,
         },
     )
+
+
+def test_print_annotation_count_タスクのフェーズとステータスで集計する(tmp_path: Path):
+    output_file = tmp_path / "summary.json"
+    main = CountAnnotationAttributeFilledMain(cast(annofabapi.Resource, None))
+
+    main.print_annotation_count(
+        data_dir / "simple-annotations.zip",
+        output_file,
+        ["task_phase", "task_status"],
+        OutputFormat.JSON,
+    )
+
+    with output_file.open(encoding="utf-8") as file:
+        actual = json.load(file)
+    assert len(actual) == 2
+    assert [(item["task_phase"], item["task_status"]) for item in actual] == [
+        ("acceptance", "not_started"),
+        ("acceptance", "complete"),
+    ]
+    assert [item["task_count"] for item in actual] == [1, 1]
+    assert [item["input_data_count"] for item in actual] == [2, 2]
+    assert actual[0]["annotation_attribute_counts"]["climatic"]["weather"] == {"filled": 2}
+    assert actual[1]["annotation_attribute_counts"]["Cat"]["weight"] == {"filled": 2}

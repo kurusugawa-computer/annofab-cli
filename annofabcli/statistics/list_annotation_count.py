@@ -500,7 +500,31 @@ class ListAnnotationCounterByTask:
 
         """
 
-        counter_list = []
+        return list(
+            self.iter_annotation_counter(
+                annotation_path,
+                target_task_ids=target_task_ids,
+                task_query=task_query,
+            )
+        )
+
+    def iter_annotation_counter(
+        self,
+        annotation_path: Path,
+        *,
+        target_task_ids: Collection[str] | None = None,
+        task_query: TaskQuery | None = None,
+    ) -> Iterator[AnnotationCounterByTask]:
+        """アノテーション数のタスク単位集計結果を順次返します。
+
+        Args:
+            annotation_path: アノテーションzipまたは展開したディレクトリ。
+            target_task_ids: 集計対象のタスクID。
+            task_query: 集計対象タスクの絞り込み条件。
+
+        Yields:
+            タスク単位の集計結果。
+        """
         iter_task_parser = lazy_parse_simple_annotation_by_task(annotation_path)
 
         target_task_ids = set(target_task_ids) if target_task_ids is not None else None
@@ -508,7 +532,7 @@ class ListAnnotationCounterByTask:
         logger.debug("アノテーションzip/ディレクトリを読み込み中")
         for task_index, task_parser in enumerate(iter_task_parser):
             if (task_index + 1) % 1000 == 0:
-                logger.debug(f"{task_index + 1}  件目のタスクディレクトリを読み込み中")
+                logger.info(f"{task_index + 1} 件目のタスクを処理中")
 
             if target_task_ids is not None and task_parser.task_id not in target_task_ids:
                 continue
@@ -523,10 +547,7 @@ class ListAnnotationCounterByTask:
                 if not match_annotation_with_task_query(dict_simple_annotation, task_query):
                     continue
 
-            task_counter = self.get_annotation_counter(task_parser)
-            counter_list.append(task_counter)
-
-        return counter_list
+            yield self.get_annotation_counter(task_parser)
 
 
 class AttributeCountCsv:
