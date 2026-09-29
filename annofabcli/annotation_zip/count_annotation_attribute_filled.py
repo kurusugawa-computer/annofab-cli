@@ -493,8 +493,13 @@ class CountAnnotationAttributeFilledMain:
         if self.name_translator is None:
             return count
         translated_counts: dict[AttributeValueKey, int] = defaultdict(int)
-        for key, value in count.annotation_attribute_counts.items():
-            translated_counts[cast(AttributeValueKey, self.name_translator.attribute_value_key(key))] += value
+        for (label_name, attribute_name, value_type), value in count.annotation_attribute_counts.items():
+            translated_key: AttributeValueKey = (
+                self.name_translator.label_name(label_name),
+                self.name_translator.attribute_name(label_name, attribute_name),
+                value_type,
+            )
+            translated_counts[translated_key] += value
         return replace(count, annotation_attribute_counts=translated_counts)
 
     def print_annotation_count_csv_by_input_data(
