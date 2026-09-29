@@ -9,12 +9,14 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+import annofabapi
 import pandas
 from annofabapi.models import InputDataType, ProjectMemberRole
 from annofabapi.util.page import create_image_editor_url
 from dataclasses_json import DataClassJsonMixin
 
 import annofabcli.common.cli
+from annofabcli.annotation_zip.annotation_name import add_use_japanese_name_argument, translate_annotation_infos
 from annofabcli.annotation_zip.task_metadata import (
     add_task_metadata_to_dataframe,
     add_task_metadata_to_dict_list,
@@ -183,6 +185,8 @@ def print_annotation_bounding_box(
     task_query: TaskQuery | None = None,
     target_label_names: Collection[str] | None = None,
     task_metadata_by_task_id: dict[str, dict[str, Any]] | None = None,
+    service: annofabapi.Resource | None = None,
+    use_japanese_name: bool = False,
 ) -> None:
     annotation_bbox_list = get_annotation_bounding_box_info_list_from_annotation_path(
         annotation_path,
@@ -190,6 +194,9 @@ def print_annotation_bounding_box(
         task_query=task_query,
         target_label_names=target_label_names,
     )
+    if use_japanese_name:
+        assert service is not None
+        annotation_bbox_list = translate_annotation_infos(service, annotation_bbox_list, use_japanese_name=True)
 
     logger.info(f"{len(annotation_bbox_list)} 件のバウンディングボックスアノテーションの情報を出力します。 :: output='{output_file}'")
 
@@ -275,6 +282,8 @@ class ListAnnotationBoundingBox2d(CommandLine):
                 task_query=task_query,
                 target_label_names=label_name_list,
                 task_metadata_by_task_id=task_metadata_by_task_id,
+                service=self.service,
+                use_japanese_name=args.use_japanese_name,
             )
 
         if project_id is not None:
@@ -297,6 +306,8 @@ class ListAnnotationBoundingBox2d(CommandLine):
                 task_query=task_query,
                 target_label_names=label_name_list,
                 task_metadata_by_task_id=task_metadata_by_task_id,
+                service=self.service,
+                use_japanese_name=args.use_japanese_name,
             )
 
 
@@ -353,6 +364,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         help="指定したディレクトリに、アノテーションZIPなどの一時ファイルをダウンロードします。",
     )
 
+    add_use_japanese_name_argument(parser)
     parser.set_defaults(subcommand_func=main)
 
 

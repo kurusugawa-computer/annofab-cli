@@ -10,6 +10,7 @@ from collections.abc import Collection, Iterator
 from pathlib import Path
 from typing import Any, Literal, assert_never
 
+import annofabapi
 import pandas
 import pydantic
 from annofabapi.models import ProjectMemberRole
@@ -20,6 +21,7 @@ from annofabapi.parser import (
 )
 
 import annofabcli.common.cli
+from annofabcli.annotation_zip.annotation_name import add_use_japanese_name_argument, translate_annotation_infos
 from annofabcli.annotation_zip.task_metadata import (
     add_task_metadata_to_dataframe,
     add_task_metadata_to_dict_list,
@@ -201,7 +203,12 @@ def print_annotation_attribute_list(
     output_format: Literal[OutputFormat.CSV, OutputFormat.JSON, OutputFormat.PRETTY_JSON],
     *,
     task_metadata_by_task_id: dict[str, dict[str, Any]] | None = None,
+    service: annofabapi.Resource | None = None,
+    use_japanese_name: bool = False,
 ) -> None:
+    if use_japanese_name:
+        assert service is not None
+        annotation_attribute_list = translate_annotation_infos(service, annotation_attribute_list, use_japanese_name=True)
     tmp_annotation_attribute_list = [e.model_dump() for e in annotation_attribute_list]
     if task_metadata_by_task_id is not None:
         tmp_annotation_attribute_list = add_task_metadata_to_dict_list(tmp_annotation_attribute_list, task_metadata_by_task_id)
@@ -289,6 +296,8 @@ class ListAnnotationAttribute(CommandLine):
                 output_file,
                 output_format,  # type: ignore[arg-type]
                 task_metadata_by_task_id=task_metadata_by_task_id,
+                service=self.service,
+                use_japanese_name=args.use_japanese_name,
             )
 
         if project_id is not None:
@@ -313,6 +322,8 @@ class ListAnnotationAttribute(CommandLine):
                 output_file,
                 output_format,  # type: ignore[arg-type]
                 task_metadata_by_task_id=task_metadata_by_task_id,
+                service=self.service,
+                use_japanese_name=args.use_japanese_name,
             )
 
 
@@ -377,6 +388,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         type=Path,
         help="指定したディレクトリに、アノテーションZIPなどの一時ファイルをダウンロードします。",
     )
+    add_use_japanese_name_argument(parser)
 
     parser.set_defaults(subcommand_func=main)
 

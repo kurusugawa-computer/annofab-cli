@@ -8,6 +8,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, BinaryIO
 
+import annofabapi
 import pandas
 from annofab_3dpc.annotation import SegmentAnnotationDetailData, convert_annotation_detail_data
 from annofabapi.exceptions import AnnotationOuterFileNotFoundError
@@ -16,6 +17,7 @@ from annofabapi.util.page import create_3dpc_editor_url
 from dataclasses_json import DataClassJsonMixin
 
 import annofabcli.common.cli
+from annofabcli.annotation_zip.annotation_name import add_use_japanese_name_argument, translate_annotation_infos
 from annofabcli.annotation_zip.task_metadata import (
     add_task_metadata_to_dataframe,
     add_task_metadata_to_dict_list,
@@ -215,6 +217,8 @@ def print_annotation_3d_segment(
     task_query: TaskQuery | None = None,
     target_label_names: Collection[str] | None = None,
     task_metadata_by_task_id: dict[str, dict[str, Any]] | None = None,
+    service: annofabapi.Resource | None = None,
+    use_japanese_name: bool = False,
 ) -> None:
     annotation_segment_list = get_annotation_3d_segment_info_list_from_annotation_path(
         annotation_path,
@@ -222,6 +226,9 @@ def print_annotation_3d_segment(
         task_query=task_query,
         target_label_names=target_label_names,
     )
+    if use_japanese_name:
+        assert service is not None
+        annotation_segment_list = translate_annotation_infos(service, annotation_segment_list, use_japanese_name=True)
 
     logger.info(f"{len(annotation_segment_list)} 件の3次元セグメントアノテーションの情報を出力します。 :: output='{output_file}'")
 
@@ -295,6 +302,8 @@ class ListAnnotation3DSegment(CommandLine):
                 task_query=task_query,
                 target_label_names=label_name_list,
                 task_metadata_by_task_id=task_metadata_by_task_id,
+                service=self.service,
+                use_japanese_name=args.use_japanese_name,
             )
 
         if project_id is not None:
@@ -312,6 +321,8 @@ class ListAnnotation3DSegment(CommandLine):
                 target_task_ids=task_id_list,
                 task_query=task_query,
                 target_label_names=label_name_list,
+                service=self.service,
+                use_japanese_name=args.use_japanese_name,
             )
 
 
@@ -343,6 +354,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         help="``--annotation`` を指定しないとき、最新のアノテーションzipを参照します。このオプションを指定すると、アノテーションzipを更新するのに数分待ちます。",
     )
     parser.add_argument("--temp_dir", type=Path, help="指定したディレクトリに、アノテーションZIPなどの一時ファイルをダウンロードします。")
+    add_use_japanese_name_argument(parser)
     parser.set_defaults(subcommand_func=main)
 
 

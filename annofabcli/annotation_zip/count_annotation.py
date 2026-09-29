@@ -4,6 +4,7 @@ import argparse
 import logging
 import sys
 import tempfile
+from collections import Counter
 from collections.abc import Collection
 from dataclasses import replace
 from pathlib import Path
@@ -13,6 +14,7 @@ import annofabapi
 from annofabapi.models import ProjectMemberRole
 
 import annofabcli.common.cli
+from annofabcli.annotation_zip.annotation_name import AnnotationNameTranslator, add_use_japanese_name_argument
 from annofabcli.annotation_zip.task_metadata import get_task_metadata_by_task_id, get_task_metadata_keys
 from annofabcli.common.cli import COMMAND_LINE_ERROR_STATUS_CODE, ArgumentParser, CommandLine
 from annofabcli.common.download import DownloadingFile
@@ -46,12 +48,39 @@ class CountTarget:
 
 
 class CountAnnotationMain:
-    def __init__(self, annotation_specs: AnnotationSpecs) -> None:
+    def __init__(self, annotation_specs: AnnotationSpecs, name_translator: AnnotationNameTranslator | None = None) -> None:
         """
         Args:
             annotation_specs: アノテーション仕様
+            name_translator: 出力する名称の変換オブジェクト。
         """
         self.annotation_specs = annotation_specs
+        self.name_translator = name_translator
+
+    def _translate_counter(self, counter: AnnotationCounterByTask | AnnotationCounterByInputData) -> AnnotationCounterByTask | AnnotationCounterByInputData:
+        """集計結果の名称を日本語名へ変換します。
+
+        Args:
+            counter: 名称を変換する集計結果。
+
+        Returns:
+            名称を変換した集計結果。
+        """
+        if self.name_translator is None:
+            return counter
+
+        annotation_count_by_label: Counter[str] = Counter()
+        for label_name, count in counter.annotation_count_by_label.items():
+            annotation_count_by_label[self.name_translator.label_name(label_name)] += count
+
+        annotation_count_by_attribute: Counter[tuple[str, str, str]] = Counter()
+        for key, count in counter.annotation_count_by_attribute.items():
+            annotation_count_by_attribute[self.name_translator.attribute_value_key(key)] += count
+        return replace(
+            counter,
+            annotation_count_by_label=annotation_count_by_label,
+            annotation_count_by_attribute=annotation_count_by_attribute,
+        )
 
     @staticmethod
     def _target_attribute_names_only(
@@ -104,7 +133,7 @@ class CountAnnotationMain:
         )
         if group_by == GroupBy.INPUT_DATA_ID:
             frame_no_map = ListAnnotationCountMain.get_frame_no_map(task_json_path) if task_json_path is not None else None
-            return ListAnnotationCounterByInputData(
+            input_data_result = ListAnnotationCounterByInputData(
                 target_labels=target_label_names,
                 target_attribute_names_only=target_attribute_names_only,
                 frame_no_map=frame_no_map,
@@ -113,8 +142,9 @@ class CountAnnotationMain:
                 target_task_ids=target_task_ids,
                 task_query=task_query,
             )
+            return [cast(AnnotationCounterByInputData, self._translate_counter(e)) for e in input_data_result]
 
-        return ListAnnotationCounterByTask(
+        task_result = ListAnnotationCounterByTask(
             target_labels=target_label_names,
             target_attribute_names_only=target_attribute_names_only,
         ).get_annotation_counter_list(
@@ -122,6 +152,7 @@ class CountAnnotationMain:
             target_task_ids=target_task_ids,
             task_query=task_query,
         )
+        return [cast(AnnotationCounterByTask, self._translate_counter(e)) for e in task_result]
 
     def print_label_count(  # noqa: PLR0913
         self,
@@ -155,6 +186,8 @@ class CountAnnotationMain:
             counter_list = [replace(counter, task_metadata=task_metadata_by_task_id.get(counter.task_id, {})) for counter in counter_list]
         if arg_format == OutputFormat.CSV:
             label_columns = list(target_label_names) if target_label_names is not None else self.annotation_specs.label_keys()
+            if self.name_translator is not None:
+                label_columns = [self.name_translator.label_name(e) for e in label_columns]
             if group_by == GroupBy.INPUT_DATA_ID:
                 LabelCountCsv().print_csv_by_input_data(
                     cast(list[AnnotationCounterByInputData], counter_list),
@@ -260,9 +293,11 @@ class CountAnnotationMain:
         else:
             attribute_value_keys = self.annotation_specs.selective_attribute_value_keys()
 
-        if target_label_names is None:
-            return attribute_value_keys
-        return [e for e in attribute_value_keys if e[0] in target_label_names]
+        if target_label_names is not None:
+            attribute_value_keys = [e for e in attribute_value_keys if e[0] in target_label_names]
+        if self.name_translator is not None:
+            attribute_value_keys = [self.name_translator.attribute_value_key(e) for e in attribute_value_keys]
+        return attribute_value_keys
 
     @staticmethod
     def to_label_count_dict(counter: AnnotationCounterByTask | AnnotationCounterByInputData) -> dict[str, Any]:
@@ -313,7 +348,8 @@ class CountAnnotation(CommandLine):
         output_file: Path = args.output
         arg_format = OutputFormat(args.format)
         with_per_input_data: bool = args.with_per_input_data
-        main_obj = CountAnnotationMain(annotation_specs)
+        name_translator = AnnotationNameTranslator.from_project(self.service, project_id) if args.use_japanese_name else None
+        main_obj = CountAnnotationMain(annotation_specs, name_translator)
 
         downloading_obj = DownloadingFile(self.service)
 
@@ -464,6 +500,7 @@ def add_common_arguments(parser: argparse.ArgumentParser) -> None:
         action="store_true",
         help="タスク単位CSVに入力データあたりのアノテーション数を追加で出力します。動画プロジェクトではフレームあたりの平均として利用できます。",
     )
+    add_use_japanese_name_argument(parser)
 
 
 def add_label_name_argument(parser: argparse.ArgumentParser, *, target_description: str) -> None:
