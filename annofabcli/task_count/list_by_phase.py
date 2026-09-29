@@ -186,6 +186,7 @@ def create_df_task(
     """
     以下の列が含まれたタスクのDataFrameを生成します。
      * task_id
+     * account_id
      * phase
      * task_status_for_summary
      * input_data_count
@@ -239,7 +240,7 @@ def create_df_task(
     if len(missing_task_history_task_id_list) > 0:
         logger.info(f"{len(missing_task_history_task_id_list)} 件のタスクはタスク履歴が存在しないため、タスク履歴なしとして集計します。")
 
-    columns = ["task_id", "phase", "input_data_count", "video_duration_hour", "video_duration_minute"] + [f"metadata.{key}" for key in metadata_keys] + ["task_status_for_summary"]
+    columns = ["task_id", "account_id", "phase", "input_data_count", "video_duration_hour", "video_duration_minute"] + [f"metadata.{key}" for key in metadata_keys] + ["task_status_for_summary"]
     df = pandas.DataFrame(task_list, columns=columns)
     return df
 

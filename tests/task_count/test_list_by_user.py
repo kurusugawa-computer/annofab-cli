@@ -2,12 +2,14 @@ import pandas
 from annofabapi.models import Task
 
 from annofabcli.task_count.common import SUMMARY_COLUMNS
+from annofabcli.task_count.list_by_phase import AggregationUnit
 from annofabcli.task_count.list_by_user import (
     UNASSIGNED_ACCOUNT_ID,
     ListTaskCountByUser,
     TaskStatusForSummary,
     create_legacy_task_count_summary_df,
     create_task_count_summary_df,
+    summarize_df_task_by_user,
 )
 
 
@@ -26,47 +28,22 @@ def test_create_task_count_summary_df() -> None:
 
     actual = create_task_count_summary_df(task_list)
 
-    expected = pandas.DataFrame(
-        [
-            {
-                "account_id": "account1",
-                "annotation.never_worked": 1,
-                "annotation.worked": 1,
-                "annotation.on_hold": 0,
-                "inspection.never_worked": 0,
-                "inspection.worked": 0,
-                "inspection.on_hold": 0,
-                "acceptance.never_worked": 0,
-                "acceptance.worked": 0,
-                "acceptance.on_hold": 0,
-                "acceptance.complete": 0,
-            },
-            {
-                "account_id": "account2",
-                "annotation.never_worked": 0,
-                "annotation.worked": 0,
-                "annotation.on_hold": 0,
-                "inspection.never_worked": 0,
-                "inspection.worked": 0,
-                "inspection.on_hold": 0,
-                "acceptance.never_worked": 0,
-                "acceptance.worked": 0,
-                "acceptance.on_hold": 0,
-                "acceptance.complete": 1,
-            },
-        ]
-    )
-    pandas.testing.assert_frame_equal(actual[expected.columns], expected, check_dtype=False, check_names=False)
-
-
-def test_create_task_count_summary_df_with_metadata_keys() -> None:
-    task_list: list[Task] = [
-        {"task_id": "task1", "account_id": "account1", "status": "working", "phase": "annotation", "metadata": {"dataset": "train"}},
-        {"task_id": "task2", "account_id": "account1", "status": "complete", "phase": "acceptance", "metadata": {"dataset": "validation"}},
-        {"task_id": "task3", "account_id": "account1", "status": "on_hold", "phase": "annotation", "metadata": {}},
+    assert actual[["account_id", "annotation_not_started", "working", "complete"]].to_dict(orient="records") == [
+        {"account_id": "account1", "annotation_not_started": 1, "working": 1, "complete": 0},
+        {"account_id": "account2", "annotation_not_started": 0, "working": 0, "complete": 1},
     ]
 
-    actual = create_task_count_summary_df(task_list, metadata_keys=["dataset"])
+
+def test_summarize_df_task_by_user_with_metadata_keys() -> None:
+    df_task = pandas.DataFrame(
+        [
+            {"account_id": "account1", "phase": "annotation", "task_status_for_summary": "worked.not_rejected", "metadata.dataset": "train"},
+            {"account_id": "account1", "phase": "acceptance", "task_status_for_summary": "complete", "metadata.dataset": "validation"},
+            {"account_id": "account1", "phase": "annotation", "task_status_for_summary": "on_hold", "metadata.dataset": None},
+        ]
+    )
+
+    actual = summarize_df_task_by_user(df_task, metadata_keys=["dataset"])
 
     assert len(actual) == 3
     assert actual["metadata.dataset"].isna().sum() == 1
@@ -74,25 +51,41 @@ def test_create_task_count_summary_df_with_metadata_keys() -> None:
     assert actual.set_index("metadata.dataset").loc["validation", "acceptance.complete"] == 1
 
 
-def test_create_task_count_summary_df_includes_unassigned_task() -> None:
-    task_list: list[Task] = [
-        {"task_id": "task1", "account_id": None, "status": "not_started", "phase": "annotation", "metadata": {"dataset": "train"}},
-        {"task_id": "task2", "account_id": "account1", "status": "working", "phase": "annotation", "metadata": {"dataset": "train"}},
-    ]
+def test_summarize_df_task_by_user_includes_unassigned_task() -> None:
+    df_task = pandas.DataFrame(
+        [
+            {"account_id": None, "phase": "annotation", "task_status_for_summary": "never_worked.unassigned", "metadata.dataset": "train"},
+            {"account_id": "account1", "phase": "annotation", "task_status_for_summary": "worked.not_rejected", "metadata.dataset": "train"},
+        ]
+    )
 
-    actual = create_task_count_summary_df(task_list, metadata_keys=["dataset"])
+    actual = summarize_df_task_by_user(df_task, metadata_keys=["dataset"])
 
     assert set(actual["account_id"]) == {"account1", UNASSIGNED_ACCOUNT_ID}
-    assert actual[SUMMARY_COLUMNS].sum(axis="columns").sum() == len(task_list)
+    assert actual[SUMMARY_COLUMNS].sum(axis="columns").sum() == len(df_task)
 
 
-def test_create_task_count_summary_df_with_multiple_metadata_keys() -> None:
-    task_list: list[Task] = [
-        {"task_id": "task1", "account_id": "account1", "status": "working", "phase": "annotation", "metadata": {"dataset": "train", "location": "tokyo"}},
-        {"task_id": "task2", "account_id": "account1", "status": "working", "phase": "annotation", "metadata": {"dataset": "validation", "location": "osaka"}},
-    ]
+def test_summarize_df_task_by_user_with_multiple_metadata_keys() -> None:
+    df_task = pandas.DataFrame(
+        [
+            {
+                "account_id": "account1",
+                "phase": "annotation",
+                "task_status_for_summary": "worked.not_rejected",
+                "metadata.dataset": "train",
+                "metadata.location": "tokyo",
+            },
+            {
+                "account_id": "account1",
+                "phase": "annotation",
+                "task_status_for_summary": "worked.not_rejected",
+                "metadata.dataset": "validation",
+                "metadata.location": "osaka",
+            },
+        ]
+    )
 
-    actual = create_task_count_summary_df(task_list, metadata_keys=["dataset", "location"])
+    actual = summarize_df_task_by_user(df_task, metadata_keys=["dataset", "location"])
 
     assert actual[["metadata.dataset", "metadata.location"]].to_dict(orient="records") == [
         {"metadata.dataset": "train", "metadata.location": "tokyo"},
@@ -100,8 +93,32 @@ def test_create_task_count_summary_df_with_multiple_metadata_keys() -> None:
     ]
 
 
-def test_create_task_count_summary_df_with_empty_task_list() -> None:
-    actual = create_task_count_summary_df([])
+def test_summarize_df_task_by_user_with_input_data_count() -> None:
+    df_task = pandas.DataFrame(
+        [
+            {
+                "account_id": "account1",
+                "phase": "annotation",
+                "task_status_for_summary": "never_worked.assigned",
+                "input_data_count": 2,
+            },
+            {
+                "account_id": "account1",
+                "phase": "annotation",
+                "task_status_for_summary": "worked.not_rejected",
+                "input_data_count": 3,
+            },
+        ]
+    )
+
+    actual = summarize_df_task_by_user(df_task, unit=AggregationUnit.INPUT_DATA)
+
+    assert actual.loc[0, "annotation.never_worked"] == 2
+    assert actual.loc[0, "annotation.worked"] == 3
+
+
+def test_summarize_df_task_by_user_with_empty_task_list() -> None:
+    actual = summarize_df_task_by_user(pandas.DataFrame())
 
     assert actual.columns.to_list() == ["account_id", *SUMMARY_COLUMNS]
     assert len(actual) == 0
@@ -116,12 +133,14 @@ def test_create_summary_df_includes_unassigned_user() -> None:
             return pandas.DataFrame([{"account_id": "account1", "user_id": "user1", "username": "user1", "biography": ""}])
 
     command = object.__new__(StubListTaskCountByUser)
-    task_list: list[Task] = [
-        {"task_id": "task1", "account_id": None, "status": "not_started", "phase": "annotation"},
-        {"task_id": "task2", "account_id": "account1", "status": "working", "phase": "inspection"},
-    ]
+    df_task = pandas.DataFrame(
+        [
+            {"account_id": None, "phase": "annotation", "task_status_for_summary": "never_worked.unassigned"},
+            {"account_id": "account1", "phase": "inspection", "task_status_for_summary": "worked.not_rejected"},
+        ]
+    )
 
-    actual = command.create_summary_df("project1", task_list)
+    actual = command.create_summary_df("project1", df_task)
 
     assert actual["user_id"].to_list() == ["user1", "unassigned"]
     assert actual[SUMMARY_COLUMNS].sum(axis="columns").to_list() == [1, 1]

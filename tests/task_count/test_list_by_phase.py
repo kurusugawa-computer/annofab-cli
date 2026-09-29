@@ -139,3 +139,18 @@ class TestCommandLine:
                 out_file,
             ]
         )
+
+    def test_list_by_user_with_input_data_unit(self):
+        out_file = str(out_dir / "list_by_user_input_data_count.csv")
+        main(
+            [
+                self.command_name,
+                "list_by_user",
+                "--project_id",
+                project_id,
+                "--unit",
+                "input_data_count",
+                "--output",
+                out_file,
+            ]
+        )

@@ -5,7 +5,7 @@ task_count list_by_user
 Description
 =================================
 
-ユーザごとに、担当しているタスク数をCSV形式で出力します。
+ユーザごとに、担当しているタスク数や入力データ数などをCSV形式で出力します。
 
 
 Examples
@@ -31,6 +31,7 @@ Examples
 
 フェーズごとに、``never_worked``（未着手）、``worked``（作業済み）、``on_hold``（保留中）のタスク数を出力します。
 完了したタスクは ``acceptance.complete`` に出力します。
+``never_worked`` の判定方法は :doc:`list_by_phase` と同じです。
 
 担当者が割り当てられていないタスクは、``user_id`` が ``unassigned`` の行に集計します。
 したがって、状態別の列をすべて合計すると、登録されているタスクの合計になります。
@@ -53,6 +54,18 @@ Examples
 
    user1,user1,,train,1,8,0,0,10,0,0,0,0,100
    user1,user1,,validation,0,2,0,0,5,0,0,0,0,20
+
+
+入力データ数で集計
+---------------------------------
+
+``--unit input_data_count`` を指定すると、タスク数ではなく入力データ数を集計します。
+``video_duration_hour`` または ``video_duration_minute`` を指定すると、動画プロジェクトの動画時間を集計します。
+
+.. code-block:: console
+
+    $ annofabcli task_count list_by_user --project_id prj1 \
+        --unit input_data_count --output out.csv
 
 
 Usage Details
