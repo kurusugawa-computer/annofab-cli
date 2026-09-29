@@ -28,7 +28,9 @@ logger = logging.getLogger(__name__)
 
 Metadata = dict[str, str | bool | int]
 
-DEPRECATED_METADATA_BY_TASK_ID_MESSAGE = "[DEPRECATED] :: '--metadata_by_task_id' は非推奨です。代わりに `task update_metadata_per_task --json` を使用してください。"
+DEPRECATED_METADATA_BY_TASK_ID_MESSAGE = (
+    "[DEPRECATED] :: '--metadata_by_task_id' は非推奨です。代わりに `task update_metadata_per_task --json` を使用してください。 '--metadata_by_task_id' オプションは2027/01/01以降に廃止予定です。"
+)
 
 
 @dataclass(frozen=True)
@@ -255,6 +257,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         help=(
             "[DEPRECATED] キーがタスクID, 値がメタデータ( ``--metadata`` 参照)であるオブジェクトをJSON形式で指定してください。\n"
             "代わりに ``task update_metadata_per_task --json`` を使用してください。\n"
+            "このオプションは2027/01/01以降に廃止予定です。\n"
             f"(ex) '{json.dumps(sample_metadata_by_task_id)}'\n"
             "``file://`` を先頭に付けると、JSON形式のファイルを指定できます。"
         ),

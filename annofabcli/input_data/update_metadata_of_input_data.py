@@ -34,7 +34,10 @@ Metadata = dict[str, str]
 値はstr型しか指定できない。
 """
 
-DEPRECATED_METADATA_BY_INPUT_DATA_ID_MESSAGE = "[DEPRECATED] :: '--metadata_by_input_data_id' は非推奨です。代わりに `input_data update_metadata_per_input_data --json` を使用してください。"
+DEPRECATED_METADATA_BY_INPUT_DATA_ID_MESSAGE = (
+    "[DEPRECATED] :: '--metadata_by_input_data_id' は非推奨です。代わりに `input_data update_metadata_per_input_data --json` を使用してください。"
+    " '--metadata_by_input_data_id' オプションは2027/01/01以降に廃止予定です。"
+)
 
 
 @dataclass(frozen=True)
@@ -249,6 +252,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         help=(
             "[DEPRECATED] キーが入力データID, 値がメタデータ( ``--metadata`` 参照)であるオブジェクトをJSON形式で指定してください。\n"
             "代わりに ``input_data update_metadata_per_input_data --json`` を使用してください。\n"
+            "このオプションは2027/01/01以降に廃止予定です。\n"
             f"(ex) '{json.dumps(sample_metadata_by_input_data_id)}'\n"
             "``file://`` を先頭に付けると、JSON形式のファイルを指定できます。"
         ),

@@ -21,7 +21,6 @@ Available Commands
    create
    diff
    list
-   put
    update
    update_configuration
 

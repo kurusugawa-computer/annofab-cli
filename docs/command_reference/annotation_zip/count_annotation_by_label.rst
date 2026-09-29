@@ -41,6 +41,8 @@ Examples
 
 デフォルトではタスク単位でアノテーション数を集計します。入力データ単位に集計する場合は、 ``--group_by input_data_id`` を指定してください。
 
+.. include:: count_group_by.inc
+
 ``--annotation`` にアノテーションzipまたはzipを展開したディレクトリを指定できます。
 
 .. include:: task_metadata.inc
@@ -104,6 +106,47 @@ CSV出力
 
 追加される列名は ``per_input_data.<label_name>`` 形式です。
 ラベル列の合計に対する入力データあたりの値は ``per_input_data.annotation_count`` 列に出力されます。
+
+
+タスクのフェーズとステータスごとに集計する
+--------------------------------------------------
+
+.. code-block:: bash
+
+    $ annofabcli annotation_zip count_annotation_by_label --project_id prj1 \
+      --group_by task_phase task_status --output out_by_status.csv
+
+.. csv-table:: out_by_status.csv
+   :header-rows: 1
+   :file: count_annotation_by_label/out_by_status.csv
+
+JSON形式では、集計キーと件数を以下のように出力します。
+
+.. code-block:: json
+    :caption: out_by_status.json
+
+    [
+        {
+            "task_phase": "annotation",
+            "task_status": "complete",
+            "task_count": 100,
+            "input_data_count": 1000,
+            "annotation_count": 1200,
+            "annotation_count_by_label": {
+                "car": 1000,
+                "bike": 200
+            }
+        }
+    ]
+
+
+タスクメタデータの値ごとに集計する
+--------------------------------------------------
+
+.. code-block:: bash
+
+    $ annofabcli annotation_zip count_annotation_by_label --project_id prj1 \
+      --group_by task_metadata.customer task_status --output out_by_customer.csv
 
 
 Command line options

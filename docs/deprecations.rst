@@ -18,11 +18,6 @@
   * 2027/01/01以降に廃止予定です。
   * 代わりに、それぞれ ``input_data create``、``task create``、``supplementary create`` を使用してください。
 
-* :doc:`command_reference/project/put`
-
-  * 2026/01/01以降に廃止予定です。
-  * 代わりに ``project create`` を使用してください。
-
 * :doc:`command_reference/statistics/visualize_annotation_count`、:doc:`command_reference/statistics/list_annotation_count`
 
   * 2027/01/01以降に廃止予定です。
@@ -38,21 +33,24 @@
   * 2027/01/01以降に廃止予定です。
   * 代わりに :doc:`command_reference/task_count/list_by_user` を使用してください。
 
-廃止時期が未定の機能
-=================================
-
 * :doc:`command_reference/filesystem/draw_annotation`
 
+  * 2027/01/01以降に廃止予定です。
   * 代わりに ``annotation_zip render`` を使用してください。
-
-* :doc:`command_reference/annotation/download` の ``--download_full_annotation`` オプション
-
-  * 将来、廃止される可能性があります。
 
 * :doc:`command_reference/input_data/update_metadata` の ``--metadata_by_input_data_id`` オプション
 
+  * 2027/01/01以降に廃止予定です。
   * 代わりに ``input_data update_metadata_per_input_data`` を使用してください。
 
 * :doc:`command_reference/task/update_metadata` の ``--metadata_by_task_id`` オプション
 
+  * 2027/01/01以降に廃止予定です。
   * 代わりに ``task update_metadata_per_task`` を使用してください。
+
+廃止時期が未定の機能
+=================================
+
+* :doc:`command_reference/annotation/download` の ``--download_full_annotation`` オプション
+
+  * 将来、廃止される可能性があります。
