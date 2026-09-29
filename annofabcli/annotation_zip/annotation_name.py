@@ -36,7 +36,7 @@ class AnnotationNameTranslator:
         additionals_by_id = {e["additional_data_definition_id"]: e for e in annotation_specs["additionals"]}
         self._label_names: dict[str, str] = {}
         self._attribute_names: dict[tuple[str, str], str] = {}
-        self._choice_names: dict[tuple[str, str], str] = {}
+        self._choice_names: dict[tuple[str, str, str], str] = {}
 
         for label in annotation_specs["labels"]:
             label_name_en = get_message_with_lang(label["label_name"], "en-US")
@@ -59,7 +59,7 @@ class AnnotationNameTranslator:
                     choice_name_en = get_message_with_lang(choice["name"], "en-US")
                     choice_name_ja = get_message_with_lang(choice["name"], "ja-JP")
                     if choice_name_en is not None and choice_name_ja is not None:
-                        self._choice_names[(attribute_name_en, choice_name_en)] = choice_name_ja
+                        self._choice_names[(label_name_en, attribute_name_en, choice_name_en)] = choice_name_ja
 
     @classmethod
     def from_project(cls, service: annofabapi.Resource, project_id: str) -> AnnotationNameTranslator:
@@ -98,17 +98,18 @@ class AnnotationNameTranslator:
         """
         return self._attribute_names.get((label_name, attribute_name), attribute_name)
 
-    def choice_name(self, attribute_name: str, choice_name: str) -> str:
-        """属性名と選択肢英語名の組み合わせから選択肢日本語名へ変換します。
+    def choice_name(self, label_name: str, attribute_name: str, choice_name: str) -> str:
+        """ラベル名、属性名、選択肢英語名の組み合わせから選択肢日本語名へ変換します。
 
         Args:
+            label_name: ラベル英語名。
             attribute_name: 属性英語名。
             choice_name: 選択肢英語名。
 
         Returns:
             日本語名。対応する日本語名がなければ入力値。
         """
-        return self._choice_names.get((attribute_name, choice_name), choice_name)
+        return self._choice_names.get((label_name, attribute_name, choice_name), choice_name)
 
     def attribute_value_key(self, key: tuple[str, str, str]) -> tuple[str, str, str]:
         """属性値のキーを日本語名へ変換します。
@@ -123,7 +124,7 @@ class AnnotationNameTranslator:
         return (
             self.label_name(label_name),
             self.attribute_name(label_name, attribute_name),
-            self.choice_name(attribute_name, choice_name),
+            self.choice_name(label_name, attribute_name, choice_name),
         )
 
     def annotation_info(self, annotation: AnnotationInfo) -> AnnotationInfo:
@@ -140,7 +141,8 @@ class AnnotationNameTranslator:
         if hasattr(annotation, "attributes"):
             attributes = cast(Mapping[str, Any], cast(Any, annotation).attributes)
             updates["attributes"] = {
-                self.attribute_name(label_name, attribute_name): self.choice_name(attribute_name, value) if isinstance(value, str) else value for attribute_name, value in attributes.items()
+                self.attribute_name(label_name, attribute_name): self.choice_name(label_name, attribute_name, value) if isinstance(value, str) else value
+                for attribute_name, value in attributes.items()
             }
         annotation_object = cast(Any, annotation)
         if hasattr(annotation_object, "model_copy"):

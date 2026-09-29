@@ -21,6 +21,10 @@ def test_annotation_name_translator() -> None:
                 "label_name": {"messages": [{"lang": "en-US", "message": "person"}]},
                 "additional_data_definitions": [],
             },
+            {
+                "label_name": {"messages": [{"lang": "en-US", "message": "truck"}, {"lang": "ja-JP", "message": "トラック"}]},
+                "additional_data_definitions": ["truck-type-id"],
+            },
         ],
         "additionals": [
             {
@@ -33,6 +37,11 @@ def test_annotation_name_translator() -> None:
                 "name": {"messages": [{"lang": "en-US", "message": "memo"}]},
                 "choices": [],
             },
+            {
+                "additional_data_definition_id": "truck-type-id",
+                "name": {"messages": [{"lang": "en-US", "message": "type"}, {"lang": "ja-JP", "message": "種類2"}]},
+                "choices": [{"name": {"messages": [{"lang": "en-US", "message": "sedan"}, {"lang": "ja-JP", "message": "セダン2"}]}}],
+            },
         ],
     }
     translator = AnnotationNameTranslator(annotation_specs)
@@ -40,6 +49,10 @@ def test_annotation_name_translator() -> None:
     assert translator.label_name("car") == "車"
     assert translator.label_name("person") == "person"
     assert translator.attribute_value_key(("car", "type", "sedan")) == ("車", "種類", "セダン")
+    assert translator.attribute_value_key(("truck", "type", "sedan")) == ("トラック", "種類2", "セダン2")
     assert translator.annotation_info(AnnotationInfo(project_id="project1", label="car", attributes={"type": "sedan", "memo": "free text", "score": 1})) == AnnotationInfo(
         project_id="project1", label="車", attributes={"種類": "セダン", "memo": "free text", "score": 1}
+    )
+    assert translator.annotation_info(AnnotationInfo(project_id="project1", label="truck", attributes={"type": "sedan"})) == AnnotationInfo(
+        project_id="project1", label="トラック", attributes={"種類2": "セダン2"}
     )
