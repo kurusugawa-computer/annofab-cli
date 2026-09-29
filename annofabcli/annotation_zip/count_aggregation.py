@@ -24,6 +24,9 @@ EXCLUSIVE_GROUPS = frozenset({TASK_ID_GROUP, INPUT_DATA_ID_GROUP, PROJECT_ID_GRO
 """単独でのみ指定できる集計キー。"""
 
 GroupValue = str | int | float | bool | None
+GroupKey = tuple[tuple[type[object], GroupValue], ...]
+"""値の型を区別する内部集計キー。"""
+
 CountKey = TypeVar("CountKey", bound=Hashable)
 TaskCountType = TypeVar("TaskCountType", bound="TaskCount")
 
@@ -151,10 +154,10 @@ def aggregate_task_counts(
         指定項目ごとの集計結果。
     """
     group_by_list = list(group_by)
-    summary_by_key: dict[tuple[GroupValue, ...], CountSummary] = {}
+    summary_by_key: dict[GroupKey, CountSummary] = {}
     for task_count in task_counts:
         group_values = _get_group_values(task_count, group_by_list, task_metadata_by_task_id or {})
-        key = tuple(group_values.values())
+        key: GroupKey = tuple((type(value), value) for value in group_values.values())
         summary = summary_by_key.setdefault(key, CountSummary(group_values=group_values))
         summary.task_count += 1
         summary.input_data_count += task_count.input_data_count
