@@ -232,7 +232,7 @@
 
 - `annofabcli stat_visualization mask_user_info`: `annofabcli statistics visualize` コマンドの出力結果のユーザ情報をマスクします。
 - `annofabcli stat_visualization merge`: ``annofabcli statistics visualize`` コマンドの出力結果をマージします。
-- `annofabcli stat_visualization summarize_whole_performance_csv`: ``annofabcli statistics visualize`` コマンドの出力結果であるプロジェクトディレクトリから、プロジェクトごとの生産性や品質の一覧を出力します。。
+- `annofabcli stat_visualization summarize_whole_performance_csv`: ``annofabcli statistics visualize`` コマンドの出力結果であるプロジェクトディレクトリから、プロジェクトごとの生産性や品質の一覧を出力します。
 - `annofabcli stat_visualization write_graph`: `annofabcli statistics visualize` コマンドの出力結果であるプロジェクトのディレクトリから、グラフを出力します。
 - `annofabcli stat_visualization write_performance_rating_csv`: プロジェクトごとユーザごとにパフォーマンスを評価できる複数のCSVを出力します。
 
