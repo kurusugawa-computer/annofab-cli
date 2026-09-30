@@ -110,7 +110,8 @@ Examples
 
 .. warning::
 
-    ``--metadata_by_input_data_id`` は非推奨です。代わりに :doc:`update_metadata_per_input_data` コマンドを使用してください。
+    ``--metadata_by_input_data_id`` は非推奨です。2027/01/01以降に廃止予定です。
+    代わりに :doc:`update_metadata_per_input_data` コマンドを使用してください。
 
 
 .. code-block:: json

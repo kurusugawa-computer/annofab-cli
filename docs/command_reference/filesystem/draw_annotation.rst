@@ -10,7 +10,7 @@ Description
 
    このコマンドは非推奨です。代わりに :doc:`../annotation_zip/render` コマンドを使用してください。
 
-   ``filesystem draw_annotation`` コマンドは2027/01/01以降に削除予定です。
+   ``filesystem draw_annotation`` コマンドは2027/01/01以降に廃止予定です。
 
 
 Examples

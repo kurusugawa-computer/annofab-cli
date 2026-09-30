@@ -128,7 +128,8 @@ Examples
 
 .. warning::
 
-    ``--metadata_by_task_id`` は非推奨です。代わりに :doc:`update_metadata_per_task` コマンドを使用してください。
+    ``--metadata_by_task_id`` は非推奨です。2027/01/01以降に廃止予定です。
+    代わりに :doc:`update_metadata_per_task` コマンドを使用してください。
 
 
 .. code-block:: json

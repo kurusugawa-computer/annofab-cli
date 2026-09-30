@@ -23,11 +23,6 @@ service = annofabapi.build()
 
 
 class TestCommandLine:
-    """
-    Notes:
-        `project put`のテストは無視する。プロジェクトを作成した後、削除する手段がないため。
-    """
-
     organization_name: str
 
     @classmethod
