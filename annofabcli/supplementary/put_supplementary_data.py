@@ -419,8 +419,8 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
 
 def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "put"
-    subcommand_help = "補助情報を登録します。"
-    description = "補助情報を登録します。"
+    subcommand_help = "[DEPRECATED] 補助情報を登録します。"
+    description = f"{subcommand_help}\n{DEPRECATED_MESSAGE}"
     epilog = "オーナーロールを持つユーザで実行してください。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)

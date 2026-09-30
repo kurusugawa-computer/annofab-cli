@@ -7,13 +7,19 @@ endif
 GITLEAKS_VERSION := v8.30.1
 GITLEAKS_DOCKER_CONFIG ?= /tmp/annofab-cli-docker-config
 
-.PHONY: docs docs-check lint test format publish_test publish gitleaks
+.PHONY: docs docs-check lint test format publish_test publish gitleaks generate-skill-command-index check-skill-command-index
 
-format:
+generate-skill-command-index:
+	uv run python scripts/generate_skill_command_index.py
+
+check-skill-command-index:
+	uv run python scripts/generate_skill_command_index.py --check
+
+format: generate-skill-command-index
 	uv run ruff format ${SOURCE_FILES} ${TEST_FILES}
 	uv run ruff check ${SOURCE_FILES} ${TEST_FILES} --fix-only --exit-zero
 
-lint:
+lint: check-skill-command-index
 	uv run ruff format ${SOURCE_FILES} ${TEST_FILES} --check
 	uv run ruff check ${SOURCE_FILES} ${TEST_FILES}
 	uv run mypy ${SOURCE_FILES} ${TEST_FILES}
