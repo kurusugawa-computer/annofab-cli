@@ -135,7 +135,18 @@ CSVのフォーマットは以下の通りです。
 色の指定
 --------------------------
 
-描画するアノテーションの色を指定する場合は、 ``--label_color`` にラベル名と色の対応関係をJSON形式で指定してください。
+描画するアノテーションの色を指定する場合は、 :doc:`../annotation_specs/list_label` コマンドのJSON出力を ``--label_color`` に指定してください。
+
+.. code-block::
+
+    $ annofabcli annotation_specs list_label \
+    --project_id prj1 \
+    --format json \
+    --output labels.json
+
+``--label_color`` に指定するJSON配列の各要素には、 ``label_name_en`` と ``color`` が必要です。
+``list_label`` コマンドが出力するその他のフィールドは無視されます。
+``label_name_en`` が空または重複している場合はエラーになります。
 
 .. code-block::
 
@@ -143,44 +154,7 @@ CSVのフォーマットは以下の通りです。
     --image_dir image/ \
     --input_data_id_csv input_data_id.csv \
     --output_dir out/ \
-    --label_color '{"dog":"red", "cat":"blue"}'
-
-
-「色」は、以下のフォーマットをサポートしています。
-フォーマットの詳細は、`Pillow - ImageColor Module <https://pillow.readthedocs.io/en/stable/reference/ImageColor.html>`_ を参照してください。
-
-* HTML color names： ``"red"``
-* 16進数： ``"#add8e6"``
-* 10進数（文字列）： ``"rgb(0, 0, 255)"``
-* 10進数（リスト）： ``[0, 0, 255]``
-
-
-アノテーション仕様画面で設定されている色を指定する場合は、 `annofabcli annotation_specs list_label_color <../annotation_specs/list_label_color.html>`_ コマンドの出力結果を使用してください。
-
-.. code-block::
-
-    $ annofabcli annotation_specs list_label_color --project_id prj1 --output label_color.json
-
-    $ cat label_color.json
-    {
-        "cat": [
-            255,
-            0,
-            0
-        ],
-        "dog": [
-            0,
-            255,
-            0
-        ],
-        // ...
-    }
-
-    $ annofabcli annotation_zip render --annotation annotation.zip \
-    --image_dir image/ \
-    --input_data_id_csv input_data_id.csv \
-    --output_dir out/ \
-    --label_color file://label_color.json
+    --label_color file://labels.json
 
 
 

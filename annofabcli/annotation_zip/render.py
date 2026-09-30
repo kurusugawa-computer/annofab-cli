@@ -37,16 +37,52 @@ def read_input_data_id_csv(csv_path: Path) -> dict[str, str]:
     return dict(zip(df["input_data_id"], df["image_path"], strict=False))
 
 
+def create_label_color_dict(label_list: object) -> dict[str, Color]:
+    """``annotation_specs list_label`` のJSON出力からラベル色の辞書を生成する。
+
+    Args:
+        label_list: ``annotation_specs list_label --format json`` の出力。
+
+    Returns:
+        ラベル英語名と色の対応関係。
+
+    Raises:
+        TypeError: JSONの型が不正な場合。
+        ValueError: ラベル英語名が空、または重複している場合。
+    """
+    if not isinstance(label_list, list):
+        raise TypeError("JSON配列を指定してください。")
+
+    result: dict[str, Color] = {}
+    for index, label in enumerate(label_list, start=1):
+        if not isinstance(label, dict):
+            raise TypeError(f"{index}件目のラベルはJSONオブジェクトである必要があります。")
+
+        label_name_en = label.get("label_name_en")
+        if not isinstance(label_name_en, str) or label_name_en == "":
+            raise ValueError(f"{index}件目のラベルに、空でない文字列の `label_name_en` を指定してください。")
+        if label_name_en in result:
+            raise ValueError(f"`label_name_en` が重複しています。 :: label_name_en='{label_name_en}'")
+
+        color = label.get("color")
+        if not isinstance(color, str):
+            raise TypeError(f"{index}件目のラベルに、文字列の `color` を指定してください。")
+        result[label_name_en] = color
+
+    return result
+
+
 class RenderAnnotation(CommandLineWithoutWebapi):
     COMMON_MESSAGE = "annofabcli annotation_zip render:"
 
     @staticmethod
     def _create_label_color(args_label_color: str) -> dict[str, Color]:
-        label_color_dict = get_json_from_args(args_label_color)
-        for label_name, color in label_color_dict.items():
-            if isinstance(color, list):
-                label_color_dict[label_name] = tuple(color)
-        return label_color_dict
+        label_list = get_json_from_args(args_label_color)
+        try:
+            return create_label_color_dict(label_list)
+        except (TypeError, ValueError) as e:
+            print(f"{RenderAnnotation.COMMON_MESSAGE} argument '--label_color': {e}", file=sys.stderr)  # noqa: T201
+            sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
     def main(self) -> None:
         args = self.args
@@ -133,11 +169,14 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
 
     parser.add_argument("--image_size", type=str, help="アノテーションのみを描画するときの画像サイズ。 ``--input_data_id_csv`` を指定しないときは必須です。\n(例) 1280x720")
 
-    label_color_sample = {"dog": [255, 128, 64], "cat": "blue"}
     parser.add_argument(
         "--label_color",
         type=str,
-        help=f"label_nameとRGBの関係をJSON形式で指定します。\n(例) ``{json.dumps(label_color_sample)}``\n``file://`` を先頭に付けると、JSON形式のファイルを指定できます。",
+        help=(
+            "ラベルの色をJSON配列で指定します。 ``annotation_specs list_label --format json`` の出力を指定できます。"
+            " 各要素には ``label_name_en`` と ``color`` が必要です。"
+            "\n``file://`` を先頭に付けると、JSON形式のファイルを指定できます。"
+        ),
     )
 
     parser.add_argument(

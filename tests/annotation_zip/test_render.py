@@ -1,7 +1,9 @@
 from pathlib import Path
 
+import pytest
+
 from annofabcli.__main__ import main
-from annofabcli.annotation_zip.render import read_input_data_id_csv
+from annofabcli.annotation_zip.render import create_label_color_dict, read_input_data_id_csv
 
 data_dir = Path("./tests/data/filesystem")
 out_dir = Path("./tests/out/annotation_zip")
@@ -20,6 +22,46 @@ def test_read_input_data_id_csv_preserves_leading_zeroes(tmp_path: Path) -> None
     actual = read_input_data_id_csv(csv_path)
 
     assert actual == {"001": "image.png"}
+
+
+def test_create_label_color_dict() -> None:
+    label_list = [
+        {
+            "label_id": "car_id",
+            "label_name_en": "car",
+            "label_name_ja": "車",
+            "annotation_type": "bounding_box",
+            "color": "#123456",
+        },
+        {
+            "label_id": "bike_id",
+            "label_name_en": "bike",
+            "color": "#ABCDEF",
+        },
+    ]
+
+    actual = create_label_color_dict(label_list)
+
+    assert actual == {"car": "#123456", "bike": "#ABCDEF"}
+
+
+@pytest.mark.parametrize(
+    "label_list",
+    [
+        {"car": "#123456"},
+        ["car"],
+        [{"label_name_en": "car"}],
+        [{"label_name_en": "car", "color": [18, 52, 86]}],
+        [{"label_name_en": "", "color": "#123456"}],
+        [
+            {"label_name_en": "car", "color": "#123456"},
+            {"label_name_en": "car", "color": "#ABCDEF"},
+        ],
+    ],
+)
+def test_create_label_color_dict__invalid(label_list: object) -> None:
+    with pytest.raises((TypeError, ValueError)):
+        create_label_color_dict(label_list)
 
 
 class TestCommandLine:
@@ -58,6 +100,8 @@ class TestCommandLine:
                 str(output_dir),
                 "--image_size",
                 "1280x720",
+                "--label_color",
+                '[{"label_id":"cat_id","label_name_en":"Cat","color":"#123456"}]',
             ]
         )
 
