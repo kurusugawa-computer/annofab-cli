@@ -139,7 +139,7 @@ def build_command_index(command_groups: Sequence[CommandGroup]) -> str:
         "# annofab-cliコマンド索引",
         "",
         "このファイルは、annofab-cliが提供するコマンドとその概要を確認するための索引です。",
-        "オプションや引数の詳細は、使用する環境で`annofabcli <command> --help`を実行して確認してください。",
+        "オプションや引数の詳細は、使用する環境で索引に記載されたコマンドに`--help`を付けて実行し、確認してください。",
     ]
 
     for group in command_groups:
