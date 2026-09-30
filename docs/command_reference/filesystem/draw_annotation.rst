@@ -159,34 +159,6 @@ CSVのフォーマットは以下の通りです。
 * 16進数： ``"#add8e6"``
 * 10進数（文字列）： ``"rgb(0, 0, 255)"``
 * 10進数（リスト）： ``[0, 0, 255]``
-  
-    
-アノテーション仕様画面で設定されている色を指定する場合は、 `annofabcli annotation_specs list_label_color <../annotation_specs/list_label_color.html>`_ コマンドの出力結果を使用してください。
-
-.. code-block::
-
-    $ annofabcli annotation_specs list_label_color --project_id prj1 --output label_color.json
-
-    $ cat label_color.json
-    {
-        "cat": [
-            255,
-            0,
-            0
-        ],
-        "dog": [
-            0,
-            255,
-            0
-        ],
-        // ...
-    }
-        
-    $ annofabcli filesystem draw_annotation  --annotation annotation.zip \
-    --image_dir image/ \
-    --input_data_id_csv input_data_id.csv \
-    --output_dir out/ \
-    --label_color file://label_color.json
 
 
 
