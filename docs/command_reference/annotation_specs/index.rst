@@ -35,14 +35,12 @@ Available Commands
    import
    list_annotation_import_info
    list_attribute
+   list_attribute_restriction
    list_choice
    list_history
    list_inspection_phrase
    list_label
    list_label_attribute
-   list_attribute_restriction
-   list_label_color
-   put_label_color
    reorder_attributes
    reorder_choices
    reorder_labels
