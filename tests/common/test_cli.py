@@ -1,8 +1,10 @@
 import argparse
 import builtins
+from types import SimpleNamespace
 
 import pytest
 
+from annofabcli.common import cli
 from annofabcli.common.cli import DEFAULT_ENDPOINT_URL, get_endpoint_url, get_json_from_args, get_list_from_args, non_negative_int, prompt_yesnoall
 
 
@@ -48,6 +50,16 @@ def test_get_endpoint_url_uses_default_when_not_configured(monkeypatch: pytest.M
     args = argparse.Namespace(endpoint_url=None)
 
     assert get_endpoint_url(args) == DEFAULT_ENDPOINT_URL
+
+
+def test_build_annofabapi_resource_adds_annofabcli_version_to_user_agent(monkeypatch: pytest.MonkeyPatch) -> None:
+    service = SimpleNamespace(api=SimpleNamespace(session=SimpleNamespace(headers={"User-Agent": "python-requests/2.32.0"})))
+    monkeypatch.setattr(cli.annofabapi, "build", lambda **_kwargs: service)
+    args = argparse.Namespace(endpoint_url=None, annofab_pat="test-token", annofab_user_id=None, annofab_password=None)
+
+    cli.build_annofabapi_resource(args)
+
+    assert service.api.session.headers["User-Agent"] == f"python-requests/2.32.0 annofab-cli/{cli.__version__}"
 
 
 def test_non_negative_int() -> None:

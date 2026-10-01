@@ -21,6 +21,7 @@ from annofabapi.exceptions import AnnofabApiException
 from annofabapi.models import OrganizationMemberRole, ProjectMemberRole
 from more_itertools import first_true
 
+from annofabcli import __version__
 from annofabcli.common.enums import OutputFormat
 from annofabcli.common.exceptions import AnnofabCliException, AuthenticationError
 from annofabcli.common.facade import AnnofabApiFacade
@@ -311,44 +312,49 @@ def build_annofabapi_resource(args: argparse.Namespace) -> annofabapi.Resource:
 
     kwargs = {"endpoint_url": endpoint_url, "input_mfa_code_via_stdin": True}
 
+    service: annofabapi.Resource
+
     # コマンドライン引数からパーソナルアクセストークンが指定された場合
     if args.annofab_pat is not None:
-        return annofabapi.build(pat=args.annofab_pat, **kwargs)  # type: ignore[arg-type]
-
+        service = annofabapi.build(pat=args.annofab_pat, **kwargs)  # type: ignore[arg-type]
     # コマンドライン引数からユーザーIDが指定された場合
-    if args.annofab_user_id is not None:
+    elif args.annofab_user_id is not None:
         login_user_id: str = args.annofab_user_id
         if args.annofab_password is not None:
-            return annofabapi.build(login_user_id, args.annofab_password, **kwargs)  # type: ignore[arg-type]
+            service = annofabapi.build(login_user_id, args.annofab_password, **kwargs)  # type: ignore[arg-type]
         else:
             # コマンドライン引数にパスワードが指定されなければ、標準入力からパスワードを取得する
             login_password = ""
             while login_password == "":
                 login_password = getpass.getpass("Enter Annofab Password: ")
-            return annofabapi.build(login_user_id, login_password, **kwargs)  # type: ignore[arg-type]
+            service = annofabapi.build(login_user_id, login_password, **kwargs)  # type: ignore[arg-type]
 
-    # 環境変数から認証情報を取得する
-    try:
-        return annofabapi.build_from_env(**kwargs)  # type: ignore[arg-type]
-    except AnnofabApiException:
-        pass
+    else:
+        # 環境変数から認証情報を取得する
+        try:
+            service = annofabapi.build_from_env(**kwargs)  # type: ignore[arg-type]
+        except AnnofabApiException:
+            # .netrcファイルから認証情報を取得する
+            try:
+                service = annofabapi.build_from_netrc(**kwargs)  # type: ignore[arg-type]
+            except AnnofabApiException:
+                # 標準入力から入力させる
+                login_user_id = ""
+                while login_user_id == "":
+                    login_user_id = input("Enter Annofab User ID: ")
 
-    # .netrcファイルから認証情報を取得する
-    try:
-        return annofabapi.build_from_netrc(**kwargs)  # type: ignore[arg-type]
-    except AnnofabApiException:
-        pass
+                login_password = ""
+                while login_password == "":
+                    login_password = getpass.getpass("Enter Annofab Password: ")
 
-    # 標準入力から入力させる
-    login_user_id = ""
-    while login_user_id == "":
-        login_user_id = input("Enter Annofab User ID: ")
+                service = annofabapi.build(login_user_id, login_password, **kwargs)  # type: ignore[arg-type]
 
-    login_password = ""
-    while login_password == "":
-        login_password = getpass.getpass("Enter Annofab Password: ")
-
-    return annofabapi.build(login_user_id, login_password, **kwargs)  # type: ignore[arg-type]
+    # requestsが既定で付与するUser-Agentにannofab-cliのバージョンを追加する。
+    user_agent = service.api.session.headers["User-Agent"]
+    if isinstance(user_agent, bytes):
+        user_agent = user_agent.decode("ascii")
+    service.api.session.headers["User-Agent"] = f"{user_agent} annofab-cli/{__version__}"
+    return service
 
 
 def prompt_yesno(msg: str) -> bool:
