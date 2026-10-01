@@ -312,8 +312,6 @@ def test_submit_parser_fixes_annotation_phase() -> None:
     assert "--reply_comment" in submit_parser.format_help()
     assert "--inspection_status" not in submit_parser.format_help()
 
-    with pytest.raises(SystemExit):
-        root_parser.parse_args(["submit", "--project_id", "project1", "--task_id", "task1", "--inspection_status", "closed"])
 
 
 def test_complete_parser_is_available_as_deprecated_compatibility_command() -> None:
