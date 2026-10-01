@@ -250,11 +250,12 @@
 
 タスク関係のサブコマンド
 
+- `annofabcli task accept`: 検査または受入フェーズのタスクを合格にします。
 - `annofabcli task cancel_acceptance`: 受入が完了したタスクに対して、受入を取り消します。
 - `annofabcli task change_operator`: タスクの担当者を変更します。
 - `annofabcli task change_status_to_break`: タスクのステータスを休憩中に変更します。
 - `annofabcli task change_status_to_on_hold`: タスクのステータスを保留に変更します。
-- `annofabcli task complete`: タスクを次のフェーズに進めます。（教師付の提出、検査または受入の合格）
+- `annofabcli task complete`: 【非推奨】タスクを次のフェーズに進めます。2027/01/01に廃止予定です。
 - `annofabcli task copy`: タスクをコピーします。
 - `annofabcli task create`: タスクを作成します。
 - `annofabcli task create_by_input_data_count`: タスクに割り当てる入力データの個数を指定して、タスクを作成します。
@@ -268,6 +269,7 @@
 - `annofabcli task put`: [DEPRECATED] タスクを作成します。
 - `annofabcli task reject`: タスクを差し戻します。
 - `annofabcli task reject_with_inspection_comments`: 検査コメントを付与してタスクを差し戻します。
+- `annofabcli task submit`: 教師付フェーズのタスクを提出します。
 - `annofabcli task update_input_data`: タスクに割り当てられた入力データと順序を更新します。
 - `annofabcli task update_metadata`: タスクのメタデータを更新します。
 - `annofabcli task update_metadata_per_task`: タスクごとにメタデータを更新します。

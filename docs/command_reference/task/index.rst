@@ -15,6 +15,7 @@ Available Commands
    :maxdepth: 1
    :titlesonly:
 
+   accept
    cancel_acceptance
    change_operator
    change_status_to_break
@@ -33,6 +34,7 @@ Available Commands
    put
    reject
    reject_with_inspection_comments
+   submit
    update_input_data
    update_metadata
    update_metadata_per_task

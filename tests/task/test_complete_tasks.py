@@ -299,3 +299,53 @@ def test_main_passes_include_status_options_to_main_object(monkeypatch: pytest.M
     complete_task_list_mock.assert_called_once()
     assert complete_task_list_mock.call_args.args[0] == "project1"
     assert complete_task_list_mock.call_args.kwargs["target_phase"] == TaskPhase.ANNOTATION
+
+
+def test_submit_parser_fixes_annotation_phase() -> None:
+    root_parser = argparse.ArgumentParser()
+    submit_parser = complete_tasks.add_submit_parser(root_parser.add_subparsers())
+
+    args = root_parser.parse_args(["submit", "--project_id", "project1", "--task_id", "task1"])
+
+    assert args.phase == TaskPhase.ANNOTATION.value
+    assert args.inspection_status is None
+    assert "--reply_comment" in submit_parser.format_help()
+    assert "--inspection_status" not in submit_parser.format_help()
+
+
+def test_complete_parser_is_available_as_deprecated_compatibility_command() -> None:
+    root_parser = argparse.ArgumentParser()
+    complete_parser = complete_tasks.add_complete_parser(root_parser.add_subparsers())
+
+    args = root_parser.parse_args(["complete", "--project_id", "project1", "--task_id", "task1", "--phase", "annotation"])
+
+    assert args.phase == TaskPhase.ANNOTATION.value
+    assert "--reply_comment" in complete_parser.format_help()
+    assert "--inspection_status" in complete_parser.format_help()
+
+
+def test_deprecated_complete_main_warns_and_delegates(monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture) -> None:
+    args = argparse.Namespace()
+    main_mock = Mock()
+    monkeypatch.setattr(complete_tasks, "main", main_mock)
+
+    complete_tasks.deprecated_complete_main(args)
+
+    assert "2027/01/01に廃止予定" in caplog.text
+    main_mock.assert_called_once_with(args)
+
+
+@pytest.mark.parametrize("phase", [TaskPhase.INSPECTION.value, TaskPhase.ACCEPTANCE.value])
+def test_accept_parser_accepts_inspection_and_acceptance_phases(phase: str) -> None:
+    root_parser = argparse.ArgumentParser()
+    accept_parser = complete_tasks.add_accept_parser(root_parser.add_subparsers())
+
+    args = root_parser.parse_args(["accept", "--project_id", "project1", "--task_id", "task1", "--phase", phase])
+
+    assert args.phase == phase
+    assert args.reply_comment is None
+    assert "--inspection_status" in accept_parser.format_help()
+    assert "--reply_comment" not in accept_parser.format_help()
+
+    with pytest.raises(SystemExit):
+        root_parser.parse_args(["accept", "--project_id", "project1", "--task_id", "task1", "--phase", phase, "--reply_comment", "対応しました"])

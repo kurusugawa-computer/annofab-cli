@@ -1,113 +1,42 @@
-=================================
+==============
 task complete
-=================================
+==============
+
+.. warning::
+
+   ``annofabcli task complete`` は非推奨です。2027/01/01に廃止予定です。
+   教師付フェーズのタスクには :doc:`submit` を、検査または受入フェーズのタスクには :doc:`accept` を使用してください。
 
 Description
 =================================
-教師付フェーズのタスクに対しては提出、検査または受入フェーズのタスクに対しては合格にして、次のフェーズに進めます。
-ただし作業中また完了状態のタスクは、次のフェーズに進めません。
-デフォルトでは休憩中または保留中状態のタスクは、次のフェーズに進めません。
-休憩中状態のタスクも次のフェーズに進めるには ``--include_break_task`` を、保留中状態のタスクも次のフェーズに進めるには ``--include_on_hold_task`` を指定してください。
+教師付フェーズのタスクを提出し、検査または受入フェーズのタスクを合格にして、次のフェーズに進めます。
+本コマンドは移行期間中の互換性のために提供しています。
 
 Examples
 =================================
 
-
-基本的な使い方
---------------------------------------
-
-``--task_id`` に操作対象タスクのtask_idを指定してください。
-
-.. code-block::
-    :caption: task_id.txt
-
-    task1
-    task2
-    ...
-
-教師付フェーズのタスクに対して提出する
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-以下のコマンドは、教師付フェーズのタスクを提出して、次のフェーズに進めます。未回答の検査コメントがあるタスクはスキップします。
+教師付フェーズのタスクを提出します。
 
 .. code-block::
 
     $ annofabcli task complete --project_id prj1 --task_id file://task_id.txt --phase annotation
 
-未回答の検査コメントがあるタスクも提出するには、``--reply_comment`` で未回答の検査コメントに対して返信する必要があります。
-以下のコマンドは、未回答の検査コメントに「対応しました」と返信してからタスクを提出します。
+検査または受入フェーズのタスクを合格にします。
 
 .. code-block::
 
-    $ annofabcli task complete --project_id prj1 --task_id file://task_id.txt \
-    --phase annotation --reply_comment "対応しました"
+    $ annofabcli task complete --project_id prj1 --task_id file://task_id.txt --phase inspection
 
+移行後のコマンドと使用方法は、以下を参照してください。
 
-
-検査/受入フェーズのタスクに対して合格にする
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-以下のコマンドは、検査フェーズでフェーズステージ2のタスクを合格にして、次のフェーズに進めます。未処置の検査コメントがあるタスクはスキップします。
-
-.. code-block::
-
-    $ annofabcli task complete --project_id prj1 --task_id file://task_id.txt \
-    --phase inspection --phase_stage 2
-
-未処置の検査コメントがあるタスクも合格にするには、``--inspection_status`` で未処置の検査コメントのステータスを変える必要があります。
-検査コメントは以下のステータスに変更できます。
-
-* ``resolved`` : 対応完了
-* ``closed`` : 対応不要
-
-以下のコマンドは、未処置の検査コメントは「対応不要」状態にしてから、受入フェーズのタスクを合格にします。
-
-.. code-block::
-
-    $ annofabcli  task complete --project_id prj1 --task_id file://task_id.txt \
-    --phase acceptance --inspection_status closed
-
-
-
-タスクのステータスや担当者で絞り込み
-----------------------------------------------
-
-``--task_query`` を指定すると、タスクのステータスや担当者で、操作対象のタスクを絞り込むことができます。
-
-
-以下のコマンドは、``task_id.txt`` に記載されているタスクの内、ステータスが未着手のタスクに対して提出します。
-
-
-.. code-block::
-
-    $ annofabcli task complete --project_id prj1 --task_id file://task_id.txt \
-    --phase annotation --task_query '{"status":"not_started"}'
-
-
-
-
-.. note::
-
-    ``--task_query '{"phase":"annotation"}'`` のようにフェーズやフェーズステージを指定する必要はありません。
-    ``annofabcli task complete`` コマンドは、``--phase`` , ``--phase_stage`` で、フェーズとフェーズステージを指定できるからです。
-
-
-
-並列処理
-----------------------------------------------
-
-以下のコマンドは、並列数4で実行します。
-
-.. code-block::
-
-    $ annofabcli task complete --project_id prj1 --task_id file://task_id.txt \
-    --phase annotation --parallelism 4 --yes
+* :doc:`submit`
+* :doc:`accept`
 
 Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.task.complete_tasks.add_parser
+   :ref: annofabcli.task.complete_tasks.add_complete_parser
    :prog: annofabcli task complete
    :nosubcommands:
    :nodefaultconst:
