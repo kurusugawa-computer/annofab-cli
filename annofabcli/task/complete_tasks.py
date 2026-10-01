@@ -729,7 +729,7 @@ def add_complete_parser(subparsers: argparse._SubParsersAction | None = None) ->
         subparsers,
         subcommand_name="complete",
         subcommand_help="【非推奨】タスクを次のフェーズに進めます。2027/01/01に廃止予定です。",
-        description=f"{DEPRECATED_COMPLETE_MESSAGE}教師付フェーズのタスクには `task submit`、検査または受入フェーズのタスクには `task accept` を使用してください。",
+        description=DEPRECATED_COMPLETE_MESSAGE,
         parse_argument_func=parse_args,
     )
     parser.set_defaults(subcommand_func=deprecated_complete_main)
