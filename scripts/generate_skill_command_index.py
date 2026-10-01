@@ -7,7 +7,7 @@ from pathlib import Path
 
 from annofabcli.__main__ import create_parser
 
-OUTPUT_PATH = Path(__file__).parents[1] / "skills" / "annofab-cli" / "references" / "command-index.md"
+OUTPUT_PATH = Path(__file__).parents[1] / "skills" / "annofab-cli-user-operations" / "references" / "command-index.md"
 """生成するコマンド索引のパス。"""
 
 

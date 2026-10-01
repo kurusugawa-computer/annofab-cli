@@ -29,6 +29,7 @@ ANNOTATION_SPECS = {
         {"label_id": "label_road", "label_name": {"messages": [{"lang": "en-US", "message": "road"}], "default_lang": "en-US"}, "annotation_type": "polyline", "additional_data_definitions": []},
     ],
     "additionals": [],
+    "inspection_phrases": [],
 }
 
 

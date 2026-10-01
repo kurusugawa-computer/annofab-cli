@@ -8,7 +8,7 @@ from annofabcli.annotation.create_classification_annotation import CreateClassif
 def test_create_classification_annotation_for_task__アノテーション情報を取得できない入力データをスキップする():
     service = Mock()
     service.api.account_id = "account_id"
-    service.api.get_annotation_specs.return_value = ({"labels": [], "additionals": []}, None)
+    service.api.get_annotation_specs.return_value = ({"labels": [], "additionals": [], "inspection_phrases": []}, None)
     service.api.get_my_member_in_project.return_value = ({"member_role": ProjectMemberRole.OWNER.value}, None)
     service.wrapper.get_task_or_none.return_value = {
         "task_id": "task1",

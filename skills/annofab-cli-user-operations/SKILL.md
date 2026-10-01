@@ -1,9 +1,9 @@
 ---
-name: annofab-cli
+name: annofab-cli-user-operations
 description: annofab-cliを使ってAnnofabから情報を取得したり、操作したりするときに使用します。annofab-cli自体の開発には使用しません。
 ---
 
-# annofab-cli
+# annofab-cli-user-operations
 ユーザーから依頼されたAnnofabの操作には、`annofabcli`を使用してください。
 
 ## コマンドの調べ方
