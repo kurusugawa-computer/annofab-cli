@@ -33,6 +33,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     annofabcli.task.change_operator.add_parser(subparsers)
     annofabcli.task.change_status_to_break.add_parser(subparsers)
     annofabcli.task.change_status_to_on_hold.add_parser(subparsers)
+    annofabcli.task.complete_tasks.add_complete_parser(subparsers)
     annofabcli.task.copy_tasks.add_parser(subparsers)
     annofabcli.task.create_tasks.add_parser(subparsers)
     annofabcli.task.create_tasks_by_input_data_count.add_parser(subparsers)

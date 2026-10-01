@@ -20,6 +20,7 @@ Available Commands
    change_operator
    change_status_to_break
    change_status_to_on_hold
+   complete
    copy
    create
    create_by_input_data_count

@@ -642,3 +642,21 @@ def add_accept_parser(subparsers: argparse._SubParsersAction | None = None) -> a
         ),
         phases=[TaskPhase.INSPECTION, TaskPhase.ACCEPTANCE],
     )
+
+
+def add_complete_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
+    """廃止予定のcompleteサブコマンドのargparseパーサーを追加します。
+
+    Args:
+        subparsers: サブコマンドを追加するargparseオブジェクト。
+
+    Returns:
+        追加したargparseパーサー。
+    """
+    return _add_parser(
+        subparsers,
+        subcommand_name="complete",
+        subcommand_help="【非推奨】タスクを次のフェーズに進めます。2027/01/01に廃止予定です。",
+        description=("【非推奨】このコマンドは2027/01/01に廃止予定です。教師付フェーズのタスクにはtask submit、検査または受入フェーズのタスクにはtask acceptを使用してください。"),
+        phases=[TaskPhase.ANNOTATION, TaskPhase.INSPECTION, TaskPhase.ACCEPTANCE],
+    )

@@ -310,6 +310,15 @@ def test_submit_parser_fixes_annotation_phase() -> None:
     assert args.phase == TaskPhase.ANNOTATION.value
 
 
+def test_complete_parser_is_available_as_deprecated_compatibility_command() -> None:
+    parser = argparse.ArgumentParser()
+    complete_tasks.add_complete_parser(parser.add_subparsers())
+
+    args = parser.parse_args(["complete", "--project_id", "project1", "--task_id", "task1", "--phase", "annotation"])
+
+    assert args.phase == TaskPhase.ANNOTATION.value
+
+
 @pytest.mark.parametrize("phase", [TaskPhase.INSPECTION.value, TaskPhase.ACCEPTANCE.value])
 def test_accept_parser_accepts_inspection_and_acceptance_phases(phase: str) -> None:
     parser = argparse.ArgumentParser()

@@ -255,6 +255,7 @@
 - `annofabcli task change_operator`: タスクの担当者を変更します。
 - `annofabcli task change_status_to_break`: タスクのステータスを休憩中に変更します。
 - `annofabcli task change_status_to_on_hold`: タスクのステータスを保留に変更します。
+- `annofabcli task complete`: 【非推奨】タスクを次のフェーズに進めます。2027/01/01に廃止予定です。
 - `annofabcli task copy`: タスクをコピーします。
 - `annofabcli task create`: タスクを作成します。
 - `annofabcli task create_by_input_data_count`: タスクに割り当てる入力データの個数を指定して、タスクを作成します。
