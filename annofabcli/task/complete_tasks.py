@@ -5,6 +5,7 @@ import logging
 import multiprocessing
 import sys
 import uuid
+from collections.abc import Callable
 from functools import partial
 from typing import Any
 
@@ -509,7 +510,7 @@ class CompleteTasks(CommandLine):
         )
 
 
-def parse_args(parser: argparse.ArgumentParser, *, phases: list[TaskPhase], fixed_phase: TaskPhase | None = None) -> None:
+def _add_common_args(parser: argparse.ArgumentParser, *, phases: list[TaskPhase], fixed_phase: TaskPhase | None = None) -> None:
     argument_parser = ArgumentParser(parser)
 
     argument_parser.add_project_id()
@@ -533,29 +534,6 @@ def parse_args(parser: argparse.ArgumentParser, *, phases: list[TaskPhase], fixe
         help=("操作対象のタスクのフェーズのステージ番号を指定してください。"),
     )
 
-    parser.add_argument(
-        "--reply_comment",
-        type=str,
-        help=(
-            f"未回答の検査コメントに対する返信コメントを指定してください。"
-            f"'--phase'に'{TaskPhase.ANNOTATION.value}' を指定したときのみ有効なオプションです。"
-            f"指定しない場合は、未回答の検査コメントを含むタスクをスキップします。"
-        ),
-    )
-
-    parser.add_argument(
-        "--inspection_status",
-        type=str,
-        choices=[CommentStatus.RESOLVED.value, CommentStatus.CLOSED.value],
-        help=(
-            "操作対象フェーズの未処置の検査コメントを、どの状態に変更するかを指定します。"
-            f"'--phase'に'{TaskPhase.INSPECTION.value}'または'{TaskPhase.ACCEPTANCE.value}' を指定したときのみ有効なオプションです。"
-            "指定しない場合、未処置の検査コメントが含まれるタスクはスキップします。"
-            f"{CommentStatus.RESOLVED.value}: 対応完了,"
-            f"{CommentStatus.CLOSED.value}: 対応不要"
-        ),
-    )
-
     argument_parser.add_task_query()
 
     parser.add_argument(
@@ -577,7 +555,85 @@ def parse_args(parser: argparse.ArgumentParser, *, phases: list[TaskPhase], fixe
         help="使用するプロセス数（並列度）を指定してください。指定する場合は必ず ``--yes`` を指定してください。指定しない場合は、逐次的に処理します。",
     )
 
+
+def _add_reply_comment_arg(parser: argparse.ArgumentParser, *, help_text: str | None = None) -> None:
+    parser.add_argument(
+        "--reply_comment",
+        type=str,
+        help=help_text or "未回答の検査コメントに対する返信コメントを指定してください。指定しない場合は、未回答の検査コメントを含むタスクをスキップします。",
+    )
+
+
+def _add_inspection_status_arg(parser: argparse.ArgumentParser, *, help_text: str | None = None) -> None:
+    parser.add_argument(
+        "--inspection_status",
+        type=str,
+        choices=[CommentStatus.RESOLVED.value, CommentStatus.CLOSED.value],
+        help=help_text
+        or (
+            "操作対象フェーズの未処置の検査コメントをどの状態に変更するか指定してください。"
+            "指定しない場合、未処置の検査コメントが含まれるタスクはスキップします。"
+            f"{CommentStatus.RESOLVED.value}: 対応完了, {CommentStatus.CLOSED.value}: 対応不要"
+        ),
+    )
+
+
+def parse_args(parser: argparse.ArgumentParser) -> None:
+    """廃止予定のtask completeコマンドの引数を定義します。
+
+    Args:
+        parser: 引数パーサー。
+
+    Returns:
+        None
+    """
+    _add_common_args(parser, phases=[TaskPhase.ANNOTATION, TaskPhase.INSPECTION, TaskPhase.ACCEPTANCE])
+    _add_reply_comment_arg(
+        parser,
+        help_text=(
+            "未回答の検査コメントに対する返信コメントを指定してください。"
+            f"'--phase'に'{TaskPhase.ANNOTATION.value}' を指定したときのみ有効なオプションです。"
+            "指定しない場合は、未回答の検査コメントを含むタスクをスキップします。"
+        ),
+    )
+    _add_inspection_status_arg(
+        parser,
+        help_text=(
+            "操作対象フェーズの未処置の検査コメントを、どの状態に変更するかを指定します。"
+            f"'--phase'に'{TaskPhase.INSPECTION.value}'または'{TaskPhase.ACCEPTANCE.value}' を指定したときのみ有効なオプションです。"
+            "指定しない場合、未処置の検査コメントが含まれるタスクはスキップします。"
+            f"{CommentStatus.RESOLVED.value}: 対応完了, {CommentStatus.CLOSED.value}: 対応不要"
+        ),
+    )
     parser.set_defaults(subcommand_func=main)
+
+
+def parse_submit_args(parser: argparse.ArgumentParser) -> None:
+    """task submitコマンドの引数を定義します。
+
+    Args:
+        parser: 引数パーサー。
+
+    Returns:
+        None
+    """
+    _add_common_args(parser, phases=[TaskPhase.ANNOTATION], fixed_phase=TaskPhase.ANNOTATION)
+    _add_reply_comment_arg(parser)
+    parser.set_defaults(inspection_status=None, subcommand_func=main)
+
+
+def parse_accept_args(parser: argparse.ArgumentParser) -> None:
+    """task acceptコマンドの引数を定義します。
+
+    Args:
+        parser: 引数パーサー。
+
+    Returns:
+        None
+    """
+    _add_common_args(parser, phases=[TaskPhase.INSPECTION, TaskPhase.ACCEPTANCE])
+    _add_inspection_status_arg(parser)
+    parser.set_defaults(reply_comment=None, subcommand_func=main)
 
 
 def main(args: argparse.Namespace) -> None:
@@ -605,12 +661,11 @@ def _add_parser(
     subcommand_name: str,
     subcommand_help: str,
     description: str,
-    phases: list[TaskPhase],
-    fixed_phase: TaskPhase | None = None,
+    parse_argument_func: Callable[[argparse.ArgumentParser], None],
 ) -> argparse.ArgumentParser:
     epilog = "チェッカーまたはオーナロールを持つユーザで実行してください。"
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
-    parse_args(parser, phases=phases, fixed_phase=fixed_phase)
+    parse_argument_func(parser)
     return parser
 
 
@@ -633,8 +688,7 @@ def add_submit_parser(subparsers: argparse._SubParsersAction | None = None) -> a
             "作業中または完了状態のタスクは、次のフェーズに進めません。"
             "保留中状態のタスクは、デフォルトでは次のフェーズに進めません。"
         ),
-        phases=[TaskPhase.ANNOTATION],
-        fixed_phase=TaskPhase.ANNOTATION,
+        parse_argument_func=parse_submit_args,
     )
 
 
@@ -658,7 +712,7 @@ def add_accept_parser(subparsers: argparse._SubParsersAction | None = None) -> a
             "作業中また完了状態のタスクは、次のフェーズに進めません。"
             "保留中状態のタスクは、デフォルトでは次のフェーズに進めません。"
         ),
-        phases=[TaskPhase.INSPECTION, TaskPhase.ACCEPTANCE],
+        parse_argument_func=parse_accept_args,
     )
 
 
@@ -676,7 +730,7 @@ def add_complete_parser(subparsers: argparse._SubParsersAction | None = None) ->
         subcommand_name="complete",
         subcommand_help="【非推奨】タスクを次のフェーズに進めます。2027/01/01に廃止予定です。",
         description=f"{DEPRECATED_COMPLETE_MESSAGE}教師付フェーズのタスクには `task submit`、検査または受入フェーズのタスクには `task accept` を使用してください。",
-        phases=[TaskPhase.ANNOTATION, TaskPhase.INSPECTION, TaskPhase.ACCEPTANCE],
+        parse_argument_func=parse_args,
     )
     parser.set_defaults(subcommand_func=deprecated_complete_main)
     return parser
