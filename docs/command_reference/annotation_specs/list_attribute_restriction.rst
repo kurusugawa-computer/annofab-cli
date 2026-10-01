@@ -31,6 +31,8 @@ Examples
 
 ``--format text_with_ids`` を指定すると、属性ID・ラベルID・選択肢IDなどのIDを含めて自然言語で出力します。
 
+``--use_japanese_name`` を指定すると、自然言語形式のラベル名・属性名・選択肢名を日本語名で出力します。日本語名が登録されていない場合は英語名を出力します。
+
 .. code-block::
 
     $ annofabcli annotation_specs list_attribute_restriction --project_id prj1 --format text_with_ids
