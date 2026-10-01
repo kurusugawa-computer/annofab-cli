@@ -15,11 +15,11 @@ Available Commands
    :maxdepth: 1
    :titlesonly:
 
+   accept
    cancel_acceptance
    change_operator
    change_status_to_break
    change_status_to_on_hold
-   complete
    copy
    create
    create_by_input_data_count
@@ -33,6 +33,7 @@ Available Commands
    put
    reject
    reject_with_inspection_comments
+   submit
    update_input_data
    update_metadata
    update_metadata_per_task

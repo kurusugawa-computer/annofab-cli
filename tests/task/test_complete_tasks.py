@@ -299,3 +299,22 @@ def test_main_passes_include_status_options_to_main_object(monkeypatch: pytest.M
     complete_task_list_mock.assert_called_once()
     assert complete_task_list_mock.call_args.args[0] == "project1"
     assert complete_task_list_mock.call_args.kwargs["target_phase"] == TaskPhase.ANNOTATION
+
+
+def test_submit_parser_fixes_annotation_phase() -> None:
+    parser = argparse.ArgumentParser()
+    complete_tasks.add_submit_parser(parser.add_subparsers())
+
+    args = parser.parse_args(["submit", "--project_id", "project1", "--task_id", "task1"])
+
+    assert args.phase == TaskPhase.ANNOTATION.value
+
+
+@pytest.mark.parametrize("phase", [TaskPhase.INSPECTION.value, TaskPhase.ACCEPTANCE.value])
+def test_accept_parser_accepts_inspection_and_acceptance_phases(phase: str) -> None:
+    parser = argparse.ArgumentParser()
+    complete_tasks.add_accept_parser(parser.add_subparsers())
+
+    args = parser.parse_args(["accept", "--project_id", "project1", "--task_id", "task1", "--phase", phase])
+
+    assert args.phase == phase

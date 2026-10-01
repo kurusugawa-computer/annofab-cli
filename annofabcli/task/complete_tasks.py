@@ -447,7 +447,7 @@ class CompleteTasks(CommandLine):
 
     @staticmethod
     def validate(args: argparse.Namespace) -> bool:
-        COMMON_MESSAGE = "annofabcli task complete: error:"  # noqa: N806
+        COMMON_MESSAGE = "annofabcli task: error:"  # noqa: N806
         if args.phase == TaskPhase.ANNOTATION.value:
             if args.inspection_status is not None:
                 print(  # noqa: T201
@@ -504,19 +504,22 @@ class CompleteTasks(CommandLine):
         )
 
 
-def parse_args(parser: argparse.ArgumentParser) -> None:
+def parse_args(parser: argparse.ArgumentParser, *, phases: list[TaskPhase], fixed_phase: TaskPhase | None = None) -> None:
     argument_parser = ArgumentParser(parser)
 
     argument_parser.add_project_id()
     argument_parser.add_task_id(required=True)
 
-    parser.add_argument(
-        "--phase",
-        type=str,
-        required=True,
-        choices=[TaskPhase.ANNOTATION.value, TaskPhase.INSPECTION.value, TaskPhase.ACCEPTANCE.value],
-        help=("操作対象のタスクのフェーズを指定してください。"),
-    )
+    if fixed_phase is None:
+        parser.add_argument(
+            "--phase",
+            type=str,
+            required=True,
+            choices=[phase.value for phase in phases],
+            help="操作対象のタスクのフェーズを指定してください。",
+        )
+    else:
+        parser.set_defaults(phase=fixed_phase.value)
 
     parser.add_argument(
         "--phase_stage",
@@ -578,20 +581,64 @@ def main(args: argparse.Namespace) -> None:
     CompleteTasks(service, facade, args).main()
 
 
-def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
-    subcommand_name = "complete"
-    subcommand_help = "タスクを次のフェーズに進めます。（教師付の提出、検査または受入の合格）"
-    description = (
-        "タスクを次のフェーズに進めます。（教師付の提出、検査または受入の合格） "
-        "教師付フェーズを完了にする場合は、未回答の検査コメントに対して返信することができます"
-        "（未回答の検査コメントに対して返信しないと、タスクを提出できないため）。"
-        "検査または受入フェーズを完了する場合は、未処置の検査コメントを対応完了/対応不要状態に変更できます"
-        "（未処置の検査コメントが残っている状態では、タスクを合格にできないため）。"
-        "作業中また完了状態のタスクは、次のフェーズに進めません。"
-        "保留中状態のタスクは、デフォルトでは次のフェーズに進めません。"
-    )
+def _add_parser(
+    subparsers: argparse._SubParsersAction | None,
+    *,
+    subcommand_name: str,
+    subcommand_help: str,
+    description: str,
+    phases: list[TaskPhase],
+    fixed_phase: TaskPhase | None = None,
+) -> argparse.ArgumentParser:
     epilog = "チェッカーまたはオーナロールを持つユーザで実行してください。"
-
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
-    parse_args(parser)
+    parse_args(parser, phases=phases, fixed_phase=fixed_phase)
     return parser
+
+
+def add_submit_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
+    """提出サブコマンドのargparseパーサーを追加します。
+
+    Args:
+        subparsers: サブコマンドを追加するargparseオブジェクト。
+
+    Returns:
+        追加したargparseパーサー。
+    """
+    return _add_parser(
+        subparsers,
+        subcommand_name="submit",
+        subcommand_help="教師付フェーズのタスクを提出します。",
+        description=(
+            "教師付フェーズのタスクを提出して、次のフェーズに進めます。"
+            "未回答の検査コメントに返信しないと、タスクを提出できません。"
+            "作業中また完了状態のタスクは、次のフェーズに進めません。"
+            "保留中状態のタスクは、デフォルトでは次のフェーズに進めません。"
+        ),
+        phases=[TaskPhase.ANNOTATION],
+        fixed_phase=TaskPhase.ANNOTATION,
+    )
+
+
+def add_accept_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
+    """合格サブコマンドのargparseパーサーを追加します。
+
+    Args:
+        subparsers: サブコマンドを追加するargparseオブジェクト。
+
+    Returns:
+        追加したargparseパーサー。
+    """
+    return _add_parser(
+        subparsers,
+        subcommand_name="accept",
+        subcommand_help="検査または受入フェーズのタスクを合格にします。",
+        description=(
+            "検査または受入フェーズのタスクを合格にして、次のフェーズに進めます。"
+            "未処置の検査コメントは対応完了/対応不要状態に変更できます。"
+            "未処置の検査コメントが残っている状態では、タスクを合格にできません。"
+            "作業中また完了状態のタスクは、次のフェーズに進めません。"
+            "保留中状態のタスクは、デフォルトでは次のフェーズに進めません。"
+        ),
+        phases=[TaskPhase.INSPECTION, TaskPhase.ACCEPTANCE],
+    )

@@ -28,11 +28,11 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     subparsers = parser.add_subparsers(dest="subcommand_name")
 
     # サブコマンドの定義
+    annofabcli.task.complete_tasks.add_accept_parser(subparsers)
     annofabcli.task.cancel_acceptance.add_parser(subparsers)
     annofabcli.task.change_operator.add_parser(subparsers)
     annofabcli.task.change_status_to_break.add_parser(subparsers)
     annofabcli.task.change_status_to_on_hold.add_parser(subparsers)
-    annofabcli.task.complete_tasks.add_parser(subparsers)
     annofabcli.task.copy_tasks.add_parser(subparsers)
     annofabcli.task.create_tasks.add_parser(subparsers)
     annofabcli.task.create_tasks_by_input_data_count.add_parser(subparsers)
@@ -46,6 +46,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     annofabcli.task.put_tasks.add_parser(subparsers)
     annofabcli.task.reject_tasks.add_parser(subparsers)
     annofabcli.task.reject_tasks_with_inspection_comments.add_parser(subparsers)
+    annofabcli.task.complete_tasks.add_submit_parser(subparsers)
     annofabcli.task.update_input_data.add_parser(subparsers)
     annofabcli.task.update_metadata_of_task.add_parser(subparsers)
     annofabcli.task.update_metadata_per_task.add_parser(subparsers)
