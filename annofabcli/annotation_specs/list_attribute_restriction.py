@@ -98,7 +98,14 @@ class ListAttributeRestriction(CommandLine):
 
     @staticmethod
     def _use_japanese_names(annotation_specs: dict[str, Any]) -> dict[str, Any]:
-        """人向け出力で参照される英語名を、日本語名があれば置き換える。"""
+        """人向け出力で参照される英語名を、日本語名があれば置き換える。
+
+        Args:
+            annotation_specs: 変換対象のアノテーション仕様。
+
+        Returns:
+            日本語名を反映したアノテーション仕様のコピー。
+        """
         result = copy.deepcopy(annotation_specs)
 
         def replace_name(name: dict[str, Any]) -> None:
