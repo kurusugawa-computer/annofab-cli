@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import argparse
+import copy
 import logging
 from collections.abc import Callable
 from enum import Enum
 from pathlib import Path
 from typing import Any, cast
 
+from annofabapi.util.annotation_specs import InternationalizationMessage, get_message_with_lang
 from annofabapi.util.attribute_restrictions import Restriction
 
 import annofabcli.common.cli
@@ -14,6 +16,7 @@ import annofabcli.common.utils
 from annofabcli.annotation_specs.attribute_restriction import AttributeRestrictionMessage
 from annofabcli.annotation_specs.history import add_history_arguments, load_annotation_specs_or_exit
 from annofabcli.annotation_specs.restriction_type import RESTRICTION_TYPE_TO_CONDITION_TYPE, matches_restriction_type
+from annofabcli.annotation_zip.annotation_name import add_use_japanese_name_argument
 from annofabcli.common.cli import ArgumentParser, CommandLine, build_annofabapi_resource_and_login, get_list_from_args
 from annofabcli.common.facade import AnnofabApiFacade
 
@@ -88,8 +91,37 @@ class ListAttributeRestriction(CommandLine):
             )
             return
 
+        if args.use_japanese_name:
+            annotation_specs = self._use_japanese_names(annotation_specs)
         restriction_text_list = self.get_restriction_text_list(annotation_specs, target_restrictions, include_ids=output_format == OutputFormat.TEXT_WITH_IDS)
         annofabcli.common.utils.output_string("\n".join(restriction_text_list), args.output)
+
+    @staticmethod
+    def _use_japanese_names(annotation_specs: dict[str, Any]) -> dict[str, Any]:
+        """人向け出力で参照される英語名を、日本語名があれば置き換える。
+
+        Args:
+            annotation_specs: 変換対象のアノテーション仕様。
+
+        Returns:
+            日本語名を反映したアノテーション仕様のコピー。
+        """
+        result = copy.deepcopy(annotation_specs)
+
+        def replace_name(name: dict[str, Any]) -> None:
+            messages = name.get("messages", [])
+            japanese_message = get_message_with_lang(cast(InternationalizationMessage, name), "ja-JP")
+            assert japanese_message is not None
+            english_message = next(message for message in messages if message.get("lang") == "en-US")
+            english_message["message"] = japanese_message
+
+        for label in result["labels"]:
+            replace_name(label["label_name"])
+        for additional in result["additionals"]:
+            replace_name(additional["name"])
+            for choice in additional.get("choices", []):
+                replace_name(choice["name"])
+        return result
 
 
 def parse_args(parser: argparse.ArgumentParser) -> None:
@@ -134,6 +166,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         ),
     )
     argument_parser.add_output()
+    add_use_japanese_name_argument(parser)
 
     parser.add_argument(
         "-f",

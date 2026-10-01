@@ -24,6 +24,13 @@ Examples
 
     $ annofabcli annotation list --project_id prj1 
 
+``--use_japanese_name`` を指定すると、アノテーション情報に ``detail.label_name_ja`` が追加されます。
+英語名の ``detail.label_name_en`` も引き続き出力されます。
+
+.. code-block::
+
+    $ annofabcli annotation list --project_id prj1 --use_japanese_name
+
 
 .. warning::
     

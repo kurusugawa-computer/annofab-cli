@@ -47,6 +47,38 @@ class TestListAttributeRestriction:
             "If 'unclear' is checked, 'comment' matches '[0-9]'."
         )
 
+    def test_use_japanese_nameを指定すると日本語名で出力する(self, tmp_path: Path) -> None:
+        annotation_specs_path = DATA_DIR / "annotation_specs.json"
+        annotation_specs = json.loads(annotation_specs_path.read_text(encoding="utf-8"))
+        for additional in annotation_specs["additionals"]:
+            if additional["name"]["messages"]:
+                for message in additional["name"]["messages"]:
+                    if message["lang"] == "ja-JP":
+                        message["message"] = "コメント" if message["message"] == "comment" else message["message"]
+        localized_path = tmp_path / "annotation_specs.json"
+        localized_path.write_text(json.dumps(annotation_specs, ensure_ascii=False), encoding="utf-8")
+        output_path = tmp_path / "restrictions.txt"
+
+        main(
+            [
+                self.command_name,
+                "list_attribute_restriction",
+                "--annotation_specs_json_file",
+                str(localized_path),
+                "--attribute_name_en",
+                "comment",
+                "--format",
+                "text",
+                "--use_japanese_name",
+                "--output",
+                str(output_path),
+            ]
+        )
+
+        actual_text = output_path.read_text(encoding="utf-8")
+        assert "'コメント' is read-only" in actual_text
+        assert "'comment' is read-only" not in actual_text
+
     def test_text_with_ids形式ではinclude_idsを有効にして属性制約を出力する(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
         annotation_specs_path = DATA_DIR / "annotation_specs.json"
         output_path = tmp_path / "restrictions.txt"
