@@ -8,6 +8,7 @@ from enum import Enum
 from pathlib import Path
 from typing import Any, cast
 
+from annofabapi.util.annotation_specs import InternationalizationMessage, get_message_with_lang
 from annofabapi.util.attribute_restrictions import Restriction
 
 import annofabcli.common.cli
@@ -102,11 +103,10 @@ class ListAttributeRestriction(CommandLine):
 
         def replace_name(name: dict[str, Any]) -> None:
             messages = name.get("messages", [])
-            japanese_message = next((message["message"] for message in messages if message.get("lang") == "ja-JP"), None)
-            if japanese_message is not None:
-                english_message = next((message for message in messages if message.get("lang") == "en-US"), None)
-                if english_message is not None:
-                    english_message["message"] = japanese_message
+            japanese_message = get_message_with_lang(cast(InternationalizationMessage, name), "ja-JP")
+            assert japanese_message is not None
+            english_message = next(message for message in messages if message.get("lang") == "en-US")
+            english_message["message"] = japanese_message
 
         for label in result["labels"]:
             replace_name(label["label_name"])

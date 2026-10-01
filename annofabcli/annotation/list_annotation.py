@@ -3,12 +3,13 @@ from __future__ import annotations
 import argparse
 import logging
 import sys
+from collections.abc import Mapping
 from typing import Any
 
 import annofabapi
 import pandas
 from annofabapi.models import SingleAnnotation
-from annofabapi.util.annotation_specs import AnnotationSpecsAccessor, get_label_name_en
+from annofabapi.util.annotation_specs import AnnotationSpecsAccessor, get_label_name_en, get_message_with_lang
 
 import annofabcli.common.cli
 from annofabcli.annotation.annotation_query import AnnotationQueryForAPI, AnnotationQueryForCLI
@@ -28,6 +29,13 @@ from annofabcli.common.visualize import AddProps
 logger = logging.getLogger(__name__)
 
 
+def get_label_name_ja(label: Mapping[str, Any]) -> str:
+    """ラベル情報から日本語名を取得する。"""
+    label_name_ja = get_message_with_lang(label["label_name"], "ja-JP")
+    assert label_name_ja is not None
+    return label_name_ja
+
+
 def remove_unnecessary_keys_from_annotation(annotation: dict[str, Any]) -> None:
     """
     アノテーション情報から不要なキーを取り除きます。
@@ -45,10 +53,11 @@ def remove_unnecessary_keys_from_annotation(annotation: dict[str, Any]) -> None:
 
 
 class ListAnnotationMain:
-    def __init__(self, service: annofabapi.Resource, project_id: str) -> None:
+    def __init__(self, service: annofabapi.Resource, project_id: str, *, use_japanese_name: bool = False) -> None:
         self.service = service
         self.facade = AnnofabApiFacade(service)
         self.visualize = AddProps(self.service, project_id)
+        self.use_japanese_name = use_japanese_name
         annotation_specs, _ = self.service.api.get_annotation_specs(project_id, query_params={"v": "3"})
         self.annotation_specs_accessor = AnnotationSpecsAccessor(annotation_specs)
 
@@ -70,6 +79,8 @@ class ListAnnotationMain:
         detail = annotation["detail"]
         label = self.annotation_specs_accessor.get_label(label_id=detail["label_id"])
         detail["label_name_en"] = get_label_name_en(label)
+        if self.use_japanese_name:
+            detail["label_name_ja"] = get_label_name_ja(label)
 
         account_id = detail["account_id"]
         member = self.visualize.get_project_member_from_account_id(account_id) if account_id is not None else None
@@ -192,7 +203,7 @@ class ListAnnotation(CommandLine):
         args = self.args
 
         project_id = args.project_id
-        main_obj = ListAnnotationMain(self.service, project_id=project_id)
+        main_obj = ListAnnotationMain(self.service, project_id=project_id, use_japanese_name=args.use_japanese_name)
 
         if args.annotation_query is not None:
             annotation_specs, _ = self.service.api.get_annotation_specs(project_id, query_params={"v": "3"})
@@ -226,10 +237,11 @@ class ListAnnotation(CommandLine):
         if self.str_format == OutputFormat.CSV.value:
             annotation_list_for_csv = to_annotation_list_for_csv(annotation_list)
             df = pandas.DataFrame(annotation_list_for_csv)
-            columns = get_columns_with_priority(df, prior_columns=self.PRIOR_COLUMNS)
+            prior_columns = self.PRIOR_COLUMNS + (["detail.label_name_ja"] if args.use_japanese_name else [])
+            columns = get_columns_with_priority(df, prior_columns=prior_columns)
             if len(df) == 0:
                 # 列を作成するために、何らかの値を設定する
-                df[self.PRIOR_COLUMNS] = None
+                df[prior_columns] = None
             else:
                 df = df[columns]
             self.print_csv(df)
@@ -274,6 +286,12 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     argument_parser.add_format(
         choices=[OutputFormat.CSV, OutputFormat.JSON, OutputFormat.PRETTY_JSON],
         default=OutputFormat.CSV,
+    )
+
+    parser.add_argument(
+        "--use_japanese_name",
+        action="store_true",
+        help="ラベルの日本語名を ``detail.label_name_ja`` として出力します。",
     )
 
     argument_parser.add_output()
