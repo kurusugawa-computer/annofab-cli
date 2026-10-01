@@ -313,7 +313,6 @@ def test_submit_parser_fixes_annotation_phase() -> None:
     assert "--inspection_status" not in submit_parser.format_help()
 
 
-
 def test_complete_parser_is_available_as_deprecated_compatibility_command() -> None:
     root_parser = argparse.ArgumentParser()
     complete_parser = complete_tasks.add_complete_parser(root_parser.add_subparsers())
