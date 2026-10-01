@@ -63,6 +63,7 @@ ANNOTATION_SPECS = {
             "name": {"messages": [{"lang": "en-US", "message": "dest_only"}], "default_lang": "en-US"},
         },
     ],
+    "inspection_phrases": [],
 }
 
 

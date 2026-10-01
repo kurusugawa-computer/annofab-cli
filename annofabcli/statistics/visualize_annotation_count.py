@@ -541,8 +541,8 @@ def main(args: argparse.Namespace) -> None:
 
 def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "visualize_annotation_count"
-    subcommand_help = "各ラベル、各属性値のアノテーション数をヒストグラムで可視化します。"
-    description = "各ラベル、各属性値のアノテーション数をヒストグラムで可視化したファイルを出力します。"
+    subcommand_help = "[DEPRECATED] 各ラベル、各属性値のアノテーション数をヒストグラムで可視化します。"
+    description = f"{subcommand_help}\n{DEPRECATED_MESSAGE}"
     epilog = "オーナロールまたはアノテーションユーザロールを持つユーザで実行してください。"
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description=description, epilog=epilog)
     parse_args(parser)

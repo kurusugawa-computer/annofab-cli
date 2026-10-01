@@ -33,6 +33,7 @@ ANNOTATION_SPECS = {
         },
     ],
     "additionals": [],
+    "inspection_phrases": [],
 }
 
 

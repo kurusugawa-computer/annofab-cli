@@ -30,3 +30,9 @@ $ pip install annofabcli
 ```
 
 動作環境、認証情報の設定、初回の動作確認は、[Getting Started](https://annofab-cli.readthedocs.io/ja/latest/user_guide/getting_started.html)を参照してください。
+
+## Codex Skill
+
+Codexでannofab-cliを利用するためのAgent Skillを提供しています。
+
+インストール方法と利用上の注意は、[Codex Skill](https://annofab-cli.readthedocs.io/ja/latest/user_guide/codex_skill.html)を参照してください。

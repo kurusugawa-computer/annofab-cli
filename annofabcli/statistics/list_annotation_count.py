@@ -1722,8 +1722,9 @@ def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse
         作成されたArgumentParserインスタンス
     """
     subcommand_name = "list_annotation_count"
-    subcommand_help = "ラベルごとまたは属性値ごとにアノテーション数を出力します。"
+    subcommand_help = "[DEPRECATED] ラベルごとまたは属性値ごとにアノテーション数を出力します。"
+    description = f"{subcommand_help}\n{DEPRECATED_MESSAGE}"
     epilog = "オーナロールまたはアノテーションユーザロールを持つユーザで実行してください。"
-    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description=subcommand_help, epilog=epilog)
+    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description=description, epilog=epilog)
     parse_args(parser)
     return parser
