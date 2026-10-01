@@ -32,6 +32,7 @@ DEPRECATED_COMPLETE_MESSAGE = (
     "教師付フェーズのタスクには `annofabcli task submit`、検査または受入フェーズのタスクには `annofabcli task accept` を使用してください。"
     "`annofabcli task complete` コマンドは2027/01/01に廃止予定です。"
 )
+"""task completeコマンドの非推奨警告メッセージ。"""
 
 InspectionJson = dict[str, dict[str, list[Inspection]]]
 """
