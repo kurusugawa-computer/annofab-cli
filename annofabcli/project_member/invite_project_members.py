@@ -14,7 +14,7 @@ from annofabcli.common.facade import AnnofabApiFacade
 logger = logging.getLogger(__name__)
 
 
-class InviteProjectMemberMain:
+class InviteProjectMembersMain:
     def __init__(self, service: annofabapi.Resource) -> None:
         self.service = service
         self.facade = AnnofabApiFacade(service)
@@ -78,7 +78,7 @@ class InviteProjectMemberMain:
                 logger.warning(f"project_id='{project_id}' のプロジェクトメンバにユーザを招待できませんでした。")
 
 
-class InviteUser(CommandLine):
+class InviteProjectMembers(CommandLine):
     """
     ユーザをプロジェクトに招待する
     """
@@ -88,7 +88,7 @@ class InviteUser(CommandLine):
 
         user_id_list = annofabcli.common.cli.get_list_from_args(args.user_id)
 
-        main_obj = InviteProjectMemberMain(self.service)
+        main_obj = InviteProjectMembersMain(self.service)
         if args.organization is not None:
             main_obj.assign_role_with_organization(args.organization, user_id_list, ProjectMemberRole(args.role))
 
@@ -100,7 +100,7 @@ class InviteUser(CommandLine):
 def main(args: argparse.Namespace) -> None:
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
-    InviteUser(service, facade, args).main()
+    InviteProjectMembers(service, facade, args).main()
 
 
 def parse_args(parser: argparse.ArgumentParser) -> None:

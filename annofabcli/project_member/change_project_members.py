@@ -15,7 +15,6 @@ from annofabcli.common.cli import (
     build_annofabapi_resource_and_login,
 )
 from annofabcli.common.facade import AnnofabApiFacade
-from annofabcli.project_member.put_project_members import PutProjectMembers
 
 logger = logging.getLogger(__name__)
 
@@ -25,7 +24,7 @@ class ChangeProjectMembers(CommandLine):
     プロジェクトメンバのメンバ情報を更新する。
     """
 
-    def put_project_member(
+    def update_project_member(
         self,
         project_id: str,
         user_id: str,
@@ -92,15 +91,15 @@ class ChangeProjectMembers(CommandLine):
         old_project_members = self.service.wrapper.get_all_project_members(project_id)
         project_title = self.facade.get_project_title(project_id)
 
-        count_invite_members = 0
-        # プロジェクトメンバを登録
+        success_count = 0
+        # プロジェクトメンバを更新
         logger.info(f"{project_title} に、{len(user_id_list)} 件のプロジェクトメンバの情報を変更します。")
         for user_id in user_id_list:
             if user_id == self.service.api.login_user_id:
                 logger.warning(f"ユーザ '{user_id}'は自分自身なので、変更できません。")
                 continue
 
-            old_member = PutProjectMembers.find_member(old_project_members, user_id)
+            old_member = next((member for member in old_project_members if member["user_id"] == user_id), None)
             if old_member is None:
                 logger.warning(f"ユーザ '{user_id}' は、プロジェクトメンバでないため変更できませんでした。")
                 continue
@@ -111,14 +110,14 @@ class ChangeProjectMembers(CommandLine):
 
             # メンバを登録
             try:
-                self.put_project_member(project_id, user_id, old_member, member_role=member_role, member_info=member_info)
+                self.update_project_member(project_id, user_id, old_member, member_role=member_role, member_info=member_info)
                 logger.debug(f"user_id = {user_id} のプロジェクトメンバ情報を変更しました。member_role={member_role}, member_info={member_info}")
-                count_invite_members += 1
+                success_count += 1
 
             except requests.exceptions.HTTPError:
                 logger.warning(f"プロジェクトメンバの登録に失敗しました。 :: user_id='{user_id}'", exc_info=True)
 
-        logger.info(f"{project_title} に、{count_invite_members} / {len(user_id_list)} 件のプロジェクトメンバを変更しました。")
+        logger.info(f"{project_title} に、{success_count} / {len(user_id_list)} 件のプロジェクトメンバを変更しました。")
 
     def get_all_user_id_list_except_myself(self, project_id: str) -> list[str]:
         """自分自身を除いた、すべてのプロジェクトメンバを取得する"""

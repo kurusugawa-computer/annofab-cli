@@ -14,7 +14,7 @@ from annofabcli.common.utils import get_columns_with_priority
 logger = logging.getLogger(__name__)
 
 
-class ListUser(CommandLine):
+class ListProjectMembers(CommandLine):
     """
     ユーザを表示する
     """
@@ -75,7 +75,7 @@ class ListUser(CommandLine):
 
         logger.info(f"プロジェクトメンバ一覧の件数: {len(project_members)}")
         if args.format == OutputFormat.CSV.value:
-            df = pandas.DataFrame(project_members)
+            df = pandas.DataFrame(project_members) if project_members else pandas.DataFrame(columns=self.PRIOR_COLUMNS)
             columns = get_columns_with_priority(df, prior_columns=self.PRIOR_COLUMNS)
             self.print_csv(df[columns])
         else:
@@ -85,7 +85,7 @@ class ListUser(CommandLine):
 def main(args: argparse.Namespace) -> None:
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
-    ListUser(service, facade, args).main()
+    ListProjectMembers(service, facade, args).main()
 
 
 def parse_args(parser: argparse.ArgumentParser) -> None:
