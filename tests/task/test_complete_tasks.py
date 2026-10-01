@@ -319,6 +319,17 @@ def test_complete_parser_is_available_as_deprecated_compatibility_command() -> N
     assert args.phase == TaskPhase.ANNOTATION.value
 
 
+def test_deprecated_complete_main_warns_and_delegates(monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture) -> None:
+    args = argparse.Namespace()
+    main_mock = Mock()
+    monkeypatch.setattr(complete_tasks, "main", main_mock)
+
+    complete_tasks.deprecated_complete_main(args)
+
+    assert "2027/01/01に廃止予定" in caplog.text
+    main_mock.assert_called_once_with(args)
+
+
 @pytest.mark.parametrize("phase", [TaskPhase.INSPECTION.value, TaskPhase.ACCEPTANCE.value])
 def test_accept_parser_accepts_inspection_and_acceptance_phases(phase: str) -> None:
     parser = argparse.ArgumentParser()

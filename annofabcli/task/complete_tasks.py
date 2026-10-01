@@ -26,6 +26,11 @@ from annofabcli.common.cli import (
 from annofabcli.common.facade import AnnofabApiFacade, TaskQuery, match_task_with_query
 
 logger = logging.getLogger(__name__)
+DEPRECATED_COMPLETE_MESSAGE = (
+    "[DEPRECATED] :: `annofabcli task complete` コマンドは非推奨です。"
+    "教師付フェーズのタスクには `annofabcli task submit`、検査または受入フェーズのタスクには `annofabcli task accept` を使用してください。"
+    "`annofabcli task complete` コマンドは2027/01/01に廃止予定です。"
+)
 
 InspectionJson = dict[str, dict[str, list[Inspection]]]
 """
@@ -581,6 +586,19 @@ def main(args: argparse.Namespace) -> None:
     CompleteTasks(service, facade, args).main()
 
 
+def deprecated_complete_main(args: argparse.Namespace) -> None:
+    """非推奨警告を出して、task completeの処理を実行します。
+
+    Args:
+        args: コマンドライン引数。
+
+    Returns:
+        None
+    """
+    logger.warning(DEPRECATED_COMPLETE_MESSAGE)
+    main(args)
+
+
 def _add_parser(
     subparsers: argparse._SubParsersAction | None,
     *,
@@ -653,10 +671,12 @@ def add_complete_parser(subparsers: argparse._SubParsersAction | None = None) ->
     Returns:
         追加したargparseパーサー。
     """
-    return _add_parser(
+    parser = _add_parser(
         subparsers,
         subcommand_name="complete",
         subcommand_help="【非推奨】タスクを次のフェーズに進めます。2027/01/01に廃止予定です。",
-        description=("【非推奨】このコマンドは2027/01/01に廃止予定です。教師付フェーズのタスクにはtask submit、検査または受入フェーズのタスクにはtask acceptを使用してください。"),
+        description=f"{DEPRECATED_COMPLETE_MESSAGE}教師付フェーズのタスクには `task submit`、検査または受入フェーズのタスクには `task accept` を使用してください。",
         phases=[TaskPhase.ANNOTATION, TaskPhase.INSPECTION, TaskPhase.ACCEPTANCE],
     )
+    parser.set_defaults(subcommand_func=deprecated_complete_main)
+    return parser
