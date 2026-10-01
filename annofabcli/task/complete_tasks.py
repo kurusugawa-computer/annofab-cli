@@ -612,7 +612,7 @@ def add_submit_parser(subparsers: argparse._SubParsersAction | None = None) -> a
         description=(
             "教師付フェーズのタスクを提出して、次のフェーズに進めます。"
             "未回答の検査コメントに返信しないと、タスクを提出できません。"
-            "作業中また完了状態のタスクは、次のフェーズに進めません。"
+            "作業中または完了状態のタスクは、次のフェーズに進めません。"
             "保留中状態のタスクは、デフォルトでは次のフェーズに進めません。"
         ),
         phases=[TaskPhase.ANNOTATION],
