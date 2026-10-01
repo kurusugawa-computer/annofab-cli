@@ -80,6 +80,7 @@ annofabcli = "annofabcli.__main__:main"
 [tool.mypy]
 disallow_incomplete_defs = true
 disallow_untyped_calls = true
+explicit_package_bases = true
 strict_equality = true
 strict_bytes = true
 ignore_missing_imports = true
@@ -151,6 +152,11 @@ select = [
 "annofabcli/**.py" = [
     # assertは型の絞り込みや内部の不変条件の確認に使用しているため
     "S101",
+]
+
+# scriptsディレクトリはPythonパッケージではなく、単独で実行するスクリプトを配置するため
+"scripts/**.py" = [
+    "INP001",
 ]
 
 # テストコードはチェックを緩和する
