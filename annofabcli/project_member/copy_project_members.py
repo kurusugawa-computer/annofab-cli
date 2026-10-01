@@ -54,7 +54,7 @@ class CopyProjectMembers(CommandLine):
 
         return None
 
-    def put_project_members(self, project_id: str, project_members: list[dict[str, Any]]) -> list[ProjectMember]:
+    def apply_project_members(self, project_id: str, project_members: list[dict[str, Any]]) -> list[ProjectMember]:
         """
         複数のプロジェクトメンバを追加/更新/削除する.
 
@@ -147,11 +147,11 @@ class CopyProjectMembers(CommandLine):
 
             updated_members = updated_members + deleted_dest_members
 
-        if len(added_members) > 0:
+        if added_members or deleted_dest_members:
             if self.confirm_processing(
                 f"'{self.src_project_title}' のプロジェクトのメンバを、'{self.dest_project_title}' にコピーしますか？追加対象: {len(added_members)} 件, 削除対象: {len(deleted_dest_members)} 件"
             ):
-                self.put_project_members(dest_project_id, updated_members)
+                self.apply_project_members(dest_project_id, updated_members)
         else:
             logger.info(f"{self.dest_project_title}のプロジェクトメンバに追加/更新はありません。")
 
