@@ -146,7 +146,7 @@ class ChangeProjectMembers(CommandLine):
     def main(self) -> None:
         args = self.args
         project_id = args.project_id
-        if args.all_user:
+        if args.all_users:
             user_id_list = self.get_all_user_id_list_except_myself(project_id)
         else:
             user_id_list = annofabcli.common.cli.get_list_from_args(args.user_id)
@@ -180,7 +180,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         nargs="+",
         help="変更するプロジェクトメンバのuser_idを指定してください。 ``file://`` を先頭に付けると、一覧が記載されたファイルを指定できます。",
     )
-    user_group.add_argument("--all_user", action="store_true", help="自分以外のすべてのプロジェクトメンバを変更します。")
+    user_group.add_argument("--all_users", action="store_true", help="自分以外のすべてのプロジェクトメンバを変更します。")
 
     parser.add_argument(
         "--role",
