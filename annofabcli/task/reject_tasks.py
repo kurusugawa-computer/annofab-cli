@@ -540,8 +540,8 @@ def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse
     subcommand_help = "タスクを差し戻します。"
     description = "タスクを差し戻します。差し戻す際、検査コメントを付与することもできます。作業中状態のタスクに対しては差し戻せません。休憩中状態のタスクは、デフォルトでは差し戻せません。"
     epilog = (
-        "``--comment`` を指定しない場合は、オーナーロールが必要です。"
-        "``--cancel_acceptance`` を指定する場合も、オーナーロールが必要です。"
+        "``--comment`` を指定しない場合は、オーナーロールが必要です。\n"
+        "``--cancel_acceptance`` を指定する場合も、オーナーロールが必要です。\n"
         "``--comment`` を指定し、``--cancel_acceptance`` を指定しない場合は、チェッカーロールまたはオーナーロールで実行できます。"
     )
 
