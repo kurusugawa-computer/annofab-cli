@@ -341,7 +341,7 @@ class ChangeLabelOfAnnotation(CommandLine):
             print(f"{self.COMMON_MESSAGE} argument '{option_name}' の値が不正です。 :: {e}", file=sys.stderr)  # noqa: T201
             sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
-        super().validate_project(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.ACCEPTER])
+        super().require_project_access(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.ACCEPTER])
         if args.include_complete_task:  # noqa: SIM102
             if not self.facade.contains_any_project_member_role(project_id, [ProjectMemberRole.OWNER]):
                 print(  # noqa: T201

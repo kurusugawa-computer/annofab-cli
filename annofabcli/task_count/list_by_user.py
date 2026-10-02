@@ -231,7 +231,7 @@ class ListTaskCountByUser(CommandLine):
         args = self.args
         project_id = args.project_id
         unit = AggregationUnit(args.unit)
-        super().validate_project(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER])
+        super().require_project_access(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER])
 
         if args.legacy_output:
             self._main_legacy(project_id)

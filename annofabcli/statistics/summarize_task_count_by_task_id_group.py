@@ -157,7 +157,7 @@ class SummarizeTaskCountByTaskId(CommandLine):
     def main(self) -> None:
         args = self.args
         project_id = args.project_id
-        super().validate_project(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER])
+        super().require_project_access(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER])
 
         def download_and_process_task_data(temp_dir: Path) -> None:
             if args.task_json is not None:

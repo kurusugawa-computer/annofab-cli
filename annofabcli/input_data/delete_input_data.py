@@ -70,7 +70,7 @@ class DeleteInputData(CommandLine):
         タスクに使われていない入力データを削除する。
         """
 
-        super().validate_project(project_id, [ProjectMemberRole.OWNER])
+        super().require_project_access(project_id, [ProjectMemberRole.OWNER])
         project_title = self.facade.get_project_title(project_id)
         logger.info(f"プロジェクト'{project_title}'から 、{len(input_data_id_list)} 件の入力データを削除します。")
 

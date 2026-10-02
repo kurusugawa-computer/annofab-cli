@@ -90,7 +90,7 @@ class ListAnnotationCount(CommandLine):
         task_id_list = get_list_from_args(args.task_id) if args.task_id is not None else None
         input_data_id_list = get_list_from_args(args.input_data_id) if args.input_data_id is not None else None
 
-        super().validate_project(project_id, project_member_roles=None)
+        super().require_project_access(project_id, project_member_roles=None)
         all_annotation_list = self.list_annotation_main_obj.get_all_annotation_list(
             project_id,
             annotation_query=annotation_query,

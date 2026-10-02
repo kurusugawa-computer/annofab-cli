@@ -419,7 +419,7 @@ class CreateInputData(CommandLine):
             sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
         project_id = args.project_id
-        super().validate_project(project_id, [ProjectMemberRole.OWNER])
+        super().require_project_access(project_id, [ProjectMemberRole.OWNER])
         try:
             common_metadata = get_metadata_from_json_args(args.metadata)
         except (TypeError, ValueError) as e:

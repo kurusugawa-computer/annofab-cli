@@ -365,7 +365,7 @@ class DeleteInvalidAttributeValueOfAnnotation(CommandLine):
         else:
             backup_dir = Path(args.backup)
 
-        super().validate_project(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.ACCEPTER])
+        super().require_project_access(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.ACCEPTER])
         if args.include_complete_task and not self.facade.contains_any_project_member_role(project_id, [ProjectMemberRole.OWNER]):
             print(  # noqa: T201
                 f"{self.COMMON_MESSAGE} argument --include_complete_task : '--include_complete_task' 引数を利用するにはプロジェクトのオーナーロールを持つユーザーで実行する必要があります。",

@@ -49,7 +49,7 @@ class UpdateOnholdComment(CommandLine):
         if not self.validate(args):
             sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
-        super().validate_project(args.project_id)
+        super().require_project_access(args.project_id)
 
         if args.json is not None:
             comment_list: Any = annofabcli.common.cli.get_json_from_args(args.json)

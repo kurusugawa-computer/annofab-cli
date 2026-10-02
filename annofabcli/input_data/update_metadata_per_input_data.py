@@ -91,7 +91,7 @@ class UpdateMetadataPerInputData(CommandLine):
             )
             sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
-        super().validate_project(args.project_id, [ProjectMemberRole.OWNER])
+        super().require_project_access(args.project_id, [ProjectMemberRole.OWNER])
         main_obj = UpdateMetadataMain(self.service, all_yes=args.yes)
         main_obj.update_metadata_of_input_data(
             args.project_id,

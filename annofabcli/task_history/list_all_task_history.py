@@ -106,7 +106,7 @@ class ListTaskHistoryWithJson(CommandLine):
 
         """
 
-        super().validate_project(project_id, project_member_roles=None)
+        super().require_project_access(project_id, project_member_roles=None)
 
         main_obj = ListTaskHistoryWithJsonMain(self.service)
         task_history_dict = main_obj.get_task_history_dict(project_id, task_history_json=task_history_json, task_id_list=task_id_list, temp_dir=temp_dir)

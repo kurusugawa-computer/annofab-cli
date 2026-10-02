@@ -313,7 +313,7 @@ class ChangeAttributesOfAnnotation(CommandLine):
         else:
             backup_dir = Path(args.backup)
 
-        super().validate_project(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.ACCEPTER])
+        super().require_project_access(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.ACCEPTER])
         if args.include_complete_task:  # noqa: SIM102
             if not self.facade.contains_any_project_member_role(project_id, [ProjectMemberRole.OWNER]):
                 print(  # noqa: T201

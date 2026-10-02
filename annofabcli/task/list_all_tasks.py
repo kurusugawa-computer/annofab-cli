@@ -94,7 +94,7 @@ class ListTasksWithJson(CommandLine):
         task_query = TaskQuery.from_dict(annofabcli.common.cli.get_json_from_args(args.task_query)) if args.task_query is not None else None
 
         project_id = args.project_id
-        super().validate_project(project_id, project_member_roles=None)
+        super().require_project_access(project_id, project_member_roles=None)
 
         main_obj = ListTasksWithJsonMain(self.service)
         temp_dir = Path(args.temp_dir) if args.temp_dir is not None else None

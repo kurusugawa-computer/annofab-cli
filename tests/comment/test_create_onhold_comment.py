@@ -31,10 +31,11 @@ def test_create_onhold_passes_task_status_options(monkeypatch: pytest.MonkeyPatc
     service.api.get_my_member_in_project.return_value = ({"member_role": ProjectMemberRole.ACCEPTER.value}, None)
     CreateOnholdComment(service, facade, args).main()
 
-    facade.validate_project.assert_called_once_with(
+    facade.require_project_access.assert_called_once_with(
         project_id="project1",
         project_member_roles=[ProjectMemberRole.ACCEPTER, ProjectMemberRole.OWNER, ProjectMemberRole.WORKER],
         organization_member_roles=None,
+        operation=None,
     )
     put_comment_main_class.assert_called_once_with(service, project_id="project1", comment_type=CommentType.ONHOLD, all_yes=True, can_change_other_operator=True)
     put_comment_main.add_comments_for_task_list.assert_called_once()

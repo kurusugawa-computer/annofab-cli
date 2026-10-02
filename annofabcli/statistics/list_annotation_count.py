@@ -1535,7 +1535,7 @@ class ListAnnotationCount(CommandLine):
         args = self.args
 
         project_id: str = args.project_id
-        super().validate_project(project_id, project_member_roles=[ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER])
+        super().require_project_access(project_id, project_member_roles=[ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER])
 
         annotation_path = args.annotation
 

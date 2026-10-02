@@ -156,7 +156,7 @@ class UpdateMetadataOfTask(CommandLine):
         task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id)
         metadata_keys = annofabcli.common.cli.get_list_from_args(args.metadata_key)
 
-        super().validate_project(args.project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER])
+        super().require_project_access(args.project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER])
         main_obj = DeleteMetadataKeysOfTaskMain(self.service, project_id=args.project_id, parallelism=args.parallelism, all_yes=args.yes)
         main_obj.delete_metadata_keys_for_task_list(task_id_list=task_id_list, metadata_keys=metadata_keys)
 

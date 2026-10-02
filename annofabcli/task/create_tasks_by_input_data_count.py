@@ -94,7 +94,7 @@ class CreateTasksByInputDataCount(CommandLine):
     def main(self) -> None:
         args = self.args
         project_id = args.project_id
-        super().validate_project(project_id, [ProjectMemberRole.OWNER])
+        super().require_project_access(project_id, [ProjectMemberRole.OWNER])
 
         main_obj = CreatingTasksByInputDataCountMain(
             self.service,

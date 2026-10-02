@@ -224,7 +224,7 @@ class ChangeOperator(CommandLine):
         task_query: TaskQuery | None = TaskQuery.from_dict(dict_task_query) if dict_task_query is not None else None
 
         project_id = args.project_id
-        super().validate_project(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.ACCEPTER])
+        super().require_project_access(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.ACCEPTER])
 
         main_obj = ChangeOperatorMain(self.service, all_yes=self.all_yes, include_on_hold=args.include_on_hold_task)
         main_obj.change_operator(

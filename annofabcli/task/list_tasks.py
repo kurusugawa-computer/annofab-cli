@@ -204,7 +204,7 @@ class ListTasks(CommandLine):
         task_query = annofabcli.common.cli.get_json_from_args(args.task_query)
 
         project_id = args.project_id
-        super().validate_project(project_id, project_member_roles=None)
+        super().require_project_access(project_id, project_member_roles=None)
 
         main_obj = ListTasksMain(self.service, project_id=project_id)
         task_list = main_obj.get_task_list(
