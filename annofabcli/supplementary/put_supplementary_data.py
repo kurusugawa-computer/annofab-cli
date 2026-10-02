@@ -329,7 +329,7 @@ class PutSupplementaryData(CommandLine):
             sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
         project_id = args.project_id
-        super().validate_project(project_id, [ProjectMemberRole.OWNER])
+        super().require_project_access(project_id, [ProjectMemberRole.OWNER])
 
         if args.csv is not None:
             supplementary_data_list = self.get_supplementary_data_list_from_csv(Path(args.csv))

@@ -298,7 +298,7 @@ class ChangeAttributesPerAnnotation(CommandLine):
                 sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
         # プロジェクト権限チェック
-        super().validate_project(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.ACCEPTER])
+        super().require_project_access(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.ACCEPTER])
 
         main_obj = ChangeAnnotationAttributesPerAnnotationMain(
             self.service,

@@ -379,9 +379,9 @@ class DeleteAnnotation(CommandLine):
         if args.include_complete_task:
             # --include_complete_taskオプションが指定されている場合は、完了状態のタスクも削除する
             # 完了状態のタスクを削除するには、オーナーロールである必要があるため、`args.include_complete_task`で条件を分岐する
-            super().validate_project(project_id, [ProjectMemberRole.OWNER])
+            super().require_project_access(project_id, [ProjectMemberRole.OWNER])
         else:
-            super().validate_project(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.ACCEPTER])
+            super().require_project_access(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.ACCEPTER])
 
         main_obj = DeleteAnnotationMain(self.service, project_id, all_yes=args.yes, include_complete_task=args.include_complete_task)
 

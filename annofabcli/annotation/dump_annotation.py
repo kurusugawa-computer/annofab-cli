@@ -202,7 +202,7 @@ class DumpAnnotation(CommandLine):
         task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id)
         output_dir = Path(args.output_dir)
 
-        super().validate_project(project_id, project_member_roles=None)
+        super().require_project_access(project_id, project_member_roles=None)
 
         main_obj = DumpAnnotationMain(self.service, project_id)
         main_obj.dump_annotation(task_id_list, output_dir=output_dir, parallelism=args.parallelism, task_history_index=args.task_history_index, task_history_id=args.task_history_id)

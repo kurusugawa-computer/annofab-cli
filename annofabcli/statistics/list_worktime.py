@@ -112,7 +112,7 @@ class ListWorktimeFromTaskHistoryEvent(CommandLine):
         project_id: str,
         task_history_event_json: Path | None,
     ) -> None:
-        super().validate_project(project_id, project_member_roles=None)
+        super().require_project_access(project_id, project_member_roles=None)
 
         main_obj = ListWorktimeFromTaskHistoryEventMain(self.service, project_id=project_id)
         worktime_list = main_obj.get_worktime_list(

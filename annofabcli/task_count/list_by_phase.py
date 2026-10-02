@@ -494,7 +494,7 @@ class ListTaskCountByPhase(CommandLine):
 
         unit = AggregationUnit(args.unit)
 
-        super().validate_project(project_id, project_member_roles=[ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER])
+        super().require_project_access(project_id, project_member_roles=[ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER])
 
         # 動画時間で集計する場合は、プロジェクトが動画プロジェクトかどうかをチェック
         if unit in [AggregationUnit.VIDEO_DURATION_HOUR, AggregationUnit.VIDEO_DURATION_MINUTE]:

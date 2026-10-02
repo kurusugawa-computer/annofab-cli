@@ -322,7 +322,7 @@ class AnnofabApiFacade:
             task_query.account_id = self.project_member_repository.get_account_id_from_user_id(project_id, task_query.user_id)
         return task_query
 
-    def validate_project(
+    def require_project_access(
         self,
         project_id: str,
         project_member_roles: list[ProjectMemberRole] | None = None,

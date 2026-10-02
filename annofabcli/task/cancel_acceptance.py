@@ -242,7 +242,7 @@ class CancelAcceptance(CommandLine):
         dict_task_query = annofabcli.common.cli.get_json_from_args(args.task_query)
         task_query: TaskQuery | None = TaskQuery.from_dict(dict_task_query) if dict_task_query is not None else None
 
-        super().validate_project(args.project_id, [ProjectMemberRole.OWNER])
+        super().require_project_access(args.project_id, [ProjectMemberRole.OWNER])
         main_obj = CancelAcceptanceMain(self.service, project_id=args.project_id, all_yes=args.yes)
         main_obj.cancel_acceptance_for_task_list(
             task_id_list,

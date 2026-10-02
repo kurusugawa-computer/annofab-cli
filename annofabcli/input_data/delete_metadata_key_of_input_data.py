@@ -163,7 +163,7 @@ class DeleteMetadataKeyOfInputData(CommandLine):
         input_data_id_list = annofabcli.common.cli.get_list_from_args(args.input_data_id)
         metadata_keys = annofabcli.common.cli.get_list_from_args(args.metadata_key)
 
-        super().validate_project(args.project_id, [ProjectMemberRole.OWNER])
+        super().require_project_access(args.project_id, [ProjectMemberRole.OWNER])
         main_obj = DeleteMetadataKeyOfInputDataMain(self.service, project_id=args.project_id, all_yes=args.yes)
         main_obj.delete_metadata_keys_for_input_data_list(
             input_data_id_list=input_data_id_list,

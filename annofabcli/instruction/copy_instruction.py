@@ -18,15 +18,15 @@ class CopyInstruction(CommandLine):
     作業ガイドをコピーする。
     """
 
-    def validate_projects(self, src_project_id: str, dest_project_id: str) -> None:
+    def require_access_to_projects(self, src_project_id: str, dest_project_id: str) -> None:
         """
         適切なRoleが付与されているかを確認する。
 
         Raises:
              AuthorizationError: 自分自身のRoleがいずれかのRoleにも合致しなければ、AuthorizationErrorが発生する。
         """
-        super().validate_project(src_project_id, project_member_roles=None)
-        super().validate_project(dest_project_id, project_member_roles=[ProjectMemberRole.ACCEPTER, ProjectMemberRole.OWNER])
+        super().require_project_access(src_project_id, project_member_roles=None)
+        super().require_project_access(dest_project_id, project_member_roles=[ProjectMemberRole.ACCEPTER, ProjectMemberRole.OWNER])
 
     @staticmethod
     def get_instruction_image_id_from_url(url: str) -> str:
@@ -115,7 +115,7 @@ class CopyInstruction(CommandLine):
         self.put_instruction(dest_project_id, str(pq_html))
 
     def copy_instruction(self, src_project_id: str, dest_project_id: str) -> None:
-        self.validate_projects(src_project_id, dest_project_id)
+        self.require_access_to_projects(src_project_id, dest_project_id)
         src_project_title = self.facade.get_project_title(src_project_id)
         dest_project_title = self.facade.get_project_title(dest_project_id)
 

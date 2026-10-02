@@ -115,7 +115,7 @@ class ListTaskHistoryEventWithJson(CommandLine):
         arg_format: OutputFormat,
         temp_dir: Path | None,
     ) -> None:
-        super().validate_project(project_id, project_member_roles=None)
+        super().require_project_access(project_id, project_member_roles=None)
 
         main_obj = ListTaskHistoryEventWithJsonMain(self.service)
         task_history_event_list = main_obj.get_task_history_event_list(project_id, task_history_event_json=task_history_event_json, task_id_list=task_id_list, temp_dir=temp_dir)

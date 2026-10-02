@@ -318,7 +318,7 @@ class DiffProjects(CommandLine):
             logger.info("プロジェクト設定は同じ")
             return False, diff_message
 
-    def validate_projects(self, project_id1: str, project_id2: str) -> None:
+    def require_access_to_projects(self, project_id1: str, project_id2: str) -> None:
         """
         適切なRoleが付与されているかを確認する。
 
@@ -332,11 +332,11 @@ class DiffProjects(CommandLine):
             AuthorizationError: 自分自身のRoleがいずれかのRoleにも合致しなければ、AuthorizationErrorが発生する。
         """
         roles = [ProjectMemberRole.OWNER, ProjectMemberRole.ACCEPTER, ProjectMemberRole.TRAINING_DATA_USER]
-        super().validate_project(project_id1, roles)
-        super().validate_project(project_id2, roles)
+        super().require_project_access(project_id1, roles)
+        super().require_project_access(project_id2, roles)
 
     def diff(self, project_id1: str, project_id2: str, diff_targets: set[DiffTarget]) -> DiffResult:
-        self.validate_projects(project_id1, project_id2)
+        self.require_access_to_projects(project_id1, project_id2)
 
         logger.info(f"=== {self.project_title1}({project_id1}) と {self.project_title2}({project_id2}) の差分を表示")
 

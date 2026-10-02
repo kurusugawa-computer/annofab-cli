@@ -451,7 +451,7 @@ class RejectTasks(CommandLine):
             required_roles = [ProjectMemberRole.OWNER]
             operation = "検査コメントを付けないタスクの差し戻し"
 
-        super().validate_project(project_id, required_roles, operation=operation)
+        super().require_project_access(project_id, required_roles, operation=operation)
 
 
 def main(args: argparse.Namespace) -> None:

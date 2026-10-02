@@ -43,7 +43,7 @@ class DeleteJob(CommandLine):
     def main(self) -> None:
         args = self.args
         project_id = args.project_id
-        super().validate_project(project_id, project_member_roles=[ProjectMemberRole.OWNER])
+        super().require_project_access(project_id, project_member_roles=[ProjectMemberRole.OWNER])
 
         job_type = ProjectJobType(args.job_type)
         job_id_list = get_list_from_args(args.job_id)

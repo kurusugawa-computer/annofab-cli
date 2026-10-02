@@ -206,7 +206,7 @@ class DeleteSupplementaryData(CommandLine):
             sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
         project_id = args.project_id
-        super().validate_project(project_id, [ProjectMemberRole.OWNER])
+        super().require_project_access(project_id, [ProjectMemberRole.OWNER])
 
         main_obj = DeleteSupplementaryDataMain(self.service, all_yes=args.yes)
 

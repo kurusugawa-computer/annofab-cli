@@ -175,7 +175,7 @@ class ListInputDataMergedTask(CommandLine):
 
         project_id = args.project_id
         if project_id is not None:
-            super().validate_project(project_id, None)
+            super().require_project_access(project_id, None)
             input_data_list, task_list = self.download_json_files(project_id, args.temp_dir, is_latest=args.latest)
         else:
             task_json_path = args.task_json

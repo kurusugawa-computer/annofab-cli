@@ -173,7 +173,7 @@ class ListAllTasksAddedTaskHistory(CommandLine):
         task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id) if args.task_id is not None else None
         task_query = TaskQuery.from_dict(annofabcli.common.cli.get_json_from_args(args.task_query)) if args.task_query is not None else None
 
-        self.validate_project(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER])
+        self.require_project_access(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER])
 
         temp_dir = Path(args.temp_dir) if args.temp_dir is not None else None
         start_date_list = args.start_datetime if args.start_datetime is not None else None

@@ -592,7 +592,7 @@ class CommandLine(CommandLineWithoutWebapi):
         self.facade = facade
         super().__init__(args)
 
-    def validate_project(
+    def require_project_access(
         self,
         project_id: str,
         project_member_roles: list[ProjectMemberRole] | None = None,
@@ -613,7 +613,7 @@ class CommandLine(CommandLineWithoutWebapi):
              AuthorizationError: 自分自身のRoleがいずれかのRoleにも合致しなければ、AuthorizationErrorが発生する。
 
         """
-        self.facade.validate_project(
+        self.facade.require_project_access(
             project_id=project_id,
             project_member_roles=project_member_roles,
             organization_member_roles=organization_member_roles,
