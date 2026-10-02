@@ -42,12 +42,12 @@ Examples
     --member_info '{"sampling_inspection_rate": 10, "sampling_acceptance_rate": 20}'
 
 
-``--all_user`` を指定すると、 自分以外のすべてのプロジェクトメンバを変更します。
+``--all_users`` を指定すると、 自分以外のすべてのプロジェクトメンバを変更します。
 以下のコマンドは、自分以外のすべてのプロジェクトメンバを、アノテータロールに変更します。
 
 .. code-block::
 
-    $ annofabcli project_member change --project_id prj1 --all_user --role worker
+    $ annofabcli project_member change --project_id prj1 --all_users --role worker
 
 Usage Details
 =================================

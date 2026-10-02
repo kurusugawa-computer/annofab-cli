@@ -38,27 +38,33 @@ class InviteProjectMembersMain:
 
         project_title = self.facade.get_project_title(project_id)
 
-        # プロジェクトメンバを追加/更新する
-        for user_id in user_id_list:
+        success_count = 0
+        skipped_count = 0
+        logger.info(f"{project_title}({project_id}) に {len(user_id_list)} 件のユーザを招待します。")
+        for index, user_id in enumerate(user_id_list, start=1):
+            logger.debug(f"{index} / {len(user_id_list)} 件目: user_id='{user_id}'")
             dest_member = get_project_member(user_id)
             if dest_member is not None:
-                last_updated_datetime = dest_member["updated_datetime"]
-            else:
-                last_updated_datetime = None
+                logger.info(f"user_id='{user_id}' は既に {project_title}({project_id}) のメンバなのでスキップします。")
+                skipped_count += 1
+                continue
 
             request_body = {
                 "member_status": ProjectMemberStatus.ACTIVE.value,
                 "member_role": member_role.value,
-                "last_updated_datetime": last_updated_datetime,
+                "last_updated_datetime": None,
             }
             try:
                 self.service.api.put_project_member(project_id, user_id, request_body=request_body)
                 logger.debug(f"{project_title}({project_id}) のプロジェクトメンバに、{user_id} を {member_role.value} ロールで追加しました。")
+                success_count += 1
             except requests.HTTPError:
                 logger.warning(
                     f"{project_title}({project_id}) のプロジェクトメンバに、{user_id} を {member_role.value} ロールで追加できませんでした。",
                     exc_info=True,
                 )
+
+        logger.info(f"{project_title}({project_id}) への招待が完了しました。成功: {success_count} 件、スキップ: {skipped_count} 件、失敗: {len(user_id_list) - success_count - skipped_count} 件。")
 
     def assign_role_with_organization(self, organization_name: str, user_id_list: list[str], member_role: ProjectMemberRole) -> None:
         projects = self.service.wrapper.get_all_projects_of_organization(organization_name, query_params={"account_id": self.service.api.account_id})
