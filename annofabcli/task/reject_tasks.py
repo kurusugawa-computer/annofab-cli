@@ -26,6 +26,7 @@ from annofabcli.common.cli import (
     build_annofabapi_resource_and_login,
 )
 from annofabcli.common.enums import CustomProjectType
+from annofabcli.common.exceptions import AuthorizationError, ProjectAuthorizationError
 from annofabcli.common.facade import AnnofabApiFacade, TaskQuery, match_task_with_query
 
 logger = logging.getLogger(__name__)
@@ -384,11 +385,7 @@ class RejectTasks(CommandLine):
             return
         assign_last_annotator = not args.not_assign and assigned_annotator is None
 
-        if not args.cancel_acceptance and args.comment is not None:
-            # 受入取消を実施しない AND 検査コメントを付与する場合はチェッカーロールでも実行できる
-            super().validate_project(args.project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.ACCEPTER])
-        else:
-            super().validate_project(args.project_id, [ProjectMemberRole.OWNER])
+        self.validate_reject_project(args.project_id, cancel_acceptance=args.cancel_acceptance, has_comment=args.comment is not None)
 
         dict_task_query = annofabcli.common.cli.get_json_from_args(args.task_query)
         task_query: TaskQuery | None = TaskQuery.from_dict(dict_task_query) if dict_task_query is not None else None
@@ -433,6 +430,33 @@ class RejectTasks(CommandLine):
             task_query=task_query,
             parallelism=args.parallelism,
         )
+
+    def validate_reject_project(self, project_id: str, *, cancel_acceptance: bool, has_comment: bool) -> None:
+        """差し戻し操作に必要なプロジェクトロールを確認する。
+
+        Args:
+            project_id: 対象プロジェクトのID。
+            cancel_acceptance: 受入完了を取り消す場合はTrue。
+            has_comment: 検査コメントを付与する場合はTrue。
+
+        Returns:
+            None
+        """
+        if not cancel_acceptance and has_comment:
+            required_roles = [ProjectMemberRole.OWNER, ProjectMemberRole.ACCEPTER]
+        else:
+            required_roles = [ProjectMemberRole.OWNER]
+
+        try:
+            super().validate_project(project_id, required_roles)
+        except ProjectAuthorizationError as e:
+            if cancel_acceptance:
+                reason = "--cancel_acceptanceで受入完了を取り消すには、オーナーロールが必要です。"
+            elif not has_comment:
+                reason = "検査コメントを付けずにタスクを差し戻すには、オーナーロールが必要です。"
+            else:
+                reason = "検査コメントを付けてタスクを差し戻すには、チェッカーまたはオーナーロールが必要です。"
+            raise AuthorizationError(f"プロジェクト'{project_id}'で{reason}") from e
 
 
 def main(args: argparse.Namespace) -> None:
@@ -520,7 +544,11 @@ def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse
     subcommand_name = "reject"
     subcommand_help = "タスクを差し戻します。"
     description = "タスクを差し戻します。差し戻す際、検査コメントを付与することもできます。作業中状態のタスクに対しては差し戻せません。休憩中状態のタスクは、デフォルトでは差し戻せません。"
-    epilog = "``--comment`` を指定し、``--cancel_acceptance`` を指定しない場合は、チェッカーロールまたはオーナーロールを持つユーザーで実行できます。それ以外の場合は、オーナーロールが必要です。"
+    epilog = (
+        "``--comment`` を指定しない場合は、オーナーロールが必要です。"
+        "``--cancel_acceptance`` を指定する場合も、オーナーロールが必要です。"
+        "``--comment`` を指定し、``--cancel_acceptance`` を指定しない場合は、チェッカーロールまたはオーナーロールで実行できます。"
+    )
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
     parse_args(parser)

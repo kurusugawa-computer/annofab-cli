@@ -6,7 +6,7 @@ import sys
 from typing import Any
 
 import annofabapi
-from annofabapi.models import CommentType, ProjectMemberRole
+from annofabapi.models import CommentType
 
 import annofabcli.common.cli
 from annofabcli.comment.put_comment import AddedComments, PutCommentMain, convert_cli_inspection_comment_list
@@ -58,8 +58,7 @@ class RejectTasksWithInspectionComments(RejectTasks):
             return
         assign_last_annotator = not args.not_assign and assigned_annotator is None
 
-        required_project_member_roles = [ProjectMemberRole.OWNER] if args.cancel_acceptance else [ProjectMemberRole.ACCEPTER, ProjectMemberRole.OWNER]
-        super().validate_project(args.project_id, required_project_member_roles)
+        self.validate_reject_project(args.project_id, cancel_acceptance=args.cancel_acceptance, has_comment=True)
 
         main_obj = RejectTasksWithInspectionCommentsMain(self.service, project_id=args.project_id, comments_for_task_list=comments_for_task_list, all_yes=self.all_yes)
         main_obj.reject_task_list(
