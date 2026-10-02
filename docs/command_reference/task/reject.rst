@@ -8,6 +8,12 @@ Description
 ただし作業中状態のタスクに対しては差し戻せません。
 休憩中状態や保留中状態のタスクは、デフォルトではスキップします。
 
+実行できるロール
+--------------------------------------
+
+``--comment`` を指定し、``--cancel_acceptance`` を指定しない場合は、チェッカーロールまたはオーナーロールのユーザーが実行できます。
+検査コメントを付与せずに差し戻す場合や、``--cancel_acceptance`` で受入完了を取り消す場合は、オーナーロールが必要です。
+
 
 
 
@@ -175,4 +181,3 @@ Usage Details
    :prog: annofabcli task reject
    :nosubcommands:
    :nodefaultconst:
-
