@@ -60,6 +60,7 @@ def test_create_onhold_simply_puts_onhold_comment(monkeypatch: pytest.MonkeyPatc
         project_id="project1",
         project_member_roles=[ProjectMemberRole.ACCEPTER, ProjectMemberRole.OWNER, ProjectMemberRole.WORKER],
         organization_member_roles=None,
+        operation=None,
     )
     put_comment_main_class.assert_called_once_with(service, project_id="project1", comment_type=CommentType.ONHOLD, all_yes=True, can_change_other_operator=True)
     put_comment_main.put_comment_for_task_list.assert_called_once()

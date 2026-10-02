@@ -26,7 +26,6 @@ from annofabcli.common.cli import (
     build_annofabapi_resource_and_login,
 )
 from annofabcli.common.enums import CustomProjectType
-from annofabcli.common.exceptions import AuthorizationError, ProjectAuthorizationError
 from annofabcli.common.facade import AnnofabApiFacade, TaskQuery, match_task_with_query
 
 logger = logging.getLogger(__name__)
@@ -444,19 +443,15 @@ class RejectTasks(CommandLine):
         """
         if not cancel_acceptance and has_comment:
             required_roles = [ProjectMemberRole.OWNER, ProjectMemberRole.ACCEPTER]
+            operation = "検査コメントを付けるタスクの差し戻し"
+        elif cancel_acceptance:
+            required_roles = [ProjectMemberRole.OWNER]
+            operation = "--cancel_acceptance による受入完了の取り消し"
         else:
             required_roles = [ProjectMemberRole.OWNER]
+            operation = "検査コメントを付けないタスクの差し戻し"
 
-        try:
-            super().validate_project(project_id, required_roles)
-        except ProjectAuthorizationError as e:
-            if cancel_acceptance:
-                reason = "--cancel_acceptanceで受入完了を取り消すには、オーナーロールが必要です。"
-            elif not has_comment:
-                reason = "検査コメントを付けずにタスクを差し戻すには、オーナーロールが必要です。"
-            else:
-                reason = "検査コメントを付けてタスクを差し戻すには、チェッカーまたはオーナーロールが必要です。"
-            raise AuthorizationError(f"プロジェクト'{project_id}'で{reason}") from e
+        super().validate_project(project_id, required_roles, operation=operation)
 
 
 def main(args: argparse.Namespace) -> None:

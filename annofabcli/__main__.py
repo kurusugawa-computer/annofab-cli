@@ -33,7 +33,7 @@ import annofabcli.task_history.subcommand_task_history
 import annofabcli.task_history_event.subcommand_task_history_event
 import annofabcli.webhook.subcommand_webhook
 from annofabcli.common.cli import ExitCode
-from annofabcli.common.exceptions import AuthorizationError
+from annofabcli.common.exceptions import AnnofabCliException
 
 logger = logging.getLogger(__name__)
 
@@ -95,12 +95,12 @@ def main(arguments: list[str] | None = None) -> None:
                     argv = ["annofabcli", *list(arguments)]
                 logger.info(f"argv={mask_sensitive_value_in_argv(argv)}")
             args.subcommand_func(args)
-        except AuthorizationError as e:
+        except AnnofabCliException as e:
             logger.error("%s", e)  # noqa: TRY400
-            sys.exit(ExitCode.GENERAL_ERROR)
-        except Exception as e:
-            logger.exception(e)  # noqa: TRY401
-            raise e  # noqa: TRY201
+            raise SystemExit(ExitCode.GENERAL_ERROR) from None
+        except Exception:
+            logger.exception("予期しないエラーが発生しました。")
+            raise SystemExit(ExitCode.GENERAL_ERROR) from None
 
     else:
         # 未知のサブコマンドの場合はヘルプを表示
