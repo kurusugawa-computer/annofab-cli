@@ -1,2 +1,2 @@
 ﻿project_id,task_id,task_phase,task_phase_stage,task_status,input_data_id,input_data_name,updated_datetime,label,annotation_id,annotation_editor_url,left_top.x,left_top.y,right_bottom.x,right_bottom.y,center.x,center.y,width,height,area,attributes.confidence,attributes.occluded
-proj1,task_00,annotation,1,complete,i1,i1.jpg,2023-10-01T12:00:00.000+09:00,cat,ann1,https://annofab.com/projects/proj1/tasks/task_00/editor?#i1/ann1,0,0,100,200,50.0,100.0,100,200,20000,0.95,True
+prj1,task_00,annotation,1,complete,i1,i1.jpg,2023-10-01T12:00:00.000+09:00,cat,ann1,https://annofab.com/projects/prj1/tasks/task_00/editor?#i1/ann1,0,0,100,200,50.0,100.0,100,200,20000,0.95,True
