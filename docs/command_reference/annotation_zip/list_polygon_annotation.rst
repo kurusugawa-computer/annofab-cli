@@ -54,11 +54,11 @@ Examples
         "area": 50.0,
         "centroid": {"x": 3.333333333333333, "y": 3.333333333333333},
         "bounding_box": {
-          "left_top": {"x": 0, "y": 0},
-          "right_bottom": {"x": 10, "y": 10}
+          "left_top": {"x": 0.0, "y": 0.0},
+          "right_bottom": {"x": 10.0, "y": 10.0}
         },
-        "bounding_box_width": 10,
-        "bounding_box_height": 10,
+        "bounding_box_width": 10.0,
+        "bounding_box_height": 10.0,
         "attributes": {
           "occluded": true,
           "type": "sedan"
