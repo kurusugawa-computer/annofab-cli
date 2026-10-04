@@ -11,13 +11,16 @@ Description
 Examples
 =================================
 
-基本的な使い方
-----------------------------------------------------------------------
+出力例（CSV形式）
+----------------------------------------------
 
 .. code-block:: bash
 
-    $ annofabcli annotation_zip list_3d_bounding_box_annotation --project_id prj1 --output out.csv
+    $ annofabcli annotation_zip list_3d_bounding_box_annotation --project_id prj1 --format csv --output out.csv
 
+.. csv-table:: out.csv
+    :file: list_3d_bounding_box_annotation/out.csv
+    :header-rows: 1
 
 出力例（JSON形式）
 ----------------------------------------------------------------------
@@ -32,7 +35,7 @@ Examples
 
     [
       {
-        "project_id": "proj1",
+        "project_id": "prj1",
         "task_id": "task_00",
         "task_status": "complete",
         "task_phase": "annotation",
@@ -42,7 +45,7 @@ Examples
         "updated_datetime": "2023-10-01T12:00:00.000+09:00",
         "label": "car",
         "annotation_id": "ann1",
-        "annotation_editor_url": "https://d2rljy8mjgrfyd.cloudfront.net/3d-editor-latest/index.html?p=proj1&t=task_00/#i1/ann1",
+        "annotation_editor_url": "https://d2rljy8mjgrfyd.cloudfront.net/3d-editor-latest/index.html?p=prj1&t=task_00/#i1/ann1",
         "dimensions": {
           "width": 2.39,
           "height": 1.56,
@@ -70,11 +73,11 @@ Examples
             "z": 1
           }
         },
-        "volume": 19.3,
-        "footprint_area": 12.3,
-        "bottom_z": -0.06,
+        "volume": 19.238544,
+        "footprint_area": 12.332400000000002,
+        "bottom_z": -0.07000000000000006,
         "top_z": 1.49,
-        "horizontal_distance": 13.09,
+        "horizontal_distance": 13.093910798535326,
         "attributes": {
           "occluded": true,
           "type": "sedan"

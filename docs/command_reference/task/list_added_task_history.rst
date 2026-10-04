@@ -96,7 +96,7 @@ CSV出力
 
 .. code-block::
 
-    $ annofabcli task list_added_task_history --project_id prj1 --output task.csv
+    $ annofabcli task list_added_task_history --project_id prj1 --output out.csv
 
 
 CSV出力時は、タスクのメタデータ（``metadata``）が ``metadata.{key名}`` の形式で列ごとに展開されます。
@@ -104,6 +104,10 @@ CSV出力時は、タスクのメタデータ（``metadata``）が ``metadata.{k
 
 また、 ``input_data_id_list`` 列は、リスト型のためCSV出力時には除外されます。入力データの件数は ``input_data_count`` 列で確認できます。
 
+
+.. csv-table:: out.csv
+    :file: list_added_task_history/out.csv
+    :header-rows: 1
 
 JSON出力
 ----------------------------------------------

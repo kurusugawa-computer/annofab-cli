@@ -49,12 +49,25 @@ Examples
 =================================
 
 
+以下は、コメント投稿者のユーザー情報を取得できない場合の出力例です。
+
+CSV出力
+----------------------------------------------
+
+.. code-block:: bash
+
+    $ annofabcli comment list --project_id prj1 --task_id task1 --format csv --output out.csv
+
+.. csv-table:: out.csv
+    :file: list/out.csv
+    :header-rows: 1
+
 JSON出力
 ----------------------------------------------
 
 .. code-block::
 
-    $ annofabcli comment list --format pretty_json --output out.json
+    $ annofabcli comment list --project_id prj1 --task_id task1 --format pretty_json --output out.json
 
 
 
@@ -63,7 +76,7 @@ JSON出力
 
     [
     {
-        "project_id": "project1",
+        "project_id": "prj1",
         "task_id": "task1",
         "input_data_id": "input_data1",
         "comment_id": "comment1",
@@ -87,10 +100,12 @@ JSON出力
         "datetime_for_sorting": "2022-07-05T11:45:21.968+09:00",
         "created_datetime": "2022-07-05T11:45:32.88+09:00",
         "updated_datetime": "2022-07-05T11:45:32.88+09:00",
-        "reply_count": 1
+        "reply_count": 1,
+        "user_id": null,
+        "username": null
     },
     {
-        "project_id": "project1",
+        "project_id": "prj1",
         "task_id": "task1",
         "input_data_id": "input_data1",
         "comment_id": "comment2",
@@ -118,7 +133,9 @@ JSON出力
         "datetime_for_sorting": "2022-07-05T11:45:08.506+09:00",
         "created_datetime": "2022-07-05T11:45:32.88+09:00",
         "updated_datetime": "2022-07-05T11:45:32.88+09:00",
-        "reply_count": 0
+        "reply_count": 0,
+        "user_id": null,
+        "username": null
     }
     ]
 

@@ -26,6 +26,17 @@ CSV出力
 
     $ annofabcli annotation_specs list_label_attribute --project_id prj1 --format csv --output out.csv
 
+.. csv-table:: out.csv
+    :file: list_label_attribute/out.csv
+    :header-rows: 1
+
+JSON出力
+----------------------------------------------
+
+.. code-block:: bash
+
+    $ annofabcli annotation_specs list_label_attribute --project_id prj1 --format pretty_json --output out.json
+
 .. code-block::
     :caption: out.json
     

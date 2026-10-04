@@ -14,7 +14,18 @@ Annofabではポリラインとポリゴンの区別がないため、ポリゴ�
 Examples
 =================================
 
-基本的な使い方
+出力例（CSV形式）
+----------------------------------------------
+
+.. code-block:: bash
+
+    $ annofabcli annotation_zip list_polyline_annotation --project_id prj1 --format csv --output out.csv
+
+.. csv-table:: out.csv
+    :file: list_polyline_annotation/out.csv
+    :header-rows: 1
+
+出力例（JSON形式）
 --------------------
 
 .. code-block:: bash
@@ -28,7 +39,7 @@ Examples
 
     [
       {
-        "project_id": "proj1",
+        "project_id": "prj1",
         "task_id": "task_00",
         "task_status": "complete",
         "task_phase": "annotation",
@@ -38,12 +49,12 @@ Examples
         "updated_datetime": "2023-10-01T12:00:00.000+09:00",
         "label": "road",
         "annotation_id": "ann1",
-        "annotation_editor_url": "https://annofab.com/projects/proj1/tasks/task_00/editor?#i1/ann1",
+        "annotation_editor_url": "https://annofab.com/projects/prj1/tasks/task_00/editor?#i1/ann1",
         "point_count": 5,
-        "length": 100.5,
+        "length": 72.55832815336873,
         "start_point": {"x": 10.0, "y": 20.0},
         "end_point": {"x": 50.0, "y": 80.0},
-        "midpoint": {"x": 30.0, "y": 45.0},
+        "midpoint": {"x": 30.0, "y": 47.0},
         "bounding_box_width": 40.0,
         "bounding_box_height": 60.0,
         "attributes": {

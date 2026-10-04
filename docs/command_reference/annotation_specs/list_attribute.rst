@@ -23,6 +23,20 @@ Examples
 
 
 
+CSV出力
+----------------------------------------------
+
+.. code-block:: bash
+
+    $ annofabcli annotation_specs list_attribute --project_id prj1 --format csv --output out.csv
+
+.. csv-table:: out.csv
+    :file: list_attribute/out.csv
+    :header-rows: 1
+
+CSV形式では、属性の種類は ``type`` 列に出力されます。 ``label_ids`` 、 ``label_name_ens`` 、 ``keybind`` はJSON文字列です。
+``choices`` はCSV形式では出力されません。
+
 JSON出力
 ----------------------------------------------
 

@@ -32,6 +32,10 @@ CSV出力
 
     $ annofabcli webhook list --project_id prj1 --format csv --output out.csv
 
+.. csv-table:: out.csv
+    :file: list/out.csv
+    :header-rows: 1
+
 JSON出力
 ----------------------------------------------
 

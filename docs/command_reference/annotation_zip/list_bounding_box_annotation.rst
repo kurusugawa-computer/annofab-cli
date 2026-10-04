@@ -10,7 +10,18 @@ Description
 Examples
 =================================
 
-基本的な使い方
+出力例（CSV形式）
+----------------------------------------------
+
+.. code-block:: bash
+
+    $ annofabcli annotation_zip list_bounding_box_annotation --project_id prj1 --format csv --output out.csv
+
+.. csv-table:: out.csv
+    :file: list_bounding_box_annotation/out.csv
+    :header-rows: 1
+
+出力例（JSON形式）
 --------------------
 
 .. code-block:: bash
@@ -24,7 +35,7 @@ Examples
 
     [
       {
-        "project_id": "proj1", 
+        "project_id": "prj1",
         "task_id": "task_00",
         "task_status": "complete",
         "task_phase": "annotation",
@@ -34,7 +45,7 @@ Examples
         "updated_datetime": "2023-10-01T12:00:00.000+09:00",
         "label": "cat",
         "annotation_id": "ann1",
-        "annotation_editor_url": "https://annofab.com/projects/proj1/tasks/task_00/editor?#i1/ann1",
+        "annotation_editor_url": "https://annofab.com/projects/prj1/tasks/task_00/editor?#i1/ann1",
         "left_top": {"x": 0, "y": 0},
         "right_bottom": {"x": 100, "y": 200},
         "center": {"x": 50.0, "y": 100.0},

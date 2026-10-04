@@ -1,0 +1,3 @@
+﻿attribute_id,attribute_name_en,attribute_type,choice_id,choice_name_en,choice_name_ja,choice_name_vi,is_default,keybind,keybind_text
+a0f7c8ed-38dc-41e6-a18c-29a36d3e28f2,direction,select,3475515f-ba44-4a8d-b32b-72635e420048,rear,rear,rear,False,,
+a0f7c8ed-38dc-41e6-a18c-29a36d3e28f2,direction,select,a5ebf59b-0484-446d-ac11-14a4736026e4,front,front,front,False,,
