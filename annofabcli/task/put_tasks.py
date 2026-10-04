@@ -232,7 +232,7 @@ class PutTask(CommandLine):
     def main(self) -> None:
         args = self.args
         project_id = args.project_id
-        super().validate_project(project_id, [ProjectMemberRole.OWNER])
+        super().require_project_access(project_id, [ProjectMemberRole.OWNER])
 
         api_with_creating_task = ApiWithCreatingTask(args.api) if args.api is not None else None
         main_obj = PuttingTaskMain(

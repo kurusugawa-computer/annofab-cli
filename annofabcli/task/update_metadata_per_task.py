@@ -80,7 +80,7 @@ class UpdateMetadataPerTask(CommandLine):
 
         metadata_info_list = get_task_metadata_info_list_from_json_args(args.json)
         metadata_by_task_id = {info.task_id: info.metadata for info in metadata_info_list}
-        super().validate_project(args.project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER])
+        super().require_project_access(args.project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER])
         main_obj = UpdateMetadataOfTaskMain(self.service, is_overwrite_metadata=args.overwrite, parallelism=args.parallelism, all_yes=args.yes)
         main_obj.update_metadata_of_task(args.project_id, metadata_by_task_id=metadata_by_task_id)
 

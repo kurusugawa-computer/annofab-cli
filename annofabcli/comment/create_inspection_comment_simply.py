@@ -41,7 +41,7 @@ class CreateInspectionCommentSimply(CommandLine):
             sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
         required_project_member_roles = [ProjectMemberRole.OWNER] if args.include_complete_task else [ProjectMemberRole.ACCEPTER, ProjectMemberRole.OWNER]
-        super().validate_project(args.project_id, required_project_member_roles)
+        super().require_project_access(args.project_id, required_project_member_roles)
 
         comment_data = annofabcli.common.cli.get_json_from_args(args.comment_data)
         custom_project_type = CustomProjectType(args.custom_project_type) if args.custom_project_type is not None else None

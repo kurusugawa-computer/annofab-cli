@@ -346,7 +346,7 @@ class CreateAnnotation(CommandLine):
             print(f"{self.COMMON_MESSAGE} argument --editor_props の値が不正です。{e}", file=sys.stderr)  # noqa: T201
             sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
-        super().validate_project(args.project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.ACCEPTER])
+        super().require_project_access(args.project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.ACCEPTER])
         annotation_specs, _ = self.service.api.get_annotation_specs(args.project_id, query_params={"v": "3"})
         project, _ = self.service.api.get_project(args.project_id)
         converter = CreateAnnotationConverter(project, annotation_specs, default_editor_props=default_editor_props)

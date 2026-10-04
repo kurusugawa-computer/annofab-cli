@@ -409,7 +409,7 @@ class UpdateTaskInputData(CommandLine):
             print(f"{self.COMMON_MESSAGE} {e}", file=sys.stderr)  # noqa: T201
             sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
-        super().validate_project(args.project_id, [ProjectMemberRole.OWNER])
+        super().require_project_access(args.project_id, [ProjectMemberRole.OWNER])
         main_obj = UpdateTaskInputDataMain(
             self.service,
             args.project_id,

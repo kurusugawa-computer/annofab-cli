@@ -73,7 +73,7 @@ class CopyProject(CommandLine):
             copy_options: 各項目についてコピーするかどうかのオプション
         """
 
-        self.validate_project(
+        self.require_project_access(
             src_project_id,
             project_member_roles=[ProjectMemberRole.OWNER],
             organization_member_roles=[OrganizationMemberRole.ADMINISTRATOR, OrganizationMemberRole.OWNER],

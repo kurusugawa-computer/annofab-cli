@@ -77,7 +77,7 @@ class PutProjectMembers(CommandLine):
 
         """
 
-        super().validate_project(project_id, [ProjectMemberRole.OWNER])
+        super().require_project_access(project_id, [ProjectMemberRole.OWNER])
 
         organization_name = self.facade.get_organization_name_from_project_id(project_id)
         organization_members = self.service.wrapper.get_all_organization_members(organization_name)

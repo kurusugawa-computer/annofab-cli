@@ -16,7 +16,7 @@ def test_copy_project_members_deletes_destination_members_when_source_is_empty(m
     command.facade.get_organization_name_from_project_id.return_value = "org"
     command.src_project_title = "source"
     command.dest_project_title = "destination"
-    monkeypatch.setattr(command, "validate_projects", Mock())
+    monkeypatch.setattr(command, "require_access_to_projects", Mock())
     monkeypatch.setattr(command, "get_organization_members_from_project_id", lambda _: [{"account_id": "account1"}])
     monkeypatch.setattr(command, "confirm_processing", Mock(return_value=True))
     apply_project_members = Mock()

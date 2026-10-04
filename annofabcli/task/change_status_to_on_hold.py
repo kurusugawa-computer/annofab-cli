@@ -255,7 +255,7 @@ class ChangingStatusToOnHold(CommandLine):
         task_query: TaskQuery | None = TaskQuery.from_dict(dict_task_query) if dict_task_query is not None else None
 
         project_id = args.project_id
-        super().validate_project(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.ACCEPTER, ProjectMemberRole.WORKER])
+        super().require_project_access(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.ACCEPTER, ProjectMemberRole.WORKER])
         my_member, _ = self.service.api.get_my_member_in_project(project_id)
         can_operate_other_task = ProjectMemberRole(my_member["member_role"]) != ProjectMemberRole.WORKER
 

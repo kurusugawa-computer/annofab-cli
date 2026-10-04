@@ -86,7 +86,7 @@ class ChangeProjectMembers(CommandLine):
 
         """
 
-        super().validate_project(project_id, [ProjectMemberRole.OWNER])
+        super().require_project_access(project_id, [ProjectMemberRole.OWNER])
 
         old_project_members = self.service.wrapper.get_all_project_members(project_id)
         project_title = self.facade.get_project_title(project_id)

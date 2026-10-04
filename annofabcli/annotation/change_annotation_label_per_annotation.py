@@ -283,7 +283,7 @@ class ChangeLabelPerAnnotation(CommandLine):
                 file=sys.stderr,
             )
             sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
-        super().validate_project(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.ACCEPTER])
+        super().require_project_access(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.ACCEPTER])
 
         main_obj = ChangeAnnotationLabelPerAnnotationMain(self.service, project_id=project_id, include_complete_task=args.include_complete_task, all_yes=args.yes, backup_dir=backup_dir)
         try:

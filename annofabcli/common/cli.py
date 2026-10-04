@@ -592,11 +592,13 @@ class CommandLine(CommandLineWithoutWebapi):
         self.facade = facade
         super().__init__(args)
 
-    def validate_project(
+    def require_project_access(
         self,
         project_id: str,
         project_member_roles: list[ProjectMemberRole] | None = None,
         organization_member_roles: list[OrganizationMemberRole] | None = None,
+        *,
+        operation: str | None = None,
     ) -> None:
         """
         プロジェクト or 組織に対して、必要な権限が付与されているかを確認する。
@@ -605,13 +607,15 @@ class CommandLine(CommandLineWithoutWebapi):
             project_id:
             project_member_roles: プロジェクトメンバロールの一覧. Noneの場合はチェックしない。
             organization_member_roles: 組織メンバロールの一覧。Noneの場合はチェックしない。
+            operation: 権限が必要な操作の説明。
 
         Raises:
              AuthorizationError: 自分自身のRoleがいずれかのRoleにも合致しなければ、AuthorizationErrorが発生する。
 
         """
-        self.facade.validate_project(
+        self.facade.require_project_access(
             project_id=project_id,
             project_member_roles=project_member_roles,
             organization_member_roles=organization_member_roles,
+            operation=operation,
         )

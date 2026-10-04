@@ -414,7 +414,7 @@ class VisualizeAnnotationCount(CommandLine):
 
         project_id: str | None = args.project_id
         if project_id is not None:
-            super().validate_project(project_id, project_member_roles=[ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER])
+            super().require_project_access(project_id, project_member_roles=[ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER])
 
         output_dir: Path = args.output_dir
         annotation_path = Path(args.annotation) if args.annotation is not None else None

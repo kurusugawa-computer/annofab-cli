@@ -50,7 +50,7 @@ class PutInspectionComment(CommandLine):
         if not self.validate(args):
             sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
-        super().validate_project(args.project_id, [ProjectMemberRole.ACCEPTER, ProjectMemberRole.OWNER])
+        super().require_project_access(args.project_id, [ProjectMemberRole.ACCEPTER, ProjectMemberRole.OWNER])
 
         if args.json is not None:
             dict_comments = annofabcli.common.cli.get_json_from_args(args.json)

@@ -290,7 +290,7 @@ class CopyInputData(CommandLine):
         src_project_id = args.src_project_id
         dest_project_id = args.dest_project_id
 
-        super().validate_project(dest_project_id, [ProjectMemberRole.OWNER])
+        super().require_project_access(dest_project_id, [ProjectMemberRole.OWNER])
         main_obj = CopyInputDataMain(
             self.service,
             src_project_id=src_project_id,

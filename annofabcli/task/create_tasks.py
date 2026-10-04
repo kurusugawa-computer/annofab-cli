@@ -352,7 +352,7 @@ class CreateTask(CommandLine):
             sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
         project_id = args.project_id
-        super().validate_project(project_id, [ProjectMemberRole.OWNER])
+        super().require_project_access(project_id, [ProjectMemberRole.OWNER])
 
         common_metadata = get_metadata_from_json_args(args.metadata)
         main_obj = CreateTaskMain(

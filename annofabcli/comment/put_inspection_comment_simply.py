@@ -46,7 +46,7 @@ class PutInspectionCommentSimply(CommandLine):
         if not self.validate(args):
             sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
-        super().validate_project(args.project_id, [ProjectMemberRole.ACCEPTER, ProjectMemberRole.OWNER])
+        super().require_project_access(args.project_id, [ProjectMemberRole.ACCEPTER, ProjectMemberRole.OWNER])
 
         comment_data = annofabcli.common.cli.get_json_from_args(args.comment_data)
         custom_project_type = CustomProjectType(args.custom_project_type) if args.custom_project_type is not None else None
