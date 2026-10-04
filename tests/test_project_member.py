@@ -27,7 +27,7 @@ class TestCommandLine:
             [
                 "project_member",
                 "change",
-                "--all_user",
+                "--all_users",
                 "--project_id",
                 project_id,
                 "--member_info",
