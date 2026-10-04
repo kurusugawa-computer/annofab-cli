@@ -74,7 +74,7 @@ JSON出力
 
     [
     {
-        "project_id": "project1",
+        "project_id": "prj1",
         "task_id": "task1",
         "input_data_id": "input_data1",
         "comment_id": "comment1",
@@ -101,7 +101,7 @@ JSON出力
         "reply_count": 1
     },
     {
-        "project_id": "project1",
+        "project_id": "prj1",
         "task_id": "task1",
         "input_data_id": "input_data1",
         "comment_id": "comment2",

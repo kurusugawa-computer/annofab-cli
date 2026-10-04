@@ -35,7 +35,7 @@ Examples
 
     [
       {
-        "project_id": "proj1",
+        "project_id": "prj1",
         "task_id": "task_00",
         "task_status": "complete",
         "task_phase": "annotation",
@@ -45,7 +45,7 @@ Examples
         "updated_datetime": "2023-10-01T12:00:00.000+09:00",
         "label": "car",
         "annotation_id": "ann1",
-        "annotation_editor_url": "https://d2rljy8mjgrfyd.cloudfront.net/3d-editor-latest/index.html?p=proj1&t=task_00/#i1/ann1",
+        "annotation_editor_url": "https://d2rljy8mjgrfyd.cloudfront.net/3d-editor-latest/index.html?p=prj1&t=task_00/#i1/ann1",
         "dimensions": {
           "width": 2.39,
           "height": 1.56,
