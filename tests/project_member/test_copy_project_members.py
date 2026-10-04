@@ -42,7 +42,7 @@ def test_copy_project_members_does_not_deactivate_login_user(monkeypatch):
     command.facade = Mock()
     command.src_project_title = "source"
     command.dest_project_title = "destination"
-    monkeypatch.setattr(command, "validate_projects", Mock())
+    monkeypatch.setattr(command, "require_access_to_projects", Mock())
     monkeypatch.setattr(command, "get_organization_members_from_project_id", lambda _: [])
     monkeypatch.setattr(command, "confirm_processing", Mock(return_value=True))
     apply_project_members = Mock()
@@ -64,7 +64,7 @@ def test_copy_project_members_does_not_update_login_user(monkeypatch):
     command.facade = Mock()
     command.src_project_title = "source"
     command.dest_project_title = "destination"
-    monkeypatch.setattr(command, "validate_projects", Mock())
+    monkeypatch.setattr(command, "require_access_to_projects", Mock())
     monkeypatch.setattr(command, "get_organization_members_from_project_id", lambda _: [{"account_id": "account1"}])
     apply_project_members = Mock()
     monkeypatch.setattr(command, "apply_project_members", apply_project_members)
