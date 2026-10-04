@@ -31,7 +31,7 @@ class InviteProjectMembersMain:
         Returns:
 
         """
-        dest_project_members = self.service.wrapper.get_all_project_members(project_id)
+        dest_project_members = self.service.wrapper.get_all_project_members(project_id, query_params={"include_inactive_member": True})
 
         def get_project_member(user_id: str) -> dict[str, Any] | None:
             return first_true(dest_project_members, pred=lambda e: e["user_id"] == user_id)
@@ -44,7 +44,7 @@ class InviteProjectMembersMain:
         for index, user_id in enumerate(user_id_list, start=1):
             logger.debug(f"{index} / {len(user_id_list)} 件目: user_id='{user_id}'")
             dest_member = get_project_member(user_id)
-            if dest_member is not None:
+            if dest_member is not None and dest_member["member_status"] == ProjectMemberStatus.ACTIVE.value:
                 logger.info(f"user_id='{user_id}' は既に {project_title}({project_id}) のメンバなのでスキップします。")
                 skipped_count += 1
                 continue
@@ -52,7 +52,7 @@ class InviteProjectMembersMain:
             request_body = {
                 "member_status": ProjectMemberStatus.ACTIVE.value,
                 "member_role": member_role.value,
-                "last_updated_datetime": None,
+                "last_updated_datetime": dest_member["updated_datetime"] if dest_member is not None else None,
             }
             try:
                 self.service.api.put_project_member(project_id, user_id, request_body=request_body)
