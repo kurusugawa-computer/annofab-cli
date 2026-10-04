@@ -206,7 +206,7 @@
 - `annofabcli project_member copy`: プロジェクトメンバをコピーする。
 - `annofabcli project_member delete`: 複数のプロジェクトから、ユーザを脱退させます。
 - `annofabcli project_member invite`: 複数のプロジェクトに、ユーザを招待します。
-- `annofabcli project_member list`: 複数のプロジェクトのプロジェクトメンバを出力します。
+- `annofabcli project_member list`: プロジェクトメンバを出力します。
 - `annofabcli project_member put`: プロジェクトメンバを登録します。
 
 ## statistics

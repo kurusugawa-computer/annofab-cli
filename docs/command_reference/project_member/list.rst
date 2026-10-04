@@ -22,13 +22,7 @@ Examples
 
 .. code-block::
 
-    $ annofabcli project_member list --project_id prj1 prj2
-
-自分が所属する組織配下のすべてのプロジェクトを対象にする場合は、``--organization`` を指定してください。
-
-.. code-block::
-
-    $ annofabcli project_member list --organization org1 --parallelism 4
+    $ annofabcli project_member list --project_id prj1
 
 
 
