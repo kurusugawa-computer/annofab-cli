@@ -73,11 +73,11 @@ Examples
             "z": 1
           }
         },
-        "volume": 19.3,
-        "footprint_area": 12.3,
-        "bottom_z": -0.06,
+        "volume": 19.238544,
+        "footprint_area": 12.332400000000002,
+        "bottom_z": -0.07000000000000006,
         "top_z": 1.49,
-        "horizontal_distance": 13.09,
+        "horizontal_distance": 13.093910798535326,
         "attributes": {
           "occluded": true,
           "type": "sedan"

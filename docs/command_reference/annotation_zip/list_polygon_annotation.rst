@@ -52,7 +52,7 @@ Examples
         "annotation_editor_url": "https://annofab.com/projects/prj1/tasks/task_00/editor?#i1/ann1",
         "point_count": 3,
         "area": 50.0,
-        "centroid": {"x": 3.3, "y": 3.3},
+        "centroid": {"x": 3.333333333333333, "y": 3.333333333333333},
         "bounding_box": {
           "left_top": {"x": 0, "y": 0},
           "right_bottom": {"x": 10, "y": 10}

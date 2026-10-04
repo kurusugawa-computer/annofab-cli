@@ -51,10 +51,10 @@ Examples
         "annotation_id": "ann1",
         "annotation_editor_url": "https://annofab.com/projects/prj1/tasks/task_00/editor?#i1/ann1",
         "point_count": 5,
-        "length": 100.5,
+        "length": 72.55832815336873,
         "start_point": {"x": 10.0, "y": 20.0},
         "end_point": {"x": 50.0, "y": 80.0},
-        "midpoint": {"x": 30.0, "y": 45.0},
+        "midpoint": {"x": 30.0, "y": 47.0},
         "bounding_box_width": 40.0,
         "bounding_box_height": 60.0,
         "attributes": {
