@@ -12,7 +12,6 @@ pytestmark = pytest.mark.access_webapi
 
 
 out_dir = Path("./tests/out/project_member")
-data_dir = Path("./tests/data/project_member")
 
 inifile = configparser.ConfigParser()
 inifile.read("./pytest.ini", "UTF-8")
@@ -53,7 +52,3 @@ class TestCommandLine:
 
     def test_list_project_member(self):
         main(["project_member", "list", "--project_id", project_id])
-
-    def test_put_project_member(self):
-        csv_file = str(data_dir / "project_members.csv")
-        main(["project_member", "put", "--project_id", project_id, "--csv", csv_file, "--yes"])

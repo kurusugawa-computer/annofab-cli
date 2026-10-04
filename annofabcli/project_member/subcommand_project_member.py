@@ -5,7 +5,6 @@ import annofabcli.project_member.copy_project_members
 import annofabcli.project_member.delete_project_members
 import annofabcli.project_member.invite_project_members
 import annofabcli.project_member.list_users
-import annofabcli.project_member.put_project_members
 import annofabcli.project_member.update_project_member_roles
 import annofabcli.project_member.update_project_members
 
@@ -18,7 +17,6 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     annofabcli.project_member.delete_project_members.add_parser(subparsers)
     annofabcli.project_member.invite_project_members.add_parser(subparsers)
     annofabcli.project_member.list_users.add_parser(subparsers)
-    annofabcli.project_member.put_project_members.add_parser(subparsers)
     annofabcli.project_member.update_project_members.add_parser(subparsers)
     annofabcli.project_member.update_project_member_roles.add_parser(subparsers)
 
