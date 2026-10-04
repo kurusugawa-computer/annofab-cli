@@ -217,7 +217,7 @@ class UpdateMetadata(CommandLine):
         else:
             raise RuntimeError("'--metadata'か'--metadata_by_input_data_id'のどちらかを指定する必要があります。")
 
-        super().validate_project(args.project_id, [ProjectMemberRole.OWNER])
+        super().require_project_access(args.project_id, [ProjectMemberRole.OWNER])
         main_obj = UpdateMetadataMain(self.service, all_yes=args.yes)
         main_obj.update_metadata_of_input_data(
             args.project_id,

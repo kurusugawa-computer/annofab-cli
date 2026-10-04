@@ -146,7 +146,7 @@ class ListAllInputData(CommandLine):
         input_data_query = InputDataQuery.from_dict(annofabcli.common.cli.get_json_from_args(args.input_data_query)) if args.input_data_query is not None else None
 
         project_id = args.project_id
-        super().validate_project(project_id, project_member_roles=[ProjectMemberRole.TRAINING_DATA_USER, ProjectMemberRole.OWNER])
+        super().require_project_access(project_id, project_member_roles=[ProjectMemberRole.TRAINING_DATA_USER, ProjectMemberRole.OWNER])
 
         main_obj = ListInputDataWithJsonMain(self.service)
         temp_dir = Path(args.temp_dir) if args.temp_dir is not None else None

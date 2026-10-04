@@ -44,7 +44,7 @@ class PutOnholdCommentSimply(CommandLine):
         if not self.validate(args):
             sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
-        super().validate_project(args.project_id)
+        super().require_project_access(args.project_id)
 
         task_id_list = get_list_from_args(args.task_id)
         main_obj = PutCommentSimplyMain(self.service, project_id=args.project_id, comment_type=CommentType.ONHOLD, all_yes=self.all_yes)

@@ -857,7 +857,7 @@ class CountAnnotationAttributeFilled(CommandLine):
         task_metadata_keys: list[str] = []
         task_metadata_by_task_id: dict[str, dict[str, Any]] | None = None
         if project_id is not None:
-            super().validate_project(project_id, project_member_roles=[ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER])
+            super().require_project_access(project_id, project_member_roles=[ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER])
 
         annotation_path = Path(args.annotation) if args.annotation is not None else None
 

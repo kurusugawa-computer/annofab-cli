@@ -323,7 +323,7 @@ class ListAnnotationPolygon(CommandLine):
             print(f"{self.COMMON_MESSAGE} argument --project_id: `--with_task_metadata`を指定するときは、`--project_id`が必須です。", file=sys.stderr)  # noqa: T201
             sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
         if project_id is not None:
-            super().validate_project(project_id, project_member_roles=[ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER])
+            super().require_project_access(project_id, project_member_roles=[ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER])
             project, _ = self.service.api.get_project(project_id)
             if project["input_data_type"] != InputDataType.IMAGE.value:
                 print(f"project_id='{project_id}'であるプロジェクトは画像プロジェクトでないので、終了します", file=sys.stderr)  # noqa: T201

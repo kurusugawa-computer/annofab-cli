@@ -226,7 +226,7 @@ class UpdateMetadataOfTask(CommandLine):
         else:
             raise RuntimeError("'--metadata'か'--metadata_by_task_id'のどちらかを指定する必要があります。")
 
-        super().validate_project(args.project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER])
+        super().require_project_access(args.project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER])
         main_obj = UpdateMetadataOfTaskMain(self.service, is_overwrite_metadata=args.overwrite, parallelism=args.parallelism, all_yes=args.yes)
         main_obj.update_metadata_of_task(args.project_id, metadata_by_task_id=metadata_by_task_id)
 

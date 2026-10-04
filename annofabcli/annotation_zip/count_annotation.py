@@ -518,7 +518,7 @@ class CountAnnotation(CommandLine):
 
         project_id: str = args.project_id
         with_task_metadata: bool = args.with_task_metadata
-        super().validate_project(project_id, project_member_roles=[ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER])
+        super().require_project_access(project_id, project_member_roles=[ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER])
 
         annotation_path = args.annotation
         task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id) if args.task_id is not None else None

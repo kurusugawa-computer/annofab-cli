@@ -47,7 +47,7 @@ class AnnotationSpecsHistories(CommandLine):
         return [self._add_properties_to_annotation_specs_history(e) for e in annotation_specs_histories]
 
     def list_annotation_specs_histories(self, project_id: str) -> None:
-        super().validate_project(project_id)
+        super().require_project_access(project_id)
 
         annotation_specs_histories = self.get_annotation_specs_histories(project_id)
         self.print_according_to_format(annotation_specs_histories)

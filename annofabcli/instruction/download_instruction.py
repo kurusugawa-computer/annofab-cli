@@ -127,7 +127,7 @@ class DownloadInstruction(CommandLine):
         args = self.args
 
         project_id = args.project_id
-        super().validate_project(project_id)
+        super().require_project_access(project_id)
 
         if args.before is not None:
             history_id = self.get_history_id_from_before_index(args.project_id, args.before)

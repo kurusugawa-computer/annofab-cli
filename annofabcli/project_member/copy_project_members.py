@@ -30,7 +30,7 @@ class CopyProjectMembers(CommandLine):
         self.src_project_title = project_title1
         self.dest_project_title = project_title2
 
-    def validate_projects(self, src_project_id: str, dest_project_id: str) -> None:
+    def require_access_to_projects(self, src_project_id: str, dest_project_id: str) -> None:
         """
         適切なRoleが付与されているかを確認する。
 
@@ -39,8 +39,8 @@ class CopyProjectMembers(CommandLine):
 
         """
 
-        super().validate_project(src_project_id, project_member_roles=None)
-        super().validate_project(dest_project_id, project_member_roles=[ProjectMemberRole.OWNER])
+        super().require_project_access(src_project_id, project_member_roles=None)
+        super().require_project_access(dest_project_id, project_member_roles=[ProjectMemberRole.OWNER])
 
     def get_organization_members_from_project_id(self, project_id: str) -> list[OrganizationMember]:
         organization_name = self.facade.get_organization_name_from_project_id(project_id)
@@ -103,7 +103,7 @@ class CopyProjectMembers(CommandLine):
 
         """
 
-        self.validate_projects(src_project_id, dest_project_id)
+        self.require_access_to_projects(src_project_id, dest_project_id)
 
         src_project_members = self.service.wrapper.get_all_project_members(src_project_id)
         src_organization_members = self.get_organization_members_from_project_id(src_project_id)

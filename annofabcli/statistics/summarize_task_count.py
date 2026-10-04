@@ -136,7 +136,7 @@ class SummarizeTaskCount(CommandLine):
 
     def summarize_task_count(self, project_id: str, *, task_json_path: Path | None, is_latest: bool, temp_dir: Path | None = None) -> None:
         # タスク全件ファイルをダウンロードするので、オーナロールかアノテーションユーザロールであることを確認する。
-        super().validate_project(project_id, project_member_roles=[ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER])
+        super().require_project_access(project_id, project_member_roles=[ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER])
 
         task_list = self.get_task_list_with_downloading_file(project_id, task_json_path, is_latest=is_latest, temp_dir=temp_dir)
 

@@ -37,7 +37,7 @@ class CreateOnholdCommentSimply(CommandLine):
         if not self.validate(args):
             sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
-        super().validate_project(args.project_id, [ProjectMemberRole.ACCEPTER, ProjectMemberRole.OWNER, ProjectMemberRole.WORKER])
+        super().require_project_access(args.project_id, [ProjectMemberRole.ACCEPTER, ProjectMemberRole.OWNER, ProjectMemberRole.WORKER])
         my_member, _ = self.service.api.get_my_member_in_project(args.project_id)
         can_change_other_operator = ProjectMemberRole(my_member["member_role"]) != ProjectMemberRole.WORKER
 

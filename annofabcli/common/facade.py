@@ -322,11 +322,13 @@ class AnnofabApiFacade:
             task_query.account_id = self.project_member_repository.get_account_id_from_user_id(project_id, task_query.user_id)
         return task_query
 
-    def validate_project(
+    def require_project_access(
         self,
         project_id: str,
         project_member_roles: list[ProjectMemberRole] | None = None,
         organization_member_roles: list[OrganizationMemberRole] | None = None,
+        *,
+        operation: str | None = None,
     ) -> None:
         """
         プロジェクト or 組織に対して、必要な権限が付与されているかを確認する。
@@ -335,6 +337,7 @@ class AnnofabApiFacade:
             project_id:
             project_member_roles: プロジェクトメンバロールの一覧. Noneの場合はチェックしない。
             organization_member_roles: 組織メンバロールの一覧。Noneの場合はチェックしない。
+            operation: 権限が必要な操作の説明。
 
         Raises:
              AuthorizationError: 自分自身のRoleがいずれかのRoleにも合致しなければ、AuthorizationErrorが発生する。
@@ -345,9 +348,9 @@ class AnnofabApiFacade:
 
         if project_member_roles is not None:  # noqa: SIM102
             if not self.contains_any_project_member_role(project_id, project_member_roles):
-                raise ProjectAuthorizationError(project_title, project_member_roles)
+                raise ProjectAuthorizationError(project_title, project_member_roles, operation=operation)
 
         if organization_member_roles is not None:
             organization_name = self.get_organization_name_from_project_id(project_id)
             if not self.contains_any_organization_member_role(organization_name, organization_member_roles):
-                raise OrganizationAuthorizationError(organization_name, organization_member_roles)
+                raise OrganizationAuthorizationError(organization_name, organization_member_roles, operation=operation)

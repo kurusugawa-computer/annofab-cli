@@ -488,7 +488,7 @@ class CompleteTasks(CommandLine):
         inspection_status = CommentStatus(args.inspection_status) if args.inspection_status is not None else None
 
         project_id = args.project_id
-        super().validate_project(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.ACCEPTER])
+        super().require_project_access(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.ACCEPTER])
 
         dict_task_query = annofabcli.common.cli.get_json_from_args(args.task_query)
         task_query: TaskQuery | None = TaskQuery.from_dict(dict_task_query) if dict_task_query is not None else None

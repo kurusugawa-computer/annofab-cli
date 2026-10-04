@@ -45,7 +45,7 @@ class ListJob(CommandLine):
 
         """
 
-        super().validate_project(project_id, project_member_roles=None)
+        super().require_project_access(project_id, project_member_roles=None)
 
         job_list = self.get_job_list(project_id, job_type=job_type, job_query=job_query)
         logger.info(f"ジョブ一覧の件数: {len(job_list)}")

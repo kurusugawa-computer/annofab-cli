@@ -291,7 +291,7 @@ def test_main_passes_include_status_options_to_main_object(monkeypatch: pytest.M
     monkeypatch.setattr(complete_tasks.annofabcli.common.cli, "get_json_from_args", lambda _value: None)
 
     command = complete_tasks.CompleteTasks(service, facade, args)
-    monkeypatch.setattr(command, "validate_project", Mock())
+    monkeypatch.setattr(command, "require_project_access", Mock())
 
     command.main()
 

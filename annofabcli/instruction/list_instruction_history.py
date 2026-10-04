@@ -43,7 +43,7 @@ class ListInstructionHistories(CommandLine):
     def main(self) -> None:
         args = self.args
         project_id = args.project_id
-        super().validate_project(project_id)
+        super().require_project_access(project_id)
 
         histories = self.get_instruction_histories(project_id)
         self.print_according_to_format(histories)

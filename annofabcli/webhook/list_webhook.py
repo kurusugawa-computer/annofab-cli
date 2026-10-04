@@ -62,7 +62,7 @@ class ListWebhook(CommandLine):
         Returns:
             Webhook一覧
         """
-        self.validate_project(project_id, project_member_roles=[ProjectMemberRole.OWNER])
+        self.require_project_access(project_id, project_member_roles=[ProjectMemberRole.OWNER])
         webhook_list, _ = self.service.api.get_webhooks(project_id)
         return webhook_list
 

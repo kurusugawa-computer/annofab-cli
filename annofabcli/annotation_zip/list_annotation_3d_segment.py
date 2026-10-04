@@ -270,7 +270,7 @@ class ListAnnotation3DSegment(CommandLine):
             )
             sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
         if project_id is not None:
-            super().validate_project(project_id, project_member_roles=[ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER])
+            super().require_project_access(project_id, project_member_roles=[ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER])
             project, _ = self.service.api.get_project(project_id)
             if project["input_data_type"] != InputDataType.CUSTOM.value:
                 print(  # noqa: T201

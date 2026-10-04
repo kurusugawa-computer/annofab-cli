@@ -240,7 +240,7 @@ class ListClassificationAnnotation(CommandLine):
             sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
         annotation_editor_type: AnnotationEditorType | None = args.annotation_editor_type
         if project_id is not None:
-            super().validate_project(project_id, project_member_roles=[ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER])
+            super().require_project_access(project_id, project_member_roles=[ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER])
             project, _ = self.service.api.get_project(project_id)
             annotation_editor_type = get_annotation_editor_type_from_input_data_type(project["input_data_type"])
 

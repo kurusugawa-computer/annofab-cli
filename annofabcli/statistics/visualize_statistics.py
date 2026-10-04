@@ -439,7 +439,7 @@ class VisualizingStatisticsMain:
 
         """
 
-        self.facade.validate_project(project_id, project_member_roles=[ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER])
+        self.facade.require_project_access(project_id, project_member_roles=[ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER])
         project_info = self.get_project_info(project_id)
         logger.info(f"project_title='{project_info.project_title}'")
 
