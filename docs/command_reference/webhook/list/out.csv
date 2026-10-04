@@ -1,0 +1,2 @@
+﻿project_id,webhook_id,webhook_status,event_type,method,url,headers,body,created_datetime,updated_datetime
+prj1,webhook1,active,task-completed,POST,https://example.com/webhook,"[{""name"": ""Content-Type"", ""value"": ""application/json""}]","{""project_id"":""{{PROJECT_ID}}"",""task_id"":""{{TASK_ID}}""}",2026-01-23T03:02:56.478+09:00,2026-01-23T03:02:56.478+09:00

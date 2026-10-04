@@ -1,0 +1,3 @@
+﻿label_id,label_name_en,label_name_ja,label_name_vi,annotation_type,attribute_id,attribute_name_en,attribute_name_ja,attribute_name_vi,attribute_type
+a0a0c27b-dad8-42da-9235-c09688cdfd12,car,car,car,bounding_box,0f739b17-c22b-4f4a-a791-d142eb0bcd41,truncation,truncation,truncation,flag
+53530a8f-e48f-46e9-833f-8e48becb25af,road,road,road,segmentation_v2,0f739b17-c22b-4f4a-a791-d142eb0bcd41,truncation,truncation,truncation,flag

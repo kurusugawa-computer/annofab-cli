@@ -14,7 +14,18 @@ Annofabではポリラインとポリゴンの区別がないため、ポリラ�
 Examples
 =================================
 
-基本的な使い方
+出力例（CSV形式）
+----------------------------------------------
+
+.. code-block:: bash
+
+    $ annofabcli annotation_zip list_polygon_annotation --project_id prj1 --format csv --output out.csv
+
+.. csv-table:: out.csv
+    :file: list_polygon_annotation/out.csv
+    :header-rows: 1
+
+出力例（JSON形式）
 --------------------
 
 .. code-block:: bash
@@ -42,6 +53,10 @@ Examples
         "point_count": 3,
         "area": 50.0,
         "centroid": {"x": 3.3, "y": 3.3},
+        "bounding_box": {
+          "left_top": {"x": 0, "y": 0},
+          "right_bottom": {"x": 10, "y": 10}
+        },
         "bounding_box_width": 10,
         "bounding_box_height": 10,
         "attributes": {

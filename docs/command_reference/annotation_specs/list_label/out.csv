@@ -1,0 +1,2 @@
+﻿label_id,label_name_en,label_name_ja,label_name_vi,annotation_type,color,attribute_count,keybind,keybind_text,field_values
+dc14bd37-c31e-4ca1-99f3-4025edae5bb9,car,car,car,bounding_box,#8100D8,5,"{""alt"": false, ""code"": ""Digit1"", ""ctrl"": true, ""shift"": false}",Ctrl+Digit1,{}

@@ -36,6 +36,17 @@ Examples
 出力結果
 =================================
 
+CSV出力
+----------------------------------------------
+
+.. code-block:: bash
+
+    $ annofabcli annotation_specs list_inspection_phrase --project_id prj1 --format csv --output out.csv
+
+.. csv-table:: out.csv
+    :file: list_inspection_phrase/out.csv
+    :header-rows: 1
+
 JSON出力
 ----------------------------------------------
 

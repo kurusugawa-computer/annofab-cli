@@ -14,7 +14,18 @@ Annofabではポリラインとポリゴンの区別がないため、ポリゴ�
 Examples
 =================================
 
-基本的な使い方
+出力例（CSV形式）
+----------------------------------------------
+
+.. code-block:: bash
+
+    $ annofabcli annotation_zip list_polyline_annotation --project_id prj1 --format csv --output out.csv
+
+.. csv-table:: out.csv
+    :file: list_polyline_annotation/out.csv
+    :header-rows: 1
+
+出力例（JSON形式）
 --------------------
 
 .. code-block:: bash
