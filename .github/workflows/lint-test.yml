@@ -41,8 +41,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-        with:
-          fetch-depth: 0
       - name: Install uv and set the python version
         uses: astral-sh/setup-uv@v7
         with:
@@ -54,6 +52,15 @@ jobs:
       - name: Lint
         run: |
             make lint
+
+  gitleaks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Scan Git history for secrets
+        run: make gitleaks
 
   docs:
     runs-on: ubuntu-latest

@@ -22,7 +22,7 @@ Examples
 
 .. code-block::
 
-    $ annofabcli project_member list --project_id prj1 prj2
+    $ annofabcli project_member list --project_id prj1
 
 
 
@@ -78,7 +78,7 @@ user_idの一覧を出力
 
 .. code-block::
 
-    $ annofabcli task list --project_id prj1 --format user_id_list --output out.txt
+    $ annofabcli project_member list --project_id prj1 --format user_id_list --output out.txt
 
 
 .. code-block::
@@ -96,4 +96,3 @@ Usage Details
    :prog: annofabcli project_member list
    :nosubcommands:
    :nodefaultconst:
-

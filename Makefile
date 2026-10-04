@@ -23,7 +23,6 @@ lint: check-skill-command-index
 	uv run ruff format ${SOURCE_FILES} ${TEST_FILES} --check
 	uv run ruff check ${SOURCE_FILES} ${TEST_FILES}
 	uv run mypy ${SOURCE_FILES} ${TEST_FILES}
-	$(MAKE) gitleaks
 
 gitleaks:
 	@if command -v gitleaks >/dev/null 2>&1; then \

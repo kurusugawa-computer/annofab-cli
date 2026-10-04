@@ -7,8 +7,10 @@ from annofabcli.project_member.list_users import ListProjectMembers
 
 def test_list_project_members_csv_has_headers_when_empty(monkeypatch):
     command = object.__new__(ListProjectMembers)
-    command.args = Namespace(project_id=["project_id"], include_inactive=False, format=OutputFormat.CSV.value)
-    monkeypatch.setattr(command, "get_project_members_with_project_id", Mock(return_value=[]))
+    command.args = Namespace(project_id="project_id", include_inactive=False, format=OutputFormat.CSV.value)
+    command.service = Mock()
+    command.service.api.get_project.return_value = ({"title": "project"}, None)
+    command.service.wrapper.get_all_project_members.return_value = []
     print_csv = Mock()
     monkeypatch.setattr(command, "print_csv", print_csv)
 

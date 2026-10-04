@@ -6,6 +6,7 @@ Description
 =================================
 
 複数のプロジェクトにユーザを招待します。
+既にプロジェクトメンバであるユーザはスキップします。ロールを変更する場合は :doc:`change` を使用してください。
 
 
 Examples
@@ -42,6 +43,6 @@ Usage Details
 
 .. argparse::
    :ref: annofabcli.project_member.invite_project_members.add_parser
-   :prog: annofabcli project_member change
+   :prog: annofabcli project_member invite
    :nosubcommands:
    :nodefaultconst:

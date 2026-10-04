@@ -117,6 +117,9 @@ class CopyProjectMembers(CommandLine):
         # 追加対象のプロジェクトメンバ
         added_members = []
         for member in src_project_members:
+            if member["user_id"] == self.service.api.login_user_id:
+                logger.debug(f"自分自身のプロジェクトメンバ情報はコピーしません。user_id='{member['user_id']}'")
+                continue
             account_id = member["account_id"]
             if self.find_member(dest_organization_members, account_id) is None:
                 # コピー先の組織メンバでないので、コピーしない
@@ -135,7 +138,7 @@ class CopyProjectMembers(CommandLine):
         if delete_dest:
             # コピー先にしかいないメンバを削除する
             src_account_ids = [e["account_id"] for e in src_project_members]
-            deleted_dest_members = [e for e in dest_project_members if e["account_id"] not in src_account_ids]
+            deleted_dest_members = [e for e in dest_project_members if e["account_id"] not in src_account_ids and e["user_id"] != self.service.api.login_user_id]
 
             def to_inactive(arg_member: dict[str, Any]) -> dict[str, Any]:
                 arg_member["member_status"] = "inactive"
@@ -170,7 +173,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("src_project_id", type=str, help="コピー元のプロジェクトのproject_id")
     parser.add_argument("dest_project_id", type=str, help="コピー先のプロジェクトのproject_id")
 
-    parser.add_argument("--delete_dest", action="store_true", help="コピー先のプロジェクトにしか存在しないプロジェクトメンバを削除します。")
+    parser.add_argument("--delete_dest", action="store_true", help="コピー元にいないコピー先のメンバを脱退させます。ただし自分自身は脱退させません。")
 
     parser.set_defaults(subcommand_func=main)
 
