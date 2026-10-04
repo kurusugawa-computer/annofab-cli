@@ -1,0 +1,2 @@
+﻿project_id,task_id,task_status,task_phase,task_phase_stage,input_data_id,input_data_name,updated_datetime,label,annotation_id,annotation_area
+prj1,task_00,complete,annotation,1,i1,i1.jpg,2023-10-01T12:00:00.000+09:00,cat,ann1,1234

@@ -25,6 +25,20 @@ Examples
 =================================
 
 
+出力例（CSV形式）
+----------------------------------------------
+
+.. code-block:: bash
+
+    $ annofabcli statistics list_annotation_area --project_id prj1 --format csv --output out.csv
+
+.. csv-table:: out.csv
+    :file: list_annotation_area/out.csv
+    :header-rows: 1
+
+出力例（JSON形式）
+----------------------------------------------
+
 .. code-block::
 
     $ annofabcli statistics list_annotation_area --project_id prj1 \
@@ -35,6 +49,7 @@ Examples
 
     [
       {
+        "project_id": "prj1",
         "task_id": "task_00",
         "task_status": "complete",
         "task_phase": "annotation",

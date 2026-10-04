@@ -1,0 +1,2 @@
+﻿organization_id,plugin_id,plugin_name,description,is_builtin,project_extra_data_kinds,detail,created_datetime,updated_datetime
+12345678-abcd-1234-abcd-1234abcd5678,plugin1,Custom Annotation Editor,独自のアノテーションエディタです。,False,[],"{""type"": ""AnnotationEditor"", ""url"": ""https://example.com/editor?project_id={projectId}&task_id={taskId}"", ""auth_redirect_url"": ""https://example.com/oauth/callback"", ""compatible_input_data_types"": [""image""]}",2026-01-23T03:02:56.478+09:00,2026-01-23T03:02:56.478+09:00

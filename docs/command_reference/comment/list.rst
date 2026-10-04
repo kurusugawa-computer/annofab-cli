@@ -49,12 +49,23 @@ Examples
 =================================
 
 
+CSV出力
+----------------------------------------------
+
+.. code-block:: bash
+
+    $ annofabcli comment list --project_id prj1 --task_id task1 --format csv --output out.csv
+
+.. csv-table:: out.csv
+    :file: list/out.csv
+    :header-rows: 1
+
 JSON出力
 ----------------------------------------------
 
 .. code-block::
 
-    $ annofabcli comment list --format pretty_json --output out.json
+    $ annofabcli comment list --project_id prj1 --task_id task1 --format pretty_json --output out.json
 
 
 

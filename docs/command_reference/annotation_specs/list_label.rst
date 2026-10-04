@@ -40,6 +40,19 @@ Examples
 
 
 
+CSV出力
+----------------------------------------------
+
+.. code-block:: bash
+
+    $ annofabcli annotation_specs list_label --project_id prj1 --format csv --output out.csv
+
+.. csv-table:: out.csv
+    :file: list_label/out.csv
+    :header-rows: 1
+
+CSV形式では、 ``keybind`` と ``field_values`` はJSON文字列です。
+
 JSON出力
 ----------------------------------------------
 
@@ -67,7 +80,8 @@ JSON出力
                 "ctrl": true,
                 "shift": false
             },
-            "keybind_text": "Ctrl+Digit1"
+            "keybind_text": "Ctrl+Digit1",
+            "field_values": {}
         }
     ]
 
@@ -83,6 +97,7 @@ JSON出力
 * ``keybind`` : キーボードショートカットのJSONオブジェクト
 * ``keybind_text`` : キーボードショートカットの表示文字列。キーボードショートカットが未設定の場合は ``null`` です。
 
+* ``field_values`` : ラベルに設定されたフィールド値。未設定の場合は空のオブジェクトです。
 
 
 

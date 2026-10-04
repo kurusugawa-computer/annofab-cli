@@ -33,6 +33,10 @@ CSV出力
     $ annofabcli instruction list_history --project_id prj1  --format csv --output out.csv
 
 
+.. csv-table:: out.csv
+    :file: list_history/out.csv
+    :header-rows: 1
+
 JSON出力
 ----------------------------------------------
 

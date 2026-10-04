@@ -23,6 +23,17 @@ Examples
 =================================
 
 
+CSV出力
+----------------------------------------------
+
+.. code-block:: bash
+
+    $ annofabcli organization list --format csv --output out.csv
+
+.. csv-table:: out.csv
+    :file: list/out.csv
+    :header-rows: 1
+
 JSON出力
 ----------------------------------------------
 
