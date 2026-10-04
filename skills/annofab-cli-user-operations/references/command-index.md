@@ -202,12 +202,13 @@
 
 プロジェクトメンバ関係のサブコマンド
 
-- `annofabcli project_member change`: プロジェクトメンバを変更します。
 - `annofabcli project_member copy`: プロジェクトメンバをコピーする。
 - `annofabcli project_member delete`: 複数のプロジェクトから、ユーザを脱退させます。
 - `annofabcli project_member invite`: 複数のプロジェクトに、ユーザを招待します。
 - `annofabcli project_member list`: プロジェクトメンバを出力します。
 - `annofabcli project_member put`: プロジェクトメンバを登録します。
+- `annofabcli project_member update`: CSVまたはJSONでプロジェクトメンバ情報を更新します。
+- `annofabcli project_member update_role`: 複数のプロジェクトメンバに同じロールを設定します。
 
 ## statistics
 

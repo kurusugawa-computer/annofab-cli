@@ -15,12 +15,13 @@ Available Commands
    :maxdepth: 1
    :titlesonly:
 
-   change
    copy
    delete
    invite
    list
    put
+   update
+   update_role
 
 Usage Details
 =================================

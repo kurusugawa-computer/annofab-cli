@@ -1,4 +1,5 @@
 import configparser
+import json
 from pathlib import Path
 
 import annofabapi
@@ -22,16 +23,20 @@ service = annofabapi.build()
 
 
 class TestCommandLine:
-    def test_change(self):
+    def test_update(self):
+        updates = [
+            {"user_id": member["user_id"], "sampling_inspection_rate": 10, "sampling_acceptance_rate": 20}
+            for member in service.wrapper.get_all_project_members(project_id)
+            if member["user_id"] != service.api.login_user_id
+        ]
         main(
             [
                 "project_member",
-                "change",
-                "--all_users",
+                "update",
                 "--project_id",
                 project_id,
-                "--member_info",
-                '{"sampling_inspection_rate": 10, "sampling_acceptance_rate": 20}',
+                "--json",
+                json.dumps(updates),
                 "--yes",
             ]
         )
