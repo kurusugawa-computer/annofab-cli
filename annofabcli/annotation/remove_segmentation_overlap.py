@@ -17,6 +17,7 @@ from annofabapi.pydantic_models.task_status import TaskStatus
 from annofabapi.segmentation import read_binary_image, write_binary_image
 
 import annofabcli.common.cli
+from annofabcli.annotation.dump_annotation import DumpAnnotationMain
 from annofabcli.common.annofab.editor_annotation import get_editor_annotation_dict_in_bulk
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
@@ -73,9 +74,14 @@ class RemoveSegmentationOverlapMain(CommandLineWithConfirm):
         include_complete_task: bool,
         include_break_task: bool,
         include_on_hold_task: bool,
+        backup_dir: Path | None = None,
     ) -> None:
         self.annofab_service = annofab_service
         self.project_id = project_id
+        self.backup_dir = backup_dir
+        """更新前のアノテーションを保存するディレクトリ"""
+        self.dump_annotation_obj = DumpAnnotationMain(annofab_service, project_id)
+        """JSONと塗りつぶし画像を保存するオブジェクト"""
         my_member, _ = self.annofab_service.api.get_my_member_in_project(project_id)
         self.project_member_role = ProjectMemberRole(my_member["member_role"])
         self.include_complete_task = include_complete_task
@@ -144,6 +150,11 @@ class RemoveSegmentationOverlapMain(CommandLineWithConfirm):
                 f"{log_message_prefix}{len(updated_annotation_id_list)} 件の塗りつぶしアノテーションを更新します。 :: "
                 f"task_id='{task_id}', input_data_id='{input_data_id}', annotation_id_list={updated_annotation_id_list}"
             )
+            if self.backup_dir is not None:
+                backup_path = self.backup_dir / task_id / f"{input_data_id}.json"
+                backup_path.parent.mkdir(exist_ok=True, parents=True)
+                self.dump_annotation_obj.dump_editor_annotation(old_annotation, json_path=backup_path)
+
             new_details = []
             for detail in old_details:
                 annotation_id = detail["annotation_id"]
@@ -320,6 +331,7 @@ class RemoveSegmentationOverlap(CommandLine):
             include_complete_task=args.include_complete_task,
             include_break_task=args.include_break_task,
             include_on_hold_task=args.include_on_hold_task,
+            backup_dir=args.backup,
         )
 
         main_obj.main(task_id_list, parallelism=args.parallelism)
@@ -359,6 +371,12 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         type=int,
         choices=PARALLELISM_CHOICES,
         help="並列度。指定しない場合は、逐次的に処理します。指定した場合は、``--yes`` も指定してください。",
+    )
+
+    parser.add_argument(
+        "--backup",
+        type=Path,
+        help="更新前のアノテーションのバックアップを保存するディレクトリのパス。アノテーションの復元は ``annotation restore`` コマンドで実現できます。",
     )
 
     parser.set_defaults(subcommand_func=main)
