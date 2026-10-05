@@ -31,6 +31,7 @@ Available Commands
    list_added_task_history
    list_all
    list_all_added_task_history
+   list_video_duration
    put
    reject
    reject_with_inspection_comments
@@ -38,6 +39,7 @@ Available Commands
    update_input_data
    update_metadata
    update_metadata_per_task
+   visualize_video_duration
 
 Usage Details
 =================================

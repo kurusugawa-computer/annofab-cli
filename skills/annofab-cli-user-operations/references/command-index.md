@@ -140,6 +140,7 @@
 - `annofabcli input_data update`: 入力データの名前または入力データのパスを更新します。
 - `annofabcli input_data update_metadata`: 入力データのメタデータを更新します。
 - `annofabcli input_data update_metadata_per_input_data`: 入力データごとにメタデータを更新します。
+- `annofabcli input_data visualize_video_duration`: 入力データごとの動画の長さをヒストグラムで可視化します。タスク未使用の動画も含め、各入力データを1回数えます。
 
 ## instruction
 
@@ -225,14 +226,14 @@
 - `annofabcli statistics list_annotation_count`: [DEPRECATED] ラベルごとまたは属性値ごとにアノテーション数を出力します。
 - `annofabcli statistics list_annotation_duration`: ラベルごとまたは属性値ごとに区間アノテーションの長さ（秒）を出力します。
 - `annofabcli statistics list_annotation_area`: 塗りつぶし、矩形、ポリゴンアノテーションの面積を出力します。
-- `annofabcli statistics list_video_duration`: 各タスクの動画の長さを出力します。
+- `annofabcli statistics list_video_duration`: [DEPRECATED] 各タスクの動画の長さを出力します。
 - `annofabcli statistics list_worktime`: 日ごとユーザごとの作業時間の一覧を出力します。
 - `annofabcli statistics summarize_task_count_by_task_id_group`: task_idのグループごとにタスク数を集計します。 [DEPRECATED] :: `statistics summarize_task_count_by_task_id_group` コマンドは非推奨です。代わりに `task_count list_by_task_id_group` コマンドを使用してください。 `statistics summarize_task_count_by_task_id_group` コマンドは2027/01/01以降に廃止予定です。
 - `annofabcli statistics summarize_task_count_by_user`: ユーザごとに、担当しているタスク数を出力します。 [DEPRECATED] :: `statistics summarize_task_count_by_user` コマンドは非推奨です。代わりに `task_count list_by_user` コマンドを使用してください。 `statistics summarize_task_count_by_user` コマンドは2027/01/01以降に廃止予定です。
 - `annofabcli statistics visualize`: 生産性に関するCSVファイルやグラフを出力します。
 - `annofabcli statistics visualize_annotation_count`: [DEPRECATED] 各ラベル、各属性値のアノテーション数をヒストグラムで可視化します。
 - `annofabcli statistics visualize_annotation_duration`: ラベルごとまたは属性値ごとに区間アノテーションの長さをヒストグラムで可視化したファイルを出力します。
-- `annofabcli statistics visualize_video_duration`: 動画の長さをヒストグラムで可視化します。
+- `annofabcli statistics visualize_video_duration`: [DEPRECATED] 動画の長さをヒストグラムで可視化します。
 
 ## stat_visualization
 
@@ -274,6 +275,7 @@
 - `annofabcli task list_added_task_history`: タスク履歴に関する情報を加えたタスク一覧を出力します。
 - `annofabcli task list_all`: すべてのタスクの一覧を出力します。
 - `annofabcli task list_all_added_task_history`: タスク履歴に関する情報を加えたタスク一覧のすべてを出力します。
+- `annofabcli task list_video_duration`: 各タスクの動画の長さを出力します。
 - `annofabcli task put`: [DEPRECATED] タスクを作成します。
 - `annofabcli task reject`: タスクを差し戻します。
 - `annofabcli task reject_with_inspection_comments`: 検査コメントを付与してタスクを差し戻します。
@@ -281,6 +283,7 @@
 - `annofabcli task update_input_data`: タスクに割り当てられた入力データと順序を更新します。
 - `annofabcli task update_metadata`: タスクのメタデータを更新します。
 - `annofabcli task update_metadata_per_task`: タスクごとにメタデータを更新します。
+- `annofabcli task visualize_video_duration`: タスクごとの動画の長さをヒストグラムで可視化します。同じ入力データもタスクごとに数えます。
 
 ## task_count
 

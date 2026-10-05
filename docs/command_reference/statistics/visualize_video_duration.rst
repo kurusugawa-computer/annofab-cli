@@ -2,6 +2,12 @@
 statistics visualize_video_duration
 ==========================================
 
+.. warning::
+
+   このコマンドは非推奨です。入力データ単位の可視化には :doc:`../input_data/visualize_video_duration` 、
+   タスク単位の可視化には :doc:`../task/visualize_video_duration` を使用してください。
+   旧コマンドの集計単位は入力データで、新しい入力データ単位のコマンドでは不明な動画長を除外します。
+
 Description
 =================================
 
