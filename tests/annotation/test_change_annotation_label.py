@@ -273,7 +273,7 @@ class TestIsAllowedLabelChange:
         assert not is_allowed_label_change(src_annotation_type, dest_annotation_type)
 
 
-@pytest.mark.parametrize(("answers", "expected_prompt_count", "expected_update_count"), [(["all"], 1, 2), (["y", "y", "y"], 3, 2), (["n"], 1, 0)])
+@pytest.mark.parametrize(("answers", "expected_prompt_count", "expected_update_count"), [(["all", "y", "all"], 3, 2), (["y", "all"], 2, 2), (["y", "y", "y"], 3, 2), (["n"], 1, 0)])
 def test_backup_confirmation_controls_subsequent_label_changes(monkeypatch: pytest.MonkeyPatch, answers: list[str], expected_prompt_count: int, expected_update_count: int) -> None:
     service = Mock()
     service.api.get_annotation_specs.return_value = (ANNOTATION_SPECS, None)
@@ -325,6 +325,9 @@ def test_backup_confirmation_controls_subsequent_label_changes(monkeypatch: pyte
         command.main()
 
     assert len(prompts) == expected_prompt_count
+    assert prompts[0].endswith(" [y/n] : ")
+    if expected_update_count:
+        assert prompts[-1].endswith(" [y/n/all] : ")
     assert service.api.batch_update_annotations.call_count == expected_update_count
     for call in service.api.batch_update_annotations.call_args_list:
         assert call.kwargs["request_body"][0]["data"]["label_id"] == "label_bus"

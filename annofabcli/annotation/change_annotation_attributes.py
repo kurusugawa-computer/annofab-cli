@@ -307,7 +307,7 @@ class ChangeAttributesOfAnnotation(CommandLine):
                 "間違えてアノテーションを変更してしまっときに復元できるようにするため、'--backup'でバックアップ用のディレクトリを指定することを推奨します。",
                 file=sys.stderr,
             )
-            if not self.confirm_processing("復元用のバックアップディレクトリが指定されていません。処理を続行しますか？"):
+            if not args.yes and not annofabcli.common.cli.prompt_yesno("復元用のバックアップディレクトリが指定されていません。処理を続行しますか？"):
                 sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
             backup_dir = None
         else:
@@ -322,7 +322,7 @@ class ChangeAttributesOfAnnotation(CommandLine):
                 )
                 sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
-        main_obj = ChangeAnnotationAttributesMain(self.service, project_id=project_id, include_complete_task=args.include_complete_task, all_yes=self.all_yes)
+        main_obj = ChangeAnnotationAttributesMain(self.service, project_id=project_id, include_complete_task=args.include_complete_task, all_yes=args.yes)
         main_obj.change_annotation_attributes_for_task_list(
             task_id_list,
             annotation_query=annotation_query,

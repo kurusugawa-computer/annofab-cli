@@ -3,7 +3,7 @@ import builtins
 
 import pytest
 
-from annofabcli.common.cli import DEFAULT_ENDPOINT_URL, get_endpoint_url, get_json_from_args, get_list_from_args, non_negative_int, prompt_yesnoall
+from annofabcli.common.cli import DEFAULT_ENDPOINT_URL, get_endpoint_url, get_json_from_args, get_list_from_args, non_negative_int, prompt_yesno, prompt_yesnoall
 
 
 def test_get_json_from_args():
@@ -75,3 +75,18 @@ def test_prompt_yesnoall_accepts_uppercase_all(monkeypatch: pytest.MonkeyPatch) 
     monkeypatch.setattr(builtins, "input", lambda _prompt: "ALL")
 
     assert prompt_yesnoall("処理しますか？") == (True, True)
+
+
+@pytest.mark.parametrize(("answer", "expected"), [("y", True), ("Y", True), ("n", False), ("N", False)])
+def test_prompt_yesno_rejects_all(monkeypatch: pytest.MonkeyPatch, answer: str, *, expected: bool) -> None:
+    responses = iter(["all", "ALL", answer])
+    prompts: list[str] = []
+
+    def input_mock(prompt: str) -> str:
+        prompts.append(prompt)
+        return next(responses)
+
+    monkeypatch.setattr(builtins, "input", input_mock)
+
+    assert prompt_yesno("処理を続行しますか？") is expected
+    assert prompts == ["処理を続行しますか？ [y/n] : "] * 3

@@ -304,7 +304,8 @@ class TestChangeAnnotationDataPerAnnotationMain:
 @pytest.mark.parametrize(
     ("answers", "all_yes", "expected_prompt_count", "expected_update_count"),
     [
-        (["all"], False, 1, 2),
+        (["all", "y", "all"], False, 3, 2),
+        (["y", "all"], False, 2, 2),
         (["y", "y", "y"], False, 3, 2),
         (["y", "n", "n"], False, 3, 0),
         (["n"], False, 1, 0),
@@ -357,6 +358,10 @@ def test_backup_confirmation_controls_subsequent_task_confirmation(
         command.main()
 
     assert len(prompts) == expected_prompt_count
+    if prompts:
+        assert prompts[0].endswith(" [y/n] : ")
+    if service.wrapper.get_task_or_none.called:
+        assert prompts[-1].endswith(" [y/n/all] : ") if not all_yes else not prompts
     assert service.api.put_annotation.call_count == expected_update_count
     for call in service.api.put_annotation.call_args_list:
         assert call.kwargs["request_body"]["details"][0]["body"]["data"] == {"_type": "Range", "begin": 1000, "end": 5000}

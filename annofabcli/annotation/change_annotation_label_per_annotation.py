@@ -271,7 +271,7 @@ class ChangeLabelPerAnnotation(CommandLine):
         project_id = args.project_id
         if args.backup is None:
             print("間違えてアノテーションを変更してしまったときに復元できるようにするため、'--backup'でバックアップ用のディレクトリを指定することを推奨します。", file=sys.stderr)  # noqa: T201
-            if not self.confirm_processing("復元用のバックアップディレクトリが指定されていません。処理を続行しますか？"):
+            if not args.yes and not annofabcli.common.cli.prompt_yesno("復元用のバックアップディレクトリが指定されていません。処理を続行しますか？"):
                 sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
             backup_dir = None
         else:
@@ -285,7 +285,7 @@ class ChangeLabelPerAnnotation(CommandLine):
             sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
         super().require_project_access(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.ACCEPTER])
 
-        main_obj = ChangeAnnotationLabelPerAnnotationMain(self.service, project_id=project_id, include_complete_task=args.include_complete_task, all_yes=self.all_yes, backup_dir=backup_dir)
+        main_obj = ChangeAnnotationLabelPerAnnotationMain(self.service, project_id=project_id, include_complete_task=args.include_complete_task, all_yes=args.yes, backup_dir=backup_dir)
         try:
             target_annotation_list = resolve_target_annotation_list(input_annotation_list, main_obj.annotation_specs)
         except ValueError as e:
