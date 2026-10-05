@@ -3,7 +3,6 @@ import argparse
 import annofabcli.common.cli
 import annofabcli.job.delete_job
 import annofabcli.job.list_job
-import annofabcli.job.list_last_job
 import annofabcli.job.wait_job
 
 
@@ -14,7 +13,6 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
 
     annofabcli.job.delete_job.add_parser(subparsers)
     annofabcli.job.list_job.add_parser(subparsers)
-    annofabcli.job.list_last_job.add_parser(subparsers)
     annofabcli.job.wait_job.add_parser(subparsers)
 
 

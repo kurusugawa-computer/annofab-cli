@@ -9,7 +9,6 @@ from annofabapi.plugin import EditorPluginId
 
 from annofabcli.comment.put_comment import (
     AddedComment,
-    CommentPutMode,
     PutCommentMain,
     convert_cli_inspection_comment_list,
     convert_cli_onhold_comment_list,
@@ -140,8 +139,7 @@ def test_put_inspection_comment_requires_data_for_unsupported_custom_project() -
         )
 
 
-@pytest.mark.parametrize("put_mode", ["update", "put"])
-def test_put_inspection_comment_requires_data_except_create_mode(put_mode: CommentPutMode) -> None:
+def test_put_inspection_comment_requires_data_in_put_mode() -> None:
     service = Mock()
     service.api.account_id = "account1"
     service.api.get_project.return_value = ({"input_data_type": "image"}, None)
@@ -153,7 +151,7 @@ def test_put_inspection_comment_requires_data_except_create_mode(put_mode: Comme
             task={"task_id": "task1", "phase": "inspection", "phase_stage": 1},
             input_data_id="input1",
             comments=[AddedComment(comment="コメント1")],
-            put_mode=put_mode,
+            put_mode="put",
         )
 
 

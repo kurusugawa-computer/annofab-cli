@@ -153,7 +153,6 @@
 
 - `annofabcli job delete`: ジョブを削除する。
 - `annofabcli job list`: ジョブ一覧を出力します。
-- `annofabcli job list_last`: 複数のプロジェクトに対して、最新のジョブを出力します。
 - `annofabcli job wait`: ジョブの終了を待ちます。
 
 ## my_account
