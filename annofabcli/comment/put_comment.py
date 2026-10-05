@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 import functools
 import json
 import logging
@@ -16,6 +17,7 @@ import requests
 from annofabapi.models import CommentType, InputDataType, TaskPhase, TaskStatus
 from annofabapi.plugin import EditorPluginId
 from dataclasses_json import DataClassJsonMixin
+from pydantic import BaseModel
 
 from annofabcli.comment.utils import create_default_inspection_comment_data, get_comment_type_name, round_image_inspection_comment_data
 from annofabcli.common.cli import CommandLineWithConfirm
@@ -36,14 +38,13 @@ SUPPORTED_ANNOTATION_TYPES_FOR_INSPECTION_DATA = frozenset(
 """検査コメントの座標情報（InspectionData形式）への変換をサポートしているアノテーションタイプ"""
 
 
-@dataclass
-class AddedComment(DataClassJsonMixin):
+class AddedComment(BaseModel):
     """
-    追加対象のコメント。
+    作成・更新対象のコメント。更新時は明示的に指定された項目だけを反映する。
     """
 
-    comment: str
-    """コメントの中身"""
+    comment: str | None = None
+    """コメントの中身。更新時は省略できる。"""
 
     data: dict[str, Any] | None = None
     """コメントを付与する位置や区間"""
@@ -205,9 +206,12 @@ class PutCommentMain(CommandLineWithConfirm):
             batch_update_comments APIのリクエストボディ。
 
         Raises:
-            ValueError: 作成モード以外の検査コメントで、dataとannotation_idの両方が指定されていない場合。
+            ValueError: putモードの検査コメントで、dataとannotation_idの両方が指定されていない場合。
         """
         task_id = task["task_id"]
+
+        if put_mode == "update":
+            return self._create_update_request_body(task_id, input_data_id, comments)
 
         # annotation_idが指定されているがdataがNoneのコメントがあるか確認
         # 保留コメントの場合は座標情報は不要なので、検査コメントのときのみdataを取得するようにする
@@ -270,6 +274,55 @@ class PutCommentMain(CommandLineWithConfirm):
         converted_comments = [_convert(e) for e in comments]
         return [c for c in converted_comments if c is not None]
 
+    def _create_update_request_body(self, task_id: str, input_data_id: str, comments: list[AddedComment]) -> list[dict[str, Any]]:
+        """既存コメントに指定された項目だけを反映する。
+
+        Args:
+            task_id: 更新対象のタスクID。
+            input_data_id: 更新対象の入力データID。
+            comments: コメントIDと更新する項目。
+
+        Returns:
+            コメント一括更新APIのリクエストボディ。
+        """
+        old_comments, _ = self.service.api.get_comments(self.project_id, task_id, input_data_id, query_params={"v": "2"})
+        old_comments_by_id = {comment["comment_id"]: comment for comment in old_comments}
+        annotation_labels: dict[str, str] | None = None
+        request_body = []
+        for comment in comments:
+            log_prefix = f"task_id='{task_id}', input_data_id='{input_data_id}', comment_id='{comment.comment_id}' :: "
+            old_comment = old_comments_by_id.get(comment.comment_id)
+            if old_comment is None:
+                logger.warning(f"{log_prefix}更新対象のコメントが存在しないため、スキップします。")
+                continue
+            if old_comment["comment_type"] != self.comment_type.value or old_comment["comment_node"]["_type"] != "Root":
+                logger.warning(f"{log_prefix}コメントの種類が更新対象と異なるため、スキップします。")
+                continue
+            changes = comment.model_dump(exclude_unset=True, exclude={"comment_id"})
+            if not changes:
+                logger.warning(f"{log_prefix}更新する内容が指定されていないため、スキップします。")
+                continue
+            updated = {key: copy.deepcopy(old_comment.get(key)) for key in ("comment_id", "phase", "phase_stage", "account_id", "comment_type", "comment", "phrases", "comment_node")}
+            node = updated["comment_node"]
+            for key in ("comment", "phrases"):
+                if key in changes:
+                    updated[key] = changes[key]
+            if "data" in changes:
+                node["data"] = round_image_inspection_comment_data(comment.data) if self.input_data_type == InputDataType.IMAGE and comment.data is not None else comment.data
+            if "annotation_id" in changes:
+                node["annotation_id"] = comment.annotation_id
+                node["label_id"] = None
+                if comment.annotation_id is not None:
+                    if annotation_labels is None:
+                        annotation, _ = self.service.api.get_editor_annotation(self.project_id, task_id, input_data_id, query_params={"v": "2"})
+                        annotation_labels = {detail["annotation_id"]: detail["label_id"] for detail in annotation["details"]}
+                    if comment.annotation_id not in annotation_labels:
+                        raise ValueError(f"{log_prefix}annotation_id='{comment.annotation_id}'のアノテーションが存在しません。")
+                    node["label_id"] = annotation_labels[comment.annotation_id]
+            updated["_type"] = "Put"
+            request_body.append(updated)
+        return request_body
+
     def _filter_creatable_comments(self, task_id: str, input_data_id: str, comments: list[AddedComment]) -> list[AddedComment]:
         """既存コメントと同じcomment_idを持つコメントを除外する。"""
 
@@ -288,36 +341,13 @@ class PutCommentMain(CommandLineWithConfirm):
 
         return creatable_comments
 
-    def _filter_updatable_comments(self, task_id: str, input_data_id: str, comments: list[AddedComment]) -> list[AddedComment]:
-        """既存コメントと同じcomment_idを持つコメントだけを残す。"""
-
-        has_comment_id = any(comment.comment_id is not None for comment in comments)
-        if not has_comment_id:
-            logger.warning(f"task_id='{task_id}', input_data_id='{input_data_id}' :: comment_idが指定されていないため、コメントの更新をスキップします。")
-            return []
-
-        old_comment_list, _ = self.service.api.get_comments(self.project_id, task_id, input_data_id, query_params={"v": "2"})
-        old_comment_ids = {comment["comment_id"] for comment in old_comment_list}
-        updatable_comments = []
-        for comment in comments:
-            if comment.comment_id is None:
-                logger.warning(f"task_id='{task_id}', input_data_id='{input_data_id}' :: comment_idが指定されていないため、コメントの更新をスキップします。")
-                continue
-
-            if comment.comment_id not in old_comment_ids:
-                logger.warning(f"task_id='{task_id}', input_data_id='{input_data_id}' :: comment_id='{comment.comment_id}'のコメントは存在しないので、コメントの更新をスキップします。")
-                continue
-            updatable_comments.append(comment)
-
-        return updatable_comments
-
     def _filter_comments_by_put_mode(self, task_id: str, input_data_id: str, comments: list[AddedComment], put_mode: CommentPutMode) -> list[AddedComment]:
         if put_mode == "put":
             return comments
         if put_mode == "create":
             return self._filter_creatable_comments(task_id=task_id, input_data_id=input_data_id, comments=comments)
         if put_mode == "update":
-            return self._filter_updatable_comments(task_id=task_id, input_data_id=input_data_id, comments=comments)
+            return comments
 
         raise ValueError(f"未対応のコメント登録モードです。 :: put_mode='{put_mode}'")
 
@@ -448,9 +478,11 @@ class PutCommentMain(CommandLineWithConfirm):
                 continue
 
             request_body = self._create_request_body(task=task, input_data_id=input_data_id, comments=target_comments, put_mode=put_mode)
+            if not request_body:
+                continue
             self.service.api.batch_update_comments(self.project_id, task_id, input_data_id, request_body=request_body)
-            added_comment_count += len(target_comments)
-            logger.debug(f"task_id='{task_id}', input_data_id='{input_data_id}' :: {len(target_comments)}件のコメントを付与しました。")
+            added_comment_count += len(request_body)
+            logger.debug(f"task_id='{task_id}', input_data_id='{input_data_id}' :: {len(request_body)}件のコメントを付与しました。")
 
         return added_comment_count
 

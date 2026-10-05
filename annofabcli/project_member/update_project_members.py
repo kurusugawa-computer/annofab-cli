@@ -82,7 +82,7 @@ class UpdateProjectMembers(CommandLine):
     """既存のプロジェクトメンバを部分更新する。"""
 
     def update_project_members(self, project_id: str, members: list[UpdatedProjectMember]) -> None:
-        """指定されたプロパティだけを更新する。自分自身と非所属ユーザはスキップする。
+        """指定されたプロパティだけを更新する。自分自身のロール変更と非所属ユーザはスキップする。
 
         Args:
             project_id: 対象のプロジェクトID
@@ -103,10 +103,10 @@ class UpdateProjectMembers(CommandLine):
                 logger.info(f"{index} / {len(members)} 件目のプロジェクトメンバを処理中です。")
             old_member = old_members.get(member.user_id)
             changes = member.model_dump(mode="json", exclude_unset=True, exclude={"user_id"})
-            if member.user_id == self.service.api.login_user_id:
-                logger.warning(f"user_id='{member.user_id}' は自分自身のため更新できません。")
-            elif old_member is None or old_member["member_status"] != ProjectMemberStatus.ACTIVE.value:
+            if old_member is None or old_member["member_status"] != ProjectMemberStatus.ACTIVE.value:
                 logger.warning(f"user_id='{member.user_id}' は有効なプロジェクトメンバでないため更新できません。")
+            elif member.user_id == self.service.api.login_user_id and changes.get("member_role", old_member["member_role"]) != old_member["member_role"]:
+                logger.warning(f"user_id='{member.user_id}' は自分自身のロールを変更できないため更新をスキップします。")
             elif not changes:
                 logger.warning(f"user_id='{member.user_id}' の更新内容が指定されていません。")
             elif self.confirm_processing(f"user_id='{member.user_id}' のメンバ情報を更新しますか？ project_id='{project_id}', 更新内容={changes}"):
@@ -179,7 +179,7 @@ def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse
         subparsers,
         "update",
         "CSVまたはJSONでプロジェクトメンバ情報を更新します。",
-        description="既存のプロジェクトメンバのロール、抜取検査率、抜取受入率を更新します。自分自身は更新できません。",
+        description="既存のプロジェクトメンバのロール、抜取検査率、抜取受入率を更新します。自分自身の抜取率も更新できますが、ロールは変更できません。",
         epilog="オーナロールを持つユーザで実行してください。",
     )
     parse_args(parser)

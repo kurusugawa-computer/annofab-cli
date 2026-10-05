@@ -17,7 +17,6 @@ Available Commands
 
    delete
    list
-   list_last
    wait
 
 Usage Details
