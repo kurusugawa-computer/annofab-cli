@@ -13,7 +13,6 @@ import annofabcli.annotation_zip.subcommand_annotation_zip
 import annofabcli.comment.subcommand_comment
 import annofabcli.common.cli
 import annofabcli.completion.subcommand_completion
-import annofabcli.experimental.subcommand_experimental
 import annofabcli.filesystem.subcommand_filesystem
 import annofabcli.input_data.subcommand_input_data
 import annofabcli.instruction.subcommand_instruction
@@ -138,7 +137,6 @@ def create_parser() -> argparse.ArgumentParser:
     annofabcli.webhook.subcommand_webhook.add_parser(subparsers)
 
     annofabcli.filesystem.subcommand_filesystem.add_parser(subparsers)
-    annofabcli.experimental.subcommand_experimental.add_parser(subparsers)
 
     return parser
 
