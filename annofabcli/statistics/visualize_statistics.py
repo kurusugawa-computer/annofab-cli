@@ -577,6 +577,34 @@ def create_custom_production_volume(cli_value: str) -> CustomProductionVolume:
     return CustomProductionVolume(df=df, custom_production_volume_list=custom_production_volume_list)
 
 
+def read_actual_worktime(*, actual_worktime_csv: Path | None, labor_csv: Path | None) -> ActualWorktime:
+    """新旧オプションで指定されたCSVから実績作業時間を読み込みます。
+
+    Args:
+        actual_worktime_csv: 実績作業時間のCSV。labor_csvとは同時に指定しません。
+        labor_csv: 非推奨オプションで指定された実績作業時間のCSV。
+
+    Returns:
+        実績作業時間。CSVが未指定の場合は空のデータです。
+    """
+    csv_path = actual_worktime_csv
+    option_name = "--actual_worktime_csv"
+    if labor_csv is not None:
+        logger.warning("引数 '--labor_csv' は非推奨です。代わりに '--actual_worktime_csv' を指定してください。'--labor_csv' は2027/01/01以降に廃止予定です。")
+        csv_path = labor_csv
+        option_name = "--labor_csv"
+
+    if csv_path is None:
+        logger.warning("'--actual_worktime_csv'が指定されていないので、実績作業時間に関する情報は出力されません。")
+        return ActualWorktime.empty()
+
+    df_actual_worktime = pandas.read_csv(csv_path, dtype={"project_id": "string", "account_id": "string"})
+    if not ActualWorktime.required_columns_exist(df_actual_worktime):
+        logger.error(f"引数`{option_name}`のCSVには以下の列が存在しないので、終了します。\n`project_id`, `date`, `account_id`, `actual_worktime_hour`")
+        sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
+    return ActualWorktime(df_actual_worktime)
+
+
 class VisualizeStatistics(CommandLine):
     """
     統計情報を可視化する。
@@ -671,7 +699,7 @@ class VisualizeStatistics(CommandLine):
             else:
                 logger.warning("出力した統計情報は0件なので、`プロジェクトごとの生産性と品質.csv`を出力しません。")
 
-    def main(self) -> None:  # pylint: disable=too-many-branches, # noqa: PLR0912
+    def main(self) -> None:  # pylint: disable=too-many-branches,
         args = self.args
         if not self.validate(args):
             sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
@@ -689,15 +717,7 @@ class VisualizeStatistics(CommandLine):
 
         root_output_dir: Path = args.output_dir
 
-        if args.labor_csv is None:
-            logger.warning("'--labor_csv'が指定されていないので、実績作業時間に関する情報は出力されません。")
-            actual_worktime = ActualWorktime.empty()
-        else:
-            df_actual_worktime = pandas.read_csv(args.labor_csv, dtype={"project_id": "string", "account_id": "string"})
-            if not ActualWorktime.required_columns_exist(df_actual_worktime):
-                logger.error("引数`--labor_csv`のCSVには以下の列が存在しないので、終了します。\n`project_id`, `date`, `account_id`, `actual_worktime_hour`")
-                sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
-            actual_worktime = ActualWorktime(df_actual_worktime)
+        actual_worktime = read_actual_worktime(actual_worktime_csv=args.actual_worktime_csv, labor_csv=args.labor_csv)
 
         if args.annotation_count_csv is not None:
             df_annotation_count = pandas.read_csv(args.annotation_count_csv, dtype={"project_id": "string", "task_id": "string"})
@@ -841,12 +861,19 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         help="タスク履歴を1個ずつ取得して、タスク履歴の最新版を参照します。タスクの数だけWebAPIを実行するので、処理時間が長くなります。",
     )
 
-    parser.add_argument(
-        "--labor_csv",
+    actual_worktime_group = parser.add_mutually_exclusive_group()
+    actual_worktime_group.add_argument(
+        "--actual_worktime_csv",
         type=Path,
         help=(
             "実績作業時間情報が格納されたCSVを指定してください。指定しない場合は、実績作業時間は0とみなします。列名は以下の通りです。\n\n* date\n* account_id\n* actual_worktime_hour\n* project_id \n"
         ),
+    )
+
+    actual_worktime_group.add_argument(
+        "--labor_csv",
+        type=Path,
+        help="[DEPRECATED] '--actual_worktime_csv' と同じCSVを指定できます。代わりに '--actual_worktime_csv' を指定してください。2027/01/01以降に廃止予定です。",
     )
 
     parser.add_argument(

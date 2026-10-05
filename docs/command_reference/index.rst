@@ -19,6 +19,7 @@ Command Reference
    job/index
    my_account/index
    organization/index
+   organization_idp/index
    organization_member/index
    organization_plugin/index
    project/index
