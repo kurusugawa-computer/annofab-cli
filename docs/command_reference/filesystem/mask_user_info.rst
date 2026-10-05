@@ -26,11 +26,11 @@ Examples
     $ annofabcli filesystem mask_user_info --csv user.csv
 
 
-デフォルトでは1行ヘッダのCSVを読み込みます。複数行ヘッダのCSVを読み込む場合は、 ``--csv_header`` にヘッダの行数を指定してください。
+デフォルトでは1行ヘッダのCSVを読み込みます。複数行ヘッダのCSVを読み込む場合は、 ``--csv_header_row_count`` にヘッダの行数を指定してください。
 
 .. code-block::
 
-    $ annofabcli filesystem mask_user_info --csv user.csv --csv_header 2
+    $ annofabcli filesystem mask_user_info --csv user.csv --csv_header_row_count 2
 
 
 ``--not_masked_user_id`` には「マスクしないユーザ」のuser_idを指定できます。
@@ -41,7 +41,7 @@ Examples
     $ annofabcli filesystem mask_user_info --csv user.csv --not_masked_user_id alice
 
 
-``--not_masked_biography`` には「マスクしないbiographyであるユーザ」のuser_idを指定できます。
+``--not_masked_biography`` にはマスクしないユーザのbiographyを指定できます。
 以下のコマンドはbiographyが ``Japan`` 以外のユーザをマスクします。
 
 

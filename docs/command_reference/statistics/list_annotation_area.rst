@@ -60,7 +60,7 @@ Examples
         "label": "cat",
         "annotation_id": "ann1",
         "annotation_area": 1234
-      },
+      }
     ]
 
 

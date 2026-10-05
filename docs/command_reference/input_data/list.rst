@@ -82,7 +82,7 @@ CSV形式で出力する場合、以下の特徴があります。
 
 .. code-block::
 
-    $ annofabcli input_data list --format csv --output out.csv
+    $ annofabcli input_data list --project_id prj1 --format csv --output out.csv
 
 .. csv-table:: out.csv
    :header-rows: 1
@@ -93,7 +93,7 @@ JSON出力
 
 .. code-block::
 
-    $ annofabcli input_data list --format pretty_json --output out.json
+    $ annofabcli input_data list --project_id prj1 --format pretty_json --output out.json
 
 
 
@@ -131,7 +131,7 @@ input_data_idの一覧を出力
 
 .. code-block::
 
-    $ annofabcli input_data list --format input_data_id_list --output out.txt
+    $ annofabcli input_data list --project_id prj1 --format input_data_id_list --output out.txt
 
 
 .. code-block::

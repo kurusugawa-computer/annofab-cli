@@ -46,7 +46,7 @@ Examples
 
 .. code-block::
 
-    $ annofabcli annotaticn copy -p prj1 --input src_task_id:dest_task_id --merge
+    $ annofabcli annotation copy -p prj1 --input src_task_id:dest_task_id --merge
 
 
 コピー先のアノテーションを残さない場合は、 ``--overwrite`` を指定してください。

@@ -39,7 +39,7 @@ Examples
 
 .. code-block::
 
-    $ annofabcli task download --output out.json
+    $ annofabcli task download --project_id prj1 --output out.json
     $ jq . out.json > out-pretty.json
 
 
@@ -62,7 +62,7 @@ Examples
             "account_id": "12345678-abcd-1234-abcd-1234abcd5678",
             "phase": "annotation",
             "phase_stage": 1,
-            "worked": true,
+            "worked": true
           },
           ...
         ],
@@ -71,7 +71,7 @@ Examples
         "updated_datetime": "2020-11-24T16:29:29.381+09:00",
         "operation_updated_datetime": "2020-11-24T16:29:29.381+09:00",
         "sampling": null,
-        "metadata": {},
+        "metadata": {}
       },
       ...
     ]

@@ -32,11 +32,11 @@ Examples
         "task1":{
             "input_data1": [
                 {
-                    "comment": "type属性が間違っています。",
+                    "comment": "type属性が間違っています。"
                 },
                 {
                     "comment": "枠がズレています。",
-                    "annotation_id": "foo",
+                    "annotation_id": "foo"
                 }
             ],
             "input_data2":[]

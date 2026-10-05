@@ -23,23 +23,24 @@ Examples
 
 よく利用するであろう ``--configuration`` の例を以下のJSONに記載します。
 
+* ``editor_version`` : アノテーションエディタのバージョンをプレビュー版
+* ``max_tasks_per_member`` : 保留中のタスクを除き、1人（オーナー以外）に割り当てられるタスク数の上限
+* ``max_tasks_per_member_including_hold`` : 保留中のタスクを含めて、1人（オーナー以外）に割り当てられるタスク数上限
+* ``private_storage_aws_iam_role_arn`` : S3プライベートストレージ認可用AWS IAMロールARN
+* ``use_s3_transfer_acceleration`` : S3プライベートストレージにアクセスする際に、AWS S3 Transfer Accelerationを使用する
 
-.. code-block:: 
+
+.. code-block:: json
         
     {
-        # アノテーションエディタのバージョンをプレビュー版
         "editor_version":"preview",
         
-        # 保留中のタスクを除き、1人（オーナー以外）に割り当てられるタスク数の上限
         "max_tasks_per_member": 100,
         
-        # 保留中のタスクを含めて、1人（オーナー以外）に割り当てられるタスク数上限
         "max_tasks_per_member_including_hold": 100,
         
-        # S3プライベートストレージ認可用AWS IAMロールARN
         "private_storage_aws_iam_role_arn": "arn:aws:iam::123456789012:role/YourRoleName",
 
-        # S3プライベートストレージにアクセスする際に、AWS S3 Transfer Accelerationを使用する
         "use_s3_transfer_acceleration": true
     }
     

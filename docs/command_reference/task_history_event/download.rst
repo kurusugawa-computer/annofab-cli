@@ -29,7 +29,7 @@ Examples
 
 .. code-block::
 
-    $ annofabcli task_history_event download --output out.json
+    $ annofabcli task_history_event download --project_id prj1 --output out.json
     $ jq . out.json > out-pretty.json
 
 
@@ -51,7 +51,7 @@ Examples
             "account_id": "user1",
             "last_updated_datetime": "2021-05-20T13:37:28.179+09:00",
             "force": false
-            },
+            }
         },
         {
             "project_id": "prj1",
@@ -67,7 +67,7 @@ Examples
             "account_id": "user1",
             "last_updated_datetime": "2021-05-20T13:37:52.296+09:00",
             "force": false
-            },
+            }
         }
     ]
 

@@ -46,7 +46,7 @@ JSON出力
 
 .. code-block::
 
-    $ annofabcli job list --organization org1 --format pretty_json --output out.json
+    $ annofabcli job list --project_id prj1 --job_type gen-annotation --format pretty_json --output out.json
 
 
 

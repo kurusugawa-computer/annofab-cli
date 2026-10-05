@@ -18,7 +18,7 @@
 * ``real_monitored_worktime_hour`` : 集計対象タスクに影響しない実際にかかった計測作業時間（アノテーションエディタ画面を触っていた作業の時間）。仕掛中のタスクにかかった作業時間も含まれます。
 * ``real_actual_worktime_hour`` : 集計対象タスクに影響しない実際にかかった実績作業時間（ ``--labor_csv`` で渡された実際の作業時間）。仕掛中のタスクにかかった作業時間も含まれます。
 * ``monitored_worktime_hour`` ： 集計対象タスクにかかった計測作業時間。仕掛中のタスクにかかった作業時間は含まれません。
-* ``actual_worktime_hour`` ： 集計対象タスクにかかった実績作業時間。仕掛中のタスクにかかった作業時間は含まれません。 ``monitored_worktime_hour * real_monitored_worktime_hour / real_actual_worktime_hour`` で算出した値です。
+* ``actual_worktime_hour`` ： 集計対象タスクにかかった実績作業時間。仕掛中のタスクにかかった作業時間は含まれません。 ``monitored_worktime_hour * real_actual_worktime_hour / real_monitored_worktime_hour`` で算出した値です。
 
 
 集計対象タスクは、 ``--task_completion_criteria`` または ``--task_query`` （非推奨）に指定した値によって決まります。
@@ -69,7 +69,7 @@
 
 品質の指標
 ---------------------------------
-* ``pointed_out_inspection_comment_count/input_data_count`` : アノテーションあたりの指摘を受けたコメント数（対応完了状態の検査コメント）
+* ``pointed_out_inspection_comment_count/input_data_count`` : 入力データあたりの指摘を受けたコメント数（対応完了状態の検査コメント）
 * ``pointed_out_inspection_comment_count/annotation_count`` : アノテーションあたりの指摘を受けたコメント数（対応完了状態の検査コメント）
 * ``rejected_count/task_count`` : タスクあたりの差し戻された回数
 

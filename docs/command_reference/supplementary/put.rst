@@ -93,7 +93,7 @@ JSONから補助情報を登録する
             "input_data_id": "input1",
             "supplementary_data_number": 1,
             "supplementary_data_name": "foo",
-            "supplementary_data_path": "file://foo.jpg",
+            "supplementary_data_path": "file://foo.jpg"
         }
         ,
         {
@@ -125,7 +125,7 @@ JSONのキーは、``--csv`` に指定するCSVファイルの列に対応しま
 
 .. code-block::
 
-    $ annofabcli supplementary put --project_id prj1 --csv supplementary_data.csv
+    $ annofabcli supplementary put --project_id prj1 --csv supplementary_data.csv \
     --parallelism 4 --yes
 
 Usage Details
