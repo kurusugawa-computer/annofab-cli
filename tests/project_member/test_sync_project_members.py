@@ -3,8 +3,9 @@ from unittest.mock import Mock
 
 import pytest
 import requests
-from annofabapi.models import ProjectMember
+from annofabapi.models import ProjectMember, ProjectMemberRole
 
+from annofabcli.common.exceptions import ProjectAuthorizationError
 from annofabcli.project_member.sync_project_members import SyncProjectMembers
 
 
@@ -69,6 +70,33 @@ def test_sync_handles_multiple_destinations_and_duplicates(service):
     command = SyncProjectMembers(service, Mock(), Namespace(yes=True, src_project_id="src", dest_project_id=["dest1", "dest2", "dest1"], delete_extra_members=False))
     command.main()
     assert [call.args[:2] for call in service.api.put_project_member.call_args_list] == [("dest1", "new"), ("dest2", "new")]
+
+
+@pytest.mark.parametrize("failure", ["authorization", "http"])
+def test_sync_continues_after_destination_failure(service, caplog, failure):
+    facade = Mock()
+
+    def require_project_access(*, project_id, **_kwargs):
+        if project_id == "dest1" and failure == "authorization":
+            raise ProjectAuthorizationError("dest1", [ProjectMemberRole.OWNER])
+
+    def get_project_members(project_id, **_kwargs):
+        if project_id == "dest1" and failure == "http":
+            raise requests.HTTPError
+        return [member("new")] if project_id == "src" else []
+
+    facade.require_project_access.side_effect = require_project_access
+    service.wrapper.get_all_project_members.side_effect = get_project_members
+    command = SyncProjectMembers(service, facade, Namespace(yes=True, src_project_id="src", dest_project_id=["dest1", "dest2"], delete_extra_members=False))
+    command.main()
+
+    assert [call.args[:2] for call in service.api.put_project_member.call_args_list] == [("dest2", "new")]
+    warnings = [record for record in caplog.records if record.levelname == "WARNING"]
+    assert len(warnings) == 1
+    assert "dest1" in warnings[0].message
+    assert warnings[0].exc_info is not None
+    expected_exception = ProjectAuthorizationError if failure == "authorization" else requests.HTTPError
+    assert isinstance(warnings[0].exc_info[1], expected_exception)
 
 
 def test_sync_same_project_makes_no_changes(service):

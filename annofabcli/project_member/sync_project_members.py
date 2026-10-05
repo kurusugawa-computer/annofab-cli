@@ -8,6 +8,7 @@ from annofabapi.models import ProjectMemberRole
 
 import annofabcli.common.cli
 from annofabcli.common.cli import build_annofabapi_resource_and_login
+from annofabcli.common.exceptions import ProjectAuthorizationError
 from annofabcli.common.facade import AnnofabApiFacade
 from annofabcli.project_member.compare_project_members import MEMBER_PROPERTIES, CompareProjectMembers, add_comparison_arguments
 
@@ -73,7 +74,10 @@ class SyncProjectMembers(CompareProjectMembers):
             None
         """
         for project_id in dict.fromkeys(annofabcli.common.cli.get_list_from_args(self.args.dest_project_id)):
-            self.sync_project_members(self.args.src_project_id, project_id, delete_extra_members=self.args.delete_extra_members)
+            try:
+                self.sync_project_members(self.args.src_project_id, project_id, delete_extra_members=self.args.delete_extra_members)
+            except (ProjectAuthorizationError, requests.HTTPError):
+                logger.warning(f"プロジェクトへのメンバ同期に失敗しました。project_id='{project_id}'", exc_info=True)
 
 
 def main(args: argparse.Namespace) -> None:
