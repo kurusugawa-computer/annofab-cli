@@ -23,6 +23,8 @@ Examples
 * `annofabcli annotation dump <../annotation/dump.html>`_ コマンドの出力先ディレクトリ
 * `annofabcli annotation delete <../annotation/delete.html>`_ コマンドのバックアップ先ディレクトリ
 * `annofabcli annotation change_attributes <../annotation/change_attributes.html>`_ コマンドのバックアップ先ディレクトリ
+* :doc:`merge_segmentation` コマンドのバックアップ先ディレクトリ
+* :doc:`remove_segmentation_overlap` コマンドのバックアップ先ディレクトリ
 
 .. code-block::
 
