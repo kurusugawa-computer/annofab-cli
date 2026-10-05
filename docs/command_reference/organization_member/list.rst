@@ -35,11 +35,13 @@ CSV出力
 
 .. code-block::
 
-    $ annofabcli organization_member list --project_id prj1  --format csv --output out.csv
+    $ annofabcli organization_member list --organization org1  --format csv --output out.csv
 
 .. csv-table:: out.csv
    :header-rows: 1
    :file: list/out.csv
+
+取得結果が0件の場合も、CSVのヘッダ行を出力します。
 
 JSON出力
 ----------------------------------------------

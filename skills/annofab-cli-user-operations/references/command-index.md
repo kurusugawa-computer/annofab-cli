@@ -174,10 +174,10 @@
 
 組織メンバ関係のサブコマンド
 
-- `annofabcli organization_member change`: 組織メンバの情報（ロールなど）を変更します。
 - `annofabcli organization_member delete`: 組織からメンバーを脱退させます。
 - `annofabcli organization_member invite`: 組織にメンバーを招待します。
 - `annofabcli organization_member list`: 組織メンバ一覧を出力します。
+- `annofabcli organization_member update_role`: 組織メンバのロールを更新します。
 
 ## organization_plugin
 

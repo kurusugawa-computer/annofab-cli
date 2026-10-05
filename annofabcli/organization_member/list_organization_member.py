@@ -54,6 +54,8 @@ class ListOrganizationMember(CommandLine):
 
         if args.format == OutputFormat.CSV.value:
             df = pandas.DataFrame(organization_member_list)
+            if df.empty:
+                df = pandas.DataFrame(columns=self.PRIOR_COLUMNS)
             columns = get_columns_with_priority(df, prior_columns=self.PRIOR_COLUMNS)
             self.print_csv(df[columns])
         else:

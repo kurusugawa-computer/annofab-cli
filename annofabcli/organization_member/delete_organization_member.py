@@ -38,21 +38,28 @@ class DeleteOrganizationMemberMain(CommandLineWithConfirm):
     def delete_organization_members_from_organization(self, organization_name: str, user_ids: Collection[str]) -> None:
         if not self.facade.contains_any_organization_member_role(organization_name, {OrganizationMemberRole.ADMINISTRATOR, OrganizationMemberRole.OWNER}):
             logger.warning(f"組織'{organization_name}'に所属していないか、組織メンバーを脱退できるロールを持たないため、スキップします。")
+            logger.info(f"組織'{organization_name}'の処理が完了しました。成功: 0 件、スキップ: {len(user_ids)} 件、失敗: 0 件、合計: {len(user_ids)} 件")
             return
 
         logger.info(f"{len(user_ids)} 件のメンバーを組織'{organization_name}'から脱退させます。")
 
         member_list = self.service.wrapper.get_all_organization_members(organization_name)
 
-        # プロジェクトメンバを追加/更新する
         success_count = 0
-        for user_id in user_ids:
+        skipped_count = 0
+        failed_count = 0
+        for index, user_id in enumerate(user_ids, start=1):
+            logger.debug(f"組織'{organization_name}': {index} / {len(user_ids)} 件目を処理します。user_id='{user_id}'")
+            if index % 100 == 0:
+                logger.info(f"組織'{organization_name}': {index} / {len(user_ids)} 件目を処理します。")
             member = self.get_member(member_list, user_id)
             if member is None:
                 logger.warning(f"組織'{organization_name}'に user_id='{user_id}'のメンバーが存在しません。")
+                skipped_count += 1
                 continue
 
             if not self.confirm_processing(f"組織'{organization_name}'に所属する user_id='{user_id}'のメンバーを脱退させますか？ :: username='{member['username']}'"):
+                skipped_count += 1
                 continue
 
             try:
@@ -61,15 +68,17 @@ class DeleteOrganizationMemberMain(CommandLineWithConfirm):
                 success_count += 1
 
             except Exception:  # pylint: disable=broad-except
+                failed_count += 1
                 logger.warning(f"組織'{organization_name}'から user_id='{user_id}'のメンバーを脱退させるのに失敗しました。", exc_info=True)
 
-        logger.info(f"{success_count} / {len(user_ids)} 件のメンバーを組織'{organization_name}'から脱退させました。")
+        logger.info(f"組織'{organization_name}'の処理が完了しました。成功: {success_count} 件、スキップ: {skipped_count} 件、失敗: {failed_count} 件、合計: {len(user_ids)} 件")
 
     def delete_organization_members_from_organizations(self, organization_names: list[str], user_ids: Collection[str]) -> None:
-        for organization_name in organization_names:
+        for index, organization_name in enumerate(organization_names, start=1):
+            logger.info(f"{index} / {len(organization_names)} 件目の組織'{organization_name}'を処理します。")
             try:
                 self.delete_organization_members_from_organization(organization_name, user_ids)
-            except Exception:  # pylint
+            except Exception:  # pylint: disable=broad-except
                 logger.warning(f"組織'{organization_name}'からメンバーを脱退させるのに失敗しました。", exc_info=True)
 
 
@@ -97,7 +106,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         nargs="+",
         required=True,
         type=str,
-        help="対象の組織名を指定してます。 ``file://`` を先頭に付けると、一覧が記載されたファイルを指定できます。",
+        help="対象の組織名を指定します。 ``file://`` を先頭に付けると、一覧が記載されたファイルを指定できます。",
     )
 
     parser.add_argument(

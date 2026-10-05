@@ -30,6 +30,7 @@ class InviteOrganizationMemberMain(CommandLineWithConfirm):
     def invite_members_to_organization(self, organization_name: str, user_ids: Collection[str], role: str) -> None:
         if not self.facade.contains_any_organization_member_role(organization_name, {OrganizationMemberRole.ADMINISTRATOR, OrganizationMemberRole.OWNER}):
             logger.warning(f"組織'{organization_name}'に所属していないか、組織メンバーを招待できるロールを持たないため、スキップします。")
+            logger.info(f"組織'{organization_name}'の処理が完了しました。成功: 0 件、スキップ: {len(user_ids)} 件、失敗: 0 件、合計: {len(user_ids)} 件")
             return
 
         logger.info(f"{len(user_ids)} 件のメンバーを組織'{organization_name}'に招待して、ロール'{role}'を付与します。")
@@ -37,14 +38,20 @@ class InviteOrganizationMemberMain(CommandLineWithConfirm):
         organization_member_list = self.service.wrapper.get_all_organization_members(organization_name)
         all_user_ids = {e["user_id"] for e in organization_member_list}
 
-        # プロジェクトメンバを追加/更新する
         success_count = 0
-        for user_id in user_ids:
+        skipped_count = 0
+        failed_count = 0
+        for index, user_id in enumerate(user_ids, start=1):
+            logger.debug(f"組織'{organization_name}': {index} / {len(user_ids)} 件目を処理します。user_id='{user_id}'")
+            if index % 100 == 0:
+                logger.info(f"組織'{organization_name}': {index} / {len(user_ids)} 件目を処理します。")
             if user_id in all_user_ids:
                 logger.warning(f"user_id='{user_id}'のメンバーは、すでに組織'{organization_name}'に存在しているため、スキップします。")
+                skipped_count += 1
                 continue
 
             if not self.confirm_processing(f"user_id='{user_id}'のメンバーを組織'{organization_name}'に招待して、ロール'{role}'を付与しますか？"):
+                skipped_count += 1
                 continue
 
             try:
@@ -53,15 +60,17 @@ class InviteOrganizationMemberMain(CommandLineWithConfirm):
                 success_count += 1
 
             except Exception:  # pylint: disable=broad-except
+                failed_count += 1
                 logger.warning(f"user_id='{user_id}'のメンバーを組織'{organization_name}'に招待するのに失敗しました。", exc_info=True)
 
-        logger.info(f"{success_count} / {len(user_ids)} 件のメンバーを組織'{organization_name}'に招待しました。")
+        logger.info(f"組織'{organization_name}'の処理が完了しました。成功: {success_count} 件、スキップ: {skipped_count} 件、失敗: {failed_count} 件、合計: {len(user_ids)} 件")
 
     def invite_members_to_organizations(self, organization_names: list[str], user_ids: Collection[str], role: str) -> None:
-        for organization_name in organization_names:
+        for index, organization_name in enumerate(organization_names, start=1):
+            logger.info(f"{index} / {len(organization_names)} 件目の組織'{organization_name}'を処理します。")
             try:
                 self.invite_members_to_organization(organization_name, user_ids, role)
-            except Exception:  # pylint
+            except Exception:  # pylint: disable=broad-except
                 logger.warning(f"組織'{organization_name}'にメンバーを招待するのに失敗しました。", exc_info=True)
 
 
@@ -83,7 +92,14 @@ def main(args: argparse.Namespace) -> None:
 
 
 def parse_args(parser: argparse.ArgumentParser) -> None:
-    parser.add_argument("-org", "--organization", nargs="+", required=True, type=str, help="招待先の組織名を指定してください。")
+    parser.add_argument(
+        "-org",
+        "--organization",
+        nargs="+",
+        required=True,
+        type=str,
+        help="招待先の組織名を指定してください。 ``file://`` を先頭に付けると、組織名の一覧が記載されたファイルを指定できます。",
+    )
 
     parser.add_argument(
         "-u",
@@ -91,7 +107,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         type=str,
         nargs="+",
         required=True,
-        help="組織に招待するメンバーのuser_idを指定してます。 ``file://`` を先頭に付けると、一覧が記載されたファイルを指定できます。",
+        help="組織に招待するメンバーのuser_idを指定します。 ``file://`` を先頭に付けると、一覧が記載されたファイルを指定できます。",
     )
 
     role_choices = [e.value for e in OrganizationMemberRole]
