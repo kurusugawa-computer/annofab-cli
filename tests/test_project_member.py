@@ -40,8 +40,11 @@ class TestCommandLine:
             ]
         )
 
-    def test_copy(self):
-        main(["project_member", "copy", project_id, project_id, "--yes"])
+    def test_sync(self):
+        main(["project_member", "sync", "--src_project_id", project_id, "--dest_project_id", project_id, "--yes"])
+
+    def test_diff(self):
+        main(["project_member", "diff", "--left_project_id", project_id, "--right_project_id", project_id])
 
     def test_delete(self):
         main(["project_member", "delete", "--project_id", project_id, "--user_id", "not_exists_user_id", "--yes"])

@@ -12,8 +12,12 @@ Description
 
 ``update`` のCSVでは、抜取率の空欄や列の省略は現在の値を維持します。
 旧 ``put`` と同様に設定を解除するには、JSONで抜取率に ``null`` を指定してください。
-旧 ``put --delete`` に相当する一括同期機能はありません。
+旧 ``put --delete`` に相当するCSVによる一括同期機能はありません。
 :doc:`list` で現在のメンバを取得し、CSVにないユーザを ``delete`` で指定してください。
+
+旧 ``project_member copy`` は :doc:`sync` に変更しました。
+基準プロジェクトを ``--src_project_id``、同期先を ``--dest_project_id`` で指定します。
+同期前のメンバ構成の確認には :doc:`diff` を使用してください。
 
 
 Available Commands
@@ -24,10 +28,11 @@ Available Commands
    :maxdepth: 1
    :titlesonly:
 
-   copy
    delete
+   diff
    invite
    list
+   sync
    update
    update_role
 
