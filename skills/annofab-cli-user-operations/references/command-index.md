@@ -172,6 +172,12 @@
 
 - `annofabcli organization list`: 所属している組織の一覧を出力します。
 
+## organization_idp
+
+組織IDプロバイダー関係のサブコマンド
+
+- `annofabcli organization_idp list`: 組織IDプロバイダー一覧を出力します。
+
 ## organization_member
 
 組織メンバ関係のサブコマンド
