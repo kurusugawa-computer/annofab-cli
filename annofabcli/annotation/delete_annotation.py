@@ -383,7 +383,7 @@ class DeleteAnnotation(CommandLine):
         else:
             super().require_project_access(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.ACCEPTER])
 
-        main_obj = DeleteAnnotationMain(self.service, project_id, all_yes=args.yes, include_complete_task=args.include_complete_task)
+        main_obj = DeleteAnnotationMain(self.service, project_id, all_yes=self.all_yes, include_complete_task=args.include_complete_task)
 
         if args.json is not None:
             dict_annotation_list = get_json_from_args(args.json)

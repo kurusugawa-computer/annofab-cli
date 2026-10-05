@@ -356,7 +356,7 @@ class CreateAnnotation(CommandLine):
             include_complete_task=args.include_complete_task,
             include_break_task=args.include_break_task,
             include_on_hold_task=args.include_on_hold_task,
-            all_yes=args.yes,
+            all_yes=self.all_yes,
             converter=converter,
             backup_dir=Path(args.backup) if args.backup is not None else None,
         ).create(items)

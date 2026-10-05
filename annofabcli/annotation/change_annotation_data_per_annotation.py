@@ -383,7 +383,7 @@ class ChangeDataPerAnnotation(CommandLine):
         main_obj = ChangeAnnotationDataPerAnnotationMain(
             self.service,
             project_id=project_id,
-            all_yes=args.yes,
+            all_yes=self.all_yes,
             include_complete_task=args.include_complete_task,
             include_on_hold_task=args.include_on_hold_task,
             backup_dir=backup_dir,

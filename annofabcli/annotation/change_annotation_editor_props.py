@@ -385,7 +385,7 @@ class ChangeAnnotationEditorProps(CommandLine):
             include_complete_task=args.include_complete_task,
             include_break_task=args.include_break_task,
             include_on_hold_task=args.include_on_hold_task,
-            all_yes=args.yes,
+            all_yes=self.all_yes,
             backup_dir=backup_dir,
         )
         main_obj.change_editor_props_for_task_list(task_id_list, parallelism=args.parallelism)

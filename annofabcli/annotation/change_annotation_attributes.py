@@ -322,7 +322,7 @@ class ChangeAttributesOfAnnotation(CommandLine):
                 )
                 sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
-        main_obj = ChangeAnnotationAttributesMain(self.service, project_id=project_id, include_complete_task=args.include_complete_task, all_yes=args.yes)
+        main_obj = ChangeAnnotationAttributesMain(self.service, project_id=project_id, include_complete_task=args.include_complete_task, all_yes=self.all_yes)
         main_obj.change_annotation_attributes_for_task_list(
             task_id_list,
             annotation_query=annotation_query,

@@ -303,7 +303,7 @@ class ChangeAttributesPerAnnotation(CommandLine):
         main_obj = ChangeAnnotationAttributesPerAnnotationMain(
             self.service,
             project_id=project_id,
-            all_yes=args.yes,
+            all_yes=self.all_yes,
             include_complete_task=args.include_complete_task,
             backup_dir=backup_dir,
         )

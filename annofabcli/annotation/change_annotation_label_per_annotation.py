@@ -285,7 +285,7 @@ class ChangeLabelPerAnnotation(CommandLine):
             sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
         super().require_project_access(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.ACCEPTER])
 
-        main_obj = ChangeAnnotationLabelPerAnnotationMain(self.service, project_id=project_id, include_complete_task=args.include_complete_task, all_yes=args.yes, backup_dir=backup_dir)
+        main_obj = ChangeAnnotationLabelPerAnnotationMain(self.service, project_id=project_id, include_complete_task=args.include_complete_task, all_yes=self.all_yes, backup_dir=backup_dir)
         try:
             target_annotation_list = resolve_target_annotation_list(input_annotation_list, main_obj.annotation_specs)
         except ValueError as e:

@@ -299,7 +299,7 @@ class DeleteInvalidLabelAnnotationOfAnnotation(CommandLine):
             )
             sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
-        main_obj = DeleteInvalidLabelAnnotationMain(self.service, project_id=project_id, include_complete_task=args.include_complete_task, all_yes=args.yes)
+        main_obj = DeleteInvalidLabelAnnotationMain(self.service, project_id=project_id, include_complete_task=args.include_complete_task, all_yes=self.all_yes)
         try:
             actual_task_id_list = main_obj.get_target_task_id_list(task_id_list)
         except ValueError as e:

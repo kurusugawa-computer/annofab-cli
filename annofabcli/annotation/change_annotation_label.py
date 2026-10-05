@@ -354,7 +354,7 @@ class ChangeLabelOfAnnotation(CommandLine):
             self.service,
             project_id=project_id,
             include_complete_task=args.include_complete_task,
-            all_yes=args.yes,
+            all_yes=self.all_yes,
             annotation_specs=annotation_specs,
         )
         dest_label_info = main_obj.get_dest_label_info(dest_label_id)
@@ -369,7 +369,7 @@ class ChangeLabelOfAnnotation(CommandLine):
                 "間違えてアノテーションを変更してしまっときに復元できるようにするため、'--backup'でバックアップ用のディレクトリを指定することを推奨します。",
                 file=sys.stderr,
             )
-            if not self.confirm_processing("復元用のバックアップディレクトリが指定されていません。処理を続行しますか？"):
+            if not main_obj.confirm_processing("復元用のバックアップディレクトリが指定されていません。処理を続行しますか？"):
                 sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
             backup_dir = None
         else:

@@ -1,10 +1,13 @@
 from __future__ import annotations
 
+import builtins
+import json
 import logging
 from unittest.mock import Mock
 
 import pytest
 
+from annofabcli.annotation import change_annotation_data_per_annotation
 from annofabcli.annotation.change_annotation_data_per_annotation import (
     ChangeAnnotationDataCount,
     ChangeAnnotationDataPerAnnotationMain,
@@ -296,3 +299,64 @@ class TestChangeAnnotationDataPerAnnotationMain:
 
         assert actual.count == ChangeAnnotationDataCount(success=0, failed=1)
         assert actual.request_body["details"][0]["body"] is None
+
+
+@pytest.mark.parametrize(
+    ("answers", "all_yes", "expected_prompt_count", "expected_update_count"),
+    [
+        (["all"], False, 1, 2),
+        (["y", "y", "y"], False, 3, 2),
+        (["y", "n", "n"], False, 3, 0),
+        (["n"], False, 1, 0),
+        ([], True, 0, 2),
+    ],
+)
+def test_backup_confirmation_controls_subsequent_task_confirmation(
+    monkeypatch: pytest.MonkeyPatch, answers: list[str], *, all_yes: bool, expected_prompt_count: int, expected_update_count: int
+) -> None:
+    service = Mock()
+    service.wrapper.get_task_or_none.return_value = {"status": "not_started"}
+    editor_annotation = {
+        "project_id": "prj1",
+        "task_id": "task1",
+        "input_data_id": "input1",
+        "updated_datetime": "2026-05-22T00:00:00+09:00",
+        "details": [
+            {
+                "annotation_id": "anno1",
+                "label_id": "label1",
+                "additional_data_list": [],
+                "body": {"_type": "Inner", "data": {"_type": "Range", "begin": 0, "end": 1000}},
+                "editor_props": {},
+            }
+        ],
+    }
+    service.api.get_editor_annotations_in_bulk.side_effect = [({"success": [{**editor_annotation, "task_id": task_id}], "failure": []}, None) for task_id in ["task1", "task2"]]
+    parser = change_annotation_data_per_annotation.add_parser()
+    cli_args = [
+        "--project_id",
+        "prj1",
+        "--json",
+        json.dumps([{"task_id": task_id, "input_data_id": "input1", "annotation_id": "anno1", "data": {"_type": "Range", "begin": 1000, "end": 5000}} for task_id in ["task1", "task2"]]),
+    ]
+    if all_yes:
+        cli_args.append("--yes")
+    command = change_annotation_data_per_annotation.ChangeDataPerAnnotation(service, Mock(), parser.parse_args(cli_args))
+    prompts: list[str] = []
+    responses = iter(answers)
+
+    def input_mock(prompt: str) -> str:
+        prompts.append(prompt)
+        return next(responses)
+
+    monkeypatch.setattr(builtins, "input", input_mock)
+    if answers == ["n"]:
+        with pytest.raises(SystemExit):
+            command.main()
+    else:
+        command.main()
+
+    assert len(prompts) == expected_prompt_count
+    assert service.api.put_annotation.call_count == expected_update_count
+    for call in service.api.put_annotation.call_args_list:
+        assert call.kwargs["request_body"]["details"][0]["body"]["data"] == {"_type": "Range", "begin": 1000, "end": 5000}
