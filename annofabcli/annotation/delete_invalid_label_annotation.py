@@ -285,7 +285,7 @@ class DeleteInvalidLabelAnnotationOfAnnotation(CommandLine):
                 "間違えてアノテーションを削除してしまったときに復元できるようにするため、'--backup'でバックアップ用のディレクトリを指定することを推奨します。",
                 file=sys.stderr,
             )
-            if not self.confirm_processing("復元用のバックアップディレクトリが指定されていません。処理を続行しますか？"):
+            if not args.yes and not annofabcli.common.cli.prompt_yesno("復元用のバックアップディレクトリが指定されていません。処理を続行しますか？"):
                 sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
             backup_dir = None
         else:

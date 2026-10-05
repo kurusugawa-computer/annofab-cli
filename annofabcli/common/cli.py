@@ -362,11 +362,11 @@ def prompt_yesno(msg: str) -> bool:
 
     """
     while True:
-        choice = input(f"{msg} [y/N] : ")
+        choice = input(f"{msg} [y/n] : ").lower()
         if choice == "y":
             return True
 
-        elif choice == "N":
+        elif choice == "n":
             return False
 
 

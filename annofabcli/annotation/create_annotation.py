@@ -334,7 +334,7 @@ class CreateAnnotation(CommandLine):
 
         if args.backup is None:
             print("間違えてアノテーションを作成したときに復元できるようにするため、'--backup'でバックアップ用のディレクトリを指定することを推奨します。", file=sys.stderr)  # noqa: T201
-            if not self.confirm_processing("復元用のバックアップディレクトリが指定されていません。処理を続行しますか？"):
+            if not args.yes and not annofabcli.common.cli.prompt_yesno("復元用のバックアップディレクトリが指定されていません。処理を続行しますか？"):
                 sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
         if args.include_complete_task and not self.facade.contains_any_project_member_role(args.project_id, [ProjectMemberRole.OWNER]):
             print(f"{self.COMMON_MESSAGE} argument --include_complete_task: オーナーロールを持つユーザーで実行する必要があります。", file=sys.stderr)  # noqa: T201

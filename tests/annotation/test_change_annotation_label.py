@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import argparse
+import builtins
 import copy
+from unittest.mock import Mock
 
 import pytest
 from annofabapi.dataclass.annotation import AdditionalDataV1
@@ -269,3 +271,63 @@ class TestIsAllowedLabelChange:
     )
     def test_false(self, src_annotation_type: str, dest_annotation_type: str) -> None:
         assert not is_allowed_label_change(src_annotation_type, dest_annotation_type)
+
+
+@pytest.mark.parametrize(("answers", "expected_prompt_count", "expected_update_count"), [(["all", "y", "all"], 3, 2), (["y", "all"], 2, 2), (["y", "y", "y"], 3, 2), (["n"], 1, 0)])
+def test_backup_confirmation_controls_subsequent_label_changes(monkeypatch: pytest.MonkeyPatch, answers: list[str], expected_prompt_count: int, expected_update_count: int) -> None:
+    service = Mock()
+    service.api.get_annotation_specs.return_value = (ANNOTATION_SPECS, None)
+    service.api.get_project.return_value = ({"title": "project1"}, None)
+    task = {
+        "project_id": "prj1",
+        "phase": "annotation",
+        "phase_stage": 1,
+        "status": "not_started",
+        "input_data_id_list": ["input1"],
+        "account_id": None,
+        "histories_by_phase": [],
+        "work_time_span": 0,
+        "number_of_rejections": 0,
+        "started_datetime": None,
+        "updated_datetime": "2026-05-22T00:00:00+09:00",
+        "operation_updated_datetime": None,
+        "sampling": None,
+        "metadata": None,
+    }
+    service.wrapper.get_task_or_none.side_effect = [{**task, "task_id": task_id} for task_id in ["task1", "task2"]]
+    service.wrapper.get_all_annotation_list.side_effect = [
+        [
+            {
+                "project_id": "prj1",
+                "task_id": task_id,
+                "input_data_id": "input1",
+                "updated_datetime": task["updated_datetime"],
+                "detail": {"annotation_id": "anno1", "label_id": "label_car", "additional_data_list": []},
+            }
+        ]
+        for task_id in ["task1", "task2"]
+    ]
+    parser = change_annotation_label.add_parser()
+    args = parser.parse_args(["--project_id", "prj1", "--task_id", "task1", "task2", "--annotation_query", '{"label": "car"}', "--label_id", "label_bus"])
+    command = change_annotation_label.ChangeLabelOfAnnotation(service, Mock(), args)
+    prompts: list[str] = []
+    responses = iter(answers)
+
+    def input_mock(prompt: str) -> str:
+        prompts.append(prompt)
+        return next(responses)
+
+    monkeypatch.setattr(builtins, "input", input_mock)
+    if answers == ["n"]:
+        with pytest.raises(SystemExit):
+            command.main()
+    else:
+        command.main()
+
+    assert len(prompts) == expected_prompt_count
+    assert prompts[0].endswith(" [y/n] : ")
+    if expected_update_count:
+        assert prompts[-1].endswith(" [y/n/all] : ")
+    assert service.api.batch_update_annotations.call_count == expected_update_count
+    for call in service.api.batch_update_annotations.call_args_list:
+        assert call.kwargs["request_body"][0]["data"]["label_id"] == "label_bus"
