@@ -1,8 +1,13 @@
 from __future__ import annotations
 
+import json
+from pathlib import Path
+from typing import Any
 from unittest.mock import Mock
 
+import pytest
 from annofabapi.models import ProjectMemberRole, TaskStatus
+from annofabapi.parser import SimpleAnnotationDirParser
 
 from annofabcli.annotation.restore_annotation import RestoreAnnotationMain
 
@@ -152,3 +157,63 @@ class TestRestoreAnnotationMain:
 
         assert actual is True
         assert service.wrapper.change_task_operator.call_count == 2
+
+    @pytest.mark.parametrize("format_version", [None, "1.0.0"])
+    def test_put_annotation_rejects_v1_without_updating_annotation(self, tmp_path: Path, format_version: str | None) -> None:
+        annotation: dict[str, Any] = {"details": []}
+        if format_version is not None:
+            annotation["format_version"] = format_version
+        json_path = tmp_path / "input1.json"
+        json_path.write_text(json.dumps(annotation), encoding="utf-8")
+        service = Mock()
+        main_obj = self._create_main_obj(service, project_member_role=ProjectMemberRole.OWNER)
+
+        with pytest.raises(ValueError):
+            main_obj.put_annotation_for_input_data(SimpleAnnotationDirParser(json_path))
+
+        service.wrapper.upload_data_to_s3.assert_not_called()
+        service.api.get_editor_annotation.assert_not_called()
+        service.api.put_annotation.assert_not_called()
+
+    def test_put_annotation_restores_v2_inner_and_outer(self, tmp_path: Path) -> None:
+        task_dir = tmp_path / "task1"
+        outer_dir = task_dir / "input1"
+        outer_dir.mkdir(parents=True)
+        outer_data = b'{"kind":"SEMANTIC_SEGMENT","points":[1,2]}'
+        (outer_dir / "outer1").write_bytes(outer_data)
+        inner_detail = {"annotation_id": "inner1", "label_id": "label1", "body": {"_type": "Inner", "data": {"x": 1, "y": 2}}}
+        outer_detail = {"annotation_id": "outer1", "label_id": "label2", "body": {"_type": "Outer", "url": "https://example.com/outer1", "path": "old-path"}}
+        annotation = {"format_version": "2.0.0", "details": [inner_detail, outer_detail]}
+        json_path = task_dir / "input1.json"
+        json_path.write_text(json.dumps(annotation), encoding="utf-8")
+        service = Mock()
+        service.api.get_editor_annotation.return_value = ({"updated_datetime": "2026-10-05T00:00:00+09:00"}, None)
+        uploaded_data = []
+
+        def upload_data_to_s3(project_id, data, *, content_type):
+            uploaded_data.append((project_id, data.read(), content_type))
+            return "s3://bucket/outer1"
+
+        service.wrapper.upload_data_to_s3.side_effect = upload_data_to_s3
+        main_obj = self._create_main_obj(service, project_member_role=ProjectMemberRole.OWNER)
+
+        assert main_obj.put_annotation_for_input_data(SimpleAnnotationDirParser(json_path)) is True
+
+        assert uploaded_data == [("prj1", outer_data, "application/octet-stream")]
+        service.api.put_annotation.assert_called_once_with(
+            "prj1",
+            "task1",
+            "input1",
+            request_body={
+                "project_id": "prj1",
+                "task_id": "task1",
+                "input_data_id": "input1",
+                "format_version": "2.0.0",
+                "updated_datetime": "2026-10-05T00:00:00+09:00",
+                "details": [
+                    {**inner_detail, "_type": "Import"},
+                    {**outer_detail, "_type": "Import", "body": {"_type": "Outer", "path": "s3://bucket/outer1"}},
+                ],
+            },
+        )
+        assert json.loads(json_path.read_text(encoding="utf-8")) == annotation
