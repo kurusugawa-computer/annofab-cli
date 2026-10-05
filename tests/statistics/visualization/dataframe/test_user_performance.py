@@ -1,6 +1,11 @@
+import json
+import re
 from pathlib import Path
 
 import pandas
+import pytest
+from bokeh.document import Document
+from bokeh.models.widgets.inputs import MultiChoice
 
 from annofabcli.statistics.visualization.dataframe.task_worktime_by_phase_user import TaskWorktimeByPhaseUser
 from annofabcli.statistics.visualization.dataframe.user_performance import (
@@ -107,27 +112,50 @@ class TestUserPerformance:
             production_volume_column="input_data_count",
         )
 
-    def test_plot_productivity__find_userにはプロットされたユーザーだけを表示する(self, tmp_path: Path) -> None:
-        df = self.obj.df.copy()
-        not_plotted_user_df = df.iloc[[0]].copy()
-        not_plotted_user_df[("user_id", "")] = "not_plotted"
-        not_plotted_user_df[("username", "")] = "not_plotted"
-        for phase in self.obj.phase_list:
-            not_plotted_user_df[("actual_worktime_hour", phase)] = pandas.NA
-            not_plotted_user_df[("actual_worktime_hour/annotation_count", phase)] = pandas.NA
+    @pytest.mark.parametrize("plot_type", ["productivity", "quality", "quality_and_productivity"])
+    def test_find_userには各散布図にプロットされたユーザーだけを表示する(self, tmp_path: Path, plot_type: str) -> None:
+        df = self.obj.df.iloc[[0]].copy()
+        # 教師付をせず、受入だけを実施したユーザーを追加する。
+        acceptance_only_df = df.copy()
+        acceptance_only_df[("user_id", "")] = "acceptance_only"
+        acceptance_only_df[("username", "")] = "Acceptance Only"
+        for column in [
+            "actual_worktime_hour",
+            "actual_worktime_hour/annotation_count",
+            "task_count",
+            "rejected_count/task_count",
+            "annotation_count",
+            "pointed_out_inspection_comment_count/annotation_count",
+        ]:
+            acceptance_only_df[(column, "annotation")] = pandas.NA
 
         obj = UserPerformance(
-            pandas.concat([df, not_plotted_user_df], ignore_index=True),
+            pandas.concat([df, acceptance_only_df], ignore_index=True),
             self.obj.task_completion_criteria,
             custom_production_volume_list=self.obj.custom_production_volume_list,
         )
+        output_file = tmp_path / "scatter.html"
+        if plot_type == "quality":
+            obj.plot_quality(output_file)
+        elif plot_type == "productivity":
+            obj.plot_productivity(output_file, worktime_type=WorktimeType.ACTUAL, production_volume_column="annotation_count")
+        else:
+            obj.plot_quality_and_productivity(output_file, worktime_type=WorktimeType.ACTUAL, production_volume_column="annotation_count")
 
-        output_file = tmp_path / "散布図-アノテーションあたり作業時間と累計作業時間の関係-実績時間.html"
-        obj.plot_productivity(output_file, worktime_type=WorktimeType.ACTUAL, production_volume_column="annotation_count")
-
+        # 出力HTMLからBokehのモデルを復元し、グラフごとの選択肢を確認する。
         html = output_file.read_text(encoding="utf-8")
-        assert "AC:AC" in html
-        assert "not_plotted:not_plotted" not in html
+        match = re.search(r'<script type="application/json" id="[^"]+">(.*?)</script>', html, re.DOTALL)
+        assert match is not None
+        document = Document.from_json(next(iter(json.loads(match.group(1)).values())))
+        widgets = [model for model in document.select({"type": MultiChoice}) if isinstance(model, MultiChoice)]
+        assert len(widgets) == 2
+        options = [{tuple(option) for option in widget.options} for widget in widgets]
+        annotation_options = {("AC", "AC:AC")}
+        if plot_type == "productivity":
+            assert annotation_options in options
+            assert annotation_options | {("acceptance_only", "acceptance_only:Acceptance Only")} in options
+        else:
+            assert all(option == annotation_options for option in options)
 
     def test_plot_productivity_with_worktime_type_selector(self, tmp_path: Path) -> None:
         output_file = tmp_path / "散布図-アノテーションあたり作業時間と累計作業時間の関係.html"

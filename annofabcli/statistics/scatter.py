@@ -235,10 +235,6 @@ class ScatterGraph:
         if self._hover_tool is not None and self._scatter_glyphs is not None:
             self._hover_tool.renderers = list(self._scatter_glyphs.values())
 
-    def get_plotted_users(self) -> list[tuple[str, str]]:
-        """散布図に表示しているユーザーのリストを返します。"""
-        return list(self._plotted_users.items())
-
     def configure_legend(self) -> None:
         """
         凡例を設定します。
@@ -257,12 +253,16 @@ class ScatterGraph:
         legend = fig.legend[0]
         fig.add_layout(legend, "left")
 
-    def add_multi_choice_widget_for_searching_user(self, users: list[tuple[str, str]]) -> None:
+    def add_multi_choice_widget_for_searching_user(self) -> None:
         """
-        特定のユーザーを探すためのMultiChoiceウィジェットを追加します。
+        散布図にプロットしたユーザーだけを選択できるMultiChoiceウィジェットを追加します。
 
         Args:
-            users: ユーザーのリスト。tuple[user_id, username]
+            なし。
+
+        Returns:
+            なし。
+
         Notes:
             2回以上実行しても意味がありません。
 
@@ -283,7 +283,7 @@ class ScatterGraph:
         }
         """
         code = code % (self.DEFAULT_USER_TEXT_FONT_STYLE, self.DEFAULT_USER_TEXT_FONT_SIZE)
-        options = [(user_id, f"{user_id}:{username}") for user_id, username in users]
+        options = [(user_id, f"{user_id}:{username}") for user_id, username in self._plotted_users.items()]
         multi_choice = MultiChoice(options=options, title="Find User:", width=300)  # type: ignore[arg-type]
         multi_choice.js_on_change(
             "value",
