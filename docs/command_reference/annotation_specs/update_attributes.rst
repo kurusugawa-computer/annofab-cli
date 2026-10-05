@@ -93,7 +93,7 @@ JSON形式で指定する場合
       - 更新後の属性ベトナム語名。
     * - ``keybind``
       - 任意
-      - 更新後のキーボードショートカットのJSONオブジェクト。 ``code`` に指定できる値は、 `KeyboardEvent.code <https://developer.mozilla.org/ja/docs/Web/API/KeyboardEvent/code>`_ を参照してください。
+      - 更新後のキーボードショートカットのJSONオブジェクト。省略すると既存値を保持し、 ``null`` を指定するとショートカットキーを解除します。 ``code`` に指定できる値は、 `KeyboardEvent.code <https://developer.mozilla.org/ja/docs/Web/API/KeyboardEvent/code>`_ を参照してください。
     * - ``read_only``
       - 任意
       - 更新後の読み込み専用設定。 ``true`` または ``false`` を指定してください。
@@ -142,6 +142,7 @@ CSV形式で指定する場合
 
 CSV形式では、 ``keybind`` 列だけはJSONオブジェクト文字列として指定してください。
 そのため、CSVセル全体を ``"`` で囲み、JSON内の ``"`` は ``""`` のようにエスケープする必要があります。
+CSVの ``keybind`` 列の省略・空欄は既存値を保持します。解除する場合はJSON形式で ``null`` を指定してください。
 CSV形式では選択肢情報は更新できません。選択肢情報も同時に更新したい場合はJSON形式を利用してください。
 
 .. code-block::

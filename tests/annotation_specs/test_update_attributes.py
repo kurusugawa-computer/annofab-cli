@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 import json
 from pathlib import Path
 
@@ -43,6 +44,7 @@ class TestBuildRequestBodyForUpdateAttributes:
                     attribute_name_ja="コメント",
                     attribute_name_vi="bình luận",
                     keybind={"alt": False, "code": "Digit1", "ctrl": True, "shift": False},
+                    has_keybind=True,
                     read_only=True,
                     default_value="確認済み",
                     has_default_value=True,
@@ -289,6 +291,7 @@ class TestReadAttributes:
                 attribute_name_ja="コメント",
                 attribute_name_vi="bình luận",
                 keybind={"alt": False, "code": "Digit1", "ctrl": True, "shift": False},
+                has_keybind=True,
                 read_only=True,
                 default_value="確認済み",
                 has_default_value=True,
@@ -344,6 +347,7 @@ class TestReadAttributes:
                 attribute_name_ja="コメント",
                 attribute_name_vi="bình luận",
                 keybind={"alt": False, "code": "Digit1", "ctrl": True, "shift": False},
+                has_keybind=True,
                 read_only=True,
                 default_value="確認済み",
                 has_default_value=True,
@@ -354,3 +358,47 @@ class TestReadAttributes:
                 has_default_value=True,
             ),
         ]
+
+
+@pytest.mark.parametrize(
+    "updates",
+    [
+        {"keybind": None},
+        {"attribute_name_ja": "変更後"},
+        {"keybind": {"code": "Digit2"}},
+    ],
+)
+def test_update_keybind_from_json(annotation_specs: dict, updates: dict) -> None:
+    target = next(item for item in annotation_specs["additionals"] if item["additional_data_definition_id"] == COMMENT_ATTRIBUTE_ID)
+    target["keybind"] = [{"alt": False, "code": "Digit1", "ctrl": False, "shift": False}]
+    original = copy.deepcopy(annotation_specs)
+    inputs = read_attributes_json(json.dumps([{"attribute_id": COMMENT_ATTRIBUTE_ID, **updates}]))
+    resolved_inputs = resolve_attribute_update_inputs(annotation_specs, attribute_update_inputs=inputs)
+
+    actual = build_request_body_for_update_attributes(annotation_specs, resolved_attribute_update_inputs=resolved_inputs, comment=None)
+
+    updated = next(item for item in actual["additionals"] if item["additional_data_definition_id"] == COMMENT_ATTRIBUTE_ID)
+    if "keybind" not in updates:
+        assert updated["keybind"] == target["keybind"]
+    elif updates["keybind"] is None:
+        assert updated["keybind"] == []
+    else:
+        assert updated["keybind"] == [{"alt": False, "code": "Digit2", "ctrl": False, "shift": False}]
+    assert annotation_specs == original
+
+
+@pytest.mark.parametrize("include_keybind_column", [True, False])
+def test_update_csv_preserves_keybind(annotation_specs: dict, tmp_path: Path, *, include_keybind_column: bool) -> None:
+    target = next(item for item in annotation_specs["additionals"] if item["additional_data_definition_id"] == COMMENT_ATTRIBUTE_ID)
+    target["keybind"] = [{"alt": False, "code": "Digit1", "ctrl": False, "shift": False}]
+    path = tmp_path / "updates.csv"
+    keybind_header = ",keybind" if include_keybind_column else ""
+    keybind_cell = "," if include_keybind_column else ""
+    path.write_text(f"attribute_id,attribute_name_ja{keybind_header}\n{COMMENT_ATTRIBUTE_ID},変更後{keybind_cell}\n", encoding="utf-8")
+    inputs = read_attributes_csv(path)
+    resolved_inputs = resolve_attribute_update_inputs(annotation_specs, attribute_update_inputs=inputs)
+
+    actual = build_request_body_for_update_attributes(annotation_specs, resolved_attribute_update_inputs=resolved_inputs, comment=None)
+
+    updated = next(item for item in actual["additionals"] if item["additional_data_definition_id"] == COMMENT_ATTRIBUTE_ID)
+    assert updated["keybind"] == target["keybind"]
