@@ -203,7 +203,7 @@
 プロジェクトメンバ関係のサブコマンド
 
 - `annofabcli project_member delete`: 複数のプロジェクトから、ユーザを脱退させます。
-- `annofabcli project_member diff`: 基準プロジェクトと複数プロジェクトのメンバ構成の差分を出力します。
+- `annofabcli project_member diff`: 左から右へのプロジェクトのメンバ構成の差分を出力します。
 - `annofabcli project_member invite`: 複数のプロジェクトに、ユーザを招待します。
 - `annofabcli project_member list`: プロジェクトメンバを出力します。
 - `annofabcli project_member sync`: 基準プロジェクトのメンバ構成を複数プロジェクトに同期します。

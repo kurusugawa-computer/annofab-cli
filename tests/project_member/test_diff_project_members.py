@@ -1,55 +1,103 @@
-import csv
 import json
 from argparse import Namespace
 from unittest.mock import Mock
 
 import pytest
+import yaml
 from annofabapi.models import ProjectMember
 
-from annofabcli.project_member.diff_project_members import DIFF_COLUMNS, DiffProjectMembers
+from annofabcli.project_member.diff_project_members import DiffProjectMembers
 
 
-def member(user_id: str, role: str = "worker", status: str = "active") -> ProjectMember:
-    return {"user_id": user_id, "account_id": user_id, "member_role": role, "sampling_inspection_rate": None, "sampling_acceptance_rate": None, "member_status": status, "updated_datetime": "updated"}
+def member(user_id: str, role: str = "worker", status: str = "active", inspection_rate: int | None = None) -> ProjectMember:
+    return {
+        "user_id": user_id,
+        "account_id": user_id,
+        "member_role": role,
+        "sampling_inspection_rate": inspection_rate,
+        "sampling_acceptance_rate": None,
+        "member_status": status,
+        "updated_datetime": "updated",
+    }
 
 
-@pytest.mark.parametrize("output_format", ["csv", "pretty_json"])
-def test_diff_reports_changes_and_reasons_without_writing(tmp_path, output_format):
+@pytest.mark.parametrize("output_format", ["text", "detail_text", "json", "pretty_json"])
+def test_diff_reports_left_to_right_changes_without_writing(tmp_path, output_format):
     service = Mock()
     service.api.login_user_id = "myself"
-    source = [member("new"), member("changed"), member("same"), member("myself"), member("outside")]
-    destination = [member("changed", "owner"), member("same"), member("myself", "owner"), member("extra"), member("inactive", status="inactive")]
-    service.wrapper.get_all_project_members.side_effect = lambda project_id, **_kwargs: source if project_id == "src" else destination
-    service.wrapper.get_all_organization_members.return_value = [{"account_id": m["account_id"]} for m in source if m["user_id"] != "outside"]
+    left = [member("removed"), member("changed", inspection_rate=10), member("same"), member("myself"), member("outside")]
+    right = [member("changed", "owner", inspection_rate=20), member("same"), member("myself", "owner"), member("added"), member("inactive", status="inactive")]
+    service.wrapper.get_all_project_members.side_effect = lambda project_id, **_kwargs: left if project_id == "left" else right
     output = tmp_path / "diff"
-    command = DiffProjectMembers(service, Mock(), Namespace(yes=False, src_project_id="src", dest_project_id=["dest1", "dest2"], format=output_format, output=str(output)))
+    command = DiffProjectMembers(service, Mock(), Namespace(yes=False, left_project_id="left", right_project_id="right", format=output_format, output=str(output)))
     command.main()
-    if output_format == "csv":
-        with output.open(encoding="utf-8-sig") as stream:
-            records = list(csv.DictReader(stream))
+    if output_format in ("json", "pretty_json"):
+        record = json.loads(output.read_text())
+        assert record["left_project_id"] == "left"
+        assert record["right_project_id"] == "right"
+        assert record["added_user_ids"] == ["added"]
+        assert record["removed_user_ids"] == ["outside", "removed"]
+        changed = {m["user_id"]: m for m in record["changed_members"]}
+        assert set(changed) == {"changed", "myself"}
+        assert changed["changed"]["changes"] == {
+            "member_role": {"left": "worker", "right": "owner"},
+            "sampling_inspection_rate": {"left": 10, "right": 20},
+        }
     else:
-        records = json.loads(output.read_text())
-    assert len(records) == 10
-    assert {r["dest_project_id"] for r in records} == {"dest1", "dest2"}
-    by_user = {r["user_id"]: r for r in records}
-    assert by_user["new"]["action"] == "add"
-    assert by_user["changed"]["action"] == "update"
-    assert by_user["changed"]["src_member_role"] == "worker"
-    assert by_user["changed"]["dest_member_role"] == "owner"
-    assert by_user["extra"]["action"] == "delete"
-    assert by_user["myself"]["skip_reason"]
-    assert by_user["outside"]["skip_reason"]
+        text = output.read_text()
+        assert text.startswith("[project_members]\n")
+        record = yaml.safe_load(text.removeprefix("[project_members]\n"))
+        assert record["left_project_id"] == "left"
+        assert record["right_project_id"] == "right"
+        assert record["added"] == ["added"]
+        assert record["removed"] == ["outside", "removed"]
+        changed = {m["user_id"]: m for m in record["changed"]}
+        assert set(changed) == {"changed", "myself"}
+        if output_format == "text":
+            assert changed["changed"]["fields"] == ["member_role", "sampling_inspection_rate"]
+            assert "changes" not in changed["changed"]
+        else:
+            assert changed["changed"]["changes"] == {
+                "member_role": {"left": "worker", "right": "owner"},
+                "sampling_inspection_rate": {"left": 10, "right": 20},
+            }
+    service.wrapper.get_all_organization_members.assert_not_called()
     service.api.put_project_member.assert_not_called()
 
 
-@pytest.mark.parametrize("output_format", ["csv", "json"])
-def test_diff_empty_output(tmp_path, output_format):
+@pytest.mark.parametrize("output_format", ["text", "detail_text", "json", "pretty_json"])
+@pytest.mark.parametrize("members", [[], [member("same")]])
+def test_diff_empty_output(tmp_path, output_format, members):
+    service = Mock()
+    service.wrapper.get_all_project_members.return_value = members
+    output = tmp_path / "diff"
+    DiffProjectMembers(service, Mock(), Namespace(yes=False, left_project_id="left", right_project_id="right", format=output_format, output=str(output))).main()
+    if output_format in ("json", "pretty_json"):
+        assert json.loads(output.read_text()) == {"left_project_id": "left", "right_project_id": "right", "added_user_ids": [], "removed_user_ids": [], "changed_members": []}
+    else:
+        assert output.read_text() == ""
+
+
+def test_diff_inactive_members_and_unset_rates(tmp_path):
+    service = Mock()
+    left = [member("rejoin", status="inactive"), member("leave"), member("changed", inspection_rate=10), member("inactive", status="inactive")]
+    right = [member("rejoin"), member("leave", status="inactive"), member("changed"), member("inactive", "owner", status="inactive")]
+    service.wrapper.get_all_project_members.side_effect = lambda project_id, **_kwargs: left if project_id == "left" else right
+    output = tmp_path / "diff.json"
+    DiffProjectMembers(service, Mock(), Namespace(yes=False, left_project_id="left", right_project_id="right", format="json", output=str(output))).main()
+    record = json.loads(output.read_text())
+    assert record == {
+        "left_project_id": "left",
+        "right_project_id": "right",
+        "added_user_ids": ["rejoin"],
+        "removed_user_ids": ["leave"],
+        "changed_members": [{"user_id": "changed", "changes": {"sampling_inspection_rate": {"left": 10, "right": None}}}],
+    }
+    service.api.put_project_member.assert_not_called()
+
+
+def test_diff_empty_text_does_not_write_stdout(capsys):
     service = Mock()
     service.wrapper.get_all_project_members.return_value = []
-    service.wrapper.get_all_organization_members.return_value = []
-    output = tmp_path / "diff"
-    DiffProjectMembers(service, Mock(), Namespace(yes=False, src_project_id="src", dest_project_id=["dest"], format=output_format, output=str(output))).main()
-    if output_format == "csv":
-        assert output.read_text(encoding="utf-8-sig").strip() == ",".join(DIFF_COLUMNS)
-    else:
-        assert json.loads(output.read_text()) == []
+    DiffProjectMembers(service, Mock(), Namespace(yes=False, left_project_id="left", right_project_id="right", format="text", output=None)).main()
+    assert capsys.readouterr().out == ""

@@ -1,2 +1,0 @@
-src_project_id,dest_project_id,user_id,action,skip_reason,src_member_role,src_sampling_inspection_rate,src_sampling_acceptance_rate,dest_member_role,dest_sampling_inspection_rate,dest_sampling_acceptance_rate
-prj1,prj2,user1,update,,worker,10,,accepter,20,
