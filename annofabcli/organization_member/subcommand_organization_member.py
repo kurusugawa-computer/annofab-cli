@@ -1,20 +1,20 @@
 import argparse
 
 import annofabcli.common.cli
-import annofabcli.organization_member.change_organization_member
 import annofabcli.organization_member.delete_organization_member
 import annofabcli.organization_member.invite_organization_member
 import annofabcli.organization_member.list_organization_member
+import annofabcli.organization_member.update_organization_member_role
 
 
 def parse_args(parser: argparse.ArgumentParser) -> None:
     subparsers = parser.add_subparsers(dest="subcommand_name")
 
     # サブコマンドの定義
-    annofabcli.organization_member.change_organization_member.add_parser(subparsers)
     annofabcli.organization_member.delete_organization_member.add_parser(subparsers)
     annofabcli.organization_member.invite_organization_member.add_parser(subparsers)
     annofabcli.organization_member.list_organization_member.add_parser(subparsers)
+    annofabcli.organization_member.update_organization_member_role.add_parser(subparsers)
 
 
 def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
