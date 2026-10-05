@@ -7,6 +7,16 @@
 
 `教師付開始日毎の生産量と生産性.csvのサンプル <https://github.com/kurusugawa-computer/annofab-cli/blob/main/docs/command_reference/statistics/visualize/out_dir/教師付開始日毎の生産量と生産性.csv>`_
 
+.. note::
+
+    作業時間列と生産性列の作業時間名は、計測作業時間であることを明示するため、
+    ``worktime_hour`` などから ``monitored_worktime_hour`` などへ変更しました。
+    移動平均列（ ``__lastweek`` ）も同様です。旧列名は出力しません。
+    旧列名を参照するスクリプトは、新列名に修正してください。
+    過去の出力ディレクトリから ``stat_visualization write_graph`` でグラフを再生成する場合は、
+    先に ``statistics visualize`` でCSVを再生成してください。
+    ``タスクlist.csv`` の列名は変更していません。
+
 列の内容
 ===================================================================================================
 
@@ -14,14 +24,14 @@
 
 作業時間
 ----------
-* ``worktime_hour`` : その日に教師付フェーズを開始して、現在作業が完了したタスクにかけた計測作業時間（アノテーションエディタ画面を触っていた作業の時間）。
-* ``annotation_worktime_hour`` : 教師付フェーズの計測作業時間
-* ``inspection_worktime_hour`` : 検査フェーズの計測作業時間
-* ``acceptance_worktime_hour`` : 受入フェーズの計測作業時間
+* ``monitored_worktime_hour`` : その日に教師付フェーズを開始して、現在作業が完了したタスクにかけた計測作業時間（アノテーションエディタ画面を触っていた作業の時間）。
+* ``monitored_annotation_worktime_hour`` : 教師付フェーズの計測作業時間
+* ``monitored_inspection_worktime_hour`` : 検査フェーズの計測作業時間
+* ``monitored_acceptance_worktime_hour`` : 受入フェーズの計測作業時間
 
 .. warning::
 
-    ``worktime`` は、その日に教師付フェーズを開始したタスクにかかった作業時間です。その日に作業した時間ではないことに注意してください。
+    ``monitored_worktime_hour`` は、その日に教師付フェーズを開始したタスクにかかった作業時間です。その日に作業した時間ではないことに注意してください。
 
 
 .. warning::
@@ -51,8 +61,8 @@
 生産性
 ----------
 
-* ``worktime_hour/input_data_count`` : 入力データあたり計測作業時間
-* ``worktime_hour/annotation_count`` : アノテーションあたり計測作業時間
+* ``monitored_worktime_hour/input_data_count`` : 入力データあたり計測作業時間
+* ``monitored_worktime_hour/annotation_count`` : アノテーションあたり計測作業時間
 
 
 その他
