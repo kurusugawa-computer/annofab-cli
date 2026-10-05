@@ -13,7 +13,6 @@ Command Reference
    annotation_zip/index
    comment/index
    completion
-   experimental/index
    filesystem/index
    input_data/index
    instruction/index

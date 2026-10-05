@@ -41,12 +41,14 @@
 - `annofabcli annotation_specs add_choices_to_attribute`: 既存の選択肢系属性に選択肢を追加します。
 - `annofabcli annotation_specs add_choices_to_attributes`: 既存の複数選択肢系属性に選択肢を追加します。
 - `annofabcli annotation_specs add_existing_attribute_to_labels`: アノテーション仕様の既存属性を複数の既存ラベルへ追加します。
+- `annofabcli annotation_specs add_inspection_phrases`: アノテーション仕様の定型指摘を複数件追加します。
 - `annofabcli annotation_specs add_label`: アノテーション仕様にラベルを追加します。
 - `annofabcli annotation_specs add_labels`: アノテーション仕様にラベルを複数追加します。
 - `annofabcli annotation_specs change_attribute_type`: アノテーション仕様の既存属性の種類を変更します。
 - `annofabcli annotation_specs delete_attribute_restriction`: アノテーション仕様の属性制約を削除します。
 - `annofabcli annotation_specs delete_attributes`: アノテーション仕様のラベルから属性を削除します。
 - `annofabcli annotation_specs delete_choices`: アノテーション仕様の選択肢系属性から選択肢を削除します。
+- `annofabcli annotation_specs delete_inspection_phrases`: アノテーション仕様の定型指摘を複数件削除します。
 - `annofabcli annotation_specs delete_labels`: アノテーション仕様からラベルを複数削除します。
 - `annofabcli annotation_specs describe_label_attributes`: ラベルと属性の関係を共有用のMarkdown形式で出力します。
 - `annofabcli annotation_specs diff`: アノテーション仕様の差分を出力します。
@@ -67,6 +69,7 @@
 - `annofabcli annotation_specs unset_attribute_required`: 属性の必須制約を解除します。
 - `annofabcli annotation_specs update_attributes`: アノテーション仕様の既存属性情報を更新します。
 - `annofabcli annotation_specs update_choices`: アノテーション仕様の既存選択肢情報を更新します。
+- `annofabcli annotation_specs update_inspection_phrases`: アノテーション仕様の定型指摘を複数件更新します。
 - `annofabcli annotation_specs update_label_field_values`: アノテーション仕様の既存ラベルの field_values を更新します。
 - `annofabcli annotation_specs update_labels`: アノテーション仕様の既存ラベル情報を更新します。
 
@@ -311,9 +314,3 @@ Webhook関係のサブコマンド
 
 - `annofabcli filesystem draw_annotation`: [DEPRECATED] 画像にアノテーションを描画します。
 - `annofabcli filesystem mask_user_info`: CSVに記載されたユーザ情報をマスクします。
-
-## experimental
-
-アルファ版のサブコマンド
-
-- `annofabcli experimental list_out_of_range_annotation_for_movie`: 動画範囲外のアノテーションを探すためのCSVを出力します。
