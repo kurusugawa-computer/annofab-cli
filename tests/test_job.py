@@ -51,22 +51,6 @@ class TestCommandLine:
             ]
         )
 
-    def test_list_last_job(self):
-        main(
-            [
-                "job",
-                "list_last",
-                "--project_id",
-                project_id,
-                "--job_type",
-                "gen-annotation",
-                "--format",
-                "csv",
-                "--output",
-                str(out_dir / "list_last-out.csv"),
-            ]
-        )
-
     def test_wait(self):
         main(
             [

@@ -49,11 +49,38 @@ def test_update_members_preserves_omitted_values_and_clears_null_rates(service):
     }
 
 
-def test_update_members_skips_self_absent_inactive_and_empty_changes(service):
+@pytest.mark.parametrize(
+    "changes, expected_rates",
+    [
+        ({"sampling_inspection_rate": 0}, (0, 40)),
+        ({"sampling_acceptance_rate": 100}, (30, 100)),
+        ({"sampling_inspection_rate": None, "sampling_acceptance_rate": None}, (None, None)),
+        ({"member_role": "accepter", "sampling_inspection_rate": 10, "sampling_acceptance_rate": 20}, (10, 20)),
+    ],
+)
+def test_update_members_updates_own_rates_and_preserves_role(service, changes, expected_rates):
+    command = UpdateProjectMembers(service, Mock(), Namespace(yes=True))
+
+    command.update_project_members("project", parse_project_member_updates([{"user_id": "myself", **changes}]))
+
+    service.api.put_project_member.assert_called_once()
+    call = service.api.put_project_member.call_args
+    assert call.args == ("project", "myself")
+    assert call.kwargs["request_body"] == {
+        "member_status": "active",
+        "member_role": "accepter",
+        "sampling_inspection_rate": expected_rates[0],
+        "sampling_acceptance_rate": expected_rates[1],
+        "last_updated_datetime": "2026-10-05T12:00:00+09:00",
+    }
+
+
+@pytest.mark.parametrize("rates", [{}, {"sampling_inspection_rate": 10, "sampling_acceptance_rate": 20}])
+def test_update_members_skips_own_role_change_absent_inactive_and_empty_changes(service, rates):
     command = UpdateProjectMembers(service, Mock(), Namespace(yes=True))
     updates = parse_project_member_updates(
         [
-            {"user_id": "myself", "member_role": "worker"},
+            {"user_id": "myself", "member_role": "worker", **rates},
             {"user_id": "absent", "member_role": "worker"},
             {"user_id": "inactive", "member_role": "worker"},
             {"user_id": "user1"},

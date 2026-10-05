@@ -79,7 +79,7 @@ JSON形式で指定する場合
       - 更新後のラベルの色。 ``#RRGGBB`` 形式の16進数カラーコードを指定してください。
     * - ``keybind``
       - 任意
-      - 更新後のキーボードショートカットのJSONオブジェクト。 ``code`` に指定できる値は、 `KeyboardEvent.code <https://developer.mozilla.org/ja/docs/Web/API/KeyboardEvent/code>`_ を参照してください。
+      - 更新後のキーボードショートカットのJSONオブジェクト。省略すると既存値を保持し、 ``null`` を指定するとショートカットキーを解除します。 ``code`` に指定できる値は、 `KeyboardEvent.code <https://developer.mozilla.org/ja/docs/Web/API/KeyboardEvent/code>`_ を参照してください。
     * - ``field_values``
       - 任意
       - 更新するサイズ制約や許容誤差範囲などのJSONオブジェクト。 ``field_values_operation`` を省略した場合は既存の ``field_values`` にマージします。
@@ -101,6 +101,7 @@ CSV形式で指定する場合
 
 CSV形式では、 ``keybind`` 列と ``field_values`` 列だけはJSONオブジェクト文字列として指定してください。
 そのため、CSVセル全体を ``"`` で囲み、JSON内の ``"`` は ``""`` のようにエスケープする必要があります。
+CSVの ``keybind`` 列の省略・空欄は既存値を保持します。解除する場合はJSON形式で ``null`` を指定してください。
 
 .. code-block::
 

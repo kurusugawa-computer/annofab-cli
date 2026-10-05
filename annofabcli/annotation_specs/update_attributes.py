@@ -72,6 +72,9 @@ class AttributeUpdateInput:
     keybind: dict[str, Any] | None = None
     """更新後のkeybind。"""
 
+    has_keybind: bool = False
+    """``keybind`` が明示的に指定されたか。"""
+
     read_only: bool | None = None
     """更新後のread_only。"""
 
@@ -110,7 +113,7 @@ def validate_attribute_update_input(attribute_update_input: AttributeUpdateInput
             attribute_update_input.attribute_name_en is not None,
             attribute_update_input.attribute_name_ja is not None,
             attribute_update_input.attribute_name_vi is not None,
-            attribute_update_input.keybind is not None,
+            attribute_update_input.has_keybind,
             attribute_update_input.read_only is not None,
             attribute_update_input.has_default_value,
             attribute_update_input.choice_updates is not None,
@@ -157,6 +160,7 @@ def parse_attribute_update_input_from_dict(data: dict[str, Any], *, index: int) 
         attribute_name_ja=data.get("attribute_name_ja"),
         attribute_name_vi=data.get("attribute_name_vi"),
         keybind=None if data.get("keybind") is None else validate_keybind_input(data["keybind"]),
+        has_keybind="keybind" in data,
         read_only=data.get("read_only"),
         default_value=data.get("default_value"),
         has_default_value="default_value" in data,
@@ -215,6 +219,7 @@ def read_attributes_csv(csv_path: Path) -> list[AttributeUpdateInput]:
             attribute_name_ja=row.get("attribute_name_ja"),
             attribute_name_vi=row.get("attribute_name_vi"),
             keybind=parse_keybind_in_csv(row.get("keybind"), index=index),
+            has_keybind=row.get("keybind") is not None,
             read_only=row.get("read_only"),
             default_value=default_value,
             has_default_value=default_value is not None,
@@ -385,7 +390,7 @@ def build_request_body_for_update_attributes(
             update_attribute_name_ja(attribute, attribute_update_input.attribute_name_ja)
         if attribute_update_input.attribute_name_vi is not None:
             update_attribute_name_vi(attribute, attribute_update_input.attribute_name_vi)
-        if attribute_update_input.keybind is not None:
+        if attribute_update_input.has_keybind:
             attribute["keybind"] = keybind_to_api_keybind(copy.deepcopy(attribute_update_input.keybind))
         if attribute_update_input.read_only is not None:
             attribute["read_only"] = attribute_update_input.read_only
@@ -505,6 +510,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
             "更新する属性情報のJSON配列を指定します。 ``file://`` を先頭に付けるとJSON形式のファイルを指定できます。"
             " 各要素には更新対象を示す ``attribute_id`` が必要です。"
             " 任意で更新後の ``attribute_name_en`` , ``attribute_name_ja`` , ``attribute_name_vi`` , ``keybind`` , ``read_only`` , ``default_value`` , ``choice_updates`` を指定できます。"
+            " ``keybind`` を省略すると既存値を保持し、nullを指定するとショートカットキーを解除します。"
             " ``choice_updates`` では既存選択肢の ``choice_name_en`` , ``choice_name_ja`` , ``choice_name_vi`` , ``keybind`` を更新できます。"
             f"\n(例) ``{json.dumps(sample_json, ensure_ascii=False)}``"
         ),

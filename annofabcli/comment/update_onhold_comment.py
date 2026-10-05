@@ -10,11 +10,8 @@ from typing import Any
 from annofabapi.models import CommentType
 
 import annofabcli.common.cli
-from annofabcli.comment.put_comment import (
-    PutCommentMain,
-    convert_cli_onhold_comment_list,
-    read_onhold_comment_csv,
-)
+from annofabcli.comment.put_comment import PutCommentMain
+from annofabcli.comment.update_comment import convert_updated_comment_list, read_updated_comment_csv
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
     PARALLELISM_CHOICES,
@@ -56,10 +53,14 @@ class UpdateOnholdComment(CommandLine):
             if not isinstance(comment_list, list):
                 print(f"{self.COMMON_MESSAGE} argument --json: JSON形式が不正です。配列を指定してください。", file=sys.stderr)  # noqa: T201
                 sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
-            comments_for_task_list = convert_cli_onhold_comment_list(comment_list)
+            try:
+                comments_for_task_list = convert_updated_comment_list(comment_list, comment_type=CommentType.ONHOLD)
+            except ValueError as e:
+                print(f"{self.COMMON_MESSAGE} argument --json: 更新内容が不正です。 :: {e}", file=sys.stderr)  # noqa: T201
+                sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
         elif args.csv is not None:
             try:
-                comments_for_task_list = read_onhold_comment_csv(args.csv)
+                comments_for_task_list = read_updated_comment_csv(args.csv, comment_type=CommentType.ONHOLD)
             except ValueError as e:
                 print(f"{self.COMMON_MESSAGE} argument --csv: CSVの読み込みに失敗しました。 :: {e}", file=sys.stderr)  # noqa: T201
                 sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
@@ -101,7 +102,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         type=str,
         help=(
             f"更新する保留コメントの情報をJSON形式で指定してください。``file://`` を先頭に付けると、JSON形式のファイルを指定できます。\n\n"
-            f"各コメントには ``comment_id`` を指定してください。\n\n"
+            f"各コメントには ``task_id``、``input_data_id``、``comment_id`` と更新する項目を指定してください。省略した項目は既存値を保持します。\n\n"
             f"(ex)  ``{json.dumps(sample_json, ensure_ascii=False)}``"
         ),
     )
@@ -111,11 +112,11 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         type=Path,
         help=(
             "更新する保留コメントの内容をCSV形式で指定してください。\n"
-            "CSVには以下の列が必要です：\n\n"
+            "CSVの列は以下の通りです。任意列の省略・空欄は既存値を保持します：\n\n"
             " * ``task_id`` （必須）: タスクID\n"
             " * ``input_data_id`` （必須）: 入力データID\n"
             " * ``comment_id`` （必須）: コメントID\n"
-            " * ``comment`` （必須）: コメント本文\n"
+            " * ``comment`` （任意）: コメント本文\n"
             " * ``annotation_id`` （任意）: 紐付けるアノテーションID\n"
         ),
     )
@@ -133,7 +134,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
 def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "update_onhold"
     subcommand_help = "保留コメントを更新します"
-    description = "保留コメントを更新します。comment_idが存在しない場合はスキップします。"
+    description = "指定した項目だけを更新し、省略した項目は既存値を保持します。保留コメントを更新します。comment_idが存在しない場合はスキップします。"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description=description)
     parse_args(parser)

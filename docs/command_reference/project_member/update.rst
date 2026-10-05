@@ -6,7 +6,8 @@ Description
 =================================
 
 既存のプロジェクトメンバのロール、抜取検査率、抜取受入率をCSVまたはJSONで更新します。
-自分自身と、プロジェクトに所属していないユーザ（脱退済みを含む）は更新しません。
+自分自身の抜取検査率・抜取受入率も更新できます。自分自身のロールを変更する指定がある場合は、そのユーザの抜取率を含む更新全体をスキップします。
+プロジェクトに所属していないユーザ（脱退済みを含む）は更新しません。
 複数ユーザに同じロールを設定する場合は :doc:`update_role` を使用してください。
 
 旧 ``project_member change`` の代わりに、このコマンドまたは ``update_role`` を使用してください。
@@ -33,6 +34,13 @@ JSONで更新する
       --json '[{"user_id":"user1","member_role":"worker"},{"user_id":"user2","sampling_inspection_rate":null,"sampling_acceptance_rate":20}]'
 
 JSONファイルを指定する場合は ``--json file://members.json`` を使用してください。
+
+自分自身の抜取率を更新する場合は、ログインユーザのユーザIDを指定します。
+
+.. code-block::
+
+    $ annofabcli project_member update --project_id prj1 \
+      --json '[{"user_id":"my_user_id","sampling_inspection_rate":10,"sampling_acceptance_rate":20}]'
 
 CSVで更新する
 ---------------------------------
