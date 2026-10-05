@@ -21,7 +21,6 @@ Available Commands
    list_annotation_area
    list_video_duration
    list_worktime
-   summarize_task_count
    summarize_task_count_by_task_id_group
    summarize_task_count_by_user
    visualize

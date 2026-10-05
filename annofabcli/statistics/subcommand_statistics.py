@@ -6,7 +6,6 @@ import annofabcli.statistics.list_annotation_count
 import annofabcli.statistics.list_annotation_duration
 import annofabcli.statistics.list_video_duration
 import annofabcli.statistics.list_worktime
-import annofabcli.statistics.summarize_task_count
 import annofabcli.statistics.summarize_task_count_by_task_id_group
 import annofabcli.statistics.summarize_task_count_by_user
 import annofabcli.statistics.visualize_annotation_count
@@ -25,7 +24,6 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
 
     annofabcli.statistics.list_video_duration.add_parser(subparsers)
     annofabcli.statistics.list_worktime.add_parser(subparsers)
-    annofabcli.statistics.summarize_task_count.add_parser(subparsers)
     annofabcli.statistics.summarize_task_count_by_task_id_group.add_parser(subparsers)
     annofabcli.statistics.summarize_task_count_by_user.add_parser(subparsers)
     annofabcli.statistics.visualize_statistics.add_parser(subparsers)

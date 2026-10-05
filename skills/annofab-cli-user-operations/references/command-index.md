@@ -221,7 +221,6 @@
 - `annofabcli statistics list_annotation_area`: 塗りつぶし、矩形、ポリゴンアノテーションの面積を出力します。
 - `annofabcli statistics list_video_duration`: 各タスクの動画の長さを出力します。
 - `annofabcli statistics list_worktime`: 日ごとユーザごとの作業時間の一覧を出力します。
-- `annofabcli statistics summarize_task_count`: タスクのフェーズ、ステータス、ステップごとにタスク数を出力します。
 - `annofabcli statistics summarize_task_count_by_task_id_group`: task_idのグループごとにタスク数を集計します。 [DEPRECATED] :: `statistics summarize_task_count_by_task_id_group` コマンドは非推奨です。代わりに `task_count list_by_task_id_group` コマンドを使用してください。 `statistics summarize_task_count_by_task_id_group` コマンドは2027/01/01以降に廃止予定です。
 - `annofabcli statistics summarize_task_count_by_user`: ユーザごとに、担当しているタスク数を出力します。 [DEPRECATED] :: `statistics summarize_task_count_by_user` コマンドは非推奨です。代わりに `task_count list_by_user` コマンドを使用してください。 `statistics summarize_task_count_by_user` コマンドは2027/01/01以降に廃止予定です。
 - `annofabcli statistics visualize`: 生産性に関するCSVファイルやグラフを出力します。
