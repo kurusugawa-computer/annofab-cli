@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 import json
 from pathlib import Path
 
@@ -46,6 +47,7 @@ class TestBuildRequestBodyForUpdateLabels:
                     label_name_vi="xe hơi",
                     color="#123456",
                     keybind={"alt": False, "code": "Digit1", "ctrl": True, "shift": False},
+                    has_keybind=True,
                     field_values={
                         "minimum_size_2d_with_default_insert_position": {
                             "_type": "MinimumSize2dWithDefaultInsertPosition",
@@ -212,6 +214,7 @@ class TestReadLabels:
                 label_name_vi="xe hơi",
                 color="#123456",
                 keybind={"alt": False, "code": "Digit1", "ctrl": True, "shift": False},
+                has_keybind=True,
                 field_values={"margin_of_error_tolerance": {"max_pixel": 5, "_type": "MarginOfErrorTolerance"}},
             ),
             LabelUpdateInput(label_id="bike", field_values_operation="replace"),
@@ -257,7 +260,52 @@ class TestReadLabels:
                 label_name_vi="xe hơi",
                 color="#123456",
                 keybind={"alt": False, "code": "Digit1", "ctrl": True, "shift": False},
+                has_keybind=True,
                 field_values={"margin_of_error_tolerance": {"max_pixel": 5, "_type": "MarginOfErrorTolerance"}},
             ),
             LabelUpdateInput(label_id="bike", field_values_operation="replace"),
         ]
+
+
+@pytest.mark.parametrize(
+    "updates",
+    [
+        {"keybind": None},
+        {"label_name_ja": "変更後"},
+        {"keybind": {"code": "Digit2"}},
+    ],
+)
+def test_update_keybind_from_json(annotation_specs: dict, updates: dict) -> None:
+    target = next(item for item in annotation_specs["labels"] if item["label_id"] == CAR_LABEL_ID)
+    target["keybind"] = [{"alt": False, "code": "Digit1", "ctrl": False, "shift": False}]
+    original = copy.deepcopy(annotation_specs)
+    inputs = read_labels_json(json.dumps([{"label_id": CAR_LABEL_ID, **updates}]))
+    resolved_inputs = resolve_label_update_inputs(annotation_specs, label_update_inputs=inputs)
+
+    actual = build_request_body_for_update_labels(annotation_specs, resolved_label_update_inputs=resolved_inputs, comment=None)
+
+    updated = next(item for item in actual["labels"] if item["label_id"] == CAR_LABEL_ID)
+    if "keybind" not in updates:
+        assert updated["keybind"] == target["keybind"]
+    elif updates["keybind"] is None:
+        assert updated["keybind"] == []
+    else:
+        assert updated["keybind"] == [{"alt": False, "code": "Digit2", "ctrl": False, "shift": False}]
+    assert annotation_specs == original
+
+
+@pytest.mark.parametrize("include_keybind_column", [True, False])
+def test_update_csv_preserves_keybind(annotation_specs: dict, tmp_path: Path, *, include_keybind_column: bool) -> None:
+    target = next(item for item in annotation_specs["labels"] if item["label_id"] == CAR_LABEL_ID)
+    target["keybind"] = [{"alt": False, "code": "Digit1", "ctrl": False, "shift": False}]
+    path = tmp_path / "updates.csv"
+    keybind_header = ",keybind" if include_keybind_column else ""
+    keybind_cell = "," if include_keybind_column else ""
+    path.write_text(f"label_id,label_name_ja{keybind_header}\n{CAR_LABEL_ID},変更後{keybind_cell}\n", encoding="utf-8")
+    inputs = read_labels_csv(path)
+    resolved_inputs = resolve_label_update_inputs(annotation_specs, label_update_inputs=inputs)
+
+    actual = build_request_body_for_update_labels(annotation_specs, resolved_label_update_inputs=resolved_inputs, comment=None)
+
+    updated = next(item for item in actual["labels"] if item["label_id"] == CAR_LABEL_ID)
+    assert updated["keybind"] == target["keybind"]

@@ -72,6 +72,9 @@ class LabelUpdateInput:
     keybind: dict[str, Any] | None = None
     """更新後のkeybind。"""
 
+    has_keybind: bool = False
+    """``keybind`` が明示的に指定されたか。"""
+
     field_values: dict[str, Any] | None = None
     """更新するfield_values。"""
 
@@ -132,7 +135,7 @@ def validate_label_update_input(label_update_input: LabelUpdateInput, *, index: 
             label_update_input.label_name_ja is not None,
             label_update_input.label_name_vi is not None,
             label_update_input.color is not None,
-            label_update_input.keybind is not None,
+            label_update_input.has_keybind,
             has_field_values_update,
         ]
     )
@@ -170,6 +173,7 @@ def parse_label_update_input_from_dict(data: dict[str, Any], *, index: int) -> L
         label_name_vi=data.get("label_name_vi"),
         color=data.get("color"),
         keybind=None if data.get("keybind") is None else validate_keybind_input(data["keybind"]),
+        has_keybind="keybind" in data,
         field_values=None if field_values is None else validate_field_values_input(field_values),
         field_values_operation=None if field_values_operation is None else validate_field_values_operation(field_values_operation, index=index),
     )
@@ -280,6 +284,7 @@ def read_labels_csv(csv_path: Path) -> list[LabelUpdateInput]:
             label_name_vi=row.get("label_name_vi"),
             color=row.get("color"),
             keybind=parse_keybind_in_csv(row.get("keybind"), index=index),
+            has_keybind=row.get("keybind") is not None,
             field_values=parse_field_values_in_csv(row.get("field_values"), index=index),
             field_values_operation=parse_field_values_operation_in_csv(row.get("field_values_operation"), index=index),
         )
@@ -484,7 +489,7 @@ def build_request_body_for_update_labels(
             update_label_name_vi(label, label_update_input.label_name_vi)
         if label_update_input.color is not None:
             label["color"] = hex_to_rgb(label_update_input.color)
-        if label_update_input.keybind is not None:
+        if label_update_input.has_keybind:
             label["keybind"] = keybind_to_api_keybind(copy.deepcopy(label_update_input.keybind))
         update_label_field_values(label, label_update_input)
 
@@ -601,6 +606,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
             "更新するラベル情報のJSON配列を指定します。 ``file://`` を先頭に付けるとJSON形式のファイルを指定できます。"
             " 各要素には更新対象を示す ``label_id`` が必要です。"
             " 任意で更新後の ``label_name_en`` , ``label_name_ja`` , ``label_name_vi`` , ``color`` , ``keybind`` , ``field_values`` , ``field_values_operation`` を指定できます。"
+            " ``keybind`` を省略すると既存値を保持し、nullを指定するとショートカットキーを解除します。"
             f"\n(例) ``{json.dumps(sample_json, ensure_ascii=False)}``"
         ),
     )
