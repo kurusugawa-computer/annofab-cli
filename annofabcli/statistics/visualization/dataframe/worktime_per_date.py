@@ -24,12 +24,12 @@ from annofabcli.statistics.linegraph import (
     get_plotted_user_id_list,
     write_bokeh_graph,
 )
-from annofabcli.statistics.list_worktime import get_worktime_dict_from_event_list
 from annofabcli.statistics.visualization.dataframe.actual_worktime import ActualWorktime
 from annofabcli.task_history_event.list_worktime import (
     ListWorktimeFromTaskHistoryEventMain,
     WorktimeFromTaskHistoryEvent,
 )
+from annofabcli.task_history_event.summarize_worktime_by_user_and_date import get_worktime_dict_from_event_list
 
 logger = logging.getLogger(__name__)
 

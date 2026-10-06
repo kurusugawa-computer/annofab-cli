@@ -19,6 +19,7 @@ Available Commands
    download
    list_all
    list_worktime
+   summarize_worktime_by_user_and_date
 
 Usage Details
 =================================
