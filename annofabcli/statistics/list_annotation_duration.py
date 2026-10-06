@@ -559,6 +559,9 @@ class ListAnnotationDuration(CommandLine):
         return True
 
     def main(self) -> None:
+        logger.warning(
+            "[DEPRECATED] statistics list_annotation_durationは非推奨です。annotation_zip sum_annotation_duration_by_label、またはsum_annotation_duration_by_attribute_valueに移行してください。"
+        )
         args = self.args
 
         if not self.validate(args):
@@ -698,7 +701,7 @@ def main(args: argparse.Namespace) -> None:
 
 def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "list_annotation_duration"
-    subcommand_help = "ラベルごとまたは属性値ごとに区間アノテーションの長さ（秒）を出力します。"
+    subcommand_help = "[非推奨] ラベルごとまたは属性値ごとに区間アノテーションの長さ（秒）を出力します。"
     epilog = "オーナロールまたはアノテーションユーザロールを持つユーザで実行してください。"
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description=subcommand_help, epilog=epilog)
     parse_args(parser)

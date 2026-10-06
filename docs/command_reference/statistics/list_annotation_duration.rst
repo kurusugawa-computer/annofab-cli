@@ -2,6 +2,14 @@
 statistics list_annotation_duration
 ==========================================
 
+.. deprecated:: next
+
+    :doc:`../annotation_zip/sum_annotation_duration_by_label` または
+    :doc:`../annotation_zip/sum_annotation_duration_by_attribute_value` を使用してください。
+    旧コマンドと同じ集計単位は、新コマンドのデフォルトのタスク単位です。
+    新コマンドは ``--project_id`` が必須です。属性値のJSONキーは
+    ``annotation_duration_second_by_attribute_value`` です。
+
 Description
 =================================
 
