@@ -237,6 +237,39 @@ class TestWholeProductivityPerFirstAnnotationStartedDate:
         obj = WholeProductivityPerFirstAnnotationStartedDate.from_task(task, TaskCompletionCriteria.ACCEPTANCE_COMPLETED)
         obj.to_csv(self.output_dir / "test__from_task__and__to_csv.csv")
 
+    @pytest.mark.parametrize("task_completion_criteria", list(TaskCompletionCriteria))
+    def test__計測作業時間の列名と値をCSVに出力する(self, tmp_path: Path, task_completion_criteria: TaskCompletionCriteria) -> None:
+        task = Task.from_csv(data_dir / "task.csv", custom_production_volume_list=[ProductionVolumeColumn("custom_production_volume1", "custom_生産量1")])
+        original_df = task.df.copy(deep=True)
+        obj = WholeProductivityPerFirstAnnotationStartedDate.from_task(task, task_completion_criteria)
+        output_file = tmp_path / "productivity.csv"
+        obj.to_csv(output_file)
+        loaded = WholeProductivityPerFirstAnnotationStartedDate.from_csv(output_file, task_completion_criteria, custom_production_volume_list=task.custom_production_volume_list)
+
+        assert loaded.df.columns.tolist() == obj.columns
+        assert task.df.equals(original_df)
+        if task_completion_criteria == TaskCompletionCriteria.ACCEPTANCE_COMPLETED:
+            expected_tasks = task.df[task.df["status"] == "complete"]
+        elif task_completion_criteria == TaskCompletionCriteria.ACCEPTANCE_REACHED:
+            expected_tasks = task.to_non_acceptance().df
+            expected_tasks = expected_tasks[expected_tasks["phase"] == "acceptance"]
+        elif task_completion_criteria == TaskCompletionCriteria.INSPECTION_REACHED:
+            expected_tasks = task.to_non_inspection_acceptance().df
+            expected_tasks = expected_tasks[expected_tasks["phase"].isin(["inspection", "acceptance"])]
+        else:
+            expected_tasks = task.df[task.df["first_annotation_started_datetime"].notna()]
+
+        for old_column in ["worktime_hour", "annotation_worktime_hour", "inspection_worktime_hour", "acceptance_worktime_hour"]:
+            new_column = f"monitored_{old_column}"
+            assert loaded.df[new_column].sum() == pytest.approx(expected_tasks[old_column].sum())
+            assert not any(column.startswith(old_column) for column in loaded.df.columns)
+            for denominator in ["input_data_count", "annotation_count", "custom_production_volume1"]:
+                ratio = loaded.df[new_column] / loaded.df[denominator]
+                assert loaded.df[f"{new_column}/{denominator}"].tolist() == pytest.approx(ratio.tolist(), nan_ok=True)
+                assert f"{new_column}/{denominator}__lastweek" in loaded.df.columns
+
+        loaded.plot(tmp_path / "productivity.html")
+
     def test__from_task__and__plot(self):
         task = Task.from_csv(
             data_dir / "task.csv",
@@ -281,6 +314,11 @@ class TestWholeProductivityPerFirstAnnotationStartedDate:
             ("custom_production_volume2", "custom_生産量2"),
         ]
         data_source = production_volume_graph.renderers[0].data_source
+        assert "monitored_worktime_hour" in data_source.data
+        assert "worktime_hour" not in data_source.data
+        assert "monitored_worktime_minute/custom_production_volume1" in data_source.data
+        worktime_graph = layout.children[1]
+        assert worktime_graph.renderers[0].glyph.y == "monitored_worktime_hour"
         assert "custom_production_volume1__lastweek" in data_source.data
         assert "custom_production_volume2__lastweek" in data_source.data
         callback = production_volume_select.js_property_callbacks["change:value"][0]

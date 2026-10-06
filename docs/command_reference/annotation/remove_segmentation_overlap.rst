@@ -38,6 +38,18 @@ Examples
     
     コマンドの実行後の状態。塗りつぶしアノテーションは重なりが削除されている。
 
+更新前のアノテーションをバックアップする
+--------------------------------------------------
+
+``--backup`` に保存先ディレクトリを指定すると、変更する入力データの更新前アノテーションを保存します。
+誤って重なりを除去した場合に復元できるよう、バックアップの取得を推奨します。
+保存形式と復元方法は :ref:`segmentation_annotation_backup` を参照してください。
+
+.. code-block::
+
+    $ annofabcli annotation remove_segmentation_overlap --project_id prj1 --task_id task1 --backup backup-dir/
+
+
 Usage Details
 =================================
 

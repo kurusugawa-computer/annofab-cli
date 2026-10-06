@@ -1,0 +1,2 @@
+organization_name,id,client_id,attributes_request_method,endpoints._type,endpoints.issuer,attribute_mapping.email,attribute_mapping.name,sign_up_url,created_datetime,updated_datetime
+org1,idp1,client1,GET,IssuerOnly,https://example.com,email,name,https://example.com/signup,2026-10-05T12:00:00+09:00,2026-10-05T12:00:00+09:00

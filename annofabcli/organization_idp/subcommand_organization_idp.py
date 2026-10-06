@@ -1,20 +1,19 @@
 import argparse
 
 import annofabcli.common.cli
-from annofabcli.experimental import list_out_of_range_annotation_for_movie
+import annofabcli.organization_idp.list_organization_idp
 
 
 def parse_args(parser: argparse.ArgumentParser) -> None:
     subparsers = parser.add_subparsers(dest="subcommand_name")
 
-    # サブコマンドの定義
-    list_out_of_range_annotation_for_movie.add_parser(subparsers)
+    annofabcli.organization_idp.list_organization_idp.add_parser(subparsers)
 
 
 def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
-    subcommand_name = "experimental"
-    subcommand_help = "アルファ版のサブコマンド"
-    description = "アルファ版のサブコマンド。予告なしに削除されたり、コマンドライン引数が変わったりします。"
+    subcommand_name = "organization_idp"
+    subcommand_help = "組織IDプロバイダー関係のサブコマンド"
+    description = "組織IDプロバイダー関係のサブコマンド"
 
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, is_subcommand=False)
     parse_args(parser)

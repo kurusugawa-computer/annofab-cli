@@ -917,10 +917,10 @@ class WholeProductivityPerFirstAnnotationStartedDate:
 
         # annofab 計測時間から算出したvelocityを追加
         for column in production_volume_columns:
-            add_velocity_column(df, numerator_column="worktime_hour", denominator_column=column)
-            add_velocity_column(df, numerator_column="annotation_worktime_hour", denominator_column=column)
-            add_velocity_column(df, numerator_column="inspection_worktime_hour", denominator_column=column)
-            add_velocity_column(df, numerator_column="acceptance_worktime_hour", denominator_column=column)
+            add_velocity_column(df, numerator_column="monitored_worktime_hour", denominator_column=column)
+            add_velocity_column(df, numerator_column="monitored_annotation_worktime_hour", denominator_column=column)
+            add_velocity_column(df, numerator_column="monitored_inspection_worktime_hour", denominator_column=column)
+            add_velocity_column(df, numerator_column="monitored_acceptance_worktime_hour", denominator_column=column)
 
     @classmethod
     def from_task(cls, task: Task, task_completion_criteria: TaskCompletionCriteria) -> WholeProductivityPerFirstAnnotationStartedDate:
@@ -958,14 +958,22 @@ class WholeProductivityPerFirstAnnotationStartedDate:
                 "acceptance_worktime_hour",
             ]
         ].copy()
+        df_sub_task = df_sub_task.rename(
+            columns={
+                "worktime_hour": "monitored_worktime_hour",
+                "annotation_worktime_hour": "monitored_annotation_worktime_hour",
+                "inspection_worktime_hour": "monitored_inspection_worktime_hour",
+                "acceptance_worktime_hour": "monitored_acceptance_worktime_hour",
+            }
+        )
         df_sub_task["first_annotation_started_date"] = df_sub_task["first_annotation_started_datetime"].map(lambda e: datetime_to_date(e) if not pandas.isna(e) else None)
 
         value_columns = [
             *production_volume_columns,
-            "worktime_hour",
-            "annotation_worktime_hour",
-            "inspection_worktime_hour",
-            "acceptance_worktime_hour",
+            "monitored_worktime_hour",
+            "monitored_annotation_worktime_hour",
+            "monitored_inspection_worktime_hour",
+            "monitored_acceptance_worktime_hour",
         ]
         df_agg_sub_task = df_sub_task.pivot_table(
             values=value_columns,
@@ -1012,10 +1020,10 @@ class WholeProductivityPerFirstAnnotationStartedDate:
             "first_annotation_started_date",
             "task_count",
             *production_volume_columns,
-            "worktime_hour",
-            "annotation_worktime_hour",
-            "inspection_worktime_hour",
-            "acceptance_worktime_hour",
+            "monitored_worktime_hour",
+            "monitored_annotation_worktime_hour",
+            "monitored_inspection_worktime_hour",
+            "monitored_acceptance_worktime_hour",
         ]
 
         velocity_columns = [
@@ -1023,10 +1031,10 @@ class WholeProductivityPerFirstAnnotationStartedDate:
             for suffix in ["", WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX]
             for denominator in production_volume_columns
             for numerator in [
-                "worktime_hour",
-                "annotation_worktime_hour",
-                "inspection_worktime_hour",
-                "acceptance_worktime_hour",
+                "monitored_worktime_hour",
+                "monitored_annotation_worktime_hour",
+                "monitored_inspection_worktime_hour",
+                "monitored_acceptance_worktime_hour",
             ]
         ]
         columns = basic_columns + velocity_columns
@@ -1050,15 +1058,15 @@ class WholeProductivityPerFirstAnnotationStartedDate:
         def add_velocity_and_weekly_moving_average_columns(df: pandas.DataFrame) -> None:
             for column in [
                 *[e.value for e in production_volume_list],
-                "worktime_hour",
-                "annotation_worktime_hour",
-                "inspection_worktime_hour",
-                "acceptance_worktime_hour",
+                "monitored_worktime_hour",
+                "monitored_annotation_worktime_hour",
+                "monitored_inspection_worktime_hour",
+                "monitored_acceptance_worktime_hour",
             ]:
                 df[f"{column}{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}"] = get_weekly_moving_average(df[column])
 
             for denominator in [e.value for e in production_volume_list]:
-                for numerator in ["worktime", "annotation_worktime", "inspection_worktime", "acceptance_worktime"]:
+                for numerator in ["monitored_worktime", "monitored_annotation_worktime", "monitored_inspection_worktime", "monitored_acceptance_worktime"]:
                     df[f"{numerator}_minute/{denominator}"] = df[f"{numerator}_hour"] * 60 / df[denominator]
                     df[f"{numerator}_minute/{denominator}{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}"] = get_weekly_sum(df[f"{numerator}_hour"]) * 60 / get_weekly_sum(df[denominator])
 
@@ -1107,7 +1115,7 @@ class WholeProductivityPerFirstAnnotationStartedDate:
                 y_axis_label=default_production_volume_name,
                 tooltip_columns=[
                     "first_annotation_started_date",
-                    "worktime_hour",
+                    "monitored_worktime_hour",
                     *[production_volume.value for production_volume in production_volume_list],
                 ],
             )
@@ -1190,7 +1198,7 @@ class WholeProductivityPerFirstAnnotationStartedDate:
                 y_axis_label=f"{default_production_volume_name}あたり作業時間[分/{default_production_volume_name}]",
                 tooltip_columns=[
                     "first_annotation_started_date",
-                    "worktime_hour",
+                    "monitored_worktime_hour",
                     *[production_volume.value for production_volume in production_volume_list],
                     *[f"{prefix}_minute/{production_volume.value}" for production_volume in production_volume_list for prefix, _ in phase_prefix],
                 ],
@@ -1286,10 +1294,10 @@ class WholeProductivityPerFirstAnnotationStartedDate:
                 y_axis_label="作業時間[時間]",
                 tooltip_columns=[
                     "first_annotation_started_date",
-                    "worktime_hour",
-                    "annotation_worktime_hour",
-                    "inspection_worktime_hour",
-                    "acceptance_worktime_hour",
+                    "monitored_worktime_hour",
+                    "monitored_annotation_worktime_hour",
+                    "monitored_inspection_worktime_hour",
+                    "monitored_acceptance_worktime_hour",
                 ],
             )
             for index, (prefix, phase_name) in enumerate(phase_prefix):
@@ -1322,10 +1330,10 @@ class WholeProductivityPerFirstAnnotationStartedDate:
         source = ColumnDataSource(data=df)
 
         phase_prefix = [
-            ("worktime", "計測作業時間"),
-            ("annotation_worktime", "計測作業時間(教師付)"),
-            ("inspection_worktime", "計測作業時間(検査)"),
-            ("acceptance_worktime", "計測作業時間(受入)"),
+            ("monitored_worktime", "計測作業時間"),
+            ("monitored_annotation_worktime", "計測作業時間(教師付)"),
+            ("monitored_inspection_worktime", "計測作業時間(検査)"),
+            ("monitored_acceptance_worktime", "計測作業時間(受入)"),
         ]
         worktime_line_graph = create_worktime_line_graph(phase_prefix)
         production_volume_line_graph, production_volume_select = create_production_volume_line_graph(production_volume_list)

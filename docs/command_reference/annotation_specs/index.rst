@@ -22,12 +22,14 @@ Available Commands
    add_choices_to_attribute
    add_choices_to_attributes
    add_existing_attribute_to_labels
+   add_inspection_phrases
    add_label
    add_labels
    change_attribute_type
    delete_attribute_restriction
    delete_attributes
    delete_choices
+   delete_inspection_phrases
    delete_labels
    describe_label_attributes
    diff
@@ -48,6 +50,7 @@ Available Commands
    unset_attribute_required
    update_attributes
    update_choices
+   update_inspection_phrases
    update_label_field_values
    update_labels
 

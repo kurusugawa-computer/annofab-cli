@@ -7,6 +7,8 @@ annotation restore
 Description
 =================================
 アノテーション情報をリストアします。
+v2形式（``format_version`` が ``2.0.0``）のバックアップのみ対応しています。
+v1形式のバックアップはリストアできません。
 ただし、作業中状態のタスクに対してはアノテーション情報をリストアできません。
 オーナーロールまたはチェッカーロールを持つユーザーが実行できます。
 
@@ -23,6 +25,8 @@ Examples
 * `annofabcli annotation dump <../annotation/dump.html>`_ コマンドの出力先ディレクトリ
 * `annofabcli annotation delete <../annotation/delete.html>`_ コマンドのバックアップ先ディレクトリ
 * `annofabcli annotation change_attributes <../annotation/change_attributes.html>`_ コマンドのバックアップ先ディレクトリ
+* :doc:`merge_segmentation` コマンドのバックアップ先ディレクトリ
+* :doc:`remove_segmentation_overlap` コマンドのバックアップ先ディレクトリ
 
 .. code-block::
 

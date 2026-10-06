@@ -15,7 +15,7 @@
 作業時間
 ------------------
 
-* ``actual_worktime_hour`` : 実績作業時間（ ``--labor_csv`` で渡された実際の作業時間）
+* ``actual_worktime_hour`` : 実績作業時間（ ``--actual_worktime_csv`` で渡された実際の作業時間）
 * ``monitored_worktime_hour`` : 計測作業時間（アノテーションエディタ画面を触っていた作業の時間）
 * ``monitored_annotation_worktime_hour`` : 教師付フェーズの計測作業時間
 * ``monitored_inspection_worktime_hour`` : 検査フェーズの計測作業時間

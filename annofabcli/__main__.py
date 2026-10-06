@@ -13,13 +13,13 @@ import annofabcli.annotation_zip.subcommand_annotation_zip
 import annofabcli.comment.subcommand_comment
 import annofabcli.common.cli
 import annofabcli.completion.subcommand_completion
-import annofabcli.experimental.subcommand_experimental
 import annofabcli.filesystem.subcommand_filesystem
 import annofabcli.input_data.subcommand_input_data
 import annofabcli.instruction.subcommand_instruction
 import annofabcli.job.subcommand_job
 import annofabcli.my_account.subcommand_my_account
 import annofabcli.organization.subcommand_organization
+import annofabcli.organization_idp.subcommand_organization_idp
 import annofabcli.organization_member.subcommand_organization_member
 import annofabcli.organization_plugin.subcommand_organization_plugin
 import annofabcli.project.subcommand_project
@@ -124,6 +124,7 @@ def create_parser() -> argparse.ArgumentParser:
     annofabcli.job.subcommand_job.add_parser(subparsers)
     annofabcli.my_account.subcommand_my_account.add_parser(subparsers)
     annofabcli.organization.subcommand_organization.add_parser(subparsers)
+    annofabcli.organization_idp.subcommand_organization_idp.add_parser(subparsers)
     annofabcli.organization_member.subcommand_organization_member.add_parser(subparsers)
     annofabcli.organization_plugin.subcommand_organization_plugin.add_parser(subparsers)
     annofabcli.project.subcommand_project.add_parser(subparsers)
@@ -138,7 +139,6 @@ def create_parser() -> argparse.ArgumentParser:
     annofabcli.webhook.subcommand_webhook.add_parser(subparsers)
 
     annofabcli.filesystem.subcommand_filesystem.add_parser(subparsers)
-    annofabcli.experimental.subcommand_experimental.add_parser(subparsers)
 
     return parser
 

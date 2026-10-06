@@ -117,15 +117,18 @@ Examples
 したがって、計測作業時間から算出した生産性を元にアノテーションの生産量を見積もると、見積もりから大きく外れる恐れがあります。
 
 アノテーションの生産量を見積もる場合は、アノテーションエディタ以外の作業も含めた作業時間（以下、「実績作業時間」と呼ぶ）で生産性を算出することを推奨します。
-実績作業時間から算出した生産性を出力するには、実績作業時間が記載されたCSVを ``--labor_csv`` に渡してください。
+実績作業時間から算出した生産性を出力するには、実績作業時間が記載されたCSVを ``--actual_worktime_csv`` に渡してください。
+
+``--labor_csv`` は非推奨です。代わりに ``--actual_worktime_csv`` を指定してください。
+``--labor_csv`` は2027/01/01以降に廃止予定です。新旧オプションは同時に指定できません。
 
 .. code-block::
 
-    $ annofabcli statistics visualize --project_id prj1 --labor_csv labor.csv \
+    $ annofabcli statistics visualize --project_id prj1 --actual_worktime_csv actual_worktime.csv \
     --output_dir out_dir/
 
 
-以下、実績作業時間が記載されたCSV( ``labor.csv`` )のサンプルです。
+以下、実績作業時間が記載されたCSV( ``actual_worktime.csv`` )のサンプルです。
 
 .. csv-table::
    :header: date,account_id,actual_worktime_hour,project_id

@@ -1,17 +1,26 @@
 ==================================================
-experimental
+organization_idp
 ==================================================
 
 Description
 =================================
-``experimental`` はアルファ版です。予告なく変更される場合があります。
+組織IDプロバイダー関係のコマンドです。
+
 
 Available Commands
 =================================
+
+
+.. toctree::
+   :maxdepth: 1
+   :titlesonly:
+
+   list
 
 Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.experimental.subcommand_experimental.add_parser
-   :prog: annofabcli experimental
+   :ref: annofabcli.organization_idp.subcommand_organization_idp.add_parser
+   :prog: annofabcli organization_idp
+   :nosubcommands:
