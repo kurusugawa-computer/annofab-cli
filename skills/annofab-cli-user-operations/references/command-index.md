@@ -98,6 +98,8 @@
 - `annofabcli annotation_zip sum_annotation_duration_by_label`: ラベルごとに区間アノテーションの長さ（秒）を合計して出力します。
 - `annofabcli annotation_zip visualize_annotation_count_by_attribute_value`: 属性値ごとのアノテーション数をヒストグラムで可視化します。
 - `annofabcli annotation_zip visualize_annotation_count_by_label`: ラベルごとのアノテーション数をヒストグラムで可視化します。
+- `annofabcli annotation_zip visualize_annotation_duration_by_attribute_value`: 属性値ごとにタスク単位の区間アノテーションの合計長をヒストグラムで可視化します。
+- `annofabcli annotation_zip visualize_annotation_duration_by_label`: ラベルごとにタスク単位の区間アノテーションの合計長をヒストグラムで可視化します。
 
 ## comment
 
@@ -233,7 +235,7 @@
 - `annofabcli statistics summarize_task_count_by_user`: ユーザごとに、担当しているタスク数を出力します。 [DEPRECATED] :: `statistics summarize_task_count_by_user` コマンドは非推奨です。代わりに `task_count list_by_user` コマンドを使用してください。 `statistics summarize_task_count_by_user` コマンドは2027/01/01以降に廃止予定です。
 - `annofabcli statistics visualize`: 生産性に関するCSVファイルやグラフを出力します。
 - `annofabcli statistics visualize_annotation_count`: [DEPRECATED] 各ラベル、各属性値のアノテーション数をヒストグラムで可視化します。
-- `annofabcli statistics visualize_annotation_duration`: ラベルごとまたは属性値ごとに区間アノテーションの長さをヒストグラムで可視化したファイルを出力します。
+- `annofabcli statistics visualize_annotation_duration`: [非推奨・2027-01-01以降の最初のリリースで廃止予定] ラベルごとまたは属性値ごとに区間アノテーションの長さをヒストグラムで可視化したファイルを出力します。
 - `annofabcli statistics visualize_video_duration`: [DEPRECATED] 動画の長さをヒストグラムで可視化します。
 
 ## stat_visualization
