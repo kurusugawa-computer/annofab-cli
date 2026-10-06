@@ -124,7 +124,7 @@ def test_update_segmentation_backup(tmp_path, segmentation_annotation, with_back
         )
         task_parser = next(lazy_parse_simple_annotation_dir_by_task(backup_dir))
         parser = next(task_parser.lazy_parse())
-        request = restore_obj.editor_annotation_to_request_body_v2(parser.load_json(), parser)
+        request = restore_obj.editor_annotation_to_request_body(parser.load_json(), parser)
         assert restored_images == list(images.values())
         assert [detail["annotation_id"] for detail in request["details"]] == ["a1", "a2"]
         assert [detail["attributes"] for detail in request["details"]] == [detail["attributes"] for detail in annotation["details"]]
