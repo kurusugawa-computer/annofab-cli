@@ -23,6 +23,8 @@ from annofabcli.annotation_zip.sum_annotation_duration_by_attribute_value import
 from annofabcli.annotation_zip.sum_annotation_duration_by_label import add_parser as add_parser_sum_annotation_duration_by_label
 from annofabcli.annotation_zip.visualize_annotation_count_by_attribute_value import add_parser as add_parser_visualize_annotation_count_by_attribute_value
 from annofabcli.annotation_zip.visualize_annotation_count_by_label import add_parser as add_parser_visualize_annotation_count_by_label
+from annofabcli.annotation_zip.visualize_annotation_duration_by_attribute_value import add_parser as add_parser_visualize_annotation_duration_by_attribute_value
+from annofabcli.annotation_zip.visualize_annotation_duration_by_label import add_parser as add_parser_visualize_annotation_duration_by_label
 
 
 def parse_args(parser: argparse.ArgumentParser) -> None:
@@ -54,6 +56,8 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     add_parser_sum_annotation_duration_by_label(subparsers)
     add_parser_visualize_annotation_count_by_attribute_value(subparsers)
     add_parser_visualize_annotation_count_by_label(subparsers)
+    add_parser_visualize_annotation_duration_by_attribute_value(subparsers)
+    add_parser_visualize_annotation_duration_by_label(subparsers)
 
 
 def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
