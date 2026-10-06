@@ -166,7 +166,7 @@ def add_use_japanese_name_argument(parser: argparse.ArgumentParser) -> None:
     )
 
 
-def translate_annotation_infos(
+def translate_annotation_infos[AnnotationInfo: AnnotationInfoProtocol](
     service: annofabapi.Resource,
     annotations: Collection[AnnotationInfo],
     *,

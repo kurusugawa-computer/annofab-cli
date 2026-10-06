@@ -7,7 +7,7 @@ from collections.abc import Collection
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
-from typing import Any, TypeAlias
+from typing import Any
 
 import numpy
 import pandas
@@ -123,7 +123,7 @@ class ProductivityType(Enum):
     """検査または受入"""
 
 
-ThresholdInfoSettings: TypeAlias = dict[tuple[str, ProductivityType], ThresholdInfo]
+type ThresholdInfoSettings = dict[tuple[str, ProductivityType], ThresholdInfo]
 """
 閾値の設定情報
 key: tuple(ディレクトリ名, 生産性の種類)
@@ -131,7 +131,7 @@ value: 閾値情報
 """
 
 
-ProductivityIndicatorByDirectory: TypeAlias = dict[str, ProductivityIndicator]
+type ProductivityIndicatorByDirectory = dict[str, ProductivityIndicator]
 """
 ディレクトリごとの生産性の指標
 key: ディレクトリ名
@@ -139,7 +139,7 @@ value: 生産性の指標
 """
 
 
-QualityIndicatorByDirectory: TypeAlias = dict[str, QualityIndicator]
+type QualityIndicatorByDirectory = dict[str, QualityIndicator]
 """
 ディレクトリごとの品質の指標
 key: ディレクトリ名
