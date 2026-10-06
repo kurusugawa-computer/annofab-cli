@@ -53,6 +53,7 @@ Available Commands
    update_inspection_phrases
    update_label_field_values
    update_labels
+   update_option
 
 
 Usage Details

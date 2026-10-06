@@ -72,6 +72,7 @@
 - `annofabcli annotation_specs update_inspection_phrases`: アノテーション仕様の定型指摘を複数件更新します。
 - `annofabcli annotation_specs update_label_field_values`: アノテーション仕様の既存ラベルの field_values を更新します。
 - `annofabcli annotation_specs update_labels`: アノテーション仕様の既存ラベル情報を更新します。
+- `annofabcli annotation_specs update_option`: アノテーション仕様のoptionを更新します。
 
 ## annotation_zip
 
