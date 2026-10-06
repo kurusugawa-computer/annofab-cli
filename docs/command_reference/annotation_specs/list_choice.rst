@@ -65,7 +65,7 @@ JSON出力
         "is_default": false,
         "keybind": null,
         "keybind_text": null
-    },    
+    }
     ]
     
 

@@ -54,7 +54,7 @@ Examples
 ``--task_query`` を指定すると、タスクのフェーズやステータスなどで、操作対象のタスクを絞り込むことができます。
 
 
-以下のコマンドは、``task_id.txt`` に記載されているタスクの内、受入フェーズのタスクに対してステータスを作業中から休憩中に変更します。
+以下のコマンドは、``task_id.txt`` に記載されているタスクの内、受入フェーズのタスクに対してステータスを休憩中または未着手から保留中に変更します。
 
 
 .. code-block::
@@ -80,6 +80,6 @@ Usage Details
 
 .. argparse::
    :ref: annofabcli.task.change_status_to_on_hold.add_parser
-   :prog: annofabcli task
+   :prog: annofabcli task change_status_to_on_hold
    :nosubcommands:
    :nodefaultconst:

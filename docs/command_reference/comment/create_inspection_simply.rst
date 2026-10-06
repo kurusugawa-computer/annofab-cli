@@ -102,7 +102,7 @@ Examples
 .. code-block::
 
     $ annofabcli comment create_inspection_simply --project_id prj1 --task_id t1 t2 t3 t4 \
-    --parallelism 4 --yes
+    --comment "枠がズレています。" --parallelism 4 --yes
 
 
 Usage Details

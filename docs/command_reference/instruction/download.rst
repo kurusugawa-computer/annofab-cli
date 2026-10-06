@@ -37,14 +37,14 @@ history_idは、`annofabcli instruction list_history <../instruction/list_histor
 
 .. code-block::
 
-    $ annofabcli instruction download --project_id prj1 --before 1
+    $ annofabcli instruction download --project_id prj1 --output_dir out_dir/ --before 1
 
 
-以下のコマンドは、history_idが"xxx"のアノテーション仕様を出力します。
+以下のコマンドは、history_idが"xxx"の作業ガイドを出力します。
 
 .. code-block::
 
-    $ annofabcli instruction download --project_id prj1 --history_id xxx
+    $ annofabcli instruction download --project_id prj1 --output_dir out_dir/ --history_id xxx
 
 
 

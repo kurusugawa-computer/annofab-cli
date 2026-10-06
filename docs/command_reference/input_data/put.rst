@@ -92,7 +92,7 @@ JSON文字列を指定する場合
         {
             "input_data_name":"data2",
             "input_data_path":"s3://example.com/data2",
-            "input_data_id":"id2",
+            "input_data_id":"id2"
         }
     ]
 
@@ -113,7 +113,7 @@ JSONのキーは、``--csv`` に指定するCSVファイルの列に対応しま
 
 .. code-block::
 
-    $ annofabcli input_data put --project_id prj1 --csv input_data.csv
+    $ annofabcli input_data put --project_id prj1 --csv input_data.csv \
     --parallelism 4 --yes
 
 Usage Details

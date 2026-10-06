@@ -83,7 +83,7 @@ JSON出力
             "worktime_hour": 0.0
             },
             ...
-        ],
+        ]
     }
 
 Usage Details

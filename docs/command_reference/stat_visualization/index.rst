@@ -4,7 +4,7 @@ stat_visualization
 
 Description
 =================================
-``annofabcli statistics visualization`` コマンドの出力結果を利用するコマンドです。
+``annofabcli statistics visualize`` コマンドの出力結果を利用するコマンドです。
 
 ``stat_visualization`` はアルファ版です。予告なく変更される場合があります。
 

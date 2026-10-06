@@ -77,7 +77,7 @@ Usage Details
 
 .. argparse::
    :ref: annofabcli.input_data.list_all_input_data.add_parser
-   :prog: annofabcli input_data list_all_input_data
+   :prog: annofabcli input_data list_all
    :nosubcommands:
    :nodefaultconst:
 

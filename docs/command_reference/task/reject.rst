@@ -69,7 +69,7 @@ Examples
      --comment "weather属性を見直してください。" \
      --comment_data '{"x":10,"y":10,"_type":"Point"}'
 
-``--comment_data`` に渡す形式は、 :doc:`../comment/put_inspection_simply` コマンドを参照してください。
+``--comment_data`` に渡す形式は、 :doc:`../comment/create_inspection_simply` コマンドを参照してください。
 
 ``--comment_data`` を指定しない場合は、以下の検査コメントが付与されます。
 

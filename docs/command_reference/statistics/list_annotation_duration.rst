@@ -47,7 +47,7 @@ JSON出力
             "traffic_light": {
                 "color": {
                     "red": 13.2,
-                    "green": 8.133,
+                    "green": 8.133
                 }
             }
         }
@@ -73,13 +73,12 @@ JSON出力
 CSV出力
 --------------------------
 
-ラベルごとのアノテーション数をCSV出力する場合は、 :doc:`../annotation_zip/count_annotation_by_label` を使用してください。
-属性値ごとのアノテーション数をCSV出力する場合は、 :doc:`../annotation_zip/count_annotation_by_attribute_value` を使用してください。
+``--type label`` を指定するとラベルごとの区間アノテーションの長さ（秒）を、 ``--type attribute`` を指定すると属性値ごとの区間アノテーションの長さ（秒）をCSV形式で出力します。
 
 
 .. code-block::
 
-    $ annofabcli annotation_zip count_annotation_by_label --project_id prj1 \
+    $ annofabcli statistics list_annotation_duration --type label --project_id prj1 \
     --format csv --output out_by_label.csv
 
 .. csv-table:: out_by_label.csv 
@@ -89,7 +88,7 @@ CSV出力
 
 .. code-block::
 
-    $ annofabcli annotation_zip count_annotation_by_attribute_value --project_id prj1 \
+    $ annofabcli statistics list_annotation_duration --type attribute --project_id prj1 \
     --format csv --output out_by_attribute.csv
 
 .. csv-table:: out_by_attribute.csv 

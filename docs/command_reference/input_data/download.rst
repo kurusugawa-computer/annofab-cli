@@ -40,7 +40,7 @@ Examples
 
 .. code-block::
 
-    $ annofabcli input_data download --output out.json
+    $ annofabcli input_data download --project_id prj1 --output out.json
     $ jq . out.json > out-pretty.json
 
 

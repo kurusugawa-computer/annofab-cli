@@ -30,13 +30,13 @@ task_idのプレフィックスでグループ化する場合は、``--task_id_d
     $ annofabcli statistics summarize_task_count_by_task_id_group --project_id prj1 --task_id_delimiter "_"
 
 
-task_idとtask_id_groupを個別に指定する場合は、 ``--task_id_group`` に ``{"group1":["id1","id2"], "group2":["id3","id4"]}`` のようなJSON文字列を指定してください。
+task_idとtask_id_groupを個別に指定する場合は、 ``--task_id_groups`` に ``{"group1":["id1","id2"], "group2":["id3","id4"]}`` のようなJSON文字列を指定してください。
 
 
 .. code-block::
 
     $ annofabcli statistics summarize_task_count_by_task_id_group --project_id prj1 \
-     --task_id_group '{"group1":["id1","id2"], "group2":["id3","id4"]}''
+     --task_id_groups '{"group1":["id1","id2"], "group2":["id3","id4"]}'
 
 
 出力結果
@@ -45,7 +45,7 @@ task_idとtask_id_groupを個別に指定する場合は、 ``--task_id_group`` 
 
 .. code-block::
 
-    $ annofabcli statistics summarize_task_count_by_task_id_group --project_id prj1 --output out.csv
+    $ annofabcli statistics summarize_task_count_by_task_id_group --project_id prj1 --task_id_delimiter "_" --output out.csv
 
 
 .. csv-table:: out.csv

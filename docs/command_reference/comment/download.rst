@@ -31,7 +31,7 @@ Examples
 
 .. code-block::
 
-    $ annofabcli comment download --output out.json
+    $ annofabcli comment download --project_id prj1 --output out.json
     $ jq . out.json > out-pretty.json
 
 

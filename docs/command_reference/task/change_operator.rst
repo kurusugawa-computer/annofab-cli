@@ -81,13 +81,13 @@ Examples
 .. code-block::
 
     $  annofabcli task change_operator --project_id prj1 --task_id file://task.txt \
-    --parallelism 4 --yes
+    --user_id user1 --parallelism 4 --yes
 
 Usage Details
 =================================
 
 .. argparse::
    :ref: annofabcli.task.change_operator.add_parser
-   :prog: annofabcli task
+   :prog: annofabcli task change_operator
    :nosubcommands:
    :nodefaultconst:

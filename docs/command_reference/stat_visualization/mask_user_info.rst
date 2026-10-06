@@ -49,7 +49,7 @@ Examples
      --not_masked_user_id alice
 
 
-``--not_masked_biography`` には「マスクしないbiographyであるユーザ」のuser_idを指定できます。
+``--not_masked_biography`` にはマスクしないユーザのbiographyを指定できます。
 以下のコマンドはbiographyが ``Japan`` 以外のユーザをマスクします。
 
 

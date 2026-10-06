@@ -64,7 +64,7 @@ JSON文字列を指定する場合
 
     {
         "task1": ["input1","input2"],
-        "task2": ["input3","input4"],
+        "task2": ["input3","input4"]
     }
 
 キーにtask_idを指定して、値にinput_data_idの配列を指定してください。

@@ -14,11 +14,12 @@ Examples
 既存の ``field_values`` にマージする場合
 ----------------------------------------------
 
+以下のJSONは、矩形の最小幅と最小高さを20pxに設定します。
+
 .. code-block:: json
     :caption: field_values.json
 
 	{
-        // 矩形のサイズ制約（幅また高さが20px以上）
 		"minimum_size_2d_with_default_insert_position": {
 			"min_warn_rule": {
 				"_type": "Or"
