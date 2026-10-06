@@ -5,7 +5,7 @@ import re
 import sys
 from collections.abc import Callable, Sequence
 from pathlib import Path
-from typing import Any, TypeVar
+from typing import Any
 
 import dateutil.parser
 import isodate
@@ -14,8 +14,6 @@ import pandas
 from annofabcli.common.enums import OutputFormat
 
 logger = logging.getLogger(__name__)
-
-T = TypeVar("T")  # Can be anything
 
 
 def read_lines(filepath: str) -> list[str]:
@@ -33,7 +31,7 @@ def read_lines_except_blank_line(filepath: str) -> list[str]:
     return [line for line in lines if line != ""]
 
 
-def duplicated_set(target_list: list[T]) -> set[T]:
+def duplicated_set[T](target_list: list[T]) -> set[T]:
     """
     重複しているsetを返す
     Args:

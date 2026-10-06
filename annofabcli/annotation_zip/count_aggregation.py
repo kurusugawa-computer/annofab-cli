@@ -4,7 +4,7 @@ import json
 from collections import Counter
 from collections.abc import Callable, Collection, Hashable, Iterable, Mapping
 from dataclasses import dataclass, field
-from typing import Protocol, TypeVar
+from typing import Protocol
 
 from annofabcli.annotation_zip.task_metadata import TASK_METADATA_COLUMN_PREFIX
 
@@ -26,9 +26,6 @@ EXCLUSIVE_GROUPS = frozenset({TASK_ID_GROUP, INPUT_DATA_ID_GROUP, PROJECT_ID_GRO
 GroupValue = str | int | float | bool | None
 GroupKey = tuple[tuple[type[object], GroupValue], ...]
 """値の型を区別する内部集計キー。"""
-
-CountKey = TypeVar("CountKey", bound=Hashable)
-TaskCountType = TypeVar("TaskCountType", bound="TaskCount")
 
 
 class TaskCount(Protocol):
@@ -133,7 +130,7 @@ def needs_task_metadata(group_by: Collection[str]) -> bool:
     return any(value.startswith(f"{TASK_METADATA_COLUMN_PREFIX}.") for value in group_by)
 
 
-def aggregate_task_counts(
+def aggregate_task_counts[TaskCountType: "TaskCount", CountKey: Hashable](
     task_counts: Iterable[TaskCountType],
     group_by: Collection[str],
     *,
