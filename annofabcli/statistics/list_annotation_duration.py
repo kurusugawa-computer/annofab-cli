@@ -560,8 +560,7 @@ class ListAnnotationDuration(CommandLine):
 
     def main(self) -> None:
         logger.warning(
-            "[DEPRECATED] statistics list_annotation_durationは非推奨です。annotation_zip sum_annotation_duration_by_label、"
-            "またはsum_annotation_duration_by_attribute_valueに移行してください。旧コマンドと同じ入力データ単位の集計には--group_by input_data_idを指定してください。"
+            "[DEPRECATED] statistics list_annotation_durationは非推奨です。annotation_zip sum_annotation_duration_by_label、またはsum_annotation_duration_by_attribute_valueに移行してください。"
         )
         args = self.args
 

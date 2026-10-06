@@ -34,7 +34,9 @@ Examples
         "task_phase": "annotation",
         "task_phase_stage": 1,
         "task_status": "complete",
-        "input_data_count": 1,
+        "input_data_id": "video1",
+        "input_data_name": "video1.mp4",
+        "updated_datetime": "2026-10-06T12:00:00+09:00",
         "video_duration_second": 60.0,
         "annotation_duration_second": 30.0,
         "annotation_duration_second_by_label": {"speech": 20.0, "music": 10.0}
@@ -44,15 +46,12 @@ Examples
 .. code-block:: bash
 
     $ annofabcli annotation_zip sum_annotation_duration_by_label --project_id prj1 \
-      --annotation annotation.zip --group_by input_data_id --output by_input.csv
+      --annotation annotation.zip --output by_task.csv
 
 .. code-block:: bash
 
     $ annofabcli annotation_zip sum_annotation_duration_by_label --project_id prj1 \
       --group_by task_phase task_status --output summary.csv
-
-入力データ単位では ``input_data_id``、 ``input_data_name``、 ``frame_no``、 ``updated_datetime`` が追加され、
-``input_data_count`` は出力されません。サマリーには集計キー、 ``task_count``、 ``input_data_count`` を出力します。
 
 .. include:: sum_annotation_duration.inc
 

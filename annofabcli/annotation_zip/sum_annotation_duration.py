@@ -65,7 +65,7 @@ def aggregate_annotation_durations(
     Args:
         annotations: simple形式のアノテーションJSON一覧。
         input_data_list: 動画長取得用の入力データ一覧。
-        task_list: フレーム番号とメタデータ取得用のタスク一覧。
+        task_list: メタデータ取得用のタスク一覧。
         options: 集計設定。
 
     Returns:
@@ -81,13 +81,13 @@ def aggregate_annotation_durations(
         if options.task_query is not None and not match_annotation_with_task_query(dict(annotation), options.task_query):
             continue
         task = task_by_id.get(task_id, {})
+        if "input_data_id_list" in task and len(task["input_data_id_list"]) != 1:
+            raise ValueError(f"task_id='{task_id}'の入力データ数が1ではありません。動画タスクを指定してください。")
         info = get_group_info(annotation, task, options)
         if is_summary_group(options.group_by):
             key_fields = info
         else:
             key_fields = {"project_id": annotation["project_id"], "task_id": task_id}
-            if options.group_by == ["input_data_id"]:
-                key_fields["input_data_id"] = annotation["input_data_id"]
         key = tuple((type(value), json.dumps(value, ensure_ascii=False, sort_keys=True)) for value in key_fields.values())
         summary = summaries.setdefault(key, DurationSummary(info=info))
         summary.task_keys.add((annotation["project_id"], task_id))
@@ -134,11 +134,7 @@ def get_group_info(annotation: Mapping[str, Any], task: Mapping[str, Any], optio
                 value = annotation[name]
             info[name] = value
         return info
-    info = {name: annotation[name] for name in ["project_id", "task_id", "task_phase", "task_phase_stage", "task_status"]}
-    if options.group_by == ["input_data_id"]:
-        info.update({name: annotation[name] for name in ["input_data_id", "input_data_name", "updated_datetime"]})
-        input_ids = task.get("input_data_id_list", [])
-        info["frame_no"] = input_ids.index(annotation["input_data_id"]) + 1 if annotation["input_data_id"] in input_ids else None
+    info = {name: annotation[name] for name in ["project_id", "task_id", "task_phase", "task_phase_stage", "task_status", "input_data_id", "input_data_name", "updated_datetime"]}
     if options.with_task_metadata:
         info["task_metadata"] = task.get("metadata", {})
     return info
@@ -169,10 +165,9 @@ def make_output_rows(
     rows = []
     for summary in summaries:
         row = {**summary.info, "video_duration_second": summary.video_duration_second}
-        if options.group_by != ["input_data_id"]:
-            row["input_data_count"] = summary.input_data_count
         if is_summary_group(options.group_by):
             row["task_count"] = len(summary.task_keys)
+            row["input_data_count"] = summary.input_data_count
         if by_attribute:
             values: dict[AttributeKey, float] = defaultdict(float)
             for key in dict.fromkeys([*attribute_columns, *summary.attributes]):
@@ -330,11 +325,7 @@ def get_output_columns(options: DurationOptions, task_list: Collection[Mapping[s
     """
     if is_summary_group(options.group_by):
         return [*options.group_by, "task_count", "input_data_count", "video_duration_second"]
-    columns = ["project_id", "task_id", "task_phase", "task_phase_stage", "task_status"]
-    if options.group_by == ["input_data_id"]:
-        columns.extend(["input_data_id", "input_data_name", "frame_no", "updated_datetime"])
-    else:
-        columns.append("input_data_count")
+    columns = ["project_id", "task_id", "task_phase", "task_phase_stage", "task_status", "input_data_id", "input_data_name", "updated_datetime"]
     if options.with_task_metadata:
         columns.extend(f"task_metadata.{key}" for key in sorted({key for task in task_list for key in task.get("metadata", {})}))
     return [*columns, "video_duration_second"]
@@ -353,16 +344,14 @@ def add_arguments(parser: argparse.ArgumentParser, *, by_attribute: bool) -> Non
     arguments = ArgumentParser(parser)
     arguments.add_project_id()
     parser.add_argument("--annotation", type=Path, help="アノテーションZIPまたは展開済みディレクトリ。省略するとダウンロードします。")
-    parser.add_argument(
-        "--group_by", nargs="+", default=["task_id"], help="集計単位。task_id, input_data_id, project_id, task_phase, task_phase_stage, task_status, task_metadata.<key>を指定できます。"
-    )
+    parser.add_argument("--group_by", nargs="+", default=["task_id"], help="集計単位。task_id, project_id, task_phase, task_phase_stage, task_status, task_metadata.<key>を指定できます。")
     arguments.add_format(choices=[OutputFormat.CSV, OutputFormat.JSON, OutputFormat.PRETTY_JSON], default=OutputFormat.CSV)
     arguments.add_output()
     arguments.add_task_id(required=False)
     parser.add_argument("--task_query", "-tq", help="対象タスクの条件をJSONで指定します。キーはtask_id, status, phase, phase_stageです。file://でファイルを指定できます。")
     parser.add_argument("--latest", action="store_true", help="最新のアノテーションZIP、入力データ、タスク情報を取得します。数分待つ場合があります。")
     parser.add_argument("--temp_dir", type=Path, help="ダウンロード先ディレクトリ。")
-    parser.add_argument("--with_task_metadata", action="store_true", help="タスクまたは入力データ単位の出力にタスクメタデータを追加します。")
+    parser.add_argument("--with_task_metadata", action="store_true", help="タスク単位の出力にタスクメタデータを追加します。")
     add_use_japanese_name_argument(parser)
     if by_attribute:
         add_attribute_value_arguments(parser)
@@ -381,11 +370,13 @@ def run_command(args: argparse.Namespace, *, by_attribute: bool) -> None:
     Returns:
         None。
     """
+    if "input_data_id" in args.group_by:
+        raise AnnofabCliException("動画タスクには入力データが1個しか含まれないため、--group_by task_idを指定してください。")
     error = validate_group_by(args.group_by)
     if error is not None:
         raise AnnofabCliException(error)
     if args.with_task_metadata and is_summary_group(args.group_by):
-        raise AnnofabCliException("--with_task_metadataはタスクまたは入力データ単位の出力で指定してください。")
+        raise AnnofabCliException("--with_task_metadataはタスク単位の出力で指定してください。")
     service = build_annofabapi_resource_and_login(args)
     SumAnnotationDuration(service, AnnofabApiFacade(service), args).run(by_attribute=by_attribute)
 

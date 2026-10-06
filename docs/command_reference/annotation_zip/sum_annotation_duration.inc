@@ -14,9 +14,15 @@ CSVの出力件数が0件の場合もヘッダーを出力します。単位は�
 
 ``--project_id`` は必須です。 ``--annotation`` を指定しても、動画長・タスク情報・アノテーション仕様はAnnofabから取得します。
 
-デフォルトはタスク単位です。入力データ単位の場合は ``--group_by input_data_id`` を指定します。
+デフォルトはタスク単位です。動画タスクには入力データが1個しか含まれないため、
+タスク単位の出力に ``input_data_id``、 ``input_data_name``、 ``updated_datetime`` を含めます。
+常に1となる ``input_data_count`` と ``frame_no`` はタスク単位では出力しません。
 
-.. include:: count_group_by.inc
+``--group_by`` には ``task_id``、 ``project_id``、 ``task_phase``、 ``task_phase_stage``、
+``task_status``、 ``task_metadata.<key>`` を指定できます。 ``input_data_id`` は指定できません。
+``task_id`` と ``project_id`` は単独で指定し、それ以外のキーは複数指定できます。
+サマリーには集計キー、 ``task_count``、 ``input_data_count`` を出力します。
+メタデータのキーが存在しないタスクは、値が空のグループに集計されます。
 
 .. include:: task_metadata.inc
 
@@ -25,5 +31,5 @@ CSVの出力件数が0件の場合もヘッダーを出力します。単位は�
 
 ``statistics list_annotation_duration --type label`` は ``sum_annotation_duration_by_label``、
 ``--type attribute`` は ``sum_annotation_duration_by_attribute_value`` に対応します。
-旧コマンドと同じ入力データ単位にするには ``--group_by input_data_id`` を指定してください。
+旧コマンドと同じ集計単位は、デフォルトのタスク単位です。集計単位の指定は不要です。
 新コマンドは属性値JSONキーを ``annotation_duration_second_by_attribute_value`` に統一しています。
