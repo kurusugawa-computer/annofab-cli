@@ -1,0 +1,4 @@
+project_id,task_id,task_phase,task_phase_stage,task_status,input_data_count,video_duration_second,speech,speech
+,,,,,,,speaker,speaker
+,,,,,,,male,female
+prj1,task1,annotation,1,complete,1,60.0,12.0,8.0

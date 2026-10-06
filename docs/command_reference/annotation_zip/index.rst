@@ -70,6 +70,8 @@ Available Commands
    list_single_point_annotation
    merge
    render
+   sum_annotation_duration_by_attribute_value
+   sum_annotation_duration_by_label
    visualize_annotation_count_by_attribute_value
    visualize_annotation_count_by_label
 

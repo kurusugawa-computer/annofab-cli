@@ -93,6 +93,8 @@
 - `annofabcli annotation_zip list_single_point_annotation`: アノテーションZIPから点アノテーションの座標情報を出力します。
 - `annofabcli annotation_zip merge`: 2つのアノテーションzip（またはzipを展開したディレクトリ）をマージします。
 - `annofabcli annotation_zip render`: アノテーションzip内のアノテーションを画像として出力します。
+- `annofabcli annotation_zip sum_annotation_duration_by_attribute_value`: 属性値ごとに区間アノテーションの長さ（秒）を合計して出力します。
+- `annofabcli annotation_zip sum_annotation_duration_by_label`: ラベルごとに区間アノテーションの長さ（秒）を合計して出力します。
 - `annofabcli annotation_zip visualize_annotation_count_by_attribute_value`: 属性値ごとのアノテーション数をヒストグラムで可視化します。
 - `annofabcli annotation_zip visualize_annotation_count_by_label`: ラベルごとのアノテーション数をヒストグラムで可視化します。
 
@@ -223,7 +225,7 @@
 統計関係のサブコマンド
 
 - `annofabcli statistics list_annotation_count`: [DEPRECATED] ラベルごとまたは属性値ごとにアノテーション数を出力します。
-- `annofabcli statistics list_annotation_duration`: ラベルごとまたは属性値ごとに区間アノテーションの長さ（秒）を出力します。
+- `annofabcli statistics list_annotation_duration`: [非推奨] ラベルごとまたは属性値ごとに区間アノテーションの長さ（秒）を出力します。
 - `annofabcli statistics list_annotation_area`: 塗りつぶし、矩形、ポリゴンアノテーションの面積を出力します。
 - `annofabcli statistics list_video_duration`: [DEPRECATED] 各タスクの動画の長さを出力します。
 - `annofabcli statistics list_worktime`: 日ごとユーザごとの作業時間の一覧を出力します。
