@@ -3,8 +3,9 @@ from unittest.mock import Mock
 
 import pandas
 
-from annofabcli.statistics.list_worktime import CSV_COLUMNS, ListWorktimeFromTaskHistoryEvent, WorktimeFromTaskHistoryEvent, get_df_worktime
+from annofabcli.statistics.list_worktime import ListWorktimeFromTaskHistoryEvent, WorktimeFromTaskHistoryEvent, get_df_worktime
 from annofabcli.task_history_event.list_worktime import RequestOfTaskHistoryEvent, SimpleTaskHistoryEvent
+from annofabcli.task_history_event.summarize_worktime_by_user_and_date import WORKTIME_COLUMNS
 
 
 class TestListWorktime:
@@ -67,4 +68,4 @@ def test_empty_list_outputs_csv_header(tmp_path):
 
     df = pandas.read_csv(output)
     assert len(df) == 0
-    assert df.columns.to_list() == list(CSV_COLUMNS)
+    assert df.columns.to_list() == WORKTIME_COLUMNS
