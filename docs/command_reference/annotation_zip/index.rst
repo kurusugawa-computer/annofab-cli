@@ -74,6 +74,8 @@ Available Commands
    sum_annotation_duration_by_label
    visualize_annotation_count_by_attribute_value
    visualize_annotation_count_by_label
+   visualize_annotation_duration_by_attribute_value
+   visualize_annotation_duration_by_label
 
 
 Usage Details
