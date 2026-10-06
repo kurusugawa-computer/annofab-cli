@@ -226,7 +226,6 @@
 
 - `annofabcli statistics list_annotation_count`: [DEPRECATED] ラベルごとまたは属性値ごとにアノテーション数を出力します。
 - `annofabcli statistics list_annotation_duration`: [非推奨] ラベルごとまたは属性値ごとに区間アノテーションの長さ（秒）を出力します。
-- `annofabcli statistics list_annotation_area`: 塗りつぶし、矩形、ポリゴンアノテーションの面積を出力します。
 - `annofabcli statistics list_video_duration`: [DEPRECATED] 各タスクの動画の長さを出力します。
 - `annofabcli statistics list_worktime`: 日ごとユーザごとの作業時間の一覧を出力します。
 - `annofabcli statistics summarize_task_count_by_task_id_group`: task_idのグループごとにタスク数を集計します。 [DEPRECATED] :: `statistics summarize_task_count_by_task_id_group` コマンドは非推奨です。代わりに `task_count list_by_task_id_group` コマンドを使用してください。 `statistics summarize_task_count_by_task_id_group` コマンドは2027/01/01以降に廃止予定です。
