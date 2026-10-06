@@ -84,7 +84,7 @@ JSON出力
         },
         "user_id": "user1",
         "username": "user1"
-    },
+    }
     ]
 
 

@@ -31,7 +31,7 @@ Examples
 
 .. code-block::
 
-    $ annofabcli task_history download --output out.json
+    $ annofabcli task_history download --project_id prj1 --output out.json
     $ jq . out.json > out-pretty.json
 
 
@@ -49,7 +49,7 @@ Examples
             "accumulated_labor_time_milliseconds": "PT0S",
             "phase": "annotation",
             "phase_stage": 1,
-            "account_id": null,
+            "account_id": null
             },
             ...
         ],
@@ -63,7 +63,7 @@ Examples
             "accumulated_labor_time_milliseconds": "PT0S",
             "phase": "annotation",
             "phase_stage": 1,
-            "account_id": null,
+            "account_id": null
             },
             ...
         ],

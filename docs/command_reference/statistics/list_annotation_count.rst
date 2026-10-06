@@ -33,10 +33,10 @@ Examples
 
     [
     {
-        "annotation_count": 130,
+        "annotation_count": 70,
         "annotation_count_by_label": {
             "car": 60,
-            "bike": 10,
+            "bike": 10
         },
         "annotation_count_by_attribute": {
             "car": {
@@ -51,8 +51,8 @@ Examples
             },
             "bike": {
                 "occlusion": {
-                    "false": 10,
-                    "true": 20
+                    "false": 5,
+                    "true": 5
                 }
             }
         },
@@ -61,7 +61,7 @@ Examples
         "task_phase": "acceptance",
         "task_phase_stage": 1,
         "task_status": "complete",
-        "input_data_count": 10,
+        "input_data_count": 10
     }
     ]  
 
@@ -87,7 +87,7 @@ Examples
 
 .. code-block::
 
-    $ annofabcli statistics list_annotation_count --project_id prj1 --output_dir out_dir/ \
+    $ annofabcli statistics list_annotation_count --project_id prj1 --output out.json --format pretty_json \
     --annotation annotation.zip
 
 
@@ -120,10 +120,10 @@ JSON出力
 
     [
     {
-        "annotation_count": 130,
+        "annotation_count": 70,
         "annotation_count_by_label": {
             "car": 60,
-            "bike": 10,
+            "bike": 10
         },
         "annotation_count_by_attribute": {
             "car": {
@@ -138,8 +138,8 @@ JSON出力
             },
             "bike": {
                 "occlusion": {
-                    "false": 10,
-                    "true": 20
+                    "false": 5,
+                    "true": 5
                 }
             }
         },
@@ -168,10 +168,10 @@ JSON出力
 
     [
     {
-        "annotation_count": 130,
+        "annotation_count": 70,
         "annotation_count_by_label": {
             "car": 60,
-            "bike": 10,
+            "bike": 10
         },
         "annotation_count_by_attribute": {
             "car": {
@@ -186,19 +186,20 @@ JSON出力
             },
             "bike": {
                 "occlusion": {
-                    "false": 10,
-                    "true": 20
+                    "false": 5,
+                    "true": 5
                 }
             }
         },
         "project_id": "project1",
         "task_id": "task1",
-        "status": "complete",
-        "phase": "acceptance",
-        "phase_stage": 1,
+        "task_status": "complete",
+        "task_phase": "acceptance",
+        "task_phase_stage": 1,
         "input_data_id": "input1",
         "input_data_name": "input1",
-        "updated_datetime": "2023-10-01T12:00:00.000+09:00",
+        "frame_no": 1,
+        "updated_datetime": "2023-10-01T12:00:00.000+09:00"
     }
     ]  
 
@@ -231,7 +232,7 @@ CSV出力
 
 
 .. csv-table:: out_by_task_attribute.csv 
-    :header-rows: 1
+    :header-rows: 3
     :file: list_annotation_count/out_by_task_attribute.csv
 
 
@@ -260,7 +261,7 @@ CSV出力
 
 
 .. csv-table:: out_by_input_data_attribute.csv
-    :header-rows: 1
+    :header-rows: 3
     :file: list_annotation_count/out_by_input_data_attribute.csv
 
 

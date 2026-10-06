@@ -10,8 +10,7 @@ from pathlib import Path
 from typing import Any
 
 import annofabapi
-from annofabapi.dataclass.annotation import AnnotationDetailV1, AnnotationV1
-from annofabapi.models import AnnotationDataHoldingType, ProjectMemberRole, TaskStatus
+from annofabapi.models import ProjectMemberRole, TaskStatus
 from annofabapi.parser import (
     SimpleAnnotationParser,
     SimpleAnnotationParserByTask,
@@ -53,67 +52,20 @@ class RestoreAnnotationMain(CommandLineWithConfirm):
         self.include_break_task = include_break_task
         self.include_on_hold_task = include_on_hold_task
 
-    def _to_annotation_detail_for_request(self, parser: SimpleAnnotationParser, detail: AnnotationDetailV1) -> AnnotationDetailV1:
-        """
-        Request Bodyに渡すDataClassに変換する。塗りつぶし画像があれば、それをS3にアップロードする。
-
-        Args:
-            project_id:
-            parser:
-            detail: (IN/OUT) １個のアノテーション情報
-
-        Returns:
-
-        """
-        if detail.data_holding_type == AnnotationDataHoldingType.OUTER:
-            detail.etag = None
-            detail.url = None
-            data_uri = detail.path
-
-            if data_uri is not None:
-                with parser.open_outer_file(data_uri) as f:
-                    s3_path = self.service.wrapper.upload_data_to_s3(self.project_id, f, content_type="image/png")
-                    detail.path = s3_path
-            else:
-                logger.warning(f"annotation_id='{detail.annotation_id}' :: data_holding_typeが'outer'なのにpathがNoneです。")
-
-        return detail
-
-    def editor_annotation_to_request_body_v1(self, editor_annotation: dict[str, Any], parser: SimpleAnnotationParser) -> dict[str, Any]:
-        """
-        `get_editor_annotation`で取得したアノテーション(v1)を、`put_annotation` APIに渡すリクエストボディ(v1)に変換する。
-
-        Args:
-            editor_annotation: `get_editor_annotation`で取得したアノテーション(v1)
-            parser: SimpleAnnotationParserインスタンス。アノテーションのファイルを開くために利用する。
-        """
-        # infer_missing=Trueを指定する理由：Optional型のキーが存在しない場合でも、AnnotationV1データクラスのインスタンスを生成できるようにするため
-        # https://qiita.com/yuji38kwmt/items/c5b56f70da3b8a70ba31
-        annotation: AnnotationV1 = AnnotationV1.from_dict(editor_annotation, infer_missing=True)
-        request_details: list[dict[str, Any]] = []
-        for detail in annotation.details:
-            request_detail = self._to_annotation_detail_for_request(parser, detail)
-
-            if request_detail is not None:
-                request_details.append(request_detail.to_dict(encode_json=True))
-
-        request_body = {
-            "project_id": self.project_id,
-            "task_id": parser.task_id,
-            "input_data_id": parser.input_data_id,
-            "details": request_details,
-        }
-
-        return request_body
-
-    def editor_annotation_to_request_body_v2(self, editor_annotation: dict[str, Any], parser: SimpleAnnotationParser) -> dict[str, Any]:
+    def editor_annotation_to_request_body(self, editor_annotation: dict[str, Any], parser: SimpleAnnotationParser) -> dict[str, Any]:
         """
         `get_editor_annotation`で取得したアノテーション(v2)を、`put_annotation` APIに渡すリクエストボディ(v2)に変換する。
 
         Args:
             editor_annotation: `get_editor_annotation`で取得したアノテーション(v2)
             parser: SimpleAnnotationParserインスタンス。アノテーションのファイルを開くために利用する。
+
+        Returns:
+            v2形式のリクエストボディ。
         """
+        if editor_annotation.get("format_version") != "2.0.0":
+            raise ValueError("アノテーションのリストアはv2形式（format_version='2.0.0'）のみ対応しています。v1形式のバックアップはリストアできません。")
+
         request_details: list[dict[str, Any]] = []
         for detail in editor_annotation["details"]:
             new_detail = copy.deepcopy(detail)
@@ -142,10 +94,7 @@ class RestoreAnnotationMain(CommandLineWithConfirm):
         logger.info(f"task_id='{task_id}', input_data_id='{input_data_id}' :: アノテーションをリストアします。")
 
         editor_annotation = parser.load_json()
-        if editor_annotation.get("format_version") == "2.0.0":
-            request_body = self.editor_annotation_to_request_body_v2(editor_annotation, parser)
-        else:
-            request_body = self.editor_annotation_to_request_body_v1(editor_annotation, parser)
+        request_body = self.editor_annotation_to_request_body(editor_annotation, parser)
 
         old_annotation, _ = self.service.api.get_editor_annotation(self.project_id, task_id, input_data_id, query_params={"v": "2"})
         updated_datetime = old_annotation["updated_datetime"] if old_annotation is not None else None

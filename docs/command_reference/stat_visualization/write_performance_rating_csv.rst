@@ -67,7 +67,7 @@ Examples
     │   ├── annotation_quality__deviation.csv
     │   ├── annotation_quality__rank.csv
     │   └── annotation_quality__summary.csv
-    └── inspection_acceptance_
+    └── inspection_acceptance_productivity
         ├── inspection_acceptance_productivity__original.csv
         ├── inspection_acceptance_productivity__deviation.csv
         ├── inspection_acceptance_productivity__rank.csv
@@ -92,8 +92,7 @@ Examples
 * 評価対象
     * annotation_productivity: 教師付の生産性（単位あたり実績作業時間）
     * inspection_acceptance_productivity: 検査/受入の生産性（単位あたり実績作業時間）
-    * annotation_quality: 教師付の品質（タスクあたり差し戻し回数）
-    * annotation_quality_per_task: 教師付の品質（単位あたりの検査コメント数）
+    * annotation_quality: 教師付の品質。デフォルトはアノテーションあたりの指摘コメント数です。 ``--quality_indicator`` または ``--quality_indicator_by_directory`` で変更できます。
 * 評価方法
     * original: 生産性または品質の値
     * deviation: 偏差値。値が小さいほど、生産性/品質が高い。

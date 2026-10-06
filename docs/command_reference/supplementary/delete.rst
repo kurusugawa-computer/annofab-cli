@@ -65,12 +65,12 @@ JSON形式で指定された補助情報を削除します。
     [
         {
             "input_data_id": "input1",
-            "supplementary_data_id": "supplementary1",
+            "supplementary_data_id": "supplementary1"
         },
         {
             "input_data_id": "input2",
-            "supplementary_data_id": "supplementary2",
-        },
+            "supplementary_data_id": "supplementary2"
+        }
     ]
 
 

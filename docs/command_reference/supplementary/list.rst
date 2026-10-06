@@ -35,7 +35,7 @@ CSV出力
 
 .. code-block::
 
-    $ annofabcli supplementary list --format csv --output out.csv
+    $ annofabcli supplementary list --project_id prj1 --format csv --output out.csv
 
 .. csv-table:: out.csv
    :header-rows: 1
@@ -46,7 +46,7 @@ JSON出力
 
 .. code-block::
 
-    $ annofabcli supplementary list --input_data_id file://input_data_id.txt --format pretty_json --output out.json
+    $ annofabcli supplementary list --project_id prj1 --input_data_id file://input_data_id.txt --format pretty_json --output out.json
 
 
 

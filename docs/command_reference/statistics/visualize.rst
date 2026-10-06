@@ -46,7 +46,7 @@ Examples
 
 
 
-集計期間も指定できます。``--start_date`` は、指定した日付以降に教師付を開始したタスクを集計します。``--end_date`` は、指定した日付以前に更新されたタスクを集計します。
+集計期間も指定できます。``--start_date`` は、指定した日付以降に教師付を開始したタスクを集計します。``--end_date`` は、指定した日付以前に教師付を開始したタスクを集計します。
 
 
 .. code-block::
@@ -143,14 +143,13 @@ Examples
 
 複数のプロジェクトをマージする
 ----------------------------------------------
-``--project_id`` に複数のproject_idを指定したときに ``--merge`` を指定すると、指定したプロジェクトをマージしたディレクトリも出力します。ディレクトリ名は ``merge`` です。
+複数プロジェクトの出力結果をマージするには、 :doc:`../stat_visualization/merge` コマンドを使用してください。
+各プロジェクトの出力ディレクトリを ``--dir`` に指定します。
 
 .. code-block::
 
-    $ annofabcli input_data put --project_id prj1 prj2 --output out_dir/
-    --merge
-
-
+    $ annofabcli statistics visualize --project_id prj1 prj2 --output_dir out_dir/
+    $ annofabcli stat_visualization merge --dir out_dir/prj1 out_dir/prj2 --output_dir out_dir/merge
 
 
 
@@ -161,7 +160,7 @@ Examples
 
 .. code-block::
 
-    $ annofabcli input_data put --project_id file://project_id.txt --output out_dir/
+    $ annofabcli statistics visualize --project_id file://project_id.txt --output_dir out_dir/ \
     --parallelism 4
 
 
@@ -206,7 +205,7 @@ CSVには以下の列が存在している必要があります。
 以下はCSVファイルのサンプルです。
 
 .. code-block::
-    :caption: annotation_count.csv
+    :caption: input_data_count.csv
 
     project_id,task_id,input_data_count
     prj1,task1,5
@@ -232,15 +231,20 @@ CSVには以下の列が存在している必要があります。
 .. code-block:: json
 
     {
-      "csv_path": "custom_production_volume.csv", // 生産量が記載されたCSVファイルのパス
-      "column_list":[  // 生産量の情報
+      "csv_path": "custom_production_volume.csv",
+      "column_list":[
         {
-          "value": "video_duration_minute",  // CSVの列名
-          "name": "動画長さ"  // CSVの列名を補足する内容。出力されるグラフなどに用いられる。
+          "value": "video_duration_minute",
+          "name": "動画長さ"
         }
       ]
     }
 
+
+* ``csv_path`` : 生産量が記載されたCSVファイルのパス
+* ``column_list`` : 生産量の情報
+* ``value`` : CSVの列名
+* ``name`` : CSVの列名を補足する内容。出力されるグラフなどに用いられる。
 
 以下は、 ``csv_path`` キーに指定するCSVファイルのサンプルです。
 
@@ -367,35 +371,35 @@ CSVには以下の列が存在している必要があります。
 .. code-block::
 
     out_dir/
-    ├── project_id1/
+    ├── prj1/
     │   ├── タスクlist.csv
     │   ├── メンバごとの生産性と品質.csv
     │   └── ...
-    ├── project_id2/
+    ├── prj2/
     │   ├── タスクlist.csv
     │   ├── メンバごとの生産性と品質.csv
     │   └── ...
 
 
 
-``--merge`` を指定した場合
+出力結果をマージした場合
 --------------------------------------------------------------------------------------------
 
 .. code-block::
 
-    $ annofabcli statistics visualize --project_id prj1 prj2 --output_dir out_dir --minimal \
-    --merge
+    $ annofabcli statistics visualize --project_id prj1 prj2 --output_dir out_dir --minimal
+    $ annofabcli stat_visualization merge --dir out_dir/prj1 out_dir/prj2 --output_dir out_dir/merge --minimal
 
 prj1とprj2の出力結果をマージしたファイルが、``merge`` ディレクトリに出力されます。
 
 .. code-block::
 
     out_dir/
-    ├── project_id1/
+    ├── prj1/
     │   ├── タスクlist.csv
     │   ├── メンバごとの生産性と品質.csv
     │   └── ...
-    ├── project_id2/
+    ├── prj2/
     │   ├── タスクlist.csv
     │   ├── メンバごとの生産性と品質.csv
     │   └── ...

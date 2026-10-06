@@ -71,7 +71,7 @@ JSON出力
 
 .. code-block::
 
-    $ annofabcli annotation list --format pretty_json --output out.json
+    $ annofabcli annotation list --project_id prj1 --format pretty_json --output out.json
 
 
 
@@ -97,7 +97,7 @@ JSON出力
                 {
                 "x": 664,
                 "y": 432
-                },
+                }
             ],
             "_type": "Points"
             },
@@ -122,7 +122,7 @@ CSV出力
 
 .. code-block::
 
-    $ annofabcli annotation list --format csv --output out.csv
+    $ annofabcli annotation list --project_id prj1 --format csv --output out.csv
 
 
 
