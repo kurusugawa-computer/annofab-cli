@@ -1,5 +1,6 @@
 import argparse
 import json
+import re
 import zipfile
 from copy import deepcopy
 from pathlib import Path
@@ -14,7 +15,6 @@ from bokeh.document import Document
 from bokeh.models.annotations.labels import Title
 from bokeh.models.renderers import GlyphRenderer
 from bokeh.models.sources import ColumnDataSource
-from bs4 import BeautifulSoup
 
 from annofabcli.annotation_zip import visualize_annotation_duration as duration_module
 from annofabcli.annotation_zip.annotation_name import AnnotationNameTranslator
@@ -268,10 +268,10 @@ def command_inputs(tmp_path, monkeypatch):
 
 
 def load_html_document(path: Path) -> Document:
-    soup = BeautifulSoup(path.read_text(encoding="utf-8"), "html.parser")
-    script = soup.find("script", {"type": "application/json"})
-    assert script is not None
-    payload = json.loads(script.get_text())
+    html = path.read_text(encoding="utf-8")
+    match = re.search(r'<script type="application/json" id="[^"]+">(.*?)</script>', html, re.DOTALL)
+    assert match is not None
+    payload = json.loads(match.group(1))
     return Document.from_json(next(iter(payload.values())))
 
 
