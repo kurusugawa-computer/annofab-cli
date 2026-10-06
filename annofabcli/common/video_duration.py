@@ -7,7 +7,7 @@ import logging
 import tempfile
 from collections.abc import Collection
 from pathlib import Path
-from typing import Literal, TypedDict
+from typing import TypedDict
 
 import pandas
 from annofabapi.models import InputData, InputDataType, ProjectMemberRole, Task
@@ -21,9 +21,6 @@ from annofabcli.common.utils import print_according_to_format, print_csv
 from annofabcli.common.video_duration_histogram import BIN_COUNT, TimeUnit, plot_video_duration
 
 logger = logging.getLogger(__name__)
-
-ResourceUnit = Literal["task", "input_data"]
-"""動画長を数える単位。"""
 
 
 class TaskVideoDuration(TypedDict):
@@ -99,7 +96,6 @@ def get_video_durations(
     task_list: Collection[Task],
     input_data_list: Collection[InputData],
     *,
-    resource_unit: ResourceUnit,
     task_ids: Collection[str] | None = None,
     input_data_ids: Collection[str] | None = None,
     from_date: str | None = None,
@@ -110,7 +106,6 @@ def get_video_durations(
     Args:
         task_list: タスク。
         input_data_list: 入力データ。
-        resource_unit: 集計単位。
         task_ids: 対象タスクID。
         input_data_ids: 対象入力データID。
         from_date: 入力データ更新日の下限（当日を含む）。
@@ -129,33 +124,25 @@ def get_video_durations(
     if to_date is not None:
         upper = datetime.date.fromisoformat(to_date)
         data_list = [data for data in data_list if datetime.datetime.fromisoformat(data["updated_datetime"]).date() <= upper]
-    if resource_unit == "task":
-        if input_data_ids is not None or from_date is not None or to_date is not None:
-            selected_ids = {data["input_data_id"] for data in data_list}
-            tasks = [task for task in tasks if any(data_id in selected_ids for data_id in task["input_data_id_list"])]
-        values = [row["video_duration_second"] for row in get_task_video_duration_list(tasks, data_list)]
-    else:
-        if task_ids is not None:
-            selected_ids = {data_id for task in tasks for data_id in task["input_data_id_list"]}
-            data_list = [data for data in data_list if data["input_data_id"] in selected_ids]
-        values = [data["system_metadata"]["input_duration"] for data in data_list]
+    if input_data_ids is not None or from_date is not None or to_date is not None:
+        selected_ids = {data["input_data_id"] for data in data_list}
+        tasks = [task for task in tasks if any(data_id in selected_ids for data_id in task["input_data_id_list"])]
+    values = [row["video_duration_second"] for row in get_task_video_duration_list(tasks, data_list)]
     durations = [value for value in values if value is not None]
     return durations, len(values) - len(durations)
 
 
 class VideoDurationCommand(CommandLine):
-    def run(self, resource_unit: ResourceUnit, *, visualize: bool) -> None:
+    def run(self, *, visualize: bool) -> None:
         """動画プロジェクトの情報を読み取り、一覧または分布を出力します。
 
         Args:
-            resource_unit: 集計単位。
             visualize: 分布をHTMLに出力するか。
 
         Returns:
             None。
         """
         args = self.args
-        needs_tasks = resource_unit == "task" or args.task_id is not None
         project_title = None
         if args.project_id is not None:
             self.require_project_access(args.project_id, project_member_roles=[ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER])
@@ -171,19 +158,16 @@ class VideoDurationCommand(CommandLine):
                 input_data_json = downloading.download_input_data_json_to_dir(args.project_id, temp_dir, is_latest=args.latest)
             with input_data_json.open(encoding="utf-8") as file:
                 input_data_list = json.load(file)
-            task_list = []
-            if needs_tasks:
-                task_json = args.task_json
-                if task_json is None:
-                    task_json = downloading.download_task_json_to_dir(args.project_id, temp_dir, is_latest=args.latest)
-                with task_json.open(encoding="utf-8") as file:
-                    task_list = json.load(file)
+            task_json = args.task_json
+            if task_json is None:
+                task_json = downloading.download_task_json_to_dir(args.project_id, temp_dir, is_latest=args.latest)
+            with task_json.open(encoding="utf-8") as file:
+                task_list = json.load(file)
         task_ids = get_list_from_args(args.task_id) if args.task_id is not None else None
         if visualize:
             durations, excluded_count = get_video_durations(
                 task_list,
                 input_data_list,
-                resource_unit=resource_unit,
                 task_ids=task_ids,
                 input_data_ids=get_list_from_args(args.input_data_id) if args.input_data_id is not None else None,
                 from_date=args.from_date,
@@ -197,7 +181,7 @@ class VideoDurationCommand(CommandLine):
                 bin_width=args.bin_width,
                 project_id=args.project_id,
                 project_title=project_title,
-                y_axis_label="タスク数" if resource_unit == "task" else "入力データ数",
+                y_axis_label="タスク数",
                 excluded_count=excluded_count,
             )
         else:
@@ -207,22 +191,20 @@ class VideoDurationCommand(CommandLine):
             print_task_video_duration_list(rows, OutputFormat(args.format), args.output)
 
 
-def run_command(args: argparse.Namespace, resource_unit: ResourceUnit, *, visualize: bool) -> None:
+def run_command(args: argparse.Namespace, *, visualize: bool) -> None:
     """認証後に動画長コマンドを実行します。
 
     Args:
         args: コマンドライン引数。
-        resource_unit: 集計単位。
         visualize: HTMLを出力するか。
 
     Returns:
         None。
     """
-    needs_tasks = resource_unit == "task" or args.task_id is not None
-    if args.project_id is None and (args.input_data_json is None or (needs_tasks and args.task_json is None)):
+    if args.project_id is None and (args.input_data_json is None or args.task_json is None):
         raise AnnofabCliException("必要なJSONファイルが未指定のときは、--project_idを指定してください。")
     service = build_annofabapi_resource_and_login(args)
-    VideoDurationCommand(service, AnnofabApiFacade(service), args).run(resource_unit, visualize=visualize)
+    VideoDurationCommand(service, AnnofabApiFacade(service), args).run(visualize=visualize)
 
 
 def add_arguments(parser: argparse.ArgumentParser, *, visualize: bool) -> None:
@@ -238,7 +220,7 @@ def add_arguments(parser: argparse.ArgumentParser, *, visualize: bool) -> None:
     arguments = ArgumentParser(parser)
     parser.add_argument("-p", "--project_id", help="対象の動画プロジェクトID。必要なJSONファイルをすべて指定した場合は省略できます。")
     parser.add_argument("--input_data_json", type=Path, help="input_data downloadで取得した入力データのJSONファイル。")
-    parser.add_argument("--task_json", type=Path, help="task downloadで取得したタスクのJSONファイル。入力データ単位では、--task_id指定時のみ必要です。")
+    parser.add_argument("--task_json", type=Path, help="task downloadで取得したタスクのJSONファイル。")
     parser.add_argument("--latest", action="store_true", help="入力データ情報とタスク情報の最新版を取得します。数分待つ場合があります。")
     parser.add_argument("--temp_dir", type=Path, help="JSONファイルをダウンロードするディレクトリ。")
     parser.add_argument("-t", "--task_id", nargs="+", help="対象タスクID。file://でID一覧ファイルを指定できます。")

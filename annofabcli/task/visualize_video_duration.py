@@ -5,7 +5,7 @@ from annofabcli.common.video_duration import add_arguments, run_command
 
 
 def main(args: argparse.Namespace) -> None:
-    run_command(args, "task", visualize=True)
+    run_command(args, visualize=True)
 
 
 def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:

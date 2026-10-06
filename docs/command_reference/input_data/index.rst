@@ -28,7 +28,6 @@ Available Commands
    update
    update_metadata
    update_metadata_per_input_data
-   visualize_video_duration
 
 Usage Details
 =================================

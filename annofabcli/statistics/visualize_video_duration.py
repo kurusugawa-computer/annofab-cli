@@ -26,7 +26,7 @@ from annofabcli.common.video_duration_histogram import BIN_COUNT, TimeUnit, plot
 
 logger = logging.getLogger(__name__)
 
-DEPRECATED_MESSAGE = "[DEPRECATED] statistics visualize_video_durationは非推奨です。input_data visualize_video_duration または task visualize_video_durationを使用してください。"
+DEPRECATED_MESSAGE = "[DEPRECATED] statistics visualize_video_durationは非推奨です。task visualize_video_durationを使用してください。"
 """旧コマンドの移行先。"""
 
 

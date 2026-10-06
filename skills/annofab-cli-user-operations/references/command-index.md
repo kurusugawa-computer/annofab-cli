@@ -140,7 +140,6 @@
 - `annofabcli input_data update`: 入力データの名前または入力データのパスを更新します。
 - `annofabcli input_data update_metadata`: 入力データのメタデータを更新します。
 - `annofabcli input_data update_metadata_per_input_data`: 入力データごとにメタデータを更新します。
-- `annofabcli input_data visualize_video_duration`: 入力データごとの動画の長さをヒストグラムで可視化します。タスク未使用の動画も含め、各入力データを1回数えます。
 
 ## instruction
 

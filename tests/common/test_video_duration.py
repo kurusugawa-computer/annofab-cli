@@ -30,17 +30,15 @@ def input_data_list() -> list[InputData]:
     ]""")
 
 
-def test_resource_units(task_list, input_data_list):
-    assert get_video_durations(task_list, input_data_list, resource_unit="task") == ([10, 10], 2)
-    assert get_video_durations(task_list, input_data_list, resource_unit="input_data") == ([10, 20, 0], 1)
-    assert get_video_durations(task_list, input_data_list, resource_unit="input_data", task_ids=["t1", "t2"]) == ([10], 0)
+def test_shared_and_unused_input_data(task_list, input_data_list):
+    assert get_video_durations(task_list, input_data_list) == ([10, 10], 2)
 
 
 def test_filtering_and_date_boundaries(task_list, input_data_list):
-    assert get_video_durations(task_list, input_data_list, resource_unit="task", task_ids=["t2"]) == ([10], 0)
-    assert get_video_durations(task_list, input_data_list, resource_unit="task", input_data_ids=["shared"]) == ([10, 10], 0)
-    assert get_video_durations(task_list, input_data_list, resource_unit="input_data", from_date="2026-10-06", to_date="2026-10-06") == ([10, 0], 1)
-    assert get_video_durations(task_list, input_data_list, resource_unit="task", from_date="2026-10-07") == ([], 0)
+    assert get_video_durations(task_list, input_data_list, task_ids=["t2"]) == ([10], 0)
+    assert get_video_durations(task_list, input_data_list, input_data_ids=["shared"]) == ([10, 10], 0)
+    assert get_video_durations(task_list, input_data_list, from_date="2026-10-06", to_date="2026-10-06") == ([10, 10], 1)
+    assert get_video_durations(task_list, input_data_list, from_date="2026-10-07") == ([], 0)
 
 
 def test_rows_and_missing_values(task_list, input_data_list, tmp_path):
@@ -111,3 +109,8 @@ def test_histogram_outputs(durations, bin_width, tmp_path):
 def test_invalid_bin_width(bin_width, tmp_path):
     with pytest.raises(ValueError):
         plot_video_duration([10], tmp_path / "out.html", time_unit=TimeUnit.SECOND, bin_width=bin_width)
+
+
+def test_zero_duration_is_included(task_list, input_data_list):
+    task_list[0]["input_data_id_list"] = ["zero"]
+    assert get_video_durations(task_list[:1], input_data_list) == ([0], 0)
