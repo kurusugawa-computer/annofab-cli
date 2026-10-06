@@ -22,21 +22,19 @@ from annofabcli.common.utils import get_columns_with_priority
 logger = logging.getLogger(__name__)
 
 
-def create_minimal_dataframe(project_list: list[Project]) -> pandas.DataFrame:
-    """必要最小限の列であるDataFrameを作成する"""
-    df = pandas.DataFrame(project_list)
-    df["last_tasks_updated_datetime"] = [e["summary"]["last_tasks_updated_datetime"] for e in project_list]
-    return df[
-        [
-            "project_id",
-            "title",
-            "organization_name",
-            "project_status",
-            "input_data_type",
-            "last_tasks_updated_datetime",
-            "created_datetime",
-        ]
-    ]
+def create_project_dataframe(project_list: list[Project]) -> pandas.DataFrame:
+    """プロジェクト一覧のCSV用DataFrameを作成する。
+
+    Args:
+        project_list: プロジェクト一覧。
+
+    Returns:
+        データが0件でも基本列を持つDataFrame。
+    """
+    df = pandas.DataFrame(project_list) if project_list else pandas.DataFrame(columns=ListProject.PRIOR_COLUMNS)
+    df["last_tasks_updated_datetime"] = [(project.get("summary") or {}).get("last_tasks_updated_datetime") for project in project_list]
+    columns = get_columns_with_priority(df, prior_columns=ListProject.PRIOR_COLUMNS)
+    return df[columns]
 
 
 class ListProjectMain:
@@ -146,6 +144,7 @@ class ListProject(CommandLine):
         "overview",
         "project_status",
         "input_data_type",
+        "last_tasks_updated_datetime",
         "created_datetime",
         "updated_datetime",
         "summary",
@@ -186,13 +185,8 @@ class ListProject(CommandLine):
 
         logger.info(f"プロジェクト一覧の件数: {len(project_list)}")
 
-        if args.format == OutputFormat.MINIMAL_CSV.value:
-            df = create_minimal_dataframe(project_list)
-            self.print_csv(df)
-        elif args.format == OutputFormat.CSV.value:
-            df = pandas.DataFrame(project_list)
-            columns = get_columns_with_priority(df, prior_columns=self.PRIOR_COLUMNS)
-            self.print_csv(df[columns])
+        if args.format == OutputFormat.CSV.value:
+            self.print_csv(create_project_dataframe(project_list))
         else:
             self.print_according_to_format(project_list)
 
@@ -242,7 +236,6 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     argument_parser.add_format(
         choices=[
             OutputFormat.CSV,
-            OutputFormat.MINIMAL_CSV,
             OutputFormat.JSON,
             OutputFormat.PRETTY_JSON,
             OutputFormat.PROJECT_ID_LIST,

@@ -13,6 +13,7 @@ from annofabcli.common.download import DownloadingFile
 from annofabcli.common.enums import OutputFormat
 from annofabcli.common.facade import AnnofabApiFacade
 from annofabcli.common.visualize import AddProps
+from annofabcli.task_history.list_task_history import CSV_COLUMNS
 
 logger = logging.getLogger(__name__)
 
@@ -113,7 +114,7 @@ class ListTaskHistoryWithJson(CommandLine):
         logger.debug(f"{len(task_history_dict)} 件のタスクの履歴情報を出力します。")
         if arg_format == OutputFormat.CSV:
             all_task_history_list = main_obj.to_all_task_history_list_from_dict(task_history_dict)
-            self.print_according_to_format(all_task_history_list)
+            self.print_according_to_format(all_task_history_list, csv_columns=CSV_COLUMNS)
         else:
             self.print_according_to_format(task_history_dict)
 

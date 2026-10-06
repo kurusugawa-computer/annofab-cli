@@ -88,6 +88,9 @@ def create_task_count_summary_df(task_list: list[Task]) -> pandas.DataFrame:
     Returns:
         従来形式で集計したDataFrame。
     """
+    if not task_list:
+        return pandas.DataFrame(columns=["account_id", *[status.value for status in TaskStatusForSummary]])
+
     df_task = pandas.DataFrame([add_info_to_task(task) for task in task_list])
     df_summary = df_task.pivot_table(
         values="task_id",
@@ -192,9 +195,6 @@ class ListTaskCountByUser(CommandLine):
         """
         df_task_count = create_legacy_task_count_summary_df(task_list)
         df_user = self.create_user_df(project_id, df_task_count["account_id"], include_unknown_account=False)
-        if len(df_user) == 0:
-            return pandas.DataFrame()
-
         df = pandas.merge(df_user, df_task_count, how="left", on=["account_id"])
         task_count_columns = [status.value for status in TaskStatusForSummary]
         df[task_count_columns] = df[task_count_columns].fillna(0)
@@ -293,10 +293,7 @@ class ListTaskCountByUser(CommandLine):
                 task_list = json.load(f)
 
             df = self.create_legacy_summary_df(project_id, task_list)
-            if len(df) > 0:
-                self.print_legacy_summarize_df(df)
-            else:
-                logger.error("出力対象データが0件のため、出力しません。")
+            self.print_legacy_summarize_df(df)
 
         if args.temp_dir is not None:
             download_and_process_task_data(temp_dir=args.temp_dir)

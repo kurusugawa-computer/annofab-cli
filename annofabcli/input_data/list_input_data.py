@@ -17,6 +17,20 @@ from annofabcli.input_data.utils import remove_unnecessary_keys_from_input_data
 
 logger = logging.getLogger(__name__)
 
+INPUT_DATA_COLUMNS = (
+    "organization_id",
+    "input_data_set_id",
+    "project_id",
+    "input_data_id",
+    "input_data_name",
+    "input_data_path",
+    "url",
+    "etag",
+    "updated_datetime",
+    "sign_required",
+)
+"""入力データ一覧のCSVの基本列。"""
+
 
 BULK_REQUEST_SIZE = 100
 """入力データバルク取得APIの1リクエストで指定する入力データIDの上限。"""
@@ -35,19 +49,6 @@ def print_input_data_list(
         output_format: 出力フォーマット
         output_file: 出力先
     """
-    input_data_prior_columns = [
-        "organization_id",
-        "input_data_set_id",
-        "project_id",
-        "input_data_id",
-        "input_data_name",
-        "input_data_path",
-        "url",
-        "etag",
-        "updated_datetime",
-        "sign_required",
-    ]
-
     if output_format == OutputFormat.CSV:
         if len(input_data_list) > 0:
             # pandas.DataFrameでなくpandas.json_normalizeを使う理由:
@@ -55,14 +56,14 @@ def print_input_data_list(
             df = pandas.json_normalize(input_data_list)
 
             # system_metadata.*列とmetadata.*列を検出して優先列リストに追加
-            # 順序: input_data_prior_columns → system_metadata.* → metadata.*
+            # 順序: INPUT_DATA_COLUMNS → system_metadata.* → metadata.*
             system_metadata_columns = sorted([col for col in df.columns if col.startswith("system_metadata.")])
             metadata_columns = sorted([col for col in df.columns if col.startswith("metadata.")])
-            prior_columns_with_metadata = input_data_prior_columns + system_metadata_columns + metadata_columns
+            prior_columns_with_metadata = list(INPUT_DATA_COLUMNS) + system_metadata_columns + metadata_columns
             columns = get_columns_with_priority(df, prior_columns=prior_columns_with_metadata)
             print_csv(df[columns], output=output_file)
         else:
-            df = pandas.DataFrame(columns=input_data_prior_columns)
+            df = pandas.DataFrame(columns=INPUT_DATA_COLUMNS)
             print_csv(df, output=output_file)
 
     elif output_format == OutputFormat.PRETTY_JSON:

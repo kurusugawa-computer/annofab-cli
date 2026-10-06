@@ -1,9 +1,11 @@
 import logging
+from argparse import Namespace
 from unittest.mock import Mock
 
+import pandas
 import pytest
 
-from annofabcli.supplementary.list_supplementary_data import ListSupplementaryDataMain
+from annofabcli.supplementary.list_supplementary_data import CSV_COLUMNS, ListSupplementaryData, ListSupplementaryDataMain
 
 
 def test_get_all_supplementary_data_list(caplog: pytest.LogCaptureFixture) -> None:
@@ -50,3 +52,17 @@ def test_get_all_supplementary_data_list_when_bulk_request_fails(caplog: pytest.
     assert result == []
     assert "入力データ 1〜100 件（100件）の補助情報バルク取得に失敗しました。" in caplog.messages
     assert "補助情報の取得が完了しました。取得件数: 0 件, 失敗した入力データ数: 100 件" in caplog.messages
+
+
+def test_empty_list_outputs_csv_header(tmp_path):
+
+    service = Mock()
+    service.api.get_supplementary_data_in_bulk.return_value = ({"success": [], "failure": []}, None)
+    output = tmp_path / "supplementary.csv"
+    args = Namespace(project_id="project1", input_data_id=["input1"], format="csv", output=output, yes=True)
+
+    ListSupplementaryData(service, Mock(), args).main()
+
+    df = pandas.read_csv(output)
+    assert len(df) == 0
+    assert df.columns.to_list() == list(CSV_COLUMNS)

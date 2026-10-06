@@ -12,6 +12,9 @@ from annofabcli.common.visualize import AddProps
 
 logger = logging.getLogger(__name__)
 
+CSV_COLUMNS = ("history_id", "project_id", "updated_datetime", "url", "account_id", "comment", "user_id", "username")
+"""データが0件のときに出力するCSVの列。"""
+
 
 class AnnotationSpecsHistories(CommandLine):
     """
@@ -50,7 +53,7 @@ class AnnotationSpecsHistories(CommandLine):
         super().require_project_access(project_id)
 
         annotation_specs_histories = self.get_annotation_specs_histories(project_id)
-        self.print_according_to_format(annotation_specs_histories)
+        self.print_according_to_format(annotation_specs_histories, csv_columns=CSV_COLUMNS)
 
     def main(self) -> None:
         args = self.args

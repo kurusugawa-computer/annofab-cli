@@ -12,6 +12,9 @@ from annofabcli.common.facade import AnnofabApiFacade
 
 logger = logging.getLogger(__name__)
 
+CSV_COLUMNS = ("project_id", "job_type", "job_id", "job_status", "job_execution", "job_detail", "errors", "created_datetime", "updated_datetime")
+"""データが0件のときに出力するCSVの列。"""
+
 
 class ListJob(CommandLine):
     """
@@ -49,7 +52,7 @@ class ListJob(CommandLine):
 
         job_list = self.get_job_list(project_id, job_type=job_type, job_query=job_query)
         logger.info(f"ジョブ一覧の件数: {len(job_list)}")
-        self.print_according_to_format(job_list)
+        self.print_according_to_format(job_list, csv_columns=CSV_COLUMNS)
 
     def main(self) -> None:
         args = self.args

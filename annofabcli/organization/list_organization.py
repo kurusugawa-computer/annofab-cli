@@ -8,12 +8,15 @@ from annofabcli.common.facade import AnnofabApiFacade
 
 logger = logging.getLogger(__name__)
 
+CSV_COLUMNS = ("organization_id", "name", "email", "price_plan", "summary", "created_datetime", "updated_datetime", "my_role", "my_status")
+"""データが0件のときに出力するCSVの列。"""
+
 
 class ListOrganization(CommandLine):
     def main(self) -> None:
         organization_list = self.service.wrapper.get_all_my_organizations()
         logger.info(f"組織一覧の件数: {len(organization_list)}")
-        self.print_according_to_format(organization_list)
+        self.print_according_to_format(organization_list, csv_columns=CSV_COLUMNS)
 
 
 def main(args: argparse.Namespace) -> None:

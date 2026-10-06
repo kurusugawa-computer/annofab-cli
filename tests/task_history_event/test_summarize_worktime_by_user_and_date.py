@@ -162,13 +162,13 @@ def test_command_json(output_format, local_worktime_input, tmp_path):
 
 
 @pytest.mark.parametrize("output_format", ["csv", "json"])
-def test_command_empty(output_format, local_worktime_input, tmp_path):
+@pytest.mark.parametrize("command", [["statistics", "list_worktime"], ["task_history_event", "summarize_worktime_by_user_and_date"]])
+def test_command_empty(command, output_format, local_worktime_input, tmp_path):
     local_worktime_input.write_text("[]", encoding="utf-8")
     output = tmp_path / "empty"
     run_command(
         [
-            "task_history_event",
-            "summarize_worktime_by_user_and_date",
+            *command,
             "--project_id",
             "prj1",
             "--task_history_event_json",
