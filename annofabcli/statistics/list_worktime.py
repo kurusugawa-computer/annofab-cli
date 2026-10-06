@@ -20,6 +20,9 @@ from annofabcli.task_history_event.list_worktime import (
 
 logger = logging.getLogger(__name__)
 
+CSV_COLUMNS = ("date", "account_id", "user_id", "username", "biography", "worktime_hour", "annotation_worktime_hour", "inspection_worktime_hour", "acceptance_worktime_hour")
+"""日別・ユーザ別作業時間のCSVの列。"""
+
 WorktimeDict = dict[tuple[str, str, str], float]
 """key: date, account_id, phase"""
 
@@ -61,6 +64,9 @@ def get_worktime_dict_from_event_list(task_history_event_list: list[WorktimeFrom
 
 
 def get_df_worktime(task_history_event_list: list[WorktimeFromTaskHistoryEvent], member_list: list[dict[str, Any]]) -> pandas.DataFrame:
+    if not task_history_event_list:
+        return pandas.DataFrame(columns=CSV_COLUMNS)
+
     dict_worktime = get_worktime_dict_from_event_list(task_history_event_list)
 
     s = pandas.Series(
@@ -88,22 +94,10 @@ def get_df_worktime(task_history_event_list: list[WorktimeFromTaskHistoryEvent],
 
     df["worktime_hour"] = df["annotation_worktime_hour"] + df["inspection_worktime_hour"] + df["acceptance_worktime_hour"]
 
-    df_member = pandas.DataFrame(member_list)[["account_id", "user_id", "username", "biography"]]
+    df_member = pandas.DataFrame(member_list).reindex(columns=["account_id", "user_id", "username", "biography"])
 
     df = df.merge(df_member, how="left", on="account_id")
-    return df[
-        [
-            "date",
-            "account_id",
-            "user_id",
-            "username",
-            "biography",
-            "worktime_hour",
-            "annotation_worktime_hour",
-            "inspection_worktime_hour",
-            "acceptance_worktime_hour",
-        ]
-    ]
+    return df[list(CSV_COLUMNS)]
 
 
 class ListWorktimeFromTaskHistoryEvent(CommandLine):
@@ -122,10 +116,7 @@ class ListWorktimeFromTaskHistoryEvent(CommandLine):
         project_member_list = self.service.wrapper.get_all_project_members(project_id, query_params={"include_inactive_member": ""})
         df = get_df_worktime(worktime_list, project_member_list)
 
-        if len(worktime_list) > 0:
-            self.print_csv(df)
-        else:
-            logger.warning("データ件数が0件であるため、出力しません。")
+        self.print_csv(df)
 
     def main(self) -> None:
         args = self.args

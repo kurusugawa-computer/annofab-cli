@@ -1,3 +1,6 @@
+from argparse import Namespace
+from unittest.mock import Mock
+
 import pandas
 from annofabapi.models import Task
 
@@ -156,3 +159,17 @@ def test_create_legacy_task_count_summary_df_excludes_unassigned_task() -> None:
 
     assert actual["account_id"].to_list() == ["account1"]
     assert actual["working"].to_list() == [1]
+
+
+def test_empty_legacy_task_list_outputs_csv_header(tmp_path):
+
+    source = tmp_path / "tasks.json"
+    source.write_text("[]")
+    output = tmp_path / "task_count.csv"
+    args = Namespace(project_id="project1", unit=AggregationUnit.TASK.value, legacy_output=True, task_json=source, temp_dir=None, format="csv", output=output, yes=True)
+
+    ListTaskCountByUser(Mock(), Mock(), args).main()
+
+    df = pandas.read_csv(output)
+    assert len(df) == 0
+    assert df.columns.to_list() == ["user_id", "username", "biography", *[status.value for status in TaskStatusForSummary]]

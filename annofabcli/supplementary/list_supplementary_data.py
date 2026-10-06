@@ -18,6 +18,20 @@ from annofabcli.common.facade import AnnofabApiFacade
 
 logger = logging.getLogger(__name__)
 
+CSV_COLUMNS = (
+    "project_id",
+    "organization_id",
+    "input_data_id",
+    "input_data_set_id",
+    "supplementary_data_id",
+    "supplementary_data_name",
+    "supplementary_data_path",
+    "supplementary_data_type",
+    "supplementary_data_number",
+    "updated_datetime",
+)
+"""データが0件のときに出力するCSVの列。"""
+
 
 BULK_REQUEST_SIZE = 100
 """補助情報バルク取得APIの1リクエストで指定する入力データIDの上限。"""
@@ -117,7 +131,7 @@ class ListSupplementaryData(CommandLine):
 
         main_obj = ListSupplementaryDataMain(self.service, project_id=project_id)
         all_supplementary_data_list = main_obj.get_all_supplementary_data_list(input_data_id_list)
-        self.print_according_to_format(all_supplementary_data_list)
+        self.print_according_to_format(all_supplementary_data_list, csv_columns=CSV_COLUMNS)
 
 
 def main(args: argparse.Namespace) -> None:

@@ -3,7 +3,7 @@ import logging
 import os
 import re
 import sys
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from pathlib import Path
 from typing import Any, TypeVar
 
@@ -107,6 +107,8 @@ def print_according_to_format(
     target: Any,  # noqa: ANN401
     format: OutputFormat,  # noqa: A002
     output: str | Path | None = None,
+    *,
+    csv_columns: Sequence[str] | None = None,
 ) -> None:
     """
     コマンドライン引数 ``--format`` の値にしたがって、内容を出力する。
@@ -115,7 +117,10 @@ def print_according_to_format(
         target: 出力する内容
         format: 出力フォーマット
         output: 出力先（オプション）
+        csv_columns: CSVのデータが0件のときに出力する列名。
 
+    Returns:
+        None
 
     """
 
@@ -127,6 +132,8 @@ def print_according_to_format(
 
     elif format == OutputFormat.CSV:
         df = pandas.DataFrame(target)
+        if len(df) == 0 and csv_columns is not None:
+            df = df.reindex(columns=csv_columns)
         print_csv(df, output=output)
 
     elif format == OutputFormat.TASK_ID_LIST:

@@ -98,16 +98,9 @@ CSV出力
    :file: list/out.csv
 
 
-最小限の列のみ出力する場合は、``--format minimal_csv`` を指定してください。
-
-.. code-block::
-
-    $ annofabcli project list --organization org1 --format minimal_csv --output out_minimal.csv
-
-.. csv-table:: out_minimal.csv
-   :header-rows: 1
-   :file: list/out_minimal.csv
-
+``last_tasks_updated_datetime`` 列に、タスク一覧の最終更新日時を出力します。
+従来の ``--format minimal_csv`` は廃止しました。``--format csv`` を使用してください。
+プロジェクトが0件の場合も、基本列のヘッダ行を出力します。
 
 
 JSON出力

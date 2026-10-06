@@ -114,6 +114,9 @@ def create_task_count_summary_df(task_list: list[Task], task_id_delimiter: str |
 
     """
 
+    if not task_list:
+        return pandas.DataFrame(columns=["task_id_group", *[status.value for status in TaskStatusForSummary], "sum"])
+
     def add_columns_if_not_exists(df: pandas.DataFrame, column: str) -> None:
         if column not in df.columns:
             df[column] = 0

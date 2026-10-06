@@ -12,6 +12,22 @@ from annofabcli.common.visualize import AddProps
 
 logger = logging.getLogger(__name__)
 
+CSV_COLUMNS = (
+    "project_id",
+    "task_id",
+    "task_history_id",
+    "started_datetime",
+    "ended_datetime",
+    "accumulated_labor_time_milliseconds",
+    "phase",
+    "phase_stage",
+    "account_id",
+    "user_id",
+    "username",
+    "worktime_hour",
+)
+"""タスク履歴が0件のときに出力するCSVの列。"""
+
 TaskHistoryDict = dict[str, list[TaskHistory]]
 """全タスクのタスク履歴一覧の集合体。keyはtask_id"""
 
@@ -96,10 +112,7 @@ class ListTaskHistory(CommandLine):
         task_history_dict = main_obj.get_task_history_dict_for_output(project_id, task_id_list=task_id_list)
         if arg_format == OutputFormat.CSV:
             all_task_history_list = main_obj.to_all_task_history_list_from_dict(task_history_dict)
-            if len(all_task_history_list) > 0:
-                self.print_according_to_format(all_task_history_list)
-            else:
-                logger.warning("タスク履歴情報が0件のため、出力しません。")
+            self.print_according_to_format(all_task_history_list, csv_columns=CSV_COLUMNS)
         else:
             self.print_according_to_format(task_history_dict)
 

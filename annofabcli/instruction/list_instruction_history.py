@@ -10,6 +10,9 @@ from annofabcli.common.visualize import AddProps
 
 logger = logging.getLogger(__name__)
 
+CSV_COLUMNS = ("history_id", "account_id", "updated_datetime", "user_id", "username")
+"""データが0件のときに出力するCSVの列。"""
+
 
 class ListInstructionHistories(CommandLine):
     @staticmethod
@@ -46,7 +49,7 @@ class ListInstructionHistories(CommandLine):
         super().require_project_access(project_id)
 
         histories = self.get_instruction_histories(project_id)
-        self.print_according_to_format(histories)
+        self.print_according_to_format(histories, csv_columns=CSV_COLUMNS)
 
 
 def main(args: argparse.Namespace) -> None:

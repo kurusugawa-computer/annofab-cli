@@ -25,6 +25,7 @@ from annofabcli.common.download import DownloadingFile
 from annofabcli.common.enums import OutputFormat
 from annofabcli.common.facade import AnnofabApiFacade, InputDataQuery, match_input_data_with_query
 from annofabcli.common.utils import print_csv
+from annofabcli.input_data.list_input_data import INPUT_DATA_COLUMNS
 from annofabcli.input_data.utils import remove_unnecessary_keys_from_input_data
 
 logger = logging.getLogger(__name__)
@@ -92,7 +93,7 @@ def create_df_input_data_with_merged_task(input_data_list: list[dict[str, Any]])
 
     # pandas.DataFrameでなくpandas.json_normalizeを使う理由:
     # ネストしたオブジェクトを`system_metadata.input_duration`のような列名でアクセスできるようにするため
-    df_input_data = pandas.json_normalize(new_input_data_list)
+    df_input_data = pandas.json_normalize(new_input_data_list) if new_input_data_list else pandas.DataFrame(columns=INPUT_DATA_COLUMNS)
 
     for column in ["task_id", "task_phase", "task_phase_stage", "task_status", "frame_no"]:
         if column not in df_input_data.columns:

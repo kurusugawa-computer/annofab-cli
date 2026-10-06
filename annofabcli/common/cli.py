@@ -9,6 +9,7 @@ import logging
 import logging.config
 import os
 import pkgutil
+from collections.abc import Sequence
 from pathlib import Path
 from typing import Any
 
@@ -547,8 +548,8 @@ class CommandLineWithoutWebapi:
     def print_csv(self, df: pandas.DataFrame) -> None:
         print_csv(df, output=self.output)
 
-    def print_according_to_format(self, target: Any) -> None:  # noqa: ANN401
-        print_according_to_format(target, format=OutputFormat(self.str_format), output=self.output)
+    def print_according_to_format(self, target: Any, *, csv_columns: Sequence[str] | None = None) -> None:  # noqa: ANN401
+        print_according_to_format(target, format=OutputFormat(self.str_format), output=self.output, csv_columns=csv_columns)
 
 
 class PrettyHelpFormatter(argparse.RawTextHelpFormatter, argparse.ArgumentDefaultsHelpFormatter):
