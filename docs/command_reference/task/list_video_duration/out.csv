@@ -1,0 +1,3 @@
+project_id,task_id,phase,phase_stage,status,input_data_id,input_data_name,video_duration_second,input_data_updated_datetime
+project1,task1,acceptance,1,complete,video1,video1.mp4,10.0,2024-10-04T09:18:02.416+09:00
+project1,task2,annotation,1,not_started,missing,,,

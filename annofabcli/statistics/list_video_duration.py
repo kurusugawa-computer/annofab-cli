@@ -26,6 +26,9 @@ from annofabcli.common.utils import print_according_to_format, print_csv
 
 logger = logging.getLogger(__name__)
 
+DEPRECATED_MESSAGE = "[DEPRECATED] statistics list_video_durationは非推奨です。task list_video_durationを使用してください。"
+"""旧コマンドの移行先。"""
+
 
 def get_video_duration_list(task_list: list[dict[str, Any]], input_data_list: list[dict[str, Any]]) -> list[dict[str, Any]]:
     """
@@ -210,6 +213,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
 
 
 def main(args: argparse.Namespace) -> None:
+    logger.warning(DEPRECATED_MESSAGE)
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
     ListVideoDuration(service, facade, args).main()
@@ -217,8 +221,8 @@ def main(args: argparse.Namespace) -> None:
 
 def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "list_video_duration"
-    subcommand_help = "各タスクの動画の長さを出力します。"
+    subcommand_help = "[DEPRECATED] 各タスクの動画の長さを出力します。"
     epilog = "オーナロールまたはアノテーションユーザロールを持つユーザで実行してください。"
-    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, epilog=epilog)
+    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description=f"{subcommand_help}\n{DEPRECATED_MESSAGE}", epilog=epilog)
     parse_args(parser)
     return parser

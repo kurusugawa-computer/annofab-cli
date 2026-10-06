@@ -7,19 +7,11 @@ import json
 import logging
 import sys
 import tempfile
-from collections.abc import Collection, Sequence
-from enum import Enum
+from collections.abc import Collection
 from functools import partial
 from pathlib import Path
 
-import bokeh
-import numpy
-import pandas
 from annofabapi.models import InputDataType, ProjectMemberRole
-from bokeh.models import HoverTool, LayoutDOM
-from bokeh.models.annotations.labels import Title
-from bokeh.models.widgets.markups import PreText
-from bokeh.plotting import ColumnDataSource, figure
 
 import annofabcli.common.cli
 from annofabcli.common.cli import (
@@ -30,110 +22,12 @@ from annofabcli.common.cli import (
 )
 from annofabcli.common.download import DownloadingFile
 from annofabcli.common.facade import AnnofabApiFacade
-from annofabcli.statistics.histogram import get_sub_title_from_series
+from annofabcli.common.video_duration_histogram import BIN_COUNT, TimeUnit, plot_video_duration
 
 logger = logging.getLogger(__name__)
 
-BIN_COUNT = 20
-
-
-class TimeUnit(Enum):
-    SECOND = "second"
-    MINUTE = "minute"
-
-
-def plot_video_duration(
-    durations_for_input_data: Sequence[float],
-    output_file: Path,
-    *,
-    time_unit: TimeUnit,
-    bin_width: float | None = None,
-    project_id: str | None = None,
-    project_title: str | None = None,
-) -> None:
-    """
-    ラベルごとの区間アノテーションの長さのヒストグラムを出力します。
-
-    Args:
-        durations_for_input_data: 動画の長さの一覧。単位は「秒」です。
-        output_file: 出力先のファイルのパス
-        time_unit: ヒストグラムに表示する時間の単位
-        bin_width_second: ヒストグラムのビンの幅。単位は「秒」です。
-        html_title: HTMLのタイトル。
-    """
-
-    def create_figure(
-        durations: Sequence[float],
-        bins: int | numpy.ndarray,
-        histogram_range: tuple[float, float],
-        title: str,
-        x_axis_label: str,
-        y_axis_label: str,
-    ) -> figure:
-        hist, bin_edges = numpy.histogram(durations, bins=bins, range=histogram_range)
-
-        df_histogram = pandas.DataFrame({"frequency": hist, "left": bin_edges[:-1], "right": bin_edges[1:]})
-        df_histogram["interval"] = [f"{left:.1f} to {right:.1f}" for left, right in zip(df_histogram["left"], df_histogram["right"], strict=False)]
-
-        source = ColumnDataSource(df_histogram)
-        fig = figure(  # type: ignore[call-arg]
-            width=400,
-            height=300,
-            x_axis_label=x_axis_label,
-            y_axis_label=y_axis_label,
-        )
-
-        fig.add_layout(Title(text=get_sub_title_from_series(pandas.Series(durations), decimals=2), text_font_size="11px"), "above")
-        fig.add_layout(Title(text=title), "above")
-
-        hover = HoverTool(tooltips=[("interval", "@interval"), ("frequency", "@frequency")])
-
-        fig.quad(source=source, top="frequency", bottom=0, left="left", right="right", line_color="white")
-
-        fig.add_tools(hover)
-        return fig
-
-    if time_unit == TimeUnit.MINUTE:
-        durations_for_input_data = [duration / 60 for duration in durations_for_input_data]
-
-    if bin_width is not None:
-        if time_unit == TimeUnit.MINUTE:
-            bin_width = bin_width / 60
-
-        max_duration = max(durations_for_input_data)
-        bins_sequence = numpy.arange(0, max_duration + bin_width, bin_width)
-
-        if bins_sequence[-1] == max_duration:
-            bins_sequence = numpy.append(bins_sequence, bins_sequence[-1] + bin_width)
-
-        bins: int | numpy.ndarray = bins_sequence
-    else:
-        bins = BIN_COUNT
-
-    x_axis_label = "動画の長さ[分]" if time_unit == TimeUnit.MINUTE else "動画の長さ[秒]"
-    histogram_range = (min(durations_for_input_data), max(durations_for_input_data))
-
-    layout_list: list[LayoutDOM] = [
-        PreText(text=f"project_id='{project_id}'\nproject_title='{project_title}'"),
-        create_figure(
-            durations_for_input_data,
-            bins=bins,
-            histogram_range=histogram_range,
-            title="動画の長さの分布",
-            x_axis_label=x_axis_label,
-            y_axis_label="動画数",
-        ),
-    ]
-
-    bokeh_obj = bokeh.layouts.layout(layout_list)
-    output_file.parent.mkdir(exist_ok=True, parents=True)
-    bokeh.plotting.reset_output()
-    title = "動画の長さの分布"
-    if project_title is not None:
-        title = title + f"({project_title})"
-    bokeh.plotting.output_file(output_file, title=title)
-    bokeh.plotting.save(bokeh_obj)
-    logger.info(f"'{output_file}'を出力しました。")
+DEPRECATED_MESSAGE = "[DEPRECATED] statistics visualize_video_durationは非推奨です。task visualize_video_durationを使用してください。"
+"""旧コマンドの移行先。"""
 
 
 def get_video_duration_list(
@@ -383,6 +277,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
 
 
 def main(args: argparse.Namespace) -> None:
+    logger.warning(DEPRECATED_MESSAGE)
     service = build_annofabapi_resource_and_login(args)
     facade = AnnofabApiFacade(service)
     VisualizeVideoDuration(service, facade, args).main()
@@ -390,8 +285,8 @@ def main(args: argparse.Namespace) -> None:
 
 def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "visualize_video_duration"
-    subcommand_help = "動画の長さをヒストグラムで可視化します。"
+    subcommand_help = "[DEPRECATED] 動画の長さをヒストグラムで可視化します。"
     epilog = "オーナロールまたはアノテーションユーザロールを持つユーザで実行してください。"
-    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, epilog=epilog)
+    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description=f"{subcommand_help}\n{DEPRECATED_MESSAGE}", epilog=epilog)
     parse_args(parser)
     return parser
