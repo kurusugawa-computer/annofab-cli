@@ -1,7 +1,9 @@
 import argparse
 import csv
 import json
+import logging
 import zipfile
+from collections.abc import Iterator
 from copy import deepcopy
 from pathlib import Path
 from typing import Any
@@ -214,7 +216,7 @@ def test_japanese_name_collision_adds_durations(sources):
         (True, ["--additional_attribute_name", "comment", "--group_by", "task_phase"], "csv"),
     ],
 )
-def test_command_with_api_boundary_mocks(sources, tmp_path, monkeypatch, by_attribute, extra, output_format):
+def test_command_with_api_boundary_mocks(sources, tmp_path, monkeypatch, caplog, by_attribute, extra, output_format):
     specs = json.loads(Path("tests/data/annotation_specs/annotation_specs.json").read_text(encoding="utf-8"))
     for label in specs["labels"]:
         label["annotation_type"] = DefaultAnnotationType.RANGE.value
@@ -239,7 +241,9 @@ def test_command_with_api_boundary_mocks(sources, tmp_path, monkeypatch, by_attr
     parser = attribute_parser() if by_attribute else label_parser()
     output_path = tmp_path / "out"
     args = parser.parse_args(["--project_id", "p", "--annotation", str(annotation_zip), "--output", str(output_path), "--format", output_format, *extra])
+    caplog.set_level(logging.INFO, logger="annofabcli.annotation_zip.sum_annotation_duration")
     SumAnnotationDuration(service, AnnofabApiFacade(service), args).run(by_attribute=by_attribute)
+    assert f"3件の入力データから{1 if '--group_by' in extra else 3}件の集計結果を出力します。" in caplog.text
     if output_format == "csv":
         frame = pandas.read_csv(output_path, header=[0, 1, 2] if by_attribute else 0)
         duration_column = next(column for column in frame.columns if (column[0] if by_attribute else column) == "video_duration_second")
@@ -272,3 +276,18 @@ def test_multiple_input_data_task_is_rejected(sources):
     sources[2][0]["input_data_id_list"].append("v2")
     with pytest.raises(ValueError):
         output(sources, DurationOptions())
+
+
+@pytest.mark.parametrize("groups", [["task_id"], ["project_id"]])
+def test_annotations_are_aggregated_before_reading_next(sources, groups):
+    options = DurationOptions(group_by=groups, attribute_names=[("speech", "speaker")])
+    expected = aggregate_annotation_durations(sources[0], sources[1], sources[2], options)
+
+    def iter_annotations() -> Iterator[dict[str, Any]]:
+        for annotation in sources[0]:
+            yield annotation
+            # 次のJSONを読む前に、直前のJSONの区間情報が集計済みであることを確認します。
+            annotation["details"].clear()
+
+    actual = aggregate_annotation_durations(iter_annotations(), sources[1], sources[2], options)
+    assert actual == expected

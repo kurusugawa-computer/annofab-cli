@@ -5,7 +5,7 @@ import json
 import logging
 import tempfile
 from collections import defaultdict
-from collections.abc import Collection, Mapping
+from collections.abc import Collection, Iterable, Iterator, Mapping
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -55,7 +55,7 @@ class DurationSummary:
 
 
 def aggregate_annotation_durations(
-    annotations: Collection[Mapping[str, Any]],
+    annotations: Iterable[Mapping[str, Any]],
     input_data_list: Collection[Mapping[str, Any]],
     task_list: Collection[Mapping[str, Any]],
     options: DurationOptions,
@@ -63,7 +63,7 @@ def aggregate_annotation_durations(
     """ZIP由来の入力データごとの情報を集計します。
 
     Args:
-        annotations: simple形式のアノテーションJSON一覧。
+        annotations: simple形式のアノテーションJSONを逐次取得するイテラブル。
         input_data_list: 動画長取得用の入力データ一覧。
         task_list: メタデータ取得用のタスク一覧。
         options: 集計設定。
@@ -268,15 +268,28 @@ class SumAnnotationDuration(CommandLine):
                 input_data_list = json.load(file)
             with task_path.open(encoding="utf-8") as file:
                 task_list = json.load(file)
-            annotations = []
-            for index, parser in enumerate(lazy_parse_simple_annotation_by_input_data(annotation_path)):
-                if (index + 1) % 1000 == 0:
-                    logger.info(f"{index + 1}件のアノテーションJSONを読み込みました。")
-                annotations.append(parser.load_json())
-            summaries = aggregate_annotation_durations(annotations, input_data_list, task_list, options)
+            annotation_count = 0
+
+            def iter_annotations() -> Iterator[Mapping[str, Any]]:
+                """アノテーションJSONを逐次読み込み、件数を記録します。
+
+                Args:
+                    なし。
+
+                Returns:
+                    アノテーションJSONのイテレーター。
+                """
+                nonlocal annotation_count
+                for parser in lazy_parse_simple_annotation_by_input_data(annotation_path):
+                    annotation_count += 1
+                    if annotation_count % 1000 == 0:
+                        logger.info(f"{annotation_count}件のアノテーションJSONを読み込みました。")
+                    yield parser.load_json()
+
+            summaries = aggregate_annotation_durations(iter_annotations(), input_data_list, task_list, options)
         attribute_columns = specs.get_attribute_value_keys_for_target_attributes(attributes)
         rows = make_output_rows(summaries, options, by_attribute=by_attribute, label_columns=labels, attribute_columns=attribute_columns, translator=translator)
-        logger.info(f"{len(annotations)}件の入力データから{len(rows)}件の集計結果を出力します。")
+        logger.info(f"{annotation_count}件の入力データから{len(rows)}件の集計結果を出力します。")
         if OutputFormat(args.format) != OutputFormat.CSV:
             print_json(rows, is_pretty=args.format == OutputFormat.PRETTY_JSON.value, output=args.output)
             return
