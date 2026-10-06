@@ -385,7 +385,7 @@ CSVには以下の列が存在している必要があります。
 .. code-block::
 
     $ annofabcli statistics visualize --project_id prj1 prj2 --output_dir out_dir --minimal
-    $ annofabcli stat_visualization merge --dir out_dir/prj1 out_dir/prj2 --output_dir out_dir/merge
+    $ annofabcli stat_visualization merge --dir out_dir/prj1 out_dir/prj2 --output_dir out_dir/merge --minimal
 
 prj1とprj2の出力結果をマージしたファイルが、``merge`` ディレクトリに出力されます。
 
