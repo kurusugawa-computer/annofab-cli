@@ -7,6 +7,7 @@ import pytest
 from annofabapi.dataclass.task import Task
 from annofabapi.models import TaskPhase
 
+from annofabcli.common.facade import TaskQuery
 from annofabcli.task import complete_tasks
 
 
@@ -349,3 +350,85 @@ def test_accept_parser_accepts_inspection_and_acceptance_phases(phase: str) -> N
 
     with pytest.raises(SystemExit):
         root_parser.parse_args(["accept", "--project_id", "project1", "--task_id", "task1", "--phase", phase, "--reply_comment", "対応しました"])
+
+
+@pytest.mark.parametrize(
+    ("phase", "phase_stage", "target_phase", "target_phase_stage", "task_query", "expected"),
+    [
+        ("inspection", 1, None, None, None, True),
+        ("inspection", 2, None, None, None, True),
+        ("acceptance", 1, None, None, None, True),
+        ("acceptance", 2, None, None, None, True),
+        ("annotation", 1, None, None, None, False),
+        ("inspection", 2, TaskPhase.INSPECTION, None, None, True),
+        ("acceptance", 1, TaskPhase.INSPECTION, None, None, False),
+        ("inspection", 2, None, 1, None, False),
+        ("acceptance", 2, None, 2, None, True),
+        ("inspection", 2, TaskPhase.INSPECTION, 2, None, True),
+        ("inspection", 2, TaskPhase.INSPECTION, 1, None, False),
+        ("inspection", 2, None, None, TaskQuery(phase=TaskPhase.ACCEPTANCE), False),
+        ("acceptance", 2, None, None, TaskQuery(phase=TaskPhase.ACCEPTANCE, phase_stage=2), True),
+        ("acceptance", 1, None, None, TaskQuery(phase_stage=2), False),
+    ],
+)
+def test_accept_task_filters_current_phase_and_stage(phase, phase_stage, target_phase, target_phase_stage, task_query, expected):
+    service = Mock()
+    task_dict = create_task_dict(phase=phase)
+    task_dict["phase_stage"] = phase_stage
+    service.wrapper.get_task_or_none.return_value = task_dict
+    service.api.get_comments.return_value = ([], None)
+    service.api.account_id = "account1"
+    service.wrapper.change_task_status_to_working.return_value = {**task_dict, "status": "working"}
+    main_obj = complete_tasks.CompleteTasksMain(service, all_yes=True)
+
+    result = main_obj.complete_task(
+        "project1",
+        "task1",
+        target_phase=target_phase,
+        target_phase_stage=target_phase_stage,
+        task_query=task_query,
+    )
+
+    assert result is expected
+    if expected:
+        service.wrapper.complete_task.assert_called_once()
+    else:
+        service.wrapper.change_task_status_to_working.assert_not_called()
+        service.wrapper.complete_task.assert_not_called()
+
+
+@pytest.mark.parametrize("status", ["working", "complete", "break", "on_hold"])
+def test_accept_without_phase_skips_ineligible_status(status):
+    service = Mock()
+    service.wrapper.get_task_or_none.return_value = create_task_dict(phase="inspection", status=status)
+    main_obj = complete_tasks.CompleteTasksMain(service, all_yes=True)
+
+    result = main_obj.complete_task("project1", "task1", target_phase=None, target_phase_stage=None)
+
+    assert result is False
+    service.wrapper.change_task_status_to_working.assert_not_called()
+    service.wrapper.complete_task.assert_not_called()
+
+
+def test_accept_without_phase_processes_mixed_phases_and_stages(caplog):
+    service = Mock()
+    tasks = [
+        {**create_task_dict(phase="inspection"), "task_id": "inspection1", "phase_stage": 2},
+        {**create_task_dict(phase="acceptance"), "task_id": "acceptance1"},
+        {**create_task_dict(), "task_id": "annotation1"},
+    ]
+    service.wrapper.get_task_or_none.side_effect = tasks
+    service.api.get_project.return_value = ({"title": "project1"}, None)
+    service.api.get_comments.return_value = ([], None)
+    service.api.account_id = "account1"
+    service.wrapper.change_task_status_to_working.side_effect = [{**task, "status": "working"} for task in tasks[:2]]
+    root_parser = argparse.ArgumentParser()
+    complete_tasks.add_accept_parser(root_parser.add_subparsers())
+    args = root_parser.parse_args(["accept", "--project_id", "project1", "--task_id", "inspection1", "acceptance1", "annotation1", "--yes"])
+    command = complete_tasks.CompleteTasks(service, Mock(), args)
+
+    with caplog.at_level("INFO"):
+        command.main()
+
+    assert [call.args[1] for call in service.wrapper.complete_task.call_args_list] == ["inspection1", "acceptance1"]
+    assert "2 / 3 件" in caplog.text

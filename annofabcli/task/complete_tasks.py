@@ -296,8 +296,9 @@ class CompleteTasksMain(CommandLineWithConfirm):
             return "受入フェーズ"
         return f"{phase.value}フェーズ"
 
-    def _validate_task(self, task: Task, target_phase: TaskPhase, target_phase_stage: int, task_query: TaskQuery | None) -> bool:
-        if not (task.phase == target_phase and task.phase_stage == target_phase_stage):
+    def _validate_task(self, task: Task, target_phase: TaskPhase | None, target_phase_stage: int | None, task_query: TaskQuery | None) -> bool:
+        allowed_phases = {target_phase} if target_phase is not None else {TaskPhase.INSPECTION, TaskPhase.ACCEPTANCE}
+        if task.phase not in allowed_phases or (target_phase_stage is not None and task.phase_stage != target_phase_stage):
             logger.warning(f"task_id='{task.task_id}'のタスクは操作対象のフェーズ、フェーズステージではないため、スキップします。")
             return False
 
@@ -322,8 +323,8 @@ class CompleteTasksMain(CommandLineWithConfirm):
         self,
         project_id: str,
         task_id: str,
-        target_phase: TaskPhase,
-        target_phase_stage: int,
+        target_phase: TaskPhase | None,
+        target_phase_stage: int | None,
         reply_comment: str | None = None,
         inspection_status: CommentStatus | None = None,
         task_query: TaskQuery | None = None,
@@ -358,8 +359,8 @@ class CompleteTasksMain(CommandLineWithConfirm):
         self,
         tpl: tuple[int, str],
         project_id: str,
-        target_phase: TaskPhase,
-        target_phase_stage: int,
+        target_phase: TaskPhase | None,
+        target_phase_stage: int | None,
         reply_comment: str | None = None,
         inspection_status: CommentStatus | None = None,
         task_query: TaskQuery | None = None,
@@ -384,8 +385,8 @@ class CompleteTasksMain(CommandLineWithConfirm):
         self,
         project_id: str,
         task_id_list: list[str],
-        target_phase: TaskPhase,
-        target_phase_stage: int,
+        target_phase: TaskPhase | None,
+        target_phase_stage: int | None,
         reply_comment: str | None = None,
         inspection_status: CommentStatus | None = None,
         task_query: TaskQuery | None = None,
@@ -396,8 +397,8 @@ class CompleteTasksMain(CommandLineWithConfirm):
         Args:
             project_id: 対象のproject_id
             task_id_list:
-            target_phase: 操作対象のタスクフェーズ
-            target_phase_stage: 操作対象のタスクのフェーズステージ
+            target_phase: 操作対象のタスクフェーズ。Noneの場合は検査と受入。
+            target_phase_stage: 操作対象のタスクのフェーズステージ。Noneの場合はすべてのステージ。
             reply_comment: 未回答の検査コメントに対する指摘
             inspection_status: 未処置の検査コメントの状態
         """
@@ -405,7 +406,8 @@ class CompleteTasksMain(CommandLineWithConfirm):
             task_query = self.facade.set_account_id_of_task_query(project_id, task_query)
 
         project_title = self.facade.get_project_title(project_id)
-        logger.info(f"{project_title} のタスク {len(task_id_list)} 件に対して、'{target_phase.value}'フェーズを次のフェーズに進めます。")
+        phase_name = f"'{target_phase.value}'フェーズ" if target_phase is not None else "検査または受入フェーズ"
+        logger.info(f"{project_title} のタスク {len(task_id_list)} 件に対して、{phase_name}を次のフェーズに進めます。")
 
         success_count = 0
 
@@ -444,7 +446,7 @@ class CompleteTasksMain(CommandLineWithConfirm):
                     logger.warning(f"task_id='{task_id}'のタスクのフェーズを次のフェーズに進めるのに失敗しました。", exc_info=True)
                     continue
 
-        logger.info(f"{success_count} / {len(task_id_list)} 件のタスクに対して、'{target_phase.value}'フェーズを次のフェーズに進めました。")
+        logger.info(f"{success_count} / {len(task_id_list)} 件のタスクに対して、{phase_name}を次のフェーズに進めました。")
 
 
 class CompleteTasks(CommandLine):
@@ -502,7 +504,7 @@ class CompleteTasks(CommandLine):
         main_obj.complete_task_list(
             project_id,
             task_id_list=task_id_list,
-            target_phase=TaskPhase(args.phase),
+            target_phase=TaskPhase(args.phase) if args.phase is not None else None,
             target_phase_stage=args.phase_stage,
             inspection_status=inspection_status,
             reply_comment=args.reply_comment,
@@ -511,7 +513,13 @@ class CompleteTasks(CommandLine):
         )
 
 
-def _add_common_args(parser: argparse.ArgumentParser, *, phases: list[TaskPhase], fixed_phase: TaskPhase | None = None) -> None:
+def _add_common_args(
+    parser: argparse.ArgumentParser,
+    *,
+    phases: list[TaskPhase],
+    fixed_phase: TaskPhase | None = None,
+    phase_required: bool = True,
+) -> None:
     argument_parser = ArgumentParser(parser)
 
     argument_parser.add_project_id()
@@ -521,9 +529,9 @@ def _add_common_args(parser: argparse.ArgumentParser, *, phases: list[TaskPhase]
         parser.add_argument(
             "--phase",
             type=str,
-            required=True,
+            required=phase_required,
             choices=[phase.value for phase in phases],
-            help="操作対象のタスクのフェーズを指定してください。",
+            help="操作対象のタスクのフェーズを指定してください。" + ("指定しない場合、検査と受入フェーズのタスクを対象にします。" if not phase_required else ""),
         )
     else:
         parser.set_defaults(phase=fixed_phase.value)
@@ -531,8 +539,8 @@ def _add_common_args(parser: argparse.ArgumentParser, *, phases: list[TaskPhase]
     parser.add_argument(
         "--phase_stage",
         type=int,
-        default=1,
-        help=("操作対象のタスクのフェーズのステージ番号を指定してください。"),
+        default=1 if phase_required else None,
+        help="操作対象のタスクのフェーズのステージ番号を指定してください。" + ("指定しない場合、すべてのステージのタスクを対象にします。" if not phase_required else ""),
     )
 
     argument_parser.add_task_query()
@@ -632,7 +640,7 @@ def parse_accept_args(parser: argparse.ArgumentParser) -> None:
     Returns:
         None
     """
-    _add_common_args(parser, phases=[TaskPhase.INSPECTION, TaskPhase.ACCEPTANCE])
+    _add_common_args(parser, phases=[TaskPhase.INSPECTION, TaskPhase.ACCEPTANCE], phase_required=False)
     _add_inspection_status_arg(parser)
     parser.set_defaults(reply_comment=None, subcommand_func=main)
 
