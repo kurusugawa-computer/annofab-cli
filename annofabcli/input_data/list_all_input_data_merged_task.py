@@ -93,7 +93,11 @@ def create_df_input_data_with_merged_task(input_data_list: list[dict[str, Any]])
 
     # pandas.DataFrameでなくpandas.json_normalizeを使う理由:
     # ネストしたオブジェクトを`system_metadata.input_duration`のような列名でアクセスできるようにするため
-    df_input_data = pandas.json_normalize(new_input_data_list) if new_input_data_list else pandas.DataFrame(columns=INPUT_DATA_COLUMNS)
+    df_input_data = (
+        pandas.json_normalize(new_input_data_list)
+        if new_input_data_list
+        else pandas.DataFrame(columns=[column for column in INPUT_DATA_COLUMNS if column not in {"url", "etag"}])
+    )
 
     for column in ["task_id", "task_phase", "task_phase_stage", "task_status", "frame_no"]:
         if column not in df_input_data.columns:
