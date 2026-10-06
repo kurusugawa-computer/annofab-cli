@@ -1,0 +1,13 @@
+[
+  {
+    "date": "2026-10-01",
+    "account_id": "alice",
+    "user_id": "alice",
+    "username": "Alice",
+    "biography": "Japan",
+    "worktime_hour": 3.0,
+    "annotation_worktime_hour": 2.0,
+    "inspection_worktime_hour": 1.0,
+    "acceptance_worktime_hour": 0.0
+  }
+]

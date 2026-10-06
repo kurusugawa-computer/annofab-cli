@@ -7,7 +7,7 @@ Description
 タスク履歴イベントから作業時間の一覧を出力します。
 「作業中状態から休憩状態までの作業時間」など、タスク履歴より詳細な作業時間の情報を出力します。
 
-日ごとユーザーごとの作業時間を確認する場合は、 `annofabcli statistics list_worktime <../statistics/list_worktime.html>`_ を参照してください。
+日ごとユーザーごとの作業時間を確認する場合は、 `annofabcli task_history_event summarize_worktime_by_user_and_date <summarize_worktime_by_user_and_date.html>`_ を参照してください。
 
 
 Examples

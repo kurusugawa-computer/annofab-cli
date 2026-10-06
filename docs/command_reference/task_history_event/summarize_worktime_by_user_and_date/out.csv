@@ -1,0 +1,2 @@
+date,account_id,user_id,username,biography,worktime_hour,annotation_worktime_hour,inspection_worktime_hour,acceptance_worktime_hour
+2026-10-01,alice,alice,Alice,Japan,3.0,2.0,1.0,0.0

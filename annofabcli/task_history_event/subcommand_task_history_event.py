@@ -3,6 +3,7 @@ import argparse
 import annofabcli.task_history_event.download_task_history_event_json
 import annofabcli.task_history_event.list_all_task_history_event
 import annofabcli.task_history_event.list_worktime
+import annofabcli.task_history_event.summarize_worktime_by_user_and_date
 from annofabcli.common.cli import add_parser as common_add_parser
 
 
@@ -13,6 +14,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     annofabcli.task_history_event.download_task_history_event_json.add_parser(subparsers)
     annofabcli.task_history_event.list_all_task_history_event.add_parser(subparsers)
     annofabcli.task_history_event.list_worktime.add_parser(subparsers)
+    annofabcli.task_history_event.summarize_worktime_by_user_and_date.add_parser(subparsers)
 
 
 def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
