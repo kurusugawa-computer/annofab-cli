@@ -16,7 +16,7 @@ Examples
 --------------------------
 
 以下のコマンドを実行すると、アノテーションZIPがダウンロードされます。
-アノテーションZIPのフォーマットについては https://annofab.com/docs/api/#tag/x-annotation-zip/Simple-Annotation-ZIP を参照してください。
+アノテーションZIPのフォーマットについては https://annofab.readme.io/docs/annotation-format を参照してください。
 
 .. code-block::
 

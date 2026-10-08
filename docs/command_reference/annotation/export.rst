@@ -35,7 +35,7 @@ Examples
             └── annotation1
 
 ``input2.json`` の例です。外部ファイルは ``input2/annotation1`` に保存します。
-JSONのフォーマットについては https://annofab.com/docs/api/#tag/x-annotation-zip/Simple-Annotation-ZIP を参照してください。
+JSONのフォーマットについては https://annofab.readme.io/docs/annotation-format を参照してください。
 
 .. code-block:: json
 
