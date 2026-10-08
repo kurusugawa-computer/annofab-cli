@@ -7,6 +7,7 @@ Description
 
 各アノテーションのラベルを個別に変更します。
 作業中状態のタスクに含まれるアノテーションは変更できません。
+保留中状態のタスクは、既定ではスキップされます。処理する場合は :ref:`include-on-hold-task-for-annotation-updates` を参照してください。
 
 .. warning::
 

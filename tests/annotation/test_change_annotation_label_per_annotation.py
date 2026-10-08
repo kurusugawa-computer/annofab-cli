@@ -46,10 +46,10 @@ def test_filter_annotation_items_by_task_ids() -> None:
     assert actual_not_existing_task_ids == {"task3"}
 
 
-def create_main_obj() -> tuple[ChangeAnnotationLabelPerAnnotationMain, Mock]:
+def create_main_obj(*, include_on_hold_task: bool = False) -> tuple[ChangeAnnotationLabelPerAnnotationMain, Mock]:
     service = Mock()
     service.api.get_annotation_specs.return_value = (ANNOTATION_SPECS, None)
-    return ChangeAnnotationLabelPerAnnotationMain(service, project_id="project1", include_complete_task=False, all_yes=True), service
+    return ChangeAnnotationLabelPerAnnotationMain(service, project_id="project1", include_complete_task=False, include_on_hold_task=include_on_hold_task, all_yes=True), service
 
 
 def test_change_annotation_label_by_frame_changes_label_and_removes_incompatible_attributes() -> None:
@@ -104,6 +104,36 @@ def test_change_annotation_label_by_frame_skips_incompatible_label_type() -> Non
     assert actual.skipped == 1
     assert actual.failed == 0
     service.api.batch_update_annotations.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    ("status", "include_on_hold_task", "expected_changed"),
+    [("on_hold", False, False), ("on_hold", True, True), ("working", True, False), ("complete", True, False), ("not_started", False, True), ("break", False, True)],
+)
+def test_change_annotation_label_for_task_respects_task_status(status: str, *, include_on_hold_task: bool, expected_changed: bool) -> None:
+    main_obj, service = create_main_obj(include_on_hold_task=include_on_hold_task)
+    service.wrapper.get_task_or_none.return_value = {"task_id": "task1", "status": status}
+    editor_annotation = {
+        "project_id": "project1",
+        "task_id": "task1",
+        "input_data_id": "input1",
+        "updated_datetime": "2026-09-07T00:00:00+09:00",
+        "details": [{"annotation_id": "annotation1", "label_id": "label_car", "additional_data_list": []}],
+    }
+    service.api.get_editor_annotations_in_bulk.return_value = ({"success": [editor_annotation], "failure": []}, None)
+    target = TargetAnnotationLabel(task_id="task1", input_data_id="input1", annotation_id="annotation1", label_id="label_bus")
+
+    actual_changed, actual_count = main_obj.change_annotation_label_for_task("task1", {"input1": [target]})
+
+    assert actual_changed == expected_changed
+    assert actual_count.success == int(expected_changed)
+    assert actual_count.skipped == int(not expected_changed)
+    assert actual_count.failed == 0
+    if expected_changed:
+        assert service.api.batch_update_annotations.call_args.kwargs["request_body"][0]["data"]["label_id"] == "label_bus"
+    else:
+        service.api.get_editor_annotations_in_bulk.assert_not_called()
+        service.api.batch_update_annotations.assert_not_called()
 
 
 def test_resolve_target_annotation_list_rejects_unknown_label() -> None:
