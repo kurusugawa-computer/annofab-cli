@@ -8,7 +8,7 @@ import annofabcli.organization_member.update_organization_member_role
 
 
 def parse_args(parser: argparse.ArgumentParser) -> None:
-    subparsers = parser.add_subparsers(dest="subcommand_name")
+    subparsers = parser.add_subparsers(dest="subcommand_name", required=True)
 
     # サブコマンドの定義
     annofabcli.organization_member.delete_organization_member.add_parser(subparsers)

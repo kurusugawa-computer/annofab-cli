@@ -5,7 +5,7 @@ import annofabcli.organization_plugin.list_organization_plugin
 
 
 def parse_args(parser: argparse.ArgumentParser) -> None:
-    subparsers = parser.add_subparsers(dest="subcommand_name")
+    subparsers = parser.add_subparsers(dest="subcommand_name", required=True)
 
     annofabcli.organization_plugin.list_organization_plugin.add_parser(subparsers)
 

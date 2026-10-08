@@ -33,7 +33,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     Args:
         parser: パーサー
     """
-    subparsers = parser.add_subparsers(dest="subcommand_name")
+    subparsers = parser.add_subparsers(dest="subcommand_name", required=True)
 
     # サブコマンドの定義
     add_parser_count_annotation_attribute_filled(subparsers)
