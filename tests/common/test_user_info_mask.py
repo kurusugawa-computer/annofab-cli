@@ -46,6 +46,33 @@ def test_mask_dataframe_missing_user_id_values():
     assert masked.loc[1, "biography"] == create_masked_name("Japan", prefix="category")
 
 
+@pytest.mark.parametrize("header_rows", [1, 2, 3])
+def test_mask_dataframe_excludes_biography_with_missing_user_id(header_rows):
+    original = pandas.DataFrame(
+        {
+            "user_id": [None, None, None],
+            "username": ["Alice", "Bob", "Chris"],
+            "account_id": ["alice-account", "bob-account", "chris-account"],
+            "biography": ["Japan", "U.S.", None],
+            "task_count": [1, 2, 3],
+        }
+    )
+    if header_rows > 1:
+        original.columns = pandas.MultiIndex.from_tuples([(name, *([""] * (header_rows - 1))) for name in original.columns])
+    source = original.copy()
+    masker = UserInfoMasker(not_masked_biographies=frozenset({"Japan"})).with_user_df(original)
+    masked = masker.mask_dataframe(original)
+
+    assert_frame_equal(masked.iloc[:1], original.iloc[:1])
+    assert list(masked["username"].iloc[1:]) == [create_masked_name("Bob"), create_masked_name("Chris")]
+    assert list(masked["account_id"].iloc[1:]) == [create_masked_name("bob-account"), create_masked_name("chris-account")]
+    biography_column = "biography" if header_rows == 1 else ("biography", *([""] * (header_rows - 1)))
+    assert masked.iloc[1][biography_column] == create_masked_name("U.S.", prefix="category")
+    assert masked.isna().equals(original.isna())
+    assert masked["task_count"].equals(original["task_count"])
+    assert_frame_equal(original, source)
+
+
 def test_mask_dataframe_empty():
     original = pandas.DataFrame(columns=["user_id", "username", "account_id", "biography", "task_count"])
     assert_frame_equal(UserInfoMasker().mask_dataframe(original), original)

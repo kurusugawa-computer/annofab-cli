@@ -110,6 +110,9 @@ class UserInfoMasker:
                 continue
             user_ids = df[user_id_column].astype("string")
             masked_rows = ~user_ids.isin(self.not_masked_user_ids)
+            biography_column = _column(df, f"{prefix}biography")
+            if biography_column in df:
+                masked_rows &= ~df[biography_column].astype("string").isin(self.not_masked_biographies)
             aliases = user_ids.map(create_masked_name, na_action="ignore")
             id_rows = masked_rows & user_ids.notna()
             if id_rows.any():
@@ -128,7 +131,6 @@ class UserInfoMasker:
                 if not is_string_dtype(result[column].dtype):
                     result[column] = df[column].astype("string")
                 result.loc[value_rows, column] = values[value_rows]
-            biography_column = _column(df, f"{prefix}biography")
             if biography_column in df:
                 biography_rows = masked_rows & df[biography_column].notna()
                 if not biography_rows.any():
