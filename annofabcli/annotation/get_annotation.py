@@ -54,7 +54,7 @@ class GetAnnotationMain:
             for annotation_id in sorted(outer_annotation_ids):
                 self.service.wrapper.download(outer_details[annotation_id]["body"]["url"], outer_dir / annotation_id)
 
-        (task_dir / f"{input_data_id}.json").write_text(json.dumps(annotation, ensure_ascii=False), encoding="utf-8")
+        (task_dir / f"{input_data_id}.json").write_text(json.dumps(annotation, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
     def get_annotation_for_task(self, task_id: str, output_dir: Path) -> None:
         """1タスクのアノテーションをZIPと同じ構成で保存する。

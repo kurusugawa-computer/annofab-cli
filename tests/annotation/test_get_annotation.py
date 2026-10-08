@@ -41,6 +41,10 @@ def test_get_preserves_simple_annotation_and_empty_input(tmp_path: Path) -> None
     assert sorted(path.name for path in (tmp_path / "task1").iterdir()) == ["input1.json", "input2.json", "input3.json"]
     for input_data_id, annotation in annotations.items():
         assert json.loads((tmp_path / "task1" / f"{input_data_id}.json").read_text(encoding="utf-8")) == annotation
+    json_text = (tmp_path / "task1" / "input1.json").read_text(encoding="utf-8")
+    assert json_text.startswith('{\n  "project_id": "prj1",\n')
+    assert json_text.endswith("\n")
+    assert "日本語" in json_text
     service.api.get_editor_annotation.assert_not_called()
     assert len(list(lazy_parse_simple_annotation_dir(tmp_path))) == 3
 
