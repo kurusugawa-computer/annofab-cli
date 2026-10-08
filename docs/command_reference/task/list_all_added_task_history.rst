@@ -98,3 +98,6 @@ Usage Details
    :prog: annofabcli task list_all_added_task_history
    :nosubcommands:
    :nodefaultconst:
+
+ローカルファイルを使用する場合は ``--task_json task.json --task_history_json history.json`` のように両方のパスを指定してください。
+パスに ``file://`` は付けません。
