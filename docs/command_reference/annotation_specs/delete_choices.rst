@@ -40,7 +40,8 @@ Examples
 ------------------------------------------------------------
 
 削除対象選択肢が属性のデフォルト値に設定されている場合は、デフォルトでは削除できません。
-デフォルト値を解除した上で選択肢を削除する場合は、 ``--unsafe_defaults`` を指定してください。
+デフォルト値を解除した上で選択肢を削除する場合は、 ``--clear_default_if_deleted`` を指定してください。
+旧オプション ``--unsafe_defaults`` は使用できません。
 
 
 .. code-block::
@@ -49,7 +50,7 @@ Examples
      --project_id prj1 \
      --attribute_name_en type \
      --choice_name_en large \
-     --unsafe_defaults
+     --clear_default_if_deleted
 
 
 既存アノテーションに影響する変更を許可する
