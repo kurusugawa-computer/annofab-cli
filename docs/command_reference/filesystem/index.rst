@@ -17,7 +17,6 @@ Available Commands
    :titlesonly:
 
    draw_annotation
-   mask_user_info
 
 Usage Details
 =================================

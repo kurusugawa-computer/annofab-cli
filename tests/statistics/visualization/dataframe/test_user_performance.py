@@ -20,6 +20,21 @@ data_dir = Path("./tests/data/statistics")
 output_dir.mkdir(exist_ok=True, parents=True)
 
 
+def test_from_csv_preserves_numeric_user_info(tmp_path):
+    source = UserPerformance.from_csv(data_dir / "productivity-per-user2.csv", TaskCompletionCriteria.ACCEPTANCE_COMPLETED)
+    df = source.df.iloc[:1].copy()
+    values = {"user_id": "001", "username": "002", "account_id": "003", "biography": "004"}
+    for name, value in values.items():
+        df[(name, "")] = value
+    # 列の位置が変わっても、ユーザー情報を文字列として読み込む。
+    df = pandas.concat([df.iloc[:, 4:], df.iloc[:, :4]], axis=1)
+    csv_path = tmp_path / "user_performance.csv"
+    UserPerformance(df, source.task_completion_criteria).to_csv(csv_path)
+    loaded = UserPerformance.from_csv(csv_path, source.task_completion_criteria)
+    for name, value in values.items():
+        assert loaded.df.iloc[0][(name, "")] == value
+
+
 class TestUserPerformance:
     obj: UserPerformance
 
