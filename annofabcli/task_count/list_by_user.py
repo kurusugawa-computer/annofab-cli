@@ -178,7 +178,7 @@ class ListTaskCountByUser(CommandLine):
         account_id_list = df_task_count.loc[df_task_count["account_id"] != UNASSIGNED_ACCOUNT_ID, "account_id"].to_list()
         df_user = self.create_user_df(project_id, account_id_list)
         if UNASSIGNED_ACCOUNT_ID in df_task_count["account_id"].array:
-            df_unassigned_user = pandas.DataFrame([{"account_id": UNASSIGNED_ACCOUNT_ID, "user_id": UNASSIGNED_USER_ID, "username": "", "biography": ""}])
+            df_unassigned_user = pandas.DataFrame([{"account_id": UNASSIGNED_ACCOUNT_ID, "user_id": UNASSIGNED_USER_ID, "username": None, "biography": None}])
             df_user = pandas.concat([df_user, df_unassigned_user], ignore_index=True)
 
         df = pandas.merge(df_user, df_task_count, how="left", on=["account_id"])

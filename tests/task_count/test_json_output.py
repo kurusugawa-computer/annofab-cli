@@ -68,3 +68,5 @@ def test_command_outputs_json_summary(command_class, output_format, is_empty, tm
             assert actual[0]["task_id_group"] == "train"
         if command_class is ListTaskCountByUser:
             assert actual[0]["user_id"] == "unassigned"
+            assert actual[0]["username"] is None
+            assert actual[0]["biography"] is None
