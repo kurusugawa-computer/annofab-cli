@@ -1,15 +1,20 @@
 from __future__ import annotations
 
 import argparse
+import copy
+import functools
 import json
 import logging
+from collections.abc import Iterable
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
 import annofabapi
 
 import annofabcli.common.cli
-from annofabcli.common.cli import ArgumentParser, CommandLine, build_annofabapi_resource_and_login
+from annofabcli.common.cli import PARALLELISM_CHOICES, ArgumentParser, CommandLine, build_annofabapi_resource_and_login, get_list_from_args
+from annofabcli.common.exceptions import AnnofabCliException
 from annofabcli.common.facade import AnnofabApiFacade
 
 logger = logging.getLogger(__name__)
@@ -51,7 +56,7 @@ class GetAnnotationMain:
 
         (task_dir / f"{input_data_id}.json").write_text(json.dumps(annotation, ensure_ascii=False), encoding="utf-8")
 
-    def get_annotation(self, task_id: str, output_dir: Path) -> None:
+    def get_annotation_for_task(self, task_id: str, output_dir: Path) -> None:
         """1タスクのアノテーションをZIPと同じ構成で保存する。
 
         Args:
@@ -81,12 +86,63 @@ class GetAnnotationMain:
             staging_dir.rename(task_dir)
         logger.info(f"{len(input_data_ids)}件の入力データのアノテーションを'{task_dir}'に保存しました。")
 
+    def get_annotation_for_task_wrapper(self, task: tuple[int, str], output_dir: Path, *, copy_service: bool = False) -> bool:
+        """タスクの取得結果を返し、失敗しても他のタスクの処理を継続する。
+
+        Args:
+            task: ゼロ始まりの処理順とタスクID。
+            output_dir: 出力先ディレクトリ。
+            copy_service: 並列処理でAPIクライアントを共有しないために複製するかどうか。
+
+        Returns:
+            タスクの取得に成功したかどうか。
+        """
+        index, task_id = task
+        logger.info(f"{index + 1}件目: タスク'{task_id}'のアノテーションを取得します。")
+        try:
+            main_obj = GetAnnotationMain(copy.deepcopy(self.service), self.project_id) if copy_service else self
+            main_obj.get_annotation_for_task(task_id, output_dir)
+        except Exception:
+            logger.warning(f"タスク'{task_id}'のアノテーションの取得に失敗しました。", exc_info=True)
+            return False
+        else:
+            return True
+
+    def get_annotation(self, task_ids: Iterable[str], output_dir: Path, *, parallelism: int | None = None) -> None:
+        """複数タスクのアノテーションを取得し、必要に応じてタスク単位で並列化する。
+
+        Args:
+            task_ids: 取得対象のタスクID。重複するIDは1回だけ取得する。
+            output_dir: タスクIDごとのディレクトリを作成する出力先。
+            parallelism: 同時に取得するタスク数。Noneの場合は逐次処理する。
+
+        Returns:
+            None。
+
+        Raises:
+            AnnofabCliException: 1件以上のタスクの取得に失敗した場合。
+        """
+        unique_task_ids = list(dict.fromkeys(task_ids))
+        logger.info(f"タスク{len(unique_task_ids)}件のアノテーションを取得します。")
+        output_dir.mkdir(parents=True, exist_ok=True)
+        func = functools.partial(self.get_annotation_for_task_wrapper, output_dir=output_dir, copy_service=parallelism is not None)
+        success_count = 0
+        if parallelism is None:
+            success_count = sum(func(task) for task in enumerate(unique_task_ids))
+        else:
+            with ThreadPoolExecutor(max_workers=parallelism) as executor:
+                success_count = sum(executor.map(func, enumerate(unique_task_ids)))
+        failure_count = len(unique_task_ids) - success_count
+        logger.info(f"タスクのアノテーション取得が完了しました。成功{success_count}件、失敗{failure_count}件。")
+        if failure_count:
+            raise AnnofabCliException(f"{failure_count}件のタスクのアノテーション取得に失敗しました。")
+
 
 class GetAnnotation(CommandLine):
     def main(self) -> None:
         args = self.args
         super().require_project_access(args.project_id, project_member_roles=None)
-        GetAnnotationMain(self.service, args.project_id).get_annotation(args.task_id, args.output_dir)
+        GetAnnotationMain(self.service, args.project_id).get_annotation(get_list_from_args(args.task_id), args.output_dir, parallelism=args.parallelism)
 
 
 def main(args: argparse.Namespace) -> None:
@@ -95,9 +151,11 @@ def main(args: argparse.Namespace) -> None:
 
 
 def parse_args(parser: argparse.ArgumentParser) -> None:
-    ArgumentParser(parser).add_project_id()
-    parser.add_argument("-t", "--task_id", type=str, required=True, help="取得対象のタスクIDを1個指定します。")
+    argument_parser = ArgumentParser(parser)
+    argument_parser.add_project_id()
+    argument_parser.add_task_id()
     parser.add_argument("-o", "--output_dir", type=Path, required=True, help="出力先ディレクトリ。配下にタスクIDのディレクトリを作成します。既存のタスクディレクトリは上書きしません。")
+    parser.add_argument("--parallelism", type=int, choices=PARALLELISM_CHOICES, help="同時に取得するタスク数。指定しない場合は逐次処理します。各タスク内の入力データは逐次処理します。")
     parser.set_defaults(subcommand_func=main)
 
 
