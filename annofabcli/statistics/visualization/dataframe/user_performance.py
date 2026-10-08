@@ -187,7 +187,10 @@ class UserPerformance:
         *,
         custom_production_volume_list: list[ProductionVolumeColumn] | None = None,
     ) -> UserPerformance:
-        df = read_multiheader_csv(str(csv_file))
+        # 複数行ヘッダでは列名の文字列によるdtype指定が効かないため、列位置で指定する。
+        columns = pandas.read_csv(csv_file, nrows=0).columns
+        string_dtypes = {index: "string" for index, column in enumerate(columns) if column in {"user_id", "username", "account_id", "biography"}}
+        df = read_multiheader_csv(str(csv_file), dtype=string_dtypes)
         return cls(df, task_completion_criteria, custom_production_volume_list=custom_production_volume_list)
 
     @classmethod

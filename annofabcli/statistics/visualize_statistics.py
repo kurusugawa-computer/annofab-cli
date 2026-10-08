@@ -25,6 +25,7 @@ from annofabcli.common.cli import (
     get_list_from_args,
 )
 from annofabcli.common.facade import AnnofabApiFacade, TaskQuery
+from annofabcli.common.user_info_mask import UserInfoMasker, add_mask_user_info_arguments
 from annofabcli.statistics.visualization.dataframe.actual_worktime import ActualWorktime
 from annofabcli.statistics.visualization.dataframe.annotation_count import AnnotationCount
 from annofabcli.statistics.visualization.dataframe.annotation_duration import AnnotationDuration
@@ -86,6 +87,7 @@ class WriteCsvGraph:
         include_annotation_duration_seconds: bool = False,
         include_video_duration_minutes: bool = False,
         task_metadata_keys: list[str] | None = None,
+        user_info_masker: UserInfoMasker | None = None,
     ) -> None:
         self.service = service
         self.project_id = project_id
@@ -104,6 +106,8 @@ class WriteCsvGraph:
         self.include_annotation_duration_seconds = include_annotation_duration_seconds
         self.include_video_duration_minutes = include_video_duration_minutes
         self.task_metadata_keys = task_metadata_keys if task_metadata_keys is not None else []
+        self.user_info_masker = user_info_masker
+        """レポートの出力直前に適用するユーザー情報のマスク設定。"""
 
         self.task: Task | None = None
         self.worktime_per_date: WorktimePerDate | None = None
@@ -268,6 +272,8 @@ class WriteCsvGraph:
 
         """
         obj = self._get_task()
+        if self.user_info_masker is not None:
+            obj = Task(self.user_info_masker.mask_dataframe(obj.df), custom_production_volume_list=obj.custom_production_volume_list)
 
         self.project_dir.write_task_list(obj)
 
@@ -281,7 +287,7 @@ class WriteCsvGraph:
 
         # タスク、フェーズ、ユーザごとの作業時間を出力する
         task_worktime_obj = self._get_task_worktime_obj()
-        self.project_dir.write_task_worktime_list(task_worktime_obj)
+        self.project_dir.write_task_worktime_list(self._mask_task_worktime(task_worktime_obj))
 
         user_performance = UserPerformance.from_df_wrapper(
             task_worktime_by_phase_user=task_worktime_obj,
@@ -289,6 +295,12 @@ class WriteCsvGraph:
             task_completion_criteria=self.task_completion_criteria,
         )
 
+        if self.user_info_masker is not None:
+            user_performance = UserPerformance(
+                self.user_info_masker.mask_dataframe(user_performance.df),
+                task_completion_criteria=user_performance.task_completion_criteria,
+                custom_production_volume_list=user_performance.custom_production_volume_list,
+            )
         self.project_dir.write_user_performance(user_performance)
 
         whole_performance = WholePerformance.from_df_wrapper(
@@ -326,6 +338,13 @@ class WriteCsvGraph:
         inspector_obj = InspectorCumulativeProductivity.from_df_wrapper(task_worktime_obj)
         acceptor_obj = AcceptorCumulativeProductivity.from_df_wrapper(task_worktime_obj)
 
+        if self.user_info_masker is not None:
+            user_id_list = self.user_info_masker.mask_user_ids(user_id_list)
+            for obj in (annotator_obj, inspector_obj, acceptor_obj):
+                obj.df = self.user_info_masker.mask_dataframe(obj.df)
+                # 仮名のソート順でデフォルトの表示対象が変わらないようにする。
+                obj.default_user_id_list = self.user_info_masker.mask_user_ids(obj.default_user_id_list) or []
+
         if not self.output_only_text:
             self.project_dir.write_cumulative_line_graph(annotator_obj, phase=TaskPhase.ANNOTATION, user_id_list=user_id_list, minimal_output=self.minimal_output)
             self.project_dir.write_cumulative_line_graph(inspector_obj, phase=TaskPhase.INSPECTION, user_id_list=user_id_list, minimal_output=self.minimal_output)
@@ -335,7 +354,13 @@ class WriteCsvGraph:
         """日ごとの作業時間情報を出力する。"""
         worktime_per_date_obj = self._get_worktime_per_date()
 
-        self.project_dir.write_worktime_per_date_user(worktime_per_date_obj)
+        masked_worktime_per_date = worktime_per_date_obj
+        if self.user_info_masker is not None:
+            masked_worktime_per_date = WorktimePerDate(self.user_info_masker.mask_dataframe(worktime_per_date_obj.df))
+            if user_id_list is None:
+                user_id_list = worktime_per_date_obj._get_default_user_id_list()  # noqa: SLF001
+            user_id_list = self.user_info_masker.mask_user_ids(user_id_list)
+        self.project_dir.write_worktime_per_date_user(masked_worktime_per_date)
 
         task = self._get_task()
         productivity_per_completed_date_obj = WholeProductivityPerCompletedDate.from_df_wrapper(task, worktime_per_date_obj, task_completion_criteria=self.task_completion_criteria)
@@ -346,7 +371,7 @@ class WriteCsvGraph:
         self.project_dir.write_whole_productivity_per_first_annotation_started_date(productivity_per_started_date_obj)
 
         if not self.output_only_text:
-            self.project_dir.write_worktime_line_graph(worktime_per_date_obj, user_id_list=user_id_list)
+            self.project_dir.write_worktime_line_graph(masked_worktime_per_date, user_id_list=user_id_list)
             self.project_dir.write_whole_productivity_line_graph_per_date(productivity_per_completed_date_obj)
             self.project_dir.write_whole_productivity_line_graph_per_annotation_started_date(productivity_per_started_date_obj)
 
@@ -358,15 +383,45 @@ class WriteCsvGraph:
         inspector_per_date_obj = InspectorProductivityPerDate.from_df_wrapper(task_worktime_obj)
         acceptor_per_date_obj = AcceptorProductivityPerDate.from_df_wrapper(task_worktime_obj)
 
-        # 開始日ごとのCSVを出力
-        self.project_dir.write_performance_per_started_date_csv(annotator_per_date_obj, phase=TaskPhase.ANNOTATION)
-        self.project_dir.write_performance_per_started_date_csv(inspector_per_date_obj, phase=TaskPhase.INSPECTION)
-        self.project_dir.write_performance_per_started_date_csv(acceptor_per_date_obj, phase=TaskPhase.ACCEPTANCE)
+        for phase, obj in (
+            (TaskPhase.ANNOTATION, annotator_per_date_obj),
+            (TaskPhase.INSPECTION, inspector_per_date_obj),
+            (TaskPhase.ACCEPTANCE, acceptor_per_date_obj),
+        ):
+            graph_user_ids = user_id_list
+            if self.user_info_masker is not None:
+                if graph_user_ids is None:
+                    graph_user_ids = obj.df.sort_values("user_id", ascending=False)["user_id"].dropna().unique().tolist()
+                graph_user_ids = self.user_info_masker.mask_user_ids(graph_user_ids)
+                obj.df = self.user_info_masker.mask_dataframe(obj.df)
+            self.project_dir.write_performance_per_started_date_csv(obj, phase=phase)
+            if not self.output_only_text:
+                self.project_dir.write_performance_line_graph_per_date(obj, phase=phase, user_id_list=graph_user_ids)
 
-        if not self.output_only_text:
-            self.project_dir.write_performance_line_graph_per_date(annotator_per_date_obj, phase=TaskPhase.ANNOTATION, user_id_list=user_id_list)
-            self.project_dir.write_performance_line_graph_per_date(inspector_per_date_obj, phase=TaskPhase.INSPECTION, user_id_list=user_id_list)
-            self.project_dir.write_performance_line_graph_per_date(acceptor_per_date_obj, phase=TaskPhase.ACCEPTANCE, user_id_list=user_id_list)
+    def prepare_user_info_mask(self) -> None:
+        """出力前にbiographyによる除外対象を解決します。
+
+        Args:
+            なし。
+
+        Returns:
+            None。
+        """
+        if self.user_info_masker is not None and self.user_info_masker.not_masked_biographies:
+            self.user_info_masker = self.user_info_masker.with_user_df(self._get_task_worktime_obj().df).with_user_df(self._get_worktime_per_date().df)
+
+    def _mask_task_worktime(self, obj: TaskWorktimeByPhaseUser) -> TaskWorktimeByPhaseUser:
+        """出力用にユーザー情報をマスクします。
+
+        Args:
+            obj: 実IDで集計したタスク作業時間。
+
+        Returns:
+            出力用のタスク作業時間。元データは保持します。
+        """
+        if self.user_info_masker is None:
+            return obj
+        return TaskWorktimeByPhaseUser(self.user_info_masker.mask_dataframe(obj.df), custom_production_volume_list=obj.custom_production_volume_list)
 
 
 class VisualizingStatisticsMain:
@@ -393,6 +448,7 @@ class VisualizingStatisticsMain:
         production_volume_include_labels: list[str] | None = None,
         production_volume_exclude_labels: list[str] | None = None,
         task_metadata_keys: list[str] | None = None,
+        user_info_masker: UserInfoMasker | None = None,
     ) -> None:
         self.service = service
         self.facade = AnnofabApiFacade(service)
@@ -412,6 +468,8 @@ class VisualizingStatisticsMain:
         self.production_volume_include_labels = production_volume_include_labels
         self.production_volume_exclude_labels = production_volume_exclude_labels
         self.task_metadata_keys = task_metadata_keys if task_metadata_keys is not None else []
+        self.user_info_masker = user_info_masker
+        """各プロジェクトに渡すユーザー情報のマスク設定。"""
 
     def get_project_info(self, project_id: str) -> ProjectInfo:
         project_info = self.service.api.get_project(project_id)[0]
@@ -511,8 +569,10 @@ class VisualizingStatisticsMain:
             include_annotation_duration_seconds=is_video_project,
             include_video_duration_minutes=is_video_project,
             task_metadata_keys=self.task_metadata_keys,
+            user_info_masker=self.user_info_masker,
         )
 
+        write_obj.prepare_user_info_mask()
         write_obj._catch_exception(write_obj.write_user_performance)()  # noqa: SLF001
         write_obj._catch_exception(write_obj.write_worktime_per_date)(self.user_ids)  # noqa: SLF001
 
@@ -652,6 +712,7 @@ class VisualizeStatistics(CommandLine):
         production_volume_include_labels: list[str] | None = None,
         production_volume_exclude_labels: list[str] | None = None,
         task_metadata_keys: list[str] | None = None,
+        user_info_masker: UserInfoMasker | None = None,
     ) -> None:
         main_obj = VisualizingStatisticsMain(
             service=self.service,
@@ -671,6 +732,7 @@ class VisualizeStatistics(CommandLine):
             production_volume_include_labels=production_volume_include_labels,
             production_volume_exclude_labels=production_volume_exclude_labels,
             task_metadata_keys=task_metadata_keys,
+            user_info_masker=user_info_masker,
         )
 
         if len(project_id_list) == 1:
@@ -765,6 +827,7 @@ class VisualizeStatistics(CommandLine):
                     production_volume_include_labels=get_list_from_args(args.production_volume_include_label) if args.production_volume_include_label is not None else None,
                     production_volume_exclude_labels=get_list_from_args(args.production_volume_exclude_label) if args.production_volume_exclude_label is not None else None,
                     task_metadata_keys=get_list_from_args(args.task_metadata_key) if args.task_metadata_key is not None else None,
+                    user_info_masker=UserInfoMasker.from_args(args),
                 )
         else:
             self.visualize_statistics(
@@ -787,6 +850,7 @@ class VisualizeStatistics(CommandLine):
                 production_volume_include_labels=get_list_from_args(args.production_volume_include_label) if args.production_volume_include_label is not None else None,
                 production_volume_exclude_labels=get_list_from_args(args.production_volume_exclude_label) if args.production_volume_exclude_label is not None else None,
                 task_metadata_keys=get_list_from_args(args.task_metadata_key) if args.task_metadata_key is not None else None,
+                user_info_masker=UserInfoMasker.from_args(args),
             )
 
 
@@ -797,6 +861,7 @@ def main(args: argparse.Namespace) -> None:
 
 
 def parse_args(parser: argparse.ArgumentParser) -> None:
+    add_mask_user_info_arguments(parser)
     parser.add_argument(
         "-p",
         "--project_id",

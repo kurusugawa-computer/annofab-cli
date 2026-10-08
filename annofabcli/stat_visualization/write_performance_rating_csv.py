@@ -17,6 +17,7 @@ from pandas.api.typing import NAType
 
 import annofabcli
 from annofabcli.common.cli import CommandLineWithoutWebapi, get_json_from_args, get_list_from_args
+from annofabcli.common.user_info_mask import UserInfoMasker, add_mask_user_info_arguments
 from annofabcli.common.utils import print_csv
 from annofabcli.statistics.visualization.dataframe.project_performance import (
     ProjectPerformance,
@@ -498,25 +499,47 @@ def create_custom_production_volume_by_directory(cli_value: str) -> dict[str, li
 
 
 class WritingCsv:
-    def __init__(self, threshold_deviation_user_count: int | None = None, user_ids: Collection[str] | None = None) -> None:
+    def __init__(
+        self,
+        threshold_deviation_user_count: int | None = None,
+        user_ids: Collection[str] | None = None,
+        *,
+        user_info_masker: UserInfoMasker | None = None,
+    ) -> None:
         self.threshold_deviation_user_count = threshold_deviation_user_count
         self.user_ids = user_ids
+        self.user_info_masker = user_info_masker
+        """評価・絞り込み後に適用するユーザー情報のマスク設定。"""
+
+    def _write_user_csv(self, df: pandas.DataFrame, output_file: Path) -> None:
+        """実IDで評価・絞り込みをした後に、ユーザー情報をマスクして出力します。
+
+        Args:
+            df: 評価済みのDataFrame。
+            output_file: CSVの出力先。
+
+        Returns:
+            None。
+        """
+        if self.user_info_masker is not None:
+            df = self.user_info_masker.mask_dataframe(df)
+        print_csv(df, str(output_file))
 
     def write(self, df: pandas.DataFrame, csv_basename: str, output_dir: Path) -> None:
         # infが存在すると、統計情報を算出する際にwarningが発生するため、infをnanに置換する
         df = df.replace([numpy.inf, -numpy.inf], numpy.nan)
-        print_csv(df, str(output_dir / f"{csv_basename}__original.csv"))
+        self._write_user_csv(df, output_dir / f"{csv_basename}__original.csv")
 
         # 偏差値のCSVを出力
-        print_csv(
+        self._write_user_csv(
             create_deviation_df(df, threshold_deviation_user_count=self.threshold_deviation_user_count, user_ids=self.user_ids),
-            str(output_dir / f"{csv_basename}__deviation.csv"),
+            output_dir / f"{csv_basename}__deviation.csv",
         )
 
         # A,B,C,DでランクされたCSVを出力
-        print_csv(
+        self._write_user_csv(
             create_rank_df(df, user_ids=self.user_ids),
-            str(output_dir / f"{csv_basename}__rank.csv"),
+            output_dir / f"{csv_basename}__rank.csv",
         )
 
         # プロジェクトごとのサマリを出力
@@ -597,7 +620,10 @@ class WritePerformanceRatingCsv(CommandLineWithoutWebapi):
 
         output_dir: Path = args.output_dir
 
-        obj = WritingCsv(threshold_deviation_user_count=args.threshold_deviation_user_count, user_ids=user_id_list)
+        user_info_masker = UserInfoMasker.from_args(args)
+        if user_info_masker is not None:
+            user_info_masker = user_info_masker.with_user_df(df_user.reset_index())
+        obj = WritingCsv(threshold_deviation_user_count=args.threshold_deviation_user_count, user_ids=user_id_list, user_info_masker=user_info_masker)
 
         # 教師付生産性に関するファイルを出力
         obj.write(
@@ -624,6 +650,7 @@ class WritePerformanceRatingCsv(CommandLineWithoutWebapi):
 
 
 def parse_args(parser: argparse.ArgumentParser) -> None:
+    add_mask_user_info_arguments(parser)
     parser.add_argument(
         "--dir",
         type=Path,

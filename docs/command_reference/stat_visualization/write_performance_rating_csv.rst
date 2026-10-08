@@ -43,6 +43,27 @@ Examples
 品質の指標は、 ``--quality_indicator`` または ``--quality_indicator_by_directory`` で指定できます。
 
 
+ユーザー情報をマスクして出力する
+----------------------------------------------
+
+``--mask_user_info`` を指定すると、すべての ``__original.csv``、``__deviation.csv``、``__rank.csv`` のユーザー情報をマスクします。
+同じユーザーには、すべてのCSVで同じ仮名を使用します。評価値・偏差値・ランク・プロジェクト集計は保持します。
+
+.. code-block::
+
+    $ annofabcli stat_visualization write_performance_rating_csv --dir out_dir --output_dir masked_out \
+    --mask_user_info
+
+``--user_id`` には実IDを指定してください。評価とユーザーの絞り込みを行った後で、出力するユーザー情報をマスクします。
+``--not_masked_user_id`` と ``--not_masked_biography`` も使用できます。
+仮名の生成方法・マスク範囲・除外指定は :ref:`statistics-visualize-mask-user-info` を参照してください。
+
+すでにマスクされた可視化結果から集計する場合、仮名を保持するには ``--mask_user_info`` を追加せずに実行してください。
+この場合、``--user_id`` には入力CSVに記載されたマスク後のIDを指定します。
+
+``filesystem mask_user_info`` と ``scripts/mask_user_info_for_rating_performance.py`` は削除しました。
+評価CSVは、このコマンドの ``--mask_user_info`` で生成してください。
+
 
 出力結果
 =================================
