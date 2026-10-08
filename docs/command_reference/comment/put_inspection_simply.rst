@@ -96,16 +96,9 @@ Examples
 
 * 画像プロジェクト： 点。先頭画像の左上に位置する。
 * 動画プロジェクト： 区間。動画の先頭に位置する。
-* カスタムプロジェクト（3dpc）： 辺が1の立方体。先頭フレームの原点に位置する。
+* カスタムプロジェクト（標準3Dエディタ）： 辺が1の立方体。先頭フレームの原点に位置する。
 
-ただし、ビルトインのエディタプラグインを使用していないカスタムプロジェクトの場合は ``--custom_project_type`` が必須です。
-
-
-.. code-block::
-
-    $ annofabcli comment put_inspection_simply --project_id prj1 --task_id task1 \
-    --comment "weather属性を見直してください。" \
-    --custom_project_type 3dpc
+対応するカスタムエディタと廃止したオプションについては :ref:`検査コメント作成に対応するカスタムエディタ <supported-simple-inspection-editors>` を参照してください。
 
 
 

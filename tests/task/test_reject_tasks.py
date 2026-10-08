@@ -20,7 +20,6 @@ def create_args(**kwargs) -> argparse.Namespace:
         "comment": None,
         "task_query": None,
         "comment_data": None,
-        "custom_project_type": None,
     }
     defaults.update(kwargs)
     return argparse.Namespace(**defaults)
@@ -243,3 +242,33 @@ def test_reject_task_allows_on_hold_task_when_option_is_enabled() -> None:
 
     assert result is True
     service.wrapper.reject_task.assert_called_once()
+
+
+@pytest.mark.parametrize("configuration", [None, {}, {"plugin_id": "custom-editor"}])
+@pytest.mark.parametrize("comment_data", [None, '{"_type": "Custom", "data": "{}"}'])
+def test_main_rejects_unsupported_editor_before_changing_tasks(configuration: dict | None, comment_data: str | None) -> None:
+    service = Mock()
+    service.api.get_project.return_value = ({"input_data_type": "custom", "configuration": configuration}, None)
+    args = create_args(comment="確認してください", comment_data=comment_data, cancel_acceptance=True)
+
+    with pytest.raises(SystemExit) as exc_info:
+        reject_tasks.RejectTasks(service, Mock(), args).main()
+
+    assert exc_info.value.code == 2
+    service.wrapper.get_task_or_none.assert_not_called()
+    service.wrapper.cancel_completed_task.assert_not_called()
+    service.wrapper.change_task_operator.assert_not_called()
+    service.wrapper.change_task_status_to_working.assert_not_called()
+    service.wrapper.reject_task.assert_not_called()
+    service.api.batch_update_comments.assert_not_called()
+
+
+def test_main_allows_unsupported_editor_without_comment() -> None:
+    service = Mock()
+    service.api.get_project.return_value = ({"title": "project1", "input_data_type": "custom", "configuration": {"plugin_id": "custom-editor"}}, None)
+    service.wrapper.get_task_or_none.return_value = create_task_dict()
+
+    reject_tasks.RejectTasks(service, Mock(), create_args()).main()
+
+    service.wrapper.reject_task.assert_called_once()
+    service.api.batch_update_comments.assert_not_called()
