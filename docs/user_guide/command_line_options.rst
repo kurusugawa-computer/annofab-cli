@@ -21,11 +21,13 @@ Command line options
 --task_id / -t
 ------------------------------------
 タスクのtask_idを指定します。
+一覧ファイルを指定する際の制約は :ref:`file-argument-syntax` を参照してください。
 
 
 --input_data_id / -i
 ------------------------------------
 入力データのinput_data_idを指定します。
+一覧ファイルを指定する際の制約は :ref:`file-argument-syntax` を参照してください。
 
 
 --user_id / -u
@@ -181,7 +183,8 @@ Command line options
 
 --csv
 ------------------------------------
-CSVファイルを指定します。
+CSVファイルを通常のファイルパスで指定します。 ``file://`` は付けません。
+JSON形式の値やID一覧との指定方法の違いは :ref:`file-argument-syntax` を参照してください。
 
 --dir
 ------------------------------------
