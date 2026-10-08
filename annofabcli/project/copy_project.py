@@ -10,7 +10,7 @@ from typing import Any
 from annofabapi.models import OrganizationMemberRole, ProjectJobType, ProjectMemberRole
 
 import annofabcli.common.cli
-from annofabcli.common.cli import ArgumentParser, CommandLine, build_annofabapi_resource_and_login
+from annofabcli.common.cli import CommandLine, build_annofabapi_resource_and_login
 from annofabcli.common.dataclasses import WaitOptions
 from annofabcli.common.facade import AnnofabApiFacade
 
@@ -122,7 +122,7 @@ class CopyProject(CommandLine):
         dest_project_id = args.dest_project_id if args.dest_project_id is not None else str(uuid.uuid4())
         copied_targets = {CopiedTarget(e) for e in args.copied_target} if args.copied_target is not None else None
         self.copy_project(
-            args.project_id,
+            src_project_id=args.src_project_id,
             dest_project_id=dest_project_id,
             dest_title=args.dest_title,
             dest_overview=args.dest_overview,
@@ -137,9 +137,7 @@ def main(args: argparse.Namespace) -> None:
 
 
 def parse_args(parser: argparse.ArgumentParser) -> None:
-    argument_parser = ArgumentParser(parser)
-
-    argument_parser.add_project_id(help_message="コピー元のプロジェクトのproject_idを指定してください。")
+    parser.add_argument("--src_project_id", type=str, required=True, help="コピー元のプロジェクトのproject_idを指定してください。")
 
     parser.add_argument("--dest_project_id", type=str, help="新しいプロジェクトのproject_idを指定してください。省略した場合は UUIDv4 フォーマットになります。")
     parser.add_argument("--dest_title", type=str, required=True, help="新しいプロジェクトのタイトルを指定してください。")
