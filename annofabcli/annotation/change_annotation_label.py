@@ -245,8 +245,8 @@ class ChangeAnnotationLabelMain(CommandLineWithConfirm):
             raise ValueError("対象のタスクIDまたは全タスク指定が必要です。")
 
         task_list = self.service.wrapper.get_all_tasks(self.project_id)
-        if len(task_list) == 10_000:
-            logger.warning("タスク一覧は10,000件で打ち切られている可能性があります。")
+        if len(task_list) >= 10_000:
+            raise ValueError("タスク一覧が10,000件の取得上限に達したため、全タスクを安全に取得できず処理を中断しました。`--task_id` を指定して対象タスクを絞り込んでください。")
         return [e["task_id"] for e in task_list]
 
     def change_annotation_label_for_task_list(

@@ -177,6 +177,14 @@ class TestChangeAnnotationLabelMain:
         actual = main.get_target_task_id_list(None, all_tasks=True)
         assert actual == ["task1", "task2"]
 
+    def test_get_target_task_id_list_rejects_possibly_truncated_all_tasks(self) -> None:
+        service = Mock()
+        service.wrapper.get_all_tasks.return_value = [{"task_id": f"task{i}"} for i in range(10_000)]
+        main = ChangeAnnotationLabelMain(service, project_id="prj1", include_complete_task=False, all_yes=True, annotation_specs=ANNOTATION_SPECS)
+
+        with pytest.raises(ValueError):
+            main.get_target_task_id_list(None, all_tasks=True)
+
     def test_get_target_task_id_list_requires_explicit_target(self) -> None:
         service = Mock()
         main = ChangeAnnotationLabelMain(service, project_id="prj1", include_complete_task=False, all_yes=True, annotation_specs=ANNOTATION_SPECS)
