@@ -18,25 +18,26 @@ logger = logging.getLogger(__name__)
 EDITOR_USAGE_COLUMNS = ("editor_usage.image_editor", "editor_usage.video_editor", "editor_usage.3d_editor")
 """エディタ利用時間（時間）のCSV列。"""
 
-CSV_COLUMNS = ("organization_id", "year_month", "aggregation_period_from", "aggregation_period_to", "storage_usage", *EDITOR_USAGE_COLUMNS)
+CSV_COLUMNS = ("organization_id", "organization_name", "year_month", "aggregation_period_from", "aggregation_period_to", "storage_usage", *EDITOR_USAGE_COLUMNS)
 """月別CSVの列。ストレージ利用量の単位はGB時。"""
 
-DAILY_CSV_COLUMNS = ("organization_id", "date", "aggregation_period_from", "aggregation_period_to", "storage_usage", *EDITOR_USAGE_COLUMNS, "created_datetime")
+DAILY_CSV_COLUMNS = ("organization_id", "organization_name", "date", "aggregation_period_from", "aggregation_period_to", "storage_usage", *EDITOR_USAGE_COLUMNS, "created_datetime")
 """日別CSVの列。"""
 
 
-def create_csv_rows(usage_status_list: Sequence[UsageStatus | UsageStatusByDay]) -> list[dict[str, str | float | int | None]]:
+def create_csv_rows(usage_status_list: Sequence[UsageStatus | UsageStatusByDay], *, organization_name: str) -> list[dict[str, str | float | int | None]]:
     """エディタ別利用時間をCSVの列に展開します。
 
     Args:
         usage_status_list: 月別または日別の利用状況。
+        organization_name: 取得対象の組織名。
 
     Returns:
         CSV出力用のレコード一覧。未取得のエディタ利用時間は空欄になります。
     """
     rows: list[dict[str, str | float | int | None]] = []
     for usage in usage_status_list:
-        row: dict[str, str | float | int | None] = {"organization_id": usage.organization_id}
+        row: dict[str, str | float | int | None] = {"organization_id": usage.organization_id, "organization_name": organization_name}
         if isinstance(usage, UsageStatusByDay):
             row["date"] = usage.var_date
         else:
@@ -71,11 +72,11 @@ class ListUsageStatus(CommandLine):
         logger.info(f"組織'{args.organization}'の利用状況一覧の件数: {len(usage_status_list)}")
         if args.format == OutputFormat.CSV.value:
             model = UsageStatusByDay if args.year_month is not None else UsageStatus
-            rows = create_csv_rows([model.model_validate(usage) for usage in usage_status_list])
+            rows = create_csv_rows([model.model_validate(usage) for usage in usage_status_list], organization_name=args.organization)
             columns = DAILY_CSV_COLUMNS if args.year_month is not None else CSV_COLUMNS
             self.print_according_to_format(rows, csv_columns=columns)
         else:
-            self.print_according_to_format(usage_status_list)
+            self.print_according_to_format([{**usage, "organization_name": args.organization} for usage in usage_status_list])
 
 
 def main(args: argparse.Namespace) -> None:

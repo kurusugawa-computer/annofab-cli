@@ -6,6 +6,8 @@ Description
 =================================
 組織の月別または日別の利用状況を出力します。組織管理者として実行してください。
 
+CSV・JSONともに、``--organization`` で指定した組織名を ``organization_name`` として出力します。
+
 エディタ利用時間の単位は時間、ストレージ利用量の単位はGB時です。
 作業時間や請求金額を出力するコマンドではありません。
 
@@ -50,7 +52,7 @@ APIから追加のエディタ名が返された場合は、その列も出力�
 
 JSON出力
 ---------------------------------
-JSONではAPIのレスポンスをそのまま出力します。
+JSONではAPIのレスポンスに ``organization_name`` を付与して出力します。
 
 .. code-block:: bash
 
@@ -62,6 +64,7 @@ JSONではAPIのレスポンスをそのまま出力します。
     [
         {
             "organization_id": "12345678-abcd-1234-abcd-1234abcd5678",
+            "organization_name": "org1",
             "year_month": "2026-09",
             "aggregation_period_from": "2026-09-01T00:00:00+09:00",
             "aggregation_period_to": "2026-10-01T00:00:00+09:00",

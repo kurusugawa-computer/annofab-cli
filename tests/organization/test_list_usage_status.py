@@ -60,13 +60,14 @@ def test_usage_status_output(tmp_path: Path, *, daily: bool, output_format: str,
         assert df.columns.to_list() == list(DAILY_CSV_COLUMNS if daily else CSV_COLUMNS)
         assert len(df) == len(data)
         if not empty:
+            assert df.loc[0, "organization_name"] == "org"
             assert df.loc[0, "storage_usage"] == 48.5
             assert df.loc[0, "editor_usage.image_editor"] == 1.5
             assert df.loc[0, "editor_usage.video_editor"] == 0
             assert pandas.isna(df.loc[0, "editor_usage.3d_editor"])
             assert df.loc[0, "date" if daily else "year_month"] == ("2026-09-01" if daily else "2026-09")
     else:
-        assert json.loads(output.read_text()) == data
+        assert json.loads(output.read_text()) == [{**usage, "organization_name": "org"} for usage in data]
     assert data == original_data
 
 
