@@ -66,7 +66,7 @@ class ListUsageStatus(CommandLine):
         if args.year_month is not None:
             usage_status_list, _ = self.service.api.get_organization_usage_status(args.organization, args.year_month)
         else:
-            query_params = {key: value for key, value in {"from": args.from_month, "to": args.to_month}.items() if value is not None}
+            query_params = {key: value for key, value in {"from": args.start_month, "to": args.end_month}.items() if value is not None}
             usage_status_list, _ = self.service.api.get_organization_usage_status_list(args.organization, query_params=query_params)
         logger.info(f"組織'{args.organization}'の利用状況一覧の件数: {len(usage_status_list)}")
         if args.format == OutputFormat.CSV.value:
@@ -87,7 +87,7 @@ def main(args: argparse.Namespace) -> None:
     Returns:
         None。
     """
-    validate_period(args.from_month, args.to_month, args.year_month)
+    validate_period(args.start_month, args.end_month, args.year_month)
     service = build_annofabapi_resource_and_login(args)
     ListUsageStatus(service, AnnofabApiFacade(service), args).main()
 
@@ -102,9 +102,9 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         None。
     """
     parser.add_argument("-org", "--organization", required=True, help="対象の組織名。組織管理者として実行してください。")
-    parser.add_argument("--from_month", type=year_month, help="月別一覧の開始月（YYYY-MM、当月を含む）。省略時はAPIの既定期間を使用します。")
-    parser.add_argument("--to_month", type=year_month, help="月別一覧の終了月（YYYY-MM、当月を含む）。省略時はAPIの既定期間を使用します。")
-    parser.add_argument("--year_month", type=year_month, help="日別一覧を取得する対象月（YYYY-MM）。--from_month、--to_monthとは同時に指定できません。")
+    parser.add_argument("--start_month", type=year_month, help="月別一覧の開始月（YYYY-MM、当月を含む）。省略時はAPIの既定期間を使用します。")
+    parser.add_argument("--end_month", type=year_month, help="月別一覧の終了月（YYYY-MM、当月を含む）。省略時はAPIの既定期間を使用します。")
+    parser.add_argument("--year_month", type=year_month, help="日別一覧を取得する対象月（YYYY-MM）。--start_month、--end_monthとは同時に指定できません。")
     argument_parser = ArgumentParser(parser)
     argument_parser.add_format(choices=[OutputFormat.CSV, OutputFormat.JSON, OutputFormat.PRETTY_JSON], default=OutputFormat.CSV)
     argument_parser.add_output()

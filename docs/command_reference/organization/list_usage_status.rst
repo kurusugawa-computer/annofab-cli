@@ -17,7 +17,7 @@ Examples
 
 .. code-block:: bash
 
-    $ annofabcli organization list_usage_status --organization org1 --from_month 2026-08 --to_month 2026-09 --output out.csv
+    $ annofabcli organization list_usage_status --organization org1 --start_month 2026-08 --end_month 2026-09 --output out.csv
 
 開始月と終了月はどちらも対象に含みます。年月は ``YYYY-MM`` 形式で指定します。
 終了月を省略するとAPIはJSTでの現在の年月を使用します。
@@ -31,7 +31,7 @@ Examples
     $ annofabcli organization list_usage_status --organization org1 --year_month 2026-09 --output daily.csv
 
 ``--year_month`` を指定すると、その月の日別利用状況を出力します。
-``--from_month``、``--to_month`` とは同時に指定できません。
+``--start_month``、``--end_month`` とは同時に指定できません。
 日別CSVでは ``year_month`` の代わりに ``date`` が出力され、``created_datetime`` も追加されます。
 
 出力結果
@@ -54,7 +54,7 @@ JSONではAPIのレスポンスをそのまま出力します。
 
 .. code-block:: bash
 
-    $ annofabcli organization list_usage_status --organization org1 --from_month 2026-09 --to_month 2026-09 --format pretty_json --output out.json
+    $ annofabcli organization list_usage_status --organization org1 --start_month 2026-09 --end_month 2026-09 --format pretty_json --output out.json
 
 .. code-block:: json
     :caption: out.json

@@ -39,8 +39,8 @@ def test_usage_status_output(tmp_path: Path, *, daily: bool, output_format: str,
     output = tmp_path / "usage.txt"
     args = Namespace(
         organization="org",
-        from_month="2026-08" if not daily else None,
-        to_month="2026-09" if not daily else None,
+        start_month="2026-08" if not daily else None,
+        end_month="2026-09" if not daily else None,
         year_month="2026-09" if daily else None,
         format=output_format,
         output=output,
@@ -70,11 +70,11 @@ def test_usage_status_output(tmp_path: Path, *, daily: bool, output_format: str,
     assert data == original_data
 
 
-@pytest.mark.parametrize("from_month,to_month,query_params", [(None, None, {}), ("2026-08", None, {"from": "2026-08"}), (None, "2026-09", {"to": "2026-09"})])
-def test_optional_month_range(tmp_path: Path, from_month: str | None, to_month: str | None, query_params: dict) -> None:
+@pytest.mark.parametrize("start_month,end_month,query_params", [(None, None, {}), ("2026-08", None, {"from": "2026-08"}), (None, "2026-09", {"to": "2026-09"})])
+def test_optional_month_range(tmp_path: Path, start_month: str | None, end_month: str | None, query_params: dict) -> None:
     service = Mock()
     service.api.get_organization_usage_status_list.return_value = ([], Mock())
-    args = Namespace(organization="org", from_month=from_month, to_month=to_month, year_month=None, format="json", output=tmp_path / "usage.json", yes=True)
+    args = Namespace(organization="org", start_month=start_month, end_month=end_month, year_month=None, format="json", output=tmp_path / "usage.json", yes=True)
 
     ListUsageStatus(service, Mock(), args).main()
 
@@ -87,17 +87,17 @@ def test_csv_keeps_additional_editor(tmp_path: Path) -> None:
     data["editor_usage"].append({"editor_name": "custom_editor", "value": 2.5})
     service.api.get_organization_usage_status_list.return_value = ([data], Mock())
     output = tmp_path / "usage.csv"
-    args = Namespace(organization="org", from_month=None, to_month=None, year_month=None, format="csv", output=output, yes=True)
+    args = Namespace(organization="org", start_month=None, end_month=None, year_month=None, format="csv", output=output, yes=True)
 
     ListUsageStatus(service, Mock(), args).main()
 
     assert pandas.read_csv(output).loc[0, "editor_usage.custom_editor"] == 2.5
 
 
-@pytest.mark.parametrize("from_month,to_month,daily_month", [("2026-10", "2026-09", None), ("2026-09", None, "2026-09"), (None, "2026-09", "2026-09")])
-def test_conflicting_period(from_month: str | None, to_month: str | None, daily_month: str | None) -> None:
+@pytest.mark.parametrize("start_month,end_month,daily_month", [("2026-10", "2026-09", None), ("2026-09", None, "2026-09"), (None, "2026-09", "2026-09")])
+def test_conflicting_period(start_month: str | None, end_month: str | None, daily_month: str | None) -> None:
     with pytest.raises(AnnofabCliException):
-        validate_period(from_month, to_month, daily_month)
+        validate_period(start_month, end_month, daily_month)
 
 
 def test_same_month_period() -> None:

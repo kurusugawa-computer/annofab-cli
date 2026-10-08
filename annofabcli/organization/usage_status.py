@@ -23,12 +23,12 @@ def year_month(value: str) -> str:
     return value
 
 
-def validate_period(from_month: str | None, to_month: str | None, daily_month: str | None) -> None:
+def validate_period(start_month: str | None, end_month: str | None, daily_month: str | None) -> None:
     """月別の期間指定と日別の対象月指定の整合性を検証します。
 
     Args:
-        from_month: 月別一覧の開始月。
-        to_month: 月別一覧の終了月。
+        start_month: 月別一覧の開始月。
+        end_month: 月別一覧の終了月。
         daily_month: 日別一覧の対象月。
 
     Returns:
@@ -37,7 +37,7 @@ def validate_period(from_month: str | None, to_month: str | None, daily_month: s
     Raises:
         AnnofabCliException: 指定が競合するか期間が逆転している場合。
     """
-    if daily_month is not None and (from_month is not None or to_month is not None):
-        raise AnnofabCliException("--year_monthと--from_month、--to_monthは同時に指定できません。")
-    if from_month is not None and to_month is not None and from_month > to_month:
-        raise AnnofabCliException("--from_monthは--to_month以前の年月を指定してください。")
+    if daily_month is not None and (start_month is not None or end_month is not None):
+        raise AnnofabCliException("--year_monthと--start_month、--end_monthは同時に指定できません。")
+    if start_month is not None and end_month is not None and start_month > end_month:
+        raise AnnofabCliException("--start_monthは--end_month以前の年月を指定してください。")
