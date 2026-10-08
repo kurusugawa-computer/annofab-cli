@@ -34,10 +34,10 @@ class TestCommandLine:
 
     @pytest.mark.submitting_job
     def test_copy(self):
-        main(["project", "copy", "--project_id", project_id, "--dest_title", "copy-project", "--yes"])
+        main(["project", "copy", "--src_project_id", project_id, "--dest_title", "copy-project", "--yes"])
 
     def test_diff_project(self):
-        main(["project", "diff", project_id, project_id, "--target", "annotation_labels"])
+        main(["project", "diff", "--left_project_id", project_id, "--right_project_id", project_id, "--target", "annotation_labels"])
 
     def test_list(self):
         main(

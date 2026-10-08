@@ -142,8 +142,8 @@ def main(args: argparse.Namespace) -> None:
 
 
 def parse_args(parser: argparse.ArgumentParser) -> None:
-    parser.add_argument("src_project_id", type=str, help="コピー元のプロジェクトのproject_id")
-    parser.add_argument("dest_project_id", type=str, help="コピー先のプロジェクトのproject_id")
+    parser.add_argument("--src_project_id", type=str, required=True, help="コピー元のプロジェクトのproject_id")
+    parser.add_argument("--dest_project_id", type=str, required=True, help="コピー先のプロジェクトのproject_id")
     parser.set_defaults(subcommand_func=main)
 
 

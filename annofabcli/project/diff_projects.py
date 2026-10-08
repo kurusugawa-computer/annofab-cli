@@ -71,20 +71,20 @@ class DiffProjects(CommandLine):
     def __init__(self, service: annofabapi.Resource, facade: AnnofabApiFacade, args: argparse.Namespace) -> None:
         super().__init__(service, facade, args)
 
-        project_id1 = args.project_id1
-        project_id2 = args.project_id2
-        project_title1 = self.facade.get_project_title(project_id1)
-        project_title2 = self.facade.get_project_title(project_id2)
+        left_project_id = args.left_project_id
+        right_project_id = args.right_project_id
+        project_title1 = self.facade.get_project_title(left_project_id)
+        project_title2 = self.facade.get_project_title(right_project_id)
 
         self.project_title1 = project_title1
         self.project_title2 = project_title2
 
-    def diff_project_members(self, project_id1: str, project_id2: str) -> DiffResult:
+    def diff_project_members(self, left_project_id: str, right_project_id: str) -> DiffResult:
         """
         プロジェクト間のプロジェクトメンバの差分を表示する。
         Args:
-            project_id1: 比較対象のプロジェクトのproject_id
-            project_id2: 比較対象のプロジェクトのproject_id
+            left_project_id: 比較元（左側）のプロジェクトのproject_id
+            right_project_id: 比較先（右側）のプロジェクトのproject_id
 
         Returns:
             Tuple(差分があるかどうか, 差分メッセージ)
@@ -94,8 +94,8 @@ class DiffProjects(CommandLine):
 
         diff_message = ""
 
-        project_members1 = self.service.wrapper.get_all_project_members(project_id1)
-        project_members2 = self.service.wrapper.get_all_project_members(project_id2)
+        project_members1 = self.service.wrapper.get_all_project_members(left_project_id)
+        project_members2 = self.service.wrapper.get_all_project_members(right_project_id)
 
         # プロジェクトメンバは順番に意味がないので、ソートしたリストを比較する
         sorted_members1 = sorted_project_members(project_members1)
@@ -256,12 +256,12 @@ class DiffProjects(CommandLine):
 
         return is_different, diff_message
 
-    def diff_annotation_specs(self, project_id1: str, project_id2: str, diff_targets: set[DiffTarget]) -> DiffResult:
+    def diff_annotation_specs(self, left_project_id: str, right_project_id: str, diff_targets: set[DiffTarget]) -> DiffResult:
         """
         プロジェクト間のアノテーション仕様の差分を表示する。
         Args:
-            project_id1: 比較対象のプロジェクトのproject_id
-            project_id2: 比較対象のプロジェクトのproject_id
+            left_project_id: 比較元（左側）のプロジェクトのproject_id
+            right_project_id: 比較先（右側）のプロジェクトのproject_id
             diff_targets: 比較対象の項目
 
         Returns:
@@ -273,8 +273,8 @@ class DiffProjects(CommandLine):
         is_different = False
 
         # [REMOVE_V2_PARAM]
-        annotation_specs1, _ = self.service.api.get_annotation_specs(project_id1, query_params={"v": "2"})
-        annotation_specs2, _ = self.service.api.get_annotation_specs(project_id2, query_params={"v": "2"})
+        annotation_specs1, _ = self.service.api.get_annotation_specs(left_project_id, query_params={"v": "2"})
+        annotation_specs2, _ = self.service.api.get_annotation_specs(right_project_id, query_params={"v": "2"})
 
         if DiffTarget.INSPECTION_PHRASES in diff_targets:
             bool_result, message = self.diff_inspection_phrases(annotation_specs1["inspection_phrases"], annotation_specs2["inspection_phrases"])
@@ -291,12 +291,12 @@ class DiffProjects(CommandLine):
 
         return is_different, diff_message
 
-    def diff_project_settings(self, project_id1: str, project_id2: str) -> DiffResult:
+    def diff_project_settings(self, left_project_id: str, right_project_id: str) -> DiffResult:
         """
         プロジェクト間のプロジェクト設定の差分を表示する。
         Args:
-            project_id1: 比較対象のプロジェクトのproject_id
-            project_id2: 比較対象のプロジェクトのproject_id
+            left_project_id: 比較元（左側）のプロジェクトのproject_id
+            right_project_id: 比較先（右側）のプロジェクトのproject_id
 
 
         Returns:
@@ -307,8 +307,8 @@ class DiffProjects(CommandLine):
 
         diff_message = ""
 
-        config1 = self.service.api.get_project(project_id1)[0]["configuration"]
-        config2 = self.service.api.get_project(project_id2)[0]["configuration"]
+        config1 = self.service.api.get_project(left_project_id)[0]["configuration"]
+        config2 = self.service.api.get_project(right_project_id)[0]["configuration"]
 
         diff_result = list(dictdiffer.diff(config1, config2))
         if len(diff_result) > 0:
@@ -318,13 +318,13 @@ class DiffProjects(CommandLine):
             logger.info("プロジェクト設定は同じ")
             return False, diff_message
 
-    def require_access_to_projects(self, project_id1: str, project_id2: str) -> None:
+    def require_access_to_projects(self, left_project_id: str, right_project_id: str) -> None:
         """
         適切なRoleが付与されているかを確認する。
 
         Args:
-            project_id1:
-            project_id2:
+            left_project_id:
+            right_project_id:
 
         Returns:
 
@@ -332,50 +332,50 @@ class DiffProjects(CommandLine):
             AuthorizationError: 自分自身のRoleがいずれかのRoleにも合致しなければ、AuthorizationErrorが発生する。
         """
         roles = [ProjectMemberRole.OWNER, ProjectMemberRole.ACCEPTER, ProjectMemberRole.TRAINING_DATA_USER]
-        super().require_project_access(project_id1, roles)
-        super().require_project_access(project_id2, roles)
+        super().require_project_access(left_project_id, roles)
+        super().require_project_access(right_project_id, roles)
 
-    def diff(self, project_id1: str, project_id2: str, diff_targets: set[DiffTarget]) -> DiffResult:
-        self.require_access_to_projects(project_id1, project_id2)
+    def diff(self, left_project_id: str, right_project_id: str, diff_targets: set[DiffTarget]) -> DiffResult:
+        self.require_access_to_projects(left_project_id, right_project_id)
 
-        logger.info(f"=== {self.project_title1}({project_id1}) と {self.project_title2}({project_id2}) の差分を表示")
+        logger.info(f"=== {self.project_title1}({left_project_id}) と {self.project_title2}({right_project_id}) の差分を表示")
 
         diff_message = ""
         is_different = False
 
         if DiffTarget.MEMBERS in diff_targets:
-            bool_result, message = self.diff_project_members(project_id1, project_id2)
+            bool_result, message = self.diff_project_members(left_project_id, right_project_id)
             is_different = is_different or bool_result
             diff_message += message
 
         if DiffTarget.SETTINGS in diff_targets:
-            bool_result, message = self.diff_project_settings(project_id1, project_id2)
+            bool_result, message = self.diff_project_settings(left_project_id, right_project_id)
             is_different = is_different or bool_result
             diff_message += message
 
         if DiffTarget.ANNOTATION_LABELS in diff_targets or DiffTarget.INSPECTION_PHRASES in diff_targets:
-            bool_result, message = self.diff_annotation_specs(project_id1, project_id2, diff_targets)
+            bool_result, message = self.diff_annotation_specs(left_project_id, right_project_id, diff_targets)
             is_different = is_different or bool_result
             diff_message += message
 
         if is_different:
-            diff_message = f"!!! {self.project_title1}({project_id1}) と {self.project_title2}({project_id2}) に差分あり\n" + diff_message
+            diff_message = f"!!! {self.project_title1}({left_project_id}) と {self.project_title2}({right_project_id}) に差分あり\n" + diff_message
         return is_different, diff_message
 
     def main(self) -> None:
         args = self.args
-        project_id1 = args.project_id1
-        project_id2 = args.project_id2
+        left_project_id = args.left_project_id
+        right_project_id = args.right_project_id
 
         diff_targets = {DiffTarget(e) for e in args.target}
-        _, diff_message = self.diff(project_id1, project_id2, diff_targets)
+        _, diff_message = self.diff(left_project_id, right_project_id, diff_targets)
         print(diff_message)  # noqa: T201
 
 
 def parse_args(parser: argparse.ArgumentParser) -> None:
-    parser.add_argument("project_id1", type=str, help="比較対象のプロジェクトのproject_id")
+    parser.add_argument("--left_project_id", type=str, required=True, help="比較元（左側）のプロジェクトのproject_id")
 
-    parser.add_argument("project_id2", type=str, help="比較対象のプロジェクトのproject_id")
+    parser.add_argument("--right_project_id", type=str, required=True, help="比較先（右側）のプロジェクトのproject_id。差分は左側から右側への変更として表示します。")
 
     choices = [DiffTarget.ANNOTATION_LABELS, DiffTarget.INSPECTION_PHRASES, DiffTarget.MEMBERS, DiffTarget.SETTINGS]
 

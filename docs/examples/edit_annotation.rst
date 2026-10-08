@@ -59,7 +59,7 @@ AnnofabcliではAnnofabプロジェクト内のアノテーションのエクス
 
 .. code-block::
 
-    $ annofabcli project copy --project_id prj1 --dest_title prj2-title  --dest_project_id prj2 --copy_tasks
+    $ annofabcli project copy --src_project_id prj1 --dest_title prj2-title  --dest_project_id prj2 --copied_target task
 
 
 

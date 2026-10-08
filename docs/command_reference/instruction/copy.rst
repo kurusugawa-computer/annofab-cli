@@ -8,6 +8,11 @@ Description
 
 
 
+.. note::
+
+    コピー元は ``--src_project_id``、コピー先は ``--dest_project_id`` で指定してください。
+    以前の位置引数による指定は利用できません。
+
 Examples
 =================================
 
@@ -19,7 +24,7 @@ Examples
 
 .. code-block::
 
-    $ annofabcli instruction copy prj1 prj2
+    $ annofabcli instruction copy --src_project_id prj1 --dest_project_id prj2
 
 Usage Details
 =================================
