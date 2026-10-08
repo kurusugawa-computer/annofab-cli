@@ -47,7 +47,10 @@ class TestDumpAnnotationMain:
 
         main_obj.dump_editor_annotation(annotation, json_path)
 
-        assert json.loads(json_path.read_text(encoding="utf-8")) == annotation
+        json_text = json_path.read_text(encoding="utf-8")
+        assert json.loads(json_text) == annotation
+        assert json_text.startswith('{\n  "format_version": "2.0.0",\n')
+        assert json_text.endswith("\n")
         if has_outer:
             assert (tmp_path / "input1" / "outer1").read_bytes() == outer_data
         else:

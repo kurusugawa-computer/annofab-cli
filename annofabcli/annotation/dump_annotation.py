@@ -41,7 +41,7 @@ class DumpAnnotationMain:
         if editor_annotation.get("format_version") != "2.0.0":
             raise ValueError("アノテーションの保存はv2形式（format_version='2.0.0'）のみ対応しています。")
 
-        json_path.write_text(json.dumps(editor_annotation, ensure_ascii=False), encoding="utf-8")
+        json_path.write_text(json.dumps(editor_annotation, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
         outer_details = [e for e in editor_annotation["details"] if e["body"]["_type"] == "Outer"]
         if len(outer_details) == 0:
             return

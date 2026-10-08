@@ -6,6 +6,7 @@ Description
 =================================
 `annofabcli annotation restore <../annotation/restore.html>`_ コマンドに読み込ませることができるアノテーション情報を出力します。
 アノテーションのバックアップ目的で利用することを想定しています。
+JSONは2スペースでインデントしたpretty形式で保存し、ファイル末尾に改行を付けます。
 
 
 Examples
