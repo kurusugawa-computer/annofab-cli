@@ -108,7 +108,7 @@ def main(arguments: list[str] | None = None) -> None:
 
 
 def create_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(prog="annofabcli", description="Command Line Interface for Annofab", formatter_class=annofabcli.common.cli.PrettyHelpFormatter)
+    parser = argparse.ArgumentParser(prog="annofabcli", description="Command Line Interface for Annofab", formatter_class=annofabcli.common.cli.PrettyHelpFormatter, allow_abbrev=False)
     parser.add_argument("--version", action="version", version=f"annofabcli {annofabcli.__version__}")
     parser.set_defaults(command_help=parser.print_help)
 

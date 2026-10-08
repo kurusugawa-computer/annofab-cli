@@ -130,7 +130,7 @@ def add_parser(
         """
         共通の引数セットを生成する。
         """
-        parent_parser = argparse.ArgumentParser(add_help=False)
+        parent_parser = argparse.ArgumentParser(add_help=False, allow_abbrev=False)
         group = parent_parser.add_argument_group(GLOBAL_OPTIONAL_ARGUMENTS_TITLE)
 
         group.add_argument("--yes", action="store_true", help="処理中に現れる問い合わせに対して、常に ``yes`` と回答します。")
@@ -155,7 +155,7 @@ def add_parser(
         return parent_parser
 
     if subparsers is None:
-        subparsers = argparse.ArgumentParser().add_subparsers()
+        subparsers = argparse.ArgumentParser(allow_abbrev=False).add_subparsers()
 
     parents = [create_parent_parser()] if is_subcommand else []
     parser = subparsers.add_parser(
@@ -165,6 +165,7 @@ def add_parser(
         help=command_help,
         epilog=epilog,
         formatter_class=PrettyHelpFormatter,
+        allow_abbrev=False,
     )
     parser.set_defaults(command_help=parser.print_help)
 
