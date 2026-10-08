@@ -4,7 +4,8 @@ organization list_usage_detail
 
 Description
 =================================
-指定した月の組織のエディタ利用状況明細をCSVまたはJSONで出力します。組織管理者として実行してください。
+指定した期間の組織のエディタ利用状況明細をCSVまたはJSONで出力します。組織管理者として実行してください。
+期間を省略すると日本時間（JST）の現在の月のみ取得します。
 
 APIが提供するCSVの列名を標準化し、組織情報、ユーザー情報、プロジェクト名を付与します。
 月別・日別の集計値を出力する場合は :doc:`list_usage` を使用してください。
@@ -14,12 +15,19 @@ Examples
 
 .. code-block:: bash
 
-    $ annofabcli organization list_usage_detail --organization org1 --month 2026-09 --output usage_detail.csv
+    $ annofabcli organization list_usage_detail --organization org1 --start_month 2026-07 --end_month 2026-09 --output usage_detail.csv
 
 年月の形式は :doc:`list_usage` と同じです。
+開始月と終了月を含む各月の明細を取得し、1つのCSVまたはJSONに結合します。
+``--end_month`` の省略時は日本時間の現在の月、``--start_month`` の省略時は終了月と同じ月になります。
+単月を取得する場合は、``--end_month 2026-09`` のように終了月だけ指定できます。
+開始月だけ指定すると、その月から現在の月までを取得します。
+開始月が終了月より後の場合はエラーになります。
+
 ``--format pretty_json`` を指定するとJSONで出力します。
 ``--output`` を省略すると標準出力に出力します。
-出力先の親ディレクトリがない場合は作成します。取得・整形に失敗した場合は既存ファイルを保持します。
+出力先の親ディレクトリがない場合は作成します。すべての月の取得・整形が成功してから出力します。
+途中の月で取得に失敗した場合も、既存ファイルを保持します。
 
 出力結果
 =================================

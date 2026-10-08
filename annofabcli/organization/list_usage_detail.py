@@ -3,6 +3,7 @@
 import argparse
 import logging
 from collections.abc import Mapping, Sequence
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
@@ -12,7 +13,7 @@ import annofabcli.common.cli
 from annofabcli.common.cli import ArgumentParser, CommandLine, build_annofabapi_resource_and_login
 from annofabcli.common.enums import OutputFormat
 from annofabcli.common.facade import AnnofabApiFacade
-from annofabcli.organization.usage_status import year_month
+from annofabcli.organization.usage_status import validate_period, year_month
 
 logger = logging.getLogger(__name__)
 
@@ -24,6 +25,33 @@ CSV_DTYPES = {"date": "string", "editorName": "string", "projectId": "string", "
 
 CSV_COLUMNS = ("organization_id", "organization_name", "date", "editor_name", "project_id", "project_title", "account_id", "user_id", "username", "editor_usage_hour")
 """CSV・JSON共通の出力項目。"""
+
+
+def get_target_months(start_month: str | None, end_month: str | None) -> list[str]:
+    """省略された期間を補完し、開始月から終了月までの対象月を返します。
+
+    Args:
+        start_month: 開始月。省略時は終了月と同じ月。
+        end_month: 終了月。省略時は日本時間の現在の月。
+
+    Returns:
+        開始月・終了月を含む、昇順の対象月一覧。
+
+    Raises:
+        AnnofabCliException: 開始月が終了月より後の場合。
+    """
+    if end_month is None:
+        end_month = datetime.now(timezone(timedelta(hours=9))).strftime("%Y-%m")
+    if start_month is None:
+        start_month = end_month
+    validate_period(start_month, end_month, None)
+    start_year, start_month_number = (int(value) for value in start_month.split("-"))
+    end_year, end_month_number = (int(value) for value in end_month.split("-"))
+    months = []
+    for month_index in range(start_year * 12 + start_month_number - 1, end_year * 12 + end_month_number):
+        year, zero_based_month = divmod(month_index, 12)
+        months.append(f"{year:04d}-{zero_based_month + 1:02d}")
+    return months
 
 
 def read_usage_detail_csv(path: Path) -> pandas.DataFrame:
@@ -84,12 +112,18 @@ class ListUsageDetail(CommandLine):
             None。
         """
         args = self.args
-        logger.info(f"組織'{args.organization}'の{args.month}のエディタ利用状況明細を取得します。")
-        csv_file, _ = self.service.api.get_organization_usage_status_detail(args.organization, args.month)
+        months = get_target_months(args.start_month, args.end_month)
+        frames = []
         with TemporaryDirectory() as temporary_dir:
             temporary_file = Path(temporary_dir) / "usage_status.csv"
-            self.service.wrapper.download(csv_file["url"], temporary_file)
-            df = read_usage_detail_csv(temporary_file)
+            for index, month in enumerate(months, start=1):
+                logger.info(f"{index}/{len(months)}: 組織'{args.organization}'の{month}のエディタ利用状況明細を取得します。")
+                csv_file, _ = self.service.api.get_organization_usage_status_detail(args.organization, month)
+                self.service.wrapper.download(csv_file["url"], temporary_file)
+                month_df = read_usage_detail_csv(temporary_file)
+                if not month_df.empty:
+                    frames.append(month_df)
+            df = pandas.concat(frames, ignore_index=True) if frames else pandas.DataFrame()
         if df.empty:
             self.print_according_to_format([], csv_columns=CSV_COLUMNS)
             logger.info("エディタ利用状況明細の件数: 0")
@@ -128,7 +162,8 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         None。
     """
     parser.add_argument("-org", "--organization", required=True, help="対象の組織名。組織管理者として実行してください。")
-    parser.add_argument("--month", type=year_month, required=True, help="取得する利用状況の対象月（YYYY-MM）。")
+    parser.add_argument("--start_month", type=year_month, help="明細の開始月（YYYY-MM、指定月を含む）。省略時は終了月と同じ月です。")
+    parser.add_argument("--end_month", type=year_month, help="明細の終了月（YYYY-MM、指定月を含む）。省略時は日本時間（JST）の現在の月です。")
     argument_parser = ArgumentParser(parser)
     argument_parser.add_format(choices=[OutputFormat.CSV, OutputFormat.JSON, OutputFormat.PRETTY_JSON], default=OutputFormat.CSV)
     argument_parser.add_output()
@@ -144,7 +179,9 @@ def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse
     Returns:
         作成したパーサー。
     """
-    description = "指定した月の組織のエディタ利用状況明細を出力します。ユーザー情報・プロジェクト名を付与します。エディタ利用時間の単位は時間です。"
+    description = (
+        "指定した期間の組織のエディタ利用状況明細をCSVまたはJSONで出力します。省略時は日本時間の現在の月のみ取得します。現在のユーザー情報・プロジェクト名を付与します。利用時間の単位は時間です。"
+    )
     parser = annofabcli.common.cli.add_parser(subparsers, "list_usage_detail", "組織のエディタ利用状況明細を出力します。", description)
     parse_args(parser)
     return parser
