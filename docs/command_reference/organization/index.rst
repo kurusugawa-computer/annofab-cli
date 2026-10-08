@@ -15,7 +15,9 @@ Available Commands
    :maxdepth: 1
    :titlesonly:
 
+   download_usage_status_detail
    list
+   list_usage_status
 
 
 Usage Details

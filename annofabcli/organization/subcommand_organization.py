@@ -1,14 +1,18 @@
 import argparse
 
 import annofabcli.common.cli
+import annofabcli.organization.download_usage_status_detail
 import annofabcli.organization.list_organization
+import annofabcli.organization.list_usage_status
 
 
 def parse_args(parser: argparse.ArgumentParser) -> None:
     subparsers = parser.add_subparsers(dest="subcommand_name")
 
     # サブコマンドの定義
+    annofabcli.organization.download_usage_status_detail.add_parser(subparsers)
     annofabcli.organization.list_organization.add_parser(subparsers)
+    annofabcli.organization.list_usage_status.add_parser(subparsers)
 
 
 def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
