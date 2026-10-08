@@ -41,7 +41,7 @@ def test_usage_status_output(tmp_path: Path, *, daily: bool, output_format: str,
         organization="org",
         start_month="2026-08" if not daily else None,
         end_month="2026-09" if not daily else None,
-        year_month="2026-09" if daily else None,
+        month="2026-09" if daily else None,
         format=output_format,
         output=output,
         yes=True,
@@ -65,9 +65,26 @@ def test_usage_status_output(tmp_path: Path, *, daily: bool, output_format: str,
             assert df.loc[0, "image_editor_usage_hour"] == 1.5
             assert df.loc[0, "video_editor_usage_hour"] == 0
             assert pandas.isna(df.loc[0, "3d_editor_usage_hour"])
-            assert df.loc[0, "date" if daily else "year_month"] == ("2026-09-01" if daily else "2026-09")
+            assert df.loc[0, "date" if daily else "month"] == ("2026-09-01" if daily else "2026-09")
     else:
-        assert json.loads(output.read_text()) == [{**usage, "organization_name": "org"} for usage in data]
+        expected = []
+        if not empty:
+            row = {
+                "organization_id": "org-id",
+                "organization_name": "org",
+                "aggregation_period_from": data[0]["aggregation_period_from"],
+                "aggregation_period_to": data[0]["aggregation_period_to"],
+                "storage_usage_gb_hour": 48.5,
+                "image_editor_usage_hour": 1.5,
+                "video_editor_usage_hour": 0,
+                "3d_editor_usage_hour": None,
+            }
+            if daily:
+                row.update(date="2026-09-01", created_datetime="2026-09-02T03:00:00+09:00")
+            else:
+                row["month"] = "2026-09"
+            expected.append(row)
+        assert json.loads(output.read_text()) == expected
     assert data == original_data
 
 
@@ -75,24 +92,28 @@ def test_usage_status_output(tmp_path: Path, *, daily: bool, output_format: str,
 def test_optional_month_range(tmp_path: Path, start_month: str | None, end_month: str | None, query_params: dict) -> None:
     service = Mock()
     service.api.get_organization_usage_status_list.return_value = ([], Mock())
-    args = Namespace(organization="org", start_month=start_month, end_month=end_month, year_month=None, format="json", output=tmp_path / "usage.json", yes=True)
+    args = Namespace(organization="org", start_month=start_month, end_month=end_month, month=None, format="json", output=tmp_path / "usage.json", yes=True)
 
     ListUsageStatus(service, Mock(), args).main()
 
     service.api.get_organization_usage_status_list.assert_called_once_with("org", query_params=query_params)
 
 
-def test_csv_keeps_additional_editor(tmp_path: Path) -> None:
+@pytest.mark.parametrize("output_format", ["csv", "json", "pretty_json"])
+def test_output_keeps_additional_editor(tmp_path: Path, output_format: str) -> None:
     service = Mock()
     data = make_usage_status(daily=False)
     data["editor_usage"].append({"editor_name": "custom_editor", "value": 2.5})
     service.api.get_organization_usage_status_list.return_value = ([data], Mock())
     output = tmp_path / "usage.csv"
-    args = Namespace(organization="org", start_month=None, end_month=None, year_month=None, format="csv", output=output, yes=True)
+    args = Namespace(organization="org", start_month=None, end_month=None, month=None, format=output_format, output=output, yes=True)
 
     ListUsageStatus(service, Mock(), args).main()
 
-    assert pandas.read_csv(output).loc[0, "custom_editor_usage_hour"] == 2.5
+    if output_format == "csv":
+        assert pandas.read_csv(output).loc[0, "custom_editor_usage_hour"] == 2.5
+    else:
+        assert json.loads(output.read_text())[0]["custom_editor_usage_hour"] == 2.5
 
 
 @pytest.mark.parametrize("start_month,end_month,daily_month", [("2026-10", "2026-09", None), ("2026-09", None, "2026-09"), (None, "2026-09", "2026-09")])

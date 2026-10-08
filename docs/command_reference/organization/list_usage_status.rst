@@ -30,11 +30,11 @@ Examples
 
 .. code-block:: bash
 
-    $ annofabcli organization list_usage_status --organization org1 --year_month 2026-09 --output daily.csv
+    $ annofabcli organization list_usage_status --organization org1 --month 2026-09 --output daily.csv
 
-``--year_month`` を指定すると、その月の日別利用状況を出力します。
+``--month`` を指定すると、その月の日別利用状況を出力します。
 ``--start_month``、``--end_month`` とは同時に指定できません。
-日別CSVでは ``year_month`` の代わりに ``date`` が出力され、``created_datetime`` も追加されます。
+日別CSVでは ``month`` の代わりに ``date`` が出力され、``created_datetime`` も追加されます。
 
 出力結果
 =================================
@@ -53,7 +53,8 @@ APIから追加のエディタ名が返された場合は、``{エディタ名}_
 
 JSON出力
 ---------------------------------
-JSONではAPIのレスポンスに ``organization_name`` を付与して出力します。
+JSONはCSVと同じ項目名・単位・レコード構造の配列として出力します。
+APIに含まれないエディタの利用時間は、CSVでは空欄、JSONでは ``null`` になります。
 
 .. code-block:: bash
 
@@ -66,18 +67,17 @@ JSONではAPIのレスポンスに ``organization_name`` を付与して出力�
         {
             "organization_id": "12345678-abcd-1234-abcd-1234abcd5678",
             "organization_name": "org1",
-            "year_month": "2026-09",
+            "month": "2026-09",
             "aggregation_period_from": "2026-09-01T00:00:00+09:00",
             "aggregation_period_to": "2026-10-01T00:00:00+09:00",
-            "editor_usage": [
-                {"editor_name": "image_editor", "value": 12.5},
-                {"editor_name": "video_editor", "value": 3.0}
-            ],
-            "storage_usage": 720.0
+            "storage_usage_gb_hour": 720.0,
+            "image_editor_usage_hour": 12.5,
+            "video_editor_usage_hour": 3.0,
+            "3d_editor_usage_hour": null
         }
     ]
 
-日別JSONでは ``year_month`` の代わりに ``date`` が含まれ、``created_datetime`` も含まれます。
+日別JSONでは ``month`` の代わりに ``date`` が含まれ、``created_datetime`` も含まれます。
 
 Usage Details
 =================================

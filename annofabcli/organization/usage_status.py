@@ -38,6 +38,6 @@ def validate_period(start_month: str | None, end_month: str | None, daily_month:
         AnnofabCliException: 指定が競合するか期間が逆転している場合。
     """
     if daily_month is not None and (start_month is not None or end_month is not None):
-        raise AnnofabCliException("--year_monthと--start_month、--end_monthは同時に指定できません。")
+        raise AnnofabCliException("--monthと--start_month、--end_monthは同時に指定できません。")
     if start_month is not None and end_month is not None and start_month > end_month:
         raise AnnofabCliException("--start_monthは--end_month以前の年月を指定してください。")

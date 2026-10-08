@@ -16,7 +16,7 @@ Examples
 
 .. code-block:: bash
 
-    $ annofabcli organization download_usage_status_detail --organization org1 --year_month 2026-09 --output usage_detail.csv
+    $ annofabcli organization download_usage_status_detail --organization org1 --month 2026-09 --output usage_detail.csv
 
 年月の形式は :doc:`list_usage_status` と同じです。
 出力先の親ディレクトリがない場合は作成します。

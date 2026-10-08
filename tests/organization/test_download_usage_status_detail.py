@@ -20,7 +20,7 @@ def test_download_csv_preserves_bytes(tmp_path: Path) -> None:
 
     service.wrapper.download.side_effect = download
     output = tmp_path / "nested" / "usage.csv"
-    args = Namespace(organization="org", year_month="2026-09", output=output, yes=True)
+    args = Namespace(organization="org", month="2026-09", output=output, yes=True)
 
     DownloadUsageStatusDetail(service, Mock(), args).main()
 
@@ -42,7 +42,7 @@ def test_download_failure_does_not_leave_partial_output(tmp_path: Path, *, exist
     output = tmp_path / "usage.csv"
     if existing:
         output.write_bytes(b"original")
-    args = Namespace(organization="org", year_month="2026-09", output=output, yes=True)
+    args = Namespace(organization="org", month="2026-09", output=output, yes=True)
 
     with pytest.raises(requests.HTTPError):
         DownloadUsageStatusDetail(service, Mock(), args).main()
@@ -59,7 +59,7 @@ def test_api_failure_preserves_existing_output(tmp_path: Path) -> None:
     service.api.get_organization_usage_status_detail.side_effect = requests.HTTPError()
     output = tmp_path / "usage.csv"
     output.write_bytes(b"original")
-    args = Namespace(organization="org", year_month="2026-09", output=output, yes=True)
+    args = Namespace(organization="org", month="2026-09", output=output, yes=True)
 
     with pytest.raises(requests.HTTPError):
         DownloadUsageStatusDetail(service, Mock(), args).main()

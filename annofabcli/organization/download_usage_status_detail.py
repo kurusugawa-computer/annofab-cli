@@ -26,8 +26,8 @@ class DownloadUsageStatusDetail(CommandLine):
             None。
         """
         args = self.args
-        logger.info(f"組織'{args.organization}'の{args.year_month}の利用状況詳細CSVをダウンロードします。")
-        csv_file, _ = self.service.api.get_organization_usage_status_detail(args.organization, args.year_month)
+        logger.info(f"組織'{args.organization}'の{args.month}の利用状況詳細CSVをダウンロードします。")
+        csv_file, _ = self.service.api.get_organization_usage_status_detail(args.organization, args.month)
         output: Path = args.output
         output.parent.mkdir(parents=True, exist_ok=True)
         with TemporaryDirectory(dir=output.parent) as temporary_dir:
@@ -60,7 +60,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         None。
     """
     parser.add_argument("-org", "--organization", required=True, help="対象の組織名。組織管理者として実行してください。")
-    parser.add_argument("--year_month", type=year_month, required=True, help="取得する利用状況の対象月（YYYY-MM）。")
+    parser.add_argument("--month", type=year_month, required=True, help="取得する利用状況の対象月（YYYY-MM）。")
     parser.add_argument("-o", "--output", type=Path, required=True, help="CSVファイルの保存先。既存ファイルはダウンロード成功後に上書きします。")
     parser.set_defaults(subcommand_func=main)
 
