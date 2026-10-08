@@ -35,7 +35,6 @@ CSVとJSONは同じ項目を出力します。
       {
         "organization_id": "org-id",
         "organization_name": "org1",
-        "month": "2026-09",
         "date": "2026-09-01",
         "editor_name": "image_editor",
         "project_id": "project-id",
@@ -57,8 +56,6 @@ CSVとJSONは同じ項目を出力します。
      - 説明
    * - organization_id / organization_name
      - 組織ID / 組織名
-   * - month
-     - 指定した対象月（YYYY-MM）
    * - date
      - 利用日（APIの ``date``）
    * - editor_name

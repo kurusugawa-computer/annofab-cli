@@ -22,7 +22,7 @@ SOURCE_COLUMNS = {"date": "date", "editorName": "editor_name", "projectId": "pro
 CSV_DTYPES = {"date": "string", "editorName": "string", "projectId": "string", "accountId": "string", "editorUsageTime": "Float64"}
 """IDを文字列、エディタ利用時間を時間単位の数値として読み込む型。"""
 
-CSV_COLUMNS = ("organization_id", "organization_name", "month", "date", "editor_name", "project_id", "project_title", "account_id", "user_id", "username", "editor_usage_hour")
+CSV_COLUMNS = ("organization_id", "organization_name", "date", "editor_name", "project_id", "project_title", "account_id", "user_id", "username", "editor_usage_hour")
 """CSV・JSON共通の出力項目。"""
 
 
@@ -47,7 +47,6 @@ def enrich_usage_detail(
     *,
     organization_id: str,
     organization_name: str,
-    month: str,
     members: Sequence[Mapping[str, str]],
     projects: Sequence[Mapping[str, str]],
 ) -> pandas.DataFrame:
@@ -57,7 +56,6 @@ def enrich_usage_detail(
         df: 列名を標準化した明細。
         organization_id: 組織ID。
         organization_name: 組織名。
-        month: 対象月（YYYY-MM）。
         members: 現在の組織メンバー一覧。
         projects: 現在の組織配下プロジェクト一覧。
 
@@ -67,7 +65,6 @@ def enrich_usage_detail(
     result = df.copy()
     result["organization_id"] = organization_id
     result["organization_name"] = organization_name
-    result["month"] = month
     result["user_id"] = result["account_id"].map({member["account_id"]: member["user_id"] for member in members}).astype("string")
     result["username"] = result["account_id"].map({member["account_id"]: member["username"] for member in members}).astype("string")
     result["project_title"] = result["project_id"].map({project["project_id"]: project["title"] for project in projects}).astype("string")
@@ -100,7 +97,7 @@ class ListUsageDetail(CommandLine):
         organization, _ = self.service.api.get_organization(args.organization)
         members = self.service.wrapper.get_all_organization_members(args.organization)
         projects = self.service.wrapper.get_all_projects_of_organization(args.organization)
-        df = enrich_usage_detail(df, organization_id=organization["organization_id"], organization_name=args.organization, month=args.month, members=members, projects=projects)
+        df = enrich_usage_detail(df, organization_id=organization["organization_id"], organization_name=args.organization, members=members, projects=projects)
         missing_member_count = df.loc[df["account_id"].notna() & df["user_id"].isna(), "account_id"].nunique()
         if missing_member_count:
             logger.warning(f"組織メンバーに見つからないアカウントが{missing_member_count}件あります。user_id・usernameは空欄またはnullで出力します。")

@@ -33,7 +33,6 @@ def test_normalized_usage_detail(tmp_path: Path, service: Mock, output_format: s
         {
             "organization_id": "org-id",
             "organization_name": "org",
-            "month": "2026-09",
             "date": "2026-09-01",
             "editor_name": "image_editor",
             "project_id": "001",
@@ -46,7 +45,6 @@ def test_normalized_usage_detail(tmp_path: Path, service: Mock, output_format: s
         {
             "organization_id": "org-id",
             "organization_name": "org",
-            "month": "2026-09",
             "date": "2026-09-02",
             "editor_name": "video_editor",
             "project_id": "deleted",
@@ -59,7 +57,6 @@ def test_normalized_usage_detail(tmp_path: Path, service: Mock, output_format: s
         {
             "organization_id": "org-id",
             "organization_name": "org",
-            "month": "2026-09",
             "date": "2026-09-03",
             "editor_name": "3d_editor",
             "project_id": "NA",
