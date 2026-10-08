@@ -51,7 +51,7 @@ def create_usage_status_rows(usage_status_list: Sequence[UsageStatus | UsageStat
     return rows
 
 
-class ListUsageStatus(CommandLine):
+class ListUsage(CommandLine):
     """組織の利用状況一覧を出力するコマンド。"""
 
     def main(self) -> None:
@@ -87,7 +87,7 @@ def main(args: argparse.Namespace) -> None:
     """
     validate_period(args.start_month, args.end_month, args.month)
     service = build_annofabapi_resource_and_login(args)
-    ListUsageStatus(service, AnnofabApiFacade(service), args).main()
+    ListUsage(service, AnnofabApiFacade(service), args).main()
 
 
 def parse_args(parser: argparse.ArgumentParser) -> None:
@@ -119,6 +119,6 @@ def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse
         作成したパーサー。
     """
     description = "組織の月別または日別の利用状況を出力します。エディタ利用時間の単位は時間、ストレージ利用量の単位はGB時です。"
-    parser = annofabcli.common.cli.add_parser(subparsers, "list_usage_status", "組織の利用状況一覧を出力します。", description)
+    parser = annofabcli.common.cli.add_parser(subparsers, "list_usage", "組織の利用状況一覧を出力します。", description)
     parse_args(parser)
     return parser

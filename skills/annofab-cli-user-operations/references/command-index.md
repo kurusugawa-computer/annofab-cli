@@ -176,9 +176,9 @@
 
 組織関係のサブコマンド
 
-- `annofabcli organization download_usage_status_detail`: 組織の利用状況詳細CSVをダウンロードします。
 - `annofabcli organization list`: 所属している組織の一覧を出力します。
-- `annofabcli organization list_usage_status`: 組織の利用状況一覧を出力します。
+- `annofabcli organization list_usage`: 組織の利用状況一覧を出力します。
+- `annofabcli organization list_usage_detail`: 組織の利用状況詳細CSVをダウンロードします。
 
 ## organization_idp
 

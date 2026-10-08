@@ -1,5 +1,5 @@
 =============================================
-organization download_usage_status_detail
+organization list_usage_detail
 =============================================
 
 Description
@@ -9,16 +9,16 @@ Description
 APIが提供するCSVファイルを、文字コードや列構成を変えずに保存します。
 このコマンドはCSVのダウンロード専用です。
 月別・日別の利用状況をCSVまたはJSONで出力する場合は、
-:doc:`list_usage_status` を使用してください。出力例も同ページに記載しています。
+:doc:`list_usage` を使用してください。出力例も同ページに記載しています。
 
 Examples
 =================================
 
 .. code-block:: bash
 
-    $ annofabcli organization download_usage_status_detail --organization org1 --month 2026-09 --output usage_detail.csv
+    $ annofabcli organization list_usage_detail --organization org1 --month 2026-09 --output usage_detail.csv
 
-年月の形式は :doc:`list_usage_status` と同じです。
+年月の形式は :doc:`list_usage` と同じです。
 出力先の親ディレクトリがない場合は作成します。
 既存ファイルはダウンロード成功後に上書きします。
 ダウンロードに失敗した場合は既存ファイルを保持し、不完全なCSVは残しません。
@@ -32,13 +32,13 @@ Examples
     usage_detail.csv
 
 詳細CSVの列構成はAnnofabが提供するファイルに従います。
-``list_usage_status`` が生成する集計CSVとは異なります。
+``list_usage`` が生成する集計CSVとは異なります。
 
 Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.organization.download_usage_status_detail.add_parser
-   :prog: annofabcli organization download_usage_status_detail
+   :ref: annofabcli.organization.list_usage_detail.add_parser
+   :prog: annofabcli organization list_usage_detail
    :nosubcommands:
    :nodefaultconst:

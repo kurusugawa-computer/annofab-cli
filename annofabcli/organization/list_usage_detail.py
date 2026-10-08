@@ -13,7 +13,7 @@ from annofabcli.organization.usage_status import year_month
 logger = logging.getLogger(__name__)
 
 
-class DownloadUsageStatusDetail(CommandLine):
+class ListUsageDetail(CommandLine):
     """利用状況詳細CSVを保存するコマンド。"""
 
     def main(self) -> None:
@@ -47,7 +47,7 @@ def main(args: argparse.Namespace) -> None:
         None。
     """
     service = build_annofabapi_resource_and_login(args)
-    DownloadUsageStatusDetail(service, AnnofabApiFacade(service), args).main()
+    ListUsageDetail(service, AnnofabApiFacade(service), args).main()
 
 
 def parse_args(parser: argparse.ArgumentParser) -> None:
@@ -75,6 +75,6 @@ def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse
         作成したパーサー。
     """
     description = "指定した月の組織の利用状況詳細CSVをダウンロードします。APIが提供するCSVをそのまま保存します。"
-    parser = annofabcli.common.cli.add_parser(subparsers, "download_usage_status_detail", "組織の利用状況詳細CSVをダウンロードします。", description)
+    parser = annofabcli.common.cli.add_parser(subparsers, "list_usage_detail", "組織の利用状況詳細CSVをダウンロードします。", description)
     parse_args(parser)
     return parser

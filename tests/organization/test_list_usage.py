@@ -8,7 +8,7 @@ import pandas
 import pytest
 
 from annofabcli.common.exceptions import AnnofabCliException
-from annofabcli.organization.list_usage_status import CSV_COLUMNS, DAILY_CSV_COLUMNS, ListUsageStatus
+from annofabcli.organization.list_usage import CSV_COLUMNS, DAILY_CSV_COLUMNS, ListUsage
 from annofabcli.organization.usage_status import validate_period
 
 
@@ -47,7 +47,7 @@ def test_usage_status_output(tmp_path: Path, *, daily: bool, output_format: str,
         yes=True,
     )
 
-    ListUsageStatus(service, Mock(), args).main()
+    ListUsage(service, Mock(), args).main()
 
     if daily:
         service.api.get_organization_usage_status.assert_called_once_with("org", "2026-09")
@@ -94,7 +94,7 @@ def test_optional_month_range(tmp_path: Path, start_month: str | None, end_month
     service.api.get_organization_usage_status_list.return_value = ([], Mock())
     args = Namespace(organization="org", start_month=start_month, end_month=end_month, month=None, format="json", output=tmp_path / "usage.json", yes=True)
 
-    ListUsageStatus(service, Mock(), args).main()
+    ListUsage(service, Mock(), args).main()
 
     service.api.get_organization_usage_status_list.assert_called_once_with("org", query_params=query_params)
 
@@ -108,7 +108,7 @@ def test_output_keeps_additional_editor(tmp_path: Path, output_format: str) -> N
     output = tmp_path / "usage.csv"
     args = Namespace(organization="org", start_month=None, end_month=None, month=None, format=output_format, output=output, yes=True)
 
-    ListUsageStatus(service, Mock(), args).main()
+    ListUsage(service, Mock(), args).main()
 
     if output_format == "csv":
         assert pandas.read_csv(output).loc[0, "custom_editor_usage_hour"] == 2.5

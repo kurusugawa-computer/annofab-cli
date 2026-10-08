@@ -1,5 +1,5 @@
 ==================================
-organization list_usage_status
+organization list_usage
 ==================================
 
 Description
@@ -19,7 +19,7 @@ Examples
 
 .. code-block:: bash
 
-    $ annofabcli organization list_usage_status --organization org1 --start_month 2026-08 --end_month 2026-09 --output out.csv
+    $ annofabcli organization list_usage --organization org1 --start_month 2026-08 --end_month 2026-09 --output out.csv
 
 開始月と終了月はどちらも対象に含みます。年月は ``YYYY-MM`` 形式で指定します。
 終了月を省略するとAPIはJSTでの現在の年月を使用します。
@@ -30,7 +30,7 @@ Examples
 
 .. code-block:: bash
 
-    $ annofabcli organization list_usage_status --organization org1 --month 2026-09 --output daily.csv
+    $ annofabcli organization list_usage --organization org1 --month 2026-09 --output daily.csv
 
 ``--month`` を指定すると、その月の日別利用状況を出力します。
 ``--start_month``、``--end_month`` とは同時に指定できません。
@@ -48,7 +48,7 @@ APIから追加のエディタ名が返された場合は、``{エディタ名}_
 取得結果が0件でもヘッダ行を出力します。
 
 .. csv-table:: out.csv
-    :file: list_usage_status/out.csv
+    :file: list_usage/out.csv
     :header-rows: 1
 
 JSON出力
@@ -58,7 +58,7 @@ APIに含まれないエディタの利用時間は、CSVでは空欄、JSONで�
 
 .. code-block:: bash
 
-    $ annofabcli organization list_usage_status --organization org1 --start_month 2026-09 --end_month 2026-09 --format pretty_json --output out.json
+    $ annofabcli organization list_usage --organization org1 --start_month 2026-09 --end_month 2026-09 --format pretty_json --output out.json
 
 .. code-block:: json
     :caption: out.json
@@ -83,7 +83,7 @@ Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.organization.list_usage_status.add_parser
-   :prog: annofabcli organization list_usage_status
+   :ref: annofabcli.organization.list_usage.add_parser
+   :prog: annofabcli organization list_usage
    :nosubcommands:
    :nodefaultconst:

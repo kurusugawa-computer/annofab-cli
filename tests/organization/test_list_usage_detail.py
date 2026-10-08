@@ -5,7 +5,7 @@ from unittest.mock import Mock
 import pytest
 import requests
 
-from annofabcli.organization.download_usage_status_detail import DownloadUsageStatusDetail
+from annofabcli.organization.list_usage_detail import ListUsageDetail
 
 
 def test_download_csv_preserves_bytes(tmp_path: Path) -> None:
@@ -22,7 +22,7 @@ def test_download_csv_preserves_bytes(tmp_path: Path) -> None:
     output = tmp_path / "nested" / "usage.csv"
     args = Namespace(organization="org", month="2026-09", output=output, yes=True)
 
-    DownloadUsageStatusDetail(service, Mock(), args).main()
+    ListUsageDetail(service, Mock(), args).main()
 
     service.api.get_organization_usage_status_detail.assert_called_once_with("org", "2026-09")
     assert output.read_bytes() == csv_content
@@ -45,7 +45,7 @@ def test_download_failure_does_not_leave_partial_output(tmp_path: Path, *, exist
     args = Namespace(organization="org", month="2026-09", output=output, yes=True)
 
     with pytest.raises(requests.HTTPError):
-        DownloadUsageStatusDetail(service, Mock(), args).main()
+        ListUsageDetail(service, Mock(), args).main()
 
     if existing:
         assert output.read_bytes() == b"original"
@@ -62,7 +62,7 @@ def test_api_failure_preserves_existing_output(tmp_path: Path) -> None:
     args = Namespace(organization="org", month="2026-09", output=output, yes=True)
 
     with pytest.raises(requests.HTTPError):
-        DownloadUsageStatusDetail(service, Mock(), args).main()
+        ListUsageDetail(service, Mock(), args).main()
 
     assert output.read_bytes() == b"original"
     service.wrapper.download.assert_not_called()
