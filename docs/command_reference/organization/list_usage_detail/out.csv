@@ -1,0 +1,2 @@
+organization_id,organization_name,month,date,editor_name,project_id,project_title,account_id,user_id,username,editor_usage_hour
+org-id,org1,2026-09,2026-09-01,image_editor,project-id,プロジェクトA,account-id,alice,利用者A,1.5

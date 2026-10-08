@@ -1,23 +1,84 @@
-"""組織の利用状況詳細CSVをダウンロードします。"""
+"""組織のエディタ利用状況の明細を出力します。"""
 
 import argparse
 import logging
+from collections.abc import Mapping, Sequence
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
+import pandas
+
 import annofabcli.common.cli
-from annofabcli.common.cli import CommandLine, build_annofabapi_resource_and_login
+from annofabcli.common.cli import ArgumentParser, CommandLine, build_annofabapi_resource_and_login
+from annofabcli.common.enums import OutputFormat
 from annofabcli.common.facade import AnnofabApiFacade
 from annofabcli.organization.usage_status import year_month
 
 logger = logging.getLogger(__name__)
 
+SOURCE_COLUMNS = {"date": "date", "editorName": "editor_name", "projectId": "project_id", "accountId": "account_id", "editorUsageTime": "editor_usage_hour"}
+"""APIが提供するCSVの列名と、CLIの出力項目名の対応。"""
+
+CSV_DTYPES = {"date": "string", "editorName": "string", "projectId": "string", "accountId": "string", "editorUsageTime": "Float64"}
+"""IDを文字列、エディタ利用時間を時間単位の数値として読み込む型。"""
+
+CSV_COLUMNS = ("organization_id", "organization_name", "month", "date", "editor_name", "project_id", "project_title", "account_id", "user_id", "username", "editor_usage_hour")
+"""CSV・JSON共通の出力項目。"""
+
+
+def read_usage_detail_csv(path: Path) -> pandas.DataFrame:
+    """明細CSVを読み込み、列名を標準化します。
+
+    Args:
+        path: APIから取得した明細CSVのパス。
+
+    Returns:
+        列名を標準化した明細。エディタ利用時間の単位は時間です。
+    """
+    try:
+        df = pandas.read_csv(path, usecols=list(SOURCE_COLUMNS), dtype=CSV_DTYPES, encoding="utf-8-sig", keep_default_na=False, na_values=[""])
+    except pandas.errors.EmptyDataError:
+        df = pandas.DataFrame(columns=list(SOURCE_COLUMNS)).astype(CSV_DTYPES)
+    return df.rename(columns=SOURCE_COLUMNS)
+
+
+def enrich_usage_detail(
+    df: pandas.DataFrame,
+    *,
+    organization_id: str,
+    organization_name: str,
+    month: str,
+    members: Sequence[Mapping[str, str]],
+    projects: Sequence[Mapping[str, str]],
+) -> pandas.DataFrame:
+    """利用状況明細に組織・ユーザー・プロジェクト情報を付与します。
+
+    Args:
+        df: 列名を標準化した明細。
+        organization_id: 組織ID。
+        organization_name: 組織名。
+        month: 対象月（YYYY-MM）。
+        members: 現在の組織メンバー一覧。
+        projects: 現在の組織配下プロジェクト一覧。
+
+    Returns:
+        出力項目を揃えた明細。対応するメンバーやプロジェクトがなければ補完項目は欠損値になります。
+    """
+    result = df.copy()
+    result["organization_id"] = organization_id
+    result["organization_name"] = organization_name
+    result["month"] = month
+    result["user_id"] = result["account_id"].map({member["account_id"]: member["user_id"] for member in members}).astype("string")
+    result["username"] = result["account_id"].map({member["account_id"]: member["username"] for member in members}).astype("string")
+    result["project_title"] = result["project_id"].map({project["project_id"]: project["title"] for project in projects}).astype("string")
+    return result[list(CSV_COLUMNS)]
+
 
 class ListUsageDetail(CommandLine):
-    """利用状況詳細CSVを保存するコマンド。"""
+    """エディタ利用状況の明細をCSV・JSONで出力するコマンド。"""
 
     def main(self) -> None:
-        """CSVを一時ファイルに取得し、成功した場合に出力先へ保存します。
+        """明細を取得してユーザー情報などを付与し、指定形式で出力します。
 
         Args:
             なし。
@@ -26,15 +87,25 @@ class ListUsageDetail(CommandLine):
             None。
         """
         args = self.args
-        logger.info(f"組織'{args.organization}'の{args.month}の利用状況詳細CSVをダウンロードします。")
+        logger.info(f"組織'{args.organization}'の{args.month}のエディタ利用状況明細を取得します。")
         csv_file, _ = self.service.api.get_organization_usage_status_detail(args.organization, args.month)
-        output: Path = args.output
-        output.parent.mkdir(parents=True, exist_ok=True)
-        with TemporaryDirectory(dir=output.parent) as temporary_dir:
+        with TemporaryDirectory() as temporary_dir:
             temporary_file = Path(temporary_dir) / "usage_status.csv"
             self.service.wrapper.download(csv_file["url"], temporary_file)
-            temporary_file.replace(output)
-        logger.info(f"利用状況詳細CSVを保存しました。 :: output='{output}'")
+            df = read_usage_detail_csv(temporary_file)
+        if df.empty:
+            self.print_according_to_format([], csv_columns=CSV_COLUMNS)
+            logger.info("エディタ利用状況明細の件数: 0")
+            return
+        organization, _ = self.service.api.get_organization(args.organization)
+        members = self.service.wrapper.get_all_organization_members(args.organization)
+        projects = self.service.wrapper.get_all_projects_of_organization(args.organization)
+        df = enrich_usage_detail(df, organization_id=organization["organization_id"], organization_name=args.organization, month=args.month, members=members, projects=projects)
+        missing_member_count = df.loc[df["account_id"].notna() & df["user_id"].isna(), "account_id"].nunique()
+        if missing_member_count:
+            logger.warning(f"組織メンバーに見つからないアカウントが{missing_member_count}件あります。user_id・usernameは空欄またはnullで出力します。")
+        self.print_according_to_format(df.to_dict(orient="records"), csv_columns=CSV_COLUMNS)
+        logger.info(f"エディタ利用状況明細の件数: {len(df)}")
 
 
 def main(args: argparse.Namespace) -> None:
@@ -61,12 +132,14 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     """
     parser.add_argument("-org", "--organization", required=True, help="対象の組織名。組織管理者として実行してください。")
     parser.add_argument("--month", type=year_month, required=True, help="取得する利用状況の対象月（YYYY-MM）。")
-    parser.add_argument("-o", "--output", type=Path, required=True, help="CSVファイルの保存先。既存ファイルはダウンロード成功後に上書きします。")
+    argument_parser = ArgumentParser(parser)
+    argument_parser.add_format(choices=[OutputFormat.CSV, OutputFormat.JSON, OutputFormat.PRETTY_JSON], default=OutputFormat.CSV)
+    argument_parser.add_output()
     parser.set_defaults(subcommand_func=main)
 
 
 def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
-    """利用状況詳細ダウンロードのパーサーを作成します。
+    """利用状況明細のパーサーを作成します。
 
     Args:
         subparsers: コマンドを登録する親パーサー。
@@ -74,7 +147,7 @@ def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse
     Returns:
         作成したパーサー。
     """
-    description = "指定した月の組織の利用状況詳細CSVをダウンロードします。APIが提供するCSVをそのまま保存します。"
-    parser = annofabcli.common.cli.add_parser(subparsers, "list_usage_detail", "組織の利用状況詳細CSVをダウンロードします。", description)
+    description = "指定した月の組織のエディタ利用状況明細を出力します。ユーザー情報・プロジェクト名を付与します。エディタ利用時間の単位は時間です。"
+    parser = annofabcli.common.cli.add_parser(subparsers, "list_usage_detail", "組織のエディタ利用状況明細を出力します。", description)
     parse_args(parser)
     return parser
