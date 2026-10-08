@@ -176,7 +176,7 @@ class ListAllTasksAddedTaskHistory(CommandLine):
         self.require_project_access(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER])
 
         temp_dir = Path(args.temp_dir) if args.temp_dir is not None else None
-        start_date_list = args.start_datetime if args.start_datetime is not None else None
+        start_date_list = args.start_date
         task_list = ListAllTasksAddedTaskHistoryMain(self.service, project_id).get_task_list_added_task_history(
             task_json_path=args.task_json,
             task_history_json_path=args.task_history_json,
@@ -233,7 +233,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     )
 
     parser.add_argument(
-        "--start_datetime",
+        "--start_date",
         type=str,
         nargs="+",
         help="指定した日付以降（started_datetimeを基準）の教師付・検査・受入作業時間および担当者情報を計算し、"
