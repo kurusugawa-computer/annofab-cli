@@ -238,7 +238,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
 
     argument_parser.add_task_id(
         required=False,
-        help_message=("マージ対象であるタスクのtask_idを指定します。指定しない場合、すべてのタスクがマージ対象です。 ``file://`` を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。"),
+        help_message=("マージ対象であるタスクのtask_idを指定します。指定しない場合、すべてのタスクがマージ対象です。"),
     )
 
     parser.set_defaults(subcommand_func=main)

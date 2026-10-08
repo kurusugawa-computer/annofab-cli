@@ -427,11 +427,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
 
     argument_parser.add_task_id(
         required=False,
-        help_message=(
-            "描画対象であるタスクのtask_idを指定します。"
-            "指定しない場合、すべてのタスクに含まれるアノテーションが描画されます。"
-            " ``file://`` を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。"
-        ),
+        help_message=("描画対象であるタスクのtask_idを指定します。指定しない場合、すべてのタスクに含まれるアノテーションが描画されます。"),
     )
 
     parser.add_argument(

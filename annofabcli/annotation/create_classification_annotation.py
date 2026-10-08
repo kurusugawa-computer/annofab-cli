@@ -375,9 +375,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
 
     argument_parser.add_project_id()
 
-    argument_parser.add_task_id(
-        required=True, help_message=("全体アノテーションの作成先であるタスクのtask_idを指定します。 ``file://`` を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。")
-    )
+    argument_parser.add_task_id(required=True, help_message=("全体アノテーションの作成先であるタスクのtask_idを指定します。"))
 
     parser.add_argument(
         "--label_name",
