@@ -15,13 +15,13 @@ from annofabcli.organization.usage_status import validate_period, year_month
 
 logger = logging.getLogger(__name__)
 
-EDITOR_USAGE_COLUMNS = ("editor_usage.image_editor", "editor_usage.video_editor", "editor_usage.3d_editor")
+EDITOR_USAGE_COLUMNS = ("image_editor_usage_hour", "video_editor_usage_hour", "3d_editor_usage_hour")
 """エディタ利用時間（時間）のCSV列。"""
 
-CSV_COLUMNS = ("organization_id", "organization_name", "year_month", "aggregation_period_from", "aggregation_period_to", "storage_usage", *EDITOR_USAGE_COLUMNS)
+CSV_COLUMNS = ("organization_id", "organization_name", "year_month", "aggregation_period_from", "aggregation_period_to", "storage_usage_gb_hour", *EDITOR_USAGE_COLUMNS)
 """月別CSVの列。ストレージ利用量の単位はGB時。"""
 
-DAILY_CSV_COLUMNS = ("organization_id", "organization_name", "date", "aggregation_period_from", "aggregation_period_to", "storage_usage", *EDITOR_USAGE_COLUMNS, "created_datetime")
+DAILY_CSV_COLUMNS = ("organization_id", "organization_name", "date", "aggregation_period_from", "aggregation_period_to", "storage_usage_gb_hour", *EDITOR_USAGE_COLUMNS, "created_datetime")
 """日別CSVの列。"""
 
 
@@ -42,9 +42,9 @@ def create_csv_rows(usage_status_list: Sequence[UsageStatus | UsageStatusByDay],
             row["date"] = usage.var_date
         else:
             row["year_month"] = usage.year_month
-        row.update(aggregation_period_from=usage.aggregation_period_from, aggregation_period_to=usage.aggregation_period_to, storage_usage=usage.storage_usage)
+        row.update(aggregation_period_from=usage.aggregation_period_from, aggregation_period_to=usage.aggregation_period_to, storage_usage_gb_hour=usage.storage_usage)
         row.update(dict.fromkeys(EDITOR_USAGE_COLUMNS))
-        row.update({f"editor_usage.{editor.editor_name}": editor.value for editor in usage.editor_usage})
+        row.update({f"{editor.editor_name}_usage_hour": editor.value for editor in usage.editor_usage})
         if isinstance(usage, UsageStatusByDay):
             row["created_datetime"] = usage.created_datetime
         rows.append(row)

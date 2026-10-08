@@ -41,9 +41,10 @@ Examples
 
 CSV出力
 ---------------------------------
-エディタ利用時間を ``editor_usage.image_editor``、``editor_usage.video_editor``、
-``editor_usage.3d_editor`` の列に展開します。APIに含まれないエディタの利用時間は空欄です。
-APIから追加のエディタ名が返された場合は、その列も出力します。
+ストレージ利用量を ``storage_usage_gb_hour`` （GB時）として出力します。
+エディタ利用時間を ``image_editor_usage_hour``、``video_editor_usage_hour``、
+``3d_editor_usage_hour`` の列に展開します。APIに含まれないエディタの利用時間は空欄です。
+APIから追加のエディタ名が返された場合は、``{エディタ名}_usage_hour`` の列も出力します。
 取得結果が0件でもヘッダ行を出力します。
 
 .. csv-table:: out.csv

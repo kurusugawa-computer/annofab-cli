@@ -61,10 +61,10 @@ def test_usage_status_output(tmp_path: Path, *, daily: bool, output_format: str,
         assert len(df) == len(data)
         if not empty:
             assert df.loc[0, "organization_name"] == "org"
-            assert df.loc[0, "storage_usage"] == 48.5
-            assert df.loc[0, "editor_usage.image_editor"] == 1.5
-            assert df.loc[0, "editor_usage.video_editor"] == 0
-            assert pandas.isna(df.loc[0, "editor_usage.3d_editor"])
+            assert df.loc[0, "storage_usage_gb_hour"] == 48.5
+            assert df.loc[0, "image_editor_usage_hour"] == 1.5
+            assert df.loc[0, "video_editor_usage_hour"] == 0
+            assert pandas.isna(df.loc[0, "3d_editor_usage_hour"])
             assert df.loc[0, "date" if daily else "year_month"] == ("2026-09-01" if daily else "2026-09")
     else:
         assert json.loads(output.read_text()) == [{**usage, "organization_name": "org"} for usage in data]
@@ -92,7 +92,7 @@ def test_csv_keeps_additional_editor(tmp_path: Path) -> None:
 
     ListUsageStatus(service, Mock(), args).main()
 
-    assert pandas.read_csv(output).loc[0, "editor_usage.custom_editor"] == 2.5
+    assert pandas.read_csv(output).loc[0, "custom_editor_usage_hour"] == 2.5
 
 
 @pytest.mark.parametrize("start_month,end_month,daily_month", [("2026-10", "2026-09", None), ("2026-09", None, "2026-09"), (None, "2026-09", "2026-09")])
