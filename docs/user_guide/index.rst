@@ -7,7 +7,7 @@ User Guide
    :titlesonly:
 
    getting_started
-   codex_skill
+   agent_skill
    user_guide
    configurations
    cli_usage_output
