@@ -141,7 +141,7 @@ class TestResolveChoiceDeletion:
                 choice_name_ens=None,
             )
 
-    def test_resolve_choice_deletion__defaultを削除するときはunsafe_defaultsが必要(self) -> None:
+    def test_resolve_choice_deletion__defaultを削除するときはclear_default_if_deletedが必要(self) -> None:
         annotation_specs = load_annotation_specs()
         get_type_attribute(annotation_specs)["default"] = LARGE_CHOICE_ID
 
@@ -152,10 +152,10 @@ class TestResolveChoiceDeletion:
                 attribute_name_en=None,
                 choice_ids=[LARGE_CHOICE_ID],
                 choice_name_ens=None,
-                unsafe_defaults=False,
+                clear_default_if_deleted=False,
             )
 
-    def test_resolve_choice_deletion__unsafe_defaultsならdefaultの削除を許可する(self) -> None:
+    def test_resolve_choice_deletion__clear_default_if_deletedならdefaultの削除を許可する(self) -> None:
         annotation_specs = load_annotation_specs()
         get_type_attribute(annotation_specs)["default"] = LARGE_CHOICE_ID
 
@@ -165,7 +165,7 @@ class TestResolveChoiceDeletion:
             attribute_name_en=None,
             choice_ids=[LARGE_CHOICE_ID],
             choice_name_ens=None,
-            unsafe_defaults=True,
+            clear_default_if_deleted=True,
         )
 
         assert [choice["choice_id"] for choice in actual.choices_to_remove] == [LARGE_CHOICE_ID]
@@ -182,7 +182,7 @@ class TestBuildRequestBodyForDeleteChoices:
             choice_name_ens=["medium"],
         )
 
-        actual = build_request_body_for_delete_choices(annotation_specs, resolved_deletion=resolved, unsafe_defaults=False, comment=None)
+        actual = build_request_body_for_delete_choices(annotation_specs, resolved_deletion=resolved, clear_default_if_deleted=False, comment=None)
 
         updated_attribute = get_type_attribute(actual)
         assert [choice["choice_id"] for choice in updated_attribute["choices"]] == [LARGE_CHOICE_ID, SMALL_CHOICE_ID]
@@ -190,7 +190,7 @@ class TestBuildRequestBodyForDeleteChoices:
         assert actual["last_updated_datetime"] == "2026-04-24T00:00:00+09:00"
         assert "以下の選択肢を属性から削除しました。" in actual["comment"]
 
-    def test_build_request_body_for_delete_choices__unsafe_defaultsならdefaultを解除する(self) -> None:
+    def test_build_request_body_for_delete_choices__clear_default_if_deletedならdefaultを解除する(self) -> None:
         annotation_specs = load_annotation_specs()
         get_type_attribute(annotation_specs)["default"] = LARGE_CHOICE_ID
         resolved = resolve_choice_deletion(
@@ -199,10 +199,10 @@ class TestBuildRequestBodyForDeleteChoices:
             attribute_name_en=None,
             choice_ids=[LARGE_CHOICE_ID],
             choice_name_ens=None,
-            unsafe_defaults=True,
+            clear_default_if_deleted=True,
         )
 
-        actual = build_request_body_for_delete_choices(annotation_specs, resolved_deletion=resolved, unsafe_defaults=True, comment=None)
+        actual = build_request_body_for_delete_choices(annotation_specs, resolved_deletion=resolved, clear_default_if_deleted=True, comment=None)
 
         assert get_type_attribute(actual)["default"] == ""
 
@@ -216,7 +216,7 @@ class TestBuildRequestBodyForDeleteChoices:
             choice_name_ens=["medium"],
         )
 
-        actual = build_request_body_for_delete_choices(annotation_specs, resolved_deletion=resolved, unsafe_defaults=False, comment="custom")
+        actual = build_request_body_for_delete_choices(annotation_specs, resolved_deletion=resolved, clear_default_if_deleted=False, comment="custom")
 
         assert actual["comment"] == "custom"
 
@@ -231,7 +231,7 @@ class TestBuildRequestBodyForDeleteChoices:
             choice_name_ens=["medium"],
         )
 
-        build_request_body_for_delete_choices(annotation_specs, resolved_deletion=resolved, unsafe_defaults=False, comment=None)
+        build_request_body_for_delete_choices(annotation_specs, resolved_deletion=resolved, clear_default_if_deleted=False, comment=None)
 
         assert annotation_specs == old_annotation_specs
 

@@ -2,17 +2,18 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from unittest.mock import Mock
 
 import pytest
 from annofabapi.util.attribute_restrictions import Restriction
 
 from annofabcli.__main__ import main
+from annofabcli.annotation_specs import list_attribute_restriction
 
 DATA_DIR = Path("./tests/data/annotation_specs")
 
-pytestmark = pytest.mark.access_webapi
 
-
+@pytest.mark.access_webapi
 class TestListAttributeRestriction:
     command_name = "annotation_specs"
 
@@ -240,3 +241,23 @@ class TestListAttributeRestriction:
                 },
             }
         ]
+
+
+def test_label_name_enでラベルに紐づく属性制約を絞り込む(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(list_attribute_restriction, "build_annofabapi_resource_and_login", Mock(return_value=Mock()))
+    annotation_specs_path = DATA_DIR / "annotation_specs.json"
+    annotation_specs = json.loads(annotation_specs_path.read_text(encoding="utf-8"))
+    annotation_specs["labels"][0]["additional_data_definitions"] = ["15235360-4f46-42ac-927d-0e046bf52ddd"]
+    annotation_specs_path = tmp_path / "annotation_specs.json"
+    annotation_specs_path.write_text(json.dumps(annotation_specs), encoding="utf-8")
+    output_path = tmp_path / "restrictions.json"
+    args = list_attribute_restriction.add_parser().parse_args(["--annotation_specs_json_file", str(annotation_specs_path), "--label_name_en", "car", "--format", "json", "--output", str(output_path)])
+
+    list_attribute_restriction.main(args)
+
+    attribute_ids = annotation_specs["labels"][0]["additional_data_definitions"]
+    expected = [restriction for restriction in annotation_specs["restrictions"] if restriction["additional_data_definition_id"] in attribute_ids]
+    actual = json.loads(output_path.read_text(encoding="utf-8"))
+    assert actual == expected
+    assert actual
+    assert len(actual) < len(annotation_specs["restrictions"])

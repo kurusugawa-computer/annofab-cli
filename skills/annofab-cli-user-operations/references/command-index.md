@@ -129,6 +129,12 @@
 
 - `annofabcli completion`: 指定したシェル用の補完スクリプトを標準出力に書き出します。
 
+## filesystem
+
+ファイル操作関係（Web APIにアクセスしない）のサブコマンド
+
+- `annofabcli filesystem draw_annotation`: [DEPRECATED] 画像にアノテーションを描画します。
+
 ## input_data
 
 入力データ関係のサブコマンド
@@ -226,6 +232,16 @@
 - `annofabcli project_member update`: CSVまたはJSONでプロジェクトメンバ情報を更新します。
 - `annofabcli project_member update_role`: 複数のプロジェクトメンバに同じロールを設定します。
 
+## stat_visualization
+
+`annofabcli statistics visualization` コマンドの出力結果を加工するサブコマンド（アルファ版）
+
+- `annofabcli stat_visualization mask_user_info`: `annofabcli statistics visualize` コマンドの出力結果のユーザ情報をマスクします。
+- `annofabcli stat_visualization merge`: ``annofabcli statistics visualize`` コマンドの出力結果をマージします。
+- `annofabcli stat_visualization summarize_whole_performance_csv`: ``annofabcli statistics visualize`` コマンドの出力結果であるプロジェクトディレクトリから、プロジェクトごとの生産性や品質の一覧を出力します。
+- `annofabcli stat_visualization write_graph`: `annofabcli statistics visualize` コマンドの出力結果であるプロジェクトのディレクトリから、グラフを出力します。
+- `annofabcli stat_visualization write_performance_rating_csv`: プロジェクトごとユーザごとにパフォーマンスを評価できる複数のCSVを出力します。
+
 ## statistics
 
 統計関係のサブコマンド
@@ -240,16 +256,6 @@
 - `annofabcli statistics visualize_annotation_count`: [DEPRECATED] 各ラベル、各属性値のアノテーション数をヒストグラムで可視化します。
 - `annofabcli statistics visualize_annotation_duration`: [非推奨・2027-01-01以降の最初のリリースで廃止予定] ラベルごとまたは属性値ごとに区間アノテーションの長さをヒストグラムで可視化したファイルを出力します。
 - `annofabcli statistics visualize_video_duration`: [DEPRECATED] 動画の長さをヒストグラムで可視化します。
-
-## stat_visualization
-
-`annofabcli statistics visualization` コマンドの出力結果を加工するサブコマンド（アルファ版）
-
-- `annofabcli stat_visualization mask_user_info`: `annofabcli statistics visualize` コマンドの出力結果のユーザ情報をマスクします。
-- `annofabcli stat_visualization merge`: ``annofabcli statistics visualize`` コマンドの出力結果をマージします。
-- `annofabcli stat_visualization summarize_whole_performance_csv`: ``annofabcli statistics visualize`` コマンドの出力結果であるプロジェクトディレクトリから、プロジェクトごとの生産性や品質の一覧を出力します。
-- `annofabcli stat_visualization write_graph`: `annofabcli statistics visualize` コマンドの出力結果であるプロジェクトのディレクトリから、グラフを出力します。
-- `annofabcli stat_visualization write_performance_rating_csv`: プロジェクトごとユーザごとにパフォーマンスを評価できる複数のCSVを出力します。
 
 ## supplementary
 
@@ -322,9 +328,3 @@
 Webhook関係のサブコマンド
 
 - `annofabcli webhook list`: Webhook一覧を出力します。
-
-## filesystem
-
-ファイル操作関係（Web APIにアクセスしない）のサブコマンド
-
-- `annofabcli filesystem draw_annotation`: [DEPRECATED] 画像にアノテーションを描画します。

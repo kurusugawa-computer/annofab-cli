@@ -119,6 +119,7 @@ def create_parser() -> argparse.ArgumentParser:
     annofabcli.annotation_zip.subcommand_annotation_zip.add_parser(subparsers)
     annofabcli.comment.subcommand_comment.add_parser(subparsers)
     annofabcli.completion.subcommand_completion.add_parser(subparsers)
+    annofabcli.filesystem.subcommand_filesystem.add_parser(subparsers)
     annofabcli.input_data.subcommand_input_data.add_parser(subparsers)
     annofabcli.instruction.subcommand_instruction.add_parser(subparsers)
     annofabcli.job.subcommand_job.add_parser(subparsers)
@@ -129,16 +130,14 @@ def create_parser() -> argparse.ArgumentParser:
     annofabcli.organization_plugin.subcommand_organization_plugin.add_parser(subparsers)
     annofabcli.project.subcommand_project.add_parser(subparsers)
     annofabcli.project_member.subcommand_project_member.add_parser(subparsers)
-    annofabcli.statistics.subcommand_statistics.add_parser(subparsers)
     annofabcli.stat_visualization.subcommand_stat_visualization.add_parser(subparsers)
+    annofabcli.statistics.subcommand_statistics.add_parser(subparsers)
     annofabcli.supplementary.subcommand_supplementary.add_parser(subparsers)
     annofabcli.task.subcommand_task.add_parser(subparsers)
     annofabcli.task_count.subcommand_task_count.add_parser(subparsers)
     annofabcli.task_history.subcommand_task_history.add_parser(subparsers)
     annofabcli.task_history_event.subcommand_task_history_event.add_parser(subparsers)
     annofabcli.webhook.subcommand_webhook.add_parser(subparsers)
-
-    annofabcli.filesystem.subcommand_filesystem.add_parser(subparsers)
 
     return parser
 
