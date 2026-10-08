@@ -356,3 +356,40 @@ def test_backup_confirmation_controls_subsequent_label_changes(monkeypatch: pyte
     assert service.api.batch_update_annotations.call_count == expected_update_count
     for call in service.api.batch_update_annotations.call_args_list:
         assert call.kwargs["request_body"][0]["data"]["label_id"] == "label_bus"
+
+
+@pytest.mark.parametrize("include_on_hold_task", [False, True])
+def test_on_hold_task_requires_explicit_opt_in(include_on_hold_task: bool) -> None:  # noqa: FBT001
+    service = Mock()
+    task = {
+        "project_id": "project1",
+        "task_id": "task1",
+        "phase": "annotation",
+        "phase_stage": 1,
+        "status": "on_hold",
+        "input_data_id_list": ["input1"],
+        "account_id": None,
+        "histories_by_phase": [],
+        "work_time_span": 0,
+        "number_of_rejections": 0,
+        "started_datetime": None,
+        "updated_datetime": "2026-10-09T00:00:00+09:00",
+        "operation_updated_datetime": None,
+        "sampling": None,
+        "metadata": None,
+    }
+    service.wrapper.get_task_or_none.return_value = task
+    service.wrapper.get_all_annotation_list.return_value = []
+    obj = ChangeAnnotationLabelMain(
+        service,
+        project_id="project1",
+        include_complete_task=False,
+        include_on_hold_task=include_on_hold_task,
+        all_yes=True,
+        annotation_specs={"labels": [], "additionals": [], "inspection_phrases": []},
+    )
+    obj.change_label_for_task(
+        "task1", annotation_query=AnnotationQueryForAPI(label_id="car"), dest_label_info=DestLabelInfo(label_id="car", annotation_type="polygon", additional_data_definition_ids=set())
+    )
+    assert service.wrapper.get_all_annotation_list.called is include_on_hold_task
+    service.api.batch_update_annotations.assert_not_called()
