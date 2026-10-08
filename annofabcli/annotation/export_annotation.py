@@ -20,14 +20,14 @@ from annofabcli.common.facade import AnnofabApiFacade
 logger = logging.getLogger(__name__)
 
 
-class GetAnnotationMain:
+class ExportAnnotationMain:
     def __init__(self, service: annofabapi.Resource, project_id: str) -> None:
         self.service = service
         """Annofab APIクライアント。"""
         self.project_id = project_id
         """取得対象のプロジェクトID。"""
 
-    def get_annotation_for_input_data(self, task_id: str, input_data_id: str, task_dir: Path) -> None:
+    def export_annotation_for_input_data(self, task_id: str, input_data_id: str, task_dir: Path) -> None:
         """Simpleアノテーションと参照先の外部ファイルを保存する。
 
         Args:
@@ -56,7 +56,7 @@ class GetAnnotationMain:
 
         (task_dir / f"{input_data_id}.json").write_text(json.dumps(annotation, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
-    def get_annotation_for_task(self, task_id: str, output_dir: Path) -> None:
+    def export_annotation_for_task(self, task_id: str, output_dir: Path) -> None:
         """1タスクのアノテーションをZIPと同じ構成で保存する。
 
         Args:
@@ -80,13 +80,13 @@ class GetAnnotationMain:
             staging_dir.mkdir()
             for index, input_data_id in enumerate(input_data_ids, start=1):
                 logger.debug(f"{index}件目: 入力データ'{input_data_id}'のアノテーションを取得します。")
-                self.get_annotation_for_input_data(task_id, input_data_id, staging_dir)
+                self.export_annotation_for_input_data(task_id, input_data_id, staging_dir)
                 if index % 100 == 0:
                     logger.info(f"{index} / {len(input_data_ids)}件の入力データのアノテーションを取得しました。")
             staging_dir.rename(task_dir)
         logger.info(f"{len(input_data_ids)}件の入力データのアノテーションを'{task_dir}'に保存しました。")
 
-    def get_annotation_for_task_wrapper(self, task: tuple[int, str], output_dir: Path, *, copy_service: bool = False) -> bool:
+    def export_annotation_for_task_wrapper(self, task: tuple[int, str], output_dir: Path, *, copy_service: bool = False) -> bool:
         """タスクの取得結果を返し、失敗しても他のタスクの処理を継続する。
 
         Args:
@@ -100,15 +100,15 @@ class GetAnnotationMain:
         index, task_id = task
         logger.info(f"{index + 1}件目: タスク'{task_id}'のアノテーションを取得します。")
         try:
-            main_obj = GetAnnotationMain(copy.deepcopy(self.service), self.project_id) if copy_service else self
-            main_obj.get_annotation_for_task(task_id, output_dir)
+            main_obj = ExportAnnotationMain(copy.deepcopy(self.service), self.project_id) if copy_service else self
+            main_obj.export_annotation_for_task(task_id, output_dir)
         except Exception:
             logger.warning(f"タスク'{task_id}'のアノテーションの取得に失敗しました。", exc_info=True)
             return False
         else:
             return True
 
-    def get_annotation(self, task_ids: Iterable[str], output_dir: Path, *, parallelism: int | None = None) -> None:
+    def export_annotation(self, task_ids: Iterable[str], output_dir: Path, *, parallelism: int | None = None) -> None:
         """複数タスクのアノテーションを取得し、必要に応じてタスク単位で並列化する。
 
         Args:
@@ -125,7 +125,7 @@ class GetAnnotationMain:
         unique_task_ids = list(dict.fromkeys(task_ids))
         logger.info(f"タスク{len(unique_task_ids)}件のアノテーションを取得します。")
         output_dir.mkdir(parents=True, exist_ok=True)
-        func = functools.partial(self.get_annotation_for_task_wrapper, output_dir=output_dir, copy_service=parallelism is not None)
+        func = functools.partial(self.export_annotation_for_task_wrapper, output_dir=output_dir, copy_service=parallelism is not None)
         success_count = 0
         if parallelism is None:
             success_count = sum(func(task) for task in enumerate(unique_task_ids))
@@ -138,16 +138,16 @@ class GetAnnotationMain:
             raise AnnofabCliException(f"{failure_count}件のタスクのアノテーション取得に失敗しました。")
 
 
-class GetAnnotation(CommandLine):
+class ExportAnnotation(CommandLine):
     def main(self) -> None:
         args = self.args
         super().require_project_access(args.project_id, project_member_roles=None)
-        GetAnnotationMain(self.service, args.project_id).get_annotation(get_list_from_args(args.task_id), args.output_dir, parallelism=args.parallelism)
+        ExportAnnotationMain(self.service, args.project_id).export_annotation(get_list_from_args(args.task_id), args.output_dir, parallelism=args.parallelism)
 
 
 def main(args: argparse.Namespace) -> None:
     service = build_annofabapi_resource_and_login(args)
-    GetAnnotation(service, AnnofabApiFacade(service), args).main()
+    ExportAnnotation(service, AnnofabApiFacade(service), args).main()
 
 
 def parse_args(parser: argparse.ArgumentParser) -> None:
@@ -160,7 +160,9 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
 
 
 def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
-    description = "指定したタスクのアノテーションを、アノテーションZIPと同じディレクトリ構成・JSON形式で取得します。"
-    parser = annofabcli.common.cli.add_parser(subparsers, "get", description, description)
+    description = "指定したタスクのアノテーションを、アノテーションZIPと同じディレクトリ構成・JSON形式で書き出します。"
+    parser = annofabcli.common.cli.add_parser(
+        subparsers, "export", description, description, epilog="取り込みには annotation import を使用してください。バックアップ・復元には annotation dump / annotation restore を使用してください。"
+    )
     parse_args(parser)
     return parser

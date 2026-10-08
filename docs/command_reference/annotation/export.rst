@@ -1,10 +1,10 @@
 ==========================================
-annotation get
+annotation export
 ==========================================
 
 Description
 =================================
-指定したタスクのアノテーションを、SimpleアノテーションZIPと同じディレクトリ構成・JSON形式で取得します。
+指定したタスクのアノテーションを、SimpleアノテーションZIPと同じディレクトリ構成・JSON形式で書き出します。
 プロジェクト全体のZIPを作成・ダウンロードせずに、現在保存されているアノテーションを取得できます。
 
 JSONには ``getAnnotation`` APIのレスポンスを保存します。
@@ -12,14 +12,16 @@ JSONは2スペースでインデントしたpretty形式で保存し、ファイ
 塗りつぶし画像や3次元セグメントなどの外部ファイルがある場合は、``getEditorAnnotation`` APIでURLを取得してダウンロードします。
 JSONと外部ファイルは別々のAPIで取得するため、実行中にアノテーションが更新されると内容が一致しない可能性があります。
 
-プロジェクト全体のZIP取得には :doc:`download`、復元用データの取得には :doc:`dump` を使用してください。
+書き出したデータの取り込みには :doc:`import` を使用してください。
+``import`` は状態を完全に復元する操作ではありません。
+バックアップ・復元には :doc:`dump` / :doc:`restore`、プロジェクト全体のZIP取得には :doc:`download` を使用してください。
 
 Examples
 =================================
 
 .. code-block:: bash
 
-    $ annofabcli annotation get --project_id prj1 --task_id task1 --output_dir annotations/
+    $ annofabcli annotation export --project_id prj1 --task_id task1 --output_dir annotations/
 
 出力例は次のとおりです。
 
@@ -69,7 +71,7 @@ CSV出力には対応していません。
 
 .. code-block:: bash
 
-    $ annofabcli annotation get --project_id prj1 --task_id task1 task2 task3 --output_dir annotations/ --parallelism 3
+    $ annofabcli annotation export --project_id prj1 --task_id task1 task2 task3 --output_dir annotations/ --parallelism 3
 
 ``--parallelism`` を指定すると、タスク単位で並列に取得します。
 指定しない場合は逐次処理します。各タスク内の入力データは逐次処理します。
@@ -94,7 +96,7 @@ Usage Details
 =================================
 
 .. argparse::
-    :ref: annofabcli.annotation.get_annotation.add_parser
-    :prog: annofabcli annotation get
+    :ref: annofabcli.annotation.export_annotation.add_parser
+    :prog: annofabcli annotation export
     :nosubcommands:
     :nodefaultconst:

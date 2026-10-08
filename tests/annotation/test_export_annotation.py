@@ -8,7 +8,7 @@ from unittest.mock import Mock
 import pytest
 from annofabapi.parser import lazy_parse_simple_annotation_dir
 
-from annofabcli.annotation.get_annotation import GetAnnotationMain
+from annofabcli.annotation.export_annotation import ExportAnnotationMain
 from annofabcli.common.exceptions import AnnofabCliException
 
 
@@ -26,7 +26,7 @@ def make_annotation(input_data_id: str, details: list[dict]) -> dict:
     }
 
 
-def test_get_preserves_simple_annotation_and_empty_input(tmp_path: Path) -> None:
+def test_export_preserves_simple_annotation_and_empty_input(tmp_path: Path) -> None:
     annotations = {
         "input1": make_annotation("input1", [{"label": "画像全体", "annotation_id": "a1", "data": None, "attributes": {"memo": "日本語"}}]),
         "input2": make_annotation("input2", []),
@@ -36,7 +36,7 @@ def test_get_preserves_simple_annotation_and_empty_input(tmp_path: Path) -> None
     service.api.get_task.return_value = ({"input_data_id_list": list(annotations)}, None)
     service.api.get_annotation.side_effect = lambda _project_id, _task_id, input_data_id: (annotations[input_data_id], None)
 
-    GetAnnotationMain(service, "prj1").get_annotation_for_task("task1", tmp_path)
+    ExportAnnotationMain(service, "prj1").export_annotation_for_task("task1", tmp_path)
 
     assert sorted(path.name for path in (tmp_path / "task1").iterdir()) == ["input1.json", "input2.json", "input3.json"]
     for input_data_id, annotation in annotations.items():
@@ -57,7 +57,7 @@ def test_get_preserves_simple_annotation_and_empty_input(tmp_path: Path) -> None
         {"_type": "Unknown", "data": "./input1/a1"},
     ],
 )
-def test_get_downloads_outer_file_and_preserves_json(tmp_path: Path, data: dict) -> None:
+def test_export_downloads_outer_file_and_preserves_json(tmp_path: Path, data: dict) -> None:
     annotation = make_annotation("input1", [{"label": "road", "annotation_id": "a1", "data": data, "attributes": {}}])
     service = Mock()
     service.api.get_task.return_value = ({"input_data_id_list": ["input1"]}, None)
@@ -74,7 +74,7 @@ def test_get_downloads_outer_file_and_preserves_json(tmp_path: Path, data: dict)
 
     service.wrapper.download.side_effect = download
 
-    GetAnnotationMain(service, "prj1").get_annotation_for_task("task1", tmp_path)
+    ExportAnnotationMain(service, "prj1").export_annotation_for_task("task1", tmp_path)
 
     assert downloads == ["https://example.com/a1"]
     assert (tmp_path / "task1" / "input1" / "a1").read_bytes() == b"outer file"
@@ -85,7 +85,7 @@ def test_get_downloads_outer_file_and_preserves_json(tmp_path: Path, data: dict)
             assert outer_file.read() == b"outer file"
 
 
-def test_get_leaves_no_partial_task_on_download_failure(tmp_path: Path) -> None:
+def test_export_leaves_no_partial_task_on_download_failure(tmp_path: Path) -> None:
     service = Mock()
     service.api.get_task.return_value = ({"input_data_id_list": ["input1", "input2"]}, None)
     service.api.get_annotation.side_effect = [
@@ -96,12 +96,12 @@ def test_get_leaves_no_partial_task_on_download_failure(tmp_path: Path) -> None:
     service.wrapper.download.side_effect = OSError()
 
     with pytest.raises(OSError):
-        GetAnnotationMain(service, "prj1").get_annotation_for_task("task1", tmp_path)
+        ExportAnnotationMain(service, "prj1").export_annotation_for_task("task1", tmp_path)
 
     assert list(tmp_path.iterdir()) == []
 
 
-def test_get_refuses_existing_task_without_changing_files(tmp_path: Path) -> None:
+def test_export_refuses_existing_task_without_changing_files(tmp_path: Path) -> None:
     task_dir = tmp_path / "task1"
     task_dir.mkdir()
     existing_file = task_dir / "input1.json"
@@ -109,26 +109,26 @@ def test_get_refuses_existing_task_without_changing_files(tmp_path: Path) -> Non
     service = Mock()
 
     with pytest.raises(FileExistsError):
-        GetAnnotationMain(service, "prj1").get_annotation_for_task("task1", tmp_path)
+        ExportAnnotationMain(service, "prj1").export_annotation_for_task("task1", tmp_path)
 
     assert existing_file.read_text() == "existing"
     service.api.get_task.assert_not_called()
 
 
-def test_get_fails_if_referenced_outer_annotation_disappears(tmp_path: Path) -> None:
+def test_export_fails_if_referenced_outer_annotation_disappears(tmp_path: Path) -> None:
     service = Mock()
     service.api.get_task.return_value = ({"input_data_id_list": ["input1"]}, None)
     service.api.get_annotation.return_value = (make_annotation("input1", [{"annotation_id": "a1", "data": {"_type": "SegmentationV2", "data_uri": "a1"}}]), None)
     service.api.get_editor_annotation.return_value = ({"details": []}, None)
 
     with pytest.raises(KeyError):
-        GetAnnotationMain(service, "prj1").get_annotation_for_task("task1", tmp_path)
+        ExportAnnotationMain(service, "prj1").export_annotation_for_task("task1", tmp_path)
 
     assert list(tmp_path.iterdir()) == []
 
 
 @pytest.mark.parametrize("parallelism", [None, 2])
-def test_get_multiple_tasks_with_duplicates(tmp_path: Path, parallelism: int | None) -> None:
+def test_export_multiple_tasks_with_duplicates(tmp_path: Path, parallelism: int | None) -> None:
     service = Mock()
     fetched_task_ids = []
     lock = Lock()
@@ -146,7 +146,7 @@ def test_get_multiple_tasks_with_duplicates(tmp_path: Path, parallelism: int | N
     service.api.get_task.side_effect = get_task
     service.api.get_annotation.side_effect = get_annotation
 
-    GetAnnotationMain(service, "prj1").get_annotation(["task1", "task2", "task1"], tmp_path, parallelism=parallelism)
+    ExportAnnotationMain(service, "prj1").export_annotation(["task1", "task2", "task1"], tmp_path, parallelism=parallelism)
 
     assert sorted(fetched_task_ids) == ["task1", "task2"]
     assert sorted(path.name for path in tmp_path.iterdir()) == ["task1", "task2"]
@@ -174,7 +174,7 @@ def test_parallelism_runs_tasks_concurrently_and_inputs_sequentially(tmp_path: P
     service.api.get_task.side_effect = get_task
     service.api.get_annotation.side_effect = get_annotation
 
-    GetAnnotationMain(service, "prj1").get_annotation(["task1", "task2"], tmp_path, parallelism=2)
+    ExportAnnotationMain(service, "prj1").export_annotation(["task1", "task2"], tmp_path, parallelism=2)
 
     assert fetched_inputs == {"task1": ["input1", "input2"], "task2": ["input1", "input2"]}
     assert len(list(tmp_path.glob("*/*.json"))) == 4
@@ -195,7 +195,7 @@ def test_task_failure_preserves_successful_tasks_and_cleans_partial_output(tmp_p
     service.api.get_annotation.side_effect = get_annotation
 
     with pytest.raises(AnnofabCliException):
-        GetAnnotationMain(service, "prj1").get_annotation(["task1", "task2", "task3"], tmp_path, parallelism=parallelism)
+        ExportAnnotationMain(service, "prj1").export_annotation(["task1", "task2", "task3"], tmp_path, parallelism=parallelism)
 
     assert sorted(path.name for path in tmp_path.iterdir()) == ["task1", "task3"]
     assert len(list(tmp_path.glob("*/*.json"))) == 4

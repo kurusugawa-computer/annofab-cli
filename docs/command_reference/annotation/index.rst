@@ -29,7 +29,7 @@ Available Commands
    delete_invalid_label_annotation
    download
    dump
-   get
+   export
    import
    list
    list_count
