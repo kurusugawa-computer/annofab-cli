@@ -217,8 +217,8 @@
 - `annofabcli project create`: プロジェクトを作成します。
 - `annofabcli project diff`: プロジェクト間の差分を表示する。
 - `annofabcli project list`: プロジェクト一覧を出力します。
-- `annofabcli project update_configuration`: 複数のプロジェクトの設定を一括で更新します。
 - `annofabcli project update`: プロジェクトのタイトルまたは概要を更新します。
+- `annofabcli project update_configuration`: 複数のプロジェクトの設定を一括で更新します。
 
 ## project_member
 
