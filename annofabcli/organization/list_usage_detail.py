@@ -148,6 +148,7 @@ def main(args: argparse.Namespace) -> None:
     Returns:
         None。
     """
+    validate_period(args.start_month, args.end_month, None)
     service = build_annofabapi_resource_and_login(args)
     ListUsageDetail(service, AnnofabApiFacade(service), args).main()
 
