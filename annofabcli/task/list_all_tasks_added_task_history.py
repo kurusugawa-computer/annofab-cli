@@ -176,7 +176,7 @@ class ListAllTasksAddedTaskHistory(CommandLine):
         self.require_project_access(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER])
 
         temp_dir = Path(args.temp_dir) if args.temp_dir is not None else None
-        start_date_list = args.start_date
+        start_date_list = args.add_since_date_columns
         task_list = ListAllTasksAddedTaskHistoryMain(self.service, project_id).get_task_list_added_task_history(
             task_json_path=args.task_json,
             task_history_json_path=args.task_history_json,
@@ -233,12 +233,14 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     )
 
     parser.add_argument(
-        "--start_date",
+        "--add_since_date_columns",
         type=str,
         nargs="+",
-        help="指定した日付以降（started_datetimeを基準）の教師付・検査・受入作業時間および担当者情報を計算し、"
-        " ``since_{日付}.{フェーズ}_worktime_hour``および ``since_{日付}.first_{フェーズ}_{user_id,username,started_datetime,worktime_hour}``"
-        " カラムを出力に追加します。YYYY-MM-DD 形式で指定してください。複数指定可能です。",
+        metavar="YYYY-MM-DD",
+        help="指定日以降の作業時間と最初の担当者情報を、追加カラムとして出力します。"
+        "日付はYYYY-MM-DD形式で複数指定できます。タスク履歴のstarted_datetimeを基準に集計します。"
+        "追加カラム名は ``since_{日付}.{フェーズ}_worktime_hour`` および"
+        " ``since_{日付}.first_{フェーズ}_{user_id,username,started_datetime,worktime_hour}`` です。",
     )
 
     argument_parser.add_output()

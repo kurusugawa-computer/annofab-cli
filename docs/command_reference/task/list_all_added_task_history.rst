@@ -72,15 +72,15 @@ Examples
 指定日以降の作業時間や担当者を出力する
 ----------------------------------------------
 
-``--start_date`` を指定すると、その日付以降の作業時間や担当者情報を各タスクに追加した形で出力できます。
+``--add_since_date_columns`` を指定すると、指定日以降の作業時間と最初の担当者情報を、追加カラムとして出力します。
 詳細は :doc:`list_added_task_history` を参照してください。
 
-``--start_datetime`` は ``--start_date`` に改名しました。既存スクリプトではオプション名を置き換えてください。
+``--start_date`` （旧 ``--start_datetime`` ）は ``--add_since_date_columns`` に改名しました。既存スクリプトではオプション名を置き換えてください。
 
 .. code-block::
 
     $ annofabcli task list_all_added_task_history --project_id prj1 \
-     --start_date 2026-10-01
+     --add_since_date_columns 2026-10-01
 
 
 

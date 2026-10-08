@@ -558,7 +558,7 @@ class ListTasksAddedTaskHistory(CommandLine):
         task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id) if args.task_id is not None else None
         task_query = annofabcli.common.cli.get_json_from_args(args.task_query) if args.task_query is not None else None
 
-        start_date_list = args.start_date if args.start_date is not None else None
+        start_date_list = args.add_since_date_columns
 
         main_obj = ListTasksAddedTaskHistoryMain(self.service, project_id=args.project_id)
         task_list = main_obj.main(task_query=task_query, task_id_list=task_id_list, start_date_list=start_date_list)
@@ -600,12 +600,14 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     )
 
     parser.add_argument(
-        "--start_date",
+        "--add_since_date_columns",
         type=str,
         nargs="+",
-        help="指定した日付以降（started_datetimeを基準）の教師付・検査・受入作業時間を計算し、"
-        " ``since_{日付}.{フェーズ}_worktime_hour``および ``since_{日付}.first_{フェーズ}_{user_id,username,started_datetime,worktime_hour}``"
-        " カラムを出力に追加します。YYYY-MM-DD 形式で指定してください。複数指定可能です。",
+        metavar="YYYY-MM-DD",
+        help="指定日以降の作業時間と最初の担当者情報を、追加カラムとして出力します。"
+        "日付はYYYY-MM-DD形式で複数指定できます。タスク履歴のstarted_datetimeを基準に集計します。"
+        "追加カラム名は ``since_{日付}.{フェーズ}_worktime_hour`` および"
+        " ``since_{日付}.first_{フェーズ}_{user_id,username,started_datetime,worktime_hour}`` です。",
     )
 
     argument_parser.add_output()
