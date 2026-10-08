@@ -2,7 +2,6 @@ import argparse
 
 import annofabcli.common.cli
 import annofabcli.filesystem.draw_annotation
-import annofabcli.filesystem.mask_user_info
 
 
 def parse_args(parser: argparse.ArgumentParser) -> None:
@@ -10,7 +9,6 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
 
     # サブコマンドの定義
     annofabcli.filesystem.draw_annotation.add_parser(subparsers)
-    annofabcli.filesystem.mask_user_info.add_parser(subparsers)
 
 
 def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:

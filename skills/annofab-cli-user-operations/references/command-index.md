@@ -328,4 +328,3 @@ Webhook関係のサブコマンド
 ファイル操作関係（Web APIにアクセスしない）のサブコマンド
 
 - `annofabcli filesystem draw_annotation`: [DEPRECATED] 画像にアノテーションを描画します。
-- `annofabcli filesystem mask_user_info`: CSVに記載されたユーザ情報をマスクします。

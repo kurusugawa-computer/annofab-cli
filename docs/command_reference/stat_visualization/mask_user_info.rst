@@ -6,6 +6,10 @@ Description
 =================================
 ``annofabcli statistics visualize`` コマンドの出力結果からユーザ情報をマスクします。
 
+新しくレポートを生成する場合は、:ref:`statistics-visualize-mask-user-info` の ``--mask_user_info`` を使用できます。
+このコマンドは、保存済みの可視化結果を加工する場合に使用してください。
+仮名の生成方法は生成時のオプションと共通です。
+
 以下のユーザ情報をマスクします。
 
 * user_id

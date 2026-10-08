@@ -29,6 +29,48 @@ Examples
     $ annofabcli statistics visualize --project_id prj1 --output_dir out_dir
 
 
+.. _statistics-visualize-mask-user-info:
+
+ユーザー情報をマスクして出力する
+----------------------------------------------
+
+``--mask_user_info`` を指定すると、CSVとグラフの ``user_id``、``username``、``account_id``、``biography`` をマスクして出力します。
+タスクの初回教師付者・検査者・受入者のユーザー情報、グラフの凡例・ツールチップ・埋め込みデータも対象です。
+未マスクのレポートを出力してから加工する必要はありません。
+
+.. code-block::
+
+    $ annofabcli statistics visualize --project_id prj1 prj2 --output_dir masked_out \
+    --mask_user_info
+
+ユーザーIDから ``user-`` で始まる仮名を生成し、ユーザー名とアカウントIDも同じ仮名に置換します。
+biographyは ``category-`` で始まる仮名に置換します。同じ値は、ファイル・プロジェクト・実行順・並列度によらず同じ仮名になります。
+``biography`` 列がないタスクのユーザー情報もマスクします。集計値と欠損値は保持します。
+
+以下は、出力CSVのユーザー情報列と作業時間の抜粋です。
+
+.. csv-table:: マスク後のユーザー情報
+    :header-rows: 1
+    :file: visualize/masked_user_info.csv
+
+``--user_id`` にはマスク前の実IDを指定してください。指定したユーザーのグラフを、マスク後の名前で表示します。
+
+マスクしないユーザーを指定する場合は、``--not_masked_user_id`` または ``--not_masked_biography`` を併用してください。
+以下の例では、``alice`` またはbiographyが ``Japan`` のユーザーをマスクしません。
+これらのオプションは ``--mask_user_info`` を指定したときに有効です。
+
+.. code-block::
+
+    $ annofabcli statistics visualize --project_id prj1 --output_dir masked_out \
+    --mask_user_info --not_masked_user_id alice --not_masked_biography Japan
+
+マスク対象はレポートのユーザー情報です。ログ、``--temp_dir`` に保存する集計元ファイル、
+プロジェクト名・タスクID・任意のメタデータに含まれる文字列は対象外です。
+``project_info.json`` に出力するプロジェクト情報や集計条件も保持します。
+
+``filesystem mask_user_info`` コマンドは削除しました。レポート生成時の ``--mask_user_info`` に置き換えてください。
+保存済みの可視化結果には :doc:`../stat_visualization/mask_user_info` を使用できます。
+
 
 タスクのメタデータ値ごとに生産性と品質を出力する
 ----------------------------------------------------------
