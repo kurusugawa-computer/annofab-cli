@@ -100,8 +100,8 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         None。
     """
     parser.add_argument("-org", "--organization", required=True, help="対象の組織名。組織管理者として実行してください。")
-    parser.add_argument("--start_month", type=year_month, help="月別一覧の開始月（YYYY-MM、当月を含む）。省略時はAPIの既定期間を使用します。")
-    parser.add_argument("--end_month", type=year_month, help="月別一覧の終了月（YYYY-MM、当月を含む）。省略時はAPIの既定期間を使用します。")
+    parser.add_argument("--start_month", type=year_month, help="月別一覧の開始月（YYYY-MM、指定月を含む）。省略時は終了月の1年前です。")
+    parser.add_argument("--end_month", type=year_month, help="月別一覧の終了月（YYYY-MM、指定月を含む）。省略時は日本時間（JST）の現在の月です。")
     parser.add_argument("--month", type=year_month, help="日別一覧を取得する対象月（YYYY-MM）。--start_month、--end_monthとは同時に指定できません。")
     argument_parser = ArgumentParser(parser)
     argument_parser.add_format(choices=[OutputFormat.CSV, OutputFormat.JSON, OutputFormat.PRETTY_JSON], default=OutputFormat.CSV)
