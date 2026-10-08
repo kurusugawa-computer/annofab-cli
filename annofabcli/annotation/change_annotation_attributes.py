@@ -140,7 +140,10 @@ class ChangeAnnotationAttributesMain(CommandLineWithConfirm):
 
         task: Task = Task.from_dict(dict_task)
         if task.status == TaskStatus.WORKING or (task.status == TaskStatus.ON_HOLD and not self.include_on_hold_task):
-            logger.info(f"task_id='{task_id}': status='{task.status.value}' のため、スキップします。保留中のタスクを変更するには --include_on_hold_task を指定してください。")
+            if task.status == TaskStatus.WORKING:
+                logger.info(f"task_id='{task_id}': タスクが作業中のため、スキップします。")
+            else:
+                logger.info(f"task_id='{task_id}': タスクが保留中のため、スキップします。変更するには --include_on_hold_task を指定してください。")
             return False, 0
 
         if not self.include_complete_task:  # noqa: SIM102
