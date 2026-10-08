@@ -23,6 +23,7 @@
 - `annofabcli annotation delete_invalid_label_annotation`: アノテーション仕様に存在しないラベルを持つアノテーションを削除します。
 - `annofabcli annotation download`: アノテーションZIPをダウンロードします。
 - `annofabcli annotation dump`: ``annotation restore`` コマンドに読み込ませることができるアノテーション情報を出力します。
+- `annofabcli annotation get`: 指定したタスクのアノテーションを、アノテーションZIPと同じディレクトリ構成・JSON形式で取得します。
 - `annofabcli annotation import`: アノテーションをインポートします。
 - `annofabcli annotation list`: アノテーションの一覧を出力します。
 - `annofabcli annotation list_count`: task_idまたはinput_data_idで集約したアノテーションの個数を出力します。
