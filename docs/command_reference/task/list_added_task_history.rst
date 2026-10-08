@@ -60,12 +60,15 @@ task_id絞り込む
 
 指定日以降の作業時間や担当者を出力する
 --------------------------------------------------------------------------------------------
-``--start_date`` を指定すると、その日付以降（``started_datetime`` を基準）に作業したタスク履歴に絞り込んで、フェーズごとの作業時間や効始担当者を計算します。
+``--add_since_date_columns`` を指定すると、指定日以降の作業時間と最初の担当者情報を、追加カラムとして出力します。
+タスク履歴の ``started_datetime`` を基準に集計します。出力対象のタスクや既存カラムの値は変わりません。
+
+``--start_date`` は ``--add_since_date_columns`` に改名しました。既存スクリプトではオプション名を置き換えてください。
 
 .. code-block::
 
     $ annofabcli task list_added_task_history --project_id prj1 \
-     --start_date 2026-10-01
+     --add_since_date_columns 2026-10-01
 
 以下のカラムが追加されます。
 
@@ -79,12 +82,12 @@ task_id絞り込む
 
 検査・受入フェーズについても同様のカラムが追加されます。
 
-``--start_date`` は複数指定できます。
+``--add_since_date_columns`` は複数指定できます。
 
 .. code-block::
 
     $ annofabcli task list_added_task_history --project_id prj1 \
-     --start_date 2026-10-01 2026-12-01
+     --add_since_date_columns 2026-10-01 2026-12-01
 
 
 
@@ -227,10 +230,10 @@ JSON出力
 * ``acceptance_is_skipped`` : 抜取受入により受入フェーズがスキップされたかどうか
 
 
-``--start_date`` を指定した場合の追加カラム
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+``--add_since_date_columns`` を指定した場合の追加カラム
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-``--start_date YYYY-MM-DD`` を指定した場合、以下のカラムが追加されます。
+``--add_since_date_columns YYYY-MM-DD`` を指定した場合、以下のカラムが追加されます。
 
 * ``since_{YYYY-MM-DD}.annotation_worktime_hour`` : 指定日以降の教師付フェーズの作業時間
 * ``since_{YYYY-MM-DD}.inspection_worktime_hour`` : 指定日以降の検査フェーズの作業時間
@@ -242,7 +245,7 @@ JSON出力
 
 検査・受入フェーズについても同様のカラムが追加されます。
 
-``--start_date`` を複数指定した場合は、それぞれの日付に対応するカラムが追加されます。
+``--add_since_date_columns`` を複数指定した場合は、それぞれの日付に対応するカラムが追加されます。
 
 
 
