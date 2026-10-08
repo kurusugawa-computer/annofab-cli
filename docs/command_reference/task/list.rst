@@ -193,3 +193,7 @@ Usage Details
 See also
 =================================
 * `annofabcli task list_all <../task/list_all.html>`_
+
+``task list`` の検索による取得には10,000件の上限があります。
+上限に達した場合も警告して結果を出力します。
+``task list_all`` は全件ファイルを使います。ファイルの更新時点と最新化オプションを確認して使い分けてください。
