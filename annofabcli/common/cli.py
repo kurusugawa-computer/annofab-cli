@@ -419,7 +419,8 @@ class ArgumentParser:
             help_message = "対象のタスクのtask_idを指定します。"
         help_message += (
             " ``file://`` を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。"
-            "ファイルを読み込む場合は、ファイル指定を1個だけ渡してください。直接指定するIDや別のファイル指定とは併用できません。"
+            "ファイルを読み込む場合は、ファイル指定を1個だけ渡してください。"
+            "直接指定するIDや別のファイル指定とは併用できません。"
         )
 
         self.parser.add_argument("-t", "--task_id", type=str, required=required, nargs="+", help=help_message)
@@ -439,7 +440,13 @@ class ArgumentParser:
             "--task_id",
             type=str,
             nargs="+",
-            help="対象のタスクのtask_idを指定します。 ``file://`` を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。 ``--all_tasks`` とは同時に指定できません。",
+            help=(
+                "対象のタスクのtask_idを指定します。"
+                " ``file://`` を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。"
+                " ``--all_tasks`` とは同時に指定できません。"
+                " ファイルを読み込む場合は、ファイル指定を1個だけ渡してください。"
+                "直接指定する値や別のファイル指定とは併用できません。"
+            ),
         )
         group.add_argument(
             "--all_tasks", action="store_true", help="プロジェクト内の全タスクを対象にします。タスクの状態などによるスキップ条件は適用されます。 ``--task_id`` とは同時に指定できません。"
@@ -453,7 +460,8 @@ class ArgumentParser:
             help_message = "対象の入力データのinput_data_idを指定します。"
         help_message += (
             " ``file://`` を先頭に付けると、input_data_idの一覧が記載されたファイルを指定できます。"
-            "ファイルを読み込む場合は、ファイル指定を1個だけ渡してください。直接指定するIDや別のファイル指定とは併用できません。"
+            "ファイルを読み込む場合は、ファイル指定を1個だけ渡してください。"
+            "直接指定するIDや別のファイル指定とは併用できません。"
         )
 
         self.parser.add_argument("-i", "--input_data_id", type=str, required=required, nargs="+", help=help_message)

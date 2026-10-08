@@ -123,7 +123,12 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         type=str,
         nargs="+",
         required=True,
-        help="招待するユーザのuser_idを指定してください。 ``file://`` を先頭に付けると、一覧が記載されたファイルを指定できます。",
+        help=(
+            "招待するユーザのuser_idを指定してください。"
+            " ``file://`` を先頭に付けると、一覧が記載されたファイルを指定できます。"
+            " ファイルを読み込む場合は、ファイル指定を1個だけ渡してください。"
+            "直接指定する値や別のファイル指定とは併用できません。"
+        ),
     )
 
     parser.add_argument("--role", type=str, required=True, choices=role_choices, help="ユーザに割り当てるロール")
@@ -134,7 +139,12 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--project_id",
         type=str,
         nargs="+",
-        help="招待するプロジェクトのproject_idを指定してください。 ``file://`` を先頭に付けると、一覧が記載されたファイルを指定できます。",
+        help=(
+            "招待するプロジェクトのproject_idを指定してください。"
+            " ``file://`` を先頭に付けると、一覧が記載されたファイルを指定できます。"
+            " ファイルを読み込む場合は、ファイル指定を1個だけ渡してください。"
+            "直接指定する値や別のファイル指定とは併用できません。"
+        ),
     )
     assign_group.add_argument("-org", "--organization", type=str, help="組織名を指定すると、組織配下のすべてのプロジェクト（自分が所属している）に招待します。")
 

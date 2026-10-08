@@ -106,7 +106,12 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         nargs="+",
         required=True,
         type=str,
-        help="対象の組織名を指定します。 ``file://`` を先頭に付けると、一覧が記載されたファイルを指定できます。",
+        help=(
+            "対象の組織名を指定します。"
+            " ``file://`` を先頭に付けると、一覧が記載されたファイルを指定できます。"
+            " ファイルを読み込む場合は、ファイル指定を1個だけ渡してください。"
+            "直接指定する値や別のファイル指定とは併用できません。"
+        ),
     )
 
     parser.add_argument(
@@ -115,7 +120,12 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         type=str,
         nargs="+",
         required=True,
-        help="組織から脱退させるメンバーのuser_idを指定します。 ``file://`` を先頭に付けると、一覧が記載されたファイルを指定できます。",
+        help=(
+            "組織から脱退させるメンバーのuser_idを指定します。"
+            " ``file://`` を先頭に付けると、一覧が記載されたファイルを指定できます。"
+            " ファイルを読み込む場合は、ファイル指定を1個だけ渡してください。"
+            "直接指定する値や別のファイル指定とは併用できません。"
+        ),
     )
 
     parser.set_defaults(subcommand_func=main)

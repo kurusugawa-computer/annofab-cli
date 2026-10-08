@@ -117,7 +117,12 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         type=str,
         nargs="+",
         required=True,
-        help="脱退させるユーザのuser_idを指定してください。 ``file://`` を先頭に付けると、一覧が記載されたファイルを指定できます。",
+        help=(
+            "脱退させるユーザのuser_idを指定してください。"
+            " ``file://`` を先頭に付けると、一覧が記載されたファイルを指定できます。"
+            " ファイルを読み込む場合は、ファイル指定を1個だけ渡してください。"
+            "直接指定する値や別のファイル指定とは併用できません。"
+        ),
     )
 
     drop_group = parser.add_mutually_exclusive_group(required=True)
@@ -126,7 +131,12 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--project_id",
         type=str,
         nargs="+",
-        help="脱退させるプロジェクトのproject_idを指定してください。 ``file://`` を先頭に付けると、一覧が記載されたファイルを指定できます。",
+        help=(
+            "脱退させるプロジェクトのproject_idを指定してください。"
+            " ``file://`` を先頭に付けると、一覧が記載されたファイルを指定できます。"
+            " ファイルを読み込む場合は、ファイル指定を1個だけ渡してください。"
+            "直接指定する値や別のファイル指定とは併用できません。"
+        ),
     )
 
     drop_group.add_argument(

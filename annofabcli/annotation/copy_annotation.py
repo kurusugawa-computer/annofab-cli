@@ -431,7 +431,13 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     入力データ単位でコピーする場合： ``src_task_id/src_input_data_id:dest_task_id/dest_input_data_id``
     ``file://`` を先頭に付けると、コピー元とコピー先が記載されているファイルを指定できます。
     """  # noqa: N806
-    parser.add_argument("--input", type=str, nargs="+", required=True, help=INPUT_HELP_MESSAGE)
+    parser.add_argument(
+        "--input",
+        type=str,
+        nargs="+",
+        required=True,
+        help=(INPUT_HELP_MESSAGE + " ファイルを読み込む場合は、ファイル指定を1個だけ渡してください。直接指定する値や別のファイル指定とは併用できません。"),
+    )
 
     overwrite_merge_group = parser.add_mutually_exclusive_group()
     overwrite_merge_group.add_argument(

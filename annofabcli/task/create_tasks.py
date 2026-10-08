@@ -421,9 +421,13 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--input_data_id_as_task_id",
         type=str,
         nargs="+",
-        help="タスクを作成する対象のinput_data_idを指定してください。"
-        " 指定したinput_data_idと同じtask_idのタスクを作成し、各タスクには1件の入力データだけを紐づけます。"
-        " ``file://`` を先頭に付けると、input_data_idの一覧が記載されたファイルを指定できます。",
+        help=(
+            "タスクを作成する対象のinput_data_idを指定してください。"
+            " 指定したinput_data_idと同じtask_idのタスクを作成し、各タスクには1件の入力データだけを紐づけます。"
+            " ``file://`` を先頭に付けると、input_data_idの一覧が記載されたファイルを指定できます。"
+            " ファイルを読み込む場合は、ファイル指定を1個だけ渡してください。"
+            "直接指定する値や別のファイル指定とは併用できません。"
+        ),
     )
 
     json_sample = '[{"task_id":"task1","input_data_id_list":["input1","input2"]}]'

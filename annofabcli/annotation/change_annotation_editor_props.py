@@ -408,7 +408,13 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         type=str,
         nargs="+",
         required=True,
-        help="変更対象のアノテーションのラベル名（英語）を指定します。複数指定できます。``file://`` を先頭に付けると、ラベル名が記載されたファイルを指定できます。",
+        help=(
+            "変更対象のアノテーションのラベル名（英語）を指定します。"
+            "複数指定できます。"
+            "``file://`` を先頭に付けると、ラベル名が記載されたファイルを指定できます。"
+            " ファイルを読み込む場合は、ファイル指定を1個だけ渡してください。"
+            "直接指定する値や別のファイル指定とは併用できません。"
+        ),
     )
 
     EXAMPLE_EDITOR_PROPS = '{"can_delete": false, "can_edit_data": false, "can_edit_additional": false}'  # noqa: N806

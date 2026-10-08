@@ -246,7 +246,18 @@ def add_edit_arguments(parser: argparse.ArgumentParser, *, operation: Operation)
     """
     ArgumentParser(parser).add_project_id()
     if operation == "delete":
-        parser.add_argument("--inspection_phrase_id", required=True, nargs="+", help="削除する定型指摘ID。複数指定できます。 ``file://`` を先頭に付けると一覧ファイルを指定できます。")
+        parser.add_argument(
+            "--inspection_phrase_id",
+            required=True,
+            nargs="+",
+            help=(
+                "削除する定型指摘ID。"
+                "複数指定できます。"
+                " ``file://`` を先頭に付けると一覧ファイルを指定できます。"
+                " ファイルを読み込む場合は、ファイル指定を1個だけ渡してください。"
+                "直接指定する値や別のファイル指定とは併用できません。"
+            ),
+        )
     else:
         group = parser.add_mutually_exclusive_group(required=True)
         group.add_argument(

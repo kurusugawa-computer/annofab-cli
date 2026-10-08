@@ -393,13 +393,25 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--label_name_en",
         type=str,
         nargs="+",
-        help="削除するラベルの英語名。複数指定できます。 ``file://`` を先頭に付けると一覧ファイルを指定できます。",
+        help=(
+            "削除するラベルの英語名。"
+            "複数指定できます。"
+            " ``file://`` を先頭に付けると一覧ファイルを指定できます。"
+            " ファイルを読み込む場合は、ファイル指定を1個だけ渡してください。"
+            "直接指定する値や別のファイル指定とは併用できません。"
+        ),
     )
     label_group.add_argument(
         "--label_id",
         type=str,
         nargs="+",
-        help="削除するラベルのlabel_id。複数指定できます。 ``file://`` を先頭に付けると一覧ファイルを指定できます。",
+        help=(
+            "削除するラベルのlabel_id。"
+            "複数指定できます。"
+            " ``file://`` を先頭に付けると一覧ファイルを指定できます。"
+            " ファイルを読み込む場合は、ファイル指定を1個だけ渡してください。"
+            "直接指定する値や別のファイル指定とは併用できません。"
+        ),
     )
     parser.add_argument(
         "--allow_affecting_annotations",

@@ -223,10 +223,20 @@ def add_arguments(parser: argparse.ArgumentParser, *, visualize: bool) -> None:
     parser.add_argument("--task_json", type=Path, help="task downloadで取得したタスクのJSONファイル。")
     parser.add_argument("--latest", action="store_true", help="入力データ情報とタスク情報の最新版を取得します。数分待つ場合があります。")
     parser.add_argument("--temp_dir", type=Path, help="JSONファイルをダウンロードするディレクトリ。")
-    parser.add_argument("-t", "--task_id", nargs="+", help="対象タスクID。file://でID一覧ファイルを指定できます。")
+    parser.add_argument(
+        "-t",
+        "--task_id",
+        nargs="+",
+        help=("対象タスクID。file://でID一覧ファイルを指定できます。 ファイルを読み込む場合は、ファイル指定を1個だけ渡してください。直接指定する値や別のファイル指定とは併用できません。"),
+    )
     if visualize:
         parser.add_argument("-o", "--output", type=Path, required=True, help="出力先HTMLファイル。")
-        parser.add_argument("-i", "--input_data_id", nargs="+", help="対象入力データID。file://でID一覧ファイルを指定できます。")
+        parser.add_argument(
+            "-i",
+            "--input_data_id",
+            nargs="+",
+            help=("対象入力データID。file://でID一覧ファイルを指定できます。 ファイルを読み込む場合は、ファイル指定を1個だけ渡してください。直接指定する値や別のファイル指定とは併用できません。"),
+        )
         parser.add_argument("--time_unit", choices=[unit.value for unit in TimeUnit], default=TimeUnit.SECOND.value, help="横軸の時間単位。")
         parser.add_argument("--bin_width", type=float, help=f"ビンの幅（秒）。省略すると{BIN_COUNT}個のビンを使用します。正の値を指定してください。")
         parser.add_argument("--from_date", help="この日以降に更新された入力データを対象にします（YYYY-MM-DD、当日を含む）。")

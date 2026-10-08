@@ -86,4 +86,15 @@ def add_comparison_arguments(parser: argparse.ArgumentParser) -> None:
         None
     """
     parser.add_argument("--src_project_id", required=True, help="基準プロジェクトのproject_id")
-    parser.add_argument("--dest_project_id", required=True, nargs="+", help="同期先のproject_id。複数指定可能です。 ``file://`` で一覧ファイルを指定できます。")
+    parser.add_argument(
+        "--dest_project_id",
+        required=True,
+        nargs="+",
+        help=(
+            "同期先のproject_id。"
+            "複数指定可能です。"
+            " ``file://`` で一覧ファイルを指定できます。"
+            " ファイルを読み込む場合は、ファイル指定を1個だけ渡してください。"
+            "直接指定する値や別のファイル指定とは併用できません。"
+        ),
+    )
