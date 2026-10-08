@@ -1,14 +1,15 @@
 import copy
 import json
 from argparse import Namespace
+from datetime import UTC, datetime
 from pathlib import Path
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 import pandas
 import pytest
 
 from annofabcli.common.exceptions import AnnofabCliException
-from annofabcli.organization.list_usage import CSV_COLUMNS, DAILY_CSV_COLUMNS, ListUsage
+from annofabcli.organization.list_usage import CSV_COLUMNS, DAILY_CSV_COLUMNS, ListUsage, get_monthly_query_params
 from annofabcli.organization.usage_status import validate_period
 
 
@@ -88,15 +89,35 @@ def test_usage_status_output(tmp_path: Path, *, daily: bool, output_format: str,
     assert data == original_data
 
 
-@pytest.mark.parametrize("start_month,end_month,query_params", [(None, None, {}), ("2026-08", None, {"from": "2026-08"}), (None, "2026-09", {"to": "2026-09"})])
+@pytest.mark.parametrize(
+    "start_month,end_month,query_params",
+    [(None, None, {"from": "2025-11", "to": "2026-10"}), ("2026-08", None, {"from": "2026-08", "to": "2026-10"}), (None, "2026-09", {"from": "2025-10", "to": "2026-09"})],
+)
 def test_optional_month_range(tmp_path: Path, start_month: str | None, end_month: str | None, query_params: dict) -> None:
     service = Mock()
     service.api.get_organization_usage_status_list.return_value = ([], Mock())
     args = Namespace(organization="org", start_month=start_month, end_month=end_month, month=None, format="json", output=tmp_path / "usage.json", yes=True)
 
-    ListUsage(service, Mock(), args).main()
+    with patch("annofabcli.organization.list_usage.datetime", wraps=datetime) as mock_datetime:
+        mock_datetime.now.side_effect = lambda tz: datetime(2026, 9, 30, 15, tzinfo=UTC).astimezone(tz)
+        ListUsage(service, Mock(), args).main()
 
     service.api.get_organization_usage_status_list.assert_called_once_with("org", query_params=query_params)
+
+
+@pytest.mark.parametrize("end_month,start_month", [("2026-01", "2025-02"), ("2024-02", "2023-03"), ("2026-12", "2026-01")])
+def test_default_range_has_twelve_months(end_month: str, start_month: str) -> None:
+    assert get_monthly_query_params(None, end_month) == {"from": start_month, "to": end_month}
+
+
+def test_future_start_month_is_rejected_after_default_end_month_resolution(tmp_path: Path) -> None:
+    service = Mock()
+    args = Namespace(organization="org", start_month="2026-11", end_month=None, month=None, format="json", output=tmp_path / "usage.json", yes=True)
+    with patch("annofabcli.organization.list_usage.datetime", wraps=datetime) as mock_datetime:
+        mock_datetime.now.side_effect = lambda tz: datetime(2026, 10, 1, tzinfo=UTC).astimezone(tz)
+        with pytest.raises(AnnofabCliException):
+            ListUsage(service, Mock(), args).main()
+    service.api.get_organization_usage_status_list.assert_not_called()
 
 
 @pytest.mark.parametrize("output_format", ["csv", "json", "pretty_json"])
