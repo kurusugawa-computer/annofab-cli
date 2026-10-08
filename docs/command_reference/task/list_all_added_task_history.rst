@@ -99,5 +99,4 @@ Usage Details
    :nosubcommands:
    :nodefaultconst:
 
-ローカルファイルを使用する場合は ``--task_json task.json --task_history_json history.json`` のように両方のパスを指定してください。
-パスに ``file://`` は付けません。
+``--task_json`` と ``--task_history_json`` のファイルパスに ``file://`` は付けません。
