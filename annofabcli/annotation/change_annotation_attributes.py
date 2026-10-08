@@ -21,6 +21,7 @@ from annofabcli.annotation.annotation_query import (
     convert_attributes_from_cli_to_additional_data_list_v2,
 )
 from annofabcli.annotation.dump_annotation import DumpAnnotationMain
+from annofabcli.annotation.update_result import AnnotationUpdateResult
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
     PARALLELISM_CHOICES,
@@ -30,6 +31,7 @@ from annofabcli.common.cli import (
     build_annofabapi_resource_and_login,
     get_json_from_args,
 )
+from annofabcli.common.exceptions import AnnofabCliException
 from annofabcli.common.facade import AnnofabApiFacade
 
 logger = logging.getLogger(__name__)
@@ -171,19 +173,20 @@ class ChangeAnnotationAttributesMain(CommandLineWithConfirm):
         additional_data_list: list[dict[str, Any]],
         *,
         backup_dir: Path | None = None,
-    ) -> tuple[bool, int]:
+    ) -> AnnotationUpdateResult:
         task_index, task_id = tpl
         try:
-            return self.change_attributes_for_task(
+            success, changed_count = self.change_attributes_for_task(
                 task_id,
                 annotation_query=annotation_query,
                 additional_data_list=additional_data_list,
                 backup_dir=backup_dir,
                 task_index=task_index,
             )
+            return AnnotationUpdateResult(success, changed_count)
         except Exception:  # pylint: disable=broad-except
             logger.warning(f"タスク'{task_id}'のアノテーションの属性値の変更に失敗しました。", exc_info=True)
-            return False, 0
+            return AnnotationUpdateResult(success=False, changed_count=0, failed=True)
 
     def get_target_task_id_list(self, task_id_list: list[str] | None, *, all_tasks: bool = False) -> list[str]:
         """明示的に指定された処理対象のタスクID一覧を取得する。
@@ -236,39 +239,25 @@ class ChangeAnnotationAttributesMain(CommandLineWithConfirm):
 
         if backup_dir is not None:
             backup_dir.mkdir(exist_ok=True, parents=True)
-        success_count = 0
-        # 変更したアノテーションの個数
-        changed_annotation_count = 0
+        func = functools.partial(
+            self.change_attributes_for_task_wrapper,
+            annotation_query=annotation_query,
+            additional_data_list=additional_data_list,
+            backup_dir=backup_dir,
+        )
         if parallelism is not None:
-            func = functools.partial(
-                self.change_attributes_for_task_wrapper,
-                annotation_query=annotation_query,
-                additional_data_list=additional_data_list,
-                backup_dir=backup_dir,
-            )
             with multiprocessing.Pool(parallelism) as pool:
-                result_tuple_list = pool.map(func, enumerate(task_id_list))
-                success_count = len([e for e in result_tuple_list if e[0]])
-                changed_annotation_count = sum(e[1] for e in result_tuple_list)
-
+                results = pool.map(func, enumerate(task_id_list))
         else:
-            for task_index, task_id in enumerate(task_id_list):
-                try:
-                    result, sub_changed_annotation_count = self.change_attributes_for_task(
-                        task_id,
-                        annotation_query=annotation_query,
-                        additional_data_list=additional_data_list,
-                        backup_dir=backup_dir,
-                        task_index=task_index,
-                    )
-                    changed_annotation_count += sub_changed_annotation_count
-                    if result:
-                        success_count += 1
-                except Exception:
-                    logger.warning(f"タスク'{task_id}'のアノテーションの属性値の変更に失敗しました。", exc_info=True)
-                    continue
+            results = [func(item) for item in enumerate(task_id_list)]
 
-        logger.info(f"{success_count} / {len(task_id_list)} 件のタスクに対して {changed_annotation_count} 件のアノテーションの属性値を変更しました。")
+        success_count = sum(result.success for result in results)
+        failed_count = sum(result.failed for result in results)
+        skipped_count = len(results) - success_count - failed_count
+        changed_annotation_count = sum(result.changed_count for result in results)
+        logger.info(f"{changed_annotation_count} 件のアノテーションの属性値を変更しました。タスク: 成功{success_count}件、スキップ{skipped_count}件、失敗{failed_count}件。")
+        if failed_count:
+            raise AnnofabCliException(f"{failed_count} 件のタスクのアノテーションの属性値変更に失敗しました。")
 
 
 class ChangeAttributesOfAnnotation(CommandLine):

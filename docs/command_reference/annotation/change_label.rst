@@ -62,3 +62,7 @@ Usage Details
     :prog: annofabcli annotation change_label
     :nosubcommands:
     :nodefaultconst:
+
+タスク単位の処理で例外が発生しても、残りのタスクの処理は継続します。
+全タスクの処理後、例外による失敗が1件以上あれば終了コード1で終了します。
+確認での拒否、作業中・完了状態などによる正常なスキップだけの場合は終了コード0です。

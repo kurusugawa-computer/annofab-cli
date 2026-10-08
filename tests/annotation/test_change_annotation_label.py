@@ -11,6 +11,7 @@ from annofabapi.dataclass.annotation import AdditionalDataV1
 from annofabcli.annotation import change_annotation_label
 from annofabcli.annotation.annotation_query import AnnotationQueryForAPI
 from annofabcli.annotation.change_annotation_label import ChangeAnnotationLabelMain, DestLabelInfo, get_label_id_from_name_or_id, is_allowed_label_change
+from annofabcli.common.exceptions import AnnofabCliException
 
 ANNOTATION_SPECS = {
     "labels": [
@@ -356,3 +357,36 @@ def test_backup_confirmation_controls_subsequent_label_changes(monkeypatch: pyte
     assert service.api.batch_update_annotations.call_count == expected_update_count
     for call in service.api.batch_update_annotations.call_args_list:
         assert call.kwargs["request_body"][0]["data"]["label_id"] == "label_bus"
+
+
+@pytest.mark.parametrize("fail", [False, True])
+def test_batch_continues_and_reports_failures(fail: bool) -> None:  # noqa: FBT001
+    service = Mock()
+    service.api.get_project.return_value = ({"title": "project1"}, None)
+    service.wrapper.get_task_or_none.side_effect = [RuntimeError("API failure") if fail else None, None]
+    obj = ChangeAnnotationLabelMain(service, project_id="project1", include_complete_task=False, all_yes=True, annotation_specs={"labels": [], "additionals": [], "inspection_phrases": []})
+    if fail:
+        with pytest.raises(AnnofabCliException):
+            obj.change_annotation_label_for_task_list(
+                ["task1", "task2"],
+                annotation_query=AnnotationQueryForAPI(label_id="car"),
+                dest_label_info=DestLabelInfo(label_id="car", annotation_type="polygon", additional_data_definition_ids=set()),
+            )
+    else:
+        obj.change_annotation_label_for_task_list(
+            ["task1", "task2"], annotation_query=AnnotationQueryForAPI(label_id="car"), dest_label_info=DestLabelInfo(label_id="car", annotation_type="polygon", additional_data_definition_ids=set())
+        )
+    assert [call.args[1] for call in service.wrapper.get_task_or_none.call_args_list] == ["task1", "task2"]
+    service.api.batch_update_annotations.assert_not_called()
+
+
+def test_parallel_worker_reports_exception_as_failure() -> None:
+    service = Mock()
+    service.wrapper.get_task_or_none.side_effect = RuntimeError("API failure")
+    obj = ChangeAnnotationLabelMain(service, project_id="project1", include_complete_task=False, all_yes=True, annotation_specs={"labels": [], "additionals": [], "inspection_phrases": []})
+    result = obj.change_label_for_task_wrapper(
+        (0, "task1"), annotation_query=AnnotationQueryForAPI(label_id="car"), dest_label_info=DestLabelInfo(label_id="car", annotation_type="polygon", additional_data_definition_ids=set())
+    )
+    assert result.failed
+    assert not result.success
+    assert result.changed_count == 0
