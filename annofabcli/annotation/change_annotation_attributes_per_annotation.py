@@ -75,12 +75,27 @@ class ChangeAnnotationAttributesPerAnnotationMain(CommandLineWithConfirm):
         *,
         project_id: str,
         include_complete_task: bool,
+        include_on_hold_task: bool,
         all_yes: bool,
         backup_dir: Path | None = None,
     ) -> None:
+        """属性値の個別変更処理を初期化する。
+
+        Args:
+            service: Annofab APIのリソース。
+            project_id: 対象のプロジェクトID。
+            include_complete_task: 完了状態のタスクも処理する場合はTrue。
+            include_on_hold_task: 保留中状態のタスクも処理する場合はTrue。
+            all_yes: 処理確認を省略する場合はTrue。
+            backup_dir: バックアップを保存するディレクトリ。
+
+        Returns:
+            None
+        """
         self.service = service
         self.project_id = project_id
         self.include_complete_task = include_complete_task
+        self.include_on_hold_task = include_on_hold_task
         self.backup_dir = backup_dir
         self.annotation_specs, _ = self.service.api.get_annotation_specs(project_id, query_params={"v": "3"})
         self.dump_annotation_obj = DumpAnnotationMain(service, project_id)
@@ -180,6 +195,13 @@ class ChangeAnnotationAttributesPerAnnotationMain(CommandLineWithConfirm):
         if task["status"] == TaskStatus.WORKING.value:
             logger.info(f"task_id='{task_id}' :: タスクが作業中状態のため、{annotation_count} 件のアノテーションの属性値の変更をスキップします。")
             failed_to_change_annotation_count += annotation_count
+            return False, 0, annotation_count
+
+        if task["status"] == TaskStatus.ON_HOLD.value and not self.include_on_hold_task:
+            logger.info(
+                f"task_id='{task_id}' :: タスクが保留中状態のため、{annotation_count} 件のアノテーションの属性値の変更をスキップします。"
+                "保留中状態のタスクのアノテーションも変更するには、`--include_on_hold_task` オプションを指定してください。"
+            )
             return False, 0, annotation_count
 
         if not self.include_complete_task:  # noqa: SIM102
@@ -305,6 +327,7 @@ class ChangeAttributesPerAnnotation(CommandLine):
             project_id=project_id,
             all_yes=args.yes,
             include_complete_task=args.include_complete_task,
+            include_on_hold_task=args.include_on_hold_task,
             backup_dir=backup_dir,
         )
         main_obj.change_annotation_attributes(target_annotation_list)
@@ -341,6 +364,12 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--include_complete_task",
         action="store_true",
         help="指定した場合は、完了状態のタスクのアノテーションも属性値を変更します。ただし、完了状態のタスクのアノテーションを変更するには、オーナーロールを持つユーザーが実行する必要があります。",
+    )
+
+    parser.add_argument(
+        "--include_on_hold_task",
+        action="store_true",
+        help="保留中状態のタスクに含まれるアノテーションも変更します。未指定の場合、保留中状態のタスクはスキップされます。",
     )
 
     parser.add_argument(
