@@ -28,6 +28,23 @@ Command line options
 入力データのinput_data_idを指定します。
 
 
+.. _task-selection-for-updates:
+
+--all_tasks
+------------------------------------
+プロジェクト内の全タスクを対象にします。
+以下のコマンドでは、対象タスクを ``--task_id`` または ``--all_tasks`` のいずれかで指定する必要があります。両方を同時には指定できません。
+
+* ``annotation change_label``
+* ``annotation delete_invalid_attribute_value``
+* ``annotation delete_invalid_label_annotation``
+
+従来はタスクIDを省略すると全タスクが対象になりましたが、現在は対象指定を省略するとエラーになります。
+全タスクを対象にする既存スクリプトには ``--all_tasks`` を追加してください。
+``--all_tasks`` は対象範囲を指定するオプションで、処理確認を省略する ``--yes`` とは用途が異なります。
+作業中・完了状態などのタスクをスキップする条件は、各コマンドの説明を参照してください。
+
+
 --user_id / -u
 ------------------------------------
 ユーザのuser_idを指定します。

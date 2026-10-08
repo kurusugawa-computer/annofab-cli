@@ -419,6 +419,27 @@ class ArgumentParser:
 
         self.parser.add_argument("-t", "--task_id", type=str, required=required, nargs="+", help=help_message)
 
+    def add_task_id_or_all_tasks(self) -> None:
+        """タスクID指定と全タスク指定のいずれかを必須にする。
+
+        Args:
+            なし。
+
+        Returns:
+            None
+        """
+        group = self.parser.add_mutually_exclusive_group(required=True)
+        group.add_argument(
+            "-t",
+            "--task_id",
+            type=str,
+            nargs="+",
+            help="対象のタスクのtask_idを指定します。 ``file://`` を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。 ``--all_tasks`` とは同時に指定できません。",
+        )
+        group.add_argument(
+            "--all_tasks", action="store_true", help="プロジェクト内の全タスクを対象にします。タスクの状態などによるスキップ条件は適用されます。 ``--task_id`` とは同時に指定できません。"
+        )
+
     def add_input_data_id(self, *, required: bool = True, help_message: str | None = None) -> None:
         """
         '--input_data_id` 引数を追加

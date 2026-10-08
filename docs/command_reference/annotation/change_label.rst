@@ -8,6 +8,8 @@ Description
 アノテーションのラベルを一括で変更します。
 ただし、作業中状態のタスクに含まれるアノテーションは変更できません。
 
+対象タスクは ``--task_id`` または ``--all_tasks`` で指定してください。指定方法は :ref:`task-selection-for-updates` を参照してください。
+
 
 .. warning::
 
@@ -31,7 +33,7 @@ Examples
 
 .. code-block::
 
-    $ annofabcli annotation change_label --project_id prj1  \
+    $ annofabcli annotation change_label --project_id prj1 --all_tasks \
     --annotation_query '{"label": "car"}' \
     --label_name bus \
     --backup backup_dir/

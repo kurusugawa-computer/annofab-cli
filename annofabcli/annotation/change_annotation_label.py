@@ -229,10 +229,20 @@ class ChangeAnnotationLabelMain(CommandLineWithConfirm):
             logger.warning(f"タスク'{task_id}'のアノテーションラベルの変更に失敗しました。", exc_info=True)
             return False, 0
 
-    def get_target_task_id_list(self, task_id_list: list[str] | None) -> list[str]:
-        """処理対象のタスクID一覧を取得する。"""
+    def get_target_task_id_list(self, task_id_list: list[str] | None, *, all_tasks: bool = False) -> list[str]:
+        """明示的に指定された処理対象のタスクID一覧を取得する。
+
+        Args:
+            task_id_list: 対象のタスクID一覧。
+            all_tasks: 全タスクを対象にする場合はTrue。
+
+        Returns:
+            処理対象のタスクID一覧。
+        """
         if task_id_list is not None:
             return task_id_list
+        if not all_tasks:
+            raise ValueError("対象のタスクIDまたは全タスク指定が必要です。")
 
         task_list = self.service.wrapper.get_all_tasks(self.project_id)
         if len(task_list) == 10_000:
@@ -247,9 +257,22 @@ class ChangeAnnotationLabelMain(CommandLineWithConfirm):
         *,
         backup_dir: Path | None = None,
         parallelism: int | None = None,
+        all_tasks: bool = False,
     ) -> None:
-        """複数タスクに対してアノテーションのラベルを変更する。"""
-        actual_task_id_list = self.get_target_task_id_list(task_id_list)
+        """複数タスクに対してアノテーションのラベルを変更する。
+
+        Args:
+            task_id_list: 対象のタスクID一覧。
+            annotation_query: 変更対象のアノテーションの検索条件。
+            dest_label_info: 変更後のラベル情報。
+            backup_dir: バックアップを保存するディレクトリ。
+            parallelism: 並列度。
+            all_tasks: 全タスクを対象にする場合はTrue。
+
+        Returns:
+            None
+        """
+        actual_task_id_list = self.get_target_task_id_list(task_id_list, all_tasks=all_tasks)
         project_title = self.facade.get_project_title(self.project_id)
         logger.info(f"プロジェクト'{project_title}'に対して、タスク{len(actual_task_id_list)} 件のアノテーションラベルを変更します。")
 
@@ -381,6 +404,7 @@ class ChangeLabelOfAnnotation(CommandLine):
             dest_label_info=dest_label_info,
             backup_dir=backup_dir,
             parallelism=args.parallelism,
+            all_tasks=args.all_tasks,
         )
 
 
@@ -394,7 +418,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     argument_parser = ArgumentParser(parser)
 
     argument_parser.add_project_id()
-    argument_parser.add_task_id(required=False)
+    argument_parser.add_task_id_or_all_tasks()
 
     example_annotation_query = {"label": "car"}
     parser.add_argument(
