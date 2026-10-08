@@ -117,12 +117,27 @@ class ChangeAnnotationLabelPerAnnotationMain(CommandLineWithConfirm):
         *,
         project_id: str,
         include_complete_task: bool,
+        include_on_hold_task: bool,
         all_yes: bool,
         backup_dir: Path | None = None,
     ) -> None:
+        """ラベルの個別変更処理を初期化する。
+
+        Args:
+            service: Annofab APIのリソース。
+            project_id: 対象のプロジェクトID。
+            include_complete_task: 完了状態のタスクも処理する場合はTrue。
+            include_on_hold_task: 保留中状態のタスクも処理する場合はTrue。
+            all_yes: 処理確認を省略する場合はTrue。
+            backup_dir: バックアップを保存するディレクトリ。
+
+        Returns:
+            None
+        """
         self.service = service
         self.project_id = project_id
         self.include_complete_task = include_complete_task
+        self.include_on_hold_task = include_on_hold_task
         self.backup_dir = backup_dir
         self.annotation_specs, _ = service.api.get_annotation_specs(project_id, query_params={"v": "3"})
         self.annotation_specs_accessor = AnnotationSpecsAccessor(self.annotation_specs)
@@ -203,6 +218,12 @@ class ChangeAnnotationLabelPerAnnotationMain(CommandLineWithConfirm):
             return False, ChangeAnnotationLabelCount(success=0, skipped=annotation_count, failed=0)
         if task["status"] == TaskStatus.WORKING.value:
             logger.info(f"task_id='{task_id}' :: タスクが作業中状態のため、{annotation_count}件のアノテーションラベル変更をスキップします。")
+            return False, ChangeAnnotationLabelCount(success=0, skipped=annotation_count, failed=0)
+        if task["status"] == TaskStatus.ON_HOLD.value and not self.include_on_hold_task:
+            logger.info(
+                f"task_id='{task_id}' :: タスクが保留中状態のため、{annotation_count}件のアノテーションラベル変更をスキップします。"
+                "保留中状態のタスクのアノテーションも変更するには、`--include_on_hold_task` オプションを指定してください。"
+            )
             return False, ChangeAnnotationLabelCount(success=0, skipped=annotation_count, failed=0)
         if task["status"] == TaskStatus.COMPLETE.value and not self.include_complete_task:
             logger.info(
@@ -285,7 +306,14 @@ class ChangeLabelPerAnnotation(CommandLine):
             sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
         super().require_project_access(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.ACCEPTER])
 
-        main_obj = ChangeAnnotationLabelPerAnnotationMain(self.service, project_id=project_id, include_complete_task=args.include_complete_task, all_yes=args.yes, backup_dir=backup_dir)
+        main_obj = ChangeAnnotationLabelPerAnnotationMain(
+            self.service,
+            project_id=project_id,
+            include_complete_task=args.include_complete_task,
+            include_on_hold_task=args.include_on_hold_task,
+            all_yes=args.yes,
+            backup_dir=backup_dir,
+        )
         try:
             target_annotation_list = resolve_target_annotation_list(input_annotation_list, main_obj.annotation_specs)
         except ValueError as e:
@@ -322,6 +350,11 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     argument_parser.add_task_id(required=False, help_message="変更対象のアノテーションをtask_idで絞り込みます。 ``--json`` や ``--csv`` で指定したデータのうち、一致したtask_idのみを処理します。")
     parser.add_argument(
         "--include_complete_task", action="store_true", help="指定した場合は、完了状態のタスクのアノテーションラベルも変更します。ただし、オーナーロールを持つユーザーでしか実行できません。"
+    )
+    parser.add_argument(
+        "--include_on_hold_task",
+        action="store_true",
+        help="保留中状態のタスクに含まれるアノテーションも変更します。未指定の場合、保留中状態のタスクはスキップされます。",
     )
     parser.add_argument("--backup", type=Path, required=False, help="アノテーションのバックアップを保存するディレクトリのパス。アノテーションの復元は ``annotation restore`` コマンドで実現できます。")
     parser.set_defaults(subcommand_func=main)

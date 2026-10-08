@@ -4,6 +4,11 @@ Command line options
 
 利用頻度が高いコマンドラインオプションを記載します。
 
+長いオプション名は省略せず、ヘルプに記載された名前を指定してください。
+たとえば、``--annofab_password`` を ``--annofab_pass`` と省略するとエラーになります。
+従来は受理されていた省略形も利用できないため、既存のスクリプトで使用している場合は正式な名前に変更してください。
+``-p`` や ``-t`` など、明示的に定義された短いオプションは引き続き利用できます。
+
 
 リソースを指定するオプション
 ==========================================
@@ -53,6 +58,23 @@ Command line options
 * ``invoke-hook`` : Webhookの起動
 * ``move-project`` : プロジェクトの所属組織の移動
 
+
+
+.. _include-on-hold-task-for-annotation-updates:
+
+--include_on_hold_task
+------------------------------------
+保留中状態のタスクに含まれるアノテーションも変更します。
+以下の個別変更コマンドでは、未指定の場合、保留中状態のタスクはスキップされます。
+
+* ``annotation change_attributes_per_annotation``
+* ``annotation change_data_per_annotation``
+* ``annotation change_label_per_annotation``
+
+従来は属性値・ラベルの個別変更では保留中状態のタスクも処理されましたが、現在は明示的な指定が必要です。
+保留中状態のタスクも処理する既存スクリプトには ``--include_on_hold_task`` を追加してください。
+このオプションを指定しても、作業中状態のタスクはスキップされます。
+完了状態のタスクを変更するには、別途 ``--include_complete_task`` とオーナーロールが必要です。
 
 
 リソースの検索条件を指定するオプション
