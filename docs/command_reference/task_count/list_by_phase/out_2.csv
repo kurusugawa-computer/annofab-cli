@@ -1,0 +1,7 @@
+phase,metadata.dataset_type,never_worked.unassigned,never_worked.assigned,worked.not_rejected,worked.rejected,on_hold,complete
+annotation,train,8,3,5,1,1,42
+annotation,validation,2,2,3,1,0,32
+inspection,train,0,0,8,2,0,48
+inspection,validation,0,0,4,1,0,37
+acceptance,train,0,0,5,0,0,53
+acceptance,validation,0,0,3,0,0,39

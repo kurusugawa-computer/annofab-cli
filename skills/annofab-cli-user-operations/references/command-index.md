@@ -301,9 +301,9 @@
 
 タスク数関係のサブコマンド
 
-- `annofabcli task_count list_by_metadata`: タスクメタデータごとに、フェーズと状態別のタスク数などをCSV形式で出力します。
-- `annofabcli task_count list_by_phase`: フェーズごとにタスク数や入力データ数などを集計し、CSV形式で出力します。
-- `annofabcli task_count list_by_task_id_group`: タスクIDのグループごとに、フェーズと状態別のタスク数をCSV形式で出力します。
+- `annofabcli task_count list_by_metadata`: タスクメタデータごとに、フェーズと状態別のタスク数などを指定した形式で出力します。
+- `annofabcli task_count list_by_phase`: フェーズごとにタスク数や入力データ数などを集計し、指定した形式で出力します。
+- `annofabcli task_count list_by_task_id_group`: タスクIDのグループごとに、フェーズと状態別のタスク数を指定した形式で出力します。
 - `annofabcli task_count list_by_user`: ユーザごとに、担当しているタスク数や入力データ数などを出力します。
 
 ## task_history
