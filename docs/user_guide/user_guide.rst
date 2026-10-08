@@ -113,9 +113,36 @@ Zsh、Fish、PowerShell、およびTcsh用の補完スクリプトも生成で�
 
 
 
+.. _file-argument-syntax:
+
 パラメータの指定
 =================================================
-複数の値を渡せるコマンドラインオプションと、JSON形式の値を渡すコマンドラインオプションは、``file://`` を指定することでファイルの中身を渡すことができます。
+ヘルプに ``file://`` に対応すると記載されているオプションでは、ファイルの中身を引数として渡すことができます。
+入力形式によって、ファイルの指定方法が異なります。
+
+.. list-table::
+    :header-rows: 1
+
+    * - 入力形式
+      - 指定例
+      - 読み込む内容
+    * - IDなどの値の一覧
+      - ``--task_id file://task_id.txt``
+      - 改行区切りの値。空行は除外されます。
+    * - JSON形式の値
+      - ``--task_query file://task_query.json`` または ``--json file://annotations.json``
+      - JSONファイルの内容
+    * - CSVファイルのパス
+      - ``--csv annotations.csv``
+      - 通常のファイルパスを指定します。 ``file://`` は付けません。
+    * - JSONファイルのパス
+      - ``--task_json task.json``
+      - 通常のファイルパスを指定します。 ``file://`` は付けません。
+
+値の一覧をファイルから読み込む場合は、対象オプションの引数を ``file://パス`` の1個だけにしてください。
+直接指定する値や別のファイル指定とは併用できません。
+たとえば、``--task_id file://task_id.txt task3`` や ``--task_id file://a.txt file://b.txt`` では、ファイルは展開されず、``file://...`` 自体がIDの文字列として扱われます。
+ファイルと追加の値をまとめて指定したい場合は、1つの一覧ファイルにまとめてください。
 
 .. code-block::
     :caption: task_id.txt
@@ -126,7 +153,7 @@ Zsh、Fish、PowerShell、およびTcsh用の補完スクリプトも生成で�
 
 .. code-block::
 
-    # 標準入力で指定する
+    # コマンドライン引数で直接指定する
     $ annofabcli task list --project_id prj1 --task_id task1 task2
 
     # 相対パスでファイルを指定する
@@ -144,7 +171,7 @@ Zsh、Fish、PowerShell、およびTcsh用の補完スクリプトも生成で�
 
 .. code-block::
 
-    # 標準入力で指定
+    # コマンドライン引数でJSONを直接指定する
     $ annofabcli task list --project_id prj1 --task_query '{"status":"not_started", "phase":"acceptance"}'
 
     # 絶対パスでファイルを指定する
