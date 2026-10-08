@@ -213,7 +213,7 @@ def resolve_choice_deletion(
     attribute_name_en: str | None,
     choice_ids: Sequence[str] | None,
     choice_name_ens: Sequence[str] | None,
-    unsafe_defaults: bool = False,
+    clear_default_if_deleted: bool = False,
 ) -> ResolvedChoiceDeletion:
     """
     選択肢削除対象を既存アノテーション仕様に対して解決する。
@@ -224,7 +224,7 @@ def resolve_choice_deletion(
         attribute_name_en: 対象属性英語名
         choice_ids: 対象選択肢ID一覧
         choice_name_ens: 対象選択肢英語名一覧
-        unsafe_defaults: Trueなら、削除対象選択肢がデフォルト値でも削除を許可する
+        clear_default_if_deleted: Trueなら、削除対象選択肢がデフォルト値でも削除を許可する
 
     Returns:
         解決済み選択肢削除対象
@@ -242,8 +242,8 @@ def resolve_choice_deletion(
 
     removed_choice_ids = {choice["choice_id"] for choice in choices_to_remove}
     default_choice_id = target_attribute.get("default")
-    if default_choice_id in removed_choice_ids and not unsafe_defaults:
-        raise ValueError("削除対象の選択肢が属性のデフォルト値に設定されています。削除する場合は `--unsafe_defaults` を指定してください。")
+    if default_choice_id in removed_choice_ids and not clear_default_if_deleted:
+        raise ValueError("削除対象の選択肢が属性のデフォルト値に設定されています。削除する場合は `--clear_default_if_deleted` を指定してください。")
 
     target_attribute_id = target_attribute["additional_data_definition_id"]
     restrictions_to_remove = [
@@ -267,7 +267,7 @@ def build_request_body_for_delete_choices(
     annotation_specs: dict[str, Any],
     *,
     resolved_deletion: ResolvedChoiceDeletion,
-    unsafe_defaults: bool,
+    clear_default_if_deleted: bool,
     comment: str | None,
 ) -> dict[str, Any]:
     """
@@ -276,7 +276,7 @@ def build_request_body_for_delete_choices(
     Args:
         annotation_specs: 既存のアノテーション仕様
         resolved_deletion: 解決済み選択肢削除対象
-        unsafe_defaults: Trueなら、削除対象選択肢がデフォルト値でもデフォルト値を解除して削除する
+        clear_default_if_deleted: Trueなら、削除対象選択肢がデフォルト値でもデフォルト値を解除して削除する
         comment: 変更コメント
 
     Returns:
@@ -289,7 +289,7 @@ def build_request_body_for_delete_choices(
         if attribute["additional_data_definition_id"] != target_attribute_id:
             continue
         attribute["choices"] = [choice for choice in attribute["choices"] if choice["choice_id"] not in removed_choice_ids]
-        if unsafe_defaults and attribute.get("default") in removed_choice_ids:
+        if clear_default_if_deleted and attribute.get("default") in removed_choice_ids:
             attribute["default"] = ""
         break
 
@@ -394,7 +394,7 @@ class DeleteChoicesMain(CommandLineWithConfirm):
         attribute_name_en: str | None,
         choice_ids: Sequence[str] | None,
         choice_name_ens: Sequence[str] | None,
-        unsafe_defaults: bool = False,
+        clear_default_if_deleted: bool = False,
         comment: str | None = None,
     ) -> bool:
         """
@@ -405,7 +405,7 @@ class DeleteChoicesMain(CommandLineWithConfirm):
             attribute_name_en: 対象属性英語名
             choice_ids: 対象選択肢ID一覧
             choice_name_ens: 対象選択肢英語名一覧
-            unsafe_defaults: Trueなら、削除対象選択肢がデフォルト値でもデフォルト値を解除して削除する
+            clear_default_if_deleted: Trueなら、削除対象選択肢がデフォルト値でもデフォルト値を解除して削除する
             comment: 変更コメント
 
         Returns:
@@ -418,7 +418,7 @@ class DeleteChoicesMain(CommandLineWithConfirm):
             attribute_name_en=attribute_name_en,
             choice_ids=choice_ids,
             choice_name_ens=choice_name_ens,
-            unsafe_defaults=unsafe_defaults,
+            clear_default_if_deleted=clear_default_if_deleted,
         )
         affecting_annotations = self.collect_affecting_annotations(resolved_deletion)
         if not self.validate_deletion(affecting_annotations):
@@ -428,7 +428,7 @@ class DeleteChoicesMain(CommandLineWithConfirm):
         if not self.confirm_processing(confirm_message):
             return False
 
-        request_body = build_request_body_for_delete_choices(old_annotation_specs, resolved_deletion=resolved_deletion, unsafe_defaults=unsafe_defaults, comment=comment)
+        request_body = build_request_body_for_delete_choices(old_annotation_specs, resolved_deletion=resolved_deletion, clear_default_if_deleted=clear_default_if_deleted, comment=comment)
         self.service.api.put_annotation_specs(self.project_id, query_params={"v": "3"}, request_body=request_body)
         logger.info(f"{len(resolved_deletion.choices_to_remove)} 件の選択肢を削除しました。")
         return True
@@ -458,7 +458,7 @@ class DeleteChoices(CommandLine):
             attribute_name_en=args.attribute_name_en,
             choice_ids=choice_ids,
             choice_name_ens=choice_name_ens,
-            unsafe_defaults=args.unsafe_defaults,
+            clear_default_if_deleted=args.clear_default_if_deleted,
             comment=args.comment,
         )
 
@@ -496,7 +496,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         help="指定すると、既存アノテーションに影響する変更でも選択肢を削除します。",
     )
     parser.add_argument(
-        "--unsafe_defaults",
+        "--clear_default_if_deleted",
         action="store_true",
         help="指定すると、削除対象選択肢が属性のデフォルト値に設定されている場合でも、デフォルト値を解除して選択肢を削除します。",
     )
