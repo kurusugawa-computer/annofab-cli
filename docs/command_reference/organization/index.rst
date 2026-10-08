@@ -16,6 +16,8 @@ Available Commands
    :titlesonly:
 
    list
+   list_usage
+   list_usage_detail
 
 
 Usage Details

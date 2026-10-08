@@ -1,0 +1,151 @@
+"""組織の月別・日別利用状況を出力します。"""
+
+import argparse
+import logging
+from collections.abc import Sequence
+from datetime import datetime, timedelta, timezone
+
+from annofabapi.pydantic_models.usage_status import UsageStatus
+from annofabapi.pydantic_models.usage_status_by_day import UsageStatusByDay
+
+import annofabcli.common.cli
+from annofabcli.common.cli import ArgumentParser, CommandLine, build_annofabapi_resource_and_login
+from annofabcli.common.enums import OutputFormat
+from annofabcli.common.exceptions import AnnofabCliException
+from annofabcli.common.facade import AnnofabApiFacade
+from annofabcli.organization.usage_status import validate_period, year_month
+
+logger = logging.getLogger(__name__)
+
+EDITOR_USAGE_COLUMNS = ("image_editor_usage_hour", "video_editor_usage_hour", "3d_editor_usage_hour")
+"""エディタ利用時間（時間）のCSV列。"""
+
+CSV_COLUMNS = ("organization_id", "organization_name", "month", "aggregation_period_from", "aggregation_period_to", "storage_usage_gb_hour", *EDITOR_USAGE_COLUMNS)
+"""月別CSVの列。ストレージ利用量の単位はGB時。"""
+
+DAILY_CSV_COLUMNS = ("organization_id", "organization_name", "date", "aggregation_period_from", "aggregation_period_to", "storage_usage_gb_hour", *EDITOR_USAGE_COLUMNS, "created_datetime")
+"""日別CSVの列。"""
+
+
+def get_monthly_query_params(start_month: str | None, end_month: str | None) -> dict[str, str]:
+    """省略された月別取得期間を補完し、APIのクエリパラメータを作成します。
+
+    Args:
+        start_month: 開始月。省略時は終了月の11か月前。
+        end_month: 終了月。省略時は日本時間の現在の月。
+
+    Returns:
+        開始月・終了月を含むAPIのクエリパラメータ。
+
+    Raises:
+        AnnofabCliException: 開始月が終了月より後、または補完した開始月が西暦1年より前の場合。
+    """
+    if end_month is None:
+        end_month = datetime.now(timezone(timedelta(hours=9))).strftime("%Y-%m")
+    if start_month is None:
+        year, month = (int(value) for value in end_month.split("-"))
+        start_year, start_month_index = divmod(year * 12 + month - 12, 12)
+        if start_year < 1:
+            raise AnnofabCliException("開始月が西暦1年より前になります。--start_monthを指定してください。")
+        start_month = f"{start_year:04d}-{start_month_index + 1:02d}"
+    validate_period(start_month, end_month, None)
+    return {"from": start_month, "to": end_month}
+
+
+def create_usage_status_rows(usage_status_list: Sequence[UsageStatus | UsageStatusByDay], *, organization_name: str) -> list[dict[str, str | float | int | None]]:
+    """エディタ別利用時間を単位付きの項目に展開します。
+
+    Args:
+        usage_status_list: 月別または日別の利用状況。
+        organization_name: 取得対象の組織名。
+
+    Returns:
+        CSV・JSON共通のレコード一覧。未取得のエディタ利用時間はNoneになります。
+    """
+    rows: list[dict[str, str | float | int | None]] = []
+    for usage in usage_status_list:
+        row: dict[str, str | float | int | None] = {"organization_id": usage.organization_id, "organization_name": organization_name}
+        if isinstance(usage, UsageStatusByDay):
+            row["date"] = usage.var_date
+        else:
+            row["month"] = usage.year_month
+        row.update(aggregation_period_from=usage.aggregation_period_from, aggregation_period_to=usage.aggregation_period_to, storage_usage_gb_hour=usage.storage_usage)
+        row.update(dict.fromkeys(EDITOR_USAGE_COLUMNS))
+        row.update({f"{editor.editor_name}_usage_hour": editor.value for editor in usage.editor_usage})
+        if isinstance(usage, UsageStatusByDay):
+            row["created_datetime"] = usage.created_datetime
+        rows.append(row)
+    return rows
+
+
+class ListUsage(CommandLine):
+    """組織の利用状況一覧を出力するコマンド。"""
+
+    def main(self) -> None:
+        """APIから利用状況を取得し、指定された形式で出力します。
+
+        Args:
+            なし。
+
+        Returns:
+            None。
+        """
+        args = self.args
+        if args.month is not None:
+            usage_status_list, _ = self.service.api.get_organization_usage_status(args.organization, args.month)
+        else:
+            query_params = get_monthly_query_params(args.start_month, args.end_month)
+            usage_status_list, _ = self.service.api.get_organization_usage_status_list(args.organization, query_params=query_params)
+        logger.info(f"組織'{args.organization}'の利用状況一覧の件数: {len(usage_status_list)}")
+        model = UsageStatusByDay if args.month is not None else UsageStatus
+        rows = create_usage_status_rows([model.model_validate(usage) for usage in usage_status_list], organization_name=args.organization)
+        columns = DAILY_CSV_COLUMNS if args.month is not None else CSV_COLUMNS
+        self.print_according_to_format(rows, csv_columns=columns)
+
+
+def main(args: argparse.Namespace) -> None:
+    """引数を検証してコマンドを実行します。
+
+    Args:
+        args: コマンドライン引数。
+
+    Returns:
+        None。
+    """
+    validate_period(args.start_month, args.end_month, args.month)
+    service = build_annofabapi_resource_and_login(args)
+    ListUsage(service, AnnofabApiFacade(service), args).main()
+
+
+def parse_args(parser: argparse.ArgumentParser) -> None:
+    """コマンドライン引数を登録します。
+
+    Args:
+        parser: 引数を登録するパーサー。
+
+    Returns:
+        None。
+    """
+    parser.add_argument("-org", "--organization", required=True, help="対象の組織名。組織管理者として実行してください。")
+    parser.add_argument("--start_month", type=year_month, help="月別一覧の開始月（YYYY-MM、指定月を含む）。省略時は終了月の11か月前です（終了月を含む12か月分）。")
+    parser.add_argument("--end_month", type=year_month, help="月別一覧の終了月（YYYY-MM、指定月を含む）。省略時は日本時間（JST）の現在の月です。")
+    parser.add_argument("--month", type=year_month, help="日別一覧を取得する対象月（YYYY-MM）。--start_month、--end_monthとは同時に指定できません。")
+    argument_parser = ArgumentParser(parser)
+    argument_parser.add_format(choices=[OutputFormat.CSV, OutputFormat.JSON, OutputFormat.PRETTY_JSON], default=OutputFormat.CSV)
+    argument_parser.add_output()
+    parser.set_defaults(subcommand_func=main)
+
+
+def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
+    """利用状況一覧のパーサーを作成します。
+
+    Args:
+        subparsers: コマンドを登録する親パーサー。
+
+    Returns:
+        作成したパーサー。
+    """
+    description = "組織の月別または日別の利用状況を出力します。エディタ利用時間の単位は時間、ストレージ利用量の単位はGB時です。"
+    parser = annofabcli.common.cli.add_parser(subparsers, "list_usage", "組織の利用状況一覧を出力します。", description)
+    parse_args(parser)
+    return parser

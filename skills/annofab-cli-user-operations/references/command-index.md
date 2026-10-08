@@ -177,6 +177,8 @@
 組織関係のサブコマンド
 
 - `annofabcli organization list`: 所属している組織の一覧を出力します。
+- `annofabcli organization list_usage`: 組織の利用状況一覧を出力します。
+- `annofabcli organization list_usage_detail`: 組織のエディタ利用状況明細を出力します。
 
 ## organization_idp
 
