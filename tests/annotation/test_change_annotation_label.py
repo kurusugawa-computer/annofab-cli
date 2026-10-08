@@ -359,14 +359,15 @@ def test_backup_confirmation_controls_subsequent_label_changes(monkeypatch: pyte
 
 
 @pytest.mark.parametrize("include_on_hold_task", [False, True])
-def test_on_hold_task_requires_explicit_opt_in(include_on_hold_task: bool) -> None:  # noqa: FBT001
+@pytest.mark.parametrize("status", ["on_hold", "working"])
+def test_on_hold_task_requires_explicit_opt_in(include_on_hold_task: bool, status: str) -> None:  # noqa: FBT001
     service = Mock()
     task = {
         "project_id": "project1",
         "task_id": "task1",
         "phase": "annotation",
         "phase_stage": 1,
-        "status": "on_hold",
+        "status": status,
         "input_data_id_list": ["input1"],
         "account_id": None,
         "histories_by_phase": [],
@@ -391,5 +392,5 @@ def test_on_hold_task_requires_explicit_opt_in(include_on_hold_task: bool) -> No
     obj.change_label_for_task(
         "task1", annotation_query=AnnotationQueryForAPI(label_id="car"), dest_label_info=DestLabelInfo(label_id="car", annotation_type="polygon", additional_data_definition_ids=set())
     )
-    assert service.wrapper.get_all_annotation_list.called is include_on_hold_task
+    assert service.wrapper.get_all_annotation_list.called is (include_on_hold_task and status == "on_hold")
     service.api.batch_update_annotations.assert_not_called()
