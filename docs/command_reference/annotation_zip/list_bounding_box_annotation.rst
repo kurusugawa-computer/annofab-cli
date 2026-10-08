@@ -115,3 +115,6 @@ Usage Details
     :nodefaultconst:
 
 
+
+必要なローカルファイルを指定し、``--project_id`` を省略した場合は、Annofabへの認証を行いません。
+``--project_id`` を指定した場合は、プロジェクトの確認と権限チェックのため認証します。

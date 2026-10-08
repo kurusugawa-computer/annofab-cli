@@ -369,7 +369,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
 
 
 def main(args: argparse.Namespace) -> None:
-    service = build_annofabapi_resource_and_login(args)
+    service = build_annofabapi_resource_and_login(args) if args.project_id is not None else annofabapi.build()
     facade = AnnofabApiFacade(service)
     ListAnnotationBoundingBox2d(service, facade, args).main()
 

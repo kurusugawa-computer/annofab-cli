@@ -4,7 +4,9 @@ Test cases for annofabcli.annotation_zip.list_annotation_bounding_box_2d module
 
 from __future__ import annotations
 
+import zipfile
 from pathlib import Path
+from unittest.mock import Mock
 
 import pytest
 
@@ -108,3 +110,13 @@ class TestCommandLine:
                 "pretty_json",
             ]
         )
+
+
+def test_local_zip_does_not_login(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    monkeypatch.setattr("annofabcli.annotation_zip.list_annotation_bounding_box_2d.build_annofabapi_resource_and_login", Mock(side_effect=AssertionError("ローカル処理で認証してはいけません")))
+    archive = tmp_path / "annotation.zip"
+    with zipfile.ZipFile(archive, "w"):
+        pass
+    output = tmp_path / "output.json"
+    main(["annotation_zip", "list_bounding_box_annotation", "--annotation", str(archive), "--format", "json", "--output", str(output), "--disable_log"])
+    assert output.read_text(encoding="utf-8").strip() == "[]"
