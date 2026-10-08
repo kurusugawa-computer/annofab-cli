@@ -238,7 +238,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "-tq",
         "--task_query",
         type=str,
-        help="タスクの検索クエリをJSON形式で指定します。指定しない場合は、全タスクを検索対象にします（取得上限は10,000件）。"
+        help="タスクの検索クエリをJSON形式で指定します。``--task_query`` と ``--task_id`` の両方を省略した場合は、全タスクを検索対象にします（取得上限は10,000件）。"
         " ``file://`` を先頭に付けると、JSON形式のファイルを指定できます。"
         "クエリのフォーマットは、`getTasks <https://annofab.com/docs/api/#operation/getTasks>`_ APIのクエリパラメータと同じです。"
         "さらに追加で、``user_id`` , ``previous_user_id`` キーも指定できます。"
