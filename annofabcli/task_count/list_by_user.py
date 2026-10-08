@@ -354,10 +354,9 @@ def parse_args(parser: argparse.ArgumentParser, *, include_metadata_key: bool = 
         help="指定したディレクトリに、一時ファイルをダウンロードします。",
     )
 
-    argument_parser.add_format(choices=[OutputFormat.CSV, OutputFormat.JSON, OutputFormat.PRETTY_JSON], default=OutputFormat.CSV)
     argument_parser.add_output()
 
-    parser.set_defaults(subcommand_func=main)
+    parser.set_defaults(subcommand_func=main, format=OutputFormat.CSV.value)
 
 
 def main(args: argparse.Namespace) -> None:
@@ -373,4 +372,5 @@ def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse
     epilog = "アノテーションユーザまたはオーナロールを持つユーザで実行してください。"
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description=description, epilog=epilog)
     parse_args(parser)
+    ArgumentParser(parser).add_format(choices=[OutputFormat.CSV, OutputFormat.JSON, OutputFormat.PRETTY_JSON], default=OutputFormat.CSV)
     return parser
