@@ -20,7 +20,7 @@ Examples
 --------------------------
 
 ``--task_id`` にアノテーション削除対象のタスクのtask_idを指定してください。
-``--task_id`` を省略すると、プロジェクト内の全タスクを対象にします。
+全タスクを対象にする場合は ``--all_tasks`` を指定してください。指定方法は :ref:`task-selection-for-updates` を参照してください。
 ただし、プロジェクト内のタスク数が10,000件を超える場合は、全タスクを安全に取得できないため処理を中断します。その場合は ``--task_id`` で対象タスクを絞り込んでください。
 
 .. code-block::
@@ -34,12 +34,12 @@ Examples
 
 .. code-block::
 
-    $ annofabcli annotation delete_invalid_label_annotation --project_id prj1 --backup backup_dir/
+    $ annofabcli annotation delete_invalid_label_annotation --project_id prj1 --all_tasks --backup backup_dir/
 
 
 .. note::
 
-    ``--task_id`` を省略したときに、プロジェクト内のタスク数が10,000件を超える場合は処理を中断します。必要に応じて ``--task_id`` で対象タスクを絞り込んでください。
+    ``--all_tasks`` を指定したときに、プロジェクト内のタスク数が10,000件を超える場合は処理を中断します。必要に応じて ``--task_id`` で対象タスクを絞り込んでください。
 
 
 ``--backup`` にディレクトリを指定すると、変更対象のタスクのアノテーション情報を、バックアップとしてディレクトリに保存します。

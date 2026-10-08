@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import copy
 from typing import cast
+from unittest.mock import Mock
 
 import annofabapi
 import pytest
@@ -296,11 +297,24 @@ class TestDeleteInvalidAttributeValueMain:
 
         assert actual == ["task2"]
 
-    def test_get_target_task_id_list_returns_all_tasks_when_task_id_is_none(self) -> None:
+    @pytest.mark.parametrize("task_id_list", [None, [], ["task2"]])
+    def test_get_target_task_id_list_does_not_fetch_all_tasks_without_explicit_request(self, task_id_list: list[str] | None) -> None:
+        service = Mock()
+        obj = DeleteInvalidAttributeValueMain(service, project_id="prj1", include_complete_task=False, all_yes=True)
+
+        if task_id_list is None:
+            with pytest.raises(ValueError):
+                obj.get_target_task_id_list(task_id_list)
+        else:
+            assert obj.get_target_task_id_list(task_id_list) == task_id_list
+
+        service.api.get_tasks.assert_not_called()
+
+    def test_get_target_task_id_list_returns_all_tasks_when_explicitly_requested(self) -> None:
         service = DummyService(create_editor_annotation([]), task_list=[{"task_id": "task1"}, {"task_id": "task2"}])
         obj = DeleteInvalidAttributeValueMain(cast(annofabapi.Resource, service), project_id="prj1", include_complete_task=False, all_yes=True)
 
-        actual = obj.get_target_task_id_list(None)
+        actual = obj.get_target_task_id_list(None, all_tasks=True)
 
         assert actual == ["task1", "task2"]
 
@@ -309,7 +323,7 @@ class TestDeleteInvalidAttributeValueMain:
         service = DummyService(create_editor_annotation([]), task_list=task_list)
         obj = DeleteInvalidAttributeValueMain(cast(annofabapi.Resource, service), project_id="prj1", include_complete_task=False, all_yes=True)
 
-        actual = obj.get_target_task_id_list(None)
+        actual = obj.get_target_task_id_list(None, all_tasks=True)
 
         assert actual == [e["task_id"] for e in task_list]
 
@@ -318,4 +332,4 @@ class TestDeleteInvalidAttributeValueMain:
         obj = DeleteInvalidAttributeValueMain(cast(annofabapi.Resource, service), project_id="prj1", include_complete_task=False, all_yes=True)
 
         with pytest.raises(ValueError):
-            obj.get_target_task_id_list(None)
+            obj.get_target_task_id_list(None, all_tasks=True)

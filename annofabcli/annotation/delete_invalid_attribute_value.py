@@ -312,18 +312,21 @@ class DeleteInvalidAttributeValueMain(CommandLineWithConfirm):
 
         logger.info(f"{success_task_count} / {len(task_id_list)} 件のタスクに対して {deleted_annotation_count} 件のアノテーションから、ラベルに含まれていない属性値を削除しました。")
 
-    def get_target_task_id_list(self, task_id_list: list[str] | None) -> list[str]:
+    def get_target_task_id_list(self, task_id_list: list[str] | None, *, all_tasks: bool = False) -> list[str]:
         """
         処理対象のタスクID一覧を取得する。
 
         Args:
             task_id_list: 引数で指定されたタスクID一覧。
+            all_tasks: 全タスクを対象にする場合はTrue。
 
         Returns:
             処理対象のタスクID一覧。
         """
         if task_id_list is not None:
             return task_id_list
+        if not all_tasks:
+            raise ValueError("対象のタスクIDまたは全タスク指定が必要です。")
 
         limit = 200
         content, _ = self.service.api.get_tasks(self.project_id, query_params={"page": 1, "limit": limit})
@@ -375,7 +378,7 @@ class DeleteInvalidAttributeValueOfAnnotation(CommandLine):
 
         main_obj = DeleteInvalidAttributeValueMain(self.service, project_id=project_id, include_complete_task=args.include_complete_task, all_yes=args.yes)
         try:
-            actual_task_id_list = main_obj.get_target_task_id_list(task_id_list)
+            actual_task_id_list = main_obj.get_target_task_id_list(task_id_list, all_tasks=args.all_tasks)
         except ValueError as e:
             print(f"{self.COMMON_MESSAGE} {e}", file=sys.stderr)  # noqa: T201
             sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
@@ -395,7 +398,7 @@ def main(args: argparse.Namespace) -> None:
 def parse_args(parser: argparse.ArgumentParser) -> None:
     argument_parser = ArgumentParser(parser)
     argument_parser.add_project_id()
-    argument_parser.add_task_id(required=False)
+    argument_parser.add_task_id_or_all_tasks()
 
     parser.add_argument(
         "--include_complete_task",

@@ -185,14 +185,35 @@ class ChangeAnnotationAttributesMain(CommandLineWithConfirm):
             logger.warning(f"タスク'{task_id}'のアノテーションの属性値の変更に失敗しました。", exc_info=True)
             return False, 0
 
+    def get_target_task_id_list(self, task_id_list: list[str] | None, *, all_tasks: bool = False) -> list[str]:
+        """明示的に指定された処理対象のタスクID一覧を取得する。
+
+        Args:
+            task_id_list: 対象のタスクID一覧。
+            all_tasks: 全タスクを対象にする場合はTrue。
+
+        Returns:
+            処理対象のタスクID一覧。
+        """
+        if task_id_list is not None:
+            return task_id_list
+        if not all_tasks:
+            raise ValueError("対象のタスクIDまたは全タスク指定が必要です。")
+
+        task_list = self.service.wrapper.get_all_tasks(self.project_id)
+        if len(task_list) >= 10_000:
+            raise ValueError("タスク一覧が10,000件の取得上限に達したため、全タスクを安全に取得できず処理を中断しました。`--task_id` を指定して対象タスクを絞り込んでください。")
+        return [e["task_id"] for e in task_list]
+
     def change_annotation_attributes_for_task_list(
         self,
-        task_id_list: list[str],
+        task_id_list: list[str] | None,
         annotation_query: AnnotationQueryForAPI,
         additional_data_list: list[dict[str, Any]],
         *,
         backup_dir: Path | None = None,
         parallelism: int | None = None,
+        all_tasks: bool = False,
     ) -> None:
         """
         複数のタスクに対してアノテーションの属性値を変更します。
@@ -203,8 +224,13 @@ class ChangeAnnotationAttributesMain(CommandLineWithConfirm):
             additional_data_list: 変更後の属性値(`AdditionalDataListV2`スキーマ)
             backup_dir: バックアップ先のディレクトリ
             parallelism: 並列数
+            all_tasks: 全タスクを対象にする場合はTrue。
+
+        Returns:
+            None
 
         """
+        task_id_list = self.get_target_task_id_list(task_id_list, all_tasks=all_tasks)
         project_title = self.facade.get_project_title(self.project_id)
         logger.info(f"プロジェクト'{project_title}'に対して、タスク{len(task_id_list)} 件のアノテーションの属性値を変更します。")
 
@@ -286,7 +312,7 @@ class ChangeAttributesOfAnnotation(CommandLine):
             sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
         project_id = args.project_id
-        task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id)
+        task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id) if args.task_id is not None else None
 
         annotation_specs, _ = self.service.api.get_annotation_specs(project_id, query_params={"v": "3"})
 
@@ -329,6 +355,7 @@ class ChangeAttributesOfAnnotation(CommandLine):
             additional_data_list=additional_data_list,
             backup_dir=backup_dir,
             parallelism=args.parallelism,
+            all_tasks=args.all_tasks,
         )
 
 
@@ -342,7 +369,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     argument_parser = ArgumentParser(parser)
 
     argument_parser.add_project_id()
-    argument_parser.add_task_id()
+    argument_parser.add_task_id_or_all_tasks()
 
     EXAMPLE_ANNOTATION_QUERY = {"label": "car", "attributes": {"occluded": True}}  # noqa: N806
     parser.add_argument(
