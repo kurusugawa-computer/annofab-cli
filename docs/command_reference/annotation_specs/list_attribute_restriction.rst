@@ -61,6 +61,8 @@ Examples
 
 ``--restriction_type`` を指定すると、対象属性に紐づく属性制約のうち、指定した種類の制約だけを出力できます。
 属性は ``--attribute_id`` または ``--attribute_name_en`` で指定できます。
+ラベルに紐づく属性の制約を出力する場合は、 ``--label_name_en`` にラベルの英語名を指定してください。
+旧オプション ``--label_name`` は使用できません。
 
 .. code-block::
 
