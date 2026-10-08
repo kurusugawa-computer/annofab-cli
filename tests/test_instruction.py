@@ -24,7 +24,7 @@ class TestCommandLine:
     def test_copy_instruction(self):
         src_project_id = project_id
         dest_project_id = project_id
-        main(["instruction", "copy", src_project_id, dest_project_id, "--yes"])
+        main(["instruction", "copy", "--src_project_id", src_project_id, "--dest_project_id", dest_project_id, "--yes"])
 
     def test_download(self):
         main(

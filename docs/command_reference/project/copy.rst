@@ -6,12 +6,17 @@ Description
 =================================
 プロジェクトをコピーします。
 
+.. note::
+
+    コピー元の指定は ``--project_id`` から ``--src_project_id`` に変更しました。
+    以前の ``--project_id`` と短縮形 ``-p`` は利用できません。
+
 Examples
 =================================
 
 基本的な使い方
 --------------------------
-``--project_id`` にコピー元プロジェクトのproject_id、 ``--dest_title`` にコピー先プロジェクトの名前を指定してください。
+``--src_project_id`` にコピー元プロジェクトのproject_id、 ``--dest_title`` にコピー先プロジェクトの名前を指定してください。
 コピー元プロジェクトの以下の情報がコピーされます。
 
 * プロジェクト設定
@@ -20,13 +25,13 @@ Examples
 
 .. code-block::
 
-    $ annofabcli project copy --project_id prj1 --dest_title prj2-title
+    $ annofabcli project copy --src_project_id prj1 --dest_title prj2-title
 
-コピー先プロジェクトのproject_idは、デフォルトではUUIDv4になります。project_idを指定する場合は、 ``dest_project_id`` を指定してください。
+コピー先プロジェクトのproject_idは、デフォルトではUUIDv4になります。project_idを指定する場合は、 ``--dest_project_id`` を指定してください。
 
 .. code-block::
 
-    $ annofabcli project copy --project_id prj1 --dest_title prj2-title  --dest_project_id prj2
+    $ annofabcli project copy --src_project_id prj1 --dest_title prj2-title  --dest_project_id prj2
 
 デフォルトでは、タスクや入力データなどはコピーされません。コピー対象のデータを指定する場合は、 ``--copied_target`` 引数に以下の値を複数指定してください。
 指定できる値は以下の通りです。
@@ -41,7 +46,7 @@ Examples
 
 .. code-block::
 
-    $ annofabcli project copy --project_id prj1 --dest_title prj2-title  --copied_target annotation
+    $ annofabcli project copy --src_project_id prj1 --dest_title prj2-title  --copied_target annotation
 
 
 Usage Details

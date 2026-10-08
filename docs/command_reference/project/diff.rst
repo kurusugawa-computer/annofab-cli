@@ -10,18 +10,24 @@ Description
 
 
 
+.. note::
+
+    比較対象は ``--left_project_id`` と ``--right_project_id`` で指定してください。
+    以前の位置引数による指定は利用できません。
+
 Examples
 =================================
 
 基本的な使い方
 --------------------------
-比較したいプロジェクトのproject_idを指定してください。
+``--left_project_id`` に比較元（左側）、``--right_project_id`` に比較先（右側）のproject_idを指定してください。
+差分は左側から右側への変更として表示します。
 
 以下のコマンドは、プロジェクトprj1とprj2の差分を出力します。差分がない場合、標準出力は空です。
 
 .. code-block::
 
-    $ annofabcli project diff  prj1 prj2
+    $ annofabcli project diff --left_project_id prj1 --right_project_id prj2
 
 
 特定の項目のみ差分を出力する場合は、``--target`` を指定してください。指定できる値は以下の通りです。
@@ -34,7 +40,7 @@ Examples
 
 .. code-block::
 
-    $ annofabcli project diff prj1 prj2 --target annotation_labels
+    $ annofabcli project diff --left_project_id prj1 --right_project_id prj2 --target annotation_labels
 
 
 出力結果
