@@ -90,7 +90,8 @@ Examples
 カスタムプロジェクトでは、標準3Dエディタを使用している場合だけ検査コメントを作成できます。
 標準3Dエディタかどうかはプロジェクトの設定から自動判定します。
 標準外エディタでは、``--comment_data`` を指定してもエラーになります。
-``--custom_project_type`` オプションは廃止しました。
+``comment create_inspection_simply``・``comment put_inspection_simply``・``task reject`` の ``--custom_project_type`` オプションは廃止しました。
+:doc:`../project/create` の ``--custom_project_type 3d`` は引き続き利用できます。
 
 
 並列処理
