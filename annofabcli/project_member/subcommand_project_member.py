@@ -11,7 +11,7 @@ import annofabcli.project_member.update_project_members
 
 
 def parse_args(parser: argparse.ArgumentParser) -> None:
-    subparsers = parser.add_subparsers(dest="subcommand_name")
+    subparsers = parser.add_subparsers(dest="subcommand_name", required=True)
 
     # サブコマンドの定義
     annofabcli.project_member.delete_project_members.add_parser(subparsers)

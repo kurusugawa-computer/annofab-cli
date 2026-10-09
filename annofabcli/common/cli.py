@@ -124,7 +124,7 @@ def add_parser(
         サブコマンドのparser
 
     """
-    GLOBAL_OPTIONAL_ARGUMENTS_TITLE = "global optional arguments"  # noqa: N806
+    GLOBAL_OPTIONAL_ARGUMENTS_TITLE = "common options (after the subcommand)"  # noqa: N806
 
     def create_parent_parser() -> argparse.ArgumentParser:
         """

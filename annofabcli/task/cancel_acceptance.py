@@ -24,7 +24,6 @@ from annofabcli.common.cli import (
     build_annofabapi_resource_and_login,
 )
 from annofabcli.common.facade import AnnofabApiFacade, TaskQuery, match_task_with_query
-from annofabcli.common.utils import add_dryrun_prefix
 
 logger = logging.getLogger(__name__)
 
@@ -62,7 +61,6 @@ class CancelAcceptanceMain(CommandLineWithConfirm):
         assign_last_acceptor: bool = True,  # noqa: FBT001, FBT002
         task_query: TaskQuery | None = None,
         task_index: int | None = None,
-        dryrun: bool = False,  # noqa: FBT001, FBT002
     ) -> bool:
         logging_prefix = f"{task_index + 1} 件目" if task_index is not None else ""
 
@@ -106,8 +104,7 @@ class CancelAcceptanceMain(CommandLineWithConfirm):
             )
 
             operator_account_id = actual_acceptor.account_id if actual_acceptor is not None else None
-            if not dryrun:
-                self.service.wrapper.cancel_completed_task(self.project_id, task_id, operator_account_id=operator_account_id)
+            self.service.wrapper.cancel_completed_task(self.project_id, task_id, operator_account_id=operator_account_id)
             logger.info(f"{logging_prefix} : task_id = {task_id} の受け入れ取り消しが成功しました。")
             return True  # noqa: TRY300
 
@@ -121,7 +118,6 @@ class CancelAcceptanceMain(CommandLineWithConfirm):
         acceptor: User | None = None,
         assign_last_acceptor: bool = True,  # noqa: FBT001, FBT002
         task_query: TaskQuery | None = None,
-        dryrun: bool = False,  # noqa: FBT001, FBT002
     ) -> bool:
         task_index, task_id = tpl
         try:
@@ -131,7 +127,6 @@ class CancelAcceptanceMain(CommandLineWithConfirm):
                 assign_last_acceptor=assign_last_acceptor,
                 task_query=task_query,
                 task_index=task_index,
-                dryrun=dryrun,
             )
         except Exception:  # pylint: disable=broad-except
             logger.warning(f"タスク'{task_id}'の受け入れ取り消しに失敗しました。", exc_info=True)
@@ -144,7 +139,6 @@ class CancelAcceptanceMain(CommandLineWithConfirm):
         assign_last_acceptor: bool = True,  # noqa: FBT001, FBT002
         task_query: TaskQuery | None = None,
         parallelism: int | None = None,
-        dryrun: bool = False,  # noqa: FBT001, FBT002
     ) -> None:
         """
         タスクを受入取り消しする
@@ -168,7 +162,6 @@ class CancelAcceptanceMain(CommandLineWithConfirm):
                 acceptor=acceptor,
                 assign_last_acceptor=assign_last_acceptor,
                 task_query=task_query,
-                dryrun=dryrun,
             )
             with multiprocessing.Pool(parallelism) as pool:
                 result_bool_list = pool.map(partial_func, enumerate(task_id_list))
@@ -185,7 +178,6 @@ class CancelAcceptanceMain(CommandLineWithConfirm):
                         acceptor=acceptor,
                         assign_last_acceptor=assign_last_acceptor,
                         task_query=task_query,
-                        dryrun=dryrun,
                     )
                     if result:
                         success_count += 1
@@ -214,9 +206,6 @@ class CancelAcceptance(CommandLine):
         args = self.args
         if not self.validate(args):
             sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
-
-        if args.dryrun:
-            add_dryrun_prefix(logger)
 
         task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id)
 
@@ -250,7 +239,6 @@ class CancelAcceptance(CommandLine):
             acceptor=acceptor,
             task_query=task_query,
             parallelism=args.parallelism,
-            dryrun=args.dryrun,
         )
 
 
@@ -302,8 +290,6 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         choices=PARALLELISM_CHOICES,
         help="使用するプロセス数（並列度）を指定してください。指定する場合は必ず ``--yes`` を指定してください。指定しない場合は、逐次的に処理します。",
     )
-
-    parser.add_argument("--dryrun", action="store_true", help="取り消しが行われた時の結果を表示しますが、実際は受け入れを取り消しません。")
 
     parser.set_defaults(subcommand_func=main)
 

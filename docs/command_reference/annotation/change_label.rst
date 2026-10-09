@@ -62,3 +62,6 @@ Usage Details
     :prog: annofabcli annotation change_label
     :nosubcommands:
     :nodefaultconst:
+
+保留中のタスクは、``--include_on_hold_task`` を指定した場合のみ変更します。
+詳細は :ref:`include-on-hold-task-for-annotation-updates` を参照してください。

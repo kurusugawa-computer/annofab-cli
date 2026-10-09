@@ -7,7 +7,7 @@ import annofabcli.my_account.revoke_personal_access_token
 
 
 def parse_args(parser: argparse.ArgumentParser) -> None:
-    subparsers = parser.add_subparsers(dest="subcommand_name")
+    subparsers = parser.add_subparsers(dest="subcommand_name", required=True)
 
     # サブコマンドの定義
     annofabcli.my_account.get_my_account.add_parser(subparsers)

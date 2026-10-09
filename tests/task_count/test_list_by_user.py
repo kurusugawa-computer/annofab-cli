@@ -1,7 +1,9 @@
+import json
 from argparse import Namespace
 from unittest.mock import Mock
 
 import pandas
+import pytest
 from annofabapi.models import Task
 
 from annofabcli.task_count.common import SUMMARY_COLUMNS
@@ -161,15 +163,19 @@ def test_create_legacy_task_count_summary_df_excludes_unassigned_task() -> None:
     assert actual["working"].to_list() == [1]
 
 
-def test_empty_legacy_task_list_outputs_csv_header(tmp_path):
+@pytest.mark.parametrize("output_format", ["csv", "json", "pretty_json"])
+def test_empty_legacy_task_list_outputs_selected_format(tmp_path, output_format):
 
     source = tmp_path / "tasks.json"
     source.write_text("[]")
     output = tmp_path / "task_count.csv"
-    args = Namespace(project_id="project1", unit=AggregationUnit.TASK.value, legacy_output=True, task_json=source, temp_dir=None, format="csv", output=output, yes=True)
+    args = Namespace(project_id="project1", unit=AggregationUnit.TASK.value, legacy_output=True, task_json=source, temp_dir=None, format=output_format, output=output, yes=True)
 
     ListTaskCountByUser(Mock(), Mock(), args).main()
 
-    df = pandas.read_csv(output)
-    assert len(df) == 0
-    assert df.columns.to_list() == ["user_id", "username", "biography", *[status.value for status in TaskStatusForSummary]]
+    if output_format == "csv":
+        df = pandas.read_csv(output)
+        assert len(df) == 0
+        assert df.columns.to_list() == ["user_id", "username", "biography", *[status.value for status in TaskStatusForSummary]]
+    else:
+        assert json.loads(output.read_text()) == []

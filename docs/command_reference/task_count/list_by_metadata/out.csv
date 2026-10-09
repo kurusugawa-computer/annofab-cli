@@ -1,0 +1,4 @@
+metadata.dataset_type,annotation.never_worked,annotation.worked,annotation.on_hold,inspection.never_worked,inspection.worked,inspection.on_hold,acceptance.never_worked,acceptance.worked,acceptance.on_hold,acceptance.complete
+train,10,20,1,5,12,0,3,8,1,40
+validation,2,6,0,1,4,0,1,3,0,13
+,1,0,0,0,0,0,0,0,0,0

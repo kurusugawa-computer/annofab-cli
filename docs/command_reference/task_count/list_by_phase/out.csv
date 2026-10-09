@@ -1,0 +1,4 @@
+phase,never_worked.unassigned,never_worked.assigned,worked.not_rejected,worked.rejected,on_hold,complete
+annotation,10,5,8,2,1,74
+inspection,0,0,12,3,0,85
+acceptance,0,0,8,0,0,92

@@ -115,3 +115,7 @@ Usage Details
     :nodefaultconst:
 
 
+
+ローカルファイルを指定し、``--project_id`` と ``--use_japanese_name`` を省略した場合は、Annofabへの認証を行いません。
+``--project_id`` を指定した場合は、プロジェクトの確認と権限チェックのため認証します。
+``--use_japanese_name`` を指定すると、ローカルファイルの場合も認証してアノテーション仕様を取得します。

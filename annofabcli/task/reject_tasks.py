@@ -12,11 +12,10 @@ from typing import Any
 import annofabapi
 from annofabapi.dataclass.task import Task
 from annofabapi.models import InputDataType, ProjectMemberRole, TaskPhase, TaskStatus
-from annofabapi.plugin import EditorPluginId
 from annofabapi.project_member_repository import ProjectMemberRepository
 
 import annofabcli.common.cli
-from annofabcli.comment.utils import round_image_inspection_comment_data
+from annofabcli.comment.utils import resolve_inspection_comment_data, round_image_inspection_comment_data
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
     PARALLELISM_CHOICES,
@@ -25,7 +24,6 @@ from annofabcli.common.cli import (
     CommandLineWithConfirm,
     build_annofabapi_resource_and_login,
 )
-from annofabcli.common.enums import CustomProjectType
 from annofabcli.common.facade import AnnofabApiFacade, TaskQuery, match_task_with_query
 
 logger = logging.getLogger(__name__)
@@ -390,28 +388,14 @@ class RejectTasks(CommandLine):
         task_query: TaskQuery | None = TaskQuery.from_dict(dict_task_query) if dict_task_query is not None else None
 
         comment_data = annofabcli.common.cli.get_json_from_args(args.comment_data)
-        custom_project_type = CustomProjectType(args.custom_project_type) if args.custom_project_type is not None else None
 
         project, _ = self.service.api.get_project(args.project_id)
-        if args.comment is not None and comment_data is None:
-            if project["input_data_type"] == InputDataType.IMAGE.value:
-                comment_data = {"x": 0, "y": 0, "_type": "Point"}
-            elif project["input_data_type"] == InputDataType.MOVIE.value:
-                # 注意：少なくとも0.1秒以上の区間にしないと、Annofab上で検査コメントを確認できない
-                comment_data = {"start": 0, "end": 100, "_type": "Time"}
-            elif project["input_data_type"] == InputDataType.CUSTOM.value:
-                editor_plugin_id = project["configuration"]["plugin_id"]
-                if editor_plugin_id == EditorPluginId.THREE_DIMENSION.value or custom_project_type == CustomProjectType.THREE_DIMENSION_POINT_CLOUD:
-                    comment_data = {
-                        "data": '{"kind": "CUBOID", "shape": {"dimensions": {"width": 1.0, "height": 1.0, "depth": 1.0}, "location": {"x": 0.0, "y": 0.0, "z": 0.0}, "rotation": {"x": 0.0, "y": 0.0, "z": 0.0}, "direction": {"front": {"x": 1.0, "y": 0.0, "z": 0.0}, "up": {"x": 0.0, "y": 0.0, "z": 1.0}}}, "version": "2"}',  # noqa: E501
-                        "_type": "Custom",
-                    }
-                else:
-                    print(  # noqa: T201
-                        f"{self.COMMON_MESSAGE}: カスタムプロジェクト（ビルトインのエディタプラグインを使用していない）に検査コメントを付与する場合は、'--comment_data' または '--custom_project_type'を指定してください。",  # noqa: E501
-                        file=sys.stderr,
-                    )
-                    sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
+        if args.comment is not None:
+            try:
+                comment_data = resolve_inspection_comment_data(project, comment_data)
+            except ValueError as e:
+                print(f"{self.COMMON_MESSAGE} {e}", file=sys.stderr)  # noqa: T201
+                sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
         if args.comment is not None and project["input_data_type"] == InputDataType.IMAGE.value and comment_data is not None:
             comment_data = round_image_inspection_comment_data(comment_data)
@@ -484,14 +468,8 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "\n"
         " * 画像プロジェクト：点。先頭画像の左上\n"
         " * 動画プロジェクト：区間。動画の先頭\n"
-        " * カスタムプロジェクト(3dpc)：辺が1の立方体。原点\n",
-    )
-
-    parser.add_argument(
-        "--custom_project_type",
-        type=str,
-        choices=[e.value for e in CustomProjectType],
-        help="[BETA] カスタムプロジェクトの種類を指定します。ビルトインのエディタプラグインを使用していないカスタムプロジェクトに対して、検査コメントの位置を指定しない場合は必須です。\n",
+        " * カスタムプロジェクト（標準3Dエディタ）：辺が1の立方体。原点\n\n"
+        "標準3Dエディタ以外のカスタムプロジェクトへの検査コメント作成はサポートしていません。",
     )
 
     # 差し戻したタスクの担当者の割当に関して

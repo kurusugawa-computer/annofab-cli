@@ -5,7 +5,7 @@ task_count list_by_metadata
 Description
 =================================
 
-タスクメタデータごとに、フェーズと状態別のタスク数などを横持ちのCSV形式で出力します。
+タスクメタデータごとに、フェーズと状態別のタスク数などを横持ちのCSVまたはJSON形式で出力します。
 集計列の意味は :doc:`list_by_task_id_group` と同じです。
 
 
@@ -26,11 +26,8 @@ Examples
 出力ファイル :file:`out.csv` の内容は次のとおりです。
 
 .. csv-table:: out.csv
-   :header: metadata.dataset_type,annotation.never_worked,annotation.worked,annotation.on_hold,inspection.never_worked,inspection.worked,inspection.on_hold,acceptance.never_worked,acceptance.worked,acceptance.on_hold,acceptance.complete
-
-   train,10,20,1,5,12,0,3,8,1,40
-   validation,2,6,0,1,4,0,1,3,0,13
-   ,1,0,0,0,0,0,0,0,0,0
+   :file: list_by_metadata/out.csv
+   :header-rows: 1
 
 
 複数のメタデータでグループ化
@@ -54,6 +51,38 @@ Examples
 
     $ annofabcli task_count list_by_metadata --project_id prj1 \
         --metadata_key dataset_type --unit input_data_count --output out.csv
+
+
+JSON形式で出力
+---------------------------------
+
+``--format json`` または ``--format pretty_json`` を指定すると、CSVと同じ列名をキーにした
+オブジェクトの配列を出力します。欠損値は ``null``、空の集計結果は ``[]`` になります。
+省略時はCSV形式で出力します。
+
+.. code-block:: console
+
+    $ annofabcli task_count list_by_metadata --project_id prj1 --metadata_key dataset_type --format pretty_json --output out.json
+
+出力例（先頭の1行分）は次のとおりです。
+
+.. code-block:: json
+
+    [
+      {
+        "metadata.dataset_type": "train",
+        "annotation.never_worked": 10,
+        "annotation.worked": 20,
+        "annotation.on_hold": 1,
+        "inspection.never_worked": 5,
+        "inspection.worked": 12,
+        "inspection.on_hold": 0,
+        "acceptance.never_worked": 3,
+        "acceptance.worked": 8,
+        "acceptance.on_hold": 1,
+        "acceptance.complete": 40
+      }
+    ]
 
 
 Usage Details
