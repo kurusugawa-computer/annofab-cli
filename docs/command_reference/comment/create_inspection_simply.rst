@@ -83,15 +83,15 @@ Examples
 
 * 画像プロジェクト： 点。先頭画像の左上に位置する。
 * 動画プロジェクト： 区間。動画の先頭に位置する。
-* カスタムプロジェクト（3dpc）： 辺が1の立方体。先頭フレームの原点に位置する。
+* カスタムプロジェクト（標準3Dエディタ）： 辺が1の立方体。先頭フレームの原点に位置する。
 
-ただし、ビルトインのエディタプラグインを使用していないカスタムプロジェクトの場合は ``--custom_project_type`` が必須です。
+.. _supported-simple-inspection-editors:
 
-.. code-block::
-
-    $ annofabcli comment create_inspection_simply --project_id prj1 --task_id task1 \
-    --comment "weather属性を見直してください。" \
-    --custom_project_type 3dpc
+カスタムプロジェクトでは、標準3Dエディタを使用している場合だけ検査コメントを作成できます。
+標準3Dエディタかどうかはプロジェクトの設定から自動判定します。
+標準外エディタでは、``--comment_data`` を指定してもエラーになります。
+``comment create_inspection_simply``・``comment put_inspection_simply``・``task reject`` の ``--custom_project_type`` オプションは廃止しました。
+:doc:`../project/create` の ``--custom_project_type 3d`` は引き続き利用できます。
 
 
 並列処理

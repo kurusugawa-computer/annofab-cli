@@ -50,6 +50,7 @@ class ChangeAnnotationAttributesMain(CommandLineWithConfirm):
         project_id: str,
         include_complete_task: bool,
         all_yes: bool,
+        include_on_hold_task: bool = False,
     ) -> None:
         self.service = service
         self.facade = AnnofabApiFacade(service)
@@ -57,6 +58,7 @@ class ChangeAnnotationAttributesMain(CommandLineWithConfirm):
 
         self.project_id = project_id
         self.include_complete_task = include_complete_task
+        self.include_on_hold_task = include_on_hold_task
 
         self.dump_annotation_obj = DumpAnnotationMain(service, project_id)
 
@@ -139,8 +141,11 @@ class ChangeAnnotationAttributesMain(CommandLineWithConfirm):
             return False, 0
 
         task: Task = Task.from_dict(dict_task)
-        if task.status == TaskStatus.WORKING:
-            logger.warning(f"task_id='{task_id}': タスクが作業中状態のため、スキップします。")
+        if task.status == TaskStatus.WORKING or (task.status == TaskStatus.ON_HOLD and not self.include_on_hold_task):
+            if task.status == TaskStatus.WORKING:
+                logger.info(f"task_id='{task_id}': タスクが作業中のため、スキップします。")
+            else:
+                logger.info(f"task_id='{task_id}': タスクが保留中のため、スキップします。変更するには --include_on_hold_task を指定してください。")
             return False, 0
 
         if not self.include_complete_task:  # noqa: SIM102
@@ -337,7 +342,9 @@ class ChangeAttributesOfAnnotation(CommandLine):
                 )
                 sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
-        main_obj = ChangeAnnotationAttributesMain(self.service, project_id=project_id, include_complete_task=args.include_complete_task, all_yes=args.yes)
+        main_obj = ChangeAnnotationAttributesMain(
+            self.service, project_id=project_id, include_complete_task=args.include_complete_task, include_on_hold_task=args.include_on_hold_task, all_yes=args.yes
+        )
         main_obj.change_annotation_attributes_for_task_list(
             task_id_list,
             annotation_query=annotation_query,
@@ -375,6 +382,12 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         type=str,
         required=True,
         help=f"変更後の属性をJSON形式で指定します。``file://`` を先頭に付けると、JSON形式のファイルを指定できます。(ex): ``{EXAMPLE_ATTRIBUTES}``",
+    )
+
+    parser.add_argument(
+        "--include_on_hold_task",
+        action="store_true",
+        help="保留中状態のタスクも変更します。未指定の場合は保留中のタスクをスキップします。作業中のタスクは変更しません。",
     )
 
     parser.add_argument(

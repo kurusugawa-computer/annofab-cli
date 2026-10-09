@@ -8,7 +8,7 @@ import annofabcli.task_count.list_by_user
 
 
 def parse_args(parser: argparse.ArgumentParser) -> None:
-    subparsers = parser.add_subparsers(dest="subcommand_name")
+    subparsers = parser.add_subparsers(dest="subcommand_name", required=True)
 
     # サブコマンドの定義
     annofabcli.task_count.list_by_metadata.add_parser(subparsers)

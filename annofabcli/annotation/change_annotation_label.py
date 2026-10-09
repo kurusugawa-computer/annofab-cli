@@ -86,6 +86,7 @@ class ChangeAnnotationLabelMain(CommandLineWithConfirm):
         include_complete_task: bool,
         all_yes: bool,
         annotation_specs: dict[str, Any],
+        include_on_hold_task: bool = False,
     ) -> None:
         self.service = service
         self.facade = AnnofabApiFacade(service)
@@ -93,6 +94,7 @@ class ChangeAnnotationLabelMain(CommandLineWithConfirm):
 
         self.project_id = project_id
         self.include_complete_task = include_complete_task
+        self.include_on_hold_task = include_on_hold_task
         self.annotation_specs_accessor = AnnotationSpecsAccessor(annotation_specs)
         self.dump_annotation_obj = DumpAnnotationMain(service, project_id)
 
@@ -179,8 +181,11 @@ class ChangeAnnotationLabelMain(CommandLineWithConfirm):
             return False, 0
 
         task: Task = Task.from_dict(dict_task)
-        if task.status == TaskStatus.WORKING:
-            logger.warning(f"task_id='{task_id}': タスクが作業中状態のため、スキップします。")
+        if task.status == TaskStatus.WORKING or (task.status == TaskStatus.ON_HOLD and not self.include_on_hold_task):
+            if task.status == TaskStatus.WORKING:
+                logger.info(f"task_id='{task_id}': タスクが作業中のため、スキップします。")
+            else:
+                logger.info(f"task_id='{task_id}': タスクが保留中のため、スキップします。変更するには --include_on_hold_task を指定してください。")
             return False, 0
 
         if not self.include_complete_task:  # noqa: SIM102
@@ -367,6 +372,7 @@ class ChangeLabelOfAnnotation(CommandLine):
             self.service,
             project_id=project_id,
             include_complete_task=args.include_complete_task,
+            include_on_hold_task=args.include_on_hold_task,
             all_yes=args.yes,
             annotation_specs=annotation_specs,
         )
@@ -429,6 +435,12 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--label_id",
         type=str,
         help="変更後のラベルIDを指定します。変更前のラベルと同じ種類である必要があります。",
+    )
+
+    parser.add_argument(
+        "--include_on_hold_task",
+        action="store_true",
+        help="保留中状態のタスクも変更します。未指定の場合は保留中のタスクをスキップします。作業中のタスクは変更しません。",
     )
 
     parser.add_argument(

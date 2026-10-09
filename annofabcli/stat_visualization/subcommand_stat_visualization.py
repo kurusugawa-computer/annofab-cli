@@ -8,7 +8,7 @@ from annofabcli.stat_visualization import summarize_whole_performance_csv
 
 
 def parse_args(parser: argparse.ArgumentParser) -> None:
-    subparsers = parser.add_subparsers(dest="subcommand_name")
+    subparsers = parser.add_subparsers(dest="subcommand_name", required=True)
 
     # サブコマンドの定義
     annofabcli.stat_visualization.mask_visualization_dir.add_parser(subparsers)
