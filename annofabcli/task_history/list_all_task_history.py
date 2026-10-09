@@ -40,34 +40,20 @@ class ListTaskHistoryWithJsonMain:
                 filtered_task_history_dict[task_id] = task_history_list
         return filtered_task_history_dict
 
-    def get_task_history_dict(self, project_id: str, task_history_json: Path | None = None, task_id_list: list[str] | None = None, temp_dir: Path | None = None) -> TaskHistoryDict:
+    def get_task_history_dict(self, project_id: str, task_id_list: list[str] | None = None, temp_dir: Path | None = None) -> TaskHistoryDict:
         """出力対象のタスク履歴情報を取得する"""
-        if task_history_json is None:
-            downloading_obj = DownloadingFile(self.service)
-            # `NamedTemporaryFile`を使わない理由: Windowsで`PermissionError`が発生するため
-            # https://qiita.com/yuji38kwmt/items/c6f50e1fc03dafdcdda0 参考
-            if temp_dir is not None:
-                tmp_json_path = downloading_obj.download_task_history_json_to_dir(project_id, temp_dir)
-            else:
-                with tempfile.TemporaryDirectory() as str_temp_dir:
-                    tmp_json_path = downloading_obj.download_task_history_json_to_dir(project_id, Path(str_temp_dir))
-                    with tmp_json_path.open(encoding="utf-8") as f:
-                        all_task_history_dict = json.load(f)
-                        # 一時ディレクトリの場合はここでフィルタリング処理まで行う
-                        task_history_dict = self.filter_task_history_dict(all_task_history_dict, task_id_list)
+        downloading_obj = DownloadingFile(self.service)
 
-                        visualize = AddProps(self.service, project_id)
+        def download_and_load(dir_path: Path) -> TaskHistoryDict:
+            json_path = downloading_obj.download_task_history_json_to_dir(project_id, dir_path)
+            with json_path.open(encoding="utf-8") as f:
+                return json.load(f)
 
-                        for task_history_list in task_history_dict.values():
-                            for task_history in task_history_list:
-                                visualize.add_properties_to_task_history(task_history)
-
-                        return task_history_dict
+        if temp_dir is not None:
+            all_task_history_dict = download_and_load(temp_dir)
         else:
-            tmp_json_path = task_history_json
-
-        with tmp_json_path.open(encoding="utf-8") as f:
-            all_task_history_dict = json.load(f)
+            with tempfile.TemporaryDirectory() as str_temp_dir:
+                all_task_history_dict = download_and_load(Path(str_temp_dir))
 
         task_history_dict = self.filter_task_history_dict(all_task_history_dict, task_id_list)
 
@@ -91,26 +77,28 @@ class ListTaskHistoryWithJson(CommandLine):
     def print_task_history_list(
         self,
         project_id: str,
-        task_history_json: Path | None,
         task_id_list: list[str] | None,
         arg_format: OutputFormat,
         temp_dir: Path | None,
     ) -> None:
         """
-        タスク一覧を出力する
+        タスク履歴一覧を出力する
 
         Args:
             project_id: 対象のproject_id
             task_id_list: 対象のタスクのtask_id
-            task_query: タスク検索クエリ
-            task_list_from_json: JSONファイルから取得したタスク一覧
+            arg_format: 出力形式
+            temp_dir: 全件ファイルの保存先ディレクトリ
+
+        Returns:
+            なし。
 
         """
 
         super().require_project_access(project_id, project_member_roles=None)
 
         main_obj = ListTaskHistoryWithJsonMain(self.service)
-        task_history_dict = main_obj.get_task_history_dict(project_id, task_history_json=task_history_json, task_id_list=task_id_list, temp_dir=temp_dir)
+        task_history_dict = main_obj.get_task_history_dict(project_id, task_id_list=task_id_list, temp_dir=temp_dir)
         logger.debug(f"{len(task_history_dict)} 件のタスクの履歴情報を出力します。")
         if arg_format == OutputFormat.CSV:
             all_task_history_list = main_obj.to_all_task_history_list_from_dict(task_history_dict)
@@ -126,7 +114,6 @@ class ListTaskHistoryWithJson(CommandLine):
 
         self.print_task_history_list(
             args.project_id,
-            task_history_json=args.task_history_json,
             task_id_list=task_id_list,
             arg_format=OutputFormat(args.format),
             temp_dir=temp_dir,
@@ -152,16 +139,9 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     )
 
     parser.add_argument(
-        "--task_history_json",
-        type=Path,
-        help="タスク履歴情報が記載されたJSONファイルのパスを指定すると、JSONに記載された情報を元にタスク履歴一覧を出力します。\n"
-        "JSONファイルは ``$ annofabcli task_history download`` コマンドで取得できます。",
-    )
-
-    parser.add_argument(
         "--temp_dir",
         type=str,
-        help="``--task_history_json`` を指定しなかった場合、ダウンロードしたJSONファイルの保存先ディレクトリを指定できます。指定しない場合は、一時ディレクトリに保存されます。",
+        help="ダウンロードしたJSONファイルの保存先ディレクトリを指定できます。指定しない場合は、一時ディレクトリに保存されます。",
     )
 
     argument_parser.add_format(

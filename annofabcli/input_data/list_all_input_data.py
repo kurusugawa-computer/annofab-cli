@@ -80,7 +80,6 @@ class ListInputDataWithJsonMain:
     def get_input_data_list(
         self,
         project_id: str,
-        input_data_json: Path | None,
         *,
         input_data_id_list: list[str] | None = None,
         input_data_query: InputDataQuery | None = None,
@@ -109,10 +108,7 @@ class ListInputDataWithJsonMain:
         def download_and_load_json_files(dir_path: Path) -> list[dict[str, Any]]:
             downloading_obj = DownloadingFile(self.service)
 
-            if input_data_json is None:
-                input_data_json_path = downloading_obj.download_input_data_json_to_dir(project_id, dir_path, is_latest=is_latest)
-            else:
-                input_data_json_path = input_data_json
+            input_data_json_path = downloading_obj.download_input_data_json_to_dir(project_id, dir_path, is_latest=is_latest)
             with input_data_json_path.open(encoding="utf-8") as f:
                 input_data_list = json.load(f)
 
@@ -123,11 +119,6 @@ class ListInputDataWithJsonMain:
                     task_list = json.load(f)
 
             return filter_and_add_details(input_data_list, task_list)
-
-        if input_data_json is not None and not contain_parent_task_id_list:
-            with input_data_json.open(encoding="utf-8") as f:
-                input_data_list = json.load(f)
-            return filter_and_add_details(input_data_list)
 
         if temp_dir is not None:
             return download_and_load_json_files(temp_dir)
@@ -152,7 +143,6 @@ class ListAllInputData(CommandLine):
         temp_dir = Path(args.temp_dir) if args.temp_dir is not None else None
         input_data_list = main_obj.get_input_data_list(
             project_id=project_id,
-            input_data_json=args.input_data_json,
             input_data_id_list=input_data_id_list,
             input_data_query=input_data_query,
             is_latest=args.latest,
@@ -198,13 +188,6 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         type=str,
         nargs="+",
         help="対象のinput_data_idを指定します。\n``file://`` を先頭に付けると、input_data_idの一覧が記載されたファイルを指定できます。",
-    )
-
-    parser.add_argument(
-        "--input_data_json",
-        type=Path,
-        help="入力データ情報が記載されたJSONファイルのパスを指定すると、JSONに記載された情報を元に入力データ一覧を出力します。\n"
-        "JSONファイルは ``$ annofabcli input_data download`` コマンドで取得できます。",
     )
 
     parser.add_argument(

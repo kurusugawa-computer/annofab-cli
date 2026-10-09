@@ -4,7 +4,6 @@ import argparse
 import copy
 import json
 import logging
-import sys
 import tempfile
 from collections import defaultdict
 from pathlib import Path
@@ -15,7 +14,6 @@ from annofabapi.dataclass.input import InputData
 
 import annofabcli.common.cli
 from annofabcli.common.cli import (
-    COMMAND_LINE_ERROR_STATUS_CODE,
     ArgumentParser,
     CommandLine,
     build_annofabapi_resource_and_login,
@@ -129,25 +127,6 @@ def match_parent_task_list_of_input_data_with(input_data: dict[str, Any], *, is_
 
 
 class ListInputDataMergedTask(CommandLine):
-    @staticmethod
-    def validate(args: argparse.Namespace) -> bool:
-        COMMON_MESSAGE = "annofabcli input_data list_all_merged_task: error:"  # noqa: N806
-        if args.project_id is None and (args.input_data_json is None or args.task_json is None):
-            print(  # noqa: T201
-                f"{COMMON_MESSAGE} '--project_id' か、'--task_json'/'--input_data_json'ペアのいずれかを指定する必要があります。",
-                file=sys.stderr,
-            )
-            return False
-
-        if (args.input_data_json is None and args.task_json is not None) or (args.input_data_json is not None and args.task_json is None):
-            print(  # noqa: T201
-                f"{COMMON_MESSAGE} '--task_json'と'--input_data_json'の両方を指定する必要があります。",
-                file=sys.stderr,
-            )
-            return False
-
-        return True
-
     def download_json_files(self, project_id: str, temp_dir: Path | None, *, is_latest: bool) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
         """入力データJSONとタスクJSONをダウンロードして読み込む。"""
         downloading_obj = DownloadingFile(self.service)
@@ -171,24 +150,9 @@ class ListInputDataMergedTask(CommandLine):
 
     def main(self) -> None:
         args = self.args
-        if not self.validate(args):
-            sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
-
         project_id = args.project_id
-        if project_id is not None:
-            super().require_project_access(project_id, None)
-            input_data_list, task_list = self.download_json_files(project_id, args.temp_dir, is_latest=args.latest)
-        else:
-            task_json_path = args.task_json
-            input_data_json_path = args.input_data_json
-
-            logger.debug(f"{task_json_path} を読み込み中")
-            with open(task_json_path, encoding="utf-8") as f:  # noqa: PTH123
-                task_list = json.load(f)
-
-            logger.debug(f"{input_data_json_path} を読み込み中")
-            with open(input_data_json_path, encoding="utf-8") as f:  # noqa: PTH123
-                input_data_list = json.load(f)
+        super().require_project_access(project_id, None)
+        input_data_list, task_list = self.download_json_files(project_id, args.temp_dir, is_latest=args.latest)
 
         input_data_id_set = set(get_list_from_args(args.input_data_id)) if args.input_data_id is not None else None
         input_data_query = InputDataQuery.from_dict(annofabcli.common.cli.get_json_from_args(args.input_data_query)) if args.input_data_query is not None else None
@@ -219,12 +183,7 @@ def main(args: argparse.Namespace) -> None:
 def parse_args(parser: argparse.ArgumentParser) -> None:
     argument_parser = ArgumentParser(parser)
 
-    parser.add_argument(
-        "-p",
-        "--project_id",
-        type=str,
-        help="対象のプロジェクトのproject_idを指定してください。指定すると、入力データ一覧ファイル、タスク一覧ファイルをダウンロードします。",
-    )
+    argument_parser.add_project_id()
 
     parser.add_argument("-i", "--input_data_id", type=str, nargs="+", help="指定したinput_data_idに完全一致する入力データを絞り込みます。")
     parser.add_argument("--input_data_name", type=str, nargs="+", help="指定したinput_data_nameに部分一致(大文字小文字区別しない）する入力データを絞り込みます。")
@@ -254,27 +213,15 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     )
 
     parser.add_argument(
-        "--input_data_json",
-        type=str,
-        help="入力データ情報が記載されたJSONファイルのパスを指定してください。JSONに記載された情報を元に出力します。JSONファイルは ``$ annofabcli input_data download`` コマンドで取得できます。",
-    )
-
-    parser.add_argument(
-        "--task_json",
-        type=str,
-        help="タスク情報が記載されたJSONファイルのパスを指定してください。JSONに記載された情報を元に出力します。JSONファイルは ``$ annofabcli task download`` コマンドで取得できます。",
-    )
-
-    parser.add_argument(
         "--latest",
         action="store_true",
-        help="入力データ一覧ファイル、タスク一覧ファイルの更新が完了するまで待って、最新のファイルをダウンロードします。 ``--project_id`` を指定したときのみ有効です。",
+        help="入力データ一覧ファイル、タスク一覧ファイルの更新が完了するまで待って、最新のファイルをダウンロードします。",
     )
 
     parser.add_argument(
         "--temp_dir",
         type=Path,
-        help="指定したディレクトリに、入力データJSONやタスクJSONなどの一時ファイルをダウンロードします。 ``--project_id`` を指定したときのみ有効です。",
+        help="指定したディレクトリに、入力データJSONやタスクJSONなどの一時ファイルをダウンロードします。",
     )
 
     argument_parser.add_format(

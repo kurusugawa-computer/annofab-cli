@@ -26,14 +26,6 @@ Examples
     $ annofabcli task list_all --project_id prj1 --output task.csv
 
 
-`annofabcli task download <../task/download.html>`_ コマンドでダウンロードできるタスク全件ファイルから、タスクの一覧を出力することもできます。
-
-.. code-block::
-
-    $ annofabcli task download --project_id prj1 --output task.json 
-    $ annofabcli task list_all --project_id prj1 --task_json task.json 
-
-
 タスクのフェーズやステータスなどで絞り込み
 ----------------------------------------------
 

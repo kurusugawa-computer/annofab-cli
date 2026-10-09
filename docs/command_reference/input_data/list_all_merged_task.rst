@@ -30,13 +30,6 @@ Examples
     $ annofabcli input_data list_all_merged_task --project_id prj1 
 
 
-手元にある入力データ全件ファイル、タスク全件ファイルを指定する場合は、 ``--task_json`` , ``--input_data_json`` を指定してください。
-
-.. code-block::
-
-    $ annofabcli input_data list_all_merged_task --input_data_json input_data.json --task_json task.json
-
-
 絞り込み
 --------------------------
 

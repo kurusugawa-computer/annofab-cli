@@ -14,7 +14,7 @@ def test_load_task_list_updates_task_json_when_latest_task_is_specified(tmp_path
     downloading_obj.download_task_json_to_dir.return_value = task_json_path
     main_obj.downloading_obj = downloading_obj
 
-    actual = main_obj.load_task_list(task_json_path=None, temp_dir=tmp_path, is_latest=True)
+    actual = main_obj.load_task_list(temp_dir=tmp_path, is_latest=True)
 
     assert actual == task_list
     downloading_obj.download_task_json_to_dir.assert_called_once_with("project-1", tmp_path, is_latest=True)
