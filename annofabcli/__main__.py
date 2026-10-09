@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import argparse
-import copy
 import logging
 import sys
 
@@ -53,18 +52,20 @@ def mask_sensitive_value_in_argv(argv: list[str]) -> list[str]:
     """
     `argv`にセンシティブな情報が含まれている場合は、`***`に置き換える。
     """
-    tmp_argv = copy.deepcopy(argv)
-    for masked_option in ["--annofab_user_id", "--annofab_password", "--annofab_pat"]:
-        try:
-            start_index = 0
-            # `--annofab_password a --annofab_password b`のように複数指定された場合でもマスクできるようにする
-            while True:
-                index = tmp_argv.index(masked_option, start_index)
-                tmp_argv[index + 1] = "***"
-                start_index = index + 2
-
-        except ValueError:
+    masked_options = {"--annofab_user_id", "--annofab_password", "--annofab_pat"}
+    tmp_argv = argv.copy()
+    mask_next = False
+    for index, argument in enumerate(argv):
+        if mask_next:
+            tmp_argv[index] = "***"
+            mask_next = False
             continue
+        option, separator, _ = argument.partition("=")
+        if option in masked_options:
+            if separator:
+                tmp_argv[index] = f"{option}=***"
+            else:
+                mask_next = True
     return tmp_argv
 
 
@@ -112,7 +113,7 @@ def create_parser() -> argparse.ArgumentParser:
     parser.add_argument("--version", action="version", version=f"annofabcli {annofabcli.__version__}")
     parser.set_defaults(command_help=parser.print_help)
 
-    subparsers = parser.add_subparsers(dest="command_name")
+    subparsers = parser.add_subparsers(dest="command_name", required=True)
 
     annofabcli.annotation.subcommand_annotation.add_parser(subparsers)
     annofabcli.annotation_specs.subcommand_annotation_specs.add_parser(subparsers)

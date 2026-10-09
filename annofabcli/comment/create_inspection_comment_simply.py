@@ -2,12 +2,11 @@ import argparse
 import logging
 import sys
 
-from annofabapi.models import CommentType, InputDataType, ProjectMemberRole
-from annofabapi.plugin import EditorPluginId
+from annofabapi.models import CommentType, ProjectMemberRole
 
 import annofabcli.common.cli
 from annofabcli.comment.put_comment_simply import AddedSimpleComment, PutCommentSimplyMain
-from annofabcli.comment.utils import create_default_inspection_comment_data
+from annofabcli.comment.utils import resolve_inspection_comment_data
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
     PARALLELISM_CHOICES,
@@ -16,7 +15,6 @@ from annofabcli.common.cli import (
     build_annofabapi_resource_and_login,
     get_list_from_args,
 )
-from annofabcli.common.enums import CustomProjectType
 from annofabcli.common.facade import AnnofabApiFacade
 
 logger = logging.getLogger(__name__)
@@ -44,20 +42,13 @@ class CreateInspectionCommentSimply(CommandLine):
         super().require_project_access(args.project_id, required_project_member_roles)
 
         comment_data = annofabcli.common.cli.get_json_from_args(args.comment_data)
-        custom_project_type = CustomProjectType(args.custom_project_type) if args.custom_project_type is not None else None
 
         project, _ = self.service.api.get_project(args.project_id)
-        if comment_data is None:
-            editor_plugin_id = project.get("configuration", {}).get("plugin_id")
-            is_3d_point_cloud = editor_plugin_id == EditorPluginId.THREE_DIMENSION.value or custom_project_type == CustomProjectType.THREE_DIMENSION_POINT_CLOUD
-            try:
-                comment_data = create_default_inspection_comment_data(InputDataType(project["input_data_type"]), is_3d_point_cloud=is_3d_point_cloud)
-            except ValueError:
-                print(  # noqa: T201
-                    f"{self.COMMON_MESSAGE} カスタムプロジェクト（ビルトインのエディタプラグインを使用していない）に検査コメントを作成する場合は、'--comment_data' または '--custom_project_type'を指定してください。",  # noqa: E501
-                    file=sys.stderr,
-                )
-                sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
+        try:
+            comment_data = resolve_inspection_comment_data(project, comment_data)
+        except ValueError as e:
+            print(f"{self.COMMON_MESSAGE} {e}", file=sys.stderr)  # noqa: T201
+            sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
         task_id_list = get_list_from_args(args.task_id)
         phrase_id_list = get_list_from_args(args.phrase_id)
@@ -116,14 +107,8 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "\n"
         " * 画像プロジェクト：点。先頭画像の左上\n"
         " * 動画プロジェクト：区間。動画の先頭\n"
-        " * カスタムプロジェクト(3dpc)：辺が1の立方体。原点\n",
-    )
-
-    parser.add_argument(
-        "--custom_project_type",
-        type=str,
-        choices=[e.value for e in CustomProjectType],
-        help="[BETA] ビルトインのエディタプラグインを使用していないカスタムプロジェクトの種類を指定します。カスタムプロジェクトに対して、検査コメントの位置を指定しない場合は必須です。\n",
+        " * カスタムプロジェクト（標準3Dエディタ）：辺が1の立方体。原点\n\n"
+        "標準3Dエディタ以外のカスタムプロジェクトへの検査コメント作成はサポートしていません。",
     )
 
     parser.add_argument(

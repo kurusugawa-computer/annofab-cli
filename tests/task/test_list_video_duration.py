@@ -1,13 +1,11 @@
 import json
-
-import annofabapi
+from unittest.mock import Mock
 
 from annofabcli.__main__ import main
 
 
 def test_local_list_video_duration(monkeypatch, tmp_path):
-    # 共通CLIが行う認証だけを制御し、ローカルJSONからの出力を検証する。
-    monkeypatch.setattr("annofabcli.common.video_duration.build_annofabapi_resource_and_login", lambda _args: annofabapi.build())
+    monkeypatch.setattr("annofabcli.common.video_duration.build_annofabapi_resource_and_login", Mock(side_effect=AssertionError("ローカル処理で認証してはいけません")))
     task_json = tmp_path / "task.json"
     input_data_json = tmp_path / "input_data.json"
     output = tmp_path / "out.json"

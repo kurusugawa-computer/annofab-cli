@@ -13,9 +13,11 @@ from annofabapi.models import ProjectMemberRole
 
 import annofabcli.common.cli
 from annofabcli.common.cli import COMMAND_LINE_ERROR_STATUS_CODE, ArgumentParser, CommandLine, build_annofabapi_resource_and_login
+from annofabcli.common.enums import OutputFormat
 from annofabcli.common.facade import AnnofabApiFacade
 from annofabcli.task_count.common import summarize_df_task
 from annofabcli.task_count.list_by_phase import AggregationUnit, GettingTaskCountSummary
+from annofabcli.task_count.output import print_task_count_summary
 
 logger = logging.getLogger(__name__)
 
@@ -41,7 +43,7 @@ def summarize_df_task_by_metadata(
 
 
 class ListTaskCountByMetadata(CommandLine):
-    """タスクメタデータごとの値をCSV形式で出力する。"""
+    """タスクメタデータごとの値を指定した形式で出力する。"""
 
     def list_task_count_by_metadata(
         self,
@@ -53,7 +55,7 @@ class ListTaskCountByMetadata(CommandLine):
         not_worked_threshold_second: float = 0,
         unit: AggregationUnit = AggregationUnit.TASK,
     ) -> None:
-        """タスクメタデータごとの値をCSV形式で出力する。
+        """タスクメタデータごとの値を指定した形式で出力する。
 
         Args:
             project_id: プロジェクトID。
@@ -79,11 +81,11 @@ class ListTaskCountByMetadata(CommandLine):
         df_task = getting_obj.create_df_task()
         df_summary = summarize_df_task_by_metadata(df_task, metadata_keys=metadata_keys, unit=unit)
         if len(df_task) == 0:
-            logger.info("タスクが0件ですが、ヘッダ行を出力します。")
+            logger.info("タスクが0件のため、空の集計結果を出力します。")
         else:
             logger.info(f"{len(df_task)} 件のタスクを集計しました。")
-        self.print_csv(df_summary)
-        logger.info(f"project_id='{project_id}' :: タスクメタデータごとの'{unit.value}'をCSV形式で出力しました。")
+        print_task_count_summary(df_summary, format=OutputFormat(self.str_format), output=self.output)
+        logger.info(f"project_id='{project_id}' :: タスクメタデータごとの'{unit.value}'を指定した形式で出力しました。")
 
     def main(self) -> None:
         """コマンドを実行する。
@@ -165,6 +167,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         default=AggregationUnit.TASK.value,
         help="集計の単位を指定します。task_count: タスク数、input_data_count: 入力データ数、video_duration_hour: 動画の長さ（時間）、video_duration_minute: 動画の長さ（分）。",
     )
+    argument_parser.add_format(choices=[OutputFormat.CSV, OutputFormat.JSON, OutputFormat.PRETTY_JSON], default=OutputFormat.CSV)
     argument_parser.add_output()
     parser.set_defaults(subcommand_func=main)
 
@@ -193,7 +196,7 @@ def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse
         追加した引数パーサー。
     """
     subcommand_name = "list_by_metadata"
-    subcommand_help = "タスクメタデータごとに、フェーズと状態別のタスク数などをCSV形式で出力します。"
+    subcommand_help = "タスクメタデータごとに、フェーズと状態別のタスク数などを指定した形式で出力します。"
     epilog = "オーナロールまたはアノテーションユーザーロールを持つユーザで実行してください。"
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, epilog=epilog)
     parse_args(parser)

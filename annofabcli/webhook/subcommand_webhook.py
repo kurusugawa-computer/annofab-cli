@@ -5,7 +5,7 @@ import annofabcli.webhook.list_webhook
 
 
 def parse_args(parser: argparse.ArgumentParser) -> None:
-    subparsers = parser.add_subparsers(dest="subcommand_name")
+    subparsers = parser.add_subparsers(dest="subcommand_name", required=True)
 
     annofabcli.webhook.list_webhook.add_parser(subparsers)
 

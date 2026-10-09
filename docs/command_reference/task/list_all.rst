@@ -69,3 +69,5 @@ Usage Details
 See also
 =================================
 * `annofabcli task list <../task/list.html>`_
+
+一覧取得の上限と全件ファイルの違いは :ref:`list-retrieval-limits` を参照してください。

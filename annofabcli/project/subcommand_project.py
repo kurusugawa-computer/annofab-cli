@@ -12,7 +12,7 @@ from annofabcli.common.cli import add_parser as common_add_parser
 
 
 def parse_args(parser: argparse.ArgumentParser) -> None:
-    subparsers = parser.add_subparsers(dest="subcommand_name")
+    subparsers = parser.add_subparsers(dest="subcommand_name", required=True)
 
     # サブコマンドの定義
     annofabcli.project.change_organization_of_project.add_parser(subparsers)
@@ -21,8 +21,8 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     annofabcli.project.create_project.add_parser(subparsers)
     annofabcli.project.diff_projects.add_parser(subparsers)
     annofabcli.project.list_project.add_parser(subparsers)
-    annofabcli.project.update_configuration.add_parser(subparsers)
     annofabcli.project.update_project.add_parser(subparsers)
+    annofabcli.project.update_configuration.add_parser(subparsers)
 
 
 def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:

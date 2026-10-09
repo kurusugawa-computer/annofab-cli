@@ -1,9 +1,11 @@
-==========================================
+===================================
 annotation change_label
-==========================================
+===================================
+
 
 Description
-=================================
+==========================
+
 
 アノテーションのラベルを一括で変更します。
 ただし、作業中状態のタスクに含まれるアノテーションは変更できません。
@@ -19,7 +21,8 @@ Description
 
 
 Examples
-=================================
+==========================
+
 
 
 基本的な使い方
@@ -54,11 +57,21 @@ Examples
 ただし、オーナーロールであるユーザーで実行する必要があります。
 
 
+保留中のタスクは、``--include_on_hold_task`` を指定した場合のみ変更します。
+詳細は :ref:`include-on-hold-task-for-annotation-updates` を参照してください。
+
+
 Usage Details
-=================================
+==========================
+
 
 .. argparse::
     :ref: annofabcli.annotation.change_annotation_label.add_parser
     :prog: annofabcli annotation change_label
     :nosubcommands:
     :nodefaultconst:
+
+終了コード
+===================================
+
+終了コードと処理継続の仕様は :ref:`batch-annotation-update-exit-code` を参照してください。
