@@ -28,16 +28,6 @@ Examples
     $ annofabcli task list_all_added_task_history --project_id prj1 --output task.csv
 
 
-タスク全件ファイルを指定する場合は ``--task_json`` 、タスク履歴全件ファイルを指定する場合は ``--task_history_json`` を指定してください。
-
-.. code-block::
-
-    $ annofabcli task list_all_added_task_history --project_id prj1 --output task.csv \
-    --task_json task.json --task_history_json task_history.json
-
-タスク全件ファイルは `annofabcli task download <../task/download.html>`_ コマンド、タスク履歴全件ファイルは、`annofabcli task_history download <../task_history/download.html>`_ コマンドでダウンロードできます。
-
-
 タスク全件ファイルのみ最新化する
 ----------------------------------------------
 
@@ -50,8 +40,6 @@ Examples
 
     $ annofabcli task list_all_added_task_history --project_id prj1 --output task.csv \
      --latest_task
-
-``--task_history_json`` を指定して、利用するタスク履歴全件ファイルを固定することもできます。``--latest_task`` と ``--task_json`` は同時に指定できません。
 
 
 タスクの絞り込み
@@ -98,5 +86,3 @@ Usage Details
    :prog: annofabcli task list_all_added_task_history
    :nosubcommands:
    :nodefaultconst:
-
-``--task_json`` と ``--task_history_json`` のファイルパスに ``file://`` は付けません。

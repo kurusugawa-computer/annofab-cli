@@ -262,17 +262,12 @@ JSON形式の値やID一覧との指定方法の違いは :ref:`file-argument-sy
 
 --task_json
 ------------------------------------
-タスク全件ファイルを指定します。
-
-
---task_history_json
-------------------------------------
-タスク履歴全件ファイルを指定します。
+タスク全件ファイルを指定します。集計系コマンドで利用できます。 ``task list_all`` 、 ``task list_all_added_task_history`` 、 ``input_data list_all_merged_task`` では、Annofabから自動で取得します。
 
 
 --input_data_json
 ------------------------------------
-入力データ全件ファイルを指定します。
+入力データ全件ファイルを指定します。動画時間の集計・可視化コマンドで利用できます。 ``input_data list_all`` 、 ``input_data list_all_merged_task`` では、Annofabから自動で取得します。
 
 
 --inspection_comment_json

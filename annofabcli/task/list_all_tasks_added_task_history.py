@@ -3,7 +3,6 @@ from __future__ import annotations
 import argparse
 import json
 import logging
-import sys
 import tempfile
 from pathlib import Path
 from typing import Any
@@ -14,7 +13,6 @@ from annofabapi.models import ProjectMemberRole, TaskHistory
 
 import annofabcli.common.cli
 from annofabcli.common.cli import (
-    COMMAND_LINE_ERROR_STATUS_CODE,
     ArgumentParser,
     CommandLine,
     build_annofabapi_resource_and_login,
@@ -61,35 +59,27 @@ class ListAllTasksAddedTaskHistoryMain:
 
         return task_list
 
-    def load_task_list(self, task_json_path: Path | None, temp_dir: Path | None, *, is_latest: bool) -> list[dict[str, Any]]:
-        if task_json_path is None:
-            # `NamedTemporaryFile`を使わない理由: Windowsで`PermissionError`が発生するため
-            # https://qiita.com/yuji38kwmt/items/c6f50e1fc03dafdcdda0 参考
-            if temp_dir is not None:
-                task_json_path = self.downloading_obj.download_task_json_to_dir(self.project_id, temp_dir, is_latest=is_latest)
-            else:
-                with tempfile.TemporaryDirectory() as str_temp_dir:
-                    task_json_path = self.downloading_obj.download_task_json_to_dir(self.project_id, Path(str_temp_dir), is_latest=is_latest)
-                    with task_json_path.open(encoding="utf-8") as f:
-                        return json.load(f)
+    def load_task_list(self, temp_dir: Path | None, *, is_latest: bool) -> list[dict[str, Any]]:
+        def download_and_load(dir_path: Path) -> list[dict[str, Any]]:
+            task_json_path = self.downloading_obj.download_task_json_to_dir(self.project_id, dir_path, is_latest=is_latest)
+            with task_json_path.open(encoding="utf-8") as f:
+                return json.load(f)
 
-        with task_json_path.open(encoding="utf-8") as f:
-            return json.load(f)
+        if temp_dir is not None:
+            return download_and_load(temp_dir)
+        with tempfile.TemporaryDirectory() as str_temp_dir:
+            return download_and_load(Path(str_temp_dir))
 
-    def load_task_history_dict(self, task_history_json_path: Path | None, temp_dir: Path | None) -> TaskHistoryDict:
-        if task_history_json_path is None:
-            # `NamedTemporaryFile`を使わない理由: Windowsで`PermissionError`が発生するため
-            # https://qiita.com/yuji38kwmt/items/c6f50e1fc03dafdcdda0 参考
-            if temp_dir is not None:
-                task_history_json_path = self.downloading_obj.download_task_history_json_to_dir(self.project_id, temp_dir)
-            else:
-                with tempfile.TemporaryDirectory() as str_temp_dir:
-                    task_history_json_path = self.downloading_obj.download_task_history_json_to_dir(self.project_id, Path(str_temp_dir))
-                    with task_history_json_path.open(encoding="utf-8") as f:
-                        return json.load(f)
+    def load_task_history_dict(self, temp_dir: Path | None) -> TaskHistoryDict:
+        def download_and_load(dir_path: Path) -> TaskHistoryDict:
+            task_history_json_path = self.downloading_obj.download_task_history_json_to_dir(self.project_id, dir_path)
+            with task_history_json_path.open(encoding="utf-8") as f:
+                return json.load(f)
 
-        with task_history_json_path.open(encoding="utf-8") as f:
-            return json.load(f)
+        if temp_dir is not None:
+            return download_and_load(temp_dir)
+        with tempfile.TemporaryDirectory() as str_temp_dir:
+            return download_and_load(Path(str_temp_dir))
 
     @staticmethod
     def match_task_with_conditions(
@@ -121,8 +111,6 @@ class ListAllTasksAddedTaskHistoryMain:
 
     def get_task_list_added_task_history(
         self,
-        task_json_path: Path | None,
-        task_history_json_path: Path | None,
         task_id_list: list[str] | None,
         task_query: TaskQuery | None,
         temp_dir: Path | None,
@@ -133,8 +121,8 @@ class ListAllTasksAddedTaskHistoryMain:
         """
         タスク履歴情報を加えたタスク一覧を取得する。
         """
-        task_list = self.load_task_list(task_json_path, temp_dir, is_latest=is_latest_task)
-        task_history_dict = self.load_task_history_dict(task_history_json_path, temp_dir)
+        task_list = self.load_task_list(temp_dir, is_latest=is_latest_task)
+        task_history_dict = self.load_task_history_dict(temp_dir)
 
         filtered_task_list = self.filter_task_list(task_list, task_id_list=task_id_list, task_query=task_query)
 
@@ -148,23 +136,8 @@ class ListAllTasksAddedTaskHistory(CommandLine):
     タスクの一覧を表示する
     """
 
-    @staticmethod
-    def validate(args: argparse.Namespace) -> bool:
-        COMMON_MESSAGE = "annofabcli task list_all_added_task_history: error:"  # noqa: N806
-        if not args.latest_task and ((args.task_json is None and args.task_history_json is not None) or (args.task_json is not None and args.task_history_json is None)):
-            print(  # noqa: T201
-                f"{COMMON_MESSAGE} '--task_json'と'--task_history_json'の両方を指定する必要があります。",
-                file=sys.stderr,
-            )
-            return False
-
-        return True
-
     def main(self) -> None:
         args = self.args
-        if not self.validate(args):
-            sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
-
         project_id = args.project_id
 
         if args.latest_task:
@@ -178,8 +151,6 @@ class ListAllTasksAddedTaskHistory(CommandLine):
         temp_dir = Path(args.temp_dir) if args.temp_dir is not None else None
         start_date_list = args.add_since_date_columns
         task_list = ListAllTasksAddedTaskHistoryMain(self.service, project_id).get_task_list_added_task_history(
-            task_json_path=args.task_json,
-            task_history_json_path=args.task_history_json,
             task_id_list=task_id_list,
             task_query=task_query,
             temp_dir=temp_dir,
@@ -203,16 +174,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     argument_parser.add_task_query()
     argument_parser.add_task_id(required=False)
 
-    task_source_group = parser.add_mutually_exclusive_group()
-
-    task_source_group.add_argument(
-        "--task_json",
-        type=Path,
-        help="タスク情報が記載されたJSONファイルのパスを指定すると、JSONに記載された情報を元に出力します。指定しない場合はJSONファイルをダウンロードします。\n"
-        "JSONファイルは ``$ annofabcli task download`` コマンドで取得できます。",
-    )
-
-    task_source_group.add_argument(
+    parser.add_argument(
         "--latest_task",
         action="store_true",
         help="タスク全件ファイルを最新化してからダウンロードします。タスク履歴全件ファイルは更新されないため、タスク履歴に関する列は最新ではありません。"
@@ -220,16 +182,9 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     )
 
     parser.add_argument(
-        "--task_history_json",
-        type=Path,
-        help="タスク履歴情報が記載されたJSONファイルのパスを指定すると、JSONに記載された情報を元に出力します。指定しない場合はJSONファイルをダウンロードします。\n"
-        "JSONファイルは ``$ annofabcli task_history download`` コマンドで取得できます。",
-    )
-
-    parser.add_argument(
         "--temp_dir",
         type=str,
-        help="``--task_json`` と ``--task_history_json`` を指定しなかった場合、ダウンロードしたJSONファイルの保存先ディレクトリを指定できます。指定しない場合は、一時ディレクトリに保存されます。",
+        help="ダウンロードしたJSONファイルの保存先ディレクトリを指定できます。指定しない場合は、一時ディレクトリに保存されます。",
     )
 
     parser.add_argument(

@@ -41,39 +41,24 @@ class ListTasksWithJsonMain:
     def get_task_list(
         self,
         project_id: str,
-        task_json: Path | None,
         *,
         task_id_list: list[str] | None = None,
         task_query: TaskQuery | None = None,
         is_latest: bool = False,
         temp_dir: Path | None = None,
     ) -> list[dict[str, Any]]:
-        if task_json is None:
-            downloading_obj = DownloadingFile(self.service)
-            # `NamedTemporaryFile`を使わない理由: Windowsで`PermissionError`が発生するため
-            # https://qiita.com/yuji38kwmt/items/c6f50e1fc03dafdcdda0 参考
-            if temp_dir is not None:
-                json_path = downloading_obj.download_task_json_to_dir(project_id, temp_dir, is_latest=is_latest)
-            else:
-                with tempfile.TemporaryDirectory() as str_temp_dir:
-                    json_path = downloading_obj.download_task_json_to_dir(project_id, Path(str_temp_dir), is_latest=is_latest)
-                    with json_path.open(encoding="utf-8") as f:
-                        task_list = json.load(f)
-                        # 一時ディレクトリの場合はここでフィルタリング処理まで行う
-                        if task_query is not None:
-                            task_query = self.facade.set_account_id_of_task_query(project_id, task_query)
+        downloading_obj = DownloadingFile(self.service)
 
-                        logger.debug("出力対象のタスクを抽出しています。")
-                        task_id_set = set(task_id_list) if task_id_list is not None else None
-                        filtered_task_list = [e for e in task_list if self.match_task_with_conditions(e, task_query=task_query, task_id_set=task_id_set)]
+        def download_and_load(dir_path: Path) -> list[dict[str, Any]]:
+            json_path = downloading_obj.download_task_json_to_dir(project_id, dir_path, is_latest=is_latest)
+            with json_path.open(encoding="utf-8") as f:
+                return json.load(f)
 
-                        visualize_obj = AddProps(self.service, project_id)
-                        return [visualize_obj.add_properties_to_task(e) for e in filtered_task_list]
+        if temp_dir is not None:
+            task_list = download_and_load(temp_dir)
         else:
-            json_path = task_json
-
-        with json_path.open(encoding="utf-8") as f:
-            task_list = json.load(f)
+            with tempfile.TemporaryDirectory() as str_temp_dir:
+                task_list = download_and_load(Path(str_temp_dir))
 
         if task_query is not None:
             task_query = self.facade.set_account_id_of_task_query(project_id, task_query)
@@ -100,7 +85,6 @@ class ListTasksWithJson(CommandLine):
         temp_dir = Path(args.temp_dir) if args.temp_dir is not None else None
         task_list = main_obj.get_task_list(
             project_id=project_id,
-            task_json=args.task_json,
             task_id_list=task_id_list,
             task_query=task_query,
             is_latest=args.latest,
@@ -125,12 +109,6 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     argument_parser.add_task_id(required=False)
 
     parser.add_argument(
-        "--task_json",
-        type=Path,
-        help="タスク情報が記載されたJSONファイルのパスを指定すると、JSONに記載された情報を元にタスク一覧を出力します。\nJSONファイルは ``$ annofabcli task download`` コマンドで取得できます。",
-    )
-
-    parser.add_argument(
         "--latest",
         action="store_true",
         help="最新のタスクの情報を出力します。"
@@ -141,7 +119,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--temp_dir",
         type=str,
-        help="``--task_json`` を指定しなかった場合、ダウンロードしたJSONファイルの保存先ディレクトリを指定できます。指定しない場合は、一時ディレクトリに保存されます。",
+        help="ダウンロードしたJSONファイルの保存先ディレクトリを指定できます。指定しない場合は、一時ディレクトリに保存されます。",
     )
 
     argument_parser.add_format(

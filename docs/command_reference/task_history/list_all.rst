@@ -24,14 +24,6 @@ Examples
 
 
 
-`annofabcli task_history download <../task_history/download.html>`_ コマンドでダウンロードできるタスク履歴全件ファイルから、タスク履歴の一覧を出力することもできます。
-
-.. code-block::
-
-    $ annofabcli task_history download --project_id prj1 --output task_history.json 
-    $ annofabcli task_history list_all --project_id prj1 --task_history_json task_history.json 
-
-
 出力結果
 =================================
 `annofabcli task_history list <../task_history/list.html>`_ コマンドの出力結果と同じです。

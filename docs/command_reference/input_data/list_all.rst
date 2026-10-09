@@ -8,7 +8,7 @@ Description
 
 .. note::
 
-    ``--input_data_json`` を指定しない場合、ダウンロードした入力データ全件ファイルの内容を出力します。
+    入力データ全件ファイルをダウンロードして、その内容を出力します。
     入力データ全件ファイルの内容は、コマンドを実行した日の02:00(JST)頃の状態です。最新の情報を出力したい場合は、 ``--latest`` 引数を指定してください。
 
     ``--with_parent_task_id_list`` を指定した場合は、タスク全件ファイルもダウンロードします。
@@ -31,15 +31,6 @@ Examples
 .. code-block::
 
     $ annofabcli input_data list_all --project_id prj1
-
-
-`annofabcli input_data download <../input_data/download.html>`_ コマンドでダウンロードできる入力データ全件ファイルから、入力データの一覧を出力することもできます。
-
-.. code-block::
-
-    $ annofabcli input_data download --project_id prj1 --output input_data.json 
-    $ annofabcli input_data list_all --project_id prj1 --input_data_json input_data.json 
-
 
 
 絞り込み

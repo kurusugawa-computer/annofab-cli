@@ -86,7 +86,7 @@ def test_list_all_uses_downloaded_input_data_json_without_fetching_input_data_in
     service = Mock()
     main_obj = ListInputDataWithJsonMain(service)
 
-    result = main_obj.get_input_data_list(project_id="project1", input_data_json=None)
+    result = main_obj.get_input_data_list(project_id="project1")
 
     assert result == [
         {
@@ -148,7 +148,6 @@ def test_list_all_adds_parent_task_id_list_from_downloaded_task_json(tmp_path: P
 
     result = main_obj.get_input_data_list(
         project_id="project1",
-        input_data_json=None,
         contain_parent_task_id_list=True,
         is_latest=is_latest,
         temp_dir=tmp_path,
