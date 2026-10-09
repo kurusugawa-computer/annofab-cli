@@ -8,7 +8,7 @@ from annofabcli.common.cli import add_parser as common_add_parser
 
 
 def parse_args(parser: argparse.ArgumentParser) -> None:
-    subparsers = parser.add_subparsers(dest="subcommand_name")
+    subparsers = parser.add_subparsers(dest="subcommand_name", required=True)
 
     # サブコマンドの定義
     annofabcli.task_history_event.download_task_history_event_json.add_parser(subparsers)

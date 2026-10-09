@@ -113,7 +113,7 @@ def create_parser() -> argparse.ArgumentParser:
     parser.add_argument("--version", action="version", version=f"annofabcli {annofabcli.__version__}")
     parser.set_defaults(command_help=parser.print_help)
 
-    subparsers = parser.add_subparsers(dest="command_name")
+    subparsers = parser.add_subparsers(dest="command_name", required=True)
 
     annofabcli.annotation.subcommand_annotation.add_parser(subparsers)
     annofabcli.annotation_specs.subcommand_annotation_specs.add_parser(subparsers)

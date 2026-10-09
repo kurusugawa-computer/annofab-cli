@@ -5,7 +5,7 @@ import annofabcli.filesystem.draw_annotation
 
 
 def parse_args(parser: argparse.ArgumentParser) -> None:
-    subparsers = parser.add_subparsers()
+    subparsers = parser.add_subparsers(required=True)
 
     # サブコマンドの定義
     annofabcli.filesystem.draw_annotation.add_parser(subparsers)

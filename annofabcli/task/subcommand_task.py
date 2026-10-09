@@ -27,7 +27,7 @@ import annofabcli.task.visualize_video_duration
 
 
 def parse_args(parser: argparse.ArgumentParser) -> None:
-    subparsers = parser.add_subparsers(dest="subcommand_name")
+    subparsers = parser.add_subparsers(dest="subcommand_name", required=True)
 
     # サブコマンドの定義
     annofabcli.task.complete_tasks.add_accept_parser(subparsers)

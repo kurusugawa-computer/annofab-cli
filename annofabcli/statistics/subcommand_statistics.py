@@ -14,7 +14,7 @@ import annofabcli.statistics.visualize_video_duration
 
 
 def parse_args(parser: argparse.ArgumentParser) -> None:
-    subparsers = parser.add_subparsers(dest="subcommand_name")
+    subparsers = parser.add_subparsers(dest="subcommand_name", required=True)
 
     # サブコマンドの定義
     annofabcli.statistics.list_annotation_count.add_parser(subparsers)
