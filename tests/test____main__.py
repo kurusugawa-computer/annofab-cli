@@ -8,6 +8,18 @@ from annofabcli.common.exceptions import AuthenticationError
 from annofabcli.task import reject_tasks, reject_tasks_with_inspection_comments
 
 
+@pytest.mark.parametrize("option", ["--annofab_user_id", "--annofab_password", "--annofab_pat"])
+def test_mask_sensitive_equal_arguments(option: str) -> None:
+    arguments = ["task", "list", f"{option}=first=second", option, "secret", f"{option}="]
+    original = arguments.copy()
+    assert mask_sensitive_value_in_argv(arguments) == ["task", "list", f"{option}=***", option, "***", f"{option}=***"]
+    assert arguments == original
+
+
+def test_mask_sensitive_argument_without_value() -> None:
+    assert mask_sensitive_value_in_argv(["--annofab_password"]) == ["--annofab_password"]
+
+
 def test__mask_sensitive_value_in_argv__password():
     actual = mask_sensitive_value_in_argv(["--annofab_user_id", "alice", "--annofab_password", "pw"])
     assert actual == ["--annofab_user_id", "***", "--annofab_password", "***"]
