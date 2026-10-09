@@ -90,9 +90,9 @@ class VisualizeVideoDuration(CommandLine):
     COMMON_MESSAGE = "annofabcli statistics visualize_video_duration: error:"
 
     def validate(self, args: argparse.Namespace) -> bool:
-        if args.project_id is None and (args.input_data_json is None or args.task_json is None):
+        if args.project_id is None and (args.input_data_json_file is None or args.task_json_file is None):
             print(  # noqa: T201
-                f"{self.COMMON_MESSAGE} argument --project_id: '--input_data_json'または'--task_json'が未指定のときは、'--project_id' を指定してください。",
+                f"{self.COMMON_MESSAGE} argument --project_id: '--input_data_json_file'または'--task_json_file'が未指定のときは、'--project_id' を指定してください。",
                 file=sys.stderr,
             )
             return False
@@ -172,27 +172,27 @@ class VisualizeVideoDuration(CommandLine):
         def wrapper_func(temp_dir: Path) -> None:
             downloading_obj = DownloadingFile(self.service)
             assert project_id is not None
-            if args.input_data_json is None:
+            if args.input_data_json_file is None:
                 input_data_json = downloading_obj.download_input_data_json_to_dir(
                     project_id,
                     temp_dir,
                     is_latest=args.latest,
                 )
             else:
-                input_data_json = args.input_data_json
+                input_data_json = args.input_data_json_file
 
-            if args.task_json is None:
+            if args.task_json_file is None:
                 task_json = downloading_obj.download_task_json_to_dir(
                     project_id,
                     temp_dir,
                     is_latest=args.latest,
                 )
             else:
-                task_json = args.task_json
+                task_json = args.task_json_file
 
             func(task_json=task_json, input_data_json=input_data_json)
 
-        if args.input_data_json is None or args.task_json is None:
+        if args.input_data_json_file is None or args.task_json_file is None:
             if args.temp_dir is not None:
                 wrapper_func(args.temp_dir)
             else:
@@ -202,19 +202,19 @@ class VisualizeVideoDuration(CommandLine):
                     wrapper_func(Path(str_temp_dir))
 
         else:
-            func(task_json=args.task_json, input_data_json=args.input_data_json)
+            func(task_json=args.task_json_file, input_data_json=args.input_data_json_file)
 
 
 def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
-        "--input_data_json",
+        "--input_data_json_file",
         type=Path,
         required=False,
         help="入力データ情報が記載されたJSONファイルのパスを指定します。\nJSONファイルは ``$ annofabcli input_data download`` コマンドで取得できます。",
     )
 
     parser.add_argument(
-        "--task_json",
+        "--task_json_file",
         type=Path,
         required=False,
         help="タスク情報が記載されたJSONファイルのパスを指定します。\nJSONファイルは ``$ annofabcli task download`` コマンドで取得できます。",
@@ -225,7 +225,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--project_id",
         type=str,
         required=False,
-        help="project_id。``--input_data_json`` と ``--task_json`` が未指定のときは必須です。",
+        help="project_id。``--input_data_json_file`` と ``--task_json_file`` が未指定のときは必須です。",
     )
 
     parser.add_argument("-o", "--output", type=Path, required=True, help="出力先HTMLファイルのパス")

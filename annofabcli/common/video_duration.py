@@ -154,12 +154,12 @@ class VideoDurationCommand(CommandLine):
         with tempfile.TemporaryDirectory() as temporary_dir:
             temp_dir = args.temp_dir if args.temp_dir is not None else Path(temporary_dir)
             downloading = DownloadingFile(self.service)
-            input_data_json = args.input_data_json
+            input_data_json = args.input_data_json_file
             if input_data_json is None:
                 input_data_json = downloading.download_input_data_json_to_dir(args.project_id, temp_dir, is_latest=args.latest)
             with input_data_json.open(encoding="utf-8") as file:
                 input_data_list = json.load(file)
-            task_json = args.task_json
+            task_json = args.task_json_file
             if task_json is None:
                 task_json = downloading.download_task_json_to_dir(args.project_id, temp_dir, is_latest=args.latest)
             with task_json.open(encoding="utf-8") as file:
@@ -202,7 +202,7 @@ def run_command(args: argparse.Namespace, *, visualize: bool) -> None:
     Returns:
         None。
     """
-    if args.project_id is None and (args.input_data_json is None or args.task_json is None):
+    if args.project_id is None and (args.input_data_json_file is None or args.task_json_file is None):
         raise AnnofabCliException("必要なJSONファイルが未指定のときは、--project_idを指定してください。")
     service = build_annofabapi_resource_and_login(args) if args.project_id is not None else annofabapi.build()
     VideoDurationCommand(service, AnnofabApiFacade(service), args).run(visualize=visualize)
@@ -220,8 +220,8 @@ def add_arguments(parser: argparse.ArgumentParser, *, visualize: bool) -> None:
     """
     arguments = ArgumentParser(parser)
     parser.add_argument("-p", "--project_id", help="対象の動画プロジェクトID。必要なJSONファイルをすべて指定した場合は省略できます。")
-    parser.add_argument("--input_data_json", type=Path, help="input_data downloadで取得した入力データのJSONファイル。")
-    parser.add_argument("--task_json", type=Path, help="task downloadで取得したタスクのJSONファイル。")
+    parser.add_argument("--input_data_json_file", type=Path, help="input_data downloadで取得した入力データのJSONファイル。")
+    parser.add_argument("--task_json_file", type=Path, help="task downloadで取得したタスクのJSONファイル。")
     parser.add_argument("--latest", action="store_true", help="入力データ情報とタスク情報の最新版を取得します。数分待つ場合があります。")
     parser.add_argument("--temp_dir", type=Path, help="JSONファイルをダウンロードするディレクトリ。")
     parser.add_argument(

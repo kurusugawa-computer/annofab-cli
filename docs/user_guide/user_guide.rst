@@ -136,7 +136,7 @@ Zsh、Fish、PowerShell、およびTcsh用の補完スクリプトも生成で�
       - ``--csv annotations.csv``
       - 通常のファイルパスを指定します。 ``file://`` は付けません。
     * - JSONファイルのパス
-      - ``--task_json task.json``
+      - ``--task_json_file task.json``
       - 通常のファイルパスを指定します。 ``file://`` は付けません。
 
 値の一覧をファイルから読み込む場合は、対象オプションの引数を ``file://パス`` の1個だけにしてください。

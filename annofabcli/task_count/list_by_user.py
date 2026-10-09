@@ -279,8 +279,8 @@ class ListTaskCountByUser(CommandLine):
         args = self.args
 
         def download_and_process_task_data(temp_dir: Path) -> None:
-            if args.task_json is not None:
-                task_json_path = args.task_json
+            if args.task_json_file is not None:
+                task_json_path = args.task_json_file
             else:
                 downloading_obj = DownloadingFile(self.service)
                 task_json_path = downloading_obj.download_task_json_to_dir(
@@ -337,7 +337,7 @@ def parse_args(parser: argparse.ArgumentParser, *, include_metadata_key: bool = 
     else:
         parser.set_defaults(metadata_key=None, execute_get_tasks_api=False, not_worked_threshold_second=0, unit=AggregationUnit.TASK.value, legacy_output=True)
         parser.add_argument(
-            "--task_json",
+            "--task_json_file",
             type=str,
             help="タスク情報が記載されたJSONファイルのパスを指定します。JSONファイルは ``$ annofabcli task download`` コマンドで取得できます。"
             "指定しない場合は、Annofabからタスク全件ファイルをダウンロードします。",
