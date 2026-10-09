@@ -218,7 +218,12 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         type=str,
         nargs="+",
         required=True,
-        help="コピー元のtask_idとコピー先のtask_idを ``:`` で区切って指定してください。\n``file://`` を先頭に付けると、コピー元とコピー先が記載されているファイルを指定できます。",
+        help=(
+            "コピー元のtask_idとコピー先のtask_idを ``:`` で区切って指定してください。"
+            "\n``file://`` を先頭に付けると、コピー元とコピー先が記載されているファイルを指定できます。"
+            " ファイルを読み込む場合は、ファイル指定を1個だけ渡してください。"
+            "直接指定する値や別のファイル指定とは併用できません。"
+        ),
     )
 
     parser.add_argument("--copy_metadata", action="store_true", help="指定した場合、タスクのメタデータもコピーします。")

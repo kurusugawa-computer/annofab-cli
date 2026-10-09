@@ -558,13 +558,25 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--attribute_name_en",
         type=str,
         nargs="+",
-        help="削除する属性の英語名。複数指定できます。 ``file://`` を先頭に付けると一覧ファイルを指定できます。",
+        help=(
+            "削除する属性の英語名。"
+            "複数指定できます。"
+            " ``file://`` を先頭に付けると一覧ファイルを指定できます。"
+            " ファイルを読み込む場合は、ファイル指定を1個だけ渡してください。"
+            "直接指定する値や別のファイル指定とは併用できません。"
+        ),
     )
     attribute_group.add_argument(
         "--attribute_id",
         type=str,
         nargs="+",
-        help="削除する属性の属性ID。複数指定できます。 ``file://`` を先頭に付けると一覧ファイルを指定できます。",
+        help=(
+            "削除する属性の属性ID。"
+            "複数指定できます。"
+            " ``file://`` を先頭に付けると一覧ファイルを指定できます。"
+            " ファイルを読み込む場合は、ファイル指定を1個だけ渡してください。"
+            "直接指定する値や別のファイル指定とは併用できません。"
+        ),
     )
 
     label_group = parser.add_mutually_exclusive_group(required=True)
@@ -572,13 +584,25 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--label_name_en",
         type=str,
         nargs="+",
-        help="属性を削除する対象ラベルの英語名。複数指定できます。 ``file://`` を先頭に付けると一覧ファイルを指定できます。",
+        help=(
+            "属性を削除する対象ラベルの英語名。"
+            "複数指定できます。"
+            " ``file://`` を先頭に付けると一覧ファイルを指定できます。"
+            " ファイルを読み込む場合は、ファイル指定を1個だけ渡してください。"
+            "直接指定する値や別のファイル指定とは併用できません。"
+        ),
     )
     label_group.add_argument(
         "--label_id",
         type=str,
         nargs="+",
-        help="属性を削除する対象ラベルのlabel_id。複数指定できます。 ``file://`` を先頭に付けると一覧ファイルを指定できます。",
+        help=(
+            "属性を削除する対象ラベルのlabel_id。"
+            "複数指定できます。"
+            " ``file://`` を先頭に付けると一覧ファイルを指定できます。"
+            " ファイルを読み込む場合は、ファイル指定を1個だけ渡してください。"
+            "直接指定する値や別のファイル指定とは併用できません。"
+        ),
     )
     label_group.add_argument(
         "--all_labels",

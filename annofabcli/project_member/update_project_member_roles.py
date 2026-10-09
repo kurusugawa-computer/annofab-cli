@@ -42,7 +42,12 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--user_id",
         type=str,
         nargs="+",
-        help="ロールを更新するユーザIDを指定します。 ``file://`` を先頭に付けると、一覧が記載されたファイルを指定できます。",
+        help=(
+            "ロールを更新するユーザIDを指定します。"
+            " ``file://`` を先頭に付けると、一覧が記載されたファイルを指定できます。"
+            " ファイルを読み込む場合は、ファイル指定を1個だけ渡してください。"
+            "直接指定する値や別のファイル指定とは併用できません。"
+        ),
     )
     user_group.add_argument("--all_users", action="store_true", help="自分以外のすべての有効なプロジェクトメンバを対象にします。")
     parser.add_argument("--role", required=True, choices=[role.value for role in ProjectMemberRole], help="対象ユーザに共通して設定するロールを指定します。")

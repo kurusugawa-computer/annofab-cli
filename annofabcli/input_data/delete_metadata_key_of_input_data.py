@@ -183,7 +183,15 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     argument_parser.add_project_id()
     argument_parser.add_input_data_id(required=True)
 
-    parser.add_argument("--metadata_key", type=str, nargs="+", required=True, help="削除するメタデータのキーを指定します。")
+    parser.add_argument(
+        "--metadata_key",
+        type=str,
+        nargs="+",
+        required=True,
+        help="削除するメタデータのキーを指定します。"
+        " ``file://`` を先頭に付けると、メタデータキーの改行区切りの一覧ファイルを指定できます。"
+        "ファイルを読み込む場合は、ファイル指定を1個だけ渡してください。直接指定する値や別のファイル指定とは併用できません。",
+    )
 
     parser.add_argument(
         "--parallelism",
