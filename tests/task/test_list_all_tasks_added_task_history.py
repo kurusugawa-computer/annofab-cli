@@ -1,7 +1,18 @@
 import json
+from pathlib import Path
 from unittest.mock import MagicMock
 
 from annofabcli.task.list_all_tasks_added_task_history import ListAllTasksAddedTaskHistoryMain
+
+
+def test_load_local_task_history(tmp_path: Path) -> None:
+    path = tmp_path / "history.json"
+    histories = {"task1": [{"task_history_id": "history1"}]}
+    path.write_text(json.dumps(histories), encoding="utf-8")
+    service = MagicMock()
+    actual = ListAllTasksAddedTaskHistoryMain(service, "project1").load_task_history_dict(path, None)
+    assert actual == histories
+    service.wrapper.assert_not_called()
 
 
 def test_load_task_list_updates_task_json_when_latest_task_is_specified(tmp_path):
