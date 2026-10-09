@@ -98,7 +98,12 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         nargs="+",
         required=True,
         type=str,
-        help="招待先の組織名を指定してください。 ``file://`` を先頭に付けると、組織名の一覧が記載されたファイルを指定できます。",
+        help=(
+            "招待先の組織名を指定してください。"
+            " ``file://`` を先頭に付けると、組織名の一覧が記載されたファイルを指定できます。"
+            " ファイルを読み込む場合は、ファイル指定を1個だけ渡してください。"
+            "直接指定する値や別のファイル指定とは併用できません。"
+        ),
     )
 
     parser.add_argument(
@@ -107,7 +112,12 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         type=str,
         nargs="+",
         required=True,
-        help="組織に招待するメンバーのuser_idを指定します。 ``file://`` を先頭に付けると、一覧が記載されたファイルを指定できます。",
+        help=(
+            "組織に招待するメンバーのuser_idを指定します。"
+            " ``file://`` を先頭に付けると、一覧が記載されたファイルを指定できます。"
+            " ファイルを読み込む場合は、ファイル指定を1個だけ渡してください。"
+            "直接指定する値や別のファイル指定とは併用できません。"
+        ),
     )
 
     role_choices = [e.value for e in OrganizationMemberRole]

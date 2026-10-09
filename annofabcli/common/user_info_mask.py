@@ -152,5 +152,23 @@ def add_mask_user_info_arguments(parser: argparse.ArgumentParser) -> None:
         None。
     """
     parser.add_argument("--mask_user_info", action="store_true", help="出力するCSVとグラフのユーザーID、ユーザー名、アカウントID、biographyをマスクします。")
-    parser.add_argument("--not_masked_user_id", nargs="+", help="'--mask_user_info'指定時にマスクしないユーザーID。``file://`` を先頭に付けると一覧ファイルを指定できます。")
-    parser.add_argument("--not_masked_biography", nargs="+", help="'--mask_user_info'指定時にマスクしないユーザーのbiography。``file://`` を先頭に付けると一覧ファイルを指定できます。")
+    parser.add_argument(
+        "--not_masked_user_id",
+        nargs="+",
+        help=(
+            "'--mask_user_info'指定時にマスクしないユーザーID。"
+            "``file://`` を先頭に付けると一覧ファイルを指定できます。"
+            " ファイルを読み込む場合は、ファイル指定を1個だけ渡してください。"
+            "直接指定する値や別のファイル指定とは併用できません。"
+        ),
+    )
+    parser.add_argument(
+        "--not_masked_biography",
+        nargs="+",
+        help=(
+            "'--mask_user_info'指定時にマスクしないユーザーのbiography。"
+            "``file://`` を先頭に付けると一覧ファイルを指定できます。"
+            " ファイルを読み込む場合は、ファイル指定を1個だけ渡してください。"
+            "直接指定する値や別のファイル指定とは併用できません。"
+        ),
+    )

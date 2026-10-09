@@ -273,14 +273,24 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "-t",
         "--task_id",
         nargs="+",
-        help=("対象のタスクのtask_idを指定します。 ``file://`` を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。"),
+        help=(
+            "対象のタスクのtask_idを指定します。"
+            " ``file://`` を先頭に付けると、task_idの一覧が記載されたファイルを指定できます。"
+            " ファイルを読み込む場合は、ファイル指定を1個だけ渡してください。"
+            "直接指定する値や別のファイル指定とは併用できません。"
+        ),
     )
 
     id_group.add_argument(
         "-i",
         "--input_data_id",
         nargs="+",
-        help=("対象の入力データのinput_data_idを指定します。 ``file://`` を先頭に付けると、input_data_idの一覧が記載されたファイルを指定できます。"),
+        help=(
+            "対象の入力データのinput_data_idを指定します。"
+            " ``file://`` を先頭に付けると、input_data_idの一覧が記載されたファイルを指定できます。"
+            " ファイルを読み込む場合は、ファイル指定を1個だけ渡してください。"
+            "直接指定する値や別のファイル指定とは併用できません。"
+        ),
     )
 
     argument_parser.add_format(

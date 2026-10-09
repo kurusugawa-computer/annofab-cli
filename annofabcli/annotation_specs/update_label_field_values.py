@@ -273,13 +273,25 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--label_name_en",
         type=str,
         nargs="+",
-        help="更新する対象ラベルの英語名。複数指定できます。 ``file://`` を先頭に付けると一覧ファイルを指定できます。",
+        help=(
+            "更新する対象ラベルの英語名。"
+            "複数指定できます。"
+            " ``file://`` を先頭に付けると一覧ファイルを指定できます。"
+            " ファイルを読み込む場合は、ファイル指定を1個だけ渡してください。"
+            "直接指定する値や別のファイル指定とは併用できません。"
+        ),
     )
     label_group.add_argument(
         "--label_id",
         type=str,
         nargs="+",
-        help="更新する対象ラベルのlabel_id。複数指定できます。 ``file://`` を先頭に付けると一覧ファイルを指定できます。",
+        help=(
+            "更新する対象ラベルのlabel_id。"
+            "複数指定できます。"
+            " ``file://`` を先頭に付けると一覧ファイルを指定できます。"
+            " ファイルを読み込む場合は、ファイル指定を1個だけ渡してください。"
+            "直接指定する値や別のファイル指定とは併用できません。"
+        ),
     )
 
     update_group = parser.add_mutually_exclusive_group(required=True)
