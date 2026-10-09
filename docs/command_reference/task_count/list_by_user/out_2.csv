@@ -1,0 +1,3 @@
+user_id,username,biography,metadata.dataset_type,annotation.never_worked,annotation.worked,annotation.on_hold,inspection.never_worked,inspection.worked,inspection.on_hold,acceptance.never_worked,acceptance.worked,acceptance.on_hold,acceptance.complete
+user1,user1,,train,1,8,0,0,10,0,0,0,0,100
+user1,user1,,validation,0,2,0,0,5,0,0,0,0,20

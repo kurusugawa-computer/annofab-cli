@@ -5,6 +5,7 @@ from collections.abc import Collection
 from typing import Any
 
 from annofabapi.models import CommentType, InputDataType
+from annofabapi.plugin import EditorPluginId
 
 logger = logging.getLogger(__name__)
 
@@ -36,6 +37,29 @@ def create_default_inspection_comment_data(input_data_type: InputDataType, *, is
         }
 
     raise ValueError(f"入力データ種別が'{input_data_type.value}'のプロジェクトでは、検査コメントの既定位置を生成できません。")
+
+
+def resolve_inspection_comment_data(project: dict[str, Any], comment_data: dict[str, Any] | None) -> dict[str, Any]:
+    """対応するプロジェクトの検査コメント位置を決定する。
+
+    Args:
+        project: プロジェクト情報。
+        comment_data: 明示的に指定された位置。Noneの場合は既定位置を生成する。
+
+    Returns:
+        検査コメントの位置や区間。
+
+    Raises:
+        ValueError: 標準3Dエディタ以外のカスタムプロジェクトの場合。
+    """
+    input_data_type = InputDataType(project["input_data_type"])
+    editor_plugin_id = (project.get("configuration") or {}).get("plugin_id")
+    is_3d_point_cloud = editor_plugin_id == EditorPluginId.THREE_DIMENSION.value
+    if input_data_type == InputDataType.CUSTOM and not is_3d_point_cloud:
+        raise ValueError("標準3Dエディタ以外のカスタムプロジェクトへの検査コメント作成はサポートしていません。")
+    if comment_data is not None:
+        return comment_data
+    return create_default_inspection_comment_data(input_data_type, is_3d_point_cloud=is_3d_point_cloud)
 
 
 def round_image_inspection_comment_data(data: dict[str, Any]) -> dict[str, Any]:

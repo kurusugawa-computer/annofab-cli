@@ -21,7 +21,9 @@ from annofabcli.common.cli import (
     build_annofabapi_resource_and_login,
 )
 from annofabcli.common.download import DownloadingFile
+from annofabcli.common.enums import OutputFormat
 from annofabcli.common.facade import AnnofabApiFacade
+from annofabcli.task_count.output import print_task_count_summary
 
 logger = logging.getLogger(__name__)
 
@@ -414,7 +416,7 @@ class GettingTaskCountSummary:
 
 class ListTaskCountByPhase(CommandLine):
     """
-    フェーズごとにタスク数や入力データ数などを集計し、CSV形式で出力する。
+    フェーズごとにタスク数や入力データ数などを集計し、指定した形式で出力する。
     """
 
     def list_task_count_by_phase(
@@ -428,7 +430,7 @@ class ListTaskCountByPhase(CommandLine):
         unit: AggregationUnit = AggregationUnit.TASK,
     ) -> None:
         """
-        フェーズごとにタスク数や入力データ数などを集計し、CSV形式で出力する。
+        フェーズごとにタスク数や入力データ数などを集計し、指定した形式で出力する。
 
         Args:
             project_id: プロジェクトID
@@ -466,7 +468,7 @@ class ListTaskCountByPhase(CommandLine):
                 df_task = getting_obj.create_df_task()
 
         if len(df_task) == 0:
-            logger.info("タスクが0件ですが、ヘッダ行を出力します。")
+            logger.info("タスクが0件のため、空の集計結果を出力します。")
             # aggregate_df関数と同じ列構成の空のDataFrameを作成
             metadata_columns = [f"metadata.{key}" for key in (metadata_keys or [])]
             result_columns = [
@@ -484,8 +486,8 @@ class ListTaskCountByPhase(CommandLine):
             logger.info(f"{len(df_task)} 件のタスクを集計しました。")
             df_summary = aggregate_df(df_task, metadata_keys, unit)
 
-        self.print_csv(df_summary)
-        logger.info(f"project_id='{project_id}' :: フェーズごとの'{unit.value}'をCSV形式で出力しました。")
+        print_task_count_summary(df_summary, format=OutputFormat(self.str_format), output=self.output)
+        logger.info(f"project_id='{project_id}' :: フェーズごとの'{unit.value}'を指定した形式で出力しました。")
 
     def main(self) -> None:
         args = self.args
@@ -553,6 +555,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         help="集計の単位を指定します。task_count: タスク数、input_data_count: 入力データ数、video_duration_hour: 動画の長さ（時間）、video_duration_minute: 動画の長さ（分）。",
     )
 
+    argument_parser.add_format(choices=[OutputFormat.CSV, OutputFormat.JSON, OutputFormat.PRETTY_JSON], default=OutputFormat.CSV)
     argument_parser.add_output()
 
     parser.set_defaults(subcommand_func=main)
@@ -566,7 +569,7 @@ def main(args: argparse.Namespace) -> None:
 
 def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "list_by_phase"
-    subcommand_help = "フェーズごとにタスク数や入力データ数などを集計し、CSV形式で出力します。"
+    subcommand_help = "フェーズごとにタスク数や入力データ数などを集計し、指定した形式で出力します。"
     epilog = "オーナロールまたはアノテーションユーザーロールを持つユーザで実行してください。"
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, epilog=epilog)
     parse_args(parser)

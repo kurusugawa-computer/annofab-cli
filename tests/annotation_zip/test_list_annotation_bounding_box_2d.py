@@ -4,7 +4,10 @@ Test cases for annofabcli.annotation_zip.list_annotation_bounding_box_2d module
 
 from __future__ import annotations
 
+import json
+import zipfile
 from pathlib import Path
+from unittest.mock import Mock
 
 import pytest
 
@@ -108,3 +111,33 @@ class TestCommandLine:
                 "pretty_json",
             ]
         )
+
+
+def test_local_zip_does_not_login(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    monkeypatch.setattr("annofabcli.annotation_zip.list_annotation_bounding_box_2d.build_annofabapi_resource_and_login", Mock(side_effect=AssertionError("ローカル処理で認証してはいけません")))
+    archive = tmp_path / "annotation.zip"
+    with zipfile.ZipFile(archive, "w"):
+        pass
+    output = tmp_path / "output.json"
+    main(["annotation_zip", "list_bounding_box_annotation", "--annotation", str(archive), "--format", "json", "--output", str(output), "--disable_log"])
+    assert output.read_text(encoding="utf-8").strip() == "[]"
+
+
+def test_local_japanese_names_authenticate(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    service = Mock()
+    service.api.get_annotation_specs.return_value = (
+        {
+            "labels": [{"label_name": {"messages": [{"lang": "en-US", "message": "Cat"}, {"lang": "ja-JP", "message": "猫"}], "default_lang": "en-US"}, "additional_data_definitions": []}],
+            "additionals": [],
+        },
+        None,
+    )
+    login = Mock(return_value=service)
+    monkeypatch.setattr("annofabcli.annotation_zip.list_annotation_bounding_box_2d.build_annofabapi_resource_and_login", login)
+    output = tmp_path / "output.json"
+    main(["annotation_zip", "list_bounding_box_annotation", "--annotation", str(data_dir / "image_annotation"), "--format", "json", "--output", str(output), "--use_japanese_name", "--disable_log"])
+    rows = json.loads(output.read_text(encoding="utf-8"))
+    assert len(rows) == 1
+    assert rows[0]["label"] == "猫"
+    assert login.called
+    service.api.get_annotation_specs.assert_called_once_with(rows[0]["project_id"], query_params={"v": "2"})

@@ -5,7 +5,7 @@ task_count list_by_user
 Description
 =================================
 
-ユーザごとに、担当しているタスク数や入力データ数などをCSV形式で出力します。
+ユーザごとに、担当しているタスク数や入力データ数などをCSVまたはJSON形式で出力します。
 
 
 Examples
@@ -21,11 +21,8 @@ Examples
 出力ファイル :file:`out.csv` の内容は次のとおりです。
 
 .. csv-table:: out.csv
-   :header: user_id,username,biography,annotation.never_worked,annotation.worked,annotation.on_hold,inspection.never_worked,inspection.worked,inspection.on_hold,acceptance.never_worked,acceptance.worked,acceptance.on_hold,acceptance.complete
-
-   unassigned,,,1,0,0,0,0,0,0,0,0,0
-   user1,user1,,2,10,1,3,20,0,0,0,0,100
-   user2,user2,,1,5,0,2,10,1,0,0,0,40
+   :file: list_by_user/out.csv
+   :header-rows: 1
 
 各列の内容は以下のとおりです。
 
@@ -49,11 +46,9 @@ Examples
 
 出力ファイル :file:`out.csv` の内容は次のとおりです。
 
-.. csv-table:: out.csv
-   :header: user_id,username,biography,metadata.dataset_type,annotation.never_worked,annotation.worked,annotation.on_hold,inspection.never_worked,inspection.worked,inspection.on_hold,acceptance.never_worked,acceptance.worked,acceptance.on_hold,acceptance.complete
-
-   user1,user1,,train,1,8,0,0,10,0,0,0,0,100
-   user1,user1,,validation,0,2,0,0,5,0,0,0,0,20
+.. csv-table:: out_2.csv
+   :file: list_by_user/out_2.csv
+   :header-rows: 1
 
 
 入力データ数で集計
@@ -66,6 +61,40 @@ Examples
 
     $ annofabcli task_count list_by_user --project_id prj1 \
         --unit input_data_count --output out.csv
+
+
+JSON形式で出力
+---------------------------------
+
+``--format json`` または ``--format pretty_json`` を指定すると、CSVと同じ列名をキーにした
+オブジェクトの配列を出力します。欠損値は ``null``、空の集計結果は ``[]`` になります。
+省略時はCSV形式で出力します。
+
+.. code-block:: console
+
+    $ annofabcli task_count list_by_user --project_id prj1 --format pretty_json --output out.json
+
+出力例（先頭の1行分）は次のとおりです。
+
+.. code-block:: json
+
+    [
+      {
+        "user_id": "unassigned",
+        "username": null,
+        "biography": null,
+        "annotation.never_worked": 1,
+        "annotation.worked": 0,
+        "annotation.on_hold": 0,
+        "inspection.never_worked": 0,
+        "inspection.worked": 0,
+        "inspection.on_hold": 0,
+        "acceptance.never_worked": 0,
+        "acceptance.worked": 0,
+        "acceptance.on_hold": 0,
+        "acceptance.complete": 0
+      }
+    ]
 
 
 Usage Details

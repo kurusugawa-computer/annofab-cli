@@ -9,6 +9,7 @@ from collections.abc import Collection
 from pathlib import Path
 from typing import TypedDict
 
+import annofabapi
 import pandas
 from annofabapi.models import InputData, InputDataType, ProjectMemberRole, Task
 
@@ -192,7 +193,7 @@ class VideoDurationCommand(CommandLine):
 
 
 def run_command(args: argparse.Namespace, *, visualize: bool) -> None:
-    """認証後に動画長コマンドを実行します。
+    """オンライン処理が必要な場合だけ認証し、動画長コマンドを実行します。
 
     Args:
         args: コマンドライン引数。
@@ -203,7 +204,7 @@ def run_command(args: argparse.Namespace, *, visualize: bool) -> None:
     """
     if args.project_id is None and (args.input_data_json is None or args.task_json is None):
         raise AnnofabCliException("必要なJSONファイルが未指定のときは、--project_idを指定してください。")
-    service = build_annofabapi_resource_and_login(args)
+    service = build_annofabapi_resource_and_login(args) if args.project_id is not None else annofabapi.build()
     VideoDurationCommand(service, AnnofabApiFacade(service), args).run(visualize=visualize)
 
 
