@@ -16,7 +16,6 @@ from annofabcli.common.cli import (
     build_annofabapi_resource_and_login,
 )
 from annofabcli.common.facade import AnnofabApiFacade, TaskQuery, match_task_with_query
-from annofabcli.common.utils import add_dryrun_prefix
 
 logger = logging.getLogger(__name__)
 
@@ -28,14 +27,12 @@ class DeleteTaskMain(CommandLineWithConfirm):
         project_id: str,
         *,
         all_yes: bool = False,
-        dryrun: bool = False,
         delete_annotated_task: bool = False,
         should_delete_input_data: bool = False,
     ) -> None:
         self.service = service
         self.facade = AnnofabApiFacade(service)
         self.project_id = project_id
-        self.dryrun = dryrun
         self.delete_annotated_task = delete_annotated_task
         self.should_delete_input_data = should_delete_input_data
 
@@ -52,8 +49,7 @@ class DeleteTaskMain(CommandLineWithConfirm):
         for supplementary_data in supplementary_data_list:
             supplementary_data_id = supplementary_data["supplementary_data_id"]
             try:
-                if not self.dryrun:
-                    self.service.api.delete_supplementary_data(self.project_id, input_data_id=input_data_id, supplementary_data_id=supplementary_data_id)
+                self.service.api.delete_supplementary_data(self.project_id, input_data_id=input_data_id, supplementary_data_id=supplementary_data_id)
                 logger.debug(
                     f"task_id='{task_id}', input_data_id='{input_data_id}' :: 補助情報を削除しました。 :: "
                     f"supplementary_data_id='{supplementary_data_id}', "
@@ -100,9 +96,8 @@ class DeleteTaskMain(CommandLineWithConfirm):
         # 入力データに紐づく補助情報を削除
         self.delete_supplementary_data_list(task_id, input_data_id)
 
-        # 入力データに紐づく補助情報を削除
-        if not self.dryrun:
-            self.service.api.delete_input_data(self.project_id, input_data_id)
+        # 入力データを削除
+        self.service.api.delete_input_data(self.project_id, input_data_id)
         logger.debug(f"task_id='{task_id}' :: 入力データを削除しました。 :: input_data_id='{input_data_id}', input_data_name='{input_data['input_data_name']}'")
         return True
 
@@ -169,9 +164,8 @@ class DeleteTaskMain(CommandLineWithConfirm):
         if not self._should_delete_task(task, log_prefix, task_query=task_query):
             return False
 
-        if not self.dryrun:
-            self.service.api.delete_task(self.project_id, task_id)
-            logger.debug(f"{log_prefix} :: タスクを削除しました。")
+        self.service.api.delete_task(self.project_id, task_id)
+        logger.debug(f"{log_prefix} :: タスクを削除しました。")
 
         if self.should_delete_input_data:
             deleted_input_data_count = 0
@@ -232,9 +226,6 @@ class DeleteTask(CommandLine):
     def main(self) -> None:
         args = self.args
 
-        if args.dryrun:
-            add_dryrun_prefix(logger)
-
         task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id)
 
         dict_task_query = annofabcli.common.cli.get_json_from_args(args.task_query)
@@ -246,7 +237,6 @@ class DeleteTask(CommandLine):
             self.service,
             project_id=args.project_id,
             all_yes=args.yes,
-            dryrun=args.dryrun,
             delete_annotated_task=args.delete_annotated_task,
             should_delete_input_data=args.delete_input_data,
         )
@@ -270,7 +260,6 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         action="store_true",
         help="指定した場合、タスクから参照されている入力データと、その入力データに紐づく補助情報を削除します。ただし、他のタスクから参照されている入力データは削除しません。",
     )
-    parser.add_argument("--dryrun", action="store_true", help="削除が行われた時の結果を表示しますが、実際はタスクを削除しません。")
     argument_parser.add_task_query()
 
     parser.set_defaults(subcommand_func=main)

@@ -23,6 +23,7 @@ from annofabcli.common.enums import OutputFormat
 from annofabcli.common.facade import AnnofabApiFacade
 from annofabcli.task_count.common import SUMMARY_COLUMNS, summarize_df_task
 from annofabcli.task_count.list_by_phase import AggregationUnit, GettingTaskCountSummary
+from annofabcli.task_count.output import print_task_count_summary
 
 logger = logging.getLogger(__name__)
 
@@ -177,7 +178,7 @@ class ListTaskCountByUser(CommandLine):
         account_id_list = df_task_count.loc[df_task_count["account_id"] != UNASSIGNED_ACCOUNT_ID, "account_id"].to_list()
         df_user = self.create_user_df(project_id, account_id_list)
         if UNASSIGNED_ACCOUNT_ID in df_task_count["account_id"].array:
-            df_unassigned_user = pandas.DataFrame([{"account_id": UNASSIGNED_ACCOUNT_ID, "user_id": UNASSIGNED_USER_ID, "username": "", "biography": ""}])
+            df_unassigned_user = pandas.DataFrame([{"account_id": UNASSIGNED_ACCOUNT_ID, "user_id": UNASSIGNED_USER_ID, "username": None, "biography": None}])
             df_user = pandas.concat([df_user, df_unassigned_user], ignore_index=True)
 
         df = pandas.merge(df_user, df_task_count, how="left", on=["account_id"])
@@ -204,14 +205,14 @@ class ListTaskCountByUser(CommandLine):
         metadata_columns = [f"metadata.{key}" for key in metadata_keys or []]
         columns = ["user_id", "username", "biography", *metadata_columns, *SUMMARY_COLUMNS]
         target_df = df[columns].sort_values(["user_id", *metadata_columns])
-        annofabcli.common.utils.print_according_to_format(
+        print_task_count_summary(
             target_df,
-            format=OutputFormat.CSV,
+            format=OutputFormat(self.str_format),
             output=self.output,
         )
 
     def print_legacy_summarize_df(self, df: pandas.DataFrame) -> None:
-        """非推奨コマンドと互換性のある列をCSV形式で出力する。
+        """非推奨コマンドと互換性のある列を指定した形式で出力する。
 
         Args:
             df: 出力対象のDataFrame。
@@ -221,9 +222,9 @@ class ListTaskCountByUser(CommandLine):
         """
         columns = ["user_id", "username", "biography", *[status.value for status in TaskStatusForSummary]]
         target_df = df[columns].sort_values("user_id")
-        annofabcli.common.utils.print_according_to_format(
+        print_task_count_summary(
             target_df,
-            format=OutputFormat.CSV,
+            format=OutputFormat(self.str_format),
             output=self.output,
         )
 
@@ -257,7 +258,7 @@ class ListTaskCountByUser(CommandLine):
             df_task = getting_obj.create_df_task()
             df = self.create_summary_df(project_id, df_task, args.metadata_key, unit)
             if len(df) == 0:
-                logger.info("タスクが0件ですが、ヘッダ行を出力します。")
+                logger.info("タスクが0件のため、空の集計結果を出力します。")
             self.print_summarize_df(df, args.metadata_key)
 
         if args.temp_dir is not None:
@@ -355,7 +356,7 @@ def parse_args(parser: argparse.ArgumentParser, *, include_metadata_key: bool = 
 
     argument_parser.add_output()
 
-    parser.set_defaults(subcommand_func=main)
+    parser.set_defaults(subcommand_func=main, format=OutputFormat.CSV.value)
 
 
 def main(args: argparse.Namespace) -> None:
@@ -367,8 +368,9 @@ def main(args: argparse.Namespace) -> None:
 def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "list_by_user"
     subcommand_help = "ユーザごとに、担当しているタスク数や入力データ数などを出力します。"
-    description = "ユーザごとに、担当しているタスク数や入力データ数などをCSV形式で出力します。"
+    description = "ユーザごとに、担当しているタスク数や入力データ数などを指定した形式で出力します。"
     epilog = "アノテーションユーザまたはオーナロールを持つユーザで実行してください。"
     parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description=description, epilog=epilog)
     parse_args(parser)
+    ArgumentParser(parser).add_format(choices=[OutputFormat.CSV, OutputFormat.JSON, OutputFormat.PRETTY_JSON], default=OutputFormat.CSV)
     return parser

@@ -156,3 +156,5 @@ See also
 * `annofabcli input_data list_all <../input_data/list_all.html>`_     
 
 
+
+一覧取得の上限と全件ファイルの違いは :ref:`list-retrieval-limits` を参照してください。

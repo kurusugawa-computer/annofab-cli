@@ -1,0 +1,4 @@
+user_id,username,biography,annotation.never_worked,annotation.worked,annotation.on_hold,inspection.never_worked,inspection.worked,inspection.on_hold,acceptance.never_worked,acceptance.worked,acceptance.on_hold,acceptance.complete
+unassigned,,,1,0,0,0,0,0,0,0,0,0
+user1,user1,,2,10,1,3,20,0,0,0,0,100
+user2,user2,,1,5,0,2,10,1,0,0,0,40

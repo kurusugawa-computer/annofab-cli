@@ -1,12 +1,11 @@
 import json
-
-import annofabapi
+from unittest.mock import Mock
 
 from annofabcli.__main__ import main
 
 
 def test_shared_input_data_counts_each_task(monkeypatch, tmp_path):
-    monkeypatch.setattr("annofabcli.common.video_duration.build_annofabapi_resource_and_login", lambda _args: annofabapi.build())
+    monkeypatch.setattr("annofabcli.common.video_duration.build_annofabapi_resource_and_login", Mock(side_effect=AssertionError("ローカル処理で認証してはいけません")))
     task_json = tmp_path / "task.json"
     input_data_json = tmp_path / "input_data.json"
     output = tmp_path / "out.html"

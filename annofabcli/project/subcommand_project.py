@@ -21,8 +21,8 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     annofabcli.project.create_project.add_parser(subparsers)
     annofabcli.project.diff_projects.add_parser(subparsers)
     annofabcli.project.list_project.add_parser(subparsers)
-    annofabcli.project.update_configuration.add_parser(subparsers)
     annofabcli.project.update_project.add_parser(subparsers)
+    annofabcli.project.update_configuration.add_parser(subparsers)
 
 
 def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:

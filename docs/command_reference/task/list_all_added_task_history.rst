@@ -98,3 +98,5 @@ Usage Details
    :prog: annofabcli task list_all_added_task_history
    :nosubcommands:
    :nodefaultconst:
+
+``--task_json`` と ``--task_history_json`` のファイルパスに ``file://`` は付けません。
