@@ -169,7 +169,7 @@ def test_empty_legacy_task_list_outputs_selected_format(tmp_path, output_format)
     source = tmp_path / "tasks.json"
     source.write_text("[]")
     output = tmp_path / "task_count.csv"
-    args = Namespace(project_id="project1", unit=AggregationUnit.TASK.value, legacy_output=True, task_json=source, temp_dir=None, format=output_format, output=output, yes=True)
+    args = Namespace(project_id="project1", unit=AggregationUnit.TASK.value, legacy_output=True, task_json_file=source, temp_dir=None, format=output_format, output=output, yes=True)
 
     ListTaskCountByUser(Mock(), Mock(), args).main()
 

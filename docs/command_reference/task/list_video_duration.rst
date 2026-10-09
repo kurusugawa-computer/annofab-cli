@@ -21,7 +21,7 @@ Examples
 .. code-block:: bash
 
     $ annofabcli task list_video_duration --project_id prj1 --output out.csv
-    $ annofabcli task list_video_duration --task_json task.json --input_data_json input_data.json \
+    $ annofabcli task list_video_duration --task_json_file task.json --input_data_json_file input_data.json \
         --task_id task1 task2 --format pretty_json --output out.json
 
 出力結果

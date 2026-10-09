@@ -51,7 +51,7 @@ def test_empty_task_list_outputs_csv_header(tmp_path):
     source = tmp_path / "tasks.json"
     source.write_text("[]")
     output = tmp_path / "task_count.csv"
-    args = Namespace(project_id="project1", task_json=source, task_id_delimiter="_", task_id_groups=None, temp_dir=None, format="csv", output=output, yes=True)
+    args = Namespace(project_id="project1", task_json_file=source, task_id_delimiter="_", task_id_groups=None, temp_dir=None, format="csv", output=output, yes=True)
 
     SummarizeTaskCountByTaskId(Mock(), Mock(), args).main()
 

@@ -226,6 +226,9 @@ Command line options
 パスを指定するオプション
 ===================================
 
+従来の ``--task_json`` 、 ``--input_data_json`` は、 ``--task_json_file`` 、 ``--input_data_json_file`` に改名しました。
+旧名は受理しません。既存スクリプトではオプション名を置き換えてください。
+
 
 
 --output / -o
@@ -260,21 +263,14 @@ JSON形式の値やID一覧との指定方法の違いは :ref:`file-argument-sy
 
 
 
---task_json
+--task_json_file
 ------------------------------------
-タスク全件ファイルを指定します。集計系コマンドで利用できます。 ``task list_all`` 、 ``task list_all_added_task_history`` 、 ``input_data list_all_merged_task`` では、Annofabから自動で取得します。
+タスク全件ファイルのパスを指定します。集計系コマンドで利用できます。 ``task list_all`` 、 ``task list_all_added_task_history`` 、 ``input_data list_all_merged_task`` では、Annofabから自動で取得します。
 
 
---input_data_json
+--input_data_json_file
 ------------------------------------
-入力データ全件ファイルを指定します。動画時間の集計・可視化コマンドで利用できます。 ``input_data list_all`` 、 ``input_data list_all_merged_task`` では、Annofabから自動で取得します。
-
-
---inspection_comment_json
-------------------------------------
-検査コメント全件ファイルを指定します。
-
-
+入力データ全件ファイルのパスを指定します。動画時間の集計・可視化コマンドで利用できます。 ``input_data list_all`` 、 ``input_data list_all_merged_task`` では、Annofabから自動で取得します。
 
 
 その他のオプション

@@ -20,7 +20,7 @@ Examples
     $ annofabcli task visualize_video_duration --project_id prj1 --task_id task1 task2 \
         --time_unit minute --bin_width 60 --output out2.html
 
-``--task_json`` と ``--input_data_json`` を指定すると、``--project_id`` を省略できます。
+``--task_json_file`` と ``--input_data_json_file`` を指定すると、``--project_id`` を省略できます。
 1タスクに入力データが1件ある動画タスクを対象にします。それ以外はエラーになります。
 
 ``--from_date`` と ``--to_date`` は入力データの更新日で絞り込みます。

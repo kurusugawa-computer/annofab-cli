@@ -163,8 +163,8 @@ class SummarizeTaskCountByTaskId(CommandLine):
         super().require_project_access(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER])
 
         def download_and_process_task_data(temp_dir: Path) -> None:
-            if args.task_json is not None:
-                task_json_path = args.task_json
+            if args.task_json_file is not None:
+                task_json_path = args.task_json_file
             else:
                 downloading_obj = DownloadingFile(self.service)
                 task_json_path = downloading_obj.download_task_json_to_dir(
@@ -192,7 +192,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
 
     argument_parser.add_project_id()
     parser.add_argument(
-        "--task_json",
+        "--task_json_file",
         type=str,
         help="タスク情報が記載されたJSONファイルのパスを指定してます。JSONファイルは ``$ annofabcli task download`` コマンドで取得できます。"
         "指定しない場合は、Annofabからタスク全件ファイルをダウンロードします。",
