@@ -108,7 +108,7 @@ Zsh、Fish、PowerShell、およびTcsh用の補完スクリプトも生成で�
       -p PROJECT_ID, --project_id PROJECT_ID
                             対象のプロジェクトのproject_idを指定します。 (default: None)
 
-    global optional arguments:
+    common options (after the subcommand):
       --yes                 処理中に現れる問い合わせに対して、常に'yes'と回答します。 (default: False)
 
 
