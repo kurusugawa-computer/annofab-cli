@@ -27,3 +27,12 @@ description: ユーザーからAnnofab上の情報取得やリソース操作を
 
 ## アノテーション仕様に関するコマンド
 * `annotation import`などアノテーション関連のコマンドを実行する上で、アノテーション仕様のラベルと属性を参照する場合は、 `annotation_specs list_annotation_import_info`を使ってください。
+
+
+## アノテーションの変更
+`annotation create`などアノテーションを変更するコマンドを実行する場合は、以下のサイトを読み込んで、事前にアノテーションフォーマットを理解してください。
+
+* [アノテーションJSONの詳細](https://annofab.readme.io/docs/annotation-format#detailsattributes)
+* [画像プロジェクトのアノテーションJSON](https://annofab.readme.io/docs/image-annotation-format)
+* [動画プロジェクトのアノテーションJSON](https://annofab.readme.io/docs/video-annotation-format)
+* [3次元プロジェクトのアノテーションJSON](https://annofab.readme.io/docs/3dpc-annotation-format)
