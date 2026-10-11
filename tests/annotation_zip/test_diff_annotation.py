@@ -143,20 +143,29 @@ def test_duplicate_annotation_id_is_error(tmp_path):
 
 
 @pytest.mark.parametrize("targets", [("label", "data", "attributes"), ("label",)])
-def test_image_wide_null_data_is_supported(tmp_path, targets):
-    detail = {**_detail(), "data": None}
+def test_image_wide_classification_is_supported(tmp_path, targets):
+    detail = _detail(data={"_type": "Classification"})
     left = _source(tmp_path, "left", [detail], zipped=True)
     right = _source(tmp_path, "right", [detail])
     assert not create_annotation_zip_diff(left, right, targets=targets).has_diff
 
 
-def test_image_wide_null_data_change_is_reported(tmp_path):
-    left = _source(tmp_path, "left", [{**_detail(), "data": None}])
+def test_image_wide_classification_type_change_is_reported(tmp_path):
+    left = _source(tmp_path, "left", [_detail(data={"_type": "Classification"})])
     right = _source(tmp_path, "right", [_detail()])
     diff = create_annotation_zip_diff(left, right)
     assert diff.annotations.changed[0].data_changed
     detail = yaml.safe_load(format_diff_as_text(diff, detail=True).split("\n", 1)[1])
-    assert detail["changed"][0]["changes"]["data"]["left"] is None
+    assert json.loads(detail["changed"][0]["changes"]["data"]["left"]) == {"_type": "Classification"}
+
+
+def test_image_wide_classification_attribute_change_is_reported(tmp_path):
+    left = _source(tmp_path, "left", [_detail(data={"_type": "Classification"}, attributes={"weather": "sunny"})])
+    right = _source(tmp_path, "right", [_detail(data={"_type": "Classification"}, attributes={"weather": "rainy"})])
+    changed = create_annotation_zip_diff(left, right).annotations.changed[0]
+    assert not changed.data_changed
+    assert changed.attributes_changed
+    assert changed.changed_attribute_keys == ["weather"]
 
 
 @pytest.mark.parametrize("zipped", [False, True])

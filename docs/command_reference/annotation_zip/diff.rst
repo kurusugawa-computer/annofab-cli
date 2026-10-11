@@ -32,6 +32,7 @@ Examples
   この2つとJSON内の ``annotation_id`` の組み合わせで対応付けます。
 * ``label`` 、 ``data`` 、 ``attributes`` を比較します。
   JSON内の ``project_id`` 、 ``task_id`` 、 ``input_data_id`` 、 ``updated_datetime`` 、タスクのステータス・フェーズ、入力データ名などの補足情報は比較しません。
+* 画像全体アノテーションの ``data`` は、 `公式フォーマット <https://annofab.readme.io/docs/image-annotation-format#全体>`_ に従い ``{"_type": "Classification"}`` として読み込みます。
 * アノテーションの並び順と、属性を含むオブジェクトのキーの並び順は無視します。
   属性値の配列や座標配列は順序も比較します。座標に許容誤差は設けません。
 * 属性キーの追加・削除・値の変更を区別します。キーの欠落と ``null`` 、空文字列は異なる値です。

@@ -34,8 +34,8 @@ class AnnotationDetail(BaseModel):
     """アノテーションID。"""
     label: str
     """ラベル名。"""
-    data: dict[str, JsonValue] | None
-    """形状や外部ファイルの参照情報。画像全体アノテーションはNone。"""
+    data: dict[str, JsonValue]
+    """形状や外部ファイルの参照情報。画像全体は_type='Classification'。"""
     attributes: dict[str, JsonValue]
     """属性キーと値。"""
 
@@ -122,7 +122,7 @@ def _load_details(parser: SimpleAnnotationParser) -> dict[str, AnnotationDetail]
     return result
 
 
-def _external_reference(data: dict[str, JsonValue] | None, input_data_id: str) -> tuple[str, str] | None:
+def _external_reference(data: dict[str, JsonValue], input_data_id: str) -> tuple[str, str] | None:
     """外部ファイルの種類と入力データ配下の参照を取り出す。
 
     Args:
@@ -132,8 +132,6 @@ def _external_reference(data: dict[str, JsonValue] | None, input_data_id: str) -
     Returns:
         種類と相対パス。外部参照なしの場合はNone。
     """
-    if data is None:
-        return None
     if data.get("_type") in ("Segmentation", "SegmentationV2"):
         uri = data.get("data_uri")
         if not isinstance(uri, str):
@@ -152,7 +150,7 @@ def _external_reference(data: dict[str, JsonValue] | None, input_data_id: str) -
     return None
 
 
-def _comparable_data(data: dict[str, JsonValue] | None, reference: tuple[str, str] | None) -> dict[str, JsonValue] | None:
+def _comparable_data(data: dict[str, JsonValue], reference: tuple[str, str] | None) -> dict[str, JsonValue]:
     """参照パスを除き、埋め込みJSONを正規化する。
 
     Args:
@@ -162,8 +160,6 @@ def _comparable_data(data: dict[str, JsonValue] | None, reference: tuple[str, st
     Returns:
         内容比較用の形状情報。
     """
-    if data is None:
-        return None
     result = dict(data)
     if reference is not None:
         del result["data_uri" if reference[0] == "SEGMENTATION" else "data"]
