@@ -57,6 +57,7 @@ Available Commands
    count_annotation_attribute_filled
    count_annotation_by_attribute_value
    count_annotation_by_label
+   diff
    filter
    list_3d_bounding_box_annotation
    list_3d_segment_annotation
