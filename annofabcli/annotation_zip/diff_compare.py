@@ -190,6 +190,25 @@ def _same_bytes(left: BinaryIO, right: BinaryIO) -> bool:
             return True
 
 
+def _equal_json(left: JsonValue, right: JsonValue) -> bool:
+    """真偽値と数値を区別してJSONを再帰的に比較する。
+
+    Args:
+        left: 比較元の値。
+        right: 比較先の値。
+
+    Returns:
+        JSONとして同じ値か。数値の1と1.0は同じ値として扱う。
+    """
+    if isinstance(left, bool) or isinstance(right, bool):
+        return type(left) is type(right) and left == right
+    if isinstance(left, dict):
+        return isinstance(right, dict) and left.keys() == right.keys() and all(_equal_json(value, right[key]) for key, value in left.items())
+    if isinstance(left, list):
+        return isinstance(right, list) and len(left) == len(right) and all(_equal_json(lvalue, rvalue) for lvalue, rvalue in zip(left, right, strict=True))
+    return left == right
+
+
 def _segment_points(file: BinaryIO) -> set[int]:
     """対応形式の3Dセグメントから点集合を読み込む。
 
@@ -291,7 +310,7 @@ def _compare_annotation(
     if "attributes" in targets:
         result.added_attribute_keys = sorted(right.attributes.keys() - left.attributes.keys())
         result.removed_attribute_keys = sorted(left.attributes.keys() - right.attributes.keys())
-        result.changed_attribute_keys = sorted(k for k in left.attributes.keys() & right.attributes.keys() if left.attributes[k] != right.attributes[k])
+        result.changed_attribute_keys = sorted(k for k in left.attributes.keys() & right.attributes.keys() if not _equal_json(left.attributes[k], right.attributes[k]))
         result.attributes_changed = bool(result.added_attribute_keys or result.removed_attribute_keys or result.changed_attribute_keys)
         if result.attributes_changed:
             result.attribute_changes = {
@@ -302,7 +321,7 @@ def _compare_annotation(
     if "data" in targets:
         left_reference = _external_reference(left.data, key.input_data_id)
         right_reference = _external_reference(right.data, key.input_data_id)
-        if _comparable_data(left.data, left_reference) != _comparable_data(right.data, right_reference):
+        if not _equal_json(_comparable_data(left.data, left_reference), _comparable_data(right.data, right_reference)):
             result.data_changed = True
             result.changes["data"] = ValueChange(left=left.data, right=right.data)
         if left_reference and right_reference and left_reference[0] == right_reference[0]:

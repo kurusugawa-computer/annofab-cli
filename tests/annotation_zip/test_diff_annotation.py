@@ -114,6 +114,27 @@ def test_missing_null_and_empty_are_distinct(tmp_path, attributes):
     assert create_annotation_zip_diff(left, right).annotations.changed[0].attributes_changed
 
 
+@pytest.mark.parametrize(("left_value", "right_value"), [(True, 1), (False, 0), (1, True), (0, False), ({"flag": True}, {"flag": 1}), ([False], [0]), ([{"flag": True}], [{"flag": 1}])])
+def test_boolean_and_number_attribute_values_are_distinct(tmp_path, left_value, right_value):
+    left = _source(tmp_path, "left", [_detail(attributes={"value": left_value})])
+    right = _source(tmp_path, "right", [_detail(attributes={"value": right_value})])
+    changed = create_annotation_zip_diff(left, right).annotations.changed[0]
+    assert changed.attributes_changed
+    assert changed.changed_attribute_keys == ["value"]
+
+
+def test_boolean_and_number_in_data_are_distinct(tmp_path):
+    left = _source(tmp_path, "left", [_detail(data={"_type": "Unknown", "data": '{"kind":"CUBOID","metadata":{"flag":true}}'})])
+    right = _source(tmp_path, "right", [_detail(data={"_type": "Unknown", "data": '{"kind":"CUBOID","metadata":{"flag":1}}'})])
+    assert create_annotation_zip_diff(left, right).annotations.changed[0].data_changed
+
+
+def test_equivalent_json_numbers_are_equal(tmp_path):
+    left = _source(tmp_path, "left", [_detail(attributes={"value": 1}, data={"_type": "Point", "point": {"x": 10, "y": 20}})])
+    right = _source(tmp_path, "right", [_detail(attributes={"value": 1.0}, data={"_type": "Point", "point": {"x": 10.0, "y": 20.0}})])
+    assert not create_annotation_zip_diff(left, right).has_diff
+
+
 def test_duplicate_annotation_id_is_error(tmp_path):
     left = _source(tmp_path, "left", [_detail(), _detail()])
     right = _source(tmp_path, "right", [_detail()])
