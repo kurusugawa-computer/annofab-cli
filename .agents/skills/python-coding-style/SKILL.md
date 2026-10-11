@@ -24,3 +24,11 @@ description: Pythonコードを作成・修正するときに使用。テスト�
 
 # model
 * `dataclasses_json`よりは`pydantic`を使用する。理由は、`pydantic`の方が型ヒントのサポートが充実しているため。
+
+# Annofab形式アノテーション
+Annofab形式アノテーションを扱う際は、以下のドキュメントを参照してフォーマットを理解してください。
+
+* [アノテーションJSONの詳細](https://annofab.readme.io/docs/annotation-format#detailsattributes)
+* [画像プロジェクトのアノテーションJSON](https://annofab.readme.io/docs/image-annotation-format)
+* [動画プロジェクトのアノテーションJSON](https://annofab.readme.io/docs/video-annotation-format)
+* [3次元プロジェクトのアノテーションJSON](https://annofab.readme.io/docs/3dpc-annotation-format)
