@@ -1,6 +1,7 @@
 import io
 import json
 import zipfile
+from contextlib import ExitStack
 from pathlib import Path
 
 import numpy
@@ -11,7 +12,7 @@ from PIL import Image
 
 from annofabcli.__main__ import main
 from annofabcli.annotation_zip.diff_annotation import format_diff_as_text
-from annofabcli.annotation_zip.diff_compare import create_annotation_zip_diff
+from annofabcli.annotation_zip.diff_compare import AnnotationSource, create_annotation_zip_diff
 from annofabcli.common.exceptions import AnnofabCliException
 
 
@@ -253,6 +254,20 @@ def test_invalid_external_reference_is_error(tmp_path, uri):
     right = _source(tmp_path, "right", [_detail(data=data)])
     with pytest.raises(AnnofabCliException):
         create_annotation_zip_diff(left, right)
+
+
+@pytest.mark.parametrize("zipped", [False, True])
+@pytest.mark.parametrize(
+    "uri", [r"..\outside.png", r"C:\outside.png", "C:/outside.png", "C:outside.png", r"\\server\share\outside.png", "//server/share/outside.png", r"\outside.png", r"nested\mask.png"]
+)
+def test_windows_external_reference_is_rejected_before_opening(tmp_path, zipped, uri):
+    path = _source(tmp_path, "source", [_detail()], zipped=zipped)
+    with ExitStack() as stack:
+        source = AnnotationSource(path, stack)
+        parser = source.parsers[("task1", "image1")]
+        # ファイル欠落によるエラーではなく、参照の検証で拒否する。
+        with pytest.raises(ValueError):
+            source.open_external(parser, uri, stack)
 
 
 def test_cli_local_without_login_and_empty_output(tmp_path, capsys):

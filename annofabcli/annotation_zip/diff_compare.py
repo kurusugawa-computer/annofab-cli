@@ -7,7 +7,7 @@ import logging
 import zipfile
 from collections.abc import Collection
 from contextlib import ExitStack
-from pathlib import Path, PurePosixPath
+from pathlib import Path, PurePosixPath, PureWindowsPath
 from typing import BinaryIO, Literal
 
 import numpy
@@ -84,7 +84,7 @@ class AnnotationSource:
             読み取り可能なバイナリストリーム。
         """
         relative = PurePosixPath(uri)
-        if relative.is_absolute() or ".." in relative.parts or not relative.parts:
+        if "\\" in uri or PureWindowsPath(uri).drive or relative.is_absolute() or ".." in relative.parts or not relative.parts:
             raise ValueError(f"外部ファイルの参照が不正です。 :: uri='{uri}'")
         return stack.enter_context(parser.open_outer_file(str(relative)))
 
