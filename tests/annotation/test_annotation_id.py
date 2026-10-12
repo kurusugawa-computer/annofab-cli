@@ -47,3 +47,14 @@ def test_resolve_annotation_id__画像の矩形アノテーションはUUIDを�
     actual = resolve_annotation_id(label, project, None)
 
     assert str(uuid.UUID(actual, version=4)) == actual
+
+
+@pytest.mark.parametrize("annotation_id", [None, "specified_id"])
+def test_resolve_annotation_id__動画の全体アノテーションは指定IDを維持する(annotation_id, caplog):
+    label = {"annotation_type": "classification", "label_id": "label_id"}
+    project = {"input_data_type": "movie", "configuration": {"plugin_id": None}}
+
+    actual = resolve_annotation_id(label, project, annotation_id)
+
+    assert actual == (annotation_id if annotation_id is not None else "label_id")
+    assert not caplog.records

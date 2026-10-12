@@ -23,7 +23,7 @@ def resolve_annotation_id(label: Mapping[str, Any], project: Mapping[str, Any], 
         APIリクエストで使用するアノテーションID。
     """
     is_3dpc = project["input_data_type"] == InputDataType.CUSTOM.value and project["configuration"]["plugin_id"] == EditorPluginId.THREE_DIMENSION.value
-    if not is_3dpc and label["annotation_type"] == DefaultAnnotationType.CLASSIFICATION.value:
+    if project["input_data_type"] == InputDataType.IMAGE.value and label["annotation_type"] == DefaultAnnotationType.CLASSIFICATION.value:
         label_id = str(label["label_id"])
         if annotation_id is not None and annotation_id != label_id:
             logger.warning(f"全体アノテーションのannotation_idにはlabel_id='{label_id}'を使用します。指定されたannotation_id='{annotation_id}'は無視します。")
@@ -32,4 +32,6 @@ def resolve_annotation_id(label: Mapping[str, Any], project: Mapping[str, Any], 
         return annotation_id
     if is_3dpc:
         return str(ulid.new())
+    if label["annotation_type"] == DefaultAnnotationType.CLASSIFICATION.value:
+        return str(label["label_id"])
     return str(uuid.uuid4())
