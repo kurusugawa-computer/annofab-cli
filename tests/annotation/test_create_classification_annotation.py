@@ -142,6 +142,54 @@ def test_main__画像全体以外のラベルに属性値を指定できない(s
     service.api.put_annotation.assert_not_called()
 
 
+@pytest.mark.parametrize(
+    ("attribute_type", "value"),
+    [
+        ("flag", "yes"),
+        ("flag", 1),
+        ("integer", True),
+        ("integer", "1"),
+        ("choice", False),
+        ("choice", 1),
+        ("select", True),
+        ("select", 1),
+        ("comment", 1),
+        ("text", False),
+        ("tracking", 1),
+        ("link", True),
+    ],
+)
+def test_main__属性定義に合わない型ではタスクを操作しない(service: Mock, attribute_type: str, value):
+    service.api.get_annotation_specs.return_value[0]["additionals"][0]["type"] = attribute_type
+
+    with pytest.raises(ValueError):
+        make_main(service).main(["task1"], ["weather"], attributes={"sunny": value})
+
+    service.wrapper.get_task_or_none.assert_not_called()
+    service.api.put_annotation.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    ("attribute_type", "value", "expected_value"),
+    [
+        ("integer", 1, {"_type": "Integer", "value": 1}),
+        ("text", "晴れ", {"_type": "Text", "value": "晴れ"}),
+        ("choice", "clear", {"_type": "Choice", "choice_id": "clear-id"}),
+        ("select", "clear", {"_type": "Select", "choice_id": "clear-id"}),
+        ("link", "", None),
+    ],
+)
+def test_main__属性定義に合う型を変換して作成する(service: Mock, attribute_type: str, value, expected_value):
+    definition = service.api.get_annotation_specs.return_value[0]["additionals"][0]
+    definition["type"] = attribute_type
+    definition["choices"] = [{"choice_id": "clear-id", "name": {"messages": [{"lang": "en-US", "message": "clear"}], "default_lang": "en-US"}}]
+
+    make_main(service).main(["task1"], ["weather"], attributes={"sunny": value})
+
+    detail = service.api.put_annotation.call_args.kwargs["request_body"]["details"][0]
+    assert detail["additional_data_list"] == [{"definition_id": "weather-sunny", "value": expected_value}]
+
+
 @pytest.mark.parametrize("attributes_json", ["[]", "null", '{"sunny": []}', '{"sunny": 1.5}', "invalid"])
 def test_command__不正なJSON形式では書き込まない(service: Mock, attributes_json: str):
     args = argparse.Namespace(

@@ -8,7 +8,7 @@ from typing import Any
 
 import annofabapi
 from annofabapi.models import DefaultAnnotationType, ProjectMemberRole, TaskStatus
-from annofabapi.util.annotation_specs import AnnotationSpecsAccessor
+from annofabapi.util.annotation_specs import AnnotationSpecsAccessor, LabelDefinition
 from pydantic import TypeAdapter
 
 import annofabcli.common.cli
@@ -283,6 +283,25 @@ class CreateClassificationAnnotationMain(CommandLineWithConfirm):
         else:
             return created_count > 0
 
+    def _validate_attribute_values(self, attributes: dict[str, AttributeValue], label: LabelDefinition) -> None:
+        """属性定義に対応する型で属性値が指定されていることを検証する。
+
+        Args:
+            attributes: 作成時に設定する属性値。
+            label: 作成対象のラベル定義。
+
+        Returns:
+            None
+        """
+        for name, value in attributes.items():
+            definition = self.annotation_specs_accessor.get_attribute(attribute_name=name, label=label)
+            if value is None:
+                continue
+            attribute_type = definition["type"]
+            expected_type = bool if attribute_type == "flag" else int if attribute_type == "integer" else str
+            if type(value) is not expected_type:
+                raise ValueError(f"属性'{name}'（{attribute_type}型）の属性値は{expected_type.__name__}型またはnullで指定してください。")
+
     def main(self, task_ids: list[str], labels: list[str], parallelism: int | None = None, *, attributes: dict[str, AttributeValue] | None = None) -> None:
         """
         メイン処理
@@ -300,9 +319,11 @@ class CreateClassificationAnnotationMain(CommandLineWithConfirm):
         if attributes is not None:
             if len(labels) != 1:
                 raise ValueError("`--attributes` を指定する場合は、`--label_name` にラベルを1個だけ指定してください。")
-            label_info: dict[str, Any] = dict(self.annotation_specs_accessor.get_label(label_name=labels[0]))
+            label = self.annotation_specs_accessor.get_label(label_name=labels[0])
+            label_info: dict[str, Any] = dict(label)
             if label_info["annotation_type"] != DefaultAnnotationType.CLASSIFICATION.value:
                 raise ValueError(f"ラベル'{labels[0]}'は全体アノテーション（Classification）ではありません。")
+            self._validate_attribute_values(attributes, label)
             self.additional_data_list = convert_attributes_from_cli_to_additional_data_list_v2(attributes, self.annotation_specs, label_id=label_info["label_id"])
 
         success_count = 0
