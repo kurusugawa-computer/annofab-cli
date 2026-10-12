@@ -85,6 +85,10 @@ Examples
 
 以下のように ``annotation_id`` が指定されている場合、``annotation_id`` もインポートされます。
 
+画像・動画プロジェクトの全体アノテーションでは、 ``annotation_id`` の省略を推奨します。省略した場合は、ラベルの ``label_id`` を使用します。
+指定する場合は、ラベルの ``label_id`` と一致させる必要があります。このコマンドは、指定されたIDを自動補正しません。
+``--merge`` で既存の全体アノテーションを更新する場合も、 ``annotation_id`` は省略できます。
+
 
 .. code-block::
     :caption: {input_data_id}.json

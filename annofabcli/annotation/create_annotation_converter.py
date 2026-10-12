@@ -1,17 +1,14 @@
 from __future__ import annotations
 
 import copy
-import uuid
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from typing import Any, assert_never
 
-import ulid
 from annofabapi.models import AdditionalDataDefinitionType, DefaultAnnotationType
-from annofabapi.plugin import EditorPluginId
-from annofabapi.pydantic_models.input_data_type import InputDataType
 from annofabapi.util.annotation_specs import AnnotationSpecsAccessor, get_english_message
 
+from annofabcli.annotation.annotation_id import resolve_annotation_id
 from annofabcli.annotation.editor_props import validate_editor_props_for_cli
 
 
@@ -29,14 +26,6 @@ class AnnotationDetailToCreate:
     """アノテーションID。"""
     editor_props: dict[str, Any]
     """アノテーションエディタ用のプロパティ。"""
-
-
-def _create_annotation_id(label: Mapping[str, Any], project: Mapping[str, Any]) -> str:
-    if project["input_data_type"] == InputDataType.CUSTOM.value and project["configuration"]["plugin_id"] == EditorPluginId.THREE_DIMENSION.value:
-        return str(ulid.new())
-    if label["annotation_type"] == DefaultAnnotationType.CLASSIFICATION.value:
-        return str(label["label_id"])
-    return str(uuid.uuid4())
 
 
 def _round_coordinates(data: dict[str, Any]) -> dict[str, Any]:
@@ -108,7 +97,7 @@ class CreateAnnotationConverter:
         return {
             "_type": "Create",
             "label_id": label["label_id"],
-            "annotation_id": detail.annotation_id or _create_annotation_id(label, self.project),
+            "annotation_id": resolve_annotation_id(label, self.project, detail.annotation_id),
             "additional_data_list": self._convert_attributes(detail.attributes, label) if detail.attributes is not None else [],
             "editor_props": {**self.default_editor_props, **validate_editor_props_for_cli(detail.editor_props)},
             "body": {"_type": "Inner", "data": _round_coordinates(detail.data)},

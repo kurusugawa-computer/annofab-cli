@@ -388,7 +388,8 @@ def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse
         subparsers,
         "create",
         "各アノテーションを新規作成します。",
-        "各アノテーションを新規作成します。既存アノテーションは更新または削除しません。既存のannotation_idと一致する場合、そのアノテーションは作成せずにスキップします。",
+        "各アノテーションを新規作成します。既存アノテーションは更新または削除しません。既存のannotation_idと一致する場合、そのアノテーションは作成せずにスキップします。"
+        "画像・動画プロジェクトの全体アノテーションのannotation_idは指定不要です。指定された値に関係なく、ラベルのlabel_idを使用します。",
         epilog="オーナーロールまたはチェッカーロールを持つユーザーで実行してください。",
     )
     parse_args(parser)

@@ -28,6 +28,34 @@ project: dict[str, Any] = {
 }
 
 
+@pytest.mark.parametrize("annotation_id", [None, "fcb847a5-5607-4467-a72b-fc11fb5cfbab", "wrong_id", ""])
+@pytest.mark.parametrize("has_existing_annotation", [False, True])
+@pytest.mark.parametrize("input_data_type", ["image", "movie"])
+def test_create_request_body__全体アノテーションはlabel_idで作成または既存判定する(annotation_id, has_existing_annotation, input_data_type, caplog):
+    label_id = "fcb847a5-5607-4467-a72b-fc11fb5cfbab"
+    existing_detail = {"annotation_id": label_id, "label_id": label_id, "additional_data_list": [], "body": {"_type": "Inner", "data": {"_type": "Classification"}}}
+    editor_annotation = {
+        "project_id": "project_id",
+        "task_id": "t1",
+        "input_data_id": "i1",
+        "updated_datetime": "2026-10-12T00:00:00+09:00",
+        "details": [existing_detail] if has_existing_annotation else [],
+    }
+    converter = CreateAnnotationConverter({**project, "input_data_type": input_data_type}, annotation_specs, default_editor_props={})
+    items = [CreateAnnotationItem(task_id="t1", input_data_id="i1", annotation_id=annotation_id, label="whole", data={"_type": "Classification"})]
+
+    actual = create_request_body(editor_annotation, items, converter=converter)
+
+    assert actual.count == CreateAnnotationCount(success=0 if has_existing_annotation else 1, failed=1 if has_existing_annotation else 0)
+    assert len(actual.request_body["details"]) == 1
+    assert actual.request_body["details"][0]["annotation_id"] == label_id
+    assert actual.request_body["details"][0]["_type"] == ("Update" if has_existing_annotation else "Create")
+    if has_existing_annotation:
+        assert actual.request_body["details"][0]["body"] is None
+    if annotation_id is not None and annotation_id != label_id:
+        assert f"指定されたannotation_id='{annotation_id}'は無視します。" in caplog.text
+
+
 def test_create_request_body__既存アノテーションを変更せず新規アノテーションを追加する():
     editor_annotation = {
         "project_id": "project_id",
