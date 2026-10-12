@@ -347,12 +347,15 @@ class Test__AnnotationConverter:
         assert actual["details"][0]["label_id"] == number_plate_label_id
         assert actual["details"][0]["additional_data_list"] == [{"definition_id": number_plate_definition_id, "value": None}]
 
-    def test__convert_annotation_details__annotation_idを省略した分類アノテーションは既存アノテーションを更新する(self):
-        converter = AnnotationConverter(project, annotation_specs, is_strict=False, service=service)
+    @pytest.mark.parametrize("annotation_id", [None, "fcb847a5-5607-4467-a72b-fc11fb5cfbab", "wrong_id", ""])
+    @pytest.mark.parametrize("is_strict", [False, True])
+    def test__convert_annotation_details__分類アノテーションはlabel_idで既存アノテーションを更新する(self, annotation_id, is_strict):
+        converter = AnnotationConverter(project, annotation_specs, is_strict=is_strict, service=service)
         classification_label_id = "fcb847a5-5607-4467-a72b-fc11fb5cfbab"
         details = [
             ImportedSimpleAnnotationDetail(
                 label="whole",
+                annotation_id=annotation_id,
                 data={"_type": "Classification"},
             )
         ]
@@ -380,11 +383,12 @@ class Test__AnnotationConverter:
             }
         ]
 
-    def test__convert_annotation_details__実効annotation_idが重複する場合は例外(self):
+    @pytest.mark.parametrize("annotation_ids", [(None, None), ("first_id", "second_id")])
+    def test__convert_annotation_details__実効annotation_idが重複する場合は例外(self, annotation_ids):
         converter = AnnotationConverter(project, annotation_specs, is_strict=False, service=service)
         details = [
-            ImportedSimpleAnnotationDetail(label="whole", data={"_type": "Classification"}),
-            ImportedSimpleAnnotationDetail(label="whole", data={"_type": "Classification"}),
+            ImportedSimpleAnnotationDetail(label="whole", annotation_id=annotation_ids[0], data={"_type": "Classification"}),
+            ImportedSimpleAnnotationDetail(label="whole", annotation_id=annotation_ids[1], data={"_type": "Classification"}),
         ]
 
         with pytest.raises(ValueError):
