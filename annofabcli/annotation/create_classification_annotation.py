@@ -395,7 +395,7 @@ class CreateClassificationAnnotation(CommandLine):
 
         try:
             attributes = TypeAdapter(dict[str, AttributeValue]).validate_python(get_json_from_args(args.attributes), strict=True) if args.attributes is not None else None
-        except ValueError as e:
+        except (ValueError, OSError) as e:
             print(f"annofabcli annotation create_classification: error: argument --attributes: {e}", file=sys.stderr)  # noqa: T201
             sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 

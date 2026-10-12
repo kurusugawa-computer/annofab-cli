@@ -210,6 +210,27 @@ def test_command__不正なJSON形式では書き込まない(service: Mock, att
     service.api.put_annotation.assert_not_called()
 
 
+@pytest.mark.parametrize("path_name", ["missing.json", "."])
+def test_command__属性ファイルを読み込めない場合はCLIエラーにする(service: Mock, tmp_path: Path, path_name: str):
+    args = argparse.Namespace(
+        project_id="prj1",
+        task_id=["task1"],
+        label_name=["weather"],
+        attributes=f"file://{tmp_path / path_name}",
+        parallelism=None,
+        yes=True,
+        include_complete_task=False,
+        include_break_task=False,
+        include_on_hold_task=False,
+    )
+    with pytest.raises(SystemExit) as exc:
+        CreateClassificationAnnotation(service, Mock(), args).main()
+
+    assert exc.value.code == 2
+    service.wrapper.get_task_or_none.assert_not_called()
+    service.api.put_annotation.assert_not_called()
+
+
 def test_create_classification_annotation_for_task__アノテーション情報を取得できない入力データをスキップする():
     service = Mock()
     service.api.account_id = "account_id"
