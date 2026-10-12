@@ -5,11 +5,34 @@ annotation_zip diff
 Description
 =================================
 
-2つのローカルのアノテーションZIPまたは展開ディレクトリを比較し、アノテーションの追加・削除・変更を出力します。
-Annofabへのログインは不要です。Simple形式のアノテーションを使用してください。
+左右それぞれのプロジェクトまたはローカルのアノテーションZIP・展開ディレクトリを比較し、アノテーションの追加・削除・変更を出力します。
+両側ともローカルの場合、Annofabへのログインは不要です。ローカルファイルはSimple形式のアノテーションを使用してください。
+
+左右それぞれ、 ``--left_project_id`` / ``--right_project_id`` または ``--left_annotation`` / ``--right_annotation`` のどちらかを指定します。
+同じ側でプロジェクトIDとローカルファイルを同時に指定することはできません。
+プロジェクトIDを指定した場合のみログインし、アノテーションZIPを最新化してから一時ディレクトリへダウンロードします。
+プロジェクトのオーナーまたはアノテーションユーザーの権限が必要です。
+左右で同じプロジェクトIDを指定した場合は、1回ダウンロードしたZIPを両側で使用します。
+ダウンロード用の一時ディレクトリは、比較後やエラー発生時に削除します。
 
 Examples
 =================================
+
+プロジェクト同士を比較する例です。
+
+.. code-block:: bash
+
+    $ annofabcli annotation_zip diff \
+        --left_project_id project_a --right_project_id project_b
+
+保存済みのZIPとプロジェクトの最新結果を比較する例です。
+
+.. code-block:: bash
+
+    $ annofabcli annotation_zip diff \
+        --left_annotation old.zip --right_project_id project_a
+
+ローカルファイル同士を比較する例です。
 
 .. code-block:: bash
 

@@ -1,9 +1,12 @@
 import io
 import json
+import shutil
 import zipfile
 from contextlib import ExitStack
 from pathlib import Path
+from unittest.mock import Mock
 
+import annofabapi
 import numpy
 import pytest
 import yaml
@@ -11,8 +14,10 @@ from annofabapi.segmentation import write_binary_image
 from PIL import Image
 
 from annofabcli.__main__ import main
+from annofabcli.annotation_zip import diff_annotation
 from annofabcli.annotation_zip.diff_annotation import format_diff_as_text
 from annofabcli.annotation_zip.diff_compare import AnnotationSource, create_annotation_zip_diff
+from annofabcli.common.download import DownloadingFile
 from annofabcli.common.exceptions import AnnofabCliException
 
 
@@ -270,7 +275,8 @@ def test_windows_external_reference_is_rejected_before_opening(tmp_path, zipped,
             source.open_external(parser, uri, stack)
 
 
-def test_cli_local_without_login_and_empty_output(tmp_path, capsys):
+def test_cli_local_without_login_and_empty_output(tmp_path, capsys, monkeypatch):
+    monkeypatch.setattr(diff_annotation, "build_annofabapi_resource_and_login", Mock(side_effect=AssertionError("ローカル比較で認証してはいけません。")))
     left = _source(tmp_path, "left", [_detail()])
     right = _source(tmp_path, "right", [_detail()])
     arguments = ["annotation_zip", "diff", "--left_annotation", str(left), "--right_annotation", str(right)]
@@ -279,6 +285,70 @@ def test_cli_local_without_login_and_empty_output(tmp_path, capsys):
     output = tmp_path / "diff.txt"
     main([*arguments, "--output", str(output)])
     assert output.read_text() == ""
+
+
+@pytest.fixture
+def project_sources(tmp_path, monkeypatch):
+    left = _source(tmp_path, "left", [_detail()], zipped=True)
+    right = _source(tmp_path, "right", [_detail(attributes={"occluded": True, "type": "sedan"})], zipped=True)
+    service = annofabapi.build("user", "password")
+    monkeypatch.setattr(service.api, "get_project", Mock(return_value=({"title": "test"}, None)))
+    monkeypatch.setattr(service.api, "get_my_member_in_project", Mock(return_value=({"member_role": "owner"}, None)))
+    login = Mock(return_value=service)
+    monkeypatch.setattr(diff_annotation, "build_annofabapi_resource_and_login", login)
+
+    def download(project_id, directory, *, is_latest):
+        assert is_latest is True
+        path = directory / f"{project_id}.zip"
+        shutil.copyfile(left if project_id == "left-project" else right, path)
+        return path
+
+    downloader = Mock(side_effect=download)
+    monkeypatch.setattr(DownloadingFile, "download_annotation_zip_to_dir", downloader)
+    return left, right, login, downloader, service
+
+
+@pytest.mark.parametrize("sources", ["left_project", "right_project", "both_projects", "same_project"])
+def test_cli_project_sources_produce_diff_and_clean_up(project_sources, capsys, sources):
+    left, right, login, downloader, _ = project_sources
+    arguments = ["annotation_zip", "diff", "--format", "json"]
+    if sources == "right_project":
+        arguments.extend(["--left_annotation", str(left)])
+    else:
+        arguments.extend(["--left_project_id", "left-project"])
+    if sources == "left_project":
+        arguments.extend(["--right_annotation", str(right)])
+    else:
+        arguments.extend(["--right_project_id", "left-project" if sources == "same_project" else "right-project"])
+    main(arguments)
+    diff = json.loads(capsys.readouterr().out)
+    assert diff["has_diff"] == (sources != "same_project")
+    if diff["has_diff"]:
+        assert diff["annotations"]["changed"][0]["changed_attribute_keys"] == ["occluded"]
+    login.assert_called_once()
+    assert downloader.call_count == (2 if sources == "both_projects" else 1)
+    for call in downloader.call_args_list:
+        assert not call.args[1].exists()
+
+
+def test_cli_project_download_failure_does_not_write_output(project_sources, tmp_path):
+    _, right, _, downloader, _ = project_sources
+    downloader.side_effect = OSError("ダウンロードに失敗しました。")
+    output = tmp_path / "diff.json"
+    with pytest.raises(SystemExit) as exc:
+        main(["annotation_zip", "diff", "--left_project_id", "left-project", "--right_annotation", str(right), "--output", str(output)])
+    assert exc.value.code != 0
+    assert not output.exists()
+    assert not downloader.call_args.args[1].exists()
+
+
+def test_cli_project_access_is_checked_before_download(project_sources, monkeypatch):
+    _, right, _, downloader, service = project_sources
+    monkeypatch.setattr(service.api, "get_my_member_in_project", Mock(return_value=({"member_role": "worker"}, None)))
+    with pytest.raises(SystemExit) as exc:
+        main(["annotation_zip", "diff", "--left_project_id", "left-project", "--right_annotation", str(right)])
+    assert exc.value.code != 0
+    downloader.assert_not_called()
 
 
 def test_cli_comparison_error_does_not_write_partial_output(tmp_path):

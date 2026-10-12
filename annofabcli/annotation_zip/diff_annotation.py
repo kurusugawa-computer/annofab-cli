@@ -5,15 +5,20 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import tempfile
 from pathlib import Path
 from typing import cast
 
 import yaml
+from annofabapi.models import ProjectMemberRole
 from pydantic import JsonValue
 
 import annofabcli.common.cli
 from annofabcli.annotation_zip.diff_compare import Target, create_annotation_zip_diff
 from annofabcli.annotation_zip.diff_models import AnnotationZipDiff, ChangedAnnotation
+from annofabcli.common.cli import build_annofabapi_resource_and_login
+from annofabcli.common.download import DownloadingFile
+from annofabcli.common.facade import AnnofabApiFacade
 from annofabcli.common.utils import output_string, print_json
 
 logger = logging.getLogger(__name__)
@@ -81,8 +86,38 @@ def format_diff_as_text(diff: AnnotationZipDiff, *, detail: bool = False) -> str
     return "[annotations]\n" + yaml.safe_dump(annotations, allow_unicode=True, sort_keys=False).rstrip() + "\n"
 
 
+def _resolve_sources(args: argparse.Namespace, directory: Path) -> dict[str, Path]:
+    """プロジェクト指定がある場合だけ認証し、比較対象を取得する。
+
+    Args:
+        args: CLI引数。
+        directory: ダウンロード用の一時ディレクトリ。
+
+    Returns:
+        左右のZIPまたは展開ディレクトリのパス。
+    """
+    paths: dict[str, Path] = {}
+    for side in ("left", "right"):
+        annotation: Path | None = getattr(args, f"{side}_annotation")
+        if annotation is not None:
+            paths[side] = annotation
+    project_ids = list(dict.fromkeys(project_id for project_id in (args.left_project_id, args.right_project_id) if project_id is not None))
+    if project_ids:
+        service = build_annofabapi_resource_and_login(args)
+        facade = AnnofabApiFacade(service)
+        for project_id in project_ids:
+            facade.require_project_access(project_id, project_member_roles=[ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER])
+        downloader = DownloadingFile(service)
+        downloaded = {project_id: downloader.download_annotation_zip_to_dir(project_id, directory, is_latest=True) for project_id in project_ids}
+        for side in ("left", "right"):
+            project_id = getattr(args, f"{side}_project_id")
+            if project_id is not None:
+                paths[side] = downloaded[project_id]
+    return paths
+
+
 def main(args: argparse.Namespace) -> None:
-    """認証なしでローカルの差分を出力する。
+    """指定された入力から差分を出力する。
 
     Args:
         args: CLI引数。
@@ -90,7 +125,9 @@ def main(args: argparse.Namespace) -> None:
     Returns:
         なし。
     """
-    diff = create_annotation_zip_diff(args.left_annotation, args.right_annotation, targets=cast(list[Target], args.target or ["label", "data", "attributes"]))
+    with tempfile.TemporaryDirectory() as directory:
+        paths = _resolve_sources(args, Path(directory))
+        diff = create_annotation_zip_diff(paths["left"], paths["right"], targets=cast(list[Target], args.target or ["label", "data", "attributes"]))
     if args.format in ("json", "pretty_json"):
         print_json(diff.model_dump(exclude_none=True), is_pretty=args.format == "pretty_json", output=args.output)
     else:
@@ -110,9 +147,14 @@ def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse
     Returns:
         diffコマンドのパーサー。
     """
-    parser = annofabcli.common.cli.add_parser(subparsers, "diff", "アノテーションZIPの差分を出力します。", "2つのアノテーションZIPの結果を比較します。Annofabへのログインは不要です。")
-    parser.add_argument("--left_annotation", type=Path, required=True, help="比較元（左側）のアノテーションZIPまたは展開ディレクトリ。右側にのみあるアノテーションは追加として出力します。")
-    parser.add_argument("--right_annotation", type=Path, required=True, help="比較先（右側）のアノテーションZIPまたは展開ディレクトリ。左側にのみあるアノテーションは削除として出力します。")
+    parser = annofabcli.common.cli.add_parser(
+        subparsers, "diff", "アノテーションZIPの差分を出力します。", "プロジェクトまたはローカルのZIP・展開ディレクトリから、2つのアノテーション結果を比較します。"
+    )
+    for side, description in (("left", "比較元（左側）"), ("right", "比較先（右側）")):
+        group = parser.add_mutually_exclusive_group(required=True)
+        direction = "右側にのみあるアノテーションは追加として出力します。" if side == "left" else "左側にのみあるアノテーションは削除として出力します。"
+        group.add_argument(f"--{side}_project_id", help=f"{description}のプロジェクトID。アノテーションZIPを最新化して取得します。{direction}")
+        group.add_argument(f"--{side}_annotation", type=Path, help=f"{description}のローカルのアノテーションZIPまたは展開ディレクトリ。{direction}")
     parser.add_argument("--target", nargs="+", choices=["label", "data", "attributes"], help="比較するフィールド。省略時はすべて比較します。アノテーションの追加・削除は常に出力します。")
     parser.add_argument(
         "-f",
