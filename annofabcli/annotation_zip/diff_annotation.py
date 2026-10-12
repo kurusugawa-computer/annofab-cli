@@ -127,7 +127,12 @@ def main(args: argparse.Namespace) -> None:
     """
     with tempfile.TemporaryDirectory() as directory:
         paths = _resolve_sources(args, Path(directory))
-        diff = create_annotation_zip_diff(paths["left"], paths["right"], targets=cast(list[Target], args.target or ["label", "data", "attributes"]))
+        diff = create_annotation_zip_diff(
+            paths["left"],
+            paths["right"],
+            targets=cast(list[Target], args.target or ["label", "data", "attributes"]),
+            target_task_ids=annofabcli.common.cli.get_list_from_args(args.task_id) if args.task_id is not None else None,
+        )
     if args.format in ("json", "pretty_json"):
         print_json(diff.model_dump(exclude_none=True), is_pretty=args.format == "pretty_json", output=args.output)
     else:
@@ -155,6 +160,7 @@ def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse
         direction = "右側にのみあるアノテーションは追加として出力します。" if side == "left" else "左側にのみあるアノテーションは削除として出力します。"
         group.add_argument(f"--{side}_project_id", help=f"{description}のプロジェクトID。アノテーションZIPを最新化して取得します。{direction}")
         group.add_argument(f"--{side}_annotation", type=Path, help=f"{description}のローカルのアノテーションZIPまたは展開ディレクトリ。{direction}")
+    annofabcli.common.cli.ArgumentParser(parser).add_task_id(required=False, help_message="左右の比較対象とするタスクのtask_idを指定します。省略時はすべてのタスクを比較します。")
     parser.add_argument("--target", nargs="+", choices=["label", "data", "attributes"], help="比較するフィールド。省略時はすべて比較します。アノテーションの追加・削除は常に出力します。")
     parser.add_argument(
         "-f",

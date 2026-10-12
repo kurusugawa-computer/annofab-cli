@@ -43,12 +43,13 @@ class AnnotationDetail(BaseModel):
 class AnnotationSource:
     """比較中はZIPを開いたまま保持する入力。"""
 
-    def __init__(self, path: Path, stack: ExitStack) -> None:
+    def __init__(self, path: Path, stack: ExitStack, *, target_task_ids: Collection[str] | None = None) -> None:
         """パス由来の入力データキーでパーサーを索引化する。
 
         Args:
             path: ZIPまたは展開ディレクトリ。
             stack: ZIPを閉じるためのコンテキスト。
+            target_task_ids: 比較対象のタスクID。Noneならすべてのタスク。
 
         Returns:
             なし。
@@ -66,7 +67,10 @@ class AnnotationSource:
                 parts = PurePosixPath(info.filename).parts
                 if not info.is_dir() and len(parts) == 2 and parts[1].endswith(".json"):
                     parsers.append(SimpleAnnotationZipParser(self.zip_file, info.filename))
+        task_ids = set(target_task_ids) if target_task_ids is not None else None
         for parser in parsers:
+            if task_ids is not None and parser.task_id not in task_ids:
+                continue
             key = (parser.task_id, parser.input_data_id)
             if key in self.parsers:
                 raise ValueError(f"入力データJSONが重複しています。 :: task_id='{key[0]}', input_data_id='{key[1]}'")
@@ -330,13 +334,16 @@ def _compare_annotation(
     return result if result.label_changed or result.data_changed or result.attributes_changed else None
 
 
-def create_annotation_zip_diff(left_path: Path, right_path: Path, *, targets: Collection[Target] = ("label", "data", "attributes")) -> AnnotationZipDiff:
+def create_annotation_zip_diff(
+    left_path: Path, right_path: Path, *, targets: Collection[Target] = ("label", "data", "attributes"), target_task_ids: Collection[str] | None = None
+) -> AnnotationZipDiff:
     """パス由来の入力データとannotation_idで結果を比較する。
 
     Args:
         left_path: 比較元のZIPまたは展開ディレクトリ。
         right_path: 比較先のZIPまたは展開ディレクトリ。
         targets: 比較するフィールド。追加・削除は常に比較する。
+        target_task_ids: 左右で比較対象とするタスクID。Noneならすべてのタスク。
 
     Returns:
         アノテーションの差分。
@@ -346,7 +353,7 @@ def create_annotation_zip_diff(left_path: Path, right_path: Path, *, targets: Co
         sources = []
         for side, path in (("left", left_path), ("right", right_path)):
             try:
-                sources.append(AnnotationSource(path, stack))
+                sources.append(AnnotationSource(path, stack, target_task_ids=target_task_ids))
             except Exception as exc:
                 raise AnnofabCliException(f"入力を読み込めません。 :: side='{side}', path='{path}': {exc}") from exc
         left_source, right_source = sources
