@@ -8,9 +8,11 @@ from typing import Any
 
 import annofabapi
 from annofabapi.models import DefaultAnnotationType, ProjectMemberRole, TaskStatus
-from annofabapi.util.annotation_specs import AnnotationSpecsAccessor
+from annofabapi.util.annotation_specs import AnnotationSpecsAccessor, LabelDefinition
+from pydantic import TypeAdapter
 
 import annofabcli.common.cli
+from annofabcli.annotation.annotation_query import AttributeValue, convert_attributes_from_cli_to_additional_data_list_v2
 from annofabcli.common.annofab.editor_annotation import get_editor_annotation_dict_in_bulk
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
@@ -19,6 +21,7 @@ from annofabcli.common.cli import (
     CommandLine,
     CommandLineWithConfirm,
     build_annofabapi_resource_and_login,
+    get_json_from_args,
 )
 from annofabcli.common.facade import AnnofabApiFacade
 
@@ -47,7 +50,11 @@ class CreateClassificationAnnotationMain(CommandLineWithConfirm):
 
         # アノテーション仕様を取得
         annotation_specs_v3, _ = self.service.api.get_annotation_specs(self.project_id, query_params={"v": "3"})
+        self.annotation_specs = annotation_specs_v3
+        """属性値の変換に使用するアノテーション仕様。"""
         self.annotation_specs_accessor = AnnotationSpecsAccessor(annotation_specs_v3)
+        self.additional_data_list: list[dict[str, Any]] = []
+        """新規作成するアノテーションに付与する属性値。"""
 
         my_member, _ = self.service.api.get_my_member_in_project(project_id)
         self.my_project_member_role = ProjectMemberRole(my_member["member_role"])
@@ -147,7 +154,7 @@ class CreateClassificationAnnotationMain(CommandLineWithConfirm):
                 "_type": "Create",
                 "label_id": label_info["label_id"],
                 "annotation_id": annotation_id,
-                "additional_data_list": [],
+                "additional_data_list": self.additional_data_list,
                 "editor_props": {},
                 "body": {"_type": "Inner", "data": {"_type": "Classification"}},
             }
@@ -276,7 +283,26 @@ class CreateClassificationAnnotationMain(CommandLineWithConfirm):
         else:
             return created_count > 0
 
-    def main(self, task_ids: list[str], labels: list[str], parallelism: int | None = None) -> None:
+    def _validate_attribute_values(self, attributes: dict[str, AttributeValue], label: LabelDefinition) -> None:
+        """属性定義に対応する型で属性値が指定されていることを検証する。
+
+        Args:
+            attributes: 作成時に設定する属性値。
+            label: 作成対象のラベル定義。
+
+        Returns:
+            None
+        """
+        for name, value in attributes.items():
+            definition = self.annotation_specs_accessor.get_attribute(attribute_name=name, label=label)
+            if value is None:
+                continue
+            attribute_type = definition["type"]
+            expected_type = bool if attribute_type == "flag" else int if attribute_type == "integer" else str
+            if type(value) is not expected_type:
+                raise ValueError(f"属性'{name}'（{attribute_type}型）の属性値は{expected_type.__name__}型またはnullで指定してください。")
+
+    def main(self, task_ids: list[str], labels: list[str], parallelism: int | None = None, *, attributes: dict[str, AttributeValue] | None = None) -> None:
         """
         メイン処理
 
@@ -284,7 +310,22 @@ class CreateClassificationAnnotationMain(CommandLineWithConfirm):
             task_ids: タスクIDのリスト
             labels: ラベル名のリスト
             parallelism: 並列度
+            attributes: 新規作成時に設定する属性値。指定する場合はラベルを1個に限定する。
+
+        Returns:
+            None
         """
+        self.additional_data_list = []
+        if attributes is not None:
+            if len(labels) != 1:
+                raise ValueError("`--attributes` を指定する場合は、`--label_name` にラベルを1個だけ指定してください。")
+            label = self.annotation_specs_accessor.get_label(label_name=labels[0])
+            label_info: dict[str, Any] = dict(label)
+            if label_info["annotation_type"] != DefaultAnnotationType.CLASSIFICATION.value:
+                raise ValueError(f"ラベル'{labels[0]}'は全体アノテーション（Classification）ではありません。")
+            self._validate_attribute_values(attributes, label)
+            self.additional_data_list = convert_attributes_from_cli_to_additional_data_list_v2(attributes, self.annotation_specs, label_id=label_info["label_id"])
+
         success_count = 0
 
         if parallelism is not None:
@@ -352,6 +393,12 @@ class CreateClassificationAnnotation(CommandLine):
         task_ids = annofabcli.common.cli.get_list_from_args(args.task_id)
         labels = annofabcli.common.cli.get_list_from_args(args.label_name)
 
+        try:
+            attributes = TypeAdapter(dict[str, AttributeValue]).validate_python(get_json_from_args(args.attributes), strict=True) if args.attributes is not None else None
+        except (ValueError, OSError) as e:
+            print(f"annofabcli annotation create_classification: error: argument --attributes: {e}", file=sys.stderr)  # noqa: T201
+            sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
+
         main_obj = CreateClassificationAnnotationMain(
             self.service,
             project_id=project_id,
@@ -361,7 +408,11 @@ class CreateClassificationAnnotation(CommandLine):
             include_on_hold_task=args.include_on_hold_task,
         )
 
-        main_obj.main(task_ids, labels, parallelism=args.parallelism)
+        try:
+            main_obj.main(task_ids, labels, parallelism=args.parallelism, attributes=attributes)
+        except ValueError as e:
+            print(f"annofabcli annotation create_classification: error: {e}", file=sys.stderr)  # noqa: T201
+            sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
 
 def main(args: argparse.Namespace) -> None:
@@ -383,6 +434,17 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         required=True,
         nargs="+",
         help="作成する全体アノテーションのラベル名（英語）を指定します。",
+    )
+
+    parser.add_argument(
+        "--attributes",
+        type=str,
+        help=(
+            "新規作成する全体アノテーションに設定する属性値をJSON形式で指定します。"
+            "すべての対象入力データに同じ属性値を設定します。既存アノテーションの属性値は変更しません。"
+            "指定する場合は、``--label_name`` にラベルを1個だけ指定してください。"
+            '``file://`` を先頭に付けると、JSON形式のファイルを指定できます。(ex): ``{"sunny": true}``'
+        ),
     )
 
     parser.add_argument(
