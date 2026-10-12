@@ -6,6 +6,7 @@ import json
 import logging
 import multiprocessing
 import sys
+import uuid
 import zipfile
 from collections.abc import Iterator, Mapping, Sequence
 from dataclasses import dataclass
@@ -14,6 +15,7 @@ from typing import Any, assert_never
 
 import annofabapi
 import pydantic
+import ulid
 from annofabapi.dataclass.task import Task
 from annofabapi.models import (
     AdditionalDataDefinitionType,
@@ -27,12 +29,12 @@ from annofabapi.parser import (
     lazy_parse_simple_annotation_dir_by_task,
     lazy_parse_simple_annotation_zip_by_task,
 )
-from annofabapi.plugin import ThreeDimensionAnnotationType
+from annofabapi.plugin import EditorPluginId, ThreeDimensionAnnotationType
+from annofabapi.pydantic_models.input_data_type import InputDataType
 from annofabapi.util.annotation_specs import AnnotationSpecsAccessor, get_english_message
 from dataclasses_json import DataClassJsonMixin
 
 import annofabcli.common.cli
-from annofabcli.annotation.annotation_id import resolve_annotation_id
 from annofabcli.annotation.editor_props import validate_editor_props_for_cli
 from annofabcli.common.annofab.editor_annotation import get_editor_annotation_dict_in_bulk
 from annofabcli.common.cli import (
@@ -99,6 +101,26 @@ def is_3dpc_segment_label(label_info: Mapping[str, Any]) -> bool:
         ThreeDimensionAnnotationType.INSTANCE_SEGMENT.value,
         ThreeDimensionAnnotationType.SEMANTIC_SEGMENT.value,
     }
+
+
+def is_3dpc_project(project: dict[str, Any]) -> bool:
+    """3次元プロジェクトか否か"""
+    editor_plugin_id = project["configuration"]["plugin_id"]
+    return project["input_data_type"] == InputDataType.CUSTOM.value and editor_plugin_id == EditorPluginId.THREE_DIMENSION.value
+
+
+def create_annotation_id(label_info: Mapping[str, Any], project: dict[str, Any]) -> str:
+    """
+    デフォルトのアノテーションIDを生成します。
+    """
+    if is_3dpc_project(project):
+        # 3次元エディタ画面ではULIDが発行されるので、それに合わせる
+        return str(ulid.new())
+    elif label_info["annotation_type"] == DefaultAnnotationType.CLASSIFICATION.value:
+        # 全体アノテーションの場合、annotation_idはlabel_idである必要がある
+        return label_info["label_id"]
+    else:
+        return str(uuid.uuid4())
 
 
 def get_3dpc_segment_data_uri(annotation_data: dict[str, Any]) -> str:
@@ -350,7 +372,7 @@ class AnnotationConverter:
         result = {
             "_type": "Create",
             "label_id": label_info["label_id"],
-            "annotation_id": resolve_annotation_id(label_info, self.project, detail.annotation_id),
+            "annotation_id": detail.annotation_id if detail.annotation_id is not None else create_annotation_id(label_info, self.project),
             "additional_data_list": additional_data_list,
             "editor_props": editor_props,
         }
@@ -922,7 +944,7 @@ def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse
     subcommand_help = "アノテーションをインポートします。"
     description = (
         "アノテーションをインポートします。アノテーションのフォーマットは、Simpleアノテーションと同じフォルダ構成のzipファイルまたはディレクトリです。"
-        "画像全体アノテーションのannotation_idは指定不要です。指定された値に関係なく、ラベルのlabel_idを使用します。"
+        "画像全体アノテーションのannotation_idは省略を推奨します。省略するとラベルのlabel_idを使用します。指定する場合はlabel_idと一致させる必要があります。"
         "ただし、作業中状態のタスクはインポートできません。"
         "``--include_complete_task`` を指定すれば、完了状態のタスクにもインポートできます。"
         "``--include_break_task`` を指定すれば、休憩中状態のタスクにもインポートできます。"
