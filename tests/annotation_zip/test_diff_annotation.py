@@ -336,11 +336,14 @@ def test_windows_external_reference_is_rejected_before_opening(tmp_path, zipped,
             source.open_external(parser, uri, stack)
 
 
-def test_cli_local_without_login_and_empty_output(tmp_path, capsys, monkeypatch):
+@pytest.mark.parametrize("latest", [False, True])
+def test_cli_local_without_login_and_empty_output(tmp_path, capsys, monkeypatch, latest):
     monkeypatch.setattr(diff_annotation, "build_annofabapi_resource_and_login", Mock(side_effect=AssertionError("ローカル比較で認証してはいけません。")))
     left = _source(tmp_path, "left", [_detail()])
     right = _source(tmp_path, "right", [_detail()])
     arguments = ["annotation_zip", "diff", "--left_annotation", str(left), "--right_annotation", str(right)]
+    if latest:
+        arguments.append("--latest")
     main([*arguments, "--format", "pretty_json"])
     assert json.loads(capsys.readouterr().out) == {"has_diff": False, "annotations": {"added": [], "removed": [], "changed": []}}
     output = tmp_path / "diff.txt"
@@ -358,8 +361,7 @@ def project_sources(tmp_path, monkeypatch):
     login = Mock(return_value=service)
     monkeypatch.setattr(diff_annotation, "build_annofabapi_resource_and_login", login)
 
-    def download(project_id, directory, *, is_latest):
-        assert is_latest is True
+    def download(project_id, directory, **_kwargs):
         path = directory / f"{project_id}.zip"
         shutil.copyfile(left if project_id == "left-project" else right, path)
         return path
@@ -371,9 +373,16 @@ def project_sources(tmp_path, monkeypatch):
 
 @pytest.mark.parametrize("sources", ["left_project", "right_project", "both_projects", "same_project"])
 @pytest.mark.parametrize("task_id", [None, "task1", "missing"])
-def test_cli_project_sources_produce_diff_and_clean_up(project_sources, capsys, sources, task_id):
+@pytest.mark.parametrize("latest", [False, True])
+@pytest.mark.parametrize("use_temp_dir", [False, True])
+def test_cli_project_sources_produce_diff_and_clean_up(project_sources, capsys, tmp_path, sources, task_id, latest, use_temp_dir):
     left, right, login, downloader, _ = project_sources
     arguments = ["annotation_zip", "diff", "--format", "json"]
+    if latest:
+        arguments.append("--latest")
+    temp_dir = tmp_path / "download" / "annotation"
+    if use_temp_dir:
+        arguments.extend(["--temp_dir", str(temp_dir)])
     if task_id is not None:
         arguments.extend(["--task_id", task_id])
     if sources == "right_project":
@@ -392,7 +401,12 @@ def test_cli_project_sources_produce_diff_and_clean_up(project_sources, capsys, 
     login.assert_called_once()
     assert downloader.call_count == (2 if sources == "both_projects" else 1)
     for call in downloader.call_args_list:
-        assert not call.args[1].exists()
+        assert call.kwargs["is_latest"] is latest
+        if use_temp_dir:
+            assert call.args[1] == temp_dir
+            assert (temp_dir / f"{call.args[0]}.zip").is_file()
+        else:
+            assert not call.args[1].exists()
 
 
 def test_cli_project_download_failure_does_not_write_output(project_sources, tmp_path):

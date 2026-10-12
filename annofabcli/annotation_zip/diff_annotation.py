@@ -108,7 +108,8 @@ def _resolve_sources(args: argparse.Namespace, directory: Path) -> dict[str, Pat
         for project_id in project_ids:
             facade.require_project_access(project_id, project_member_roles=[ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER])
         downloader = DownloadingFile(service)
-        downloaded = {project_id: downloader.download_annotation_zip_to_dir(project_id, directory, is_latest=True) for project_id in project_ids}
+        directory.mkdir(parents=True, exist_ok=True)
+        downloaded = {project_id: downloader.download_annotation_zip_to_dir(project_id, directory, is_latest=args.latest) for project_id in project_ids}
         for side in ("left", "right"):
             project_id = getattr(args, f"{side}_project_id")
             if project_id is not None:
@@ -126,7 +127,7 @@ def main(args: argparse.Namespace) -> None:
         なし。
     """
     with tempfile.TemporaryDirectory() as directory:
-        paths = _resolve_sources(args, Path(directory))
+        paths = _resolve_sources(args, args.temp_dir if args.temp_dir is not None else Path(directory))
         diff = create_annotation_zip_diff(
             paths["left"],
             paths["right"],
@@ -158,8 +159,10 @@ def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse
     for side, description in (("left", "比較元（左側）"), ("right", "比較先（右側）")):
         group = parser.add_mutually_exclusive_group(required=True)
         direction = "右側にのみあるアノテーションは追加として出力します。" if side == "left" else "左側にのみあるアノテーションは削除として出力します。"
-        group.add_argument(f"--{side}_project_id", help=f"{description}のプロジェクトID。アノテーションZIPを最新化して取得します。{direction}")
+        group.add_argument(f"--{side}_project_id", help=f"{description}のプロジェクトID。アノテーションZIPを取得します。{direction}")
         group.add_argument(f"--{side}_annotation", type=Path, help=f"{description}のローカルのアノテーションZIPまたは展開ディレクトリ。{direction}")
+    parser.add_argument("--latest", action="store_true", help="プロジェクトIDを指定した側のアノテーションZIPを最新化して取得します。更新に数分かかる場合があります。")
+    parser.add_argument("--temp_dir", type=Path, help="アノテーションZIPのダウンロード先ディレクトリ。指定したディレクトリとファイルは比較後も保持します。")
     annofabcli.common.cli.ArgumentParser(parser).add_task_id(required=False, help_message="左右の比較対象とするタスクのtask_idを指定します。省略時はすべてのタスクを比較します。")
     parser.add_argument("--target", nargs="+", choices=["label", "data", "attributes"], help="比較するフィールド。省略時はすべて比較します。アノテーションの追加・削除は常に出力します。")
     parser.add_argument(
