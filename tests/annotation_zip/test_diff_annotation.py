@@ -105,6 +105,67 @@ def test_renamed_path_is_removal_and_addition(tmp_path):
     assert diff.annotations.removed[0].task_id == "task1"
 
 
+@pytest.mark.parametrize(("left_zip", "right_zip"), [(False, False), (True, True), (False, True), (True, False)])
+def test_task_filter_preserves_selected_additions_removals_and_changes(tmp_path, left_zip, right_zip):
+    def annotation_json(details: list[dict]) -> bytes:
+        return json.dumps({"details": details}).encode()
+
+    left = _source(
+        tmp_path,
+        "left",
+        [_detail()],
+        zipped=left_zip,
+        metadata={"task_id": "wrong"},
+        outer={"removed/image1.json": annotation_json([_detail()]), "excluded/image1.json": annotation_json([_detail()])},
+    )
+    right = _source(
+        tmp_path,
+        "right",
+        [_detail(label="bus")],
+        zipped=right_zip,
+        outer={"added/image1.json": annotation_json([_detail()]), "excluded/image1.json": annotation_json([_detail(label="bus")])},
+    )
+    diff = create_annotation_zip_diff(left, right, target_task_ids=["task1", "added", "removed", "missing", "task1"])
+    assert [(item.task_id, item.annotation_id) for item in diff.annotations.changed] == [("task1", "a1")]
+    assert [item.task_id for item in diff.annotations.added] == ["added"]
+    assert [item.task_id for item in diff.annotations.removed] == ["removed"]
+    assert not create_annotation_zip_diff(left, right, target_task_ids=[]).has_diff
+    assert not create_annotation_zip_diff(left, right, target_task_ids=["missing"]).has_diff
+    assert [item.task_id for item in create_annotation_zip_diff(left, right).annotations.changed] == ["excluded", "task1"]
+
+
+@pytest.mark.parametrize("zipped", [False, True])
+def test_task_filter_skips_unselected_invalid_json_and_external_files(tmp_path, zipped):
+    outer = {
+        "broken/image1.json": b"invalid JSON",
+        "external/image1.json": json.dumps({"details": [_detail(data={"_type": "Segmentation", "data_uri": "missing.png"})]}).encode(),
+    }
+    left = _source(tmp_path, "left", [_detail()], zipped=zipped, outer=outer)
+    right = _source(tmp_path, "right", [_detail()], zipped=zipped, outer=outer)
+    assert not create_annotation_zip_diff(left, right, target_task_ids=["task1"]).has_diff
+    for task_id in ("broken", "external"):
+        with pytest.raises(AnnofabCliException):
+            create_annotation_zip_diff(left, right, target_task_ids=[task_id])
+
+
+@pytest.mark.parametrize("task_option", ["direct", "file", "empty_file"])
+def test_cli_task_filter(tmp_path, capsys, task_option):
+    extra = json.dumps({"details": [_detail()]}).encode()
+    left = _source(tmp_path, "left", [_detail()], outer={"task2/image1.json": extra, "task3/image1.json": extra})
+    right = _source(tmp_path, "right", [_detail(label="bus")], zipped=True)
+    if task_option == "direct":
+        task_ids = ["task1", "task2"]
+    else:
+        task_file = tmp_path / "task_ids.txt"
+        task_file.write_text("task1\ntask2\n" if task_option == "file" else "")
+        task_ids = [f"file://{task_file}"]
+    main(["annotation_zip", "diff", "--left_annotation", str(left), "--right_annotation", str(right), "--format", "json", "--task_id", *task_ids])
+    diff = json.loads(capsys.readouterr().out)
+    assert diff["has_diff"] == (task_option != "empty_file")
+    assert [item["task_id"] for item in diff["annotations"]["changed"]] == ([] if task_option == "empty_file" else ["task1"])
+    assert [item["task_id"] for item in diff["annotations"]["removed"]] == ([] if task_option == "empty_file" else ["task2"])
+
+
 def test_target_preserves_addition_and_removal(tmp_path):
     left = _source(tmp_path, "left", [_detail(), _detail("removed")])
     right = _source(tmp_path, "right", [_detail(data={"_type": "Classification"}), _detail("added")])
@@ -309,9 +370,12 @@ def project_sources(tmp_path, monkeypatch):
 
 
 @pytest.mark.parametrize("sources", ["left_project", "right_project", "both_projects", "same_project"])
-def test_cli_project_sources_produce_diff_and_clean_up(project_sources, capsys, sources):
+@pytest.mark.parametrize("task_id", [None, "task1", "missing"])
+def test_cli_project_sources_produce_diff_and_clean_up(project_sources, capsys, sources, task_id):
     left, right, login, downloader, _ = project_sources
     arguments = ["annotation_zip", "diff", "--format", "json"]
+    if task_id is not None:
+        arguments.extend(["--task_id", task_id])
     if sources == "right_project":
         arguments.extend(["--left_annotation", str(left)])
     else:
@@ -322,7 +386,7 @@ def test_cli_project_sources_produce_diff_and_clean_up(project_sources, capsys, 
         arguments.extend(["--right_project_id", "left-project" if sources == "same_project" else "right-project"])
     main(arguments)
     diff = json.loads(capsys.readouterr().out)
-    assert diff["has_diff"] == (sources != "same_project")
+    assert diff["has_diff"] == (sources != "same_project" and task_id != "missing")
     if diff["has_diff"]:
         assert diff["annotations"]["changed"][0]["changed_attribute_keys"] == ["occluded"]
     login.assert_called_once()

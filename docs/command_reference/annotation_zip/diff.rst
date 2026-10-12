@@ -48,6 +48,27 @@ Examples
 属性だけを比較する場合は ``--target attributes`` を指定します。
 アノテーションの追加・削除は、指定したフィールドにかかわらず出力します。
 
+特定のタスクだけを比較する場合は ``--task_id`` を指定します。左右の入力に同じ絞り込みを適用します。
+タスクIDはJSONの親ディレクトリ名で判定します。省略時はすべてのタスクを比較します。
+指定したタスクが片側にしかない場合は、そのアノテーションを追加または削除として出力します。
+両側に存在しないタスクIDは差分に含めません。対象外のタスクのJSONや外部ファイルは読み込みません。
+プロジェクトIDを指定した場合、ZIP全体をダウンロードした後に絞り込みます。
+
+.. code-block:: bash
+
+    $ annofabcli annotation_zip diff \
+        --left_annotation old.zip --right_annotation new.zip \
+        --task_id task1 task2
+
+``file://`` を付けると、1行に1個のタスクIDを記載したファイルを指定できます。
+空の一覧ファイルを指定した場合は、比較対象がなく差分なしになります。
+
+.. code-block:: bash
+
+    $ annofabcli annotation_zip diff \
+        --left_annotation old.zip --right_annotation new.zip \
+        --task_id file://task_ids.txt
+
 比較ルール
 =================================
 
