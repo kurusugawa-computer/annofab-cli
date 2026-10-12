@@ -10,10 +10,13 @@ Description
 
 左右それぞれ、 ``--left_project_id`` / ``--right_project_id`` または ``--left_annotation`` / ``--right_annotation`` のどちらかを指定します。
 同じ側でプロジェクトIDとローカルファイルを同時に指定することはできません。
-プロジェクトIDを指定した場合のみログインし、アノテーションZIPを最新化してから一時ディレクトリへダウンロードします。
+プロジェクトIDを指定した場合のみログインし、既存のアノテーションZIPをダウンロードします。
+``--latest`` を指定すると、プロジェクトIDを指定した側のZIPを最新化してからダウンロードします。更新に数分かかる場合があります。
+省略時でも、ZIPが存在しない場合は更新して取得します。ローカルファイルには影響しません。
 プロジェクトのオーナーまたはアノテーションユーザーの権限が必要です。
 左右で同じプロジェクトIDを指定した場合は、1回ダウンロードしたZIPを両側で使用します。
-ダウンロード用の一時ディレクトリは、比較後やエラー発生時に削除します。
+``--temp_dir`` を指定すると、そのディレクトリにZIPをダウンロードし、比較後やエラー発生時も保持します。
+ディレクトリが存在しない場合は作成します。省略時は一時ディレクトリを使用し、比較後やエラー発生時に削除します。
 
 Examples
 =================================
@@ -30,7 +33,15 @@ Examples
 .. code-block:: bash
 
     $ annofabcli annotation_zip diff \
-        --left_annotation old.zip --right_project_id project_a
+        --left_annotation old.zip --right_project_id project_a --latest
+
+ダウンロードしたZIPを残す場合は ``--temp_dir`` を指定します。
+
+.. code-block:: bash
+
+    $ annofabcli annotation_zip diff \
+        --left_project_id project_a --right_project_id project_b \
+        --latest --temp_dir downloaded_annotations/
 
 ローカルファイル同士を比較する例です。
 
