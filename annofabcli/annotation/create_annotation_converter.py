@@ -97,7 +97,7 @@ class CreateAnnotationConverter:
         return {
             "_type": "Create",
             "label_id": label["label_id"],
-            "annotation_id": resolve_annotation_id(label, self.project, detail.annotation_id or None),
+            "annotation_id": resolve_annotation_id(label, self.project, detail.annotation_id),
             "additional_data_list": self._convert_attributes(detail.attributes, label) if detail.attributes is not None else [],
             "editor_props": {**self.default_editor_props, **validate_editor_props_for_cli(detail.editor_props)},
             "body": {"_type": "Inner", "data": _round_coordinates(detail.data)},

@@ -28,7 +28,7 @@ def resolve_annotation_id(label: Mapping[str, Any], project: Mapping[str, Any], 
         if annotation_id is not None and annotation_id != label_id:
             logger.warning(f"全体アノテーションのannotation_idにはlabel_id='{label_id}'を使用します。指定されたannotation_id='{annotation_id}'は無視します。")
         return label_id
-    if annotation_id is not None:
+    if annotation_id:
         return annotation_id
     if is_3dpc:
         return str(ulid.new())

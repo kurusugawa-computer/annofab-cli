@@ -28,9 +28,9 @@ project: dict[str, Any] = {
 }
 
 
-@pytest.mark.parametrize("annotation_id", [None, "fcb847a5-5607-4467-a72b-fc11fb5cfbab", "wrong_id"])
+@pytest.mark.parametrize("annotation_id", [None, "fcb847a5-5607-4467-a72b-fc11fb5cfbab", "wrong_id", ""])
 @pytest.mark.parametrize("has_existing_annotation", [False, True])
-def test_create_request_body__全体アノテーションはlabel_idで作成または既存判定する(annotation_id, has_existing_annotation):
+def test_create_request_body__全体アノテーションはlabel_idで作成または既存判定する(annotation_id, has_existing_annotation, caplog):
     label_id = "fcb847a5-5607-4467-a72b-fc11fb5cfbab"
     existing_detail = {"annotation_id": label_id, "label_id": label_id, "additional_data_list": [], "body": {"_type": "Inner", "data": {"_type": "Classification"}}}
     editor_annotation = {
@@ -51,6 +51,8 @@ def test_create_request_body__全体アノテーションはlabel_idで作成ま
     assert actual.request_body["details"][0]["_type"] == ("Update" if has_existing_annotation else "Create")
     if has_existing_annotation:
         assert actual.request_body["details"][0]["body"] is None
+    if annotation_id is not None and annotation_id != label_id:
+        assert f"指定されたannotation_id='{annotation_id}'は無視します。" in caplog.text
 
 
 def test_create_request_body__既存アノテーションを変更せず新規アノテーションを追加する():

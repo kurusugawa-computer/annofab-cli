@@ -30,21 +30,23 @@ def test_resolve_annotation_id__全体以外は指定されたIDを使用する(
 
 
 @pytest.mark.parametrize("annotation_type", ["bounding_box", "classification"])
-def test_resolve_annotation_id__3次元プロジェクトはULIDを生成する(annotation_type):
+@pytest.mark.parametrize("annotation_id", [None, ""])
+def test_resolve_annotation_id__3次元プロジェクトはULIDを生成する(annotation_type, annotation_id):
     label = {"annotation_type": annotation_type, "label_id": "label_id"}
     project = {"input_data_type": "custom", "configuration": {"plugin_id": EditorPluginId.THREE_DIMENSION.value}}
 
-    actual = resolve_annotation_id(label, project, None)
+    actual = resolve_annotation_id(label, project, annotation_id)
 
     assert str(ulid.from_str(actual)) == actual
     assert resolve_annotation_id(label, project, "specified_id") == "specified_id"
 
 
-def test_resolve_annotation_id__画像の矩形アノテーションはUUIDを生成する():
+@pytest.mark.parametrize("annotation_id", [None, ""])
+def test_resolve_annotation_id__画像の矩形アノテーションはUUIDを生成する(annotation_id):
     label = {"annotation_type": "bounding_box", "label_id": "label_id"}
     project = {"input_data_type": "image", "configuration": {"plugin_id": None}}
 
-    actual = resolve_annotation_id(label, project, None)
+    actual = resolve_annotation_id(label, project, annotation_id)
 
     assert str(uuid.UUID(actual, version=4)) == actual
 
