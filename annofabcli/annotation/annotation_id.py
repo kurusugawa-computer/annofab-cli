@@ -23,7 +23,7 @@ def resolve_annotation_id(label: Mapping[str, Any], project: Mapping[str, Any], 
         APIリクエストで使用するアノテーションID。
     """
     is_3dpc = project["input_data_type"] == InputDataType.CUSTOM.value and project["configuration"]["plugin_id"] == EditorPluginId.THREE_DIMENSION.value
-    if project["input_data_type"] == InputDataType.IMAGE.value and label["annotation_type"] == DefaultAnnotationType.CLASSIFICATION.value:
+    if project["input_data_type"] in {InputDataType.IMAGE.value, InputDataType.MOVIE.value} and label["annotation_type"] == DefaultAnnotationType.CLASSIFICATION.value:
         label_id = str(label["label_id"])
         if annotation_id is not None and annotation_id != label_id:
             logger.warning(f"全体アノテーションのannotation_idにはlabel_id='{label_id}'を使用します。指定されたannotation_id='{annotation_id}'は無視します。")

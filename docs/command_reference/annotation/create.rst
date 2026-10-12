@@ -39,8 +39,8 @@ JSON形式で指定する
 
     $ annofabcli annotation create --project_id p1 --json file://annotations.json --backup backup_dir/
 
-``annotation_id`` は通常、省略してください。画像全体アノテーションでは、指定された値に関係なく、ラベルの ``label_id`` を使用します。
-異なる値を指定した場合は警告を出力します。既存の画像全体アノテーションがある場合は作成をスキップします。
+``annotation_id`` は通常、省略してください。画像・動画プロジェクトの全体アノテーションでは、指定された値に関係なく、ラベルの ``label_id`` を使用します。
+異なる値を指定した場合は警告を出力します。既存の全体アノテーションがある場合は作成をスキップします。
 
 矩形などのアノテーションでは、省略した場合は新しいIDを自動で採番します。同じ入力を再実行したときの重複を避けるには、固定の ``annotation_id`` を指定してください。
 
@@ -58,7 +58,7 @@ CSV形式で指定する
     input_data_id,Yes,
     label,Yes,ラベル名（英語）
     data,Yes,アノテーションdata（JSON形式）
-    annotation_id,No,画像全体アノテーションでは指定不要（label_idを使用）
+    annotation_id,No,画像・動画の全体アノテーションでは指定不要（label_idを使用）
     attributes,No,属性名と値のオブジェクト（JSON形式）
     editor_props,No,エディタ用プロパティのオブジェクト（JSON形式）
 

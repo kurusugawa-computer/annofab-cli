@@ -30,7 +30,8 @@ project: dict[str, Any] = {
 
 @pytest.mark.parametrize("annotation_id", [None, "fcb847a5-5607-4467-a72b-fc11fb5cfbab", "wrong_id", ""])
 @pytest.mark.parametrize("has_existing_annotation", [False, True])
-def test_create_request_body__全体アノテーションはlabel_idで作成または既存判定する(annotation_id, has_existing_annotation, caplog):
+@pytest.mark.parametrize("input_data_type", ["image", "movie"])
+def test_create_request_body__全体アノテーションはlabel_idで作成または既存判定する(annotation_id, has_existing_annotation, input_data_type, caplog):
     label_id = "fcb847a5-5607-4467-a72b-fc11fb5cfbab"
     existing_detail = {"annotation_id": label_id, "label_id": label_id, "additional_data_list": [], "body": {"_type": "Inner", "data": {"_type": "Classification"}}}
     editor_annotation = {
@@ -40,7 +41,7 @@ def test_create_request_body__全体アノテーションはlabel_idで作成ま
         "updated_datetime": "2026-10-12T00:00:00+09:00",
         "details": [existing_detail] if has_existing_annotation else [],
     }
-    converter = CreateAnnotationConverter(project, annotation_specs, default_editor_props={})
+    converter = CreateAnnotationConverter({**project, "input_data_type": input_data_type}, annotation_specs, default_editor_props={})
     items = [CreateAnnotationItem(task_id="t1", input_data_id="i1", annotation_id=annotation_id, label="whole", data={"_type": "Classification"})]
 
     actual = create_request_body(editor_annotation, items, converter=converter)

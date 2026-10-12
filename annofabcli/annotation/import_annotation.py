@@ -944,7 +944,7 @@ def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse
     subcommand_help = "アノテーションをインポートします。"
     description = (
         "アノテーションをインポートします。アノテーションのフォーマットは、Simpleアノテーションと同じフォルダ構成のzipファイルまたはディレクトリです。"
-        "画像全体アノテーションのannotation_idは省略を推奨します。省略するとラベルのlabel_idを使用します。指定する場合はlabel_idと一致させる必要があります。"
+        "画像・動画プロジェクトの全体アノテーションのannotation_idは省略を推奨します。省略するとラベルのlabel_idを使用します。指定する場合はlabel_idと一致させる必要があります。"
         "ただし、作業中状態のタスクはインポートできません。"
         "``--include_complete_task`` を指定すれば、完了状態のタスクにもインポートできます。"
         "``--include_break_task`` を指定すれば、休憩中状態のタスクにもインポートできます。"

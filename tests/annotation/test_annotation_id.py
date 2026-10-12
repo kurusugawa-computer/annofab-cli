@@ -8,9 +8,10 @@ from annofabcli.annotation.annotation_id import resolve_annotation_id
 
 
 @pytest.mark.parametrize("annotation_id", [None, "label_id", "wrong_id", ""])
-def test_resolve_annotation_id__全体アノテーションはlabel_idを使用する(annotation_id, caplog):
+@pytest.mark.parametrize("input_data_type", ["image", "movie"])
+def test_resolve_annotation_id__全体アノテーションはlabel_idを使用する(annotation_id, input_data_type, caplog):
     label = {"annotation_type": "classification", "label_id": "label_id"}
-    project = {"input_data_type": "image", "configuration": {"plugin_id": None}}
+    project = {"input_data_type": input_data_type, "configuration": {"plugin_id": None}}
 
     actual = resolve_annotation_id(label, project, annotation_id)
 
@@ -49,14 +50,3 @@ def test_resolve_annotation_id__画像の矩形アノテーションはUUIDを�
     actual = resolve_annotation_id(label, project, annotation_id)
 
     assert str(uuid.UUID(actual, version=4)) == actual
-
-
-@pytest.mark.parametrize("annotation_id", [None, "specified_id"])
-def test_resolve_annotation_id__動画の全体アノテーションは指定IDを維持する(annotation_id, caplog):
-    label = {"annotation_type": "classification", "label_id": "label_id"}
-    project = {"input_data_type": "movie", "configuration": {"plugin_id": None}}
-
-    actual = resolve_annotation_id(label, project, annotation_id)
-
-    assert actual == (annotation_id if annotation_id is not None else "label_id")
-    assert not caplog.records
