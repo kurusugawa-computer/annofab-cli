@@ -5,7 +5,7 @@ annotation create
 Description
 =================================
 各アノテーションを新規作成します。既存アノテーションは更新または削除しません。
-入力の ``annotation_id`` が既存アノテーションと一致する場合、そのアノテーションは作成せずにスキップします。
+作成するアノテーションの ``annotation_id`` が既存アノテーションと一致する場合、そのアノテーションは作成せずにスキップします。
 外部ファイルが必要な塗りつぶしアノテーションなどは、このコマンドではサポートしていません。
 
 Examples
@@ -39,7 +39,10 @@ JSON形式で指定する
 
     $ annofabcli annotation create --project_id p1 --json file://annotations.json --backup backup_dir/
 
-``annotation_id`` は任意です。省略した場合は新しいIDを自動で採番します。同じ入力を再実行したときの重複を避けるには、安定した ``annotation_id`` を指定してください。
+``annotation_id`` は通常、省略してください。画像・動画プロジェクトの全体アノテーションでは、指定された値に関係なく、ラベルの ``label_id`` を使用します。
+異なる値を指定した場合は警告を出力します。既存の全体アノテーションがある場合は作成をスキップします。
+
+矩形などのアノテーションでは、省略した場合は新しいIDを自動で採番します。同じ入力を再実行したときの重複を避けるには、固定の ``annotation_id`` を指定してください。
 
 休憩中状態のタスクは既定ではスキップします。作成対象に含めるには ``--include_break_task`` を指定してください。
 
@@ -55,7 +58,7 @@ CSV形式で指定する
     input_data_id,Yes,
     label,Yes,ラベル名（英語）
     data,Yes,アノテーションdata（JSON形式）
-    annotation_id,No,
+    annotation_id,No,画像・動画の全体アノテーションでは指定不要（label_idを使用）
     attributes,No,属性名と値のオブジェクト（JSON形式）
     editor_props,No,エディタ用プロパティのオブジェクト（JSON形式）
 
