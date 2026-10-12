@@ -82,6 +82,7 @@
 - `annofabcli annotation_zip count_annotation_attribute_filled`: 値が入力されている属性の個数を、タスクごとまたは入力データごとに集計します。
 - `annofabcli annotation_zip count_annotation_by_attribute_value`: 属性値ごとにアノテーション数を出力します。
 - `annofabcli annotation_zip count_annotation_by_label`: ラベルごとにアノテーション数を出力します。
+- `annofabcli annotation_zip diff`: アノテーションZIPの差分を出力します。
 - `annofabcli annotation_zip filter`: アノテーションzipから特定のファイルを絞り込んで、zip展開します。
 - `annofabcli annotation_zip list_3d_bounding_box_annotation`: アノテーションZIPから3Dバウンディングボックス（CUBOID）アノテーションの座標情報を出力します。
 - `annofabcli annotation_zip list_3d_segment_annotation`: アノテーションZIPから3次元セグメントアノテーションの情報を出力します。
