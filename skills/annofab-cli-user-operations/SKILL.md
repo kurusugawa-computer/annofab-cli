@@ -30,7 +30,7 @@ description: ユーザーからAnnofab上の情報取得やリソース操作を
 * 属性を追加するには、先にラベルを追加する必要があります。
 
 ### 属性の制約の追加
-* `annotation_specs add_attribute_constraint`コマンドに属性制約を表したJSONを指定して、アノテーション仕様に制約を追加します。
+* `annotation_specs add_attribute_restriction`コマンドに属性制約を表したJSONを指定して、アノテーション仕様に制約を追加します。
 * 属性制約を表したJSONは、`annofabapi.util.attribute_restrictions`で生成してください。このライブラリを使うことで、使用できない制約（トラッキングID属性でのMatches（正規表現に一致する）など）のJSONを間違えて出力してしまうことを防げます。
 
 ```
