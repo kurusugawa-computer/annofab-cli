@@ -16,6 +16,7 @@ from annofabapi.util.annotation_specs import get_label_name_en
 
 import annofabcli.common.cli
 from annofabcli.annotation_specs.color import RgbColor, hex_to_rgb
+from annofabcli.annotation_specs.insertion import get_insertion_index
 from annofabcli.annotation_specs.utils import create_name
 from annofabcli.common.annofab.annotation_specs import keybind_to_api_keybind, validate_keybind_input
 from annofabcli.common.cli import (
@@ -339,6 +340,7 @@ def build_request_body_for_add_label(
     resolved_new_label_input: ResolvedNewLabelInput,
     label_name_en: str,
     comment: str | None,
+    before_label_name_en: str | None = None,
 ) -> dict[str, Any]:
     """
     ラベル追加用の request body を生成する。
@@ -347,13 +349,15 @@ def build_request_body_for_add_label(
         annotation_specs: 既存のアノテーション仕様
         resolved_new_label_input: 解決済み新規ラベル入力
         label_name_en: ラベル英語名
+        before_label_name_en: 挿入先の基準となる既存要素の英語名
         comment: 変更コメント
 
     Returns:
         Annofab API に渡す request body
     """
+    insertion_index = get_insertion_index([get_label_name_en(label) for label in annotation_specs["labels"]], before_name=before_label_name_en, context="ラベル一覧")
     request_body = copy.deepcopy(annotation_specs)
-    request_body["labels"].append(resolved_new_label_input.new_label)
+    request_body["labels"].insert(insertion_index, resolved_new_label_input.new_label)
     if comment is None:
         comment = create_comment_from_label(label_name_en)
     request_body["comment"] = comment
@@ -389,6 +393,7 @@ class AddLabelMain(CommandLineWithConfirm):
         keybind: dict[str, Any] | None = None,
         field_values: dict[str, Any] | None = None,
         comment: str | None = None,
+        before_label_name_en: str | None = None,
     ) -> bool:
         """
         ラベルを追加してアノテーション仕様を更新する。
@@ -402,6 +407,7 @@ class AddLabelMain(CommandLineWithConfirm):
             color_code: ``#RRGGBB`` 形式のカラーコード
             keybind: 新規ラベルに設定するkeybind
             field_values: 新規ラベルに設定するfield_values
+            before_label_name_en: 挿入先の基準となる既存要素の英語名
             comment: 変更コメント
 
         Returns:
@@ -424,15 +430,17 @@ class AddLabelMain(CommandLineWithConfirm):
         )
 
         confirm_message = f"ラベル名(英語)='{label_name_en}', label_id='{resolved_new_label_input.label_id}', annotation_type='{annotation_type}' のラベルを追加します。よろしいですか？"
-        if not self.confirm_processing(confirm_message):
-            return False
-
         request_body = build_request_body_for_add_label(
             old_annotation_specs,
             resolved_new_label_input=resolved_new_label_input,
             label_name_en=label_name_en,
             comment=comment,
+            before_label_name_en=before_label_name_en,
         )
+
+        if not self.confirm_processing(confirm_message):
+            return False
+
         self.service.api.put_annotation_specs(self.project_id, query_params={"v": "3"}, request_body=request_body)
         logger.info(f"ラベルを追加しました。 :: label_name_en='{label_name_en}', label_id='{resolved_new_label_input.label_id}', annotation_type='{annotation_type}'")
         return True
@@ -460,6 +468,7 @@ class AddLabel(CommandLine):
             keybind=keybind,
             field_values=field_values,
             comment=args.comment,
+            before_label_name_en=args.before_label_name_en,
         )
 
 
@@ -492,6 +501,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
             " field_valuesのフォーマットはWebAPIの ``AnnotationTypeFieldValue`` を参照してください。"
         ),
     )
+    parser.add_argument("--before_label_name_en", type=str, help="基準となる既存ラベルの英語名。このラベルの直前に入力順で追加します。一意な英語名のラベルを指定してください。")
     parser.add_argument("--comment", type=str, help="アノテーション仕様の変更内容を説明するコメント。未指定の場合、自動でコメントが生成されます。")
 
     parser.set_defaults(subcommand_func=main)

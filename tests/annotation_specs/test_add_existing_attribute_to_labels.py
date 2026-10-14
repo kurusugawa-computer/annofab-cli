@@ -5,8 +5,10 @@ import json
 from pathlib import Path
 
 import pytest
+from annofabapi.util.annotation_specs import get_attribute_name_en
 
 from annofabcli.annotation_specs.add_existing_attribute_to_labels import (
+    ResolvedExistingAttributeToLabelsInput,
     build_request_body_for_add_existing_attribute_to_labels,
     resolve_existing_attribute_to_labels_input,
 )
@@ -146,3 +148,16 @@ class TestBuildRequestBodyForAddExistingAttributeToLabels:
         bus_label = next(label for label in actual["labels"] if label["label_id"] == "22b5189b-af7b-4d9c-83a5-b92f122170ec")
         assert bus_label["additional_data_definitions"] == ["54fa5e97-6f88-49a4-aeb0-a91a15d11528"]
         assert actual["comment"] == "custom"
+
+
+def test_existing_attribute_before_in_multiple_labels(annotation_specs: dict) -> None:
+    attributes = annotation_specs["additionals"]
+    new_id, anchor_id, other_id = [a["additional_data_definition_id"] for a in attributes[:3]]
+    labels = annotation_specs["labels"][:2]
+    labels[0]["additional_data_definitions"] = [other_id, anchor_id]
+    labels[1]["additional_data_definitions"] = [anchor_id]
+    resolved = ResolvedExistingAttributeToLabelsInput(target_attribute=attributes[0], target_labels=labels)
+    actual = build_request_body_for_add_existing_attribute_to_labels(annotation_specs, resolved_input=resolved, comment=None, before_attribute_name_en=get_attribute_name_en(attributes[1]))
+    assert actual["labels"][0]["additional_data_definitions"] == [other_id, new_id, anchor_id]
+    assert actual["labels"][1]["additional_data_definitions"] == [new_id, anchor_id]
+    assert actual["additionals"] == attributes

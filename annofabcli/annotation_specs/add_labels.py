@@ -25,6 +25,7 @@ from annofabcli.annotation_specs.add_label import (
     validate_new_label,
 )
 from annofabcli.annotation_specs.color import RgbColor, hex_to_rgb
+from annofabcli.annotation_specs.insertion import get_insertion_index
 from annofabcli.common.annofab.annotation_specs import validate_keybind_input
 from annofabcli.common.cli import (
     ArgumentParser,
@@ -388,6 +389,7 @@ def build_request_body_for_add_labels(
     *,
     resolved_label_inputs: Sequence[LabelInput],
     comment: str | None,
+    before_label_name_en: str | None = None,
 ) -> dict[str, Any]:
     """
     複数ラベル追加用の request body を生成する。
@@ -395,11 +397,13 @@ def build_request_body_for_add_labels(
     Args:
         annotation_specs: 既存のアノテーション仕様
         resolved_label_inputs: ``annotation_type`` 解決済みのラベル一覧
+        before_label_name_en: 挿入先の基準となる既存要素の英語名
         comment: 変更コメント
 
     Returns:
         Annofab API に渡す request body
     """
+    insertion_index = get_insertion_index([get_label_name_en(label) for label in annotation_specs["labels"]], before_name=before_label_name_en, context="ラベル一覧")
     request_body = copy.deepcopy(annotation_specs)
     existing_label_names = {get_label_name_en(label) for label in request_body["labels"]}
     input_label_name_ens = [label.label_name_en for label in resolved_label_inputs]
@@ -425,7 +429,8 @@ def build_request_body_for_add_labels(
             keybind=label_input.keybind,
             field_values=label_input.field_values,
         )
-        request_body["labels"].append(new_label)
+        request_body["labels"].insert(insertion_index, new_label)
+        insertion_index += 1
 
     if comment is None:
         comment = create_comment_from_labels(resolved_label_inputs)
@@ -456,6 +461,7 @@ class AddLabelsMain(CommandLineWithConfirm):
         label_inputs: Sequence[LabelInput],
         annotation_type: str | None = None,
         comment: str | None = None,
+        before_label_name_en: str | None = None,
     ) -> bool:
         """
         複数ラベルを追加してアノテーション仕様を更新する。
@@ -463,6 +469,7 @@ class AddLabelsMain(CommandLineWithConfirm):
         Args:
             label_inputs: 追加するラベル一覧
             annotation_type: 追加するラベルのアノテーション種類
+            before_label_name_en: 挿入先の基準となる既存要素の英語名
             comment: 変更コメント
 
         Returns:
@@ -479,14 +486,16 @@ class AddLabelsMain(CommandLineWithConfirm):
         annotation_types = sorted({cast(str, label.annotation_type) for label in resolved_label_inputs})
 
         confirm_message = f"{len(label_inputs)} 件のラベルを追加します。 label_name_en={input_label_name_ens}, annotation_types={annotation_types}。よろしいですか？"
-        if not self.confirm_processing(confirm_message):
-            return False
-
         request_body = build_request_body_for_add_labels(
             old_annotation_specs,
             resolved_label_inputs=resolved_label_inputs,
             comment=comment,
+            before_label_name_en=before_label_name_en,
         )
+
+        if not self.confirm_processing(confirm_message):
+            return False
+
         self.service.api.put_annotation_specs(self.project_id, query_params={"v": "3"}, request_body=request_body)
         logger.info(f"{len(label_inputs)} 件のラベルを追加しました。 :: label_name_ens={input_label_name_ens}, annotation_types={annotation_types}")
         return True
@@ -516,6 +525,7 @@ class AddLabels(CommandLine):
             label_inputs=label_inputs,
             annotation_type=args.annotation_type,
             comment=args.comment,
+            before_label_name_en=args.before_label_name_en,
         )
 
 
@@ -580,6 +590,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         choices=ANNOTATION_TYPE_CHOICES,
         help=f"追加するラベルの既定のアノテーション種類。 ``--label_name_en`` を指定する場合は必須です。 JSON/CSV側にも ``annotation_type`` を指定できます。\n{create_annotation_type_help()}",
     )
+    parser.add_argument("--before_label_name_en", type=str, help="基準となる既存ラベルの英語名。このラベルの直前に入力順で追加します。一意な英語名のラベルを指定してください。")
     parser.add_argument("--comment", type=str, help="アノテーション仕様の変更内容を説明するコメント。未指定の場合、自動でコメントが生成されます。")
 
     parser.set_defaults(subcommand_func=main)

@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import json
+from copy import deepcopy
 from pathlib import Path
 
 import pytest
+from annofabapi.util.annotation_specs import get_english_message
 
 from annofabcli.annotation_specs.add_choice_attribute import ChoiceAttributeInput
 from annofabcli.annotation_specs.add_choices_to_attributes import (
@@ -184,3 +186,41 @@ class TestReadAttributesJson:
     def test_read_attributes_json__unexpected_key(self) -> None:
         with pytest.raises(ValueError):
             read_attributes_json(f'[{{"attribute_id":"{TYPE_ATTRIBUTE_ID}","choices":[{{"choice_id":"xlarge","choice_name_en":"xlarge"}}],"delete":true}}]')
+
+
+def test_add_choices_to_attributes_with_individual_positions(annotation_specs: dict) -> None:
+    first = next(a for a in annotation_specs["additionals"] if a["type"] in {"choice", "select"})
+    second = deepcopy(first)
+    second["additional_data_definition_id"] = "second"
+    annotation_specs["additionals"].append(second)
+    original = deepcopy(annotation_specs)
+    inputs = read_attributes_json(
+        json.dumps(
+            [
+                {
+                    "attribute_id": a["additional_data_definition_id"],
+                    "before_choice_name_en": get_english_message(a["choices"][i]["name"]),
+                    "choices": [{"choice_id": "new1", "choice_name_en": "new1"}, {"choice_id": "new2", "choice_name_en": "new2"}],
+                }
+                for i, a in enumerate([first, second])
+            ]
+        )
+    )
+    resolved = resolve_attribute_choices_inputs(annotation_specs, attribute_choices_inputs=inputs)
+    actual = build_request_body_for_add_choices_to_attributes(annotation_specs, resolved_added_choices_inputs=resolved, comment=None)
+    for index, attribute in enumerate([first, second]):
+        updated = next(a for a in actual["additionals"] if a["additional_data_definition_id"] == attribute["additional_data_definition_id"])
+        expected = [choice["choice_id"] for choice in attribute["choices"]]
+        expected[index:index] = ["new1", "new2"]
+        assert [choice["choice_id"] for choice in updated["choices"]] == expected
+        assert updated["default"] == attribute["default"]
+    assert annotation_specs == original
+
+
+def test_batch_choices_invalid_position_does_not_update(annotation_specs: dict) -> None:
+    attribute = next(a for a in annotation_specs["additionals"] if a["type"] in {"choice", "select"})
+    original = deepcopy(annotation_specs)
+    inputs = read_attributes_json(json.dumps([{"attribute_id": attribute["additional_data_definition_id"], "before_choice_name_en": "missing", "choices": [{"choice_name_en": "new"}]}]))
+    with pytest.raises(ValueError):
+        resolve_attribute_choices_inputs(annotation_specs, attribute_choices_inputs=inputs)
+    assert annotation_specs == original

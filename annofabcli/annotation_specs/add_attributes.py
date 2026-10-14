@@ -24,6 +24,7 @@ from annofabcli.annotation_specs.add_choice_attribute import (
 from annofabcli.annotation_specs.add_choice_attribute import (
     create_attribute as create_choice_attribute,
 )
+from annofabcli.annotation_specs.insertion import insert_attribute_into_labels, resolve_before_attribute_id
 from annofabcli.annotation_specs.utils import get_target_labels
 from annofabcli.common.annofab.annotation_specs import validate_keybind_input
 from annofabcli.common.cli import ArgumentParser, CommandLine, CommandLineWithConfirm, build_annofabapi_resource_and_login, get_json_from_args
@@ -75,6 +76,9 @@ class AttributeInput(BaseModel):
 
     keybind: dict[str, Any] | None = None
     """属性に設定するkeybind。"""
+
+    before_attribute_name_en: str | None = None
+    """基準となる既存属性の英語名。"""
 
     choices: list[ChoiceAttributeInput] | None = None
     """選択肢系属性のときに指定する選択肢一覧。"""
@@ -343,17 +347,25 @@ def build_request_body_for_add_attributes(
         Annofab API に渡す request body
     """
     request_body = copy.deepcopy(annotation_specs)
-    labels_by_id = {label["label_id"]: label for label in request_body["labels"]}
 
     for resolved_input in resolved_inputs:
-        request_body["additionals"].append(resolved_input.new_attribute)
+        before_attribute_id = resolve_before_attribute_id(
+            annotation_specs, target_labels=resolved_input.target_labels, before_attribute_name_en=resolved_input.attribute_input.before_attribute_name_en
+        )
+        attribute_ids = [attribute["additional_data_definition_id"] for attribute in request_body["additionals"]]
+        index = len(attribute_ids) if before_attribute_id is None else attribute_ids.index(before_attribute_id)
+        request_body["additionals"].insert(index, resolved_input.new_attribute)
         target_label_names = [get_label_name_en(label) for label in resolved_input.target_labels]
         logger.debug(
             f"属性名(英語)='{resolved_input.attribute_input.attribute_name_en}', 属性ID='{resolved_input.new_attribute['additional_data_definition_id']}', "
             f"対象ラベル={target_label_names} を追加します。"
         )
-        for target_label in resolved_input.target_labels:
-            labels_by_id[target_label["label_id"]]["additional_data_definitions"].append(resolved_input.new_attribute["additional_data_definition_id"])
+        insert_attribute_into_labels(
+            request_body["labels"],
+            target_label_ids={label["label_id"] for label in resolved_input.target_labels},
+            attribute_id=resolved_input.new_attribute["additional_data_definition_id"],
+            before_attribute_id=before_attribute_id,
+        )
 
     if comment is None:
         comment = create_comment_from_attributes([e.attribute_input for e in resolved_inputs])
@@ -404,14 +416,15 @@ class AddAttributesMain(CommandLineWithConfirm):
 
         input_attribute_name_ens = [attribute.attribute_name_en for attribute in attribute_inputs]
         confirm_message = f"{len(attribute_inputs)} 件の属性を追加します。 attribute_name_ens={input_attribute_name_ens}。よろしいですか？"
-        if not self.confirm_processing(confirm_message):
-            return False
-
         request_body = build_request_body_for_add_attributes(
             old_annotation_specs,
             resolved_inputs=resolved_inputs,
             comment=comment,
         )
+
+        if not self.confirm_processing(confirm_message):
+            return False
+
         self.service.api.put_annotation_specs(self.project_id, query_params={"v": "3"}, request_body=request_body)
         logger.info(f"{len(attribute_inputs)} 件の属性を追加しました。 :: attribute_name_ens={input_attribute_name_ens}")
         return True

@@ -21,6 +21,7 @@ from annofabcli.common.utils import duplicated_set
 logger = logging.getLogger(__name__)
 
 ATTRIBUTE_CHOICES_JSON_KEYS = {
+    "before_choice_name_en",
     "attribute_id",
     "choices",
 }
@@ -39,6 +40,9 @@ class AttributeChoicesInput:
     choices: list[ChoiceAttributeInput]
     """追加する選択肢一覧。"""
 
+    before_choice_name_en: str | None = None
+    """基準となる既存選択肢の英語名。"""
+
 
 def validate_attribute_choices_input(attribute_choices_input: AttributeChoicesInput, *, index: int) -> None:
     """
@@ -46,6 +50,8 @@ def validate_attribute_choices_input(attribute_choices_input: AttributeChoicesIn
     """
     if attribute_choices_input.attribute_id is None:
         raise ValueError(f"{index}件目の属性に `attribute_id` が指定されていません。")
+    if attribute_choices_input.before_choice_name_en is not None and not isinstance(attribute_choices_input.before_choice_name_en, str):
+        raise TypeError(f"{index}件目の属性の `before_choice_name_en` には文字列を指定してください。")
     if len(attribute_choices_input.choices) == 0:
         raise ValueError(f"{index}件目の属性の `choices` には選択肢を1件以上指定してください。")
 
@@ -84,6 +90,7 @@ def parse_attribute_choices_input_from_dict(data: dict[str, Any], *, index: int)
     attribute_choices_input = AttributeChoicesInput(
         attribute_id=data.get("attribute_id"),
         choices=parse_choices_from_dict(data, index=index),
+        before_choice_name_en=data.get("before_choice_name_en"),
     )
     validate_attribute_choices_input(attribute_choices_input, index=index)
     return attribute_choices_input
@@ -134,6 +141,7 @@ def resolve_attribute_choices_inputs(
             attribute_id=attribute_choices_input.attribute_id,
             attribute_name_en=None,
             choice_inputs=attribute_choices_input.choices,
+            before_choice_name_en=attribute_choices_input.before_choice_name_en,
         )
         for attribute_choices_input in attribute_choices_inputs
     ]
@@ -166,13 +174,11 @@ def build_request_body_for_add_choices_to_attributes(
     複数属性への選択肢追加用の request body を生成する。
     """
     request_body = copy.deepcopy(annotation_specs)
-    added_choices_by_attribute_id = {resolved_input.target_attribute["additional_data_definition_id"]: resolved_input.added_choices for resolved_input in resolved_added_choices_inputs}
-
-    for attribute in request_body["additionals"]:
-        added_choices = added_choices_by_attribute_id.get(attribute["additional_data_definition_id"])
-        if added_choices is None:
-            continue
-        attribute["choices"].extend(added_choices)
+    attributes_by_id = {attribute["additional_data_definition_id"]: attribute for attribute in request_body["additionals"]}
+    for resolved_input in resolved_added_choices_inputs:
+        attribute = attributes_by_id[resolved_input.target_attribute["additional_data_definition_id"]]
+        index = resolved_input.insertion_index
+        attribute["choices"][index:index] = resolved_input.added_choices
 
     if comment is None:
         comment = create_comment_for_add_choices_to_attributes(resolved_added_choices_inputs)

@@ -15,6 +15,7 @@ from annofabapi.util.annotation_specs import AnnotationSpecsAccessor, get_attrib
 
 import annofabcli.common.cli
 from annofabcli.annotation_specs.add_choice_attribute import ChoiceAttributeInput, build_choices, parse_keybind_in_csv, read_choices_json
+from annofabcli.annotation_specs.insertion import get_insertion_index
 from annofabcli.common.cli import ArgumentParser, CommandLine, CommandLineWithConfirm, build_annofabapi_resource_and_login
 from annofabcli.common.facade import AnnofabApiFacade
 
@@ -32,6 +33,9 @@ class ResolvedAddedChoicesInput:
 
     added_choices: list[dict[str, Any]]
     """追加する選択肢一覧。"""
+
+    insertion_index: int
+    """検証済みの選択肢の挿入位置。"""
 
 
 def create_comment_from_attribute(attribute_name_en: str, choice_name_ens: list[str]) -> str:
@@ -144,6 +148,7 @@ def resolve_added_choices_input(
     attribute_id: str | None,
     attribute_name_en: str | None,
     choice_inputs: Sequence[ChoiceAttributeInput],
+    before_choice_name_en: str | None = None,
 ) -> ResolvedAddedChoicesInput:
     """
     既存属性への追加選択肢を既存アノテーション仕様に対して解決する。
@@ -153,6 +158,7 @@ def resolve_added_choices_input(
         attribute_id: 追加先属性ID
         attribute_name_en: 追加先属性英語名
         choice_inputs: 追加する選択肢一覧
+        before_choice_name_en: 基準となる既存選択肢の英語名
 
     Returns:
         解決済み追加選択肢入力
@@ -171,7 +177,12 @@ def resolve_added_choices_input(
         target_attribute,
         added_choices=added_choices,
     )
-    return ResolvedAddedChoicesInput(target_attribute=dict(target_attribute), added_choices=added_choices)
+    insertion_index = get_insertion_index(
+        [get_english_message(choice["name"]) for choice in (target_attribute["choices"] or [])],
+        before_name=before_choice_name_en,
+        context=f"属性(英語)='{get_attribute_name_en(target_attribute)}' の選択肢一覧",
+    )
+    return ResolvedAddedChoicesInput(target_attribute=dict(target_attribute), added_choices=added_choices, insertion_index=insertion_index)
 
 
 def build_request_body_for_add_choices_to_attribute(
@@ -199,7 +210,8 @@ def build_request_body_for_add_choices_to_attribute(
     for attribute in request_body["additionals"]:
         if attribute["additional_data_definition_id"] != resolved_attribute_id:
             continue
-        attribute["choices"].extend(resolved_added_choices_input.added_choices)
+        index = resolved_added_choices_input.insertion_index
+        attribute["choices"][index:index] = resolved_added_choices_input.added_choices
         break
 
     if comment is None:
@@ -233,6 +245,7 @@ class AddChoicesToAttributeMain(CommandLineWithConfirm):
         choice_json: str | None,
         choice_csv: Path | None,
         comment: str | None = None,
+        before_choice_name_en: str | None = None,
     ) -> bool:
         """
         既存の選択肢系属性へ選択肢を追加して、アノテーション仕様を更新する。
@@ -242,6 +255,7 @@ class AddChoicesToAttributeMain(CommandLineWithConfirm):
             attribute_name_en: 追加先属性英語名
             choice_json: 追加する選択肢JSON
             choice_csv: 追加する選択肢CSV
+            before_choice_name_en: 基準となる既存選択肢の英語名
             comment: 変更コメント
 
         Returns:
@@ -265,6 +279,7 @@ class AddChoicesToAttributeMain(CommandLineWithConfirm):
             attribute_id=attribute_id,
             attribute_name_en=attribute_name_en,
             choice_inputs=choice_inputs,
+            before_choice_name_en=before_choice_name_en,
         )
 
         resolved_attribute_id = resolved_added_choices_input.target_attribute["additional_data_definition_id"]
@@ -274,14 +289,15 @@ class AddChoicesToAttributeMain(CommandLineWithConfirm):
             f"属性名(英語)='{resolved_attribute_name_en}', 属性ID='{resolved_attribute_id}' に "
             f"{len(resolved_added_choices_input.added_choices)} 件の選択肢 {added_choice_name_ens} を追加します。よろしいですか？"
         )
-        if not self.confirm_processing(confirm_message):
-            return False
-
         request_body = build_request_body_for_add_choices_to_attribute(
             old_annotation_specs,
             resolved_added_choices_input=resolved_added_choices_input,
             comment=comment,
         )
+
+        if not self.confirm_processing(confirm_message):
+            return False
+
         self.service.api.put_annotation_specs(self.project_id, query_params={"v": "3"}, request_body=request_body)
         logger.info(f"属性名(英語)='{resolved_attribute_name_en}', 属性ID='{resolved_attribute_id}' に {len(resolved_added_choices_input.added_choices)} 件の選択肢を追加しました。")
         return True
@@ -303,6 +319,7 @@ class AddChoicesToAttribute(CommandLine):
             choice_json=args.choice_json,
             choice_csv=args.choice_csv,
             comment=args.comment,
+            before_choice_name_en=args.before_choice_name_en,
         )
 
 
@@ -352,6 +369,9 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         ),
     )
 
+    parser.add_argument(
+        "--before_choice_name_en", type=str, help="基準となる既存選択肢の英語名。対象属性内のこの選択肢の直前に入力順で追加します。対象属性内で一意な英語名の選択肢を指定してください。"
+    )
     parser.add_argument("--comment", type=str, help="アノテーション仕様の変更内容を説明するコメント。未指定の場合、自動でコメントが生成されます。")
 
     parser.set_defaults(subcommand_func=main)

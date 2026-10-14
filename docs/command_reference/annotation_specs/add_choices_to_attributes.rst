@@ -9,7 +9,7 @@ Description
 複数属性への選択肢追加を1回のアノテーション仕様更新として実行できます。
 1つの属性にだけ選択肢を追加したい場合は :doc:`add_choices_to_attribute` も利用できます。
 
-``attribute_id`` 、既存選択肢、選択肢の並び順、属性の ``default_value`` は変更できません。
+``attribute_id`` 、既存選択肢の内容・相対的な並び順、属性の ``default_value`` は変更できません。
 属性の ``default_value`` を変更したい場合は :doc:`update_attributes` を利用してください。
 
 
@@ -75,6 +75,9 @@ JSON形式で指定する場合
     * - ``attribute_id``
       - 必須
       - 選択肢を追加する対象属性の ``attribute_id`` 。
+    * - ``before_choice_name_en``
+      - 任意
+      - 基準となる既存選択肢の英語名。この選択肢の直前に追加します。
     * - ``choices``
       - 必須
       - 追加する選択肢情報の配列。1件以上指定してください。
@@ -105,6 +108,27 @@ JSON形式で指定する場合
     * - ``is_default``
       - 任意
       - 指定されても無視されます。デフォルト値を変更したい場合は :doc:`update_attributes` を利用してください。
+
+
+追加位置の指定
+=================================
+
+JSONの各対象属性オブジェクトに、任意の ``before_choice_name_en`` を指定できます。
+各属性の ``choices`` 配列を入力順のまま、指定した既存選択肢の直前に挿入します。
+位置指定とエラー条件は :doc:`add_choices_to_attribute` と同じです。
+いずれかの属性の位置指定が不正な場合は、更新全体をエラーにします。
+
+.. code-block:: json
+
+    [
+        {
+            "attribute_id": "size_attribute_id",
+            "before_choice_name_en": "large",
+            "choices": [
+                {"choice_name_en": "medium"}
+            ]
+        }
+    ]
 
 
 Usage Details

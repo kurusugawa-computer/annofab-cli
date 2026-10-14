@@ -124,6 +124,22 @@ Examples
       - 3次元プロジェクト
 
 
+追加位置の指定
+=================================
+
+``--before_label_name_en`` に既存ラベルの英語名を指定すると、そのラベルの直前に追加します。
+未指定の場合は末尾に追加します。既存ラベル同士の相対的な順序は維持します。
+基準ラベルが存在しない場合や、英語名が一意でない場合は更新全体をエラーにします。
+
+.. code-block::
+
+    $ annofabcli annotation_specs add_label \
+     --project_id prj1 \
+     --label_name_en pedestrian \
+     --annotation_type bounding_box \
+     --before_label_name_en car
+
+
 Usage Details
 =================================
 

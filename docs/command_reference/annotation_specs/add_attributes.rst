@@ -79,6 +79,7 @@ JSON形式で指定する場合
 * ``label_ids`` : ``label_name_ens`` とどちらか一方が必須。属性を追加する対象ラベルの ``label_id`` 一覧。
 * ``attribute_name_ja`` : 任意。属性名（日本語）。
 * ``attribute_name_vi`` : 任意。属性名（ベトナム語）。
+* ``before_attribute_name_en`` : 任意。基準となる既存属性の英語名。この属性の直前に追加します。
 * ``attribute_id`` : 任意。属性ID。未指定の場合はUUIDv4が自動生成されます。
 * ``read_only`` : 任意。 ``true`` を指定すると読み込み専用の属性として追加します。未指定の場合は ``false`` です。
 * ``default_value`` : 任意。非選択肢系属性の初期値。 ``attribute_type`` が ``flag`` の場合は真偽値、 ``integer`` の場合は整数、その他の場合は文字列を指定します。 ``choice`` または ``select`` では指定できません。
@@ -93,6 +94,28 @@ JSON形式で指定する場合
   * ``keybind`` : 任意。選択肢に設定するキーボードショートカット。JSONオブジェクトを指定してください。
 
 ``attribute_type`` には、非選択肢系属性の値に加えて ``choice`` と ``select`` も指定できます。
+
+
+追加位置の指定
+=================================
+
+JSONの各属性オブジェクトに、任意の ``before_attribute_name_en`` を指定できます。
+位置指定とエラー条件は :doc:`add_attribute` と同じです。
+同じ基準属性の直前に複数属性を追加する場合は、JSON配列の入力順を維持します。
+基準には実行前から存在する属性を指定し、同じコマンドで追加する属性は指定できません。
+いずれかの属性の位置指定が不正な場合は、更新全体をエラーにします。
+新規属性内の選択肢は ``choices`` 配列の入力順で作成します。
+
+.. code-block:: json
+
+    [
+        {
+            "attribute_type": "flag",
+            "attribute_name_en": "new_flag",
+            "label_name_ens": ["car", "bike"],
+            "before_attribute_name_en": "unclear"
+        }
+    ]
 
 
 Usage Details

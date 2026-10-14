@@ -11,6 +11,7 @@ import annofabapi
 from annofabapi.util.annotation_specs import AnnotationSpecsAccessor, get_attribute_name_en, get_label_name_en
 
 import annofabcli.common.cli
+from annofabcli.annotation_specs.insertion import insert_attribute_into_labels, resolve_before_attribute_id
 from annofabcli.annotation_specs.utils import get_target_labels
 from annofabcli.common.cli import ArgumentParser, CommandLine, CommandLineWithConfirm, build_annofabapi_resource_and_login, get_list_from_args
 from annofabcli.common.facade import AnnofabApiFacade
@@ -119,6 +120,7 @@ def build_request_body_for_add_existing_attribute_to_labels(
     *,
     resolved_input: ResolvedExistingAttributeToLabelsInput,
     comment: str | None,
+    before_attribute_name_en: str | None = None,
 ) -> dict[str, Any]:
     """
     既存属性をラベルへ追加する request body を生成する。
@@ -126,6 +128,7 @@ def build_request_body_for_add_existing_attribute_to_labels(
     Args:
         annotation_specs: 既存のアノテーション仕様
         resolved_input: 解決済み入力
+        before_attribute_name_en: 挿入先の基準となる既存要素の英語名
         comment: 変更コメント
 
     Returns:
@@ -133,10 +136,13 @@ def build_request_body_for_add_existing_attribute_to_labels(
     """
     request_body = copy.deepcopy(annotation_specs)
     target_attribute_id = resolved_input.target_attribute["additional_data_definition_id"]
-    target_label_id_set = {label["label_id"] for label in resolved_input.target_labels}
-    for label in request_body["labels"]:
-        if label["label_id"] in target_label_id_set:
-            label["additional_data_definitions"].append(target_attribute_id)
+    before_attribute_id = resolve_before_attribute_id(annotation_specs, target_labels=resolved_input.target_labels, before_attribute_name_en=before_attribute_name_en)
+    insert_attribute_into_labels(
+        request_body["labels"],
+        target_label_ids={label["label_id"] for label in resolved_input.target_labels},
+        attribute_id=target_attribute_id,
+        before_attribute_id=before_attribute_id,
+    )
 
     attribute_name = get_attribute_name_en(resolved_input.target_attribute)
     label_names = [get_label_name_en(label) for label in resolved_input.target_labels]
@@ -171,6 +177,7 @@ class AddExistingAttributeToLabelsMain(CommandLineWithConfirm):
         label_ids: Sequence[str] | None,
         label_name_ens: Sequence[str] | None,
         comment: str | None = None,
+        before_attribute_name_en: str | None = None,
     ) -> bool:
         """
         既存属性を複数の既存ラベルへ追加して、アノテーション仕様を更新する。
@@ -180,6 +187,7 @@ class AddExistingAttributeToLabelsMain(CommandLineWithConfirm):
             attribute_name_en: 追加する属性英語名
             label_ids: 追加先ラベルID一覧。未指定時はNone
             label_name_ens: 追加先ラベル英語名一覧。未指定時はNone
+            before_attribute_name_en: 挿入先の基準となる既存要素の英語名
             comment: 変更コメント
 
         Returns:
@@ -201,14 +209,16 @@ class AddExistingAttributeToLabelsMain(CommandLineWithConfirm):
         attribute_name = get_attribute_name_en(resolved_input.target_attribute)
         label_names = [get_label_name_en(label) for label in resolved_input.target_labels]
         confirm_message = f"既存属性名(英語)='{attribute_name}', 属性ID='{target_attribute_id}' を、対象ラベル={label_names} に追加します。よろしいですか？"
-        if not self.confirm_processing(confirm_message):
-            return False
-
         request_body = build_request_body_for_add_existing_attribute_to_labels(
             old_annotation_specs,
             resolved_input=resolved_input,
             comment=comment,
+            before_attribute_name_en=before_attribute_name_en,
         )
+
+        if not self.confirm_processing(confirm_message):
+            return False
+
         self.service.api.put_annotation_specs(self.project_id, query_params={"v": "3"}, request_body=request_body)
         logger.info(f"既存属性名(英語)='{attribute_name}', 属性ID='{target_attribute_id}' を {len(resolved_input.target_labels)} 件のラベルに追加しました。")
         return True
@@ -233,6 +243,7 @@ class AddExistingAttributeToLabels(CommandLine):
             label_ids=label_ids,
             label_name_ens=label_name_ens,
             comment=args.comment,
+            before_attribute_name_en=args.before_attribute_name_en,
         )
 
 
@@ -284,6 +295,9 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         ),
     )
 
+    parser.add_argument(
+        "--before_attribute_name_en", type=str, help="基準となる既存属性の英語名。全対象ラベルでこの属性の直前に追加します。全対象ラベルに含まれる、一意な英語名の属性を指定してください。"
+    )
     parser.add_argument("--comment", type=str, help="アノテーション仕様の変更内容を説明するコメント。未指定の場合、自動でコメントが生成されます。")
 
     parser.set_defaults(subcommand_func=main)
