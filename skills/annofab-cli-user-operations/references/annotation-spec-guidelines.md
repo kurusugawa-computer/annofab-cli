@@ -17,7 +17,7 @@
 その際、できるだけラベルの順番とキーの順番が対応するようにしてください。
 
 ### `field_values`
-https://annofab-cli.readthedocs.io/ja/latest/command_reference/annotation_specs/update_label_field_values.html#annotation_specs_field_values_samples を参照して、設定できる`field_values`があれば設定してください。
+https://annofab-cli.readthedocs.io/ja/latest/command_reference/annotation_specs/update_label_field_values.html#annotation-specs-field-values-samples を参照して、設定できる`field_values`があれば設定してください。
 
 ## 属性の追加/変更
 * 属性を追加するには、先にラベルを追加する必要があります。
