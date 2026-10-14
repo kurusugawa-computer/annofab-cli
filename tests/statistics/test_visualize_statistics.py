@@ -1,5 +1,7 @@
+import json
 import logging
 from pathlib import Path
+from unittest.mock import Mock
 
 import annofabapi
 import pandas
@@ -10,11 +12,88 @@ from pandas.testing import assert_frame_equal
 from annofabcli.common.cli import COMMAND_LINE_ERROR_STATUS_CODE
 from annofabcli.common.user_info_mask import UserInfoMasker, create_masked_name
 from annofabcli.common.utils import read_multiheader_csv
+from annofabcli.statistics.visualization.annotation_count_api import AnnotationCountSource
 from annofabcli.statistics.visualization.dataframe.actual_worktime import ActualWorktime
+from annofabcli.statistics.visualization.dataframe.annotation_count import AnnotationCount
 from annofabcli.statistics.visualization.filtering_query import FilteringQuery
 from annofabcli.statistics.visualization.project_dir import ProjectDir, TaskCompletionCriteria
 from annofabcli.statistics.visualization.visualization_source_files import VisualizationSourceFiles
-from annofabcli.statistics.visualize_statistics import WriteCsvGraph, read_actual_worktime
+from annofabcli.statistics.visualize_statistics import VisualizingStatisticsMain, WriteCsvGraph, read_actual_worktime
+
+
+@pytest.fixture
+def annotation_count_sources(tmp_path):
+    service = Mock()
+    source = VisualizationSourceFiles(service, "prj1", tmp_path)
+    tasks = [
+        {"task_id": "selected", "phase": "acceptance", "status": "complete"},
+        {"task_id": "ignored", "phase": "acceptance", "status": "complete"},
+        {"task_id": "old", "phase": "acceptance", "status": "complete"},
+        {"task_id": "unfinished", "phase": "annotation", "status": "not_started"},
+    ]
+    source.task_json_path.write_text(json.dumps(tasks), encoding="utf-8")
+    histories = {
+        task["task_id"]: [
+            {
+                "phase": "annotation",
+                "account_id": "account1",
+                "accumulated_labor_time_milliseconds": "PT1H",
+                "started_datetime": "2020-01-01T00:00:00+09:00" if task["task_id"] == "old" else "2026-10-01T00:00:00+09:00",
+            }
+        ]
+        for task in tasks
+    }
+    source.task_history_json_path.write_text(json.dumps(histories), encoding="utf-8")
+    main = VisualizingStatisticsMain(
+        service,
+        temp_dir=tmp_path,
+        task_completion_criteria=TaskCompletionCriteria.ACCEPTANCE_COMPLETED,
+        filtering_query=FilteringQuery(start_date="2026-01-01", ignored_task_ids={"ignored"}),
+    )
+    return main, source, service
+
+
+def test_api_count_only_requests_selected_tasks(annotation_count_sources):
+    main, source, service = annotation_count_sources
+    service.wrapper.get_all_annotation_list.return_value = [{}] * 7
+    actual = main._prepare_annotation_count(source, None, AnnotationCountSource.API)
+    assert actual.df.to_dict("records") == [{"project_id": "prj1", "task_id": "selected", "annotation_count": 7}]
+    queries = [call.kwargs["query_params"]["query"] for call in service.wrapper.get_all_annotation_list.call_args_list]
+    assert [query["task_id"] for query in queries] == ["selected"]
+
+
+def test_csv_count_does_not_require_excluded_tasks_or_call_api(annotation_count_sources):
+    main, source, service = annotation_count_sources
+    counts = AnnotationCount(pandas.DataFrame([("prj1", "selected", 0)], columns=AnnotationCount.columns()))
+    assert main._prepare_annotation_count(source, counts, AnnotationCountSource.AUTO).df["annotation_count"].tolist() == [0]
+    service.wrapper.get_all_annotation_list.assert_not_called()
+    service.api.get_annotation_specs.assert_not_called()
+
+
+def test_csv_missing_selected_tasks_fails_without_api_fallback(annotation_count_sources):
+    main, source, service = annotation_count_sources
+    with pytest.raises(ValueError):
+        main._prepare_annotation_count(source, AnnotationCount.empty(), AnnotationCountSource.AUTO)
+    service.wrapper.get_all_annotation_list.assert_not_called()
+
+
+def test_zip_count_does_not_call_api(annotation_count_sources):
+    main, source, service = annotation_count_sources
+    source.annotation_zip_path.touch()
+    assert main._prepare_annotation_count(source, None, AnnotationCountSource.ZIP) is None
+    service.wrapper.get_all_annotation_list.assert_not_called()
+
+
+def test_api_source_files_cannot_be_reused_as_zip_without_archive(annotation_count_sources):
+    main, source, service = annotation_count_sources
+    service.wrapper.get_all_annotation_list.return_value = [{}] * 7
+    assert main._prepare_annotation_count(source, None, AnnotationCountSource.API).df["annotation_count"].tolist() == [7]
+    assert not source.annotation_zip_path.exists()
+
+    service.wrapper.get_all_annotation_list.reset_mock()
+    with pytest.raises(FileNotFoundError):
+        main._prepare_annotation_count(source, None, AnnotationCountSource.ZIP)
+    service.wrapper.get_all_annotation_list.assert_not_called()
 
 
 @pytest.mark.parametrize("option_name", ["actual_worktime_csv", "labor_csv"])
