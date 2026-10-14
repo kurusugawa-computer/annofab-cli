@@ -79,6 +79,28 @@ Examples
 * ``tracking`` : トラッキングID
 * ``link`` : アノテーションリンク
 
+追加位置の指定
+=================================
+
+``--before_attribute_name_en`` に既存属性の英語名を指定すると、その属性の直前に追加します。
+未指定の場合は末尾に追加します。
+属性定義全体の一覧と各対象ラベルの属性一覧の両方に適用します。
+既存属性同士の相対的な順序は維持します。
+
+基準属性は、コマンド実行前から存在し、属性定義全体で英語名が一意である必要があります。
+全対象ラベルに基準属性が含まれている必要があり、1つでも含まれない場合は更新全体をエラーにします。
+基準属性が存在しない場合や英語名が重複する場合も、アノテーション仕様は更新しません。
+
+.. code-block::
+
+    $ annofabcli annotation_specs add_attribute \
+     --project_id prj1 \
+     --attribute_type flag \
+     --attribute_name_en new_flag \
+     --label_name_en car bike \
+     --before_attribute_name_en unclear
+
+
 Usage Details
 =================================
 

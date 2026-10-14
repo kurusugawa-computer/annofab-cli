@@ -2,9 +2,11 @@ from __future__ import annotations
 
 import json
 import uuid
+from copy import deepcopy
 from pathlib import Path
 
 import pytest
+from annofabapi.util.annotation_specs import get_label_name_en
 
 from annofabcli.annotation_specs import add_label
 from annofabcli.annotation_specs.add_label import (
@@ -304,3 +306,26 @@ class TestValidateKeybindInput:
     def test_keybind_code_is_required(self) -> None:
         with pytest.raises(ValueError):
             add_label.validate_keybind_input({"ctrl": True})
+
+
+@pytest.mark.parametrize("index", [0, 1])
+def test_add_label_before(annotation_specs: dict, index: int) -> None:
+    original = deepcopy(annotation_specs)
+    resolved = resolve_new_label_input(annotation_specs, label_name_en="new", annotation_type="bounding_box", label_id="new", label_name_ja=None, color_code=None)
+    before = get_label_name_en(annotation_specs["labels"][index])
+    actual = build_request_body_for_add_label(annotation_specs, resolved_new_label_input=resolved, label_name_en="new", comment=None, before_label_name_en=before)
+    expected = [label["label_id"] for label in annotation_specs["labels"]]
+    expected.insert(index, "new")
+    assert [label["label_id"] for label in actual["labels"]] == expected
+    assert annotation_specs == original
+
+
+@pytest.mark.parametrize("ambiguous", [False, True])
+def test_invalid_before_label(annotation_specs: dict, *, ambiguous: bool) -> None:
+    before = "missing"
+    if ambiguous:
+        annotation_specs["labels"].append(deepcopy(annotation_specs["labels"][0]))
+        before = get_label_name_en(annotation_specs["labels"][0])
+    resolved = resolve_new_label_input(annotation_specs, label_name_en="new", annotation_type="bounding_box", label_id="new", label_name_ja=None, color_code=None)
+    with pytest.raises(ValueError):
+        build_request_body_for_add_label(annotation_specs, resolved_new_label_input=resolved, label_name_en="new", comment=None, before_label_name_en=before)

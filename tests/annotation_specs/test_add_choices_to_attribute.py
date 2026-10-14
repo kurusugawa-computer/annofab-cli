@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import json
+from copy import deepcopy
 from pathlib import Path
 
 import pytest
+from annofabapi.util.annotation_specs import get_english_message
 
 from annofabcli.annotation_specs.add_choice_attribute import read_choices_json
 from annofabcli.annotation_specs.add_choices_to_attribute import (
@@ -151,3 +153,40 @@ class TestBuildRequestBodyForAddChoicesToAttribute:
 
         updated_attribute = next(attribute for attribute in actual["additionals"] if attribute["additional_data_definition_id"] == "71620647-98cf-48ad-b43b-4af425a24f32")
         assert updated_attribute["default"] == "08ec927c-18e6-4bba-837a-b16de7061580"
+
+
+@pytest.mark.parametrize("index", [0, 1])
+def test_add_choices_before_preserves_order_and_default(annotation_specs: dict, index: int) -> None:
+    attribute = next(a for a in annotation_specs["additionals"] if a["type"] in {"choice", "select"})
+    original = deepcopy(annotation_specs)
+    resolved = resolve_added_choices_input(
+        annotation_specs,
+        attribute_id=attribute["additional_data_definition_id"],
+        attribute_name_en=None,
+        choice_inputs=read_choices_json('[{"choice_id":"new1","choice_name_en":"new1"},{"choice_id":"new2","choice_name_en":"new2"}]'),
+        before_choice_name_en=get_english_message(attribute["choices"][index]["name"]),
+    )
+    actual = build_request_body_for_add_choices_to_attribute(annotation_specs, resolved_added_choices_input=resolved, comment=None)
+    updated = next(a for a in actual["additionals"] if a["additional_data_definition_id"] == attribute["additional_data_definition_id"])
+    expected = [choice["choice_id"] for choice in attribute["choices"]]
+    expected[index:index] = ["new1", "new2"]
+    assert [choice["choice_id"] for choice in updated["choices"]] == expected
+    assert updated["default"] == attribute["default"]
+    assert annotation_specs == original
+
+
+@pytest.mark.parametrize("ambiguous", [False, True])
+def test_invalid_before_choice(annotation_specs: dict, *, ambiguous: bool) -> None:
+    attribute = next(a for a in annotation_specs["additionals"] if a["type"] in {"choice", "select"})
+    before = "missing"
+    if ambiguous:
+        attribute["choices"].append(deepcopy(attribute["choices"][0]))
+        before = get_english_message(attribute["choices"][0]["name"])
+    with pytest.raises(ValueError):
+        resolve_added_choices_input(
+            annotation_specs,
+            attribute_id=attribute["additional_data_definition_id"],
+            attribute_name_en=None,
+            choice_inputs=read_choices_json('[{"choice_name_en":"new"}]'),
+            before_choice_name_en=before,
+        )

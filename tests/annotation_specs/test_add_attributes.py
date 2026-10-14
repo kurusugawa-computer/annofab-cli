@@ -2,11 +2,13 @@ from __future__ import annotations
 
 import json
 import logging
+from copy import deepcopy
 from pathlib import Path
 from typing import Any, cast
 
 import pytest
 from annofabapi.pydantic_models.additional_data_definition_type import AdditionalDataDefinitionType
+from annofabapi.util.annotation_specs import get_attribute_name_en
 from pydantic import ValidationError
 
 from annofabcli.annotation_specs.add_attributes import (
@@ -258,3 +260,45 @@ class TestBuildRequestBodyForAddAttributes:
         )
 
         assert actual["comment"] == "custom comment"
+
+
+def test_add_attributes_before_preserves_input_order(annotation_specs: dict) -> None:
+    anchor = annotation_specs["additionals"][0]
+    anchor_id = anchor["additional_data_definition_id"]
+    other_id = annotation_specs["additionals"][1]["additional_data_definition_id"]
+    anchor_name = get_attribute_name_en(anchor)
+    labels = annotation_specs["labels"][:2]
+    labels[0]["additional_data_definitions"] = [other_id, anchor_id]
+    labels[1]["additional_data_definitions"] = [anchor_id]
+    original = deepcopy(annotation_specs)
+    inputs = read_attributes_json(
+        json.dumps(
+            [
+                {"attribute_type": "flag", "attribute_name_en": name, "attribute_id": name, "label_ids": [label["label_id"] for label in labels], "before_attribute_name_en": anchor_name}
+                for name in ["new1", "new2"]
+            ]
+        )
+    )
+    resolved = resolve_attribute_inputs(annotation_specs, attribute_inputs=inputs)
+    actual = build_request_body_for_add_attributes(annotation_specs, resolved_inputs=resolved, comment=None)
+    assert [a["additional_data_definition_id"] for a in actual["additionals"][:3]] == ["new1", "new2", anchor_id]
+    assert actual["labels"][0]["additional_data_definitions"] == [other_id, "new1", "new2", anchor_id]
+    assert actual["labels"][1]["additional_data_definitions"] == ["new1", "new2", anchor_id]
+    assert annotation_specs == original
+
+
+@pytest.mark.parametrize("before", ["missing", "new1"])
+def test_add_attributes_rejects_missing_or_new_anchor(annotation_specs: dict, before: str) -> None:
+    inputs = read_attributes_json(
+        json.dumps(
+            [
+                {"attribute_type": "flag", "attribute_name_en": "new1", "label_name_ens": ["car"]},
+                {"attribute_type": "flag", "attribute_name_en": "new2", "label_name_ens": ["car"], "before_attribute_name_en": before},
+            ]
+        )
+    )
+    resolved = resolve_attribute_inputs(annotation_specs, attribute_inputs=inputs)
+    original = deepcopy(annotation_specs)
+    with pytest.raises(ValueError):
+        build_request_body_for_add_attributes(annotation_specs, resolved_inputs=resolved, comment=None)
+    assert annotation_specs == original

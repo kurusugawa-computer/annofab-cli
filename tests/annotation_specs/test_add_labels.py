@@ -5,6 +5,7 @@ from pathlib import Path
 
 import pandas
 import pytest
+from annofabapi.util.annotation_specs import get_label_name_en
 
 from annofabcli.annotation_specs.add_label import DEFAULT_SEGMENTATION_FIELD_VALUES
 from annofabcli.annotation_specs.add_labels import (
@@ -278,3 +279,12 @@ class TestReadLabels:
     def test_parse_annotation_type_in_csv__invalid(self) -> None:
         with pytest.raises(ValueError):
             parse_annotation_type_in_csv("invalid", index=1)
+
+
+def test_add_labels_before_preserves_input_order(annotation_specs: dict) -> None:
+    before = get_label_name_en(annotation_specs["labels"][1])
+    inputs = resolve_annotation_types([LabelInput(label_id="new1", label_name_en="new1"), LabelInput(label_id="new2", label_name_en="new2")], annotation_type="bounding_box")
+    actual = build_request_body_for_add_labels(annotation_specs, resolved_label_inputs=inputs, comment=None, before_label_name_en=before)
+    expected = [label["label_id"] for label in annotation_specs["labels"]]
+    expected[1:1] = ["new1", "new2"]
+    assert [label["label_id"] for label in actual["labels"]] == expected

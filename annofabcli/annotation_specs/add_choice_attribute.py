@@ -15,6 +15,7 @@ import pandas
 from annofabapi.util.annotation_specs import AnnotationSpecsAccessor, get_attribute_name_en, get_label_name_en
 
 import annofabcli.common.cli
+from annofabcli.annotation_specs.insertion import insert_attribute_into_labels, resolve_before_attribute_id
 from annofabcli.annotation_specs.utils import create_name, get_target_labels
 from annofabcli.common.annofab.annotation_specs import keybind_to_api_keybind, validate_keybind_input
 from annofabcli.common.cli import (
@@ -407,6 +408,7 @@ def build_request_body_for_add_choice_attribute(
     resolved_choice_attribute_input: ResolvedChoiceAttributeInput,
     attribute_name_en: str,
     comment: str | None,
+    before_attribute_name_en: str | None = None,
 ) -> dict[str, Any]:
     """
     選択肢系属性追加用の request body を生成する。
@@ -415,17 +417,23 @@ def build_request_body_for_add_choice_attribute(
         annotation_specs: 既存のアノテーション仕様
         resolved_choice_attribute_input: 解決済み選択肢系属性入力
         attribute_name_en: 属性英語名
+        before_attribute_name_en: 挿入先の基準となる既存要素の英語名
         comment: 変更コメント
 
     Returns:
         Annofab API に渡す request body
     """
+    before_attribute_id = resolve_before_attribute_id(annotation_specs, target_labels=resolved_choice_attribute_input.target_labels, before_attribute_name_en=before_attribute_name_en)
+    attribute_ids = [attribute["additional_data_definition_id"] for attribute in annotation_specs["additionals"]]
+    index = len(attribute_ids) if before_attribute_id is None else attribute_ids.index(before_attribute_id)
     request_body = copy.deepcopy(annotation_specs)
-    request_body["additionals"].append(resolved_choice_attribute_input.new_attribute)
-    target_label_id_set = {label["label_id"] for label in resolved_choice_attribute_input.target_labels}
-    for label in request_body["labels"]:
-        if label["label_id"] in target_label_id_set:
-            label["additional_data_definitions"].append(resolved_choice_attribute_input.new_attribute["additional_data_definition_id"])
+    request_body["additionals"].insert(index, resolved_choice_attribute_input.new_attribute)
+    insert_attribute_into_labels(
+        request_body["labels"],
+        target_label_ids={label["label_id"] for label in resolved_choice_attribute_input.target_labels},
+        attribute_id=resolved_choice_attribute_input.new_attribute["additional_data_definition_id"],
+        before_attribute_id=before_attribute_id,
+    )
 
     label_names = [get_label_name_en(label) for label in resolved_choice_attribute_input.target_labels]
     if comment is None:
@@ -465,6 +473,7 @@ class AddChoiceAttributeMain(CommandLineWithConfirm):
         read_only: bool = False,
         keybind: dict[str, Any] | None = None,
         comment: str | None = None,
+        before_attribute_name_en: str | None = None,
     ) -> bool:
         """
         選択肢系属性を追加し、指定ラベルへ紐付けてアノテーション仕様を更新する。
@@ -480,6 +489,7 @@ class AddChoiceAttributeMain(CommandLineWithConfirm):
             label_name_ens: 追加先ラベル英語名一覧。未指定時はNone
             read_only: 読み込み専用属性にするかどうか
             keybind: 属性に設定するkeybind
+            before_attribute_name_en: 挿入先の基準となる既存要素の英語名
             comment: 変更コメント
 
         Returns:
@@ -511,15 +521,17 @@ class AddChoiceAttributeMain(CommandLineWithConfirm):
         if resolved_choice_attribute_input.duplicated_name_attribute_ids:
             duplicated_text = ", ".join(resolved_choice_attribute_input.duplicated_name_attribute_ids)
             confirm_message = f"{confirm_message} なお、同じ属性名(英語)を持つ既存属性があります。既存の属性ID: {duplicated_text}"
-        if not self.confirm_processing(confirm_message):
-            return False
-
         request_body = build_request_body_for_add_choice_attribute(
             old_annotation_specs,
             resolved_choice_attribute_input=resolved_choice_attribute_input,
             attribute_name_en=attribute_name_en,
             comment=comment,
+            before_attribute_name_en=before_attribute_name_en,
         )
+
+        if not self.confirm_processing(confirm_message):
+            return False
+
         self.service.api.put_annotation_specs(self.project_id, query_params={"v": "3"}, request_body=request_body)
         logger.info(f"属性名(英語)='{attribute_name_en}', 属性ID='{resolved_choice_attribute_input.new_attribute['additional_data_definition_id']}' の選択肢系属性を追加しました。")
         return True
@@ -560,6 +572,7 @@ class AddChoiceAttribute(CommandLine):
             read_only=args.read_only,
             keybind=keybind,
             comment=args.comment,
+            before_attribute_name_en=args.before_attribute_name_en,
         )
 
 
@@ -646,6 +659,9 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
             " ファイルを読み込む場合は、ファイル指定を1個だけ渡してください。"
             "直接指定する値や別のファイル指定とは併用できません。"
         ),
+    )
+    parser.add_argument(
+        "--before_attribute_name_en", type=str, help="基準となる既存属性の英語名。全対象ラベルでこの属性の直前に追加します。全対象ラベルに含まれる、一意な英語名の属性を指定してください。"
     )
     parser.add_argument("--comment", type=str, help="アノテーション仕様の変更内容を説明するコメント。未指定の場合、自動でコメントが生成されます。")
 

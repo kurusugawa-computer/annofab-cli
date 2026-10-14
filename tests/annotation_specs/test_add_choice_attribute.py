@@ -2,17 +2,21 @@ from __future__ import annotations
 
 import json
 import uuid
+from copy import deepcopy
 from pathlib import Path
 
 import pytest
+from annofabapi.util.annotation_specs import get_attribute_name_en
 
 from annofabcli.annotation_specs.add_choice_attribute import (
+    ResolvedChoiceAttributeInput,
     build_choices,
     build_request_body_for_add_choice_attribute,
     read_choices_csv,
     read_choices_json,
     resolve_choice_attribute_input,
 )
+from annofabcli.annotation_specs.utils import create_name
 
 data_dir = Path("./tests/data/annotation_specs")
 
@@ -264,3 +268,43 @@ class TestBuildRequestBodyForAddChoiceAttribute:
         added_attribute = actual["additionals"][-1]
         assert added_attribute["default"] is None
         assert actual["comment"] == "custom"
+
+
+@pytest.mark.parametrize("before", [None, "anchor"])
+def test_add_before_attribute_in_multiple_labels(annotation_specs: dict, before: str | None) -> None:
+    attributes = annotation_specs["additionals"]
+    anchor_id = attributes[0]["additional_data_definition_id"]
+    other_id = attributes[1]["additional_data_definition_id"]
+    attributes[0]["name"] = create_name("anchor", None)
+    labels = annotation_specs["labels"][:2]
+    labels[0]["additional_data_definitions"] = [other_id, anchor_id]
+    labels[1]["additional_data_definitions"] = [anchor_id, other_id]
+    original = deepcopy(annotation_specs)
+    new_attribute = {"additional_data_definition_id": "new", "name": create_name("new", None)}
+    resolved = ResolvedChoiceAttributeInput(target_labels=labels, new_attribute=new_attribute, duplicated_name_attribute_ids=[])
+    actual = build_request_body_for_add_choice_attribute(annotation_specs, resolved_choice_attribute_input=resolved, attribute_name_en="new", comment=None, before_attribute_name_en=before)
+    assert [get_attribute_name_en(a) for a in actual["additionals"]].index("new") == (0 if before else len(attributes))
+    assert actual["labels"][0]["additional_data_definitions"] == ([other_id, "new", anchor_id] if before else [other_id, anchor_id, "new"])
+    assert actual["labels"][1]["additional_data_definitions"] == (["new", anchor_id, other_id] if before else [anchor_id, other_id, "new"])
+    assert annotation_specs == original
+
+
+@pytest.mark.parametrize("error", ["missing", "ambiguous", "missing_in_one_label"])
+def test_invalid_before_attribute_does_not_modify_specs(annotation_specs: dict, error: str) -> None:
+    attributes = annotation_specs["additionals"]
+    anchor_id = attributes[0]["additional_data_definition_id"]
+    attributes[0]["name"] = create_name("anchor", None)
+    labels = annotation_specs["labels"][:2]
+    for label in labels:
+        label["additional_data_definitions"] = [anchor_id]
+    if error == "ambiguous":
+        attributes.append({"additional_data_definition_id": "duplicate", "name": create_name("anchor", None)})
+    elif error == "missing_in_one_label":
+        labels[1]["additional_data_definitions"] = []
+    original = deepcopy(annotation_specs)
+    resolved = ResolvedChoiceAttributeInput(target_labels=labels, new_attribute={"additional_data_definition_id": "new"}, duplicated_name_attribute_ids=[])
+    with pytest.raises(ValueError):
+        build_request_body_for_add_choice_attribute(
+            annotation_specs, resolved_choice_attribute_input=resolved, attribute_name_en="new", comment=None, before_attribute_name_en="missing" if error == "missing" else "anchor"
+        )
+    assert annotation_specs == original

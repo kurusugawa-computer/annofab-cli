@@ -86,6 +86,25 @@ CSV形式の例
 * ``--choice_csv`` : 追加する選択肢情報のCSVファイルを指定します。 ``keybind`` 列にはJSONオブジェクト文字列を指定してください。
 
 
+追加位置の指定
+=================================
+
+``--before_choice_name_en`` に対象属性内の既存選択肢の英語名を指定すると、その選択肢の直前に追加します。
+未指定の場合は末尾に追加します。追加する選択肢はJSON配列またはCSVの入力順を維持します。
+既存選択肢同士の相対的な順序と、属性のデフォルト値は維持します。
+
+基準選択肢は、コマンド実行前から対象属性内に存在し、対象属性内で英語名が一意である必要があります。
+基準選択肢が存在しない場合や英語名が重複する場合は、更新全体をエラーにします。
+
+.. code-block::
+
+    $ annofabcli annotation_specs add_choices_to_attribute \
+     --project_id prj1 \
+     --attribute_name_en size \
+     --choice_json file://choices.json \
+     --before_choice_name_en large
+
+
 Usage Details
 =================================
 
