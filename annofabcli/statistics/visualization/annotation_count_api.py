@@ -10,7 +10,6 @@ from annofabapi.models import Task
 from annofabapi.plugin import ThreeDimensionAnnotationType
 from annofabapi.util.annotation_specs import get_label_name_en
 
-from annofabcli.common.exceptions import AnnofabCliException
 from annofabcli.statistics.visualization.dataframe.annotation_count import AnnotationCount
 
 logger = logging.getLogger(__name__)
@@ -68,43 +67,37 @@ def count_annotations_from_api(
     Returns:
         アノテーションがないタスクも0件で含む集計値。
     """
-    limit = 10_000
-    label_ids: set[str] | None = None
+    label_ids: list[str | None] = [None]
     if include_labels is not None or exclude_labels is not None:
         specs, _ = service.api.get_annotation_specs(project_id, query_params={"v": "3"})
-        label_ids = {
-            label["label_id"] for label in specs["labels"] if (get_label_name_en(label) in include_labels if include_labels is not None else get_label_name_en(label) not in (exclude_labels or []))
-        }
+        label_ids = sorted(
+            {label["label_id"] for label in specs["labels"] if (get_label_name_en(label) in include_labels if include_labels is not None else get_label_name_en(label) not in (exclude_labels or []))}
+        )
 
-    def count(task_id: str, input_data_id: str | None = None) -> tuple[int, bool]:
-        """検索結果を数え、取得上限に達したか返します。
+    def count(task_id: str, label_id: str | None) -> int:
+        """最初のページの総件数を取得します。
 
         Args:
             task_id: タスクID。
-            input_data_id: 絞り込む入力データID。
+            label_id: 絞り込むラベルID。Noneなら全ラベルを数えます。
 
         Returns:
-            件数と、取得上限に達したかどうか。
+            検索結果の総件数。over_limitは一覧の取得上限を表し、総件数は制限しません。
         """
         query: dict[str, str | bool] = {"task_id": task_id, "exact_match_task_id": True}
-        if input_data_id is not None:
-            query.update({"input_data_id": input_data_id, "exact_match_input_data_id": True})
-        annotations = service.wrapper.get_all_annotation_list(project_id, query_params={"query": query, "v": "2"})
-        return sum(1 for annotation in annotations if label_ids is None or annotation["detail"]["label_id"] in label_ids), len(annotations) >= limit
+        if label_id is not None:
+            query["label_id"] = label_id
+        result, _ = service.api.get_annotation_list(
+            project_id,
+            query_params={"query": query, "page": 1, "limit": 1, "v": "2", "no_aggregate_label_and_input": True},
+        )
+        return int(result["total_count"])
 
     rows: list[tuple[str, str, int]] = []
     for index, task in enumerate(tasks, start=1):
         task_id = task["task_id"]
         logger.debug(f"project_id='{project_id}' :: {index}件目: タスク'{task_id}'のアノテーション数を集計します。")
-        annotation_count, reached_limit = count(task_id)
-        if reached_limit:
-            logger.info(f"task_id='{task_id}' :: 一覧APIの取得上限に達したため、入力データ単位で取得し直します。")
-            annotation_count = 0
-            for input_data_id in task["input_data_id_list"]:
-                input_count, input_reached_limit = count(task_id, input_data_id)
-                if input_reached_limit:
-                    raise AnnofabCliException(f"task_id='{task_id}', input_data_id='{input_data_id}' :: 一覧APIの取得上限に達したため、正確なアノテーション数を集計できません。")
-                annotation_count += input_count
+        annotation_count = sum(count(task_id, label_id) for label_id in label_ids)
         rows.append((project_id, task_id, annotation_count))
         if index % 100 == 0:
             logger.info(f"project_id='{project_id}' :: {index}件のタスクのアノテーション数を集計しました。")
