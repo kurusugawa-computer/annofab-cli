@@ -27,44 +27,7 @@ description: ユーザーからAnnofab上の情報取得やリソース操作を
 
 ## アノテーション仕様に関するコマンド
 * `annotation import`などアノテーション関連のコマンドを実行する上で、アノテーション仕様のラベルと属性を参照する場合は、 `annotation_specs list_annotation_import_info`を使ってください。
-* 属性を追加するには、先にラベルを追加する必要があります。
-
-### 属性の制約の追加
-* `annotation_specs add_attribute_restriction`コマンドに属性制約を表したJSONを指定して、アノテーション仕様に制約を追加します。
-* 属性制約を表したJSONは、`annofabapi.util.attribute_restrictions`で生成してください。このライブラリを使うことで、使用できない制約（トラッキングID属性でのMatches（正規表現に一致する）など）のJSONを間違えて出力してしまうことを防げます。
-
-```
->>> import annofabapi
->>> import json
->>> from annofabapi.util.attribute_restrictions import AttributeFactory
->>> service = annofabapi.build()
->>> annotation_specs, _ = service.api.get_annotation_specs("prj1", query_params={"v": "3"})
-
->>> fac = AttributeFactory(annotation_specs)
-
-# 「'occluded'チェックボックスがONならば、'note'テキストボックスは空ではない」という制約
->>> restriction = fac.checkbox(attribute_name="occluded").checked().imply(fac.string_textbox(attribute_name="note").is_not_empty())
-
->>> print(json.dumps(restriction.to_dict())
-{
-  "additional_data_definition_id": "9b05648d-1e16-4ea2-ab79-48907f5eed00",
-  "condition": {
-    "_type": "Imply",
-    "premise": {
-      "additional_data_definition_id": "2517f635-2269-4142-8ef4-16312b4cc9f7",
-      "condition": {
-        "_type": "Equals",
-        "value": "true"
-      }
-    },
-    "condition": {
-      "_type": "NotEquals",
-      "value": ""
-    }
-  }
-}
-```
-
+* アノテーション仕様を変更する際は、[アノテーション仕様を変更する際のガイドライン](references/annotation-spec-guidelines.md)を参照してください。
 
 
 ## アノテーションの変更
