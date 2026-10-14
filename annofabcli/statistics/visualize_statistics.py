@@ -26,6 +26,7 @@ from annofabcli.common.cli import (
 )
 from annofabcli.common.facade import AnnofabApiFacade, TaskQuery
 from annofabcli.common.user_info_mask import UserInfoMasker, add_mask_user_info_arguments
+from annofabcli.statistics.visualization.annotation_count_api import AnnotationCountSource, count_annotations_from_api, resolve_annotation_count_source
 from annofabcli.statistics.visualization.dataframe.actual_worktime import ActualWorktime
 from annofabcli.statistics.visualization.dataframe.annotation_count import AnnotationCount
 from annofabcli.statistics.visualization.dataframe.annotation_duration import AnnotationDuration
@@ -441,6 +442,7 @@ class VisualizingStatisticsMain:
         is_get_task_histories_one_of_each: bool = False,
         actual_worktime: ActualWorktime | None = None,
         annotation_count: AnnotationCount | None = None,
+        annotation_count_source: AnnotationCountSource = AnnotationCountSource.AUTO,
         input_data_count: InputDataCount | None = None,
         custom_production_volume: CustomProductionVolume | None = None,
         user_ids: list[str] | None = None,
@@ -461,6 +463,7 @@ class VisualizingStatisticsMain:
         self.is_get_task_histories_one_of_each = is_get_task_histories_one_of_each
         self.actual_worktime = actual_worktime
         self.annotation_count = annotation_count
+        self.annotation_count_source = annotation_count_source
         self.input_data_count = input_data_count
         self.custom_production_volume = custom_production_volume
         self.user_ids = user_ids
@@ -486,6 +489,44 @@ class VisualizingStatisticsMain:
             production_volume_exclude_labels=self.production_volume_exclude_labels,
         )
         return project_summary
+
+    def _prepare_annotation_count(
+        self,
+        source_files: VisualizationSourceFiles,
+        annotation_count: AnnotationCount | None,
+        source: AnnotationCountSource,
+    ) -> AnnotationCount | None:
+        """対象タスクを絞り込み、API集計またはCSVの検証を行います。
+
+        Args:
+            source_files: 集計元のファイル。
+            annotation_count: 指定CSVから読み込んだ件数。
+            source: 解決済みの取得元。
+
+        Returns:
+            APIまたはCSVの件数。ZIPから集計する場合はNone。
+        """
+        project_id = source_files.project_id
+        if annotation_count is None and source != AnnotationCountSource.API:
+            return None
+        tasks = filter_tasks(
+            source_files.read_tasks_json(),
+            self.task_completion_criteria,
+            self.filtering_query,
+            task_histories=source_files.read_task_histories_json(),
+        )
+        if annotation_count is None:
+            return count_annotations_from_api(
+                self.service,
+                project_id,
+                tasks,
+                include_labels=self.production_volume_include_labels,
+                exclude_labels=self.production_volume_exclude_labels,
+            )
+        missing_task_ids = {task["task_id"] for task in tasks} - set(annotation_count.df["task_id"])
+        if missing_task_ids:
+            raise ValueError(f"--annotation_count_csvに集計対象タスクの件数がありません。project_id='{project_id}', task_ids={sorted(missing_task_ids)}")
+        return annotation_count
 
     def visualize_statistics(self, project_id: str, output_project_dir: Path) -> None:
         """
@@ -527,17 +568,19 @@ class VisualizingStatisticsMain:
         else:
             df_actual_worktime = ActualWorktime.empty()
 
+        # --not_downloadではAPIによる件数取得を行わず、保存済みZIPか指定CSVを使用する。
+        source = self.annotation_count_source
         if self.annotation_count is not None:
-            # project_idで絞り込む
             df_annotation_count = self.annotation_count.df
-            df_annotation_count = df_annotation_count[df_annotation_count["project_id"] == project_id]
-            # `annotation_count = None`にする理由：後続の処理でアノテーションZIPからアノテーション数を算出するようにするため
-            if len(df_annotation_count) == 0:
-                annotation_count = None
-            else:
-                annotation_count = AnnotationCount(df_annotation_count)
+            annotation_count = AnnotationCount(df_annotation_count[df_annotation_count["project_id"] == project_id])
         else:
             annotation_count = None
+            if self.not_download_visualization_source_files:
+                if source == AnnotationCountSource.API:
+                    raise ValueError("--annotation_count_source apiと--not_downloadは併用できません。")
+                source = AnnotationCountSource.ZIP
+            else:
+                source = resolve_annotation_count_source(self.service, project_id, source)
 
         visualization_source_files = VisualizationSourceFiles(
             self.service,
@@ -548,8 +591,10 @@ class VisualizingStatisticsMain:
             visualization_source_files.write_files(
                 is_latest=self.download_latest,
                 should_get_task_histories_one_of_each=self.is_get_task_histories_one_of_each,
-                should_download_annotation_zip=(annotation_count is None),
+                should_download_annotation_zip=(annotation_count is None and source == AnnotationCountSource.ZIP) or is_video_project,
             )
+
+        annotation_count = self._prepare_annotation_count(visualization_source_files, annotation_count, source)
 
         write_obj = WriteCsvGraph(
             self.service,
@@ -681,6 +726,10 @@ class VisualizeStatistics(CommandLine):
                 )
                 return False
 
+        if args.not_download and args.annotation_count_source == AnnotationCountSource.API.value:
+            print(f"{COMMON_MESSAGE} --annotation_count_source apiと--not_downloadは併用できません。", file=sys.stderr)  # noqa: T201
+            return False
+
         if args.not_download:  # noqa: SIM102
             if args.temp_dir is None:
                 print(  # noqa: T201
@@ -713,6 +762,7 @@ class VisualizeStatistics(CommandLine):
         production_volume_exclude_labels: list[str] | None = None,
         task_metadata_keys: list[str] | None = None,
         user_info_masker: UserInfoMasker | None = None,
+        annotation_count_source: AnnotationCountSource = AnnotationCountSource.AUTO,
     ) -> None:
         main_obj = VisualizingStatisticsMain(
             service=self.service,
@@ -722,6 +772,7 @@ class VisualizeStatistics(CommandLine):
             user_ids=user_id_list,
             actual_worktime=actual_worktime,
             annotation_count=annotation_count,
+            annotation_count_source=annotation_count_source,
             input_data_count=input_data_count,
             custom_production_volume=custom_production_volume,
             download_latest=download_latest,
@@ -813,6 +864,7 @@ class VisualizeStatistics(CommandLine):
                     user_id_list=user_id_list,
                     actual_worktime=actual_worktime,
                     annotation_count=annotation_count,
+                    annotation_count_source=AnnotationCountSource(args.annotation_count_source),
                     input_data_count=input_data_count,
                     custom_production_volume=custom_production_volume,
                     download_latest=args.latest,
@@ -837,6 +889,7 @@ class VisualizeStatistics(CommandLine):
                 user_id_list=user_id_list,
                 actual_worktime=actual_worktime,
                 annotation_count=annotation_count,
+                annotation_count_source=AnnotationCountSource(args.annotation_count_source),
                 input_data_count=input_data_count,
                 custom_production_volume=custom_production_volume,
                 download_latest=args.latest,
@@ -955,11 +1008,24 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         help="[DEPRECATED] '--actual_worktime_csv' と同じCSVを指定できます。代わりに '--actual_worktime_csv' を指定してください。2027/01/01以降に廃止予定です。",
     )
 
-    parser.add_argument(
+    annotation_count_group = parser.add_mutually_exclusive_group()
+    annotation_count_group.add_argument(
+        "--annotation_count_source",
+        choices=[source.value for source in AnnotationCountSource],
+        default=AnnotationCountSource.AUTO.value,
+        help=(
+            "アノテーション数の取得元を指定します。"
+            "autoは仕様に3Dインスタンスセグメントまたは3Dセマンティックセグメントがあればapi、それ以外はzipを選びます。"
+            "zipはアノテーションZIPから、apiは本体を取得せず一覧APIから集計します。"
+            "apiは--not_downloadと併用できません。--not_downloadではautoもzipを使用します。"
+            "動画プロジェクトでは区間長の集計に別途ZIPが必要です。"
+        ),
+    )
+    annotation_count_group.add_argument(
         "--annotation_count_csv",
         type=Path,
         help=(
-            "指定されたCSVに記載されているアノテーション数を参照して、生産量や生産性を算出します。未指定の場合はアノテーションZIPからアノテーション数をカウントします。CSVには以下の列が必要です。\n"
+            "指定されたCSVに記載されているアノテーション数を参照して、生産量や生産性を算出します。未指定の場合は--annotation_count_sourceに従って集計します。集計対象タスクの行が欠けている場合はエラーになります。CSVには以下の列が必要です。\n"
             "\n"
             "* project_id\n"
             "* task_id\n"
