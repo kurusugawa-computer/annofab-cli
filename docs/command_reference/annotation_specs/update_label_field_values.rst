@@ -6,6 +6,7 @@ Description
 =================================
 アノテーション仕様の既存ラベルに設定された ``field_values`` を、マージ・置換・クリアのいずれかで更新します。
 ``field_values`` にはサイズ制約や許容誤差範囲などの情報を設定できます。
+アノテーションの種類ごとのサンプルは、 :ref:`annotation_specs_field_values_samples` を参照してください。
 
 
 Examples
@@ -79,6 +80,137 @@ Examples
 
 
 
+
+
+.. _annotation_specs_field_values_samples:
+
+``field_values`` のサンプル
+=================================
+
+``--field_values_json`` には、以下のJSONオブジェクトを指定します。
+必要な設定だけを残し、数値を変更して使用できます。 ``_type`` にはサンプルの値をそのまま指定してください。
+
+
+
+矩形（ ``bounding_box`` ）
+----------------------------------------------
+
+最小幅を100px、最小高さを200px、許容誤差を5pxに設定します。
+
+``min_warn_rule._type`` は、幅と高さに関して警告を出す条件です。
+
+* ``Or`` : 幅が ``min_width`` 未満、または高さが ``min_height`` 未満の場合に警告します。「幅100px以上 AND 高さ200px以上」という制約に使用します。
+* ``And`` : 幅が ``min_width`` 未満、かつ高さが ``min_height`` 未満の場合に警告します。「幅100px以上 OR 高さ200px以上」という制約に使用します。
+
+.. code-block:: json
+    :caption: field_values.json
+
+    {
+        "minimum_size_2d_with_default_insert_position": {
+            "_type": "MinimumSize2dWithDefaultInsertPosition",
+            "min_warn_rule": {
+                "_type": "Or"
+            },
+            "min_width": 100,
+            "min_height": 200
+        },
+        "margin_of_error_tolerance": {
+            "_type": "MarginOfErrorTolerance",
+            "max_pixel": 5
+        }
+    }
+
+
+ポリゴン（ ``polygon`` ）
+----------------------------------------------
+
+最小幅と最小高さを20px、最小面積を400平方ピクセル、頂点数を3～10個、許容誤差を5pxに設定します。
+
+.. code-block:: json
+    :caption: field_values.json
+
+    {
+        "minimum_size_2d": {
+            "_type": "MinimumSize2d",
+            "min_warn_rule": {
+                "_type": "Or"
+            },
+            "min_width": 20,
+            "min_height": 20
+        },
+        "minimum_area_2d": {
+            "_type": "MinimumArea2d",
+            "min_area": 400
+        },
+        "margin_of_error_tolerance": {
+            "_type": "MarginOfErrorTolerance",
+            "max_pixel": 5
+        },
+        "vertex_count_min_max": {
+            "_type": "VertexCountMinMax",
+            "min": 3,
+            "max": 10
+        }
+    }
+
+
+ポリライン（ ``polyline`` ）
+----------------------------------------------
+
+幅100px以上または高さ200px以上の最小サイズ制約、頂点数2～20個、許容誤差5pxを設定し、線分の方向を表示します。
+``display_line_direction.has_direction`` を ``false`` にすると、線分の方向を表示しません。
+``vertex_count_min_max.min`` または ``max`` に ``null`` を指定すると、その側の頂点数制約を設定しません。
+
+.. code-block:: json
+    :caption: field_values.json
+
+    {
+        "minimum_size_2d": {
+            "_type": "MinimumSize2d",
+            "min_warn_rule": {
+                "_type": "And"
+            },
+            "min_width": 100,
+            "min_height": 200
+        },
+        "margin_of_error_tolerance": {
+            "_type": "MarginOfErrorTolerance",
+            "max_pixel": 5
+        },
+        "display_line_direction": {
+            "_type": "DisplayLineDirection",
+            "has_direction": true
+        },
+        "vertex_count_min_max": {
+            "_type": "VertexCountMinMax",
+            "min": 2,
+            "max": 20
+        }
+    }
+
+
+塗りつぶし・塗りつぶしv2（ ``segmentation`` ・ ``segmentation_v2`` ）
+------------------------------------------------------------------------------------
+
+最小幅と最小高さを20px、許容誤差を5pxに設定します。
+
+.. code-block:: json
+    :caption: field_values.json
+
+    {
+        "minimum_size_2d": {
+            "_type": "MinimumSize2d",
+            "min_warn_rule": {
+                "_type": "Or"
+            },
+            "min_width": 20,
+            "min_height": 20
+        },
+        "margin_of_error_tolerance": {
+            "_type": "MarginOfErrorTolerance",
+            "max_pixel": 5
+        }
+    }
 
 
 Usage Details
