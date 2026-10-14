@@ -79,7 +79,20 @@ def test_csv_missing_selected_tasks_fails_without_api_fallback(annotation_count_
 
 def test_zip_count_does_not_call_api(annotation_count_sources):
     main, source, service = annotation_count_sources
+    source.annotation_zip_path.touch()
     assert main._prepare_annotation_count(source, None, AnnotationCountSource.ZIP) is None
+    service.wrapper.get_all_annotation_list.assert_not_called()
+
+
+def test_api_source_files_cannot_be_reused_as_zip_without_archive(annotation_count_sources):
+    main, source, service = annotation_count_sources
+    service.wrapper.get_all_annotation_list.return_value = [{}] * 7
+    assert main._prepare_annotation_count(source, None, AnnotationCountSource.API).df["annotation_count"].tolist() == [7]
+    assert not source.annotation_zip_path.exists()
+
+    service.wrapper.get_all_annotation_list.reset_mock()
+    with pytest.raises(FileNotFoundError):
+        main._prepare_annotation_count(source, None, AnnotationCountSource.ZIP)
     service.wrapper.get_all_annotation_list.assert_not_called()
 
 

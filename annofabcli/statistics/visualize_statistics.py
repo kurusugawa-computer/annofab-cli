@@ -508,6 +508,8 @@ class VisualizingStatisticsMain:
         """
         project_id = source_files.project_id
         if annotation_count is None and source != AnnotationCountSource.API:
+            if not source_files.annotation_zip_path.is_file():
+                raise FileNotFoundError(f"アノテーションZIPがありません。'{source_files.annotation_zip_path}'にZIPを事前に保存するか、--annotation_count_csvを指定してください。")
             return None
         tasks = filter_tasks(
             source_files.read_tasks_json(),
