@@ -55,24 +55,26 @@ https://annofab-cli.readthedocs.io/ja/latest/command_reference/annotation_specs/
 # 「'occluded'チェックボックスがONならば、'note'テキストボックスは空ではない」という制約
 >>> restriction = fac.checkbox(attribute_name="occluded").checked().imply(fac.string_textbox(attribute_name="note").is_not_empty())
 
->>> print(json.dumps(restriction.to_dict())
-{
-  "additional_data_definition_id": "9b05648d-1e16-4ea2-ab79-48907f5eed00",
-  "condition": {
-    "_type": "Imply",
-    "premise": {
-      "additional_data_definition_id": "2517f635-2269-4142-8ef4-16312b4cc9f7",
-      "condition": {
-        "_type": "Equals",
-        "value": "true"
-      }
-    },
+>>> print(json.dumps([restriction.to_dict()], ensure_ascii=False, indent=2))
+[
+  {
+    "additional_data_definition_id": "9b05648d-1e16-4ea2-ab79-48907f5eed00",
     "condition": {
-      "_type": "NotEquals",
-      "value": ""
+      "_type": "Imply",
+      "premise": {
+        "additional_data_definition_id": "2517f635-2269-4142-8ef4-16312b4cc9f7",
+        "condition": {
+          "_type": "Equals",
+          "value": "true"
+        }
+      },
+      "condition": {
+        "_type": "NotEquals",
+        "value": ""
+      }
     }
   }
-}
+]
 ```
 
 ## オプションの変更
