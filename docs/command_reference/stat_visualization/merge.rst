@@ -30,6 +30,24 @@ Examples
 
 
 
+ディレクトリ一覧をファイルで指定する
+----------------------------------------------
+
+``--dir`` は、改行区切りのディレクトリ一覧を ``file://`` で指定することもできます。
+ファイルには2件以上のパスを記載してください。相対パスはコマンド実行時のカレントディレクトリを基準に解釈します。
+ファイル指定は1個だけ渡してください。直接指定する値や別のファイル指定とは併用できません。
+
+.. code-block:: text
+    :caption: directories.txt
+
+    prj1_dir/
+    prj2_dir/
+
+.. code-block:: bash
+
+    $ annofabcli stat_visualization merge --dir file://directories.txt --output_dir merge_dir/
+
+
 出力結果
 =================================
 

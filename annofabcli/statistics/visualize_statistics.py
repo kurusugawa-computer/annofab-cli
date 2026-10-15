@@ -1052,7 +1052,12 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--task_metadata_key",
         nargs="+",
-        help="タスクのmetadataのキーを指定します。指定したキーの値ごとに、生産性と品質のCSVを追加で出力します。複数指定可能です。",
+        help=(
+            "タスクのmetadataのキーを指定します。指定したキーの値ごとに、生産性と品質のCSVを追加で出力します。複数指定可能です。"
+            " ``file://`` を先頭に付けると、改行区切りの一覧ファイルを指定できます。"
+            " ファイルを読み込む場合は、ファイル指定を1個だけ渡してください。"
+            "直接指定する値や別のファイル指定とは併用できません。"
+        ),
     )
 
     custom_production_volume_sample = {
@@ -1067,6 +1072,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
             "プロジェクト独自の生産量をJSON形式で指定します。"
             f"(例) ``{json.dumps(custom_production_volume_sample, ensure_ascii=False)}`` \n"
             "詳細は https://annofab-cli.readthedocs.io/ja/latest/command_reference/statistics/visualize.html#custom-project-volume を参照してください。"
+            " ``file://`` を先頭に付けると、JSON形式のファイルを指定できます。"
         ),
     )
 
@@ -1105,13 +1111,23 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     production_volume_label_group.add_argument(
         "--production_volume_include_label",
         nargs="+",
-        help="生産量（'annotation_count'など）の集計対象に含めるラベル名（英語）を指定します。複数指定可能です。",
+        help=(
+            "生産量（'annotation_count'など）の集計対象に含めるラベル名（英語）を指定します。複数指定可能です。"
+            " ``file://`` を先頭に付けると、改行区切りの一覧ファイルを指定できます。"
+            " ファイルを読み込む場合は、ファイル指定を1個だけ渡してください。"
+            "直接指定する値や別のファイル指定とは併用できません。"
+        ),
     )
 
     production_volume_label_group.add_argument(
         "--production_volume_exclude_label",
         nargs="+",
-        help="生産量（'annotation_count'など）の集計対象から除外するラベル名（英語）を指定します。複数指定可能です。",
+        help=(
+            "生産量（'annotation_count'など）の集計対象から除外するラベル名（英語）を指定します。複数指定可能です。"
+            " ``file://`` を先頭に付けると、改行区切りの一覧ファイルを指定できます。"
+            " ファイルを読み込む場合は、ファイル指定を1個だけ渡してください。"
+            "直接指定する値や別のファイル指定とは併用できません。"
+        ),
     )
 
     parser.set_defaults(subcommand_func=main)

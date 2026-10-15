@@ -433,7 +433,12 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         type=str,
         required=True,
         nargs="+",
-        help="作成する全体アノテーションのラベル名（英語）を指定します。",
+        help=(
+            "作成する全体アノテーションのラベル名（英語）を指定します。"
+            " ``file://`` を先頭に付けると、改行区切りの一覧ファイルを指定できます。"
+            " ファイルを読み込む場合は、ファイル指定を1個だけ渡してください。"
+            "直接指定する値や別のファイル指定とは併用できません。"
+        ),
     )
 
     parser.add_argument(

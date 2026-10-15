@@ -463,7 +463,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     group.add_argument(
         "--json",
         type=str,
-        help=f"削除対象のアノテーションをJSON配列で指定します。例: ``{json.dumps(example_json)}``",
+        help=(f"削除対象のアノテーションをJSON配列で指定します。例: ``{json.dumps(example_json)}`` ``file://`` を先頭に付けると、JSON形式のファイルを指定できます。"),
     )
     group.add_argument(
         "--csv",
