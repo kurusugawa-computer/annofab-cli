@@ -32,6 +32,7 @@ NEW_IMPLEMENTATION_MODULES = {
     "task_history_event.worktime",
     "task_history_event.worktime_summary",
     "input_data.metadata",
+    "task_count.output",
 }
 
 
