@@ -23,7 +23,7 @@ from annofabcli.common.cli import (
     build_annofabapi_resource_and_login,
 )
 from annofabcli.common.facade import AnnofabApiFacade
-from annofabcli.input_data.metadata import validate_metadata
+from annofabcli.input_data.utils import validate_metadata
 from annofabcli.utils.iterables import batched
 
 logger = logging.getLogger(__name__)

@@ -29,7 +29,7 @@ from annofabcli.common.cli import (
 )
 from annofabcli.common.facade import AnnofabApiFacade
 from annofabcli.common.utils import get_file_scheme_path
-from annofabcli.input_data.metadata import validate_metadata
+from annofabcli.input_data.utils import validate_metadata
 from annofabcli.utils.iterables import batched
 
 logger = logging.getLogger(__name__)

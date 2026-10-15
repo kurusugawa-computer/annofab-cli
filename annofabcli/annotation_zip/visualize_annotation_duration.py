@@ -30,9 +30,9 @@ from dataclasses_json import DataClassJsonMixin, config
 
 import annofabcli.common.cli
 from annofabcli.annotation_zip.annotation_count import AnnotationSpecs
-from annofabcli.annotation_zip.annotation_count_histogram import convert_to_2d_figure_list, get_only_selective_attribute
 from annofabcli.annotation_zip.annotation_name import AnnotationNameTranslator, add_use_japanese_name_argument
 from annofabcli.annotation_zip.count_annotation import add_attribute_value_arguments, add_label_name_argument
+from annofabcli.annotation_zip.visualize_annotation_count import convert_to_2d_figure_list, get_only_selective_attribute
 from annofabcli.common.bokeh import convert_1d_figure_list_to_2d, create_pretext_from_metadata
 from annofabcli.common.cli import ArgumentParser, CommandLine, build_annofabapi_resource_and_login
 from annofabcli.common.download import DownloadingFile
