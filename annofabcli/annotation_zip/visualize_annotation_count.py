@@ -11,10 +11,10 @@ import annofabapi
 from annofabapi.models import ProjectMemberRole
 
 import annofabcli.common.cli
+from annofabcli.annotation_zip.annotation_count import AnnotationSpecs, AttributeNameKey, GroupBy
+from annofabcli.annotation_zip.annotation_count_histogram import BIN_COUNT, plot_attribute_histogram, plot_label_histogram
 from annofabcli.annotation_zip.annotation_name import AnnotationNameTranslator, add_use_japanese_name_argument
 from annofabcli.annotation_zip.count_annotation import CountAnnotationMain, CountTarget
-from annofabcli.common.annotation_count import AnnotationSpecs, AttributeNameKey, GroupBy
-from annofabcli.common.annotation_count_histogram import BIN_COUNT, plot_attribute_histogram, plot_label_histogram
 from annofabcli.common.cli import ArgumentParser, CommandLine, positive_int
 from annofabcli.common.download import DownloadingFile
 from annofabcli.common.facade import AnnofabApiFacade, TaskQuery

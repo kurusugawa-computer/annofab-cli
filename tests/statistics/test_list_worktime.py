@@ -3,9 +3,7 @@ from unittest.mock import Mock
 
 import pandas
 
-from annofabcli.common.task_history_worktime import RequestOfTaskHistoryEvent, SimpleTaskHistoryEvent
-from annofabcli.common.worktime_summary import WORKTIME_COLUMNS, WorktimeFromTaskHistoryEvent, get_df_worktime
-from annofabcli.statistics.list_worktime import ListWorktimeFromTaskHistoryEvent
+from annofabcli.statistics.list_worktime import WORKTIME_COLUMNS, ListWorktimeFromTaskHistoryEvent, RequestOfTaskHistoryEvent, SimpleTaskHistoryEvent, WorktimeFromTaskHistoryEvent, get_df_worktime
 
 
 class TestListWorktime:

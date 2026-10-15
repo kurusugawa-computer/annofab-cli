@@ -32,6 +32,7 @@ from annofabapi.pydantic_models.task_status import TaskStatus
 from dataclasses_json import DataClassJsonMixin, config
 
 import annofabcli.common.cli
+from annofabcli.annotation_zip.annotation_count import AnnotationSpecs
 from annofabcli.annotation_zip.annotation_name import AnnotationNameTranslator, add_use_japanese_name_argument
 from annofabcli.annotation_zip.count_aggregation import (
     INPUT_DATA_ID_GROUP,
@@ -43,7 +44,6 @@ from annofabcli.annotation_zip.count_aggregation import (
     validate_group_by,
 )
 from annofabcli.annotation_zip.task_metadata import TASK_METADATA_COLUMN_PREFIX, get_task_metadata_by_task_id, get_task_metadata_keys
-from annofabcli.common.annotation_count import AnnotationSpecs
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
     ArgumentParser,

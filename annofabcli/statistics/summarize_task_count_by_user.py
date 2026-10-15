@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import argparse
 import json
 import logging
@@ -51,7 +53,7 @@ class TaskStatusForSummary(Enum):
     COMPLETE = "complete"
 
     @staticmethod
-    def from_task(task: Task) -> "TaskStatusForSummary":
+    def from_task(task: Task) -> TaskStatusForSummary:
         status = task["status"]
         if status == TaskStatus.NOT_STARTED.value:
             phase = task["phase"]

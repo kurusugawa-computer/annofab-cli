@@ -11,6 +11,7 @@ import isodate
 import pandas
 from annofabapi.models import ProjectMemberRole, Task, TaskPhase, TaskStatus
 from annofabapi.resource import Resource as AnnofabResource
+from annofabapi.utils import get_number_of_rejections
 
 import annofabcli.common
 from annofabcli.common.cli import (
@@ -22,7 +23,6 @@ from annofabcli.common.cli import (
 from annofabcli.common.download import DownloadingFile
 from annofabcli.common.enums import OutputFormat
 from annofabcli.common.facade import AnnofabApiFacade
-from annofabcli.common.task_phase import get_step_for_current_phase
 from annofabcli.task_count.output import print_task_count_summary
 
 logger = logging.getLogger(__name__)
@@ -139,6 +139,42 @@ class TaskStatusForSummary(Enum):
 
             case _:
                 raise RuntimeError(f"'{status}'は対象外です。")
+
+
+def get_step_for_current_phase(task: Task, number_of_inspections: int) -> int:
+    """
+    今のフェーズが何回目かを取得する。
+
+    Args:
+        task: 対象タスクの情報。phase, phase_stage, histories_by_phase を含む。
+        number_of_inspections: 対象プロジェクトの検査フェーズの回数
+
+    Returns:
+        現在のフェーズのステップ数
+    """
+    current_phase = TaskPhase(task["phase"])
+    current_phase_stage = task["phase_stage"]
+    histories_by_phase = task["histories_by_phase"]
+
+    number_of_rejections_by_acceptance = get_number_of_rejections(histories_by_phase, phase=TaskPhase.ACCEPTANCE)
+    match current_phase:
+        case TaskPhase.ACCEPTANCE:
+            return number_of_rejections_by_acceptance + 1
+
+        case TaskPhase.ANNOTATION:
+            number_of_rejections_by_inspection = sum(
+                get_number_of_rejections(histories_by_phase, phase=TaskPhase.INSPECTION, phase_stage=phase_stage) for phase_stage in range(1, number_of_inspections + 1)
+            )
+            return number_of_rejections_by_inspection + number_of_rejections_by_acceptance + 1
+
+        case TaskPhase.INSPECTION:
+            number_of_rejections_by_inspection = sum(
+                get_number_of_rejections(histories_by_phase, phase=TaskPhase.INSPECTION, phase_stage=phase_stage) for phase_stage in range(current_phase_stage, number_of_inspections + 1)
+            )
+            return number_of_rejections_by_inspection + number_of_rejections_by_acceptance + 1
+
+        case _ as unreachable:
+            assert_never(unreachable)
 
 
 def create_df_task(

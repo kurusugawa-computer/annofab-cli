@@ -1,7 +1,7 @@
 import pytest
 
-from annofabcli.common.task_metadata import TaskMetadataInfo
 from annofabcli.task import update_metadata_per_task
+from annofabcli.task.update_metadata_per_task import TaskMetadataInfo
 
 
 def test_get_task_metadata_info_list_from_json_args() -> None:

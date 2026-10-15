@@ -3,15 +3,12 @@ from __future__ import annotations
 import datetime
 from collections import defaultdict
 from collections.abc import Collection
-from pathlib import Path
 from typing import Any
 
 import pandas
 from dateutil.parser import parse
 
-from annofabcli.common.cli import CommandLine
-from annofabcli.common.enums import OutputFormat
-from annofabcli.common.task_history_worktime import ListWorktimeFromTaskHistoryEventMain, WorktimeFromTaskHistoryEvent
+from annofabcli.task_history_event.worktime import WorktimeFromTaskHistoryEvent
 
 WorktimeDict = dict[tuple[str, str, str], float]
 """日付、アカウントID、工程をキーとする作業時間（時間単位）。"""
@@ -126,50 +123,3 @@ def get_df_worktime(task_history_event_list: Collection[WorktimeFromTaskHistoryE
 
     df = df.merge(df_member, how="left", on="account_id")
     return df[WORKTIME_COLUMNS]
-
-
-class SummarizeWorktimeByUserAndDate(CommandLine):
-    def print_worktime_list(
-        self,
-        project_id: str,
-        task_history_event_json: Path | None,
-    ) -> None:
-        """タスク履歴イベントから作業時間を集計して出力する。
-
-        Args:
-            project_id: プロジェクトID。
-            task_history_event_json: タスク履歴イベント全件ファイルのパス。
-
-        Returns:
-            None
-        """
-        super().require_project_access(project_id, project_member_roles=None)
-
-        main_obj = ListWorktimeFromTaskHistoryEventMain(self.service, project_id=project_id)
-        worktime_list = main_obj.get_worktime_list(
-            project_id,
-            task_history_event_json=task_history_event_json,
-        )
-        project_member_list = self.service.wrapper.get_all_project_members(project_id, query_params={"include_inactive_member": ""})
-        df = get_df_worktime(worktime_list, project_member_list)
-
-        if self.str_format == OutputFormat.CSV.value:
-            self.print_csv(df)
-        else:
-            self.print_according_to_format(df.to_dict(orient="records"))
-
-    def main(self) -> None:
-        """コマンドライン引数に従って集計する。
-
-        Args:
-            なし。
-
-        Returns:
-            None
-        """
-        args = self.args
-
-        self.print_worktime_list(
-            args.project_id,
-            task_history_event_json=args.task_history_event_json,
-        )

@@ -5,10 +5,59 @@ import logging
 from pathlib import Path
 
 import annofabcli.common.cli
-from annofabcli.common.cli import ArgumentParser, build_annofabapi_resource_and_login
+from annofabcli.common.cli import ArgumentParser, CommandLine, build_annofabapi_resource_and_login
 from annofabcli.common.enums import OutputFormat
 from annofabcli.common.facade import AnnofabApiFacade
-from annofabcli.common.worktime_summary import SummarizeWorktimeByUserAndDate
+from annofabcli.task_history_event.worktime import ListWorktimeFromTaskHistoryEventMain
+from annofabcli.task_history_event.worktime_summary import get_df_worktime
+
+
+class SummarizeWorktimeByUserAndDate(CommandLine):
+    def print_worktime_list(
+        self,
+        project_id: str,
+        task_history_event_json: Path | None,
+    ) -> None:
+        """タスク履歴イベントから作業時間を集計して出力する。
+
+        Args:
+            project_id: プロジェクトID。
+            task_history_event_json: タスク履歴イベント全件ファイルのパス。
+
+        Returns:
+            None
+        """
+        super().require_project_access(project_id, project_member_roles=None)
+
+        main_obj = ListWorktimeFromTaskHistoryEventMain(self.service, project_id=project_id)
+        worktime_list = main_obj.get_worktime_list(
+            project_id,
+            task_history_event_json=task_history_event_json,
+        )
+        project_member_list = self.service.wrapper.get_all_project_members(project_id, query_params={"include_inactive_member": ""})
+        df = get_df_worktime(worktime_list, project_member_list)
+
+        if self.str_format == OutputFormat.CSV.value:
+            self.print_csv(df)
+        else:
+            self.print_according_to_format(df.to_dict(orient="records"))
+
+    def main(self) -> None:
+        """コマンドライン引数に従って集計する。
+
+        Args:
+            なし。
+
+        Returns:
+            None
+        """
+        args = self.args
+
+        self.print_worktime_list(
+            args.project_id,
+            task_history_event_json=args.task_history_event_json,
+        )
+
 
 logger = logging.getLogger(__name__)
 

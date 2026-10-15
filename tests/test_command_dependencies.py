@@ -26,10 +26,20 @@ COMMAND_PAIRS = [
 ]
 
 
+NEW_IMPLEMENTATION_MODULES = {
+    "annotation_zip.annotation_count",
+    "annotation_zip.annotation_count_histogram",
+    "annotation_zip.annotation_duration",
+    "task_history_event.worktime",
+    "task_history_event.worktime_summary",
+    "input_data.metadata",
+}
+
+
 @pytest.mark.parametrize(("old_module", "new_module"), COMMAND_PAIRS)
 @pytest.mark.parametrize("import_old", [False, True])
 def test_commands_can_be_imported_independently(old_module, new_module, import_old):
-    module, other_module = (old_module, new_module) if import_old else (new_module, old_module)
+    module = old_module if import_old else new_module
     # 各コマンドを新しいプロセスで読み込み、間接的な依存も確認する。
     script = f"""
 import importlib
@@ -42,4 +52,8 @@ print(json.dumps(sorted(sys.modules)))
     result = subprocess.run([sys.executable, "-c", script], check=True, capture_output=True, text=True)
     imported_modules = json.loads(result.stdout)
 
-    assert f"annofabcli.{other_module}" not in imported_modules
+    if import_old:
+        forbidden_modules = {new for _, new in COMMAND_PAIRS} | NEW_IMPLEMENTATION_MODULES
+    else:
+        forbidden_modules = {old for old, _ in COMMAND_PAIRS}
+    assert not {f"annofabcli.{name}" for name in forbidden_modules}.intersection(imported_modules)

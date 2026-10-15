@@ -29,13 +29,12 @@ from annofabapi.pydantic_models.additional_data_definition_type import Additiona
 from dataclasses_json import DataClassJsonMixin, config
 
 from annofabcli.annotation_zip.task_metadata import TASK_METADATA_COLUMN_PREFIX
-from annofabcli.common.enums import OutputFormat
 from annofabcli.common.facade import (
     TaskQuery,
     convert_annotation_specs_labels_v2_to_v1,
     match_annotation_with_task_query,
 )
-from annofabcli.common.utils import print_csv, print_json
+from annofabcli.common.utils import print_csv
 from annofabcli.common.visualize import AddProps, MessageLocale
 
 logger = logging.getLogger(__name__)
@@ -60,15 +59,6 @@ tuple[label_name_en, attribute_name_en] で表す。
 
 
 AttributeKeys = Collection[Collection]
-
-
-class CsvType(Enum):
-    """出力するCSVの種類"""
-
-    LABEL = "label"
-    """ラベルごとのアノテーション数を出力"""
-    ATTRIBUTE = "attribute"
-    """属性値ごとのアノテーション数を出力"""
 
 
 class GroupBy(Enum):
@@ -1119,386 +1109,25 @@ class AnnotationSpecs:
         return target_attributes_columns
 
 
-class ListAnnotationCountMain:
-    def __init__(self, service: annofabapi.Resource, annotation_specs: AnnotationSpecs) -> None:
-        """
-        Args:
-            service: AnnofabのAPIリソース
-            annotation_specs: アノテーション仕様
-        """
-        self.service = service
-        self.annotation_specs = annotation_specs
+def get_frame_no_map(task_json_path: Path) -> dict[tuple[str, str], int]:
+    """
+    タスクJSONファイルから、(task_id, input_data_id)をキーとし、フレーム番号を値とするマップを取得します。
+    フレーム番号は1始まりです。
 
-    @staticmethod
-    def get_frame_no_map(task_json_path: Path) -> dict[tuple[str, str], int]:
-        """
-        タスクJSONファイルから、(task_id, input_data_id)をキーとし、フレーム番号を値とするマップを取得します。
-        フレーム番号は1始まりです。
+    Args:
+        task_json_path: タスクJSONファイルのパス
 
-        Args:
-            task_json_path: タスクJSONファイルのパス
+    Returns:
+        key: (task_id, input_data_id)のタプル、value: フレーム番号のdict
+    """
+    with task_json_path.open(encoding="utf-8") as f:
+        task_list = json.load(f)
 
-        Returns:
-            key: (task_id, input_data_id)のタプル、value: フレーム番号のdict
-        """
-        with task_json_path.open(encoding="utf-8") as f:
-            task_list = json.load(f)
-
-        result = {}
-        for task in task_list:
-            task_id = task["task_id"]
-            input_data_id_list = task["input_data_id_list"]
-            for index, input_data_id in enumerate(input_data_id_list):
-                # 画面に合わせて1始まりにする
-                result[(task_id, input_data_id)] = index + 1
-        return result
-
-    def print_annotation_counter_csv_by_input_data(
-        self,
-        annotation_path: Path,
-        csv_type: CsvType,
-        output_file: Path,
-        *,
-        task_json_path: Path | None = None,
-        target_task_ids: Collection[str] | None = None,
-        task_query: TaskQuery | None = None,
-        additional_attribute_names: Collection[AttributeNameKey] | None = None,
-        specified_attribute_names: Collection[AttributeNameKey] | None = None,
-    ) -> None:
-        """
-        ラベルごと/属性ごとのアノテーション数を入力データ単位でCSVファイルに出力します。
-
-        Args:
-            annotation_path: アノテーションzipまたはzipを展開したディレクトリのパス
-            csv_type: 出力するCSVの種類（ラベルごと/属性ごと）
-            output_file: 出力先のCSVファイルパス
-            task_json_path: タスクJSONファイルのパス。フレーム番号を出力する場合に指定します。
-            target_task_ids: 集計対象のタスクIDのコレクション
-            task_query: 集計対象タスクを絞り込むためのクエリ条件
-            additional_attribute_names: デフォルトの選択系属性に加えて集計対象とする属性名のキー
-            specified_attribute_names: 集計対象とする属性名のキー。指定した場合、これらの属性のみが集計対象になります。
-
-        Raises:
-            ValueError: `additional_attribute_names`と`specified_attribute_names`の両方が指定された場合に発生します。
-        """
-        if additional_attribute_names is not None and specified_attribute_names is not None:
-            raise ValueError("`additional_attribute_names`と`specified_attribute_names`の両方が指定されています。")
-
-        if specified_attribute_names is not None:
-            # specified_attribute_namesから属性名のみを抽出
-            target_attribute_names_only = list({attr_name for _, attr_name in specified_attribute_names})
-        elif additional_attribute_names is not None:
-            # デフォルトの選択系属性の属性名を取得
-            default_selective_attributes = self.annotation_specs.selective_attribute_name_keys()
-            default_attribute_names = {attr_name for _, attr_name in default_selective_attributes}
-            # additional_attribute_namesから属性名のみを抽出
-            additional_attr_names = {attr_name for _, attr_name in additional_attribute_names}
-            # 両方を組み合わせる
-            target_attribute_names_only = list(default_attribute_names | additional_attr_names)
-        else:
-            # デフォルトでは選択肢系の属性のみを集計対象とする
-            default_selective_attributes = self.annotation_specs.selective_attribute_name_keys()
-            target_attribute_names_only = list({attr_name for _, attr_name in default_selective_attributes})
-
-        frame_no_map = self.get_frame_no_map(task_json_path) if task_json_path is not None else None
-        counter_by_input_data = ListAnnotationCounterByInputData(
-            target_attribute_names_only=target_attribute_names_only,
-            frame_no_map=frame_no_map,
-        )
-        counter_list_by_input_data = counter_by_input_data.get_annotation_counter_list(
-            annotation_path,
-            target_task_ids=target_task_ids,
-            task_query=task_query,
-        )
-
-        if csv_type == CsvType.LABEL:
-            # ラベル名の列順が、アノテーション仕様にあるラベル名の順番に対応するようにする。
-            label_columns = self.annotation_specs.label_keys()
-            LabelCountCsv().print_csv_by_input_data(counter_list_by_input_data, output_file, prior_label_columns=label_columns)
-        elif csv_type == CsvType.ATTRIBUTE:
-            if specified_attribute_names is not None:
-                # 指定された属性名に対応する属性値のキーのみを取得
-                attribute_columns = self.annotation_specs.get_attribute_value_keys_for_target_attributes(specified_attribute_names)
-            elif additional_attribute_names is not None:
-                # デフォルトの選択系属性とadditional_attribute_namesを組み合わせた属性値のキーを取得
-                default_selective_attributes = self.annotation_specs.selective_attribute_name_keys()
-                combined_attributes = list(set(default_selective_attributes) | set(additional_attribute_names))
-                attribute_columns = self.annotation_specs.get_attribute_value_keys_for_target_attributes(combined_attributes)
-            else:
-                attribute_columns = self.annotation_specs.selective_attribute_value_keys()
-            AttributeCountCsv().print_csv_by_input_data(counter_list_by_input_data, output_file, prior_attribute_columns=attribute_columns)
-
-    def print_annotation_counter_csv_by_task(
-        self,
-        annotation_path: Path,
-        csv_type: CsvType,
-        output_file: Path,
-        *,
-        target_task_ids: Collection[str] | None = None,
-        task_query: TaskQuery | None = None,
-        additional_attribute_names: Collection[AttributeNameKey] | None = None,
-        specified_attribute_names: Collection[AttributeNameKey] | None = None,
-    ) -> None:
-        """
-        ラベルごと/属性ごとのアノテーション数をタスク単位でCSVファイルに出力します。
-
-        Args:
-            annotation_path: アノテーションzipまたはzipを展開したディレクトリのパス
-            csv_type: 出力するCSVの種類（ラベルごと/属性ごと）
-            output_file: 出力先のCSVファイルパス
-            target_task_ids: 集計対象のタスクIDのコレクション
-            task_query: 集計対象タスクを絞り込むためのクエリ条件
-            additional_attribute_names: デフォルトの選択系属性に加えて集計対象とする属性名のキー
-            specified_attribute_names: 集計対象とする属性名のキー。指定した場合、これらの属性のみが集計対象になります。
-
-        Raises:
-            ValueError: `additional_attribute_names`と`specified_attribute_names`の両方が指定された場合に発生します。
-        """
-        if additional_attribute_names is not None and specified_attribute_names is not None:
-            raise ValueError("`additional_attribute_names`と`specified_attribute_names`の両方が指定されています。")
-
-        if specified_attribute_names is not None:
-            # specified_attribute_namesから属性名のみを抽出
-            target_attribute_names_only = list({attr_name for _, attr_name in specified_attribute_names})
-        elif additional_attribute_names is not None:
-            # デフォルトの選択系属性の属性名を取得
-            default_selective_attributes = self.annotation_specs.selective_attribute_name_keys()
-            default_attribute_names = {attr_name for _, attr_name in default_selective_attributes}
-            # additional_attribute_namesから属性名のみを抽出
-            additional_attr_names = {attr_name for _, attr_name in additional_attribute_names}
-            # 両方を組み合わせる
-            target_attribute_names_only = list(default_attribute_names | additional_attr_names)
-        else:
-            # デフォルトでは選択肢系の属性のみを集計対象とする
-            default_selective_attributes = self.annotation_specs.selective_attribute_name_keys()
-            target_attribute_names_only = list({attr_name for _, attr_name in default_selective_attributes})
-
-        counter_list_by_task = ListAnnotationCounterByTask(
-            target_attribute_names_only=target_attribute_names_only,
-        ).get_annotation_counter_list(
-            annotation_path,
-            target_task_ids=target_task_ids,
-            task_query=task_query,
-        )
-
-        if csv_type == CsvType.LABEL:
-            # 列順が、アノテーション仕様にあるラベル名の順番に対応するようにする。
-            label_columns = self.annotation_specs.label_keys()
-            LabelCountCsv().print_csv_by_task(counter_list_by_task, output_file, prior_label_columns=label_columns)
-
-        elif csv_type == CsvType.ATTRIBUTE:
-            # 列順が、アノテーション仕様にある属性名と属性値の順番に対応するようにする。
-            if specified_attribute_names is not None:
-                # 指定された属性名に対応する属性値のキーのみを取得
-                attribute_columns = self.annotation_specs.get_attribute_value_keys_for_target_attributes(specified_attribute_names)
-            elif additional_attribute_names is not None:
-                # デフォルトの選択系属性とadditional_attribute_namesを組み合わせた属性値のキーを取得
-                default_selective_attributes = self.annotation_specs.selective_attribute_name_keys()
-                combined_attributes = list(set(default_selective_attributes) | set(additional_attribute_names))
-                attribute_columns = self.annotation_specs.get_attribute_value_keys_for_target_attributes(combined_attributes)
-            else:
-                attribute_columns = self.annotation_specs.selective_attribute_value_keys()
-            AttributeCountCsv().print_csv_by_task(counter_list_by_task, output_file, prior_attribute_columns=attribute_columns)
-
-    def print_annotation_counter_json_by_input_data(
-        self,
-        annotation_path: Path,
-        output_file: Path,
-        *,
-        task_json_path: Path | None = None,
-        target_task_ids: Collection[str] | None = None,
-        task_query: TaskQuery | None = None,
-        json_is_pretty: bool = False,
-        additional_attribute_names: Collection[AttributeNameKey] | None = None,
-        specified_attribute_names: Collection[AttributeNameKey] | None = None,
-    ) -> None:
-        """
-        ラベルごと/属性ごとのアノテーション数を入力データ単位でJSONファイルに出力します。
-
-        Args:
-            annotation_path: アノテーションzipまたはzipを展開したディレクトリのパス
-            output_file: 出力先のJSONファイルパス
-            task_json_path: タスクJSONファイルのパス。フレーム番号を出力する場合に指定します。
-            target_task_ids: 集計対象のタスクIDのコレクション
-            task_query: 集計対象タスクを絞り込むためのクエリ条件
-            json_is_pretty: Trueの場合、整形されたJSON（pretty print）を出力します
-            additional_attribute_names: デフォルトの選択系属性に加えて集計対象とする属性名のキー
-            specified_attribute_names: 集計対象とする属性名のキー。指定した場合、これらの属性のみが集計対象になります。
-
-        Raises:
-            ValueError: `additional_attribute_names`と`specified_attribute_names`の両方が指定された場合に発生します。
-        """
-        if additional_attribute_names is not None and specified_attribute_names is not None:
-            raise ValueError("`additional_attribute_names`と`specified_attribute_names`の両方が指定されています。")
-
-        if specified_attribute_names is not None:
-            # specified_attribute_namesから属性名のみを抽出
-            target_attribute_names_only = list({attr_name for _, attr_name in specified_attribute_names})
-        elif additional_attribute_names is not None:
-            # デフォルトの選択系属性の属性名を取得
-            default_selective_attributes = self.annotation_specs.selective_attribute_name_keys()
-            default_attribute_names = {attr_name for _, attr_name in default_selective_attributes}
-            # additional_attribute_namesから属性名のみを抽出
-            additional_attr_names = {attr_name for _, attr_name in additional_attribute_names}
-            # 両方を組み合わせる
-            target_attribute_names_only = list(default_attribute_names | additional_attr_names)
-        else:
-            # デフォルトでは選択肢系の属性のみを集計対象とする
-            default_selective_attributes = self.annotation_specs.selective_attribute_name_keys()
-            target_attribute_names_only = list({attr_name for _, attr_name in default_selective_attributes})
-
-        frame_no_map = self.get_frame_no_map(task_json_path) if task_json_path is not None else None
-        counter_by_input_data = ListAnnotationCounterByInputData(
-            target_attribute_names_only=target_attribute_names_only,
-            frame_no_map=frame_no_map,
-        )
-        counter_list_by_input_data = counter_by_input_data.get_annotation_counter_list(
-            annotation_path,
-            target_task_ids=target_task_ids,
-            task_query=task_query,
-        )
-
-        print_json(
-            [e.to_dict(encode_json=True) for e in counter_list_by_input_data],
-            is_pretty=json_is_pretty,
-            output=output_file,
-        )
-
-    def print_annotation_counter_json_by_task(
-        self,
-        annotation_path: Path,
-        output_file: Path,
-        *,
-        target_task_ids: Collection[str] | None = None,
-        task_query: TaskQuery | None = None,
-        json_is_pretty: bool = False,
-        additional_attribute_names: Collection[AttributeNameKey] | None = None,
-        specified_attribute_names: Collection[AttributeNameKey] | None = None,
-    ) -> None:
-        """
-        ラベルごと/属性ごとのアノテーション数をタスク単位でJSONファイルに出力します。
-
-        Args:
-            annotation_path: アノテーションzipまたはzipを展開したディレクトリのパス
-            output_file: 出力先のJSONファイルパス
-            target_task_ids: 集計対象のタスクIDのコレクション
-            task_query: 集計対象タスクを絞り込むためのクエリ条件
-            json_is_pretty: Trueの場合、整形されたJSON（pretty print）を出力します
-            additional_attribute_names: デフォルトの選択系属性に加えて集計対象とする属性名のキー
-            specified_attribute_names: 集計対象とする属性名のキー。指定した場合、これらの属性のみが集計対象になります。
-
-        Raises:
-            ValueError: `additional_attribute_names`と`specified_attribute_names`の両方が指定された場合に発生します。
-        """
-        if additional_attribute_names is not None and specified_attribute_names is not None:
-            raise ValueError("`additional_attribute_names`と`specified_attribute_names`の両方が指定されています。")
-
-        if specified_attribute_names is not None:
-            # specified_attribute_namesから属性名のみを抽出
-            target_attribute_names_only = list({attr_name for _, attr_name in specified_attribute_names})
-        elif additional_attribute_names is not None:
-            # デフォルトの選択系属性の属性名を取得
-            default_selective_attributes = self.annotation_specs.selective_attribute_name_keys()
-            default_attribute_names = {attr_name for _, attr_name in default_selective_attributes}
-            # additional_attribute_namesから属性名のみを抽出
-            additional_attr_names = {attr_name for _, attr_name in additional_attribute_names}
-            # 両方を組み合わせる
-            target_attribute_names_only = list(default_attribute_names | additional_attr_names)
-        else:
-            # デフォルトでは選択肢系の属性のみを集計対象とする
-            default_selective_attributes = self.annotation_specs.selective_attribute_name_keys()
-            target_attribute_names_only = list({attr_name for _, attr_name in default_selective_attributes})
-
-        counter_list_by_task = ListAnnotationCounterByTask(
-            target_attribute_names_only=target_attribute_names_only,
-        ).get_annotation_counter_list(
-            annotation_path,
-            target_task_ids=target_task_ids,
-            task_query=task_query,
-        )
-
-        print_json(
-            [e.to_dict(encode_json=True) for e in counter_list_by_task],
-            is_pretty=json_is_pretty,
-            output=output_file,
-        )
-
-    def print_annotation_counter(
-        self,
-        annotation_path: Path,
-        group_by: GroupBy,
-        output_file: Path,
-        arg_format: OutputFormat,
-        *,
-        task_json_path: Path | None = None,
-        target_task_ids: Collection[str] | None = None,
-        task_query: TaskQuery | None = None,
-        csv_type: CsvType | None = None,
-        additional_attribute_names: Collection[AttributeNameKey] | None = None,
-        specified_attribute_names: Collection[AttributeNameKey] | None = None,
-    ) -> None:
-        """
-        ラベルごと/属性ごとのアノテーション数を出力します。
-
-        Args:
-            annotation_path: アノテーションzipまたはzipを展開したディレクトリのパス
-            group_by: 集計単位（タスク単位または入力データ単位）
-            output_file: 出力先ファイルのパス
-            arg_format: 出力形式（CSV、JSON、整形済みJSON）
-            task_json_path: タスクJSONファイルのパス。フレーム番号を出力する場合に指定します。
-            target_task_ids: 集計対象のタスクIDのコレクション
-            task_query: 集計対象タスクを絞り込むためのクエリ条件
-            csv_type: CSV出力時の種類（ラベルごと/属性ごと）。CSV形式の場合は必須です。
-            additional_attribute_names: デフォルトの選択系属性に加えて集計対象とする属性名のキー
-            specified_attribute_names: 集計対象とする属性名のキー。指定した場合、これらの属性のみが集計対象になります。
-        """
-        if arg_format == OutputFormat.CSV:
-            assert csv_type is not None
-            if group_by == GroupBy.INPUT_DATA_ID:
-                self.print_annotation_counter_csv_by_input_data(
-                    annotation_path=annotation_path,
-                    task_json_path=task_json_path,
-                    output_file=output_file,
-                    csv_type=csv_type,
-                    target_task_ids=target_task_ids,
-                    task_query=task_query,
-                    additional_attribute_names=additional_attribute_names,
-                    specified_attribute_names=specified_attribute_names,
-                )
-
-            elif group_by == GroupBy.TASK_ID:
-                self.print_annotation_counter_csv_by_task(
-                    annotation_path=annotation_path,
-                    output_file=output_file,
-                    csv_type=csv_type,
-                    target_task_ids=target_task_ids,
-                    task_query=task_query,
-                    additional_attribute_names=additional_attribute_names,
-                    specified_attribute_names=specified_attribute_names,
-                )
-
-        elif arg_format in [OutputFormat.PRETTY_JSON, OutputFormat.JSON]:
-            json_is_pretty = arg_format == OutputFormat.PRETTY_JSON
-
-            if group_by == GroupBy.INPUT_DATA_ID:
-                self.print_annotation_counter_json_by_input_data(
-                    annotation_path=annotation_path,
-                    task_json_path=task_json_path,
-                    output_file=output_file,
-                    target_task_ids=target_task_ids,
-                    task_query=task_query,
-                    json_is_pretty=json_is_pretty,
-                    additional_attribute_names=additional_attribute_names,
-                    specified_attribute_names=specified_attribute_names,
-                )
-
-            elif group_by == GroupBy.TASK_ID:
-                self.print_annotation_counter_json_by_task(
-                    annotation_path=annotation_path,
-                    output_file=output_file,
-                    target_task_ids=target_task_ids,
-                    task_query=task_query,
-                    json_is_pretty=json_is_pretty,
-                    additional_attribute_names=additional_attribute_names,
-                    specified_attribute_names=specified_attribute_names,
-                )
+    result = {}
+    for task in task_list:
+        task_id = task["task_id"]
+        input_data_id_list = task["input_data_id_list"]
+        for index, input_data_id in enumerate(input_data_id_list):
+            # 画面に合わせて1始まりにする
+            result[(task_id, input_data_id)] = index + 1
+    return result

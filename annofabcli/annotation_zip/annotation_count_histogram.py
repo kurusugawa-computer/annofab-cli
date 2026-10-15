@@ -15,7 +15,7 @@ from bokeh.models import LayoutDOM
 from bokeh.models.widgets.markups import Div
 from bokeh.plotting import figure
 
-from annofabcli.common.annotation_count import AnnotationCounter, AttributeNameKey, AttributeValueKey, GroupBy
+from annofabcli.annotation_zip.annotation_count import AnnotationCounter, AttributeNameKey, AttributeValueKey, GroupBy
 from annofabcli.common.bokeh import convert_1d_figure_list_to_2d, create_pretext_from_metadata
 from annofabcli.statistics.histogram import create_histogram_figure, get_bin_edges, get_sub_title_from_series
 

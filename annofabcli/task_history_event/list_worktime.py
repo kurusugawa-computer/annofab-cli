@@ -16,7 +16,7 @@ from annofabcli.common.cli import (
 )
 from annofabcli.common.enums import OutputFormat
 from annofabcli.common.facade import AnnofabApiFacade
-from annofabcli.common.task_history_worktime import (
+from annofabcli.task_history_event.worktime import (
     ListWorktimeFromTaskHistoryEventMain,
 )
 
