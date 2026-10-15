@@ -42,6 +42,14 @@ Examples
 
 集計結果をCSV/JSONで出力したい場合は、 :doc:`count_annotation_by_label` を使用してください。
 
+.. _annotation_zip_visualize_annotation_count_bin_width:
+
+ヒストグラムのビン幅
+--------------------------
+
+``--bin_width`` には1以上の整数を指定してください。0や負の値は引数エラーになります。
+省略すると、ビンの個数が20になるようにビン幅を調整します。
+
 
 Command line options
 =================================
