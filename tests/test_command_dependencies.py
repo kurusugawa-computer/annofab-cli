@@ -29,7 +29,6 @@ COMMAND_PAIRS = [
 NEW_IMPLEMENTATION_MODULES = {
     "annotation_zip.annotation_count",
     "annotation_zip.annotation_count_histogram",
-    "annotation_zip.annotation_duration",
     "task_history_event.worktime",
     "task_history_event.worktime_summary",
     "input_data.metadata",
