@@ -3,7 +3,7 @@ import builtins
 
 import pytest
 
-from annofabcli.common.cli import DEFAULT_ENDPOINT_URL, get_endpoint_url, get_json_from_args, get_list_from_args, non_negative_int, prompt_yesno, prompt_yesnoall
+from annofabcli.common.cli import DEFAULT_ENDPOINT_URL, get_endpoint_url, get_json_from_args, get_list_from_args, non_negative_int, positive_int, prompt_yesno, prompt_yesnoall
 
 
 def test_get_json_from_args():
@@ -48,6 +48,17 @@ def test_get_endpoint_url_uses_default_when_not_configured(monkeypatch: pytest.M
     args = argparse.Namespace(endpoint_url=None)
 
     assert get_endpoint_url(args) == DEFAULT_ENDPOINT_URL
+
+
+@pytest.mark.parametrize("value", ["1", "3"])
+def test_positive_int(value: str) -> None:
+    assert positive_int(value) == int(value)
+
+
+@pytest.mark.parametrize("value", ["0", "-1"])
+def test_positive_int_rejects_non_positive_values(value: str) -> None:
+    with pytest.raises(argparse.ArgumentTypeError):
+        positive_int(value)
 
 
 def test_non_negative_int() -> None:

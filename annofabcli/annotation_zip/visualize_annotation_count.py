@@ -13,7 +13,7 @@ from annofabapi.models import ProjectMemberRole
 import annofabcli.common.cli
 from annofabcli.annotation_zip.annotation_name import AnnotationNameTranslator, add_use_japanese_name_argument
 from annofabcli.annotation_zip.count_annotation import CountAnnotationMain, CountTarget
-from annofabcli.common.cli import ArgumentParser, CommandLine
+from annofabcli.common.cli import ArgumentParser, CommandLine, positive_int
 from annofabcli.common.download import DownloadingFile
 from annofabcli.common.facade import AnnofabApiFacade, TaskQuery
 from annofabcli.statistics.list_annotation_count import AnnotationSpecs, AttributeNameKey, GroupBy
@@ -280,8 +280,8 @@ def add_common_arguments(parser: argparse.ArgumentParser) -> None:
     argument_parser.add_output(required=True, help_message="出力先HTMLファイルのパスを指定します。")
     parser.add_argument(
         "--bin_width",
-        type=int,
-        help=f"ヒストグラムのビンの幅を指定します。指定しない場合は、ビンの個数が{BIN_COUNT}になるようにビンの幅が調整されます。",
+        type=positive_int,
+        help=f"ヒストグラムのビンの幅を1以上の整数で指定します。指定しない場合は、ビンの個数が{BIN_COUNT}になるようにビンの幅が調整されます。",
     )
     parser.add_argument(
         "--exclude_empty_value",

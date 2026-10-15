@@ -27,6 +27,7 @@ from annofabcli.common.cli import (
     ArgumentParser,
     CommandLine,
     build_annofabapi_resource_and_login,
+    positive_int,
 )
 from annofabcli.common.download import DownloadingFile
 from annofabcli.common.facade import AnnofabApiFacade, TaskQuery
@@ -492,8 +493,8 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
 
     parser.add_argument(
         "--bin_width",
-        type=int,
-        help=f"ヒストグラムのビンの幅を指定します。指定しない場合は、ビンの個数が{BIN_COUNT}になるようにビンの幅が調整されます。",
+        type=positive_int,
+        help=f"ヒストグラムのビンの幅を1以上の整数で指定します。指定しない場合は、ビンの個数が{BIN_COUNT}になるようにビンの幅が調整されます。",
     )
 
     parser.add_argument(

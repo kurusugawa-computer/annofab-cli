@@ -63,6 +63,8 @@ Examples
 
 集計結果をCSV/JSONで出力したい場合は、 :doc:`count_annotation_by_attribute_value` を使用してください。
 
+``--bin_width`` の指定方法は :ref:`annotation_zip_visualize_annotation_count_bin_width` を参照してください。
+
 
 Command line options
 =================================
