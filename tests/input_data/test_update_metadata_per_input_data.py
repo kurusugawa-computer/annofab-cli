@@ -1,7 +1,7 @@
 import pytest
 
 from annofabcli.input_data import update_metadata_per_input_data
-from annofabcli.input_data.update_metadata_of_input_data import InputDataMetadataInfo
+from annofabcli.input_data.update_metadata_per_input_data import InputDataMetadataInfo
 
 
 def test_get_input_data_metadata_info_list_from_json_args() -> None:

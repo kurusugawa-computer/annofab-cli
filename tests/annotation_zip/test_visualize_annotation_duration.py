@@ -17,8 +17,10 @@ from bokeh.models.renderers import GlyphRenderer
 from bokeh.models.sources import ColumnDataSource
 
 from annofabcli.annotation_zip import visualize_annotation_duration as duration_module
+from annofabcli.annotation_zip.annotation_count import AnnotationSpecs
 from annofabcli.annotation_zip.annotation_name import AnnotationNameTranslator
 from annofabcli.annotation_zip.visualize_annotation_duration import (
+    ListAnnotationDurationByInputData,
     TimeUnit,
     get_duration_plot_data,
     plot_annotation_duration_histogram_by_attribute,
@@ -28,7 +30,6 @@ from annofabcli.annotation_zip.visualize_annotation_duration_by_attribute_value 
 from annofabcli.annotation_zip.visualize_annotation_duration_by_label import add_parser as label_parser
 from annofabcli.common.download import DownloadingFile
 from annofabcli.common.exceptions import AnnofabCliException
-from annofabcli.statistics.list_annotation_duration import AnnotationSpecs, ListAnnotationDurationByInputData
 
 output_dir = Path("./tests/out/annotation_zip/visualize_annotation_duration")
 data_dir = Path("./tests/data/statistics/")

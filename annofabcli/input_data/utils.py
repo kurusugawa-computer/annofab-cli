@@ -18,3 +18,15 @@ def remove_unnecessary_keys_from_input_data(input_data: dict[str, Any]) -> None:
     ]
     for key in unnecessary_keys:
         input_data.pop(key, None)
+
+
+def validate_metadata(metadata: dict[str, str]) -> bool:
+    """入力データのメタデータの値が文字列であることを検証する。
+
+    Args:
+        metadata: 検証するメタデータ。
+
+    Returns:
+        すべての値が文字列の場合はTrue。
+    """
+    return all(isinstance(value, str) for value in metadata.values())

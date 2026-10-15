@@ -7,11 +7,11 @@ from typing import Any
 import pandas
 from annofabapi.models import TaskPhase, TaskStatus
 
+from annofabcli.annotation_zip.annotation_count import AnnotationCounterByTask
 from annofabcli.annotation_zip.count_aggregation import CountSummary
 from annofabcli.annotation_zip.count_annotation import CountAnnotationMain, validate_with_per_input_data
 from annofabcli.annotation_zip.task_metadata import add_task_metadata_to_dataframe, add_task_metadata_to_dict_list
 from annofabcli.common.enums import OutputFormat
-from annofabcli.statistics.list_annotation_count import AnnotationCounterByTask
 
 
 def test_to_label_count_dict():

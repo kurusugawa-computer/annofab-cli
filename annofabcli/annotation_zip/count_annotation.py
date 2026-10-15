@@ -15,6 +15,20 @@ import pandas
 from annofabapi.models import ProjectMemberRole
 
 import annofabcli.common.cli
+from annofabcli.annotation_zip.annotation_count import (
+    AnnotationCounterByInputData,
+    AnnotationCounterByTask,
+    AnnotationSpecs,
+    AttributeCountCsv,
+    AttributeNameKey,
+    AttributeValueKey,
+    GroupBy,
+    LabelCountCsv,
+    ListAnnotationCounterByInputData,
+    ListAnnotationCounterByTask,
+    encode_annotation_count_by_attribute,
+    get_frame_no_map,
+)
 from annofabcli.annotation_zip.annotation_name import AnnotationNameTranslator, add_use_japanese_name_argument
 from annofabcli.annotation_zip.count_aggregation import (
     INPUT_DATA_ID_GROUP,
@@ -31,20 +45,6 @@ from annofabcli.common.download import DownloadingFile
 from annofabcli.common.enums import OutputFormat
 from annofabcli.common.facade import AnnofabApiFacade, TaskQuery
 from annofabcli.common.utils import print_csv, print_json
-from annofabcli.statistics.list_annotation_count import (
-    AnnotationCounterByInputData,
-    AnnotationCounterByTask,
-    AnnotationSpecs,
-    AttributeCountCsv,
-    AttributeNameKey,
-    AttributeValueKey,
-    GroupBy,
-    LabelCountCsv,
-    ListAnnotationCounterByInputData,
-    ListAnnotationCounterByTask,
-    ListAnnotationCountMain,
-    encode_annotation_count_by_attribute,
-)
 
 logger = logging.getLogger(__name__)
 
@@ -144,7 +144,7 @@ class CountAnnotationMain:
             specified_attribute_names=specified_attribute_names,
         )
         if group_by == GroupBy.INPUT_DATA_ID:
-            frame_no_map = ListAnnotationCountMain.get_frame_no_map(task_json_path) if task_json_path is not None else None
+            frame_no_map = get_frame_no_map(task_json_path) if task_json_path is not None else None
             input_data_result = ListAnnotationCounterByInputData(
                 target_labels=target_label_names,
                 target_attribute_names_only=target_attribute_names_only,

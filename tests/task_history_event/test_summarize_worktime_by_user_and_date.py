@@ -6,9 +6,10 @@ import pandas
 import pytest
 
 from annofabcli.__main__ import create_parser
+from annofabcli.statistics import list_worktime
 from annofabcli.task_history_event import summarize_worktime_by_user_and_date
-from annofabcli.task_history_event.list_worktime import RequestOfTaskHistoryEvent, SimpleTaskHistoryEvent
-from annofabcli.task_history_event.summarize_worktime_by_user_and_date import WORKTIME_COLUMNS, WorktimeFromTaskHistoryEvent, get_df_worktime
+from annofabcli.task_history_event.list_worktime import RequestOfTaskHistoryEvent, SimpleTaskHistoryEvent, WorktimeFromTaskHistoryEvent
+from annofabcli.task_history_event.summarize_worktime_by_user_and_date import WORKTIME_COLUMNS, get_df_worktime
 
 
 def run_command(arguments: list[str]) -> None:
@@ -107,6 +108,7 @@ def local_worktime_input(tmp_path, monkeypatch):
     service.api.get_project.return_value = ({"title": "Project"}, None)
     service.wrapper.get_all_project_members.return_value = members
     monkeypatch.setattr(summarize_worktime_by_user_and_date, "build_annofabapi_resource_and_login", lambda _args: service)
+    monkeypatch.setattr(list_worktime, "build_annofabapi_resource_and_login", lambda _args: service)
     events = []
     for status, hour in [("working", 10), ("complete", 11)]:
         events.append(

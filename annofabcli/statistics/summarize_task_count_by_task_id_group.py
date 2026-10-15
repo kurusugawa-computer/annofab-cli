@@ -6,9 +6,11 @@ import logging
 import tempfile
 from enum import Enum
 from pathlib import Path
+from typing import assert_never
 
 import pandas
 from annofabapi.models import ProjectMemberRole, Task, TaskPhase, TaskStatus
+from annofabapi.utils import get_number_of_rejections
 
 import annofabcli.common.cli
 from annofabcli.common.cli import (
@@ -21,7 +23,6 @@ from annofabcli.common.dataclasses import WaitOptions
 from annofabcli.common.download import DownloadingFile
 from annofabcli.common.enums import OutputFormat
 from annofabcli.common.facade import AnnofabApiFacade
-from annofabcli.task_count.list_by_phase import get_step_for_current_phase
 
 logger = logging.getLogger(__name__)
 
@@ -34,6 +35,42 @@ DEPRECATED_MESSAGE = (
 DEFAULT_WAIT_OPTIONS = WaitOptions(interval=60, max_tries=360)
 TASK_ID_GROUP_UNKNOWN = "unknown"
 """task_id_groupが不明な場合に表示する値"""
+
+
+def get_step_for_current_phase(task: Task, number_of_inspections: int) -> int:
+    """
+    今のフェーズが何回目かを取得する。
+
+    Args:
+        task: 対象タスクの情報。phase, phase_stage, histories_by_phase を含む。
+        number_of_inspections: 対象プロジェクトの検査フェーズの回数
+
+    Returns:
+        現在のフェーズのステップ数
+    """
+    current_phase = TaskPhase(task["phase"])
+    current_phase_stage = task["phase_stage"]
+    histories_by_phase = task["histories_by_phase"]
+
+    number_of_rejections_by_acceptance = get_number_of_rejections(histories_by_phase, phase=TaskPhase.ACCEPTANCE)
+    match current_phase:
+        case TaskPhase.ACCEPTANCE:
+            return number_of_rejections_by_acceptance + 1
+
+        case TaskPhase.ANNOTATION:
+            number_of_rejections_by_inspection = sum(
+                get_number_of_rejections(histories_by_phase, phase=TaskPhase.INSPECTION, phase_stage=phase_stage) for phase_stage in range(1, number_of_inspections + 1)
+            )
+            return number_of_rejections_by_inspection + number_of_rejections_by_acceptance + 1
+
+        case TaskPhase.INSPECTION:
+            number_of_rejections_by_inspection = sum(
+                get_number_of_rejections(histories_by_phase, phase=TaskPhase.INSPECTION, phase_stage=phase_stage) for phase_stage in range(current_phase_stage, number_of_inspections + 1)
+            )
+            return number_of_rejections_by_inspection + number_of_rejections_by_acceptance + 1
+
+        case _ as unreachable:
+            assert_never(unreachable)
 
 
 class TaskStatusForSummary(Enum):

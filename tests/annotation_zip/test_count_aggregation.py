@@ -2,8 +2,8 @@ import collections
 
 from annofabapi.models import TaskPhase, TaskStatus
 
+from annofabcli.annotation_zip.annotation_count import AnnotationCounterByTask
 from annofabcli.annotation_zip.count_aggregation import aggregate_task_counts, needs_task_metadata, validate_group_by
-from annofabcli.statistics.list_annotation_count import AnnotationCounterByTask
 
 
 def create_task_count(
