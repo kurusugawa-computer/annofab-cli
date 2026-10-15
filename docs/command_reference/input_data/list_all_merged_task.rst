@@ -33,6 +33,14 @@ Examples
 絞り込み
 --------------------------
 
+``--input_data_name`` を指定すると、指定した名前のいずれかに部分一致する入力データを出力します。大文字小文字は区別しません。
+``--input_data_id`` や ``--input_data_query`` と併用すると、すべての条件に一致する入力データを出力します。
+
+.. code-block:: bash
+
+    $ annofabcli input_data list_all_merged_task --project_id prj1 \
+      --input_data_name sample example
+
 ``--input_data_query`` を指定すると、入力データの名前や入力データのパスで絞り込めます。
 
 
