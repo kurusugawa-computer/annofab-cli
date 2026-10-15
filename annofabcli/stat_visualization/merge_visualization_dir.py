@@ -4,6 +4,7 @@ import argparse
 import json
 import logging
 import sys
+from collections.abc import Collection
 from pathlib import Path
 
 from annofabapi.models import TaskPhase
@@ -233,9 +234,17 @@ def merge_visualization_dir(  # pylint: disable=too-many-statements
     writing_obj.write_merge_info(merging_info)
 
 
-def validate(args: argparse.Namespace) -> bool:
+def validate(directory_paths: Collection[Path]) -> bool:
+    """マージ対象の件数を検証します。
+
+    Args:
+        directory_paths: 一覧ファイルを展開した後のディレクトリ一覧。
+
+    Returns:
+        ディレクトリが2つ以上あればTrue。
+    """
     COMMON_MESSAGE = "annofabcli stat_visualization merge:"  # noqa: N806
-    if len(args.dir) < 2:
+    if len(directory_paths) < 2:
         print(f"{COMMON_MESSAGE} argument --dir: マージ対象のディレクトリは2つ以上指定してください。", file=sys.stderr)  # noqa: T201
         return False
 
@@ -255,7 +264,8 @@ def create_custom_production_volume_list(cli_value: str) -> list[ProductionVolum
 
 
 def main(args: argparse.Namespace) -> None:
-    if not validate(args):
+    directory_paths = [Path(value) for value in get_list_from_args(args.dir)]
+    if not validate(directory_paths):
         sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
     user_id_list = get_list_from_args(args.user_id) if args.user_id is not None else None
@@ -263,7 +273,7 @@ def main(args: argparse.Namespace) -> None:
     custom_production_volume_list = create_custom_production_volume_list(args.custom_production_volume) if args.custom_production_volume is not None else None
     task_completion_criteria = TaskCompletionCriteria(args.task_completion_criteria)
     merge_visualization_dir(
-        project_dir_list=[ProjectDir(e, task_completion_criteria) for e in args.dir],
+        project_dir_list=[ProjectDir(e, task_completion_criteria) for e in directory_paths],
         task_completion_criteria=task_completion_criteria,
         user_id_list=user_id_list,
         custom_production_volume_list=custom_production_volume_list,
@@ -273,7 +283,18 @@ def main(args: argparse.Namespace) -> None:
 
 
 def parse_args(parser: argparse.ArgumentParser) -> None:
-    parser.add_argument("--dir", type=Path, nargs="+", required=True, help="マージ対象ディレクトリ。2つ以上指定してください。")
+    parser.add_argument(
+        "--dir",
+        type=str,
+        nargs="+",
+        required=True,
+        help=(
+            "マージ対象ディレクトリ。2つ以上指定してください。"
+            " ``file://`` を先頭に付けると、改行区切りの一覧ファイルを指定できます。"
+            " ファイルを読み込む場合は、ファイル指定を1個だけ渡してください。"
+            "直接指定する値や別のファイル指定とは併用できません。"
+        ),
+    )
     parser.add_argument("-o", "--output_dir", type=Path, required=True, help="出力先ディレクトリ。配下にプロジェクト名のディレクトリが出力される。")
 
     parser.add_argument(
@@ -312,7 +333,10 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--custom_production_volume",
         type=str,
-        help=(f"プロジェクト独自の生産量をJSON形式で指定します。(例) ``{json.dumps(custom_production_volume_sample, ensure_ascii=False)}`` \n"),
+        help=(
+            f"プロジェクト独自の生産量をJSON形式で指定します。(例) ``{json.dumps(custom_production_volume_sample, ensure_ascii=False)}`` \n"
+            " ``file://`` を先頭に付けると、JSON形式のファイルを指定できます。"
+        ),
     )
 
     parser.set_defaults(subcommand_func=main)

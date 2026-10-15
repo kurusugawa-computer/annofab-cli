@@ -684,9 +684,12 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--productivity_indicator_by_directory",
         type=str,
-        help="生産性の指標をディレクトリごとに指定します。JSON形式で指定してください。\n"
-        "``--productivity_indicator`` で指定した値よりも優先されます。\n"
-        f"(ex) ``{json.dumps(PRODUCTIVITY_INDICATOR_BY_DIRECTORY_SAMPLE)}``",
+        help=(
+            "生産性の指標をディレクトリごとに指定します。JSON形式で指定してください。\n"
+            "``--productivity_indicator`` で指定した値よりも優先されます。\n"
+            f"(ex) ``{json.dumps(PRODUCTIVITY_INDICATOR_BY_DIRECTORY_SAMPLE)}``"
+            " ``file://`` を先頭に付けると、JSON形式のファイルを指定できます。"
+        ),
     )
 
     parser.add_argument(
@@ -702,9 +705,12 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--quality_indicator_by_directory",
         type=str,
-        help="品質の指標をディレクトリごとに指定します。JSON形式で指定してください。\n"
-        "``--quality_indicator`` で指定した値よりも優先されます。\n"
-        f"(ex) ``{json.dumps(QUALITY_INDICATOR_BY_DIRECTORY_SAMPLE)}``",
+        help=(
+            "品質の指標をディレクトリごとに指定します。JSON形式で指定してください。\n"
+            "``--quality_indicator`` で指定した値よりも優先されます。\n"
+            f"(ex) ``{json.dumps(QUALITY_INDICATOR_BY_DIRECTORY_SAMPLE)}``"
+            " ``file://`` を先頭に付けると、JSON形式のファイルを指定できます。"
+        ),
     )
 
     parser.add_argument(
@@ -731,7 +737,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--threshold_settings",
         type=str,
-        help=f"JSON形式で、ディレクトリ名ごとに閾値を指定してください。\n(ex) ``{json.dumps(THRESHOLD_SETTINGS_SAMPLE)}``",
+        help=(f"JSON形式で、ディレクトリ名ごとに閾値を指定してください。\n(ex) ``{json.dumps(THRESHOLD_SETTINGS_SAMPLE)}`` ``file://`` を先頭に付けると、JSON形式のファイルを指定できます。"),
     )
 
     custom_production_volume_sample = {
@@ -742,7 +748,10 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--custom_production_volume_by_directory",
         type=str,
-        help=(f"プロジェクト独自の生産量をJSON形式で指定します。(例) ``{json.dumps(custom_production_volume_sample, ensure_ascii=False)}`` \n"),
+        help=(
+            f"プロジェクト独自の生産量をJSON形式で指定します。(例) ``{json.dumps(custom_production_volume_sample, ensure_ascii=False)}`` \n"
+            " ``file://`` を先頭に付けると、JSON形式のファイルを指定できます。"
+        ),
     )
 
     parser.add_argument("-o", "--output_dir", required=True, type=Path, help="出力ディレクトリ")

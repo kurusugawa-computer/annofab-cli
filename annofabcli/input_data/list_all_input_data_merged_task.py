@@ -171,7 +171,8 @@ class ListInputDataMergedTask(CommandLine):
 
         input_data_id_set = set(get_list_from_args(args.input_data_id)) if args.input_data_id is not None else None
         input_data_query = InputDataQuery.from_dict(annofabcli.common.cli.get_json_from_args(args.input_data_query)) if args.input_data_query is not None else None
-        filtered_input_data_list = [e for e in input_data_list if match_input_data(e, input_data_query=input_data_query, input_data_id_set=input_data_id_set, input_data_names=args.input_data_name)]
+        input_data_names = get_list_from_args(args.input_data_name) if args.input_data_name is not None else None
+        filtered_input_data_list = [e for e in input_data_list if match_input_data(e, input_data_query=input_data_query, input_data_id_set=input_data_id_set, input_data_names=input_data_names)]
 
         input_data_list_with_merged_task = create_input_data_list_with_merged_task(input_data_list=filtered_input_data_list, task_list=task_list)
 
@@ -200,13 +201,29 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
 
     argument_parser.add_project_id()
 
-    parser.add_argument("-i", "--input_data_id", type=str, nargs="+", help="指定したinput_data_idに完全一致する入力データを絞り込みます。")
+    parser.add_argument(
+        "-i",
+        "--input_data_id",
+        type=str,
+        nargs="+",
+        help=(
+            "指定したinput_data_idに完全一致する入力データを絞り込みます。"
+            " ``file://`` を先頭に付けると、改行区切りの一覧ファイルを指定できます。"
+            " ファイルを読み込む場合は、ファイル指定を1個だけ渡してください。"
+            "直接指定する値や別のファイル指定とは併用できません。"
+        ),
+    )
     parser.add_argument(
         "--input_data_name",
         type=str,
         nargs="+",
-        help="指定した名前のいずれかに部分一致（大文字小文字を区別しない）する入力データに絞り込みます。"
-        " ``--input_data_id`` や ``--input_data_query`` との併用時は、すべての条件に一致する入力データを出力します。",
+        help=(
+            "指定した名前のいずれかに部分一致（大文字小文字を区別しない）する入力データに絞り込みます。"
+            " ``--input_data_id`` や ``--input_data_query`` との併用時は、すべての条件に一致する入力データを出力します。"
+            " ``file://`` を先頭に付けると、改行区切りの一覧ファイルを指定できます。"
+            " ファイルを読み込む場合は、ファイル指定を1個だけ渡してください。"
+            "直接指定する値や別のファイル指定とは併用できません。"
+        ),
     )
 
     parser.add_argument(

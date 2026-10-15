@@ -28,6 +28,8 @@ def test_empty_list_outputs_input_data_and_task_headers(tmp_path: Path) -> None:
         (["--input_data_name", "sAmPlE"], ["input1", "input2"]),
         (["--input_data_name", "sample", "OTHER"], ["input1", "input2", "input3"]),
         (["--input_data_name", "missing"], []),
+        (["--input_data_name", "file://{names_file}"], ["input1", "input2"]),
+        (["--input_data_name", "file://{names_file}", "--input_data_id", "input2", "input3"], ["input2"]),
         (["--input_data_name", "sample", "--input_data_id", "input2", "input3"], ["input2"]),
         (["--input_data_name", "sample", "--input_data_query", '{"input_data_path": "selected"}'], ["input1"]),
     ],
@@ -57,6 +59,9 @@ def test_main_filters_input_data_names(tmp_path: Path, monkeypatch: pytest.Monke
     task_path.write_text("[]", encoding="utf-8")
     monkeypatch.setattr(DownloadingFile, "download_input_data_json_to_dir", Mock(return_value=input_data_path))
     monkeypatch.setattr(DownloadingFile, "download_task_json_to_dir", Mock(return_value=task_path))
+    names_file = tmp_path / "名前一覧.txt"
+    names_file.write_text("sAmPlE\n\nmissing\n", encoding="utf-8")
+    options = [option.replace("{names_file}", str(names_file)) for option in options]
     output = tmp_path / "result.json"
     args = add_parser().parse_args(["--project_id", "project1", "--format", "json", "--output", str(output), *options])
 

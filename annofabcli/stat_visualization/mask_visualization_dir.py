@@ -189,14 +189,24 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--not_masked_biography",
         type=str,
         nargs="+",
-        help="マスクしないユーザの ``biography`` を指定してください。",
+        help=(
+            "マスクしないユーザの ``biography`` を指定してください。"
+            " ``file://`` を先頭に付けると、改行区切りの一覧ファイルを指定できます。"
+            " ファイルを読み込む場合は、ファイル指定を1個だけ渡してください。"
+            "直接指定する値や別のファイル指定とは併用できません。"
+        ),
     )
 
     parser.add_argument(
         "--not_masked_user_id",
         type=str,
         nargs="+",
-        help="マスクしないユーザの ``user_id`` を指定してください。",
+        help=(
+            "マスクしないユーザの ``user_id`` を指定してください。"
+            " ``file://`` を先頭に付けると、改行区切りの一覧ファイルを指定できます。"
+            " ファイルを読み込む場合は、ファイル指定を1個だけ渡してください。"
+            "直接指定する値や別のファイル指定とは併用できません。"
+        ),
     )
 
     parser.add_argument(
@@ -221,7 +231,10 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--custom_production_volume",
         type=str,
-        help=(f"プロジェクト独自の生産量をJSON形式で指定します。(例) ``{json.dumps(custom_production_volume_sample, ensure_ascii=False)}`` \n"),
+        help=(
+            f"プロジェクト独自の生産量をJSON形式で指定します。(例) ``{json.dumps(custom_production_volume_sample, ensure_ascii=False)}`` \n"
+            " ``file://`` を先頭に付けると、JSON形式のファイルを指定できます。"
+        ),
     )
 
     parser.add_argument("-o", "--output_dir", type=Path, required=True, help="出力先ディレクトリ。")

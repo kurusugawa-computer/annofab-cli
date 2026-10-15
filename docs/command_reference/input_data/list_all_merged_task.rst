@@ -41,6 +41,20 @@ Examples
     $ annofabcli input_data list_all_merged_task --project_id prj1 \
       --input_data_name sample example
 
+``--input_data_name`` は、改行区切りの名前一覧を ``file://`` で指定することもできます。
+ファイル指定は1個だけ渡してください。直接指定する値や別のファイル指定とは併用できません。
+
+.. code-block:: text
+    :caption: input_data_names.txt
+
+    sample
+    example
+
+.. code-block:: bash
+
+    $ annofabcli input_data list_all_merged_task --project_id prj1 \
+      --input_data_name file://input_data_names.txt
+
 ``--input_data_query`` を指定すると、入力データの名前や入力データのパスで絞り込めます。
 
 

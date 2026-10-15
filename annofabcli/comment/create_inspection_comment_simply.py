@@ -101,7 +101,17 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         help="作成する検査コメントのメッセージを指定します。",
     )
 
-    parser.add_argument("--phrase_id", type=str, nargs="+", help="定型指摘コメントのIDを指定してください。")
+    parser.add_argument(
+        "--phrase_id",
+        type=str,
+        nargs="+",
+        help=(
+            "定型指摘コメントのIDを指定してください。"
+            " ``file://`` を先頭に付けると、改行区切りの一覧ファイルを指定できます。"
+            " ファイルを読み込む場合は、ファイル指定を1個だけ渡してください。"
+            "直接指定する値や別のファイル指定とは併用できません。"
+        ),
+    )
 
     parser.add_argument(
         "--comment_data",

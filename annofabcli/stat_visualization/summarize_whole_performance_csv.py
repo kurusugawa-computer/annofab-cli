@@ -55,7 +55,10 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--custom_production_volume",
         type=str,
-        help=(f"プロジェクト独自の生産量をJSON形式で指定します。(例) ``{json.dumps(custom_production_volume_sample, ensure_ascii=False)}`` \n"),
+        help=(
+            f"プロジェクト独自の生産量をJSON形式で指定します。(例) ``{json.dumps(custom_production_volume_sample, ensure_ascii=False)}`` \n"
+            " ``file://`` を先頭に付けると、JSON形式のファイルを指定できます。"
+        ),
     )
 
     parser.set_defaults(subcommand_func=main)
