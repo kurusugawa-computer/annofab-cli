@@ -10,7 +10,7 @@ import pandas
 from annofabapi.models import ProjectMemberRole
 
 import annofabcli.common.cli
-from annofabcli.common.cli import COMMAND_LINE_ERROR_STATUS_CODE, ArgumentParser, CommandLine, build_annofabapi_resource_and_login, get_json_from_args
+from annofabcli.common.cli import COMMAND_LINE_ERROR_STATUS_CODE, ArgumentParser, CommandLine, build_annofabapi_resource_and_login, get_json_from_args, positive_int
 from annofabcli.common.enums import OutputFormat
 from annofabcli.common.facade import AnnofabApiFacade
 from annofabcli.task_count.common import SUMMARY_COLUMNS, summarize_df_task
@@ -24,24 +24,6 @@ TASK_ID_GROUP_UNKNOWN = "unknown"
 
 SINGLE_TASK_ID_GROUP_NAME = "all"
 """すべてのタスクを1グループとして集計するときのtask_id_group。"""
-
-
-def positive_int(value: str) -> int:
-    """文字列を1以上の整数に変換する。
-
-    Args:
-        value: コマンドライン引数で指定された値。
-
-    Returns:
-        変換後の整数。
-
-    Raises:
-        argparse.ArgumentTypeError: 1未満の値が指定された場合。
-    """
-    int_value = int(value)
-    if int_value < 1:
-        raise argparse.ArgumentTypeError("1以上の整数を指定してください。")
-    return int_value
 
 
 def get_task_id_prefix(task_id: str, delimiter: str, component_count: int | None = None) -> str:

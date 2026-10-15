@@ -58,6 +58,24 @@ AnnofabのRate Limit的に最大4並列なので（これ以上並列度を上�
 """
 
 
+def positive_int(value: str) -> int:
+    """文字列を1以上の整数に変換する。
+
+    Args:
+        value: コマンドライン引数で指定された値。
+
+    Returns:
+        変換後の整数。
+
+    Raises:
+        argparse.ArgumentTypeError: 1未満の値が指定された場合。
+    """
+    int_value = int(value)
+    if int_value < 1:
+        raise argparse.ArgumentTypeError("1以上の整数を指定してください。")
+    return int_value
+
+
 def non_negative_int(value: str) -> int:
     """
     0以上の整数に変換する。

@@ -6,6 +6,7 @@ import json
 import logging
 import tempfile
 from collections import defaultdict
+from collections.abc import Collection
 from pathlib import Path
 from typing import Any
 
@@ -107,13 +108,27 @@ def match_input_data(
     input_data: dict[str, Any],
     input_data_id_set: set[str] | None = None,
     input_data_query: InputDataQuery | None = None,
+    input_data_names: Collection[str] | None = None,
 ) -> bool:
+    """入力データが指定されたすべての絞り込み条件に一致するか判定します。
+
+    Args:
+        input_data: 判定対象の入力データ。
+        input_data_id_set: 対象の入力データID。Noneの場合は絞り込みません。
+        input_data_query: 入力データの検索条件。
+        input_data_names: 部分一致させる名前。いずれかに一致すれば対象とし、大文字小文字は区別しません。
+
+    Returns:
+        すべての条件に一致する場合はTrue。
+    """
     result = True
 
     dc_input_data = InputData.from_dict(input_data)
     result = result and match_input_data_with_query(dc_input_data, input_data_query)
     if input_data_id_set is not None:
         result = result and (dc_input_data.input_data_id in input_data_id_set)
+    if input_data_names is not None:
+        result = result and any(name.lower() in dc_input_data.input_data_name.lower() for name in input_data_names)
     return result
 
 
@@ -156,7 +171,7 @@ class ListInputDataMergedTask(CommandLine):
 
         input_data_id_set = set(get_list_from_args(args.input_data_id)) if args.input_data_id is not None else None
         input_data_query = InputDataQuery.from_dict(annofabcli.common.cli.get_json_from_args(args.input_data_query)) if args.input_data_query is not None else None
-        filtered_input_data_list = [e for e in input_data_list if match_input_data(e, input_data_query=input_data_query, input_data_id_set=input_data_id_set)]
+        filtered_input_data_list = [e for e in input_data_list if match_input_data(e, input_data_query=input_data_query, input_data_id_set=input_data_id_set, input_data_names=args.input_data_name)]
 
         input_data_list_with_merged_task = create_input_data_list_with_merged_task(input_data_list=filtered_input_data_list, task_list=task_list)
 
@@ -186,7 +201,13 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     argument_parser.add_project_id()
 
     parser.add_argument("-i", "--input_data_id", type=str, nargs="+", help="指定したinput_data_idに完全一致する入力データを絞り込みます。")
-    parser.add_argument("--input_data_name", type=str, nargs="+", help="指定したinput_data_nameに部分一致(大文字小文字区別しない）する入力データを絞り込みます。")
+    parser.add_argument(
+        "--input_data_name",
+        type=str,
+        nargs="+",
+        help="指定した名前のいずれかに部分一致（大文字小文字を区別しない）する入力データに絞り込みます。"
+        " ``--input_data_id`` や ``--input_data_query`` との併用時は、すべての条件に一致する入力データを出力します。",
+    )
 
     parser.add_argument(
         "-iq",

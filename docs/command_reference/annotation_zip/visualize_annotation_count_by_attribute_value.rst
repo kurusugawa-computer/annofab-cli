@@ -39,6 +39,21 @@ Examples
 
     $ annofabcli annotation_zip visualize_annotation_count_by_attribute_value --project_id prj1 --annotation annotation.zip --output attributes_count.html
 
+ラベルで絞り込む
+--------------------------
+
+``--label_name`` を指定すると、指定したラベルに属する属性値だけを集計・描画します。
+``--attribute_name`` と併用すると、指定したラベルに属する指定属性の値だけが対象になります。
+``--additional_attribute_name`` と併用すると、指定したラベルに属するデフォルトの選択系属性に加えて、指定属性の値も対象になります。
+
+.. code-block:: bash
+
+    $ annofabcli annotation_zip visualize_annotation_count_by_attribute_value --project_id prj1 \
+      --label_name car --output car_attributes_count.html
+
+ラベル名の指定方法は :doc:`count_annotation_by_attribute_value` と共通です。
+
+
 入力データごとに可視化する
 --------------------------
 
@@ -47,6 +62,8 @@ Examples
     $ annofabcli annotation_zip visualize_annotation_count_by_attribute_value --project_id prj1 --group_by input_data_id --output attributes_count.html
 
 集計結果をCSV/JSONで出力したい場合は、 :doc:`count_annotation_by_attribute_value` を使用してください。
+
+``--bin_width`` の指定方法は :ref:`annotation_zip_visualize_annotation_count_bin_width` を参照してください。
 
 
 Command line options
