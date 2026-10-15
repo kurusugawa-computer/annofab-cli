@@ -39,15 +39,6 @@ Examples
 
     $ annofabcli annotation_zip visualize_annotation_count_by_attribute_value --project_id prj1 --annotation annotation.zip --output attributes_count.html
 
-入力データごとに可視化する
---------------------------
-
-.. code-block::
-
-    $ annofabcli annotation_zip visualize_annotation_count_by_attribute_value --project_id prj1 --group_by input_data_id --output attributes_count.html
-
-集計結果をCSV/JSONで出力したい場合は、 :doc:`count_annotation_by_attribute_value` を使用してください。
-
 ラベルで絞り込む
 --------------------------
 
@@ -60,6 +51,16 @@ Examples
       --label_name car --output car_attributes_count.html
 
 ラベル名の指定方法は :doc:`count_annotation_by_attribute_value` と共通です。
+
+
+入力データごとに可視化する
+--------------------------
+
+.. code-block::
+
+    $ annofabcli annotation_zip visualize_annotation_count_by_attribute_value --project_id prj1 --group_by input_data_id --output attributes_count.html
+
+集計結果をCSV/JSONで出力したい場合は、 :doc:`count_annotation_by_attribute_value` を使用してください。
 
 
 Command line options
