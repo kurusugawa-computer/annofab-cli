@@ -21,7 +21,7 @@ from annofabcli.common.dataclasses import WaitOptions
 from annofabcli.common.download import DownloadingFile
 from annofabcli.common.enums import OutputFormat
 from annofabcli.common.facade import AnnofabApiFacade
-from annofabcli.task_count.list_by_phase import get_step_for_current_phase
+from annofabcli.common.task_phase import get_step_for_current_phase
 
 logger = logging.getLogger(__name__)
 

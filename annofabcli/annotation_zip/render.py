@@ -16,8 +16,8 @@ from annofabcli.common.cli import (
     get_json_from_args,
     get_list_from_args,
 )
+from annofabcli.common.draw_annotation import Color, DrawingOptions, draw_annotation_all
 from annofabcli.common.facade import TaskQuery
-from annofabcli.filesystem.draw_annotation import Color, DrawingOptions, draw_annotation_all
 
 
 def read_input_data_id_csv(csv_path: Path) -> dict[str, str]:

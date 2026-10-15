@@ -18,17 +18,14 @@ from bokeh.models.sources import ColumnDataSource
 
 from annofabcli.annotation_zip import visualize_annotation_duration as duration_module
 from annofabcli.annotation_zip.annotation_name import AnnotationNameTranslator
-from annofabcli.annotation_zip.visualize_annotation_duration import (
-    TimeUnit,
-    get_duration_plot_data,
-    plot_annotation_duration_histogram_by_attribute,
-    plot_annotation_duration_histogram_by_label,
-)
+from annofabcli.annotation_zip.visualize_annotation_duration import get_duration_plot_data
 from annofabcli.annotation_zip.visualize_annotation_duration_by_attribute_value import add_parser as attribute_parser
 from annofabcli.annotation_zip.visualize_annotation_duration_by_label import add_parser as label_parser
+from annofabcli.common.annotation_count import AnnotationSpecs
+from annofabcli.common.annotation_duration import ListAnnotationDurationByInputData
+from annofabcli.common.annotation_duration_histogram import TimeUnit, plot_annotation_duration_histogram_by_attribute, plot_annotation_duration_histogram_by_label
 from annofabcli.common.download import DownloadingFile
 from annofabcli.common.exceptions import AnnofabCliException
-from annofabcli.statistics.list_annotation_duration import AnnotationSpecs, ListAnnotationDurationByInputData
 
 output_dir = Path("./tests/out/annotation_zip/visualize_annotation_duration")
 data_dir = Path("./tests/data/statistics/")

@@ -13,11 +13,11 @@ from annofabapi.models import ProjectMemberRole
 import annofabcli.common.cli
 from annofabcli.annotation_zip.annotation_name import AnnotationNameTranslator, add_use_japanese_name_argument
 from annofabcli.annotation_zip.count_annotation import CountAnnotationMain, CountTarget
+from annofabcli.common.annotation_count import AnnotationSpecs, AttributeNameKey, GroupBy
+from annofabcli.common.annotation_count_histogram import BIN_COUNT, plot_attribute_histogram, plot_label_histogram
 from annofabcli.common.cli import ArgumentParser, CommandLine
 from annofabcli.common.download import DownloadingFile
 from annofabcli.common.facade import AnnofabApiFacade, TaskQuery
-from annofabcli.statistics.list_annotation_count import AnnotationSpecs, AttributeNameKey, GroupBy
-from annofabcli.statistics.visualize_annotation_count import BIN_COUNT, plot_attribute_histogram, plot_label_histogram
 
 logger = logging.getLogger(__name__)
 

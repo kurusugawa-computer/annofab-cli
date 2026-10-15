@@ -1,7 +1,7 @@
 from pathlib import Path
 
-from annofabcli.statistics.list_annotation_count import ListAnnotationCounterByInputData, ListAnnotationCounterByTask
-from annofabcli.statistics.visualize_annotation_count import GroupBy, plot_attribute_histogram, plot_label_histogram
+from annofabcli.common.annotation_count import GroupBy, ListAnnotationCounterByInputData, ListAnnotationCounterByTask
+from annofabcli.common.annotation_count_histogram import plot_attribute_histogram, plot_label_histogram
 
 output_dir = Path("./tests/out/statistics/visualize_annotation_count")
 data_dir = Path("./tests/data/statistics/")

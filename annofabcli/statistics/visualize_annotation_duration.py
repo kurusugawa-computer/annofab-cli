@@ -11,16 +11,12 @@ from pathlib import Path
 from annofabapi.models import DefaultAnnotationType, InputDataType, ProjectMemberRole
 
 import annofabcli.common.cli
-from annofabcli.annotation_zip.visualize_annotation_duration import (
-    BIN_COUNT,
-    TimeUnit,
-    plot_annotation_duration_histogram_by_attribute,
-    plot_annotation_duration_histogram_by_label,
-)
+from annofabcli.common.annotation_count import AnnotationSpecs
+from annofabcli.common.annotation_duration import AttributeNameKey, AttributeValueKey, ListAnnotationDurationByInputData
+from annofabcli.common.annotation_duration_histogram import BIN_COUNT, TimeUnit, plot_annotation_duration_histogram_by_attribute, plot_annotation_duration_histogram_by_label
 from annofabcli.common.cli import COMMAND_LINE_ERROR_STATUS_CODE, ArgumentParser, CommandLine, build_annofabapi_resource_and_login
 from annofabcli.common.download import DownloadingFile
 from annofabcli.common.facade import AnnofabApiFacade, TaskQuery
-from annofabcli.statistics.list_annotation_duration import AnnotationSpecs, AttributeNameKey, AttributeValueKey, ListAnnotationDurationByInputData
 
 logger = logging.getLogger(__name__)
 

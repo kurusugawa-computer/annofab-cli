@@ -15,7 +15,7 @@ from annofabcli.common.cli import (
     build_annofabapi_resource_and_login,
 )
 from annofabcli.common.facade import AnnofabApiFacade
-from annofabcli.task.update_metadata_of_task import TaskMetadataInfo, UpdateMetadataOfTaskMain
+from annofabcli.common.task_metadata import TaskMetadataInfo, UpdateMetadataOfTaskMain
 
 
 def get_task_metadata_info_list_from_json_args(json_value: str) -> list[TaskMetadataInfo]:

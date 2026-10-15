@@ -43,6 +43,7 @@ from annofabcli.annotation_zip.count_aggregation import (
     validate_group_by,
 )
 from annofabcli.annotation_zip.task_metadata import TASK_METADATA_COLUMN_PREFIX, get_task_metadata_by_task_id, get_task_metadata_keys
+from annofabcli.common.annotation_count import AnnotationSpecs
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
     ArgumentParser,
@@ -57,7 +58,6 @@ from annofabcli.common.facade import (
     match_annotation_with_task_query,
 )
 from annofabcli.common.utils import print_csv, print_json
-from annofabcli.statistics.list_annotation_count import AnnotationSpecs
 
 logger = logging.getLogger(__name__)
 

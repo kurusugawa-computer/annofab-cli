@@ -10,6 +10,13 @@ https://code.visualstudio.com/docs/remote/containers
     * `ANNOFAB_PAT` : Annofabのパーソナルアクセストークン
 
 
+# コマンドの共通処理
+
+旧コマンドと移行先の新コマンドは、互いのコマンドモジュールをインポートしない構成にします。
+引数定義と実行入口は各コマンドで定義し、共有する集計・描画・更新処理は `annofabcli/common/` などのコマンドを定義しないモジュールに配置します。
+これにより、旧コマンドの廃止や新コマンドの引数変更を独立して行えます。
+新旧コマンド間の間接的な依存は `tests/test_command_dependencies.py` で確認します。
+
 # Test
 
 ## テストの実行方法

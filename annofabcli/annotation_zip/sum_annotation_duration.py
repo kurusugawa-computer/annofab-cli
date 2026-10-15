@@ -17,13 +17,13 @@ from annofabcli.annotation_zip.annotation_name import AnnotationNameTranslator, 
 from annofabcli.annotation_zip.count_aggregation import is_summary_group, validate_group_by
 from annofabcli.annotation_zip.count_annotation import add_attribute_value_arguments, add_label_name_argument
 from annofabcli.common.annofab.annotation_zip import lazy_parse_simple_annotation_by_input_data
+from annofabcli.common.annotation_count import AnnotationSpecs
 from annofabcli.common.cli import ArgumentParser, CommandLine, build_annofabapi_resource_and_login, get_json_from_args, get_list_from_args
 from annofabcli.common.download import DownloadingFile
 from annofabcli.common.enums import OutputFormat
 from annofabcli.common.exceptions import AnnofabCliException
 from annofabcli.common.facade import AnnofabApiFacade, TaskQuery, match_annotation_with_task_query
 from annofabcli.common.utils import print_csv, print_json
-from annofabcli.statistics.list_annotation_count import AnnotationSpecs
 
 logger = logging.getLogger(__name__)
 AttributeKey = tuple[str, str, str]

@@ -26,12 +26,7 @@ from annofabcli.annotation_zip.count_aggregation import (
     validate_group_by,
 )
 from annofabcli.annotation_zip.task_metadata import get_task_metadata_by_task_id, get_task_metadata_keys
-from annofabcli.common.cli import COMMAND_LINE_ERROR_STATUS_CODE, ArgumentParser, CommandLine
-from annofabcli.common.download import DownloadingFile
-from annofabcli.common.enums import OutputFormat
-from annofabcli.common.facade import AnnofabApiFacade, TaskQuery
-from annofabcli.common.utils import print_csv, print_json
-from annofabcli.statistics.list_annotation_count import (
+from annofabcli.common.annotation_count import (
     AnnotationCounterByInputData,
     AnnotationCounterByTask,
     AnnotationSpecs,
@@ -45,6 +40,11 @@ from annofabcli.statistics.list_annotation_count import (
     ListAnnotationCountMain,
     encode_annotation_count_by_attribute,
 )
+from annofabcli.common.cli import COMMAND_LINE_ERROR_STATUS_CODE, ArgumentParser, CommandLine
+from annofabcli.common.download import DownloadingFile
+from annofabcli.common.enums import OutputFormat
+from annofabcli.common.facade import AnnofabApiFacade, TaskQuery
+from annofabcli.common.utils import print_csv, print_json
 
 logger = logging.getLogger(__name__)
 

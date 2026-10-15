@@ -28,8 +28,8 @@ from annofabcli.common.cli import (
     prompt_yesnoall,
 )
 from annofabcli.common.facade import AnnofabApiFacade
+from annofabcli.common.input_data_metadata import validate_metadata
 from annofabcli.common.utils import get_file_scheme_path
-from annofabcli.input_data.update_metadata_of_input_data import validate_metadata
 from annofabcli.utils.iterables import batched
 
 logger = logging.getLogger(__name__)

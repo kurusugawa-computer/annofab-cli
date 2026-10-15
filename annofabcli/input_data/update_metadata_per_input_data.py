@@ -15,7 +15,7 @@ from annofabcli.common.cli import (
     build_annofabapi_resource_and_login,
 )
 from annofabcli.common.facade import AnnofabApiFacade
-from annofabcli.input_data.update_metadata_of_input_data import InputDataMetadataInfo, UpdateMetadataMain, validate_metadata
+from annofabcli.common.input_data_metadata import InputDataMetadataInfo, UpdateMetadataMain, validate_metadata
 
 
 def get_input_data_metadata_info_list_from_json_args(json_value: str) -> list[InputDataMetadataInfo]:

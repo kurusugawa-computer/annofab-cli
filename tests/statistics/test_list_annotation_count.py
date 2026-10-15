@@ -4,12 +4,7 @@ from pathlib import Path
 
 import pandas
 
-from annofabcli.statistics.list_annotation_count import (
-    AttributeCountCsv,
-    LabelCountCsv,
-    ListAnnotationCounterByInputData,
-    ListAnnotationCounterByTask,
-)
+from annofabcli.common.annotation_count import AttributeCountCsv, LabelCountCsv, ListAnnotationCounterByInputData, ListAnnotationCounterByTask
 
 output_dir = Path("./tests/out/statistics/list_annotation_count")
 data_dir = Path("./tests/data/statistics/")
