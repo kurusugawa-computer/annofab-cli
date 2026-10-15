@@ -75,3 +75,5 @@ def test_command_filters_histograms_by_label(tmp_path, monkeypatch, group_by, op
     assert {title.split(",")[0] for title in titles} == expected_labels
     if expected_attribute is not None:
         assert {title.split(",")[1] for title in titles} == {expected_attribute}
+    if "--additional_attribute_name" in options:
+        assert {"type", "comment"} <= {title.split(",")[1] for title in titles}
