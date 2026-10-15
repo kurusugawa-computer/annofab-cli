@@ -24,7 +24,10 @@ logger = logging.getLogger(__name__)
 
 @dataclass(frozen=True)
 class AttributeNameOptions:
-    """属性値ごとの可視化対象とする属性名。"""
+    """属性値ごとの可視化対象を絞り込むラベル名と属性名。"""
+
+    target_label_names: Collection[str] | None = None
+    """集計対象とするラベルの英語名。"""
 
     additional_attribute_names: Collection[AttributeNameKey] | None = None
     """デフォルトの選択系属性に加えて集計対象とする属性名。"""
@@ -111,6 +114,7 @@ class VisualizeAnnotationCountMain:
             group_by,
             target_task_ids=target_task_ids,
             task_query=task_query,
+            target_label_names=attribute_name_options.target_label_names,
             additional_attribute_names=attribute_name_options.additional_attribute_names,
             specified_attribute_names=attribute_name_options.specified_attribute_names,
         )
@@ -123,6 +127,7 @@ class VisualizeAnnotationCountMain:
             prior_keys=self.count_annotation.attribute_value_columns(
                 additional_attribute_names=attribute_name_options.additional_attribute_names,
                 specified_attribute_names=attribute_name_options.specified_attribute_names,
+                target_label_names=attribute_name_options.target_label_names,
             ),
             exclude_empty_value=exclude_empty_value,
             arrange_bin_edge=arrange_bin_edge,
@@ -217,26 +222,40 @@ class VisualizeAnnotationCount(CommandLine):
         self,
         annotation_specs: AnnotationSpecs,
     ) -> AttributeNameOptions:
-        """属性値の可視化で利用する属性名を取得します。"""
+        """属性値の可視化で利用するラベル名と属性名を取得します。
+
+        Args:
+            annotation_specs: 対象プロジェクトのアノテーション仕様。
+
+        Returns:
+            指定されたラベル名と属性名による絞り込み条件。
+        """
         if self.count_target != CountTarget.ATTRIBUTE_VALUE:
             return AttributeNameOptions()
 
         args = self.args
+        target_label_names = None
+        if args.label_name is not None:
+            label_name_list = annofabcli.common.cli.get_list_from_args(args.label_name)
+            target_label_names, not_found_names = annotation_specs.get_label_keys_by_label_names(label_name_list)
+            if len(not_found_names) > 0:
+                logger.warning(f"指定されたラベル名のうち、アノテーション仕様に見つからなかったラベル名があります。 :: {not_found_names}")
+
         if args.additional_attribute_name is not None:
             attribute_name_str_list = annofabcli.common.cli.get_list_from_args(args.additional_attribute_name)
             additional_attribute_names, not_found_names = annotation_specs.get_attribute_name_keys_by_attribute_names(attribute_name_str_list)
             if len(not_found_names) > 0:
                 logger.warning(f"指定された属性名のうち、アノテーション仕様に見つからなかった属性名があります。 :: {not_found_names}")
-            return AttributeNameOptions(additional_attribute_names=additional_attribute_names)
+            return AttributeNameOptions(target_label_names=target_label_names, additional_attribute_names=additional_attribute_names)
 
         if args.attribute_name is not None:
             attribute_name_str_list = annofabcli.common.cli.get_list_from_args(args.attribute_name)
             specified_attribute_names, not_found_names = annotation_specs.get_attribute_name_keys_by_attribute_names(attribute_name_str_list)
             if len(not_found_names) > 0:
                 logger.warning(f"指定された属性名のうち、アノテーション仕様に見つからなかった属性名があります。 :: {not_found_names}")
-            return AttributeNameOptions(specified_attribute_names=specified_attribute_names)
+            return AttributeNameOptions(target_label_names=target_label_names, specified_attribute_names=specified_attribute_names)
 
-        return AttributeNameOptions()
+        return AttributeNameOptions(target_label_names=target_label_names)
 
 
 def add_common_arguments(parser: argparse.ArgumentParser) -> None:

@@ -48,6 +48,19 @@ Examples
 
 集計結果をCSV/JSONで出力したい場合は、 :doc:`count_annotation_by_attribute_value` を使用してください。
 
+ラベルで絞り込む
+--------------------------
+
+``--label_name`` を指定すると、指定したラベルに属する属性値だけを集計・描画します。
+``--attribute_name`` または ``--additional_attribute_name`` と併用すると、ラベル名と属性名の両方に一致する属性値だけが対象になります。
+
+.. code-block:: bash
+
+    $ annofabcli annotation_zip visualize_annotation_count_by_attribute_value --project_id prj1 \
+      --label_name car --output car_attributes_count.html
+
+ラベル名の指定方法は :doc:`count_annotation_by_attribute_value` と共通です。
+
 
 Command line options
 =================================
