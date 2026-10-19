@@ -34,6 +34,29 @@ def annotation_specs() -> dict:
 
 
 class TestBuildRequestBodyForAddLabels:
+    @pytest.mark.parametrize("annotation_type", ["classification", "range"])
+    def test_build_request_body_for_add_labels__unused_editor_colors(self, annotation_specs: dict, annotation_type: str) -> None:
+        annotation_specs["labels"] = []
+        actual = build_request_body_for_add_labels(
+            annotation_specs,
+            resolved_label_inputs=[
+                LabelInput(label_name_en="whole1", annotation_type=annotation_type),
+                LabelInput(label_name_en="whole2", annotation_type=annotation_type),
+                LabelInput(label_name_en="explicit", annotation_type=annotation_type, color="#FF0000"),
+                LabelInput(label_name_en="box1", annotation_type="bounding_box"),
+                LabelInput(label_name_en="box2", annotation_type="bounding_box"),
+            ],
+            comment=None,
+        )
+
+        assert [label["color"] for label in actual["labels"]] == [
+            {"red": 0, "green": 0, "blue": 0},
+            {"red": 0, "green": 0, "blue": 0},
+            {"red": 255, "green": 0, "blue": 0},
+            {"red": 255, "green": 0, "blue": 0},
+            {"red": 0, "green": 255, "blue": 255},
+        ]
+
     def test_build_request_body_for_add_labels(self, annotation_specs: dict) -> None:
         actual = build_request_body_for_add_labels(
             annotation_specs,
@@ -60,7 +83,7 @@ class TestBuildRequestBodyForAddLabels:
         assert [label["label_name"]["messages"][1]["message"] for label in added_labels] == ["歩行者", "bicycle"]
         assert [label["annotation_type"] for label in added_labels] == ["bounding_box", "bounding_box"]
         assert added_labels[0]["color"] == {"red": 18, "green": 52, "blue": 86}
-        assert added_labels[1]["color"] == {"red": 255, "green": 85, "blue": 0}
+        assert added_labels[1]["color"] == {"red": 0, "green": 255, "blue": 255}
         assert added_labels[0]["keybind"] == [{"alt": False, "code": "Digit1", "ctrl": True, "shift": False}]
         assert added_labels[1]["keybind"] == []
         assert added_labels[0]["field_values"] == {"margin_of_error_tolerance": {"max_pixel": 5, "_type": "MarginOfErrorTolerance"}}
@@ -245,7 +268,7 @@ class TestReadLabels:
             read_labels_csv(csv_path)
 
     def test_create_label_color(self) -> None:
-        actual = create_label_color("#123456", [])
+        actual = create_label_color("#123456", [], annotation_type="bounding_box")
         assert actual == {"red": 18, "green": 52, "blue": 86}
 
     def test_parse_field_values_in_csv(self) -> None:

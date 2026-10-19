@@ -36,37 +36,67 @@ class TestColor:
 
     def test_create_auto_color(self, annotation_specs: dict) -> None:
         colors: list[RgbColor] = collect_label_colors(annotation_specs["labels"])
-        actual = create_auto_color(colors)
-        assert actual == {"red": 255, "green": 85, "blue": 0}
+        actual = create_auto_color(colors, annotation_type="bounding_box")
+        assert actual == {"red": 0, "green": 255, "blue": 255}
+
+    def test_create_auto_color__uses_distinct_basic_colors_first(self) -> None:
+        colors: list[RgbColor] = []
+        for expected in ["#FF0000", "#00FFFF", "#FFFF00", "#0000FF", "#00FF00", "#FF00FF"]:
+            actual = create_auto_color(colors, annotation_type="bounding_box")
+            assert actual == hex_to_rgb(expected)
+            colors.append(actual)
 
     def test_create_auto_color__uses_extended_vivid_palette(self) -> None:
         colors: list[RgbColor] = [
             {"red": 255, "green": 0, "blue": 0},
-            {"red": 255, "green": 85, "blue": 0},
-            {"red": 255, "green": 170, "blue": 0},
-            {"red": 255, "green": 255, "blue": 0},
-            {"red": 170, "green": 255, "blue": 0},
-            {"red": 85, "green": 255, "blue": 0},
-            {"red": 0, "green": 255, "blue": 0},
-            {"red": 0, "green": 255, "blue": 85},
-            {"red": 0, "green": 255, "blue": 170},
             {"red": 0, "green": 255, "blue": 255},
+            {"red": 255, "green": 255, "blue": 0},
+            {"red": 0, "green": 0, "blue": 255},
+            {"red": 0, "green": 255, "blue": 0},
+            {"red": 255, "green": 0, "blue": 255},
         ]
 
-        actual = create_auto_color(colors)
+        actual = create_auto_color(colors, annotation_type="bounding_box")
 
-        assert actual == {"red": 0, "green": 170, "blue": 255}
+        assert actual == {"red": 255, "green": 85, "blue": 0}
 
     def test_create_auto_color__returns_least_used_palette_color_when_all_palette_colors_are_used(self) -> None:
         colors: list[RgbColor] = [hex_to_rgb(color_code) for color_code in AUTO_COLOR_PALETTE_HEX]
         colors.append({"red": 255, "green": 0, "blue": 0})
 
-        actual = create_auto_color(colors)
+        actual = create_auto_color(colors, annotation_type="bounding_box")
 
-        assert actual == {"red": 255, "green": 85, "blue": 0}
+        assert actual == {"red": 0, "green": 255, "blue": 255}
 
 
 class TestResolveNewLabelInput:
+    @pytest.mark.parametrize("annotation_type", ["classification", "range"])
+    @pytest.mark.parametrize("color_code", [None, "#123456"])
+    def test_resolve_new_label_input__unused_editor_color(self, annotation_specs: dict, annotation_type: str, color_code: str | None) -> None:
+        annotation_specs["labels"].append(
+            {"annotation_type": annotation_type, "color": hex_to_rgb("#000000"), "label_id": "existing", "label_name": {"messages": [{"lang": "en-US", "message": "existing"}]}}
+        )
+
+        actual = resolve_new_label_input(
+            annotation_specs,
+            label_name_en="new",
+            annotation_type=annotation_type,
+            label_id="new",
+            label_name_ja=None,
+            color_code=color_code,
+        )
+
+        assert actual.new_label["color"] == hex_to_rgb(color_code if color_code is not None else "#000000")
+
+    @pytest.mark.parametrize("annotation_type", ["classification", "range"])
+    def test_resolve_new_label_input__ignores_unused_existing_editor_colors(self, annotation_specs: dict, annotation_type: str) -> None:
+        for label in annotation_specs["labels"]:
+            label["annotation_type"] = annotation_type
+
+        actual = resolve_new_label_input(annotation_specs, label_name_en="new", annotation_type="bounding_box", label_id="new", label_name_ja=None, color_code=None)
+
+        assert actual.new_label["color"] == hex_to_rgb("#FF0000")
+
     def test_resolve_new_label_input(self, annotation_specs: dict) -> None:
         actual = resolve_new_label_input(
             annotation_specs,
@@ -107,7 +137,7 @@ class TestResolveNewLabelInput:
             field_values=None,
         )
 
-        assert actual.new_label["color"] == {"red": 255, "green": 85, "blue": 0}
+        assert actual.new_label["color"] == {"red": 0, "green": 255, "blue": 255}
 
     def test_resolve_new_label_input__field_values(self, annotation_specs: dict) -> None:
         actual = resolve_new_label_input(
