@@ -257,6 +257,16 @@ def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse
     subcommand_help = "プロジェクト一覧を出力します。"
     description = "プロジェクト一覧を出力します。"
 
-    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
+    parser = annofabcli.common.cli.add_parser(
+        subparsers,
+        subcommand_name,
+        subcommand_help,
+        description,
+        epilog=(
+            "``--organization`` を指定する場合は、対象の組織に所属するユーザーで実行してください。"
+            "すべての組織メンバーロールで実行できます。"
+            "``--project_id`` を指定する場合は、すべてのプロジェクトメンバーロールで実行できます。"
+        ),
+    )
     parse_args(parser)
     return parser
