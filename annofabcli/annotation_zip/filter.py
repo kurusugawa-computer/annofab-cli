@@ -269,6 +269,7 @@ def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse
 
     description = "アノテーションzipから特定のファイルを絞り込んで、zip展開します。"
 
-    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
+    epilog = "ローカルファイルのみを処理するため、プロジェクトのロールに関係なく実行できます。"
+    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
     parse_args(parser)
     return parser
