@@ -185,6 +185,7 @@ def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse
         "update_option",
         "アノテーション仕様のoptionを更新します。",
         description="動画プロジェクトのアノテーション仕様のoptionを、指定されたキーだけ更新します。",
+        epilog="オーナーロールを持つユーザーで実行してください。",
     )
     parse_args(parser)
     return parser

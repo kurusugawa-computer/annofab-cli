@@ -182,6 +182,11 @@ def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse
 
     subcommand_help = "アノテーションをimportする際に参照すべき情報（ラベル、属性、選択肢）のみを出力します。"
 
-    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help)
+    parser = annofabcli.common.cli.add_parser(
+        subparsers,
+        subcommand_name,
+        subcommand_help,
+        epilog="すべてのプロジェクトメンバーロールで実行できます。",
+    )
     parse_args(parser)
     return parser

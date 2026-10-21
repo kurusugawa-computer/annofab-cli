@@ -353,6 +353,12 @@ def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse
     subcommand_help = "アノテーション仕様の既存属性の種類を変更します。"
     description = "アノテーション仕様の既存属性1個に対して、許可されている組み合わせの範囲で属性種類を変更します。"
 
-    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description=description)
+    parser = annofabcli.common.cli.add_parser(
+        subparsers,
+        subcommand_name,
+        subcommand_help,
+        description=description,
+        epilog="オーナーロールを持つユーザーで実行してください。",
+    )
     parse_args(parser)
     return parser
