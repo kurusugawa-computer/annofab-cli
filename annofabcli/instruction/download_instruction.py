@@ -193,6 +193,6 @@ def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse
     subcommand_name = "download"
     subcommand_help = "作業ガイドをダウンロードします。"
     description = "作業ガイドをダウンロードします。HTMLファイルにはbodyタグの内部が記載されています。"
-    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
+    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog="すべてのプロジェクトメンバーロールで実行できます。")
     parse_args(parser)
     return parser
