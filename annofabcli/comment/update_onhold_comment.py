@@ -136,6 +136,12 @@ def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse
     subcommand_help = "保留コメントを更新します"
     description = "指定した項目だけを更新し、省略した項目は既存値を保持します。保留コメントを更新します。comment_idが存在しない場合はスキップします。"
 
-    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description=description)
+    parser = annofabcli.common.cli.add_parser(
+        subparsers,
+        subcommand_name,
+        subcommand_help,
+        description=description,
+        epilog="オーナーロール、チェッカーロール、アノテーターロールのいずれかを持つユーザーで実行してください。アノテーターロールでは、自身が担当するタスクまたは未割当タスクのみ操作できます。",
+    )
     parse_args(parser)
     return parser

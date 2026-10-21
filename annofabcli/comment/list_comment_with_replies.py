@@ -71,6 +71,6 @@ def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse
     subcommand_name = "list_with_replies"
     subcommand_help = "指定したタスクのルートコメントに返信コメント一覧を付与して出力します。"
 
-    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description=subcommand_help)
+    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description=subcommand_help, epilog="すべてのプロジェクトメンバーロールで実行できます。")
     parse_args(parser)
     return parser

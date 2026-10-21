@@ -102,6 +102,12 @@ def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse
     subcommand_help = "[DEPRECATED] ``comment put_onhold`` コマンドよりも、簡単に保留コメントを付与します。"
     description = f"{subcommand_help}\n{DEPRECATED_MESSAGE}"
 
-    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
+    parser = annofabcli.common.cli.add_parser(
+        subparsers,
+        subcommand_name,
+        subcommand_help,
+        description,
+        epilog="オーナーロール、チェッカーロール、アノテーターロールのいずれかを持つユーザーで実行してください。アノテーターロールでは、自身が担当するタスクまたは未割当タスクのみ操作できます。",
+    )
     parse_args(parser)
     return parser
