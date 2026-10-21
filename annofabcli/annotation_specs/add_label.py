@@ -548,6 +548,12 @@ def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse
     subcommand_help = "アノテーション仕様にラベルを追加します。"
     description = "アノテーション仕様にラベルを1件追加します。属性の紐付けは行いません。"
 
-    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description=description)
+    parser = annofabcli.common.cli.add_parser(
+        subparsers,
+        subcommand_name,
+        subcommand_help,
+        description=description,
+        epilog="オーナーロールを持つユーザーで実行してください。",
+    )
     parse_args(parser)
     return parser

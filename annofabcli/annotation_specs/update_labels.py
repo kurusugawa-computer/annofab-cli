@@ -650,6 +650,12 @@ def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse
     subcommand_help = "アノテーション仕様の既存ラベル情報を更新します。"
     description = "アノテーション仕様の既存ラベルに設定された英語名、日本語名、ベトナム語名、色、キーバインド、field_values を更新します。"
 
-    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description=description)
+    parser = annofabcli.common.cli.add_parser(
+        subparsers,
+        subcommand_name,
+        subcommand_help,
+        description=description,
+        epilog="オーナーロールを持つユーザーで実行してください。色とショートカットキーのみを変更する場合は、チェッカーロールでも実行できます。",
+    )
     parse_args(parser)
     return parser

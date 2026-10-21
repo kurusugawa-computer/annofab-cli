@@ -265,7 +265,7 @@ def add_edit_arguments(parser: argparse.ArgumentParser, *, operation: Operation)
             help="定型指摘情報のJSON配列。 ``file://`` を先頭に付けるとJSONファイルを指定できます。各要素に ``inspection_phrase_id`` と1言語以上の本文が必要です。",
         )
         group.add_argument("--inspection_phrase_csv", type=Path, help="定型指摘情報のヘッダー付きCSV。 ``inspection_phrase_id`` 列と1言語以上の本文が必要です。")
-        parser.epilog = (
+        parser.epilog = (f"{parser.epilog}\n\n" if parser.epilog else "") + (
             "本文には inspection_phrase_text_ja（日本語）、inspection_phrase_text_en（英語）、inspection_phrase_text_vi（ベトナム語）を指定します。"
             "未指定の言語は補完しません。更新時は省略・null・空文字の本文を保持します。IDに使用できる文字は英数字・アンダースコア・ハイフンです。"
         )

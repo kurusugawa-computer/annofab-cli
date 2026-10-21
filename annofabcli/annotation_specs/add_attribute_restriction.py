@@ -213,6 +213,12 @@ def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse
 
     subcommand_help = "アノテーション仕様に属性の制約を追加します。"
     description = subcommand_help + "アノテーション仕様画面では設定できない「属性間の制約」を追加するときに有用です。"
-    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description=description)
+    parser = annofabcli.common.cli.add_parser(
+        subparsers,
+        subcommand_name,
+        subcommand_help,
+        description=description,
+        epilog="オーナーロールを持つユーザーで実行してください。",
+    )
     parse_args(parser)
     return parser

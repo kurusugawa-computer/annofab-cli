@@ -30,7 +30,9 @@ def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse
     Returns:
         作成したパーサー。
     """
-    parser = annofabcli.common.cli.add_parser(subparsers, "update_inspection_phrases", "アノテーション仕様の定型指摘を複数件更新します。")
+    parser = annofabcli.common.cli.add_parser(
+        subparsers, "update_inspection_phrases", "アノテーション仕様の定型指摘を複数件更新します。", epilog="オーナーロールまたはチェッカーロールを持つユーザーで実行してください。"
+    )
     add_edit_arguments(parser, operation="update")
     parser.set_defaults(subcommand_func=main)
     return parser
