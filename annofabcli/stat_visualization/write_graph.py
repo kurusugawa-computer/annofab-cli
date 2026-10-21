@@ -192,6 +192,8 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
 def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "write_graph"
     subcommand_help = "`annofabcli statistics visualize` コマンドの出力結果であるプロジェクトのディレクトリから、グラフを出力します。"
-    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description=subcommand_help)
+    parser = annofabcli.common.cli.add_parser(
+        subparsers, subcommand_name, subcommand_help, description=subcommand_help, epilog="ローカルファイルのみを処理するため、プロジェクトや組織のロールに関係なく実行できます。"
+    )
     parse_args(parser)
     return parser

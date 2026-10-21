@@ -246,6 +246,8 @@ def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse
     subcommand_name = "mask_user_info"
     subcommand_help = "`annofabcli statistics visualize` コマンドの出力結果のユーザ情報をマスクします。"
     description = "`annofabcli statistics visualize` コマンドの出力結果のユーザ情報をマスクします。マスク対象のファイルのみ出力します。"
-    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
+    parser = annofabcli.common.cli.add_parser(
+        subparsers, subcommand_name, subcommand_help, description, epilog="ローカルファイルのみを処理するため、プロジェクトや組織のロールに関係なく実行できます。"
+    )
     parse_args(parser)
     return parser
