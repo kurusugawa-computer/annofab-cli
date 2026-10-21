@@ -235,6 +235,15 @@ def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse
     subcommand_help = "ユーザーごと日付ごとに作業時間を集計します。"
     description = "タスク履歴イベント全件ファイルから、ユーザーごと日付ごとに作業時間を集計します。"
 
-    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
+    parser = annofabcli.common.cli.add_parser(
+        subparsers,
+        subcommand_name,
+        subcommand_help,
+        description,
+        epilog=(
+            "``--task_history_event_json`` を指定する場合は、すべてのプロジェクトメンバーロールで実行できます。"
+            "指定しない場合は、タスク履歴イベント全件ファイルをダウンロードするため、オーナーロールまたはアノテーションユーザーロールを持つユーザーで実行してください。"
+        ),
+    )
     parse_args(parser)
     return parser
