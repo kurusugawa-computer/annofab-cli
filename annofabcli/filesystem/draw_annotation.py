@@ -458,6 +458,8 @@ def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse
 
     description = f"{subcommand_help}\n{DEPRECATED_MESSAGE}"
 
-    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
+    parser = annofabcli.common.cli.add_parser(
+        subparsers, subcommand_name, subcommand_help, description, epilog="ローカルファイルのみを処理するため、プロジェクトや組織のロールに関係なく実行できます。"
+    )
     parse_args(parser)
     return parser
