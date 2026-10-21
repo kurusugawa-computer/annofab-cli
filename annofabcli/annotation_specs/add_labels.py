@@ -293,13 +293,14 @@ def create_label_inputs_from_name_ens(label_name_ens: Sequence[str]) -> list[Lab
     return [LabelInput(label_name_en=label_name_en) for label_name_en in label_name_ens]
 
 
-def create_label_color(color_code: str | None, colors: list[RgbColor]) -> RgbColor:
+def create_label_color(color_code: str | None, colors: list[RgbColor], *, annotation_type: str) -> RgbColor:
     """
     ラベル入力から使用する色を決定する。
 
     Args:
         color_code: 入力されたカラーコード
         colors: 既存ラベルと今回追加分を含む使用済み色一覧
+        annotation_type: 追加するラベルのアノテーション種類
 
     Returns:
         Annofab API向けのRGB辞書
@@ -308,7 +309,7 @@ def create_label_color(color_code: str | None, colors: list[RgbColor]) -> RgbCol
         ValueError: カラーコードの形式が不正な場合
     """
     if color_code is None:
-        return create_auto_color(colors)
+        return create_auto_color(colors, annotation_type=annotation_type)
 
     try:
         return hex_to_rgb(color_code)
@@ -417,18 +418,19 @@ def build_request_body_for_add_labels(
         resolved_label_id = label_input.label_id if label_input.label_id is not None else str(uuid.uuid4())
         validate_new_label(request_body["labels"], label_id=resolved_label_id, label_name_en=label_input.label_name_en)
 
-        color = create_label_color(label_input.color, colors)
-        colors.append(color)
+        annotation_type = cast(str, label_input.annotation_type)
+        color = create_label_color(label_input.color, colors, annotation_type=annotation_type)
         new_label = create_new_label(
             label_id=resolved_label_id,
             label_name_en=label_input.label_name_en,
             label_name_ja=label_input.label_name_ja,
             label_name_vi=label_input.label_name_vi,
-            annotation_type=cast(str, label_input.annotation_type),
+            annotation_type=annotation_type,
             color=color,
             keybind=label_input.keybind,
             field_values=label_input.field_values,
         )
+        colors.extend(collect_label_colors([new_label]))
         request_body["labels"].insert(insertion_index, new_label)
         insertion_index += 1
 

@@ -81,28 +81,28 @@ def create_annotation_type_help() -> str:
 
 AUTO_COLOR_PALETTE_HEX: list[str] = [
     "#FF0000",  # 赤 (red)
-    "#FF5500",  # オレンジ (orange)
-    "#FFAA00",  # アンバー (amber)
-    "#FFFF00",  # 黄 (yellow)
-    "#AAFF00",  # 黄緑 (lime)
-    "#55FF00",  # シャルトリューズ (chartreuse)
-    "#00FF00",  # 緑 (green)
-    "#00FF55",  # スプリンググリーン (spring green)
-    "#00FFAA",  # ターコイズ (turquoise)
     "#00FFFF",  # シアン (cyan)
-    "#00AAFF",  # スカイブルー (sky blue)
-    "#0055FF",  # アジュール (azure)
+    "#FFFF00",  # 黄 (yellow)
     "#0000FF",  # 青 (blue)
-    "#5500FF",  # インディゴ (indigo)
-    "#AA00FF",  # バイオレット (violet)
+    "#00FF00",  # 緑 (green)
     "#FF00FF",  # マゼンタ (magenta)
+    "#FF5500",  # オレンジ (orange)
+    "#00AAFF",  # スカイブルー (sky blue)
+    "#AAFF00",  # 黄緑 (lime)
+    "#5500FF",  # インディゴ (indigo)
+    "#00FF55",  # スプリンググリーン (spring green)
     "#FF00AA",  # ローズ (rose)
+    "#FFAA00",  # アンバー (amber)
+    "#0055FF",  # アジュール (azure)
+    "#55FF00",  # シャルトリューズ (chartreuse)
+    "#AA00FF",  # バイオレット (violet)
+    "#00FFAA",  # ターコイズ (turquoise)
     "#FF0055",  # ピンクレッド (pink red)
     "#FFFFFF",  # 白 (white)
     "#C0C0C0",  # ライトグレー (light gray)
     "#808080",  # グレー (gray)
 ]
-"""自動色選択で優先する高彩度のカラーパレット。"""
+"""自動色選択の優先順。基本の6色を先頭に置き、残りの有彩色も色相が離れる順に並べ、無彩色は末尾に置く。"""
 
 
 SEGMENTATION_ANNOTATION_TYPES = {
@@ -110,6 +110,13 @@ SEGMENTATION_ANNOTATION_TYPES = {
     DefaultAnnotationType.SEGMENTATION_V2.value,
 }
 """柔軟な編集用の既定 field_values を適用するアノテーション種類。"""
+
+
+ANNOTATION_TYPES_WITHOUT_EDITOR_COLOR = {
+    DefaultAnnotationType.CLASSIFICATION.value,
+    DefaultAnnotationType.RANGE.value,
+}
+"""エディタでラベルの色が使われないアノテーション種類。"""
 
 
 DEFAULT_SEGMENTATION_FIELD_VALUES: dict[str, Any] = {
@@ -197,16 +204,22 @@ def validate_field_values_input(field_values: object) -> dict[str, Any]:
     return cast(dict[str, Any], field_values)
 
 
-def create_auto_color(colors: Collection[RgbColor]) -> RgbColor:
+def create_auto_color(colors: Collection[RgbColor], *, annotation_type: str) -> RgbColor:
     """
     AUTO_COLOR_PALETTE_HEX の中から使用回数が最も少ない色を返す。
+    使用回数が同じ場合は、パレットの先頭に近い色を優先する。
+    エディタで色が使われないアノテーション種類には黒を返す。
 
     Args:
         colors: 既存色一覧
+        annotation_type: 追加するラベルのアノテーション種類
 
     Returns:
         Annofab API向けのRGB辞書
     """
+    if annotation_type in ANNOTATION_TYPES_WITHOUT_EDITOR_COLOR:
+        return hex_to_rgb("#000000")
+
     palette_color_tuples = [(color["red"], color["green"], color["blue"]) for color in map(hex_to_rgb, AUTO_COLOR_PALETTE_HEX)]
     color_counts: Counter[tuple[int, int, int]] = Counter()
     for color in colors:
@@ -220,7 +233,7 @@ def create_auto_color(colors: Collection[RgbColor]) -> RgbColor:
 
 def collect_label_colors(labels: Collection[dict[str, Any]]) -> list[RgbColor]:
     """
-    既存ラベル一覧から色一覧を抽出する。
+    既存ラベル一覧から、エディタで色が使われるラベルの色一覧を抽出する。
 
     Args:
         labels: 既存ラベル一覧
@@ -230,6 +243,8 @@ def collect_label_colors(labels: Collection[dict[str, Any]]) -> list[RgbColor]:
     """
     colors: list[RgbColor] = []
     for label in labels:
+        if label["annotation_type"] in ANNOTATION_TYPES_WITHOUT_EDITOR_COLOR:
+            continue
         color = label["color"]
         colors.append(color)
     return colors
@@ -320,7 +335,7 @@ def resolve_new_label_input(
     generated_label_id = label_id if label_id is not None else str(uuid.uuid4())
     validate_new_label(labels, label_id=generated_label_id, label_name_en=label_name_en)
 
-    color = hex_to_rgb(color_code) if color_code is not None else create_auto_color(collect_label_colors(labels))
+    color = hex_to_rgb(color_code) if color_code is not None else create_auto_color(collect_label_colors(labels), annotation_type=annotation_type)
     new_label = create_new_label(
         label_id=generated_label_id,
         label_name_en=label_name_en,
