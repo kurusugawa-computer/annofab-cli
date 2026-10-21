@@ -99,6 +99,6 @@ def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse
     subcommand_help = "Webhook一覧を出力します。"
     description = "Webhook一覧を出力します。"
 
-    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
+    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog="オーナーロールを持つユーザーで実行してください。")
     parse_args(parser)
     return parser
