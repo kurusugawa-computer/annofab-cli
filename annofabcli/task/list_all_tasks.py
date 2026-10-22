@@ -135,6 +135,8 @@ def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse
     subcommand_name = "list_all"
     subcommand_help = "すべてのタスクの一覧を出力します。"
     description = "すべてのタスクの一覧を出力します。\n出力されるタスクは、コマンドを実行した日の02:00(JST)頃の状態です。最新の情報を出力したい場合は、 ``--latest`` を指定してください。"
-    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description=description)
+    parser = annofabcli.common.cli.add_parser(
+        subparsers, subcommand_name, subcommand_help, description=description, epilog="オーナーロールまたはアノテーションユーザーロールを持つユーザーで実行してください。"
+    )
     parse_args(parser)
     return parser

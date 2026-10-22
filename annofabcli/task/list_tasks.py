@@ -273,6 +273,6 @@ def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse
     subcommand_help = "タスク一覧を出力します。"
     description = "タスク一覧を出力します。検索による取得は最大10,000件です。上限に達した場合も警告して結果を出力します。全件ファイルから取得する場合は task list_all を使用してください。"
 
-    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
+    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog="すべてのプロジェクトメンバーロールで実行できます。")
     parse_args(parser)
     return parser
