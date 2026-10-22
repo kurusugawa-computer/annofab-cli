@@ -42,6 +42,6 @@ def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse
     subcommand_name = "revoke_personal_access_token"
     subcommand_help = "パーソナルアクセストークンを無効化します。"
 
-    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help)
+    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, epilog="ログイン中のユーザー自身の情報を扱います。プロジェクトや組織のロールに関係なく実行できます。")
     parse_args(parser)
     return parser
