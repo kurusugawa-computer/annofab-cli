@@ -75,6 +75,6 @@ def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse
     subcommand_help = "作業ガイドの変更履歴を出力します。"
     description = "作業ガイドの変更履歴を出力します。"
 
-    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
+    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog="すべてのプロジェクトメンバーロールで実行できます。")
     parse_args(parser)
     return parser
