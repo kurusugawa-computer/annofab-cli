@@ -160,9 +160,8 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
 
 
 def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
-    description = "指定したタスクのアノテーションを、アノテーションZIPと同じディレクトリ構成・JSON形式で書き出します。"
-    parser = annofabcli.common.cli.add_parser(
-        subparsers, "export", description, description, epilog="取り込みには annotation import を使用してください。バックアップ・復元には annotation dump / annotation restore を使用してください。"
-    )
+    subcommand_help = "指定したタスクのアノテーションを、アノテーションZIPと同じディレクトリ構成・JSON形式で書き出します。"
+    description = f"{subcommand_help}\n\n取り込みには annotation import を使用してください。バックアップ・復元には annotation dump / annotation restore を使用してください。"
+    parser = annofabcli.common.cli.add_parser(subparsers, "export", subcommand_help, description=description, epilog="すべてのプロジェクトメンバーロールで実行できます。")
     parse_args(parser)
     return parser
