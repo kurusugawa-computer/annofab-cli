@@ -346,6 +346,8 @@ def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse
     subcommand_name = "merge"
     subcommand_help = "``annofabcli statistics visualize`` コマンドの出力結果をマージします。"
     description = "``annofabcli statistics visualize`` コマンドの出力結果をマージします。"
-    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
+    parser = annofabcli.common.cli.add_parser(
+        subparsers, subcommand_name, subcommand_help, description, epilog="ローカルファイルのみを処理するため、プロジェクトや組織のロールに関係なく実行できます。"
+    )
     parse_args(parser)
     return parser
