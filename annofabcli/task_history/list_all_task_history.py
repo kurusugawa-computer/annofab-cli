@@ -166,6 +166,6 @@ def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse
         "出力されるタスク履歴は、コマンドを実行した日の02:00(JST)頃の状態です。最新の情報を出力したい場合は、 ``annofabcli task_history list`` コマンドを実行してください。"
     )
 
-    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
+    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog="オーナーロールまたはアノテーションユーザーロールを持つユーザーで実行してください。")
     parse_args(parser)
     return parser
