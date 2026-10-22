@@ -279,6 +279,6 @@ def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse
     subcommand_name = "list_all_merged_task"
     subcommand_help = "タスク一覧と結合したすべての入力データ一覧の情報を出力します。"
 
-    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help)
+    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, epilog="オーナーロールまたはアノテーションユーザーロールを持つユーザーで実行してください。")
     parse_args(parser)
     return parser
