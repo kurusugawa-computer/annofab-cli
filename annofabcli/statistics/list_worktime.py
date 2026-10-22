@@ -464,6 +464,15 @@ def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse
         追加した引数パーサー。
     """
     subcommand_help = "[DEPRECATED] 日ごとユーザーごとの作業時間の一覧を出力します。"
-    parser = annofabcli.common.cli.add_parser(subparsers, "list_worktime", subcommand_help, description=f"{subcommand_help}\n{DEPRECATED_MESSAGE}")
+    parser = annofabcli.common.cli.add_parser(
+        subparsers,
+        "list_worktime",
+        subcommand_help,
+        description=f"{subcommand_help}\n{DEPRECATED_MESSAGE}",
+        epilog=(
+            "``--task_history_event_json`` を指定する場合は、すべてのプロジェクトメンバーロールで実行できます。"
+            "指定しない場合は、タスク履歴イベント全件ファイルをダウンロードするため、オーナーロールまたはアノテーションユーザーロールを持つユーザーで実行してください。"
+        ),
+    )
     parse_args(parser)
     return parser
