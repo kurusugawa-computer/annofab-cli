@@ -15,6 +15,7 @@ def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse
     """
     name = "visualize_annotation_duration_by_attribute_value"
     description = "属性値ごとにタスク単位の区間アノテーションの合計長をヒストグラムで可視化します。"
-    parser = annofabcli.common.cli.add_parser(subparsers, name, description, description=description)
+    epilog = "オーナーロールまたはアノテーションユーザーロールを持つユーザーで実行してください。"
+    parser = annofabcli.common.cli.add_parser(subparsers, name, description, description=description, epilog=epilog)
     add_arguments(parser, by_attribute=True)
     return parser

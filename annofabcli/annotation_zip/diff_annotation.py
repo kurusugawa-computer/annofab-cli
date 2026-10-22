@@ -153,8 +153,16 @@ def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse
     Returns:
         diffコマンドのパーサー。
     """
+    epilog = (
+        "``--left_project_id`` または ``--right_project_id`` を指定する場合は、指定した各プロジェクトに対してオーナーロールまたはアノテーションユーザーロールを持つユーザーで実行してください。"
+        "ローカルファイル同士を比較する場合は、プロジェクトのロールに関係なく実行できます。"
+    )
     parser = annofabcli.common.cli.add_parser(
-        subparsers, "diff", "アノテーションZIPの差分を出力します。", "プロジェクトまたはローカルのZIP・展開ディレクトリから、2つのアノテーション結果を比較します。"
+        subparsers,
+        "diff",
+        "アノテーションZIPの差分を出力します。",
+        "プロジェクトまたはローカルのZIP・展開ディレクトリから、2つのアノテーション結果を比較します。",
+        epilog=epilog,
     )
     for side, description in (("left", "比較元（左側）"), ("right", "比較先（右側）")):
         group = parser.add_mutually_exclusive_group(required=True)
