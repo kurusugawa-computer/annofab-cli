@@ -126,7 +126,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     Returns:
         None。
     """
-    parser.add_argument("-org", "--organization", required=True, help="対象の組織名。組織管理者として実行してください。")
+    parser.add_argument("-org", "--organization", required=True, help="対象の組織名。")
     parser.add_argument("--start_month", type=year_month, help="月別一覧の開始月（YYYY-MM、指定月を含む）。省略時は終了月の11か月前です（終了月を含む12か月分）。")
     parser.add_argument("--end_month", type=year_month, help="月別一覧の終了月（YYYY-MM、指定月を含む）。省略時は日本時間（JST）の現在の月です。")
     parser.add_argument("--month", type=year_month, help="日別一覧を取得する対象月（YYYY-MM）。--start_month、--end_monthとは同時に指定できません。")
@@ -146,6 +146,6 @@ def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse
         作成したパーサー。
     """
     description = "組織の月別または日別の利用状況を出力します。エディタ利用時間の単位は時間、ストレージ利用量の単位はGB時です。"
-    parser = annofabcli.common.cli.add_parser(subparsers, "list_usage", "組織の利用状況一覧を出力します。", description)
+    parser = annofabcli.common.cli.add_parser(subparsers, "list_usage", "組織の利用状況一覧を出力します。", description, epilog="組織管理者または組織オーナーロールを持つユーザーで実行してください。")
     parse_args(parser)
     return parser
