@@ -79,6 +79,6 @@ def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse
     subcommand_name = "wait"
     subcommand_help = "ジョブの終了を待ちます。"
     description = "ジョブの終了を待ちます。60秒間隔で完了を確認し、最大6時間待ちます。"
-    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description)
+    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog="すべてのプロジェクトメンバーロールで実行できます。")
     parse_args(parser)
     return parser
