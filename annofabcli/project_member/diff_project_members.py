@@ -141,7 +141,12 @@ def main(args: argparse.Namespace) -> None:
 
 
 def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
-    parser = annofabcli.common.cli.add_parser(subparsers, "diff", "左から右へのプロジェクトのメンバ構成の差分を出力します。")
+    parser = annofabcli.common.cli.add_parser(
+        subparsers,
+        "diff",
+        "左から右へのプロジェクトのメンバ構成の差分を出力します。",
+        epilog="比較対象の両プロジェクトに所属するユーザーで実行してください。すべてのプロジェクトメンバーロールで実行できます。",
+    )
     parser.add_argument("--left_project_id", required=True, help="比較元（左側）のプロジェクトのproject_id")
     parser.add_argument("--right_project_id", required=True, help="比較先（右側）のプロジェクトのproject_id。差分は左側から右側への変更として表示します。")
     parser.add_argument(
