@@ -68,6 +68,7 @@ docs = [
 ]
 
 [tool.uv]
+required-version = ">=0.13.4"
 default-groups = ["dev", "test", "linter", "docs"]
 package = true
 
