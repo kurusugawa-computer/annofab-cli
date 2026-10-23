@@ -71,7 +71,7 @@ class LineGraph:
         tooltip_columns: list[str] | None = None,
         **figure_kwargs: Any,  # noqa: ANN401
     ) -> None:
-        fig = figure(  # type: ignore[call-arg]
+        fig = figure(
             title=title,
             x_axis_label=x_axis_label,
             y_axis_label=y_axis_label,

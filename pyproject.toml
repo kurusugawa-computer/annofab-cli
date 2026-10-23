@@ -16,7 +16,8 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
-    "Programming Language :: Python :: 3.14"
+    "Programming Language :: Python :: 3.14",
+    "Programming Language :: Python :: 3.15",
 ]
 dependencies = [
     "requests",
@@ -49,29 +50,29 @@ dev = [
     "numpy>=2.1",
 ]
 test = [
-    "pytest>=9",
-    "pytest-xdist",
+    "pytest>=9.1.1",
+    "pytest-xdist>=3.8.0",
 ]
 linter = [
-    "ruff>=0.16",
-    "mypy>=1",
-    "pre-commit>=4",
-    "types-requests",
-    "types-python-dateutil",
-    "types-PyYAML",
+    "ruff>=0.17.2",
+    "mypy>=2.4.0",
+    "pre-commit>=4.7.0",
+    "types-requests>=2.33.0.20261006",
+    "types-python-dateutil>=2.9.0.20261021",
+    "types-PyYAML>=6.0.12.20260906",
 ]
 docs = [
-    "sphinx>=9.1",
-    "pydata-sphinx-theme>=0.13",
-    "sphinx-last-updated-by-git",
-    "sphinx-argparse",
+    "sphinx>=9.1.1; python_version < '3.13'",
+    "sphinx>=9.2.0; python_version >= '3.13'",
+    "pydata-sphinx-theme>=0.23.0",
+    "sphinx-last-updated-by-git>=0.3.8",
+    "sphinx-argparse>=0.6.1",
 ]
 
 [tool.uv]
 required-version = ">=0.13.4"
 default-groups = ["dev", "test", "linter", "docs"]
 package = true
-
 
 [project.scripts]
 annofabcli = "annofabcli.__main__:main"
@@ -99,7 +100,6 @@ disallow_incomplete_defs = false
 [tool.ruff]
 target-version = "py312"
 line-length = 200
-
 
 [tool.ruff.lint]
 
@@ -146,7 +146,6 @@ select = [
 ]
 
 
-
 [tool.ruff.lint.per-file-ignores]
 "annofabcli/**.py" = [
     # assertは型の絞り込みや内部の不変条件の確認に使用しているため
@@ -171,7 +170,6 @@ select = [
     "PLC2401", # non-ascii-name: メソッド名に日本語を使うため
 ]
 
-
 [tool.ruff.lint.pydocstyle]
 convention = "google"
 
@@ -183,11 +181,9 @@ keep-runtime-typing = true
 [tool.ruff.lint.pylint]
 max-args = 10
 
-
 [build-system]
 requires = ["hatchling", "uv-dynamic-versioning"]
 build-backend = "hatchling.build"
-
 
 [tool.hatch.version]
 source = "uv-dynamic-versioning"
