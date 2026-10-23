@@ -14,7 +14,6 @@ jobs:
       uses: astral-sh/setup-uv@v7
       with:
         python-version: "3.12"
-        # Install a specific version of uv.
         version: "latest"
 
     - name: Publish
