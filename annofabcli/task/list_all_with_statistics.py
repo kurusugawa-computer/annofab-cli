@@ -35,7 +35,7 @@ def get_output_columns() -> list[str]:
         なし。
 
     Returns:
-        入力データ数の直後に生産量3列を追加した、44列の一覧。
+        入力データ数の直後に生産量3列を追加した、47列の一覧。
     """
     columns = TasksAddedTaskHistoryOutput._get_output_target_columns()  # noqa: SLF001
     index = columns.index("input_data_count") + 1
@@ -56,7 +56,8 @@ def output_tasks(task_list: list[dict[str, Any]], output: Path | None, output_fo
     columns = get_output_columns()
     rows = [{**{column: task.get(column) for column in columns}, "metadata": task.get("metadata") or {}} for task in task_list]
     if output_format == OutputFormat.CSV:
-        df = pandas.json_normalize(rows)
+        csv_rows = [{key: json.dumps(value, ensure_ascii=False) if key.endswith("_worktime_hour_by_user") else value for key, value in row.items()} for row in rows]
+        df = pandas.json_normalize(csv_rows)
         metadata_columns = sorted(column for column in df.columns if column.startswith("metadata."))
         df = df.reindex(columns=columns + metadata_columns).astype({"annotation_count": "Int64"})
         print_csv(df, output=output)

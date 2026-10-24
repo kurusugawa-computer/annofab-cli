@@ -46,6 +46,11 @@
     "post_rejection_acceptance_worktime_hour": 0.0,
     "metadata": {
       "category": "sample"
-    }
+    },
+    "annotation_worktime_hour_by_user": {
+      "user1": 0.5
+    },
+    "inspection_worktime_hour_by_user": {},
+    "acceptance_worktime_hour_by_user": {}
   }
 ]

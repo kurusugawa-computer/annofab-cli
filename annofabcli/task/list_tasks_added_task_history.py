@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import logging
 from pathlib import Path
 from typing import Any
@@ -21,6 +22,10 @@ from annofabcli.common.visualize import AddProps
 from annofabcli.task.list_tasks import ListTasksMain
 
 logger = logging.getLogger(__name__)
+
+
+class TaskHistoryUserNotFoundError(ValueError):
+    """正の作業時間があるタスク履歴のユーザーを特定できない場合のエラー。"""
 
 
 def get_post_rejection_annotation_worktime_hour(task_histories: list[TaskHistory]) -> float:
@@ -358,6 +363,34 @@ class AddingAdditionalInfoToTask:
 
         return task
 
+    def calculate_worktime_hour_by_user(self, task_histories: list[TaskHistory], phase: TaskPhase, *, start_date: str | None = None) -> dict[str, float]:
+        """フェーズ別の作業時間をuser_idごとに合算する。
+
+        Args:
+            task_histories: タスク履歴。
+            phase: 集計対象のフェーズ。
+            start_date: 集計開始日。指定時はstarted_datetimeの日付で絞り込む。
+
+        Returns:
+            user_idをキー、作業時間[hour]を値とする辞書。
+        """
+        result: dict[str, float] = {}
+        for history in task_histories:
+            if history["phase"] != phase.value:
+                continue
+            if start_date is not None and (history["started_datetime"] is None or history["started_datetime"][:10] < start_date):
+                continue
+            worktime_hour = isoduration_to_hour(history["accumulated_labor_time_milliseconds"])
+            if worktime_hour <= 0:
+                continue
+            account_id = history["account_id"]
+            member = self.visualize.get_project_member_from_account_id(account_id) if account_id is not None else None
+            if member is None or not member["user_id"]:
+                raise TaskHistoryUserNotFoundError(f"task_id='{history['task_id']}', account_id='{account_id}' :: 正の作業時間があるタスク履歴のuser_idを取得できません。")
+            user_id = member["user_id"]
+            result[user_id] = result.get(user_id, 0.0) + worktime_hour
+        return result
+
     def add_additional_info_to_task(self, task: dict[str, Any]) -> None:
         """タスクの付加的情報を、タスクに追加する。
         以下の列を追加する。
@@ -401,6 +434,7 @@ class AddingAdditionalInfoToTask:
         for phase in TaskPhase:
             # タスク履歴から取得した作業時間を設定
             task[f"{phase.value}_worktime_hour"] = calculate_total_worktime_in_phase(task_histories, phase)
+            task[f"{phase.value}_worktime_hour_by_user"] = self.calculate_worktime_hour_by_user(task_histories, phase)
             first_task_history = get_first_task_history(task_histories, phase)
             self._add_task_history_info(task, first_task_history, column_prefix=f"first_{phase.value}")
 
@@ -424,6 +458,7 @@ class AddingAdditionalInfoToTask:
             for start_date in start_date_list:
                 for phase in [TaskPhase.ANNOTATION, TaskPhase.INSPECTION, TaskPhase.ACCEPTANCE]:
                     task[f"since_{start_date}.{phase.value}_worktime_hour"] = calculate_worktime_since_date(task_histories, phase, start_date)
+                    task[f"since_{start_date}.{phase.value}_worktime_hour_by_user"] = self.calculate_worktime_hour_by_user(task_histories, phase, start_date=start_date)
                     first_history = get_first_task_history_since_date(task_histories, phase, start_date)
                     self._add_task_history_info(task, first_history, column_prefix=f"since_{start_date}.first_{phase.value}")
 
@@ -451,6 +486,8 @@ class ListTasksAddedTaskHistoryMain:
                 task_histories, _ = self.service.api.get_task_histories(self.project_id, task_id)
                 # タスク履歴から取得した情報をtaskに設定する
                 obj.add_task_history_additional_info_to_task(task, task_histories, start_date_list=start_date_list)
+            except TaskHistoryUserNotFoundError:
+                raise
             except Exception:
                 logger.warning(f"task_id='{task_id}' :: タスク履歴に関する情報を取得するのに失敗しました。", exc_info=True)
 
@@ -487,6 +524,9 @@ class TasksAddedTaskHistoryOutput:
             "annotation_worktime_hour",
             "inspection_worktime_hour",
             "acceptance_worktime_hour",
+            "annotation_worktime_hour_by_user",
+            "inspection_worktime_hour_by_user",
+            "acceptance_worktime_hour_by_user",
             # 差し戻し回数
             "number_of_rejections_by_inspection",
             "number_of_rejections_by_acceptance",
@@ -520,7 +560,7 @@ class TasksAddedTaskHistoryOutput:
         columns = []
         for start_date in self.start_date_list:
             for phase in [TaskPhase.ANNOTATION, TaskPhase.INSPECTION, TaskPhase.ACCEPTANCE]:
-                columns.append(f"since_{start_date}.{phase.value}_worktime_hour")
+                columns.extend([f"since_{start_date}.{phase.value}_worktime_hour", f"since_{start_date}.{phase.value}_worktime_hour_by_user"])
                 columns.extend(f"since_{start_date}.first_{phase.value}_{info}" for info in ["user_id", "username", "started_datetime", "worktime_hour"])
         return columns
 
@@ -531,7 +571,8 @@ class TasksAddedTaskHistoryOutput:
             since_columns = self._get_since_columns()
             if len(task_list) > 0:
                 # json_normalizeでメタデータを自動展開
-                df = pandas.json_normalize(task_list)
+                csv_records = [{key: json.dumps(value, ensure_ascii=False) if key.endswith("_worktime_hour_by_user") else value for key, value in task.items()} for task in task_list]
+                df = pandas.json_normalize(csv_records)
 
                 # metadata.*列を検出して出力対象列リストに追加
                 metadata_columns = sorted([col for col in df.columns if col.startswith("metadata.")])
@@ -610,9 +651,9 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         type=str,
         nargs="+",
         metavar="YYYY-MM-DD",
-        help="指定日以降の作業時間と最初の担当者情報を、追加カラムとして出力します。"
+        help="指定日以降の作業時間、ユーザー別の作業時間、最初の担当者情報を、追加カラムとして出力します。"
         "日付はYYYY-MM-DD形式で複数指定できます。タスク履歴のstarted_datetimeを基準に集計します。"
-        "追加カラム名は ``since_{日付}.{フェーズ}_worktime_hour`` および"
+        "追加カラム名は ``since_{日付}.{フェーズ}_worktime_hour`` 、 ``since_{日付}.{フェーズ}_worktime_hour_by_user`` および"
         " ``since_{日付}.first_{フェーズ}_{user_id,username,started_datetime,worktime_hour}`` です。",
     )
 
