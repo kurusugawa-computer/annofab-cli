@@ -51,7 +51,9 @@ def command_context(tmp_path, monkeypatch):
     monkeypatch.setattr(service.api, "get_my_member_in_project", Mock(return_value=({"member_role": "owner"}, None)))
     monkeypatch.setattr(service.api, "get_project", Mock(return_value=({"title": "test", "input_data_type": "movie"}, None)))
     monkeypatch.setattr(service.api, "get_annotation_specs", Mock(return_value=({"labels": []}, None)))
-    monkeypatch.setattr(service.wrapper, "get_all_project_members", Mock(return_value=[]))
+    account_ids = {history["account_id"] for task_histories in histories.values() for history in task_histories if history["account_id"] is not None} | {"a"}
+    members = [{"account_id": account_id, "user_id": account_id, "username": account_id} for account_id in sorted(account_ids)]
+    monkeypatch.setattr(service.wrapper, "get_all_project_members", Mock(return_value=members))
     monkeypatch.setattr(service.wrapper, "download_project_tasks_url", Mock(side_effect=lambda _p, dest: Path(dest).write_text(json.dumps(tasks), encoding="utf-8")))
     monkeypatch.setattr(service.wrapper, "download_project_task_histories_url", Mock(side_effect=lambda _p, dest: Path(dest).write_text(json.dumps(histories), encoding="utf-8")))
     monkeypatch.setattr(service.wrapper, "download_project_inputs_url", Mock(side_effect=lambda _p, dest: Path(dest).write_text(json.dumps(inputs), encoding="utf-8")))
@@ -172,8 +174,12 @@ def test_csv_fixed_columns_metadata_and_nullable_counts(tmp_path):
     command.output_tasks(rows, path, OutputFormat.CSV)
     df = pandas.read_csv(path)
     assert list(df.columns) == [*command.get_output_columns(), "metadata.category", "metadata.priority"]
-    assert len(command.get_output_columns()) == 44
+    assert len(command.get_output_columns()) == 47
     assert len(df) == 4
+    for index, row in enumerate(rows):
+        for phase in ["annotation", "inspection", "acceptance"]:
+            column = f"{phase}_worktime_hour_by_user"
+            assert json.loads(df.loc[index, column]) == row[column]
     assert pandas.isna(df.loc[2, "annotation_count"])
     assert df.loc[3, "annotation_count"] == 0
     assert not any(column.startswith("since_") for column in df.columns)
