@@ -288,6 +288,7 @@
 - `annofabcli task list_added_task_history`: タスク履歴に関する情報を加えたタスク一覧を出力します。
 - `annofabcli task list_all`: すべてのタスクの一覧を出力します。
 - `annofabcli task list_all_added_task_history`: タスク履歴に関する情報を加えたタスク一覧のすべてを出力します。
+- `annofabcli task list_all_with_statistics`: 全タスクの作業時間・アノテーション数・動画時間・区間長さを出力します。
 - `annofabcli task list_video_duration`: 各タスクの動画の長さを出力します。
 - `annofabcli task put`: [DEPRECATED] タスクを作成します。
 - `annofabcli task reject`: タスクを差し戻します。

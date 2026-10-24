@@ -14,6 +14,7 @@ import annofabcli.task.delete_tasks
 import annofabcli.task.download_task_json
 import annofabcli.task.list_all_tasks
 import annofabcli.task.list_all_tasks_added_task_history
+import annofabcli.task.list_all_with_statistics
 import annofabcli.task.list_tasks
 import annofabcli.task.list_tasks_added_task_history
 import annofabcli.task.list_video_duration
@@ -46,6 +47,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     annofabcli.task.list_tasks_added_task_history.add_parser(subparsers)
     annofabcli.task.list_all_tasks.add_parser(subparsers)
     annofabcli.task.list_all_tasks_added_task_history.add_parser(subparsers)
+    annofabcli.task.list_all_with_statistics.add_parser(subparsers)
     annofabcli.task.list_video_duration.add_parser(subparsers)
     annofabcli.task.put_tasks.add_parser(subparsers)
     annofabcli.task.reject_tasks.add_parser(subparsers)
