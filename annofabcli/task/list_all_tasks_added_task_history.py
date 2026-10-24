@@ -192,9 +192,9 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         type=str,
         nargs="+",
         metavar="YYYY-MM-DD",
-        help="指定日以降の作業時間と最初の担当者情報を、追加カラムとして出力します。"
+        help="指定日以降の作業時間、ユーザー別の作業時間、最初の担当者情報を、追加カラムとして出力します。"
         "日付はYYYY-MM-DD形式で複数指定できます。タスク履歴のstarted_datetimeを基準に集計します。"
-        "追加カラム名は ``since_{日付}.{フェーズ}_worktime_hour`` および"
+        "追加カラム名は ``since_{日付}.{フェーズ}_worktime_hour`` 、 ``since_{日付}.{フェーズ}_worktime_hour_by_user`` および"
         " ``since_{日付}.first_{フェーズ}_{user_id,username,started_datetime,worktime_hour}`` です。",
     )
 
