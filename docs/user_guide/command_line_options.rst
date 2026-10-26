@@ -106,6 +106,7 @@ Command line options
 * ``annotation change_attributes_per_annotation``
 * ``annotation change_data_per_annotation``
 * ``annotation change_label_per_annotation``
+* ``annotation normalize_attribute_types``
 
 従来は検索条件による属性値・ラベル変更と、それらの個別変更では保留中状態のタスクも処理されましたが、現在は明示的な指定が必要です。
 保留中状態のタスクも処理する既存スクリプトには ``--include_on_hold_task`` を追加してください。
