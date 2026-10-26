@@ -101,8 +101,8 @@ attribute_type に指定できる値
 
 * ``flag`` : チェックボックス
 * ``integer`` : 整数
-* ``text`` : 自由記述（1行）
-* ``comment`` : 自由記述（複数行）
+* ``text`` : 自由記述（複数行）
+* ``comment`` : 自由記述（1行）
 * ``tracking`` : トラッキングID
 * ``link`` : アノテーションリンク
 * ``choice`` : ラジオボタン

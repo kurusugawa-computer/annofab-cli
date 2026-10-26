@@ -99,10 +99,7 @@ def create_confirm_message_for_change_attribute_type(
     """
     confirm_message = f"属性名(英語)='{attribute_name_en}', 属性ID='{attribute_id}' の属性種類を '{current_type}' から '{target_type}' に変更します。"
     if has_annotation_with_label_having_attribute:
-        confirm_message += (
-            "この属性を含むラベルがアノテーションで使われています。3次元エディタでは属性値が消えてしまう恐れがあります。"
-            "属性値の保存型は変更しません。変更後に annotation normalize_attribute_type で属性値の型をそろえてください。"
-        )
+        confirm_message += "この属性を含むラベルがアノテーションで使われています。3次元エディタでは属性値が消えてしまう恐れがあります。"
     else:
         confirm_message += "この属性を含むラベルがアノテーションで使われていることは確認できませんでした。"
     confirm_message += "よろしいですか？"
@@ -325,9 +322,9 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         help=(
             "変更後の属性種類。対応している変換は以下です。\n"
             "* ``choice`` （ラジオボタン）↔ ``select`` （ドロップダウン）\n"
-            "* ``text`` （自由記述1行）↔ ``comment`` （自由記述複数行）\n"
-            "* ``text`` （自由記述1行）↔ ``integer`` （整数）\n"
-            "* ``comment`` （自由記述複数行）→ ``integer`` （整数）"
+            "* ``text`` （自由記述複数行）↔ ``comment`` （自由記述1行）\n"
+            "* ``text`` （自由記述複数行）↔ ``integer`` （整数）\n"
+            "* ``comment`` （自由記述1行）→ ``integer`` （整数）"
         ),
     )
     parser.add_argument("--comment", type=str, help="アノテーション仕様の変更内容を説明するコメント。未指定の場合、自動でコメントが生成されます。")
