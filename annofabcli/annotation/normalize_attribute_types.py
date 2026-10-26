@@ -308,9 +308,15 @@ def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse
     """
     parser = annofabcli.common.cli.add_parser(
         subparsers,
-        "normalize_attribute_types",
-        "属性の保存型を現行仕様にそろえます。",
-        "アノテーション仕様を変更せず、属性の保存型を現行仕様にそろえます。対応する変換以外はスキップします。バックアップの指定を推奨します。",
+        command_name="normalize_attribute_types",
+        command_help="アノテーションの属性値の型を、現在のアノテーション仕様に合わせます。",
+        description=(
+            "アノテーションの属性値の型を、現在のアノテーション仕様に合わせます。"
+            "たとえば、アノテーション仕様で属性の種類を自由記述1行（ ``text`` ）から自由記述複数行（ ``comment`` ）に変更した直後は、"
+            "属性値の型がアノテーション仕様と一致していないため、"
+            "アノテーションエディタ画面やダウンロードしたアノテーションZIPでは、属性値が空欄になっている可能性があります。"
+            "そのようなアノテーションの属性値を修正します。"
+        ),
         epilog="オーナーロールまたはチェッカーロールを持つユーザーで実行してください。",
     )
     parse_args(parser)
