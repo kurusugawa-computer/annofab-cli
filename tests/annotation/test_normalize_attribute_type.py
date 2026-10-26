@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import copy
+import logging
 from pathlib import Path
 from typing import cast
 from unittest.mock import Mock
@@ -143,23 +144,28 @@ def service_with_annotation() -> Mock:
     return service
 
 
-def test_update_and_backup(tmp_path: Path) -> None:
+def test_update_and_backup(tmp_path: Path, caplog: pytest.LogCaptureFixture) -> None:
+    caplog.set_level(logging.INFO, logger="annofabcli.annotation.normalize_attribute_type")
     service = service_with_annotation()
     result = NormalizeAttributeTypeMain(cast(annofabapi.Resource, service), project_id="project1", annotation_specs=specs(), backup_dir=tmp_path, all_yes=True).normalize_for_task((0, "task1"))
-    assert (result.changed, result.skipped, result.failed) == (1, 2, 0)
+    assert (result.changed, result.skipped, result.failed_input_data, result.failed_tasks) == (1, 2, 0, 0)
     service.api.batch_update_annotations.assert_called_once()
     request = service.api.batch_update_annotations.call_args.kwargs["request_body"]
     assert request[0]["data"]["updated_datetime"] == annotation()["updated_datetime"]
     assert "body" not in request[0]["data"]
     assert (tmp_path / "task1" / "input1.json").is_file()
+    assert "属性値の型を1件変更しました。変換できず保持した属性値: 2件、処理に失敗した入力データ: 0件、処理に失敗したタスク: 0件。" in caplog.text
 
 
-def test_dry_run_does_not_write_or_backup(tmp_path: Path) -> None:
+def test_dry_run_does_not_write_or_backup(tmp_path: Path, caplog: pytest.LogCaptureFixture) -> None:
+    caplog.set_level(logging.INFO, logger="annofabcli.annotation.normalize_attribute_type")
     service = service_with_annotation()
     result = NormalizeAttributeTypeMain(cast(annofabapi.Resource, service), project_id="project1", annotation_specs=specs(), backup_dir=tmp_path, dry_run=True).normalize_for_task((0, "task1"))
     assert result.changed == 1
     service.api.batch_update_annotations.assert_not_called()
     assert list(tmp_path.iterdir()) == []
+    assert "属性値の型を1件変更する予定です。" in caplog.text
+    assert "変更しました" not in caplog.text
 
 
 @pytest.mark.parametrize("status", ["working", "complete", "on_hold"])
@@ -167,7 +173,7 @@ def test_skip_task_status(status: str) -> None:
     service = service_with_annotation()
     service.wrapper.get_task_or_none.return_value["status"] = status
     result = NormalizeAttributeTypeMain(cast(annofabapi.Resource, service), project_id="project1", annotation_specs=specs(), all_yes=True).normalize_for_task((0, "task1"))
-    assert result.changed == result.failed == 0
+    assert result.changed == result.failed_input_data == result.failed_tasks == 0
     service.api.batch_update_annotations.assert_not_called()
 
 
@@ -200,5 +206,15 @@ def test_failure_does_not_stop_other_inputs() -> None:
     service.api.get_editor_annotations_in_bulk.return_value = ({"success": [annotation(), second], "failure": []}, None)
     service.api.batch_update_annotations.side_effect = [RuntimeError("failure"), None]
     result = NormalizeAttributeTypeMain(cast(annofabapi.Resource, service), project_id="project1", annotation_specs=specs(), all_yes=True).normalize_for_task((0, "task1"))
-    assert result.changed == result.failed == 1
+    assert result.changed == result.failed_input_data == 1
+    assert result.failed_tasks == 0
     assert service.api.batch_update_annotations.call_count == 2
+
+
+def test_task_failure_is_counted_separately() -> None:
+    service = service_with_annotation()
+    service.api.get_editor_annotations_in_bulk.side_effect = RuntimeError("failure")
+    result = NormalizeAttributeTypeMain(cast(annofabapi.Resource, service), project_id="project1", annotation_specs=specs(), all_yes=True).normalize_for_task((0, "task1"))
+    assert result.changed == result.failed_input_data == 0
+    assert result.failed_tasks == 1
+    service.api.batch_update_annotations.assert_not_called()

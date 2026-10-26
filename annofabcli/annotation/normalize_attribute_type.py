@@ -35,14 +35,16 @@ SUPPORTED_CONVERSIONS = {
 
 @dataclass
 class NormalizeResult:
-    """正規化の集計結果。件数の単位は属性値、失敗は入力データまたはタスク。"""
+    """属性値の型の変更と、入力データ・タスクごとの処理失敗の集計結果。"""
 
     changed: int = 0
     """正規化した属性値数。dry-runでは正規化予定数。"""
     skipped: int = 0
     """不整合を修復できず保持した属性値数。"""
-    failed: int = 0
-    """処理に失敗した入力データまたはタスク数。"""
+    failed_input_data: int = 0
+    """処理に失敗した入力データ数。"""
+    failed_tasks: int = 0
+    """処理に失敗したタスク数。"""
 
 
 def normalize_attribute_value(value: dict[str, Any], attribute: dict[str, Any]) -> dict[str, Any]:
@@ -194,12 +196,16 @@ class NormalizeAttributeTypeMain(CommandLineWithConfirm):
                         self.service.api.batch_update_annotations(self.project_id, request_body=request)
                     total.changed += result.changed
                 except Exception:
-                    total.failed += 1
+                    total.failed_input_data += 1
                     logger.warning(f"task_id='{task_id}', input_data_id='{input_data_id}' :: 属性型の正規化に失敗しました。", exc_info=True)
         except Exception:
-            total.failed += 1
+            total.failed_tasks += 1
             logger.warning(f"task_id='{task_id}' :: 属性型の正規化に失敗しました。", exc_info=True)
-        logger.info(f"task_id='{task_id}' :: 正規化{'予定' if self.dry_run else ''}{total.changed}属性値、スキップ{total.skipped}属性値、失敗{total.failed}件。")
+        logger.info(
+            f"task_id='{task_id}' :: 属性値の型を{total.changed}件変更{'する予定です' if self.dry_run else 'しました'}。"
+            f"変換できず保持した属性値: {total.skipped}件、"
+            f"処理に失敗した入力データ: {total.failed_input_data}件、処理に失敗したタスク: {total.failed_tasks}件。"
+        )
         return total
 
 
@@ -253,13 +259,15 @@ class NormalizeAttributeType(CommandLine):
                 results = pool.map(main_obj.normalize_for_task, enumerate(dict.fromkeys(task_ids)))
         else:
             results = [main_obj.normalize_for_task(item) for item in enumerate(dict.fromkeys(task_ids))]
-        failed = sum(result.failed for result in results)
+        failed_input_data = sum(result.failed_input_data for result in results)
+        failed_tasks = sum(result.failed_tasks for result in results)
         logger.info(
-            f"正規化{'予定' if args.dry_run else ''}{sum(result.changed for result in results)}属性値、"
-            f"スキップ{sum(result.skipped for result in results)}属性値、失敗{failed}件（入力データまたはタスク）。"
+            f"全体の処理結果 :: 属性値の型の変更{'予定' if args.dry_run else ''}: {sum(result.changed for result in results)}件、"
+            f"変換できず保持した属性値: {sum(result.skipped for result in results)}件、"
+            f"処理に失敗した入力データ: {failed_input_data}件、処理に失敗したタスク: {failed_tasks}件。"
         )
-        if failed:
-            raise AnnofabCliException(f"{failed} 件の処理に失敗しました。")
+        if failed_input_data or failed_tasks:
+            raise AnnofabCliException(f"入力データ{failed_input_data}件、タスク{failed_tasks}件の処理に失敗しました。")
 
 
 def main(args: argparse.Namespace) -> None:
