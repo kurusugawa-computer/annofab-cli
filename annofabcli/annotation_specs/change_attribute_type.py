@@ -99,10 +99,7 @@ def create_confirm_message_for_change_attribute_type(
     """
     confirm_message = f"属性名(英語)='{attribute_name_en}', 属性ID='{attribute_id}' の属性種類を '{current_type}' から '{target_type}' に変更します。"
     if has_annotation_with_label_having_attribute:
-        confirm_message += (
-            "この属性を含むラベルがアノテーションで使われています。3次元エディタでは属性値が消えてしまう恐れがあります。"
-            "属性値の保存型は変更しません。変更後に annotation normalize_attribute_type で属性値の型をそろえてください。"
-        )
+        confirm_message += "この属性を含むラベルがアノテーションで使われています。3次元エディタでは属性値が消えてしまう恐れがあります。"
     else:
         confirm_message += "この属性を含むラベルがアノテーションで使われていることは確認できませんでした。"
     confirm_message += "よろしいですか？"
