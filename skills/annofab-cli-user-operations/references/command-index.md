@@ -28,7 +28,7 @@
 - `annofabcli annotation list`: アノテーションの一覧を出力します。
 - `annofabcli annotation list_count`: task_idまたはinput_data_idで集約したアノテーションの個数を出力します。
 - `annofabcli annotation merge_segmentation`: 複数の塗りつぶしアノテーションを1つにまとめます。
-- `annofabcli annotation normalize_attribute_types`: アノテーションの属性値の型を、現在のアノテーション仕様に合わせます。
+- `annofabcli annotation normalize_attribute_type`: アノテーションの属性値の型を、現在のアノテーション仕様に合わせます。
 - `annofabcli annotation remove_segmentation_overlap`: 塗りつぶしアノテーションの重なりを除去します。
 - `annofabcli annotation restore`: 'annotation dump'コマンドの出力結果から、アノテーション情報をリストアします。
 

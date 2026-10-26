@@ -34,7 +34,7 @@ Available Commands
    list
    list_count
    merge_segmentation
-   normalize_attribute_types
+   normalize_attribute_type
    remove_segmentation_overlap
    restore
 

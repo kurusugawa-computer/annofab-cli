@@ -30,7 +30,7 @@ SUPPORTED_CONVERSIONS = {
     ("Comment", "integer"): "Integer",
     ("Integer", "text"): "Text",
 }
-"""保存型と現行仕様の型をキーとする、対応する変換。"""
+"""保存型と現在のアノテーション仕様の型をキーとする、対応する変換。"""
 
 
 @dataclass
@@ -46,11 +46,11 @@ class NormalizeResult:
 
 
 def normalize_attribute_value(value: dict[str, Any], attribute: dict[str, Any]) -> dict[str, Any]:
-    """保存値を現行仕様の型に変換する。一致している値はそのまま返す。
+    """保存値を現在のアノテーション仕様の型に変換する。一致している値はそのまま返す。
 
     Args:
         value: Editor形式の保存値。
-        attribute: 現行仕様の属性定義。
+        attribute: 現在のアノテーション仕様の属性定義。
 
     Returns:
         変換後の保存値。
@@ -69,7 +69,7 @@ def normalize_attribute_value(value: dict[str, Any], attribute: dict[str, Any]) 
     result = copy.deepcopy(value)
     if source_type in {"Choice", "Select"}:
         if value.get("choice_id") not in {choice["choice_id"] for choice in attribute["choices"]}:
-            raise ValueError("保存されている選択肢IDが現行仕様に存在しません。")
+            raise ValueError("保存されている選択肢IDが現在のアノテーション仕様に存在しません。")
     elif source_type == "Integer":
         if type(value.get("value")) is not int:
             raise ValueError("Integerの保存値が整数ではありません。")
@@ -110,7 +110,7 @@ def create_normalized_request(editor_annotation: dict[str, Any], annotation_spec
             try:
                 if attribute_id not in definitions or attribute_id not in allowed.get(detail["label_id"], set()):
                     result.skipped += 1
-                    logger.warning(f"annotation_id='{detail['annotation_id']}', attribute_id='{attribute_id}' :: 属性が現行仕様のラベルに存在しないため、スキップします。")
+                    logger.warning(f"annotation_id='{detail['annotation_id']}', attribute_id='{attribute_id}' :: 属性が現在のアノテーション仕様のラベルに存在しないため、スキップします。")
                     continue
                 converted = normalize_attribute_value(value, definitions[attribute_id])
             except ValueError as e:
@@ -131,8 +131,8 @@ def create_normalized_request(editor_annotation: dict[str, Any], annotation_spec
     return request, result
 
 
-class NormalizeAttributeTypesMain(CommandLineWithConfirm):
-    """属性の保存型を現行仕様にそろえる処理。"""
+class NormalizeAttributeTypeMain(CommandLineWithConfirm):
+    """属性の保存型を現在のアノテーション仕様にそろえる処理。"""
 
     def __init__(
         self,
@@ -178,7 +178,7 @@ class NormalizeAttributeTypesMain(CommandLineWithConfirm):
             if status == TaskStatus.WORKING.value or (status == TaskStatus.COMPLETE.value and not self.include_complete_task) or (status == TaskStatus.ON_HOLD.value and not self.include_on_hold_task):
                 logger.info(f"task_id='{task_id}' :: タスクの状態が'{status}'のため、スキップします。")
                 return total
-            if not self.dry_run and not self.confirm_processing(f"task_id='{task_id}' の属性の保存型を現行仕様にそろえますか？"):
+            if not self.dry_run and not self.confirm_processing(f"task_id='{task_id}' の属性の保存型を現在のアノテーション仕様にそろえますか？"):
                 return total
             annotations = get_editor_annotation_dict_in_bulk(self.service, self.project_id, task_id, task["input_data_id_list"])
             for input_data_id in task["input_data_id_list"]:
@@ -203,7 +203,7 @@ class NormalizeAttributeTypesMain(CommandLineWithConfirm):
         return total
 
 
-class NormalizeAttributeTypes(CommandLine):
+class NormalizeAttributeType(CommandLine):
     """正規化コマンドの引数を解決して実行する。"""
 
     def main(self) -> None:
@@ -236,7 +236,7 @@ class NormalizeAttributeTypes(CommandLine):
             if len(tasks) >= 10_000:
                 raise AnnofabCliException("タスク一覧が取得上限に達したため中断します。--task_id を指定してください。")
             task_ids = [task["task_id"] for task in tasks]
-        main_obj = NormalizeAttributeTypesMain(
+        main_obj = NormalizeAttributeTypeMain(
             self.service,
             project_id=args.project_id,
             annotation_specs=specs,
@@ -272,7 +272,7 @@ def main(args: argparse.Namespace) -> None:
         None。
     """
     service = build_annofabapi_resource_and_login(args)
-    NormalizeAttributeTypes(service, AnnofabApiFacade(service), args).main()
+    NormalizeAttributeType(service, AnnofabApiFacade(service), args).main()
 
 
 def parse_args(parser: argparse.ArgumentParser) -> None:
@@ -309,7 +309,7 @@ def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse
     """
     parser = annofabcli.common.cli.add_parser(
         subparsers,
-        command_name="normalize_attribute_types",
+        command_name="normalize_attribute_type",
         command_help="アノテーションの属性値の型を、現在のアノテーション仕様に合わせます。",
         description=(
             "アノテーションの属性値の型を、現在のアノテーション仕様に合わせます。"

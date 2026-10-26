@@ -1,5 +1,5 @@
 ==========================================
-annotation normalize_attribute_types
+annotation normalize_attribute_type
 ==========================================
 
 Description
@@ -40,7 +40,7 @@ Examples
 
 .. code-block:: console
 
-    $ annofabcli annotation normalize_attribute_types \
+    $ annofabcli annotation normalize_attribute_type \
      --project_id p1 --task_id t1 t2 --dry_run
 
 正規化予定の属性値数とスキップ理由をログに出力します。バックアップは作成しません。
@@ -50,7 +50,7 @@ Examples
 
 .. code-block:: console
 
-    $ annofabcli annotation normalize_attribute_types \
+    $ annofabcli annotation normalize_attribute_type \
      --project_id p1 --task_id t1 t2 \
      --attribute_name_en note --backup backup_dir/
 
@@ -65,7 +65,7 @@ Usage Details
 =================================
 
 .. argparse::
-    :ref: annofabcli.annotation.normalize_attribute_types.add_parser
-    :prog: annofabcli annotation normalize_attribute_types
+    :ref: annofabcli.annotation.normalize_attribute_type.add_parser
+    :prog: annofabcli annotation normalize_attribute_type
     :nosubcommands:
     :nodefaultconst:

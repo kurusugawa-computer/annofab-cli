@@ -8,7 +8,7 @@ from unittest.mock import Mock
 import annofabapi
 import pytest
 
-from annofabcli.annotation.normalize_attribute_types import NormalizeAttributeTypesMain, create_normalized_request, normalize_attribute_value
+from annofabcli.annotation.normalize_attribute_type import NormalizeAttributeTypeMain, create_normalized_request, normalize_attribute_value
 
 
 @pytest.mark.parametrize(
@@ -145,7 +145,7 @@ def service_with_annotation() -> Mock:
 
 def test_update_and_backup(tmp_path: Path) -> None:
     service = service_with_annotation()
-    result = NormalizeAttributeTypesMain(cast(annofabapi.Resource, service), project_id="project1", annotation_specs=specs(), backup_dir=tmp_path, all_yes=True).normalize_for_task((0, "task1"))
+    result = NormalizeAttributeTypeMain(cast(annofabapi.Resource, service), project_id="project1", annotation_specs=specs(), backup_dir=tmp_path, all_yes=True).normalize_for_task((0, "task1"))
     assert (result.changed, result.skipped, result.failed) == (1, 2, 0)
     service.api.batch_update_annotations.assert_called_once()
     request = service.api.batch_update_annotations.call_args.kwargs["request_body"]
@@ -156,7 +156,7 @@ def test_update_and_backup(tmp_path: Path) -> None:
 
 def test_dry_run_does_not_write_or_backup(tmp_path: Path) -> None:
     service = service_with_annotation()
-    result = NormalizeAttributeTypesMain(cast(annofabapi.Resource, service), project_id="project1", annotation_specs=specs(), backup_dir=tmp_path, dry_run=True).normalize_for_task((0, "task1"))
+    result = NormalizeAttributeTypeMain(cast(annofabapi.Resource, service), project_id="project1", annotation_specs=specs(), backup_dir=tmp_path, dry_run=True).normalize_for_task((0, "task1"))
     assert result.changed == 1
     service.api.batch_update_annotations.assert_not_called()
     assert list(tmp_path.iterdir()) == []
@@ -166,7 +166,7 @@ def test_dry_run_does_not_write_or_backup(tmp_path: Path) -> None:
 def test_skip_task_status(status: str) -> None:
     service = service_with_annotation()
     service.wrapper.get_task_or_none.return_value["status"] = status
-    result = NormalizeAttributeTypesMain(cast(annofabapi.Resource, service), project_id="project1", annotation_specs=specs(), all_yes=True).normalize_for_task((0, "task1"))
+    result = NormalizeAttributeTypeMain(cast(annofabapi.Resource, service), project_id="project1", annotation_specs=specs(), all_yes=True).normalize_for_task((0, "task1"))
     assert result.changed == result.failed == 0
     service.api.batch_update_annotations.assert_not_called()
 
@@ -175,7 +175,7 @@ def test_skip_task_status(status: str) -> None:
 def test_explicitly_include_task_status(status: str) -> None:
     service = service_with_annotation()
     service.wrapper.get_task_or_none.return_value["status"] = status
-    result = NormalizeAttributeTypesMain(
+    result = NormalizeAttributeTypeMain(
         cast(annofabapi.Resource, service), project_id="project1", annotation_specs=specs(), include_complete_task=True, include_on_hold_task=True, all_yes=True
     ).normalize_for_task((0, "task1"))
     assert result.changed == 1
@@ -187,7 +187,7 @@ def test_no_updates_when_already_normalized() -> None:
     normalized = annotation()
     normalized["details"][0]["additional_data_list"] = [{"definition_id": "a1", "value": {"_type": "Comment", "value": "4"}}]
     service.api.get_editor_annotations_in_bulk.return_value = ({"success": [normalized], "failure": []}, None)
-    result = NormalizeAttributeTypesMain(cast(annofabapi.Resource, service), project_id="project1", annotation_specs=specs(), all_yes=True).normalize_for_task((0, "task1"))
+    result = NormalizeAttributeTypeMain(cast(annofabapi.Resource, service), project_id="project1", annotation_specs=specs(), all_yes=True).normalize_for_task((0, "task1"))
     assert result.changed == 0
     service.api.batch_update_annotations.assert_not_called()
 
@@ -199,6 +199,6 @@ def test_failure_does_not_stop_other_inputs() -> None:
     second["input_data_id"] = "input2"
     service.api.get_editor_annotations_in_bulk.return_value = ({"success": [annotation(), second], "failure": []}, None)
     service.api.batch_update_annotations.side_effect = [RuntimeError("failure"), None]
-    result = NormalizeAttributeTypesMain(cast(annofabapi.Resource, service), project_id="project1", annotation_specs=specs(), all_yes=True).normalize_for_task((0, "task1"))
+    result = NormalizeAttributeTypeMain(cast(annofabapi.Resource, service), project_id="project1", annotation_specs=specs(), all_yes=True).normalize_for_task((0, "task1"))
     assert result.changed == result.failed == 1
     assert service.api.batch_update_annotations.call_count == 2
