@@ -15,6 +15,7 @@ from annofabcli.annotation.normalize_attribute_types import NormalizeAttributeTy
     ("value", "target_type", "expected"),
     [
         ({"_type": "Text", "value": "4"}, "comment", {"_type": "Comment", "value": "4"}),
+        *[({"_type": "Text", "value": text}, "comment", {"_type": "Comment", "value": text}) for text in ["a\nb", "a\rb", "a\r\nb"]],
         ({"_type": "Comment", "value": "hello"}, "text", {"_type": "Text", "value": "hello"}),
         ({"_type": "Choice", "choice_id": "c1"}, "select", {"_type": "Select", "choice_id": "c1"}),
         ({"_type": "Select", "choice_id": "c1"}, "choice", {"_type": "Choice", "choice_id": "c1"}),
@@ -44,8 +45,7 @@ def test_normalize_attribute_value(value: dict, target_type: str, expected: dict
         ({"_type": "Text", "value": None}, "integer"),
         ({"_type": "Comment", "value": "4"}, "integer"),
         ({"_type": "Text", "value": "4"}, "select"),
-        ({"_type": "Text", "value": "a\nb"}, "comment"),
-        ({"_type": "Text", "value": "a\rb"}, "comment"),
+        *[({"_type": "Comment", "value": text}, "text") for text in ["a\nb", "a\rb", "a\r\nb"]],
         ({"_type": "Choice", "choice_id": "missing"}, "select"),
     ],
 )

@@ -78,7 +78,7 @@ def normalize_attribute_value(value: dict[str, Any], attribute: dict[str, Any]) 
             raise ValueError("文字列属性の保存値が文字列ではありません。")
         if target_type == "integer":
             result["value"] = int(value["value"])
-        elif target_type == "comment" and ("\n" in value["value"] or "\r" in value["value"]):
+        elif target_type == "text" and ("\n" in value["value"] or "\r" in value["value"]):
             raise ValueError("改行を含むため、1行の自由記述には変換しません。")
     result["_type"] = converted_type
     return result
