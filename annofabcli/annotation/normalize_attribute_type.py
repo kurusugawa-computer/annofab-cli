@@ -81,7 +81,7 @@ def normalize_attribute_value(value: dict[str, Any], attribute: dict[str, Any]) 
             raise ValueError("文字列属性の保存値が文字列ではありません。")
         if target_type == "integer":
             result["value"] = int(value["value"])
-        elif target_type == "text" and ("\n" in value["value"] or "\r" in value["value"]):
+        elif target_type == "comment" and ("\n" in value["value"] or "\r" in value["value"]):
             raise ValueError("改行を含むため、1行の自由記述には変換しません。")
     result["_type"] = converted_type
     return result
@@ -321,7 +321,7 @@ def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse
         command_help="アノテーションの属性値の型を、現在のアノテーション仕様に合わせます。",
         description=(
             "アノテーションの属性値の型を、現在のアノテーション仕様に合わせます。"
-            "たとえば、アノテーション仕様で属性の種類を自由記述1行（ ``text`` ）から自由記述複数行（ ``comment`` ）に変更した直後は、"
+            "たとえば、アノテーション仕様で属性の種類を自由記述複数行（ ``text`` ）から自由記述1行（ ``comment`` ）に変更した直後は、"
             "属性値の型がアノテーション仕様と一致していないため、"
             "アノテーションエディタ画面やダウンロードしたアノテーションZIPでは、属性値が空欄になっている可能性があります。"
             "そのようなアノテーションの属性値を修正します。"

@@ -402,8 +402,8 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
             "追加する属性の種類。\n"
             "* ``flag`` : チェックボックス\n"
             "* ``integer`` : 整数\n"
-            "* ``text`` : 自由記述（1行）\n"
-            "* ``comment`` : 自由記述（複数行）\n"
+            "* ``text`` : 自由記述（複数行）\n"
+            "* ``comment`` : 自由記述（1行）\n"
             "* ``tracking`` : トラッキングID\n"
             "* ``link`` : アノテーションリンク"
         ),

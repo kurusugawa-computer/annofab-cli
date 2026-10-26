@@ -9,9 +9,9 @@ Description
 対応している変換は、以下の組み合わせです。
 
 * ``choice`` （ラジオボタン） ↔ ``select`` （ドロップダウン）
-* ``text`` （自由記述1行） ↔ ``comment`` （自由記述複数行）
-* ``text`` （自由記述1行） ↔ ``integer`` （整数）
-* ``comment`` （自由記述複数行） → ``integer`` （整数）
+* ``text`` （自由記述複数行） ↔ ``comment`` （自由記述1行）
+* ``text`` （自由記述複数行） ↔ ``integer`` （整数）
+* ``comment`` （自由記述1行） → ``integer`` （整数）
 
 このコマンドはアノテーション仕様だけを変更します。
 既存アノテーションの属性値の型をそろえるには、変更後に :doc:`../annotation/normalize_attribute_type` を実行してください。

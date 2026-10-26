@@ -47,8 +47,8 @@ ANNOTATION_TYPE_DISPLAY_NAMES: Mapping[str, Mapping[DescriptionLanguage, str]] =
 ATTRIBUTE_TYPE_DISPLAY_NAMES: Mapping[str, Mapping[DescriptionLanguage, str]] = {
     AdditionalDataDefinitionType.FLAG.value: {DescriptionLanguage.JA: "チェックボックス", DescriptionLanguage.EN: "Checkbox"},
     AdditionalDataDefinitionType.INTEGER.value: {DescriptionLanguage.JA: "整数", DescriptionLanguage.EN: "Integer"},
-    AdditionalDataDefinitionType.TEXT.value: {DescriptionLanguage.JA: "1行テキスト", DescriptionLanguage.EN: "Text"},
-    AdditionalDataDefinitionType.COMMENT.value: {DescriptionLanguage.JA: "複数行テキスト", DescriptionLanguage.EN: "Comment"},
+    AdditionalDataDefinitionType.TEXT.value: {DescriptionLanguage.JA: "複数行テキスト", DescriptionLanguage.EN: "Text"},
+    AdditionalDataDefinitionType.COMMENT.value: {DescriptionLanguage.JA: "1行テキスト", DescriptionLanguage.EN: "Comment"},
     AdditionalDataDefinitionType.CHOICE.value: {DescriptionLanguage.JA: "ラジオボタン", DescriptionLanguage.EN: "Radio button"},
     AdditionalDataDefinitionType.SELECT.value: {DescriptionLanguage.JA: "ドロップダウン", DescriptionLanguage.EN: "Dropdown"},
     AdditionalDataDefinitionType.TRACKING.value: {DescriptionLanguage.JA: "トラッキングID", DescriptionLanguage.EN: "Tracking ID"},

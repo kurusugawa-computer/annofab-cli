@@ -322,9 +322,9 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         help=(
             "変更後の属性種類。対応している変換は以下です。\n"
             "* ``choice`` （ラジオボタン）↔ ``select`` （ドロップダウン）\n"
-            "* ``text`` （自由記述1行）↔ ``comment`` （自由記述複数行）\n"
-            "* ``text`` （自由記述1行）↔ ``integer`` （整数）\n"
-            "* ``comment`` （自由記述複数行）→ ``integer`` （整数）"
+            "* ``text`` （自由記述複数行）↔ ``comment`` （自由記述1行）\n"
+            "* ``text`` （自由記述複数行）↔ ``integer`` （整数）\n"
+            "* ``comment`` （自由記述1行）→ ``integer`` （整数）"
         ),
     )
     parser.add_argument("--comment", type=str, help="アノテーション仕様の変更内容を説明するコメント。未指定の場合、自動でコメントが生成されます。")
