@@ -21,8 +21,9 @@ from annofabcli.annotation.normalize_attribute_types import NormalizeAttributeTy
         ({"_type": "Select", "choice_id": "c1"}, "choice", {"_type": "Choice", "choice_id": "c1"}),
         ({"_type": "Integer", "value": -4}, "text", {"_type": "Text", "value": "-4"}),
         *[
-            ({"_type": "Text", "value": text}, "integer", {"_type": "Integer", "value": number})
-            for text, number in [("4", 4), ("04", 4), ("+4", 4), (" 4 ", 4), ("-0", 0), ("-4", -4), ("1_000", 1000)]
+            ({"_type": source_type, "value": text}, "integer", {"_type": "Integer", "value": number})
+            for source_type in ["Text", "Comment"]
+            for text, number in [("4", 4), ("04", 4), ("+4", 4), (" 4 ", 4), ("-0", 0), ("-4", -4), ("1_000", 1000), ("4\n", 4)]
         ],
         ({"_type": "Text", "value": ""}, "comment", {"_type": "Comment", "value": ""}),
         ({"_type": "Text", "value": "abc"}, "text", {"_type": "Text", "value": "abc"}),
@@ -39,11 +40,9 @@ def test_normalize_attribute_value(value: dict, target_type: str, expected: dict
 @pytest.mark.parametrize(
     ("value", "target_type"),
     [
-        *[({"_type": "Text", "value": text}, "integer") for text in ["", "abc", "4.0"]],
+        *[({"_type": source_type, "value": text}, "integer") for source_type in ["Text", "Comment"] for text in ["", "abc", "4.0", "4\n5", None]],
         ({"_type": "Integer", "value": True}, "text"),
         ({"_type": "Integer", "value": 4.5}, "text"),
-        ({"_type": "Text", "value": None}, "integer"),
-        ({"_type": "Comment", "value": "4"}, "integer"),
         ({"_type": "Text", "value": "4"}, "select"),
         *[({"_type": "Comment", "value": text}, "text") for text in ["a\nb", "a\rb", "a\r\nb"]],
         ({"_type": "Choice", "choice_id": "missing"}, "select"),
@@ -91,8 +90,10 @@ def annotation() -> dict:
     }
 
 
-def test_request_preserves_unconvertible_and_unrelated_data_and_is_idempotent() -> None:
+@pytest.mark.parametrize("source_type", ["Text", "Comment"])
+def test_request_preserves_unconvertible_and_unrelated_data_and_is_idempotent(source_type: str) -> None:
     source = annotation()
+    source["details"][0]["additional_data_list"][1]["value"]["_type"] = source_type
     original = copy.deepcopy(source)
     request, result = create_normalized_request(source, specs())
     assert (result.changed, result.skipped) == (1, 2)

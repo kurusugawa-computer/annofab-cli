@@ -27,6 +27,7 @@ SUPPORTED_CONVERSIONS = {
     ("Text", "comment"): "Comment",
     ("Comment", "text"): "Text",
     ("Text", "integer"): "Integer",
+    ("Comment", "integer"): "Integer",
     ("Integer", "text"): "Text",
 }
 """保存型と現行仕様の型をキーとする、対応する変換。"""
