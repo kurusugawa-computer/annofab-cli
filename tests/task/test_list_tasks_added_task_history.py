@@ -1,11 +1,20 @@
+import json
+from copy import deepcopy
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
+from unittest.mock import MagicMock
 
 import pandas
+import pytest
+from annofabapi.models import TaskPhase
 
 from annofabcli.common.enums import OutputFormat
+from annofabcli.task.list_all_tasks_added_task_history import ListAllTasksAddedTaskHistoryMain
 from annofabcli.task.list_tasks_added_task_history import (
+    AddingAdditionalInfoToTask,
+    ListTasksAddedTaskHistoryMain,
+    TaskHistoryUserNotFoundError,
     TasksAddedTaskHistoryOutput,
     get_completed_datetime,
     get_first_acceptance_completed_datetime,
@@ -664,3 +673,76 @@ class TestTasksAddedTaskHistoryOutput:
 
         # metadata列そのものも含まれないことを確認
         assert "metadata" not in columns
+
+
+@pytest.fixture
+def worktime_service():
+    service = MagicMock()
+    service.wrapper.get_all_project_members.return_value = [
+        {"account_id": "account-a", "user_id": "alice", "username": "Alice"},
+        {"account_id": "account-b", "user_id": "bob", "username": "Bob"},
+    ]
+    return service
+
+
+@pytest.fixture
+def worktime_histories():
+    template = complete_task.task_histories[0]
+    return [deepcopy(template)] + [
+        {**template, "phase": phase, "account_id": account_id, "accumulated_labor_time_milliseconds": duration, "started_datetime": started, "ended_datetime": started}
+        for phase, account_id, duration, started in [
+            ("annotation", "account-a", "PT1H", "2026-09-30T12:00:00+09:00"),
+            ("inspection", "account-b", "PT1H", "2026-10-01T10:00:00+09:00"),
+            ("annotation", "account-b", "PT6H", "2026-10-01T12:00:00+09:00"),
+            ("annotation", "account-a", "PT2H", "2026-10-02T12:00:00+09:00"),
+            ("acceptance", None, "PT0S", None),
+        ]
+    ]
+
+
+def test_worktime_by_user_includes_reassigned_and_returning_users(worktime_service, worktime_histories):
+    task = deepcopy(complete_task.task)
+    obj = AddingAdditionalInfoToTask(worktime_service, "project1")
+    obj.add_task_history_additional_info_to_task(task, worktime_histories, start_date_list=["2026-10-01", "2026-10-03"])
+    assert task["annotation_worktime_hour_by_user"] == {"alice": 3.0, "bob": 6.0}
+    assert task["inspection_worktime_hour_by_user"] == {"bob": 1.0}
+    assert task["acceptance_worktime_hour_by_user"] == {}
+    assert task["since_2026-10-01.annotation_worktime_hour_by_user"] == {"bob": 6.0, "alice": 2.0}
+    assert task["since_2026-10-03.annotation_worktime_hour_by_user"] == {}
+    for prefix in ["", "since_2026-10-01.", "since_2026-10-03."]:
+        for phase in TaskPhase:
+            assert sum(task[f"{prefix}{phase.value}_worktime_hour_by_user"].values()) == pytest.approx(task[f"{prefix}{phase.value}_worktime_hour"])
+
+
+@pytest.mark.parametrize("account_id", [None, "missing-account"])
+@pytest.mark.parametrize("command", ["list", "list_all"])
+def test_unknown_worktime_user_aborts_command(worktime_service, worktime_histories, account_id, command):
+    task = deepcopy(task_created_immediately.task)
+    histories = [worktime_histories[0], {**worktime_histories[1], "account_id": account_id}]
+    worktime_service.wrapper.get_all_tasks.return_value = [task]
+    worktime_service.api.get_task_histories.return_value = (histories, None)
+    with pytest.raises(TaskHistoryUserNotFoundError):
+        if command == "list":
+            ListTasksAddedTaskHistoryMain(worktime_service, "project1").main(task_query=None, task_id_list=None)
+        else:
+            ListAllTasksAddedTaskHistoryMain(worktime_service, "project1").get_detail_task_list([task], {task["task_id"]: histories})
+
+
+@pytest.mark.parametrize("output_format", [OutputFormat.CSV, OutputFormat.JSON, OutputFormat.PRETTY_JSON])
+def test_worktime_by_user_output_preserves_json_and_metadata(tmp_path, worktime_service, worktime_histories, output_format):
+    task = deepcopy(complete_task.task)
+    task["metadata"] = {"category": "sample"}
+    AddingAdditionalInfoToTask(worktime_service, "project1").add_task_history_additional_info_to_task(task, worktime_histories, start_date_list=["2026-10-01"])
+    original = deepcopy(task)
+    output = tmp_path / "output"
+    TasksAddedTaskHistoryOutput([task], start_date_list=["2026-10-01"]).output(output, output_format)
+    if output_format == OutputFormat.CSV:
+        record = pandas.read_csv(output).iloc[0].to_dict()
+        assert record["metadata.category"] == "sample"
+        for key, value in task.items():
+            if key.endswith("_worktime_hour_by_user"):
+                assert json.loads(record[key]) == value
+        assert "annotation_worktime_hour_by_user.alice" not in record
+    else:
+        assert json.loads(output.read_text())[0] == original
+    assert task == original
