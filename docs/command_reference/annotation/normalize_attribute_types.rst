@@ -1,0 +1,69 @@
+==========================================
+annotation normalize_attribute_types
+==========================================
+
+Description
+=================================
+アノテーションの属性値の型を、現在のアノテーション仕様に合わせます。
+たとえば、アノテーション仕様で属性の種類を自由記述1行（ ``text`` ）から自由記述複数行（ ``comment`` ）に変更した直後は、
+属性値の型がアノテーション仕様と一致していないため、
+アノテーションエディタ画面やダウンロードしたアノテーションZIPでは、属性値が空欄になっている可能性があります。
+そのようなアノテーションの属性値を修正するコマンドです。
+
+
+対応する変換
+---------------------------------------
+
+* ドロップダウン（ ``select`` ） ↔ ラジオボタン（ ``choice`` ）
+* 自由記述1行（ ``text`` ） ↔ 自由記述複数行（ ``comment`` ）
+* 自由記述1行（ ``text`` ） ↔ 整数（ ``integer`` ）
+
+   * 自由記述1行から整数への変換には、Pythonの`int()`関数を用います。
+
+
+タスクの状態に応じた処理
+---------------------------------------
+
+
+作業中状態のタスクはスキップします。
+保留中状態のタスクの扱いは :ref:`include-on-hold-task-for-annotation-updates` を参照してください。
+完了状態のタスクも処理する場合は、オーナーロールで ``--include_complete_task`` を指定してください。
+
+
+Examples
+=================================
+
+更新せずに確認する
+---------------------------------------
+
+.. code-block:: console
+
+    $ annofabcli annotation normalize_attribute_types \
+     --project_id p1 --task_id t1 t2 --dry_run
+
+正規化予定の属性値数とスキップ理由をログに出力します。バックアップは作成しません。
+
+属性を絞り込んで修復する
+---------------------------------------
+
+.. code-block:: console
+
+    $ annofabcli annotation normalize_attribute_types \
+     --project_id p1 --task_id t1 t2 \
+     --attribute_name_en note --backup backup_dir/
+
+``--attribute_id`` または ``--attribute_name_en`` で対象属性を指定できます。省略すると全属性が対象です。
+``--task_id`` の代わりに ``--all_tasks`` を指定すると全タスクを対象にします。
+
+変更する入力データのEditor形式アノテーションと外部リソースを、更新前に ``--backup`` のディレクトリへ保存します。
+バックアップの形式は :doc:`dump`、復元方法は :doc:`restore` を参照してください。
+再実行しても、型がすでに一致する属性値は更新しません。
+
+Usage Details
+=================================
+
+.. argparse::
+    :ref: annofabcli.annotation.normalize_attribute_types.add_parser
+    :prog: annofabcli annotation normalize_attribute_types
+    :nosubcommands:
+    :nodefaultconst:

@@ -73,7 +73,7 @@ JSON形式で指定する場合
 
 各属性オブジェクトでは、以下のキーを指定できます。
 
-* ``attribute_type`` : 必須。属性の種類。指定できる値は :ref:`annotation_specs_non_choice_attribute_types` を参照してください。
+* ``attribute_type`` : 必須。属性の種類。指定できる値は :ref:`annotation_specs_attribute_types` を参照してください。
 * ``attribute_name_en`` : 必須。属性名（英語）。
 * ``label_name_ens`` : ``label_ids`` とどちらか一方が必須。属性を追加する対象ラベルの英語名一覧。
 * ``label_ids`` : ``label_name_ens`` とどちらか一方が必須。属性を追加する対象ラベルの ``label_id`` 一覧。
@@ -93,7 +93,20 @@ JSON形式で指定する場合
   * ``is_default`` : 任意。 ``true`` を指定すると属性の初期値として使用します。未指定の場合は ``false`` です。
   * ``keybind`` : 任意。選択肢に設定するキーボードショートカット。JSONオブジェクトを指定してください。
 
-``attribute_type`` には、非選択肢系属性の値に加えて ``choice`` と ``select`` も指定できます。
+
+.. _annotation_specs_attribute_types:
+
+attribute_type に指定できる値
+=================================
+
+* ``flag`` : チェックボックス
+* ``integer`` : 整数
+* ``text`` : 自由記述（1行）
+* ``comment`` : 自由記述（複数行）
+* ``tracking`` : トラッキングID
+* ``link`` : アノテーションリンク
+* ``choice`` : ラジオボタン
+* ``select`` : ドロップダウン
 
 
 追加位置の指定
