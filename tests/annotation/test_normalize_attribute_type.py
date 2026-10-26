@@ -213,7 +213,7 @@ def test_failure_does_not_stop_other_inputs() -> None:
 
 def test_task_failure_is_counted_separately() -> None:
     service = service_with_annotation()
-    service.api.get_editor_annotations_in_bulk.side_effect = RuntimeError("failure")
+    service.wrapper.get_task_or_none.side_effect = RuntimeError("failure")
     result = NormalizeAttributeTypeMain(cast(annofabapi.Resource, service), project_id="project1", annotation_specs=specs(), all_yes=True).normalize_for_task((0, "task1"))
     assert result.changed == result.failed_input_data == 0
     assert result.failed_tasks == 1
