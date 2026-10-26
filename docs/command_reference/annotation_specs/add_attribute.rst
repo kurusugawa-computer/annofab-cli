@@ -70,14 +70,7 @@ Examples
 --attribute_type に指定できる値
 =================================
 
-``--attribute_type`` には、以下の非選択肢系属性を指定できます。
-
-* ``flag`` : チェックボックス
-* ``integer`` : 整数
-* ``text`` : 自由記述（1行）
-* ``comment`` : 自由記述（複数行）
-* ``tracking`` : トラッキングID
-* ``link`` : アノテーションリンク
+``--attribute_type`` には、 :ref:`annotation_specs_attribute_types` のうち、 ``choice`` と ``select`` を除く非選択肢系属性を指定できます。
 
 追加位置の指定
 =================================
