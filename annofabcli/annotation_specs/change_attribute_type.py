@@ -19,12 +19,11 @@ logger = logging.getLogger(__name__)
 SUPPORTED_ATTRIBUTE_TYPE_CONVERSIONS: Mapping[str, frozenset[str]] = {
     "choice": frozenset({"select"}),
     "select": frozenset({"choice"}),
+    "text": frozenset({"comment", "integer"}),
+    "comment": frozenset({"text", "integer"}),
+    "integer": frozenset({"text"}),
 }
-"""対応している属性種類の変換ルール。将来の変換追加はこの定数を更新する。
-現時点では、画面では変更できないchoice↔selectの変換のみサポートしています。
-他にも変換可能な組み合わせはありますが、画面から変更した方が簡単なので、CLIではサポートしていません。
-ただし、将来的にサポートする変換を増やす可能性はあります。
-"""
+"""対応している属性種類の変換ルール。annotation normalize_attribute_typeと同じ組み合わせをサポートする。"""
 
 SUPPORTED_ATTRIBUTE_TYPES = sorted(set(SUPPORTED_ATTRIBUTE_TYPE_CONVERSIONS) | {target for targets in SUPPORTED_ATTRIBUTE_TYPE_CONVERSIONS.values() for target in targets})
 """変換先として指定できる属性種類一覧。"""
@@ -100,7 +99,10 @@ def create_confirm_message_for_change_attribute_type(
     """
     confirm_message = f"属性名(英語)='{attribute_name_en}', 属性ID='{attribute_id}' の属性種類を '{current_type}' から '{target_type}' に変更します。"
     if has_annotation_with_label_having_attribute:
-        confirm_message += "この属性を含むラベルがアノテーションで使われています。3次元エディタでは属性値が消えてしまう恐れがあります。画像エディタ/動画エディタでは2026年4月時点では引き継がれます。"
+        confirm_message += (
+            "この属性を含むラベルがアノテーションで使われています。3次元エディタでは属性値が消えてしまう恐れがあります。"
+            "属性値の保存型は変更しません。変更後に annotation normalize_attribute_type で属性値の型をそろえてください。"
+        )
     else:
         confirm_message += "この属性を含むラベルがアノテーションで使われていることは確認できませんでした。"
     confirm_message += "よろしいですか？"
@@ -320,7 +322,13 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         type=str,
         required=True,
         choices=SUPPORTED_ATTRIBUTE_TYPES,
-        help=("変更後の属性種類。現在対応している変換は以下のみです。\n* ``choice`` （ラジオボタン）↔ ``select`` （ドロップダウン）"),
+        help=(
+            "変更後の属性種類。対応している変換は以下です。\n"
+            "* ``choice`` （ラジオボタン）↔ ``select`` （ドロップダウン）\n"
+            "* ``text`` （自由記述1行）↔ ``comment`` （自由記述複数行）\n"
+            "* ``text`` （自由記述1行）↔ ``integer`` （整数）\n"
+            "* ``comment`` （自由記述複数行）→ ``integer`` （整数）"
+        ),
     )
     parser.add_argument("--comment", type=str, help="アノテーション仕様の変更内容を説明するコメント。未指定の場合、自動でコメントが生成されます。")
 

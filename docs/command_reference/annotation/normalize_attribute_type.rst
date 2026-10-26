@@ -1,5 +1,5 @@
 ==========================================
-annotation normalize_attribute_types
+annotation normalize_attribute_type
 ==========================================
 
 Description
@@ -17,8 +17,10 @@ Description
 * ドロップダウン（ ``select`` ） ↔ ラジオボタン（ ``choice`` ）
 * 自由記述1行（ ``text`` ） ↔ 自由記述複数行（ ``comment`` ）
 * 自由記述1行（ ``text`` ） ↔ 整数（ ``integer`` ）
+* 自由記述複数行（ ``comment`` ） → 整数（ ``integer`` ）
 
-   * 自由記述1行から整数への変換には、Pythonの`int()`関数を用います。
+自由記述1行・複数行から整数への変換には、Pythonの ``int()`` 関数を用います。
+整数に変換できない値（空文字、 ``abc`` 、 ``4.0`` など）は警告を出してスキップし、元の値を保持します。
 
 
 タスクの状態に応じた処理
@@ -38,17 +40,17 @@ Examples
 
 .. code-block:: console
 
-    $ annofabcli annotation normalize_attribute_types \
+    $ annofabcli annotation normalize_attribute_type \
      --project_id p1 --task_id t1 t2 --dry_run
 
-正規化予定の属性値数とスキップ理由をログに出力します。バックアップは作成しません。
+型の変更予定の属性値数と、変換できない理由をログに出力します。バックアップは作成しません。
 
 属性を絞り込んで修復する
 ---------------------------------------
 
 .. code-block:: console
 
-    $ annofabcli annotation normalize_attribute_types \
+    $ annofabcli annotation normalize_attribute_type \
      --project_id p1 --task_id t1 t2 \
      --attribute_name_en note --backup backup_dir/
 
@@ -59,11 +61,26 @@ Examples
 バックアップの形式は :doc:`dump`、復元方法は :doc:`restore` を参照してください。
 再実行しても、型がすでに一致する属性値は更新しません。
 
+処理結果のログ
+---------------------------------------
+
+タスクごとの結果と全体の処理結果を出力します。
+
+.. code-block:: text
+
+    task_id='t1' :: 属性値の型を1件変更しました。変換できず保持した属性値: 0件、処理に失敗した入力データ: 0件、処理に失敗したタスク: 0件。
+    全体の処理結果 :: 属性値の型の変更: 1件、変換できず保持した属性値: 0件、処理に失敗した入力データ: 0件、処理に失敗したタスク: 0件。
+
+「変換できず保持した属性値」は、変換できない値や現在のアノテーション仕様に存在しない属性などの件数です。
+型がすでに一致する値や対象外の属性は、この件数に含みません。
+失敗件数は、入力データ単位の処理失敗と、タスク情報の取得などのタスク単位の処理失敗を分けて表示します。
+``--dry_run`` では、変更件数を予定として表示します。
+
 Usage Details
 =================================
 
 .. argparse::
-    :ref: annofabcli.annotation.normalize_attribute_types.add_parser
-    :prog: annofabcli annotation normalize_attribute_types
+    :ref: annofabcli.annotation.normalize_attribute_type.add_parser
+    :prog: annofabcli annotation normalize_attribute_type
     :nosubcommands:
     :nodefaultconst:

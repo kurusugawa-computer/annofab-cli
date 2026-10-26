@@ -27,29 +27,32 @@ SUPPORTED_CONVERSIONS = {
     ("Text", "comment"): "Comment",
     ("Comment", "text"): "Text",
     ("Text", "integer"): "Integer",
+    ("Comment", "integer"): "Integer",
     ("Integer", "text"): "Text",
 }
-"""保存型と現行仕様の型をキーとする、対応する変換。"""
+"""保存型と現在のアノテーション仕様の型をキーとする、対応する変換。"""
 
 
 @dataclass
 class NormalizeResult:
-    """正規化の集計結果。件数の単位は属性値、失敗は入力データまたはタスク。"""
+    """属性値の型の変更と、入力データ・タスクごとの処理失敗の集計結果。"""
 
     changed: int = 0
     """正規化した属性値数。dry-runでは正規化予定数。"""
     skipped: int = 0
     """不整合を修復できず保持した属性値数。"""
-    failed: int = 0
-    """処理に失敗した入力データまたはタスク数。"""
+    failed_input_data: int = 0
+    """処理に失敗した入力データ数。"""
+    failed_tasks: int = 0
+    """処理に失敗したタスク数。"""
 
 
 def normalize_attribute_value(value: dict[str, Any], attribute: dict[str, Any]) -> dict[str, Any]:
-    """保存値を現行仕様の型に変換する。一致している値はそのまま返す。
+    """保存値を現在のアノテーション仕様の型に変換する。一致している値はそのまま返す。
 
     Args:
         value: Editor形式の保存値。
-        attribute: 現行仕様の属性定義。
+        attribute: 現在のアノテーション仕様の属性定義。
 
     Returns:
         変換後の保存値。
@@ -68,7 +71,7 @@ def normalize_attribute_value(value: dict[str, Any], attribute: dict[str, Any]) 
     result = copy.deepcopy(value)
     if source_type in {"Choice", "Select"}:
         if value.get("choice_id") not in {choice["choice_id"] for choice in attribute["choices"]}:
-            raise ValueError("保存されている選択肢IDが現行仕様に存在しません。")
+            raise ValueError("保存されている選択肢IDが現在のアノテーション仕様に存在しません。")
     elif source_type == "Integer":
         if type(value.get("value")) is not int:
             raise ValueError("Integerの保存値が整数ではありません。")
@@ -109,7 +112,7 @@ def create_normalized_request(editor_annotation: dict[str, Any], annotation_spec
             try:
                 if attribute_id not in definitions or attribute_id not in allowed.get(detail["label_id"], set()):
                     result.skipped += 1
-                    logger.warning(f"annotation_id='{detail['annotation_id']}', attribute_id='{attribute_id}' :: 属性が現行仕様のラベルに存在しないため、スキップします。")
+                    logger.warning(f"annotation_id='{detail['annotation_id']}', attribute_id='{attribute_id}' :: 属性が現在のアノテーション仕様のラベルに存在しないため、スキップします。")
                     continue
                 converted = normalize_attribute_value(value, definitions[attribute_id])
             except ValueError as e:
@@ -130,8 +133,8 @@ def create_normalized_request(editor_annotation: dict[str, Any], annotation_spec
     return request, result
 
 
-class NormalizeAttributeTypesMain(CommandLineWithConfirm):
-    """属性の保存型を現行仕様にそろえる処理。"""
+class NormalizeAttributeTypeMain(CommandLineWithConfirm):
+    """属性の保存型を現在のアノテーション仕様にそろえる処理。"""
 
     def __init__(
         self,
@@ -177,7 +180,7 @@ class NormalizeAttributeTypesMain(CommandLineWithConfirm):
             if status == TaskStatus.WORKING.value or (status == TaskStatus.COMPLETE.value and not self.include_complete_task) or (status == TaskStatus.ON_HOLD.value and not self.include_on_hold_task):
                 logger.info(f"task_id='{task_id}' :: タスクの状態が'{status}'のため、スキップします。")
                 return total
-            if not self.dry_run and not self.confirm_processing(f"task_id='{task_id}' の属性の保存型を現行仕様にそろえますか？"):
+            if not self.dry_run and not self.confirm_processing(f"task_id='{task_id}' の属性の保存型を現在のアノテーション仕様にそろえますか？"):
                 return total
             annotations = get_editor_annotation_dict_in_bulk(self.service, self.project_id, task_id, task["input_data_id_list"])
             for input_data_id in task["input_data_id_list"]:
@@ -193,16 +196,20 @@ class NormalizeAttributeTypesMain(CommandLineWithConfirm):
                         self.service.api.batch_update_annotations(self.project_id, request_body=request)
                     total.changed += result.changed
                 except Exception:
-                    total.failed += 1
+                    total.failed_input_data += 1
                     logger.warning(f"task_id='{task_id}', input_data_id='{input_data_id}' :: 属性型の正規化に失敗しました。", exc_info=True)
         except Exception:
-            total.failed += 1
+            total.failed_tasks += 1
             logger.warning(f"task_id='{task_id}' :: 属性型の正規化に失敗しました。", exc_info=True)
-        logger.info(f"task_id='{task_id}' :: 正規化{'予定' if self.dry_run else ''}{total.changed}属性値、スキップ{total.skipped}属性値、失敗{total.failed}件。")
+        logger.info(
+            f"task_id='{task_id}' :: 属性値の型を{total.changed}件変更{'する予定です' if self.dry_run else 'しました'}。"
+            f"変換できず保持した属性値: {total.skipped}件、"
+            f"処理に失敗した入力データ: {total.failed_input_data}件、処理に失敗したタスク: {total.failed_tasks}件。"
+        )
         return total
 
 
-class NormalizeAttributeTypes(CommandLine):
+class NormalizeAttributeType(CommandLine):
     """正規化コマンドの引数を解決して実行する。"""
 
     def main(self) -> None:
@@ -235,7 +242,7 @@ class NormalizeAttributeTypes(CommandLine):
             if len(tasks) >= 10_000:
                 raise AnnofabCliException("タスク一覧が取得上限に達したため中断します。--task_id を指定してください。")
             task_ids = [task["task_id"] for task in tasks]
-        main_obj = NormalizeAttributeTypesMain(
+        main_obj = NormalizeAttributeTypeMain(
             self.service,
             project_id=args.project_id,
             annotation_specs=specs,
@@ -252,13 +259,15 @@ class NormalizeAttributeTypes(CommandLine):
                 results = pool.map(main_obj.normalize_for_task, enumerate(dict.fromkeys(task_ids)))
         else:
             results = [main_obj.normalize_for_task(item) for item in enumerate(dict.fromkeys(task_ids))]
-        failed = sum(result.failed for result in results)
+        failed_input_data = sum(result.failed_input_data for result in results)
+        failed_tasks = sum(result.failed_tasks for result in results)
         logger.info(
-            f"正規化{'予定' if args.dry_run else ''}{sum(result.changed for result in results)}属性値、"
-            f"スキップ{sum(result.skipped for result in results)}属性値、失敗{failed}件（入力データまたはタスク）。"
+            f"全体の処理結果 :: 属性値の型の変更{'予定' if args.dry_run else ''}: {sum(result.changed for result in results)}件、"
+            f"変換できず保持した属性値: {sum(result.skipped for result in results)}件、"
+            f"処理に失敗した入力データ: {failed_input_data}件、処理に失敗したタスク: {failed_tasks}件。"
         )
-        if failed:
-            raise AnnofabCliException(f"{failed} 件の処理に失敗しました。")
+        if failed_input_data or failed_tasks:
+            raise AnnofabCliException(f"入力データ{failed_input_data}件、タスク{failed_tasks}件の処理に失敗しました。")
 
 
 def main(args: argparse.Namespace) -> None:
@@ -271,7 +280,7 @@ def main(args: argparse.Namespace) -> None:
         None。
     """
     service = build_annofabapi_resource_and_login(args)
-    NormalizeAttributeTypes(service, AnnofabApiFacade(service), args).main()
+    NormalizeAttributeType(service, AnnofabApiFacade(service), args).main()
 
 
 def parse_args(parser: argparse.ArgumentParser) -> None:
@@ -308,7 +317,7 @@ def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse
     """
     parser = annofabcli.common.cli.add_parser(
         subparsers,
-        command_name="normalize_attribute_types",
+        command_name="normalize_attribute_type",
         command_help="アノテーションの属性値の型を、現在のアノテーション仕様に合わせます。",
         description=(
             "アノテーションの属性値の型を、現在のアノテーション仕様に合わせます。"
