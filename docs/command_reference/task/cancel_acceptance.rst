@@ -77,7 +77,7 @@ Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.task.cancel_acceptance.add_parser
+   :ref: annofabcli.task.cancel_acceptance.create_parser
    :prog: annofabcli task cancel_acceptance
    :nosubcommands:
    :nodefaultconst:

@@ -97,7 +97,7 @@ Usage Details
 =================================
 
 .. argparse::
-    :ref: annofabcli.annotation_specs.update_choices.add_parser
+    :ref: annofabcli.annotation_specs.update_choices.create_parser
     :prog: annofabcli annotation_specs update_choices
     :nosubcommands:
     :nodefaultconst:

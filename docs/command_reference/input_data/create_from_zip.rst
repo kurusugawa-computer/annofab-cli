@@ -46,7 +46,7 @@ Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.input_data.create_input_data_from_zip.add_parser
+   :ref: annofabcli.input_data.create_input_data_from_zip.create_parser
    :prog: annofabcli input_data create_from_zip
    :nosubcommands:
    :nodefaultconst:

@@ -58,7 +58,7 @@ Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.my_account.list_personal_access_token.add_parser
+   :ref: annofabcli.my_account.list_personal_access_token.create_parser
    :prog: annofabcli my_account list_personal_access_token
    :nosubcommands:
    :nodefaultconst:

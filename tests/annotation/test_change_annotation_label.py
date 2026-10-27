@@ -73,7 +73,7 @@ ANNOTATION_SPECS = {
 def create_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers(dest="subcommand_name", required=True)
-    change_annotation_label.add_parser(subparsers)
+    change_annotation_label.create_parser(subparsers)
     return parser
 
 
@@ -333,7 +333,7 @@ def test_backup_confirmation_controls_subsequent_label_changes(monkeypatch: pyte
         ]
         for task_id in ["task1", "task2"]
     ]
-    parser = change_annotation_label.add_parser()
+    parser = change_annotation_label.create_parser()
     args = parser.parse_args(["--project_id", "prj1", "--task_id", "task1", "task2", "--annotation_query", '{"label": "car"}', "--label_id", "label_bus"])
     command = change_annotation_label.ChangeLabelOfAnnotation(service, Mock(), args)
     prompts: list[str] = []

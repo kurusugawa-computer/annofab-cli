@@ -160,7 +160,7 @@ Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.annotation_zip.count_annotation_attribute_filled.add_parser
+   :ref: annofabcli.annotation_zip.count_annotation_attribute_filled.create_parser
    :prog: annofabcli annotation_zip count_annotation_attribute_filled
    :nosubcommands:
    :nodefaultconst:

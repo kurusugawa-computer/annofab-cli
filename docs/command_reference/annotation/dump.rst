@@ -82,7 +82,7 @@ Usage Details
 =================================
 
 .. argparse::
-    :ref: annofabcli.annotation.dump_annotation.add_parser
+    :ref: annofabcli.annotation.dump_annotation.create_parser
     :prog: annofabcli annotation dump
     :nosubcommands:
     :nodefaultconst:

@@ -24,6 +24,6 @@ Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.organization.subcommand_organization.add_parser
+   :ref: annofabcli.organization.subcommand_organization.create_parser
    :prog: annofabcli organization
    :nosubcommands:

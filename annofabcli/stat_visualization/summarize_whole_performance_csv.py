@@ -66,10 +66,10 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
+def create_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "summarize_whole_performance_csv"
     subcommand_help = "``annofabcli statistics visualize`` コマンドの出力結果であるプロジェクトディレクトリから、プロジェクトごとの生産性や品質の一覧を出力します。"
-    parser = annofabcli.common.cli.add_parser(
+    parser = annofabcli.common.cli.create_parser(
         subparsers, subcommand_name, subcommand_help, description=subcommand_help, epilog="ローカルファイルのみを処理するため、プロジェクトや組織のロールに関係なく実行できます。"
     )
     parse_args(parser)

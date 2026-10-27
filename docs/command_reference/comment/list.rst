@@ -146,7 +146,7 @@ Usage Details
 =================================
 
 .. argparse::
-    :ref: annofabcli.comment.list_comment.add_parser
+    :ref: annofabcli.comment.list_comment.create_parser
     :prog: annofabcli comment list
     :nosubcommands:
     :nodefaultconst:

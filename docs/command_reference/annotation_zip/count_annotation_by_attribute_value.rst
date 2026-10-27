@@ -151,6 +151,6 @@ Command line options
 =================================
 
 .. argparse::
-   :ref: annofabcli.annotation_zip.count_annotation_by_attribute_value.add_parser
+   :ref: annofabcli.annotation_zip.count_annotation_by_attribute_value.create_parser
    :prog: annofabcli annotation_zip count_annotation_by_attribute_value
    :nosubcommands:

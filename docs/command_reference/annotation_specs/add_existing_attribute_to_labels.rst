@@ -44,7 +44,7 @@ Usage Details
 =================================
 
 .. argparse::
-    :ref: annofabcli.annotation_specs.add_existing_attribute_to_labels.add_parser
+    :ref: annofabcli.annotation_specs.add_existing_attribute_to_labels.create_parser
     :prog: annofabcli annotation_specs add_existing_attribute_to_labels
     :nosubcommands:
     :nodefaultconst:

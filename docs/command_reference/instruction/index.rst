@@ -24,6 +24,6 @@ Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.instruction.subcommand_instruction.add_parser
+   :ref: annofabcli.instruction.subcommand_instruction.create_parser
    :prog: annofabcli instruction
    :nosubcommands:

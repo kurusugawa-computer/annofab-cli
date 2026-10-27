@@ -104,7 +104,7 @@ Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.statistics.visualize_annotation_duration.add_parser
+   :ref: annofabcli.statistics.visualize_annotation_duration.create_parser
    :prog: annofabcli statistics visualize_annotation_duration
    :nosubcommands:
    :nodefaultconst:

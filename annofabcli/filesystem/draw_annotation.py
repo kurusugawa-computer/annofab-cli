@@ -451,14 +451,14 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
+def create_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "draw_annotation"
 
     subcommand_help = "[DEPRECATED] 画像にアノテーションを描画します。"
 
     description = f"{subcommand_help}\n{DEPRECATED_MESSAGE}"
 
-    parser = annofabcli.common.cli.add_parser(
+    parser = annofabcli.common.cli.create_parser(
         subparsers, subcommand_name, subcommand_help, description, epilog="ローカルファイルのみを処理するため、プロジェクトや組織のロールに関係なく実行できます。"
     )
     parse_args(parser)

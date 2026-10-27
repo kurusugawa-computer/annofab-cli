@@ -177,12 +177,12 @@ def main(args: argparse.Namespace) -> None:
     PrintAnnotationImportInfo(service, facade, args).main()
 
 
-def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
+def create_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "list_annotation_import_info"
 
     subcommand_help = "アノテーションをimportする際に参照すべき情報（ラベル、属性、選択肢）のみを出力します。"
 
-    parser = annofabcli.common.cli.add_parser(
+    parser = annofabcli.common.cli.create_parser(
         subparsers,
         subcommand_name,
         subcommand_help,

@@ -216,12 +216,12 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
+def create_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "change_status_to_break"
     subcommand_help = "タスクのステータスを休憩中に変更します。"
     description = "タスクのステータスを休憩中に変更します。ただし、操作対象のタスクは作業中か保留中である必要があります。"
     epilog = "アノテータ、チェッカーまたはオーナロールを持つユーザで実行してください。ワーカーロールで実行する場合は、自身が担当するタスクだけを操作できます。"
 
-    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
+    parser = annofabcli.common.cli.create_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
     parse_args(parser)
     return parser

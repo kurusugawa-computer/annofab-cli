@@ -11,16 +11,16 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
 
     # サブコマンドの定義
 
-    annofabcli.job.delete_job.add_parser(subparsers)
-    annofabcli.job.list_job.add_parser(subparsers)
-    annofabcli.job.wait_job.add_parser(subparsers)
+    annofabcli.job.delete_job.create_parser(subparsers)
+    annofabcli.job.list_job.create_parser(subparsers)
+    annofabcli.job.wait_job.create_parser(subparsers)
 
 
-def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
+def create_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "job"
     subcommand_help = "ジョブ関係のサブコマンド"
     description = "ジョブ関係のサブコマンド"
 
-    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, is_subcommand=False)
+    parser = annofabcli.common.cli.create_parser(subparsers, subcommand_name, subcommand_help, description, is_subcommand=False)
     parse_args(parser)
     return parser

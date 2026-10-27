@@ -55,7 +55,7 @@ Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.task.complete_tasks.add_accept_parser
+   :ref: annofabcli.task.complete_tasks.create_accept_parser
    :prog: annofabcli task accept
    :nosubcommands:
    :nodefaultconst:

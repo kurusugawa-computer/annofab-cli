@@ -272,7 +272,7 @@ Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.statistics.list_annotation_count.add_parser
+   :ref: annofabcli.statistics.list_annotation_count.create_parser
    :prog: annofabcli statistics list_annotation_count
    :nosubcommands:
    :nodefaultconst:

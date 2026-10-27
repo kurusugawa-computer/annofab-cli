@@ -131,11 +131,11 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
+def create_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "delete"
     subcommand_help = "組織からメンバーを脱退させます。"
     epilog = "組織オーナまたは組織管理者ロールを持つユーザで実行してください。"
 
-    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, command_help=subcommand_help, epilog=epilog)
+    parser = annofabcli.common.cli.create_parser(subparsers, subcommand_name, command_help=subcommand_help, epilog=epilog)
     parse_args(parser)
     return parser

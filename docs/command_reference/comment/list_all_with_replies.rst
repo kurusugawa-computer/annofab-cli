@@ -90,7 +90,7 @@ Usage Details
 =================================
 
 .. argparse::
-    :ref: annofabcli.comment.list_all_comment_with_replies.add_parser
+    :ref: annofabcli.comment.list_all_comment_with_replies.create_parser
     :prog: annofabcli comment list_all_with_replies
     :nosubcommands:
     :nodefaultconst:

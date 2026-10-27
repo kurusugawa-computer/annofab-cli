@@ -78,7 +78,7 @@ Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.annotation_specs.list_annotation_specs_inspection_phrase.add_parser
+   :ref: annofabcli.annotation_specs.list_annotation_specs_inspection_phrase.create_parser
    :prog: annofabcli annotation_specs list_inspection_phrase
    :nosubcommands:
    :nodefaultconst:

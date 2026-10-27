@@ -13,7 +13,7 @@ from bokeh.models.annotations.labels import Title
 
 from annofabcli.annotation_zip.count_annotation import CountTarget
 from annofabcli.annotation_zip.visualize_annotation_count import VisualizeAnnotationCount
-from annofabcli.annotation_zip.visualize_annotation_count_by_attribute_value import add_parser
+from annofabcli.annotation_zip.visualize_annotation_count_by_attribute_value import create_parser
 from annofabcli.common.facade import AnnofabApiFacade
 
 
@@ -62,7 +62,7 @@ def test_command_filters_histograms_by_label(tmp_path, monkeypatch, group_by, op
     labels_path.write_text("bike\n", encoding="utf-8")
     options = [f"file://{labels_path}" if value == "file://labels.txt" else value for value in options]
     output = tmp_path / "result.html"
-    args = add_parser().parse_args(["--project_id", "project1", "--annotation", str(annotation_path), "--output", str(output), "--group_by", group_by, *options])
+    args = create_parser().parse_args(["--project_id", "project1", "--annotation", str(annotation_path), "--output", str(output), "--group_by", group_by, *options])
 
     VisualizeAnnotationCount(service, AnnofabApiFacade(service), args, count_target=CountTarget.ATTRIBUTE_VALUE).main()
 

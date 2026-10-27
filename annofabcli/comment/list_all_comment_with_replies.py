@@ -92,7 +92,7 @@ def main(args: argparse.Namespace) -> None:
     ListAllCommentWithReplies(service, facade, args).main()
 
 
-def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
+def create_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "list_all_with_replies"
     subcommand_help = "すべてのルートコメントに返信コメント一覧を付与して出力します。"
     description = (
@@ -100,7 +100,7 @@ def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse
         "コメント一覧は、コマンドを実行した日の02:00(JST)頃の状態です。最新のコメント情報を取得したい場合は、 ``annofabcli comment list_with_replies`` コマンドを実行してください。"
     )
 
-    parser = annofabcli.common.cli.add_parser(
+    parser = annofabcli.common.cli.create_parser(
         subparsers,
         subcommand_name,
         subcommand_help,

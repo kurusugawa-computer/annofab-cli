@@ -1032,11 +1032,11 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
+def create_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "count_annotation_attribute_filled"
     subcommand_help = "値が入力されている属性の個数を、タスクごとまたは入力データごとに集計します。"
 
     epilog = "``--project_id`` を指定する場合は、オーナーロールまたはアノテーションユーザーロールを持つユーザーで実行してください。指定しない場合は、プロジェクトのロールに関係なく実行できます。"
-    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, epilog=epilog)
+    parser = annofabcli.common.cli.create_parser(subparsers, subcommand_name, subcommand_help, epilog=epilog)
     parse_args(parser)
     return parser

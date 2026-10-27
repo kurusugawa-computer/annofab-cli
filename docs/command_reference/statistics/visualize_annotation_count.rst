@@ -71,7 +71,7 @@ Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.statistics.visualize_annotation_count.add_parser
+   :ref: annofabcli.statistics.visualize_annotation_count.create_parser
    :prog: annofabcli statistics visualize_annotation_count
    :nosubcommands:
    :nodefaultconst:

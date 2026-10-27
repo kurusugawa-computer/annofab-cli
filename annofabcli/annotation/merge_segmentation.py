@@ -434,7 +434,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
+def create_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "merge_segmentation"
     subcommand_help = "複数の塗りつぶしアノテーションを1つにまとめます。"
     description = (
@@ -442,6 +442,6 @@ def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse
         "ラベルの種類を「塗りつぶし（インスタンスセグメンテーション）」から「塗りつぶしv2（セマンティックセグメンテーション）」に変更する場合などに有用です。"
     )
     epilog = "オーナーロールまたはチェッカーロールを持つユーザーで実行してください。"
-    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
+    parser = annofabcli.common.cli.create_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
     parse_args(parser)
     return parser

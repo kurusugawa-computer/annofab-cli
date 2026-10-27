@@ -153,7 +153,7 @@ Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.input_data.list_all_input_data_merged_task.add_parser
+   :ref: annofabcli.input_data.list_all_input_data_merged_task.create_parser
    :prog: annofabcli input_data list_all_merged_task
    :nosubcommands:
    :nodefaultconst:

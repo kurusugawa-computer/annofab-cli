@@ -61,7 +61,7 @@ Usage Details
 =================================
 
 .. argparse::
-    :ref: annofabcli.annotation.delete_invalid_attribute_value.add_parser
+    :ref: annofabcli.annotation.delete_invalid_attribute_value.create_parser
     :prog: annofabcli annotation delete_invalid_attribute_value
     :nosubcommands:
     :nodefaultconst:

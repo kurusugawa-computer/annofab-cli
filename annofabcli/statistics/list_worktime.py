@@ -454,8 +454,8 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
-    """旧コマンドのサブパーサーを追加する。
+def create_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
+    """旧コマンドのサブパーサーを生成する。
 
     Args:
         subparsers: サブパーサー。
@@ -464,7 +464,7 @@ def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse
         追加した引数パーサー。
     """
     subcommand_help = "[DEPRECATED] 日ごとユーザーごとの作業時間の一覧を出力します。"
-    parser = annofabcli.common.cli.add_parser(
+    parser = annofabcli.common.cli.create_parser(
         subparsers,
         "list_worktime",
         subcommand_help,

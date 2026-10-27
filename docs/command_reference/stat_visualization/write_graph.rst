@@ -55,7 +55,7 @@ Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.stat_visualization.write_graph.add_parser
+   :ref: annofabcli.stat_visualization.write_graph.create_parser
    :prog: annofabcli stat_visualization write_graph
    :nosubcommands:
    :nodefaultconst:

@@ -8,8 +8,8 @@ def main(args: argparse.Namespace) -> None:
     run_command(args, visualize=False)
 
 
-def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
-    parser = annofabcli.common.cli.add_parser(
+def create_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
+    parser = annofabcli.common.cli.create_parser(
         subparsers,
         "list_video_duration",
         "各タスクの動画の長さを出力します。",

@@ -21,6 +21,6 @@ Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.webhook.subcommand_webhook.add_parser
+   :ref: annofabcli.webhook.subcommand_webhook.create_parser
    :prog: annofabcli webhook
    :nosubcommands:

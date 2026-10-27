@@ -36,7 +36,7 @@ Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.project.change_project_status.add_parser
+   :ref: annofabcli.project.change_project_status.create_parser
    :prog: annofabcli project change_status
    :nosubcommands:
    :nodefaultconst:

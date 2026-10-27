@@ -12,18 +12,18 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     subparsers = parser.add_subparsers(dest="subcommand_name", required=True)
 
     # サブコマンドの定義
-    annofabcli.supplementary.create_supplementary_data.add_parser(subparsers)
-    annofabcli.supplementary.delete_supplementary_data.add_parser(subparsers)
-    annofabcli.supplementary.list_supplementary_data.add_parser(subparsers)
-    annofabcli.supplementary.put_supplementary_data.add_parser(subparsers)
-    annofabcli.supplementary.update_supplementary_data.add_parser(subparsers)
+    annofabcli.supplementary.create_supplementary_data.create_parser(subparsers)
+    annofabcli.supplementary.delete_supplementary_data.create_parser(subparsers)
+    annofabcli.supplementary.list_supplementary_data.create_parser(subparsers)
+    annofabcli.supplementary.put_supplementary_data.create_parser(subparsers)
+    annofabcli.supplementary.update_supplementary_data.create_parser(subparsers)
 
 
-def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
+def create_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "supplementary"
     subcommand_help = "補助情報関係のサブコマンド"
     description = "補助情報関係のサブコマンド"
 
-    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, is_subcommand=False)
+    parser = annofabcli.common.cli.create_parser(subparsers, subcommand_name, subcommand_help, description, is_subcommand=False)
     parse_args(parser)
     return parser

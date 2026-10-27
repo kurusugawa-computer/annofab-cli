@@ -217,7 +217,7 @@ Usage Details
 =================================
 
 .. argparse::
-    :ref: annofabcli.annotation_specs.update_label_field_values.add_parser
+    :ref: annofabcli.annotation_specs.update_label_field_values.create_parser
     :prog: annofabcli annotation_specs update_label_field_values
     :nosubcommands:
     :nodefaultconst:

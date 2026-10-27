@@ -10,7 +10,7 @@ Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.completion.subcommand_completion.add_parser
+   :ref: annofabcli.completion.subcommand_completion.create_parser
    :prog: annofabcli completion
    :nosubcommands:
    :nodefaultconst:

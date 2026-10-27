@@ -17,9 +17,9 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.set_defaults(subcommand_func=main_label)
 
 
-def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
+def create_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     """
-    visualize_annotation_count_by_labelサブコマンドのパーサーを追加します。
+    visualize_annotation_count_by_labelサブコマンドのパーサーを生成します。
 
     Args:
         subparsers: 親パーサーのサブパーサーアクション
@@ -30,6 +30,6 @@ def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse
     subcommand_name = "visualize_annotation_count_by_label"
     subcommand_help = "ラベルごとのアノテーション数をヒストグラムで可視化します。"
     epilog = "オーナロールまたはアノテーションユーザロールを持つユーザで実行してください。"
-    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description=subcommand_help, epilog=epilog)
+    parser = annofabcli.common.cli.create_parser(subparsers, subcommand_name, subcommand_help, description=subcommand_help, epilog=epilog)
     parse_args(parser)
     return parser

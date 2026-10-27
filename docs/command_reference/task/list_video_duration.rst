@@ -73,7 +73,7 @@ Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.task.list_video_duration.add_parser
+   :ref: annofabcli.task.list_video_duration.create_parser
    :prog: annofabcli task list_video_duration
    :nosubcommands:
    :nodefaultconst:

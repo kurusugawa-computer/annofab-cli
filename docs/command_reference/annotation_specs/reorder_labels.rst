@@ -37,7 +37,7 @@ Usage Details
 =================================
 
 .. argparse::
-    :ref: annofabcli.annotation_specs.reorder_labels.add_parser
+    :ref: annofabcli.annotation_specs.reorder_labels.create_parser
     :prog: annofabcli annotation_specs reorder_labels
     :nosubcommands:
     :nodefaultconst:

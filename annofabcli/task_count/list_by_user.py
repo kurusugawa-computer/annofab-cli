@@ -183,12 +183,12 @@ def main(args: argparse.Namespace) -> None:
     ListTaskCountByUser(service, facade, args).main()
 
 
-def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
+def create_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "list_by_user"
     subcommand_help = "ユーザごとに、担当しているタスク数や入力データ数などを出力します。"
     description = "ユーザごとに、担当しているタスク数や入力データ数などを指定した形式で出力します。"
     epilog = "アノテーションユーザまたはオーナロールを持つユーザで実行してください。"
-    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description=description, epilog=epilog)
+    parser = annofabcli.common.cli.create_parser(subparsers, subcommand_name, subcommand_help, description=description, epilog=epilog)
     parse_args(parser)
     ArgumentParser(parser).add_format(choices=[OutputFormat.CSV, OutputFormat.JSON, OutputFormat.PRETTY_JSON], default=OutputFormat.CSV)
     return parser

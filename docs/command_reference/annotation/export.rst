@@ -96,7 +96,7 @@ Usage Details
 =================================
 
 .. argparse::
-    :ref: annofabcli.annotation.export_annotation.add_parser
+    :ref: annofabcli.annotation.export_annotation.create_parser
     :prog: annofabcli annotation export
     :nosubcommands:
     :nodefaultconst:

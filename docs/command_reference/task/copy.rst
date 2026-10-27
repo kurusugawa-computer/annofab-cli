@@ -37,7 +37,7 @@ Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.task.copy_tasks.add_parser
+   :ref: annofabcli.task.copy_tasks.create_parser
    :prog: annofabcli task copy
    :nosubcommands:
    :nodefaultconst:

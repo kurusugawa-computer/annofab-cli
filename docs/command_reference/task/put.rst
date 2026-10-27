@@ -107,7 +107,7 @@ Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.task.put_tasks.add_parser
+   :ref: annofabcli.task.put_tasks.create_parser
    :prog: annofabcli task put
    :nosubcommands:
    :nodefaultconst:

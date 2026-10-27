@@ -144,7 +144,7 @@ def main(args: argparse.Namespace) -> None:
             output_string(text, args.output)
 
 
-def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
+def create_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     """diffコマンドを登録する。
 
     Args:
@@ -157,7 +157,7 @@ def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse
         "``--left_project_id`` または ``--right_project_id`` を指定する場合は、指定した各プロジェクトに対してオーナーロールまたはアノテーションユーザーロールを持つユーザーで実行してください。"
         "ローカルファイル同士を比較する場合は、プロジェクトのロールに関係なく実行できます。"
     )
-    parser = annofabcli.common.cli.add_parser(
+    parser = annofabcli.common.cli.create_parser(
         subparsers,
         "diff",
         "アノテーションZIPの差分を出力します。",

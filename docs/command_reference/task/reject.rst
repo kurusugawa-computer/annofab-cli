@@ -172,7 +172,7 @@ Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.task.reject_tasks.add_parser
+   :ref: annofabcli.task.reject_tasks.create_parser
    :prog: annofabcli task reject
    :nosubcommands:
    :nodefaultconst:

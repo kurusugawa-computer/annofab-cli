@@ -51,7 +51,7 @@ Usage Details
 =================================
 
 .. argparse::
-    :ref: annofabcli.annotation.download_annotation_zip.add_parser
+    :ref: annofabcli.annotation.download_annotation_zip.create_parser
     :prog: annofabcli annotation download
     :nosubcommands:
     :nodefaultconst:

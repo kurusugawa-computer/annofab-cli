@@ -124,7 +124,7 @@ Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.stat_visualization.write_performance_rating_csv.add_parser
+   :ref: annofabcli.stat_visualization.write_performance_rating_csv.create_parser
    :prog: annofabcli stat_visualization write_performance_rating_csv
    :nosubcommands:
    :nodefaultconst:

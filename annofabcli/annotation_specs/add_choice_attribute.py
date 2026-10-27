@@ -680,7 +680,7 @@ def main(args: argparse.Namespace) -> None:
     AddChoiceAttribute(service, facade, args).main()
 
 
-def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
+def create_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     """
     ``annotation_specs add_choice_attribute`` 用のparserを生成する。
 
@@ -694,7 +694,7 @@ def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse
     subcommand_help = "アノテーション仕様に選択肢系属性を追加します。"
     description = "アノテーション仕様に選択肢系属性（ラジオボタン/ドロップダウン）を追加し、指定したラベルへ紐付けます。"
 
-    parser = annofabcli.common.cli.add_parser(
+    parser = annofabcli.common.cli.create_parser(
         subparsers,
         subcommand_name,
         subcommand_help,

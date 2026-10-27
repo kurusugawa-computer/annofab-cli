@@ -79,7 +79,7 @@ Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.task.change_status_to_on_hold.add_parser
+   :ref: annofabcli.task.change_status_to_on_hold.create_parser
    :prog: annofabcli task change_status_to_on_hold
    :nosubcommands:
    :nodefaultconst:

@@ -77,7 +77,7 @@ Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.statistics.list_video_duration.add_parser
+   :ref: annofabcli.statistics.list_video_duration.create_parser
    :prog: annofabcli statistics list_video_duration
    :nosubcommands:
    :nodefaultconst:

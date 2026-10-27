@@ -29,7 +29,7 @@ Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.job.delete_job.add_parser
+   :ref: annofabcli.job.delete_job.create_parser
    :prog: annofabcli job delete
    :nosubcommands:
    :nodefaultconst:

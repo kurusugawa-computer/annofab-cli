@@ -21,7 +21,7 @@ def main(args: argparse.Namespace) -> None:
     EditInspectionPhrases(service, AnnofabApiFacade(service), args).main()
 
 
-def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
+def create_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     """定型指摘削除コマンドのパーサーを作る。
 
     Args:
@@ -30,7 +30,7 @@ def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse
     Returns:
         作成したパーサー。
     """
-    parser = annofabcli.common.cli.add_parser(
+    parser = annofabcli.common.cli.create_parser(
         subparsers, "delete_inspection_phrases", "アノテーション仕様の定型指摘を複数件削除します。", epilog="オーナーロールまたはチェッカーロールを持つユーザーで実行してください。"
     )
     add_edit_arguments(parser, operation="delete")

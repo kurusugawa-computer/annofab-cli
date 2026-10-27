@@ -131,7 +131,7 @@ Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.task_count.list_by_phase.add_parser
+   :ref: annofabcli.task_count.list_by_phase.create_parser
    :prog: annofabcli task_count list_by_phase
    :nosubcommands:
    :nodefaultconst:
