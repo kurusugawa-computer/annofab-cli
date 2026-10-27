@@ -35,7 +35,7 @@ def test_deprecated_command_warns_and_preserves_both_outputs(tmp_path, monkeypat
     with zipfile.ZipFile(path, "w") as archive:
         archive.writestr("task1/input1.json", json.dumps(annotation))
     output_dir = tmp_path / "out"
-    args = visualize_annotation_duration.add_parser().parse_args(["--project_id", "project1", "--annotation", str(path), "--output_dir", str(output_dir)])
+    args = visualize_annotation_duration.create_parser().parse_args(["--project_id", "project1", "--annotation", str(path), "--output_dir", str(output_dir)])
     caplog.set_level(logging.WARNING)
     args.subcommand_func(args)
     assert {file.name for file in output_dir.iterdir()} == {"annotation_duration_by_label.html", "annotation_duration_by_attribute.html"}

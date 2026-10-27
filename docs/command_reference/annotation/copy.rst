@@ -77,7 +77,7 @@ Usage Details
 =================================
 
 .. argparse::
-    :ref: annofabcli.annotation.copy_annotation.add_parser
+    :ref: annofabcli.annotation.copy_annotation.create_parser
     :prog: annofabcli annotation copy
     :nosubcommands:
     :nodefaultconst:

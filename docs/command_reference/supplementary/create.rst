@@ -126,7 +126,7 @@ Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.supplementary.create_supplementary_data.add_parser
+   :ref: annofabcli.supplementary.create_supplementary_data.create_parser
    :prog: annofabcli supplementary create
    :nosubcommands:
    :nodefaultconst:

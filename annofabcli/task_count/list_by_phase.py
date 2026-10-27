@@ -567,10 +567,10 @@ def main(args: argparse.Namespace) -> None:
     ListTaskCountByPhase(service, facade, args).main()
 
 
-def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
+def create_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "list_by_phase"
     subcommand_help = "フェーズごとにタスク数や入力データ数などを集計し、指定した形式で出力します。"
     epilog = "オーナロールまたはアノテーションユーザーロールを持つユーザで実行してください。"
-    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, epilog=epilog)
+    parser = annofabcli.common.cli.create_parser(subparsers, subcommand_name, subcommand_help, epilog=epilog)
     parse_args(parser)
     return parser

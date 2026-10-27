@@ -158,7 +158,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
+def create_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "list_all"
     subcommand_help = "すべてのタスク履歴の一覧を出力します。"
     description = (
@@ -166,6 +166,6 @@ def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse
         "出力されるタスク履歴は、コマンドを実行した日の02:00(JST)頃の状態です。最新の情報を出力したい場合は、 ``annofabcli task_history list`` コマンドを実行してください。"
     )
 
-    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog="オーナーロールまたはアノテーションユーザーロールを持つユーザーで実行してください。")
+    parser = annofabcli.common.cli.create_parser(subparsers, subcommand_name, subcommand_help, description, epilog="オーナーロールまたはアノテーションユーザーロールを持つユーザーで実行してください。")
     parse_args(parser)
     return parser

@@ -105,7 +105,7 @@ Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.annotation_specs.list_annotation_import_info.add_parser
+   :ref: annofabcli.annotation_specs.list_annotation_import_info.create_parser
    :prog: annofabcli annotation_specs list_annotation_import_info
    :nosubcommands:
    :nodefaultconst:

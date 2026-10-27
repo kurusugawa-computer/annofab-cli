@@ -279,8 +279,8 @@ def main(args: argparse.Namespace) -> None:
     ListTaskCountByTaskIdGroup(service, facade, args).main()
 
 
-def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
-    """サブコマンドのパーサーを追加する。
+def create_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
+    """サブコマンドのパーサーを生成する。
 
     Args:
         subparsers: サブパーサー。
@@ -291,6 +291,6 @@ def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse
     subcommand_name = "list_by_task_id_group"
     subcommand_help = "タスクIDのグループごとに、フェーズと状態別のタスク数を指定した形式で出力します。"
     epilog = "オーナロールまたはアノテーションユーザーロールを持つユーザで実行してください。"
-    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, epilog=epilog)
+    parser = annofabcli.common.cli.create_parser(subparsers, subcommand_name, subcommand_help, epilog=epilog)
     parse_args(parser)
     return parser

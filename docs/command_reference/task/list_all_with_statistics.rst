@@ -127,7 +127,7 @@ Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.task.list_all_with_statistics.add_parser
+   :ref: annofabcli.task.list_all_with_statistics.create_parser
    :prog: annofabcli task list_all_with_statistics
    :nosubcommands:
    :nodefaultconst:

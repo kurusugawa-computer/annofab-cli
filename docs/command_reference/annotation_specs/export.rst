@@ -51,7 +51,7 @@ Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.annotation_specs.export_annotation_specs.add_parser
+   :ref: annofabcli.annotation_specs.export_annotation_specs.create_parser
    :prog: annofabcli annotation_specs export
    :nosubcommands:
    :nodefaultconst:

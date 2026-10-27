@@ -469,7 +469,7 @@ def main(args: argparse.Namespace) -> None:
     AddAttribute(service, facade, args).main()
 
 
-def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
+def create_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     """
     ``annotation_specs add_attribute`` 用のparserを生成する。
 
@@ -483,7 +483,7 @@ def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse
     subcommand_help = "アノテーション仕様に非選択肢系の属性を追加します。"
     description = "アノテーション仕様に非選択肢系の属性を追加します。選択肢系属性の追加は ``add_attributes`` または ``add_choice_attribute`` コマンドを使用してください。"
 
-    parser = annofabcli.common.cli.add_parser(
+    parser = annofabcli.common.cli.create_parser(
         subparsers,
         subcommand_name,
         subcommand_help,

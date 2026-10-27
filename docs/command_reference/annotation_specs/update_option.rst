@@ -53,7 +53,7 @@ Usage Details
 =================================
 
 .. argparse::
-    :ref: annofabcli.annotation_specs.update_option.add_parser
+    :ref: annofabcli.annotation_specs.update_option.create_parser
     :prog: annofabcli annotation_specs update_option
     :nosubcommands:
     :nodefaultconst:

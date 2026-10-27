@@ -30,7 +30,7 @@ Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.job.wait_job.add_parser
+   :ref: annofabcli.job.wait_job.create_parser
    :prog: annofabcli job wait
    :nosubcommands:
    :nodefaultconst:

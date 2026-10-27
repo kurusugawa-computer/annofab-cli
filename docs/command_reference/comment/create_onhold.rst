@@ -94,7 +94,7 @@ Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.comment.create_onhold_comment.add_parser
+   :ref: annofabcli.comment.create_onhold_comment.create_parser
    :prog: annofabcli comment create_onhold
    :nosubcommands:
    :nodefaultconst:

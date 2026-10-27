@@ -73,7 +73,7 @@ Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.organization_plugin.list_organization_plugin.add_parser
+   :ref: annofabcli.organization_plugin.list_organization_plugin.create_parser
    :prog: annofabcli organization_plugin list
    :nosubcommands:
    :nodefaultconst:

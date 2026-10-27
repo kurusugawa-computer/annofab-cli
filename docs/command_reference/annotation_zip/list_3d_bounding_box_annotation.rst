@@ -155,7 +155,7 @@ Usage Details
 =================================
 
 .. argparse::
-    :ref: annofabcli.annotation_zip.list_annotation_3d_bounding_box.add_parser
+    :ref: annofabcli.annotation_zip.list_annotation_3d_bounding_box.create_parser
     :prog: annofabcli annotation_zip list_3d_bounding_box_annotation
     :nosubcommands:
     :nodefaultconst:

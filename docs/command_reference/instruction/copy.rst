@@ -30,7 +30,7 @@ Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.instruction.copy_instruction.add_parser
+   :ref: annofabcli.instruction.copy_instruction.create_parser
    :prog: annofabcli instruction copy
    :nosubcommands:
    :nodefaultconst:

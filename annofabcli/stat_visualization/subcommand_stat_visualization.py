@@ -11,18 +11,18 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     subparsers = parser.add_subparsers(dest="subcommand_name", required=True)
 
     # サブコマンドの定義
-    annofabcli.stat_visualization.mask_visualization_dir.add_parser(subparsers)
-    annofabcli.stat_visualization.merge_visualization_dir.add_parser(subparsers)
-    summarize_whole_performance_csv.add_parser(subparsers)
-    annofabcli.stat_visualization.write_graph.add_parser(subparsers)
-    annofabcli.stat_visualization.write_performance_rating_csv.add_parser(subparsers)
+    annofabcli.stat_visualization.mask_visualization_dir.create_parser(subparsers)
+    annofabcli.stat_visualization.merge_visualization_dir.create_parser(subparsers)
+    summarize_whole_performance_csv.create_parser(subparsers)
+    annofabcli.stat_visualization.write_graph.create_parser(subparsers)
+    annofabcli.stat_visualization.write_performance_rating_csv.create_parser(subparsers)
 
 
-def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
+def create_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "stat_visualization"
     subcommand_help = "`annofabcli statistics visualization` コマンドの出力結果を加工するサブコマンド（アルファ版）"
     description = "`annofabcli statistics visualization` コマンドの出力結果を加工するサブコマンド（アルファ版）"
 
-    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, is_subcommand=False)
+    parser = annofabcli.common.cli.create_parser(subparsers, subcommand_name, subcommand_help, description, is_subcommand=False)
     parse_args(parser)
     return parser

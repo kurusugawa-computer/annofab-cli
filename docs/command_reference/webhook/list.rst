@@ -72,7 +72,7 @@ Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.webhook.list_webhook.add_parser
+   :ref: annofabcli.webhook.list_webhook.create_parser
    :prog: annofabcli webhook list
    :nosubcommands:
    :nodefaultconst:

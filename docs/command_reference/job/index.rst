@@ -23,6 +23,6 @@ Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.job.subcommand_job.add_parser
+   :ref: annofabcli.job.subcommand_job.create_parser
    :prog: annofabcli job
    :nosubcommands:

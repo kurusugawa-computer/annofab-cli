@@ -92,7 +92,7 @@ Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.project_member.list_users.add_parser
+   :ref: annofabcli.project_member.list_users.create_parser
    :prog: annofabcli project_member list
    :nosubcommands:
    :nodefaultconst:

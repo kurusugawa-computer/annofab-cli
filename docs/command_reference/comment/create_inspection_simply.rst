@@ -109,7 +109,7 @@ Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.comment.create_inspection_comment_simply.add_parser
+   :ref: annofabcli.comment.create_inspection_comment_simply.create_parser
    :prog: annofabcli comment create_inspection_simply
    :nosubcommands:
    :nodefaultconst:

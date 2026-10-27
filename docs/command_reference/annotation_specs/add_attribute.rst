@@ -98,7 +98,7 @@ Usage Details
 =================================
 
 .. argparse::
-    :ref: annofabcli.annotation_specs.add_attribute.add_parser
+    :ref: annofabcli.annotation_specs.add_attribute.create_parser
     :prog: annofabcli annotation_specs add_attribute
     :nosubcommands:
     :nodefaultconst:

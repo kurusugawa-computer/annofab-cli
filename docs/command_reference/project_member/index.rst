@@ -40,6 +40,6 @@ Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.project_member.subcommand_project_member.add_parser
+   :ref: annofabcli.project_member.subcommand_project_member.create_parser
    :prog: annofabcli project_member
    :nosubcommands:

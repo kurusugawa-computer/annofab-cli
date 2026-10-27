@@ -85,7 +85,7 @@ Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.annotation_specs.list_annotation_specs_choice.add_parser
+   :ref: annofabcli.annotation_specs.list_annotation_specs_choice.create_parser
    :prog: annofabcli annotation_specs list_choice
    :nosubcommands:
    :nodefaultconst:

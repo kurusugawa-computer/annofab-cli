@@ -23,7 +23,7 @@ Usage Details
 =================================
 
 .. argparse::
-    :ref: annofabcli.annotation_specs.unset_attribute_required.add_parser
+    :ref: annofabcli.annotation_specs.unset_attribute_required.create_parser
     :prog: annofabcli annotation_specs unset_attribute_required
     :nosubcommands:
     :nodefaultconst:

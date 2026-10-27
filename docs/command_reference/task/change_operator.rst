@@ -87,7 +87,7 @@ Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.task.change_operator.add_parser
+   :ref: annofabcli.task.change_operator.create_parser
    :prog: annofabcli task change_operator
    :nosubcommands:
    :nodefaultconst:

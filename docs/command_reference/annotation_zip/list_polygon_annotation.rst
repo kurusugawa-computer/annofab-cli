@@ -125,7 +125,7 @@ Usage Details
 =================================
 
 .. argparse::
-    :ref: annofabcli.annotation_zip.list_polygon_annotation.add_parser
+    :ref: annofabcli.annotation_zip.list_polygon_annotation.create_parser
     :prog: annofabcli annotation_zip list_polygon_annotation
     :nosubcommands:
     :nodefaultconst:

@@ -11,17 +11,17 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     subparsers = parser.add_subparsers(dest="subcommand_name", required=True)
 
     # サブコマンドの定義
-    annofabcli.task_count.list_by_metadata.add_parser(subparsers)
-    annofabcli.task_count.list_by_phase.add_parser(subparsers)
-    annofabcli.task_count.list_by_task_id_group.add_parser(subparsers)
-    annofabcli.task_count.list_by_user.add_parser(subparsers)
+    annofabcli.task_count.list_by_metadata.create_parser(subparsers)
+    annofabcli.task_count.list_by_phase.create_parser(subparsers)
+    annofabcli.task_count.list_by_task_id_group.create_parser(subparsers)
+    annofabcli.task_count.list_by_user.create_parser(subparsers)
 
 
-def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
+def create_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "task_count"
     subcommand_help = "タスク数関係のサブコマンド"
     description = "タスク数関係のサブコマンド"
 
-    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, is_subcommand=False)
+    parser = annofabcli.common.cli.create_parser(subparsers, subcommand_name, subcommand_help, description, is_subcommand=False)
     parse_args(parser)
     return parser

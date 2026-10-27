@@ -104,7 +104,7 @@ Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.comment.update_inspection_comment.add_parser
+   :ref: annofabcli.comment.update_inspection_comment.create_parser
    :prog: annofabcli comment update_inspection
    :nosubcommands:
    :nodefaultconst:

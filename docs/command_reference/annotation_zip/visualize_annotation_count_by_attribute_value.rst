@@ -70,6 +70,6 @@ Command line options
 =================================
 
 .. argparse::
-   :ref: annofabcli.annotation_zip.visualize_annotation_count_by_attribute_value.add_parser
+   :ref: annofabcli.annotation_zip.visualize_annotation_count_by_attribute_value.create_parser
    :prog: annofabcli annotation_zip visualize_annotation_count_by_attribute_value
    :nosubcommands:

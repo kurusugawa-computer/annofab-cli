@@ -23,6 +23,6 @@ Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.task_history.subcommand_task_history.add_parser
+   :ref: annofabcli.task_history.subcommand_task_history.create_parser
    :prog: annofabcli task_history
    :nosubcommands:

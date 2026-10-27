@@ -90,7 +90,7 @@ Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.organization.list_usage_detail.add_parser
+   :ref: annofabcli.organization.list_usage_detail.create_parser
    :prog: annofabcli organization list_usage_detail
    :nosubcommands:
    :nodefaultconst:

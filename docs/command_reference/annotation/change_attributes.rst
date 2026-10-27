@@ -73,7 +73,7 @@ Usage Details
 
 
 .. argparse::
-    :ref: annofabcli.annotation.change_annotation_attributes.add_parser
+    :ref: annofabcli.annotation.change_annotation_attributes.create_parser
     :prog: annofabcli annotation change_attributes
     :nosubcommands:
     :nodefaultconst:

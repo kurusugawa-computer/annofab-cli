@@ -37,7 +37,7 @@ Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.my_account.get_my_account.add_parser
+   :ref: annofabcli.my_account.get_my_account.create_parser
    :prog: annofabcli my_account get
    :nosubcommands:
    :nodefaultconst:

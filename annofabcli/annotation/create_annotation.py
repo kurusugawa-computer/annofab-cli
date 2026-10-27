@@ -383,8 +383,8 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
-    parser = annofabcli.common.cli.add_parser(
+def create_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
+    parser = annofabcli.common.cli.create_parser(
         subparsers,
         "create",
         "各アノテーションを新規作成します。",

@@ -110,7 +110,7 @@ Usage Details
 =================================
 
 .. argparse::
-    :ref: annofabcli.annotation.change_annotation_data_per_annotation.add_parser
+    :ref: annofabcli.annotation.change_annotation_data_per_annotation.create_parser
     :prog: annofabcli annotation change_data_per_annotation
     :nosubcommands:
     :nodefaultconst:

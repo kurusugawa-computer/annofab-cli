@@ -57,7 +57,7 @@ Usage Details
 =================================
 
 .. argparse::
-    :ref: annofabcli.annotation_specs.delete_attributes.add_parser
+    :ref: annofabcli.annotation_specs.delete_attributes.create_parser
     :prog: annofabcli annotation_specs delete_attributes
     :nosubcommands:
     :nodefaultconst:

@@ -73,7 +73,7 @@ Usage Details
 =================================
 
 .. argparse::
-    :ref: annofabcli.task_history.download_task_history_json.add_parser
+    :ref: annofabcli.task_history.download_task_history_json.create_parser
     :prog: annofabcli task_history download
     :nosubcommands:
     :nodefaultconst:

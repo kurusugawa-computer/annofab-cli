@@ -25,6 +25,6 @@ Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.task_history_event.subcommand_task_history_event.add_parser
+   :ref: annofabcli.task_history_event.subcommand_task_history_event.create_parser
    :prog: annofabcli task_history_event
    :nosubcommands:
