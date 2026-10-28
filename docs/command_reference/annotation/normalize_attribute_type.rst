@@ -83,7 +83,7 @@ Usage Details
 =================================
 
 .. argparse::
-    :ref: annofabcli.annotation.normalize_attribute_type.add_parser
+    :ref: annofabcli.annotation.normalize_attribute_type.create_parser
     :prog: annofabcli annotation normalize_attribute_type
     :nosubcommands:
     :nodefaultconst:

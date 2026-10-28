@@ -11,17 +11,17 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     subparsers = parser.add_subparsers(dest="subcommand_name", required=True)
 
     # サブコマンドの定義
-    annofabcli.organization_member.delete_organization_member.add_parser(subparsers)
-    annofabcli.organization_member.invite_organization_member.add_parser(subparsers)
-    annofabcli.organization_member.list_organization_member.add_parser(subparsers)
-    annofabcli.organization_member.update_organization_member_role.add_parser(subparsers)
+    annofabcli.organization_member.delete_organization_member.create_parser(subparsers)
+    annofabcli.organization_member.invite_organization_member.create_parser(subparsers)
+    annofabcli.organization_member.list_organization_member.create_parser(subparsers)
+    annofabcli.organization_member.update_organization_member_role.create_parser(subparsers)
 
 
-def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
+def create_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "organization_member"
     subcommand_help = "組織メンバ関係のサブコマンド"
     description = "組織メンバ関係のサブコマンド"
 
-    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, is_subcommand=False)
+    parser = annofabcli.common.cli.create_parser(subparsers, subcommand_name, subcommand_help, description, is_subcommand=False)
     parse_args(parser)
     return parser

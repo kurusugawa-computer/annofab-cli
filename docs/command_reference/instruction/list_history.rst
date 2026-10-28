@@ -64,7 +64,7 @@ Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.instruction.list_instruction_history.add_parser
+   :ref: annofabcli.instruction.list_instruction_history.create_parser
    :prog: annofabcli instruction list_history
    :nosubcommands:
    :nodefaultconst:

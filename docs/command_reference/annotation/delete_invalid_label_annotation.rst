@@ -60,7 +60,7 @@ Usage Details
 =================================
 
 .. argparse::
-    :ref: annofabcli.annotation.delete_invalid_label_annotation.add_parser
+    :ref: annofabcli.annotation.delete_invalid_label_annotation.create_parser
     :prog: annofabcli annotation delete_invalid_label_annotation
     :nosubcommands:
     :nodefaultconst:

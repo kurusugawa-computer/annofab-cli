@@ -306,7 +306,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
+def create_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     """サブコマンドを登録する。
 
     Args:
@@ -315,7 +315,7 @@ def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse
     Returns:
         登録したパーサー。
     """
-    parser = annofabcli.common.cli.add_parser(
+    parser = annofabcli.common.cli.create_parser(
         subparsers,
         command_name="normalize_attribute_type",
         command_help="アノテーションの属性値の型を、現在のアノテーション仕様に合わせます。",

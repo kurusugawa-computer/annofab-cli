@@ -56,7 +56,7 @@ Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.project.update_download_files.add_parser
+   :ref: annofabcli.project.update_download_files.create_parser
    :prog: annofabcli project update_download_files
    :nosubcommands:
    :nodefaultconst:

@@ -97,12 +97,12 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
+def create_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "put_onhold_simply"
     subcommand_help = "[DEPRECATED] ``comment put_onhold`` コマンドよりも、簡単に保留コメントを付与します。"
     description = f"{subcommand_help}\n{DEPRECATED_MESSAGE}"
 
-    parser = annofabcli.common.cli.add_parser(
+    parser = annofabcli.common.cli.create_parser(
         subparsers,
         subcommand_name,
         subcommand_help,

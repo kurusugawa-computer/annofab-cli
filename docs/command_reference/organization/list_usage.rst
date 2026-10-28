@@ -85,7 +85,7 @@ Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.organization.list_usage.add_parser
+   :ref: annofabcli.organization.list_usage.create_parser
    :prog: annofabcli organization list_usage
    :nosubcommands:
    :nodefaultconst:

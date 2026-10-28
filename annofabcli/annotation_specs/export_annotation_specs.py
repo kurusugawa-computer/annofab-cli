@@ -73,12 +73,12 @@ def main(args: argparse.Namespace) -> None:
     ExportAnnotationSpecs(service, facade, args).main()
 
 
-def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
+def create_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "export"
 
     subcommand_help = "アノテーション仕様の情報をエクスポートします。"
 
-    parser = annofabcli.common.cli.add_parser(
+    parser = annofabcli.common.cli.create_parser(
         subparsers,
         subcommand_name,
         subcommand_help,

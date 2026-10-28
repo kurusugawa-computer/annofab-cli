@@ -40,7 +40,7 @@ Usage Details
 =================================
 
 .. argparse::
-    :ref: annofabcli.annotation_specs.reorder_choices.add_parser
+    :ref: annofabcli.annotation_specs.reorder_choices.create_parser
     :prog: annofabcli annotation_specs reorder_choices
     :nosubcommands:
     :nodefaultconst:

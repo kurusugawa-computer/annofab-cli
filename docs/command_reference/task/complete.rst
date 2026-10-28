@@ -36,7 +36,7 @@ Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.task.complete_tasks.add_complete_parser
+   :ref: annofabcli.task.complete_tasks.create_complete_parser
    :prog: annofabcli task complete
    :nosubcommands:
    :nodefaultconst:

@@ -60,7 +60,7 @@ Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.task.list_all_tasks.add_parser
+   :ref: annofabcli.task.list_all_tasks.create_parser
    :prog: annofabcli task list_all
    :nosubcommands:
    :nodefaultconst:

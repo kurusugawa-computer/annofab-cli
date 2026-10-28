@@ -215,7 +215,7 @@ Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.annotation_zip.diff_annotation.add_parser
+   :ref: annofabcli.annotation_zip.diff_annotation.create_parser
    :prog: annofabcli annotation_zip diff
    :nosubcommands:
    :nodefaultconst:

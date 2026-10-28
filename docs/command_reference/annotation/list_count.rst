@@ -83,7 +83,7 @@ Usage Details
 =================================
 
 .. argparse::
-    :ref: annofabcli.annotation.list_annotation_count.add_parser
+    :ref: annofabcli.annotation.list_annotation_count.create_parser
     :prog: annofabcli annotation list_count
     :nosubcommands:
     :nodefaultconst:

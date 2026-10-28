@@ -72,7 +72,7 @@ Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.project.diff_projects.add_parser
+   :ref: annofabcli.project.diff_projects.create_parser
    :prog: annofabcli project diff
    :nosubcommands:
    :nodefaultconst:

@@ -21,7 +21,7 @@ def main(args: argparse.Namespace) -> None:
     EditInspectionPhrases(service, AnnofabApiFacade(service), args).main()
 
 
-def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
+def create_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     """定型指摘更新コマンドのパーサーを作る。
 
     Args:
@@ -35,7 +35,7 @@ def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse
         "本文には inspection_phrase_text_ja（日本語）、inspection_phrase_text_en（英語）、inspection_phrase_text_vi（ベトナム語）を指定します。"
         "未指定の言語は補完しません。更新時は省略・null・空文字の本文を保持します。IDに使用できる文字は英数字・アンダースコア・ハイフンです。"
     )
-    parser = annofabcli.common.cli.add_parser(
+    parser = annofabcli.common.cli.create_parser(
         subparsers,
         "update_inspection_phrases",
         "アノテーション仕様の定型指摘を複数件更新します。",

@@ -253,8 +253,8 @@ def main(args: argparse.Namespace) -> None:
     SummarizeTaskCountByUser(service, facade, args).main()
 
 
-def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
-    """旧コマンドのサブパーサーを追加する。
+def create_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
+    """旧コマンドのサブパーサーを生成する。
 
     Args:
         subparsers: サブパーサー。
@@ -266,6 +266,6 @@ def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse
     subcommand_help = f"ユーザごとに、担当しているタスク数を出力します。\n{DEPRECATED_MESSAGE}"
     description = f"ユーザごとに、担当しているタスク数をCSV形式で出力します。\n{DEPRECATED_MESSAGE}"
     epilog = "アノテーションユーザまたはオーナロールを持つユーザで実行してください。"
-    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description=description, epilog=epilog)
+    parser = annofabcli.common.cli.create_parser(subparsers, subcommand_name, subcommand_help, description=description, epilog=epilog)
     parse_args(parser)
     return parser

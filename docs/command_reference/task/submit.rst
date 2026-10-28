@@ -42,7 +42,7 @@ Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.task.complete_tasks.add_submit_parser
+   :ref: annofabcli.task.complete_tasks.create_submit_parser
    :prog: annofabcli task submit
    :nosubcommands:
    :nodefaultconst:

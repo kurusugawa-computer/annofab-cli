@@ -304,7 +304,7 @@ def test_main_passes_include_status_options_to_main_object(monkeypatch: pytest.M
 
 def test_submit_parser_fixes_annotation_phase() -> None:
     root_parser = argparse.ArgumentParser()
-    submit_parser = complete_tasks.add_submit_parser(root_parser.add_subparsers())
+    submit_parser = complete_tasks.create_submit_parser(root_parser.add_subparsers())
 
     args = root_parser.parse_args(["submit", "--project_id", "project1", "--task_id", "task1"])
 
@@ -316,7 +316,7 @@ def test_submit_parser_fixes_annotation_phase() -> None:
 
 def test_complete_parser_is_available_as_deprecated_compatibility_command() -> None:
     root_parser = argparse.ArgumentParser()
-    complete_parser = complete_tasks.add_complete_parser(root_parser.add_subparsers())
+    complete_parser = complete_tasks.create_complete_parser(root_parser.add_subparsers())
 
     args = root_parser.parse_args(["complete", "--project_id", "project1", "--task_id", "task1", "--phase", "annotation"])
 
@@ -339,7 +339,7 @@ def test_deprecated_complete_main_warns_and_delegates(monkeypatch: pytest.Monkey
 @pytest.mark.parametrize("phase", [TaskPhase.INSPECTION.value, TaskPhase.ACCEPTANCE.value])
 def test_accept_parser_accepts_inspection_and_acceptance_phases(phase: str) -> None:
     root_parser = argparse.ArgumentParser()
-    accept_parser = complete_tasks.add_accept_parser(root_parser.add_subparsers())
+    accept_parser = complete_tasks.create_accept_parser(root_parser.add_subparsers())
 
     args = root_parser.parse_args(["accept", "--project_id", "project1", "--task_id", "task1", "--phase", phase])
 
@@ -423,7 +423,7 @@ def test_accept_without_phase_processes_mixed_phases_and_stages(caplog):
     service.api.account_id = "account1"
     service.wrapper.change_task_status_to_working.side_effect = [{**task, "status": "working"} for task in tasks[:2]]
     root_parser = argparse.ArgumentParser()
-    complete_tasks.add_accept_parser(root_parser.add_subparsers())
+    complete_tasks.create_accept_parser(root_parser.add_subparsers())
     args = root_parser.parse_args(["accept", "--project_id", "project1", "--task_id", "inspection1", "acceptance1", "annotation1", "--yes"])
     command = complete_tasks.CompleteTasks(service, Mock(), args)
 

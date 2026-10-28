@@ -397,12 +397,12 @@ def main(args: argparse.Namespace) -> None:
     DiffProjects(service, facade, args).main()
 
 
-def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
+def create_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "diff"
     subcommand_help = "プロジェクト間の差分を表示する。"
     description = "プロジェクト間の差分を表示する。" + "ただし、Annofabで生成されるIDや、変化する日時などは比較しない。"
     epilog = "オーナ、チェッカーロールのいずれかを持つユーザで実行してください。"
 
-    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
+    parser = annofabcli.common.cli.create_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
     parse_args(parser)
     return parser

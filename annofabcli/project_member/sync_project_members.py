@@ -85,8 +85,8 @@ def main(args: argparse.Namespace) -> None:
     SyncProjectMembers(service, AnnofabApiFacade(service), args).main()
 
 
-def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
-    parser = annofabcli.common.cli.add_parser(
+def create_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
+    parser = annofabcli.common.cli.create_parser(
         subparsers,
         "sync",
         "基準プロジェクトのメンバ構成を複数プロジェクトに同期します。",

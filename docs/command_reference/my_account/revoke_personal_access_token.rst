@@ -22,7 +22,7 @@ Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.my_account.revoke_personal_access_token.add_parser
+   :ref: annofabcli.my_account.revoke_personal_access_token.create_parser
    :prog: annofabcli my_account revoke_personal_access_token
    :nosubcommands:
    :nodefaultconst:

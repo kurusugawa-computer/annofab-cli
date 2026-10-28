@@ -59,7 +59,7 @@ Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.comment.delete_comment.add_parser
+   :ref: annofabcli.comment.delete_comment.create_parser
    :prog: annofabcli comment delete
    :nosubcommands:
    :nodefaultconst:

@@ -46,6 +46,6 @@ Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.task.subcommand_task.add_parser
+   :ref: annofabcli.task.subcommand_task.create_parser
    :prog: annofabcli task
    :nosubcommands:

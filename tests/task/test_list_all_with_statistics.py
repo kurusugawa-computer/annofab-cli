@@ -66,7 +66,7 @@ def command_context(tmp_path, monkeypatch):
 
 def run_command(tmp_path: Path, *options: str) -> list[dict[str, Any]]:
     output = tmp_path / "tasks.json"
-    args = command.add_parser().parse_args(["--project_id", "p", "--output", str(output), "--format", "pretty_json", *options])
+    args = command.create_parser().parse_args(["--project_id", "p", "--output", str(output), "--format", "pretty_json", *options])
     args.subcommand_func(args)
     return json.loads(output.read_text(encoding="utf-8"))
 

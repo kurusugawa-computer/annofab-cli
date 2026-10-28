@@ -100,7 +100,7 @@ Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.task_history_event.list_worktime.add_parser
+   :ref: annofabcli.task_history_event.list_worktime.create_parser
    :prog: annofabcli task_history_event list_worktime
    :nosubcommands:
    :nodefaultconst:

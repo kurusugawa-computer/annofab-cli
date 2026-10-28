@@ -63,7 +63,7 @@ Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.instruction.upload_instruction.add_parser
+   :ref: annofabcli.instruction.upload_instruction.create_parser
    :prog: annofabcli instruction upload
    :nosubcommands:
    :nodefaultconst:

@@ -38,6 +38,6 @@ Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.statistics.subcommand_statistics.add_parser
+   :ref: annofabcli.statistics.subcommand_statistics.create_parser
    :prog: annofabcli statistics
    :nosubcommands:

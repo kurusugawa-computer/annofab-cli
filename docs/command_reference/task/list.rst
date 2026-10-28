@@ -185,7 +185,7 @@ Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.task.list_tasks.add_parser
+   :ref: annofabcli.task.list_tasks.create_parser
    :prog: annofabcli task list
    :nosubcommands:
    :nodefaultconst:

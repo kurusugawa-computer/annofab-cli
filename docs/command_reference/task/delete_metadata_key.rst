@@ -33,7 +33,7 @@ Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.task.delete_metadata_key_of_task.add_parser
+   :ref: annofabcli.task.delete_metadata_key_of_task.create_parser
    :prog: annofabcli task delete_metadata_key
    :nosubcommands:
    :nodefaultconst:

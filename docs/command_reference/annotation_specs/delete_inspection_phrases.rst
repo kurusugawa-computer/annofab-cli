@@ -34,7 +34,7 @@ Usage Details
 =================================
 
 .. argparse::
-    :ref: annofabcli.annotation_specs.delete_inspection_phrases.add_parser
+    :ref: annofabcli.annotation_specs.delete_inspection_phrases.create_parser
     :prog: annofabcli annotation_specs delete_inspection_phrases
     :nosubcommands:
     :nodefaultconst:

@@ -22,6 +22,6 @@ Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.filesystem.subcommand_filesystem.add_parser
+   :ref: annofabcli.filesystem.subcommand_filesystem.create_parser
    :prog: annofabcli filesystem
    :nosubcommands:

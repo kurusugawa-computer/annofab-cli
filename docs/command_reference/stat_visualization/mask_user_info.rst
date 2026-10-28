@@ -96,7 +96,7 @@ Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.stat_visualization.mask_visualization_dir.add_parser
+   :ref: annofabcli.stat_visualization.mask_visualization_dir.create_parser
    :prog: annofabcli stat_visualization mask_user_info
    :nosubcommands:
    :nodefaultconst:

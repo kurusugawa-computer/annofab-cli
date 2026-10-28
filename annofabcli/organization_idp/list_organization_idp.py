@@ -68,8 +68,8 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
+def create_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     description = "組織IDプロバイダー一覧を出力します。クライアントシークレットは出力しません。"
-    parser = annofabcli.common.cli.add_parser(subparsers, "list", "組織IDプロバイダー一覧を出力します。", description, epilog="すべての組織メンバーロールで実行できます。")
+    parser = annofabcli.common.cli.create_parser(subparsers, "list", "組織IDプロバイダー一覧を出力します。", description, epilog="すべての組織メンバーロールで実行できます。")
     parse_args(parser)
     return parser

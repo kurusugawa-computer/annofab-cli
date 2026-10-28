@@ -251,7 +251,9 @@ def test_label_name_enでラベルに紐づく属性制約を絞り込む(tmp_pa
     annotation_specs_path = tmp_path / "annotation_specs.json"
     annotation_specs_path.write_text(json.dumps(annotation_specs), encoding="utf-8")
     output_path = tmp_path / "restrictions.json"
-    args = list_attribute_restriction.add_parser().parse_args(["--annotation_specs_json_file", str(annotation_specs_path), "--label_name_en", "car", "--format", "json", "--output", str(output_path)])
+    args = list_attribute_restriction.create_parser().parse_args(
+        ["--annotation_specs_json_file", str(annotation_specs_path), "--label_name_en", "car", "--format", "json", "--output", str(output_path)]
+    )
 
     list_attribute_restriction.main(args)
 

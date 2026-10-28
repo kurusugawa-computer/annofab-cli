@@ -70,7 +70,7 @@ Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.statistics.summarize_task_count_by_task_id_group.add_parser
+   :ref: annofabcli.statistics.summarize_task_count_by_task_id_group.create_parser
    :prog: annofabcli statistics summarize_task_count_by_task_id_group
    :nosubcommands:
    :nodefaultconst:

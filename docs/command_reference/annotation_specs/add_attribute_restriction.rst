@@ -51,7 +51,7 @@ Usage Details
 =================================
 
 .. argparse::
-    :ref: annofabcli.annotation_specs.add_attribute_restriction.add_parser
+    :ref: annofabcli.annotation_specs.add_attribute_restriction.create_parser
     :prog: annofabcli annotation_specs add_attribute_restriction
     :nosubcommands:
     :nodefaultconst:

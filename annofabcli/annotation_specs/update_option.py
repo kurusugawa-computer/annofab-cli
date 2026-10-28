@@ -171,7 +171,7 @@ def main(args: argparse.Namespace) -> None:
     UpdateOption(service, AnnofabApiFacade(service), args).main()
 
 
-def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
+def create_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     """update_optionのパーサーを生成する。
 
     Args:
@@ -180,7 +180,7 @@ def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse
     Returns:
         生成したパーサー
     """
-    parser = annofabcli.common.cli.add_parser(
+    parser = annofabcli.common.cli.create_parser(
         subparsers,
         "update_option",
         "アノテーション仕様のoptionを更新します。",

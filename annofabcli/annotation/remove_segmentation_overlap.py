@@ -382,11 +382,11 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
+def create_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "remove_segmentation_overlap"
     subcommand_help = "塗りつぶしアノテーションの重なりを除去します。"
     description = "塗りつぶしアノテーションの重なりを除去します。Annofabでインスタンスセグメンテーションは重ねることができてしまいます。この重なりをなくしたいときに有用です。"
     epilog = "オーナーロールまたはチェッカーロールを持つユーザーで実行してください。"
-    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
+    parser = annofabcli.common.cli.create_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
     parse_args(parser)
     return parser

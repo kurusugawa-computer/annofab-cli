@@ -62,7 +62,7 @@ Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.task_history_event.summarize_worktime_by_user_and_date.add_parser
+   :ref: annofabcli.task_history_event.summarize_worktime_by_user_and_date.create_parser
    :prog: annofabcli task_history_event summarize_worktime_by_user_and_date
    :nosubcommands:
    :nodefaultconst:

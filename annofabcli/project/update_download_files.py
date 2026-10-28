@@ -120,7 +120,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
+def create_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "update_download_files"
     subcommand_help = "ダウンロード用ファイルを並列に更新し、すべての更新完了を待ちます。"
     description = (
@@ -128,7 +128,7 @@ def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse
         "60秒間隔で完了を確認し、各更新を最大6時間待ちます。"
         "一部の更新に失敗してもほかの更新の完了を待ち、いずれかが失敗またはタイムアウトした場合は非0の終了コードで終了します。"
     )
-    parser = annofabcli.common.cli.add_parser(
+    parser = annofabcli.common.cli.create_parser(
         subparsers,
         subcommand_name,
         subcommand_help,

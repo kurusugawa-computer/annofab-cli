@@ -57,7 +57,7 @@ Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.statistics.summarize_task_count_by_user.add_parser
+   :ref: annofabcli.statistics.summarize_task_count_by_user.create_parser
    :prog: annofabcli statistics summarize_task_count_by_user
    :nosubcommands:
    :nodefaultconst:

@@ -9,7 +9,7 @@ import pytest
 from annofabcli.common.download import DownloadingFile
 from annofabcli.common.facade import AnnofabApiFacade
 from annofabcli.common.utils import print_csv
-from annofabcli.input_data.list_all_input_data_merged_task import ListInputDataMergedTask, add_parser, create_df_input_data_with_merged_task
+from annofabcli.input_data.list_all_input_data_merged_task import ListInputDataMergedTask, create_df_input_data_with_merged_task, create_parser
 
 
 def test_empty_list_outputs_input_data_and_task_headers(tmp_path: Path) -> None:
@@ -63,7 +63,7 @@ def test_main_filters_input_data_names(tmp_path: Path, monkeypatch: pytest.Monke
     names_file.write_text("sAmPlE\n\nmissing\n", encoding="utf-8")
     options = [option.replace("{names_file}", str(names_file)) for option in options]
     output = tmp_path / "result.json"
-    args = add_parser().parse_args(["--project_id", "project1", "--format", "json", "--output", str(output), *options])
+    args = create_parser().parse_args(["--project_id", "project1", "--format", "json", "--output", str(output), *options])
 
     ListInputDataMergedTask(Mock(spec=annofabapi.Resource), Mock(spec=AnnofabApiFacade), args).main()
 

@@ -26,8 +26,8 @@ from annofabcli.annotation_zip.visualize_annotation_duration import (
     plot_annotation_duration_histogram_by_attribute,
     plot_annotation_duration_histogram_by_label,
 )
-from annofabcli.annotation_zip.visualize_annotation_duration_by_attribute_value import add_parser as attribute_parser
-from annofabcli.annotation_zip.visualize_annotation_duration_by_label import add_parser as label_parser
+from annofabcli.annotation_zip.visualize_annotation_duration_by_attribute_value import create_parser as attribute_parser
+from annofabcli.annotation_zip.visualize_annotation_duration_by_label import create_parser as label_parser
 from annofabcli.common.download import DownloadingFile
 from annofabcli.common.exceptions import AnnofabCliException
 

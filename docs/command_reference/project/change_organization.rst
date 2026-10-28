@@ -24,7 +24,7 @@ Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.project.change_organization_of_project.add_parser
+   :ref: annofabcli.project.change_organization_of_project.create_parser
    :prog: annofabcli project change_organization
    :nosubcommands:
    :nodefaultconst:

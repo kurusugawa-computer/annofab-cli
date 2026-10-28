@@ -207,7 +207,7 @@ Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.filesystem.draw_annotation.add_parser
+   :ref: annofabcli.filesystem.draw_annotation.create_parser
    :prog: annofabcli filesystem draw_annotation
    :nosubcommands:
    :nodefaultconst:

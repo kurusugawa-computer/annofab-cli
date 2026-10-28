@@ -66,7 +66,7 @@ Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.task.delete_tasks.add_parser
+   :ref: annofabcli.task.delete_tasks.create_parser
    :prog: annofabcli task delete
    :nosubcommands:
    :nodefaultconst:

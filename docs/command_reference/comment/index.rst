@@ -36,6 +36,6 @@ Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.comment.subcommand_comment.add_parser
+   :ref: annofabcli.comment.subcommand_comment.create_parser
    :prog: annofabcli comment
    :nosubcommands:

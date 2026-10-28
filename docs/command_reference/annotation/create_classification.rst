@@ -122,7 +122,7 @@ Usage Details
 =================================
 
 .. argparse::
-    :ref: annofabcli.annotation.create_classification_annotation.add_parser
+    :ref: annofabcli.annotation.create_classification_annotation.create_parser
     :prog: annofabcli annotation create_classification
     :nosubcommands:
     :nodefaultconst:

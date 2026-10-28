@@ -244,7 +244,7 @@ def main(args: argparse.Namespace) -> None:
     DescribeLabelAttributes(service, facade, args).main()
 
 
-def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
+def create_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     """``describe_label_attributes`` 用のparserを生成する。
 
     Args:
@@ -257,7 +257,7 @@ def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse
     subcommand_name = "describe_label_attributes"
     subcommand_help = "ラベルと属性の関係を共有用のMarkdown形式で出力します。"
 
-    parser = annofabcli.common.cli.add_parser(
+    parser = annofabcli.common.cli.create_parser(
         subparsers,
         subcommand_name,
         subcommand_help,

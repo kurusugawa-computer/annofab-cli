@@ -66,7 +66,7 @@ Usage Details
 
 
 .. argparse::
-    :ref: annofabcli.annotation.change_annotation_label.add_parser
+    :ref: annofabcli.annotation.change_annotation_label.create_parser
     :prog: annofabcli annotation change_label
     :nosubcommands:
     :nodefaultconst:

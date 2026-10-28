@@ -74,5 +74,5 @@ Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.task.reject_tasks_with_inspection_comments.add_parser
+   :ref: annofabcli.task.reject_tasks_with_inspection_comments.create_parser
    :prog: annofabcli task reject_with_inspection_comments

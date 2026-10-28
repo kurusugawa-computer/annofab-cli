@@ -29,7 +29,7 @@ Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.organization_member.delete_organization_member.add_parser
+   :ref: annofabcli.organization_member.delete_organization_member.create_parser
    :prog: annofabcli organization_member delete
    :nosubcommands:
    :nodefaultconst:

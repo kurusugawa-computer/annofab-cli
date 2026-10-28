@@ -75,7 +75,7 @@ Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.stat_visualization.merge_visualization_dir.add_parser
+   :ref: annofabcli.stat_visualization.merge_visualization_dir.create_parser
    :prog: annofabcli stat_visualization merge
    :nosubcommands:
    :nodefaultconst:

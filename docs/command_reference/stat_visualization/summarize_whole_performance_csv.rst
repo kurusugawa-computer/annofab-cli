@@ -46,7 +46,7 @@ Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.stat_visualization.summarize_whole_performance_csv.add_parser
+   :ref: annofabcli.stat_visualization.summarize_whole_performance_csv.create_parser
    :prog: annofabcli stat_visualization summarize_whole_performance_csv
    :nosubcommands:
    :nodefaultconst:

@@ -120,7 +120,7 @@ Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.task.create_tasks.add_parser
+   :ref: annofabcli.task.create_tasks.create_parser
    :prog: annofabcli task create
    :nosubcommands:
    :nodefaultconst:
