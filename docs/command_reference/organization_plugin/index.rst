@@ -21,6 +21,6 @@ Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.organization_plugin.subcommand_organization_plugin.add_parser
+   :ref: annofabcli.organization_plugin.subcommand_organization_plugin.create_parser
    :prog: annofabcli organization_plugin
    :nosubcommands:

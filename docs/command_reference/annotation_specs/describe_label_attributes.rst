@@ -50,7 +50,7 @@ Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.annotation_specs.describe_label_attributes.add_parser
+   :ref: annofabcli.annotation_specs.describe_label_attributes.create_parser
    :prog: annofabcli annotation_specs describe_label_attributes
    :nosubcommands:
    :nodefaultconst:

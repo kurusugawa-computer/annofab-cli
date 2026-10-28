@@ -89,7 +89,7 @@ Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.task_count.list_by_metadata.add_parser
+   :ref: annofabcli.task_count.list_by_metadata.create_parser
    :prog: annofabcli task_count list_by_metadata
    :nosubcommands:
    :nodefaultconst:

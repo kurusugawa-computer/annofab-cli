@@ -450,7 +450,7 @@ def main(args: argparse.Namespace) -> None:
     UpdateChoices(service, facade, args).main()
 
 
-def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
+def create_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     """
     ``annotation_specs update_choices`` 用のparserを生成する。
     """
@@ -458,7 +458,7 @@ def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse
     subcommand_help = "アノテーション仕様の既存選択肢情報を更新します。"
     description = "アノテーション仕様の既存選択肢に設定された英語名、日本語名、ベトナム語名、ショートカットキーを更新します。"
 
-    parser = annofabcli.common.cli.add_parser(
+    parser = annofabcli.common.cli.create_parser(
         subparsers,
         subcommand_name,
         subcommand_help,

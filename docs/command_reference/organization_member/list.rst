@@ -75,7 +75,7 @@ Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.organization_member.list_organization_member.add_parser
+   :ref: annofabcli.organization_member.list_organization_member.create_parser
    :prog: annofabcli organization_member list
    :nosubcommands:
    :nodefaultconst:

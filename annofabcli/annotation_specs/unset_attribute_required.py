@@ -65,12 +65,12 @@ def main(args: argparse.Namespace) -> None:
     UnsetAttributeRequired(service, facade, args).main()
 
 
-def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
+def create_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "unset_attribute_required"
 
     subcommand_help = "属性の必須制約を解除します。"
     description = subcommand_help
-    parser = annofabcli.common.cli.add_parser(
+    parser = annofabcli.common.cli.create_parser(
         subparsers,
         subcommand_name,
         subcommand_help,

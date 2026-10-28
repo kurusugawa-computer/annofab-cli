@@ -97,7 +97,7 @@ Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.supplementary.delete_supplementary_data.add_parser
+   :ref: annofabcli.supplementary.delete_supplementary_data.create_parser
    :prog: annofabcli supplementary delete
    :nosubcommands:
    :nodefaultconst:

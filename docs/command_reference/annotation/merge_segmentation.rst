@@ -87,7 +87,7 @@ Usage Details
 =================================
 
 .. argparse::
-    :ref: annofabcli.annotation.merge_segmentation.add_parser
+    :ref: annofabcli.annotation.merge_segmentation.create_parser
     :prog: annofabcli annotation merge_segmentation
     :nosubcommands:
     :nodefaultconst:

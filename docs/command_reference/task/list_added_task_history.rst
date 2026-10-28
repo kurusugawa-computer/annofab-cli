@@ -270,7 +270,7 @@ Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.task.list_tasks_added_task_history.add_parser
+   :ref: annofabcli.task.list_tasks_added_task_history.create_parser
    :prog: annofabcli task list_added_task_history
    :nosubcommands:
    :nodefaultconst:

@@ -42,6 +42,6 @@ Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.annotation.subcommand_annotation.add_parser
+   :ref: annofabcli.annotation.subcommand_annotation.create_parser
    :prog: annofabcli annotation
    :nosubcommands:

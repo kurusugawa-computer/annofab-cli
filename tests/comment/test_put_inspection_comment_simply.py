@@ -3,7 +3,7 @@ from unittest.mock import Mock
 import pytest
 from annofabapi.plugin import EditorPluginId
 
-from annofabcli.comment.put_inspection_comment_simply import PutInspectionCommentSimply, add_parser
+from annofabcli.comment.put_inspection_comment_simply import PutInspectionCommentSimply, create_parser
 
 
 @pytest.mark.parametrize("configuration", [None, {}, {"plugin_id": "custom-editor"}])
@@ -14,7 +14,7 @@ def test_unsupported_editor_stops_before_changing_tasks(configuration: dict | No
     argv = ["--project_id", "project1", "--task_id", "task1", "--comment", "確認してください", "--yes"]
     if comment_data is not None:
         argv.extend(["--comment_data", comment_data])
-    args = add_parser().parse_args(argv)
+    args = create_parser().parse_args(argv)
 
     with pytest.raises(SystemExit) as exc_info:
         PutInspectionCommentSimply(service, Mock(), args).main()
@@ -34,7 +34,7 @@ def test_supported_project_creates_inspection_comment(input_data_type: str) -> N
     task = {"task_id": "task1", "phase": "inspection", "phase_stage": 1, "status": "not_started", "account_id": "account1", "input_data_id_list": ["input1"]}
     service.wrapper.get_task_or_none.return_value = task
     service.wrapper.change_task_status_to_working.return_value = {**task, "status": "working"}
-    args = add_parser().parse_args(["--project_id", "project1", "--task_id", "task1", "--comment", "確認してください", "--yes"])
+    args = create_parser().parse_args(["--project_id", "project1", "--task_id", "task1", "--comment", "確認してください", "--yes"])
 
     PutInspectionCommentSimply(service, Mock(), args).main()
 

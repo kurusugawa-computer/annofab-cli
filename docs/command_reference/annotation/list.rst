@@ -136,7 +136,7 @@ Usage Details
 =================================
 
 .. argparse::
-    :ref: annofabcli.annotation.list_annotation.add_parser
+    :ref: annofabcli.annotation.list_annotation.create_parser
     :prog: annofabcli annotation list
     :nosubcommands:
     :nodefaultconst:

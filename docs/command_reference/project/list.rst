@@ -170,7 +170,7 @@ Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.project.list_project.add_parser
+   :ref: annofabcli.project.list_project.create_parser
    :prog: annofabcli project list
    :nosubcommands:
    :nodefaultconst:

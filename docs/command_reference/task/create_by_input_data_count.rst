@@ -39,7 +39,7 @@ Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.task.create_tasks_by_input_data_count.add_parser
+   :ref: annofabcli.task.create_tasks_by_input_data_count.create_parser
    :prog: annofabcli task create_by_input_data_count
    :nosubcommands:
    :nodefaultconst:

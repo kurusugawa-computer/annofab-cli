@@ -89,7 +89,7 @@ Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.annotation_zip.list_annotation_attribute.add_parser
+   :ref: annofabcli.annotation_zip.list_annotation_attribute.create_parser
    :prog: annofabcli annotation_zip list_annotation_attribute
    :nosubcommands:
    :nodefaultconst:

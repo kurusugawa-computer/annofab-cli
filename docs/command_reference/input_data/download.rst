@@ -78,7 +78,7 @@ Usage Details
 =================================
 
 .. argparse::
-    :ref: annofabcli.input_data.download_input_data_json.add_parser
+    :ref: annofabcli.input_data.download_input_data_json.create_parser
     :prog: annofabcli input_data download
     :nosubcommands:
     :nodefaultconst:

@@ -63,7 +63,7 @@ Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.statistics.visualize_video_duration.add_parser
+   :ref: annofabcli.statistics.visualize_video_duration.create_parser
    :prog: annofabcli statistics visualize_video_duration
    :nosubcommands:
    :nodefaultconst:

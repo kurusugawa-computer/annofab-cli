@@ -53,7 +53,7 @@ Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.project.copy_project.add_parser
+   :ref: annofabcli.project.copy_project.create_parser
    :prog: annofabcli project copy
    :nosubcommands:
    :nodefaultconst:

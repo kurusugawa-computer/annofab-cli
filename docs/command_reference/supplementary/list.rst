@@ -73,7 +73,7 @@ Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.supplementary.list_supplementary_data.add_parser
+   :ref: annofabcli.supplementary.list_supplementary_data.create_parser
    :prog: annofabcli supplementary list
    :nosubcommands:
    :nodefaultconst:

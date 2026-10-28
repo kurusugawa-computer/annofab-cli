@@ -119,7 +119,7 @@ def build_annofabapi_resource_and_login(args: argparse.Namespace) -> annofabapi.
         raise e  # noqa: TRY201
 
 
-def add_parser(
+def create_parser(
     subparsers: argparse._SubParsersAction | None,
     command_name: str,
     command_help: str,
@@ -128,10 +128,10 @@ def add_parser(
     epilog: str | None = None,
 ) -> argparse.ArgumentParser:
     """
-    サブコマンド用にparserを追加する
+    コマンド用のparserを生成する。subparsersが指定されていれば、そこに登録する。
 
     Args:
-        subparsers:
+        subparsers: パーサーの登録先。Noneの場合は単独で使用するパーサーを生成する。
         command_name:
         command_help: 1階層上のコマンドヘルプに表示される コマンドの説明（簡易的な説明）
         description: ヘルプ出力に表示される説明（詳細な説明）。未指定の場合は command_help と同じ値です。

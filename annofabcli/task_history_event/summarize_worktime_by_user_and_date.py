@@ -222,8 +222,8 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
-    """作業時間集計のサブパーサーを追加する。
+def create_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
+    """作業時間集計のサブパーサーを生成する。
 
     Args:
         subparsers: サブパーサー。
@@ -235,7 +235,7 @@ def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse
     subcommand_help = "ユーザーごと日付ごとに作業時間を集計します。"
     description = "タスク履歴イベント全件ファイルから、ユーザーごと日付ごとに作業時間を集計します。"
 
-    parser = annofabcli.common.cli.add_parser(
+    parser = annofabcli.common.cli.create_parser(
         subparsers,
         subcommand_name,
         subcommand_help,

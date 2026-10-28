@@ -330,7 +330,7 @@ def main(args: argparse.Namespace) -> None:
     UpdateLabelFieldValues(service, facade, args).main()
 
 
-def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
+def create_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     """
     ``annotation_specs update_label_field_values`` 用のparserを生成する。
 
@@ -344,7 +344,7 @@ def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse
     subcommand_help = "アノテーション仕様の既存ラベルの field_values を更新します。"
     description = "アノテーション仕様の既存ラベルに設定された field_values を、マージ・置換・クリアのいずれかで更新します。field_values にはサイズ制約や許容誤差範囲などの情報を設定できます。"
 
-    parser = annofabcli.common.cli.add_parser(
+    parser = annofabcli.common.cli.create_parser(
         subparsers,
         subcommand_name,
         subcommand_help,

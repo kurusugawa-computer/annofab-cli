@@ -95,7 +95,7 @@ Usage Details
 =================================
 
 .. argparse::
-    :ref: annofabcli.comment.download_comment_json.add_parser
+    :ref: annofabcli.comment.download_comment_json.create_parser
     :prog: annofabcli comment download
     :nosubcommands:
     :nodefaultconst:

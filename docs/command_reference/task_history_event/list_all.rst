@@ -94,7 +94,7 @@ Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.task_history_event.list_all_task_history_event.add_parser
+   :ref: annofabcli.task_history_event.list_all_task_history_event.create_parser
    :prog: annofabcli task_history_event list_all
    :nosubcommands:
    :nodefaultconst:

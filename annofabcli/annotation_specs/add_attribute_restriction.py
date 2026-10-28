@@ -208,12 +208,12 @@ def main(args: argparse.Namespace) -> None:
     AddAttributeRestriction(service, facade, args).main()
 
 
-def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
+def create_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "add_attribute_restriction"
 
     subcommand_help = "アノテーション仕様に属性の制約を追加します。"
     description = subcommand_help + "アノテーション仕様画面では設定できない「属性間の制約」を追加するときに有用です。"
-    parser = annofabcli.common.cli.add_parser(
+    parser = annofabcli.common.cli.create_parser(
         subparsers,
         subcommand_name,
         subcommand_help,

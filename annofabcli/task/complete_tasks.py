@@ -664,7 +664,7 @@ def deprecated_complete_main(args: argparse.Namespace) -> None:
     main(args)
 
 
-def _add_parser(
+def _create_parser(
     subparsers: argparse._SubParsersAction | None,
     *,
     subcommand_name: str,
@@ -673,21 +673,21 @@ def _add_parser(
     parse_argument_func: Callable[[argparse.ArgumentParser], None],
 ) -> argparse.ArgumentParser:
     epilog = "チェッカーまたはオーナロールを持つユーザで実行してください。"
-    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
+    parser = annofabcli.common.cli.create_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
     parse_argument_func(parser)
     return parser
 
 
-def add_submit_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
-    """提出サブコマンドのargparseパーサーを追加します。
+def create_submit_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
+    """提出サブコマンドのargparseパーサーを生成します。
 
     Args:
         subparsers: サブコマンドを追加するargparseオブジェクト。
 
     Returns:
-        追加したargparseパーサー。
+        生成したargparseパーサー。
     """
-    return _add_parser(
+    return _create_parser(
         subparsers,
         subcommand_name="submit",
         subcommand_help="教師付フェーズのタスクを提出します。",
@@ -701,16 +701,16 @@ def add_submit_parser(subparsers: argparse._SubParsersAction | None = None) -> a
     )
 
 
-def add_accept_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
-    """合格サブコマンドのargparseパーサーを追加します。
+def create_accept_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
+    """合格サブコマンドのargparseパーサーを生成します。
 
     Args:
         subparsers: サブコマンドを追加するargparseオブジェクト。
 
     Returns:
-        追加したargparseパーサー。
+        生成したargparseパーサー。
     """
-    return _add_parser(
+    return _create_parser(
         subparsers,
         subcommand_name="accept",
         subcommand_help="検査または受入フェーズのタスクを合格にします。",
@@ -725,16 +725,16 @@ def add_accept_parser(subparsers: argparse._SubParsersAction | None = None) -> a
     )
 
 
-def add_complete_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
-    """廃止予定のcompleteサブコマンドのargparseパーサーを追加します。
+def create_complete_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
+    """廃止予定のcompleteサブコマンドのargparseパーサーを生成します。
 
     Args:
         subparsers: サブコマンドを追加するargparseオブジェクト。
 
     Returns:
-        追加したargparseパーサー。
+        生成したargparseパーサー。
     """
-    parser = _add_parser(
+    parser = _create_parser(
         subparsers,
         subcommand_name="complete",
         subcommand_help="【非推奨】タスクを次のフェーズに進めます。2027/01/01に廃止予定です。",

@@ -119,7 +119,7 @@ Usage Details
 =================================
 
 .. argparse::
-    :ref: annofabcli.annotation.delete_annotation.add_parser
+    :ref: annofabcli.annotation.delete_annotation.create_parser
     :prog: annofabcli annotation delete
     :nosubcommands:
     :nodefaultconst:

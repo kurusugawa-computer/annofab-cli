@@ -8,8 +8,8 @@ def main(args: argparse.Namespace) -> None:
     run_command(args, visualize=True)
 
 
-def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
-    parser = annofabcli.common.cli.add_parser(
+def create_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
+    parser = annofabcli.common.cli.create_parser(
         subparsers,
         "visualize_video_duration",
         "タスクごとの動画の長さをヒストグラムで可視化します。同じ入力データもタスクごとに数えます。",

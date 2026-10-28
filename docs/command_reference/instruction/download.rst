@@ -85,7 +85,7 @@ Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.instruction.download_instruction.add_parser
+   :ref: annofabcli.instruction.download_instruction.create_parser
    :prog: annofabcli instruction download
    :nosubcommands:
    :nodefaultconst:

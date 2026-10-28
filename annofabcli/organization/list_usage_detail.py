@@ -171,7 +171,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
+def create_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     """利用状況明細のパーサーを作成します。
 
     Args:
@@ -183,7 +183,7 @@ def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse
     description = (
         "指定した期間の組織のエディタ利用状況明細をCSVまたはJSONで出力します。省略時は日本時間の現在の月のみ取得します。現在のユーザー情報・プロジェクト名を付与します。利用時間の単位は時間です。"
     )
-    parser = annofabcli.common.cli.add_parser(
+    parser = annofabcli.common.cli.create_parser(
         subparsers, "list_usage_detail", "組織のエディタ利用状況明細を出力します。", description, epilog="組織管理者または組織オーナーロールを持つユーザーで実行してください。"
     )
     parse_args(parser)

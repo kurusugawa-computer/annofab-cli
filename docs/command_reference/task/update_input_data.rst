@@ -100,7 +100,7 @@ Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.task.update_input_data.add_parser
+   :ref: annofabcli.task.update_input_data.create_parser
    :prog: annofabcli task update_input_data
    :nosubcommands:
    :nodefaultconst:

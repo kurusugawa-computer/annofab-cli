@@ -76,7 +76,7 @@ Usage Details
 =================================
 
 .. argparse::
-    :ref: annofabcli.task_history_event.download_task_history_event_json.add_parser
+    :ref: annofabcli.task_history_event.download_task_history_event_json.create_parser
     :prog: annofabcli task_history_event download
     :nosubcommands:
     :nodefaultconst:

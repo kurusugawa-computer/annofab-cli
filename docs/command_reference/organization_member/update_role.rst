@@ -33,7 +33,7 @@ Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.organization_member.update_organization_member_role.add_parser
+   :ref: annofabcli.organization_member.update_organization_member_role.create_parser
    :prog: annofabcli organization_member update_role
    :nosubcommands:
    :nodefaultconst:

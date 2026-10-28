@@ -763,11 +763,11 @@ def main(args: argparse.Namespace) -> None:
     WritePerformanceRatingCsv(args).main()
 
 
-def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
+def create_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "write_performance_rating_csv"
     subcommand_help = "プロジェクトごとユーザごとにパフォーマンスを評価できる複数のCSVを出力します。"
     description = "プロジェクトごとユーザごとにパフォーマンスを評価できる複数のCSVを出力します。"
-    parser = annofabcli.common.cli.add_parser(
+    parser = annofabcli.common.cli.create_parser(
         subparsers, subcommand_name, subcommand_help, description=description, epilog="ローカルファイルのみを処理するため、プロジェクトや組織のロールに関係なく実行できます。"
     )
     parse_args(parser)

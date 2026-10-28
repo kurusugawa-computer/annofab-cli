@@ -29,6 +29,6 @@ Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.project.subcommand_project.add_parser
+   :ref: annofabcli.project.subcommand_project.create_parser
    :prog: annofabcli project
    :nosubcommands:

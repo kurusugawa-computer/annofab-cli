@@ -315,7 +315,7 @@ def main(args: argparse.Namespace) -> None:
     AddExistingAttributeToLabels(service, facade, args).main()
 
 
-def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
+def create_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     """
     ``annotation_specs add_existing_attribute_to_labels`` 用のparserを生成する。
 
@@ -329,7 +329,7 @@ def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse
     subcommand_help = "アノテーション仕様の既存属性を複数の既存ラベルへ追加します。"
     description = "アノテーション仕様に既に存在する属性1個を、指定した複数ラベルへ追加します。"
 
-    parser = annofabcli.common.cli.add_parser(
+    parser = annofabcli.common.cli.create_parser(
         subparsers,
         subcommand_name,
         subcommand_help,

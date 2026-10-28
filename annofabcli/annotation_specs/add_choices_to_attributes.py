@@ -295,7 +295,7 @@ def main(args: argparse.Namespace) -> None:
     AddChoicesToAttributes(service, facade, args).main()
 
 
-def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
+def create_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     """
     ``annotation_specs add_choices_to_attributes`` 用のparserを生成する。
     """
@@ -303,7 +303,7 @@ def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse
     subcommand_help = "既存の複数選択肢系属性に選択肢を追加します。"
     description = "既存の複数選択肢系属性（ラジオボタン/ドロップダウン）に、選択肢を追加します。"
 
-    parser = annofabcli.common.cli.add_parser(
+    parser = annofabcli.common.cli.create_parser(
         subparsers,
         subcommand_name,
         subcommand_help,

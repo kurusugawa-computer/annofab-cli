@@ -42,7 +42,7 @@ Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.annotation_zip.filter.add_parser
+   :ref: annofabcli.annotation_zip.filter.create_parser
    :prog: annofabcli annotation_zip filter
    :nosubcommands:
    :nodefaultconst:

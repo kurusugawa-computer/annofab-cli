@@ -255,7 +255,7 @@ Usage Details
 =================================
 
 .. argparse::
-    :ref: annofabcli.annotation.import_annotation.add_parser
+    :ref: annofabcli.annotation.import_annotation.create_parser
     :prog: annofabcli annotation import
     :nosubcommands:
     :nodefaultconst:

@@ -99,7 +99,7 @@ Usage Details
 =================================
 
 .. argparse::
-    :ref: annofabcli.annotation_zip.list_single_point_annotation.add_parser
+    :ref: annofabcli.annotation_zip.list_single_point_annotation.create_parser
     :prog: annofabcli annotation_zip list_single_point_annotation
     :nosubcommands:
     :nodefaultconst:

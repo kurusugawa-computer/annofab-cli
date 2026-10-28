@@ -84,7 +84,7 @@ Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.annotation_specs.list_annotation_specs_label_attribute.add_parser
+   :ref: annofabcli.annotation_specs.list_annotation_specs_label_attribute.create_parser
    :prog: annofabcli annotation_specs list_label_attribute
    :nosubcommands:
    :nodefaultconst:

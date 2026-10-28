@@ -71,7 +71,7 @@ Usage Details
 =================================
 
 .. argparse::
-    :ref: annofabcli.annotation.change_annotation_editor_props.add_parser
+    :ref: annofabcli.annotation.change_annotation_editor_props.create_parser
     :prog: annofabcli annotation change_editor_props
     :nosubcommands:
     :nodefaultconst:

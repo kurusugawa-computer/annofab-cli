@@ -18,7 +18,7 @@ Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.statistics.list_worktime.add_parser
+   :ref: annofabcli.statistics.list_worktime.create_parser
    :prog: annofabcli statistics list_worktime
    :nosubcommands:
    :nodefaultconst:

@@ -259,7 +259,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
+def create_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     """サブコマンドを登録します。
 
     Args:
@@ -268,7 +268,7 @@ def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse
     Returns:
         登録した引数パーサー。
     """
-    parser = annofabcli.common.cli.add_parser(
+    parser = annofabcli.common.cli.create_parser(
         subparsers,
         "list_all_with_statistics",
         "全タスクの作業時間・アノテーション数・動画時間・区間長さを出力します。",

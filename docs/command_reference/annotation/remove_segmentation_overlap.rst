@@ -54,7 +54,7 @@ Usage Details
 =================================
 
 .. argparse::
-    :ref: annofabcli.annotation.remove_segmentation_overlap.add_parser
+    :ref: annofabcli.annotation.remove_segmentation_overlap.create_parser
     :prog: annofabcli annotation remove_segmentation_overlap
     :nosubcommands:
     :nodefaultconst:

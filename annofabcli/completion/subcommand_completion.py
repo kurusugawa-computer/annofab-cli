@@ -36,9 +36,9 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.set_defaults(subcommand_func=main, skip_logging=True)
 
 
-def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
+def create_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     """
-    completionコマンドのパーサーを追加する。
+    completionコマンドのパーサーを生成する。
 
     Args:
         subparsers: 親パーサーのサブパーサー
@@ -49,6 +49,6 @@ def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse
     command_name = "completion"
     command_help = "指定したシェル用の補完スクリプトを標準出力に書き出します。"
 
-    parser = annofabcli.common.cli.add_parser(subparsers, command_name, command_help, epilog="Annofabへのログインは不要です。プロジェクトや組織のロールに関係なく実行できます。")
+    parser = annofabcli.common.cli.create_parser(subparsers, command_name, command_help, epilog="Annofabへのログインは不要です。プロジェクトや組織のロールに関係なく実行できます。")
     parse_args(parser)
     return parser

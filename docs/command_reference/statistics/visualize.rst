@@ -490,7 +490,7 @@ Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.statistics.visualize_statistics.add_parser
+   :ref: annofabcli.statistics.visualize_statistics.create_parser
    :prog: annofabcli statistics visualize
    :nosubcommands:
    :nodefaultconst:

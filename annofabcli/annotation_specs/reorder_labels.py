@@ -276,7 +276,7 @@ def main(args: argparse.Namespace) -> None:
     ReorderLabels(service, facade, args).main()
 
 
-def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
+def create_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     """
     ``annotation_specs reorder_labels`` 用のparserを生成する。
 
@@ -289,7 +289,7 @@ def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse
     subcommand_name = "reorder_labels"
     subcommand_help = "アノテーション仕様のラベルを並び替えます。"
 
-    parser = annofabcli.common.cli.add_parser(
+    parser = annofabcli.common.cli.create_parser(
         subparsers,
         subcommand_name,
         subcommand_help,

@@ -27,6 +27,6 @@ Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.stat_visualization.subcommand_stat_visualization.add_parser
+   :ref: annofabcli.stat_visualization.subcommand_stat_visualization.create_parser
    :prog: annofabcli stat_visualization
    :nosubcommands:

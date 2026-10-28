@@ -123,7 +123,7 @@ Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.annotation_zip.merge.add_parser
+   :ref: annofabcli.annotation_zip.merge.create_parser
    :prog: annofabcli annotation_zip merge
    :nosubcommands:
    :nodefaultconst:

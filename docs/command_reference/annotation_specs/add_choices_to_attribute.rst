@@ -109,7 +109,7 @@ Usage Details
 =================================
 
 .. argparse::
-    :ref: annofabcli.annotation_specs.add_choices_to_attribute.add_parser
+    :ref: annofabcli.annotation_specs.add_choices_to_attribute.create_parser
     :prog: annofabcli annotation_specs add_choices_to_attribute
     :nosubcommands:
     :nodefaultconst:

@@ -89,7 +89,7 @@ Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.project.update_project.add_parser
+   :ref: annofabcli.project.update_project.create_parser
    :prog: annofabcli project update
    :nosubcommands:
    :nodefaultconst:

@@ -513,7 +513,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.set_defaults(subcommand_func=main)
 
 
-def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
+def create_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "reject"
     subcommand_help = "タスクを差し戻します。"
     description = "タスクを差し戻します。差し戻す際、検査コメントを付与することもできます。作業中状態のタスクに対しては差し戻せません。休憩中状態のタスクは、デフォルトでは差し戻せません。"
@@ -523,6 +523,6 @@ def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse
         "``--comment`` を指定し、``--cancel_acceptance`` を指定しない場合は、チェッカーロールまたはオーナーロールで実行できます。"
     )
 
-    parser = annofabcli.common.cli.add_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
+    parser = annofabcli.common.cli.create_parser(subparsers, subcommand_name, subcommand_help, description, epilog=epilog)
     parse_args(parser)
     return parser

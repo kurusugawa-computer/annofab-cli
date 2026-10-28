@@ -122,7 +122,7 @@ Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.task_count.list_by_task_id_group.add_parser
+   :ref: annofabcli.task_count.list_by_task_id_group.create_parser
    :prog: annofabcli task_count list_by_task_id_group
    :nosubcommands:
    :nodefaultconst:

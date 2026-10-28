@@ -333,7 +333,7 @@ def test_backup_confirmation_controls_subsequent_task_confirmation(
         ],
     }
     service.api.get_editor_annotations_in_bulk.side_effect = [({"success": [{**editor_annotation, "task_id": task_id}], "failure": []}, None) for task_id in ["task1", "task2"]]
-    parser = change_annotation_data_per_annotation.add_parser()
+    parser = change_annotation_data_per_annotation.create_parser()
     cli_args = [
         "--project_id",
         "prj1",

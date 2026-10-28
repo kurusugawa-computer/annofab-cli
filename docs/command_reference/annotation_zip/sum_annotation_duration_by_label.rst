@@ -59,6 +59,6 @@ Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.annotation_zip.sum_annotation_duration_by_label.add_parser
+   :ref: annofabcli.annotation_zip.sum_annotation_duration_by_label.create_parser
    :prog: annofabcli annotation_zip sum_annotation_duration_by_label
    :nosubcommands:

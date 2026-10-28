@@ -48,7 +48,7 @@ Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.input_data.delete_input_data.add_parser
+   :ref: annofabcli.input_data.delete_input_data.create_parser
    :prog: annofabcli input_data delete
    :nosubcommands:
    :nodefaultconst:

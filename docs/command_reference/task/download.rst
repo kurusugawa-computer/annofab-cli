@@ -81,7 +81,7 @@ Usage Details
 =================================
 
 .. argparse::
-    :ref: annofabcli.task.download_task_json.add_parser
+    :ref: annofabcli.task.download_task_json.create_parser
     :prog: annofabcli task download
     :nosubcommands:
     :nodefaultconst:

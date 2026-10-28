@@ -65,7 +65,7 @@ Usage Details
 =================================
 
 .. argparse::
-   :ref: annofabcli.project_member.update_project_members.add_parser
+   :ref: annofabcli.project_member.update_project_members.create_parser
    :prog: annofabcli project_member update
    :nosubcommands:
    :nodefaultconst:

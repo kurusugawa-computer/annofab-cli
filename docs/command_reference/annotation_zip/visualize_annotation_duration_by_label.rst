@@ -59,6 +59,6 @@ Command line options
 =================================
 
 .. argparse::
-   :ref: annofabcli.annotation_zip.visualize_annotation_duration_by_label.add_parser
+   :ref: annofabcli.annotation_zip.visualize_annotation_duration_by_label.create_parser
    :prog: annofabcli annotation_zip visualize_annotation_duration_by_label
    :nosubcommands:
