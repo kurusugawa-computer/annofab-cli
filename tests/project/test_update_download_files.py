@@ -1,4 +1,4 @@
-from threading import Barrier
+from threading import current_thread, main_thread
 from unittest.mock import Mock, call
 
 import pytest
@@ -20,12 +20,13 @@ def service():
     return service
 
 
-def test_updates_all_targets_concurrently_and_waits_for_each_job(service, capsys):
-    # 逐次実行では全対象がバリアに到達できず、テストが失敗する。
-    barrier = Barrier(3, timeout=5)
-
+def test_submits_all_targets_before_waiting_for_each_job(service, capsys):
     def wait_for_job(project_id, *, job_type, job_id, job_access_interval, max_job_access):
-        barrier.wait()
+        # すべてのジョブが先に投入され、割り込み可能なメインスレッドで待機する。
+        service.api.post_project_tasks_update.assert_called_once_with("p")
+        service.api.post_annotation_archive_update.assert_called_once_with("p")
+        service.api.post_project_inputs_update.assert_called_once_with("p")
+        assert current_thread() is main_thread()
         assert project_id == "p"
         assert job_access_interval == 60
         assert max_job_access == 360
@@ -105,13 +106,12 @@ def test_conflicting_job_failure_is_reported(service, job_status):
 
 
 @pytest.mark.parametrize("targets", [[DownloadFileTarget.ANNOTATION], list(DownloadFileTarget)])
-def test_four_projects_update_all_selected_targets_concurrently(service, targets):
+def test_four_projects_submit_all_selected_targets_before_waiting(service, targets):
     project_ids = ["p1", "p2", "p3", "p4"]
     job_count = len(project_ids) * len(targets)
-    barrier = Barrier(job_count, timeout=5)
 
     def wait_for_job(_project_id, **_kwargs):
-        barrier.wait()
+        assert len(service.api.mock_calls) == job_count
         return JobStatus.SUCCEEDED
 
     service.wrapper.wait_until_job_finished.side_effect = wait_for_job
@@ -148,3 +148,15 @@ def test_project_failure_does_not_prevent_other_projects_from_updating(service):
 
     assert service.api.post_annotation_archive_update.call_count == 4
     assert service.wrapper.wait_until_job_finished.call_count == 3
+
+
+def test_keyboard_interrupt_stops_waiting_without_waiting_for_remaining_jobs(service):
+    service.wrapper.wait_until_job_finished.side_effect = KeyboardInterrupt
+
+    with pytest.raises(KeyboardInterrupt):
+        UpdateDownloadFilesMain(service).update_download_files(["p"], list(DownloadFileTarget))
+
+    service.api.post_project_tasks_update.assert_called_once_with("p")
+    service.api.post_annotation_archive_update.assert_called_once_with("p")
+    service.api.post_project_inputs_update.assert_called_once_with("p")
+    assert service.wrapper.wait_until_job_finished.call_count == 1
