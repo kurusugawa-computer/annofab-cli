@@ -31,7 +31,7 @@ class UpdateDownloadFilesMain:
 
         Args:
             project_id: 対象のプロジェクトID。
-            targets: 更新対象。同じ対象を複数指定しても更新は1回だけ行う。
+            targets: 更新対象。
 
         Returns:
             None
@@ -87,7 +87,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         choices=[target.value for target in DownloadFileTarget],
         nargs="+",
         required=True,
-        help="更新対象を1個以上指定します。task: タスク全件JSON、annotation: アノテーションZIP、input_data: 入力データ全件JSON。重複指定した対象は1回だけ更新します。",
+        help="更新対象を1個以上指定します。task: タスク全件JSON、annotation: アノテーションZIP、input_data: 入力データ全件JSON。",
     )
     parser.set_defaults(subcommand_func=main)
 
@@ -97,7 +97,6 @@ def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse
     subcommand_help = "ダウンロード用ファイルを並列に更新し、すべての更新完了を待ちます。"
     description = (
         "指定したダウンロード用ファイルをAnnofab上で並列に更新します。ローカルへのダウンロードは行いません。"
-        "同種の更新ジョブが実行中の場合は、そのジョブの完了を待ちます。"
         "60秒間隔で完了を確認し、各更新を最大6時間待ちます。"
         "一部の更新に失敗してもほかの更新の完了を待ち、いずれかが失敗またはタイムアウトした場合は非0の終了コードで終了します。"
     )
