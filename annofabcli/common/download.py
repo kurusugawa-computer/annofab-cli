@@ -6,7 +6,7 @@ from pathlib import Path
 
 import annofabapi
 import requests
-from annofabapi.models import ProjectJobType
+from annofabapi.models import JobStatus, ProjectJobType
 
 from annofabcli.common.dataclasses import WaitOptions
 from annofabcli.common.exceptions import DownloadingFileNotFoundError, UpdatedFileForDownloadingError
@@ -22,14 +22,6 @@ DOWNLOADING_FILETYPE_DICT = {
 DEFAULT_WAIT_OPTIONS = WaitOptions(interval=60, max_tries=360)
 
 
-def _get_annofab_error_message(http_error: requests.HTTPError) -> str | None:
-    obj = http_error.response.json()
-    errors = obj.get("errors")
-    if errors is None:
-        return None
-    return errors[0].get("message")
-
-
 def get_filename(project_id: str, file_type: str, extension: str) -> str:
     timestamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S")  # noqa: DTZ005
     return f"{timestamp}--{project_id}--{file_type}.{extension}"
@@ -43,26 +35,72 @@ class DownloadingFile:
     def get_max_wait_minutes(wait_options: WaitOptions) -> float:
         return wait_options.max_tries * wait_options.interval / 60
 
-    def _wait_for_completion(
+    def request_update(self, project_id: str, job_type: ProjectJobType) -> str:
+        """ダウンロード用ファイルの更新を要求する。
+
+        Args:
+            project_id: 対象のプロジェクトID。
+            job_type: 更新対象のジョブ種別。
+
+        Returns:
+            開始した更新ジョブ、または競合した既存ジョブのID。
+
+        Raises:
+            UpdatedFileForDownloadingError: 競合した既存ジョブが見つからない場合。
+        """
+        update_functions = {
+            ProjectJobType.GEN_TASKS_LIST: self.service.api.post_project_tasks_update,
+            ProjectJobType.GEN_INPUTS_LIST: self.service.api.post_project_inputs_update,
+            ProjectJobType.GEN_ANNOTATION: self.service.api.post_annotation_archive_update,
+        }
+        try:
+            job = update_functions[job_type](project_id)[0]["job"]
+            return job["job_id"]
+        except requests.HTTPError as e:
+            if e.response.status_code != requests.codes.conflict:
+                raise
+            logger.warning(f"project_id='{project_id}', job_type='{job_type.value}' :: 更新要求が競合したため、既存の更新ジョブを参照します。", exc_info=True)
+
+        jobs = self.service.api.get_project_job(project_id, query_params={"type": job_type.value})[0]["list"]
+        if not jobs:
+            raise UpdatedFileForDownloadingError(f"{DOWNLOADING_FILETYPE_DICT[job_type]}の更新ジョブが見つかりませんでした。")
+        return jobs[0]["job_id"]
+
+    def wait_for_completion(
         self,
         project_id: str,
         job_type: ProjectJobType,
+        job_id: str,
         wait_options: WaitOptions | None = None,
-        job_id: str | None = None,
     ) -> None:
+        """指定した更新ジョブが成功するまで待つ。
+
+        Args:
+            project_id: 対象のプロジェクトID。
+            job_type: 更新対象のジョブ種別。
+            job_id: 待機するジョブのID。
+            wait_options: 完了確認の間隔と回数。
+
+        Returns:
+            None
+
+        Raises:
+            UpdatedFileForDownloadingError: ジョブが失敗、タイムアウト、または存在しない場合。
+        """
         if wait_options is None:
             wait_options = DEFAULT_WAIT_OPTIONS
 
         max_wait_minutes = self.get_max_wait_minutes(wait_options)
         filetype = DOWNLOADING_FILETYPE_DICT[job_type]
         logger.info(f"{filetype}の更新処理が完了するまで、最大{max_wait_minutes}分間待ちます。job_id='{job_id}'")
-        result = self.service.wrapper.wait_for_completion(
+        result = self.service.wrapper.wait_until_job_finished(
             project_id,
             job_type=job_type,
+            job_id=job_id,
             job_access_interval=wait_options.interval,
             max_job_access=wait_options.max_tries,
         )
-        if not result:
+        if result != JobStatus.SUCCEEDED:
             raise UpdatedFileForDownloadingError(f"{filetype}の更新処理が{max_wait_minutes}分以内に完了しない、または更新処理に失敗しました。")
 
     async def download_annotation_zip_with_async(
@@ -108,18 +146,8 @@ class DownloadingFile:
                     raise e  # noqa: TRY201
 
     def wait_until_updated_annotation_zip(self, project_id: str, wait_options: WaitOptions | None = None) -> None:
-        job_id = None
-        try:
-            job = self.service.api.post_annotation_archive_update(project_id)[0]["job"]
-            job_id = job["job_id"]
-        except requests.HTTPError as e:
-            # すでにジョブが進行中の場合は、無視する
-            if e.response.status_code == requests.codes.conflict:
-                logger.warning(f"別のバックグラウンドジョブが既に実行されているので、アノテーションZIPの更新処理を実行できません。 :: error_message: {_get_annofab_error_message(e)}")
-            else:
-                raise e  # noqa: TRY201
-
-        self._wait_for_completion(project_id, job_type=ProjectJobType.GEN_ANNOTATION, wait_options=wait_options, job_id=job_id)
+        job_id = self.request_update(project_id, ProjectJobType.GEN_ANNOTATION)
+        self.wait_for_completion(project_id, job_type=ProjectJobType.GEN_ANNOTATION, job_id=job_id, wait_options=wait_options)
 
     async def download_input_data_json_with_async(
         self,
@@ -155,18 +183,8 @@ class DownloadingFile:
                     raise e  # noqa: TRY201
 
     def wait_until_updated_input_data_json(self, project_id: str, wait_options: WaitOptions | None = None) -> None:
-        job_id = None
-        try:
-            job = self.service.api.post_project_inputs_update(project_id)[0]["job"]
-            job_id = job["job_id"]
-        except requests.HTTPError as e:
-            # すでにジョブが進行中の場合は、無視する
-            if e.response.status_code == requests.codes.conflict:
-                logger.warning(f"別のバックグラウンドジョブが既に実行されているので、更新処理を無視します。 :: error_message: {_get_annofab_error_message(e)}")
-            else:
-                raise e  # noqa: TRY201
-
-        self._wait_for_completion(project_id, job_type=ProjectJobType.GEN_INPUTS_LIST, wait_options=wait_options, job_id=job_id)
+        job_id = self.request_update(project_id, ProjectJobType.GEN_INPUTS_LIST)
+        self.wait_for_completion(project_id, job_type=ProjectJobType.GEN_INPUTS_LIST, job_id=job_id, wait_options=wait_options)
 
     async def download_task_json_with_async(
         self,
@@ -196,18 +214,8 @@ class DownloadingFile:
                     raise e  # noqa: TRY201
 
     def wait_until_updated_task_json(self, project_id: str, wait_options: WaitOptions | None = None) -> None:
-        job_id = None
-        try:
-            job = self.service.api.post_project_tasks_update(project_id)[0]["job"]
-            job_id = job["job_id"]
-        except requests.HTTPError as e:
-            # すでにジョブが進行中の場合は、無視する
-            if e.response.status_code == requests.codes.conflict:
-                logger.warning(f"別のバックグラウンドジョブが既に実行されているので、更新処理を無視します。 :: error_message={_get_annofab_error_message(e)}")
-            else:
-                raise e  # noqa: TRY201
-
-        self._wait_for_completion(project_id, job_type=ProjectJobType.GEN_TASKS_LIST, wait_options=wait_options, job_id=job_id)
+        job_id = self.request_update(project_id, ProjectJobType.GEN_TASKS_LIST)
+        self.wait_for_completion(project_id, job_type=ProjectJobType.GEN_TASKS_LIST, job_id=job_id, wait_options=wait_options)
 
     async def download_task_history_json_with_async(self, project_id: str, dest_path: str | Path) -> None:
         """

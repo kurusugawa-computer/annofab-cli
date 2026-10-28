@@ -221,6 +221,7 @@
 - `annofabcli project list`: プロジェクト一覧を出力します。
 - `annofabcli project update`: プロジェクトのタイトルまたは概要を更新します。
 - `annofabcli project update_configuration`: 複数のプロジェクトの設定を一括で更新します。
+- `annofabcli project update_download_files`: ダウンロード用ファイルを並列に更新し、すべての更新完了を待ちます。
 
 ## project_member
 
