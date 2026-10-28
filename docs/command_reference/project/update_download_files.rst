@@ -37,8 +37,6 @@ Examples
       annofabcli task list_all -p PROJECT_ID --output tasks.csv && \
       annofabcli annotation_zip list_bounding_box_annotation -p PROJECT_ID --output annotations.csv
 
-入力データ全件JSONも更新する場合は、``--target task annotation input_data`` と指定してください。
-1種類だけ更新する場合は、たとえば ``--target task`` と指定できます。
 
 Usage Details
 =================================
