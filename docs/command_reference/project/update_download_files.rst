@@ -7,6 +7,10 @@ Description
 ダウンロード用ファイルをAnnofab上で並列に更新し、すべての更新完了を待ちます。
 ローカルへのダウンロードは行いません。
 
+``--project_id`` にプロジェクトIDを最大4個指定できます。
+指定したすべてのプロジェクトに、``--target`` で指定した更新対象を適用します。
+5個以上指定した場合は、更新要求を送らずにエラーで終了します。
+
 ``--target`` に更新対象を1個以上指定してください。
 
 * ``task``: タスク全件JSON
@@ -36,6 +40,16 @@ Examples
     annofabcli project update_download_files -p PROJECT_ID --target task annotation && \
       annofabcli task list_all -p PROJECT_ID --output tasks.csv && \
       annofabcli annotation_zip list_bounding_box_annotation -p PROJECT_ID --output annotations.csv
+
+
+複数プロジェクトのアノテーションZIPを並列に更新する
+------------------------------------------------------------
+
+.. code-block:: bash
+
+    $ annofabcli project update_download_files -p PROJECT_A PROJECT_B --target annotation
+
+複数プロジェクトを指定した場合も、``--target task annotation input_data`` のように複数の更新対象を指定できます。
 
 
 Usage Details
