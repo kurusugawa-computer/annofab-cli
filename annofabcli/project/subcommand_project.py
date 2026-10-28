@@ -7,6 +7,7 @@ import annofabcli.project.create_project
 import annofabcli.project.diff_projects
 import annofabcli.project.list_project
 import annofabcli.project.update_configuration
+import annofabcli.project.update_download_files
 import annofabcli.project.update_project
 from annofabcli.common.cli import add_parser as common_add_parser
 
@@ -23,6 +24,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     annofabcli.project.list_project.add_parser(subparsers)
     annofabcli.project.update_project.add_parser(subparsers)
     annofabcli.project.update_configuration.add_parser(subparsers)
+    annofabcli.project.update_download_files.add_parser(subparsers)
 
 
 def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:

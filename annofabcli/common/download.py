@@ -6,7 +6,7 @@ from pathlib import Path
 
 import annofabapi
 import requests
-from annofabapi.models import ProjectJobType
+from annofabapi.models import JobStatus, ProjectJobType
 
 from annofabcli.common.dataclasses import WaitOptions
 from annofabcli.common.exceptions import DownloadingFileNotFoundError, UpdatedFileForDownloadingError
@@ -55,14 +55,21 @@ class DownloadingFile:
 
         max_wait_minutes = self.get_max_wait_minutes(wait_options)
         filetype = DOWNLOADING_FILETYPE_DICT[job_type]
+        if job_id is None:
+            # 更新要求が競合した場合も、ジョブIDを確定して終了直後の失敗を見逃さないようにする。
+            jobs = self.service.api.get_project_job(project_id, query_params={"type": job_type.value})[0]["list"]
+            if not jobs:
+                raise UpdatedFileForDownloadingError(f"{filetype}の更新ジョブが見つかりませんでした。")
+            job_id = jobs[0]["job_id"]
         logger.info(f"{filetype}の更新処理が完了するまで、最大{max_wait_minutes}分間待ちます。job_id='{job_id}'")
-        result = self.service.wrapper.wait_for_completion(
+        result = self.service.wrapper.wait_until_job_finished(
             project_id,
             job_type=job_type,
+            job_id=job_id,
             job_access_interval=wait_options.interval,
             max_job_access=wait_options.max_tries,
         )
-        if not result:
+        if result != JobStatus.SUCCEEDED:
             raise UpdatedFileForDownloadingError(f"{filetype}の更新処理が{max_wait_minutes}分以内に完了しない、または更新処理に失敗しました。")
 
     async def download_annotation_zip_with_async(

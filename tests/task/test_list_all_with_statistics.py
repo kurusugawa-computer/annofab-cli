@@ -10,6 +10,7 @@ import annofabapi
 import pandas
 import pytest
 from annofabapi.credentials import IdPass
+from annofabapi.models import JobStatus
 
 from annofabcli.common.enums import OutputFormat
 from annofabcli.task import list_all_with_statistics as command
@@ -152,7 +153,7 @@ def test_latest_updates_used_files_but_not_history_archive(command_context, tmp_
     service, _, _ = command_context
     for name in ["post_project_tasks_update", "post_project_inputs_update", "post_annotation_archive_update"]:
         monkeypatch.setattr(service.api, name, Mock(return_value=({"job": {"job_id": "j"}}, None)))
-    monkeypatch.setattr(service.wrapper, "wait_for_completion", Mock(return_value=True))
+    monkeypatch.setattr(service.wrapper, "wait_until_job_finished", Mock(return_value=JobStatus.SUCCEEDED))
     run_command(tmp_path, "--latest", "--annotation_count_source", "zip")
     service.api.post_annotation_archive_update.assert_called_once()
     service.api.post_project_inputs_update.assert_called_once()

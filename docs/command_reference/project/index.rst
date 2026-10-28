@@ -23,6 +23,7 @@ Available Commands
    list
    update
    update_configuration
+   update_download_files
 
 Usage Details
 =================================
