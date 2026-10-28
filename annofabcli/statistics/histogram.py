@@ -1,4 +1,5 @@
 import logging
+import math
 from dataclasses import dataclass
 
 import numpy
@@ -38,6 +39,9 @@ def get_bin_edges(min_value: float, max_value: float, bin_width: float) -> numpy
     """
     numpy.histogramのbins引数に渡す、ビンの境界値を取得します。
 
+    最大値を含むビンまで生成します。最大値が境界に一致する場合は、その境界から始まるビンも生成します。
+    ビンの個数の計算では、整数に近い値（相対・絶対許容誤差1e-12）を整数として扱い、小数の丸め誤差を吸収します。
+
     * min_value=0, max_value=3, bin_width=2の場合: [0, 2, 4]を返す。
     * min_value=0, max_value=4, bin_width=2の場合: [0, 2, 4, 6]を返す。
 
@@ -45,12 +49,15 @@ def get_bin_edges(min_value: float, max_value: float, bin_width: float) -> numpy
         min_value: ヒストグラムに表示するデータの最小値
         max_value: ヒストグラムに表示するデータの最大値
         bin_width: ヒストグラムに表示するビンの幅
+
+    Returns:
+        min_valueから始まる、bin_width間隔のビンの境界値。
     """
-    # stop引数に、`bin_width*2`を指定している理由：
-    # 引数が小数のときは`len(bin_edges)``期待通りにならないときがあるので、ビンの数を少し増やしている
-    # https://qiita.com/yuji38kwmt/items/ff00f3cb9083567d083f
-    bin_edges = numpy.arange(start=min_value, stop=max_value + bin_width * 2, step=bin_width)  # type: ignore[call-overload]
-    return bin_edges
+    width_count = (max_value - min_value) / bin_width
+    if math.isclose(width_count, round(width_count), rel_tol=1e-12, abs_tol=1e-12):
+        width_count = round(width_count)
+    bin_count = math.floor(width_count) + 1
+    return min_value + numpy.arange(bin_count + 1) * bin_width
 
 
 def create_histogram_figure(
