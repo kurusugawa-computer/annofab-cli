@@ -6,6 +6,13 @@ description: ユーザーからAnnofab上の情報取得やリソース操作を
 # annofab-cli-user-operations
 ユーザーから依頼されたAnnofabの操作には、`annofabcli`を使用してください。
 
+## インストール方法
+`pip`,`pipx`,`uv`などのPythonパッケージ管理ツールを使って、以下のようなコマンドでインストールしてください。
+
+```
+$ pip install annofabcli
+```
+
 ## コマンドの調べ方
 - 使用するコマンドが明確でない場合は、[コマンド索引](references/command-index.md)を参照してください。
 - コマンドを実行する前に`annofabcli <command> <subcommand> --help`を実行して、ヘルプを確認してください。コマンド名やオプションを推測しないでください。
