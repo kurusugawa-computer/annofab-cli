@@ -12,7 +12,7 @@ from typing import Any
 import bokeh
 import bokeh.palettes
 import pandas
-from bokeh.models import CrosshairTool, CustomJS, DataRange1d, HoverTool, LinearAxis
+from bokeh.models import CrosshairTool, CustomJS, HoverTool
 from bokeh.models.renderers.glyph_renderer import GlyphRenderer
 from bokeh.models.widgets.buttons import Button
 from bokeh.models.widgets.groups import CheckboxGroup
@@ -30,12 +30,7 @@ WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX = "__lastweek"
 
 
 class LineGraph:
-    """
-    折れ線グラフに対応するクラス
-
-    Args:
-        exists_secondary_y_axis
-    """
+    """折れ線グラフに対応するクラス"""
 
     _SECONDARY_Y_RANGE_NAME = "secondary"
     """
@@ -90,47 +85,10 @@ class LineGraph:
 
         self.figure = fig
 
-        self.exists_secondary_y_axis = False
         self.line_glyphs: dict[str, GlyphRenderer] = {}
         """key:凡例, value: 描画している折れ線"""
         self.marker_glyphs: dict[str, GlyphRenderer] = {}
         """key:凡例, value: 描画しているマーカー"""
-
-    def add_secondary_y_axis(
-        self,
-        axis_label: str,
-        *,
-        secondary_y_axis_range: DataRange1d | None = None,
-        primary_y_axis_range: DataRange1d | None = None,
-    ) -> None:
-        """
-        第2のY軸を追加する。
-
-        Notes:
-            軸範囲を設定する理由：第1軸と第2軸の軸範囲を指定しないと、第1軸と第2軸の軸範囲が同じになり、適切な軸範囲にならないため。
-            https://qiita.com/yuji38kwmt/items/ccbee24184789686b102 参考
-
-        Args:
-            axis_label: 第2軸の名前
-            secondary_y_axis_range: 第2Y軸の軸範囲
-            primary_y_axis_range: 第1Y軸の軸範囲
-        """
-        self.figure.add_layout(
-            LinearAxis(
-                y_range_name=self._SECONDARY_Y_RANGE_NAME,
-                axis_label=axis_label,
-            ),
-            "right",
-        )
-        if secondary_y_axis_range is not None:
-            self.figure.extra_y_ranges = {self._SECONDARY_Y_RANGE_NAME: secondary_y_axis_range}
-        else:
-            self.figure.extra_y_ranges = {self._SECONDARY_Y_RANGE_NAME: DataRange1d()}
-
-        if primary_y_axis_range is not None:
-            self.figure.y_range = primary_y_axis_range
-
-        self.exists_secondary_y_axis = True
 
     def add_line(
         self,
