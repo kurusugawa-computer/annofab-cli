@@ -106,56 +106,6 @@ class DeleteAnnotationMain(CommandLineWithConfirm):
         annotation_list = self.service.wrapper.get_all_annotation_list(self.project_id, query_params={"query": dict_query})
         return annotation_list
 
-    def delete_annotation_for_task(
-        self,
-        task_id: str,
-        annotation_query: AnnotationQueryForAPI | None = None,
-        backup_dir: Path | None = None,
-    ) -> None:
-        """
-        タスクに対してアノテーションを削除する
-
-        Args:
-            task_id:
-            annotation_query: 削除対象のアノテーションの検索条件
-            backup_dir: 削除対象のアノテーションをバックアップとして保存するディレクトリ。指定しない場合は、バックアップを取得しない。
-
-        """
-        dict_task = self.service.wrapper.get_task_or_none(self.project_id, task_id)
-        if dict_task is None:
-            logger.warning(f"task_id='{task_id}'であるタスクは存在しません。")
-            return
-
-        task: Task = Task.from_dict(dict_task)
-        logger.info(f"task_id='{task.task_id}', phase='{task.phase.value}', status='{task.status.value}', updated_datetime='{task.updated_datetime}'")
-
-        if task.status == TaskStatus.WORKING:
-            logger.info(f"task_id='{task_id}' :: タスクが作業中状態のため、スキップします。")
-            return
-
-        if not self.include_complete_task:  # noqa: SIM102
-            if task.status == TaskStatus.COMPLETE:
-                logger.info(f"task_id='{task_id}' :: タスクが完了状態のため、スキップします。完了状態のタスクのアノテーションを削除するには、`--include_complete_task`オプションを指定してください。")
-                return
-
-        annotation_list = self.get_annotation_list_for_task(task_id, annotation_query=annotation_query)
-        logger.info(f"task_id='{task_id}'の削除対象アノテーション数：{len(annotation_list)}")
-        if len(annotation_list) == 0:
-            logger.info(f"task_id='{task_id}'には削除対象のアノテーションが存在しないので、スキップします。")
-            return
-
-        if not self.confirm_processing(f"task_id='{task_id}' のアノテーションを削除しますか？"):
-            return
-
-        if backup_dir is not None:
-            self.dump_annotation_obj.dump_annotation_for_task(task_id, output_dir=backup_dir)
-
-        try:
-            self.delete_annotation_list(annotation_list=annotation_list)
-            logger.info(f"task_id='{task_id}' :: アノテーションを削除しました。")
-        except requests.HTTPError:
-            logger.warning(f"task_id='{task_id}' :: アノテーションの削除に失敗しました。", exc_info=True)
-
     def delete_annotation_for_task_list(
         self,
         task_id_list: list[str],

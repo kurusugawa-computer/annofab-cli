@@ -6,7 +6,6 @@ import json
 import logging
 import multiprocessing
 import sys
-from enum import Enum
 from pathlib import Path
 from typing import Any
 
@@ -35,11 +34,6 @@ from annofabcli.common.exceptions import AnnofabCliException
 from annofabcli.common.facade import AnnofabApiFacade
 
 logger = logging.getLogger(__name__)
-
-
-class ChangeBy(Enum):
-    TASK = "task"
-    INPUT_DATA = "input_data"
 
 
 class ChangeAnnotationAttributesMain(CommandLineWithConfirm):
