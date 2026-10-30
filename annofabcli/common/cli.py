@@ -18,6 +18,7 @@ import pandas
 import requests
 import yaml
 from annofabapi.api import DEFAULT_ENDPOINT_URL
+from annofabapi.credentials import IdPass
 from annofabapi.exceptions import AnnofabApiException
 from annofabapi.models import OrganizationMemberRole, ProjectMemberRole
 from more_itertools import first_true
@@ -336,36 +337,39 @@ def build_annofabapi_resource(args: argparse.Namespace) -> annofabapi.Resource:
 
     # コマンドライン引数からパーソナルアクセストークンが指定された場合
     if args.annofab_pat is not None:
-        return annofabapi.build(pat=args.annofab_pat, **kwargs)  # type: ignore[arg-type]
+        service = annofabapi.build(pat=args.annofab_pat, **kwargs)  # type: ignore[arg-type]
 
     # コマンドライン引数からユーザーIDが指定された場合
-    if args.annofab_user_id is not None:
+    elif args.annofab_user_id is not None:
         login_user_id: str = args.annofab_user_id
         if args.annofab_password is not None:
-            return annofabapi.build(login_user_id, args.annofab_password, **kwargs)  # type: ignore[arg-type]
+            login_password = args.annofab_password
         else:
             # コマンドライン引数にパスワードが指定されなければ、標準入力からパスワードを取得する
             login_password = ""
             while login_password == "":
                 login_password = getpass.getpass("Enter Annofab Password: ")
-            return annofabapi.build(login_user_id, login_password, **kwargs)  # type: ignore[arg-type]
+        service = annofabapi.build(login_user_id, login_password, **kwargs)  # type: ignore[arg-type]
+    else:
+        # 環境変数から認証情報を取得する
+        try:
+            service = annofabapi.build_from_env(**kwargs)  # type: ignore[arg-type]
+        except AnnofabApiException:
+            # 標準入力から入力させる
+            login_user_id = ""
+            while login_user_id == "":
+                login_user_id = input("Enter Annofab User ID: ")
 
-    # 環境変数から認証情報を取得する
-    try:
-        return annofabapi.build_from_env(**kwargs)  # type: ignore[arg-type]
-    except AnnofabApiException:
-        pass
+            login_password = ""
+            while login_password == "":
+                login_password = getpass.getpass("Enter Annofab Password: ")
 
-    # 標準入力から入力させる
-    login_user_id = ""
-    while login_user_id == "":
-        login_user_id = input("Enter Annofab User ID: ")
+            service = annofabapi.build(login_user_id, login_password, **kwargs)  # type: ignore[arg-type]
 
-    login_password = ""
-    while login_password == "":
-        login_password = getpass.getpass("Enter Annofab Password: ")
+    if isinstance(service.api.credentials, IdPass):
+        logger.warning("パスワード認証を使用しています。パーソナルアクセストークン（--annofab_pat または ANNOFAB_PAT）の利用を推奨します。")
 
-    return annofabapi.build(login_user_id, login_password, **kwargs)  # type: ignore[arg-type]
+    return service
 
 
 def prompt_yesno(msg: str) -> bool:
