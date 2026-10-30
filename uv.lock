@@ -39,7 +39,7 @@ wheels = [
 
 [[package]]
 name = "annofabapi"
-version = "1.8.1"
+version = "1.9.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "backoff" },
@@ -50,9 +50,9 @@ dependencies = [
     { name = "python-dateutil" },
     { name = "requests" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/64/15/005bdec90d0ae476d6c9228e7f4054a8880c87bdb1b2d7ab6ca0e7663b90/annofabapi-1.8.1.tar.gz", hash = "sha256:70f396cb07dfb4db771655c7df5bfde1ad1d0b74b7e572d11528decd1d26e837", size = 548044, upload-time = "2026-10-01T16:00:30.216Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/09/d9/48fddd1353c6edb37b87eda0b7d570ecd66decd88a25207f0499c3e9d37b/annofabapi-1.9.0.tar.gz", hash = "sha256:90df2c5a3e37dec7ddb39b8522076e33e4b357ad9f88bf2371de1058837344a9", size = 550948, upload-time = "2026-10-30T02:40:37.208Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/11/2d/0fbe164ea9c988c6fd4c7ce40de583367c2b622d39e70b6088fbf62ebab6/annofabapi-1.8.1-py3-none-any.whl", hash = "sha256:1796a61c6a66c9aa81dc63e7f1069b59ee624b884ae79afa054597f36734dd81", size = 809597, upload-time = "2026-10-01T16:00:28.392Z" },
+    { url = "https://files.pythonhosted.org/packages/dc/1d/178870e06b00d3a7ceac0049e8c8613a929b2f959e1685497e04addd4b5f/annofabapi-1.9.0-py3-none-any.whl", hash = "sha256:412ca300f534c3a2ebb3250e85e96d8ffbe48dba24d6a52c1eb9826ddb9aa2e2", size = 817432, upload-time = "2026-10-30T02:40:35.147Z" },
 ]
 
 [[package]]
@@ -119,7 +119,7 @@ test = [
 
 [package.metadata]
 requires-dist = [
-    { name = "annofabapi", specifier = ">=1.7.2" },
+    { name = "annofabapi", specifier = ">=1.9.0" },
     { name = "annofabapi-3dpc-extensions" },
     { name = "bokeh", specifier = ">=3.8" },
     { name = "dictdiffer" },
