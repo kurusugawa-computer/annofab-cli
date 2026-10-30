@@ -3,7 +3,6 @@ import logging
 from typing import Any
 
 import annofabapi
-import pandas
 import requests
 from annofabapi.models import OrganizationMember, Project, ProjectMemberRole, ProjectStatus
 from more_itertools import first_true
@@ -13,23 +12,6 @@ from annofabcli.common.cli import CommandLine, build_annofabapi_resource_and_log
 from annofabcli.common.facade import AnnofabApiFacade
 
 logger = logging.getLogger(__name__)
-
-
-def create_minimal_dataframe(project_list: list[Project]) -> pandas.DataFrame:
-    """必要最小限の列であるDataFrameを作成する"""
-    df = pandas.DataFrame(project_list)
-    df["last_tasks_updated_datetime"] = [e["summary"]["last_tasks_updated_datetime"] for e in project_list]
-    return df[
-        [
-            "project_id",
-            "title",
-            "organization_name",
-            "project_status",
-            "input_data_type",
-            "last_tasks_updated_datetime",
-            "created_datetime",
-        ]
-    ]
 
 
 class ChanegProjectStatusMain:

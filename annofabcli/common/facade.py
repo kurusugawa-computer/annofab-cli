@@ -7,7 +7,6 @@ from typing import Any
 
 import annofabapi
 import more_itertools
-from annofabapi.dataclass.annotation import AdditionalDataV1
 from annofabapi.dataclass.input import InputData
 from annofabapi.dataclass.task import Task
 from annofabapi.models import (
@@ -23,49 +22,6 @@ from dataclasses_json import DataClassJsonMixin
 from annofabcli.common.exceptions import OrganizationAuthorizationError, ProjectAuthorizationError
 
 logger = logging.getLogger(__name__)
-
-
-@dataclass
-class AnnotationQuery(DataClassJsonMixin):
-    """
-    `get_annotation_list`メソッドに渡すアノテーション検索条件
-    """
-
-    label_id: str
-    attributes: list[AdditionalDataV1] | None = None
-
-
-@dataclass
-class AdditionalDataForCli(DataClassJsonMixin):
-    additional_data_definition_id: str | None = None
-    """属性ID"""
-
-    additional_data_definition_name_en: str | None = None
-    """属性の英語名"""
-
-    flag: bool | None = None
-
-    integer: int | None = None
-
-    comment: str | None = None
-
-    choice: str | None = None
-    """選択肢ID"""
-
-    choice_name_en: str | None = None
-    """選択肢の英語名"""
-
-
-@dataclass
-class AnnotationQueryForCli(DataClassJsonMixin):
-    """
-    コマンドライン上で指定するアノテーション検索条件
-    """
-
-    label_name_en: str | None = None
-    """ラベルの英語名"""
-    label_id: str | None = None
-    attributes: list[AdditionalDataForCli] | None = None
 
 
 @dataclass

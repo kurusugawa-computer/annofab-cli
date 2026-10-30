@@ -100,21 +100,6 @@ def parse_default_value(attribute_type: str | AttributeType, default_value: str 
     return default_value
 
 
-def get_default_value(attribute_type: str | AttributeType) -> str | bool | None:
-    """
-    属性種類ごとのデフォルト値を返す。
-
-    Args:
-        attribute_type: 属性の種類
-
-    Returns:
-        属性のデフォルト値
-    """
-    if attribute_type == AttributeType.FLAG:
-        return False
-    return ""
-
-
 def create_comment_from_attribute(attribute_name_en: str, label_names: Sequence[str]) -> str:
     """
     属性追加時のデフォルトコメントを生成する。

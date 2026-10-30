@@ -45,23 +45,6 @@ class ListInputDataWithJsonMain:
         return result
 
     @staticmethod
-    def remove_unnecessary_keys_from_input_data2(input_data_list: list[dict[str, Any]]) -> None:
-        """
-        入力データから不要なキーを取り除きます。
-
-        Args:
-            input_data_list: (IN/OUT) 入力データのlist
-        """
-        unnecessary_keys = [
-            "url",  # システム内部用のプロパティ
-            "original_input_data_path",  # システム内部用のプロパティ
-            "etag",  # annofab-cliで見ることはない
-        ]
-        for input_data in input_data_list:
-            for key in unnecessary_keys:
-                input_data.pop(key, None)
-
-    @staticmethod
     def add_parent_task_id_list_from_task_list(input_data_list: list[dict[str, Any]], task_list: list[dict[str, Any]]) -> None:
         """タスク一覧を参照して、入力データに参照元タスクIDの一覧を追加する。
 

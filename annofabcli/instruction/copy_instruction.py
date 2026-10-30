@@ -1,6 +1,5 @@
 import argparse
 import logging
-import mimetypes
 
 import requests
 from annofabapi.models import ProjectMemberRole
@@ -33,18 +32,6 @@ class CopyInstruction(CommandLine):
         # URL Queryを除いたURLを取得する
         url_without_query = url.split("?", maxsplit=1)[0]
         return url_without_query.split("/")[-1]
-
-    @staticmethod
-    def _get_mime_type_from_filename(filename: str | None) -> str:
-        """
-        ファイル名からMIME TYPEを取得する。
-        """
-        DEFAULT_MIME_TYPE = "application/octet-stream"  # noqa: N806
-        if filename is None:
-            return DEFAULT_MIME_TYPE
-
-        content_type = mimetypes.guess_type(filename)[0]
-        return content_type if content_type is not None else DEFAULT_MIME_TYPE
 
     def upload_instruction_image(self, src_project_id: str, dest_project_id: str, pq_img: PyQuery) -> str | None:
         """

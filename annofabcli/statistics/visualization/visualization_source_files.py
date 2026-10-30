@@ -74,19 +74,6 @@ class VisualizationSourceFiles:
         logger.debug(f"{self.logging_prefix}: '{self.task_history_json_path}'を読み込みました。{len(task_histories_dict)}件のタスクの履歴が含まれています。")
         return task_histories_dict
 
-    def read_task_history_events_json(self) -> list[dict[str, Any]]:
-        """
-        タスク履歴イベント全件ファイルを読み込みます。
-
-        Returns:
-            全タスクの履歴イベント情報
-        """
-        with self.task_history_event_json_path.open(encoding="utf-8") as f:
-            task_history_event_list = json.load(f)
-
-        logger.debug(f"{self.logging_prefix}: '{self.task_history_event_json_path}'を読み込みました。{len(task_history_event_list)}件のタスク履歴イベントが含まれています。")
-        return task_history_event_list
-
     def read_comments_json(self) -> list[dict[str, Any]]:
         """
         コメント全件ファイルを読み込みます。
