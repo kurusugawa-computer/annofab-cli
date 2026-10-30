@@ -2,8 +2,43 @@ import argparse
 import builtins
 
 import pytest
+from annofabapi.credentials import IdPass, Pat
 
-from annofabcli.common.cli import DEFAULT_ENDPOINT_URL, get_endpoint_url, get_json_from_args, get_list_from_args, non_negative_int, positive_int, prompt_yesno, prompt_yesnoall
+from annofabcli.common.cli import (
+    DEFAULT_ENDPOINT_URL,
+    build_annofabapi_resource,
+    get_endpoint_url,
+    get_json_from_args,
+    get_list_from_args,
+    non_negative_int,
+    positive_int,
+    prompt_yesno,
+    prompt_yesnoall,
+)
+
+
+@pytest.mark.parametrize("auth_source", ["command_line", "environment", "stdin"])
+def test_build_annofabapi_resource(monkeypatch: pytest.MonkeyPatch, auth_source: str) -> None:
+    for name in ("ANNOFAB_PAT", "ANNOFAB_USER_ID", "ANNOFAB_PASSWORD", "ANNOFAB_ENDPOINT_URL"):
+        monkeypatch.delenv(name, raising=False)
+
+    args = argparse.Namespace(endpoint_url=None, annofab_pat=None, annofab_user_id=None, annofab_password=None)
+    expected_credentials: IdPass | Pat
+    if auth_source == "command_line":
+        args.annofab_pat = "command-line-token"
+        monkeypatch.setenv("ANNOFAB_PAT", "environment-token")
+        expected_credentials = Pat("command-line-token")
+    elif auth_source == "environment":
+        monkeypatch.setenv("ANNOFAB_PAT", "environment-token")
+        expected_credentials = Pat("environment-token")
+    else:
+        monkeypatch.setattr(builtins, "input", lambda _prompt: "test-user")
+        monkeypatch.setattr("getpass.getpass", lambda _prompt: "test-password")
+        expected_credentials = IdPass("test-user", "test-password")
+
+    service = build_annofabapi_resource(args)
+
+    assert service.api.credentials == expected_credentials
 
 
 def test_get_json_from_args():

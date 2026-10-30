@@ -12,7 +12,7 @@ Annofabの認証情報を設定する方法は以下の3つです。優先順位
 
 1. コマンドライン引数
 2. 環境変数
-3.  ``.netrc`` ファイル
+3. 標準入力（ユーザーIDとパスワード）
 
 
 
@@ -59,33 +59,9 @@ Annofabの認証情報を設定する方法は以下の3つです。優先順位
 環境変数 ``ANNOFAB_PAT`` にパーソナルアクセストークンを設定してください。
 
 
-.netrc ファイル
-----------------------------------------------------------------
-`.netrcファイル <https://www.gnu.org/software/inetutils/manual/html_node/The-_002enetrc-file.html>`_ にAnnofabの認証情報を記載してください。
-
-.. code-block::
-    :caption: .netrc
-
-    machine annofab.com
-    login annofab_user_id
-    password annofab_password
-
-For Linux
-^^^^^^^^^^^^^^^^^^^^^^^^^
-* パスは ``$HOME/.netrc``
-* ``$ chmod 600 $HOME/.netrc`` でパーミッションを変更する
-
-
-
-For Windows
-^^^^^^^^^^^^^^^^^^^^^^^^^
-* パスは ``%USERPROFILE%\.netrc``
-
-
-
 標準入力
 ----------------------------------------------------------------
-.netrcファイルと環境変数どちらにも認証情報が設定されていない場合は、標準入力からAnnofabの認証情報を入力できるようになります。
+コマンドライン引数と環境変数のどちらにも認証情報が設定されていない場合は、標準入力からAnnofabのユーザーIDとパスワードを入力できるようになります。
 
 .. code-block::
 
