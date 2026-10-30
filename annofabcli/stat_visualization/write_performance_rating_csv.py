@@ -101,12 +101,6 @@ class QualityIndicator:
 
     column: str
 
-    def quality_penalty(self) -> str:
-        """
-        品質の悪さ（`pointed_out_inspection_comment_count`など）を表す文字列
-        """
-        return self.column.split("/")[0]
-
     @property
     def production_volume(self) -> str:
         """
