@@ -1,6 +1,5 @@
 import json
 import logging
-import os
 import re
 import sys
 from collections.abc import Callable, Sequence
@@ -211,24 +210,6 @@ def datetime_to_date(str_datetime: str) -> str:
         日時(YYYY-MM-DD)
     """
     return str(dateutil.parser.parse(str_datetime).date())
-
-
-def get_cache_dir() -> Path:
-    """
-    環境変数から、annofabcliのキャシュディレクトリを取得する。
-    キャッシュホームディレクトリは環境変数 ``XDG_CACHE_HOME`` から取得する。デフォルトは ``$HOME/.cache``である。
-
-    Returns:
-        annofabcliのキャッシュディレクトリ
-
-    """
-    cache_home_dir = os.environ.get("XDG_CACHE_HOME")
-    if cache_home_dir is None:
-        cache_home_dir_path = Path.home() / ".cache"
-    else:
-        cache_home_dir_path = Path(cache_home_dir)
-
-    return cache_home_dir_path / "annofabcli"
 
 
 def read_multiheader_csv(csv_file: str, header_row_count: int = 2, **kwargs: Any) -> pandas.DataFrame:  # noqa: ANN401
