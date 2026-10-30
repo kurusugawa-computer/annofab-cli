@@ -55,10 +55,10 @@ def command_context(tmp_path, monkeypatch):
     account_ids = {history["account_id"] for task_histories in histories.values() for history in task_histories if history["account_id"] is not None} | {"a"}
     members = [{"account_id": account_id, "user_id": account_id, "username": account_id} for account_id in sorted(account_ids)]
     monkeypatch.setattr(service.wrapper, "get_all_project_members", Mock(return_value=members))
-    monkeypatch.setattr(service.wrapper, "download_project_tasks_url", Mock(side_effect=lambda _p, dest: Path(dest).write_text(json.dumps(tasks), encoding="utf-8")))
-    monkeypatch.setattr(service.wrapper, "download_project_task_histories_url", Mock(side_effect=lambda _p, dest: Path(dest).write_text(json.dumps(histories), encoding="utf-8")))
-    monkeypatch.setattr(service.wrapper, "download_project_inputs_url", Mock(side_effect=lambda _p, dest: Path(dest).write_text(json.dumps(inputs), encoding="utf-8")))
-    monkeypatch.setattr(service.wrapper, "download_annotation_archive", Mock(side_effect=lambda _p, dest: shutil.copyfile(archive_path, dest)))
+    monkeypatch.setattr(service.wrapper, "download_project_tasks_json", Mock(side_effect=lambda _p, dest: Path(dest).write_text(json.dumps(tasks), encoding="utf-8")))
+    monkeypatch.setattr(service.wrapper, "download_project_task_histories_json", Mock(side_effect=lambda _p, dest: Path(dest).write_text(json.dumps(histories), encoding="utf-8")))
+    monkeypatch.setattr(service.wrapper, "download_project_inputs_json", Mock(side_effect=lambda _p, dest: Path(dest).write_text(json.dumps(inputs), encoding="utf-8")))
+    monkeypatch.setattr(service.wrapper, "download_annotation_zip", Mock(side_effect=lambda _p, dest: shutil.copyfile(archive_path, dest)))
     monkeypatch.setattr(service.api, "get_task_histories", Mock(side_effect=lambda _p, task_id: (copy.deepcopy(histories[task_id]), None)))
     monkeypatch.setattr(service.api, "get_annotation_list", Mock(return_value=({"total_count": 7}, None)))
     return service, tasks, histories
@@ -112,7 +112,7 @@ def test_history_api_only_fetches_filtered_tasks_and_refreshes_total_worktime(co
     assert rows[0]["annotation_worktime_hour"] == 1
     assert rows[0]["worktime_hour"] == 1
     assert rows[0]["first_annotation_started_datetime"] == "2026-10-01T00:00:00+09:00"
-    service.wrapper.download_project_task_histories_url.assert_not_called()
+    service.wrapper.download_project_task_histories_json.assert_not_called()
     service.api.get_task_histories.assert_called_once_with("p", "pending")
 
 
@@ -132,7 +132,7 @@ def test_count_sources_and_movie_duration(command_context, tmp_path, source):
     rows = run_command(tmp_path, "--annotation_count_source", source, "--task_id", "pending")
     assert rows[0]["annotation_count"] == (3 if source == "zip" else 7)
     assert rows[0]["annotation_duration_minute"] == 2
-    service.wrapper.download_annotation_archive.assert_called_once()
+    service.wrapper.download_annotation_zip.assert_called_once()
     if source == "zip":
         service.api.get_annotation_list.assert_not_called()
     else:
@@ -145,8 +145,8 @@ def test_api_counts_without_zip_or_input_download_for_non_movie(command_context,
     service.api.get_project.return_value = ({"title": "test", "input_data_type": input_type}, None)
     rows = run_command(tmp_path, "--annotation_count_source", "api")
     assert all(row["annotation_count"] == 7 and row["video_duration_minute"] is None and row["annotation_duration_minute"] is None for row in rows)
-    service.wrapper.download_annotation_archive.assert_not_called()
-    service.wrapper.download_project_inputs_url.assert_not_called()
+    service.wrapper.download_annotation_zip.assert_not_called()
+    service.wrapper.download_project_inputs_json.assert_not_called()
 
 
 def test_latest_updates_used_files_but_not_history_archive(command_context, tmp_path, monkeypatch):
@@ -157,14 +157,14 @@ def test_latest_updates_used_files_but_not_history_archive(command_context, tmp_
     run_command(tmp_path, "--latest", "--annotation_count_source", "zip")
     service.api.post_annotation_archive_update.assert_called_once()
     service.api.post_project_inputs_update.assert_called_once()
-    service.wrapper.download_project_task_histories_url.assert_called_once()
+    service.wrapper.download_project_task_histories_json.assert_called_once()
 
 
 def test_empty_selection_skips_statistics_and_history_download(command_context, tmp_path):
     service, _, _ = command_context
     assert run_command(tmp_path, "--task_id", "unknown") == []
-    service.wrapper.download_project_task_histories_url.assert_not_called()
-    service.wrapper.download_annotation_archive.assert_not_called()
+    service.wrapper.download_project_task_histories_json.assert_not_called()
+    service.wrapper.download_annotation_zip.assert_not_called()
     service.api.get_annotation_list.assert_not_called()
 
 
@@ -201,7 +201,7 @@ def test_non_movie_zip_has_blank_duration_columns(command_context, tmp_path):
     rows = run_command(tmp_path, "--annotation_count_source", "zip")
     assert [row["annotation_count"] for row in rows] == [3, 1, None, 0]
     assert all(row["video_duration_minute"] is None and row["annotation_duration_minute"] is None for row in rows)
-    service.wrapper.download_project_inputs_url.assert_not_called()
+    service.wrapper.download_project_inputs_json.assert_not_called()
 
 
 def test_api_count_failure_does_not_output_partial_results(command_context, tmp_path):

@@ -24,6 +24,7 @@ from annofabcli.common.cli import (
     CommandLineWithConfirm,
     build_annofabapi_resource_and_login,
 )
+from annofabcli.common.download import DownloadingFile
 from annofabcli.common.facade import AnnofabApiFacade
 from annofabcli.utils.iterables import batched
 
@@ -200,7 +201,7 @@ class CopyInputDataMain(CommandLineWithConfirm):
     def get_all_input_data_id_list(self, project_id: str) -> list[str]:
         with tempfile.TemporaryDirectory() as tmp_dir:
             input_data_json = Path(tmp_dir) / f"{project_id}_input_data.json"
-            self.service.wrapper.download_project_inputs_url(project_id, dest_path=input_data_json)
+            DownloadingFile(self.service).download_input_data_json(project_id, dest_path=input_data_json)
             input_data_list = json.loads(input_data_json.read_text())
         return [e["input_data_id"] for e in input_data_list]
 

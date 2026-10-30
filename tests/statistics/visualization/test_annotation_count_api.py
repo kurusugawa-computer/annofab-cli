@@ -106,7 +106,7 @@ def test_api_failure_does_not_return_partial_count():
     service.api.get_annotation_list.side_effect = [({"total_count": 1}, None), OSError()]
     with pytest.raises(OSError):
         count_annotations_from_api(service, "prj1", [{"task_id": "task1"}, {"task_id": "task2"}])
-    service.wrapper.download_annotation_archive.assert_not_called()
+    service.wrapper.download_annotation_zip.assert_not_called()
 
 
 def test_empty_tasks():
