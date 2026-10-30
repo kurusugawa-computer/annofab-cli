@@ -128,7 +128,7 @@ class DownloadingFile:
             if should_download_full_annotation:
                 self.service.wrapper.download_full_annotation_archive(project_id, dest_path)
             else:
-                self.service.wrapper.download_annotation_archive(project_id, dest_path)
+                self.service.wrapper.download_annotation_zip(project_id, dest_path)
 
         if is_latest:
             self.wait_until_updated_annotation_zip(project_id, wait_options)
@@ -169,16 +169,16 @@ class DownloadingFile:
     ) -> None:
         if is_latest:
             self.wait_until_updated_input_data_json(project_id, wait_options)
-            self.service.wrapper.download_project_inputs_url(project_id, dest_path)
+            self.service.wrapper.download_project_inputs_json(project_id, dest_path)
 
         else:
             try:
-                self.service.wrapper.download_project_inputs_url(project_id, dest_path)
+                self.service.wrapper.download_project_inputs_json(project_id, dest_path)
             except requests.HTTPError as e:
                 if e.response.status_code == requests.codes.not_found:
                     logger.info("入力データ全件ファイルが存在しなかったので、入力データ全件ファイルの更新処理を実行します。")
                     self.wait_until_updated_input_data_json(project_id, wait_options)
-                    self.service.wrapper.download_project_inputs_url(project_id, dest_path)
+                    self.service.wrapper.download_project_inputs_json(project_id, dest_path)
                 else:
                     raise e  # noqa: TRY201
 
@@ -200,16 +200,16 @@ class DownloadingFile:
     def download_task_json(self, project_id: str, dest_path: str | Path, *, is_latest: bool = False, wait_options: WaitOptions | None = None) -> None:
         if is_latest:
             self.wait_until_updated_task_json(project_id, wait_options)
-            self.service.wrapper.download_project_tasks_url(project_id, dest_path)
+            self.service.wrapper.download_project_tasks_json(project_id, dest_path)
 
         else:
             try:
-                self.service.wrapper.download_project_tasks_url(project_id, dest_path)
+                self.service.wrapper.download_project_tasks_json(project_id, dest_path)
             except requests.HTTPError as e:
                 if e.response.status_code == requests.codes.not_found:
                     logger.info("タスク全件ファイルが存在しなかったので、タスク全件ファイルの更新処理を実行します。")
                     self.wait_until_updated_task_json(project_id, wait_options)
-                    self.service.wrapper.download_project_tasks_url(project_id, dest_path)
+                    self.service.wrapper.download_project_tasks_json(project_id, dest_path)
                 else:
                     raise e  # noqa: TRY201
 
@@ -238,7 +238,7 @@ class DownloadingFile:
             DownloadingFileNotFoundError:
         """
         try:
-            self.service.wrapper.download_project_task_histories_url(project_id, dest_path)
+            self.service.wrapper.download_project_task_histories_json(project_id, dest_path)
         except requests.HTTPError as e:
             if e.response.status_code == requests.codes.not_found:
                 raise DownloadingFileNotFoundError(f"project_id='{project_id}'のプロジェクトに、タスク履歴全件ファイルが存在しないため、ダウンロードできませんでした。") from e
@@ -256,7 +256,7 @@ class DownloadingFile:
             DownloadingFileNotFoundError:
         """
         try:
-            self.service.wrapper.download_project_task_history_events_url(project_id, dest_path)
+            self.service.wrapper.download_project_task_history_events_json(project_id, dest_path)
         except requests.HTTPError as e:
             if e.response.status_code == requests.codes.not_found:
                 raise DownloadingFileNotFoundError(f"project_id='{project_id}'のプロジェクトに、タスク履歴イベント全件ファイルが存在しないため、ダウンロードできませんでした。") from e
@@ -316,7 +316,7 @@ class DownloadingFile:
             DownloadingFileNotFoundError:
         """
         try:
-            self.service.wrapper.download_project_comments_url(project_id, dest_path)
+            self.service.wrapper.download_project_comments_json(project_id, dest_path)
         except requests.HTTPError as e:
             if e.response.status_code == requests.codes.not_found:
                 raise DownloadingFileNotFoundError(f"project_id='{project_id}'のプロジェクトに、コメント全件ファイルが存在しないため、ダウンロードできませんでした。") from e
