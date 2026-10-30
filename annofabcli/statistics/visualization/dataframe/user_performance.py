@@ -53,25 +53,6 @@ class WorktimeType(Enum):
         return worktime_name
 
 
-class PerformanceUnit(Enum):
-    """
-    生産性の単位
-    """
-
-    ANNOTATION_COUNT = "annotation_count"
-    INPUT_DATA_COUNT = "input_data_count"
-
-    @property
-    def performance_unit_name(self) -> str:
-        if self.value == "annotation_count":
-            performance_unit_name = "アノテーション"
-        elif self.value == "input_data_count":
-            performance_unit_name = "入力データ"
-        else:
-            raise RuntimeError(f"'{self.name}'は未対応です。")
-        return performance_unit_name
-
-
 class UserPerformance:
     """
     各ユーザの合計の生産性と品質。
@@ -595,29 +576,6 @@ class UserPerformance:
         # `df.reset_index()`を実行する理由：indexである`account_id`を列にするため
         return cls(df.reset_index(), task_completion_criteria, custom_production_volume_list=task_worktime_by_phase_user.custom_production_volume_list)
 
-    @classmethod
-    def _convert_column_dtypes(cls, df: pandas.DataFrame) -> pandas.DataFrame:
-        """
-        引数`df`の列の型を正しい型に変換する。
-        """
-
-        columns = set(df.columns)
-        # 列ヘッダに相当する列名
-        basic_columns = [
-            ("account_id", ""),
-            ("user_id", ""),
-            ("username", ""),
-            ("biography", ""),
-            ("first_working_date", ""),
-            ("last_working_date", ""),
-            ("working_days", ""),
-        ]
-
-        value_columns = columns - set(basic_columns)
-        dtypes = dict.fromkeys(basic_columns, "string")
-        dtypes.update(dict.fromkeys(value_columns, "float64"))
-        return df.astype(dtypes)
-
     def _validate_df_for_output(self, output_file: Path) -> bool:
         if len(self.df) == 0:
             logger.warning(f"データが0件のため、{output_file} は出力しません。")
@@ -780,41 +738,6 @@ class UserPerformance:
         df = df.fillna({"biography": ""})
 
         return df
-
-    @staticmethod
-    def _add_ratio_key_for_whole_productivity(series: pandas.Series, phase_list: Sequence[str]) -> None:
-        """
-        プロジェクト全体の生産性に関するkeyを、pandas.Seriesに追加します。
-        """
-        # ゼロ割の警告を無視する
-        with numpy.errstate(divide="ignore", invalid="ignore"):
-            series[("real_monitored_worktime_hour/real_actual_worktime_hour", "sum")] = series[("real_monitored_worktime_hour", "sum")] / series[("real_actual_worktime_hour", "sum")]
-
-            for phase in phase_list:
-                # Annofab時間の比率を算出
-                # 計測作業時間の合計値が0により、monitored_worktime_ratioはnanになる場合は、教師付の実績作業時間を実績作業時間の合計値になるようなmonitored_worktime_ratioに変更する
-                if series[("monitored_worktime_hour", "sum")] == 0:
-                    if phase == TaskPhase.ANNOTATION.value:
-                        series[("monitored_worktime_ratio", phase)] = 1
-                    else:
-                        series[("monitored_worktime_ratio", phase)] = 0
-                else:
-                    series[("monitored_worktime_ratio", phase)] = series[("monitored_worktime_hour", phase)] / series[("monitored_worktime_hour", "sum")]
-
-                # Annofab時間の比率から、Annowork時間を予測する
-                series[("actual_worktime_hour", phase)] = series[("actual_worktime_hour", "sum")] * series[("monitored_worktime_ratio", phase)]
-
-                # 生産性を算出
-                series[("monitored_worktime_hour/input_data_count", phase)] = series[("monitored_worktime_hour", phase)] / series[("input_data_count", phase)]
-                series[("actual_worktime_hour/input_data_count", phase)] = series[("actual_worktime_hour", phase)] / series[("input_data_count", phase)]
-
-                series[("monitored_worktime_hour/annotation_count", phase)] = series[("monitored_worktime_hour", phase)] / series[("annotation_count", phase)]
-                series[("actual_worktime_hour/annotation_count", phase)] = series[("actual_worktime_hour", phase)] / series[("annotation_count", phase)]
-
-            phase = TaskPhase.ANNOTATION.value
-            series[("pointed_out_inspection_comment_count/annotation_count", phase)] = series[("pointed_out_inspection_comment_count", phase)] / series[("annotation_count", phase)]
-            series[("pointed_out_inspection_comment_count/input_data_count", phase)] = series[("pointed_out_inspection_comment_count", phase)] / series[("input_data_count", phase)]
-            series[("rejected_count/task_count", phase)] = series[("rejected_count", phase)] / series[("task_count", phase)]
 
     def get_production_volume_name(self, production_volume_column: str) -> str:
         """
