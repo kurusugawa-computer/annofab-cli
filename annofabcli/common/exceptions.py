@@ -80,13 +80,3 @@ class OrganizationAuthorizationError(AuthorizationError):
         role_names = [f"'{role.value}'ロール" for role in roles]
         msg = f"{target}{action}、{_format_required_roles(role_names)}が必要です。"
         super().__init__(msg)
-
-
-class MfaEnabledUserExecutionError(AnnofabCliException):
-    """
-    MFAが有効化されているユーザーが実行したことを示すエラー
-    """
-
-    def __init__(self, login_user_id: str) -> None:
-        msg = f"MFAによるログインで失敗しました。User ID: {login_user_id}"
-        super().__init__(msg)
