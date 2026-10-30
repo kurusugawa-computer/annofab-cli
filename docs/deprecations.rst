@@ -47,10 +47,3 @@
 
   * 2027/01/01以降に廃止予定です。
   * 代わりに ``task update_metadata_per_task`` を使用してください。
-
-廃止時期が未定の機能
-=================================
-
-* :doc:`command_reference/annotation/download` の ``--download_full_annotation`` オプション
-
-  * 将来、廃止される可能性があります。

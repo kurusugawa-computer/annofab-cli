@@ -34,19 +34,6 @@ Examples
 
 
 
-FullアノテーションZIPダウンロード（非推奨）
-----------------------------------------------------
-
-``--download_full_annotation`` を指定すると、FullアノテーションZIPダウンロードされます。
-FullアノテーションZIPのフォーマットについては https://annofab.com/docs/api/#tag/x-annotation-zip/Full-Annotation-ZIP を参照してください。
-
-ただし、``--download_full_annotation`` は非推奨です。将来、廃止される可能性があります。
-
-.. code-block::
-
-    $ annofabcli annotation download --project_id prj1 --output full-annotation.zip --download_full_annotation
-
-
 Usage Details
 =================================
 

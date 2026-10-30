@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 
 class DownloadingAnnotationZip(CommandLine):
-    def download_annotation_zip(self, project_id: str, output_zip: Path, is_latest: bool, should_download_full_annotation: bool = False) -> None:  # noqa: FBT001, FBT002
+    def download_annotation_zip(self, project_id: str, output_zip: Path, is_latest: bool) -> None:  # noqa: FBT001
         super().require_project_access(project_id, [ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER])
 
         project_title = self.facade.get_project_title(project_id)
@@ -24,7 +24,6 @@ class DownloadingAnnotationZip(CommandLine):
             project_id,
             str(output_zip),
             is_latest=is_latest,
-            should_download_full_annotation=should_download_full_annotation,
         )
         logger.info(f"アノテーションZIPをダウンロードして、'{output_zip}'に保存しました。")
 
@@ -35,7 +34,6 @@ class DownloadingAnnotationZip(CommandLine):
             args.project_id,
             output_zip=args.output,
             is_latest=args.latest,
-            should_download_full_annotation=args.download_full_annotation,
         )
 
 
@@ -54,12 +52,6 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--latest",
         action="store_true",
         help="現在のアノテーションの状態をアノテーションZIPに反映させてから、ダウンロードします。アノテーションZIPへの反映には、データ数に応じて数分から数十分かかります。",
-    )
-
-    parser.add_argument(
-        "--download_full_annotation",
-        action="store_true",
-        help="[DEPRECATED] FullアノテーションZIPをダウンロードします。このオプションは、廃止予定のため非推奨です。",
     )
 
     parser.set_defaults(subcommand_func=main)

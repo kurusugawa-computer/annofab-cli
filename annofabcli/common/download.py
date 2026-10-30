@@ -120,28 +120,21 @@ class DownloadingFile:
         dest_path: str | Path,
         is_latest: bool = False,  # noqa: FBT001, FBT002
         wait_options: WaitOptions | None = None,
-        should_download_full_annotation: bool = False,  # noqa: FBT001, FBT002
     ) -> None:
         """アノテーションZIPをダウンロードします。"""
 
-        def download_annotation_zip() -> None:
-            if should_download_full_annotation:
-                self.service.wrapper.download_full_annotation_archive(project_id, dest_path)
-            else:
-                self.service.wrapper.download_annotation_zip(project_id, dest_path)
-
         if is_latest:
             self.wait_until_updated_annotation_zip(project_id, wait_options)
-            download_annotation_zip()
+            self.service.wrapper.download_annotation_zip(project_id, dest_path)
 
         else:
             try:
-                download_annotation_zip()
+                self.service.wrapper.download_annotation_zip(project_id, dest_path)
             except requests.HTTPError as e:
                 if e.response.status_code == requests.codes.not_found:
                     logger.info("アノテーションzipが存在しなかったので、アノテーションzipファイルの更新処理を実行します。")
                     self.wait_until_updated_annotation_zip(project_id, wait_options)
-                    download_annotation_zip()
+                    self.service.wrapper.download_annotation_zip(project_id, dest_path)
                 else:
                     raise e  # noqa: TRY201
 
