@@ -272,31 +272,6 @@ class DownloadingFile:
         """
         return self.download_task_history_event_json(project_id, dest_path=dest_path)
 
-    async def download_inspection_json_with_async(self, project_id: str, dest_path: str | Path) -> None:
-        """
-        非同期で検査コメント全件ファイルをダウンロードする。
-
-        Raises:
-            DownloadingFileNotFoundError:
-        """
-
-        return self.download_inspection_comment_json(project_id, dest_path=dest_path)
-
-    def download_inspection_comment_json(self, project_id: str, dest_path: str | Path) -> None:
-        """
-        検査コメント全件ファイルをダウンロードする。
-
-
-        Raises:
-            DownloadingFileNotFoundError:
-        """
-        try:
-            self.service.wrapper.download_project_inspections_url(project_id, dest_path)
-        except requests.HTTPError as e:
-            if e.response.status_code == requests.codes.not_found:
-                raise DownloadingFileNotFoundError(f"project_id='{project_id}'のプロジェクトに、検査コメント全件ファイルが存在しないため、ダウンロードできませんでした。") from e
-            raise e  # noqa: TRY201
-
     async def download_comment_json_with_async(self, project_id: str, dest_path: str | Path) -> None:
         """
         非同期でコメント全件ファイルをダウンロードする。
