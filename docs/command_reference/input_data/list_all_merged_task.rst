@@ -75,7 +75,7 @@ Examples
      --input_data_id file://input_data_id.txt
 
 
-``--not_used_by_task`` を指定すれば、タスクに使われていない入力データがあります。「入力データは登録したがタスクは登録していなかった」などのデータ登録のミスを探すときに、 このオプションは便利です。
+``--not_used_by_task`` を指定すれば、タスクに使われていない入力データのみ出力します。「入力データは登録したがタスクは登録していなかった」などのデータ登録のミスを探すときに、 このオプションは便利です。
 
 
 ``--used_by_multiple_task`` を指定すれば、複数のタスクから使われている入力データが出力されます。
@@ -86,14 +86,17 @@ Examples
 出力結果
 =================================
 
-
-
-
-
-
+以下の例では、 ``input1`` は2個のタスク、 ``input2`` は1個のタスクで使われています。
+``input3`` はどのタスクにも使われていません。
 
 CSV出力
 ----------------------------------------------
+
+入力データとタスクの組み合わせごとに1行出力します。
+複数のタスクで使われている入力データは、タスクごとに行が分かれるため、CSVの行数と入力データの件数は一致しない場合があります。
+タスクに使われていない入力データも1行出力し、タスク関連の列は空欄になります。
+
+``frame_no`` は、タスク内での入力データの順番（1始まり）です。
 
 .. code-block::
 
@@ -107,6 +110,9 @@ CSV出力
 
 JSON出力
 ----------------------------------------------
+
+入力データごとに1個のオブジェクトを出力し、参照しているタスクを ``parent_task_list`` に格納します。
+タスクに使われていない入力データでは、 ``parent_task_list`` は空配列 ``[]`` になります。
 
 .. code-block::
 
@@ -122,9 +128,9 @@ JSON出力
             "input_data_id": "input1",
             "project_id": "prj1",
             "organization_id": "org1",
-            "input_data_set_id": ",12345678-abcd-1234-abcd-1234abcd5678",
-            "input_data_name": "data1",
-            "input_data_path": "s3://af-production-input/organizations/...",
+            "input_data_set_id": "12345678-abcd-1234-abcd-1234abcd5678",
+            "input_data_name": "test-input1",
+            "input_data_path": "s3://example-bucket/input1.jpg",
             "updated_datetime": "2021-01-04T21:21:28.169+09:00",
             "sign_required": false,
             "metadata": {},
@@ -138,15 +144,69 @@ JSON出力
             },
             "parent_task_list": [
                 {
-                    "task_id": "test_16",
-                    "task_phase": "acceptance",
+                    "task_id": "task1",
+                    "task_phase": "annotation",
                     "task_phase_stage": 1,
-                    "task_status": "break",
+                    "task_status": "not_started",
+                    "frame_no": 1
+                },
+                {
+                    "task_id": "task2",
+                    "task_phase": "annotation",
+                    "task_phase_stage": 1,
+                    "task_status": "not_started",
                     "frame_no": 1
                 }
             ]
         },
-        ...
+        {
+            "input_data_id": "input2",
+            "project_id": "prj1",
+            "organization_id": "org1",
+            "input_data_set_id": "12345678-abcd-1234-abcd-1234abcd5678",
+            "input_data_name": "test-input2",
+            "input_data_path": "s3://example-bucket/input2.jpg",
+            "updated_datetime": "2021-01-04T21:21:28.169+09:00",
+            "sign_required": false,
+            "metadata": {},
+            "system_metadata": {
+                "resized_resolution": null,
+                "original_resolution": {
+                    "width": 80,
+                    "height": 80
+                },
+                "_type": "Image"
+            },
+            "parent_task_list": [
+                {
+                    "task_id": "task2",
+                    "task_phase": "annotation",
+                    "task_phase_stage": 1,
+                    "task_status": "not_started",
+                    "frame_no": 2
+                }
+            ]
+        },
+        {
+            "input_data_id": "input3",
+            "project_id": "prj1",
+            "organization_id": "org1",
+            "input_data_set_id": "12345678-abcd-1234-abcd-1234abcd5678",
+            "input_data_name": "test-input3",
+            "input_data_path": "s3://example-bucket/input3.jpg",
+            "updated_datetime": "2021-01-04T21:21:28.169+09:00",
+            "sign_required": false,
+            "metadata": {},
+            "system_metadata": {
+                "resized_resolution": null,
+                "original_resolution": {
+                    "width": 80,
+                    "height": 80
+                },
+                "_type": "Image"
+            },
+            "parent_task_list": []
+        }
     ]
 
 Usage Details
