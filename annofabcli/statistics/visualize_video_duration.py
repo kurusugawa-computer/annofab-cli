@@ -20,7 +20,7 @@ from annofabcli.common.cli import (
     build_annofabapi_resource_and_login,
     get_list_from_args,
 )
-from annofabcli.common.download import DownloadingFile
+from annofabcli.common.download import DownloadFileTarget, DownloadingFile
 from annofabcli.common.facade import AnnofabApiFacade
 from annofabcli.common.video_duration_histogram import BIN_COUNT, TimeUnit, plot_video_duration
 
@@ -172,11 +172,15 @@ class VisualizeVideoDuration(CommandLine):
         def wrapper_func(temp_dir: Path) -> None:
             downloading_obj = DownloadingFile(self.service)
             assert project_id is not None
+            download_latest = args.latest
+            if download_latest and args.input_data_json_file is None and args.task_json_file is None:
+                downloading_obj.update_download_files([args.project_id], [DownloadFileTarget.INPUT_DATA, DownloadFileTarget.TASK])
+                download_latest = False
             if args.input_data_json_file is None:
                 input_data_json = downloading_obj.download_input_data_json_to_dir(
                     project_id,
                     temp_dir,
-                    is_latest=args.latest,
+                    is_latest=download_latest,
                 )
             else:
                 input_data_json = args.input_data_json_file
@@ -185,7 +189,7 @@ class VisualizeVideoDuration(CommandLine):
                 task_json = downloading_obj.download_task_json_to_dir(
                     project_id,
                     temp_dir,
-                    is_latest=args.latest,
+                    is_latest=download_latest,
                 )
             else:
                 task_json = args.task_json_file

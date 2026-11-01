@@ -1,6 +1,9 @@
 import asyncio
 import datetime
 import logging.config
+from collections.abc import Collection
+from dataclasses import dataclass
+from enum import Enum
 from functools import partial
 from pathlib import Path
 
@@ -27,9 +30,79 @@ def get_filename(project_id: str, file_type: str, extension: str) -> str:
     return f"{timestamp}--{project_id}--{file_type}.{extension}"
 
 
+class DownloadFileTarget(Enum):
+    TASK = "task"
+    ANNOTATION = "annotation"
+    INPUT_DATA = "input_data"
+
+
+@dataclass(frozen=True)
+class UpdateJob:
+    project_id: str
+    """対象のプロジェクトID。"""
+    target: DownloadFileTarget
+    """更新対象。"""
+    job_id: str
+    """待機する更新ジョブのID。"""
+
+
 class DownloadingFile:
     def __init__(self, service: annofabapi.Resource) -> None:
         self.service = service
+
+    def update_download_files(self, project_ids: Collection[str], targets: Collection[DownloadFileTarget], *, wait_options: WaitOptions | None = None) -> None:
+        """指定したダウンロード用ファイルを並列に更新し、すべての完了を待つ。
+
+        Args:
+            project_ids: 対象のプロジェクトID。
+            targets: 更新対象。
+            wait_options: 完了確認の間隔と回数。
+
+        Returns:
+            None
+
+        Raises:
+            UpdatedFileForDownloadingError: いずれかの更新要求・待機に失敗した場合。
+        """
+        job_types = {
+            DownloadFileTarget.TASK: ProjectJobType.GEN_TASKS_LIST,
+            DownloadFileTarget.ANNOTATION: ProjectJobType.GEN_ANNOTATION,
+            DownloadFileTarget.INPUT_DATA: ProjectJobType.GEN_INPUTS_LIST,
+        }
+        unique_targets = list(dict.fromkeys(targets))
+        if not unique_targets:
+            raise ValueError("更新対象を1個以上指定してください。")
+
+        unique_project_ids = list(dict.fromkeys(project_ids))
+        if not unique_project_ids:
+            raise ValueError("プロジェクトを1個以上指定してください。")
+        job_count = len(unique_project_ids) * len(unique_targets)
+        logger.info(f"{len(unique_project_ids)}件のプロジェクトのダウンロード用ファイル{job_count}件を並列に更新します。")
+        failure_targets = []
+        jobs = []
+        # 完了を待つ前にすべての更新を要求し、Annofab上で並列に実行させる。
+        for project_id in unique_project_ids:
+            for target in unique_targets:
+                log_prefix = f"project_id='{project_id}', target='{target.value}'"
+                try:
+                    job_id = self.request_update(project_id, job_types[target])
+                    jobs.append(UpdateJob(project_id, target, job_id))
+                except Exception:
+                    failure_targets.append(log_prefix)
+                    logger.warning(f"{log_prefix}の更新要求に失敗しました。", exc_info=True)
+
+        for index, job in enumerate(jobs):
+            log_prefix = f"project_id='{job.project_id}', target='{job.target.value}'"
+            try:
+                self.wait_for_completion(job.project_id, job_types[job.target], job.job_id, wait_options=wait_options)
+                logger.info(f"{index + 1}/{len(jobs)}件目 :: {log_prefix}の更新が完了しました。")
+            except Exception:
+                failure_targets.append(log_prefix)
+                logger.warning(f"{index + 1}/{len(jobs)}件目 :: {log_prefix}の更新に失敗しました。", exc_info=True)
+
+        logger.info(f"ダウンロード用ファイルの更新処理が終了しました。 :: 成功: {job_count - len(failure_targets)}件, 失敗: {len(failure_targets)}件")
+        if failure_targets:
+            raise UpdatedFileForDownloadingError(f"ダウンロード用ファイルの更新に失敗しました。 :: target={failure_targets}")
 
     @staticmethod
     def get_max_wait_minutes(wait_options: WaitOptions) -> float:

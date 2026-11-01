@@ -14,6 +14,7 @@ from annofabapi.models import InputDataType, ProjectMemberRole
 import annofabcli.common.cli
 from annofabcli.common.annotation_production_volume import aggregate_annotation_production_volume
 from annofabcli.common.cli import ArgumentParser, CommandLine, build_annofabapi_resource_and_login, get_json_from_args, get_list_from_args
+from annofabcli.common.download import DownloadFileTarget
 from annofabcli.common.enums import OutputFormat
 from annofabcli.common.facade import AnnofabApiFacade, TaskQuery
 from annofabcli.common.utils import print_csv, print_json
@@ -138,6 +139,9 @@ class ListAllWithStatisticsMain(ListAllTasksAddedTaskHistoryMain):
         project, _ = self.service.api.get_project(self.project_id)
         is_movie = project["input_data_type"] == InputDataType.MOVIE.value
         source = resolve_annotation_count_source(self.service, self.project_id, annotation_count_source)
+        if latest and is_movie:
+            self.downloading_obj.update_download_files([self.project_id], [DownloadFileTarget.ANNOTATION, DownloadFileTarget.INPUT_DATA])
+            latest = False
         for task in tasks:
             task.update(dict.fromkeys(PRODUCTION_VOLUME_COLUMNS))
 

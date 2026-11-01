@@ -38,7 +38,7 @@ from annofabcli.common.cli import (
     CommandLine,
     build_annofabapi_resource_and_login,
 )
-from annofabcli.common.download import DownloadingFile
+from annofabcli.common.download import DownloadFileTarget, DownloadingFile
 from annofabcli.common.enums import OutputFormat
 from annofabcli.common.facade import (
     AnnofabApiFacade,
@@ -1570,6 +1570,9 @@ class ListAnnotationCount(CommandLine):
         downloading_obj = DownloadingFile(self.service)
 
         def download_and_process_annotation(temp_dir: Path, *, is_latest: bool, annotation_path: Path | None) -> None:
+            if is_latest and annotation_path is None and group_by == GroupBy.INPUT_DATA_ID:
+                downloading_obj.update_download_files([project_id], [DownloadFileTarget.TASK, DownloadFileTarget.ANNOTATION])
+                is_latest = False
             # タスク全件ファイルは、group_by=input_data_idの場合のみフレーム番号を参照するのに利用する
             task_json_path: Path | None = None
             if group_by == GroupBy.INPUT_DATA_ID:

@@ -15,7 +15,7 @@ from annofabapi.models import ProjectMemberRole
 
 import annofabcli.common.cli
 from annofabcli.common.cli import ArgumentParser, CommandLine, build_annofabapi_resource_and_login
-from annofabcli.common.download import DownloadingFile
+from annofabcli.common.download import DownloadFileTarget, DownloadingFile
 from annofabcli.common.enums import OutputFormat
 from annofabcli.common.facade import AnnofabApiFacade, InputDataQuery, match_input_data_with_query
 from annofabcli.input_data.list_input_data import AddingDetailsToInputData, print_input_data_list
@@ -90,14 +90,17 @@ class ListInputDataWithJsonMain:
 
         def download_and_load_json_files(dir_path: Path) -> list[dict[str, Any]]:
             downloading_obj = DownloadingFile(self.service)
+            if is_latest and contain_parent_task_id_list:
+                downloading_obj.update_download_files([project_id], [DownloadFileTarget.INPUT_DATA, DownloadFileTarget.TASK])
+            download_latest = is_latest and not contain_parent_task_id_list
 
-            input_data_json_path = downloading_obj.download_input_data_json_to_dir(project_id, dir_path, is_latest=is_latest)
+            input_data_json_path = downloading_obj.download_input_data_json_to_dir(project_id, dir_path, is_latest=download_latest)
             with input_data_json_path.open(encoding="utf-8") as f:
                 input_data_list = json.load(f)
 
             task_list = None
             if contain_parent_task_id_list:
-                task_json_path = downloading_obj.download_task_json_to_dir(project_id, dir_path, is_latest=is_latest)
+                task_json_path = downloading_obj.download_task_json_to_dir(project_id, dir_path, is_latest=download_latest)
                 with task_json_path.open(encoding="utf-8") as f:
                     task_list = json.load(f)
 

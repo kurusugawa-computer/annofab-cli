@@ -1,19 +1,13 @@
 import argparse
-import logging
 from collections.abc import Collection
-from dataclasses import dataclass
-from enum import Enum
 
 import annofabapi
-from annofabapi.models import ProjectJobType, ProjectMemberRole
+from annofabapi.models import ProjectMemberRole
 
 import annofabcli.common.cli
 from annofabcli.common.cli import CommandLine, build_annofabapi_resource_and_login
-from annofabcli.common.download import DownloadingFile
-from annofabcli.common.exceptions import UpdatedFileForDownloadingError
+from annofabcli.common.download import DownloadFileTarget, DownloadingFile
 from annofabcli.common.facade import AnnofabApiFacade
-
-logger = logging.getLogger(__name__)
 
 MAX_PROJECT_COUNT = 4
 """一度に更新できるプロジェクト数の上限。"""
@@ -35,28 +29,12 @@ def validate_project_ids(project_ids: Collection[str]) -> None:
         raise ValueError(f"--project_id は1個以上{MAX_PROJECT_COUNT}個以下で指定してください。")
 
 
-class DownloadFileTarget(Enum):
-    TASK = "task"
-    ANNOTATION = "annotation"
-    INPUT_DATA = "input_data"
-
-
-@dataclass(frozen=True)
-class UpdateJob:
-    project_id: str
-    """対象のプロジェクトID。"""
-    target: DownloadFileTarget
-    """更新対象。"""
-    job_id: str
-    """待機する更新ジョブのID。"""
-
-
 class UpdateDownloadFilesMain:
     def __init__(self, service: annofabapi.Resource) -> None:
         self.service = service
 
     def update_download_files(self, project_ids: Collection[str], targets: Collection[DownloadFileTarget]) -> None:
-        """指定したダウンロード用ファイルを並列に更新し、すべての完了を待つ。
+        """プロジェクト数を検証し、指定したファイルを並列に更新する。
 
         Args:
             project_ids: 対象のプロジェクトID。最大4個。
@@ -64,49 +42,9 @@ class UpdateDownloadFilesMain:
 
         Returns:
             None
-
-        Raises:
-            UpdatedFileForDownloadingError: いずれかの更新要求・待機に失敗した場合。
         """
         validate_project_ids(project_ids)
-        downloader = DownloadingFile(self.service)
-        job_types = {
-            DownloadFileTarget.TASK: ProjectJobType.GEN_TASKS_LIST,
-            DownloadFileTarget.ANNOTATION: ProjectJobType.GEN_ANNOTATION,
-            DownloadFileTarget.INPUT_DATA: ProjectJobType.GEN_INPUTS_LIST,
-        }
-        unique_targets = list(dict.fromkeys(targets))
-        if not unique_targets:
-            raise ValueError("更新対象を1個以上指定してください。")
-
-        unique_project_ids = list(dict.fromkeys(project_ids))
-        job_count = len(unique_project_ids) * len(unique_targets)
-        logger.info(f"{len(unique_project_ids)}件のプロジェクトのダウンロード用ファイル{job_count}件を並列に更新します。")
-        failure_targets = []
-        jobs = []
-        # 完了を待つ前にすべての更新を要求し、Annofab上で並列に実行させる。
-        for project_id in unique_project_ids:
-            for target in unique_targets:
-                log_prefix = f"project_id='{project_id}', target='{target.value}'"
-                try:
-                    job_id = downloader.request_update(project_id, job_types[target])
-                    jobs.append(UpdateJob(project_id, target, job_id))
-                except Exception:
-                    failure_targets.append(log_prefix)
-                    logger.warning(f"{log_prefix}の更新要求に失敗しました。", exc_info=True)
-
-        for index, job in enumerate(jobs):
-            log_prefix = f"project_id='{job.project_id}', target='{job.target.value}'"
-            try:
-                downloader.wait_for_completion(job.project_id, job_types[job.target], job.job_id)
-                logger.info(f"{index + 1}/{len(jobs)}件目 :: {log_prefix}の更新が完了しました。")
-            except Exception:
-                failure_targets.append(log_prefix)
-                logger.warning(f"{index + 1}/{len(jobs)}件目 :: {log_prefix}の更新に失敗しました。", exc_info=True)
-
-        logger.info(f"ダウンロード用ファイルの更新処理が終了しました。 :: 成功: {job_count - len(failure_targets)}件, 失敗: {len(failure_targets)}件")
-        if failure_targets:
-            raise UpdatedFileForDownloadingError(f"ダウンロード用ファイルの更新に失敗しました。 :: target={failure_targets}")
+        DownloadingFile(self.service).update_download_files(project_ids, targets)
 
 
 class UpdateDownloadFiles(CommandLine):

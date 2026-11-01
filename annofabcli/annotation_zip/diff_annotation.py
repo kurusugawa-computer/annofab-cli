@@ -17,7 +17,7 @@ import annofabcli.common.cli
 from annofabcli.annotation_zip.diff_compare import Target, create_annotation_zip_diff
 from annofabcli.annotation_zip.diff_models import AnnotationZipDiff, ChangedAnnotation
 from annofabcli.common.cli import build_annofabapi_resource_and_login
-from annofabcli.common.download import DownloadingFile
+from annofabcli.common.download import DownloadFileTarget, DownloadingFile
 from annofabcli.common.facade import AnnofabApiFacade
 from annofabcli.common.utils import output_string, print_json
 
@@ -109,7 +109,9 @@ def _resolve_sources(args: argparse.Namespace, directory: Path) -> dict[str, Pat
             facade.require_project_access(project_id, project_member_roles=[ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER])
         downloader = DownloadingFile(service)
         directory.mkdir(parents=True, exist_ok=True)
-        downloaded = {project_id: downloader.download_annotation_zip_to_dir(project_id, directory, is_latest=args.latest) for project_id in project_ids}
+        if args.latest:
+            downloader.update_download_files(project_ids, [DownloadFileTarget.ANNOTATION])
+        downloaded = {project_id: downloader.download_annotation_zip_to_dir(project_id, directory, is_latest=False) for project_id in project_ids}
         for side in ("left", "right"):
             project_id = getattr(args, f"{side}_project_id")
             if project_id is not None:
